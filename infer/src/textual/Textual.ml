@@ -46,6 +46,18 @@ module Location = struct
   end)
 end
 
+module SourceFile = struct
+  type t = {file: SourceFile.t; line_map: LineMap.t option}
+
+  let create ?line_map filename = {file= SourceFile.create filename; line_map}
+
+  let line_map {line_map} = line_map
+
+  let file {file} = file
+
+  let pp fmt {file} = SourceFile.pp fmt file
+end
+
 type transform_error = {loc: Location.t; msg: string Lazy.t}
 
 let pp_transform_error sourcefile fmt {loc; msg} =

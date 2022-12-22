@@ -9,7 +9,7 @@ open! IStd
 
 type t
 
-val init : SourceFile.t -> t
+val init : Textual.SourceFile.t -> t
 
 val declare_global : t -> Textual.Global.t -> unit
 
@@ -33,10 +33,10 @@ val get_struct : t -> Textual.TypeName.t -> Textual.Struct.t option
 
 val is_field_declared : t -> Textual.qualified_fieldname -> bool
 
-val source_file : t -> SourceFile.t
+val source_file : t -> Textual.SourceFile.t
 
 type error
 
-val pp_error : SourceFile.t -> Format.formatter -> error -> unit
+val pp_error : Textual.SourceFile.t -> Format.formatter -> error -> unit
 
 val make_decls : Textual.Module.t -> error list * t

@@ -266,6 +266,18 @@ module SsaVerification : sig
   val run : ProcDesc.t -> unit
 end
 
+module SourceFile : sig
+  type t
+
+  val create : ?line_map:LineMap.t -> string -> t
+
+  val line_map : t -> LineMap.t option
+
+  val file : t -> SourceFile.t
+
+  val pp : F.formatter -> t -> unit
+end
+
 module Module : sig
   type decl =
     | Global of Global.t

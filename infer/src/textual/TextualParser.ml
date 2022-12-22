@@ -18,8 +18,8 @@ type error =
 
 let pp_error sourcefile fmt = function
   | SyntaxError {loc; msg} ->
-      F.fprintf fmt "%a, %a: SIL syntax error: %s" SourceFile.pp sourcefile Textual.Location.pp loc
-        msg
+      F.fprintf fmt "%a, %a: SIL syntax error: %s" Textual.SourceFile.pp sourcefile
+        Textual.Location.pp loc msg
   | VerificationError err ->
       TextualVerification.pp_error sourcefile fmt err
   | TypeError err ->
@@ -89,24 +89,25 @@ module TextualFile = struct
     match textual_file with StandaloneFile _ -> None | TranslatedFile {line_map} -> Some line_map
 
 
-  type sil = {sourcefile: SourceFile.t; cfg: Cfg.t; tenv: Tenv.t}
+  type sil = {sourcefile: Textual.SourceFile.t; cfg: Cfg.t; tenv: Tenv.t}
 
   let translate textual_file =
-    let sourcefile = SourceFile.create (source_path textual_file) in
-    let parsed =
+    let sourcefile, parsed =
       match textual_file with
       | StandaloneFile path ->
+          let sourcefile = Textual.SourceFile.create (source_path textual_file) in
           let cin = In_channel.create path in
           let result = parse_chan sourcefile cin in
           In_channel.close cin ;
-          result
-      | TranslatedFile {content; _} ->
-          parse_string sourcefile content
+          (sourcefile, result)
+      | TranslatedFile {content; line_map} ->
+          let sourcefile = Textual.SourceFile.create ~line_map (source_path textual_file) in
+          (sourcefile, parse_string sourcefile content)
     in
     match parsed with
     | Ok module_ -> (
       try
-        let cfg, tenv = TextualSil.module_to_sil module_ ~line_map:(line_map textual_file) in
+        let cfg, tenv = TextualSil.module_to_sil module_ in
         Ok {sourcefile; cfg; tenv}
       with Textual.TextualTransformError errors -> Error (sourcefile, [TransformError errors]) )
     | Error errs ->
@@ -114,6 +115,7 @@ module TextualFile = struct
 
 
   let capture {sourcefile; cfg; tenv} =
+    let sourcefile = Textual.SourceFile.file sourcefile in
     DB.Results_dir.init sourcefile ;
     SourceFiles.add sourcefile cfg (FileLocal tenv) None ;
     if Config.debug_mode then Tenv.store_debug_file_for_source sourcefile tenv ;

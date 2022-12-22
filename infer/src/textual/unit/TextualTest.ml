@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 open Textual
 
-let sourcefile = SourceFile.create ~check_rel_path:false "dummy.sil"
+let sourcefile = SourceFile.create "dummy.sil"
 
 let parse_module text =
   match TextualParser.parse_string sourcefile text with
@@ -198,7 +198,7 @@ let%test_module "to_sil" =
     let%expect_test _ =
       let no_lang = {|define nothing() : void { #node: ret null }|} in
       let m = parse_module no_lang in
-      try TextualSil.module_to_sil m ~line_map:None |> ignore
+      try TextualSil.module_to_sil m |> ignore
       with TextualTransformError errs ->
         List.iter errs ~f:(Textual.pp_transform_error sourcefile F.std_formatter) ;
         [%expect

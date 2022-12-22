@@ -95,7 +95,7 @@
 %token OBJCSIGNSTUB
 
 
-%start <SourceFile.t -> Textual.Module.t> main
+%start <Textual.SourceFile.t -> Textual.Module.t> main
 %start <DoliAst.doliProgram> doliProgram
 %type <Attr.t> attribute
 %type <Module.decl> declaration
