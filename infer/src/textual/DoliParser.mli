@@ -11,3 +11,7 @@ val run : string -> unit
 (** [run path] parses the file in [path] accordning to the doli syntax. In the end, it discards the
     generated AST It prints a message indicating whether parsing was succesful, and if not, also
     gives the location of the error. *)
+
+val matcher : Procname.t -> Procname.t option
+(** [matcher procname] search for a model that matches [procname]. If it finds one, it returns the
+    internal name of the model *)

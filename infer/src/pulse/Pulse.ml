@@ -354,6 +354,11 @@ module PulseTransferFunctions = struct
             proc_name )
 
 
+  type model_search_result =
+    | DoliModel of Procname.t
+    | OcamlModel of (PulseModelsImport.model * Procname.t)
+    | NoModel
+
   let rec dispatch_call_eval_args
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) path ret call_exp
       actuals func_args call_loc flags astate callee_pname =
@@ -371,18 +376,23 @@ module PulseTransferFunctions = struct
     in
     let model =
       match callee_pname with
-      | Some callee_pname ->
-          PulseModels.dispatch tenv callee_pname func_args
-          |> Option.map ~f:(fun model -> (model, callee_pname))
+      | Some callee_pname -> (
+        match DoliParser.matcher callee_pname with
+        | Some procname ->
+            DoliModel procname
+        | None ->
+            PulseModels.dispatch tenv callee_pname func_args
+            |> Option.value_map ~default:NoModel ~f:(fun model -> OcamlModel (model, callee_pname))
+        )
       | None ->
           (* unresolved function pointer, etc.: skip *)
-          None
+          NoModel
     in
     (* do interprocedural call then destroy objects going out of scope *)
     let exec_states_res, call_was_unknown =
       match model with
-      | Some (model, callee_procname) ->
-          L.d_printfln "Found model for call@\n" ;
+      | OcamlModel (model, callee_procname) ->
+          L.d_printfln "Found ocaml model for call@\n" ;
           let astate =
             let arg_values =
               List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= value, _} ->
@@ -399,7 +409,16 @@ module PulseTransferFunctions = struct
               ; ret }
               astate
           , `KnownCall )
-      | None ->
+      | DoliModel callee_pname ->
+          L.d_printfln "Found doli model %a for call@\n" Procname.pp callee_pname ;
+          PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
+          let r =
+            interprocedural_call analysis_data path ret (Some callee_pname) call_exp func_args
+              call_loc flags astate
+          in
+          PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+          r
+      | NoModel ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
           let r =
             interprocedural_call analysis_data path ret callee_pname call_exp func_args call_loc
