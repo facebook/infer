@@ -67,10 +67,11 @@ let run path =
       Printf.printf "doli parsing of %s succeeded.\n" filename ;
       let module_ = program_to_textual_module path doli_program in
       let sourcefile = module_.Textual.Module.sourcefile in
+      let file = Textual.SourceFile.file sourcefile in
       try
-        let cfg, tenv = TextualSil.module_to_sil module_ ~line_map:None in
-        DB.Results_dir.init sourcefile ;
-        SourceFiles.add sourcefile cfg (FileLocal tenv) None ;
+        let cfg, tenv = TextualSil.module_to_sil module_ in
+        DB.Results_dir.init file ;
+        SourceFiles.add file cfg (FileLocal tenv) None ;
         Option.iter (Tenv.load_global ()) (* will only work with Java that has a unique Tenv *)
           ~f:(fun global_tenv -> Tenv.merge ~src:tenv ~dst:global_tenv)
       with Textual.TextualTransformError errors ->
