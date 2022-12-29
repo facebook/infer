@@ -1,4 +1,4 @@
-doli syntax error: unexpected token "#lab3" in testBodyFail.doli (line 14, column 4)
+doli syntax error: unexpected token "#lab3" in testBodyFail.doli (line 15, column 4)
 doli parsing of testComments.doli succeeded.
 doli parsing of testEmpty.doli succeeded.
 doli parsing of testJavaArrays.doli succeeded.
@@ -6,6 +6,6 @@ doli parsing of testJavaConvenience.doli succeeded.
 doli parsing of testJavaGenericInstantiations.doli succeeded.
 doli parsing of testJavaModifiers.doli succeeded.
 doli parsing of testJavaThrows.doli succeeded.
-doli syntax error: unexpected token "boolean" in testJavaThrowsBooleanFail.doli (line 12, column 31)
-doli syntax error: unexpected token "under" in testJavaThrowsEmptyFail.doli (line 12, column 30)
+doli syntax error: unexpected token "boolean" in testJavaThrowsBooleanFail.doli (line 13, column 31)
+doli syntax error: unexpected token "under" in testJavaThrowsEmptyFail.doli (line 13, column 30)
 doli parsing of testObjCJava.doli succeeded.

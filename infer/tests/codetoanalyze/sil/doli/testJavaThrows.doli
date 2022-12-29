@@ -8,6 +8,7 @@
 // tests  throws clauses
 
 // one exception thorwn
+rule rule_throws_1
 in Java match {
     void  fun6tt(A a) throws A under className
 } body {
@@ -16,6 +17,7 @@ in Java match {
 }
 
 //  one exception thrown, denoted as path
+rule rule_throws_2
 in Java match {
     void  fun6tt(A a) throws A.B<Y,? super C>.D<E> under className
 } body {
@@ -25,6 +27,7 @@ in Java match {
 
 
 //  two exceptions thrown simple denotation
+rule rule_throws_3
 in Java match {
     void  fun6tt(A a) throws A, B under className
 } body {
@@ -33,6 +36,7 @@ in Java match {
 }
 
 //  several exceptions thrown simple denotation
+rule rule_throws_4
 in Java match {
     void  fun6tt(A a) throws A, B, D under className
 } body {
@@ -41,6 +45,7 @@ in Java match {
 }
 
 // several exceptions thrown, denoted as path
+rule rule_throws_5
 in Java match {
     void  fun6tt(A a) throws  A.B<Y,? super C>.D<E>, Object.A, B<? super C<D>>.E.H  under className
 } body {

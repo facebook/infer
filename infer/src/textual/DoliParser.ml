@@ -42,7 +42,7 @@ let program_to_textual_module filename (DoliProgram _instrs) : Textual.Module.t 
   let sourcefile = SourceFile.create filename in
   let lang = Lang.Java in
   (* we have the choice between Hack or Java currently *)
-  let instrs_with_decls = ([] : (doliInstruction * ProcDesc.t) list) in
+  let instrs_with_decls = ([] : (doliRule * ProcDesc.t) list) in
   (* TODO: build a list of pairs (Doli instruction, Textual procdesc) *)
   let decls = List.map ~f:(fun (_, procdesc) -> Module.Proc procdesc) instrs_with_decls in
   global_doli_matcher :=

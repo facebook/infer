@@ -8,6 +8,7 @@
 // parsing should fail
 
 // throws keyword must be followed by a non-empty list
+rule rule_throws_empty
 in Java match {
      void  f_name(A a) throws under className
 } body {

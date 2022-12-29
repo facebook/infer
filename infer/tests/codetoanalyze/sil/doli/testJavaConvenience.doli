@@ -10,6 +10,7 @@
 
 //  several signatures in one match part
 //  with and without throws clauses
+rule r20
 in Java match {
     void  fun6tt(A[] a)  throws A under A<B,C<D,E>>.G.H
     A[][]  methD66(A.B[] x)  throws D under className
@@ -24,6 +25,7 @@ in Java match {
 
 //  several signatures in one  under
 //  some with, and some without a throws clause
+rule r21
 in Java match {
     void  fun6tt(A[] a)  throws A;
     A[][]  methD66(A.B[] x)  throws D;
@@ -41,6 +43,7 @@ in Java match {
 
 // several signatures in one  under, several under-s
 // in the same match-part
+rule r22
 in Java match {
     void  fun6tt(A[] a)  throws A;
     A[][]  methD66(A.B[] x)  throws D
@@ -59,6 +62,7 @@ in Java match {
 
 /* this should NOT parse -- the keyword under is missing
 
+rule r23
 in Java match {
     void  fun6tt(A[] a)  throws A
 } body {

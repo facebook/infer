@@ -66,6 +66,7 @@
 %token <string> STRING
 
 (* Doli-specific keywords *)
+%token RULE
 %token IN
 %token JAVA
 %token OBJC
@@ -380,14 +381,14 @@ expression:
 (*  -------------------- DOLI  ----------------------------------*)
 
 doliProgram:
- | dis = doliInstruction* EOF { DoliProgram dis }
+ | doliRules = doliRule* EOF { DoliProgram doliRules }
  ;
 
- doliInstruction:
-  | IN JAVA jm = javaMatch bd= doliBody
-  { { match_ = jm; body = bd }  }
-  | IN OBJC ocm = objCMatch bd= doliBody
-  {   { match_ = ocm; body = bd }  }
+ doliRule:
+  | RULE ruleId = ident IN JAVA jm = javaMatch bd= doliBody
+  { { ruleName = ruleId;  match_ = jm; body = bd }  }
+  | RULE ruleId = ident  IN OBJC ocm = objCMatch bd= doliBody
+  { { ruleName = ruleId; match_ = ocm; body = bd }  }
   ;
 
 doliBody:

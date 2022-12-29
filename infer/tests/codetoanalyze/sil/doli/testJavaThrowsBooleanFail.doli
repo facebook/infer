@@ -8,6 +8,7 @@
 // parsing should fail
 
 // throws part may not include primitive types (here boolean)
+rule rule_throws_bool
 in Java match {
     void  funIdent(A a) throws boolean under className
 } body {
