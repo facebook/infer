@@ -60,7 +60,7 @@ let matcher ir_procname =
       if exec_matching match_ ir_procname then Some model_procname else None )
 
 
-let run path =
+let capture path =
   let filename = Filename.basename path in
   match parse path with
   | Ok doli_program -> (
