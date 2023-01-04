@@ -5,9 +5,9 @@
 
 .source_language = "hack"
 
-define foo() : void {
+define caller_bad_args_number() : void {
 #b0:
-  n0 = $builtins.bar()
+  n0 = $builtins.bar() // error, wrong number arguments
   ret null
 }
 

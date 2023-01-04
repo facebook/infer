@@ -1,0 +1,24 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "hack"
+
+define caller_unknown_args_number() : void {
+#b0:
+  n0 = $builtins.bar()        // allowed
+  n1 = $builtins.bar(n0)      // allowed
+  n2 = $builtins.bar(n0, n1)  // allowed
+  ret null
+}
+
+define caller_unknown_args_number_bad_result_type() : int {
+#b0:
+  n0 = $builtins.foo()       // allowed
+  ret n0                     // but still the typechecker uses foo's result type here
+}
+
+declare $builtins.bar(...) : *HackMixed
+
+declare $builtins.foo(...) : *HackMixed
