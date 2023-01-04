@@ -11,9 +11,6 @@ module F = Format
 type error
 
 val pp_error : Textual.SourceFile.t -> F.formatter -> error -> unit
-  [@@warning "-unused-value-declaration"]
-
-val log_error : Textual.SourceFile.t -> error -> unit
 
 val parse_string : Textual.SourceFile.t -> string -> (Textual.Module.t, error list) result
   [@@warning "-unused-value-declaration"]
@@ -35,3 +32,4 @@ module TextualFile : sig
 end
 
 val capture : TextualFile.t list -> unit
+(** turn a list of textual files into a SIL-Java program and capture it. *)

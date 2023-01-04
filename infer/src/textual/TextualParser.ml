@@ -30,11 +30,6 @@ let pp_error sourcefile fmt = function
       TextualDecls.pp_error sourcefile fmt err
 
 
-let log_error sourcefile error =
-  if Config.keep_going then L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error
-  else L.external_error "%a@\n" (pp_error sourcefile) error
-
-
 let parse_buf sourcefile (filebuf : CombinedLexer.lexbuf) =
   try
     let lexer = CombinedLexer.Lexbuf.with_tokenizer CombinedLexer.mainlex filebuf in
@@ -124,14 +119,14 @@ module TextualFile = struct
     tenv
 end
 
-(* This code is used only by the --capture-textual integration, which includes Java which requires a
-   global tenv. The Hack driver doesn't use this function. *)
+(* This code is used only by the --capture-textual integration, which turn textual files into
+   a SIL-Java program. The Hack driver doesn't use this function. *)
 let capture textual_files =
   let global_tenv = Tenv.create () in
   let capture_one textual_file =
     match TextualFile.translate textual_file with
     | Error (sourcefile, errs) ->
-        List.iter errs ~f:(log_error sourcefile)
+        List.iter errs ~f:(fun error -> L.external_error "%a@\n" (pp_error sourcefile) error)
     | Ok sil ->
         let tenv = TextualFile.capture sil in
         Tenv.merge ~src:tenv ~dst:global_tenv
