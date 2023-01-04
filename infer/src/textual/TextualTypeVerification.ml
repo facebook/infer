@@ -161,10 +161,13 @@ let iter (l : 'a list) ~(f : 'a -> unit monad) : unit monad =
  fun state -> ret () (List.fold l ~init:state ~f:(fun state a -> snd (f a state)))
 
 
-let iter2 (l1 : 'a list) (l2 : 'b list) ~(f : 'a -> 'b -> unit monad) : unit monad =
+let iter2 ?(strict = true) (l1 : 'a list) (l2 : 'b list) ~(f : 'a -> 'b -> unit monad) : unit monad
+    =
  fun state ->
   match List.fold2 l1 l2 ~init:state ~f:(fun state a b -> snd (f a b state)) with
   | Ok state ->
+      ret () state
+  | Unequal_lengths when not strict ->
       ret () state
   | Unequal_lengths ->
       L.die InternalError
@@ -270,23 +273,22 @@ let typeof_const (const : Const.t) : Typ.t =
       Float
 
 
-let typeof_reserved_proc (proc : qualified_procname) : Typ.t * Typ.t list option =
-  if ProcDecl.to_binop proc |> Option.is_some then (Int, Some [Int; Int])
-  else if ProcDecl.to_unop proc |> Option.is_some then (Int, Some [Int])
+let typeof_reserved_proc (proc : qualified_procname) : Typ.t * Typ.t list * bool =
+  let exact_args_number = true in
+  if ProcDecl.to_binop proc |> Option.is_some then (Int, [Int; Int], exact_args_number)
+  else if ProcDecl.to_unop proc |> Option.is_some then (Int, [Int], exact_args_number)
   else
     L.die InternalError "procname %a should be user-declared or a builtin" pp_qualified_procname
       proc
 
 
 (* Since procname can be both defined and declared in a file we should account for unknown formals in declarations. *)
-let typeof_procname (proc : qualified_procname) : (Typ.t * Typ.t list option) monad =
+let typeof_procname (proc : qualified_procname) : (Typ.t * Typ.t list * bool) monad =
  fun state ->
   match TextualDecls.get_procname state.decls proc with
   | Some (procdecl : ProcDecl.t) ->
-      let formals_types =
-        Option.map procdecl.formals_types ~f:(List.map ~f:(fun {Typ.typ} -> typ))
-      in
-      ret (procdecl.result_type.typ, formals_types) state
+      let formals_types = List.map procdecl.formals_types ~f:(fun {Typ.typ} -> typ) in
+      ret (procdecl.result_type.typ, formals_types, procdecl.are_formal_types_fully_declared) state
   | None ->
       ret (typeof_reserved_proc proc) state
 
@@ -335,27 +337,23 @@ and typeof_exp (exp : Exp.t) : Typ.t monad =
       typeof_allocate_array_builtin proc args
   | Call {proc; args} when ProcDecl.is_cast_builtin proc ->
       typeof_cast_builtin proc args
-  | Call {proc; args} -> (
-      let* result_type, formals_types = typeof_procname proc in
+  | Call {proc; args} ->
+      let* result_type, formals_types, exact_args_number = typeof_procname proc in
       let* loc = get_location in
-      match formals_types with
-      | Some formals_types ->
-          let expected = List.length formals_types in
-          let given = List.length args in
-          let* () =
-            if not (Int.equal given expected) then
-              (* this situation can not happen for user-defined function because of
-                 TextualVerification verification *)
-              add_error (WrongNumberBuiltinArgs {proc; expected; given; at_least= false; loc})
-            else
-              iter2 args formals_types ~f:(fun exp assigned ->
-                  typecheck_exp exp
-                    ~check:(fun given -> compat ~assigned ~given)
-                    ~expected:(SubTypeOf assigned) ~loc )
-          in
-          ret result_type
-      | _ ->
-          ret result_type )
+      let expected = List.length formals_types in
+      let given = List.length args in
+      let* () =
+        if (not (Int.equal given expected)) && exact_args_number then
+          (* this situation can not happen for user-defined function because of
+                 TextualBasicVerification verification *)
+          add_error (WrongNumberBuiltinArgs {proc; expected; given; at_least= false; loc})
+        else
+          iter2 ~strict:exact_args_number args formals_types ~f:(fun exp assigned ->
+              typecheck_exp exp
+                ~check:(fun given -> compat ~assigned ~given)
+                ~expected:(SubTypeOf assigned) ~loc )
+      in
+      ret result_type
   | Typ _ ->
       ret (Typ.Struct TypeNameBridge.sil_type_of_types)
 

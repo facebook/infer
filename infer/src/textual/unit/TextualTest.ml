@@ -121,13 +121,23 @@ let%test_module "parsing" =
           {|
            .source_language = "hack"
            declare todo(...): *Mixed
+           declare todo2(int, float, ...): *Mixed
+           declare foo(): *Mixed
+           declare bar(int, float): *Mixed
            |}
       in
       F.printf "%a" Module.pp m ;
-      [%expect {|
+      [%expect
+        {|
         .source_language = "hack"
 
-        declare todo(...) : *Mixed |}]
+        declare todo(...) : *Mixed
+
+        declare todo2(int, float, ...) : *Mixed
+
+        declare foo() : *Mixed
+
+        declare bar(int, float) : *Mixed |}]
 
     let%expect_test "numbers lexing" =
       let text =
@@ -180,7 +190,8 @@ let%test_module "procnames" =
           { qualified_name=
               { enclosing_class= TopLevel
               ; name= {value= "toplevel"; loc= Location.known ~line:0 ~col:0} }
-          ; formals_types= Some []
+          ; formals_types= []
+          ; are_formal_types_fully_declared= true
           ; result_type= Typ.mk_without_attributes Typ.Void
           ; attributes= [] }
       in

@@ -12,3 +12,17 @@ define caller_bad_args_number() : void {
 }
 
 declare $builtins.bar(*HackMixed) : *HackMixed
+
+define caller_unknown_args_number_at_least2() : void {
+#b0:
+  n0 = $builtins.bar2()      // error, too few arguments
+  n1 = $builtins.bar2(null)  // error, too few arguments
+  // in practice this feature is not meant for varadic signature but
+  // when the Hack frontend that emits this Textual module does not
+  // have enough type information around to give the exact signature
+  // of the callee. But the implementation of the callee will be found
+  // later in an other module and there the signature will be complete.
+  ret null
+}
+
+declare $builtins.bar2(*HackMixed, *HackMixed, ...) : void

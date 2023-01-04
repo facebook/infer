@@ -270,30 +270,36 @@ let pp_list_with_comma pp fmt l = Pp.seq ~sep:", " pp fmt l
 module ProcDecl = struct
   type t =
     { qualified_name: qualified_procname
-    ; formals_types: Typ.annotated list option
+    ; formals_types: Typ.annotated list
+    ; are_formal_types_fully_declared: bool
     ; result_type: Typ.annotated
     ; attributes: Attr.t list }
 
-  let formals_or_die ?(context = "<no context>") {qualified_name; formals_types; _} =
-    match formals_types with
-    | None ->
-        L.die InternalError "List of formals is unknown in %a: %s" pp_qualified_procname
-          qualified_name context
-    | Some formals ->
-        formals
+  let formals_or_die ?(context = "<no context>")
+      {qualified_name; formals_types; are_formal_types_fully_declared} =
+    if are_formal_types_fully_declared then formals_types
+    else
+      L.die InternalError "List of formals is unknown in %a: %s" pp_qualified_procname
+        qualified_name context
 
 
-  let pp_formals fmt formals =
+  let pp_formals fmt (formals, fully_declared) =
     match formals with
-    | None ->
+    | [] when fully_declared ->
+        F.fprintf fmt ""
+    | [] ->
         F.fprintf fmt "..."
-    | Some formals ->
+    | _ when fully_declared ->
         pp_list_with_comma Typ.pp_annotated fmt formals
+    | _ ->
+        F.fprintf fmt "%a, ..." (pp_list_with_comma Typ.pp_annotated) formals
 
 
-  let pp fmt {qualified_name; formals_types; result_type; attributes} =
+  let pp fmt
+      {qualified_name; formals_types; are_formal_types_fully_declared; result_type; attributes} =
     List.iter attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
-    F.fprintf fmt "%a(%a) : %a" pp_qualified_procname qualified_name pp_formals formals_types
+    F.fprintf fmt "%a(%a) : %a" pp_qualified_procname qualified_name pp_formals
+      (formals_types, are_formal_types_fully_declared)
       Typ.pp_annotated result_type
 
 

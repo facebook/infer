@@ -13,6 +13,14 @@ define caller_unknown_args_number() : void {
   ret null
 }
 
+define caller_unknown_args_number_at_least2() : void {
+#b0:
+  n0 = $builtins.bar2(null, null)         // allowed
+  n1 = $builtins.bar2(null, null, 0)      // allowed but probably an error because bar2 is not variadic
+  n2 = $builtins.bar2(null, null, 0, 0.0) // allowed but probably an error because bar2 is not variadic
+  ret null
+}
+
 define caller_unknown_args_number_bad_result_type() : int {
 #b0:
   n0 = $builtins.foo()       // allowed
@@ -20,5 +28,7 @@ define caller_unknown_args_number_bad_result_type() : int {
 }
 
 declare $builtins.bar(...) : *HackMixed
+
+declare $builtins.bar2(*HackMixed, *HackMixed, ...) : *HackMixed
 
 declare $builtins.foo(...) : *HackMixed

@@ -131,11 +131,12 @@ end
 module ProcDecl : sig
   type t =
     { qualified_name: qualified_procname
-    ; formals_types: Typ.annotated list option
-          (** List of formal argument types or [None] when the formals are unknown. The latter is
-              possible only for external function declarations when translating from Hack and is
-              denoted with a special [...] syntax. Functions defined within a textual module always
-              have a known list of formal parameters. *)
+    ; formals_types: Typ.annotated list
+    ; are_formal_types_fully_declared: bool
+          (** The list of formal argument types may not be fully specified. It is possible only for
+              external function declarations when translating from Hack and is denoted with a
+              special [typ1, typ2, ...] syntax. Functions defined within a textual module always
+              have a fully declared list of formal parameters. *)
     ; result_type: Typ.annotated
     ; attributes: Attr.t list }
 
