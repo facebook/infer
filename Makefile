@@ -215,8 +215,8 @@ DIRECT_TESTS += \
   java_starvation-whole-program \
   java_topl \
   sil_doli \
-  sil_parsing \
   sil_pulse \
+  sil_verif \
 
 ifneq ($(KOTLINC), no)
 DIRECT_TESTS += \

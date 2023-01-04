@@ -11,7 +11,7 @@ module L = Logging
 
 type error =
   | SyntaxError of {loc: Textual.Location.t; msg: string}
-  | VerificationError of TextualVerification.error
+  | BasicError of TextualBasicVerification.error
   | TypeError of TextualTypeVerification.error
   | TransformError of Textual.transform_error list
   | DeclaredTwiceError of TextualDecls.error
@@ -20,8 +20,8 @@ let pp_error sourcefile fmt = function
   | SyntaxError {loc; msg} ->
       F.fprintf fmt "%a, %a: SIL syntax error: %s" Textual.SourceFile.pp sourcefile
         Textual.Location.pp loc msg
-  | VerificationError err ->
-      TextualVerification.pp_error sourcefile fmt err
+  | BasicError err ->
+      TextualBasicVerification.pp_error sourcefile fmt err
   | TypeError err ->
       TextualTypeVerification.pp_error sourcefile fmt err
   | TransformError errs ->
@@ -42,9 +42,7 @@ let parse_buf sourcefile (filebuf : CombinedLexer.lexbuf) =
     let twice_declared_errors, decls_env = TextualDecls.make_decls m in
     let twice_declared_errors = List.map twice_declared_errors ~f:(fun x -> DeclaredTwiceError x) in
     (* even if twice_declared_errors is not empty we can continue the other verifications *)
-    let errors =
-      TextualVerification.run m decls_env |> List.map ~f:(fun x -> VerificationError x)
-    in
+    let errors = TextualBasicVerification.run m decls_env |> List.map ~f:(fun x -> BasicError x) in
     if List.is_empty errors then
       let errors = TextualTypeVerification.run m decls_env |> List.map ~f:(fun x -> TypeError x) in
       let errors = twice_declared_errors @ errors in
