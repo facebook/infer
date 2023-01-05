@@ -743,9 +743,9 @@ and get_struct_methods struct_decl tenv =
 and get_record_struct_type tenv definition_decl : Typ.desc =
   let open Clang_ast_t in
   match definition_decl with
-  | ClassTemplateSpecializationDecl (_, _, type_ptr, _, _, _, record_decl_info, _, _, _, _)
-  | CXXRecordDecl (_, _, type_ptr, _, _, _, record_decl_info, _)
-  | RecordDecl (_, _, type_ptr, _, _, _, record_decl_info) -> (
+  | ClassTemplateSpecializationDecl (decl_info, _, type_ptr, _, _, _, record_decl_info, _, _, _, _)
+  | CXXRecordDecl (decl_info, _, type_ptr, _, _, _, record_decl_info, _)
+  | RecordDecl (decl_info, _, type_ptr, _, _, _, record_decl_info) -> (
       let sil_typename = get_record_typename ~tenv definition_decl in
       let sil_desc = Typ.Tstruct sil_typename in
       match Tenv.lookup tenv sil_typename with
@@ -777,7 +777,11 @@ and get_record_struct_type tenv definition_decl : Typ.desc =
               if Typ.Name.Cpp.is_class sil_typename then Annot.Class.cpp
               else (* No annotations for structs *) Annot.Item.empty
             in
-            Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename |> ignore ;
+            let source_file =
+              (fst decl_info.di_source_range).sl_file |> Option.map ~f:SourceFile.from_abs_path
+            in
+            Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ?source_file sil_typename
+            |> ignore ;
             CAst_utils.update_sil_types_map type_ptr sil_desc ;
             sil_desc )
           else (

@@ -34,7 +34,8 @@ type t =
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
   ; java_class_info: java_class_info option  (** present if and only if the class is Java *)
-  ; dummy: bool  (** dummy struct for class including static method *) }
+  ; dummy: bool  (** dummy struct for class including static method *)
+  ; source_file: SourceFile.t option  (** source file containing this struct's declaration *) }
 [@@deriving equal]
 
 type lookup = Typ.Name.t -> t option
@@ -52,7 +53,8 @@ let pp pe name f
      ; exported_objc_methods
      ; annots
      ; java_class_info
-     ; dummy } [@warning "+missing-record-field-pattern"] ) =
+     ; dummy
+     ; source_file } [@warning "+missing-record-field-pattern"] ) =
   let pp_field pe f (field_name, typ, ann) =
     F.fprintf f "@;<0 2>%a %a %a" (Typ.pp_full pe) typ Fieldname.pp field_name Annot.Item.pp ann
   in
@@ -74,7 +76,7 @@ let pp pe name f
      annots: {@[<v>%a@]}@,\
      java_class_info: {@[<v>%a@]}@,\
      dummy: %b@,\
-     @]"
+     %a@]"
     Typ.Name.pp name
     (seq (pp_field pe))
     fields
@@ -88,11 +90,13 @@ let pp pe name f
     methods
     (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp m))
     exported_objc_methods Annot.Item.pp annots pp_java_class_info_opt java_class_info dummy
+    (fun fs -> Option.iter ~f:(Format.fprintf fs "source_file: %a@," SourceFile.pp))
+    source_file
 
 
 let compare_custom_field (fld, _, _) (fld', _, _) = Fieldname.compare fld fld'
 
-let make_java_struct fields' statics' methods' supers' annots' java_class_info dummy =
+let make_java_struct fields' statics' methods' supers' annots' java_class_info ?source_file dummy =
   let fields = List.dedup_and_sort ~compare:compare_custom_field fields' in
   let statics = List.dedup_and_sort ~compare:compare_custom_field statics' in
   let methods = List.dedup_and_sort ~compare:Procname.compare methods' in
@@ -106,11 +110,12 @@ let make_java_struct fields' statics' methods' supers' annots' java_class_info d
   ; objc_protocols= []
   ; annots
   ; java_class_info
-  ; dummy }
+  ; dummy
+  ; source_file }
 
 
 let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
-    ?objc_protocols ?annots ?java_class_info ?dummy typename =
+    ?objc_protocols ?annots ?java_class_info ?dummy ?source_file typename =
   let default_ =
     { fields= []
     ; statics= []
@@ -120,15 +125,16 @@ let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods
     ; objc_protocols= []
     ; annots= Annot.Item.empty
     ; java_class_info= None
-    ; dummy= false }
+    ; dummy= false
+    ; source_file= None }
   in
   let mk_struct_ ?(default = default_) ?(fields = default.fields) ?(statics = default.statics)
       ?(methods = default.methods) ?(exported_objc_methods = default.exported_objc_methods)
       ?(supers = default.supers) ?(objc_protocols = default.objc_protocols)
-      ?(annots = default.annots) ?(dummy = default.dummy) typename =
+      ?(annots = default.annots) ?(dummy = default.dummy) ?source_file typename =
     match typename with
     | Typ.JavaClass _jclass ->
-        make_java_struct fields statics methods supers annots java_class_info dummy
+        make_java_struct fields statics methods supers annots java_class_info ?source_file dummy
     | _ ->
         { fields
         ; statics
@@ -138,10 +144,11 @@ let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods
         ; objc_protocols
         ; annots
         ; java_class_info
-        ; dummy }
+        ; dummy
+        ; source_file }
   in
   mk_struct_ ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?objc_protocols
-    ?annots ?dummy typename
+    ?annots ?dummy ?source_file typename
 
 
 (** the element typ of the final extensible array in the given typ, if any *)
@@ -214,6 +221,8 @@ let get_field_type_and_annotation ~lookup field_name_to_lookup typ =
 
 
 let is_dummy {dummy} = dummy
+
+let get_source_file {source_file} = source_file
 
 (* is [lhs] included in [rhs] when both are sorted and deduped *)
 let rec is_subsumed ~compare lhs rhs =
@@ -408,6 +417,9 @@ module Normalizer = HashNormalizer.Make (struct
     in
     let annots = Annot.Item.Normalizer.normalize t.annots in
     let java_class_info = JavaClassInfoOptNormalizer.normalize t.java_class_info in
+    let source_file =
+      IOption.map_changed ~equal:phys_equal ~f:SourceFile.Normalizer.normalize t.source_file
+    in
     if
       phys_equal fields t.fields && phys_equal statics t.statics && phys_equal supers t.supers
       && phys_equal objc_protocols t.objc_protocols
@@ -415,6 +427,7 @@ module Normalizer = HashNormalizer.Make (struct
       && phys_equal exported_objc_methods t.exported_objc_methods
       && phys_equal annots t.annots
       && phys_equal java_class_info t.java_class_info
+      && phys_equal source_file t.source_file
     then t
     else
       { fields
@@ -425,5 +438,6 @@ module Normalizer = HashNormalizer.Make (struct
       ; exported_objc_methods
       ; annots
       ; java_class_info
-      ; dummy= t.dummy }
+      ; dummy= t.dummy
+      ; source_file }
 end)
