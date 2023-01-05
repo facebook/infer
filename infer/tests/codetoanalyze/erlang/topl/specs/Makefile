@@ -3,13 +3,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-TESTS_DIR = ../../..
+TESTS_DIR = ../../../..
 
-INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) --print-types \
-		--pulse-max-disjuncts 60 --erlang-check-return
+INFER_OPTIONS = --topl-only --topl-properties property.topl --erlang-check-return --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = $(wildcard */*.erl)
+SOURCES = $(wildcard *.erl)
 
 include $(TESTS_DIR)/erlc.make
 

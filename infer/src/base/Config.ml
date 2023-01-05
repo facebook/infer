@@ -1534,6 +1534,13 @@ and erlang_ast_dir =
      previous run with $(b,--debug)."
 
 
+and erlang_check_return =
+  CLOpt.mk_bool ~long:"erlang-check-return"
+    ~in_help:InferCommand.[(Capture, manual_erlang)]
+    "Check whether the values returned by functions correspond to what the function's spec \
+     promises. This check is introduced at capture time."
+
+
 and erlang_skip_compile =
   CLOpt.mk_bool ~long:"erlang-skip-compile"
     ~in_help:InferCommand.[(Capture, manual_erlang)]
@@ -3604,6 +3611,8 @@ and eradicate_return_over_annotated = !eradicate_return_over_annotated
 and eradicate_verbose = !eradicate_verbose
 
 and erlang_ast_dir = !erlang_ast_dir
+
+and erlang_check_return = !erlang_check_return
 
 and erlang_skip_compile = !erlang_skip_compile
 
