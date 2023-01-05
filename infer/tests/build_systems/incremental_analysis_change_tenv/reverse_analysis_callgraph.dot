@@ -1,0 +1,11 @@
+
+digraph callgraph {
+  N1 [ label = "main", flag = false ];
+
+  N0 [ label = "twice", flag = false ];
+  N0 -> N1 ;
+
+  N2 [ label = "make_pair", flag = false ];
+  N2 -> N0 ;
+
+}
