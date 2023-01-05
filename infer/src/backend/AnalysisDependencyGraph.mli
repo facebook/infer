@@ -6,5 +6,6 @@
  *)
 open! IStd
 
-val build : unit -> CallGraph.t
-(** Build the graph from the summaries in the .specs files *)
+val build : changed_files:SourceFile.Set.t -> CallGraph.t
+(** Build the graph from the summaries in the .specs files, and flag any transitive dependencies of
+    the [changed_files] *)

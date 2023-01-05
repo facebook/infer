@@ -252,41 +252,13 @@ let invalidate_changed_procedures changed_files =
           L.die InternalError "Incremental analysis enabled without specifying changed files"
     in
     L.progress "Incremental analysis: invalidating potentially-affected analysis results.@." ;
-    let dependency_graph = ReverseAnalysisCallGraph.build () in
+    let dependency_graph = AnalysisDependencyGraph.build ~changed_files in
     let total_nodes = CallGraph.n_procs dependency_graph in
     (* Only bother with incremental invalidation and logging if there are already some analysis
        results stored in the db. *)
     if total_nodes > 0 then (
-      let tenv_dependencies =
-        Iter.fold
-          (fun rev_deps summary ->
-            let pname = Summary.get_proc_name summary in
-            let source_file_deps = summary.Summary.used_tenv_sources in
-            SourceFile.Set.fold
-              (fun source_file ->
-                SourceFile.Map.update source_file (function
-                  | Some pnames ->
-                      Some (Procname.Set.add pname pnames)
-                  | None ->
-                      Some (Procname.Set.singleton pname) ) )
-              source_file_deps rev_deps )
-          SourceFile.Map.empty
-          (fun f -> Summary.OnDisk.iter_specs ~f)
-      in
-      SourceFile.Set.iter
-        (fun sf ->
-          SourceFile.Map.find_opt sf tenv_dependencies
-          |> Option.iter ~f:(Procname.Set.iter (CallGraph.flag_reachable dependency_graph)) ;
-          SourceFiles.proc_names_of_source sf
-          |> List.iter ~f:(fun pname ->
-                 match Attributes.load pname with
-                 | None ->
-                     CallGraph.flag_reachable dependency_graph pname
-                 | Some attrs ->
-                     if attrs.changed then CallGraph.flag_reachable dependency_graph pname ) )
-        changed_files ;
       if Config.debug_level_analysis > 0 then
-        CallGraph.to_dotty dependency_graph "reverse_analysis_callgraph.dot" ;
+        CallGraph.to_dotty dependency_graph "analysis_dependency_graph.dot" ;
       let invalidated_nodes, invalidated_files =
         CallGraph.fold_flagged dependency_graph
           ~f:(fun node (acc_nodes, acc_files) ->
