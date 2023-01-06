@@ -311,8 +311,9 @@ module TransferFunctions = struct
         Dom.Mem.add_unknown ret ~location mem
 
 
-  let call {interproc= {tenv}; get_summary; get_formals; oenv= {integer_type_widths}} node location
-      ((id, _) as ret) callee_pname args captured_vars mem =
+  let call
+      {interproc= {proc_desc= pdesc; tenv}; get_summary; get_formals; oenv= {integer_type_widths}}
+      node location ((id, _) as ret) callee_pname args captured_vars mem =
     let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
     let fun_arg_list =
       List.map args ~f:(fun (exp, typ) ->
@@ -322,8 +323,8 @@ module TransferFunctions = struct
     | Some {Models.exec} ->
         let model_env =
           let node_hash = CFG.Node.hash node in
-          BoUtils.ModelEnv.mk_model_env callee_pname ~node_hash location tenv integer_type_widths
-            get_summary
+          BoUtils.ModelEnv.mk_model_env callee_pname ~caller_pname:(Procdesc.get_proc_name pdesc)
+            ~node_hash location tenv integer_type_widths get_summary
         in
         exec model_env ~ret mem
     | None -> (

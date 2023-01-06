@@ -1,0 +1,22 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "java"
+
+type A = { fresh: bool }
+
+type B = { age: int }
+
+define external_returns_A(this: *A) : *A {
+  #entry:
+    n0: *A = load &this
+    ret n0
+}
+
+define external_returns_B(this: *B) : *B {
+   #entry:
+    n0: *B = load &this
+    ret n0
+}

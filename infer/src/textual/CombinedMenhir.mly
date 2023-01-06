@@ -66,11 +66,13 @@
 %token <string> STRING
 
 (* Doli-specific keywords *)
-%token UNDER
+%token RULE
 %token IN
-%token MATCH
 %token JAVA
 %token OBJC
+%token MATCH
+%token BODYKW
+%token UNDER
 (* generics *)
 %token QUESTION
 %token SUPER
@@ -91,12 +93,10 @@
 %token DOUBLE
 %token BOOLEAN
 (* placeholders for the bodies- will be removed in future work *)
-%token BODYSTUB
-%token BODYKW
 %token OBJCSIGNSTUB
 
 
-%start <SourceFile.t -> Textual.Module.t> main
+%start <Textual.SourceFile.t -> Textual.Module.t> main
 %start <DoliAst.doliProgram> doliProgram
 %type <Attr.t> attribute
 %type <Module.decl> declaration
@@ -205,18 +205,11 @@ declaration:
       let supers = Option.value supers ~default:[] in
       Struct {name= typ_name; supers; fields; attributes} }
   | DECLARE attributes=annots qualified_name=qualified_pname LPAREN
-            formals_types = separated_list(COMMA, annotated_typ)
+            formals_types=formals_types
             RPAREN COLON result_type=annotated_typ
-    { let procdecl : ProcDecl.t =
-        {qualified_name; formals_types= Some formals_types; result_type; attributes} in
-      Procdecl procdecl
-    }
-  | DECLARE attributes=annots qualified_name=qualified_pname
-            LPAREN ELLIPSIS RPAREN COLON result_type=annotated_typ
-/* Declarations with an ellipsis is a temporary syntax to support declarations of external functions
-in Hack where formals number and types are unknown. */
-    { let procdecl : ProcDecl.t =
-        {qualified_name; formals_types= None; result_type; attributes} in
+    { let formals_types, are_formal_types_fully_declared = formals_types in
+      let procdecl : ProcDecl.t =
+        {qualified_name; formals_types= formals_types; are_formal_types_fully_declared; result_type; attributes} in
       Procdecl procdecl
     }
   | DEFINE attributes=annots qualified_name=qualified_pname LPAREN
@@ -224,13 +217,29 @@ in Hack where formals number and types are unknown. */
            body = body
     { let formals_types = List.map ~f:snd params in
       let procdecl : ProcDecl.t =
-        {qualified_name; formals_types= Some formals_types; result_type; attributes} in
+        {qualified_name; formals_types; are_formal_types_fully_declared=true; result_type; attributes} in
       let {locals; nodes} : Body.t = body in
       let start_node = List.hd_exn nodes in
       let params = List.map ~f:fst params in
       let exit_loc = location_of_pos $endpos in
       Proc { procdecl; nodes; start= start_node.Node.label; params; locals; exit_loc}
     }
+
+formals_types:
+  | { [], true }
+  | formals_types=formals_types_rec
+    { formals_types }
+
+formals_types_rec:
+  | ELLIPSIS
+   /* Declarations with an ellipsis is a temporary syntax to support declarations of external functions
+      in Hack where formals number and types are unknown. */
+    { [], false }
+  | typ=annotated_typ
+    { [typ], true }
+  | typ=annotated_typ COMMA queue=formals_types_rec
+    { let l, b = queue in
+      typ :: l, b}
 
 body:
  | LBRACKET lcls = locals nds=block+ RBRACKET
@@ -381,78 +390,78 @@ expression:
 (*  -------------------- DOLI  ----------------------------------*)
 
 doliProgram:
- | dis = doliInstruction* EOF { DoliProgram dis }
+ | doliRules = doliRule* EOF { DoliProgram doliRules }
  ;
 
- doliInstruction:
-  | IN JAVA jm = javaMatch bd= doliBody
-	{ { match_ = jm; body = bd }  }
-	| IN OBJC ocm = objCMatch bd= doliBody
-	{   { match_ = ocm; body = bd }  }
-	;
+ doliRule:
+  | RULE ruleId = ident IN JAVA jm = javaMatch bd= doliBody
+  { { ruleName = ruleId;  match_ = jm; body = bd }  }
+  | RULE ruleId = ident  IN OBJC ocm = objCMatch bd= doliBody
+  { { ruleName = ruleId; match_ = ocm; body = bd }  }
+  ;
 
 doliBody:
-  | BODYKW; LBRACKET; BODYSTUB; RBRACKET;
-     { DoliAst.DoliBodyStub }
+  | BODYKW; bd = body
+     { bd }
      ;
 
 javaMatch: MATCH;
-	LBRACKET; ess=list(extendedSignature); RBRACKET;
-	  { JavaMatching ess}
+  LBRACKET; ess=list(extendedSignature); RBRACKET;
+    { JavaMatching ess}
   ;
 
 extendedSignature:
- 	| sigs=separated_nonempty_list(SEMICOLON,signature); UNDER; rt=referenceType
-	 (* the SEMICOLON separator is needed in order to avoid shift-reduce conflicts *)
-	  { {signs=sigs; under=rt}  }
-	;
+  | sigs=separated_nonempty_list(SEMICOLON,signature); UNDER; rt=referenceType
+    (* the SEMICOLON separator is needed in order to avoid shift-reduce conflicts *)
+    { {signs=sigs; under=rt}  }
+  ;
 
 signature:
-	| mds=modifier*; rt=returnType; funcId=ident;
-	LPAREN fPTs=separated_list(COMMA, formalParameterType) RPAREN
-	option(throws)
-		{ {modifiers = mds; returns = rt; identifier = funcId; formParTypes = fPTs } }
-	;
+  | mds=modifier*; rt=returnType; funcId=ident;
+  LPAREN fPTs=separated_list(COMMA, formalParameterType) RPAREN
+    option(throws)
+   { {modifiers = mds; returns = rt; identifier = funcId; formParTypes = fPTs } }
+  ;
 
 modifier:
-    | PUBLIC { Public }
-	| PROTECTED { Protected }
-	| PRIVATE { Private }
-	| STATIC { Static }
-	| FINAL { Final }
-	| ABSTRACT { Abstract }
-	| NATIVE { Native }
-	;
+  | PUBLIC { Public }
+  | PROTECTED { Protected }
+  | PRIVATE { Private }
+  | STATIC { Static }
+  | FINAL { Final }
+  | ABSTRACT { Abstract }
+  | NATIVE { Native }
+  ;
 
 returnType:
   | VOID { VoidType }
-	| nvt=nonVoidType { NonVoid nvt }
-	;
+  | nvt=nonVoidType { NonVoid nvt }
+  ;
 
 referenceType:
   | cts=separated_nonempty_list(DOT, classType) { RT cts }
    ;
 
 classType:
-    | cId=ident { CT (cId, []) }
-	| cId=ident LABRACKET tArgs=separated_list(COMMA, typeArgument)  RABRACKET { CT (cId,tArgs) }
-	;
+  | cId=ident { CT (cId, []) }
+  | cId=ident LABRACKET tArgs=separated_list(COMMA, typeArgument)  RABRACKET { CT (cId,tArgs) }
+  ;
 
 
 nonVoidType:
 (* QUESTION: Do we want to "flatten" tree in the future?,
    ie avoid having one constructor appied to an other*)
-	| BYTE { BasicType ByteType }
-	| INT { BasicType IntType }
-	| BOOLEAN { BasicType BoolType }
-	| CHAR { BasicType CharType }
-	| DOUBLE { BasicType DoubleType }
-	| FLOAT { BasicType FloatType }
-	| LONG { BasicType LongType }
-	| SHORT { BasicType ShortType }
-	| rt=referenceType { RefType rt }
-	| nvt=nonVoidType; LSBRACKET RSBRACKET { Array nvt }
-	;
+  | BYTE { BasicType ByteType }
+  | INT { BasicType IntType }
+  | BOOLEAN { BasicType BoolType }
+  | CHAR { BasicType CharType }
+  | DOUBLE { BasicType DoubleType }
+  | FLOAT { BasicType FloatType }
+  | LONG { BasicType LongType }
+  | SHORT { BasicType ShortType }
+  | rt=referenceType { RefType rt }
+  | nvt=nonVoidType; LSBRACKET RSBRACKET { Array nvt }
+  ;
 
 formalParameterType:
    | nvt=nonVoidType; ident { nvt }
@@ -460,23 +469,23 @@ formalParameterType:
 
 
 typeArgument:
-    | rt=referenceType { PLAIN rt }
-    | QUESTION SUPER; rt=referenceType { SUPER rt }
-    | QUESTION EXTENDS rt=referenceType { EXTENDS rt }
-	 ;
+  | rt=referenceType { PLAIN rt }
+  | QUESTION SUPER; rt=referenceType { SUPER rt }
+  | QUESTION EXTENDS rt=referenceType { EXTENDS rt }
+  ;
 
 
 throws:
-	| THROWS  separated_nonempty_list(COMMA, referenceType){ }
-	;
+  | THROWS  separated_nonempty_list(COMMA, referenceType){ }
+  ;
 
 
 (* ObjC matching *)
 
 objCMatch:
     MATCH; LBRACKET; ess=extendedSignatureList; RBRACKET;
-	                   { ObjCMatching(ess) }
+      { ObjCMatching(ess) }
 ;
 
 extendedSignatureList:
- 	|  OBJCSIGNSTUB;  {  [ { stub = 33 } ] }
+  |  OBJCSIGNSTUB;  {  [ { stub = 33 } ] }

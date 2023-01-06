@@ -7,12 +7,10 @@
 
 open! IStd
 
-type doliBody = DoliBodyStub
-
 type matching =
   | JavaMatching of DoliJavaAst.extendedSignature list
   | ObjCMatching of DoliObjCAst.extendedSignature list
 
-type doliInstruction = {match_: matching; body: doliBody}
+type doliRule = {ruleName: string; match_: matching; body: Textual.Body.t}
 
-type doliProgram = DoliProgram of doliInstruction list
+type doliProgram = DoliProgram of doliRule list

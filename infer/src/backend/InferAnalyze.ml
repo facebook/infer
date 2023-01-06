@@ -202,7 +202,7 @@ let analyze source_files_to_analyze =
     let runner =
       (* use a ref to pass data from prologue to epilogue without too much machinery *)
       let gc_stats_pre_fork = ref None in
-      let child_prologue () =
+      let child_prologue _ =
         Stats.reset () ;
         gc_stats_pre_fork := Some (GCStats.get ~since:ProgramStart) ;
         if Config.memtrace_analysis then
@@ -213,7 +213,7 @@ let analyze source_files_to_analyze =
             ~filename
           |> ignore
       in
-      let child_epilogue () =
+      let child_epilogue _ =
         let gc_stats_in_fork =
           match !gc_stats_pre_fork with
           | Some stats ->
@@ -252,23 +252,13 @@ let invalidate_changed_procedures changed_files =
           L.die InternalError "Incremental analysis enabled without specifying changed files"
     in
     L.progress "Incremental analysis: invalidating potentially-affected analysis results.@." ;
-    let dependency_graph = ReverseAnalysisCallGraph.build () in
+    let dependency_graph = AnalysisDependencyGraph.build ~changed_files in
     let total_nodes = CallGraph.n_procs dependency_graph in
     (* Only bother with incremental invalidation and logging if there are already some analysis
        results stored in the db. *)
     if total_nodes > 0 then (
-      SourceFile.Set.iter
-        (fun sf ->
-          SourceFiles.proc_names_of_source sf
-          |> List.iter ~f:(fun pname ->
-                 match Attributes.load pname with
-                 | None ->
-                     CallGraph.flag_reachable dependency_graph pname
-                 | Some attrs ->
-                     if attrs.changed then CallGraph.flag_reachable dependency_graph pname ) )
-        changed_files ;
       if Config.debug_level_analysis > 0 then
-        CallGraph.to_dotty dependency_graph "reverse_analysis_callgraph.dot" ;
+        CallGraph.to_dotty dependency_graph "analysis_dependency_graph.dot" ;
       let invalidated_nodes, invalidated_files =
         CallGraph.fold_flagged dependency_graph
           ~f:(fun node (acc_nodes, acc_files) ->

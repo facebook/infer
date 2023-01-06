@@ -23,11 +23,12 @@ let detect_new_line line =
 
 let create content : t =
   let lines = String.split content ~on:'\n' in
-  let line_map = Array.create (-1) ~len:(List.length lines) in
-  let cur_line = ref (-1) in
+  let line_map = Array.create 0 ~len:(List.length lines) in
+  let cur_line = ref 1 in
   List.iteri lines ~f:(fun i line ->
       match detect_new_line line with
       | Some line_num ->
+          line_map.(i) <- !cur_line ;
           cur_line := line_num
       | _ ->
           line_map.(i) <- !cur_line ) ;

@@ -1,0 +1,7 @@
+The tests in this directory are for issues of type BAD_RETURN. Unlike other
+issues we emit, these do *not* correspond to a crash at runtime. Instead, they
+signal a disagreement between code and specs. (At runtime there is no crash
+because at runtime specs are completely ignored by Erlang.)
+
+Because a disagreement with the compiler is expected, this directory should not
+be included in the compiler tests (see `../../compiler/Makefile`).

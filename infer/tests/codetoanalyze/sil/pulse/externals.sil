@@ -3,12 +3,9 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-.source_language = "hack"
+.source_language = "java"
 
-define foo() : void {
-#b0:
-  n0 = $builtins.bar()
-  ret null
+define external_return_null() : *cell {
+  #entry:
+    ret null
 }
-
-declare $builtins.bar(*HackMixed) : *HackMixed

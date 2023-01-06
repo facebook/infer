@@ -33,12 +33,11 @@ let try_eval path location e disjunct =
       None
 
 
-let get_copied_and_source copy_type ({PathContext.timestamp} as path) rest_args location from
+let get_copied_and_source ({PathContext.timestamp} as path) rest_args location from
     (disjunct : AbductiveDomain.t) =
   let heap = (disjunct.post :> BaseDomain.t).heap in
-  let copied =
-    NonDisjDomain.Copied
-      {heap; typ= Typ.strip_ptr copy_type; location; copied_location= None; from; timestamp}
+  let copied source_typ =
+    NonDisjDomain.Copied {heap; source_typ; location; copied_location= None; from; timestamp}
   in
   let disjunct, source_addr_typ_opt =
     match rest_args with
@@ -52,7 +51,7 @@ let get_copied_and_source copy_type ({PathContext.timestamp} as path) rest_args 
     | _ ->
         (disjunct, None)
   in
-  (copied, disjunct, source_addr_typ_opt)
+  (copied (Option.map ~f:trd3 source_addr_typ_opt), disjunct, source_addr_typ_opt)
 
 
 let is_modeled_as_cheap_to_copy tenv actual_typ =
@@ -145,7 +144,7 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
             let* from = copy_check_fn procname in
             let copied_var = Var.of_pvar copy_pvar in
             let copied, disjunct, source_addr_typ_opt =
-              get_copied_and_source copy_type path rest_args location from disjunct
+              get_copied_and_source path rest_args location from disjunct
             in
             let* _, source_expr, _ = source_addr_typ_opt in
             let copy_into_opt : Attribute.CopiedInto.t option =
@@ -191,7 +190,7 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
           when Typ.is_rvalue_reference source_typ && not (is_cheap_to_copy tenv copy_type) ->
             let* from = copy_check_fn procname in
             let copied, disjunct, source_addr_typ_opt =
-              get_copied_and_source copy_type path rest_args location from disjunct
+              get_copied_and_source path rest_args location from disjunct
             in
             let+ disjunct, copy_addr = try_eval path location exp disjunct in
             let disjunct' =
@@ -289,7 +288,7 @@ let add_copied_return path location call_exp actuals astates astate_non_disj =
                 NonDisjDomain.add_var into ~source_addr_opt:(Some source)
                   (Copied
                      { heap= (disjunct.post :> BaseDomain.t).heap
-                     ; typ= Typ.strip_ptr copy_type
+                     ; source_typ= Some (Typ.strip_ptr copy_type)
                      ; location
                      ; copied_location= Some (procname, copied_location)
                      ; from

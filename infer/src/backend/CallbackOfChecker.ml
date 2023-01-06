@@ -57,6 +57,14 @@ let interprocedural_with_field payload_field checker {Callbacks.summary; exe_env
   {summary with payloads= Field.fset payload_field summary.payloads result; stats= !stats_ref}
 
 
+let interprocedural_with_field_dependency ~dep_field payload_field checker
+    ({Callbacks.summary} as callbacks) =
+  let checker analysis_data =
+    checker analysis_data (Field.get dep_field summary.payloads |> Lazy.force)
+  in
+  interprocedural_with_field payload_field checker callbacks
+
+
 let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; source_file} =
   let analyze_file_dependency proc_name =
     Ondemand.analyze_proc_name_no_caller exe_env proc_name

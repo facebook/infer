@@ -152,6 +152,10 @@ module Errors = struct
    fun {location} astate -> error (Badrecord {calling_context= []; location}) astate
 
 
+  let badreturn : model =
+   fun {location} astate -> error (Badreturn {calling_context= []; location}) astate
+
+
   let case_clause : model =
    fun {location} astate -> error (Case_clause {calling_context= []; location}) astate
 
@@ -1120,6 +1124,7 @@ let matchers : matcher list =
     ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Errors.badmap
     ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Errors.badmatch
     ; +BuiltinDecl.(match_builtin __erlang_error_badrecord) <>--> Errors.badrecord
+    ; +BuiltinDecl.(match_builtin __erlang_error_badreturn) <>--> Errors.badreturn
     ; +BuiltinDecl.(match_builtin __erlang_error_case_clause) <>--> Errors.case_clause
     ; +BuiltinDecl.(match_builtin __erlang_error_function_clause) <>--> Errors.function_clause
     ; +BuiltinDecl.(match_builtin __erlang_error_if_clause) <>--> Errors.if_clause

@@ -1,0 +1,44 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+// demonstrates the current limitations of type checking
+// at the moment all three functions type check, even though they should
+// all be found as type in-correct
+// also, the missing declaration of C is not reported
+
+.source_language = "java"
+
+type A = { value:int; next: *A; other: *C}
+// C is not declared anywhere
+
+define retrurns_a_C_for_an_A(this: *A) : *A {
+// C is not a subclcass of A
+   #entry:
+    n0: *A = load &this
+    n1: *C = load n0.A.other
+    ret n1
+}
+
+define external_call_with_different_A(this: *A) : void {
+// A in this file is different from A in imported file
+  #entry:
+    n0: *A = load &this
+    n1 = n0.A.external_returns_A()
+    n2: int = load n1.A.value
+    ret n2
+}
+
+define external_call_with_different_singnatures(this: *A) : *A {
+// external_returns_B has different signature in imported file
+   #entry:
+    n0: *A = load &this
+    n1 = n0.A.external_returns_B()
+    n2: *A = load n1.A.next
+    ret n2
+}
+
+declare A.external_returns_A(*A) : *A
+
+declare A.external_returns_B(*A) : *A

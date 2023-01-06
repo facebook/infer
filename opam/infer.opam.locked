@@ -138,6 +138,7 @@ depends: [
   "stdcompat" {= "19"}
   "stdio" {= "v0.15.0"}
   "stdlib-shims" {= "0.3.0"}
+  "tdigest" {= "2.0.0"}
   "textutils" {= "v0.15.0"}
   "textutils_kernel" {= "v0.15.0"}
   "time_now" {= "v0.15.0"}

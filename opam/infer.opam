@@ -44,6 +44,7 @@ depends: [
   "sawja" {>="1.5.11"}
   "sedlex" {>="3.0"}
   "sqlite3"
+  "tdigest" {>="2.0.0"}
   "utop" {with-test}
   "xmlm" {>="1.2.0"}
   "yojson" {>="1.7.0"}

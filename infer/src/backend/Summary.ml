@@ -47,7 +47,8 @@ type t =
   ; stats: Stats.t
   ; proc_desc: Procdesc.t
   ; err_log: Errlog.t
-  ; mutable callee_pnames: Procname.Set.t }
+  ; mutable callee_pnames: Procname.Set.t
+  ; mutable used_tenv_sources: SourceFile.Set.t }
 
 let yojson_of_t {proc_desc; payloads} =
   [%yojson_of: Procname.t * Payloads.t] (Procdesc.get_proc_name proc_desc, payloads)
@@ -120,11 +121,20 @@ module ReportSummary = struct
 end
 
 module SummaryMetadata = struct
-  type t = {sessions: int; stats: Stats.t; proc_desc: Procdesc.t; callee_pnames: Procname.Set.t}
+  type t =
+    { sessions: int
+    ; stats: Stats.t
+    ; proc_desc: Procdesc.t
+    ; callee_pnames: Procname.Set.t
+    ; used_tenv_sources: SourceFile.Set.t }
   [@@deriving fields]
 
   let of_full_summary (f : full_summary) : t =
-    {sessions= f.sessions; stats= f.stats; proc_desc= f.proc_desc; callee_pnames= f.callee_pnames}
+    { sessions= f.sessions
+    ; stats= f.stats
+    ; proc_desc= f.proc_desc
+    ; callee_pnames= f.callee_pnames
+    ; used_tenv_sources= f.used_tenv_sources }
 
 
   module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
@@ -139,6 +149,7 @@ let mk_full_summary payloads (report_summary : ReportSummary.t)
   ; stats= summary_metadata.stats
   ; proc_desc= summary_metadata.proc_desc
   ; callee_pnames= summary_metadata.callee_pnames
+  ; used_tenv_sources= summary_metadata.used_tenv_sources
   ; err_log= report_summary.err_log }
 
 
@@ -264,7 +275,8 @@ module OnDisk = struct
       ; stats= Stats.empty
       ; proc_desc
       ; err_log= Errlog.empty ()
-      ; callee_pnames= Procname.Set.empty }
+      ; callee_pnames= Procname.Set.empty
+      ; used_tenv_sources= SourceFile.Set.empty }
     in
     Procname.Hash.replace cache (Procdesc.get_proc_name proc_desc) summary ;
     summary

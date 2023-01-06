@@ -2529,14 +2529,6 @@ module MemReach = struct
      | End ->
          add_cpp_iter_end_alias new_pvar m )
     |> Option.value ~default:m
-
-
-  let get_proc_desc m =
-    let oenv = GOption.value m.oenv in
-    oenv.proc_desc
-
-
-  let get_proc_name m = Procdesc.get_proc_name (get_proc_desc m)
 end
 
 module Mem = struct
@@ -2840,7 +2832,4 @@ module Mem = struct
 
   let propagate_cpp_iter_begin_or_end_alias ~new_pvar ~existing_pvar m =
     map m ~f:(MemReach.propagate_cpp_iter_begin_or_end_alias ~new_pvar ~existing_pvar)
-
-
-  let get_proc_name m = f_lift_default ~default:None (fun m -> Some (MemReach.get_proc_name m)) m
 end

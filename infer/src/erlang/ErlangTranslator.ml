@@ -63,8 +63,8 @@ let update_location (loc : Ast.location) (env : (_, _) Env.t) =
 
 
 let update_path (path : string) (env : (_, _) Env.t) =
-  (* Ignore if we don't find the source for OTP related files. *)
-  let file = SourceFile.create path ~warn_on_error:(not env.is_otp) in
+  (* Ignore if we don't find the source for OTP related files or any absolute paths. *)
+  let file = SourceFile.create path ~check_abs_path:false ~check_rel_path:(not env.is_otp) in
   let location = {env.location with file} in
   {env with location}
 
@@ -1329,32 +1329,40 @@ and translate_function_clauses (env : (_, _) Env.t) procdesc (attributes : ProcA
       let load = Sil.Load {id; e= Exp.Lvar pvar; typ; loc= attributes.loc} in
       (id, load)
     in
-    List.unzip (List.map ~f:load attributes.formals)
+    let idents, load_instructions = List.unzip (List.map ~f:load attributes.formals) in
+    (idents, Block.make_instruction env ~kind:ErlangCaseClause load_instructions)
   in
   (* Translate each clause using the idents we load into. *)
-  let ({start; exit_success; exit_failure} : Block.t) =
-    let blocks = List.map ~f:(translate_case_clause env idents) clauses in
-    Block.any env blocks
+  let clauses_blocks =
+    let match_cases = List.map ~f:(translate_case_clause env idents) clauses in
+    let no_match_case = Block.make_fail env BuiltinDecl.__erlang_error_function_clause in
+    Block.any env (match_cases @ [no_match_case])
   in
-  let () =
-    (* Put the loading node before the translated clauses or the specs (if any). *)
-    let loads_node = Node.make_stmt env ~kind:ErlangCaseClause loads in
-    Procdesc.get_start_node procdesc |~~> [loads_node] ;
+  let maybe_prune_args =
     match spec with
     | Some spec ->
-        let prune_block = ErlangTypes.prune_spec_args env idents spec in
-        loads_node |~~> [prune_block.start] ;
-        prune_block.exit_success |~~> [start]
+        Block.any env [ErlangTypes.prune_spec_args env idents spec; Block.make_stuck env]
     | None ->
-        loads_node |~~> [start]
+        Block.make_success env
   in
-  let () =
-    (* Finally, if all patterns fail, report error. *)
-    let crash_node = Node.make_fail env BuiltinDecl.__erlang_error_function_clause in
-    exit_failure |~~> [crash_node] ;
-    crash_node |~~> [Procdesc.get_exit_node procdesc]
+  let maybe_prune_ret =
+    match spec with
+    | Some spec when Config.erlang_check_return ->
+        let id = mk_fresh_id () in
+        let load =
+          let (Env.Present ret) = env.result in
+          Block.make_instruction env [Sil.Load {id; e= ret; typ= any_typ; loc= env.location}]
+        in
+        let prune_ret = ErlangTypes.prune_spec_return env id spec in
+        let bad_ret_type = Block.make_fail env BuiltinDecl.__erlang_error_badreturn in
+        Block.all env [load; Block.any env [prune_ret; bad_ret_type]]
+    | _ ->
+        Block.make_success env
   in
-  exit_success |~~> [Procdesc.get_exit_node procdesc]
+  let body = Block.all env [loads; maybe_prune_args; clauses_blocks; maybe_prune_ret] in
+  Procdesc.get_start_node procdesc |~~> [body.start] ;
+  body.exit_success |~~> [Procdesc.get_exit_node procdesc] ;
+  body.exit_failure |~~> [Procdesc.get_exit_node procdesc]
 
 
 let mk_procdesc (env : (_, _) Env.t) attributes =
@@ -1439,7 +1447,9 @@ let translate_one_spec (env : (_, _) Env.t) function_ spec =
     let body =
       let ret_id = mk_fresh_id () in
       let store_instr = Sil.Store {e1= ret_var; typ= any_typ; e2= Var ret_id; loc= env.location} in
-      let prune_block = ErlangTypes.prune_spec_return env ret_id spec in
+      let prune_block =
+        Block.any env [ErlangTypes.prune_spec_return env ret_id spec; Block.make_stuck env]
+      in
       let store_block = Block.make_instruction env [store_instr] in
       Block.all env [prune_block; store_block]
     in
@@ -1449,7 +1459,7 @@ let translate_one_spec (env : (_, _) Env.t) function_ spec =
 
 
 (** Translate forms of a module. *)
-let translate_module (env : (_, _) Env.t) module_ =
+let translate_module (env : (_, _) Env.t) module_ base_dir =
   let f env {Ast.location; simple_form} =
     let sub_env = update_location location env in
     match simple_form with
@@ -1463,6 +1473,7 @@ let translate_module (env : (_, _) Env.t) module_ =
         translate_one_spec sub_env function_ spec ;
         env
     | File {path} ->
+        let path = match base_dir with Some dir -> Filename.concat dir path | None -> path in
         update_path path env
     | _ ->
         env

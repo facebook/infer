@@ -440,13 +440,17 @@ let fork_child ~child_prologue ~slot (updates_r, updates_w) ~f ~epilogue =
       {pid; down_pipe= Unix.out_channel_of_descr to_child_w}
 
 
+module Worker = struct
+  type id = int
+end
+
 let rec create_pipes n = if Int.equal n 0 then [] else Unix.pipe () :: create_pipes (n - 1)
 
 let create :
        jobs:int
-    -> child_prologue:(unit -> unit)
+    -> child_prologue:(Worker.id -> unit)
     -> f:('work -> 'result option)
-    -> child_epilogue:(unit -> 'final)
+    -> child_epilogue:(Worker.id -> 'final)
     -> tasks:(unit -> ('work, 'result) TaskGenerator.t)
     -> ('work, 'final, 'result) t =
  fun ~jobs ~child_prologue ~f ~child_epilogue ~tasks ->
@@ -455,7 +459,10 @@ let create :
   let slots =
     Array.init jobs ~f:(fun slot ->
         let child_pipe = List.nth_exn children_pipes slot in
-        fork_child ~child_prologue ~slot child_pipe ~f ~epilogue:child_epilogue )
+        fork_child
+          ~child_prologue:(fun () -> child_prologue (slot :> Worker.id))
+          ~slot child_pipe ~f
+          ~epilogue:(fun () -> child_epilogue (slot :> Worker.id)) )
   in
   ProcessPoolState.has_running_children := true ;
   Epilogues.register ~description:"Wait children processes exit" ~f:(fun () ->

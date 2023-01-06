@@ -1,0 +1,17 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "java"
+
+define ClassA.external_returns_null(this: *ClassA) : *ClassA {
+  #entry:
+    ret null
+}
+
+define ClassA.external_returns_non_null(this: *ClassA) : *ClassA {
+  #entry:
+    n0: *ClassA = load &this
+    ret n0
+}

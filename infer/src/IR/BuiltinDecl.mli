@@ -37,6 +37,9 @@ val __erlang_error_badmap : Procname.t
 
 val __erlang_error_badrecord : Procname.t
 
+val __erlang_error_badreturn : Procname.t
+(** Not a runtime error in Erlang. It means that the actual type disagrees with the spec. *)
+
 val __erlang_error_case_clause : Procname.t
 
 val __erlang_error_function_clause : Procname.t

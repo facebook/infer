@@ -47,6 +47,7 @@ let keywords =
     ; ("unreachable", UNREACHABLE)
     ; ("void", VOID)
     ; ("under", UNDER) (* Doli-specific keywords *)
+    ; ("rule", RULE)
     ; ("in", IN)
     ; ("match", MATCH)
     ; ("body", BODYKW)
@@ -67,8 +68,8 @@ let keywords =
     ; ("native", NATIVE)
     ; ("throws", THROWS)
     ; ("super", SUPER) (* Doli generics *)
-    ; ("bodyStub", BODYSTUB) (* Doli abbreviations -- will disappear eventually *)
-    ; ("objCSignStub", OBJCSIGNSTUB) ]
+    ; ("objCSignStub", OBJCSIGNSTUB)
+      (* Doli singature stub -- eventually will be replaced and removed *) ]
 
 
 let keywords = Map.of_alist_exn (module String) keywords

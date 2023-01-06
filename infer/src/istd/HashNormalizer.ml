@@ -45,4 +45,19 @@ module StringNormalizer = Make (struct
   let normalize = Fn.id
 end)
 
+module rec StringListNormalizer : (S with type t = string list) = Make (struct
+  type t = string list [@@deriving equal]
+
+  let hash = Hashtbl.hash
+
+  let normalize string_list =
+    match string_list with
+    | [] ->
+        []
+    | x :: xs ->
+        let xs' = StringListNormalizer.normalize xs in
+        let x' = StringNormalizer.normalize x in
+        if phys_equal x x' && phys_equal xs xs' then string_list else x' :: xs'
+end)
+
 let reset_all_normalizers () = List.iter !normalizer_reset_funs ~f:(fun f -> f ())

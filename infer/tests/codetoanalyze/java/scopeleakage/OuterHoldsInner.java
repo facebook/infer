@@ -48,6 +48,10 @@ class Factory {
   }
 }
 
+class AnonymousBox {
+  public Object f;
+}
+
 @ScopeType(value = Outer.class)
 public class OuterHoldsInner<T> {
   // Simple error, requires basic analysis of types, fields, and annotations.
@@ -77,7 +81,13 @@ public class OuterHoldsInner<T> {
   // An error that requires modeling reflection-based factory methods.
   public final Object FN_inner_via_factory = Factory.make(InnerScopedClass.class);
 
-  public OuterHoldsInner() {}
+  public Object anon_box_holder_bad;
+
+  public OuterHoldsInner() {
+    AnonymousBox b = new AnonymousBox();
+    b.f = new InnerScopedClass();
+    anon_box_holder_bad = b;
+  }
 
   public static InnerScopedClass getMethod() {
     return new InnerScopedClass();

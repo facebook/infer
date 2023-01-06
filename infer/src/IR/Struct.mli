@@ -31,7 +31,8 @@ type t = private
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
   ; java_class_info: java_class_info option  (** present if and only if the class is Java *)
-  ; dummy: bool  (** dummy struct for class including static method *) }
+  ; dummy: bool  (** dummy struct for class including static method *)
+  ; source_file: SourceFile.t option  (** source file containing this struct's declaration *) }
 
 type lookup = Typ.Name.t -> t option
 
@@ -51,6 +52,7 @@ val internal_mk_struct :
   -> ?annots:Annot.Item.t
   -> ?java_class_info:java_class_info
   -> ?dummy:bool
+  -> ?source_file:SourceFile.t
   -> Typ.name
   -> t
 (** Construct a struct_typ, normalizing field types *)
@@ -80,5 +82,7 @@ val merge : Typ.Name.t -> newer:t -> current:t -> t
 val is_not_java_interface : t -> bool
 (** check that a struct either defines a non-java type, or a non-java-interface type (abstract or
     normal class) *)
+
+val get_source_file : t -> SourceFile.t option
 
 module Normalizer : HashNormalizer.S with type t = t

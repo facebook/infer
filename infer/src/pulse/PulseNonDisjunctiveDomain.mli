@@ -12,7 +12,7 @@ module BaseMemory = PulseBaseMemory
 
 type copy_spec_t =
   | Copied of
-      { typ: Typ.t
+      { source_typ: Typ.t option
       ; location: Location.t (* the location to report the issue *)
       ; copied_location: (Procname.t * Location.t) option
             (* [copied_location] has a value when the copied location is different to where to
@@ -21,7 +21,7 @@ type copy_spec_t =
       ; from: Attribute.CopyOrigin.t
       ; timestamp: Timestamp.t }
   | Modified of
-      { typ: Typ.t
+      { source_typ: Typ.t option
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
       ; from: Attribute.CopyOrigin.t
@@ -55,7 +55,7 @@ val mark_parameter_as_modified :
 val get_copied :
      t
   -> ( Attribute.CopiedInto.t
-     * Typ.t
+     * Typ.t option
      * Location.t
      * (Procname.t * Location.t) option
      * Attribute.CopyOrigin.t )
