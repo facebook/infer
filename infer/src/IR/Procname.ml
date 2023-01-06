@@ -1185,7 +1185,7 @@ let rec pp_unique_id fmt = function
   | C osig ->
       C.pp Verbose fmt osig
   | Erlang e ->
-      Erlang.pp Verbose fmt e
+      Erlang.pp_filename fmt e
   | Hack h ->
       Hack.pp Verbose fmt h
   | ObjC_Cpp osig ->
@@ -1526,8 +1526,6 @@ let to_filename pname =
         let pp_mangled fmt = function None -> () | Some mangled -> F.fprintf fmt "#%s" mangled in
         F.asprintf "%a%a%a" pp_rev_qualified pname Parameter.pp_parameters parameters pp_mangled
           mangled
-    | Erlang pname ->
-        F.asprintf "%a" Erlang.pp_filename pname
     | ObjC_Cpp objc_cpp ->
         F.asprintf "%a%a#%a" pp_rev_qualified pname Parameter.pp_parameters objc_cpp.parameters
           ObjC_Cpp.pp_verbose_kind objc_cpp.kind
