@@ -12,6 +12,47 @@ module L = Logging
 (** Hash tables on type names. *)
 module TypenameHash = Caml.Hashtbl.Make (Typ.Name)
 
+(** Mutable state keeping track of which procedure summaries depend on which type environments. *)
+module Deps : sig
+  val set_current_proc : Procname.t option -> unit
+  (** set (or unset) the currently-under-analysis procedure *)
+
+  val get_current_proc : unit -> Procname.t option
+  (** get the currently-under-analysis procedure if one exists *)
+
+  val of_procname : Procname.t -> SourceFile.Set.t
+  (** Return the set of source files whose type environments were used to compute a summary of the
+      given [proc_name] *)
+
+  val record : Procname.t -> SourceFile.t -> unit
+  (** Record a dependency from a [proc_name] upon the type environment of some [source_file] *)
+end = struct
+  let currently_under_analysis : Procname.t option ref = ref None
+
+  let recorded_dependencies : SourceFile.Set.t Procname.Hash.t = Procname.Hash.create 1000
+
+  let set_current_proc = ( := ) currently_under_analysis
+
+  let get_current_proc () = !currently_under_analysis
+
+  let of_procname pname =
+    match Procname.Hash.find_opt recorded_dependencies pname with
+    | Some deps ->
+        (* Remove recorded dependencies for this [pname] to save memory, since they are read at most once. *)
+        Procname.Hash.remove recorded_dependencies pname ;
+        deps
+    | None ->
+        SourceFile.Set.empty
+
+
+  let record pname file =
+    match Procname.Hash.find_opt recorded_dependencies pname with
+    | None ->
+        Procname.Hash.add recorded_dependencies pname (SourceFile.Set.singleton file)
+    | Some files ->
+        Procname.Hash.replace recorded_dependencies pname (SourceFile.Set.add file files)
+end
+
 (** Type for type environment. *)
 type t = Struct.t TypenameHash.t
 
@@ -24,28 +65,35 @@ let create () = TypenameHash.create 1000
 
 (** Construct a struct type in a type environment *)
 let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?objc_protocols
-    ?annots ?java_class_info ?dummy name =
+    ?annots ?java_class_info ?dummy ?source_file name =
   let struct_typ =
     Struct.internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
-      ?objc_protocols ?annots ?java_class_info ?dummy name
+      ?objc_protocols ?annots ?java_class_info ?dummy ?source_file name
   in
   TypenameHash.replace tenv name struct_typ ;
   struct_typ
 
 
-(** Look up a name in the global type environment. *)
+(** Look up a name in the given type environment. *)
 let lookup tenv name : Struct.t option =
-  try Some (TypenameHash.find tenv name)
-  with Caml.Not_found -> (
-    (* ToDo: remove the following additional lookups once C/C++ interop is resolved *)
-    match (name : Typ.Name.t) with
-    | CStruct m ->
-        TypenameHash.find_opt tenv
-          (CppClass {name= m; template_spec_info= NoTemplate; is_union= false})
-    | CppClass {name= m; template_spec_info= NoTemplate} ->
-        TypenameHash.find_opt tenv (CStruct m)
-    | _ ->
-        None )
+  let result =
+    try Some (TypenameHash.find tenv name)
+    with Caml.Not_found -> (
+      (* ToDo: remove the following additional lookups once C/C++ interop is resolved *)
+      match (name : Typ.Name.t) with
+      | CStruct m ->
+          TypenameHash.find_opt tenv
+            (CppClass {name= m; template_spec_info= NoTemplate; is_union= false})
+      | CppClass {name= m; template_spec_info= NoTemplate} ->
+          TypenameHash.find_opt tenv (CStruct m)
+      | _ ->
+          None )
+  in
+  (* Record Tenv lookups during analysis to facilitate conservative incremental invalidation *)
+  IOption.iter2 (Deps.get_current_proc ())
+    (Option.bind result ~f:Struct.get_source_file)
+    ~f:Deps.record ;
+  result
 
 
 let compare_fields (name1, _, _) (name2, _, _) = Fieldname.compare name1 name2

@@ -7,6 +7,7 @@
 
 // tests mixture of Java and OjectiveC
 
+rule rule_mix_1
 in Java match {
    public void main33()  under name32a
 } body {
@@ -14,6 +15,7 @@ in Java match {
        jmp lab3
 }
 
+rule rule_mix_2
 in ObjectiveC match {
    objCSignStub
 } body {
@@ -22,6 +24,7 @@ in ObjectiveC match {
 }
 
 // public private is syntactically correct doli
+rule rule_mix_3
 in Java match{
 // public private is correct doli
    public static private void main33()  under name32a
@@ -30,6 +33,7 @@ in Java match{
        jmp lab3
 }
 
+rule rule_mix_4
 in ObjectiveC match {
    objCSignStub
 } body {
@@ -37,6 +41,7 @@ in ObjectiveC match {
        jmp lab3
 }
 
+rule rule_mix_5
 in Java
 match {
    void mainx(A a, b Bb)  under name32a
@@ -45,6 +50,7 @@ match {
        jmp lab3
 }
 
+rule rule_mix_6
 in ObjectiveC match{
    objCSignStub
 } body {

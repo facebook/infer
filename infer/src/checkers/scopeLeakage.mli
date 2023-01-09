@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
+module F = Format
 
 (** This analysis operates over Java bytecode. It assumes that types (classes, interfaces, enums,
     etc.) may be annotated with so-called scope annotations. The analysis is parameterized by a set
@@ -25,4 +26,11 @@ open! IStd
     as a form of lightweight modeling.) A scope class is the name of the class that represents a
     given scope. *)
 
-val checker : IntraproceduralAnalysis.t -> unit
+(* The abstract domain of this analysis. *)
+module Summary : sig
+  type t
+
+  val pp : F.formatter -> t -> unit
+end
+
+val checker : Summary.t InterproceduralAnalysis.t -> Summary.t option

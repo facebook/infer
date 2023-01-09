@@ -8,6 +8,7 @@
 // this file tests Java modifiers and return types
 
 // when there are two modifiers
+rule rule_mods_1
 in Java match {
     public static typeA m()  under A
 } body {
@@ -15,6 +16,7 @@ in Java match {
       jmp lab3(n3)
 }
 
+rule rule_mods_2
 in Java match {
     public static void fun6y() under A
 } body {
@@ -23,6 +25,7 @@ in Java match {
 }
 
 // when there is a space between the method name (m, here) anf the arguments (empty, here)
+rule rule_mods_3
 in Java match {
     public static void m () under A
 } body {
@@ -31,6 +34,7 @@ in Java match {
 }
 
 // when there are no modifiers
+rule rule_mods_4
 in Java match {
     void de4()  under A6b
 } body {

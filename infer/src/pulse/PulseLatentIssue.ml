@@ -65,6 +65,8 @@ let add_call_to_calling_context call_and_loc = function
       ErlangError (Badmatch {calling_context= call_and_loc :: calling_context; location})
   | ErlangError (Badrecord {calling_context; location}) ->
       ErlangError (Badrecord {calling_context= call_and_loc :: calling_context; location})
+  | ErlangError (Badreturn {calling_context; location}) ->
+      ErlangError (Badreturn {calling_context= call_and_loc :: calling_context; location})
   | ErlangError (Case_clause {calling_context; location}) ->
       ErlangError (Case_clause {calling_context= call_and_loc :: calling_context; location})
   | ErlangError (Function_clause {calling_context; location}) ->

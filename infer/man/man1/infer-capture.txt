@@ -301,6 +301,11 @@ ERLANG OPTIONS
            Also load AST from all .json files in the given path. These .json
            files usually come from a previous run with --debug.
 
+       --erlang-check-return
+           Activates: Check whether the values returned by functions
+           correspond to what the function's spec promises. This check is
+           introduced at capture time. (Conversely: --no-erlang-check-return)
+
        --erlang-skip-compile
            Activates: Skip running compiler (erlc/rebar3), to save time. The
            build command is basically ignored in this case. To be used

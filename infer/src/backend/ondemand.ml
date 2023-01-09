@@ -49,6 +49,7 @@ type global_state =
   ; pulse_address_generator: PulseAbstractValue.State.t
   ; absint_state: AnalysisState.t
   ; biabduction_state: State.t
+  ; current_procname: Procname.t option
   ; taskbar_nesting: int
   ; checker_timer_state: Timer.state }
 
@@ -68,6 +69,7 @@ let save_global_state () =
   ; pulse_address_generator= PulseAbstractValue.State.get ()
   ; absint_state= AnalysisState.save ()
   ; biabduction_state= State.save_state ()
+  ; current_procname= Tenv.Deps.get_current_proc ()
   ; taskbar_nesting= !nesting
   ; checker_timer_state= Timer.suspend () }
 
@@ -82,6 +84,7 @@ let restore_global_state st =
   Ident.NameGenerator.set_current st.name_generator ;
   PulseAbstractValue.State.set st.pulse_address_generator ;
   AnalysisState.restore st.absint_state ;
+  Tenv.Deps.set_current_proc st.current_procname ;
   State.restore_state st.biabduction_state ;
   current_taskbar_status :=
     Option.map st.proc_analysis_time ~f:(fun (suspended_span, status) ->
@@ -128,6 +131,7 @@ let analyze exe_env callee_summary =
 
 let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
+  Tenv.Deps.set_current_proc (Some callee_pname) ;
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
   let log_elapsed_time =
     let start_time = Mtime_clock.counter () in
@@ -155,6 +159,7 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
   in
   let postprocess summary =
     decr nesting ;
+    summary.Summary.used_tenv_sources <- Tenv.Deps.of_procname callee_pname ;
     Summary.OnDisk.store summary ;
     remove_active callee_pname ;
     Printer.write_proc_html callee_pdesc ;

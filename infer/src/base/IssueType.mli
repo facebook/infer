@@ -91,6 +91,8 @@ val bad_map : latent:bool -> t
 
 val bad_record : latent:bool -> t
 
+val bad_return : latent:bool -> t
+
 val biabduction_analysis_stops : t
 
 val biabduction_retain_cycle : t

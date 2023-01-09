@@ -100,6 +100,8 @@ let __erlang_error_badmap = create_procname "__erlang_error_badmap"
 
 let __erlang_error_badrecord = create_procname "__erlang_error_badrecord"
 
+let __erlang_error_badreturn = create_procname "__erlang_error_badreturn"
+
 let __erlang_error_case_clause = create_procname "__erlang_error_case_clause"
 
 let __erlang_error_function_clause = create_procname "__erlang_error_function_clause"

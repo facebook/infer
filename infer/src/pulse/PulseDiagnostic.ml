@@ -64,6 +64,7 @@ module ErlangError = struct
     | Badmap of {calling_context: calling_context; location: Location.t}
     | Badmatch of {calling_context: calling_context; location: Location.t}
     | Badrecord of {calling_context: calling_context; location: Location.t}
+    | Badreturn of {calling_context: calling_context; location: Location.t}
     | Case_clause of {calling_context: calling_context; location: Location.t}
     | Function_clause of {calling_context: calling_context; location: Location.t}
     | If_clause of {calling_context: calling_context; location: Location.t}
@@ -80,6 +81,7 @@ module ErlangError = struct
                                                   | Badmap {calling_context; location}
                                                   | Badmatch {calling_context; location}
                                                   | Badrecord {calling_context; location}
+                                                  | Badreturn {calling_context; location}
                                                   | Case_clause {calling_context; location}
                                                   | Function_clause {calling_context; location}
                                                   | If_clause {calling_context; location}
@@ -231,6 +233,7 @@ let get_location = function
   | ErlangError (Badmap {location; calling_context= []})
   | ErlangError (Badmatch {location; calling_context= []})
   | ErlangError (Badrecord {location; calling_context= []})
+  | ErlangError (Badreturn {location; calling_context= []})
   | ErlangError (Case_clause {location; calling_context= []})
   | ErlangError (Function_clause {location; calling_context= []})
   | ErlangError (If_clause {location; calling_context= []})
@@ -242,6 +245,7 @@ let get_location = function
   | ErlangError (Badmap {calling_context= (_, location) :: _})
   | ErlangError (Badmatch {calling_context= (_, location) :: _})
   | ErlangError (Badrecord {calling_context= (_, location) :: _})
+  | ErlangError (Badreturn {calling_context= (_, location) :: _})
   | ErlangError (Case_clause {calling_context= (_, location) :: _})
   | ErlangError (Function_clause {calling_context= (_, location) :: _})
   | ErlangError (If_clause {calling_context= (_, location) :: _})
@@ -278,6 +282,7 @@ let aborts_execution = function
       | Badmap _
       | Badmatch _
       | Badrecord _
+      | Badreturn _
       | Case_clause _
       | Function_clause _
       | If_clause _
@@ -461,6 +466,8 @@ let get_message diagnostic =
       F.asprintf "no match of RHS at %a" Location.pp location
   | ErlangError (Badrecord {calling_context= _; location}) ->
       F.asprintf "bad record at %a" Location.pp location
+  | ErlangError (Badreturn {calling_context= _; location}) ->
+      F.asprintf "dynamic type of returned value disagrees with spec at %a" Location.pp location
   | ErlangError (Case_clause {calling_context= _; location}) ->
       F.asprintf "no matching case clause at %a" Location.pp location
   | ErlangError (Function_clause {calling_context= _; location}) ->
@@ -741,6 +748,9 @@ let get_trace = function
   | ErlangError (Badrecord {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "bad record here" []]
+  | ErlangError (Badreturn {calling_context; location}) ->
+      get_trace_calling_context calling_context
+      @@ [Errlog.make_trace_element 0 location "bad return here" []]
   | ErlangError (Case_clause {calling_context; location}) ->
       get_trace_calling_context calling_context
       @@ [Errlog.make_trace_element 0 location "no matching case clause here" []]
@@ -838,6 +848,8 @@ let get_issue_type ~latent issue_type =
       IssueType.no_match_of_rhs ~latent
   | ErlangError (Badrecord _), _ ->
       IssueType.bad_record ~latent
+  | ErlangError (Badreturn _), _ ->
+      IssueType.bad_return ~latent
   | ErlangError (Case_clause _), _ ->
       IssueType.no_matching_case_clause ~latent
   | ErlangError (Function_clause _), _ ->

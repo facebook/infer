@@ -23,6 +23,7 @@ type t =
   ; purity: PurityDomain.summary option Lazy.t
   ; quandary: QuandarySummary.t option Lazy.t
   ; racerd: RacerDDomain.summary option Lazy.t
+  ; scope_leakage: ScopeLeakage.Summary.t option Lazy.t
   ; siof: SiofDomain.Summary.t option Lazy.t
   ; simple_lineage: SimpleLineage.Summary.t option Lazy.t
   ; simple_shape: SimpleShape.Summary.t option Lazy.t
@@ -58,6 +59,7 @@ let all_fields =
     ~racerd:(fun f -> mk f RacerD RacerDDomain.pp_summary)
     ~lab_resource_leaks:(fun f -> mk f LabResourceLeaks ResourceLeakDomain.pp)
     ~dotnet_resource_leaks:(fun f -> mk f DotnetResourceLeaks ResourceLeakCSDomain.Summary.pp)
+    ~scope_leakage:(fun f -> mk f ScopeLeakage ScopeLeakage.Summary.pp)
     ~siof:(fun f -> mk f SIOF SiofDomain.Summary.pp)
     ~simple_lineage:(fun f -> mk f SimpleLineage SimpleLineage.Summary.pp)
     ~simple_shape:(fun f -> mk f SimpleShape SimpleShape.Summary.pp)
@@ -94,6 +96,7 @@ let empty =
   ; purity= no_payload
   ; quandary= no_payload
   ; racerd= no_payload
+  ; scope_leakage= no_payload
   ; siof= no_payload
   ; simple_lineage= no_payload
   ; simple_shape= no_payload
@@ -145,10 +148,10 @@ module SQLite = struct
       ~disjunctive_demo:data_of_sqlite_column ~litho_required_props:data_of_sqlite_column
       ~pulse:data_of_sqlite_column ~purity:data_of_sqlite_column ~quandary:data_of_sqlite_column
       ~racerd:data_of_sqlite_column ~lab_resource_leaks:data_of_sqlite_column
-      ~dotnet_resource_leaks:data_of_sqlite_column ~siof:data_of_sqlite_column
-      ~simple_lineage:data_of_sqlite_column ~simple_shape:data_of_sqlite_column
-      ~starvation:data_of_sqlite_column ~nullsafe:data_of_sqlite_column
-      ~uninit:data_of_sqlite_column
+      ~dotnet_resource_leaks:data_of_sqlite_column ~scope_leakage:data_of_sqlite_column
+      ~siof:data_of_sqlite_column ~simple_lineage:data_of_sqlite_column
+      ~simple_shape:data_of_sqlite_column ~starvation:data_of_sqlite_column
+      ~nullsafe:data_of_sqlite_column ~uninit:data_of_sqlite_column
 
 
   let eager_load stmt ~first_column = (make_eager first_column |> fst) stmt
@@ -201,6 +204,7 @@ module SQLite = struct
     ; purity= lazy (load table ~rowid Purity)
     ; quandary= lazy (load table ~rowid Quandary)
     ; racerd= lazy (load table ~rowid RacerD)
+    ; scope_leakage= lazy (load table ~rowid ScopeLeakage)
     ; siof= lazy (load table ~rowid SIOF)
     ; simple_lineage= lazy (load table ~rowid SimpleLineage)
     ; simple_shape= lazy (load table ~rowid SimpleShape)

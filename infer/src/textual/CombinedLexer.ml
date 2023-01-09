@@ -47,6 +47,7 @@ let keywords =
     ; ("unreachable", UNREACHABLE)
     ; ("void", VOID)
     ; ("under", UNDER) (* Doli-specific keywords *)
+    ; ("rule", RULE)
     ; ("in", IN)
     ; ("match", MATCH)
     ; ("body", BODYKW)

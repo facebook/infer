@@ -31,6 +31,7 @@ include sig
     ; purity: PurityDomain.summary option Lazy.t
     ; quandary: QuandarySummary.t option Lazy.t
     ; racerd: RacerDDomain.summary option Lazy.t
+    ; scope_leakage: ScopeLeakage.Summary.t option Lazy.t
     ; siof: SiofDomain.Summary.t option Lazy.t
     ; simple_lineage: SimpleLineage.Summary.t option Lazy.t
     ; simple_shape: SimpleShape.Summary.t option Lazy.t

@@ -7,6 +7,6 @@
 
 open! IStd
 
-val translate_module : (_, _) ErlangEnvironment.t -> ErlangAst.module_ -> string -> unit
+val translate_module : (_, _) ErlangEnvironment.t -> ErlangAst.module_ -> string option -> unit
 (** Translate a module. Assumes an initialized environment and an AST annotated with scope
     information (see [ErlangScopes.annotate_scopes]). *)

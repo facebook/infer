@@ -7,6 +7,7 @@
 
 // tests comments and layout
 
+rule r1
 in Java match
    { public /* comment */ void main33()  under name32a }
 body {
@@ -23,12 +24,14 @@ body {
 }
 
 // start in one line
+rule r2
 in Java match { public void main33()  under name32a } body {
    #entry: n0: int = load &i
    ret null
    }
 
 // over several lines
+rule r3
 in ObjectiveC
 match // a one-line comment here
    { objCSignStub  }
@@ -45,6 +48,7 @@ body {
     unreachable
  }
 
+rule r4
 in ObjectiveC match /* comment over
    several
    lines */
@@ -61,6 +65,7 @@ body
    }
 
 
+rule r5
 in ObjectiveC match {
    objCSignStub // comment here
  }

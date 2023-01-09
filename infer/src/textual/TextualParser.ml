@@ -11,28 +11,23 @@ module L = Logging
 
 type error =
   | SyntaxError of {loc: Textual.Location.t; msg: string}
-  | VerificationError of TextualVerification.error
+  | BasicError of TextualBasicVerification.error
   | TypeError of TextualTypeVerification.error
   | TransformError of Textual.transform_error list
   | DeclaredTwiceError of TextualDecls.error
 
 let pp_error sourcefile fmt = function
   | SyntaxError {loc; msg} ->
-      F.fprintf fmt "%a, %a: SIL syntax error: %s" SourceFile.pp sourcefile Textual.Location.pp loc
-        msg
-  | VerificationError err ->
-      TextualVerification.pp_error sourcefile fmt err
+      F.fprintf fmt "%a, %a: SIL syntax error: %s" Textual.SourceFile.pp sourcefile
+        Textual.Location.pp loc msg
+  | BasicError err ->
+      TextualBasicVerification.pp_error sourcefile fmt err
   | TypeError err ->
       TextualTypeVerification.pp_error sourcefile fmt err
   | TransformError errs ->
       List.iter errs ~f:(Textual.pp_transform_error sourcefile fmt)
   | DeclaredTwiceError err ->
       TextualDecls.pp_error sourcefile fmt err
-
-
-let log_error sourcefile error =
-  if Config.keep_going then L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error
-  else L.external_error "%a@\n" (pp_error sourcefile) error
 
 
 let parse_buf sourcefile (filebuf : CombinedLexer.lexbuf) =
@@ -42,9 +37,7 @@ let parse_buf sourcefile (filebuf : CombinedLexer.lexbuf) =
     let twice_declared_errors, decls_env = TextualDecls.make_decls m in
     let twice_declared_errors = List.map twice_declared_errors ~f:(fun x -> DeclaredTwiceError x) in
     (* even if twice_declared_errors is not empty we can continue the other verifications *)
-    let errors =
-      TextualVerification.run m decls_env |> List.map ~f:(fun x -> VerificationError x)
-    in
+    let errors = TextualBasicVerification.run m decls_env |> List.map ~f:(fun x -> BasicError x) in
     if List.is_empty errors then
       let errors = TextualTypeVerification.run m decls_env |> List.map ~f:(fun x -> TypeError x) in
       let errors = twice_declared_errors @ errors in
@@ -89,24 +82,25 @@ module TextualFile = struct
     match textual_file with StandaloneFile _ -> None | TranslatedFile {line_map} -> Some line_map
 
 
-  type sil = {sourcefile: SourceFile.t; cfg: Cfg.t; tenv: Tenv.t}
+  type sil = {sourcefile: Textual.SourceFile.t; cfg: Cfg.t; tenv: Tenv.t}
 
   let translate textual_file =
-    let sourcefile = SourceFile.create (source_path textual_file) in
-    let parsed =
+    let sourcefile, parsed =
       match textual_file with
       | StandaloneFile path ->
+          let sourcefile = Textual.SourceFile.create (source_path textual_file) in
           let cin = In_channel.create path in
           let result = parse_chan sourcefile cin in
           In_channel.close cin ;
-          result
-      | TranslatedFile {content; _} ->
-          parse_string sourcefile content
+          (sourcefile, result)
+      | TranslatedFile {content; line_map} ->
+          let sourcefile = Textual.SourceFile.create ~line_map (source_path textual_file) in
+          (sourcefile, parse_string sourcefile content)
     in
     match parsed with
     | Ok module_ -> (
       try
-        let cfg, tenv = TextualSil.module_to_sil module_ ~line_map:(line_map textual_file) in
+        let cfg, tenv = TextualSil.module_to_sil module_ in
         Ok {sourcefile; cfg; tenv}
       with Textual.TextualTransformError errors -> Error (sourcefile, [TransformError errors]) )
     | Error errs ->
@@ -114,6 +108,7 @@ module TextualFile = struct
 
 
   let capture {sourcefile; cfg; tenv} =
+    let sourcefile = Textual.SourceFile.file sourcefile in
     DB.Results_dir.init sourcefile ;
     SourceFiles.add sourcefile cfg (FileLocal tenv) None ;
     if Config.debug_mode then Tenv.store_debug_file_for_source sourcefile tenv ;
@@ -124,14 +119,14 @@ module TextualFile = struct
     tenv
 end
 
-(* This code is used only by the --capture-textual integration, which includes Java which requires a
-   global tenv. The Hack driver doesn't use this function. *)
+(* This code is used only by the --capture-textual integration, which turn textual files into
+   a SIL-Java program. The Hack driver doesn't use this function. *)
 let capture textual_files =
   let global_tenv = Tenv.create () in
   let capture_one textual_file =
     match TextualFile.translate textual_file with
     | Error (sourcefile, errs) ->
-        List.iter errs ~f:(log_error sourcefile)
+        List.iter errs ~f:(fun error -> L.external_error "%a@\n" (pp_error sourcefile) error)
     | Ok sil ->
         let tenv = TextualFile.capture sil in
         Tenv.merge ~src:tenv ~dst:global_tenv

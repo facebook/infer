@@ -123,6 +123,8 @@ OPTIONS
              BAD_POINTER_COMPARISON (enabled by default),
              BAD_RECORD (enabled by default),
              BAD_RECORD_LATENT (disabled by default),
+             BAD_RETURN (enabled by default),
+             BAD_RETURN_LATENT (disabled by default),
              BIABDUCTION_ANALYSIS_STOPS (disabled by default),
              BIABDUCTION_MEMORY_LEAK (disabled by default),
              BIABDUCTION_RETAIN_CYCLE (enabled by default),

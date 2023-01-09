@@ -20,12 +20,14 @@ val prune_spec_args :
   -> Ident.t list
   -> ErlangAst.spec
   -> ErlangBlock.t
-(** Given a function spec and a list if identifiers corresponding to function arguments, returns a
-    block that prunes based on the types of the arguments. The assumptions lead to [exit_success]
-    while [exit_failure] is an unreachable no-op node. *)
+(** Given a function spec and a list of identifiers corresponding to function arguments, returns a
+    block that prunes based on the types of the arguments. The assumptions lead to [exit_success],
+    while the negation of the assumptions leads to [exit_failure]. *)
 
 val prune_spec_return :
      (Procdesc.t ErlangEnvironment.present, _) ErlangEnvironment.t
   -> Ident.t
   -> ErlangAst.spec
   -> ErlangBlock.t
+(** Similar to [prune_spec_args], except that instead of a list of identifiers for arguments we get
+    one identifier for the return. *)

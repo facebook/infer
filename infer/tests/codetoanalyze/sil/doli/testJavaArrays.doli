@@ -8,6 +8,7 @@
 // tests Java arrays
 
 //  parameter type is an array type
+rule r1
 in Java match { void  fun6tt33a(A[] a) throws A under className  } body {
     #entry:
     n2: int = load n1.cell.value
@@ -15,6 +16,7 @@ in Java match { void  fun6tt33a(A[] a) throws A under className  } body {
  }
 
 //  return type is array
+rule r2
 in Java match { B[]  fun6tt(A a) throws A.B<Y,? super C>.D<E>   under className } body {
     #entry:
     n2: int = load n1.cell.value
@@ -22,6 +24,7 @@ in Java match { B[]  fun6tt(A a) throws A.B<Y,? super C>.D<E>   under className 
 }
 
 //  array and generic instantiations
+rule r3
 in Java match { A<B,G>[] fun6tt(A[] a, B[][] b)   under className  } body {
     #entry:
     n2: int = load n1.cell.value
@@ -29,6 +32,7 @@ in Java match { A<B,G>[] fun6tt(A[] a, B[][] b)   under className  } body {
  }
 
 // array type at the end of long path name
+rule r4
 in Java match { A<B,C<D,E>>.H.M<N>[] fun6tt(A a)  under className  } body {
     #entry:
     n2: int = load n1.cell.value

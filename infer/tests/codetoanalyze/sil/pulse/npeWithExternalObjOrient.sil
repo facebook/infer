@@ -1,0 +1,38 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+// demonstrates separate compiation for sil in the
+// object-oriented setting
+
+.source_language = "java"
+
+type ClassA = { value:int; next: *ClassA }
+
+define external_call_a_OK(this: *ClassA) : void {
+  #entry:
+    n0: *ClassA = load &this
+    n1 = n0.ClassA.external_returns_null()
+    ret null
+}
+
+define external_call_b_OK(this: *ClassA) : void {
+  #entry:
+    n0: *ClassA = load &this
+    n1  = n0.ClassA.external_returns_non_null()
+    n2: int = load n1.ClassA.value
+    ret n2
+}
+
+define external_call_and_npe_bad(this: *ClassA) : int {
+  #entry:
+    n0: *ClassA = load &this
+    n1  = n0.ClassA.external_returns_null()
+    n2: int = load n1.ClassA.value
+    ret n2
+}
+
+declare ClassA.external_returns_null(*ClassA) : *ClassA
+
+declare ClassA.external_returns_non_null(*ClassA) : *ClassA

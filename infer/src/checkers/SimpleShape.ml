@@ -424,6 +424,19 @@ struct
       List.Assoc.find ~equal:Procname.equal models procname
 
 
+    let ignore_shape_ret_and_args ret_var args =
+      ignore (Shape.Env.var_shape env ret_var : Shape.Env.shape) ;
+      ignore (List.map ~f:shape_expr args : Shape.Env.shape list) ;
+      ()
+
+
+    let unknown_model procname ret_var args =
+      L.debug Analysis Verbose "@[<v2> SimpleShape: no model found for expression `%a`@]@,"
+        Procname.pp procname ;
+      ignore_shape_ret_and_args ret_var args ;
+      ()
+
+
     let standard_model proc_desc summary ret_var args =
       (* Standard call of a known function:
          1. We get the shape of the actual args and ret_id
@@ -453,8 +466,7 @@ struct
         | Some (proc_desc, summary) ->
             standard_model proc_desc summary ret_var args
         | None ->
-            L.debug Analysis Verbose "@[<v2> SimpleShape: no model found for procname `%a`@]@,"
-              Procname.pp procname )
+            unknown_model procname ret_var args )
   end
 
   let exec_assignment var rhs_exp =
@@ -478,13 +490,15 @@ struct
   let exec_instr_unit {InterproceduralAnalysis.analyze_dependency} (instr : Sil.instr) =
     match instr with
     | Call ((ret_id, _typ), fun_exp, args, _location, _flags) -> (
-      match procname_of_exp fun_exp with
-      | None ->
-          L.debug Analysis Verbose "@[<v>SimpleShape: call of unsupported expression `%a`.@]@,"
-            Exp.pp fun_exp
-      | Some procname ->
-          let args = (* forget SIL types *) List.map ~f:fst args in
-          CallModel.exec analyze_dependency procname (Var.of_id ret_id) args )
+        let ret_var = Var.of_id ret_id in
+        let args = List.map ~f:fst args (* forget SIL types *) in
+        match procname_of_exp fun_exp with
+        | None ->
+            CallModel.ignore_shape_ret_and_args ret_var args ;
+            L.debug Analysis Verbose "@[<v>SimpleShape: call of unsupported expression `%a`.@]@,"
+              Exp.pp fun_exp
+        | Some procname ->
+            CallModel.exec analyze_dependency procname ret_var args )
     | Prune (e, _, _, _) ->
         ignore (shape_expr e : Shape.Env.shape)
     | Metadata _ ->
@@ -520,12 +534,18 @@ end
 
 let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let module Analyzer = Analyzer () in
+  (* Shape captured vars *)
+  let shape_captured_var {CapturedVar.pvar} =
+    ignore (Shape.Env.var_shape Analyzer.Env.env (Var.of_pvar pvar) : Shape.Env.shape)
+  in
+  List.iter ~f:shape_captured_var (Procdesc.get_captured proc_desc) ;
+  (* Analyze the procedure's code  *)
   let _invmap : Analyzer.invariant_map = Analyzer.exec_pdesc analysis_data ~initial:() proc_desc in
   let summary = Shape.Summary.make Analyzer.Env.env in
   Report.debug proc_desc Analyzer.Env.env summary ;
   Some summary
 
 
-let checker =
+let checker analysis_data =
   (* We skip the functions that would not be analysed by SimpleLineage anyway *)
-  SimpleLineageUtils.skip_unwanted unskipped_checker
+  SimpleLineageUtils.skip_unwanted (fun data () -> unskipped_checker data) analysis_data ()

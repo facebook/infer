@@ -12,7 +12,8 @@ type error =
   | UnknownField of qualified_fieldname
   | UnknownProcdecl of qualified_procname
   | UnknownLabel of {label: NodeName.t; pname: qualified_procname}
-  | WrongArgNumber of {proc: qualified_procname; args: int; formals: int; loc: Location.t}
+  | WrongArgNumber of
+      {proc: qualified_procname; args: int; exact: bool; formals: int; loc: Location.t}
 
 let error_loc = function
   | UnknownField {enclosing_class; _} ->
@@ -36,8 +37,11 @@ let pp_error sourcefile fmt error =
   | UnknownLabel {label; pname} ->
       F.fprintf fmt "label %a is not declared in function %a" NodeName.pp label
         pp_qualified_procname pname
-  | WrongArgNumber {proc; args; formals} ->
+  | WrongArgNumber {proc; args; exact; formals} when exact ->
       F.fprintf fmt "function %a called with %d arguments while declared with %d parameters"
+        pp_qualified_procname proc args formals
+  | WrongArgNumber {proc; args; formals} ->
+      F.fprintf fmt "function %a called with %d arguments while at least %d are expected"
         pp_qualified_procname proc args formals
 
 
@@ -55,13 +59,17 @@ let verify_decl ~env errors (decl : Module.decl) =
       match TextualDecls.get_procname env proc with
       | None ->
           UnknownProcdecl proc :: errors
-      | Some {formals_types= Some formals_types; _} ->
+      | Some {formals_types; are_formal_types_fully_declared= true} ->
           let formals = List.length formals_types in
           let args = List.length args in
-          if not (Int.equal args formals) then WrongArgNumber {proc; args; formals; loc} :: errors
+          if not (Int.equal args formals) then
+            WrongArgNumber {proc; args; exact= true; formals; loc} :: errors
           else errors
-      | _ ->
-          errors
+      | Some {formals_types; are_formal_types_fully_declared= false} ->
+          let formals = List.length formals_types in
+          let args = List.length args in
+          if args < formals then WrongArgNumber {proc; args; exact= false; formals; loc} :: errors
+          else errors
   in
   let rec verify_exp loc errors (exp : Exp.t) =
     match exp with

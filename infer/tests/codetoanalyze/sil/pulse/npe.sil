@@ -186,3 +186,13 @@ define load_internal_bad() : void {
     n1: int = load n0.cell.value
     ret null
 }
+
+
+define external_call_and_npe_bad() : void {
+  #entry:
+    n0 = external_return_null()
+    n1: int = load n0.cell.value
+    ret null
+}
+
+declare external_return_null() : *cell

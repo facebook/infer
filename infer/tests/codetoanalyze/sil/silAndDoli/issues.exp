@@ -1,0 +1,1 @@
+callingExternals.sil, $TOPLEVEL$CLASS$.external_call_bad(ClassA):int, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to `ClassA ClassA.external_returns_null(ClassA)`,is assigned to the null pointer,returned,return from call to `ClassA ClassA.external_returns_null(ClassA)`,invalid access occurs here]

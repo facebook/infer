@@ -34,6 +34,14 @@ val interprocedural_with_field :
 (** [interprocedural field checker] expects [checker] to compute a payload (option) suitable for
     [field], given an inter-procedural analysis of callees that computes the same payload type *)
 
+val interprocedural_with_field_dependency :
+     dep_field:(Payloads.t, 'payload_dep Lazy.t) Field.t
+  -> (Payloads.t, 'payload option Lazy.t) Field.t
+  -> ('payload InterproceduralAnalysis.t -> 'payload_dep -> 'payload option)
+  -> Callbacks.proc_callback_t
+(** An inter-procedural analysis that depends on the summary payload found by another one for a
+    procedure to analyse the same procedure. *)
+
 val interprocedural_file :
      (Payloads.t, 'payload option Lazy.t) Field.t
   -> ('payload InterproceduralAnalysis.file_t -> IssueLog.t)
