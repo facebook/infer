@@ -93,7 +93,8 @@ let loc_trace_to_sarifbug_record trace_list =
   List.map ~f:trace_item_to_record trace_list
 
 
-let pp_jsonbug fmt {Jsonbug_t.file; severity; bug_type; qualifier; line; column; bug_trace} =
+let pp_jsonbug fmt
+    {Jsonbug_t.file; severity; bug_type; qualifier; line; column; bug_trace; hash; key} =
   let message = {Sarifbug_j.text= qualifier} in
   let level = String.lowercase severity in
   let ruleId = bug_type in
@@ -114,8 +115,14 @@ let pp_jsonbug fmt {Jsonbug_t.file; severity; bug_type; qualifier; line; column;
   let thread_flow =
     if trace_list_length > 0 then Some [{Sarifbug_j.threadFlows= thread_flow_locs}] else None
   in
+  let fingerprints = {Sarifbug_j.hashV1= hash; key} in
   let result =
-    {Sarifbug_j.message; level; ruleId; codeFlows= thread_flow; locations= file_location_to_record}
+    { Sarifbug_j.message
+    ; level
+    ; ruleId
+    ; codeFlows= thread_flow
+    ; locations= file_location_to_record
+    ; fingerprints }
   in
   F.pp_print_string fmt (Sarifbug_j.string_of_sarifbug result)
 

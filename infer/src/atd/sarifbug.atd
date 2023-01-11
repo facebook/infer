@@ -45,12 +45,18 @@ type codeflow = {
   threadFlows : threadflow list;
 }
 
+type fingerprints = {
+  hashV1 <json name="hash/v1"> : string;
+  key : string;
+}
+
 type sarifbug = {
   message : message;
   level : string;
   ruleId : string;
   ?codeFlows : codeflow list option;
   locations : loc list;
+  fingerprints : fingerprints;
 }
 
 type rule = {
