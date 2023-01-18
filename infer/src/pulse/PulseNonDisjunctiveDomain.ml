@@ -352,10 +352,38 @@ let checked_via_dtor var = map (checked_via_dtor_elt var)
 
 module CopiedSet = PrettyPrintable.MakePPSet (Attribute.CopiedInto)
 
-let get_copied = function
+let is_never_used_after_copy_into_intermediate (copied_into : Attribute.CopiedInto.t)
+    (copied_timestamp : Timestamp.t) = function
+  | Top ->
+      false
+  | V {passed_to; loads} -> (
+    match copied_into with
+    | IntoIntermediate {source_opt= Some (PVar pvar, _)} ->
+        let source_var = Var.of_pvar pvar in
+        let is_passed_to_non_destructor_after_copy =
+          PassedTo.get_all source_var passed_to
+          |> List.exists ~f:(fun {CalleeWithLoc.callee; _} ->
+                 match callee with
+                 | V {callee; timestamp} when (copied_timestamp :> int) < (timestamp :> int) ->
+                     not (Procname.is_destructor callee)
+                 | _ ->
+                     false )
+        in
+        let is_loaded_after_copy =
+          Loads.get_loaded_locations source_var loads
+          |> List.exists ~f:(fun LoadedLoc.{timestamp} ->
+                 (copied_timestamp :> int) < (timestamp :> int) )
+        in
+        not (is_loaded_after_copy || is_passed_to_non_destructor_after_copy)
+    | _ ->
+        false )
+
+
+let get_copied astate =
+  match astate with
   | Top ->
       []
-  | V {copy_map; captured; loads; passed_to} ->
+  | V {copy_map; captured} ->
       let modified =
         CopyMap.fold
           (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
@@ -373,31 +401,11 @@ let get_copied = function
         (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
           match copy_spec with
           | Modified
-              {location; copied_location; source_typ= copied_source_typ; from; copied_timestamp}
-            -> (
-            (* if source var is never used later on, we can still suggest removing the copy even though the copy is modified *)
-            match copied_into with
-            | IntoIntermediate {source_opt= Some (PVar pvar, _)} ->
-                let source_var = Var.of_pvar pvar in
-                let is_passed_to_non_destructor_after_copy =
-                  PassedTo.get_all source_var passed_to
-                  |> List.exists ~f:(fun {CalleeWithLoc.callee; _} ->
-                         match callee with
-                         | V {callee; timestamp} when (copied_timestamp :> int) < (timestamp :> int)
-                           ->
-                             not (Procname.is_destructor callee)
-                         | _ ->
-                             false )
-                in
-                let is_loaded_after_copy =
-                  Loads.get_loaded_locations source_var loads
-                  |> List.exists ~f:(fun LoadedLoc.{timestamp} ->
-                         (copied_timestamp :> int) < (timestamp :> int) )
-                in
-                if is_loaded_after_copy || is_passed_to_non_destructor_after_copy then acc
-                else (copied_into, copied_source_typ, location, copied_location, from) :: acc
-            | _ ->
-                acc )
+              {location; copied_location; source_typ= copied_source_typ; from; copied_timestamp} ->
+              (* if source var is never used later on, we can still suggest removing the copy even though the copy is modified *)
+              if is_never_used_after_copy_into_intermediate copied_into copied_timestamp astate then
+                (copied_into, copied_source_typ, location, copied_location, from) :: acc
+              else acc
           | Copied {location; copied_location; source_typ= copied_source_typ; from} ->
               if CopiedSet.mem copied_into modified || is_captured copied_into then acc
               else (copied_into, copied_source_typ, location, copied_location, from) :: acc )
