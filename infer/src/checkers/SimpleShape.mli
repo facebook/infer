@@ -17,6 +17,7 @@ module Summary : sig
     -> Var.t * Fieldname.t list
     -> max_width:int
     -> max_depth:int
+    -> prevent_cycles:bool
     -> init:'accum
     -> f:('accum -> Fieldname.t list -> 'accum)
     -> 'accum
@@ -36,6 +37,7 @@ module Summary : sig
     -> Var.t * Fieldname.t list
     -> max_width:int
     -> max_depth:int
+    -> prevent_cycles:bool
     -> f:(Fieldname.t list -> 'a list)
     -> 'a list
   (** A specialised version of {!fold_terminal_fields} for when you want to accumulate in a list
@@ -47,6 +49,7 @@ module Summary : sig
     -> Var.t * Fieldname.t list
     -> max_width:int
     -> max_depth:int
+    -> prevent_cycles:bool
     -> init:'accum
     -> f:('accum -> Fieldname.t list -> Fieldname.t list -> 'accum)
     -> 'accum

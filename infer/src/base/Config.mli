@@ -702,6 +702,8 @@ val simple_lineage_include_builtins : bool
 
 val simple_lineage_field_depth : int
 
+val simple_lineage_prevent_cycles : bool
+
 val simple_lineage_field_width : int option
 
 val simple_lineage_json_report : bool

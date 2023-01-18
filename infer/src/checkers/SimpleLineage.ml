@@ -107,19 +107,22 @@ end = struct
 
   let max_width = Option.value ~default:Int.max_value Config.simple_lineage_field_width
 
+  let prevent_cycles = Config.simple_lineage_prevent_cycles
+
   let fold_terminal shapes (var, fields) ~init ~f =
-    SimpleShape.Summary.fold_terminal_fields shapes (var, fields) ~max_width ~max_depth ~init
-      ~f:(fun acc fields -> f acc (make var fields))
+    SimpleShape.Summary.fold_terminal_fields shapes (var, fields) ~max_width ~max_depth
+      ~prevent_cycles ~init ~f:(fun acc fields -> f acc (make var fields))
 
 
   let concat_map_terminal shapes (var, fields) ~f =
     SimpleShape.Summary.concat_map_terminal_fields shapes (var, fields) ~max_width ~max_depth
-      ~f:(fun fields -> f (make var fields))
+      ~prevent_cycles ~f:(fun fields -> f (make var fields))
 
 
   let fold_terminal_pairs shapes (var1, fields1) (var2, fields2) ~init ~f =
     SimpleShape.Summary.fold_terminal_fields_2 shapes (var1, fields1) (var2, fields2) ~max_width
-      ~max_depth ~init ~f:(fun acc fields1 fields2 -> f acc (make var1 fields1) (make var2 fields2))
+      ~max_depth ~prevent_cycles ~init ~f:(fun acc fields1 fields2 ->
+        f acc (make var1 fields1) (make var2 fields2) )
 
 
   module Terminal = struct
