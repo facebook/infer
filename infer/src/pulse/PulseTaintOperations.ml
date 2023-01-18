@@ -322,12 +322,13 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param p
             List.foldi actuals ~init:acc
               ~f:(fun i ((astate, tainted) as acc) ((_, actual_typ) as actual_hist_and_typ) ->
                 if taint_target_matches tenv taint_target i actual_typ then (
-                  L.d_printfln "match! tainting actual #%d with type %a" i (Typ.pp_full Pp.text)
-                    actual_typ ;
+                  L.d_printfln_escaped "match! tainting actual #%d with type %a" i
+                    (Typ.pp_full Pp.text) actual_typ ;
                   let taint = {Taint.proc_name; origin= Argument {index= i}; kinds} in
                   (astate, (taint, actual_hist_and_typ) :: tainted) )
                 else (
-                  L.d_printfln "no match for #%d with type %a" i (Typ.pp_full Pp.text) actual_typ ;
+                  L.d_printfln_escaped "no match for #%d with type %a" i (Typ.pp_full Pp.text)
+                    actual_typ ;
                   acc ) )
         | `Fields fields ->
             let type_check astate value typ fieldname =
@@ -538,62 +539,79 @@ let check_policies ~sink ~source ~source_times ~sanitizers =
                 acc ) ) )
 
 
+module TaintDependencies = struct
+  module G = Graph.Imperative.Digraph.Concrete (struct
+    type t = AbstractValue.t [@@deriving compare, equal]
+
+    let hash = Hashtbl.hash
+  end)
+
+  type t = {root: G.vertex; graph: G.t}
+
+  let create root =
+    let graph = G.create () in
+    G.add_vertex graph root ;
+    {root; graph}
+
+
+  let add_edge {graph} v1 v2 = G.add_edge graph v1 v2
+
+  (* This iterates vertices with DFS order, but with additional stack'ed accumulation. *)
+  let fold {root; graph} ~init ~stack_init ~f =
+    let visited = ref AbstractValue.Set.empty in
+    let rec visit acc stack v =
+      if AbstractValue.Set.mem v !visited then Ok acc
+      else (
+        visited := AbstractValue.Set.add v !visited ;
+        let* acc, stack = f acc stack v in
+        PulseResult.list_fold (G.succ graph v) ~init:acc ~f:(fun acc v -> visit acc stack v) )
+    in
+    visit init stack_init root
+end
+
 (** Preorder traversal of the tree formed by taint dependencies of [v] in [astate] *)
 let gather_taint_dependencies v astate =
+  let taint_dependencies = TaintDependencies.create v in
   let visited = ref AbstractValue.Set.empty in
-  let rec gather_taint_dependencies_aux acc v =
-    if AbstractValue.Set.mem v !visited then acc
-    else (
+  let rec gather_taint_dependencies_aux v =
+    if not (AbstractValue.Set.mem v !visited) then (
       visited := AbstractValue.Set.add v !visited ;
-      let acc =
-        match AbductiveDomain.AddressAttributes.get_propagate_taint_from v astate with
-        | None ->
-            acc
-        | Some taints_in ->
-            let acc =
-              List.fold taints_in ~init:acc ~f:(fun acc {Attribute.v= v'} ->
-                  gather_taint_dependencies_aux acc v' )
-            in
-            List.fold taints_in ~init:acc ~f:(fun acc {Attribute.v} -> v :: acc)
-      in
-      let acc =
-        (* if the value is an array we propagate the check to the array elements *)
-        (* NOTE: we could do the same for field accesses or really all accesses if we want the taint
-            analysis to consider that the insides of objects are tainted whenever the object is. This
-            might not be a very efficient way to do this though? *)
-        match AbductiveDomain.Memory.find_opt v astate with
-        | None ->
-            acc
-        | Some edges ->
-            BaseMemory.Edges.fold edges ~init:acc ~f:(fun acc (access, (dest, _)) ->
-                match access with
-                | FieldAccess _ | TakeAddress | Dereference ->
-                    acc
-                | ArrayAccess _ -> (
-                  match AbductiveDomain.Memory.find_edge_opt dest Dereference astate with
-                  | None ->
-                      acc
-                  | Some (dest_value, _) ->
-                      dest_value :: gather_taint_dependencies_aux acc dest_value ) )
-      in
-      v :: acc )
+      Option.iter (AbductiveDomain.AddressAttributes.get_propagate_taint_from v astate)
+        ~f:(fun taints_in ->
+          List.iter taints_in ~f:(fun {Attribute.v= v'} ->
+              TaintDependencies.add_edge taint_dependencies v v' ;
+              gather_taint_dependencies_aux v' ) ) ;
+      (* if the value is an array we propagate the check to the array elements *)
+      (* NOTE: we could do the same for field accesses or really all accesses if we want the taint
+          analysis to consider that the insides of objects are tainted whenever the object is. This
+          might not be a very efficient way to do this though? *)
+      Option.iter (AbductiveDomain.Memory.find_opt v astate) ~f:(fun edges ->
+          BaseMemory.Edges.iter edges ~f:(function
+            | ArrayAccess _, (dest, _) ->
+                Option.iter (AbductiveDomain.Memory.find_edge_opt dest Dereference astate)
+                  ~f:(fun (dest_value, _) ->
+                    TaintDependencies.add_edge taint_dependencies v dest_value )
+            | (FieldAccess _ | TakeAddress | Dereference), _ ->
+                () ) ) )
   in
-  gather_taint_dependencies_aux [] v
+  gather_taint_dependencies_aux v ;
+  taint_dependencies
 
 
 let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path location
     (sink, sink_trace) v astate =
   let source_expr = Decompiler.find v astate in
   let mk_reportable_error diagnostic = [ReportableError {astate; diagnostic}] in
-  let check_tainted_flows policy_violations_reported v astate =
+  let check_tainted_flows policy_violations_reported sanitizers v astate =
     L.d_printfln "Checking that %a is not tainted" AbstractValue.pp v ;
-    let sources, sanitizers =
+    let sources, new_sanitizers =
       AbductiveDomain.AddressAttributes.get_taint_sources_and_sanitizers v astate
     in
+    let sanitizers = Attribute.TaintSanitizedSet.union sanitizers new_sanitizers in
     Attribute.TaintedSet.fold
       (fun {source; time_trace= source_times; hist= source_hist} policy_violations_reported_result ->
         let* policy_violations_reported = policy_violations_reported_result in
-        L.d_printfln ~color:Red "Found source %a, checking policy..." Taint.pp source ;
+        L.d_printfln_escaped ~color:Red "Found source %a, checking policy..." Taint.pp source ;
         let potential_policy_violations = check_policies ~sink ~source ~source_times ~sanitizers in
         let report_policy_violation reported_so_far
             (source_kind, sink_kind, sink_policy_description, violated_policy_id) =
@@ -618,18 +636,17 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
         PulseResult.list_fold potential_policy_violations ~init:policy_violations_reported
           ~f:report_policy_violation )
       sources (Ok policy_violations_reported)
+    |> PulseResult.map ~f:(fun res -> (res, sanitizers))
   in
   let taint_dependencies = gather_taint_dependencies v astate in
-  let+ policy_violations_reported, astate =
-    PulseResult.list_fold taint_dependencies ~init:(policy_violations_reported, astate)
-      ~f:(fun (policy_violations_reported, astate) v ->
-        let astate =
-          AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate
-        in
-        let+ policy_violations_reported = check_tainted_flows policy_violations_reported v astate in
-        (policy_violations_reported, astate) )
-  in
-  (policy_violations_reported, astate)
+  TaintDependencies.fold taint_dependencies ~init:(policy_violations_reported, astate)
+    ~stack_init:Attribute.TaintSanitizedSet.empty
+    ~f:(fun (policy_violations_reported, astate) sanitizers v ->
+      let astate = AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate in
+      let+ policy_violations_reported, sanitizers =
+        check_tainted_flows policy_violations_reported sanitizers v astate
+      in
+      ((policy_violations_reported, astate), sanitizers) )
 
 
 let should_ignore_all_flows_to proc_name =
