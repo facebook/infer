@@ -261,16 +261,15 @@ module BasicString = struct
     astate
 
 
-  let constructor this_hist init_hist : model =
+  let constructor (this, hist) init_hist : model =
    fun {path; location} astate ->
     let event = Hist.call_event path location "std::basic_string::basic_string()" in
-    let<*> astate, (addr, hist) =
-      PulseOperations.eval_access path Write location this_hist Dereference astate
-    in
+    let<*> astate, init_data = to_internal_string path location init_hist astate in
+    let<*> astate, copied_data = PulseOperations.shallow_copy path location init_data astate in
     let<+> astate =
       PulseOperations.write_field path location
-        ~ref:(addr, Hist.add_event path event hist)
-        PulseOperations.ModeledField.internal_string ~obj:init_hist astate
+        ~ref:(this, Hist.add_event path event hist)
+        PulseOperations.ModeledField.internal_string ~obj:copied_data astate
     in
     astate
 
@@ -286,17 +285,12 @@ module BasicString = struct
    fun {path; location} astate ->
     let call_event = Hist.call_event path location "std::basic_string::~basic_string()" in
     let<*> astate, (string_addr, string_hist) = to_internal_string path location this_hist astate in
-    let string_addr_hist = (string_addr, Hist.add_event path call_event string_hist) in
-    let<*> astate =
-      PulseOperations.invalidate_access path location CppDelete string_addr_hist Dereference astate
-    in
+    let string_hist = Hist.add_event path call_event string_hist in
     let<+> astate =
       PulseOperations.invalidate path
         (MemoryAccess
-           { pointer= this_hist
-           ; access= internal_string_access
-           ; hist_obj_default= snd string_addr_hist } )
-        location CppDelete string_addr_hist astate
+           {pointer= this_hist; access= internal_string_access; hist_obj_default= string_hist} )
+        location CppDelete (string_addr, string_hist) astate
     in
     astate
 
