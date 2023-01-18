@@ -14,6 +14,22 @@ module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
 
 let string_length_access = HilExp.Access.FieldAccess PulseOperations.ModeledField.string_length
 
+(* NOTE: The semantic models do not check overflow for now. *)
+let binop_overflow_common binop (x, x_hist) (y, y_hist) res : model =
+ fun {path; location} astate ->
+  let bop_addr = AbstractValue.mk_fresh () in
+  let<**> astate, bop_addr = PulseArithmetic.eval_binop_absval bop_addr binop x y astate in
+  let hist = Hist.binop path binop x_hist y_hist in
+  let<+> astate = PulseOperations.write_deref path location ~ref:res ~obj:(bop_addr, hist) astate in
+  astate
+
+
+let add_overflow = binop_overflow_common (PlusA None)
+
+let mul_overflow = binop_overflow_common (Mult None)
+
+let sub_overflow = binop_overflow_common (MinusA None)
+
 let delete deleted_arg : model =
  fun model_data astate -> Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate
 
@@ -584,7 +600,13 @@ end
 let matchers : matcher list =
   let char_ptr_typ = Typ.mk (Tptr (Typ.mk (Tint IChar), Pk_pointer)) in
   let open ProcnameDispatcher.Call in
-  [ +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
+  [ +BuiltinDecl.(match_builtin __builtin_add_overflow)
+    <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> add_overflow
+  ; +BuiltinDecl.(match_builtin __builtin_mul_overflow)
+    <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> mul_overflow
+  ; +BuiltinDecl.(match_builtin __builtin_sub_overflow)
+    <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> sub_overflow
+  ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
   ; +BuiltinDecl.(match_builtin __delete_array) <>$ capt_arg $--> delete_array
   ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
   ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array
