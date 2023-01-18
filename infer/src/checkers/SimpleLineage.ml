@@ -19,34 +19,76 @@ module PPNode = struct
   let pp fmt node = pp_id fmt (id node)
 end
 
-let () =
-  if
-    Int.(Config.simple_lineage_field_depth <> 0) || Option.is_some Config.simple_lineage_field_width
-  then Logging.die InternalError "Field support is not implemented yet in lineage"
-
-
 module VariableIndex : sig
   (** A [VariableIndex] is a variable and a possibly empty list of subscripted fields. *)
 
-  type t [@@deriving compare, equal]
+  (** The type {!t} has a phantom parameter, which is used to statically encode the information that
+      some variable indexes are "terminal", which means that no subfield of them will be considered
+      by the analysis (either because they have none, or that would lead to too deep or too wide
+      field sequences).
 
-  val var : Var.t -> t
+      Only terminal indices can be used to build the lineage graph. *)
 
-  val get_var : t -> Var.t
+  type terminal
 
-  val pvar : Pvar.t -> t
+  (** For indices that are not known to be terminal *)
+  type transient
 
-  val ident : Ident.t -> t
+  type _ t
 
-  val pp : Format.formatter -> t -> unit
+  val var : Var.t -> transient t
 
-  val var_appears_in_source_code : t -> bool
+  val get_var : _ t -> Var.t
+
+  val make : Var.t -> Fieldname.t list -> transient t
+
+  val pvar : Pvar.t -> transient t
+
+  val ident : Ident.t -> transient t
+
+  val pp : Format.formatter -> _ t -> unit
+
+  val var_appears_in_source_code : _ t -> bool
+
+  val fold_terminal :
+    SimpleShape.Summary.t -> _ t -> init:'accum -> f:('accum -> terminal t -> 'accum) -> 'accum
+  (** Given an index, fold the [f] function over all the terminal indices that can be obtained as
+      "sub fields" of the index. *)
+
+  val concat_map_terminal : SimpleShape.Summary.t -> _ t -> f:(terminal t -> 'a list) -> 'a list
+  (** Given an index, accumulates the results of the [f] function computed over all the terminal
+      indices that can be obtained as "sub fields" of the index. *)
+
+  val fold_terminal_pairs :
+       SimpleShape.Summary.t
+    -> _ t
+    -> _ t
+    -> init:'accum
+    -> f:('accum -> terminal t -> terminal t -> 'accum)
+    -> 'accum
+  (** Given two indices that must have the same type, fold the [f] function over all the pairs of
+      terminal indices that can be obtained as "sub fields" of the indices. [f] will always be
+      called on corresponding sub-indices: see {!SimpleShape.Summary.fold_terminal_fields_2}. *)
+
+  module Terminal : sig
+    (** Utility module for standard functor calls *)
+
+    type nonrec t = terminal t [@@deriving compare, equal]
+
+    val pp : Format.formatter -> t -> unit
+  end
 end = struct
-  type t = Var.t * Fieldname.t list
+  type terminal
+
+  type transient
+
+  type _ t = Var.t * Fieldname.t list
   (* The field list is in syntactic order: x#a#b is represented as (x, [a, b]) *)
   [@@deriving compare, equal]
 
   let var v = (v, [])
+
+  let make var fields = (var, fields)
 
   let get_var (v, _) = v
 
@@ -60,6 +102,37 @@ end = struct
 
 
   let var_appears_in_source_code (var, _) = Var.appears_in_source_code var
+
+  let max_depth = Config.simple_lineage_field_depth
+
+  let max_width = Option.value ~default:Int.max_value Config.simple_lineage_field_width
+
+  let fold_terminal shapes (var, fields) ~init ~f =
+    SimpleShape.Summary.fold_terminal_fields shapes (var, fields) ~max_width ~max_depth ~init
+      ~f:(fun acc fields -> f acc (make var fields))
+
+
+  let concat_map_terminal shapes (var, fields) ~f =
+    SimpleShape.Summary.concat_map_terminal_fields shapes (var, fields) ~max_width ~max_depth
+      ~f:(fun fields -> f (make var fields))
+
+
+  let fold_terminal_pairs shapes (var1, fields1) (var2, fields2) ~init ~f =
+    SimpleShape.Summary.fold_terminal_fields_2 shapes (var1, fields1) (var2, fields2) ~max_width
+      ~max_depth ~init ~f:(fun acc fields1 fields2 -> f acc (make var1 fields1) (make var2 fields2))
+
+
+  module Terminal = struct
+    type nonrec t = terminal t
+
+    (* Ignore the phantom type variable in comparisons *)
+
+    let compare = compare [%compare: _]
+
+    let equal = equal [%equal: _]
+
+    let pp = pp
+  end
 end
 
 module LineageGraph = struct
@@ -69,7 +142,7 @@ module LineageGraph = struct
     | ConstantAtom of string
     | ConstantInt of string
     | ConstantString of string
-    | VariableIndex of (VariableIndex.t[@sexp.opaque])
+    | VariableIndex of (VariableIndex.Terminal.t[@sexp.opaque])
   [@@deriving compare, equal, sexp]
 
   type data =
@@ -821,7 +894,7 @@ end
 
 module Domain = struct
   module Real = struct
-    module LastWrites = AbstractDomain.FiniteMultiMap (VariableIndex) (PPNode)
+    module LastWrites = AbstractDomain.FiniteMultiMap (VariableIndex.Terminal) (PPNode)
     module UnsupportedFeatures = AbstractDomain.BooleanOr
     include AbstractDomain.Pair (LastWrites) (UnsupportedFeatures)
   end
@@ -847,13 +920,51 @@ module TransferFunctions = struct
     include Comparable.Make (T)
   end
 
-  (** Return constants and free variables that occur in [e]. *)
-  let rec free_locals_of_exp (e : Exp.t) : Local.Set.t =
+  (** If an expression is made of a single variable index, return it *)
+  let single_var_index_of_exp (e : Exp.t) : _ VariableIndex.t option =
+    let rec aux fields_acc = function
+      | Exp.Lvar pvar ->
+          Some (VariableIndex.make (Var.of_pvar pvar) fields_acc)
+      | Exp.Var id ->
+          Some (VariableIndex.make (Var.of_id id) fields_acc)
+      | Exp.Lfield (e, fieldname, _) ->
+          aux (fieldname :: fields_acc) e
+      | Exp.UnOp (_, _, _)
+      | Exp.BinOp (_, _, _)
+      | Exp.Exn _
+      | Exp.Closure _
+      | Exp.Const _
+      | Exp.Cast (_, _)
+      | Exp.Lindex (_, _)
+      | Exp.Sizeof _ ->
+          None
+    in
+    aux [] e
+
+
+  (** Return the terminal free indices that can be derived from an index *)
+  let terminal_free_locals_from_index shapes index =
+    VariableIndex.fold_terminal shapes index
+      ~f:(fun acc index -> Local.Set.add acc (VariableIndex index))
+      ~init:Local.Set.empty
+
+
+  (** Return constants and free terminal indices that occur in [e]. *)
+  let rec free_locals_of_exp shapes (e : Exp.t) : Local.Set.t =
     match e with
     | Lvar pvar ->
-        Local.Set.singleton (VariableIndex (VariableIndex.pvar pvar))
+        terminal_free_locals_from_index shapes (VariableIndex.pvar pvar)
     | Var id ->
-        Local.Set.singleton (VariableIndex (VariableIndex.ident id))
+        terminal_free_locals_from_index shapes (VariableIndex.ident id)
+    | Lfield _ -> (
+      (* We only allow (sequences of) fields to be "applied" to a single variable, yielding a single index  *)
+      match single_var_index_of_exp e with
+      | None ->
+          (* Debugging hint: if you run into this assertion, the easiest is likely to change the
+             frontend to introduce a temporary variable. *)
+          L.die InternalError "I don't support fields sequences from non-variables expressions"
+      | Some index ->
+          terminal_free_locals_from_index shapes index )
     | Const (Cint x) ->
         Local.Set.singleton (ConstantInt (IntLit.to_string x))
     | Const (Cstr x) ->
@@ -862,21 +973,21 @@ module TransferFunctions = struct
         Local.Set.empty
     | Closure _ ->
         Local.Set.empty
-    | UnOp (_, e1, _) | Exn e1 | Cast (_, e1) | Lfield (e1, _, _) ->
-        free_locals_of_exp e1
+    | UnOp (_, e1, _) | Exn e1 | Cast (_, e1) ->
+        free_locals_of_exp shapes e1
     | Sizeof {dynamic_length= Some e1} ->
-        free_locals_of_exp e1
+        free_locals_of_exp shapes e1
     | Sizeof {dynamic_length= None} ->
         Local.Set.empty
     | BinOp (_, e1, e2) | Lindex (e1, e2) ->
-        Local.Set.union (free_locals_of_exp e1) (free_locals_of_exp e2)
+        Local.Set.union (free_locals_of_exp shapes e1) (free_locals_of_exp shapes e2)
 
 
   (** Return variables that are captured by the closures occurring in [e]. *)
-  let captured_locals_of_exp (e : Exp.t) : Local.Set.t =
+  let captured_locals_of_exp shapes (e : Exp.t) : Local.Set.t =
     let add locals {Exp.captured_vars} =
       List.fold captured_vars ~init:locals ~f:(fun locals (_exp, pvar, _typ, _mode) ->
-          Local.Set.add locals (VariableIndex (VariableIndex.pvar pvar)) )
+          Local.Set.union locals (terminal_free_locals_from_index shapes (VariableIndex.pvar pvar)) )
     in
     Sequence.fold ~init:Local.Set.empty ~f:add (Exp.closures e)
 
@@ -886,8 +997,8 @@ module TransferFunctions = struct
     Sequence.fold ~init:Procname.Set.empty ~f:add (Exp.closures e)
 
 
-  let free_locals_of_exp_list (es : Exp.t list) : Local.Set.t =
-    Local.Set.union_list (List.rev_map ~f:free_locals_of_exp es)
+  let free_locals_of_exp_list shapes (es : Exp.t list) : Local.Set.t =
+    Local.Set.union_list (List.rev_map ~f:(free_locals_of_exp shapes) es)
 
 
   type read_set =
@@ -895,9 +1006,9 @@ module TransferFunctions = struct
     ; captured_locals: Local.Set.t (* captured variables *)
     ; lambdas: Procname.Set.t (* names of closures *) }
 
-  let read_set_of_exp e =
-    { free_locals= free_locals_of_exp e
-    ; captured_locals= captured_locals_of_exp e
+  let read_set_of_exp shapes e =
+    { free_locals= free_locals_of_exp shapes e
+    ; captured_locals= captured_locals_of_exp shapes e
     ; lambdas= lambdas_of_exp e }
 
 
@@ -915,7 +1026,7 @@ module TransferFunctions = struct
 
 
   (** For all closures in [instr], record capture flows. *)
-  let add_cap_flows node (instr : Sil.instr) (astate : Domain.t) : Domain.t =
+  let add_cap_flows shapes node (instr : Sil.instr) (astate : Domain.t) : Domain.t =
     let rec one_exp astate (exp : Exp.t) =
       match exp with
       | Var _ | Const _ | Lvar _ | Sizeof _ ->
@@ -929,8 +1040,10 @@ module TransferFunctions = struct
     and closure astate ({name; captured_vars} : Exp.closure) =
       let one_var index ((last_writes, has_unsupported_features), local_edges)
           (_exp, pvar, _typ, _mode) =
-        let local : Local.t = VariableIndex (VariableIndex.pvar pvar) in
-        let source_list = sources_of_local node last_writes local in
+        let source_list =
+          VariableIndex.concat_map_terminal shapes (VariableIndex.pvar pvar) ~f:(fun index ->
+              sources_of_local node last_writes (VariableIndex index) )
+        in
         let add_one_flow local_edges source =
           LineageGraph.add_flow ~kind:Direct ~node ~source
             ~target:(CapturedBy (index, name))
@@ -944,10 +1057,10 @@ module TransferFunctions = struct
     List.fold ~init:astate ~f:one_exp (Sil.exps_of_instr instr)
 
 
-  let add_arg_flows (call_node : PPNode.t) (callee_pname : Procname.t) (argument_list : Exp.t list)
-      (astate : Domain.t) : Domain.t =
+  let add_arg_flows shapes (call_node : PPNode.t) (callee_pname : Procname.t)
+      (argument_list : Exp.t list) (astate : Domain.t) : Domain.t =
     let add_flows_all_to_arg index ((last_writes, has_unsupported_features), local_edges) arg =
-      let read_set = free_locals_of_exp arg in
+      let read_set = free_locals_of_exp shapes arg in
       let add_flows_local_to_arg local_edges (local : Local.t) =
         let sources = sources_of_local call_node last_writes local in
         let add_one_flow local_edges source =
@@ -963,27 +1076,37 @@ module TransferFunctions = struct
     List.foldi argument_list ~init:astate ~f:add_flows_all_to_arg
 
 
-  let add_ret_flows (callee_pname : Procname.t) (ret_id : Ident.t) node (astate : Domain.t) :
+  let add_ret_flows shapes (callee_pname : Procname.t) (ret_id : Ident.t) node (astate : Domain.t) :
       Domain.t =
     let last_writes, local_edges = astate in
-    let local_edges =
+    let add_one_return_edge local_edges target_index =
       LineageGraph.add_flow ~kind:Return ~node ~source:(ReturnOf callee_pname)
-        ~target:(Local (VariableIndex (VariableIndex.ident ret_id), node))
+        ~target:(Local (VariableIndex target_index, node))
         local_edges
+    in
+    let local_edges =
+      VariableIndex.fold_terminal ~f:add_one_return_edge ~init:local_edges shapes
+        (VariableIndex.ident ret_id)
     in
     (last_writes, local_edges)
 
 
-  let add_lambda_edges node write_var lambdas (real_state, local_edges) =
-    let target = LineageGraph.Local (VariableIndex write_var, node) in
+  let add_lambda_edges shapes node write_var_index lambdas (real_state, local_edges) =
     let add_one_lambda one_lambda local_edges =
-      LineageGraph.add_flow ~kind:Direct ~node ~source:(Function one_lambda) ~target local_edges
+      VariableIndex.fold_terminal
+        ~f:(fun acc target ->
+          LineageGraph.add_flow ~kind:Direct ~node ~source:(Function one_lambda)
+            ~target:(Local (VariableIndex target, node))
+            acc )
+        ~init:local_edges shapes write_var_index
     in
     let local_edges = Procname.Set.fold add_one_lambda lambdas local_edges in
     (real_state, local_edges)
 
 
-  let update_write node kind (write_var : VariableIndex.t) (read_set : Local.Set.t)
+  (* Add a write for a single variable index -- this should usually not be used directly as it will
+     not take any shapes into account. *)
+  let update_one_write node kind (write_var : VariableIndex.Terminal.t) (read_set : Local.Set.t)
       (((last_writes, has_unsupported_features), local_edges) : Domain.t) : Domain.t =
     let target = LineageGraph.Local (VariableIndex write_var, node) in
     let add_read local_edges (read_local : Local.t) =
@@ -1007,40 +1130,67 @@ module TransferFunctions = struct
     ((last_writes, has_unsupported_features), local_edges)
 
 
-  let exec_assignment astate node dst_var src_exp =
-    let {free_locals; captured_locals; lambdas} = read_set_of_exp src_exp in
-    astate
-    |> update_write node LineageGraph.FlowKind.Direct (VariableIndex.var dst_var) free_locals
-    |> update_write node LineageGraph.FlowKind.Capture (VariableIndex.var dst_var) captured_locals
-    |> add_lambda_edges node (VariableIndex.var dst_var) lambdas
+  (* Update all the terminal fields of an index, as obtained from the shapes information. *)
+  let update_write node kind dst_index read_set shapes astate =
+    VariableIndex.fold_terminal
+      ~f:(fun acc_astate terminal -> update_one_write node kind terminal read_set acc_astate)
+      ~init:astate shapes dst_index
+
+
+  (* Update all the terminal fields of an destination index, as obtained from the shapes information,
+     as being written in parallel from the corresponding terminal fields of a source index. *)
+  let update_write_parallel node kind dst_index src_index shapes astate =
+    VariableIndex.fold_terminal_pairs
+      ~f:(fun acc_astate dst_terminal src_terminal ->
+        update_one_write node kind dst_terminal
+          (Local.Set.singleton (VariableIndex src_terminal))
+          acc_astate )
+      ~init:astate shapes dst_index src_index
+
+
+  let exec_assignment astate shapes node dst_index src_exp =
+    match single_var_index_of_exp src_exp with
+    | Some src_index ->
+        (* Simple assignment of the form [dst := src_index]: we copy the fields of [src_index] into
+           the corresponding fields of [dst]. *)
+        update_write_parallel node Direct dst_index src_index shapes astate
+    | None ->
+        (* Complex assignment of any other form: we copy every terminal field from the source to
+           (every terminal field of) the destination, and also process the potential captured indices
+           and lambdas. *)
+        let {free_locals; captured_locals; lambdas} = read_set_of_exp shapes src_exp in
+        astate
+        |> update_write node LineageGraph.FlowKind.Direct dst_index free_locals shapes
+        |> update_write node LineageGraph.FlowKind.Capture dst_index captured_locals shapes
+        |> add_lambda_edges shapes node dst_index lambdas
 
 
   let add_tito node (kind : LineageGraph.FlowKind.t) tito_arguments (argument_list : Exp.t list)
-      (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
+      (ret_id : Ident.t) (shapes : SimpleShape.Summary.t) (astate : Domain.t) : Domain.t =
     let tito_locals =
       let tito_exps =
         List.filter_mapi
           ~f:(fun index arg -> if IntSet.mem index tito_arguments then Some arg else None)
           argument_list
       in
-      free_locals_of_exp_list tito_exps
+      free_locals_of_exp_list shapes tito_exps
     in
-    update_write node kind (VariableIndex.ident ret_id) tito_locals astate
+    update_write node kind (VariableIndex.ident ret_id) tito_locals shapes astate
 
 
   let add_tito_all node (kind : LineageGraph.FlowKind.t) (argument_list : Exp.t list)
-      (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
+      (ret_id : Ident.t) (shapes : SimpleShape.Summary.t) (astate : Domain.t) : Domain.t =
     let all = IntSet.of_list (List.mapi argument_list ~f:(fun index _ -> index)) in
-    add_tito node kind all argument_list ret_id astate
+    add_tito node kind all argument_list ret_id shapes astate
 
 
   let add_summary_flows (kind : LineageGraph.FlowKind.t) (callee : (Procdesc.t * Summary.t) option)
-      (argument_list : Exp.t list) (ret_id : Ident.t) node (astate : Domain.t) : Domain.t =
+      (argument_list : Exp.t list) (ret_id : Ident.t) node shapes (astate : Domain.t) : Domain.t =
     match callee with
     | None ->
-        add_tito_all node kind argument_list ret_id astate
+        add_tito_all node kind argument_list ret_id shapes astate
     | Some (_callee_pdesc, {Summary.tito_arguments}) ->
-        add_tito node kind tito_arguments argument_list ret_id astate
+        add_tito node kind tito_arguments argument_list ret_id shapes astate
 
 
   let record_supported name (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
@@ -1051,42 +1201,43 @@ module TransferFunctions = struct
     ((last_writes, has_unsupported_features), local_edges)
 
 
-  let generic_call_model astate analyze_dependency node ret_id procname args =
+  let generic_call_model shapes astate analyze_dependency node ret_id procname args =
     let rm_builtin =
       (not Config.simple_lineage_include_builtins) && BuiltinDecl.is_declared procname
     in
     let if_not_builtin transform state = if rm_builtin then state else transform state in
     let summary_type : LineageGraph.FlowKind.t = if rm_builtin then Direct else Summary in
     astate |> record_supported procname
-    |> if_not_builtin (add_arg_flows node procname args)
-    |> if_not_builtin (add_ret_flows procname ret_id node)
-    |> add_summary_flows summary_type (analyze_dependency procname) args ret_id node
+    |> if_not_builtin (add_arg_flows shapes node procname args)
+    |> if_not_builtin (add_ret_flows shapes procname ret_id node)
+    |> add_summary_flows summary_type (analyze_dependency procname) args ret_id node shapes
 
 
   module CustomModel = struct
-    let call_unqualified astate analyze_dependency node ret_id procname args =
+    let call_unqualified shapes astate analyze_dependency node ret_id procname args =
       match args with
       | fun_ :: _ ->
-          generic_call_model astate analyze_dependency node ret_id procname args
+          generic_call_model shapes astate analyze_dependency node ret_id procname args
           |> update_write node DynamicCallFunction (VariableIndex.ident ret_id)
-               (free_locals_of_exp fun_)
+               (free_locals_of_exp shapes fun_) shapes
       | _ ->
           L.die InternalError "Expecting at least one argument for '__erlang_call_unqualified'"
 
 
-    let call_qualified astate analyze_dependency node ret_id procname args =
+    let call_qualified shapes astate analyze_dependency node ret_id procname args =
       match args with
       | module_ :: fun_ :: _ ->
-          generic_call_model astate analyze_dependency node ret_id procname args
+          generic_call_model shapes astate analyze_dependency node ret_id procname args
           |> update_write node DynamicCallFunction (VariableIndex.ident ret_id)
-               (free_locals_of_exp fun_)
+               (free_locals_of_exp shapes fun_) shapes
           |> update_write node DynamicCallModule (VariableIndex.ident ret_id)
-               (free_locals_of_exp module_)
+               (free_locals_of_exp shapes module_)
+               shapes
       | _ ->
           L.die InternalError "Expecting at least two arguments for '__erlang_call_qualified'"
 
 
-    let make_atom astate _analyze_dependency node ret_id _procname (args : Exp.t list) =
+    let make_atom shapes astate _analyze_dependency node ret_id _procname (args : Exp.t list) =
       let atom_name =
         match args with
         | Const (Cstr atom_name) :: _ ->
@@ -1095,7 +1246,20 @@ module TransferFunctions = struct
             L.die InternalError "Expecting first argument of 'make_atom' to be its name"
       in
       let sources = Local.Set.singleton (ConstantAtom atom_name) in
-      update_write node LineageGraph.FlowKind.Direct (VariableIndex.ident ret_id) sources astate
+      update_write node LineageGraph.FlowKind.Direct (VariableIndex.ident ret_id) sources shapes
+        astate
+
+
+    let make_tuple shapes astate _analyze_dependency node ret_id _procname (args : Exp.t list) =
+      let size = List.length args in
+      let tuple_type = ErlangTypeName.Tuple size in
+      let field_names = ErlangTypeName.tuple_field_names size in
+      let fieldname name = Fieldname.make (ErlangType tuple_type) name in
+      let ret_field name = VariableIndex.make (Var.of_id ret_id) [fieldname name] in
+      List.fold2_exn
+        ~f:(fun astate field_name arg ->
+          exec_assignment astate shapes node (ret_field field_name) arg )
+        ~init:astate field_names args
 
 
     let custom_call_models =
@@ -1105,6 +1269,7 @@ module TransferFunctions = struct
       in
       let pairs =
         [ (BuiltinDecl.__erlang_make_atom, make_atom)
+        ; (BuiltinDecl.__erlang_make_tuple, make_tuple)
         ; (apply 2, call_unqualified)
         ; (apply 3, call_qualified) ]
       in
@@ -1117,39 +1282,42 @@ module TransferFunctions = struct
       else Procname.Map.find_opt name custom_call_models
   end
 
-  let exec_named_call (astate : Domain.t) analyze_dependency node ret_id name args : Domain.t =
+  let exec_named_call shapes (astate : Domain.t) analyze_dependency node ret_id name args : Domain.t
+      =
     let model = CustomModel.get name |> Option.value ~default:generic_call_model in
-    model astate analyze_dependency node ret_id name args
+    model shapes astate analyze_dependency node ret_id name args
 
 
-  let exec_call (astate : Domain.t) analyze_dependency node ret_id fun_exp args : Domain.t =
+  let exec_call (astate : Domain.t) (shapes, {InterproceduralAnalysis.analyze_dependency; _}) node
+      ret_id fun_exp args : Domain.t =
     let callee_pname = procname_of_exp fun_exp in
     let args = List.map ~f:fst args in
     match callee_pname with
     | None ->
         let arity = List.length args in
         let erlang_call_name = Procname.erlang_call_unqualified ~arity in
-        exec_named_call astate analyze_dependency node ret_id erlang_call_name (fun_exp :: args)
+        exec_named_call shapes astate analyze_dependency node ret_id erlang_call_name
+          (fun_exp :: args)
     | Some name ->
-        exec_named_call astate analyze_dependency node ret_id name args
+        exec_named_call shapes astate analyze_dependency node ret_id name args
 
 
-  let exec_instr astate (_shapes, {InterproceduralAnalysis.analyze_dependency}) node instr_index
-      (instr : Sil.instr) =
+  let exec_instr astate (shapes, lineage_data) node instr_index (instr : Sil.instr) =
     if not (Int.equal instr_index 0) then
       L.die InternalError "SimpleLineage: INV broken: CFGs should be single instruction@\n" ;
-    let astate = add_cap_flows node instr (fst astate, [ (* don't repeat edges*) ]) in
+    let astate = add_cap_flows shapes node instr (fst astate, [ (* don't repeat edges*) ]) in
     match instr with
     | Load {id; e; _} ->
-        if Ident.is_none id then astate else exec_assignment astate node (Var.of_id id) e
+        if Ident.is_none id then astate
+        else exec_assignment astate shapes node (VariableIndex.ident id) e
     | Store {e1= Lvar lhs; e2; _} ->
-        exec_assignment astate node (Var.of_pvar lhs) e2
+        exec_assignment astate shapes node (VariableIndex.pvar lhs) e2
     | Store _ ->
         L.debug Analysis Verbose
           "SimpleLineage: The only lhs I can handle (now) for Store is Lvar@\n" ;
         astate
     | Call ((ret_id, _ret_typ), name, args, _location, _flags) ->
-        exec_call astate analyze_dependency node ret_id name args
+        exec_call astate (shapes, lineage_data) node ret_id name args
     | Sil.Prune (_, _, _, _) | Sil.Metadata _ ->
         astate
 
@@ -1174,17 +1342,24 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
     let formals = get_formals proc_desc in
     let captured = get_captured proc_desc in
     let start_node = CFG.start_node cfg in
-    let add_arg last_writes arg =
-      Domain.Real.LastWrites.add (VariableIndex.var arg) start_node last_writes
+    let add_arg_index last_writes arg_index =
+      Domain.Real.LastWrites.add arg_index start_node last_writes
+    in
+    let add_arg last_writes var =
+      VariableIndex.fold_terminal ~f:add_arg_index ~init:last_writes shapes (VariableIndex.var var)
     in
     let last_writes =
       List.fold ~init:Domain.Real.LastWrites.bottom ~f:add_arg (captured @ formals)
     in
     let local_edges =
-      let add_flow ~source local_edges var =
+      let add_index_flow ~source local_edges var_index =
         LineageGraph.add_flow ~kind:Direct ~node:start_node ~source
-          ~target:(Local (VariableIndex (VariableIndex.var var), start_node))
+          ~target:(Local (VariableIndex var_index, start_node))
           local_edges
+      in
+      let add_flow ~source local_edges var =
+        VariableIndex.fold_terminal ~f:(add_index_flow ~source) ~init:local_edges shapes
+          (VariableIndex.var var)
       in
       let add_arg_flow i = add_flow ~source:(Argument i) in
       let add_cap_flow i = add_flow ~source:(Captured i) in
@@ -1210,16 +1385,18 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
       post_edges :: edges
     in
     let ret_var = VariableIndex.pvar (Procdesc.get_ret_var proc_desc) in
-    let add_ret_edge local_edges ret_node =
+    let add_one_ret_index_edge local_edges ret_index ret_node =
       LineageGraph.add_flow ~kind:Direct ~node:ret_node
-        ~source:(Local (VariableIndex ret_var, ret_node))
+        ~source:(Local (VariableIndex ret_index, ret_node))
         ~target:Return local_edges
     in
-    let graph = Analyzer.InvariantMap.fold collect invmap [snd initial] |> List.concat in
-    let graph =
-      List.fold ~init:graph ~f:add_ret_edge
-        (Domain.Real.LastWrites.get_all ret_var exit_last_writes)
+    let add_ret_index_edges local_edges ret_index =
+      List.fold ~init:local_edges
+        ~f:(fun acc source -> add_one_ret_index_edge acc ret_index source)
+        (Domain.Real.LastWrites.get_all ret_index exit_last_writes)
     in
+    let graph = Analyzer.InvariantMap.fold collect invmap [snd initial] |> List.concat in
+    let graph = VariableIndex.fold_terminal ~init:graph ~f:add_ret_index_edges shapes ret_var in
     graph
   in
   let summary = Summary.make exit_has_unsupported_features proc_desc graph in

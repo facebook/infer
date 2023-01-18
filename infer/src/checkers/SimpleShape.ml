@@ -9,6 +9,53 @@ open! IStd
 module L = Logging
 module CFG = ProcCfg.NormalOneInstrPerNode
 
+module Ilist = struct
+  (** Size-indexed lists *)
+
+  (** These will be used for traversing "in parallel" the shape information structures, accumulating
+      a set of a generic (but static) number of field sequences.
+
+      For instance, searching the possible fields of a single variable will return a set of
+      one-sized lists of field sequences. Searching the corresponding fields of two
+      (variable+fields) of the same shape will return a set of two-sized lists of field sequences.
+
+      Having the size as part of the type allows both having one generic code (parameterised over
+      that size type) being able to perform these two traversals, and statically know at the call
+      sites how many field sequences we are accumulating. *)
+
+  (** Natural integers as types *)
+
+  type z = |
+
+  type 'a s = |
+
+  (** Lists indexed by their length (second parameter) *)
+  type (_, _) t = [] : (_, z) t | ( :: ) : ('a * ('a, 'len) t) -> ('a, 'len s) t
+
+  let rec for_all : type len. ('a, len) t -> f:('a -> bool) -> bool =
+   fun li ~f -> match li with [] -> true | x :: xs -> f x && for_all ~f xs
+
+
+  let rec map : type len. ('a, len) t -> f:('a -> 'b) -> ('b, len) t =
+   fun li ~f ->
+    match li with
+    | [] ->
+        []
+    | x :: xs ->
+        let r = f x in
+        r :: map ~f xs
+
+
+  let rec map2 : type len. ('a, len) t -> ('b, len) t -> f:('a -> 'b -> 'c) -> ('c, len) t =
+   fun li li' ~f ->
+    match (li, li') with
+    | [], [] ->
+        []
+    | x :: xs, y :: ys ->
+        let r = f x y in
+        r :: map2 ~f xs ys
+end
+
 module Id () : sig
   include Unique_id.Id
 
@@ -84,6 +131,36 @@ module Shape : sig
     val make : Env.t -> t
     (** Makes a summary from a typing environment. Further updates to the environment will have no
         effect on the summary. *)
+
+    val fold_terminal_fields :
+         t
+      -> Var.t * Fieldname.t list
+      -> max_width:int
+      -> max_depth:int
+      -> init:'accum
+      -> f:('accum -> Fieldname.t list -> 'accum)
+      -> 'accum
+    (* Doc in .mli *)
+
+    val concat_map_terminal_fields :
+         t
+      -> Var.t * Fieldname.t list
+      -> max_width:int
+      -> max_depth:int
+      -> f:(Fieldname.t list -> 'a list)
+      -> 'a list
+    (* Doc in .mli *)
+
+    val fold_terminal_fields_2 :
+         t
+      -> Var.t * Fieldname.t list
+      -> Var.t * Fieldname.t list
+      -> max_width:int
+      -> max_depth:int
+      -> init:'accum
+      -> f:('accum -> Fieldname.t list -> Fieldname.t list -> 'accum)
+      -> 'accum
+    (* Doc in .mli *)
 
     val introduce : formals:Var.t list -> return:Var.t -> t -> Env.t -> Env.shape list * Env.shape
     (** Generates fresh shapes into a typing environment for the formal parameters and the formal
@@ -259,6 +336,40 @@ end = struct
         shape_fields
 
 
+    let find_var_shape var_shapes var =
+      match Caml.Hashtbl.find_opt var_shapes var with
+      | Some shape ->
+          shape
+      | None ->
+          L.die InternalError "No shape found for var %a" Var.pp var
+
+
+    let find_field_table shape_fields shape =
+      match Caml.Hashtbl.find_opt shape_fields shape with
+      | Some field_table ->
+          field_table
+      | None ->
+          L.die InternalError "No field table found for shape %a" Shape_id.pp shape
+
+
+    let find_next_field_shape shape_fields shape field =
+      let field_table = find_field_table shape_fields shape in
+      match Caml.Hashtbl.find_opt field_table field with
+      | Some field_shape ->
+          field_shape
+      | None ->
+          L.die InternalError "Field %a unknown for shape %a.@ Known fields are:@ @[{%a}@]"
+            Fieldname.pp field Shape_id.pp shape
+            (Fmt.iter_bindings ~sep:Fmt.semi Caml.Hashtbl.iter @@ Fmt.pair Fieldname.pp Shape_id.pp)
+            field_table
+
+
+    let find_field_shape shape_fields shape fields =
+      List.fold
+        ~f:(fun shape field -> find_next_field_shape shape_fields shape field)
+        ~init:shape fields
+
+
     let make {Env.var_shapes; shape_fields} =
       (* Making a summary from an environment essentially amounts to converting Env ids into Summary
          ids and Env (Core) hashtables into Summary (Caml) hasthables. We keep an id translation
@@ -343,6 +454,116 @@ end = struct
       in
       let return_env_shape = introduce_var ~var:return id_translation_tbl summary env in
       (args_env_shapes, return_env_shape)
+
+
+    let pp_field_table field_table =
+      Fmt.iter_bindings ~sep:Fmt.comma Caml.Hashtbl.iter
+        (Fmt.pair ~sep:(Fmt.any ":@ ") Fieldname.pp Shape_id.pp)
+        field_table
+
+
+    let finalise_prefixes shape_fields max_width max_depths root_shapes rev_prefixes =
+      let rev_and_trim_depth max_depth rev_prefix =
+        (* Reverse the reversed prefixes and trim them to the max depths *)
+        List.rev (List.drop rev_prefix (-max_depth))
+      in
+      let rec ensure_max_width shape_fields max_width shape = function
+        (* Ensure that we do not traverse a field table wider than max_width *)
+        | [] ->
+            []
+        | field :: fields ->
+            let field_table = find_field_table shape_fields shape in
+            if Caml.Hashtbl.length field_table > max_width then []
+            else
+              field
+              :: ensure_max_width shape_fields max_width
+                   (Caml.Hashtbl.find field_table field)
+                   fields
+      in
+      rev_prefixes
+      |> Ilist.map2 ~f:rev_and_trim_depth max_depths
+      |> Ilist.map2 ~f:(ensure_max_width shape_fields max_width) root_shapes
+
+
+    (** Given field shapes, a particular shape, a maximal width and three size-indexed lists of
+        maximal depths, var shapes (cf. later) and reversed field prefixes, traverses the field
+        shapes table and builds in parallel the sequence of field prefixes by recursively adding all
+        the defined fieldname of the considered shape to the prefixes.
+
+        The [var_shapes] list is expected to contain the list of the shapes of the variables from
+        which the fields [rev_prefixes] are being taken. It will be used to ensure that the result
+        will not cross a field table wider than [max_width] even if one of the argument does. For
+        instance, the terminal fields of [X#field1], where [X] itself has a huge number of fields,
+        will only be [X].
+
+        A shape having more than max_width fields will be considered as "terminal", ie. not having
+        any field at all.
+
+        Once every possible subfield has been traversed or the maximal depth has been reached for
+        every prefix, the traversal will consider that a "terminal" field has been reached (and the
+        folding function will be called). *)
+    let rec fold_terminal_fields_of_shape shape_fields shape ~max_width ~max_depths ~root_shapes
+        ~rev_prefixes ~init ~f =
+      if Ilist.for_all ~f:Int.is_non_positive max_depths then
+        f init (finalise_prefixes shape_fields max_width max_depths root_shapes rev_prefixes)
+      else
+        match Caml.Hashtbl.find_opt shape_fields shape with
+        | None ->
+            f init (finalise_prefixes shape_fields max_width max_depths root_shapes rev_prefixes)
+        | Some fields ->
+            let len = Caml.Hashtbl.length fields in
+            if Int.(len = 0 || len > max_width) then
+              f init (finalise_prefixes shape_fields max_width max_depths root_shapes rev_prefixes)
+            else
+              Caml.Hashtbl.fold
+                (fun fieldname shape acc ->
+                  let rev_prefixes = Ilist.map ~f:(List.cons fieldname) rev_prefixes in
+                  let max_depths = Ilist.map ~f:Int.pred max_depths in
+                  fold_terminal_fields_of_shape shape_fields shape ~max_width ~max_depths
+                    ~root_shapes ~rev_prefixes ~init:acc ~f )
+                fields init
+
+
+    let fold_terminal_fields {var_shapes; shape_fields} (var, fields) ~max_width ~max_depth ~init ~f
+        =
+      let var_shape = find_var_shape var_shapes var in
+      let shape = find_field_shape shape_fields var_shape fields in
+      let root_shapes = Ilist.[var_shape] in
+      let rev_prefixes = Ilist.[List.rev fields] in
+      let max_depths = Ilist.[max_depth - List.length fields] in
+      fold_terminal_fields_of_shape shape_fields shape ~max_width ~max_depths ~rev_prefixes
+        ~root_shapes
+        ~f:(fun acc Ilist.[x] -> f acc x)
+        ~init
+
+
+    let concat_map_terminal_fields env (var, fields) ~max_width ~max_depth ~f =
+      fold_terminal_fields env (var, fields) ~max_width ~max_depth ~init:[] ~f:(fun acc index ->
+          f index @ acc )
+
+
+    let fold_terminal_fields_2 {var_shapes; shape_fields} (var1, fields1) (var2, fields2) ~max_width
+        ~max_depth ~init ~f =
+      let var_shape1 = find_var_shape var_shapes var1 in
+      let var_shape2 = find_var_shape var_shapes var2 in
+      let shape1 = find_field_shape shape_fields var_shape1 fields1 in
+      let shape2 = find_field_shape shape_fields var_shape2 fields2 in
+      if not ([%equal: Shape_id.t] shape1 shape2) then
+        L.die InternalError
+          "@[Attempting to get related fields of differently shaped fields: @[%a={%a}@]@ vs@ \
+           @[%a={%a}@]@]"
+          Shape_id.pp shape1 pp_field_table
+          (Caml.Hashtbl.find shape_fields shape1)
+          Shape_id.pp shape2 pp_field_table
+          (Caml.Hashtbl.find shape_fields shape1)
+      else
+        let max_depths = Ilist.[max_depth - List.length fields1; max_depth - List.length fields2] in
+        let rev_prefixes = Ilist.[List.rev fields1; List.rev fields2] in
+        let root_shapes = Ilist.[var_shape1; var_shape2] in
+        fold_terminal_fields_of_shape shape_fields shape1 ~max_width ~max_depths ~rev_prefixes
+          ~root_shapes
+          ~f:(fun acc Ilist.[x; y] -> f acc x y)
+          ~init
   end
 end
 
@@ -359,12 +580,23 @@ module Report = struct
   (** Reporting utility module. *)
 
   let debug proc_desc env summary =
-    (* Print both a local environment and a summary in the debug logs *)
+    (* Print a local environment, a summary and the fields of the returned value in the debug
+       logs. *)
     let procname = Procdesc.get_proc_name proc_desc in
     L.debug Analysis Verbose "@[<v>@ @[<v2>" ;
     L.debug Analysis Verbose "@[<v>Result for procedure : %a@]@ " Procname.pp procname ;
     L.debug Analysis Verbose "@[<v2>LOCAL ENV:@ %a@]@ @ " Shape.Env.pp env ;
-    L.debug Analysis Verbose "@[<v2>SUMMARY:@ %a@]" Shape.Summary.pp summary ;
+    L.debug Analysis Verbose "@[<v2>SUMMARY:@ %a@]@ @ " Shape.Summary.pp summary ;
+    L.debug Analysis Verbose "@[<v2>FIELDS OF RETURN:@ (%a)@]"
+      (Fmt.iter
+         (fun f summary ->
+           Shape.Summary.fold_terminal_fields summary ~max_depth:3 ~max_width:5
+             (Var.of_pvar (Procdesc.get_ret_var proc_desc), [])
+             ~f:(fun () fields -> f fields)
+             ~init:() )
+         ~sep:Fmt.comma
+         (Fmt.list ~sep:(Fmt.any "#") Fieldname.pp) )
+      summary ;
     L.debug Analysis Verbose "@]@ @]"
 end
 
