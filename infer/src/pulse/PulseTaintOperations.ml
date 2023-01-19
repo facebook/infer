@@ -614,7 +614,7 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
         L.d_printfln_escaped ~color:Red "Found source %a, checking policy..." Taint.pp source ;
         let potential_policy_violations = check_policies ~sink ~source ~source_times ~sanitizers in
         let report_policy_violation reported_so_far
-            (source_kind, sink_kind, sink_policy_description, violated_policy_id) =
+            (source_kind, sink_kind, policy_description, violated_policy_id) =
           if IntSet.mem violated_policy_id reported_so_far then Ok reported_so_far
           else
             let flow_kind =
@@ -631,7 +631,7 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
                      ; source= ({source with kinds= [source_kind]}, source_hist)
                      ; sink= ({sink with kinds= [sink_kind]}, sink_trace)
                      ; flow_kind
-                     ; sink_policy_description } ) )
+                     ; policy_description } ) )
         in
         PulseResult.list_fold potential_policy_violations ~init:policy_violations_reported
           ~f:report_policy_violation )
