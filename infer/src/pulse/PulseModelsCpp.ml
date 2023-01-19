@@ -14,6 +14,22 @@ module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
 
 let string_length_access = HilExp.Access.FieldAccess PulseOperations.ModeledField.string_length
 
+(* NOTE: The semantic models do not check overflow for now. *)
+let binop_overflow_common binop (x, x_hist) (y, y_hist) res : model =
+ fun {path; location} astate ->
+  let bop_addr = AbstractValue.mk_fresh () in
+  let<**> astate, bop_addr = PulseArithmetic.eval_binop_absval bop_addr binop x y astate in
+  let hist = Hist.binop path binop x_hist y_hist in
+  let<+> astate = PulseOperations.write_deref path location ~ref:res ~obj:(bop_addr, hist) astate in
+  astate
+
+
+let add_overflow = binop_overflow_common (PlusA None)
+
+let mul_overflow = binop_overflow_common (Mult None)
+
+let sub_overflow = binop_overflow_common (MinusA None)
+
 let delete deleted_arg : model =
  fun model_data astate -> Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate
 
@@ -245,16 +261,15 @@ module BasicString = struct
     astate
 
 
-  let constructor this_hist init_hist : model =
+  let constructor (this, hist) init_hist : model =
    fun {path; location} astate ->
     let event = Hist.call_event path location "std::basic_string::basic_string()" in
-    let<*> astate, (addr, hist) =
-      PulseOperations.eval_access path Write location this_hist Dereference astate
-    in
+    let<*> astate, init_data = to_internal_string path location init_hist astate in
+    let<*> astate, copied_data = PulseOperations.shallow_copy path location init_data astate in
     let<+> astate =
       PulseOperations.write_field path location
-        ~ref:(addr, Hist.add_event path event hist)
-        PulseOperations.ModeledField.internal_string ~obj:init_hist astate
+        ~ref:(this, Hist.add_event path event hist)
+        PulseOperations.ModeledField.internal_string ~obj:copied_data astate
     in
     astate
 
@@ -270,17 +285,12 @@ module BasicString = struct
    fun {path; location} astate ->
     let call_event = Hist.call_event path location "std::basic_string::~basic_string()" in
     let<*> astate, (string_addr, string_hist) = to_internal_string path location this_hist astate in
-    let string_addr_hist = (string_addr, Hist.add_event path call_event string_hist) in
-    let<*> astate =
-      PulseOperations.invalidate_access path location CppDelete string_addr_hist Dereference astate
-    in
+    let string_hist = Hist.add_event path call_event string_hist in
     let<+> astate =
       PulseOperations.invalidate path
         (MemoryAccess
-           { pointer= this_hist
-           ; access= internal_string_access
-           ; hist_obj_default= snd string_addr_hist } )
-        location CppDelete string_addr_hist astate
+           {pointer= this_hist; access= internal_string_access; hist_obj_default= string_hist} )
+        location CppDelete (string_addr, string_hist) astate
     in
     astate
 
@@ -584,7 +594,13 @@ end
 let matchers : matcher list =
   let char_ptr_typ = Typ.mk (Tptr (Typ.mk (Tint IChar), Pk_pointer)) in
   let open ProcnameDispatcher.Call in
-  [ +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
+  [ +BuiltinDecl.(match_builtin __builtin_add_overflow)
+    <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> add_overflow
+  ; +BuiltinDecl.(match_builtin __builtin_mul_overflow)
+    <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> mul_overflow
+  ; +BuiltinDecl.(match_builtin __builtin_sub_overflow)
+    <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> sub_overflow
+  ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
   ; +BuiltinDecl.(match_builtin __delete_array) <>$ capt_arg $--> delete_array
   ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
   ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array

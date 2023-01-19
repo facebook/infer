@@ -73,6 +73,8 @@ val is_locked : t -> bool
 
 val set_load : Location.t -> Timestamp.t -> Ident.t -> Var.t -> t -> t
 
+val set_store : Location.t -> Timestamp.t -> Pvar.t -> t -> t
+
 val get_loaded_locations : Var.t -> t -> Location.t list
 
 val set_passed_to : Location.t -> Timestamp.t -> Exp.t -> (Exp.t * Typ.t) list -> t -> t

@@ -146,7 +146,7 @@ type t =
       ; sink: Taint.t * Trace.t
       ; location: Location.t
       ; flow_kind: flow_kind
-      ; sink_policy_description: string }
+      ; policy_description: string }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; source_typ: Typ.t option
@@ -576,10 +576,10 @@ let get_message diagnostic =
         else F.fprintf f "stack variable `%a`" Var.pp var
       in
       F.asprintf "Address of %a is returned by the function" pp_var variable
-  | TaintFlow {expr; source= source, _; sink= sink, _; flow_kind; sink_policy_description} ->
+  | TaintFlow {expr; source= source, _; sink= sink, _; flow_kind; policy_description} ->
       (* TODO: say what line the source happened in the current function *)
       F.asprintf "`%a` is tainted by %a and flows to %a (%a) and policy (%s)" DecompilerExpr.pp expr
-        Taint.pp source Taint.pp sink pp_flow_kind flow_kind sink_policy_description
+        Taint.pp source Taint.pp sink pp_flow_kind flow_kind policy_description
   | UnnecessaryCopy {copied_into; source_typ; copied_location= Some (callee, {file; line})} ->
       let open PulseAttribute in
       F.asprintf

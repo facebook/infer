@@ -2759,6 +2759,14 @@ and simple_lineage_field_depth =
      field insensitive."
 
 
+and simple_lineage_prevent_cycles =
+  CLOpt.mk_bool ~long:"simple-lineage-prevent-cycles" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "[EXPERIMENTAL] If set, SimpleLineage will stop distinguishing the fields of a variable when \
+     it notices recursive types (that is, a sub-field having the same type as one of its \
+     \"ancestors\")."
+
+
 and simple_lineage_field_width =
   CLOpt.mk_int_opt ~long:"simple-lineage-field-width"
     ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
@@ -4087,6 +4095,8 @@ and shrink_analysis_db = !shrink_analysis_db
 and simple_lineage_include_builtins = !simple_lineage_include_builtins
 
 and simple_lineage_field_depth = !simple_lineage_field_depth
+
+and simple_lineage_prevent_cycles = !simple_lineage_prevent_cycles
 
 and simple_lineage_field_width = !simple_lineage_field_width
 

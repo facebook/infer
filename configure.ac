@@ -91,6 +91,11 @@ AS_IF([test x"$BUILD_PLATFORM" = x"Windows"], [WINDOWS_BUILD=yes])
 AC_MSG_RESULT([$WINDOWS_BUILD])
 AC_SUBST([WINDOWS_BUILD])
 
+AC_MSG_CHECKING([for realpath])
+AS_IF([test x"$BUILD_PLATFORM" = x"Darwin"], [REALPATH=grealpath], [REALPATH=realpath])
+AC_MSG_RESULT([$REALPATH])
+AC_SUBST([REALPATH])
+
 AC_ARG_VAR([PLATFORM_ENV], [Build and link binaries against this platform rather than system default (Linux only)])
 
 AC_ARG_ENABLE(c-analyzers,

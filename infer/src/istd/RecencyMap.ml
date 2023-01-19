@@ -37,6 +37,8 @@ module type S = sig
 
   val find_opt : key -> t -> value option
 
+  val iter : t -> f:(key * value -> unit) -> unit
+
   val fold : t -> init:'acc -> f:('acc -> key * value -> 'acc) -> 'acc
 
   val fold_map : t -> init:'acc -> f:('acc -> key -> value -> 'acc * value) -> 'acc * t
@@ -151,6 +153,8 @@ module Make
 
 
   let fold map ~init ~f = Seq.fold_left f init (to_seq map)
+
+  let iter map ~f = fold map ~init:() ~f:(fun () x -> f x)
 
   let bindings map = to_seq map |> Caml.List.of_seq
 

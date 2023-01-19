@@ -57,36 +57,40 @@ let assign_non_empty_value ProcnameDispatcher.Call.FuncArg.{arg_payload= this} ~
   astate
 
 
+let get_template_arg typ =
+  match (Typ.strip_ptr typ).desc with
+  | Tstruct (CppClass {template_spec_info= Template {args= [TType typ]}}) ->
+      Some typ
+  | _ ->
+      L.d_printfln "Template argument type is not found." ;
+      None
+
+
 let assign_precise_value (ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= this_payload} as this)
     (ProcnameDispatcher.Call.FuncArg.{arg_payload= other_payload} as other) ~desc : model =
  (* This model marks the optional object to be non-empty by storing value. *)
  fun ({callee_procname; path; location} as model_data) astate ->
-  match ((Typ.strip_ptr typ).desc, IRAttributes.load_formal_types callee_procname |> List.last) with
-  (* typ is the template argument *)
-  | Typ.Tstruct (CppClass {template_spec_info= Template {args= [TType typ]}}), Some actual -> (
-    match typ.desc with
-    | Tstruct class_name ->
-        (* assign the value pointer to the field of the shared_ptr *)
-        let<**> astate, value_address = Basic.alloc_value_address ~desc typ model_data astate in
-        let<*> astate, _ =
-          write_value path location this_payload ~value:value_address ~desc astate
-        in
-        let typ = Typ.mk (Tptr (typ, Typ.Pk_pointer)) in
-        (* We need an expression corresponding to the value of the argument we pass to
-           the constructor. *)
-        let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
-        let args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list =
-          {typ; exp= fake_exp; arg_payload= value_address} :: [other]
-        in
-        (* create the list of types of the actual arguments of the constructor *)
-        let actuals = [typ; actual] in
-        Basic.call_constructor class_name actuals args fake_exp model_data astate
-    | _ ->
-        L.d_printfln "Class not found" ;
-        let<**> astate, address = Basic.deep_copy path location ~value:other_payload ~desc astate in
-        let<+> astate, _ = write_value path location this_payload ~value:address ~desc astate in
-        astate )
-  | _ ->
+  match (get_template_arg typ, IRAttributes.load_formal_types callee_procname |> List.last) with
+  | Some ({desc= Tstruct class_name} as typ), Some actual ->
+      (* assign the value pointer to the field of the shared_ptr *)
+      let<**> astate, value_address = Basic.alloc_value_address ~desc typ model_data astate in
+      let<*> astate, _ = write_value path location this_payload ~value:value_address ~desc astate in
+      let typ = Typ.mk (Tptr (typ, Pk_pointer)) in
+      (* We need an expression corresponding to the value of the argument we pass to
+         the constructor. *)
+      let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
+      let args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list =
+        {typ; exp= fake_exp; arg_payload= value_address} :: [other]
+      in
+      (* create the list of types of the actual arguments of the constructor *)
+      let actuals = [typ; actual] in
+      Basic.call_constructor class_name actuals args fake_exp model_data astate
+  | Some _, Some _ ->
+      L.d_printfln "Class not found" ;
+      let<**> astate, address = Basic.deep_copy path location ~value:other_payload ~desc astate in
+      let<+> astate, _ = write_value path location this_payload ~value:address ~desc astate in
+      astate
+  | _, _ ->
       (* if the model cannot find a template argument and/or the formal parameters,
          it just marks the object non-empty *)
       assign_non_empty_value this
@@ -106,11 +110,27 @@ let assign_value (args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecializa
       Basic.skip
 
 
-let copy_assignment this init ~desc : model =
- fun {path; location} astate ->
-  let<*> astate, value = to_internal_value_deref path Read location init astate in
-  let<+> astate, _ = write_value path location this ~value ~desc astate in
-  astate
+let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this_payload} as this)
+    ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= other} ~desc : model =
+ fun ({path; location} as model_data) astate ->
+  let<*> astate, ((other_addr, _) as other) =
+    to_internal_value_deref path Read location other astate
+  in
+  match get_template_arg typ with
+  | Some typ ->
+      let assign_none =
+        let<**> astate = PulseArithmetic.prune_eq_zero other_addr astate in
+        assign_none this_payload ~desc model_data astate
+      in
+      let assign_value =
+        let<**> astate = PulseArithmetic.prune_positive other_addr astate in
+        assign_precise_value this
+          {exp= Var (Ident.create_none ()); typ; arg_payload= other}
+          ~desc model_data astate
+      in
+      assign_none @ assign_value
+  | None ->
+      Basic.ok_continue astate
 
 
 let emplace optional ~desc : model =
@@ -190,6 +210,27 @@ let value_or optional default ~desc : model =
   SatUnsat.to_list astate_non_empty @ SatUnsat.to_list astate_default
 
 
+let destruct ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : model =
+ fun ({path; location} as model_data) astate ->
+  match get_template_arg typ with
+  | Some typ ->
+      (* note: We do dereference the value address with [NoAccess], to avoid a null dereference
+         issue reported when [None] is given as an optional value. *)
+      let<*> astate, (value_addr, value_hist) =
+        to_internal_value_deref path NoAccess location this astate
+      in
+      let value_hist = Hist.add_call path location desc value_hist in
+      let deleted_arg =
+        ProcnameDispatcher.Call.FuncArg.
+          { arg_payload= (value_addr, value_hist)
+          ; exp= Var (Ident.create_fresh Ident.kprimed)
+          ; typ= {desc= Tptr (typ, Pk_pointer); quals= Typ.mk_type_quals ()} }
+      in
+      Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate
+  | None ->
+      Basic.ok_continue astate
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
@@ -197,16 +238,16 @@ let matchers : matcher list =
     $--> assign_none ~desc:"folly::Optional::Optional(=None)"
   ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
     $--> assign_none ~desc:"folly::Optional::Optional()"
-  ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
-    $+ capt_arg_payload_of_typ (-"folly" &:: "Optional")
+  ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg
+    $+ capt_arg_of_typ (-"folly" &:: "Optional")
     $--> copy_assignment ~desc:"folly::Optional::Optional(folly::Optional<Value> arg)"
   ; -"folly" &:: "Optional" &:: "Optional"
     &++> assign_value ~desc:"folly::Optional::Optional(Value arg)"
   ; -"folly" &:: "Optional" &:: "assign" <>$ capt_arg_payload
     $+ any_arg_of_typ (-"folly" &:: "None")
     $--> assign_none ~desc:"folly::Optional::assign(=None)"
-  ; -"folly" &:: "Optional" &:: "assign" <>$ capt_arg_payload
-    $+ capt_arg_payload_of_typ (-"folly" &:: "Optional")
+  ; -"folly" &:: "Optional" &:: "assign" <>$ capt_arg
+    $+ capt_arg_of_typ (-"folly" &:: "Optional")
     $--> copy_assignment ~desc:"folly::Optional::assign(folly::Optional<Value> arg)"
   ; -"folly" &:: "Optional" &:: "assign"
     &++> assign_value ~desc:"folly::Optional::assign(Value arg)"
@@ -228,21 +269,23 @@ let matchers : matcher list =
     $+...$--> get_pointer ~desc:"folly::Optional::get_pointer()"
   ; -"folly" &:: "Optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
     $+...$--> value_or ~desc:"folly::Optional::value_or()"
+  ; -"folly" &:: "Optional" &:: "~Optional" $ capt_arg
+    $--> destruct ~desc:"folly::Optional::~Optional()"
   ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
     $+ any_arg_of_typ (-"std" &:: "nullopt_t")
     $--> assign_none ~desc:"std::optional::optional(=nullopt)"
   ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
     $--> assign_none ~desc:"std::optional::optional()"
-  ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
-    $+ capt_arg_payload_of_typ (-"std" &:: "optional")
+  ; -"std" &:: "optional" &:: "optional" $ capt_arg
+    $+ capt_arg_of_typ (-"std" &:: "optional")
     $--> copy_assignment ~desc:"std::optional::optional(std::optional<Value> arg)"
   ; -"std" &:: "optional" &:: "optional"
     &++> assign_value ~desc:"std::optional::optional(Value arg)"
   ; -"std" &:: "optional" &:: "operator=" $ capt_arg_payload
     $+ any_arg_of_typ (-"std" &:: "nullopt_t")
     $--> assign_none ~desc:"std::optional::operator=(None)"
-  ; -"std" &:: "optional" &:: "operator=" $ capt_arg_payload
-    $+ capt_arg_payload_of_typ (-"std" &:: "optional")
+  ; -"std" &:: "optional" &:: "operator=" $ capt_arg
+    $+ capt_arg_of_typ (-"std" &:: "optional")
     $--> copy_assignment ~desc:"std::optional::operator=(std::optional<Value> arg)"
   ; -"std" &:: "optional" &:: "operator="
     &++> assign_value ~desc:"std::optional::operator=(Value arg)"
@@ -265,4 +308,6 @@ let matchers : matcher list =
   ; -"std" &:: "optional" &:: "operator->" <>$ capt_arg_payload
     $+...$--> value ~desc:"std::optional::operator->()"
   ; -"std" &:: "optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
-    $+...$--> value_or ~desc:"std::optional::value_or()" ]
+    $+...$--> value_or ~desc:"std::optional::value_or()"
+  ; -"std" &:: "optional" &:: "~optional" $ capt_arg
+    $--> destruct ~desc:"std::optional::~optional()" ]
