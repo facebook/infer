@@ -1,0 +1,20 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+rule r2
+in Java match {
+    int basic_branch_Bad( ) under ClassA
+} body {
+  #entry:
+    n2 = __sil_eq(3, 2)
+    jmp then, else   // ERROR: the else target is unknown
+                     // infer --capture-doli does not find that error
+  #then:
+    prune n2
+    ret 444
+  #elseMissSpelt:
+    prune ! n2
+    ret 345
+ }

@@ -377,7 +377,7 @@ module PulseTransferFunctions = struct
     let model =
       match callee_pname with
       | Some callee_pname -> (
-        match DoliParser.matcher callee_pname with
+        match DoliToTextual.matcher callee_pname with
         | Some procname ->
             DoliModel procname
         | None ->

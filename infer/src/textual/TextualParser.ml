@@ -16,6 +16,8 @@ type error =
   | TransformError of Textual.transform_error list
   | DeclaredTwiceError of TextualDecls.error
 
+type whichCapture = DoliCapture | TextualCapture
+
 let pp_error sourcefile fmt = function
   | SyntaxError {loc; msg} ->
       F.fprintf fmt "%a, %a: SIL syntax error: %s" Textual.SourceFile.pp sourcefile
@@ -30,40 +32,50 @@ let pp_error sourcefile fmt = function
       TextualDecls.pp_error sourcefile fmt err
 
 
-let parse_buf sourcefile (filebuf : CombinedLexer.lexbuf) =
+let parse_buf ~capture sourcefile filebuf =
   try
     let lexer = CombinedLexer.Lexbuf.with_tokenizer CombinedLexer.mainlex filebuf in
-    let m = MenhirLib.Convert.Simplified.traditional2revised CombinedMenhir.main lexer sourcefile in
-    let twice_declared_errors, decls_env = TextualDecls.make_decls m in
+    let parsed =
+      match capture with
+      | TextualCapture ->
+          MenhirLib.Convert.Simplified.traditional2revised CombinedMenhir.main lexer sourcefile
+      | DoliCapture ->
+          let doliModule =
+            MenhirLib.Convert.Simplified.traditional2revised CombinedMenhir.doliProgram lexer
+          in
+          DoliToTextual.program_to_textual_module sourcefile doliModule
+    in
+    let twice_declared_errors, decls_env = TextualDecls.make_decls parsed in
     let twice_declared_errors = List.map twice_declared_errors ~f:(fun x -> DeclaredTwiceError x) in
     (* even if twice_declared_errors is not empty we can continue the other verifications *)
-    let errors = TextualBasicVerification.run m decls_env |> List.map ~f:(fun x -> BasicError x) in
+    let errors =
+      TextualBasicVerification.run parsed decls_env |> List.map ~f:(fun x -> BasicError x)
+    in
     if List.is_empty errors then
-      let errors = TextualTypeVerification.run m decls_env |> List.map ~f:(fun x -> TypeError x) in
+      let errors =
+        TextualTypeVerification.run parsed decls_env |> List.map ~f:(fun x -> TypeError x)
+      in
       let errors = twice_declared_errors @ errors in
-      if List.is_empty errors then Ok m else Error errors
+      if List.is_empty errors then Ok parsed else Error errors
     else Error (twice_declared_errors @ errors)
   with
   | CombinedMenhir.Error ->
       let token = CombinedLexer.Lexbuf.lexeme filebuf in
-      let msg = Format.sprintf "unexpected token %s" token in
-      let pos, _ = CombinedLexer.Lexbuf.lexing_positions filebuf in
-      let line = pos.Lexing.pos_lnum in
-      let col = pos.Lexing.pos_cnum - pos.Lexing.pos_bol in
-      Error [SyntaxError {loc= Textual.Location.known ~line ~col; msg}]
+      let Lexing.{pos_lnum; pos_cnum; pos_bol}, _ = CombinedLexer.Lexbuf.lexing_positions filebuf in
+      let loc = Textual.Location.known ~line:pos_lnum ~col:(pos_cnum - pos_bol) in
+      Error [SyntaxError {loc; msg= "unexpected token " ^ token}]
   | CombinedLexer.LexingError (loc, lexeme) ->
-      let msg = sprintf "unexpected token %s" lexeme in
-      Error [SyntaxError {loc; msg}]
+      Error [SyntaxError {loc; msg= "unexpected token " ^ lexeme}]
 
 
 let parse_string sourcefile text =
   let filebuf = CombinedLexer.Lexbuf.from_gen (Gen.of_string text) in
-  parse_buf sourcefile filebuf
+  parse_buf ~capture:TextualCapture sourcefile filebuf
 
 
 let parse_chan sourcefile ic =
   let filebuf = CombinedLexer.Lexbuf.from_channel ic in
-  parse_buf sourcefile filebuf
+  parse_buf ~capture:TextualCapture sourcefile filebuf
 
 
 module TextualFile = struct

@@ -221,6 +221,8 @@ val capture_textual : string list
 
 val capture_doli : string option
 
+val parse_doli : string option
+
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
 val cfg_json : string option

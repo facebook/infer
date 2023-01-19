@@ -954,6 +954,11 @@ and capture_doli =
     "Generate models from a DOLI representation given a .doli file."
 
 
+and parse_doli =
+  CLOpt.mk_path_opt ~long:"parse-doli" ~meta:"path"
+    "Perform parsing on given a .doli file -- no checks on textual, no capture."
+
+
 and cfg_json =
   CLOpt.mk_path_opt ~long:"cfg-json"
     ~in_help:InferCommand.[(Capture, manual_generic)]
@@ -3464,6 +3469,8 @@ and capture = !capture
 and capture_textual = RevList.to_list !capture_textual
 
 and capture_doli = !capture_doli
+
+and parse_doli = !parse_doli
 
 and capture_block_list = !capture_block_list
 

@@ -46,20 +46,20 @@ let keywords =
     ; ("type", TYPE)
     ; ("unreachable", UNREACHABLE)
     ; ("void", VOID)
-    ; ("under", UNDER) (* Doli-specific keywords *)
+    ; ("under", UNDER) (* the below are Doli-specific keywords *)
     ; ("rule", RULE)
     ; ("in", IN)
     ; ("match", MATCH)
     ; ("body", BODYKW)
     ; ("Java", JAVA)
     ; ("ObjectiveC", OBJC)
-    ; ("byte", BYTE) (* Doli basic types *)
+    ; ("byte", BYTE) (* the below are Doli basic types *)
     ; ("short", SHORT)
     ; ("char", CHAR)
     ; ("long", LONG)
     ; ("double", DOUBLE)
     ; ("boolean", BOOLEAN)
-    ; ("public", PUBLIC) (* Doli Java modifiers and throws *)
+    ; ("public", PUBLIC) (* the below are Doli Java modifiers and throws *)
     ; ("protected", PROTECTED)
     ; ("private", PRIVATE)
     ; ("static", STATIC)
@@ -67,9 +67,9 @@ let keywords =
     ; ("final", FINAL)
     ; ("native", NATIVE)
     ; ("throws", THROWS)
-    ; ("super", SUPER) (* Doli generics *)
+    ; ("super", SUPER) (* the below are Doli generics *)
     ; ("objCSignStub", OBJCSIGNSTUB)
-      (* Doli singature stub -- eventually will be replaced and removed *) ]
+      (* above is a Doli singature stub -- eventually will be replaced and removed *) ]
 
 
 let keywords = Map.of_alist_exn (module String) keywords

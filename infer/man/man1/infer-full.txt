@@ -2406,6 +2406,13 @@ INTERNAL OPTIONS
        --oom-threshold-reset
            Cancel the effect of --oom-threshold.
 
+       --parse-doli path
+           Perform parsing on given a .doli file -- no checks on textual, no
+           capture.
+
+       --parse-doli-reset
+           Cancel the effect of --parse-doli.
+
        --print-buckets
            Activates: Show the internal bucket of Infer reports in their
            textual description (Conversely: --no-print-buckets)

@@ -1,0 +1,20 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+rule r41
+in Java match {
+    int method_twice( ) under ClassA
+} body {
+  #entry:
+     ret 55
+ }
+
+ rule r42
+in Java match {
+    int method_twice( ) under ClassA // twice declaration -- should be caught
+} body {
+  #entry:
+     ret 55
+ }
