@@ -791,6 +791,11 @@ module PulseTransferFunctions = struct
             | _ ->
                 ValueHistory.Assignment (loc, timestamp)
           in
+          let astate_n =
+            Exp.program_vars lhs_exp
+            |> Sequence.fold ~init:astate_n ~f:(fun astate_n pvar ->
+                   NonDisjDomain.set_store loc timestamp pvar astate_n )
+          in
           let result =
             let<**> astate, (rhs_addr, rhs_history) =
               PulseOperations.eval path NoAccess loc rhs_exp astate
