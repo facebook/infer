@@ -46,6 +46,13 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
         | _ ->
             None
       in
+      let taint_extra : Jsonbug_t.taint_extra option =
+        match (taint_source, taint_sink, taint_policy_privacy_effect) with
+        | None, None, None ->
+            None
+        | _, _, _ ->
+            Some {taint_source; taint_sink; taint_policy_privacy_effect}
+      in
       let config_usage_extra : Jsonbug_t.config_usage_extra option =
         match diagnostic with
         | ConfigUsage {pname; config; branch_location= {file; line}} ->
@@ -62,10 +69,8 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
         ; cost_degree= None
         ; nullsafe_extra= None
         ; copy_type
-        ; taint_source
-        ; taint_sink
-        ; taint_policy_privacy_effect
-        ; config_usage_extra }
+        ; config_usage_extra
+        ; taint_extra }
     in
     Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic)
       ~ltr:(extra_trace @ get_trace diagnostic)

@@ -102,15 +102,19 @@ type config_usage_extra = {
   line_number: int;
 }
 
+type taint_extra = {
+  ?taint_source : string option;
+  ?taint_sink : string option;
+  ?taint_policy_privacy_effect : string option;
+}
+
 type extra = {
   ?cost_polynomial : string option;
   ?cost_degree : int option;
   ?nullsafe_extra : nullsafe_extra option;
   ?copy_type : string option;
-  ?taint_source : string option;
-  ?taint_sink : string option;
-  ?taint_policy_privacy_effect : string option;
   ?config_usage_extra : config_usage_extra option;
+  ?taint_extra : taint_extra option;
 }
 
 type jsonbug = {
