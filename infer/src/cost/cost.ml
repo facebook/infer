@@ -256,6 +256,7 @@ let compute_errlog_extras cost =
     ; copy_type= None
     ; taint_source= None
     ; taint_sink= None
+    ; taint_policy_privacy_effect= None
     ; config_usage_extra= None }
 
 

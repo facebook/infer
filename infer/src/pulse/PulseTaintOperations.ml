@@ -61,7 +61,8 @@ type sink_policy =
   { source_kinds: Taint.Kind.t list [@ignore]
   ; sanitizer_kinds: Taint.Kind.t list [@ignore]
   ; description: string [@ignore]
-  ; policy_id: int }
+  ; policy_id: int
+  ; privacy_effect: string option [@ignore] }
 [@@deriving equal]
 
 let sink_policies = Hashtbl.create (module Taint.Kind)
@@ -80,14 +81,17 @@ let fill_data_flow_kinds_from_config () =
 
 let fill_policies_from_config () =
   Config.pulse_taint_config.policies
-  |> List.iter ~f:(fun {Pulse_config_j.short_description= description; taint_flows} ->
+  |> List.iter
+       ~f:(fun {Pulse_config_j.short_description= description; taint_flows; privacy_effect} ->
          let policy_id = next_policy_id () in
          List.iter taint_flows ~f:(fun {Pulse_config_j.source_kinds; sanitizer_kinds; sink_kinds} ->
              let source_kinds = List.map source_kinds ~f:Taint.Kind.of_string in
              let sanitizer_kinds = List.map sanitizer_kinds ~f:Taint.Kind.of_string in
              List.iter sink_kinds ~f:(fun sink_kind_s ->
                  let sink_kind = Taint.Kind.of_string sink_kind_s in
-                 let flow = {source_kinds; sanitizer_kinds; description; policy_id} in
+                 let flow =
+                   {source_kinds; sanitizer_kinds; description; policy_id; privacy_effect}
+                 in
                  Hashtbl.update sink_policies sink_kind ~f:(function
                    | None ->
                        [flow]
@@ -105,7 +109,8 @@ let () =
              any Simple sanitizer is in the way"
         ; source_kinds= [simple_kind]
         ; sanitizer_kinds= [simple_kind]
-        ; policy_id= next_policy_id () } ]
+        ; policy_id= next_policy_id ()
+        ; privacy_effect= None } ]
   |> ignore ;
   fill_data_flow_kinds_from_config () ;
   fill_policies_from_config ()
@@ -509,7 +514,7 @@ let check_policies ~sink ~source ~source_times ~sanitizers =
   List.fold sink.Taint.kinds ~init:[] ~f:(fun acc sink_kind ->
       let policies = Hashtbl.find_exn sink_policies sink_kind in
       List.fold policies ~init:acc
-        ~f:(fun acc {source_kinds; sanitizer_kinds; description; policy_id} ->
+        ~f:(fun acc {source_kinds; sanitizer_kinds; description; policy_id; privacy_effect} ->
           match
             List.find source.Taint.kinds ~f:(fun source_kind ->
                 (* We should ignore flows between data-flow-only sources and data-flow-only sinks *)
@@ -532,7 +537,7 @@ let check_policies ~sink ~source ~source_times ~sanitizers =
                   sanitizers
               in
               if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
-                (suspicious_source, sink_kind, description, policy_id) :: acc
+                (suspicious_source, sink_kind, description, policy_id, privacy_effect) :: acc
               else (
                 L.d_printfln ~color:Green "...but sanitized by %a" Attribute.TaintSanitizedSet.pp
                   matching_sanitizers ;
@@ -614,7 +619,8 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
         L.d_printfln_escaped ~color:Red "Found source %a, checking policy..." Taint.pp source ;
         let potential_policy_violations = check_policies ~sink ~source ~source_times ~sanitizers in
         let report_policy_violation reported_so_far
-            (source_kind, sink_kind, policy_description, violated_policy_id) =
+            (source_kind, sink_kind, policy_description, violated_policy_id, policy_privacy_effect)
+            =
           if IntSet.mem violated_policy_id reported_so_far then Ok reported_so_far
           else
             let flow_kind =
@@ -631,7 +637,8 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
                      ; source= ({source with kinds= [source_kind]}, source_hist)
                      ; sink= ({sink with kinds= [sink_kind]}, sink_trace)
                      ; flow_kind
-                     ; policy_description } ) )
+                     ; policy_description
+                     ; policy_privacy_effect } ) )
         in
         PulseResult.list_fold potential_policy_violations ~init:policy_violations_reported
           ~f:report_policy_violation )

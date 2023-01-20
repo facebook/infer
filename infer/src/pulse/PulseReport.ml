@@ -39,6 +39,13 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
         | _ ->
             (None, None)
       in
+      let taint_policy_privacy_effect =
+        match diagnostic with
+        | TaintFlow {flow_kind= TaintedFlow; policy_privacy_effect; _} ->
+            policy_privacy_effect
+        | _ ->
+            None
+      in
       let config_usage_extra : Jsonbug_t.config_usage_extra option =
         match diagnostic with
         | ConfigUsage {pname; config; branch_location= {file; line}} ->
@@ -57,6 +64,7 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
         ; copy_type
         ; taint_source
         ; taint_sink
+        ; taint_policy_privacy_effect
         ; config_usage_extra }
     in
     Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic)

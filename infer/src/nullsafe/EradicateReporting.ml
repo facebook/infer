@@ -32,6 +32,7 @@ let report_error {IntraproceduralAnalysis.proc_desc; tenv; err_log} checker ?(fi
       ; copy_type= None
       ; taint_source= None
       ; taint_sink= None
+      ; taint_policy_privacy_effect= None
       ; config_usage_extra= None }
   in
   let suppressed = Reporting.is_suppressed tenv proc_attrs issue_type ~field_name in

@@ -45,7 +45,8 @@ type data_flow_kinds = string list
 
 type taint_policy = {
   short_description: string;
-  taint_flows: taint_flow list
+  taint_flows: taint_flow list;
+  ?privacy_effect: string option;
 }
 
 type taint_policies = taint_policy list
