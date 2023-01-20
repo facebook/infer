@@ -281,6 +281,49 @@ module BasicString = struct
     PulseOperations.write_id ret_id (string, Hist.add_event path event hist) astate
 
 
+  let iterator_common ((this, _) as this_hist) ((iter, _) as iter_hist) ~desc {path; location}
+      astate =
+    let event = Hist.call_event path location desc in
+    let* astate, backing_ptr =
+      PulseOperations.eval_access path Read location iter_hist
+        (FieldAccess GenericArrayBackedCollection.field) astate
+    in
+    let+ astate, internal_string = to_internal_string path location this_hist astate in
+    let astate =
+      AbductiveDomain.AddressAttributes.add_one iter (PropagateTaintFrom [{v= this}]) astate
+    in
+    (astate, event, backing_ptr, internal_string)
+
+
+  let begin_ this_hist iter_hist ~desc : model =
+   fun ({path; location} as model_data) astate ->
+    let<*> astate, event, backing_ptr, (string, hist) =
+      iterator_common this_hist iter_hist ~desc model_data astate
+    in
+    let<+> astate =
+      PulseOperations.write_deref path location ~ref:backing_ptr
+        ~obj:(string, Hist.add_event path event hist)
+        astate
+    in
+    astate
+
+
+  let end_ this_hist iter_hist ~desc : model =
+   fun ({path; location} as model_data) astate ->
+    let<*> astate, event, backing_ptr, string_hist =
+      iterator_common this_hist iter_hist ~desc model_data astate
+    in
+    let<*> astate, (last, hist) =
+      GenericArrayBackedCollection.eval_pointer_to_last_element path location string_hist astate
+    in
+    let<+> astate =
+      PulseOperations.write_deref path location ~ref:backing_ptr
+        ~obj:(last, Hist.add_event path event hist)
+        astate
+    in
+    astate
+
+
   let destructor this_hist : model =
    fun {path; location} astate ->
     let call_event = Hist.call_event path location "std::basic_string::~basic_string()" in
@@ -610,6 +653,10 @@ let matchers : matcher list =
     $--> BasicString.constructor_from_constant ~desc:"std::basic_string::basic_string()"
   ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
     $--> BasicString.constructor
+  ; -"std" &:: "basic_string" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> BasicString.begin_ ~desc:"std::basic_string::begin()"
+  ; -"std" &:: "basic_string" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> BasicString.end_ ~desc:"std::basic_string::end()"
   ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload
     $--> BasicString.data ~desc:"std::basic_string::data()"
   ; -"std" &:: "basic_string" &:: "empty" <>$ capt_arg_payload $--> BasicString.empty
