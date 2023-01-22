@@ -18,10 +18,15 @@ let issue_type_of_flow_type flow_type =
 
 let jsonbug_filter (jsonbug : Jsonbug_t.jsonbug) ~procname ~flow_type =
   let procname_from_jsonbug =
-    let extract_field (extra : Jsonbug_t.extra) =
-      match flow_type with FromSource -> extra.taint_source | ToSink -> extra.taint_sink
+    let extract_field (taint_extra : Jsonbug_t.taint_extra) =
+      match flow_type with
+      | FromSource ->
+          taint_extra.taint_source
+      | ToSink ->
+          taint_extra.taint_sink
     in
-    Option.bind jsonbug.extras ~f:extract_field
+    let taint_extra = match jsonbug.extras with Some extra -> extra.taint_extra | None -> None in
+    Option.bind taint_extra ~f:extract_field
   in
   let procname_matches = Option.exists procname_from_jsonbug ~f:(String.equal procname) in
   let issue_type_matches =

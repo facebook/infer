@@ -482,6 +482,7 @@ and translate_guard_expression (env : (_, _) Env.t) (expression : Ast.expression
     =
   let id, guard_block = translate_expression_to_fresh_id env expression in
   (* If we'd like to catch "silent" errors later, we might do it here *)
+  let env = update_location expression.location env in
   let unboxed, unbox_block = unbox_bool env (Exp.Var id) in
   (unboxed, Block.all env [guard_block; unbox_block])
 
@@ -1302,7 +1303,8 @@ and translate_body (env : (_, _) Env.t) body : Block.t =
     values on which patterns should be matched have been loaded into the identifiers listed in
     [values]. *)
 and translate_case_clause (env : (_, _) Env.t) (values : Ident.t list)
-    {Ast.location= _; patterns; guards; body} : Block.t =
+    {Ast.location; patterns; guards; body} : Block.t =
+  let env = update_location location env in
   let f (one_value, one_pattern) = translate_pattern env one_value one_pattern in
   let matchers = List.map ~f (List.zip_exn values patterns) in
   let guard_block = translate_guard_sequence env guards in

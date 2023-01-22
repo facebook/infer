@@ -1,7 +1,7 @@
 The purpose of this directory is to test that we can use doli instructions in textual files.
 
-When D42193883 is completed, callingEternals.sil will be using the function defibed
-in exrernal.doli. Currently, it uses the sil-version, in external.sil
+When D42193883 is completed, callingEternals.sil will be using the function defined
+in external.doli. Currently, it uses the sil-version, in external.sil
 
 When D42193883 is completed, we will delete external.sil and only use external.doli.
-We will probably also need to modify the Makefile, so that it also parses external.doli
+We will probably also need to modify the Makefile, so that it also parses external.doli.

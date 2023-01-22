@@ -291,13 +291,13 @@ module Basic = struct
     let candidates = Tenv.find_cpp_constructor analysis_data.tenv class_name in
     match match_args_of_procedures Typ.overloading_resolution actuals candidates with
     | Some constructor ->
-        L.d_printfln "Constructor found: %a" Procname.pp_unique_id constructor ;
+        L.d_printfln_escaped "Constructor found: %a" Procname.pp_unique_id constructor ;
         dispatch_call_eval_args analysis_data path ret exp
           (List.map args ~f:(fun x ->
                (x.PulseAliasSpecialization.FuncArg.exp, x.PulseAliasSpecialization.FuncArg.typ) ) )
           args location CallFlags.default astate (Some constructor)
     | None ->
-        (* In theory, with a precise overloading resolution, it shouldn't go here *)
+        (* A constructor can be not found if it is not in captured data, e.g. standard library. *)
         L.d_printfln "Constructor not found" ;
         astate |> ok_continue
 

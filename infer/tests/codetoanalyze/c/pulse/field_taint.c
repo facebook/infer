@@ -16,6 +16,7 @@ void taint_manipulated(structure);
 void taint_manipulated_with_indirections(structure**);
 
 void sink_int(int);
+void sink_log(int);
 void sink_manipulated(structure);
 
 void sanitize_manipulated(structure);
@@ -93,4 +94,9 @@ void test_taint_field_with_indirections_good(structure s) {
 void test_taint_previously_unaccessed_field_bad(structure s) {
   taint_structure(s);
   sink_int(s.manipulated);
+}
+
+void test_taint_logger_policy(structure s) {
+  taint_manipulated(s);
+  sink_log(s.manipulated);
 }

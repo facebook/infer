@@ -63,6 +63,7 @@ type pulse_taint_config =
 let build_system_exe_assoc =
   [ (BAnt, "ant")
   ; (BBuck, "buck")
+  ; (BBuck, "buck1")
   ; (BBuck2, "buck2")
   ; (BGradle, "gradle")
   ; (BGradle, "gradlew")
@@ -952,6 +953,11 @@ and capture_textual =
 and capture_doli =
   CLOpt.mk_path_opt ~long:"capture-doli" ~meta:"path"
     "Generate models from a DOLI representation given a .doli file."
+
+
+and parse_doli =
+  CLOpt.mk_path_opt ~long:"parse-doli" ~meta:"path"
+    "Perform parsing on given a .doli file -- no checks on textual, no capture."
 
 
 and cfg_json =
@@ -2759,6 +2765,14 @@ and simple_lineage_field_depth =
      field insensitive."
 
 
+and simple_lineage_prevent_cycles =
+  CLOpt.mk_bool ~long:"simple-lineage-prevent-cycles" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "[EXPERIMENTAL] If set, SimpleLineage will stop distinguishing the fields of a variable when \
+     it notices recursive types (that is, a sub-field having the same type as one of its \
+     \"ancestors\")."
+
+
 and simple_lineage_field_width =
   CLOpt.mk_int_opt ~long:"simple-lineage-field-width"
     ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
@@ -3457,6 +3471,8 @@ and capture_textual = RevList.to_list !capture_textual
 
 and capture_doli = !capture_doli
 
+and parse_doli = !parse_doli
+
 and capture_block_list = !capture_block_list
 
 and cfg_json = !cfg_json
@@ -4087,6 +4103,8 @@ and shrink_analysis_db = !shrink_analysis_db
 and simple_lineage_include_builtins = !simple_lineage_include_builtins
 
 and simple_lineage_field_depth = !simple_lineage_field_depth
+
+and simple_lineage_prevent_cycles = !simple_lineage_prevent_cycles
 
 and simple_lineage_field_width = !simple_lineage_field_width
 

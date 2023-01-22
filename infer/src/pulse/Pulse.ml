@@ -377,7 +377,7 @@ module PulseTransferFunctions = struct
     let model =
       match callee_pname with
       | Some callee_pname -> (
-        match DoliParser.matcher callee_pname with
+        match DoliToTextual.matcher callee_pname with
         | Some procname ->
             DoliModel procname
         | None ->
@@ -790,6 +790,11 @@ module PulseTransferFunctions = struct
                 ValueHistory.Returned (loc, timestamp)
             | _ ->
                 ValueHistory.Assignment (loc, timestamp)
+          in
+          let astate_n =
+            Exp.program_vars lhs_exp
+            |> Sequence.fold ~init:astate_n ~f:(fun astate_n pvar ->
+                   NonDisjDomain.set_store loc timestamp pvar astate_n )
           in
           let result =
             let<**> astate, (rhs_addr, rhs_history) =

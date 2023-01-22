@@ -433,7 +433,7 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
         exec_states astate
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
-      L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
+      L.d_printfln_escaped "No spec found for %a@\n" Procname.pp callee_pname ;
       let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
       let<**> astate_unknown =
         PulseOperations.conservatively_initialize_args arg_values astate

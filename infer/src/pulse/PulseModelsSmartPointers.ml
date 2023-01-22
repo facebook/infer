@@ -492,7 +492,8 @@ module UniquePtr = struct
         in
         Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate
     | _ ->
-        L.die InternalError "Cannot find template arguments"
+        L.internal_error "Cannot find template arguments@." ;
+        Basic.ok_continue astate
 
 
   let default_reset (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) ~desc : model =

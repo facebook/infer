@@ -820,6 +820,12 @@ let __array_access = Builtin.register BuiltinDecl.__array_access execute_skip
 
 let __assert_fail = Builtin.register BuiltinDecl.__assert_fail execute___assert_fail
 
+let __builtin_add_overflow = Builtin.register BuiltinDecl.__builtin_add_overflow execute_skip
+
+let __builtin_mul_overflow = Builtin.register BuiltinDecl.__builtin_mul_overflow execute_skip
+
+let __builtin_sub_overflow = Builtin.register BuiltinDecl.__builtin_sub_overflow execute_skip
+
 let __builtin_va_arg = Builtin.register BuiltinDecl.__builtin_va_arg execute___builtin_va_arg
 
 let __builtin_va_copy = Builtin.register BuiltinDecl.__builtin_va_copy execute_skip

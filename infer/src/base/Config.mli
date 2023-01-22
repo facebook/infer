@@ -221,6 +221,8 @@ val capture_textual : string list
 
 val capture_doli : string option
 
+val parse_doli : string option
+
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
 val cfg_json : string option
@@ -701,6 +703,8 @@ val shrink_analysis_db : bool
 val simple_lineage_include_builtins : bool
 
 val simple_lineage_field_depth : int
+
+val simple_lineage_prevent_cycles : bool
 
 val simple_lineage_field_width : int option
 
