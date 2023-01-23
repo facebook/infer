@@ -26,6 +26,9 @@ module Deps : sig
 
   val record : Procname.t -> SourceFile.t -> unit
   (** Record a dependency from a [proc_name] upon the type environment of some [source_file] *)
+
+  val clear : unit -> unit
+  (** drop all currently-recorded dependency edges to reclaim memory *)
 end = struct
   let currently_under_analysis : Procname.t option ref = ref None
 
@@ -51,6 +54,9 @@ end = struct
         Procname.Hash.add recorded_dependencies pname (SourceFile.Set.singleton file)
     | Some files ->
         Procname.Hash.replace recorded_dependencies pname (SourceFile.Set.add file files)
+
+
+  let clear () = Procname.Hash.clear recorded_dependencies
 end
 
 (** Type for type environment. *)
