@@ -1,1 +1,0 @@
-codetoanalyze/erlang/topl/reach/reach.erl, test_c_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to source/0,call to source/0,call to sink/1]
