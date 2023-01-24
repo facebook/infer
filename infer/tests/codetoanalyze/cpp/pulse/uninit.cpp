@@ -105,6 +105,15 @@ class Uninit {
   void call_get_MyClass_feasible_default_bad() {
     int x = get_MyClass_feasible_default().i;
   }
+
+  std::function<MyClass()> unknown;
+
+  MyClass havoc_return_param() { return unknown(); }
+
+  int call_havoc_return_param_ok() {
+    MyClass x = havoc_return_param();
+    return x.i;
+  }
 };
 
 class Uninit2 {

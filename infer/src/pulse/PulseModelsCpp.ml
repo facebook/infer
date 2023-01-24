@@ -372,11 +372,10 @@ end
 module Function = struct
   let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
       model =
-   fun {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate ->
-    let havoc_ret (ret_id, _) astate =
-      let event = Hist.call_event path location "std::function::operator()" in
-      [PulseOperations.havoc_id ret_id (Hist.single_event path event) astate]
-    in
+   fun { path
+       ; analysis_data= {analyze_dependency; tenv; proc_desc}
+       ; location
+       ; ret= (ret_id, _) as ret } astate ->
     let<*> astate, (lambda, _) =
       PulseOperations.eval_access path Read location lambda_ptr_hist Dereference astate
     in
@@ -384,7 +383,16 @@ module Function = struct
     match AddressAttributes.get_closure_proc_name lambda astate with
     | None ->
         (* we don't know what proc name this lambda resolves to *)
-        havoc_ret ret astate |> List.map ~f:(fun astate -> Ok (ContinueProgram astate))
+        let desc = "std::function::operator()" in
+        let hist = Hist.single_event path (Hist.call_event path location desc) in
+        let astate = PulseOperations.havoc_id ret_id hist astate in
+        let astate =
+          let unknown_effect = Attribute.UnknownEffect (Model desc, hist) in
+          List.fold actuals ~init:astate
+            ~f:(fun acc ProcnameDispatcher.Call.FuncArg.{arg_payload= actual, _} ->
+              AddressAttributes.add_one actual unknown_effect acc )
+        in
+        [Ok (ContinueProgram astate)]
     | Some callee_proc_name ->
         let actuals =
           (lambda_ptr_hist, typ)
