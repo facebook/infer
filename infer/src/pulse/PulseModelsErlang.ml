@@ -12,6 +12,11 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 
+(** Represents the result of a transfer function that may (a) nondeterministically split the state,
+    and (b) some of the nondeterministic branches may be errors. Goes well with [let>] defined later
+    in this file. *)
+type 'ok result = 'ok AccessResult.t list
+
 (** A type for transfer functions that make an object, add it to abstract state
     ([AbductiveDomain.t]), and return a handle to it ([(AbstractValue.t * ValueHistory.t)]). Note
     that the type is simlar to that of [PulseOperations.eval]. *)
@@ -95,6 +100,24 @@ let ( let> ) x f =
     x
 
 
+let result_fold list ~init ~f =
+  let init = [Ok init] in
+  let f result x =
+    let> ok = result in
+    f ok x
+  in
+  List.fold list ~init ~f
+
+
+let result_foldi list ~init ~f =
+  let init = [Ok init] in
+  let f index result x =
+    let> ok = result in
+    f index ok x
+  in
+  List.foldi list ~init ~f
+
+
 (** Builds as an abstract value the truth value of the predicate "The value given as an argument as
     the erlang type given as the other argument" *)
 let has_erlang_type value typ : value_maker =
@@ -105,7 +128,7 @@ let has_erlang_type value typ : value_maker =
   (astate, instanceof_val)
 
 
-let prune_type path location (value, hist) typ astate : AbductiveDomain.t AccessResult.t list =
+let prune_type path location (value, hist) typ astate : AbductiveDomain.t result =
   (let open SatUnsat.Import in
   let* astate =
     (* If check_addr_access fails, we stop exploring this path by marking it [Unsat] *)
@@ -240,6 +263,8 @@ end
 module Integers = struct
   let value_field = Fieldname.make (ErlangType Integer) ErlangTypeName.integer_value
 
+  let typ = Typ.mk_struct (ErlangType Integer)
+
   let make_raw location path value : sat_maker =
    fun astate ->
     let hist = Hist.single_alloc path location "integer" in
@@ -249,7 +274,7 @@ module Integers = struct
         ~field_addr:(AbstractValue.mk_fresh (), hist)
         ~field_val:value value_field astate
     in
-    (PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Integer)) (fst addr) astate, addr)
+    (PulseOperations.add_dynamic_type typ (fst addr) astate, addr)
 
 
   let make value : model =
@@ -690,6 +715,13 @@ module Lists = struct
 end
 
 module Tuples = struct
+  let typ size = Typ.ErlangType (Tuple size)
+
+  let field_name size index =
+    if not (1 <= index && index <= size) then L.die InternalError "Erlang tuples are 1-indexed"
+    else Fieldname.make (typ size) (ErlangTypeName.tuple_elem index)
+
+
   (** Helper: Like [Tuples.make] but with a more precise/composable type. *)
   let make_raw (location : Location.t) (path : PathContext.t)
       (args : (AbstractValue.t * ValueHistory.t) list) : sat_maker =
@@ -1020,7 +1052,11 @@ module Custom = struct
         [@name "MFA"]
   [@@deriving of_yojson]
 
-  type behavior = ReturnValue of erlang_value [@@deriving of_yojson]
+  type arguments_return = {arguments: erlang_value list; return: erlang_value}
+  [@@deriving of_yojson]
+
+  type behavior = ReturnValue of erlang_value | ArgumentsReturnList of arguments_return list
+  [@@deriving of_yojson]
 
   type rule = {selector: selector; behavior: behavior} [@@deriving of_yojson]
 
@@ -1093,8 +1129,82 @@ module Custom = struct
     PulseOperations.write_id ret_id ret astate
 
 
-  let make_model behavior _args : model =
-    match behavior with ReturnValue ret_val -> return_value_model ret_val
+  let rec argument_value_helper path location actual_arg (pre_arg : erlang_value) astate :
+      AbductiveDomain.t result =
+    match pre_arg with
+    | None ->
+        [Ok astate]
+    | Some (Atom None) ->
+        prune_type path location actual_arg Atom astate
+    | Some (Atom (Some name)) ->
+        let> astate = prune_type path location actual_arg Atom astate in
+        let astate, _, (arg_hash, _hist) =
+          load_field path Atoms.hash_field location actual_arg astate
+        in
+        let name_hash : Const.t = Cint (IntLit.of_int (ErlangTypeName.calculate_hash name)) in
+        PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand arg_hash)
+          (ConstOperand name_hash) astate
+        |> SatUnsat.to_list
+    | Some (IntLit intlit) ->
+        let> astate = prune_type path location actual_arg Integer astate in
+        let astate, _, (value, _hist) =
+          load_field path Integers.value_field location actual_arg astate
+        in
+        PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand value)
+          (ConstOperand (Cint (IntLit.of_string intlit)))
+          astate
+        |> SatUnsat.to_list
+    | Some (Tuple elements) ->
+        let size = List.length elements in
+        let> astate = prune_type path location actual_arg (Tuple size) astate in
+        let one_element index astate pattern =
+          let field = Tuples.field_name size (index + 1) in
+          let astate, _, argi = load_field path field location actual_arg astate in
+          argument_value_helper path location argi pattern astate
+        in
+        result_foldi elements ~init:astate ~f:one_element
+    | Some (List elements) ->
+        let rec go value elements astate =
+          match elements with
+          | [] ->
+              prune_type path location value Nil astate
+          | element :: rest ->
+              let> head, tail, astate = Lists.load_head_tail value astate path location in
+              let> astate = argument_value_helper path location head element astate in
+              go tail rest astate
+        in
+        go actual_arg elements astate
+
+
+  let arguments_return_model args (summaries : arguments_return list) : model =
+   fun {location; path; ret= ret_id, _} astate ->
+    let get_payload (arg : 'a ProcnameDispatcher.Call.FuncArg.t) = arg.arg_payload in
+    let actual_arguments = args |> List.map ~f:get_payload in
+    let one_summary {arguments; return} =
+      let one_arg astate (actual_arg, pre_arg) =
+        argument_value_helper path location actual_arg pre_arg astate
+      in
+      let paired =
+        match List.zip actual_arguments arguments with
+        | Unequal_lengths ->
+            L.internal_error "Matched wrong arity (or model has wrong arity)." ;
+            []
+        | Ok result ->
+            result
+      in
+      let> astate = result_fold paired ~init:astate ~f:one_arg in
+      let> astate, ret = return_value_helper location path return astate |> SatUnsat.to_list in
+      [Ok (PulseOperations.write_id ret_id ret astate)]
+    in
+    List.concat_map ~f:one_summary summaries |> List.map ~f:Basic.map_continue
+
+
+  let make_model behavior args : model =
+    match behavior with
+    | ReturnValue ret_val ->
+        return_value_model ret_val
+    | ArgumentsReturnList arguments_return_list ->
+        arguments_return_model args arguments_return_list
 
 
   let matcher_of_rule {selector; behavior} = make_selector selector (make_model behavior)
