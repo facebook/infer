@@ -185,6 +185,9 @@ module BuildMethodSignature = struct
     let params = get_parameters qual_type_to_sil_type tenv ~block_return_type method_decl in
     let attributes = decl_info.Clang_ast_t.di_attributes in
     let is_cpp_virtual = CMethodProperties.is_cpp_virtual method_decl in
+    let is_cpp_copy_assignment = CMethodProperties.is_cpp_copy_assignment method_decl in
+    let is_cpp_copy_ctor = CMethodProperties.is_cpp_copy_ctor method_decl in
+    let is_cpp_implicit = CAst_utils.is_cpp_implicit_decl method_decl in
     let is_no_return = CMethodProperties.is_no_return method_decl in
     let is_variadic = CMethodProperties.is_variadic method_decl in
     let access = decl_info.Clang_ast_t.di_access in
@@ -193,6 +196,9 @@ module BuildMethodSignature = struct
     ; access
     ; class_param
     ; params
+    ; is_cpp_copy_assignment
+    ; is_cpp_copy_ctor
+    ; is_cpp_implicit
     ; ret_type= (ret_type, ret_typ_annot)
     ; is_ret_type_pod
     ; is_ret_constexpr
@@ -616,19 +622,16 @@ and mk_c_function ?tenv name function_decl_info_opt parameters =
   else Procname.C (Procname.C.c name mangled parameters template_info)
 
 
-and mk_cpp_method ~is_copy_assignment ?tenv class_name method_name ?meth_decl mangled parameters =
+and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =
   let open Clang_ast_t in
   let method_kind =
     match meth_decl with
-    | Some
-        ( Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_copy_constructor= is_copy_ctor}) as
-        decl ) ->
-        let is_implicit = CAst_utils.is_implicit_decl decl in
-        Procname.ObjC_Cpp.CPPConstructor {mangled; is_copy_ctor; is_implicit}
+    | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, _)) ->
+        Procname.ObjC_Cpp.CPPConstructor mangled
     | Some (Clang_ast_t.CXXDestructorDecl _) ->
-        Procname.ObjC_Cpp.CPPDestructor {mangled}
+        Procname.ObjC_Cpp.CPPDestructor mangled
     | _ ->
-        Procname.ObjC_Cpp.CPPMethod {mangled; is_copy_assignment}
+        Procname.ObjC_Cpp.CPPMethod mangled
   in
   let template_info =
     match meth_decl with
@@ -695,8 +698,7 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
     let mangled = get_mangled_method_name fdi mdi in
     let method_name = CAst_utils.get_unqualified_name name_info in
     let class_typename = get_class_typename ?tenv decl_info in
-    let is_copy_assignment = mdi.xmdi_is_copy_assignment in
-    mk_cpp_method ~is_copy_assignment ?tenv class_typename method_name ~meth_decl mangled parameters
+    mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled parameters
   in
   match meth_decl with
   | FunctionDecl (decl_info, name_info, _, fdi) ->
@@ -814,7 +816,7 @@ module CProcname = struct
 
 
     let cpp_method_of_string tenv class_name method_name =
-      mk_cpp_method ~is_copy_assignment:false ~tenv class_name method_name None []
+      mk_cpp_method ~tenv class_name method_name None []
 
 
     let objc_method_of_string_kind class_name method_name method_kind =

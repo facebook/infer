@@ -338,10 +338,12 @@ module Parameter = struct
 end
 
 module ObjC_Cpp = struct
+  type mangled = string option [@@deriving compare, equal, yojson_of, sexp, hash]
+
   type kind =
-    | CPPMethod of {mangled: string option; is_copy_assignment: bool}
-    | CPPConstructor of {mangled: string option; is_copy_ctor: bool; is_implicit: bool}
-    | CPPDestructor of {mangled: string option}
+    | CPPMethod of mangled
+    | CPPConstructor of mangled
+    | CPPDestructor of mangled
     | ObjCClassMethod
     | ObjCInstanceMethod
   [@@deriving compare, equal, yojson_of, sexp, hash]
@@ -376,18 +378,6 @@ module ObjC_Cpp = struct
     if is_instance then ObjCInstanceMethod else ObjCClassMethod
 
 
-  let is_copy_assignment {kind} =
-    match kind with CPPMethod {is_copy_assignment} -> is_copy_assignment | _ -> false
-
-
-  let is_copy_ctor {kind} =
-    match kind with CPPConstructor {is_copy_ctor} -> is_copy_ctor | _ -> false
-
-
-  let is_implicit_ctor {kind} =
-    match kind with CPPConstructor {is_implicit} -> is_implicit | _ -> false
-
-
   let is_prefix_init s = String.is_prefix ~prefix:"init" s
 
   let is_objc_constructor method_name = String.equal method_name "new" || is_prefix_init method_name
@@ -412,12 +402,10 @@ module ObjC_Cpp = struct
   let is_cpp_lambda {method_name} = String.is_substring ~substring:"operator()" method_name
 
   let pp_verbose_kind fmt = function
-    | CPPMethod {mangled} | CPPDestructor {mangled} ->
+    | CPPMethod mangled | CPPDestructor mangled ->
         F.fprintf fmt "(%s)" (Option.value ~default:"" mangled)
-    | CPPConstructor {mangled; is_copy_ctor} ->
-        F.fprintf fmt "{%s}%s"
-          (if is_copy_ctor then "[copy_ctor]" else "")
-          (Option.value ~default:"" mangled)
+    | CPPConstructor mangled ->
+        F.fprintf fmt "{%s}" (Option.value ~default:"" mangled)
     | ObjCClassMethod ->
         F.pp_print_string fmt "[class]"
     | ObjCInstanceMethod ->
@@ -799,34 +787,10 @@ let rec base_of = function
 
 let is_std_move t = match base_of t with C c_pname -> C.is_std_move c_pname | _ -> false
 
-let is_copy_assignment t =
-  match base_of t with
-  | ObjC_Cpp objc_cpp_pname ->
-      ObjC_Cpp.is_copy_assignment objc_cpp_pname
-  | _ ->
-      false
-
-
-let is_copy_ctor t =
-  match base_of t with
-  | ObjC_Cpp objc_cpp_pname ->
-      ObjC_Cpp.is_copy_ctor objc_cpp_pname
-  | _ ->
-      false
-
-
 let is_cpp_assignment_operator t =
   match base_of t with
   | ObjC_Cpp name when String.equal name.method_name "operator=" ->
       true
-  | _ ->
-      false
-
-
-let is_implicit_ctor t =
-  match base_of t with
-  | ObjC_Cpp objc_cpp_pname ->
-      ObjC_Cpp.is_implicit_ctor objc_cpp_pname
   | _ ->
       false
 

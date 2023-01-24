@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module IRAttributes = Attributes
 open PulseBasicInterface
 module BaseMemory = PulseBaseMemory
 module DecompilerExpr = PulseDecompilerExpr
@@ -189,9 +190,12 @@ module CalleeWithUnknown = struct
 
   let is_copy_to_field_or_global = function
     | V {copy_tgt= Some (Lindex _ | Lfield _); callee} ->
-        Procname.is_copy_assignment callee || Procname.is_copy_ctor callee
+        Option.exists (IRAttributes.load callee) ~f:(fun attrs ->
+            attrs.ProcAttributes.is_cpp_copy_assignment || attrs.ProcAttributes.is_cpp_copy_ctor )
     | V {copy_tgt= Some (Lvar pvar); callee} ->
-        Pvar.is_global pvar && Procname.is_copy_assignment callee
+        Pvar.is_global pvar
+        && Option.exists (IRAttributes.load callee) ~f:(fun attrs ->
+               attrs.ProcAttributes.is_cpp_copy_assignment )
     | V _ ->
         false
     | Unknown ->
@@ -528,7 +532,10 @@ let set_passed_to_elt loc timestamp call_exp actuals ({loads; passed_to} as asta
     | Const (Cfun callee) | Closure {name= callee} ->
         let copy_tgt =
           match actuals with
-          | (tgt, _) :: _ when Procname.is_copy_ctor callee || Procname.is_copy_assignment callee ->
+          | (tgt, _) :: _
+            when Option.exists (IRAttributes.load callee) ~f:(fun attrs ->
+                     attrs.ProcAttributes.is_cpp_copy_ctor
+                     || attrs.ProcAttributes.is_cpp_copy_assignment ) ->
               Some tgt
           | _ ->
               None

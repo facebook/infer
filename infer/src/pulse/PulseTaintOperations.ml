@@ -923,7 +923,8 @@ let pulse_models_to_treat_as_unknown_for_taint =
 let should_treat_as_unknown_for_taint tenv proc_name =
   (* HACK: we already have a function for matching procedure names so just re-use it even though we
      don't need its full power *)
-  Procname.is_implicit_ctor proc_name
+  Option.exists (IRAttributes.load proc_name) ~f:(fun attrs -> attrs.ProcAttributes.is_cpp_implicit)
+  && Procname.is_constructor proc_name
   || procedure_matches tenv pulse_models_to_treat_as_unknown_for_taint proc_name []
      |> List.is_empty |> not
 

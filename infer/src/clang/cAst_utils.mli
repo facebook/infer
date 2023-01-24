@@ -91,7 +91,7 @@ val get_cxx_virtual_base_classes : Clang_ast_t.decl -> Clang_ast_t.type_ptr list
 
 val is_no_escape_block_arg : Clang_ast_t.decl -> bool
 
-val is_implicit_decl : Clang_ast_t.decl -> bool
+val is_cpp_implicit_decl : Clang_ast_t.decl -> bool
 
 val get_superclass_curr_class_objc_from_decl : Clang_ast_t.decl -> Clang_ast_t.decl_ref option
 

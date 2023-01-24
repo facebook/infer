@@ -94,7 +94,10 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
         in
         if
           Option.exists callee_pname_opt ~f:(fun p ->
-              Procname.is_constructor p || Procname.is_copy_assignment p || Procname.is_destructor p )
+              Procname.is_constructor p
+              || Option.exists (IRAttributes.load p) ~f:(fun attrs ->
+                     attrs.ProcAttributes.is_cpp_copy_assignment )
+              || Procname.is_destructor p )
         then astate
         else
           (* record the [WrittenTo] attribute for all reachable values

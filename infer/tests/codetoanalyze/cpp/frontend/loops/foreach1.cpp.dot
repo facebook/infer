@@ -142,43 +142,43 @@ digraph cfg {
 	
 
 	 "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_4" -> "operator*#iterator#(14296957122470685412).e3f593369544fc43a253ad1e4f5ed136_2" ;
-"iterator#iterator#{[copy_ctor]}6263800793583893213.67e69b7d82707760b2e4fd35827eeeda_1" [label="1: Start iterator::iterator\nFormals:  this:iterator* __param_0:iterator const &\nLocals:  \n  " color=yellow style=filled]
+"iterator#iterator#{6263800793583893213}.2925417e565733c02897725a022607ab_1" [label="1: Start iterator::iterator\nFormals:  this:iterator* __param_0:iterator const &\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "iterator#iterator#{[copy_ctor]}6263800793583893213.67e69b7d82707760b2e4fd35827eeeda_1" -> "iterator#iterator#{[copy_ctor]}6263800793583893213.67e69b7d82707760b2e4fd35827eeeda_3" ;
-"iterator#iterator#{[copy_ctor]}6263800793583893213.67e69b7d82707760b2e4fd35827eeeda_2" [label="2: Exit iterator::iterator \n  " color=yellow style=filled]
+	 "iterator#iterator#{6263800793583893213}.2925417e565733c02897725a022607ab_1" -> "iterator#iterator#{6263800793583893213}.2925417e565733c02897725a022607ab_3" ;
+"iterator#iterator#{6263800793583893213}.2925417e565733c02897725a022607ab_2" [label="2: Exit iterator::iterator \n  " color=yellow style=filled]
 	
 
-"iterator#iterator#{[copy_ctor]}6263800793583893213.67e69b7d82707760b2e4fd35827eeeda_3" [label="3:  Constructor Init \n   n$1=*&this:iterator* [line 9, column 8]\n " shape="box"]
+"iterator#iterator#{6263800793583893213}.2925417e565733c02897725a022607ab_3" [label="3:  Constructor Init \n   n$1=*&this:iterator* [line 9, column 8]\n " shape="box"]
 	
 
-	 "iterator#iterator#{[copy_ctor]}6263800793583893213.67e69b7d82707760b2e4fd35827eeeda_3" -> "iterator#iterator#{[copy_ctor]}6263800793583893213.67e69b7d82707760b2e4fd35827eeeda_4" ;
-"iterator#iterator#{[copy_ctor]}6263800793583893213.67e69b7d82707760b2e4fd35827eeeda_4" [label="4:  Constructor Init \n   n$2=*&__param_0:iterator const & [line 9, column 8]\n  n$3=*n$2.val:int [line 9, column 8]\n  *n$1.val:int=n$3 [line 9, column 8]\n " shape="box"]
+	 "iterator#iterator#{6263800793583893213}.2925417e565733c02897725a022607ab_3" -> "iterator#iterator#{6263800793583893213}.2925417e565733c02897725a022607ab_4" ;
+"iterator#iterator#{6263800793583893213}.2925417e565733c02897725a022607ab_4" [label="4:  Constructor Init \n   n$2=*&__param_0:iterator const & [line 9, column 8]\n  n$3=*n$2.val:int [line 9, column 8]\n  *n$1.val:int=n$3 [line 9, column 8]\n " shape="box"]
 	
 
-	 "iterator#iterator#{[copy_ctor]}6263800793583893213.67e69b7d82707760b2e4fd35827eeeda_4" -> "iterator#iterator#{[copy_ctor]}6263800793583893213.67e69b7d82707760b2e4fd35827eeeda_2" ;
-"iterator#iterator#{}653730785817818446.120c55fc49ab5dc1dd472bca7529b8c4_1" [label="1: Start iterator::iterator\nFormals:  this:iterator*\nLocals:  \n  " color=yellow style=filled]
+	 "iterator#iterator#{6263800793583893213}.2925417e565733c02897725a022607ab_4" -> "iterator#iterator#{6263800793583893213}.2925417e565733c02897725a022607ab_2" ;
+"iterator#iterator#{653730785817818446}.63d1626384a198c721f31181f019c163_1" [label="1: Start iterator::iterator\nFormals:  this:iterator*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "iterator#iterator#{}653730785817818446.120c55fc49ab5dc1dd472bca7529b8c4_1" -> "iterator#iterator#{}653730785817818446.120c55fc49ab5dc1dd472bca7529b8c4_2" ;
-"iterator#iterator#{}653730785817818446.120c55fc49ab5dc1dd472bca7529b8c4_2" [label="2: Exit iterator::iterator \n  " color=yellow style=filled]
+	 "iterator#iterator#{653730785817818446}.63d1626384a198c721f31181f019c163_1" -> "iterator#iterator#{653730785817818446}.63d1626384a198c721f31181f019c163_2" ;
+"iterator#iterator#{653730785817818446}.63d1626384a198c721f31181f019c163_2" [label="2: Exit iterator::iterator \n  " color=yellow style=filled]
 	
 
-"iterator#iterator#{}733828176452420883.e126ede768031ba3d05c971a459e5034_1" [label="1: Start iterator::iterator\nFormals:  this:iterator* __param_0:iterator&&\nLocals:  \n  " color=yellow style=filled]
+"iterator#iterator#{733828176452420883}.61dfc7a691ff5e9a9f581f45331e0324_1" [label="1: Start iterator::iterator\nFormals:  this:iterator* __param_0:iterator&&\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "iterator#iterator#{}733828176452420883.e126ede768031ba3d05c971a459e5034_1" -> "iterator#iterator#{}733828176452420883.e126ede768031ba3d05c971a459e5034_3" ;
-"iterator#iterator#{}733828176452420883.e126ede768031ba3d05c971a459e5034_2" [label="2: Exit iterator::iterator \n  " color=yellow style=filled]
+	 "iterator#iterator#{733828176452420883}.61dfc7a691ff5e9a9f581f45331e0324_1" -> "iterator#iterator#{733828176452420883}.61dfc7a691ff5e9a9f581f45331e0324_3" ;
+"iterator#iterator#{733828176452420883}.61dfc7a691ff5e9a9f581f45331e0324_2" [label="2: Exit iterator::iterator \n  " color=yellow style=filled]
 	
 
-"iterator#iterator#{}733828176452420883.e126ede768031ba3d05c971a459e5034_3" [label="3:  Constructor Init \n   n$1=*&this:iterator* [line 9, column 8]\n " shape="box"]
+"iterator#iterator#{733828176452420883}.61dfc7a691ff5e9a9f581f45331e0324_3" [label="3:  Constructor Init \n   n$1=*&this:iterator* [line 9, column 8]\n " shape="box"]
 	
 
-	 "iterator#iterator#{}733828176452420883.e126ede768031ba3d05c971a459e5034_3" -> "iterator#iterator#{}733828176452420883.e126ede768031ba3d05c971a459e5034_4" ;
-"iterator#iterator#{}733828176452420883.e126ede768031ba3d05c971a459e5034_4" [label="4:  Constructor Init \n   n$2=*&__param_0:iterator&& [line 9, column 8]\n  n$3=*n$2.val:int [line 9, column 8]\n  *n$1.val:int=n$3 [line 9, column 8]\n " shape="box"]
+	 "iterator#iterator#{733828176452420883}.61dfc7a691ff5e9a9f581f45331e0324_3" -> "iterator#iterator#{733828176452420883}.61dfc7a691ff5e9a9f581f45331e0324_4" ;
+"iterator#iterator#{733828176452420883}.61dfc7a691ff5e9a9f581f45331e0324_4" [label="4:  Constructor Init \n   n$2=*&__param_0:iterator&& [line 9, column 8]\n  n$3=*n$2.val:int [line 9, column 8]\n  *n$1.val:int=n$3 [line 9, column 8]\n " shape="box"]
 	
 
-	 "iterator#iterator#{}733828176452420883.e126ede768031ba3d05c971a459e5034_4" -> "iterator#iterator#{}733828176452420883.e126ede768031ba3d05c971a459e5034_2" ;
+	 "iterator#iterator#{733828176452420883}.61dfc7a691ff5e9a9f581f45331e0324_4" -> "iterator#iterator#{733828176452420883}.61dfc7a691ff5e9a9f581f45331e0324_2" ;
 "end#vec(class iterator)#(14240882620331653738).aed9da65654959634fd17d4511cfa44d_1" [label="1: Start vec::end\nFormals:  this:vec* __return_param:iterator*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -217,35 +217,35 @@ digraph cfg {
 	
 
 	 "begin#vec(class iterator)#(1866137161906470488).407edea568a869b61c9e5e8424e0b5f7_5" -> "begin#vec(class iterator)#(1866137161906470488).407edea568a869b61c9e5e8424e0b5f7_2" ;
-"vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_1" [label="1: Start vec::vec\nFormals:  this:vec* size:int\nLocals:  \n  " color=yellow style=filled]
+"vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_1" [label="1: Start vec::vec\nFormals:  this:vec* size:int\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_1" -> "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_7" ;
-"vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_2" [label="2: Exit vec::vec \n  " color=yellow style=filled]
+	 "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_1" -> "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_7" ;
+"vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_2" [label="2: Exit vec::vec \n  " color=yellow style=filled]
 	
 
-"vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:vec* [line 24, column 5]\n  n$1=*&size:int [line 24, column 16]\n  *n$0.end_.val:int=n$1 [line 24, column 5]\n " shape="box"]
+"vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:vec* [line 24, column 5]\n  n$1=*&size:int [line 24, column 16]\n  *n$0.end_.val:int=n$1 [line 24, column 5]\n " shape="box"]
 	
 
-	 "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_3" -> "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_2" ;
-"vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&this:vec* [line 23, column 5]\n  *n$2.begin_.val:int=0 [line 23, column 5]\n " shape="box"]
+	 "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_3" -> "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_2" ;
+"vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&this:vec* [line 23, column 5]\n  *n$2.begin_.val:int=0 [line 23, column 5]\n " shape="box"]
 	
 
-	 "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_4" -> "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_3" ;
-"vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_5" [label="5:  Constructor Init \n   n$3=*&this:vec* [line 22, column 3]\n " shape="box"]
+	 "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_4" -> "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_3" ;
+"vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_5" [label="5:  Constructor Init \n   n$3=*&this:vec* [line 22, column 3]\n " shape="box"]
 	
 
-	 "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_5" -> "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_6" ;
-"vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_6" [label="6:  Constructor Init \n   n$4=_fun_iterator::iterator(n$3.end_:iterator*) [line 22, column 3]\n " shape="box"]
+	 "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_5" -> "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_6" ;
+"vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_6" [label="6:  Constructor Init \n   n$4=_fun_iterator::iterator(n$3.end_:iterator*) [line 22, column 3]\n " shape="box"]
 	
 
-	 "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_6" -> "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_4" ;
-"vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_7" [label="7:  Constructor Init \n   n$5=*&this:vec* [line 22, column 3]\n " shape="box"]
+	 "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_6" -> "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_4" ;
+"vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_7" [label="7:  Constructor Init \n   n$5=*&this:vec* [line 22, column 3]\n " shape="box"]
 	
 
-	 "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_7" -> "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_8" ;
-"vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_8" [label="8:  Constructor Init \n   n$6=_fun_iterator::iterator(n$5.begin_:iterator*) [line 22, column 3]\n " shape="box"]
+	 "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_7" -> "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_8" ;
+"vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_8" [label="8:  Constructor Init \n   n$6=_fun_iterator::iterator(n$5.begin_:iterator*) [line 22, column 3]\n " shape="box"]
 	
 
-	 "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_8" -> "vec#vec#{}14372719777012317208.311479a3075adce85ca95c3de5e3c5ea_5" ;
+	 "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_8" -> "vec#vec#{14372719777012317208}.d88ff419231dda7ed4b627518fd1a9fb_5" ;
 }
