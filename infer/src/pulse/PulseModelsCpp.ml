@@ -653,6 +653,7 @@ let matchers : matcher list =
     <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> sub_overflow
   ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
   ; +BuiltinDecl.(match_builtin __delete_array) <>$ capt_arg $--> delete_array
+  ; +BuiltinDecl.(match_builtin __infer_skip) &--> Basic.skip
   ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
   ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array
   ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new

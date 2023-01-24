@@ -189,4 +189,9 @@ void modify_string(std::string& s) {
 }
 
 void call_modify_string_ok(std::string s) { modify_string(s); }
+
+void void_cast(std::string* s) { (void)s; }
+
+void call_void_cast_bad(std::string s) { void_cast(&s); }
+
 } // namespace const_refable
