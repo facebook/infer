@@ -27,6 +27,7 @@ CXX := @CXX@
 CXXFLAGS := @CXXFLAGS@
 # this is useless but autoconf is picky...
 datarootdir = @datarootdir@
+DIFF_CAN_FORMAT := @DIFF_CAN_FORMAT@
 EMACS := @EMACS@
 ENABLE_OCAMLOPT_CUSTOM_CC := @ENABLE_OCAMLOPT_CUSTOM_CC@
 ENABLE_OCAML_BINANNOT := @ENABLE_OCAML_BINANNOT@
