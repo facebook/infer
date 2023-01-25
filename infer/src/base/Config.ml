@@ -2479,6 +2479,12 @@ and pulse_nullsafe_report_npe =
     "Report null dereference issues on files marked @Nullsafe."
 
 
+and pulse_log_summary_count =
+  CLOpt.mk_bool ~long:"pulse-log-summary-count"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Log the number of summaries for each analyzed procedure in Pulse"
+
+
 and pure_by_default =
   CLOpt.mk_bool ~long:"pure-by-default" ~default:false
     "[Purity]Consider unknown functions to be pure by default"
@@ -3926,6 +3932,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
 and pulse_models_for_erlang = !pulse_models_for_erlang
 
 and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
+
+and pulse_log_summary_count = !pulse_log_summary_count
 
 and pulse_prevent_non_disj_top = !pulse_prevent_non_disj_top
 

@@ -1169,30 +1169,34 @@ let rec pp_unique_id fmt = function
 let to_unique_id proc_name = F.asprintf "%a" pp_unique_id proc_name
 
 (** Convert a proc name to a string for the user to see *)
-let rec pp fmt = function
+let rec pp_with_verbosity verbosity fmt = function
   | Java j ->
-      Java.pp Non_verbose fmt j
+      Java.pp verbosity fmt j
   | CSharp cs ->
-      CSharp.pp Non_verbose fmt cs
+      CSharp.pp verbosity fmt cs
   | C osig ->
-      C.pp Non_verbose fmt osig
+      C.pp verbosity fmt osig
   | Erlang e ->
-      Erlang.pp Non_verbose fmt e
+      Erlang.pp verbosity fmt e
   | Hack h ->
-      Hack.pp Non_verbose fmt h
+      Hack.pp verbosity fmt h
   | ObjC_Cpp osig ->
-      ObjC_Cpp.pp Non_verbose fmt osig
+      ObjC_Cpp.pp verbosity fmt osig
   | Block bsig ->
-      Block.pp Non_verbose fmt bsig
+      Block.pp verbosity fmt bsig
   | WithAliasingParameters (base, []) | WithFunctionParameters (base, []) ->
-      pp fmt base
+      pp_with_verbosity verbosity fmt base
   | WithAliasingParameters (base, aliases) ->
-      pp_with_aliasing_parameters Non_verbose pp fmt base aliases
+      pp_with_aliasing_parameters verbosity (pp_with_verbosity verbosity) fmt base aliases
   | WithFunctionParameters (base, (_ :: _ as functions)) ->
-      pp_with_function_parameters Non_verbose pp fmt base functions
+      pp_with_function_parameters verbosity (pp_with_verbosity verbosity) fmt base functions
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method
 
+
+let pp = pp_with_verbosity Non_verbose
+
+let pp_verbose = pp_with_verbosity Verbose
 
 let pp_without_templates fmt = function
   | ObjC_Cpp osig when not (ObjC_Cpp.is_objc_method osig) ->

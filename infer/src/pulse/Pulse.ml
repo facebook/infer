@@ -930,6 +930,27 @@ module PulseTransferFunctions = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
 end
 
+module Out = struct
+  let channel_ref = ref None
+
+  let channel () =
+    let output_dir = Filename.concat Config.results_dir "pulse" in
+    Unix.mkdir_p output_dir ;
+    match !channel_ref with
+    | None ->
+        let filename = Format.asprintf "pulse-summary-count-%a.txt" Pid.pp (Unix.getpid ()) in
+        let channel = Filename.concat output_dir filename |> Out_channel.create in
+        let close_channel () =
+          Option.iter !channel_ref ~f:Out_channel.close_no_err ;
+          channel_ref := None
+        in
+        Epilogues.register ~f:close_channel ~description:"close output channel for Pulse" ;
+        channel_ref := Some channel ;
+        channel
+    | Some channel ->
+        channel
+end
+
 module DisjunctiveAnalyzer =
   AbstractInterpreter.MakeDisjunctive
     (PulseTransferFunctions)
@@ -1052,7 +1073,11 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
           (Procdesc.get_proc_name proc_desc) ;
       if Config.pulse_scuba_logging then
         ScubaLogging.log_count ~label:"pulse_summary" ~value:(List.length summary) ;
-      Stats.add_pulse_summaries_count (List.length summary) ;
+      let summary_count = List.length summary in
+      Stats.add_pulse_summaries_count summary_count ;
+      ( if Config.pulse_log_summary_count then
+        let name = F.asprintf "%a" Procname.pp_verbose proc_name in
+        Printf.fprintf (Out.channel ()) "%s summaries: %d\n" name summary_count ) ;
       Some summary
     in
     let exn_sink_node_opt = Procdesc.get_exn_sink proc_desc in

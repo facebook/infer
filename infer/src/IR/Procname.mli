@@ -419,6 +419,9 @@ val pp_without_templates : Format.formatter -> t -> unit
 val pp : Format.formatter -> t -> unit
 (** Pretty print a proc name for the user to see. *)
 
+val pp_verbose : Format.formatter -> t -> unit
+(** Pretty print a proc name for the user to see with verbosity parameter. *)
+
 val to_string : t -> string
 (** Convert a proc name into a string for the user to see. *)
 

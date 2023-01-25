@@ -1124,6 +1124,11 @@ OPTIONS
            type function pointer in Pulse. (Conversely:
            --no-pulse-inline-global-init-func-pointer)           See also infer-analyze(1).
 
+       --pulse-log-summary-count
+           Activates: Log the number of summaries for each analyzed procedure
+           in Pulse (Conversely: --no-pulse-log-summary-count)       
+    See also infer-analyze(1).
+
        --pulse-max-cfg-size int
            Larger CFGs than the max size are skipped in Pulse.       
     See also infer-analyze(1).
