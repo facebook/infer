@@ -1060,6 +1060,7 @@ module TransferFunctions = struct
     List.fold ~init:astate ~f:one_exp (Sil.exps_of_instr instr)
 
 
+  (* Add flow from the concrete arguments to the special ArgumentOf nodes *)
   let add_arg_flows shapes (call_node : PPNode.t) (callee_pname : Procname.t)
       (argument_list : Exp.t list) (astate : Domain.t) : Domain.t =
     let add_flows_all_to_arg index ((last_writes, has_unsupported_features), local_edges) arg =
@@ -1079,6 +1080,7 @@ module TransferFunctions = struct
     List.foldi argument_list ~init:astate ~f:add_flows_all_to_arg
 
 
+  (* Add flow from the special Return nodes to the destination variable of a call *)
   let add_ret_flows shapes (callee_pname : Procname.t) (ret_id : Ident.t) node (astate : Domain.t) :
       Domain.t =
     let last_writes, local_edges = astate in
@@ -1168,6 +1170,8 @@ module TransferFunctions = struct
         |> add_lambda_edges shapes node dst_index lambdas
 
 
+  (* Add Summary (or Direct if this is a suppressed builtin call) edges from the concrete parameters
+     to the concrete destination variable of a call, as specified by the tito_arguments summary information *)
   let add_tito node (kind : LineageGraph.FlowKind.t) tito_arguments (argument_list : Exp.t list)
       (ret_id : Ident.t) (shapes : SimpleShape.Summary.t) (astate : Domain.t) : Domain.t =
     let tito_locals =
@@ -1181,12 +1185,16 @@ module TransferFunctions = struct
     update_write node kind (VariableIndex.ident ret_id) tito_locals shapes astate
 
 
+  (* Add all the possible Summary/Direct (see add_tito) call edges from arguments to destination for
+     when no summary is available. *)
   let add_tito_all node (kind : LineageGraph.FlowKind.t) (argument_list : Exp.t list)
       (ret_id : Ident.t) (shapes : SimpleShape.Summary.t) (astate : Domain.t) : Domain.t =
     let all = IntSet.of_list (List.mapi argument_list ~f:(fun index _ -> index)) in
     add_tito node kind all argument_list ret_id shapes astate
 
 
+  (* Add the relevant Summary/Direct call edges from concrete arguments to the destination, depending
+     on the presence of a summary. *)
   let add_summary_flows (kind : LineageGraph.FlowKind.t) (callee : (Procdesc.t * Summary.t) option)
       (argument_list : Exp.t list) (ret_id : Ident.t) node shapes (astate : Domain.t) : Domain.t =
     match callee with
