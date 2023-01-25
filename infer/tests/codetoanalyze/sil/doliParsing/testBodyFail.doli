@@ -5,13 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// tests that syntactially incorrect body gets flagged
-
-rule r1
+rule r1 
 in Java match {
    public void main33()  under name32aGeGe
 } body {
     #lab2:
-    #lab3:
+    #lab3:      // textual syntax error here
        jmp lab3
 }

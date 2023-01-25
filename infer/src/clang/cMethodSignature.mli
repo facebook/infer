@@ -31,6 +31,9 @@ type t =
   ; loc: Clang_ast_t.source_range
   ; method_kind: ClangMethodKind.t
   ; is_cpp_virtual: bool
+  ; is_cpp_copy_assignment: bool
+  ; is_cpp_copy_ctor: bool
+  ; is_cpp_implicit: bool
   ; passed_as_noescape_block_to: Procname.t option
   ; is_no_return: bool
   ; is_variadic: bool
@@ -55,6 +58,9 @@ val mk :
   -> Clang_ast_t.source_range
   -> ClangMethodKind.t
   -> ?is_cpp_virtual:bool
+  -> ?is_cpp_copy_assignment:bool
+  -> ?is_cpp_copy_ctor:bool
+  -> ?is_cpp_implicit:bool
   -> ?passed_as_noescape_block_to:Procname.t option
   -> ?is_no_return:bool
   -> ?is_variadic:bool

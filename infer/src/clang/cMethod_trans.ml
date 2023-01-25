@@ -273,6 +273,9 @@ let create_local_procdesc ?loc_instantiated ?(set_objc_accessor_attr = false)
         ; is_ret_type_pod= ms.CMethodSignature.is_ret_type_pod
         ; is_ret_constexpr= ms.CMethodSignature.is_ret_constexpr
         ; access
+        ; is_cpp_copy_ctor= ms.CMethodSignature.is_cpp_copy_ctor
+        ; is_cpp_copy_assignment= ms.CMethodSignature.is_cpp_copy_assignment
+        ; is_cpp_implicit= ms.CMethodSignature.is_cpp_implicit
         ; is_defined= defined
         ; is_biabduction_model= Config.biabduction_models_mode
         ; passed_as_noescape_block_to= ms.CMethodSignature.passed_as_noescape_block_to

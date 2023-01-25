@@ -140,10 +140,12 @@ module Parameter : sig
 end
 
 module ObjC_Cpp : sig
+  type mangled = string option [@@deriving compare]
+
   type kind =
-    | CPPMethod of {mangled: string option; is_copy_assignment: bool}
-    | CPPConstructor of {mangled: string option; is_copy_ctor: bool; is_implicit: bool}
-    | CPPDestructor of {mangled: string option}
+    | CPPMethod of mangled
+    | CPPConstructor of mangled
+    | CPPDestructor of mangled
     | ObjCClassMethod
     | ObjCInstanceMethod
   [@@deriving compare]
@@ -261,13 +263,7 @@ val replace_parameters : Parameter.t list -> t -> t
 
 val parameter_of_name : t -> Typ.Name.t -> Parameter.t
 
-val is_copy_assignment : t -> bool
-
-val is_copy_ctor : t -> bool
-
 val is_cpp_assignment_operator : t -> bool
-
-val is_implicit_ctor : t -> bool
 
 val is_destructor : t -> bool
 
@@ -422,6 +418,9 @@ val pp_without_templates : Format.formatter -> t -> unit
 
 val pp : Format.formatter -> t -> unit
 (** Pretty print a proc name for the user to see. *)
+
+val pp_verbose : Format.formatter -> t -> unit
+(** Pretty print a proc name for the user to see with verbosity parameter. *)
 
 val to_string : t -> string
 (** Convert a proc name into a string for the user to see. *)

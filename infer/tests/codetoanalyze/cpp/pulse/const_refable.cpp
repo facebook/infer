@@ -180,4 +180,18 @@ void move_iterated_vector_ok(std::vector<std::string> v) {
                std::make_move_iterator(v.end()));
 }
 
+char mod_char(char);
+
+void modify_string(std::string& s) {
+  for (char& c : s) {
+    c = mod_char(c);
+  }
+}
+
+void call_modify_string_ok(std::string s) { modify_string(s); }
+
+void void_cast(std::string* s) { (void)s; }
+
+void call_void_cast_bad(std::string s) { void_cast(&s); }
+
 } // namespace const_refable

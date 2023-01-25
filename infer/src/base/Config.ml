@@ -63,6 +63,7 @@ type pulse_taint_config =
 let build_system_exe_assoc =
   [ (BAnt, "ant")
   ; (BBuck, "buck")
+  ; (BBuck, "buck1")
   ; (BBuck2, "buck2")
   ; (BGradle, "gradle")
   ; (BGradle, "gradlew")
@@ -952,6 +953,11 @@ and capture_textual =
 and capture_doli =
   CLOpt.mk_path_opt ~long:"capture-doli" ~meta:"path"
     "Generate models from a DOLI representation given a .doli file."
+
+
+and parse_doli =
+  CLOpt.mk_path_opt ~long:"parse-doli" ~meta:"path"
+    "Perform parsing on given a .doli file -- no checks on textual, no capture."
 
 
 and cfg_json =
@@ -2473,6 +2479,12 @@ and pulse_nullsafe_report_npe =
     "Report null dereference issues on files marked @Nullsafe."
 
 
+and pulse_log_summary_count =
+  CLOpt.mk_bool ~long:"pulse-log-summary-count"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Log the number of summaries for each analyzed procedure in Pulse"
+
+
 and pure_by_default =
   CLOpt.mk_bool ~long:"pure-by-default" ~default:false
     "[Purity]Consider unknown functions to be pure by default"
@@ -2757,6 +2769,14 @@ and simple_lineage_field_depth =
     ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
     "[EXPERIMENTAL] Maximal field depth sensitivity for lineage analysis. 0 will make the analysis \
      field insensitive."
+
+
+and simple_lineage_prevent_cycles =
+  CLOpt.mk_bool ~long:"simple-lineage-prevent-cycles" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+    "[EXPERIMENTAL] If set, SimpleLineage will stop distinguishing the fields of a variable when \
+     it notices recursive types (that is, a sub-field having the same type as one of its \
+     \"ancestors\")."
 
 
 and simple_lineage_field_width =
@@ -3457,6 +3477,8 @@ and capture_textual = RevList.to_list !capture_textual
 
 and capture_doli = !capture_doli
 
+and parse_doli = !parse_doli
+
 and capture_block_list = !capture_block_list
 
 and cfg_json = !cfg_json
@@ -3911,6 +3933,8 @@ and pulse_models_for_erlang = !pulse_models_for_erlang
 
 and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
 
+and pulse_log_summary_count = !pulse_log_summary_count
+
 and pulse_prevent_non_disj_top = !pulse_prevent_non_disj_top
 
 and pulse_recency_limit = !pulse_recency_limit
@@ -4087,6 +4111,8 @@ and shrink_analysis_db = !shrink_analysis_db
 and simple_lineage_include_builtins = !simple_lineage_include_builtins
 
 and simple_lineage_field_depth = !simple_lineage_field_depth
+
+and simple_lineage_prevent_cycles = !simple_lineage_prevent_cycles
 
 and simple_lineage_field_width = !simple_lineage_field_width
 

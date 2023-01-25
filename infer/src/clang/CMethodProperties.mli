@@ -25,6 +25,10 @@ val is_cpp_lambda_call_operator : Clang_ast_t.decl -> bool
 
 val is_cpp_virtual : Clang_ast_t.decl -> bool
 
+val is_cpp_copy_assignment : Clang_ast_t.decl -> bool
+
+val is_cpp_copy_ctor : Clang_ast_t.decl -> bool
+
 val is_constexpr : Clang_ast_t.decl -> bool
 
 val get_init_list_instrs : Clang_ast_t.decl -> CFrontend_config.instr_type list

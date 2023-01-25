@@ -565,6 +565,10 @@ PULSE CHECKER OPTIONS
            type function pointer in Pulse. (Conversely:
            --no-pulse-inline-global-init-func-pointer)
 
+       --pulse-log-summary-count
+           Activates: Log the number of summaries for each analyzed procedure
+           in Pulse (Conversely: --no-pulse-log-summary-count)
+
        --pulse-max-cfg-size int
            Larger CFGs than the max size are skipped in Pulse.
 
@@ -801,6 +805,12 @@ SIMPLE LINEAGE OPTIONS
 
        --simple-lineage-max-cfg-size int
            If set, larger CFGs are skipped.
+
+       --simple-lineage-prevent-cycles
+           Activates: [EXPERIMENTAL] If set, SimpleLineage will stop
+           distinguishing the fields of a variable when it notices recursive
+           types (that is, a sub-field having the same type as one of its
+           "ancestors"). (Conversely: --no-simple-lineage-prevent-cycles)
 
        --simple-lineage-seed int
            Set the random seed used for hashing. (Various entities that get

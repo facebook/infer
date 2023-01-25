@@ -640,3 +640,10 @@ int intermediate_copy_modified_local_used_ok() {
   modify_arg(input); // copy from input to an intermediate which is modified
   return input[0];
 }
+
+int intermediate_local_copy_used_ok() {
+  Arr input;
+  int x = get_first_elem(input); // copy from input to an intermediate
+  input.arr[0] = 0; // can't suggest moving input as it is used
+  return x;
+}

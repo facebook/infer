@@ -113,4 +113,7 @@ module Deps : sig
   val of_procname : Procname.t -> SourceFile.Set.t
   (** Return the set of source files whose type environments were used to compute a summary of the
       given [proc_name] *)
+
+  val clear : unit -> unit
+  (** drop all currently-recorded dependency edges to reclaim memory *)
 end

@@ -1,4 +1,14 @@
 {
+  "pulse-taint-policies": [
+    { "short_description": "Logger taint policy",
+      "taint_flows": [
+        { "source_kinds": ["Simple"],
+          "sink_kinds": ["Logger"]
+        }
+      ],
+      "privacy_effect": "SOME_PRIVACY_EFFECT"
+    }
+  ],
   "pulse-taint-sources": [
       {"procedure": "int_source", "kinds": ["Simple"]},
       {"procedure": "float_source", "kinds": ["Simple"]},
@@ -14,7 +24,8 @@
       {"procedure": "printf", "kinds": ["Simple"]},
       { "procedure": "sink_manipulated",
         "kinds": ["Simple"],
-        "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]}
+        "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]},
+      {"procedure": "sink_log", "kinds": ["Logger"]}
   ],
   "pulse-taint-sanitizers": [
       { "procedure": "sanitize_manipulated",

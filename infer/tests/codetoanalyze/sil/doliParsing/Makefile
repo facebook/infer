@@ -7,7 +7,7 @@ TESTS_DIR = ../../..
 
 include $(TESTS_DIR)/base.make
 
-INFER_OPTIONS = --capture-doli
+INFER_OPTIONS = --parse-doli
 SOURCES = $(sort $(wildcard *.doli))
 
 .PHONY: compile
@@ -25,7 +25,7 @@ test: issues.exp.test
 	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp$(TEST_RESULT_SUFFIX),$(TEST_REL_DIR)/issues.exp.test$(TEST_SUFFIX))
 
 issues.exp.test: $(SOURCES) $(INFER_BIN)
-	@for f in $(SOURCES); do $(INFER_BIN) --capture-doli $${f}; done >& $@
+	@for f in $(SOURCES); do $(INFER_BIN) --parse-doli $${f}; done >& $@
 
 .PHONY: replace
 replace: issues.exp.test

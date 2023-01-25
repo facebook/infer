@@ -221,6 +221,8 @@ val capture_textual : string list
 
 val capture_doli : string option
 
+val parse_doli : string option
+
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
 val cfg_json : string option
@@ -624,6 +626,8 @@ val pulse_widen_threshold : int
 
 val pulse_nullsafe_report_npe : bool
 
+val pulse_log_summary_count : bool
+
 val pure_by_default : bool
 
 val quandary_endpoints : Yojson.Basic.t
@@ -701,6 +705,8 @@ val shrink_analysis_db : bool
 val simple_lineage_include_builtins : bool
 
 val simple_lineage_field_depth : int
+
+val simple_lineage_prevent_cycles : bool
 
 val simple_lineage_field_width : int option
 

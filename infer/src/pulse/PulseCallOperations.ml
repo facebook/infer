@@ -94,7 +94,10 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
         in
         if
           Option.exists callee_pname_opt ~f:(fun p ->
-              Procname.is_constructor p || Procname.is_copy_assignment p || Procname.is_destructor p )
+              Procname.is_constructor p
+              || Option.exists (IRAttributes.load p) ~f:(fun attrs ->
+                     attrs.ProcAttributes.is_cpp_copy_assignment )
+              || Procname.is_destructor p )
         then astate
         else
           (* record the [WrittenTo] attribute for all reachable values
@@ -433,7 +436,7 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
         exec_states astate
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
-      L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
+      L.d_printfln_escaped "No spec found for %a@\n" Procname.pp callee_pname ;
       let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
       let<**> astate_unknown =
         PulseOperations.conservatively_initialize_args arg_values astate

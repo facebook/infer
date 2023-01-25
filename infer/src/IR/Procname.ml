@@ -338,10 +338,12 @@ module Parameter = struct
 end
 
 module ObjC_Cpp = struct
+  type mangled = string option [@@deriving compare, equal, yojson_of, sexp, hash]
+
   type kind =
-    | CPPMethod of {mangled: string option; is_copy_assignment: bool}
-    | CPPConstructor of {mangled: string option; is_copy_ctor: bool; is_implicit: bool}
-    | CPPDestructor of {mangled: string option}
+    | CPPMethod of mangled
+    | CPPConstructor of mangled
+    | CPPDestructor of mangled
     | ObjCClassMethod
     | ObjCInstanceMethod
   [@@deriving compare, equal, yojson_of, sexp, hash]
@@ -376,18 +378,6 @@ module ObjC_Cpp = struct
     if is_instance then ObjCInstanceMethod else ObjCClassMethod
 
 
-  let is_copy_assignment {kind} =
-    match kind with CPPMethod {is_copy_assignment} -> is_copy_assignment | _ -> false
-
-
-  let is_copy_ctor {kind} =
-    match kind with CPPConstructor {is_copy_ctor} -> is_copy_ctor | _ -> false
-
-
-  let is_implicit_ctor {kind} =
-    match kind with CPPConstructor {is_implicit} -> is_implicit | _ -> false
-
-
   let is_prefix_init s = String.is_prefix ~prefix:"init" s
 
   let is_objc_constructor method_name = String.equal method_name "new" || is_prefix_init method_name
@@ -412,12 +402,10 @@ module ObjC_Cpp = struct
   let is_cpp_lambda {method_name} = String.is_substring ~substring:"operator()" method_name
 
   let pp_verbose_kind fmt = function
-    | CPPMethod {mangled} | CPPDestructor {mangled} ->
+    | CPPMethod mangled | CPPDestructor mangled ->
         F.fprintf fmt "(%s)" (Option.value ~default:"" mangled)
-    | CPPConstructor {mangled; is_copy_ctor} ->
-        F.fprintf fmt "{%s}%s"
-          (if is_copy_ctor then "[copy_ctor]" else "")
-          (Option.value ~default:"" mangled)
+    | CPPConstructor mangled ->
+        F.fprintf fmt "{%s}" (Option.value ~default:"" mangled)
     | ObjCClassMethod ->
         F.pp_print_string fmt "[class]"
     | ObjCInstanceMethod ->
@@ -799,34 +787,10 @@ let rec base_of = function
 
 let is_std_move t = match base_of t with C c_pname -> C.is_std_move c_pname | _ -> false
 
-let is_copy_assignment t =
-  match base_of t with
-  | ObjC_Cpp objc_cpp_pname ->
-      ObjC_Cpp.is_copy_assignment objc_cpp_pname
-  | _ ->
-      false
-
-
-let is_copy_ctor t =
-  match base_of t with
-  | ObjC_Cpp objc_cpp_pname ->
-      ObjC_Cpp.is_copy_ctor objc_cpp_pname
-  | _ ->
-      false
-
-
 let is_cpp_assignment_operator t =
   match base_of t with
   | ObjC_Cpp name when String.equal name.method_name "operator=" ->
       true
-  | _ ->
-      false
-
-
-let is_implicit_ctor t =
-  match base_of t with
-  | ObjC_Cpp objc_cpp_pname ->
-      ObjC_Cpp.is_implicit_ctor objc_cpp_pname
   | _ ->
       false
 
@@ -1205,30 +1169,34 @@ let rec pp_unique_id fmt = function
 let to_unique_id proc_name = F.asprintf "%a" pp_unique_id proc_name
 
 (** Convert a proc name to a string for the user to see *)
-let rec pp fmt = function
+let rec pp_with_verbosity verbosity fmt = function
   | Java j ->
-      Java.pp Non_verbose fmt j
+      Java.pp verbosity fmt j
   | CSharp cs ->
-      CSharp.pp Non_verbose fmt cs
+      CSharp.pp verbosity fmt cs
   | C osig ->
-      C.pp Non_verbose fmt osig
+      C.pp verbosity fmt osig
   | Erlang e ->
-      Erlang.pp Non_verbose fmt e
+      Erlang.pp verbosity fmt e
   | Hack h ->
-      Hack.pp Non_verbose fmt h
+      Hack.pp verbosity fmt h
   | ObjC_Cpp osig ->
-      ObjC_Cpp.pp Non_verbose fmt osig
+      ObjC_Cpp.pp verbosity fmt osig
   | Block bsig ->
-      Block.pp Non_verbose fmt bsig
+      Block.pp verbosity fmt bsig
   | WithAliasingParameters (base, []) | WithFunctionParameters (base, []) ->
-      pp fmt base
+      pp_with_verbosity verbosity fmt base
   | WithAliasingParameters (base, aliases) ->
-      pp_with_aliasing_parameters Non_verbose pp fmt base aliases
+      pp_with_aliasing_parameters verbosity (pp_with_verbosity verbosity) fmt base aliases
   | WithFunctionParameters (base, (_ :: _ as functions)) ->
-      pp_with_function_parameters Non_verbose pp fmt base functions
+      pp_with_function_parameters verbosity (pp_with_verbosity verbosity) fmt base functions
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method
 
+
+let pp = pp_with_verbosity Non_verbose
+
+let pp_verbose = pp_with_verbosity Verbose
 
 let pp_without_templates fmt = function
   | ObjC_Cpp osig when not (ObjC_Cpp.is_objc_method osig) ->

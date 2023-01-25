@@ -23,7 +23,10 @@ type t =
 type since = ProgramStart | PreviousStats of t
 
 let get ~since =
-  let stats = Gc.stat () in
+  (* Gc.quick_stat is much faster than Gc.stat because it doesn't calculate live_words/blocks,
+     free_words/blocks, largest_free or fragments. We don't use those fields anyway, so no reason not
+     to use quick_stat. *)
+  let stats = Gc.quick_stat () in
   match since with
   | ProgramStart ->
       { minor_words= stats.minor_words

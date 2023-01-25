@@ -132,6 +132,27 @@ let is_cpp_virtual method_decl =
       false
 
 
+let is_cpp_copy_assignment method_decl =
+  let open Clang_ast_t in
+  match method_decl with
+  | CXXMethodDecl (_, _, _, _, mdi)
+  | CXXConstructorDecl (_, _, _, _, mdi)
+  | CXXConversionDecl (_, _, _, _, mdi)
+  | CXXDestructorDecl (_, _, _, _, mdi) ->
+      mdi.xmdi_is_copy_assignment
+  | _ ->
+      false
+
+
+let is_cpp_copy_ctor method_decl =
+  let open Clang_ast_t in
+  match method_decl with
+  | CXXConstructorDecl (_, _, _, _, {xmdi_is_copy_constructor}) ->
+      xmdi_is_copy_constructor
+  | _ ->
+      false
+
+
 let is_constexpr decl =
   match Clang_ast_proj.get_function_decl_tuple decl with
   | Some (_, _, _, {Clang_ast_t.fdi_is_constexpr}) ->

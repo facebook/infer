@@ -91,6 +91,11 @@ AS_IF([test x"$BUILD_PLATFORM" = x"Windows"], [WINDOWS_BUILD=yes])
 AC_MSG_RESULT([$WINDOWS_BUILD])
 AC_SUBST([WINDOWS_BUILD])
 
+AC_MSG_CHECKING([for realpath])
+AS_IF([test x"$BUILD_PLATFORM" = x"Darwin"], [REALPATH=grealpath], [REALPATH=realpath])
+AC_MSG_RESULT([$REALPATH])
+AC_SUBST([REALPATH])
+
 AC_ARG_VAR([PLATFORM_ENV], [Build and link binaries against this platform rather than system default (Linux only)])
 
 AC_ARG_ENABLE(c-analyzers,
@@ -438,8 +443,18 @@ AS_IF([test "$SED" != "xno"], [
 ])
 AC_SUBST([GNU_SED])
 
-AC_CHECK_TOOL([BREW], [brew], [no])
+AC_ASSERT_PROG([diff], [$DIFF])
+AC_MSG_CHECKING([if diff supports --LTYPE-line-format=LFMT options])
+# there are several such options but just test one of them and hope for the best
+AS_IF([diff --unchanged-line-format=A /dev/null /dev/null 2>/dev/null], [
+  DIFF_CAN_FORMAT=yes
+], [
+  DIFF_CAN_FORMAT=no
+])
+AC_MSG_RESULT([$DIFF_CAN_FORMAT])
+AC_SUBST([DIFF_CAN_FORMAT])
 
+AC_CHECK_TOOL([BREW], [brew], [no])
 AC_CHECK_TOOL([INSTALL_NAME_TOOL], [install_name_tool], [no])
 AC_SUBST([INSTALL_NAME_TOOL])
 AC_CHECK_TOOL([LDD], [ldd], [no])

@@ -15,6 +15,12 @@ module type S = sig
 
   val __assert_fail : t
 
+  val __builtin_add_overflow : t
+
+  val __builtin_mul_overflow : t
+
+  val __builtin_sub_overflow : t
+
   val __builtin_va_arg : t
 
   val __builtin_va_copy : t

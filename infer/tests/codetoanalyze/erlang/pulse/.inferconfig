@@ -4,6 +4,217 @@
       "selector": [
         "MFA",
         {
+          "module": "models_arguments_return",
+          "function": "one_or_two",
+          "arity": 0
+        }
+      ],
+      "behavior": [
+        "ArgumentsReturnList",
+        [
+          {
+            "arguments": [],
+            "return": [
+              "IntLit",
+              "1"
+            ]
+          },
+          {
+            "arguments": [],
+            "return": [
+              "IntLit",
+              "2"
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_arguments_return",
+          "function": "is_small",
+          "arity": 1
+        }
+      ],
+      "behavior": [
+        "ArgumentsReturnList",
+        [
+          {
+            "arguments": [
+              [
+                "List",
+                []
+              ]
+            ],
+            "return": [
+              "Atom",
+              "true"
+            ]
+          },
+          {
+            "arguments": [
+              [
+                "List",
+                [
+                  null
+                ]
+              ]
+            ],
+            "return": [
+              "Atom",
+              "true"
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_arguments_return",
+          "function": "doop",
+          "arity": 2
+        }
+      ],
+      "behavior": [
+        "ArgumentsReturnList",
+        [
+          {
+            "arguments": [
+              [
+                "Atom",
+                "swap"
+              ],
+              [
+                "Tuple",
+                [
+                  [
+                    "List",
+                    [
+                      [
+                        "IntLit",
+                        "1"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            "return": [
+              "List",
+              [
+                [
+                  "Tuple",
+                  [
+                    [
+                      "IntLit",
+                      "1"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
+          "module": "models_arguments_return",
+          "function": "get_range",
+          "arity": 1
+        }
+      ],
+      "behavior": [
+        "ArgumentsReturnList",
+        [
+          {
+            "arguments": [
+              [
+                "IntLit",
+                "0"
+              ]
+            ],
+            "return": [
+              "List",
+              []
+            ]
+          },
+          {
+            "arguments": [
+              [
+                "IntLit",
+                "1"
+              ]
+            ],
+            "return": [
+              "List",
+              [
+                [
+                  "IntLit",
+                  "0"
+                ]
+              ]
+            ]
+          },
+          {
+            "arguments": [
+              [
+                "IntLit",
+                "2"
+              ]
+            ],
+            "return": [
+              "List",
+              [
+                [
+                  "IntLit",
+                  "0"
+                ],
+                [
+                  "IntLit",
+                  "1"
+                ]
+              ]
+            ]
+          },
+          {
+            "arguments": [
+              [
+                "IntLit",
+                "3"
+              ]
+            ],
+            "return": [
+              "List",
+              [
+                [
+                  "IntLit",
+                  "0"
+                ],
+                [
+                  "IntLit",
+                  "1"
+                ],
+                [
+                  "IntLit",
+                  "2"
+                ]
+              ]
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "selector": [
+        "MFA",
+        {
           "module": "models_return_value",
           "function": "get_true",
           "arity": 0

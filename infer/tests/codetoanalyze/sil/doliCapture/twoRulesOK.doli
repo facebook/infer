@@ -1,0 +1,27 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+rule r1
+in Java match {
+    int basic_OK( ) under ClassA
+} body {
+    #entry:
+        ret 4
+ }
+
+rule r2A
+in Java match {
+    int basic_branch_OK( ) under ClassA
+} body {
+  #entry:
+    n2 = __sil_eq(3, 2)
+    jmp then, else
+  #then:
+    prune n2
+    ret 45
+  #else:
+    prune ! n2
+    ret 55
+ }

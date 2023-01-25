@@ -758,9 +758,9 @@ OPTIONS
 
        --force-integration command
            Proceed as if the first argument after -- was command. Possible
-           values: ant, buck, buck2, gradle, gradlew, java, javac, cc, clang,
-           gcc, clang++, c++, g++, hackc, make, configure, cmake, waf, mvn,
-           mvnw, ndk-build, rebar3, erlc, xcodebuild.           See also infer-capture(1) and infer-run(1).
+           values: ant, buck, buck1, buck2, gradle, gradlew, java, javac, cc,
+           clang, gcc, clang++, c++, g++, hackc, make, configure, cmake, waf,
+           mvn, mvnw, ndk-build, rebar3, erlc, xcodebuild.           See also infer-capture(1) and infer-run(1).
 
        --no-fragment-retains-view
            Deactivates: checker fragment-retains-view: Detects when Android
@@ -1123,6 +1123,11 @@ OPTIONS
            Activates: Inline the initializer of global variables that are of
            type function pointer in Pulse. (Conversely:
            --no-pulse-inline-global-init-func-pointer)           See also infer-analyze(1).
+
+       --pulse-log-summary-count
+           Activates: Log the number of summaries for each analyzed procedure
+           in Pulse (Conversely: --no-pulse-log-summary-count)       
+    See also infer-analyze(1).
 
        --pulse-max-cfg-size int
            Larger CFGs than the max size are skipped in Pulse.       
@@ -1525,6 +1530,13 @@ OPTIONS
        --simple-lineage-only
            Activates: Enable simple-lineage and disable all other checkers
            (Conversely: --no-simple-lineage-only)           See also infer-analyze(1).
+
+       --simple-lineage-prevent-cycles
+           Activates: [EXPERIMENTAL] If set, SimpleLineage will stop
+           distinguishing the fields of a variable when it notices recursive
+           types (that is, a sub-field having the same type as one of its
+           "ancestors"). (Conversely: --no-simple-lineage-prevent-cycles)       
+    See also infer-analyze(1).
 
        --simple-lineage-seed int
            Set the random seed used for hashing. (Various entities that get
@@ -2398,6 +2410,13 @@ INTERNAL OPTIONS
 
        --oom-threshold-reset
            Cancel the effect of --oom-threshold.
+
+       --parse-doli path
+           Perform parsing on given a .doli file -- no checks on textual, no
+           capture.
+
+       --parse-doli-reset
+           Cancel the effect of --parse-doli.
 
        --print-buckets
            Activates: Show the internal bucket of Infer reports in their

@@ -7,6 +7,7 @@
 
 open! IStd
 module L = Logging
+module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 module CheapCopyTypes = PulseCheapCopyTypes
@@ -234,8 +235,14 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
             None )
   in
   let copy_from_fn pname : Attribute.CopyOrigin.t option =
-    if Procname.is_copy_ctor pname then Some CopyCtor
-    else if Procname.is_copy_assignment pname then Some CopyAssignment
+    if
+      Option.exists (IRAttributes.load pname) ~f:(fun attrs ->
+          attrs.ProcAttributes.is_cpp_copy_ctor )
+    then Some CopyCtor
+    else if
+      Option.exists (IRAttributes.load pname) ~f:(fun attrs ->
+          attrs.ProcAttributes.is_cpp_copy_assignment )
+    then Some CopyAssignment
     else None
   in
   let astate_n, astates = aux (copy_from_fn, Fn.id) astate_non_disj astates in

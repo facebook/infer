@@ -46,13 +46,12 @@ let do_compaction_if_needed =
     else ()
 
 
-let clear_caches_except_lrus () =
+let clear_caches () =
   Summary.OnDisk.clear_cache () ;
   BufferOverrunUtils.clear_cache () ;
-  Attributes.clear_cache ()
+  Attributes.clear_cache () ;
+  Tenv.Deps.clear ()
 
-
-let clear_caches () = clear_caches_except_lrus ()
 
 let proc_name_of_uid uid =
   match Attributes.load_from_uid uid with
@@ -103,7 +102,7 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
     in
     (* clear cache for each source file to avoid it growing unboundedly; we do it here to
        release memory before potentially going idle *)
-    clear_caches_except_lrus () ;
+    clear_caches () ;
     do_compaction_if_needed () ;
     result
 
