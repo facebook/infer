@@ -368,32 +368,29 @@ let checked_via_dtor var = map (checked_via_dtor_elt var)
 
 module CopiedSet = PrettyPrintable.MakePPSet (Attribute.CopiedInto)
 
-let is_never_used_after_copy_into_intermediate (copied_into : Attribute.CopiedInto.t)
-    (copied_timestamp : Timestamp.t) astate =
-  let is_after_copy =
-    List.exists ~f:(fun TrackedLoc.{timestamp} -> (copied_timestamp :> int) < (timestamp :> int))
-  in
+let is_never_used_after_copy_into_intermediate_or_field pvar (copied_timestamp : Timestamp.t) astate
+    =
   match astate with
   | Top ->
       false
-  | V {passed_to; loads; stores} -> (
-    match copied_into with
-    | IntoIntermediate {source_opt= Some (PVar pvar, _)} ->
-        let source_var = Var.of_pvar pvar in
-        let is_passed_to_non_destructor_after_copy =
-          PassedTo.get_all source_var passed_to
-          |> List.exists ~f:(fun {CalleeWithLoc.callee; _} ->
-                 match callee with
-                 | V {callee; timestamp} when (copied_timestamp :> int) < (timestamp :> int) ->
-                     not (Procname.is_destructor callee)
-                 | _ ->
-                     false )
-        in
-        let is_loaded_after_copy = Loads.get_loaded_locations source_var loads |> is_after_copy in
-        let is_stored_after_copy = Stores.get_all pvar stores |> is_after_copy in
-        not (is_loaded_after_copy || is_stored_after_copy || is_passed_to_non_destructor_after_copy)
-    | _ ->
-        false )
+  | V {passed_to; loads; stores} ->
+      let is_after_copy =
+        List.exists ~f:(fun TrackedLoc.{timestamp} ->
+            (copied_timestamp :> int) < (timestamp :> int) )
+      in
+      let source_var = Var.of_pvar pvar in
+      let is_passed_to_non_destructor_after_copy =
+        PassedTo.get_all source_var passed_to
+        |> List.exists ~f:(fun {CalleeWithLoc.callee; _} ->
+               match callee with
+               | V {callee; timestamp} when (copied_timestamp :> int) < (timestamp :> int) ->
+                   not (Procname.is_destructor callee)
+               | _ ->
+                   false )
+      in
+      let is_loaded_after_copy = Loads.get_loaded_locations source_var loads |> is_after_copy in
+      let is_stored_after_copy = Stores.get_all pvar stores |> is_after_copy in
+      not (is_loaded_after_copy || is_stored_after_copy || is_passed_to_non_destructor_after_copy)
 
 
 let get_copied astate =
@@ -416,16 +413,22 @@ let get_copied astate =
       in
       CopyMap.fold
         (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
-          match copy_spec with
-          | Modified
-              {location; copied_location; source_typ= copied_source_typ; from; copied_timestamp} ->
-              (* if source var is never used later on, we can still suggest removing the copy even though the copy is modified *)
-              if is_never_used_after_copy_into_intermediate copied_into copied_timestamp astate then
-                (copied_into, copied_source_typ, location, copied_location, from) :: acc
+          match (copied_into, copy_spec) with
+          | _, Copied _ when CopiedSet.mem copied_into modified || is_captured copied_into ->
+              acc
+          | ( ( IntoField {source_opt= Some (SourceExpr ((PVar pvar, _), _))}
+              | IntoIntermediate {source_opt= Some (PVar pvar, _)} )
+            , ( Copied {location; copied_location; source_typ; from; timestamp= copied_timestamp}
+              | Modified {location; copied_location; source_typ; from; copied_timestamp} ) ) ->
+              if is_never_used_after_copy_into_intermediate_or_field pvar copied_timestamp astate
+              then
+                (* if source var is never used later on, we can still suggest removing the copy even though the copy is modified *)
+                (copied_into, source_typ, location, copied_location, from) :: acc
               else acc
-          | Copied {location; copied_location; source_typ= copied_source_typ; from} ->
-              if CopiedSet.mem copied_into modified || is_captured copied_into then acc
-              else (copied_into, copied_source_typ, location, copied_location, from) :: acc )
+          | _, Copied {location; copied_location; source_typ; from} ->
+              (copied_into, source_typ, location, copied_location, from) :: acc
+          | _, Modified _ ->
+              acc )
         copy_map []
 
 

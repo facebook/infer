@@ -188,7 +188,7 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
                 , disjunct' ) )
         | ( (Const (Cfun procname) | Closure {name= procname})
           , ((Lfield (_, field, _) as exp), copy_type) :: ((_, source_typ) :: _ as rest_args) )
-          when Typ.is_rvalue_reference source_typ && not (is_cheap_to_copy tenv copy_type) ->
+          when not (is_cheap_to_copy tenv copy_type) ->
             let* from = copy_check_fn procname in
             let copied, disjunct, source_addr_typ_opt =
               get_copied_and_source path rest_args location from disjunct

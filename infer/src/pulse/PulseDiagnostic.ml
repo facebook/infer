@@ -885,22 +885,24 @@ let get_issue_type ~latent issue_type =
       IssueType.sensitive_data_flow
   | UnnecessaryCopy {copied_location= Some _}, false ->
       IssueType.unnecessary_copy_return_pulse
-  | UnnecessaryCopy {copied_into= IntoField _; from= CopyAssignment}, false ->
+  | UnnecessaryCopy {copied_into= IntoField _; source_typ; from= CopyAssignment}, false
+    when Option.exists ~f:Typ.is_rvalue_reference source_typ ->
       IssueType.unnecessary_copy_assignment_movable_pulse
-  | UnnecessaryCopy {copied_into= IntoField _; from= CopyCtor}, false ->
+  | UnnecessaryCopy {copied_into= IntoField _; source_typ; from= CopyCtor}, false
+    when Option.exists ~f:Typ.is_rvalue_reference source_typ ->
       IssueType.unnecessary_copy_movable_pulse
-  | UnnecessaryCopy {copied_into= IntoIntermediate _; source_typ; from= CopyCtor}, false
+  | ( UnnecessaryCopy {copied_into= IntoField _ | IntoIntermediate _; source_typ; from= CopyCtor}
+    , false )
     when Option.exists ~f:Typ.is_const_reference source_typ ->
       IssueType.unnecessary_copy_intermediate_const_pulse
-  | UnnecessaryCopy {copied_into= IntoIntermediate _; from= CopyCtor}, false ->
+  | UnnecessaryCopy {copied_into= IntoField _ | IntoIntermediate _; from= CopyCtor}, false ->
       IssueType.unnecessary_copy_intermediate_pulse
   | UnnecessaryCopy {copied_into= IntoVar _; from= CopyCtor}, false ->
       IssueType.unnecessary_copy_pulse
-  | UnnecessaryCopy {from= CopyAssignment; source_typ}, false
-    when Option.exists ~f:Typ.is_const_reference source_typ ->
-      IssueType.unnecessary_copy_assignment_const_pulse
-  | UnnecessaryCopy {from= CopyAssignment}, false ->
-      IssueType.unnecessary_copy_assignment_pulse
+  | UnnecessaryCopy {from= CopyAssignment; source_typ}, false ->
+      if Option.exists ~f:Typ.is_const_reference source_typ then
+        IssueType.unnecessary_copy_assignment_const_pulse
+      else IssueType.unnecessary_copy_assignment_pulse
   | ( ( ConfigUsage _
       | ConstRefableParameter _
       | CSharpResourceLeak _

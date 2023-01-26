@@ -160,7 +160,7 @@ class AssignField {
  public:
   // It should NOT report const refable issue, but unncessary copy assignment
   // issue.
-  void assign_field_bad_FN(Arr a) { field = a; }
+  void assign_field_bad(Arr a) { field = a; }
 
   // It should NOT report const refable issue, but unncessary copy assignment
   // issue.
