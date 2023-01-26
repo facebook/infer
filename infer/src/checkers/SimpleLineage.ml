@@ -1081,7 +1081,7 @@ module TransferFunctions = struct
 
 
   (* Add flow from the special Return nodes to the destination variable of a call *)
-  let add_ret_flows shapes (callee_pname : Procname.t) (ret_id : Ident.t) node (astate : Domain.t) :
+  let add_ret_flows shapes node (callee_pname : Procname.t) (ret_id : Ident.t) (astate : Domain.t) :
       Domain.t =
     let last_writes, local_edges = astate in
     let add_one_return_edge local_edges target_index =
@@ -1136,7 +1136,7 @@ module TransferFunctions = struct
 
 
   (* Update all the terminal fields of an index, as obtained from the shapes information. *)
-  let update_write node kind dst_index read_set shapes astate =
+  let update_write shapes node kind dst_index read_set astate =
     VariableIndex.fold_terminal
       ~f:(fun acc_astate terminal -> update_one_write node kind terminal read_set acc_astate)
       ~init:astate shapes dst_index
@@ -1144,7 +1144,7 @@ module TransferFunctions = struct
 
   (* Update all the terminal fields of an destination index, as obtained from the shapes information,
      as being written in parallel from the corresponding terminal fields of a source index. *)
-  let update_write_parallel node kind dst_index src_index shapes astate =
+  let update_write_parallel shapes node kind dst_index src_index astate =
     VariableIndex.fold_terminal_pairs
       ~f:(fun acc_astate dst_terminal src_terminal ->
         update_one_write node kind dst_terminal
@@ -1153,27 +1153,27 @@ module TransferFunctions = struct
       ~init:astate shapes dst_index src_index
 
 
-  let exec_assignment astate shapes node dst_index src_exp =
+  let exec_assignment shapes node dst_index src_exp astate =
     match single_var_index_of_exp src_exp with
     | Some src_index ->
         (* Simple assignment of the form [dst := src_index]: we copy the fields of [src_index] into
            the corresponding fields of [dst]. *)
-        update_write_parallel node Direct dst_index src_index shapes astate
+        update_write_parallel shapes node Direct dst_index src_index astate
     | None ->
         (* Complex assignment of any other form: we copy every terminal field from the source to
            (every terminal field of) the destination, and also process the potential captured indices
            and lambdas. *)
         let {free_locals; captured_locals; lambdas} = read_set_of_exp shapes src_exp in
         astate
-        |> update_write node LineageGraph.FlowKind.Direct dst_index free_locals shapes
-        |> update_write node LineageGraph.FlowKind.Capture dst_index captured_locals shapes
+        |> update_write shapes node LineageGraph.FlowKind.Direct dst_index free_locals
+        |> update_write shapes node LineageGraph.FlowKind.Capture dst_index captured_locals
         |> add_lambda_edges shapes node dst_index lambdas
 
 
   (* Add Summary (or Direct if this is a suppressed builtin call) edges from the concrete parameters
      to the concrete destination variable of a call, as specified by the tito_arguments summary information *)
-  let add_tito node (kind : LineageGraph.FlowKind.t) tito_arguments (argument_list : Exp.t list)
-      (ret_id : Ident.t) (shapes : SimpleShape.Summary.t) (astate : Domain.t) : Domain.t =
+  let add_tito (shapes : SimpleShape.Summary.t) node (kind : LineageGraph.FlowKind.t) tito_arguments
+      (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     let tito_locals =
       let tito_exps =
         List.filter_mapi
@@ -1182,26 +1182,27 @@ module TransferFunctions = struct
       in
       free_locals_of_exp_list shapes tito_exps
     in
-    update_write node kind (VariableIndex.ident ret_id) tito_locals shapes astate
+    update_write shapes node kind (VariableIndex.ident ret_id) tito_locals astate
 
 
   (* Add all the possible Summary/Direct (see add_tito) call edges from arguments to destination for
      when no summary is available. *)
-  let add_tito_all node (kind : LineageGraph.FlowKind.t) (argument_list : Exp.t list)
-      (ret_id : Ident.t) (shapes : SimpleShape.Summary.t) (astate : Domain.t) : Domain.t =
+  let add_tito_all (shapes : SimpleShape.Summary.t) node (kind : LineageGraph.FlowKind.t)
+      (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     let all = IntSet.of_list (List.mapi argument_list ~f:(fun index _ -> index)) in
-    add_tito node kind all argument_list ret_id shapes astate
+    add_tito shapes node kind all argument_list ret_id astate
 
 
   (* Add the relevant Summary/Direct call edges from concrete arguments to the destination, depending
      on the presence of a summary. *)
-  let add_summary_flows (kind : LineageGraph.FlowKind.t) (callee : (Procdesc.t * Summary.t) option)
-      (argument_list : Exp.t list) (ret_id : Ident.t) node shapes (astate : Domain.t) : Domain.t =
+  let add_summary_flows shapes node (kind : LineageGraph.FlowKind.t)
+      (callee : (Procdesc.t * Summary.t) option) (argument_list : Exp.t list) (ret_id : Ident.t)
+      (astate : Domain.t) : Domain.t =
     match callee with
     | None ->
-        add_tito_all node kind argument_list ret_id shapes astate
+        add_tito_all shapes node kind argument_list ret_id astate
     | Some (_callee_pdesc, {Summary.tito_arguments}) ->
-        add_tito node kind tito_arguments argument_list ret_id shapes astate
+        add_tito shapes node kind tito_arguments argument_list ret_id astate
 
 
   let record_supported name (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
@@ -1212,7 +1213,7 @@ module TransferFunctions = struct
     ((last_writes, has_unsupported_features), local_edges)
 
 
-  let generic_call_model shapes astate analyze_dependency node ret_id procname args =
+  let generic_call_model shapes node analyze_dependency ret_id procname args astate =
     let rm_builtin =
       (not Config.simple_lineage_include_builtins) && BuiltinDecl.is_declared procname
     in
@@ -1220,35 +1221,36 @@ module TransferFunctions = struct
     let summary_type : LineageGraph.FlowKind.t = if rm_builtin then Direct else Summary in
     astate |> record_supported procname
     |> if_not_builtin (add_arg_flows shapes node procname args)
-    |> if_not_builtin (add_ret_flows shapes procname ret_id node)
-    |> add_summary_flows summary_type (analyze_dependency procname) args ret_id node shapes
+    |> if_not_builtin (add_ret_flows shapes node procname ret_id)
+    |> add_summary_flows shapes node summary_type (analyze_dependency procname) args ret_id
 
 
   module CustomModel = struct
-    let call_unqualified shapes astate analyze_dependency node ret_id procname args =
+    let call_unqualified shapes node analyze_dependency ret_id procname args astate =
       match args with
       | fun_ :: _ ->
-          generic_call_model shapes astate analyze_dependency node ret_id procname args
-          |> update_write node DynamicCallFunction (VariableIndex.ident ret_id)
-               (free_locals_of_exp shapes fun_) shapes
+          astate
+          |> generic_call_model shapes node analyze_dependency ret_id procname args
+          |> update_write shapes node DynamicCallFunction (VariableIndex.ident ret_id)
+               (free_locals_of_exp shapes fun_)
       | _ ->
           L.die InternalError "Expecting at least one argument for '__erlang_call_unqualified'"
 
 
-    let call_qualified shapes astate analyze_dependency node ret_id procname args =
+    let call_qualified shapes node analyze_dependency ret_id procname args astate =
       match args with
       | module_ :: fun_ :: _ ->
-          generic_call_model shapes astate analyze_dependency node ret_id procname args
-          |> update_write node DynamicCallFunction (VariableIndex.ident ret_id)
-               (free_locals_of_exp shapes fun_) shapes
-          |> update_write node DynamicCallModule (VariableIndex.ident ret_id)
+          astate
+          |> generic_call_model shapes node analyze_dependency ret_id procname args
+          |> update_write shapes node DynamicCallFunction (VariableIndex.ident ret_id)
+               (free_locals_of_exp shapes fun_)
+          |> update_write shapes node DynamicCallModule (VariableIndex.ident ret_id)
                (free_locals_of_exp shapes module_)
-               shapes
       | _ ->
           L.die InternalError "Expecting at least two arguments for '__erlang_call_qualified'"
 
 
-    let make_atom shapes astate _analyze_dependency node ret_id _procname (args : Exp.t list) =
+    let make_atom shapes node _analyze_dependency ret_id _procname (args : Exp.t list) astate =
       let atom_name =
         match args with
         | Const (Cstr atom_name) :: _ ->
@@ -1257,11 +1259,11 @@ module TransferFunctions = struct
             L.die InternalError "Expecting first argument of 'make_atom' to be its name"
       in
       let sources = Local.Set.singleton (ConstantAtom atom_name) in
-      update_write node LineageGraph.FlowKind.Direct (VariableIndex.ident ret_id) sources shapes
+      update_write shapes node LineageGraph.FlowKind.Direct (VariableIndex.ident ret_id) sources
         astate
 
 
-    let make_tuple shapes astate _analyze_dependency node ret_id _procname (args : Exp.t list) =
+    let make_tuple shapes node _analyze_dependency ret_id _procname (args : Exp.t list) astate =
       let size = List.length args in
       let tuple_type = ErlangTypeName.Tuple size in
       let field_names = ErlangTypeName.tuple_field_names size in
@@ -1269,7 +1271,7 @@ module TransferFunctions = struct
       let ret_field name = VariableIndex.make (Var.of_id ret_id) [fieldname name] in
       List.fold2_exn
         ~f:(fun astate field_name arg ->
-          exec_assignment astate shapes node (ret_field field_name) arg )
+          exec_assignment shapes node (ret_field field_name) arg astate )
         ~init:astate field_names args
 
 
@@ -1293,42 +1295,41 @@ module TransferFunctions = struct
       else Procname.Map.find_opt name custom_call_models
   end
 
-  let exec_named_call shapes (astate : Domain.t) analyze_dependency node ret_id name args : Domain.t
-      =
+  let exec_named_call shapes node analyze_dependency ret_id name args astate : Domain.t =
     let model = CustomModel.get name |> Option.value ~default:generic_call_model in
-    model shapes astate analyze_dependency node ret_id name args
+    model shapes node analyze_dependency ret_id name args astate
 
 
-  let exec_call (astate : Domain.t) (shapes, {InterproceduralAnalysis.analyze_dependency; _}) node
-      ret_id fun_exp args : Domain.t =
+  let exec_call shapes node analyze_dependency ret_id fun_exp args astate : Domain.t =
     let callee_pname = procname_of_exp fun_exp in
     let args = List.map ~f:fst args in
     match callee_pname with
     | None ->
         let arity = List.length args in
         let erlang_call_name = Procname.erlang_call_unqualified ~arity in
-        exec_named_call shapes astate analyze_dependency node ret_id erlang_call_name
-          (fun_exp :: args)
+        exec_named_call shapes node analyze_dependency ret_id erlang_call_name (fun_exp :: args)
+          astate
     | Some name ->
-        exec_named_call shapes astate analyze_dependency node ret_id name args
+        exec_named_call shapes node analyze_dependency ret_id name args astate
 
 
-  let exec_instr astate (shapes, lineage_data) node instr_index (instr : Sil.instr) =
+  let exec_instr astate (shapes, {InterproceduralAnalysis.analyze_dependency; _}) node instr_index
+      (instr : Sil.instr) =
     if not (Int.equal instr_index 0) then
       L.die InternalError "SimpleLineage: INV broken: CFGs should be single instruction@\n" ;
     let astate = add_cap_flows shapes node instr (fst astate, [ (* don't repeat edges*) ]) in
     match instr with
     | Load {id; e; _} ->
         if Ident.is_none id then astate
-        else exec_assignment astate shapes node (VariableIndex.ident id) e
+        else exec_assignment shapes node (VariableIndex.ident id) e astate
     | Store {e1= Lvar lhs; e2; _} ->
-        exec_assignment astate shapes node (VariableIndex.pvar lhs) e2
+        exec_assignment shapes node (VariableIndex.pvar lhs) e2 astate
     | Store _ ->
         L.debug Analysis Verbose
           "SimpleLineage: The only lhs I can handle (now) for Store is Lvar@\n" ;
         astate
     | Call ((ret_id, _ret_typ), name, args, _location, _flags) ->
-        exec_call astate (shapes, lineage_data) node ret_id name args
+        exec_call shapes node analyze_dependency ret_id name args astate
     | Sil.Prune (_, _, _, _) | Sil.Metadata _ ->
         astate
 
