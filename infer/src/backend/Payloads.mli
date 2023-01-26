@@ -24,7 +24,6 @@ include sig
     ; config_impact_analysis: ConfigImpactAnalysis.Summary.t option Lazy.t
     ; cost: CostDomain.summary option Lazy.t
     ; disjunctive_demo: DisjunctiveDemo.domain option Lazy.t
-    ; dotnet_resource_leaks: ResourceLeakCSDomain.summary option Lazy.t
     ; lab_resource_leaks: ResourceLeakDomain.summary option Lazy.t
     ; litho_required_props: LithoDomain.summary option Lazy.t
     ; pulse: PulseSummary.t option Lazy.t

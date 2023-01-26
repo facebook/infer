@@ -15,7 +15,6 @@ type t =
   | ConfigImpactAnalysis
   | Cost
   | DisjunctiveDemo
-  | DotnetResourceLeaks
   | LabResourceLeaks
   | LithoRequiredProps
   | Pulse

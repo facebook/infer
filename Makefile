@@ -283,7 +283,6 @@ DIRECT_TESTS += \
   dotnet_nullparam \
   dotnet_numcomparison \
   dotnet_reference \
-  dotnet_resourceleak \
   dotnet_starg \
   dotnet_threadsafetyviolation
 

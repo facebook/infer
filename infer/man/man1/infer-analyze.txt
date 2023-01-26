@@ -120,9 +120,8 @@ OPTIONS
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --inefficient-keyset-iterator, --linters,
-           --liveness, --parameter-not-null-checked, --racerd,
-           --dotnet-resource-leak, --siof, --self-in-block, --starvation
-           (Conversely: --default-checkers)
+           --liveness, --parameter-not-null-checked, --racerd, --siof,
+           --self-in-block, --starvation (Conversely: --default-checkers)
 
        --eradicate
            Activates: checker eradicate: The eradicate `@Nullable` checker

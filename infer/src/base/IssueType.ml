@@ -797,11 +797,6 @@ let lab_resource_leak =
   register ~id:"LAB_RESOURCE_LEAK" Error ResourceLeakLabExercise ~user_documentation:"Toy issue."
 
 
-let dotnet_resource_leak =
-  register ~id:"DOTNET_RESOURCE_LEAK" Error DOTNETResourceLeaks
-    ~user_documentation:"Resource leak checker for .NET."
-
-
 let leak_after_array_abstraction =
   register_hidden ~id:"Leak_after_array_abstraction" Error Biabduction
 

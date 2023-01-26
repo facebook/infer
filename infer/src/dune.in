@@ -117,7 +117,7 @@ let infertop_stanza =
  (modes byte_complete)
  (modules Infertop)
  (flags (:standard -open Core -open IStdlib -open IStd -open Textuallib %s))
- (libraries %s utop Absint ATDGenerated Backend IBase Biabduction BO Checkers Concurrency Costlib CStubs IR Textuallib IStdlib Labs Dotnet Nullsafe Pulselib Quandary Integration TestDeterminators Topllib UnitTests)
+ (libraries %s utop Absint ATDGenerated Backend IBase Biabduction BO Checkers Concurrency Costlib CStubs IR Textuallib IStdlib Labs Nullsafe Pulselib Quandary Integration TestDeterminators Topllib UnitTests)
  (link_flags (-linkall -warn-error -31))
  (preprocess (pps ppx_compare))
  (promote (until-clean) (into ../bin))

@@ -430,9 +430,9 @@ OPTIONS
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --inefficient-keyset-iterator, --linters,
-           --liveness, --parameter-not-null-checked, --racerd,
-           --dotnet-resource-leak, --siof, --self-in-block, --starvation
-           (Conversely: --default-checkers)           See also infer-analyze(1).
+           --liveness, --parameter-not-null-checked, --racerd, --siof,
+           --self-in-block, --starvation (Conversely: --default-checkers)       
+    See also infer-analyze(1).
 
        --dependencies
            Activates: Translate all the dependencies during the capture. The
@@ -517,7 +517,6 @@ OPTIONS
              DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default),
              DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER (enabled by default),
              DIVIDE_BY_ZERO (disabled by default),
-             DOTNET_RESOURCE_LEAK (enabled by default),
              DO_NOT_REPORT (enabled by default),
              EMPTY_VECTOR_ACCESS (enabled by default),
              ERADICATE_ANNOTATION_GRAPH (enabled by default),

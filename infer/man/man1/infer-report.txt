@@ -167,7 +167,6 @@ OPTIONS
              DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default),
              DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER (enabled by default),
              DIVIDE_BY_ZERO (disabled by default),
-             DOTNET_RESOURCE_LEAK (enabled by default),
              DO_NOT_REPORT (enabled by default),
              EMPTY_VECTOR_ACCESS (enabled by default),
              ERADICATE_ANNOTATION_GRAPH (enabled by default),

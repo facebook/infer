@@ -69,6 +69,10 @@ let parse_cil_procname (json : Safe.t) : Procname.t =
       BuiltinDecl.__cast
   | "__unwrap_exception" ->
       BuiltinDecl.__unwrap_exception
+  | "__throw" ->
+      BuiltinDecl.__java_throw
+  | "__get_array_length" ->
+      BuiltinDecl.__get_array_length
   | _ ->
       let return_type =
         if String.equal Procname.CSharp.constructor_method_name method_name then None
@@ -299,13 +303,14 @@ and parse_exp (json : Safe.t) =
   else if String.equal ekind "SizeofExpression" then
     let t = parse_sil_type_name (member "type" json) in
     let s = to_string (member "kind" json) in
+    let dl = try Some (parse_exp (member "dynamic_length" json)) with Type_error _ -> None in
     match s with
     | "exact" ->
-        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= dl; subtype= Subtype.exact}
     | "instof" ->
-        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes_instof}
+        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= dl; subtype= Subtype.subtypes_instof}
     | "cast" ->
-        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes_cast}
+        Exp.Sizeof {typ= t; nbytes= None; dynamic_length= dl; subtype= Subtype.subtypes_cast}
     | _ ->
         Logging.die InternalError "Subtype in Sizeof instruction is not supported."
   else Logging.die InternalError "Unknown expression kind %s" ekind
@@ -340,6 +345,7 @@ and parse_sil_type_name (json : Safe.t) : Typ.t =
     let tn = parse_typename (member "type_name" json) in
     Typ.mk (Typ.TVar (Typ.Name.name tn))
   else if String.equal type_kind "Tvoid" then StdTyp.void
+  else if String.equal type_kind "Tfun" then Typ.mk Tfun
   else if String.equal type_kind "Tenum" then
     (* Sil.Tenum (parse_list (parse_pair (fun n -> Mangled.from_string (to_string n)) parse_constant) value) *)
     Logging.die InternalError "Enums are not supported yet"

@@ -542,8 +542,6 @@ module Name = struct
     F.fprintf fmt "%s %a" (prefix tname) (pp_name_c_syntax Pp.text) tname
 
 
-  let pp_name_only fmt tname = F.fprintf fmt "%a" (pp_name_c_syntax Pp.text) tname
-
   let to_string = F.asprintf "%a" pp
 
   let is_class = function

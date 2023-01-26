@@ -35,7 +35,6 @@ type t =
   | Quandary
   | RacerD
   | ResourceLeakLabExercise
-  | DOTNETResourceLeaks
   | ScopeLeakage
   | SIOF
   | SimpleLineage
@@ -396,14 +395,6 @@ let config_unsafe checker =
           "Toy checker for the \"resource leak\" write-your-own-checker exercise."
       ; cli_flags= Some {deprecated= []; show_in_help= false}
       ; enabled_by_default= false
-      ; activates= [] }
-  | DOTNETResourceLeaks ->
-      { id= "dotnet-resource-leak"
-      ; kind= UserFacing {title= "Resource Leak checker for .NET"; markdown_body= ""}
-      ; support= mk_support_func ~csharp:Support ()
-      ; short_documentation= "\"resource leak\" checker for .NET."
-      ; cli_flags= Some {deprecated= []; show_in_help= false}
-      ; enabled_by_default= true
       ; activates= [] }
   | ScopeLeakage ->
       { id= "scope-leakage"
