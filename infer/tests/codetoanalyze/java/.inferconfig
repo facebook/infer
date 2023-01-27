@@ -249,7 +249,11 @@
     },
     { "class_names": ["codetoanalyze.java.pulse.InterproceduralInterfileUser"],
       "method_names": ["getPhoneNumber"],
-      "kinds": ["UserData"] }
+      "kinds": ["UserData"] },
+    { "class_names": ["codetoanalyze.java.pulse.Constants"],
+      "method_names": ["source"],
+      "taint_target": ["ArgumentPositions", [1]]
+    }
   ],
   "pulse-taint-sinks": [
     { "procedure": "inferSensitiveSink" },
