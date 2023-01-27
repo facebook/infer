@@ -15,7 +15,9 @@ include sig
 
       When retrieving already-computed summaries, each entry is lazily loaded from the analysis
       database to avoid loading and deserializing payloads unnecessarily, which can be overly
-      expensive and memory-hungry. *)
+      expensive and memory-hungry.
+
+      This type has to be in sync with PayloadId.t *)
   type t =
     { annot_map: AnnotationReachabilityDomain.t option Lazy.t
     ; biabduction: BiabductionSummary.t option Lazy.t

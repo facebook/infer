@@ -7,6 +7,7 @@
 
 open! IStd
 
+(* This type has to be in sync with Payloads.t *)
 type t =
   | AnnotMap
   | Biabduction
