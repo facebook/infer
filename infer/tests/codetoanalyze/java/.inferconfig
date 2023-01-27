@@ -253,7 +253,8 @@
     { "class_names": ["codetoanalyze.java.pulse.Constants"],
       "method_names": ["source"],
       "taint_target": ["ArgumentPositions", [1]]
-    }
+    },
+    { "method_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker" }
   ],
   "pulse-taint-sinks": [
     { "procedure": "inferSensitiveSink" },
@@ -393,7 +394,8 @@
     },
     { "class_names": ["codetoanalyze.java.pulse.Logger"],
       "method_names": ["log"],
-      "kinds": ["Logger"] }
+      "kinds": ["Logger"] },
+    { "method_with_annotation": "codetoanalyze.java.pulse.SensitiveSinkMarker" }
   ],
   "pulse-taint-sanitizers": [
     { "procedure": "inferUniversalSanitizer" },
@@ -405,6 +407,7 @@
       "method_names": ["append"],
       "kinds": ["StringConcatenation"]
     },
-    { "procedure": "codetoanalyze.java.pulse.ExternalSpecs.sanitizer" }
+    { "procedure": "codetoanalyze.java.pulse.ExternalSpecs.sanitizer" },
+    { "method_with_annotation": "codetoanalyze.java.pulse.SanitizerMarker" }
   ]
 }
