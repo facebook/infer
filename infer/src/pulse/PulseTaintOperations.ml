@@ -232,10 +232,10 @@ let procedure_matches tenv matchers proc_name actuals =
       let procedure_name_matches =
         match matcher.procedure_matcher with
         | ProcedureName {name} ->
-            let proc_name_s = F.asprintf "%a" Procname.pp_unique_id proc_name in
+            let proc_name_s = F.asprintf "%a" Procname.pp_verbose proc_name in
             String.is_substring ~substring:name proc_name_s
         | ProcedureNameRegex {name_regex} -> (
-            let proc_name_s = F.asprintf "%a" Procname.pp_unique_id proc_name in
+            let proc_name_s = F.asprintf "%a" Procname.pp_verbose proc_name in
             L.d_printfln "Matching regex wrt %s" proc_name_s ;
             match Str.search_forward name_regex proc_name_s 0 with
             | _ ->
