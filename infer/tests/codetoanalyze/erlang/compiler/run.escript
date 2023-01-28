@@ -24,9 +24,12 @@ run_test(Module, Function) ->
         io:format("ok~n")
     catch
         % Ignore details, we don't need them and might change across versions
-        error:{Reason,_Details} -> io:format("~w~n", [Reason]);
+        error:{Reason, _Details} -> io:format("~w~n", [Reason]);
         error:Error -> io:format("~w~n", [Error])
     end.
+
+is_test_func(Name) ->
+    lists:prefix("test_", Name) or lists:prefix("fp_test_", Name) or lists:prefix("fn_test_", Name).
 
 run_tests(File) ->
     case compile:file(File, []) of
@@ -34,12 +37,7 @@ run_tests(File) ->
             io:format("----- ~s -----~n", [Module]),
             Exports = Module:module_info(exports),
             Tests = lists:filter(
-                fun({F, A}) ->
-                    Fn = atom_to_list(F),
-                    (A =:= 0) and
-                        (lists:prefix("test", Fn) or lists:prefix("fp_", Fn) or
-                            lists:prefix("fn_", Fn))
-                end,
+                fun({F, A}) -> (A =:= 0) and is_test_func(atom_to_list(F)) end,
                 Exports
             ),
             lists:foreach(
