@@ -163,6 +163,7 @@ ifneq ($(REBAR3),no)
 DIRECT_TESTS += \
   erlang_pulse \
   erlang_pulse-otp \
+  erlang_pulse-taint \
   erlang_topl \
   erlang_compiler \
 

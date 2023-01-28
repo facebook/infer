@@ -1,0 +1,42 @@
+{
+    "pulse-taint-policies": [
+        {
+            "short_description": "Testing taint analysis",
+            "taint_flows": [
+                {
+                    "source_kinds": [
+                        "SimpleSource"
+                    ],
+                    "sanitizer_kinds": ["SimpleSanitizer"],
+                    "sink_kinds": [
+                        "SimpleSink"
+                    ]
+                }
+            ]
+        }
+    ],
+    "pulse-taint-sources": [
+        {
+            "procedure": "pulse_taint_simple:source/0",
+            "kinds": [
+                "SimpleSource"
+            ]
+        }
+    ],
+    "pulse-taint-sanitizers": [
+        {
+            "procedure": "pulse_taint_simple:sanitizer/1",
+            "kinds": [
+                "SimpleSanitizer"
+            ]
+        }
+    ],
+    "pulse-taint-sinks": [
+        {
+            "procedure": "pulse_taint_simple:sink/1",
+            "kinds": [
+                "SimpleSink"
+            ]
+        }
+    ]
+}
