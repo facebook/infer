@@ -349,128 +349,6 @@ let apply_arithmetic_constraints pre_or_post {PathContext.timestamp} callee_proc
     call_state.subst call_state
 
 
-(* All substitutions from callee to caller should use the canonical representation
-   of values and edges to ensure information is well connected between the two.
-   This is necessary for arrays because they can have different accesses with
-   different indices which are actually equal.
-   To do so, we add equalities in the state's formula for eveything we know should
-   be considered equal and get rid of the "non-canonical" representation of values
-   to avoid future conflicts with the canonical values.
-
-   e.g.
-    We can have { v1 -> { [v2] -> v3; [v4] -> v5 }} with v2 = v4. In that case, we
-    want to ensure that we always use v2 and v3 in the substitution rather than
-    v4 and v5. Therefore, we need to had the v3 = v5 equality in the formula and
-    ensure v5 will not conflict with v3 in the future.
-
-   These cases appear because when we link the arguments in the caller with the
-   parameters in the callee, we don't look into the array accesses to match the
-   indices with known values and also because some equalities may not be known at
-   the time we process an argument.
-   e.g.
-    when calling f(array, 0), we will only see that the second parameter is equal
-    to 0 after we already processed the first one so if one of the indices in the
-    given array is 0 and one in the parameter is equal to the second argument, we
-    would only know it after processing all the arguments and therefore after
-    having created values to represent the "new" index and value in the given array
-*)
-let canonicalize ~actuals call_state =
-  let incorporate_eqs_on_array_cells actuals astate =
-    let rec aux visited addrs astate replaced =
-      (* We keep track of the values from the callee that we replaced with values
-         from the caller to later remove their edges from the memory to avoid
-         getting an [Unsat] in [PulseBaseMemory.subst_var] which happens when we
-         [AbductiveDomain.incorporate_new_eqs] during the application of the post *)
-      let post_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in
-      match addrs with
-      | [] ->
-          (astate, replaced)
-      | addr :: addrs when AddressSet.mem addr visited ->
-          aux visited addrs astate replaced
-      | addr :: addrs -> (
-          let visited = AddressSet.add addr visited in
-          match BaseMemory.find_opt addr post_heap with
-          | None ->
-              aux visited addrs astate replaced
-          | Some edges ->
-              let merge_edges ~get_var_repr accessed accessed' astate =
-                (* Given 2 addresses [accessed] and [accessed'], merge their canonicalized
-                   edges and update the edges of accessed' with the result. In case an
-                   edge belongs to both addresses, the one from [accessed'] is kept. *)
-                match BaseMemory.find_opt accessed post_heap with
-                | None ->
-                    astate
-                | Some edges ->
-                    (* the callee value may know some edges that the caller is
-                       not aware of. We want to add them *)
-                    let edges' =
-                      match BaseMemory.find_opt accessed' post_heap with
-                      | None ->
-                          BaseMemory.Edges.empty
-                      | Some edges' ->
-                          BaseMemory.Edges.canonicalize ~get_var_repr edges'
-                    in
-                    let edges = BaseMemory.Edges.canonicalize ~get_var_repr edges in
-                    let merged_edges = BaseMemory.Edges.union_left_biased edges' edges in
-                    AbductiveDomain.set_post_edges accessed' merged_edges astate
-              in
-              let add_new_eq_aux accessed accessed' (replaced, astate) =
-                (* Set the [accessed'] as equal to [accessed] in [astate.path_condition]
-                   and set its edges to their merged canonicalized edges *)
-                match
-                  Formula.and_equal (AbstractValueOperand accessed) (AbstractValueOperand accessed')
-                    astate.AbductiveDomain.path_condition
-                with
-                | Unsat ->
-                    (replaced, astate)
-                | Sat (formula, _new_eqs) ->
-                    let get_var_repr v = Formula.get_var_repr formula v in
-                    let astate' = merge_edges ~get_var_repr accessed accessed' astate in
-                    let replaced =
-                      if phys_equal astate astate' then replaced else accessed :: replaced
-                    in
-                    let astate' = AbductiveDomain.set_path_condition formula astate' in
-                    (replaced, astate')
-              in
-              let add_new_eq accessed addr' access' ((_, astate) as acc) =
-                (* Set the value accesssible from [addr'] and [access'] as equal to
-                   [accessed] in [astate.path_condition] and merge their edges *)
-                let formula = astate.AbductiveDomain.path_condition in
-                let get_var_repr v = Formula.get_var_repr formula v in
-                match BaseMemory.find_edge_opt ~get_var_repr addr' access' post_heap with
-                | None ->
-                    acc
-                | Some (accessed', _)
-                  when AbstractValue.equal (get_var_repr accessed') (get_var_repr accessed) ->
-                    acc
-                | Some (accessed', _) ->
-                    add_new_eq_aux accessed accessed' acc
-              in
-              let replaced, astate, addrs =
-                BaseMemory.Edges.fold edges ~init:(replaced, astate, addrs)
-                  ~f:(fun (replaced, astate, addrs) (access, (accessed, _)) ->
-                    let formula = astate.AbductiveDomain.path_condition in
-                    let get_var_repr v = Formula.get_var_repr formula v in
-                    let addr' = get_var_repr addr in
-                    let access' = BaseMemory.Access.canonicalize ~get_var_repr access in
-                    let replaced, astate =
-                      add_new_eq accessed addr' access (replaced, astate)
-                      |> add_new_eq accessed addr access'
-                    in
-                    (replaced, astate, accessed :: addrs) )
-              in
-              aux visited addrs astate replaced )
-    in
-    let astate, replaced =
-      aux AddressSet.empty (List.map actuals ~f:(fun ((addr, _), _) -> addr)) astate []
-    in
-    List.fold replaced ~init:astate ~f:(fun astate addr ->
-        AbductiveDomain.remove_from_post addr astate )
-  in
-  let astate = incorporate_eqs_on_array_cells actuals call_state.astate in
-  if phys_equal call_state.astate astate then call_state else {call_state with astate}
-
-
 let materialize_pre path callee_proc_name call_location callee_summary ~captured_formals
     ~captured_actuals ~formals ~actuals call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call pre" ())) ;
@@ -485,7 +363,6 @@ let materialize_pre path callee_proc_name call_location callee_summary ~captured
     >>= (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
     apply_arithmetic_constraints `Pre path callee_proc_name call_location callee_summary
-    >>| canonicalize ~actuals
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   r
@@ -817,11 +694,140 @@ let apply_unknown_effects callee_summary call_state =
   {call_state with astate}
 
 
+(* All substitutions from callee to caller should use the canonical representation
+   of values and edges to ensure information is well connected between the two.
+   This is necessary for arrays because they can have different accesses with
+   different indices which are actually equal.
+   To do so, we add equalities in the state's formula for eveything we know should
+   be considered equal and get rid of the "non-canonical" representation of values
+   to avoid future conflicts with the canonical values.
+
+   e.g.
+    We can have { v1 -> { [v2] -> v3; [v4] -> v5 }} with v2 = v4. In that case, we
+    want to ensure that we always use v2 and v3 in the substitution rather than
+    v4 and v5. Therefore, we need to add the v3 = v5 equality in the formula and
+    ensure v5 will not conflict with v3 in the future.
+
+   These cases appear because when we link the arguments in the caller with the
+   parameters in the callee, we don't look into the array accesses to match the
+   indices with known values and also because some equalities may not be known at
+   the time we process an argument.
+   e.g.
+    when calling f(array, 0), we will only see that the second parameter is equal
+    to 0 after we already processed the first one so if one of the indices in the
+    given array is 0 and one in the parameter is equal to the second argument, we
+    would only know it after processing all the arguments and therefore after
+    having created values to represent the "new" index and value in the given array
+*)
+let canonicalize ~actuals call_state =
+  let incorporate_eqs_on_array_cells actuals astate =
+    let rec aux visited addrs astate replaced =
+      (* We keep track of the values from the callee that we replaced with values
+         from the caller to later remove their edges from the memory to avoid
+         getting an [Unsat] in [PulseBaseMemory.subst_var] which happens when we
+         [AbductiveDomain.incorporate_new_eqs] during the application of the post *)
+      let post_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in
+      match addrs with
+      | [] ->
+          (astate, replaced)
+      | addr :: addrs when AddressSet.mem addr visited ->
+          aux visited addrs astate replaced
+      | addr :: addrs -> (
+          let visited = AddressSet.add addr visited in
+          match BaseMemory.find_opt addr post_heap with
+          | None ->
+              aux visited addrs astate replaced
+          | Some edges ->
+              let merge_edges ~get_var_repr accessed accessed' astate =
+                (* Given 2 addresses [accessed] and [accessed'], merge their canonicalized
+                   edges and update the edges of accessed' with the result. In case an
+                   edge belongs to both addresses, the one from [accessed'] is kept. *)
+                match BaseMemory.find_opt accessed post_heap with
+                | None ->
+                    astate
+                | Some edges ->
+                    (* the callee value may know some edges that the caller is
+                       not aware of. We want to add them *)
+                    let edges' =
+                      match BaseMemory.find_opt accessed' post_heap with
+                      | None ->
+                          BaseMemory.Edges.empty
+                      | Some edges' ->
+                          BaseMemory.Edges.canonicalize ~get_var_repr edges'
+                    in
+                    let edges = BaseMemory.Edges.canonicalize ~get_var_repr edges in
+                    let merged_edges = BaseMemory.Edges.union_left_biased edges' edges in
+                    AbductiveDomain.set_post_edges accessed' merged_edges astate
+              in
+              let add_new_eq_aux accessed accessed' (replaced, astate) =
+                (* Set the [accessed'] as equal to [accessed] in [astate.path_condition]
+                   and set its edges to their merged canonicalized edges *)
+                match
+                  Formula.and_equal (AbstractValueOperand accessed) (AbstractValueOperand accessed')
+                    astate.AbductiveDomain.path_condition
+                with
+                | Unsat ->
+                    (replaced, astate)
+                | Sat (formula, _new_eqs) ->
+                    let get_var_repr v = Formula.get_var_repr formula v in
+                    let astate' = merge_edges ~get_var_repr accessed accessed' astate in
+                    let replaced =
+                      if phys_equal astate astate' then replaced else accessed :: replaced
+                    in
+                    let astate' = AbductiveDomain.set_path_condition formula astate' in
+                    (replaced, astate')
+              in
+              let add_new_eq accessed addr' access' ((_, astate) as acc) =
+                (* Set the value accesssible from [addr'] and [access'] as equal to
+                   [accessed] in [astate.path_condition] and merge their edges *)
+                let formula = astate.AbductiveDomain.path_condition in
+                let get_var_repr v = Formula.get_var_repr formula v in
+                match BaseMemory.find_edge_opt ~get_var_repr addr' access' post_heap with
+                | None ->
+                    acc
+                | Some (accessed', _)
+                  when AbstractValue.equal (get_var_repr accessed') (get_var_repr accessed) ->
+                    acc
+                | Some (accessed', _) ->
+                    add_new_eq_aux accessed accessed' acc
+              in
+              let replaced, astate, addrs =
+                BaseMemory.Edges.fold edges ~init:(replaced, astate, addrs)
+                  ~f:(fun (replaced, astate, addrs) (access, (accessed, _)) ->
+                    let formula = astate.AbductiveDomain.path_condition in
+                    let get_var_repr v = Formula.get_var_repr formula v in
+                    let addr' = get_var_repr addr in
+                    let access' = BaseMemory.Access.canonicalize ~get_var_repr access in
+                    let replaced, astate =
+                      add_new_eq accessed addr' access (replaced, astate)
+                      |> add_new_eq accessed addr access'
+                    in
+                    (replaced, astate, accessed :: addrs) )
+              in
+              aux visited addrs astate replaced )
+    in
+    let astate, replaced =
+      aux AddressSet.empty (List.map actuals ~f:(fun ((addr, _), _) -> addr)) astate []
+    in
+    List.fold replaced ~init:astate ~f:(fun astate addr ->
+        AbductiveDomain.remove_from_post addr astate )
+  in
+  let astate = incorporate_eqs_on_array_cells actuals call_state.astate in
+  if phys_equal call_state.astate astate then call_state else {call_state with astate}
+
+
 let apply_post path callee_proc_name call_location callee_summary ~captured_formals
     ~captured_actuals ~formals ~actuals call_state =
   let open PulseResult.Let_syntax in
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
   let normalize_subst_for_post call_state =
+    (* Exploit known equalities to deduce new ones by relying on the canonical representation
+       of values and edge. This is necessary for arrays because they rely on values in their
+       index access representation *)
+    let call_state = canonicalize ~actuals call_state in
+    let call_state = canonicalize ~actuals:captured_actuals call_state in
+    (* Now that all equalities are deduced and set, we can exploit them to use the canonical
+       representation of values in the subst and rev_subst maps *)
     let get_var_repr v = Formula.get_var_repr call_state.astate.AbductiveDomain.path_condition v in
     let subst =
       AddressMap.map
