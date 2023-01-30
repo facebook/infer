@@ -646,3 +646,9 @@ int intermediate_local_copy_used_ok() {
   input.arr[0] = 0; // can't suggest moving input as it is used
   return x;
 }
+
+void copy_assignment_const_ref_member_FP(const Arr& arr) {
+  std::vector<int> my_vec;
+  my_vec = arr.vec; // infer cannot see that arr.vec is const so it should
+                    // suggest unnecessary_copy_assignment_const
+}
