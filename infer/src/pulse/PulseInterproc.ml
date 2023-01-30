@@ -980,7 +980,7 @@ let check_all_taint_valid path callee_proc_name call_location callee_summary ast
    - if aliasing is introduced at any time then give up *)
 let apply_summary path callee_proc_name call_location ~callee_summary ~captured_formals
     ~captured_actuals ~formals ~actuals astate =
-  L.d_printfln "Applying pre/post for %a(%a):@\n%a" Procname.pp callee_proc_name
+  L.d_printfln_escaped "Applying pre/post for %a(%a):@\n%a" Procname.pp callee_proc_name
     (Pp.seq ~sep:"," (fun f (var, _) -> Var.pp f var))
     formals AbductiveDomain.Summary.pp callee_summary ;
   let empty_call_state =

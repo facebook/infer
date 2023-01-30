@@ -82,7 +82,7 @@ digraph cfg {
 	
 
 	 "forward<int>#std#14337564435912703930.2162e0d5df444300a9e4b7f172c27ccd_3" -> "forward<int>#std#14337564435912703930.2162e0d5df444300a9e4b7f172c27ccd_4" ;
-"forward<int>#std#14337564435912703930.2162e0d5df444300a9e4b7f172c27ccd_4" [label="4:  Return Stmt \n   *&return:int&&=n$0 [line 26, column 3]\n " shape="box"]
+"forward<int>#std#14337564435912703930.2162e0d5df444300a9e4b7f172c27ccd_4" [label="4:  Return Stmt \n   *&return:int&&=(int&&)n$0 [line 26, column 3]\n " shape="box"]
 	
 
 	 "forward<int>#std#14337564435912703930.2162e0d5df444300a9e4b7f172c27ccd_4" -> "forward<int>#std#14337564435912703930.2162e0d5df444300a9e4b7f172c27ccd_2" ;

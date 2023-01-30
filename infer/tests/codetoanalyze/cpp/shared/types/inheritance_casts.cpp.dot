@@ -156,7 +156,7 @@ digraph cfg {
 	
 
 	 "A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_3" -> "A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_4" ;
-"A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_4" [label="4:  Constructor Init \n   n$2=*&__param_0:inheritance_casts::A&& [line 8, column 8]\n  n$3=*n$2.f:int [line 8, column 8]\n  *n$1.f:int=n$3 [line 8, column 8]\n " shape="box"]
+"A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_4" [label="4:  Constructor Init \n   n$2=*&__param_0:inheritance_casts::A&& [line 8, column 8]\n  n$3=*(inheritance_casts::A&&)n$2.f:int [line 8, column 8]\n  *n$1.f:int=n$3 [line 8, column 8]\n " shape="box"]
 	
 
 	 "A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_4" -> "A#A#inheritance_casts#{5177723221953429334}.49b928799db3860588da51289e876f42_2" ;
@@ -178,7 +178,7 @@ digraph cfg {
 	
 
 	 "B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_3" -> "B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_4" ;
-"B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_4" [label="4:  Constructor Init \n   n$2=*&__param_0:inheritance_casts::B&& [line 11, column 8]\n  n$3=_fun_inheritance_casts::A::A(n$1:inheritance_casts::B*,n$2:inheritance_casts::B&&) [line 11, column 8]\n " shape="box"]
+"B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_4" [label="4:  Constructor Init \n   n$2=*&__param_0:inheritance_casts::B&& [line 11, column 8]\n  n$3=_fun_inheritance_casts::A::A(n$1:inheritance_casts::B*,(inheritance_casts::B&&)n$2:inheritance_casts::B&&) [line 11, column 8]\n " shape="box"]
 	
 
 	 "B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_4" -> "B#B#inheritance_casts#{1524938702708619033}.c5e2632fa2e80da07a969f289f194331_2" ;

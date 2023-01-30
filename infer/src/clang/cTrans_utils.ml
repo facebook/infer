@@ -551,6 +551,8 @@ let dereference_value_from_result ?(strip_pointer = false) source_range sil_loc 
 
 let cast_operation ?objc_bridge_cast_kind cast_kind ((exp, typ) as exp_typ) cast_typ sil_loc =
   match cast_kind with
+  | `NoOp when Typ.is_rvalue_reference cast_typ ->
+      ([], (Exp.Cast (cast_typ, exp), cast_typ))
   | `NoOp | `DerivedToBase | `UncheckedDerivedToBase ->
       (* These casts ignore change of type *)
       ([], exp_typ)
