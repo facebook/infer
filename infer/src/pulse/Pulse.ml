@@ -8,7 +8,6 @@
 open! IStd
 module F = Format
 module L = Logging
-module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
@@ -27,14 +26,15 @@ let report_topl_errors proc_desc err_log summary =
   List.iter ~f summary
 
 
-let is_not_implicit pname =
+let is_not_implicit exe_env pname =
   not
-    (Option.exists (IRAttributes.load pname) ~f:(fun attrs -> attrs.ProcAttributes.is_cpp_implicit))
+    (Option.exists (Exe_env.get_attributes exe_env pname) ~f:(fun attrs ->
+         attrs.ProcAttributes.is_cpp_implicit ) )
 
 
-let report_unnecessary_copies proc_desc err_log non_disj_astate =
+let report_unnecessary_copies exe_env proc_desc err_log non_disj_astate =
   let pname = Procdesc.get_proc_name proc_desc in
-  if is_not_implicit pname then
+  if is_not_implicit exe_env pname then
     PulseNonDisjunctiveDomain.get_copied non_disj_astate
     |> List.iter ~f:(fun (copied_into, source_typ, location, copied_location, from) ->
            let copy_name = Format.asprintf "%a" Attribute.CopiedInto.pp copied_into in
@@ -45,10 +45,10 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
            PulseReport.report ~is_suppressed ~latent:false proc_desc err_log diagnostic )
 
 
-let report_unnecessary_parameter_copies proc_desc err_log non_disj_astate =
+let report_unnecessary_parameter_copies exe_env proc_desc err_log non_disj_astate =
   let pname = Procdesc.get_proc_name proc_desc in
-  if is_not_implicit pname then
-    PulseNonDisjunctiveDomain.get_const_refable_parameters non_disj_astate
+  if is_not_implicit exe_env pname then
+    PulseNonDisjunctiveDomain.get_const_refable_parameters exe_env non_disj_astate
     |> List.iter ~f:(fun (param, typ, location) ->
            let diagnostic =
              if Typ.is_shared_pointer typ then
@@ -71,8 +71,8 @@ module PulseTransferFunctions = struct
 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
-  let get_pvar_formals pname =
-    IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
+  let get_pvar_formals exe_env pname =
+    Exe_env.get_attributes exe_env pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
   let need_specialization astates =
@@ -122,15 +122,15 @@ module PulseTransferFunctions = struct
 
 
   let interprocedural_call
-      ({InterproceduralAnalysis.analyze_dependency; tenv; proc_desc} as analysis_data) path ret
-      callee_pname call_exp func_args call_loc (flags : CallFlags.t) astate =
+      ({InterproceduralAnalysis.analyze_dependency; exe_env; tenv; proc_desc} as analysis_data) path
+      ret callee_pname call_exp func_args call_loc (flags : CallFlags.t) astate =
     let actuals =
       List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
           (arg_payload, typ) )
     in
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
-        let formals_opt = get_pvar_formals callee_pname in
+        let formals_opt = get_pvar_formals exe_env callee_pname in
         let callee_data = analyze_dependency callee_pname in
         let call_kind_of call_exp =
           match call_exp with
@@ -161,11 +161,11 @@ module PulseTransferFunctions = struct
                 with
                 | Some (callee_pname, call_exp, astate) ->
                     L.d_printfln "Succesfully alias-specialized %a@\n" Exp.pp call_exp ;
-                    let formals_opt = get_pvar_formals callee_pname in
+                    let formals_opt = get_pvar_formals exe_env callee_pname in
                     let callee_data = analyze_dependency callee_pname in
                     let call_res =
-                      PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data
-                        call_loc callee_pname ~ret ~actuals ~formals_opt
+                      PulseCallOperations.call exe_env tenv path ~caller_proc_desc:proc_desc
+                        ~callee_data call_loc callee_pname ~ret ~actuals ~formals_opt
                         ~call_kind:(call_kind_of call_exp) astate
                     in
                     (callee_pname, call_exp, call_res)
@@ -185,10 +185,11 @@ module PulseTransferFunctions = struct
             with
             | Some (callee_pname, call_exp, astate) ->
                 L.d_printfln "Succesfully closure-specialized %a@\n" Exp.pp call_exp ;
-                let formals_opt = get_pvar_formals callee_pname in
+                let formals_opt = get_pvar_formals exe_env callee_pname in
                 let callee_data = analyze_dependency callee_pname in
-                PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
-                  callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate
+                PulseCallOperations.call exe_env tenv path ~caller_proc_desc:proc_desc ~callee_data
+                  call_loc callee_pname ~ret ~actuals ~formals_opt
+                  ~call_kind:(call_kind_of call_exp) astate
                 |> maybe_call_with_alias callee_pname call_exp
             | None ->
                 L.d_printfln "Failed to closure-specialize %a@\n" Exp.pp call_exp ;
@@ -197,8 +198,8 @@ module PulseTransferFunctions = struct
         in
         let res, _contradiction =
           let callee_pname, call_exp, call_res =
-            PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
-              callee_pname ~ret ~actuals ~formals_opt ~call_kind astate
+            PulseCallOperations.call exe_env tenv path ~caller_proc_desc:proc_desc ~callee_data
+              call_loc callee_pname ~ret ~actuals ~formals_opt ~call_kind astate
             |> maybe_call_with_alias callee_pname call_exp
           in
           let _, _, call_res = maybe_call_specialization callee_pname call_exp call_res in
@@ -242,7 +243,7 @@ module PulseTransferFunctions = struct
              PulseOperations.conservatively_initialize_args arg_values astate
            in
            let<++> astate =
-             PulseCallOperations.unknown_call path call_loc (SkippedUnknownCall call_exp)
+             PulseCallOperations.unknown_call exe_env path call_loc (SkippedUnknownCall call_exp)
                callee_pname ~ret ~actuals ~formals_opt:None astate
            in
            astate )
@@ -369,8 +370,8 @@ module PulseTransferFunctions = struct
     | NoModel
 
   let rec dispatch_call_eval_args
-      ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) path ret call_exp
-      actuals func_args call_loc flags astate callee_pname =
+      ({InterproceduralAnalysis.tenv; exe_env; proc_desc; err_log} as analysis_data) path ret
+      call_exp actuals func_args call_loc flags astate callee_pname =
     let callee_pname =
       if flags.CallFlags.cf_virtual then resolve_virtual_call tenv astate func_args callee_pname
       else callee_pname
@@ -452,7 +453,7 @@ module PulseTransferFunctions = struct
               match call_was_unknown with `UnknownCall -> true | `KnownCall -> false
             in
             let+ astate =
-              PulseTaintOperations.call tenv path call_loc ret ~call_was_unknown call_event
+              PulseTaintOperations.call exe_env tenv path call_loc ret ~call_was_unknown call_event
                 func_args astate
             in
             ContinueProgram astate
@@ -483,7 +484,7 @@ module PulseTransferFunctions = struct
       | None ->
           exec_states_res
     in
-    if Option.exists callee_pname ~f:IRAttributes.is_no_return then
+    if Option.exists callee_pname ~f:(Exe_env.is_no_return exe_env) then
       List.filter_map exec_states_res ~f:(fun exec_state_res ->
           (let+ exec_state = exec_state_res in
            PulseSummary.force_exit_program tenv proc_desc err_log call_loc exec_state
@@ -760,7 +761,7 @@ module PulseTransferFunctions = struct
 
   let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t)
-      ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
+      ({InterproceduralAnalysis.tenv; exe_env; proc_desc; err_log} as analysis_data) _cfg_node
       (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
     | AbortProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
@@ -851,10 +852,12 @@ module PulseTransferFunctions = struct
             |> PulseReport.report_exec_results tenv proc_desc err_log loc
           in
           let astate_n, astates =
-            PulseNonDisjunctiveOperations.call tenv proc_desc path loc ~call_exp ~actuals astates
-              astate_n
+            PulseNonDisjunctiveOperations.call exe_env tenv proc_desc path loc ~call_exp ~actuals
+              astates astate_n
           in
-          let astate_n = NonDisjDomain.set_passed_to loc timestamp call_exp actuals astate_n in
+          let astate_n =
+            NonDisjDomain.set_passed_to exe_env loc timestamp call_exp actuals astate_n
+          in
           (astates, path, astate_n)
       | Prune (condition, loc, is_then_branch, if_kind) ->
           let prune_result =
@@ -1010,7 +1013,7 @@ let exit_function analysis_data location posts non_disj_astate =
   (List.rev astates, astate_n)
 
 
-let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
+let analyze ({InterproceduralAnalysis.tenv; exe_env; proc_desc; err_log} as analysis_data) =
   if should_analyze proc_desc then (
     AbstractValue.State.reset () ;
     PulseTopl.Debug.dropped_disjuncts_count := 0 ;
@@ -1058,8 +1061,8 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
             else summary
           in
           report_topl_errors proc_desc err_log summary ;
-          report_unnecessary_copies proc_desc err_log non_disj_astate ;
-          report_unnecessary_parameter_copies proc_desc err_log non_disj_astate ;
+          report_unnecessary_copies exe_env proc_desc err_log non_disj_astate ;
+          report_unnecessary_parameter_copies exe_env proc_desc err_log non_disj_astate ;
           summary
       | None ->
           []

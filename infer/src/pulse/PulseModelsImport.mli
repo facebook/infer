@@ -153,7 +153,8 @@ module Basic : sig
     -> AbductiveDomain.t AccessResult.t SatUnsat.t
 
   val call_constructor :
-       Typ.name
+       Exe_env.t
+    -> Typ.name
     -> Typ.t list
     -> (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list
     -> Exp.t

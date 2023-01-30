@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module IRAttributes = Attributes
 module FuncArg = ProcnameDispatcher.Call.FuncArg
 open PulseBasicInterface
 open PulseDomainInterface
@@ -368,6 +367,7 @@ let deep_formals_to_closures_of_captured_vars ({InterproceduralAnalysis.proc_des
 
 
 let get_orig_captured_vars analysis_data callee_pname call_kind =
+  let exe_env = analysis_data.InterproceduralAnalysis.exe_env in
   match call_kind with
   | `Closure captured_vars ->
       (* If the current callee is specialized, we want to get rid of the variables captured
@@ -376,12 +376,12 @@ let get_orig_captured_vars analysis_data callee_pname call_kind =
       *)
       let captured =
         let attributes =
-          Option.bind (IRAttributes.load callee_pname) ~f:(fun attributes ->
+          Option.bind (Exe_env.get_attributes exe_env callee_pname) ~f:(fun attributes ->
               match attributes.ProcAttributes.specialized_with_closures_info with
               | None ->
                   Some attributes
               | Some {orig_proc} ->
-                  IRAttributes.load orig_proc )
+                  Exe_env.get_attributes exe_env orig_proc )
         in
         match attributes with None -> [] | Some attributes -> attributes.captured
       in

@@ -373,7 +373,7 @@ module Function = struct
   let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
       model =
    fun { path
-       ; analysis_data= {analyze_dependency; tenv; proc_desc}
+       ; analysis_data= {analyze_dependency; exe_env; tenv; proc_desc}
        ; location
        ; ret= (ret_id, _) as ret } astate ->
     let<*> astate, (lambda, _) =
@@ -399,7 +399,7 @@ module Function = struct
           :: List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
                  (arg_payload, typ) )
         in
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
+        PulseCallOperations.call exe_env tenv path ~caller_proc_desc:proc_desc
           ~callee_data:(analyze_dependency callee_proc_name)
           location callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname
           astate

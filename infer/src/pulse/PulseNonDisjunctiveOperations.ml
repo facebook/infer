@@ -7,7 +7,6 @@
 
 open! IStd
 module L = Logging
-module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 module CheapCopyTypes = PulseCheapCopyTypes
@@ -133,7 +132,7 @@ let is_copy_assigned_from_this ~from source_addr_typ_opt =
              false )
 
 
-let add_copies tenv proc_desc path location call_exp actuals astates astate_non_disj =
+let add_copies exe_env tenv proc_desc path location call_exp actuals astates astate_non_disj =
   let open IOption.Let_syntax in
   let aux (copy_check_fn, args_map_fn) init astates =
     continue_fold_map astates ~init ~f:(fun astate_non_disj disjunct ->
@@ -236,11 +235,11 @@ let add_copies tenv proc_desc path location call_exp actuals astates astate_non_
   in
   let copy_from_fn pname : Attribute.CopyOrigin.t option =
     if
-      Option.exists (IRAttributes.load pname) ~f:(fun attrs ->
+      Option.exists (Exe_env.get_attributes exe_env pname) ~f:(fun attrs ->
           attrs.ProcAttributes.is_cpp_copy_ctor )
     then Some CopyCtor
     else if
-      Option.exists (IRAttributes.load pname) ~f:(fun attrs ->
+      Option.exists (Exe_env.get_attributes exe_env pname) ~f:(fun attrs ->
           attrs.ProcAttributes.is_cpp_copy_assignment )
     then Some CopyAssignment
     else None
@@ -310,8 +309,10 @@ let add_copied_return path location call_exp actuals astates astate_non_disj =
       default
 
 
-let call tenv proc_desc path loc ~call_exp ~actuals astates astate_n =
-  let astate_n, astates = add_copies tenv proc_desc path loc call_exp actuals astates astate_n in
+let call exe_env tenv proc_desc path loc ~call_exp ~actuals astates astate_n =
+  let astate_n, astates =
+    add_copies exe_env tenv proc_desc path loc call_exp actuals astates astate_n
+  in
   add_copied_return path loc call_exp actuals astates astate_n
 
 

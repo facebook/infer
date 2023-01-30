@@ -7,7 +7,6 @@
 
 open! IStd
 module L = Logging
-module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
@@ -34,15 +33,15 @@ let add_returned_from_unknown callee_pname_opt ret_val actuals astate =
 (** if the procedure has a variadic number of arguments, its known [formals] will be less than the
     [actuals] we get but currently there is no support for handling the remaining arguments (the
     ones in [...]) so we just drop them *)
-let trim_actuals_if_var_arg proc_name_opt ~formals ~actuals =
-  let proc_attrs = Option.bind ~f:IRAttributes.load proc_name_opt in
+let trim_actuals_if_var_arg exe_env proc_name_opt ~formals ~actuals =
+  let proc_attrs = Option.bind ~f:(Exe_env.get_attributes exe_env) proc_name_opt in
   if Option.exists proc_attrs ~f:(fun {ProcAttributes.is_variadic} -> is_variadic) then
     List.take actuals (List.length formals)
   else actuals
 
 
-let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t) callee_pname_opt
-    ~ret ~actuals ~formals_opt ({AbductiveDomain.post; path_condition} as astate) =
+let unknown_call exe_env ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t)
+    callee_pname_opt ~ret ~actuals ~formals_opt ({AbductiveDomain.post; path_condition} as astate) =
   let hist =
     ValueHistory.singleton
       (Call {f= reason; location= call_loc; in_call= ValueHistory.epoch; timestamp})
@@ -95,7 +94,7 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
         if
           Option.exists callee_pname_opt ~f:(fun p ->
               Procname.is_constructor p
-              || Option.exists (IRAttributes.load p) ~f:(fun attrs ->
+              || Option.exists (Exe_env.get_attributes exe_env p) ~f:(fun attrs ->
                      attrs.ProcAttributes.is_cpp_copy_assignment )
               || Procname.is_destructor p )
         then astate
@@ -165,7 +164,7 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
   | _, None ->
       havoc_actuals_without_typ_info astate
   | _, Some formals -> (
-      let actuals = trim_actuals_if_var_arg callee_pname_opt ~actuals ~formals in
+      let actuals = trim_actuals_if_var_arg exe_env callee_pname_opt ~actuals ~formals in
       match
         List.fold2 actuals formals ~init:astate ~f:(fun astate actual_typ (_, formal_typ) ->
             havoc_actual_if_ptr actual_typ (Some formal_typ) astate )
@@ -179,8 +178,8 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
   |> add_skipped_proc
 
 
-let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee_pname call_loc
-    callee_exec_state ~ret ~captured_formals ~captured_actuals ~formals ~actuals astate =
+let apply_callee exe_env tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee_pname
+    call_loc callee_exec_state ~ret ~captured_formals ~captured_actuals ~formals ~actuals astate =
   let open ExecutionDomain in
   let copy_to_caller_return_variable astate return_val_opt =
     (* Copies the return value of the callee into the return register of the caller.
@@ -206,7 +205,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
     let sat_unsat, contradiction =
       PulseInterproc.apply_summary path callee_pname call_loc ~callee_summary ~captured_formals
         ~captured_actuals ~formals
-        ~actuals:(trim_actuals_if_var_arg (Some callee_pname) ~actuals ~formals)
+        ~actuals:(trim_actuals_if_var_arg exe_env (Some callee_pname) ~actuals ~formals)
         astate
     in
     let sat_unsat =
@@ -361,7 +360,7 @@ let ( let<**> ) x f =
       (res, contradiction)
 
 
-let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
+let call_aux exe_env tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
     (callee_proc_attrs : ProcAttributes.t) exec_states (astate : AbductiveDomain.t) =
   let formals =
     List.map callee_proc_attrs.formals ~f:(fun (mangled, typ, _) ->
@@ -400,7 +399,7 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
            *)
         Timer.check_timeout () ;
         match
-          apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_state
+          apply_callee exe_env tenv path ~caller_proc_desc callee_pname call_loc callee_exec_state
             ~captured_formals ~captured_actuals ~formals ~actuals ~ret astate
         with
         | Unsat, new_contradiction ->
@@ -410,8 +409,8 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
             (post :: posts, merge_contradictions contradiction new_contradiction) )
 
 
-let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
-    callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) =
+let call exe_env tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option)
+    call_loc callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) =
   (* a special case for objc nil messaging *)
   let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =
     let result_unknown =
@@ -424,14 +423,14 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
     let result_unknown_nil, contradiction =
       PulseSummary.mk_objc_nil_messaging_summary tenv proc_name proc_attrs
       |> Option.value_map ~default:([], None) ~f:(fun nil_summary ->
-             call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
+             call_aux exe_env tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
                proc_attrs [nil_summary] astate )
     in
     (result_unknown @ result_unknown_nil, contradiction)
   in
   match callee_data with
   | Some (callee_proc_desc, exec_states) ->
-      call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
+      call_aux exe_env tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
         (Procdesc.get_attributes callee_proc_desc)
         exec_states astate
   | None ->
@@ -440,14 +439,14 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
       let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
       let<**> astate_unknown =
         PulseOperations.conservatively_initialize_args arg_values astate
-        |> unknown_call path call_loc (SkippedKnownCall callee_pname) (Some callee_pname) ~ret
-             ~actuals ~formals_opt
+        |> unknown_call exe_env path call_loc (SkippedKnownCall callee_pname) (Some callee_pname)
+             ~ret ~actuals ~formals_opt
       in
       ScubaLogging.pulse_log_message ~label:"unmodeled_function_operation_pulse"
         ~message:
           (Format.asprintf "Unmodeled Function[Pulse] : %a" Procname.pp_without_templates
              callee_pname ) ;
-      IRAttributes.load callee_pname
+      Exe_env.get_attributes exe_env callee_pname
       |> Option.value_map
            ~default:([Ok (ContinueProgram astate_unknown)], None)
            ~f:(unknown_objc_nil_messaging astate_unknown callee_pname)

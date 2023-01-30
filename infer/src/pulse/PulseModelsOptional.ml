@@ -7,7 +7,6 @@
 
 open! IStd
 module L = Logging
-module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
@@ -69,8 +68,9 @@ let get_template_arg typ =
 let assign_precise_value (ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= this_payload} as this)
     (ProcnameDispatcher.Call.FuncArg.{arg_payload= other_payload} as other) ~desc : model =
  (* This model marks the optional object to be non-empty by storing value. *)
- fun ({callee_procname; path; location} as model_data) astate ->
-  match (get_template_arg typ, IRAttributes.load_formal_types callee_procname |> List.last) with
+ fun ({analysis_data; callee_procname; path; location} as model_data) astate ->
+  let exe_env = analysis_data.InterproceduralAnalysis.exe_env in
+  match (get_template_arg typ, Exe_env.get_formal_types exe_env callee_procname |> List.last) with
   | Some ({desc= Tstruct class_name} as typ), Some actual ->
       (* assign the value pointer to the field of the shared_ptr *)
       let<**> astate, value_address = Basic.alloc_value_address ~desc typ model_data astate in
@@ -84,7 +84,7 @@ let assign_precise_value (ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= thi
       in
       (* create the list of types of the actual arguments of the constructor *)
       let actuals = [typ; actual] in
-      Basic.call_constructor class_name actuals args fake_exp model_data astate
+      Basic.call_constructor exe_env class_name actuals args fake_exp model_data astate
   | Some _, Some _ ->
       L.d_printfln "Class not found" ;
       let<**> astate, address = Basic.deep_copy path location ~value:other_payload ~desc astate in

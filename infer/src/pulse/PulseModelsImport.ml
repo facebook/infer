@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module IRAttributes = Attributes
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
@@ -186,17 +185,18 @@ module Basic = struct
       don't have the implementation. This triggers a bunch of heuristics, e.g. to havoc arguments we
       suspect are passed by reference. *)
   let unknown_call skip_reason args : model =
-   fun {path; callee_procname; location; ret} astate ->
+   fun {analysis_data= {exe_env}; path; callee_procname; location; ret} astate ->
     let actuals =
       List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
           (actual, typ) )
     in
     let formals_opt =
-      IRAttributes.load callee_procname |> Option.map ~f:ProcAttributes.get_pvar_formals
+      Exe_env.get_attributes exe_env callee_procname
+      |> Option.map ~f:ProcAttributes.get_pvar_formals
     in
     let<++> astate =
-      PulseCallOperations.unknown_call path location (Model skip_reason) (Some callee_procname) ~ret
-        ~actuals ~formals_opt astate
+      PulseCallOperations.unknown_call exe_env path location (Model skip_reason)
+        (Some callee_procname) ~ret ~actuals ~formals_opt astate
     in
     astate
 
@@ -272,24 +272,24 @@ module Basic = struct
         ok_continue astate
 
 
-  let match_args_of_single_proc comparator actuals (proc : Procname.t) : bool =
+  let match_args_of_single_proc exe_env comparator actuals (proc : Procname.t) : bool =
     (* Check if the formal arguments of the function 'proc' bind the actual arguments *)
-    let formals = IRAttributes.load_formal_types proc in
+    let formals = Exe_env.get_formal_types exe_env proc in
     List.equal comparator formals actuals
 
 
-  let match_args_of_procedures comparators actuals procedures =
+  let match_args_of_procedures exe_env comparators actuals procedures =
     (* Check if there is any procedure in procedures where the formal arguments bind the actual arguments.
        It tries multiple-levels of comparators (e.g., strict, loose),
             and return the function found firstly that matches with a stricter comparator.*)
     List.find_map comparators ~f:(fun c ->
-        List.find procedures ~f:(match_args_of_single_proc c actuals) )
+        List.find procedures ~f:(match_args_of_single_proc exe_env c actuals) )
 
 
-  let call_constructor class_name actuals args exp
+  let call_constructor exe_env class_name actuals args exp
       {analysis_data; dispatch_call_eval_args; path; location; ret} astate =
     let candidates = Tenv.find_cpp_constructor analysis_data.tenv class_name in
-    match match_args_of_procedures Typ.overloading_resolution actuals candidates with
+    match match_args_of_procedures exe_env Typ.overloading_resolution actuals candidates with
     | Some constructor ->
         L.d_printfln_escaped "Constructor found: %a" Procname.pp_unique_id constructor ;
         dispatch_call_eval_args analysis_data path ret exp

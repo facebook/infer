@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseOperationResult.Import
 open PulseModelsImport
@@ -22,7 +21,7 @@ end
 let call args : model =
  (* [call \[args...; Closure _\]] models a call to the closure. It is similar to a
     dispatch function. *)
- fun {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate ->
+ fun {path; analysis_data= {analyze_dependency; exe_env; tenv; proc_desc}; location; ret} astate ->
   match List.last args with
   | Some {ProcnameDispatcher.Call.FuncArg.exp= Closure c} when Procname.is_objc_block c.name ->
       (* TODO(T101946461): This code is very similar to [Pulse.dispatch_call] after the special
@@ -31,14 +30,14 @@ let call args : model =
       PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
       let actuals = [] in
       let get_pvar_formals pname =
-        IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
+        Exe_env.get_attributes exe_env pname |> Option.map ~f:ProcAttributes.get_pvar_formals
       in
       let formals_opt = get_pvar_formals c.name in
       let callee_data = analyze_dependency c.name in
       let call_kind = `Closure c.captured_vars in
       let r, _contradiction =
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data location c.name
-          ~ret ~actuals ~formals_opt ~call_kind astate
+        PulseCallOperations.call exe_env tenv path ~caller_proc_desc:proc_desc ~callee_data location
+          c.name ~ret ~actuals ~formals_opt ~call_kind astate
       in
       PerfEvent.(log (fun logger -> log_end_event logger ())) ;
       r

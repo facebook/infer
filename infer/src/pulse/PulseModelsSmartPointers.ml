@@ -7,7 +7,6 @@
 
 open! IStd
 module L = Logging
-module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
@@ -330,8 +329,8 @@ module SharedPtr = struct
             [Ok exec_state] )
 
 
-  let is_rvalue callee_procname arg_index =
-    let formals = IRAttributes.load_formal_types callee_procname in
+  let is_rvalue exe_env callee_procname arg_index =
+    let formals = Exe_env.get_formal_types exe_env callee_procname in
     let other_typ = List.nth formals arg_index in
     match other_typ with Some {Typ.desc= Tptr (_, Pk_rvalue_reference)} -> true | _ -> false
 
@@ -339,7 +338,8 @@ module SharedPtr = struct
   let copy_move_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc
       : model =
    fun ({callee_procname} as model_data) ->
-    if is_rvalue callee_procname 1 then
+    let exe_env = model_data.analysis_data.InterproceduralAnalysis.exe_env in
+    if is_rvalue exe_env callee_procname 1 then
       move_assignment this other ~desc:(desc ^ " (move)") model_data
     else copy_assignment arg other ~desc:(desc ^ " (copy)") model_data
 
@@ -347,7 +347,8 @@ module SharedPtr = struct
   let copy_move_constructor (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc
       : model =
    fun ({callee_procname} as model_data) ->
-    if is_rvalue callee_procname 1 then
+    let exe_env = model_data.analysis_data.InterproceduralAnalysis.exe_env in
+    if is_rvalue exe_env callee_procname 1 then
       move_assignment this other ~desc:(desc ^ " (move)") model_data
     else copy_constructor arg other ~desc:(desc ^ " (copy)") model_data
 
@@ -379,11 +380,12 @@ module SharedPtr = struct
       (args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list) ~desc :
       model =
    fun ({callee_procname; path; location} as model_data) astate ->
+    let exe_env = model_data.analysis_data.InterproceduralAnalysis.exe_env in
     let this, args_without_this, actuals =
       match
         ( args |> List.last
         , args |> List.drop_last
-        , IRAttributes.load_formal_types callee_procname |> List.drop_last )
+        , Exe_env.get_formal_types exe_env callee_procname |> List.drop_last )
       with
       | Some this, Some args_without_this, Some formals ->
           (this, args_without_this, formals)
@@ -436,7 +438,7 @@ module SharedPtr = struct
         (* create the list of types of the actual arguments of the constructor
            Note that these types are the formal arguments of make_shared *)
         let actuals = typ :: actuals in
-        Basic.call_constructor class_name actuals args fake_exp model_data astate
+        Basic.call_constructor exe_env class_name actuals args fake_exp model_data astate
     | _ -> (
         L.d_printfln "std::make_shared called on non-class type, assuming primitive type" ;
         match args_without_this with

@@ -416,7 +416,7 @@ module Resource = struct
 
   (* I think this function needs to match all the cases *)
 
-  let model_with_analysis args
+  let model_with_analysis exe_env args
       {analysis_data= {analyze_dependency; tenv; proc_desc}; path; callee_procname; location; ret}
       astate =
     let actuals =
@@ -430,7 +430,7 @@ module Resource = struct
     match callee_data with
     | Some _ ->
         (* if we have what we need for a callee match, use it *)
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data location
+        PulseCallOperations.call exe_env tenv path ~caller_proc_desc:proc_desc ~callee_data location
           callee_procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
         |> fst
     | None ->
@@ -443,7 +443,8 @@ module Resource = struct
    fun model_data astate ->
     (* this (probably) marks the this_arg as allocated, and is passed to the calls *)
     let allocated_astate = allocate_state this_arg_payload model_data astate in
-    model_with_analysis (this_arg :: arguments) model_data allocated_astate
+    let exe_env = model_data.analysis_data.InterproceduralAnalysis.exe_env in
+    model_with_analysis exe_env (this_arg :: arguments) model_data allocated_astate
 
 
   (* Doesn't use allocate_aux, but given the parameters allocate_aux would have been given,
@@ -474,7 +475,8 @@ module Resource = struct
     let released_astate =
       PulseOperations.csharp_resource_release ~recursive:true (fst this_arg_payload) astate
     in
-    model_with_analysis [this_arg] model_data released_astate
+    let exe_env = model_data.analysis_data.InterproceduralAnalysis.exe_env in
+    model_with_analysis exe_env [this_arg] model_data released_astate
 
 
   let _release_this_only this : model =

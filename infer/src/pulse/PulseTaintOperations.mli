@@ -10,7 +10,8 @@ open PulseBasicInterface
 open PulseDomainInterface
 
 val call :
-     Tenv.t
+     Exe_env.t
+  -> Tenv.t
   -> PathContext.t
   -> Location.t
   -> Ident.t * Typ.t
