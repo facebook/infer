@@ -155,7 +155,7 @@ let config_unsafe checker =
       ; kind=
           UserFacing
             { title= "Cost: Complexity Analysis"
-            ; markdown_body= [%blob "../../documentation/checkers/Cost.md"] }
+            ; markdown_body= [%blob "./documentation/checkers/Cost.md"] }
       ; support= mk_support_func ~clang:Support ~java:Support ()
       ; short_documentation=
           "Computes the asymptotic complexity of functions with respect to execution cost or other \
@@ -185,7 +185,7 @@ let config_unsafe checker =
       ; kind=
           UserFacingDeprecated
             { title= "Eradicate"
-            ; markdown_body= [%blob "../../documentation/checkers/Eradicate.md"]
+            ; markdown_body= [%blob "./documentation/checkers/Eradicate.md"]
             ; deprecation_message=
                 "Unmaintained and will be removed in the future. Consider using \
                  [NullAway](https://github.com/uber/NullAway) as an alternative to Eradicate." }
@@ -228,7 +228,7 @@ let config_unsafe checker =
       { id= "impurity"
       ; kind=
           UserFacing
-            {title= "Impurity"; markdown_body= [%blob "../../documentation/checkers/Impurity.md"]}
+            {title= "Impurity"; markdown_body= [%blob "./documentation/checkers/Impurity.md"]}
       ; support= mk_support_func ~clang:ExperimentalSupport ~java:ExperimentalSupport ()
       ; short_documentation=
           "Detects functions with potential side-effects. Same as \"purity\", but implemented on \
@@ -251,7 +251,7 @@ let config_unsafe checker =
       ; kind=
           UserFacingDeprecated
             { title= "AST Language (AL)"
-            ; markdown_body= [%blob "../../documentation/checkers/ASTLanguage.md"]
+            ; markdown_body= [%blob "./documentation/checkers/ASTLanguage.md"]
             ; deprecation_message= "On end-of-life support, may be removed in the future." }
       ; support= mk_support_func ~clang:Support ()
       ; short_documentation= "Declarative linting framework over the Clang AST."
@@ -263,7 +263,7 @@ let config_unsafe checker =
       ; kind=
           UserFacing
             { title= "Litho \"Required Props\""
-            ; markdown_body= [%blob "../../documentation/checkers/LithoRequiredProps.md"] }
+            ; markdown_body= [%blob "./documentation/checkers/LithoRequiredProps.md"] }
       ; support= mk_support_func ~java:Support ()
       ; short_documentation=
           "Checks that all non-optional `@Prop`s have been specified when constructing Litho \
@@ -284,7 +284,7 @@ let config_unsafe checker =
       ; kind=
           UserFacing
             { title= "Loop Hoisting"
-            ; markdown_body= [%blob "../../documentation/checkers/LoopHoisting.md"] }
+            ; markdown_body= [%blob "./documentation/checkers/LoopHoisting.md"] }
       ; support= mk_support_func ~clang:Support ~java:Support ()
       ; short_documentation=
           "Detect opportunities to hoist function calls that are invariant outside of loop bodies \
@@ -306,7 +306,7 @@ let config_unsafe checker =
       ; kind=
           UserFacing
             { title= "Parameter Not Null Checked"
-            ; markdown_body= [%blob "../../documentation/checkers/ParameterNotNullChecked.md"] }
+            ; markdown_body= [%blob "./documentation/checkers/ParameterNotNullChecked.md"] }
       ; support= mk_support_func ~clang:Support ()
       ; short_documentation=
           "An Objective-C-specific analysis to detect when a block parameter is used before being \
@@ -331,8 +331,7 @@ let config_unsafe checker =
       ; activates= [] }
   | Pulse ->
       { id= "pulse"
-      ; kind=
-          UserFacing {title= "Pulse"; markdown_body= [%blob "../../documentation/checkers/Pulse.md"]}
+      ; kind= UserFacing {title= "Pulse"; markdown_body= [%blob "./documentation/checkers/Pulse.md"]}
       ; support= mk_support_func ~clang:Support ~java:Support ~erlang:ExperimentalSupport ()
       ; short_documentation= "Memory and lifetime analysis."
       ; cli_flags= Some {deprecated= ["-ownership"]; show_in_help= true}
@@ -349,8 +348,7 @@ let config_unsafe checker =
   | PurityChecker ->
       { id= "purity"
       ; kind=
-          UserFacing
-            {title= "Purity"; markdown_body= [%blob "../../documentation/checkers/Purity.md"]}
+          UserFacing {title= "Purity"; markdown_body= [%blob "./documentation/checkers/Purity.md"]}
       ; support= mk_support_func ~clang:ExperimentalSupport ~java:ExperimentalSupport ()
       ; short_documentation=
           "Detects pure (side-effect-free) functions. A different implementation of \"impurity\"."
@@ -361,7 +359,7 @@ let config_unsafe checker =
       { id= "quandary"
       ; kind=
           UserFacing
-            {title= "Quandary"; markdown_body= [%blob "../../documentation/checkers/Quandary.md"]}
+            {title= "Quandary"; markdown_body= [%blob "./documentation/checkers/Quandary.md"]}
       ; support= mk_support_func ~clang:Support ~java:Support ()
       ; short_documentation=
           "The Quandary taint analysis detects flows of values between sources and sinks, except \
@@ -373,8 +371,7 @@ let config_unsafe checker =
   | RacerD ->
       { id= "racerd"
       ; kind=
-          UserFacing
-            {title= "RacerD"; markdown_body= [%blob "../../documentation/checkers/RacerD.md"]}
+          UserFacing {title= "RacerD"; markdown_body= [%blob "./documentation/checkers/RacerD.md"]}
       ; support= mk_support_func ~clang:Support ~java:Support ~csharp:Support ()
       ; short_documentation= "Thread safety analysis."
       ; cli_flags= Some {deprecated= ["-threadsafety"]; show_in_help= true}
@@ -447,8 +444,7 @@ let config_unsafe checker =
       { id= "starvation"
       ; kind=
           UserFacing
-            { title= "Starvation"
-            ; markdown_body= [%blob "../../documentation/checkers/Starvation.md"] }
+            {title= "Starvation"; markdown_body= [%blob "./documentation/checkers/Starvation.md"]}
       ; support= mk_support_func ~clang:Support ~java:Support ()
       ; short_documentation=
           "Detect various kinds of situations when no progress is being made because of \
@@ -458,8 +454,7 @@ let config_unsafe checker =
       ; activates= [] }
   | Topl ->
       { id= "topl"
-      ; kind=
-          UserFacing {title= "Topl"; markdown_body= [%blob "../../documentation/checkers/Topl.md"]}
+      ; kind= UserFacing {title= "Topl"; markdown_body= [%blob "./documentation/checkers/Topl.md"]}
       ; support=
           mk_support_func ~clang:ExperimentalSupport ~java:ExperimentalSupport
             ~erlang:ExperimentalSupport ()

@@ -7,8 +7,19 @@
  (name Datalog)
  (public_name infer.Datalog)
  (flags
-  (:standard -open Core -open IStdlib -open IStd -open IBase -open IR -open
-    Absint))
+  (:standard
+   -open
+   Core
+   -open
+   IStdlib
+   -open
+   IStd
+   -open
+   IBase
+   -open
+   IR
+   -open
+   Absint))
  (libraries core javalib sawja IStdlib IBase IR Absint)
  (preprocess
   (pps ppx_compare)))

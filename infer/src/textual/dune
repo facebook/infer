@@ -10,7 +10,13 @@
   (:standard -open IStdlib -open IBase -open IR))
  (libraries core zarith IStdlib IBase IR menhirLib sedlex sedlex.ppx)
  (preprocess
-  (pps ppx_compare ppx_hash ppx_show ppx_sexp_conv ppx_yojson_conv sedlex.ppx)))
+  (pps
+   ppx_compare
+   ppx_hash
+   ppx_show
+   ppx_sexp_conv
+   ppx_yojson_conv
+   sedlex.ppx)))
 
 (menhir
  (modules CombinedMenhir)

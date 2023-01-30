@@ -227,24 +227,23 @@ end = struct
 
   let cost_issue_doc_list =
     [ ( "EXECUTION_TIME_COMPLEXITY_INCREASE"
-      , [%blob "../../documentation/issues/EXECUTION_TIME_COMPLEXITY_INCREASE.md"] )
+      , [%blob "./documentation/issues/EXECUTION_TIME_COMPLEXITY_INCREASE.md"] )
     ; ( "EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD"
-      , [%blob "../../documentation/issues/EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD.md"] )
+      , [%blob "./documentation/issues/EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD.md"] )
     ; ( "EXECUTION_TIME_UNREACHABLE_AT_EXIT"
-      , [%blob "../../documentation/issues/EXECUTION_TIME_UNREACHABLE_AT_EXIT.md"] )
-    ; ("INFINITE_EXECUTION_TIME", [%blob "../../documentation/issues/INFINITE_EXECUTION_TIME.md"])
-    ; ("EXPENSIVE_EXECUTION_TIME", [%blob "../../documentation/issues/EXPENSIVE_EXECUTION_TIME.md"])
+      , [%blob "./documentation/issues/EXECUTION_TIME_UNREACHABLE_AT_EXIT.md"] )
+    ; ("INFINITE_EXECUTION_TIME", [%blob "./documentation/issues/INFINITE_EXECUTION_TIME.md"])
+    ; ("EXPENSIVE_EXECUTION_TIME", [%blob "./documentation/issues/EXPENSIVE_EXECUTION_TIME.md"])
     ; ( "AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE"
-      , [%blob "../../documentation/issues/AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE.md"] )
+      , [%blob "./documentation/issues/AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE.md"] )
     ; ( "AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD"
-      , [%blob "../../documentation/issues/AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD.md"]
-      )
+      , [%blob "./documentation/issues/AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD.md"] )
     ; ( "AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT"
-      , [%blob "../../documentation/issues/AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT.md"] )
+      , [%blob "./documentation/issues/AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT.md"] )
     ; ( "INFINITE_AUTORELEASEPOOL_SIZE"
-      , [%blob "../../documentation/issues/INFINITE_AUTORELEASEPOOL_SIZE.md"] )
+      , [%blob "./documentation/issues/INFINITE_AUTORELEASEPOOL_SIZE.md"] )
     ; ( "EXPENSIVE_AUTORELEASEPOOL_SIZE"
-      , [%blob "../../documentation/issues/EXPENSIVE_AUTORELEASEPOOL_SIZE.md"] ) ]
+      , [%blob "./documentation/issues/EXPENSIVE_AUTORELEASEPOOL_SIZE.md"] ) ]
 
 
   (** cost issues are already registered below.*)
@@ -293,7 +292,7 @@ let abduction_case_not_implemented =
 let arbitrary_code_execution_under_lock =
   register ~id:"ARBITRARY_CODE_EXECUTION_UNDER_LOCK" ~hum:"Arbitrary Code Execution Under lock"
     Error Starvation
-    ~user_documentation:[%blob "../../documentation/issues/ARBITRARY_CODE_EXECUTION_UNDER_LOCK.md"]
+    ~user_documentation:[%blob "./documentation/issues/ARBITRARY_CODE_EXECUTION_UNDER_LOCK.md"]
 
 
 let array_of_pointsto = register_hidden ~id:"Array_of_pointsto" Error Biabduction
@@ -314,44 +313,44 @@ let assert_failure = register_hidden ~id:"Assert_failure" Error Biabduction
 
 let _assign_pointer_warning =
   register ~id:"ASSIGN_POINTER_WARNING" Warning Linters
-    ~user_documentation:[%blob "../../documentation/issues/ASSIGN_POINTER_WARNING.md"]
+    ~user_documentation:[%blob "./documentation/issues/ASSIGN_POINTER_WARNING.md"]
 
 
 let bad_footprint = register_hidden ~id:"Bad_footprint" Error Biabduction
 
 let _bad_pointer_comparison =
   register ~id:"BAD_POINTER_COMPARISON" Warning Linters
-    ~user_documentation:[%blob "../../documentation/issues/BAD_POINTER_COMPARISON.md"]
+    ~user_documentation:[%blob "./documentation/issues/BAD_POINTER_COMPARISON.md"]
 
 
 let bad_arg =
   register_with_latent ~id:"BAD_ARG" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/BAD_ARG.md"]
+    ~user_documentation:[%blob "./documentation/issues/BAD_ARG.md"]
 
 
 let bad_key =
   register_with_latent ~id:"BAD_KEY" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/BAD_KEY.md"]
+    ~user_documentation:[%blob "./documentation/issues/BAD_KEY.md"]
 
 
 let bad_map =
   register_with_latent ~id:"BAD_MAP" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/BAD_MAP.md"]
+    ~user_documentation:[%blob "./documentation/issues/BAD_MAP.md"]
 
 
 let bad_record =
   register_with_latent ~id:"BAD_RECORD" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/BAD_RECORD.md"]
+    ~user_documentation:[%blob "./documentation/issues/BAD_RECORD.md"]
 
 
 let bad_return =
   register_with_latent ~id:"BAD_RETURN" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/BAD_RETURN.md"]
+    ~user_documentation:[%blob "./documentation/issues/BAD_RETURN.md"]
 
 
 let block_parameter_not_null_checked =
   register ~id:"BLOCK_PARAMETER_NOT_NULL_CHECKED" Warning ParameterNotNullChecked
-    ~user_documentation:[%blob "../../documentation/issues/BLOCK_PARAMETER_NOT_NULL_CHECKED.md"]
+    ~user_documentation:[%blob "./documentation/issues/BLOCK_PARAMETER_NOT_NULL_CHECKED.md"]
 
 
 let biabduction_analysis_stops =
@@ -365,7 +364,7 @@ let biabduction_retain_cycle =
 
 let buffer_overrun_l1 =
   register ~id:"BUFFER_OVERRUN_L1" Error BufferOverrunChecker
-    ~user_documentation:[%blob "../../documentation/issues/BUFFER_OVERRUN.md"]
+    ~user_documentation:[%blob "./documentation/issues/BUFFER_OVERRUN.md"]
 
 
 let buffer_overrun_l2 =
@@ -402,48 +401,46 @@ let cannot_star = register_hidden ~id:"Cannot_star" Error Biabduction
 
 let captured_strong_self =
   register ~id:"CAPTURED_STRONG_SELF" ~hum:"Captured strongSelf" Error SelfInBlock
-    ~user_documentation:[%blob "../../documentation/issues/CAPTURED_STRONG_SELF.md"]
+    ~user_documentation:[%blob "./documentation/issues/CAPTURED_STRONG_SELF.md"]
 
 
 let checkers_allocates_memory =
   register ~id:"CHECKERS_ALLOCATES_MEMORY" ~hum:"Allocates Memory" Error AnnotationReachability
-    ~user_documentation:[%blob "../../documentation/issues/CHECKERS_ALLOCATES_MEMORY.md"]
+    ~user_documentation:[%blob "./documentation/issues/CHECKERS_ALLOCATES_MEMORY.md"]
 
 
 let checkers_annotation_reachability_error =
   register ~id:"CHECKERS_ANNOTATION_REACHABILITY_ERROR" ~hum:"Annotation Reachability Error" Error
     AnnotationReachability
-    ~user_documentation:
-      [%blob "../../documentation/issues/CHECKERS_ANNOTATION_REACHABILITY_ERROR.md"]
+    ~user_documentation:[%blob "./documentation/issues/CHECKERS_ANNOTATION_REACHABILITY_ERROR.md"]
 
 
 let checkers_calls_expensive_method =
   register ~id:"CHECKERS_CALLS_EXPENSIVE_METHOD" ~hum:"Expensive Method Called" Error
     AnnotationReachability
-    ~user_documentation:[%blob "../../documentation/issues/CHECKERS_CALLS_EXPENSIVE_METHOD.md"]
+    ~user_documentation:[%blob "./documentation/issues/CHECKERS_CALLS_EXPENSIVE_METHOD.md"]
 
 
 let checkers_expensive_overrides_unexpensive =
   register ~id:"CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED" ~hum:"Expensive Overrides Unannotated"
     Error AnnotationReachability
-    ~user_documentation:
-      [%blob "../../documentation/issues/CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED.md"]
+    ~user_documentation:[%blob "./documentation/issues/CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED.md"]
 
 
 let checkers_fragment_retain_view =
   register ~id:"CHECKERS_FRAGMENT_RETAINS_VIEW" ~hum:"Fragment Retains View" Warning
     FragmentRetainsView
-    ~user_documentation:[%blob "../../documentation/issues/CHECKERS_FRAGMENT_RETAINS_VIEW.md"]
+    ~user_documentation:[%blob "./documentation/issues/CHECKERS_FRAGMENT_RETAINS_VIEW.md"]
 
 
 let checkers_immutable_cast =
   register ~id:"CHECKERS_IMMUTABLE_CAST" Warning ImmutableCast
-    ~user_documentation:[%blob "../../documentation/issues/CHECKERS_IMMUTABLE_CAST.md"]
+    ~user_documentation:[%blob "./documentation/issues/CHECKERS_IMMUTABLE_CAST.md"]
 
 
 let checkers_printf_args =
   register ~id:"CHECKERS_PRINTF_ARGS" Error PrintfArgs
-    ~user_documentation:[%blob "../../documentation/issues/CHECKERS_PRINTF_ARGS.md"]
+    ~user_documentation:[%blob "./documentation/issues/CHECKERS_PRINTF_ARGS.md"]
 
 
 let class_cast_exception =
@@ -460,32 +457,32 @@ let condition_always_true =
 
 let config_impact_analysis =
   register ~enabled:false ~id:"CONFIG_IMPACT" Advice ConfigImpactAnalysis
-    ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT.md"]
+    ~user_documentation:[%blob "./documentation/issues/CONFIG_IMPACT.md"]
 
 
 let config_impact_analysis_strict =
   register ~enabled:false ~id:"CONFIG_IMPACT_STRICT" Advice ConfigImpactAnalysis
-    ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT_STRICT.md"]
+    ~user_documentation:[%blob "./documentation/issues/CONFIG_IMPACT_STRICT.md"]
 
 
 let config_impact_analysis_strict_beta =
   register ~enabled:false ~id:"CONFIG_IMPACT_STRICT_BETA" Advice ConfigImpactAnalysis
-    ~user_documentation:[%blob "../../documentation/issues/CONFIG_IMPACT_STRICT_BETA.md"]
+    ~user_documentation:[%blob "./documentation/issues/CONFIG_IMPACT_STRICT_BETA.md"]
 
 
 let pulse_config_usage =
   register ~enabled:false ~id:"CONFIG_USAGE" Info Pulse
-    ~user_documentation:[%blob "../../documentation/issues/CONFIG_USAGE.md"]
+    ~user_documentation:[%blob "./documentation/issues/CONFIG_USAGE.md"]
 
 
 let pulse_const_refable =
   register ~enabled:false ~id:"PULSE_CONST_REFABLE" Error Pulse ~hum:"Const Refable Parameter"
-    ~user_documentation:[%blob "../../documentation/issues/PULSE_CONST_REFABLE.md"]
+    ~user_documentation:[%blob "./documentation/issues/PULSE_CONST_REFABLE.md"]
 
 
 let constant_address_dereference =
   register_with_latent ~enabled:false ~id:"CONSTANT_ADDRESS_DEREFERENCE" Warning Pulse
-    ~user_documentation:[%blob "../../documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]
+    ~user_documentation:[%blob "./documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]
 
 
 let create_intent_from_uri =
@@ -502,7 +499,7 @@ let cross_site_scripting =
 
 let _cxx_reference_captured_in_objc_block =
   register ~id:"CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK" Warning Linters
-    ~user_documentation:[%blob "../../documentation/issues/CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK.md"]
+    ~user_documentation:[%blob "./documentation/issues/CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK.md"]
 
 
 let dangling_pointer_dereference =
@@ -516,23 +513,22 @@ let dangling_pointer_dereference_maybe =
 
 let dead_store =
   register ~id:"DEAD_STORE" Error Liveness
-    ~user_documentation:[%blob "../../documentation/issues/DEAD_STORE.md"]
+    ~user_documentation:[%blob "./documentation/issues/DEAD_STORE.md"]
 
 
 let deadlock =
   register ~id:"DEADLOCK" Error Starvation
-    ~user_documentation:[%blob "../../documentation/issues/DEADLOCK.md"]
+    ~user_documentation:[%blob "./documentation/issues/DEADLOCK.md"]
 
 
 let _direct_atomic_property_access =
   register ~id:"DIRECT_ATOMIC_PROPERTY_ACCESS" Warning Linters
-    ~user_documentation:[%blob "../../documentation/issues/DIRECT_ATOMIC_PROPERTY_ACCESS.md"]
+    ~user_documentation:[%blob "./documentation/issues/DIRECT_ATOMIC_PROPERTY_ACCESS.md"]
 
 
 let _discouraged_weak_property_custom_setter =
   register ~id:"DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER" Warning Linters
-    ~user_documentation:
-      [%blob "../../documentation/issues/DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER.md"]
+    ~user_documentation:[%blob "./documentation/issues/DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER.md"]
 
 
 let divide_by_zero =
@@ -543,7 +539,7 @@ let do_not_report = register_hidden ~id:"DO_NOT_REPORT" Error Quandary
 
 let empty_vector_access =
   register ~id:"EMPTY_VECTOR_ACCESS" Error Biabduction
-    ~user_documentation:[%blob "../../documentation/issues/EMPTY_VECTOR_ACCESS.md"]
+    ~user_documentation:[%blob "./documentation/issues/EMPTY_VECTOR_ACCESS.md"]
 
 
 (* A technical issue needed to output the annotation graph for the class - not intended to be surfaces to the end user *)
@@ -560,17 +556,17 @@ let eradicate_annotation_graph =
    on, this should not be more than advice. *)
 let eradicate_condition_redundant =
   register ~id:"ERADICATE_CONDITION_REDUNDANT" ~hum:"Condition Redundant" Advice Eradicate
-    ~user_documentation:[%blob "../../documentation/issues/ERADICATE_CONDITION_REDUNDANT.md"]
+    ~user_documentation:[%blob "./documentation/issues/ERADICATE_CONDITION_REDUNDANT.md"]
 
 
 let eradicate_field_not_initialized =
   register ~id:"ERADICATE_FIELD_NOT_INITIALIZED" ~hum:"Field Not Initialized" Warning Eradicate
-    ~user_documentation:[%blob "../../documentation/issues/ERADICATE_FIELD_NOT_INITIALIZED.md"]
+    ~user_documentation:[%blob "./documentation/issues/ERADICATE_FIELD_NOT_INITIALIZED.md"]
 
 
 let eradicate_field_not_nullable =
   register ~id:"ERADICATE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable" Warning Eradicate
-    ~user_documentation:[%blob "../../documentation/issues/ERADICATE_FIELD_NOT_NULLABLE.md"]
+    ~user_documentation:[%blob "./documentation/issues/ERADICATE_FIELD_NOT_NULLABLE.md"]
 
 
 (* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
@@ -584,14 +580,14 @@ let eradicate_inconsistent_subclass_parameter_annotation =
   register ~id:"ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION"
     ~hum:"Inconsistent Subclass Parameter Annotation" Warning Eradicate
     ~user_documentation:
-      [%blob "../../documentation/issues/ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION.md"]
+      [%blob "./documentation/issues/ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION.md"]
 
 
 let eradicate_inconsistent_subclass_return_annotation =
   register ~id:"ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION"
     ~hum:"Inconsistent Subclass Return Annotation" Warning Eradicate
     ~user_documentation:
-      [%blob "../../documentation/issues/ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION.md"]
+      [%blob "./documentation/issues/ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION.md"]
 
 
 let eradicate_redundant_nested_class_annotation =
@@ -614,18 +610,18 @@ let eradicate_nullable_dereference =
 
 let eradicate_parameter_not_nullable =
   register ~id:"ERADICATE_PARAMETER_NOT_NULLABLE" ~hum:"Parameter Not Nullable" Warning Eradicate
-    ~user_documentation:[%blob "../../documentation/issues/ERADICATE_PARAMETER_NOT_NULLABLE.md"]
+    ~user_documentation:[%blob "./documentation/issues/ERADICATE_PARAMETER_NOT_NULLABLE.md"]
 
 
 let eradicate_return_not_nullable =
   register ~id:"ERADICATE_RETURN_NOT_NULLABLE" ~hum:"Return Not Nullable" Warning Eradicate
-    ~user_documentation:[%blob "../../documentation/issues/ERADICATE_RETURN_NOT_NULLABLE.md"]
+    ~user_documentation:[%blob "./documentation/issues/ERADICATE_RETURN_NOT_NULLABLE.md"]
 
 
 (* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
 let eradicate_return_over_annotated =
   register ~id:"ERADICATE_RETURN_OVER_ANNOTATED" ~hum:"Return Over Annotated" Advice Eradicate
-    ~user_documentation:[%blob "../../documentation/issues/ERADICATE_RETURN_OVER_ANNOTATED.md"]
+    ~user_documentation:[%blob "./documentation/issues/ERADICATE_RETURN_OVER_ANNOTATED.md"]
 
 
 let eradicate_unchecked_usage_in_nullsafe =
@@ -656,8 +652,7 @@ let eradicate_meta_class_needs_improvement =
     ~hum:
       "Class needs improvement to become @Nullsafe" (* Should be enabled for special integrations *)
     ~enabled:false Info Eradicate
-    ~user_documentation:
-      [%blob "../../documentation/issues/ERADICATE_META_CLASS_NEEDS_IMPROVEMENT.md"]
+    ~user_documentation:[%blob "./documentation/issues/ERADICATE_META_CLASS_NEEDS_IMPROVEMENT.md"]
 
 
 let eradicate_meta_class_can_be_nullsafe =
@@ -681,23 +676,22 @@ let _global_variable_initialized_with_function_or_method_call =
   register ~enabled:false ~id:"GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL" Warning
     Linters
     ~user_documentation:
-      [%blob
-        "../../documentation/issues/GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL.md"]
+      [%blob "./documentation/issues/GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL.md"]
 
 
 let guardedby_violation =
   register Warning ~id:"GUARDEDBY_VIOLATION" ~hum:"GuardedBy Violation" RacerD
-    ~user_documentation:[%blob "../../documentation/issues/GUARDEDBY_VIOLATION.md"]
+    ~user_documentation:[%blob "./documentation/issues/GUARDEDBY_VIOLATION.md"]
 
 
 let impure_function =
   register ~id:"IMPURE_FUNCTION" Error Impurity
-    ~user_documentation:[%blob "../../documentation/issues/IMPURE_FUNCTION.md"]
+    ~user_documentation:[%blob "./documentation/issues/IMPURE_FUNCTION.md"]
 
 
 let inefficient_keyset_iterator =
   register ~id:"INEFFICIENT_KEYSET_ITERATOR" Warning InefficientKeysetIterator
-    ~user_documentation:[%blob "../../documentation/issues/INEFFICIENT_KEYSET_ITERATOR.md"]
+    ~user_documentation:[%blob "./documentation/issues/INEFFICIENT_KEYSET_ITERATOR.md"]
 
 
 let inferbo_alloc_is_big =
@@ -753,7 +747,7 @@ let insecure_intent_handling =
 
 let integer_overflow_l1 =
   register ~id:"INTEGER_OVERFLOW_L1" Error BufferOverrunChecker
-    ~user_documentation:[%blob "../../documentation/issues/INTEGER_OVERFLOW.md"]
+    ~user_documentation:[%blob "./documentation/issues/INTEGER_OVERFLOW.md"]
 
 
 let integer_overflow_l2 =
@@ -773,14 +767,14 @@ let integer_overflow_u5 =
 
 let interface_not_thread_safe =
   register Warning ~id:"INTERFACE_NOT_THREAD_SAFE" RacerD
-    ~user_documentation:[%blob "../../documentation/issues/INTERFACE_NOT_THREAD_SAFE.md"]
+    ~user_documentation:[%blob "./documentation/issues/INTERFACE_NOT_THREAD_SAFE.md"]
 
 
 let internal_error = register_hidden ~id:"Internal_error" Error Biabduction
 
 let invariant_call =
   register ~enabled:false ~id:"INVARIANT_CALL" Error LoopHoisting
-    ~user_documentation:[%blob "../../documentation/issues/INVARIANT_CALL.md"]
+    ~user_documentation:[%blob "./documentation/issues/INVARIANT_CALL.md"]
 
 
 let ipc_on_ui_thread =
@@ -807,12 +801,12 @@ let leak_unknown_origin = register_hidden ~enabled:false ~id:"Leak_unknown_origi
 
 let lock_consistency_violation =
   register Warning ~id:"LOCK_CONSISTENCY_VIOLATION" RacerD
-    ~user_documentation:[%blob "../../documentation/issues/LOCK_CONSISTENCY_VIOLATION.md"]
+    ~user_documentation:[%blob "./documentation/issues/LOCK_CONSISTENCY_VIOLATION.md"]
 
 
 let lockless_violation =
   register ~id:"LOCKLESS_VIOLATION" Error Starvation
-    ~user_documentation:[%blob "../../documentation/issues/LOCKLESS_VIOLATION.md"]
+    ~user_documentation:[%blob "./documentation/issues/LOCKLESS_VIOLATION.md"]
 
 
 let logging_private_data =
@@ -821,7 +815,7 @@ let logging_private_data =
 
 let expensive_loop_invariant_call =
   register ~id:"EXPENSIVE_LOOP_INVARIANT_CALL" Error LoopHoisting
-    ~user_documentation:[%blob "../../documentation/issues/EXPENSIVE_LOOP_INVARIANT_CALL.md"]
+    ~user_documentation:[%blob "./documentation/issues/EXPENSIVE_LOOP_INVARIANT_CALL.md"]
 
 
 let memory_leak =
@@ -833,68 +827,68 @@ let missing_fld = register_hidden ~id:"Missing_fld" ~hum:"Missing Field" Error B
 
 let missing_required_prop =
   register ~id:"MISSING_REQUIRED_PROP" ~hum:"Missing Required Prop" Error LithoRequiredProps
-    ~user_documentation:[%blob "../../documentation/issues/MISSING_REQUIRED_PROP.md"]
+    ~user_documentation:[%blob "./documentation/issues/MISSING_REQUIRED_PROP.md"]
 
 
 let mixed_self_weakself =
   register ~id:"MIXED_SELF_WEAKSELF" ~hum:"Mixed Self WeakSelf" Error SelfInBlock
-    ~user_documentation:[%blob "../../documentation/issues/MIXED_SELF_WEAKSELF.md"]
+    ~user_documentation:[%blob "./documentation/issues/MIXED_SELF_WEAKSELF.md"]
 
 
 let modifies_immutable =
   register ~id:"MODIFIES_IMMUTABLE" Error Impurity
-    ~user_documentation:[%blob "../../documentation/issues/MODIFIES_IMMUTABLE.md"]
+    ~user_documentation:[%blob "./documentation/issues/MODIFIES_IMMUTABLE.md"]
 
 
 let multiple_weakself =
   register ~id:"MULTIPLE_WEAKSELF" ~hum:"Multiple WeakSelf Use" Error SelfInBlock
-    ~user_documentation:[%blob "../../documentation/issues/MULTIPLE_WEAKSELF.md"]
+    ~user_documentation:[%blob "./documentation/issues/MULTIPLE_WEAKSELF.md"]
 
 
 let nil_block_call =
   register_with_latent ~id:"NIL_BLOCK_CALL" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/NIL_BLOCK_CALL.md"]
+    ~user_documentation:[%blob "./documentation/issues/NIL_BLOCK_CALL.md"]
 
 
 let nil_insertion_into_collection =
   register_with_latent ~id:"NIL_INSERTION_INTO_COLLECTION" Error Pulse
     ~hum:"Nil Insertion Into Collection"
-    ~user_documentation:[%blob "../../documentation/issues/NIL_INSERTION_INTO_COLLECTION.md"]
+    ~user_documentation:[%blob "./documentation/issues/NIL_INSERTION_INTO_COLLECTION.md"]
 
 
 let nil_messaging_to_non_pod =
   register_with_latent ~id:"NIL_MESSAGING_TO_NON_POD" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/NIL_MESSAGING_TO_NON_POD.md"]
+    ~user_documentation:[%blob "./documentation/issues/NIL_MESSAGING_TO_NON_POD.md"]
 
 
 let no_match_of_rhs =
   register_with_latent ~id:"NO_MATCH_OF_RHS" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/NO_MATCH_OF_RHS.md"]
+    ~user_documentation:[%blob "./documentation/issues/NO_MATCH_OF_RHS.md"]
 
 
 let no_matching_case_clause =
   register_with_latent ~id:"NO_MATCHING_CASE_CLAUSE" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_CASE_CLAUSE.md"]
+    ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_CASE_CLAUSE.md"]
 
 
 let no_matching_function_clause =
   register_with_latent ~id:"NO_MATCHING_FUNCTION_CLAUSE" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_FUNCTION_CLAUSE.md"]
+    ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_FUNCTION_CLAUSE.md"]
 
 
 let no_true_branch_in_if =
   register_with_latent ~id:"NO_TRUE_BRANCH_IN_IF" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/NO_TRUE_BRANCH_IN_IF.md"]
+    ~user_documentation:[%blob "./documentation/issues/NO_TRUE_BRANCH_IN_IF.md"]
 
 
 let no_matching_branch_in_try =
   register_with_latent ~id:"NO_MATCHING_BRANCH_IN_TRY" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/NO_MATCHING_BRANCH_IN_TRY.md"]
+    ~user_documentation:[%blob "./documentation/issues/NO_MATCHING_BRANCH_IN_TRY.md"]
 
 
 let null_argument =
   register_with_latent ~id:"NULL_ARGUMENT" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/NULL_ARGUMENT.md"]
+    ~user_documentation:[%blob "./documentation/issues/NULL_ARGUMENT.md"]
 
 
 let null_dereference =
@@ -904,17 +898,17 @@ let null_dereference =
 
 let nullptr_dereference =
   register_with_latent ~id:"NULLPTR_DEREFERENCE" ~hum:"Null Dereference" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/NULLPTR_DEREFERENCE.md"]
+    ~user_documentation:[%blob "./documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
 let optional_empty_access =
   register_with_latent ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
+    ~user_documentation:[%blob "./documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
 
 
 let _pointer_to_const_objc_class =
   register ~id:"POINTER_TO_CONST_OBJC_CLASS" Warning Linters
-    ~user_documentation:[%blob "../../documentation/issues/POINTER_TO_CONST_OBJC_CLASS.md"]
+    ~user_documentation:[%blob "./documentation/issues/POINTER_TO_CONST_OBJC_CLASS.md"]
 
 
 let precondition_not_found = register_hidden ~id:"PRECONDITION_NOT_FOUND" Error Biabduction
@@ -923,12 +917,12 @@ let precondition_not_met = register_hidden ~id:"PRECONDITION_NOT_MET" Warning Bi
 
 let premature_nil_termination =
   register ~id:"PREMATURE_NIL_TERMINATION_ARGUMENT" Warning Biabduction
-    ~user_documentation:[%blob "../../documentation/issues/PREMATURE_NIL_TERMINATION_ARGUMENT.md"]
+    ~user_documentation:[%blob "./documentation/issues/PREMATURE_NIL_TERMINATION_ARGUMENT.md"]
 
 
 let pulse_memory_leak_c =
   register ~id:"MEMORY_LEAK_C" ~hum:"Memory Leak" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/MEMORY_LEAK_C.md"]
+    ~user_documentation:[%blob "./documentation/issues/MEMORY_LEAK_C.md"]
 
 
 let pulse_memory_leak_cpp =
@@ -943,7 +937,7 @@ let pulse_resource_leak =
 
 let pure_function =
   register ~id:"PURE_FUNCTION" Error PurityChecker
-    ~user_documentation:[%blob "../../documentation/issues/PURE_FUNCTION.md"]
+    ~user_documentation:[%blob "./documentation/issues/PURE_FUNCTION.md"]
 
 
 let quandary_taint_error =
@@ -954,7 +948,7 @@ let quandary_taint_error =
 let readonly_shared_ptr_param =
   register ~enabled:false ~id:"PULSE_READONLY_SHARED_PTR_PARAM" Error Pulse
     ~hum:"Read-only Shared Parameter"
-    ~user_documentation:[%blob "../../documentation/issues/PULSE_READONLY_SHARED_PTR_PARAM.md"]
+    ~user_documentation:[%blob "./documentation/issues/PULSE_READONLY_SHARED_PTR_PARAM.md"]
 
 
 let taint_error =
@@ -985,17 +979,17 @@ let regex_op_on_ui_thread =
 
 let resource_leak =
   register ~id:"RESOURCE_LEAK" Error Biabduction
-    ~user_documentation:[%blob "../../documentation/issues/RESOURCE_LEAK.md"]
+    ~user_documentation:[%blob "./documentation/issues/RESOURCE_LEAK.md"]
 
 
 let retain_cycle =
   register ~enabled:false ~id:"RETAIN_CYCLE" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/RETAIN_CYCLE.md"]
+    ~user_documentation:[%blob "./documentation/issues/RETAIN_CYCLE.md"]
 
 
 let scope_leakage =
   register ~enabled:true ~id:"SCOPE_LEAKAGE" Error ScopeLeakage
-    ~user_documentation:[%blob "../../documentation/issues/SCOPE_LEAKAGE.md"]
+    ~user_documentation:[%blob "./documentation/issues/SCOPE_LEAKAGE.md"]
 
 
 let skip_function = register_hidden ~enabled:false ~id:"SKIP_FUNCTION" Info Biabduction
@@ -1022,32 +1016,32 @@ let sql_injection_risk =
 
 let stack_variable_address_escape =
   register ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/STACK_VARIABLE_ADDRESS_ESCAPE.md"]
+    ~user_documentation:[%blob "./documentation/issues/STACK_VARIABLE_ADDRESS_ESCAPE.md"]
 
 
 let starvation =
   register ~id:"STARVATION" ~hum:"UI Thread Starvation" Error Starvation
-    ~user_documentation:[%blob "../../documentation/issues/STARVATION.md"]
+    ~user_documentation:[%blob "./documentation/issues/STARVATION.md"]
 
 
 let static_initialization_order_fiasco =
   register ~id:"STATIC_INITIALIZATION_ORDER_FIASCO" Error SIOF
-    ~user_documentation:[%blob "../../documentation/issues/STATIC_INITIALIZATION_ORDER_FIASCO.md"]
+    ~user_documentation:[%blob "./documentation/issues/STATIC_INITIALIZATION_ORDER_FIASCO.md"]
 
 
 let strict_mode_violation =
   register ~id:"STRICT_MODE_VIOLATION" ~hum:"Strict Mode Violation" Error Starvation
-    ~user_documentation:[%blob "../../documentation/issues/STRICT_MODE_VIOLATION.md"]
+    ~user_documentation:[%blob "./documentation/issues/STRICT_MODE_VIOLATION.md"]
 
 
 let _strong_delegate_warning =
   register ~id:"STRONG_DELEGATE_WARNING" Warning Linters
-    ~user_documentation:[%blob "../../documentation/issues/STRONG_DELEGATE_WARNING.md"]
+    ~user_documentation:[%blob "./documentation/issues/STRONG_DELEGATE_WARNING.md"]
 
 
 let strong_self_not_checked =
   register ~id:"STRONG_SELF_NOT_CHECKED" ~hum:"StrongSelf Not Checked" Error SelfInBlock
-    ~user_documentation:[%blob "../../documentation/issues/STRONG_SELF_NOT_CHECKED.md"]
+    ~user_documentation:[%blob "./documentation/issues/STRONG_SELF_NOT_CHECKED.md"]
 
 
 let symexec_memory_error =
@@ -1057,7 +1051,7 @@ let symexec_memory_error =
 
 let thread_safety_violation =
   register Warning ~id:"THREAD_SAFETY_VIOLATION" RacerD
-    ~user_documentation:[%blob "../../documentation/issues/THREAD_SAFETY_VIOLATION.md"]
+    ~user_documentation:[%blob "./documentation/issues/THREAD_SAFETY_VIOLATION.md"]
 
 
 let complexity_increase ~kind ~is_on_ui_thread =
@@ -1066,12 +1060,12 @@ let complexity_increase ~kind ~is_on_ui_thread =
 
 let topl_error =
   register ~id:"TOPL_ERROR" Error Topl
-    ~user_documentation:[%blob "../../documentation/issues/TOPL_ERROR.md"]
+    ~user_documentation:[%blob "./documentation/issues/TOPL_ERROR.md"]
 
 
 let uninitialized_value =
   register ~id:"UNINITIALIZED_VALUE" Error Uninit
-    ~user_documentation:[%blob "../../documentation/issues/UNINITIALIZED_VALUE.md"]
+    ~user_documentation:[%blob "./documentation/issues/UNINITIALIZED_VALUE.md"]
 
 
 let uninitialized_value_pulse =
@@ -1082,7 +1076,7 @@ let uninitialized_value_pulse =
 
 let unnecessary_copy_pulse =
   register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY" Error Pulse ~hum:"Unnecessary Copy"
-    ~user_documentation:[%blob "../../documentation/issues/PULSE_UNNECESSARY_COPY.md"]
+    ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY.md"]
 
 
 let unnecessary_copy_assignment_pulse =
@@ -1118,30 +1112,30 @@ let unnecessary_copy_intermediate_const_pulse =
 let unnecessary_copy_movable_pulse =
   register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_MOVABLE" Error Pulse
     ~hum:"Unnecessary Copy Movable"
-    ~user_documentation:[%blob "../../documentation/issues/PULSE_UNNECESSARY_COPY_MOVABLE.md"]
+    ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_MOVABLE.md"]
 
 
 let unnecessary_copy_return_pulse =
   register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_RETURN" Error Pulse
     ~hum:"Unnecessary Copy Return"
-    ~user_documentation:[%blob "../../documentation/issues/PULSE_UNNECESSARY_COPY_RETURN.md"]
+    ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_RETURN.md"]
 
 
 let unreachable_code_after = register_hidden ~id:"UNREACHABLE_CODE" Error BufferOverrunChecker
 
 let use_after_delete =
   register_with_latent ~id:"USE_AFTER_DELETE" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_DELETE.md"]
+    ~user_documentation:[%blob "./documentation/issues/USE_AFTER_DELETE.md"]
 
 
 let use_after_free =
   register_with_latent ~id:"USE_AFTER_FREE" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_FREE.md"]
+    ~user_documentation:[%blob "./documentation/issues/USE_AFTER_FREE.md"]
 
 
 let use_after_lifetime =
   register_with_latent ~id:"USE_AFTER_LIFETIME" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/USE_AFTER_LIFETIME.md"]
+    ~user_documentation:[%blob "./documentation/issues/USE_AFTER_LIFETIME.md"]
 
 
 let user_controlled_sql_risk =
@@ -1206,12 +1200,12 @@ let untrusted_variable_length_array =
 
 let vector_invalidation =
   register_with_latent ~id:"VECTOR_INVALIDATION" Error Pulse
-    ~user_documentation:[%blob "../../documentation/issues/VECTOR_INVALIDATION.md"]
+    ~user_documentation:[%blob "./documentation/issues/VECTOR_INVALIDATION.md"]
 
 
 let weak_self_in_noescape_block =
   register ~id:"WEAK_SELF_IN_NO_ESCAPE_BLOCK" Error SelfInBlock
-    ~user_documentation:[%blob "../../documentation/issues/WEAK_SELF_IN_NO_ESCAPE_BLOCK.md"]
+    ~user_documentation:[%blob "./documentation/issues/WEAK_SELF_IN_NO_ESCAPE_BLOCK.md"]
 
 
 let wrong_argument_number =
