@@ -8,37 +8,24 @@ INFER_OUT ?= infer-out$(TEST_SUFFIX)
 
 include $(TESTS_DIR)/base.make
 
-INFER_OPTIONS = -capture-doli
 SOURCES = $(sort $(wildcard *.doli))
-OKSOURCES = $(sort $(wildcard *OK.doli))
-ErrSOURCES = $(sort $(wildcard *Err.doli))
-TextualSOURCES = $(sort $(wildcard *.sil))
+
+# infer-out from --capture-textual
+CAPTURE_DIR = infer-out-capture
+CAPTURE_CMD = $(patsubst %.doli, --capture-doli  %.doli, $(SOURCES))
+
+CLEAN_EXTRA = $(CAPTURE_DIR)
+
+issues.exp.test: $(SOURCES) $(INFER_BIN)
+	$(INFER_BIN) -j 1 --quiet --no-progress-bar -o $(CAPTURE_DIR) $(CAPTURE_CMD) &> $@
 
 .PHONY: compile
-compile:
-
-.PHONY: analyze
-analyze:
-
-.PHONY: print
-print:
+compile: issues.exp.test
 
 .PHONY: test
 test: issues.exp.test
 	$(QUIET)cd $(TESTS_DIR) && \
 	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp$(TEST_RESULT_SUFFIX),$(TEST_REL_DIR)/issues.exp.test$(TEST_SUFFIX))
-
-issues.exp.test: $(SOURCES) $(INFER_BIN)
-	@for f in $(SOURCES); do $(INFER_BIN) --capture-doli $${f}; done >& $@
-
-issues.exp.testOK: $(OKSOURCES) $(INFER_BIN)
-	@for f in $(OKSOURCES); do $(INFER_BIN) --capture-doli $${f}; done >& $@
-
-issues.exp.testBad: $(ErrSOURCES) $(INFER_BIN)
-	@for f in $(ErrSOURCES); do $(INFER_BIN) --capture-doli $${f}; done >& $@
-
-issues.exp.testTextual: $(TextualSOURCES) $(INFER_BIN)
-	@for f in $(TextualSOURCES); do $(INFER_BIN) --capture-textual $${f}; done >& $@
 
 .PHONY: replace
 replace: issues.exp.test

@@ -22,12 +22,6 @@ val parse_string : Textual.SourceFile.t -> string -> (Textual.Module.t, error li
 
 type whichCapture = DoliCapture | TextualCapture
 
-val parse_buf :
-     capture:whichCapture
-  -> Textual.SourceFile.t
-  -> CombinedLexer.lexbuf
-  -> (Textual.Module.t, error list) result
-
 module TextualFile : sig
   type t =
     | StandaloneFile of string  (** Path to a file with textual SIL as content. *)
@@ -44,5 +38,5 @@ module TextualFile : sig
   val line_map : t -> LineMap.t option [@@warning "-unused-value-declaration"]
 end
 
-val capture : TextualFile.t list -> unit
-(** turn a list of textual files into a SIL-Java program and capture it. *)
+val capture : capture:whichCapture -> TextualFile.t list -> unit
+(** turn a list of textual files or doli files into a SIL-Java program and capture them. *)

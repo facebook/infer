@@ -951,8 +951,8 @@ and capture_textual =
 
 
 and capture_doli =
-  CLOpt.mk_path_opt ~long:"capture-doli" ~meta:"path"
-    "Generate models from a DOLI representation given a .doli file."
+  CLOpt.mk_path_list ~long:"capture-doli" ~meta:"path"
+    "Generate a SIL program from doli representations given in .doli files."
 
 
 and parse_doli =
@@ -3475,7 +3475,7 @@ and capture = !capture
 
 and capture_textual = RevList.to_list !capture_textual
 
-and capture_doli = !capture_doli
+and capture_doli = RevList.to_list !capture_doli
 
 and parse_doli = !parse_doli
 

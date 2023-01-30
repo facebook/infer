@@ -73,9 +73,9 @@ let parse_string sourcefile text =
   parse_buf ~capture:TextualCapture sourcefile filebuf
 
 
-let parse_chan sourcefile ic =
+let parse_chan ~capture sourcefile ic =
   let filebuf = CombinedLexer.Lexbuf.from_channel ic in
-  parse_buf ~capture:TextualCapture sourcefile filebuf
+  parse_buf ~capture sourcefile filebuf
 
 
 module TextualFile = struct
@@ -96,17 +96,16 @@ module TextualFile = struct
 
   type sil = {sourcefile: Textual.SourceFile.t; cfg: Cfg.t; tenv: Tenv.t}
 
-  let translate textual_file =
+  let translate_textual_or_doli ~capture file =
     let sourcefile, parsed =
-      match textual_file with
+      match file with
       | StandaloneFile path ->
-          let sourcefile = Textual.SourceFile.create (source_path textual_file) in
-          let cin = In_channel.create path in
-          let result = parse_chan sourcefile cin in
-          In_channel.close cin ;
-          (sourcefile, result)
+          Utils.with_file_in path ~f:(fun cin ->
+              let sourcefile = Textual.SourceFile.create (source_path file) in
+              let result = parse_chan ~capture sourcefile cin in
+              (sourcefile, result) )
       | TranslatedFile {content; line_map} ->
-          let sourcefile = Textual.SourceFile.create ~line_map (source_path textual_file) in
+          let sourcefile = Textual.SourceFile.create ~line_map (source_path file) in
           (sourcefile, parse_string sourcefile content)
     in
     match parsed with
@@ -118,6 +117,8 @@ module TextualFile = struct
     | Error errs ->
         Error (sourcefile, errs)
 
+
+  let translate file = translate_textual_or_doli ~capture:TextualCapture file
 
   let capture {sourcefile; cfg; tenv} =
     let sourcefile = Textual.SourceFile.file sourcefile in
@@ -133,15 +134,15 @@ end
 
 (* This code is used only by the --capture-textual integration, which turn textual files into
    a SIL-Java program. The Hack driver doesn't use this function. *)
-let capture textual_files =
+let capture ~capture files =
   let global_tenv = Tenv.create () in
-  let capture_one textual_file =
-    match TextualFile.translate textual_file with
+  let capture_one file =
+    match TextualFile.translate_textual_or_doli ~capture file with
     | Error (sourcefile, errs) ->
         List.iter errs ~f:(fun error -> L.external_error "%a@\n" (pp_error sourcefile) error)
     | Ok sil ->
         let tenv = TextualFile.capture sil in
         Tenv.merge ~src:tenv ~dst:global_tenv
   in
-  List.iter textual_files ~f:capture_one ;
+  List.iter files ~f:capture_one ;
   Tenv.store_global global_tenv

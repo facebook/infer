@@ -160,8 +160,6 @@ let () =
       else JSourceFileInfo.debug_on_file (Option.value_exn Config.java_debug_source_file_info)
   | _ when Option.is_some Config.parse_doli ->
       DoliParser.just_parse (Option.value_exn Config.parse_doli)
-  | _ when Option.is_some Config.capture_doli ->
-      DoliParser.capture (Option.value_exn Config.capture_doli)
   | Analyze ->
       run Driver.Analyze
   | Capture | Compile | Run ->

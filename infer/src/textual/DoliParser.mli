@@ -9,8 +9,3 @@ open! IStd
 
 val just_parse : string -> unit
 (** [parse path] parses the file in path *)
-
-val capture : string -> unit
-(** [capture path] parses the file in [path] accordning to the doli syntax. If parsing was
-    successful, then it stores the generated cfg into the database (`DB`), and in `Tenv`. If parsing
-    was not successful, then it prints an error message, and the location of the error. *)

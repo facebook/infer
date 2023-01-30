@@ -36,15 +36,3 @@ let just_parse path =
               L.external_error "%a@\n"
                 (TextualParser.pp_error (Textual.SourceFile.create path))
                 error ) )
-
-
-let capture path =
-  let sourcefile = Textual.SourceFile.create path in
-  Utils.with_file_in path ~f:(fun cin ->
-      let filebuf = CombinedLexer.Lexbuf.from_channel cin in
-      match TextualParser.parse_buf ~capture:DoliCapture sourcefile filebuf with
-      | Ok _ ->
-          L.progress "%s succesfully captured\n" (Filename.basename path)
-      | Error errs ->
-          List.iter errs ~f:(fun error ->
-              L.external_error "%a@\n" (TextualParser.pp_error sourcefile) error ) )
