@@ -23,7 +23,7 @@ val add_duration_since : t -> counter -> t
 
 val add : t -> t -> t
 
-val wall_time : t -> float
+val wall_time : t -> Mtime.span
 
 val pp : prefix:string -> Format.formatter -> t -> unit
 

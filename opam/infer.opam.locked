@@ -67,7 +67,7 @@ depends: [
   "menhirSdk" {= "20220210"}
   "mew" {= "0.1.0" & with-test}
   "mew_vi" {= "0.5.0" & with-test}
-  "mtime" {= "1.4.0"}
+  "mtime" {= "2.0.0"}
   "num" {= "1.4"}
   "ocaml" {= "4.14.0"}
   "ocaml-compiler-libs" {= "v0.12.4"}

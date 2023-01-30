@@ -117,7 +117,7 @@ let draw_job_status fmt ~term_width ~draw_time t ~status ~t0 ~heap_words =
     length := !length + job_prefix_size ) ;
   let time_width = 4 + (* actually drawing the time *) 4 (* "[s] " *) in
   if draw_time && term_width > time_width + job_prefix_size then (
-    let time_running = Mtime.span t0 t |> Mtime.Span.to_s in
+    let time_running = Mtime.span t0 t |> IMtime.span_to_s_float in
     F.fprintf fmt "[%4.1fs]" time_running ;
     (let heap_words_width = 7 in
      if term_width > heap_words_width + time_width + job_prefix_size then (

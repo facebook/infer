@@ -27,7 +27,7 @@ depends: [
   "javalib" {>="3.2.1"}
   "memtrace" {>="0.1.2"}
   "menhir" {>= "20220210"}
-  "mtime"
+  "mtime" {>="2"}
   "ocaml" {>="4.12.0"}
   "ocamlfind" {build}
   "ocamlgraph"

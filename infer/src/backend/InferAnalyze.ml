@@ -315,7 +315,7 @@ let main ~changed_files =
   Stats.log_aggregate backend_stats_list ;
   GCStats.log_aggregate ~prefix:"backend_stats." Analysis gc_stats_list ;
   let analysis_duration = ExecutionDuration.since start in
-  L.debug Analysis Quiet "Analysis phase finished in %a@\n" Mtime.Span.pp_float_s
+  L.debug Analysis Quiet "Analysis phase finished in %a@\n" Mtime.Span.pp
     (ExecutionDuration.wall_time analysis_duration) ;
   ExecutionDuration.log ~prefix:"backend_stats.scheduler_process_analysis_time" Analysis
     analysis_duration ;

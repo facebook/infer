@@ -137,7 +137,7 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
     let start_time = Mtime_clock.counter () in
     fun () ->
       let elapsed = Mtime_clock.count start_time in
-      let duration = Mtime.Span.to_ms elapsed |> Float.to_int in
+      let duration = IMtime.span_to_ms_int elapsed in
       Stats.add_proc_duration (Procname.to_string callee_pname) duration ;
       L.(debug Analysis Medium)
         "Elapsed analysis time: %a: %a@\n" Procname.pp callee_pname Mtime.Span.pp elapsed
