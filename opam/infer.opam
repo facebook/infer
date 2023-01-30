@@ -26,7 +26,7 @@ depends: [
   "iter"
   "javalib" {>="3.2.1"}
   "memtrace" {>="0.1.2"}
-  "menhir" {>= "20211128" & != "20211230" & != "20220210"}
+  "menhir" {>= "20220210"}
   "mtime"
   "ocaml" {>="4.12.0"}
   "ocamlfind" {build}

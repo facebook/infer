@@ -62,9 +62,9 @@ depends: [
   "lwt" {= "5.6.1"}
   "lwt_react" {= "1.2.0"}
   "memtrace" {= "0.2.2"}
-  "menhir" {= "20211128"}
-  "menhirLib" {= "20211128"}
-  "menhirSdk" {= "20211128"}
+  "menhir" {= "20220210"}
+  "menhirLib" {= "20220210"}
+  "menhirSdk" {= "20220210"}
   "mew" {= "0.1.0"}
   "mew_vi" {= "0.5.0"}
   "mtime" {= "1.4.0"}

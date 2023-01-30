@@ -9,7 +9,7 @@
 
 let lexer = "(ocamllex jSourceLexer jSourceFileInfo)"
 
-let jparser = "(menhir (modules jSourceParser))"
+let jparser = "(menhir (modules jSourceParser) (flags --table))"
 
 let java =
   Printf.sprintf

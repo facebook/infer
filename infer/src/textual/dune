@@ -20,5 +20,4 @@
 
 (menhir
  (modules CombinedMenhir)
- (flags --explain --unused-tokens)
- (infer false))
+ (flags --explain --unused-tokens))
