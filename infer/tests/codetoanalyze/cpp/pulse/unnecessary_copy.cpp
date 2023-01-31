@@ -652,3 +652,20 @@ void copy_assignment_const_ref_member_FP(const Arr& arr) {
   my_vec = arr.vec; // infer cannot see that arr.vec is const so it should
                     // suggest unnecessary_copy_assignment_const
 }
+
+class FVector {
+
+  FVector(FVector const& rhs) {
+    table_ = rhs.table_; // don't report on copy ctors
+  }
+
+  FVector& operator=(FVector const& rhs) {
+    if (this != &rhs) {
+      table_ = rhs.table_; // don't report on copy ctors
+    }
+    return *this;
+  }
+
+ protected:
+  std::vector<int> table_;
+};

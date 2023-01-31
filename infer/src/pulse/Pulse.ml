@@ -26,15 +26,16 @@ let report_topl_errors proc_desc err_log summary =
   List.iter ~f summary
 
 
-let is_not_implicit exe_env pname =
+let is_not_implicit_or_copy_ctor_assignment exe_env pname =
   not
     (Option.exists (Exe_env.get_attributes exe_env pname) ~f:(fun attrs ->
-         attrs.ProcAttributes.is_cpp_implicit ) )
+         attrs.ProcAttributes.is_cpp_implicit || attrs.ProcAttributes.is_cpp_copy_ctor
+         || attrs.ProcAttributes.is_cpp_copy_assignment ) )
 
 
 let report_unnecessary_copies exe_env proc_desc err_log non_disj_astate =
   let pname = Procdesc.get_proc_name proc_desc in
-  if is_not_implicit exe_env pname then
+  if is_not_implicit_or_copy_ctor_assignment exe_env pname then
     PulseNonDisjunctiveDomain.get_copied non_disj_astate
     |> List.iter ~f:(fun (copied_into, source_typ, location, copied_location, from) ->
            let copy_name = Format.asprintf "%a" Attribute.CopiedInto.pp copied_into in
@@ -47,7 +48,7 @@ let report_unnecessary_copies exe_env proc_desc err_log non_disj_astate =
 
 let report_unnecessary_parameter_copies exe_env proc_desc err_log non_disj_astate =
   let pname = Procdesc.get_proc_name proc_desc in
-  if is_not_implicit exe_env pname then
+  if is_not_implicit_or_copy_ctor_assignment exe_env pname then
     PulseNonDisjunctiveDomain.get_const_refable_parameters exe_env non_disj_astate
     |> List.iter ~f:(fun (param, typ, location) ->
            let diagnostic =
