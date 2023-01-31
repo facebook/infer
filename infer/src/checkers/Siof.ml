@@ -129,7 +129,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let at_least_nonbottom = Domain.join (NonBottom SiofTrace.bottom, Domain.VarNames.empty)
 
   let exec_instr astate
-      ({InterproceduralAnalysis.proc_desc; analyze_dependency; exe_env} as analysis_data) _ _
+      ({InterproceduralAnalysis.proc_desc; analyze_dependency; _} as analysis_data) _ _
       (instr : Sil.instr) =
     match instr with
     | Store {e1= Lvar global; typ= Typ.{desc= Tptr _}; e2= Lvar _; loc}
@@ -162,7 +162,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         Domain.join astate (NonBottom SiofTrace.bottom, Domain.VarNames.of_list init)
     | Call (_, Const (Cfun callee_pname), actuals, loc, _)
-      when Exe_env.get_attributes exe_env callee_pname
+      when Attributes.load callee_pname
            |> Option.exists ~f:(fun attrs -> attrs.ProcAttributes.is_ret_constexpr) ->
         let actuals_without_this =
           if Procname.is_constructor callee_pname then List.tl actuals |> Option.value ~default:[]
@@ -265,7 +265,7 @@ let siof_check ({InterproceduralAnalysis.proc_desc} as analysis_data) gname summ
       ()
 
 
-let checker ({InterproceduralAnalysis.proc_desc; exe_env} as analysis_data) =
+let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let pname = Procdesc.get_proc_name proc_desc in
   let standard_streams_initialized_in_tu =
     let includes_iostream tu =
@@ -278,8 +278,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env} as analysis_data) =
                  "__infer_translation_unit_init_streams" )
           |> Pvar.get_initializer_pname )
       in
-      Exe_env.get_procs_in_file exe_env pname
-      |> List.exists ~f:(Procname.equal magic_iostream_marker)
+      SourceFiles.get_procs_in_file pname |> List.exists ~f:(Procname.equal magic_iostream_marker)
     in
     includes_iostream (Procdesc.get_attributes proc_desc).ProcAttributes.translation_unit
   in

@@ -10,7 +10,7 @@ open! IStd
 (** This stage is called for each Java class after all corresponding proc summaries are calculated. *)
 
 val analyze_class :
-  Exe_env.t -> Tenv.t -> SourceFile.t -> AggregatedSummaries.ClassInfo.t -> IssueLog.t -> IssueLog.t
+  Tenv.t -> SourceFile.t -> AggregatedSummaries.ClassInfo.t -> IssueLog.t -> IssueLog.t
 (** Given aggregated summary for a class, analyze it, and return updated issue log, if necessary.
     This function will be called for each non-trivial{^ 1} anonymous class in the file, including
     nested classes. Order of calls is not specified.

@@ -142,14 +142,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else Domain.set_non_null formals lhs_access_exp astate
 
 
-  let do_call {interproc= {tenv; exe_env; analyze_dependency}; formals} lhs callee actuals loc
+  let do_call {interproc= {tenv; analyze_dependency}; formals} lhs callee actuals loc
       (astate : Domain.t) =
     let open Domain in
     let make_ret_attr return_attribute = {empty_summary with return_attribute} in
     let make_thread thread = {empty_summary with thread} in
     let actuals_acc_exps = get_access_expr_list actuals in
     let get_returned_executor_summary () =
-      StarvationModels.get_returned_executor exe_env tenv callee actuals
+      StarvationModels.get_returned_executor tenv callee actuals
       |> Option.map ~f:(fun thread_constraint -> make_ret_attr (WorkScheduler thread_constraint))
     in
     let get_thread_assert_summary () =
@@ -425,7 +425,7 @@ let set_initial_attributes ({InterproceduralAnalysis.proc_desc} as interproc) as
         astate
 
 
-let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv; exe_env} as interproc) =
+let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
   let procname = Procdesc.get_proc_name proc_desc in
   if StarvationModels.should_skip_analysis tenv procname [] then None
   else
@@ -441,16 +441,15 @@ let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv; exe_env} as int
     in
     let set_thread_status_by_annotation (astate : Domain.t) =
       let thread =
-        if ConcurrencyModels.annotated_as_worker_thread exe_env tenv procname then
+        if ConcurrencyModels.annotated_as_worker_thread tenv procname then
           Domain.ThreadDomain.BGThread
-        else if ConcurrencyModels.runs_on_ui_thread exe_env tenv procname then
-          Domain.ThreadDomain.UIThread
+        else if ConcurrencyModels.runs_on_ui_thread tenv procname then Domain.ThreadDomain.UIThread
         else astate.thread
       in
       {astate with thread}
     in
     let set_ignore_blocking_calls_flag astate =
-      if StarvationModels.is_annotated_nonblocking exe_env tenv procname then
+      if StarvationModels.is_annotated_nonblocking tenv procname then
         Domain.set_ignore_blocking_calls_flag astate
       else astate
     in
@@ -646,13 +645,13 @@ let should_report attrs =
       false
 
 
-let fold_reportable_summaries analyze_ondemand exe_env tenv clazz ~init ~f =
+let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
   let methods =
     Tenv.lookup tenv clazz
     |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Struct.methods)
   in
   let f acc mthd =
-    Exe_env.get_attributes exe_env mthd
+    Attributes.load mthd
     |> Option.value_map ~default:acc ~f:(fun other_attrs ->
            if should_report other_attrs then
              analyze_ondemand mthd
@@ -675,10 +674,9 @@ let is_private attrs = ProcAttributes.equal_access (ProcAttributes.get_access at
 
 (** report warnings possible on the parallel composition of two threads/critical pairs
     [should_report_starvation] means [pair] is on the UI thread and not on a constructor *)
-let report_on_parallel_composition ~should_report_starvation exe_env tenv pattrs pair lock
-    other_pname other_pair report_map =
-  if is_private pattrs || Exe_env.get_attributes exe_env other_pname |> Option.exists ~f:is_private
-  then report_map
+let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lock other_pname
+    other_pair report_map =
+  if is_private pattrs || Attributes.load other_pname |> Option.exists ~f:is_private then report_map
   else
     let open Domain in
     let pname = ProcAttributes.get_proc_name pattrs in
@@ -732,7 +730,7 @@ let report_on_parallel_composition ~should_report_starvation exe_env tenv pattrs
     else report_map
 
 
-let report_on_pair ~analyze_ondemand exe_env tenv pattrs (pair : Domain.CriticalPair.t) report_map =
+let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) report_map =
   let open Domain in
   let pname = ProcAttributes.get_proc_name pattrs in
   let event = pair.elem.event in
@@ -816,8 +814,7 @@ let report_on_pair ~analyze_ondemand exe_env tenv pattrs (pair : Domain.Critical
           let ltr = CriticalPair.make_trace pname pair in
           ReportMap.add_arbitrary_code_execution_under_lock tenv pattrs loc ltr error_message
             report_map )
-  | LockAcquire _ when is_not_private && StarvationModels.is_annotated_lockless exe_env tenv pname
-    ->
+  | LockAcquire _ when is_not_private && StarvationModels.is_annotated_lockless tenv pname ->
       let error_message =
         Format.asprintf "%a is annotated %s but%a." pname_pp pname
           (MF.monospaced_to_string Annotations.lockless)
@@ -847,11 +844,11 @@ let report_on_pair ~analyze_ondemand exe_env tenv pattrs (pair : Domain.Critical
                       and retrieve all the summaries of the methods of that class;
                       then, report on the parallel composition of the current pair and any pair in these
                       summaries that can indeed run in parallel *)
-                   fold_reportable_summaries analyze_ondemand exe_env tenv other_class ~init:acc
+                   fold_reportable_summaries analyze_ondemand tenv other_class ~init:acc
                      ~f:(fun acc (other_pname, summary) ->
                        Domain.fold_critical_pairs_of_summary
-                         (report_on_parallel_composition ~should_report_starvation exe_env tenv
-                            pattrs pair lock other_pname )
+                         (report_on_parallel_composition ~should_report_starvation tenv pattrs pair
+                            lock other_pname )
                          summary acc ) ) ) )
   | _ ->
       report_map
@@ -862,11 +859,11 @@ let reporting {InterproceduralAnalysis.procedures; file_exe_env; analyze_file_de
   else
     let report_on_proc tenv pattrs report_map payload =
       Domain.fold_critical_pairs_of_summary
-        (report_on_pair ~analyze_ondemand:analyze_file_dependency file_exe_env tenv pattrs)
+        (report_on_pair ~analyze_ondemand:analyze_file_dependency tenv pattrs)
         payload report_map
     in
     let report_procedure report_map procname =
-      match Exe_env.get_attributes file_exe_env procname with
+      match Attributes.load procname with
       | None ->
           report_map
       | Some attributes ->

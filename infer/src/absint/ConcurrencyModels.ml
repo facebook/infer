@@ -389,8 +389,8 @@ let is_android_lifecycle_method tenv pname =
 type annotation_trail = DirectlyAnnotated | Override of Procname.t | SuperClass of Typ.name
 [@@deriving compare]
 
-let find_override_or_superclass_annotated exe_env is_annot tenv proc_name =
-  let is_annotated pn = Annotations.pname_has_return_annot exe_env pn is_annot in
+let find_override_or_superclass_annotated is_annot tenv proc_name =
+  let is_annotated pn = Annotations.pname_has_return_annot pn is_annot in
   let is_override = Staged.unstage (PatternMatch.has_same_signature proc_name) in
   let find_override_or_superclass_aux class_name =
     Tenv.find_map_supers tenv class_name ~f:(fun name struct_opt ->
@@ -404,20 +404,18 @@ let find_override_or_superclass_annotated exe_env is_annot tenv proc_name =
   else Procname.get_class_type_name proc_name |> Option.bind ~f:find_override_or_superclass_aux
 
 
-let annotated_as exe_env predicate tenv pname =
-  find_override_or_superclass_annotated exe_env predicate tenv pname |> Option.is_some
+let annotated_as predicate tenv pname =
+  find_override_or_superclass_annotated predicate tenv pname |> Option.is_some
 
 
-let annotated_as_worker_thread exe_env tenv pname =
-  annotated_as exe_env Annotations.ia_is_worker_thread tenv pname
+let annotated_as_worker_thread tenv pname = annotated_as Annotations.ia_is_worker_thread tenv pname
+
+let annotated_as_uithread_equivalent tenv pname =
+  annotated_as Annotations.ia_is_uithread_equivalent tenv pname
 
 
-let annotated_as_uithread_equivalent exe_env tenv pname =
-  annotated_as exe_env Annotations.ia_is_uithread_equivalent tenv pname
-
-
-let runs_on_ui_thread exe_env tenv pname =
-  is_android_lifecycle_method tenv pname || annotated_as_uithread_equivalent exe_env tenv pname
+let runs_on_ui_thread tenv pname =
+  is_android_lifecycle_method tenv pname || annotated_as_uithread_equivalent tenv pname
 
 
 let is_recursive_lock_type = function

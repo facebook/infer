@@ -119,7 +119,7 @@ val ia_is_uithread_equivalent : Annot.Item.t -> bool
 val pdesc_has_return_annot : Procdesc.t -> (Annot.Item.t -> bool) -> bool
 (** return true if the given predicate evaluates to true on the annotation of [pdesc]'s return value *)
 
-val pname_has_return_annot : Exe_env.t -> Procname.t -> (Annot.Item.t -> bool) -> bool
+val pname_has_return_annot : Procname.t -> (Annot.Item.t -> bool) -> bool
 (** return true if the given predicate evaluates to true on the annotation of [pname]'s return value *)
 
 val attrs_return_annot_ends_with : ProcAttributes.t -> string -> bool

@@ -7,4 +7,4 @@
 
 open! IStd
 
-type t = {proc_desc: Procdesc.t; tenv: Tenv.t; err_log: Errlog.t; exe_env: Exe_env.t}
+type t = {proc_desc: Procdesc.t; tenv: Tenv.t; err_log: Errlog.t}

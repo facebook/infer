@@ -226,7 +226,7 @@ let propagator_matchers =
     Config.pulse_taint_config.propagators
 
 
-let procedure_matches exe_env tenv matchers proc_name actuals =
+let procedure_matches tenv matchers proc_name actuals =
   List.filter_map matchers ~f:(fun matcher ->
       let procedure_name_matches =
         match matcher.procedure_matcher with
@@ -262,7 +262,7 @@ let procedure_matches exe_env tenv matchers proc_name actuals =
                              tenv proc_name ) )
                   procedure_class_name )
         | MethodWithAnnotation {annotation} ->
-            Annotations.pname_has_return_annot exe_env proc_name (fun annot_item ->
+            Annotations.pname_has_return_annot proc_name (fun annot_item ->
                 Annotations.ia_ends_with annot_item annotation )
         | Allocation _ ->
             false
@@ -281,9 +281,9 @@ let procedure_matches exe_env tenv matchers proc_name actuals =
       else None )
 
 
-let get_tainted exe_env tenv path location matchers return_opt ~has_added_return_param proc_name
-    actuals astate =
-  let matches = procedure_matches exe_env tenv matchers proc_name actuals in
+let get_tainted tenv path location matchers return_opt ~has_added_return_param proc_name actuals
+    astate =
+  let matches = procedure_matches tenv matchers proc_name actuals in
   if not (List.is_empty matches) then L.d_printfln "taint matches" ;
   List.fold matches ~init:(astate, []) ~f:(fun acc matcher ->
       let actuals =
@@ -466,11 +466,11 @@ let taint_and_explore ~taint v astate =
   aux v astate
 
 
-let taint_sources exe_env tenv path location ~intra_procedural_only return ~has_added_return_param
-    proc_name actuals astate =
+let taint_sources tenv path location ~intra_procedural_only return ~has_added_return_param proc_name
+    actuals astate =
   let astate, tainted =
-    get_tainted exe_env tenv path location source_matchers return ~has_added_return_param proc_name
-      actuals astate
+    get_tainted tenv path location source_matchers return ~has_added_return_param proc_name actuals
+      astate
   in
   List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _)) ->
       let hist =
@@ -489,11 +489,10 @@ let taint_sources exe_env tenv path location ~intra_procedural_only return ~has_
             astate ) )
 
 
-let taint_sanitizers exe_env tenv path return ~has_added_return_param ~location proc_name actuals
-    astate =
+let taint_sanitizers tenv path return ~has_added_return_param ~location proc_name actuals astate =
   let astate, tainted =
-    get_tainted exe_env tenv path location sanitizer_matchers return ~has_added_return_param
-      proc_name actuals astate
+    get_tainted tenv path location sanitizer_matchers return ~has_added_return_param proc_name
+      actuals astate
   in
   let astate =
     List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, history), _)) ->
@@ -660,10 +659,10 @@ let should_ignore_all_flows_to proc_name =
   Procname.is_objc_dealloc proc_name || BuiltinDecl.is_declared proc_name
 
 
-let taint_sinks exe_env tenv path location return ~has_added_return_param proc_name actuals astate =
+let taint_sinks tenv path location return ~has_added_return_param proc_name actuals astate =
   let astate, tainted =
-    get_tainted exe_env tenv path location sink_matchers return ~has_added_return_param proc_name
-      actuals astate
+    get_tainted tenv path location sink_matchers return ~has_added_return_param proc_name actuals
+      astate
   in
   PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ)) ->
       if should_ignore_all_flows_to proc_name then Ok astate
@@ -760,11 +759,10 @@ let propagate_to path location v values call astate =
           astate ) )
 
 
-let taint_propagators exe_env tenv path location return ~has_added_return_param proc_name actuals
-    astate =
+let taint_propagators tenv path location return ~has_added_return_param proc_name actuals astate =
   let astate, tainted =
-    get_tainted exe_env tenv path location propagator_matchers return ~has_added_return_param
-      proc_name actuals astate
+    get_tainted tenv path location propagator_matchers return ~has_added_return_param proc_name
+      actuals astate
   in
   List.fold tainted ~init:astate ~f:(fun astate (_propagator, ((v, _history), _)) ->
       let other_actuals =
@@ -927,7 +925,7 @@ let should_treat_as_unknown_for_taint exe_env tenv proc_name =
   Option.exists (Exe_env.get_attributes exe_env proc_name) ~f:(fun attrs ->
       attrs.ProcAttributes.is_cpp_implicit )
   && Procname.is_constructor proc_name
-  || procedure_matches exe_env tenv pulse_models_to_treat_as_unknown_for_taint proc_name []
+  || procedure_matches tenv pulse_models_to_treat_as_unknown_for_taint proc_name []
      |> List.is_empty |> not
 
 
@@ -951,21 +949,21 @@ let call exe_env tenv path location return ~call_was_unknown (call : _ Either.t)
             false
       in
       let astate =
-        taint_sanitizers exe_env tenv path (Some return) ~has_added_return_param ~location proc_name
-          actuals astate
+        taint_sanitizers tenv path (Some return) ~has_added_return_param ~location proc_name actuals
+          astate
       in
       let astate =
-        taint_sources exe_env tenv path location ~intra_procedural_only:false (Some return)
+        taint_sources tenv path location ~intra_procedural_only:false (Some return)
           ~has_added_return_param proc_name actuals astate
       in
       let+ astate =
-        taint_sinks exe_env tenv path location (Some return) ~has_added_return_param proc_name
-          actuals astate
+        taint_sinks tenv path location (Some return) ~has_added_return_param proc_name actuals
+          astate
       in
       let astate, call_was_unknown =
         let new_astate =
-          taint_propagators exe_env tenv path location (Some return) ~has_added_return_param
-            proc_name actuals astate
+          taint_propagators tenv path location (Some return) ~has_added_return_param proc_name
+            actuals astate
         in
         (new_astate, call_was_unknown && phys_equal astate new_astate)
       in
@@ -975,7 +973,7 @@ let call exe_env tenv path location return ~call_was_unknown (call : _ Either.t)
       else astate
 
 
-let taint_initial exe_env tenv proc_name (proc_attrs : ProcAttributes.t) astate0 =
+let taint_initial tenv proc_name (proc_attrs : ProcAttributes.t) astate0 =
   let result =
     let++ astate, rev_actuals =
       List.fold
@@ -990,7 +988,7 @@ let taint_initial exe_env tenv proc_name (proc_attrs : ProcAttributes.t) astate0
           , {ProcnameDispatcher.Call.FuncArg.exp= Lvar pvar; typ; arg_payload= actual_value}
             :: rev_actuals ) )
     in
-    taint_sources exe_env tenv PathContext.initial proc_attrs.loc ~intra_procedural_only:true None
+    taint_sources tenv PathContext.initial proc_attrs.loc ~intra_procedural_only:true None
       ~has_added_return_param:false proc_name (List.rev rev_actuals) astate
   in
   match PulseOperationResult.sat_ok result with

@@ -8,8 +8,8 @@
 
 open! IStd
 
-(** Execution environments are a means to perform I/O operations during analysis time such as
-    getting a [tenv] of a function while providing appropriate caching *)
+(** Execution environments are a means to get a function's type environment and integer widths and
+    cache those *)
 
 type t
 
@@ -31,6 +31,3 @@ val get_attributes : t -> Procname.t -> ProcAttributes.t option
 val get_formal_types : t -> Procname.t -> Typ.t list
 
 val is_no_return : t -> Procname.t -> bool
-
-val get_procs_in_file : t -> Procname.t -> Procname.t list
-(** return the list of procedures in the file where the given procedure name was defined *)

@@ -43,4 +43,4 @@ val check_flows_wrt_sink :
   -> (IntSet.t * AbductiveDomain.t) AccessResult.t
 
 val taint_initial :
-  Exe_env.t -> Tenv.t -> Procname.t -> ProcAttributes.t -> AbductiveDomain.t -> AbductiveDomain.t
+  Tenv.t -> Procname.t -> ProcAttributes.t -> AbductiveDomain.t -> AbductiveDomain.t

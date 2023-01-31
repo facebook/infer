@@ -75,7 +75,7 @@ let report exe_env work_set =
                  Ondemand.analyze_proc_name exe_env ~caller_summary:summary pname
                  |> Option.bind ~f:(fun summary -> Lazy.force summary.Summary.payloads.starvation)
                  )
-               exe_env tenv pattrs pair acc
+               tenv pattrs pair acc
            in
            Event.get_acquired_locks pair.elem.event
            |> List.fold ~init:acc ~f:(fun acc lock ->
@@ -84,8 +84,8 @@ let report exe_env work_set =
                   in
                   WorkHashSet.fold
                     (fun (other_procname, (other_pair : CriticalPair.t)) () acc ->
-                      Starvation.report_on_parallel_composition ~should_report_starvation exe_env
-                        tenv pattrs pair lock other_procname other_pair acc )
+                      Starvation.report_on_parallel_composition ~should_report_starvation tenv
+                        pattrs pair lock other_procname other_pair acc )
                     work_set acc ) )
   in
   WorkHashSet.fold wrap_report work_set Starvation.ReportMap.empty

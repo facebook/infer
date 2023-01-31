@@ -242,11 +242,11 @@ let make_trace ~report_kind original_exp =
 
 
 (** Explain why we are reporting this access, in Java *)
-let get_reporting_explanation_java exe_env report_kind tenv pname thread =
+let get_reporting_explanation_java report_kind tenv pname thread =
   (* best explanation is always that the current class or method is annotated thread-safe. try for
      that first. *)
   let annotation_explanation_opt =
-    if RacerDModels.is_thread_safe_method exe_env pname tenv then
+    if RacerDModels.is_thread_safe_method pname tenv then
       Some
         (F.asprintf
            "@\n Reporting because current method is annotated %a or overrides an annotated method."
@@ -310,9 +310,9 @@ let get_reporting_explanation_java exe_env report_kind tenv pname thread =
 let get_reporting_explanation_cpp = (IssueType.lock_consistency_violation, "")
 
 (** Explain why we are reporting this access *)
-let get_reporting_explanation exe_env report_kind tenv pname thread =
+let get_reporting_explanation report_kind tenv pname thread =
   if Procname.is_java pname || Procname.is_csharp pname then
-    get_reporting_explanation_java exe_env report_kind tenv pname thread
+    get_reporting_explanation_java report_kind tenv pname thread
   else get_reporting_explanation_cpp
 
 
@@ -320,7 +320,7 @@ let log_issue current_pname ~issue_log ~loc ~ltr ~access issue_type error_messag
   Reporting.log_issue_external current_pname ~issue_log ~loc ~ltr ~access issue_type error_message
 
 
-let report_thread_safety_violation ~make_description ~report_kind exe_env
+let report_thread_safety_violation ~make_description ~report_kind
     ({threads; snapshot; tenv; procname= pname} : reported_access) issue_log =
   let open RacerDDomain in
   let final_pname = List.last snapshot.trace |> Option.value_map ~default:pname ~f:CallSite.pname in
@@ -331,14 +331,14 @@ let report_thread_safety_violation ~make_description ~report_kind exe_env
   (* what the potential bug is *)
   let description = make_description pname final_sink_site initial_sink_site snapshot in
   (* why we are reporting it *)
-  let issue_type, explanation = get_reporting_explanation exe_env report_kind tenv pname threads in
+  let issue_type, explanation = get_reporting_explanation report_kind tenv pname threads in
   let error_message = F.sprintf "%s%s" description explanation in
   let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
   let access = IssueAuxData.encode end_locs in
   log_issue pname ~issue_log ~loc ~ltr ~access RacerD issue_type error_message
 
 
-let report_unannotated_interface_violation exe_env reported_pname reported_access issue_log =
+let report_unannotated_interface_violation reported_pname reported_access issue_log =
   match Procname.base_of reported_pname with
   | Procname.Java java_pname ->
       let class_name = Procname.Java.get_class_name java_pname in
@@ -348,22 +348,22 @@ let report_unannotated_interface_violation exe_env reported_pname reported_acces
            interface with %a or adding a lock."
           describe_pname reported_pname MF.pp_monospaced class_name MF.pp_monospaced "@ThreadSafe"
       in
-      report_thread_safety_violation ~make_description ~report_kind:UnannotatedInterface exe_env
+      report_thread_safety_violation ~make_description ~report_kind:UnannotatedInterface
         reported_access issue_log
   | _ ->
       (* skip reporting on C++ *)
       issue_log
 
 
-let report_thread_safety_violation ~acc ~make_description ~report_kind exe_env reported_access =
+let report_thread_safety_violation ~acc ~make_description ~report_kind reported_access =
   ReportedSet.deduplicate
-    ~f:(report_thread_safety_violation ~make_description ~report_kind exe_env)
+    ~f:(report_thread_safety_violation ~make_description ~report_kind)
     reported_access acc
 
 
-let report_unannotated_interface_violation ~acc exe_env reported_pname reported_access =
+let report_unannotated_interface_violation ~acc reported_pname reported_access =
   ReportedSet.deduplicate reported_access acc
-    ~f:(report_unannotated_interface_violation exe_env reported_pname)
+    ~f:(report_unannotated_interface_violation reported_pname)
 
 
 let make_read_write_race_description ~read_is_sync (conflict : reported_access) pname
@@ -400,7 +400,7 @@ let make_unprotected_write_description pname final_sink_site initial_sink_site f
     pp_access final_sink
 
 
-let report_on_write_java_csharp exe_env accesses acc (reported_access : reported_access) =
+let report_on_write_java_csharp accesses acc (reported_access : reported_access) =
   let open RacerDDomain in
   let conflict =
     if ThreadsDomain.is_any reported_access.threads then
@@ -420,13 +420,12 @@ let report_on_write_java_csharp exe_env accesses acc (reported_access : reported
     && (Option.is_some conflict || ThreadsDomain.is_any reported_access.threads)
   then
     report_thread_safety_violation ~acc ~make_description:make_unprotected_write_description
-      ~report_kind:(WriteWriteRace conflict) exe_env reported_access
+      ~report_kind:(WriteWriteRace conflict) reported_access
   else acc
 
 
 (** unprotected read. report all writes as conflicts for java/csharp. *)
-let report_on_unprotected_read_java_csharp exe_env accesses acc (reported_access : reported_access)
-    =
+let report_on_unprotected_read_java_csharp accesses acc (reported_access : reported_access) =
   let open RacerDDomain in
   let is_conflict {snapshot; threads= other_threads} =
     AccessSnapshot.is_write snapshot
@@ -436,11 +435,11 @@ let report_on_unprotected_read_java_csharp exe_env accesses acc (reported_access
   |> Option.value_map ~default:acc ~f:(fun conflict ->
          let make_description = make_read_write_race_description ~read_is_sync:false conflict in
          let report_kind = ReadWriteRace conflict.snapshot in
-         report_thread_safety_violation ~acc ~make_description ~report_kind exe_env reported_access )
+         report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
 
 
 (** protected read. report unprotected writes and opposite protected writes as conflicts *)
-let report_on_protected_read_java_csharp exe_env accesses acc (reported_access : reported_access) =
+let report_on_protected_read_java_csharp accesses acc (reported_access : reported_access) =
   let open RacerDDomain in
   let can_conflict (snapshot1 : AccessSnapshot.t) (snapshot2 : AccessSnapshot.t) =
     if snapshot1.elem.lock && snapshot2.elem.lock then false
@@ -457,33 +456,32 @@ let report_on_protected_read_java_csharp exe_env accesses acc (reported_access :
          (* protected read with conflicting unprotected write(s). warn. *)
          let make_description = make_read_write_race_description ~read_is_sync:true conflict in
          let report_kind = ReadWriteRace conflict.snapshot in
-         report_thread_safety_violation ~acc ~make_description ~report_kind exe_env reported_access )
+         report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
 
 
 (** main reporting hook for Java & C# *)
-let report_unsafe_access_java_csharp exe_env accesses acc
+let report_unsafe_access_java_csharp accesses acc
     ({snapshot; threads; tenv; procname= pname} as reported_access) =
   let open RacerDDomain in
   let open RacerDModels in
   match snapshot.elem.access with
   | InterfaceCall {pname= reported_pname}
     when AccessSnapshot.is_unprotected snapshot
-         && ThreadsDomain.is_any threads
-         && is_marked_thread_safe exe_env pname tenv ->
+         && ThreadsDomain.is_any threads && is_marked_thread_safe pname tenv ->
       (* un-annotated interface call + no lock in method marked thread-safe. warn *)
-      report_unannotated_interface_violation ~acc exe_env reported_pname reported_access
+      report_unannotated_interface_violation ~acc reported_pname reported_access
   | InterfaceCall _ ->
       acc
   | Write _ | ContainerWrite _ ->
-      report_on_write_java_csharp exe_env accesses acc reported_access
+      report_on_write_java_csharp accesses acc reported_access
   | (Read _ | ContainerRead _) when AccessSnapshot.is_unprotected snapshot ->
-      report_on_unprotected_read_java_csharp exe_env accesses acc reported_access
+      report_on_unprotected_read_java_csharp accesses acc reported_access
   | Read _ | ContainerRead _ ->
-      report_on_protected_read_java_csharp exe_env accesses acc reported_access
+      report_on_protected_read_java_csharp accesses acc reported_access
 
 
 (** main reporting hook for C langs *)
-let report_unsafe_access_objc_cpp exe_env accesses acc ({snapshot} as reported_access) =
+let report_unsafe_access_objc_cpp accesses acc ({snapshot} as reported_access) =
   let open RacerDDomain in
   match snapshot.elem.access with
   | InterfaceCall _ | Write _ | ContainerWrite _ ->
@@ -498,20 +496,19 @@ let report_unsafe_access_objc_cpp exe_env accesses acc ({snapshot} as reported_a
       |> Option.value_map ~default:acc ~f:(fun conflict ->
              let make_description = make_read_write_race_description ~read_is_sync:false conflict in
              let report_kind = ReadWriteRace conflict.snapshot in
-             report_thread_safety_violation ~acc ~make_description ~report_kind exe_env
-               reported_access )
+             report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
   | Read _ | ContainerRead _ ->
       (* Do not report protected reads for ObjC_Cpp *)
       acc
 
 
 (** report hook dispatching to language specific functions *)
-let report_unsafe_access exe_env accesses acc ({procname} as reported_access) =
+let report_unsafe_access accesses acc ({procname} as reported_access) =
   match (Procname.base_of procname : Procname.t) with
   | Java _ | CSharp _ ->
-      report_unsafe_access_java_csharp exe_env accesses acc reported_access
+      report_unsafe_access_java_csharp accesses acc reported_access
   | ObjC_Cpp _ ->
-      report_unsafe_access_objc_cpp exe_env accesses acc reported_access
+      report_unsafe_access_objc_cpp accesses acc reported_access
   | _ ->
       acc
 
@@ -543,7 +540,7 @@ let report_unsafe_access exe_env accesses acc ({procname} as reported_access) =
     The above is tempered at the moment by abstractions of "same lock" and "same thread": we are
     currently not distinguishing different locks, and are treating "known to be confined to a
     thread" as if "known to be confined to UI thread". *)
-let report_unsafe_accesses ~issue_log exe_env classname aggregated_access_map =
+let report_unsafe_accesses ~issue_log classname aggregated_access_map =
   let open RacerDDomain in
   let report_accesses_on_location reportable_accesses init =
     (* Don't report on location if all accesses are on non-concurrent contexts *)
@@ -551,14 +548,14 @@ let report_unsafe_accesses ~issue_log exe_env classname aggregated_access_map =
       List.for_all reportable_accesses ~f:(fun ({threads} : reported_access) ->
           ThreadsDomain.is_any threads |> not )
     then init
-    else List.fold reportable_accesses ~init ~f:(report_unsafe_access exe_env reportable_accesses)
+    else List.fold reportable_accesses ~init ~f:(report_unsafe_access reportable_accesses)
   in
   let report_guardedby_violations_on_location grouped_accesses init =
     if Config.racerd_guardedby then
       List.fold grouped_accesses ~init ~f:(fun acc r ->
           if should_report_guardedby_violation classname r then
             report_thread_safety_violation ~acc ~report_kind:GuardedByViolation
-              ~make_description:make_guardedby_violation_description exe_env r
+              ~make_description:make_guardedby_violation_description r
           else acc )
     else init
   in
@@ -574,7 +571,7 @@ let report_unsafe_accesses ~issue_log exe_env classname aggregated_access_map =
 
 
 let should_report_on_proc file_exe_env proc_name =
-  Exe_env.get_attributes file_exe_env proc_name
+  Attributes.load proc_name
   |> Option.exists ~f:(fun attrs ->
          let tenv = Exe_env.get_proc_tenv file_exe_env proc_name in
          let is_not_private = not ProcAttributes.(equal_access (get_access attrs) Private) in
@@ -584,7 +581,7 @@ let should_report_on_proc file_exe_env proc_name =
          | Java java_pname ->
              (* return true if procedure is at an abstraction boundary or reporting has been explicitly
                 requested via @ThreadSafe in java *)
-             RacerDModels.is_thread_safe_method file_exe_env proc_name tenv
+             RacerDModels.is_thread_safe_method proc_name tenv
              || is_not_private
                 && (not (Procname.Java.is_class_initializer java_pname))
                 && (not (Procname.Java.is_autogen_method java_pname))
@@ -735,7 +732,7 @@ let analyze ({InterproceduralAnalysis.file_exe_env; analyze_file_dependency} as 
       (fun classname methods issue_log ->
         make_results_table file_exe_env methods
         |> synchronized_container_filter classname
-        |> report_unsafe_accesses ~issue_log file_exe_env classname )
+        |> report_unsafe_accesses ~issue_log classname )
       class_map IssueLog.empty
   in
   clear_sync_container_cache () ;

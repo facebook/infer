@@ -124,8 +124,3 @@ let is_no_return t pname =
 
 
 let mk () = {proc_map= Procname.Hash.create 17; file_map= SourceFile.Hash.create 1}
-
-let get_procs_in_file t proc_name =
-  get_attributes t proc_name
-  |> Option.map ~f:(fun {ProcAttributes.translation_unit} -> translation_unit)
-  |> Option.value_map ~default:[] ~f:SourceFiles.proc_names_of_source

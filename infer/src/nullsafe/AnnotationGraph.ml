@@ -56,7 +56,7 @@ let graph_nodes_of_provisional_annotations annotations =
   AnnotationMap.of_seq (Stdlib.List.to_seq annotation_points)
 
 
-let build_graph_nodes exe_env tenv class_struct class_name =
+let build_graph_nodes tenv class_struct class_name =
   let class_typ = Typ.mk_struct class_name in
   let field_annotations =
     class_struct.Struct.fields
@@ -74,9 +74,7 @@ let build_graph_nodes exe_env tenv class_struct class_name =
     class_struct.Struct.methods
     |> List.sort ~compare:Procname.compare
     |> List.map ~f:(fun proc_name ->
-           let proc_attributes =
-             Option.value_exn (PatternMatch.lookup_attributes exe_env tenv proc_name)
-           in
+           let proc_attributes = Option.value_exn (PatternMatch.lookup_attributes tenv proc_name) in
            AnnotatedSignature.get_for_class_under_analysis tenv proc_attributes )
   in
   let method_and_param_annotations =
@@ -168,8 +166,8 @@ let get_param_num_json = function
 
 let java_type_to_string java_type = Pp.string_of_pp (Typ.pp_java ~verbose:true) java_type
 
-let get_access_level exe_env tenv proc_name =
-  let proc_attributes = PatternMatch.lookup_attributes_exn exe_env tenv (Procname.Java proc_name) in
+let get_access_level tenv proc_name =
+  let proc_attributes = PatternMatch.lookup_attributes_exn tenv (Procname.Java proc_name) in
   match ProcAttributes.get_access proc_attributes with
   | Default ->
       `Default
@@ -181,7 +179,7 @@ let get_access_level exe_env tenv proc_name =
       `Protected
 
 
-let get_method_info_json exe_env tenv annotation =
+let get_method_info_json tenv annotation =
   let open IOption.Let_syntax in
   let+ proc_name =
     match annotation with
@@ -194,15 +192,15 @@ let get_method_info_json exe_env tenv annotation =
   in
   let method_name = Procname.Java.get_method proc_name in
   let params = Procname.Java.get_parameters proc_name |> List.map ~f:java_type_to_string in
-  let access_level = get_access_level exe_env tenv proc_name in
+  let access_level = get_access_level tenv proc_name in
   Jsonbug_t.{method_name; params; access_level}
 
 
-let to_json_annotation_point exe_env tenv graph {id; annotation; num_violations; dependent_points} :
+let to_json_annotation_point tenv graph {id; annotation; num_violations; dependent_points} :
     Jsonbug_t.annotation_point =
   { id
   ; kind= get_kind_json annotation
-  ; method_info= get_method_info_json exe_env tenv annotation
+  ; method_info= get_method_info_json tenv annotation
   ; field_name= get_field_name_json annotation
   ; param_num= get_param_num_json annotation
   ; num_violations
@@ -213,14 +211,14 @@ let to_json_annotation_point exe_env tenv graph {id; annotation; num_violations;
 
 
 (* Convert the graph to the JSON representation *)
-let to_json exe_env tenv graph =
+let to_json tenv graph =
   AnnotationMap.bindings graph |> List.map ~f:snd
   (* Sort by ids to get any stable order *)
   |> List.sort ~compare:(fun {id= id1} {id= id2} -> String.compare id1 id2)
-  |> List.map ~f:(to_json_annotation_point exe_env tenv graph)
+  |> List.map ~f:(to_json_annotation_point tenv graph)
 
 
-let build_graph exe_env tenv class_struct class_name provisional_violations =
-  let graph = build_graph_nodes exe_env tenv class_struct class_name in
+let build_graph tenv class_struct class_name provisional_violations =
+  let graph = build_graph_nodes tenv class_struct class_name in
   update_nodes_and_set_edges graph provisional_violations ;
-  to_json exe_env tenv graph
+  to_json tenv graph

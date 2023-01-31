@@ -117,7 +117,7 @@ let callback1 ({IntraproceduralAnalysis.proc_desc= curr_pdesc; _} as analysis_da
 
 
 let analyze_one_procedure ~java_pname
-    ({IntraproceduralAnalysis.tenv; proc_desc; exe_env} as analysis_data) calls_this checks
+    ({IntraproceduralAnalysis.tenv; proc_desc; _} as analysis_data) calls_this checks
     annotated_signature linereader proc_loc : unit =
   let idenv = IDEnv.create proc_desc in
   let find_duplicate_nodes = State.mk_find_duplicate_nodes proc_desc in
@@ -164,11 +164,11 @@ let analyze_one_procedure ~java_pname
         && checks.TypeCheck.eradicate
       then (
         let typestates_for_curr_constructor_and_all_initializer_methods =
-          Initializers.final_initializer_typestates_lazy exe_env tenv proc_name proc_desc
+          Initializers.final_initializer_typestates_lazy tenv proc_name proc_desc
             (typecheck_proc ~curr_java_pname:java_pname)
         in
         let typestates_for_all_constructors_incl_current =
-          Initializers.final_constructor_typestates_lazy exe_env tenv proc_name
+          Initializers.final_constructor_typestates_lazy tenv proc_name
             (typecheck_proc ~curr_java_pname:java_pname)
         in
         EradicateChecks.check_constructor_initialization analysis_data find_canonical_duplicate

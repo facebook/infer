@@ -69,7 +69,7 @@ module TransferFunctions = struct
         mem
 
 
-  let instantiate_mem_reachable exe_env ret_id callee_formals callee_pname ~callee_exit_mem
+  let instantiate_mem_reachable ret_id callee_formals callee_pname ~callee_exit_mem
       ({Dom.eval_locpath} as eval_sym_trace) mem location =
     let formal_locs =
       List.fold callee_formals ~init:LocSet.empty ~f:(fun acc (formal, _) ->
@@ -138,7 +138,7 @@ module TransferFunctions = struct
     in
     let ret_var = Loc.of_var (Var.of_id ret_id) in
     let ret_val =
-      match Exe_env.get_attributes exe_env callee_pname with
+      match Attributes.load callee_pname with
       | Some callee_attrs when callee_attrs.ProcAttributes.has_added_return_param ->
           Dom.Val.of_loc (Loc.of_pvar (Pvar.get_ret_param_pvar callee_pname))
       | _ ->
@@ -152,8 +152,7 @@ module TransferFunctions = struct
 
 
   let instantiate_mem :
-         Exe_env.t
-      -> is_args_ref:bool
+         is_args_ref:bool
       -> Typ.IntegerWidths.t
       -> Ident.t
       -> (Pvar.t * Typ.t) list
@@ -164,15 +163,15 @@ module TransferFunctions = struct
       -> BufferOverrunAnalysisSummary.t
       -> Location.t
       -> Dom.Mem.t =
-   fun exe_env ~is_args_ref integer_type_widths ret_id callee_formals callee_pname args
-       captured_vars caller_mem callee_exit_mem location ->
+   fun ~is_args_ref integer_type_widths ret_id callee_formals callee_pname args captured_vars
+       caller_mem callee_exit_mem location ->
     let eval_sym_trace =
       Sem.mk_eval_sym_trace ~is_args_ref integer_type_widths callee_formals args captured_vars
         caller_mem ~mode:Sem.EvalNormal
     in
     let mem =
-      instantiate_mem_reachable exe_env ret_id callee_formals callee_pname ~callee_exit_mem
-        eval_sym_trace caller_mem location
+      instantiate_mem_reachable ret_id callee_formals callee_pname ~callee_exit_mem eval_sym_trace
+        caller_mem location
     in
     if Language.curr_language_is Java then
       Dom.Mem.incr_iterator_simple_alias_on_call eval_sym_trace ~callee_exit_mem mem
@@ -313,11 +312,8 @@ module TransferFunctions = struct
 
 
   let call
-      { interproc= {proc_desc= pdesc; tenv; exe_env}
-      ; get_summary
-      ; get_formals
-      ; oenv= {integer_type_widths} } node location ((id, _) as ret) callee_pname args captured_vars
-      mem =
+      {interproc= {proc_desc= pdesc; tenv}; get_summary; get_formals; oenv= {integer_type_widths}}
+      node location ((id, _) as ret) callee_pname args captured_vars mem =
     let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
     let fun_arg_list =
       List.map args ~f:(fun (exp, typ) ->
@@ -337,8 +333,8 @@ module TransferFunctions = struct
         in
         match (get_summary callee_pname, get_formals callee_pname) with
         | Some callee_exit_mem, Some callee_formals ->
-            instantiate_mem exe_env ~is_args_ref integer_type_widths id callee_formals callee_pname
-              args captured_vars mem callee_exit_mem location
+            instantiate_mem ~is_args_ref integer_type_widths id callee_formals callee_pname args
+              captured_vars mem callee_exit_mem location
         | _, _ ->
             (* This may happen for procedures with a biabduction model too. *)
             L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp_without_templates
@@ -522,7 +518,7 @@ let compute_invariant_map :
     let open IOption.Let_syntax in
     let get_summary proc_name = analyze_dependency proc_name >>| snd in
     let get_formals callee_pname =
-      Exe_env.get_attributes exe_env callee_pname >>| ProcAttributes.get_pvar_formals
+      Attributes.load callee_pname >>| ProcAttributes.get_pvar_formals
     in
     let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
     let oenv = OndemandEnv.mk proc_desc tenv integer_type_widths in

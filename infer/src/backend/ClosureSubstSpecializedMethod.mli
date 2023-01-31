@@ -8,4 +8,4 @@
 
 open! IStd
 
-val process : Exe_env.t -> Procdesc.t -> unit
+val process : Procdesc.t -> unit

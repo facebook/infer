@@ -31,8 +31,8 @@ let is_active, add_active, remove_active, clear_actives =
   (is_active, add_active, remove_active, clear_actives)
 
 
-let procedure_should_be_analyzed exe_env proc_name =
-  Exe_env.get_attributes exe_env proc_name
+let procedure_should_be_analyzed proc_name =
+  Attributes.load proc_name
   |> Option.exists ~f:(fun proc_attributes -> proc_attributes.ProcAttributes.is_defined)
 
 
@@ -236,10 +236,10 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
   summary
 
 
-let dump_duplicate_procs exe_env source_file procs =
+let dump_duplicate_procs source_file procs =
   let duplicate_procs =
     List.filter_map procs ~f:(fun pname ->
-        match Exe_env.get_attributes exe_env pname with
+        match Attributes.load pname with
         | Some
             { is_defined=
                 true
@@ -286,7 +286,7 @@ let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
     match Summary.OnDisk.get ~lazy_payloads callee_pname with
     | Some _ as summ_opt ->
         summ_opt
-    | None when procedure_should_be_analyzed exe_env callee_pname ->
+    | None when procedure_should_be_analyzed callee_pname ->
         get_proc_desc callee_pname
         |> Option.bind ~f:(fun callee_pdesc ->
                RestartScheduler.lock_exn callee_pname ;
@@ -335,8 +335,7 @@ let analyze_procedures exe_env procs_to_analyze source_file_opt =
   in
   List.iter ~f:analyze_proc_name_call procs_to_analyze ;
   Option.iter source_file_opt ~f:(fun source_file ->
-      if Config.dump_duplicate_symbols then
-        dump_duplicate_procs exe_env source_file procs_to_analyze ;
+      if Config.dump_duplicate_symbols then dump_duplicate_procs source_file procs_to_analyze ;
       Callbacks.iterate_file_callbacks_and_store_issues procs_to_analyze exe_env source_file ) ;
   Language.curr_language := saved_language
 

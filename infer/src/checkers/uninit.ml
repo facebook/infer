@@ -85,9 +85,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_array t = match t.Typ.desc with Typ.Tarray _ -> true | _ -> false
 
-  let get_formals exe_env pname =
-    Exe_env.get_attributes exe_env pname |> Option.map ~f:ProcAttributes.get_formals
-
+  let get_formals pname = Attributes.load pname |> Option.map ~f:ProcAttributes.get_formals
 
   let should_report_var pdesc tenv maybe_uninit_vars access_expr =
     let base = HilExp.AccessExpression.get_base access_expr in
@@ -102,8 +100,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let nth_formal_param exe_env callee_pname idx =
-    get_formals exe_env callee_pname |> Option.bind ~f:(fun formals -> List.nth formals idx)
+  let nth_formal_param callee_pname idx =
+    get_formals callee_pname |> Option.bind ~f:(fun formals -> List.nth formals idx)
 
 
   let function_expects_a_pointer_as_nth_param callee_formals idx =
@@ -144,9 +142,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             () )
 
 
-  let is_dummy_constructor_of_a_struct exe_env call =
+  let is_dummy_constructor_of_a_struct call =
     let is_dummy_constructor_of_struct =
-      match get_formals exe_env call with
+      match get_formals call with
       | Some [(_, {Typ.desc= Typ.Tptr ({Typ.desc= Tstruct _}, _)}, _)] ->
           true
       | _ ->
@@ -165,8 +163,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   (* checks that the set of initialized formal parameters defined in the precondition of
      the function (init_formal_params) contains the (base of) nth formal parameter of the function *)
-  let init_nth_actual_param exe_env callee_pname idx init_formal_params =
-    match nth_formal_param exe_env callee_pname idx with
+  let init_nth_actual_param callee_pname idx init_formal_params =
+    match nth_formal_param callee_pname idx with
     | None ->
         None
     | Some (fparam, t, _) ->
@@ -181,11 +179,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         else None
 
 
-  let remove_initialized_params {InterproceduralAnalysis.analyze_dependency; exe_env} call
-      maybe_uninit_vars idx access_expr remove_fields =
+  let remove_initialized_params {InterproceduralAnalysis.analyze_dependency} call maybe_uninit_vars
+      idx access_expr remove_fields =
     match analyze_dependency call with
     | Some (_, {UninitDomain.pre= init_formals; post= _}) -> (
-      match init_nth_actual_param exe_env call idx init_formals with
+      match init_nth_actual_param call idx init_formals with
       | Some var_formal ->
           let maybe_uninit_vars = MaybeUninitVars.remove access_expr maybe_uninit_vars in
           if remove_fields then
@@ -208,9 +206,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let exec_instr (astate : Domain.t)
-      {analysis_data= {proc_desc; tenv; exe_env} as analysis_data; formals} _ _ (instr : HilInstr.t)
-      =
+  let exec_instr (astate : Domain.t) {analysis_data= {proc_desc; tenv} as analysis_data; formals} _
+      _ (instr : HilInstr.t) =
     let check_access_expr ~loc rhs_access_expr =
       if should_report_var proc_desc tenv astate.maybe_uninit_vars rhs_access_expr then
         report_intra rhs_access_expr loc analysis_data
@@ -259,7 +256,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       when Procname.equal callee_pname BuiltinDecl.objc_cpp_throw ->
         {astate with maybe_uninit_vars= MaybeUninitVars.empty}
     | Call (_, HilInstr.Direct call, [HilExp.AccessExpression (AddressOf (Base base))], _, _)
-      when is_dummy_constructor_of_a_struct exe_env call ->
+      when is_dummy_constructor_of_a_struct call ->
         (* if it's a default constructor, we use the following heuristic: we assume that it initializes
            correctly all fields when there is an implementation of the constructor that initilizes at least one
            field. If there is no explicit implementation we cannot assume fields are initialized *)
@@ -272,7 +269,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         else astate
     | Call (_, call, actuals, _, loc) ->
         let pname_opt = match call with Direct pname -> Some pname | Indirect _ -> None in
-        let callee_formals_opt = Option.bind pname_opt ~f:(get_formals exe_env) in
+        let callee_formals_opt = Option.bind pname_opt ~f:get_formals in
         let is_initializing_all_args =
           match call with
           | Direct pname ->

@@ -22,8 +22,7 @@ type extras_WorstCaseCost =
   ; inferbo_get_summary: BufferOverrunAnalysisSummary.get_summary
   ; get_node_nb_exec: Node.t -> BasicCost.t
   ; get_summary: Procname.t -> CostDomain.summary option
-  ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option
-  ; exe_env: Exe_env.t }
+  ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option }
 
 let instantiate_cost ?get_closure_callee_cost ~default_closure_cost integer_type_widths
     ~inferbo_caller_mem ~callee_pname ~callee_formals ~args ~captured_vars ~callee_cost ~loc =
@@ -54,9 +53,8 @@ module InstrBasicCostWithReason = struct
       List.exists prefixes ~f:(fun prefix -> String.is_prefix method_name ~prefix)
 
 
-  let is_objc_call_from_no_arc_to_arc exe_env caller_pdesc callee_pname =
-    Option.exists (Exe_env.get_attributes exe_env callee_pname)
-      ~f:(fun (callee_attrs : ProcAttributes.t) ->
+  let is_objc_call_from_no_arc_to_arc caller_pdesc callee_pname =
+    Option.exists (Attributes.load callee_pname) ~f:(fun (callee_attrs : ProcAttributes.t) ->
         callee_attrs.is_defined
         && (not (Procdesc.is_objc_arc_on caller_pdesc))
         && callee_attrs.is_objc_arc_on )
@@ -90,11 +88,11 @@ module InstrBasicCostWithReason = struct
           BasicCostWithReason.one () )
 
 
-  let dispatch_autoreleasepool exe_env tenv callee_pname callee_cost_opt fun_arg_list {get_summary}
+  let dispatch_autoreleasepool tenv callee_pname callee_cost_opt fun_arg_list {get_summary}
       model_env ((_, ret_typ) as ret) cfg loc inferbo_mem : BasicCostWithReason.t =
     let fun_cost =
       if
-        is_objc_call_from_no_arc_to_arc exe_env cfg callee_pname
+        is_objc_call_from_no_arc_to_arc cfg callee_pname
         && Typ.is_pointer_to_objc_non_tagged_class ret_typ
         && not (return_object_owned_by_caller callee_pname)
       then
@@ -141,12 +139,8 @@ module InstrBasicCostWithReason = struct
 
 
   let get_call_cost_record tenv
-      ( { inferbo_invariant_map
-        ; integer_type_widths
-        ; inferbo_get_summary
-        ; get_summary
-        ; get_formals
-        ; exe_env } as extras ) cfg instr_node callee_pname ret args captured_vars location =
+      ( {inferbo_invariant_map; integer_type_widths; inferbo_get_summary; get_summary; get_formals}
+      as extras ) cfg instr_node callee_pname ret args captured_vars location =
     let fun_arg_list =
       List.map args ~f:(fun (exp, typ) ->
           ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
@@ -195,8 +189,8 @@ module InstrBasicCostWithReason = struct
             | AllocationCost ->
                 dispatch_allocation tenv callee_pname callee_cost_opt
             | AutoreleasepoolSize ->
-                dispatch_autoreleasepool exe_env tenv callee_pname callee_cost_opt fun_arg_list
-                  extras model_env ret cfg location inferbo_mem )
+                dispatch_autoreleasepool tenv callee_pname callee_cost_opt fun_arg_list extras
+                  model_env ret cfg location inferbo_mem )
 
 
   let get_instr_cost_record tenv extras cfg instr_node instr =
@@ -430,8 +424,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
     compute_bound_map tenv proc_desc node_cfg inferbo_invariant_map analyze_dependency
   in
   let is_on_ui_thread =
-    (not (Procname.is_objc_method proc_name))
-    && ConcurrencyModels.runs_on_ui_thread exe_env tenv proc_name
+    (not (Procname.is_objc_method proc_name)) && ConcurrencyModels.runs_on_ui_thread tenv proc_name
   in
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
@@ -448,7 +441,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       inferbo_summary
     in
     let get_formals callee_pname =
-      Exe_env.get_attributes exe_env callee_pname >>| ProcAttributes.get_pvar_formals
+      Attributes.load callee_pname >>| ProcAttributes.get_pvar_formals
     in
     let instr_cfg = InstrCFG.from_pdesc proc_desc in
     let extras =
@@ -457,8 +450,7 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
       ; integer_type_widths
       ; get_node_nb_exec
       ; get_summary
-      ; get_formals
-      ; exe_env }
+      ; get_formals }
     in
     AnalysisCallbacks.html_debug_new_node_session (NodeCFG.start_node node_cfg)
       ~pp_name:(fun f -> F.pp_print_string f "cost(worst-case)")

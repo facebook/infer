@@ -25,10 +25,10 @@ val is_synchronized_library_call : Tenv.t -> Procname.t -> bool
 val should_skip_analysis : Tenv.t -> Procname.t -> HilExp.t list -> bool
 (** should we treat a method call as skip (eg library methods in guava) to avoid FPs? *)
 
-val is_annotated_nonblocking : Exe_env.t -> Tenv.t -> Procname.t -> bool
+val is_annotated_nonblocking : Tenv.t -> Procname.t -> bool
 (** is procedure transitively annotated [@Nonblocking] *)
 
-val is_annotated_lockless : Exe_env.t -> Tenv.t -> Procname.t -> bool
+val is_annotated_lockless : Tenv.t -> Procname.t -> bool
 (** is procedure transitively annotated [@Lockless] *)
 
 val schedules_work : Tenv.t -> Procname.t -> bool
@@ -48,7 +48,7 @@ val get_run_method_from_runnable : Tenv.t -> HilExp.AccessExpression.t -> Procna
 (** given a receiver, find the [run()] method in the appropriate class *)
 
 val get_returned_executor :
-  Exe_env.t -> Tenv.t -> Procname.t -> HilExp.t list -> scheduler_thread_constraint option
+  Tenv.t -> Procname.t -> HilExp.t list -> scheduler_thread_constraint option
 (** does the function return an executor and of which thread? *)
 
 val schedules_first_arg_on_ui_thread : Tenv.t -> Procname.t -> bool
