@@ -25,9 +25,3 @@ val load_java_global_tenv : t -> Tenv.t
 
 val get_integer_type_widths : t -> Procname.t -> Typ.IntegerWidths.t
 (** return the integer type widths associated with the procedure *)
-
-val get_attributes : t -> Procname.t -> ProcAttributes.t option
-
-val get_formal_types : t -> Procname.t -> Typ.t list
-
-val is_no_return : t -> Procname.t -> bool

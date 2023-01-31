@@ -61,7 +61,7 @@ val get_copied :
      * Attribute.CopyOrigin.t )
      list
 
-val get_const_refable_parameters : Exe_env.t -> t -> (Var.t * Typ.t * Location.t) list
+val get_const_refable_parameters : t -> (Var.t * Typ.t * Location.t) list
 
 val is_checked_via_dtor : Var.t -> t -> bool
 
@@ -77,7 +77,6 @@ val set_store : Location.t -> Timestamp.t -> Pvar.t -> t -> t
 
 val get_loaded_locations : Var.t -> t -> Location.t list
 
-val set_passed_to :
-  Exe_env.t -> Location.t -> Timestamp.t -> Exp.t -> (Exp.t * Typ.t) list -> t -> t
+val set_passed_to : Location.t -> Timestamp.t -> Exp.t -> (Exp.t * Typ.t) list -> t -> t
 
 val is_lifetime_extended : Var.t -> t -> bool

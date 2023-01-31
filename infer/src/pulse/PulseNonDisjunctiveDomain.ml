@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module IRAttributes = Attributes
 open PulseBasicInterface
 module BaseMemory = PulseBaseMemory
 module DecompilerExpr = PulseDecompilerExpr
@@ -187,13 +188,13 @@ module CalleeWithUnknown = struct
         F.pp_print_string f "unknown"
 
 
-  let is_copy_to_field_or_global exe_env = function
+  let is_copy_to_field_or_global = function
     | V {copy_tgt= Some (Lindex _ | Lfield _); callee} ->
-        Option.exists (Exe_env.get_attributes exe_env callee) ~f:(fun attrs ->
+        Option.exists (IRAttributes.load callee) ~f:(fun attrs ->
             attrs.ProcAttributes.is_cpp_copy_assignment || attrs.ProcAttributes.is_cpp_copy_ctor )
     | V {copy_tgt= Some (Lvar pvar); callee} ->
         Pvar.is_global pvar
-        && Option.exists (Exe_env.get_attributes exe_env callee) ~f:(fun attrs ->
+        && Option.exists (IRAttributes.load callee) ~f:(fun attrs ->
                attrs.ProcAttributes.is_cpp_copy_assignment )
     | V _ ->
         false
@@ -206,15 +207,14 @@ module CalleeWithLoc = struct
 
   let pp f {callee; loc} = F.fprintf f "%a at %a" CalleeWithUnknown.pp callee Location.pp loc
 
-  let is_copy_to_field_or_global exe_env {callee} =
-    CalleeWithUnknown.is_copy_to_field_or_global exe_env callee
+  let is_copy_to_field_or_global {callee} = CalleeWithUnknown.is_copy_to_field_or_global callee
 end
 
 module PassedTo = struct
   include AbstractDomain.FiniteMultiMap (Var) (CalleeWithLoc)
 
-  let is_copied_to_field_or_global exe_env var x =
-    List.exists (get_all var x) ~f:(CalleeWithLoc.is_copy_to_field_or_global exe_env)
+  let is_copied_to_field_or_global var x =
+    List.exists (get_all var x) ~f:CalleeWithLoc.is_copy_to_field_or_global
 end
 
 type elt =
@@ -432,7 +432,7 @@ let get_copied astate =
         copy_map []
 
 
-let get_const_refable_parameters exe_env = function
+let get_const_refable_parameters = function
   | Top ->
       []
   | V {parameter_map; captured; loads; passed_to} ->
@@ -440,7 +440,7 @@ let get_const_refable_parameters exe_env = function
         (fun var (parameter_spec_t : ParameterSpec.t) acc ->
           if
             (Loads.is_loaded var loads || Captured.mem_var var captured)
-            && not (PassedTo.is_copied_to_field_or_global exe_env var passed_to)
+            && not (PassedTo.is_copied_to_field_or_global var passed_to)
           then
             match parameter_spec_t with
             | Modified ->
@@ -529,14 +529,14 @@ let is_captured var astate =
       true
 
 
-let set_passed_to_elt exe_env loc timestamp call_exp actuals ({loads; passed_to} as astate) =
+let set_passed_to_elt loc timestamp call_exp actuals ({loads; passed_to} as astate) =
   let new_callee =
     match (call_exp : Exp.t) with
     | Const (Cfun callee) | Closure {name= callee} ->
         let copy_tgt =
           match actuals with
           | (tgt, _) :: _
-            when Option.exists (Exe_env.get_attributes exe_env callee) ~f:(fun attrs ->
+            when Option.exists (IRAttributes.load callee) ~f:(fun attrs ->
                      attrs.ProcAttributes.is_cpp_copy_ctor
                      || attrs.ProcAttributes.is_cpp_copy_assignment ) ->
               Some tgt
@@ -563,8 +563,8 @@ let set_passed_to_elt exe_env loc timestamp call_exp actuals ({loads; passed_to}
   {astate with passed_to}
 
 
-let set_passed_to exe_env loc timestamp call_exp actuals =
-  map (set_passed_to_elt exe_env loc timestamp call_exp actuals)
+let set_passed_to loc timestamp call_exp actuals =
+  map (set_passed_to_elt loc timestamp call_exp actuals)
 
 
 let get_passed_to var ~f = function

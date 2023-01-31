@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module IRAttributes = Attributes
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
@@ -919,17 +920,16 @@ let pulse_models_to_treat_as_unknown_for_taint =
   |> List.map ~f:dummy_matcher_of_procedure_matcher
 
 
-let should_treat_as_unknown_for_taint exe_env tenv proc_name =
+let should_treat_as_unknown_for_taint tenv proc_name =
   (* HACK: we already have a function for matching procedure names so just re-use it even though we
      don't need its full power *)
-  Option.exists (Exe_env.get_attributes exe_env proc_name) ~f:(fun attrs ->
-      attrs.ProcAttributes.is_cpp_implicit )
+  Option.exists (IRAttributes.load proc_name) ~f:(fun attrs -> attrs.ProcAttributes.is_cpp_implicit)
   && Procname.is_constructor proc_name
   || procedure_matches tenv pulse_models_to_treat_as_unknown_for_taint proc_name []
      |> List.is_empty |> not
 
 
-let call exe_env tenv path location return ~call_was_unknown (call : _ Either.t) actuals astate =
+let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals astate =
   match call with
   | First call_exp ->
       if call_was_unknown then
@@ -938,11 +938,9 @@ let call exe_env tenv path location return ~call_was_unknown (call : _ Either.t)
              (SkippedUnknownCall call_exp) None actuals astate )
       else Ok astate
   | Second proc_name ->
-      let call_was_unknown =
-        call_was_unknown || should_treat_as_unknown_for_taint exe_env tenv proc_name
-      in
+      let call_was_unknown = call_was_unknown || should_treat_as_unknown_for_taint tenv proc_name in
       let has_added_return_param =
-        match Exe_env.get_attributes exe_env proc_name with
+        match IRAttributes.load proc_name with
         | Some attrs when attrs.ProcAttributes.has_added_return_param ->
             true
         | _ ->

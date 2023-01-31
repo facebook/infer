@@ -113,14 +113,4 @@ let get_integer_type_widths =
     ~file_data_to_value:file_data_to_integer_type_widths ~column_name:"integer type widths"
 
 
-let get_attributes _t pname = Attributes.load pname
-
-let get_formal_types t pname =
-  match get_attributes t pname with Some {formals} -> List.map formals ~f:snd3 | None -> []
-
-
-let is_no_return t pname =
-  match get_attributes t pname with Some {is_no_return} -> is_no_return | _ -> false
-
-
 let mk () = {proc_map= Procname.Hash.create 17; file_map= SourceFile.Hash.create 1}

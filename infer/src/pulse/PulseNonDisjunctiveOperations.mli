@@ -16,8 +16,7 @@ val init_const_refable_parameters :
 (** Initialize candidate parameters for const refable in the non-disj domain *)
 
 val call :
-     Exe_env.t
-  -> Tenv.t
+     Tenv.t
   -> Procdesc.t
   -> PathContext.t
   -> Location.t
