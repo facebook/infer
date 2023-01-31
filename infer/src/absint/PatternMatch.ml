@@ -508,10 +508,10 @@ let override_iter f tenv proc_name =
        tenv proc_name )
 
 
-let lookup_attributes tenv proc_name =
+let lookup_attributes exe_env tenv proc_name =
   let found_attributes = ref None in
   let f pname =
-    match Attributes.load pname with
+    match Exe_env.get_attributes exe_env pname with
     | None ->
         false
     | Some _ as attributes ->
@@ -522,8 +522,8 @@ let lookup_attributes tenv proc_name =
   !found_attributes
 
 
-let lookup_attributes_exn tenv proc_name =
-  match lookup_attributes tenv proc_name with
+let lookup_attributes_exn exe_env tenv proc_name =
+  match lookup_attributes exe_env tenv proc_name with
   | Some result ->
       result
   | None ->

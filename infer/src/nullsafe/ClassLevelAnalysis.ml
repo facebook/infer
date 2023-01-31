@@ -300,8 +300,8 @@ let report_annotation_graph source_file class_name class_struct annotation_graph
     IssueType.eradicate_annotation_graph ""
 
 
-let build_and_report_annotation_graph tenv source_file class_name class_struct class_info issue_log
-    =
+let build_and_report_annotation_graph exe_env tenv source_file class_name class_struct class_info
+    issue_log =
   if not Config.nullsafe_annotation_graph then issue_log
   else
     let class_typ_name = Typ.JavaClass class_name in
@@ -312,25 +312,25 @@ let build_and_report_annotation_graph tenv source_file class_name class_struct c
       |> List.filter_map ~f:ProvisionalViolation.of_issue
     in
     let annotation_graph =
-      AnnotationGraph.build_graph tenv class_struct class_typ_name provisional_violations
+      AnnotationGraph.build_graph exe_env tenv class_struct class_typ_name provisional_violations
     in
     report_annotation_graph source_file class_name class_struct annotation_graph issue_log
 
 
-let analyze_class_impl tenv source_file class_name class_struct class_info issue_log =
+let analyze_class_impl exe_env tenv source_file class_name class_struct class_info issue_log =
   issue_log
   |> analyze_meta_issue_for_top_level_class tenv source_file class_name class_struct class_info
   |> analyze_nullsafe_annotations tenv source_file class_name class_struct
-  |> build_and_report_annotation_graph tenv source_file class_name class_struct class_info
+  |> build_and_report_annotation_graph exe_env tenv source_file class_name class_struct class_info
 
 
-let analyze_class tenv source_file class_info issue_log =
+let analyze_class exe_env tenv source_file class_info issue_log =
   if SourceFile.has_extension ~ext:Config.kotlin_source_extension source_file then issue_log
   else
     let class_name = AggregatedSummaries.ClassInfo.get_class_name class_info in
     match Tenv.lookup tenv (Typ.JavaClass class_name) with
     | Some class_struct ->
-        analyze_class_impl tenv source_file class_name class_struct class_info issue_log
+        analyze_class_impl exe_env tenv source_file class_name class_struct class_info issue_log
     | None ->
         L.debug Analysis Medium
           "%a: could not load class info in environment: skipping class analysis@\n"

@@ -78,24 +78,24 @@ module ReplaceObjCCopy = struct
     else None
 
 
-  let method_exists_in_sources pdesc ~method_name ~class_name =
+  let method_exists_in_sources exe_env pdesc ~method_name ~class_name =
     let pname = Procdesc.get_proc_name pdesc in
-    let procs = SourceFiles.get_procs_in_file pname in
+    let procs = Exe_env.get_procs_in_file exe_env pname in
     List.exists procs ~f:(fun pn ->
         let class_name_opt = Procname.get_class_name pn in
         String.equal method_name (Procname.get_method pn)
         && Option.exists class_name_opt ~f:(String.equal class_name) )
 
 
-  let get_replaced_instr {protocol; method_name; method_with_zone; is_mutable} pdesc tenv args
-      ret_id_typ loc flags =
+  let get_replaced_instr exe_env {protocol; method_name; method_with_zone; is_mutable} pdesc tenv
+      args ret_id_typ loc flags =
     match objc_get_first_arg_typ args with
     | Some cl ->
         let class_name = Typ.Name.name cl in
         if
           ( PatternMatch.ObjectiveC.conforms_to ~protocol tenv class_name
           || PatternMatch.ObjectiveC.implements "NSObject" tenv class_name )
-          && method_exists_in_sources pdesc ~method_name:method_with_zone ~class_name
+          && method_exists_in_sources exe_env pdesc ~method_name:method_with_zone ~class_name
         then (
           let pname = Procname.make_objc_copyWithZone cl ~is_mutable in
           let function_exp = Exp.Const (Const.Cfun pname) in
@@ -115,10 +115,10 @@ module ReplaceObjCCopy = struct
         None
 
 
-  let process tenv pdesc ret_id_typ callee args loc flags =
+  let process exe_env tenv pdesc ret_id_typ callee args loc flags =
     get_copy_kind_opt callee
     |> Option.bind ~f:(fun copy_kind ->
-           get_replaced_instr copy_kind pdesc tenv args ret_id_typ loc flags )
+           get_replaced_instr exe_env copy_kind pdesc tenv args ret_id_typ loc flags )
 end
 
 module ReplaceObjCOverridden = struct
@@ -150,12 +150,13 @@ module ReplaceObjCOverridden = struct
 end
 
 module ReplaceObjCMethodCall = struct
-  let process tenv pdesc caller =
+  let process exe_env tenv pdesc caller =
     let replace_method instr =
       match (instr : Sil.instr) with
       | Call (ret_id_typ, Const (Cfun callee), args, loc, flags) ->
           IOption.if_none_evalopt
-            (ReplaceObjCCopy.process tenv pdesc ret_id_typ callee args loc flags) ~f:(fun () ->
+            (ReplaceObjCCopy.process exe_env tenv pdesc ret_id_typ callee args loc flags)
+            ~f:(fun () ->
               ReplaceObjCOverridden.process tenv caller ret_id_typ callee args loc flags )
           |> Option.value ~default:instr
       | _ ->
@@ -229,14 +230,14 @@ module InlineJavaSyntheticMethods = struct
     Procdesc.find_map_instrs ~f:do_instr pdesc
 
 
-  let process pdesc =
+  let process exe_env pdesc =
     let is_generated_for_lambda proc_name =
       String.is_substring ~substring:Config.java_lambda_marker_infix (Procname.get_method proc_name)
     in
     let should_inline proc_name =
       (not (is_generated_for_lambda proc_name))
       &&
-      match Attributes.load proc_name with
+      match Exe_env.get_attributes exe_env proc_name with
       | None ->
           false
       | Some attributes ->
@@ -456,12 +457,12 @@ let do_preanalysis exe_env pdesc =
   let tenv = Exe_env.get_proc_tenv exe_env (Procdesc.get_proc_name pdesc) in
   let proc_name = Procdesc.get_proc_name pdesc in
   if Procname.is_java proc_name || Procname.is_csharp proc_name then
-    InlineJavaSyntheticMethods.process pdesc ;
+    InlineJavaSyntheticMethods.process exe_env pdesc ;
   (* NOTE: It is important that this preanalysis stays before Liveness *)
   if not (Procname.is_java proc_name || Procname.is_csharp proc_name) then (
-    CCallSpecializedWithClosures.process pdesc ;
+    CCallSpecializedWithClosures.process exe_env pdesc ;
     (* Apply dynamic selection of copy and overriden methods *)
-    ReplaceObjCMethodCall.process tenv pdesc proc_name ) ;
+    ReplaceObjCMethodCall.process exe_env tenv pdesc proc_name ) ;
   Liveness.process pdesc ;
   AddAbstractionInstructions.process pdesc ;
   if Procname.is_java proc_name then Devirtualizer.process pdesc tenv ;

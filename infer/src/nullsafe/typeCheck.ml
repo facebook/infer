@@ -17,8 +17,8 @@ type typecheck_result =
 module ComplexExpressions = struct
   let procname_instanceof pname = Procname.equal BuiltinDecl.__instanceof pname
 
-  let is_annotated_with predicate tenv procname =
-    match PatternMatch.lookup_attributes tenv procname with
+  let is_annotated_with exe_env predicate tenv procname =
+    match PatternMatch.lookup_attributes exe_env tenv procname with
     | Some proc_attributes ->
         let annotated_signature =
           (* TODO(T62825735): fully support trusted callees *)
@@ -37,13 +37,13 @@ module ComplexExpressions = struct
     match pname with Procname.Java java_pname -> java_predicate java_pname | _ -> false
 
 
-  let procname_is_false_on_null tenv procname =
-    is_annotated_with Annotations.ia_is_false_on_null tenv procname
+  let procname_is_false_on_null exe_env tenv procname =
+    is_annotated_with exe_env Annotations.ia_is_false_on_null tenv procname
     || java_predicate_to_pname_predicate Models.is_false_on_null procname
 
 
-  let procname_is_true_on_null tenv procname =
-    is_annotated_with Annotations.ia_is_true_on_null tenv procname
+  let procname_is_true_on_null exe_env tenv procname =
+    is_annotated_with exe_env Annotations.ia_is_true_on_null tenv procname
     || java_predicate_to_pname_predicate Models.is_true_on_null procname
 
 
@@ -790,9 +790,9 @@ let normalize_cond_for_sil_prune idenv ~node cond =
 
 
 let rec check_condition_for_sil_prune
-    ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data) idenv calls_this
-    find_canonical_duplicate loc curr_annotated_signature linereader typestate checks true_branch
-    instr_ref ~nullsafe_mode ~original_node ~node c : TypeState.t =
+    ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; exe_env} as analysis_data) idenv
+    calls_this find_canonical_duplicate loc curr_annotated_signature linereader typestate checks
+    true_branch instr_ref ~nullsafe_mode ~original_node ~node c : TypeState.t =
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
   (* check if the expression is coming from a call, and return the arguments *)
   let extract_arguments_from_call filter_callee expr =
@@ -818,11 +818,11 @@ let rec check_condition_for_sil_prune
   in
   (* check if the expression is coming from a procedure returning false on null *)
   let extract_arguments_from_call_to_false_on_null_func e =
-    extract_arguments_from_call (ComplexExpressions.procname_is_false_on_null tenv) e
+    extract_arguments_from_call (ComplexExpressions.procname_is_false_on_null exe_env tenv) e
   in
   (* check if the expression is coming from a procedure returning true on null *)
   let extract_arguments_from_call_to_true_on_null_func e =
-    extract_arguments_from_call (ComplexExpressions.procname_is_true_on_null tenv) e
+    extract_arguments_from_call (ComplexExpressions.procname_is_true_on_null exe_env tenv) e
   in
   (* check if the expression is coming from Map.containsKey *)
   let is_from_containsKey expr =
@@ -1120,12 +1120,12 @@ let calc_typestate_after_call
 
 (* SIL instruction in form of [ret = fun(args);] where fun is a non-builtin Java function *)
 let typecheck_sil_call_function
-    ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
+    ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; exe_env} as analysis_data)
     find_canonical_duplicate checks instr_ref typestate idenv ~callee_pname curr_annotated_signature
     calls_this ~nullsafe_mode ret_id_typ etl_ loc callee_pname_java cflags node =
   L.d_with_indent ~name:"typecheck_sil_call_function" (fun () ->
       let callee_attributes =
-        match PatternMatch.lookup_attributes tenv callee_pname with
+        match PatternMatch.lookup_attributes exe_env tenv callee_pname with
         | Some proc_attributes ->
             proc_attributes
         | None ->
@@ -1355,10 +1355,10 @@ let typecheck_instr ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as
         ~node:node' ~original_node:node normalized_cond
 
 
-let can_instrunction_throw tenv node instr =
+let can_instrunction_throw exe_env tenv node instr =
   match instr with
   | Sil.Call (_, Exp.Const (Const.Cfun callee_pname), _, _, _) -> (
-      let callee_attributes_opt = PatternMatch.lookup_attributes tenv callee_pname in
+      let callee_attributes_opt = PatternMatch.lookup_attributes exe_env tenv callee_pname in
       (* We assume if the function is not annotated with throws(), it can not throw an exception.
          This is unsound.
          TODO(T63305137) nullsafe should assume all methods can throw.
@@ -1387,8 +1387,8 @@ let is_noreturn_instruction = function
 
 
 (** Typecheck the instructions in a cfg node. *)
-let typecheck_node ({IntraproceduralAnalysis.tenv; _} as analysis_data) calls_this checks idenv
-    find_canonical_duplicate annotated_signature typestate node linereader =
+let typecheck_node ({IntraproceduralAnalysis.tenv; exe_env} as analysis_data) calls_this checks
+    idenv find_canonical_duplicate annotated_signature typestate node linereader =
   if Procdesc.Node.equal_nodekind (Procdesc.Node.get_kind node) Procdesc.Node.exn_sink_kind then
     {normal_flow_typestate= None; exception_flow_typestates= []}
   else
@@ -1423,7 +1423,7 @@ let typecheck_node ({IntraproceduralAnalysis.tenv; _} as analysis_data) calls_th
             {prev_result with normal_flow_typestate= None} )
           else
             let exception_flow_typestates =
-              if can_instrunction_throw tenv node instr then (
+              if can_instrunction_throw exe_env tenv node instr then (
                 (* add the typestate after this instruction to the list of exception typestates *)
                 L.d_strln "Throwable instruction: adding the typestate to exception list" ;
                 normal_flow_typestate :: exception_flow_typestates_prev )

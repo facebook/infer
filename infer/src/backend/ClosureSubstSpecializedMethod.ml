@@ -52,7 +52,7 @@ let rec get_closure (id_to_closure_map, pvar_to_closure_map) exp =
       None
 
 
-let eval_instr ((id_to_closure_map, pvar_to_closure_map) as maps : Domain.t) instr =
+let eval_instr exe_env ((id_to_closure_map, pvar_to_closure_map) as maps : Domain.t) instr =
   let open Sil in
   match instr with
   | Load {id; e} | Store {e1= Exp.Var id; e2= e} -> (
@@ -76,7 +76,7 @@ let eval_instr ((id_to_closure_map, pvar_to_closure_map) as maps : Domain.t) ins
          then [id] is associated with the same closure *)
       let passed_closure =
         let open IOption.Let_syntax in
-        let* attributes = Attributes.load callee_pname in
+        let* attributes = Exe_env.get_attributes exe_env callee_pname in
         let* accessor = attributes.ProcAttributes.objc_accessor in
         match accessor with
         | ProcAttributes.Objc_getter (fieldname, typ, _) ->
@@ -99,9 +99,9 @@ module TransferFunctions = struct
   module CFG = CFG
   module Domain = Domain
 
-  type analysis_data = unit
+  type analysis_data = Exe_env.t
 
-  let exec_instr astate _ _node _ instr = eval_instr astate instr
+  let exec_instr astate exe_env _node _ instr = eval_instr exe_env astate instr
 
   let pp_session_name node fmt =
     Format.fprintf fmt "Closure Subst Specialized Method %a" CFG.Node.pp_id (CFG.Node.id node)
@@ -293,7 +293,7 @@ let analyze_at_node (map : Analyzer.invariant_map) node : Domain.t =
       (IdClosureSpecMap.top, PvarClosureSpecMap.top)
 
 
-let process pdesc =
+let process exe_env pdesc =
   let proc_name = Procdesc.get_proc_name pdesc in
   let proc_attributes = Procdesc.get_attributes pdesc in
   match proc_attributes.ProcAttributes.specialized_with_closures_info with
@@ -305,9 +305,9 @@ let process pdesc =
       in
       let node_cfg = CFG.from_pdesc pdesc in
       let invariant_map =
-        Analyzer.exec_cfg node_cfg () ~initial:(IdClosureSpecMap.empty, pvar_to_closure_map)
+        Analyzer.exec_cfg node_cfg exe_env ~initial:(IdClosureSpecMap.empty, pvar_to_closure_map)
       in
-      let update_context = eval_instr in
+      let update_context = eval_instr exe_env in
       CFG.fold_nodes node_cfg ~init:() ~f:(fun _ node ->
           let used_ids = Instrs.instrs_get_normal_vars (CFG.instrs node) in
           Ident.update_name_generator used_ids ) ;

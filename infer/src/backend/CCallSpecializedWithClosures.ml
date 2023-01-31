@@ -33,7 +33,7 @@ let replace_with_specialize_methods instr =
       instr
 
 
-let process proc_desc =
+let process exe_env proc_desc =
   (* For each procdesc:
      1. If we are a specialized procdesc:
       1.1. Copy original procdesc
@@ -48,7 +48,7 @@ let process proc_desc =
       1.2. Specialize at instruction level: [foo(f)] when [f = closure] replaces every
            use of [f] (calls and as argument) with the corresponding [closure] and its
            captured variables. *)
-  ClosureSubstSpecializedMethod.process proc_desc ;
+  ClosureSubstSpecializedMethod.process exe_env proc_desc ;
   (* 2.
       Replace each indirect use of closure (as argument) with a direct use of closure.
      e.g.

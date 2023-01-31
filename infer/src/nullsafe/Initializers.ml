@@ -11,7 +11,7 @@ type init = Procname.t * Procdesc.t
 
 let equal_class_opt = [%equal: string option]
 
-let final_typestates initializers_current_class tenv typecheck_proc =
+let final_typestates exe_env initializers_current_class tenv typecheck_proc =
   (* Get the private methods, from the same class, directly called by the initializers. *)
   let get_private_called (initializers : init list) : init list =
     let res = ref [] in
@@ -33,7 +33,7 @@ let final_typestates initializers_current_class tenv typecheck_proc =
         is_private && same_class
       in
       let private_called =
-        PatternMatch.proc_calls (PatternMatch.lookup_attributes tenv) init_pd filter
+        PatternMatch.proc_calls (PatternMatch.lookup_attributes exe_env tenv) init_pd filter
       in
       let do_called (callee_pn, _) =
         match Procdesc.load callee_pn with
@@ -82,10 +82,10 @@ let final_typestates initializers_current_class tenv typecheck_proc =
   List.rev !final_typestates
 
 
-let pname_and_pdescs_with tenv curr_pname f =
+let pname_and_pdescs_with exe_env tenv curr_pname f =
   let res = ref [] in
   let filter pname =
-    match PatternMatch.lookup_attributes tenv pname with
+    match PatternMatch.lookup_attributes exe_env tenv pname with
     | Some proc_attributes ->
         f (pname, proc_attributes)
     | None ->
@@ -95,7 +95,7 @@ let pname_and_pdescs_with tenv curr_pname f =
     if filter pname then
       match Procdesc.load pname with Some pdesc -> res := (pname, pdesc) :: !res | None -> ()
   in
-  List.iter ~f:do_proc (SourceFiles.get_procs_in_file curr_pname) ;
+  List.iter ~f:do_proc (Exe_env.get_procs_in_file exe_env curr_pname) ;
   List.rev !res
 
 
@@ -103,40 +103,41 @@ let get_class pn =
   match pn with Procname.Java pn_java -> Some (Procname.Java.get_class_name pn_java) | _ -> None
 
 
-let is_annotated_initializer tenv proc_name =
-  PatternMatch.lookup_attributes tenv proc_name
+let is_annotated_initializer exe_env tenv proc_name =
+  PatternMatch.lookup_attributes exe_env tenv proc_name
   |> Option.exists ~f:(fun ProcAttributes.{ret_annots} -> Annotations.ia_is_initializer ret_annots)
 
 
-let is_annotated_initializer_in_chain tenv proc_name =
-  PatternMatch.override_exists (is_annotated_initializer tenv) tenv proc_name
+let is_annotated_initializer_in_chain exe_env tenv proc_name =
+  PatternMatch.override_exists (is_annotated_initializer exe_env tenv) tenv proc_name
 
 
 (* Should the (non-constructor) function be considered an initializer method *)
-let is_initializer tenv proc_attributes =
+let is_initializer exe_env tenv proc_attributes =
   (* Either modelled as initializer or the descendent of such a method *)
   PatternMatch.Java.method_is_initializer tenv proc_attributes
   || (* Or explicitly marked @Initializer or the descendent of such a method *)
-  is_annotated_initializer_in_chain tenv proc_attributes.ProcAttributes.proc_name
+  is_annotated_initializer_in_chain exe_env tenv proc_attributes.ProcAttributes.proc_name
 
 
 (** Typestates after the current procedure and all initializer procedures. *)
-let final_initializer_typestates_lazy tenv curr_pname curr_pdesc typecheck_proc =
+let final_initializer_typestates_lazy exe_env tenv curr_pname curr_pdesc typecheck_proc =
   lazy
     (let initializers_current_class =
-       pname_and_pdescs_with tenv curr_pname (function pname, proc_attributes ->
-           is_initializer tenv proc_attributes
+       pname_and_pdescs_with exe_env tenv curr_pname (function pname, proc_attributes ->
+           is_initializer exe_env tenv proc_attributes
            && equal_class_opt (get_class pname) (get_class curr_pname) )
      in
-     final_typestates ((curr_pname, curr_pdesc) :: initializers_current_class) tenv typecheck_proc
-    )
+     final_typestates exe_env
+       ((curr_pname, curr_pdesc) :: initializers_current_class)
+       tenv typecheck_proc )
 
 
 (** Typestates after all constructors. *)
-let final_constructor_typestates_lazy tenv curr_pname typecheck_proc =
+let final_constructor_typestates_lazy exe_env tenv curr_pname typecheck_proc =
   lazy
     (let constructors_current_class =
-       pname_and_pdescs_with tenv curr_pname (fun (pname, _) ->
+       pname_and_pdescs_with exe_env tenv curr_pname (fun (pname, _) ->
            Procname.is_constructor pname && equal_class_opt (get_class pname) (get_class curr_pname) )
      in
-     final_typestates constructors_current_class tenv typecheck_proc )
+     final_typestates exe_env constructors_current_class tenv typecheck_proc )

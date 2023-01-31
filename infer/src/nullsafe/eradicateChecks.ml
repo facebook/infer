@@ -525,14 +525,15 @@ let check_inheritance_rule_for_signature analysis_data find_canonical_duplicate 
 
 (** Checks if the annotations are consistent with the derived classes and with the implemented
     interfaces *)
-let check_overridden_annotations ({IntraproceduralAnalysis.tenv; proc_desc; _} as analysis_data)
-    find_canonical_duplicate annotated_signature ~proc_name =
+let check_overridden_annotations
+    ({IntraproceduralAnalysis.tenv; proc_desc; exe_env} as analysis_data) find_canonical_duplicate
+    annotated_signature ~proc_name =
   let start_node = Procdesc.get_start_node proc_desc in
   let loc = Procdesc.Node.get_loc start_node in
   let check_if_base_signature_matches_current base_proc_name =
     match base_proc_name with
     | Procname.Java base_java_proc_name -> (
-      match PatternMatch.lookup_attributes tenv base_proc_name with
+      match PatternMatch.lookup_attributes exe_env tenv base_proc_name with
       | Some base_attributes ->
           let base_signature =
             (* TODO(T62825735): fully support trusted callees. Note that for inheritance

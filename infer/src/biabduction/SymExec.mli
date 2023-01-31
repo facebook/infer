@@ -36,7 +36,8 @@ val diverge : Prop.normal Prop.t -> Paths.Path.t -> (Prop.normal Prop.t * Paths.
 
 val proc_call : Procdesc.t * BiabductionSummary.t -> Builtin.t
 
-val unknown_or_scan_call : is_scan:bool -> reason:string -> Typ.t -> Annot.Item.t -> Builtin.t
+val unknown_or_scan_call :
+  is_scan:bool -> reason:string -> Exe_env.t -> Typ.t -> Annot.Item.t -> Builtin.t
 
 val check_variadic_sentinel : ?fails_on_nil:bool -> int -> int * int -> Builtin.t
 

@@ -48,9 +48,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else do_call_acquiring_ownership ret_access_exp astate
 
 
-  let process_for_unannotated_interface_call tenv formals call_flags callee_pname actuals loc astate
-      =
-    if RacerDModels.should_flag_interface_call tenv actuals call_flags callee_pname then
+  let process_for_unannotated_interface_call exe_env tenv formals call_flags callee_pname actuals
+      loc astate =
+    if RacerDModels.should_flag_interface_call exe_env tenv actuals call_flags callee_pname then
       Domain.add_unannotated_call_access formals callee_pname actuals loc astate
     else astate
 
@@ -99,18 +99,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate
 
 
-  let process_for_functional_values tenv ret_access_exp callee_pname (astate : Domain.t) =
+  let process_for_functional_values exe_env tenv ret_access_exp callee_pname (astate : Domain.t) =
     let open Domain in
-    if PatternMatch.override_exists RacerDModels.is_functional tenv callee_pname then
+    if PatternMatch.override_exists (RacerDModels.is_functional exe_env) tenv callee_pname then
       let attribute_map = AttributeMapDomain.add ret_access_exp Functional astate.attribute_map in
       {astate with attribute_map}
     else astate
 
 
-  let process_for_onwership_acquisition tenv ret_access_exp callee_pname astate =
+  let process_for_onwership_acquisition exe_env tenv ret_access_exp callee_pname astate =
     if
       PatternMatch.override_exists
-        (RacerDModels.has_return_annot Annotations.ia_is_returns_ownership)
+        (RacerDModels.has_return_annot exe_env Annotations.ia_is_returns_ownership)
         tenv callee_pname
     then do_call_acquiring_ownership ret_access_exp astate
     else astate
@@ -121,14 +121,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let do_proc_call ret_base callee_pname actuals call_flags loc
-      {interproc= {tenv; analyze_dependency}; formals} (astate : Domain.t) =
+      {interproc= {tenv; analyze_dependency; exe_env}; formals} (astate : Domain.t) =
     let ret_access_exp = AccessExpression.base ret_base in
-    process_for_unannotated_interface_call tenv formals call_flags callee_pname actuals loc astate
+    process_for_unannotated_interface_call exe_env tenv formals call_flags callee_pname actuals loc
+      astate
     |> process_for_thread_assert_effect ret_access_exp callee_pname
     |> process_lock_effect_or_summary analyze_dependency tenv formals ret_access_exp callee_pname
          actuals loc
-    |> process_for_functional_values tenv ret_access_exp callee_pname
-    |> process_for_onwership_acquisition tenv ret_access_exp callee_pname
+    |> process_for_functional_values exe_env tenv ret_access_exp callee_pname
+    |> process_for_onwership_acquisition exe_env tenv ret_access_exp callee_pname
     |> process_for_noreturn callee_pname
 
 
@@ -223,7 +224,7 @@ end
 
 module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.Normal))
 
-let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
+let analyze ({InterproceduralAnalysis.proc_desc; tenv; exe_env} as interproc) =
   let open RacerDDomain in
   let proc_name = Procdesc.get_proc_name proc_desc in
   let open ConcurrencyModels in
@@ -246,24 +247,26 @@ let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
       in
       OwnershipDomain.add formal ownership_value acc
   in
-  if RacerDModels.should_analyze_proc tenv proc_name then
+  if RacerDModels.should_analyze_proc exe_env tenv proc_name then
     let locks =
       if Procdesc.is_java_synchronized proc_desc || Procdesc.is_csharp_synchronized proc_desc then
         LockDomain.(acquire_lock bottom)
       else LockDomain.bottom
     in
     let threads =
-      if runs_on_ui_thread tenv proc_name || RacerDModels.is_thread_confined_method tenv proc_name
+      if
+        runs_on_ui_thread exe_env tenv proc_name
+        || RacerDModels.is_thread_confined_method exe_env tenv proc_name
       then ThreadsDomain.AnyThreadButSelf
       else if
         Procdesc.is_java_synchronized proc_desc
         || Procdesc.is_csharp_synchronized proc_desc
-        || RacerDModels.is_marked_thread_safe proc_name tenv
+        || RacerDModels.is_marked_thread_safe exe_env proc_name tenv
       then ThreadsDomain.AnyThread
       else ThreadsDomain.NoThread
     in
     let ownership =
-      let is_initializer = RacerDModels.is_initializer tenv proc_name in
+      let is_initializer = RacerDModels.is_initializer exe_env tenv proc_name in
       let is_injected =
         is_initializer && Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_inject
       in

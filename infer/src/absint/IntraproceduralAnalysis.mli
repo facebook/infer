@@ -9,4 +9,4 @@ open! IStd
 
 (** a subset of {!InterproceduralAnalysis.t} that doesn't have any inter-procedural callbacks and
     cannot read summaries *)
-type t = {proc_desc: Procdesc.t; tenv: Tenv.t; err_log: Errlog.t}
+type t = {proc_desc: Procdesc.t; tenv: Tenv.t; err_log: Errlog.t; exe_env: Exe_env.t}

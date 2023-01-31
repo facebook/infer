@@ -26,16 +26,18 @@ let get_summaries
 
 
 (* Analyze the class and all its nested children recursively *)
-let rec analyze_class_and_nested tenv source_file issue_log class_info =
+let rec analyze_class_and_nested exe_env tenv source_file issue_log class_info =
   (* Analyze the class itself *)
-  let updated_log = ClassLevelAnalysis.analyze_class tenv source_file class_info issue_log in
+  let updated_log =
+    ClassLevelAnalysis.analyze_class exe_env tenv source_file class_info issue_log
+  in
   (* Analyze its nested children *)
   AggregatedSummaries.ClassInfo.get_nested_classes_info class_info
-  |> List.fold ~init:updated_log ~f:(analyze_class_and_nested tenv source_file)
+  |> List.fold ~init:updated_log ~f:(analyze_class_and_nested exe_env tenv source_file)
 
 
 (* Given aggregated information about the top-level class, analyze it and its nested children *)
-let analyze_top_level_class tenv source_file issue_log top_level_class_info =
+let analyze_top_level_class exe_env tenv source_file issue_log top_level_class_info =
   let is_from_third_party =
     ThirdPartyAnnotationInfo.is_third_party_class_name
       (ThirdPartyAnnotationGlobalRepo.get_repo ())
@@ -43,7 +45,7 @@ let analyze_top_level_class tenv source_file issue_log top_level_class_info =
   in
   if is_from_third_party then (* Don't analyze third party classes *)
     issue_log
-  else analyze_class_and_nested tenv source_file issue_log top_level_class_info
+  else analyze_class_and_nested exe_env tenv source_file issue_log top_level_class_info
 
 
 let analyze_file ({InterproceduralAnalysis.file_exe_env; source_file} as analysis_data) =
@@ -55,7 +57,8 @@ let analyze_file ({InterproceduralAnalysis.file_exe_env; source_file} as analysi
       Logging.debug Analysis Medium "Hierarchy for a top level class:@\n%a@\n"
         AggregatedSummaries.ClassInfo.pp top_level_class ) ;
   let issue_log =
-    List.fold top_level_classes ~init:IssueLog.empty ~f:(analyze_top_level_class tenv source_file)
+    List.fold top_level_classes ~init:IssueLog.empty
+      ~f:(analyze_top_level_class file_exe_env tenv source_file)
   in
   Logging.debug Analysis Medium "Finished file level analysis of %a@\n" SourceFile.pp source_file ;
   issue_log

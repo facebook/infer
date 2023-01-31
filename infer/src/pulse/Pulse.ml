@@ -969,11 +969,11 @@ let with_html_debug_node node ~desc ~f =
     ~f
 
 
-let initial tenv proc_name proc_attrs =
+let initial exe_env tenv proc_name proc_attrs =
   let initial_astate =
     AbductiveDomain.mk_initial tenv proc_name proc_attrs
     |> PulseSummary.initial_with_positive_self proc_name proc_attrs
-    |> PulseTaintOperations.taint_initial tenv proc_name proc_attrs
+    |> PulseTaintOperations.taint_initial exe_env tenv proc_name proc_attrs
   in
   [(ContinueProgram initial_astate, PathContext.initial)]
 
@@ -1019,7 +1019,7 @@ let analyze ({InterproceduralAnalysis.tenv; exe_env; proc_desc; err_log} as anal
     PulseTopl.Debug.dropped_disjuncts_count := 0 ;
     let proc_name = Procdesc.get_proc_name proc_desc in
     let proc_attrs = Procdesc.get_attributes proc_desc in
-    let initial_disjuncts = initial tenv proc_name proc_attrs in
+    let initial_disjuncts = initial exe_env tenv proc_name proc_attrs in
     let initial_non_disj =
       PulseNonDisjunctiveOperations.init_const_refable_parameters proc_desc tenv
         (List.map initial_disjuncts ~f:fst)

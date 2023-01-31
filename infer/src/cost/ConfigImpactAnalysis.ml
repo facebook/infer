@@ -1234,7 +1234,7 @@ let has_call_stmt proc_desc =
   with FoundCall -> true
 
 
-let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
+let checker ({InterproceduralAnalysis.proc_desc; exe_env} as analysis_data) =
   let pname = Procdesc.get_proc_name proc_desc in
   if
     Procname.is_java_class_initializer pname
@@ -1243,7 +1243,7 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   then None
   else
     let get_formals pname =
-      Attributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
+      Exe_env.get_attributes exe_env pname |> Option.map ~f:ProcAttributes.get_pvar_formals
     in
     let get_instantiated_cost = CostInstantiate.get_instantiated_cost analysis_data in
     let is_param =

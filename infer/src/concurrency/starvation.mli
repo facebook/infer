@@ -24,6 +24,7 @@ end
 
 val report_on_pair :
      analyze_ondemand:(Procname.t -> StarvationDomain.summary option)
+  -> Exe_env.t
   -> Tenv.t
   -> ProcAttributes.t
   -> StarvationDomain.CriticalPair.t
@@ -32,6 +33,7 @@ val report_on_pair :
 
 val report_on_parallel_composition :
      should_report_starvation:bool
+  -> Exe_env.t
   -> Tenv.t
   -> ProcAttributes.t
   -> StarvationDomain.CriticalPair.t

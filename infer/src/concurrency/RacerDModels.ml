@@ -243,10 +243,10 @@ let rec is_container_read tenv pn =
       false
 
 
-let has_return_annot predicate pn = Annotations.pname_has_return_annot pn predicate
+let has_return_annot exe_env predicate pn = Annotations.pname_has_return_annot exe_env pn predicate
 
-let is_functional pname =
-  let is_annotated_functional = has_return_annot Annotations.ia_is_functional in
+let is_functional exe_env pname =
+  let is_annotated_functional = has_return_annot exe_env Annotations.ia_is_functional in
   let is_modeled_functional = function
     | Procname.Java java_pname -> (
       match (Procname.Java.get_class_name java_pname, Procname.Java.get_method java_pname) with
@@ -347,9 +347,9 @@ let is_box = function
    methods at all. In future we should account for races between these methods and methods from
    completely different classes that don't necessarily run on the same thread as the confined
    object. *)
-let is_thread_confined_method tenv pname =
-  ConcurrencyModels.find_override_or_superclass_annotated Annotations.ia_is_thread_confined tenv
-    pname
+let is_thread_confined_method exe_env tenv pname =
+  ConcurrencyModels.find_override_or_superclass_annotated exe_env Annotations.ia_is_thread_confined
+    tenv pname
   |> Option.is_some
 
 
@@ -386,8 +386,8 @@ let is_assumed_thread_safe item_annot =
   List.exists ~f item_annot
 
 
-let is_assumed_thread_safe tenv pname =
-  ConcurrencyModels.find_override_or_superclass_annotated is_assumed_thread_safe tenv pname
+let is_assumed_thread_safe exe_env tenv pname =
+  ConcurrencyModels.find_override_or_superclass_annotated exe_env is_assumed_thread_safe tenv pname
   |> Option.is_some
 
 
@@ -423,31 +423,31 @@ let should_analyze_proc =
     | _ ->
         false
   in
-  fun tenv pn ->
+  fun exe_env tenv pn ->
     (not (should_skip pn))
     && (not (FbThreadSafety.is_logging_method pn))
-    && not (is_assumed_thread_safe tenv pn)
+    && not (is_assumed_thread_safe exe_env tenv pn)
 
 
 let get_current_class_and_threadsafe_superclasses tenv pname =
   get_current_class_and_annotated_superclasses is_thread_safe tenv pname
 
 
-let is_thread_safe_method pname tenv =
+let is_thread_safe_method exe_env pname tenv =
   Config.racerd_always_report_java
   ||
-  match find_override_or_superclass_annotated is_thread_safe tenv pname with
+  match find_override_or_superclass_annotated exe_env is_thread_safe tenv pname with
   | Some (DirectlyAnnotated | Override _) ->
       true
   | _ ->
       false
 
 
-let is_marked_thread_safe pname tenv =
+let is_marked_thread_safe exe_env pname tenv =
   ((* current class not marked [@NotThreadSafe] *)
    not
      (PatternMatch.Java.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname) )
-  && ConcurrencyModels.find_override_or_superclass_annotated is_thread_safe tenv pname
+  && ConcurrencyModels.find_override_or_superclass_annotated exe_env is_thread_safe tenv pname
      |> Option.is_some
 
 
@@ -470,7 +470,7 @@ let is_builder_class tname = String.is_suffix ~suffix:"$Builder" (Typ.Name.to_st
 
 let is_builder_method java_pname = is_builder_class (Procname.Java.get_class_type_name java_pname)
 
-let should_flag_interface_call tenv exps call_flags pname =
+let should_flag_interface_call exe_env tenv exps call_flags pname =
   let thread_safe_or_thread_confined annot =
     Annotations.ia_is_thread_safe annot || Annotations.ia_is_thread_confined annot
   in
@@ -504,8 +504,8 @@ let should_flag_interface_call tenv exps call_flags pname =
       && (not (is_builder_method java_pname))
       (* can't ask anyone to annotate interfaces in library code, and Builders should always be
          thread-safe (would be unreasonable to ask everyone to annotate them) *)
-      && ConcurrencyModels.find_override_or_superclass_annotated thread_safe_or_thread_confined tenv
-           pname
+      && ConcurrencyModels.find_override_or_superclass_annotated exe_env
+           thread_safe_or_thread_confined tenv pname
          |> Option.is_none
       && receiver_is_not_safe exps tenv
       && not (implements_threadsafe_interface java_pname tenv)
@@ -594,11 +594,11 @@ let is_synchronized_container callee_pname (access_exp : HilExp.AccessExpression
         false
 
 
-let is_initializer tenv proc_name =
+let is_initializer exe_env tenv proc_name =
   Procname.is_constructor proc_name
   || FbThreadSafety.is_custom_init tenv proc_name
   || PatternMatch.override_exists
-       (fun pname -> Annotations.pname_has_return_annot pname Annotations.ia_is_initializer)
+       (fun pname -> Annotations.pname_has_return_annot exe_env pname Annotations.ia_is_initializer)
        tenv proc_name
 
 

@@ -42,12 +42,12 @@ type annotation_trail =
 [@@deriving compare]
 
 val find_override_or_superclass_annotated :
-  (Annot.Item.t -> bool) -> Tenv.t -> Procname.t -> annotation_trail option
+  Exe_env.t -> (Annot.Item.t -> bool) -> Tenv.t -> Procname.t -> annotation_trail option
 (** check if a method's transitive annotations satisfy the given predicate *)
 
-val annotated_as_worker_thread : Tenv.t -> Procname.t -> bool
+val annotated_as_worker_thread : Exe_env.t -> Tenv.t -> Procname.t -> bool
 
-val runs_on_ui_thread : Tenv.t -> Procname.t -> bool
+val runs_on_ui_thread : Exe_env.t -> Tenv.t -> Procname.t -> bool
 (** is method not transitively annotated [@WorkerThread] and is modeled or annotated [@UIThread] or
     equivalent? *)
 

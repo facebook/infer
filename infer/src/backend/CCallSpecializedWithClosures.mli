@@ -24,4 +24,4 @@
 
 open! IStd
 
-val process : Procdesc.t -> unit
+val process : Exe_env.t -> Procdesc.t -> unit

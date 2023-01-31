@@ -19,7 +19,8 @@ open! IStd
       constructor). *)
 
 val final_initializer_typestates_lazy :
-     Tenv.t
+     Exe_env.t
+  -> Tenv.t
   -> Procname.t
   -> Procdesc.t
   -> (bool -> Procname.t -> Procdesc.t -> 'a option -> 'b * 'c option)
@@ -27,7 +28,8 @@ val final_initializer_typestates_lazy :
 (** Typestates after the current constructor and all initializer procedures. *)
 
 val final_constructor_typestates_lazy :
-     Tenv.t
+     Exe_env.t
+  -> Tenv.t
   -> Procname.t
   -> (bool -> Procname.t -> Procdesc.t -> 'a option -> 'b * 'c option)
   -> (Procname.t * 'c) list lazy_t

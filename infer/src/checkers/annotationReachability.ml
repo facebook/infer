@@ -42,24 +42,26 @@ let is_allocator tenv pname =
       false
 
 
-let check_attributes check tenv pname =
+let check_attributes exe_env check tenv pname =
   PatternMatch.Java.check_class_attributes check tenv pname
-  || Annotations.pname_has_return_annot pname check
+  || Annotations.pname_has_return_annot exe_env pname check
 
 
 let method_overrides is_annotated tenv pname =
   PatternMatch.override_exists (fun pn -> is_annotated tenv pn) tenv pname
 
 
-let method_has_annot annot tenv pname =
+let method_has_annot exe_env annot tenv pname =
   let has_annot ia = Annotations.ia_ends_with ia annot.Annot.class_name in
   if Annotations.annot_ends_with annot dummy_constructor_annot then is_allocator tenv pname
   else if Annotations.annot_ends_with annot Annotations.expensive then
-    check_attributes has_annot tenv pname || is_modeled_expensive tenv pname
-  else check_attributes has_annot tenv pname
+    check_attributes exe_env has_annot tenv pname || is_modeled_expensive tenv pname
+  else check_attributes exe_env has_annot tenv pname
 
 
-let method_overrides_annot annot tenv pname = method_overrides (method_has_annot annot) tenv pname
+let method_overrides_annot exe_env annot tenv pname =
+  method_overrides (method_has_annot exe_env annot) tenv pname
+
 
 let lookup_annotation_calls {InterproceduralAnalysis.analyze_dependency} annot pname =
   analyze_dependency pname
@@ -113,9 +115,10 @@ let report_annotation_stack ({InterproceduralAnalysis.proc_desc; err_log} as ana
       description
 
 
-let report_call_stack end_of_stack lookup_next_calls report call_site sink_map =
+let report_call_stack exe_env end_of_stack lookup_next_calls report call_site sink_map =
   let lookup_location pname =
-    Option.value_map ~f:ProcAttributes.get_loc ~default:Location.dummy (Attributes.load pname)
+    Option.value_map ~f:ProcAttributes.get_loc ~default:Location.dummy
+      (Exe_env.get_attributes exe_env pname)
   in
   let rec loop fst_call_loc visited_pnames trace (callee_pname, call_loc) =
     if end_of_stack callee_pname then report fst_call_loc trace callee_pname call_loc
@@ -149,15 +152,16 @@ let report_call_stack end_of_stack lookup_next_calls report call_site sink_map =
     sink_map
 
 
-let report_src_snk_path ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) sink_map
-    snk_annot src_annot =
+let report_src_snk_path ({InterproceduralAnalysis.proc_desc; tenv; exe_env} as analysis_data)
+    sink_map snk_annot src_annot =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let loc = Procdesc.get_loc proc_desc in
-  if method_overrides_annot src_annot tenv proc_name then
+  if method_overrides_annot exe_env src_annot tenv proc_name then
     let f_report =
       report_annotation_stack analysis_data src_annot.Annot.class_name snk_annot.Annot.class_name
     in
-    report_call_stack (method_has_annot snk_annot tenv)
+    report_call_stack exe_env
+      (method_has_annot exe_env snk_annot tenv)
       (lookup_annotation_calls analysis_data snk_annot)
       f_report (CallSite.make proc_name loc) sink_map
 
@@ -187,15 +191,16 @@ module AnnotationSpec = struct
 end
 
 module StandardAnnotationSpec = struct
-  let from_annotations str_src_annots str_snk_annot =
+  let from_annotations exe_env str_src_annots str_snk_annot =
     let src_annots = List.map str_src_annots ~f:annotation_of_str in
     let snk_annot = annotation_of_str str_snk_annot in
     let has_annot ia = Annotations.ia_ends_with ia snk_annot.Annot.class_name in
     let open AnnotationSpec in
     { description= "StandardAnnotationSpec"
     ; source_predicate=
-        (fun tenv pname -> List.exists src_annots ~f:(fun a -> method_overrides_annot a tenv pname))
-    ; sink_predicate= (fun tenv pname -> check_attributes has_annot tenv pname)
+        (fun tenv pname ->
+          List.exists src_annots ~f:(fun a -> method_overrides_annot exe_env a tenv pname) )
+    ; sink_predicate= (fun tenv pname -> check_attributes exe_env has_annot tenv pname)
     ; sanitizer_predicate= default_sanitizer
     ; sink_annotation= snk_annot
     ; report=
@@ -204,8 +209,8 @@ module StandardAnnotationSpec = struct
 end
 
 module CxxAnnotationSpecs = struct
-  let src_path_of pname =
-    match Attributes.load pname with
+  let src_path_of exe_env pname =
+    match Exe_env.get_attributes exe_env pname with
     | Some proc_attrs ->
         let loc = ProcAttributes.get_loc proc_attrs in
         SourceFile.to_string loc.file
@@ -252,7 +257,7 @@ module CxxAnnotationSpecs = struct
         src
 
 
-  let spec_from_config spec_name spec_cfg source_overrides =
+  let spec_from_config exe_env spec_name spec_cfg source_overrides =
     let src = option_name ^ " -> " ^ spec_name in
     let make_pname_pred entry ~src : Procname.t -> bool =
       let symbols = U.yojson_lookup entry "symbols" ~src ~f:U.string_list_of_yojson ~default:[] in
@@ -271,7 +276,7 @@ module CxxAnnotationSpecs = struct
         | Some regexp ->
             Str.string_match regexp pname_string 0
       in
-      let path_pred pname = List.exists ~f:(path_match (src_path_of pname)) paths in
+      let path_pred pname = List.exists ~f:(path_match (src_path_of exe_env pname)) paths in
       fun pname ->
         let pname_string = Procname.to_string pname in
         sym_pred pname_string || sym_regexp_pred pname_string || path_pred pname
@@ -337,13 +342,13 @@ module CxxAnnotationSpecs = struct
         description
     in
     let snk_annot = annotation_of_str snk_name in
-    let report ({InterproceduralAnalysis.proc_desc} as analysis_data) annot_map =
+    let report ({InterproceduralAnalysis.proc_desc; exe_env} as analysis_data) annot_map =
       let proc_name = Procdesc.get_proc_name proc_desc in
       if src_pred proc_name then
         let loc = Procdesc.get_loc proc_desc in
         try
           let sink_map = Domain.find snk_annot annot_map in
-          report_call_stack snk_pred
+          report_call_stack exe_env snk_pred
             (lookup_annotation_calls analysis_data snk_annot)
             (report_cxx_annotation_stack analysis_data)
             (CallSite.make proc_name loc) sink_map
@@ -365,11 +370,11 @@ module CxxAnnotationSpecs = struct
     U.assoc_of_yojson Config.annotation_reachability_cxx_sources ~src:src_option_name
 
 
-  let from_config () : 'AnnotationSpec list =
+  let from_config exe_env : 'AnnotationSpec list =
     List.map
       ~f:(fun (spec_name, spec_cfg) ->
         let src = option_name ^ " -> " ^ spec_name in
-        spec_from_config spec_name (U.assoc_of_yojson spec_cfg ~src)
+        spec_from_config exe_env spec_name (U.assoc_of_yojson spec_cfg ~src)
           annotation_reachability_cxx_sources )
       annotation_reachability_cxx
 end
@@ -379,13 +384,14 @@ module NoAllocationAnnotationSpec = struct
 
   let constructor_annot = annotation_of_str dummy_constructor_annot
 
-  let spec =
+  let spec exe_env =
     let open AnnotationSpec in
     { description= "NoAllocationAnnotationSpec"
-    ; source_predicate= (fun tenv pname -> method_overrides_annot no_allocation_annot tenv pname)
+    ; source_predicate=
+        (fun tenv pname -> method_overrides_annot exe_env no_allocation_annot tenv pname)
     ; sink_predicate= (fun tenv pname -> is_allocator tenv pname)
     ; sanitizer_predicate=
-        (fun tenv pname -> check_attributes Annotations.ia_is_ignore_allocations tenv pname)
+        (fun tenv pname -> check_attributes exe_env Annotations.ia_is_ignore_allocations tenv pname)
     ; sink_annotation= constructor_annot
     ; report=
         (fun proc_data annot_map ->
@@ -397,15 +403,19 @@ module ExpensiveAnnotationSpec = struct
 
   let expensive_annot = annotation_of_str Annotations.expensive
 
-  let is_expensive tenv pname = check_attributes Annotations.ia_is_expensive tenv pname
+  let is_expensive exe_env tenv pname =
+    check_attributes exe_env Annotations.ia_is_expensive tenv pname
 
-  let method_is_expensive tenv pname = is_modeled_expensive tenv pname || is_expensive tenv pname
 
-  let check_expensive_subtyping_rules {InterproceduralAnalysis.proc_desc; tenv; err_log}
+  let method_is_expensive exe_env tenv pname =
+    is_modeled_expensive tenv pname || is_expensive exe_env tenv pname
+
+
+  let check_expensive_subtyping_rules {InterproceduralAnalysis.proc_desc; tenv; err_log; exe_env}
       overridden_pname =
     let proc_name = Procdesc.get_proc_name proc_desc in
     let loc = Procdesc.get_loc proc_desc in
-    if not (method_is_expensive tenv overridden_pname) then
+    if not (method_is_expensive exe_env tenv overridden_pname) then
       let description =
         Format.asprintf "Method %a overrides unannotated method %a and cannot be annotated with %a"
           MF.pp_monospaced (Procname.to_string proc_name) MF.pp_monospaced
@@ -416,20 +426,20 @@ module ExpensiveAnnotationSpec = struct
         IssueType.checkers_expensive_overrides_unexpensive description
 
 
-  let spec =
+  let spec exe_env =
     let open AnnotationSpec in
     { description= "ExpensiveAnnotationSpec"
-    ; source_predicate= is_expensive
+    ; source_predicate= is_expensive exe_env
     ; sink_predicate=
         (fun tenv pname ->
           let has_annot ia = Annotations.ia_ends_with ia expensive_annot.class_name in
-          check_attributes has_annot tenv pname || is_modeled_expensive tenv pname )
+          check_attributes exe_env has_annot tenv pname || is_modeled_expensive tenv pname )
     ; sanitizer_predicate= default_sanitizer
     ; sink_annotation= expensive_annot
     ; report=
         (fun ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) astate ->
           let proc_name = Procdesc.get_proc_name proc_desc in
-          if is_expensive tenv proc_name then
+          if is_expensive exe_env tenv proc_name then
             PatternMatch.override_iter
               (check_expensive_subtyping_rules analysis_data)
               tenv proc_name ;
@@ -451,27 +461,28 @@ let parse_user_defined_specs = function
       []
 
 
-let annot_specs =
+let annot_specs exe_env =
   let user_defined_specs =
     parse_user_defined_specs Config.annotation_reachability_custom_pairs
     |> List.map ~f:(fun (str_src_annots, str_snk_annot) ->
-           StandardAnnotationSpec.from_annotations str_src_annots str_snk_annot )
+           StandardAnnotationSpec.from_annotations exe_env str_src_annots str_snk_annot )
   in
   let open Annotations in
   let cannot_call_ui_annots = [any_thread; worker_thread] in
   let cannot_call_non_ui_annots = [any_thread; mainthread; ui_thread] in
-  [ (Language.Clang, CxxAnnotationSpecs.from_config ())
+  [ (Language.Clang, CxxAnnotationSpecs.from_config exe_env)
   ; ( Language.Java
-    , ExpensiveAnnotationSpec.spec :: NoAllocationAnnotationSpec.spec
-      :: StandardAnnotationSpec.from_annotations cannot_call_ui_annots ui_thread
-      :: StandardAnnotationSpec.from_annotations cannot_call_ui_annots mainthread
-      :: StandardAnnotationSpec.from_annotations cannot_call_non_ui_annots worker_thread
+    , ExpensiveAnnotationSpec.spec exe_env
+      :: NoAllocationAnnotationSpec.spec exe_env
+      :: StandardAnnotationSpec.from_annotations exe_env cannot_call_ui_annots ui_thread
+      :: StandardAnnotationSpec.from_annotations exe_env cannot_call_ui_annots mainthread
+      :: StandardAnnotationSpec.from_annotations exe_env cannot_call_non_ui_annots worker_thread
       :: user_defined_specs ) ]
 
 
-let get_annot_specs pname =
+let get_annot_specs exe_env pname =
   let language = Procname.get_language pname in
-  List.Assoc.find_exn ~equal:Language.equal annot_specs language
+  List.Assoc.find_exn ~equal:Language.equal (annot_specs exe_env) language
 
 
 module MakeTransferFunctions (CFG : ProcCfg.S) = struct
@@ -540,10 +551,10 @@ end
 module TransferFunctions = MakeTransferFunctions (ProcCfg.Exceptional)
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
 
-let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) : Domain.t option =
+let checker ({InterproceduralAnalysis.proc_desc; exe_env} as analysis_data) : Domain.t option =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let initial = Domain.empty in
-  let specs = get_annot_specs proc_name in
+  let specs = get_annot_specs exe_env proc_name in
   let proc_data = {TransferFunctions.analysis_data; specs} in
   let post = Analyzer.compute_post proc_data ~initial proc_desc in
   Option.iter post ~f:(fun annot_map ->

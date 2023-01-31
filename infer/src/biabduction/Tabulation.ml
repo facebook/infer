@@ -745,15 +745,15 @@ let prop_set_exn tenv pname prop se_exn =
   Prop.normalize tenv (Prop.set prop ~sigma:sigma')
 
 
-let get_attributes proc_name =
+let get_attributes exe_env proc_name =
   if BiabductionModels.mem proc_name then
     AnalysisCallbacks.get_model_proc_desc proc_name |> Option.map ~f:Procdesc.get_attributes
-  else Attributes.load proc_name
+  else Exe_env.get_attributes exe_env proc_name
 
 
 (** Include a subtrace for a procedure call if the callee is not a model. *)
-let include_subtrace callee_pname =
-  match get_attributes callee_pname with
+let include_subtrace exe_env callee_pname =
+  match get_attributes exe_env callee_pname with
   | Some attrs ->
       (not attrs.ProcAttributes.is_biabduction_model)
       && SourceFile.is_under_project_root attrs.ProcAttributes.loc.Location.file
@@ -762,8 +762,8 @@ let include_subtrace callee_pname =
 
 
 (** combine the spec's post with a splitting and actual precondition *)
-let combine ({InterproceduralAnalysis.proc_desc= caller_pdesc; tenv; _} as analysis_data) ret_id
-    (posts : ('a Prop.t * Paths.Path.t) list) actual_pre path_pre split callee_pname loc =
+let combine ({InterproceduralAnalysis.proc_desc= caller_pdesc; tenv; exe_env} as analysis_data)
+    ret_id (posts : ('a Prop.t * Paths.Path.t) list) actual_pre path_pre split callee_pname loc =
   let instantiated_post =
     let posts' =
       if !BiabductionConfig.footprint && List.is_empty posts then
@@ -773,8 +773,10 @@ let combine ({InterproceduralAnalysis.proc_desc= caller_pdesc; tenv; _} as analy
       else
         List.map
           ~f:(fun (p, path_post) ->
-            (p, Paths.Path.add_call (include_subtrace callee_pname) path_pre callee_pname path_post)
-            )
+            ( p
+            , Paths.Path.add_call
+                (include_subtrace exe_env callee_pname)
+                path_pre callee_pname path_post ) )
           posts
     in
     List.map
@@ -1218,7 +1220,7 @@ let prop_pure_to_footprint tenv (p : 'a Prop.t) : Prop.normal Prop.t =
 
 
 (** post-process the raw result of a function call *)
-let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
+let exe_call_postprocess exe_env tenv ret_id callee_pname callee_attrs loc results =
   let filter_valid_res = function Invalid_res _ -> false | Valid_res _ -> true in
   let valid_res0, invalid_res0 = List.partition_tf ~f:filter_valid_res results in
   let valid_res =
@@ -1256,8 +1258,9 @@ let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
               | Some path_post ->
                   let old_path, _ = State.get_path () in
                   let new_path =
-                    Paths.Path.add_call (include_subtrace callee_pname) old_path callee_pname
-                      path_post
+                    Paths.Path.add_call
+                      (include_subtrace exe_env callee_pname)
+                      old_path callee_pname path_post
                   in
                   State.set_path new_path path_pos_opt
             in
@@ -1363,7 +1366,7 @@ let exe_call_postprocess tenv ret_id callee_pname callee_attrs loc results =
 
 
 (** Execute the function call and return the list of results with return value *)
-let exe_function_call ({InterproceduralAnalysis.tenv; _} as analysis_data) ~callee_attributes
+let exe_function_call ({InterproceduralAnalysis.tenv; exe_env} as analysis_data) ~callee_attributes
     ~callee_pname ~callee_summary ~ret_id loc ~actuals prop path =
   let spec_list, formal_params =
     spec_find_rename callee_attributes (BiabductionSummary.get_specs callee_summary)
@@ -1378,4 +1381,4 @@ let exe_function_call ({InterproceduralAnalysis.tenv; _} as analysis_data) ~call
       callee_attributes
   in
   let results = List.map ~f:exe_one_spec spec_list in
-  exe_call_postprocess tenv ret_id callee_pname callee_attributes loc results
+  exe_call_postprocess exe_env tenv ret_id callee_pname callee_attributes loc results

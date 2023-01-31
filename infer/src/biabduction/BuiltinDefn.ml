@@ -654,14 +654,14 @@ let execute_pthread_create
 
 let execute_skip {Builtin.prop_; path} : Builtin.ret_typ = [(prop_, path)]
 
-let execute_scan_function skip_n_arguments ({Builtin.args; ret_id_typ} as call_args) :
-    Builtin.ret_typ =
+let execute_scan_function skip_n_arguments
+    ({Builtin.args; ret_id_typ; analysis_data= {exe_env}} as call_args) : Builtin.ret_typ =
   match args with
   | _ when List.length args >= skip_n_arguments ->
       let varargs = ref args in
       varargs := IList.drop !varargs skip_n_arguments ;
-      SymExec.unknown_or_scan_call ~is_scan:true ~reason:"execute scan function" (snd ret_id_typ)
-        Annot.Item.empty {call_args with args= !varargs}
+      SymExec.unknown_or_scan_call ~is_scan:true ~reason:"execute scan function" exe_env
+        (snd ret_id_typ) Annot.Item.empty {call_args with args= !varargs}
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 

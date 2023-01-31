@@ -356,7 +356,8 @@ module TransferFunctions = struct
         None
 
 
-  let report_unchecked_strongself_issues_on_args proc_desc err_log (domain : Domain.t) pname args =
+  let report_unchecked_strongself_issues_on_args exe_env proc_desc err_log (domain : Domain.t) pname
+      args =
     let report_issue var =
       Domain.report_unchecked_strongself_issues proc_desc err_log
         (F.sprintf "passed to `%s`" (Procname.to_simplified_string pname))
@@ -379,7 +380,7 @@ module TransferFunctions = struct
       | _ ->
           domain
     in
-    let attributes_opt = Attributes.load pname in
+    let attributes_opt = Exe_env.get_attributes exe_env pname in
     let annotations = get_annotations attributes_opt in
     let args =
       if is_objc_instance attributes_opt then match args with _ :: rest -> rest | [] -> []
@@ -393,8 +394,8 @@ module TransferFunctions = struct
     report_on_non_nullable_arg ?annotations domain args
 
 
-  let exec_instr (astate : Domain.t) {IntraproceduralAnalysis.proc_desc; err_log} _cfg_node _
-      (instr : Sil.instr) =
+  let exec_instr (astate : Domain.t) {IntraproceduralAnalysis.proc_desc; err_log; exe_env} _cfg_node
+      _ (instr : Sil.instr) =
     let attributes = Procdesc.get_attributes proc_desc in
     let astate = report_unchecked_strongself_issues_on_exps proc_desc err_log astate instr in
     let astate = Domain.remove_ids_in_closures_from_domain instr astate in
@@ -411,7 +412,7 @@ module TransferFunctions = struct
     | Prune (UnOp (LNot, BinOp (Binop.Eq, Var id, e), _), _, _, _) ->
         if Exp.is_null_literal e then Domain.exec_null_check_id id astate else astate
     | Call (_, Exp.Const (Const.Cfun callee_pn), args, _, _) ->
-        report_unchecked_strongself_issues_on_args proc_desc err_log astate callee_pn args
+        report_unchecked_strongself_issues_on_args exe_env proc_desc err_log astate callee_pn args
     | _ ->
         astate
 end

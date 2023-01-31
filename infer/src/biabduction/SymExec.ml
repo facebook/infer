@@ -416,22 +416,22 @@ let check_arith_norm_exp {InterproceduralAnalysis.proc_desc; err_log; tenv} exp 
       (Prop.exp_normalize_prop tenv prop exp, prop')
 
 
-let method_exists right_proc_name methods =
+let method_exists exe_env right_proc_name methods =
   if Language.curr_language_is Java || Language.curr_language_is CIL then
     List.exists ~f:(fun meth_name -> Procname.equal right_proc_name meth_name) methods
   else
     (* ObjC/C++ case : The attribute map will only exist when we have code for the method or
        the method has been called directly somewhere. It can still be that this is not the
        case but we have a model for the method. *)
-    match Attributes.load right_proc_name with
+    match Exe_env.get_attributes exe_env right_proc_name with
     | Some attrs ->
         attrs.ProcAttributes.is_defined
     | None ->
         BiabductionModels.mem right_proc_name
 
 
-let resolve_method tenv class_name proc_name =
-  match Tenv.resolve_method ~method_exists tenv class_name proc_name with
+let resolve_method exe_env tenv class_name proc_name =
+  match Tenv.resolve_method ~method_exists:(method_exists exe_env) tenv class_name proc_name with
   | None ->
       Logging.d_printfln "Couldn't find method in the hierarchy of type %s"
         (Typ.Name.name class_name) ;
@@ -457,11 +457,11 @@ let resolve_typename prop receiver_exp =
 
 (** If the dynamic type of the receiver actual T_actual is a subtype of the receiver type T_formal
     in the signature of [pname], resolve [pname] to T_actual.[pname]. *)
-let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t list =
+let resolve_virtual_pname exe_env tenv prop actuals callee_pname call_flags : Procname.t list =
   let resolve receiver_exp pname prop =
     match resolve_typename prop receiver_exp with
     | Some class_name ->
-        resolve_method tenv class_name pname
+        resolve_method exe_env tenv class_name pname
     | None ->
         pname
   in
@@ -510,7 +510,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
 
 
 (** Resolve the name of the procedure to call based on the type of the arguments *)
-let resolve_pname ~caller_pdesc tenv prop args pname call_flags : Procname.t =
+let resolve_pname ~caller_pdesc exe_env tenv prop args pname call_flags : Procname.t =
   let resolve_from_args resolved_pname args =
     let resolved_parameters = Procname.get_parameters resolved_pname in
     let resolved_params =
@@ -545,7 +545,7 @@ let resolve_pname ~caller_pdesc tenv prop args pname call_flags : Procname.t =
         let resolved =
           match resolve_typename prop first_arg with
           | Some class_name ->
-              resolve_method tenv class_name pname
+              resolve_method exe_env tenv class_name pname
           | None ->
               pname
         in
@@ -595,15 +595,15 @@ let get_proc_desc proc_name =
   else Procdesc.load proc_name
 
 
-let get_attributes proc_name =
+let get_attributes exe_env proc_name =
   if BiabductionModels.mem proc_name then
     AnalysisCallbacks.get_model_proc_desc proc_name |> Option.map ~f:Procdesc.get_attributes
-  else Attributes.load proc_name
+  else Exe_env.get_attributes exe_env proc_name
 
 
 (** Resolve the procedure name and run the analysis of the resolved procedure if not already
     analyzed *)
-let resolve_and_analyze {InterproceduralAnalysis.analyze_dependency; proc_desc; tenv}
+let resolve_and_analyze {InterproceduralAnalysis.analyze_dependency; proc_desc; tenv; exe_env}
     ~has_clang_model prop args callee_proc_name call_flags : resolve_and_analyze_result =
   if has_clang_model then
     {resolved_pname= callee_proc_name; resolved_procdesc_opt= None; resolved_summary_opt= None}
@@ -633,7 +633,7 @@ let resolve_and_analyze {InterproceduralAnalysis.analyze_dependency; proc_desc; 
               analyze_dependency resolved_pname ) )
     in
     let resolved_pname =
-      resolve_pname ~caller_pdesc:proc_desc tenv prop args callee_proc_name call_flags
+      resolve_pname ~caller_pdesc:proc_desc exe_env tenv prop args callee_proc_name call_flags
     in
     let resolved_procdesc_opt, resolved_summary_opt = analyze_ondemand resolved_pname in
     {resolved_pname; resolved_procdesc_opt; resolved_summary_opt}
@@ -948,8 +948,8 @@ let execute_load ?(report_deref_errors = true) ({InterproceduralAnalysis.tenv; _
       [Prop.conjoin_eq tenv (Exp.Var id) undef prop_]
 
 
-let load_ret_annots pname =
-  Attributes.load pname
+let load_ret_annots exe_env pname =
+  Exe_env.get_attributes exe_env pname
   |> Option.value_map ~default:Annot.Item.empty ~f:(fun {ProcAttributes.ret_annots} -> ret_annots)
 
 
@@ -995,15 +995,16 @@ let execute_store ?(report_deref_errors = true) ({InterproceduralAnalysis.tenv; 
     if Int.equal Config.biabduction_array_level 0 then assert false else [prop_]
 
 
-let is_variadic_procname callee_pname =
-  Option.exists (get_attributes callee_pname) ~f:(fun proc_attrs ->
+let is_variadic_procname exe_env callee_pname =
+  Option.exists (get_attributes exe_env callee_pname) ~f:(fun proc_attrs ->
       proc_attrs.ProcAttributes.is_variadic )
 
 
-let resolve_and_analyze_no_dynamic_dispatch {InterproceduralAnalysis.analyze_dependency; tenv}
-    prop_r n_actual_params callee_pname call_flags =
+let resolve_and_analyze_no_dynamic_dispatch
+    {InterproceduralAnalysis.analyze_dependency; tenv; exe_env} prop_r n_actual_params callee_pname
+    call_flags =
   let resolved_pname =
-    match resolve_virtual_pname tenv prop_r n_actual_params callee_pname call_flags with
+    match resolve_virtual_pname exe_env tenv prop_r n_actual_params callee_pname call_flags with
     | resolved_pname :: _ ->
         resolved_pname
     | [] ->
@@ -1013,9 +1014,9 @@ let resolve_and_analyze_no_dynamic_dispatch {InterproceduralAnalysis.analyze_dep
   {resolved_pname; resolved_procdesc_opt= get_proc_desc resolved_pname; resolved_summary_opt}
 
 
-let resolve_and_analyze_clang analysis_data prop_r n_actual_params callee_pname call_flags =
+let resolve_and_analyze_clang exe_env analysis_data prop_r n_actual_params callee_pname call_flags =
   if
-    ((not (is_variadic_procname callee_pname)) && Procname.is_objc_method callee_pname)
+    ((not (is_variadic_procname exe_env callee_pname)) && Procname.is_objc_method callee_pname)
     || Procname.is_objc_block callee_pname
     (* to be extended to other methods *)
   then
@@ -1083,8 +1084,8 @@ let declare_locals_and_ret tenv pdesc (prop_ : Prop.normal Prop.t) =
 
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec
-    ( {InterproceduralAnalysis.proc_desc= current_pdesc; analyze_dependency; err_log; tenv} as
-    analysis_data ) instr_ (prop_ : Prop.normal Prop.t) path :
+    ( {InterproceduralAnalysis.proc_desc= current_pdesc; analyze_dependency; err_log; tenv; exe_env}
+    as analysis_data ) instr_ (prop_ : Prop.normal Prop.t) path :
     (Prop.normal Prop.t * Paths.Path.t) list =
   AnalysisState.set_instr instr_ ;
   (* mark instruction last seen *)
@@ -1126,7 +1127,7 @@ let rec sym_exec
       let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
       BiabductionReporting.log_issue_deprecated_using_state current_pdesc err_log exn ;
       L.d_printfln "Skipping function '%a': %s" Procname.pp callee_pname reason ;
-      unknown_or_scan_call ~is_scan:false ~reason ret_typ ret_annots
+      unknown_or_scan_call ~is_scan:false ~reason exe_env ret_typ ret_annots
         { Builtin.instr
         ; prop_= prop
         ; path
@@ -1183,7 +1184,7 @@ let rec sym_exec
           match resolve_and_analyze_result.resolved_summary_opt with
           | None ->
               let ret_typ = Procname.Java.get_return_typ callee_pname_java in
-              let ret_annots = load_ret_annots callee_pname in
+              let ret_annots = load_ret_annots exe_env callee_pname in
               exec_skip_call ~reason:"unknown method" resolved_pname ret_annots ret_typ
           | Some ((callee_proc_desc, _) as resolved_summary) -> (
             match reason_to_skip ~callee_desc:(`Summary resolved_summary) with
@@ -1198,7 +1199,7 @@ let rec sym_exec
           let norm_prop, norm_args = normalize_params analysis_data prop_ actual_params in
           let url_handled_args = call_constructor_url_update_args callee_pname norm_args in
           let resolved_pnames =
-            resolve_virtual_pname tenv norm_prop url_handled_args callee_pname call_flags
+            resolve_virtual_pname exe_env tenv norm_prop url_handled_args callee_pname call_flags
           in
           let exec_one_pname pname =
             let exec_skip_call ~reason ret_annots ret_type =
@@ -1208,7 +1209,7 @@ let rec sym_exec
             match analyze_dependency pname with
             | None ->
                 let ret_typ = Procname.CSharp.get_return_typ callee_pname_csharp in
-                let ret_annots = load_ret_annots callee_pname in
+                let ret_annots = load_ret_annots exe_env callee_pname in
                 exec_skip_call ~reason:"unknown method" ret_annots ret_typ
             | Some ((callee_proc_desc, _) as callee_summary) -> (
               match reason_to_skip ~callee_desc:(`Summary callee_summary) with
@@ -1225,7 +1226,8 @@ let rec sym_exec
           (* Generic fun call with known name *)
           let prop_r, n_actual_params = normalize_params analysis_data prop_ actual_params in
           let resolve_and_analyze_result =
-            resolve_and_analyze_clang analysis_data prop_r n_actual_params callee_pname call_flags
+            resolve_and_analyze_clang exe_env analysis_data prop_r n_actual_params callee_pname
+              call_flags
           in
           let resolved_pname = resolve_and_analyze_result.resolved_pname in
           let resolved_pdesc_opt = resolve_and_analyze_result.resolved_procdesc_opt in
@@ -1234,7 +1236,7 @@ let rec sym_exec
           Logging.d_printfln "Resolved callee %s" (Procname.to_unique_id resolved_pname) ;
           let sentinel_result =
             if Language.curr_language_is Clang then
-              check_variadic_sentinel_if_present
+              check_variadic_sentinel_if_present exe_env
                 (call_args prop_r resolved_pname actual_params ret_id_typ loc)
             else [(prop_r, path)]
           in
@@ -1255,7 +1257,7 @@ let rec sym_exec
                   | Some (proc_desc, _) ->
                       (Procdesc.get_attributes proc_desc).ProcAttributes.ret_annots
                   | None ->
-                      load_ret_annots resolved_pname
+                      load_ret_annots exe_env resolved_pname
                 in
                 match resolved_pdesc_opt with
                 | Some resolved_pdesc ->
@@ -1284,8 +1286,8 @@ let rec sym_exec
       Exp.d_exp fun_exp ;
       L.d_strln ", returning undefined value." ;
       let callee_pname = Procname.from_string_c_fun "__function_pointer__" in
-      unknown_or_scan_call ~is_scan:false ~reason:"unresolved function pointer" (snd ret_id_typ)
-        Annot.Item.empty
+      unknown_or_scan_call ~is_scan:false ~reason:"unresolved function pointer" exe_env
+        (snd ret_id_typ) Annot.Item.empty
         { Builtin.analysis_data
         ; instr
         ; prop_= prop_r
@@ -1361,8 +1363,8 @@ and instrs ?(mask_errors = false) analysis_data instrs ppl =
   Instrs.fold ~f ~init:ppl instrs
 
 
-and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref callee_pname callee_loc
-    =
+and add_constraints_on_actuals_by_ref exe_env tenv caller_pdesc prop actuals_by_ref callee_pname
+    callee_loc =
   let add_actual_by_ref_to_footprint prop (actual, actual_typ, actual_index) =
     let abduced =
       match actual with
@@ -1431,7 +1433,7 @@ and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref call
   in
   let non_const_actuals_by_ref =
     let is_not_const (e, _, i) =
-      match Attributes.load callee_pname with
+      match Exe_env.get_attributes exe_env callee_pname with
       | Some attrs ->
           let is_const = List.mem ~equal:Int.equal attrs.ProcAttributes.const_formals i in
           if is_const then (
@@ -1448,7 +1450,7 @@ and add_constraints_on_actuals_by_ref tenv caller_pdesc prop actuals_by_ref call
 
 
 (** execute a call for an unknown or scan function *)
-and unknown_or_scan_call ~is_scan ~reason ret_typ ret_annots
+and unknown_or_scan_call ~is_scan ~reason exe_env ret_typ ret_annots
     { Builtin.analysis_data= {proc_desc; tenv; _}
     ; prop_= pre
     ; path
@@ -1525,7 +1527,7 @@ and unknown_or_scan_call ~is_scan ~reason ret_typ ret_annots
         (Exp.Var (fst ret_id_typ))
         ret_typ ~has_nonnull_annot callee_pname loc
     in
-    add_constraints_on_actuals_by_ref tenv proc_desc pre_2 actuals_by_ref callee_pname loc
+    add_constraints_on_actuals_by_ref exe_env tenv proc_desc pre_2 actuals_by_ref callee_pname loc
   in
   if is_scan (* if scan function, don't mark anything with undef attributes *) then
     [(Tabulation.remove_constant_string_class tenv pre_final, path)]
@@ -1539,7 +1541,9 @@ and unknown_or_scan_call ~is_scan ~reason ret_typ ret_annots
         callee_pname ret_annots loc path_pos
     in
     let callee_loc_opt =
-      Option.map ~f:(fun attributes -> attributes.ProcAttributes.loc) (get_attributes callee_pname)
+      Option.map
+        ~f:(fun attributes -> attributes.ProcAttributes.loc)
+        (get_attributes exe_env callee_pname)
     in
     let skip_path = Paths.Path.add_skipped_call path callee_pname reason callee_loc_opt in
     [(prop_with_undef_attr, skip_path)]
@@ -1580,8 +1584,8 @@ and check_variadic_sentinel ?(fails_on_nil = false) n_formals (sentinel, null_po
   List.fold ~f:check_allocated ~init:[(prop_, path)] non_terminal_argsi
 
 
-and check_variadic_sentinel_if_present ({Builtin.prop_; path; proc_name} as builtin_args) =
-  match get_attributes proc_name with
+and check_variadic_sentinel_if_present exe_env ({Builtin.prop_; path; proc_name} as builtin_args) =
+  match get_attributes exe_env proc_name with
   | Some callee_attributes -> (
     match callee_attributes.ProcAttributes.sentinel_attr with
     | Some sentinel ->

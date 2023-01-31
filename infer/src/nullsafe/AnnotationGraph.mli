@@ -13,6 +13,11 @@ open! IStd
     [@Nullable], A -> B are connected in the graph. *)
 
 val build_graph :
-  Tenv.t -> Struct.t -> Typ.name -> ProvisionalViolation.t list -> Jsonbug_t.annotation_point list
+     Exe_env.t
+  -> Tenv.t
+  -> Struct.t
+  -> Typ.name
+  -> ProvisionalViolation.t list
+  -> Jsonbug_t.annotation_point list
 (** Given a Java class and the list of all provisional violations found in that class, build the
     annotation graph *)

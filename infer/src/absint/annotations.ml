@@ -156,8 +156,8 @@ let pdesc_get_return_annot pdesc = (Procdesc.get_attributes pdesc).ProcAttribute
 
 let pdesc_has_return_annot pdesc predicate = predicate (pdesc_get_return_annot pdesc)
 
-let pname_has_return_annot pname predicate =
-  Attributes.load pname
+let pname_has_return_annot exe_env pname predicate =
+  Exe_env.get_attributes exe_env pname
   |> Option.exists ~f:(fun {ProcAttributes.ret_annots} -> predicate ret_annots)
 
 
