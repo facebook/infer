@@ -302,6 +302,8 @@ module LRUHash : LRUHashtbl.S with type key = t
 
 module HashQueue : Hash_queue.S with type key = t
 
+module HashSet : HashSet.S with type elt = t
+
 (** Maps from proc names. *)
 module Map : PrettyPrintable.PPMap with type key = t
 

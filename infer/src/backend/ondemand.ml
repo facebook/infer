@@ -159,7 +159,6 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
   in
   let postprocess summary =
     decr nesting ;
-    summary.Summary.used_tenv_sources <- Tenv.Deps.of_procname callee_pname ;
     Summary.OnDisk.store summary ;
     remove_active callee_pname ;
     Printer.write_proc_html callee_pdesc ;
@@ -268,10 +267,8 @@ let dump_duplicate_procs source_file procs =
 
 
 let register_callee ?caller_summary callee_pname =
-  Option.iter
-    ~f:(fun (summary : Summary.t) ->
-      summary.callee_pnames <- Procname.Set.add callee_pname summary.callee_pnames )
-    caller_summary
+  Option.iter caller_summary
+    ~f:Summary.(fun {dependencies} -> Deps.add_exn dependencies callee_pname)
 
 
 let get_proc_desc callee_pname =

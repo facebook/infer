@@ -110,9 +110,9 @@ module Deps : sig
   val get_current_proc : unit -> Procname.t option
   (** get the currently-under-analysis procedure if one exists *)
 
-  val of_procname : Procname.t -> SourceFile.Set.t
-  (** Return the set of source files whose type environments were used to compute a summary of the
-      given [proc_name] *)
+  val of_procname : Procname.t -> SourceFile.t list
+  (** Return a list of source files whose type environments were used to compute a summary of the
+      given [proc_name], and drop that set from the global dependency map to reclaim some memory. *)
 
   val clear : unit -> unit
   (** drop all currently-recorded dependency edges to reclaim memory *)

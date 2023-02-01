@@ -56,14 +56,14 @@ module WorkHashSet = struct
     let hash = Hashtbl.hash
   end
 
-  include Caml.Hashtbl.Make (T)
+  include HashSet.Make (T)
 
-  let add_pair work_set caller pair = replace work_set (caller, pair) ()
+  let add_pair work_set caller pair = add (caller, pair) work_set
 end
 
 let report exe_env work_set =
   let open Domain in
-  let wrap_report (procname, (pair : CriticalPair.t)) () init =
+  let wrap_report (procname, (pair : CriticalPair.t)) init =
     Summary.OnDisk.get ~lazy_payloads:true procname
     |> Option.fold ~init ~f:(fun acc summary ->
            let pdesc = Summary.get_proc_desc summary in
@@ -83,7 +83,7 @@ let report exe_env work_set =
                     CriticalPair.is_uithread pair && not (Procname.is_constructor procname)
                   in
                   WorkHashSet.fold
-                    (fun (other_procname, (other_pair : CriticalPair.t)) () acc ->
+                    (fun (other_procname, (other_pair : CriticalPair.t)) acc ->
                       Starvation.report_on_parallel_composition ~should_report_starvation tenv
                         pattrs pair lock other_procname other_pair acc )
                     work_set acc ) )

@@ -22,20 +22,16 @@ type t =
       ; rel_path: string  (** path of the source file relative to the project root *) }
 [@@deriving compare, equal, sexp, hash]
 
-module OrderedSourceFile = struct
-  type nonrec t = t [@@deriving compare]
-end
-
-module Map = Caml.Map.Make (OrderedSourceFile)
-module Set = Caml.Set.Make (OrderedSourceFile)
-
-module Hash = Caml.Hashtbl.Make (struct
-  type nonrec t = t
-
-  let equal = equal
+module T = struct
+  type nonrec t = t [@@deriving compare, equal, sexp]
 
   let hash = Caml.Hashtbl.hash
-end)
+end
+
+module Map = Caml.Map.Make (T)
+module Set = Caml.Set.Make (T)
+module Hash = Caml.Hashtbl.Make (T)
+module HashSet = HashSet.Make (T)
 
 let realpath_if_exists path = try Utils.realpath path with Unix.Unix_error _ -> path
 

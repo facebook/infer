@@ -20,9 +20,9 @@ module Deps : sig
   val get_current_proc : unit -> Procname.t option
   (** get the currently-under-analysis procedure if one exists *)
 
-  val of_procname : Procname.t -> SourceFile.Set.t
-  (** Return the set of source files whose type environments were used to compute a summary of the
-      given [proc_name] *)
+  val of_procname : Procname.t -> SourceFile.t list
+  (** Return a list of source files whose type environments were used to compute a summary of the
+      given [proc_name], and drop that set from the global dependency map to reclaim some memory. *)
 
   val record : Procname.t -> SourceFile.t -> unit
   (** Record a dependency from a [proc_name] upon the type environment of some [source_file] *)
@@ -32,7 +32,7 @@ module Deps : sig
 end = struct
   let currently_under_analysis : Procname.t option ref = ref None
 
-  let recorded_dependencies : SourceFile.Set.t Procname.Hash.t = Procname.Hash.create 1000
+  let recorded_dependencies : SourceFile.HashSet.t Procname.Hash.t = Procname.Hash.create 1000
 
   let set_current_proc = ( := ) currently_under_analysis
 
@@ -43,17 +43,21 @@ end = struct
     | Some deps ->
         (* Remove recorded dependencies for this [pname] to save memory, since they are read at most once. *)
         Procname.Hash.remove recorded_dependencies pname ;
+        SourceFile.HashSet.iter deps |> Iter.to_list
+    | None ->
+        []
+
+
+  let record pname src_file =
+    SourceFile.HashSet.add src_file
+    @@
+    match Procname.Hash.find_opt recorded_dependencies pname with
+    | Some deps ->
         deps
     | None ->
-        SourceFile.Set.empty
-
-
-  let record pname file =
-    match Procname.Hash.find_opt recorded_dependencies pname with
-    | None ->
-        Procname.Hash.add recorded_dependencies pname (SourceFile.Set.singleton file)
-    | Some files ->
-        Procname.Hash.replace recorded_dependencies pname (SourceFile.Set.add file files)
+        let deps = SourceFile.HashSet.create 0 in
+        Procname.Hash.add recorded_dependencies pname deps ;
+        deps
 
 
   let clear () = Procname.Hash.clear recorded_dependencies
