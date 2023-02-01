@@ -647,10 +647,9 @@ int intermediate_local_copy_used_ok() {
   return x;
 }
 
-void copy_assignment_const_ref_member_FP(const Arr& arr) {
+void copy_assignment_const_ref_member(const Arr& arr) {
   std::vector<int> my_vec;
-  my_vec = arr.vec; // infer cannot see that arr.vec is const so it should
-                    // suggest unnecessary_copy_assignment_const
+  my_vec = arr.vec;
 }
 
 class FVector {

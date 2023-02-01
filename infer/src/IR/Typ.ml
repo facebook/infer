@@ -323,6 +323,8 @@ let set_ptr_to_const ({desc} as typ) =
       typ
 
 
+let set_to_const ({quals} as typ) = {typ with quals= {quals with is_const= true}}
+
 let mk_array ?default ?quals ?length ?stride elt : t =
   mk ?default ?quals (Tarray {elt; length; stride})
 

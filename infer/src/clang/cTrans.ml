@@ -469,7 +469,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     mk_trans_result (Exp.Const (Const.Cfun pname), typ) empty_control
 
 
-  let field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init =
+  let field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init
+      ~is_member_of_const =
     let open CContext in
     let context = trans_state.context in
     let sil_loc =
@@ -479,6 +480,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let field_string = name_info.Clang_ast_t.ni_name in
     L.debug Capture Verbose "Translating field '%s'@\n" field_string ;
     let field_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
+    (* If the object is const, field member will also be const *)
+    let field_typ = if is_member_of_const then Typ.set_to_const field_typ else field_typ in
     let obj_sil, class_typ = pre_trans_result.return in
     let is_pointer_typ = Typ.is_pointer class_typ in
     let class_typ = match class_typ.Typ.desc with Typ.Tptr (t, _) -> t | _ -> class_typ in
@@ -872,7 +875,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     res_trans
 
 
-  and decl_ref_trans ?(is_constructor_init = false) ~context trans_state stmt_info decl_ref =
+  and decl_ref_trans ?(is_constructor_init = false) ?(is_member_of_const = false) ~context
+      trans_state stmt_info decl_ref =
     let decl_kind = decl_ref.Clang_ast_t.dr_kind in
     match (decl_kind, context) with
     | `EnumConstant, _ ->
@@ -885,6 +889,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (* a field outside of constructor initialization is probably a pointer to member, which we
            do not support *)
         field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init
+          ~is_member_of_const
     | (`CXXMethod | `CXXConversion | `CXXConstructor | `CXXDestructor), _ ->
         method_deref_trans trans_state ~context decl_ref stmt_info decl_kind
     | _ ->
@@ -3308,7 +3313,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (** function used in the computation for both Member_Expr and ObjCIVarRefExpr *)
-  and do_memb_ivar_ref_exp trans_state stmt_info stmt_list decl_ref =
+  and do_memb_ivar_ref_exp ~is_member_of_const trans_state stmt_info stmt_list decl_ref =
     let exp_stmt =
       extract_stmt_from_singleton stmt_list stmt_info.Clang_ast_t.si_source_range
         "in MemberExpr there must be only one stmt defining its expression."
@@ -3318,17 +3323,21 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* int p = X(1).field; *)
     let trans_state' = {trans_state with var_exp_typ= None} in
     let result_trans_exp_stmt = exec_with_glvalue_as_reference instruction trans_state' exp_stmt in
-    decl_ref_trans ~context:(MemberOrIvar result_trans_exp_stmt) trans_state stmt_info decl_ref
+    decl_ref_trans ~is_member_of_const ~context:(MemberOrIvar result_trans_exp_stmt) trans_state
+      stmt_info decl_ref
 
 
   and objCIvarRefExpr_trans trans_state stmt_info stmt_list obj_c_ivar_ref_expr_info =
     let decl_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
-    do_memb_ivar_ref_exp trans_state stmt_info stmt_list decl_ref
+    do_memb_ivar_ref_exp ~is_member_of_const:false trans_state stmt_info stmt_list decl_ref
 
 
-  and memberExpr_trans trans_state stmt_info stmt_list member_expr_info =
+  and memberExpr_trans trans_state stmt_info stmt_list expr_info member_expr_info =
     let decl_ref = member_expr_info.Clang_ast_t.mei_decl_ref in
-    let res_trans = do_memb_ivar_ref_exp trans_state stmt_info stmt_list decl_ref in
+    let res_trans =
+      do_memb_ivar_ref_exp ~is_member_of_const:expr_info.Clang_ast_t.ei_qual_type.qt_is_const
+        trans_state stmt_info stmt_list decl_ref
+    in
     let is_virtual_dispatch = member_expr_info.Clang_ast_t.mei_performs_virtual_dispatch in
     {res_trans with is_cpp_call_virtual= res_trans.is_cpp_call_virtual && is_virtual_dispatch}
 
@@ -4907,8 +4916,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         objCProtocolExpr_trans trans_state expr_info decl_ref
     | ObjCIvarRefExpr (stmt_info, stmt_list, _, obj_c_ivar_ref_expr_info) ->
         objCIvarRefExpr_trans trans_state stmt_info stmt_list obj_c_ivar_ref_expr_info
-    | MemberExpr (stmt_info, stmt_list, _, member_expr_info) ->
-        memberExpr_trans trans_state stmt_info stmt_list member_expr_info
+    | MemberExpr (stmt_info, stmt_list, expr_info, member_expr_info) ->
+        memberExpr_trans trans_state stmt_info stmt_list expr_info member_expr_info
     | UnaryOperator (stmt_info, stmt_list, expr_info, unary_operator_info) ->
         if
           is_logical_negation_of_int trans_state.context.CContext.tenv expr_info unary_operator_info

@@ -146,6 +146,8 @@ val mk_ptr : ?ptr_kind:ptr_kind -> t -> t
 
 val set_ptr_to_const : t -> t
 
+val set_to_const : t -> t
+
 val get_ikind_opt : t -> ikind option
 (** Get ikind if the type is integer. *)
 
