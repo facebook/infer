@@ -525,8 +525,9 @@ module Mem : sig
   val add_unknown_from : Ident.t * Typ.t -> callee_pname:Procname.t -> location:Location.t -> t -> t
   (** Add an unknown return value of [callee_pname] for stack variables *)
 
-  val remove_temps : Ident.t list -> t -> t
-  (** Remove given temporary variables from the abstract memory *)
+  val remove_vars : Var.t list -> t -> t
+  (** Remove temporary variables and if Config.bo_exit_frontend_gener_vars is true also frontend
+      generated variables *)
 
   val find : AbsLoc.Loc.t -> _ t0 -> Val.t
 

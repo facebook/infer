@@ -791,6 +791,13 @@ and bo_assume_void =
     "Assume void type as a type of record fields not in type environment."
 
 
+and bo_exit_frontend_gener_vars =
+  CLOpt.mk_bool ~default:false ~long:"bo-exit-frontend-gener-vars"
+    ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
+    "Put frontend generated variables out of scope when they are listed in exit scope instruction."
+
+
+
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
     ~in_help:InferCommand.[(Capture, manual_java)]
@@ -3443,6 +3450,8 @@ and bo_bottom_as_default = !bo_bottom_as_default
 and bo_context_sensitive_allocsites = !bo_context_sensitive_allocsites
 
 and bo_assume_void = !bo_assume_void
+
+and bo_exit_frontend_gener_vars = !bo_exit_frontend_gener_vars
 
 and buck = !buck
 

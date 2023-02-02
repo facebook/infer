@@ -481,7 +481,7 @@ module TransferFunctions = struct
           let mem, _ = BoUtils.Exec.decl_local model_env (mem, 1) (Loc.of_pvar pvar, typ) in
           mem
       | Metadata (ExitScope (dead_vars, _)) ->
-          Dom.Mem.remove_temps (List.filter_map dead_vars ~f:Var.get_ident) mem
+          Dom.Mem.remove_vars dead_vars mem
       | Metadata
           ( Abstract _
           | CatchEntry _

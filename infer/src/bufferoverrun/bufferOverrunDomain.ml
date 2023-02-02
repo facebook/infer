@@ -1491,6 +1491,8 @@ module Alias = struct
   type t =
     { map: AliasMap.t
     ; ret: AliasRet.t
+          (** The list of addresses that were assigned to a return variable of a function. All
+              locations reachable from these addresses need to be kept in the abstract state. *)
     ; cpp_iterator_cmp: CppIteratorCmp.t
     ; cpp_iter_begin_or_end: CppIterBeginOrEnd.t }
 
@@ -1629,7 +1631,7 @@ module Alias = struct
    fun ~ret_id ~iterator a -> lift_map (AliasMap.add_iterator_next_object_alias ~ret_id ~iterator) a
 
 
-  let remove_temp : Ident.t -> t -> t = fun temp -> lift_map (AliasMap.remove (KeyLhs.of_id temp))
+  let remove_key : KeyLhs.t -> t -> t = fun key -> lift_map (AliasMap.remove key)
 
   let forget_size_alias arr_locs = lift_map (AliasMap.forget_size_alias arr_locs)
 
@@ -2362,19 +2364,6 @@ module MemReach = struct
       weak_update ploc v s )
 
 
-  let remove_temp : Ident.t -> t -> t =
-   fun temp m ->
-    let l = Loc.of_id temp in
-    { m with
-      stack_locs= StackLocs.remove l m.stack_locs
-    ; mem_pure= MemPure.remove l m.mem_pure
-    ; alias= Alias.remove_temp temp m.alias }
-
-
-  let remove_temps : Ident.t list -> t -> t =
-   fun temps m -> List.fold temps ~init:m ~f:(fun acc temp -> remove_temp temp acc)
-
-
   let set_prune_pairs : PrunePairs.t -> t -> t =
    fun prune_pairs m -> {m with latest_prune= LatestPrune.Latest prune_pairs}
 
@@ -2497,6 +2486,30 @@ module MemReach = struct
 
 
   let forget_size_alias arr_locs m = {m with alias= Alias.forget_size_alias arr_locs m.alias}
+
+  let remove_vars : Var.t list -> t -> t =
+   fun vars m ->
+    let remove l key m =
+      { m with
+        stack_locs= StackLocs.remove l m.stack_locs
+      ; mem_pure= MemPure.remove l m.mem_pure
+      ; alias= Alias.remove_key key m.alias }
+    in
+    List.fold vars ~init:m ~f:(fun m var ->
+        if Var.is_pvar var then
+          Option.value_map (Var.get_pvar var) ~default:m ~f:(fun pvar ->
+              if Config.bo_exit_frontend_gener_vars && Pvar.is_frontend_tmp pvar then
+                let locs =
+                  expand_reachable_locs
+                    ~locs:(LocSet.singleton (Loc.of_pvar pvar))
+                    ~expand_ptrs_arrs:false m
+                in
+                LocSet.fold (fun l m -> remove l (KeyLhs.of_loc l) m) locs m
+              else m )
+        else
+          Option.value_map (Var.get_ident var) ~default:m ~f:(fun id ->
+              remove (Loc.of_id id) (KeyLhs.of_id id) m ) )
+
 
   (* unsound *)
   let set_first_idx_of_null : Loc.t -> Val.t -> t -> t =
@@ -2764,7 +2777,7 @@ module Mem = struct
    fun ~f ploc -> map ~f:(MemReach.transform_mem ~f ploc)
 
 
-  let remove_temps : Ident.t list -> t -> t = fun temps -> map ~f:(MemReach.remove_temps temps)
+  let remove_vars : Var.t list -> t -> t = fun vars -> map ~f:(MemReach.remove_vars vars)
 
   let set_prune_pairs : PrunePairs.t -> t -> t =
    fun prune_pairs -> map ~f:(MemReach.set_prune_pairs prune_pairs)
