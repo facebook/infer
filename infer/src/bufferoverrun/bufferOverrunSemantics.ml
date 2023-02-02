@@ -642,7 +642,8 @@ module Prune = struct
                if Val.is_bot v then acc
                else
                  let v' = Val.prune_ne_zero v in
-                 update_mem_in_prune rhs v' acc )
+                 let pruning_exp = PruningExp.make Binop.Ne ~lhs:v ~rhs:(Val.of_int 0) in
+                 update_mem_in_prune rhs v' ~pruning_exp acc )
               |> prune_linked_list_index rhs mem
               |> prune_iterator_offset_objc rhs mem
           | AliasTarget.Empty ->
