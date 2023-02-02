@@ -2432,10 +2432,17 @@ module MemReach = struct
 
   let set_latest_prune : LatestPrune.t -> t -> t = fun latest_prune x -> {x with latest_prune}
 
-  let get_reachable_locs_from_aux : f:(Pvar.t -> bool) -> LocSet.t -> _ t0 -> LocSet.t =
+  (** Get set of locations containing the input locations locs and all the locations reachable from
+      these input locations. If a location represents a record, expand it to all its direct and
+      indirect fields. That is, a location representing a record field "X1..XN.F" is reachable if
+      there exists I in 1 .. 2 for which the location "X1..XI" is either an input location or it is
+      reachable. If expand_ptrs_arrs is true, follow pointers and arrays. *)
+  let expand_reachable_locs : locs:LocSet.t -> expand_ptrs_arrs:bool -> _ t0 -> LocSet.t =
+   fun ~locs ~expand_ptrs_arrs m ->
     let add_reachable1 ~root loc v acc =
-      if Loc.equal root loc then LocSet.union acc (Val.get_all_locs v |> PowLoc.to_set)
-      else if Loc.is_field_of ~loc:root ~field_loc:loc then LocSet.add loc acc
+      if Loc.equal root loc then
+        if expand_ptrs_arrs then LocSet.union acc (Val.get_all_locs v |> PowLoc.to_set) else acc
+      else if Loc.is_trans_field_of ~loc:root ~field_loc:loc then LocSet.add loc acc
       else acc
     in
     let rec add_from_locs heap locs acc = LocSet.fold (add_from_loc heap) locs acc
@@ -2445,13 +2452,17 @@ module MemReach = struct
         let reachable_locs = MemPure.fold (add_reachable1 ~root:loc) heap LocSet.empty in
         add_from_locs heap reachable_locs (LocSet.add loc acc)
     in
+    add_from_locs m.mem_pure locs LocSet.empty
+
+
+  let get_reachable_locs_from_aux : f:(Pvar.t -> bool) -> LocSet.t -> _ t0 -> LocSet.t =
     let add_param_locs ~f mem acc =
       let add_loc loc _ acc = if Loc.exists_pvar ~f loc then LocSet.add loc acc else acc in
       MemPure.fold add_loc mem acc
     in
     fun ~f locs m ->
       let locs = add_param_locs ~f m.mem_pure locs in
-      add_from_locs m.mem_pure locs LocSet.empty
+      expand_reachable_locs ~locs ~expand_ptrs_arrs:true m
 
 
   let get_reachable_locs_from : (Pvar.t * Typ.t) list -> LocSet.t -> _ t0 -> LocSet.t =

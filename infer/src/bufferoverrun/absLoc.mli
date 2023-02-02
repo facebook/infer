@@ -83,6 +83,9 @@ module Loc : sig
   val is_field_of : loc:t -> field_loc:t -> bool
   (** It checks if [loc] is prefix of [field_loc]. *)
 
+  val is_trans_field_of : loc:t -> field_loc:t -> bool
+  (** Checks if field_loc is a direct or indirect field of loc. *)
+
   val is_frontend_tmp : t -> bool
 
   val is_global : t -> bool

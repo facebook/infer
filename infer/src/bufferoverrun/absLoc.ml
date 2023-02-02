@@ -299,6 +299,14 @@ module Loc = struct
         false
 
 
+  let rec is_trans_field_of ~loc ~field_loc =
+    match field_loc with
+    | BoField.(Field {prefix= l} | StarField {prefix= l}) ->
+        if equal loc l then true else is_trans_field_of ~loc ~field_loc:l
+    | _ ->
+        false
+
+
   let get_parent_field field_loc =
     match field_loc with BoField.(Field {prefix= l} | StarField {prefix= l}) -> l | _ -> field_loc
 
