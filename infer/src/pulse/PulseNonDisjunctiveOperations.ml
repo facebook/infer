@@ -326,7 +326,10 @@ let is_folly_coro_task =
 
 
 let init_const_refable_parameters procdesc tenv astates astate_non_disj =
-  if Option.exists (Procdesc.get_ret_param_type procdesc) ~f:is_folly_coro_task then astate_non_disj
+  if
+    Option.exists (Procdesc.get_ret_param_type procdesc) ~f:is_folly_coro_task
+    || Procname.is_lambda_or_block (Procdesc.get_proc_name procdesc)
+  then astate_non_disj
   else
     let proc_parameters = Procdesc.get_passed_by_value_formals procdesc in
     let location = Procdesc.get_loc procdesc in

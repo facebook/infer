@@ -194,4 +194,12 @@ void void_cast(std::string* s) { (void)s; }
 
 void call_void_cast_bad(std::string s) { void_cast(&s); }
 
+int get_lambda(const std::function<int(Arr)>& f, Arr a) {
+  return f(std::move(a));
+}
+
+int call_get_lambda_ok(Arr a) {
+  return get_lambda([](Arr a) { return a.vec[0]; }, std::move(a));
+}
+
 } // namespace const_refable

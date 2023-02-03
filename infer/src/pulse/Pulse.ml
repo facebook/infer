@@ -1018,15 +1018,16 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
     PulseTopl.Debug.dropped_disjuncts_count := 0 ;
     let proc_name = Procdesc.get_proc_name proc_desc in
     let proc_attrs = Procdesc.get_attributes proc_desc in
-    let initial_disjuncts = initial tenv proc_name proc_attrs in
-    let initial_non_disj =
-      PulseNonDisjunctiveOperations.init_const_refable_parameters proc_desc tenv
-        (List.map initial_disjuncts ~f:fst)
-        NonDisjDomain.bottom
-    in
     let initial =
       with_html_debug_node (Procdesc.get_start_node proc_desc) ~desc:"initial state creation"
-        ~f:(fun () -> (initial_disjuncts, initial_non_disj))
+        ~f:(fun () ->
+          let initial_disjuncts = initial tenv proc_name proc_attrs in
+          let initial_non_disj =
+            PulseNonDisjunctiveOperations.init_const_refable_parameters proc_desc tenv
+              (List.map initial_disjuncts ~f:fst)
+              NonDisjDomain.bottom
+          in
+          (initial_disjuncts, initial_non_disj) )
     in
     let exit_summaries_opt, exn_sink_summaries_opt =
       DisjunctiveAnalyzer.compute_post_including_exceptional analysis_data ~initial proc_desc
