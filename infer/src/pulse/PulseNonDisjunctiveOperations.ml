@@ -339,7 +339,10 @@ let init_const_refable_parameters procdesc tenv astates astate_non_disj =
             if
               Var.appears_in_source_code var && Typ.is_reference typ
               && (not (is_cheap_to_copy tenv typ))
-              && not (Var.is_cpp_unnamed_param var)
+              && (not (Var.is_cpp_unnamed_param var))
+              && (* [unique_ptr] is ignored since it is not copied. This condition can be removed if
+                    we can distinguish whether a class has a copy constructor or not. *)
+              not (Typ.is_pointer_to_unique_pointer typ)
             then
               (* [&] is added by the frontend and type is pass-by-value anyways so strip it *)
               NonDisjDomain.add_parameter var

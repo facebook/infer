@@ -202,4 +202,8 @@ int call_get_lambda_ok(Arr a) {
   return get_lambda([](Arr a) { return a.vec[0]; }, std::move(a));
 }
 
+std::string use_unique_ptr_ok(std::unique_ptr<std::string> x) {
+  return *x.get();
+}
+
 } // namespace const_refable
