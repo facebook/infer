@@ -348,6 +348,10 @@ module ArrayAccessCondition = struct
     then {report_issue_type= Issue IssueType.buffer_overrun_l2; propagate= false}
       (* symbolic il >= sl, probably an error *)
     else if
+      Bound.is_infty (ItvPure.ub real_idx) && Bound.is_not_infty (ItvPure.ub size) 
+    then {report_issue_type= Issue IssueType.buffer_overrun_l3; propagate= false}
+      (* su < iu = +oo, probably an error *)
+    else if
       Bound.is_symbolic (ItvPure.lb real_idx) && Bound.le (ItvPure.lb size) (ItvPure.lb real_idx)
     then {report_issue_type= Issue IssueType.buffer_overrun_s2; propagate= true}
     else
