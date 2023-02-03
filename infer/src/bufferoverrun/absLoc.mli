@@ -27,6 +27,8 @@ module Allocsite : sig
 
   val unknown : t
 
+  val is_unknown : t -> bool
+
   val make :
        Procname.t
     -> caller_pname:Procname.t option
@@ -174,6 +176,8 @@ module PowLoc : sig
   (** It checks whether [rhs] is of [lhs.any_field], which is a heuristic for detecting a linked
       list, e.g. [x = x.next()]. It returns [Some lhs] if the condition is satisfied, [None]
       otherwise. *)
+
+  val is_unknown : t -> bool
 
   val is_single_known_loc : t -> bool
   (** Returns true if the set consists of a single known location. *)

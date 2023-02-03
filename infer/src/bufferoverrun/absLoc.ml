@@ -499,6 +499,8 @@ module PowLoc = struct
 
   let is_bot = function Bottom -> true | Unknown _ | Known _ -> false
 
+  let is_unknown = function Unknown _ -> true | Bottom | Known _ -> false
+
   let unknown = mk_unknown (LocSet.singleton Loc.unknown)
 
   let singleton l =

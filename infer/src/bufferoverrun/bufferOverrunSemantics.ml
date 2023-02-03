@@ -411,7 +411,24 @@ let rec eval_sympath_partial ~mode params p mem =
         Mem.find (Loc.of_allocsite (Allocsite.make_symbol p)) mem
     | EvalPOCond | EvalPOReachability ->
         Val.Itv.top )
-  | BoField.(Prim (Symb.SymbolPath.Deref _) | Field _ | StarField _) ->
+  | BoField.(Prim (Symb.SymbolPath.Deref _)) ->
+      let locs = eval_locpath ~mode params p mem in
+      PowLoc.fold
+        (fun loc acc ->
+          Val.join
+            (let v = Mem.find loc mem in
+             if Val.is_default v then
+               (* There is no or default value for the dereference of a pointer in the abstract
+                  state of the caller. Create symbolic value representing the dereference.
+                  This makes it possible to import, e.g., the fact that "**A_Callee=2" for
+                  a pointer "*A_Caller" having an unknown value in the caller (A_Callee
+                  being a formal parameter of type pointer to pointer, A_Caller being an actual
+                  parameter of type pointer to pointer). *)
+               Mem.on_demand ~loc mem
+             else v )
+            acc )
+        locs Val.bot
+  | BoField.(Field _ | StarField _) ->
       let locs = eval_locpath ~mode params p mem in
       Mem.find_set locs mem
 

@@ -39,6 +39,8 @@ val get_pow_loc : t -> AbsLoc.PowLoc.t
 
 val is_bot : t -> bool
 
+val is_unknown : t -> bool
+
 val is_symbolic : t -> bool
 (** Check if there is a symbolic integer value in its offset or size *)
 

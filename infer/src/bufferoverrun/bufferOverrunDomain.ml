@@ -232,6 +232,24 @@ module Val = struct
 
   let of_pow_loc ~traces powloc = {bot with powloc; traces}
 
+  let of_ptr_loc ?(traces = TraceSet.bottom) ~(ptr_loc_type : Typ.t) ptr_loc =
+    match Loc.get_path ptr_loc with
+    | None ->
+        default
+    | Some path ->
+        let deref_loc =
+          let deref_kind =
+            match ptr_loc_type.desc with
+            | Tptr (_, ptr_kind) ->
+                Symb.SymbolPath.get_deref_kind path ptr_kind
+            | _ ->
+                SPath.Deref_CPointer
+          in
+          AbsLoc.Loc.of_path (Symb.SymbolPath.deref ~deref_kind path)
+        in
+        {default with powloc= PowLoc.singleton deref_loc; arrayblk= ArrayBlk.bot; traces}
+
+
   let of_c_array_alloc :
       Allocsite.t -> stride:int option -> offset:Itv.t -> size:Itv.t -> traces:TraceSet.t -> t =
    fun allocsite ~stride ~offset ~size ~traces ->
@@ -540,6 +558,12 @@ module Val = struct
     Itv.is_bottom x.itv && PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk
     && FuncPtr.Set.is_bottom x.func_ptrs
 
+
+  let is_unknown v =
+    Itv.is_top v.itv && PowLoc.is_unknown v.powloc && ArrayBlk.is_unknown v.arrayblk
+
+
+  let is_default v = if Config.bo_bottom_as_default then is_bot v else is_unknown v
 
   let is_mone x = Itv.is_mone (get_itv x)
 
@@ -2135,6 +2159,11 @@ module MemReach = struct
 
   let is_rep_multi_loc : Loc.t -> _ t0 -> bool = fun l m -> MemPure.is_rep_multi_loc l m.mem_pure
 
+  let on_demand ~loc mem =
+    let on_demand' oenv = Val.on_demand ~default:Val.default oenv loc in
+    GOption.value_map mem.oenv ~f:(fun oenv -> on_demand' oenv) ~default:Val.default
+
+
   let find_opt : Loc.t -> _ t0 -> Val.t option = fun l m -> MemPure.find_opt l m.mem_pure
 
   let find_stack : Loc.t -> _ t0 -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.bot
@@ -2637,6 +2666,10 @@ module Mem = struct
 
   let is_rep_multi_loc : Loc.t -> _ t0 -> bool =
    fun k -> f_lift_default ~default:false (MemReach.is_rep_multi_loc k)
+
+
+  let on_demand : loc:Loc.t -> _ t0 -> Val.t =
+   fun ~loc -> f_lift_default ~default:Val.default (MemReach.on_demand ~loc)
 
 
   let find : Loc.t -> _ t0 -> Val.t = fun k -> f_lift_default ~default:Val.default (MemReach.find k)

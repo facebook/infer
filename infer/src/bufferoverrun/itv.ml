@@ -784,3 +784,5 @@ let is_length_path_of path = bind1_gen ~bot:false (ItvPure.is_length_path_of pat
 let has_only_non_int_symbols = bind1bool ItvPure.has_only_non_int_symbols
 
 let is_incr_of path = bind1bool (ItvPure.is_incr_of path)
+
+let is_top v = match v with Bottom -> false | NonBottom v_itv_pure -> ItvPure.is_top v_itv_pure

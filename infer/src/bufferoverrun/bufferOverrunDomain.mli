@@ -81,9 +81,16 @@ module Val : sig
 
   val of_literal_string : Typ.IntegerWidths.t -> string -> t
 
+  val of_ptr_loc : ?traces:BufferOverrunTrace.Set.t -> ptr_loc_type:Typ.t -> AbsLoc.Loc.t -> t
+  (** Create a value for a pointer pointing to a symbolic dereference of given location given the
+      type of the location. Return top if get_path returns None for loc (i.e., loc is LogicalVar or
+      Unknown or LiteralString Allocsite. *)
+
   val of_loc : ?traces:BufferOverrunTrace.Set.t -> AbsLoc.Loc.t -> t
+  (** Create a value for a pointer pointing to x.*)
 
   val of_pow_loc : traces:BufferOverrunTrace.Set.t -> AbsLoc.PowLoc.t -> t
+  (** Create a value for a pointer pointing to locations in powloc.*)
 
   val of_func_ptrs : FuncPtr.Set.t -> t
 
@@ -94,6 +101,16 @@ module Val : sig
 
   val is_bot : t -> bool
   (** Check if the value is bottom *)
+
+  val is_unknown : t -> bool
+  (** Return true if the value represents an unknown value. Note that this does not mean that it is
+      identical with Dom.Val.unknown. This is because an unknown value is bound to a particular
+      location (this affects fields sym, offset_sym, and size_sym - see MemReach.add_heap) and a to
+      particular assignment (this affects the field traces - see Val.add_assign_trace_elem). *)
+
+  val is_default : t -> bool
+  (** Return true if the value represents default value (bottom if Config.bo_bottom_as_default,
+      unknown otherwise). *)
 
   val is_mone : t -> bool
   (** Check if the value is [\[-1,-1\]] *)
@@ -528,6 +545,9 @@ module Mem : sig
   val remove_vars : Var.t list -> t -> t
   (** Remove temporary variables and if Config.bo_exit_frontend_gener_vars is true also frontend
       generated variables *)
+
+  val on_demand : loc:AbsLoc.Loc.t -> _ t0 -> Val.t
+  (* Create a value for loc using type information stored in the abstract state. *)
 
   val find : AbsLoc.Loc.t -> _ t0 -> Val.t
 

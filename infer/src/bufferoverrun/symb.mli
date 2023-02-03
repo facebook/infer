@@ -34,6 +34,8 @@ module SymbolPath : sig
     | Modeled of partial
   [@@deriving equal]
 
+  val get_deref_kind : partial -> Typ.ptr_kind -> deref_kind
+
   val equal_partial : partial -> partial -> bool
 
   val pp_mark : markup:bool -> F.formatter -> t -> unit
