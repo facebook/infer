@@ -950,12 +950,12 @@ module Bound = struct
   let plus_l : weak:bool -> t -> t -> t =
     plus_exact ~otherwise:(fun x y ->
         match (x, y) with
-        | MinMax (c1, Plus, Max, d1, _), Linear (c2, x2)
-        | Linear (c2, x2), MinMax (c1, Plus, Max, d1, _) ->
-            Linear (Z.(c1 + d1 + c2), x2)
-        | MinMax (c1, Minus, Min, d1, _), Linear (c2, x2)
-        | Linear (c2, x2), MinMax (c1, Minus, Min, d1, _) ->
-            Linear (Z.(c1 - d1 + c2), x2)
+        | MinMax (c1, Plus, Max, d1, x1), Linear (c2, x2)
+        | Linear (c2, x2), MinMax (c1, Plus, Max, d1, x1) ->
+            mk_MinMaxB (Max, (Linear (Z.(c1 + d1 + c2), x2)), (Linear (Z.(c1 + c2), SymLinear.plus (SymLinear.singleton_one x1) x2)))
+        | MinMax (c1, Minus, Min, d1, x1), Linear (c2, x2)
+        | Linear (c2, x2), MinMax (c1, Minus, Min, d1, x1) ->
+            mk_MinMaxB (Max, (Linear (Z.(c1 - d1 + c2), x2)), (Linear (Z.(c1 + c2), SymLinear.plus (SymLinear.singleton_minus_one x1) x2)))
         | _, _ ->
             MInf )
 
@@ -963,12 +963,12 @@ module Bound = struct
   let plus_u : weak:bool -> t -> t -> t =
     plus_exact ~otherwise:(fun x y ->
         match (x, y) with
-        | MinMax (c1, Plus, Min, d1, _), Linear (c2, x2)
-        | Linear (c2, x2), MinMax (c1, Plus, Min, d1, _) ->
-            Linear (Z.(c1 + d1 + c2), x2)
-        | MinMax (c1, Minus, Max, d1, _), Linear (c2, x2)
-        | Linear (c2, x2), MinMax (c1, Minus, Max, d1, _) ->
-            Linear (Z.(c1 - d1 + c2), x2)
+        | MinMax (c1, Plus, Min, d1, x1), Linear (c2, x2)
+        | Linear (c2, x2), MinMax (c1, Plus, Min, d1, x1) ->
+            mk_MinMaxB (Min, (Linear (Z.(c1 + d1 + c2), x2)), (Linear (Z.(c1 + c2), SymLinear.plus (SymLinear.singleton_one x1) x2)))
+        | MinMax (c1, Minus, Max, d1, x1), Linear (c2, x2)
+        | Linear (c2, x2), MinMax (c1, Minus, Max, d1, x1) ->
+            mk_MinMaxB (Min, (Linear (Z.(c1 - d1 + c2), x2)), (Linear (Z.(c1 + c2), SymLinear.plus (SymLinear.singleton_minus_one x1) x2)))
         | _, _ ->
             PInf )
 
