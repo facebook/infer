@@ -376,34 +376,6 @@ end = struct
   let of_generator_procname = of_generator_procname_with_config config
 end
 
-(** A mapping from pointer variables to scopes. *)
-module VarToScope = struct
-  open VarMap
-
-  type t = Scope.t VarMap.t
-
-  let create size : t = VarMap.create size
-
-  let find_or_bottom tbl k = find_opt tbl k |> Option.value ~default:Scope.bottom
-
-  let join tbl k d =
-    let d' = find_or_bottom tbl k in
-    let joined_scope = Scope.join d d' in
-    if not (Scope.is_bottom joined_scope) (* Keep the mapping sparse. *) then
-      replace tbl k joined_scope
-    else (* d' is bottom, meaning there is no key in the table. *)
-      ()
-
-
-  let join_list tbl entries = List.iter entries ~f:(fun (var, scope) -> join tbl var scope)
-
-  let pp fmt tbl =
-    let pp_pair fmt (fst, snd) = F.fprintf fmt "%a: %a" Var.pp fst Scope.pp snd in
-    F.fprintf fmt "@[<hv>[%a]@]" (F.pp_print_seq ~pp_sep:pp_comma_sep pp_pair) (VarMap.to_seq tbl)
-end
-
-module Summary = VarToScope
-
 (** A flow-insensitive alias analysis between local pointer variables. That is, only assignments
     between pointer variables are considered.
 
@@ -414,8 +386,6 @@ module Summary = VarToScope
     in practice and not worth the additional time/space for maintaining size counters. *)
 module Aliasing = struct
   open VarMap
-
-  let iter = VarMap.iter
 
   (** Returns the representative of the given variable's alias set. *)
   let rec get_rep aliasing var =
@@ -453,23 +423,50 @@ module Aliasing = struct
     varToRep
 end
 
-(** Sets the scope of any given variable to the join of the scopes of all other members of its alias
-    set. *)
-let join_scopes_across_alias_sets aliasing scoping : unit =
-  (* Join all scopes into the representative of the alias set. *)
-  Aliasing.iter
-    (fun v rep ->
-      let v_scope = VarToScope.find_or_bottom scoping v in
-      VarToScope.join scoping rep v_scope )
-    aliasing ;
-  (* Now copy the representative's scope to all other members of its alias set.
-  *)
-  Aliasing.iter
-    (fun v rep ->
-      let rep_scope = VarToScope.find_or_bottom scoping rep in
-      VarToScope.join scoping v rep_scope )
-    aliasing
+(** A mapping from pointer variables to scopes. *)
+module VarToScope : sig
+  type t
 
+  val create : Var.t VarMap.t -> int -> t
+
+  val find_or_bottom : t -> Var.t -> Scope.t
+
+  val join : t -> Var.t -> Scope.t -> unit
+
+  val join_list : t -> (Var.t * Scope.t) list -> unit
+
+  val pp : F.formatter -> t -> unit
+end = struct
+  open VarMap
+
+  type t = {aliasing: Var.t VarMap.t; env: Scope.t VarMap.t}
+
+  let create aliasing size : t = {aliasing; env= VarMap.create size}
+
+  let find_or_bottom {aliasing; env} var =
+    let var = Aliasing.get_rep aliasing var in
+    find_opt env var |> Option.value ~default:Scope.bottom
+
+
+  let join abs var scope =
+    let var = Aliasing.get_rep abs.aliasing var in
+    let current_scope = find_or_bottom abs var in
+    let joined_scope = Scope.join scope current_scope in
+    if not (Scope.is_bottom joined_scope) (* Keep the mapping sparse. *) then
+      replace abs.env var joined_scope
+    else (* d' is bottom, meaning there is no key in the table. *)
+      ()
+
+
+  let join_list abs entries = List.iter entries ~f:(fun (var, scope) -> join abs var scope)
+
+  let pp fmt {env} =
+    let pp_pair fmt (fst, snd) = F.fprintf fmt "%a: %a" Var.pp fst Scope.pp snd in
+    let pp_sep fmt () = F.pp_print_string fmt ",@," in
+    F.fprintf fmt "@[<hv>[%a]@]" (F.pp_print_seq ~pp_sep pp_pair) (VarMap.to_seq env)
+end
+
+module Summary = VarToScope
 
 (* The variable to which we should assign a scope to in the given expression. *)
 let rec scope_target_var_of_expr (e : Exp.t) =
@@ -539,10 +536,10 @@ let exec_instr tenv analyze_dependency instr =
       []
 
 
-(** A local analysis that assigns a scope to each left-hand side variable. *)
-let locally_assign_scopes_to_vars proc_desc tenv analyze_dependency _aliasing =
+(** A flow-insensitive analysis that assigns scopes to variables. *)
+let assign_scopes_to_vars proc_desc tenv analyze_dependency aliasing =
   let exec_instr_in_context = exec_instr tenv analyze_dependency in
-  let result = VarToScope.create 100 in
+  let result = VarToScope.create aliasing 100 in
   Procdesc.iter_instrs
     (fun _ instr ->
       let entries = exec_instr_in_context instr in
@@ -579,12 +576,13 @@ let report_bad_field_assignments err_log proc_desc scoping =
 
 let _pp_vars fs vars = F.pp_print_list ~pp_sep:pp_comma_sep (Pvar.pp Pp.text) fs vars
 
-(** Maintain only entries for the (pointer-typed) procedure's parameter variables and the return
+(** Retain only entries for the (pointer-typed) procedure's parameter variables and the return
     variable. *)
 let to_summary proc_desc scoping =
   let ret_pvar_typ = (Procdesc.get_ret_var proc_desc, Procdesc.get_ret_type proc_desc) in
   let summary_vars = ret_pvar_typ :: Procdesc.get_pvar_formals proc_desc in
-  let summary = VarToScope.create (1 + List.length summary_vars) in
+  let empty_aliasing = VarMap.create 0 in
+  let summary = VarToScope.create empty_aliasing (1 + List.length summary_vars) in
   List.iter summary_vars ~f:(fun (pvar, pvar_typ) ->
       if Typ.is_pointer pvar_typ then
         let var = Var.of_pvar pvar in
@@ -599,8 +597,7 @@ let _print_config () = L.debug Analysis Quiet "%a@\n" AnalysisConfig.pp config
 (** Checks whether the given procedure does not violate the scope nesting restriction. *)
 let checker {InterproceduralAnalysis.proc_desc; tenv; err_log; analyze_dependency} =
   let aliasing = Aliasing.of_proc_desc proc_desc in
-  let scoping = locally_assign_scopes_to_vars proc_desc tenv analyze_dependency aliasing in
-  join_scopes_across_alias_sets aliasing scoping ;
+  let scoping = assign_scopes_to_vars proc_desc tenv analyze_dependency aliasing in
   report_bad_field_assignments err_log proc_desc scoping ;
   let summary = to_summary proc_desc scoping in
   Some summary
