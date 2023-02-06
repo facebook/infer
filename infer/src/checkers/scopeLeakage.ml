@@ -556,19 +556,17 @@ let report_bad_field_assignments err_log proc_desc scoping =
   Procdesc.iter_instrs
     (fun _ instr ->
       match instr with
-      | Store {e1= Lfield (Var lpvar, fldname, lvar_type); e2= Var rvar; loc; typ}
-        when Typ.is_pointer typ ->
+      | Store {e1= Lfield (Var lpvar, fldname, _); e2= Var rvar; loc; typ} when Typ.is_pointer typ
+        ->
           let lvar = Var.of_id lpvar in
           let lvar_scope = VarToScope.find_or_bottom scoping lvar in
           let rvar_scope = VarToScope.find_or_bottom scoping (Var.of_id rvar) in
           if Scope.must_not_hold lvar_scope rvar_scope then
             let ltr = [Errlog.make_trace_element 0 loc "assignment of scoped object" []] in
-            let lvar_type_str = PatternMatch.get_type_name lvar_type in
             let description =
               Format.asprintf
-                "Field %s.%s exists in an object of scope %a and should not retain an object of \
-                 scope %a"
-                lvar_type_str
+                "Field `%s` is declared in an object of scope `%a` and should not be assigned an \
+                 object of scope `%a`"
                 (Fieldname.get_field_name fldname)
                 Scope.pp lvar_scope Scope.pp rvar_scope
             in
