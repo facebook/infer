@@ -11,16 +11,12 @@ class Constants {
 
   void source(Object request) {}
 
-  void FP_nullTaintedOk() {
-    // TODO: It appears the `null` pointer gets tainted. Same for String
-    // literals. While it is probably a configuration error to tell infer
-    // that a method can taint a read-only String, the `null` case could
-    // lead to some genuine false positives.
+  void nullNotTaintedOk() {
     source(null);
     InferTaint.inferSensitiveSink(null);
   }
 
-  void FP_stringLiteralTaintedOk() {
+  void stringLiteralNotTaintedOk() {
     source("asdf");
     InferTaint.inferSensitiveSink("asdf");
   }
