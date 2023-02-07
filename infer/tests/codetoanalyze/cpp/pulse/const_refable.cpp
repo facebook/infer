@@ -89,6 +89,11 @@ int param_ref_move_ok(std::set<int> source) {
   return 0;
 }
 
+int static_cast_to_rvalue_ref_ok(std::set<int> source) {
+  pass_rvalue_ref(static_cast<std::set<int>&&>(source));
+  return 0;
+}
+
 // structs known to be cheap to copy are not reported
 int std_pair_int_ok(std::pair<int, int> p) { return p.first; }
 

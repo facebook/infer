@@ -385,6 +385,15 @@ module PulseTransferFunctions = struct
       | _, _ ->
           astate
     in
+    let astate =
+      List.fold func_args ~init:astate
+        ~f:(fun acc {ProcnameDispatcher.Call.FuncArg.arg_payload= arg, _; exp} ->
+          match exp with
+          | Cast (typ, _) when Typ.is_rvalue_reference typ ->
+              AddressAttributes.add_one arg StdMoved acc
+          | _ ->
+              acc )
+    in
     let model =
       match callee_pname with
       | Some callee_pname -> (
