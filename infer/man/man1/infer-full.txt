@@ -188,6 +188,12 @@ OPTIONS
            option. By default, all recursive dependencies are captured.       
     See also infer-capture(1).
 
+       --buck-dependency-depth int
+           Capture dependencies only if they are at most the depth provided,
+           or all transitive dependencies if depth is not provided (the
+           default). In particular, depth zero means capture exactly the
+           targets provided and nothing else.           See also infer-capture(1).
+
        --buck-erlang
            Activates: Buck integration for Erlang. (Conversely:
            --no-buck-erlang)           See also infer-capture(1).
@@ -196,12 +202,6 @@ OPTIONS
            Activates: Buck integration for Java which uses the buck flavor
            #infer-java-capture instead of genrules like buck-java.
            (Conversely: --no-buck-java-flavor)           See also infer-capture(1).
-
-       --buck-java-flavor-dependency-depth int
-           Capture dependencies only if they are at most the depth provided,
-           or all transitive dependencies if depth is not provided (the
-           default). In particular, depth zero means capture exactly the
-           targets provided and nothing else.           See also infer-capture(1).
 
        --buck-java-flavor-suppress-config
            Activates: Suppress setting buck config values for the infer
@@ -1881,8 +1881,8 @@ INTERNAL OPTIONS
        --buck-compilation-database-reset
            Cancel the effect of --buck-compilation-database.
 
-       --buck-java-flavor-dependency-depth-reset
-           Cancel the effect of --buck-java-flavor-dependency-depth.
+       --buck-dependency-depth-reset
+           Cancel the effect of --buck-dependency-depth.
 
        --buck-java-heap-size-gb-reset
            Cancel the effect of --buck-java-heap-size-gb.

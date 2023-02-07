@@ -854,18 +854,18 @@ and buck_compilation_database_depth =
     ~meta:"int"
 
 
-and buck_java_heap_size_gb =
-  CLOpt.mk_int_opt ~long:"buck-java-heap-size-gb"
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Explicitly set the size of the Java heap of Buck processes, in gigabytes." ~meta:"int"
-
-
-and buck_java_flavor_dependency_depth =
-  CLOpt.mk_int_opt ~long:"buck-java-flavor-dependency-depth"
+and buck_dependency_depth =
+  CLOpt.mk_int_opt ~long:"buck-dependency-depth"
     ~in_help:InferCommand.[(Capture, manual_buck)]
     "Capture dependencies only if they are at most the depth provided, or all transitive \
      dependencies if depth is not provided (the default). In particular, depth zero means capture \
      exactly the targets provided and nothing else."
+
+
+and buck_java_heap_size_gb =
+  CLOpt.mk_int_opt ~long:"buck-java-heap-size-gb"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Explicitly set the size of the Java heap of Buck processes, in gigabytes." ~meta:"int"
 
 
 and buck_java_flavor_suppress_config =
@@ -3441,9 +3441,9 @@ and buck_cache_mode = (!buck || !genrule_mode) && not !debug
 
 and buck_clang_use_toolchain_config = !buck_clang_use_toolchain_config
 
-and buck_java_heap_size_gb = !buck_java_heap_size_gb
+and buck_dependency_depth = !buck_dependency_depth
 
-and buck_java_flavor_dependency_depth = !buck_java_flavor_dependency_depth
+and buck_java_heap_size_gb = !buck_java_heap_size_gb
 
 and buck_java_flavor_suppress_config = !buck_java_flavor_suppress_config
 
