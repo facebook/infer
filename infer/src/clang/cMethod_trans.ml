@@ -198,10 +198,8 @@ let find_sentinel_attribute attrs =
         None )
 
 
-(** Creates a procedure description. *)
-let create_local_procdesc ?loc_instantiated ?(set_objc_accessor_attr = false)
-    ?(record_lambda_captured = false) ?(is_cpp_lambda_call_operator = false) trans_unit_ctx cfg tenv
-    ms fbody captured =
+let create_attributes_helper ?loc_instantiated ?(set_objc_accessor_attr = false) trans_unit_ctx tenv
+    ms fbody captured_mangled_not_formals =
   let defined = not (List.is_empty fbody) in
   let proc_name = ms.CMethodSignature.name in
   let clang_method_kind = ms.CMethodSignature.method_kind in
@@ -216,6 +214,66 @@ let create_local_procdesc ?loc_instantiated ?(set_objc_accessor_attr = false)
     | `Public ->
         Public
   in
+  let all_params = Option.to_list ms.CMethodSignature.class_param @ ms.CMethodSignature.params in
+  let has_added_return_param = ms.CMethodSignature.has_added_return_param in
+  let formals =
+    List.map
+      ~f:(fun ({name; typ; annot} : CMethodSignature.param_type) -> (name, typ, annot))
+      all_params
+  in
+  let const_formals = get_const_params_indices all_params in
+  let reference_formals = get_reference_indices all_params in
+  let source_range = ms.CMethodSignature.loc in
+  let loc_start =
+    CLocation.location_of_source_range trans_unit_ctx.CFrontend_config.source_file source_range
+  in
+  let ret_type, ret_annots = ms.CMethodSignature.ret_type in
+  let objc_property_accessor =
+    if set_objc_accessor_attr then get_objc_property_accessor tenv ms else None
+  in
+  let translation_unit = trans_unit_ctx.CFrontend_config.source_file in
+  { (ProcAttributes.default translation_unit proc_name) with
+    ProcAttributes.captured= captured_mangled_not_formals
+  ; formals
+  ; const_formals
+  ; reference_formals
+  ; has_added_return_param
+  ; is_ret_type_pod= ms.CMethodSignature.is_ret_type_pod
+  ; is_ret_constexpr= ms.CMethodSignature.is_ret_constexpr
+  ; access
+  ; is_cpp_copy_ctor= ms.CMethodSignature.is_cpp_copy_ctor
+  ; is_cpp_copy_assignment= ms.CMethodSignature.is_cpp_copy_assignment
+  ; is_cpp_implicit= ms.CMethodSignature.is_cpp_implicit
+  ; is_defined= defined
+  ; is_biabduction_model= Config.biabduction_models_mode
+  ; passed_as_noescape_block_to= ms.CMethodSignature.passed_as_noescape_block_to
+  ; is_no_return= ms.CMethodSignature.is_no_return
+  ; is_objc_arc_on= trans_unit_ctx.CFrontend_config.is_objc_arc_on
+  ; is_variadic= ms.CMethodSignature.is_variadic
+  ; sentinel_attr= find_sentinel_attribute ms.CMethodSignature.attributes
+  ; loc= loc_start
+  ; loc_instantiated
+  ; clang_method_kind
+  ; objc_accessor= objc_property_accessor
+  ; ret_type
+  ; ret_annots }
+
+
+let create_attributes ?loc_instantiated ?(set_objc_accessor_attr = false) trans_unit_ctx tenv ms
+    fbody captured =
+  let captured_mangled =
+    List.map ~f:(fun (pvar, typ, capture_mode) -> {CapturedVar.pvar; typ; capture_mode}) captured
+  in
+  create_attributes_helper ?loc_instantiated ~set_objc_accessor_attr trans_unit_ctx tenv ms fbody
+    captured_mangled
+
+
+(** Creates a procedure description. *)
+let create_local_procdesc ?loc_instantiated ?(set_objc_accessor_attr = false)
+    ?(record_lambda_captured = false) ?(is_cpp_lambda_call_operator = false) trans_unit_ctx cfg tenv
+    ms fbody captured =
+  let defined = not (List.is_empty fbody) in
+  let proc_name = ms.CMethodSignature.name in
   let captured_mangled =
     List.map
       ~f:(fun (pvar, typ, capture_mode) ->
@@ -237,62 +295,23 @@ let create_local_procdesc ?loc_instantiated ?(set_objc_accessor_attr = false)
     else captured_mangled
   in
   let create_new_procdesc () =
-    let all_params = Option.to_list ms.CMethodSignature.class_param @ ms.CMethodSignature.params in
-    let has_added_return_param = ms.CMethodSignature.has_added_return_param in
-    let formals =
-      List.map
-        ~f:(fun ({name; typ; annot} : CMethodSignature.param_type) -> (name, typ, annot))
-        all_params
-    in
-    let const_formals = get_const_params_indices all_params in
-    let reference_formals = get_reference_indices all_params in
-    let source_range = ms.CMethodSignature.loc in
     L.(debug Capture Verbose)
       "@\nCreating a new procdesc for function: '%a'@\n@." Procname.pp proc_name ;
     L.(debug Capture Verbose) "@\nms = %a@\n@." CMethodSignature.pp ms ;
-    let loc_start =
-      CLocation.location_of_source_range trans_unit_ctx.CFrontend_config.source_file source_range
+    let proc_attributes =
+      create_attributes_helper ?loc_instantiated ~set_objc_accessor_attr trans_unit_ctx tenv ms
+        fbody captured_mangled_not_formals
     in
-    let loc_exit =
-      CLocation.location_of_source_range ~pick_location:`End
-        trans_unit_ctx.CFrontend_config.source_file source_range
-    in
-    let ret_type, ret_annots = ms.CMethodSignature.ret_type in
-    let objc_property_accessor =
-      if set_objc_accessor_attr then get_objc_property_accessor tenv ms else None
-    in
-    let translation_unit = trans_unit_ctx.CFrontend_config.source_file in
-    let procdesc =
-      let proc_attributes =
-        { (ProcAttributes.default translation_unit proc_name) with
-          ProcAttributes.captured= captured_mangled_not_formals
-        ; formals
-        ; const_formals
-        ; reference_formals
-        ; has_added_return_param
-        ; is_ret_type_pod= ms.CMethodSignature.is_ret_type_pod
-        ; is_ret_constexpr= ms.CMethodSignature.is_ret_constexpr
-        ; access
-        ; is_cpp_copy_ctor= ms.CMethodSignature.is_cpp_copy_ctor
-        ; is_cpp_copy_assignment= ms.CMethodSignature.is_cpp_copy_assignment
-        ; is_cpp_implicit= ms.CMethodSignature.is_cpp_implicit
-        ; is_defined= defined
-        ; is_biabduction_model= Config.biabduction_models_mode
-        ; passed_as_noescape_block_to= ms.CMethodSignature.passed_as_noescape_block_to
-        ; is_no_return= ms.CMethodSignature.is_no_return
-        ; is_objc_arc_on= trans_unit_ctx.CFrontend_config.is_objc_arc_on
-        ; is_variadic= ms.CMethodSignature.is_variadic
-        ; sentinel_attr= find_sentinel_attribute ms.CMethodSignature.attributes
-        ; loc= loc_start
-        ; loc_instantiated
-        ; clang_method_kind
-        ; objc_accessor= objc_property_accessor
-        ; ret_type
-        ; ret_annots }
-      in
-      Cfg.create_proc_desc cfg proc_attributes
-    in
+    let procdesc = Cfg.create_proc_desc cfg proc_attributes in
     if defined then (
+      let source_range = ms.CMethodSignature.loc in
+      let loc_start =
+        CLocation.location_of_source_range trans_unit_ctx.CFrontend_config.source_file source_range
+      in
+      let loc_exit =
+        CLocation.location_of_source_range ~pick_location:`End
+          trans_unit_ctx.CFrontend_config.source_file source_range
+      in
       let start_node = Procdesc.create_node procdesc loc_start Procdesc.Node.Start_node [] in
       let exit_node = Procdesc.create_node procdesc loc_exit Procdesc.Node.Exit_node [] in
       Procdesc.set_start_node procdesc start_node ;

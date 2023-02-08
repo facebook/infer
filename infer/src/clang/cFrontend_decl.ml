@@ -139,6 +139,11 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             ignore
               (CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv
                  ms [] [] )
+          else
+            let proc_attributes =
+              CMethod_trans.create_attributes ~set_objc_accessor_attr trans_unit_ctx tenv ms [] []
+            in
+            Attributes.store ~proc_desc:None proc_attributes ~analysis:false
     with CFrontend_errors.IncorrectAssumption _ -> ()
 
 

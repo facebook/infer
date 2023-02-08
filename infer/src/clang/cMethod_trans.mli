@@ -37,6 +37,16 @@ val create_local_procdesc :
   -> (Pvar.t * Typ.t * CapturedVar.capture_mode) list
   -> bool
 
+val create_attributes :
+     ?loc_instantiated:Location.t
+  -> ?set_objc_accessor_attr:bool
+  -> CFrontend_config.translation_unit_context
+  -> Tenv.t
+  -> CMethodSignature.t
+  -> Clang_ast_t.stmt list
+  -> (Pvar.t * Typ.t * CapturedVar.capture_mode) list
+  -> ProcAttributes.t
+
 val create_external_procdesc :
      CFrontend_config.translation_unit_context
   -> Cfg.t
