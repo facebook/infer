@@ -243,6 +243,7 @@ let create_attributes_helper ?loc_instantiated ?(set_objc_accessor_attr = false)
   ; access
   ; is_cpp_copy_ctor= ms.CMethodSignature.is_cpp_copy_ctor
   ; is_cpp_copy_assignment= ms.CMethodSignature.is_cpp_copy_assignment
+  ; is_cpp_deleted= ms.CMethodSignature.is_cpp_deleted
   ; is_cpp_implicit= ms.CMethodSignature.is_cpp_implicit
   ; is_defined= defined
   ; is_biabduction_model= Config.biabduction_models_mode

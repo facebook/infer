@@ -642,7 +642,8 @@
           {
             "mangled_name" : "8928078380412315851",
             "is_cpp" : true,
-            "is_inline" : true
+            "is_inline" : true,
+            "is_deleted" : true
           },
           {
           }

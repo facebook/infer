@@ -153,6 +153,18 @@ let is_cpp_copy_ctor method_decl =
       false
 
 
+let is_cpp_deleted method_decl =
+  let open Clang_ast_t in
+  match method_decl with
+  | CXXConstructorDecl (_, _, _, fdi, _)
+  | CXXConversionDecl (_, _, _, fdi, _)
+  | CXXDestructorDecl (_, _, _, fdi, _)
+  | CXXMethodDecl (_, _, _, fdi, _) ->
+      fdi.fdi_is_deleted
+  | _ ->
+      false
+
+
 let is_constexpr decl =
   match Clang_ast_proj.get_function_decl_tuple decl with
   | Some (_, _, _, {Clang_ast_t.fdi_is_constexpr}) ->
