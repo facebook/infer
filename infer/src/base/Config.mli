@@ -586,7 +586,7 @@ val pulse_model_return_nonnull : Str.regexp option
 
 val pulse_model_skip_pattern : Str.regexp option
 
-val pulse_models_for_erlang : Yojson.Basic.t
+val pulse_models_for_erlang : string list
 
 val pulse_prevent_non_disj_top : bool
 
