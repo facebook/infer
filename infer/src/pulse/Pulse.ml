@@ -34,6 +34,21 @@ let is_not_implicit_or_copy_ctor_assignment pname =
          || attrs.ProcAttributes.is_cpp_copy_assignment ) )
 
 
+let is_non_deleted_copy pname =
+  (* TODO: Default is set to true for now because we can't get the attributes of library calls right now. *)
+  Option.value_map ~default:true (IRAttributes.load pname) ~f:(fun attrs ->
+      attrs.ProcAttributes.is_cpp_copy_ctor && not attrs.ProcAttributes.is_cpp_deleted )
+
+
+let is_type_copiable tenv typ =
+  match typ with
+  | {Typ.desc= Tstruct name} | {Typ.desc= Tptr ({desc= Tstruct name}, _)} ->
+      Tenv.lookup tenv name
+      |> Option.exists ~f:(fun Struct.{methods} -> List.exists ~f:is_non_deleted_copy methods)
+  | _ ->
+      true
+
+
 let report_unnecessary_copies proc_desc err_log non_disj_astate =
   let pname = Procdesc.get_proc_name proc_desc in
   if is_not_implicit_or_copy_ctor_assignment pname then
@@ -47,21 +62,23 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
            PulseReport.report ~is_suppressed ~latent:false proc_desc err_log diagnostic )
 
 
-let report_unnecessary_parameter_copies proc_desc err_log non_disj_astate =
+let report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate =
   let pname = Procdesc.get_proc_name proc_desc in
   if is_not_implicit_or_copy_ctor_assignment pname then
     PulseNonDisjunctiveDomain.get_const_refable_parameters non_disj_astate
     |> List.iter ~f:(fun (param, typ, location) ->
-           let diagnostic =
-             if Typ.is_shared_pointer typ then
-               if NonDisjDomain.is_lifetime_extended param non_disj_astate then None
-               else
-                 let used_locations = NonDisjDomain.get_loaded_locations param non_disj_astate in
-                 Some (Diagnostic.ReadonlySharedPtrParameter {param; typ; location; used_locations})
-             else Some (Diagnostic.ConstRefableParameter {param; typ; location})
-           in
-           Option.iter diagnostic ~f:(fun diagnostic ->
-               PulseReport.report ~is_suppressed:false ~latent:false proc_desc err_log diagnostic ) )
+           if is_type_copiable tenv typ then
+             let diagnostic =
+               if Typ.is_shared_pointer typ then
+                 if NonDisjDomain.is_lifetime_extended param non_disj_astate then None
+                 else
+                   let used_locations = NonDisjDomain.get_loaded_locations param non_disj_astate in
+                   Some
+                     (Diagnostic.ReadonlySharedPtrParameter {param; typ; location; used_locations})
+               else Some (Diagnostic.ConstRefableParameter {param; typ; location})
+             in
+             Option.iter diagnostic ~f:(fun diagnostic ->
+                 PulseReport.report ~is_suppressed:false ~latent:false proc_desc err_log diagnostic ) )
 
 
 let heap_size () = (Gc.quick_stat ()).heap_words
@@ -1071,7 +1088,7 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
           in
           report_topl_errors proc_desc err_log summary ;
           report_unnecessary_copies proc_desc err_log non_disj_astate ;
-          report_unnecessary_parameter_copies proc_desc err_log non_disj_astate ;
+          report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate ;
           summary
       | None ->
           []

@@ -211,4 +211,14 @@ std::string use_unique_ptr_ok(std::unique_ptr<std::string> x) {
   return *x.get();
 }
 
+struct NonCopiableT {
+  std::vector<int> vec;
+  int x;
+  // doesn't allow copying
+  NonCopiableT(const NonCopiableT&) = delete;
+};
+
+// we shouldn't report const-refable here since the type doesn't allow copies
+void non_copiable_ok(NonCopiableT t) { auto p = t.x; }
+
 } // namespace const_refable
