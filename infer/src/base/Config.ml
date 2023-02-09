@@ -3111,20 +3111,6 @@ and trace_topl =
   CLOpt.mk_bool ~long:"trace-topl" "Detailed tracing information during Topl analysis"
 
 
-and tv_commit =
-  CLOpt.mk_string_opt ~long:"tv-commit" ~meta:"commit" "Commit hash to submit to Traceview"
-
-
-and tv_limit =
-  CLOpt.mk_int ~long:"tv-limit" ~default:100 ~meta:"int"
-    "The maximum number of traces to submit to Traceview"
-
-
-and tv_limit_filtered =
-  CLOpt.mk_int ~long:"tv-limit-filtered" ~default:100 ~meta:"int"
-    "The maximum number of traces for issues filtered out by --report-filter to submit to Traceview"
-
-
 and uninit_interproc =
   CLOpt.mk_bool ~long:"uninit-interproc" "Run uninit check in the experimental interprocedural mode"
 
@@ -4262,12 +4248,6 @@ and trace_events = !trace_events
 and trace_ondemand = !trace_ondemand
 
 and trace_topl = !trace_topl
-
-and tv_commit = !tv_commit
-
-and tv_limit = !tv_limit
-
-and tv_limit_filtered = !tv_limit_filtered
 
 and uninit_interproc = !uninit_interproc
 

@@ -2803,19 +2803,6 @@ INTERNAL OPTIONS
            Activates: Detailed tracing information during Topl analysis
            (Conversely: --no-trace-topl)
 
-       --tv-commit commit
-           Commit hash to submit to Traceview
-
-       --tv-commit-reset
-           Cancel the effect of --tv-commit.
-
-       --tv-limit int
-           The maximum number of traces to submit to Traceview
-
-       --tv-limit-filtered int
-           The maximum number of traces for issues filtered out by
-           --report-filter to submit to Traceview
-
        --uninit-interproc
            Activates: Run uninit check in the experimental interprocedural
            mode (Conversely: --no-uninit-interproc)

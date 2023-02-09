@@ -689,9 +689,6 @@ uninstall:
 	$(REMOVE) $(INFER_COMMANDS:%=$(DESTDIR)$(bindir)/%)
 	$(REMOVE) $(foreach manual,$(INFER_GROFF_MANUALS_GZIPPED),\
 	  $(DESTDIR)$(mandir)/man1/$(notdir $(manual)))
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(MAKE) -C facebook uninstall
-endif
 
 .PHONY: test_clean
 test_clean: $(DIRECT_TESTS:%=direct_%_clean) $(BUILD_SYSTEMS_TESTS:%=build_%_clean)
@@ -801,20 +798,6 @@ endif
 	   $(LN_S) infer "$$alias"); done
 	$(foreach man,$(INFER_GROFF_MANUALS_GZIPPED), \
 	  $(INSTALL_DATA) -C $(man) '$(DESTDIR)$(mandir)/man1/$(notdir $(man))';)
-ifeq ($(IS_FACEBOOK_TREE),yes)
-ifdef DESTDIR
-ifeq (,$(findstring :/,:$(DESTDIR)))
-#	DESTDIR is set and relative
-	$(MAKE) -C facebook install 'DESTDIR=../$(DESTDIR)'
-else
-#	DESTDIR is set and absolute
-	$(MAKE) -C facebook install
-endif
-else
-#	DESTDIR not set
-	$(MAKE) -C facebook install
-endif
-endif
 
 # install dynamic libraries
 # use this if you want to distribute infer binaries
@@ -828,9 +811,6 @@ ifneq ($(PLATFORM_ENV),)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(PATCHELF) --set-rpath '$(PLATFORM_ENV)'/lib '$(DESTDIR)$(libdir)'/infer/facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib
 endif   # BUILD_C_ANALYZERS
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(PATCHELF) --set-rpath '$(PLATFORM_ENV)'/lib '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
-endif 	# IS_FACEBOOK_TREE
 else	# PLATFORM_ENV
 #	figure out where libgmp, libmpfr, and libsqlite3 are using ldd
 	set -x; \
@@ -844,9 +824,6 @@ else	# PLATFORM_ENV
 	  $(PATCHELF) --set-rpath '$$ORIGIN' --force-rpath "$$sofile"; \
 	done
 	$(PATCHELF) --set-rpath '$$ORIGIN/../libso' --force-rpath '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(PATCHELF) --set-rpath '$$ORIGIN/../libso' --force-rpath '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
-endif	# IS_FACEBOOK_TREE
 endif 	# PLATFORM_ENV
 else 	# PATCHELF
 	echo "ERROR: ldd (Linux?) found but not patchelf, please install patchelf" >&2; exit 1
@@ -870,10 +847,6 @@ ifneq ($(INSTALL_NAME_TOOL),no)
 	done
 	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
 	scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
-	scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
-endif	# IS_FACEBOOK_TREE
 else 	# INSTALL_NAME_TOOL
 	echo "ERROR: otool (OSX?) found but not install_name_tool, please install install_name_tool" >&2; exit 1
 endif	# INSTALL_NAME_TOOL

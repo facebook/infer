@@ -808,12 +808,6 @@ val trace_ondemand : bool
 
 val trace_topl : bool
 
-val tv_commit : string option
-
-val tv_limit : int
-
-val tv_limit_filtered : int
-
 val uninit_interproc : bool
 
 val workspace : string option

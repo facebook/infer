@@ -125,26 +125,9 @@ let infertop_stanza =
     verbose extlib_if_java
 
 
-let inferCreateTraceViewLinks_stanza =
-  Format.sprintf
-    {|(executable
- (name InferCreateTraceViewLinks)
- (modes byte_complete exe)
- (modules InferCreateTraceViewLinks)
- (flags (:standard -open Core -open IStdlib -open IStd -open ATDGenerated -open IBase -open Textuallib %s))
- (libraries core async IStdlib ATDGenerated IBase Textuallib)
- (link_flags %s)
- (preprocess (pps ppx_compare))
- (promote (until-clean) (into ../bin))
-   )|}
-    verbose
-    (if_platform_env_and_not_byte_mode "(:include linking-flags-tv.sexp)")
-
-
 (** The build stanzas to be passed to dune *)
 let stanzas =
   [env_stanza; infer_exe_stanza; inferunit_stanza; infertop_stanza]
-  @ if facebook then [inferCreateTraceViewLinks_stanza] else []
 
 
 ;;

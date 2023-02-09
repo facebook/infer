@@ -109,7 +109,6 @@ depend:
 #	silence "unused module" warnings for executables
 	$(QUIET)if [ $@ = "infer.cmx" ] \
 	        || [ $@ = "inferunit.cmx" ] \
-	        || [ $@ = "InferCreateTraceViewLinks.cmx" ] \
 	        ; then \
 	  echo '[@warning "-unused-module"] ' >> $(ALL_INFER_IN_ONE_FILE_ML); \
 	fi
@@ -130,7 +129,6 @@ depend:
 #	silence "unused module" warnings for executables
 	$(QUIET)if [ $@ = "infer.cmx" ] \
 	        || [ $@ = "inferunit.cmx" ] \
-	        || [ $@ = "InferCreateTraceViewLinks.cmx" ] \
 	        || [ $@ = "scripts/checkCopyright.cmx" ] \
 	        ; then \
 	  echo '[@warning "-unused-module"] ' >> $(ALL_INFER_IN_ONE_FILE_ML);\
@@ -160,7 +158,7 @@ $(ml_src_files_without_mli:.ml=.cmx):
 # root .cmx to include all the code. Any code not used in the construction of these "root .cmx" will
 # be considered dead.
 .PHONY: flatten_infer
-flatten_infer: infer.cmx inferunit.cmx InferCreateTraceViewLinks.cmx scripts/checkCopyright.cmx
+flatten_infer: infer.cmx inferunit.cmx scripts/checkCopyright.cmx
 	$(QUIET)echo "see results in $(ALL_INFER_IN_ONE_FILE_ML)"
 
 # copy dune.in to dune only when needed to avoid dune trying to build
