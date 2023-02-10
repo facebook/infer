@@ -523,6 +523,8 @@ and translate_expression env {Ast.location; simple_expression} =
         translate_expression_binary_operator env ret_var e1 op e2
     | Block body ->
         translate_body env body
+    | BitstringConstructor elements ->
+        translate_expression_bitstring_constructor env ret_var elements
     | Call
         { module_= None
         ; function_= {Ast.location= _; simple_expression= Literal (Atom function_name)}
@@ -712,6 +714,28 @@ and translate_expression_binary_operator (env : (_, _) Env.t) ret_var e1 (op : A
       Block.all env [block1; unbox_block1; block2; unbox_block2; op_block]
   | FDiv ->
       make_builtin_call (call_unsupported "float_div_op" 2)
+
+
+and translate_expression_bitstring_constructor (env : (_, _) Env.t) ret_var elements =
+  let translate_one_element (elem : Ast.bin_element) =
+    let expr_id, expr_block = translate_expression_to_fresh_id env elem.expression in
+    (* TODO: translate type specifiers when added in AST. *)
+    match elem.size with
+    | Some size ->
+        let size_id, size_block = translate_expression_to_fresh_id env size in
+        ([Exp.Var expr_id; Exp.Var size_id], [expr_block; size_block])
+    | None ->
+        ([Exp.Var expr_id], [expr_block])
+  in
+  let ids, blocks = List.unzip (List.map ~f:translate_one_element elements) in
+  let ids = List.concat ids in
+  let blocks = List.concat blocks in
+  (* TODO: currently we just dump all elements and sizes into the builtin call as it
+     does not have any model. However, when we add a model we will probably need to
+     pass the arguments in a structured way to be able to distinguish elements and
+     sizes. *)
+  let call_expr = builtin_call env ret_var BuiltinDecl.__erlang_make_bitstring ids in
+  Block.all env (blocks @ [Block.make_instruction env [call_expr]])
 
 
 and lookup_module_for_unqualified (env : (_, _) Env.t) function_name arity =

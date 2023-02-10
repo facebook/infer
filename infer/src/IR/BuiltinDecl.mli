@@ -62,6 +62,8 @@ val __erlang_make_map : Procname.t
 
 val __erlang_make_str_const : Procname.t
 
+val __erlang_make_bitstring : Procname.t
+
 val __erlang_receive : Procname.t
 
 val __erlang_str_equal : Procname.t
