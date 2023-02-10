@@ -179,6 +179,49 @@ let unbox_integer env expr : Exp.t * Block.t =
   (unboxed_expr, {start; exit_success= unbox_block.exit_success; exit_failure= Node.make_nop env})
 
 
+let procname_exn scope =
+  match scope with
+  | Some name ->
+      name
+  | None ->
+      (* Can happen e.g. if we have the _ variable in record field initializers (T134336886) *)
+      L.die InternalError "Scope not found for variable, probably missing annotation."
+
+
+let vars_of_pattern p =
+  let rec f acc {Ast.simple_expression; _} =
+    match simple_expression with
+    | BinaryOperator (e1, _, e2) ->
+        List.fold ~f ~init:acc [e1; e2]
+    | BitstringConstructor elements ->
+        List.fold ~init:acc ~f:(fun acc (e : Ast.bin_element) -> f acc e.expression) elements
+    | Cons {head; tail} ->
+        List.fold ~f ~init:acc [head; tail]
+    | Map {updates; _} ->
+        List.fold ~init:acc
+          ~f:(fun acc (a : Ast.association) -> List.fold ~init:acc ~f [a.key; a.value])
+          updates
+    | Match {pattern; body} ->
+        List.fold ~f ~init:acc [pattern; body]
+    | RecordUpdate {updates; _} ->
+        List.fold ~init:acc ~f:(fun acc (ru : Ast.record_update) -> f acc ru.expression) updates
+    | Tuple exprs ->
+        List.fold ~f ~init:acc exprs
+    | UnaryOperator (_, e) ->
+        f acc e
+    | Variable {vname; scope} ->
+        let procname = procname_exn scope in
+        Pvar.Set.add (Pvar.mk (Mangled.from_string vname) procname) acc
+    | Literal _ | Nil | RecordIndex _ ->
+        acc
+    | e ->
+        L.debug Capture Verbose "@[todo ErlangTranslator.vars_of_pattern %s@."
+          (Sexp.to_string (Ast.sexp_of_simple_expression e)) ;
+        acc
+  in
+  f Pvar.Set.empty p
+
+
 (** Main entry point for patterns. Result is a block where if the pattern-match succeeds, the
     [exit_success] node is reached and the pattern variables are storing the corresponding values;
     otherwise, the [exit_failure] node is reached. *)
@@ -217,11 +260,34 @@ let rec translate_pattern env (value : Ident.t) {Ast.location; simple_expression
       (* TODO: Cover all cases. *)
       L.debug Capture Verbose "@[todo ErlangTranslator.translate_pattern %s@."
         (Sexp.to_string (Ast.sexp_of_simple_expression e)) ;
-      let unsupported = call_unsupported "pattern" 1 in
-      let id = mk_fresh_id () in
-      Block.all env
-        [ Block.make_instruction env [builtin_call_1 env id unsupported (Var value)]
-        ; Block.make_branch env (Var id) ]
+      translate_pattern_unsupported env value {Ast.location; simple_expression}
+
+
+and translate_pattern_unsupported (env : (_, _) Env.t) value expr : Block.t =
+  (* As an approximation, we collect all variables appearing in the pattern and bind them
+     to the return value of an unknown call that gets the value to be matched as argument.
+     This way, in lineage the variables get connected to the value. *)
+  let bind_one_var pvar =
+    let unsupported = call_unsupported "pattern_var" 1 in
+    let id = mk_fresh_id () in
+    let call_instr = builtin_call_1 env id unsupported (Var value) in
+    let store_instr =
+      Sil.Store {e1= Exp.Lvar pvar; typ= any_typ; e2= Exp.Var id; loc= env.location}
+    in
+    [call_instr; store_instr]
+  in
+  (* Make a nondet. choice based on call to unknown. *)
+  let id = mk_fresh_id () in
+  let unsupported = call_unsupported "pattern_match" 1 in
+  let branch_call = Block.make_instruction env [builtin_call_1 env id unsupported (Var value)] in
+  let branch_block = Block.make_branch env (Var id) in
+  let blocks = Block.all env [branch_call; branch_block] in
+  (* Bind variables on success (matched) branch. *)
+  let vars = vars_of_pattern expr in
+  let bind_instrs = List.concat_map ~f:bind_one_var (Pvar.Set.elements vars) in
+  let bind_node = Node.make_stmt env bind_instrs in
+  blocks.exit_success |~~> [bind_node] ;
+  {Block.start= blocks.start; exit_success= bind_node; exit_failure= blocks.exit_failure}
 
 
 and translate_pattern_cons env value head tail : Block.t =
@@ -461,13 +527,7 @@ and translate_pattern_number_expression (env : (_, _) Env.t) value location simp
 and translate_pattern_variable (env : (_, _) Env.t) value vname scope : Block.t =
   (* We also assign to _ so that stuff like f()->_=1. works. But if we start checking for
      re-binding, we should exclude _ from such checks. *)
-  let procname =
-    match scope with
-    | Some name ->
-        name
-    | None ->
-        L.die InternalError "Scope not found for variable, probably missing annotation."
-  in
+  let procname = procname_exn scope in
   let store : Sil.instr =
     let e1 : Exp.t = Lvar (Pvar.mk (Mangled.from_string vname) procname) in
     let e2 : Exp.t = Var value in
@@ -1296,14 +1356,7 @@ and translate_expression_unary_operator (env : (_, _) Env.t) ret_var (op : Ast.u
 
 
 and translate_expression_variable (env : (_, _) Env.t) ret_var vname scope : Block.t =
-  let procname =
-    match scope with
-    | Some name ->
-        name
-    | None ->
-        (* This can happen for example if we have the _ variable in record field initializers. *)
-        L.die InternalError "Scope not found for variable, probably missing annotation."
-  in
+  let procname = procname_exn scope in
   let e = Exp.Lvar (Pvar.mk (Mangled.from_string vname) procname) in
   let load_instr = Sil.Load {id= ret_var; e; typ= any_typ; loc= env.location} in
   Block.make_instruction env [load_instr]
