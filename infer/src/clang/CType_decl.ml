@@ -791,7 +791,7 @@ and get_record_struct_type tenv definition_decl : Typ.desc =
           else (
             (* There is no definition for that struct in whole translation unit.
                Put empty struct into tenv to prevent backend problems *)
-            ignore (Tenv.mk_struct tenv ~fields:[] sil_typename) ;
+            ignore (Tenv.mk_struct tenv ~dummy:true sil_typename) ;
             CAst_utils.update_sil_types_map type_ptr sil_desc ;
             sil_desc ) )
   | _ ->

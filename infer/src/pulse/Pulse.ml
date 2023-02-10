@@ -42,9 +42,12 @@ let is_non_deleted_copy pname =
 
 let is_type_copiable tenv typ =
   match typ with
-  | {Typ.desc= Tstruct name} | {Typ.desc= Tptr ({desc= Tstruct name}, _)} ->
-      Tenv.lookup tenv name
-      |> Option.exists ~f:(fun Struct.{methods} -> List.exists ~f:is_non_deleted_copy methods)
+  | {Typ.desc= Tstruct name} | {Typ.desc= Tptr ({desc= Tstruct name}, _)} -> (
+    match Tenv.lookup tenv name with
+    | None | Some {dummy= true} ->
+        true
+    | Some {methods} ->
+        List.exists ~f:is_non_deleted_copy methods )
   | _ ->
       true
 
