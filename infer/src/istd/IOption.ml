@@ -28,6 +28,11 @@ let map_changed opt ~equal ~f =
       if equal x x' then opt else Some x'
 
 
+let continue ~default opt f =
+  let v = Option.value opt ~default in
+  match f v with None -> opt | Some _ as res -> res
+
+
 module Let_syntax = struct
   include Option.Let_syntax
 
