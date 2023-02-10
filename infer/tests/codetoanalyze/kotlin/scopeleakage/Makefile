@@ -7,6 +7,7 @@ TESTS_DIR = ../../..
 
 SOURCES = $(wildcard *.kt)
 CLEAN_EXTRA = *.class META-INF
+INFER_OPTIONS = --scope-leakage-only
 INFERPRINT_OPTIONS = --issues-tests
 
 include $(TESTS_DIR)/kotlinc.make
