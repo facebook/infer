@@ -331,9 +331,9 @@ let top = Top
 
 let is_top = function Top -> true | V _ -> false
 
-let map f = function Top -> Top | V astate -> V (f astate)
+let map f = function Top -> Top | V astate_n -> V (f astate_n)
 
-let mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt ({copy_map} as astate) =
+let mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt ({copy_map} as astate_n) =
   let copy_var = CopyVar.{copied_into; source_addr_opt} in
   let copy_map =
     match CopyMap.find_opt copy_var copy_map with
@@ -350,14 +350,14 @@ let mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt ({copy_
     | _ ->
         copy_map
   in
-  {astate with copy_map}
+  {astate_n with copy_map}
 
 
 let mark_copy_as_modified ~is_modified ~copied_into ~source_addr_opt =
   map (mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt)
 
 
-let mark_parameter_as_modified_elt ~is_modified ~var ({parameter_map} as astate) =
+let mark_parameter_as_modified_elt ~is_modified ~var ({parameter_map} as astate_n) =
   let parameter_map =
     match ParameterMap.find_opt var parameter_map with
     | Some (Unmodified {heap= copy_heap}) when is_modified copy_heap Timestamp.t0 ->
@@ -366,24 +366,24 @@ let mark_parameter_as_modified_elt ~is_modified ~var ({parameter_map} as astate)
     | _ ->
         parameter_map
   in
-  {astate with parameter_map}
+  {astate_n with parameter_map}
 
 
 let mark_parameter_as_modified ~is_modified ~var =
   map (mark_parameter_as_modified_elt ~is_modified ~var)
 
 
-let checked_via_dtor_elt var astate =
-  {astate with destructor_checked= DestructorChecked.add var astate.destructor_checked}
+let checked_via_dtor_elt var astate_n =
+  {astate_n with destructor_checked= DestructorChecked.add var astate_n.destructor_checked}
 
 
 let checked_via_dtor var = map (checked_via_dtor_elt var)
 
 module CopiedSet = PrettyPrintable.MakePPSet (Attribute.CopiedInto)
 
-let is_never_used_after_copy_into_intermediate_or_field pvar (copied_timestamp : Timestamp.t) astate
-    =
-  match astate with
+let is_never_used_after_copy_into_intermediate_or_field pvar (copied_timestamp : Timestamp.t)
+    astate_n =
+  match astate_n with
   | Top ->
       false
   | V {passed_to; loads; stores} ->
@@ -406,8 +406,8 @@ let is_never_used_after_copy_into_intermediate_or_field pvar (copied_timestamp :
       not (is_loaded_after_copy || is_stored_after_copy || is_passed_to_non_destructor_after_copy)
 
 
-let get_copied astate =
-  match astate with
+let get_copied astate_n =
+  match astate_n with
   | Top ->
       []
   | V {copy_map; captured} ->
@@ -433,7 +433,7 @@ let get_copied astate =
               | IntoIntermediate {source_opt= Some (PVar pvar, _)} )
             , ( Copied {location; copied_location; source_typ; from; timestamp= copied_timestamp}
               | Modified {location; copied_location; source_typ; from; copied_timestamp} ) ) ->
-              if is_never_used_after_copy_into_intermediate_or_field pvar copied_timestamp astate
+              if is_never_used_after_copy_into_intermediate_or_field pvar copied_timestamp astate_n
               then
                 (* if source var is never used later on, we can still suggest removing the copy even though the copy is modified *)
                 (copied_into, source_typ, location, copied_location, from) :: acc
@@ -464,29 +464,29 @@ let get_const_refable_parameters = function
         parameter_map []
 
 
-let add_var_elt copied_into ~source_addr_opt (res : copy_spec_t) astate =
-  {astate with copy_map= CopyMap.add {copied_into; source_addr_opt} res astate.copy_map}
+let add_var_elt copied_into ~source_addr_opt (res : copy_spec_t) astate_n =
+  {astate_n with copy_map= CopyMap.add {copied_into; source_addr_opt} res astate_n.copy_map}
 
 
-let remove_var_elt var astate = {astate with copy_map= CopyMap.remove_var var astate.copy_map}
+let remove_var_elt var astate_n = {astate_n with copy_map= CopyMap.remove_var var astate_n.copy_map}
 
 let add_var copied_into ~source_addr_opt res = map (add_var_elt copied_into ~source_addr_opt res)
 
 let remove_var var = map (remove_var_elt var)
 
-let add_field_elt copied_field ~source_opt (res : copy_spec_t) astate =
-  { astate with
+let add_field_elt copied_field ~source_opt (res : copy_spec_t) astate_n =
+  { astate_n with
     copy_map=
       CopyMap.add
         { copied_into= IntoField {field= copied_field; source_opt}
         ; source_addr_opt= Option.bind source_opt ~f:DecompilerExpr.abstract_value_of_expr }
-        res astate.copy_map }
+        res astate_n.copy_map }
 
 
 let add_field copied_field ~source_opt res = map (add_field_elt copied_field ~source_opt res)
 
-let add_parameter_elt parameter_var (res : parameter_spec_t) astate =
-  {astate with parameter_map= ParameterMap.add parameter_var res astate.parameter_map}
+let add_parameter_elt parameter_var (res : parameter_spec_t) astate_n =
+  {astate_n with parameter_map= ParameterMap.add parameter_var res astate_n.parameter_map}
 
 
 let add_parameter parameter_var res = map (add_parameter_elt parameter_var res)
@@ -498,36 +498,36 @@ let is_checked_via_dtor var = function
       DestructorChecked.mem var destructor_checked
 
 
-let set_captured_variables_elt exp astate =
+let set_captured_variables_elt exp astate_n =
   match exp with
   | Exp.Closure {captured_vars} ->
-      List.fold captured_vars ~init:astate ~f:(fun astate (_, pvar, _, _) ->
-          {astate with captured= Captured.add pvar astate.captured} )
+      List.fold captured_vars ~init:astate_n ~f:(fun astate_n (_, pvar, _, _) ->
+          {astate_n with captured= Captured.add pvar astate_n.captured} )
   | _ ->
-      astate
+      astate_n
 
 
 let set_captured_variables exp = map (set_captured_variables_elt exp)
 
-let set_locked_elt astate = {astate with locked= true}
+let set_locked_elt astate_n = {astate_n with locked= true}
 
 let set_locked = map set_locked_elt
 
 let is_locked = function Top -> true | V {locked} -> locked
 
-let set_load_elt loc tstamp ident var astate =
-  {astate with loads= Loads.add loc tstamp ident var astate.loads}
+let set_load_elt loc tstamp ident var astate_n =
+  {astate_n with loads= Loads.add loc tstamp ident var astate_n.loads}
 
 
-let set_load loc tstamp ident var astate =
-  if Ident.is_none ident then astate else map (set_load_elt loc tstamp ident var) astate
+let set_load loc tstamp ident var astate_n =
+  if Ident.is_none ident then astate_n else map (set_load_elt loc tstamp ident var) astate_n
 
 
-let set_store_elt loc timestamp var astate =
-  {astate with stores= Stores.add var {loc; timestamp} astate.stores}
+let set_store_elt loc timestamp var astate_n =
+  {astate_n with stores= Stores.add var {loc; timestamp} astate_n.stores}
 
 
-let set_store loc tstamp var astate = map (set_store_elt loc tstamp var) astate
+let set_store loc tstamp var astate_n = map (set_store_elt loc tstamp var) astate_n
 
 let get_loaded_locations var = function
   | Top ->
@@ -536,8 +536,8 @@ let get_loaded_locations var = function
       Loads.get_loaded_locations var loads |> List.map ~f:(fun TrackedLoc.{loc} -> loc)
 
 
-let is_captured var astate =
-  match ((var : Var.t), astate) with
+let is_captured var astate_n =
+  match ((var : Var.t), astate_n) with
   | LogicalVar _, _ ->
       false
   | ProgramVar x, V {captured} ->
@@ -546,7 +546,7 @@ let is_captured var astate =
       true
 
 
-let set_passed_to_elt loc timestamp call_exp actuals ({loads; passed_to} as astate) =
+let set_passed_to_elt loc timestamp call_exp actuals ({loads; passed_to} as astate_n) =
   let new_callee =
     match (call_exp : Exp.t) with
     | Const (Cfun callee) | Closure {name= callee} ->
@@ -577,7 +577,7 @@ let set_passed_to_elt loc timestamp call_exp actuals ({loads; passed_to} as asta
   let passed_to =
     Var.Set.fold (fun var acc -> PassedTo.add var {callee= new_callee; loc} acc) vars passed_to
   in
-  {astate with passed_to}
+  {astate_n with passed_to}
 
 
 let set_passed_to loc timestamp call_exp actuals =
@@ -594,11 +594,11 @@ let get_passed_to var ~f = function
       `PassedTo callees
 
 
-let is_lifetime_extended var astate =
-  is_captured var astate
+let is_lifetime_extended var astate_n =
+  is_captured var astate_n
   ||
   match
-    get_passed_to var astate ~f:(function
+    get_passed_to var astate_n ~f:(function
       | CalleeWithUnknown.V {callee} ->
           not (Procname.is_shared_ptr_observer callee)
       | CalleeWithUnknown.Unknown ->
