@@ -34,6 +34,51 @@ let get_copy_origin pname =
   else None
 
 
+let to_arg_payloads actuals =
+  List.map actuals ~f:(fun (exp, typ) ->
+      ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= ()} )
+
+
+let is_optional_copy_constructor_with_arg_payloads =
+  let dispatch : (unit, unit, unit) ProcnameDispatcher.Call.dispatcher =
+    let open ProcnameDispatcher.Call in
+    make_dispatcher
+      [ -"folly" &:: "Optional" &:: "Optional" $ any_arg
+        $+ any_arg_of_typ (-"folly" &:: "Optional")
+        $--> ()
+      ; -"std" &:: "optional" &:: "optional" $ any_arg
+        $+ any_arg_of_typ (-"std" &:: "optional")
+        $--> () ]
+  in
+  fun pname arg_payloads ->
+    dispatch () pname arg_payloads |> Option.value_map ~default:false ~f:(fun () -> true)
+
+
+let is_optional_copy_constructor pname actuals =
+  is_optional_copy_constructor_with_arg_payloads pname (to_arg_payloads actuals)
+
+
+let get_element_copy_by_optional =
+  let dispatch : (unit, bool, unit) ProcnameDispatcher.Call.dispatcher =
+    let open ProcnameDispatcher.Call in
+    make_dispatcher
+      [ -"folly" &:: "Optional" &:: "Optional" $ any_arg
+        $+ any_arg_of_typ (-"folly" &:: "None")
+        $--> false
+      ; -"folly" &:: "Optional" &:: "Optional" $ any_arg $+ any_arg $--> true
+      ; -"std" &:: "optional" &:: "optional" $ any_arg
+        $+ any_arg_of_typ (-"std" &:: "nullopt_t")
+        $--> false
+      ; -"std" &:: "optional" &:: "optional" $ any_arg $+ any_arg $--> true ]
+  in
+  fun pname actuals ->
+    let arg_payloads = to_arg_payloads actuals in
+    if is_optional_copy_constructor_with_arg_payloads pname arg_payloads then None
+    else
+      dispatch () pname arg_payloads
+      |> Option.bind ~f:(fun matched -> Option.some_if matched Attribute.CopyOrigin.CopyCtor)
+
+
 let try_eval path location e astate =
   match PulseOperations.eval path NoAccess location e astate with
   | Sat (Ok (astate, (v, _))) ->
@@ -212,6 +257,15 @@ let add_copies_to_pvar_or_field tenv path location from args (astate_n, astate) 
       None
 
 
+let get_copied_return_addr proc_desc path location copy_var astate =
+  let open IOption.Let_syntax in
+  let* return_param = get_return_param proc_desc in
+  let astate, (return_param_addr, _) = PulseOperations.eval_var path location return_param astate in
+  let* copy_addr, _ = PulseOperations.read_id copy_var astate in
+  let* return_addr, _ = Memory.find_edge_opt return_param_addr Dereference astate in
+  if AbstractValue.equal copy_addr return_addr then Some (copy_addr, astate) else None
+
+
 let add_copies_to_return tenv proc_desc path location from args (astate_n, astate) =
   let open IOption.Let_syntax in
   match (args : (Exp.t * Typ.t) list) with
@@ -221,21 +275,25 @@ let add_copies_to_return tenv proc_desc path location from args (astate_n, astat
          && (not (has_copy_in_name (Procdesc.get_proc_name proc_desc)))
          && (not (NonDisjDomain.is_locked astate_n))
          && not (is_local_variable source_exp) ->
-      let* return_param = get_return_param proc_desc in
-      let astate, (return_param_addr, _) =
-        PulseOperations.eval_var path location return_param astate
+      let* copy_addr, astate = get_copied_return_addr proc_desc path location copy_var astate in
+      let+ astate, source = try_eval path location source_exp astate in
+      let astate =
+        AddressAttributes.add_copied_return copy_addr ~source
+          ~is_const_ref:(Typ.is_const_reference source_typ)
+          from location astate
       in
-      let* copy_addr, _ = PulseOperations.read_id copy_var astate in
-      let* return_addr, _ = Memory.find_edge_opt return_param_addr Dereference astate in
-      if AbstractValue.equal copy_addr return_addr then
-        let+ astate, source = try_eval path location source_exp astate in
-        let astate =
-          AddressAttributes.add_copied_return copy_addr ~source
-            ~is_const_ref:(Typ.is_const_reference source_typ)
-            from location astate
-        in
-        (astate_n, astate)
-      else None
+      (astate_n, astate)
+  | _ ->
+      None
+
+
+let remove_optional_copies_to_return proc_desc path location pname args (astate_n, astate) =
+  let open IOption.Let_syntax in
+  match (args : (Exp.t * Typ.t) list) with
+  | (Var copy_var, _) :: (Lvar source_var, _) :: _ when is_optional_copy_constructor pname args ->
+      let+ _, astate = get_copied_return_addr proc_desc path location copy_var astate in
+      let astate_n = NonDisjDomain.remove_var (Var.of_pvar source_var) astate_n in
+      (astate_n, astate)
   | _ ->
       None
 
@@ -246,12 +304,16 @@ let add_copies tenv proc_desc path location pname actuals default =
         let ( |-> ) = IOption.continue ~default in
         let args = args_map_fn actuals in
         add_copies_to_pvar_or_field tenv path location from args default
-        |-> add_copies_to_return tenv proc_desc path location from args )
+        |-> add_copies_to_return tenv proc_desc path location from args
+        (* Ignore optional copies to return value to avoid false positives w.r.t. RVO/NRVO *)
+        |-> remove_optional_copies_to_return proc_desc path location pname args )
   in
   let ( |-> ) = IOption.continue ~default in
   aux get_copy_origin Fn.id default
   (* For functions that return a copy, the last argument is the assigned copy *)
   |-> aux get_modeled_as_returning_copy_opt List.rev
+  (* Record a copy of element in optional constructors *)
+  |-> aux (fun pname -> get_element_copy_by_optional pname actuals) Fn.id
 
 
 let is_lock pname =

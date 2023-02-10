@@ -141,7 +141,20 @@ module Captured = struct
     match (var : Var.t) with ProgramVar pvar -> mem pvar x | LogicalVar _ -> false
 end
 
-module CopyMap = AbstractDomain.Map (CopyVar) (CopySpec)
+module CopyMap = struct
+  include AbstractDomain.Map (CopyVar) (CopySpec)
+
+  let remove_var var x =
+    filter
+      (fun {copied_into} _ ->
+        match copied_into with
+        | IntoVar {copied_var} | IntoIntermediate {copied_var} ->
+            not (Var.equal var copied_var)
+        | IntoField _ ->
+            true )
+      x
+end
+
 module ParameterMap = AbstractDomain.Map (ParameterVar) (ParameterSpec)
 module Locked = AbstractDomain.BooleanOr
 
@@ -455,7 +468,11 @@ let add_var_elt copied_into ~source_addr_opt (res : copy_spec_t) astate =
   {astate with copy_map= CopyMap.add {copied_into; source_addr_opt} res astate.copy_map}
 
 
+let remove_var_elt var astate = {astate with copy_map= CopyMap.remove_var var astate.copy_map}
+
 let add_var copied_into ~source_addr_opt res = map (add_var_elt copied_into ~source_addr_opt res)
+
+let remove_var var = map (remove_var_elt var)
 
 let add_field_elt copied_field ~source_opt (res : copy_spec_t) astate =
   { astate with
