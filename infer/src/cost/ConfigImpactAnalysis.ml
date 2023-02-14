@@ -843,6 +843,16 @@ module Dom = struct
              && String.is_suffix method_name ~suffix:"Value" )
 
 
+  let is_kotlin_getter pname args =
+    match (Attributes.load pname, args) with
+    | Some {loc= {file}}, [_] ->
+        (not (SourceFile.is_invalid file))
+        && SourceFile.has_extension ~ext:Config.kotlin_source_extension file
+        && String.is_prefix (Procname.get_method pname) ~prefix:"get"
+    | _, _ ->
+        false
+
+
   let update_gated_callees ~callee args
       ({condition_checks= config_checks, latent_config_checks; gated_classes} as astate) =
     let update_gated_class_constructor typ_name =
@@ -944,7 +954,17 @@ module Dom = struct
         let has_expensive_callee =
           Option.exists callee_summary ~f:Summary.has_known_expensive_callee
         in
-        let is_cheap_call = match instantiated_cost with Some Cheap -> true | _ -> false in
+        let is_cheap_call =
+          match instantiated_cost with
+          | Some Cheap ->
+              true
+          | Some (Symbolic _) ->
+              false
+          | Some NoModel | None ->
+              (* When the cost of the callee is unknown by some reasons, we apply a heuristic to
+                 ignore Kotlin's getter as cheap. *)
+              is_kotlin_getter callee args
+        in
         let is_unmodeled_call = match instantiated_cost with Some NoModel -> true | _ -> false in
         match mode with
         | `StrictBeta | `Strict -> (
