@@ -43,7 +43,10 @@ let is_optional_copy_constructor_with_arg_payloads =
   let dispatch : (unit, unit, unit) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
     make_dispatcher
-      [ -"folly" &:: "Optional" &:: "Optional" $ any_arg
+      [ -"boost" &:: "optional" &:: "optional" $ any_arg
+        $+ any_arg_of_typ (-"boost" &:: "optional")
+        $--> ()
+      ; -"folly" &:: "Optional" &:: "Optional" $ any_arg
         $+ any_arg_of_typ (-"folly" &:: "Optional")
         $--> ()
       ; -"std" &:: "optional" &:: "optional" $ any_arg
@@ -62,7 +65,11 @@ let get_element_copy_by_optional =
   let dispatch : (unit, bool, unit) ProcnameDispatcher.Call.dispatcher =
     let open ProcnameDispatcher.Call in
     make_dispatcher
-      [ -"folly" &:: "Optional" &:: "Optional" $ any_arg
+      [ -"boost" &:: "optional" &:: "optional" $ any_arg
+        $+ any_arg_of_typ (-"boost" &:: "none_t")
+        $--> false
+      ; -"boost" &:: "optional" &:: "optional" $ any_arg $+ any_arg $--> true
+      ; -"folly" &:: "Optional" &:: "Optional" $ any_arg
         $+ any_arg_of_typ (-"folly" &:: "None")
         $--> false
       ; -"folly" &:: "Optional" &:: "Optional" $ any_arg $+ any_arg $--> true
