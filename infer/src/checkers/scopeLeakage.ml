@@ -22,13 +22,15 @@ module AnalysisConfig : sig
   (** Lists of generators for the different types of scopes. *)
   type generators = classname_methods list
 
-  (** Class names for the different types of scopes. *)
-  type scope = {classname: string; generators: generators}
+  (** Information defining each scope. *)
+  type scope_def = {classname: string; generators: generators}
 
   type must_not_hold_pair = {holder: string; held: string}
 
   type t =
-    {annotation_classname: string; scopes: scope list; must_not_hold_pairs: must_not_hold_pair list}
+    { annotation_classname: string
+    ; scope_defs: scope_def list
+    ; must_not_hold_pairs: must_not_hold_pair list }
 
   val empty : t
 
@@ -41,14 +43,16 @@ end = struct
 
   type generators = classname_methods list
 
-  type scope = {classname: string; generators: generators}
+  type scope_def = {classname: string; generators: generators}
 
   type must_not_hold_pair = {holder: string; held: string}
 
   type t =
-    {annotation_classname: string; scopes: scope list; must_not_hold_pairs: must_not_hold_pair list}
+    { annotation_classname: string
+    ; scope_defs: scope_def list
+    ; must_not_hold_pairs: must_not_hold_pair list }
 
-  let empty = {annotation_classname= ""; scopes= []; must_not_hold_pairs= []}
+  let empty = {annotation_classname= ""; scope_defs= []; must_not_hold_pairs= []}
 
   let pp_method fs methodname = F.fprintf fs {|"%s"|} methodname
 
@@ -84,7 +88,7 @@ end = struct
   "must-not-hold": {%a}
 }
       |}
-      config.annotation_classname pp_scopes config.scopes pp_must_not_hold_pairs
+      config.annotation_classname pp_scopes config.scope_defs pp_must_not_hold_pairs
       config.must_not_hold_pairs
 
 
@@ -171,6 +175,22 @@ end = struct
         L.die UserError "Failed parsing a must-not-hold pair from %a!@\n" Yojson.Basic.pp node
 
 
+  (** Basic semantic checks. *)
+  let validate {scope_defs; must_not_hold_pairs} =
+    let scope_names = List.map scope_defs ~f:(fun {classname} -> classname) in
+    List.iter must_not_hold_pairs ~f:(fun {holder; held} ->
+        if not (List.mem scope_names holder ~equal:equal_string) then
+          L.die UserError
+            "Failed validating scope-leakage-config: scope name %s appearing in 'must-not-hold' is \
+             not listed in as a scope!@\n"
+            holder ;
+        if not (List.mem scope_names held ~equal:equal_string) then
+          L.die UserError
+            "Failed validating scope-leakage-config: scope name %s appearing in 'must-not-hold' is \
+             not listed in as a scope!@\n"
+            held )
+
+
   let parse node =
     match node with
     | `Assoc node_assoc_list ->
@@ -178,9 +198,13 @@ end = struct
         let annot_classname_node = find_node node_as_map "annot-classname" node in
         let scopes_node = find_node node_as_map "scopes" node in
         let must_not_hold_node = find_node node_as_map "must-not-hold" node in
-        { annotation_classname= Yojson.Basic.Util.to_string annot_classname_node
-        ; scopes= parse_scope_list scopes_node
-        ; must_not_hold_pairs= parse_must_not_hold must_not_hold_node }
+        let result =
+          { annotation_classname= Yojson.Basic.Util.to_string annot_classname_node
+          ; scope_defs= parse_scope_list scopes_node
+          ; must_not_hold_pairs= parse_must_not_hold must_not_hold_node }
+        in
+        validate result ;
+        result
     | `List [] ->
         L.debug Analysis Verbose "scope-leakage-config is empty!@\n" ;
         empty
@@ -189,7 +213,7 @@ end = struct
           node
 end
 
-(** Parse the configuration once and for all. *)
+(** Parse the configuration into a global. *)
 let config =
   if Config.is_checker_enabled ScopeLeakage then AnalysisConfig.parse Config.scope_leakage_config
   else AnalysisConfig.empty
@@ -231,7 +255,9 @@ end = struct
 
   let annotation_class = config.annotation_classname
 
-  let scope_class_names = List.map config.scopes ~f:(fun scope -> scope.AnalysisConfig.classname)
+  let scope_class_names =
+    List.map config.scope_defs ~f:(fun scope -> scope.AnalysisConfig.classname)
+
 
   let is_bottom scope = equal scope bottom
 
@@ -286,7 +312,7 @@ end = struct
     else bottom
 
 
-  (** Traverses the given type to find a Struct.t, if one exists. *)
+  (** Traverses the given type to return a Struct.t, if one exists. *)
   let rec inner_struct_of_type tenv {Typ.desc} =
     match desc with
     | Tstruct struct_name ->
@@ -300,9 +326,9 @@ end = struct
 
 
   (** Returns the scope corresponding to the given struct based on its annotations. *)
-  let of_struct_annots s =
+  let of_struct_annots struc =
     let open Struct in
-    List.fold s.annots ~init:bottom ~f:(fun accum_scope annot ->
+    List.fold struc.annots ~init:bottom ~f:(fun accum_scope annot ->
         let curr_scope = of_annot annot in
         join curr_scope accum_scope )
 
@@ -369,8 +395,8 @@ end = struct
 
   (** Given a config, generates a function that matches a procedure name with the scope of the
       returned object (or bottom if the scope of the returned object is unknown). *)
-  let of_generator_procname_with_config {AnalysisConfig.scopes} procname =
-    match procname with Procname.Java jname -> match_javaname scopes jname | _ -> bottom
+  let of_generator_procname_with_config {AnalysisConfig.scope_defs} procname =
+    match procname with Procname.Java jname -> match_javaname scope_defs jname | _ -> bottom
 
 
   let of_generator_procname = of_generator_procname_with_config config
