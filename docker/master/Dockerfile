@@ -19,6 +19,7 @@ RUN apt-get update && \
       libgmp-dev \
       libmpfr-dev \
       libsqlite3-dev \
+      sqlite3 \
       make \
       opam \
       openjdk-11-jdk-headless \
@@ -58,7 +59,7 @@ RUN cd /infer && \
     DESTDIR="/infer-release" \
     libdir_relative_to_bindir="../lib"
 
-FROM debian:buster-slim AS executor
+FROM debian:bullseye-slim AS executor
 
 RUN apt-get update && apt-get install --yes --no-install-recommends sqlite3
 
