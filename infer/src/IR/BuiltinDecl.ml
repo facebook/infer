@@ -130,6 +130,8 @@ let __erlang_make_tuple = create_procname "__erlang_make_tuple"
 
 let __erlang_make_str_const = create_procname "__erlang_make_str_const"
 
+let __erlang_make_bitstring = create_procname "__erlang_make_bitstring"
+
 let __erlang_receive = create_procname "__erlang_receive"
 
 let __erlang_str_equal = create_procname "__erlang_str_equal"

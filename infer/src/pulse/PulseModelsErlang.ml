@@ -1210,17 +1210,41 @@ module Custom = struct
   let matcher_of_rule {selector; behavior} = make_selector selector (make_model behavior)
 
   let matchers () : matcher list =
+    let load_spec path =
+      try spec_of_yojson (Yojson.Safe.from_file path) with
+      | Yojson.Json_error what ->
+          L.user_error
+            "@[<v>Failed to parse json from %s: %s@;\
+             Continuing with no custom models imported from this file.@;\
+             @]"
+            path what ;
+          []
+      | Ppx_yojson_conv_lib__Yojson_conv.Of_yojson_error (what, json) ->
+          let details = match what with Failure what -> Printf.sprintf " (%s)" what | _ -> "" in
+          L.user_error
+            "@[<v>Failed to parse --pulse-models-for-erlang from %s %s:@;\
+             %a@;\
+             Continuing with no custom models imported from this file.@;\
+             @]"
+            path details Yojson.Safe.pp json ;
+          []
+    in
     let spec =
-      try spec_of_yojson (Config.pulse_models_for_erlang :> Yojson.Safe.t)
-      with Ppx_yojson_conv_lib__Yojson_conv.Of_yojson_error (what, json) ->
-        let details = match what with Failure what -> Printf.sprintf " (%s)" what | _ -> "" in
-        L.user_error
-          "@[<v>Failed to parse --pulse-models-for-erlang%s:@;\
-           %a@;\
-           Continuing with no custom models.@;\
-           @]"
-          details Yojson.Safe.pp json ;
-        []
+      List.fold Config.pulse_models_for_erlang ~init:[] ~f:(fun spec path ->
+          match (Unix.stat path).st_kind with
+          | S_DIR ->
+              Utils.fold_files ~init:spec
+                ~f:(fun spec filepath ->
+                  if Filename.check_suffix filepath "json" then
+                    List.append (load_spec filepath) spec
+                  else spec )
+                ~path
+          | S_REG ->
+              List.append (load_spec path) spec
+          | _ ->
+              spec
+          | exception Unix.Unix_error (ENOENT, _, _) ->
+              spec )
     in
     List.map ~f:matcher_of_rule spec
 end

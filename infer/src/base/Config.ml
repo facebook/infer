@@ -854,18 +854,18 @@ and buck_compilation_database_depth =
     ~meta:"int"
 
 
-and buck_java_heap_size_gb =
-  CLOpt.mk_int_opt ~long:"buck-java-heap-size-gb"
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Explicitly set the size of the Java heap of Buck processes, in gigabytes." ~meta:"int"
-
-
-and buck_java_flavor_dependency_depth =
-  CLOpt.mk_int_opt ~long:"buck-java-flavor-dependency-depth"
+and buck_dependency_depth =
+  CLOpt.mk_int_opt ~long:"buck-dependency-depth"
     ~in_help:InferCommand.[(Capture, manual_buck)]
     "Capture dependencies only if they are at most the depth provided, or all transitive \
      dependencies if depth is not provided (the default). In particular, depth zero means capture \
      exactly the targets provided and nothing else."
+
+
+and buck_java_heap_size_gb =
+  CLOpt.mk_int_opt ~long:"buck-java-heap-size-gb"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Explicitly set the size of the Java heap of Buck processes, in gigabytes." ~meta:"int"
 
 
 and buck_java_flavor_suppress_config =
@@ -2307,9 +2307,36 @@ and pulse_model_skip_pattern =
 
 
 and pulse_models_for_erlang =
-  CLOpt.mk_json ~long:"pulse-models-for-erlang"
+  CLOpt.mk_path_list ~long:"pulse-models-for-erlang"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
-    "Provide custom models for Erlang code using a DSL."
+    "Provide custom models for Erlang in JSON files. If a path to a directory is given then the \
+     JSON files must have the `.json` extension. Any other file will be ignored. The \
+     subdirectories will be explored and must follow the same convention.\n\
+    \ \n\
+    \ The format is [SelectorBehavior, ...] where\n\
+    \ SelectorBehavior := {\"selector\": Selector, \"behavior\": Behavior}\n\
+    \ Selector := [\"MFA\", {\n\
+    \   \"module\": \"<module_name>\",\n\
+    \   \"function\": \"<function_name>\",\n\
+    \   \"arity\": <arity_int>\n\
+    \ }]\n\
+    \ Behavior := ReturnValue | ArgumentsReturnList\n\
+    \  - ReturnValue models return regardless of the arguments\n\
+    \  - ArgumentsReturnList maps arguments to return values\n\
+    \ ReturnValue := [\"ReturnValue\", ErlangValue]\n\
+    \ ArgumentsReturnList := \n\
+    \   [\"ArgumentsReturnList\", [ArgumentsReturn, ...]]\n\
+    \ ArgumentsReturn :=  {\n\
+    \   \"arguments\": [ErlangValue, ...],\n\
+    \   \"return\": ErlangValue\n\
+    \ }\n\
+    \ ErlangValue := [\"Atom\", \"<atom_name>\"] \n\
+    \   | [\"IntLit\", \"<integer_value>\"] \n\
+    \   | [\"List\", [ErlangValue, ...] \n\
+    \   | [\"Tuple\", [ErlangValue, ...] \n\
+    \   | null\n\
+    \ \n\
+    \ ErlangValue = null is to represent nondeterministic value"
 
 
 and pulse_model_transfer_ownership =
@@ -3084,20 +3111,6 @@ and trace_topl =
   CLOpt.mk_bool ~long:"trace-topl" "Detailed tracing information during Topl analysis"
 
 
-and tv_commit =
-  CLOpt.mk_string_opt ~long:"tv-commit" ~meta:"commit" "Commit hash to submit to Traceview"
-
-
-and tv_limit =
-  CLOpt.mk_int ~long:"tv-limit" ~default:100 ~meta:"int"
-    "The maximum number of traces to submit to Traceview"
-
-
-and tv_limit_filtered =
-  CLOpt.mk_int ~long:"tv-limit-filtered" ~default:100 ~meta:"int"
-    "The maximum number of traces for issues filtered out by --report-filter to submit to Traceview"
-
-
 and uninit_interproc =
   CLOpt.mk_bool ~long:"uninit-interproc" "Run uninit check in the experimental interprocedural mode"
 
@@ -3441,9 +3454,9 @@ and buck_cache_mode = (!buck || !genrule_mode) && not !debug
 
 and buck_clang_use_toolchain_config = !buck_clang_use_toolchain_config
 
-and buck_java_heap_size_gb = !buck_java_heap_size_gb
+and buck_dependency_depth = !buck_dependency_depth
 
-and buck_java_flavor_dependency_depth = !buck_java_flavor_dependency_depth
+and buck_java_heap_size_gb = !buck_java_heap_size_gb
 
 and buck_java_flavor_suppress_config = !buck_java_flavor_suppress_config
 
@@ -3929,7 +3942,7 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   RevList.rev_partition_map ~f:aux models
 
 
-and pulse_models_for_erlang = !pulse_models_for_erlang
+and pulse_models_for_erlang = RevList.to_list !pulse_models_for_erlang
 
 and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
 
@@ -4235,12 +4248,6 @@ and trace_events = !trace_events
 and trace_ondemand = !trace_ondemand
 
 and trace_topl = !trace_topl
-
-and tv_commit = !tv_commit
-
-and tv_limit = !tv_limit
-
-and tv_limit_filtered = !tv_limit_filtered
 
 and uninit_interproc = !uninit_interproc
 

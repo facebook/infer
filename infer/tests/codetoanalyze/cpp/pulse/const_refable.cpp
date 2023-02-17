@@ -89,6 +89,11 @@ int param_ref_move_ok(std::set<int> source) {
   return 0;
 }
 
+int static_cast_to_rvalue_ref_ok(std::set<int> source) {
+  pass_rvalue_ref(static_cast<std::set<int>&&>(source));
+  return 0;
+}
+
 // structs known to be cheap to copy are not reported
 int std_pair_int_ok(std::pair<int, int> p) { return p.first; }
 
@@ -193,5 +198,27 @@ void call_modify_string_ok(std::string s) { modify_string(s); }
 void void_cast(std::string* s) { (void)s; }
 
 void call_void_cast_bad(std::string s) { void_cast(&s); }
+
+int get_lambda(const std::function<int(Arr)>& f, Arr a) {
+  return f(std::move(a));
+}
+
+int call_get_lambda_ok(Arr a) {
+  return get_lambda([](Arr a) { return a.vec[0]; }, std::move(a));
+}
+
+std::string use_unique_ptr_ok(std::unique_ptr<std::string> x) {
+  return *x.get();
+}
+
+struct NonCopiableT {
+  std::vector<int> vec;
+  int x;
+  // doesn't allow copying
+  NonCopiableT(const NonCopiableT&) = delete;
+};
+
+// we shouldn't report const-refable here since the type doesn't allow copies
+void non_copiable_ok(NonCopiableT t) { auto p = t.x; }
 
 } // namespace const_refable

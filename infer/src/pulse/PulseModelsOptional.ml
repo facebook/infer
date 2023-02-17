@@ -233,7 +233,44 @@ let destruct ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : mo
 
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
-  [ -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
+  [ -"boost" &:: "optional" &:: "optional" <>$ capt_arg_payload
+    $+ any_arg_of_typ (-"boost" &:: "none_t")
+    $--> assign_none ~desc:"boost::optional::optional(=none_t)"
+  ; -"boost" &:: "optional" &:: "optional" <>$ capt_arg_payload
+    $--> assign_none ~desc:"boost::optional::optional()"
+  ; -"boost" &:: "optional" &:: "optional" <>$ capt_arg
+    $+ capt_arg_of_typ (-"boost" &:: "optional")
+    $--> copy_assignment ~desc:"boost::optional::optional(boost::optional<Value> arg)"
+  ; -"boost" &:: "optional" &:: "optional"
+    &++> assign_value ~desc:"boost::optional::optional(Value arg)"
+  ; -"boost" &:: "optional" &:: "operator=" $ capt_arg_payload
+    $+ any_arg_of_typ (-"boost" &:: "none_t")
+    $--> assign_none ~desc:"boost::optional::operator=(none_t)"
+  ; -"boost" &:: "optional" &:: "operator=" $ capt_arg
+    $+ capt_arg_of_typ (-"boost" &:: "optional")
+    $--> copy_assignment ~desc:"boost::optional::operator=(boost::optional<Value> arg)"
+  ; -"boost" &:: "optional" &:: "operator="
+    &++> assign_value ~desc:"boost::optional::operator=(Value arg)"
+  ; -"boost" &:: "optional" &:: "is_initialized" <>$ capt_arg_payload
+    $+...$--> has_value ~desc:"boost::optional::is_initialized()"
+  ; -"boost" &:: "optional" &:: "operator_bool" <>$ capt_arg_payload
+    $+...$--> has_value ~desc:"boost::optional::operator_bool()"
+  ; -"boost" &:: "optional" &:: "reset" <>$ capt_arg_payload
+    $--> assign_none ~desc:"boost::optional::reset()"
+  ; -"boost" &:: "optional" &:: "reset" &++> assign_value ~desc:"boost::optional::reset(Value arg)"
+  ; -"boost" &:: "optional" &:: "get" <>$ capt_arg_payload
+    $+...$--> value ~desc:"boost::optional::get()"
+  ; -"boost" &:: "optional" &:: "operator*" <>$ capt_arg_payload
+    $+...$--> value ~desc:"boost::optional::operator*()"
+  ; -"boost" &:: "optional" &:: "operator->" <>$ capt_arg_payload
+    $+...$--> value ~desc:"boost::optional::operator->()"
+  ; -"boost" &:: "optional" &:: "get_ptr" $ capt_arg_payload
+    $+...$--> get_pointer ~desc:"boost::optional::get_ptr()"
+  ; -"boost" &:: "optional" &:: "get_value_or" $ capt_arg_payload $+ capt_arg_payload
+    $+...$--> value_or ~desc:"boost::optional::get_value_or()"
+  ; -"boost" &:: "optional" &:: "~optional" $ capt_arg
+    $--> destruct ~desc:"boost::optional::~optional()"
+  ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
     $+ any_arg_of_typ (-"folly" &:: "None")
     $--> assign_none ~desc:"folly::Optional::Optional(=None)"
   ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
@@ -283,7 +320,7 @@ let matchers : matcher list =
     &++> assign_value ~desc:"std::optional::optional(Value arg)"
   ; -"std" &:: "optional" &:: "operator=" $ capt_arg_payload
     $+ any_arg_of_typ (-"std" &:: "nullopt_t")
-    $--> assign_none ~desc:"std::optional::operator=(None)"
+    $--> assign_none ~desc:"std::optional::operator=(nullopt_t)"
   ; -"std" &:: "optional" &:: "operator=" $ capt_arg
     $+ capt_arg_of_typ (-"std" &:: "optional")
     $--> copy_assignment ~desc:"std::optional::operator=(std::optional<Value> arg)"

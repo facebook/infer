@@ -1103,6 +1103,21 @@ let get_global_name_of_initializer t =
       None
 
 
+let rec is_lambda_or_block = function
+  | Block _ ->
+      true
+  | ObjC_Cpp {class_name} -> (
+    match QualifiedCppName.extract_last (Typ.Name.unqualified_name class_name) with
+    | Some (name, _) when String.is_prefix name ~prefix:"lambda" ->
+        true
+    | _ ->
+        false )
+  | WithAliasingParameters (base, _) | WithFunctionParameters (base, _) ->
+      is_lambda_or_block base
+  | _ ->
+      false
+
+
 let pp_with_aliasing_parameters verbose pp fmt base aliases =
   pp fmt base ;
   F.pp_print_string fmt "[" ;

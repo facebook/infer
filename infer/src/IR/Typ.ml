@@ -753,6 +753,16 @@ let is_pointer_to_smart_pointer =
         false
 
 
+let is_pointer_to_unique_pointer =
+  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::unique_ptr"] in
+  fun typ ->
+    match typ.desc with
+    | Tptr ({desc= Tstruct (CppClass {name})}, _) ->
+        QualifiedCppName.Match.match_qualifiers matcher name
+    | _ ->
+        false
+
+
 let is_shared_pointer =
   let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::shared_ptr"] in
   fun typ ->

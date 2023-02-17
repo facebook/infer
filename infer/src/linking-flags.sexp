@@ -18,8 +18,6 @@
 ;     the list of dynamically-linked ones either.
 ;  4. Update the example above to match the new flags so we can refer to it to infer the
 ;     correspondence log link flags -> this file.
-;  5. In the same dune log file you'll see similar link flags for inferCreateTraceViewLinks, repeat
-;     step 3 for these and record the new flags in linking-flags-tv.sexp
 ;
 ; ## Why this file
 ;

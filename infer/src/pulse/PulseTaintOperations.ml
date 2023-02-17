@@ -288,8 +288,8 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param p
   if not (List.is_empty matches) then L.d_printfln "taint matches" ;
   List.fold matches ~init:(astate, []) ~f:(fun acc matcher ->
       let actuals =
-        List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ} ->
-            (arg_payload, typ) )
+        List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ; exp} ->
+            (arg_payload, typ, Some exp) )
       in
       let {kinds} = matcher in
       let rec match_target acc = function
@@ -318,15 +318,16 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param p
                     Stack.find_opt return astate
                     |> Option.fold ~init:acc ~f:(fun (_, tainted) return_value ->
                            let taint = {Taint.proc_name; origin= ReturnValue; kinds} in
-                           (astate, (taint, (return_value, return_typ)) :: tainted) ) ) )
+                           (astate, (taint, (return_value, return_typ, None)) :: tainted) ) ) )
         | ( `AllArguments
           | `ArgumentPositions _
           | `AllArgumentsButPositions _
           | `ArgumentsMatchingTypes _ ) as taint_target ->
             L.d_printf "matching actuals... " ;
             List.foldi actuals ~init:acc
-              ~f:(fun i ((astate, tainted) as acc) ((_, actual_typ) as actual_hist_and_typ) ->
-                if taint_target_matches tenv taint_target i actual_typ then (
+              ~f:(fun i ((astate, tainted) as acc) ((_, actual_typ, exp) as actual_hist_and_typ) ->
+                let is_const_exp = match exp with Some exp -> Exp.is_const exp | None -> false in
+                if taint_target_matches tenv taint_target i actual_typ && not is_const_exp then (
                   L.d_printfln_escaped "match! tainting actual #%d with type %a" i
                     (Typ.pp_full Pp.text) actual_typ ;
                   let taint = {Taint.proc_name; origin= Argument {index= i}; kinds} in
@@ -362,7 +363,7 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param p
               in
               (astate, value, typ_name, field_typ)
             in
-            let move_taint_to_field ((astate, tainted) as acc) (taint, (value, typ)) fieldname =
+            let move_taint_to_field ((astate, tainted) as acc) (taint, (value, typ, _)) fieldname =
               (* Move the taint from [value] to [value]'s field [fieldname] *)
               match type_check astate value typ fieldname with
               | None ->
@@ -388,7 +389,7 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param p
                          (Typ.pp_full Pp.text) field_typ ;
                        ( astate
                        , ( Taint.{taint with origin= Field {name= fieldname; origin= taint.origin}}
-                         , (ret_value, field_typ) )
+                         , (ret_value, field_typ, None) )
                          :: tainted )) )
             in
             List.fold fields ~init:acc ~f:(fun ((astate, tainted) as acc) (fieldname, origin) ->
@@ -473,7 +474,7 @@ let taint_sources tenv path location ~intra_procedural_only return ~has_added_re
     get_tainted tenv path location source_matchers return ~has_added_return_param proc_name actuals
       astate
   in
-  List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _)) ->
+  List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _, _)) ->
       let hist =
         ValueHistory.singleton (TaintSource (source, location, path.PathContext.timestamp))
       in
@@ -496,7 +497,7 @@ let taint_sanitizers tenv path return ~has_added_return_param ~location proc_nam
       actuals astate
   in
   let astate =
-    List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, history), _)) ->
+    List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, history), _, _)) ->
         let trace = Trace.Immediate {location; history} in
         let taint_sanitized =
           Attribute.TaintSanitized.
@@ -665,7 +666,7 @@ let taint_sinks tenv path location return ~has_added_return_param proc_name actu
     get_tainted tenv path location sink_matchers return ~has_added_return_param proc_name actuals
       astate
   in
-  PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ)) ->
+  PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ, _)) ->
       if should_ignore_all_flows_to proc_name then Ok astate
       else
         let sink_trace = Trace.Immediate {location; history} in
@@ -765,7 +766,7 @@ let taint_propagators tenv path location return ~has_added_return_param proc_nam
     get_tainted tenv path location propagator_matchers return ~has_added_return_param proc_name
       actuals astate
   in
-  List.fold tainted ~init:astate ~f:(fun astate (_propagator, ((v, _history), _)) ->
+  List.fold tainted ~init:astate ~f:(fun astate (_propagator, ((v, _history), _, _)) ->
       let other_actuals =
         List.filter actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual, _hist} ->
             not (AbstractValue.equal v actual) )

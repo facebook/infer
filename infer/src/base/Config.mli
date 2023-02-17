@@ -195,7 +195,7 @@ val buck_cache_mode : bool
 
 val buck_clang_use_toolchain_config : bool
 
-val buck_java_flavor_dependency_depth : int option
+val buck_dependency_depth : int option
 
 val buck_java_flavor_suppress_config : bool
 
@@ -586,7 +586,7 @@ val pulse_model_return_nonnull : Str.regexp option
 
 val pulse_model_skip_pattern : Str.regexp option
 
-val pulse_models_for_erlang : Yojson.Basic.t
+val pulse_models_for_erlang : string list
 
 val pulse_prevent_non_disj_top : bool
 
@@ -807,12 +807,6 @@ val trace_events : bool
 val trace_ondemand : bool
 
 val trace_topl : bool
-
-val tv_commit : string option
-
-val tv_limit : int
-
-val tv_limit_filtered : int
 
 val uninit_interproc : bool
 

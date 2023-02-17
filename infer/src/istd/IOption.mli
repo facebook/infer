@@ -31,6 +31,10 @@ val iter2 : 'a option -> 'b option -> f:('a -> 'b -> unit) -> unit
 val map_changed : 'a option -> equal:('a -> 'a -> bool) -> f:('a -> 'a) -> 'a option
 (** Like [Option.map] but maintain physical equality *)
 
+val continue : default:'a -> 'a option -> ('a -> 'a option) -> 'a option
+(** Like [Option.bind] but keeps continuing the further evaluation with [default] input when the
+    first parameter is [None]. *)
+
 include sig
   [@@@warning "-32-60"]
 

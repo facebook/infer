@@ -5,49 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
-class Outer {}
-
-class Middle {}
-
-class Inner {}
-
-class Box<T> {
-  final String name;
-
-  public Box(String name) {
-    this.name = name;
-  }
-}
-
-class InnerScope {
-  public static <T> Box<T> getBox(Class<?> c) {
-    return new Box<T>(c.getName());
-  }
-}
-
-@Retention(RetentionPolicy.RUNTIME)
-@interface ScopeType {
-  // The scope type
-  Class<?> value();
-}
-
-class Factory {
-  public static <T> T make(Class<T> c) {
-    T result = null;
-    try {
-      result = c.getDeclaredConstructor().newInstance();
-    } catch (NoSuchMethodException e) {
-    } catch (java.lang.reflect.InvocationTargetException e) {
-    } catch (InstantiationException e) {
-    } catch (IllegalAccessException e) {
-    }
-    return result;
-  }
-}
-
 class AnonymousBox {
   public Object f;
 }

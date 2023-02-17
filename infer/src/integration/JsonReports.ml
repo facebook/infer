@@ -407,6 +407,8 @@ let process_all_summaries_and_issues ~issues_outf ~costs_outf ~config_impact_out
   IssueLog.iter_all_issues ~f:(fun _checker proc_name errlog ->
       all_issues := collect_issues proc_name None errlog !all_issues ) ;
   let all_issues = Issue.sort_filter_issues !all_issues in
+  let n_issues = List.length all_issues in
+  ScubaLogging.log_count ~label:"reports_unfiltered" ~value:n_issues ;
   List.iter all_issues ~f:(fun {Issue.proc_name; proc_location_opt; err_key; err_data} ->
       let error_filter = mk_error_filter filters proc_name in
       JsonIssuePrinter.pp issues_outf.Utils.fmt

@@ -323,6 +323,8 @@ val is_pointer_to_objc_non_tagged_class : t -> bool
 
 val is_pointer_to_smart_pointer : t -> bool
 
+val is_pointer_to_unique_pointer : t -> bool
+
 val is_shared_pointer : t -> bool
 
 val is_pointer_to_void : t -> bool

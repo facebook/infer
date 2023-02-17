@@ -77,6 +77,7 @@ type t =
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
   ; is_cpp_copy_assignment: bool  (** true if the procedure is a copy assignment *)
   ; is_cpp_copy_ctor: bool  (** true if the procedure is a copy constructor *)
+  ; is_cpp_deleted: bool  (** true if the procedure is deleted *)
   ; is_cpp_implicit: bool
         (** returns false if the declaration exists in code and true if it was created implicitly by
             the compiler *)
@@ -152,6 +153,7 @@ let default translation_unit proc_name =
   ; is_bridge_method= false
   ; is_cpp_copy_assignment= false
   ; is_cpp_copy_ctor= false
+  ; is_cpp_deleted= false
   ; is_cpp_implicit= false
   ; is_defined= false
   ; is_java_synchronized_method= false
@@ -221,6 +223,7 @@ let pp f
      ; is_bridge_method
      ; is_cpp_copy_assignment
      ; is_cpp_copy_ctor
+     ; is_cpp_deleted
      ; is_cpp_implicit
      ; is_defined
      ; is_java_synchronized_method
@@ -278,6 +281,7 @@ let pp f
   pp_bool_default ~default:default.is_cpp_copy_assignment "is_cpp_copy_assignment"
     is_cpp_copy_assignment f () ;
   pp_bool_default ~default:default.is_cpp_copy_ctor "is_cpp_copy_ctor" is_cpp_copy_ctor f () ;
+  pp_bool_default ~default:default.is_cpp_deleted "is_deleted" is_cpp_deleted f () ;
   pp_bool_default ~default:default.is_cpp_implicit "is_cpp_implicit" is_cpp_implicit f () ;
   pp_bool_default ~default:default.is_defined "is_defined" is_defined f () ;
   pp_bool_default ~default:default.is_java_synchronized_method "is_java_synchronized_method"

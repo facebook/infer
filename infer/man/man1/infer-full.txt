@@ -188,6 +188,12 @@ OPTIONS
            option. By default, all recursive dependencies are captured.       
     See also infer-capture(1).
 
+       --buck-dependency-depth int
+           Capture dependencies only if they are at most the depth provided,
+           or all transitive dependencies if depth is not provided (the
+           default). In particular, depth zero means capture exactly the
+           targets provided and nothing else.           See also infer-capture(1).
+
        --buck-erlang
            Activates: Buck integration for Erlang. (Conversely:
            --no-buck-erlang)           See also infer-capture(1).
@@ -196,12 +202,6 @@ OPTIONS
            Activates: Buck integration for Java which uses the buck flavor
            #infer-java-capture instead of genrules like buck-java.
            (Conversely: --no-buck-java-flavor)           See also infer-capture(1).
-
-       --buck-java-flavor-dependency-depth int
-           Capture dependencies only if they are at most the depth provided,
-           or all transitive dependencies if depth is not provided (the
-           default). In particular, depth zero means capture exactly the
-           targets provided and nothing else.           See also infer-capture(1).
 
        --buck-java-flavor-suppress-config
            Activates: Suppress setting buck config values for the infer
@@ -1203,8 +1203,36 @@ OPTIONS
            Pulse. Accepted formats are method or namespace::method       
     See also infer-analyze(1).
 
-       --pulse-models-for-erlang json
-           Provide custom models for Erlang code using a DSL.           See also infer-analyze(1).
+       --pulse-models-for-erlang +path
+           Provide custom models for Erlang in JSON files. If a path to a
+           directory is given then the JSON files must have the `.json`
+           extension. Any other file will be ignored. The subdirectories will
+           be explored and must follow the same convention.            
+            The format is [SelectorBehavior, ...] where
+            SelectorBehavior := {"selector": Selector, "behavior": Behavior}
+            Selector := ["MFA", {
+              "module": "<module_name>",
+              "function": "<function_name>",
+              "arity": <arity_int>
+            }]
+            Behavior := ReturnValue | ArgumentsReturnList
+             - ReturnValue models return regardless of the arguments
+             - ArgumentsReturnList maps arguments to return values
+            ReturnValue := ["ReturnValue", ErlangValue]
+            ArgumentsReturnList := 
+              ["ArgumentsReturnList", [ArgumentsReturn, ...]]
+            ArgumentsReturn :=  {
+              "arguments": [ErlangValue, ...],
+              "return": ErlangValue
+            }
+            ErlangValue := ["Atom", "<atom_name>"] 
+              | ["IntLit", "<integer_value>"] 
+              | ["List", [ErlangValue, ...] 
+              | ["Tuple", [ErlangValue, ...] 
+              | null
+            
+            ErlangValue = null is to represent nondeterministic value
+           See also infer-analyze(1).
 
        --no-pulse-nullsafe-report-npe
            Deactivates: Report null dereference issues on files marked
@@ -1881,8 +1909,8 @@ INTERNAL OPTIONS
        --buck-compilation-database-reset
            Cancel the effect of --buck-compilation-database.
 
-       --buck-java-flavor-dependency-depth-reset
-           Cancel the effect of --buck-java-flavor-dependency-depth.
+       --buck-dependency-depth-reset
+           Cancel the effect of --buck-dependency-depth.
 
        --buck-java-heap-size-gb-reset
            Cancel the effect of --buck-java-heap-size-gb.
@@ -2500,6 +2528,9 @@ INTERNAL OPTIONS
        --pulse-model-transfer-ownership-reset
            Set --pulse-model-transfer-ownership to the empty list.
 
+       --pulse-models-for-erlang-reset
+           Set --pulse-models-for-erlang to the empty list.
+
        --pulse-prevent-non-disj-top
            Activates: Forcibly prevent non-disjunctive domain value from
            becoming top. Without this option, non-disjunctive domain value
@@ -2771,19 +2802,6 @@ INTERNAL OPTIONS
        --trace-topl
            Activates: Detailed tracing information during Topl analysis
            (Conversely: --no-trace-topl)
-
-       --tv-commit commit
-           Commit hash to submit to Traceview
-
-       --tv-commit-reset
-           Cancel the effect of --tv-commit.
-
-       --tv-limit int
-           The maximum number of traces to submit to Traceview
-
-       --tv-limit-filtered int
-           The maximum number of traces for issues filtered out by
-           --report-filter to submit to Traceview
 
        --uninit-interproc
            Activates: Run uninit check in the experimental interprocedural

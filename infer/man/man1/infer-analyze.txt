@@ -633,8 +633,35 @@ PULSE CHECKER OPTIONS
            Methods that should be modelled as transfering memory ownership in
            Pulse. Accepted formats are method or namespace::method
 
-       --pulse-models-for-erlang json
-           Provide custom models for Erlang code using a DSL.
+       --pulse-models-for-erlang +path
+           Provide custom models for Erlang in JSON files. If a path to a
+           directory is given then the JSON files must have the `.json`
+           extension. Any other file will be ignored. The subdirectories will
+           be explored and must follow the same convention.            
+            The format is [SelectorBehavior, ...] where
+            SelectorBehavior := {"selector": Selector, "behavior": Behavior}
+            Selector := ["MFA", {
+              "module": "<module_name>",
+              "function": "<function_name>",
+              "arity": <arity_int>
+            }]
+            Behavior := ReturnValue | ArgumentsReturnList
+             - ReturnValue models return regardless of the arguments
+             - ArgumentsReturnList maps arguments to return values
+            ReturnValue := ["ReturnValue", ErlangValue]
+            ArgumentsReturnList := 
+              ["ArgumentsReturnList", [ArgumentsReturn, ...]]
+            ArgumentsReturn :=  {
+              "arguments": [ErlangValue, ...],
+              "return": ErlangValue
+            }
+            ErlangValue := ["Atom", "<atom_name>"] 
+              | ["IntLit", "<integer_value>"] 
+              | ["List", [ErlangValue, ...] 
+              | ["Tuple", [ErlangValue, ...] 
+              | null
+            
+            ErlangValue = null is to represent nondeterministic value
 
        --no-pulse-nullsafe-report-npe
            Deactivates: Report null dereference issues on files marked
