@@ -618,6 +618,9 @@ let get_message diagnostic =
       in
       let suggestion_msg =
         match (from, copied_into) with
+        | CopyToOptional, _ ->
+            if is_from_const then suggestion_msg_move
+            else suggestion_msg_move ^ " or changing the callee's type"
         | _, IntoIntermediate _ ->
             suggestion_msg_move
         | _, IntoField _ ->
@@ -918,6 +921,10 @@ let get_issue_type ~latent issue_type =
       if Option.exists ~f:Typ.is_const_reference source_typ then
         IssueType.unnecessary_copy_assignment_const_pulse
       else IssueType.unnecessary_copy_assignment_pulse
+  | UnnecessaryCopy {source_typ; from= CopyToOptional}, false ->
+      if Option.exists ~f:Typ.is_const_reference source_typ then
+        IssueType.unnecessary_copy_optional_const_pulse
+      else IssueType.unnecessary_copy_optional_pulse
   | ( ( ConfigUsage _
       | ConstRefableParameter _
       | CSharpResourceLeak _

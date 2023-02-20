@@ -1115,6 +1115,18 @@ let unnecessary_copy_movable_pulse =
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_MOVABLE.md"]
 
 
+let unnecessary_copy_optional_pulse =
+  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_OPTIONAL" Error Pulse
+    ~hum:"Unnecessary Copy to Optional"
+    ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_OPTIONAL.md"]
+
+
+let unnecessary_copy_optional_const_pulse =
+  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_OPTIONAL_CONST" Error Pulse
+    ~hum:"Unnecessary Copy to Optional from Const"
+    ~user_documentation:"See [PULSE_UNNECESSARY_COPY_OPTIONAL](#pulse_unnecessary_copy_optional)."
+
+
 let unnecessary_copy_return_pulse =
   register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_RETURN" Error Pulse
     ~hum:"Unnecessary Copy Return"

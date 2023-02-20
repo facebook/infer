@@ -278,6 +278,8 @@ OPTIONS
              PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST (disabled by
            default),
              PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default),
+             PULSE_UNNECESSARY_COPY_OPTIONAL (disabled by default),
+             PULSE_UNNECESSARY_COPY_OPTIONAL_CONST (disabled by default),
              PULSE_UNNECESSARY_COPY_RETURN (disabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),

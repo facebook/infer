@@ -83,7 +83,7 @@ let get_element_copy_by_optional =
     if is_optional_copy_constructor_with_arg_payloads pname arg_payloads then None
     else
       dispatch () pname arg_payloads
-      |> Option.bind ~f:(fun matched -> Option.some_if matched Attribute.CopyOrigin.CopyCtor)
+      |> Option.bind ~f:(fun matched -> Option.some_if matched Attribute.CopyOrigin.CopyToOptional)
 
 
 let try_eval path location e astate =
