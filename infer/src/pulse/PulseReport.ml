@@ -17,6 +17,7 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
   else
     (* Report suppressed issues with a message to distinguish them from non-suppressed issues.
        Useful for infer's tests. *)
+    let loc_instantiated = Diagnostic.get_location_instantiated diagnostic in
     let extra_trace =
       if is_suppressed && Config.pulse_report_issues_for_tests then
         let depth = 0 in
@@ -72,7 +73,7 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
         ; config_usage_extra
         ; taint_extra }
     in
-    Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic)
+    Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic) ?loc_instantiated
       ~ltr:(extra_trace @ get_trace diagnostic)
       ~extras Pulse
       (get_issue_type ~latent diagnostic)

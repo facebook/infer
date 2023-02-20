@@ -8,7 +8,13 @@
 open! IStd
 
 type log_t =
-  ?ltr:Errlog.loc_trace -> ?extras:Jsonbug_t.extra -> Checker.t -> IssueType.t -> string -> unit
+     ?loc_instantiated:Location.t
+  -> ?ltr:Errlog.loc_trace
+  -> ?extras:Jsonbug_t.extra
+  -> Checker.t
+  -> IssueType.t
+  -> string
+  -> unit
 
 module Suppression = struct
   let does_annotation_suppress_issue (kind : IssueType.t) (annot : Annot.t) =
@@ -138,7 +144,15 @@ let log_issue_from_summary_simplified ?severity_override proc_desc err_log ~loc 
     ~loc ~ltr ?extras checker issue_to_report
 
 
-let log_issue proc_desc err_log ~loc ?ltr ?extras checker issue_type error_message =
+let log_issue proc_desc err_log ~loc ?loc_instantiated ?ltr ?extras checker issue_type error_message
+    =
+  let ltr =
+    Option.map ltr ~f:(fun default ->
+        Option.value_map ~default loc_instantiated ~f:(fun loc_instantiated ->
+            let depth = 0 in
+            let tags = [] in
+            Errlog.make_trace_element depth loc_instantiated "first instantiated at" tags :: default ) )
+  in
   log_issue_from_summary_simplified proc_desc err_log ~loc ?ltr ?extras checker issue_type
     error_message
 

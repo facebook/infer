@@ -109,6 +109,9 @@ val get_formals : t -> (Mangled.t * Typ.t * Annot.Item.t) list
 val get_loc : t -> Location.t
 (** Return loc information for the procedure *)
 
+val get_loc_instantiated : t -> Location.t option
+(** Return instantiated loc information for the procedure *)
+
 val get_proc_name : t -> Procname.t
 
 val get_pvar_formals : t -> (Pvar.t * Typ.t) list

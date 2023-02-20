@@ -130,6 +130,8 @@ let get_proc_name attributes = attributes.proc_name
 
 let get_loc attributes = attributes.loc
 
+let get_loc_instantiated attributes = attributes.loc_instantiated
+
 let to_return_type attributes =
   if attributes.has_added_return_param then
     match List.last attributes.formals with

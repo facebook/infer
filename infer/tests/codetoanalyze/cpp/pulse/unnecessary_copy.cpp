@@ -8,6 +8,7 @@
 #include <set>
 #include <string>
 #include <list>
+#include "header.h"
 
 struct Arr {
   int arr[2];
@@ -668,3 +669,12 @@ class FVector {
  protected:
   std::vector<int> table_;
 };
+
+void call_templated_func_specialized_int(const std::vector<int>& arg) {
+  copy_in_header_bad(arg);
+}
+
+void call_templated_func_specialized_string(
+    const std::vector<std::string>& arg) {
+  copy_in_header_bad(arg);
+}

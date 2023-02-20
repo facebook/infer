@@ -153,6 +153,7 @@ type t =
       ; source_typ: Typ.t option
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
+      ; location_instantiated: Location.t option
       ; from: PulseAttribute.CopyOrigin.t }
 [@@deriving equal]
 
@@ -211,9 +212,14 @@ let pp fmt diagnostic =
       ; source_typ: Typ.t option
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
-      ; from: PulseAttribute.CopyOrigin.t } ->
+      ; from: PulseAttribute.CopyOrigin.t
+      ; location_instantiated: Location.t option } ->
       F.fprintf fmt
-        "UnnecessaryCopy {@[copied_into=%a;@;typ=%a;@;location:%a;@;copied_location:%a@;from=%a@]}"
+        "UnnecessaryCopy {@[copied_into=%a;@;\
+         typ=%a;@;\
+         location:%a;@;\
+         copied_location:%a@;\
+         from=%a;loc_instantiated=%a@]}"
         PulseAttribute.CopiedInto.pp copied_into
         (Pp.option (Typ.pp_full Pp.text))
         source_typ Location.pp location
@@ -222,7 +228,8 @@ let pp fmt diagnostic =
               F.pp_print_string fmt "none"
           | Some (callee, location) ->
               F.fprintf fmt "%a,%a" Procname.pp callee Location.pp location )
-        copied_location PulseAttribute.CopyOrigin.pp from
+        copied_location PulseAttribute.CopyOrigin.pp from (Pp.option Location.pp)
+        location_instantiated
 
 
 let get_location = function
@@ -264,6 +271,13 @@ let get_location = function
   | TaintFlow {location}
   | UnnecessaryCopy {location} ->
       location
+
+
+let get_location_instantiated = function
+  | UnnecessaryCopy {location_instantiated} ->
+      location_instantiated
+  | _ ->
+      None
 
 
 let get_copy_type = function
