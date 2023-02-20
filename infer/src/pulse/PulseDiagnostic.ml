@@ -617,20 +617,24 @@ let get_message diagnostic =
          hence suppress the warning"
       in
       let suggestion_msg =
-        match (from : CopyOrigin.t) with
-        | CopyCtor ->
+        match (from, copied_into) with
+        | _, IntoIntermediate _ ->
+            suggestion_msg_move
+        | _, IntoField _ ->
+            "Rather than copying into the field, consider moving into it instead"
+        | CopyCtor, IntoVar _ ->
             "To avoid the copy, try using a reference `&`"
-        | CopyAssignment ->
+        | CopyAssignment, IntoVar _ ->
             suggestion_msg_move
       in
       match copied_into with
       | IntoIntermediate {source_opt= None} ->
           F.asprintf "An intermediate%a is %a on %a. %s." pp_typ source_typ CopyOrigin.pp from
-            Location.pp_line location suggestion_msg_move
+            Location.pp_line location suggestion_msg
       | IntoIntermediate {source_opt= Some source_expr} ->
           F.asprintf "variable `%a`%a is %a unnecessarily into an intermediate on %a. %s."
             DecompilerExpr.pp_source_expr source_expr pp_typ source_typ CopyOrigin.pp from
-            Location.pp_line location suggestion_msg_move
+            Location.pp_line location suggestion_msg
       | IntoVar {source_opt= None} ->
           F.asprintf
             "%a variable `%a` is not modified after it is copied from a source%a on %a. %s. %s."
@@ -641,17 +645,14 @@ let get_message diagnostic =
             "%a variable `%a` is not modified after it is copied from `%a`%a on %a. %s. %s."
             CopyOrigin.pp from CopiedInto.pp copied_into DecompilerExpr.pp_source_expr source_expr
             pp_typ source_typ Location.pp_line location suggestion_msg suppression_msg
-      | IntoField {field; source_opt} -> (
-          let advice = "Rather than copying into the field, consider moving into it instead." in
-          match source_opt with
-          | Some source_expr ->
-              F.asprintf "`%a`%a is %a into field `%a` but is not modified afterwards. %s"
-                DecompilerExpr.pp source_expr pp_typ source_typ CopyOrigin.pp from Fieldname.pp
-                field advice
-          | None ->
-              F.asprintf
-                "Field `%a` is %a into from an rvalue-ref%a but is not modified afterwards. %s"
-                Fieldname.pp field CopyOrigin.pp from pp_typ source_typ advice ) )
+      | IntoField {field; source_opt= None} ->
+          F.asprintf
+            "Field `%a` is %a into from an rvalue-ref%a but is not modified afterwards. %s."
+            Fieldname.pp field CopyOrigin.pp from pp_typ source_typ suggestion_msg
+      | IntoField {field; source_opt= Some source_expr} ->
+          F.asprintf "`%a`%a is %a into field `%a` but is not modified afterwards. %s."
+            DecompilerExpr.pp source_expr pp_typ source_typ CopyOrigin.pp from Fieldname.pp field
+            suggestion_msg )
 
 
 let add_errlog_header ~nesting ~title location errlog =
