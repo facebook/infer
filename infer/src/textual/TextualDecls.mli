@@ -35,6 +35,8 @@ val is_field_declared : t -> Textual.qualified_fieldname -> bool
 
 val source_file : t -> Textual.SourceFile.t
 
+val get_undefined_types : t -> string Seq.t
+
 type error
 
 val pp_error : Textual.SourceFile.t -> Format.formatter -> error -> unit

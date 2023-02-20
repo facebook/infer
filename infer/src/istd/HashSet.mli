@@ -20,7 +20,13 @@ module type S = sig
 
   val add : elt -> t -> unit
 
+  val remove : elt -> t -> unit
+
+  val remove_all : elt Iter.t -> t -> unit
+
   val iter : t -> elt Iter.t
+
+  val seq : t -> elt Seq.t
 
   val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
 

@@ -82,13 +82,15 @@ module TypeNameBridge = struct
     JavaClass (replace_2colons_with_dot string |> JavaClassName.from_string)
 
 
-  let to_sil (lang : Lang.t) {value} : SilTyp.Name.t =
+  let value_to_sil (lang : Lang.t) value : SilTyp.Name.t =
     match lang with
     | Java ->
         string_to_java_sil value
     | Hack ->
         HackClass (HackClassName.make value)
 
+
+  let to_sil (lang : Lang.t) {value} = value_to_sil lang value
 
   let java_lang_object = of_java_name "java.lang.Object"
 
@@ -883,6 +885,11 @@ module ModuleBridge = struct
                      Java examples are not in SSA *)
                   SsaVerification.run pdesc ;
                 ProcDescBridge.to_sil lang decls_env cfgs pdesc ) ;
+        (* Register undefined types in tenv *)
+        TextualDecls.get_undefined_types decls_env
+        |> Seq.iter (fun tname ->
+               let sil_tname = TypeNameBridge.value_to_sil lang tname in
+               Tenv.mk_struct ~dummy:true tenv sil_tname |> ignore ) ;
         (cfgs, tenv)
 
 

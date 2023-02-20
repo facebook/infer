@@ -19,7 +19,13 @@ module type S = sig
 
   val add : elt -> t -> unit
 
+  val remove : elt -> t -> unit
+
+  val remove_all : elt Iter.t -> t -> unit
+
   val iter : t -> elt Iter.t
+
+  val seq : t -> elt Seq.t
 
   val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
 
@@ -43,7 +49,13 @@ module Make (Key : Hashtbl.HashedType) : S with type elt = Key.t = struct
 
   let add x xs = replace xs x ()
 
+  let remove x xs = remove xs x
+
   let iter xs f = iter (fun x _ -> f x) xs
+
+  let seq xs = to_seq_keys xs
+
+  let remove_all it xs = Iter.iter (fun y -> remove y xs) it
 
   let fold f = fold (fun x _ acc -> f x acc)
 
