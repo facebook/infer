@@ -456,6 +456,8 @@ let create :
  fun ~jobs ~child_prologue ~f ~child_epilogue ~tasks ->
   let task_bar = TaskBar.create ~jobs in
   let children_pipes = create_pipes jobs in
+  (* Flush formatters in the parent before we start forking children. *)
+  L.flush_formatters () ;
   let slots =
     Array.init jobs ~f:(fun slot ->
         let child_pipe = List.nth_exn children_pipes slot in
