@@ -11,8 +11,6 @@ include $(ROOT_DIR)/Makefile.config
 INFER_MAIN = infer
 INFERTOP_MAIN = infertop
 INFERUNIT_MAIN = inferunit
-INFER_CREATE_TRACEVIEW_LINKS_MODULE = InferCreateTraceViewLinks
-INFER_CREATE_TRACEVIEW_LINKS_MAIN = $(INFER_CREATE_TRACEVIEW_LINKS_MODULE)
 CHECKCOPYRIGHT_MAIN = checkCopyright
 
 #### Clang declarations ####
@@ -38,12 +36,6 @@ CLANG_BINIOU_DICT = $(ETC_DIR)/clang_ast.dict
 
 ifeq ($(ENABLE_OCAMLOPT_CUSTOM_CC),yes)
 EXTRA_CFLAGS += -cc,$(CC)
-endif
-
-# list of ocamlbuild targets common to all build targets -- native version
-INFER_CONFIG_TARGETS = $(INFER_MAIN).exe
-ifeq ($(IS_FACEBOOK_TREE),yes)
-INFER_CONFIG_TARGETS += $(INFER_CREATE_TRACEVIEW_LINKS_MAIN).exe
 endif
 
 OCAML_GENERATED_SOURCES = base/Version.ml
@@ -91,8 +83,7 @@ runtest_formatted: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest
 .PHONY: test
 test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest_formatted
 	BYTE_MODE=true $(DUNE_BUILD) \
-	  $(patsubst %.exe, %.bc.exe, $(INFER_CONFIG_TARGETS)) \
-	  scripts/$(CHECKCOPYRIGHT_MAIN).bc.exe $(INFERUNIT_MAIN).bc.exe $(INFERTOP_MAIN).bc.exe
+	  $(INFER_MAIN).bc.exe scripts/$(CHECKCOPYRIGHT_MAIN).bc.exe $(INFERUNIT_MAIN).bc.exe $(INFERTOP_MAIN).bc.exe
 
 .PHONY: unit
 unit: runtest test
@@ -113,7 +104,7 @@ check: $(SRC_BUILD_COMMON)
 
 .PHONY: watch
 watch: $(SRC_BUILD_COMMON)
-	$(DUNE_BUILD) --watch --terminal-persistence=clear-on-rebuild $(INFER_CONFIG_TARGETS)
+	$(DUNE_BUILD) --watch --terminal-persistence=clear-on-rebuild $(INFER_MAIN).exe
 
 #### Aliases for building binaries ####
 
@@ -125,11 +116,11 @@ watch: $(SRC_BUILD_COMMON)
 
 .PHONY: $(INFER_BIN).exe
 $(INFER_BIN).exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(QUIET)$(DUNE_BUILD) $(INFER_CONFIG_TARGETS)
+	$(QUIET)$(DUNE_BUILD) $(INFER_MAIN).exe
 
 .PHONY: $(INFER_BIN).bc.exe
 $(INFER_BIN).bc.exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(QUIET)BYTE_MODE=true $(DUNE_BUILD) $(patsubst %.exe, %.bc.exe, $(INFER_CONFIG_TARGETS))
+	$(QUIET)BYTE_MODE=true $(DUNE_BUILD) $(INFER_MAIN).bc.exe
 
 .PHONY: $(INFERTOP_BIN) toplevel
 $(INFERTOP_BIN): $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
@@ -144,17 +135,11 @@ checkCopyright: $(CHECKCOPYRIGHT_BIN)
 .PHONY: infer
 infer: $(INFER_BIN).exe
 	$(INSTALL_PROGRAM) -C $(INFER_BIN).exe $(INFER_BIN)
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(INSTALL_PROGRAM) -C $(INFER_CREATE_TRACEVIEW_LINKS_BIN).exe $(INFER_CREATE_TRACEVIEW_LINKS_BIN)
-endif
 	$(MAKE) $(INFER_BIN_ALIASES)
 
 .PHONY: byte
 byte: $(INFER_BIN).bc.exe
 	$(INSTALL_PROGRAM) -C $(INFER_BIN).bc.exe $(INFER_BIN)
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(INSTALL_PROGRAM) -C $(INFER_CREATE_TRACEVIEW_LINKS_BIN).bc.exe $(INFER_CREATE_TRACEVIEW_LINKS_BIN)
-endif
 	$(MAKE) $(INFER_BIN_ALIASES)
 
 INFER_BIN_ALIASES = $(foreach alias,$(INFER_COMMANDS),$(BIN_DIR)/$(alias))
@@ -164,9 +149,6 @@ $(INFER_BIN_ALIASES): Makefile $(BIN_DIR)/$(INFER_MAIN)
 	$(QUIET)touch $@
 
 roots:=Infer
-ifeq ($(IS_FACEBOOK_TREE),yes)
-roots += $(INFER_CREATE_TRACEVIEW_LINKS_MODULE)
-endif
 clusters:=absint al atd backend base biabduction bufferoverrun checkers clang clang_stubs concurrency cost c_stubs datalog deadcode integration IR istd java labs dotnet llvm nullsafe opensource pulse quandary scripts test_determinator topl unit
 
 ml_src_files:=$(shell find . -not -path "./*stubs*" -regex '\./[a-zA-Z].*\.ml\(i\)*')
@@ -276,7 +258,7 @@ clean:
 	$(REMOVE) base/Version.ml.tmp.* dune.tmp.* dune-workspace.tmp.*
 #	be a bit more aggressive than needed with what we remove here so that stale binaries that
 #	only existed in previous versions get removed as well
-	$(REMOVE) $(INFER_BIN) $(INFER_BIN_ALIASES) $(INFER_CREATE_TRACEVIEW_LINKS_BIN)
+	$(REMOVE) $(INFER_BIN) $(INFER_BIN_ALIASES)
 	$(REMOVE) $(BIN_DIR)/llvm_sil
 	$(REMOVE) atd/*_{j,t,v}.ml{,i} atd/clang_ast_*
 	$(REMOVE) mod_dep.dot

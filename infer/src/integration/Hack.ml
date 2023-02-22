@@ -250,8 +250,7 @@ end
     When the whole compilation unit has been accumulated, [Unit.capture_unit] is called. *)
 let process_output ic =
   let unit_count, units = Unit.extract_units ic in
-  (* Use @. to flush the format buffer and avoid double printing in child processes. *)
-  Option.iter unit_count ~f:(L.progress "Expecting to capture %d files@.") ;
+  Option.iter unit_count ~f:(L.progress "Expecting to capture %d files@\n") ;
   let n_captured, n_error = (ref 0, ref 0) in
   (* action's output and on_finish's input are connected and consistent with
      ProcessPool.TaskGenerator's contract *)

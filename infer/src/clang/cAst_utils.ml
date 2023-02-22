@@ -357,7 +357,7 @@ let is_no_escape_block_arg decl =
   List.exists attrs ~f:has_noescape_attr
 
 
-let is_implicit_decl decl =
+let is_cpp_implicit_decl decl =
   let decl_info = Clang_ast_proj.get_decl_tuple decl in
   decl_info.Clang_ast_t.di_is_implicit
 

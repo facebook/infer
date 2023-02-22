@@ -91,7 +91,8 @@ type t =
       ; sink: Taint.t * Trace.t
       ; location: Location.t
       ; flow_kind: flow_kind
-      ; policy_description: string }
+      ; policy_description: string
+      ; policy_privacy_effect: string option }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; source_typ: Typ.t option
@@ -99,6 +100,7 @@ type t =
       ; copied_location: (Procname.t * Location.t) option
             (* [copied_location] has a value when the copied location is different to where to
                report: e.g. this is the case for returning copied values. *)
+      ; location_instantiated: Location.t option
       ; from: PulseAttribute.CopyOrigin.t }
 [@@deriving equal]
 
@@ -110,6 +112,8 @@ val aborts_execution : t -> bool
 val get_message : t -> string
 
 val get_location : t -> Location.t
+
+val get_location_instantiated : t -> Location.t option
 
 val get_copy_type : t -> Typ.t option
 

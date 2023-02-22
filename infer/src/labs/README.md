@@ -125,7 +125,7 @@ Augment the summary type with state to indicate whether the current procedure re
 
 ```OCaml
   match analyze_dependency callee_procname with
-  | Some (callee_proc_desc, callee_summary) ->
+  | Some callee_summary ->
       (* interprocedural analysis produced a summary: use it *)
       ()
   | None ->

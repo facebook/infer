@@ -746,6 +746,8 @@ topl_process:test_2_Bad/0: expected_crash
 
 ----- topl_taint -----
 topl_taint:fp_test_c2_Ok/0: ok
+topl_taint:fp_test_send4_Ok/0: ok
+topl_taint:fp_test_send8_Ok/0: ok
 topl_taint:test_a_Bad/0: taint_error
 topl_taint:test_b_Ok/0: ok
 topl_taint:test_c_Bad/0: taint_error
@@ -756,4 +758,10 @@ topl_taint:test_g_Ok/0: ok
 topl_taint:test_h_Bad/0: taint_error
 topl_taint:test_i_Ok/0: ok
 topl_taint:test_j_Bad/0: case_clause
+topl_taint:test_send1_Ok/0: ok
+topl_taint:test_send2_Bad/0: taint_error
+topl_taint:test_send3_Ok/0: ok
+topl_taint:test_send5_Ok/0: ok
+topl_taint:test_send6_Bad/0: taint_error
+topl_taint:test_send7_Ok/0: ok
 

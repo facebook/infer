@@ -9,9 +9,6 @@ open! IStd
 
 (** {2 Analysis API} *)
 
-val get_model_proc_desc : Procname.t -> Procdesc.t option
-(** get the preanalysed procdesc of a model; raises if procname given is not a biabduction model *)
-
 val html_debug_new_node_session :
      ?kind:[`ComputePre | `ExecNode | `ExecNodeNarrowing | `WTO]
   -> pp_name:(Format.formatter -> unit)
@@ -32,8 +29,7 @@ type callbacks =
       -> pp_name:(Format.formatter -> unit)
       -> Procdesc.Node.t
       -> f:(unit -> 'a)
-      -> 'a
-  ; get_model_proc_desc_f: Procname.t -> Procdesc.t option }
+      -> 'a }
 
 val set_callbacks : callbacks -> unit
 (** make sure this is called before starting any actual analysis *)

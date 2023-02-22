@@ -646,8 +646,8 @@ let execute_pthread_create
               (* no precondition to check, skip *)
               [(prop_, path)]
           | Some callee_summary ->
-              SymExec.proc_call callee_summary {builtin_args with args= [(routine_arg, snd arg)]} )
-      )
+              SymExec.proc_call pname callee_summary
+                {builtin_args with args= [(routine_arg, snd arg)]} ) )
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 

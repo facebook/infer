@@ -443,8 +443,18 @@ AS_IF([test "$SED" != "xno"], [
 ])
 AC_SUBST([GNU_SED])
 
-AC_CHECK_TOOL([BREW], [brew], [no])
+AC_ASSERT_PROG([diff], [$DIFF])
+AC_MSG_CHECKING([if diff supports --LTYPE-line-format=LFMT options])
+# there are several such options but just test one of them and hope for the best
+AS_IF([diff --unchanged-line-format=A /dev/null /dev/null 2>/dev/null], [
+  DIFF_CAN_FORMAT=yes
+], [
+  DIFF_CAN_FORMAT=no
+])
+AC_MSG_RESULT([$DIFF_CAN_FORMAT])
+AC_SUBST([DIFF_CAN_FORMAT])
 
+AC_CHECK_TOOL([BREW], [brew], [no])
 AC_CHECK_TOOL([INSTALL_NAME_TOOL], [install_name_tool], [no])
 AC_SUBST([INSTALL_NAME_TOOL])
 AC_CHECK_TOOL([LDD], [ldd], [no])

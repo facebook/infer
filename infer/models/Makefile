@@ -13,6 +13,8 @@ OBJC_MODELS_DIR = objc/src
 
 RESULTS_DIR = infer-out
 RESULTS_DB = $(RESULTS_DIR)/results.db
+CAPTURE_DB = $(RESULTS_DIR)/capture.db
+
 INFER_OPTIONS = --jobs 1 --biabduction-only --results-dir $(RESULTS_DIR) --biabduction-models-mode
 
 JAVA_MODELS_OUT = java/models
@@ -27,6 +29,10 @@ SQL_DUMP_MODEL_SPECS = \
 	-cmd ".mode insert model_specs" \
 	-cmd ".output $(MODELS_RESULTS_FILE)" \
 	-cmd "select * from specs order by proc_uid ;"
+
+SQL_DUMP_MODEL_PROCS = \
+	-cmd ".mode insert procedures" \
+	-cmd "select * from procedures order by proc_uid ;"
 
 
 .PHONY: all
@@ -66,7 +72,7 @@ $(MODELS_RESULTS_FILE): $(MAKEFILE_LIST)
 	$(MAKE) capture
 	$(QUIET)$(call silent_on_success,Analyzing models,$(INFER_BIN) analyze $(INFER_OPTIONS))
 	sqlite3 $(RESULTS_DB) $(SQL_DUMP_MODEL_SPECS) </dev/null
-
+	sqlite3 $(CAPTURE_DB) $(SQL_DUMP_MODEL_PROCS) </dev/null >> $(MODELS_RESULTS_FILE)
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
 $(MODELS_RESULTS_FILE): $(CLANG_DEPS_NO_MODELS)

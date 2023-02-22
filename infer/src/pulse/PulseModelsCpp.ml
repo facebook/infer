@@ -281,6 +281,49 @@ module BasicString = struct
     PulseOperations.write_id ret_id (string, Hist.add_event path event hist) astate
 
 
+  let iterator_common ((this, _) as this_hist) ((iter, _) as iter_hist) ~desc {path; location}
+      astate =
+    let event = Hist.call_event path location desc in
+    let* astate, backing_ptr =
+      PulseOperations.eval_access path Read location iter_hist
+        (FieldAccess GenericArrayBackedCollection.field) astate
+    in
+    let+ astate, internal_string = to_internal_string path location this_hist astate in
+    let astate =
+      AbductiveDomain.AddressAttributes.add_one iter (PropagateTaintFrom [{v= this}]) astate
+    in
+    (astate, event, backing_ptr, internal_string)
+
+
+  let begin_ this_hist iter_hist ~desc : model =
+   fun ({path; location} as model_data) astate ->
+    let<*> astate, event, backing_ptr, (string, hist) =
+      iterator_common this_hist iter_hist ~desc model_data astate
+    in
+    let<+> astate =
+      PulseOperations.write_deref path location ~ref:backing_ptr
+        ~obj:(string, Hist.add_event path event hist)
+        astate
+    in
+    astate
+
+
+  let end_ this_hist iter_hist ~desc : model =
+   fun ({path; location} as model_data) astate ->
+    let<*> astate, event, backing_ptr, string_hist =
+      iterator_common this_hist iter_hist ~desc model_data astate
+    in
+    let<*> astate, (last, hist) =
+      GenericArrayBackedCollection.eval_pointer_to_last_element path location string_hist astate
+    in
+    let<+> astate =
+      PulseOperations.write_deref path location ~ref:backing_ptr
+        ~obj:(last, Hist.add_event path event hist)
+        astate
+    in
+    astate
+
+
   let destructor this_hist : model =
    fun {path; location} astate ->
     let call_event = Hist.call_event path location "std::basic_string::~basic_string()" in
@@ -329,11 +372,10 @@ end
 module Function = struct
   let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
       model =
-   fun {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate ->
-    let havoc_ret (ret_id, _) astate =
-      let event = Hist.call_event path location "std::function::operator()" in
-      [PulseOperations.havoc_id ret_id (Hist.single_event path event) astate]
-    in
+   fun { path
+       ; analysis_data= {analyze_dependency; tenv; proc_desc}
+       ; location
+       ; ret= (ret_id, _) as ret } astate ->
     let<*> astate, (lambda, _) =
       PulseOperations.eval_access path Read location lambda_ptr_hist Dereference astate
     in
@@ -341,7 +383,16 @@ module Function = struct
     match AddressAttributes.get_closure_proc_name lambda astate with
     | None ->
         (* we don't know what proc name this lambda resolves to *)
-        havoc_ret ret astate |> List.map ~f:(fun astate -> Ok (ContinueProgram astate))
+        let desc = "std::function::operator()" in
+        let hist = Hist.single_event path (Hist.call_event path location desc) in
+        let astate = PulseOperations.havoc_id ret_id hist astate in
+        let astate =
+          let unknown_effect = Attribute.UnknownEffect (Model desc, hist) in
+          List.fold actuals ~init:astate
+            ~f:(fun acc ProcnameDispatcher.Call.FuncArg.{arg_payload= actual, _} ->
+              AddressAttributes.add_one actual unknown_effect acc )
+        in
+        [Ok (ContinueProgram astate)]
     | Some callee_proc_name ->
         let actuals =
           (lambda_ptr_hist, typ)
@@ -602,6 +653,7 @@ let matchers : matcher list =
     <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> sub_overflow
   ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
   ; +BuiltinDecl.(match_builtin __delete_array) <>$ capt_arg $--> delete_array
+  ; +BuiltinDecl.(match_builtin __infer_skip) &--> Basic.skip
   ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
   ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array
   ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new
@@ -610,6 +662,10 @@ let matchers : matcher list =
     $--> BasicString.constructor_from_constant ~desc:"std::basic_string::basic_string()"
   ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
     $--> BasicString.constructor
+  ; -"std" &:: "basic_string" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> BasicString.begin_ ~desc:"std::basic_string::begin()"
+  ; -"std" &:: "basic_string" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> BasicString.end_ ~desc:"std::basic_string::end()"
   ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload
     $--> BasicString.data ~desc:"std::basic_string::data()"
   ; -"std" &:: "basic_string" &:: "empty" <>$ capt_arg_payload $--> BasicString.empty

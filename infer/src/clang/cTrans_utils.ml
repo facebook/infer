@@ -461,7 +461,7 @@ let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_ty
   let method_kind = ClangMethodKind.OBJC_INSTANCE in
   let pname =
     CType_decl.CProcname.NoAstDecl.objc_method_of_string_kind cls_name CFrontend_config.init
-      Procname.ObjC_Cpp.ObjCInstanceMethod
+      Procname.ObjC_Cpp.ObjCInstanceMethod []
   in
   CMethod_trans.create_external_procdesc trans_state.context.CContext.translation_unit_context
     trans_state.context.CContext.cfg pname method_kind None ;
@@ -551,6 +551,8 @@ let dereference_value_from_result ?(strip_pointer = false) source_range sil_loc 
 
 let cast_operation ?objc_bridge_cast_kind cast_kind ((exp, typ) as exp_typ) cast_typ sil_loc =
   match cast_kind with
+  | `NoOp when Typ.is_rvalue_reference cast_typ ->
+      ([], (Exp.Cast (cast_typ, exp), cast_typ))
   | `NoOp | `DerivedToBase | `UncheckedDerivedToBase ->
       (* These casts ignore change of type *)
       ([], exp_typ)

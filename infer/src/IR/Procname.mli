@@ -140,10 +140,12 @@ module Parameter : sig
 end
 
 module ObjC_Cpp : sig
+  type mangled = string option [@@deriving compare]
+
   type kind =
-    | CPPMethod of {mangled: string option; is_copy_assignment: bool}
-    | CPPConstructor of {mangled: string option; is_copy_ctor: bool; is_implicit: bool}
-    | CPPDestructor of {mangled: string option}
+    | CPPMethod of mangled
+    | CPPConstructor of mangled
+    | CPPDestructor of mangled
     | ObjCClassMethod
     | ObjCInstanceMethod
   [@@deriving compare]
@@ -154,6 +156,7 @@ module ObjC_Cpp : sig
     ; kind: kind
     ; method_name: string
     ; parameters: Parameter.clang_parameter list
+          (** NOTE: [parameters] should NOT include additional [this/self] or [__return_param]. *)
     ; template_args: Typ.template_spec_info }
   [@@deriving compare]
 
@@ -261,13 +264,7 @@ val replace_parameters : Parameter.t list -> t -> t
 
 val parameter_of_name : t -> Typ.Name.t -> Parameter.t
 
-val is_copy_assignment : t -> bool
-
-val is_copy_ctor : t -> bool
-
 val is_cpp_assignment_operator : t -> bool
-
-val is_implicit_ctor : t -> bool
 
 val is_destructor : t -> bool
 
@@ -305,6 +302,8 @@ module Hash : Caml.Hashtbl.S with type key = t
 module LRUHash : LRUHashtbl.S with type key = t
 
 module HashQueue : Hash_queue.S with type key = t
+
+module HashSet : HashSet.S with type elt = t
 
 (** Maps from proc names. *)
 module Map : PrettyPrintable.PPMap with type key = t
@@ -423,6 +422,9 @@ val pp_without_templates : Format.formatter -> t -> unit
 val pp : Format.formatter -> t -> unit
 (** Pretty print a proc name for the user to see. *)
 
+val pp_verbose : Format.formatter -> t -> unit
+(** Pretty print a proc name for the user to see with verbosity parameter. *)
+
 val to_string : t -> string
 (** Convert a proc name into a string for the user to see. *)
 
@@ -470,6 +472,8 @@ val pp_name_only : F.formatter -> t -> unit
     - In C/Erlang: "<ProcName>" *)
 
 val is_c : t -> bool
+
+val is_lambda_or_block : t -> bool
 
 val patterns_match : Re.Str.regexp list -> t -> bool
 (** Test whether a proc name matches to one of the regular expressions. *)

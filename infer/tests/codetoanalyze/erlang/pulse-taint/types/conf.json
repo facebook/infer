@@ -1,0 +1,34 @@
+{
+    "pulse-taint-policies": [
+        {
+            "short_description": "Testing taint analysis based on return types",
+            "taint_flows": [
+                {
+                    "source_kinds": [
+                        "TypeBasedSource"
+                    ],
+                    "sink_kinds": [
+                        "SimpleSink"
+                    ]
+                }
+            ]
+        }
+    ],
+    "pulse-taint-sources": [
+        {
+            "procedure": "pulse_taint_types:__infer_assume_type_dirty/1",
+            "kinds": [
+                "TypeBasedSource"
+            ],
+            "taint_target" : "AllArguments"
+        }
+    ],
+    "pulse-taint-sinks": [
+        {
+            "procedure": "pulse_taint_types:sink/1",
+            "kinds": [
+                "SimpleSink"
+            ]
+        }
+    ]
+}

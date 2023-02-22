@@ -13,5 +13,8 @@
    tdigest unix xmlm yojson zarith zip CStubs)
  (modules All_infer_in_one_file)
  (preprocess
-  (pps ppx_blob ppx_compare ppx_enumerate ppx_fields_conv ppx_hash
-    ppx_sexp_conv ppx_show ppx_variants_conv ppx_yojson_conv sedlex.ppx -no-check)))
+   (pps ppx_blob ppx_compare ppx_enumerate ppx_fields_conv ppx_hash
+     ppx_sexp_conv ppx_show ppx_variants_conv ppx_yojson_conv sedlex.ppx -no-check))
+ (preprocessor_deps
+  (glob_files ../../documentation/checkers/*.md)
+  (glob_files ../../documentation/issues/*.md)))

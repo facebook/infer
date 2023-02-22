@@ -7,8 +7,21 @@
  (name ClangUnitTests)
  (public_name infer.ClangUnitTests)
  (flags
-  (:standard -open Core -open IR -open IStdlib -open IStd -open ATDGenerated
-    -open IBase -open ClangFrontend))
+  (:standard
+   -open
+   Core
+   -open
+   IR
+   -open
+   IStdlib
+   -open
+   IStd
+   -open
+   ATDGenerated
+   -open
+   IBase
+   -open
+   ClangFrontend))
  (libraries oUnit core IStdlib ATDGenerated IBase IR ClangFrontend)
  (preprocess
   (pps ppx_compare)))

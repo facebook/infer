@@ -80,8 +80,11 @@ val pp_ocaml_pos_opt : F.formatter -> ocaml_pos option -> unit
 val setup_log_file : unit -> unit
 (** Set up logging to go to the log file. Call this once the results directory has been set up. *)
 
+val flush_formatters : unit -> unit
+(** Flushes the formatters used for logging. Call this in the parent before you fork(2). *)
+
 val reset_formatters : unit -> unit
-(** Reset the formatters used for logging. Call this when you fork(2). *)
+(** Reset the formatters used for logging. Call this in the child after you fork(2). *)
 
 (** Delayed printing (HTML debug, ...) *)
 

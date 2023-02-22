@@ -466,7 +466,13 @@ end = struct
           trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace ;
           Option.iter
             ~f:(fun loc ->
-              if Procname.is_java pname && not (SourceFile.is_invalid loc.Location.file) then
+              if
+                Procname.is_java pname
+                && (not (SourceFile.is_invalid loc.Location.file))
+                && not
+                     ( Attributes.load pname
+                     |> Option.exists ~f:(fun attrs -> attrs.ProcAttributes.is_biabduction_model) )
+              then
                 let definition_descr =
                   Format.asprintf "Definition of %a"
                     (Procname.pp_simplified_string ~withclass:false)

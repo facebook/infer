@@ -55,7 +55,10 @@ let parse_translate_store ?(base_dir = None) result_dir =
             false )
   in
   let process_one_file json_file =
-    ( if should_process json_file then
+    if should_process json_file then (
+      let t0 = Mtime_clock.now () in
+      let status = Filename.basename json_file in
+      !ProcessPoolState.update_status t0 status ;
       match Utils.read_safe_json_file json_file with
       | Ok json ->
           if not (process_one_ast json) then
@@ -264,4 +267,5 @@ let capture_buck ~command ~args =
       (Process.create_process_and_wait_with_output ~prog:command ~args:["root"] ReadStdout)
   in
   save_beams_from_report ~buck_root ~build_report_path beam_list_path ;
+  L.progress "translating generated beam files@." ;
   process_beams ~buck_root beam_list_path

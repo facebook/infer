@@ -16,7 +16,6 @@ type t =
   ; config_impact_analysis: ConfigImpactAnalysis.Summary.t option Lazy.t
   ; cost: CostDomain.summary option Lazy.t
   ; disjunctive_demo: DisjunctiveDemo.domain option Lazy.t
-  ; dotnet_resource_leaks: ResourceLeakCSDomain.summary option Lazy.t
   ; lab_resource_leaks: ResourceLeakDomain.summary option Lazy.t
   ; litho_required_props: LithoDomain.summary option Lazy.t
   ; pulse: PulseSummary.t option Lazy.t
@@ -58,7 +57,6 @@ let all_fields =
     ~quandary:(fun f -> mk f Quandary QuandarySummary.pp)
     ~racerd:(fun f -> mk f RacerD RacerDDomain.pp_summary)
     ~lab_resource_leaks:(fun f -> mk f LabResourceLeaks ResourceLeakDomain.pp)
-    ~dotnet_resource_leaks:(fun f -> mk f DotnetResourceLeaks ResourceLeakCSDomain.Summary.pp)
     ~scope_leakage:(fun f -> mk f ScopeLeakage ScopeLeakage.Summary.pp)
     ~siof:(fun f -> mk f SIOF SiofDomain.Summary.pp)
     ~simple_lineage:(fun f -> mk f SimpleLineage SimpleLineage.Summary.pp)
@@ -89,7 +87,6 @@ let empty =
   ; config_impact_analysis= no_payload
   ; cost= no_payload
   ; disjunctive_demo= no_payload
-  ; dotnet_resource_leaks= no_payload
   ; lab_resource_leaks= no_payload
   ; litho_required_props= no_payload
   ; pulse= no_payload
@@ -148,10 +145,10 @@ module SQLite = struct
       ~disjunctive_demo:data_of_sqlite_column ~litho_required_props:data_of_sqlite_column
       ~pulse:data_of_sqlite_column ~purity:data_of_sqlite_column ~quandary:data_of_sqlite_column
       ~racerd:data_of_sqlite_column ~lab_resource_leaks:data_of_sqlite_column
-      ~dotnet_resource_leaks:data_of_sqlite_column ~scope_leakage:data_of_sqlite_column
-      ~siof:data_of_sqlite_column ~simple_lineage:data_of_sqlite_column
-      ~simple_shape:data_of_sqlite_column ~starvation:data_of_sqlite_column
-      ~nullsafe:data_of_sqlite_column ~uninit:data_of_sqlite_column
+      ~scope_leakage:data_of_sqlite_column ~siof:data_of_sqlite_column
+      ~simple_lineage:data_of_sqlite_column ~simple_shape:data_of_sqlite_column
+      ~starvation:data_of_sqlite_column ~nullsafe:data_of_sqlite_column
+      ~uninit:data_of_sqlite_column
 
 
   let eager_load stmt ~first_column = (make_eager first_column |> fst) stmt
@@ -197,7 +194,6 @@ module SQLite = struct
     ; config_impact_analysis= lazy (load table ~rowid ConfigImpactAnalysis)
     ; cost= lazy (load table ~rowid Cost)
     ; disjunctive_demo= lazy (load table ~rowid DisjunctiveDemo)
-    ; dotnet_resource_leaks= lazy (load table ~rowid DotnetResourceLeaks)
     ; lab_resource_leaks= lazy (load table ~rowid LabResourceLeaks)
     ; litho_required_props= lazy (load table ~rowid LithoRequiredProps)
     ; pulse= lazy (load table ~rowid Pulse)

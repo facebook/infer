@@ -114,9 +114,6 @@ module type ExceptionalS =
      and module Node = DefaultNode
      and type instrs_dir = Instrs.not_reversed
 
-(** Forward .NET CFG with exceptional control-flow *)
-module ExceptionalHandlerOnly : ExceptionalS
-
 (** Forward CFG with exceptional control-flow *)
 module Exceptional : ExceptionalS
 

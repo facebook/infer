@@ -1,0 +1,9 @@
+The purpose of this directory is to test whether DoliToTextual creates
+the approptiate function descriptions. We wanr to see that the call of
+      infer --capture-doli someFile.doli
+indeed runs static analysis on the contents of the file someFile.doli.
+
+We would like that compilation of the files called *OK.doli should succeed,
+and compilation of the files *Err*doli should fail. This is currently
+sometimes, but not always the case, bacause the current implementation
+of DoliToTextual isnincompete.

@@ -421,7 +421,7 @@ let yojson_lookup yojson_assoc elt_name ~src ~f ~default =
 let timeit ~f =
   let start_time = Mtime_clock.counter () in
   let ret_val = f () in
-  let duration_ms = Mtime_clock.count start_time |> Mtime.Span.to_ms |> int_of_float in
+  let duration_ms = Mtime_clock.count start_time |> IMtime.span_to_ms_int in
   (ret_val, duration_ms)
 
 

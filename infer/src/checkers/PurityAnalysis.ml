@@ -185,9 +185,7 @@ let compute_summary {InterproceduralAnalysis.proc_desc; tenv; analyze_dependency
     Procdesc.get_formals proc_desc
     |> List.map ~f:(fun (mname, _, _) -> Var.of_pvar (Pvar.mk mname proc_name))
   in
-  let get_callee_summary callee_pname =
-    analyze_dependency callee_pname |> Option.bind ~f:(fun (_, (purity_opt, _)) -> purity_opt)
-  in
+  let get_callee_summary callee_pname = analyze_dependency callee_pname |> Option.bind ~f:fst in
   let analysis_data = {tenv; inferbo_invariant_map; formals; get_callee_summary} in
   Analyzer.compute_post analysis_data ~initial:PurityDomain.pure proc_desc
 

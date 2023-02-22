@@ -1,0 +1,3 @@
+OuterHolderInner.kt, OuterHoldsInner.<init>(), 3, SCOPE_LEAKAGE, no_bucket, ERROR, [assignment of scoped object]
+OuterHolderInner.kt, OuterHoldsInner.<init>(), 7, SCOPE_LEAKAGE, no_bucket, ERROR, [assignment of scoped object]
+OuterHolderInner.kt, AnotherOuterHoldsInner.<init>(), 2, SCOPE_LEAKAGE, no_bucket, ERROR, [assignment of scoped object]

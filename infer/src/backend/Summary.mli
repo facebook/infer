@@ -22,30 +22,41 @@ module Stats : sig
   val update : ?add_symops:int -> ?failure_kind:Exception.failure_kind -> t -> t
 end
 
+module Deps : sig
+  type partial = Procname.HashSet.t
+
+  type complete =
+    { callees: Procname.t list
+          (** Summaries of these procedures were used to compute this summary. *)
+    ; used_tenv_sources: SourceFile.t list
+          (** These source files contain type definitions that were used to compute this summary. *)
+    }
+
+  type t =
+    | Partial of partial
+    | Complete of complete
+        (** Dependencies are [partial] and mutable while the summary to which they belong is being
+            computed, then made [complete] and immutable once the summary is fully analyzed. *)
+
+  val add_exn : t -> Procname.t -> unit
+  (** Adds a procname to a partial dependency set ; raises an error if the given dependencies have
+      been marked as complete *)
+end
+
 (** summary of a procedure name *)
 type t =
   { payloads: Payloads.t
   ; mutable sessions: int  (** Session number: how many nodes went through symbolic execution *)
   ; stats: Stats.t
-  ; proc_desc: Procdesc.t
+  ; proc_name: Procname.t
   ; err_log: Errlog.t
         (** Those are issues that are detected for this procedure after per-procedure analysis. In
             addition to that there can be errors detected after file-level analysis (next stage
             after per-procedure analysis). This latter category of errors should NOT be written
             here, use [IssueLog] and its serialization capabilities instead. *)
-  ; mutable callee_pnames: Procname.Set.t
-        (** Summaries of these procedures were used to compute this summary. *)
-  ; mutable used_tenv_sources: SourceFile.Set.t
-        (** These source files contain type definitions that were used to compute this summary. *)
-  }
+  ; mutable dependencies: Deps.t
+        (** Dynamically discovered analysis-time dependencies used to compute this summary *) }
 [@@deriving yojson_of]
-
-val get_proc_name : t -> Procname.t
-(** Get the procedure name *)
-
-val get_proc_desc : t -> Procdesc.t
-
-val get_err_log : t -> Errlog.t
 
 val pp_html : SourceFile.t -> Format.formatter -> t -> unit
 (** Print the summary in html format *)
@@ -60,7 +71,7 @@ module OnDisk : sig
   val get : lazy_payloads:bool -> Procname.t -> t option
   (** Return the summary option for the procedure name *)
 
-  val reset : Procdesc.t -> t
+  val reset : Procname.t -> t
   (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 
   val store : t -> unit
@@ -86,8 +97,6 @@ module OnDisk : sig
           -> unit )
     -> unit
   (** Iterates over all analysis artefacts listed above, for each procedure *)
-
-  val get_model_proc_desc : Procname.t -> Procdesc.t option
 
   val get_count : unit -> int
   (** Counts the summaries currently stored on disk. *)

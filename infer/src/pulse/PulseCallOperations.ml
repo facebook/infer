@@ -94,7 +94,10 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
         in
         if
           Option.exists callee_pname_opt ~f:(fun p ->
-              Procname.is_constructor p || Procname.is_copy_assignment p || Procname.is_destructor p )
+              Procname.is_constructor p
+              || Option.exists (IRAttributes.load p) ~f:(fun attrs ->
+                     attrs.ProcAttributes.is_cpp_copy_assignment )
+              || Procname.is_destructor p )
         then astate
         else
           (* record the [WrittenTo] attribute for all reachable values
@@ -407,8 +410,8 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
             (post :: posts, merge_contradictions contradiction new_contradiction) )
 
 
-let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
-    callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) =
+let call tenv path ~caller_proc_desc ~(callee_data : PulseSummary.t option) call_loc callee_pname
+    ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) =
   (* a special case for objc nil messaging *)
   let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =
     let result_unknown =
@@ -427,13 +430,13 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
     (result_unknown @ result_unknown_nil, contradiction)
   in
   match callee_data with
-  | Some (callee_proc_desc, exec_states) ->
+  | Some exec_states ->
       call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-        (Procdesc.get_attributes callee_proc_desc)
+        (IRAttributes.load_exn callee_pname)
         exec_states astate
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
-      L.d_printfln "No spec found for %a@\n" Procname.pp callee_pname ;
+      L.d_printfln_escaped "No spec found for %a@\n" Procname.pp callee_pname ;
       let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
       let<**> astate_unknown =
         PulseOperations.conservatively_initialize_args arg_values astate

@@ -7,8 +7,17 @@
  (name IR)
  (public_name infer.IR)
  (flags
-  (:standard -open Core -open IStdlib -open IStd -open ATDGenerated -open
-    IBase))
+  (:standard
+   -open
+   Core
+   -open
+   IStdlib
+   -open
+   IStd
+   -open
+   ATDGenerated
+   -open
+   IBase))
  (libraries core zarith ppx_show.runtime IStdlib ATDGenerated IBase)
  (preprocess
   (pps ppx_compare ppx_hash ppx_show ppx_sexp_conv ppx_yojson_conv)))

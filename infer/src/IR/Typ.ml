@@ -323,6 +323,8 @@ let set_ptr_to_const ({desc} as typ) =
       typ
 
 
+let set_to_const ({quals} as typ) = {typ with quals= {quals with is_const= true}}
+
 let mk_array ?default ?quals ?length ?stride elt : t =
   mk ?default ?quals (Tarray {elt; length; stride})
 
@@ -542,8 +544,6 @@ module Name = struct
     F.fprintf fmt "%s %a" (prefix tname) (pp_name_c_syntax Pp.text) tname
 
 
-  let pp_name_only fmt tname = F.fprintf fmt "%a" (pp_name_c_syntax Pp.text) tname
-
   let to_string = F.asprintf "%a" pp
 
   let is_class = function
@@ -745,6 +745,16 @@ let is_pointer_to_void typ = match typ.desc with Tptr ({desc= Tvoid}, _) -> true
 
 let is_pointer_to_smart_pointer =
   let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::shared_ptr"; "std::unique_ptr"] in
+  fun typ ->
+    match typ.desc with
+    | Tptr ({desc= Tstruct (CppClass {name})}, _) ->
+        QualifiedCppName.Match.match_qualifiers matcher name
+    | _ ->
+        false
+
+
+let is_pointer_to_unique_pointer =
+  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::unique_ptr"] in
   fun typ ->
     match typ.desc with
     | Tptr ({desc= Tstruct (CppClass {name})}, _) ->

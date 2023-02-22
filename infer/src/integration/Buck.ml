@@ -365,11 +365,11 @@ let resolve_pattern_targets (buck_mode : BuckMode.t) version targets =
   let deps_query =
     match (buck_mode, version) with
     | Clang, V2 ->
-        Query.deps None
+        Query.deps Config.buck_dependency_depth
     | Clang, V1 | ClangCompilationDB NoDependencies, _ | Erlang, _ ->
         Fn.id
     | Java, _ ->
-        Query.deps Config.buck_java_flavor_dependency_depth
+        Query.deps Config.buck_dependency_depth
     | ClangCompilationDB DepsAllDepths, _ ->
         Query.deps None
     | ClangCompilationDB (DepsUpToDepth depth), _ ->
@@ -450,6 +450,8 @@ let parse_command_and_targets (buck_mode : BuckMode.t) (version : version) origi
     match (buck_mode, version, parsed_args) with
     | Clang, V1, {pattern_targets= []; alias_targets= []; normal_targets} ->
         normal_targets
+    | Clang, V2, {pattern_targets; alias_targets; normal_targets} ->
+        pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
     | _, _, {pattern_targets; alias_targets; normal_targets} ->
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
         |> resolve_pattern_targets buck_mode version

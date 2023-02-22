@@ -1057,3 +1057,23 @@ void testNSArray_cell_ArrayWithArrayGood(void) {
   void* value = NSArray_objectAt(copied, 1);
   testNSArray_sink(value);
 }
+
+void sinkObjectAt0(NSMutableArray* mArr) {
+  void* value = NSArray_objectAt(mArr, 0);
+  testNSArray_sink(value);
+}
+
+void sinkObjectAt1(NSMutableArray* mArr) {
+  void* value = NSArray_objectAt(mArr, 1);
+  testNSArray_sink(value);
+}
+
+void testNSArray_cell_sinkInCalleeBad(void) {
+  NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
+  sinkObjectAt0(mArr);
+}
+
+void testNSArray_cell_sinkInCalleeGood(void) {
+  NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
+  sinkObjectAt1(mArr);
+}

@@ -22,6 +22,7 @@ type mode =
   | BuckErlang of {prog: string; args: string list}
   | BuckGenrule of {prog: string}
   | BuckJavaFlavor of {build_cmd: string list}
+  | BxlClang of {build_cmd: string list}
   | Clang of {compiler: Clang.compiler; prog: string; args: string list}
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
   | Gradle of {prog: string; args: string list}
@@ -32,7 +33,7 @@ type mode =
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
   | Hackc of {prog: string; args: string list}
-  | Textual of {files: string list}
+  | Textual of {textualfiles: string list; dolifiles: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 
@@ -60,6 +61,8 @@ let pp_mode fmt = function
       F.fprintf fmt "BuckGenRule driver mode:@\nprog = '%s'" prog
   | BuckJavaFlavor {build_cmd} ->
       F.fprintf fmt "BuckJavaFlavor driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
+  | BxlClang {build_cmd} ->
+      F.fprintf fmt "BxlClang driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | Clang {prog; args} ->
       F.fprintf fmt "Clang driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | ClangCompilationDB _ ->
@@ -80,8 +83,17 @@ let pp_mode fmt = function
       F.fprintf fmt "Erlc driver mode:@\nargs = %a" Pp.cli_args args
   | Hackc {prog; args} ->
       F.fprintf fmt "Hackc driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
-  | Textual {files} ->
-      F.fprintf fmt "Textual capture mode:@\nfiles = %a" Pp.cli_args files
+  | Textual {textualfiles; dolifiles} -> (
+      ( match textualfiles with
+      | [] ->
+          ()
+      | _ :: _ ->
+          F.fprintf fmt "Textual capture mode:@\nfiles = %a" Pp.cli_args textualfiles ) ;
+      match dolifiles with
+      | [] ->
+          ()
+      | _ :: _ ->
+          F.fprintf fmt "Doli capture mode:@\nfiles = %a" Pp.cli_args dolifiles )
   | XcodeBuild {prog; args} ->
       F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | XcodeXcpretty {prog; args} ->
@@ -158,6 +170,9 @@ let capture ~changed_files mode =
     | BuckJavaFlavor {build_cmd} ->
         L.progress "Capturing for BuckJavaFlavor integration...@." ;
         BuckJavaFlavor.capture build_cmd
+    | BxlClang {build_cmd} ->
+        L.progress "Capturing in bxl/clang mode...@." ;
+        BxlClang.capture build_cmd
     | Clang {compiler; prog; args} ->
         if Config.is_originator then L.progress "Capturing in make/cc mode...@." ;
         Clang.capture compiler ~prog ~args
@@ -188,10 +203,14 @@ let capture ~changed_files mode =
     | Hackc {prog; args} ->
         L.progress "Capturing in hackc mode...@." ;
         Hack.capture ~prog ~args
-    | Textual {files} ->
+    | Textual {textualfiles; dolifiles} ->
         L.progress "Capturing in textual mode...@." ;
-        let files = List.map files ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x) in
-        TextualParser.capture files
+        let dfiles = List.map dolifiles ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x) in
+        TextualParser.capture ~capture:DoliCapture dfiles ;
+        let tfiles =
+          List.map textualfiles ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x)
+        in
+        TextualParser.capture ~capture:TextualCapture tfiles
     | XcodeBuild {prog; args} ->
         L.progress "Capturing in xcodebuild mode...@." ;
         XcodeBuild.capture ~prog ~args
@@ -424,20 +443,21 @@ let assert_supported_build_system build_system =
 let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   match build_cmd with
   | [] -> (
-    match (Config.clang_compilation_dbs, Config.capture_textual) with
-    | _ :: _, _ :: _ ->
-        L.die UserError "Both --clang-compilation-dbs and --capture-textual are set."
-    | _ :: _, [] ->
-        assert_supported_mode `Clang "clang compilation database" ;
-        ClangCompilationDB {db_files= Config.clang_compilation_dbs}
-    | [], _ :: _ ->
-        Textual {files= Config.capture_textual}
-    | [], [] -> (
-      match (Config.cfg_json, Config.tenv_json) with
-      | Some cfg_json, Some tenv_json ->
-          JsonSIL {cfg_json; tenv_json}
-      | _ ->
-          Analyze ) )
+      let textualfiles, dolifiles = (Config.capture_textual, Config.capture_doli) in
+      match (Config.clang_compilation_dbs, textualfiles, dolifiles) with
+      | _ :: _, _ :: _, _ | _ :: _, _, _ :: _ ->
+          L.die UserError "Both --clang-compilation-dbs and --capture-textual are set."
+      | _ :: _, [], [] ->
+          assert_supported_mode `Clang "clang compilation database" ;
+          ClangCompilationDB {db_files= Config.clang_compilation_dbs}
+      | [], _ :: _, _ | [], _, _ :: _ ->
+          Textual {textualfiles; dolifiles}
+      | [], [], [] -> (
+        match (Config.cfg_json, Config.tenv_json) with
+        | Some cfg_json, Some tenv_json ->
+            JsonSIL {cfg_json; tenv_json}
+        | _ ->
+            Analyze ) )
   | prog :: args -> (
       let build_system =
         match Config.force_integration with
@@ -473,6 +493,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
             error_no_buck_mode_specified ()
         | Some Erlang ->
             BuckErlang {prog; args}
+        | Some Clang when Config.buck2_use_bxl ->
+            BxlClang {build_cmd}
         | Some Clang ->
             Buck2Clang {build_cmd}
         | Some Java ->

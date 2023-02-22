@@ -57,7 +57,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           ResourceLeakDomain.release_resource astate
         else
           match analyze_dependency callee_procname with
-          | Some (_callee_proc_desc, callee_summary) ->
+          | Some callee_summary ->
               (* interprocedural analysis produced a summary: use it *)
               ResourceLeakDomain.apply_summary ~summary:callee_summary astate
           | None ->

@@ -8,6 +8,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 module BStats = Stats
 
 module Stats = struct
@@ -41,63 +42,81 @@ module Stats = struct
     F.fprintf fmt "FAILURE:%a SYMOPS:%d@\n" pp_failure_kind_opt failure_kind symops
 end
 
+module Deps = struct
+  type partial = Procname.HashSet.t
+
+  type complete = {callees: Procname.t list; used_tenv_sources: SourceFile.t list}
+
+  type t = Partial of partial | Complete of complete
+
+  let empty () = Partial (Procname.HashSet.create 0)
+
+  let freeze pname = function
+    | Partial callees ->
+        let callees = Iter.to_list (Procname.HashSet.iter callees) in
+        let used_tenv_sources = Tenv.Deps.of_procname pname in
+        {callees; used_tenv_sources}
+    | Complete deps ->
+        deps
+
+
+  let partial_exn = function
+    | Partial p ->
+        p
+    | Complete _ ->
+        L.die InternalError "partial dependency info unavailable for completed summary"
+
+
+  let complete_exn = function
+    | Complete c ->
+        c
+    | Partial _ ->
+        L.die InternalError "complete depenendency info unavailable for partially-computed summary"
+
+
+  let add_exn deps callee = Procname.HashSet.add callee (partial_exn deps)
+end
+
 type t =
   { payloads: Payloads.t
   ; mutable sessions: int
   ; stats: Stats.t
-  ; proc_desc: Procdesc.t
+  ; proc_name: Procname.t
   ; err_log: Errlog.t
-  ; mutable callee_pnames: Procname.Set.t
-  ; mutable used_tenv_sources: SourceFile.Set.t }
+  ; mutable dependencies: Deps.t }
 
-let yojson_of_t {proc_desc; payloads} =
-  [%yojson_of: Procname.t * Payloads.t] (Procdesc.get_proc_name proc_desc, payloads)
-
+let yojson_of_t {proc_name; payloads} = [%yojson_of: Procname.t * Payloads.t] (proc_name, payloads)
 
 type full_summary = t
-
-let get_proc_desc summary = summary.proc_desc
-
-let get_attributes summary = Procdesc.get_attributes summary.proc_desc
-
-let get_proc_name summary = (get_attributes summary).ProcAttributes.proc_name
-
-let get_ret_type summary = (get_attributes summary).ProcAttributes.ret_type
-
-let get_formals summary = (get_attributes summary).ProcAttributes.formals
-
-let get_err_log summary = summary.err_log
-
-let get_loc summary = (get_attributes summary).ProcAttributes.loc
 
 let pp_errlog fmt err_log =
   F.fprintf fmt "ERRORS: @[<h>%a@]@\n%!" Errlog.pp_errors err_log ;
   F.fprintf fmt "WARNINGS: @[<h>%a@]" Errlog.pp_warnings err_log
 
 
-let pp_signature fmt summary =
+let pp_signature fmt {proc_name} =
+  let {ProcAttributes.ret_type; formals} = Attributes.load_exn proc_name in
   let pp_formal fmt (p, typ, _) = F.fprintf fmt "%a %a" (Typ.pp_full Pp.text) typ Mangled.pp p in
-  F.fprintf fmt "%a %a(%a)" (Typ.pp_full Pp.text) (get_ret_type summary) Procname.pp
-    (get_proc_name summary) (Pp.seq ~sep:", " pp_formal) (get_formals summary)
+  F.fprintf fmt "%a %a(%a)" (Typ.pp_full Pp.text) ret_type Procname.pp proc_name
+    (Pp.seq ~sep:", " pp_formal) formals
 
 
 let pp_no_stats_specs fmt summary = F.fprintf fmt "%a@\n" pp_signature summary
 
-let pp_text fmt summary =
+let pp_text fmt ({err_log; payloads; stats} as summary) =
   pp_no_stats_specs fmt summary ;
-  F.fprintf fmt "%a@\n%a%a" pp_errlog (get_err_log summary) Stats.pp summary.stats
-    (Payloads.pp Pp.text) summary.payloads
+  F.fprintf fmt "%a@\n%a%a" pp_errlog err_log Stats.pp stats (Payloads.pp Pp.text) payloads
 
 
-let pp_html source fmt summary =
+let pp_html source fmt ({err_log; payloads; stats} as summary) =
   let pp_escaped pp fmt x = F.fprintf fmt "%s" (Escape.escape_xml (F.asprintf "%a" pp x)) in
   F.pp_force_newline fmt () ;
   Pp.html_with_color Black (pp_escaped pp_no_stats_specs) fmt summary ;
-  F.fprintf fmt "<br />%a<br />@\n" Stats.pp summary.stats ;
-  Errlog.pp_html source [] fmt (get_err_log summary) ;
+  F.fprintf fmt "<br />%a<br />@\n" Stats.pp stats ;
+  Errlog.pp_html source [] fmt err_log ;
   Io_infer.Html.pp_hline fmt () ;
   F.fprintf fmt "<LISTING>@\n" ;
-  pp_escaped (Payloads.pp (Pp.html Black)) fmt summary.payloads ;
+  pp_escaped (Payloads.pp (Pp.html Black)) fmt payloads ;
   F.fprintf fmt "</LISTING>@\n"
 
 
@@ -108,11 +127,11 @@ module ReportSummary = struct
     ; config_impact_opt: ConfigImpactAnalysis.Summary.t option
     ; err_log: Errlog.t }
 
-  let of_full_summary (f : full_summary) : t =
-    { loc= get_loc f
-    ; cost_opt= Lazy.force f.payloads.Payloads.cost
-    ; config_impact_opt= Lazy.force f.payloads.Payloads.config_impact_analysis
-    ; err_log= f.err_log }
+  let of_full_summary ({proc_name; payloads; err_log} : full_summary) : t =
+    { loc= (Attributes.load_exn proc_name).loc
+    ; cost_opt= Lazy.force payloads.Payloads.cost
+    ; config_impact_opt= Lazy.force payloads.Payloads.config_impact_analysis
+    ; err_log }
 
 
   module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
@@ -121,20 +140,14 @@ module ReportSummary = struct
 end
 
 module SummaryMetadata = struct
-  type t =
-    { sessions: int
-    ; stats: Stats.t
-    ; proc_desc: Procdesc.t
-    ; callee_pnames: Procname.Set.t
-    ; used_tenv_sources: SourceFile.Set.t }
+  type t = {sessions: int; stats: Stats.t; proc_name: Procname.t; dependencies: Deps.complete}
   [@@deriving fields]
 
   let of_full_summary (f : full_summary) : t =
     { sessions= f.sessions
     ; stats= f.stats
-    ; proc_desc= f.proc_desc
-    ; callee_pnames= f.callee_pnames
-    ; used_tenv_sources= f.used_tenv_sources }
+    ; proc_name= f.proc_name
+    ; dependencies= Deps.complete_exn f.dependencies }
 
 
   module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
@@ -147,9 +160,8 @@ let mk_full_summary payloads (report_summary : ReportSummary.t)
   { payloads
   ; sessions= summary_metadata.sessions
   ; stats= summary_metadata.stats
-  ; proc_desc= summary_metadata.proc_desc
-  ; callee_pnames= summary_metadata.callee_pnames
-  ; used_tenv_sources= summary_metadata.used_tenv_sources
+  ; proc_name= summary_metadata.proc_name
+  ; dependencies= Deps.Complete summary_metadata.dependencies
   ; err_log= report_summary.err_log }
 
 
@@ -245,40 +257,30 @@ module OnDisk = struct
         load_summary_to_spec_table ~lazy_payloads proc_name
 
 
-  let get_model_proc_desc model_name =
-    if not (BiabductionModels.mem model_name) then
-      Logging.die InternalError "Requested summary of model that couldn't be found: %a@\n"
-        Procname.pp model_name
-    else
-      (* we only care about the proc_desc so load analysis payloads lazily (i.e. not at all) *)
-      Option.map (get ~lazy_payloads:true model_name) ~f:(fun (s : full_summary) -> s.proc_desc)
-
-
   (** Save summary for the procedure into the spec database *)
-  let store (summary : t) =
-    let proc_name = get_proc_name summary in
+  let store ({proc_name; dependencies; payloads} as summary : t) =
     (* Make sure the summary in memory is identical to the saved one *)
     add proc_name summary ;
+    summary.dependencies <- Deps.(Complete (freeze proc_name dependencies)) ;
     let report_summary = ReportSummary.of_full_summary summary in
     let summary_metadata = SummaryMetadata.of_full_summary summary in
     DBWriter.store_spec ~proc_uid:(Procname.to_unique_id proc_name)
       ~proc_name:(Procname.SQLite.serialize proc_name)
-      ~payloads:(Payloads.SQLite.serialize summary.payloads)
+      ~payloads:(Payloads.SQLite.serialize payloads)
       ~report_summary:(ReportSummary.SQLite.serialize report_summary)
       ~summary_metadata:(SummaryMetadata.SQLite.serialize summary_metadata)
 
 
-  let reset proc_desc =
+  let reset proc_name =
     let summary =
       { sessions= 0
       ; payloads= Payloads.empty
       ; stats= Stats.empty
-      ; proc_desc
+      ; proc_name
       ; err_log= Errlog.empty ()
-      ; callee_pnames= Procname.Set.empty
-      ; used_tenv_sources= SourceFile.Set.empty }
+      ; dependencies= Deps.empty () }
     in
-    Procname.Hash.replace cache (Procdesc.get_proc_name proc_desc) summary ;
+    Procname.Hash.replace cache proc_name summary ;
     summary
 
 

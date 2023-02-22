@@ -1596,7 +1596,7 @@ int ASTExporter<ATDWriter>::FunctionDeclTupleSize() {
 //@atd   ~is_inline : bool;
 //@atd   ~is_module_private : bool;
 //@atd   ~is_pure : bool;
-//@atd   ~is_delete_as_written : bool;
+//@atd   ~is_deleted : bool;
 //@atd   ~is_no_return : bool;
 //@atd   ~is_constexpr : bool;
 //@atd   ~is_variadic : bool;
@@ -1619,7 +1619,7 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
   bool IsInlineSpecified = D->isInlineSpecified();
   bool IsModulePrivate = D->isModulePrivate();
   bool IsPure = D->isPure();
-  bool IsDeletedAsWritten = D->isDeletedAsWritten();
+  bool IsDeleted = D->isDeleted();
   bool IsCpp = Mangler->getASTContext().getLangOpts().CPlusPlus;
   bool IsVariadic = D->isVariadic();
   bool IsStatic = false; // static functions
@@ -1641,8 +1641,8 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
   SourceLocation PointOfInstantiation = D->getPointOfInstantiation();
   bool IsValidPointOfInstantiation = PointOfInstantiation.isValid();
   int size = ShouldMangleName + IsCpp + IsInlineSpecified + IsModulePrivate +
-             IsPure + IsDeletedAsWritten + IsNoReturn + IsConstexpr +
-             IsVariadic + IsStatic + HasParameters + (bool)DeclWithBody +
+             IsPure + IsDeleted + IsNoReturn + IsConstexpr + IsVariadic +
+             IsStatic + HasParameters + (bool)DeclWithBody +
              HasDeclarationBody + (bool)TemplateDecl +
              IsValidPointOfInstantiation;
   ObjectScope Scope(OF, size);
@@ -1668,7 +1668,7 @@ void ASTExporter<ATDWriter>::VisitFunctionDecl(const FunctionDecl *D) {
   OF.emitFlag("is_inline", IsInlineSpecified);
   OF.emitFlag("is_module_private", IsModulePrivate);
   OF.emitFlag("is_pure", IsPure);
-  OF.emitFlag("is_delete_as_written", IsDeletedAsWritten);
+  OF.emitFlag("is_deleted", IsDeleted);
   OF.emitFlag("is_no_return", IsNoReturn);
   OF.emitFlag("is_constexpr", IsConstexpr);
   OF.emitFlag("is_variadic", IsVariadic);

@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -76,4 +77,11 @@ X creates_copy(X a) {
 void intermediate_copy_via_model_bad(A arr) {
   get_size(ns::creates_copy(
       arr)); // creates an intermediate copy (via model/unknown)
+}
+
+void get_optional_value(std::optional<A> x) {}
+
+void call_get_optional_value_bad(A x) {
+  x.vec[0] = 42;
+  get_optional_value(x);
 }

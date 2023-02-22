@@ -188,6 +188,12 @@ OPTIONS
            option. By default, all recursive dependencies are captured.       
     See also infer-capture(1).
 
+       --buck-dependency-depth int
+           Capture dependencies only if they are at most the depth provided,
+           or all transitive dependencies if depth is not provided (the
+           default). In particular, depth zero means capture exactly the
+           targets provided and nothing else.           See also infer-capture(1).
+
        --buck-erlang
            Activates: Buck integration for Erlang. (Conversely:
            --no-buck-erlang)           See also infer-capture(1).
@@ -196,12 +202,6 @@ OPTIONS
            Activates: Buck integration for Java which uses the buck flavor
            #infer-java-capture instead of genrules like buck-java.
            (Conversely: --no-buck-java-flavor)           See also infer-capture(1).
-
-       --buck-java-flavor-dependency-depth int
-           Capture dependencies only if they are at most the depth provided,
-           or all transitive dependencies if depth is not provided (the
-           default). In particular, depth zero means capture exactly the
-           targets provided and nothing else.           See also infer-capture(1).
 
        --buck-java-flavor-suppress-config
            Activates: Suppress setting buck config values for the infer
@@ -223,9 +223,17 @@ OPTIONS
            Skip capture of buck targets matched by the specified regular
            expression.           See also infer-capture(1) and infer-run(1).
 
+       --buck2-bxl-target string
+           Buck2 BXL script (as a buck target) to run when capturing with
+           buck2/clang integration.           See also infer-capture(1).
+
        --buck2-root dir
            Specify the parent directory of buck-out (used only for buck2).       
     See also infer-capture(1) and infer-run(1).
+
+       --buck2-use-bxl
+           Activates: Use BXL script when capturing with buck2. (Conversely:
+           --no-buck2-use-bxl)           See also infer-capture(1).
 
        --bufferoverrun
            Activates: checker bufferoverrun: InferBO is a detector for
@@ -430,9 +438,9 @@ OPTIONS
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
            --fragment-retains-view, --inefficient-keyset-iterator, --linters,
-           --liveness, --parameter-not-null-checked, --racerd,
-           --dotnet-resource-leak, --siof, --self-in-block, --starvation
-           (Conversely: --default-checkers)           See also infer-analyze(1).
+           --liveness, --parameter-not-null-checked, --racerd, --siof,
+           --self-in-block, --starvation (Conversely: --default-checkers)       
+    See also infer-analyze(1).
 
        --dependencies
            Activates: Translate all the dependencies during the capture. The
@@ -517,7 +525,6 @@ OPTIONS
              DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default),
              DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER (enabled by default),
              DIVIDE_BY_ZERO (disabled by default),
-             DOTNET_RESOURCE_LEAK (enabled by default),
              DO_NOT_REPORT (enabled by default),
              EMPTY_VECTOR_ACCESS (enabled by default),
              ERADICATE_ANNOTATION_GRAPH (enabled by default),
@@ -629,6 +636,8 @@ OPTIONS
              PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST (disabled by
            default),
              PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default),
+             PULSE_UNNECESSARY_COPY_OPTIONAL (disabled by default),
+             PULSE_UNNECESSARY_COPY_OPTIONAL_CONST (disabled by default),
              PULSE_UNNECESSARY_COPY_RETURN (disabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
@@ -758,9 +767,9 @@ OPTIONS
 
        --force-integration command
            Proceed as if the first argument after -- was command. Possible
-           values: ant, buck, buck2, gradle, gradlew, java, javac, cc, clang,
-           gcc, clang++, c++, g++, hackc, make, configure, cmake, waf, mvn,
-           mvnw, ndk-build, rebar3, erlc, xcodebuild.           See also infer-capture(1) and infer-run(1).
+           values: ant, buck, buck1, buck2, gradle, gradlew, java, javac, cc,
+           clang, gcc, clang++, c++, g++, hackc, make, configure, cmake, waf,
+           mvn, mvnw, ndk-build, rebar3, erlc, xcodebuild.           See also infer-capture(1) and infer-run(1).
 
        --no-fragment-retains-view
            Deactivates: checker fragment-retains-view: Detects when Android
@@ -1124,6 +1133,11 @@ OPTIONS
            type function pointer in Pulse. (Conversely:
            --no-pulse-inline-global-init-func-pointer)           See also infer-analyze(1).
 
+       --pulse-log-summary-count
+           Activates: Log the number of summaries for each analyzed procedure
+           in Pulse (Conversely: --no-pulse-log-summary-count)       
+    See also infer-analyze(1).
+
        --pulse-max-cfg-size int
            Larger CFGs than the max size are skipped in Pulse.       
     See also infer-analyze(1).
@@ -1199,8 +1213,36 @@ OPTIONS
            Pulse. Accepted formats are method or namespace::method       
     See also infer-analyze(1).
 
-       --pulse-models-for-erlang json
-           Provide custom models for Erlang code using a DSL.           See also infer-analyze(1).
+       --pulse-models-for-erlang +path
+           Provide custom models for Erlang in JSON files. If a path to a
+           directory is given then the JSON files must have the `.json`
+           extension. Any other file will be ignored. The subdirectories will
+           be explored and must follow the same convention.            
+            The format is [SelectorBehavior, ...] where
+            SelectorBehavior := {"selector": Selector, "behavior": Behavior}
+            Selector := ["MFA", {
+              "module": "<module_name>",
+              "function": "<function_name>",
+              "arity": <arity_int>
+            }]
+            Behavior := ReturnValue | ArgumentsReturnList
+             - ReturnValue models return regardless of the arguments
+             - ArgumentsReturnList maps arguments to return values
+            ReturnValue := ["ReturnValue", ErlangValue]
+            ArgumentsReturnList := 
+              ["ArgumentsReturnList", [ArgumentsReturn, ...]]
+            ArgumentsReturn :=  {
+              "arguments": [ErlangValue, ...],
+              "return": ErlangValue
+            }
+            ErlangValue := ["Atom", "<atom_name>"] 
+              | ["IntLit", "<integer_value>"] 
+              | ["List", [ErlangValue, ...] 
+              | ["Tuple", [ErlangValue, ...] 
+              | null
+            
+            ErlangValue = null is to represent nondeterministic value
+           See also infer-analyze(1).
 
        --no-pulse-nullsafe-report-npe
            Deactivates: Report null dereference issues on files marked
@@ -1877,14 +1919,17 @@ INTERNAL OPTIONS
        --buck-compilation-database-reset
            Cancel the effect of --buck-compilation-database.
 
-       --buck-java-flavor-dependency-depth-reset
-           Cancel the effect of --buck-java-flavor-dependency-depth.
+       --buck-dependency-depth-reset
+           Cancel the effect of --buck-dependency-depth.
 
        --buck-java-heap-size-gb-reset
            Cancel the effect of --buck-java-heap-size-gb.
 
        --buck-targets-block-list-reset
            Set --buck-targets-block-list to the empty list.
+
+       --buck2-bxl-target-reset
+           Cancel the effect of --buck2-bxl-target.
 
        --buck2-root-reset
            Cancel the effect of --buck2-root.
@@ -1896,11 +1941,12 @@ INTERNAL OPTIONS
        --capture-block-list-reset
            Cancel the effect of --capture-block-list.
 
-       --capture-doli path
-           Generate models from a DOLI representation given a .doli file.
+       --capture-doli +path
+           Generate a SIL program from doli representations given in .doli
+           files.
 
        --capture-doli-reset
-           Cancel the effect of --capture-doli.
+           Set --capture-doli to the empty list.
 
        --capture-textual +path
            Generate a SIL program from a textual representation given in .sil
@@ -2122,10 +2168,6 @@ INTERNAL OPTIONS
        --disjunctive-demo
            Activates: checker disjunctive-demo: Demo of the disjunctive
            domain, used for testing. (Conversely: --no-disjunctive-demo)
-
-       --no-dotnet-resource-leak
-           Deactivates: checker dotnet-resource-leak: "resource leak" checker
-           for .NET. (Conversely: --dotnet-resource-leak)
 
        --no-dotty-cfg-libs
            Deactivates: Print the cfg of the code coming from the libraries
@@ -2406,6 +2448,13 @@ INTERNAL OPTIONS
        --oom-threshold-reset
            Cancel the effect of --oom-threshold.
 
+       --parse-doli path
+           Perform parsing on given a .doli file -- no checks on textual, no
+           capture.
+
+       --parse-doli-reset
+           Cancel the effect of --parse-doli.
+
        --print-buckets
            Activates: Show the internal bucket of Infer reports in their
            textual description (Conversely: --no-print-buckets)
@@ -2491,6 +2540,9 @@ INTERNAL OPTIONS
 
        --pulse-model-transfer-ownership-reset
            Set --pulse-model-transfer-ownership to the empty list.
+
+       --pulse-models-for-erlang-reset
+           Set --pulse-models-for-erlang to the empty list.
 
        --pulse-prevent-non-disj-top
            Activates: Forcibly prevent non-disjunctive domain value from
@@ -2763,19 +2815,6 @@ INTERNAL OPTIONS
        --trace-topl
            Activates: Detailed tracing information during Topl analysis
            (Conversely: --no-trace-topl)
-
-       --tv-commit commit
-           Commit hash to submit to Traceview
-
-       --tv-commit-reset
-           Cancel the effect of --tv-commit.
-
-       --tv-limit int
-           The maximum number of traces to submit to Traceview
-
-       --tv-limit-filtered int
-           The maximum number of traces for issues filtered out by
-           --report-filter to submit to Traceview
 
        --uninit-interproc
            Activates: Run uninit check in the experimental interprocedural

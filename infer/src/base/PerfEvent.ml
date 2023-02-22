@@ -134,7 +134,7 @@ let pp_categories_field f categories =
 
 
 let pp_duration_field f duration =
-  JsonFragment.pp_assoc_field Json.pp f "dur" (`Int (Mtime.Span.to_us duration |> Float.to_int))
+  JsonFragment.pp_assoc_field Json.pp f "dur" (`Int (IMtime.span_to_us_int duration))
 
 
 let pp_event_type_field f event_type =
@@ -163,7 +163,7 @@ let pp_scope_field f scope =
 
 let pp_timestamp_field f ts_opt =
   let ts = match ts_opt with None -> Mtime_clock.elapsed () | Some t -> Mtime.span t0 t in
-  JsonFragment.pp_assoc_field Json.pp f "ts" (`Int (Mtime.Span.to_us ts |> Float.to_int))
+  JsonFragment.pp_assoc_field Json.pp f "ts" (`Int (IMtime.span_to_us_int ts))
 
 
 let log_begin_event f ?timestamp ?categories ?arguments ~name () =

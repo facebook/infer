@@ -174,7 +174,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Some (make_ret_attr (Looper ForUIThread))
       else None
     in
-    let get_callee_summary () = analyze_dependency callee |> Option.map ~f:snd in
+    let get_callee_summary () = analyze_dependency callee in
     let treat_handler_constructor () =
       if StarvationModels.is_handler_constructor tenv callee actuals then
         match actuals_acc_exps with
@@ -429,7 +429,7 @@ let analyze_procedure ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
   let procname = Procdesc.get_proc_name proc_desc in
   if StarvationModels.should_skip_analysis tenv procname [] then None
   else
-    let formals = FormalMap.make proc_desc in
+    let formals = FormalMap.make (Procdesc.get_attributes proc_desc) in
     let proc_data = {interproc; formals} in
     let loc = Procdesc.get_loc proc_desc in
     let set_lock_state_for_synchronized_proc astate =

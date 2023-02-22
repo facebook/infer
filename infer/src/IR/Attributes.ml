@@ -68,6 +68,8 @@ let load_from_uid, load, clear_cache, store =
   (load_from_uid, load, clear_cache, store)
 
 
+let load_exn pname = Option.value_exn (load pname)
+
 let load_formal_types pname =
   match load pname with Some {formals} -> List.map formals ~f:snd3 | None -> []
 

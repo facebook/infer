@@ -585,9 +585,18 @@ let replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis =
 
 let shrink_analysis_db () = perform ShrinkAnalysisDB
 
-let start () = Server.start ()
-
 let stop () = try Server.send Command.Terminate with Unix.Unix_error _ -> ()
+
+let start =
+  let already_started = ref false in
+  fun () ->
+    if (not !already_started) && Config.is_originator then (
+      remove_socket_file () ;
+      if Lazy.force use_daemon then (
+        Server.start () ;
+        Epilogues.register ~f:stop ~description:"Stop Sqlite write daemon" ;
+        already_started := true ) )
+
 
 let store_issue_log ~checker ~source_file ~issue_log =
   perform (StoreIssueLog {checker; source_file; issue_log})

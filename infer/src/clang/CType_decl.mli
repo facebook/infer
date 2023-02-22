@@ -23,7 +23,12 @@ module CProcname : sig
 
     val cpp_method_of_string : Tenv.t -> Typ.Name.t -> string -> Procname.t
 
-    val objc_method_of_string_kind : Typ.Name.t -> string -> Procname.ObjC_Cpp.kind -> Procname.t
+    val objc_method_of_string_kind :
+         Typ.Name.t
+      -> string
+      -> Procname.ObjC_Cpp.kind
+      -> Procname.Parameter.clang_parameter list
+      -> Procname.t
   end
 end
 

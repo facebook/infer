@@ -152,9 +152,11 @@ let tests =
       , [assign_to_non_source "ret_id"; call_sink "ret_id"; assert_empty] ) ]
     |> TestInterpreter.create_tests ~pp_opt:pp_sparse
          (fun summary ->
+           let proc_desc = Procdesc.load_exn summary.proc_name in
            { analysis_data=
-               CallbackOfChecker.mk_interprocedural_field_t Payloads.Fields.quandary (Exe_env.mk ())
-                 summary ~tenv:(Tenv.create ()) ()
+               CallbackOfChecker.mk_interprocedural_field_t Payloads.Fields.quandary
+                 {proc_desc; exe_env= Exe_env.mk (); summary}
+                 ~tenv:(Tenv.create ()) ()
                |> fst
            ; formal_map= FormalMap.empty } )
          ~initial:(MockTaintAnalysis.Domain.bottom, Bindings.empty)

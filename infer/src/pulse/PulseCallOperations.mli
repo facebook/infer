@@ -15,7 +15,7 @@ val call :
      Tenv.t
   -> PathContext.t
   -> caller_proc_desc:Procdesc.t
-  -> callee_data:(Procdesc.t * PulseSummary.t) option
+  -> callee_data:PulseSummary.t option
   -> Location.t
   -> Procname.t
   -> ret:Ident.t * Typ.t

@@ -34,7 +34,6 @@ type t =
   | Quandary
   | RacerD
   | ResourceLeakLabExercise
-  | DOTNETResourceLeaks
   | ScopeLeakage
   | SIOF
   | SimpleLineage

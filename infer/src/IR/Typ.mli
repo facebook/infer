@@ -146,6 +146,8 @@ val mk_ptr : ?ptr_kind:ptr_kind -> t -> t
 
 val set_ptr_to_const : t -> t
 
+val set_to_const : t -> t
+
 val get_ikind_opt : t -> ikind option
 (** Get ikind if the type is integer. *)
 
@@ -175,9 +177,6 @@ module Name : sig
   (** convert the typename to a string *)
 
   val pp : Format.formatter -> t -> unit
-
-  val pp_name_only : Format.formatter -> t -> unit
-  (** Print name only without prefix *)
 
   val is_class : t -> bool
   (** [is_class name] holds if [name] names CPP/Objc/Java class *)
@@ -323,6 +322,8 @@ val is_pointer_to_cpp_class : t -> bool
 val is_pointer_to_objc_non_tagged_class : t -> bool
 
 val is_pointer_to_smart_pointer : t -> bool
+
+val is_pointer_to_unique_pointer : t -> bool
 
 val is_shared_pointer : t -> bool
 

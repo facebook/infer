@@ -63,15 +63,15 @@ let is_assert_log pname =
       false
 
 
-let get_predefined_ms_method condition class_name method_name method_kind mk_procname arguments
-    return_type attributes builtin =
+let get_predefined_ms_method condition class_name method_name method_kind clang_params mk_procname
+    arguments return_type attributes builtin =
   if condition then
     let procname =
       match builtin with
       | Some procname ->
           procname
       | None ->
-          mk_procname class_name method_name method_kind
+          mk_procname class_name method_name method_kind clang_params
     in
     let ms =
       CMethodSignature.mk procname None arguments return_type ~is_ret_constexpr:false attributes
@@ -94,7 +94,7 @@ let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname =
   in
   let param_name = Mangled.from_string "x" in
   let params = [CMethodSignature.mk_param_type param_name char_star_type] in
-  get_predefined_ms_method condition class_name method_name Procname.ObjC_Cpp.ObjCClassMethod
+  get_predefined_ms_method condition class_name method_name Procname.ObjC_Cpp.ObjCClassMethod [None]
     mk_procname params (id_type, Annot.Item.empty) [] None
 
 
@@ -105,7 +105,7 @@ let get_predefined_ms_is_kind_of_class class_name method_name mk_procname =
   let params = [CMethodSignature.mk_param_type name class_type] in
   let bool_type = CType_to_sil_type.type_of_builtin_type_kind `Bool in
   get_predefined_ms_method condition class_name method_name Procname.ObjC_Cpp.ObjCInstanceMethod
-    mk_procname params (bool_type, Annot.Item.empty) [] (Some BuiltinDecl.__instanceof)
+    [None] mk_procname params (bool_type, Annot.Item.empty) [] (Some BuiltinDecl.__instanceof)
 
 
 let get_predefined_model_method_signature class_name method_name mk_procname =

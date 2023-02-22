@@ -7,8 +7,19 @@
  (name ErlangFrontend)
  (public_name infer.ErlangFrontend)
  (flags
-  (:standard -open Core -open IStdlib -open IStd -open OpenSource -open IBase
-    -open IR))
+  (:standard
+   -open
+   Core
+   -open
+   IStdlib
+   -open
+   IStd
+   -open
+   OpenSource
+   -open
+   IBase
+   -open
+   IR))
  (libraries core IStdlib IBase IR)
  (preprocess
   (pps ppx_compare ppx_sexp_conv)))

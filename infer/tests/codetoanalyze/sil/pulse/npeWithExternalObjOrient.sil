@@ -5,6 +5,7 @@
 
 // demonstrates separate compiation for sil in the
 // object-oriented setting
+// relies on file externalObjOrient.sil
 
 .source_language = "java"
 

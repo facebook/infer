@@ -185,8 +185,8 @@ end = struct
     match Summary.OnDisk.get ~lazy_payloads:true proc_name with
     | None ->
         ()
-    | Some summary ->
-        Errlog.update global_err_log (Summary.get_err_log summary)
+    | Some {err_log} ->
+        Errlog.update global_err_log err_log
 
 
   let write_html_file filename procs =

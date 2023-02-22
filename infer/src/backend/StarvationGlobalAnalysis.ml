@@ -28,19 +28,17 @@ let iter_critical_pairs_of_scheduled_work f (work_item : Domain.ScheduledWorkIte
   |> Option.iter ~f:(iter_critical_pairs_of_summary (iter_scheduled_pair work_item f))
 
 
-let iter_summary ~f exe_env (summary : Summary.t) =
+let iter_summary ~f exe_env ({payloads; proc_name} : Summary.t) =
   let open Domain in
-  Payloads.starvation summary.payloads
-  |> Lazy.force
+  Payloads.starvation payloads |> Lazy.force
   |> Option.iter ~f:(fun (payload : summary) ->
-         let pname = Summary.get_proc_name summary in
-         let tenv = Exe_env.get_proc_tenv exe_env pname in
+         let tenv = Exe_env.get_proc_tenv exe_env proc_name in
          if
-           StarvationModels.is_java_main_method pname
-           || ConcurrencyModels.is_android_lifecycle_method tenv pname
-         then iter_critical_pairs_of_summary (f pname) payload ;
+           StarvationModels.is_java_main_method proc_name
+           || ConcurrencyModels.is_android_lifecycle_method tenv proc_name
+         then iter_critical_pairs_of_summary (f proc_name) payload ;
          ScheduledWorkDomain.iter
-           (iter_critical_pairs_of_scheduled_work (f pname))
+           (iter_critical_pairs_of_scheduled_work (f proc_name))
            payload.scheduled_work )
 
 
@@ -56,18 +54,17 @@ module WorkHashSet = struct
     let hash = Hashtbl.hash
   end
 
-  include Caml.Hashtbl.Make (T)
+  include HashSet.Make (T)
 
-  let add_pair work_set caller pair = replace work_set (caller, pair) ()
+  let add_pair work_set caller pair = add (caller, pair) work_set
 end
 
 let report exe_env work_set =
   let open Domain in
-  let wrap_report (procname, (pair : CriticalPair.t)) () init =
+  let wrap_report (procname, (pair : CriticalPair.t)) init =
     Summary.OnDisk.get ~lazy_payloads:true procname
     |> Option.fold ~init ~f:(fun acc summary ->
-           let pdesc = Summary.get_proc_desc summary in
-           let pattrs = Procdesc.get_attributes pdesc in
+           let pattrs = Attributes.load_exn procname in
            let tenv = Exe_env.get_proc_tenv exe_env procname in
            let acc =
              Starvation.report_on_pair
@@ -83,7 +80,7 @@ let report exe_env work_set =
                     CriticalPair.is_uithread pair && not (Procname.is_constructor procname)
                   in
                   WorkHashSet.fold
-                    (fun (other_procname, (other_pair : CriticalPair.t)) () acc ->
+                    (fun (other_procname, (other_pair : CriticalPair.t)) acc ->
                       Starvation.report_on_parallel_composition ~should_report_starvation tenv
                         pattrs pair lock other_procname other_pair acc )
                     work_set acc ) )

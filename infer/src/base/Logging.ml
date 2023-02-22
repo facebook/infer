@@ -143,14 +143,18 @@ let register_formatter =
        formatters_ref )
 
 
-let flush_formatters {file; console_file} =
+let flush_formatter {file; console_file} =
   Option.iter file ~f:(fun file -> F.pp_print_flush file ()) ;
   F.pp_print_flush console_file ()
 
 
+let flush_formatters () =
+  let flush (formatters, _) = flush_formatter !formatters in
+  List.iter ~f:flush !logging_formatters
+
+
 let close_logs () =
-  let close_fmt (formatters, _) = flush_formatters !formatters in
-  List.iter ~f:close_fmt !logging_formatters ;
+  flush_formatters () ;
   Option.iter !log_file ~f:(function file_fmt, chan ->
       F.pp_print_flush file_fmt () ;
       Out_channel.close chan )
@@ -163,7 +167,7 @@ let register_epilogue () =
 let reset_formatters () =
   let refresh_formatter (formatters, mk_formatters) =
     (* flush to be nice *)
-    flush_formatters !formatters ;
+    flush_formatter !formatters ;
     (* recreate formatters, in particular update PID info *)
     formatters := mk_formatters ()
   in

@@ -182,7 +182,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let remove_initialized_params {InterproceduralAnalysis.analyze_dependency} call maybe_uninit_vars
       idx access_expr remove_fields =
     match analyze_dependency call with
-    | Some (_, {UninitDomain.pre= init_formals; post= _}) -> (
+    | Some {UninitDomain.pre= init_formals; post= _} -> (
       match init_nth_actual_param call idx init_formals with
       | Some var_formal ->
           let maybe_uninit_vars = MaybeUninitVars.remove access_expr maybe_uninit_vars in
@@ -200,7 +200,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   (* true if a function initializes at least a param or a field of a struct param *)
   let function_initializes_some_formal_params {InterproceduralAnalysis.analyze_dependency} call =
     match analyze_dependency call with
-    | Some (_, {UninitDomain.pre= initialized_formal_params; post= _}) ->
+    | Some {UninitDomain.pre= initialized_formal_params; post= _} ->
         not (D.is_empty initialized_formal_params)
     | _ ->
         false
@@ -348,7 +348,7 @@ let checker ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) =
     ; prepost= {UninitDomain.pre= D.empty; post= D.empty} }
   in
   let proc_data =
-    let formals = FormalMap.make proc_desc in
+    let formals = FormalMap.make (Procdesc.get_attributes proc_desc) in
     {analysis_data; formals}
   in
   Analyzer.compute_post proc_data ~initial proc_desc

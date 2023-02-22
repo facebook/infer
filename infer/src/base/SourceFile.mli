@@ -15,7 +15,10 @@ module Map : Caml.Map.S with type key = t
 (** Set of source files *)
 module Set : Caml.Set.S with type elt = t
 
+(** Mutable hash tables and sets keyed on source files *)
 module Hash : Caml.Hashtbl.S with type key = t
+
+module HashSet : HashSet.S with type elt = t
 
 val is_invalid : t -> bool
 (** Is the source file the invalid source file? *)

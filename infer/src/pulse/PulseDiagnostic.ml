@@ -146,12 +146,14 @@ type t =
       ; sink: Taint.t * Trace.t
       ; location: Location.t
       ; flow_kind: flow_kind
-      ; policy_description: string }
+      ; policy_description: string
+      ; policy_privacy_effect: string option }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; source_typ: Typ.t option
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
+      ; location_instantiated: Location.t option
       ; from: PulseAttribute.CopyOrigin.t }
 [@@deriving equal]
 
@@ -210,9 +212,14 @@ let pp fmt diagnostic =
       ; source_typ: Typ.t option
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
-      ; from: PulseAttribute.CopyOrigin.t } ->
+      ; from: PulseAttribute.CopyOrigin.t
+      ; location_instantiated: Location.t option } ->
       F.fprintf fmt
-        "UnnecessaryCopy {@[copied_into=%a;@;typ=%a;@;location:%a;@;copied_location:%a@;from=%a@]}"
+        "UnnecessaryCopy {@[copied_into=%a;@;\
+         typ=%a;@;\
+         location:%a;@;\
+         copied_location:%a@;\
+         from=%a;loc_instantiated=%a@]}"
         PulseAttribute.CopiedInto.pp copied_into
         (Pp.option (Typ.pp_full Pp.text))
         source_typ Location.pp location
@@ -221,7 +228,8 @@ let pp fmt diagnostic =
               F.pp_print_string fmt "none"
           | Some (callee, location) ->
               F.fprintf fmt "%a,%a" Procname.pp callee Location.pp location )
-        copied_location PulseAttribute.CopyOrigin.pp from
+        copied_location PulseAttribute.CopyOrigin.pp from (Pp.option Location.pp)
+        location_instantiated
 
 
 let get_location = function
@@ -263,6 +271,13 @@ let get_location = function
   | TaintFlow {location}
   | UnnecessaryCopy {location} ->
       location
+
+
+let get_location_instantiated = function
+  | UnnecessaryCopy {location_instantiated} ->
+      location_instantiated
+  | _ ->
+      None
 
 
 let get_copy_type = function
@@ -602,20 +617,27 @@ let get_message diagnostic =
          hence suppress the warning"
       in
       let suggestion_msg =
-        match (from : CopyOrigin.t) with
-        | CopyCtor ->
+        match (from, copied_into) with
+        | CopyToOptional, _ ->
+            if is_from_const then suggestion_msg_move
+            else suggestion_msg_move ^ " or changing the callee's type"
+        | _, IntoIntermediate _ ->
+            suggestion_msg_move
+        | _, IntoField _ ->
+            "Rather than copying into the field, consider moving into it instead"
+        | CopyCtor, IntoVar _ ->
             "To avoid the copy, try using a reference `&`"
-        | CopyAssignment ->
+        | CopyAssignment, IntoVar _ ->
             suggestion_msg_move
       in
       match copied_into with
       | IntoIntermediate {source_opt= None} ->
           F.asprintf "An intermediate%a is %a on %a. %s." pp_typ source_typ CopyOrigin.pp from
-            Location.pp_line location suggestion_msg_move
+            Location.pp_line location suggestion_msg
       | IntoIntermediate {source_opt= Some source_expr} ->
           F.asprintf "variable `%a`%a is %a unnecessarily into an intermediate on %a. %s."
             DecompilerExpr.pp_source_expr source_expr pp_typ source_typ CopyOrigin.pp from
-            Location.pp_line location suggestion_msg_move
+            Location.pp_line location suggestion_msg
       | IntoVar {source_opt= None} ->
           F.asprintf
             "%a variable `%a` is not modified after it is copied from a source%a on %a. %s. %s."
@@ -626,17 +648,14 @@ let get_message diagnostic =
             "%a variable `%a` is not modified after it is copied from `%a`%a on %a. %s. %s."
             CopyOrigin.pp from CopiedInto.pp copied_into DecompilerExpr.pp_source_expr source_expr
             pp_typ source_typ Location.pp_line location suggestion_msg suppression_msg
-      | IntoField {field; source_opt} -> (
-          let advice = "Rather than copying into the field, consider moving into it instead." in
-          match source_opt with
-          | Some source_expr ->
-              F.asprintf "`%a`%a is %a into field `%a` but is not modified afterwards. %s"
-                DecompilerExpr.pp source_expr pp_typ source_typ CopyOrigin.pp from Fieldname.pp
-                field advice
-          | None ->
-              F.asprintf
-                "Field `%a` is %a into from an rvalue-ref%a but is not modified afterwards. %s"
-                Fieldname.pp field CopyOrigin.pp from pp_typ source_typ advice ) )
+      | IntoField {field; source_opt= None} ->
+          F.asprintf
+            "Field `%a` is %a into from an rvalue-ref%a but is not modified afterwards. %s."
+            Fieldname.pp field CopyOrigin.pp from pp_typ source_typ suggestion_msg
+      | IntoField {field; source_opt= Some source_expr} ->
+          F.asprintf "`%a`%a is %a into field `%a` but is not modified afterwards. %s."
+            DecompilerExpr.pp source_expr pp_typ source_typ CopyOrigin.pp from Fieldname.pp field
+            suggestion_msg )
 
 
 let add_errlog_header ~nesting ~title location errlog =
@@ -884,22 +903,28 @@ let get_issue_type ~latent issue_type =
       IssueType.sensitive_data_flow
   | UnnecessaryCopy {copied_location= Some _}, false ->
       IssueType.unnecessary_copy_return_pulse
-  | UnnecessaryCopy {copied_into= IntoField _; from= CopyAssignment}, false ->
+  | UnnecessaryCopy {copied_into= IntoField _; source_typ; from= CopyAssignment}, false
+    when Option.exists ~f:Typ.is_rvalue_reference source_typ ->
       IssueType.unnecessary_copy_assignment_movable_pulse
-  | UnnecessaryCopy {copied_into= IntoField _; from= CopyCtor}, false ->
+  | UnnecessaryCopy {copied_into= IntoField _; source_typ; from= CopyCtor}, false
+    when Option.exists ~f:Typ.is_rvalue_reference source_typ ->
       IssueType.unnecessary_copy_movable_pulse
-  | UnnecessaryCopy {copied_into= IntoIntermediate _; source_typ; from= CopyCtor}, false
+  | ( UnnecessaryCopy {copied_into= IntoField _ | IntoIntermediate _; source_typ; from= CopyCtor}
+    , false )
     when Option.exists ~f:Typ.is_const_reference source_typ ->
       IssueType.unnecessary_copy_intermediate_const_pulse
-  | UnnecessaryCopy {copied_into= IntoIntermediate _; from= CopyCtor}, false ->
+  | UnnecessaryCopy {copied_into= IntoField _ | IntoIntermediate _; from= CopyCtor}, false ->
       IssueType.unnecessary_copy_intermediate_pulse
   | UnnecessaryCopy {copied_into= IntoVar _; from= CopyCtor}, false ->
       IssueType.unnecessary_copy_pulse
-  | UnnecessaryCopy {from= CopyAssignment; source_typ}, false
-    when Option.exists ~f:Typ.is_const_reference source_typ ->
-      IssueType.unnecessary_copy_assignment_const_pulse
-  | UnnecessaryCopy {from= CopyAssignment}, false ->
-      IssueType.unnecessary_copy_assignment_pulse
+  | UnnecessaryCopy {from= CopyAssignment; source_typ}, false ->
+      if Option.exists ~f:Typ.is_const_reference source_typ then
+        IssueType.unnecessary_copy_assignment_const_pulse
+      else IssueType.unnecessary_copy_assignment_pulse
+  | UnnecessaryCopy {source_typ; from= CopyToOptional}, false ->
+      if Option.exists ~f:Typ.is_const_reference source_typ then
+        IssueType.unnecessary_copy_optional_const_pulse
+      else IssueType.unnecessary_copy_optional_pulse
   | ( ( ConfigUsage _
       | ConstRefableParameter _
       | CSharpResourceLeak _

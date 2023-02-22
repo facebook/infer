@@ -1,0 +1,447 @@
+[
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_arguments_return",
+        "function": "one_or_two",
+        "arity": 0
+      }
+    ],
+    "behavior": [
+      "ArgumentsReturnList",
+      [
+        {
+          "arguments": [],
+          "return": [
+            "IntLit",
+            "1"
+          ]
+        },
+        {
+          "arguments": [],
+          "return": [
+            "IntLit",
+            "2"
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_arguments_return",
+        "function": "is_small",
+        "arity": 1
+      }
+    ],
+    "behavior": [
+      "ArgumentsReturnList",
+      [
+        {
+          "arguments": [
+            [
+              "List",
+              []
+            ]
+          ],
+          "return": [
+            "Atom",
+            "true"
+          ]
+        },
+        {
+          "arguments": [
+            [
+              "List",
+              [
+                null
+              ]
+            ]
+          ],
+          "return": [
+            "Atom",
+            "true"
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_arguments_return",
+        "function": "doop",
+        "arity": 2
+      }
+    ],
+    "behavior": [
+      "ArgumentsReturnList",
+      [
+        {
+          "arguments": [
+            [
+              "Atom",
+              "swap"
+            ],
+            [
+              "Tuple",
+              [
+                [
+                  "List",
+                  [
+                    [
+                      "IntLit",
+                      "1"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "return": [
+            "List",
+            [
+              [
+                "Tuple",
+                [
+                  [
+                    "IntLit",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_arguments_return",
+        "function": "get_range",
+        "arity": 1
+      }
+    ],
+    "behavior": [
+      "ArgumentsReturnList",
+      [
+        {
+          "arguments": [
+            [
+              "IntLit",
+              "0"
+            ]
+          ],
+          "return": [
+            "List",
+            []
+          ]
+        },
+        {
+          "arguments": [
+            [
+              "IntLit",
+              "1"
+            ]
+          ],
+          "return": [
+            "List",
+            [
+              [
+                "IntLit",
+                "0"
+              ]
+            ]
+          ]
+        },
+        {
+          "arguments": [
+            [
+              "IntLit",
+              "2"
+            ]
+          ],
+          "return": [
+            "List",
+            [
+              [
+                "IntLit",
+                "0"
+              ],
+              [
+                "IntLit",
+                "1"
+              ]
+            ]
+          ]
+        },
+        {
+          "arguments": [
+            [
+              "IntLit",
+              "3"
+            ]
+          ],
+          "return": [
+            "List",
+            [
+              [
+                "IntLit",
+                "0"
+              ],
+              [
+                "IntLit",
+                "1"
+              ],
+              [
+                "IntLit",
+                "2"
+              ]
+            ]
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_return_value",
+        "function": "get_true",
+        "arity": 0
+      }
+    ],
+    "behavior": [
+      "ReturnValue",
+      [
+        "Atom",
+        "true"
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_return_value",
+        "function": "get_one",
+        "arity": 0
+      }
+    ],
+    "behavior": [
+      "ReturnValue",
+      [
+        "IntLit",
+        "1"
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_return_value",
+        "function": "get_pair_true_nondet",
+        "arity": 0
+      }
+    ],
+    "behavior": [
+      "ReturnValue",
+      [
+        "Tuple",
+        [
+          [
+            "Atom",
+            "true"
+          ],
+          null
+        ]
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_return_value",
+        "function": "get_nondet_atom",
+        "arity": 0
+      }
+    ],
+    "behavior": [
+      "ReturnValue",
+      [
+        "Atom",
+        null
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_return_value",
+        "function": "get_nested",
+        "arity": 0
+      }
+    ],
+    "behavior": [
+      "ReturnValue",
+      [
+        "Tuple",
+        [
+          [
+            "IntLit",
+            "12345678901234567890"
+          ],
+          [
+            "List",
+            []
+          ],
+          [
+            "List",
+            [
+              null
+            ]
+          ],
+          [
+            "List",
+            [
+              [
+                "Atom",
+                "one"
+              ],
+              [
+                "IntLit",
+                "2"
+              ],
+              [
+                "Tuple",
+                [
+                  [
+                    "Tuple",
+                    []
+                  ],
+                  [
+                    "IntLit",
+                    "-3"
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_return_value",
+        "function": "get_arity",
+        "arity": 0
+      }
+    ],
+    "behavior": [
+      "ReturnValue",
+      [
+        "IntLit",
+        "0"
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_return_value",
+        "function": "get_arity",
+        "arity": 1
+      }
+    ],
+    "behavior": [
+      "ReturnValue",
+      [
+        "IntLit",
+        "1"
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_return_value",
+        "function": "get_arity",
+        "arity": 2
+      }
+    ],
+    "behavior": [
+      "ReturnValue",
+      [
+        "IntLit",
+        "2"
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_return_value",
+        "function": "get_arity",
+        "arity": 3
+      }
+    ],
+    "behavior": [
+      "ReturnValue",
+      [
+        "IntLit",
+        "3"
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_return_value",
+        "function": "get_arity",
+        "arity": 4
+      }
+    ],
+    "behavior": [
+      "ReturnValue",
+      [
+        "IntLit",
+        "4"
+      ]
+    ]
+  },
+  {
+    "selector": [
+      "MFA",
+      {
+        "module": "models_return_value",
+        "function": "get_arity",
+        "arity": 5
+      }
+    ],
+    "behavior": [
+      "ReturnValue",
+      [
+        "IntLit",
+        "5"
+      ]
+    ]
+  }
+]

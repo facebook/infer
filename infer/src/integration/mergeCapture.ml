@@ -8,7 +8,7 @@
 open! IStd
 module L = Logging
 
-(** Module to merge the results of capture for different buck targets. *)
+(** Module to merge the results of capture for different buck/gradle targets. *)
 
 module TenvMerger = struct
   let merge_global_tenvs infer_deps_file =
@@ -75,7 +75,7 @@ let merge_changed_functions () =
 
 let merge_captured_targets ~root =
   let time0 = Mtime_clock.counter () in
-  L.progress "Merging captured Buck targets...@\n%!" ;
+  L.progress "Merging captured targets...@\n%!" ;
   let infer_deps_file = ResultsDir.get_path CaptureDependencies in
   let tenv_merger_child = TenvMerger.start infer_deps_file in
   DBWriter.merge_captures ~root ~infer_deps_file ;
@@ -87,13 +87,13 @@ let merge_captured_targets ~root =
     !counter
   in
   ScubaLogging.log_count ~label:"merged_captured_targets" ~value:targets_num ;
-  L.progress "Merging %d captured Buck targets took %a@\n%!" targets_num Mtime.Span.pp
+  L.progress "Merging %d captured targets took %a@\n%!" targets_num Mtime.Span.pp
     (Mtime_clock.count time0)
 
 
 (* shadowed for tracing *)
 let merge_captured_targets ~root =
-  PerfEvent.(log (fun logger -> log_begin_event logger ~name:"merge buck targets" ())) ;
+  PerfEvent.(log (fun logger -> log_begin_event logger ~name:"merge targets" ())) ;
   merge_captured_targets ~root ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 

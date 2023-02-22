@@ -22,19 +22,17 @@ PROJECT_ROOT ?= $(TESTS_DIR)
 
 JAVAC_FLAGS = -g -source 8 -target 8
 
-$(ARGSFILE):
-	$(QUIET)echo $(shell realpath infer-out-B) > $(ARGSFILE)
-
 $(OBJECTS): $(SOURCES)
 	$(QUIET)$(JAVAC) $(JAVAC_FLAGS) -cp $(CLASSPATH) $(SOURCES)
 
-infer-out$(TEST_SUFFIX)/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST) $(ARGSFILE)
+infer-out$(TEST_SUFFIX)/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Capturing A.java,\
 	  $(INFER_BIN) capture --project-root $(PROJECT_ROOT) -o infer-out-A -- $(JAVAC) $(JAVAC_FLAGS) A.java)
 	$(QUIET)$(call silent_on_success,Capturing B.java,\
 	  $(INFER_BIN) capture --project-root $(PROJECT_ROOT) -o infer-out-B -- $(JAVAC) $(JAVAC_FLAGS) B.java)
+	$(QUIET)echo $$(realpath infer-out-B) > $(ARGSFILE)
 	$(QUIET)$(call silent_on_success,Merging infer-outs,\
-	  $(INFER_BIN) capture --project-root $(PROJECT_ROOT) --merge-capture $(shell realpath infer-out-A) --merge-capture @$(ARGSFILE) -o infer-out)
+	  $(INFER_BIN) capture --project-root $(PROJECT_ROOT) --merge-capture $$(realpath infer-out-A) --merge-capture @$(ARGSFILE) -o infer-out)
 	$(QUIET)$(call silent_on_success,Testing infer/java in $(TEST_REL_DIR),\
 	  $(INFER_BIN) analyze $(INFER_OPTIONS))
 	$(QUIET)rm $(ARGSFILE)

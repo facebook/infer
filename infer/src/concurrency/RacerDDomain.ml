@@ -725,12 +725,12 @@ let branch_never_returns () =
       AttributeMapDomain.empty }
 
 
-let integrate_summary formals ~callee_proc_desc summary ret_access_exp callee_pname actuals loc
+let integrate_summary formals ~callee_proc_attrs summary ret_access_exp callee_pname actuals loc
     astate =
   let {threads; locks; never_returns; return_ownership; return_attribute} = summary in
   if never_returns then branch_never_returns ()
   else
-    let callee_formals = FormalMap.make callee_proc_desc in
+    let callee_formals = FormalMap.make callee_proc_attrs in
     let astate =
       add_callee_accesses ~caller_formals:formals ~callee_formals ~callee_accesses:summary.accesses
         callee_pname actuals loc astate

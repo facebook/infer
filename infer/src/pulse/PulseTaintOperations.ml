@@ -61,7 +61,8 @@ type sink_policy =
   { source_kinds: Taint.Kind.t list [@ignore]
   ; sanitizer_kinds: Taint.Kind.t list [@ignore]
   ; description: string [@ignore]
-  ; policy_id: int }
+  ; policy_id: int
+  ; privacy_effect: string option [@ignore] }
 [@@deriving equal]
 
 let sink_policies = Hashtbl.create (module Taint.Kind)
@@ -80,14 +81,17 @@ let fill_data_flow_kinds_from_config () =
 
 let fill_policies_from_config () =
   Config.pulse_taint_config.policies
-  |> List.iter ~f:(fun {Pulse_config_j.short_description= description; taint_flows} ->
+  |> List.iter
+       ~f:(fun {Pulse_config_j.short_description= description; taint_flows; privacy_effect} ->
          let policy_id = next_policy_id () in
          List.iter taint_flows ~f:(fun {Pulse_config_j.source_kinds; sanitizer_kinds; sink_kinds} ->
              let source_kinds = List.map source_kinds ~f:Taint.Kind.of_string in
              let sanitizer_kinds = List.map sanitizer_kinds ~f:Taint.Kind.of_string in
              List.iter sink_kinds ~f:(fun sink_kind_s ->
                  let sink_kind = Taint.Kind.of_string sink_kind_s in
-                 let flow = {source_kinds; sanitizer_kinds; description; policy_id} in
+                 let flow =
+                   {source_kinds; sanitizer_kinds; description; policy_id; privacy_effect}
+                 in
                  Hashtbl.update sink_policies sink_kind ~f:(function
                    | None ->
                        [flow]
@@ -105,7 +109,8 @@ let () =
              any Simple sanitizer is in the way"
         ; source_kinds= [simple_kind]
         ; sanitizer_kinds= [simple_kind]
-        ; policy_id= next_policy_id () } ]
+        ; policy_id= next_policy_id ()
+        ; privacy_effect= None } ]
   |> ignore ;
   fill_data_flow_kinds_from_config () ;
   fill_policies_from_config ()
@@ -227,10 +232,10 @@ let procedure_matches tenv matchers proc_name actuals =
       let procedure_name_matches =
         match matcher.procedure_matcher with
         | ProcedureName {name} ->
-            let proc_name_s = F.asprintf "%a" Procname.pp_unique_id proc_name in
+            let proc_name_s = F.asprintf "%a" Procname.pp_verbose proc_name in
             String.is_substring ~substring:name proc_name_s
         | ProcedureNameRegex {name_regex} -> (
-            let proc_name_s = F.asprintf "%a" Procname.pp_unique_id proc_name in
+            let proc_name_s = F.asprintf "%a" Procname.pp_verbose proc_name in
             L.d_printfln "Matching regex wrt %s" proc_name_s ;
             match Str.search_forward name_regex proc_name_s 0 with
             | _ ->
@@ -283,8 +288,8 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param p
   if not (List.is_empty matches) then L.d_printfln "taint matches" ;
   List.fold matches ~init:(astate, []) ~f:(fun acc matcher ->
       let actuals =
-        List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ} ->
-            (arg_payload, typ) )
+        List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ; exp} ->
+            (arg_payload, typ, Some exp) )
       in
       let {kinds} = matcher in
       let rec match_target acc = function
@@ -313,15 +318,16 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param p
                     Stack.find_opt return astate
                     |> Option.fold ~init:acc ~f:(fun (_, tainted) return_value ->
                            let taint = {Taint.proc_name; origin= ReturnValue; kinds} in
-                           (astate, (taint, (return_value, return_typ)) :: tainted) ) ) )
+                           (astate, (taint, (return_value, return_typ, None)) :: tainted) ) ) )
         | ( `AllArguments
           | `ArgumentPositions _
           | `AllArgumentsButPositions _
           | `ArgumentsMatchingTypes _ ) as taint_target ->
             L.d_printf "matching actuals... " ;
             List.foldi actuals ~init:acc
-              ~f:(fun i ((astate, tainted) as acc) ((_, actual_typ) as actual_hist_and_typ) ->
-                if taint_target_matches tenv taint_target i actual_typ then (
+              ~f:(fun i ((astate, tainted) as acc) ((_, actual_typ, exp) as actual_hist_and_typ) ->
+                let is_const_exp = match exp with Some exp -> Exp.is_const exp | None -> false in
+                if taint_target_matches tenv taint_target i actual_typ && not is_const_exp then (
                   L.d_printfln_escaped "match! tainting actual #%d with type %a" i
                     (Typ.pp_full Pp.text) actual_typ ;
                   let taint = {Taint.proc_name; origin= Argument {index= i}; kinds} in
@@ -357,7 +363,7 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param p
               in
               (astate, value, typ_name, field_typ)
             in
-            let move_taint_to_field ((astate, tainted) as acc) (taint, (value, typ)) fieldname =
+            let move_taint_to_field ((astate, tainted) as acc) (taint, (value, typ, _)) fieldname =
               (* Move the taint from [value] to [value]'s field [fieldname] *)
               match type_check astate value typ fieldname with
               | None ->
@@ -383,7 +389,7 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param p
                          (Typ.pp_full Pp.text) field_typ ;
                        ( astate
                        , ( Taint.{taint with origin= Field {name= fieldname; origin= taint.origin}}
-                         , (ret_value, field_typ) )
+                         , (ret_value, field_typ, None) )
                          :: tainted )) )
             in
             List.fold fields ~init:acc ~f:(fun ((astate, tainted) as acc) (fieldname, origin) ->
@@ -468,7 +474,7 @@ let taint_sources tenv path location ~intra_procedural_only return ~has_added_re
     get_tainted tenv path location source_matchers return ~has_added_return_param proc_name actuals
       astate
   in
-  List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _)) ->
+  List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _, _)) ->
       let hist =
         ValueHistory.singleton (TaintSource (source, location, path.PathContext.timestamp))
       in
@@ -491,7 +497,7 @@ let taint_sanitizers tenv path return ~has_added_return_param ~location proc_nam
       actuals astate
   in
   let astate =
-    List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, history), _)) ->
+    List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, history), _, _)) ->
         let trace = Trace.Immediate {location; history} in
         let taint_sanitized =
           Attribute.TaintSanitized.
@@ -509,7 +515,7 @@ let check_policies ~sink ~source ~source_times ~sanitizers =
   List.fold sink.Taint.kinds ~init:[] ~f:(fun acc sink_kind ->
       let policies = Hashtbl.find_exn sink_policies sink_kind in
       List.fold policies ~init:acc
-        ~f:(fun acc {source_kinds; sanitizer_kinds; description; policy_id} ->
+        ~f:(fun acc {source_kinds; sanitizer_kinds; description; policy_id; privacy_effect} ->
           match
             List.find source.Taint.kinds ~f:(fun source_kind ->
                 (* We should ignore flows between data-flow-only sources and data-flow-only sinks *)
@@ -532,7 +538,7 @@ let check_policies ~sink ~source ~source_times ~sanitizers =
                   sanitizers
               in
               if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
-                (suspicious_source, sink_kind, description, policy_id) :: acc
+                (suspicious_source, sink_kind, description, policy_id, privacy_effect) :: acc
               else (
                 L.d_printfln ~color:Green "...but sanitized by %a" Attribute.TaintSanitizedSet.pp
                   matching_sanitizers ;
@@ -614,7 +620,8 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
         L.d_printfln_escaped ~color:Red "Found source %a, checking policy..." Taint.pp source ;
         let potential_policy_violations = check_policies ~sink ~source ~source_times ~sanitizers in
         let report_policy_violation reported_so_far
-            (source_kind, sink_kind, policy_description, violated_policy_id) =
+            (source_kind, sink_kind, policy_description, violated_policy_id, policy_privacy_effect)
+            =
           if IntSet.mem violated_policy_id reported_so_far then Ok reported_so_far
           else
             let flow_kind =
@@ -631,7 +638,8 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
                      ; source= ({source with kinds= [source_kind]}, source_hist)
                      ; sink= ({sink with kinds= [sink_kind]}, sink_trace)
                      ; flow_kind
-                     ; policy_description } ) )
+                     ; policy_description
+                     ; policy_privacy_effect } ) )
         in
         PulseResult.list_fold potential_policy_violations ~init:policy_violations_reported
           ~f:report_policy_violation )
@@ -658,7 +666,7 @@ let taint_sinks tenv path location return ~has_added_return_param proc_name actu
     get_tainted tenv path location sink_matchers return ~has_added_return_param proc_name actuals
       astate
   in
-  PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ)) ->
+  PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ, _)) ->
       if should_ignore_all_flows_to proc_name then Ok astate
       else
         let sink_trace = Trace.Immediate {location; history} in
@@ -758,7 +766,7 @@ let taint_propagators tenv path location return ~has_added_return_param proc_nam
     get_tainted tenv path location propagator_matchers return ~has_added_return_param proc_name
       actuals astate
   in
-  List.fold tainted ~init:astate ~f:(fun astate (_propagator, ((v, _history), _)) ->
+  List.fold tainted ~init:astate ~f:(fun astate (_propagator, ((v, _history), _, _)) ->
       let other_actuals =
         List.filter actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual, _hist} ->
             not (AbstractValue.equal v actual) )
@@ -916,7 +924,8 @@ let pulse_models_to_treat_as_unknown_for_taint =
 let should_treat_as_unknown_for_taint tenv proc_name =
   (* HACK: we already have a function for matching procedure names so just re-use it even though we
      don't need its full power *)
-  Procname.is_implicit_ctor proc_name
+  Option.exists (IRAttributes.load proc_name) ~f:(fun attrs -> attrs.ProcAttributes.is_cpp_implicit)
+  && Procname.is_constructor proc_name
   || procedure_matches tenv pulse_models_to_treat_as_unknown_for_taint proc_name []
      |> List.is_empty |> not
 

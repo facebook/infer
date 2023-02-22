@@ -7,6 +7,7 @@
 
 open! IStd
 open Textual
+module StringSet = HashSet.Make (String)
 
 module QualifiedNameHashtbl = Hashtbl.Make (struct
   type t = qualified_procname
@@ -167,6 +168,47 @@ let check_proc_not_implemented_twice decls errors procdecl =
   if is_proc_implemented decls procdecl then
     ProcImplementedTwice procdecl.ProcDecl.qualified_name :: errors
   else errors
+
+
+let get_undefined_types decls =
+  let referenced_tnames, defined_tnames = (StringSet.create 17, StringSet.create 17) in
+  (* Helpers *)
+  let register_tname tname set = StringSet.add tname.TypeName.value set in
+  let register_tnames tnames set = List.iter tnames ~f:(fun x -> register_tname x set) in
+  let rec register_typ (typ : Typ.t) set =
+    match typ with
+    | Struct tname ->
+        register_tname tname set
+    | Ptr typ | Array typ ->
+        register_typ typ set
+    | _ ->
+        ()
+  in
+  let register_annotated_typ ({typ} : Typ.annotated) set = register_typ typ set in
+  let register_annotated_typs typs set =
+    List.iter typs ~f:(fun annotated_typ -> register_annotated_typ annotated_typ set)
+  in
+  (* Collect type names from Globals *)
+  VarName.Hashtbl.to_seq_values decls.globals
+  |> Seq.iter (fun ({typ} : Global.t) -> register_typ typ referenced_tnames) ;
+  (* Collect type names from Procdecls  *)
+  QualifiedNameHashtbl.to_seq_values decls.procnames
+  |> Seq.iter (fun ((procdecl : ProcDecl.t), _) ->
+         register_annotated_typ procdecl.result_type referenced_tnames ;
+         register_annotated_typs procdecl.formals_types referenced_tnames ) ;
+  (* Collect type names from Structs  *)
+  TypeName.Hashtbl.to_seq_values decls.structs
+  |> Seq.iter (fun (s : Struct.t) ->
+         register_tname s.name referenced_tnames ;
+         register_tname s.name defined_tnames ;
+         register_tnames s.supers referenced_tnames ;
+         List.iter s.fields ~f:(fun (field : FieldDecl.t) ->
+             register_tname field.qualified_name.enclosing_class referenced_tnames ;
+             register_typ field.typ referenced_tnames ) ) ;
+  (* TODO(arr): collect types from expressions such as alloc and cast. We'll need to extend the
+     decls with ProcDescs to have access to expressions. *)
+  StringSet.remove_all (StringSet.iter defined_tnames) referenced_tnames ;
+  StringSet.seq referenced_tnames
 
 
 let make_decls ({decls; sourcefile} : Module.t) : error list * t =

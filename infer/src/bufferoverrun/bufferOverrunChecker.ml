@@ -457,18 +457,8 @@ let checker ({InterproceduralAnalysis.proc_desc; tenv; exe_env; analyze_dependen
       let cfg = CFG.from_pdesc proc_desc in
       let checks =
         let open IOption.Let_syntax in
-        let get_summary_common callee_pname =
-          let+ _, summaries = analyze_dependency callee_pname in
-          summaries
-        in
-        let get_checks_summary callee_pname =
-          let* checker_summary, _analysis_summary = get_summary_common callee_pname in
-          checker_summary
-        in
-        let get_summary callee_pname =
-          let* _checker_summary, analysis_summary = get_summary_common callee_pname in
-          analysis_summary
-        in
+        let get_checks_summary callee_pname = analyze_dependency callee_pname >>= fst in
+        let get_summary callee_pname = analyze_dependency callee_pname >>= snd in
         let get_formals callee_pname =
           Attributes.load callee_pname >>| ProcAttributes.get_pvar_formals
         in

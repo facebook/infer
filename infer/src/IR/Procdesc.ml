@@ -863,10 +863,10 @@ let pp_signature fmt pdesc =
   let attributes = get_attributes pdesc in
   let pname = get_proc_name pdesc in
   let defined_string = match is_defined pdesc with true -> "defined" | false -> "undefined" in
-  Format.fprintf fmt "@[%a [%s, Return type: %a, %aFormals: %a, Locals: %a" Procname.pp pname
-    defined_string (Typ.pp_full Pp.text) (get_ret_type pdesc) pp_objc_accessor
+  Format.fprintf fmt "@[%a [%s, Return type: %a, %aFormals: %a, Locals: %a, is_deleted:%b"
+    Procname.pp pname defined_string (Typ.pp_full Pp.text) (get_ret_type pdesc) pp_objc_accessor
     attributes.ProcAttributes.objc_accessor pp_variable_list (get_formals pdesc) pp_locals_list
-    (get_locals pdesc) ;
+    (get_locals pdesc) attributes.ProcAttributes.is_cpp_deleted ;
   if not (List.is_empty (get_captured pdesc)) then
     Format.fprintf fmt ", Captured: %a" pp_captured_list (get_captured pdesc) ;
   let ret_annots = attributes.ProcAttributes.ret_annots in
@@ -964,6 +964,8 @@ let load =
       ~f:(fun () -> run_query load_statement_cdb)
       (run_query load_statement_adb)
 
+
+let load_exn procname = load procname |> Option.value_exn
 
 let mark_if_unchanged ~old_pdesc ~new_pdesc =
   (* map from exp names in [old_pdesc] to exp names in [new_pdesc] *)

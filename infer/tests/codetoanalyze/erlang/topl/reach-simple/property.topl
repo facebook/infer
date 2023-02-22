@@ -1,0 +1,6 @@
+property Reach
+  message "A dirty thing ends up in the sink"
+  prefix "reach"
+  start -> start: *
+  start -> track: "source/0"(Ret) => dirty := Ret
+  track -> error: "sink/1"(Arg, Ret) when Arg ~~> dirty

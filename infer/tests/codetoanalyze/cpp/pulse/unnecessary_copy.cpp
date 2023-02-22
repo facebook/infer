@@ -8,6 +8,7 @@
 #include <set>
 #include <string>
 #include <list>
+#include "header.h"
 
 struct Arr {
   int arr[2];
@@ -292,19 +293,19 @@ struct SimpleS {
 
 struct SwapSimple {
   SimpleS v;
-  void swap_ok(SwapSimple& x) {
+  void swap_bad(SwapSimple& x) {
     const auto temp = v;
     v = x.v;
-    x.v = temp;
+    x.v = temp; // report copy assignment from const
   }
 };
 
 struct SwapVector {
   std::vector<int> v;
-  void swap_ok(SwapVector& x) {
+  void swap_bad(SwapVector& x) {
     const auto temp = v;
     v = x.v;
-    x.v = temp;
+    x.v = temp; // report copy assignment from const
   }
 };
 
@@ -497,7 +498,7 @@ class ClassWithoutConstructDef {
   std::vector<int> __internal_vec;
 
   // we should detect copy assignment and suggest a move into the field
-  void field_setter_bad_FN(std::vector<int> vec) {
+  void field_setter_bad(std::vector<int> vec) {
     __internal_vec = vec; // copy assignment
   }
 
@@ -524,11 +525,11 @@ void call_unknown_constructor_twice_ok(const ClassWithoutConstructDef& src) {
 
 void foo(std::vector<int> my_vec) { LOCAL_MACRO(my_vec); }
 
-class CopiedToField1_Bad_FN {
+class CopiedToField1_Bad {
   Arr field;
 
  public:
-  CopiedToField1_Bad_FN(Arr a) : field(a) {}
+  CopiedToField1_Bad(Arr a) : field(a) {}
 };
 
 class CopiedToField1_Ok {
@@ -538,11 +539,11 @@ class CopiedToField1_Ok {
   CopiedToField1_Ok(Arr a) : field(std::move(a)) {}
 };
 
-class CopiedToField2_Bad_FN {
+class CopiedToField2_Bad {
   Arr field;
 
  public:
-  CopiedToField2_Bad_FN(Arr a) { field = a; }
+  CopiedToField2_Bad(Arr a) { field = a; }
 };
 
 class CopiedToField2_Ok {
@@ -557,14 +558,13 @@ struct Arrs {
   Arr b;
 };
 
-class CopiedToField3_Ok {
+class CopiedToField3_Last_Bad {
   Arrs field1;
   Arr field2;
 
  public:
-  // It should not report unnecessary copy issue since the parameter cannot be
-  // moved.
-  CopiedToField3_Ok(Arrs as) {
+  // last copy could be avoided
+  CopiedToField3_Last_Bad(Arrs as) {
     field1 = as;
     field2 = as.a;
   }
@@ -599,14 +599,14 @@ class PassedToUnknownRef_Bad {
   PassedToUnknownRef_Bad(Arr a) { unknown(a); }
 };
 
-class CopiedToMultipleField_Bad_FN {
+class CopiedToMultipleField_Last_Bad {
   Arr field1;
   Arr field2;
 
  public:
   // Ideally, the last copy can be avoided by std::move, but this pattern is not
   // common in practice. The test is just for showing checker's behavior.
-  CopiedToMultipleField_Bad_FN(Arr a) : field1(a), field2(a) {}
+  CopiedToMultipleField_Last_Bad(Arr a) : field1(a), field2(a) {}
 };
 
 void global_setter_bad(const Arr& arr) {
@@ -646,4 +646,35 @@ int intermediate_local_copy_used_ok() {
   int x = get_first_elem(input); // copy from input to an intermediate
   input.arr[0] = 0; // can't suggest moving input as it is used
   return x;
+}
+
+void copy_assignment_const_ref_member(const Arr& arr) {
+  std::vector<int> my_vec;
+  my_vec = arr.vec;
+}
+
+class FVector {
+
+  FVector(FVector const& rhs) {
+    table_ = rhs.table_; // don't report on copy ctors
+  }
+
+  FVector& operator=(FVector const& rhs) {
+    if (this != &rhs) {
+      table_ = rhs.table_; // don't report on copy ctors
+    }
+    return *this;
+  }
+
+ protected:
+  std::vector<int> table_;
+};
+
+void call_templated_func_specialized_int(const std::vector<int>& arg) {
+  copy_in_header_bad(arg);
+}
+
+void call_templated_func_specialized_string(
+    const std::vector<std::string>& arg) {
+  copy_in_header_bad(arg);
 }

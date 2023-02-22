@@ -63,7 +63,7 @@ let method_overrides_annot annot tenv pname = method_overrides (method_has_annot
 
 let lookup_annotation_calls {InterproceduralAnalysis.analyze_dependency} annot pname =
   analyze_dependency pname
-  |> Option.bind ~f:(fun (_, astate) -> Domain.find_opt annot astate)
+  |> Option.bind ~f:(Domain.find_opt annot)
   |> Option.value ~default:Domain.SinkMap.empty
 
 
@@ -501,7 +501,7 @@ module MakeTransferFunctions (CFG : ProcCfg.S) = struct
     match analyze_dependency callee_pname with
     | None ->
         astate
-    | Some (_, callee_call_map) ->
+    | Some callee_call_map ->
         L.d_printf "Applying summary for `%a`@\n" Procname.pp callee_pname ;
         let add_call_site annot sink calls astate =
           if Domain.CallSites.is_empty calls then astate

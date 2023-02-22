@@ -185,6 +185,10 @@ val buck2_build_args : string list
 
 val buck2_build_args_no_inline : string list
 
+val buck2_bxl_target : string option
+
+val buck2_use_bxl : bool
+
 val buck_block_list : string list
 
 val buck_build_args : string list
@@ -195,7 +199,7 @@ val buck_cache_mode : bool
 
 val buck_clang_use_toolchain_config : bool
 
-val buck_java_flavor_dependency_depth : int option
+val buck_dependency_depth : int option
 
 val buck_java_flavor_suppress_config : bool
 
@@ -219,7 +223,9 @@ val capture_block_list : string option
 
 val capture_textual : string list
 
-val capture_doli : string option
+val capture_doli : string list
+
+val parse_doli : string option
 
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
@@ -584,7 +590,7 @@ val pulse_model_return_nonnull : Str.regexp option
 
 val pulse_model_skip_pattern : Str.regexp option
 
-val pulse_models_for_erlang : Yojson.Basic.t
+val pulse_models_for_erlang : string list
 
 val pulse_prevent_non_disj_top : bool
 
@@ -623,6 +629,8 @@ val pulse_taint_config : pulse_taint_config
 val pulse_widen_threshold : int
 
 val pulse_nullsafe_report_npe : bool
+
+val pulse_log_summary_count : bool
 
 val pure_by_default : bool
 
@@ -803,12 +811,6 @@ val trace_events : bool
 val trace_ondemand : bool
 
 val trace_topl : bool
-
-val tv_commit : string option
-
-val tv_limit : int
-
-val tv_limit_filtered : int
 
 val uninit_interproc : bool
 

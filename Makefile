@@ -41,10 +41,13 @@ BUILD_SYSTEMS_TESTS += \
   results_xml \
   tracebugs \
   utf8_in_procname \
-  export_changed_functions \
   incremental_analysis_remove_file \
   incremental_analysis_change_procedure \
   incremental_analysis_add_procedure \
+
+ifeq ($(DIFF_CAN_FORMAT),yes)
+BUILD_SYSTEMS_TESTS += export_changed_functions
+endif
 
 DIRECT_TESTS += \
   c_biabduction \
@@ -84,14 +87,16 @@ ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += \
   buck_block_list \
   buck-clang-db \
-  buck_clang_test_determinator \
   buck_flavors \
   buck_flavors_diff \
   buck_flavors_run \
-  buck_flavors_deterministic \
-  buck_export_changed_functions \
+  buck_flavors_deterministic
 
+ifeq ($(DIFF_CAN_FORMAT),yes)
+BUILD_SYSTEMS_TESTS += buck_clang_test_determinator buck_export_changed_functions
 endif
+endif
+
 ifneq ($(CMAKE),no)
 BUILD_SYSTEMS_TESTS += clang_compilation_db cmake inferconfig inferconfig_not_strict
 endif
@@ -100,13 +105,16 @@ BUILD_SYSTEMS_TESTS += ndk_build
 endif
 ifeq ($(HAS_OBJC),yes)
 BUILD_SYSTEMS_TESTS += \
-  clang_test_determinator \
   differential_of_costs_report_objc \
   objc_getters_setters \
   objc_missing_fld \
   objc_retain_cycles \
   objc_retain_cycles_weak \
   pulse_messages_objc \
+
+ifeq ($(DIFF_CAN_FORMAT),yes)
+BUILD_SYSTEMS_TESTS += clang_test_determinator
+endif
 
 DIRECT_TESTS += \
   objc_autoreleasepool \
@@ -155,6 +163,7 @@ ifneq ($(REBAR3),no)
 DIRECT_TESTS += \
   erlang_pulse \
   erlang_pulse-otp \
+  erlang_pulse-taint \
   erlang_topl \
   erlang_compiler \
 
@@ -181,11 +190,14 @@ BUILD_SYSTEMS_TESTS += \
   differential_skip_duplicated_types_on_filenames_with_renamings \
   gradle \
   java_source_parser \
-  java_test_determinator \
   javac \
   resource_leak_exception_lines \
   racerd_dedup \
   merge-capture \
+
+ifeq ($(DIFF_CAN_FORMAT),yes)
+BUILD_SYSTEMS_TESTS += java_test_determinator
+endif
 
 DIRECT_TESTS += \
   java_annotreach \
@@ -214,7 +226,8 @@ DIRECT_TESTS += \
   java_starvation-dedup \
   java_starvation-whole-program \
   java_topl \
-  sil_doli \
+  sil_doliCapture  \
+  sil_doliParsing \
   sil_pulse \
   sil_verif \
 
@@ -222,6 +235,7 @@ ifneq ($(KOTLINC), no)
 DIRECT_TESTS += \
   kotlin_racerd \
   kotlin_resources \
+  kotlin_scopeleakage \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 DIRECT_TESTS += \
@@ -271,7 +285,6 @@ DIRECT_TESTS += \
   dotnet_nullparam \
   dotnet_numcomparison \
   dotnet_reference \
-  dotnet_resourceleak \
   dotnet_starg \
   dotnet_threadsafetyviolation
 
@@ -677,9 +690,6 @@ uninstall:
 	$(REMOVE) $(INFER_COMMANDS:%=$(DESTDIR)$(bindir)/%)
 	$(REMOVE) $(foreach manual,$(INFER_GROFF_MANUALS_GZIPPED),\
 	  $(DESTDIR)$(mandir)/man1/$(notdir $(manual)))
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(MAKE) -C facebook uninstall
-endif
 
 .PHONY: test_clean
 test_clean: $(DIRECT_TESTS:%=direct_%_clean) $(BUILD_SYSTEMS_TESTS:%=build_%_clean)
@@ -789,20 +799,6 @@ endif
 	   $(LN_S) infer "$$alias"); done
 	$(foreach man,$(INFER_GROFF_MANUALS_GZIPPED), \
 	  $(INSTALL_DATA) -C $(man) '$(DESTDIR)$(mandir)/man1/$(notdir $(man))';)
-ifeq ($(IS_FACEBOOK_TREE),yes)
-ifdef DESTDIR
-ifeq (,$(findstring :/,:$(DESTDIR)))
-#	DESTDIR is set and relative
-	$(MAKE) -C facebook install 'DESTDIR=../$(DESTDIR)'
-else
-#	DESTDIR is set and absolute
-	$(MAKE) -C facebook install
-endif
-else
-#	DESTDIR not set
-	$(MAKE) -C facebook install
-endif
-endif
 
 # install dynamic libraries
 # use this if you want to distribute infer binaries
@@ -816,9 +812,6 @@ ifneq ($(PLATFORM_ENV),)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(PATCHELF) --set-rpath '$(PLATFORM_ENV)'/lib '$(DESTDIR)$(libdir)'/infer/facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib
 endif   # BUILD_C_ANALYZERS
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(PATCHELF) --set-rpath '$(PLATFORM_ENV)'/lib '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
-endif 	# IS_FACEBOOK_TREE
 else	# PLATFORM_ENV
 #	figure out where libgmp, libmpfr, and libsqlite3 are using ldd
 	set -x; \
@@ -832,9 +825,6 @@ else	# PLATFORM_ENV
 	  $(PATCHELF) --set-rpath '$$ORIGIN' --force-rpath "$$sofile"; \
 	done
 	$(PATCHELF) --set-rpath '$$ORIGIN/../libso' --force-rpath '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(PATCHELF) --set-rpath '$$ORIGIN/../libso' --force-rpath '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
-endif	# IS_FACEBOOK_TREE
 endif 	# PLATFORM_ENV
 else 	# PATCHELF
 	echo "ERROR: ldd (Linux?) found but not patchelf, please install patchelf" >&2; exit 1
@@ -858,10 +848,6 @@ ifneq ($(INSTALL_NAME_TOOL),no)
 	done
 	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
 	scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso '$(DESTDIR)$(libdir)'/infer/infer/bin/infer
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(INSTALL_NAME_TOOL) -add_rpath '@executable_path/../libso' '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
-	scripts/set_libso_path.sh '$(DESTDIR)$(libdir)'/infer/infer/libso '$(DESTDIR)$(libdir)'/infer/infer/bin/InferCreateTraceViewLinks
-endif	# IS_FACEBOOK_TREE
 else 	# INSTALL_NAME_TOOL
 	echo "ERROR: otool (OSX?) found but not install_name_tool, please install install_name_tool" >&2; exit 1
 endif	# INSTALL_NAME_TOOL
@@ -942,6 +928,10 @@ endif
 	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && [ x"$(GNU_SED)" = x"no" ]; then \
 	  echo '$(TERM_INFO)*** Installing GNU sed$(TERM_RESET)' >&2; \
 	  brew install gnu-sed; \
+	fi
+	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && [ x"$(DIFF_CAN_FORMAT)" = x"no" ] ; then \
+	  echo '$(TERM_INFO)*** Installing diffutils$(TERM_RESET)' >&2; \
+	  brew install diffutils; \
 	fi
 	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && ! $$(parallel -h | grep -q GNU); then \
 	  echo '$(TERM_INFO)*** Installing GNU parallel$(TERM_RESET)' >&2; \

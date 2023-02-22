@@ -33,8 +33,7 @@ let interprocedural_with_field_dependency ~dep_field payload_field checker =
     [payload_field1] *)
 let interprocedural2 payload_field1 payload_field2 checker =
   Procedure
-    (CallbackOfChecker.interprocedural
-       ~f_analyze_dep:(fun proc_desc payloads -> Some (proc_desc, payloads))
+    (CallbackOfChecker.interprocedural ~f_analyze_dep:Option.some
        ~get_payload:(fun payloads ->
          ( Field.get payload_field1 payloads |> Lazy.force
          , Field.get payload_field2 payloads |> Lazy.force ) )
@@ -45,8 +44,7 @@ let interprocedural2 payload_field1 payload_field2 checker =
 (** For checkers that read three separate payloads. *)
 let interprocedural3 payload_field1 payload_field2 payload_field3 ~set_payload checker =
   Procedure
-    (CallbackOfChecker.interprocedural
-       ~f_analyze_dep:(fun proc_desc payloads -> Some (proc_desc, payloads))
+    (CallbackOfChecker.interprocedural ~f_analyze_dep:Option.some
        ~get_payload:(fun payloads ->
          ( Field.get payload_field1 payloads |> Lazy.force
          , Field.get payload_field2 payloads |> Lazy.force
@@ -138,10 +136,6 @@ let all_checkers =
                interprocedural later on *)
             interprocedural Payloads.Fields.lab_resource_leaks ResourceLeaks.checker
           , Java ) ] }
-  ; (* .NET resource analysis, based on the toy resource analysis in the infer lab *)
-    { checker= DOTNETResourceLeaks
-    ; callbacks=
-        [(interprocedural Payloads.Fields.dotnet_resource_leaks ResourceLeaksCS.checker, CIL)] }
   ; { checker= RacerD
     ; callbacks=
         (let racerd_proc = interprocedural Payloads.Fields.racerd RacerDProcAnalysis.analyze in

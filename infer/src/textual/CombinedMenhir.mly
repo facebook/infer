@@ -145,43 +145,43 @@ ident:
   | PROTECTED { "protected" }
   | PRIVATE { "private" }
   | STATIC { "static" }
-  | IN{ "in" }
+  | IN { "in" }
   | x=IDENT { x }
 
 
 main:
   | attrs=attribute* decls=declaration* EOF
-    { (fun sourcefile -> { attrs; decls; sourcefile }) }
+    { (fun sourcefile -> { Module.attrs; decls; sourcefile }) }
 
 pname:
   | id=ident
-    { { value=id; loc=location_of_pos $startpos(id) } }
+    { { ProcName.value=id; loc=location_of_pos $startpos(id) } }
 
 fname:
   | id=ident
-    { { value=id; loc=location_of_pos $startpos(id) } }
+    { { FieldName.value=id; loc=location_of_pos $startpos(id) } }
 
 nname:
   | id=ident
-    { { value=id; loc=location_of_pos $startpos(id) } }
+    { { NodeName.value=id; loc=location_of_pos $startpos(id) } }
 
 tname:
   | id=ident
-    { { value=id; loc=location_of_pos $startpos(id) } }
+    { { TypeName.value=id; loc=location_of_pos $startpos(id) } }
 
 vname:
   | id=ident
-    { { value=id; loc=location_of_pos $startpos(id) } }
+    { { VarName.value=id; loc=location_of_pos $startpos(id) } }
 
 qualified_pname:
   | tname=tname DOT name=pname
-    { {enclosing_class=Enclosing tname; name} }
+    { ( {enclosing_class=Enclosing tname; name} : qualified_procname) }
   | name=pname
-    { {enclosing_class=TopLevel; name} }
+    { ( {enclosing_class=TopLevel; name} : qualified_procname ) }
 
 attribute:
   | DOT name=ident EQ value=STRING
-    { {name; values=[value]; loc=location_of_pos $startpos} }
+    { {Attr.name=name; values=[value]; loc=location_of_pos $startpos} }
 
 extends:
   | EXTENDS supers=separated_nonempty_list(COMMA,tname)
@@ -192,7 +192,7 @@ declaration:
     { let typ = annotated_typ.Typ.typ in
       let attributes = annotated_typ.Typ.attributes in
       let global : Global.t = {name; typ; attributes} in
-      Global global }
+      Module.Global global }
   | TYPE typ_name=tname supers=extends? ioption(EQ) attributes=annots
          LBRACKET l=separated_list(SEMICOLON, typed_field) RBRACKET
     { let fields =
@@ -203,14 +203,14 @@ declaration:
                         let attributes = annotated_typ.Typ.attributes in
                         {FieldDecl.qualified_name; typ; attributes}) in
       let supers = Option.value supers ~default:[] in
-      Struct {name= typ_name; supers; fields; attributes} }
+      Module.Struct {name= typ_name; supers; fields; attributes} }
   | DECLARE attributes=annots qualified_name=qualified_pname LPAREN
             formals_types=formals_types
             RPAREN COLON result_type=annotated_typ
     { let formals_types, are_formal_types_fully_declared = formals_types in
       let procdecl : ProcDecl.t =
         {qualified_name; formals_types= formals_types; are_formal_types_fully_declared; result_type; attributes} in
-      Procdecl procdecl
+      Module.Procdecl procdecl
     }
   | DEFINE attributes=annots qualified_name=qualified_pname LPAREN
            params = separated_list(COMMA, typed_var) RPAREN COLON result_type=annotated_typ
@@ -222,7 +222,7 @@ declaration:
       let start_node = List.hd_exn nodes in
       let params = List.map ~f:fst params in
       let exit_loc = location_of_pos $endpos in
-      Proc { procdecl; nodes; start= start_node.Node.label; params; locals; exit_loc}
+      Module.Proc { procdecl; nodes; start= start_node.Node.label; params; locals; exit_loc}
     }
 
 formals_types:
@@ -243,7 +243,7 @@ formals_types_rec:
 
 body:
  | LBRACKET lcls = locals nds=block+ RBRACKET
-      { { locals= lcls; nodes= nds }  }
+      { Body.{ locals= lcls; nodes= nds }  }
 
 locals:
   | { [] }
@@ -252,15 +252,15 @@ locals:
 
 base_typ:
   | INT
-    { Int }
+    { Typ.Int }
   | FLOAT
-    { Float }
+    { Typ.Float }
   | VOID
-    { Void }
+    { Typ.Void }
   | name=tname
-    { Struct name }
+    { Typ.Struct name }
   | typ=base_typ LSBRACKET RSBRACKET
-    { Array typ }
+    { Typ.Array typ }
   | LPAREN typ=typ RPAREN
     { typ }
 
@@ -268,7 +268,7 @@ typ:
   | typ=base_typ
     { typ }
   | STAR typ=typ
-    { Ptr typ }
+    { Typ.Ptr typ }
 
 %inline
 annots:
@@ -278,7 +278,7 @@ annots:
 annot:
   | DOT name=ident values=annot_value
     { let loc = location_of_pos $startpos(name) in
-      {name; values; loc} }
+      {Attr.name=name; values; loc} }
 
 %inline
 annot_value:
@@ -290,7 +290,7 @@ annot_value:
 
 annotated_typ:
   | annots=annots typ=typ
-    { {attributes=annots; typ} }
+    { {Typ.attributes=annots; typ} }
 
 typed_field:
   | name=fname COLON annotated_typ=annotated_typ
@@ -310,7 +310,7 @@ block:
       let last_loc = location_of_pos $startpos(last) in
       let label_loc = location_of_pos $startpos(lab) in
       let label, ssa_parameters = lab in
-      { label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc } }
+      Node.{ label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc } }
 
 label:
   | label=LABEL COLON
@@ -322,45 +322,45 @@ label:
 
 const:
   | INTEGER
-    { Int $1 }
+    { Const.Int $1 }
   | STRING
-    { Str $1 }
+    { Const.Str $1 }
   | FLOATINGPOINT
-    { Float $1 }
+    { Const.Float $1 }
   | TRUE
-    { Int Z.one }
+    { Const.Int Z.one }
   | FALSE
-    { Int Z.zero }
+    { Const.Int Z.zero }
   | NULL
-    { Null }
+    { Const.Null }
 
 instruction:
   | id=LOCAL COLON typ=typ EQ LOAD exp=expression
-    { Load {id= Ident.of_int id; exp; typ; loc=location_of_pos $startpos } }
+    { Instr.Load {id= Ident.of_int id; exp; typ; loc=location_of_pos $startpos } }
   | STORE exp1=expression ASSIGN exp2=expression COLON typ=typ
-    { Store {exp1; exp2; typ; loc=location_of_pos $startpos } }
+    { Instr.Store {exp1; exp2; typ; loc=location_of_pos $startpos } }
   | PRUNE exp=expression
-    { Prune {exp; loc=location_of_pos $startpos} }
+    { Instr.Prune {exp; loc=location_of_pos $startpos} }
   | PRUNE NOT exp=expression
-    { Prune {exp=Exp.not exp; loc=location_of_pos $startpos} }
+    { Instr.Prune {exp=Exp.not exp; loc=location_of_pos $startpos} }
   | id=LOCAL EQ exp=expression
-    { Let { id= Ident.of_int id; exp; loc=location_of_pos $startpos } }
+    { Instr.Let { id= Ident.of_int id; exp; loc=location_of_pos $startpos } }
 
 terminator:
   | RET e=expression
-    { Ret e }
+    { Terminator.Ret e }
   | JMP l=separated_list(COMMA, node_call)
-    { Jump l }
+    { Terminator.Jump l }
   | UNREACHABLE
-    { Unreachable }
+    { Terminator.Unreachable }
   | THROW e=expression
-    { Throw e }
+    { Terminator.Throw e }
 
 node_call:
   | label=nname
-    { {label; ssa_args=[]} }
+    { Terminator.{label; ssa_args=[]} }
   | label=nname LPAREN ssa_args=separated_nonempty_list(COMMA, expression) RPAREN
-    { {label; ssa_args} }
+    { Terminator.{label; ssa_args} }
 
 opt_handlers:
   | { [] }
@@ -369,22 +369,22 @@ opt_handlers:
 
 expression:
   | id=LOCAL
-    { Var (Ident.of_int id) }
+    { Exp.Var (Ident.of_int id) }
   | AMPERSAND name=vname
-    { Lvar name }
+    { Exp.Lvar name }
   | exp=expression DOT enclosing_class=tname DOT name=fname
     { let field : qualified_fieldname = {enclosing_class; name} in
-      Field {exp; field} }
+      Exp.Field {exp; field} }
   | e1=expression LSBRACKET e2=expression RSBRACKET
-    { Index (e1, e2) }
+    { Exp.Index (e1, e2) }
   | c=const
-    { Const c }
+    { Exp.Const c }
   | proc=qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
-    { Call {proc; args; kind= Exp.NonVirtual} }
+    { Exp.Call {proc; args; kind= Exp.NonVirtual} }
   | recv=expression DOT proc=qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
     { Exp.call_virtual proc recv args }
   | LABRACKET typ=typ RABRACKET
-    { Typ typ }
+    { Exp.Typ typ }
 
 
 (*  -------------------- DOLI  ----------------------------------*)
