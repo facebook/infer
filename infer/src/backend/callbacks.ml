@@ -8,7 +8,7 @@
 open! IStd
 module L = Logging
 
-type proc_callback_args = {summary: Summary.t; exe_env: Exe_env.t}
+type proc_callback_args = {summary: Summary.t; exe_env: Exe_env.t; proc_desc: Procdesc.t}
 
 type proc_callback_t = proc_callback_args -> Summary.t
 
@@ -36,8 +36,7 @@ let register_file_callback checker language (callback : file_callback_t) =
   file_callbacks_rev := {checker; language; callback} :: !file_callbacks_rev
 
 
-let iterate_procedure_callbacks exe_env summary =
-  let proc_desc = Summary.get_proc_desc summary in
+let iterate_procedure_callbacks exe_env summary proc_desc =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let procedure_language = Procname.get_language proc_name in
   Language.curr_language := procedure_language ;
@@ -52,7 +51,7 @@ let iterate_procedure_callbacks exe_env summary =
                 () )) ;
         let summary =
           Timer.time (Checker checker)
-            ~f:(fun () -> callback {summary; exe_env})
+            ~f:(fun () -> callback {summary; exe_env; proc_desc})
             ~on_timeout:(fun span ->
               L.debug Analysis Quiet "TIMEOUT in %s after %fs of CPU time analyzing %a:%a@\n"
                 (Checker.get_id checker) span SourceFile.pp

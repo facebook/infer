@@ -123,8 +123,8 @@ let update_taskbar proc_name_opt source_file_opt =
   !ProcessPoolState.update_status t0 status
 
 
-let analyze exe_env callee_summary =
-  let summary = Callbacks.iterate_procedure_callbacks exe_env callee_summary in
+let analyze exe_env callee_summary callee_pdesc =
+  let summary = Callbacks.iterate_procedure_callbacks exe_env callee_summary callee_pdesc in
   Stats.incr_ondemand_procs_analyzed () ;
   summary
 
@@ -187,7 +187,8 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
   let initial_callee_summary = preprocess () in
   try
     let callee_summary =
-      if callee_attributes.ProcAttributes.is_defined then analyze exe_env initial_callee_summary
+      if callee_attributes.ProcAttributes.is_defined then
+        analyze exe_env initial_callee_summary callee_pdesc
       else initial_callee_summary
     in
     let final_callee_summary = postprocess callee_summary in

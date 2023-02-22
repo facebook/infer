@@ -154,7 +154,7 @@ let tests =
          (fun summary ->
            { analysis_data=
                CallbackOfChecker.mk_interprocedural_field_t Payloads.Fields.quandary
-                 {exe_env= Exe_env.mk (); summary}
+                 {proc_desc= summary.proc_desc; exe_env= Exe_env.mk (); summary}
                  ~tenv:(Tenv.create ()) ()
                |> fst
            ; formal_map= FormalMap.empty } )
