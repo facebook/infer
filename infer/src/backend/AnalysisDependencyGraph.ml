@@ -11,7 +11,7 @@ let build ~changed_files =
   let graph = CallGraph.(create default_initial_capacity) in
   let tenv_deps = SourceFile.Hash.create 0 in
   (* First, build a reverse analysis callgraph [graph] and tenv dependency map [tenv_deps]. *)
-  Summary.OnDisk.iter_specs ~f:(fun {Summary.proc_attrs= {proc_name}; dependencies} ->
+  Summary.OnDisk.iter_specs ~f:(fun {Summary.proc_name; dependencies} ->
       let Summary.Deps.{callees; used_tenv_sources} =
         match dependencies with
         | Complete c ->

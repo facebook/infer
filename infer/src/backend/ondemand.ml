@@ -153,7 +153,7 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
     Preanal.do_preanalysis exe_env callee_pdesc ;
     if Config.debug_mode then
       DotCfg.emit_proc_desc callee_attributes.translation_unit callee_pdesc |> ignore ;
-    let initial_callee_summary = Summary.OnDisk.reset (Procdesc.get_attributes callee_pdesc) in
+    let initial_callee_summary = Summary.OnDisk.reset callee_pname in
     add_active callee_pname ;
     initial_callee_summary
   in
@@ -165,7 +165,7 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
     log_elapsed_time () ;
     summary
   in
-  let log_error_and_continue exn ({Summary.err_log; stats; payloads} as summary) kind =
+  let log_error_and_continue exn ({Summary.err_log; payloads; stats} as summary) kind =
     BiabductionReporting.log_issue_using_state callee_pdesc err_log exn ;
     let stats = Summary.Stats.update stats ~failure_kind:kind in
     let payloads =
@@ -290,7 +290,7 @@ let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
                        ~f:(fun () ->
                          let caller_pdesc =
                            Option.bind
-                             ~f:(fun {Summary.proc_attrs} -> Procdesc.load proc_attrs.proc_name)
+                             ~f:(fun {Summary.proc_name} -> Procdesc.load proc_name)
                              caller_summary
                          in
                          Some (run_proc_analysis exe_env ~caller_pdesc callee_pdesc) )

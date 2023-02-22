@@ -8,8 +8,7 @@
 open! IStd
 module L = Logging
 
-let report {Summary.payloads= {simple_lineage}; proc_attrs} =
-  let proc_name = ProcAttributes.get_proc_name proc_attrs in
+let report {Summary.payloads= {simple_lineage}; proc_name} =
   match Lazy.force simple_lineage with
   | None ->
       L.user_warning "No summary for %a@\n" Procname.pp proc_name

@@ -36,8 +36,7 @@ let register_file_callback checker language (callback : file_callback_t) =
   file_callbacks_rev := {checker; language; callback} :: !file_callbacks_rev
 
 
-let iterate_procedure_callbacks exe_env summary proc_desc =
-  let proc_name = summary.Summary.proc_attrs.ProcAttributes.proc_name in
+let iterate_procedure_callbacks exe_env ({Summary.proc_name} as summary) proc_desc =
   let procedure_language = Procname.get_language proc_name in
   Language.curr_language := procedure_language ;
   let is_specialized = Procdesc.is_specialized proc_desc in

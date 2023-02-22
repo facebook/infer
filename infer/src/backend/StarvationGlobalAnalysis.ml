@@ -28,7 +28,7 @@ let iter_critical_pairs_of_scheduled_work f (work_item : Domain.ScheduledWorkIte
   |> Option.iter ~f:(iter_critical_pairs_of_summary (iter_scheduled_pair work_item f))
 
 
-let iter_summary ~f exe_env ({payloads; proc_attrs= {proc_name}} : Summary.t) =
+let iter_summary ~f exe_env ({payloads; proc_name} : Summary.t) =
   let open Domain in
   Payloads.starvation payloads |> Lazy.force
   |> Option.iter ~f:(fun (payload : summary) ->
@@ -64,7 +64,7 @@ let report exe_env work_set =
   let wrap_report (procname, (pair : CriticalPair.t)) init =
     Summary.OnDisk.get ~lazy_payloads:true procname
     |> Option.fold ~init ~f:(fun acc summary ->
-           let pattrs = summary.Summary.proc_attrs in
+           let pattrs = Attributes.load_exn procname in
            let tenv = Exe_env.get_proc_tenv exe_env procname in
            let acc =
              Starvation.report_on_pair

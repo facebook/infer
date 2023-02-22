@@ -141,7 +141,7 @@ let tests =
             , [invariant "normal:{ b, a }"; id_assign_var "x" "b"]
             , [id_assign_var "x" "a"] ) ] ) ]
     |> TestInterpreter.create_tests
-         (fun {proc_attrs} -> Procdesc.load_exn proc_attrs.proc_name)
+         (fun {proc_name} -> Procdesc.load_exn proc_name)
          ~initial:Liveness.ExtendedDomain.bottom
   in
   "liveness_test_suite" >::: test_list

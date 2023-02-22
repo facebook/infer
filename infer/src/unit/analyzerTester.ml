@@ -293,7 +293,7 @@ struct
     set_succs last_node [exit_node] ~exn_handlers:no_exn_handlers ;
     Procdesc.set_exit_node pdesc exit_node ;
     Cfg.store src_file cfg ;
-    (Summary.OnDisk.reset (Procdesc.get_attributes pdesc), assert_map, pdesc)
+    (Summary.OnDisk.reset pname, assert_map, pdesc)
 
 
   let create_test test_program make_analysis_data ~initial pp_opt _ =

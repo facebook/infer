@@ -48,7 +48,7 @@ type t =
   { payloads: Payloads.t
   ; mutable sessions: int  (** Session number: how many nodes went through symbolic execution *)
   ; stats: Stats.t
-  ; proc_attrs: ProcAttributes.t
+  ; proc_name: Procname.t
   ; err_log: Errlog.t
         (** Those are issues that are detected for this procedure after per-procedure analysis. In
             addition to that there can be errors detected after file-level analysis (next stage
@@ -71,7 +71,7 @@ module OnDisk : sig
   val get : lazy_payloads:bool -> Procname.t -> t option
   (** Return the summary option for the procedure name *)
 
-  val reset : ProcAttributes.t -> t
+  val reset : Procname.t -> t
   (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 
   val store : t -> unit
