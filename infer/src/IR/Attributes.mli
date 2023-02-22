@@ -18,6 +18,9 @@ val load_from_uid : string -> ProcAttributes.t option
 val load : Procname.t -> ProcAttributes.t option
 (** Load the attributes for the procedure from the attributes database. *)
 
+val load_exn : Procname.t -> ProcAttributes.t
+(** like [load], but raises an exception if no attributes are found. *)
+
 val is_no_return : Procname.t -> bool
 
 val load_formal_types : Procname.t -> Typ.t list

@@ -66,8 +66,7 @@ let report exe_env work_set =
   let wrap_report (procname, (pair : CriticalPair.t)) init =
     Summary.OnDisk.get ~lazy_payloads:true procname
     |> Option.fold ~init ~f:(fun acc summary ->
-           let pdesc = Summary.get_proc_desc summary in
-           let pattrs = Procdesc.get_attributes pdesc in
+           let pattrs = Attributes.load_exn procname in
            let tenv = Exe_env.get_proc_tenv exe_env procname in
            let acc =
              Starvation.report_on_pair

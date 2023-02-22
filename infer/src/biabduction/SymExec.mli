@@ -34,7 +34,7 @@ val instrs :
 val diverge : Prop.normal Prop.t -> Paths.Path.t -> (Prop.normal Prop.t * Paths.Path.t) list
 (** Symbolic execution of the divergent pure computation. *)
 
-val proc_call : Procdesc.t * BiabductionSummary.t -> Builtin.t
+val proc_call : Procname.t -> BiabductionSummary.t -> Builtin.t
 
 val unknown_or_scan_call : is_scan:bool -> reason:string -> Typ.t -> Annot.Item.t -> Builtin.t
 

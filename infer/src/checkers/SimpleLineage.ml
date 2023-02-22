@@ -1198,13 +1198,12 @@ module TransferFunctions = struct
 
   (* Add the relevant Summary/Direct call edges from concrete arguments to the destination, depending
      on the presence of a summary. *)
-  let add_summary_flows shapes node (kind : LineageGraph.FlowKind.t)
-      (callee : (Procdesc.t * Summary.t) option) (argument_list : Exp.t list) (ret_id : Ident.t)
-      (astate : Domain.t) : Domain.t =
+  let add_summary_flows shapes node (kind : LineageGraph.FlowKind.t) (callee : Summary.t option)
+      (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     match callee with
     | None ->
         add_tito_all shapes node kind argument_list ret_id astate
-    | Some (_callee_pdesc, {Summary.tito_arguments}) ->
+    | Some {Summary.tito_arguments} ->
         add_tito shapes node kind tito_arguments argument_list ret_id astate
 
 

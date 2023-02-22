@@ -33,8 +33,7 @@ let interprocedural_with_field_dependency ~dep_field payload_field checker =
     [payload_field1] *)
 let interprocedural2 payload_field1 payload_field2 checker =
   Procedure
-    (CallbackOfChecker.interprocedural
-       ~f_analyze_dep:(fun proc_desc payloads -> Some (proc_desc, payloads))
+    (CallbackOfChecker.interprocedural ~f_analyze_dep:Option.some
        ~get_payload:(fun payloads ->
          ( Field.get payload_field1 payloads |> Lazy.force
          , Field.get payload_field2 payloads |> Lazy.force ) )
@@ -45,8 +44,7 @@ let interprocedural2 payload_field1 payload_field2 checker =
 (** For checkers that read three separate payloads. *)
 let interprocedural3 payload_field1 payload_field2 payload_field3 ~set_payload checker =
   Procedure
-    (CallbackOfChecker.interprocedural
-       ~f_analyze_dep:(fun proc_desc payloads -> Some (proc_desc, payloads))
+    (CallbackOfChecker.interprocedural ~f_analyze_dep:Option.some
        ~get_payload:(fun payloads ->
          ( Field.get payload_field1 payloads |> Lazy.force
          , Field.get payload_field2 payloads |> Lazy.force

@@ -12,14 +12,13 @@ open! IStd
 
 val mk_interprocedural_field_t :
      (Payloads.t, 'payload option Lazy.t) Field.t
-  -> Exe_env.t
-  -> Summary.t
+  -> Callbacks.proc_callback_args
   -> ?tenv:Tenv.t
   -> unit
   -> 'payload InterproceduralAnalysis.t * Summary.Stats.t ref
 
 val interprocedural :
-     f_analyze_dep:(Procdesc.t -> 'payloads_orig -> (Procdesc.t * 'payloads) option)
+     f_analyze_dep:('payloads_orig -> 'payloads option)
   -> get_payload:(Payloads.t -> 'payloads_orig)
   -> set_payload:(Payloads.t -> 'payload_checker Lazy.t -> Payloads.t)
   -> ('payloads InterproceduralAnalysis.t -> 'payload_checker)

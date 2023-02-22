@@ -516,7 +516,7 @@ let compute_invariant_map :
   let analysis_data =
     let proc_name = Procdesc.get_proc_name proc_desc in
     let open IOption.Let_syntax in
-    let get_summary proc_name = analyze_dependency proc_name >>| snd in
+    let get_summary = analyze_dependency in
     let get_formals callee_pname =
       Attributes.load callee_pname >>| ProcAttributes.get_pvar_formals
     in

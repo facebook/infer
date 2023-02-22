@@ -410,8 +410,8 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
             (post :: posts, merge_contradictions contradiction new_contradiction) )
 
 
-let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.t) option) call_loc
-    callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) =
+let call tenv path ~caller_proc_desc ~(callee_data : PulseSummary.t option) call_loc callee_pname
+    ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) =
   (* a special case for objc nil messaging *)
   let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =
     let result_unknown =
@@ -430,9 +430,9 @@ let call tenv path ~caller_proc_desc ~(callee_data : (Procdesc.t * PulseSummary.
     (result_unknown @ result_unknown_nil, contradiction)
   in
   match callee_data with
-  | Some (callee_proc_desc, exec_states) ->
+  | Some exec_states ->
       call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-        (Procdesc.get_attributes callee_proc_desc)
+        (IRAttributes.load_exn callee_pname)
         exec_states astate
   | None ->
       (* no spec found for some reason (unknown function, ...) *)

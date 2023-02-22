@@ -74,8 +74,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let process_call_summary analyze_dependency tenv formals ret_access_exp callee_pname actuals loc
       astate =
     match analyze_dependency callee_pname with
-    | Some (callee_proc_desc, summary) ->
-        Domain.integrate_summary formals ~callee_proc_desc summary ret_access_exp callee_pname
+    | Some summary ->
+        let callee_proc_attrs = Attributes.load_exn callee_pname in
+        Domain.integrate_summary formals ~callee_proc_attrs summary ret_access_exp callee_pname
           actuals loc astate
     | None ->
         process_call_without_summary tenv ret_access_exp callee_pname actuals astate
@@ -225,7 +226,8 @@ module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (ProcCfg.N
 
 let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
   let open RacerDDomain in
-  let proc_name = Procdesc.get_proc_name proc_desc in
+  let proc_attrs = Procdesc.get_attributes proc_desc in
+  let proc_name = proc_attrs.proc_name in
   let open ConcurrencyModels in
   let add_owned_formal acc base = OwnershipDomain.add base OwnershipAbstractValue.owned acc in
   let add_conditionally_owned_formal =
@@ -233,9 +235,8 @@ let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
       (* [@InjectProp] allocates a fresh object to bind to the parameter *)
       String.is_suffix ~suffix:Annotations.inject_prop class_name
     in
-    let ret_annots = (Procdesc.get_attributes proc_desc).ret_annots in
     let is_inject_prop =
-      Annotations.method_has_annotation_with ret_annots
+      Annotations.method_has_annotation_with proc_attrs.ret_annots
         (List.map (Procdesc.get_formals proc_desc) ~f:trd3)
         is_owned_formal
     in
@@ -283,7 +284,7 @@ let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
              else add_conditionally_owned_formal acc base index )
     in
     let initial = {initial with ownership; threads; locks} in
-    let formals = FormalMap.make proc_desc in
+    let formals = FormalMap.make proc_attrs in
     let analysis_data = {interproc; formals} in
     Analyzer.compute_post analysis_data ~initial proc_desc
     |> Option.map ~f:(astate_to_summary proc_desc formals)

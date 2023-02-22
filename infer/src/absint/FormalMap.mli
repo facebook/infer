@@ -11,7 +11,7 @@ module F = Format
 (** a map from a formal to its positional index *)
 type t
 
-val make : Procdesc.t -> t
+val make : ProcAttributes.t -> t
 (** create a formal map for the given procdesc *)
 
 val empty : t

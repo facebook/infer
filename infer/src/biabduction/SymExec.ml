@@ -360,8 +360,8 @@ let reason_to_skip ~callee_desc : string option =
     else None
   in
   match callee_desc with
-  | `Summary (callee_pdesc, callee_summary) ->
-      let attr_reason = Procdesc.get_attributes callee_pdesc |> reason_from_attributes in
+  | `Summary (callee_pname, callee_summary) ->
+      let attr_reason = Attributes.load_exn callee_pname |> reason_from_attributes in
       if Option.is_some attr_reason then attr_reason
       else if List.is_empty (BiabductionSummary.get_specs callee_summary) then
         Some "empty list of specs"
@@ -588,7 +588,7 @@ let resolve_args prop args =
 type resolve_and_analyze_result =
   { resolved_pname: Procname.t
   ; resolved_procdesc_opt: Procdesc.t option
-  ; resolved_summary_opt: (Procdesc.t * BiabductionSummary.t) option }
+  ; resolved_summary_opt: BiabductionSummary.t option }
 
 (** Resolve the procedure name and run the analysis of the resolved procedure if not already
     analyzed *)
@@ -1019,7 +1019,7 @@ let resolve_and_analyze_clang analysis_data prop_r n_actual_params callee_pname 
          In that case, default to the non-specialized spec for the model. *)
       let clang_model_specialized_failure =
         match resolve_and_analyze_result.resolved_summary_opt with
-        | Some (_, summary) when has_clang_model ->
+        | Some summary when has_clang_model ->
             List.is_empty (BiabductionSummary.get_specs summary)
         | None ->
             true
@@ -1174,15 +1174,14 @@ let rec sym_exec
               let ret_typ = Procname.Java.get_return_typ callee_pname_java in
               let ret_annots = load_ret_annots callee_pname in
               exec_skip_call ~reason:"unknown method" resolved_pname ret_annots ret_typ
-          | Some ((callee_proc_desc, _) as resolved_summary) -> (
-            match reason_to_skip ~callee_desc:(`Summary resolved_summary) with
+          | Some resolved_summary -> (
+            match reason_to_skip ~callee_desc:(`Summary (resolved_pname, resolved_summary)) with
             | None ->
-                proc_call resolved_summary (call_args prop_ callee_pname norm_args ret_id_typ loc)
+                proc_call resolved_pname resolved_summary
+                  (call_args prop_ callee_pname norm_args ret_id_typ loc)
             | Some reason ->
-                let proc_attrs = Procdesc.get_attributes callee_proc_desc in
-                let ret_annots = proc_attrs.ProcAttributes.ret_annots in
-                exec_skip_call ~reason resolved_pname ret_annots proc_attrs.ProcAttributes.ret_type
-            ) )
+                let {ProcAttributes.ret_annots; ret_type} = Attributes.load_exn callee_pname in
+                exec_skip_call ~reason resolved_pname ret_annots ret_type ) )
       | CSharp callee_pname_csharp ->
           let norm_prop, norm_args = normalize_params analysis_data prop_ actual_params in
           let url_handled_args = call_constructor_url_update_args callee_pname norm_args in
@@ -1199,15 +1198,14 @@ let rec sym_exec
                 let ret_typ = Procname.CSharp.get_return_typ callee_pname_csharp in
                 let ret_annots = load_ret_annots callee_pname in
                 exec_skip_call ~reason:"unknown method" ret_annots ret_typ
-            | Some ((callee_proc_desc, _) as callee_summary) -> (
-              match reason_to_skip ~callee_desc:(`Summary callee_summary) with
+            | Some callee_summary -> (
+              match reason_to_skip ~callee_desc:(`Summary (callee_pname, callee_summary)) with
               | None ->
                   let handled_args = call_args norm_prop pname url_handled_args ret_id_typ loc in
-                  proc_call callee_summary handled_args
+                  proc_call callee_pname callee_summary handled_args
               | Some reason ->
-                  let proc_attrs = Procdesc.get_attributes callee_proc_desc in
-                  let ret_annots = proc_attrs.ProcAttributes.ret_annots in
-                  exec_skip_call ~reason ret_annots proc_attrs.ProcAttributes.ret_type )
+                  let {ProcAttributes.ret_annots; ret_type} = Attributes.load_exn callee_pname in
+                  exec_skip_call ~reason ret_annots ret_type )
           in
           List.fold ~f:(fun acc pname -> exec_one_pname pname @ acc) ~init:[] resolved_pnames
       | _ ->
@@ -1231,7 +1229,7 @@ let rec sym_exec
             let callee_desc =
               match (resolved_summary_opt, resolved_pdesc_opt) with
               | Some summary, _ ->
-                  `Summary summary
+                  `Summary (resolved_pname, summary)
               | None, Some pdesc ->
                   `ProcDesc pdesc
               | None, None ->
@@ -1239,13 +1237,7 @@ let rec sym_exec
             in
             match reason_to_skip ~callee_desc with
             | Some reason -> (
-                let ret_annots =
-                  match resolved_summary_opt with
-                  | Some (proc_desc, _) ->
-                      (Procdesc.get_attributes proc_desc).ProcAttributes.ret_annots
-                  | None ->
-                      load_ret_annots resolved_pname
-                in
+                let ret_annots = load_ret_annots resolved_pname in
                 match resolved_pdesc_opt with
                 | Some resolved_pdesc ->
                     let attrs = Procdesc.get_attributes resolved_pdesc in
@@ -1260,7 +1252,7 @@ let rec sym_exec
                     skip_call ~reason prop path resolved_pname ret_annots loc ret_id_typ
                       (snd ret_id_typ) n_actual_params )
             | None ->
-                proc_call
+                proc_call resolved_pname
                   (Option.value_exn resolved_summary_opt)
                   (call_args prop resolved_pname n_actual_params ret_id_typ loc)
           in
@@ -1527,9 +1519,7 @@ and unknown_or_scan_call ~is_scan ~reason ret_typ ret_annots
       Attribute.mark_vars_as_undefined tenv pre_final ~ret_exp ~undefined_actuals_by_ref
         callee_pname ret_annots loc path_pos
     in
-    let callee_loc_opt =
-      Option.map ~f:(fun attributes -> attributes.ProcAttributes.loc) (Attributes.load callee_pname)
-    in
+    let callee_loc_opt = Attributes.load callee_pname |> Option.map ~f:ProcAttributes.get_loc in
     let skip_path = Paths.Path.add_skipped_call path callee_pname reason callee_loc_opt in
     [(prop_with_undef_attr, skip_path)]
 
@@ -1583,15 +1573,14 @@ and check_variadic_sentinel_if_present ({Builtin.prop_; path; proc_name} as buil
 
 
 (** Perform symbolic execution for a function call *)
-and proc_call (callee_pdesc, callee_summary)
+and proc_call callee_pname callee_summary
     { Builtin.analysis_data= {tenv; proc_desc= caller_pdesc; _} as analysis_data
     ; prop_= pre
     ; path
     ; ret_id_typ
     ; args= actual_pars
     ; loc } =
-  let callee_pname = Procdesc.get_proc_name callee_pdesc in
-  let callee_attributes = Procdesc.get_attributes callee_pdesc in
+  let callee_attributes = Attributes.load_exn callee_pname in
   check_inherently_dangerous_function analysis_data callee_pname ;
   let formal_types = List.map ~f:snd3 callee_attributes.ProcAttributes.formals in
   let rec comb actual_pars formal_types =

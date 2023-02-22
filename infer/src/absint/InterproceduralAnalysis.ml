@@ -12,7 +12,7 @@ type 'payload t =
   ; tenv: Tenv.t
   ; err_log: Errlog.t
   ; exe_env: Exe_env.t
-  ; analyze_dependency: Procname.t -> (Procdesc.t * 'payload) option
+  ; analyze_dependency: Procname.t -> 'payload option
   ; update_stats: ?add_symops:int -> ?failure_kind:Exception.failure_kind -> unit -> unit }
 
 type 'payload file_t =
@@ -24,7 +24,4 @@ type 'payload file_t =
 let bind_payload ~f analysis_data =
   { analysis_data with
     analyze_dependency=
-      (fun proc_name ->
-        analysis_data.analyze_dependency proc_name
-        |> Option.bind ~f:(fun (proc_desc, payloads) ->
-               Option.map (f payloads) ~f:(fun payloads' -> (proc_desc, payloads')) ) ) }
+      (fun proc_name -> Option.bind ~f (analysis_data.analyze_dependency proc_name)) }

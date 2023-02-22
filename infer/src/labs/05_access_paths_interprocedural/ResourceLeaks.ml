@@ -64,7 +64,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate )
     | Call (return, Direct callee_procname, actuals, _, _loc) -> (
       match analyze_dependency callee_procname with
-      | Some (_callee_proc_desc, callee_summary) ->
+      | Some callee_summary ->
           (* interprocedural analysis produced a summary: use it *)
           ResourceLeakDomain.Summary.apply ~callee:callee_summary ~return ~actuals astate
       | None ->
@@ -111,6 +111,6 @@ let report_if_leak {InterproceduralAnalysis.proc_desc; err_log; _} formal_map po
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let result = Analyzer.compute_post analysis_data ~initial:ResourceLeakDomain.initial proc_desc in
   Option.map result ~f:(fun post ->
-      let formal_map = FormalMap.make proc_desc in
+      let formal_map = FormalMap.make (Procdesc.get_attributes proc_desc) in
       report_if_leak analysis_data formal_map post ;
       ResourceLeakDomain.Summary.make formal_map post )

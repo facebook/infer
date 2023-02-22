@@ -153,8 +153,9 @@ let tests =
     |> TestInterpreter.create_tests ~pp_opt:pp_sparse
          (fun summary ->
            { analysis_data=
-               CallbackOfChecker.mk_interprocedural_field_t Payloads.Fields.quandary (Exe_env.mk ())
-                 summary ~tenv:(Tenv.create ()) ()
+               CallbackOfChecker.mk_interprocedural_field_t Payloads.Fields.quandary
+                 {exe_env= Exe_env.mk (); summary}
+                 ~tenv:(Tenv.create ()) ()
                |> fst
            ; formal_map= FormalMap.empty } )
          ~initial:(MockTaintAnalysis.Domain.bottom, Bindings.empty)

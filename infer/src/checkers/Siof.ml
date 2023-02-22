@@ -66,7 +66,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_compile_time_constructed {InterproceduralAnalysis.analyze_dependency} pv =
     let init_pname = Pvar.get_initializer_pname pv in
     match Option.bind init_pname ~f:(fun callee_pname -> analyze_dependency callee_pname) with
-    | Some (_, (Bottom, _)) ->
+    | Some (Bottom, _) ->
         (* we analyzed the initializer for this global and found that it doesn't require any runtime
            initialization so cannot participate in SIOF *)
         true
@@ -172,7 +172,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Const (Cfun callee_pname), actuals, loc, _) ->
         let callee_astate =
           match analyze_dependency callee_pname with
-          | Some (_, (NonBottom trace, initialized_by_callee)) ->
+          | Some (NonBottom trace, initialized_by_callee) ->
               let already_initialized = snd astate in
               let dangerous_accesses =
                 SiofTrace.sinks trace
@@ -187,7 +187,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   dangerous_accesses
               in
               (NonBottom (SiofTrace.update_sinks trace sinks), initialized_by_callee)
-          | Some (_, ((Bottom, _) as callee_astate)) ->
+          | Some ((Bottom, _) as callee_astate) ->
               callee_astate
           | None ->
               L.d_printfln "Unknown call" ;
@@ -222,7 +222,7 @@ let report_siof {InterproceduralAnalysis.proc_desc; err_log; analyze_dependency;
     =
   let trace_of_pname pname =
     match analyze_dependency pname with
-    | Some (_, (NonBottom summary, _)) ->
+    | Some (NonBottom summary, _) ->
         summary
     | _ ->
         SiofTrace.bottom

@@ -710,7 +710,7 @@ struct
       ()
 
 
-    let standard_model proc_desc summary ret_var args =
+    let standard_model procname summary ret_var args =
       (* Standard call of a known function:
          1. We get the shape of the actual args and ret_id
          2. We introduce into the environment the shapes of the formal args and return value of
@@ -721,9 +721,10 @@ struct
       *)
       let ret_id_shape = Shape.Env.var_shape env ret_var in
       let actual_args_shapes = List.map ~f:shape_expr args in
-      let return = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
+      let return = Var.of_pvar (Pvar.get_ret_pvar procname) in
       let formals =
-        List.map ~f:(fun (pvar, _typ) -> Var.of_pvar pvar) (Procdesc.get_pvar_formals proc_desc)
+        Attributes.load_exn procname |> ProcAttributes.get_pvar_formals
+        |> List.map ~f:(fun (pvar, _typ) -> Var.of_pvar pvar)
       in
       let formal_shapes, returned_shape = Shape.Summary.introduce ~return ~formals summary env in
       List.iter2_exn ~f:(fun s1 s2 -> Shape.Env.unify env s1 s2) actual_args_shapes formal_shapes ;
@@ -736,8 +737,8 @@ struct
           model ret_var args
       | None -> (
         match analyze_dependency procname with
-        | Some (proc_desc, summary) ->
-            standard_model proc_desc summary ret_var args
+        | Some summary ->
+            standard_model procname summary ret_var args
         | None ->
             unknown_model procname ret_var args )
   end

@@ -123,7 +123,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           TaintDomain.bottom
         else
           match analyze_dependency pname with
-          | Some (_, summary) ->
+          | Some summary ->
               TaintSpecification.of_summary_access_tree summary
           | None ->
               TaintDomain.bottom
@@ -638,7 +638,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         match analyze_dependency callee_pname with
         | None ->
             handle_unknown_call callee_pname astate_with_direct_sources
-        | Some (_, summary) -> (
+        | Some summary -> (
             let ret_typ = snd ret_ap in
             let access_tree = TaintSpecification.of_summary_access_tree summary in
             match TaintSpecification.get_model callee_pname ret_typ actuals tenv access_tree with
@@ -842,7 +842,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         (TraceDomain.Source.get_tainted_formals pdesc tenv)
     in
     let initial = make_initial proc_desc in
-    let formal_map = FormalMap.make proc_desc in
+    let formal_map = FormalMap.make (Procdesc.get_attributes proc_desc) in
     let proc_data = {analysis_data; formal_map} in
     match Analyzer.compute_post proc_data ~initial proc_desc with
     | Some access_tree ->

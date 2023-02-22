@@ -26,12 +26,11 @@ let specialize_captured_vars {InterproceduralAnalysis.proc_desc} captured_vars =
       {captured_var with pvar= Pvar.specialize_pvar pvar caller_pname} )
 
 
-let get_procname_and_captured value ({InterproceduralAnalysis.analyze_dependency} as analysis_data)
-    astate =
+let get_procname_and_captured value analysis_data astate =
   let open IOption.Let_syntax in
   let* procname = AddressAttributes.get_closure_proc_name value astate in
-  let+ pdesc, _ = analyze_dependency procname in
-  let captured_vars = Procdesc.get_captured pdesc |> specialize_captured_vars analysis_data in
+  let+ {ProcAttributes.captured} = IRAttributes.load procname in
+  let captured_vars = specialize_captured_vars analysis_data captured in
   (procname, captured_vars)
 
 

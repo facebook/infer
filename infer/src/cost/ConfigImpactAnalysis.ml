@@ -947,7 +947,7 @@ module Dom = struct
           match analyze_dependency callee with
           | None ->
               None
-          | Some (_, (_, analysis_data, _)) ->
+          | Some (_, analysis_data, _) ->
               analysis_data
         in
         let expensiveness_model = get_expensiveness_model tenv callee args in
@@ -1111,7 +1111,7 @@ module TransferFunctions = struct
 
   let add_ret analyze_dependency id callee astate =
     match analyze_dependency callee with
-    | Some (_, (_, Some {Summary.ret= ret_val}, _)) ->
+    | Some (_, Some {Summary.ret= ret_val}, _) ->
         Dom.add_mem (Loc.of_id id) ret_val astate
     | _ ->
         astate

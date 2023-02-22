@@ -130,9 +130,7 @@ let checker
       CostInstantiate.get_cost_if_expensive analysis_data
     else fun _ -> None
   in
-  let get_callee_purity callee_pname =
-    match analyze_dependency callee_pname with Some (_, (_, purity, _)) -> purity | _ -> None
-  in
+  let get_callee_purity callee_pname = Option.bind ~f:snd3 (analyze_dependency callee_pname) in
   report_errors proc_desc tenv err_log get_callee_purity reaching_defs_invariant_map
     loop_head_to_source_nodes extract_cost_if_expensive ;
   ()

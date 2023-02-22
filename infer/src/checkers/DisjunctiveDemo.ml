@@ -54,7 +54,7 @@ module TransferFunctions = struct
         match analysis_data.InterproceduralAnalysis.analyze_dependency proc_name with
         | None ->
             [astate]
-        | Some (_, (callee_summary, _)) ->
+        | Some (callee_summary, _) ->
             incr node_id ;
             List.map callee_summary ~f:(fun xs ->
                 xs @ (F.asprintf "%a%d" Procname.pp proc_name !node_id :: astate) ) )

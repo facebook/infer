@@ -513,10 +513,12 @@ let apply_to_expr (e : Exp.t) scope =
 
 let apply_summary procname analyze_dependency ret_exp args =
   match analyze_dependency procname with
-  | Some (proc_desc, summary) ->
+  | Some summary ->
       let all_formals =
-        (Procdesc.get_ret_var proc_desc, Procdesc.get_ret_type proc_desc)
-        :: Procdesc.get_pvar_formals proc_desc
+        let attrs = Attributes.load_exn procname in
+        let ret_var = Pvar.get_ret_pvar procname in
+        let ret_type = attrs.ProcAttributes.ret_type in
+        (ret_var, ret_type) :: ProcAttributes.get_pvar_formals attrs
       in
       let all_actuals = ret_exp :: args in
       if equal_int (List.length all_formals) (List.length all_actuals) then

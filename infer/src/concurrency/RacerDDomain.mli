@@ -185,7 +185,7 @@ val add_reads_of_hilexps : Tenv.t -> FormalMap.t -> HilExp.t list -> Location.t 
 
 val integrate_summary :
      FormalMap.t
-  -> callee_proc_desc:Procdesc.t
+  -> callee_proc_attrs:ProcAttributes.t
   -> summary
   -> HilExp.access_expression
   -> Procname.t

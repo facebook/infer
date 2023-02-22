@@ -374,7 +374,7 @@ let compute_bound_map tenv proc_desc node_cfg inferbo_invariant_map analyze_depe
   in
   let loop_inv_map =
     let get_callee_purity callee_pname =
-      match analyze_dependency callee_pname with Some (_, (_, _, purity)) -> purity | _ -> None
+      match analyze_dependency callee_pname with Some (_, _, purity) -> purity | _ -> None
     in
     LoopInvariant.get_loop_inv_var_map tenv get_callee_purity reaching_defs_invariant_map
       loop_head_to_loop_nodes
@@ -428,16 +428,12 @@ let checker ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as
   in
   let get_node_nb_exec = compute_get_node_nb_exec node_cfg bound_map in
   let astate =
-    let get_summary_common callee_pname =
-      let+ _, summaries = analyze_dependency callee_pname in
-      summaries
-    in
     let get_summary callee_pname =
-      let* cost_summary, _inferbo_summary, _ = get_summary_common callee_pname in
+      let* cost_summary, _inferbo_summary, _ = analyze_dependency callee_pname in
       cost_summary
     in
     let inferbo_get_summary callee_pname =
-      let* _cost_summary, inferbo_summary, _ = get_summary_common callee_pname in
+      let* _cost_summary, inferbo_summary, _ = analyze_dependency callee_pname in
       inferbo_summary
     in
     let get_formals callee_pname =

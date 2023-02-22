@@ -12,7 +12,7 @@ let get_java_class_initializer_summary_of {InterproceduralAnalysis.proc_desc; an
   | Procname.Java _ ->
       Procname.get_class_type_name procname
       |> Option.map ~f:(fun tname -> Procname.(Java (Java.get_class_initializer tname)))
-      |> Option.bind ~f:analyze_dependency |> Option.map ~f:snd
+      |> Option.bind ~f:analyze_dependency
   | _ ->
       None
 
@@ -28,4 +28,4 @@ let get_java_constructor_summaries_of {InterproceduralAnalysis.proc_desc; tenv; 
   (* keep only the constructors *)
   |> List.filter ~f:Procname.(function Java jname -> Java.is_constructor jname | _ -> false)
   (* get the summaries of the constructors *)
-  |> List.filter_map ~f:(fun pname -> analyze_dependency pname |> Option.map ~f:snd)
+  |> List.filter_map ~f:analyze_dependency
