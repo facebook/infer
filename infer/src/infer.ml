@@ -27,16 +27,6 @@ let run driver_mode =
 let run driver_mode = ScubaLogging.execute_with_time_logging "run" (fun () -> run driver_mode)
 
 let setup () =
-  let db_start =
-    let already_started = ref false in
-    fun () ->
-      if (not !already_started) && Config.is_originator then (
-        DBWriter.remove_socket_file () ;
-        if Lazy.force DBWriter.use_daemon then (
-          DBWriter.start () ;
-          Epilogues.register ~f:DBWriter.stop ~description:"Stop Sqlite write daemon" ;
-          already_started := true ) )
-  in
   ( match Config.command with
   | Analyze ->
       ResultsDir.assert_results_dir "have you run capture before?"
@@ -61,7 +51,7 @@ let setup () =
         Config.is_originator && (not Config.continue_capture)
         && not (Driver.is_analyze_mode driver_mode)
       then (
-        db_start () ;
+        DBWriter.start () ;
         SourceFiles.mark_all_stale () )
   | Explore ->
       ResultsDir.assert_results_dir "please run an infer analysis first"
@@ -77,7 +67,7 @@ let setup () =
         false
   in
   if has_result_dir then (
-    db_start () ;
+    DBWriter.start () ;
     if Config.is_originator then ResultsDir.RunState.add_run_to_sequence () ) ;
   has_result_dir
 

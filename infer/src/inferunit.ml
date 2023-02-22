@@ -21,7 +21,6 @@ let rec mk_test_fork_proof test =
 
 
 let () =
-  ResultsDir.create_results_dir () ;
   let open OUnit2 in
   let tests =
     (* OUnit runs tests in parallel using fork(2) *)
@@ -50,4 +49,4 @@ let () =
       @ ClangTests.tests @ AllNullsafeTests.tests )
   in
   let test_suite = "all" >::: tests in
-  OUnit2.run_test_tt_main test_suite
+  run_test_tt_main test_suite

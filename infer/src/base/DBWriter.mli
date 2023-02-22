@@ -8,13 +8,6 @@
 
 open! IStd
 
-val remove_socket_file : unit -> unit
-(** deletes (unlinks) the file corresponding to the socket in the results dir if it exists; useful
-    to clean up stale state at the start of an infer execution *)
-
-val use_daemon : bool Lazy.t
-(** indicates that there should be a daemon running *)
-
 val add_source_file :
      source_file:Sqlite3.Data.t
   -> tenv:Sqlite3.Data.t
@@ -51,8 +44,6 @@ val shrink_analysis_db : unit -> unit
 (** Delete all analysis summaries (by overwriting with [NULL]) and [VACUUM]ing. *)
 
 val start : unit -> unit
-
-val stop : unit -> unit
 
 val store_issue_log :
   checker:string -> source_file:Sqlite3.Data.t -> issue_log:Sqlite3.Data.t -> unit

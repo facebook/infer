@@ -10,6 +10,12 @@ module F = Format
 
 (** utilities for writing abstract domains/transfer function tests *)
 
+(** set up results dir and database for StructuredSil test programs *)
+let () =
+  ResultsDir.create_results_dir () ;
+  DBWriter.start ()
+
+
 (** structured language that makes it easy to write small test programs in OCaml *)
 module StructuredSil = struct
   type assertion = string
@@ -179,11 +185,19 @@ struct
   module T = I.TransferFunctions
   module M = I.InvariantMap
 
-  let structured_program_to_cfg program test_pname =
+  let gen_pname =
+    let id = ref (-1) in
+    fun () ->
+      Int.incr id ;
+      Procname.from_string_c_fun ("structured_sil_test_" ^ Int.to_string !id)
+
+
+  let structured_program_to_cfg program =
     let cfg = Cfg.create () in
-    let pdesc =
-      Cfg.create_proc_desc cfg (ProcAttributes.default (SourceFile.invalid __FILE__) test_pname)
-    in
+    let src_file = SourceFile.invalid __FILE__ in
+    let pname = gen_pname () in
+    let attrs = ProcAttributes.{(default src_file pname) with is_defined= true} in
+    let pdesc = Cfg.create_proc_desc cfg attrs in
     let create_node kind cmds = Procdesc.create_node pdesc dummy_loc kind cmds in
     let set_succs cur_node succs ~exn_handlers =
       Procdesc.node_set_succs pdesc cur_node ~normal:succs ~exn:exn_handlers
@@ -278,15 +292,14 @@ struct
     let exit_node = create_node Procdesc.Node.Exit_node [] in
     set_succs last_node [exit_node] ~exn_handlers:no_exn_handlers ;
     Procdesc.set_exit_node pdesc exit_node ;
-    (Summary.OnDisk.reset pdesc, assert_map)
+    Cfg.store src_file cfg ;
+    (Summary.OnDisk.reset pdesc, assert_map, pdesc)
 
 
-  let create_test test_program make_analysis_data ~initial pp_opt test_pname _ =
+  let create_test test_program make_analysis_data ~initial pp_opt _ =
     let pp_state = Option.value ~default:I.TransferFunctions.Domain.pp pp_opt in
-    let summary, assert_map = structured_program_to_cfg test_program test_pname in
-    let inv_map =
-      I.exec_pdesc (make_analysis_data summary) ~initial (Summary.get_proc_desc summary)
-    in
+    let summary, assert_map, pdesc = structured_program_to_cfg test_program in
+    let inv_map = I.exec_pdesc (make_analysis_data summary) ~initial pdesc in
     let collect_invariant_mismatches node_id (inv_str, inv_label) error_msgs_acc =
       let post_str =
         try
@@ -328,7 +341,7 @@ struct
 
   let ai_list = [("ai_rpo", AI_RPO.create_test); ("ai_wto", AI_WTO.create_test)]
 
-  let create_tests ?(test_pname = Procname.empty_block) ~initial ?pp_opt make_analysis_data tests =
+  let create_tests ~initial ?pp_opt make_analysis_data tests =
     AnalysisCallbacks.set_callbacks
       { html_debug_new_node_session_f= NodePrinter.with_session
       ; get_model_proc_desc_f= Summary.OnDisk.get_model_proc_desc } ;
@@ -336,8 +349,8 @@ struct
     List.concat_map
       ~f:(fun (name, test_program) ->
         List.map ai_list ~f:(fun (ai_name, create_test) ->
-            name ^ "_" ^ ai_name
-            >:: create_test test_program make_analysis_data ~initial pp_opt test_pname ) )
+            name ^ "_" ^ ai_name >:: create_test test_program make_analysis_data ~initial pp_opt )
+        )
       tests
 end
 
