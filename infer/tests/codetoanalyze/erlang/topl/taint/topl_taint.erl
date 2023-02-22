@@ -16,7 +16,17 @@
     test_g_Ok/0,
     test_h_Bad/0,
     test_i_Ok/0,
-    test_j_Bad/0
+    test_j_Bad/0,
+    tito_process/0,
+    sanitizer_process/0,
+    test_send1_Ok/0,
+    test_send2_Bad/0,
+    test_send3_Ok/0,
+    fp_test_send4_Ok/0,
+    test_send5_Ok/0,
+    test_send6_Bad/0,
+    test_send7_Ok/0,
+    fp_test_send8_Ok/0
 ]).
 
 test_a_Bad() ->
@@ -69,6 +79,74 @@ test_j_Bad() ->
     case two() + two() - one() of
         1 -> sink(dirty_if_argument_nil(bad));
         2 -> sink(dirty_if_argument_nil([ok, ok, ok]))
+    end.
+
+%% Tests with message passing
+
+tito_process() ->
+    receive
+        {From, X} -> From ! X
+    end.
+
+sanitizer_process() ->
+    receive
+        {From, _} -> From ! not_dirty
+    end.
+
+test_send1_Ok() ->
+    Pid = spawn(topl_taint, tito_process, []),
+    Pid ! {self(), not_dirty},
+    receive
+        X -> sink(X)
+    end.
+
+test_send2_Bad() ->
+    Pid = spawn(topl_taint, tito_process, []),
+    Pid ! {self(), source()},
+    receive
+        X -> sink(X)
+    end.
+
+test_send3_Ok() ->
+    Pid = spawn(topl_taint, sanitizer_process, []),
+    Pid ! {self(), not_dirty},
+    receive
+        X -> sink(X)
+    end.
+
+fp_test_send4_Ok() ->
+    Pid = spawn(topl_taint, sanitizer_process, []),
+    Pid ! {self(), source()},
+    receive
+        X -> sink(X)
+    end.
+
+test_send5_Ok() ->
+    Pid = spawn(fun() -> tito_process() end),
+    Pid ! {self(), not_dirty},
+    receive
+        X -> sink(X)
+    end.
+
+test_send6_Bad() ->
+    Pid = spawn(fun() -> tito_process() end),
+    Pid ! {self(), source()},
+    receive
+        X -> sink(X)
+    end.
+
+test_send7_Ok() ->
+    Pid = spawn(fun() -> sanitizer_process() end),
+    Pid ! {self(), not_dirty},
+    receive
+        X -> sink(X)
+    end.
+
+fp_test_send8_Ok() ->
+    Pid = spawn(fun() -> sanitizer_process() end),
+    Pid ! {self(), source()},
+    receive
+        X -> sink(X)
     end.
 
 %%
