@@ -202,8 +202,16 @@ BUCK OPTIONS
            Skip capture of buck targets matched by the specified regular
            expression.
 
+       --buck2-bxl-target string
+           Buck2 BXL script (as a buck target) to run when capturing with
+           buck2/clang integration.
+
        --buck2-root dir
            Specify the parent directory of buck-out (used only for buck2).
+
+       --buck2-use-bxl
+           Activates: Use BXL script when capturing with buck2. (Conversely:
+           --no-buck2-use-bxl)
 
        --Xbuck +string
            Pass values as command-line arguments to invocations of `buck

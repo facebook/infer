@@ -22,6 +22,7 @@ type mode =
   | BuckErlang of {prog: string; args: string list}
   | BuckGenrule of {prog: string}
   | BuckJavaFlavor of {build_cmd: string list}
+  | BxlClang of {build_cmd: string list}
   | Clang of {compiler: Clang.compiler; prog: string; args: string list}
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
   | Gradle of {prog: string; args: string list}
@@ -60,6 +61,8 @@ let pp_mode fmt = function
       F.fprintf fmt "BuckGenRule driver mode:@\nprog = '%s'" prog
   | BuckJavaFlavor {build_cmd} ->
       F.fprintf fmt "BuckJavaFlavor driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
+  | BxlClang {build_cmd} ->
+      F.fprintf fmt "BxlClang driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | Clang {prog; args} ->
       F.fprintf fmt "Clang driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | ClangCompilationDB _ ->
@@ -167,6 +170,9 @@ let capture ~changed_files mode =
     | BuckJavaFlavor {build_cmd} ->
         L.progress "Capturing for BuckJavaFlavor integration...@." ;
         BuckJavaFlavor.capture build_cmd
+    | BxlClang {build_cmd} ->
+        L.progress "Capturing in bxl/clang mode...@." ;
+        BxlClang.capture build_cmd
     | Clang {compiler; prog; args} ->
         if Config.is_originator then L.progress "Capturing in make/cc mode...@." ;
         Clang.capture compiler ~prog ~args
@@ -487,6 +493,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
             error_no_buck_mode_specified ()
         | Some Erlang ->
             BuckErlang {prog; args}
+        | Some Clang when Config.buck2_use_bxl ->
+            BxlClang {build_cmd}
         | Some Clang ->
             Buck2Clang {build_cmd}
         | Some Java ->

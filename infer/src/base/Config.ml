@@ -814,6 +814,18 @@ and buck2_build_args_no_inline_rev =
      args starting with '@'. Only valid for $(b,--buck-clang)."
 
 
+and buck2_bxl_target =
+  CLOpt.mk_string_opt ~long:"buck2-bxl-target"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Buck2 BXL script (as a buck target) to run when capturing with buck2/clang integration."
+
+
+and buck2_use_bxl =
+  CLOpt.mk_bool ~long:"buck2-use-bxl" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Use BXL script when capturing with buck2."
+
+
 and buck_block_list =
   CLOpt.mk_string_list
     ~deprecated:["-blacklist-regex"; "-blacklist"; "-buck-blacklist"]
@@ -3443,6 +3455,10 @@ and buck = !buck
 and buck2_build_args = RevList.to_list !buck2_build_args
 
 and buck2_build_args_no_inline = RevList.to_list !buck2_build_args_no_inline_rev
+
+and buck2_bxl_target = !buck2_bxl_target
+
+and buck2_use_bxl = !buck2_use_bxl
 
 and buck_block_list = RevList.to_list !buck_block_list
 

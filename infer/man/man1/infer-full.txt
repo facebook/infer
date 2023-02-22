@@ -223,9 +223,17 @@ OPTIONS
            Skip capture of buck targets matched by the specified regular
            expression.           See also infer-capture(1) and infer-run(1).
 
+       --buck2-bxl-target string
+           Buck2 BXL script (as a buck target) to run when capturing with
+           buck2/clang integration.           See also infer-capture(1).
+
        --buck2-root dir
            Specify the parent directory of buck-out (used only for buck2).       
     See also infer-capture(1) and infer-run(1).
+
+       --buck2-use-bxl
+           Activates: Use BXL script when capturing with buck2. (Conversely:
+           --no-buck2-use-bxl)           See also infer-capture(1).
 
        --bufferoverrun
            Activates: checker bufferoverrun: InferBO is a detector for
@@ -1919,6 +1927,9 @@ INTERNAL OPTIONS
 
        --buck-targets-block-list-reset
            Set --buck-targets-block-list to the empty list.
+
+       --buck2-bxl-target-reset
+           Cancel the effect of --buck2-bxl-target.
 
        --buck2-root-reset
            Cancel the effect of --buck2-root.

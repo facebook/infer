@@ -450,6 +450,8 @@ let parse_command_and_targets (buck_mode : BuckMode.t) (version : version) origi
     match (buck_mode, version, parsed_args) with
     | Clang, V1, {pattern_targets= []; alias_targets= []; normal_targets} ->
         normal_targets
+    | Clang, V2, {pattern_targets; alias_targets; normal_targets} ->
+        pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
     | _, _, {pattern_targets; alias_targets; normal_targets} ->
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
         |> resolve_pattern_targets buck_mode version

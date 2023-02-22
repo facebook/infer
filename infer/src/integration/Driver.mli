@@ -21,6 +21,7 @@ type mode =
   | BuckErlang of {prog: string; args: string list}
   | BuckGenrule of {prog: string}
   | BuckJavaFlavor of {build_cmd: string list}
+  | BxlClang of {build_cmd: string list}
   | Clang of {compiler: Clang.compiler; prog: string; args: string list}
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
   | Gradle of {prog: string; args: string list}
