@@ -461,7 +461,7 @@ let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_ty
   let method_kind = ClangMethodKind.OBJC_INSTANCE in
   let pname =
     CType_decl.CProcname.NoAstDecl.objc_method_of_string_kind cls_name CFrontend_config.init
-      Procname.ObjC_Cpp.ObjCInstanceMethod
+      Procname.ObjC_Cpp.ObjCInstanceMethod []
   in
   CMethod_trans.create_external_procdesc trans_state.context.CContext.translation_unit_context
     trans_state.context.CContext.cfg pname method_kind None ;

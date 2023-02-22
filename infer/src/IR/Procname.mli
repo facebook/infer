@@ -156,6 +156,7 @@ module ObjC_Cpp : sig
     ; kind: kind
     ; method_name: string
     ; parameters: Parameter.clang_parameter list
+          (** NOTE: [parameters] should NOT include additional [this/self] or [__return_param]. *)
     ; template_args: Typ.template_spec_info }
   [@@deriving compare]
 

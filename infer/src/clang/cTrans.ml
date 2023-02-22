@@ -36,8 +36,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             CMethod_trans.get_class_name_method_call_from_receiver_kind context
               obj_c_message_expr_info act_params
           in
+          let parameters = List.map act_params ~f:(fun (_, typ) -> Procname.Parameter.of_typ typ) in
           CType_decl.CProcname.NoAstDecl.objc_method_of_string_kind class_name selector
-            objc_method_kind
+            objc_method_kind parameters
     in
     let predefined_ms_opt =
       match proc_name with
