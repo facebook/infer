@@ -965,6 +965,8 @@ let load =
       (run_query load_statement_adb)
 
 
+let load_exn procname = load procname |> Option.value_exn
+
 let mark_if_unchanged ~old_pdesc ~new_pdesc =
   (* map from exp names in [old_pdesc] to exp names in [new_pdesc] *)
   let exp_map = ref Exp.Map.empty in

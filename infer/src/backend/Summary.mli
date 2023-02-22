@@ -48,7 +48,7 @@ type t =
   { payloads: Payloads.t
   ; mutable sessions: int  (** Session number: how many nodes went through symbolic execution *)
   ; stats: Stats.t
-  ; proc_desc: Procdesc.t
+  ; proc_attrs: ProcAttributes.t
   ; err_log: Errlog.t
         (** Those are issues that are detected for this procedure after per-procedure analysis. In
             addition to that there can be errors detected after file-level analysis (next stage
@@ -57,13 +57,6 @@ type t =
   ; mutable dependencies: Deps.t
         (** Dynamically discovered analysis-time dependencies used to compute this summary *) }
 [@@deriving yojson_of]
-
-val get_proc_name : t -> Procname.t
-(** Get the procedure name *)
-
-val get_proc_desc : t -> Procdesc.t
-
-val get_err_log : t -> Errlog.t
 
 val pp_html : SourceFile.t -> Format.formatter -> t -> unit
 (** Print the summary in html format *)
@@ -78,7 +71,7 @@ module OnDisk : sig
   val get : lazy_payloads:bool -> Procname.t -> t option
   (** Return the summary option for the procedure name *)
 
-  val reset : Procdesc.t -> t
+  val reset : ProcAttributes.t -> t
   (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 
   val store : t -> unit
@@ -104,8 +97,6 @@ module OnDisk : sig
           -> unit )
     -> unit
   (** Iterates over all analysis artefacts listed above, for each procedure *)
-
-  val get_model_proc_desc : Procname.t -> Procdesc.t option
 
   val get_count : unit -> int
   (** Counts the summaries currently stored on disk. *)

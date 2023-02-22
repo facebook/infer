@@ -28,19 +28,17 @@ let iter_critical_pairs_of_scheduled_work f (work_item : Domain.ScheduledWorkIte
   |> Option.iter ~f:(iter_critical_pairs_of_summary (iter_scheduled_pair work_item f))
 
 
-let iter_summary ~f exe_env (summary : Summary.t) =
+let iter_summary ~f exe_env ({payloads; proc_attrs= {proc_name}} : Summary.t) =
   let open Domain in
-  Payloads.starvation summary.payloads
-  |> Lazy.force
+  Payloads.starvation payloads |> Lazy.force
   |> Option.iter ~f:(fun (payload : summary) ->
-         let pname = Summary.get_proc_name summary in
-         let tenv = Exe_env.get_proc_tenv exe_env pname in
+         let tenv = Exe_env.get_proc_tenv exe_env proc_name in
          if
-           StarvationModels.is_java_main_method pname
-           || ConcurrencyModels.is_android_lifecycle_method tenv pname
-         then iter_critical_pairs_of_summary (f pname) payload ;
+           StarvationModels.is_java_main_method proc_name
+           || ConcurrencyModels.is_android_lifecycle_method tenv proc_name
+         then iter_critical_pairs_of_summary (f proc_name) payload ;
          ScheduledWorkDomain.iter
-           (iter_critical_pairs_of_scheduled_work (f pname))
+           (iter_critical_pairs_of_scheduled_work (f proc_name))
            payload.scheduled_work )
 
 
@@ -66,7 +64,7 @@ let report exe_env work_set =
   let wrap_report (procname, (pair : CriticalPair.t)) init =
     Summary.OnDisk.get ~lazy_payloads:true procname
     |> Option.fold ~init ~f:(fun acc summary ->
-           let pattrs = Attributes.load_exn procname in
+           let pattrs = summary.Summary.proc_attrs in
            let tenv = Exe_env.get_proc_tenv exe_env procname in
            let acc =
              Starvation.report_on_pair

@@ -12,8 +12,8 @@ open! IStd
 let () = AnalysisCallbacks.set_callbacks {html_debug_new_node_session_f= NodePrinter.with_session}
 
 let mk_interprocedural_t ~f_analyze_dep ~get_payload
-    {Callbacks.exe_env; proc_desc; summary= {Summary.stats; err_log} as caller_summary}
-    ?(tenv = Exe_env.get_proc_tenv exe_env (Procdesc.get_proc_name proc_desc)) () =
+    {Callbacks.exe_env; proc_desc; summary= {Summary.stats; proc_attrs; err_log} as caller_summary}
+    ?(tenv = Exe_env.get_proc_tenv exe_env proc_attrs.proc_name) () =
   let analyze_dependency proc_name =
     let open IOption.Let_syntax in
     let* {Summary.payloads} = Ondemand.analyze_proc_name exe_env ~caller_summary proc_name in
@@ -61,10 +61,10 @@ let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; s
     {InterproceduralAnalysis.procedures; source_file; file_exe_env= exe_env; analyze_file_dependency}
 
 
-let to_intraprocedural_t {Callbacks.summary; exe_env; proc_desc} =
+let to_intraprocedural_t {Callbacks.summary= {proc_attrs; err_log}; exe_env; proc_desc} =
   { IntraproceduralAnalysis.proc_desc
-  ; tenv= Exe_env.get_proc_tenv exe_env (Summary.get_proc_name summary)
-  ; err_log= Summary.get_err_log summary }
+  ; tenv= Exe_env.get_proc_tenv exe_env proc_attrs.proc_name
+  ; err_log }
 
 
 let intraprocedural checker ({Callbacks.summary} as callbacks) =

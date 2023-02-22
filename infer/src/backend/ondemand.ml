@@ -153,7 +153,7 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
     Preanal.do_preanalysis exe_env callee_pdesc ;
     if Config.debug_mode then
       DotCfg.emit_proc_desc callee_attributes.translation_unit callee_pdesc |> ignore ;
-    let initial_callee_summary = Summary.OnDisk.reset callee_pdesc in
+    let initial_callee_summary = Summary.OnDisk.reset (Procdesc.get_attributes callee_pdesc) in
     add_active callee_pname ;
     initial_callee_summary
   in
@@ -165,18 +165,17 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
     log_elapsed_time () ;
     summary
   in
-  let log_error_and_continue exn (summary : Summary.t) kind =
-    BiabductionReporting.log_issue_using_state (Summary.get_proc_desc summary)
-      (Summary.get_err_log summary) exn ;
-    let stats = Summary.Stats.update summary.stats ~failure_kind:kind in
+  let log_error_and_continue exn ({Summary.err_log; stats; payloads} as summary) kind =
+    BiabductionReporting.log_issue_using_state callee_pdesc err_log exn ;
+    let stats = Summary.Stats.update stats ~failure_kind:kind in
     let payloads =
       let biabduction =
         Lazy.from_val
           (Some
              BiabductionSummary.
-               {preposts= []; phase= summary.payloads.biabduction |> Lazy.force |> opt_get_phase} )
+               {preposts= []; phase= payloads.biabduction |> Lazy.force |> opt_get_phase} )
       in
-      {summary.payloads with biabduction}
+      {payloads with biabduction}
     in
     let new_summary = {summary with stats; payloads} in
     Summary.OnDisk.store new_summary ;
@@ -272,11 +271,6 @@ let register_callee ?caller_summary callee_pname =
     ~f:Summary.(fun {dependencies} -> Deps.add_exn dependencies callee_pname)
 
 
-let get_proc_desc callee_pname =
-  if BiabductionModels.mem callee_pname then Summary.OnDisk.get_model_proc_desc callee_pname
-  else Procdesc.load callee_pname
-
-
 let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
   register_callee ?caller_summary callee_pname ;
   if is_active callee_pname then None
@@ -285,7 +279,7 @@ let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
     | Some _ as summ_opt ->
         summ_opt
     | None when procedure_should_be_analyzed callee_pname ->
-        get_proc_desc callee_pname
+        Procdesc.load callee_pname
         |> Option.bind ~f:(fun callee_pdesc ->
                RestartScheduler.lock_exn callee_pname ;
                let previous_global_state = save_global_state () in
@@ -294,10 +288,12 @@ let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
                    ~f:(fun () ->
                      Timer.time Preanalysis
                        ~f:(fun () ->
-                         Some
-                           (run_proc_analysis exe_env
-                              ~caller_pdesc:(Option.map ~f:Summary.get_proc_desc caller_summary)
-                              callee_pdesc ) )
+                         let caller_pdesc =
+                           Option.bind
+                             ~f:(fun {Summary.proc_attrs} -> Procdesc.load proc_attrs.proc_name)
+                             caller_summary
+                         in
+                         Some (run_proc_analysis exe_env ~caller_pdesc callee_pdesc) )
                        ~on_timeout:(fun span ->
                          L.debug Analysis Quiet
                            "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any checkers \

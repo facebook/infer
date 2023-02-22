@@ -11,23 +11,22 @@ let build ~changed_files =
   let graph = CallGraph.(create default_initial_capacity) in
   let tenv_deps = SourceFile.Hash.create 0 in
   (* First, build a reverse analysis callgraph [graph] and tenv dependency map [tenv_deps]. *)
-  Summary.OnDisk.iter_specs ~f:(fun summary ->
-      let summary_pname = Summary.get_proc_name summary in
+  Summary.OnDisk.iter_specs ~f:(fun {Summary.proc_attrs= {proc_name}; dependencies} ->
       let Summary.Deps.{callees; used_tenv_sources} =
-        match summary.dependencies with
+        match dependencies with
         | Complete c ->
             c
         | Partial _ ->
             L.die InternalError "deserialized summary with incomplete dependencies"
       in
       List.iter callees ~f:(fun callee ->
-          CallGraph.add_edge graph ~pname:callee ~successor_pname:summary_pname ) ;
+          CallGraph.add_edge graph ~pname:callee ~successor_pname:proc_name ) ;
       List.iter used_tenv_sources ~f:(fun src_file ->
           match SourceFile.Hash.find_opt tenv_deps src_file with
           | Some deps ->
-              Procname.HashSet.add summary_pname deps
+              Procname.HashSet.add proc_name deps
           | None ->
-              Procname.HashSet.singleton summary_pname |> SourceFile.Hash.add tenv_deps src_file ) ) ;
+              Procname.HashSet.singleton proc_name |> SourceFile.Hash.add tenv_deps src_file ) ) ;
   (* Then, flag in [graph] any procedure with a summary depending (transitively) on either
      (1) the tenv of a changed file or (2) the summary of a changed procedure. *)
   SourceFile.Set.iter

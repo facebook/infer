@@ -81,29 +81,25 @@ type t =
   { payloads: Payloads.t
   ; mutable sessions: int
   ; stats: Stats.t
-  ; proc_desc: Procdesc.t
+  ; proc_attrs: ProcAttributes.t
   ; err_log: Errlog.t
   ; mutable dependencies: Deps.t }
 
-let yojson_of_t {proc_desc; payloads} =
-  [%yojson_of: Procname.t * Payloads.t] (Procdesc.get_proc_name proc_desc, payloads)
+let yojson_of_t {proc_attrs; payloads} =
+  [%yojson_of: Procname.t * Payloads.t] (proc_attrs.proc_name, payloads)
 
 
 type full_summary = t
 
-let get_proc_desc summary = summary.proc_desc
+let get_proc_name summary = summary.proc_attrs.proc_name
 
-let get_attributes summary = Procdesc.get_attributes summary.proc_desc
+let get_ret_type summary = summary.proc_attrs.ret_type
 
-let get_proc_name summary = (get_attributes summary).ProcAttributes.proc_name
+let get_formals summary = summary.proc_attrs.formals
 
-let get_ret_type summary = (get_attributes summary).ProcAttributes.ret_type
-
-let get_formals summary = (get_attributes summary).ProcAttributes.formals
+let get_loc summary = summary.proc_attrs.loc
 
 let get_err_log summary = summary.err_log
-
-let get_loc summary = (get_attributes summary).ProcAttributes.loc
 
 let pp_errlog fmt err_log =
   F.fprintf fmt "ERRORS: @[<h>%a@]@\n%!" Errlog.pp_errors err_log ;
@@ -156,13 +152,13 @@ module ReportSummary = struct
 end
 
 module SummaryMetadata = struct
-  type t = {sessions: int; stats: Stats.t; proc_desc: Procdesc.t; dependencies: Deps.complete}
+  type t = {sessions: int; stats: Stats.t; proc_attrs: ProcAttributes.t; dependencies: Deps.complete}
   [@@deriving fields]
 
   let of_full_summary (f : full_summary) : t =
     { sessions= f.sessions
     ; stats= f.stats
-    ; proc_desc= f.proc_desc
+    ; proc_attrs= f.proc_attrs
     ; dependencies= Deps.complete_exn f.dependencies }
 
 
@@ -176,7 +172,7 @@ let mk_full_summary payloads (report_summary : ReportSummary.t)
   { payloads
   ; sessions= summary_metadata.sessions
   ; stats= summary_metadata.stats
-  ; proc_desc= summary_metadata.proc_desc
+  ; proc_attrs= summary_metadata.proc_attrs
   ; dependencies= Deps.Complete summary_metadata.dependencies
   ; err_log= report_summary.err_log }
 
@@ -273,15 +269,6 @@ module OnDisk = struct
         load_summary_to_spec_table ~lazy_payloads proc_name
 
 
-  let get_model_proc_desc model_name =
-    if not (BiabductionModels.mem model_name) then
-      Logging.die InternalError "Requested summary of model that couldn't be found: %a@\n"
-        Procname.pp model_name
-    else
-      (* we only care about the proc_desc so load analysis payloads lazily (i.e. not at all) *)
-      Option.map (get ~lazy_payloads:true model_name) ~f:(fun (s : full_summary) -> s.proc_desc)
-
-
   (** Save summary for the procedure into the spec database *)
   let store (summary : t) =
     let proc_name = get_proc_name summary in
@@ -297,17 +284,16 @@ module OnDisk = struct
       ~summary_metadata:(SummaryMetadata.SQLite.serialize summary_metadata)
 
 
-  let reset proc_desc =
-    let pname = Procdesc.get_proc_name proc_desc in
+  let reset proc_attrs =
     let summary =
       { sessions= 0
       ; payloads= Payloads.empty
       ; stats= Stats.empty
-      ; proc_desc
+      ; proc_attrs
       ; err_log= Errlog.empty ()
       ; dependencies= Deps.empty () }
     in
-    Procname.Hash.replace cache pname summary ;
+    Procname.Hash.replace cache (ProcAttributes.get_proc_name proc_attrs) summary ;
     summary
 
 
