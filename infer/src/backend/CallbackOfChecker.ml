@@ -9,11 +9,7 @@ open! IStd
 
 (* make sure callbacks are set or the checkers will not be able to call into them (and get a nice
    crash) *)
-let () =
-  AnalysisCallbacks.set_callbacks
-    { html_debug_new_node_session_f= NodePrinter.with_session
-    ; get_model_proc_desc_f= Summary.OnDisk.get_model_proc_desc }
-
+let () = AnalysisCallbacks.set_callbacks {html_debug_new_node_session_f= NodePrinter.with_session}
 
 let mk_interprocedural_t ~f_analyze_dep ~get_payload exe_env summary
     ?(tenv = Exe_env.get_proc_tenv exe_env (Summary.get_proc_name summary)) () =

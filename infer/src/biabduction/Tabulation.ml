@@ -745,15 +745,9 @@ let prop_set_exn tenv pname prop se_exn =
   Prop.normalize tenv (Prop.set prop ~sigma:sigma')
 
 
-let get_attributes proc_name =
-  if BiabductionModels.mem proc_name then
-    AnalysisCallbacks.get_model_proc_desc proc_name |> Option.map ~f:Procdesc.get_attributes
-  else Attributes.load proc_name
-
-
 (** Include a subtrace for a procedure call if the callee is not a model. *)
 let include_subtrace callee_pname =
-  match get_attributes callee_pname with
+  match Attributes.load callee_pname with
   | Some attrs ->
       (not attrs.ProcAttributes.is_biabduction_model)
       && SourceFile.is_under_project_root attrs.ProcAttributes.loc.Location.file

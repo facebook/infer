@@ -342,9 +342,7 @@ struct
   let ai_list = [("ai_rpo", AI_RPO.create_test); ("ai_wto", AI_WTO.create_test)]
 
   let create_tests ~initial ?pp_opt make_analysis_data tests =
-    AnalysisCallbacks.set_callbacks
-      { html_debug_new_node_session_f= NodePrinter.with_session
-      ; get_model_proc_desc_f= Summary.OnDisk.get_model_proc_desc } ;
+    AnalysisCallbacks.set_callbacks {html_debug_new_node_session_f= NodePrinter.with_session} ;
     let open OUnit2 in
     List.concat_map
       ~f:(fun (name, test_program) ->
