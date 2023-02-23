@@ -1666,15 +1666,23 @@ module Formula = struct
     ; atoms= Atom.Set.empty }
 
 
-  let pp_with_pp_var pp_var fmt
+  let is_empty
       ({var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms}
         [@warning "+missing-record-field-pattern"] ) =
+    VarUF.is_empty var_eqs && Var.Map.is_empty linear_eqs && Term.VarMap.is_empty term_eqs
+    && Var.Map.is_empty tableau && Var.Map.is_empty intervals && Atom.Set.is_empty atoms
+
+
+  let pp_with_pp_var pp_var fmt
+      ( ({var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms}
+      [@warning "+missing-record-field-pattern"] ) as phi ) =
     let is_first = ref true in
     let pp_if condition header pp fmt x =
       let pp_and fmt = if not !is_first then F.fprintf fmt "@;&& " else is_first := false in
       if condition then F.fprintf fmt "%t%s: %a" pp_and header pp x
     in
     F.pp_open_hvbox fmt 0 ;
+    if is_empty phi then F.pp_print_string fmt "(empty)" ;
     (pp_if (not (VarUF.is_empty var_eqs)) "var_eqs" (VarUF.pp pp_var)) fmt var_eqs ;
     (pp_if
        (not (Var.Map.is_empty linear_eqs))
