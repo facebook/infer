@@ -1124,27 +1124,27 @@ module TransferFunctions = struct
     List.fold ~init:astate ~f:one_exp (Sil.exps_of_instr instr)
 
 
-  (* Add flow from the concrete arguments to the special ArgumentOf nodes *)
+  (* Add Call flow from the concrete arguments to the special ArgumentOf nodes *)
   let add_arg_flows shapes (call_node : PPNode.t) (callee_pname : Procname.t)
       (argument_list : Exp.t list) (astate : Domain.t) : Domain.t =
-    let add_flows_all_to_arg index ((last_writes, has_unsupported_features), local_edges) arg =
-      let read_set = free_locals_of_exp shapes arg in
-      let add_flows_local_to_arg local_edges (local : Local.t) =
-        let sources = sources_of_local call_node last_writes local in
-        let add_one_flow local_edges source =
-          LineageGraph.add_flow ~kind:Call ~node:call_node ~source
-            ~target:(ArgumentOf (index, callee_pname))
-            local_edges
-        in
-        List.fold sources ~f:add_one_flow ~init:local_edges
+    let add_one_arg_flows index ((last_writes, has_unsupported_features), local_edges) arg =
+      let add_one_source_edge local_edges source =
+        LineageGraph.add_flow ~kind:Call ~node:call_node ~source
+          ~target:(ArgumentOf (index, callee_pname))
+          local_edges
       in
-      let local_edges = Set.fold read_set ~init:local_edges ~f:add_flows_local_to_arg in
+      let add_one_local_flows local_edges (local : Local.t) =
+        let sources = sources_of_local call_node last_writes local in
+        List.fold sources ~f:add_one_source_edge ~init:local_edges
+      in
+      let read_set = free_locals_of_exp shapes arg in
+      let local_edges = Set.fold read_set ~init:local_edges ~f:add_one_local_flows in
       ((last_writes, has_unsupported_features), local_edges)
     in
-    List.foldi argument_list ~init:astate ~f:add_flows_all_to_arg
+    List.foldi argument_list ~init:astate ~f:add_one_arg_flows
 
 
-  (* Add flow from the special Return nodes to the destination variable of a call *)
+  (* Add Return flow from the special ReturnOf nodes to the destination variable of a call *)
   let add_ret_flows shapes node (callee_pname : Procname.t) (ret_id : Ident.t) (astate : Domain.t) :
       Domain.t =
     let last_writes, local_edges = astate in
@@ -1179,14 +1179,7 @@ module TransferFunctions = struct
       (((last_writes, has_unsupported_features), local_edges) : Domain.t) : Domain.t =
     let target = LineageGraph.Local (VariableIndex write_var, node) in
     let add_read local_edges (read_local : Local.t) =
-      let sources =
-        match read_local with
-        | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
-            [LineageGraph.Local (read_local, node)]
-        | VariableIndex read_var ->
-            let source_nodes = Domain.Real.LastWrites.get_all read_var last_writes in
-            List.map ~f:(fun node -> LineageGraph.Local (read_local, node)) source_nodes
-      in
+      let sources = sources_of_local node last_writes read_local in
       let add_edge local_edges source =
         LineageGraph.add_flow ~node ~kind ~source ~target local_edges
       in
