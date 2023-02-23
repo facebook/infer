@@ -16,9 +16,8 @@ let pname_with_closure_actuals callee_pname formals_to_closures =
     | ProcAttributes.Closure (pname, _) when Procname.is_objc_block pname || Procname.is_c pname ->
         Procname.to_function_parameter pname :: acc
     | ProcAttributes.Fields passed_closures ->
-        Fieldname.Map.fold
-          (fun _ passed_closure acc -> get_function_parameters acc passed_closure)
-          passed_closures acc
+        List.fold_right passed_closures ~init:acc ~f:(fun (_, passed_closure) acc ->
+            get_function_parameters acc passed_closure )
     | _ ->
         acc
   in
@@ -56,9 +55,9 @@ let rec get_captured_in_passed_closure captured_vars_acc = function
   | ProcAttributes.Closure (_, captured_vars) ->
       captured_vars :: captured_vars_acc
   | ProcAttributes.Fields passed_closures ->
-      Fieldname.Map.fold
-        (fun _ actual captured_vars_acc -> get_captured_in_passed_closure captured_vars_acc actual)
-        passed_closures captured_vars_acc
+      List.fold_right passed_closures ~init:captured_vars_acc
+        ~f:(fun (_, actual) captured_vars_acc ->
+          get_captured_in_passed_closure captured_vars_acc actual )
 
 
 let get_captured actuals =

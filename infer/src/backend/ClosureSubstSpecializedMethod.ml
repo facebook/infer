@@ -45,7 +45,7 @@ let rec get_closure (id_to_closure_map, pvar_to_closure_map) exp =
       >>= SpecDom.get
       >>= function
       | ProcAttributes.Fields field_to_passed_closure_map ->
-          Fieldname.Map.find_opt fieldname field_to_passed_closure_map >>| SpecDom.v
+          List.Assoc.find field_to_passed_closure_map ~equal:Fieldname.equal fieldname >>| SpecDom.v
       | _ ->
           None )
   | _ ->

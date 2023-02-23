@@ -35,7 +35,7 @@ type specialized_with_aliasing_info =
 
 type 'captured_var passed_closure =
   | Closure of (Procname.t * 'captured_var list)
-  | Fields of 'captured_var passed_closure Fieldname.Map.t
+  | Fields of (Fieldname.t * 'captured_var passed_closure) list
 [@@deriving compare, equal]
 
 type specialized_with_closures_info =

@@ -57,7 +57,7 @@ type specialized_with_aliasing_info = {orig_proc: Procname.t; aliases: Pvar.t li
 
 type 'captured_var passed_closure =
   | Closure of (Procname.t * 'captured_var list)
-  | Fields of 'captured_var passed_closure Fieldname.Map.t
+  | Fields of (Fieldname.t * 'captured_var passed_closure) list
 [@@deriving compare, equal]
 
 type specialized_with_closures_info =
@@ -203,7 +203,10 @@ let pp_specialized_with_closures_info fmt info =
         let pp_captured_vars = Pp.semicolon_seq ~print_env:Pp.text_break CapturedVar.pp in
         Pp.pair ~fst:Procname.pp ~snd:pp_captured_vars fmt closure
     | Fields field_to_function_map ->
-        Fieldname.Map.pp ~pp_value:pp_passed_closure fmt field_to_function_map
+        PrettyPrintable.pp_collection
+          ~pp_item:(fun fmt (fld, func) ->
+            F.fprintf fmt "%a->%a" Fieldname.pp fld pp_passed_closure func )
+          fmt field_to_function_map
   in
   F.fprintf fmt "orig_procname=%a, formals_to_closures=%a" Procname.pp info.orig_proc
     (Pvar.Map.pp ~pp_value:pp_passed_closure)

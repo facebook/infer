@@ -211,14 +211,10 @@ let actuals_of_func analysis_data func_actuals caller_values_to_closures astate 
                       match actual_of accessed_value seen with
                       | Some passed_closure -> (
                         match res with
-                        | Some (ProcAttributes.Fields map) ->
-                            Some
-                              (ProcAttributes.Fields
-                                 (Fieldname.Map.add fieldname passed_closure map) )
+                        | Some (ProcAttributes.Fields closures) ->
+                            Some (ProcAttributes.Fields ((fieldname, passed_closure) :: closures))
                         | _ ->
-                            Some
-                              (ProcAttributes.Fields
-                                 (Fieldname.Map.singleton fieldname passed_closure) ) )
+                            Some (ProcAttributes.Fields [(fieldname, passed_closure)]) )
                       | None ->
                           res )
                     | Dereference when Option.is_none res ->
@@ -287,8 +283,8 @@ let deep_formals_to_closures_of_captured_vars ({InterproceduralAnalysis.proc_des
                   dftb_and_passed_closure_of_closure (pname, captured) map astate seen
               | Fields passed_closures ->
                   let astate, map, fields =
-                    Fieldname.Map.fold
-                      (fun fieldname passed_closure (astate, map, fields) ->
+                    List.fold_right passed_closures ~init:(astate, map, Some [])
+                      ~f:(fun (fieldname, passed_closure) (astate, map, fields) ->
                         match fields with
                         | None ->
                             (astate, map, None)
@@ -297,10 +293,8 @@ let deep_formals_to_closures_of_captured_vars ({InterproceduralAnalysis.proc_des
                           | _, _, None ->
                               (astate, map, None)
                           | astate, map, Some passed_closure ->
-                              let fields = Fieldname.Map.add fieldname passed_closure fields in
+                              let fields = (fieldname, passed_closure) :: fields in
                               (astate, map, Some fields) ) )
-                      passed_closures
-                      (astate, map, Some Fieldname.Map.empty)
                   in
                   let fields = Option.map fields ~f:(fun fields -> Fields fields) in
                   (astate, map, fields)
@@ -334,17 +328,12 @@ let deep_formals_to_closures_of_captured_vars ({InterproceduralAnalysis.proc_des
                       | astate, map, Some passed_closure -> (
                         match res with
                         | None ->
-                            ( astate
-                            , map
-                            , Some
-                                (ProcAttributes.Fields
-                                   (Fieldname.Map.singleton fieldname passed_closure) ) )
+                            (astate, map, Some (ProcAttributes.Fields [(fieldname, passed_closure)]))
                         | Some (ProcAttributes.Fields fields) ->
                             ( astate
                             , map
-                            , Some
-                                (ProcAttributes.Fields
-                                   (Fieldname.Map.add fieldname passed_closure fields) ) )
+                            , Some (ProcAttributes.Fields ((fieldname, passed_closure) :: fields))
+                            )
                         | Some _ ->
                             (astate, map, res) ) )
                   | Dereference -> (
@@ -434,10 +423,9 @@ let prepend_deep_captured_vars deep_formals_to_closures captured_vars =
       | ProcAttributes.Closure (_, captured_vars) ->
           captured_vars :: captured_vars_acc
       | ProcAttributes.Fields passed_closures ->
-          Fieldname.Map.fold
-            (fun _ actual captured_vars_acc ->
+          List.fold_right passed_closures ~init:captured_vars_acc
+            ~f:(fun (_, actual) captured_vars_acc ->
               get_captured_vars_in_passed_closure captured_vars_acc actual )
-            passed_closures captured_vars_acc
     in
     Pvar.Map.fold
       (fun _ actual captured_vars -> get_captured_vars_in_passed_closure captured_vars actual)
@@ -481,7 +469,7 @@ let make_specialized_call_exp analysis_data func_args callee_pname call_kind pat
             , List.map captured_vars ~f:(fun (_, pvar, typ, capture_mode) ->
                   CapturedVar.{pvar; typ; capture_mode} ) )
       | ProcAttributes.Fields fields ->
-          ProcAttributes.Fields (Fieldname.Map.map convert fields)
+          ProcAttributes.Fields (List.map fields ~f:(fun (fld, v) -> (fld, convert v)))
     in
     Pvar.Map.map convert deep_formals_to_closures
   in
