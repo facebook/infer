@@ -345,7 +345,7 @@ let add_copied_return path location pname actuals (astate_n, astate) =
   let open IOption.Let_syntax in
   if is_lock pname then Some (NonDisjDomain.set_locked astate_n, astate)
   else if not (NonDisjDomain.is_locked astate_n) then
-    match (Option.map (Procdesc.load pname) ~f:Procdesc.get_attributes, List.last actuals) with
+    match (IRAttributes.load pname, List.last actuals) with
     | Some attrs, Some ((Exp.Lvar ret_pvar as ret), copy_type) when attrs.has_added_return_param ->
         let copied_var = Var.of_pvar ret_pvar in
         if is_copy_into_local copied_var then

@@ -510,7 +510,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
 
 
 (** Resolve the name of the procedure to call based on the type of the arguments *)
-let resolve_pname ~caller_pdesc tenv prop args pname call_flags : Procname.t =
+let resolve_pname ~caller_loc tenv prop args pname call_flags : Procname.t =
   let resolve_from_args resolved_pname args =
     let resolved_parameters = Procname.get_parameters resolved_pname in
     let resolved_params =
@@ -525,12 +525,11 @@ let resolve_pname ~caller_pdesc tenv prop args pname call_flags : Procname.t =
           ~init:[] args resolved_parameters
         |> List.rev
       with Invalid_argument _ ->
-        let loc = (Procdesc.get_attributes caller_pdesc).loc in
-        let file = loc.Location.file in
+        let file = caller_loc.Location.file in
         L.(debug Analysis Medium)
           "Call mismatch: method %a has %i paramters but is called with %i arguments, in %a, %a@."
           Procname.pp pname (List.length resolved_parameters) (List.length args) SourceFile.pp file
-          Location.pp loc ;
+          Location.pp caller_loc ;
         raise SpecializeProcdesc.UnmatchedParameters
     in
     Procname.replace_parameters resolved_params resolved_pname
@@ -557,12 +556,11 @@ let resolve_pname ~caller_pdesc tenv prop args pname call_flags : Procname.t =
     | args when match_parameters args (* Static call *) ->
         (pname, args)
     | args ->
-        let loc = (Procdesc.get_attributes caller_pdesc).loc in
-        let file = loc.Location.file in
+        let file = caller_loc.Location.file in
         L.(debug Analysis Medium)
           "Call mismatch: method %a has %i paramters but is called with %i arguments, in %a, %a@."
           Procname.pp pname (List.length parameters) (List.length args) SourceFile.pp file
-          Location.pp loc ;
+          Location.pp caller_loc ;
         raise SpecializeProcdesc.UnmatchedParameters
   in
   resolve_from_args resolved_pname other_args
@@ -622,7 +620,8 @@ let resolve_and_analyze {InterproceduralAnalysis.analyze_dependency; proc_desc; 
               analyze_dependency resolved_pname ) )
     in
     let resolved_pname =
-      resolve_pname ~caller_pdesc:proc_desc tenv prop args callee_proc_name call_flags
+      let caller_loc = Procdesc.get_loc proc_desc in
+      resolve_pname ~caller_loc tenv prop args callee_proc_name call_flags
     in
     let resolved_procdesc_opt, resolved_summary_opt = analyze_ondemand resolved_pname in
     {resolved_pname; resolved_procdesc_opt; resolved_summary_opt}
