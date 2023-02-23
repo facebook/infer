@@ -344,6 +344,8 @@ val set_exit_node : t -> Node.t -> unit
 
 val set_start_node : t -> Node.t -> unit
 
+val init_wto : t -> unit
+
 val get_wto : t -> Node.t WeakTopologicalOrder.Partition.t
 
 val is_loop_head : t -> Node.t -> bool

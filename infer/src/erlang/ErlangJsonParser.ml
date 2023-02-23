@@ -639,7 +639,7 @@ let rec to_type json : Ast.type_ option =
       Some (Ast.Var name)
   (* TODO: add more types *)
   | _ ->
-      let _ = unknown "type" json in
+      unknown "type" json |> ignore ;
       Some Ast.Unsupported
 
 

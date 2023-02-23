@@ -33,7 +33,7 @@ let rec iter ~action_on_class_location context {location; kind; inner_elements} 
   let classname = previous_prefix ^ name in
   let col = location.col in
   let line = location.line in
-  let _ = action_on_class_location ~classname ~col ~line in
+  action_on_class_location ~classname ~col ~line ;
   List.iter inner_elements ~f:(iter ~action_on_class_location context)
 
 

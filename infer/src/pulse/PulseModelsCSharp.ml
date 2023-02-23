@@ -424,7 +424,7 @@ module Resource = struct
           (arg_payload, typ) )
     in
     let callee_data = analyze_dependency callee_procname in
-    (* let _ = Printf.printf "analysis occurs here.  Found callee_data for %s? : %b \n" *)
+    (* let () = Printf.printf "analysis occurs here.  Found callee_data for %s? : %b \n" *)
     (*     (Procname.to_string callee_procname) (Option.is_some callee_data) *)
     (* in *)
     match callee_data with

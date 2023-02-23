@@ -774,19 +774,19 @@ end
 
 module WTO = WeakTopologicalOrder.Bourdoncle_SCC (PreProcCfg)
 
+let init_wto pdesc =
+  let wto = WTO.make pdesc in
+  let (_ : int) =
+    WeakTopologicalOrder.Partition.fold_nodes wto ~init:0 ~f:(fun idx node ->
+        node.Node.wto_index <- idx ;
+        idx + 1 )
+  in
+  pdesc.wto <- Some wto
+
+
 let get_wto pdesc =
-  match pdesc.wto with
-  | Some wto ->
-      wto
-  | None ->
-      let wto = WTO.make pdesc in
-      let (_ : int) =
-        WeakTopologicalOrder.Partition.fold_nodes wto ~init:0 ~f:(fun idx node ->
-            node.Node.wto_index <- idx ;
-            idx + 1 )
-      in
-      pdesc.wto <- Some wto ;
-      wto
+  if Option.is_none pdesc.wto then init_wto pdesc ;
+  Option.value_exn pdesc.wto
 
 
 (** Get loop heads for widening. It collects all target nodes of back-edges in a depth-first

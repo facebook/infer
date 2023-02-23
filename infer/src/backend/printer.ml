@@ -175,7 +175,7 @@ end = struct
 
   let process_proc table_nodes_at_linenum global_err_log proc_desc =
     let proc_name = Procdesc.get_proc_name proc_desc in
-    let _ = (* Initializes wto_indexes *) Procdesc.get_wto proc_desc in
+    Procdesc.init_wto proc_desc ;
     let process_node n =
       let lnum = (Procdesc.Node.get_loc n).Location.line in
       let curr_nodes = try Hashtbl.find table_nodes_at_linenum lnum with Caml.Not_found -> [] in

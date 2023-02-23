@@ -27,7 +27,7 @@ module Make (T : NormalizedT) = struct
 
   let table : t H.t = H.create 11
 
-  let _ = normalizer_reset_funs := (fun () -> H.reset table) :: !normalizer_reset_funs
+  let () = normalizer_reset_funs := (fun () -> H.reset table) :: !normalizer_reset_funs
 
   let normalize t =
     match H.find_opt table t with
