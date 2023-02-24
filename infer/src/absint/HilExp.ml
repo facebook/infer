@@ -19,7 +19,7 @@ module Access = struct
 
   type 'array_index t = (Fieldname.t, 'array_index) t_ [@@deriving compare, equal, yojson_of]
 
-  let loose_compare compare_array_index = compare_t_ Fieldname.loose_compare compare_array_index
+  let loose_compare compare_array_index = compare_t_ Fieldname.compare_name compare_array_index
 
   let pp pp_array_index fmt = function
     | FieldAccess field_name ->

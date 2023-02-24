@@ -162,9 +162,6 @@ module Name : sig
   (** Named types. *)
   type t = name [@@deriving compare, yojson_of, sexp, hash]
 
-  val loose_compare : t -> t -> int
-  (** Similar to compare, but addresses [CStruct x] and [CppClass x] as equal. *)
-
   val compare_name : t -> t -> int
   (** Similar to compare, but compares only names, except template arguments. *)
 

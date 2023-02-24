@@ -15,8 +15,6 @@ type t = Typ.Name.t t_ [@@deriving compare, equal, yojson_of, sexp, hash]
 
 let pp f fld = F.pp_print_string f fld.field_name
 
-let loose_compare = compare_t_ Typ.Name.loose_compare
-
 let compare_name = compare_t_ Typ.Name.compare_name
 
 let make class_name field_name = {class_name; field_name}
