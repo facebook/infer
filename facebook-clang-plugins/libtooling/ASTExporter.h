@@ -294,6 +294,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   void dumpDeclarationName(const DeclarationName &Name);
   void dumpNestedNameSpecifierLoc(NestedNameSpecifierLoc NNS);
   void dumpTemplateArgument(const TemplateArgument &Arg);
+  void dumpTemplateArguments(const TemplateArgumentList &Args);
   void dumpTemplateSpecialization(const TemplateDecl *D,
                                   const TemplateArgumentList &Args);
   //    void dumpTemplateParameters(const TemplateParameterList *TPL);
@@ -761,9 +762,7 @@ int ASTExporter<ATDWriter>::DeclContextTupleSize() {
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitDeclContext(const DeclContext *DC) {
   if (!DC) {
-    {
-      ArrayScope Scope(OF, 0);
-    }
+    { ArrayScope Scope(OF, 0); }
     { ObjectScope Scope(OF, 0); }
     return;
   }
@@ -1115,11 +1114,10 @@ void ASTExporter<ATDWriter>::dumpNestedNameSpecifierLoc(
 template <class ATDWriter>
 bool ASTExporter<ATDWriter>::alwaysEmitParent(const Decl *D) {
   if (isa<ObjCMethodDecl>(D) || isa<CXXMethodDecl>(D) || isa<FieldDecl>(D) ||
-      isa<ObjCIvarDecl>(D) || isa<BlockDecl>(D) ||
-      isa<ObjCInterfaceDecl>(D) || isa<ObjCImplementationDecl>(D) ||
-      isa<ObjCCategoryDecl>(D) || isa<ObjCCategoryImplDecl>(D) ||
-      isa<ObjCPropertyDecl>(D) || isa<RecordDecl>(D)
-      || isa<ObjCProtocolDecl>(D) ) {
+      isa<ObjCIvarDecl>(D) || isa<BlockDecl>(D) || isa<ObjCInterfaceDecl>(D) ||
+      isa<ObjCImplementationDecl>(D) || isa<ObjCCategoryDecl>(D) ||
+      isa<ObjCCategoryImplDecl>(D) || isa<ObjCPropertyDecl>(D) ||
+      isa<RecordDecl>(D) || isa<ObjCProtocolDecl>(D)) {
     return true;
   }
   return false;
@@ -2126,6 +2124,15 @@ void ASTExporter<ATDWriter>::dumpTemplateArgument(const TemplateArgument &Arg) {
   }
 }
 
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::dumpTemplateArguments(
+    const TemplateArgumentList &Args) {
+  ArrayScope aScope(OF, Args.size());
+  for (size_t i = 0; i < Args.size(); i++) {
+    dumpTemplateArgument(Args[i]);
+  }
+}
+
 //@atd type template_specialization_info = {
 //@atd   template_decl : pointer;
 //@atd   ~specialization_args : template_instantiation_arg_info list;
@@ -2139,10 +2146,7 @@ void ASTExporter<ATDWriter>::dumpTemplateSpecialization(
   dumpPointer(D);
   if (HasTemplateArgs) {
     OF.emitTag("specialization_args");
-    ArrayScope aScope(OF, Args.size());
-    for (size_t i = 0; i < Args.size(); i++) {
-      dumpTemplateArgument(Args[i]);
-    }
+    dumpTemplateArguments(Args);
   }
 }
 
@@ -2635,7 +2639,8 @@ void ASTExporter<ATDWriter>::VisitObjCMethodDecl(const ObjCMethodDecl *D) {
 
   SmallString<64> Buf;
   llvm::raw_svector_ostream StrOS(Buf);
-  Mangler->mangleObjCMethodName(D, StrOS,
+  Mangler->mangleObjCMethodName(D,
+                                StrOS,
                                 /*includePrefixByte=*/false,
                                 /*includeCategoryNamespace=*/true);
   std::string MangledName = StrOS.str().str();
@@ -3513,7 +3518,6 @@ template <class ATDWriter>
 int ASTExporter<ATDWriter>::ObjCBridgedCastExprTupleSize() {
   return ExplicitCastExprTupleSize() + 1;
 }
-
 
 //@atd type obj_c_bridge_cast_kind = [
 //@atd   OBC_BridgeRetained
@@ -5178,15 +5182,15 @@ void ASTExporter<ATDWriter>::VisitBuiltinType(const BuiltinType *T) {
   }
 #include <clang/AST/BuiltinTypes.def>
 #define SVE_PREDICATE_TYPE(Name, MangeldName, Id, SingletonId, NumEls) \
-  case BuiltinType::Id: {                                 \
-    type_name = #Id;                                      \
-    break;                                                \
+  case BuiltinType::Id: {                                              \
+    type_name = #Id;                                                   \
+    break;                                                             \
   }
 #define SVE_VECTOR_TYPE(                                                      \
     Name, MangledName, Id, SingletonId, NumEls, ElBits, IsSigned, IsFP, IsBF) \
-  case BuiltinType::Id: {                                                      \
-    type_name = #Id;                                                           \
-    break;                                                                     \
+  case BuiltinType::Id: {                                                     \
+    type_name = #Id;                                                          \
+    break;                                                                    \
   }
 #include <clang/Basic/AArch64SVEACLETypes.def>
 #define IMAGE_TYPE(ImgType, ID, SingletonId, Access, Suffix) \

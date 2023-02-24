@@ -83,17 +83,27 @@ let sil_var_of_decl context var_decl procname =
   let outer_procname = CContext.get_outer_procname context in
   let trans_unit_ctx = context.CContext.translation_unit_context in
   let open Clang_ast_t in
-  match var_decl with
-  | VarDecl (decl_info, name_info, qual_type, var_decl_info)
-  | VarTemplateSpecializationDecl (decl_info, name_info, qual_type, var_decl_info) ->
-      let shoud_be_mangled = not (is_custom_var_pointer decl_info.Clang_ast_t.di_pointer) in
-      let var_decl_details = Some (decl_info, qual_type, var_decl_info, shoud_be_mangled) in
-      mk_sil_var trans_unit_ctx name_info var_decl_details procname outer_procname
-  | ParmVarDecl (decl_info, name_info, qual_type, var_decl_info) ->
-      let var_decl_details = Some (decl_info, qual_type, var_decl_info, false) in
-      mk_sil_var trans_unit_ctx name_info var_decl_details procname outer_procname
-  | _ ->
-      assert false
+  let should_be_mangled =
+    match var_decl with
+    | VarDecl (decl_info, _, _, _) | VarTemplateSpecializationDecl (decl_info, _, _, _) ->
+        not (is_custom_var_pointer decl_info.Clang_ast_t.di_pointer)
+    | ParmVarDecl _ ->
+        false
+    | _ ->
+        assert false
+  in
+  let name_info, decl_info, qual_type, var_decl_info =
+    match var_decl with
+    | VarDecl (decl_info, name_info, qual_type, var_decl_info)
+    | ParmVarDecl (decl_info, name_info, qual_type, var_decl_info)
+    | VarTemplateSpecializationDecl (decl_info, name_info, qual_type, var_decl_info) ->
+        (name_info, decl_info, qual_type, var_decl_info)
+    | _ ->
+        assert false
+  in
+  mk_sil_var trans_unit_ctx name_info
+    (Some (decl_info, qual_type, var_decl_info, should_be_mangled))
+    procname outer_procname
 
 
 let sil_var_of_decl_ref context source_range decl_ref procname =

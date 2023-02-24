@@ -496,7 +496,7 @@ and get_record_typename ?tenv decl =
         | None ->
             assert false
       in
-      let args = get_template_args tenv spec_info in
+      let args = get_template_args tenv spec_info.tsi_specialization_args in
       let mangled = if String.equal "" mangling then None else Some mangling in
       Typ.Name.Cpp.from_qual_name
         (Typ.Template {mangled; args})
@@ -555,7 +555,7 @@ and add_types_from_decl_to_tenv tenv decl =
       assert false
 
 
-and get_template_args tenv (tsi : Clang_ast_t.template_specialization_info) =
+and get_template_args tenv (template_args : Clang_ast_t.template_instantiation_arg_info list) =
   let rec aux = function
     | `Type qual_type ->
         [Typ.TType (qual_type_to_sil_type tenv qual_type)]
@@ -570,7 +570,7 @@ and get_template_args tenv (tsi : Clang_ast_t.template_specialization_info) =
     | `Pack p ->
         List.concat_map ~f:aux p
   in
-  List.concat_map ~f:aux tsi.tsi_specialization_args
+  List.concat_map ~f:aux template_args
 
 
 and qual_type_to_sil_type tenv qual_type =
@@ -579,8 +579,9 @@ and qual_type_to_sil_type tenv qual_type =
 
 and get_template_info tenv (fdi : Clang_ast_t.function_decl_info) =
   match fdi.fdi_template_specialization with
-  | Some spec_info ->
-      Typ.Template {mangled= fdi.fdi_mangled_name; args= get_template_args tenv spec_info}
+  | Some {tsi_specialization_args} ->
+      Typ.Template
+        {mangled= fdi.fdi_mangled_name; args= get_template_args tenv tsi_specialization_args}
   | None ->
       Typ.NoTemplate
 
