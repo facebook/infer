@@ -221,7 +221,7 @@ struct
     in
     let rec structured_instr_to_node (last_node, assert_map) exn_handlers = function
       | Cmd cmd ->
-          let node = create_node (Procdesc.Node.Stmt_node (Skip "")) [cmd] in
+          let node = create_node (Stmt_node Skip) [cmd] in
           set_succs last_node [node] ~exn_handlers ;
           (node, assert_map)
       | If (exp, then_instrs, else_instrs) ->
@@ -274,7 +274,7 @@ struct
           set_succs catch_end_node [finally_start_node] ~exn_handlers ;
           structured_instrs_to_node finally_start_node assert_map'' exn_handlers finally_instrs
       | Invariant (inv_str, inv_label) ->
-          let node = create_node (Procdesc.Node.Stmt_node (Skip "Invariant")) [] in
+          let node = create_node (Stmt_node Skip) [] in
           set_succs last_node [node] ~exn_handlers ;
           (* add the assertion to be checked after analysis converges *)
           (node, M.add (T.CFG.Node.id node) (inv_str, inv_label) assert_map)

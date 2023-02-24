@@ -81,7 +81,7 @@ module Node : sig
     | OutOfBound
     | ReturnStmt
     | Scope of string
-    | Skip of string
+    | Skip
     | SwitchStmt
     | ThisNotNull
     | Throw

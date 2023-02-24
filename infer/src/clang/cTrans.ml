@@ -4657,9 +4657,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   (** no-op translated for unsupported instructions that will at least translate subexpressions *)
-  and skip_unimplemented ~reason trans_state stmt_info ret_typ stmts =
-    call_function_with_args (Procdesc.Node.Skip reason) BuiltinDecl.__infer_skip trans_state
-      stmt_info ret_typ stmts
+  and skip_unimplemented ~pp_unimplemented trans_state stmt_info ret_typ stmts =
+    L.debug Capture Medium "Skipping unimplemented %t" pp_unimplemented ;
+    call_function_with_args Procdesc.Node.Skip BuiltinDecl.__infer_skip trans_state stmt_info
+      ret_typ stmts
 
 
   and instruction trans_state instr = instruction_log trans_state instr
@@ -5195,10 +5196,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               (stmt_tuple, StdTyp.void)
         in
         skip_unimplemented
-          ~reason:
-            (Printf.sprintf "unimplemented construct: %s, found at %s"
-               (Clang_ast_proj.get_stmt_kind_string instr)
-               (Clang_ast_j.string_of_source_range stmt_info.Clang_ast_t.si_source_range) )
+          ~pp_unimplemented:(fun fmt ->
+            Format.fprintf fmt "%s, found at %s"
+              (Clang_ast_proj.get_stmt_kind_string instr)
+              (Clang_ast_j.string_of_source_range stmt_info.Clang_ast_t.si_source_range) )
           trans_state stmt_info ret_typ stmts
 
 

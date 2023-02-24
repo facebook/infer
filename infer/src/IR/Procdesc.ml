@@ -99,7 +99,7 @@ module Node = struct
     | OutOfBound
     | ReturnStmt
     | Scope of string
-    | Skip of string
+    | Skip
     | SwitchStmt
     | ThisNotNull
     | Throw
@@ -376,8 +376,8 @@ module Node = struct
         F.pp_print_string fmt "Return Stmt"
     | Scope descr ->
         F.fprintf fmt "Scope(%s)" descr
-    | Skip reason ->
-        F.pp_print_string fmt reason
+    | Skip ->
+        F.pp_print_string fmt "Skip"
     | SwitchStmt ->
         F.pp_print_string fmt "SwitchStmt"
     | ThisNotNull ->

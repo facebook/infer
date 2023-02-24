@@ -27,9 +27,7 @@ let tests =
   let instrs2 = [dummy_instr3] in
   let instrs3 = [dummy_instr4] in
   let instrs4 = [] in
-  let create_node instrs =
-    Procdesc.create_node test_pdesc Location.dummy (Procdesc.Node.Stmt_node (Skip "")) instrs
-  in
+  let create_node instrs = Procdesc.create_node test_pdesc Location.dummy (Stmt_node Skip) instrs in
   let n1 = create_node instrs1 in
   let n2 = create_node instrs2 in
   let n3 = create_node instrs3 in

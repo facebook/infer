@@ -580,7 +580,7 @@ let parse_stmt_nodekind (json : Safe.t) : Procdesc.Node.stmt_nodekind =
   | "ReturnStmt" ->
       Procdesc.Node.ReturnStmt
   | "Skip" ->
-      Procdesc.Node.Skip (to_string nk_comment)
+      Procdesc.Node.Skip
   | "SwitchStmt" ->
       Procdesc.Node.SwitchStmt
   | "ThisNotNull" ->
