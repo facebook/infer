@@ -37,4 +37,20 @@ void call_get_optional_value_ok(Arr x) {
   x.arr[0] = 42;
   get_optional_value(std::move(x));
 }
+
+void call_get_optional_value_static_cast_ok(Arr x) {
+  x.arr[0] = 42;
+  get_optional_value(static_cast<Arr&&>(x));
+}
+
+class OptionalFieldOk {
+ public:
+  template <typename T>
+  OptionalFieldOk(T&& x) : x(std::forward<T>(x)) {}
+
+ private:
+  std::optional<Arr> x;
+};
+
+void construct_optional_field(Arr x) { OptionalFieldOk o(std::move(x)); }
 } // namespace unnecessary_copy

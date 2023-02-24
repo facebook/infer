@@ -78,9 +78,19 @@ let get_element_copy_by_optional =
         $--> false
       ; -"std" &:: "optional" &:: "optional" $ any_arg $+ any_arg $--> true ]
   in
+  let has_rvalue_ref_formal pname =
+    match IRAttributes.load pname with
+    | Some {formals= [_; (_, t, _)]} ->
+        Typ.is_rvalue_reference t
+    | _ ->
+        false
+  in
   fun pname actuals ->
     let arg_payloads = to_arg_payloads actuals in
-    if is_optional_copy_constructor_with_arg_payloads pname arg_payloads then None
+    if
+      is_optional_copy_constructor_with_arg_payloads pname arg_payloads
+      || has_rvalue_ref_formal pname
+    then None
     else
       dispatch () pname arg_payloads
       |> Option.bind ~f:(fun matched -> Option.some_if matched Attribute.CopyOrigin.CopyToOptional)
