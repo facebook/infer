@@ -11,6 +11,7 @@ open! IStd
 
 module L = Logging
 module F = Format
+open Option.Monad_infix
 
 (* always incremented before use *)
 let nesting = ref (-1)
@@ -64,8 +65,7 @@ let save_global_state () =
   ; html_formatter= !Printer.curr_html_formatter
   ; name_generator= Ident.NameGenerator.get_current ()
   ; proc_analysis_time=
-      Option.map !current_taskbar_status ~f:(fun (t0, status) ->
-          (Mtime.span t0 (Mtime_clock.now ()), status) )
+      (!current_taskbar_status >>| fun (t0, status) -> (Mtime.span t0 (Mtime_clock.now ()), status))
   ; pulse_address_generator= PulseAbstractValue.State.get ()
   ; absint_state= AnalysisState.save ()
   ; biabduction_state= State.save_state ()
@@ -86,14 +86,15 @@ let restore_global_state st =
   AnalysisState.restore st.absint_state ;
   Tenv.Deps.set_current_proc st.current_procname ;
   State.restore_state st.biabduction_state ;
-  current_taskbar_status :=
-    Option.map st.proc_analysis_time ~f:(fun (suspended_span, status) ->
-        (* forget about the time spent doing a nested analysis and resend the status of the outer
-           analysis with the updated "original" start time *)
-        let new_t0 = Mtime.sub_span (Mtime_clock.now ()) suspended_span in
-        let new_t0 = Option.value_exn new_t0 in
-        !ProcessPoolState.update_status new_t0 status ;
-        (new_t0, status) ) ;
+  (current_taskbar_status :=
+     st.proc_analysis_time
+     >>| fun (suspended_span, status) ->
+     (* forget about the time spent doing a nested analysis and resend the status of the outer
+        analysis with the updated "original" start time *)
+     let new_t0 = Mtime.sub_span (Mtime_clock.now ()) suspended_span in
+     let new_t0 = Option.value_exn new_t0 in
+     !ProcessPoolState.update_status new_t0 status ;
+     (new_t0, status) ) ;
   Timeout.resume_previous_timeout () ;
   nesting := st.taskbar_nesting ;
   Timer.resume st.checker_timer_state
@@ -129,7 +130,7 @@ let analyze exe_env callee_summary callee_pdesc =
   summary
 
 
-let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
+let run_proc_analysis exe_env ?caller_pname callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   Tenv.Deps.set_current_proc (Some callee_pname) ;
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
@@ -143,8 +144,7 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
         "Elapsed analysis time: %a: %a@\n" Procname.pp callee_pname Mtime.Span.pp elapsed
   in
   if Config.trace_ondemand then
-    L.progress "[%d] run_proc_analysis %a -> %a@." !nesting (Pp.option Procname.pp)
-      (Option.map caller_pdesc ~f:Procdesc.get_proc_name)
+    L.progress "[%d] run_proc_analysis %a -> %a@." !nesting (Pp.option Procname.pp) caller_pname
       Procname.pp callee_pname ;
   let preprocess () =
     incr nesting ;
@@ -223,14 +223,14 @@ let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
 
 
 (* shadowed for tracing *)
-let run_proc_analysis exe_env ~caller_pdesc callee_pdesc =
+let run_proc_analysis exe_env ?caller_pname callee_pdesc =
   PerfEvent.(
     log (fun logger ->
         let callee_pname = Procdesc.get_proc_name callee_pdesc in
         log_begin_event logger ~name:"ondemand" ~categories:["backend"]
           ~arguments:[("proc", `String (Procname.to_string callee_pname))]
           () )) ;
-  let summary = run_proc_analysis exe_env ~caller_pdesc callee_pdesc in
+  let summary = run_proc_analysis exe_env ?caller_pname callee_pdesc in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   summary
 
@@ -280,32 +280,27 @@ let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
         summ_opt
     | None when procedure_should_be_analyzed callee_pname ->
         Procdesc.load callee_pname
-        |> Option.bind ~f:(fun callee_pdesc ->
-               RestartScheduler.lock_exn callee_pname ;
-               let previous_global_state = save_global_state () in
-               let callee_summary =
-                 protect
-                   ~f:(fun () ->
-                     Timer.time Preanalysis
-                       ~f:(fun () ->
-                         let caller_pdesc =
-                           Option.bind
-                             ~f:(fun {Summary.proc_name} -> Procdesc.load proc_name)
-                             caller_summary
-                         in
-                         Some (run_proc_analysis exe_env ~caller_pdesc callee_pdesc) )
-                       ~on_timeout:(fun span ->
-                         L.debug Analysis Quiet
-                           "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any checkers \
-                            (pre-analysis timeout?)@\n"
-                           span SourceFile.pp
-                           (Procdesc.get_attributes callee_pdesc).translation_unit Procname.pp
-                           callee_pname ;
-                         None ) )
-                   ~finally:(fun () -> restore_global_state previous_global_state)
-               in
-               RestartScheduler.unlock callee_pname ;
-               callee_summary )
+        >>= fun callee_pdesc ->
+        RestartScheduler.lock_exn callee_pname ;
+        let previous_global_state = save_global_state () in
+        let callee_summary =
+          protect
+            ~f:(fun () ->
+              Timer.time Preanalysis
+                ~f:(fun () ->
+                  let caller_pname = caller_summary >>| fun summ -> summ.Summary.proc_name in
+                  Some (run_proc_analysis exe_env ?caller_pname callee_pdesc) )
+                ~on_timeout:(fun span ->
+                  L.debug Analysis Quiet
+                    "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any checkers \
+                     (pre-analysis timeout?)@\n"
+                    span SourceFile.pp (Procdesc.get_attributes callee_pdesc).translation_unit
+                    Procname.pp callee_pname ;
+                  None ) )
+            ~finally:(fun () -> restore_global_state previous_global_state)
+        in
+        RestartScheduler.unlock callee_pname ;
+        callee_summary
     | _ ->
         None
 
