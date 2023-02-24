@@ -39,10 +39,12 @@ val materialize_cpp_temporary :
   CContext.t -> Clang_ast_t.stmt_info -> Clang_ast_t.expr_info -> Pvar.t * Typ.t
 
 val mk_sil_global_var :
-     CFrontend_config.translation_unit_context
+     Tenv.t
+  -> CFrontend_config.translation_unit_context
   -> ?mk_name:(string -> Mangled.t -> Mangled.t)
   -> Clang_ast_t.decl_info
   -> Clang_ast_t.named_decl_info
   -> Clang_ast_t.var_decl_info
+  -> Clang_ast_t.template_instantiation_arg_info list option
   -> Clang_ast_t.qual_type
   -> Pvar.t

@@ -123,6 +123,7 @@ val mk_global :
   -> ?is_constant_array:bool
   -> ?is_const:bool
   -> ?translation_unit:SourceFile.t
+  -> ?template_args:Typ.template_spec_info
   -> Mangled.t
   -> t
 (** create a global variable with the given name *)

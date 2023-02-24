@@ -48,6 +48,9 @@ val class_from_pointer_type : Tenv.t -> Clang_ast_t.qual_type -> Typ.Name.t
 
 val get_type_from_expr_info : Clang_ast_t.expr_info -> Tenv.t -> Typ.t
 
+val get_template_args :
+  Tenv.t -> Clang_ast_t.template_instantiation_arg_info list -> Typ.template_arg list
+
 val method_signature_of_decl :
      Tenv.t
   -> Clang_ast_t.decl

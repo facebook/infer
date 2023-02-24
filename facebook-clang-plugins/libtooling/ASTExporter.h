@@ -346,6 +346,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(ClassTemplateDecl)
   DECLARE_VISITOR(FunctionTemplateDecl)
   DECLARE_VISITOR(FriendDecl)
+  DECLARE_VISITOR(VarTemplateSpecializationDecl)
 
   //    void VisitTypeAliasDecl(const TypeAliasDecl *D);
   //    void VisitTypeAliasTemplateDecl(const TypeAliasTemplateDecl *D);
@@ -363,8 +364,6 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   //    void VisitClassScopeFunctionSpecializationDecl(
   //        const ClassScopeFunctionSpecializationDecl *D);
   //    void VisitVarTemplateDecl(const VarTemplateDecl *D);
-  //    void VisitVarTemplateSpecializationDecl(
-  //        const VarTemplateSpecializationDecl *D);
   //    void VisitVarTemplatePartialSpecializationDecl(
   //        const VarTemplatePartialSpecializationDecl *D);
   //    void VisitTemplateTypeParmDecl(const TemplateTypeParmDecl *D);
@@ -2176,6 +2175,19 @@ void ASTExporter<ATDWriter>::VisitClassTemplateSpecializationDecl(
 }
 
 template <class ATDWriter>
+int ASTExporter<ATDWriter>::VarTemplateSpecializationDeclTupleSize() {
+  return VarDeclTupleSize() + 1;
+}
+
+//@atd #define var_template_specialization_decl_tuple template_instantiation_arg_info list * var_decl_tuple
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitVarTemplateSpecializationDecl(
+    const VarTemplateSpecializationDecl *D) {
+  dumpTemplateArguments(D->getTemplateArgs());
+  VisitVarDecl(D);
+}
+
+template <class ATDWriter>
 int ASTExporter<ATDWriter>::CXXMethodDeclTupleSize() {
   return FunctionDeclTupleSize() + 1;
 }
@@ -2447,13 +2459,6 @@ void ASTExporter<ATDWriter>::VisitFriendDecl(const FriendDecl *D) {
 //      break;
 //    }
 //  }
-//}
-//
-// template <class ATDWriter>
-// void ASTExporter<ATDWriter>::VisitVarTemplateSpecializationDecl(
-//    const VarTemplateSpecializationDecl *D) {
-//  dumpTemplateArgumentList(D->getTemplateArgs());
-//  VisitVarDecl(D);
 //}
 //
 // template <class ATDWriter>

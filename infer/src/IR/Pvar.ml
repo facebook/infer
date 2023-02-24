@@ -23,8 +23,9 @@ type pvar_kind =
       (** synthetic variable to represent param passed by reference *)
   | Global_var of
       { translation_unit: translation_unit [@ignore]
-      ; is_constexpr: bool (* is it compile constant? *)
-      ; is_ice: bool (* is it integral constant expression? *)
+      ; template_args: Typ.template_spec_info
+      ; is_constexpr: bool  (** is it compile constant? *)
+      ; is_ice: bool  (** is it integral constant expression? *)
       ; is_pod: bool
       ; is_static_local: bool
       ; is_static_global: bool
@@ -67,9 +68,16 @@ let to_string pv = Mangled.to_string pv.pv_name
 
 let get_simplified_name pv =
   let s = Mangled.to_string pv.pv_name in
-  match String.rsplit2 s ~on:'.' with
-  | Some (s1, s2) -> (
-    match String.rsplit2 s1 ~on:'.' with Some (_, s4) -> Printf.sprintf "%s.%s" s4 s2 | _ -> s )
+  let s =
+    match String.rsplit2 s ~on:'.' with
+    | Some (s1, s2) -> (
+      match String.rsplit2 s1 ~on:'.' with Some (_, s4) -> Printf.sprintf "%s.%s" s4 s2 | _ -> s )
+    | _ ->
+        s
+  in
+  match pv with
+  | {pv_kind= Global_var {template_args}} ->
+      F.asprintf "%s%a" s (Typ.pp_template_spec_info Pp.text) template_args
   | _ ->
       s
 
@@ -180,13 +188,14 @@ let pp_ ~verbose f pv =
   | Abduced_ref_param (_, index, _) ->
       Mangled.pp f name ;
       if verbose then F.fprintf f "|abducedRefParam%d" index
-  | Global_var {translation_unit; is_constexpr; is_ice; is_pod} ->
+  | Global_var {translation_unit; template_args; is_constexpr; is_ice; is_pod} ->
       if verbose then
         F.fprintf f "#GB<%a%s%s%s>$" pp_translation_unit translation_unit
           (if is_constexpr then "|const" else "")
           (if is_ice then "|ice" else "")
           (if not is_pod then "|!pod" else "") ;
-      Mangled.pp f name
+      Mangled.pp f name ;
+      (Typ.pp_template_spec_info Pp.text) f template_args
   | Seed_var ->
       F.fprintf f "old_%a" Mangled.pp name
 
@@ -244,12 +253,13 @@ let mk_callee (name : Mangled.t) (proc_name : Procname.t) : t =
 (** create a global variable with the given name *)
 let mk_global ?(is_constexpr = false) ?(is_ice = false) ?(is_pod = true) ?(is_static_local = false)
     ?(is_static_global = false) ?(is_constant_array = false) ?(is_const = false) ?translation_unit
-    (name : Mangled.t) : t =
+    ?(template_args = Typ.NoTemplate) (name : Mangled.t) : t =
   { pv_hash= name_hash name
   ; pv_name= name
   ; pv_kind=
       Global_var
         { translation_unit
+        ; template_args
         ; is_constexpr
         ; is_ice
         ; is_pod
