@@ -95,25 +95,3 @@ module SQLite : SqliteUtils.Data with type t = per_file
 
 val normalize : per_file -> per_file
 (** Produce an equivalent type environment that has maximal sharing between its structures. *)
-
-(** Mutable state keeping track during on-demand interprocedural analysis of (1) which procedure is
-    currently being analyzed and (2) which type environments were used to compute summaries.
-
-    Located here in the IR module to track type-environment dependencies without adding parameters
-    to track the currently-under-analysis procedure throughout various analysis engine and checker
-    code. These dependencies are then used to conservatively invalidate procedure summaries that
-    were computed using out-of-date type environment information. *)
-module Deps : sig
-  val set_current_proc : Procname.t option -> unit
-  (** set (or unset) the currently-under-analysis procedure *)
-
-  val get_current_proc : unit -> Procname.t option
-  (** get the currently-under-analysis procedure if one exists *)
-
-  val of_procname : Procname.t -> SourceFile.t list
-  (** Return a list of source files whose type environments were used to compute a summary of the
-      given [proc_name], and drop that set from the global dependency map to reclaim some memory. *)
-
-  val clear : unit -> unit
-  (** drop all currently-recorded dependency edges to reclaim memory *)
-end

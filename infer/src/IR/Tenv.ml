@@ -6,62 +6,12 @@
  *)
 open! IStd
 module L = Logging
+open Option.Monad_infix
 
 (** Module for Type Environments. *)
 
 (** Hash tables on type names. *)
 module TypenameHash = Caml.Hashtbl.Make (Typ.Name)
-
-(** Mutable state keeping track of which procedure summaries depend on which type environments. *)
-module Deps : sig
-  val set_current_proc : Procname.t option -> unit
-  (** set (or unset) the currently-under-analysis procedure *)
-
-  val get_current_proc : unit -> Procname.t option
-  (** get the currently-under-analysis procedure if one exists *)
-
-  val of_procname : Procname.t -> SourceFile.t list
-  (** Return a list of source files whose type environments were used to compute a summary of the
-      given [proc_name], and drop that set from the global dependency map to reclaim some memory. *)
-
-  val record : Procname.t -> SourceFile.t -> unit
-  (** Record a dependency from a [proc_name] upon the type environment of some [source_file] *)
-
-  val clear : unit -> unit
-  (** drop all currently-recorded dependency edges to reclaim memory *)
-end = struct
-  let currently_under_analysis : Procname.t option ref = ref None
-
-  let recorded_dependencies : SourceFile.HashSet.t Procname.Hash.t = Procname.Hash.create 1000
-
-  let set_current_proc = ( := ) currently_under_analysis
-
-  let get_current_proc () = !currently_under_analysis
-
-  let of_procname pname =
-    match Procname.Hash.find_opt recorded_dependencies pname with
-    | Some deps ->
-        (* Remove recorded dependencies for this [pname] to save memory, since they are read at most once. *)
-        Procname.Hash.remove recorded_dependencies pname ;
-        SourceFile.HashSet.iter deps |> Iter.to_list
-    | None ->
-        []
-
-
-  let record pname src_file =
-    SourceFile.HashSet.add src_file
-    @@
-    match Procname.Hash.find_opt recorded_dependencies pname with
-    | Some deps ->
-        deps
-    | None ->
-        let deps = SourceFile.HashSet.create 0 in
-        Procname.Hash.add recorded_dependencies pname deps ;
-        deps
-
-
-  let clear () = Procname.Hash.clear recorded_dependencies
-end
 
 (** Type for type environment. *)
 type t = Struct.t TypenameHash.t
@@ -100,9 +50,7 @@ let lookup tenv name : Struct.t option =
           None )
   in
   (* Record Tenv lookups during analysis to facilitate conservative incremental invalidation *)
-  IOption.iter2 (Deps.get_current_proc ())
-    (Option.bind result ~f:Struct.get_source_file)
-    ~f:Deps.record ;
+  Option.iter (result >>= Struct.get_source_file) ~f:Dependencies.record_srcfile_dep ;
   result
 
 
@@ -245,9 +193,8 @@ let load source =
       |> Sqlite3.bind load_stmt 1
       |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
       SqliteUtils.result_single_column_option ~finalize:false ~log:"Tenv.load" db load_stmt
-      |> Option.bind ~f:(fun x ->
-             SQLite.deserialize x
-             |> function Global -> load_global () | FileLocal tenv -> Some tenv ) )
+      >>| SQLite.deserialize
+      >>= function Global -> load_global () | FileLocal tenv -> Some tenv )
 
 
 let store_debug_file tenv tenv_filename =
@@ -342,9 +289,7 @@ let resolve_method ~method_exists tenv class_name proc_name =
               []
         in
         List.find_map supers_to_search ~f:resolve_name )
-  and resolve_name class_name =
-    lookup tenv class_name |> Option.bind ~f:(resolve_name_struct class_name)
-  in
+  and resolve_name class_name = lookup tenv class_name >>= resolve_name_struct class_name in
   resolve_name class_name
 
 

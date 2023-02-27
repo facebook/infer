@@ -50,7 +50,7 @@ let clear_caches () =
   Summary.OnDisk.clear_cache () ;
   BufferOverrunUtils.clear_cache () ;
   Attributes.clear_cache () ;
-  Tenv.Deps.clear ()
+  Dependencies.clear ()
 
 
 let proc_name_of_uid uid =

@@ -69,7 +69,7 @@ let save_global_state () =
   ; pulse_address_generator= PulseAbstractValue.State.get ()
   ; absint_state= AnalysisState.save ()
   ; biabduction_state= State.save_state ()
-  ; current_procname= Tenv.Deps.get_current_proc ()
+  ; current_procname= Dependencies.get_current_proc ()
   ; taskbar_nesting= !nesting
   ; checker_timer_state= Timer.suspend () }
 
@@ -84,15 +84,14 @@ let restore_global_state st =
   Ident.NameGenerator.set_current st.name_generator ;
   PulseAbstractValue.State.set st.pulse_address_generator ;
   AnalysisState.restore st.absint_state ;
-  Tenv.Deps.set_current_proc st.current_procname ;
+  Dependencies.set_current_proc st.current_procname ;
   State.restore_state st.biabduction_state ;
   (current_taskbar_status :=
      st.proc_analysis_time
      >>| fun (suspended_span, status) ->
      (* forget about the time spent doing a nested analysis and resend the status of the outer
         analysis with the updated "original" start time *)
-     let new_t0 = Mtime.sub_span (Mtime_clock.now ()) suspended_span in
-     let new_t0 = Option.value_exn new_t0 in
+     let new_t0 = Mtime.sub_span (Mtime_clock.now ()) suspended_span |> Option.value_exn in
      !ProcessPoolState.update_status new_t0 status ;
      (new_t0, status) ) ;
   Timeout.resume_previous_timeout () ;
@@ -132,7 +131,7 @@ let analyze exe_env callee_summary callee_pdesc =
 
 let run_proc_analysis exe_env ?caller_pname callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
-  Tenv.Deps.set_current_proc (Some callee_pname) ;
+  Dependencies.set_current_proc (Some callee_pname) ;
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
   let log_elapsed_time =
     let start_time = Mtime_clock.counter () in
@@ -266,9 +265,9 @@ let dump_duplicate_procs source_file procs =
   if not (List.is_empty duplicate_procs) then output_to_file duplicate_procs
 
 
-let register_callee ?caller_summary callee_pname =
-  Option.iter caller_summary
-    ~f:Summary.(fun {dependencies} -> Deps.add_exn dependencies callee_pname)
+let register_callee ?caller_summary callee =
+  Option.iter caller_summary ~f:(fun {Summary.proc_name= caller} ->
+      Dependencies.record_pname_dep ~caller callee )
 
 
 let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =

@@ -8,7 +8,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 module BStats = Stats
 
 module Stats = struct
@@ -42,48 +41,13 @@ module Stats = struct
     F.fprintf fmt "FAILURE:%a SYMOPS:%d@\n" pp_failure_kind_opt failure_kind symops
 end
 
-module Deps = struct
-  type partial = Procname.HashSet.t
-
-  type complete = {callees: Procname.t list; used_tenv_sources: SourceFile.t list}
-
-  type t = Partial of partial | Complete of complete
-
-  let empty () = Partial (Procname.HashSet.create 0)
-
-  let freeze pname = function
-    | Partial callees ->
-        let callees = Iter.to_list (Procname.HashSet.iter callees) in
-        let used_tenv_sources = Tenv.Deps.of_procname pname in
-        {callees; used_tenv_sources}
-    | Complete deps ->
-        deps
-
-
-  let partial_exn = function
-    | Partial p ->
-        p
-    | Complete _ ->
-        L.die InternalError "partial dependency info unavailable for completed summary"
-
-
-  let complete_exn = function
-    | Complete c ->
-        c
-    | Partial _ ->
-        L.die InternalError "complete depenendency info unavailable for partially-computed summary"
-
-
-  let add_exn deps callee = Procname.HashSet.add callee (partial_exn deps)
-end
-
 type t =
   { payloads: Payloads.t
   ; mutable sessions: int
   ; stats: Stats.t
   ; proc_name: Procname.t
   ; err_log: Errlog.t
-  ; mutable dependencies: Deps.t }
+  ; mutable dependencies: Dependencies.t }
 
 let yojson_of_t {proc_name; payloads} = [%yojson_of: Procname.t * Payloads.t] (proc_name, payloads)
 
@@ -140,14 +104,15 @@ module ReportSummary = struct
 end
 
 module SummaryMetadata = struct
-  type t = {sessions: int; stats: Stats.t; proc_name: Procname.t; dependencies: Deps.complete}
+  type t =
+    {sessions: int; stats: Stats.t; proc_name: Procname.t; dependencies: Dependencies.complete}
   [@@deriving fields]
 
   let of_full_summary (f : full_summary) : t =
     { sessions= f.sessions
     ; stats= f.stats
     ; proc_name= f.proc_name
-    ; dependencies= Deps.complete_exn f.dependencies }
+    ; dependencies= Dependencies.complete_exn f.dependencies }
 
 
   module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
@@ -161,7 +126,7 @@ let mk_full_summary payloads (report_summary : ReportSummary.t)
   ; sessions= summary_metadata.sessions
   ; stats= summary_metadata.stats
   ; proc_name= summary_metadata.proc_name
-  ; dependencies= Deps.Complete summary_metadata.dependencies
+  ; dependencies= Dependencies.Complete summary_metadata.dependencies
   ; err_log= report_summary.err_log }
 
 
@@ -261,7 +226,7 @@ module OnDisk = struct
   let store ({proc_name; dependencies; payloads} as summary : t) =
     (* Make sure the summary in memory is identical to the saved one *)
     add proc_name summary ;
-    summary.dependencies <- Deps.(Complete (freeze proc_name dependencies)) ;
+    summary.dependencies <- Dependencies.(Complete (freeze proc_name dependencies)) ;
     let report_summary = ReportSummary.of_full_summary summary in
     let summary_metadata = SummaryMetadata.of_full_summary summary in
     DBWriter.store_spec ~proc_uid:(Procname.to_unique_id proc_name)
@@ -278,7 +243,7 @@ module OnDisk = struct
       ; stats= Stats.empty
       ; proc_name
       ; err_log= Errlog.empty ()
-      ; dependencies= Deps.empty () }
+      ; dependencies= Dependencies.reset proc_name }
     in
     Procname.Hash.replace cache proc_name summary ;
     summary

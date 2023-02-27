@@ -22,27 +22,6 @@ module Stats : sig
   val update : ?add_symops:int -> ?failure_kind:Exception.failure_kind -> t -> t
 end
 
-module Deps : sig
-  type partial = Procname.HashSet.t
-
-  type complete =
-    { callees: Procname.t list
-          (** Summaries of these procedures were used to compute this summary. *)
-    ; used_tenv_sources: SourceFile.t list
-          (** These source files contain type definitions that were used to compute this summary. *)
-    }
-
-  type t =
-    | Partial of partial
-    | Complete of complete
-        (** Dependencies are [partial] and mutable while the summary to which they belong is being
-            computed, then made [complete] and immutable once the summary is fully analyzed. *)
-
-  val add_exn : t -> Procname.t -> unit
-  (** Adds a procname to a partial dependency set ; raises an error if the given dependencies have
-      been marked as complete *)
-end
-
 (** summary of a procedure name *)
 type t =
   { payloads: Payloads.t
@@ -54,7 +33,7 @@ type t =
             addition to that there can be errors detected after file-level analysis (next stage
             after per-procedure analysis). This latter category of errors should NOT be written
             here, use [IssueLog] and its serialization capabilities instead. *)
-  ; mutable dependencies: Deps.t
+  ; mutable dependencies: Dependencies.t
         (** Dynamically discovered analysis-time dependencies used to compute this summary *) }
 [@@deriving yojson_of]
 
