@@ -422,6 +422,13 @@ let desc_to_string desc =
   F.asprintf "%t" pp
 
 
+let is_template_spec_info_empty = function
+  | NoTemplate | Template {args= []} ->
+      true
+  | Template {args= _ :: _} ->
+      false
+
+
 module Name = struct
   type t = name [@@deriving compare, equal, yojson_of, sexp, hash]
 

@@ -192,7 +192,11 @@ module C : sig
     ; template_args: Typ.template_spec_info }
 
   val c :
-    QualifiedCppName.t -> string -> Parameter.clang_parameter list -> Typ.template_spec_info -> t
+       QualifiedCppName.t
+    -> ?mangled:string
+    -> Parameter.clang_parameter list
+    -> Typ.template_spec_info
+    -> t
   (** Create a C procedure name from plain and mangled name. *)
 
   val is_make_shared : t -> bool

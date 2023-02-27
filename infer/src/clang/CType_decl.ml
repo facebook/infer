@@ -622,7 +622,7 @@ and mk_c_function ?tenv name function_decl_info_opt parameters =
   in
   let mangled = file ^ mangled_name in
   if String.is_empty mangled then Procname.from_string_c_fun (QualifiedCppName.to_qual_string name)
-  else Procname.C (Procname.C.c name mangled parameters template_info)
+  else Procname.C (Procname.C.c name ~mangled parameters template_info)
 
 
 and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =

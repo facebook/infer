@@ -459,17 +459,31 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               () )
       | VarDecl
           (decl_info, named_decl_info, qt, ({vdi_is_global; vdi_init_expr; vdi_is_constexpr} as vdi))
+      | VarTemplateSpecializationDecl
+          ( _
+          , decl_info
+          , named_decl_info
+          , qt
+          , ({vdi_is_global; vdi_init_expr; vdi_is_constexpr} as vdi) )
         when String.is_prefix ~prefix:"__infer_" named_decl_info.ni_name
              || (vdi_is_global && Option.is_some vdi_init_expr) ->
+          let template_args_opt =
+            match[@warning "-partial-match"] dec with
+            | VarDecl _ ->
+                None
+            | VarTemplateSpecializationDecl (template_args, _, _, _, _) ->
+                Some template_args
+          in
           (* create a fake procedure that initializes the global variable so that the variable
              initializer can be analyzed by the backend (eg, the SIOF checker) *)
           let procname =
             (* create the corresponding global variable to get the right pname for its
                initializer *)
             let global =
-              CVar_decl.mk_sil_global_var tenv trans_unit_ctx decl_info named_decl_info vdi None qt
+              CVar_decl.mk_sil_global_var tenv trans_unit_ctx decl_info named_decl_info vdi
+                template_args_opt qt
             in
-            (* safe to Option.get because it's a global *)
+            (* safe use of [Option.value_exn] because it's a global *)
             Option.value_exn (Pvar.get_initializer_pname global)
           in
           if

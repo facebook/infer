@@ -168,7 +168,7 @@ let has_block_attribute decl_info =
 let add_var_to_locals procdesc var_decl typ pvar =
   let open Clang_ast_t in
   match var_decl with
-  | VarDecl (decl_info, _, _, vdi) ->
+  | VarDecl (decl_info, _, _, vdi) | VarTemplateSpecializationDecl (_, decl_info, _, _, vdi) ->
       if not vdi.Clang_ast_t.vdi_is_global then
         let modify_in_block = has_block_attribute decl_info in
         let is_constexpr =

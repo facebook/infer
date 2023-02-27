@@ -305,18 +305,25 @@ let is_pod pvar = match pvar.pv_kind with Global_var {is_pod} -> is_pod | _ -> t
 
 let get_initializer_pname {pv_name; pv_kind} =
   match pv_kind with
-  | Global_var {translation_unit; is_static_global} ->
-      let name = Config.clang_initializer_prefix ^ Mangled.to_string_full pv_name in
-      if is_static_global then
-        match translation_unit with
-        | Some file ->
-            let mangled = SourceFile.to_string file |> Utils.string_crc_hex32 in
-            Procname.C
-              (Procname.C.c (QualifiedCppName.of_qual_string name) mangled [] Typ.NoTemplate)
-            |> Option.return
-        | None ->
-            None
-      else Some (Procname.from_string_c_fun name)
+  | Global_var {translation_unit; template_args; is_static_global} ->
+      let open IOption.Let_syntax in
+      let qual_name =
+        let plain_qual_name =
+          Config.clang_initializer_prefix ^ Mangled.to_string_full pv_name
+          |> QualifiedCppName.of_qual_string
+        in
+        if Typ.is_template_spec_info_empty template_args then plain_qual_name
+        else
+          let template_suffix = F.asprintf "%a" (Typ.pp_template_spec_info Pp.text) template_args in
+          QualifiedCppName.append_template_args_to_last plain_qual_name ~args:template_suffix
+      in
+      let+ mangled =
+        if is_static_global then
+          let+ file = translation_unit in
+          SourceFile.to_string file |> Utils.string_crc_hex32 |> Option.return
+        else Some None
+      in
+      Procname.C (Procname.C.c qual_name ?mangled [] template_args)
   | _ ->
       None
 

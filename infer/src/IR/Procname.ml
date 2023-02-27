@@ -472,9 +472,7 @@ module C = struct
     ; template_args: Typ.template_spec_info }
   [@@deriving compare, equal, yojson_of, sexp, hash]
 
-  let c name mangled parameters template_args =
-    {name; mangled= Some mangled; parameters; template_args}
-
+  let c name ?mangled parameters template_args = {name; mangled; parameters; template_args}
 
   let from_string name =
     { name= QualifiedCppName.of_qual_string name
