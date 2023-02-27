@@ -149,10 +149,10 @@ let run_proc_analysis exe_env ?caller_pname callee_pdesc =
     incr nesting ;
     let source_file = callee_attributes.ProcAttributes.translation_unit in
     update_taskbar (Some callee_pname) (Some source_file) ;
+    let initial_callee_summary = Summary.OnDisk.reset callee_pname in
     Preanal.do_preanalysis exe_env callee_pdesc ;
     if Config.debug_mode then
       DotCfg.emit_proc_desc callee_attributes.translation_unit callee_pdesc |> ignore ;
-    let initial_callee_summary = Summary.OnDisk.reset callee_pname in
     add_active callee_pname ;
     initial_callee_summary
   in
