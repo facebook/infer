@@ -678,3 +678,14 @@ void call_templated_func_specialized_string(
     const std::vector<std::string>& arg) {
   copy_in_header_bad(arg);
 }
+
+class FieldCopyClass {
+
+ public:
+  Arr my_arr1_;
+  Arr my_arr2_;
+
+  void set_field_ok(Arr arg) {
+    my_arr1_ = my_arr2_; // rhs is a field, we cannot suggest move
+  }
+};
