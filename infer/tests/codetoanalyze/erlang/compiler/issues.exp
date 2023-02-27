@@ -765,3 +765,9 @@ topl_taint:test_send5_Ok/0: ok
 topl_taint:test_send6_Bad/0: taint_error
 topl_taint:test_send7_Ok/0: ok
 
+----- topl_taint_genserver -----
+topl_taint_genserver:fn_test_genserver1_Bad/0: taint_error
+topl_taint_genserver:fn_test_genserver3_Bad/0: taint_error
+topl_taint_genserver:test_genserver2_Ok/0: ok
+topl_taint_genserver:test_genserver4_Ok/0: ok
+

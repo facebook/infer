@@ -1,0 +1,6 @@
+property Taint
+  message "a value returned by source/0 is sent as argument to sink/1"
+  prefix "topl_taint"
+  start -> start: *
+  start -> tracking: "source/0"(Ret) => x := Ret
+  tracking -> error: "sink/1"(Arg, VoidRet) when x == Arg
