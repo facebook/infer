@@ -65,7 +65,7 @@ val get_class_name_method_call_from_clang :
 
 val method_signature_of_pointer : Tenv.t -> Clang_ast_t.pointer -> CMethodSignature.t option
 
-val get_method_name_from_clang : Tenv.t -> CMethodSignature.t option -> Procname.t option
+val get_method_name_from_clang : CMethodSignature.t option -> Procname.t option
 
 val create_procdesc_with_pointer :
      ?is_cpp_lambda_call_operator:bool

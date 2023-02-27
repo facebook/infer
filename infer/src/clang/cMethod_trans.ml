@@ -30,19 +30,18 @@ let method_signature_of_pointer tenv pointer =
   with CFrontend_errors.Invalid_declaration -> None
 
 
-let get_method_name_from_clang tenv ms_opt =
+let get_method_name_from_clang ms_opt =
   match ms_opt with
   | Some ms -> (
     match CAst_utils.get_decl_opt ms.CMethodSignature.pointer_to_parent with
     | Some decl -> (
-        ignore (CType_decl.add_types_from_decl_to_tenv tenv decl) ;
-        match ObjcCategory_decl.get_base_class_name_from_category decl with
-        | Some class_typename ->
-            let procname = ms.CMethodSignature.name in
-            let new_procname = Procname.replace_class procname class_typename in
-            Some new_procname
-        | None ->
-            Some ms.CMethodSignature.name )
+      match ObjcCategory_decl.get_base_class_name_from_category decl with
+      | Some class_typename ->
+          let procname = ms.CMethodSignature.name in
+          let new_procname = Procname.replace_class procname class_typename in
+          Some new_procname
+      | None ->
+          Some ms.CMethodSignature.name )
     | None ->
         Some ms.CMethodSignature.name )
   | None ->

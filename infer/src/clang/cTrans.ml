@@ -27,7 +27,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       if is_instance then ClangMethodKind.OBJC_INSTANCE else ClangMethodKind.OBJC_CLASS
     in
     let proc_name =
-      match CMethod_trans.get_method_name_from_clang context.tenv callee_ms_opt with
+      match CMethod_trans.get_method_name_from_clang callee_ms_opt with
       | Some name ->
           name
       | None ->
