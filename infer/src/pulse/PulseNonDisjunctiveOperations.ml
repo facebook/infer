@@ -255,28 +255,32 @@ let add_copies_to_pvar_or_field tenv path location from args (astate_n, astate) 
           , astate' ) )
   | ((Lfield (_, field, _) as exp), copy_type) :: ((_, source_typ) :: _ as rest_args)
     when not (is_cheap_to_copy tenv copy_type) ->
-      let copied, astate, source_addr_typ_opt =
-        get_copied_and_source path rest_args location from astate
-      in
-      if is_copy_assigned_from_this ~from source_addr_typ_opt then
-        (* If source is copy assigned from a member field, we cannot suggest move as other procedures might access it. *)
-        None
-      else
-        let+ astate, copy_addr = try_eval path location exp astate in
-        let astate' =
-          Option.value_map source_addr_typ_opt ~default:astate
-            ~f:(fun (source_addr, source_expr, _) ->
-              AddressAttributes.add_one source_addr
-                (CopiedInto (IntoField {field; source_opt= Some source_expr}))
-                astate
-              |> AddressAttributes.add_one copy_addr
-                   (SourceOriginOfCopy
-                      {source= source_addr; is_const_ref= Typ.is_const_reference source_typ} ) )
-        in
-        ( NonDisjDomain.add_field field
-            ~source_opt:(Option.map source_addr_typ_opt ~f:snd3)
-            copied astate_n
-        , astate' )
+      (* NOTE: Before running get_copied_and_source, we need to evaluate exp first to update the decompiler map in the abstract state. *)
+      try_eval path location exp astate
+      |> Option.bind ~f:(fun (astate, copy_addr) ->
+             let copied, astate, source_addr_typ_opt =
+               get_copied_and_source path rest_args location from astate
+             in
+             if is_copy_assigned_from_this ~from source_addr_typ_opt then
+               (* If source is copy assigned from a member field, we cannot suggest move as other procedures might access it. *)
+               None
+             else
+               let astate' =
+                 Option.value_map source_addr_typ_opt ~default:astate
+                   ~f:(fun (source_addr, source_expr, _) ->
+                     AddressAttributes.add_one source_addr
+                       (CopiedInto (IntoField {field; source_opt= Some source_expr}))
+                       astate
+                     |> AddressAttributes.add_one copy_addr
+                          (SourceOriginOfCopy
+                             {source= source_addr; is_const_ref= Typ.is_const_reference source_typ}
+                          ) )
+               in
+               Some
+                 ( NonDisjDomain.add_field field
+                     ~source_opt:(Option.map source_addr_typ_opt ~f:snd3)
+                     copied astate_n
+                 , astate' ) )
   | _ ->
       None
 

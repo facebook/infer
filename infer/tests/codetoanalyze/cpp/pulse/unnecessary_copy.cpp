@@ -679,13 +679,27 @@ void call_templated_func_specialized_string(
   copy_in_header_bad(arg);
 }
 
+class NonTrivialCopyClass {
+
+ public:
+  NonTrivialCopyClass& operator=(const NonTrivialCopyClass& rhs) {
+    if (this == &rhs) {
+      return *this;
+    }
+    return *this;
+  }
+};
+
 class FieldCopyClass {
 
  public:
   Arr my_arr1_;
   Arr my_arr2_;
+  NonTrivialCopyClass nt_;
 
   void set_field_ok(Arr arg) {
     my_arr1_ = my_arr2_; // rhs is a field, we cannot suggest move
   }
+
+  void copy_assign_bad(NonTrivialCopyClass arg) { nt_ = arg; }
 };
