@@ -14,6 +14,12 @@ let is_view_controller tenv cls =
   && not (Typ.Name.equal cls_name uiviewcontroller)
 
 
+let is_init_view_controller procname =
+  Procname.is_objc_init procname
+  && not (String.equal (Procname.get_method procname) "initWithFuncTable:")
+  || String.is_suffix (Procname.get_method procname) ~suffix:"ViewControllerCreate"
+
+
 let lifecycle_methods =
   [ ("loadView", `NoArg)
   ; ("viewDidLoad", `NoArg)
@@ -59,12 +65,14 @@ let replace_calls tenv _ proc_desc =
     Ident.update_name_generator (Instrs.instrs_get_normal_vars instrs) ;
     let instrs =
       match (instr : Sil.instr) with
-      | Call ((ret_id, ret_typ), Const (Cfun callee), _, loc, _) when Procname.is_objc_init callee
+      | Call ((ret_id, ret_typ), Const (Cfun callee), _, loc, _) when is_init_view_controller callee
         -> (
-        match Procname.get_objc_class_name callee with
-        | Some cls when is_view_controller tenv cls ->
-            let cls_name = Typ.Name.Objc.from_string cls in
-            instr :: build_view_controller_methods tenv cls_name loc (Var ret_id, ret_typ)
+        match ret_typ.Typ.desc with
+        | Typ.Tptr ({desc= Tstruct cls}, _) ->
+            let cls_name = Typ.Name.name cls in
+            if is_view_controller tenv cls_name then
+              instr :: build_view_controller_methods tenv cls loc (Var ret_id, ret_typ)
+            else [instr]
         | _ ->
             [instr] )
       | _ ->
