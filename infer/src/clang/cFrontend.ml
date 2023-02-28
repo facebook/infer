@@ -41,6 +41,13 @@ let init_global_state_capture () =
   CFrontend_config.reset_block_counter ()
 
 
+let do_objc_preanalyses cfg tenv =
+  CAddImplicitDeallocImpl.process cfg tenv ;
+  CAddImplicitGettersSetters.process cfg tenv ;
+  CReplaceDynamicDispatch.process cfg ;
+  CViewControllerLifecycle.process cfg tenv
+
+
 let do_source_file (translation_unit_context : CFrontend_config.translation_unit_context) ast =
   let tenv = Tenv.create () in
   CType_decl.add_predefined_types tenv ;
@@ -50,10 +57,11 @@ let do_source_file (translation_unit_context : CFrontend_config.translation_unit
   L.(debug Capture Verbose)
     "@\n Start building call/cfg graph for '%a'....@\n" SourceFile.pp source_file ;
   let cfg = compute_icfg translation_unit_context tenv ast in
-  CAddImplicitDeallocImpl.process cfg tenv ;
-  CAddImplicitGettersSetters.process cfg tenv ;
-  CReplaceDynamicDispatch.process cfg ;
-  CViewControllerLifecycle.process cfg tenv ;
+  ( match translation_unit_context.CFrontend_config.lang with
+  | CFrontend_config.ObjC | CFrontend_config.ObjCPP ->
+      do_objc_preanalyses cfg tenv
+  | _ ->
+      () ) ;
   L.(debug Capture Verbose) "@\n End building call/cfg graph for '%a'.@\n" SourceFile.pp source_file ;
   SourceFiles.add source_file cfg (Tenv.FileLocal tenv) (Some integer_type_widths) ;
   if Config.debug_mode then Tenv.store_debug_file_for_source source_file tenv ;
