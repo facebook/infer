@@ -90,6 +90,10 @@ let prune_eq_zero v astate =
   prune_binop ~negated:false Eq (AbstractValueOperand v) literal_zero astate
 
 
+let prune_ne_zero v astate =
+  prune_binop ~negated:false Ne (AbstractValueOperand v) literal_zero astate
+
+
 let prune_positive v astate =
   prune_binop ~negated:false Gt (AbstractValueOperand v) literal_zero astate
 

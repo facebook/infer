@@ -367,6 +367,19 @@ module BasicString = struct
       PulseOperations.eval_access path Read location internal_string string_length_access astate
     in
     PulseOperations.write_id ret_id (length, Hist.add_event path event hist) astate
+
+
+  let address ~desc ptr_hist (idx, _) : model =
+   fun ({ret= ret_id, _} as model_env) astate ->
+    let astate_zero_idx =
+      let++ astate = PulseArithmetic.prune_eq_zero idx astate in
+      PulseOperations.write_id ret_id ptr_hist astate |> Basic.continue
+    in
+    let astate_non_zero_idx =
+      let<**> astate = PulseArithmetic.prune_ne_zero idx astate in
+      Basic.nondet ~desc model_env astate
+    in
+    SatUnsat.to_list astate_zero_idx @ astate_non_zero_idx
 end
 
 module Function = struct
@@ -672,8 +685,8 @@ let matchers : matcher list =
   ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> BasicString.length
   ; -"std" &:: "basic_string" &:: "substr" &--> Basic.nondet ~desc:"std::basic_string::substr"
   ; -"std" &:: "basic_string" &:: "size" &--> Basic.nondet ~desc:"std::basic_string::size"
-  ; -"std" &:: "basic_string" &:: "operator[]"
-    &--> Basic.nondet ~desc:"std::basic_string::operator[]"
+  ; -"std" &:: "basic_string" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> BasicString.address ~desc:"std::basic_string::operator[]"
   ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload $--> BasicString.destructor
   ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
     $+ capt_arg_payload_of_prim_typ char_ptr_typ

@@ -221,4 +221,14 @@ struct NonCopiableT {
 // we shouldn't report const-refable here since the type doesn't allow copies
 void non_copiable_ok(NonCopiableT t) { auto p = t.x; }
 
+void modify_string_ok(std::string s) {
+  char* p = &s[0];
+  *p = 'a';
+}
+
+// currently the model semantics cannot follow the pointer arithmetics precisely
+void modify_string2_ok_FP(std::string s) {
+  char* p = &s[3];
+  *p = 'a';
+}
 } // namespace const_refable
