@@ -227,8 +227,8 @@ let add_copies_to_pvar_or_field tenv path location from args (astate_n, astate) 
               (* case 1: we copy into a local variable that occurs in the code with a known source  *)
               Some (IntoVar {copied_var; source_opt= Some source_expr})
           | SourceExpr (((PVar pvar, _) as source_expr), _)
-            when not (Pvar.is_frontend_tmp pvar || Pvar.is_this pvar) ->
-              (* case 2: we copy into an intermediate that is not a field member/frontend temp and source is known. This is the case for intermediate copies of the pass by value arguments. *)
+            when not (Pvar.is_frontend_tmp pvar || Pvar.is_this pvar || Pvar.is_global pvar) ->
+              (* case 2: we copy into an intermediate that is not a field member/frontend temp/global and source is known. This is the case for intermediate copies of the pass by value arguments. *)
               Some (IntoIntermediate {copied_var; source_opt= Some source_expr})
           | Unknown _ when is_copy_into_local copied_var ->
               (* case 3: analogous to case 1 but source is an unknown call that is know no create a copy *)

@@ -707,6 +707,6 @@ class FieldCopyClass {
   }
 };
 
-void intermediate_copy_global_ok_FP() {
+void intermediate_copy_global_ok() {
   get_first_elem(global); // we cannot suggest moving global
 }
