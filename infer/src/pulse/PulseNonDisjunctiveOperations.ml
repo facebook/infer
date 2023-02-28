@@ -193,17 +193,17 @@ let continue_fold_map astates ~init ~f =
              (acc, ExecutionDomain.continue astate) ) )
 
 
-let is_this_source source_addr_typ_opt =
+let is_this_or_global_source source_addr_typ_opt =
   Option.exists source_addr_typ_opt ~f:(fun (_, source_expr, _) ->
       match source_expr with
       | DecompilerExpr.SourceExpr ((PVar pvar, _), _) ->
-          Pvar.is_this pvar
+          Pvar.is_this pvar || Pvar.is_global pvar
       | _ ->
           false )
 
 
-let is_copy_assigned_from_this ~from source_addr_typ_opt =
-  Attribute.CopyOrigin.equal from CopyAssignment && is_this_source source_addr_typ_opt
+let is_copy_assigned_from_this_or_global ~from source_addr_typ_opt =
+  Attribute.CopyOrigin.equal from CopyAssignment && is_this_or_global_source source_addr_typ_opt
 
 
 let add_copies_to_pvar_or_field tenv path location from args (astate_n, astate) =
@@ -217,8 +217,8 @@ let add_copies_to_pvar_or_field tenv path location from args (astate_n, astate) 
       in
       let* _, source_expr, _ = source_addr_typ_opt in
       let copy_into_opt : Attribute.CopiedInto.t option =
-        if is_copy_assigned_from_this ~from source_addr_typ_opt then
-          (* If source is copy assigned from a member field, we cannot suggest move as other procedures might access it. *)
+        if is_copy_assigned_from_this_or_global ~from source_addr_typ_opt then
+          (* If source is copy assigned from a member field/global, we cannot suggest move as other procedures might access it. *)
           None
         else
           (* order matters here  *)
@@ -261,8 +261,8 @@ let add_copies_to_pvar_or_field tenv path location from args (astate_n, astate) 
              let copied, astate, source_addr_typ_opt =
                get_copied_and_source path rest_args location from astate
              in
-             if is_copy_assigned_from_this ~from source_addr_typ_opt then
-               (* If source is copy assigned from a member field, we cannot suggest move as other procedures might access it. *)
+             if is_copy_assigned_from_this_or_global ~from source_addr_typ_opt then
+               (* If source is copy assigned from a member field/global, we cannot suggest move as other procedures might access it. *)
                None
              else
                let astate' =

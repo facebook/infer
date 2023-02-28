@@ -702,4 +702,11 @@ class FieldCopyClass {
   }
 
   void copy_assign_bad(NonTrivialCopyClass arg) { nt_ = arg; }
+  void copy_assign_from_global_ok() {
+    my_arr1_ = global; // rhs is a global, we cannot suggest move
+  }
 };
+
+void intermediate_copy_global_ok_FP() {
+  get_first_elem(global); // we cannot suggest moving global
+}
