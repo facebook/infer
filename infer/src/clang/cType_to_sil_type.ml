@@ -97,11 +97,15 @@ let add_protocols_to_desc tenv desc protocol_desc_list =
     | Tstruct (CStruct nm | ObjcClass nm) ->
         let objc_protocols = List.map ~f:CType.objc_classname_of_desc protocol_desc_list in
         let name = Typ.ObjcClass nm in
-        ignore (Tenv.mk_struct tenv name ~objc_protocols) ;
+        ( match Tenv.lookup tenv name with
+        | Some struct_typ ->
+            ignore (Tenv.mk_struct ~default:struct_typ tenv name ~objc_protocols)
+        | None ->
+            ignore (Tenv.mk_struct tenv name ~objc_protocols) ) ;
         let desc = Typ.Tstruct name in
         Logging.(debug Analysis Verbose)
-          "@.Found class with protocols, replacing the existing desc with %a.. \n"
-          (Typ.pp_desc Pp.text) desc ;
+          "@.Found class with protocols, desc with added protocols %a.. \n" (Typ.pp_desc Pp.text)
+          desc ;
         desc
     | Tptr (Typ.{desc; quals}, pkind) ->
         Typ.Tptr ({desc= add_nonempty_protocol desc; quals}, pkind)
