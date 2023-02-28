@@ -18,12 +18,3 @@ let get_methods (from_decl : CAst_utils.procname_from_decl) tenv decl_list =
         list_methods
   in
   List.fold_left ~f:get_method decl_list ~init:[]
-
-
-let add_missing_methods tenv class_tn_name missing_methods =
-  match Tenv.lookup tenv class_tn_name with
-  | Some ({methods} as struct_typ) ->
-      let new_methods = CGeneral_utils.append_no_duplicates_methods methods missing_methods in
-      ignore (Tenv.mk_struct tenv ~default:struct_typ ~methods:new_methods class_tn_name)
-  | _ ->
-      ()

@@ -19,8 +19,6 @@ val get_fields :
   -> Clang_ast_t.decl list
   -> field_type list
 
-val fields_superclass : Tenv.t -> Clang_ast_t.obj_c_interface_decl_info -> field_type list
-
-val add_missing_fields : Tenv.t -> QualifiedCppName.t -> field_type list -> unit
+val fields_superclass : Tenv.t -> Clang_ast_t.decl_ref option -> field_type list
 
 val modelled_field : Clang_ast_t.named_decl_info -> field_type list

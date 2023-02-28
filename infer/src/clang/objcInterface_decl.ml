@@ -16,21 +16,6 @@ open! IStd
 (* ObjectiveC doesn't have a notion of static or class fields. *)
 (* So, in this module we translate a class into a sil srtuct with an empty list of static fields.*)
 
-module L = Logging
-
-let get_super_interface_decl otdi_super =
-  match otdi_super with
-  | Some dr ->
-      Option.map ~f:CAst_utils.get_qualified_name dr.Clang_ast_t.dr_name
-  | _ ->
-      None
-
-
-let add_class_decl qual_type_to_sil_type tenv idi =
-  let decl_ref_opt = idi.Clang_ast_t.oidi_class_interface in
-  CAst_utils.add_type_from_decl_ref_opt qual_type_to_sil_type tenv decl_ref_opt true
-
-
 let add_super_class_decl qual_type_to_sil_type tenv ocdi =
   let decl_ref_opt = ocdi.Clang_ast_t.otdi_super in
   CAst_utils.add_type_from_decl_ref_opt qual_type_to_sil_type tenv decl_ref_opt false
@@ -49,69 +34,81 @@ let add_class_implementation qual_type_to_sil_type tenv idi =
   CAst_utils.add_type_from_decl_ref_opt qual_type_to_sil_type tenv decl_ref_opt false
 
 
-let create_supers_fields qual_type_to_sil_type tenv class_tname decl_list otdi_super =
+let get_supers otdi_super =
+  let get_super_interface_decl otdi_super =
+    match otdi_super with
+    | Some dr ->
+        Option.map ~f:CAst_utils.get_qualified_name dr.Clang_ast_t.dr_name
+    | _ ->
+        None
+  in
   let super_opt = get_super_interface_decl otdi_super in
-  let supers =
-    match super_opt with None -> [] | Some super -> [Typ.Name.Objc.from_qual_name super]
-  in
-  let implements_remodel_class =
-    Option.exists Typ.Name.Objc.remodel_class ~f:(fun remodel_class ->
-        Typ.Name.equal class_tname remodel_class
-        || List.exists supers ~f:(Tenv.implements_remodel_class tenv) )
-  in
-  let fields =
-    CField_decl.get_fields ~implements_remodel_class qual_type_to_sil_type tenv class_tname
-      decl_list
-  in
-  (supers, fields)
+  match super_opt with None -> [] | Some super -> [Typ.Name.Objc.from_qual_name super]
 
 
 let append_no_duplicates_typ_name =
   Staged.unstage (IList.append_no_duplicates ~cmp:Typ.Name.compare)
 
 
+let implements_remodel_class tenv class_tname supers =
+  Option.exists Typ.Name.Objc.remodel_class ~f:(fun remodel_class ->
+      Typ.Name.equal class_tname remodel_class
+      || List.exists supers ~f:(Tenv.implements_remodel_class tenv) )
+
+
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
 let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info name_info decl_list
-    ocidi =
+    ~super ~protocols ~is_impl =
   let class_name = CAst_utils.get_qualified_name name_info in
   let interface_name = Typ.Name.Objc.from_qual_name class_name in
   let interface_desc = Typ.Tstruct interface_name in
   let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
   CAst_utils.update_sil_types_map decl_key interface_desc ;
-  (* We don't need to add the methods of the superclass *)
-  let decl_supers, decl_fields =
-    create_supers_fields qual_type_to_sil_type tenv interface_name decl_list
-      ocidi.Clang_ast_t.otdi_super
-  in
-  let objc_protocols =
+  let new_objc_protocols =
     List.filter_map
       ~f:(fun dr ->
         Option.map dr.Clang_ast_t.dr_name ~f:(fun x ->
             CAst_utils.get_qualified_name x |> Typ.Name.Objc.from_qual_name ) )
-      ocidi.Clang_ast_t.otdi_protocols
+      protocols
   in
-  let fields_sc = CField_decl.fields_superclass tenv ocidi in
-  (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
-  let fields, (supers : Typ.Name.t list), methods =
-    match Tenv.lookup tenv interface_name with
-    | Some {fields; supers; methods} ->
-        ( CGeneral_utils.append_no_duplicates_fields decl_fields fields
-        , append_no_duplicates_typ_name decl_supers supers
-        , methods )
-    | _ ->
-        (decl_fields, decl_supers, [])
+  (* We don't need to add the methods of the superclass *)
+  let new_supers = get_supers super in
+  let implements_remodel_class = implements_remodel_class tenv interface_name new_supers in
+  let decl_fields =
+    CField_decl.get_fields ~implements_remodel_class qual_type_to_sil_type tenv interface_name
+      decl_list
   in
-  let fields = CGeneral_utils.append_no_duplicates_fields fields fields_sc in
+  let sc_fields = CField_decl.fields_superclass tenv super in
   let modelled_fields = CField_decl.modelled_field name_info in
-  let all_fields = CGeneral_utils.append_no_duplicates_fields modelled_fields fields in
-  let methods =
-    CGeneral_utils.append_no_duplicates_methods
-      (ObjcMethod_decl.get_methods procname_from_decl tenv decl_list)
-      methods
+  let new_fields =
+    CGeneral_utils.append_no_duplicates_fields decl_fields modelled_fields
+    |> CGeneral_utils.append_no_duplicates_fields sc_fields
   in
-  ignore
-    (Tenv.mk_struct tenv ~fields:all_fields ~supers ~objc_protocols ~methods
-       ~annots:Annot.Class.objc ~exported_objc_methods:methods interface_name ) ;
+  let new_methods = ObjcMethod_decl.get_methods procname_from_decl tenv decl_list in
+  let new_exported_objc_methods = if is_impl then [] else new_methods in
+  let _ =
+    (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
+    match Tenv.lookup tenv interface_name with
+    | Some struct_typ ->
+        let fields = CGeneral_utils.append_no_duplicates_fields struct_typ.fields new_fields in
+        let methods = CGeneral_utils.append_no_duplicates_methods struct_typ.methods new_methods in
+        let exported_objc_methods =
+          CGeneral_utils.append_no_duplicates_methods struct_typ.exported_objc_methods
+            new_exported_objc_methods
+        in
+        let supers = append_no_duplicates_typ_name new_supers struct_typ.supers in
+        let objc_protocols =
+          append_no_duplicates_typ_name new_objc_protocols struct_typ.objc_protocols
+        in
+        ignore
+          (Tenv.mk_struct tenv ~default:struct_typ ~fields ~supers ~objc_protocols ~methods
+             ~exported_objc_methods interface_name )
+    | None ->
+        ignore
+          (Tenv.mk_struct tenv ~fields:new_fields ~supers:new_supers
+             ~objc_protocols:new_objc_protocols ~methods:new_methods ~annots:Annot.Class.objc
+             ~exported_objc_methods:new_exported_objc_methods interface_name )
+  in
   interface_desc
 
 
@@ -122,7 +119,8 @@ let interface_declaration qual_type_to_sil_type procname_from_decl tenv decl =
   | ObjCInterfaceDecl (decl_info, name_info, decl_list, _, ocidi) ->
       let typ =
         add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info name_info
-          decl_list ocidi
+          decl_list ~super:ocidi.Clang_ast_t.otdi_super ~protocols:ocidi.Clang_ast_t.otdi_protocols
+          ~is_impl:false
       in
       add_class_implementation qual_type_to_sil_type tenv ocidi ;
       add_super_class_decl qual_type_to_sil_type tenv ocidi ;
@@ -138,23 +136,8 @@ let interface_declaration qual_type_to_sil_type procname_from_decl tenv decl =
 let interface_impl_declaration qual_type_to_sil_type procname_from_decl tenv decl =
   let open Clang_ast_t in
   match decl with
-  | ObjCImplementationDecl (decl_info, name_info, decl_list, _, idi) ->
-      let class_name = CAst_utils.get_qualified_name name_info in
-      L.(debug Capture Verbose)
-        "ADDING: ObjCImplementationDecl for class '%a'@\n" QualifiedCppName.pp class_name ;
-      add_class_decl qual_type_to_sil_type tenv idi ;
-      let class_tn_name = Typ.Name.Objc.from_qual_name class_name in
-      let implements_remodel_class = Tenv.implements_remodel_class tenv class_tn_name in
-      let fields =
-        CField_decl.get_fields ~implements_remodel_class qual_type_to_sil_type tenv class_tn_name
-          decl_list
-      in
-      CField_decl.add_missing_fields tenv class_name fields ;
-      let methods = ObjcMethod_decl.get_methods procname_from_decl tenv decl_list in
-      ObjcMethod_decl.add_missing_methods tenv class_tn_name methods ;
-      let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
-      let class_desc = Typ.Tstruct class_tn_name in
-      CAst_utils.update_sil_types_map decl_key class_desc ;
-      class_desc
+  | ObjCImplementationDecl (decl_info, name_info, decl_list, _, _) ->
+      add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info name_info decl_list
+        ~super:None ~protocols:[] ~is_impl:true
   | _ ->
       assert false

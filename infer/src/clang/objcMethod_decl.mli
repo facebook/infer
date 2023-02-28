@@ -9,5 +9,3 @@ open! IStd
 
 val get_methods :
   CAst_utils.procname_from_decl -> Tenv.t -> Clang_ast_t.decl list -> Procname.t list
-
-val add_missing_methods : Tenv.t -> Typ.name -> Procname.t list -> unit
