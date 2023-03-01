@@ -285,11 +285,9 @@ let never_return_null_matcher =
   fun proc_name source_file -> FileOrProcMatcher.matches matchers proc_name source_file
 
 
-let skip_translation_matcher =
-  let matchers =
-    FileOrProcMatcher.load_matchers (patterns_of_json_with_key Config.patterns_skip_translation)
-  in
-  fun proc_name source_file -> FileOrProcMatcher.matches matchers proc_name source_file
+let skip_file_translation_matcher =
+  FileOrProcMatcher.load_matchers (patterns_of_json_with_key Config.patterns_skip_translation)
+  |> fst
 
 
 let load_filters () =
