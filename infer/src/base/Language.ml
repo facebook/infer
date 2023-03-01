@@ -14,9 +14,6 @@ let language_to_string =
 
 let to_string lang = List.Assoc.find_exn language_to_string ~equal lang
 
-let of_string s = List.Assoc.find (List.Assoc.inverse language_to_string) ~equal:String.equal s
-
-(** Current language *)
 let curr_language = ref Clang
 
 let curr_language_is lang = equal !curr_language lang

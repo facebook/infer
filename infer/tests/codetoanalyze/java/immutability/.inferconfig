@@ -1,6 +1,5 @@
 {  "skip-translation": [
     {
-      "language": "Java",
       "source_contains": "@generated",
       "source_not_contains": "@Immutable"
     }
