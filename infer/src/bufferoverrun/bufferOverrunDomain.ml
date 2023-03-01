@@ -2525,19 +2525,18 @@ module MemReach = struct
       ; alias= Alias.remove_key key m.alias }
     in
     List.fold vars ~init:m ~f:(fun m var ->
-        if Var.is_pvar var then
-          Option.value_map (Var.get_pvar var) ~default:m ~f:(fun pvar ->
-              if Config.bo_exit_frontend_gener_vars && Pvar.is_frontend_tmp pvar then
-                let locs =
-                  expand_reachable_locs
-                    ~locs:(LocSet.singleton (Loc.of_pvar pvar))
-                    ~expand_ptrs_arrs:false m
-                in
-                LocSet.fold (fun l m -> remove l (KeyLhs.of_loc l) m) locs m
-              else m )
-        else
-          Option.value_map (Var.get_ident var) ~default:m ~f:(fun id ->
-              remove (Loc.of_id id) (KeyLhs.of_id id) m ) )
+        match (var : Var.t) with
+        | ProgramVar pvar ->
+            if Config.bo_exit_frontend_gener_vars && Pvar.is_frontend_tmp pvar then
+              let locs =
+                expand_reachable_locs
+                  ~locs:(LocSet.singleton (Loc.of_pvar pvar))
+                  ~expand_ptrs_arrs:false m
+              in
+              LocSet.fold (fun l m -> remove l (KeyLhs.of_loc l) m) locs m
+            else m
+        | LogicalVar id ->
+            remove (Loc.of_id id) (KeyLhs.of_id id) m )
 
 
   (* unsound *)
