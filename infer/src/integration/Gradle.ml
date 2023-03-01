@@ -131,6 +131,5 @@ let capture ~prog ~args =
   let time = Mtime_clock.counter () in
   run_infer_capture rev_target_data ;
   write_rev_infer_deps rev_target_data ;
-  ResultsDir.RunState.set_merge_capture true ;
   L.debug Capture Quiet "[GRADLE] infer processed %d lines in %a@\n" (String.Set.length processed)
     Mtime.Span.pp (Mtime_clock.count time)

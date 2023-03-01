@@ -46,7 +46,6 @@ let capture build_cmd =
     in
     L.debug Capture Quiet "Processed buck2 bxl command '%a'@\n" (Pp.seq F.pp_print_string)
       buck2_build_cmd ;
-    ResultsDir.RunState.set_merge_capture true ;
     let infer_deps_lines =
       Buck.wrap_buck_call ~extend_env:[] V2 ~label:"build" (prog :: buck2_build_cmd)
       |> List.fold ~init:[] ~f:(traverse ~root:Config.buck2_root)

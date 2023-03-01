@@ -1936,12 +1936,6 @@ and memtrace_sampling_rate =
     "Sampling rate for Memtrace allocation profiling. Default is 1e-6."
 
 
-and merge =
-  CLOpt.mk_bool ~deprecated:["merge"] ~long:"merge"
-    ~in_help:InferCommand.[(Analyze, manual_buck)]
-    "Merge the captured results directories specified in the dependency file."
-
-
 and merge_capture =
   CLOpt.mk_string_list ~deprecated:["-merge-infer-out"] ~long:"merge-capture"
     ~in_help:InferCommand.[(Capture, manual_generic)]
@@ -3802,8 +3796,6 @@ and max_nesting = !max_nesting
 and memtrace_analysis = !memtrace_analysis
 
 and memtrace_sampling_rate = Option.value_exn !memtrace_sampling_rate
-
-and merge = !merge
 
 and merge_capture = RevList.to_list !merge_capture
 

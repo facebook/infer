@@ -41,7 +41,6 @@ let capture build_cmd =
     in
     L.debug Capture Quiet "Processed buck2 command '%a'@\n" (Pp.seq F.pp_print_string)
       buck2_build_cmd ;
-    ResultsDir.RunState.set_merge_capture true ;
     if Config.keep_going && not Config.continue_capture then
       Process.create_process_and_wait ~prog ~args:["clean"] ;
     let build_report_file =

@@ -19,8 +19,7 @@ module RunState = struct
     ; results_dir_format=
         Printf.sprintf "db_filename: %s\ndb_schema: %s"
           (ResultsDirEntryName.get_path ~results_dir:"infer-out" AnalysisDB)
-          Database.schema_hum
-    ; should_merge_capture= false }
+          Database.schema_hum }
 
 
   let state : Runstate_t.t ref = ref state0
@@ -60,14 +59,6 @@ module RunState = struct
 
 
   let reset () = state := state0
-
-  let set_merge_capture onoff =
-    state := {!state with Runstate_t.should_merge_capture= onoff} ;
-    (* store change to the runstate *)
-    store ()
-
-
-  let get_merge_capture () = !state.Runstate_t.should_merge_capture
 
   let add_run_to_sequence () =
     let run =

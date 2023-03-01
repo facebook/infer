@@ -26,4 +26,4 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(INFER_BIN) $(INFER_OPTIONS) capture --buck-clang --results-dir $(CURDIR)/infer-out \
 	  @block_list.txt --buck-block-list '.*src/hello2\.c' \
 	  -- $(BUCK) build --no-cache $(BUCK_TARGET) &&\
-	$(INFER_BIN) $(INFER_OPTIONS) --merge analyze)
+	$(INFER_BIN) $(INFER_OPTIONS) analyze)

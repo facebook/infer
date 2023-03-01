@@ -996,10 +996,6 @@ OPTIONS
            Sampling rate for Memtrace allocation profiling. Default is 1e-6.       
     See also infer-analyze(1).
 
-       --merge
-           Activates: Merge the captured results directories specified in the
-           dependency file. (Conversely: --no-merge)           See also infer-analyze(1).
-
        --merge-capture +string
            Specifies an Infer results directory. The files and procedures
            captured in it will be merged together into the results directory

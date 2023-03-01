@@ -133,7 +133,7 @@ let check_xcpretty () =
 
 
 let capture ~changed_files mode =
-  if not (List.is_empty Config.merge_capture) then (
+  ( if not (List.is_empty Config.merge_capture) then (
     let expanded_args = Utils.inline_argument_files Config.merge_capture in
     let infer_deps_file = ResultsDir.get_path CaptureDependencies in
     List.map expanded_args ~f:(fun dir -> Printf.sprintf "-\t-\t%s" dir)
@@ -220,7 +220,20 @@ let capture ~changed_files mode =
         let db_files =
           CaptureCompilationDatabase.get_compilation_database_files_xcodebuild ~prog ~args
         in
-        CaptureCompilationDatabase.capture ~changed_files ~db_files
+        CaptureCompilationDatabase.capture ~changed_files ~db_files ) ;
+  let should_merge =
+    match mode with
+    | Buck2Clang _ | Buck2Java _ | BuckClangFlavor _ | BuckJavaFlavor _ | BxlClang _ | Gradle _ ->
+        true
+    | _ ->
+        not (List.is_empty Config.merge_capture)
+  in
+  if should_merge then (
+    if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
+    let root =
+      match mode with Buck2Clang _ | BxlClang _ -> Config.buck2_root | _ -> Config.project_root
+    in
+    MergeCapture.merge_captured_targets ~root )
 
 
 (* shadowed for tracing *)
@@ -308,21 +321,6 @@ let analyze_and_report ~changed_files mode =
         (true, true)
   in
   let should_analyze = should_analyze && Config.capture in
-  let should_merge =
-    match mode with
-    | _ when Config.merge || not (List.is_empty Config.merge_capture) ->
-        (* [--merge] overrides other behaviors *)
-        true
-    | Analyze | Buck2Clang _ | Buck2Java _ | BuckClangFlavor _ | BuckJavaFlavor _ | Gradle _ ->
-        ResultsDir.RunState.get_merge_capture ()
-    | _ ->
-        false
-  in
-  if should_merge then (
-    if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
-    let root = match mode with Buck2Clang _ -> Config.buck2_root | _ -> Config.project_root in
-    MergeCapture.merge_captured_targets ~root ;
-    ResultsDir.RunState.set_merge_capture false ) ;
   if should_analyze then
     if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
     else (

@@ -37,5 +37,4 @@ let capture build_cmd =
     Utils.with_file_out infer_deps ~f:(fun out_channel ->
         Out_channel.output_lines out_channel infer_deps_lines ) ;
     L.progress "Buck2/Java capture took %a.@." Mtime.Span.pp (Mtime_clock.count time0) ;
-    ResultsDir.RunState.set_merge_capture true ;
     ()

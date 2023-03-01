@@ -472,8 +472,6 @@ val memtrace_analysis : bool
 
 val memtrace_sampling_rate : float
 
-val merge : bool
-
 val merge_capture : string list
 
 val merge_report : string list
