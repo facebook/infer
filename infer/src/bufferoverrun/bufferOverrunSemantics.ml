@@ -411,24 +411,7 @@ let rec eval_sympath_partial ~mode params p mem =
         Mem.find (Loc.of_allocsite (Allocsite.make_symbol p)) mem
     | EvalPOCond | EvalPOReachability ->
         Val.Itv.top )
-  | BoField.(Prim (Symb.SymbolPath.Deref _)) ->
-      let locs = eval_locpath ~mode params p mem in
-      PowLoc.fold
-        (fun loc acc ->
-          Val.join
-            (let v = Mem.find loc mem in
-             if Val.is_default v then
-               (* There is no or default value for the dereference of a pointer in the abstract
-                  state of the caller. Create symbolic value representing the dereference.
-                  This makes it possible to import, e.g., the fact that "**A_Callee=2" for
-                  a pointer "*A_Caller" having an unknown value in the caller (A_Callee
-                  being a formal parameter of type pointer to pointer, A_Caller being an actual
-                  parameter of type pointer to pointer). *)
-               Mem.on_demand ~loc mem
-             else v )
-            acc )
-        locs Val.bot
-  | BoField.(Field _ | StarField _) ->
+  | BoField.(Field _ | StarField _ | Prim (Symb.SymbolPath.Deref _)) ->
       let locs = eval_locpath ~mode params p mem in
       Mem.find_set locs mem
 
@@ -454,9 +437,23 @@ and eval_locpath ~mode params p mem =
     match p with
     | BoField.Prim (Symb.SymbolPath.Pvar _ | Symb.SymbolPath.Callsite _) ->
         PowLoc.unknown
-    | BoField.Prim (Symb.SymbolPath.Deref (_, p)) ->
-        let v = eval_sympath_partial ~mode params p mem in
-        Val.get_all_locs v
+    | BoField.Prim (Symb.SymbolPath.Deref (deref_kind, p_base)) ->
+        let v = eval_sympath_partial ~mode params p_base mem in
+        if Val.is_unknown v then
+          (* The target of the pointer is unknown -> get the location representing the deref
+               symbolically. *)
+          let ptr_locs = eval_locpath ~mode params p_base mem in
+          let create_deref ptr_loc =
+            match Loc.get_path ptr_loc with
+            | None ->
+                Loc.unknown
+            | Some path ->
+                Loc.of_path (Symb.SymbolPath.deref ~deref_kind path)
+          in
+          PowLoc.fold
+            (fun ptr_loc ptr_locs -> PowLoc.add (create_deref ptr_loc) ptr_locs)
+            ptr_locs PowLoc.bot
+        else Val.get_all_locs v
     | BoField.Field {fn; prefix= p} ->
         let locs = eval_locpath ~mode params p mem in
         PowLoc.append_field ~fn locs

@@ -704,11 +704,9 @@ module Val = struct
             match typ_of_param_path path with
             | None -> (
               match typ with
-              | Some typ when Loc.is_global l ->
-                  L.d_printfln_escaped "Val.on_demand for %a -> global" Loc.pp l ;
-                  do_on_demand path typ
-              | Some typ when Typ.is_pointer_to_function typ ->
-                  L.d_printfln_escaped "Val.on_demand for %a -> function pointer" Loc.pp l ;
+              | Some typ ->
+                  L.d_printfln_escaped "Val.on_demand for %a -> typ=%a" Loc.pp l (Typ.pp Pp.text)
+                    typ ;
                   do_on_demand path typ
               | _ ->
                   L.d_printfln_escaped "Val.on_demand for %a -> no type" Loc.pp l ;
