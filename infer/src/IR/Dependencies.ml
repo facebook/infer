@@ -61,9 +61,8 @@ let record_pname_dep ?caller callee =
 
 
 let record_srcfile_dep src_file =
-  Option.iter !currently_under_analysis ~f:(fun pname ->
-      let deps, _ = Procname.Hash.find deps_in_progress pname in
-      SourceFile.HashSet.add src_file deps )
+  Option.bind !currently_under_analysis ~f:(Procname.Hash.find_opt deps_in_progress)
+  |> Option.iter ~f:(fun (deps, _) -> SourceFile.HashSet.add src_file deps)
 
 
 let clear () =
