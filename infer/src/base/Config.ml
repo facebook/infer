@@ -949,14 +949,6 @@ and capture =
     "capture and translate source files into infer's intermediate language for analysis"
 
 
-and capture_block_list =
-  CLOpt.mk_string_opt ~long:"capture-block-list" ~deprecated:["-capture-blacklist"]
-    ~in_help:InferCommand.[(Run, manual_java); (Capture, manual_java)]
-    ~meta:"regex"
-    "Skip capture of files matched by the specified OCaml regular expression (only supported by \
-     the javac integration for now)."
-
-
 and capture_textual =
   CLOpt.mk_path_list ~long:"capture-textual" ~meta:"path"
     "Generate a SIL program from a textual representation given in .sil files."
@@ -3501,8 +3493,6 @@ and capture_textual = RevList.to_list !capture_textual
 and capture_doli = RevList.to_list !capture_doli
 
 and parse_doli = !parse_doli
-
-and capture_block_list = !capture_block_list
 
 and cfg_json = !cfg_json
 

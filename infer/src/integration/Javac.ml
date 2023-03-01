@@ -113,16 +113,8 @@ let call_infer_javac_capture ~javac_args =
 
 
 let capture compiler ~prog ~args =
-  match (compiler, Config.capture_block_list) with
   (* Simulates Buck support for compilation commands with no source file *)
-  | _ when Config.buck_cache_mode && no_source_file args ->
-      ()
-  | Javac, Some block_list
-    when let re = Str.regexp block_list in
-         List.exists ~f:(fun arg -> Str.string_match re arg 0) args ->
-      ()
-  | _ ->
-      let verbose_out_file = compile compiler prog args in
-      if not (InferCommand.equal Config.command Compile) then
-        JMain.from_verbose_out verbose_out_file ;
-      if not Config.debug_mode then Unix.unlink verbose_out_file
+  if not (Config.buck_cache_mode && no_source_file args) then (
+    let verbose_out_file = compile compiler prog args in
+    if not (InferCommand.equal Config.command Compile) then JMain.from_verbose_out verbose_out_file ;
+    if not Config.debug_mode then Unix.unlink verbose_out_file )

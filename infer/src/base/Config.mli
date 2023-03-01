@@ -219,8 +219,6 @@ val buck_targets_block_list : string list
 
 val capture : bool
 
-val capture_block_list : string option
-
 val capture_textual : string list
 
 val capture_doli : string list

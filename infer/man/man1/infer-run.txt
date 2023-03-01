@@ -177,10 +177,6 @@ BUCK OPTIONS
 
        --buck2-root dir
            Specify the parent directory of buck-out (used only for buck2).
-JAVA OPTIONS
-       --capture-block-list regex
-           Skip capture of files matched by the specified OCaml regular
-           expression (only supported by the javac integration for now).
 
 
 ENVIRONMENT

@@ -328,10 +328,6 @@ JAVA OPTIONS
        --bootclasspath string
            Specify the Java bootclasspath
 
-       --capture-block-list regex
-           Skip capture of files matched by the specified OCaml regular
-           expression (only supported by the javac integration for now).
-
        --dependencies
            Activates: Translate all the dependencies during the capture. The
            classes in the given jar file will be translated. No sources

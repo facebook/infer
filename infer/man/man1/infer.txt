@@ -244,11 +244,6 @@ OPTIONS
            Activates: Enable bufferoverrun and disable all other checkers
            (Conversely: --no-bufferoverrun-only)           See also infer-analyze(1).
 
-       --capture-block-list regex
-           Skip capture of files matched by the specified OCaml regular
-           expression (only supported by the javac integration for now).       
-    See also infer-capture(1) and infer-run(1).
-
        --no-censor-report +issue_type_regex
            For debugging/experimentation only: Specify issues not to be
            censored by --censor-report.           See also infer-report(1) and infer-run(1).
