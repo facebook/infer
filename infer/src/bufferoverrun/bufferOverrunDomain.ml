@@ -232,24 +232,6 @@ module Val = struct
 
   let of_pow_loc ~traces powloc = {bot with powloc; traces}
 
-  let of_ptr_loc ?(traces = TraceSet.bottom) ~(ptr_loc_type : Typ.t) ptr_loc =
-    match Loc.get_path ptr_loc with
-    | None ->
-        default
-    | Some path ->
-        let deref_loc =
-          let deref_kind =
-            match ptr_loc_type.desc with
-            | Tptr (_, ptr_kind) ->
-                Symb.SymbolPath.get_deref_kind path ptr_kind
-            | _ ->
-                SPath.Deref_CPointer
-          in
-          AbsLoc.Loc.of_path (Symb.SymbolPath.deref ~deref_kind path)
-        in
-        {default with powloc= PowLoc.singleton deref_loc; arrayblk= ArrayBlk.bot; traces}
-
-
   let of_c_array_alloc :
       Allocsite.t -> stride:int option -> offset:Itv.t -> size:Itv.t -> traces:TraceSet.t -> t =
    fun allocsite ~stride ~offset ~size ~traces ->

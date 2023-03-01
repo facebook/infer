@@ -81,11 +81,6 @@ module Val : sig
 
   val of_literal_string : Typ.IntegerWidths.t -> string -> t
 
-  val of_ptr_loc : ?traces:BufferOverrunTrace.Set.t -> ptr_loc_type:Typ.t -> AbsLoc.Loc.t -> t
-  (** Create a value for a pointer pointing to a symbolic dereference of given location given the
-      type of the location. Return top if get_path returns None for loc (i.e., loc is LogicalVar or
-      Unknown or LiteralString Allocsite. *)
-
   val of_loc : ?traces:BufferOverrunTrace.Set.t -> AbsLoc.Loc.t -> t
   (** Create a value for a pointer pointing to x.*)
 
