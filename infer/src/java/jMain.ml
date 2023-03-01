@@ -87,7 +87,7 @@ let do_all_files sources program =
       Option.exists ~f:(fun re -> Str.string_match re path 0) Config.skip_analysis_in_path
     in
     is_path_matching (SourceFile.to_rel_path source_file)
-    || Inferconfig.skip_file_translation_matcher source_file
+    || Inferconfig.capture_block_list_file_matcher source_file
   in
   let translate_source_file basename package_opt source_file =
     if not (skip source_file) then do_source_file program tenv basename package_opt source_file

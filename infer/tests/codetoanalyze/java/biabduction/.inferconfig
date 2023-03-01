@@ -12,7 +12,7 @@
   "report-block-list-files-containing": [
     "@generated"
   ],
-  "skip-translation": [
+  "capture-block-list": [
     {
       "source_contains": "_SHOULD_BE_SKIPPED_"
     }

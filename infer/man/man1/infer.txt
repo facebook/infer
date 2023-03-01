@@ -244,6 +244,11 @@ OPTIONS
            Activates: Enable bufferoverrun and disable all other checkers
            (Conversely: --no-bufferoverrun-only)           See also infer-analyze(1).
 
+       --capture-block-list json
+           Matcher or list of matchers for names of files that should not be
+           captured, hence not analyzed either. Clang and Java only.       
+    See also infer-capture(1) and infer-run(1).
+
        --no-censor-report +issue_type_regex
            For debugging/experimentation only: Specify issues not to be
            censored by --censor-report.           See also infer-report(1) and infer-run(1).
@@ -1007,6 +1012,14 @@ OPTIONS
            Specifies an Infer results directory. The report summaries in all
            specified results directories will be merged together and
            deduplicated before reporting is done.           See also infer-report(1).
+
+       --modeled-expensive json
+           Matcher or list of matchers for methods that should be considered
+           expensive by the performance critical checker.           See also infer-analyze(1).
+
+       --never-returning-null json
+           [Java only, all analyses] Matcher or list of matchers for
+           functions that never return null.           See also infer-analyze(1), infer-capture(1), and infer-run(1).
 
        --no-parameter-not-null-checked
            Deactivates: checker parameter-not-null-checked: An

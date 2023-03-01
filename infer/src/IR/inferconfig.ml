@@ -275,19 +275,18 @@ let patterns_of_json_with_key (json_key, json) =
 
 
 let modeled_expensive_matcher =
-  OverridesMatcher.load_matcher (patterns_of_json_with_key Config.patterns_modeled_expensive)
+  OverridesMatcher.load_matcher (patterns_of_json_with_key Config.modeled_expensive)
 
 
 let never_return_null_matcher =
   let matchers =
-    FileOrProcMatcher.load_matchers (patterns_of_json_with_key Config.patterns_never_returning_null)
+    FileOrProcMatcher.load_matchers (patterns_of_json_with_key Config.never_returning_null)
   in
   fun proc_name source_file -> FileOrProcMatcher.matches matchers proc_name source_file
 
 
-let skip_file_translation_matcher =
-  FileOrProcMatcher.load_matchers (patterns_of_json_with_key Config.patterns_skip_translation)
-  |> fst
+let capture_block_list_file_matcher =
+  FileOrProcMatcher.load_matchers (patterns_of_json_with_key Config.capture_block_list) |> fst
 
 
 let load_filters () =

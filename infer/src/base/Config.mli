@@ -219,11 +219,11 @@ val buck_targets_block_list : string list
 
 val capture : bool
 
-val capture_textual : string list
+val capture_block_list : string * Yojson.Basic.t
 
 val capture_doli : string list
 
-val parse_doli : string option
+val capture_textual : string list
 
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
@@ -478,7 +478,11 @@ val merge_report_summaries : string list
 
 val method_decls_info : string option
 
+val modeled_expensive : string * Yojson.Basic.t
+
 val modified_lines : string option
+
+val never_returning_null : string * Yojson.Basic.t
 
 val no_censor_report : Str.regexp list
 
@@ -502,11 +506,7 @@ val oom_threshold : int option
 
 val only_cheap_debug : bool
 
-val patterns_modeled_expensive : string * Yojson.Basic.t
-
-val patterns_never_returning_null : string * Yojson.Basic.t
-
-val patterns_skip_translation : string * Yojson.Basic.t
+val parse_doli : string option
 
 val pmd_xml : bool
 

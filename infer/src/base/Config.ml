@@ -949,9 +949,15 @@ and capture =
     "capture and translate source files into infer's intermediate language for analysis"
 
 
-and capture_textual =
-  CLOpt.mk_path_list ~long:"capture-textual" ~meta:"path"
-    "Generate a SIL program from a textual representation given in .sil files."
+and capture_block_list =
+  let long = "capture-block-list" in
+  ( long
+  , CLOpt.mk_json
+      ~deprecated:["skip_translation"; "-skip-translation"]
+      ~long
+      ~in_help:InferCommand.[(Capture, manual_generic); (Run, manual_generic)]
+      "Matcher or list of matchers for names of files that should not be captured, hence not \
+       analyzed either. Clang and Java only." )
 
 
 and capture_doli =
@@ -959,9 +965,9 @@ and capture_doli =
     "Generate a SIL program from doli representations given in .doli files."
 
 
-and parse_doli =
-  CLOpt.mk_path_opt ~long:"parse-doli" ~meta:"path"
-    "Perform parsing on given a .doli file -- no checks on textual, no capture."
+and capture_textual =
+  CLOpt.mk_path_list ~long:"capture-textual" ~meta:"path"
+    "Generate a SIL program from a textual representation given in .sil files."
 
 
 and cfg_json =
@@ -1957,10 +1963,29 @@ and method_decls_info =
      method name, etc.) when Infer is run Test Determinator mode with $(b,--test-determinator)."
 
 
+and modeled_expensive =
+  let long = "modeled-expensive" in
+  ( long
+  , CLOpt.mk_json ~deprecated:["modeled_expensive"] ~long
+      ~in_help:InferCommand.[(Analyze, manual_generic)]
+      "Matcher or list of matchers for methods that should be considered expensive by the \
+       performance critical checker." )
+
+
 and modified_lines =
   CLOpt.mk_path_opt ~long:"modified-lines"
     "Specifies the file containing the modified lines when Infer is run Test Determinator mode \
      with $(b,--test-determinator)."
+
+
+and never_returning_null =
+  let long = "never-returning-null" in
+  ( long
+  , CLOpt.mk_json ~deprecated:["never_returning_null"] ~long
+      ~in_help:
+        InferCommand.[(Analyze, manual_generic); (Capture, manual_generic); (Run, manual_generic)]
+      "[Java only, all analyses] Matcher or list of matchers for functions that never return \
+       $(i,null)." )
 
 
 and no_censor_report =
@@ -2022,26 +2047,9 @@ and oom_threshold =
      Only for use on Linux."
 
 
-and patterns_modeled_expensive =
-  let long = "modeled-expensive" in
-  ( long
-  , CLOpt.mk_json ~deprecated:["modeled_expensive"] ~long
-      "Matcher or list of matchers for methods that should be considered expensive by the \
-       performance critical checker." )
-
-
-and patterns_never_returning_null =
-  let long = "never-returning-null" in
-  ( long
-  , CLOpt.mk_json ~deprecated:["never_returning_null"] ~long
-      "Matcher or list of matchers for functions that never return $(i,null)." )
-
-
-and patterns_skip_translation =
-  let long = "skip-translation" in
-  ( long
-  , CLOpt.mk_json ~deprecated:["skip_translation"] ~long
-      "Matcher or list of matchers for names of files that should not be analyzed at all." )
+and parse_doli =
+  CLOpt.mk_path_opt ~long:"parse-doli" ~meta:"path"
+    "Perform parsing on given a .doli file -- no checks on textual, no capture."
 
 
 and pmd_xml =
@@ -3488,13 +3496,11 @@ and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 
 and capture = !capture
 
-and capture_textual = RevList.to_list !capture_textual
+and capture_block_list = match capture_block_list with k, r -> (k, !r)
 
 and capture_doli = RevList.to_list !capture_doli
 
-and parse_doli = !parse_doli
-
-and cfg_json = !cfg_json
+and capture_textual = RevList.to_list !capture_textual
 
 and censor_report =
   RevList.rev_map !censor_report ~f:(fun str ->
@@ -3510,6 +3516,8 @@ and censor_report =
       | _ ->
           L.(die UserError) "Ill-formed report filter: %s" str )
 
+
+and cfg_json = !cfg_json
 
 and changed_files_index = !changed_files_index
 
@@ -3795,7 +3803,11 @@ and merge_report_summaries = RevList.to_list !merge_report_summaries
 
 and method_decls_info = !method_decls_info
 
+and modeled_expensive = match modeled_expensive with k, r -> (k, !r)
+
 and modified_lines = !modified_lines
+
+and never_returning_null = match never_returning_null with k, r -> (k, !r)
 
 and no_censor_report = RevList.rev_map !no_censor_report ~f:Str.regexp
 
@@ -3825,11 +3837,7 @@ and oom_threshold = !oom_threshold
 
 and only_cheap_debug = !only_cheap_debug
 
-and patterns_modeled_expensive = match patterns_modeled_expensive with k, r -> (k, !r)
-
-and patterns_never_returning_null = match patterns_never_returning_null with k, r -> (k, !r)
-
-and patterns_skip_translation = match patterns_skip_translation with k, r -> (k, !r)
+and parse_doli = !parse_doli
 
 and pmd_xml = !pmd_xml
 

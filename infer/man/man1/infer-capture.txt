@@ -27,6 +27,10 @@ DESCRIPTION
 
 
 OPTIONS
+       --capture-block-list json
+           Matcher or list of matchers for names of files that should not be
+           captured, hence not analyzed either. Clang and Java only.
+
        --cfg-json file
            Path to CFG json file
 
@@ -97,6 +101,10 @@ OPTIONS
            captured in it will be merged together into the results directory
            specified with -o. Relative paths are interpreted as relative to
            project-root/buck-out.
+
+       --never-returning-null json
+           [Java only, all analyses] Matcher or list of matchers for
+           functions that never return null.
 
        --print-logs
            Activates: Also log messages to stdout and stderr (Conversely:

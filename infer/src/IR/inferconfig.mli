@@ -23,6 +23,6 @@ val create_filters : unit -> filters
 
 val never_return_null_matcher : SourceFile.t -> Procname.t -> bool
 
-val skip_file_translation_matcher : SourceFile.t -> bool
+val capture_block_list_file_matcher : SourceFile.t -> bool
 
 val modeled_expensive_matcher : (string -> bool) -> Procname.t -> bool
