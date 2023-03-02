@@ -34,8 +34,6 @@ let freeze pname deps =
   match deps with
   | Partial _ ->
       let srcfile_deps, pname_deps = Procname.Hash.find deps_in_progress pname in
-      (* Remove recorded dependencies for this [pname] to save memory, since they are read at most once. *)
-      Procname.Hash.remove deps_in_progress pname ;
       let callees = Iter.to_list (Procname.HashSet.iter pname_deps) in
       let used_tenv_sources = Iter.to_list (SourceFile.HashSet.iter srcfile_deps) in
       {callees; used_tenv_sources}
