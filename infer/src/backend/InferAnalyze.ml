@@ -148,6 +148,12 @@ let get_source_files_to_analyze ~changed_files =
     result
   in
   let source_files_to_analyze = SourceFiles.get_all ~filter () in
+  if not Config.incremental_analysis then
+    (* write to Scuba a list of files analyzed by this non-incremental analysis, to compute some
+       statistics on how frequently files are analyzed vs. modified *)
+    ScubaLogging.log_many
+    @@ List.map source_files_to_analyze ~f:(fun file ->
+           LogEntry.mk_string ~label:"analyzed_file" ~message:(SourceFile.to_rel_path file) ) ;
   ScubaLogging.log_count ~label:"source_files_to_analyze" ~value:!n_source_files_to_analyze ;
   let pp_n_source_files ~n_total fmt n_to_analyze =
     let pp_total_if_not_all fmt n_total =
