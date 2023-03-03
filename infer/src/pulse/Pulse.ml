@@ -967,26 +967,16 @@ module PulseTransferFunctions = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
 end
 
-module Out = struct
-  let channel_ref = ref None
+let summary_count_channel =
+  lazy
+    (let output_dir = Filename.concat Config.results_dir "pulse" in
+     Unix.mkdir_p output_dir ;
+     let filename = Format.asprintf "pulse-summary-count-%a.txt" Pid.pp (Unix.getpid ()) in
+     let channel = Filename.concat output_dir filename |> Out_channel.create in
+     let close_channel () = Out_channel.close_no_err channel in
+     Epilogues.register ~f:close_channel ~description:"close summary_count_channel for Pulse" ;
+     channel )
 
-  let channel () =
-    let output_dir = Filename.concat Config.results_dir "pulse" in
-    Unix.mkdir_p output_dir ;
-    match !channel_ref with
-    | None ->
-        let filename = Format.asprintf "pulse-summary-count-%a.txt" Pid.pp (Unix.getpid ()) in
-        let channel = Filename.concat output_dir filename |> Out_channel.create in
-        let close_channel () =
-          Option.iter !channel_ref ~f:Out_channel.close_no_err ;
-          channel_ref := None
-        in
-        Epilogues.register ~f:close_channel ~description:"close output channel for Pulse" ;
-        channel_ref := Some channel ;
-        channel
-    | Some channel ->
-        channel
-end
 
 module DisjunctiveAnalyzer =
   AbstractInterpreter.MakeDisjunctive
@@ -1045,6 +1035,22 @@ let exit_function analysis_data location posts non_disj_astate =
             (PulseTransferFunctions.remove_vars vars location astates @ acc_astates, astate_n) )
   in
   (List.rev astates, astate_n)
+
+
+let log_summary_count proc_name summary =
+  let counts =
+    let summary_kinds = List.map ~f:ExecutionDomain.to_name summary in
+    let map =
+      let incr_or_one val_opt = match val_opt with Some v -> v + 1 | None -> 1 in
+      let update acc s = String.Map.update acc s ~f:incr_or_one in
+      List.fold summary_kinds ~init:String.Map.empty ~f:update
+    in
+    let alist = List.map ~f:(fun (s, i) -> (s, `Int i)) (String.Map.to_alist map) in
+    let pname = F.asprintf "%a" Procname.pp_verbose proc_name in
+    `Assoc (("procname", `String pname) :: alist)
+  in
+  Yojson.Basic.to_channel (Lazy.force summary_count_channel) counts ;
+  Out_channel.output_char (Lazy.force summary_count_channel) '\n'
 
 
 let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
@@ -1109,13 +1115,11 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
           !PulseTopl.Debug.dropped_disjuncts_count
           Procname.pp_unique_id
           (Procdesc.get_proc_name proc_desc) ;
-      if Config.pulse_scuba_logging then
-        ScubaLogging.log_count ~label:"pulse_summary" ~value:(List.length summary) ;
       let summary_count = List.length summary in
+      if Config.pulse_scuba_logging then
+        ScubaLogging.log_count ~label:"pulse_summary" ~value:summary_count ;
       Stats.add_pulse_summaries_count summary_count ;
-      ( if Config.pulse_log_summary_count then
-        let name = F.asprintf "%a" Procname.pp_verbose proc_name in
-        Printf.fprintf (Out.channel ()) "%s summaries: %d\n" name summary_count ) ;
+      if Config.pulse_log_summary_count then log_summary_count proc_name summary ;
       Some summary
     in
     let exn_sink_node_opt = Procdesc.get_exn_sink proc_desc in

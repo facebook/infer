@@ -38,3 +38,5 @@ val continue : AbductiveDomain.t -> t
 type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojson_of]
 
 val pp_summary : F.formatter -> summary -> unit
+
+val to_name : 'a base_t -> string

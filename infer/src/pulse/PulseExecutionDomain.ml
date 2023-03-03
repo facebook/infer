@@ -28,7 +28,7 @@ type 'abductive_domain_t base_t =
       ; address: DecompilerExpr.t
       ; must_be_valid: (Trace.t * Invalidation.must_be_valid_reason option[@yojson.opaque])
       ; calling_context: ((CallEvent.t * Location.t) list[@yojson.opaque]) }
-[@@deriving equal, compare, yojson_of]
+[@@deriving equal, compare, yojson_of, variants]
 
 type t = AbductiveDomain.t base_t
 
@@ -108,3 +108,6 @@ let exceptional_to_normal : t -> t = function
       ContinueProgram astate
   | x ->
       x
+
+
+let to_name = Variants_of_base_t.to_name
