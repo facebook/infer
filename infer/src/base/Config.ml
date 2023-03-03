@@ -944,6 +944,13 @@ and buck_targets_block_list =
     ~meta:"regex" "Skip capture of buck targets matched by the specified regular expression."
 
 
+and bxl_file_capture =
+  CLOpt.mk_bool ~long:"bxl-file-capture" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Given an $(b, --changed-file-index) file, capture the owning buck2 targets and their \
+     dependencies using the BXL script specified by $(b, --buck2_bxl_target)."
+
+
 and capture =
   CLOpt.mk_bool ~long:"capture" ~default:true
     "capture and translate source files into infer's intermediate language for analysis"
@@ -3493,6 +3500,8 @@ and buck_mode : BuckMode.t option =
 and buck2_root = match !buck2_root with Some root -> root | None -> !project_root
 
 and buck_targets_block_list = RevList.to_list !buck_targets_block_list
+
+and bxl_file_capture = !bxl_file_capture
 
 and capture = !capture
 

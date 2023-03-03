@@ -8,4 +8,8 @@
 open! IStd
 
 val capture : string list -> unit
-(** do a buck2/clang capture given the prog and build command (buck args) *)
+(** do a bxl/clang capture given the prog and build command (buck args) *)
+
+val file_capture : unit -> unit
+(** do a bxl/clang capture of owning targets of files in $(b, changed-files-index) and their
+    dependencies. *)

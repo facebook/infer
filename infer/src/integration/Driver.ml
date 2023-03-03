@@ -23,6 +23,7 @@ type mode =
   | BuckGenrule of {prog: string}
   | BuckJavaFlavor of {build_cmd: string list}
   | BxlClang of {build_cmd: string list}
+  | BxlClangFile
   | Clang of {compiler: Clang.compiler; prog: string; args: string list}
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
   | Gradle of {prog: string; args: string list}
@@ -63,6 +64,8 @@ let pp_mode fmt = function
       F.fprintf fmt "BuckJavaFlavor driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | BxlClang {build_cmd} ->
       F.fprintf fmt "BxlClang driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
+  | BxlClangFile ->
+      F.fprintf fmt "BxlClang file driver mode"
   | Clang {prog; args} ->
       F.fprintf fmt "Clang driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | ClangCompilationDB _ ->
@@ -173,6 +176,9 @@ let capture ~changed_files mode =
     | BxlClang {build_cmd} ->
         L.progress "Capturing in bxl/clang mode...@." ;
         BxlClang.capture build_cmd
+    | BxlClangFile ->
+        L.progress "Capturing in bxl/clang file mode...@." ;
+        BxlClang.file_capture ()
     | Clang {compiler; prog; args} ->
         if Config.is_originator then L.progress "Capturing in make/cc mode...@." ;
         Clang.capture compiler ~prog ~args
@@ -223,7 +229,13 @@ let capture ~changed_files mode =
         CaptureCompilationDatabase.capture ~changed_files ~db_files ) ;
   let should_merge =
     match mode with
-    | Buck2Clang _ | Buck2Java _ | BuckClangFlavor _ | BuckJavaFlavor _ | BxlClang _ | Gradle _ ->
+    | Buck2Clang _
+    | Buck2Java _
+    | BuckClangFlavor _
+    | BuckJavaFlavor _
+    | BxlClang _
+    | BxlClangFile
+    | Gradle _ ->
         true
     | _ ->
         not (List.is_empty Config.merge_capture)
@@ -231,7 +243,11 @@ let capture ~changed_files mode =
   if should_merge then (
     if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
     let root =
-      match mode with Buck2Clang _ | BxlClang _ -> Config.buck2_root | _ -> Config.project_root
+      match mode with
+      | Buck2Clang _ | BxlClang _ | BxlClangFile ->
+          Config.buck2_root
+      | _ ->
+          Config.project_root
     in
     MergeCapture.merge_captured_targets ~root )
 
@@ -440,6 +456,8 @@ let assert_supported_build_system build_system =
 
 let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   match build_cmd with
+  | [] when Config.bxl_file_capture ->
+      BxlClangFile
   | [] -> (
       let textualfiles, dolifiles = (Config.capture_textual, Config.capture_doli) in
       match (Config.clang_compilation_dbs, textualfiles, dolifiles) with

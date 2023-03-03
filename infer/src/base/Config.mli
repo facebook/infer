@@ -217,6 +217,8 @@ val buck2_root : string
 
 val buck_targets_block_list : string list
 
+val bxl_file_capture : bool
+
 val capture : bool
 
 val capture_block_list : string * Yojson.Basic.t

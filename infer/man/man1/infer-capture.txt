@@ -221,6 +221,12 @@ BUCK OPTIONS
            Activates: Use BXL script when capturing with buck2. (Conversely:
            --no-buck2-use-bxl)
 
+       --bxl-file-capture
+           Activates: Given an --changed-file-index file, capture the owning
+           buck2 targets and their dependencies using the BXL script
+           specified by --buck2_bxl_target. (Conversely:
+           --no-bxl-file-capture)
+
        --Xbuck +string
            Pass values as command-line arguments to invocations of `buck
            build`. Only valid for --buck-clang.
