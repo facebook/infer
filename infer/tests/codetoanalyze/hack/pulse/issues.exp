@@ -1,1 +1,3 @@
+cross_file_taint_flow.hack, directCrossFileFlowBad, 2, TAINT_ERROR, no_bucket, ERROR, [source of the taint here: value returned from taintSource with kind Simple,passed as argument #1 to taintSink with kind Simple]
+cross_file_taint_flow.hack, indirectCrossFileFlowBad, 2, TAINT_ERROR, no_bucket, ERROR, [in call to `tainted`,source of the taint here: value returned from taintSource with kind Simple,return from call to `tainted`,passed as argument #1 to taintSink with kind Simple]
 level1.hack, basicFlowBad, 2, TAINT_ERROR, no_bucket, ERROR, [source of the taint here: value returned from taintSource with kind Simple,passed as argument #1 to taintSink with kind Simple]
