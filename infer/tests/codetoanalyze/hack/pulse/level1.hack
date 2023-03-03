@@ -10,7 +10,7 @@ function taintSource(): int {
 function taintSink(int $i): void {
 }
 
-function FN_basicFlowBad(): void {
+function basicFlowBad(): void {
   $tainted = taintSource();
   taintSink($tainted);
 }
