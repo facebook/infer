@@ -23,4 +23,6 @@ module Lexbuf : sig
   val with_tokenizer : (lexbuf -> 'a) -> lexbuf -> unit -> 'a * Lexing.position * Lexing.position
 end
 
-val mainlex : lexbuf -> CombinedMenhir.token
+val textual_mainlex : lexbuf -> CombinedMenhir.token
+
+val doli_mainlex : lexbuf -> CombinedMenhir.token

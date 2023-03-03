@@ -10,7 +10,7 @@ module L = Logging
 
 let parse_buf (filebuf : CombinedLexer.lexbuf) =
   try
-    let lexer = CombinedLexer.Lexbuf.with_tokenizer CombinedLexer.mainlex filebuf in
+    let lexer = CombinedLexer.Lexbuf.with_tokenizer CombinedLexer.doli_mainlex filebuf in
     let doliProgram =
       MenhirLib.Convert.Simplified.traditional2revised CombinedMenhir.doliProgram lexer
     in

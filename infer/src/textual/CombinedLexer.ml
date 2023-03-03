@@ -25,7 +25,7 @@ let lex_error (lexbuf : Sedlexing.lexbuf) =
   raise (LexingError (Textual.Location.known ~line ~col, token))
 
 
-let keywords =
+let textual_keywords =
   CombinedMenhir.
     [ ("declare", DECLARE)
     ; ("define", DEFINE)
@@ -45,34 +45,39 @@ let keywords =
     ; ("true", TRUE)
     ; ("type", TYPE)
     ; ("unreachable", UNREACHABLE)
-    ; ("void", VOID)
-    ; ("under", UNDER) (* the below are Doli-specific keywords *)
-    ; ("rule", RULE)
-    ; ("in", IN)
-    ; ("match", MATCH)
-    ; ("body", BODYKW)
-    ; ("Java", JAVA)
-    ; ("ObjectiveC", OBJC)
-    ; ("byte", BYTE) (* the below are Doli basic types *)
-    ; ("short", SHORT)
-    ; ("char", CHAR)
-    ; ("long", LONG)
-    ; ("double", DOUBLE)
-    ; ("boolean", BOOLEAN)
-    ; ("public", PUBLIC) (* the below are Doli Java modifiers and throws *)
-    ; ("protected", PROTECTED)
-    ; ("private", PRIVATE)
-    ; ("static", STATIC)
-    ; ("abstract", ABSTRACT)
-    ; ("final", FINAL)
-    ; ("native", NATIVE)
-    ; ("throws", THROWS)
-    ; ("super", SUPER) (* the below are Doli generics *)
-    ; ("objCSignStub", OBJCSIGNSTUB)
-      (* above is a Doli singature stub -- eventually will be replaced and removed *) ]
+    ; ("void", VOID) ]
 
 
-let keywords = Map.of_alist_exn (module String) keywords
+let doli_keywords =
+  textual_keywords
+  @ CombinedMenhir.
+      [ ("under", UNDER) (* the below are Doli-specific keywords *)
+      ; ("rule", RULE)
+      ; ("in", IN)
+      ; ("match", MATCH)
+      ; ("body", BODYKW)
+      ; ("Java", JAVA)
+      ; ("ObjectiveC", OBJC)
+      ; ("byte", BYTE) (* the below are Doli basic types *)
+      ; ("short", SHORT)
+      ; ("char", CHAR)
+      ; ("long", LONG)
+      ; ("double", DOUBLE)
+      ; ("boolean", BOOLEAN)
+      ; ("public", PUBLIC) (* the below are Doli Java modifiers and throws *)
+      ; ("protected", PROTECTED)
+      ; ("private", PRIVATE)
+      ; ("static", STATIC)
+      ; ("abstract", ABSTRACT)
+      ; ("final", FINAL)
+      ; ("native", NATIVE)
+      ; ("throws", THROWS)
+      ; ("super", SUPER) (* the below are Doli generics *)
+      ; ("objCSignStub", OBJCSIGNSTUB)
+        (* above is a Doli singature stub -- eventually will be replaced and removed *) ]
+
+
+let keywords_of_list l = Map.of_alist_exn (module String) l
 
 let digit = [%sedlex.regexp? '0' .. '9']
 
@@ -109,89 +114,95 @@ let floating_point_literal =
   [%sedlex.regexp? Opt sign, (digits, ".", Opt digits, Opt exponent_part | digits, exponent_part)]
 
 
-let rec mainlex (lexbuf : Sedlexing.lexbuf) =
-  let open CombinedMenhir in
-  match%sedlex lexbuf with
-  | Plus white_space ->
-      mainlex lexbuf
-  | "//", Star (Compl (Chars "\r\n")) ->
-      mainlex lexbuf
-  | "/*" ->
-      comment lexbuf
-  | "&" ->
-      AMPERSAND
-  | "<-" ->
-      ASSIGN
-  | ":" ->
-      COLON
-  | "," ->
-      COMMA
-  | "." ->
-      DOT
-  | "..." ->
-      ELLIPSIS
-  | "=" ->
-      EQ
-  | "<" ->
-      LABRACKET
-  | "{" ->
-      LBRACKET
-  | "(" ->
-      LPAREN
-  | "[" ->
-      LSBRACKET
-  | "!" ->
-      NOT
-  | ">" ->
-      RABRACKET
-  | "}" ->
-      RBRACKET
-  | ")" ->
-      RPAREN
-  | "]" ->
-      RSBRACKET
-  | ";" ->
-      SEMICOLON
-  | "*" ->
-      STAR
-  | "?" ->
-      QUESTION
-  | ".handlers" ->
-      HANDLERS
-  | floating_point_literal -> (
-      let f = Lexbuf.lexeme lexbuf in
-      match float_of_string_opt f with Some f -> FLOATINGPOINT f | None -> lex_error lexbuf )
-  | integer_literal -> (
-      let i = Lexbuf.lexeme lexbuf in
-      match Z.of_string i with i -> INTEGER i | exception Invalid_argument _ -> lex_error lexbuf )
-  | "n", integer_literal -> (
-      let lxm = Lexbuf.lexeme lexbuf in
-      let i = String.subo ~pos:1 lxm in
-      match int_of_string_opt i with Some i -> LOCAL i | None -> lex_error lexbuf )
-  | "#", ident ->
-      let lxm = Lexbuf.lexeme lexbuf in
-      LABEL (String.subo ~pos:1 lxm)
-  | ident ->
-      let lxm = Lexbuf.lexeme lexbuf in
-      Option.value ~default:(IDENT lxm) (Map.find keywords lxm)
-  | '"', Star (Compl '"'), '"' ->
-      let lxm = Lexbuf.lexeme lexbuf in
-      STRING (String.sub ~pos:1 ~len:(String.length lxm - 2) lxm)
-  | eof ->
-      EOF
-  | any ->
-      lex_error lexbuf
-  | _ ->
-      assert false
+let build_mainlex keywords =
+  let rec mainlex (lexbuf : Sedlexing.lexbuf) =
+    let open CombinedMenhir in
+    match%sedlex lexbuf with
+    | Plus white_space ->
+        mainlex lexbuf
+    | "//", Star (Compl (Chars "\r\n")) ->
+        mainlex lexbuf
+    | "/*" ->
+        comment lexbuf
+    | "&" ->
+        AMPERSAND
+    | "<-" ->
+        ASSIGN
+    | ":" ->
+        COLON
+    | "," ->
+        COMMA
+    | "." ->
+        DOT
+    | "..." ->
+        ELLIPSIS
+    | "=" ->
+        EQ
+    | "<" ->
+        LABRACKET
+    | "{" ->
+        LBRACKET
+    | "(" ->
+        LPAREN
+    | "[" ->
+        LSBRACKET
+    | "!" ->
+        NOT
+    | ">" ->
+        RABRACKET
+    | "}" ->
+        RBRACKET
+    | ")" ->
+        RPAREN
+    | "]" ->
+        RSBRACKET
+    | ";" ->
+        SEMICOLON
+    | "*" ->
+        STAR
+    | "?" ->
+        QUESTION
+    | ".handlers" ->
+        HANDLERS
+    | floating_point_literal -> (
+        let f = Lexbuf.lexeme lexbuf in
+        match float_of_string_opt f with Some f -> FLOATINGPOINT f | None -> lex_error lexbuf )
+    | integer_literal -> (
+        let i = Lexbuf.lexeme lexbuf in
+        match Z.of_string i with i -> INTEGER i | exception Invalid_argument _ -> lex_error lexbuf )
+    | "n", integer_literal -> (
+        let lxm = Lexbuf.lexeme lexbuf in
+        let i = String.subo ~pos:1 lxm in
+        match int_of_string_opt i with Some i -> LOCAL i | None -> lex_error lexbuf )
+    | "#", ident ->
+        let lxm = Lexbuf.lexeme lexbuf in
+        LABEL (String.subo ~pos:1 lxm)
+    | ident ->
+        let lxm = Lexbuf.lexeme lexbuf in
+        Option.value ~default:(IDENT lxm) (Map.find keywords lxm)
+    | '"', Star (Compl '"'), '"' ->
+        let lxm = Lexbuf.lexeme lexbuf in
+        STRING (String.sub ~pos:1 ~len:(String.length lxm - 2) lxm)
+    | eof ->
+        EOF
+    | any ->
+        lex_error lexbuf
+    | _ ->
+        assert false
+  and comment (lexbuf : Sedlexing.lexbuf) =
+    match%sedlex lexbuf with
+    | "*/" ->
+        mainlex lexbuf
+    | any ->
+        comment lexbuf
+    | eof ->
+        lex_error lexbuf (* FIXME give more informative error message *)
+    | _ ->
+        assert false
+  in
+  mainlex
 
 
-and comment (lexbuf : Sedlexing.lexbuf) =
-  match%sedlex lexbuf with
-  | "*/" ->
-      mainlex lexbuf
-  | any ->
-      comment lexbuf
-  | eof ->
-      lex_error lexbuf (* FIXME give more informative error message *)
-  | _ ->
-      assert false
+let textual_mainlex = build_mainlex @@ keywords_of_list textual_keywords
+
+let doli_mainlex = build_mainlex @@ keywords_of_list doli_keywords

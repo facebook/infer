@@ -58,3 +58,11 @@ define type_as_expr() : void {
     n4 = __sil_allocate(<node>, 3)
     ret n2
 }
+
+declare A.throws(...) : void
+
+define call_throws() : void {
+  #entry:
+    n0 = A.throws()
+    ret null
+}

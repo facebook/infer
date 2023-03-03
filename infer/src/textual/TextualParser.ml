@@ -34,7 +34,13 @@ let pp_error sourcefile fmt = function
 
 let parse_buf ~capture sourcefile filebuf =
   try
-    let lexer = CombinedLexer.Lexbuf.with_tokenizer CombinedLexer.mainlex filebuf in
+    let lexer =
+      match capture with
+      | TextualCapture ->
+          CombinedLexer.Lexbuf.with_tokenizer CombinedLexer.textual_mainlex filebuf
+      | DoliCapture ->
+          CombinedLexer.Lexbuf.with_tokenizer CombinedLexer.doli_mainlex filebuf
+    in
     let parsed =
       match capture with
       | TextualCapture ->
