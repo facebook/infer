@@ -1,1 +1,1 @@
-codetoanalyze/objcpp/liveness/CapturedVariable.mm, A.FP_block_captured_var_ok, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value]
+codetoanalyze/objcpp/liveness/CapturedVariable.mm, A.FP_block_captured_var_ok, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value (type `int`)]

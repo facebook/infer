@@ -411,11 +411,9 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
       || Procdesc.has_modify_in_block_attr proc_desc pvar )
   in
   let log_report pvar typ loc =
-    let message =
-      F.asprintf "The value written to `%a` (type `%a`) is never used" (Pvar.pp Pp.text) pvar
-        (Typ.pp_full Pp.text) typ
-    in
-    let ltr = [Errlog.make_trace_element 0 loc "Write of unused value" []] in
+    let message = F.asprintf "The value written to `%a` is never used" (Pvar.pp Pp.text) pvar in
+    let trace_message = F.asprintf "Write of unused value (type `%a`)" (Typ.pp_full Pp.text) typ in
+    let ltr = [Errlog.make_trace_element 0 loc trace_message []] in
     Reporting.log_issue proc_desc err_log ~loc ~ltr Liveness IssueType.dead_store message
   in
   let report_dead_store live_vars passed_by_ref_vars = function
