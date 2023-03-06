@@ -90,10 +90,8 @@ let log_issue_from_errlog ?severity_override err_log ~loc ~node ~session ~ltr ~a
     checker (issue_to_report : IssueToReport.t) =
   let issue_type = issue_to_report.issue_type in
   if (not Config.filtering) (* no-filtering takes priority *) || issue_type.IssueType.enabled then
-    let doc_url = issue_type.doc_url in
-    let linters_def_file = issue_type.linters_def_file in
-    Errlog.log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~linters_def_file ~doc_url
-      ~access ~extras checker issue_to_report
+    Errlog.log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~access ~extras checker
+      issue_to_report
 
 
 let log_issue_from_summary ?severity_override proc_desc err_log ~node ~session ~loc ~ltr ?extras

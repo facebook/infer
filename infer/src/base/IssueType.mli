@@ -29,9 +29,7 @@ type t = private
   ; mutable default_severity: severity
         (** used for documentation but can be overriden at report time *)
   ; mutable enabled: bool
-  ; mutable hum: string
-  ; mutable doc_url: string option
-  ; mutable linters_def_file: string option }
+  ; mutable hum: string }
 [@@deriving compare]
 
 val equal : t -> t -> bool
@@ -48,18 +46,16 @@ val find_from_string : id:string -> t option
 val register_dynamic :
      ?enabled:bool
   -> ?hum:string
-  -> ?doc_url:string
-  -> linters_def_file:string option
   -> id:string
   -> ?user_documentation:string
   -> severity
   -> Checker.t
   -> t
 (** Create a new issue and register it in the list of all issues. NOTE: if the issue with the same
-    string id is already registered, overrides `hum`, `doc_url`, and `linters_def_file`, but DOES
-    NOT override `enabled`. This trick allows to deal with disabling/enabling dynamic AL issues from
-    the config, when we don't know all params yet. Thus, the human-readable description can be
-    updated when we encounter the definition of the issue type, eg in AL. *)
+    string id is already registered, overrides `hum` but DOES NOT override `enabled`. This trick
+    allows to deal with disabling/enabling dynamic issues from the config, when we don't know all
+    params yet. Thus, the human-readable description can be updated when we encounter the definition
+    of the issue type. *)
 
 val checker_can_report : Checker.t -> t -> bool
 (** Whether the issue was registered as coming from the given checker. Important to call this before

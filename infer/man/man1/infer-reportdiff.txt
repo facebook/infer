@@ -48,8 +48,7 @@ OPTIONS
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
-           --debug-level-capture level, --debug-level-linters level):       
-      - 0: only basic debugging enabled
+           --debug-level-capture level):             - 0: only basic debugging enabled
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
 
@@ -59,10 +58,6 @@ OPTIONS
 
        --debug-level-capture int
            Debug level for the capture. See --debug-level for accepted
-           values.
-
-       --debug-level-linters int
-           Debug level for the linters. See --debug-level for accepted
            values.
 
        --no-deduplicate

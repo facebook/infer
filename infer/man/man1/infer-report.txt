@@ -68,8 +68,7 @@ OPTIONS
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
-           --debug-level-capture level, --debug-level-linters level):       
-      - 0: only basic debugging enabled
+           --debug-level-capture level):             - 0: only basic debugging enabled
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
 
@@ -79,10 +78,6 @@ OPTIONS
 
        --debug-level-capture int
            Debug level for the capture. See --debug-level for accepted
-           values.
-
-       --debug-level-linters int
-           Debug level for the linters. See --debug-level for accepted
            values.
 
        --no-deduplicate
@@ -106,7 +101,6 @@ OPTIONS
              ARRAY_OUT_OF_BOUNDS_L1 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L2 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L3 (disabled by default),
-             ASSIGN_POINTER_WARNING (enabled by default),
              AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE (enabled by default),
              AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD (enabled by
            default),
@@ -120,7 +114,6 @@ OPTIONS
              BAD_KEY_LATENT (disabled by default),
              BAD_MAP (enabled by default),
              BAD_MAP_LATENT (disabled by default),
-             BAD_POINTER_COMPARISON (enabled by default),
              BAD_RECORD (enabled by default),
              BAD_RECORD_LATENT (disabled by default),
              BAD_RETURN (enabled by default),
@@ -156,7 +149,6 @@ OPTIONS
              CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
              CREATE_INTENT_FROM_URI (enabled by default),
              CROSS_SITE_SCRIPTING (enabled by default),
-             CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK (enabled by default),
              Cannot_star (enabled by default),
              DANGLING_POINTER_DEREFERENCE (disabled by default),
              DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
@@ -164,8 +156,6 @@ OPTIONS
              DATA_FLOW_TO_SINK (disabled by default),
              DEADLOCK (enabled by default),
              DEAD_STORE (enabled by default),
-             DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default),
-             DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER (enabled by default),
              DIVIDE_BY_ZERO (disabled by default),
              DO_NOT_REPORT (enabled by default),
              EMPTY_VECTOR_ACCESS (enabled by default),
@@ -200,8 +190,6 @@ OPTIONS
              EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default),
              EXPOSED_INSECURE_INTENT_HANDLING (enabled by default),
              Failure_exe (enabled by default),
-             GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
-           (disabled by default),
              GUARDEDBY_VIOLATION (enabled by default),
              IMPURE_FUNCTION (enabled by default),
              INEFFICIENT_KEYSET_ITERATOR (enabled by default),
@@ -260,7 +248,6 @@ OPTIONS
              NULL_DEREFERENCE (enabled by default),
              OPTIONAL_EMPTY_ACCESS (enabled by default),
              OPTIONAL_EMPTY_ACCESS_LATENT (disabled by default),
-             POINTER_TO_CONST_OBJC_CLASS (enabled by default),
              PRECONDITION_NOT_FOUND (enabled by default),
              PRECONDITION_NOT_MET (enabled by default),
              PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
@@ -296,7 +283,6 @@ OPTIONS
              STARVATION (enabled by default),
              STATIC_INITIALIZATION_ORDER_FIASCO (enabled by default),
              STRICT_MODE_VIOLATION (enabled by default),
-             STRONG_DELEGATE_WARNING (enabled by default),
              STRONG_SELF_NOT_CHECKED (enabled by default),
              Symexec_memory_error (enabled by default),
              TAINT_ERROR (enabled by default),

@@ -317,8 +317,6 @@ val debug_level_analysis : int
 
 val debug_level_capture : int
 
-val debug_level_linters : int
-
 val debug_level_test_determinator : int
 
 val debug_mode : bool
@@ -449,8 +447,6 @@ val jobs : int
 val keep_going : bool
 
 val kotlin_capture : bool
-
-val linters_ignore_clang_failures : bool
 
 val list_checkers : bool
 

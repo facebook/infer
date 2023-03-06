@@ -9,7 +9,7 @@ ROOT_DIR = $(TESTS_DIR)/../..
 BUCK_TARGET = //src:hello
 SOURCES = src/hello.c src/hello2.c
 OBJECTS = buck-out/gen/src/hello\#compile-hello.c.o1f717d69,default/hello.c.o
-INFER_OPTIONS = --report-custom-error --developer-mode --no-linters --buck-clang
+INFER_OPTIONS = --report-custom-error --developer-mode --buck-clang
 INFERPRINT_OPTIONS = --issues-tests
 CLEAN_EXTRA = buck-out
 

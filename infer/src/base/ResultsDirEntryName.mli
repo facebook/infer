@@ -25,7 +25,6 @@ type id =
   | DuplicateFunctions  (** list of duplicated functions *)
   | JavaGlobalTypeEnvironment
       (** internal {!IR.Tenv.t} object corresponding to the whole project *)
-  | LintDotty  (** directory of linters' dotty debug output for CTL evaluation *)
   | Logs  (** log file *)
   | PerfEvents  (** file containing events for performance profiling *)
   | ProcnamesLocks

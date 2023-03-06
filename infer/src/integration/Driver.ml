@@ -492,10 +492,10 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
             error_no_buck_mode_specified ()
         | Some (ClangCompilationDB deps) ->
             BuckCompilationDB {deps; prog; args= List.append args Config.buck_build_args}
-        | Some Clang when Config.is_checker_enabled Linters ->
+        | Some Clang when Config.process_clang_ast ->
             L.user_warning
-              "WARNING: the linters require --buck-compilation-database to be set.@ Alternatively, \
-               set --no-linters to disable them and this warning.@." ;
+              "WARNING: the clang AST can only be processed when --buck-compilation-database is \
+               set.@ Alternatively, set --no-process-clang-ast to disable this warning.@." ;
             BuckClangFlavor {build_cmd}
         | Some Java ->
             BuckJavaFlavor {build_cmd}

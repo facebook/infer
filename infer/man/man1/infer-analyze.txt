@@ -96,8 +96,7 @@ OPTIONS
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
-           --debug-level-capture level, --debug-level-linters level):       
-      - 0: only basic debugging enabled
+           --debug-level-capture level):             - 0: only basic debugging enabled
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
 
@@ -109,17 +108,13 @@ OPTIONS
            Debug level for the capture. See --debug-level for accepted
            values.
 
-       --debug-level-linters int
-           Debug level for the linters. See --debug-level for accepted
-           values.
-
        --no-deduplicate
            Deactivates: Apply issue-specific deduplication during analysis
            and/or reporting. (Conversely: --deduplicate)
 
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
-           --fragment-retains-view, --inefficient-keyset-iterator, --linters,
+           --fragment-retains-view, --inefficient-keyset-iterator,
            --liveness, --parameter-not-null-checked, --racerd, --siof,
            --self-in-block, --starvation (Conversely: --default-checkers)
 
@@ -198,14 +193,6 @@ OPTIONS
        --keep-going
            Activates: Keep going when the analysis or capture encounter a
            failure (Conversely: --no-keep-going)
-
-       --no-linters
-           Deactivates: checker linters: Declarative linting framework over
-           the Clang AST. (Conversely: --linters)
-
-       --linters-only
-           Activates: Enable linters and disable all other checkers
-           (Conversely: --no-linters-only)
 
        --litho-required-props
            Activates: checker litho-required-props: Checks that all
@@ -494,8 +481,6 @@ CLANG OPTIONS
            specify "overrides" (by symbol or path prefix) that block the
            reachability analysis when hit. Example:           {
                "ISOLATED_REACHING_CONNECT": {
-                 "doc_url":
-           "http:://example.com/issue/doc/optional_link.html",
                  "sources": {
                    "desc": "Code that should not call connect [optional]",
                    "paths": [ "isolated/" ]

@@ -15,10 +15,6 @@ module F = Format
 module CLOpt = CommandLineOption
 module L = Die
 
-type analyzer = Checkers | Linters [@@deriving compare, equal]
-
-let string_to_analyzer = [("checkers", Checkers); ("linters", Linters)]
-
 let ml_bucket_symbols =
   [ ("all", `MLeak_all)
   ; ("cf", `MLeak_cf)
@@ -149,8 +145,6 @@ let manual_buck = "BUCK OPTIONS"
 let manual_buffer_overrun = "BUFFER OVERRUN OPTIONS"
 
 let manual_clang = "CLANG OPTIONS"
-
-let manual_clang_linters = "CLANG LINTERS OPTIONS"
 
 let manual_erlang = "ERLANG OPTIONS"
 
@@ -494,10 +488,6 @@ let all_checkers = ref []
 
 let disable_all_checkers () = List.iter !all_checkers ~f:(fun (_, _, var) -> var := false)
 
-let enable_checker c =
-  List.iter !all_checkers ~f:(fun (checker, _, var) -> if Checker.equal checker c then var := true)
-
-
 let () =
   let on_unknown_arg_from_command (cmd : InferCommand.t) =
     match cmd with
@@ -514,15 +504,8 @@ let () =
       CLOpt.mk_subcommand cmd ~name ?deprecated_long ~on_unknown_arg (Some command_doc) )
 
 
-and analyzer =
-  CLOpt.mk_symbol ~deprecated:["analyzer"; "-analyzer"; "a"] ~long:"" ~default:Checkers
-    ~eq:equal_analyzer ~symbols:string_to_analyzer
-    "DEPRECATED: To enable and disable individual analyses, use the various checkers options. For \
-     instance, to enable only the biabduction analysis, run with $(b,--biabduction-only)."
-
-
 (* checkers *)
-and () =
+let () =
   let open Checker in
   let in_analyze_help = InferCommand.[(Analyze, manual_generic)] in
   let mk_checker ?f checker =
@@ -586,7 +569,7 @@ and () =
   ()
 
 
-and annotation_reachability_cxx =
+let annotation_reachability_cxx =
   CLOpt.mk_json ~long:"annotation-reachability-cxx"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
     ( "Specify annotation reachability analyses to be performed on C/C++/ObjC code. Each entry is \
@@ -596,7 +579,6 @@ and annotation_reachability_cxx =
        Example:\n"
     ^ {|{
     "ISOLATED_REACHING_CONNECT": {
-      "doc_url": "http:://example.com/issue/doc/optional_link.html",
       "sources": {
         "desc": "Code that should not call connect [optional]",
         "paths": [ "isolated/" ]
@@ -1271,7 +1253,6 @@ and ( biabduction_write_dotty
     , debug_exceptions
     , debug_level_analysis
     , debug_level_capture
-    , debug_level_linters
     , debug_level_test_determinator
     , filtering
     , frontend_tests
@@ -1313,10 +1294,6 @@ and ( biabduction_write_dotty
   and debug_level_capture =
     CLOpt.mk_int ~long:"debug-level-capture" ~default:0 ~in_help:all_generic_manuals
       "Debug level for the capture. See $(b,--debug-level) for accepted values."
-  and debug_level_linters =
-    CLOpt.mk_int ~long:"debug-level-linters" ~default:0
-      ~in_help:(InferCommand.(Capture, manual_clang_linters) :: all_generic_manuals)
-      "Debug level for the linters. See $(b,--debug-level) for accepted values."
   and debug_level_test_determinator =
     CLOpt.mk_int ~long:"debug-level-test-determinator" ~default:0
       "Debug level for the test determinator. See $(b,--debug-level) for accepted values."
@@ -1361,7 +1338,6 @@ and ( biabduction_write_dotty
     bo_debug := level ;
     debug_level_analysis := level ;
     debug_level_capture := level ;
-    debug_level_linters := level ;
     debug_level_test_determinator := level
   in
   let debug =
@@ -1381,7 +1357,7 @@ and ( biabduction_write_dotty
       ~f:(fun level ->
         set_debug_level level ;
         level )
-      {|Debug level (sets $(b,--bo-debug) $(i,level), $(b,--debug-level-analysis) $(i,level), $(b,--debug-level-capture) $(i,level), $(b,--debug-level-linters) $(i,level)):
+      {|Debug level (sets $(b,--bo-debug) $(i,level), $(b,--debug-level-analysis) $(i,level), $(b,--debug-level-capture) $(i,level)):
   - 0: only basic debugging enabled
   - 1: verbose debugging enabled
   - 2: very verbose debugging enabled|}
@@ -1416,7 +1392,6 @@ and ( biabduction_write_dotty
   , debug_exceptions
   , debug_level_analysis
   , debug_level_capture
-  , debug_level_linters
   , debug_level_test_determinator
   , filtering
   , frontend_tests
@@ -1470,8 +1445,8 @@ and () =
             | Some issue ->
                 issue
             | None ->
-                (* unknown issue type: assume it will be defined in AL *)
-                IssueType.register_dynamic ~id:issue_id Warning ~linters_def_file:None Linters
+                (* unknown issue type: assume it will be defined dynamically *)
+                IssueType.register_dynamic ~id:issue_id Warning Biabduction
           in
           IssueType.set_enabled issue b ;
           issue_id )
@@ -1874,10 +1849,9 @@ and _log_skipped =
      machine-readable format"
 
 
-and linters_ignore_clang_failures =
-  CLOpt.mk_bool ~long:"linters-ignore-clang-failures"
-    ~in_help:InferCommand.[(Capture, manual_clang_linters)]
-    ~default:false "Continue linting files even if some compilation fails."
+and _linters =
+  CLOpt.mk_bool ~long:"" ~deprecated:["-linters"] ~deprecated_no:["-no-linters"]
+    "[DOES NOTHING] this used to de-activate ASTLanguage (AL) linters"
 
 
 and list_checkers =
@@ -3367,14 +3341,6 @@ let post_parsing_initialization command_opt =
   clang_compilation_dbs :=
     RevList.rev_map ~f:(fun x -> `Raw x) !compilation_database
     |> RevList.rev_map_append ~f:(fun x -> `Escaped x) !compilation_database_escaped ;
-  (* set analyzer mode to linters in linters developer mode *)
-  ( match !analyzer with
-  | Linters ->
-      disable_all_checkers () ;
-      capture := false ;
-      enable_checker Checker.Linters
-  | Checkers ->
-      () ) ;
   Option.value ~default:InferCommand.Run command_opt
 
 
@@ -3628,8 +3594,6 @@ and debug_level_analysis = !debug_level_analysis
 
 and debug_level_capture = !debug_level_capture
 
-and debug_level_linters = !debug_level_linters
-
 and debug_level_test_determinator = !debug_level_test_determinator
 
 and debug_exceptions = !debug_exceptions
@@ -3738,8 +3702,7 @@ and help_issue_type =
           issue_type
       | None ->
           L.die UserError
-            "Wrong argument for --help-issue-type: '%s' is not a known issue type identifier, or \
-             is defined in a linters file.@\n\
+            "Wrong argument for --help-issue-type: '%s' is not a known issue type identifier.@\n\
              @\n\
              See --list-issue-types for the list of all known issue types." id )
 
@@ -3779,8 +3742,6 @@ and job_id = !job_id
 and jobs = Option.fold !max_jobs ~init:!jobs ~f:min
 
 and kotlin_capture = !kotlin_capture
-
-and linters_ignore_clang_failures = !linters_ignore_clang_failures
 
 and list_checkers = !list_checkers
 
@@ -4326,12 +4287,11 @@ let is_checker_enabled c = mem_checkers enabled_checkers c
 
 let clang_frontend_action_string =
   let text = if capture then ["translating"] else [] in
-  let text = if is_checker_enabled Linters then "linting" :: text else text in
   let text =
-    if process_clang_ast && test_determinator then "Test Determinator with" :: text else text
+    if process_clang_ast && test_determinator then "Test Determinator and" :: text else text
   in
   let text =
-    if process_clang_ast && export_changed_functions then "Export Changed Functions with" :: text
+    if process_clang_ast && export_changed_functions then "Export Changed Functions and" :: text
     else text
   in
   String.concat ~sep:", " text

@@ -12,7 +12,7 @@ A_CPP = A.cpp
 B_CPP = B.cpp
 TEST_DETERMINATOR_RESULT = infer-out-mod2/diff_determinator.json
 DIFF_OUTPUT = diff.mod1.test diff.mod2.test
-INFER_OPTIONS = --export-changed-functions --process-clang-ast --no-linters --no-capture --buck-compilation-database 'no-deps'
+INFER_OPTIONS = --export-changed-functions --process-clang-ast --no-capture --buck-compilation-database 'no-deps'
 
 default: $(TEST_DETERMINATOR_RESULT)
 

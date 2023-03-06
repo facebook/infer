@@ -711,8 +711,6 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	    $(MKDIR_P) '$(DESTDIR)$(libdir)'/infer/\$$1" --
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/clang_wrappers/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/clang_wrappers/'
-	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/' || \
-	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/'
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/etc/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/etc'
 endif
@@ -754,8 +752,6 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	  [ $(cc) -ef '$(INFER_BIN)' ] && \
 	  $(REMOVE) '$(notdir $(cc))' && \
 	  $(LN_S) ../../bin/infer '$(notdir $(cc))';))
-	$(INSTALL_DATA) -C          'infer/lib/linter_rules/linters.al' \
-	  '$(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/linters.al'
 	$(INSTALL_DATA) -C          'infer/etc/clang_ast.dict' \
 	  '$(DESTDIR)$(libdir)/infer/infer/etc/clang_ast.dict'
 endif

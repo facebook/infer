@@ -21,7 +21,6 @@ type t =
   | ImmutableCast
   | Impurity
   | InefficientKeysetIterator
-  | Linters
   | LithoRequiredProps
   | Liveness
   | LoopHoisting

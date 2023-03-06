@@ -119,7 +119,6 @@ type extra = {
 
 type jsonbug = {
   bug_type : string;
-  ?doc_url : string option;
   qualifier : string;
   severity : string;
   line: int;
@@ -134,7 +133,6 @@ type jsonbug = {
   ?dotty : string option;
   ?infer_source_loc: loc option;
   bug_type_hum: string;
-  ?linters_def_file: string option;
   ?traceview_id: int option;
   ?censored_reason : string option;
   ?access : string option;

@@ -48,7 +48,7 @@ val external_error : ('a, F.formatter, unit) format -> 'a
 
 val external_warning : ('a, F.formatter, unit) format -> 'a
 
-type debug_kind = Analysis | BufferOverrun | Capture | Linters | MergeCapture | TestDeterminator
+type debug_kind = Analysis | BufferOverrun | Capture | MergeCapture | TestDeterminator
 
 (** Level of verbosity for debug output. Each level enables all the levels before it. *)
 type debug_level =

@@ -141,7 +141,7 @@ let list_issue_types () =
   L.progress
     "@[Format:@\n\
      Issue type unique identifier:Human-readable version:Visibility:Default \
-     severity:Enabled:Checker:Documentation URL (AL only):Linters definition file (AL only)@\n\
+     severity:Enabled:Checker@\n\
      @\n\
      @]%!" ;
   L.result "@[<v>" ;
@@ -156,16 +156,12 @@ let list_issue_types () =
                  (* do not show this as this can be a big multi-line string and not tool-friendly *)
              ; default_severity
              ; enabled
-             ; hum
-             ; doc_url
-             ; linters_def_file } [@warning "+missing-record-field-pattern"] )
+             ; hum } [@warning "+missing-record-field-pattern"] )
           ->
-         L.result "%s:%s:%s:%s:%b:%s:%s:%s@;" unique_id hum
+         L.result "%s:%s:%s:%s:%b:%s@;" unique_id hum
            (IssueType.string_of_visibility visibility)
            (IssueType.string_of_severity default_severity)
-           enabled (Checker.get_id checker)
-           (Option.value ~default:"" doc_url)
-           (Option.value ~default:"" linters_def_file) ) ;
+           enabled (Checker.get_id checker) ) ;
   L.result "@]%!"
 
 

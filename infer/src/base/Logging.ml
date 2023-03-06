@@ -250,13 +250,11 @@ let bufferoverrun_debug_level = debug_level_of_int Config.bo_debug
 
 let capture_debug_level = debug_level_of_int Config.debug_level_capture
 
-let linters_debug_level = debug_level_of_int Config.debug_level_linters
-
 let mergecapture_debug_level = Quiet
 
 let test_determinator_debug_level = debug_level_of_int Config.debug_level_test_determinator
 
-type debug_kind = Analysis | BufferOverrun | Capture | Linters | MergeCapture | TestDeterminator
+type debug_kind = Analysis | BufferOverrun | Capture | MergeCapture | TestDeterminator
 
 let debug kind level fmt =
   let base_level =
@@ -267,8 +265,6 @@ let debug kind level fmt =
         bufferoverrun_debug_level
     | Capture ->
         capture_debug_level
-    | Linters ->
-        linters_debug_level
     | MergeCapture ->
         mergecapture_debug_level
     | TestDeterminator ->

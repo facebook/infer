@@ -53,8 +53,6 @@ type err_data = private
   ; loc_in_ml_source: Logging.ocaml_pos option
   ; loc_trace: loc_trace
   ; visibility: IssueType.visibility
-  ; linters_def_file: string option
-  ; doc_url: string option  (** url to documentation of the issue type *)
   ; access: string option
   ; extras: Jsonbug_t.extra option }
 [@@deriving compare]
@@ -94,8 +92,6 @@ val log_issue :
   -> node:node
   -> session:int
   -> ltr:loc_trace
-  -> linters_def_file:string option
-  -> doc_url:string option
   -> access:string option
   -> extras:Jsonbug_t.extra option
   -> Checker.t

@@ -46,8 +46,8 @@ OPTIONS
        as argument. The format is one option per line, and enclosing single '
        and double " quotes are ignored.
 
-       Options without a default value (e.g., --linter) and options with
-       list-like values (e.g., --Xbuck) all have a corresponding
+       Options without a default value (e.g., --changed-files-index) and
+       options with list-like values (e.g., --Xbuck) all have a corresponding
        --option-reset flag that resets their values to nothing or the empty
        list, respectively. For instance, --Xbuck-reset will cancel any
        previous --Xbuck option passed to infer.
@@ -79,8 +79,6 @@ OPTIONS
            specify "overrides" (by symbol or path prefix) that block the
            reachability analysis when hit. Example:           {
                "ISOLATED_REACHING_CONNECT": {
-                 "doc_url":
-           "http:://example.com/issue/doc/optional_link.html",
                  "sources": {
                    "desc": "Code that should not call connect [optional]",
                    "paths": [ "isolated/" ]
@@ -414,8 +412,7 @@ OPTIONS
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
-           --debug-level-capture level, --debug-level-linters level):       
-      - 0: only basic debugging enabled
+           --debug-level-capture level):             - 0: only basic debugging enabled
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
            See also infer-analyze(1), infer-capture(1), infer-compile(1),
@@ -431,11 +428,6 @@ OPTIONS
            values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
            infer-report(1), infer-reportdiff(1), and infer-run(1).
 
-       --debug-level-linters int
-           Debug level for the linters. See --debug-level for accepted
-           values.           See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-report(1), infer-reportdiff(1), and infer-run(1).
-
        --no-deduplicate
            Deactivates: Apply issue-specific deduplication during analysis
            and/or reporting. (Conversely: --deduplicate)           See also infer-analyze(1), infer-report(1), and
@@ -443,7 +435,7 @@ OPTIONS
 
        --no-default-checkers
            Deactivates: Default checkers: --biabduction,
-           --fragment-retains-view, --inefficient-keyset-iterator, --linters,
+           --fragment-retains-view, --inefficient-keyset-iterator,
            --liveness, --parameter-not-null-checked, --racerd, --siof,
            --self-in-block, --starvation (Conversely: --default-checkers)       
     See also infer-analyze(1).
@@ -470,7 +462,6 @@ OPTIONS
              ARRAY_OUT_OF_BOUNDS_L1 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L2 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L3 (disabled by default),
-             ASSIGN_POINTER_WARNING (enabled by default),
              AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE (enabled by default),
              AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD (enabled by
            default),
@@ -484,7 +475,6 @@ OPTIONS
              BAD_KEY_LATENT (disabled by default),
              BAD_MAP (enabled by default),
              BAD_MAP_LATENT (disabled by default),
-             BAD_POINTER_COMPARISON (enabled by default),
              BAD_RECORD (enabled by default),
              BAD_RECORD_LATENT (disabled by default),
              BAD_RETURN (enabled by default),
@@ -520,7 +510,6 @@ OPTIONS
              CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
              CREATE_INTENT_FROM_URI (enabled by default),
              CROSS_SITE_SCRIPTING (enabled by default),
-             CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK (enabled by default),
              Cannot_star (enabled by default),
              DANGLING_POINTER_DEREFERENCE (disabled by default),
              DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
@@ -528,8 +517,6 @@ OPTIONS
              DATA_FLOW_TO_SINK (disabled by default),
              DEADLOCK (enabled by default),
              DEAD_STORE (enabled by default),
-             DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default),
-             DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER (enabled by default),
              DIVIDE_BY_ZERO (disabled by default),
              DO_NOT_REPORT (enabled by default),
              EMPTY_VECTOR_ACCESS (enabled by default),
@@ -564,8 +551,6 @@ OPTIONS
              EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default),
              EXPOSED_INSECURE_INTENT_HANDLING (enabled by default),
              Failure_exe (enabled by default),
-             GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
-           (disabled by default),
              GUARDEDBY_VIOLATION (enabled by default),
              IMPURE_FUNCTION (enabled by default),
              INEFFICIENT_KEYSET_ITERATOR (enabled by default),
@@ -624,7 +609,6 @@ OPTIONS
              NULL_DEREFERENCE (enabled by default),
              OPTIONAL_EMPTY_ACCESS (enabled by default),
              OPTIONAL_EMPTY_ACCESS_LATENT (disabled by default),
-             POINTER_TO_CONST_OBJC_CLASS (enabled by default),
              PRECONDITION_NOT_FOUND (enabled by default),
              PRECONDITION_NOT_MET (enabled by default),
              PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
@@ -660,7 +644,6 @@ OPTIONS
              STARVATION (enabled by default),
              STATIC_INITIALIZATION_ORDER_FIASCO (enabled by default),
              STRICT_MODE_VIOLATION (enabled by default),
-             STRONG_DELEGATE_WARNING (enabled by default),
              STRONG_SELF_NOT_CHECKED (enabled by default),
              Symexec_memory_error (enabled by default),
              TAINT_ERROR (enabled by default),
@@ -916,18 +899,6 @@ OPTIONS
        --kotlin-capture
            Activates: Enable Kotlin capture (experimental, do not use).
            (Conversely: --no-kotlin-capture)           See also infer-capture(1).
-
-       --no-linters
-           Deactivates: checker linters: Declarative linting framework over
-           the Clang AST. (Conversely: --linters)           See also infer-analyze(1).
-
-       --linters-ignore-clang-failures
-           Activates: Continue linting files even if some compilation fails.
-           (Conversely: --no-linters-ignore-clang-failures)           See also infer-capture(1).
-
-       --linters-only
-           Activates: Enable linters and disable all other checkers
-           (Conversely: --no-linters-only)           See also infer-analyze(1).
 
        --list-checkers
            Activates: Show the list of all available checkers. (Conversely:

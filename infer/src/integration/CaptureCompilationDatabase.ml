@@ -40,8 +40,7 @@ let invoke_cmd (source_file, (cmd : CompilationDatabase.compilation_data)) =
       ()
   | Error error ->
       let log_or_die fmt =
-        if Config.linters_ignore_clang_failures || Config.keep_going then L.debug Capture Quiet fmt
-        else L.die ExternalError fmt
+        if Config.keep_going then L.debug Capture Quiet fmt else L.die ExternalError fmt
       in
       log_or_die "Error running compilation for '%a': %a:@\n%s@." SourceFile.pp source_file
         Pp.cli_args argv error ) ;
@@ -86,8 +85,8 @@ let get_compilation_database_files_buck db_deps ~prog ~args =
         "--config" :: "*//cxx.pch_enabled=false" :: "--config" :: "*//cxx.modules_default=false"
         :: "--config" :: "*//cxx.modules=False" :: targets_args
       in
-      Logging.(debug Linters Quiet)
-        "Processed buck command is: 'buck %a'@\n" (Pp.seq F.pp_print_string) build_args ;
+      Logging.debug Capture Quiet "Processed buck command is: 'buck %a'@\n"
+        (Pp.seq F.pp_print_string) build_args ;
       Buck.wrap_buck_call ~label:"compdb_build" V1 (prog :: build_args) |> ignore ;
       let buck_targets_shell =
         prog :: "targets"

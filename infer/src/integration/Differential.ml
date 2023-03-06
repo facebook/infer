@@ -73,8 +73,6 @@ let create_json_bug ~qualifier ~line ~file ~source_file ~trace ~(item : Jsoncost
   ; dotty= None
   ; infer_source_loc= None
   ; bug_type_hum= issue_type.hum
-  ; linters_def_file= None
-  ; doc_url= None
   ; traceview_id= None
   ; censored_reason= JsonReports.censored_reason issue_type source_file
   ; access= None

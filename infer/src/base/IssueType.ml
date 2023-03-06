@@ -36,12 +36,8 @@ module Unsafe : sig
     ; user_documentation: string option
     ; mutable default_severity: severity
     ; mutable enabled: bool
-    ; mutable hum: string
-    ; mutable doc_url: string option
-    ; mutable linters_def_file: string option }
-  [@@deriving compare]
-
-  val equal : t -> t -> bool
+    ; mutable hum: string }
+  [@@deriving compare, equal]
 
   val pp : F.formatter -> t -> unit
 
@@ -69,8 +65,6 @@ module Unsafe : sig
   val register_dynamic :
        ?enabled:bool
     -> ?hum:string
-    -> ?doc_url:string
-    -> linters_def_file:string option
     -> id:string
     -> ?user_documentation:string
     -> severity
@@ -108,9 +102,7 @@ end = struct
       ; user_documentation: string option
       ; mutable default_severity: severity
       ; mutable enabled: bool
-      ; mutable hum: string
-      ; mutable doc_url: string option
-      ; mutable linters_def_file: string option }
+      ; mutable hum: string }
     [@@deriving equal]
 
     let compare {unique_id= id1} {unique_id= id2} = String.compare id1 id2
@@ -141,15 +133,15 @@ end = struct
 
       + Statically pre-defined issue types, namely the ones in this module
 
-      + Dynamically created ones, eg from custom errors defined in the models, or defined by the
-        user in AL linters
+      + Dynamically created ones, eg from custom errors defined in the models or by annotation
+        reachability
 
       + Issue types created at command-line-parsing time. These can mention issues of type 1. or 2.,
         but issues of type 2. have not yet been defined. Thus, we record only there [enabled] status
         definitely. The [hum]an-readable description can be updated when we encounter the definition
-        of the issue type, eg in AL. *)
-  let register_static_or_dynamic ?(enabled = true) ~is_cost_issue ?hum:hum0 ~doc_url
-      ~linters_def_file ~id:unique_id ~visibility ~user_documentation default_severity checker =
+        of the issue type. *)
+  let register_static_or_dynamic ?(enabled = true) ~is_cost_issue ?hum:hum0 ~id:unique_id
+      ~visibility ~user_documentation default_severity checker =
     match find_from_string ~id:unique_id with
     | ((Some
          ( { unique_id= _ (* we know it has to be the same *)
@@ -158,9 +150,7 @@ end = struct
            ; user_documentation= _ (* new one must be [None] for dynamic issue types *)
            ; default_severity= _ (* mutable field to update *)
            ; enabled= _ (* not touching this one since [Config] will have set it *)
-           ; hum= _ (* mutable field to update *)
-           ; doc_url= _ (* mutable field to update *)
-           ; linters_def_file= _ (* mutable field to update *) } as issue ) )
+           ; hum= _ (* mutable field to update *) } as issue ) )
     [@warning "+missing-record-field-pattern"] ) ->
         (* update fields that were supplied this time around, but keep the previous values of others
            and assert that the immutable fields are the same (see doc comment) *)
@@ -185,44 +175,31 @@ end = struct
             () ) ;
         issue.default_severity <- default_severity ;
         Option.iter hum0 ~f:(fun hum -> issue.hum <- hum) ;
-        if Option.is_some doc_url then issue.doc_url <- doc_url ;
-        if Option.is_some linters_def_file then issue.linters_def_file <- linters_def_file ;
         issue
     | None ->
         let hum = match hum0 with Some str -> str | _ -> prettify unique_id in
         let issue =
-          { unique_id
-          ; visibility
-          ; user_documentation
-          ; default_severity
-          ; checker
-          ; enabled
-          ; hum
-          ; doc_url
-          ; linters_def_file }
+          {unique_id; visibility; user_documentation; default_severity; checker; enabled; hum}
         in
         all_issues := IssueSet.add !all_issues issue ;
         issue
 
 
   let register ?enabled ?hum ~id ~user_documentation default_severity checker =
-    register_static_or_dynamic ?enabled ~is_cost_issue:false ~doc_url:None ~linters_def_file:None
-      ?hum ~id ~visibility:User ~user_documentation:(Some user_documentation) default_severity
-      checker
+    register_static_or_dynamic ?enabled ~is_cost_issue:false ?hum ~id ~visibility:User
+      ~user_documentation:(Some user_documentation) default_severity checker
 
 
   let register_hidden ?(is_silent = false) ?enabled ?hum ~id ?user_documentation default_severity
       checker =
-    register_static_or_dynamic ?enabled ~is_cost_issue:false ~doc_url:None ~linters_def_file:None
-      ?hum ~id
+    register_static_or_dynamic ?enabled ~is_cost_issue:false ?hum ~id
       ~visibility:(if is_silent then Silent else Developer)
       ~user_documentation default_severity checker
 
 
-  let register_dynamic ?enabled ?hum ?doc_url ~linters_def_file ~id ?user_documentation
-      default_severity checker =
-    register_static_or_dynamic ?enabled ~is_cost_issue:false ?hum ~doc_url ~linters_def_file ~id
-      ~visibility:User ~user_documentation default_severity checker
+  let register_dynamic ?enabled ?hum ~id ?user_documentation default_severity checker =
+    register_static_or_dynamic ?enabled ~is_cost_issue:false ?hum ~id ~visibility:User
+      ~user_documentation default_severity checker
 
 
   let cost_issue_doc_list =
@@ -258,8 +235,8 @@ end = struct
           L.die InternalError
             "Unexpected cost issue %s: either the issue is not enabled or unknown." issue_type
     in
-    register_static_or_dynamic ~doc_url:None ~linters_def_file:None ~is_cost_issue:true ~enabled
-      ~id:issue_type ~visibility:User Error Cost ~user_documentation:(Some user_documentation)
+    register_static_or_dynamic ~is_cost_issue:true ~enabled ~id:issue_type ~visibility:User Error
+      Cost ~user_documentation:(Some user_documentation)
 
 
   let register_with_latent ?enabled ?hum ~id ~user_documentation default_severity checker =
@@ -311,17 +288,7 @@ let array_out_of_bounds_l3 =
 
 let assert_failure = register_hidden ~id:"Assert_failure" Error Biabduction
 
-let _assign_pointer_warning =
-  register ~id:"ASSIGN_POINTER_WARNING" Warning Linters
-    ~user_documentation:[%blob "./documentation/issues/ASSIGN_POINTER_WARNING.md"]
-
-
 let bad_footprint = register_hidden ~id:"Bad_footprint" Error Biabduction
-
-let _bad_pointer_comparison =
-  register ~id:"BAD_POINTER_COMPARISON" Warning Linters
-    ~user_documentation:[%blob "./documentation/issues/BAD_POINTER_COMPARISON.md"]
-
 
 let bad_arg =
   register_with_latent ~id:"BAD_ARG" Error Pulse
@@ -497,11 +464,6 @@ let cross_site_scripting =
     ~user_documentation:"Untrusted data flows into HTML; XSS risk."
 
 
-let _cxx_reference_captured_in_objc_block =
-  register ~id:"CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK" Warning Linters
-    ~user_documentation:[%blob "./documentation/issues/CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK.md"]
-
-
 let dangling_pointer_dereference =
   register ~enabled:false ~id:"DANGLING_POINTER_DEREFERENCE" Error Biabduction (* TODO *)
     ~user_documentation:""
@@ -519,16 +481,6 @@ let dead_store =
 let deadlock =
   register ~id:"DEADLOCK" Error Starvation
     ~user_documentation:[%blob "./documentation/issues/DEADLOCK.md"]
-
-
-let _direct_atomic_property_access =
-  register ~id:"DIRECT_ATOMIC_PROPERTY_ACCESS" Warning Linters
-    ~user_documentation:[%blob "./documentation/issues/DIRECT_ATOMIC_PROPERTY_ACCESS.md"]
-
-
-let _discouraged_weak_property_custom_setter =
-  register ~id:"DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER" Warning Linters
-    ~user_documentation:[%blob "./documentation/issues/DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER.md"]
 
 
 let divide_by_zero =
@@ -670,14 +622,6 @@ let exposed_insecure_intent_handling =
 let expensive_cost_call ~kind = register_cost ~enabled:false "EXPENSIVE_%s" ~kind
 
 let failure_exe = register_hidden ~is_silent:true ~id:"Failure_exe" Info Biabduction
-
-(* from AL default linters *)
-let _global_variable_initialized_with_function_or_method_call =
-  register ~enabled:false ~id:"GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL" Warning
-    Linters
-    ~user_documentation:
-      [%blob "./documentation/issues/GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL.md"]
-
 
 let guardedby_violation =
   register Warning ~id:"GUARDEDBY_VIOLATION" ~hum:"GuardedBy Violation" RacerD
@@ -906,11 +850,6 @@ let optional_empty_access =
     ~user_documentation:[%blob "./documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
 
 
-let _pointer_to_const_objc_class =
-  register ~id:"POINTER_TO_CONST_OBJC_CLASS" Warning Linters
-    ~user_documentation:[%blob "./documentation/issues/POINTER_TO_CONST_OBJC_CLASS.md"]
-
-
 let precondition_not_found = register_hidden ~id:"PRECONDITION_NOT_FOUND" Error Biabduction
 
 let precondition_not_met = register_hidden ~id:"PRECONDITION_NOT_MET" Warning Biabduction
@@ -1031,11 +970,6 @@ let static_initialization_order_fiasco =
 let strict_mode_violation =
   register ~id:"STRICT_MODE_VIOLATION" ~hum:"Strict Mode Violation" Error Starvation
     ~user_documentation:[%blob "./documentation/issues/STRICT_MODE_VIOLATION.md"]
-
-
-let _strong_delegate_warning =
-  register ~id:"STRONG_DELEGATE_WARNING" Warning Linters
-    ~user_documentation:[%blob "./documentation/issues/STRONG_DELEGATE_WARNING.md"]
 
 
 let strong_self_not_checked =

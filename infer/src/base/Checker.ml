@@ -22,7 +22,6 @@ type t =
   | ImmutableCast
   | Impurity
   | InefficientKeysetIterator
-  | Linters
   | LithoRequiredProps
   | Liveness
   | LoopHoisting
@@ -243,18 +242,6 @@ let config_unsafe checker =
       ; short_documentation=
           "Check for inefficient uses of iterators that iterate on keys then lookup their values, \
            instead of iterating on key-value pairs directly."
-      ; cli_flags= Some {deprecated= []; show_in_help= true}
-      ; enabled_by_default= true
-      ; activates= [] }
-  | Linters ->
-      { id= "linters"
-      ; kind=
-          UserFacingDeprecated
-            { title= "AST Language (AL)"
-            ; markdown_body= [%blob "./documentation/checkers/ASTLanguage.md"]
-            ; deprecation_message= "On end-of-life support, may be removed in the future." }
-      ; support= mk_support_func ~clang:Support ()
-      ; short_documentation= "Declarative linting framework over the Clang AST."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }

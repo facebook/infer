@@ -323,16 +323,7 @@ module CxxAnnotationSpecs = struct
         Format.asprintf "%s can reach %s:\n    %s%s%s\n" src_desc snk_desc src_pname_str call_str
           snk_pname_str
       in
-      let issue_type =
-        let doc_url =
-          Option.value_map ~default:""
-            ~f:(U.string_of_yojson ~src:(src ^ " -> doc_url"))
-            (List.Assoc.find ~equal:String.equal spec_cfg "doc_url")
-        in
-        let linters_def_file = Option.value_map ~default:"" ~f:Fn.id Config.inferconfig_file in
-        IssueType.register_dynamic ~id:spec_name ~doc_url ~linters_def_file:(Some linters_def_file)
-          Error AnnotationReachability
-      in
+      let issue_type = IssueType.register_dynamic ~id:spec_name Error AnnotationReachability in
       Reporting.log_issue proc_desc err_log ~loc ~ltr:final_trace AnnotationReachability issue_type
         description
     in

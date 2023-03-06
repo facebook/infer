@@ -243,8 +243,6 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; dotty= error_desc_to_dotty_string err_key.err_desc
         ; infer_source_loc= json_ml_loc
         ; bug_type_hum= err_key.issue_type.hum
-        ; linters_def_file= err_data.linters_def_file
-        ; doc_url= err_data.doc_url
         ; traceview_id= None
         ; censored_reason= censored_reason err_key.issue_type source_file
         ; access= err_data.access
@@ -403,7 +401,7 @@ let process_all_summaries_and_issues ~issues_outf ~costs_outf ~config_impact_out
         process_summary proc_name loc ~cost:(cost_opt, costs_outf)
           ~config_impact:(config_impact_opt, config_impact_outf)
           err_log !all_issues ) ;
-  (* Issues that are generated and stored outside of summaries by linter and checkers *)
+  (* Issues that are generated and stored outside of summaries, eg file or class-level issues *)
   IssueLog.iter_all_issues ~f:(fun _checker proc_name errlog ->
       all_issues := collect_issues proc_name None errlog !all_issues ) ;
   let all_issues = Issue.sort_filter_issues !all_issues in

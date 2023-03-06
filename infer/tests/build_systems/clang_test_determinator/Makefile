@@ -13,7 +13,7 @@ A_MM = A.mm
 CLANG_OPTIONS = -c $(OBJCPP_CLANG_OPTIONS) -fobjc-arc
 TEST_DETERMINATOR_RESULT = infer-out-mod2/diff_determinator.json
 DIFF_OUTPUT = diff.mod2.test
-INFER_OPTIONS = --test-determinator --process-clang-ast --no-linters --no-capture
+INFER_OPTIONS = --test-determinator --process-clang-ast --no-capture
 
 default: $(TEST_DETERMINATOR_RESULT)
 

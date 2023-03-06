@@ -21,7 +21,6 @@ INFER_OPTIONS = --annotation-reachability-only --debug-exceptions --project-root
       } \
     }, \
     "API_ACCESS_VIOLATION": { \
-      "doc_url": "https://example.com/some_doc.html", \
       "sources": { \
         "paths": [ "codetoanalyze/cpp/annotation-reachability/sources/" ] \
       }, \

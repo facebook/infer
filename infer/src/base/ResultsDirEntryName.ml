@@ -25,7 +25,6 @@ type id =
   | Differential
   | DuplicateFunctions
   | JavaGlobalTypeEnvironment
-  | LintDotty
   | Logs
   | PerfEvents
   | ProcnamesLocks
@@ -132,11 +131,6 @@ let of_id = function
       ; kind= File
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Keep }
-  | LintDotty ->
-      { rel_path= "lint_dotty"
-      ; kind= Directory
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete }
   | Logs ->
       { rel_path= "logs"
       ; kind= File
