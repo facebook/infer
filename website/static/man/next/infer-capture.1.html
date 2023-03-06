@@ -24,7 +24,6 @@
 <a href="#DESCRIPTION">DESCRIPTION</a><br>
 <a href="#OPTIONS">OPTIONS</a><br>
 <a href="#BUCK OPTIONS">BUCK OPTIONS</a><br>
-<a href="#CLANG LINTERS OPTIONS">CLANG LINTERS OPTIONS</a><br>
 <a href="#CLANG OPTIONS">CLANG OPTIONS</a><br>
 <a href="#ERLANG OPTIONS">ERLANG OPTIONS</a><br>
 <a href="#JAVA OPTIONS">JAVA OPTIONS</a><br>
@@ -94,7 +93,14 @@ translation in the results directory.</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--cfg-json</b>
+<p style="margin-left:11%; margin-top: 1em"><b>--capture-block-list</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Matcher or list of matchers for
+names of files that should not be captured, hence not
+analyzed either. Clang and Java only.</p>
+
+<p style="margin-left:11%;"><b>--cfg-json</b>
 <i>file</i></p>
 
 <p style="margin-left:17%;">Path to CFG json file</p>
@@ -123,8 +129,7 @@ sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
 <p style="margin-left:17%;">Debug level (sets
 <b>--bo-debug</b> <i>level</i>,
 <b>--debug-level-analysis</b> <i>level</i>,
-<b>--debug-level-capture</b> <i>level</i>,
-<b>--debug-level-linters</b> <i>level</i>):</p>
+<b>--debug-level-capture</b> <i>level</i>):</p>
 
 <p style="margin-left:11%;">- 0: only basic debugging
 enabled <br>
@@ -141,12 +146,6 @@ See <b>--debug-level</b> for accepted values.</p>
 <p style="margin-left:17%;">Debug level for the capture.
 See <b>--debug-level</b> for accepted values.</p>
 
-<p style="margin-left:11%;"><b>--debug-level-linters</b>
-<i>int</i></p>
-
-<p style="margin-left:17%;">Debug level for the linters.
-See <b>--debug-level</b> for accepted values.</p>
-
 
 <p style="margin-left:11%;"><b>--force-delete-results-dir</b></p>
 
@@ -160,7 +159,7 @@ infer results directory. (Conversely:
 
 <p style="margin-left:17%;">Proceed as if the first
 argument after <b>--</b> was <i>command</i>. Possible
-values: <i>ant</i>, <i>buck</i>, <i>buck2</i>,
+values: <i>ant</i>, <i>buck</i>, <i>buck1</i>, <i>buck2</i>,
 <i>gradle</i>, <i>gradlew</i>, <i>java</i>, <i>javac</i>,
 <i>cc</i>, <i>clang</i>, <i>gcc</i>, <i>clang++</i>,
 <i>c++</i>, <i>g++</i>, <i>hackc</i>, <i>make</i>,
@@ -207,6 +206,13 @@ directory. The files and procedures captured in it will be
 merged together into the results directory specified with
 <b>-o</b>. Relative paths are interpreted as relative to
 <b>project-root/buck-out</b>.</p>
+
+<p style="margin-left:11%;"><b>--never-returning-null</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">[Java only, all analyses]
+Matcher or list of matchers for functions that never return
+<i>null</i>.</p>
 
 <p style="margin-left:11%;"><b>--print-logs</b></p>
 
@@ -344,6 +350,15 @@ includes clang targets, as per Buck's
 the <b>--buck-compilation-database deps</b> option. By
 default, all recursive dependencies are captured.</p>
 
+<p style="margin-left:11%;"><b>--buck-dependency-depth</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Capture dependencies only if
+they are at most the depth provided, or all transitive
+dependencies if depth is not provided (the default). In
+particular, depth zero means capture exactly the targets
+provided and nothing else.</p>
+
 <p style="margin-left:11%;"><b>--buck-erlang</b></p>
 
 <p style="margin-left:17%;">Activates: Buck integration for
@@ -355,16 +370,6 @@ Erlang. (Conversely: <b>--no-buck-erlang</b>)</p>
 Java which uses the buck flavor #infer-java-capture instead
 of genrules like buck-java. (Conversely:
 <b>--no-buck-java-flavor</b>)</p>
-
-
-<p style="margin-left:11%;"><b>--buck-java-flavor-dependency-depth</b>
-<i>int</i></p>
-
-<p style="margin-left:17%;">Capture dependencies only if
-they are at most the depth provided, or all transitive
-dependencies if depth is not provided (the default). In
-particular, depth zero means capture exactly the targets
-provided and nothing else.</p>
 
 
 <p style="margin-left:11%;"><b>--buck-java-flavor-suppress-config</b></p>
@@ -397,24 +402,45 @@ capture. Only valid for <b>--buck-clang</b>. (Conversely:
 <p style="margin-left:17%;">Skip capture of buck targets
 matched by the specified regular expression.</p>
 
+<p style="margin-left:11%;"><b>--buck2-bxl-target</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Buck2 BXL script (as a buck
+target) to run when capturing with buck2/clang
+integration.</p>
+
 <p style="margin-left:11%;"><b>--buck2-root</b>
 <i>dir</i></p>
 
 <p style="margin-left:17%;">Specify the parent directory of
 <b>buck-out</b> (used only for <b>buck2</b>).</p>
 
+<p style="margin-left:11%;"><b>--buck2-use-bxl</b></p>
+
+<p style="margin-left:17%;">Activates: Use BXL script when
+capturing with buck2. (Conversely:
+<b>--no-buck2-use-bxl</b>)</p>
+
+<p style="margin-left:11%;"><b>--bxl-file-capture</b></p>
+
+<p style="margin-left:17%;">Activates: Given an
+<b>--changed-file-index</b> file, capture the owning buck2
+targets and their dependencies using the BXL script
+specified by <b>--buck2_bxl_target</b>. (Conversely:
+<b>--no-bxl-file-capture</b>)</p>
+
 <p style="margin-left:11%;"><b>--Xbuck</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck build&lsquo;</i>.
+arguments to invocations of <i>&rsquo;buck build&rsquo;</i>.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;"><b>--Xbuck-no-inline</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
+arguments to invocations of <i>&rsquo;buck build&rsquo;</i>,
 don't inline any args starting with '@'. Only valid for
 <b>--buck-clang</b>.</p>
 
@@ -422,15 +448,15 @@ don't inline any args starting with '@'. Only valid for
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck2
-build&lsquo;</i>. Only valid for <b>--buck-clang</b>.</p>
+arguments to invocations of <i>&rsquo;buck2
+build&rsquo;</i>. Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;"><b>--Xbuck2-no-inline</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck2
-build&lsquo;</i>, don't inline any args starting with '@'.
+arguments to invocations of <i>&rsquo;buck2
+build&rsquo;</i>, don't inline any args starting with '@'.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;"><b>--xcode-developer-dir</b>
@@ -438,25 +464,6 @@ Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:17%;">Specify the path to Xcode
 developer directory, to use for Buck clang targets</p>
-
-<h2>CLANG LINTERS OPTIONS
-<a name="CLANG LINTERS OPTIONS"></a>
-</h2>
-
-
-
-<p style="margin-left:11%; margin-top: 1em"><b>--debug-level-linters</b>
-<i>int</i></p>
-
-<p style="margin-left:17%;">Debug level for the linters.
-See <b>--debug-level</b> for accepted values.</p>
-
-
-<p style="margin-left:11%;"><b>--linters-ignore-clang-failures</b></p>
-
-<p style="margin-left:17%;">Activates: Continue linting
-files even if some compilation fails. (Conversely:
-<b>--no-linters-ignore-clang-failures</b>)</p>
 
 <h2>CLANG OPTIONS
 <a name="CLANG OPTIONS"></a>
@@ -564,8 +571,8 @@ arguments to invocations of clang</p>
 <p style="margin-left:17%;">Activates: Infer will use
 xcpretty together with xcodebuild to analyze an iOS app.
 xcpretty just needs to be in the path, infer command is
-still just <i>&lsquo;infer -- &lt;xcodebuild
-command&gt;&lsquo;</i>. (Conversely:
+still just <i>&rsquo;infer -- &lt;xcodebuild
+command&gt;&rsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
 <h2>ERLANG OPTIONS
@@ -580,6 +587,15 @@ command&gt;&lsquo;</i>. (Conversely:
 <p style="margin-left:17%;">Also load AST from all .json
 files in the given path. These .json files usually come from
 a previous run with <b>--debug</b>.</p>
+
+
+<p style="margin-left:11%;"><b>--erlang-check-return</b></p>
+
+<p style="margin-left:17%;">Activates: Check whether the
+values returned by functions correspond to what the
+function's spec promises. This check is introduced at
+capture time. (Conversely:
+<b>--no-erlang-check-return</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--erlang-skip-compile</b></p>
@@ -609,13 +625,6 @@ more precise Pulse summaries for unknown library functions.
 
 <p style="margin-left:17%;">Specify the Java
 bootclasspath</p>
-
-<p style="margin-left:11%;"><b>--capture-block-list</b>
-<i>regex</i></p>
-
-<p style="margin-left:17%;">Skip capture of files matched
-by the specified OCaml regular expression (only supported by
-the javac integration for now).</p>
 
 <p style="margin-left:11%;"><b>--dependencies</b></p>
 

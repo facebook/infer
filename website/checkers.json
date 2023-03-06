@@ -6,12 +6,11 @@
     "checker-config-impact-analysis", "checker-cost", "checker-datalog",
     "checker-eradicate", "checker-fragment-retains-view",
     "checker-immutable-cast", "checker-impurity",
-    "checker-inefficient-keyset-iterator", "checker-linters",
-    "checker-litho-required-props", "checker-liveness",
-    "checker-loop-hoisting", "checker-parameter-not-null-checked",
-    "checker-printf-args", "checker-pulse", "checker-purity",
-    "checker-quandary", "checker-racerd", "checker-resource-leak-lab",
-    "checker-dotnet-resource-leak", "checker-scope-leakage", "checker-siof",
+    "checker-inefficient-keyset-iterator", "checker-litho-required-props",
+    "checker-liveness", "checker-loop-hoisting",
+    "checker-parameter-not-null-checked", "checker-printf-args",
+    "checker-pulse", "checker-purity", "checker-quandary", "checker-racerd",
+    "checker-resource-leak-lab", "checker-scope-leakage", "checker-siof",
     "checker-simple-lineage", "checker-self-in-block", "checker-starvation",
     "checker-topl", "checker-uninit"
   ]

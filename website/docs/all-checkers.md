@@ -77,14 +77,6 @@ Check for inefficient uses of iterators that iterate on keys then lookup their v
 
 [Visit here for more information.](/docs/next/checker-inefficient-keyset-iterator)
 
-## AST Language (AL)
-
-Declarative linting framework over the Clang AST.
-
-**\*\*\*DEPRECATED\*\*\*** On end-of-life support, may be removed in the future.
-
-[Visit here for more information.](/docs/next/checker-linters)
-
 ## Litho "Required Props"
 
 Checks that all non-optional `@Prop`s have been specified when constructing Litho components.
@@ -146,12 +138,6 @@ Thread safety analysis.
 Toy checker for the "resource leak" write-your-own-checker exercise.
 
 [Visit here for more information.](/docs/next/checker-resource-leak-lab)
-
-## Resource Leak checker for .NET
-
-"resource leak" checker for .NET.
-
-[Visit here for more information.](/docs/next/checker-dotnet-resource-leak)
 
 ## Scope Leakage
 

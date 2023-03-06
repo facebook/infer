@@ -89,18 +89,18 @@ are specified, they are applied in the order in which they
 are specified. Each filter is applied to each issue
 detected, and only issues which are accepted by all filters
 are reported. Each filter is of the form:
-&lsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&lsquo;.
+&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
 The first two components are OCaml Str regular expressions,
-with an optional &lsquo;!&lsquo; character prefix. If a
-regex has a &lsquo;!&lsquo; prefix, the polarity is
+with an optional &rsquo;!&rsquo; character prefix. If a
+regex has a &rsquo;!&rsquo; prefix, the polarity is
 inverted, and the filter becomes a &quot;block list&quot;
 instead of a &quot;allow list&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
-not match the &lsquo;issue_type_regex&lsquo; or if it does
-match the &lsquo;filename_regex&lsquo;. The filenames that
+not match the &rsquo;issue_type_regex&rsquo; or if it does
+match the &rsquo;filename_regex&rsquo;. The filenames that
 are tested by the regex are relative to the
-&lsquo;--project-root&lsquo; directory. The
-&lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
+&rsquo;--project-root&rsquo; directory. The
+&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
 
@@ -155,8 +155,7 @@ sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
 <p style="margin-left:17%;">Debug level (sets
 <b>--bo-debug</b> <i>level</i>,
 <b>--debug-level-analysis</b> <i>level</i>,
-<b>--debug-level-capture</b> <i>level</i>,
-<b>--debug-level-linters</b> <i>level</i>):</p>
+<b>--debug-level-capture</b> <i>level</i>):</p>
 
 <p style="margin-left:11%;">- 0: only basic debugging
 enabled <br>
@@ -171,12 +170,6 @@ See <b>--debug-level</b> for accepted values.</p>
 <i>int</i></p>
 
 <p style="margin-left:17%;">Debug level for the capture.
-See <b>--debug-level</b> for accepted values.</p>
-
-<p style="margin-left:11%;"><b>--debug-level-linters</b>
-<i>int</i></p>
-
-<p style="margin-left:17%;">Debug level for the linters.
 See <b>--debug-level</b> for accepted values.</p>
 
 <p style="margin-left:11%;"><b>--no-deduplicate</b></p>
@@ -211,7 +204,6 @@ ARBITRARY_CODE_EXECUTION_UNDER_LOCK (enabled by default),
 ARRAY_OUT_OF_BOUNDS_L1 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L2 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L3 (disabled by default), <br>
-ASSIGN_POINTER_WARNING (enabled by default), <br>
 AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE (enabled by
 default), <br>
 AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD (enabled
@@ -228,9 +220,10 @@ BAD_KEY (enabled by default), <br>
 BAD_KEY_LATENT (disabled by default), <br>
 BAD_MAP (enabled by default), <br>
 BAD_MAP_LATENT (disabled by default), <br>
-BAD_POINTER_COMPARISON (enabled by default), <br>
 BAD_RECORD (enabled by default), <br>
 BAD_RECORD_LATENT (disabled by default), <br>
+BAD_RETURN (enabled by default), <br>
+BAD_RETURN_LATENT (disabled by default), <br>
 BIABDUCTION_ANALYSIS_STOPS (disabled by default), <br>
 BIABDUCTION_MEMORY_LEAK (disabled by default), <br>
 BIABDUCTION_RETAIN_CYCLE (enabled by default), <br>
@@ -265,8 +258,6 @@ CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
 <br>
 CREATE_INTENT_FROM_URI (enabled by default), <br>
 CROSS_SITE_SCRIPTING (enabled by default), <br>
-CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK (enabled by default),
-<br>
 Cannot_star (enabled by default), <br>
 DANGLING_POINTER_DEREFERENCE (disabled by default), <br>
 DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
@@ -275,11 +266,7 @@ DATALOG_FACT (enabled by default), <br>
 DATA_FLOW_TO_SINK (disabled by default), <br>
 DEADLOCK (enabled by default), <br>
 DEAD_STORE (enabled by default), <br>
-DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default), <br>
-DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER (enabled by
-default), <br>
 DIVIDE_BY_ZERO (disabled by default), <br>
-DOTNET_RESOURCE_LEAK (enabled by default), <br>
 DO_NOT_REPORT (enabled by default), <br>
 EMPTY_VECTOR_ACCESS (enabled by default), <br>
 ERADICATE_ANNOTATION_GRAPH (enabled by default), <br>
@@ -322,9 +309,6 @@ EXPENSIVE_EXECUTION_TIME (disabled by default), <br>
 EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default), <br>
 EXPOSED_INSECURE_INTENT_HANDLING (enabled by default), <br>
 Failure_exe (enabled by default), <br>
-GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
-<br>
-(disabled by default), <br>
 GUARDEDBY_VIOLATION (enabled by default), <br>
 IMPURE_FUNCTION (enabled by default), <br>
 INEFFICIENT_KEYSET_ITERATOR (enabled by default), <br>
@@ -385,24 +369,29 @@ NULL_ARGUMENT_LATENT (disabled by default), <br>
 NULL_DEREFERENCE (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS_LATENT (disabled by default), <br>
-POINTER_TO_CONST_OBJC_CLASS (enabled by default), <br>
 PRECONDITION_NOT_FOUND (enabled by default), <br>
 PRECONDITION_NOT_MET (enabled by default), <br>
 PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
 <br>
 PULSE_CONST_REFABLE (disabled by default), <br>
-PULSE_READONLY_SHARED_PTR_PARAM (disabled by default), <br>
+PULSE_READONLY_SHARED_PTR_PARAM (enabled by default), <br>
 PULSE_RESOURCE_LEAK (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default), <br>
-PULSE_UNNECESSARY_COPY (disabled by default), <br>
-PULSE_UNNECESSARY_COPY_ASSIGNMENT (disabled by default),
-<br>
-PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (disabled by <br>
+PULSE_UNNECESSARY_COPY (enabled by default), <br>
+PULSE_UNNECESSARY_COPY_ASSIGNMENT (enabled by default), <br>
+PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST (disabled by
+default), <br>
+PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (enabled by
 default), <br>
 PULSE_UNNECESSARY_COPY_INTERMEDIATE (disabled by default),
 <br>
-PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default), <br>
+PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST (disabled by <br>
+default), <br>
+PULSE_UNNECESSARY_COPY_MOVABLE (enabled by default), <br>
+PULSE_UNNECESSARY_COPY_OPTIONAL (disabled by default), <br>
+PULSE_UNNECESSARY_COPY_OPTIONAL_CONST (disabled by default),
+<br>
 PULSE_UNNECESSARY_COPY_RETURN (disabled by default), <br>
 PURE_FUNCTION (enabled by default), <br>
 QUANDARY_TAINT_ERROR (enabled by default), <br>
@@ -421,7 +410,6 @@ STARVATION (enabled by default), <br>
 STATIC_INITIALIZATION_ORDER_FIASCO (enabled by default),
 <br>
 STRICT_MODE_VIOLATION (enabled by default), <br>
-STRONG_DELEGATE_WARNING (enabled by default), <br>
 STRONG_SELF_NOT_CHECKED (enabled by default), <br>
 Symexec_memory_error (enabled by default), <br>
 TAINT_ERROR (enabled by default), <br>

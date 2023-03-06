@@ -15,7 +15,15 @@
   <span><a href="../CMethodSignature/index.html#type-t">CMethodSignature.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span><a href="../../ATDGenerated/Clang_ast_t/index.html#type-stmt">ATDGenerated.Clang_ast_t.stmt</a> list</span> <span class="arrow">&#45;&gt;</span></span>
   <span><span><span>(<a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a> * <a href="../../IR/CapturedVar/index.html#type-capture_mode">IR.CapturedVar.capture_mode</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
-  bool</span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-create_external_procdesc" class="anchored"><a href="#val-create_external_procdesc" class="anchor"></a><code><span><span class="keyword">val</span> create_external_procdesc : 
+  bool</span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-create_attributes" class="anchored"><a href="#val-create_attributes" class="anchor"></a><code><span><span class="keyword">val</span> create_attributes : 
+  <span>?loc_instantiated:<a href="../../IBase/Location/index.html#type-t">IBase.Location.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>?set_objc_accessor_attr:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../CFrontend_config/index.html#type-translation_unit_context">CFrontend_config.translation_unit_context</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../CMethodSignature/index.html#type-t">CMethodSignature.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../ATDGenerated/Clang_ast_t/index.html#type-stmt">ATDGenerated.Clang_ast_t.stmt</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<a href="../../IR/Pvar/index.html#type-t">IR.Pvar.t</a> * <a href="../../IR/Typ/index.html#type-t">IR.Typ.t</a> * <a href="../../IR/CapturedVar/index.html#type-capture_mode">IR.CapturedVar.capture_mode</a>)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../IR/ProcAttributes/index.html#type-t">IR.ProcAttributes.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-create_external_procdesc" class="anchored"><a href="#val-create_external_procdesc" class="anchor"></a><code><span><span class="keyword">val</span> create_external_procdesc : 
   <span><a href="../CFrontend_config/index.html#type-translation_unit_context">CFrontend_config.translation_unit_context</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../IR/Cfg/index.html#type-t">IR.Cfg.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> <span class="arrow">&#45;&gt;</span></span>
@@ -34,7 +42,6 @@
   <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../ATDGenerated/Clang_ast_t/index.html#type-pointer">ATDGenerated.Clang_ast_t.pointer</a> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../CMethodSignature/index.html#type-t">CMethodSignature.t</a> option</span></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-get_method_name_from_clang" class="anchored"><a href="#val-get_method_name_from_clang" class="anchor"></a><code><span><span class="keyword">val</span> get_method_name_from_clang : 
-  <span><a href="../../IR/Tenv/index.html#type-t">IR.Tenv.t</a> <span class="arrow">&#45;&gt;</span></span>
   <span><span><a href="../CMethodSignature/index.html#type-t">CMethodSignature.t</a> option</span> <span class="arrow">&#45;&gt;</span></span>
   <span><a href="../../IR/Procname/index.html#type-t">IR.Procname.t</a> option</span></span></code></div></div><div class="odoc-spec"><div class="spec value" id="val-create_procdesc_with_pointer" class="anchored"><a href="#val-create_procdesc_with_pointer" class="anchor"></a><code><span><span class="keyword">val</span> create_procdesc_with_pointer : 
   <span>?is_cpp_lambda_call_operator:bool <span class="arrow">&#45;&gt;</span></span>

@@ -105,10 +105,10 @@ per line, and enclosing single ' and double &quot; quotes
 are ignored.</p>
 
 <p style="margin-left:11%; margin-top: 1em">Options without
-a default value (e.g., <b>--linter</b>) and options with
-list-like values (e.g., <b>--Xbuck</b>) all have a
-corresponding <b>--option-reset</b> flag that resets their
-values to nothing or the empty list, respectively. For
+a default value (e.g., <b>--changed-files-index</b>) and
+options with list-like values (e.g., <b>--Xbuck</b>) all
+have a corresponding <b>--option-reset</b> flag that resets
+their values to nothing or the empty list, respectively. For
 instance, <b>--Xbuck-reset</b> will cancel any previous
 <b>--Xbuck</b> option passed to infer.</p>
 
@@ -121,12 +121,12 @@ reserved for internal use). <b><br>
 
 <p style="margin-left:17%;">Activates: checker
 annotation-reachability: Given a pair of source and sink
-annotation, e.g. &lsquo;@PerformanceCritical&lsquo; and
-&lsquo;@Expensive&lsquo;, this checker will warn whenever
+annotation, e.g. &rsquo;@PerformanceCritical&rsquo; and
+&rsquo;@Expensive&rsquo;, this checker will warn whenever
 some method annotated with
-&lsquo;@PerformanceCritical&lsquo; calls, directly or
+&rsquo;@PerformanceCritical&rsquo; calls, directly or
 indirectly, another method annotated with
-&lsquo;@Expensive&lsquo; (Conversely:
+&rsquo;@Expensive&rsquo; (Conversely:
 <b>--no-annotation-reachability</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -156,10 +156,6 @@ Example:</p>
 
 <p style="margin-left:11%;">{ <br>
 &quot;ISOLATED_REACHING_CONNECT&quot;: { <br>
-&quot;doc_url&quot;: <br>
-
-&quot;http:://example.com/issue/doc/optional_link.html&quot;,
-<br>
 &quot;sources&quot;: { <br>
 &quot;desc&quot;: &quot;Code that should not call connect
 [optional]&quot;, <br>
@@ -347,6 +343,16 @@ default, all recursive dependencies are captured.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
+--buck-dependency-depth</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Capture dependencies only if
+they are at most the depth provided, or all transitive
+dependencies if depth is not provided (the default). In
+particular, depth zero means capture exactly the targets
+provided and nothing else.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --buck-erlang</b></p>
 
 <p style="margin-left:17%;">Activates: Buck integration for
@@ -360,16 +366,6 @@ Erlang. (Conversely: <b>--no-buck-erlang</b>)</p>
 Java which uses the buck flavor #infer-java-capture instead
 of genrules like buck-java. (Conversely:
 <b>--no-buck-java-flavor</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-capture</b>(1). <b><br>
---buck-java-flavor-dependency-depth</b> <i>int</i></p>
-
-<p style="margin-left:17%;">Capture dependencies only if
-they are at most the depth provided, or all transitive
-dependencies if depth is not provided (the default). In
-particular, depth zero means capture exactly the targets
-provided and nothing else.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
@@ -406,6 +402,14 @@ matched by the specified regular expression.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1). <b><br>
+--buck2-bxl-target</b> <i>string</i></p>
+
+<p style="margin-left:17%;">Buck2 BXL script (as a buck
+target) to run when capturing with buck2/clang
+integration.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --buck2-root</b> <i>dir</i></p>
 
 <p style="margin-left:17%;">Specify the parent directory of
@@ -413,6 +417,14 @@ matched by the specified regular expression.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1). <b><br>
+--buck2-use-bxl</b></p>
+
+<p style="margin-left:17%;">Activates: Use BXL script when
+capturing with buck2. (Conversely:
+<b>--no-buck2-use-bxl</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --bufferoverrun</b></p>
 
 <p style="margin-left:17%;">Activates: checker
@@ -429,11 +441,21 @@ and disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---capture-block-list</b> <i>regex</i></p>
+--bxl-file-capture</b></p>
 
-<p style="margin-left:17%;">Skip capture of files matched
-by the specified OCaml regular expression (only supported by
-the javac integration for now).</p>
+<p style="margin-left:17%;">Activates: Given an
+<b>--changed-file-index</b> file, capture the owning buck2
+targets and their dependencies using the BXL script
+specified by <b>--buck2_bxl_target</b>. (Conversely:
+<b>--no-bxl-file-capture</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
+--capture-block-list</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Matcher or list of matchers for
+names of files that should not be captured, hence not
+analyzed either. Clang and Java only.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1). <b><br>
@@ -456,18 +478,18 @@ are specified, they are applied in the order in which they
 are specified. Each filter is applied to each issue
 detected, and only issues which are accepted by all filters
 are reported. Each filter is of the form:
-&lsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&lsquo;.
+&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
 The first two components are OCaml Str regular expressions,
-with an optional &lsquo;!&lsquo; character prefix. If a
-regex has a &lsquo;!&lsquo; prefix, the polarity is
+with an optional &rsquo;!&rsquo; character prefix. If a
+regex has a &rsquo;!&rsquo; prefix, the polarity is
 inverted, and the filter becomes a &quot;block list&quot;
 instead of a &quot;allow list&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
-not match the &lsquo;issue_type_regex&lsquo; or if it does
-match the &lsquo;filename_regex&lsquo;. The filenames that
+not match the &rsquo;issue_type_regex&rsquo; or if it does
+match the &rsquo;filename_regex&rsquo;. The filenames that
 are tested by the regex are relative to the
-&lsquo;--project-root&lsquo; directory. The
-&lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
+&rsquo;--project-root&rsquo; directory. The
+&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
 <p style="margin-left:11%;">See also <b>infer-report</b>(1)
@@ -619,8 +641,8 @@ given the same before. Not compatible with
 <p style="margin-left:17%;">Activates: checker cost:
 Computes the asymptotic complexity of functions with respect
 to execution cost or other user defined resources. Can be
-used to detect changes in the complexity with &lsquo;infer
-reportdiff&lsquo;. (Conversely: <b>--no-cost</b>)</p>
+used to detect changes in the complexity with &rsquo;infer
+reportdiff&rsquo;. (Conversely: <b>--no-cost</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -721,8 +743,7 @@ infer-report</b>(1), <b>infer-reportdiff</b>(1), and
 <p style="margin-left:17%;">Debug level (sets
 <b>--bo-debug</b> <i>level</i>,
 <b>--debug-level-analysis</b> <i>level</i>,
-<b>--debug-level-capture</b> <i>level</i>,
-<b>--debug-level-linters</b> <i>level</i>):</p>
+<b>--debug-level-capture</b> <i>level</i>):</p>
 
 <p style="margin-left:11%;">- 0: only basic debugging
 enabled <br>
@@ -752,16 +773,6 @@ See <b>--debug-level</b> for accepted values.</p>
 <b>infer-compile</b>(1), <b><br>
 infer-report</b>(1), <b>infer-reportdiff</b>(1), and
 <b>infer-run</b>(1). <b><br>
---debug-level-linters</b> <i>int</i></p>
-
-<p style="margin-left:17%;">Debug level for the linters.
-See <b>--debug-level</b> for accepted values.</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1), <b>infer-capture</b>(1),
-<b>infer-compile</b>(1), <b><br>
-infer-report</b>(1), <b>infer-reportdiff</b>(1), and
-<b>infer-run</b>(1). <b><br>
 --no-deduplicate</b></p>
 
 <p style="margin-left:17%;">Deactivates: Apply
@@ -775,9 +786,8 @@ infer-reportdiff</b>(1). <b><br>
 
 <p style="margin-left:17%;">Deactivates: Default checkers:
 <b>--biabduction</b>, <b>--fragment-retains-view</b>,
-<b>--inefficient-keyset-iterator</b>, <b>--linters</b>,
-<b>--liveness</b>, <b>--parameter-not-null-checked</b>,
-<b>--racerd</b>, <b>--dotnet-resource-leak</b>,
+<b>--inefficient-keyset-iterator</b>, <b>--liveness</b>,
+<b>--parameter-not-null-checked</b>, <b>--racerd</b>,
 <b>--siof</b>, <b>--self-in-block</b>, <b>--starvation</b>
 (Conversely: <b>--default-checkers</b>)</p>
 
@@ -817,7 +827,6 @@ ARBITRARY_CODE_EXECUTION_UNDER_LOCK (enabled by default),
 ARRAY_OUT_OF_BOUNDS_L1 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L2 (disabled by default), <br>
 ARRAY_OUT_OF_BOUNDS_L3 (disabled by default), <br>
-ASSIGN_POINTER_WARNING (enabled by default), <br>
 AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE (enabled by
 default), <br>
 AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD (enabled
@@ -834,9 +843,10 @@ BAD_KEY (enabled by default), <br>
 BAD_KEY_LATENT (disabled by default), <br>
 BAD_MAP (enabled by default), <br>
 BAD_MAP_LATENT (disabled by default), <br>
-BAD_POINTER_COMPARISON (enabled by default), <br>
 BAD_RECORD (enabled by default), <br>
 BAD_RECORD_LATENT (disabled by default), <br>
+BAD_RETURN (enabled by default), <br>
+BAD_RETURN_LATENT (disabled by default), <br>
 BIABDUCTION_ANALYSIS_STOPS (disabled by default), <br>
 BIABDUCTION_MEMORY_LEAK (disabled by default), <br>
 BIABDUCTION_RETAIN_CYCLE (enabled by default), <br>
@@ -871,8 +881,6 @@ CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
 <br>
 CREATE_INTENT_FROM_URI (enabled by default), <br>
 CROSS_SITE_SCRIPTING (enabled by default), <br>
-CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK (enabled by default),
-<br>
 Cannot_star (enabled by default), <br>
 DANGLING_POINTER_DEREFERENCE (disabled by default), <br>
 DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),
@@ -881,11 +889,7 @@ DATALOG_FACT (enabled by default), <br>
 DATA_FLOW_TO_SINK (disabled by default), <br>
 DEADLOCK (enabled by default), <br>
 DEAD_STORE (enabled by default), <br>
-DIRECT_ATOMIC_PROPERTY_ACCESS (enabled by default), <br>
-DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER (enabled by
-default), <br>
 DIVIDE_BY_ZERO (disabled by default), <br>
-DOTNET_RESOURCE_LEAK (enabled by default), <br>
 DO_NOT_REPORT (enabled by default), <br>
 EMPTY_VECTOR_ACCESS (enabled by default), <br>
 ERADICATE_ANNOTATION_GRAPH (enabled by default), <br>
@@ -928,9 +932,6 @@ EXPENSIVE_EXECUTION_TIME (disabled by default), <br>
 EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default), <br>
 EXPOSED_INSECURE_INTENT_HANDLING (enabled by default), <br>
 Failure_exe (enabled by default), <br>
-GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
-<br>
-(disabled by default), <br>
 GUARDEDBY_VIOLATION (enabled by default), <br>
 IMPURE_FUNCTION (enabled by default), <br>
 INEFFICIENT_KEYSET_ITERATOR (enabled by default), <br>
@@ -991,24 +992,29 @@ NULL_ARGUMENT_LATENT (disabled by default), <br>
 NULL_DEREFERENCE (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS (enabled by default), <br>
 OPTIONAL_EMPTY_ACCESS_LATENT (disabled by default), <br>
-POINTER_TO_CONST_OBJC_CLASS (enabled by default), <br>
 PRECONDITION_NOT_FOUND (enabled by default), <br>
 PRECONDITION_NOT_MET (enabled by default), <br>
 PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
 <br>
 PULSE_CONST_REFABLE (disabled by default), <br>
-PULSE_READONLY_SHARED_PTR_PARAM (disabled by default), <br>
+PULSE_READONLY_SHARED_PTR_PARAM (enabled by default), <br>
 PULSE_RESOURCE_LEAK (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default), <br>
-PULSE_UNNECESSARY_COPY (disabled by default), <br>
-PULSE_UNNECESSARY_COPY_ASSIGNMENT (disabled by default),
-<br>
-PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (disabled by <br>
+PULSE_UNNECESSARY_COPY (enabled by default), <br>
+PULSE_UNNECESSARY_COPY_ASSIGNMENT (enabled by default), <br>
+PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST (disabled by
+default), <br>
+PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (enabled by
 default), <br>
 PULSE_UNNECESSARY_COPY_INTERMEDIATE (disabled by default),
 <br>
-PULSE_UNNECESSARY_COPY_MOVABLE (disabled by default), <br>
+PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST (disabled by <br>
+default), <br>
+PULSE_UNNECESSARY_COPY_MOVABLE (enabled by default), <br>
+PULSE_UNNECESSARY_COPY_OPTIONAL (disabled by default), <br>
+PULSE_UNNECESSARY_COPY_OPTIONAL_CONST (disabled by default),
+<br>
 PULSE_UNNECESSARY_COPY_RETURN (disabled by default), <br>
 PURE_FUNCTION (enabled by default), <br>
 QUANDARY_TAINT_ERROR (enabled by default), <br>
@@ -1027,7 +1033,6 @@ STARVATION (enabled by default), <br>
 STATIC_INITIALIZATION_ORDER_FIASCO (enabled by default),
 <br>
 STRICT_MODE_VIOLATION (enabled by default), <br>
-STRONG_DELEGATE_WARNING (enabled by default), <br>
 STRONG_SELF_NOT_CHECKED (enabled by default), <br>
 Symexec_memory_error (enabled by default), <br>
 TAINT_ERROR (enabled by default), <br>
@@ -1086,7 +1091,7 @@ or off.</p>
 --eradicate</b></p>
 
 <p style="margin-left:17%;">Activates: checker eradicate:
-The eradicate &lsquo;@Nullable&lsquo; checker for Java
+The eradicate &rsquo;@Nullable&rsquo; checker for Java
 annotations. (Conversely: <b>--no-eradicate</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1104,6 +1109,16 @@ disable all other checkers (Conversely:
 <p style="margin-left:17%;">Also load AST from all .json
 files in the given path. These .json files usually come from
 a previous run with <b>--debug</b>.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
+--erlang-check-return</b></p>
+
+<p style="margin-left:17%;">Activates: Check whether the
+values returned by functions correspond to what the
+function's spec promises. This check is introduced at
+capture time. (Conversely:
+<b>--no-erlang-check-return</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
@@ -1189,7 +1204,7 @@ infer results directory. (Conversely:
 
 <p style="margin-left:17%;">Proceed as if the first
 argument after <b>--</b> was <i>command</i>. Possible
-values: <i>ant</i>, <i>buck</i>, <i>buck2</i>,
+values: <i>ant</i>, <i>buck</i>, <i>buck1</i>, <i>buck2</i>,
 <i>gradle</i>, <i>gradlew</i>, <i>java</i>, <i>javac</i>,
 <i>cc</i>, <i>clang</i>, <i>gcc</i>, <i>clang++</i>,
 <i>c++</i>, <i>g++</i>, <i>hackc</i>, <i>make</i>,
@@ -1341,9 +1356,9 @@ report of issues found. (Conversely: <b>--no-html</b>)</p>
 <p style="margin-left:17%;">Activates: checker
 immutable-cast: Detection of object cast from immutable
 types to mutable types. For instance, it will detect casts
-from &lsquo;ImmutableList&lsquo; to &lsquo;List&lsquo;,
-&lsquo;ImmutableMap&lsquo; to &lsquo;Map&lsquo;, and
-&lsquo;ImmutableSet&lsquo; to &lsquo;Set&lsquo;.
+from &rsquo;ImmutableList&rsquo; to &rsquo;List&rsquo;,
+&rsquo;ImmutableMap&rsquo; to &rsquo;Map&rsquo;, and
+&rsquo;ImmutableSet&rsquo; to &rsquo;Set&rsquo;.
 (Conversely: <b>--no-immutable-cast</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1457,30 +1472,6 @@ capture (experimental, do not use). (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
---no-linters</b></p>
-
-<p style="margin-left:17%;">Deactivates: checker linters:
-Declarative linting framework over the Clang AST.
-(Conversely: <b>--linters</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---linters-ignore-clang-failures</b></p>
-
-<p style="margin-left:17%;">Activates: Continue linting
-files even if some compilation fails. (Conversely:
-<b>--no-linters-ignore-clang-failures</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-capture</b>(1). <b><br>
---linters-only</b></p>
-
-<p style="margin-left:17%;">Activates: Enable linters and
-disable all other checkers (Conversely:
-<b>--no-linters-only</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
 --list-checkers</b></p>
 
 <p style="margin-left:17%;">Activates: Show the list of all
@@ -1501,7 +1492,7 @@ issue types that infer might report. (Conversely:
 
 <p style="margin-left:17%;">Activates: checker
 litho-required-props: Checks that all non-optional
-&lsquo;@Prop&lsquo;s have been specified when constructing
+&rsquo;@Prop&rsquo;s have been specified when constructing
 Litho components. (Conversely:
 <b>--no-litho-required-props</b>)</p>
 
@@ -1602,7 +1593,7 @@ skipped. If omitted, all levels are shown.</p>
 
 <p style="margin-left:17%;">Activates: Generate OCaml
 analysis allocation traces in
-&lsquo;infer-out/memtrace&lsquo;. (Conversely:
+&rsquo;infer-out/memtrace&rsquo;. (Conversely:
 <b>--no-memtrace-analysis-profiling</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1611,14 +1602,6 @@ analysis allocation traces in
 
 <p style="margin-left:17%;">Sampling rate for Memtrace
 allocation profiling. Default is 1e-6.</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---merge</b></p>
-
-<p style="margin-left:17%;">Activates: Merge the captured
-results directories specified in the dependency file.
-(Conversely: <b>--no-merge</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -1650,6 +1633,23 @@ reporting is done.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-report</b>(1). <b><br>
+--modeled-expensive</b> <i>json</i></p>
+
+<p style="margin-left:17%;">Matcher or list of matchers for
+methods that should be considered expensive by the
+performance critical checker.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--never-returning-null</b> <i>json</i></p>
+
+<p style="margin-left:17%;">[Java only, all analyses]
+Matcher or list of matchers for functions that never return
+<i>null</i>.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1), <b>infer-capture</b>(1), and
+<b>infer-run</b>(1). <b><br>
 --no-parameter-not-null-checked</b></p>
 
 <p style="margin-left:17%;">Deactivates: checker
@@ -1697,11 +1697,11 @@ infer-run</b>(1). <b><br>
 --printf-args</b></p>
 
 <p style="margin-left:17%;">Activates: checker printf-args:
-Detect mismatches between the Java &lsquo;printf&lsquo;
+Detect mismatches between the Java &rsquo;printf&rsquo;
 format strings and the argument types For example, this
 checker will warn about the type error in
-&lsquo;printf(&quot;Hello %d&quot;,
-&quot;world&quot;)&lsquo; (Conversely:
+&rsquo;printf(&quot;Hello %d&quot;,
+&quot;world&quot;)&rsquo; (Conversely:
 <b>--no-printf-args</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -1859,6 +1859,14 @@ pointer in Pulse. (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--pulse-log-summary-count</b></p>
+
+<p style="margin-left:17%;">Activates: Log the number of
+summaries for each analyzed procedure in Pulse (Conversely:
+<b>--no-pulse-log-summary-count</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --pulse-max-cfg-size</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Larger CFGs than the max size
@@ -1960,8 +1968,8 @@ modelled as returning non-null in Pulse</p>
 --pulse-model-return-this</b> <i>string</i></p>
 
 <p style="margin-left:17%;">Regex of methods that should be
-modelled as returning the &lsquo;this&lsquo; or
-&lsquo;self&lsquo; argument of an instance method in Pulse.
+modelled as returning the &rsquo;this&rsquo; or
+&rsquo;self&rsquo; argument of an instance method in Pulse.
 Languages supported: Java, Objective-C</p>
 
 <p style="margin-left:11%;">See also
@@ -1988,13 +1996,45 @@ are method or namespace::method</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---pulse-models-for-erlang</b> <i>json</i></p>
+--pulse-models-for-erlang</b> <i>+path</i></p>
 
 <p style="margin-left:17%;">Provide custom models for
-Erlang code using a DSL.</p>
+Erlang in JSON files. If a path to a directory is given then
+the JSON files must have the &rsquo;.json&rsquo; extension.
+Any other file will be ignored. The subdirectories will be
+explored and must follow the same convention.</p>
 
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
+<p style="margin-left:11%;">The format is
+[SelectorBehavior, ...] where <br>
+SelectorBehavior := {&quot;selector&quot;: Selector,
+&quot;behavior&quot;: Behavior} <br>
+Selector := [&quot;MFA&quot;, { <br>
+&quot;module&quot;: &quot;&lt;module_name&gt;&quot;, <br>
+&quot;function&quot;: &quot;&lt;function_name&gt;&quot;,
+<br>
+&quot;arity&quot;: &lt;arity_int&gt; <br>
+}] <br>
+Behavior := ReturnValue | ArgumentsReturnList <br>
+- ReturnValue models return regardless of the arguments <br>
+- ArgumentsReturnList maps arguments to return values <br>
+ReturnValue := [&quot;ReturnValue&quot;, ErlangValue] <br>
+ArgumentsReturnList := <br>
+[&quot;ArgumentsReturnList&quot;, [ArgumentsReturn, ...]]
+<br>
+ArgumentsReturn := { <br>
+&quot;arguments&quot;: [ErlangValue, ...], <br>
+&quot;return&quot;: ErlangValue <br>
+} <br>
+ErlangValue := [&quot;Atom&quot;,
+&quot;&lt;atom_name&gt;&quot;] <br>
+| [&quot;IntLit&quot;, &quot;&lt;integer_value&gt;&quot;]
+<br>
+| [&quot;List&quot;, [ErlangValue, ...] <br>
+| [&quot;Tuple&quot;, [ErlangValue, ...] <br>
+| null <br>
+ErlangValue = null is to represent nondeterministic value
+<br>
+See also <b>infer-analyze</b>(1). <b><br>
 --no-pulse-nullsafe-report-npe</b></p>
 
 <p style="margin-left:17%;">Deactivates: Report null
@@ -2066,7 +2106,7 @@ and <b>--pulse-taint-data-flow-kinds</b>.</p>
 
 <p style="margin-left:11%;">If a path to a directory is
 given then the configuration files <br>
-must have the &lsquo;.json&lsquo; extension. Any other file
+must have the &rsquo;.json&rsquo; extension. Any other file
 will be ignored. <br>
 The subdirectories will be explored and must follow the same
 <br>
@@ -2460,7 +2500,7 @@ and <b>infer-explore</b>(1). <b><br>
 
 <p style="margin-left:17%;">Deactivates: checker
 self-in-block: An Objective-C-specific analysis to detect
-when a block captures &lsquo;self&lsquo;. (Conversely:
+when a block captures &rsquo;self&rsquo;. (Conversely:
 <b>--self-in-block</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -2501,6 +2541,24 @@ distinct entities get assigned the same ID. (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--simple-lineage-field-depth</b> <i>int</i></p>
+
+<p style="margin-left:17%;">[EXPERIMENTAL] Maximal field
+depth sensitivity for lineage analysis. 0 will make the
+analysis field insensitive.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--simple-lineage-field-width</b> <i>int</i></p>
+
+<p style="margin-left:17%;">[EXPERIMENTAL] Maximal width of
+structures for field sensitive lineage analysis. Structure
+that have a higher number of fields will be smashed into a
+single element. 0 will make the analysis field insensitive.
+If not set, field width will be unlimited.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --simple-lineage-include-builtins</b></p>
 
 <p style="margin-left:17%;">Activates: Include call/return
@@ -2537,19 +2595,22 @@ skipped.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---simple-lineage-model-fields</b></p>
-
-<p style="margin-left:17%;">Activates: [EXPERIMENTAL]
-Enable field-aware lineage analysis. (Conversely:
-<b>--no-simple-lineage-model-fields</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
 --simple-lineage-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
 simple-lineage and disable all other checkers (Conversely:
 <b>--no-simple-lineage-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--simple-lineage-prevent-cycles</b></p>
+
+<p style="margin-left:17%;">Activates: [EXPERIMENTAL] If
+set, SimpleLineage will stop distinguishing the fields of a
+variable when it notices recursive types (that is, a
+sub-field having the same type as one of its
+&quot;ancestors&quot;). (Conversely:
+<b>--no-simple-lineage-prevent-cycles</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2886,7 +2947,7 @@ Infer directory to generate its website at
 --Xbuck</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck build&lsquo;</i>.
+arguments to invocations of <i>&rsquo;buck build&rsquo;</i>.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;">See also
@@ -2894,7 +2955,7 @@ Only valid for <b>--buck-clang</b>.</p>
 --Xbuck-no-inline</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
+arguments to invocations of <i>&rsquo;buck build&rsquo;</i>,
 don't inline any args starting with '@'. Only valid for
 <b>--buck-clang</b>.</p>
 
@@ -2903,16 +2964,16 @@ don't inline any args starting with '@'. Only valid for
 --Xbuck2</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck2
-build&lsquo;</i>. Only valid for <b>--buck-clang</b>.</p>
+arguments to invocations of <i>&rsquo;buck2
+build&rsquo;</i>. Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
 --Xbuck2-no-inline</b> <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&lsquo;buck2
-build&lsquo;</i>, don't inline any args starting with '@'.
+arguments to invocations of <i>&rsquo;buck2
+build&rsquo;</i>, don't inline any args starting with '@'.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;">See also
@@ -2943,8 +3004,8 @@ isysroot directory, to avoid absolute paths in tests</p>
 <p style="margin-left:17%;">Activates: Infer will use
 xcpretty together with xcodebuild to analyze an iOS app.
 xcpretty just needs to be in the path, infer command is
-still just <i>&lsquo;infer -- &lt;xcodebuild
-command&gt;&lsquo;</i>. (Conversely:
+still just <i>&rsquo;infer -- &lt;xcodebuild
+command&gt;&rsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
 <p style="margin-left:11%;">See also
@@ -2979,9 +3040,9 @@ may be passed to all infer commands using the
 <b>INFER_ARGS</b> environment variable (see the
 <i>OPTIONS</i> section). <b>INFER_ARGS</b> is expected to
 contain a string of ^-separated options. For instance,
-calling &lsquo;INFER_ARGS=--debug^--print-logs infer&lsquo;
-is equivalent to calling &lsquo;infer --debug
---print-logs&lsquo;.</p>
+calling &rsquo;INFER_ARGS=--debug^--print-logs infer&rsquo;
+is equivalent to calling &rsquo;infer --debug
+--print-logs&rsquo;.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>INFERCONFIG</b>:

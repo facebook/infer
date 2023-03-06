@@ -34,15 +34,6 @@ Example:
   }
 ```
 
-## ASSIGN_POINTER_WARNING
-
-Reported as "Assign Pointer Warning" by [linters](/docs/next/checker-linters).
-
-This check fires when a pointer to an Obj-C object is tagged with an `assign`
-property (similar to the `-Warc-unsafe-retained-assign` compiler flag). Not
-holding a strong reference to the object makes it easy to accidentally create
-and use a dangling pointer.
-
 ## AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE
 
 Reported as "Autoreleasepool Size Complexity Increase" by [cost](/docs/next/checker-cost).
@@ -135,25 +126,6 @@ f() ->
 Reported as "Bad Map Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [BAD_MAP](#bad_map). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
-## BAD_POINTER_COMPARISON
-
-Reported as "Bad Pointer Comparison" by [linters](/docs/next/checker-linters).
-
-Infer reports these warnings in Objective-C when a boxed primitive type such as
-`NSNumber *` is coerced to a boolean in a comparison. For example, consider the
-code
-
-```objectivec
-void foo(NSNumber * n) {
-  if (n) ...
-```
-
-The branch in the above code will be taken when the pointer `n` is non-`nil`,
-but the programmer might have actually wanted the branch to be taken when the
-integer pointed to by `n` is nonzero (e.g., she may have meant to call an
-accessor like `[n intValue]` instead). Infer will ask the programmer explicitly
-compare `n` to `nil` or call an accessor to clarify her intention.
-
 ## BAD_RECORD
 
 Reported as "Bad Record" by [pulse](/docs/next/checker-pulse).
@@ -175,6 +147,25 @@ f() ->
 Reported as "Bad Record Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [BAD_RECORD](#bad_record). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
+## BAD_RETURN
+
+Reported as "Bad Return" by [pulse](/docs/next/checker-pulse).
+
+Bad return in Erlang: The dynamic type of a returned value disagrees with the static type given in the spec.
+
+For example, this function returns an integer, while the spec says it returns an atom.
+```erlang
+-spec f() -> atom().
+f() -> 1.
+```
+
+Note that this will *not* lead to a runtime error when running the Erlang program.
+
+## BAD_RETURN_LATENT
+
+Reported as "Bad Return Latent" by [pulse](/docs/next/checker-pulse).
+
+A latent [BAD_RETURN](#bad_return). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## BIABDUCTION_MEMORY_LEAK
 
 Reported as "Memory Leak" by [biabduction](/docs/next/checker-biabduction).
@@ -592,25 +583,6 @@ Create an intent/start a component using a (possibly user-controlled) URI. may o
 Reported as "Cross Site Scripting" by [quandary](/docs/next/checker-quandary).
 
 Untrusted data flows into HTML; XSS risk.
-## CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK
-
-Reported as "Cxx Reference Captured In Objc Block" by [linters](/docs/next/checker-linters).
-
-With this check, Infer detects C++ references captured in a block. Doing this is
-almost always wrong. The reason is that C++ references are not managed pointers
-(like ARC pointers) and so the referent is likely to be gone by the time the
-block gets executed. One solution is to do a local copy of the reference and
-pass that to the block. Example:
-
-```c
-(int &) v;
-...
-const int copied_v = v;
-^{
-// use copied_v not v
-};
-```
-
 ## DANGLING_POINTER_DEREFERENCE
 
 Reported as "Dangling Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).
@@ -698,95 +670,11 @@ Reported as "Dead Store" by [liveness](/docs/next/checker-liveness).
 This error is reported in C++. It fires when the value assigned to a variables
 is never used (e.g., `int i = 1; i = 2; return i;`).
 
-## DIRECT_ATOMIC_PROPERTY_ACCESS
-
-Reported as "Direct Atomic Property Access" by [linters](/docs/next/checker-linters).
-
-This check warns you when you are accessing an atomic property directly with an
-ivar. This makes the atomic property not atomic anymore. So potentially you may
-get a race condition.
-
-To fix the problem you need to access properties with their getter or setter.
-
-## DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER
-
-Reported as "Discouraged Weak Property Custom Setter" by [linters](/docs/next/checker-linters).
-
-This check warns you when you have a custom setter for a weak property. When
-compiled with Automatic Reference Counting (ARC, `-fobj-arc`) ARC may set the
-property to `nil` without invoking the setter, for example:
-
-```objectivec
-#import <Foundation/Foundation.h>
-
-@interface Employee : NSObject {
-  NSString* _name;
-  __weak Employee* _manager;
-}
--(id)initWithName:(NSString*)name;
-@property(atomic, weak) Employee* manager;
--(void)report;
-@end
-
-@implementation Employee
-
--(id)initWithName:(NSString*)name {
-  _name = name;
-  return self;
-}
-
--(NSString*)description {
-  return _name;
-}
-
--(void)report {
-  NSLog(@"I work for %@", _manager);
-}
-
--(Employee*)manager {
-  return _manager;
-}
-
-// DON'T do this; ARC will not call this when setting _manager to nil.
--(void)setManager:(Employee*)newManager {
-  NSLog(@"Meet the new boss...");
-  _manager = newManager;
-}
-
-@end
-
-int main(int argc, char *argv[])
-{
-  Employee* bob = [[Employee alloc] initWithName:@"Bob"];
-  Employee* sue = [[Employee alloc] initWithName:@"Sue"];
-  bob.manager = sue;
-  [bob report];
-  sue = nil;
-  [bob report];
-  return 0;
-}
-```
-
-This prints:
-
-```
-Meet the new boss...
-I work for Sue
-I work for (null)
-```
-
-Note that the custom setter was only invoked once.
-
 ## DIVIDE_BY_ZERO
 
 Reported as "Divide By Zero" by [biabduction](/docs/next/checker-biabduction).
 
 
-## DOTNET_RESOURCE_LEAK
-
-Reported as "Dotnet Resource Leak" by [dotnet-resource-leak](/docs/next/checker-dotnet-resource-leak).
-
-Resource leak checker for .NET.
 ## EMPTY_VECTOR_ACCESS
 
 Reported as "Empty Vector Access" by [biabduction](/docs/next/checker-biabduction).
@@ -1199,15 +1087,6 @@ void symbolic_expensive_hoist(int size) {
 Reported as "Exposed Insecure Intent Handling" by [quandary](/docs/next/checker-quandary).
 
 Undocumented.
-## GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
-
-Reported as "Global Variable Initialized With Function Or Method Call" by [linters](/docs/next/checker-linters).
-
-This checker warns you when the initialization of global variable contain a
-method or function call. The warning wants to make you aware that some functions
-are expensive. As the global variables are initialized before main() is called,
-these initializations can slow down the start-up time of an app.
-
 ## GUARDEDBY_VIOLATION
 
 Reported as "GuardedBy Violation" by [racerd](/docs/next/checker-racerd).
@@ -2098,15 +1977,6 @@ int value_no_check() {
 Reported as "Optional Empty Access Latent" by [pulse](/docs/next/checker-pulse).
 
 A latent [OPTIONAL_EMPTY_ACCESS](#optional_empty_access). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
-## POINTER_TO_CONST_OBJC_CLASS
-
-Reported as "Pointer To Const Objc Class" by [linters](/docs/next/checker-linters).
-
-In Objective-C, `const Class *` represents a mutable pointer pointing to an
-Objective-C class where the ivars cannot be changed. More useful is
-`Class *const` instead, meaning the destination of the pointer cannot be
-changed.
-
 ## PREMATURE_NIL_TERMINATION_ARGUMENT
 
 Reported as "Premature Nil Termination Argument" by [biabduction](/docs/next/checker-biabduction).
@@ -2218,6 +2088,11 @@ int use_reference_instead(A& x){
 Reported as "Unnecessary Copy Assignment" by [pulse](/docs/next/checker-pulse).
 
 See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
+## PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST
+
+Reported as "Unnecessary Copy Assignment from Const" by [pulse](/docs/next/checker-pulse).
+
+See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
 ## PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE
 
 Reported as "Unnecessary Copy Assignment Movable" by [pulse](/docs/next/checker-pulse).
@@ -2226,6 +2101,11 @@ See [PULSE_UNNECESSARY_COPY_MOVABLE](#pulse_unnecessary_copy_movable).
 ## PULSE_UNNECESSARY_COPY_INTERMEDIATE
 
 Reported as "Unnecessary Copy Intermediate" by [pulse](/docs/next/checker-pulse).
+
+See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
+## PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST
+
+Reported as "Unnecessary Copy Intermediate from Const" by [pulse](/docs/next/checker-pulse).
 
 See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
 ## PULSE_UNNECESSARY_COPY_MOVABLE
@@ -2259,6 +2139,31 @@ class Test {
 };
 
 ```
+## PULSE_UNNECESSARY_COPY_OPTIONAL
+
+Reported as "Unnecessary Copy to Optional" by [pulse](/docs/next/checker-pulse).
+
+This is reported when Infer detects an unnecessary copy of an object via `optional` value
+construction where the source is not modified before it goes out of scope.  To avoid the copy, we
+can move the source object or change the callee's type.
+
+For example,
+
+```cpp
+void get_optional_value(std::optional<A> x) {}
+
+void pass_non_optional_value(A x) {
+  get_optional_value(x);
+  // fix is to move as follows
+  // get_optional_value(std::move(x));
+}
+```
+
+## PULSE_UNNECESSARY_COPY_OPTIONAL_CONST
+
+Reported as "Unnecessary Copy to Optional from Const" by [pulse](/docs/next/checker-pulse).
+
+See [PULSE_UNNECESSARY_COPY_OPTIONAL](#pulse_unnecessary_copy_optional).
 ## PULSE_UNNECESSARY_COPY_RETURN
 
 Reported as "Unnecessary Copy Return" by [pulse](/docs/next/checker-pulse).
@@ -2815,14 +2720,6 @@ ability to statically detect such violations.
 
 To suppress this warning, it's enough to annotate the offending method with
 `@SuppressLint("STRICT_MODE_VIOLATION")`.
-
-## STRONG_DELEGATE_WARNING
-
-Reported as "Strong Delegate Warning" by [linters](/docs/next/checker-linters).
-
-This check warns you when you have a property called delegate or variations
-thereof which is declared strong. The idea is that delegates should generally be
-weak, otherwise this may cause retain cycles.
 
 ## STRONG_SELF_NOT_CHECKED
 
