@@ -24,7 +24,8 @@ module.exports = {
       isCloseable: false,
     },
     algolia: {
-      apiKey: "aac9e661e851db0d4b6e74802c3df9de",
+      appId: "WXX0LT0N1W",
+      apiKey: "acb23fcd08afea7e89732c52fbd86974",
       indexName: "fbinfer",
     },
     navbar: {
