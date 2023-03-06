@@ -23,7 +23,6 @@
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
 <a href="#DESCRIPTION">DESCRIPTION</a><br>
 <a href="#OPTIONS">OPTIONS</a><br>
-<a href="#BUCK OPTIONS">BUCK OPTIONS</a><br>
 <a href="#BUFFER OVERRUN OPTIONS">BUFFER OVERRUN OPTIONS</a><br>
 <a href="#CLANG OPTIONS">CLANG OPTIONS</a><br>
 <a href="#ERLANG OPTIONS">ERLANG OPTIONS</a><br>
@@ -76,12 +75,12 @@ report.</p>
 
 <p style="margin-left:17%;">Activates: checker
 annotation-reachability: Given a pair of source and sink
-annotation, e.g. &lsquo;@PerformanceCritical&lsquo; and
-&lsquo;@Expensive&lsquo;, this checker will warn whenever
+annotation, e.g. &rsquo;@PerformanceCritical&rsquo; and
+&rsquo;@Expensive&rsquo;, this checker will warn whenever
 some method annotated with
-&lsquo;@PerformanceCritical&lsquo; calls, directly or
+&rsquo;@PerformanceCritical&rsquo; calls, directly or
 indirectly, another method annotated with
-&lsquo;@Expensive&lsquo; (Conversely:
+&rsquo;@Expensive&rsquo; (Conversely:
 <b>--no-annotation-reachability</b>)</p>
 
 
@@ -161,8 +160,8 @@ given the same before. Not compatible with
 <p style="margin-left:17%;">Activates: checker cost:
 Computes the asymptotic complexity of functions with respect
 to execution cost or other user defined resources. Can be
-used to detect changes in the complexity with &lsquo;infer
-reportdiff&lsquo;. (Conversely: <b>--no-cost</b>)</p>
+used to detect changes in the complexity with &rsquo;infer
+reportdiff&rsquo;. (Conversely: <b>--no-cost</b>)</p>
 
 <p style="margin-left:11%;"><b>--cost-only</b></p>
 
@@ -205,8 +204,7 @@ sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
 <p style="margin-left:17%;">Debug level (sets
 <b>--bo-debug</b> <i>level</i>,
 <b>--debug-level-analysis</b> <i>level</i>,
-<b>--debug-level-capture</b> <i>level</i>,
-<b>--debug-level-linters</b> <i>level</i>):</p>
+<b>--debug-level-capture</b> <i>level</i>):</p>
 
 <p style="margin-left:11%;">- 0: only basic debugging
 enabled <br>
@@ -223,12 +221,6 @@ See <b>--debug-level</b> for accepted values.</p>
 <p style="margin-left:17%;">Debug level for the capture.
 See <b>--debug-level</b> for accepted values.</p>
 
-<p style="margin-left:11%;"><b>--debug-level-linters</b>
-<i>int</i></p>
-
-<p style="margin-left:17%;">Debug level for the linters.
-See <b>--debug-level</b> for accepted values.</p>
-
 <p style="margin-left:11%;"><b>--no-deduplicate</b></p>
 
 <p style="margin-left:17%;">Deactivates: Apply
@@ -240,16 +232,15 @@ reporting. (Conversely: <b>--deduplicate</b>)</p>
 
 <p style="margin-left:17%;">Deactivates: Default checkers:
 <b>--biabduction</b>, <b>--fragment-retains-view</b>,
-<b>--inefficient-keyset-iterator</b>, <b>--linters</b>,
-<b>--liveness</b>, <b>--parameter-not-null-checked</b>,
-<b>--racerd</b>, <b>--dotnet-resource-leak</b>,
+<b>--inefficient-keyset-iterator</b>, <b>--liveness</b>,
+<b>--parameter-not-null-checked</b>, <b>--racerd</b>,
 <b>--siof</b>, <b>--self-in-block</b>, <b>--starvation</b>
 (Conversely: <b>--default-checkers</b>)</p>
 
 <p style="margin-left:11%;"><b>--eradicate</b></p>
 
 <p style="margin-left:17%;">Activates: checker eradicate:
-The eradicate &lsquo;@Nullable&lsquo; checker for Java
+The eradicate &rsquo;@Nullable&rsquo; checker for Java
 annotations. (Conversely: <b>--no-eradicate</b>)</p>
 
 <p style="margin-left:11%;"><b>--eradicate-only</b></p>
@@ -305,9 +296,9 @@ internal options in the INTERNAL OPTIONS section</p>
 <p style="margin-left:17%;">Activates: checker
 immutable-cast: Detection of object cast from immutable
 types to mutable types. For instance, it will detect casts
-from &lsquo;ImmutableList&lsquo; to &lsquo;List&lsquo;,
-&lsquo;ImmutableMap&lsquo; to &lsquo;Map&lsquo;, and
-&lsquo;ImmutableSet&lsquo; to &lsquo;Set&lsquo;.
+from &rsquo;ImmutableList&rsquo; to &rsquo;List&rsquo;,
+&rsquo;ImmutableMap&rsquo; to &rsquo;Map&rsquo;, and
+&rsquo;ImmutableSet&rsquo; to &rsquo;Set&rsquo;.
 (Conversely: <b>--no-immutable-cast</b>)</p>
 
 
@@ -366,24 +357,12 @@ analysis jobs simultaneously</p>
 analysis or capture encounter a failure (Conversely:
 <b>--no-keep-going</b>)</p>
 
-<p style="margin-left:11%;"><b>--no-linters</b></p>
-
-<p style="margin-left:17%;">Deactivates: checker linters:
-Declarative linting framework over the Clang AST.
-(Conversely: <b>--linters</b>)</p>
-
-<p style="margin-left:11%;"><b>--linters-only</b></p>
-
-<p style="margin-left:17%;">Activates: Enable linters and
-disable all other checkers (Conversely:
-<b>--no-linters-only</b>)</p>
-
 
 <p style="margin-left:11%;"><b>--litho-required-props</b></p>
 
 <p style="margin-left:17%;">Activates: checker
 litho-required-props: Checks that all non-optional
-&lsquo;@Prop&lsquo;s have been specified when constructing
+&rsquo;@Prop&rsquo;s have been specified when constructing
 Litho components. (Conversely:
 <b>--no-litho-required-props</b>)</p>
 
@@ -438,7 +417,7 @@ running simultaneously</p>
 
 <p style="margin-left:17%;">Activates: Generate OCaml
 analysis allocation traces in
-&lsquo;infer-out/memtrace&lsquo;. (Conversely:
+&rsquo;infer-out/memtrace&rsquo;. (Conversely:
 <b>--no-memtrace-analysis-profiling</b>)</p>
 
 
@@ -447,6 +426,20 @@ analysis allocation traces in
 
 <p style="margin-left:17%;">Sampling rate for Memtrace
 allocation profiling. Default is 1e-6.</p>
+
+<p style="margin-left:11%;"><b>--modeled-expensive</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">Matcher or list of matchers for
+methods that should be considered expensive by the
+performance critical checker.</p>
+
+<p style="margin-left:11%;"><b>--never-returning-null</b>
+<i>json</i></p>
+
+<p style="margin-left:17%;">[Java only, all analyses]
+Matcher or list of matchers for functions that never return
+<i>null</i>.</p>
 
 
 <p style="margin-left:11%;"><b>--no-parameter-not-null-checked</b></p>
@@ -480,11 +473,11 @@ stdout and stderr (Conversely: <b>--no-print-logs</b>)</p>
 <p style="margin-left:11%;"><b>--printf-args</b></p>
 
 <p style="margin-left:17%;">Activates: checker printf-args:
-Detect mismatches between the Java &lsquo;printf&lsquo;
+Detect mismatches between the Java &rsquo;printf&rsquo;
 format strings and the argument types For example, this
 checker will warn about the type error in
-&lsquo;printf(&quot;Hello %d&quot;,
-&quot;world&quot;)&lsquo; (Conversely:
+&rsquo;printf(&quot;Hello %d&quot;,
+&quot;world&quot;)&rsquo; (Conversely:
 <b>--no-printf-args</b>)</p>
 
 <p style="margin-left:11%;"><b>--printf-args-only</b></p>
@@ -630,7 +623,7 @@ and disable all other checkers (Conversely:
 
 <p style="margin-left:17%;">Deactivates: checker
 self-in-block: An Objective-C-specific analysis to detect
-when a block captures &lsquo;self&lsquo;. (Conversely:
+when a block captures &rsquo;self&rsquo;. (Conversely:
 <b>--self-in-block</b>)</p>
 
 
@@ -768,18 +761,6 @@ node. (Conversely: <b>--no-write-html</b>) <b><br>
 <p style="margin-left:17%;">Specify the suffix of Xcode
 isysroot directory, to avoid absolute paths in tests</p>
 
-<h2>BUCK OPTIONS
-<a name="BUCK OPTIONS"></a>
-</h2>
-
-
-
-<p style="margin-left:11%; margin-top: 1em"><b>--merge</b></p>
-
-<p style="margin-left:17%;">Activates: Merge the captured
-results directories specified in the dependency file.
-(Conversely: <b>--no-merge</b>)</p>
-
 <h2>BUFFER OVERRUN OPTIONS
 <a name="BUFFER OVERRUN OPTIONS"></a>
 </h2>
@@ -854,10 +835,6 @@ Example:</p>
 
 <p style="margin-left:11%;">{ <br>
 &quot;ISOLATED_REACHING_CONNECT&quot;: { <br>
-&quot;doc_url&quot;: <br>
-
-&quot;http:://example.com/issue/doc/optional_link.html&quot;,
-<br>
 &quot;sources&quot;: { <br>
 &quot;desc&quot;: &quot;Code that should not call connect
 [optional]&quot;, <br>
@@ -991,6 +968,13 @@ initializer of global variables that are of type function
 pointer in Pulse. (Conversely:
 <b>--no-pulse-inline-global-init-func-pointer</b>)</p>
 
+
+<p style="margin-left:11%;"><b>--pulse-log-summary-count</b></p>
+
+<p style="margin-left:17%;">Activates: Log the number of
+summaries for each analyzed procedure in Pulse (Conversely:
+<b>--no-pulse-log-summary-count</b>)</p>
+
 <p style="margin-left:11%;"><b>--pulse-max-cfg-size</b>
 <i>int</i></p>
 
@@ -1090,8 +1074,8 @@ modelled as returning non-null in Pulse</p>
 <i>string</i></p>
 
 <p style="margin-left:17%;">Regex of methods that should be
-modelled as returning the &lsquo;this&lsquo; or
-&lsquo;self&lsquo; argument of an instance method in Pulse.
+modelled as returning the &rsquo;this&rsquo; or
+&rsquo;self&rsquo; argument of an instance method in Pulse.
 Languages supported: Java, Objective-C</p>
 
 
@@ -1118,13 +1102,45 @@ are method or namespace::method</p>
 
 
 <p style="margin-left:11%;"><b>--pulse-models-for-erlang</b>
-<i>json</i></p>
+<i>+path</i></p>
 
 <p style="margin-left:17%;">Provide custom models for
-Erlang code using a DSL.</p>
+Erlang in JSON files. If a path to a directory is given then
+the JSON files must have the &rsquo;.json&rsquo; extension.
+Any other file will be ignored. The subdirectories will be
+explored and must follow the same convention.</p>
 
-
-<p style="margin-left:11%;"><b>--no-pulse-nullsafe-report-npe</b></p>
+<p style="margin-left:11%;">The format is
+[SelectorBehavior, ...] where <br>
+SelectorBehavior := {&quot;selector&quot;: Selector,
+&quot;behavior&quot;: Behavior} <br>
+Selector := [&quot;MFA&quot;, { <br>
+&quot;module&quot;: &quot;&lt;module_name&gt;&quot;, <br>
+&quot;function&quot;: &quot;&lt;function_name&gt;&quot;,
+<br>
+&quot;arity&quot;: &lt;arity_int&gt; <br>
+}] <br>
+Behavior := ReturnValue | ArgumentsReturnList <br>
+- ReturnValue models return regardless of the arguments <br>
+- ArgumentsReturnList maps arguments to return values <br>
+ReturnValue := [&quot;ReturnValue&quot;, ErlangValue] <br>
+ArgumentsReturnList := <br>
+[&quot;ArgumentsReturnList&quot;, [ArgumentsReturn, ...]]
+<br>
+ArgumentsReturn := { <br>
+&quot;arguments&quot;: [ErlangValue, ...], <br>
+&quot;return&quot;: ErlangValue <br>
+} <br>
+ErlangValue := [&quot;Atom&quot;,
+&quot;&lt;atom_name&gt;&quot;] <br>
+| [&quot;IntLit&quot;, &quot;&lt;integer_value&gt;&quot;]
+<br>
+| [&quot;List&quot;, [ErlangValue, ...] <br>
+| [&quot;Tuple&quot;, [ErlangValue, ...] <br>
+| null <br>
+ErlangValue = null is to represent nondeterministic value
+<b><br>
+--no-pulse-nullsafe-report-npe</b></p>
 
 <p style="margin-left:17%;">Deactivates: Report null
 dereference issues on files marked @Nullsafe. (Conversely:
@@ -1168,7 +1184,7 @@ and <b>--pulse-taint-data-flow-kinds</b>.</p>
 
 <p style="margin-left:11%;">If a path to a directory is
 given then the configuration files <br>
-must have the &lsquo;.json&lsquo; extension. Any other file
+must have the &rsquo;.json&rsquo; extension. Any other file
 will be ignored. <br>
 The subdirectories will be explored and must follow the same
 <br>
@@ -1368,6 +1384,24 @@ distinct entities get assigned the same ID. (Conversely:
 <b>--simple-lineage-dedup</b>)</p>
 
 
+<p style="margin-left:11%;"><b>--simple-lineage-field-depth</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">[EXPERIMENTAL] Maximal field
+depth sensitivity for lineage analysis. 0 will make the
+analysis field insensitive.</p>
+
+
+<p style="margin-left:11%;"><b>--simple-lineage-field-width</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">[EXPERIMENTAL] Maximal width of
+structures for field sensitive lineage analysis. Structure
+that have a higher number of fields will be smashed into a
+single element. 0 will make the analysis field insensitive.
+If not set, field width will be unlimited.</p>
+
+
 <p style="margin-left:11%;"><b>--simple-lineage-include-builtins</b></p>
 
 <p style="margin-left:17%;">Activates: Include call/return
@@ -1401,11 +1435,14 @@ then the lineage graph produced corresponds to Infer's IR.
 skipped.</p>
 
 
-<p style="margin-left:11%;"><b>--simple-lineage-model-fields</b></p>
+<p style="margin-left:11%;"><b>--simple-lineage-prevent-cycles</b></p>
 
-<p style="margin-left:17%;">Activates: [EXPERIMENTAL]
-Enable field-aware lineage analysis. (Conversely:
-<b>--no-simple-lineage-model-fields</b>)</p>
+<p style="margin-left:17%;">Activates: [EXPERIMENTAL] If
+set, SimpleLineage will stop distinguishing the fields of a
+variable when it notices recursive types (that is, a
+sub-field having the same type as one of its
+&quot;ancestors&quot;). (Conversely:
+<b>--no-simple-lineage-prevent-cycles</b>)</p>
 
 <p style="margin-left:11%;"><b>--simple-lineage-seed</b>
 <i>int</i></p>
