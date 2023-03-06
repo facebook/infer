@@ -6,6 +6,7 @@ on:
       - "main"
     paths:
       - "website/**"
+      - ".github/workflows/deploy.yml"
 
 jobs:
   deploy:
