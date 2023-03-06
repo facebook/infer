@@ -15,14 +15,14 @@ jobs:
 
     env:
       working-directory: website
-      node-version: 14.x
+      node-version: 18
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Use Node.js ${{ env.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ env.node-version }}
 
