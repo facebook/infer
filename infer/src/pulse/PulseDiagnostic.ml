@@ -349,10 +349,6 @@ let pp_calling_context_prefix fmt calling_context =
         (if in_between_calls > 1 then "s" else "")
 
 
-let pp_typ fmt =
-  Option.iter ~f:(fun typ -> F.fprintf fmt " with type `%a`" (Typ.pp_full Pp.text) typ)
-
-
 let get_message diagnostic =
   match diagnostic with
   | AccessToInvalidAddress
@@ -448,12 +444,12 @@ let get_message diagnostic =
   | ConfigUsage {pname; config; branch_location} ->
       F.asprintf "Function %a used config %a at %a." Procname.pp pname ConfigName.pp config
         Location.pp branch_location
-  | ConstRefableParameter {param; typ; location} ->
+  | ConstRefableParameter {param; location} ->
       F.asprintf
-        "Function parameter `%a` with type `%a` is passed by-value but not modified inside the \
-         function on %a. This might result in an unnecessary copy at the callsite of this \
-         function. Consider changing the type of this function parameter to `const &`."
-        Var.pp param (Typ.pp_full Pp.text) typ Location.pp_line location
+        "Function parameter `%a` is passed by-value but not modified inside the function on %a. \
+         This might result in an unnecessary copy at the callsite of this function. Consider \
+         changing the type of this function parameter to `const &`."
+        Var.pp param Location.pp_line location
   | CSharpResourceLeak {class_name; location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let allocation_line =
@@ -523,7 +519,7 @@ let get_message diagnostic =
       in
       F.asprintf "Memory dynamically allocated %a is not freed after the last access at %a"
         pp_allocation_trace allocation_trace Location.pp location
-  | ReadonlySharedPtrParameter {param; typ; location; used_locations} ->
+  | ReadonlySharedPtrParameter {param; location; used_locations} ->
       let pp_used_locations f =
         match used_locations with
         | [] ->
@@ -536,11 +532,10 @@ let get_message diagnostic =
               used_locations
       in
       F.asprintf
-        "Function parameter `%a` with type `%a` is passed by-value but its lifetime is not \
-         extended inside the function on %a. This might result in an unnecessary copy at the \
-         callsite of this function. Consider passing a raw pointer instead and changing its usages \
-         if necessary%t."
-        Var.pp param (Typ.pp_full Pp.text) typ Location.pp_line location pp_used_locations
+        "Function parameter `%a` is passed by-value but its lifetime is not extended inside the \
+         function on %a. This might result in an unnecessary copy at the callsite of this \
+         function. Consider passing a raw pointer instead and changing its usages if necessary%t."
+        Var.pp param Location.pp_line location pp_used_locations
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
         Trace.find_map trace ~f:(function VariableDeclared (pvar, _, _) -> Some pvar | _ -> None)
@@ -595,14 +590,13 @@ let get_message diagnostic =
       (* TODO: say what line the source happened in the current function *)
       F.asprintf "`%a` is tainted by %a and flows to %a (%a) and policy (%s)" DecompilerExpr.pp expr
         Taint.pp source Taint.pp sink pp_flow_kind flow_kind policy_description
-  | UnnecessaryCopy {copied_into; source_typ; copied_location= Some (callee, {file; line})} ->
+  | UnnecessaryCopy {copied_into; copied_location= Some (callee, {file; line})} ->
       let open PulseAttribute in
       F.asprintf
-        "the return value `%a` is not modified after it is copied in the callee `%a`%a at `%a:%d`. \
+        "the return value `%a` is not modified after it is copied in the callee `%a` at `%a:%d`. \
          Please check if we can avoid the copy, e.g. by changing the return type of `%a` or by \
          revising the function body of it."
-        CopiedInto.pp copied_into Procname.pp callee pp_typ source_typ SourceFile.pp file line
-        Procname.pp callee
+        CopiedInto.pp copied_into Procname.pp callee SourceFile.pp file line Procname.pp callee
   | UnnecessaryCopy {copied_into; source_typ; location; copied_location= None; from} -> (
       let open PulseAttribute in
       let is_from_const = Option.exists ~f:Typ.is_const_reference source_typ in
@@ -632,30 +626,27 @@ let get_message diagnostic =
       in
       match copied_into with
       | IntoIntermediate {source_opt= None} ->
-          F.asprintf "An intermediate%a is %a on %a. %s." pp_typ source_typ CopyOrigin.pp from
-            Location.pp_line location suggestion_msg
+          F.asprintf "An intermediate is %a on %a. %s." CopyOrigin.pp from Location.pp_line location
+            suggestion_msg
       | IntoIntermediate {source_opt= Some source_expr} ->
-          F.asprintf "variable `%a`%a is %a unnecessarily into an intermediate on %a. %s."
-            DecompilerExpr.pp_source_expr source_expr pp_typ source_typ CopyOrigin.pp from
-            Location.pp_line location suggestion_msg
+          F.asprintf "variable `%a` is %a unnecessarily into an intermediate on %a. %s."
+            DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from Location.pp_line location
+            suggestion_msg
       | IntoVar {source_opt= None} ->
           F.asprintf
-            "%a variable `%a` is not modified after it is copied from a source%a on %a. %s. %s."
-            CopyOrigin.pp from CopiedInto.pp copied_into pp_typ source_typ Location.pp_line location
-            suggestion_msg suppression_msg
+            "%a variable `%a` is not modified after it is copied from a source on %a. %s. %s."
+            CopyOrigin.pp from CopiedInto.pp copied_into Location.pp_line location suggestion_msg
+            suppression_msg
       | IntoVar {source_opt= Some source_expr} ->
-          F.asprintf
-            "%a variable `%a` is not modified after it is copied from `%a`%a on %a. %s. %s."
+          F.asprintf "%a variable `%a` is not modified after it is copied from `%a` on %a. %s. %s."
             CopyOrigin.pp from CopiedInto.pp copied_into DecompilerExpr.pp_source_expr source_expr
-            pp_typ source_typ Location.pp_line location suggestion_msg suppression_msg
+            Location.pp_line location suggestion_msg suppression_msg
       | IntoField {field; source_opt= None} ->
-          F.asprintf
-            "Field `%a` is %a into from an rvalue-ref%a but is not modified afterwards. %s."
-            Fieldname.pp field CopyOrigin.pp from pp_typ source_typ suggestion_msg
+          F.asprintf "Field `%a` is %a into from an rvalue-ref but is not modified afterwards. %s."
+            Fieldname.pp field CopyOrigin.pp from suggestion_msg
       | IntoField {field; source_opt= Some source_expr} ->
-          F.asprintf "`%a`%a is %a into field `%a` but is not modified afterwards. %s."
-            DecompilerExpr.pp source_expr pp_typ source_typ CopyOrigin.pp from Fieldname.pp field
-            suggestion_msg )
+          F.asprintf "`%a` is %a into field `%a` but is not modified afterwards. %s."
+            DecompilerExpr.pp source_expr CopyOrigin.pp from Fieldname.pp field suggestion_msg )
 
 
 let add_errlog_header ~nesting ~title location errlog =
@@ -721,6 +712,14 @@ let add_access_trace ~include_title ~nesting invalidation access_trace errlog =
   @@ errlog
 
 
+let get_param_typ param typ =
+  F.asprintf "Parameter %a with type `%a`" Var.pp param (Typ.pp_full Pp.text) typ
+
+
+let pp_copy_typ fmt =
+  Option.iter ~f:(fun typ -> F.fprintf fmt " (with type `%a`)" (Typ.pp_full Pp.text) typ)
+
+
 let get_trace = function
   | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} ->
       let in_context_nesting = List.length calling_context in
@@ -739,9 +738,9 @@ let get_trace = function
           F.fprintf fmt "config %a is used as branch condition here" ConfigName.pp config )
         trace
       @@ []
-  | ConstRefableParameter {param; location} ->
+  | ConstRefableParameter {param; typ; location} ->
       let nesting = 0 in
-      [Errlog.make_trace_element nesting location (F.asprintf "Parameter %a" Var.pp param) []]
+      [Errlog.make_trace_element nesting location (get_param_typ param typ) []]
   | CSharpResourceLeak {class_name; location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let access_start_location = Trace.get_start_location allocation_trace in
@@ -801,9 +800,9 @@ let get_trace = function
              F.fprintf fmt "allocated by `%a` here" Attribute.pp_allocator allocator )
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
-  | ReadonlySharedPtrParameter {param; location; used_locations} ->
+  | ReadonlySharedPtrParameter {param; typ; location; used_locations} ->
       let nesting = 0 in
-      Errlog.make_trace_element nesting location (F.asprintf "Parameter %a" Var.pp param) []
+      Errlog.make_trace_element nesting location (get_param_typ param typ) []
       :: List.map used_locations ~f:(fun used_location ->
              Errlog.make_trace_element nesting used_location "used" [] )
   | ReadUninitializedValue {calling_context; trace} ->
@@ -834,16 +833,16 @@ let get_trace = function
            ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
            sink_trace
       @@ []
-  | UnnecessaryCopy {location; copied_location= None; from} ->
+  | UnnecessaryCopy {location; source_typ; copied_location= None; from} ->
       let nesting = 0 in
       [ Errlog.make_trace_element nesting location
-          (F.asprintf "%a here" PulseAttribute.CopyOrigin.pp from)
+          (F.asprintf "%a here%a" PulseAttribute.CopyOrigin.pp from pp_copy_typ source_typ)
           [] ]
-  | UnnecessaryCopy {location; copied_location= Some (_, copied_location); from} ->
+  | UnnecessaryCopy {location; source_typ; copied_location= Some (_, copied_location); from} ->
       let nesting = 0 in
       [ Errlog.make_trace_element nesting location (F.asprintf "returned here") []
       ; Errlog.make_trace_element nesting copied_location
-          (F.asprintf "%a here" PulseAttribute.CopyOrigin.pp from)
+          (F.asprintf "%a here%a" PulseAttribute.CopyOrigin.pp from pp_copy_typ source_typ)
           [] ]
 
 
