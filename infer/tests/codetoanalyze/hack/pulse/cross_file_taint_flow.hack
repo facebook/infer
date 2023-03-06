@@ -21,3 +21,8 @@ function indirectCrossFileFlowOk(): void {
   $untainted = OuterFile::untainted();
   OuterFile::taintSink($untainted);
 }
+
+function FN_inheritanceCrossFileFlowBad(): void {
+  $tainted = OuterFile::superTaintSource(); // works if OuterFile$static.superTaintSource specified as a source
+  OuterFile::taintSink($tainted);
+}

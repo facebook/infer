@@ -2,6 +2,7 @@
   "pulse-taint-sources": [
     { "procedure": "$root.taintSource" },
     { "procedure": "OuterFile$static.taintSource" },
+    { "procedure": "OuterFileSuper$static.superTaintSource" },
     { "procedure": "Level5Base.getSuperContext" }
   ],
   "pulse-taint-sinks": [
