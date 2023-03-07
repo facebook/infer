@@ -1753,6 +1753,14 @@ and incremental_analysis =
      $(b,--reanalyze) and $(b,--continue-analysis)."
 
 
+and inline_func_pointer_for_testing =
+  CLOpt.mk_string_opt ~long:"inline-func-pointer-for-testing"
+    ~in_help:InferCommand.[(Analyze, manual_clang)]
+    "Enables substituting global function pointers used for testing with the real function calls \
+     in the clang frontend. Pass the prefix used to build the global function pointers used for \
+     testing."
+
+
 and _inferconfig_path =
   (* This is a no-op argument ensuring a meaningful message in case of error, as well as to
      silently consume the argument which is parsed specially. *)
@@ -3720,6 +3728,8 @@ and impurity_report_immutable_modifications = !impurity_report_immutable_modific
 and inclusive_cost = !inclusive_cost
 
 and incremental_analysis = !incremental_analysis
+
+and inline_func_pointer_for_testing = !inline_func_pointer_for_testing
 
 and issues_tests = !issues_tests
 

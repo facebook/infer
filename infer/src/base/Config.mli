@@ -410,6 +410,8 @@ val impurity_report_immutable_modifications : bool
 
 val incremental_analysis : bool
 
+val inline_func_pointer_for_testing : string option
+
 val infer_is_clang : bool
 
 val infer_is_javac : bool

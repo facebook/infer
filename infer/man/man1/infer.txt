@@ -870,6 +870,12 @@ OPTIONS
            other checkers (Conversely: --no-inefficient-keyset-iterator-only)       
     See also infer-analyze(1).
 
+       --inline-func-pointer-for-testing string
+           Enables substituting global function pointers used for testing
+           with the real function calls in the clang frontend. Pass the
+           prefix used to build the global function pointers used for
+           testing.           See also infer-analyze(1).
+
        --issues-tests file
            Write a list of issues in a format suitable for tests to file       
     See also infer-report(1).
