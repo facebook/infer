@@ -253,6 +253,7 @@
   ],
   "pulse-taint-sinks": [
     { "procedure": "inferSensitiveSink" },
+    { "class_name_regex": "codetoanalyze.java.pulse.sinks.*"},
     { "class_names": ["android.app.Activity"],
       "method_names": ["startActivityFromChild", "startActivityFromFragment"],
       "kinds": ["StartComponent"],

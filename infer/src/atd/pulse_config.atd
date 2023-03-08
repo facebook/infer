@@ -21,6 +21,7 @@ type matcher = {
   class_name and method_names must be specified, or else overrides_of_class_with_annotation/method_with_annotation *)
   ?procedure: string option;
   ?procedure_regex: string option;
+  ?class_name_regex: string option;
   ?class_names: string list option;
   ?method_names: string list option;
   ?overrides_of_class_with_annotation: string option;

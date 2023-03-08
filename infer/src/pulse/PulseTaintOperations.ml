@@ -45,6 +45,7 @@ let taint_target_matches tenv taint_target actual_index actual_typ =
 type procedure_matcher =
   | ProcedureName of {name: string}
   | ProcedureNameRegex of {name_regex: Str.regexp}
+  | ClassNameRegex of {name_regex: Str.regexp}
   | ClassAndMethodNames of {class_names: string list; method_names: string list}
   | OverridesOfClassWithAnnotation of {annotation: string}
   | MethodWithAnnotation of {annotation: string}
@@ -129,6 +130,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
         match matcher with
         | { procedure= Some name
           ; procedure_regex= None
+          ; class_name_regex= None
           ; class_names= None
           ; method_names= None
           ; overrides_of_class_with_annotation= None
@@ -137,6 +139,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
             ProcedureName {name}
         | { procedure= None
           ; procedure_regex= Some name_regex
+          ; class_name_regex= None
           ; class_names= None
           ; method_names= None
           ; overrides_of_class_with_annotation= None
@@ -145,6 +148,16 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
             ProcedureNameRegex {name_regex= Str.regexp name_regex}
         | { procedure= None
           ; procedure_regex= None
+          ; class_name_regex= Some name_regex
+          ; class_names= None
+          ; method_names= None
+          ; overrides_of_class_with_annotation= None
+          ; method_with_annotation= None
+          ; allocation= None } ->
+            ClassNameRegex {name_regex= Str.regexp name_regex}
+        | { procedure= None
+          ; procedure_regex= None
+          ; class_name_regex= None
           ; class_names= Some class_names
           ; method_names= Some method_names
           ; overrides_of_class_with_annotation= None
@@ -153,6 +166,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
             ClassAndMethodNames {class_names; method_names}
         | { procedure= None
           ; procedure_regex= None
+          ; class_name_regex= None
           ; class_names= None
           ; method_names= None
           ; overrides_of_class_with_annotation= Some annotation
@@ -161,6 +175,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
             OverridesOfClassWithAnnotation {annotation}
         | { procedure= None
           ; procedure_regex= None
+          ; class_name_regex= None
           ; class_names= None
           ; method_names= None
           ; overrides_of_class_with_annotation= None
@@ -169,6 +184,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
             MethodWithAnnotation {annotation}
         | { procedure= None
           ; procedure_regex= None
+          ; class_name_regex= None
           ; class_names= None
           ; method_names= None
           ; overrides_of_class_with_annotation= None
@@ -178,13 +194,14 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
         | _ ->
             L.die UserError
               "When parsing option %s: Unexpected JSON format: Exactly one of \"procedure\", \
-               \"procedure_regex\", \"allocation\" must be provided, or else \"class_names\" and \
-               \"method_names\" must be provided, or else \"overrides_of_class_with_annotation\", \
-               but got \"procedure\": %a, \"procedure_regex\": %a, \"class_names\": %a, \
+               \"procedure_regex\", \"class_name_regex\" \"allocation\" must be provided, or else \
+               \"class_names\" and \"method_names\" must be provided, or else \
+               \"overrides_of_class_with_annotation\", but got \"procedure\": %a, \
+               \"procedure_regex\": %a, \"class_name_regex\": %a, \"class_names\": %a, \
                \"method_names\": %a, \"overrides_of_class_with_annotation\": %a,\n\
               \               \"method_with_annotation\": %a \"allocation\": %a" option_name
               (Pp.option F.pp_print_string) matcher.procedure (Pp.option F.pp_print_string)
-              matcher.procedure_regex
+              matcher.procedure_regex (Pp.option F.pp_print_string) matcher.class_name_regex
               (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
               matcher.class_names
               (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
@@ -242,6 +259,18 @@ let procedure_matches tenv matchers proc_name actuals =
                 true
             | exception Caml.Not_found ->
                 false )
+        | ClassNameRegex {name_regex} ->
+            Option.exists (Procname.get_class_type_name proc_name) ~f:(fun class_name ->
+                PatternMatch.supertype_exists tenv
+                  (fun class_name _ ->
+                    let class_name_s = Typ.Name.name class_name in
+                    L.d_printfln "Matching regex wrt %s" class_name_s ;
+                    match Str.search_forward name_regex class_name_s 0 with
+                    | _ ->
+                        true
+                    | exception Caml.Not_found ->
+                        false )
+                  class_name )
         | ClassAndMethodNames {class_names; method_names} ->
             Option.exists (Procname.get_class_type_name proc_name) ~f:(fun class_name ->
                 PatternMatch.supertype_exists tenv

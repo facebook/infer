@@ -7,6 +7,8 @@
 
 package codetoanalyze.java.pulse;
 
+import codetoanalyze.java.pulse.sinks.InferTaintSinks;
+
 /** testing basic intraprocedural functionality: assignment, ifs, loops, casts */
 public class Basics {
 
@@ -231,5 +233,17 @@ public class Basics {
   void taintedToSanitizedToSinkOk() {
     InferTaint.inferSensitiveSink(
         InferTaint.inferUniversalSanitizer(InferTaint.inferSecretSource()));
+  }
+
+  void taintedBasedOnClassNameRegexBad() {
+    Object src = InferTaint.inferSecretSource();
+    InferTaintSinks.sink1(src);
+    InferTaintSinks.sink2(src);
+  }
+
+  void notTaintedBasedOnClassNameRegexOk() {
+    Object src = InferTaint.inferSecretSource();
+    InferTaint.sink1(src);
+    InferTaint.sink2(src);
   }
 }
