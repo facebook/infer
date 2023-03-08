@@ -44,7 +44,7 @@ let source_file_in_project source_file =
     than the source file to avoid conflicts between different versions of the libraries. *)
 let should_translate translation_unit (loc_start, loc_end) decl_trans_context ~translate_when_used =
   let map_file_of pred loc =
-    match Option.map ~f:SourceFile.from_abs_path loc.Clang_ast_t.sl_file with
+    match Option.map ~f:SourceFile.create loc.Clang_ast_t.sl_file with
     | Some f ->
         pred f
     | None ->
