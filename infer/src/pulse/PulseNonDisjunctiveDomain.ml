@@ -157,27 +157,43 @@ end
 
 module ParameterMap = AbstractDomain.Map (ParameterVar) (ParameterSpec)
 module Locked = AbstractDomain.BooleanOr
+module TrackedLoc = AbstractDomain.FiniteMultiMap (Location) (Timestamp)
 
-module TrackedLoc = struct
-  type t = {loc: Location.t; timestamp: Timestamp.t} [@@deriving compare, equal]
+(** The value domain [Val] is conceptually a collection, i.e. a set or a map, that has a bottom
+    value and an element can be added to it, e.g. using [f_add_v] in the [add] function. *)
+module MakeMapToCollection
+    (Key : PrettyPrintable.PrintableOrderedType)
+    (Val : AbstractDomain.WithBottom) =
+struct
+  include AbstractDomain.Map (Key) (Val)
 
-  let pp fmt {loc} = Location.pp fmt loc
+  let value_with_bottom = Option.value ~default:Val.bottom
+
+  let find k x = find_opt k x |> value_with_bottom
+
+  let add k f_add_v x = update k (fun v_opt -> Some (f_add_v (value_with_bottom v_opt))) x
+end
+
+module MakeSetWithTrackedLoc (Key : PrettyPrintable.PrintableOrderedType) = struct
+  include MakeMapToCollection (Key) (TrackedLoc)
+
+  let add k loc timestamp map = add k (TrackedLoc.add loc timestamp) map
 end
 
 module Loads = struct
   module IdentToVars = AbstractDomain.FiniteMultiMap (Ident) (Var)
-  module LoadedVars = AbstractDomain.FiniteMultiMap (Var) (TrackedLoc)
+  module LoadedVars = MakeSetWithTrackedLoc (Var)
   include AbstractDomain.PairWithBottom (IdentToVars) (LoadedVars)
 
   let add loc timestamp ident var (ident_to_vars, loaded_vars) =
-    (IdentToVars.add ident var ident_to_vars, LoadedVars.add var {loc; timestamp} loaded_vars)
+    (IdentToVars.add ident var ident_to_vars, LoadedVars.add var loc timestamp loaded_vars)
 
 
   let get_all ident (ident_to_vars, _) = IdentToVars.get_all ident ident_to_vars
 
   let is_loaded var (_, loaded_vars) = LoadedVars.mem var loaded_vars
 
-  let get_loaded_locations var (_, loaded_vars) = LoadedVars.get_all var loaded_vars
+  let get_loaded_locations var (_, loaded_vars) = LoadedVars.find var loaded_vars
 end
 
 module PVar = struct
@@ -186,11 +202,10 @@ module PVar = struct
   let pp = Pvar.pp Pp.text
 end
 
-module Stores = AbstractDomain.FiniteMultiMap (PVar) (TrackedLoc)
+module Stores = MakeSetWithTrackedLoc (PVar)
 
 module CalleeWithUnknown = struct
-  type t = V of {copy_tgt: Exp.t option; callee: Procname.t; timestamp: Timestamp.t} | Unknown
-  [@@deriving compare]
+  type t = V of {copy_tgt: Exp.t option; callee: Procname.t} | Unknown [@@deriving compare]
 
   let pp_copy_tgt f copy_tgt = Option.iter copy_tgt ~f:(fun tgt -> F.fprintf f "(%a)" Exp.pp tgt)
 
@@ -215,19 +230,20 @@ module CalleeWithUnknown = struct
         true
 end
 
-module CalleeWithLoc = struct
-  type t = {callee: CalleeWithUnknown.t; loc: Location.t} [@@deriving compare]
+module CalleesWithLoc = struct
+  include MakeSetWithTrackedLoc (CalleeWithUnknown)
 
-  let pp f {callee; loc} = F.fprintf f "%a at %a" CalleeWithUnknown.pp callee Location.pp loc
-
-  let is_copy_to_field_or_global {callee} = CalleeWithUnknown.is_copy_to_field_or_global callee
+  let is_copy_to_field_or_global x =
+    exists (fun callee _ -> CalleeWithUnknown.is_copy_to_field_or_global callee) x
 end
 
 module PassedTo = struct
-  include AbstractDomain.FiniteMultiMap (Var) (CalleeWithLoc)
+  include MakeMapToCollection (Var) (CalleesWithLoc)
+
+  let add var callee loc timestamp x = add var (CalleesWithLoc.add callee loc timestamp) x
 
   let is_copied_to_field_or_global var x =
-    List.exists (get_all var x) ~f:CalleeWithLoc.is_copy_to_field_or_global
+    find_opt var x |> Option.exists ~f:CalleesWithLoc.is_copy_to_field_or_global
 end
 
 type elt =
@@ -388,21 +404,20 @@ let is_never_used_after_copy_into_intermediate_or_field pvar (copied_timestamp :
       false
   | V {passed_to; loads; stores} ->
       let is_after_copy =
-        List.exists ~f:(fun TrackedLoc.{timestamp} ->
-            (copied_timestamp :> int) < (timestamp :> int) )
+        TrackedLoc.exists (fun _ timestamp -> (copied_timestamp :> int) < (timestamp :> int))
       in
       let source_var = Var.of_pvar pvar in
       let is_passed_to_non_destructor_after_copy =
-        PassedTo.get_all source_var passed_to
-        |> List.exists ~f:(fun {CalleeWithLoc.callee; _} ->
+        PassedTo.find source_var passed_to
+        |> CalleesWithLoc.exists (fun callee tracked_loc ->
                match callee with
-               | V {callee; timestamp} when (copied_timestamp :> int) < (timestamp :> int) ->
-                   not (Procname.is_destructor callee)
-               | _ ->
+               | V {callee} ->
+                   is_after_copy tracked_loc && not (Procname.is_destructor callee)
+               | Unknown ->
                    false )
       in
       let is_loaded_after_copy = Loads.get_loaded_locations source_var loads |> is_after_copy in
-      let is_stored_after_copy = Stores.get_all pvar stores |> is_after_copy in
+      let is_stored_after_copy = Stores.find pvar stores |> is_after_copy in
       not (is_loaded_after_copy || is_stored_after_copy || is_passed_to_non_destructor_after_copy)
 
 
@@ -524,7 +539,7 @@ let set_load loc tstamp ident var astate_n =
 
 
 let set_store_elt loc timestamp var astate_n =
-  {astate_n with stores= Stores.add var {loc; timestamp} astate_n.stores}
+  {astate_n with stores= Stores.add var loc timestamp astate_n.stores}
 
 
 let set_store loc tstamp var astate_n = map (set_store_elt loc tstamp var) astate_n
@@ -533,7 +548,7 @@ let get_loaded_locations var = function
   | Top ->
       []
   | V {loads} ->
-      Loads.get_loaded_locations var loads |> List.map ~f:(fun TrackedLoc.{loc} -> loc)
+      Loads.get_loaded_locations var loads |> TrackedLoc.get_all_keys
 
 
 let is_captured var astate_n =
@@ -560,7 +575,7 @@ let set_passed_to_elt loc timestamp call_exp actuals ({loads; passed_to} as asta
           | _ ->
               None
         in
-        CalleeWithUnknown.V {copy_tgt; callee; timestamp}
+        CalleeWithUnknown.V {copy_tgt; callee}
     | _ ->
         CalleeWithUnknown.Unknown
   in
@@ -575,7 +590,7 @@ let set_passed_to_elt loc timestamp call_exp actuals ({loads; passed_to} as asta
             acc )
   in
   let passed_to =
-    Var.Set.fold (fun var acc -> PassedTo.add var {callee= new_callee; loc} acc) vars passed_to
+    Var.Set.fold (fun var acc -> PassedTo.add var new_callee loc timestamp acc) vars passed_to
   in
   {astate_n with passed_to}
 
@@ -589,7 +604,7 @@ let get_passed_to var ~f = function
       `Top
   | V {passed_to} ->
       let callees =
-        PassedTo.get_all var passed_to |> List.filter ~f:(fun {CalleeWithLoc.callee; _} -> f callee)
+        PassedTo.find var passed_to |> CalleesWithLoc.filter (fun callee _ -> f callee)
       in
       `PassedTo callees
 
@@ -607,4 +622,4 @@ let is_lifetime_extended var astate_n =
   | `Top ->
       true
   | `PassedTo callees ->
-      not (List.is_empty callees)
+      not (CalleesWithLoc.is_empty callees)

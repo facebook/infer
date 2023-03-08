@@ -305,6 +305,10 @@ include sig
 
     val get_all : Key.t -> t -> Value.t list
 
+    val get_all_keys : t -> Key.t list
+
+    val exists : (Key.t -> Value.t -> bool) -> t -> bool
+
     val fold : (Key.t -> Value.t -> 'a -> 'a) -> t -> 'a -> 'a
 
     val filter : (Key.t -> Value.t -> bool) -> t -> t

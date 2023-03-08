@@ -878,6 +878,8 @@ struct
 
   let mem k m = M.mem k m
 
+  let exists f m = M.exists (fun key values -> S.exists (fun value -> f key value) values) m
+
   let fold f (m : t) acc =
     M.fold (fun key values acc -> S.fold (fun v acc -> f key v acc) values acc) m acc
 
@@ -904,6 +906,8 @@ struct
   let remove_all k m = M.remove k m
 
   let get_all k m = match M.find_opt k m with None -> [] | Some vs -> S.elements vs
+
+  let get_all_keys m = M.fold (fun key _ acc -> key :: acc) m [] |> List.rev
 end
 
 module BooleanAnd = struct
