@@ -9,17 +9,21 @@ open! IStd
 
 type t
 
+module ProcEntry : sig
+  type t = Decl of Textual.ProcDecl.t | Desc of Textual.ProcDesc.t
+end
+
 val init : Textual.SourceFile.t -> t
 
 val declare_global : t -> Textual.Global.t -> unit
 
-val declare_proc : t -> is_implemented:bool -> Textual.ProcDecl.t -> unit
+val declare_proc : t -> ProcEntry.t -> unit
 
 val declare_struct : t -> Textual.Struct.t -> unit
 
 val fold_globals : t -> init:'a -> f:('a -> Textual.VarName.t -> Textual.Global.t -> 'a) -> 'a
 
-val fold_procnames : t -> init:'a -> f:('a -> Textual.ProcDecl.t -> 'a) -> 'a
+val fold_procdecls : t -> init:'a -> f:('a -> Textual.ProcDecl.t -> 'a) -> 'a
 
 val fold_structs : t -> init:'a -> f:('a -> Textual.TypeName.t -> Textual.Struct.t -> 'a) -> 'a
 
@@ -27,7 +31,7 @@ val get_fielddecl : t -> Textual.qualified_fieldname -> Textual.FieldDecl.t opti
 
 val get_global : t -> Textual.VarName.t -> Textual.Global.t option
 
-val get_procname : t -> Textual.qualified_procname -> Textual.ProcDecl.t option
+val get_procdecl : t -> Textual.qualified_procname -> Textual.ProcDecl.t option
 
 val get_struct : t -> Textual.TypeName.t -> Textual.Struct.t option
 

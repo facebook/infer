@@ -17,16 +17,26 @@ module QualifiedNameHashtbl = Hashtbl.Make (struct
   let hash = hash_qualified_procname
 end)
 
+module ProcEntry = struct
+  type t = Decl of ProcDecl.t | Desc of ProcDesc.t
+
+  let is_implemented = function Decl _ -> false | Desc _ -> true
+
+  let decl = function Decl p -> p | Desc p -> p.procdecl
+
+  let name t = (decl t).qualified_name
+end
+
 type t =
   { globals: Global.t VarName.Hashtbl.t
-  ; procnames: (ProcDecl.t * bool) QualifiedNameHashtbl.t
+  ; procs: ProcEntry.t QualifiedNameHashtbl.t
         (** the boolean records whether an implementation was given *)
   ; structs: Struct.t TypeName.Hashtbl.t
   ; sourcefile: SourceFile.t }
 
 let init sourcefile =
   { globals= VarName.Hashtbl.create 17
-  ; procnames= QualifiedNameHashtbl.create 17
+  ; procs= QualifiedNameHashtbl.create 17
   ; structs= TypeName.Hashtbl.create 17
   ; sourcefile }
 
@@ -66,15 +76,18 @@ let declare_global decls (global : Global.t) =
 
 let is_global_declared decls (global : Global.t) = VarName.Hashtbl.mem decls.globals global.name
 
-let is_proc_implemented decls procdecl =
-  QualifiedNameHashtbl.find_opt decls.procnames procdecl.ProcDecl.qualified_name
-  |> Option.value_map ~default:false ~f:snd
+let is_proc_implemented decls proc =
+  QualifiedNameHashtbl.find_opt decls.procs proc.ProcDecl.qualified_name
+  |> Option.value_map ~default:false ~f:ProcEntry.is_implemented
 
 
-let declare_proc decls ~is_implemented (pname : ProcDecl.t) =
-  let is_already_implemented = is_proc_implemented decls pname in
-  QualifiedNameHashtbl.replace decls.procnames pname.qualified_name
-    (pname, is_already_implemented || is_implemented)
+let declare_proc decls (proc : ProcEntry.t) =
+  let existing_proc = QualifiedNameHashtbl.find_opt decls.procs (ProcEntry.name proc) in
+  match (existing_proc, proc) with
+  | Some (Desc _), Decl _ ->
+      ()
+  | _, _ ->
+      QualifiedNameHashtbl.replace decls.procs (ProcEntry.name proc) proc
 
 
 let declare_struct decls (s : Struct.t) = TypeName.Hashtbl.replace decls.structs s.name s
@@ -99,8 +112,8 @@ let get_fielddecl decls ({name; enclosing_class} : qualified_fieldname) =
       FieldName.equal qualified_name.name name )
 
 
-let get_procname decls qualified_name =
-  QualifiedNameHashtbl.find_opt decls.procnames qualified_name |> Option.map ~f:fst
+let get_procdecl decls qualified_name =
+  QualifiedNameHashtbl.find_opt decls.procs qualified_name |> Option.map ~f:ProcEntry.decl
 
 
 let get_struct decls tname = TypeName.Hashtbl.find_opt decls.structs tname
@@ -109,8 +122,8 @@ let fold_globals decls ~init ~f =
   VarName.Hashtbl.fold (fun key data x -> f x key data) decls.globals init
 
 
-let fold_procnames decls ~init ~f =
-  QualifiedNameHashtbl.fold (fun _ (procname, _) x -> f x procname) decls.procnames init
+let fold_procdecls decls ~init ~f =
+  QualifiedNameHashtbl.fold (fun _ proc x -> f x (ProcEntry.decl proc)) decls.procs init
 
 
 let fold_structs decls ~init ~f =
@@ -192,8 +205,9 @@ let get_undefined_types decls =
   VarName.Hashtbl.to_seq_values decls.globals
   |> Seq.iter (fun ({typ} : Global.t) -> register_typ typ referenced_tnames) ;
   (* Collect type names from Procdecls  *)
-  QualifiedNameHashtbl.to_seq_values decls.procnames
-  |> Seq.iter (fun ((procdecl : ProcDecl.t), _) ->
+  QualifiedNameHashtbl.to_seq_values decls.procs
+  |> Seq.iter (fun (proc : ProcEntry.t) ->
+         let procdecl = ProcEntry.decl proc in
          register_annotated_typ procdecl.result_type referenced_tnames ;
          register_annotated_typs procdecl.formals_types referenced_tnames ) ;
   (* Collect type names from Structs  *)
@@ -225,14 +239,14 @@ let make_decls ({decls; sourcefile} : Module.t) : error list * t =
         declare_struct decls_env struct_ ;
         errors
     | Procdecl procdecl ->
-        declare_proc decls_env ~is_implemented:false procdecl ;
+        declare_proc decls_env (Decl procdecl) ;
         errors
     | Proc pdesc ->
         let procdecl = pdesc.procdecl in
         let errors = check_proc_not_implemented_twice decls_env errors procdecl in
         let errors = check_parameters_not_declared_twice errors pdesc in
         let errors = check_nodes_not_implemented_twice errors pdesc in
-        declare_proc decls_env ~is_implemented:true procdecl ;
+        declare_proc decls_env (Desc pdesc) ;
         errors
   in
   let errors = List.fold decls ~init:[] ~f:register in

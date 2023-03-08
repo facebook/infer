@@ -285,7 +285,7 @@ let typeof_reserved_proc (proc : qualified_procname) : Typ.t * Typ.t list * bool
 (* Since procname can be both defined and declared in a file we should account for unknown formals in declarations. *)
 let typeof_procname (proc : qualified_procname) : (Typ.t * Typ.t list * bool) monad =
  fun state ->
-  match TextualDecls.get_procname state.decls proc with
+  match TextualDecls.get_procdecl state.decls proc with
   | Some (procdecl : ProcDecl.t) ->
       let formals_types = List.map procdecl.formals_types ~f:(fun {Typ.typ} -> typ) in
       ret (procdecl.result_type.typ, formals_types, procdecl.are_formal_types_fully_declared) state

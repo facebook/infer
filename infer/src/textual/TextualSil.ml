@@ -441,7 +441,7 @@ module ExpBridge = struct
           Cast (TypBridge.to_sil lang typ, aux exp)
       | Call {proc; args} -> (
         match
-          ( TextualDecls.get_procname decls_env proc
+          ( TextualDecls.get_procdecl decls_env proc
           , ProcDecl.to_unop proc
           , ProcDecl.to_binop proc
           , args )
@@ -503,7 +503,7 @@ module InstrBridge = struct
           ; loc= Location.Unknown }
     | Call ((id, _), Const (Cfun pname), args, _, call_flags) ->
         let procdecl = ProcDeclBridge.of_sil pname in
-        let () = TextualDecls.declare_proc decls ~is_implemented:false procdecl in
+        let () = TextualDecls.declare_proc decls (Decl procdecl) in
         let proc = procdecl.qualified_name in
         let args = List.map ~f:(fun (e, _) -> ExpBridge.of_sil decls tenv e) args in
         let loc = Location.Unknown in
@@ -564,7 +564,7 @@ module InstrBridge = struct
     | Let {id; exp= Call {proc; args; kind}; loc} ->
         let ret = IdentBridge.to_sil id in
         let ({formals_types; are_formal_types_fully_declared} as procname : ProcDecl.t) =
-          match TextualDecls.get_procname decls_env proc with
+          match TextualDecls.get_procdecl decls_env proc with
           | Some procname ->
               procname
           | None ->
@@ -907,7 +907,7 @@ module ModuleBridge = struct
       TextualDecls.fold_structs env ~init:decls ~f:(fun decls _ struct_ -> Struct struct_ :: decls)
     in
     let decls =
-      TextualDecls.fold_procnames env ~init:decls ~f:(fun decls procname ->
+      TextualDecls.fold_procdecls env ~init:decls ~f:(fun decls procname ->
           Procdecl procname :: decls )
     in
     let attrs = [Attr.mk_source_language lang] in
