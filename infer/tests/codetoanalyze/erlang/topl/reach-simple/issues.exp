@@ -3,3 +3,4 @@ codetoanalyze/erlang/topl/reach-simple/reach.erl, test_b_Bad/0, 0, TOPL_ERROR, n
 codetoanalyze/erlang/topl/reach-simple/reach.erl, test_c_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to source/0,call to sink/1]
 codetoanalyze/erlang/topl/reach-simple/reach.erl, test_d_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to source/0,call to sink/1]
 codetoanalyze/erlang/topl/reach-simple/reach.erl, test_e_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to source/0,call to sink/1]
+codetoanalyze/erlang/topl/reach-simple/reach.erl, test_k_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to source/0,call to sink/1]

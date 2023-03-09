@@ -13,7 +13,8 @@
     fn_test_g_Bad/0,
     fn_test_h_Bad/0,
     fn_test_i_Bad/0,
-    fn_test_j_Bad/0
+    fn_test_j_Bad/0,
+    test_k_Bad/0
 ]).
 
 test_a_Bad() ->
@@ -53,6 +54,10 @@ fn_test_j_Bad() ->
     {Y} = id(X),
     Z = [Y, Y],
     go(Z).
+
+test_k_Bad() ->
+    X = source(),
+    sink(#{"X" => X}).
 
 go(Z) ->
     gogo({[], Z}).
