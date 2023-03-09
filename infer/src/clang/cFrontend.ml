@@ -57,13 +57,13 @@ let do_source_file (translation_unit_context : CFrontend_config.translation_unit
   L.(debug Capture Verbose)
     "@\n Start building call/cfg graph for '%a'....@\n" SourceFile.pp source_file ;
   let cfg = compute_icfg translation_unit_context tenv ast in
+  Config.inline_func_pointer_for_testing
+  |> Option.iter ~f:(fun prefix -> CMockPointerSubst.process cfg prefix) ;
   ( match translation_unit_context.CFrontend_config.lang with
   | CFrontend_config.ObjC | CFrontend_config.ObjCPP ->
       do_objc_preanalyses cfg tenv
   | _ ->
       () ) ;
-  Config.inline_func_pointer_for_testing
-  |> Option.iter ~f:(fun prefix -> CMockPointerSubst.process cfg prefix) ;
   L.(debug Capture Verbose) "@\n End building call/cfg graph for '%a'.@\n" SourceFile.pp source_file ;
   SourceFiles.add source_file cfg (Tenv.FileLocal tenv) (Some integer_type_widths) ;
   if Config.debug_mode then Tenv.store_debug_file_for_source source_file tenv ;

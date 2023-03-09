@@ -56,7 +56,7 @@ let verify_decl ~env errors (decl : Module.decl) =
   let verify_call loc errors proc args =
     if ProcDecl.is_not_regular_proc proc then errors
     else
-      match TextualDecls.get_procname env proc with
+      match TextualDecls.get_procdecl env proc with
       | None ->
           UnknownProcdecl proc :: errors
       | Some {formals_types; are_formal_types_fully_declared= true} ->

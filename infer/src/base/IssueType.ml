@@ -443,7 +443,7 @@ let pulse_config_usage =
 
 
 let pulse_const_refable =
-  register ~enabled:false ~id:"PULSE_CONST_REFABLE" Error Pulse ~hum:"Const Refable Parameter"
+  register ~id:"PULSE_CONST_REFABLE" Error Pulse ~hum:"Const Refable Parameter"
     ~user_documentation:[%blob "./documentation/issues/PULSE_CONST_REFABLE.md"]
 
 
@@ -1047,8 +1047,7 @@ let unnecessary_copy_movable_pulse =
 
 
 let unnecessary_copy_optional_pulse =
-  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_OPTIONAL" Error Pulse
-    ~hum:"Unnecessary Copy to Optional"
+  register ~id:"PULSE_UNNECESSARY_COPY_OPTIONAL" Error Pulse ~hum:"Unnecessary Copy to Optional"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_OPTIONAL.md"]
 
 

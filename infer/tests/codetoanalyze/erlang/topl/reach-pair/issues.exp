@@ -1,1 +1,3 @@
 codetoanalyze/erlang/topl/reach-pair/reach.erl, test_c_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to source/0,call to source/0,call to sink/1]
+codetoanalyze/erlang/topl/reach-pair/reach.erl, test_g_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to source/0,call to source/0,call to sink/1]
+codetoanalyze/erlang/topl/reach-pair/reach.erl, test_h_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to source/0,call to source/0,call to sink/1]
