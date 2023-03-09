@@ -2190,6 +2190,12 @@ and pulse_cut_to_one_path_procedures_pattern =
      large procedures to prevent too-big states from being produced."
 
 
+and pulse_increase_leak_recall =
+    CLOpt.mk_bool ~default:false ~long:"pulse-increase-leak-recall"
+    {|Disable a check for potential false alarms in the memory leak checker, which also detects resource leaks.
+This is the has the effect of increasing the memory leak and resource leak recall.|}
+
+
 and pulse_inline_global_init_func_pointer =
   CLOpt.mk_bool ~long:"pulse-inline-global-init-func-pointer" ~default:false
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -3872,6 +3878,8 @@ and project_root = !project_root
 and pulse_cut_to_one_path_procedures_pattern =
   Option.map ~f:Str.regexp !pulse_cut_to_one_path_procedures_pattern
 
+
+and pulse_increase_leak_recall = !pulse_increase_leak_recall
 
 and pulse_inline_global_init_func_pointer = !pulse_inline_global_init_func_pointer
 
