@@ -51,7 +51,8 @@ let replace_mockpointers_calls globals_map _procname proc_desc =
       | Sil.Call (ret_id_typ, Var caller_var, args, loc, flags) -> (
         match Ident.Map.find_opt caller_var ids_map with
         | Some procname ->
-            [Sil.Call (ret_id_typ, Const (Cfun procname), args, loc, flags)]
+            let new_loc = {loc with macro_file_opt= None; macro_line= 0} in
+            [Sil.Call (ret_id_typ, Const (Cfun procname), args, new_loc, flags)]
         | None ->
             [instr] )
       | Sil.Load {e= Lvar pvar} when Pvar.Map.mem pvar globals_map ->
