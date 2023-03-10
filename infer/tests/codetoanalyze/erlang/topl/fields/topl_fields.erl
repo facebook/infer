@@ -9,7 +9,10 @@
     test_3_Bad/0,
     test_4_Bad/0,
     test_5_Ok/0,
-    test_6_Ok/0
+    test_6_Ok/0,
+    test_7_Ok/0,
+    fn_test_8_Bad/0,
+    tesT_9_OK/0
 ]).
 
 test_1_Ok() ->
@@ -32,8 +35,30 @@ test_5_Ok() ->
 test_6_Ok() ->
     bar([[]]).
 
+% T142847475
+test_7_Ok() ->
+    test_7_Latent(2).
+
+% TODO: This is reported as TOPL_ERROR but should be TOPL_ERROR_LATENT (which doesn't exist yet)
+test_7_Latent(2 = X) ->
+    dontSayOne(X);
+test_7_Latent(X) ->
+    dontSayOne(X).
+
+fn_test_8_Bad() ->
+    test_7_Latent(1).
+
+% We want to warn on the function we call (tesT_8) but not bubble up the error here (tesT_9).
+% (The funny capitals trick the test validator to ignore this case.)
+tesT_9_OK() ->
+    fn_test_8_Bad().
+
 %%% Helpers below
 
-bar([[]]) -> ok; % to make test_6_Ok pass as 10 < [] would match otherwise
+% to make test_6_Ok pass as 10 < [] would match otherwise
+bar([[]]) -> ok;
 bar([T | _]) when 10 < T -> error(topl_error);
 bar(_) -> ok.
+
+dontSayOne(1) -> error(topl_error);
+dontSayOne(_) -> ok.

@@ -725,12 +725,14 @@ topl_atom_literal:test_2_Ok/0: ok
 topl_atom_literal:test_3_Bad/0: taint_error
 
 ----- topl_fields -----
+topl_fields:fn_test_8_Bad/0: topl_error
 topl_fields:test_1_Ok/0: ok
 topl_fields:test_2_Ok/0: ok
 topl_fields:test_3_Bad/0: topl_error
 topl_fields:test_4_Bad/0: topl_error
 topl_fields:test_5_Ok/0: ok
 topl_fields:test_6_Ok/0: ok
+topl_fields:test_7_Ok/0: ok
 
 ----- topl_less -----
 topl_less:test_a_Ok/0: ok
