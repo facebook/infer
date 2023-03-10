@@ -600,11 +600,14 @@ let get_message diagnostic =
   | UnnecessaryCopy {copied_into; source_typ; location; copied_location= None; from} -> (
       let open PulseAttribute in
       let is_from_const = Option.exists ~f:Typ.is_const_reference source_typ in
-      let suggestion_msg_move =
+      let suggestion_msg_move = "To avoid the copy, try moving it by calling `std::move` instead" in
+      let suggestion_msg_move_intermediate =
+        let move_msg =
+          suggestion_msg_move ^ " or alternatively change the callee's parameter type to `const &`"
+        in
         if is_from_const then
-          "To avoid the copy, try 1) removing the `const &` from the source and 2) moving it by \
-           calling `std::move` instead"
-        else "To avoid the copy, try moving it by calling `std::move` instead"
+          "To avoid the copy, try 1) removing the `const &` from the source and 2) " ^ move_msg
+        else move_msg
       in
       let suppression_msg =
         "If this copy was intentional, consider calling `folly::copy` to make it explicit and \
@@ -616,7 +619,7 @@ let get_message diagnostic =
             if is_from_const then suggestion_msg_move
             else suggestion_msg_move ^ " or changing the callee's type"
         | _, IntoIntermediate _ ->
-            suggestion_msg_move
+            suggestion_msg_move_intermediate
         | _, IntoField _ ->
             "Rather than copying into the field, consider moving into it instead"
         | CopyCtor, IntoVar _ ->
