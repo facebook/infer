@@ -56,14 +56,14 @@ When an error can occur only on some values of the parameters of the current fun
 
 ```c
 // for more realism, imagine that this function does other things as well
-void set_to_null_if_positive(int n, int* p) {
+void set_to_null_if_positive(int n, int** p) {
   if (n > 0) {
-    p = NULL;
+    *p = NULL;
   }
 }
 
 void latent_null_dereference(int n, int* p) {
-  set_to_null_if_positive(n, p);
+  set_to_null_if_positive(n, &p);
   *p = 42; // NULL dereference! but only if n > 0 so no report yet
 }
 
