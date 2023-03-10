@@ -221,6 +221,12 @@ let%test_module "to_sil" =
           .source_language = "hack"
           type Foo {}
           define f(arg1: Foo, arg2: Bar) : void { #n: ret null }
+          define g() : void {
+            local l1: *Quux
+            #n:
+              n0 = __sil_allocate(<Baz>)
+              ret null
+          }
           |}
       in
       let m = parse_module source in
@@ -228,7 +234,27 @@ let%test_module "to_sil" =
       F.printf "%a@\n" Tenv.pp tenv ;
       [%expect
         {|
+         hack Quux
+         fields: {}
+         statics: {}
+         supers: {}
+         objc_protocols: {}
+         methods: {}
+         exported_obj_methods: {}
+         annots: {<>}
+         java_class_info: {[None]}
+         dummy: true
          hack Bar
+         fields: {}
+         statics: {}
+         supers: {}
+         objc_protocols: {}
+         methods: {}
+         exported_obj_methods: {}
+         annots: {<>}
+         java_class_info: {[None]}
+         dummy: true
+         hack Baz
          fields: {}
          statics: {}
          supers: {}

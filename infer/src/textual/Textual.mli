@@ -36,6 +36,8 @@ module type NAME = sig
 
   module Hashtbl : Hashtbl.S with type key = t
 
+  module HashSet : HashSet.S with type elt = t
+
   module Map : Caml.Map.S with type key = t
 
   module Set : Caml.Set.S with type elt = t

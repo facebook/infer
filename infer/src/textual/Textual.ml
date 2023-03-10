@@ -76,6 +76,8 @@ module type NAME = sig
 
   module Hashtbl : Hashtbl.S with type key = t
 
+  module HashSet : HashSet.S with type elt = t
+
   module Map : Caml.Map.S with type key = t
 
   module Set : Caml.Set.S with type elt = t
@@ -92,6 +94,14 @@ module Name : NAME = struct
   let pp fmt name = F.pp_print_string fmt name.value
 
   module Hashtbl = Hashtbl.Make (struct
+    type nonrec t = t
+
+    let equal = equal
+
+    let hash = hash
+  end)
+
+  module HashSet = HashSet.Make (struct
     type nonrec t = t
 
     let equal = equal

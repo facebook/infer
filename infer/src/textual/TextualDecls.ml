@@ -24,6 +24,8 @@ module ProcEntry = struct
 
   let decl = function Decl p -> p | Desc p -> p.procdecl
 
+  let desc = function Decl _ -> None | Desc p -> Some p
+
   let name t = (decl t).qualified_name
 end
 
@@ -183,19 +185,77 @@ let check_proc_not_implemented_twice decls errors procdecl =
   else errors
 
 
+let rec get_typ_name (typ : Typ.t) =
+  match typ with Struct tname -> Some tname | Ptr typ | Array typ -> get_typ_name typ | _ -> None
+
+
+let get_procdesc_referenced_types (pdesc : ProcDesc.t) =
+  let referenced = TypeName.HashSet.create 17 in
+  let add_to_referenced name = TypeName.HashSet.add name referenced in
+  (* Helpers *)
+  let rec from_exp (exp : Exp.t) =
+    match exp with
+    | Typ typ ->
+        get_typ_name typ |> Option.iter ~f:add_to_referenced
+    | Var _ | Lvar _ | Const _ ->
+        ()
+    | Field {exp} ->
+        from_exp exp
+    | Index (base, idx) ->
+        from_exp base ;
+        from_exp idx
+    | Call {args} ->
+        List.iter args ~f:from_exp
+  in
+  let from_instr (ins : Instr.t) =
+    match ins with
+    | Load {exp; typ} ->
+        get_typ_name typ |> Option.iter ~f:add_to_referenced ;
+        from_exp exp
+    | Store {exp1; typ; exp2} ->
+        from_exp exp1 ;
+        get_typ_name typ |> Option.iter ~f:add_to_referenced ;
+        from_exp exp2
+    | Prune {exp} | Let {exp} ->
+        from_exp exp
+  in
+  let from_terminator (t : Terminator.t) =
+    match t with
+    | Ret exp | Throw exp ->
+        from_exp exp
+    | Jump node_call ->
+        List.iter node_call ~f:(fun ({ssa_args} : Terminator.node_call) ->
+            List.iter ssa_args ~f:from_exp )
+    | Unreachable ->
+        ()
+  in
+  let from_node (node : Node.t) =
+    let from_ssa =
+      List.iter node.ssa_parameters ~f:(fun (_, typ) ->
+          get_typ_name typ |> Option.iter ~f:add_to_referenced )
+    in
+    let from_instrs = List.iter node.instrs ~f:from_instr in
+    let from_term = from_terminator node.last in
+    from_ssa ;
+    from_instrs ;
+    from_term
+  in
+  let from_local (_, ({typ} : Typ.annotated)) =
+    get_typ_name typ |> Option.iter ~f:add_to_referenced
+  in
+  (* Accumulate referenced type names *)
+  List.iter pdesc.nodes ~f:from_node ;
+  List.iter pdesc.locals ~f:from_local ;
+  TypeName.HashSet.iter referenced |> Iter.to_list
+
+
 let get_undefined_types decls =
   let referenced_tnames, defined_tnames = (StringSet.create 17, StringSet.create 17) in
   (* Helpers *)
   let register_tname tname set = StringSet.add tname.TypeName.value set in
   let register_tnames tnames set = List.iter tnames ~f:(fun x -> register_tname x set) in
-  let rec register_typ (typ : Typ.t) set =
-    match typ with
-    | Struct tname ->
-        register_tname tname set
-    | Ptr typ | Array typ ->
-        register_typ typ set
-    | _ ->
-        ()
+  let register_typ typ set =
+    Option.iter (get_typ_name typ) ~f:(fun tname -> register_tname tname set)
   in
   let register_annotated_typ ({typ} : Typ.annotated) set = register_typ typ set in
   let register_annotated_typs typs set =
@@ -209,7 +269,10 @@ let get_undefined_types decls =
   |> Seq.iter (fun (proc : ProcEntry.t) ->
          let procdecl = ProcEntry.decl proc in
          register_annotated_typ procdecl.result_type referenced_tnames ;
-         register_annotated_typs procdecl.formals_types referenced_tnames ) ;
+         register_annotated_typs procdecl.formals_types referenced_tnames ;
+         Option.iter (ProcEntry.desc proc) ~f:(fun pdesc ->
+             let types = get_procdesc_referenced_types pdesc in
+             register_tnames types referenced_tnames ) ) ;
   (* Collect type names from Structs  *)
   TypeName.Hashtbl.to_seq_values decls.structs
   |> Seq.iter (fun (s : Struct.t) ->
