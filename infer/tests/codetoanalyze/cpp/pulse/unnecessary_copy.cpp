@@ -4,10 +4,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-#include <vector>
+#include <list>
+#include <map>
 #include <set>
 #include <string>
-#include <list>
+#include <vector>
 #include "header.h"
 
 struct Arr {
@@ -293,7 +294,7 @@ struct SimpleS {
 
 struct SwapSimple {
   SimpleS v;
-  void swap_bad(SwapSimple& x) {
+  void swap_bad_FN(SwapSimple& x) {
     const auto temp = v;
     v = x.v;
     x.v = temp; // report copy assignment from const
@@ -302,7 +303,7 @@ struct SwapSimple {
 
 struct SwapVector {
   std::vector<int> v;
-  void swap_bad(SwapVector& x) {
+  void swap_bad_FN(SwapVector& x) {
     const auto temp = v;
     v = x.v;
     x.v = temp; // report copy assignment from const
@@ -709,4 +710,15 @@ class FieldCopyClass {
 
 void intermediate_copy_global_ok() {
   get_first_elem(global); // we cannot suggest moving global
+}
+
+std::map<std::string, std::string> unreliable_source_ok(
+    const std::map<std::string, std::string>& input) {
+  auto modified = input; // the source of `modified` was `input` in the copy map
+  for (const auto& elem : input) {
+    modified[elem.first] = "abc";
+  }
+  return modified;
+  // the source of `modified` was `__range` from the for loop iteration, thus it
+  // did not correctly check `modified` is modified.
 }

@@ -60,13 +60,19 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
   let pname = Procdesc.get_proc_name proc_desc in
   if is_not_implicit_or_copy_ctor_assignment pname then
     PulseNonDisjunctiveDomain.get_copied non_disj_astate
-    |> List.iter ~f:(fun (copied_into, source_typ, location, copied_location, from) ->
+    |> List.iter ~f:(fun (copied_into, source_typ, source_opt, location, copied_location, from) ->
            let copy_name = Format.asprintf "%a" Attribute.CopiedInto.pp copied_into in
            let is_suppressed = PulseNonDisjunctiveOperations.has_copy_in copy_name in
            let location_instantiated = get_loc_instantiated pname in
            let diagnostic =
              Diagnostic.UnnecessaryCopy
-               {copied_into; source_typ; location; copied_location; location_instantiated; from}
+               { copied_into
+               ; source_typ
+               ; source_opt
+               ; location
+               ; copied_location
+               ; location_instantiated
+               ; from }
            in
            PulseReport.report ~is_suppressed ~latent:false proc_desc err_log diagnostic )
 

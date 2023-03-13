@@ -151,6 +151,7 @@ type t =
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
       ; source_typ: Typ.t option
+      ; source_opt: DecompilerExpr.source_expr option
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
       ; location_instantiated: Location.t option
@@ -208,21 +209,20 @@ let pp fmt diagnostic =
         (Pp.pair ~fst:Taint.pp ~snd:(Trace.pp ~pp_immediate))
         sink Location.pp location pp_flow_kind flow_kind
   | UnnecessaryCopy
-      { copied_into: PulseAttribute.CopiedInto.t
-      ; source_typ: Typ.t option
-      ; location: Location.t
-      ; copied_location: (Procname.t * Location.t) option
-      ; from: PulseAttribute.CopyOrigin.t
-      ; location_instantiated: Location.t option } ->
+      {copied_into; source_typ; source_opt; location; copied_location; from; location_instantiated}
+    ->
       F.fprintf fmt
         "UnnecessaryCopy {@[copied_into=%a;@;\
          typ=%a;@;\
+         source_opt=%a;@;\
          location:%a;@;\
          copied_location:%a@;\
          from=%a;loc_instantiated=%a@]}"
         PulseAttribute.CopiedInto.pp copied_into
         (Pp.option (Typ.pp_full Pp.text))
-        source_typ Location.pp location
+        source_typ
+        (Pp.option DecompilerExpr.pp_source_expr)
+        source_opt Location.pp location
         (fun fmt -> function
           | None ->
               F.pp_print_string fmt "none"
@@ -597,7 +597,8 @@ let get_message diagnostic =
          Please check if we can avoid the copy, e.g. by changing the return type of `%a` or by \
          revising the function body of it."
         CopiedInto.pp copied_into Procname.pp callee SourceFile.pp file line Procname.pp callee
-  | UnnecessaryCopy {copied_into; source_typ; location; copied_location= None; from} -> (
+  | UnnecessaryCopy {copied_into; source_typ; source_opt; location; copied_location= None; from}
+    -> (
       let open PulseAttribute in
       let is_from_const = Option.exists ~f:Typ.is_const_reference source_typ in
       let suggestion_msg_move = "To avoid the copy, try moving it by calling `std::move` instead" in
@@ -627,29 +628,30 @@ let get_message diagnostic =
         | CopyAssignment, IntoVar _ ->
             suggestion_msg_move
       in
-      match copied_into with
-      | IntoIntermediate {source_opt= None} ->
+      match (copied_into, source_opt) with
+      | IntoIntermediate _, None ->
           F.asprintf "An intermediate is %a on %a. %s." CopyOrigin.pp from Location.pp_line location
             suggestion_msg
-      | IntoIntermediate {source_opt= Some source_expr} ->
+      | IntoIntermediate _, Some source_expr ->
           F.asprintf "variable `%a` is %a unnecessarily into an intermediate on %a. %s."
             DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from Location.pp_line location
             suggestion_msg
-      | IntoVar {source_opt= None} ->
+      | IntoVar _, None ->
           F.asprintf
             "%a variable `%a` is not modified after it is copied from a source on %a. %s. %s."
             CopyOrigin.pp from CopiedInto.pp copied_into Location.pp_line location suggestion_msg
             suppression_msg
-      | IntoVar {source_opt= Some source_expr} ->
+      | IntoVar _, Some source_expr ->
           F.asprintf "%a variable `%a` is not modified after it is copied from `%a` on %a. %s. %s."
             CopyOrigin.pp from CopiedInto.pp copied_into DecompilerExpr.pp_source_expr source_expr
             Location.pp_line location suggestion_msg suppression_msg
-      | IntoField {field; source_opt= None} ->
+      | IntoField {field}, None ->
           F.asprintf "Field `%a` is %a into from an rvalue-ref but is not modified afterwards. %s."
             Fieldname.pp field CopyOrigin.pp from suggestion_msg
-      | IntoField {field; source_opt= Some source_expr} ->
+      | IntoField {field}, Some source_expr ->
           F.asprintf "`%a` is %a into field `%a` but is not modified afterwards. %s."
-            DecompilerExpr.pp source_expr CopyOrigin.pp from Fieldname.pp field suggestion_msg )
+            DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from Fieldname.pp field
+            suggestion_msg )
 
 
 let add_errlog_header ~nesting ~title location errlog =

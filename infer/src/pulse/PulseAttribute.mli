@@ -61,9 +61,9 @@ end
 
 module CopiedInto : sig
   type t =
-    | IntoVar of {copied_var: Var.t; source_opt: DecompilerExpr.source_expr option}
-    | IntoIntermediate of {copied_var: Var.t; source_opt: DecompilerExpr.source_expr option}
-    | IntoField of {field: Fieldname.t; source_opt: DecompilerExpr.t option}
+    | IntoVar of {copied_var: Var.t}
+    | IntoIntermediate of {copied_var: Var.t}
+    | IntoField of {field: Fieldname.t}
   [@@deriving compare, equal]
 
   val pp : F.formatter -> t -> unit

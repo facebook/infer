@@ -46,6 +46,7 @@ end
 type copy_spec_t =
   | Copied of
       { source_typ: Typ.t option
+      ; source_opt: DecompilerExpr.source_expr option
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
       ; heap: BaseMemory.t
@@ -53,6 +54,7 @@ type copy_spec_t =
       ; timestamp: Timestamp.t }
   | Modified of
       { source_typ: Typ.t option
+      ; source_opt: DecompilerExpr.source_expr option
       ; location: Location.t
       ; copied_location: (Procname.t * Location.t) option
       ; from: Attribute.CopyOrigin.t
@@ -355,12 +357,17 @@ let mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt ({copy_
     match CopyMap.find_opt copy_var copy_map with
     | Some
         (Copied
-          {source_typ; from; copied_location; location; heap= copy_heap; timestamp= copied_timestamp}
-          )
+          { source_typ
+          ; source_opt
+          ; from
+          ; copied_location
+          ; location
+          ; heap= copy_heap
+          ; timestamp= copied_timestamp } )
       when is_modified copy_heap copied_timestamp ->
         Logging.d_printfln_escaped "Copy/source modified!" ;
         let modified : copy_spec_t =
-          Modified {source_typ; location; copied_location; from; copied_timestamp}
+          Modified {source_typ; source_opt; location; copied_location; from; copied_timestamp}
         in
         CopyMap.add copy_var modified copy_map
     | _ ->
@@ -444,17 +451,28 @@ let get_copied astate_n =
           match (copied_into, copy_spec) with
           | _, Copied _ when CopiedSet.mem copied_into modified || is_captured copied_into ->
               acc
-          | ( ( IntoField {source_opt= Some (SourceExpr ((PVar pvar, _), _))}
-              | IntoIntermediate {source_opt= Some (PVar pvar, _)} )
-            , ( Copied {location; copied_location; source_typ; from; timestamp= copied_timestamp}
-              | Modified {location; copied_location; source_typ; from; copied_timestamp} ) ) ->
+          | ( (IntoField _ | IntoIntermediate _)
+            , ( Copied
+                  { location
+                  ; copied_location
+                  ; source_typ
+                  ; source_opt= Some (PVar pvar, _) as source_opt
+                  ; from
+                  ; timestamp= copied_timestamp }
+              | Modified
+                  { location
+                  ; copied_location
+                  ; source_typ
+                  ; source_opt= Some (PVar pvar, _) as source_opt
+                  ; from
+                  ; copied_timestamp } ) ) ->
               if is_never_used_after_copy_into_intermediate_or_field pvar copied_timestamp astate_n
               then
                 (* if source var is never used later on, we can still suggest removing the copy even though the copy is modified *)
-                (copied_into, source_typ, location, copied_location, from) :: acc
+                (copied_into, source_typ, source_opt, location, copied_location, from) :: acc
               else acc
-          | _, Copied {location; copied_location; source_typ; from} ->
-              (copied_into, source_typ, location, copied_location, from) :: acc
+          | _, Copied {location; copied_location; source_typ; source_opt; from} ->
+              (copied_into, source_typ, source_opt, location, copied_location, from) :: acc
           | _, Modified _ ->
               acc )
         copy_map []
@@ -489,16 +507,17 @@ let add_var copied_into ~source_addr_opt res = map (add_var_elt copied_into ~sou
 
 let remove_var var = map (remove_var_elt var)
 
-let add_field_elt copied_field ~source_opt (res : copy_spec_t) astate_n =
+let add_field_elt copied_field ~source_addr_opt (res : copy_spec_t) astate_n =
   { astate_n with
     copy_map=
       CopyMap.add
-        { copied_into= IntoField {field= copied_field; source_opt}
-        ; source_addr_opt= Option.bind source_opt ~f:DecompilerExpr.abstract_value_of_expr }
+        {copied_into= IntoField {field= copied_field}; source_addr_opt}
         res astate_n.copy_map }
 
 
-let add_field copied_field ~source_opt res = map (add_field_elt copied_field ~source_opt res)
+let add_field copied_field ~source_addr_opt res =
+  map (add_field_elt copied_field ~source_addr_opt res)
+
 
 let add_parameter_elt parameter_var (res : parameter_spec_t) astate_n =
   {astate_n with parameter_map= ParameterMap.add parameter_var res astate_n.parameter_map}
