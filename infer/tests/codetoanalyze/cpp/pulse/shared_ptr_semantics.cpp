@@ -495,4 +495,22 @@ int FN_shared_from_this_bad() {
   return 0;
 }
 
+template <typename T>
+class PrimaryPtr {
+ public:
+  std::shared_ptr<T> lock() const {
+    if (auto res = weak.lock()) {
+      return *res;
+    }
+    return nullptr;
+  }
+
+ private:
+  std::weak_ptr<std::shared_ptr<T>> weak;
+};
+
+void lock_primary_ptr_ok(PrimaryPtr<std::string> primary) {
+  auto x = primary.lock();
+}
+
 } // namespace shared_ptr_semantics

@@ -134,13 +134,13 @@ std::shared_ptr<A> ERROR_aliasing_construct_from_internal() {
   return {p, p->a};
 }
 
-void aliasing_member_not_null_ok_FP() {
+void aliasing_member_not_null_ok() {
   auto q = ERROR_aliasing_construct_from_external();
   // q is unknown here so we should not report null deref
   // Also we should not report dangling pointer because q is still alive
   q->baz();
 }
-void aliasing_member_null_bad() {
+void aliasing_member_null_bad_FN() {
   auto q = ERROR_aliasing_construct_from_internal();
   // q is known here so we should report null deref
   // Also we should not report dangling pointer because q is still alive

@@ -19,8 +19,7 @@ std::shared_ptr<T> joinT(std::shared_ptr<T> x) {
   return x;
 };
 
-// cannot star
-void ERROR_foo(std::weak_ptr<int> p) {
+void foo(std::weak_ptr<int> p) {
   auto self = p.lock();
   std::shared_ptr<int> x = joinT(self);
 }
