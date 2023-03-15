@@ -22,7 +22,7 @@ class Iterators {
     hasNextBad(xs);
   }
 
-  void FN_hasNextInterproceduralBad(List<Integer> xs) {
+  void hasNextInterproceduralBad(List<Integer> xs) {
     getSingleElementOk(xs.iterator());
   }
 

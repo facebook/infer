@@ -6,7 +6,7 @@
 -export([
     test_a_Ok/0,
     test_b_Ok/0,
-    fn_test_c_Bad/0,
+    test_c_Bad/0,
     test_d_Ok/0,
     test_e_Ok/0,
     fn_test_e_Bad/0,
@@ -24,7 +24,7 @@ test_b_Ok() ->
     X = source(),
     sink([X]).
 
-fn_test_c_Bad() ->
+test_c_Bad() ->
     X = source(),
     Y = source(),
     sink([X, Y]).

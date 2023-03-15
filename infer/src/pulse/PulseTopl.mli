@@ -62,3 +62,7 @@ val pp_state : Format.formatter -> state -> unit
 module Debug : sig
   val dropped_disjuncts_count : int ref
 end
+
+(* TODO: Whenever Pulse drops variables (e.g., when extracting summaries) we need to also update
+   the Topl state, by renaming variables if an equivalent one remains or, perhaps, by
+   under-approximating.*)

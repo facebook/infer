@@ -1330,7 +1330,7 @@ let filter_for_summary tenv proc_name astate0 =
      to restore their initial values at the end of the function. Removing them altogether achieves
      this. *)
   let astate = restore_formals_for_summary astate_before_filter in
-  let astate = {astate with topl= PulseTopl.filter_for_summary (topl_view astate) astate.topl} in
+  let astate = {astate with topl= PulseTopl.simplify (topl_view astate) astate.topl} in
   let astate, pre_live_addresses, post_live_addresses, dead_addresses =
     discard_unreachable_ ~for_summary:true astate
   in
@@ -1349,7 +1349,7 @@ let filter_for_summary tenv proc_name astate0 =
       astate.path_condition
   in
   let live_addresses = AbstractValue.Set.union live_addresses live_via_arithmetic in
-  ( {astate with path_condition; topl= PulseTopl.simplify (topl_view astate) astate.topl}
+  ( {astate with path_condition; topl= PulseTopl.filter_for_summary (topl_view astate) astate.topl}
   , live_addresses
   , (* we could filter out the [live_addresses] if needed; right now they might overlap *)
     dead_addresses

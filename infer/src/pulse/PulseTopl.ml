@@ -96,14 +96,15 @@ module Constraint : sig
   val negate : t list -> t list
   (** computes ¬(c1∨...∨cm) as d1∨...∨dn, where n=|c1|x...x|cm| *)
 
-  val eliminate_exists : keep:AbstractValue.Set.t -> t -> t
+  val eliminate_exists : keep:(AbstractValue.t -> bool) -> t -> t
   (** quantifier elimination *)
 
   val size : t -> int
 
   val substitute : t substitutor
 
-  val is_unsat : pulse_state -> t -> bool
+  val simplify : pulse_state -> t -> t
+  (** Drop constraints implied by Pulse state. Detect infeasible constraints. *)
 
   val pp : F.formatter -> t -> unit
 end = struct
@@ -197,112 +198,8 @@ end = struct
 
   let substitute = sub_list substitute_predicate
 
-  let prune_path constr path =
-    let open SatUnsat.Import in
-    let f pulse_formula predicate =
-      match predicate with
-      | Binary (Builtin op, l, r) ->
-          Formula.prune_binop ~negated:false op l r pulse_formula >>| fst
-      | Binary (LeadsTo, _, _) | Binary (NotLeadsTo, _, _) ->
-          (* These are not evaluated on the path_condition, but should be evaluated after calling
-           * [prune_path], on [pulse_post] *)
-          Sat pulse_formula
-      | True ->
-          Sat pulse_formula
-      | False ->
-          Unsat
-    in
-    SatUnsat.list_fold ~init:path ~f constr
-
-
   (* TODO: Replace with a proper type environment. *)
   let default_tenv = Tenv.create ()
-
-  (** Use: [let rep = rep_of_new_eqs new_eqs in rep v]. Evaluating [rep_of_new_eqs new_eqs] is slow
-      but evaluating [rep v] is fast. Only [Formula.Equal] is used; e.g., [Formula.EqZero] is
-      dropped. *)
-  let rep_of_new_eqs (new_eqs : Formula.new_eqs) : value -> value =
-    let module UF =
-      UnionFind.Make
-        (struct
-          type t = value [@@deriving compare, equal]
-
-          let is_simpler_than _ _ = false
-        end)
-        (AbstractValue.Set)
-        (AbstractValue.Map)
-    in
-    let uf =
-      RevList.fold ~init:UF.empty new_eqs ~f:(fun uf -> function
-        | Formula.Equal (v1, v2) ->
-            let uf, _ = UF.union uf v1 v2 in
-            uf
-        | Formula.EqZero _ ->
-            uf )
-    in
-    fun v -> (UF.find uf v :> value)
-
-
-  (** Returns [true] only if the conjunction [pulse_state]∧[constr] is unsatisfiable. *)
-  let is_unsat pulse_state constr =
-    let leadsto heap source target =
-      let seen = ref AbstractValue.Set.empty in
-      let rec dfs value =
-        if AbstractValue.equal value target then true
-        else if AbstractValue.Set.mem value !seen then false
-        else (
-          seen := AbstractValue.Set.add value !seen ;
-          match Memory.find_opt value heap with
-          | None ->
-              false
-          | Some edges ->
-              Memory.Edges.exists edges ~f:(function _access, (to_value, _history) -> dfs to_value)
-          )
-      in
-      dfs source
-    in
-    let simplified =
-      let open SatUnsat.Import in
-      let* path_condition = prune_path constr pulse_state.path_condition in
-      let* path_condition, new_eqs =
-        let get_dynamic_type = get_dynamic_type pulse_state in
-        Formula.normalize default_tenv ~get_dynamic_type path_condition
-      in
-      let rep = rep_of_new_eqs new_eqs in
-      let incorporate_eq heap (eq : Formula.new_eq) =
-        match eq with
-        | Equal (v1, v2) ->
-            let w = rep v2 in
-            let* heap = Memory.subst_var (v1, w) heap in
-            let* heap = Memory.subst_var (v2, w) heap in
-            Sat heap
-        | EqZero _ ->
-            (* TODO: Detect more contradictions here. *)
-            Sat heap
-      in
-      let* heap =
-        SatUnsat.list_fold ~init:pulse_state.pulse_post.heap ~f:incorporate_eq
-          (RevList.to_list new_eqs)
-      in
-      (* Note: This checks that non/reachability is implied -- a stronger check. *)
-      let check_reachability path_condition predicate =
-        match predicate with
-        | Binary (LeadsTo, Formula.AbstractValueOperand l, Formula.AbstractValueOperand r) ->
-            if leadsto heap (rep l) (rep r) then Sat path_condition else Unsat
-        | Binary (NotLeadsTo, Formula.AbstractValueOperand l, Formula.AbstractValueOperand r) ->
-            if leadsto heap (rep l) (rep r) then Unsat else Sat path_condition
-        | Binary (LeadsTo, Formula.ConstOperand _, _)
-        | Binary (LeadsTo, _, Formula.ConstOperand _)
-        | Binary (NotLeadsTo, Formula.ConstOperand _, _)
-        | Binary (NotLeadsTo, _, Formula.ConstOperand _) ->
-            Unsat (* TODO: disallow such cases by (OCaml) typing, and don't parse it *)
-        | _ ->
-            Sat path_condition
-      in
-      SatUnsat.list_fold ~init:path_condition ~f:check_reachability constr
-    in
-    Option.is_none (SatUnsat.sat simplified)
-
 
   let pp_operator f operator =
     match operator with
@@ -326,11 +223,243 @@ end = struct
 
   let pp = Pp.seq ~sep:"∧" pp_predicate
 
+  let simplify pulse_state constr : t =
+    (* Algorithm. We do a best effort attempt at achieving two goals: (a) drop redundant
+       predicates, and (b) detect unsatisfiability. The meaning of the formula should not change.
+       A predicate is not redundant on its own. For an example, consider the three predicates
+       a=b, b=c, c=a: we can drop any of them while preserving semantics, but not two of them.
+       For speed, we won't attempt to drop as *many* predicates as possible. Instead, we'll look
+       at predicates one by one and ask if they are implied by pulse_state together with the (Topl)
+       predicates we had previously decided to keep. In the a=b,b=c,c=a example we'd drop the last
+       one, where "last" is with respect to some unspecified iteration order. Same order-related
+       considerations apply to other predicates, such as LeadsTo.
+
+       The iteration order is unspecified in the sense that it's dangerous for callers of this
+       function to rely on it. But, we will look at predicates in an order convenient for
+       implementation.
+
+       (Terminology for below:
+          "predicate" = value of type Constraint.predicate
+          "constraint" = set/list of predicates
+          "path predicate" = value of shape Constraint.Builtin (_, _, _)
+          "heap predicate" = value of shape Constraint.LeadsTo (_,_) or Constraint.NotLeadsTo (_,_)
+          "path condition" = (possibly modified) pulse_state.path_condition (of type Formula.t)
+          "heap" = (possibly modified) pulse_state.post_?.heap (of type Memory.t)
+          "new_eqs" = value of type Formula.new_eqs
+       end of terminology aside.)
+
+       Whenever we process a predicate, we first re-write it according to `Formula.get_var_repr`
+       applied to the current path condition.
+
+       First, we iterate through path predicates *except* disequalities. If the predicate is implied
+       by the path condition, we drop it. Otherwise, we conjoin it to the path condition (and detect
+       if it leads to unsatisfiability), and accumulate new_eqs.
+
+       Next, we normalize the path condition, accumulating more new_eqs. And we incorporate new_eqs
+       into the heap (that is, substitute in the heap). From this point on we don't need new_eqs.
+
+       Next, we iterate through disequality path predicates. If the predicate is implied by the path
+       condition *or* by the heap, we drop it. Otherwise, we conjoin it to the path condition (and
+       detect if it leads to unsatisfiability). We assert that no new_eqs are produced (which is
+       what Formula.and_normalized_atom currently does).
+
+       Next, we iterate through LeadsTo predicates. If they are implied by the heap, we drop them;
+       otherwise, we keep them and we add them to the heap. (For implementation, we do not actually
+       add them to the heap, but to a fake-heap.)
+
+       Next, we iterate through NotLeadsTo predicates. If the predicate contradicts the union of the
+       heap with the fake-heap, we detected unsatisfiability. Otherwise, we keep the predicate.
+    *)
+    let module ConstraintByType = struct
+      type binary = (Formula.operand * Formula.operand) list
+
+      type t =
+        { no_neq_constr: (Binop.t * Formula.operand * Formula.operand) list
+        ; neq_constr: binary
+        ; leadsto_constr: binary
+        ; notleadsto_constr: binary }
+
+      let empty = {no_neq_constr= []; neq_constr= []; leadsto_constr= []; notleadsto_constr= []}
+    end in
+    let module C = ConstraintByType in
+    let open SatUnsat.Import in
+    let go () =
+      let* in_constr =
+        let f in_constr predicate =
+          match predicate with
+          | Binary (Builtin Ne, l, r) ->
+              Sat C.{in_constr with neq_constr= (l, r) :: in_constr.neq_constr}
+          | Binary (Builtin op, l, r) ->
+              Sat C.{in_constr with no_neq_constr= (op, l, r) :: in_constr.no_neq_constr}
+          | Binary (LeadsTo, l, r) ->
+              Sat C.{in_constr with leadsto_constr= (l, r) :: in_constr.leadsto_constr}
+          | Binary (NotLeadsTo, l, r) ->
+              Sat C.{in_constr with notleadsto_constr= (l, r) :: in_constr.notleadsto_constr}
+          | True ->
+              Sat in_constr
+          | False ->
+              Unsat
+        in
+        SatUnsat.list_fold constr ~f ~init:C.empty
+      in
+      let out_constr = C.empty in
+      let rep path_condition (operand : Formula.operand) : Formula.operand =
+        match operand with
+        | AbstractValueOperand v ->
+            AbstractValueOperand (Formula.get_var_repr path_condition v)
+        | other ->
+            other
+      in
+      (* Handle path predicates, except disequalities. *)
+      let* path_condition, new_eqs, out_constr =
+        let f (path_condition, old_new_eqs, out_constr) (op, l, r) =
+          let l, r = (rep path_condition l, rep path_condition r) in
+          match Formula.prune_binop ~negated:true op l r path_condition with
+          | Sat _ ->
+              let+ path_condition, new_eqs =
+                Formula.prune_binop ~negated:false op l r path_condition
+              in
+              ( path_condition
+              , RevList.append old_new_eqs new_eqs
+              , C.{out_constr with no_neq_constr= (op, l, r) :: out_constr.no_neq_constr} )
+          | Unsat ->
+              Sat (path_condition, old_new_eqs, out_constr)
+        in
+        SatUnsat.list_fold in_constr.C.no_neq_constr ~f
+          ~init:(pulse_state.path_condition, RevList.empty, out_constr)
+      in
+      (* Normalize path condition, and update heap *)
+      let* path_condition, heap =
+        let get_dynamic_type = get_dynamic_type pulse_state in
+        let old_new_eqs = new_eqs in
+        let* path_condition, new_eqs =
+          Formula.normalize default_tenv ~get_dynamic_type path_condition
+        in
+        let new_eqs = RevList.to_list (RevList.append old_new_eqs new_eqs) in
+        let+ heap =
+          let incorporate_eq heap (eq : Formula.new_eq) =
+            match eq with
+            | Equal (v1, v2) ->
+                Memory.subst_var (v1, v2) heap
+            | EqZero _ ->
+                (* TODO: Detect more contradictions here. *)
+                Sat heap
+          in
+          SatUnsat.list_fold new_eqs ~init:pulse_state.pulse_post.heap ~f:incorporate_eq
+        in
+        (path_condition, heap)
+      in
+      (* Handle disequalities. *)
+      let _path_condition =
+        let f path_condition (l, r) =
+          let l, r = (rep path_condition l, rep path_condition r) in
+          if Formula.equal_operand l r then Unsat
+          else
+            let implied_by_pathcondition () =
+              Formula.prune_binop ~negated:true Ne l r path_condition
+              |> SatUnsat.sat |> Option.is_none
+            in
+            let implied_by_heap () =
+              match (l, r) with
+              | AbstractValueOperand l, AbstractValueOperand r ->
+                  Memory.is_allocated heap l && Memory.is_allocated heap r
+              | AbstractValueOperand v, ConstOperand (Cint z)
+              | ConstOperand (Cint z), AbstractValueOperand v ->
+                  IntLit.iszero z && Memory.is_allocated heap v
+              | _ ->
+                  false
+            in
+            if implied_by_heap () || implied_by_pathcondition () then Sat path_condition
+            else
+              let+ path_condition, new_eqs =
+                Formula.prune_binop ~negated:false Ne l r path_condition
+              in
+              if not (RevList.is_empty new_eqs) then
+                L.die InternalError "Oh, no: I expected disequalities to not introduce equalities" ;
+              path_condition
+        in
+        SatUnsat.list_fold in_constr.C.neq_constr ~init:path_condition ~f
+      in
+      (* Digresion: heap (and fake-heap) traversal. *)
+      let leadsto fake_heap heap source target =
+        let pointsto v =
+          let fake_successors =
+            match AbstractValue.Map.find_opt v fake_heap with
+            | Some fake_successors ->
+                fake_successors
+            | None ->
+                []
+          in
+          let true_successors =
+            match Memory.find_opt v heap with
+            | Some edges ->
+                Memory.Edges.bindings edges |> List.map ~f:(function _access, (w, _history) -> w)
+            | None ->
+                []
+          in
+          fake_successors @ true_successors
+        in
+        let seen = ref AbstractValue.Set.empty in
+        let rec dfs value =
+          seen := AbstractValue.Set.add value !seen ;
+          let successors = pointsto value in
+          let f succ = (not (AbstractValue.Set.mem succ !seen)) && dfs succ in
+          AbstractValue.equal value target || List.exists successors ~f
+        in
+        dfs source
+      in
+      (* Handle LeadsTo predicates.. *)
+      let fake_heap, out_constr =
+        (* We use adjacency lists rather than sets because we expect them to be small, and we
+           iterate but not test membership. *)
+        let f (fake_heap, out_constr) (l, r) =
+          match (l, r) with
+          | Formula.AbstractValueOperand lv, Formula.AbstractValueOperand rv ->
+              if leadsto fake_heap heap lv rv then (fake_heap, out_constr)
+              else
+                let fake_heap =
+                  let extend rs = match rs with None -> Some [rv] | Some rs -> Some (rv :: rs) in
+                  AbstractValue.Map.update lv extend fake_heap
+                in
+                let out_constr =
+                  C.{out_constr with leadsto_constr= (l, r) :: out_constr.C.leadsto_constr}
+                in
+                (fake_heap, out_constr)
+          | _, _ ->
+              L.die InternalError "TODO: parse only simple leadsto"
+        in
+        List.fold in_constr.C.leadsto_constr ~init:(AbstractValue.Map.empty, out_constr) ~f
+      in
+      (* Handle NotLeadsTo predicates. *)
+      let* out_constr =
+        let ok (l, r) =
+          match (l, r) with
+          | Formula.AbstractValueOperand l, Formula.AbstractValueOperand r ->
+              not (leadsto fake_heap heap l r)
+          | _, _ ->
+              L.die InternalError "TODO: Forbid non-variables as arguments to ~~>, at parsing stage"
+        in
+        if List.for_all in_constr.C.notleadsto_constr ~f:ok then
+          Sat C.{out_constr with notleadsto_constr= in_constr.C.notleadsto_constr}
+        else Unsat
+      in
+      Sat out_constr
+    in
+    match go () with
+    | Sat out_constr ->
+        List.map out_constr.neq_constr ~f:(function l, r -> Binary (Builtin Ne, l, r))
+        @ List.map out_constr.no_neq_constr ~f:(function op, l, r -> Binary (Builtin op, l, r))
+        @ List.map out_constr.leadsto_constr ~f:(function l, r -> Binary (LeadsTo, l, r))
+        @ List.map out_constr.notleadsto_constr ~f:(function l, r -> Binary (NotLeadsTo, l, r))
+    | Unsat ->
+        [False]
+
+
   let eliminate_exists ~keep constr =
     (* TODO(rgrigore): replace the current weak approximation *)
     let is_live_operand : Formula.operand -> bool = function
       | AbstractValueOperand v ->
-          AbstractValue.Set.mem v keep
+          keep v
       | ConstOperand _ ->
           true
       | FunctionApplicationOperand _ ->
@@ -604,8 +733,8 @@ let static_match event : (ToplAutomaton.transition * tcontext) list =
   ToplAutomaton.tfilter_mapi (Topl.automaton ()) ~f:match_one
 
 
-let drop_infeasible pulse_state state =
-  let f {pruned} = not (Constraint.is_unsat pulse_state pruned) in
+let drop_infeasible _pulse_state state =
+  let f {pruned} = not Constraint.(equal false_ pruned) in
   List.filter ~f state
 
 
@@ -624,7 +753,7 @@ let normalize_state state = List.map ~f:normalize_simple_state state
 
 (** Filters out simple states that cannot reach error because their registers refer to garbage.
 
-    - "Garbage" is a value unreachable from the program state and different from all vlaues held by
+    - "Garbage" is a value unreachable from the program state and different from all values held by
       registers in the pre-simple-state.
     - The current implementation is an approximation. If a register refers to garbage, it might
       still be the case that "error" could be reached, depending on the structure of the automaton.
@@ -632,6 +761,7 @@ let normalize_state state = List.map ~f:normalize_simple_state state
       empirically rare, we just under-approximate by dropping always when a register has garbage.
     - We never drop simple-states corresponding to "error" vertices. *)
 let drop_garbage ~keep state =
+  L.d_printfln "@[<v>@[DBG drop_garbage keep = %a@]@;@]" AbstractValue.Set.pp keep ;
   let should_keep {pre; post} =
     ToplAutomaton.is_error (Topl.automaton ()) post.vertex
     ||
@@ -644,23 +774,48 @@ let drop_garbage ~keep state =
 
 
 let simplify pulse_state state =
-  let simplify_simple_state {pre; post; pruned; last_step} =
-    (* NOTE: We do not consider registers live. If the Topl monitor has a hold of something that is
-       garbage for the program, then that something is still garbage. *)
+  (* NOTE: For dropping garbage, we do not consider registers live. If the Topl monitor has a hold
+     of something that is garbage for the program, then that something is still garbage. *)
+  let eliminate_exists {pre; post; pruned; last_step} =
+    L.d_printfln "@[<v>@[DBG eliminate_exists pulse_state.path_condition %a@]@;@]" Formula.pp
+      pulse_state.path_condition ;
     let collect memory keep =
       List.fold ~init:keep ~f:(fun keep (_reg, value) -> AbstractValue.Set.add value keep) memory
     in
     let keep = get_reachable pulse_state |> collect pre.memory |> collect post.memory in
+    L.d_printfln "@[<v>@[DBG eliminate_exists keep = %a@]@;@]" AbstractValue.Set.pp keep ;
+    let keep v = AbstractValue.Set.mem v keep in
+    let keep v =
+      let result = keep v in
+      L.d_printfln "@[<v>@[DBG keep %a %b@]@;@]" AbstractValue.pp v result ;
+      result
+    in
     let pruned = Constraint.eliminate_exists ~keep pruned in
-    L.d_printfln "@[<2>PulseTopl.simplify@;before=%a@;after=%a@]" Constraint.pp pruned Constraint.pp
-      pruned ;
     {pre; post; pruned; last_step}
   in
-  (* The following three steps are ordered from fastest to slowest. *)
-  let state = List.map ~f:simplify_simple_state state in
+  let simplify_pruned {pre; post; pruned; last_step} =
+    let pruned = Constraint.simplify pulse_state pruned in
+    {pre; post; pruned; last_step}
+  in
+  (* The following three steps are ordered from fastest to slowest, except that `drop_infeasible`
+     has to come after `simplify_pruned`. *)
+  let state =
+    (* T147875161 *)
+    if false then List.map ~f:eliminate_exists state else state
+  in
   let state = drop_garbage ~keep:(get_reachable pulse_state) state in
+  let state = List.map ~f:simplify_pruned state in
   let state = drop_infeasible pulse_state state in
   List.dedup_and_sort ~compare:compare_simple_state state
+
+
+let simplify =
+  if Config.trace_topl then ( fun pulse_state state ->
+    let result = simplify pulse_state state in
+    L.d_printfln "@[<v2>@[PulseTopl.simplify@]@;@[before=%a@]@;@[after=%a@]@;@]" pp_state state
+      pp_state result ;
+    result )
+  else simplify
 
 
 let apply_limits pulse_state state =
