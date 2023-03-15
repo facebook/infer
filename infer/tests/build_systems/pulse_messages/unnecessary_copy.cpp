@@ -85,3 +85,19 @@ void call_get_optional_value_bad(A x) {
   x.vec[0] = 42;
   get_optional_value(x);
 }
+
+class UnMovable {
+ public:
+  std::vector<int> vec_;
+  // by defining a destructor but no move constructor, there is no
+  // auto-generated move constructor
+  ~UnMovable() = default;
+};
+
+void call_by_value(UnMovable arg){};
+
+void no_move_intermediate_bad(UnMovable unmovable) {
+  call_by_value(
+      std::move(unmovable)); // we can't suggest moving here since UnMovable
+                             // doesn't have move constructor
+}
