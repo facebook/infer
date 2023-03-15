@@ -21,7 +21,7 @@ class SlowIterTests {
   }
 
   // Inter-procedural variant of aBad.
-  static <K, V> void bBad(Map<K, V> m) {
+  static <K, V> void FN_bBad(Map<K, V> m) {
     for (K k : m.keySet()) {
       print(k, m);
     }

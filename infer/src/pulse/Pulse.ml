@@ -20,7 +20,8 @@ exception AboutToOOM
 let report_topl_errors proc_desc err_log summary =
   let f = function
     | ContinueProgram astate ->
-        PulseTopl.report_errors proc_desc err_log (AbductiveDomain.Topl.get astate)
+        let pulse_is_manifest = PulseArithmetic.is_manifest astate in
+        AbductiveDomain.Topl.report_errors proc_desc err_log ~pulse_is_manifest astate
     | _ ->
         ()
   in

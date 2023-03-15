@@ -364,7 +364,7 @@ val taint_error : t
 
 val thread_safety_violation : t
 
-val topl_error : t
+val topl_error : latent:bool -> t
 
 val uninitialized_value : t
 

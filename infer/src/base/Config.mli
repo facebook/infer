@@ -798,6 +798,8 @@ val topl_max_disjuncts : int
 
 val topl_properties : ToplAst.t list
 
+val topl_report_latent_issues : bool
+
 val trace_absarray : bool
 
 val trace_error : bool

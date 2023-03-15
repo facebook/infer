@@ -340,8 +340,9 @@ module Topl : sig
     -> callee_proc_name:Procname.t
     -> substitution:(AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
     -> callee_summary:PulseTopl.state
+    -> callee_is_manifest:bool
     -> t
     -> t
 
-  val get : Summary.t -> PulseTopl.state
+  val report_errors : Procdesc.t -> Errlog.t -> pulse_is_manifest:bool -> Summary.t -> unit
 end

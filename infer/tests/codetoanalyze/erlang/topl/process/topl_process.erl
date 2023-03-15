@@ -7,7 +7,7 @@
 
 -export([
     test_1_Ok/0,
-    test_2_Bad/0,
+    fn_test_2_Bad/0,
     fp_test_3_Ok/0
 ]).
 
@@ -22,7 +22,7 @@ test_1_Ok() ->
     message(P),
     kill(P).
 
-test_2_Bad() ->
+fn_test_2_Bad() ->
     P = spawn(),
     kill(P),
     message(P),

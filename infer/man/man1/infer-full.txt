@@ -649,6 +649,7 @@ OPTIONS
              TAINT_ERROR (enabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
              TOPL_ERROR (enabled by default),
+             TOPL_ERROR_LATENT (disabled by default),
              UNINITIALIZED_VALUE (enabled by default),
              UNREACHABLE_CODE (enabled by default),
              UNTRUSTED_BUFFER_ACCESS (disabled by default),
@@ -2774,6 +2775,12 @@ INTERNAL OPTIONS
 
        --topl-properties-reset
            Set --topl-properties to the empty list.
+
+       --no-topl-report-latent-issues
+           Deactivates: Report latent issues instead of waiting for them to
+           become manifest, when the latent issue itself is enabled. (Similar
+           to --pulse-report-latent-issues.) (Conversely:
+           --topl-report-latent-issues)
 
        --trace-error
            Activates: Detailed tracing information during error explanation

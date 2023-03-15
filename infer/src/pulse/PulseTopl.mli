@@ -37,9 +37,11 @@ val large_step :
   -> substitution:(value * ValueHistory.t) AbstractValue.Map.t
   -> pulse_state
   -> callee_summary:state
+  -> callee_is_manifest:bool
   -> state
   -> state
-(** [large_step ~call_location ~callee_proc_name ~substitution pulse_state ~callee_summary state]
+(** [large_step ~call_location ~callee_proc_name ~substitution pulse_state ~callee_summary 
+    ~callee_is_manifest state]
     updates [state] according to [callee_summary]. The abstract values in [pulse_state] and [state]
     are in one scope, and those in [callee_summary] in another scope: the [substitution] maps from
     the callee scope to the caller scope. *)
@@ -52,7 +54,7 @@ val filter_for_summary : pulse_state -> state -> state
 val simplify : pulse_state -> state -> state
 (** Keep only a subset of abstract values. This is used for extracting summaries. *)
 
-val report_errors : Procdesc.t -> Errlog.t -> state -> unit
+val report_errors : Procdesc.t -> Errlog.t -> pulse_is_manifest:bool -> state -> unit
 (** Calls [Reporting.log_issue] with error traces, if any. *)
 
 val pp_state : Format.formatter -> state -> unit

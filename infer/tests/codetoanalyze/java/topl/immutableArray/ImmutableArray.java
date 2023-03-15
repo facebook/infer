@@ -23,7 +23,7 @@ class ImmutableArray {
     otherArray[2] = 7;
   }
 
-  void badC() {
+  void FN_badC() {
     int[] array = getTestArray();
     otherMutateArray(array);
   }

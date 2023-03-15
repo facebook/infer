@@ -16,7 +16,7 @@ abstract class Taint {
     sendToDb(s1);
   }
 
-  void fBad() {
+  void FN_fBad() {
     String s0 = badString();
     if (s0 == null) return;
     String s1 = "foo" + s0 + "bar";

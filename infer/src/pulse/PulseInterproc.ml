@@ -1024,10 +1024,11 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
         in
         let astate =
           if Topl.is_active () then
+            let callee_is_manifest = PulseArithmetic.is_manifest callee_summary in
             AbductiveDomain.Topl.large_step ~call_location ~callee_proc_name
               ~substitution:call_state.subst
               ~callee_summary:(AbductiveDomain.Summary.get_topl callee_summary)
-              call_state.astate
+              ~callee_is_manifest call_state.astate
           else call_state.astate
         in
         let astate =

@@ -1477,14 +1477,16 @@ module Topl = struct
     {astate with topl= PulseTopl.small_step loc (topl_view astate) event astate.topl}
 
 
-  let large_step ~call_location ~callee_proc_name ~substitution ~callee_summary astate =
+  let large_step ~call_location ~callee_proc_name ~substitution ~callee_summary ~callee_is_manifest
+      astate =
     { astate with
       topl=
         PulseTopl.large_step ~call_location ~callee_proc_name ~substitution (topl_view astate)
-          ~callee_summary astate.topl }
+          ~callee_summary ~callee_is_manifest astate.topl }
 
 
-  let get {topl} = topl
+  let report_errors proc_desc err_log ~pulse_is_manifest astate =
+    PulseTopl.report_errors proc_desc err_log ~pulse_is_manifest astate.topl
 end
 
 (* re-exported for mli *)

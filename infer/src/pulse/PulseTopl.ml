@@ -347,7 +347,10 @@ type step =
   ; step_predecessor: simple_state  (** state before this step *)
   ; step_data: step_data }
 
-and step_data = SmallStep of event | LargeStep of (Procname.t * (* post *) simple_state)
+and step_data =
+  | SmallStep of event
+  | LargeStep of
+      {procname: Procname.t; post: simple_state; pulse_is_manifest: bool; topl_is_manifest: bool}
 
 and simple_state =
   { pre: configuration  (** at the start of the procedure *)
@@ -750,7 +753,8 @@ let sub_simple_state (sub, {pre; post; pruned; last_step}) =
   (sub, {pre; post; pruned; last_step})
 
 
-let large_step ~call_location ~callee_proc_name ~substitution pulse_state ~callee_summary state =
+let large_step ~call_location ~callee_proc_name ~substitution pulse_state ~callee_summary
+    ~callee_is_manifest state =
   let seq ((p : simple_state), (q : simple_state)) =
     if not (Int.equal p.post.vertex q.pre.vertex) then None
     else
@@ -781,7 +785,12 @@ let large_step ~call_location ~callee_proc_name ~substitution pulse_state ~calle
         Some
           { step_location= call_location
           ; step_predecessor= p
-          ; step_data= LargeStep (callee_proc_name, q) }
+          ; step_data=
+              LargeStep
+                { procname= callee_proc_name
+                ; post= q
+                ; pulse_is_manifest= callee_is_manifest
+                ; topl_is_manifest= Constraint.(equal true_ q.pruned) } }
       in
       Some {pre= p.pre; post= q.post; pruned; last_step}
   in
@@ -798,14 +807,24 @@ let filter_for_summary pulse_state state = drop_infeasible pulse_state state
 
 let description_of_step_data step_data =
   ( match step_data with
-  | SmallStep (Call {procname}) | LargeStep (procname, _) ->
+  | SmallStep (Call {procname}) | LargeStep {procname} ->
       F.fprintf F.str_formatter "@[call to %a@]" Procname.pp procname
   | SmallStep (ArrayWrite _) ->
       F.fprintf F.str_formatter "@[write to array@]" ) ;
   F.flush_str_formatter ()
 
 
-let report_errors proc_desc err_log state =
+(* The rules for reporting an error from a Topl simple_state are:
+   (a) it should go from vertex start to vertex error;
+   (b) its trace does not have a nested similar error.
+   The rules for deciding if the error is manifest are:
+   (c) the corresponding Pulse state is manifest;
+   (d) the Topl constraint ("pruned") is valid.
+   To decide (c), we rely on Pulse to tell Topl (when calling report_errors and large_step) whether
+   the Pulse state is manifest. To decide (b), we record information about (c)&(d) in the trace (in
+   large_step), and use it here (in report_errors).
+*)
+let report_errors proc_desc err_log ~pulse_is_manifest state =
   let a = Topl.automaton () in
   let rec make_trace nesting trace q =
     match q.last_step with
@@ -818,8 +837,8 @@ let report_errors proc_desc err_log state =
           match step_data with
           | SmallStep _ ->
               trace_element :: trace
-          | LargeStep (_, qq) ->
-              let new_trace = make_trace (nesting + 1) trace qq in
+          | LargeStep {post} ->
+              let new_trace = make_trace (nesting + 1) trace post in
               (* Skip trivial large steps (those with no substeps) *)
               if phys_equal new_trace trace then trace else trace_element :: new_trace
         in
@@ -833,23 +852,49 @@ let report_errors proc_desc err_log state =
     | None ->
         L.die InternalError "PulseTopl.report_errors inv broken"
   in
-  let is_nested_large_step q =
+  let is_issue q =
+    ToplAutomaton.is_start a q.pre.vertex && ToplAutomaton.is_error a q.post.vertex
+  in
+  let is_nested_large_step ~caller_pulse_is_manifest ~caller_topl_is_manifest q =
+    (* This is a simple heuristic that tries to avoid reporting too many issues that are "the same".
+       Since pulse_is_manifest and topl_is_manifest are coarse abstraction of what the issue is,
+       relying on them can filter out issues that are not "the same". But, in practice, it seems a
+       useful heuristic to reduce noise. *)
     match q.last_step with
-    | Some {step_data= LargeStep (_, prepost)}
-      when ToplAutomaton.is_start a prepost.pre.vertex
-           && ToplAutomaton.is_error a prepost.post.vertex ->
-        true
+    | Some {step_data= LargeStep {post; pulse_is_manifest; topl_is_manifest}} ->
+        is_issue post
+        && Bool.(equal caller_pulse_is_manifest pulse_is_manifest)
+        && Bool.(equal caller_topl_is_manifest topl_is_manifest)
     | _ ->
         false
   in
   let report_simple_state q =
-    if ToplAutomaton.is_start a q.pre.vertex && ToplAutomaton.is_error a q.post.vertex then
+    (* We assume simplifications happened before calling report_errors. *)
+    let topl_is_manifest = Constraint.(equal true_ q.pruned) in
+    if is_issue q then
       let q = first_error_ss q in
       (* Only report at the innermost level where error appears. *)
-      if not (is_nested_large_step q) then
+      if
+        not
+          (is_nested_large_step ~caller_pulse_is_manifest:pulse_is_manifest
+             ~caller_topl_is_manifest:topl_is_manifest q )
+      then
         let loc = Procdesc.get_loc proc_desc in
         let ltr = make_trace 0 [] q in
-        let message = ToplAutomaton.message a q.post.vertex in
-        Reporting.log_issue proc_desc err_log ~loc ~ltr Topl IssueType.topl_error message
+        let latent = (not topl_is_manifest) || not pulse_is_manifest in
+        let message =
+          (* 1. topl_is_manifest && not pulse_is_manifest:
+           *    if program execution conditions would be satisfied, monitor would signal error
+           * 2. not topl_is_manifest && pulse_is_manifest:
+           *    execution is unconditional, but the monitor still waits for some conditions to be
+           *    satisfied before signaling error *)
+          String.concat ~sep:" "
+            ( [ToplAutomaton.message a q.post.vertex]
+            @ (if latent && topl_is_manifest then ["TOPL_MANIFEST"] else [])
+            @ if latent && pulse_is_manifest then ["PULSE_MANIFEST"] else [] )
+        in
+        if (not latent) || Config.topl_report_latent_issues then
+          Reporting.log_issue proc_desc err_log ~loc ~ltr Topl (IssueType.topl_error ~latent)
+            message
   in
   List.iter ~f:report_simple_state state

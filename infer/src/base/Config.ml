@@ -3056,6 +3056,12 @@ and topl_properties =
     "[EXPERIMENTAL] Specify a file containing a temporal property definition (e.g., jdk.topl)."
 
 
+and topl_report_latent_issues =
+  CLOpt.mk_bool ~long:"topl-report-latent-issues" ~default:true
+    "Report latent issues instead of waiting for them to become manifest, when the latent issue \
+     itself is enabled. (Similar to $(b,--pulse-report-latent-issues).)"
+
+
 and profiler_samples =
   CLOpt.mk_path_opt ~long:"profiler-samples"
     "File containing the profiler samples when Infer is run Test Determinator mode with \
@@ -4226,6 +4232,8 @@ and topl_properties =
   in
   List.concat_map ~f:parse (RevList.to_list !topl_properties)
 
+
+and topl_report_latent_issues = !topl_report_latent_issues
 
 and trace_error = !trace_error
 

@@ -4,8 +4,8 @@
 % LICENSE file in the root directory of this source tree.
 -module(reach).
 -export([
-    test_a_Bad/0,
-    test_b_Bad/0,
+    fn_test_a_Bad/0,
+    fn_test_b_Bad/0,
     test_c_Bad/0,
     test_d_Bad/0,
     test_e_Bad/0,
@@ -17,10 +17,10 @@
     test_k_Bad/0
 ]).
 
-test_a_Bad() ->
+fn_test_a_Bad() ->
     sink(source()).
 
-test_b_Bad() ->
+fn_test_b_Bad() ->
     sink(id(source())).
 
 test_c_Bad() ->

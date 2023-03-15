@@ -1,3 +1,4 @@
 codetoanalyze/erlang/topl/fields/topl_fields.erl, test_3_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to bar/1]
 codetoanalyze/erlang/topl/fields/topl_fields.erl, test_4_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to bar/1]
-codetoanalyze/erlang/topl/fields/topl_fields.erl, test_7_Latent/1, 0, TOPL_ERROR, no_bucket, ERROR, [call to dontSayOne/1]
+codetoanalyze/erlang/topl/fields/topl_fields.erl, test_7_Latent/1, 0, TOPL_ERROR_LATENT, no_bucket, ERROR, [call to dontSayOne/1]
+codetoanalyze/erlang/topl/fields/topl_fields.erl, test_8_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to test_7_Latent/1,call to dontSayOne/1]
