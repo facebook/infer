@@ -310,7 +310,7 @@ let%test_module "to_sil" =
 
             #n3:
               n$0=*&x:HackMixed* [line 8, column 11];
-              n$1=_fun_unknown(n$0:Mixed*) [line 9, column 11];
+              n$1=_fun_unknown(n$0:HackMixed*) [line 9, column 11];
               n$2=*&y:HackMixed* [line 10, column 11];
               n$3=_fun_known(n$2:HackInt*) [line 11, column 11];
               *&return:void=0 [line 12, column 11];

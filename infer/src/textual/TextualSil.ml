@@ -94,7 +94,7 @@ module TypeNameBridge = struct
 
   let java_lang_object = of_java_name "java.lang.Object"
 
-  let hack_mixed = SilTyp.HackClass (HackClassName.make "Mixed")
+  let hack_mixed = SilTyp.HackClass (HackClassName.make "HackMixed")
 end
 
 let mangle_java_procname jpname =
@@ -583,7 +583,7 @@ module InstrBridge = struct
             match lang with
             | Lang.Hack ->
                 (* Declarations with unknown formals are expected in Hack. Assume that unknown
-                   formal types are *Mixed and their number matches that of the arguments. *)
+                   formal types are *HackMixed and their number matches that of the arguments. *)
                 let rec map_and_complete_with_mixed formals args =
                   match (formals, args) with
                   | [], [] ->
