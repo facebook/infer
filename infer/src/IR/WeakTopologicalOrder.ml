@@ -35,6 +35,8 @@ module Partition = struct
         (fold_nodes [@tailcall]) next ~init ~f
 
 
+  let iter_nodes partition ~f = Container.iter partition ~fold:fold_nodes ~f
+
   let rec fold_heads partition ~init ~f =
     match partition with
     | Empty ->

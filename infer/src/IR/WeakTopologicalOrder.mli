@@ -25,6 +25,8 @@ module Partition : sig
 
   val fold_nodes : ('node t, 'node, _) Container.fold
 
+  val iter_nodes : 'a t -> f:('a -> unit) -> unit
+
   val fold_heads : ('node t, 'node, _) Container.fold
 
   val expand : fold_right:('a, 'b, 'b t) Container.fold -> 'a t -> 'b t

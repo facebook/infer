@@ -80,7 +80,7 @@ let instr_is_auxiliary = function
 
 let color_wrapper ~f = if Config.print_using_diff then Pp.color_wrapper ~f else f
 
-let pp_exp_typ pe f (e, t) = F.fprintf f "%a:%a" (Exp.pp_diff pe) e (Typ.pp pe) t
+let pp_exp_typ pe pp_typ f (e, t) = F.fprintf f "%a:%a" (Exp.pp_diff pe) e (pp_typ pe) t
 
 let location_of_instr_metadata = function
   | Abstract loc
@@ -167,7 +167,7 @@ let pp_instr ~print_types pe0 f instr =
       | Call ((id, _), e, arg_ts, loc, cf) ->
           F.fprintf f "%a=" Ident.pp id ;
           F.fprintf f "%a(%a)%a [%a]" (Exp.pp_diff ~print_types pe) e
-            (Pp.comma_seq (pp_exp_typ pe))
+            (Pp.comma_seq (pp_exp_typ pe pp_typ))
             arg_ts CallFlags.pp cf Location.pp loc
       | Metadata metadata ->
           pp_instr_metadata pe0 f metadata )

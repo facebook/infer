@@ -274,6 +274,48 @@ let%test_module "to_sil" =
          annots: {<>}
          java_class_info: {[None]}
          dummy: false |}]
+
+    let%expect_test "unknown formal calls" =
+      let source =
+        {|
+         .source_language = "hack"
+         declare unknown(...) : *HackMixed
+         declare known(*HackInt) : void
+
+         define foo(x: *Foo, y: *HackInt) : void {
+         #b0:
+           n0: *HackMixed = load &x
+           n1 = unknown(n0)
+           n2: *HackMixed = load &y
+           n3 = known(n2)
+           ret null
+         }
+         |}
+      in
+      let m = parse_module source in
+      let cfg, _ = TextualSil.module_to_sil m in
+      Cfg.iter_sorted cfg ~f:(fun pdesc ->
+          F.printf "%a" (Procdesc.pp_with_instrs ~print_types:true) pdesc ) ;
+      [%expect
+        {|
+        { proc_name= foo
+        ; translation_unit= dummy.sil
+        ; formals= [(x,Foo*);  (y,HackInt*)]
+        ; is_defined= true
+        ; loc= dummy.sil:6:16
+        ; locals= []
+        ; ret_type= void
+        ; proc_id= foo }
+            #n1:
+
+            #n3:
+              n$0=*&x:HackMixed* [line 8, column 11];
+              n$1=_fun_unknown(n$0:Mixed*) [line 9, column 11];
+              n$2=*&y:HackMixed* [line 10, column 11];
+              n$3=_fun_known(n$2:HackInt*) [line 11, column 11];
+              *&return:void=0 [line 12, column 11];
+
+            #n2: |}]
   end )
 
 let%test_module "remove_internal_calls transformation" =

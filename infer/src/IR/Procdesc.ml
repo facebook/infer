@@ -390,11 +390,22 @@ module Node = struct
         F.pp_print_string fmt "UnaryOperator"
 
 
-  let pp_instrs ~highlight pe0 f node =
+  let pp_instrs ?print_types ~highlight pe0 f node =
     let pe =
       match highlight with None -> pe0 | Some instr -> Pp.extend_colormap pe0 (Obj.repr instr) Red
     in
-    Instrs.pp pe f (get_instrs node)
+    Instrs.pp ?print_types pe f (get_instrs node)
+
+
+  let pp_with_instrs ?print_types f node =
+    (* Desired output
+       #n{id}:
+         instr1
+         instr2
+    *)
+    F.fprintf f "@[<v>#n%a:@;<0 2>%a@,@]" pp node
+      (pp_instrs ?print_types ~highlight:None Pp.text)
+      node
 
 
   let d_instrs ~highlight (node : t) = L.d_pp_with_pe ~color:Green (pp_instrs ~highlight) node
@@ -873,6 +884,18 @@ let pp_signature fmt pdesc =
   if not (Annot.Item.is_empty ret_annots) then
     Format.fprintf fmt ", Return annotations: %a" Annot.Item.pp ret_annots ;
   Format.fprintf fmt "]@]@;"
+
+
+let pp_with_instrs ?print_types fmt pdesc =
+  (* Desired output:
+     {signature}
+       {instrs}
+  *)
+  F.fprintf fmt "%a@;<0 4>@[<v>" ProcAttributes.pp (get_attributes pdesc) ;
+  let wto = get_wto pdesc in
+  WeakTopologicalOrder.Partition.iter_nodes wto ~f:(fun node ->
+      F.fprintf fmt "%a" (Node.pp_with_instrs ?print_types) node ) ;
+  F.fprintf fmt "@,@]"
 
 
 let is_specialized pdesc =

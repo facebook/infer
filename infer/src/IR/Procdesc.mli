@@ -193,6 +193,10 @@ module Node : sig
 
   val pp_stmt : Format.formatter -> stmt_nodekind -> unit
 
+  val pp_with_instrs : ?print_types:bool -> Format.formatter -> t -> unit
+    [@@warning "-unused-value-declaration"]
+  (** Pretty print the node with instructions *)
+
   val compute_key : t -> NodeKey.t
 end
 
@@ -353,6 +357,9 @@ val is_loop_head : t -> Node.t -> bool
 val pp_signature : Format.formatter -> t -> unit
 
 val pp_local : Format.formatter -> ProcAttributes.var_data -> unit
+
+val pp_with_instrs : ?print_types:bool -> Format.formatter -> t -> unit
+  [@@warning "-unused-value-declaration"]
 
 val is_specialized : t -> bool
 
