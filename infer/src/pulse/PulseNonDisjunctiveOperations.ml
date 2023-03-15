@@ -230,18 +230,23 @@ let add_copies_to_pvar_or_field tenv path location from args (astate_n, astate) 
           | SourceExpr (source_expr, _) when is_copy_into_local copied_var ->
               (* case 1: we copy into a local variable that occurs in the code with a known source  *)
               Some (IntoVar {copied_var}, Some source_expr)
-          | SourceExpr (((PVar pvar, _) as source_expr), _)
-            when not (Pvar.is_frontend_tmp pvar || Pvar.is_this pvar || Pvar.is_global pvar) ->
+          | SourceExpr (((PVar pvar, _) as source_expr), _) ->
               (* case 2: we copy into an intermediate that is not a field member/frontend temp/global and source is known. This is the case for intermediate copies of the pass by value arguments. *)
-              Some (IntoIntermediate {copied_var}, Some source_expr)
+              if Pvar.is_frontend_tmp pvar || Pvar.is_this pvar || Pvar.is_global pvar then None
+              else Some (IntoIntermediate {copied_var}, Some source_expr)
           | Unknown _ when is_copy_into_local copied_var ->
-              (* case 3: analogous to case 1 but source is an unknown call that is know no create a copy *)
+              (* case 3: analogous to case 1 but source is an unknown call that is known to create a copy *)
               Some (IntoVar {copied_var}, None)
           | Unknown _ ->
-              (* case 4: analogous to case 2 but source is an unknown call that is know no create a copy *)
+              (* case 4: analogous to case 2 but source is an unknown call that is known to create a copy *)
               Some (IntoIntermediate {copied_var}, None)
-          | _ ->
-              None
+          | SourceExpr (((ReturnValue _, _) as source_expr), _) ->
+              if Var.is_global copied_var then
+                (* We don't want to track copies into globals since they can be modified by any procedure as their lifetime extends till the end of the program*)
+                None
+              else
+                (* case 5: analogous to case 2 but source is returned from a call that is known to create a copy into a non-global *)
+                Some (IntoIntermediate {copied_var}, Some source_expr)
       in
       Option.map copy_into_source_opt ~f:(fun (copy_into, source_opt) ->
           let copy_addr, _ = Option.value_exn (Stack.find_opt copied_var astate) in

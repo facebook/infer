@@ -256,6 +256,12 @@ void modified_before_custom_destructor_ok(String s) {
   cpy.set_size(10);
 }
 
+int get_size(String s) { return s.x; }
+void check_no_move_op_bad(String arg) {
+  int x = get_size(std::move(arg)); // String has no auto-generated move
+                                    // constructor so there is no move here!
+}
+
 void copy_vec_name_contains_copy_ok(std::vector<int> vec) {
   auto copy_vec = vec;
 } // variable contains "copy", hence warning should be suppressed
