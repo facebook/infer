@@ -349,6 +349,16 @@ let pp_calling_context_prefix fmt calling_context =
         (if in_between_calls > 1 then "s" else "")
 
 
+let is_from_std_move (base, _) =
+  match (base : DecompilerExpr.base) with
+  | ReturnValue (SkippedKnownCall pname) | ReturnValue (Call pname) ->
+      String.is_prefix (Procname.to_string pname) ~prefix:"std::move"
+  | ReturnValue (Model pname) ->
+      String.is_prefix pname ~prefix:"std::move"
+  | ReturnValue (SkippedUnknownCall _) | PVar _ ->
+      false
+
+
 let get_message diagnostic =
   match diagnostic with
   | AccessToInvalidAddress
@@ -601,10 +611,17 @@ let get_message diagnostic =
     -> (
       let open PulseAttribute in
       let is_from_const = Option.exists ~f:Typ.is_const_reference source_typ in
-      let suggestion_msg_move = "To avoid the copy, try moving it by calling `std::move` instead" in
-      let suggestion_msg_move_intermediate =
+      let get_suggestion_msg_move = function
+        | Some source_expr when is_from_std_move source_expr ->
+            "Even though `std::move` is called, nothing is actually getting moved (e.g. the type \
+             doesn't have a move operation) so make sure the copy is expected"
+        | _ ->
+            "To avoid the copy, try moving it by calling `std::move` instead"
+      in
+      let get_suggestion_msg_move_intermediate source_opt =
         let move_msg =
-          suggestion_msg_move ^ " or alternatively change the callee's parameter type to `const &`"
+          get_suggestion_msg_move source_opt
+          ^ " or alternatively change the callee's parameter type to `const &`"
         in
         if is_from_const then
           "To avoid the copy, try 1) removing the `const &` from the source and 2) " ^ move_msg
@@ -614,48 +631,48 @@ let get_message diagnostic =
         "If this copy was intentional, consider calling `folly::copy` to make it explicit and \
          hence suppress the warning"
       in
-      let suggestion_msg =
+      let get_suggestion_msg source_opt =
         match (from, copied_into) with
         | CopyToOptional, _ ->
-            if is_from_const then suggestion_msg_move
-            else suggestion_msg_move ^ " or changing the callee's type"
+            if is_from_const then get_suggestion_msg_move source_opt
+            else get_suggestion_msg_move source_opt ^ " or changing the callee's type"
         | _, IntoIntermediate _ ->
-            suggestion_msg_move_intermediate
+            get_suggestion_msg_move_intermediate source_opt
         | _, IntoField _ ->
             "Rather than copying into the field, consider moving into it instead"
         | CopyCtor, IntoVar _ ->
             "To avoid the copy, try using a reference `&`"
         | CopyAssignment, IntoVar _ ->
-            suggestion_msg_move
+            get_suggestion_msg_move source_opt
       in
       match (copied_into, source_opt) with
       | IntoIntermediate _, None ->
           F.asprintf "An intermediate is %a on %a. %s." CopyOrigin.pp from Location.pp_line location
-            suggestion_msg
+            (get_suggestion_msg source_opt)
       | IntoIntermediate _, Some ((PVar _, _) as source_expr) ->
           F.asprintf "variable `%a` is %a unnecessarily into an intermediate on %a. %s."
             DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from Location.pp_line location
-            suggestion_msg
+            (get_suggestion_msg source_opt)
       | IntoIntermediate _, Some ((ReturnValue _, _) as source_expr) ->
           F.asprintf "The return value from %a is %a unnecessarily  on %a. %s."
             DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from Location.pp_line location
-            suggestion_msg
+            (get_suggestion_msg source_opt)
       | IntoVar _, None ->
           F.asprintf
             "%a variable `%a` is not modified after it is copied from a source on %a. %s. %s."
-            CopyOrigin.pp from CopiedInto.pp copied_into Location.pp_line location suggestion_msg
-            suppression_msg
+            CopyOrigin.pp from CopiedInto.pp copied_into Location.pp_line location
+            (get_suggestion_msg source_opt) suppression_msg
       | IntoVar _, Some source_expr ->
           F.asprintf "%a variable `%a` is not modified after it is copied from `%a` on %a. %s. %s."
             CopyOrigin.pp from CopiedInto.pp copied_into DecompilerExpr.pp_source_expr source_expr
-            Location.pp_line location suggestion_msg suppression_msg
+            Location.pp_line location (get_suggestion_msg source_opt) suppression_msg
       | IntoField {field}, None ->
           F.asprintf "Field `%a` is %a into from an rvalue-ref but is not modified afterwards. %s."
-            Fieldname.pp field CopyOrigin.pp from suggestion_msg
+            Fieldname.pp field CopyOrigin.pp from (get_suggestion_msg source_opt)
       | IntoField {field}, Some source_expr ->
           F.asprintf "`%a` is %a into field `%a` but is not modified afterwards. %s."
             DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from Fieldname.pp field
-            suggestion_msg )
+            (get_suggestion_msg source_opt) )
 
 
 let add_errlog_header ~nesting ~title location errlog =
