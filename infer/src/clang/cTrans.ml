@@ -4663,9 +4663,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   (** no-op translated for unsupported instructions that will at least translate subexpressions *)
   and skip_unimplemented ~pp_unimplemented trans_state stmt_info ret_typ stmts =
+    let has_args =
+      (* if the sub-statements are expressions then they can reasonably be assumed to be arguments
+         to some unknown effect that the unimplemented statement kind has; if not then said
+         statement is something else. In any case if the sub-statements are *not* expressions then
+         treating them as arguments in [call_function_with_args] below will crash. *)
+      List.for_all stmts ~f:(fun stmt -> Clang_ast_proj.get_expr_tuple stmt |> Option.is_some)
+    in
+    let args = if has_args then stmts else [] in
     L.debug Capture Medium "Skipping unimplemented %t" pp_unimplemented ;
     call_function_with_args Procdesc.Node.Skip BuiltinDecl.__infer_skip trans_state stmt_info
-      ret_typ stmts
+      ret_typ args
 
 
   and instruction trans_state instr = instruction_log trans_state instr
