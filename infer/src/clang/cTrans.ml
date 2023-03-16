@@ -1765,14 +1765,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             let find_arg j _ = Int.equal i j in
             List.findi ~f:find_arg callee_ms.CMethodSignature.params
           in
-          let passed_as_noescape_block_to =
+          let block_as_arg_attributes =
             match ms_param_type_i with
-            | Some (_, {CMethodSignature.is_no_escape_block_arg}) ->
-                if is_no_escape_block_arg then Some callee_ms.CMethodSignature.name else None
+            | Some (_, {is_no_escape_block_arg}) ->
+                Some
+                  { ProcAttributes.passed_to= callee_ms.CMethodSignature.name
+                  ; passed_as_noescape_block= is_no_escape_block_arg }
             | None ->
                 None
           in
-          {trans_state_param with passed_as_noescape_block_to}
+          {trans_state_param with block_as_arg_attributes}
       | _ ->
           trans_state_param
     in
@@ -3849,7 +3851,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           CVar_decl.captured_vars_from_block_info context stmt_info.Clang_ast_t.si_source_range
             block_decl_info.Clang_ast_t.bdi_captured_variables
         in
-        let passed_as_noescape_block_to = trans_state.passed_as_noescape_block_to in
+        let block_as_arg_attributes = trans_state.block_as_arg_attributes in
         let captured_vars =
           List.map captured_vars_no_mode ~f:(fun (var, typ, modify_in_block) ->
               let mode, typ =
@@ -3861,8 +3863,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         in
         let res = closure_trans procname captured_vars context stmt_info expr_info in
         let block_data =
-          Some
-            {CModule_type.captured_vars; context; passed_as_noescape_block_to; procname; return_type}
+          Some {CModule_type.captured_vars; context; block_as_arg_attributes; procname; return_type}
         in
         F.function_decl context.translation_unit_context context.tenv context.cfg decl block_data ;
         res

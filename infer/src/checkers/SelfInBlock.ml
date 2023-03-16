@@ -503,8 +503,14 @@ let report_weakself_multiple_issue proc_desc err_log domain (weakSelf1 : DomainD
 let report_captured_strongself_issue proc_desc err_log domain (capturedStrongSelf : DomainData.t)
     report_captured_strongself =
   let attributes = Procdesc.get_attributes proc_desc in
+  let passed_as_noescape_block =
+    Option.value_map
+      ~f:(fun ({passed_as_noescape_block} : ProcAttributes.block_as_arg_attributes) ->
+        passed_as_noescape_block )
+      ~default:false attributes.block_as_arg_attributes
+  in
   if
-    Option.is_none attributes.ProcAttributes.passed_as_noescape_block_to
+    (not passed_as_noescape_block)
     && not (Pvar.Set.mem capturedStrongSelf.pvar report_captured_strongself)
   then (
     let report_captured_strongself =
@@ -536,11 +542,11 @@ let report_issues proc_desc err_log domain =
     | DomainData.WEAK_SELF ->
         let reported_weak_self_in_noescape_block =
           let attributes = Procdesc.get_attributes proc_desc in
-          match attributes.ProcAttributes.passed_as_noescape_block_to with
-          | Some procname ->
+          match attributes.ProcAttributes.block_as_arg_attributes with
+          | Some {passed_to= procname; passed_as_noescape_block= true} ->
               report_weakself_in_no_escape_block_issues proc_desc err_log domain domain_data
                 procname result.reported_weak_self_in_noescape_block
-          | None ->
+          | _ ->
               result.reported_weak_self_in_noescape_block
         in
         { result with

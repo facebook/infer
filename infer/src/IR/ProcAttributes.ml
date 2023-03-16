@@ -64,6 +64,14 @@ type specialized_with_closures_info =
   {orig_proc: Procname.t; formals_to_closures: CapturedVar.t passed_closure Pvar.Map.t}
 [@@deriving compare, equal]
 
+type block_as_arg_attributes = {passed_to: Procname.t; passed_as_noescape_block: bool}
+[@@deriving compare, equal]
+
+let pp_block_as_arg_attributes fmt {passed_to; passed_as_noescape_block} =
+  F.fprintf fmt "@[{ passed_to=%a;passed_as_noescape_block=%b } @]" Procname.pp passed_to
+    passed_as_noescape_block
+
+
 type t =
   { access: access  (** visibility access *)
   ; captured: CapturedVar.t list  (** name and type of variables captured in blocks *)
@@ -84,9 +92,10 @@ type t =
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
   ; is_csharp_synchronized_method: bool  (** the procedure is a C# synchronized method *)
-  ; passed_as_noescape_block_to: Procname.t option
-        (** Present if the procedure is an Objective-C block that has been passed to the given
-            method in a position annotated with the NS_NOESCAPE attribute. *)
+  ; block_as_arg_attributes: block_as_arg_attributes option
+        (** Present if the procedure is an Objective-C block that has been passed to a given method
+            as argument, including whether it is in a position annotated with the NS_NOESCAPE
+            attribute. *)
   ; is_no_return: bool  (** the procedure is known not to return *)
   ; is_objc_arc_on: bool  (** the ObjC procedure is compiled with ARC *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
@@ -160,7 +169,7 @@ let default translation_unit proc_name =
   ; is_defined= false
   ; is_java_synchronized_method= false
   ; is_csharp_synchronized_method= false
-  ; passed_as_noescape_block_to= None
+  ; block_as_arg_attributes= None
   ; is_no_return= false
   ; is_objc_arc_on= false
   ; is_specialized= false
@@ -233,7 +242,7 @@ let pp f
      ; is_defined
      ; is_java_synchronized_method
      ; is_csharp_synchronized_method
-     ; passed_as_noescape_block_to
+     ; block_as_arg_attributes
      ; is_no_return
      ; is_objc_arc_on
      ; is_specialized
@@ -295,10 +304,12 @@ let pp f
     is_csharp_synchronized_method f () ;
   if
     not
-      ([%equal: Procname.t option] default.passed_as_noescape_block_to passed_as_noescape_block_to)
+      ([%equal: block_as_arg_attributes option] default.block_as_arg_attributes
+         block_as_arg_attributes )
   then
-    F.fprintf f "; passed_as_noescape_block_to %a" (Pp.option Procname.pp)
-      passed_as_noescape_block_to ;
+    F.fprintf f "; block_as_arg_attributes %a"
+      (Pp.option pp_block_as_arg_attributes)
+      block_as_arg_attributes ;
   pp_bool_default ~default:default.is_no_return "is_no_return" is_no_return f () ;
   pp_bool_default ~default:default.is_objc_arc_on "is_objc_arc_on" is_objc_arc_on f () ;
   pp_bool_default ~default:default.is_specialized "is_specialized" is_specialized f () ;

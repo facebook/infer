@@ -146,7 +146,7 @@ type trans_state =
   ; var_exp_typ: (Exp.t * Typ.t) option
   ; opaque_exp: (Exp.t * Typ.t) option
   ; is_fst_arg_objc_instance_method_call: bool
-  ; passed_as_noescape_block_to: Procname.t option
+  ; block_as_arg_attributes: ProcAttributes.block_as_arg_attributes option
         (** Current to-be-translated instruction is being passed as argument to the given method in
             a position annotated with NS_NOESCAPE *) }
 
@@ -158,7 +158,7 @@ let pp_trans_state fmt
      ; var_exp_typ
      ; opaque_exp
      ; is_fst_arg_objc_instance_method_call
-     ; passed_as_noescape_block_to } [@warning "+missing-record-field-pattern"] ) =
+     ; block_as_arg_attributes } [@warning "+missing-record-field-pattern"] ) =
   F.fprintf fmt
     "{@[succ_nodes=[%a];@;\
      continuation=%a@;\
@@ -172,8 +172,9 @@ let pp_trans_state fmt
     (Pp.option (Pp.pair ~fst:Exp.pp ~snd:(Typ.pp_full Pp.text_break)))
     var_exp_typ
     (Pp.option (Pp.pair ~fst:Exp.pp ~snd:(Typ.pp_full Pp.text_break)))
-    opaque_exp is_fst_arg_objc_instance_method_call (Pp.option Procname.pp)
-    passed_as_noescape_block_to
+    opaque_exp is_fst_arg_objc_instance_method_call
+    (Pp.option ProcAttributes.pp_block_as_arg_attributes)
+    block_as_arg_attributes
 
 
 let default_trans_state context =
@@ -184,7 +185,7 @@ let default_trans_state context =
   ; var_exp_typ= None
   ; opaque_exp= None
   ; is_fst_arg_objc_instance_method_call= false
-  ; passed_as_noescape_block_to= None }
+  ; block_as_arg_attributes= None }
 
 
 type control =

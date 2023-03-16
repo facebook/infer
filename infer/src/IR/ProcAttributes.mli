@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 (** Attributes of a procedure. *)
 
@@ -42,6 +43,9 @@ type specialized_with_closures_info =
   {orig_proc: Procname.t; formals_to_closures: CapturedVar.t passed_closure Pvar.Map.t}
 [@@deriving compare]
 
+type block_as_arg_attributes = {passed_to: Procname.t; passed_as_noescape_block: bool}
+[@@deriving compare, equal]
+
 type t =
   { access: access  (** visibility access *)
   ; captured: CapturedVar.t list
@@ -64,7 +68,7 @@ type t =
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
   ; is_csharp_synchronized_method: bool  (** the procedure is a C# synchronized method *)
-  ; passed_as_noescape_block_to: Procname.t option
+  ; block_as_arg_attributes: block_as_arg_attributes option
         (** Present if the procedure is an Objective-C block that has been passed to the given
             method in a position annotated with the NS_NOESCAPE attribute. *)
   ; is_no_return: bool  (** the procedure is known not to return *)
@@ -123,5 +127,7 @@ val get_passed_by_value_formals : t -> (Pvar.t * Typ.t) list
 val to_return_type : t -> Typ.t
 (** the return type from method signature, taking into account if the procedure has added return
     parameter *)
+
+val pp_block_as_arg_attributes : F.formatter -> block_as_arg_attributes -> unit
 
 module SQLite : SqliteUtils.Data with type t = t

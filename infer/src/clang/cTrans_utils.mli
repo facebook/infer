@@ -39,7 +39,7 @@ type trans_state =
             statement is trying to initialize, if any *)
   ; opaque_exp: (Exp.t * Typ.t) option  (** needed for translating [OpaqueValueExpr] nodes *)
   ; is_fst_arg_objc_instance_method_call: bool
-  ; passed_as_noescape_block_to: Procname.t option }
+  ; block_as_arg_attributes: ProcAttributes.block_as_arg_attributes option }
 
 val pp_trans_state : F.formatter -> trans_state -> unit
 

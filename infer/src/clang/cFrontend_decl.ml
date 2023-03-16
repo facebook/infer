@@ -63,16 +63,16 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
         | None ->
             ([], None)
       in
-      let passed_as_noescape_block_to, procname, block_return_type =
+      let block_as_arg_attributes, procname, block_return_type =
         match block_data_opt with
-        | Some {CModule_type.passed_as_noescape_block_to; procname; return_type} ->
-            (passed_as_noescape_block_to, procname, Some return_type)
+        | Some {CModule_type.block_as_arg_attributes; procname; return_type} ->
+            (block_as_arg_attributes, procname, Some return_type)
         | _ ->
             (None, CType_decl.CProcname.from_decl ~tenv func_decl, None)
       in
       let ms, body_opt, extra_instrs =
         CType_decl.method_signature_body_of_decl tenv func_decl ?block_return_type
-          ~passed_as_noescape_block_to procname
+          ~block_as_arg_attributes procname
       in
       match body_opt with
       | Some body ->
