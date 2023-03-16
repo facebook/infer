@@ -819,14 +819,28 @@ module PulseTransferFunctions = struct
       match instr with
       | Load {id= lhs_id; e= rhs_exp; loc; typ} ->
           (* [lhs_id := *rhs_exp] *)
+          let model_opt = PulseLoadInstrModels.dispatch ~load:rhs_exp in
           let deref_rhs astate =
-            (let** astate, rhs_addr_hist = PulseOperations.eval_deref path loc rhs_exp astate in
+            (let** astate, rhs_addr_hist =
+               match model_opt with
+               | None ->
+                   (* no model found: evaluate the expression as normal *)
+                   PulseOperations.eval_deref path loc rhs_exp astate
+               | Some model ->
+                   (* we are loading from something modelled; apply the model *)
+                   model {path; location= loc} astate
+             in
              and_is_int_if_integer_type typ (fst rhs_addr_hist) astate
              >>|| PulseOperations.write_id lhs_id rhs_addr_hist )
             |> SatUnsat.to_list
             |> PulseReport.report_results tenv proc_desc err_log loc
           in
-          let astates = set_global_astates path analysis_data rhs_exp typ loc astate in
+          let astates =
+            (* call the initializer for certain globals to populate their values, unless we already
+               have a model for it *)
+            if Option.is_some model_opt then [astate]
+            else set_global_astates path analysis_data rhs_exp typ loc astate
+          in
           let astate_n =
             match rhs_exp with
             | Lvar pvar ->

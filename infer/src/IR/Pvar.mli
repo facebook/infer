@@ -173,6 +173,8 @@ val is_local_to_procedure : Procname.t -> t -> bool
 val get_initializer_pname : t -> Procname.t option
 (** Get the procname of the initializer function for the given global variable *)
 
+val get_template_args : t -> Typ.template_spec_info
+
 val materialized_cpp_temporary : string
 
 val specialize_pvar : t -> Procname.t -> t

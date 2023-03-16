@@ -328,6 +328,10 @@ let get_initializer_pname {pv_name; pv_kind} =
       None
 
 
+let get_template_args pvar =
+  match pvar.pv_kind with Global_var {template_args} -> template_args | _ -> Typ.NoTemplate
+
+
 let swap_proc_in_local_pvar pvar proc_name =
   match pvar.pv_kind with Local_var _ -> {pvar with pv_kind= Local_var proc_name} | _ -> pvar
 
