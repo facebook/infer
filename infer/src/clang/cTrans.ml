@@ -1525,8 +1525,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and callExpr_trans trans_state si stmt_list expr_info =
     let context = trans_state.context in
-    let fn_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
-    let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
     let sil_loc = CLocation.location_of_stmt_info context.translation_unit_context.source_file si in
     (* First stmt is the function expr and the rest are params *)
     let fun_exp_stmt, params_stmt =
@@ -1572,11 +1570,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         builtin
     | None ->
         let act_params = collect_returns result_trans_params in
+        let ret_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
+        let ret_type = add_reference_if_glvalue ret_type_no_ref expr_info in
         let res_trans_call =
-          let is_call_to_block = objc_exp_of_type_block fun_exp_stmt in
-          let call_flags = {CallFlags.default with CallFlags.cf_is_objc_block= is_call_to_block} in
-          create_call_instr trans_state function_type sil_fe act_params sil_loc call_flags
-            ~is_inherited_ctor:false
+          create_call_instr trans_state ret_type sil_fe act_params sil_loc ~is_inherited_ctor:false
+            {CallFlags.default with cf_is_objc_block= objc_exp_of_type_block fun_exp_stmt}
         in
         let node_name = Procdesc.Node.Call (Exp.to_string sil_fe) in
         let all_res_trans = res_trans_callee :: (result_trans_params @ [res_trans_call]) in
