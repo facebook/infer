@@ -212,6 +212,8 @@ let weak = "<\"Weak\">"
 
 let std_allow_listed_cpp_methods =
   [ "std::back_inserter"
+  ; "std::exchange"
+  ; "std::__exchange"
   ; "std::forward"
   ; "std::front_inserter"
   ; "std::get"
