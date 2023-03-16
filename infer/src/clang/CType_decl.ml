@@ -31,7 +31,7 @@ module BuildMethodSignature = struct
       if Mangled.is_this name && is_const_member_function then Typ.set_ptr_to_const typ else typ
     in
     let annot = CAst_utils.sil_annot_of_type qual_type in
-    Some (CMethodSignature.mk_param_type ~is_pointer_to_const ~annot name typ)
+    CMethodSignature.mk_param_type ~is_pointer_to_const ~annot name typ
 
 
   let get_class_param qual_type_to_sil_type tenv method_decl =
@@ -43,8 +43,9 @@ module BuildMethodSignature = struct
         | Some name, Some parent_pointer ->
             let qual_type = CAst_utils.qual_type_of_decl_ptr parent_pointer in
             let pointer_qual_type = Ast_expressions.create_pointer_qual_type qual_type in
-            param_type_of_qual_type ~is_const_member_function qual_type_to_sil_type tenv name
-              pointer_qual_type
+            Some
+              (param_type_of_qual_type ~is_const_member_function qual_type_to_sil_type tenv name
+                 pointer_qual_type )
         | _ ->
             None )
       | _ ->
@@ -69,7 +70,7 @@ module BuildMethodSignature = struct
     match return_type.Typ.desc with Tstruct _ -> true | _ -> false
 
 
-  let get_return_param qual_type_to_sil_type tenv ~block_return_type method_decl =
+  let get_return_type_and_param_type qual_type_to_sil_type tenv ~block_return_type method_decl =
     let return_qual_type =
       match block_return_type with
       | Some return_type ->
@@ -78,11 +79,14 @@ module BuildMethodSignature = struct
           CMethodProperties.get_return_type method_decl
     in
     let return_typ = qual_type_to_sil_type tenv return_qual_type in
-    if should_add_return_param return_typ then
-      let name = Mangled.from_string CFrontend_config.return_param in
-      let return_qual_type = Ast_expressions.create_pointer_qual_type return_qual_type in
-      param_type_of_qual_type qual_type_to_sil_type tenv name return_qual_type
-    else None
+    let return_param =
+      if should_add_return_param return_typ then
+        let name = Mangled.from_string CFrontend_config.return_param in
+        let return_qual_type = Ast_expressions.create_pointer_qual_type return_qual_type in
+        Some (param_type_of_qual_type qual_type_to_sil_type tenv name return_qual_type)
+      else None
+    in
+    (return_typ, return_qual_type, return_param)
 
 
   (** Returns parameters of a function/method. They will have following order:
@@ -117,7 +121,9 @@ module BuildMethodSignature = struct
     in
     let params = List.map ~f:par_to_ms_par (CMethodProperties.get_param_decls method_decl) in
     let return_param =
-      Option.to_list (get_return_param qual_type_to_sil_type tenv ~block_return_type method_decl)
+      Option.to_list
+        ( get_return_type_and_param_type qual_type_to_sil_type tenv ~block_return_type method_decl
+        |> trd3 )
     in
     params @ return_param
 
@@ -152,23 +158,20 @@ module BuildMethodSignature = struct
 
   (** get return type of the function and optionally type of function's return parameter *)
   let get_return_val_and_param_types qual_type_to_sil_type tenv ~block_return_type method_decl =
-    let return_qual_type =
-      match block_return_type with
-      | Some return_type ->
-          CType.return_type_of_function_type return_type
-      | None ->
-          CMethodProperties.get_return_type method_decl
+    let return_typ, return_qual_type, return_param_type =
+      get_return_type_and_param_type qual_type_to_sil_type tenv ~block_return_type method_decl
     in
-    let return_typ = qual_type_to_sil_type tenv return_qual_type in
-    let return_typ_annot = CAst_utils.sil_annot_of_type return_qual_type in
     let is_ret_typ_pod = CGeneral_utils.is_type_pod return_qual_type in
-    if should_add_return_param return_typ then
-      ( StdTyp.void
-      , Some (CType.add_pointer_to_typ return_typ)
-      , Annot.Item.empty
-      , true
-      , is_ret_typ_pod )
-    else (return_typ, None, return_typ_annot, false, is_ret_typ_pod)
+    match return_param_type with
+    | Some _ ->
+        ( StdTyp.void
+        , Some (CType.add_pointer_to_typ return_typ)
+        , Annot.Item.empty
+        , true
+        , is_ret_typ_pod )
+    | None ->
+        let return_typ_annot = CAst_utils.sil_annot_of_type return_qual_type in
+        (return_typ, None, return_typ_annot, false, is_ret_typ_pod)
 
 
   let method_signature_of_decl qual_type_to_sil_type tenv method_decl ?block_return_type
