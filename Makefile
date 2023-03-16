@@ -70,6 +70,7 @@ DIRECT_TESTS += \
   cpp_pulse \
   cpp_pulse-11 \
   cpp_pulse-17 \
+  cpp_pulse-20 \
   cpp_quandary \
   cpp_racerd \
   cpp_siof \

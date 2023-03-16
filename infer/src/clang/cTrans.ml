@@ -4654,6 +4654,32 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       {result with control= {result.control with cxx_temporary_markers_set= []}}
 
 
+  and coroutineBodyStmt_trans trans_state stmt_info body_ptr promise_ptr return_value =
+    let source_range = stmt_info.Clang_ast_t.si_source_range in
+    let body = CAst_utils.get_stmt_exn body_ptr source_range in
+    let promise = CAst_utils.get_stmt_exn promise_ptr source_range in
+    exec_with_node_creation Procdesc.Node.DefineBody trans_state ~f:instruction
+      (CompoundStmt (stmt_info, [promise; body; Clang_ast_t.ReturnStmt (stmt_info, [return_value])]))
+
+
+  and coreturnStmt_trans trans_state stmt_info operand_opt promise_call_opt =
+    let args =
+      match promise_call_opt with Some expr -> [expr] | None -> Option.to_list operand_opt
+    in
+    call_function_with_args Procdesc.Node.ReturnStmt BuiltinDecl.__builtin_cxx_co_return trans_state
+      stmt_info StdTyp.void args
+
+
+  and coroutineSuspendExpr_trans trans_state stmt_info expr_info cse_operand =
+    (* confuse [co_await] and [co_yield] because for now we don't care about their accurate
+       semantics anywhere *)
+    let return_type =
+      CType_decl.qual_type_to_sil_type trans_state.context.tenv expr_info.Clang_ast_t.ei_qual_type
+    in
+    call_function_with_args Procdesc.Node.ReturnStmt BuiltinDecl.__builtin_cxx_co_await trans_state
+      stmt_info return_type [cse_operand]
+
+
   (* Expect that this doesn't happen *)
   and undefined_expr trans_state expr_info =
     let tenv = trans_state.context.CContext.tenv in
@@ -5077,17 +5103,23 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           instr
           (Pp.of_string ~f:Clang_ast_j.string_of_stmt)
           instr
+    | CoroutineBodyStmt (stmt_info, _, {cbs_body; cbs_promise_decl_stmt; cbs_return_value}) ->
+        coroutineBodyStmt_trans trans_state stmt_info cbs_body cbs_promise_decl_stmt
+          cbs_return_value
+    | CoreturnStmt (stmt_info, _, {coret_operand; coret_promise_call}) ->
+        coreturnStmt_trans trans_state stmt_info coret_operand coret_promise_call
+    | CoawaitExpr (stmt_info, operand :: _, expr_info)
+    | CoyieldExpr (stmt_info, operand :: _, expr_info) ->
+        coroutineSuspendExpr_trans trans_state stmt_info expr_info operand
     | AddrLabelExpr _
     | ArrayTypeTraitExpr _
     | AsTypeExpr _
     | CapturedStmt _
     | ChooseExpr _
-    | CoawaitExpr _
+    | CoawaitExpr (_, [], _)
     | ConceptSpecializationExpr _
     | ConvertVectorExpr _
-    | CoreturnStmt _
-    | CoroutineBodyStmt _
-    | CoyieldExpr _
+    | CoyieldExpr (_, [], _)
     | CUDAKernelCallExpr _
     | CXXAddrspaceCastExpr _
     | CXXFoldExpr _

@@ -216,6 +216,10 @@ let __throw = create_procname "__throw"
 
 let __unwrap_exception = create_procname "__unwrap_exception"
 
+let __builtin_cxx_co_return = create_procname "__builtin_cxx_co_return"
+
+let __builtin_cxx_co_await = create_procname "__builtin_cxx_co_await"
+
 let abort = create_procname "abort"
 
 let dispatch_sync = create_procname "dispatch_sync"

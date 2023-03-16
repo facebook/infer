@@ -392,6 +392,8 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   // Stmts.
   DECLARE_VISITOR(Stmt)
   DECLARE_VISITOR(AttributedStmt)
+  DECLARE_VISITOR(CoreturnStmt)
+  DECLARE_VISITOR(CoroutineBodyStmt)
   DECLARE_VISITOR(CXXCatchStmt)
   DECLARE_VISITOR(DeclStmt)
   DECLARE_VISITOR(GotoStmt)
@@ -3377,6 +3379,60 @@ void ASTExporter<ATDWriter>::VisitCXXCatchStmt(const CXXCatchStmt *Node) {
     OF.emitTag("variable");
     dumpDecl(decl);
   }
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::CoreturnStmtTupleSize() {
+  return StmtTupleSize() + 1;
+}
+//@atd #define coreturn_stmt_tuple stmt_tuple * coreturn_stmt_info
+//@atd type coreturn_stmt_info = {
+//@atd   ?operand: stmt option;
+//@atd   ?promise_call: stmt option;
+//@atd } <ocaml field_prefix="coret_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitCoreturnStmt(const CoreturnStmt *Node) {
+  VisitStmt(Node);
+  const Expr *Operand = Node->getOperand();
+  const Expr *PromiseCall = Node->getPromiseCall();
+  ObjectScope Scope(OF, (bool)Operand + (bool)PromiseCall);
+  if (Operand) {
+    OF.emitTag("operand");
+    dumpStmt(Operand);
+  }
+  if (PromiseCall) {
+    OF.emitTag("promise_call");
+    dumpStmt(PromiseCall);
+  }
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::CoroutineBodyStmtTupleSize() {
+  return StmtTupleSize() + 1;
+}
+//@atd #define coroutine_body_stmt_tuple stmt_tuple * coro_body_stmt_info
+//@atd type coro_body_stmt_info = {
+//@atd   body: pointer;
+//@atd   promise_decl_stmt: pointer;
+//@atd   return_value: stmt;
+//@atd } <ocaml field_prefix="cbs_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitCoroutineBodyStmt(
+    const CoroutineBodyStmt *Node) {
+  VisitStmt(Node);
+  const Stmt *Body = Node->getBody();
+  const Stmt *PromiseDeclStmt = Node->getPromiseDeclStmt();
+  // for some reason the ReturnValue() does not return the ReturnValue field of
+  // the coroutine body, i.e. __promise.get_return_object(), but
+  // ReturnValueInit() does
+  const Expr *ReturnValue = Node->getReturnValueInit();
+  ObjectScope Scope(OF, 3);
+  OF.emitTag("body");
+  dumpPointer(Body);
+  OF.emitTag("promise_decl_stmt");
+  dumpPointer(PromiseDeclStmt);
+  OF.emitTag("return_value");
+  dumpStmt(ReturnValue);
 }
 
 ////===----------------------------------------------------------------------===//

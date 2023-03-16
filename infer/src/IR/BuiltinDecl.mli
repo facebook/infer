@@ -96,6 +96,10 @@ val __opencl_atomic_fetch_max : Procname.t
 
 val __opencl_atomic_fetch_min : Procname.t
 
+val __builtin_cxx_co_return : Procname.t
+
+val __builtin_cxx_co_await : Procname.t
+
 val dispatch_sync : Procname.t
 
 val match_builtin : t -> 'a -> string -> bool

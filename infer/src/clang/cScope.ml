@@ -132,6 +132,9 @@ module CXXTemporaries = struct
            check the ref the temporary is bound to so there is no chance of destroying the wrong C++
            temporary that way) *)
         temporaries
+    | CoroutineBodyStmt _ | CoawaitExpr _ | CoreturnStmt _ ->
+        (* ignore coroutines stuff for the moment *)
+        temporaries
     | _ ->
         let _, stmt_list = Clang_ast_proj.get_stmt_tuple stmt in
         visit_stmt_list ~bound_to_decl context stmt_list ~marker temporaries
