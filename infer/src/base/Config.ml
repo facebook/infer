@@ -2140,13 +2140,22 @@ and procedures_source_file =
 and procedures_summary =
   CLOpt.mk_bool ~long:"procedures-summary" ~default:false
     ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
-    "Print the summaries of each procedure in the output of $(b,--procedures)"
+    "Print the summaries of each procedure in the output of $(b,--procedures). See also \
+     $(b,--procedures-summary-nonempty)."
 
 
 and procedures_summary_json =
   CLOpt.mk_bool ~long:"procedures-summary-json" ~default:false
     ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
     "Emit the summaries of each procedure in the output of $(b,--procedures) as JSON"
+
+
+and procedures_summary_skip_empty =
+  CLOpt.mk_bool ~long:"procedures-summary-skip-empty" ~default:false
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
+    "Completely skip procedures that do not have summaries. Useful when analyzing a small part of \
+     a big project. (To use in conjunction with $(b,--procedures-summary) or \
+     $(b,--procedures-summary-json). See also $(b,--changed-files-index).)"
 
 
 and process_clang_ast =
@@ -3860,6 +3869,8 @@ and procedures_source_file = !procedures_source_file
 and procedures_summary = !procedures_summary
 
 and procedures_summary_json = !procedures_summary_json
+
+and procedures_summary_skip_empty = !procedures_summary_skip_empty
 
 and process_clang_ast = !process_clang_ast
 

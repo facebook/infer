@@ -542,6 +542,8 @@ val procedures_summary : bool
 
 val procedures_summary_json : bool
 
+val procedures_summary_skip_empty : bool
+
 val process_clang_ast : bool
 
 val profiler_samples : string option
