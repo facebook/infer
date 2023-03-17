@@ -2482,6 +2482,18 @@ INTERNAL OPTIONS
        --pulse-cut-to-one-path-procedures-pattern-reset
            Cancel the effect of --pulse-cut-to-one-path-procedures-pattern.
 
+       --pulse-force_continue
+           Activates: The code coming after a function call is not analyzed
+           if the callee has no summary of type ContinueProgram, which may
+           happen if the callee implementation was hard to analyze. With this
+           option, we force the analysis to continue, treating the callee as
+           an unknown function. (Note that if the callee had latent issues,
+           those keep being surfaced, as appropriate.) Activating this option
+           will increase the coverage of code that is analyzed, but may
+           introduce false positives. It is intended to be used for
+           debugging, to quickly assess if a false negative may be caused by
+           lack of coverage. (Conversely: --no-pulse-force_continue)
+
        --pulse-intraprocedural-only
            Activates: Disable inter-procedural analysis in Pulse. Used for
            experimentations only. (Conversely:

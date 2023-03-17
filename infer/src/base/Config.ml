@@ -2201,6 +2201,17 @@ and pulse_cut_to_one_path_procedures_pattern =
      large procedures to prevent too-big states from being produced."
 
 
+and pulse_force_continue =
+  CLOpt.mk_bool ~long:"pulse-force_continue" ~default:false
+    "The code coming after a function call is not analyzed if the callee has no summary of type \
+     ContinueProgram, which may happen if the callee implementation was hard to analyze. With this \
+     option, we force the analysis to continue, treating the callee as an unknown function. (Note \
+     that if the callee had latent issues, those keep being surfaced, as appropriate.) Activating \
+     this option will increase the coverage of code that is analyzed, but may introduce false \
+     positives. It is intended to be used for debugging, to quickly assess if a false negative may \
+     be caused by lack of coverage."
+
+
 and pulse_inline_global_init_func_pointer =
   CLOpt.mk_bool ~long:"pulse-inline-global-init-func-pointer" ~default:false
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -3952,6 +3963,8 @@ and pulse_models_for_erlang = RevList.to_list !pulse_models_for_erlang
 and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
 
 and pulse_log_summary_count = !pulse_log_summary_count
+
+and pulse_force_continue = !pulse_force_continue
 
 and pulse_prevent_non_disj_top = !pulse_prevent_non_disj_top
 

@@ -410,8 +410,8 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
             (post :: posts, merge_contradictions contradiction new_contradiction) )
 
 
-let call tenv path ~caller_proc_desc ~(callee_data : PulseSummary.t option) call_loc callee_pname
-    ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) =
+let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals ~formals_opt
+    ~call_kind (astate : AbductiveDomain.t) =
   (* a special case for objc nil messaging *)
   let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =
     let result_unknown =
@@ -429,25 +429,53 @@ let call tenv path ~caller_proc_desc ~(callee_data : PulseSummary.t option) call
     in
     (result_unknown @ result_unknown_nil, contradiction)
   in
+  let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
+  let<**> astate_unknown =
+    PulseOperations.conservatively_initialize_args arg_values astate
+    |> unknown_call path call_loc (SkippedKnownCall callee_pname) (Some callee_pname) ~ret ~actuals
+         ~formals_opt
+  in
+  ScubaLogging.pulse_log_message ~label:"unmodeled_function_operation_pulse"
+    ~message:
+      (Format.asprintf "Unmodeled Function[Pulse] : %a" Procname.pp_without_templates callee_pname) ;
+  IRAttributes.load callee_pname
+  |> Option.value_map
+       ~default:([Ok (ContinueProgram astate_unknown)], None)
+       ~f:(unknown_objc_nil_messaging astate_unknown callee_pname)
+
+
+let call tenv path ~caller_proc_desc ~(callee_data : PulseSummary.t option) call_loc callee_pname
+    ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) =
+  let has_continue_program results =
+    let f one_result = match one_result with Ok (ContinueProgram _astate) -> true | _ -> false in
+    List.exists results ~f
+  in
   match callee_data with
   | Some exec_states ->
-      call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-        (IRAttributes.load_exn callee_pname)
-        exec_states astate
+      let results, contradiction =
+        call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
+          (IRAttributes.load_exn callee_pname)
+          exec_states astate
+      in
+      if
+        (not Config.pulse_force_continue) || Option.is_some contradiction
+        || has_continue_program results
+      then (results, contradiction)
+      else
+        let more_results, more_contradiction =
+          call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals
+            ~formals_opt ~call_kind astate
+        in
+        if Option.is_some more_contradiction then (
+          L.debug Analysis Verbose
+            "@[<v>@[Failed to honor --pulse-force-continue, because attempting to treat the \
+             procedure as unknown caused a contradiction: %a@]@;\
+             @]"
+            Procname.pp callee_pname ;
+          (results, None) )
+        else (more_results @ results, None)
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln_escaped "No spec found for %a@\n" Procname.pp callee_pname ;
-      let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
-      let<**> astate_unknown =
-        PulseOperations.conservatively_initialize_args arg_values astate
-        |> unknown_call path call_loc (SkippedKnownCall callee_pname) (Some callee_pname) ~ret
-             ~actuals ~formals_opt
-      in
-      ScubaLogging.pulse_log_message ~label:"unmodeled_function_operation_pulse"
-        ~message:
-          (Format.asprintf "Unmodeled Function[Pulse] : %a" Procname.pp_without_templates
-             callee_pname ) ;
-      IRAttributes.load callee_pname
-      |> Option.value_map
-           ~default:([Ok (ContinueProgram astate_unknown)], None)
-           ~f:(unknown_objc_nil_messaging astate_unknown callee_pname)
+      call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals ~formals_opt
+        ~call_kind astate
