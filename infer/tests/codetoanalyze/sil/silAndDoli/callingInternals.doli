@@ -1,0 +1,66 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+// AIM: demonstrate capture of calls to functions defined in *doli rules
+// Here the callee functions are defined in the same file as the callers
+// and they are all inside doli rules.
+// Th capture throws errors, even before we get to call `pulse`
+// Here is part of  output -- currently
+// start node is entry
+// ... making decl from rule
+// callingInternals.doli, line 35, column 19: SIL consistency error: function ClassA.value is not declared
+// callingInternals.doli, line 34, column 19: SIL consistency error: function ClassA.internal_ret_null_d is not declared
+// callingInternals.doli, line 17, column 23: SIL consistency error: function ClassA.value is not declared
+// callingInternals.doli, line 16, column 23: SIL consistency error: function ClassA.internal_ret_this_d is not declared
+// Nothing to compile. Try cleaning the build first.
+//
+// demonstrates that we will need to do something about doli-rules learning from their environment.
+
+rule r71
+in Java match {
+    int internal_call_good( ) under ClassA
+} body {
+    #entry:
+        n0: *ClassA = load &this
+        n1 = n0.ClassA.internal_ret_this_d()
+        n2 = n1.ClassA.value() // types?
+        ret n2
+ }
+
+rule r72
+in Java match {
+    int value( ) under ClassA
+} body {
+    #entry:
+        ret 44
+ }
+
+rule r73
+in Java match {
+   int internal_call_bad( ) under ClassA
+} body { #entry:
+    n0: *ClassA = load &this
+    n1 = n0.ClassA.internal_ret_null_d()
+    n2 = n1.ClassA.value() // types?
+    ret n2
+}
+
+rule r73
+in Java match {
+   int internal_call_good( ) under ClassA
+} body { #entry:
+    n0: *ClassA = load &this
+    n2 = n0.ClassA.value() // types?
+    ret n2
+}
+
+rule r74
+in Java match {
+    ClassA internal_ret_null_d( ) under ClassA
+} body {
+  #entry:
+    n0: *ClassA = load &this
+    ret null
+}

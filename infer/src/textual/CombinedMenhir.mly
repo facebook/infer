@@ -418,9 +418,9 @@ extendedSignature:
 
 signature:
   | mds=modifier*; rt=returnType; funcId=ident;
-  LPAREN fPTs=separated_list(COMMA, formalParameterType) RPAREN
+  LPAREN formalParams=separated_list(COMMA, formalParameter) RPAREN
     option(throws)
-   { {modifiers = mds; returns = rt; identifier = funcId; formParTypes = fPTs } }
+   { {modifiers = mds; returns = rt; identifier = funcId; formalParameters = formalParams } }
   ;
 
 modifier:
@@ -463,8 +463,8 @@ nonVoidType:
   | nvt=nonVoidType; LSBRACKET RSBRACKET { Array nvt }
   ;
 
-formalParameterType:
-   | nvt=nonVoidType; ident { nvt }
+formalParameter:
+   | nvt=nonVoidType; id=ident { {  typ=nvt; ident = id } }
    ;
 
 

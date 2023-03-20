@@ -1,0 +1,37 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+// AIM: demonstrate capture of calls to functions defined in *doli rules
+//
+// We have two external functions, one in doli and one in sil
+//
+// call
+// The call below uses one *sil and one *doli file
+//     ~/infer/infer/bin/infer  --no-progress-bar --pulse-only  --dump-duplicate-symbols -o infer-out --capture-textual callingExternals_ret_null_TD.sil --capture-textual external_ret_null_t.sil  --capture-doli external_ret_null_d.doli
+// It reports errors as required
+
+
+.source_language = "java"
+
+type ClassB = { value: int }
+
+define external_call_bad_t(this: *ClassB) :int {
+  #entry:
+    n0: *ClassB = load &this
+    n1 = n0.ClassB.external_ret_null_t()
+    n2 : int = load n1.ClassB.value      // nPE, error reported
+    ret n2
+}
+
+define external_call_bad_d(this: *ClassB) :int {
+  #entry:
+    n0: *ClassB = load &this
+    n1 = n0.ClassB.external_ret_null_d()
+    n2 : int = load n1.ClassB.value     // nPE, error reported
+    ret n2
+}
+
+declare ClassB.external_ret_null_t(*ClassB) : *ClassB
+declare ClassB.external_ret_null_d(*ClassB) : *ClassB

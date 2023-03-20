@@ -183,8 +183,8 @@ module Java = struct
         F.fprintf fmt "%a%s" (pp_return_type ~verbose) j separator ;
         pp_package_method_and_params fmt j
     | Simple ->
-        (* [methodname(...)] or without ... if there are no parameters *)
         let params = match j.parameters with [] -> "" | _ -> "..." in
+        (* [methodname(...)] or without ... if there are no parameters *)
         let pp_method_name fmt j =
           if String.equal j.method_name constructor_method_name then
             F.pp_print_string fmt (get_simple_class_name j)

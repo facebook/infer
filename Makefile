@@ -229,6 +229,7 @@ DIRECT_TESTS += \
   java_topl \
   sil_doliCapture  \
   sil_doliParsing \
+  sil_silAndDoli \
   sil_pulse \
   sil_verif \
 

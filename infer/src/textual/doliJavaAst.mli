@@ -51,7 +51,20 @@ and nonVoidType = RefType of referenceType | BasicType of basicType | Array of n
 
 and returnType = VoidType | NonVoid of nonVoidType
 
+type formalParameter = {typ: nonVoidType; ident: string}
+
 type signature =
-  {modifiers: modifier list; returns: returnType; identifier: string; formParTypes: nonVoidType list}
+  { modifiers: modifier list
+  ; returns: returnType
+  ; identifier: string
+  ; formalParameters: formalParameter list }
 
 type extendedSignature = {signs: signature list; under: referenceType}
+
+val get_func_identifier_simple : signature -> string
+
+val return_type_to_textual : extendedSignature list -> Textual.Typ.t
+
+val param_types_to_textual : extendedSignature list -> Textual.Typ.annotated list
+
+val get_parameter_names : extendedSignature list -> Textual.VarName.t list

@@ -1,0 +1,72 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+// call
+// ~/infer/infer/bin/infer  --no-progress-bar --pulse-only  --dump-duplicate-symbols -o infer-out --capture-textual callingExternals_Several.sil  --capture-doli  externals_Some.doli
+//
+// this test establishes that the summaries of doli-defined functions are used at the point of call.
+// these summaries may simple (e.g. "returns 4"),
+// or may depend on the argument, (eg if  passed a 4, returns 5, else returns 6)
+
+
+.source_language = "java"
+
+type ClassB = { value: int }
+
+define  ClassB.ret_null(this: *ClassB) :*ClassB {
+  #entry:
+    ret null
+}
+
+
+define  ClassB.depends_on_two_ok(this: *ClassB) :*ClassB {
+  // we need the summaries of two doli-defined functions, and use the summary of doli_returns4a
+  // in the call of of external_doli_cond
+#entry:
+    n0: *ClassB = load &this
+    n1 = n0.ClassB.external_doli_returns4a()  // is 4
+    n2 = n0.ClassB.external_doli_cond(n1)     // is 5
+    n3 = __sil_eq(n2, 5)                      // true
+    jmp then, else
+  #then:  // provided we have captured both doli functions,
+          // only this branch entered
+    prune  n3
+    ret n0
+  #else:  // provided we have captured the doli function,
+          // this branch never entered
+    prune !n3
+    n4 = n0.ClassB.ret_null()
+    n5 : int = load n4.ClassB.value   // would be error, but we never enter that branch
+    ret n0
+}
+
+define  ClassB.depends_on_two_bad(this: *ClassB) :*ClassB {
+  // we need the summaries of two doli-defined functions, and use the summary of doli_returns4a
+  // in the call of of external_doli_cond
+#entry:
+    n0: *ClassB = load &this
+    n1 = n0.ClassB.external_doli_returns4a()  // is 4
+    n2 = n0.ClassB.external_doli_cond(n1)     // is 5
+    n3 = __sil_eq(n2, 5)                      // true
+    jmp then, else
+  #then:  // provided we have captured both doli functions,
+          // only this branch entered
+    prune  n3
+    n4 = n0.ClassB.ret_null()
+    n5 : int = load n4.ClassB.value    //error, and flagged
+    ret n0
+
+  #else:  // provided we have captured the doli function,
+          // this branch never entered
+    prune !n3
+     ret n0
+}
+
+
+declare ClassB.external_doli_returns4(*ClassB) : int
+
+declare ClassB.external_doli_returns4a(*ClassB) : int
+
+declare ClassB.external_doli_cond(*ClassB,int): int
