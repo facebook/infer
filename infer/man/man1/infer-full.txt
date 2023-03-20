@@ -1020,6 +1020,12 @@ OPTIONS
            Activates: Output issues in (PMD) XML format in
            infer-out/report.xml (Conversely: --no-pmd-xml)           See also infer-run(1).
 
+       --preanalysis-html
+           Activates: Whether the HTML node printing for preanalysis is
+           enabled or not. Set to false by default since this helps focus on
+           debugging just the enabled analyses. (Conversely:
+           --no-preanalysis-html)           See also infer-debug(1).
+
        --print-active-checkers
            Activates: Print the active checkers before starting the analysis
            (Conversely: --no-print-active-checkers)           See also infer-analyze(1).

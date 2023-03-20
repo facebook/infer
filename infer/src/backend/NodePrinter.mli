@@ -16,3 +16,7 @@ val with_session :
   -> f:(unit -> 'a)
   -> 'a
 (** Wraps [f] in an html debug session *)
+
+val print_html : bool ref
+(** Controls whether the HTML printing is enabled for all analyses except pre-analysis. Set to false
+    in preanalysis to prevent printing and turned back again. *)

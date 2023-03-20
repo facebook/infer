@@ -510,6 +510,8 @@ val parse_doli : string option
 
 val pmd_xml : bool
 
+val preanalysis_html : bool
+
 val print_active_checkers : bool
 
 val print_builtins : bool

@@ -453,6 +453,7 @@ module NoReturn = struct
 end
 
 let do_preanalysis exe_env pdesc =
+  if not Config.preanalysis_html then NodePrinter.print_html := false ;
   let proc_name = Procdesc.get_proc_name pdesc in
   let tenv = Exe_env.get_proc_tenv exe_env proc_name in
   if Procname.is_java proc_name || Procname.is_csharp proc_name then
@@ -466,4 +467,5 @@ let do_preanalysis exe_env pdesc =
   AddAbstractionInstructions.process pdesc ;
   if Procname.is_java proc_name then Devirtualizer.process pdesc tenv ;
   NoReturn.process tenv pdesc ;
+  NodePrinter.print_html := true ;
   ()

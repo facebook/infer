@@ -34,6 +34,12 @@ OPTIONS
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
 
+       --preanalysis-html
+           Activates: Whether the HTML node printing for preanalysis is
+           enabled or not. Set to false by default since this helps focus on
+           debugging just the enabled analyses. (Conversely:
+           --no-preanalysis-html)
+
        --select (N|all)
            Select option number N or all of them. If omitted, prompt for
            input.

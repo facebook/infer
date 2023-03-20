@@ -2049,6 +2049,14 @@ and pmd_xml =
     "Output issues in (PMD) XML format in infer-out/report.xml"
 
 
+and preanalysis_html =
+  CLOpt.mk_bool ~long:"preanalysis-html"
+    ~in_help:InferCommand.[(Debug, manual_generic)]
+    ~default:false
+    "Whether the HTML node printing for preanalysis is enabled or not. Set to false by default \
+     since this helps focus on debugging just the enabled analyses. "
+
+
 and print_active_checkers =
   CLOpt.mk_bool ~long:"print-active-checkers"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3848,6 +3856,8 @@ and only_cheap_debug = !only_cheap_debug
 and parse_doli = !parse_doli
 
 and pmd_xml = !pmd_xml
+
+and preanalysis_html = !preanalysis_html
 
 and print_active_checkers = !print_active_checkers
 
