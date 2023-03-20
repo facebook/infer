@@ -67,7 +67,7 @@ val last : _ t -> Sil.instr option
 
 val find_map : _ t -> f:(Sil.instr -> 'a option) -> 'a option
 
-val pp : ?print_types:bool -> Pp.env -> Format.formatter -> _ t -> unit
+val pp : ?indent:bool -> ?print_types:bool -> Pp.env -> Format.formatter -> _ t -> unit
 
 val fold : (_ t, Sil.instr, 'a) Container.fold
 

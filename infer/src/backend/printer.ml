@@ -92,7 +92,7 @@ end = struct
       pp_node_link_seq fmt (Procdesc.Node.get_exn node) ;
       F.fprintf fmt "<br>@\n" ;
       F.fprintf fmt "<LISTING class='%s'>%a</LISTING>" (Pp.color_string Green)
-        (Instrs.pp (Pp.html Green))
+        (Instrs.pp ~indent:false (Pp.html Green))
         (Procdesc.Node.get_instrs node) ) ;
     F.fprintf fmt "%a%a %t" Io_infer.Html.pp_hline ()
       (Io_infer.Html.pp_session_link source ~with_name:true [".."] ~proc_name)
