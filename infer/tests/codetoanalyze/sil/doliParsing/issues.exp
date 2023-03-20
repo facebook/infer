@@ -8,4 +8,5 @@ testJavaModifiers.doli, parsing succeeded.
 testJavaThrows.doli, parsing succeeded.
 testJavaThrowsBooleanFail.doli, line 13, column 31: SIL syntax error: unexpected token boolean
 testJavaThrowsEmptyFail.doli, line 13, column 30: SIL syntax error: unexpected token under
+testKeywordsInDoliBodies.doli, line 13, column 13: SIL syntax error: unexpected token throws
 testObjCJava.doli, parsing succeeded.

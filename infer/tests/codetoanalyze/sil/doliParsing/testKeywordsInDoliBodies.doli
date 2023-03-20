@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+rule r1
+in Java match {
+   public void calls_throws_bad()  under someClass
+} body {
+    #lab1:
+      n0 = A.throws() // a keyword appears as a function name;
+                      // this would be allowed in the body of a textual function
+                      // but is a syntax error when this body appears inside a doli
+                      // declaration
+      ret null
+}
