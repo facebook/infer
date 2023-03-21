@@ -21,8 +21,8 @@ let type_matches tenv actual_typ types =
   | {Typ.desc= Tptr ({desc= Tstruct actual_name}, _)} ->
       PatternMatch.supertype_exists tenv
         (fun type_name _struct ->
-          List.exists types ~f:(fun typ ->
-              String.is_substring ~substring:typ (Typ.Name.name type_name) ) )
+          let type_name_str = Typ.Name.name type_name in
+          List.exists types ~f:(fun typ -> String.is_substring ~substring:typ type_name_str) )
         actual_name
   | _ ->
       false
