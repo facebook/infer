@@ -459,7 +459,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
   (** reference to log errors only at the innermost recursive call *)
   let logged_error = ref false
 
-  let dump_html ~pp_instr pre instr post_result =
+  let dump_html f pre post_result =
     let pp_post_error f (exn, _, instr) =
       F.fprintf f "Analysis stopped in `%a` by error: %a."
         (Sil.pp_instr ~print_types:false Pp.text)
@@ -473,17 +473,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
       | Error err ->
           pp_post_error f err
     in
-    let pp_all f =
-      (* we pass [pre] to [pp_instr] because HIL needs it to interpret temporary variables *)
-      match (pp_instr pre instr, post_result) with
-      | None, Ok _ ->
-          ()
-      | None, Error err ->
-          pp_post_error f err
-      | Some pp_instr, _ ->
-          Format.fprintf f "@[<h>INSTR=  %t@]@\n@\n%a@\n" pp_instr pp_post post_result
-    in
-    L.d_printfln_escaped "%t" pp_all
+    F.fprintf f "%a" pp_post post_result
 
 
   let call_once_in_ten =
@@ -501,19 +491,21 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
     let exec_instr idx pre instr =
       call_once_in_ten ~f:!ProcessPoolState.update_heap_words () ;
       AnalysisState.set_instr instr ;
+      let pp_result f result = dump_html f pre result in
       let result =
-        try
-          let post = TransferFunctions.exec_instr pre proc_data node idx instr in
-          Timer.check_timeout () ;
-          (* don't forget to reset this so we output messages for future errors too *)
-          logged_error := false ;
-          Ok post
-        with exn ->
-          (* delay reraising to get a chance to write the debug HTML *)
-          let backtrace = Caml.Printexc.get_raw_backtrace () in
-          Error (exn, backtrace, instr)
+        L.d_with_indent ~name:"exec_instr" ~pp_result (fun () ->
+            Option.iter (pp_instr pre instr) ~f:(L.d_printfln ~color:Pp.Blue "@[<h>INSTR=  %t@]") ;
+            try
+              let post = TransferFunctions.exec_instr pre proc_data node idx instr in
+              Timer.check_timeout () ;
+              (* don't forget to reset this so we output messages for future errors too *)
+              logged_error := false ;
+              Ok post
+            with exn ->
+              (* delay reraising to get a chance to write the debug HTML *)
+              let backtrace = Caml.Printexc.get_raw_backtrace () in
+              Error (exn, backtrace, instr) )
       in
-      if Config.write_html then dump_html ~pp_instr pre instr result ;
       match result with
       | Ok post ->
           post

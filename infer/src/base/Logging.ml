@@ -503,5 +503,6 @@ let d_with_indent ?pp_result ~name f =
     (* Print result if needed *)
     Option.iter pp_result ~f:(fun pp_result ->
         d_printf "Result of %s:@\n" name ;
-        d_call_with_indent_impl ~f:(fun () -> d_printf "%a" pp_result result) ) ;
+        d_call_with_indent_impl ~f:(fun () -> d_printf "%a" pp_result result) ;
+        d_ln () ) ;
     result )
