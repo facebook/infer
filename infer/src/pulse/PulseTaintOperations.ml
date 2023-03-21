@@ -47,6 +47,8 @@ type procedure_matcher =
   | ProcedureNameRegex of {name_regex: Str.regexp}
   | ClassNameRegex of {name_regex: Str.regexp}
   | ClassAndMethodNames of {class_names: string list; method_names: string list}
+  | ClassAndMethodReturnTypeNames of
+      {class_names: string list; method_return_type_names: string list}
   | OverridesOfClassWithAnnotation of {annotation: string}
   | MethodWithAnnotation of {annotation: string}
   | Block
@@ -134,6 +136,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; class_name_regex= None
           ; class_names= None
           ; method_names= None
+          ; method_return_type_names= None
           ; overrides_of_class_with_annotation= None
           ; method_with_annotation= None
           ; block_passed_to= None
@@ -144,6 +147,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; class_name_regex= None
           ; class_names= None
           ; method_names= None
+          ; method_return_type_names= None
           ; overrides_of_class_with_annotation= None
           ; method_with_annotation= None
           ; block_passed_to= None
@@ -164,6 +168,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; class_name_regex= None
           ; class_names= Some class_names
           ; method_names= Some method_names
+          ; method_return_type_names= None
           ; overrides_of_class_with_annotation= None
           ; method_with_annotation= None
           ; block_passed_to= None
@@ -172,8 +177,18 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
         | { procedure= None
           ; procedure_regex= None
           ; class_name_regex= None
+          ; class_names= Some class_names
+          ; method_names= None
+          ; method_return_type_names= Some method_return_type_names
+          ; overrides_of_class_with_annotation= None
+          ; method_with_annotation= None
+          ; allocation= None } ->
+            ClassAndMethodReturnTypeNames {class_names; method_return_type_names}
+        | { procedure= None
+          ; procedure_regex= None
           ; class_names= None
           ; method_names= None
+          ; method_return_type_names= None
           ; overrides_of_class_with_annotation= Some annotation
           ; method_with_annotation= None
           ; allocation= None } ->
@@ -183,6 +198,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; class_name_regex= None
           ; class_names= None
           ; method_names= None
+          ; method_return_type_names= None
           ; overrides_of_class_with_annotation= None
           ; method_with_annotation= Some annotation
           ; block_passed_to= None
@@ -193,6 +209,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; class_name_regex= None
           ; class_names= None
           ; method_names= None
+          ; method_return_type_names= None
           ; overrides_of_class_with_annotation= None
           ; method_with_annotation= None
           ; block_passed_to= None
@@ -217,13 +234,15 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
               \ \"block_passed_to\", \n\
               \ \"allocation\" or \n\
               \ \"overrides_of_class_with_annotation\" must be provided, \n\
-               or else \"class_names\" and \"method_names\" must be provided \n\
+               or else \"class_names\" and \"method_names\" must be provided, \n\
+               or else \"class_names\" and \"method_return_type_names\" must be provided, \n\
                but got \n\
               \ \"procedure\": %a, \n\
               \ \"procedure_regex\": %a, \n\
               \ \"class_name_regex\": %a, \n\
               \ \"class_names\": %a, \n\
               \ \"method_names\": %a, \n\
+              \ \"method_return_type_names\": %a, \n\
               \ \"overrides_of_class_with_annotation\": %a,\n\
               \ \"method_with_annotation\": %a, \n\
               \ \"block_passed_to\": %a, \n\
@@ -233,7 +252,9 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
               (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
               matcher.class_names
               (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
-              matcher.method_names (Pp.option F.pp_print_string)
+              matcher.method_names
+              (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
+              matcher.method_return_type_names (Pp.option F.pp_print_string)
               matcher.overrides_of_class_with_annotation (Pp.option F.pp_print_string)
               matcher.method_with_annotation (Pp.option F.pp_print_string) matcher.block_passed_to
               (Pp.option F.pp_print_string) matcher.allocation
@@ -275,6 +296,13 @@ let propagator_matchers =
 
 let procedure_matches tenv matchers ?block_passed_to proc_name actuals =
   List.filter_map matchers ~f:(fun matcher ->
+      let class_names_match class_names =
+        Option.exists (Procname.get_class_type_name proc_name) ~f:(fun class_name ->
+            PatternMatch.supertype_exists tenv
+              (fun class_name _ ->
+                List.mem ~equal:String.equal class_names (Typ.Name.name class_name) )
+              class_name )
+      in
       let procedure_name_matches =
         match matcher.procedure_matcher with
         | ProcedureName {name} ->
@@ -301,12 +329,14 @@ let procedure_matches tenv matchers ?block_passed_to proc_name actuals =
                         false )
                   class_name )
         | ClassAndMethodNames {class_names; method_names} ->
-            Option.exists (Procname.get_class_type_name proc_name) ~f:(fun class_name ->
-                PatternMatch.supertype_exists tenv
-                  (fun class_name _ ->
-                    List.mem ~equal:String.equal class_names (Typ.Name.name class_name) )
-                  class_name )
+            class_names_match class_names
             && List.mem ~equal:String.equal method_names (Procname.get_method proc_name)
+        | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
+            let procedure_return_type_match method_return_type_names =
+              Option.exists (Procdesc.load proc_name) ~f:(fun procdesc ->
+                  type_matches tenv (Procdesc.get_ret_type procdesc) method_return_type_names )
+            in
+            class_names_match class_names && procedure_return_type_match method_return_type_names
         | OverridesOfClassWithAnnotation {annotation} ->
             Option.exists (Procname.get_class_type_name proc_name) ~f:(fun procedure_class_name ->
                 let method_name = Procname.get_method proc_name in

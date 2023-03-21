@@ -246,4 +246,28 @@ public class Basics {
     InferTaint.sink1(src);
     InferTaint.sink2(src);
   }
+
+  void taintedFromInferBaseSourceBad() {
+    InferChildSource ics = new InferChildSource();
+    Object source = ics.inferBaseSecretSource();
+    InferTaint.inferSensitiveSink(source);
+  }
+
+  void notTaintedFromInferBaseNotSourceGood() {
+    InferChildSource ics = new InferChildSource();
+    Object notSource = ics.inferBaseNotSource();
+    InferTaint.inferSensitiveSink(notSource);
+  }
+
+  void taintedFromInferChildSourceBad() {
+    InferChildSource ics = new InferChildSource();
+    Object source = ics.inferChildSecretSource();
+    InferTaint.inferSensitiveSink(source);
+  }
+
+  void notTaintedFromInferChildNotSourceGood() {
+    InferChildSource ics = new InferChildSource();
+    Object notSource = ics.inferChildNotSource();
+    InferTaint.inferSensitiveSink(notSource);
+  }
 }
