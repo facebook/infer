@@ -32,10 +32,9 @@ class IntraFileFlow {
     $this->callExplicitSinkAllArgs($derived);
   }
 
-  public static function FN_explicitSinkClassDirectBad(
+  public static function explicitSinkClassDirectBad(
     SensitiveClass $sc,
   ): void {
-    // Bugs around procname / classname matching
     Logger::someLogMethod($sc);
   }
 

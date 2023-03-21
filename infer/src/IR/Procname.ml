@@ -658,6 +658,10 @@ module Hack = struct
   type t = {class_name: string option; function_name: string}
   [@@deriving compare, equal, yojson_of, sexp, hash]
 
+  let get_class_type_name {class_name} =
+    Option.map class_name ~f:(fun cn -> Typ.HackClass (HackClassName.make cn))
+
+
   let pp verbosity fmt t =
     match verbosity with
     | Simple | Non_verbose | NameOnly ->
@@ -918,7 +922,9 @@ let get_class_type_name t =
       Some (ObjC_Cpp.get_class_type_name objc_pname)
   | Block block ->
       Block.get_class_type_name block
-  | _ ->
+  | Hack hack ->
+      Hack.get_class_type_name hack
+  | C _ | Erlang _ | WithAliasingParameters _ | WithFunctionParameters _ | Linters_dummy_method ->
       None
 
 
