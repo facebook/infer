@@ -2477,6 +2477,8 @@ and pulse_taint_sources =
       from a superclass with the specified annotation
   - "allocation": $(i,\(for taint sources only\))
       match allocations of the exact class name supplied
+  - "block_passed_to": $(i,\(for taint sources only\))
+     match a substring of the procedure name that the block is passed to
 
   Each object can also optionally specify:
   - "kinds": the kinds of taint, used in $(b,--pulse-taint-policies)
@@ -2494,9 +2496,7 @@ and pulse_taint_sources =
           arguments with types containing supplied strings
       - ["Fields", [<(string * taint_target) list>]]:
           fields given by name in return value, arguments or other fields
-    $(i,N.B.) for methods, index 0 is $(i,this)/$(i,self).
-  - "match_objc_blocks": boolean, "false" by default
-      "true" if only Objective-C blocks should be matched.|}
+    $(i,N.B.) for methods, index 0 is $(i,this)/$(i,self).|}
 
 
 and pulse_taint_data_flow_kinds =

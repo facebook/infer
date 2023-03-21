@@ -737,6 +737,9 @@ PULSE CHECKER OPTIONS
                  from a superclass with the specified annotation
              - "allocation": (for taint sources only)
                  match allocations of the exact class name supplied
+             - "block_passed_to": (for taint sources only)
+                match a substring of the procedure name that the block is
+           passed to
            
              Each object can also optionally specify:
              - "kinds": the kinds of taint, used in --pulse-taint-policies
@@ -757,8 +760,6 @@ PULSE CHECKER OPTIONS
                      fields given by name in return value, arguments or
            other fields
                N.B. for methods, index 0 is this/self.
-             - "match_objc_blocks": boolean, "false" by default
-                 "true" if only Objective-C blocks should be matched.
 
        --pulse-widen-threshold int
            Stop exploring new paths after int loop iterations

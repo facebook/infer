@@ -49,6 +49,7 @@ type procedure_matcher =
   | ClassAndMethodNames of {class_names: string list; method_names: string list}
   | OverridesOfClassWithAnnotation of {annotation: string}
   | MethodWithAnnotation of {annotation: string}
+  | Block
   | Allocation of {class_name: string}
 
 type matcher =
@@ -56,7 +57,7 @@ type matcher =
   ; arguments: Pulse_config_t.argument_constraint list
   ; kinds: Taint.Kind.t list
   ; target: Pulse_config_t.taint_target
-  ; match_objc_blocks: bool }
+  ; block_passed_to: string option }
 
 type sink_policy =
   { source_kinds: Taint.Kind.t list [@ignore]
@@ -135,6 +136,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; method_names= None
           ; overrides_of_class_with_annotation= None
           ; method_with_annotation= None
+          ; block_passed_to= None
           ; allocation= None } ->
             ProcedureName {name}
         | { procedure= None
@@ -144,6 +146,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; method_names= None
           ; overrides_of_class_with_annotation= None
           ; method_with_annotation= None
+          ; block_passed_to= None
           ; allocation= None } ->
             ProcedureNameRegex {name_regex= Str.regexp name_regex}
         | { procedure= None
@@ -153,6 +156,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; method_names= None
           ; overrides_of_class_with_annotation= None
           ; method_with_annotation= None
+          ; block_passed_to= None
           ; allocation= None } ->
             ClassNameRegex {name_regex= Str.regexp name_regex}
         | { procedure= None
@@ -162,6 +166,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; method_names= Some method_names
           ; overrides_of_class_with_annotation= None
           ; method_with_annotation= None
+          ; block_passed_to= None
           ; allocation= None } ->
             ClassAndMethodNames {class_names; method_names}
         | { procedure= None
@@ -180,6 +185,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; method_names= None
           ; overrides_of_class_with_annotation= None
           ; method_with_annotation= Some annotation
+          ; block_passed_to= None
           ; allocation= None } ->
             MethodWithAnnotation {annotation}
         | { procedure= None
@@ -189,31 +195,54 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; method_names= None
           ; overrides_of_class_with_annotation= None
           ; method_with_annotation= None
+          ; block_passed_to= None
           ; allocation= Some class_name } ->
             Allocation {class_name}
+        | { procedure= None
+          ; procedure_regex= None
+          ; class_name_regex= None
+          ; class_names= None
+          ; method_names= None
+          ; overrides_of_class_with_annotation= None
+          ; method_with_annotation= None
+          ; block_passed_to= Some _
+          ; allocation= None } ->
+            Block
         | _ ->
             L.die UserError
-              "When parsing option %s: Unexpected JSON format: Exactly one of \"procedure\", \
-               \"procedure_regex\", \"class_name_regex\" \"allocation\" must be provided, or else \
-               \"class_names\" and \"method_names\" must be provided, or else \
-               \"overrides_of_class_with_annotation\", but got \"procedure\": %a, \
-               \"procedure_regex\": %a, \"class_name_regex\": %a, \"class_names\": %a, \
-               \"method_names\": %a, \"overrides_of_class_with_annotation\": %a,\n\
-              \               \"method_with_annotation\": %a \"allocation\": %a" option_name
-              (Pp.option F.pp_print_string) matcher.procedure (Pp.option F.pp_print_string)
-              matcher.procedure_regex (Pp.option F.pp_print_string) matcher.class_name_regex
+              "When parsing option %s: Unexpected JSON format: Exactly one of \n\
+              \ \"procedure\", \n\
+              \ \"procedure_regex\", \n\
+              \ \"class_name_regex\", \n\
+              \ \"block_passed_to\", \n\
+              \ \"allocation\" or \n\
+              \ \"overrides_of_class_with_annotation\" must be provided, \n\
+               or else \"class_names\" and \"method_names\" must be provided \n\
+               but got \n\
+              \ \"procedure\": %a, \n\
+              \ \"procedure_regex\": %a, \n\
+              \ \"class_name_regex\": %a, \n\
+              \ \"class_names\": %a, \n\
+              \ \"method_names\": %a, \n\
+              \ \"overrides_of_class_with_annotation\": %a,\n\
+              \ \"method_with_annotation\": %a, \n\
+              \ \"block_passed_to\": %a, \n\
+              \ \"allocation\": %a" option_name (Pp.option F.pp_print_string) matcher.procedure
+              (Pp.option F.pp_print_string) matcher.procedure_regex (Pp.option F.pp_print_string)
+              matcher.class_name_regex
               (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
               matcher.class_names
               (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
               matcher.method_names (Pp.option F.pp_print_string)
               matcher.overrides_of_class_with_annotation (Pp.option F.pp_print_string)
-              matcher.method_with_annotation (Pp.option F.pp_print_string) matcher.allocation
+              matcher.method_with_annotation (Pp.option F.pp_print_string) matcher.block_passed_to
+              (Pp.option F.pp_print_string) matcher.allocation
       in
       { procedure_matcher
       ; arguments= matcher.argument_constraints
       ; kinds= kinds_of_strings_opt matcher.kinds
       ; target= Option.value ~default:default_taint_target matcher.taint_target
-      ; match_objc_blocks= matcher.match_objc_blocks } )
+      ; block_passed_to= matcher.block_passed_to } )
 
 
 let allocation_sources, source_matchers =
@@ -244,7 +273,7 @@ let propagator_matchers =
     Config.pulse_taint_config.propagators
 
 
-let procedure_matches tenv matchers proc_name actuals =
+let procedure_matches tenv matchers ?block_passed_to proc_name actuals =
   List.filter_map matchers ~f:(fun matcher ->
       let procedure_name_matches =
         match matcher.procedure_matcher with
@@ -294,12 +323,22 @@ let procedure_matches tenv matchers proc_name actuals =
         | MethodWithAnnotation {annotation} ->
             Annotations.pname_has_return_annot proc_name (fun annot_item ->
                 Annotations.ia_ends_with annot_item annotation )
-        | Allocation _ ->
+        | Allocation _ | Block ->
+            false
+      in
+      let block_passed_to_matches =
+        match (matcher.block_passed_to, block_passed_to) with
+        | Some name, Some block_passed_to_proc_name ->
+            let block_passed_to_proc_name_s =
+              F.asprintf "%a" Procname.pp_verbose block_passed_to_proc_name
+            in
+            String.is_substring ~substring:name block_passed_to_proc_name_s
+        | _ ->
             false
       in
       if
-        procedure_name_matches
-        && Bool.equal (Procname.is_objc_block proc_name) matcher.match_objc_blocks
+        (procedure_name_matches && not (Procname.is_objc_block proc_name))
+        || block_passed_to_matches
       then
         let actuals_match =
           List.for_all matcher.arguments ~f:(fun {Pulse_config_t.index; type_matches= types} ->
@@ -311,9 +350,9 @@ let procedure_matches tenv matchers proc_name actuals =
       else None )
 
 
-let get_tainted tenv path location matchers return_opt ~has_added_return_param proc_name actuals
-    astate =
-  let matches = procedure_matches tenv matchers proc_name actuals in
+let get_tainted tenv path location matchers return_opt ~has_added_return_param ?block_passed_to
+    proc_name actuals astate =
+  let matches = procedure_matches tenv matchers ?block_passed_to proc_name actuals in
   if not (List.is_empty matches) then L.d_printfln "taint matches" ;
   List.fold matches ~init:(astate, []) ~f:(fun acc matcher ->
       let actuals =
@@ -497,11 +536,11 @@ let taint_and_explore ~taint v astate =
   aux v astate
 
 
-let taint_sources tenv path location ~intra_procedural_only return ~has_added_return_param proc_name
-    actuals astate =
+let taint_sources tenv path location ~intra_procedural_only return ~has_added_return_param
+    ?block_passed_to proc_name actuals astate =
   let astate, tainted =
-    get_tainted tenv path location source_matchers return ~has_added_return_param proc_name actuals
-      astate
+    get_tainted tenv path location source_matchers return ~has_added_return_param ?block_passed_to
+      proc_name actuals astate
   in
   List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _, _)) ->
       let hist =
@@ -941,7 +980,7 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
 let pulse_models_to_treat_as_unknown_for_taint =
   (* HACK: make a list of matchers just to reuse the matching code below *)
   let dummy_matcher_of_procedure_matcher procedure_matcher =
-    {procedure_matcher; arguments= []; kinds= []; target= `ReturnValue; match_objc_blocks= false}
+    {procedure_matcher; arguments= []; kinds= []; target= `ReturnValue; block_passed_to= None}
   in
   [ ClassAndMethodNames
       { class_names= ["java.lang.StringBuilder"]
@@ -1016,8 +1055,13 @@ let taint_initial tenv proc_name (proc_attrs : ProcAttributes.t) astate0 =
           , {ProcnameDispatcher.Call.FuncArg.exp= Lvar pvar; typ; arg_payload= actual_value}
             :: rev_actuals ) )
     in
+    let block_passed_to =
+      Option.map
+        ~f:(fun ({passed_to} : ProcAttributes.block_as_arg_attributes) -> passed_to)
+        proc_attrs.ProcAttributes.block_as_arg_attributes
+    in
     taint_sources tenv PathContext.initial proc_attrs.loc ~intra_procedural_only:true None
-      ~has_added_return_param:false proc_name (List.rev rev_actuals) astate
+      ~has_added_return_param:false ?block_passed_to proc_name (List.rev rev_actuals) astate
   in
   match PulseOperationResult.sat_ok result with
   | Some astate_tainted ->
