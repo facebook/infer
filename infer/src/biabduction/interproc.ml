@@ -845,7 +845,6 @@ let reset_global_values proc_desc =
   Ident.NameGenerator.reset () ;
   SymOp.reset_total () ;
   reset_prop_metrics () ;
-  Abs.reset_current_rules () ;
   set_current_language proc_desc
 
 

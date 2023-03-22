@@ -681,11 +681,7 @@ module Global = struct
   let current_rules : rules ref = ref []
 end
 
-let get_current_rules () = !Global.current_rules
-
-let set_current_rules rules = Global.current_rules := rules
-
-let reset_current_rules () = Global.current_rules := []
+let () = AnalysisGlobalState.register_ref Global.current_rules ~init:(fun () -> [])
 
 let eqs_sub subst eqs =
   List.map ~f:(fun (e1, e2) -> (Predicates.exp_sub subst e1, Predicates.exp_sub subst e2)) eqs
@@ -816,7 +812,7 @@ let abs_rules_apply_rsets tenv (rsets : rule_set list) (p_in : Prop.normal Prop.
 
 let abs_rules_apply_lists tenv (p_in : Prop.normal Prop.t) : Prop.normal Prop.t =
   let new_rsets = ref [] in
-  let old_rsets = get_current_rules () in
+  let old_rsets = !Global.current_rules in
   let rec discover_then_abstract p =
     let closed_paras_sll, closed_paras_dll =
       let paras_sll = discover_para tenv p in
@@ -861,7 +857,7 @@ let abs_rules_apply_lists tenv (p_in : Prop.normal Prop.t) : Prop.normal Prop.t 
   let p1 = abs_rules_apply_rsets tenv old_rsets p_in in
   let p2 = discover_then_abstract p1 in
   let new_rules = old_rsets @ !new_rsets in
-  set_current_rules new_rules ;
+  Global.current_rules := new_rules ;
   p2
 
 

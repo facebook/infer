@@ -38,8 +38,7 @@ let procedure_should_be_analyzed proc_name =
 
 
 type global_state =
-  { abstraction_rules: Abs.rules
-  ; delayed_prints: L.delayed_prints
+  { delayed_prints: L.delayed_prints
   ; disjunctive_demo_state: int
   ; footprint_mode: bool
   ; html_formatter: F.formatter
@@ -56,8 +55,7 @@ type global_state =
 let save_global_state () =
   Timeout.suspend_existing_timeout ~keep_symop_total:false ;
   (* use a new global counter for the callee *)
-  { abstraction_rules= Abs.get_current_rules ()
-  ; delayed_prints= L.get_and_reset_delayed_prints ()
+  { delayed_prints= L.get_and_reset_delayed_prints ()
   ; disjunctive_demo_state= !DisjunctiveDemo.node_id
   ; footprint_mode= !BiabductionConfig.footprint
   ; html_formatter= !Printer.curr_html_formatter
@@ -73,7 +71,6 @@ let save_global_state () =
 
 
 let restore_global_state st =
-  Abs.set_current_rules st.abstraction_rules ;
   L.set_delayed_prints st.delayed_prints ;
   BiabductionConfig.footprint := st.footprint_mode ;
   Printer.curr_html_formatter := st.html_formatter ;

@@ -10,9 +10,6 @@ open! IStd
 
 (** Implementation of Abstraction Functions *)
 
-(** Abstraction rules discovered *)
-type rules
-
 val abstract :
   BiabductionSummary.t InterproceduralAnalysis.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 (** Abstract a proposition. *)
@@ -33,18 +30,9 @@ val abstract_no_symop :
   BiabductionSummary.t InterproceduralAnalysis.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 (** Abstract a proposition but don't pay a SymOp *)
 
-val get_current_rules : unit -> rules
-(** Get the current rules discoveres *)
-
 val lifted_abstract : BiabductionSummary.t InterproceduralAnalysis.t -> Propset.t -> Propset.t
 (** Abstract each proposition in [propset] *)
 
 val remove_redundant_array_elements :
   BiabductionSummary.t InterproceduralAnalysis.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 (** Remove redundant elements in an array, and check for junk afterwards *)
-
-val reset_current_rules : unit -> unit
-(** Reset the abstraction rules discovered *)
-
-val set_current_rules : rules -> unit
-(** Set the current rules discovered *)
