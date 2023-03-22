@@ -18,10 +18,6 @@ let nesting = ref (-1)
 
 let max_nesting_to_print = 8
 
-(* Remember what the last status sent was so that we can update the status correctly when entering
-   and exiting nested ondemand analyses. In particular we need to remember the original time.*)
-let current_taskbar_status : (Mtime.t * string) option ref = ref None
-
 let is_active, add_active, remove_active, clear_actives =
   let currently_analyzed = ref Procname.Set.empty in
   let is_active proc_name = Procname.Set.mem proc_name !currently_analyzed
@@ -37,6 +33,28 @@ let procedure_should_be_analyzed proc_name =
   |> Option.exists ~f:(fun proc_attributes -> proc_attributes.ProcAttributes.is_defined)
 
 
+(* Remember what the last status sent was so that we can update the status correctly when entering
+   and exiting nested ondemand analyses. In particular we need to remember the original time.*)
+let current_taskbar_status : (Mtime.t * string) option ref = ref None
+
+let () =
+  let open IOption.Let_syntax in
+  AnalysisGlobalState.register
+    ~save:(fun () ->
+      let+ t0, status = !current_taskbar_status in
+      (* the time elapsed doing [status] so far *)
+      (Mtime.span t0 (Mtime_clock.now ()), status) )
+    ~restore:(fun proc_analysis_time ->
+      current_taskbar_status :=
+        let+ suspended_span, status = proc_analysis_time in
+        (* forget about the time spent doing a nested analysis and resend the status of the outer
+           analysis with the updated "original" start time *)
+        let new_t0 = Mtime.sub_span (Mtime_clock.now ()) suspended_span |> Option.value_exn in
+        !ProcessPoolState.update_status new_t0 status ;
+        (new_t0, status) )
+    ~init:(fun _ -> current_taskbar_status := None)
+
+
 let () =
   (* register [Logging]'s global state here because this requires knowing about [Procname.t] but
      Logging.ml is in base/ which is too low in the dependency tree *)
@@ -45,8 +63,7 @@ let () =
 
 
 type global_state =
-  { proc_analysis_time: (Mtime.Span.t * string) option  (** the time elapsed doing [status] so far *)
-  ; absint_state: AnalysisState.t
+  { absint_state: AnalysisState.t
   ; biabduction_state: State.t
   ; current_procname: Procname.t option
   ; taskbar_nesting: int
@@ -56,9 +73,7 @@ type global_state =
 let save_global_state () =
   (* use a new global counter for the callee *)
   Timeout.suspend_existing_timeout ~keep_symop_total:false ;
-  { proc_analysis_time=
-      (!current_taskbar_status >>| fun (t0, status) -> (Mtime.span t0 (Mtime_clock.now ()), status))
-  ; absint_state= AnalysisState.save ()
+  { absint_state= AnalysisState.save ()
   ; biabduction_state= State.save_state ()
   ; current_procname= Dependencies.get_current_proc ()
   ; taskbar_nesting= !nesting
@@ -71,14 +86,6 @@ let restore_global_state st =
   AnalysisState.restore st.absint_state ;
   Dependencies.set_current_proc st.current_procname ;
   State.restore_state st.biabduction_state ;
-  (current_taskbar_status :=
-     st.proc_analysis_time
-     >>| fun (suspended_span, status) ->
-     (* forget about the time spent doing a nested analysis and resend the status of the outer
-        analysis with the updated "original" start time *)
-     let new_t0 = Mtime.sub_span (Mtime_clock.now ()) suspended_span |> Option.value_exn in
-     !ProcessPoolState.update_status new_t0 status ;
-     (new_t0, status) ) ;
   Timeout.resume_previous_timeout () ;
   nesting := st.taskbar_nesting ;
   Timer.resume st.checker_timer_state
