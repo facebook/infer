@@ -110,6 +110,15 @@ let resume_previous_timeout () =
   Option.iter ~f:set_status status_opt
 
 
+let () =
+  AnalysisGlobalState.register
+    ~save:(fun () ->
+      (* use a new global counter for the callee *)
+      suspend_existing_timeout ~keep_symop_total:false )
+    ~restore:resume_previous_timeout
+    ~init:(fun () -> ())
+
+
 let exe_timeout f x =
   register_timeout_handlers () ;
   let suspend_existing_timeout_and_start_new_one () =

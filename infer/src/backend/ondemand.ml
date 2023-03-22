@@ -71,8 +71,6 @@ type global_state =
   ; analysis_global_state: AnalysisGlobalState.t }
 
 let save_global_state () =
-  (* use a new global counter for the callee *)
-  Timeout.suspend_existing_timeout ~keep_symop_total:false ;
   { absint_state= AnalysisState.save ()
   ; biabduction_state= State.save_state ()
   ; current_procname= Dependencies.get_current_proc ()
@@ -86,7 +84,6 @@ let restore_global_state st =
   AnalysisState.restore st.absint_state ;
   Dependencies.set_current_proc st.current_procname ;
   State.restore_state st.biabduction_state ;
-  Timeout.resume_previous_timeout () ;
   nesting := st.taskbar_nesting ;
   Timer.resume st.checker_timer_state
 

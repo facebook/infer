@@ -11,9 +11,3 @@ open! IStd
 
 val exe_timeout : ('a -> unit) -> 'a -> Exception.failure_kind option
 (** Execute the function up to a given timeout. *)
-
-val resume_previous_timeout : unit -> unit
-(** Resume a previously suspended timeout. *)
-
-val suspend_existing_timeout : keep_symop_total:bool -> unit
-(** Suspend the current timeout. It must be resumed later. *)
