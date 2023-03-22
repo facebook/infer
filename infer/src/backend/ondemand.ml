@@ -16,6 +16,8 @@ open Option.Monad_infix
 (* always incremented before use *)
 let nesting = ref (-1)
 
+let () = AnalysisGlobalState.register_ref nesting ~init:(fun () -> -1)
+
 let max_nesting_to_print = 8
 
 let is_active, add_active, remove_active, clear_actives =
@@ -62,20 +64,14 @@ let () =
     ~init:L.reset_delayed_prints
 
 
-type global_state =
-  { taskbar_nesting: int
-  ; checker_timer_state: Timer.state
-  ; analysis_global_state: AnalysisGlobalState.t }
+type global_state = {checker_timer_state: Timer.state; analysis_global_state: AnalysisGlobalState.t}
 
 let save_global_state () =
-  { taskbar_nesting= !nesting
-  ; checker_timer_state= Timer.suspend ()
-  ; analysis_global_state= AnalysisGlobalState.save () }
+  {checker_timer_state= Timer.suspend (); analysis_global_state= AnalysisGlobalState.save ()}
 
 
 let restore_global_state st =
   AnalysisGlobalState.restore st.analysis_global_state ;
-  nesting := st.taskbar_nesting ;
   Timer.resume st.checker_timer_state
 
 
