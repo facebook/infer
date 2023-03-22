@@ -10,9 +10,6 @@ open! IStd
 
 (** Printers for the analysis results *)
 
-val curr_html_formatter : Format.formatter ref
-(** Current html formatter *)
-
 val node_finish_session : Procdesc.Node.t -> unit
 (** Finish a session, and perform delayed print actions if required *)
 

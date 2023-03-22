@@ -45,8 +45,7 @@ let () =
 
 
 type global_state =
-  { html_formatter: F.formatter
-  ; name_generator: Ident.NameGenerator.t
+  { name_generator: Ident.NameGenerator.t
   ; proc_analysis_time: (Mtime.Span.t * string) option
         (** the time elapsed doing [status] so far *)
   ; absint_state: AnalysisState.t
@@ -59,8 +58,7 @@ type global_state =
 let save_global_state () =
   (* use a new global counter for the callee *)
   Timeout.suspend_existing_timeout ~keep_symop_total:false ;
-  { html_formatter= !Printer.curr_html_formatter
-  ; name_generator= Ident.NameGenerator.get_current ()
+  { name_generator= Ident.NameGenerator.get_current ()
   ; proc_analysis_time=
       (!current_taskbar_status >>| fun (t0, status) -> (Mtime.span t0 (Mtime_clock.now ()), status))
   ; absint_state= AnalysisState.save ()
@@ -72,7 +70,6 @@ let save_global_state () =
 
 
 let restore_global_state st =
-  Printer.curr_html_formatter := st.html_formatter ;
   Ident.NameGenerator.set_current st.name_generator ;
   AnalysisGlobalState.restore st.analysis_global_state ;
   AnalysisState.restore st.absint_state ;

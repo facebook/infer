@@ -17,6 +17,8 @@ module F = Format
 (** Current formatter for the html output *)
 let curr_html_formatter = ref F.std_formatter
 
+let () = AnalysisGlobalState.register_ref ~init:(fun () -> F.std_formatter) curr_html_formatter
+
 (** Return true if the node was visited during analysis *)
 let is_visited node =
   match Summary.OnDisk.get ~lazy_payloads:true (Procdesc.Node.get_proc_name node) with
