@@ -65,12 +65,6 @@ let () =
   AnalysisGlobalState.register ~save:Timer.suspend ~restore:Timer.resume ~init:(fun () -> ())
 
 
-type global_state = {analysis_global_state: AnalysisGlobalState.t}
-
-let save_global_state () = {analysis_global_state= AnalysisGlobalState.save ()}
-
-let restore_global_state st = AnalysisGlobalState.restore st.analysis_global_state
-
 (** reference to log errors only at the innermost recursive call *)
 let logged_error = ref false
 
@@ -252,7 +246,7 @@ let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
         Procdesc.load callee_pname
         >>= fun callee_pdesc ->
         RestartScheduler.lock_exn callee_pname ;
-        let previous_global_state = save_global_state () in
+        let previous_global_state = AnalysisGlobalState.save () in
         AnalysisGlobalState.initialize callee_pname ;
         let callee_summary =
           protect
@@ -268,7 +262,7 @@ let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
                     span SourceFile.pp (Procdesc.get_attributes callee_pdesc).translation_unit
                     Procname.pp callee_pname ;
                   None ) )
-            ~finally:(fun () -> restore_global_state previous_global_state)
+            ~finally:(fun () -> AnalysisGlobalState.restore previous_global_state)
         in
         RestartScheduler.unlock callee_pname ;
         callee_summary
