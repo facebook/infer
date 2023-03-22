@@ -45,9 +45,7 @@ let () =
 
 
 type global_state =
-  { name_generator: Ident.NameGenerator.t
-  ; proc_analysis_time: (Mtime.Span.t * string) option
-        (** the time elapsed doing [status] so far *)
+  { proc_analysis_time: (Mtime.Span.t * string) option  (** the time elapsed doing [status] so far *)
   ; absint_state: AnalysisState.t
   ; biabduction_state: State.t
   ; current_procname: Procname.t option
@@ -58,8 +56,7 @@ type global_state =
 let save_global_state () =
   (* use a new global counter for the callee *)
   Timeout.suspend_existing_timeout ~keep_symop_total:false ;
-  { name_generator= Ident.NameGenerator.get_current ()
-  ; proc_analysis_time=
+  { proc_analysis_time=
       (!current_taskbar_status >>| fun (t0, status) -> (Mtime.span t0 (Mtime_clock.now ()), status))
   ; absint_state= AnalysisState.save ()
   ; biabduction_state= State.save_state ()
@@ -70,7 +67,6 @@ let save_global_state () =
 
 
 let restore_global_state st =
-  Ident.NameGenerator.set_current st.name_generator ;
   AnalysisGlobalState.restore st.analysis_global_state ;
   AnalysisState.restore st.absint_state ;
   Dependencies.set_current_proc st.current_procname ;
