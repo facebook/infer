@@ -58,22 +58,18 @@ let () =
 
 
 let () =
-  (* register [Logging]'s global state here because this requires knowing about [Procname.t] but
-     Logging.ml is in base/ which is too low in the dependency tree *)
+  (* register [Logging] and [Timer]'s global states here because this requires knowing about [Procname.t] but
+     they live in base/ which is too low in the dependency tree *)
   AnalysisGlobalState.register ~save:L.get_and_reset_delayed_prints ~restore:L.set_delayed_prints
-    ~init:L.reset_delayed_prints
+    ~init:L.reset_delayed_prints ;
+  AnalysisGlobalState.register ~save:Timer.suspend ~restore:Timer.resume ~init:(fun () -> ())
 
 
-type global_state = {checker_timer_state: Timer.state; analysis_global_state: AnalysisGlobalState.t}
+type global_state = {analysis_global_state: AnalysisGlobalState.t}
 
-let save_global_state () =
-  {checker_timer_state= Timer.suspend (); analysis_global_state= AnalysisGlobalState.save ()}
+let save_global_state () = {analysis_global_state= AnalysisGlobalState.save ()}
 
-
-let restore_global_state st =
-  AnalysisGlobalState.restore st.analysis_global_state ;
-  Timer.resume st.checker_timer_state
-
+let restore_global_state st = AnalysisGlobalState.restore st.analysis_global_state
 
 (** reference to log errors only at the innermost recursive call *)
 let logged_error = ref false
