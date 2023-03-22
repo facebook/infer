@@ -20,5 +20,3 @@ val return_type_to_textual : doliRule -> Textual.Typ.t
 val param_types_to_textual : doliRule -> Textual.Typ.annotated list
 
 val get_parameter_names : doliRule -> Textual.VarName.t list
-
-(* val parameterIds : doliRule -> Textual.Typ.annotated list) *)

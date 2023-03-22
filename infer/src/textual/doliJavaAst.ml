@@ -43,9 +43,7 @@ type extendedSignature = {signs: signature list; under: referenceType}
 
 let is_static (sign : signature) : bool = List.mem ~equal:equal_modifier sign.modifiers Static
 
-let get_func_identifier_simple (sign : signature) : string =
-  if is_static sign then sign.identifier else sign.identifier ^ "(...)"
-
+let get_func_identifier_simple (sign : signature) : string = sign.identifier
 
 let reference_type_to_textual (RT clts) : Textual.Typ.t =
   (* FIXME if the reference type is a path, then the function will need to

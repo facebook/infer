@@ -7,6 +7,7 @@
 
 open! IStd
 open DoliAst
+module L = Logging
 
 let global_doli_matcher = ref ([] : (DoliAst.matching * Procname.t) list)
 
@@ -48,23 +49,57 @@ let program_to_textual_module sourcefile (DoliProgram rules) : Textual.Module.t 
   {attrs= [Attr.mk_source_language lang]; decls; sourcefile}
 
 
-let exec_matching (matching : matching) (textualName : string) : bool =
-  (* tests whether [ir_procname] is matched by [match_] *)
-  let match_sign_with_procname (sign : DoliJavaAst.signature) =
-    (* FIXME make the check more precise *)
-    String.equal (DoliJavaAst.get_func_identifier_simple sign) textualName
-  in
-  let match_sign (sign : DoliJavaAst.signature) = match_sign_with_procname sign in
-  let match_signs (signs : DoliJavaAst.signature list) = List.exists ~f:match_sign signs in
-  let match_ext_sign (extSign : DoliJavaAst.extendedSignature) = match_signs extSign.signs in
-  match matching with
-  | ObjCMatching _ ->
+let rec match_type_paths (str_list : string list) (doli_class_types : DoliJavaAst.classType list) :
+    bool =
+  match (str_list, doli_class_types) with
+  | [], [] ->
+      true
+  | str :: strs, CT (doli_str, _) :: rest ->
+      String.equal str doli_str && match_type_paths strs rest
+  | _ ->
       false
-  | JavaMatching doliJavaExtendedSignatures ->
-      List.exists ~f:match_ext_sign doliJavaExtendedSignatures
 
 
-let matcher ir_procname =
-  let textual_name = Procname.to_simplified_string ir_procname in
+let match_receiver_classes (ext_sign : DoliJavaAst.extendedSignature)
+    (java_proc_name : Procname.Java.t) :
+    bool
+    (* checks whether the two patchs to the tyoes are identical *)
+    (* TODO consider class hierarchy *)
+    (* TODO consider generics *) =
+  let strs = String.split_on_chars ~on:['.'] (Procname.Java.get_class_name java_proc_name) in
+  match ext_sign.under with RT classTypes -> match_type_paths strs classTypes
+
+
+let match_sign_with_procname (sign : DoliJavaAst.signature) (java_proc_name : Procname.Java.t) :
+    bool =
+  (* matches the identifiers of the methods *)
+  String.equal
+    (DoliJavaAst.get_func_identifier_simple sign)
+    (Procname.Java.get_method java_proc_name)
+
+
+let match_ext_sign_with_procname (ext_sign : DoliJavaAst.extendedSignature)
+    (java_proc_name : Procname.Java.t) : bool =
+  (* mathes the identifiers as well as the receivers *)
+  (* TODO: also match the argument types *)
+  (* TODO: consider subtypes for the arguments *)
+  match_receiver_classes ext_sign java_proc_name
+  && List.exists ~f:(fun sign -> match_sign_with_procname sign java_proc_name) ext_sign.signs
+
+
+let exec_matching (matching : matching) (ir_procname : Procname.t) : bool =
+  (* tests whether [ir_procname] is matched by [match_] *)
+  match (matching, ir_procname) with
+  | ObjCMatching _, _ ->
+      L.die InternalError "we have not yet implemented ObjC for doli"
+  | JavaMatching doli_java_ext_signs, Java java_proc_name ->
+      List.exists
+        ~f:(fun ext_sign -> match_ext_sign_with_procname ext_sign java_proc_name)
+        doli_java_ext_signs
+  | _ ->
+      false
+
+
+let matcher (ir_procname : Procname.t) =
   List.find_map !global_doli_matcher ~f:(fun (match_, model_procname) ->
-      if exec_matching match_ textual_name then Some model_procname else None )
+      if exec_matching match_ ir_procname then Some model_procname else None )

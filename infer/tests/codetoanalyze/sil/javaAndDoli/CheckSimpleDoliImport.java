@@ -20,10 +20,25 @@ class A {
   int intField;
 }
 
+class B {
+
+  int length() {
+    return 420;
+  }
+}
+
+class C {
+
+  int length() {
+    return 2323;
+  }
+}
+
 public class CheckSimpleDoliImport {
 
   File f = new File("whatever.txt");
-
+  B aB = new B();
+  C aC = new C();
   A localA = new A();
 
   int m1_bad() {
@@ -45,5 +60,21 @@ public class CheckSimpleDoliImport {
     // The Java model will _not_ cause error report,
     // because we do not yet have a model for the function length
 
+  }
+
+  int m3_ok() {
+    if (this.aB.length() == 2323) {
+      localA = null;
+    }
+    return localA.intField;
+    // not an error, because this.aB.length calls method from class B
+  }
+
+  int m4_bad() {
+    if (this.aC.length() == 2323) {
+      localA = null;
+    }
+    return localA.intField;
+    // error, because this.aC.length calls method from class C
   }
 }

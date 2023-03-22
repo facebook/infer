@@ -64,7 +64,7 @@ let doli_keywords =
       ; ("long", LONG)
       ; ("double", DOUBLE)
       ; ("boolean", BOOLEAN)
-      ; ("public", PUBLIC) (* the below are Doli Java modifiers and throws *)
+      ; ("public", PUBLIC) (* this and the below are Doli Java modifiers and throws *)
       ; ("protected", PROTECTED)
       ; ("private", PRIVATE)
       ; ("static", STATIC)
@@ -72,7 +72,7 @@ let doli_keywords =
       ; ("final", FINAL)
       ; ("native", NATIVE)
       ; ("throws", THROWS)
-      ; ("super", SUPER) (* the below are Doli generics *)
+      ; ("super", SUPER) (* this is for Doli generics *)
       ; ("objCSignStub", OBJCSIGNSTUB)
         (* above is a Doli singature stub -- eventually will be replaced and removed *) ]
 

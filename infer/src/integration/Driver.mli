@@ -33,7 +33,7 @@ type mode =
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
   | Hackc of {prog: string; args: string list}
-  | Textual of {textualfiles: string list; dolifiles: string list}
+  | Textual of {textualfiles: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 

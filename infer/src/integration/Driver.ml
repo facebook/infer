@@ -34,7 +34,7 @@ type mode =
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
   | Hackc of {prog: string; args: string list}
-  | Textual of {textualfiles: string list; dolifiles: string list}
+  | Textual of {textualfiles: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 
@@ -86,17 +86,12 @@ let pp_mode fmt = function
       F.fprintf fmt "Erlc driver mode:@\nargs = %a" Pp.cli_args args
   | Hackc {prog; args} ->
       F.fprintf fmt "Hackc driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
-  | Textual {textualfiles; dolifiles} -> (
-      ( match textualfiles with
-      | [] ->
-          ()
-      | _ :: _ ->
-          F.fprintf fmt "Textual capture mode:@\nfiles = %a" Pp.cli_args textualfiles ) ;
-      match dolifiles with
-      | [] ->
-          ()
-      | _ :: _ ->
-          F.fprintf fmt "Doli capture mode:@\nfiles = %a" Pp.cli_args dolifiles )
+  | Textual {textualfiles} -> (
+    match textualfiles with
+    | [] ->
+        ()
+    | _ :: _ ->
+        F.fprintf fmt "Textual capture mode:@\nfiles = %a" Pp.cli_args textualfiles )
   | XcodeBuild {prog; args} ->
       F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | XcodeXcpretty {prog; args} ->
@@ -143,6 +138,13 @@ let capture ~changed_files mode =
     |> Out_channel.write_lines infer_deps_file ;
     () )
   else
+    let dolifiles = Config.capture_doli in
+    ( match dolifiles with
+    | [] ->
+        ()
+    | _ :: _ ->
+        let dfiles = List.map dolifiles ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x) in
+        TextualParser.capture ~capture:DoliCapture dfiles ) ;
     match mode with
     | Analyze ->
         ()
@@ -209,10 +211,7 @@ let capture ~changed_files mode =
     | Hackc {prog; args} ->
         L.progress "Capturing in hackc mode...@." ;
         Hack.capture ~prog ~args
-    | Textual {textualfiles; dolifiles} ->
-        L.progress "Capturing in textual mode...@." ;
-        let dfiles = List.map dolifiles ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x) in
-        TextualParser.capture ~capture:DoliCapture dfiles ;
+    | Textual {textualfiles} ->
         let tfiles =
           List.map textualfiles ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x)
         in
@@ -459,16 +458,16 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   | [] when Config.bxl_file_capture ->
       BxlClangFile
   | [] -> (
-      let textualfiles, dolifiles = (Config.capture_textual, Config.capture_doli) in
-      match (Config.clang_compilation_dbs, textualfiles, dolifiles) with
-      | _ :: _, _ :: _, _ | _ :: _, _, _ :: _ ->
+      let textualfiles = Config.capture_textual in
+      match (Config.clang_compilation_dbs, textualfiles) with
+      | _ :: _, _ :: _ ->
           L.die UserError "Both --clang-compilation-dbs and --capture-textual are set."
-      | _ :: _, [], [] ->
+      | _ :: _, [] ->
           assert_supported_mode `Clang "clang compilation database" ;
           ClangCompilationDB {db_files= Config.clang_compilation_dbs}
-      | [], _ :: _, _ | [], _, _ :: _ ->
-          Textual {textualfiles; dolifiles}
-      | [], [], [] -> (
+      | [], _ :: _ ->
+          Textual {textualfiles}
+      | [], [] -> (
         match (Config.cfg_json, Config.tenv_json) with
         | Some cfg_json, Some tenv_json ->
             JsonSIL {cfg_json; tenv_json}
