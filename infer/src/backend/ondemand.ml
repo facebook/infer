@@ -63,16 +63,14 @@ let () =
 
 
 type global_state =
-  { absint_state: AnalysisState.t
-  ; biabduction_state: State.t
+  { biabduction_state: State.t
   ; current_procname: Procname.t option
   ; taskbar_nesting: int
   ; checker_timer_state: Timer.state
   ; analysis_global_state: AnalysisGlobalState.t }
 
 let save_global_state () =
-  { absint_state= AnalysisState.save ()
-  ; biabduction_state= State.save_state ()
+  { biabduction_state= State.save_state ()
   ; current_procname= Dependencies.get_current_proc ()
   ; taskbar_nesting= !nesting
   ; checker_timer_state= Timer.suspend ()
@@ -81,7 +79,6 @@ let save_global_state () =
 
 let restore_global_state st =
   AnalysisGlobalState.restore st.analysis_global_state ;
-  AnalysisState.restore st.absint_state ;
   Dependencies.set_current_proc st.current_procname ;
   State.restore_state st.biabduction_state ;
   nesting := st.taskbar_nesting ;

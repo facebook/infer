@@ -10,8 +10,6 @@ open! IStd
 
 (** State of symbolic execution *)
 
-type t
-
 val get_instr : unit -> Sil.instr option
 (** Get last instruction seen in symbolic execution *)
 
@@ -44,11 +42,3 @@ val set_remaining_disjuncts : int -> unit
 
 val set_session : int -> unit
 (** Set last session seen in symbolic execution *)
-
-(** {2 State management} *)
-
-val restore : t -> unit
-(** Restore the old state. *)
-
-val save : unit -> t
-(** Return the old state, and revert the current state to the initial one. *)

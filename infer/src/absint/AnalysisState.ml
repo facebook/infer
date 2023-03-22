@@ -22,6 +22,8 @@ let initial () = {last_instr= None; last_node= None; last_session= 0; remaining_
 (** Global state *)
 let gs = ref (initial ())
 
+let () = AnalysisGlobalState.register_ref gs ~init:initial
+
 let get_instr () = !gs.last_instr
 
 let set_instr instr = !gs.last_instr <- Some instr
@@ -55,14 +57,3 @@ let get_remaining_disjuncts () = !gs.remaining_disjuncts
 
 let set_remaining_disjuncts remaining_disjuncts =
   !gs.remaining_disjuncts <- Some remaining_disjuncts
-
-
-(** Return the old state, and revert the current state to the initial one. *)
-let save () =
-  let old = !gs in
-  gs := initial () ;
-  old
-
-
-(** Restore the old state. *)
-let restore st = gs := st
