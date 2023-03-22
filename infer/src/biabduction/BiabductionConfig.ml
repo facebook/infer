@@ -23,6 +23,8 @@ let set_reference_and_call_function reference value f x =
 (** Flag for footprint discovery mode *)
 let footprint = ref true
 
+let () = AnalysisGlobalState.register_ref ~init:(fun () -> true) footprint
+
 let run_in_footprint_mode f x = set_reference_and_call_function footprint true f x
 
 let run_in_re_execution_mode f x = set_reference_and_call_function footprint false f x
