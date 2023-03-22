@@ -45,8 +45,7 @@ let () =
 
 
 type global_state =
-  { disjunctive_demo_state: int
-  ; footprint_mode: bool
+  { footprint_mode: bool
   ; html_formatter: F.formatter
   ; name_generator: Ident.NameGenerator.t
   ; proc_analysis_time: (Mtime.Span.t * string) option
@@ -59,10 +58,9 @@ type global_state =
   ; analysis_global_state: AnalysisGlobalState.t }
 
 let save_global_state () =
-  Timeout.suspend_existing_timeout ~keep_symop_total:false ;
   (* use a new global counter for the callee *)
-  { disjunctive_demo_state= !DisjunctiveDemo.node_id
-  ; footprint_mode= !BiabductionConfig.footprint
+  Timeout.suspend_existing_timeout ~keep_symop_total:false ;
+  { footprint_mode= !BiabductionConfig.footprint
   ; html_formatter= !Printer.curr_html_formatter
   ; name_generator= Ident.NameGenerator.get_current ()
   ; proc_analysis_time=
@@ -78,7 +76,6 @@ let save_global_state () =
 let restore_global_state st =
   BiabductionConfig.footprint := st.footprint_mode ;
   Printer.curr_html_formatter := st.html_formatter ;
-  DisjunctiveDemo.node_id := st.disjunctive_demo_state ;
   Ident.NameGenerator.set_current st.name_generator ;
   AnalysisGlobalState.restore st.analysis_global_state ;
   AnalysisState.restore st.absint_state ;

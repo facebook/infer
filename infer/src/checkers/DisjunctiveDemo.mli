@@ -8,8 +8,6 @@
 open! IStd
 module F = Format
 
-val node_id : int ref
-
 type domain
 
 val pp_domain : F.formatter -> domain -> unit

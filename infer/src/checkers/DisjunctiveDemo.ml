@@ -13,6 +13,8 @@ module L = Logging
     and which call in a branch we are analyzing *)
 let node_id = ref (-1)
 
+let () = AnalysisGlobalState.register_ref ~init:(fun () -> -1) node_id
+
 module DisjDomain = struct
   (** ["4";"goo2";"1";"foo1"], printed as "foo1.1.goo2.4", means we explored the first branch of foo
       followed by the 4th branch of goo *)
@@ -83,7 +85,6 @@ type domain = DisjunctiveAnalyzer.TransferFunctions.Domain.t
 let pp_domain = DisjunctiveAnalyzer.TransferFunctions.Domain.pp
 
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
-  node_id := -1 ;
   let result =
     DisjunctiveAnalyzer.compute_post analysis_data ~initial:([[]], NonDisjDomain.bottom) proc_desc
   in
