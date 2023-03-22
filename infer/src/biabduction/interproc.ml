@@ -842,7 +842,6 @@ let set_current_language proc_desc =
 
 (** reset global values before analysing a procedure *)
 let reset_global_values proc_desc =
-  BiabductionConfig.reset_abs_val () ;
   Ident.NameGenerator.reset () ;
   SymOp.reset_total () ;
   reset_prop_metrics () ;

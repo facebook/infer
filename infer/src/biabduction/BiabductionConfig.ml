@@ -29,8 +29,8 @@ let run_in_re_execution_mode f x = set_reference_and_call_function footprint fal
 
 let abs_val = ref Config.biabduction_abs_val
 
-let reset_abs_val () = abs_val := Config.biabduction_abs_val
-
 let run_with_abs_val_equal_zero f x = set_reference_and_call_function abs_val 0 f x
 
 let allow_leak = ref Config.biabduction_allow_leak
+
+let () = AnalysisGlobalState.register_ref abs_val ~init:(fun () -> Config.biabduction_abs_val)

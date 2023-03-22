@@ -38,8 +38,7 @@ let procedure_should_be_analyzed proc_name =
 
 
 type global_state =
-  { abs_val: int
-  ; abstraction_rules: Abs.rules
+  { abstraction_rules: Abs.rules
   ; delayed_prints: L.delayed_prints
   ; disjunctive_demo_state: int
   ; footprint_mode: bool
@@ -57,8 +56,7 @@ type global_state =
 let save_global_state () =
   Timeout.suspend_existing_timeout ~keep_symop_total:false ;
   (* use a new global counter for the callee *)
-  { abs_val= !BiabductionConfig.abs_val
-  ; abstraction_rules= Abs.get_current_rules ()
+  { abstraction_rules= Abs.get_current_rules ()
   ; delayed_prints= L.get_and_reset_delayed_prints ()
   ; disjunctive_demo_state= !DisjunctiveDemo.node_id
   ; footprint_mode= !BiabductionConfig.footprint
@@ -75,7 +73,6 @@ let save_global_state () =
 
 
 let restore_global_state st =
-  BiabductionConfig.abs_val := st.abs_val ;
   Abs.set_current_rules st.abstraction_rules ;
   L.set_delayed_prints st.delayed_prints ;
   BiabductionConfig.footprint := st.footprint_mode ;

@@ -24,8 +24,6 @@ val run_in_re_execution_mode : ('a -> 'b) -> 'a -> 'b
 
 val abs_val : int ref
 
-val reset_abs_val : unit -> unit
-
 val run_with_abs_val_equal_zero : ('a -> 'b) -> 'a -> 'b
 (** Call f x with abs_val set to zero. Restore the initial value also in case of exception. *)
 
