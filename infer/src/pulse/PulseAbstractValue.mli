@@ -49,19 +49,3 @@ module Map : sig
 
   val yojson_of_t : ('a -> Yojson.Safe.t) -> 'a t -> Yojson.Safe.t
 end
-
-(** internal state of the module
-
-    Under the hood a "next fresh" reference counter is maintained to produce fresh [t]. The
-    [Constants] module also remembers a mapping from certain constants to their corresponding [t].
-    Both of these should be per-procedure only so internal state bookkeeping has to be performed by
-    the interprocedural analysis. *)
-module State : sig
-  type t
-
-  val get : unit -> t
-
-  val set : t -> unit
-
-  val reset : unit -> unit
-end

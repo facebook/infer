@@ -65,8 +65,6 @@ end
 module Constants = struct
   module M = Caml.Map.Make (IntLit)
 
-  type nonrec t = t M.t
-
   let initial_cache = M.empty
 
   let cache = ref initial_cache
@@ -81,19 +79,9 @@ module Constants = struct
         v
 end
 
-module State = struct
-  type t = int * int * Constants.t
-
-  let get () = (!next_fresh, !next_fresh_restricted, !Constants.cache)
-
-  let set (counter_unrestricted, counter_restricted, cache) =
-    next_fresh := counter_unrestricted ;
-    next_fresh_restricted := counter_restricted ;
-    Constants.cache := cache
-
-
-  let reset () =
-    next_fresh := initial_next_fresh ;
-    next_fresh_restricted := initial_next_fresh_restricted ;
-    Constants.cache := Constants.initial_cache
-end
+let () =
+  AnalysisGlobalState.register_ref next_fresh ~init:(fun () -> initial_next_fresh) ;
+  AnalysisGlobalState.register_ref next_fresh_restricted ~init:(fun () ->
+      initial_next_fresh_restricted ) ;
+  AnalysisGlobalState.register_ref Constants.cache ~init:(fun () -> Constants.initial_cache) ;
+  ()

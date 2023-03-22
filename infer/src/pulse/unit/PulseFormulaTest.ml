@@ -144,9 +144,8 @@ let w = op_of_var w_var
 
 let v = op_of_var (mk_var "v")
 
-(** reset to this state before each test so that variable id's remain stable when tests are added in
-    the future *)
-let init_vars_state = AbstractValue.State.get ()
+(* save the global state now after all named variables have been declared *)
+let global_state = AnalysisGlobalState.save ()
 
 let pp_var fmt v =
   match Caml.Hashtbl.find_opt var_names v with
@@ -157,7 +156,9 @@ let pp_var fmt v =
 
 
 let test ~f phi =
-  AbstractValue.State.set init_vars_state ;
+  (* reset global state before each test so that variable id's remain stable when tests are added in
+      the future *)
+  AnalysisGlobalState.restore global_state ;
   phi ttrue >>= f |> F.printf "%a" (SatUnsat.pp (pp_with_pp_var pp_var))
 
 

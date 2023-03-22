@@ -47,12 +47,12 @@ type global_state =
   ; name_generator: Ident.NameGenerator.t
   ; proc_analysis_time: (Mtime.Span.t * string) option
         (** the time elapsed doing [status] so far *)
-  ; pulse_address_generator: PulseAbstractValue.State.t
   ; absint_state: AnalysisState.t
   ; biabduction_state: State.t
   ; current_procname: Procname.t option
   ; taskbar_nesting: int
-  ; checker_timer_state: Timer.state }
+  ; checker_timer_state: Timer.state
+  ; analysis_global_state: AnalysisGlobalState.t }
 
 let save_global_state () =
   Timeout.suspend_existing_timeout ~keep_symop_total:false ;
@@ -66,12 +66,12 @@ let save_global_state () =
   ; name_generator= Ident.NameGenerator.get_current ()
   ; proc_analysis_time=
       (!current_taskbar_status >>| fun (t0, status) -> (Mtime.span t0 (Mtime_clock.now ()), status))
-  ; pulse_address_generator= PulseAbstractValue.State.get ()
   ; absint_state= AnalysisState.save ()
   ; biabduction_state= State.save_state ()
   ; current_procname= Dependencies.get_current_proc ()
   ; taskbar_nesting= !nesting
-  ; checker_timer_state= Timer.suspend () }
+  ; checker_timer_state= Timer.suspend ()
+  ; analysis_global_state= AnalysisGlobalState.save () }
 
 
 let restore_global_state st =
@@ -82,7 +82,7 @@ let restore_global_state st =
   Printer.curr_html_formatter := st.html_formatter ;
   DisjunctiveDemo.node_id := st.disjunctive_demo_state ;
   Ident.NameGenerator.set_current st.name_generator ;
-  PulseAbstractValue.State.set st.pulse_address_generator ;
+  AnalysisGlobalState.restore st.analysis_global_state ;
   AnalysisState.restore st.absint_state ;
   Dependencies.set_current_proc st.current_procname ;
   State.restore_state st.biabduction_state ;
@@ -282,6 +282,7 @@ let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
         >>= fun callee_pdesc ->
         RestartScheduler.lock_exn callee_pname ;
         let previous_global_state = save_global_state () in
+        AnalysisGlobalState.initialize callee_pname ;
         let callee_summary =
           protect
             ~f:(fun () ->

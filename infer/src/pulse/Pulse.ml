@@ -1076,7 +1076,6 @@ let log_summary_count proc_name summary =
 
 let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
   if should_analyze proc_desc then (
-    AbstractValue.State.reset () ;
     PulseTopl.Debug.dropped_disjuncts_count := 0 ;
     let proc_name = Procdesc.get_proc_name proc_desc in
     let proc_attrs = Procdesc.get_attributes proc_desc in
