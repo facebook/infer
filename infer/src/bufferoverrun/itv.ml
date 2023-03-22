@@ -185,13 +185,13 @@ module ItvPure = struct
 
   let is_true : t -> bool = fun (l, u) -> Bound.le Bound.one l || Bound.le u Bound.mone
 
-  let is_false : t -> bool = is_zero
-
   let is_symbolic : t -> bool = fun (lb, ub) -> Bound.is_symbolic lb || Bound.is_symbolic ub
 
   let is_ge_zero : t -> bool = fun (lb, _) -> Bound.le Bound.zero lb
 
   let is_le_zero : t -> bool = fun (_, ub) -> Bound.le ub Bound.zero
+
+  let is_false : t -> bool = fun i -> is_le_zero i && is_ge_zero i
 
   let is_le_mone : t -> bool = fun (_, ub) -> Bound.le ub Bound.mone
 
@@ -362,18 +362,16 @@ module ItvPure = struct
   let ge_sem : t -> t -> Boolean.t = fun x y -> le_sem y x
 
   let eq_sem : t -> t -> Boolean.t =
-   fun (l1, u1) (l2, u2) ->
+   fun ((l1, u1) as itv1) ((l2, u2) as itv2) ->
     if Bound.eq l1 u1 && Bound.eq u1 l2 && Bound.eq l2 u2 then Boolean.True
     else if Bound.lt u1 l2 || Bound.lt u2 l1 then Boolean.False
+    else if
+      Boolean.equal Boolean.True (ge_sem itv1 itv2) && Boolean.equal Boolean.True (le_sem itv1 itv2)
+    then Boolean.True
     else Boolean.Top
 
 
-  let ne_sem : t -> t -> Boolean.t =
-   fun (l1, u1) (l2, u2) ->
-    if Bound.eq l1 u1 && Bound.eq u1 l2 && Bound.eq l2 u2 then Boolean.False
-    else if Bound.lt u1 l2 || Bound.lt u2 l1 then Boolean.True
-    else Boolean.Top
-
+  let ne_sem : t -> t -> Boolean.t = fun itv1 itv2 -> eq_sem itv1 itv2 |> Boolean.not_
 
   let land_sem : t -> t -> Boolean.t = fun x y -> Boolean.and_ (to_boolean x) (to_boolean y)
 
@@ -786,3 +784,5 @@ let is_length_path_of path = bind1_gen ~bot:false (ItvPure.is_length_path_of pat
 let has_only_non_int_symbols = bind1bool ItvPure.has_only_non_int_symbols
 
 let is_incr_of path = bind1bool (ItvPure.is_incr_of path)
+
+let is_top v = match v with Bottom -> false | NonBottom v_itv_pure -> ItvPure.is_top v_itv_pure

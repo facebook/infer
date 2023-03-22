@@ -411,20 +411,49 @@ let rec eval_sympath_partial ~mode params p mem =
         Mem.find (Loc.of_allocsite (Allocsite.make_symbol p)) mem
     | EvalPOCond | EvalPOReachability ->
         Val.Itv.top )
-  | BoField.(Prim (Symb.SymbolPath.Deref _) | Field _ | StarField _) ->
+  | BoField.(Field _ | StarField _ | Prim (Symb.SymbolPath.Deref _)) ->
       let locs = eval_locpath ~mode params p mem in
       Mem.find_set locs mem
 
 
+(* Import a path p from a callee as a set of locations to a caller.
+   There are the following cases:
+   (1) p involves dereference of a formal parameter:
+     Substitute the formal parameter with actual expression evaluating dereferences:
+     Example: p = "**A.f1", A is a formal parameter, actual is &B, B points
+       to C and D.
+       Return: {"C.f1", "D.f1"}
+   (2) p involves a formal parameter passed by value:
+     Return unknown location.
+     Example: p = A, A is a formal parameter, actual is B
+     Return: {"unknown"}
+     The reason why it is not possible to import A as B is that there is a mapping
+     from formal locations to evaluations of actual expressions in ParamBindings and
+     not to actual expression. That is, if the actual expression is A, we can get its
+     value, not the location itself. This is also why we can import dereferences precisely
+     (we get powloc part of such value). *)
 and eval_locpath ~mode params p mem =
   let res =
     match p with
     | BoField.Prim (Symb.SymbolPath.Pvar _ | Symb.SymbolPath.Callsite _) ->
-        let v = eval_sympath_partial ~mode params p mem in
-        Val.get_all_locs v
-    | BoField.Prim (Symb.SymbolPath.Deref (_, p)) ->
-        let v = eval_sympath_partial ~mode params p mem in
-        Val.get_all_locs v
+        PowLoc.unknown
+    | BoField.Prim (Symb.SymbolPath.Deref (deref_kind, p_base)) ->
+        let v = eval_sympath_partial ~mode params p_base mem in
+        if Val.is_unknown v then
+          (* The target of the pointer is unknown -> get the location representing the deref
+               symbolically. *)
+          let ptr_locs = eval_locpath ~mode params p_base mem in
+          let create_deref ptr_loc =
+            match Loc.get_path ptr_loc with
+            | None ->
+                Loc.unknown
+            | Some path ->
+                Loc.of_path (Symb.SymbolPath.deref ~deref_kind path)
+          in
+          PowLoc.fold
+            (fun ptr_loc ptr_locs -> PowLoc.add (create_deref ptr_loc) ptr_locs)
+            ptr_locs PowLoc.bot
+        else Val.get_all_locs v
     | BoField.Field {fn; prefix= p} ->
         let locs = eval_locpath ~mode params p mem in
         PowLoc.append_field ~fn locs
@@ -642,7 +671,8 @@ module Prune = struct
                if Val.is_bot v then acc
                else
                  let v' = Val.prune_ne_zero v in
-                 update_mem_in_prune rhs v' acc )
+                 let pruning_exp = PruningExp.make Binop.Ne ~lhs:v ~rhs:(Val.of_int 0) in
+                 update_mem_in_prune rhs v' ~pruning_exp acc )
               |> prune_linked_list_index rhs mem
               |> prune_iterator_offset_objc rhs mem
           | AliasTarget.Empty ->

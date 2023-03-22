@@ -144,6 +144,11 @@ OPTIONS
        --bo-debug int
            Debug level for buffer-overrun checker (0-4)           See also infer-analyze(1).
 
+       --bo-exit-frontend-gener-vars
+           Activates: Put frontend generated variables out of scope when they
+           are listed in exit scope instruction. (Conversely:
+           --no-bo-exit-frontend-gener-vars)           See also infer-analyze(1).
+
        --bo-field-depth-limit int
            Limit of field depth of abstract location in buffer-overrun
            checker           See also infer-analyze(1).

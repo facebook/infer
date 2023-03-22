@@ -177,6 +177,8 @@ val bo_context_sensitive_allocsites : bool
 
 val bo_assume_void : bool
 
+val bo_exit_frontend_gener_vars : bool
+
 val bootclasspath : string option
 
 val buck : bool

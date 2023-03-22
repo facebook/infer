@@ -176,6 +176,8 @@ val normalize : t -> t
 
 val is_symbolic : t -> bool
 
+val is_top : t -> bool
+
 val get_symbols : t -> SymbolSet.t
 
 val eq : t -> t -> bool

@@ -122,7 +122,7 @@ void array_iter_back_Bad() {
   a[a[0]] = 0;
 }
 
-void array_rev_iter_Good_FP() {
+void array_rev_iter_Good() {
   std::array<int, 11> a;
   for (auto it = a.rbegin(); it < a.rend(); ++it) {
     *it = 10;
@@ -130,7 +130,7 @@ void array_rev_iter_Good_FP() {
   a[a[0]] = 0;
 }
 
-void array_rev_iter_Bad() {
+void array_rev_iter_Bad_FN() {
   std::array<int, 5> a;
   for (auto it = a.rbegin(); it < a.rend(); ++it) {
     *it = 10;

@@ -119,15 +119,23 @@ module TransferFunctions = struct
     in
     let instantiate_ret_alias mem =
       let subst_loc l =
-        Option.find_map (Loc.get_path l) ~f:(fun partial ->
-            try
-              let locs = eval_locpath partial in
-              match PowLoc.is_singleton_or_more locs with
-              | IContainer.Singleton loc ->
-                  Some loc
-              | _ ->
-                  None
-            with Not_found_s _ | Caml.Not_found -> None )
+        (* TODO: for locations corresponding to parameters passed by value (e.g., IN parameters
+           in Ada), subst_loc returns None meaning that ret_alias is not instantiated for them.
+           The reason is that we don't have a way to import such locations from a callee to
+           a caller.
+        *)
+        if Loc.is_global l then Some l
+        else
+          Option.find_map (Loc.get_param_path l) ~f:(fun partial ->
+              try
+                let locs = eval_locpath partial in
+                match PowLoc.is_singleton_or_more locs with
+                (* it is only useful to record alias to a known location, return None for unknown *)
+                | IContainer.Singleton loc ->
+                    Some loc
+                | _ ->
+                    None
+              with Not_found_s _ | Caml.Not_found -> None )
       in
       match Dom.Mem.find_ret_alias callee_exit_mem with
       | Bottom ->
@@ -481,7 +489,7 @@ module TransferFunctions = struct
           let mem, _ = BoUtils.Exec.decl_local model_env (mem, 1) (Loc.of_pvar pvar, typ) in
           mem
       | Metadata (ExitScope (dead_vars, _)) ->
-          Dom.Mem.remove_temps (List.filter_map dead_vars ~f:Var.get_ident) mem
+          Dom.Mem.remove_vars dead_vars mem
       | Metadata
           ( Abstract _
           | CatchEntry _

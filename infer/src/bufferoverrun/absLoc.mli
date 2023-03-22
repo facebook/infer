@@ -27,6 +27,8 @@ module Allocsite : sig
 
   val unknown : t
 
+  val is_unknown : t -> bool
+
   val make :
        Procname.t
     -> caller_pname:Procname.t option
@@ -80,8 +82,11 @@ module Loc : sig
 
   val get_path : t -> Symb.SymbolPath.partial option
 
-  val is_field_of : loc:t -> field_loc:t -> bool
-  (** It checks if [loc] is prefix of [field_loc]. *)
+  val get_param_path : t -> Symb.SymbolPath.partial option
+  (** As get_path, but returns None if the path doesn't correspond to parameter passed by reference. *)
+
+  val is_trans_field_of : loc:t -> field_loc:t -> bool
+  (** Checks if field_loc is a direct or indirect field of loc. *)
 
   val is_frontend_tmp : t -> bool
 
@@ -168,6 +173,8 @@ module PowLoc : sig
   (** It checks whether [rhs] is of [lhs.any_field], which is a heuristic for detecting a linked
       list, e.g. [x = x.next()]. It returns [Some lhs] if the condition is satisfied, [None]
       otherwise. *)
+
+  val is_unknown : t -> bool
 
   val is_single_known_loc : t -> bool
   (** Returns true if the set consists of a single known location. *)

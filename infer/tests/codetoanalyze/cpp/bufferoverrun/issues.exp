@@ -91,8 +91,6 @@ codetoanalyze/cpp/bufferoverrun/std_array.cpp, array_iter2_Bad, 5, BUFFER_OVERRU
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, array_iter3_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 5]
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, array_iter_front_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 5]
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, array_iter_back_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 5]
-codetoanalyze/cpp/bufferoverrun/std_array.cpp, array_rev_iter_Good_FP, 5, BUFFER_OVERRUN_L5, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: [-oo, +oo] Size: 11]
-codetoanalyze/cpp/bufferoverrun/std_array.cpp, array_rev_iter_Bad, 5, BUFFER_OVERRUN_L5, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: [-oo, +oo] Size: 5]
 codetoanalyze/cpp/bufferoverrun/std_array.cpp, malloc_zero_Bad, 0, INFERBO_ALLOC_IS_ZERO, no_bucket, ERROR, [Allocation: Length: 0]
 codetoanalyze/cpp/bufferoverrun/std_string.cpp, last_char1_Bad, 3, BUFFER_OVERRUN_L3, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Array access: Offset: [-1, +oo] Size: 1024]
 codetoanalyze/cpp/bufferoverrun/std_string.cpp, last_char2_Bad, 6, BUFFER_OVERRUN_L3, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Array access: Offset: [-1, +oo] Size: 1024]

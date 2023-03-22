@@ -73,8 +73,6 @@ codetoanalyze/c/bufferoverrun/array_multidim.c, multidim_arr1_Bad, 2, BUFFER_OVE
 codetoanalyze/c/bufferoverrun/array_multidim.c, multidim_arr2_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 3 Size: 3]
 codetoanalyze/c/bufferoverrun/array_multidim.c, multidim_arr4_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Assignment,Array access: Offset: 6 Size: 6]
 codetoanalyze/c/bufferoverrun/array_multidim.c, multidim_arr5_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]
-codetoanalyze/c/bufferoverrun/array_multidim.c, multidim_arr6_Good_FP, 5, BUFFER_OVERRUN_L5, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: [-oo, +oo] Size: 10]
-codetoanalyze/c/bufferoverrun/array_multidim.c, multidim_arr6_Bad, 5, BUFFER_OVERRUN_L5, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: [-oo, +oo] Size: 5]
 codetoanalyze/c/bufferoverrun/big_array.c, use_big_array_bad, 2, BUFFER_OVERRUN_U5, no_bucket, ERROR, [<Length trace>,Unknown value from: big_array,Assignment,Array access: Offset: [-oo, +oo] (⇐ [-oo, +oo] + 999999999) Size: [0, +oo]]
 codetoanalyze/c/bufferoverrun/break_continue_return.c, break_continue_return, 4, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/break_continue_return.c, break_continue_return, 13, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]

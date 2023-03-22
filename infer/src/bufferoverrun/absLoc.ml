@@ -291,10 +291,10 @@ module Loc = struct
         false
 
 
-  let is_field_of ~loc ~field_loc =
+  let rec is_trans_field_of ~loc ~field_loc =
     match field_loc with
     | BoField.(Field {prefix= l} | StarField {prefix= l}) ->
-        equal loc l
+        if equal loc l then true else is_trans_field_of ~loc ~field_loc:l
     | _ ->
         false
 
@@ -490,6 +490,8 @@ module PowLoc = struct
   let bot = Bottom
 
   let is_bot = function Bottom -> true | Unknown _ | Known _ -> false
+
+  let is_unknown = function Unknown _ -> true | Bottom | Known _ -> false
 
   let unknown = mk_unknown (LocSet.singleton Loc.unknown)
 
