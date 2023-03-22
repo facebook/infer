@@ -548,6 +548,14 @@ let mk_int_opt ?default ?(default_to_string = Option.value_map ~default:"" ~f:st
     ~decode_json:(int_json_decoder ~flag) ~f ?parse_mode ?in_help ~meta doc
 
 
+let mk_int64_opt ?default ?(default_to_string = Option.value_map ~default:"" ~f:Int64.to_string)
+    ?f:(f0 = Fn.id) ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "int64") doc =
+  let f s = Some (f0 (Int64.of_string s)) in
+  let flag = mk_flag ~deprecated ~short ~long in
+  mk_option ~deprecated ~long ?short ~default ~default_to_string
+    ~decode_json:(null_json_decoder ~flag) ~f ?parse_mode ?in_help ~meta doc
+
+
 let mk_float_opt ?default ?(default_to_string = Option.value_map ~default:"" ~f:string_of_float)
     ?(deprecated = []) ~long ?short ?parse_mode ?in_help ?(meta = "float") doc =
   let f s = Some (float_of_string s) in

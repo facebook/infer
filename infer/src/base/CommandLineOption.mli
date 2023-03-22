@@ -75,6 +75,12 @@ val mk_int : default:int -> ?default_to_string:(int -> string) -> ?f:(int -> int
 val mk_int_opt :
   ?default:int -> ?default_to_string:(int option -> string) -> ?f:(int -> int) -> int option ref t
 
+val mk_int64_opt :
+     ?default:Int64.t
+  -> ?default_to_string:(Int64.t option -> string)
+  -> ?f:(Int64.t -> Int64.t)
+  -> Int64.t option ref t
+
 val mk_float_opt :
   ?default:float -> ?default_to_string:(float option -> string) -> float option ref t
 

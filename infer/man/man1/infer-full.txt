@@ -2691,6 +2691,12 @@ INTERNAL OPTIONS
            }
                
 
+       --scuba-execution-id int64
+           Execution ID attached to all samples logged to scuba
+
+       --scuba-execution-id-reset
+           Cancel the effect of --scuba-execution-id.
+
        --scuba-logging
            Activates: (direct) logging to scuba (Conversely:
            --no-scuba-logging)

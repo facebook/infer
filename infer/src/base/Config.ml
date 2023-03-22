@@ -2800,6 +2800,11 @@ and scuba_logging, cost_scuba_logging, pulse_scuba_logging =
   (scuba_logging, cost_scuba_logging, pulse_scuba_logging)
 
 
+and scuba_execution_id =
+  CLOpt.mk_int64_opt ~long:"scuba-execution-id"
+    "Execution ID attached to all samples logged to scuba"
+
+
 and scuba_normals =
   CLOpt.mk_string_map ~long:"scuba-normal"
     "add an extra string (normal) field to be set for each sample of scuba, format <name>=<value>"
@@ -4369,9 +4374,13 @@ let java_package_is_external package =
 
 
 let scuba_execution_id =
-  if scuba_logging then (
-    Random.self_init () ;
-    Some (Random.int64 Int64.max_value) )
+  if scuba_logging then
+    match !scuba_execution_id with
+    | None ->
+        Random.self_init () ;
+        Some (Random.int64 Int64.max_value)
+    | Some _ as some_value ->
+        some_value
   else None
 
 
