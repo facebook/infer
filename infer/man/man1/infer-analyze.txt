@@ -735,6 +735,8 @@ PULSE CHECKER OPTIONS
            the following combinations of fields to identify relevant
            procedures:             - "procedure": match a substring of the procedure name
              - "procedure_regex": as above, but match using an OCaml regex
+             - "class_name_regex": match all methods of classes whose names
+           match the OCaml regex
              - "class_names" and "method_names":
                  match exact uses of methods of particular classes
              - "class_names" and "method_return_type_names":

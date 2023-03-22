@@ -17,7 +17,7 @@ type taint_target = [
 type argument_constraint = { index: int; type_matches: string list }
 
 type matcher = {
-  (* exactly one of procedure or procedure_regex or allocation must be specified,
+  (* exactly one of procedure or procedure_regex or class_name_regex or allocation must be specified,
   or else class_names and method_names must be specified,
   or else class_names and method_return_type_names must be specified,
   or else overrides_of_class_with_annotation/method_with_annotation *)

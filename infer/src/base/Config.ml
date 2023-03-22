@@ -2476,6 +2476,7 @@ and pulse_taint_sources =
     {|Together with $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and $(b,--pulse-taint-data-flow-kinds), specify taint properties. The JSON format of sources also applies to sinks and sanitizers. It consists of a list of objects, each with one of the following combinations of fields to identify relevant procedures:
   - "procedure": match a substring of the procedure name
   - "procedure_regex": as above, but match using an OCaml regex
+  - "class_name_regex": match all methods of classes whose names match the OCaml regex
   - "class_names" and "method_names":
       match exact uses of methods of particular classes
   - "class_names" and "method_return_type_names":
