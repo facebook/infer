@@ -32,12 +32,6 @@ val freeze : Procname.t -> t -> complete
 
 val complete_exn : t -> complete
 
-val set_current_proc : Procname.t option -> unit
-(** set (or unset) the currently-under-analysis procedure *)
-
-val get_current_proc : unit -> Procname.t option
-(** get the currently-under-analysis procedure if one exists *)
-
 val record_pname_dep : ?caller:Procname.t -> Procname.t -> unit
 
 val record_srcfile_dep : SourceFile.t -> unit

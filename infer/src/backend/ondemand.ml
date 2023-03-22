@@ -63,21 +63,18 @@ let () =
 
 
 type global_state =
-  { current_procname: Procname.t option
-  ; taskbar_nesting: int
+  { taskbar_nesting: int
   ; checker_timer_state: Timer.state
   ; analysis_global_state: AnalysisGlobalState.t }
 
 let save_global_state () =
-  { current_procname= Dependencies.get_current_proc ()
-  ; taskbar_nesting= !nesting
+  { taskbar_nesting= !nesting
   ; checker_timer_state= Timer.suspend ()
   ; analysis_global_state= AnalysisGlobalState.save () }
 
 
 let restore_global_state st =
   AnalysisGlobalState.restore st.analysis_global_state ;
-  Dependencies.set_current_proc st.current_procname ;
   nesting := st.taskbar_nesting ;
   Timer.resume st.checker_timer_state
 
@@ -114,7 +111,6 @@ let analyze exe_env callee_summary callee_pdesc =
 
 let run_proc_analysis exe_env ?caller_pname callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
-  Dependencies.set_current_proc (Some callee_pname) ;
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
   let log_elapsed_time =
     let start_time = Mtime_clock.counter () in

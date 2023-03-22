@@ -9,9 +9,12 @@ module L = Logging
 
 let currently_under_analysis : Procname.t option ref = ref None
 
-let set_current_proc pname = currently_under_analysis := pname
+let () =
+  AnalysisGlobalState.register_with_proc_name
+    ~save:(fun () -> !currently_under_analysis)
+    ~restore:(fun proc_opt -> currently_under_analysis := proc_opt)
+    ~init:(fun proc_name -> currently_under_analysis := Some proc_name)
 
-let get_current_proc () = !currently_under_analysis
 
 type partial = Procname.HashSet.t
 
