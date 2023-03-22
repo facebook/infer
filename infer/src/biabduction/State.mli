@@ -10,9 +10,6 @@ open! IStd
 
 (** State of symbolic execution *)
 
-(** Internal state *)
-type t
-
 val add_diverging_states : Paths.PathSet.t -> unit
 (** Add diverging states *)
 
@@ -68,12 +65,6 @@ val reset : unit -> unit
 
 val reset_diverging_states_node : unit -> unit
 (** Reset the diverging states information for the node *)
-
-val restore_state : t -> unit
-(** Restore the old state. *)
-
-val save_state : unit -> t
-(** Return the old state, and revert the current state to the initial one. *)
 
 val set_path : Paths.Path.t -> PredSymb.path_pos option -> unit
 (** Get last path seen in symbolic execution *)

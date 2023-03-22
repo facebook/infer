@@ -46,15 +46,7 @@ let initial () =
 (** Global state *)
 let gs = ref (initial ())
 
-(** Return the old state, and revert the current state to the initial one. *)
-let save_state () =
-  let old = !gs in
-  gs := initial () ;
-  old
-
-
-(** Restore the old state. *)
-let restore_state st = gs := st
+let () = AnalysisGlobalState.register_ref gs ~init:initial
 
 let reset_diverging_states_node () = !gs.diverging_states_node <- Paths.PathSet.empty
 
