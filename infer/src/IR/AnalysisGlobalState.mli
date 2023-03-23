@@ -30,9 +30,8 @@ val register : init:(unit -> unit) -> save:(unit -> 'a) -> restore:('a -> unit) 
       need to go analyze a dependency
     - [init] is called when the analysis of a procedure starts *)
 
-val register_with_proc_name :
-  init:(Procname.t -> unit) -> save:(unit -> 'a) -> restore:('a -> unit) -> unit
-(** same as [register] except [init] takes a [Procname.t] *)
-
 val register_ref : init:(unit -> 'a) -> 'a ref -> unit
-(** simple case of a value stored in a reference; [init] sets the ref to [init ()] *)
+(** special case of a value stored in a reference; [init] sets the ref to [init ()] *)
+
+val register_ref_with_proc_name : init:(Procname.t -> 'a) -> 'a ref -> unit
+(** same as [register_ref] but [init] takes a proc name *)

@@ -25,12 +25,16 @@ let register ~init ~save ~restore =
   register_with_proc_name ~save ~restore ~init:(fun _proc_name -> init ())
 
 
-let register_ref ~init ref_ =
+let register_ref_with_proc_name ~init ref_ =
   stores :=
     StateManager
-      {save= (fun () -> !ref_); restore= (fun x -> ref_ := x); init= (fun _ -> ref_ := init ())}
+      { save= (fun () -> !ref_)
+      ; restore= (fun x -> ref_ := x)
+      ; init= (fun proc_name -> ref_ := init proc_name) }
     :: !stores
 
+
+let register_ref ~init ref_ = register_ref_with_proc_name ref_ ~init:(fun _proc_name -> init ())
 
 (** intermediate datatype to hold saved pieces of state in a heterogenously-typed list, see [save] *)
 type saved_state = Saved : 'a * ('a -> unit) -> saved_state

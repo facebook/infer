@@ -11,12 +11,24 @@ open PulseBasicInterface
 
 (** Stacks: map addresses of variables to values and histoy. *)
 
+let current_proc_name = ref Procname.Linters_dummy_method
+
+let () = AnalysisGlobalState.register_ref_with_proc_name current_proc_name ~init:Fn.id
+
 module VarAddress = struct
   include Var
 
   let pp f var =
     let pp_ampersand f = function ProgramVar _ -> F.pp_print_string f "&" | LogicalVar _ -> () in
-    F.fprintf f "%a%a" pp_ampersand var Var.pp var
+    let pp_proc_name f var =
+      let open IOption.Let_syntax in
+      match Var.get_pvar var >>= Pvar.get_declaring_function with
+      | Some pvar_proc_name when not (Procname.equal !current_proc_name pvar_proc_name) ->
+          F.fprintf f "|%a" Procname.pp pvar_proc_name
+      | _ ->
+          ()
+    in
+    F.fprintf f "%a%a%a" pp_ampersand var Var.pp var pp_proc_name var
 end
 
 module AddrHistPair = struct
