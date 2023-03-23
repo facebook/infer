@@ -706,6 +706,10 @@ module Debug = struct
 
 
   let dropped_disjuncts_count = ref 0
+
+  let () = AnalysisGlobalState.register_ref dropped_disjuncts_count ~init:(fun () -> 0)
+
+  let get_dropped_disjuncts_count () = !dropped_disjuncts_count
 end
 
 (** Returns a list of transitions whose pattern matches (e.g., event type matches). Each match

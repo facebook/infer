@@ -60,7 +60,7 @@ val report_errors : Procdesc.t -> Errlog.t -> pulse_is_manifest:bool -> state ->
 val pp_state : Format.formatter -> state -> unit
 
 module Debug : sig
-  val dropped_disjuncts_count : int ref
+  val get_dropped_disjuncts_count : unit -> int
 end
 
 (* TODO: Whenever Pulse drops variables (e.g., when extracting summaries) we need to also update

@@ -1075,8 +1075,7 @@ let log_summary_count proc_name summary =
 
 
 let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
-  if should_analyze proc_desc then (
-    PulseTopl.Debug.dropped_disjuncts_count := 0 ;
+  if should_analyze proc_desc then
     let proc_name = Procdesc.get_proc_name proc_desc in
     let proc_attrs = Procdesc.get_attributes proc_desc in
     let initial =
@@ -1132,7 +1131,7 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
         ExecutionDomain.summary list option =
       if Config.trace_topl then
         L.debug Analysis Quiet "ToplTrace: dropped %d disjuncts in %a@\n"
-          !PulseTopl.Debug.dropped_disjuncts_count
+          (PulseTopl.Debug.get_dropped_disjuncts_count ())
           Procname.pp_unique_id
           (Procdesc.get_proc_name proc_desc) ;
       let summary_count = List.length summary in
@@ -1160,7 +1159,7 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data
           process_postconditions exit_node exit_summaries_opt ~convert_normal_to_exceptional:false
         in
         let exit_esink_summaries = summaries_for_exit @ summaries_at_exn_sink in
-        report_on_and_return_summaries exit_esink_summaries ) )
+        report_on_and_return_summaries exit_esink_summaries )
   else None
 
 
