@@ -21,12 +21,12 @@ let () = AnalysisGlobalState.register_ref nesting ~init:(fun () -> -1)
 let max_nesting_to_print = 8
 
 let is_active, add_active, remove_active, clear_actives =
-  let currently_analyzed = ref Procname.Set.empty in
-  let is_active proc_name = Procname.Set.mem proc_name !currently_analyzed
-  and add_active proc_name = currently_analyzed := Procname.Set.add proc_name !currently_analyzed
-  and remove_active proc_name =
-    currently_analyzed := Procname.Set.remove proc_name !currently_analyzed
-  and clear_actives () = currently_analyzed := Procname.Set.empty in
+  let open Procname.HashSet in
+  let currently_analyzed = create 0 in
+  let is_active proc_name = mem currently_analyzed proc_name in
+  let add_active proc_name = add proc_name currently_analyzed in
+  let remove_active proc_name = remove proc_name currently_analyzed in
+  let clear_actives () = clear currently_analyzed in
   (is_active, add_active, remove_active, clear_actives)
 
 

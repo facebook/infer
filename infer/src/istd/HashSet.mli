@@ -31,6 +31,10 @@ module type S = sig
   val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
 
   val length : t -> int
+
+  val mem : t -> elt -> bool
+
+  val clear : t -> unit
 end
 
 module Make (Key : Caml.Hashtbl.HashedType) : S with type elt = Key.t

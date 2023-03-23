@@ -30,6 +30,10 @@ module type S = sig
   val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
 
   val length : t -> int
+
+  val mem : t -> elt -> bool
+
+  val clear : t -> unit
 end
 
 module Make (Key : Hashtbl.HashedType) : S with type elt = Key.t = struct
@@ -60,4 +64,8 @@ module Make (Key : Hashtbl.HashedType) : S with type elt = Key.t = struct
   let fold f = fold (fun x _ acc -> f x acc)
 
   let length = length
+
+  let mem = mem
+
+  let clear = clear
 end
