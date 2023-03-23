@@ -39,12 +39,12 @@ let setup () =
           (* In Buck mode, delete infer-out directories inside buck-out to start fresh and to
              avoid getting errors because some of their contents is missing (removed by
              [Driver.clean_results_dir ()]). *)
-          (buck && Option.exists buck_mode ~f:BuckMode.is_clang) || genrule_mode)
+          (buck && Option.exists buck_mode ~f:BuckMode.is_clang) || genrule_mode )
         || not
              ( Driver.is_analyze_mode driver_mode
              || Config.(
                   continue_capture || infer_is_clang || infer_is_javac || reactive_mode
-                  || incremental_analysis) )
+                  || incremental_analysis ) )
       then ResultsDir.remove_results_dir () ;
       ResultsDir.create_results_dir () ;
       if
@@ -74,7 +74,7 @@ let setup () =
 
 let print_active_checkers () =
   ( if Config.print_active_checkers && Config.is_originator then L.result ~style:[]
-  else L.environment_info )
+    else L.environment_info )
     "Active checkers: %a@."
     (Pp.seq ~sep:", " RegisterCheckers.pp_checker)
     (RegisterCheckers.get_active_checkers ())

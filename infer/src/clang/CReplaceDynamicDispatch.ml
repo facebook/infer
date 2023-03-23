@@ -56,8 +56,8 @@ let get_dispatch_call_name context exp =
       let name = Pvar.get_simplified_name pvar in
       Some
         ( if String.is_prefix name ~prefix:"mockptr_" then
-          String.drop_prefix name (String.length "mockptr_")
-        else name )
+            String.drop_prefix name (String.length "mockptr_")
+          else name )
   | Exp.Const (Cfun callee) ->
       Some (Procname.get_method callee)
   | _ ->

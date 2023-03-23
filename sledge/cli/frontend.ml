@@ -16,8 +16,8 @@ let pp_llvalue fs t = Format.pp_print_string fs (Llvm.string_of_llvalue t)
 
 let pp_llblock fs t =
   Format.pp_print_string fs (Llvm.string_of_llvalue (Llvm.value_of_block t))
-
 ;;
+
 Exp.demangle :=
   let open Ctypes in
   let cxa_demangle =
@@ -755,33 +755,33 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t
               arg_i
           in
           ( if i = 1 then
-            let pre_0, base = xlate_rand 0 in
-            let lltyp = Llvm.type_of (Llvm.operand llv 0) in
-            let llelt =
+              let pre_0, base = xlate_rand 0 in
+              let lltyp = Llvm.type_of (Llvm.operand llv 0) in
+              let llelt =
+                match Llvm.classify_type lltyp with
+                | Pointer -> Llvm.element_type lltyp
+                | _ -> fail "xlate_opcode: %i %a" i pp_llvalue llv ()
+              in
+              (* translate [gep t*, iN M] as [gep [1 x t]*, iN M] *)
+              ((pre_0 @ pre_i, ptr_idx x ~ptr:base ~idx ~llelt), llelt)
+            else
+              let (pre_i1, ptr), lltyp = xlate_indices (i - 1) in
               match Llvm.classify_type lltyp with
-              | Pointer -> Llvm.element_type lltyp
-              | _ -> fail "xlate_opcode: %i %a" i pp_llvalue llv ()
-            in
-            (* translate [gep t*, iN M] as [gep [1 x t]*, iN M] *)
-            ((pre_0 @ pre_i, ptr_idx x ~ptr:base ~idx ~llelt), llelt)
-          else
-            let (pre_i1, ptr), lltyp = xlate_indices (i - 1) in
-            match Llvm.classify_type lltyp with
-            | Array | Vector ->
-                let llelt = Llvm.element_type lltyp in
-                ((pre_i1 @ pre_i, ptr_idx x ~ptr ~idx ~llelt), llelt)
-            | Struct ->
-                let fld =
-                  match
-                    Option.bind ~f:Int64.unsigned_to_int
-                      (Llvm.int64_of_const (Llvm.operand llv i))
-                  with
-                  | Some n -> n
-                  | None -> fail "xlate_opcode: %i %a" i pp_llvalue llv ()
-                in
-                let llelt = (Llvm.struct_element_types lltyp).(fld) in
-                ((pre_i1 @ pre_i, ptr_fld x ~ptr ~fld ~lltyp), llelt)
-            | _ -> fail "xlate_opcode: %i %a" i pp_llvalue llv () )
+              | Array | Vector ->
+                  let llelt = Llvm.element_type lltyp in
+                  ((pre_i1 @ pre_i, ptr_idx x ~ptr ~idx ~llelt), llelt)
+              | Struct ->
+                  let fld =
+                    match
+                      Option.bind ~f:Int64.unsigned_to_int
+                        (Llvm.int64_of_const (Llvm.operand llv i))
+                    with
+                    | Some n -> n
+                    | None -> fail "xlate_opcode: %i %a" i pp_llvalue llv ()
+                  in
+                  let llelt = (Llvm.struct_element_types lltyp).(fld) in
+                  ((pre_i1 @ pre_i, ptr_fld x ~ptr ~fld ~lltyp), llelt)
+              | _ -> fail "xlate_opcode: %i %a" i pp_llvalue llv () )
           |>
           [%Dbg.retn fun {pf} (pre_exp, llt) ->
             pf "%a %a" pp_prefix_exp pre_exp pp_lltype llt]
@@ -878,8 +878,7 @@ let landingpad_typs : x -> Llvm.llvalue -> Typ.t * Typ.t * Llvm.lltype =
   check_exception_typ x instr (Llvm.type_of instr) ;
   let i32 = i32 x in
   let llcontext =
-    Llvm.(
-      module_context (global_parent (block_parent (instr_parent instr))))
+    Llvm.(module_context (global_parent (block_parent (instr_parent instr))))
   in
   let llpi8 = Llvm.(pointer_type (integer_type llcontext 8)) in
   let ti = Llvm.(named_struct_type llcontext "class.std::type_info") in

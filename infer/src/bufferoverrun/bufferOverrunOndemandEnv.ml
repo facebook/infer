@@ -69,8 +69,8 @@ let mk pdesc =
             Option.bind (typ_of_param_path x)
               ~f:
                 ( if Config.bo_assume_void then fun t ->
-                  Some (Struct.fld_typ ~lookup ~default:StdTyp.void fn t)
-                else Struct.fld_typ_opt ~lookup fn )
+                    Some (Struct.fld_typ ~lookup ~default:StdTyp.void fn t)
+                  else Struct.fld_typ_opt ~lookup fn )
         | some_typ ->
             some_typ )
       | BoField.Prim (SPath.Callsite {ret_typ}) ->

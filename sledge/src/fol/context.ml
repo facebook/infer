@@ -94,9 +94,9 @@ end = struct
     [%Dbg.call fun {pf} -> pf "@ %a@ %a" pp r pp s]
     ;
     ( if is_empty s then r
-    else
-      let r' = Trm.Map.map_endo ~f:(norm s) r in
-      Trm.Map.union_absent r' s )
+      else
+        let r' = Trm.Map.map_endo ~f:(norm s) r in
+        Trm.Map.union_absent r' s )
     |>
     [%Dbg.retn fun {pf} r' ->
       pf "%a" pp_diff (r, r') ;

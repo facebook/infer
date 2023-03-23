@@ -30,8 +30,8 @@ let do_source_file program tenv source_basename package_opt source_file =
   init_global_state source_file ;
   let cfg = JFrontend.compute_source_icfg program tenv source_basename package_opt source_file in
   ( if Config.dump_textual then
-    let filename = Filename.chop_extension (SourceFile.to_abs_path source_file) ^ ".sil" in
-    TextualSil.from_java ~filename tenv cfg ) ;
+      let filename = Filename.chop_extension (SourceFile.to_abs_path source_file) ^ ".sil" in
+      TextualSil.from_java ~filename tenv cfg ) ;
   store_icfg source_file cfg
 
 

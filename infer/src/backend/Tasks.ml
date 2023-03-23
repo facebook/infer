@@ -19,7 +19,7 @@ module Runner = struct
 
   let create ~jobs ~child_prologue ~f ~child_epilogue ~tasks =
     PerfEvent.(
-      log (fun logger -> log_begin_event logger ~categories:["sys"] ~name:"fork prepare" ())) ;
+      log (fun logger -> log_begin_event logger ~categories:["sys"] ~name:"fork prepare" ()) ) ;
     Database.db_close () ;
     let pool =
       ProcessPool.create ~jobs ~f ~child_epilogue ~tasks:(with_new_db_connection ~f:tasks)

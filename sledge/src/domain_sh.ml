@@ -231,12 +231,12 @@ let call ~summaries tid ?(child = tid) ~globals ~actuals ~areturn ~formals
   (* simplify *)
   let entry = simplify entry in
   ( if not summaries then (entry, {areturn; unshadow; frame= Xsh.emp})
-  else
-    let q, frame =
-      localize_entry child globals actuals formals freturn locals shadow q
-        entry
-    in
-    (q, {areturn; unshadow; frame}) )
+    else
+      let q, frame =
+        localize_entry child globals actuals formals freturn locals shadow q
+          entry
+      in
+      (q, {areturn; unshadow; frame}) )
   |>
   [%Dbg.retn fun {pf} (entry, {unshadow; frame}) ->
     pf "@[<v>unshadow: %a@ frame: %a@ entry: %a@]" Var.Subst.pp unshadow pp

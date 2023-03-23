@@ -44,13 +44,13 @@ let cost_tests_jsonbug_compare (cost1 : Jsoncost_t.item) (cost2 : Jsoncost_t.ite
     ( cost1.loc.file
     , cost1.procedure_id
     , ( if Config.cost_tests_only_autoreleasepool then cost1.autoreleasepool_size.hum.hum_polynomial
-      else cost1.exec_cost.hum.hum_polynomial )
+        else cost1.exec_cost.hum.hum_polynomial )
     , cost1.hash
     , cost1.is_on_ui_thread )
     ( cost2.loc.file
     , cost2.procedure_id
     , ( if Config.cost_tests_only_autoreleasepool then cost2.autoreleasepool_size.hum.hum_polynomial
-      else cost2.exec_cost.hum.hum_polynomial )
+        else cost2.exec_cost.hum.hum_polynomial )
     , cost2.hash
     , cost2.is_on_ui_thread )
 

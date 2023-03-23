@@ -140,16 +140,16 @@ struct
 
     let join _Cons zero split_pos_neg p q =
       ( if equal p zero || equal q zero then zero
-      else
-        let pp, pn = split_pos_neg p in
-        if Fmls.is_empty pp && Fmls.is_empty pn then q
         else
-          let qp, qn = split_pos_neg q in
-          if Fmls.is_empty qp && Fmls.is_empty qn then p
+          let pp, pn = split_pos_neg p in
+          if Fmls.is_empty pp && Fmls.is_empty pn then q
           else
-            let pos = Fmls.union pp qp in
-            let neg = Fmls.union pn qn in
-            _Cons ~pos ~neg )
+            let qp, qn = split_pos_neg q in
+            if Fmls.is_empty qp && Fmls.is_empty qn then p
+            else
+              let pos = Fmls.union pp qp in
+              let neg = Fmls.union pn qn in
+              _Cons ~pos ~neg )
       |> check invariant
 
     let and_ p q =

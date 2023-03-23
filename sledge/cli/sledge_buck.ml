@@ -184,9 +184,7 @@ module Command = Core.Command
 open Command.Let_syntax
 
 let ( |**> ) = Command.Param.map2 ~f:(fun a f b -> f b a)
-
-let abs_path_arg =
-  Command.Param.(Arg_type.map string ~f:(make_absolute cwd))
+let abs_path_arg = Command.Param.(Arg_type.map string ~f:(make_absolute cwd))
 
 let main ~(command : Report.status Command.basic_command) =
   let bitcode_inputs =

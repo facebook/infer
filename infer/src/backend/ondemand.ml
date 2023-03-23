@@ -193,7 +193,7 @@ let run_proc_analysis exe_env ?caller_pname callee_pdesc =
         let callee_pname = Procdesc.get_proc_name callee_pdesc in
         log_begin_event logger ~name:"ondemand" ~categories:["backend"]
           ~arguments:[("proc", `String (Procname.to_string callee_pname))]
-          () )) ;
+          () ) ) ;
   let summary = run_proc_analysis exe_env ?caller_pname callee_pdesc in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   summary

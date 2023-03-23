@@ -2425,7 +2425,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let[@warning "-partial-match"] [body] = default_stmt_list in
     let body_trans_result = instruction trans_state body in
     (let open SwitchCase in
-    add {condition= Default; stmt_info; root_nodes= body_trans_result.control.root_nodes}) ;
+     add {condition= Default; stmt_info; root_nodes= body_trans_result.control.root_nodes} ) ;
     body_trans_result
 
 
@@ -3960,8 +3960,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | `LCK_ByRef (* explicit with [&x] or implicit with [&] *)
         | `LCK_This (* explicit with [this] or implicit with [&] *)
         | `LCK_VLAType
-        (* capture a variable-length array by reference. we probably don't handle
-           this correctly elsewhere, but it's definitely not captured by value! *) ->
+          (* capture a variable-length array by reference. we probably don't handle
+             this correctly elsewhere, but it's definitely not captured by value! *) ->
             true
         | `LCK_ByCopy (* explicit with [x] or implicit with [=] *) ->
             (* [=] captures this by reference and everything else by value *)
@@ -5311,8 +5311,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           ( { root_nodes= control_tail_rev.root_nodes
             ; leaf_nodes=
                 ( if not (List.is_empty res_trans_s.control.leaf_nodes) then
-                  res_trans_s.control.leaf_nodes
-                else control_tail_rev.leaf_nodes )
+                    res_trans_s.control.leaf_nodes
+                  else control_tail_rev.leaf_nodes )
             ; instrs= List.rev_append res_trans_s.control.instrs control_tail_rev.instrs
             ; initd_exps= List.rev_append res_trans_s.control.initd_exps control_tail_rev.initd_exps
             ; cxx_temporary_markers_set=

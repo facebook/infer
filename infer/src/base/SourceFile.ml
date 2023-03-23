@@ -271,7 +271,7 @@ let from_rel_path ?(warn_on_error = true) fname =
         RelativeProjectRootAndWorkspace {workspace_rel_root= new_root; rel_path}
   in
   ( if warn_on_error then
-    try Utils.realpath ~warn_on_error (to_abs_path file) |> ignore with Unix.Unix_error _ -> () ) ;
+      try Utils.realpath ~warn_on_error (to_abs_path file) |> ignore with Unix.Unix_error _ -> () ) ;
   file
 
 

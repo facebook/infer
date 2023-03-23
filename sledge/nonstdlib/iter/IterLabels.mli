@@ -897,7 +897,7 @@ val to_string : ?sep:string -> ('a -> string) -> 'a t -> string
 
     {[
       Iterator.(
-        IO.lines_of "a" |> filter (fun l -> l <> "") |> IO.write_lines "b")
+        IO.lines_of "a" |> filter (fun l -> l <> "") |> IO.write_lines "b" )
     ]}
 
     By chunks of [4096] bytes:

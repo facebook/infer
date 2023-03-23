@@ -475,20 +475,21 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param ?
                   Option.value ~default:acc
                     (PulseResult.ok
                        (let open PulseResult.Let_syntax in
-                       let* astate, ret_value =
-                         PulseOperations.eval_access path Read location value
-                           (FieldAccess (Fieldname.make typ_name fieldname))
-                           astate
-                       in
-                       let+ astate, ret_value =
-                         PulseOperations.eval_access path Read location ret_value Dereference astate
-                       in
-                       L.d_printfln "match! tainting field %s with type %a" fieldname
-                         (Typ.pp_full Pp.text) field_typ ;
-                       ( astate
-                       , ( Taint.{taint with origin= Field {name= fieldname; origin= taint.origin}}
-                         , (ret_value, field_typ, None) )
-                         :: tainted )) )
+                        let* astate, ret_value =
+                          PulseOperations.eval_access path Read location value
+                            (FieldAccess (Fieldname.make typ_name fieldname))
+                            astate
+                        in
+                        let+ astate, ret_value =
+                          PulseOperations.eval_access path Read location ret_value Dereference
+                            astate
+                        in
+                        L.d_printfln "match! tainting field %s with type %a" fieldname
+                          (Typ.pp_full Pp.text) field_typ ;
+                        ( astate
+                        , ( Taint.{taint with origin= Field {name= fieldname; origin= taint.origin}}
+                          , (ret_value, field_typ, None) )
+                          :: tainted ) ) )
             in
             List.fold fields ~init:acc ~f:(fun ((astate, tainted) as acc) (fieldname, origin) ->
                 let astate', tainted' = match_target acc origin in

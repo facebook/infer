@@ -108,7 +108,7 @@ let is_synthetic_err = function
         | AssigningToField fieldname ->
             Fieldname.is_java_synthetic fieldname
         | _ ->
-            false) )
+            false ) )
   | _ ->
       false
 

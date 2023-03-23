@@ -105,7 +105,7 @@ let make properties =
       let prefix_pattern =
         ToplAst.(
           function
-          | ProcedureNamePattern pname -> ProcedureNamePattern (prefix_pname pname) | p -> p)
+          | ProcedureNamePattern pname -> ProcedureNamePattern (prefix_pname pname) | p -> p )
       in
       let prefix_label label = ToplAst.{label with pattern= prefix_pattern label.pattern} in
       let f {ToplAst.source; target; label} =

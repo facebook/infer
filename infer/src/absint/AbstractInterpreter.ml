@@ -346,8 +346,8 @@ struct
             in
             L.d_printfln "@]@\n" ;
             ( if Config.write_html then
-              let n = List.length disjuncts' in
-              L.d_printfln "@[Got %d disjunct%s back@]" n (if Int.equal n 1 then "" else "s") ) ;
+                let n = List.length disjuncts' in
+                L.d_printfln "@[Got %d disjunct%s back@]" n (if Int.equal n 1 then "" else "s") ) ;
             let post_disj', n = Domain.join_up_to ~limit ~into:post disjuncts' in
             ((post_disj', non_disj' :: non_disj_astates), n) ) )
     in

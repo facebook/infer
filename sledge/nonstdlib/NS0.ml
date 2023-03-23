@@ -158,9 +158,8 @@ module Invariant = struct
     {pos_fname: string; pos_lnum: int; pos_bol: int; pos_cnum: int}
   [@@deriving sexp_of]
 
-  exception Violation of exn * position * Sexp.t
+  exception Violation of exn * position * Sexp.t ;;
 
-  ;;
   register_sexp_of_exn
     (Violation (Not_found, Lexing.dummy_pos, Sexp.List []))
     (function
@@ -190,9 +189,8 @@ end
 
 (** Failures *)
 
-exception Replay of exn * Sexp.t
+exception Replay of exn * Sexp.t ;;
 
-;;
 register_sexp_of_exn
   (Replay (Not_found, Sexp.List []))
   (function

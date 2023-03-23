@@ -348,8 +348,8 @@ module Basic = struct
 
   let set_uninitialized tenv path size_exp_opt location ret_value astate =
     (let open IOption.Let_syntax in
-    let+ obj_typ = size_exp_opt >>= get_malloced_object_type in
-    AbductiveDomain.set_uninitialized tenv path (`Malloc ret_value) obj_typ location astate)
+     let+ obj_typ = size_exp_opt >>= get_malloced_object_type in
+     AbductiveDomain.set_uninitialized tenv path (`Malloc ret_value) obj_typ location astate )
     |> Option.value ~default:astate
 
 

@@ -160,8 +160,8 @@ struct
 
     let mulc coeff poly =
       ( if Q.equal Q.one coeff then poly
-      else if Q.equal Q.zero coeff then zero
-      else Sum.map_counts ~f:(Q.mul coeff) poly )
+        else if Q.equal Q.zero coeff then zero
+        else Sum.map_counts ~f:(Q.mul coeff) poly )
       |> check invariant
 
     (* transform *)

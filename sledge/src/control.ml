@@ -182,10 +182,10 @@ module RandomQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
         ; recent_weight= elt_weight
         ; frontier=
             ( if RAL.is_empty q.recent then q.frontier
-            else
-              M.update elt_weight q.frontier ~f:(function
-                | Some data -> Some (RAL.append q.recent data)
-                | None -> Some q.recent ) )
+              else
+                M.update elt_weight q.frontier ~f:(function
+                  | Some data -> Some (RAL.append q.recent data)
+                  | None -> Some q.recent ) )
         ; frontier_weight=
             q.frontier_weight
             +. Float.of_int (RAL.length q.recent)
@@ -226,7 +226,7 @@ module RandomQueue (Elt : Elt) : QueueS with type elt = Elt.t = struct
                    ; recent_weight= key
                    ; frontier=
                        ( if RAL.is_empty data then M.remove key q.frontier
-                       else M.add ~key ~data q.frontier )
+                         else M.add ~key ~data q.frontier )
                    ; frontier_weight= q.frontier_weight -. w
                    ; last= Add_or_pop_frontier } ) ) )
         ~finish:(fun _ ->
@@ -918,15 +918,15 @@ struct
       if goal_progressed then History.progress_goal history else history
     in
     ( if goal_progressed && Goal.reached goal then
-      let history = History.extend ip [history] in
-      let dp_witness fs =
-        History.dump ~show_root:true history fs ;
-        Format.fprintf fs "@\nSymbolic state:@ %a" D.pp state
-      in
-      Report.reached_goal
-        ~dp_goal:(fun fs -> Goal.pp fs goal)
-        ~dp_valid:(History.validate history)
-        ~dp_witness ) ;
+        let history = History.extend ip [history] in
+        let dp_witness fs =
+          History.dump ~show_root:true history fs ;
+          Format.fprintf fs "@\nSymbolic state:@ %a" D.pp state
+        in
+        Report.reached_goal
+          ~dp_goal:(fun fs -> Goal.pp fs goal)
+          ~dp_valid:(History.validate history)
+          ~dp_witness ) ;
     let dnf_states =
       if Config.function_summaries then D.dnf state
       else Iter.singleton state
@@ -979,15 +979,15 @@ struct
       if goal_progressed then History.progress_goal history else history
     in
     ( if goal_progressed && Goal.reached goal then
-      let history = History.extend ip [history] in
-      let dp_witness fs =
-        History.dump history fs ;
-        Format.fprintf fs "@\nSymbolic state:@ %a" D.pp state
-      in
-      Report.reached_goal
-        ~dp_goal:(fun fs -> Goal.pp fs goal)
-        ~dp_valid:(History.validate history)
-        ~dp_witness ) ;
+        let history = History.extend ip [history] in
+        let dp_witness fs =
+          History.dump history fs ;
+          Format.fprintf fs "@\nSymbolic state:@ %a" D.pp state
+        in
+        Report.reached_goal
+          ~dp_goal:(fun fs -> Goal.pp fs goal)
+          ~dp_valid:(History.validate history)
+          ~dp_witness ) ;
     let summarize post_state =
       if not Config.function_summaries then post_state
       else

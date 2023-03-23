@@ -109,12 +109,12 @@ let is_future_get =
       { default with
         classname= "java.util.concurrent.Future"
       ; methods= ["get"]
-      ; actuals_pred= no_args_or_excessive_timeout_and_timeunit })
+      ; actuals_pred= no_args_or_excessive_timeout_and_timeunit } )
 
 
 let is_future_is_done =
   MethodMatcher.(
-    of_record {default with classname= "java.util.concurrent.Future"; methods= ["isDone"]})
+    of_record {default with classname= "java.util.concurrent.Future"; methods= ["isDone"]} )
 
 
 let may_block =
@@ -132,7 +132,7 @@ let may_block =
       ; { default with
           classname= "android.os.AsyncTask"
         ; methods= ["get"]
-        ; actuals_pred= no_args_or_excessive_timeout_and_timeunit } ])
+        ; actuals_pred= no_args_or_excessive_timeout_and_timeunit } ] )
 
 
 let may_do_ipc =
@@ -157,14 +157,14 @@ let may_do_ipc =
           classname= "android.content.Context"
         ; methods= ["checkPermission"; "checkSelfPermission"] }
       ; {default with classname= "android.net.wifi.WifiManager"; methods= ["getConnectionInfo"]}
-      ; {default with classname= "android.view.Display"; methods= ["getRealSize"]} ])
+      ; {default with classname= "android.view.Display"; methods= ["getRealSize"]} ] )
 
 
 let is_regex_op =
   MethodMatcher.(
     of_records
       [ (* Potentially costly regex operations, after https://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html *)
-        {default with classname= "java.util.regex.Pattern"; methods= ["compile"; "matches"]} ])
+        {default with classname= "java.util.regex.Pattern"; methods= ["compile"; "matches"]} ] )
 
 
 let is_monitor_wait =
@@ -173,7 +173,7 @@ let is_monitor_wait =
       { default with
         classname= "java.lang.Object"
       ; methods= ["wait"]
-      ; actuals_pred= no_args_or_excessive_millis_and_nanos })
+      ; actuals_pred= no_args_or_excessive_millis_and_nanos } )
 
 
 (* selection is a bit arbitrary as some would be generated anyway if not here; no harm though *)
@@ -327,7 +327,7 @@ let get_run_method_from_runnable tenv runnable =
           List.is_empty (get_parameters pname)
           &&
           let methodname = get_method pname in
-          List.exists run_like_methods ~f:(String.equal methodname))
+          List.exists run_like_methods ~f:(String.equal methodname) )
     | _ ->
         false
   in

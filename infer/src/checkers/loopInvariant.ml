@@ -221,7 +221,7 @@ let get_invalidated_vars_in_loop tenv loop_head ~is_pure_by_default ~get_callee_
                          acc
                        else
                          get_vars_to_invalidate node loop_head args modified_params
-                           (InvalidatedVars.add (Var.of_id id) acc)) )
+                           (InvalidatedVars.add (Var.of_id id) acc) ) )
              | _ ->
                  acc ) )
     loop_nodes InvalidatedVars.empty

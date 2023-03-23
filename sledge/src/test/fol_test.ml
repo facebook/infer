@@ -57,7 +57,6 @@ let%test_module _ =
     (** tests *)
 
     let f1 = of_eqs [(i 0, i 1)]
-
     let%test _ = is_unsat f1
 
     let%expect_test _ =
@@ -65,9 +64,7 @@ let%test_module _ =
       [%expect {| { sat= false; rep= []; cls= []; use= [] } |}]
 
     let%test _ = is_unsat (add_eq (i 1) (i 1) f1)
-
     let f2 = of_eqs [(x, x + i 1)]
-
     let%test _ = is_unsat f2
 
     let%expect_test _ =
@@ -75,7 +72,6 @@ let%test_module _ =
       [%expect {| { sat= false; rep= []; cls= []; use= [] } |}]
 
     let f3 = of_eqs [(x + i 0, x + i 1)]
-
     let%test _ = is_unsat f3
 
     let%expect_test _ =
@@ -83,7 +79,6 @@ let%test_module _ =
       [%expect {| { sat= false; rep= []; cls= []; use= [] } |}]
 
     let f4 = of_eqs [(x, y); (x + i 0, y + i 1)]
-
     let%test _ = is_unsat f4
 
     let%expect_test _ =
@@ -93,15 +88,11 @@ let%test_module _ =
           { sat= false; rep= [[%y_6 ↦ %x_5]]; cls= [[%x_5 ↦ {%y_6}]]; use= [] } |}]
 
     let t1 = of_eqs [(i 1, i 1)]
-
     let%test _ = is_empty t1
-
     let t2 = of_eqs [(x, x)]
-
     let%test _ = is_empty t2
     let%test _ = is_unsat (union f3 t2)
     let%test _ = is_unsat (union t2 f3)
-
     let r0 = empty
 
     let%expect_test _ =
@@ -114,7 +105,6 @@ let%test_module _ =
 
     let%test _ = difference r0 (f x) (f x) |> Poly.equal (Some (Z.of_int 0))
     let%test _ = difference r0 (i 4) (i 3) |> Poly.equal (Some (Z.of_int 1))
-
     let r1 = of_eqs [(x, y)]
 
     let%expect_test _ =
@@ -128,7 +118,6 @@ let%test_module _ =
       { sat= true; rep= [[%y_6 ↦ %x_5]]; cls= [[%x_5 ↦ {%y_6}]]; use= [] } |}]
 
     let%test _ = implies_eq r1 x y
-
     let r2 = of_eqs [(x, y); (f x, y); (f y, z)]
 
     let%expect_test _ =
@@ -209,7 +198,6 @@ let%test_module _ =
     let%test _ = implies_eq r3 t z
     let%test _ = implies_eq r3 x z
     let%test _ = implies_eq (union r2 r3) x z
-
     let r4 = of_eqs [(w + i 2, x - i 3); (x - i 5, y + i 7); (y, z - i 4)]
 
     let%expect_test _ =
@@ -230,11 +218,8 @@ let%test_module _ =
 
     let%test _ = implies_eq r4 x (w + i 5)
     let%test _ = difference r4 x w |> Poly.equal (Some (Z.of_int 5))
-
     let r5 = of_eqs [(x, y); (g w x, y); (g w y, f z)]
-
     let%test _ = Var.Set.equal (fv r5) (Var.Set.of_list [w_; x_; y_; z_])
-
     let r6 = of_eqs [(x, i 1); (i 1, y)]
 
     let%expect_test _ =
@@ -250,7 +235,6 @@ let%test_module _ =
         use= [] } |}]
 
     let%test _ = implies_eq r6 x y
-
     let r7 = of_eqs [(v, x); (w, z); (y, z)]
 
     let%expect_test _ =
@@ -302,7 +286,6 @@ let%test_module _ =
         use= [[%z_7 ↦ (3×%y_6 + 13×%z_7 - 42), 13×%z_7]] } |}]
 
     let%test _ = implies_eq r8 y (i 14)
-
     let r9 = of_eqs [(x, z - i 16)]
 
     let%expect_test _ =
@@ -321,7 +304,6 @@ let%test_module _ =
         use= [[%z_7 ↦ (%z_7 - 16)]] } |}]
 
     let%test _ = difference r9 z (x + i 8) |> Poly.equal (Some (Z.of_int 8))
-
     let r10 = of_eqs [(i 16, z - x)]
 
     let%expect_test _ =
@@ -381,7 +363,6 @@ let%test_module _ =
           { sat= true; rep= [[%z_7 ↦ %y_6]]; cls= [[%y_6 ↦ {%z_7}]]; use= [] } |}]
 
     let%test _ = not (is_unsat r13) (* incomplete *)
-
     let a = Formula.inject (Formula.dq x (i 0))
     let r14 = of_eqs [(a, a); (x, i 1)]
 
@@ -392,7 +373,6 @@ let%test_module _ =
           { sat= true; rep= [[%x_5 ↦ 1]]; cls= [[1 ↦ {%x_5}]]; use= [] } |}]
 
     let%test _ = implies_eq r14 a (Formula.inject Formula.tt)
-
     let b = Formula.inject (Formula.dq y (i 0))
     let r14 = of_eqs [(a, b); (x, i 1)]
 
@@ -403,9 +383,9 @@ let%test_module _ =
           { sat= true; rep= [[%x_5 ↦ 1]]; cls= [[1 ↦ {%x_5}]]; use= [] } |}]
 
     let%test _ = implies_eq r14 a (Formula.inject Formula.tt)
+
     (* incomplete *)
     let%test _ = not (implies_eq r14 b (Formula.inject Formula.tt))
-
     let b = Formula.inject (Formula.dq x (i 0))
     let r15 = of_eqs [(b, b); (x, i 1)]
 
@@ -476,7 +456,6 @@ let%test_module _ =
     let%test _ = implies_eq r19 x (i 0)
     let%test _ = implies_eq r19 y (i 0)
     let%test _ = implies_eq r19 z (i 0)
-
     let r20 = of_eqs [(f x, t); (x, y); (f y, u)]
 
     let%expect_test _ =
@@ -500,7 +479,7 @@ let%test_module _ =
           andN
             [ eq x y
             ; cond ~cnd:(eq x (i 0)) ~pos:(eq z (i 2)) ~neg:(eq z (i 3))
-            ; or_ (eq w (i 4)) (eq w (i 5)) ])
+            ; or_ (eq w (i 4)) (eq w (i 5)) ] )
       in
       printf Formula.pp f ;
       printf Formula.pp
@@ -522,7 +501,7 @@ let%test_module _ =
            Llair.(
              Exp.uge
                (Exp.integer Typ.bool Z.minus_one)
-               (Exp.signed 1 (Exp.integer Typ.siz Z.one) ~to_:Typ.bool)) )
+               (Exp.signed 1 (Exp.integer Typ.siz Z.one) ~to_:Typ.bool) ) )
 
     let pp_exp e =
       Format.printf "@\nexp= %a; term= %a@." Llair.Exp.pp e Term.pp
@@ -563,6 +542,6 @@ let%test_module _ =
         Llair.(
           Exp.uge
             (Exp.integer Typ.bool Z.minus_one)
-            (Exp.signed 1 !!1 ~to_:Typ.bool)) ;
+            (Exp.signed 1 !!1 ~to_:Typ.bool) ) ;
       [%expect {| exp= (-1 u≥ ((i1)(s1) 1)); term= tt |}]
   end )

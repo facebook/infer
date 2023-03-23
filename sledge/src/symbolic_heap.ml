@@ -240,7 +240,7 @@ module Sh = struct
         if Segs.is_empty heap then
           Format.fprintf fs
             ( if first then if List.is_empty djns then "  emp" else ""
-            else "@ @<5>∧ emp" )
+              else "@ @<5>∧ emp" )
         else
           pp_heap x
             ~pre:(if first then "  " else "@ @<2>∧ ")
@@ -577,7 +577,7 @@ module Sh = struct
         :: mk_ge ctx n zero
         :: mk_le ctx (mk_add ctx [k; n]) (mk_add ctx [b; m])
         :: Z3.Boolean.(mk_iff ctx (mk_eq ctx n zero) (mk_eq ctx m zero))
-        :: Iter.fold addresses_and_sizes_are_ints ~f:List.cons ps)
+        :: Iter.fold addresses_and_sizes_are_ints ~f:List.cons ps )
     in
     let conj q (pure, heap) =
       ( Z3.Boolean.mk_and ctx
@@ -946,11 +946,11 @@ module Xsh = struct
              () )]
     ;
     ( if Var.Set.is_empty xs || is_false xq then xq
-    else
-      let vx =
-        Var.Context.with_xs (Var.Set.union xs (Var.Context.xs vx)) vx
-      in
-      (q, vx) |> check invariant )
+      else
+        let vx =
+          Var.Context.with_xs (Var.Set.union xs (Var.Context.xs vx)) vx
+        in
+        (q, vx) |> check invariant )
     |>
     [%Dbg.retn fun {pf} -> pf "%a" pp]
 
@@ -1172,17 +1172,17 @@ module Xsh = struct
     [%Dbg.call fun {pf} -> pf " %i@ %a" !count_simplify pp_raw xq]
     ;
     ( if is_false xq then false_
-    else
-      lift xq ~f:(fun q vx ->
-          let q = Sh.propagate_context Context.empty q vx in
-          if Sh.is_false q then Sh.false_
-          else
-            let q' =
-              Sh.simplify (Var.Context.xs !vx) Var.Set.empty
-                Context.Subst.empty q vx
-            in
-            Var.Fresh.inter_xs (Sh.fv q') vx ;
-            q' ) )
+      else
+        lift xq ~f:(fun q vx ->
+            let q = Sh.propagate_context Context.empty q vx in
+            if Sh.is_false q then Sh.false_
+            else
+              let q' =
+                Sh.simplify (Var.Context.xs !vx) Var.Set.empty
+                  Context.Subst.empty q vx
+              in
+              Var.Fresh.inter_xs (Sh.fv q') vx ;
+              q' ) )
     |>
     [%Dbg.retn fun {pf} xq' ->
       pf "%a" pp_raw xq' ;

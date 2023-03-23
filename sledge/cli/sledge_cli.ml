@@ -37,13 +37,13 @@ let ( *|> ) :
     -> ('common -> 'a -> 'b) param
     -> ('common -> 'b) param =
   Command.Param.map2 ~f:(fun f g a -> f a |> g a)
-
 ;;
+
 register_sexp_of_exn (Dbg.Parse_failure "") (function
   | Dbg.Parse_failure msg -> Sexplib0.Sexp.Atom msg
   | _ -> assert false )
-
 ;;
+
 register_sexp_of_exn (Goal.Sparse_trace.Invalid_trace "") (function
   | Goal.Sparse_trace.Invalid_trace msg -> Sexplib0.Sexp.Atom msg
   | _ -> assert false )
@@ -437,15 +437,12 @@ let readme () =
    separated by + or -. For example, M-M.f enables all tracing in the M \
    module except the M.f function. The <spec> value * enables all debug \
    tracing."
+;;
 
-;;
-Memtrace.trace_if_requested ()
-;;
-if Version.debug then Printexc.record_backtrace true
-;;
-Stdlib.Sys.catch_break true
+Memtrace.trace_if_requested () ;;
+if Version.debug then Printexc.record_backtrace true ;;
+Stdlib.Sys.catch_break true ;;
 
-;;
 Command.run ~version:Version.version ~build_info:Version.build_info
   (Command.group ~summary ~readme ~preserve_subcommand_order:()
      [ ("buck", Sledge_buck.main ~command)

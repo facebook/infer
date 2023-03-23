@@ -1384,8 +1384,8 @@ module Atom = struct
           if force_to_atom then
             Some
               [ ( if negated then Equal (t, Term.zero)
-                else if Term.has_known_non_boolean_type t then NotEqual (t, Term.zero)
-                else Equal (t, Term.one) ) ]
+                  else if Term.has_known_non_boolean_type t then NotEqual (t, Term.zero)
+                  else Equal (t, Term.one) ) ]
           else None
     in
     aux ~negated ~force_to_atom t

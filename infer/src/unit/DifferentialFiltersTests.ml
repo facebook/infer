@@ -37,7 +37,7 @@ let test_file_renamings_from_json =
           of_list
             [ {current= "aaa.java"; previous= "BBB.java"}
             ; {current= "ccc.java"; previous= "DDD.java"}
-            ; {current= "eee.java"; previous= "FFF.java"} ]) )
+            ; {current= "eee.java"; previous= "FFF.java"} ] ) )
   ; ( "test_file_renamings_from_json_with_good_empty_input"
     , "[]"
     , Return (DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.of_list [])
@@ -66,7 +66,7 @@ let test_file_renamings_find_previous =
       of_list
         [ {current= "aaa.java"; previous= "BBB.java"}
         ; {current= "ccc.java"; previous= "DDD.java"}
-        ; {current= "eee.java"; previous= "FFF.java"} ])
+        ; {current= "eee.java"; previous= "FFF.java"} ] )
   in
   let find_previous =
     DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.find_previous
@@ -164,7 +164,7 @@ let test_skip_duplicated_types_on_filenames =
     DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.(
       of_list
         [ {current= "file_2'.java"; previous= "file_2.java"}
-        ; {current= "file_1'.java"; previous= "file_1.java"} ])
+        ; {current= "file_1'.java"; previous= "file_1.java"} ] )
   in
   let current_costs = [] in
   let previous_costs = [] in

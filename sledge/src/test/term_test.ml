@@ -38,7 +38,6 @@ let%test_module _ =
 
     let _, y = var "y"
     let _, z = var "z"
-
     let%test "booleans distinct" = F.equal F.ff (F.iff F.tt F.ff)
     let%test "u1 values distinct" = F.equal F.ff (T.one = T.zero)
 

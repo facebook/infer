@@ -600,19 +600,19 @@ let vpath_find tenv prop exp_ : DExp.t option * Typ.t option =
   in
   let res = find [] prop.Prop.sigma exp_ in
   ( if verbose then
-    match res with
-    | None, _ ->
-        L.d_str "vpath_find: cannot find " ;
-        Exp.d_exp exp_ ;
-        L.d_ln ()
-    | Some de, typo -> (
-        L.d_printf "vpath_find: found %a :" DExp.pp de ;
-        match typo with
-        | None ->
-            L.d_str " No type"
-        | Some typ ->
-            Typ.d_full typ ;
-            L.d_ln () ) ) ;
+      match res with
+      | None, _ ->
+          L.d_str "vpath_find: cannot find " ;
+          Exp.d_exp exp_ ;
+          L.d_ln ()
+      | Some de, typo -> (
+          L.d_printf "vpath_find: found %a :" DExp.pp de ;
+          match typo with
+          | None ->
+              L.d_str " No type"
+          | Some typ ->
+              Typ.d_full typ ;
+              L.d_ln () ) ) ;
   res
 
 

@@ -108,7 +108,7 @@ module Sparse_trace = struct
           let snk_calls =
             drop 1 snk_trace |> map ~f:(fun f -> `Call (lookup f))
           in
-          src_calls @ src_rets @ snk_calls)
+          src_calls @ src_rets @ snk_calls )
     in
     {cursor= 0; trace}
 

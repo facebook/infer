@@ -121,7 +121,7 @@ let is_third_party_class_name storage java_class_name =
       let* package = JavaClassName.package java_class_name in
       lookup_related_sig_file storage ~package
     in
-    is_from_config || Option.is_some (lookup_sig_file ()))
+    is_from_config || Option.is_some (lookup_sig_file ()) )
 
 
 (* There is a bit of duplication relative to [is_third_party_proc] due to mismatch between

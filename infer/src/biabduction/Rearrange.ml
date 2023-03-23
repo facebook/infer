@@ -1219,20 +1219,20 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
         get_relevant_attributes root_no_offset
   in
   ( if Prover.check_zero tenv (Exp.root_of_lexp root) || Option.is_some nullable_var_opt then
-    let deref_str =
-      match nullable_var_opt with
-      | Some str ->
-          Localise.deref_str_nullable None str
-      | None ->
-          Localise.deref_str_null None
-    in
-    let err_desc =
-      Errdesc.explain_dereference pname tenv ~use_buckets:true
-        ~is_nullable:(Option.is_some nullable_var_opt) deref_str prop loc
-    in
-    if Localise.is_empty_vector_access_desc err_desc then
-      raise (Exceptions.Empty_vector_access (err_desc, __POS__))
-    else raise (Exceptions.Null_dereference (err_desc, __POS__)) ) ;
+      let deref_str =
+        match nullable_var_opt with
+        | Some str ->
+            Localise.deref_str_nullable None str
+        | None ->
+            Localise.deref_str_null None
+      in
+      let err_desc =
+        Errdesc.explain_dereference pname tenv ~use_buckets:true
+          ~is_nullable:(Option.is_some nullable_var_opt) deref_str prop loc
+      in
+      if Localise.is_empty_vector_access_desc err_desc then
+        raise (Exceptions.Empty_vector_access (err_desc, __POS__))
+      else raise (Exceptions.Null_dereference (err_desc, __POS__)) ) ;
   match attribute_opt with
   | Some (Apred (Adangling dk, _)) ->
       let deref_str = Localise.deref_str_dangling (Some dk) in

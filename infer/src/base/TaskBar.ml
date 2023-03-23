@@ -76,15 +76,15 @@ let draw_top_bar fmt ~term_width ~total ~finished ~elapsed =
   let top_bar_size = min term_width top_bar_size_default in
   let progress_bar_size = top_bar_size - size_around_progress_bar in
   ( if progress_bar_size < min_acceptable_progress_bar then
-    let s = Printf.sprintf "%d/%s %s" finished tasks_total_string elapsed_string in
-    F.fprintf fmt "%s" (String.prefix s term_width)
-  else
-    let bar_done_size = finished * progress_bar_size / total in
-    F.fprintf fmt top_bar_fmt bar_tasks_num_size finished tasks_total_string (pp_n '#')
-      bar_done_size (pp_n '.')
-      (progress_bar_size - bar_done_size)
-      (finished * 100 / total)
-      elapsed_string ) ;
+      let s = Printf.sprintf "%d/%s %s" finished tasks_total_string elapsed_string in
+      F.fprintf fmt "%s" (String.prefix s term_width)
+    else
+      let bar_done_size = finished * progress_bar_size / total in
+      F.fprintf fmt top_bar_fmt bar_tasks_num_size finished tasks_total_string (pp_n '#')
+        bar_done_size (pp_n '.')
+        (progress_bar_size - bar_done_size)
+        (finished * 100 / total)
+        elapsed_string ) ;
   F.fprintf fmt "%s\n" erase_eol
 
 

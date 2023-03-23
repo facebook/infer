@@ -229,22 +229,22 @@ let logger =
      in
      let is_toplevel_process = CommandLineOption.is_originator && not !ProcessPoolState.in_child in
      ( if is_toplevel_process then
-       let preexisting_logfile = ISys.file_exists log_file in
-       if preexisting_logfile then Unix.unlink log_file ) ;
+         let preexisting_logfile = ISys.file_exists log_file in
+         if preexisting_logfile then Unix.unlink log_file ) ;
      let out_channel = Stdlib.open_out_gen [Open_append; Open_creat] 0o666 log_file in
      let logger = F.formatter_of_out_channel out_channel in
      register_gc_stats logger ;
      ( if is_toplevel_process then (
-       JsonFragment.pp logger ListBegin ;
-       F.fprintf logger "%!" ;
-       Epilogues.register_late ~description:"closing perf trace json" ~f:(fun () ->
-           log_instant_event logger ~name:"end" Global ;
-           JsonFragment.pp logger ListEnd ;
-           F.fprintf logger "@." ;
-           Out_channel.close out_channel ) )
-     else
-       (* assume the trace file is here and is ready to accept list elements *)
-       JsonFragment.(pp_state := InList :: !pp_state) ) ;
+         JsonFragment.pp logger ListBegin ;
+         F.fprintf logger "%!" ;
+         Epilogues.register_late ~description:"closing perf trace json" ~f:(fun () ->
+             log_instant_event logger ~name:"end" Global ;
+             JsonFragment.pp logger ListEnd ;
+             F.fprintf logger "@." ;
+             Out_channel.close out_channel ) )
+       else
+         (* assume the trace file is here and is ready to accept list elements *)
+         JsonFragment.(pp_state := InList :: !pp_state) ) ;
      logger )
 
 

@@ -42,7 +42,7 @@ let sort_filter_issues issues =
     List.dedup_and_sort ~compare issues
   in
   ( if Config.developer_mode then
-    let num_pruned_issues = List.length issues - List.length issues' in
-    if num_pruned_issues > 0 then
-      L.user_warning "Note: pruned %d duplicate issues@\n" num_pruned_issues ) ;
+      let num_pruned_issues = List.length issues - List.length issues' in
+      if num_pruned_issues > 0 then
+        L.user_warning "Note: pruned %d duplicate issues@\n" num_pruned_issues ) ;
   issues'

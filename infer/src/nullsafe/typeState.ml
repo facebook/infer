@@ -69,16 +69,16 @@ let lookup_pvar pvar typestate = M.find_opt (Exp.Lvar pvar) typestate
 
 let add_id id range typestate ~descr =
   ( if Config.write_html then
-    let _, nullability = range in
-    L.d_printfln "Setting %a to Id %a: %s" InferredNullability.pp nullability Ident.pp id descr ) ;
+      let _, nullability = range in
+      L.d_printfln "Setting %a to Id %a: %s" InferredNullability.pp nullability Ident.pp id descr ) ;
   M.add (Exp.Var id) range typestate
 
 
 let add pvar range typestate ~descr =
   ( if Config.write_html then
-    let _, nullability = range in
-    L.d_printfln "Setting %a to Pvar %a: %s" InferredNullability.pp nullability
-      Pvar.pp_value_non_verbose pvar descr ) ;
+      let _, nullability = range in
+      L.d_printfln "Setting %a to Pvar %a: %s" InferredNullability.pp nullability
+        Pvar.pp_value_non_verbose pvar descr ) ;
   M.add (Exp.Lvar pvar) range typestate
 
 

@@ -109,9 +109,9 @@ module TransferFunctions = struct
             Dom.Mem.update_mem
               ~force_strong_update:
                 ( if Config.bo_context_sensitive_allocsites then
-                  if not Config.bo_bottom_as_default then PowLoc.is_single_known_loc locs
-                  else can_strong_update locs
-                else false )
+                    if not Config.bo_bottom_as_default then PowLoc.is_single_known_loc locs
+                    else can_strong_update locs
+                  else false )
               locs v acc )
       in
       let reachable_locs = Dom.Mem.get_reachable_locs_from callee_formals locs callee_exit_mem in

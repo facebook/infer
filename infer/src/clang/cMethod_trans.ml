@@ -325,14 +325,14 @@ let create_local_procdesc ?loc_instantiated ?(set_objc_accessor_attr = false)
        then we want to record captured variables in the previously created procdesc *)
     ignore
       ( if record_lambda_captured then
-        match Procname.Hash.find cfg proc_name with
-        | procdesc_prev ->
-            let new_attributes =
-              {(Procdesc.get_attributes procdesc_prev) with captured= captured_mangled}
-            in
-            Procdesc.set_attributes procdesc_prev new_attributes
-        | exception Caml.Not_found ->
-            () ) ;
+          match Procname.Hash.find cfg proc_name with
+          | procdesc_prev ->
+              let new_attributes =
+                {(Procdesc.get_attributes procdesc_prev) with captured= captured_mangled}
+              in
+              Procdesc.set_attributes procdesc_prev new_attributes
+          | exception Caml.Not_found ->
+              () ) ;
     false )
 
 

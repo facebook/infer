@@ -47,7 +47,7 @@ let iterate_procedure_callbacks exe_env ({Summary.proc_name} as summary) proc_de
           log (fun logger ->
               log_begin_event logger ~name:(Checker.get_id checker) ~categories:["backend"]
                 ~arguments:[("proc", `String (Procname.to_string proc_name))]
-                () )) ;
+                () ) ) ;
         let summary =
           Timer.time (Checker checker)
             ~f:(fun () -> callback {summary; exe_env; proc_desc})

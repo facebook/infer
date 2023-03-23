@@ -137,7 +137,7 @@ module TransferFunctions = struct
         Domain.(
           debug "Callee modified params %a \n" ModifiedParamIndices.pp callee_modified_params ;
           if ModifiedParamIndices.is_empty callee_modified_params then pure
-          else find_params_matching_modified_args inferbo_mem formals args callee_modified_params)
+          else find_params_matching_modified_args inferbo_mem formals args callee_modified_params )
 
 
   let modified_global ae = HilExp.AccessExpression.get_base ae |> fst |> Var.is_global

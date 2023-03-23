@@ -216,7 +216,8 @@ end = struct
         Shape ids do not make sense by themselves and are only valid within the context of the
         analysis of the function that defined them, that is, for a given environment. OCaml typing
         should prevent them from being used elsewhere (for instance mixed in another environment). *)
-    module Shape_id = Id ()
+    module Shape_id =
+    Id ()
 
     (** A shape is an equivalence class of shape identifiers, that is, shape identifiers that share
         a common determined set of fields. *)

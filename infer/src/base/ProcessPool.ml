@@ -325,11 +325,11 @@ let wait_all pool =
   in
   ProcessPoolState.has_running_children := false ;
   ( if not (List.is_empty errors) then
-    let pp_error f (slot, status) =
-      F.fprintf f "Error in infer subprocess %d: %s@." slot
-        (Unix.Exit_or_signal.to_string_hum status)
-    in
-    log_or_die "@[<v>%a@]%!" (Pp.seq ~print_env:Pp.text_break ~sep:"" pp_error) errors ) ;
+      let pp_error f (slot, status) =
+        F.fprintf f "Error in infer subprocess %d: %s@." slot
+          (Unix.Exit_or_signal.to_string_hum status)
+      in
+      log_or_die "@[<v>%a@]%!" (Pp.seq ~print_env:Pp.text_break ~sep:"" pp_error) errors ) ;
   results
 
 

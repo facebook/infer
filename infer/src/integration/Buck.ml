@@ -150,11 +150,11 @@ let config =
       "*//cxx.modules_default=false"
     ; "*//cxx.modules=false" ]
     @ ( if Config.buck_clang_use_toolchain_config then []
-      else
-        [ "*//infer.infer_bin=" ^ Config.bin_dir
-        ; "*//infer.binary=" ^ Config.infer_binary
-        ; "*//infer.clang_compiler=" ^ clang_path
-        ; "*//infer.clang_plugin=" ^ Config.clang_plugin_path ] )
+        else
+          [ "*//infer.infer_bin=" ^ Config.bin_dir
+          ; "*//infer.binary=" ^ Config.infer_binary
+          ; "*//infer.clang_compiler=" ^ clang_path
+          ; "*//infer.clang_plugin=" ^ Config.clang_plugin_path ] )
     @ ( match Config.xcode_developer_dir with
       | Some d ->
           [Printf.sprintf "apple.xcode_developer_dir=%s" d]

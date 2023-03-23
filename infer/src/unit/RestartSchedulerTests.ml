@@ -33,7 +33,7 @@ let tests_wrapper _test_ctxt =
     try
       unlock a_pname ;
       assert_failure "Should have raised an exception."
-    with Die.InferInternalError _ -> ())
+    with Die.InferInternalError _ -> () )
 
 
 let tests = "restart_scheduler_suite" >:: tests_wrapper

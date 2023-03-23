@@ -126,9 +126,7 @@ let infertop_stanza =
 
 
 (** The build stanzas to be passed to dune *)
-let stanzas =
-  [env_stanza; infer_exe_stanza; inferunit_stanza; infertop_stanza]
-
-
+let stanzas = [env_stanza; infer_exe_stanza; inferunit_stanza; infertop_stanza]
 ;;
+
 Jbuild_plugin.V1.send (String.concat "\n" stanzas)

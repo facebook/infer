@@ -83,8 +83,8 @@ module Match = struct
 
   let qualifiers_list_matcher ?prefix quals_list =
     ( if List.is_empty quals_list then "a^" (* regexp that does not match anything *)
-    else
-      List.rev_map ~f:(regexp_string_of_qualifiers ?prefix) quals_list |> String.concat ~sep:"\\|"
+      else
+        List.rev_map ~f:(regexp_string_of_qualifiers ?prefix) quals_list |> String.concat ~sep:"\\|"
     )
     |> Str.regexp
 

@@ -252,11 +252,11 @@ module Symbol = struct
     | OneValue {unsigned; non_int; path} | BoundEnd {unsigned; non_int; path} ->
         SymbolPath.pp fmt path ;
         ( if Config.developer_mode then
-          match s with
-          | BoundEnd {bound_end} ->
-              Format.fprintf fmt ".%s" (BoundEnd.to_string bound_end)
-          | OneValue _ ->
-              () ) ;
+            match s with
+            | BoundEnd {bound_end} ->
+                Format.fprintf fmt ".%s" (BoundEnd.to_string bound_end)
+            | OneValue _ ->
+                () ) ;
         if Config.bo_debug > 1 then
           F.fprintf fmt "(%c%s)" (if unsigned then 'u' else 's') (if non_int then "n" else "")
 

@@ -731,7 +731,7 @@ let add_access_trace ~include_title ~nesting invalidation access_trace errlog =
   let access_start_location = Trace.get_start_location access_trace in
   let access_title = invalidation_titles invalidation |> snd in
   ( if include_title then add_errlog_header ~nesting ~title:access_title access_start_location
-  else Fn.id )
+    else Fn.id )
   @@ Trace.add_to_errlog ~nesting:(nesting + 1)
        ~pp_immediate:(fun fmt -> F.pp_print_string fmt "invalid access occurs here")
        access_trace
@@ -752,8 +752,8 @@ let get_trace = function
       let should_print_invalidation_trace = not (Trace.has_invalidation access_trace) in
       get_trace_calling_context calling_context
       @@ ( if should_print_invalidation_trace then
-           add_invalidation_trace ~nesting:in_context_nesting invalidation invalidation_trace
-         else Fn.id )
+             add_invalidation_trace ~nesting:in_context_nesting invalidation invalidation_trace
+           else Fn.id )
       @@ add_access_trace
            ~include_title:(should_print_invalidation_trace || not (List.is_empty calling_context))
            ~nesting:in_context_nesting invalidation access_trace

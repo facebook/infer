@@ -250,9 +250,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 let base, _ = AccessPath.Abs.extract access_path in
                 F.fprintf fmt " with tainted data %a" AccessPath.Abs.pp
                   ( if Var.is_footprint (fst base) then
-                    (* TODO: resolve footprint identifier to formal name *)
-                    access_path
-                  else access_path )
+                      (* TODO: resolve footprint identifier to formal name *)
+                      access_path
+                    else access_path )
           in
           List.map
             ~f:(fun (access_path_opt, path_source) ->
@@ -781,7 +781,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
          directly with a formal. In Java this can't happen, so we only care if the formal flows to
          a sink *)
       ( if is_java then TraceDomain.Sinks.is_empty (TraceDomain.sinks trace)
-      else TraceDomain.is_bottom trace )
+        else TraceDomain.is_bottom trace )
       &&
       match tree with
       | TaintDomain.Subtree subtree ->

@@ -19,7 +19,7 @@ let add_flavors_to_buck_arguments buck_mode ~extra_flavors original_buck_args =
   let targets =
     List.rev_map targets ~f:(fun t ->
         Buck.Target.(
-          t |> of_string |> add_flavor_v1 ~extra_flavors buck_mode Config.command |> to_string) )
+          t |> of_string |> add_flavor_v1 ~extra_flavors buck_mode Config.command |> to_string ) )
   in
   {command; rev_not_targets; targets}
 

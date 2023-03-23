@@ -412,8 +412,8 @@ let set_initial_attributes ({InterproceduralAnalysis.proc_desc} as interproc) as
     | Procname.Java java_pname when Procname.Java.is_class_initializer java_pname ->
         (* we are analyzing the class initializer, don't go through on-demand again *)
         astate
-    | Procname.Java java_pname
-      when Procname.Java.(is_constructor java_pname || is_static java_pname) ->
+    | Procname.Java java_pname when Procname.Java.(is_constructor java_pname || is_static java_pname)
+      ->
         (* analyzing a constructor or static method, so we need the attributes established by the
            class initializer *)
         set_class_init_attributes interproc astate

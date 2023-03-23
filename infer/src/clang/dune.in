@@ -25,7 +25,6 @@ let clang =
     (if clang then ":standard \\ ClangFrontendStubs" else "ClangFrontendStubs")
 
 
-let documentation = "(documentation (package infer) (mld_files ClangFrontend))"
+let documentation = "(documentation (package infer) (mld_files ClangFrontend))" ;;
 
-;;
 Jbuild_plugin.V1.send (String.concat "\n" [clang; documentation])

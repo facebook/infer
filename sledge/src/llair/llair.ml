@@ -63,9 +63,7 @@ type cmnd = inst iarray [@@deriving compare, equal, sexp_of]
 type label = string [@@deriving compare, equal, sexp]
 
 type jump = {mutable dst: block; mutable retreating: bool}
-
 and call_target = {mutable func: func; mutable recursive: bool}
-
 and icall_target = {ptr: Exp.t; mutable candidates: call_target iarray}
 
 and callee =

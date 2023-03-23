@@ -395,9 +395,9 @@ module ExpBridge = struct
     | Lvar pvar ->
         let name = VarNameBridge.of_pvar Lang.Java pvar in
         ( if SilPvar.is_global pvar then
-          let typ : Typ.t = Struct (TypeNameBridge.of_global_pvar Lang.Java pvar) in
-          let global : Global.t = {name; typ; attributes= []} in
-          TextualDecls.declare_global decls global ) ;
+            let typ : Typ.t = Struct (TypeNameBridge.of_global_pvar Lang.Java pvar) in
+            let global : Global.t = {name; typ; attributes= []} in
+            TextualDecls.declare_global decls global ) ;
         Lvar name
     | Lfield (e, f, typ) ->
         let typ = TypBridge.of_sil typ in
@@ -654,8 +654,10 @@ module NodeBridge = struct
 
   let to_sil lang decls_env procname pdesc node =
     ( if not (List.is_empty node.ssa_parameters) then
-      let msg = lazy (F.asprintf "node %a should not have SSA parameters" NodeName.pp node.label) in
-      raise (TextualTransformError [{loc= node.label_loc; msg}]) ) ;
+        let msg =
+          lazy (F.asprintf "node %a should not have SSA parameters" NodeName.pp node.label)
+        in
+        raise (TextualTransformError [{loc= node.label_loc; msg}]) ) ;
     let instrs = List.map ~f:(InstrBridge.to_sil lang decls_env procname) node.instrs in
     let sourcefile = TextualDecls.source_file decls_env in
     let last_loc = LocationBridge.to_sil sourcefile node.last_loc in

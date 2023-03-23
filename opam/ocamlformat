@@ -1,1 +1,1 @@
-ocamlformat.0.22.4-3-g839cc56 -k git https://github.com/ocaml-ppx/ocamlformat.git#nebuchadnezzar
+ocamlformat.0.25.1 -k git https://github.com/ocaml-ppx/ocamlformat.git#0.25.1

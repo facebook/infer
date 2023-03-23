@@ -389,149 +389,153 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     Ident.NameGenerator.reset () ;
     let translate dec = translate_one_declaration trans_unit_ctx tenv cfg decl_trans_context dec in
     ( if should_translate_decl trans_unit_ctx dec decl_trans_context then
-      let dec_ptr = (Clang_ast_proj.get_decl_tuple dec).di_pointer in
-      match dec with
-      | FunctionDecl (_, _, _, _) ->
-          function_decl trans_unit_ctx tenv cfg dec None
-      | ObjCInterfaceDecl (_, _, decl_list, _, _) ->
-          let curr_class = CContext.ContextClsDeclPtr dec_ptr in
-          ignore
-            (ObjcInterface_decl.interface_declaration CType_decl.qual_type_to_sil_type
-               CType_decl.CProcname.from_decl tenv dec ) ;
-          process_methods trans_unit_ctx tenv cfg curr_class decl_list
-      | ObjCProtocolDecl (_, _, decl_list, _, _) ->
-          let curr_class = CContext.ContextClsDeclPtr dec_ptr in
-          ignore (ObjcProtocol_decl.protocol_decl CType_decl.qual_type_to_sil_type tenv dec) ;
-          process_methods trans_unit_ctx tenv cfg curr_class decl_list
-      | ObjCCategoryDecl (_, _, decl_list, _, _) ->
-          let curr_class = CContext.ContextClsDeclPtr dec_ptr in
-          ignore
-            (ObjcCategory_decl.category_decl CType_decl.qual_type_to_sil_type
-               CType_decl.CProcname.from_decl tenv dec ) ;
-          process_methods trans_unit_ctx tenv cfg curr_class decl_list
-      | ObjCCategoryImplDecl (_, _, decl_list, _, _) ->
-          let curr_class = CContext.ContextClsDeclPtr dec_ptr in
-          ignore
-            (ObjcCategory_decl.category_impl_decl CType_decl.qual_type_to_sil_type
-               CType_decl.CProcname.from_decl tenv dec ) ;
-          process_methods trans_unit_ctx tenv cfg curr_class decl_list
-      | ObjCImplementationDecl (objc_class_decl_info, _, decl_list, _, _) ->
-          let curr_class = CContext.ContextClsDeclPtr dec_ptr in
-          let qual_type_to_sil_type = CType_decl.qual_type_to_sil_type in
-          ignore
-            (ObjcInterface_decl.interface_impl_declaration qual_type_to_sil_type
-               CType_decl.CProcname.from_decl tenv dec ) ;
-          process_methods trans_unit_ctx tenv cfg curr_class decl_list ;
-          create_and_process_dealloc_objc_impl trans_unit_ctx tenv cfg curr_class
-            objc_class_decl_info decl_list
-      | CXXMethodDecl (decl_info, _, _, _, _)
-      | CXXConstructorDecl (decl_info, _, _, _, _)
-      | CXXConversionDecl (decl_info, _, _, _, _)
-      | CXXDestructorDecl (decl_info, _, _, _, _) -> (
-          let inside_cpp_lambda_expr =
-            match decl_trans_context with `CppLambdaExprTranslation -> true | _ -> false
-          in
-          (* di_parent_pointer has pointer to lexical context such as class.*)
-          let parent_ptr = Option.value_exn decl_info.Clang_ast_t.di_parent_pointer in
-          let class_decl = CAst_utils.get_decl parent_ptr in
-          let loc_instantiated =
+        let dec_ptr = (Clang_ast_proj.get_decl_tuple dec).di_pointer in
+        match dec with
+        | FunctionDecl (_, _, _, _) ->
+            function_decl trans_unit_ctx tenv cfg dec None
+        | ObjCInterfaceDecl (_, _, decl_list, _, _) ->
+            let curr_class = CContext.ContextClsDeclPtr dec_ptr in
+            ignore
+              (ObjcInterface_decl.interface_declaration CType_decl.qual_type_to_sil_type
+                 CType_decl.CProcname.from_decl tenv dec ) ;
+            process_methods trans_unit_ctx tenv cfg curr_class decl_list
+        | ObjCProtocolDecl (_, _, decl_list, _, _) ->
+            let curr_class = CContext.ContextClsDeclPtr dec_ptr in
+            ignore (ObjcProtocol_decl.protocol_decl CType_decl.qual_type_to_sil_type tenv dec) ;
+            process_methods trans_unit_ctx tenv cfg curr_class decl_list
+        | ObjCCategoryDecl (_, _, decl_list, _, _) ->
+            let curr_class = CContext.ContextClsDeclPtr dec_ptr in
+            ignore
+              (ObjcCategory_decl.category_decl CType_decl.qual_type_to_sil_type
+                 CType_decl.CProcname.from_decl tenv dec ) ;
+            process_methods trans_unit_ctx tenv cfg curr_class decl_list
+        | ObjCCategoryImplDecl (_, _, decl_list, _, _) ->
+            let curr_class = CContext.ContextClsDeclPtr dec_ptr in
+            ignore
+              (ObjcCategory_decl.category_impl_decl CType_decl.qual_type_to_sil_type
+                 CType_decl.CProcname.from_decl tenv dec ) ;
+            process_methods trans_unit_ctx tenv cfg curr_class decl_list
+        | ObjCImplementationDecl (objc_class_decl_info, _, decl_list, _, _) ->
+            let curr_class = CContext.ContextClsDeclPtr dec_ptr in
+            let qual_type_to_sil_type = CType_decl.qual_type_to_sil_type in
+            ignore
+              (ObjcInterface_decl.interface_impl_declaration qual_type_to_sil_type
+                 CType_decl.CProcname.from_decl tenv dec ) ;
+            process_methods trans_unit_ctx tenv cfg curr_class decl_list ;
+            create_and_process_dealloc_objc_impl trans_unit_ctx tenv cfg curr_class
+              objc_class_decl_info decl_list
+        | CXXMethodDecl (decl_info, _, _, _, _)
+        | CXXConstructorDecl (decl_info, _, _, _, _)
+        | CXXConversionDecl (decl_info, _, _, _, _)
+        | CXXDestructorDecl (decl_info, _, _, _, _) -> (
+            let inside_cpp_lambda_expr =
+              match decl_trans_context with `CppLambdaExprTranslation -> true | _ -> false
+            in
+            (* di_parent_pointer has pointer to lexical context such as class.*)
+            let parent_ptr = Option.value_exn decl_info.Clang_ast_t.di_parent_pointer in
+            let class_decl = CAst_utils.get_decl parent_ptr in
+            let loc_instantiated =
+              match class_decl with
+              | Some
+                  ( ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, _, source_location, _)
+                  | ClassTemplatePartialSpecializationDecl
+                      (_, _, _, _, _, _, _, _, _, source_location, _) ) ->
+                  Some
+                    (CLocation.clang_to_sil_location trans_unit_ctx.CFrontend_config.source_file
+                       source_location )
+              | _ ->
+                  None
+            in
             match class_decl with
-            | Some
-                ( ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, _, source_location, _)
-                | ClassTemplatePartialSpecializationDecl
-                    (_, _, _, _, _, _, _, _, _, source_location, _) ) ->
-                Some
-                  (CLocation.clang_to_sil_location trans_unit_ctx.CFrontend_config.source_file
-                     source_location )
-            | _ ->
-                None
-          in
-          match class_decl with
-          | (Some (CXXRecordDecl _) | Some (ClassTemplateSpecializationDecl _)) when Config.cxx ->
-              let curr_class = CContext.ContextClsDeclPtr parent_ptr in
-              process_methods ~inside_cpp_lambda_expr ?loc_instantiated trans_unit_ctx tenv cfg
-                curr_class [dec]
-          | Some dec ->
-              L.(debug Capture Verbose)
-                "Methods of %s skipped@\n"
-                (Clang_ast_proj.get_decl_kind_string dec)
-          | None ->
-              () )
-      | VarDecl
-          (decl_info, named_decl_info, qt, ({vdi_is_global; vdi_init_expr; vdi_is_constexpr} as vdi))
-      | VarTemplateSpecializationDecl
-          ( _
-          , decl_info
-          , named_decl_info
-          , qt
-          , ({vdi_is_global; vdi_init_expr; vdi_is_constexpr} as vdi) )
-        when String.is_prefix ~prefix:"__infer_" named_decl_info.ni_name
-             || (vdi_is_global && Option.is_some vdi_init_expr) ->
-          let template_args_opt =
-            match[@warning "-partial-match"] dec with
-            | VarDecl _ ->
-                None
-            | VarTemplateSpecializationDecl (template_args, _, _, _, _) ->
-                Some template_args
-          in
-          (* create a fake procedure that initializes the global variable so that the variable
-             initializer can be analyzed by the backend (eg, the SIOF checker) *)
-          let procname =
-            (* create the corresponding global variable to get the right pname for its
-               initializer *)
-            let global =
-              CVar_decl.mk_sil_global_var tenv trans_unit_ctx decl_info named_decl_info vdi
-                template_args_opt qt
+            | (Some (CXXRecordDecl _) | Some (ClassTemplateSpecializationDecl _)) when Config.cxx ->
+                let curr_class = CContext.ContextClsDeclPtr parent_ptr in
+                process_methods ~inside_cpp_lambda_expr ?loc_instantiated trans_unit_ctx tenv cfg
+                  curr_class [dec]
+            | Some dec ->
+                L.(debug Capture Verbose)
+                  "Methods of %s skipped@\n"
+                  (Clang_ast_proj.get_decl_kind_string dec)
+            | None ->
+                () )
+        | VarDecl
+            ( decl_info
+            , named_decl_info
+            , qt
+            , ({vdi_is_global; vdi_init_expr; vdi_is_constexpr} as vdi) )
+        | VarTemplateSpecializationDecl
+            ( _
+            , decl_info
+            , named_decl_info
+            , qt
+            , ({vdi_is_global; vdi_init_expr; vdi_is_constexpr} as vdi) )
+          when String.is_prefix ~prefix:"__infer_" named_decl_info.ni_name
+               || (vdi_is_global && Option.is_some vdi_init_expr) ->
+            let template_args_opt =
+              match[@warning "-partial-match"] dec with
+              | VarDecl _ ->
+                  None
+              | VarTemplateSpecializationDecl (template_args, _, _, _, _) ->
+                  Some template_args
             in
-            (* safe use of [Option.value_exn] because it's a global *)
-            Option.value_exn (Pvar.get_initializer_pname global)
-          in
-          if
-            CMethod_trans.should_create_procdesc cfg procname ~defined:true
-              ~set_objc_accessor_attr:false
-          then (
-            let ms =
-              CMethodSignature.mk procname None [] (StdTyp.void, Annot.Item.empty)
-                ~is_ret_constexpr:vdi_is_constexpr [] decl_info.Clang_ast_t.di_source_range
-                ClangMethodKind.C_FUNCTION None None None `None
+            (* create a fake procedure that initializes the global variable so that the variable
+               initializer can be analyzed by the backend (eg, the SIOF checker) *)
+            let procname =
+              (* create the corresponding global variable to get the right pname for its
+                 initializer *)
+              let global =
+                CVar_decl.mk_sil_global_var tenv trans_unit_ctx decl_info named_decl_info vdi
+                  template_args_opt qt
+              in
+              (* safe use of [Option.value_exn] because it's a global *)
+              Option.value_exn (Pvar.get_initializer_pname global)
             in
-            let stmt_info =
-              { si_pointer= CAst_utils.get_fresh_pointer ()
-              ; si_source_range= decl_info.di_source_range }
+            if
+              CMethod_trans.should_create_procdesc cfg procname ~defined:true
+                ~set_objc_accessor_attr:false
+            then (
+              let ms =
+                CMethodSignature.mk procname None [] (StdTyp.void, Annot.Item.empty)
+                  ~is_ret_constexpr:vdi_is_constexpr [] decl_info.Clang_ast_t.di_source_range
+                  ClangMethodKind.C_FUNCTION None None None `None
+              in
+              let stmt_info =
+                { si_pointer= CAst_utils.get_fresh_pointer ()
+                ; si_source_range= decl_info.di_source_range }
+              in
+              let body = Clang_ast_t.DeclStmt (stmt_info, [], [dec]) in
+              ignore (CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] []) ;
+              add_method trans_unit_ctx tenv cfg CContext.ContextNoCls procname body ms None None []
+              )
+        (* Note that C and C++ records are treated the same way
+           Skip translating implicit struct declarations, unless they have
+           full definition (which happens with C++ lambdas) *)
+        | ClassTemplateSpecializationDecl (di, _, _, decl_list, _, _, rdi, _, _, _, _)
+        | CXXRecordDecl (di, _, _, decl_list, _, _, rdi, _)
+        | RecordDecl (di, _, _, decl_list, _, _, rdi)
+          when (not di.di_is_implicit) || rdi.rdi_is_complete_definition ->
+            let is_method_decl decl =
+              match decl with
+              | CXXMethodDecl _
+              | CXXConstructorDecl _
+              | CXXConversionDecl _
+              | CXXDestructorDecl _
+              | FunctionTemplateDecl _ ->
+                  true
+              | _ ->
+                  false
             in
-            let body = Clang_ast_t.DeclStmt (stmt_info, [], [dec]) in
-            ignore (CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] []) ;
-            add_method trans_unit_ctx tenv cfg CContext.ContextNoCls procname body ms None None [] )
-      (* Note that C and C++ records are treated the same way
-         Skip translating implicit struct declarations, unless they have
-         full definition (which happens with C++ lambdas) *)
-      | ClassTemplateSpecializationDecl (di, _, _, decl_list, _, _, rdi, _, _, _, _)
-      | CXXRecordDecl (di, _, _, decl_list, _, _, rdi, _)
-      | RecordDecl (di, _, _, decl_list, _, _, rdi)
-        when (not di.di_is_implicit) || rdi.rdi_is_complete_definition ->
-          let is_method_decl decl =
-            match decl with
-            | CXXMethodDecl _
-            | CXXConstructorDecl _
-            | CXXConversionDecl _
-            | CXXDestructorDecl _
-            | FunctionTemplateDecl _ ->
-                true
-            | _ ->
-                false
-          in
-          let method_decls, no_method_decls = List.partition_tf ~f:is_method_decl decl_list in
-          List.iter ~f:translate no_method_decls ;
-          CFrontend_errors.protect
-            ~f:(fun () -> ignore (CType_decl.add_types_from_decl_to_tenv tenv dec))
-            ~recover:(fun () -> ())
-            ~pp_context:(fun fmt () ->
-              F.fprintf fmt "Error adding types from decl '%a'"
-                (Pp.of_string ~f:Clang_ast_j.string_of_decl)
-                dec ) ;
-          List.iter ~f:translate method_decls
-      | _ ->
-          () ) ;
+            let method_decls, no_method_decls = List.partition_tf ~f:is_method_decl decl_list in
+            List.iter ~f:translate no_method_decls ;
+            CFrontend_errors.protect
+              ~f:(fun () -> ignore (CType_decl.add_types_from_decl_to_tenv tenv dec))
+              ~recover:(fun () -> ())
+              ~pp_context:(fun fmt () ->
+                F.fprintf fmt "Error adding types from decl '%a'"
+                  (Pp.of_string ~f:Clang_ast_j.string_of_decl)
+                  dec ) ;
+            List.iter ~f:translate method_decls
+        | _ ->
+            () ) ;
     match dec with
     | EnumDecl _ ->
         ignore (CEnum_decl.enum_decl dec)

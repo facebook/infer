@@ -260,12 +260,12 @@ let get_reporting_explanation_java report_kind tenv pname thread =
         | Some (current_class, (thread_safe_class :: _ as thread_safe_annotated_classes)) ->
             Some
               ( if List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class then
-                F.asprintf "@\n Reporting because the current class is annotated %a"
-                  MF.pp_monospaced "@ThreadSafe"
-              else
-                F.asprintf "@\n Reporting because a superclass %a is annotated %a"
-                  (MF.wrap_monospaced Typ.Name.pp) thread_safe_class MF.pp_monospaced "@ThreadSafe"
-              )
+                  F.asprintf "@\n Reporting because the current class is annotated %a"
+                    MF.pp_monospaced "@ThreadSafe"
+                else
+                  F.asprintf "@\n Reporting because a superclass %a is annotated %a"
+                    (MF.wrap_monospaced Typ.Name.pp) thread_safe_class MF.pp_monospaced
+                    "@ThreadSafe" )
         | _ ->
             None )
   in
@@ -396,7 +396,7 @@ let make_unprotected_write_description pname final_sink_site initial_sink_site f
     describe_pname pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     ( if RacerDDomain.AccessSnapshot.is_container_write final_sink then "mutates"
-    else "writes to field" )
+      else "writes to field" )
     pp_access final_sink
 
 

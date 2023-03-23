@@ -697,7 +697,7 @@ let cmp perf x y =
               -Float.(
                  compare
                    (abs xgc.Report.allocated)
-                   (abs ygc.Report.allocated))
+                   (abs ygc.Report.allocated) )
               |> fun o -> if o <> 0 then o else String.compare x.name y.name
           | Some _, None -> 1
           | None, Some _ -> -1
@@ -839,8 +839,8 @@ let sort_cmd =
       ~doc:"<file> read baseline results from report <file>"
   and tests = anon (sequence ("<file>" %: string)) in
   fun () -> sort_tests baseline tests
-
 ;;
+
 Command.run
   (Command.group ~summary:"SLEdge report manipulation"
      [ ("html", Command.basic ~summary:"generate html report" html_cmd)

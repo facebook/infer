@@ -33,6 +33,6 @@ let main ~input ~output =
         Format.printf "@\nRESULT: Unknown error: %s@." (Caml.Printexc.to_string exn) ) ;
     Caml.Printexc.raise_with_backtrace exn bt
 
-
 ;;
+
 main ~input:Caml.Sys.argv.(1) ~output:(Some "-")

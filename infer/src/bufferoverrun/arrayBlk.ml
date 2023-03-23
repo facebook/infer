@@ -417,7 +417,7 @@ let lift_cmp_itv cmp_itv cmp_loc arr1 arr2 =
       Boolean.EqualOrder.(
         of_equal
           {on_equal= ArrInfo.lift_cmp_itv cmp_itv ai1 ai2; on_not_equal= cmp_loc.on_not_equal}
-          (Allocsite.eq as1 as2))
+          (Allocsite.eq as1 as2) )
   | _ ->
       Boolean.Top
 
