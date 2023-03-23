@@ -420,7 +420,7 @@ module ObjC_Cpp = struct
     | Non_verbose | NameOnly ->
         F.fprintf fmt "%s%s%s" (Typ.Name.name osig.class_name) sep osig.method_name
     | Verbose ->
-        F.fprintf fmt "%s%s%s%a%a" (Typ.Name.name osig.class_name) sep osig.method_name
+        F.fprintf fmt "%a%s%s%a%a" Typ.Name.pp osig.class_name sep osig.method_name
           Parameter.pp_parameters osig.parameters pp_verbose_kind osig.kind
 
 
