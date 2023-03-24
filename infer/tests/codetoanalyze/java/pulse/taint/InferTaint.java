@@ -39,4 +39,6 @@ public class InferTaint {
   public static void sink1(Object iMightBeTainted) {}
 
   public static void sink2(Object iMightBeTainted) {}
+
+  public static void addCallback(Callback callback) {}
 }

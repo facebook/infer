@@ -270,4 +270,30 @@ public class Basics {
     Object notSource = ics.inferChildNotSource();
     InferTaint.inferSensitiveSink(notSource);
   }
+
+  // first parameter is tainted based on the config
+  void firstParameterTainted(Object tainted, Object notTainted) {
+    // should be tainted
+    InferTaint.inferSensitiveSink(tainted);
+    // should not be tainted
+    InferTaint.inferSensitiveSink(notTainted);
+  }
+
+  void callbackAnonymousClassTaintedBad() {
+    InferTaint.addCallback(
+        new Callback() {
+          // result parameter is tainted based on the config
+          public void onCompletion(Object result) {
+            InferTaint.inferSensitiveSink(result);
+          }
+        });
+  }
+
+  void callbackLambdaTaintedBad() {
+    InferTaint.addCallback(
+        // result parameter is tainted based on the config
+        result -> {
+          InferTaint.inferSensitiveSink(result);
+        });
+  }
 }
