@@ -7,7 +7,6 @@
 
 open! IStd
 open Textual
-module StringSet = HashSet.Make (String)
 
 module QualifiedNameHashtbl = Hashtbl.Make (struct
   type t = qualified_procname
@@ -124,12 +123,30 @@ let fold_globals decls ~init ~f =
   VarName.Hashtbl.fold (fun key data x -> f x key data) decls.globals init
 
 
+let fold_procs decls ~init ~f =
+  QualifiedNameHashtbl.fold (fun _ proc x -> f x proc) decls.procs init
+
+
 let fold_procdecls decls ~init ~f =
-  QualifiedNameHashtbl.fold (fun _ proc x -> f x (ProcEntry.decl proc)) decls.procs init
+  fold_procs decls ~init ~f:(fun x proc -> f x (ProcEntry.decl proc))
 
 
 let fold_structs decls ~init ~f =
   TypeName.Hashtbl.fold (fun key data x -> f x key data) decls.structs init
+
+
+let get_proc_entries_by_enclosing_class decls =
+  fold_procs decls ~init:(TypeName.Map.empty, TypeName.Set.empty) ~f:(fun (map, set) proc ->
+      let pdecl = ProcEntry.decl proc in
+      match pdecl.ProcDecl.qualified_name.enclosing_class with
+      | Enclosing tname ->
+          let set =
+            if TypeName.Hashtbl.mem decls.structs tname then set else TypeName.Set.add tname set
+          in
+          let methods = TypeName.Map.find_opt tname map |> Option.value ~default:[] in
+          (TypeName.Map.add tname (proc :: methods) map, set)
+      | TopLevel ->
+          (map, set) )
 
 
 let source_file {sourcefile; _} = sourcefile
@@ -250,9 +267,11 @@ let get_procdesc_referenced_types (pdesc : ProcDesc.t) =
 
 
 let get_undefined_types decls =
-  let referenced_tnames, defined_tnames = (StringSet.create 17, StringSet.create 17) in
+  let referenced_tnames, defined_tnames =
+    (TypeName.HashSet.create 17, TypeName.HashSet.create 17)
+  in
   (* Helpers *)
-  let register_tname tname set = StringSet.add tname.TypeName.value set in
+  let register_tname tname set = TypeName.HashSet.add tname set in
   let register_tnames tnames set = List.iter tnames ~f:(fun x -> register_tname x set) in
   let register_typ typ set =
     Option.iter (get_typ_name typ) ~f:(fun tname -> register_tname tname set)
@@ -284,8 +303,8 @@ let get_undefined_types decls =
              register_typ field.typ referenced_tnames ) ) ;
   (* TODO(arr): collect types from expressions such as alloc and cast. We'll need to extend the
      decls with ProcDescs to have access to expressions. *)
-  StringSet.remove_all (StringSet.iter defined_tnames) referenced_tnames ;
-  StringSet.seq referenced_tnames
+  TypeName.HashSet.remove_all (TypeName.HashSet.iter defined_tnames) referenced_tnames ;
+  TypeName.HashSet.seq referenced_tnames
 
 
 let make_decls ({decls; sourcefile} : Module.t) : error list * t =

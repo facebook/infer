@@ -301,7 +301,7 @@ module ProcDeclBridge = struct
           | TopLevel ->
               None
           | Enclosing name ->
-              Some name.value
+              Some (HackClassName.make name.value)
         in
         SilProcname.make_hack ~class_name ~function_name:method_name
 end
@@ -334,15 +334,19 @@ end
 module StructBridge = struct
   open Struct
 
-  let to_sil lang tenv {name; supers; fields} =
+  let to_sil lang tenv proc_entries {name; supers; fields} =
     let name = TypeNameBridge.to_sil lang name in
     let supers = List.map supers ~f:(TypeNameBridge.to_sil lang) in
+    let methods =
+      List.map proc_entries ~f:(fun proc ->
+          TextualDecls.ProcEntry.decl proc |> ProcDeclBridge.to_sil lang )
+    in
     let fields =
       List.map fields ~f:(fun (fdecl : FieldDecl.t) ->
           (FieldDeclBridge.to_sil lang fdecl, TypBridge.to_sil lang fdecl.typ, Annot.Item.empty) )
     in
     (* FIXME: generate static fields *)
-    Tenv.mk_struct tenv ~fields ~supers name |> ignore
+    Tenv.mk_struct tenv ~fields ~supers ~methods name |> ignore
 
 
   let of_sil name (sil_struct : SilStruct.t) =
@@ -870,14 +874,26 @@ module ModuleBridge = struct
           let open TextualTransform in
           module_ |> remove_internal_calls |> let_propagation |> out_of_ssa
         in
+        let all_proc_entries, types_used_as_enclosing_but_not_defined =
+          TextualDecls.get_proc_entries_by_enclosing_class decls_env
+        in
         let cfgs = Cfg.create () in
         let tenv = Tenv.create () in
+        TypeName.Set.iter
+          (fun name ->
+            let proc_entries = TypeName.Map.find name all_proc_entries in
+            let struct_ = {Textual.Struct.name; supers= []; fields= []; attributes= []} in
+            StructBridge.to_sil lang tenv proc_entries struct_ )
+          types_used_as_enclosing_but_not_defined ;
         List.iter module_.decls ~f:(fun decl ->
             match decl with
             | Global _ ->
                 ()
             | Struct strct ->
-                StructBridge.to_sil lang tenv strct
+                let proc_entries =
+                  TypeName.Map.find_opt strct.name all_proc_entries |> Option.value ~default:[]
+                in
+                StructBridge.to_sil lang tenv proc_entries strct
             | Procdecl _ ->
                 ()
             | Proc pdesc ->
@@ -888,10 +904,15 @@ module ModuleBridge = struct
                   SsaVerification.run pdesc ;
                 ProcDescBridge.to_sil lang decls_env cfgs pdesc ) ;
         (* Register undefined types in tenv *)
+        let is_undefined_type tname =
+          (not (TypeName.Set.mem tname types_used_as_enclosing_but_not_defined))
+          && TextualDecls.get_struct decls_env tname |> Option.is_none
+        in
         TextualDecls.get_undefined_types decls_env
         |> Seq.iter (fun tname ->
-               let sil_tname = TypeNameBridge.value_to_sil lang tname in
-               Tenv.mk_struct ~dummy:true tenv sil_tname |> ignore ) ;
+               if is_undefined_type tname then
+                 let sil_tname = TypeNameBridge.to_sil lang tname in
+                 Tenv.mk_struct ~dummy:true tenv sil_tname |> ignore ) ;
         (cfgs, tenv)
 
 

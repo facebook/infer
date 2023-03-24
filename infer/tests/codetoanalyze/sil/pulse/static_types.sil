@@ -1,0 +1,52 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "hack"
+
+type B = { f:int }
+
+type A extends OO = {}
+
+define A.get_null(this: *A) : *B {
+  #entry:
+    ret null
+}
+
+define A.get_some(this: *A) : *B {
+  #entry:
+    ret __sil_allocate(<B>)
+}
+
+declare OO.get_some(*A) : *B
+
+declare OO.get_null(*A) : *B
+
+define bad_with_dyntype() : int {
+  #entry:
+    n0 = __sil_allocate(<A>)
+    n1: int = load n0.OO.get_null().B.f
+    ret n1
+}
+
+define ok_with_dyntype() : int {
+  #entry:
+    n0 = __sil_allocate(<A>)
+    n1: int = load n0.OO.get_some().B.f
+    ret n1
+}
+
+define FN_bad_with_statictype(a: *A) : int {
+  #entry:
+    n0: *OO = load &a
+    n1: int = load n0.OO.get_null().B.f
+    ret n1
+}
+
+define ok_with_statictype(a: *A) : int {
+  #entry:
+    n0: *OO = load &a
+    n1: int = load n0.OO.get_some().B.f
+    ret n1
+}

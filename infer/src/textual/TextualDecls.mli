@@ -11,6 +11,8 @@ type t
 
 module ProcEntry : sig
   type t = Decl of Textual.ProcDecl.t | Desc of Textual.ProcDesc.t
+
+  val decl : t -> Textual.ProcDecl.t
 end
 
 val init : Textual.SourceFile.t -> t
@@ -33,13 +35,18 @@ val get_global : t -> Textual.VarName.t -> Textual.Global.t option
 
 val get_procdecl : t -> Textual.qualified_procname -> Textual.ProcDecl.t option
 
+val get_proc_entries_by_enclosing_class :
+  t -> ProcEntry.t list Textual.TypeName.Map.t * Textual.TypeName.Set.t
+(** returns 1) in a map, all function implementation and declarations, indexed by the name of their
+    enclosing class 2) the set of all enclosing class that were not introduced by a type declaration *)
+
 val get_struct : t -> Textual.TypeName.t -> Textual.Struct.t option
 
 val is_field_declared : t -> Textual.qualified_fieldname -> bool
 
 val source_file : t -> Textual.SourceFile.t
 
-val get_undefined_types : t -> string Seq.t
+val get_undefined_types : t -> Textual.TypeName.t Seq.t
 
 type error
 

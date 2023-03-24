@@ -540,9 +540,9 @@ module Name = struct
   let to_string = F.asprintf "%a" pp
 
   let is_class = function
-    | CppClass _ | JavaClass _ | ObjcClass _ | CSharpClass _ ->
+    | CppClass _ | JavaClass _ | HackClass _ | ObjcClass _ | CSharpClass _ ->
         true
-    | _ ->
+    | CStruct _ | CUnion _ | ErlangType _ | ObjcProtocol _ ->
         false
 
 
@@ -556,6 +556,7 @@ module Name = struct
     | CUnion _, CUnion _
     | CppClass _, CppClass _
     | JavaClass _, JavaClass _
+    | HackClass _, HackClass _
     | ObjcClass _, ObjcClass _
     | ObjcProtocol _, ObjcProtocol _
     | CSharpClass _, CSharpClass _ ->

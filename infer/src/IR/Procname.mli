@@ -225,7 +225,7 @@ module FunctionParameters : sig
 end
 
 module Hack : sig
-  type t = private {class_name: string option; function_name: string}
+  type t = private {class_name: HackClassName.t option; function_name: string}
 end
 
 (** Type of procedure names. WithFunctionParameters is used for creating an instantiation of a
@@ -345,7 +345,7 @@ val make_csharp :
 val make_erlang : module_name:string -> function_name:string -> arity:int -> t
 (** Create an Erlang procedure name. *)
 
-val make_hack : class_name:string option -> function_name:string -> t
+val make_hack : class_name:HackClassName.t option -> function_name:string -> t
 (** Create a Hack procedure name. *)
 
 val make_objc_dealloc : Typ.Name.t -> t

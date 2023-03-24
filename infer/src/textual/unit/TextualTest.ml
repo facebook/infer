@@ -228,7 +228,12 @@ let%test_module "to_sil" =
         {|
           .source_language = "hack"
           type Foo {}
-          define f(arg1: Foo, arg2: Bar) : void { #n: ret null }
+          define Foo.f(arg1: Foo, arg2: Bar) : void { #n: ret null }
+          declare Foo.undef() : void
+          define Bar.f() : void {
+            #entry:
+              ret null
+          }
           define g() : void {
             local l1: *Quux
             #n:
@@ -257,11 +262,13 @@ let%test_module "to_sil" =
          statics: {}
          supers: {}
          objc_protocols: {}
-         methods: {}
+         methods: {
+                     Bar.f
+                   }
          exported_obj_methods: {}
          annots: {<>}
          java_class_info: {[None]}
-         dummy: true
+         dummy: false
          hack Baz
          fields: {}
          statics: {}
@@ -277,7 +284,10 @@ let%test_module "to_sil" =
          statics: {}
          supers: {}
          objc_protocols: {}
-         methods: {}
+         methods: {
+                     Foo.f
+                     Foo.undef
+                   }
          exported_obj_methods: {}
          annots: {<>}
          java_class_info: {[None]}
