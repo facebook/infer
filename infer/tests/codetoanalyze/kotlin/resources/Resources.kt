@@ -17,7 +17,7 @@ fun FP_InputOutputStreamOk(fileName: String) {
   fis.use { input -> fos.use { output -> output.write(input.read()) } }
 }
 
-fun FN_InputOutputStreamBad(fileName: String) {
+fun inputOutputStreamBad(fileName: String) {
   val fos = FileOutputStream(fileName)
   val fis = FileInputStream(fileName)
   fis.use { input -> fos.write(input.read()) }

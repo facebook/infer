@@ -1,0 +1,2 @@
+Resources.kt, ResourcesKt.FP_InputOutputStreamOk(java.lang.String):void, 12, PULSE_RESOURCE_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,allocated by constructor java.io.FileOutputStream() here,memory becomes unreachable here]
+Resources.kt, ResourcesKt.inputOutputStreamBad(java.lang.String):void, 6, PULSE_RESOURCE_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,allocated by constructor java.io.FileOutputStream() here,memory becomes unreachable here]
