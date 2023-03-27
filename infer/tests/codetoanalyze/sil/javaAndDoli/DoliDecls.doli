@@ -1,0 +1,32 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+
+rule r_File_C
+in Java match {
+// defines two functions
+    int length( )  under  java.io.File
+    int length( )  under codetoanalyze.java.infer.C
+// The class codetoanalyze.java.infer.C is not a library class
+} body {
+    #entry:
+        ret 2323
+}
+
+rule r_B
+in Java match {
+    int length( ) under  B
+} body {
+    #entry:
+        ret 2323
+}
+
+rule r_rands
+in Java match {
+    int nextInt( )  under  java.util.Random
+  } body {
+    #entry:
+        ret 2323
+}
