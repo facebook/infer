@@ -1,0 +1,27 @@
+{
+  "force-delete-results-dir": true,
+  "pulse-taint-sources": [
+    { "procedure": "inferSecretSource", "kinds": ["Simple"] },
+    { "class_names": ["codetoanalyze.kotlin.pulse.InferBaseSource"],
+      "method_return_type_names": ["java.lang.String"],
+      "kinds": ["Simple"]
+    },
+    { "class_names": ["codetoanalyze.kotlin.pulse.Basics"],
+      "method_names": ["firstParameterTainted"],
+      "taint_target": ["ArgumentPositions", [1]],
+      "kinds": ["Simple"]
+    },
+    { "class_names": ["codetoanalyze.kotlin.pulse.Callback"],
+      "method_names": ["onCompletion"],
+      "taint_target": ["ArgumentPositions", [1]],
+      "kinds": ["Simple"]
+    }
+  ],
+  "pulse-taint-sinks": [
+    { "procedure": "inferSensitiveSink" },
+    { "class_name_regex": "codetoanalyze.kotlin.pulse.sinks.*"}
+  ],
+  "pulse-taint-sanitizers": [
+    { "procedure": "inferUniversalSanitizer" }
+  ]
+}
