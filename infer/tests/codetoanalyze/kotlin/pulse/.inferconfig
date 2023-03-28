@@ -16,7 +16,11 @@
       "taint_target": ["ArgumentPositions", [1]],
       "kinds": ["Simple"]
     },
-    { "method_with_annotation": "codetoanalyze.kotlin.pulse.SensitiveSourceMarker" }
+    { "method_with_annotation": "codetoanalyze.kotlin.pulse.SensitiveSourceMarker" },
+    { "class_names": ["codetoanalyze.kotlin.pulse.Constants"],
+      "method_names": ["source"],
+      "taint_target": ["ArgumentPositions", [1]]
+    }
   ],
   "pulse-taint-sinks": [
     { "procedure": "inferSensitiveSink" },
