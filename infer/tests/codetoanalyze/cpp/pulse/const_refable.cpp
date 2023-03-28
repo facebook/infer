@@ -17,6 +17,9 @@ class Optional {
  public:
   Optional(const Optional& src);
   bool has_value();
+
+ private:
+  Value v;
 };
 
 namespace coro {
@@ -231,4 +234,13 @@ void modify_string2_ok_FP(std::string s) {
   char* p = &s[3];
   *p = 'a';
 }
+
+class N {
+  uint32_t n;
+};
+using TupleN = std::tuple<N, N>;
+
+void use_tupleN(TupleN x);
+
+void pass_tupleN_ok(TupleN x) { use_tupleN(x); }
 } // namespace const_refable

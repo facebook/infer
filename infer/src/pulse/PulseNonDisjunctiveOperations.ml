@@ -153,6 +153,38 @@ let is_cheap_to_copy tenv typ =
   || is_known_cheap_copy typ
 
 
+(* NOTE: While we calculate width of class here for detecting small types to ignore, this function
+   is NOT for precisely calculating the size in general. *)
+let rec get_fixed_size integer_widths tenv name =
+  match Tenv.lookup tenv name with
+  | Some {fields; dummy= false} ->
+      let open IOption.Let_syntax in
+      List.fold fields ~init:(Some 0) ~f:(fun acc (_, {Typ.desc}, _) ->
+          let* acc in
+          let+ size =
+            match desc with
+            | Tint ikind ->
+                Some (Typ.width_of_ikind integer_widths ikind)
+            | Tfloat fkind ->
+                Some (match fkind with FFloat -> 32 | FDouble -> 64 | FLongDouble -> 128)
+            | Tstruct name ->
+                get_fixed_size integer_widths tenv name
+            | Tvoid | Tfun | Tptr _ | TVar _ | Tarray _ ->
+                None
+          in
+          acc + size )
+  | Some {dummy= true} | None ->
+      None
+
+
+let is_smaller_than_64_bits integer_type_widths tenv typ =
+  match typ.Typ.desc with
+  | Tptr ({desc= Tstruct name}, _) ->
+      Option.exists (get_fixed_size integer_type_widths tenv name) ~f:(fun size -> size <= 64)
+  | _ ->
+      false
+
+
 let has_copy_in str = String.is_substring (String.lowercase str) ~substring:"copy"
 
 let has_copy_in_name pname = has_copy_in (Procname.get_method pname)
@@ -431,7 +463,7 @@ let is_folly_coro_task =
         false
 
 
-let init_const_refable_parameters procdesc tenv astates astate_n =
+let init_const_refable_parameters procdesc integer_type_widths tenv astates astate_n =
   if
     Option.exists (Procdesc.get_ret_param_type procdesc) ~f:is_folly_coro_task
     || Procname.is_lambda_or_block (Procdesc.get_proc_name procdesc)
@@ -445,6 +477,7 @@ let init_const_refable_parameters procdesc tenv astates astate_n =
             if
               Var.appears_in_source_code var && Typ.is_reference typ
               && (not (is_cheap_to_copy tenv typ))
+              && (not (is_smaller_than_64_bits integer_type_widths tenv typ))
               && (not (Var.is_cpp_unnamed_param var))
               && (* [unique_ptr] is ignored since it is not copied. This condition can be removed if
                     we can distinguish whether a class has a copy constructor or not. *)

@@ -12,7 +12,12 @@ val has_copy_in : string -> bool
 (** Check if the string includes "copy" in case-insensitive *)
 
 val init_const_refable_parameters :
-  Procdesc.t -> Tenv.t -> ExecutionDomain.t list -> NonDisjDomain.t -> NonDisjDomain.t
+     Procdesc.t
+  -> Typ.IntegerWidths.t
+  -> Tenv.t
+  -> ExecutionDomain.t list
+  -> NonDisjDomain.t
+  -> NonDisjDomain.t
 (** Initialize candidate parameters for const refable in the non-disj domain *)
 
 val call :

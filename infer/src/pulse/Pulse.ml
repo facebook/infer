@@ -1073,16 +1073,18 @@ let log_summary_count proc_name summary =
   Out_channel.output_char (Lazy.force summary_count_channel) '\n'
 
 
-let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) =
+let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) =
   if should_analyze proc_desc then
     let proc_name = Procdesc.get_proc_name proc_desc in
     let proc_attrs = Procdesc.get_attributes proc_desc in
+    let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
     let initial =
       with_html_debug_node (Procdesc.get_start_node proc_desc) ~desc:"initial state creation"
         ~f:(fun () ->
           let initial_disjuncts = initial tenv proc_name proc_attrs in
           let initial_non_disj =
-            PulseNonDisjunctiveOperations.init_const_refable_parameters proc_desc tenv
+            PulseNonDisjunctiveOperations.init_const_refable_parameters proc_desc
+              integer_type_widths tenv
               (List.map initial_disjuncts ~f:fst)
               NonDisjDomain.bottom
           in
