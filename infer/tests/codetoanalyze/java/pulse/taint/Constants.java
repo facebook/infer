@@ -20,4 +20,10 @@ class Constants {
     source("asdf");
     InferTaint.inferSensitiveSink("asdf");
   }
+
+  void nonLiteralTaintedBad() {
+    Object obj = new Object();
+    source(obj);
+    InferTaint.inferSensitiveSink(obj);
+  }
 }
