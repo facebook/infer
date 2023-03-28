@@ -109,8 +109,8 @@ class Basics {
     }
   }
 
-  fun whileBad1() {
-    var i = 0
+  fun whileBad1(input: Int) {
+    var i = input
     val src = InferTaint.inferSecretSource()
     while (i < 10) {
       InferTaint.inferSensitiveSink(src)
@@ -118,8 +118,8 @@ class Basics {
     }
   }
 
-  fun FN_whileBad2() {
-    var i = 0
+  fun whileBad2(input: Int) {
+    var i = input
     var src: Any? = null
     while (i < 10) {
       src = InferTaint.inferSecretSource()
