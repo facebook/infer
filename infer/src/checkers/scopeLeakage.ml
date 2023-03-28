@@ -13,6 +13,14 @@ module VarMap = Hashtbl.Make (Var)
 
 let pp_comma_sep fmt () = F.pp_print_string fmt ", "
 
+let pp_loc_opt fmt loc_opt =
+  match loc_opt with
+  | Some loc ->
+      Location.pp_file_pos fmt loc
+  | None ->
+      F.pp_print_string fmt "(unknown source location)"
+
+
 (* A module for parsing a JSON configuration into a custom data type. *)
 module AnalysisConfig : sig
   (** A class name and the method names of that class that are known to "generate" a scope. That is,
@@ -54,32 +62,23 @@ end = struct
 
   let empty = {annotation_classname= ""; scope_defs= []; must_not_hold_pairs= []}
 
-  let pp_method fs methodname = F.fprintf fs {|"%s"|} methodname
-
-  let pp_methods fs methods = F.pp_print_list ~pp_sep:pp_comma_sep pp_method fs methods
-
-  let pp_generator fs {classname; methods} =
-    F.fprintf fs {| { "classname": "%s", "methods": [%a] } |} classname pp_methods methods
-
-
-  let pp_generators fs generators = F.pp_print_list ~pp_sep:pp_comma_sep pp_generator fs generators
-
-  let pp_must_not_hold_pair fs {holder; held} =
-    F.fprintf fs {| { "holder": "%s", "held": "%s" } |} holder held
-
-
-  let pp_must_not_hold_pairs fs pairs =
-    F.pp_print_list ~pp_sep:pp_comma_sep pp_must_not_hold_pair fs pairs
-
-
-  let pp_scope fs {classname; generators} =
-    F.fprintf fs {| { "classname": "%s", "generators": [%a] } |} classname pp_generators generators
-
-
-  let pp_scopes fs scopes = F.pp_print_list ~pp_sep:pp_comma_sep pp_scope fs scopes
-
-  let pp fs config =
-    F.fprintf fs
+  let pp fmt config =
+    let pp_list pp_elt = F.pp_print_list ~pp_sep:pp_comma_sep pp_elt in
+    let pp_methods fmt methods =
+      let pp_method fmt methodname = F.fprintf fmt {|"%s"|} methodname in
+      (pp_list pp_method) fmt methods
+    in
+    let pp_generator fmt {classname; methods} =
+      F.fprintf fmt {| { "classname": "%s", "methods": [%a] } |} classname pp_methods methods
+    in
+    let pp_scope fmt {classname; generators} =
+      F.fprintf fmt {| { "classname": "%s", "generators": [%a] } |} classname (pp_list pp_generator)
+        generators
+    in
+    let pp_must_not_hold_pair fmt {holder; held} =
+      F.fprintf fmt {| { "holder": "%s", "held": "%s" } |} holder held
+    in
+    F.fprintf fmt
       {|"scope-leakage-config" : {
   "annot-classname": "%s",
   "scopes": [
@@ -88,8 +87,8 @@ end = struct
   "must-not-hold": {%a}
 }
       |}
-      config.annotation_classname pp_scopes config.scope_defs pp_must_not_hold_pairs
-      config.must_not_hold_pairs
+      config.annotation_classname (pp_list pp_scope) config.scope_defs
+      (pp_list pp_must_not_hold_pair) config.must_not_hold_pairs
 
 
   (** Finds a named JSON node in a map and aborts with an informative message otherwise. *)
@@ -219,10 +218,144 @@ let config =
   else AnalysisConfig.empty
 
 
+(** Retrieves the optional location from a struct corresponding to a Java type. *)
+let get_struct_loc {Struct.java_class_info} =
+  Option.bind java_class_info ~f:(fun {Struct.loc} -> loc)
+
+
+(* A module for representing declarations of scopes. *)
+module ScopeDeclaration : sig
+  type t
+
+  val for_annotation : Typ.Name.t option -> Location.t option -> t
+
+  val for_super : Typ.Name.t -> Location.t option -> t
+
+  val for_generator : Procname.t -> Location.t -> t
+
+  val simplicity_level : t -> int
+  (* A level, between 0 and 2, which represents the simplicity of the declaration in terms of explaining an error to a user. *)
+
+  val pp : F.formatter -> t -> unit
+
+  val pp_debug : F.formatter -> t -> unit
+
+  val trace_elem : t -> Errlog.loc_trace_elem
+end = struct
+  type declaration_kind =
+    | ViaAnnotation of Typ.Name.t option
+    | ViaSupertype of Typ.Name.t
+    | ViaGenerator of Procname.t
+
+  type t = {kind: declaration_kind; loc: Location.t option}
+
+  let pp fmt {kind; loc= _} =
+    match kind with
+    | ViaAnnotation (Some typename) ->
+        F.fprintf fmt "Scope declared via annotation on %a" Typ.Name.pp typename
+    | ViaAnnotation None ->
+        F.fprintf fmt "Scope declared via annotation"
+    | ViaSupertype super ->
+        F.fprintf fmt "Scope declared via annotation on super-type %a" Typ.Name.pp super
+    | ViaGenerator gen_procname ->
+        F.fprintf fmt "Scope declared via call to %a" Procname.pp gen_procname
+
+
+  let pp_debug fmt ({loc} as decl) = F.fprintf fmt "%a: %a" pp_loc_opt loc pp decl
+
+  let trace_elem {kind; loc} =
+    let trace_loc = Option.value loc ~default:Location.dummy in
+    let msg =
+      match kind with
+      | ViaAnnotation (Some typename) ->
+          "Scope declared via annotation on " ^ Typ.Name.to_string typename
+      | ViaAnnotation None ->
+          "Scope declared via annotation"
+      | ViaSupertype super ->
+          "Scope declared via annotation on super-type " ^ Typ.Name.to_string super
+      | ViaGenerator gen_procname ->
+          "Scope declared via call to " ^ Procname.to_simplified_string gen_procname
+    in
+    Errlog.make_trace_element 0 trace_loc msg []
+
+
+  let simplicity_level {kind} =
+    match kind with ViaAnnotation _ -> 0 | ViaSupertype _ -> 1 | ViaGenerator _ -> 2
+
+
+  let for_annotation typename loc = {kind= ViaAnnotation typename; loc}
+
+  let for_super super_name loc = {kind= ViaSupertype super_name; loc}
+
+  let for_generator procname loc = {kind= ViaGenerator procname; loc= Some loc}
+end
+
+module ScopeAccess : sig
+  type access_kind =
+    | ViaField of Fieldname.t
+    | ViaParameter of Procname.t * int
+    | ViaReturnExp of Procname.t
+
+  type t = {kind: access_kind; loc: Location.t option}
+
+  val for_field : Fieldname.t -> Location.t option -> t
+
+  val for_parameter : Procname.t -> int -> Location.t option -> t
+
+  val for_return_exp : Procname.t -> Location.t option -> t
+
+  val pp : F.formatter -> t -> unit
+
+  val pp_debug : F.formatter -> t -> unit
+
+  val trace_elem : t -> Errlog.loc_trace_elem
+end = struct
+  type access_kind =
+    | ViaField of Fieldname.t
+    | ViaParameter of Procname.t * int
+    | ViaReturnExp of Procname.t
+
+  type t = {kind: access_kind; loc: Location.t option}
+
+  let for_field fldname loc = {kind= ViaField fldname; loc}
+
+  let for_parameter procname pos loc = {kind= ViaParameter (procname, pos); loc}
+
+  let for_return_exp procname loc = {kind= ViaReturnExp procname; loc}
+
+  let pp fmt {kind; loc= _} =
+    match kind with
+    | ViaField fld ->
+        F.fprintf fmt "Scoped object assigned to field %a" Fieldname.pp fld
+    | ViaParameter (procname, position) ->
+        F.fprintf fmt "Scoped object passed via parameter %i of %a" position Procname.pp procname
+    | ViaReturnExp procname ->
+        F.fprintf fmt "Scoped object returned from %a" Procname.pp procname
+
+
+  let pp_debug fmt ({loc} as access) = F.fprintf fmt "%a: %a" pp_loc_opt loc pp access
+
+  let trace_elem {kind; loc} =
+    let trace_loc = Option.value loc ~default:Location.dummy in
+    let msg =
+      match kind with
+      | ViaField fld ->
+          Printf.sprintf "Scoped object assigned to field %s" (Fieldname.to_string fld)
+      | ViaParameter (procname, position) ->
+          Printf.sprintf "Scoped object passed via parameter %i of %s" position
+            (Procname.to_simplified_string procname)
+      | ViaReturnExp procname ->
+          Printf.sprintf "Scoped object returned from %s" (Procname.to_simplified_string procname)
+    in
+    Errlog.make_trace_element 0 trace_loc msg []
+end
+
 (** A module for defining scopes and basic operations on scopes as well as extracting scopes from
     type annotations. *)
 module Scope : sig
-  type t
+  type explained_scope
+
+  type t = explained_scope list
 
   val bottom : t
   (** Represents an empty set of scopes. *)
@@ -231,67 +364,180 @@ module Scope : sig
 
   val join : t -> t -> t
 
-  val pp : F.formatter -> t -> unit
-
   val of_type : Tenv.t -> Typ.t -> t
   (** Infers a scope for the given type. *)
 
-  val must_not_hold : t -> t -> bool
-  (** must_not_hold [holder_scope] [held_scope] is true if objects of scope [holder_scope] are not
-      allowed to hold (transitively via object fields) objects of scope [held_scope]. *)
+  val make_for_generator : Typ.Name.t -> Procname.t -> Location.t -> t
 
-  val of_generator_procname : Procname.t -> t
-  (** Matches a procedure name with the scope of the returned object (or bottom if the scope of the
+  val must_not_hold_violations : t -> t -> (explained_scope * explained_scope) list
+
+  val of_generator_procname : Procname.t -> Typ.Name.t option
+  (** Matches a procedure name with the scope of the returned object (or None if the scope of the
       returned object is unknown) by matching it against the set of known generators. *)
+
+  val extend_with_parameter : t -> Procname.t -> int -> Location.t option -> t
+
+  val extend_with_return_exp : t -> Procname.t -> Location.t option -> t
+
+  val extend_with_field_access : t -> Fieldname.t -> Location.t option -> t
+
+  val get_field_path : explained_scope -> Fieldname.t list
+
+  val pp : F.formatter -> t -> unit
+
+  (* val pp_explained_scope : F.formatter -> explained_scope -> unit *)
+
+  val pp_explained_scope_debug : F.formatter -> explained_scope -> unit
+
+  val pp_explained_type : F.formatter -> explained_scope -> unit
+
+  val trace : explained_scope -> Errlog.loc_trace
 end = struct
-  (* In order to allow a scope abstraction, we slightly abuse the set of scopes
-     by adding a bottom element and a top element.
-     A more precise option is to define another type that holds a set
-     of scopes, but the added precision is not needed.
-  *)
-  type t = Bottom | Type of Typ.Name.t | Top [@@deriving equal]
+  type explained_scope = {typname: Typ.Name.t; path: ScopeAccess.t list; dst: ScopeDeclaration.t}
 
-  let bottom = Bottom
+  (** Note that the length of the declared list and the accessed list are expected to be quite short
+      (on the order of single digits). The explanations in the 'declared' field are always
+      degenerate. That is, their 'path' field is empty. *)
+  type t = explained_scope list
 
-  let annotation_class = config.annotation_classname
+  let bottom = []
 
+  let is_bottom scopes = List.is_empty scopes
+
+  let field_depth {path} =
+    List.count path ~f:(fun {ScopeAccess.kind} ->
+        match kind with ScopeAccess.ViaField _ -> true | _ -> false )
+
+
+  let is_declared explained = equal_int 0 (field_depth explained)
+
+  (* Returns the names of the fields appearing in the path component,
+     in the same order. *)
+  let get_field_path {path} =
+    List.rev_filter_map path ~f:(function ScopeAccess.{kind= ViaField f} -> Some f | _ -> None)
+
+
+  let pp_explained_scope fmt {typname; path; dst} =
+    let pp_access_path fmt access_path =
+      F.pp_print_list ~pp_sep:pp_comma_sep ScopeAccess.pp fmt access_path
+    in
+    F.fprintf fmt "%a:[%a.%a]" Typ.Name.pp typname pp_access_path path ScopeDeclaration.pp dst
+
+
+  let pp_explained_scope_debug fmt {typname; path; dst} =
+    let pp_newline_sep fmt () = F.pp_print_string fmt "\n" in
+    let pp_access_path fmt access_path =
+      F.pp_print_list ~pp_sep:pp_newline_sep ScopeAccess.pp_debug fmt access_path
+    in
+    F.fprintf fmt "%a:[%a.\n%a]" Typ.Name.pp typname pp_access_path path ScopeDeclaration.pp_debug
+      dst
+
+
+  let trace {path; dst} =
+    let path_trace = List.map path ~f:(fun access -> ScopeAccess.trace_elem access) in
+    let dst_trace = [ScopeDeclaration.trace_elem dst] in
+    path_trace @ dst_trace
+
+
+  let pp_explained_type fmt {typname} = F.fprintf fmt "%s" (Typ.Name.name typname)
+
+  let pp fmt scopes =
+    let pp_list pp_single fmt l =
+      if List.is_empty l then F.fprintf fmt "[]"
+      else F.pp_print_list ~pp_sep:pp_comma_sep pp_single fmt l
+    in
+    let pp_explained_list fmt accessed_list = pp_list pp_explained_scope fmt accessed_list in
+    F.fprintf fmt "%a" pp_explained_list scopes
+
+
+  (* Retains one (the simplest) explained scope per scope type name. The order of the output list
+     is non-deterministic. *)
+  let normalize scopes =
+    let simpler explained1 explained2 =
+      (* Lexicographic simplicity measure: first we prefer shorter field paths,
+         then overall access paths, and finally simplier declarations.
+         We multiply by exponents of 2 to allow bit-shift optimizations.
+      *)
+      let lex_level ({path; dst} as explained) =
+        (256 * field_depth explained)
+        + (4 * List.length path)
+        + ScopeDeclaration.simplicity_level dst
+      in
+      lex_level explained1 <= lex_level explained2
+    in
+    (* Create a map from scope type names to the simplest explained scopes that reference them. *)
+    let module TypenameMap = Hashtbl.Make (Typ.Name) in
+    let scope_map = TypenameMap.create 3 in
+    List.iter scopes ~f:(fun scope ->
+        let typ = scope.typname in
+        match TypenameMap.find_opt scope_map typ with
+        | None ->
+            TypenameMap.add scope_map typ scope
+        | Some scope' ->
+            if simpler scope scope' then TypenameMap.replace scope_map typ scope ) ;
+    (* Now, dump the simplest scopes to a list. *)
+    TypenameMap.to_seq_values scope_map |> Seq.fold_left (fun accum scope -> scope :: accum) []
+
+
+  let join scopes1 scopes2 = normalize (scopes1 @ scopes2)
+
+  let extend_with_parameter scopes procname pos loc =
+    List.map scopes ~f:(fun scope ->
+        let parameter_access = ScopeAccess.for_parameter procname pos loc in
+        {scope with path= parameter_access :: scope.path} )
+
+
+  let extend_with_return_exp scopes procname loc =
+    List.map scopes ~f:(fun scope ->
+        let return_access = ScopeAccess.for_return_exp procname loc in
+        {scope with path= return_access :: scope.path} )
+
+
+  let extend_with_field_access scopes fldname loc =
+    List.map scopes ~f:(fun scope ->
+        let field_access = ScopeAccess.for_field fldname loc in
+        {scope with path= field_access :: scope.path} )
+
+
+  (** TODO: figure out if I can hide this inside of_scope_class_name (whether it's evaluated just
+      once). *)
   let scope_class_names =
     List.map config.scope_defs ~f:(fun scope -> scope.AnalysisConfig.classname)
 
 
-  let is_bottom scope = equal scope bottom
-
-  let leq ~lhs ~rhs =
-    if equal lhs rhs then true
-    else match (lhs, rhs) with Bottom, _ | _, Top -> true | _, _ -> false
-
-
-  let join x y = if leq ~lhs:x ~rhs:y then y else if leq ~lhs:y ~rhs:x then x else Top
-
-  let pp fs s =
-    F.pp_print_string fs
-      (match s with Type typ -> Typ.Name.name typ | Bottom -> "Bottom" | Top -> "Unknown")
-
-
-  (** Returns the scope corresponding to the class implementing it, or Bottom if the given name does
+  (** Returns the scope corresponding to the class implementing it, or None if the given name does
       not correspond to any such class. *)
   let of_scope_class_name name =
     if List.mem scope_class_names name ~equal:String.equal then
-      Type (Typ.Name.Java.from_string name)
-    else bottom
+      Some (Typ.Name.Java.from_string name)
+    else None
 
 
-  let must_not_hold_scopes =
+  (** Converts the string-based relation in the configuration to a list of typename pairs. *)
+  let must_not_hold_relation =
     List.map config.must_not_hold_pairs ~f:(fun {AnalysisConfig.holder; held} ->
-        (of_scope_class_name holder, of_scope_class_name held) )
+        ( of_scope_class_name holder |> Option.value_exn
+        , of_scope_class_name held |> Option.value_exn ) )
 
 
-  let must_not_hold s1 s2 =
-    if equal s1 Top then List.exists must_not_hold_scopes ~f:(fun (_, held) -> equal s2 held)
-    else if equal s2 Top then
-      List.exists must_not_hold_scopes ~f:(fun (holder, _) -> equal s1 holder)
-    else
-      List.exists must_not_hold_scopes ~f:(fun (holder, held) -> equal s1 holder && equal s2 held)
+  (* Given a pair of explained scope lists, lists the pair of 'declared-scope x any-scope' from their
+     Cartesian product that would cause a violation. That is, if storing the right-hand scope into an object
+     with the left-hand scope would yield a scope leak. *)
+  let must_not_hold_violations left_scopes right_scopes =
+    let enumerate_product lst1 lst2 =
+      List.fold lst1 ~init:[] ~f:(fun accum1 elem1 ->
+          List.fold lst2 ~init:accum1 ~f:(fun accum2 elem2 -> (elem1, elem2) :: accum2) )
+    in
+    let single_scopes_prodct = enumerate_product left_scopes right_scopes in
+    (* Checks whether the two given scope type names are included in the must_not_hold list
+       of the analysis configuration. *)
+    let mem_must_not_hold typname1 typname2 =
+      List.exists must_not_hold_relation ~f:(fun (holder, held) ->
+          Typ.Name.equal typname1 holder && Typ.Name.equal typname2 held )
+    in
+    List.filter single_scopes_prodct ~f:(fun (left_explained, right_explained) ->
+        is_declared left_explained
+        && mem_must_not_hold left_explained.typname right_explained.typname )
 
 
   (** Matches a parameter like "value = OuterScope.class" with the corresponding scope. *)
@@ -299,17 +545,7 @@ end = struct
     | {Annot.name= Some "value"; value= Class typ} when PatternMatch.type_is_class typ ->
         of_scope_class_name (PatternMatch.get_type_name typ)
     | _ ->
-        Bottom
-
-
-  (* Joins the set of scopes appearing in the parameters.
-  *)
-  let of_annot {Annot.class_name; parameters} =
-    if String.equal class_name annotation_class then
-      List.fold parameters ~init:Bottom ~f:(fun accum_scope annot_param ->
-          let curr_scope = of_annot_param annot_param in
-          join curr_scope accum_scope )
-    else bottom
+        None
 
 
   (** Traverses the given type to return a Struct.t, if one exists. *)
@@ -326,22 +562,36 @@ end = struct
 
 
   (** Returns the scope corresponding to the given struct based on its annotations. *)
-  let of_struct_annots struc =
-    let open Struct in
-    List.fold struc.annots ~init:bottom ~f:(fun accum_scope annot ->
-        let curr_scope = of_annot annot in
-        join curr_scope accum_scope )
+  let of_struct_annots typename struc =
+    (* Lists the scopes appearing in the parameters. *)
+    let of_annot {Annot.class_name; parameters} =
+      if String.equal class_name config.annotation_classname then
+        List.filter_map parameters ~f:of_annot_param
+      else []
+    in
+    let struct_scope_types = List.concat_map struc.Struct.annots ~f:of_annot in
+    let loc = get_struct_loc struc in
+    List.map struct_scope_types ~f:(fun scope_type ->
+        {typname= scope_type; path= []; dst= ScopeDeclaration.for_annotation typename loc} )
 
 
-  (** Returns the join of the scopes of all super-types of a given type name, based on their
-      annotations. *)
+  (** Lists the scopes of all super-types of a given type name, based on their annotations. *)
   let of_supertypes tenv typname =
-    Tenv.fold_supers tenv typname ~init:bottom ~f:(fun _ struct_opt accum_scope ->
+    Tenv.fold_supers tenv typname ~init:[] ~f:(fun super_typname struct_opt accum_scopes ->
         match struct_opt with
-        | Some super_struct ->
-            join accum_scope (of_struct_annots super_struct)
-        | None ->
-            accum_scope )
+        (* fold_supers also traverses typname itself, so we need to exclude it explicitly. *)
+        | Some super_struct when not (Typ.equal_name typname super_typname) ->
+            let super_scopes = of_struct_annots (Some super_typname) super_struct in
+            let extended_super_scopes =
+              List.map super_scopes ~f:(fun {typname; path} ->
+                  let super_decl =
+                    ScopeDeclaration.for_super super_typname (get_struct_loc super_struct)
+                  in
+                  {typname; path; dst= super_decl} )
+            in
+            extended_super_scopes @ accum_scopes
+        | _ ->
+            accum_scopes )
 
 
   (** Traverses the type to find an element associated with a type name, if one exists. *)
@@ -357,49 +607,52 @@ end = struct
         None
 
 
-  (** Returns the scope associated with the given type based on its own annotations and the
+  (** Lists the scopes associated with the given type based on its own annotations and the
       annotations of its super-types. *)
   let of_type tenv typ =
+    let typename_opt = inner_typename typ in
     let annots_scope =
-      match inner_struct_of_type tenv typ with Some s -> of_struct_annots s | None -> bottom
+      match inner_struct_of_type tenv typ with
+      | Some s ->
+          of_struct_annots typename_opt s
+      | None ->
+          bottom
     in
     let supers_scope =
-      match inner_typename typ with Some typname -> of_supertypes tenv typname | None -> bottom
+      match typename_opt with Some typname -> of_supertypes tenv typname | None -> bottom
     in
-    join annots_scope supers_scope
-
-
-  let matches_classname_methods classname' methodname' {AnalysisConfig.classname; methods} =
-    String.equal classname classname' && List.exists methods ~f:(String.equal methodname')
-
-
-  (** Checks whether the given classname and methodname exist in the list of generators. *)
-  let matches_generators classname methodname generators =
-    List.exists generators ~f:(matches_classname_methods classname methodname)
+    annots_scope @ supers_scope
 
 
   (** Returns the scope for which there exists a generator that matches the given Java procedure
       name, if one exists, and bottom otherwise. *)
   let match_javaname scopes (jname : Procname.Java.t) =
+    let open AnalysisConfig in
     let curr_classname = Procname.Java.get_class_name jname in
     let curr_method = Procname.Java.get_method jname in
-    match
-      List.find scopes ~f:(fun scope ->
-          matches_generators curr_classname curr_method scope.AnalysisConfig.generators )
-    with
-    | Some scope ->
-        of_scope_class_name scope.AnalysisConfig.classname
-    | None ->
-        bottom
+    (* Checks whether curr_classname+curr_method exist in the list of generators. *)
+    let match_generators generators =
+      let matches_classname_methods {classname; methods} =
+        String.equal classname curr_classname && List.exists methods ~f:(String.equal curr_method)
+      in
+      List.exists generators ~f:matches_classname_methods
+    in
+    List.find scopes ~f:(fun scope -> match_generators scope.generators)
+    |> Option.bind ~f:(fun scope -> of_scope_class_name scope.classname)
 
 
   (** Given a config, generates a function that matches a procedure name with the scope of the
-      returned object (or bottom if the scope of the returned object is unknown). *)
+      returned object (or None if the scope of the returned object is unknown). *)
   let of_generator_procname_with_config {AnalysisConfig.scope_defs} procname =
-    match procname with Procname.Java jname -> match_javaname scope_defs jname | _ -> bottom
+    match procname with Procname.Java jname -> match_javaname scope_defs jname | _ -> None
 
 
   let of_generator_procname = of_generator_procname_with_config config
+
+  let make_for_generator gen_typename procname loc =
+    let generator_decl = ScopeDeclaration.for_generator procname loc in
+    let generator_scope = {typname= gen_typename; path= []; dst= generator_decl} in
+    [generator_scope]
 end
 
 (** A flow-insensitive alias analysis between local pointer variables. That is, only assignments
@@ -447,9 +700,14 @@ module Aliasing = struct
     (* Fully compress the aliasing chains. *)
     filter_map_inplace (fun k _ -> Some (get_rep varToRep k)) varToRep ;
     varToRep
+
+
+  let pp fmt aliasing =
+    VarMap.iter (fun k v -> F.fprintf fmt "%a -> %a, " Var.pp k Var.pp v) aliasing
 end
 
-(** A mapping from pointer variables to scopes. *)
+(** A mapping from pointer variables to scopes. The mapping maintains the scopes only for the
+    representative of each alias set. *)
 module VarToScope : sig
   type t
 
@@ -480,7 +738,7 @@ end = struct
     let joined_scope = Scope.join scope current_scope in
     if not (Scope.is_bottom joined_scope) (* Keep the mapping sparse. *) then
       replace abs.env var joined_scope
-    else (* d' is bottom, meaning there is no key in the table. *)
+    else (* joined_scope is bottom, meaning there is no key in the table. *)
       ()
 
 
@@ -494,7 +752,8 @@ end
 
 module Summary = VarToScope
 
-(* The variable to which we should assign a scope to in the given expression. *)
+(* The top-level variable to which we should assign a scope in the given
+   expression, if this expression indeed starts with a variable. *)
 let rec scope_target_var_of_expr (e : Exp.t) =
   match e with
   | Var id ->
@@ -507,31 +766,77 @@ let rec scope_target_var_of_expr (e : Exp.t) =
       None
 
 
-let apply_to_expr (e : Exp.t) scope =
-  scope_target_var_of_expr e |> Option.map ~f:(fun v -> (v, scope))
+(* If [e] is an expression that starts with a variable, returns an update pair
+   to associate the given scopes with it. Otherwise, returns an empty list
+    of updates. *)
+let update_of_expr (e : Exp.t) (scopes : Scope.explained_scope list) =
+  match scope_target_var_of_expr e with Some v -> [(v, scopes)] | None -> []
 
 
-let apply_summary procname analyze_dependency ret_exp args =
+(* Creates a summary that assigns scopes to parameters based on the annotations
+   associated with their types. *)
+let type_based_summary attributes tenv procname =
+  let result = VarToScope.create (VarMap.create 0) 0 in
+  let formals = ProcAttributes.get_pvar_formals attributes in
+  (* First, assign the scope of the return variable. *)
+  let ret_var = Pvar.get_ret_pvar procname in
+  let attributes = Attributes.load_exn procname in
+  let ret_typ = ProcAttributes.to_return_type attributes in
+  let ret_scope = Scope.of_type tenv ret_typ in
+  VarToScope.join result (Var.of_pvar ret_var) ret_scope ;
+  (* Second, assign the scopes of the parameters. *)
+  List.iter formals ~f:(fun (pvar, typ) ->
+      let scope = Scope.of_type tenv typ in
+      VarToScope.join result (Var.of_pvar pvar) scope ) ;
+  result
+
+
+(* Retrieves a summary for the given procedure, if one exists, and generates a
+   type-based summary otherwise. *)
+let get_or_make_summary attributes tenv procname analyze_dependency =
   match analyze_dependency procname with
   | Some summary ->
-      let all_formals =
-        let attrs = Attributes.load_exn procname in
-        let ret_var = Pvar.get_ret_pvar procname in
-        let ret_type = attrs.ProcAttributes.ret_type in
-        (ret_var, ret_type) :: ProcAttributes.get_pvar_formals attrs
-      in
-      let all_actuals = ret_exp :: args in
-      if equal_int (List.length all_formals) (List.length all_actuals) then
-        List.fold2_exn all_formals all_actuals ~init:[]
-          ~f:(fun updates (formal_pvar, _) (actual, _) ->
-            let formal_scope = VarToScope.find_or_bottom summary (Var.of_pvar formal_pvar) in
-            apply_to_expr actual formal_scope
-            |> Option.fold ~init:updates ~f:(fun accum exp_update -> exp_update :: accum) )
+      summary
+  | None ->
+      let result = type_based_summary attributes tenv procname in
+      L.debug Analysis Verbose
+        "@[<v2> ScopeLeakage: no summary found for procname `%a`. Creating a type-based summary.@]@,"
+        Procname.pp procname ;
+      result
+
+
+(* Returns a list of scope updates for the (top-level) variables in the actual
+   arguments and return variable of a function call. *)
+let apply_summary tenv loc procname analyze_dependency ret_exp args =
+  match Attributes.load procname with
+  | Some attributes ->
+      let summary = get_or_make_summary attributes tenv procname analyze_dependency in
+      let ret_var = Pvar.get_ret_pvar procname in
+      let formals = ProcAttributes.get_pvar_formals attributes in
+      if equal_int (List.length formals) (List.length args) then
+        let returned_var_scope = VarToScope.find_or_bottom summary (Var.of_pvar ret_var) in
+        let extended_returned_var_scope =
+          Scope.extend_with_return_exp returned_var_scope procname loc
+        in
+        let (return_updates : (Var.t * Scope.explained_scope list) list) =
+          update_of_expr ret_exp extended_returned_var_scope
+        in
+        let formal_actual_pairs = List.zip_exn formals args in
+        let arg_updates =
+          List.foldi formal_actual_pairs ~init:[]
+            ~f:(fun idx updates (formal_param, actual_param) ->
+              let formal_pvar, _ = formal_param in
+              let actual_expr, _ = actual_param in
+              let formal_var_scope = VarToScope.find_or_bottom summary (Var.of_pvar formal_pvar) in
+              let extended_var_scope =
+                Scope.extend_with_parameter formal_var_scope procname idx loc
+              in
+              update_of_expr actual_expr extended_var_scope @ updates )
+        in
+        return_updates @ arg_updates
       else (* TODO: handle vararg procedures. *)
         []
   | None ->
-      L.debug Analysis Verbose "@[<v2> ScopeLeakage: no summary found for procname `%a`@]@,"
-        Procname.pp procname ;
       []
 
 
@@ -541,68 +846,123 @@ let procname_of_exp (e : Exp.t) : Procname.t option =
 
 
 (** Local inference of scopes for left-hand side variables from individual instructions. *)
-let exec_instr tenv analyze_dependency instr =
+let exec_instr scope_env tenv analyze_dependency instr =
   match (instr : Sil.instr) with
-  | Load {id; typ} when Typ.is_pointer typ ->
-      [(Var.of_id id, Scope.of_type tenv typ)]
-  | Store {e1= Lvar pvar; typ} when Typ.is_pointer typ ->
-      [(Var.of_pvar pvar, Scope.of_type tenv typ)]
-  (* Uncomment this case once the analysis handles scope joins more precisely,
-       otherwise we will consistently see instances of Top scope.
-     | Store {e1= Lfield (Var lvar, _, _); typ} when Typ.is_pointer typ ->
-         [(Var.of_id lvar, Scope.of_type tenv typ)] *)
-  | Sil.Call ((ret_id, ret_typ), call_exp, actuals, _, _) ->
+  | Load {id; (*e;*) typ} when Typ.is_pointer typ ->
+      let lhs_var = Var.of_id id in
+      let typ_scope = Scope.of_type tenv typ in
+      [(lhs_var, typ_scope)]
+  | Store {e1= Lvar pvar; typ (*; e2*)} when Typ.is_pointer typ ->
+      let lhs_var = Var.of_pvar pvar in
+      [(lhs_var, Scope.of_type tenv typ)]
+      (* TODOL specialize for right-hand side variable expressions? *)
+  | Store {e1= Lfield (Var lvar, fldname, _); typ; e2; loc} when Typ.is_pointer typ ->
+      let rhs_typ_scope = Scope.of_type tenv typ in
+      let extended_typ_scope = Scope.extend_with_field_access rhs_typ_scope fldname (Some loc) in
+      let lhs_var = Var.of_id lvar in
+      let rhs_updates =
+        match scope_target_var_of_expr e2 with
+        | Some rhs_var ->
+            let rhs_var_scope = VarToScope.find_or_bottom scope_env rhs_var in
+            let extended_rhs_scope =
+              Scope.extend_with_field_access rhs_var_scope fldname (Some loc)
+            in
+            [(lhs_var, extended_rhs_scope)]
+        | None ->
+            []
+      in
+      rhs_updates @ [(lhs_var, extended_typ_scope)]
+  | Sil.Call ((ret_id, _), call_exp, actuals, loc, _) ->
       procname_of_exp call_exp
       |> Option.value_map ~default:[] ~f:(fun callee_pname ->
-             (* Check for a scope-generator procname and only if this fails check
-                the scope of the return type. *)
-             let gen_scope = Scope.of_generator_procname callee_pname in
-             if Scope.is_bottom gen_scope then
-               apply_summary callee_pname analyze_dependency (Exp.Var ret_id, ret_typ) actuals
-             else [(Var.of_id ret_id, gen_scope)] )
+             (* Check for a scope-generator procname and only if this fails use the summary. *)
+             let opt_typename = Scope.of_generator_procname callee_pname in
+             match opt_typename with
+             | Some gen_typename ->
+                 let generator_scope = Scope.make_for_generator gen_typename callee_pname loc in
+                 [(Var.of_id ret_id, generator_scope)]
+             | None ->
+                 apply_summary tenv (Some loc) callee_pname analyze_dependency (Exp.Var ret_id)
+                   actuals )
   | _ ->
       []
 
 
-(** A flow-insensitive analysis that assigns scopes to variables. *)
+(** An analysis that assigns scopes to pointer variables. *)
 let assign_scopes_to_vars proc_desc tenv analyze_dependency aliasing =
-  let exec_instr_in_context = exec_instr tenv analyze_dependency in
   let result = VarToScope.create aliasing 100 in
-  Procdesc.iter_instrs
-    (fun _ instr ->
-      let entries = exec_instr_in_context instr in
-      VarToScope.join_list result entries )
-    proc_desc ;
+  let exec_instr_in_context = exec_instr result tenv analyze_dependency in
+  let analysis_iteration () =
+    Procdesc.iter_instrs
+      (fun _ instr ->
+        let updates = exec_instr_in_context instr in
+        VarToScope.join_list result updates )
+      proc_desc
+  in
+  (* Infers scopes via declarations and function summaries. *)
+  analysis_iteration () ;
+  (* Propagates scopes across stores to fields. *)
+  analysis_iteration () ;
   result
 
 
-(** Checks whether an assignment to a field violates the scope nesting restriction. *)
+(** Checks whether an assignment to a field yields a scope leak. *)
 let report_bad_field_assignments err_log proc_desc scoping =
+  let pp_field_path fmt path =
+    let pp_dot_sep fmt () = F.pp_print_string fmt "." in
+    F.pp_print_list ~pp_sep:pp_dot_sep Fieldname.pp fmt path
+  in
   Procdesc.iter_instrs
     (fun _ instr ->
       match instr with
-      | Store {e1= Lfield (Var lpvar, fldname, _); e2= Var rvar; loc; typ} when Typ.is_pointer typ
-        ->
+      | Store {e1= Lfield (Var lpvar, fldname, lvar_type); e2= Var rvar; loc; typ}
+        when Typ.is_pointer typ ->
           let lvar = Var.of_id lpvar in
+          let lvar_type_str = PatternMatch.get_type_name lvar_type in
           let lvar_scope = VarToScope.find_or_bottom scoping lvar in
           let rvar_scope = VarToScope.find_or_bottom scoping (Var.of_id rvar) in
-          if Scope.must_not_hold lvar_scope rvar_scope then
-            let ltr = [Errlog.make_trace_element 0 loc "assignment of scoped object" []] in
-            let description =
-              Format.asprintf
-                "Field `%s` is declared in an object of scope `%a` and should not be assigned an \
-                 object of scope `%a`"
-                (Fieldname.get_field_name fldname)
-                Scope.pp lvar_scope Scope.pp rvar_scope
-            in
-            Reporting.log_issue proc_desc err_log ~loc ~ltr ScopeLeakage IssueType.scope_leakage
-              description
+          let violations = Scope.must_not_hold_violations lvar_scope rvar_scope in
+          List.iter violations ~f:(fun (left, right) ->
+              let access_path = fldname :: Scope.get_field_path right in
+              let leak_level = List.length access_path in
+              let ltr =
+                Scope.trace left @ Scope.trace right
+                @ [Errlog.make_trace_element 0 loc "Assignment of scoped object to field" []]
+              in
+              if equal_int leak_level 1 then (
+                let description =
+                  Format.asprintf
+                    "Type '%s' has scope '%a' and must not retain an object of scope '%a' via the \
+                     field '%a'."
+                    lvar_type_str Scope.pp_explained_type left Scope.pp_explained_type right
+                    Fieldname.pp fldname
+                in
+                L.debug Analysis Verbose
+                  "Detected violation at %a with\nLeft scope: %a\nRight scope: %a\b"
+                  (Sil.pp_instr ~print_types:false Pp.text)
+                  instr Scope.pp_explained_scope_debug left Scope.pp_explained_scope_debug right ;
+                Reporting.log_issue proc_desc err_log ~loc ~ltr ScopeLeakage IssueType.scope_leakage
+                  description )
+              else
+                let description =
+                  Format.asprintf
+                    "Type '%s' has scope '%a' and must not retain an object of scope '%a' via the \
+                     field path '%a' (%i-level leak)."
+                    lvar_type_str Scope.pp_explained_type left Scope.pp_explained_type right
+                    pp_field_path access_path leak_level
+                in
+                L.debug Analysis Verbose
+                  "Detected violation at %a with\nLeft scope: %a\nRight scope: %a\b"
+                  (Sil.pp_instr ~print_types:false Pp.text)
+                  instr Scope.pp_explained_scope_debug left Scope.pp_explained_scope_debug right ;
+                Reporting.log_issue proc_desc err_log ~loc ~ltr ScopeLeakage IssueType.scope_leakage
+                  description )
       | _ ->
           () )
     proc_desc
 
 
-let _pp_vars fs vars = F.pp_print_list ~pp_sep:pp_comma_sep (Pvar.pp Pp.text) fs vars
+let _pp_vars fmt vars = F.pp_print_list ~pp_sep:pp_comma_sep (Pvar.pp Pp.text) fmt vars
 
 (** Retain only entries for the (pointer-typed) procedure's parameter variables and the return
     variable. *)
@@ -624,8 +984,14 @@ let _print_config () = L.debug Analysis Quiet "%a@\n" AnalysisConfig.pp config
 
 (** Checks whether the given procedure does not violate the scope nesting restriction. *)
 let checker {InterproceduralAnalysis.proc_desc; tenv; err_log; analyze_dependency} =
+  L.debug Analysis Verbose "SCOPE LEAKAGE: Starting analysis of %a\n" Procname.pp
+    (Procdesc.get_proc_name proc_desc) ;
   let aliasing = Aliasing.of_proc_desc proc_desc in
+  L.debug Analysis Verbose "SCOPE LEAKAGE: Aliasing= %a\n" Aliasing.pp aliasing ;
   let scoping = assign_scopes_to_vars proc_desc tenv analyze_dependency aliasing in
   report_bad_field_assignments err_log proc_desc scoping ;
   let summary = to_summary proc_desc scoping in
+  L.debug Analysis Verbose "SCOPE LEAKAGE: Summary of %a= %a\n" Procname.pp
+    (Procdesc.get_proc_name proc_desc)
+    VarToScope.pp summary ;
   Some summary

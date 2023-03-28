@@ -26,6 +26,9 @@ public class OuterHoldsInner<T> {
 
   public Object[] arr_bad = new Object[1];
 
+  // An error that requires taking annotations on interfaces into account.
+  public final ExtendsInnerClassViaInterface f_interface = new ExtendsInnerClassViaInterface();
+
   // An error that requires taking super types into account.
   public final ExtendsInnerScopedClass ex_bad = new ExtendsInnerScopedClass();
 
@@ -33,7 +36,7 @@ public class OuterHoldsInner<T> {
   public final InnerScopedClass[] InnerArr_bad = new InnerScopedClass[5];
 
   // An error that requires interprocedural analysis to consider chains of fields.
-  public final MiddleInnerScopedClass FN_middle_bad = new MiddleInnerScopedClass();
+  public final MiddleInnerScopedClass middle_bad = new MiddleInnerScopedClass();
 
   // An error that requires modeling reflection-based factory methods.
   public final Object FN_inner_via_factory = Factory.make(InnerScopedClass.class);
@@ -43,6 +46,8 @@ public class OuterHoldsInner<T> {
   public OuterHoldsInner() {
     AnonymousBox b = new AnonymousBox();
     b.f = new InnerScopedClass();
+    // An error that requires tracking field assignments to variables other
+    // than 'this' ('b' in this case).
     anon_box_holder_bad = b;
   }
 
@@ -72,6 +77,9 @@ class OuterHoldsInnerEx<T> extends OuterHoldsInner<T> {
 
   // An error that requires analysis of the field's super types.
   public final ExtendsInnerScopedClass xus_bad = new ExtendsInnerScopedClass();
+
+  // An error that requires analyzing the annotations of interfaces.
+  public final ExtendsInnerClassViaInterface f_interface_bad = new ExtendsInnerClassViaInterface();
 }
 
 @ScopeType(value = Inner.class)
@@ -81,6 +89,13 @@ class InnerScopedClass {
 
 class ExtendsInnerScopedClass extends InnerScopedClass {
   public ExtendsInnerScopedClass() {}
+}
+
+@ScopeType(value = Inner.class)
+interface InnerInterface {}
+
+class ExtendsInnerClassViaInterface implements InnerInterface {
+  public ExtendsInnerClassViaInterface() {}
 }
 
 class MiddleInnerScopedClass {
