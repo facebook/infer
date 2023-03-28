@@ -122,7 +122,7 @@ val get_pvar_formals : t -> (Pvar.t * Typ.t) list
 (** Return pvar and type of formal parameters *)
 
 val get_passed_by_value_formals : t -> (Pvar.t * Typ.t) list
-(** Return pvar and type of formal parameters that are passed by reference *)
+(** Return pvar and type of formal parameters that are passed by value *)
 
 val to_return_type : t -> Typ.t
 (** the return type from method signature, taking into account if the procedure has added return
