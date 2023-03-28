@@ -15,13 +15,16 @@
       "method_names": ["onCompletion"],
       "taint_target": ["ArgumentPositions", [1]],
       "kinds": ["Simple"]
-    }
+    },
+    { "method_with_annotation": "codetoanalyze.kotlin.pulse.SensitiveSourceMarker" }
   ],
   "pulse-taint-sinks": [
     { "procedure": "inferSensitiveSink" },
-    { "class_name_regex": "codetoanalyze.kotlin.pulse.sinks.*"}
+    { "class_name_regex": "codetoanalyze.kotlin.pulse.sinks.*"},
+    { "method_with_annotation": "codetoanalyze.kotlin.pulse.SensitiveSinkMarker" }
   ],
   "pulse-taint-sanitizers": [
-    { "procedure": "inferUniversalSanitizer" }
+    { "procedure": "inferUniversalSanitizer" },
+    { "method_with_annotation": "codetoanalyze.kotlin.pulse.SanitizerMarker" }
   ]
 }
