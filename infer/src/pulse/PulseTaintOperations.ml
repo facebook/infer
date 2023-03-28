@@ -403,7 +403,7 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param ?
                 match return_as_actual with
                 | Some actual ->
                     let astate, acc = acc in
-                    let taint = {Taint.proc_name; origin= ReturnValue; kinds} in
+                    let taint = {Taint.proc_name; origin= ReturnValue; kinds; block_passed_to} in
                     (astate, (taint, actual) :: acc)
                 | None ->
                     let return = Var.of_id return in
@@ -415,7 +415,9 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param ?
                     in
                     Stack.find_opt return astate
                     |> Option.fold ~init:acc ~f:(fun (_, tainted) return_value ->
-                           let taint = {Taint.proc_name; origin= ReturnValue; kinds} in
+                           let taint =
+                             {Taint.proc_name; origin= ReturnValue; kinds; block_passed_to}
+                           in
                            (astate, (taint, (return_value, return_typ, None)) :: tainted) ) ) )
         | ( `AllArguments
           | `ArgumentPositions _
@@ -428,7 +430,9 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param ?
                 if taint_target_matches tenv taint_target i actual_typ && not is_const_exp then (
                   L.d_printfln_escaped "match! tainting actual #%d with type %a" i
                     (Typ.pp_full Pp.text) actual_typ ;
-                  let taint = {Taint.proc_name; origin= Argument {index= i}; kinds} in
+                  let taint =
+                    {Taint.proc_name; origin= Argument {index= i}; kinds; block_passed_to}
+                  in
                   (astate, (taint, actual_hist_and_typ) :: tainted) )
                 else (
                   L.d_printfln_escaped "no match for #%d with type %a" i (Typ.pp_full Pp.text)
@@ -527,7 +531,7 @@ let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator v astat
                   let source =
                     let proc_name = Procname.from_string_c_fun alloc_desc in
                     let origin = Taint.Allocation {typ= type_name} in
-                    {Taint.kinds; proc_name; origin}
+                    {Taint.kinds; proc_name; origin; block_passed_to= None}
                   in
                   let hist =
                     ValueHistory.singleton
