@@ -15,6 +15,14 @@ type detail_level = Verbose | Non_verbose | Simple | NameOnly
 
 let is_verbose v = match v with Verbose -> true | _ -> false
 
+let remove_templates name =
+  match String.lsplit2 ~on:'<' name with
+  | Some (name_without_template, _template_part) ->
+      name_without_template
+  | None ->
+      name
+
+
 module CSharp = struct
   type kind = Non_Static | Static [@@deriving compare, equal, yojson_of, sexp, hash]
 
@@ -424,14 +432,6 @@ module ObjC_Cpp = struct
           Parameter.pp_parameters osig.parameters pp_verbose_kind osig.kind
 
 
-  let remove_templates name =
-    match String.lsplit2 ~on:'<' name with
-    | Some (name_without_template, _template_part) ->
-        name_without_template
-    | None ->
-        name
-
-
   let pp_without_templates fmt osig =
     F.fprintf fmt "%s::%s"
       (Typ.Name.name_without_templates osig.class_name)
@@ -491,6 +491,11 @@ module C = struct
     | Verbose ->
         let pp_mangled fmt = function None -> () | Some s -> F.fprintf fmt "{%s}" s in
         F.fprintf fmt "%s%a%a" plain Parameter.pp_parameters parameters pp_mangled mangled
+
+
+  let pp_without_templates fmt {name} =
+    let plain = QualifiedCppName.to_qual_string name in
+    F.pp_print_string fmt (remove_templates plain)
 
 
   let get_parameters c = c.parameters
@@ -1232,6 +1237,8 @@ let pp_verbose = pp_with_verbosity Verbose
 let pp_without_templates fmt = function
   | ObjC_Cpp osig when not (ObjC_Cpp.is_objc_method osig) ->
       ObjC_Cpp.pp_without_templates fmt osig
+  | C csig ->
+      C.pp_without_templates fmt csig
   | other ->
       (* For other languages, we use the formaters defined in pp *)
       pp fmt other
