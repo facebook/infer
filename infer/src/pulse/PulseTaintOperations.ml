@@ -333,8 +333,8 @@ let procedure_matches tenv matchers ?block_passed_to proc_name actuals =
             && List.mem ~equal:String.equal method_names (Procname.get_method proc_name)
         | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
             let procedure_return_type_match method_return_type_names =
-              Option.exists (Procdesc.load proc_name) ~f:(fun procdesc ->
-                  type_matches tenv (Procdesc.get_ret_type procdesc) method_return_type_names )
+              Option.exists (IRAttributes.load proc_name) ~f:(fun attrs ->
+                  type_matches tenv attrs.ProcAttributes.ret_type method_return_type_names )
             in
             class_names_match class_names && procedure_return_type_match method_return_type_names
         | OverridesOfClassWithAnnotation {annotation} ->
