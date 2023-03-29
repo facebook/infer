@@ -398,6 +398,22 @@ module PulseTransferFunctions = struct
             proc_name )
 
 
+  let improve_receiver_static_type astate actuals proc_name_opt =
+    if Language.curr_language_is Hack then
+      let open IOption.Let_syntax in
+      let* proc_name = proc_name_opt in
+      let* {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver, _} =
+        get_receiver proc_name actuals
+      in
+      match AbductiveDomain.AddressAttributes.get_static_type receiver astate with
+      | Some typ_name ->
+          let improved_proc_name = Procname.replace_class proc_name typ_name in
+          Some improved_proc_name
+      | _ ->
+          proc_name_opt
+    else proc_name_opt
+
+
   type model_search_result =
     | DoliModel of Procname.t
     | OcamlModel of (PulseModelsImport.model * Procname.t)
@@ -407,7 +423,9 @@ module PulseTransferFunctions = struct
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) path ret call_exp
       actuals func_args call_loc flags astate callee_pname =
     let callee_pname =
-      if flags.CallFlags.cf_virtual then resolve_virtual_call tenv astate func_args callee_pname
+      if flags.CallFlags.cf_virtual then
+        improve_receiver_static_type astate func_args callee_pname
+        |> resolve_virtual_call tenv astate func_args
       else callee_pname
     in
     let astate =

@@ -261,6 +261,10 @@ let get_dynamic_type attrs v =
   match get_dynamic_type_source_file attrs v with Some (typ, _) -> Some typ | None -> None
 
 
+let add_static_type typ address memory = add_one address (Attribute.StaticType typ) memory
+
+let get_static_type attrs v = get_attribute Attributes.get_static_type v attrs
+
 let add_ref_counted address memory = add_one address Attribute.RefCounted memory
 
 let is_ref_counted address attrs =

@@ -22,13 +22,13 @@ class IntraFileFlow {
     UnknownClass::explicitSinkAllArgs($derived);
   }
 
-  public function FN_explicitSinkMethodDerivedDynamicBad(
+  public function explicitSinkMethodDerivedDynamicBad(
     SensitiveClass $sc,
   ): void {
     $derived = $sc->getDerived();
     // Here we have derived data flowing into a taint sink across the function boundary. The
-    // analysis doesn't understand that the target of the call is `callExplicitSinkAllArgs` below
-    // because the call goes thru HackMixed.
+    // analysis has to understand that the target of the call is `callExplicitSinkAllArgs` below
+    // using the static type of $this.
     $this->callExplicitSinkAllArgs($derived);
   }
 

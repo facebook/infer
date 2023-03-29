@@ -99,6 +99,8 @@ type t =
   | SourceOriginOfCopy of {source: PulseAbstractValue.t; is_const_ref: bool}
       (** records the source value for a given copy to lookup the appropriate heap in non-disj
           domain *)
+  | StaticType of Typ.Name.t
+      (** type gotten or inferred from types in SIL instructions (only for Hack frontend)*)
   | StdMoved
   | StdVectorReserve
   | Tainted of TaintedSet.t
@@ -156,6 +158,8 @@ module Attributes : sig
   val get_unknown_effect : t -> (CallEvent.t * ValueHistory.t) option
 
   val get_dynamic_type_source_file : t -> (Typ.t * SourceFile.t option) option
+
+  val get_static_type : t -> Typ.Name.t option
 
   val is_java_resource_released : t -> bool
 

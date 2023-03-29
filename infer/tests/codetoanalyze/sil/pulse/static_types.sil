@@ -23,28 +23,28 @@ declare OO.get_some(*A) : *B
 
 declare OO.get_null(*A) : *B
 
-define bad_with_dyntype() : int {
+define with_dyntype_bad() : int {
   #entry:
     n0 = __sil_allocate(<A>)
     n1: int = load n0.OO.get_null().B.f
     ret n1
 }
 
-define ok_with_dyntype() : int {
+define with_dyntype_ok() : int {
   #entry:
     n0 = __sil_allocate(<A>)
     n1: int = load n0.OO.get_some().B.f
     ret n1
 }
 
-define FN_bad_with_statictype(a: *A) : int {
+define with_statictype_bad(b1: *B, a: *A, b2: *B) : int {
   #entry:
     n0: *OO = load &a
     n1: int = load n0.OO.get_null().B.f
     ret n1
 }
 
-define ok_with_statictype(a: *A) : int {
+define with_statictype_ok(b1: *B, a: *A, b2: *B) : int {
   #entry:
     n0: *OO = load &a
     n1: int = load n0.OO.get_some().B.f

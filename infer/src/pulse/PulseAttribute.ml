@@ -164,6 +164,7 @@ module Attribute = struct
     (* [ret_v -> ReturnedFromUnknown \[v1; ..; vn\]] does not
          retain actuals [v1] to [vn] just like PropagateTaintFrom *)
     | SourceOriginOfCopy of {source: AbstractValue.t; is_const_ref: bool}
+    | StaticType of Typ.Name.t
     | StdMoved
     | StdVectorReserve
     | Tainted of TaintedSet.t
@@ -218,6 +219,8 @@ module Attribute = struct
   let ref_counted_rank = Variants.refcounted.rank
 
   let returned_from_unknown = Variants.returnedfromunknown.rank
+
+  let static_type_rank = Variants.statictype.rank
 
   let std_moved_rank = Variants.stdmoved.rank
 
@@ -298,6 +301,8 @@ module Attribute = struct
     | SourceOriginOfCopy {source; is_const_ref} ->
         F.fprintf f "copied of source %a" AbstractValue.pp source ;
         if is_const_ref then F.pp_print_string f " (const&)"
+    | StaticType type_name ->
+        F.fprintf f "StaticType %a" Typ.Name.pp type_name
     | StdMoved ->
         F.pp_print_string f "std::move()"
     | StdVectorReserve ->
@@ -343,6 +348,7 @@ module Attribute = struct
     | PropagateTaintFrom _
     | ReturnedFromUnknown _
     | SourceOriginOfCopy _
+    | StaticType _
     | StdMoved
     | StdVectorReserve
     | Tainted _
@@ -378,6 +384,7 @@ module Attribute = struct
     | RefCounted
     | ReturnedFromUnknown _
     | SourceOriginOfCopy _
+    | StaticType _
     | StdMoved
     | StdVectorReserve
     | Tainted _
@@ -423,6 +430,7 @@ module Attribute = struct
     | PropagateTaintFrom _
     | RefCounted
     | ReturnedFromUnknown _
+    | StaticType _
     | StdMoved
     | StdVectorReserve
     | TaintSanitized _
@@ -506,6 +514,7 @@ module Attribute = struct
       | DynamicType _
       | EndOfCollection
       | RefCounted
+      | StaticType _
       | StdMoved
       | StdVectorReserve
       | Uninitialized
@@ -575,6 +584,7 @@ module Attribute = struct
       | MustNotBeTainted _
       | RefCounted
       | SourceOriginOfCopy _
+      | StaticType _
       | StdMoved
       | StdVectorReserve
       | Tainted _
@@ -766,6 +776,11 @@ module Attributes = struct
   let get_must_be_initialized =
     get_by_rank Attribute.must_be_initialized_rank ~dest:(function [@warning "-partial-match"]
         | MustBeInitialized (timestamp, trace) -> (timestamp, trace) )
+
+
+  let get_static_type =
+    get_by_rank Attribute.static_type_rank ~dest:(function [@warning "-partial-match"]
+        | StaticType typ -> typ )
 
 
   let get_unreachable_at =

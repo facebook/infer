@@ -70,6 +70,10 @@ val get_dynamic_type : t -> AbstractValue.t -> Typ.t option
 
 val get_dynamic_type_source_file : t -> AbstractValue.t -> (Typ.t * SourceFile.t option) option
 
+val add_static_type : Typ.Name.t -> AbstractValue.t -> t -> t
+
+val get_static_type : t -> AbstractValue.t -> Typ.Name.t option
+
 val add_ref_counted : AbstractValue.t -> t -> t
 
 val is_ref_counted : AbstractValue.t -> t -> bool

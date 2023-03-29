@@ -349,6 +349,10 @@ module AddressAttributes = struct
     BaseAddressAttributes.get_dynamic_type_source_file (astate.post :> base_domain).attrs addr
 
 
+  let get_static_type addr astate =
+    BaseAddressAttributes.get_static_type (astate.post :> base_domain).attrs addr
+
+
   let get_allocation addr astate =
     BaseAddressAttributes.get_allocation addr (astate.post :> base_domain).attrs
 
@@ -384,6 +388,10 @@ module AddressAttributes = struct
   let add_dynamic_type_source_file typ source_file address astate =
     map_post_attrs astate
       ~f:(BaseAddressAttributes.add_dynamic_type_source_file typ source_file address)
+
+
+  let add_static_type typ address astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.add_static_type typ address)
 
 
   let add_ref_counted address astate =
@@ -612,6 +620,32 @@ let set_uninitialized tenv {PathContext.timestamp} src typ location x =
   {x with post= set_uninitialized_post tenv timestamp src typ location x.post}
 
 
+let add_static_types astate formals_and_captured =
+  let record_static_type astate (_var, typ, (src_addr, _)) =
+    match typ with
+    | {Typ.desc= Tptr ({desc= Tstruct typ_name}, _)} ->
+        let pre_heap = (astate.pre :> BaseDomain.t).heap in
+        let post_heap = (astate.post :> BaseDomain.t).heap in
+        let addr = AbstractValue.mk_fresh () in
+        let pre_heap =
+          BaseMemory.add_edge src_addr Dereference (addr, ValueHistory.epoch) pre_heap
+          |> BaseMemory.register_address addr
+        in
+        let post_heap =
+          BaseMemory.add_edge src_addr Dereference (addr, ValueHistory.epoch) post_heap
+        in
+        let astate =
+          { astate with
+            pre= PreDomain.update ~heap:pre_heap astate.pre
+          ; post= PostDomain.update ~heap:post_heap astate.post }
+        in
+        AddressAttributes.add_static_type typ_name addr astate
+    | _ ->
+        astate
+  in
+  List.fold formals_and_captured ~init:astate ~f:record_static_type
+
+
 let mk_initial tenv proc_name (proc_attrs : ProcAttributes.t) =
   (* HACK: save the formals in the stacks of the pre and the post to remember which local variables
      correspond to formals *)
@@ -672,6 +706,13 @@ let mk_initial tenv proc_name (proc_attrs : ProcAttributes.t) =
     ; need_specialization= false
     ; topl= PulseTopl.start ()
     ; skipped_calls= SkippedCalls.empty }
+  in
+  let astate =
+    if Language.curr_language_is Hack then
+      (* The Hack frontend does not propagate types from declarations to usage,
+         so we redo part of the work ourself *)
+      add_static_types astate formals_and_captured
+    else astate
   in
   let apply_aliases astate =
     (* If a function is alias-specialized, then we want to make sure all the captured
