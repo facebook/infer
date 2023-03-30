@@ -6,7 +6,7 @@
 TESTS_DIR = ../../..
 include $(TESTS_DIR)/base.make
 SOURCES = $(sort $(wildcard *.sil))  $(sort $(wildcard *.doli)) $(sort $(wildcard *.java))
-INFER_SETTINGS = -j 1 --no-progress-bar --pulse-only   -o infer-out
+INFER_SETTINGS = -j 1 --no-progress-bar --pulse-only -o infer-out
 
 default: test
 
@@ -26,5 +26,5 @@ replace: issues.exp.test
 	cp $< issues.exp
 
 clean:
-	rm  issues.exp.test
-	rm -rf infer-out
+	$(REMOVE) issues.exp.test
+	$(REMOVE_DIR) infer-out
