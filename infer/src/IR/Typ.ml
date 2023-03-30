@@ -737,8 +737,14 @@ let is_pointer_to_objc_non_tagged_class typ =
 
 let is_pointer_to_void typ = match typ.desc with Tptr ({desc= Tvoid}, _) -> true | _ -> false
 
+let shared_pointer_qual_names =
+  ["std::shared_ptr"; "std::__shared_ptr"; "std::__shared_ptr_access"; "boost::intrusive_ptr"]
+
+
 let is_pointer_to_smart_pointer =
-  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::shared_ptr"; "std::unique_ptr"] in
+  let matcher =
+    QualifiedCppName.Match.of_fuzzy_qual_names ("std::unique_ptr" :: shared_pointer_qual_names)
+  in
   fun typ ->
     match typ.desc with
     | Tptr ({desc= Tstruct (CppClass {name})}, _) ->
@@ -757,10 +763,7 @@ let is_pointer_to_unique_pointer =
         false
 
 
-let shared_pointer_matcher =
-  QualifiedCppName.Match.of_fuzzy_qual_names
-    ["std::shared_ptr"; "std::__shared_ptr"; "std::__shared_ptr_access"; "boost::intrusive_ptr"]
-
+let shared_pointer_matcher = QualifiedCppName.Match.of_fuzzy_qual_names shared_pointer_qual_names
 
 let is_shared_pointer typ =
   match typ.desc with
