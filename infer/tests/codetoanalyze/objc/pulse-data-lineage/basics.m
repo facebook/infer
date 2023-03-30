@@ -87,14 +87,11 @@ void taintSourceParameterBlockBad() {
   return [[_session getSource] count] > 0;
 }
 
-- (void)taints_unrelated_field_ok_FP {
+- (void)taints_unrelated_field_ok {
   if ([self _isPositive]) {
-  } // in the state we have v, the result of [self _isPositive], which is
-    // tainted and equal to 0
-  if ([_helper b1]) { // nil spec is applied to b1, hence _helper becomes 0,
-                      // equal to v, and hence tainted
   }
-  BOOL b = [_helper b2]; // sensitive data flow FP is reported because in
-                         // previous step _helper became tainted
+  if ([_helper b1]) {
+  }
+  BOOL b = [_helper b2];
 }
 @end
