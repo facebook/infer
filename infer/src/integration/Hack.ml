@@ -82,7 +82,7 @@ end
 
 (** Utility functions to consume (potentially) multi-file hackc output. *)
 module Unit : sig
-  type t
+  type t = private {source_path: string; content: string}
 
   val extract_units : In_channel.t -> int option * t Seq.t
   (** Returns the expected number of units and a lazy sequence of units extracted from the channel. *)
@@ -255,8 +255,12 @@ let process_output ic =
   (* action's output and on_finish's input are connected and consistent with
      ProcessPool.TaskGenerator's contract *)
   let unit_iter = IterSeq.create ?estimated_size:unit_count units in
-  let action unit = match Unit.capture_unit unit with Ok () -> None | Error () -> Some () in
-  let on_finish = function Some _ -> incr n_error | _ -> incr n_captured in
+  let action unit =
+    let t0 = Mtime_clock.now () in
+    !ProcessPoolState.update_status t0 unit.Unit.source_path ;
+    match Unit.capture_unit unit with Ok () -> None | Error () -> Some ()
+  in
+  let on_finish = function Some () -> incr n_error | None -> incr n_captured in
   let tasks () =
     ProcessPool.TaskGenerator.
       { remaining_tasks= (fun () -> IterSeq.estimated_remaining unit_iter)
