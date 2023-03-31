@@ -494,7 +494,8 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
       let pp_result f result = dump_html f pre result in
       let result =
         L.d_with_indent ~name:"exec_instr" ~pp_result (fun () ->
-            Option.iter (pp_instr pre instr) ~f:(L.d_printfln ~color:Pp.Blue "@[<h>INSTR=  %t@]") ;
+            Option.iter (pp_instr pre instr)
+              ~f:(L.d_printfln_escaped ~color:Pp.Blue "@[<h>INSTR=  %t@]") ;
             try
               let post = TransferFunctions.exec_instr pre proc_data node idx instr in
               Timer.check_timeout () ;
