@@ -169,10 +169,13 @@ end = struct
 
   let dump_textual_to_tmp_file source_path content =
     let textual_filename = to_textual_filename source_path in
-    let out_file =
-      Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename "sil"
-    in
-    Out_channel.write_all out_file ~data:content
+    try
+      let out_file =
+        Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename "sil"
+      in
+      Out_channel.write_all out_file ~data:content
+    with Sys_error err ->
+      L.debug Capture Quiet "Error occurred during textual dump of %s: %s" source_path err
 
 
   (** Translate and capture a textual unit. Returns [Ok] on success and [Error] if there were errors
