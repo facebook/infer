@@ -161,8 +161,8 @@ val numcores : int
     - On Darwin and Windows returns half of the number of CPUs since most processors have 2 hardware
       threads per core. *)
 
-val zip_fold_filenames : init:'a -> f:('a -> string -> 'a) -> zip_filename:string -> 'a
-(** fold over each filename in the given [zip_filename]. *)
+val zip_fold : init:'a -> f:('a -> Zip.in_file -> Zip.entry -> 'a) -> zip_filename:string -> 'a
+(** fold over each file in the given [zip_filename]. *)
 
 val is_term_dumb : unit -> bool
 (** Check if the terminal is "dumb" or otherwise has very limited functionality. For example, Emacs'

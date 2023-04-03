@@ -141,9 +141,9 @@ let load_from_verbose_output =
 
 
 let collect_classnames init jar_filename =
-  let f acc filename_with_extension =
-    match Filename.split_extension filename_with_extension with
-    | class_filename, Some extension when String.equal extension "class" ->
+  let f acc _ zip_entry =
+    match Filename.split_extension zip_entry.Zip.filename with
+    | class_filename, Some "class" ->
         let classname =
           JBasics.make_cn (String.map ~f:(function '/' -> '.' | c -> c) class_filename)
         in
@@ -151,7 +151,7 @@ let collect_classnames init jar_filename =
     | _ ->
         acc
   in
-  Utils.zip_fold_filenames ~init ~f ~zip_filename:jar_filename
+  Utils.zip_fold ~init ~f ~zip_filename:jar_filename
 
 
 let search_classes path =
