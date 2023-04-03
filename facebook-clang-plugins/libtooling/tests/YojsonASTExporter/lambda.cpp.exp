@@ -703,6 +703,7 @@
                                         )>
                                       },
                                       {
+                                        "is_move_constructor" : true
                                       }
                                     )>
                                   ],
@@ -1281,6 +1282,7 @@
                                             )>
                                           },
                                           {
+                                            "is_move_constructor" : true
                                           }
                                         )>
                                       ],
@@ -2043,6 +2045,7 @@
                                         )>
                                       },
                                       {
+                                        "is_move_constructor" : true,
                                         "cxx_ctor_initializers" : [
                                           {
                                             "subject" : <"Member" : {
@@ -3159,6 +3162,7 @@
                                             )>
                                           },
                                           {
+                                            "is_move_constructor" : true,
                                             "cxx_ctor_initializers" : [
                                               {
                                                 "subject" : <"Member" : {
@@ -4139,6 +4143,7 @@
                                         )>
                                       },
                                       {
+                                        "is_move_constructor" : true,
                                         "cxx_ctor_initializers" : [
                                           {
                                             "subject" : <"Member" : {
@@ -5020,6 +5025,7 @@
                                             )>
                                           },
                                           {
+                                            "is_move_constructor" : true,
                                             "cxx_ctor_initializers" : [
                                               {
                                                 "subject" : <"Member" : {

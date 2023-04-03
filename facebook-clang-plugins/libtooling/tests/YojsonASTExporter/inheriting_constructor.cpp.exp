@@ -415,6 +415,7 @@
             ]
           },
           {
+            "is_move_constructor" : true
           }
         )>,
         <"CXXDestructorDecl" : (
@@ -761,6 +762,7 @@
             ]
           },
           {
+            "is_move_constructor" : true
           }
         )>,
         <"CXXConstructorDecl" : (

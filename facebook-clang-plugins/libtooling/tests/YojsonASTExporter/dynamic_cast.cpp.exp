@@ -534,6 +534,7 @@
             ]
           },
           {
+            "is_move_constructor" : true
           }
         )>
       ],
@@ -973,6 +974,7 @@
             ]
           },
           {
+            "is_move_constructor" : true
           }
         )>
       ],

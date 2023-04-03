@@ -2108,6 +2108,7 @@ int ASTExporter<ATDWriter>::CXXMethodDeclTupleSize() {
 //@atd   ~is_const : bool;
 //@atd   ~is_copy_assignment : bool;
 //@atd   ~is_copy_constructor : bool;
+//@atd   ~is_move_constructor : bool;
 //@atd   ~cxx_ctor_initializers : cxx_ctor_initializer list;
 //@atd   ~overriden_methods : decl_ref list;
 //@atd } <ocaml field_prefix="xmdi_">
@@ -2119,19 +2120,22 @@ void ASTExporter<ATDWriter>::VisitCXXMethodDecl(const CXXMethodDecl *D) {
   bool isCopyAssignment = D->isCopyAssignmentOperator();
   const CXXConstructorDecl *C = dyn_cast<CXXConstructorDecl>(D);
   bool isCopyConstructor = C && C->isCopyConstructor();
+  bool isMoveConstructor = C && C->isMoveConstructor();
   bool isConst = D->isConst();
   bool HasCtorInitializers = C && C->init_begin() != C->init_end();
   auto OB = D->begin_overridden_methods();
   auto OE = D->end_overridden_methods();
   ObjectScope Scope(OF,
                     IsVirtual + IsStatic + isConst + isCopyAssignment +
-                        isCopyConstructor + HasCtorInitializers + (OB != OE));
+                        isCopyConstructor + isMoveConstructor +
+                        HasCtorInitializers + (OB != OE));
 
   OF.emitFlag("is_virtual", IsVirtual);
   OF.emitFlag("is_static", IsStatic);
   OF.emitFlag("is_const", isConst);
   OF.emitFlag("is_copy_assignment", isCopyAssignment);
   OF.emitFlag("is_copy_constructor", isCopyConstructor);
+  OF.emitFlag("is_move_constructor", isMoveConstructor);
   if (HasCtorInitializers) {
     OF.emitTag("cxx_ctor_initializers");
     ArrayScope Scope(OF, std::distance(C->init_begin(), C->init_end()));

@@ -190,6 +190,7 @@ module BuildMethodSignature = struct
     let is_cpp_virtual = CMethodProperties.is_cpp_virtual method_decl in
     let is_cpp_copy_assignment = CMethodProperties.is_cpp_copy_assignment method_decl in
     let is_cpp_copy_ctor = CMethodProperties.is_cpp_copy_ctor method_decl in
+    let is_cpp_move_ctor = CMethodProperties.is_cpp_move_ctor method_decl in
     let is_cpp_deleted = CMethodProperties.is_cpp_deleted method_decl in
     let is_cpp_implicit = CAst_utils.is_cpp_implicit_decl method_decl in
     let is_no_return = CMethodProperties.is_no_return method_decl in
@@ -202,6 +203,7 @@ module BuildMethodSignature = struct
     ; params
     ; is_cpp_copy_assignment
     ; is_cpp_copy_ctor
+    ; is_cpp_move_ctor
     ; is_cpp_deleted
     ; is_cpp_implicit
     ; ret_type= (ret_type, ret_typ_annot)

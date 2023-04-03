@@ -61,6 +61,7 @@ type t =
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
   ; is_cpp_copy_assignment: bool  (** true if the procedure is a copy assignment *)
   ; is_cpp_copy_ctor: bool  (** true if the procedure is a copy constructor *)
+  ; is_cpp_move_ctor: bool  (** true if the procedure is a move constructor *)
   ; is_cpp_deleted: bool  (** true if the procedure is deleted *)
   ; is_cpp_implicit: bool
         (** returns false if the declaration exists in code and true if it was created implicitly by

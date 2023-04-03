@@ -484,6 +484,7 @@
                   ]
                 },
                 {
+                  "is_move_constructor" : true
                 }
               ]]
             ],

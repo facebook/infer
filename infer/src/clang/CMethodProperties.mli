@@ -29,6 +29,8 @@ val is_cpp_copy_assignment : Clang_ast_t.decl -> bool
 
 val is_cpp_copy_ctor : Clang_ast_t.decl -> bool
 
+val is_cpp_move_ctor : Clang_ast_t.decl -> bool
+
 val is_cpp_deleted : Clang_ast_t.decl -> bool
 
 val is_constexpr : Clang_ast_t.decl -> bool

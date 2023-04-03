@@ -153,6 +153,15 @@ let is_cpp_copy_ctor method_decl =
       false
 
 
+let is_cpp_move_ctor method_decl =
+  let open Clang_ast_t in
+  match method_decl with
+  | CXXConstructorDecl (_, _, _, _, {xmdi_is_move_constructor}) ->
+      xmdi_is_move_constructor
+  | _ ->
+      false
+
+
 let is_cpp_deleted method_decl =
   let open Clang_ast_t in
   match method_decl with
