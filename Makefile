@@ -172,7 +172,7 @@ BUILD_SYSTEMS_TESTS += rebar3
 endif
 endif # BUILD_ERLANG_ANALYZERS
 
-ifeq ($(BUILD_PLATFORM)+$(BUILD_HACK_ANALYZERS),Linux+yes)
+ifeq ($(BUILD_PLATFORM)+$(BUILD_HACK_ANALYZERS)+$(IS_FACEBOOK_TREE),Linux+yes+yes)
 ifneq ($(HACKC),no)
 DIRECT_TESTS += \
   hack_capture \
