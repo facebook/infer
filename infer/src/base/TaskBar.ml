@@ -19,6 +19,12 @@ let min_acceptable_progress_bar = 10
 (** infer rulez *)
 let job_prefix = SpecialChars.right_tack ^ " "
 
+(** How often we allow refreshing the task bar *)
+let refresh_timeout =
+  (* 25 Hz *)
+  Mtime.Span.(40 * ms)
+
+
 (** {2 Task bar} *)
 
 (** state of a multi-line task bar *)
@@ -30,7 +36,8 @@ type multiline_info =
   ; heap_words: int option Array.t  (** array of size [jobs] of heap words for each process *)
   ; start_time: Mtime_clock.counter  (** time since the creation of the task bar *)
   ; mutable tasks_done: int
-  ; mutable tasks_total: int }
+  ; mutable tasks_total: int
+  ; mutable last_refresh_time: Mtime_clock.counter }
 
 type t =
   | MultiLine of multiline_info  (** interactive *)
@@ -157,6 +164,13 @@ let refresh_multiline task_bar =
   ()
 
 
+let refresh_multiline ?(force = false) task_bar =
+  let elapsed = Mtime_clock.count task_bar.last_refresh_time in
+  if force || Mtime.Span.compare elapsed refresh_timeout > 0 then (
+    refresh_multiline task_bar ;
+    task_bar.last_refresh_time <- Mtime_clock.counter () )
+
+
 let refresh = function MultiLine t -> refresh_multiline t | NonInteractive | Quiet -> ()
 
 let create ~jobs =
@@ -174,7 +188,8 @@ let create ~jobs =
         ; heap_words= Array.create ~len:jobs None
         ; start_time= Mtime_clock.counter ()
         ; tasks_done= 0
-        ; tasks_total= 0 }
+        ; tasks_total= 0
+        ; last_refresh_time= Mtime_clock.counter () }
       in
       ANSITerminal.erase Below ;
       MultiLine task_bar
@@ -228,8 +243,9 @@ let tasks_done_reset task_bar =
 
 
 let finish = function
-  | MultiLine _ as task_bar ->
-      refresh task_bar ;
+  | MultiLine taskbar ->
+      (* Force the final refresh to display the latest progress *)
+      refresh_multiline ~force:true taskbar ;
       (* leave the progress bar displayed *)
       F.eprintf "%s%!" (move_cursor_down 1) ;
       ANSITerminal.erase Below ;
