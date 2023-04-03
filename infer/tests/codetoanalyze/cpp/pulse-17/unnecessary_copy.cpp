@@ -6,6 +6,7 @@
  */
 
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace unnecessary_copy {
@@ -53,4 +54,10 @@ class OptionalFieldOk {
 };
 
 void construct_optional_field(Arr x) { OptionalFieldOk o(std::move(x)); }
+
+void call_std_distance_ok(const std::string& s) {
+  std::string t = s;
+  t.data()[0] = 'a'; // t is modified
+  std::distance(t.begin(), t.end());
+}
 } // namespace unnecessary_copy
