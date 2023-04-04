@@ -1558,7 +1558,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let trans_state_param = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
     let result_trans_params =
       let instruction' = exec_with_glvalue_as_reference instruction in
-      List.map ~f:(instruction' trans_state_param) params_stmt
+      let trans_state_param' =
+        Option.value_map ~default:trans_state_param callee_pname_opt ~f:(fun proc_name ->
+            let block_as_arg_attributes =
+              Some
+                { ProcAttributes.passed_to= proc_name
+                ; (*TODO:passing this flag as well.*) passed_as_noescape_block= false }
+            in
+            {trans_state_param with block_as_arg_attributes} )
+      in
+      List.map ~f:(instruction' trans_state_param') params_stmt
     in
     match
       Option.bind callee_pname_opt
