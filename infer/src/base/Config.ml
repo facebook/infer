@@ -1680,6 +1680,10 @@ and hackc_binary =
     "Specify hackc binary to use (either name or path)"
 
 
+and hack_naming_table =
+  CLOpt.mk_path_opt ~long:"hack-naming-table" "Location of a Hack naming table (sqlite)"
+
+
 and headers =
   CLOpt.mk_bool ~deprecated:["headers"; "hd"] ~deprecated_no:["no_headers"; "nhd"] ~long:"headers"
     ~in_help:InferCommand.[(Capture, manual_clang)]
@@ -3740,6 +3744,8 @@ and frontend_tests = !frontend_tests
 and generated_classes = !generated_classes
 
 and genrule_mode = !genrule_mode
+
+and hack_naming_table = !hack_naming_table
 
 and hackc_binary = !hackc_binary
 

@@ -2268,6 +2268,12 @@ INTERNAL OPTIONS
            Activates: Enable the genrule compatibility mode used for the Buck
            integration (Conversely: --no-genrule-mode)
 
+       --hack-naming-table path
+           Location of a Hack naming table (sqlite)
+
+       --hack-naming-table-reset
+           Cancel the effect of --hack-naming-table.
+
        --hackc-binary path
            Specify hackc binary to use (either name or path)
 

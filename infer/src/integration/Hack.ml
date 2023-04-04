@@ -323,3 +323,22 @@ let capture ~prog ~args =
     let compiler = if Option.is_some Config.force_integration then prog else Config.hackc_binary in
     compile compiler args
   else L.die UserError "hackc command line is missing %s subcommand" textual_subcommand
+
+
+let location_of_class_db db ~class_name =
+  (* TODO(vsiles): sanitize class_name *)
+  let query =
+    Printf.sprintf "SELECT PATH_SUFFIX FROM NAMING_FILE_INFO WHERE CLASSES = \"%s\";" class_name
+  in
+  let locations = ref [] in
+  let cb row =
+    Array.iter row ~f:(function None -> () | Some row -> locations := row :: !locations)
+  in
+  let error = Sqlite3.exec_no_headers db ~cb query in
+  (error, !locations)
+
+
+let location_of_class ~naming_table ~class_name =
+  let open Sqlite3 in
+  let& db = Sqlite3.db_open ~mode:`READONLY naming_table in
+  location_of_class_db db ~class_name
