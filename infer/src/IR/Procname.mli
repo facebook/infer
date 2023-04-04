@@ -403,9 +403,9 @@ val with_aliasing_parameters : t -> Mangled.t list list -> t
 (** Create a procedure name instantiated with aliasing parameters from a base procedure name and a
     list aliases. *)
 
-val with_function_parameters : t -> FunctionParameters.t list -> t
+val with_function_parameters : t -> FunctionParameters.t list -> t option
 (** Create a procedure name instantiated with function parameters from a base procedure name and a
-    list of function procedures. *)
+    list of function procedures. It returns [None] when the given function parameter list is empty. *)
 
 val objc_cpp_replace_method_name : t -> string -> t
 

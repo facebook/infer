@@ -784,7 +784,9 @@ let hash = Hashtbl.hash
 
 let with_aliasing_parameters base aliases = WithAliasingParameters (base, aliases)
 
-let with_function_parameters base functions = WithFunctionParameters (base, functions)
+let with_function_parameters base functions =
+  if List.is_empty functions then None else Some (WithFunctionParameters (base, functions))
+
 
 let rec base_of = function
   | WithAliasingParameters (base, _) | WithFunctionParameters (base, _) ->
@@ -1188,11 +1190,12 @@ let rec pp_unique_id fmt = function
       ObjC_Cpp.pp Verbose fmt osig
   | Block bsig ->
       Block.pp Verbose fmt bsig
-  | WithAliasingParameters (base, []) | WithFunctionParameters (base, []) ->
+  | WithAliasingParameters (base, []) ->
       pp_unique_id fmt base
   | WithAliasingParameters (base, aliases) ->
       pp_with_aliasing_parameters Verbose pp_unique_id fmt base aliases
   | WithFunctionParameters (base, functions) ->
+      assert (not (List.is_empty functions)) ;
       pp_with_function_parameters Verbose pp_unique_id fmt base functions
   | Linters_dummy_method ->
       F.pp_print_string fmt "Linters_dummy_method"
@@ -1216,11 +1219,12 @@ let rec pp_with_verbosity verbosity fmt = function
       ObjC_Cpp.pp verbosity fmt osig
   | Block bsig ->
       Block.pp verbosity fmt bsig
-  | WithAliasingParameters (base, []) | WithFunctionParameters (base, []) ->
+  | WithAliasingParameters (base, []) ->
       pp_with_verbosity verbosity fmt base
   | WithAliasingParameters (base, aliases) ->
       pp_with_aliasing_parameters verbosity (pp_with_verbosity verbosity) fmt base aliases
-  | WithFunctionParameters (base, (_ :: _ as functions)) ->
+  | WithFunctionParameters (base, functions) ->
+      assert (not (List.is_empty functions)) ;
       pp_with_function_parameters verbosity (pp_with_verbosity verbosity) fmt base functions
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method

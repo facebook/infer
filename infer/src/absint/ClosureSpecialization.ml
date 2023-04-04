@@ -138,7 +138,8 @@ let create_specialized_procdesc callee_pname ~extra_formals_to_closures ~capture
             callee_pname
         with
         | Some formals_to_closures -> (
-            let specialized_pname = pname_with_closure_actuals callee_pname formals_to_closures in
+          match pname_with_closure_actuals callee_pname formals_to_closures with
+          | Some specialized_pname -> (
             (* To avoid duplicated additions on a specialized procname, it does a
                membership check. This may happen when there are multiple function calls
                with the same callees and the same closure parameters.  For the following
@@ -179,6 +180,8 @@ let create_specialized_procdesc callee_pname ~extra_formals_to_closures ~capture
                   Some specialized_pname )
                 else (* No procdesc to specialize: not defined *)
                   None )
+          | None ->
+              None )
         | None ->
             (* Current call is ill defined: args' length doesn't match function parameters' *)
             None )
