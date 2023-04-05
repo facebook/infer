@@ -1331,21 +1331,24 @@ let incorporate_new_eqs astate new_eqs =
 (** it's a good idea to normalize the path condition before calling this function *)
 let canonicalize astate =
   let open SatUnsat.Import in
+  let get_var_repr v = Formula.get_var_repr astate.path_condition v in
   let canonicalize_pre (pre : PreDomain.t) =
     (* (ab)use canonicalization to filter out empty edges in the heap and detect aliasing
        contradictions *)
-    let* stack' = BaseStack.canonicalize ~get_var_repr:Fn.id (pre :> BaseDomain.t).stack in
-    let+ heap' = BaseMemory.canonicalize ~get_var_repr:Fn.id (pre :> BaseDomain.t).heap in
-    let attrs' = BaseAddressAttributes.make_suitable_for_pre_summary (pre :> BaseDomain.t).attrs in
+    let* stack' = BaseStack.canonicalize ~get_var_repr (pre :> BaseDomain.t).stack in
+    let+ heap' = BaseMemory.canonicalize ~get_var_repr (pre :> BaseDomain.t).heap in
+    let attrs' =
+      BaseAddressAttributes.canonicalize ~for_post:false ~get_var_repr (pre :> BaseDomain.t).attrs
+    in
+    let attrs' = BaseAddressAttributes.make_suitable_for_pre_summary attrs' in
     PreDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' pre
   in
   let canonicalize_post (post : PostDomain.t) =
-    let get_var_repr v = Formula.get_var_repr astate.path_condition v in
     let* stack' = BaseStack.canonicalize ~get_var_repr (post :> BaseDomain.t).stack in
     (* note: this step also de-registers addresses pointing to empty edges *)
     let+ heap' = BaseMemory.canonicalize ~get_var_repr (post :> BaseDomain.t).heap in
     let attrs' =
-      BaseAddressAttributes.canonicalize_post ~get_var_repr (post :> BaseDomain.t).attrs
+      BaseAddressAttributes.canonicalize ~for_post:true ~get_var_repr (post :> BaseDomain.t).attrs
     in
     PostDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' post
   in
