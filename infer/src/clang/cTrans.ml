@@ -467,7 +467,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let name = QualifiedCppName.to_qual_string qual_name in
           CMethod_trans.create_procdesc_with_pointer context decl_ptr None name
     in
-    mk_trans_result (Exp.Const (Const.Cfun pname), typ) empty_control
+    let callee_ms_opt = CMethod_trans.method_signature_of_pointer context.tenv decl_ptr in
+    mk_trans_result
+      (Exp.Const (Const.Cfun pname), typ)
+      ?method_signature:callee_ms_opt empty_control
 
 
   let field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init
@@ -721,6 +724,27 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     this_expr_trans stmt_info trans_state sil_loc
       ~class_qual_type:expr_info.Clang_ast_t.ei_qual_type
+
+
+  let add_block_as_arg_attributes trans_state_param callee_ms_opt i =
+    match callee_ms_opt with
+    | Some callee_ms when not trans_state_param.is_fst_arg_objc_instance_method_call ->
+        let ms_param_type_i =
+          let find_arg j _ = Int.equal i j in
+          List.findi ~f:find_arg callee_ms.CMethodSignature.params
+        in
+        let block_as_arg_attributes =
+          match ms_param_type_i with
+          | Some (_, {is_no_escape_block_arg}) ->
+              Some
+                { ProcAttributes.passed_to= callee_ms.CMethodSignature.name
+                ; passed_as_noescape_block= is_no_escape_block_arg }
+          | None ->
+              None
+        in
+        {trans_state_param with block_as_arg_attributes}
+    | _ ->
+        trans_state_param
 
 
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
@@ -1558,16 +1582,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let trans_state_param = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
     let result_trans_params =
       let instruction' = exec_with_glvalue_as_reference instruction in
-      let trans_state_param' =
-        Option.value_map ~default:trans_state_param callee_pname_opt ~f:(fun proc_name ->
-            let block_as_arg_attributes =
-              Some
-                { ProcAttributes.passed_to= proc_name
-                ; (*TODO:passing this flag as well.*) passed_as_noescape_block= false }
-            in
-            {trans_state_param with block_as_arg_attributes} )
-      in
-      List.map ~f:(instruction' trans_state_param') params_stmt
+      let callee_ms_opt = res_trans_callee.method_signature in
+      List.mapi
+        ~f:(fun i param_stmt ->
+          instruction' (add_block_as_arg_attributes trans_state_param callee_ms_opt i) param_stmt )
+        params_stmt
     in
     match
       Option.bind callee_pname_opt
@@ -1765,26 +1784,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and exec_instruction_with_trans_state trans_state_param callee_ms_opt i stmt =
-    let trans_state_param' =
-      match callee_ms_opt with
-      | Some callee_ms when not trans_state_param.is_fst_arg_objc_instance_method_call ->
-          let ms_param_type_i =
-            let find_arg j _ = Int.equal i j in
-            List.findi ~f:find_arg callee_ms.CMethodSignature.params
-          in
-          let block_as_arg_attributes =
-            match ms_param_type_i with
-            | Some (_, {is_no_escape_block_arg}) ->
-                Some
-                  { ProcAttributes.passed_to= callee_ms.CMethodSignature.name
-                  ; passed_as_noescape_block= is_no_escape_block_arg }
-            | None ->
-                None
-          in
-          {trans_state_param with block_as_arg_attributes}
-      | _ ->
-          trans_state_param
-    in
+    let trans_state_param' = add_block_as_arg_attributes trans_state_param callee_ms_opt i in
     exec_with_glvalue_as_reference instruction trans_state_param' stmt
 
 

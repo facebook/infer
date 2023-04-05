@@ -215,14 +215,15 @@ type trans_result =
   { control: control
   ; return: Exp.t * Typ.t
   ; method_name: Procname.t option
+  ; method_signature: CMethodSignature.t option
   ; is_cpp_call_virtual: bool }
 
 let empty_control =
   {root_nodes= []; leaf_nodes= []; instrs= []; initd_exps= []; cxx_temporary_markers_set= []}
 
 
-let mk_trans_result ?method_name ?(is_cpp_call_virtual = false) return control =
-  {control; return; method_name; is_cpp_call_virtual}
+let mk_trans_result ?method_name ?method_signature ?(is_cpp_call_virtual = false) return control =
+  {control; return; method_name; method_signature; is_cpp_call_virtual}
 
 
 let undefined_expression () = Exp.Var (Ident.create_fresh Ident.knormal)

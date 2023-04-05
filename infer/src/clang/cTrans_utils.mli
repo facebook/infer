@@ -72,12 +72,16 @@ type trans_result =
             at the same time we get the [this] object that contains the method. The [this] instance
             object is returned as the [return] field, while the method to call is filled in here.
             This field is [None] in all other cases. *)
+  ; method_signature: CMethodSignature.t option
+        (** in the specific case of translating a function call, we get the method signature. This
+            field is [None] in all other cases. *)
   ; is_cpp_call_virtual: bool }
 
 val empty_control : control
 
 val mk_trans_result :
-     ?method_name:BuiltinDecl.t
+     ?method_name:Procname.t
+  -> ?method_signature:CMethodSignature.t
   -> ?is_cpp_call_virtual:bool
   -> Exp.t * Typ.t
   -> control

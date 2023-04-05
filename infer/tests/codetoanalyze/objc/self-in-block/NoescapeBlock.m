@@ -84,4 +84,20 @@
   return resultsList;
 }
 
+- (void)dispatch_sync_block_bad:(dispatch_queue_t)queue andB:(B*)obj {
+  __weak __typeof(self) weakSelf = self;
+  dispatch_sync(queue, ^() {
+    [weakSelf process:obj]; // WEAK_SELF_IN_NO_ESCAPE_BLOCK reported here
+                            // because the block is passed in a position
+                            // annotated with NS_NOESCAPE
+  });
+}
+
+- (void)dispatch_async_block_ok:(dispatch_queue_t)queue andB:(B*)obj {
+  __weak __typeof(self) weakSelf = self;
+  dispatch_async(queue, ^() {
+    [weakSelf process:obj]; // no report here
+  });
+}
+
 @end
