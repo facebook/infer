@@ -5130,6 +5130,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | CUDAKernelCallExpr _
     | CXXAddrspaceCastExpr _
     | CXXFoldExpr _
+    | CXXParenListInitExpr _
     | CXXRewrittenBinaryOperator _
     | CXXUnresolvedConstructExpr _
     | CXXUuidofExpr _
@@ -5164,6 +5165,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | OMPDistributeParallelForDirective _
     | OMPDistributeParallelForSimdDirective _
     | OMPDistributeSimdDirective _
+    | OMPErrorDirective _
     | OMPFlushDirective _
     | OMPForDirective _
     | OMPForSimdDirective _

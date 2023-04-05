@@ -207,6 +207,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | FriendTemplateDecl _
     | FunctionDecl _
     | FunctionTemplateDecl _
+    | HLSLBufferDecl _
+    | ImplicitConceptSpecializationDecl _
     | ImplicitParamDecl _
     | ImportDecl _
     | IndirectFieldDecl _
@@ -240,6 +242,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | TemplateParamObjectDecl _
     | TemplateTemplateParmDecl _
     | TemplateTypeParmDecl _
+    | TopLevelStmtDecl _
     | TranslationUnitDecl _
     | TypeAliasDecl _
     | TypeAliasTemplateDecl _

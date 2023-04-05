@@ -1358,9 +1358,15 @@
         {
         }
       ]],
+      ["ElaboratedType" , [
+        {
+          "pointer" : 116,
+          "desugared_type" : 8
+        }
+      ]],
       ["LValueReferenceType" , [
         {
-          "pointer" : 116
+          "pointer" : 117
         },
         {
           "type_ptr" : 8
@@ -1368,26 +1374,43 @@
       ]],
       ["LValueReferenceType" , [
         {
-          "pointer" : 16
+          "pointer" : 118
+        },
+        {
+          "type_ptr" : 116
+        }
+      ]],
+      ["LValueReferenceType" , [
+        {
+          "pointer" : 119
         },
         {
           "type_ptr" : 8,
           "is_const" : true
         }
       ]],
+      ["LValueReferenceType" , [
+        {
+          "pointer" : 16
+        },
+        {
+          "type_ptr" : 116,
+          "is_const" : true
+        }
+      ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 117
+          "pointer" : 120
         },
         {
           "return_type" : {
-            "type_ptr" : 116
+            "type_ptr" : 117
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 16
+              "type_ptr" : 119
             }
           ]
         }
@@ -1398,7 +1421,7 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 116
+            "type_ptr" : 118
           }
         },
         {
@@ -1411,25 +1434,33 @@
       ]],
       ["RValueReferenceType" , [
         {
-          "pointer" : 20
+          "pointer" : 121
         },
         {
           "type_ptr" : 8
         }
       ]],
+      ["RValueReferenceType" , [
+        {
+          "pointer" : 20
+        },
+        {
+          "type_ptr" : 116
+        }
+      ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 118
+          "pointer" : 122
         },
         {
           "return_type" : {
-            "type_ptr" : 116
+            "type_ptr" : 117
           }
         },
         {
           "params_type" : [
             {
-              "type_ptr" : 20
+              "type_ptr" : 121
             }
           ]
         }
@@ -1440,7 +1471,7 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 116
+            "type_ptr" : 118
           }
         },
         {
@@ -1465,12 +1496,12 @@
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 119
+          "pointer" : 123
         }
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 120
+          "pointer" : 124
         }
       ]],
       ["FunctionProtoType" , [
@@ -1496,19 +1527,19 @@
       ]],
       ["SubstTemplateTypeParmType" , [
         {
-          "pointer" : 121,
+          "pointer" : 125,
           "desugared_type" : 30
         }
       ]],
       ["SubstTemplateTypeParmType" , [
         {
-          "pointer" : 122,
+          "pointer" : 126,
           "desugared_type" : 8
         }
       ]],
       ["ObjCObjectType" , [
         {
-          "pointer" : 123
+          "pointer" : 127
         },
         {
           "base_type" : 100
@@ -1516,33 +1547,33 @@
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 124
+          "pointer" : 128
         },
         {
-          "type_ptr" : 123
+          "type_ptr" : 127
         }
       ]],
       ["TypedefType" , [
         {
-          "pointer" : 125,
-          "desugared_type" : 124
+          "pointer" : 129,
+          "desugared_type" : 128
         },
         {
           "child_type" : {
-            "type_ptr" : 124,
+            "type_ptr" : 128,
             "is_trivially_copyable" : true
           },
-          "decl_ptr" : 126
+          "decl_ptr" : 130
         }
       ]],
       ["TypedefType" , [
         {
           "pointer" : 45,
-          "desugared_type" : 124
+          "desugared_type" : 128
         },
         {
           "child_type" : {
-            "type_ptr" : 125,
+            "type_ptr" : 129,
             "is_trivially_copyable" : true
           },
           "decl_ptr" : 44

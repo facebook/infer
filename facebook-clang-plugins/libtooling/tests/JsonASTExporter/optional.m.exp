@@ -2074,9 +2074,15 @@
         },
         20
       ]],
+      ["ElaboratedType" , [
+        {
+          "pointer" : 127,
+          "desugared_type" : 113
+        }
+      ]],
       ["ObjCObjectType" , [
         {
-          "pointer" : 127
+          "pointer" : 128
         },
         {
           "base_type" : 104,
@@ -2090,7 +2096,7 @@
           "pointer" : 22
         },
         {
-          "type_ptr" : 127
+          "type_ptr" : 128
         }
       ]],
       ["ObjCObjectPointerType" , [
