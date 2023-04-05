@@ -71,6 +71,10 @@ ifneq ($(PLATFORM_ENV),)
 LDPATH=$(LIBRARY_PATH)
 endif
 
+.PHONY: fmt_dune
+fmt_dune:
+	BYTE_MODE=true $(DUNE_BUILD) @fmt --auto-promote
+
 .PHONY: runtest
 runtest: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	BYTE_MODE=true LD_LIBRARY_PATH=$(LDPATH) $(DUNE_BUILD) @runtest --auto-promote
