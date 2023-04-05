@@ -41,6 +41,7 @@ depends: [
   "ppx_fields_conv" {>= "v0.15.0" & < "v0.16"}
   "ppx_show"
   "ppx_yojson_conv" {>= "v0.15.0" & < "v0.16"}
+  "pyml" {>="20220905"}
   "sawja" {>="1.5.11"}
   "sedlex" {>="3.0"}
   "sqlite3"

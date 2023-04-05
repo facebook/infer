@@ -123,6 +123,7 @@ depends: [
   "ppx_yojson_conv_lib" {= "v0.15.0"}
   "ppxlib" {= "0.28.0"}
   "protocol_version_header" {= "v0.15.0"}
+  "pyml" {= "20220905"}
   "re" {= "1.10.4"}
   "react" {= "1.2.2"}
   "result" {= "1.5"}
