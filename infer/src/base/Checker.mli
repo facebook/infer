@@ -35,6 +35,7 @@ type t =
   | ResourceLeakLabExercise
   | ScopeLeakage
   | SIOF
+  | SILValidation
   | SimpleLineage
   | SimpleShape
   | SelfInBlock

@@ -50,7 +50,10 @@ type instr_metadata =
   | VariableLifetimeBegins of Pvar.t * Typ.t * Location.t  (** stack variable declared *)
 [@@deriving compare]
 
-(** An instruction. *)
+(** An instruction. Syntactic invariants of instructions per-front end are documented in
+    checkers/silValidation.ml, where Clang is the most general validator (that is, it properly
+    subsumes all other validators). You can enforce those invariants by adding --sil-validation to
+    an analysis. *)
 type instr =
   (* Note for frontend writers:
      [x] must be used in a subsequent instruction, otherwise the entire

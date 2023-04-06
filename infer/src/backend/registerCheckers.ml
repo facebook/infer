@@ -216,7 +216,13 @@ let all_checkers =
   ; { checker= ScopeLeakage
     ; callbacks=
         (let checker = interprocedural Payloads.Fields.scope_leakage ScopeLeakage.checker in
-         [(checker, Java)] ) } ]
+         [(checker, Java)] ) }
+  ; { checker= SILValidation
+    ; callbacks=
+        (let java_validator = intraprocedural (SilValidation.checker Language.Java) in
+         let clang_validator = intraprocedural (SilValidation.checker Language.Clang) in
+         let erlang_validator = intraprocedural (SilValidation.checker Language.Erlang) in
+         [(java_validator, Java); (clang_validator, Clang); (erlang_validator, Erlang)] ) } ]
 
 
 let get_active_checkers () =

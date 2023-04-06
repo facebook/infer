@@ -377,6 +377,15 @@ OPTIONS
            report summaries) and vacuum analysis database. (Conversely:
            --no-shrink-analysis-db)
 
+       --sil-validation
+           Activates: checker sil-validation: This checker validates that all
+           SIL instructions in all procedure bodies conform to a (front-end
+           specific) subset of SIL. (Conversely: --no-sil-validation)
+
+       --sil-validation-only
+           Activates: Enable sil-validation and disable all other checkers
+           (Conversely: --no-sil-validation-only)
+
        --simple-lineage
            Activates: checker simple-lineage: Computes a dataflow graph
            (Conversely: --no-simple-lineage)

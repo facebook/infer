@@ -573,6 +573,7 @@ OPTIONS
              INTEGER_OVERFLOW_L5 (disabled by default),
              INTEGER_OVERFLOW_U5 (disabled by default),
              INTERFACE_NOT_THREAD_SAFE (enabled by default),
+             INVALID_SIL (enabled by default),
              INVARIANT_CALL (disabled by default),
              IPC_ON_UI_THREAD (enabled by default),
              Internal_error (enabled by default),
@@ -1552,6 +1553,16 @@ OPTIONS
            Activates: After analysis, delete analysis summaries (but not
            report summaries) and vacuum analysis database. (Conversely:
            --no-shrink-analysis-db)           See also infer-analyze(1).
+
+       --sil-validation
+           Activates: checker sil-validation: This checker validates that all
+           SIL instructions in all procedure bodies conform to a (front-end
+           specific) subset of SIL. (Conversely: --no-sil-validation)       
+    See also infer-analyze(1).
+
+       --sil-validation-only
+           Activates: Enable sil-validation and disable all other checkers
+           (Conversely: --no-sil-validation-only)           See also infer-analyze(1).
 
        --simple-lineage
            Activates: checker simple-lineage: Computes a dataflow graph

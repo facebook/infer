@@ -36,6 +36,7 @@ type t =
   | ResourceLeakLabExercise
   | ScopeLeakage
   | SIOF
+  | SILValidation
   | SimpleLineage
   | SimpleShape
   | SelfInBlock
@@ -460,6 +461,16 @@ let config_unsafe checker =
             ; deprecation_message= "Uninitialized value checking has moved to Pulse." }
       ; support= mk_support_func ~clang:Support ()
       ; short_documentation= "Warns when values are used before having been initialized."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
+      ; enabled_by_default= false
+      ; activates= [] }
+  | SILValidation ->
+      { id= "sil-validation"
+      ; kind= UserFacing {title= "SIL validation"; markdown_body= ""}
+      ; support= mk_support_func ~java:Support ()
+      ; short_documentation=
+          "This checker validates that all SIL instructions in all procedure bodies conform to a \
+           (front-end specific) subset of SIL."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }
