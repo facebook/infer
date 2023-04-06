@@ -67,3 +67,49 @@ let build ~changed_files =
                  if attrs.changed then CallGraph.flag_reachable graph pname ) )
     changed_files ;
   graph
+
+
+let invalidate ~changed_files =
+  let changed_files =
+    match changed_files with
+    | Some files ->
+        files
+    | None ->
+        L.die ExternalError
+          "incremental invalidation requires specifying changed files via --changed-files-index"
+  in
+  L.progress "Incremental analysis: invalidating potentially-affected analysis results.@." ;
+  let dependency_graph = build ~changed_files in
+  let total_nodes = CallGraph.n_procs dependency_graph in
+  (* Only bother with incremental invalidation and logging if there are already some analysis
+     results stored in the db. *)
+  if total_nodes > 0 then (
+    if Config.debug_level_analysis > 0 then
+      CallGraph.to_dotty dependency_graph "analysis_dependency_graph.dot" ;
+    let invalidated_nodes, invalidated_files =
+      CallGraph.fold_flagged dependency_graph
+        ~f:(fun node (acc_nodes, acc_files) ->
+          let files =
+            match Attributes.load node.pname with
+            | Some {translation_unit} ->
+                SourceFile.Set.add translation_unit acc_files
+            | None ->
+                acc_files
+          in
+          Summary.OnDisk.delete node.pname ;
+          (acc_nodes + 1, files) )
+        (0, SourceFile.Set.empty)
+    in
+    SourceFile.Set.iter IssueLog.invalidate invalidated_files ;
+    let invalidated_files = SourceFile.Set.cardinal invalidated_files in
+    L.progress
+      "Incremental analysis: Invalidated %d of %d procedure summaries, and file-level analyses for \
+       %d distinct file%s.@."
+      invalidated_nodes total_nodes invalidated_files
+      (if Int.equal invalidated_files 1 then "" else "s") ;
+    ScubaLogging.log_count ~label:"incremental_analysis.total_nodes" ~value:total_nodes ;
+    ScubaLogging.log_count ~label:"incremental_analysis.invalidated_nodes" ~value:invalidated_nodes ;
+    ScubaLogging.log_count ~label:"incremental_analysis.invalidated_files" ~value:invalidated_files
+    ) ;
+  (* save some memory *)
+  ResultsDir.scrub_for_incremental ()

@@ -19,7 +19,7 @@ let run driver_mode =
   run_prologue driver_mode ;
   let changed_files = SourceFile.read_config_files_to_analyze () in
   capture driver_mode ~changed_files ;
-  InferAnalyze.invalidate_changed_procedures changed_files ;
+  if Config.incremental_analysis then AnalysisDependencyGraph.invalidate ~changed_files ;
   analyze_and_report driver_mode ~changed_files ;
   run_epilogue ()
 
@@ -44,7 +44,7 @@ let setup () =
              ( Driver.is_analyze_mode driver_mode
              || Config.(
                   continue_capture || infer_is_clang || infer_is_javac || reactive_mode
-                  || incremental_analysis ) )
+                  || incremental_analysis || mark_unchanged_procs ) )
       then ResultsDir.remove_results_dir () ;
       ResultsDir.create_results_dir () ;
       if

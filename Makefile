@@ -41,9 +41,13 @@ BUILD_SYSTEMS_TESTS += \
   results_xml \
   tracebugs \
   utf8_in_procname \
-  incremental_analysis_remove_file \
-  incremental_analysis_change_procedure \
   incremental_analysis_add_procedure \
+  incremental_analysis_change_procedure \
+  incremental_analysis_change_tenv \
+  incremental_analysis_file_level_change \
+  incremental_analysis_invalidate_only \
+  incremental_analysis_remove_file \
+
 
 ifeq ($(DIFF_CAN_FORMAT),yes)
 BUILD_SYSTEMS_TESTS += export_changed_functions

@@ -1759,10 +1759,31 @@ and inclusive_cost =
   CLOpt.mk_bool ~long:"inclusive-cost" ~default:true "Computes the inclusive cost"
 
 
-and incremental_analysis =
-  CLOpt.mk_bool ~long:"incremental-analysis" ~default:false
-    "[EXPERIMENTAL] Use incremental analysis for changed files. Not compatible with \
-     $(b,--reanalyze) and $(b,--continue-analysis)."
+and incremental_analysis, mark_unchanged_procs, invalidate_only =
+  let mark_unchanged_procs =
+    CLOpt.mk_bool ~long:"mark-unchanged-procs"
+      ~in_help:InferCommand.[(Capture, manual_generic)]
+      "Check structural identity of newly-captured procedures with previously-captured versions, \
+       marking the new procedure as unchanged if the two are equivalent.  Also prevents removing \
+       results db during capture, so that unchanged results can be reused during future \
+       incremental analyses"
+  in
+  let incremental_analysis =
+    CLOpt.mk_bool_group ~long:"incremental-analysis" ~default:false
+      ~in_help:InferCommand.[(Analyze, manual_generic)]
+      "Use incremental analysis for changed files. Not compatible with $(b,--reanalyze) and \
+       $(b,--continue-analysis). Also sets $(b,--mark-unchanged-procs)."
+      [mark_unchanged_procs] []
+  in
+  let invalidate_only =
+    CLOpt.mk_bool_group ~long:"invalidate-only" ~default:false
+      ~in_help:InferCommand.[(Analyze, manual_generic)]
+      "Remove any summaries from the results database that transitively depend on a changed \
+       procedure, then exit without doing any actual analysis."
+      [incremental_analysis; mark_unchanged_procs]
+      []
+  in
+  (incremental_analysis, mark_unchanged_procs, invalidate_only)
 
 
 and inline_func_pointer_for_testing =
@@ -3793,6 +3814,8 @@ and issues_tests = !issues_tests
 
 and issues_tests_fields = !issues_tests_fields
 
+and invalidate_only = !invalidate_only
+
 and java_debug_source_file_info = !java_debug_source_file_info
 
 and java_jar_compiler = !java_jar_compiler
@@ -3824,6 +3847,8 @@ and load_average =
 
 
 and margin_html = !margin_html
+
+and mark_unchanged_procs = !mark_unchanged_procs
 
 and mask_sajwa_exceptions = !mask_sajwa_exceptions
 

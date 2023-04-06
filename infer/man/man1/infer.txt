@@ -865,6 +865,12 @@ OPTIONS
            Impurity checker (Conversely:
            --no-impurity-report-immutable-modifications)           See also infer-analyze(1).
 
+       --incremental-analysis
+           Activates: Use incremental analysis for changed files. Not
+           compatible with --reanalyze and --continue-analysis. Also sets
+           --mark-unchanged-procs. (Conversely: --no-incremental-analysis)       
+    See also infer-analyze(1).
+
        --no-inefficient-keyset-iterator
            Deactivates: checker inefficient-keyset-iterator: Check for
            inefficient uses of iterators that iterate on keys then lookup
@@ -881,6 +887,12 @@ OPTIONS
            with the real function calls in the clang frontend. Pass the
            prefix used to build the global function pointers used for
            testing.           See also infer-analyze(1).
+
+       --invalidate-only
+           Activates: Remove any summaries from the results database that
+           transitively depend on a changed procedure, then exit without
+           doing any actual analysis. (Conversely: --no-invalidate-only)       
+    See also infer-analyze(1).
 
        --issues-tests file
            Write a list of issues in a format suitable for tests to file       
@@ -962,6 +974,14 @@ OPTIONS
        --loop-hoisting-only
            Activates: Enable loop-hoisting and disable all other checkers
            (Conversely: --no-loop-hoisting-only)           See also infer-analyze(1).
+
+       --mark-unchanged-procs
+           Activates: Check structural identity of newly-captured procedures
+           with previously-captured versions, marking the new procedure as
+           unchanged if the two are equivalent. Also prevents removing
+           results db during capture, so that unchanged results can be reused
+           during future incremental analyses (Conversely:
+           --no-mark-unchanged-procs)           See also infer-capture(1).
 
        --no-mask-sawja-exceptions
            Deactivates: Mask exceptions thrown by Sawja/Javalib during Java

@@ -1,13 +1,14 @@
-(*
- * Copyright (c) 2009-2013, Monoidics ltd.
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
- *)
+ */
+#include "b_c_f_g_and_e.h"
 
-open! IStd
+void a() {
+  g();
+  b();
+}
 
-(** Main module for the analysis after the capture phase *)
-
-val main : changed_files:SourceFile.Set.t option -> unit
+void d() { f(); }

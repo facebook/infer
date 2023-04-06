@@ -420,6 +420,8 @@ val infer_is_clang : bool
 
 val infer_is_javac : bool
 
+val invalidate_only : bool
+
 val implicit_sdk_root : string option
 
 val inclusive_cost : bool
@@ -465,6 +467,8 @@ val liveness_ignored_constant : string list
 val load_average : float option
 
 val margin_html : int
+
+val mark_unchanged_procs : bool
 
 val mask_sajwa_exceptions : bool
 
