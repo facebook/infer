@@ -241,7 +241,26 @@ let is_copy_assigned_from_this_or_global ~from source_addr_typ_opt =
   Attribute.CopyOrigin.equal from CopyAssignment && is_this_or_global_source source_addr_typ_opt
 
 
-let add_copies_to_pvar_or_field tenv path location from args (astate_n, astate) =
+let is_reachable_from_lvalue_ref_params ~is_intermediate ~from source_expr_opt source_addr_typ_opt
+    proc_lvalue_ref_parameters astate =
+  Option.exists source_expr_opt ~f:(fun source_expr ->
+      match (source_expr : DecompilerExpr.source_expr) with
+      | PVar pvar, _ ->
+          ( is_intermediate
+          || Attribute.CopyOrigin.equal from CopyAssignment
+          || Attribute.CopyOrigin.equal from CopyToOptional )
+          && Option.exists source_addr_typ_opt ~f:(fun (source_addr, _, _) ->
+                 List.exists proc_lvalue_ref_parameters ~f:(fun (param_pvar, _param_typ) ->
+                     Pvar.equal pvar param_pvar
+                     && BaseDomain.reachable_addresses_from (Caml.List.to_seq [source_addr])
+                          (astate.AbductiveDomain.post :> BaseDomain.t)
+                        |> AbstractValue.Set.mem source_addr ) )
+      | _ ->
+          false )
+
+
+let add_copies_to_pvar_or_field proc_lvalue_ref_parameters tenv path location from args
+    (astate_n, astate) =
   let open IOption.Let_syntax in
   match (args : (Exp.t * Typ.t) list) with
   | ((Lvar copy_pvar | Lindex (Lvar copy_pvar, _)), copy_type) :: rest_args
@@ -261,10 +280,18 @@ let add_copies_to_pvar_or_field tenv path location from args (astate_n, astate) 
           match (source_expr : DecompilerExpr.t) with
           | SourceExpr (source_expr, _) when is_copy_into_local copied_var ->
               (* case 1: we copy into a local variable that occurs in the code with a known source  *)
-              Some (IntoVar {copied_var}, Some source_expr)
+              if
+                is_reachable_from_lvalue_ref_params ~is_intermediate:false (Some source_expr)
+                  source_addr_typ_opt ~from proc_lvalue_ref_parameters astate
+              then None
+              else Some (IntoVar {copied_var}, Some source_expr)
           | SourceExpr (((PVar pvar, _) as source_expr), _) ->
               (* case 2: we copy into an intermediate that is not a field member/frontend temp/global and source is known. This is the case for intermediate copies of the pass by value arguments. *)
-              if Pvar.is_frontend_tmp pvar || Pvar.is_this pvar || Pvar.is_global pvar then None
+              if
+                Pvar.is_frontend_tmp pvar || Pvar.is_this pvar || Pvar.is_global pvar
+                || is_reachable_from_lvalue_ref_params ~is_intermediate:true (Some source_expr)
+                     source_addr_typ_opt ~from proc_lvalue_ref_parameters astate
+              then None
               else Some (IntoIntermediate {copied_var}, Some source_expr)
           | Unknown _ when is_copy_into_local copied_var ->
               (* case 3: analogous to case 1 but source is an unknown call that is known to create a copy *)
@@ -276,6 +303,10 @@ let add_copies_to_pvar_or_field tenv path location from args (astate_n, astate) 
               if Var.is_global copied_var then
                 (* We don't want to track copies into globals since they can be modified by any procedure as their lifetime extends till the end of the program*)
                 None
+              else if
+                is_reachable_from_lvalue_ref_params ~is_intermediate:true (Some source_expr)
+                  source_addr_typ_opt ~from proc_lvalue_ref_parameters astate
+              then None
               else
                 (* case 5: analogous to case 2 but source is returned from a call that is known to create a copy into a non-global *)
                 Some (IntoIntermediate {copied_var}, Some source_expr)
@@ -321,10 +352,15 @@ let add_copies_to_pvar_or_field tenv path location from args (astate_n, astate) 
                        | Unknown _ ->
                            None ) )
                in
-               Some
-                 ( NonDisjDomain.add_field field ~source_addr_opt (get_copy_spec source_expr_opt)
-                     astate_n
-                 , astate' ) )
+               if
+                 is_reachable_from_lvalue_ref_params ~is_intermediate:false source_expr_opt
+                   source_addr_typ_opt ~from proc_lvalue_ref_parameters astate
+               then None
+               else
+                 Some
+                   ( NonDisjDomain.add_field field ~source_addr_opt (get_copy_spec source_expr_opt)
+                       astate_n
+                   , astate' ) )
   | _ ->
       None
 
@@ -375,7 +411,11 @@ let add_copies tenv proc_desc path location pname actuals default =
     Option.bind (copy_check_fn pname) ~f:(fun from ->
         let ( |-> ) = IOption.continue ~default in
         let args = args_map_fn actuals in
-        add_copies_to_pvar_or_field tenv path location from args default
+        let proc_lvalue_ref_parameters =
+          Procdesc.get_passed_by_ref_formals proc_desc
+          |> List.filter ~f:(fun (_, typ) -> not (Typ.is_rvalue_reference typ))
+        in
+        add_copies_to_pvar_or_field proc_lvalue_ref_parameters tenv path location from args default
         |-> add_copies_to_return tenv proc_desc path location from args
         (* Ignore optional copies to return value to avoid false positives w.r.t. RVO/NRVO *)
         |-> remove_optional_copies_to_return proc_desc path location pname args )
