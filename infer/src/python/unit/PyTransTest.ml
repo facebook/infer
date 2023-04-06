@@ -22,6 +22,8 @@ let%test_module "to_proc_desc" =
       F.printf "%a" Textual.Module.pp res ;
       [%expect
         {|
+        .source_language = "python"
+
         define $toplevel::main() : *PyObject {
           #b0:
               store &$globals::x <- $builtins.python_int(42):*PyObject

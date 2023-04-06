@@ -10,7 +10,7 @@ module F = Format
 module Hashtbl = Caml.Hashtbl
 
 module Lang : sig
-  type t = Java | Hack [@@deriving equal]
+  type t = Java | Hack | Python [@@deriving equal]
 
   val of_string : string -> t option [@@warning "-unused-value-declaration"]
 

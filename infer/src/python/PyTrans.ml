@@ -243,6 +243,8 @@ let std_builtins =
   T.Module.[Procdecl python_int; Procdecl python_string; Procdecl python_tuple]
 
 
+let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python
+
 let to_module ~sourcefile module_name code =
   let name = proc_name module_name in
   let globals = T.VarName.Set.empty in
@@ -255,4 +257,4 @@ let to_module ~sourcefile module_name code =
       globals []
   in
   let decls = (T.Module.Proc decl :: globals) @ std_builtins in
-  T.Module.{attrs= []; decls; sourcefile}
+  T.Module.{attrs= [python_attribute]; decls; sourcefile}

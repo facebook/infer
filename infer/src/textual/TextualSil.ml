@@ -55,6 +55,8 @@ module VarNameBridge = struct
         SilPvar.get_name pvar |> Mangled.to_string |> of_java_name
     | Hack ->
         L.die UserError "of_pvar conversion is not supported in Hack mode"
+    | Python ->
+        L.die UserError "of_pvar conversion is not supported in Python mode"
 end
 
 module TypeNameBridge = struct
@@ -74,6 +76,8 @@ module TypeNameBridge = struct
         SilPvar.get_name pvar |> Mangled.to_string |> of_java_name
     | Hack ->
         L.die UserError "of_global_pvar conversion is not supported in Hack mode"
+    | Python ->
+        L.die UserError "of_global_pvar conversion is not supported in Python mode"
 
 
   let replace_2colons_with_dot str = String.substr_replace_all str ~pattern:"::" ~with_:"."
@@ -88,6 +92,8 @@ module TypeNameBridge = struct
         string_to_java_sil value
     | Hack ->
         HackClass (HackClassName.make value)
+    | Python ->
+        L.die InternalError "value_to_sil not yet implemented for Python mode"
 
 
   let to_sil (lang : Lang.t) {value} = value_to_sil lang value
@@ -304,6 +310,8 @@ module ProcDeclBridge = struct
               Some (HackClassName.make name.value)
         in
         SilProcname.make_hack ~class_name ~function_name:method_name
+    | Python ->
+        L.die InternalError "to_sil not yet implemented for Python"
 end
 
 module GlobalBridge = struct
