@@ -6,8 +6,18 @@
 (library
  (name PythonFrontendTest)
  (flags
-  (:standard -open IStdlib -open IStd -open IBase -open PythonFrontend))
- (libraries IStdlib IBase PythonFrontend)
+  (:standard
+   -open
+   IStdlib
+   -open
+   IStd
+   -open
+   IBase
+   -open
+   PythonFrontend
+   -open
+   Textuallib))
+ (libraries IStdlib IBase PythonFrontend Textuallib)
  (preprocess
   (pps ppx_deriving.std ppx_expect ppx_inline_test))
  (inline_tests))

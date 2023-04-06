@@ -6,6 +6,7 @@
  *)
 open! IStd
 module L = Logging
+module T = Textual
 
 type pyConstant =
   | PYCBool of bool
@@ -203,6 +204,35 @@ and new_py_instruction obj =
   {opname; opcode; arg; argval; offset; starts_line; is_jump_target}
 
 
+let proc_name value : T.ProcName.t = {T.ProcName.value; loc= Unknown}
+
+let builtin_scope = T.Enclosing T.{TypeName.value= "$builtins"; loc= Unknown}
+
+let builtin_name (value : string) : T.qualified_procname =
+  let name = proc_name value in
+  {enclosing_class= builtin_scope; name}
+
+
+(* Helper to box Python's int/string into Textual *)
+let python_int = builtin_name "python_int"
+
+let python_string = builtin_name "python_string"
+
+let python_tuple = builtin_name "python_tuple"
+
+let mk_int (i : int64) =
+  let proc = python_int in
+  let z = Z.of_int64 i in
+  let args = [T.(Exp.Const (Const.Int z))] in
+  T.Exp.Call {proc; args; kind= NonVirtual}
+
+
+let mk_string (s : string) =
+  let proc = python_string in
+  let args = [T.(Exp.Const (Const.Str s))] in
+  T.Exp.Call {proc; args; kind= NonVirtual}
+
+
 module Constant = struct
   type t = pyConstant =
     | PYCBool of bool
@@ -214,6 +244,27 @@ module Constant = struct
   [@@deriving show, compare]
 
   let create obj = new_py_constant obj
+
+  let rec to_exp = function
+    | PYCBool b ->
+        let b = if b then Z.one else Z.zero in
+        Some T.(Exp.Const (Const.Int b))
+    | PYCInt i ->
+        Some (mk_int i)
+    | PYCString s ->
+        Some (mk_string s)
+    | PYCNone ->
+        Some T.(Exp.Const Const.Null)
+    | PYCCode _ ->
+        None
+    | PYCTuple arr -> (
+        let l = Array.to_list arr in
+        let l = List.map ~f:to_exp l in
+        match Option.all l with
+        | None ->
+            None
+        | Some args ->
+            Some (T.Exp.Call {proc= python_tuple; args; kind= NonVirtual}) )
 end
 
 module Code = struct
