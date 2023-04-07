@@ -51,13 +51,13 @@ and pyInstruction =
 [@@deriving show, compare]
 
 let die_invalid_field ~kind f obj =
-  L.die InternalError "Field %s in object %s is not a valid %s" f (Py.Object.to_string obj) kind
+  L.die ExternalError "Field %s in object %s is not a valid %s" f (Py.Object.to_string obj) kind
 
 
 let read_field obj action f =
   match Py.Object.find_attr_string_opt obj f with
   | None ->
-      L.die InternalError "No field %s in object %s" f (Py.Object.to_string obj)
+      L.die ExternalError "No field %s in object %s" f (Py.Object.to_string obj)
   | Some obj ->
       action f obj
 
@@ -314,7 +314,7 @@ let from_python_object obj =
         code
     | _ ->
         L.die InternalError "[load_code] must always return a code object"
-  with Py.E _ as e -> L.die InternalError "[load_code] pyml expection: %s" (Exn.to_string e)
+  with Py.E _ as e -> L.die ExternalError "[load_code] pyml exception: %s" (Exn.to_string e)
 
 
 let from_string ~source ~filename =
@@ -331,7 +331,7 @@ let from_bytecode filename =
   (* see https://peps.python.org/pep-0552/ *)
   let fp = Core.In_channel.create ~binary:true filename in
   let size = Int64.to_int_exn @@ Core.In_channel.length fp in
-  if size <= 4 then L.die InternalError "[from_bytecode] Not enough data"
+  if size <= 4 then L.die UserError "[from_bytecode] Not enough data in file %s" filename
   else
     let magic = Base.Bytes.create 4 in
     let read_magic = Core.In_channel.input fp ~buf:magic ~pos:0 ~len:4 in
@@ -343,7 +343,7 @@ let from_bytecode filename =
     Base.Bytes.set mref 3 (Char.of_int_exn 10) ;
     let show_array = [%derive.show: bytes] in
     if read_magic <> 4 || not (Base.Bytes.equal magic mref) then
-      L.die InternalError "Invalid magic number for Python 3.8. Expected %s but got %s"
+      L.die UserError "Invalid magic number for Python 3.8. Expected %s but got %s"
         (show_array mref) (show_array magic) ;
     (* We skip 4 words = 16 bytes from the beginning, the rest is just marshalled data *)
     Core.In_channel.seek fp 16L ;
