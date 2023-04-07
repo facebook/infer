@@ -57,16 +57,16 @@ depends: [
   "jane-street-headers" {= "v0.15.0"}
   "javalib" {= "3.2.2"}
   "jst-config" {= "v0.15.1"}
-  "lambda-term" {= "3.3.1" & with-test}
-  "logs" {= "0.7.0" & with-test}
-  "lwt" {= "5.6.1" & with-test}
-  "lwt_react" {= "1.2.0" & with-test}
+  "lambda-term" {= "3.3.1"}
+  "logs" {= "0.7.0"}
+  "lwt" {= "5.6.1"}
+  "lwt_react" {= "1.2.0"}
   "memtrace" {= "0.2.3"}
   "menhir" {= "20220210"}
   "menhirLib" {= "20220210"}
   "menhirSdk" {= "20220210"}
-  "mew" {= "0.1.0" & with-test}
-  "mew_vi" {= "0.5.0" & with-test}
+  "mew" {= "0.1.0"}
+  "mew_vi" {= "0.5.0"}
   "mtime" {= "2.0.0"}
   "num" {= "1.4"}
   "ocaml" {= "4.14.0"}
@@ -78,7 +78,7 @@ depends: [
   "ocamlbuild" {= "0.14.2"}
   "ocamlfind" {= "1.9.6"}
   "ocamlgraph" {= "2.0.0"}
-  "ocplib-endian" {= "1.2" & with-test}
+  "ocplib-endian" {= "1.2"}
   "octavius" {= "1.2.2"}
   "ounit" {= "2.2.6"}
   "ounit2" {= "2.2.6"}
@@ -123,8 +123,9 @@ depends: [
   "ppx_yojson_conv_lib" {= "v0.15.0"}
   "ppxlib" {= "0.28.0"}
   "protocol_version_header" {= "v0.15.0"}
+  "pyml" {= "20220905"}
   "re" {= "1.10.4"}
-  "react" {= "1.2.2" & with-test}
+  "react" {= "1.2.2"}
   "result" {= "1.5"}
   "sawja" {= "1.5.12"}
   "sedlex" {= "3.1"}
@@ -144,18 +145,18 @@ depends: [
   "time_now" {= "v0.15.0"}
   "timezone" {= "v0.15.0"}
   "topkg" {= "1.0.7"}
-  "trie" {= "1.0.0" & with-test}
+  "trie" {= "1.0.0"}
   "typerep" {= "v0.15.0"}
   "uchar" {= "0.0.2"}
   "utop" {= "2.11.0" & with-test}
-  "uucp" {= "15.0.0" & with-test}
-  "uuseg" {= "15.0.0" & with-test}
+  "uucp" {= "15.0.0"}
+  "uuseg" {= "15.0.0"}
   "uutf" {= "1.0.3"}
   "variantslib" {= "v0.15.0"}
   "xmlm" {= "1.4.0"}
   "yojson" {= "2.0.2"}
   "zarith" {= "1.12"}
-  "zed" {= "3.2.1" & with-test}
+  "zed" {= "3.2.1"}
 ]
 build: [
   ["./autogen.sh"]

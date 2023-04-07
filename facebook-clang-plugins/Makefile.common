@@ -12,11 +12,11 @@ IOSFLAGS=-isysroot $(SDKPATH) -mios-simulator-version-min=8.2 -target x86_64-app
   -Wno-objc-property-implementation
 endif
 
-# we assume that the targeted clang was configured with --enable-libcpp --enable-cxx14
-CFLAGS_Darwin+=-stdlib=libc++ -std=c++14
+# we assume that the targeted clang was configured with --enable-libcpp --enable-cxx17
+CFLAGS_Darwin+=-stdlib=libc++ -std=c++17
 LDFLAGS_Darwin+=-stdlib=libc++
 
-CFLAGS_Linux+=-std=c++14 -fPIC
+CFLAGS_Linux+=-std=c++17 -fPIC
 LDFLAGS_Linux+=
 
 override CFLAGS+=$(CFLAGS_$(shell uname)) -g

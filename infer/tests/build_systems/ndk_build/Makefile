@@ -26,4 +26,5 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
             --Xclang --sysroot=$(NDKTOOLCHAIN)/sysroot \
             --Xclang -L$(NDKTOOLCHAIN)/lib/gcc/i686-linux-android/4.9.x \
             --Xclang -L$(NDKTOOLCHAIN)/i686-linux-android/lib \
+	    --Xclang -fuse-ld=bfd \
 	    -- $(NDKBUILD) -B APP_ABI=x86 NDK_LIBS_OUT=./libs NDK_OUT=./obj V=1)

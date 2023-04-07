@@ -1156,13 +1156,19 @@
       ]],
       ["TemplateSpecializationType" , [
         {
+          "pointer" : 125,
+          "desugared_type" : 13
+        }
+      ]],
+      ["ElaboratedType" , [
+        {
           "pointer" : 32,
           "desugared_type" : 13
         }
       ]],
       ["SubstTemplateTypeParmType" , [
         {
-          "pointer" : 125,
+          "pointer" : 126,
           "desugared_type" : 30
         }
       ]],
@@ -1177,10 +1183,10 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 126
+          "pointer" : 127
         },
         {
-          "type_ptr" : 125,
+          "type_ptr" : 126,
           "is_trivially_copyable" : true
         }
       ]],
@@ -1192,7 +1198,7 @@
       ]],
       ["TemplateSpecializationType" , [
         {
-          "pointer" : 127,
+          "pointer" : 128,
           "desugared_type" : 9
         }
       ]],
@@ -1204,19 +1210,7 @@
       ]],
       ["TemplateTypeParmType" , [
         {
-          "pointer" : 128
-        }
-      ]],
-      ["FunctionProtoType" , [
-        {
           "pointer" : 129
-        },
-        {
-          "return_type" : {
-            "type_ptr" : 36
-          }
-        },
-        {
         }
       ]],
       ["FunctionProtoType" , [
@@ -1231,16 +1225,6 @@
         {
         }
       ]],
-      ["LValueReferenceType" , [
-        {
-          "pointer" : 25
-        },
-        {
-          "type_ptr" : 13,
-          "is_const" : true,
-          "is_trivially_copyable" : true
-        }
-      ]],
       ["FunctionProtoType" , [
         {
           "pointer" : 131
@@ -1251,9 +1235,47 @@
           }
         },
         {
+        }
+      ]],
+      ["ElaboratedType" , [
+        {
+          "pointer" : 132,
+          "desugared_type" : 13
+        }
+      ]],
+      ["LValueReferenceType" , [
+        {
+          "pointer" : 133
+        },
+        {
+          "type_ptr" : 13,
+          "is_const" : true,
+          "is_trivially_copyable" : true
+        }
+      ]],
+      ["LValueReferenceType" , [
+        {
+          "pointer" : 25
+        },
+        {
+          "type_ptr" : 132,
+          "is_const" : true,
+          "is_trivially_copyable" : true
+        }
+      ]],
+      ["FunctionProtoType" , [
+        {
+          "pointer" : 134
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 36
+          }
+        },
+        {
           "params_type" : [
             {
-              "type_ptr" : 25
+              "type_ptr" : 133
             }
           ]
         }
@@ -1277,16 +1299,25 @@
       ]],
       ["RValueReferenceType" , [
         {
-          "pointer" : 29
+          "pointer" : 135
         },
         {
           "type_ptr" : 13,
           "is_trivially_copyable" : true
         }
       ]],
+      ["RValueReferenceType" , [
+        {
+          "pointer" : 29
+        },
+        {
+          "type_ptr" : 132,
+          "is_trivially_copyable" : true
+        }
+      ]],
       ["FunctionProtoType" , [
         {
-          "pointer" : 132
+          "pointer" : 136
         },
         {
           "return_type" : {
@@ -1296,7 +1327,7 @@
         {
           "params_type" : [
             {
-              "type_ptr" : 29
+              "type_ptr" : 135
             }
           ]
         }
@@ -1332,7 +1363,7 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 133
+          "pointer" : 137
         },
         {
           "type_ptr" : 13,
@@ -1341,7 +1372,7 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 134
+          "pointer" : 138
         },
         {
           "type_ptr" : 32,
@@ -1350,7 +1381,7 @@
       ]],
       ["ObjCObjectType" , [
         {
-          "pointer" : 135
+          "pointer" : 139
         },
         {
           "base_type" : 91
@@ -1358,33 +1389,33 @@
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 136
+          "pointer" : 140
         },
         {
-          "type_ptr" : 135
+          "type_ptr" : 139
         }
       ]],
       ["TypedefType" , [
         {
-          "pointer" : 137,
-          "desugared_type" : 136
+          "pointer" : 141,
+          "desugared_type" : 140
         },
         {
           "child_type" : {
-            "type_ptr" : 136,
+            "type_ptr" : 140,
             "is_trivially_copyable" : true
           },
-          "decl_ptr" : 138
+          "decl_ptr" : 142
         }
       ]],
       ["TypedefType" , [
         {
           "pointer" : 35,
-          "desugared_type" : 136
+          "desugared_type" : 140
         },
         {
           "child_type" : {
-            "type_ptr" : 137,
+            "type_ptr" : 141,
             "is_trivially_copyable" : true
           },
           "decl_ptr" : 34

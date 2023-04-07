@@ -243,4 +243,12 @@ using TupleN = std::tuple<N, N>;
 void use_tupleN(TupleN x);
 
 void pass_tupleN_ok(TupleN x) { use_tupleN(x); }
+
+std::string move_to_return_ok(bool b, std::string s) {
+  if (b) {
+    return "hi";
+  } else {
+    return s; // s is moved here.
+  }
+}
 } // namespace const_refable

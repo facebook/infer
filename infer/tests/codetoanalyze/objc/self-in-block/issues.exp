@@ -1,5 +1,6 @@
 codetoanalyze/objc/self-in-block/NoescapeBlock.m, objc_blockA.weak_in_noescape_block_bad:_1, 1, MULTIPLE_WEAKSELF, no_bucket, ERROR, [Using &weakSelf,Using &weakSelf]
 codetoanalyze/objc/self-in-block/NoescapeBlock.m, objc_blockA.weak_in_noescape_block_bad:_1, 1, WEAK_SELF_IN_NO_ESCAPE_BLOCK, no_bucket, ERROR, [Using &weakSelf,Using &weakSelf]
+codetoanalyze/objc/self-in-block/NoescapeBlock.m, objc_blockA.dispatch_sync_block_bad:andB:_6, 1, WEAK_SELF_IN_NO_ESCAPE_BLOCK, no_bucket, ERROR, [Using &weakSelf]
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_blockSelfInBlockTest.mixSelfWeakSelf_bad_1, 4, MIXED_SELF_WEAKSELF, no_bucket, ERROR, [Using &weakSelf,Using &self,Using &self]
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_blockSelfInBlockTest.strongSelfNoCheckNotWeakSelf_good_2, 1, CAPTURED_STRONG_SELF, no_bucket, ERROR, [Using captured &weakSelf]
 codetoanalyze/objc/self-in-block/StrongSelf.m, objc_blockSelfInBlockTest.strongSelfCheckOnce_bad_5, 6, STRONG_SELF_NOT_CHECKED, no_bucket, ERROR, [&strongSelf assigned here,Using &strongSelf not checked for null,Using &strongSelf not checked for null]

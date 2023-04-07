@@ -10,7 +10,7 @@ digraph callgraph {
 
   N7 [ label = "Unchanged.<init>()", flag = false ];
 
-  N6 [ label = "void Test.newMethod(int)", flag = false ];
+  N6 [ label = "void Test.newMethod(int)", flag = true ];
 
   N4 [ label = "void Test.complexityIncrease(int)", flag = true ];
   N4 -> N5 ;

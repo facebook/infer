@@ -41,9 +41,13 @@ BUILD_SYSTEMS_TESTS += \
   results_xml \
   tracebugs \
   utf8_in_procname \
-  incremental_analysis_remove_file \
-  incremental_analysis_change_procedure \
   incremental_analysis_add_procedure \
+  incremental_analysis_change_procedure \
+  incremental_analysis_change_tenv \
+  incremental_analysis_file_level_change \
+  incremental_analysis_invalidate_only \
+  incremental_analysis_remove_file \
+
 
 ifeq ($(DIFF_CAN_FORMAT),yes)
 BUILD_SYSTEMS_TESTS += export_changed_functions
@@ -172,7 +176,7 @@ BUILD_SYSTEMS_TESTS += rebar3
 endif
 endif # BUILD_ERLANG_ANALYZERS
 
-ifeq ($(BUILD_PLATFORM)+$(BUILD_HACK_ANALYZERS),Linux+yes)
+ifeq ($(BUILD_PLATFORM)+$(BUILD_HACK_ANALYZERS)+$(IS_FACEBOOK_TREE),Linux+yes+yes)
 ifneq ($(HACKC),no)
 DIRECT_TESTS += \
   hack_capture \
@@ -331,7 +335,8 @@ SRC_ML:=$(shell find * \( -name _build -or -name facebook-clang-plugins -or -pat
 
 .PHONY: fmt_all
 fmt_all:
-	parallel $(OCAMLFORMAT_EXE) $(OCAMLFORMAT_ARGS) -i ::: $(SRC_ML) $(DUNE_ML)
+	$(QUIET)parallel $(OCAMLFORMAT_EXE) $(OCAMLFORMAT_ARGS) -i ::: $(SRC_ML) $(DUNE_ML)
+	$(MAKE_SOURCE) fmt_dune
 
 # pre-building these avoids race conditions when doing multiple builds in parallel
 .PHONY: src_build_common

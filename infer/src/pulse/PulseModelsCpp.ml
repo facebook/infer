@@ -760,6 +760,7 @@ let matchers : matcher list =
     $--> GenericArrayBackedCollection.empty ~desc:"std::vector::is_empty()"
   ; -"std" &:: "vector" &:: "size" $ capt_arg_payload
     $--> GenericArrayBackedCollection.size ~desc:"std::vector::size()"
+  ; -"std" &:: "distance" &--> Basic.nondet ~desc:"std::distance"
   ; -"std" &:: "integral_constant" < any_typ &+ capt_int
     >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
     <>--> Basic.return_int ~desc:"std::integral_constant"

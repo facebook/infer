@@ -71,6 +71,10 @@ ifneq ($(PLATFORM_ENV),)
 LDPATH=$(LIBRARY_PATH)
 endif
 
+.PHONY: fmt_dune
+fmt_dune:
+	BYTE_MODE=true $(DUNE_BUILD) @fmt --auto-promote
+
 .PHONY: runtest
 runtest: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	BYTE_MODE=true LD_LIBRARY_PATH=$(LDPATH) $(DUNE_BUILD) @runtest --auto-promote
@@ -149,7 +153,7 @@ $(INFER_BIN_ALIASES): Makefile $(BIN_DIR)/$(INFER_MAIN)
 	$(QUIET)touch $@
 
 roots:=Infer
-clusters:=absint al atd backend base biabduction bufferoverrun checkers clang clang_stubs concurrency cost c_stubs datalog deadcode integration IR istd java labs dotnet llvm nullsafe opensource pulse quandary scripts test_determinator topl unit
+clusters:=absint al atd backend base biabduction bufferoverrun checkers clang clang_stubs concurrency cost c_stubs datalog deadcode integration IR istd java labs dotnet llvm nullsafe opensource pulse python quandary scripts test_determinator topl unit
 
 ml_src_files:=$(shell find . -not -path "./*stubs*" -regex '\./[a-zA-Z].*\.ml\(i\)*')
 inc_flags:=$(foreach dir,$(shell find . -not -path './_build*' -type d),-I $(dir))

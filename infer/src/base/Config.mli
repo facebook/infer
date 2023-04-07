@@ -393,6 +393,8 @@ val genrule_mode : bool
 
 val global_tenv : bool
 
+val hack_naming_table : string option [@@warning "-unused-value-declaration"]
+
 val hackc_binary : string
 
 val help_checker : Checker.t list
@@ -417,6 +419,8 @@ val inline_func_pointer_for_testing : string option
 val infer_is_clang : bool
 
 val infer_is_javac : bool
+
+val invalidate_only : bool
 
 val implicit_sdk_root : string option
 
@@ -463,6 +467,8 @@ val liveness_ignored_constant : string list
 val load_average : float option
 
 val margin_html : int
+
+val mark_unchanged_procs : bool
 
 val mask_sajwa_exceptions : bool
 

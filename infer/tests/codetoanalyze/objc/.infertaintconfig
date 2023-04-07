@@ -23,6 +23,7 @@
       },
       {"block_passed_to": "InferTaint.callBlockUnknown:", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
       {"block_passed_to": "InferTaint.call_block:", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
+      {"block_passed_to": "call_block_log", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
       {"procedure": "taintSourceParameterBad", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
       {"procedure": "NSURL.initWithString:", "kinds": ["SensitiveURLSource"]}
   ],
@@ -39,7 +40,13 @@
       "taint_target": ["ArgumentPositions", [0]]
     },
     { "procedure": "logEvent",
-      "kinds": ["Logger"]}
+      "kinds": ["Logger"]
+    },
+    {
+      "procedure": "log_string",
+      "taint_target": ["ArgumentPositions", [0]],
+      "kinds": ["SimpleSink"]
+    }
   ],
   "pulse-taint-propagators": [
     { "procedure": "URLCreate",

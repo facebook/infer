@@ -11,13 +11,21 @@ module L = Logging
 module Hashtbl = Caml.Hashtbl
 
 module Lang = struct
-  type t = Java | Hack [@@deriving equal]
+  type t = Java | Hack | Python [@@deriving equal]
 
   let of_string s =
-    match String.lowercase s with "java" -> Some Java | "hack" -> Some Hack | _ -> None
+    match String.lowercase s with
+    | "java" ->
+        Some Java
+    | "hack" ->
+        Some Hack
+    | "python" ->
+        Some Python
+    | _ ->
+        None
 
 
-  let to_string = function Java -> "java" | Hack -> "hack"
+  let to_string = function Java -> "java" | Hack -> "hack" | Python -> "python"
 end
 
 module Location = struct

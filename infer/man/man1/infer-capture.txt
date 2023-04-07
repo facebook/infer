@@ -91,6 +91,14 @@ OPTIONS
            Do not start new parallel jobs if the load average is greater than
            that specified (Buck and make only)
 
+       --mark-unchanged-procs
+           Activates: Check structural identity of newly-captured procedures
+           with previously-captured versions, marking the new procedure as
+           unchanged if the two are equivalent. Also prevents removing
+           results db during capture, so that unchanged results can be reused
+           during future incremental analyses (Conversely:
+           --no-mark-unchanged-procs)
+
        --merge-capture +string
            Specifies an Infer results directory. The files and procedures
            captured in it will be merged together into the results directory

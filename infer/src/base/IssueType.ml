@@ -716,6 +716,11 @@ let interface_not_thread_safe =
 
 let internal_error = register_hidden ~id:"Internal_error" Error Biabduction
 
+let invalid_sil =
+  register ~enabled:true ~id:"INVALID_SIL" Error SILValidation
+    ~user_documentation:[%blob "./documentation/issues/INVALID_SIL.md"]
+
+
 let invariant_call =
   register ~enabled:false ~id:"INVARIANT_CALL" Error LoopHoisting
     ~user_documentation:[%blob "./documentation/issues/INVARIANT_CALL.md"]

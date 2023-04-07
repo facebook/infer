@@ -177,6 +177,11 @@ OPTIONS
            Impurity checker (Conversely:
            --no-impurity-report-immutable-modifications)
 
+       --incremental-analysis
+           Activates: Use incremental analysis for changed files. Not
+           compatible with --reanalyze and --continue-analysis. Also sets
+           --mark-unchanged-procs. (Conversely: --no-incremental-analysis)
+
        --no-inefficient-keyset-iterator
            Deactivates: checker inefficient-keyset-iterator: Check for
            inefficient uses of iterators that iterate on keys then lookup
@@ -186,6 +191,11 @@ OPTIONS
        --inefficient-keyset-iterator-only
            Activates: Enable inefficient-keyset-iterator and disable all
            other checkers (Conversely: --no-inefficient-keyset-iterator-only)
+
+       --invalidate-only
+           Activates: Remove any summaries from the results database that
+           transitively depend on a changed procedure, then exit without
+           doing any actual analysis. (Conversely: --no-invalidate-only)
 
        --jobs,-j int
            Run the specified number of analysis jobs simultaneously
@@ -366,6 +376,15 @@ OPTIONS
            Activates: After analysis, delete analysis summaries (but not
            report summaries) and vacuum analysis database. (Conversely:
            --no-shrink-analysis-db)
+
+       --sil-validation
+           Activates: checker sil-validation: This checker validates that all
+           SIL instructions in all procedure bodies conform to a (front-end
+           specific) subset of SIL. (Conversely: --no-sil-validation)
+
+       --sil-validation-only
+           Activates: Enable sil-validation and disable all other checkers
+           (Conversely: --no-sil-validation-only)
 
        --simple-lineage
            Activates: checker simple-lineage: Computes a dataflow graph

@@ -230,6 +230,14 @@ module CalleeWithUnknown = struct
         false
     | Unknown ->
         true
+
+
+  let is_moved = function
+    | V {callee} ->
+        Option.exists (IRAttributes.load callee) ~f:(fun attrs ->
+            attrs.ProcAttributes.is_cpp_move_ctor )
+    | Unknown ->
+        true
 end
 
 module CalleesWithLoc = struct
@@ -237,6 +245,9 @@ module CalleesWithLoc = struct
 
   let is_copy_to_field_or_global x =
     exists (fun callee _ -> CalleeWithUnknown.is_copy_to_field_or_global callee) x
+
+
+  let is_moved x = exists (fun callee _ -> CalleeWithUnknown.is_moved callee) x
 end
 
 module PassedTo = struct
@@ -246,6 +257,9 @@ module PassedTo = struct
 
   let is_copied_to_field_or_global var x =
     find_opt var x |> Option.exists ~f:CalleesWithLoc.is_copy_to_field_or_global
+
+
+  let is_moved var x = find_opt var x |> Option.exists ~f:CalleesWithLoc.is_moved
 end
 
 type elt =
@@ -486,7 +500,8 @@ let get_const_refable_parameters = function
         (fun var (parameter_spec_t : ParameterSpec.t) acc ->
           if
             (Loads.is_loaded var loads || Captured.mem_var var captured)
-            && not (PassedTo.is_copied_to_field_or_global var passed_to)
+            && (not (PassedTo.is_copied_to_field_or_global var passed_to))
+            && not (PassedTo.is_moved var passed_to)
           then
             match parameter_spec_t with
             | Modified ->
@@ -589,7 +604,8 @@ let set_passed_to_elt loc timestamp call_exp actuals ({loads; passed_to} as asta
           | (tgt, _) :: _
             when Option.exists (IRAttributes.load callee) ~f:(fun attrs ->
                      attrs.ProcAttributes.is_cpp_copy_ctor
-                     || attrs.ProcAttributes.is_cpp_copy_assignment ) ->
+                     || attrs.ProcAttributes.is_cpp_copy_assignment
+                     || attrs.ProcAttributes.is_cpp_move_ctor ) ->
               Some tgt
           | _ ->
               None

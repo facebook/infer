@@ -1271,6 +1271,7 @@ int ASTExporter<ATDWriter>::TranslationUnitDeclTupleSize() {
 //@atd | IK_HIP
 //@atd | IK_RenderScript
 //@atd | IK_LLVM_IR
+//@atd | IK_HLSL
 //@atd ]
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::dumpInputKind(InputKind kind) {
@@ -1313,6 +1314,9 @@ void ASTExporter<ATDWriter>::dumpInputKind(InputKind kind) {
     break;
   case Language::HIP:
     OF.emitSimpleVariant("IK_HIP");
+    break;
+  case Language::HLSL:
+    OF.emitSimpleVariant("IK_HLSL");
     break;
   }
 }
@@ -1832,7 +1836,7 @@ void ASTExporter<ATDWriter>::dumpClassLambdaCapture(const LambdaCapture *C) {
   bool CapturesThis = C->capturesThis();
   bool CapturesVariable = C->capturesVariable();
   bool CapturesVLAType = C->capturesVLAType();
-  VarDecl *decl = C->capturesVariable() ? C->getCapturedVar() : nullptr;
+  ValueDecl *decl = C->capturesVariable() ? C->getCapturedVar() : nullptr;
   bool IsInitCapture = decl && decl->isInitCapture();
   bool IsImplicit = C->isImplicit();
   SourceRange source_range = C->getLocation();
@@ -4016,7 +4020,7 @@ void ASTExporter<ATDWriter>::VisitCXXNewExpr(const CXXNewExpr *Node) {
   VisitExpr(Node);
 
   bool IsArray = Node->isArray();
-  bool HasArraySize = Node->getArraySize().hasValue();
+  bool HasArraySize = Node->getArraySize().has_value();
   bool HasInitializer = Node->hasInitializer();
   unsigned PlacementArgs = Node->getNumPlacementArgs();
   bool HasPlacementArgs = PlacementArgs > 0;
@@ -4028,7 +4032,7 @@ void ASTExporter<ATDWriter>::VisitCXXNewExpr(const CXXNewExpr *Node) {
   OF.emitFlag("is_array", IsArray);
   if (HasArraySize) {
     OF.emitTag("array_size_expr");
-    dumpPointer(Node->getArraySize().getValue());
+    dumpPointer(Node->getArraySize().value());
   }
   if (HasInitializer) {
     OF.emitTag("initializer_expr");
@@ -4956,7 +4960,11 @@ void ASTExporter<ATDWriter>::VisitBuiltinType(const BuiltinType *T) {
 #include <clang/Basic/OpenCLImageTypes.def>
 #define EXT_OPAQUE_TYPE(Name, Id, Ext) case BuiltinType::Id:
 #include <clang/Basic/OpenCLExtensionTypes.def>
-    llvm_unreachable("OCL builtin types are unsupported");
+#define PPC_VECTOR_TYPE(Name, Id, Size) case BuiltinType::Id:
+#include <clang/Basic/PPCTypes.def>
+#define RVV_TYPE(Name, Id, SingletonId) case BuiltinType::Id:
+#include <clang/Basic/RISCVVTypes.def>
+    llvm_unreachable("Unsupported types");
     break;
   }
   OF.emitSimpleVariant(type_name);
@@ -5213,20 +5221,20 @@ void ASTExporter<ATDWriter>::dumpVersionTuple(const VersionTuple &VT) {
   Optional<unsigned> subminor = VT.getSubminor();
   Optional<unsigned> build = VT.getBuild();
   ObjectScope Scope(
-      OF, 1 + minor.hasValue() + subminor.hasValue() + build.hasValue());
+      OF, 1 + minor.has_value() + subminor.has_value() + build.has_value());
   OF.emitTag("major");
   OF.emitInteger(VT.getMajor());
-  if (minor.hasValue()) {
+  if (minor.has_value()) {
     OF.emitTag("minor");
-    OF.emitInteger(minor.getValue());
+    OF.emitInteger(minor.value());
   }
-  if (subminor.hasValue()) {
+  if (subminor.has_value()) {
     OF.emitTag("subminor");
-    OF.emitInteger(subminor.getValue());
+    OF.emitInteger(subminor.value());
   }
-  if (build.hasValue()) {
+  if (build.has_value()) {
     OF.emitTag("build");
-    OF.emitInteger(build.getValue());
+    OF.emitInteger(build.value());
   }
 }
 

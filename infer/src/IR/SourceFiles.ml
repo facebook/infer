@@ -67,7 +67,7 @@ let add source_file cfg tenv integer_type_widths =
     | None ->
         (tenv, new_proc_names)
   in
-  if Config.incremental_analysis then
+  if Config.mark_unchanged_procs then
     (* Mark any newly-captured procedure as unchanged if it is structurally identical to the
        previously-captured version, in order to avoid invalidating summaries of unchanged
        procedures in changed files.

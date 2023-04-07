@@ -301,7 +301,7 @@ struct SimpleS {
 
 struct SwapSimple {
   SimpleS v;
-  void swap_bad_FN(SwapSimple& x) {
+  void swap_bad(SwapSimple& x) {
     const auto temp = v;
     v = x.v;
     x.v = temp; // report copy assignment from const
@@ -310,7 +310,7 @@ struct SwapSimple {
 
 struct SwapVector {
   std::vector<int> v;
-  void swap_bad_FN(SwapVector& x) {
+  void swap_bad(SwapVector& x) {
     const auto temp = v;
     v = x.v;
     x.v = temp; // report copy assignment from const
@@ -617,8 +617,8 @@ class CopiedToMultipleField_Last_Bad {
   CopiedToMultipleField_Last_Bad(Arr a) : field1(a), field2(a) {}
 };
 
-void global_setter_bad(const Arr& arr) {
-  global = arr; // suggest std::move(arr) and remove const from the type
+void global_setter_ok(const Arr& arr) {
+  global = arr; // don't suggest std::move(arr) due to const
 }
 
 void modify_arg(std::vector<int> arg) { arg.push_back(42); }
@@ -656,7 +656,7 @@ int intermediate_local_copy_used_ok() {
   return x;
 }
 
-void copy_assignment_const_ref_member(const Arr& arr) {
+void copy_assignment_const_ref_member_ok(const Arr& arr) {
   std::vector<int> my_vec;
   my_vec = arr.vec;
 }
@@ -728,4 +728,21 @@ std::map<std::string, std::string> unreliable_source_ok(
   return modified;
   // the source of `modified` was `__range` from the for loop iteration, thus it
   // did not correctly check `modified` is modified.
+}
+
+void copy_assignment_from_lvalue_ref_ok_intermediate_bad(std::string& str,
+                                                         Arr arr) {
+  std::string s;
+  s = str; // no report here since we can't safely move str without affecting
+           // callees
+  int res = get_first_elem(arr); // we still wanna report here
+}
+
+void normal_copy_from_lvalue_ref_bad(std::string& str) {
+  auto f = str; // still report here
+}
+
+void infermediate_copy_from_lvalue_ref_ok(Arr& arr) {
+  get_first_elem(arr); // don't report since we can't safely move str without
+                       // affecting callees
 }

@@ -544,6 +544,8 @@ let get_pvar_formals pdesc = ProcAttributes.get_pvar_formals pdesc.attributes
 
 let get_passed_by_value_formals pdesc = ProcAttributes.get_passed_by_value_formals pdesc.attributes
 
+let get_passed_by_ref_formals pdesc = ProcAttributes.get_passed_by_ref_formals pdesc.attributes
+
 let get_loc pdesc = pdesc.attributes.loc
 
 (** Return name and type of local variables *)

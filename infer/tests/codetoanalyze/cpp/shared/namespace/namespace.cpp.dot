@@ -43,7 +43,7 @@ digraph cfg {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(x:foo::my_record); [line 44, column 3]\n  n$9=_fun_foo::my_record::__cxx_constructor(&x:foo::my_record*) [line 44, column 18]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(x:foo::my_record); [line 44, column 3]\n  n$9=_fun_foo::my_record::my_record(&x:foo::my_record*) [line 44, column 18]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
@@ -109,11 +109,11 @@ digraph cfg {
 "Rectangle#Rectangle#foo#{6701516798176187835}.dc8f32758033179155ff166aa8f83896_2" [label="2: Exit foo::Rectangle::Rectangle \n  " color=yellow style=filled]
 	
 
-"__cxx_constructor#my_record#foo#{31826141479385232}.5c07fcb078bba9960c920c6c3a7fe1a0_1" [label="1: Start foo::my_record::__cxx_constructor\nFormals:  this:foo::my_record*\nLocals:  \n  " color=yellow style=filled]
+"my_record#my_record#foo#{31826141479385232}.b090dd5c7908e73043f8f5ef665a8e00_1" [label="1: Start foo::my_record::my_record\nFormals:  this:foo::my_record*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "__cxx_constructor#my_record#foo#{31826141479385232}.5c07fcb078bba9960c920c6c3a7fe1a0_1" -> "__cxx_constructor#my_record#foo#{31826141479385232}.5c07fcb078bba9960c920c6c3a7fe1a0_2" ;
-"__cxx_constructor#my_record#foo#{31826141479385232}.5c07fcb078bba9960c920c6c3a7fe1a0_2" [label="2: Exit foo::my_record::__cxx_constructor \n  " color=yellow style=filled]
+	 "my_record#my_record#foo#{31826141479385232}.b090dd5c7908e73043f8f5ef665a8e00_1" -> "my_record#my_record#foo#{31826141479385232}.b090dd5c7908e73043f8f5ef665a8e00_2" ;
+"my_record#my_record#foo#{31826141479385232}.b090dd5c7908e73043f8f5ef665a8e00_2" [label="2: Exit foo::my_record::my_record \n  " color=yellow style=filled]
 	
 
 }

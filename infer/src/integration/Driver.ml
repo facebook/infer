@@ -324,27 +324,24 @@ let error_nothing_to_analyze mode =
 
 
 let analyze_and_report ~changed_files mode =
-  let should_analyze, should_report =
-    match (Config.command, mode) with
-    | _, BuckClangFlavor _ when not (Option.exists ~f:BuckMode.is_clang Config.buck_mode) ->
-        (* In Buck mode when compilation db is not used, analysis is invoked from capture if buck flavors are not used *)
-        (false, false)
-    | _ when Config.infer_is_clang || Config.infer_is_javac ->
-        (* Called from another integration to do capture only. *)
-        (false, false)
-    | (Capture | Compile | Debug | Explore | Help | Report | ReportDiff), _ ->
-        (false, false)
-    | (Analyze | Run), _ ->
-        (true, true)
-  in
-  let should_analyze = should_analyze && Config.capture in
-  if should_analyze then
-    if SourceFiles.is_empty () && Config.capture then error_nothing_to_analyze mode
-    else (
-      execute_analyze ~changed_files ;
-      if Config.starvation_whole_program then StarvationGlobalAnalysis.whole_program_analysis () ;
-      if Config.shrink_analysis_db then DBWriter.shrink_analysis_db () ) ;
-  if should_report && Config.report then report ()
+  match (Config.command, mode) with
+  | _, BuckClangFlavor _ when not (Option.exists ~f:BuckMode.is_clang Config.buck_mode) ->
+      (* In Buck mode when compilation db is not used, analysis is invoked from capture if buck flavors are not used *)
+      ()
+  | _ when Config.infer_is_clang || Config.infer_is_javac ->
+      (* Called from another integration to do capture only. *) ()
+  | (Capture | Compile | Debug | Explore | Help | Report | ReportDiff), _ ->
+      ()
+  | (Analyze | Run), _ when Config.invalidate_only ->
+      ()
+  | (Analyze | Run), _ ->
+      if Config.capture then
+        if SourceFiles.is_empty () then error_nothing_to_analyze mode
+        else (
+          execute_analyze ~changed_files ;
+          if Config.starvation_whole_program then StarvationGlobalAnalysis.whole_program_analysis () ;
+          if Config.shrink_analysis_db then DBWriter.shrink_analysis_db () ) ;
+      if Config.report then report ()
 
 
 let analyze_and_report ~changed_files mode =

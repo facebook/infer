@@ -193,11 +193,14 @@ if [[ "$PLATFORM" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
     # Please note that this case only applies to infer/master platform builds
     # Prevent CMAKE from adding -isystem /usr/include for platform builds
     CMAKE_ARGS+=(
-        -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;libcxx;libcxxabi"
+        -DLLVM_ENABLE_PROJECTS="clang;compiler-rt"
+        -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi"
         -DZLIB_INCLUDE_DIR="$ZLIB/include"
     )
 else
-    CMAKE_ARGS+=(-DLLVM_ENABLE_PROJECTS="clang;compiler-rt;libcxx;libcxxabi;openmp")
+    CMAKE_ARGS+=(-DLLVM_ENABLE_PROJECTS="clang;compiler-rt;openmp"
+                 -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi"
+    )
 fi
 
 if [ "$USE_NINJA" = "yes" ]; then

@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+#include <cstdarg>
 #include <string>
 
 char last_char1_Bad(char* s, int i) {
