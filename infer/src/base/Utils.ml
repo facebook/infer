@@ -520,9 +520,9 @@ let numcores =
       physical_cores () |> Option.value ~default
 
 
-let zip_fold_filenames ~init ~f ~zip_filename =
+let zip_fold ~init ~f ~zip_filename =
   let file_in = Zip.open_in zip_filename in
-  let collect acc (entry : Zip.entry) = f acc entry.filename in
+  let collect acc (entry : Zip.entry) = f acc file_in entry in
   let result = List.fold ~f:collect ~init (Zip.entries file_in) in
   Zip.close_in file_in ;
   result
