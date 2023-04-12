@@ -79,6 +79,11 @@ jobs:
           distribution: 'temurin'
           java-version: '8'
 
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
       - name: Get OS version
         uses: sersoft-gmbh/os-version-action@v1
         id: os-version
