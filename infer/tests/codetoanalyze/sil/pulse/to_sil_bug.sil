@@ -1,0 +1,30 @@
+.source_language = "hack"
+
+type cell = { value:int; next: *cell }
+
+type list = { header: *cell }
+
+define get_header(list_ptr_ptr: **list) : *cell {
+  #entry:
+    n1: **list = load &list_ptr_ptr
+    n2: *list = load n1
+    n3: *cell = load n2.list.header
+    ret n3
+}
+
+define use_get_next_on_pure_var_bad(l: *list) : void {
+  local temp : **list
+  #entry:
+    store &l <- null: *list
+    store &temp <- &l: **list
+    n1: **list = load &temp
+    n2 = get_header(n1)
+    ret null
+}
+
+define FN_use_get_next_on_program_var_bad(l: *list) : void {
+  #entry:
+    store &l <- null: *list
+    n1 = get_header(&l)
+    ret null
+}
