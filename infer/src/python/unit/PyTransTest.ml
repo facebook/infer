@@ -71,4 +71,46 @@ print(x)
         declare $builtins.python_string(*PyObject) : *PyObject
 
         declare $builtins.python_tuple(*PyObject) : *PyObject |}]
+
+
+    let%expect_test _ =
+      let source = {|
+x = 42
+y = 10
+print(x + y)
+      |} in
+      Py.initialize ~version:3 ~minor:8 () ;
+      let code = FFI.from_string ~source ~filename:"dummy" in
+      Py.finalize () ;
+      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      F.printf "%a" Textual.Module.pp res ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define $toplevel::main() : *PyObject {
+          #b0:
+              store &$globals::x <- $builtins.python_int(42):*PyObject
+              store &$globals::y <- $builtins.python_int(10):*PyObject
+              n0:*PyObject = load &$globals::x
+              n1:*PyObject = load &$globals::y
+              n2 = $builtins.binary_add(n0, n1)
+              n3 = $builtins.print(n2)
+              ret null
+
+        }
+
+        global $globals::y: *PyObject
+
+        global $globals::x: *PyObject
+
+        declare $builtins.print() : *PyObject
+
+        declare $builtins.binary_add() : *PyObject
+
+        declare $builtins.python_int(int) : *PyObject
+
+        declare $builtins.python_string(*PyObject) : *PyObject
+
+        declare $builtins.python_tuple(*PyObject) : *PyObject |}]
   end )

@@ -284,8 +284,43 @@ module CALL_FUNCTION = struct
         (env, PyCommon.builtin_name fname)
       else (env, qualified_procname @@ proc_name fname)
     in
-    let call = Textual.Exp.Call {proc; args; kind= Textual.Exp.NonVirtual} in
-    let let_instr = Textual.Instr.Let {id; exp= call; loc= Textual.Location.Unknown} in
+    let call = T.Exp.Call {proc; args; kind= T.Exp.NonVirtual} in
+    let let_instr = T.Instr.Let {id; exp= call; loc= T.Location.Unknown} in
+    let env = Env.push_instr env let_instr in
+    let env = Env.push env (DataStack.Temp id) in
+    (env, None)
+end
+
+module BINARY_ADD = struct
+  (* BINARY_ADD
+     Implements top-of-stack = top-of-stack1 + top-of-stack.
+
+     Before: TOS (rhs) | TOS1 (lhs) | rest-of-stack
+     After: TOS1 + TOS (lhs + rhs) | rest-of-stack
+
+     Since Python is using runtime types to know which `+` to do (addition, string concatenation,
+     custom operator, ...), we'll need to write a model for this one. *)
+  let run env code FFI.Instruction.{opname} =
+    Debug.p "[%s]\n" opname ;
+    let env, tos = pop_tos opname env in
+    let env, tos1 = pop_tos opname env in
+    let env, lhs = load_cell env code tos1 in
+    let lhs = match lhs with Ok rhs -> rhs | Error s -> L.die InternalError "[%s] %s" opname s in
+    let env, rhs = load_cell env code tos in
+    let rhs = match rhs with Ok rhs -> rhs | Error s -> L.die InternalError "[%s] %s" opname s in
+    let fname = "binary_add" in
+    let env = Env.register_builtin env fname in
+    let env, id = Env.temp env in
+    let proc = PyCommon.builtin_name fname in
+    (* Even if the call can be considered as virtual because, it's logic is not symetric. Based
+       on what I gathered, like in [0], I think the best course of action is to write a model for
+       it and leave it non virtual. TODO: ask David.
+
+       [0]:
+       https://stackoverflow.com/questions/58828522/is-radd-called-if-add-raises-notimplementederror
+    *)
+    let exp = T.Exp.Call {proc; args= [lhs; rhs]; kind= T.Exp.NonVirtual} in
+    let let_instr = T.Instr.Let {id; exp; loc= T.Location.Unknown} in
     let env = Env.push_instr env let_instr in
     let env = Env.push env (DataStack.Temp id) in
     (env, None)
@@ -307,6 +342,8 @@ let run_instruction env code FFI.Instruction.({opname} as instr) =
         POP_TOP.run env code instr
     | "CALL_FUNCTION" ->
         CALL_FUNCTION.run env code instr
+    | "BINARY_ADD" ->
+        BINARY_ADD.run env code instr
     | _ ->
         L.die InternalError "Unsupported opcode: %s" opname
   in

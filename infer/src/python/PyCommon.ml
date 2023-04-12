@@ -73,5 +73,5 @@ module Builtins = struct
 
   let is_builtin name builtins = Set.mem name builtins
 
-  let mk () = register "print" Set.empty
+  let mk () = register "print" Set.empty |> register "binary_add"
 end
