@@ -113,4 +113,73 @@ print(x + y)
         declare $builtins.python_string(*PyObject) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+# user-defined top level function
+def my_fun(x, y):
+        print(x)
+        print(y)
+        # local variable z
+        z = x + y
+        return z
+
+a = 10
+# global variable z
+z = my_fun(42, a)
+print(z)
+      |}
+      in
+      Py.initialize ~version:3 ~minor:8 () ;
+      let code = FFI.from_string ~source ~filename:"dummy" in
+      Py.finalize () ;
+      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      F.printf "%a" Textual.Module.pp res ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define $toplevel::main() : *PyObject {
+          #b0:
+              store &$globals::a <- $builtins.python_int(10):*PyInt
+              n0:*PyObject = load &$globals::a
+              n1 = my_fun($builtins.python_int(42), n0)
+              store &$globals::z <- n1:*PyObject
+              n2:*PyObject = load &$globals::z
+              n3 = $builtins.print(n2)
+              ret null
+
+        }
+
+        define my_fun(x: *PyObject, y: *PyObject) : *PyObject {
+          local z: *PyObject
+          #b0:
+              n0:*PyObject = load &x
+              n1 = $builtins.print(n0)
+              n2:*PyObject = load &y
+              n3 = $builtins.print(n2)
+              n4:*PyObject = load &x
+              n5:*PyObject = load &y
+              n6 = $builtins.binary_add(n4, n5)
+              store &z <- n6:*PyObject
+              n7:*PyObject = load &z
+              ret n7
+
+        }
+
+        global $globals::z: *PyObject
+
+        global $globals::a: *PyObject
+
+        declare $builtins.print(...) : *PyObject
+
+        declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_string(*PyObject) : *PyString
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )

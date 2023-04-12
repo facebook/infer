@@ -239,6 +239,20 @@ module Constant = struct
         | Some args ->
             let exp = T.Exp.Call {proc= PyCommon.python_tuple; args; kind= NonVirtual} in
             Some (exp, PyCommon.pyObject) )
+
+
+  let as_code = function
+    | PYCCode c ->
+        Some c
+    | PYCBool _ | PYCInt _ | PYCString _ | PYCTuple _ | PYCNone ->
+        None
+
+
+  let as_name = function
+    | PYCString name ->
+        Some name
+    | PYCBool _ | PYCInt _ | PYCCode _ | PYCTuple _ | PYCNone ->
+        None
 end
 
 module Code = struct
@@ -262,6 +276,9 @@ module Code = struct
   [@@deriving show, compare]
 
   let create obj = new_py_code obj
+
+  let is_closure {co_freevars; co_cellvars} =
+    Array.length co_freevars + Array.length co_cellvars <> 0
 end
 
 module Instruction = struct

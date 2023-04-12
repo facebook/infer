@@ -12,18 +12,32 @@ module PyBuiltins = PyCommon.Builtins
 
 module DataStack = struct
   type cell =
-    | Const of int (* index in co_consts *)
-    | Name of int (* reference to a global name, stored in co_names *)
-    | Temp of T.Ident.t (* SSA variable *)
+    | Const of int  (** index in co_consts *)
+    | Name of int  (** reference to a global name, stored in co_names *)
+    | VarName of int  (** reference to a local name, stored in co_varnames *)
+    | Temp of T.Ident.t  (** SSA variable *)
+    | Fun of string  (** top level user-defined function name *)
   [@@deriving show]
+
+  let as_code FFI.Code.{co_consts} = function
+    | Const n ->
+        let code = co_consts.(n) in
+        FFI.Constant.as_code code
+    | Name _ | Temp _ | Fun _ | VarName _ ->
+        None
+
 
   let show_cell_kind = function
     | Const _ ->
         "DataStack.Const"
     | Name _ ->
         "DataStack.Name"
+    | VarName _ ->
+        "DataStack.VarName"
     | Temp _ ->
         "DataStack.Temp"
+    | Fun _ ->
+        "DataStack.Fun"
 
 
   type t = cell list
@@ -132,16 +146,16 @@ let global name = sprintf "$globals::%s" name
 (* Until we support python types, everything is a *Object *)
 let pyObject = PyCommon.pyObject
 
-let load_cell env FFI.Code.{co_consts; co_names} cell =
+let load_cell env FFI.Code.{co_consts; co_names; co_varnames} cell =
   let loc = Env.loc env in
   match cell with
   | DataStack.Const ndx -> (
       let const = co_consts.(ndx) in
       match FFI.Constant.to_exp const with
       | None ->
-          (env, Error "[load_cell] Constant contains code objects")
+          (env, `Error "[load_cell] Constant contains code objects")
       | Some exp_ty ->
-          (env, Ok exp_ty) )
+          (env, `Ok exp_ty) )
   | DataStack.Name ndx ->
       let name = global co_names.(ndx) in
       let env, id = Env.temp env in
@@ -150,10 +164,21 @@ let load_cell env FFI.Code.{co_consts; co_names} cell =
       let instr = T.Instr.Load {id; exp; typ= pyObject; loc} in
       let env = Env.push_instr env instr in
       (* TODO: try to trace the type of names ? *)
-      (env, Ok (T.Exp.Var id, PyCommon.pyObject))
+      (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
+  | DataStack.VarName ndx ->
+      let name = co_varnames.(ndx) in
+      let env, id = Env.temp env in
+      let exp = T.Exp.Lvar (var_name ~loc name) in
+      let loc = Env.loc env in
+      let instr = T.Instr.Load {id; exp; typ= pyObject; loc} in
+      let env = Env.push_instr env instr in
+      (* TODO: try to trace the type of names ? *)
+      (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
   | DataStack.Temp id ->
       (* TODO: try to trace the type of ids ? *)
-      (env, Ok (T.Exp.Var id, PyCommon.pyObject))
+      (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
+  | DataStack.Fun f ->
+      (env, `Fun f)
 
 
 let pop_tos opname env =
@@ -164,6 +189,7 @@ let pop_tos opname env =
       (env, cell)
 
 
+(* TODO: merge the LOAD_* code in a single function *)
 module LOAD_CONST = struct
   (* LOAD_CONST(consti)
      Pushes co_consts[consti] onto the stack. *)
@@ -172,6 +198,28 @@ module LOAD_CONST = struct
     let const = co_consts.(arg) in
     Debug.p "[%s] arg = %s\n" opname (FFI.Constant.show const) ;
     let cell = DataStack.Const arg in
+    (Env.push env cell, None)
+end
+
+module LOAD_FAST = struct
+  (* LOAD_FAST(var_num)
+     Pushes a reference to the local co_varnames[var_num] onto the stack. *)
+
+  let run env FFI.Code.{co_varnames} FFI.Instruction.{opname; arg} =
+    let var = co_varnames.(arg) in
+    Debug.p "[%s] var_num = %s\n" opname var ;
+    let cell = DataStack.VarName arg in
+    (Env.push env cell, None)
+end
+
+module LOAD_GLOBAL = struct
+  (* LOAD_GLOBAL(namei)
+     Loads the global named co_names[namei] onto the stack. *)
+
+  let run env FFI.Code.{co_names} FFI.Instruction.{opname; arg} =
+    let var = co_names.(arg) in
+    Debug.p "[%s] namei = %s\n" opname var ;
+    let cell = DataStack.Name arg in
     (Env.push env cell, None)
 end
 
@@ -184,6 +232,27 @@ module LOAD_NAME = struct
     Debug.p "[%s] arg = %s\n" opname name ;
     let cell = DataStack.Name arg in
     (Env.push env cell, None)
+end
+
+module STORE_FAST = struct
+  (* STORE_FAST(var_num)
+     Stores top-of-stack into the local co_varnames[var_num]. *)
+
+  let run env FFI.Code.({co_varnames} as code) FFI.Instruction.{opname; arg} =
+    let name = co_varnames.(arg) in
+    Debug.p "[%s] name = %s\n" opname name ;
+    let loc = Env.loc env in
+    let var_name = var_name ~loc name in
+    let env, cell = pop_tos opname env in
+    let env, expty = load_cell env code cell in
+    match expty with
+    | `Ok (exp, typ) ->
+        let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
+        (Env.push_instr env instr, None)
+    | `Error s ->
+        L.die InternalError "[%s] %s" opname s
+    | `Fun f ->
+        L.die InternalError "[%s] no support for closure at the moment: %s" opname f
 end
 
 module STORE_NAME = struct
@@ -202,15 +271,18 @@ module STORE_NAME = struct
     Debug.p "[%s] name = %s\n" opname name ;
     let loc = Env.loc env in
     let var_name = var_name ~loc name in
-    let env = Env.register_global env var_name in
     let env, cell = pop_tos opname env in
     let env, exp_ty = load_cell env code cell in
     match exp_ty with
-    | Ok (exp, typ) ->
-        let instr = T.Instr.Store {exp1= T.Exp.Lvar var_name; typ; exp2= exp; loc} in
+    | `Ok (exp, typ) ->
+        let env = Env.register_global env var_name in
+        let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
         (Env.push_instr env instr, None)
-    | Error s ->
+    | `Error s ->
         L.die InternalError "[%s] %s" opname s
+    | `Fun f ->
+        Debug.p "  top-level function defined: %s" f ;
+        (env, None)
 end
 
 module RETURN_VALUE = struct
@@ -221,11 +293,13 @@ module RETURN_VALUE = struct
     let env, cell = pop_tos opname env in
     let env, exp_ty = load_cell env code cell in
     match exp_ty with
-    | Ok (exp, _) ->
+    | `Ok (exp, _) ->
         let term = T.Terminator.Ret exp in
         (env, Some term)
-    | Error s ->
+    | `Error s ->
         L.die InternalError "[%s] %s" opname s
+    | `Fun f ->
+        L.die InternalError "[%s] can't support returning closure: %s" opname f
 end
 
 module POP_TOP = struct
@@ -255,9 +329,11 @@ module CALL_FUNCTION = struct
         Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
         let env, exp_ty = load_cell env code cell in
         match exp_ty with
-        | Ok (exp, _) ->
+        | `Ok (exp, _) ->
             pop env (n - 1) (exp :: acc)
-        | Error s ->
+        | `Fun f ->
+            L.die InternalError "[%s] failed to get closure as function argument: %s" opname f
+        | `Error s ->
             L.die UserError "[%s] failed to fetch from the stack: %s" opname s )
       else (env, acc)
     in
@@ -275,7 +351,7 @@ module CALL_FUNCTION = struct
       match fname with
       | DataStack.Name ndx ->
           co_names.(ndx)
-      | DataStack.Const _ | DataStack.Temp _ ->
+      | VarName _ | Fun _ | Const _ | Temp _ ->
           L.die UserError "[%s] invalid function on the stack: %s" opname
             (DataStack.show_cell_kind fname)
     in
@@ -309,11 +385,23 @@ module BINARY_ADD = struct
     let env, tos1 = pop_tos opname env in
     let env, lhs = load_cell env code tos1 in
     let lhs =
-      match lhs with Ok (lhs, _) -> lhs | Error s -> L.die InternalError "[%s] %s" opname s
+      match lhs with
+      | `Ok (lhs, _) ->
+          lhs
+      | `Error s ->
+          L.die InternalError "[%s] %s" opname s
+      | `Fun f ->
+          L.die InternalError "[%s] Can't add function %s" opname f
     in
     let env, rhs = load_cell env code tos in
     let rhs =
-      match rhs with Ok (rhs, _) -> rhs | Error s -> L.die InternalError "[%s] %s" opname s
+      match rhs with
+      | `Ok (rhs, _) ->
+          rhs
+      | `Error s ->
+          L.die InternalError "[%s] %s" opname s
+      | `Fun f ->
+          L.die InternalError "[%s] Can't add function %s" opname f
     in
     let fname = "binary_add" in
     let env = Env.register_builtin env fname in
@@ -334,6 +422,52 @@ module BINARY_ADD = struct
     (env, None)
 end
 
+module MAKE_FUNCTION = struct
+  (* MAKE_FUNCTION(flags)
+     Pushes a new function object on the stack. From bottom to top, the consumed stack must
+     consist of values if the argument carries a specified flag value
+     - 0x01 a tuple of default values for positional-only and positional-or-keyword parameters in
+            positional order
+     - 0x02 a dictionary of keyword-only parameters’ default values
+     - 0x04 an annotation dictionary
+     - 0x08 a tuple containing cells for free variables, making a closure
+     - the code associated with the function (at TOS1)
+     - the qualified name of the function (at TOS)
+
+     In this first version, we will only support flag = 0x00. Also we won't support closures or
+     nested functions
+  *)
+  let run env FFI.Code.({co_consts} as code) FFI.Instruction.{opname; arg} =
+    Debug.p "[%s] flags = 0x%x\n" opname arg ;
+    if arg <> 0 then L.die InternalError "%s: support for flag 0x%x is not implemented" opname arg ;
+    let env, qual = pop_tos opname env in
+    (* We don't care about the code object, but we'll check it is indeed some code *)
+    let env, body = pop_tos opname env in
+    let body =
+      match DataStack.as_code code body with
+      | None ->
+          L.die InternalError "%s: payload is not code: %s" opname (DataStack.show_cell_kind body)
+      | Some body ->
+          body
+    in
+    if FFI.Code.is_closure body then L.die InternalError "%s: can't create closure" opname ;
+    let qual =
+      match qual with
+      | DataStack.(VarName _ | Name _ | Temp _ | Fun _) ->
+          L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell_kind qual)
+      | DataStack.Const ndx -> (
+          let const = co_consts.(ndx) in
+          match FFI.Constant.as_name const with
+          | Some name ->
+              name
+          | None ->
+              L.die InternalError "%s: can't read qualified name from stack: %s" opname
+                (FFI.Constant.show const) )
+    in
+    let env = Env.push env (DataStack.Fun qual) in
+    (env, None)
+end
+
 let run_instruction env code FFI.Instruction.({opname; starts_line} as instr) =
   let env = Env.starts_line env starts_line in
   (* TODO: there are < 256 opcodes, we could setup an array of callbacks instead *)
@@ -341,8 +475,14 @@ let run_instruction env code FFI.Instruction.({opname; starts_line} as instr) =
     match opname with
     | "LOAD_CONST" ->
         LOAD_CONST.run env code instr
+    | "LOAD_FAST" ->
+        LOAD_FAST.run env code instr
+    | "LOAD_GLOBAL" ->
+        LOAD_GLOBAL.run env code instr
     | "LOAD_NAME" ->
         LOAD_NAME.run env code instr
+    | "STORE_FAST" ->
+        STORE_FAST.run env code instr
     | "STORE_NAME" ->
         STORE_NAME.run env code instr
     | "RETURN_VALUE" ->
@@ -353,6 +493,8 @@ let run_instruction env code FFI.Instruction.({opname; starts_line} as instr) =
         CALL_FUNCTION.run env code instr
     | "BINARY_ADD" ->
         BINARY_ADD.run env code instr
+    | "MAKE_FUNCTION" ->
+        MAKE_FUNCTION.run env code instr
     | _ ->
         L.die InternalError "Unsupported opcode: %s" opname
   in
@@ -396,40 +538,57 @@ let first_loc_of_code FFI.Code.{instructions} =
       T.Location.Unknown
 
 
-let to_proc_desc env name code =
+let to_proc_desc env name FFI.Code.({co_argcount; co_varnames} as code) =
   let qualified_name = qualified_procname name in
   let pyObject = T.Typ.{typ= pyObject; attributes= []} in
+  let loc = first_loc_of_code code in
+  let label = node_name ~loc "b0" in
+  let nr_varnames = Array.length co_varnames in
+  let params = Array.sub co_varnames ~pos:0 ~len:co_argcount in
+  let locals = Array.sub co_varnames ~pos:co_argcount ~len:(nr_varnames - co_argcount) in
+  let params = Array.map ~f:(var_name ~loc) params |> Array.to_list in
+  let locals = Array.map ~f:(fun name -> (var_name ~loc name, pyObject)) locals |> Array.to_list in
   let procdecl =
     T.ProcDecl.
       { qualified_name
-      ; formals_types= []
+      ; formals_types= List.map ~f:(fun _ -> pyObject) params
       ; are_formal_types_fully_declared= true
       ; result_type= pyObject
       ; attributes= [] }
   in
-  let loc = first_loc_of_code code in
-  let label = node_name ~loc "b0" in
   let env = Env.reset_idents env in
   let env, remaining_instructions, node = node env label code in
   if not (List.is_empty remaining_instructions) then
     L.die InternalError "%d instructions are left" (List.length remaining_instructions) ;
   ( env
   , Textual.ProcDesc.
-      { procdecl
-      ; nodes= [node]
-      ; start= label
-      ; params= []
-      ; locals= []
-      ; exit_loc= Textual.Location.Unknown } )
+      {procdecl; nodes= [node]; start= label; params; locals; exit_loc= Textual.Location.Unknown} )
+
+
+(* No support for nested functions/methods at the moment *)
+let to_proc_descs env codes =
+  Array.fold codes ~init:(env, []) ~f:(fun (env, decls) const ->
+      match FFI.Constant.as_code const with
+      | None ->
+          (env, decls)
+      | Some FFI.Code.({co_name} as code) ->
+          let loc = first_loc_of_code code in
+          let name = proc_name ~loc co_name in
+          let env, decl = to_proc_desc env name code in
+          (env, T.Module.Proc decl :: decls) )
 
 
 let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python
 
-let to_module ~sourcefile module_name code =
+let to_module ~sourcefile module_name FFI.Code.({co_consts} as code) =
+  let env = Env.empty in
+  (* First we process any code body that is in code.co_consts *)
+  let env, decls = to_proc_descs env co_consts in
+  (* Process top level module *)
   let loc = first_loc_of_code code in
   let name = proc_name ~loc module_name in
-  let env = Env.empty in
   let env, decl = to_proc_desc env name code in
+  (* Translate globals to Textual *)
   let globals =
     T.VarName.Set.fold
       (fun name acc ->
@@ -437,5 +596,6 @@ let to_module ~sourcefile module_name code =
         T.Module.Global global :: acc )
       env.Env.globals []
   in
-  let decls = (T.Module.Proc decl :: globals) @ PyBuiltins.to_textual env.Env.builtins in
+  (* Gather everything into a Textual module *)
+  let decls = ((T.Module.Proc decl :: decls) @ globals) @ PyBuiltins.to_textual env.Env.builtins in
   T.Module.{attrs= [python_attribute]; decls; sourcefile}

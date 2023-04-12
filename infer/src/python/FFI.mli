@@ -13,6 +13,10 @@ module rec Constant : sig
   val create : Pytypes.pyobject -> t
 
   val to_exp : t -> (Textual.Exp.t * Textual.Typ.t) option
+
+  val as_code : t -> Code.t option
+
+  val as_name : t -> string option
 end
 
 and Code : sig
@@ -52,6 +56,8 @@ and Code : sig
   [@@deriving show, compare]
 
   val create : Pytypes.pyobject -> t
+
+  val is_closure : t -> bool
 end
 
 and Instruction : sig
