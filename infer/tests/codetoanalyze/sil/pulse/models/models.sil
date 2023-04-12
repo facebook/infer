@@ -1,0 +1,16 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "hack"
+
+type HackString = { val: *string }
+
+define $builtins.hack_string(str: *string) : *HackMixed {
+  #entry:
+    n0 = __sil_allocate(<HackString>)
+    n1: *string = load &str
+    store n0.HackString.val <- n1 : *string
+    ret n0
+}

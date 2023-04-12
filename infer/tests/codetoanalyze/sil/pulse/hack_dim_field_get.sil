@@ -11,21 +11,11 @@ type list extends HackMixed = {}
 
 type HackMixed = { header: *cell }
 
-type HackString = { val: *string }
-
-define hack_string(str: *string) : *HackMixed {
-  #entry:
-    n0 = __sil_allocate(<HackString>)
-    n1: *string = load &str
-    store n0.HackString.val <- n1 : *string
-    ret n0
-}
-
 define bad(l: *list) : void {
   local temp : **list
   #entry:
     n0 = &l
-    n1 = hack_string("header")
+    n1 = $builtins.hack_string("header")
     n2 = $builtins.hack_dim_field_get(n0, n1)
     store n2 <- null: *cell
     n3: *list = load &l
@@ -38,7 +28,7 @@ define good(l: *list) : void {
   local temp : **list
   #entry:
     n0 = &l
-    n1 = hack_string("header")
+    n1 = $builtins.hack_string("header")
     n2 = $builtins.hack_dim_field_get(n0, n1)
     store n2 <- __sil_allocate(<cell>): *cell
     n3: *list = load &l
@@ -48,3 +38,5 @@ define good(l: *list) : void {
 }
 
 declare $builtins.hack_dim_field_get(**HackMixed, *HackMixed): **HackMixed
+
+declare $builtins.hack_string(*string) : *HackMixed
