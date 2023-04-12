@@ -145,12 +145,12 @@ void dead_param_ok(folly::Optional<std::string> s_opt) {}
 
 void call_lambda(const std::function<void()>& f) { f(); }
 
-// This is TP in c++11.
+// This is FN in c++11.
 void captured_arr_bad_FN(Arr a) {
   call_lambda([&a]() {});
 }
 
-// This is FP in c++11.
+// This is TN in c++11.
 void captured_arr_ok(Arr a) {
   call_lambda([&a]() { a.arr[0] += 8; });
 }
@@ -250,5 +250,24 @@ std::string move_to_return_ok(bool b, std::string s) {
   } else {
     return s; // s is moved here.
   }
+}
+
+void unknown_lambda_call(std::function<void()>);
+
+// The issue is conservatively suppressed when the parameter is captured by
+// reference.
+void captured_ref_ok(std::vector<int> vec) {
+  auto f = [&vec]() { vec[0] += 42; };
+  unknown_lambda_call(std::move(f));
+}
+
+void captured_value_bad(std::vector<int> vec) {
+  auto f = [vec]() {};
+  unknown_lambda_call(std::move(f));
+}
+
+void captured_move_ok(std::vector<int> vec) {
+  auto f = [vec = std::move(vec)]() {};
+  unknown_lambda_call(std::move(f));
 }
 } // namespace const_refable

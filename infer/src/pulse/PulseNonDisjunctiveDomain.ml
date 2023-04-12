@@ -133,14 +133,30 @@ end
 module DestructorChecked = AbstractDomain.FiniteSet (Var)
 
 module Captured = struct
-  include AbstractDomain.FiniteSet (struct
-    include Pvar
+  include
+    AbstractDomain.FiniteMultiMap
+      (struct
+        include Pvar
 
-    let pp = Pvar.pp Pp.text
-  end)
+        let pp = Pvar.pp Pp.text
+      end)
+      (struct
+        type t = CapturedVar.capture_mode [@@deriving compare]
+
+        let pp f x = F.pp_print_string f (CapturedVar.string_of_capture_mode x)
+      end)
 
   let mem_var var x =
     match (var : Var.t) with ProgramVar pvar -> mem pvar x | LogicalVar _ -> false
+
+
+  let is_captured_by_ref var x =
+    match (var : Var.t) with
+    | ProgramVar pvar ->
+        get_all pvar x
+        |> List.exists ~f:(fun mode -> CapturedVar.equal_capture_mode mode ByReference)
+    | LogicalVar _ ->
+        false
 end
 
 module CopyMap = struct
@@ -341,7 +357,7 @@ let bottom =
     { copy_map= CopyMap.empty
     ; parameter_map= ParameterMap.empty
     ; destructor_checked= DestructorChecked.empty
-    ; captured= Captured.empty
+    ; captured= Captured.bottom
     ; locked= Locked.bottom
     ; loads= Loads.bottom
     ; stores= Stores.bottom
@@ -498,7 +514,8 @@ let get_const_refable_parameters = function
   | V {parameter_map; captured; loads; passed_to} ->
       ParameterMap.fold
         (fun var (parameter_spec_t : ParameterSpec.t) acc ->
-          if
+          if Captured.is_captured_by_ref var captured then acc
+          else if
             (Loads.is_loaded var loads || Captured.mem_var var captured)
             && (not (PassedTo.is_copied_to_field_or_global var passed_to))
             && not (PassedTo.is_moved var passed_to)
@@ -550,8 +567,8 @@ let is_checked_via_dtor var = function
 let set_captured_variables_elt exp astate_n =
   match exp with
   | Exp.Closure {captured_vars} ->
-      List.fold captured_vars ~init:astate_n ~f:(fun astate_n (_, pvar, _, _) ->
-          {astate_n with captured= Captured.add pvar astate_n.captured} )
+      List.fold captured_vars ~init:astate_n ~f:(fun astate_n (_, pvar, _, mode) ->
+          {astate_n with captured= Captured.add pvar mode astate_n.captured} )
   | _ ->
       astate_n
 
