@@ -148,7 +148,9 @@ val get_available_memory_MB : unit -> int option
 (** On Linux systems, return [Some x] where [MemAvailable x] is in [/proc/meminfo]. Returns [None]
     in all other cases. *)
 
-val iter_infer_deps : root:string -> f:(string -> unit) -> string -> unit
+val fold_infer_deps : root:string -> string -> init:'a -> f:('a -> string -> 'a) -> 'a
+
+val iter_infer_deps : root:string -> string -> f:(string -> unit) -> unit
 (** Parse each line of the given [infer_deps.txt] file (split on tabs, assume 3 elements per line)
     and run [f] on the third element. [root] is used to interpret relative paths in the file. *)
 

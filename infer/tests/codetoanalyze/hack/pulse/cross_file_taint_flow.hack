@@ -22,7 +22,9 @@ function indirectCrossFileFlowOk(): void {
   OuterFile::taintSink($untainted);
 }
 
-function FN_inheritanceCrossFileFlowBad(): void {
-  $tainted = OuterFile::superTaintSource(); // works if OuterFile$static.superTaintSource specified as a source
+function inheritanceCrossFileFlowBad(): void {
+  // The taint config specifies class' superclass as a source
+  // Matching against this spec works only when we have a global tenv
+  $tainted = OuterFile::superTaintSource();
   OuterFile::taintSink($tainted);
 }

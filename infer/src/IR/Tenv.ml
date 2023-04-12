@@ -212,7 +212,7 @@ let store_debug_file_for_source source_file tenv =
   store_debug_file tenv tenv_filename_of_source_file
 
 
-let store_to_filename tenv tenv_filename =
+let write tenv tenv_filename =
   Serialization.write_to_file tenv_serializer tenv_filename ~data:tenv ;
   if Config.debug_mode then store_debug_file tenv tenv_filename
 
@@ -229,19 +229,21 @@ module Normalizer = struct
     new_tenv
 end
 
-let store_global tenv =
+let store_global ~normalize tenv =
   (* update in-memory global tenv for later uses by this process, e.g. in single-core mode the
      frontend and backend run in the same process *)
   if Config.debug_level_capture > 0 then
     L.debug Capture Quiet "Tenv.store: global tenv has size %d bytes.@."
       (Obj.(reachable_words (repr tenv)) * (Sys.word_size_in_bits / 8)) ;
-  let tenv = Normalizer.normalize tenv in
+  (* TODO(arr): normalization sometimes doesn't terminate for Hack. This needs to be investigated
+     and fixed. For now we explicitly disable normalization in Hack capture. *)
+  let tenv = if normalize then Normalizer.normalize tenv else tenv in
   HashNormalizer.reset_all_normalizers () ;
   if Config.debug_level_capture > 0 then
     L.debug Capture Quiet "Tenv.store: canonicalized tenv has size %d bytes.@."
       (Obj.(reachable_words (repr tenv)) * (Sys.word_size_in_bits / 8)) ;
   global_tenv := Some tenv ;
-  store_to_filename tenv global_tenv_path
+  write tenv global_tenv_path
 
 
 let normalize = function

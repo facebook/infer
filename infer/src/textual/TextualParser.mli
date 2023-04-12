@@ -33,7 +33,7 @@ module TextualFile : sig
 
   val translate : t -> (sil, Textual.SourceFile.t * error list) result
 
-  val capture : sil -> Tenv.t
+  val capture : use_global_tenv:bool -> sil -> unit
 
   val line_map : t -> LineMap.t option [@@warning "-unused-value-declaration"]
 end

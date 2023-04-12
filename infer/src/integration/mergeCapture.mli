@@ -7,6 +7,9 @@
 
 open! IStd
 
+val merge_global_tenv : normalize:bool -> DB.filename list -> unit
+(** Merge tenvs from the given paths and store the result as a global tenv *)
+
 val merge_captured_targets : root:string -> unit
 
 val merge_changed_functions : unit -> unit

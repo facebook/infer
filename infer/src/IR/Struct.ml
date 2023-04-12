@@ -326,7 +326,8 @@ let full_merge ~newer ~current =
   let statics = merge_fields ~newer:newer.statics ~current:current.statics in
   let supers = merge_supers ~newer:newer.supers ~current:current.supers in
   let methods = merge_methods ~newer:newer.methods ~current:current.methods in
-  (* we are merging only Java classes, so [exported_obj_methods] should be empty, so no merge *)
+  (* we are merging only Java and Hack classes, so [exported_obj_methods] should be empty, so no
+     merge *)
   let annots = merge_annots ~newer:newer.annots ~current:current.annots in
   let java_class_info =
     merge_java_class_info_opt ~newer:newer.java_class_info ~current:current.java_class_info
@@ -344,7 +345,7 @@ let full_merge ~newer ~current =
 
 let merge typename ~newer ~current =
   match (typename : Typ.Name.t) with
-  | CStruct _ | CUnion _ | ErlangType _ | HackClass _ | ObjcClass _ | ObjcProtocol _ | CppClass _ ->
+  | CStruct _ | CUnion _ | ErlangType _ | ObjcClass _ | ObjcProtocol _ | CppClass _ ->
       if not (is_dummy newer) then newer else current
   | JavaClass _ when is_dummy newer ->
       current
@@ -357,6 +358,22 @@ let merge typename ~newer ~current =
   | CSharpClass _ when is_dummy current ->
       newer
   | CSharpClass _ ->
+      full_merge ~newer ~current
+  | HackClass _ when is_dummy newer ->
+      current
+  | HackClass _ when is_dummy current ->
+      newer
+  | HackClass _ ->
+      (* NOTE: when we translate Hack we have 3 sources of Structs:
+
+          1. classes defined inside the file that is being translated,
+          2. classes that are created from ProcDecls used in the file but defined inside a different
+             file,
+          3. classes that are used but not defined in any way and are marked as dummy.
+
+          We should never need to merge two structs from Group 1, but Group 1 + Group 2 or Group 2 +
+          Group 2 are valid cases. There's not much benefit in differentiating between all these
+          cases, hence when we see two non-dummy Hack structs we just do a full merge. *)
       full_merge ~newer ~current
 
 

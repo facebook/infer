@@ -67,7 +67,7 @@ let load_tenv () =
 (** Store to a file the type environment containing all the types required to perform the analysis *)
 let save_tenv tenv =
   L.(debug Capture Medium) "writing new global tenv@." ;
-  Tenv.store_global tenv
+  Tenv.store_global ~normalize:true tenv
 
 
 let store_callee_attributes tenv program =

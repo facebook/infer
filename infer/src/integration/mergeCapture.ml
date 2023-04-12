@@ -11,33 +11,41 @@ module L = Logging
 (** Module to merge the results of capture for different buck/gradle targets. *)
 
 module TenvMerger = struct
-  let merge_global_tenvs infer_deps_file =
+  let merge_into_global ~normalize paths =
     let time0 = Mtime_clock.counter () in
     let global_tenv = Tenv.create () in
-    let merge infer_out_src =
-      let global_tenv_path =
-        ResultsDirEntryName.get_path ~results_dir:infer_out_src JavaGlobalTypeEnvironment
-        |> DB.filename_from_string
-      in
-      Tenv.read global_tenv_path
-      |> Option.iter ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:global_tenv)
+    let do_merge path =
+      Tenv.read path |> Option.iter ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:global_tenv)
     in
-    Utils.iter_infer_deps ~root:Config.project_root ~f:merge infer_deps_file ;
+    List.iter paths ~f:do_merge ;
     let time1 = Mtime_clock.counter () in
-    Tenv.store_global global_tenv ;
+    Tenv.store_global ~normalize global_tenv ;
     L.progress "Merging type environments took %a, of which %a were spent storing the global tenv@."
       Mtime.Span.pp (Mtime_clock.count time0) Mtime.Span.pp (Mtime_clock.count time1)
 
 
-  let merge_global_tenvs infer_deps_file =
+  let merge_global_tenvs ~normalize infer_deps_file =
+    let dep_tenv_path infer_out_src =
+      ResultsDirEntryName.get_path ~results_dir:infer_out_src JavaGlobalTypeEnvironment
+      |> DB.filename_from_string
+    in
+    let fold_dep_paths =
+      Utils.fold_infer_deps ~root:Config.project_root |> IContainer.map ~f:dep_tenv_path
+    in
+    let paths = Container.to_list ~fold:fold_dep_paths infer_deps_file in
+    merge_into_global ~normalize paths
+
+
+  let merge_global_tenvs ~normalize infer_deps_file =
     ScubaLogging.execute_with_time_logging "merge_captured_tenvs" (fun () ->
-        GCStats.log_f ~name:"tenv_merge" MergeCapture (fun () -> merge_global_tenvs infer_deps_file) )
+        GCStats.log_f ~name:"tenv_merge" MergeCapture (fun () ->
+            merge_global_tenvs ~normalize infer_deps_file ) )
 
 
   let start infer_deps_file =
     match Unix.fork () with
     | `In_the_child ->
-        ForkUtils.protect ~f:merge_global_tenvs infer_deps_file ;
+        ForkUtils.protect ~f:(merge_global_tenvs ~normalize:true) infer_deps_file ;
         L.exit 0
     | `In_the_parent child_pid ->
         child_pid
@@ -51,6 +59,8 @@ module TenvMerger = struct
     | Ok () ->
         ()
 end
+
+let merge_global_tenv = TenvMerger.merge_into_global
 
 let merge_changed_functions () =
   L.progress "Merging changed functions files...@." ;

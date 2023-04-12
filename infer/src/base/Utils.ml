@@ -47,7 +47,7 @@ let find_files ~path ~extension =
   fold_file_tree ~init:[] ~f_dir ~f_reg ~path
 
 
-(** read a source file and return a list of lines, or None in case of error *)
+(** read a source file and return a list of lines, or Error in case of error *)
 let read_file fname =
   let res = ref [] in
   let cin_ref = ref None in
@@ -445,8 +445,8 @@ let get_available_memory_MB () =
   else with_file_in proc_meminfo ~f:scan_for_expected_output
 
 
-let iter_infer_deps ~root ~f infer_deps_file =
-  let one_line line =
+let fold_infer_deps ~root infer_deps_file ~init ~f =
+  let one_line acc line =
     match String.split ~on:'\t' line with
     | [_; _; target_results_dir] ->
         let infer_out_src =
@@ -454,15 +454,19 @@ let iter_infer_deps ~root ~f infer_deps_file =
             Filename.dirname (root ^/ target_results_dir)
           else target_results_dir
         in
-        f infer_out_src
+        f acc infer_out_src
     | _ ->
         Die.die InternalError "Couldn't parse deps file '%s', line: %s" infer_deps_file line
   in
   match read_file infer_deps_file with
   | Ok lines ->
-      List.iter ~f:one_line lines
+      List.fold ~init ~f:one_line lines
   | Error error ->
       Die.die InternalError "Couldn't read deps file '%s': %s" infer_deps_file error
+
+
+let iter_infer_deps ~root infer_deps_file ~f =
+  Container.iter ~fold:(fold_infer_deps ~root) infer_deps_file ~f
 
 
 let inline_argument_files args =

@@ -126,16 +126,17 @@ module TextualFile = struct
 
   let translate file = translate_textual_or_doli ~capture:TextualCapture file
 
-  let capture {sourcefile; cfg; tenv} =
+  let capture ~use_global_tenv {sourcefile; cfg; tenv} =
     let sourcefile = Textual.SourceFile.file sourcefile in
     DB.Results_dir.init sourcefile ;
-    SourceFiles.add sourcefile cfg (FileLocal tenv) None ;
+    let per_file_tenv = if use_global_tenv then Tenv.Global else Tenv.FileLocal tenv in
+    SourceFiles.add sourcefile cfg per_file_tenv None ;
     if Config.debug_mode then Tenv.store_debug_file_for_source sourcefile tenv ;
     if
       Config.debug_mode || Config.testing_mode || Config.frontend_tests
       || Option.is_some Config.icfg_dotty_outfile
     then DotCfg.emit_frontend_cfg sourcefile cfg ;
-    tenv
+    ()
 end
 
 (* This code is used only by the --capture-textual integration, which turn textual files into
@@ -147,8 +148,8 @@ let capture ~capture files =
     | Error (sourcefile, errs) ->
         List.iter errs ~f:(fun error -> L.external_error "%a@\n" (pp_error sourcefile) error)
     | Ok sil ->
-        let tenv = TextualFile.capture sil in
-        Tenv.merge ~src:tenv ~dst:global_tenv
+        TextualFile.capture ~use_global_tenv:true sil ;
+        Tenv.merge ~src:sil.tenv ~dst:global_tenv
   in
   List.iter files ~f:capture_one ;
-  Tenv.store_global global_tenv
+  Tenv.store_global ~normalize:true global_tenv

@@ -145,7 +145,7 @@ module Implementation = struct
     let main_db = Database.get_database CaptureDatabase in
     SqliteUtils.with_attached_db main_db ~db_file:":memory:" ~db_name:"memdb" ~f:(fun () ->
         Database.create_tables ~prefix:"memdb." main_db CaptureDatabase ;
-        Utils.iter_infer_deps ~root ~f:merge_db infer_deps_file ;
+        Utils.iter_infer_deps infer_deps_file ~root ~f:merge_db ;
         copy_to_main main_db )
 
 

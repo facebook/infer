@@ -87,7 +87,7 @@ module Unit : sig
   val extract_units : In_channel.t -> int option * t Seq.t
   (** Returns the expected number of units and a lazy sequence of units extracted from the channel. *)
 
-  val capture_unit : t -> (unit, unit) Result.t
+  val capture_unit : t -> (Tenv.t, unit) Result.t
 end = struct
   type t = {source_path: string; content: string}
 
@@ -192,9 +192,8 @@ end = struct
     let res =
       match trans with
       | Ok sil ->
-          (* TODO(arr): consider a global tenv for Hack *)
-          TextualFile.capture sil |> ignore ;
-          Ok ()
+          TextualFile.capture ~use_global_tenv:true sil ;
+          Ok sil.tenv
       | Error (sourcefile, errs) ->
           List.iter errs ~f:(log_error sourcefile) ;
           Error ()
@@ -258,10 +257,30 @@ let process_output ic =
   (* action's output and on_finish's input are connected and consistent with
      ProcessPool.TaskGenerator's contract *)
   let unit_iter = IterSeq.create ?estimated_size:unit_count units in
-  let action unit =
-    let t0 = Mtime_clock.now () in
-    !ProcessPoolState.update_status t0 unit.Unit.source_path ;
-    match Unit.capture_unit unit with Ok () -> None | Error () -> Some ()
+  let child_action, child_epilogue =
+    (* Each worker accumulates its own global tenv. In epilogue the tenv is stored to disk and its
+       filepath returned to the main process. *)
+    let child_tenv = Tenv.create () in
+    let child_action unit =
+      let t0 = Mtime_clock.now () in
+      !ProcessPoolState.update_status t0 unit.Unit.source_path ;
+      match Unit.capture_unit unit with
+      | Ok file_tenv ->
+          Tenv.merge ~src:file_tenv ~dst:child_tenv ;
+          None
+      | Error () ->
+          Some ()
+    in
+    let child_epilogue worker_id =
+      let tenv_path = ResultsDir.get_path Temporary ^/ "child.tenv" |> DB.filename_from_string in
+      let worker_num = ProcessPool.Worker.id_to_int worker_id in
+      let tenv_path = DB.filename_add_suffix tenv_path (Int.to_string worker_num) in
+      L.debug Capture Quiet "Epilogue: writing child %d tenv to %s@\n" worker_num
+        (DB.filename_to_string tenv_path) ;
+      Tenv.write child_tenv tenv_path ;
+      tenv_path
+    in
+    (child_action, child_epilogue)
   in
   let on_finish = function Some () -> incr n_error | None -> incr n_captured in
   let tasks () =
@@ -272,10 +291,22 @@ let process_output ic =
       ; next= (fun () -> IterSeq.next unit_iter) }
   in
   let runner =
-    Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:ignore ~f:action ~child_epilogue:ignore
+    Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:ignore ~f:child_action ~child_epilogue
       ~tasks
   in
-  Tasks.Runner.run runner |> ignore ;
+  let child_tenv_paths = Tasks.Runner.run runner in
+  (* Merge worker tenvs into a global tenv *)
+  let child_tenv_paths =
+    Array.mapi child_tenv_paths ~f:(fun child_num tenv_path ->
+        match tenv_path with
+        | Some tenv_path ->
+            tenv_path
+        | None ->
+            L.die ExternalError "Child %d did't return a path to its tenv" child_num )
+  in
+  L.progress "Merging type environments...@\n%!" ;
+  MergeCapture.merge_global_tenv ~normalize:false (Array.to_list child_tenv_paths) ;
+  Array.iter child_tenv_paths ~f:(fun filename -> DB.filename_to_string filename |> Unix.unlink) ;
   (!n_captured, !n_error)
 
 

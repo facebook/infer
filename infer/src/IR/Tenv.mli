@@ -21,13 +21,16 @@ val load : SourceFile.t -> t option
 val store_debug_file_for_source : SourceFile.t -> t -> unit
 
 val read : DB.filename -> t option
-(** read and return a type environment from the given file *)
+(** Read and return a type environment from the given file *)
+
+val write : t -> DB.filename -> unit
+(** Write the type environment into the given file *)
 
 val load_global : unit -> t option
-(** load the global type environment (Java) *)
+(** Load the global type environment (Java) *)
 
-val store_global : t -> unit
-(** save a global type environment (Java) *)
+val store_global : normalize:bool -> t -> unit
+(** Save a global type environment (Java/Hack) *)
 
 val lookup : t -> Typ.Name.t -> Struct.t option
 (** Look up a name in the given type environment. *)

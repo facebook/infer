@@ -55,6 +55,9 @@ type (_, _, _) t
 
 module Worker : sig
   type id
+
+  val id_to_int : id -> int
+  (** returns the number that matches the index of the worker in the array of final results *)
 end
 
 val create :

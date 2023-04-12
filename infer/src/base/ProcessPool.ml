@@ -442,6 +442,8 @@ let fork_child ~child_prologue ~slot (updates_r, updates_w) ~f ~epilogue =
 
 module Worker = struct
   type id = int
+
+  let id_to_int = Fn.id
 end
 
 let rec create_pipes n = if Int.equal n 0 then [] else Unix.pipe () :: create_pipes (n - 1)
