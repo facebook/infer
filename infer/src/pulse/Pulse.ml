@@ -554,8 +554,8 @@ module PulseTransferFunctions = struct
     else exec_states_res
 
 
-  let dispatch_call analysis_data path ret call_exp actuals call_loc flags astate =
-    let<**> astate, callee_pname = PulseOperations.eval_proc_name path call_loc call_exp astate in
+  let eval_function_call_args path call_exp actuals call_loc astate =
+    let** astate, callee_pname = PulseOperations.eval_proc_name path call_loc call_exp astate in
     (* special case for objc dispatch models *)
     let callee_pname, call_exp, actuals =
       match callee_pname with
@@ -569,7 +569,7 @@ module PulseTransferFunctions = struct
           (callee_pname, call_exp, actuals)
     in
     (* evaluate all actuals *)
-    let<**> astate, rev_func_args =
+    let++ astate, rev_actuals =
       PulseOperationResult.list_fold actuals ~init:(astate, [])
         ~f:(fun (astate, rev_func_args) (actual_exp, actual_typ) ->
           let++ astate, actual_evaled = PulseOperations.eval path Read call_loc actual_exp astate in
@@ -578,7 +578,13 @@ module PulseTransferFunctions = struct
               {exp= actual_exp; arg_payload= actual_evaled; typ= actual_typ}
             :: rev_func_args ) )
     in
-    let func_args = List.rev rev_func_args in
+    (astate, call_exp, callee_pname, List.rev rev_actuals)
+
+
+  let dispatch_call analysis_data path ret call_exp actuals call_loc flags astate =
+    let<**> astate, call_exp, callee_pname, func_args =
+      eval_function_call_args path call_exp actuals call_loc astate
+    in
     dispatch_call_eval_args analysis_data path ret call_exp actuals func_args call_loc flags astate
       callee_pname
 
@@ -921,14 +927,31 @@ module PulseTransferFunctions = struct
                 List.concat_map astates ~f:(fun astate ->
                     set_global_astates path analysis_data exp typ loc astate ) )
           in
-          let astates =
-            List.concat_map astates ~f:(fun astate ->
-                dispatch_call analysis_data path ret call_exp actuals loc call_flags astate )
-            |> PulseReport.report_exec_results tenv proc_desc err_log loc
+          (* [astates_before] are the states after we evaluate args but before we apply the callee. This is needed for PulseNonDisjunctiveOperations to determine whether we are copying from something pointed to by [this].  *)
+          let astates, astates_before =
+            let astates_before = ref [] in
+            let res =
+              List.concat_map astates ~f:(fun astate ->
+                  let results_and_before_state =
+                    let++ astate, call_exp, callee_pname, func_args =
+                      eval_function_call_args path call_exp actuals loc astate
+                    in
+                    (* stash the intermediate "before" [astate] here because the result monad does
+                       not accept more complicated types than lists of states (we need a pair of the
+                       before astate and the list of results) *)
+                    astates_before := astate :: !astates_before ;
+                    dispatch_call_eval_args analysis_data path ret call_exp actuals func_args loc
+                      call_flags astate callee_pname
+                  in
+                  let<**> r = results_and_before_state in
+                  r )
+            in
+            let astates_before = !astates_before in
+            (PulseReport.report_exec_results tenv proc_desc err_log loc res, astates_before)
           in
           let astate_n, astates =
-            PulseNonDisjunctiveOperations.call tenv proc_desc path loc ~call_exp ~actuals astates
-              astate_n
+            PulseNonDisjunctiveOperations.call tenv proc_desc path loc ~call_exp ~actuals
+              ~astates_before astates astate_n
           in
           let astate_n = NonDisjDomain.set_passed_to loc timestamp call_exp actuals astate_n in
           (astates, path, astate_n)

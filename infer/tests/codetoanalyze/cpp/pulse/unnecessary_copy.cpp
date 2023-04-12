@@ -301,7 +301,7 @@ struct SimpleS {
 
 struct SwapSimple {
   SimpleS v;
-  void swap_bad(SwapSimple& x) {
+  void swap_bad_FN(SwapSimple& x) {
     const auto temp = v;
     v = x.v;
     x.v = temp; // report copy assignment from const
@@ -310,7 +310,7 @@ struct SwapSimple {
 
 struct SwapVector {
   std::vector<int> v;
-  void swap_bad(SwapVector& x) {
+  void swap_bad_FN(SwapVector& x) {
     const auto temp = v;
     v = x.v;
     x.v = temp; // report copy assignment from const
@@ -712,6 +712,12 @@ class FieldCopyClass {
   void copy_assign_bad(NonTrivialCopyClass arg) { nt_ = arg; }
   void copy_assign_from_global_ok() {
     my_arr1_ = global; // rhs is a global, we cannot suggest move
+  }
+
+  FieldCopyClass* getPtr() { return this; }
+  void copy_assign_from_this_pointed_ok() {
+    auto t = getPtr();
+    my_arr1_ = t->my_arr1_;
   }
 };
 

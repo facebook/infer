@@ -228,8 +228,30 @@ let continue_fold_map astates ~init ~f =
              (acc, ExecutionDomain.continue astate) ) )
 
 
-let is_this_or_global_source source_addr_typ_opt =
-  Option.exists source_addr_typ_opt ~f:(fun (_, source_expr, _) ->
+(* [astates_before] represents the state after we eval the args but before we apply the callee. This is needed so that we can distinguish if source points to an address pointed to by this before the copy is executed. *)
+let is_address_reachable_from_this source_addr ~astates_before : bool =
+  List.exists astates_before ~f:(fun astate_before ->
+      let reachable_addresses_from_source =
+        BaseDomain.reachable_addresses_from (Caml.List.to_seq [source_addr])
+          (astate_before.AbductiveDomain.post :> BaseDomain.t)
+      in
+      Stack.exists
+        (fun var (this_addr, _) ->
+          Var.is_this var
+          &&
+          let reachable_addresses_from_this =
+            BaseDomain.reachable_addresses_from (Caml.List.to_seq [this_addr])
+              (astate_before.AbductiveDomain.post :> BaseDomain.t)
+          in
+          AbstractValue.Set.disjoint reachable_addresses_from_source reachable_addresses_from_this
+          |> not )
+        astate_before )
+
+
+let is_this_or_global_source source_addr_typ_opt ~astates_before =
+  Option.exists source_addr_typ_opt ~f:(fun (source_addr, source_expr, _) ->
+      is_address_reachable_from_this source_addr ~astates_before
+      ||
       match source_expr with
       | DecompilerExpr.SourceExpr ((PVar pvar, _), _) ->
           Pvar.is_this pvar || Pvar.is_global pvar
@@ -237,8 +259,9 @@ let is_this_or_global_source source_addr_typ_opt =
           false )
 
 
-let is_copy_assigned_from_this_or_global ~from source_addr_typ_opt =
-  Attribute.CopyOrigin.equal from CopyAssignment && is_this_or_global_source source_addr_typ_opt
+let is_copy_assigned_from_this_or_global ~from source_addr_typ_opt ~astates_before =
+  Attribute.CopyOrigin.equal from CopyAssignment
+  && is_this_or_global_source source_addr_typ_opt ~astates_before
 
 
 let is_reachable_from_lvalue_ref_params ~is_intermediate ~from source_expr_opt source_addr_typ_opt
@@ -260,7 +283,7 @@ let is_reachable_from_lvalue_ref_params ~is_intermediate ~from source_expr_opt s
 
 
 let add_copies_to_pvar_or_field proc_lvalue_ref_parameters tenv path location from args
-    (astate_n, astate) =
+    ~astates_before (astate_n, astate) =
   let open IOption.Let_syntax in
   match (args : (Exp.t * Typ.t) list) with
   | ((Lvar copy_pvar | Lindex (Lvar copy_pvar, _)), copy_type) :: rest_args
@@ -272,7 +295,7 @@ let add_copies_to_pvar_or_field proc_lvalue_ref_parameters tenv path location fr
       let* _, source_expr, _ = source_addr_typ_opt in
       let copy_into_source_opt : (Attribute.CopiedInto.t * DecompilerExpr.source_expr option) option
           =
-        if is_copy_assigned_from_this_or_global ~from source_addr_typ_opt then
+        if is_copy_assigned_from_this_or_global ~from source_addr_typ_opt ~astates_before then
           (* If source is copy assigned from a member field/global, we cannot suggest move as other procedures might access it. *)
           None
         else
@@ -333,7 +356,7 @@ let add_copies_to_pvar_or_field proc_lvalue_ref_parameters tenv path location fr
              let get_copy_spec, astate, source_addr_typ_opt =
                get_copied_and_source path rest_args location from astate
              in
-             if is_copy_assigned_from_this_or_global ~from source_addr_typ_opt then
+             if is_copy_assigned_from_this_or_global ~from source_addr_typ_opt ~astates_before then
                (* If source is copy assigned from a member field/global, we cannot suggest move as other procedures might access it. *)
                None
              else
@@ -406,7 +429,7 @@ let remove_optional_copies_to_return proc_desc path location pname args (astate_
       None
 
 
-let add_copies tenv proc_desc path location pname actuals default =
+let add_copies tenv proc_desc path location pname actuals ~astates_before default =
   let aux copy_check_fn args_map_fn default =
     Option.bind (copy_check_fn pname) ~f:(fun from ->
         let ( |-> ) = IOption.continue ~default in
@@ -415,7 +438,8 @@ let add_copies tenv proc_desc path location pname actuals default =
           Procdesc.get_passed_by_ref_formals proc_desc
           |> List.filter ~f:(fun (_, typ) -> not (Typ.is_rvalue_reference typ))
         in
-        add_copies_to_pvar_or_field proc_lvalue_ref_parameters tenv path location from args default
+        add_copies_to_pvar_or_field proc_lvalue_ref_parameters tenv path location from args
+          ~astates_before default
         |-> add_copies_to_return tenv proc_desc path location from args
         (* Ignore optional copies to return value to avoid false positives w.r.t. RVO/NRVO *)
         |-> remove_optional_copies_to_return proc_desc path location pname args )
@@ -481,13 +505,13 @@ let add_copied_return path location pname actuals (astate_n, astate) =
   else None
 
 
-let call tenv proc_desc path loc ~call_exp ~actuals astates astate_n =
+let call tenv proc_desc path loc ~call_exp ~actuals ~astates_before astates astate_n =
   match (call_exp : Exp.t) with
   | Const (Cfun pname) | Closure {name= pname} ->
       continue_fold_map astates ~init:astate_n ~f:(fun astate_n astate ->
           let default = (astate_n, astate) in
           let ( |-> ) = IOption.continue ~default in
-          add_copies tenv proc_desc path loc pname actuals default
+          add_copies tenv proc_desc path loc pname actuals ~astates_before default
           |-> add_copied_return path loc pname actuals )
   | _ ->
       (astate_n, astates)
