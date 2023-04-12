@@ -290,9 +290,19 @@ let process_output ic =
       ; finished= (fun ~result _ -> on_finish result)
       ; next= (fun () -> IterSeq.next unit_iter) }
   in
+  (* Cap the number of capture workers based on the number of textual units. This will make the
+     default behavior more reasonable on a high core-count machine. *)
+  let jobs =
+    match unit_count with
+    | Some unit_count ->
+        let units_per_worker = 100 in
+        min ((units_per_worker + unit_count) / units_per_worker) Config.jobs
+    | None ->
+        Config.jobs
+  in
+  L.debug Capture Quiet "Preparing to capture with %d workers@\n" jobs ;
   let runner =
-    Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:ignore ~f:child_action ~child_epilogue
-      ~tasks
+    Tasks.Runner.create ~jobs ~child_prologue:ignore ~f:child_action ~child_epilogue ~tasks
   in
   let child_tenv_paths = Tasks.Runner.run runner in
   (* Merge worker tenvs into a global tenv *)
