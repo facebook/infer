@@ -41,15 +41,28 @@ module Env = struct
   (* State of the capture while processing a single node: each node has a dedicated data stack,
      and generates its own set of instructions.
      TODO(vsiles): revisit the data stack status once generators and conditions are in the mix *)
-  type node = {stack: DataStack.t; instructions: T.Instr.t list}
+  type node = {stack: DataStack.t; instructions: T.Instr.t list; last_line: int option}
 
   type t = {shared: shared; node: node}
 
-  let mk_node shared = {shared; node= {stack= []; instructions= []}}
+  let mk_node shared = {shared; node= {stack= []; instructions= []; last_line= None}}
 
   let reset_idents env = {env with idents= T.Ident.Set.empty}
 
   let empty = {idents= T.Ident.Set.empty; globals= T.VarName.Set.empty; builtins= PyBuiltins.empty}
+
+  (* Only update last_line if some line information is available *)
+  let starts_line node last_line = if Option.is_some last_line then {node with last_line} else node
+
+  let starts_line ({node} as env) last_line = {env with node= starts_line node last_line}
+
+  let loc {last_line} =
+    last_line
+    |> Option.map ~f:(fun line -> T.Location.known ~line ~col:0)
+    |> Option.value ~default:T.Location.Unknown
+
+
+  let loc {node} = loc node
 
   let push ({stack} as env) cell =
     let stack = DataStack.push stack cell in
@@ -120,6 +133,7 @@ let global name = sprintf "$globals::%s" name
 let pyObject = PyCommon.pyObject
 
 let load_cell env FFI.Code.{co_consts; co_names} cell =
+  let loc = Env.loc env in
   match cell with
   | DataStack.Const ndx -> (
       let const = co_consts.(ndx) in
@@ -131,8 +145,9 @@ let load_cell env FFI.Code.{co_consts; co_names} cell =
   | DataStack.Name ndx ->
       let name = global co_names.(ndx) in
       let env, id = Env.temp env in
-      let exp = T.Exp.Lvar (var_name name) in
-      let instr = T.Instr.Load {id; exp; typ= pyObject; loc= T.Location.Unknown} in
+      let exp = T.Exp.Lvar (var_name ~loc name) in
+      let loc = Env.loc env in
+      let instr = T.Instr.Load {id; exp; typ= pyObject; loc} in
       let env = Env.push_instr env instr in
       (* TODO: try to trace the type of names ? *)
       (env, Ok (T.Exp.Var id, PyCommon.pyObject))
@@ -185,15 +200,14 @@ module STORE_NAME = struct
   let run env FFI.Code.({co_names} as code) FFI.Instruction.{opname; arg} =
     let name = global co_names.(arg) in
     Debug.p "[%s] name = %s\n" opname name ;
-    let var_name = var_name name in
+    let loc = Env.loc env in
+    let var_name = var_name ~loc name in
     let env = Env.register_global env var_name in
     let env, cell = pop_tos opname env in
     let env, exp_ty = load_cell env code cell in
     match exp_ty with
     | Ok (exp, typ) ->
-        let instr =
-          T.Instr.Store {exp1= T.Exp.Lvar var_name; typ; exp2= exp; loc= T.Location.Unknown}
-        in
+        let instr = T.Instr.Store {exp1= T.Exp.Lvar var_name; typ; exp2= exp; loc} in
         (Env.push_instr env instr, None)
     | Error s ->
         L.die InternalError "[%s] %s" opname s
@@ -266,14 +280,15 @@ module CALL_FUNCTION = struct
             (DataStack.show_cell_kind fname)
     in
     let env, id = Env.temp env in
+    let loc = Env.loc env in
     let env, proc =
       if PyBuiltins.is_builtin fname then
         let env = Env.register_builtin env fname in
         (env, PyCommon.builtin_name fname)
-      else (env, qualified_procname @@ proc_name fname)
+      else (env, qualified_procname @@ proc_name ~loc fname)
     in
     let call = T.Exp.Call {proc; args; kind= T.Exp.NonVirtual} in
-    let let_instr = T.Instr.Let {id; exp= call; loc= T.Location.Unknown} in
+    let let_instr = T.Instr.Let {id; exp= call; loc} in
     let env = Env.push_instr env let_instr in
     let env = Env.push env (DataStack.Temp id) in
     (env, None)
@@ -312,13 +327,15 @@ module BINARY_ADD = struct
        https://stackoverflow.com/questions/58828522/is-radd-called-if-add-raises-notimplementederror
     *)
     let exp = T.Exp.Call {proc; args= [lhs; rhs]; kind= T.Exp.NonVirtual} in
-    let let_instr = T.Instr.Let {id; exp; loc= T.Location.Unknown} in
+    let loc = Env.loc env in
+    let let_instr = T.Instr.Let {id; exp; loc} in
     let env = Env.push_instr env let_instr in
     let env = Env.push env (DataStack.Temp id) in
     (env, None)
 end
 
-let run_instruction env code FFI.Instruction.({opname} as instr) =
+let run_instruction env code FFI.Instruction.({opname; starts_line} as instr) =
+  let env = Env.starts_line env starts_line in
   (* TODO: there are < 256 opcodes, we could setup an array of callbacks instead *)
   let env, maybe_term =
     match opname with
@@ -350,9 +367,10 @@ let rec run env code = function
       match maybe_term with Some term -> (env, Some term, rest) | None -> run env code rest )
 
 
-let node env label FFI.Code.({instructions} as code) =
+let node env (T.NodeName.{loc= label_loc} as label) FFI.Code.({instructions} as code) =
   let env = Env.mk_node env in
   let env, maybe_term, rest = run env code instructions in
+  let last_loc = Env.loc env in
   match maybe_term with
   | None ->
       L.die InternalError "Reached the end of code without spotting a terminator"
@@ -364,10 +382,18 @@ let node env label FFI.Code.({instructions} as code) =
           ; exn_succs= []
           ; last
           ; instrs= Env.get_instructions env
-          ; last_loc= T.Location.Unknown
-          ; label_loc= T.Location.Unknown }
+          ; last_loc
+          ; label_loc }
       in
       (env.Env.shared, rest, node)
+
+
+let first_loc_of_code FFI.Code.{instructions} =
+  match instructions with
+  | {starts_line= Some line} :: _ ->
+      T.Location.known ~line ~col:0
+  | _ ->
+      T.Location.Unknown
 
 
 let to_proc_desc env name code =
@@ -381,7 +407,8 @@ let to_proc_desc env name code =
       ; result_type= pyObject
       ; attributes= [] }
   in
-  let label = node_name "b0" in
+  let loc = first_loc_of_code code in
+  let label = node_name ~loc "b0" in
   let env = Env.reset_idents env in
   let env, remaining_instructions, node = node env label code in
   if not (List.is_empty remaining_instructions) then
@@ -399,7 +426,8 @@ let to_proc_desc env name code =
 let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python
 
 let to_module ~sourcefile module_name code =
-  let name = proc_name module_name in
+  let loc = first_loc_of_code code in
+  let name = proc_name ~loc module_name in
   let env = Env.empty in
   let env, decl = to_proc_desc env name code in
   let globals =
