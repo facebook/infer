@@ -444,38 +444,70 @@ let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~act
        ~f:(unknown_objc_nil_messaging astate_unknown callee_pname)
 
 
-let call tenv path ~caller_proc_desc ~(callee_data : PulseSummary.t option) call_loc callee_pname
-    ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) =
+let call tenv path ~caller_proc_desc
+    ~(analyze_dependency : ?specialization:Specialization.t -> Procname.t -> PulseSummary.t option)
+    call_loc callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) =
   let has_continue_program results =
     let f one_result = match one_result with Ok (ContinueProgram _astate) -> true | _ -> false in
     List.exists results ~f
   in
-  match callee_data with
-  | Some exec_states ->
-      let results, contradiction =
-        call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-          (IRAttributes.load_exn callee_pname)
-          exec_states astate
-      in
-      if
-        (not Config.pulse_force_continue) || Option.is_some contradiction
-        || has_continue_program results
-      then (results, contradiction)
-      else
-        let more_results, more_contradiction =
-          call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals
-            ~formals_opt ~call_kind astate
+  match (analyze_dependency callee_pname : PulseSummary.t option) with
+  | Some summary ->
+      let call_aux exec_states =
+        let results, contradiction =
+          call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
+            (IRAttributes.load_exn callee_pname)
+            exec_states astate
         in
-        if Option.is_some more_contradiction then (
-          L.debug Analysis Verbose
-            "@[<v>@[Failed to honor --pulse-force-continue, because attempting to treat the \
-             procedure as unknown caused a contradiction: %a@]@;\
-             @]"
-            Procname.pp callee_pname ;
-          (results, None) )
-        else (more_results @ results, None)
+        if
+          (not Config.pulse_force_continue) || Option.is_some contradiction
+          || has_continue_program results
+        then (results, contradiction)
+        else
+          let more_results, more_contradiction =
+            call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals
+              ~formals_opt ~call_kind astate
+          in
+          if Option.is_some more_contradiction then (
+            L.debug Analysis Verbose
+              "@[<v>@[Failed to honor --pulse-force-continue, because attempting to treat the \
+               procedure as unknown caused a contradiction: %a@]@;\
+               @]"
+              Procname.pp callee_pname ;
+            (results, None) )
+          else (more_results @ results, None)
+      in
+      let res, contradiction = call_aux summary.main in
+      let needs_aliasing_specialization res contradiction =
+        List.is_empty res && Option.exists contradiction ~f:PulseInterproc.is_aliasing_contradiction
+      in
+      if needs_aliasing_specialization res contradiction then
+        if Specialization.Pulse.Map.cardinal summary.PulseSummary.alias_specialized <= 20 then
+          let alias_specialization =
+            PulseAliasSpecialization.make_specialization callee_pname actuals call_kind path
+              call_loc astate
+            |> Option.value_exn
+          in
+          let specialization = Specialization.Pulse.Aliases alias_specialization in
+          let specialized_summary : PulseSummary.t =
+            analyze_dependency ~specialization:(Pulse specialization) callee_pname
+            |> Option.value_exn
+          in
+          match
+            Specialization.Pulse.Map.find_opt specialization specialized_summary.alias_specialized
+          with
+          | None ->
+              L.die InternalError "ondemand engine did not return the expected specialied summary"
+          | Some pre_posts ->
+              let res, contradiction = call_aux pre_posts in
+              (res, contradiction, `KnownCall)
+        else (res, contradiction, `UnknownCall)
+      else (res, contradiction, `KnownCall)
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln_escaped "No spec found for %a@\n" Procname.pp callee_pname ;
-      call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals ~formals_opt
-        ~call_kind astate
+      let res, contradiction =
+        call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals
+          ~formals_opt ~call_kind astate
+      in
+      (res, contradiction, `UnknownCall)

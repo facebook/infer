@@ -13,11 +13,22 @@ module F = Format
 
 type callback_fun =
   | Procedure of Callbacks.proc_callback_t
+  | ProcedureWithSpecialization of
+      { procedure_cb: Callbacks.proc_callback_with_specialization_t
+      ; is_already_specialized: Specialization.t -> Summary.t -> bool }
   | DynamicDispatch of Callbacks.proc_callback_t
   | File of Callbacks.file_callback_t
 
 let interprocedural payload_field checker =
   Procedure (CallbackOfChecker.interprocedural_with_field payload_field checker)
+
+
+let interprocedural_with_specialization payload_field checker is_already_specialized =
+  ProcedureWithSpecialization
+    { procedure_cb=
+        CallbackOfChecker.interprocedural_with_field_and_specialization payload_field checker
+    ; is_already_specialized=
+        CallbackOfChecker.make_is_already_specialized_test payload_field is_already_specialized }
 
 
 let dynamic_dispatch payload_field checker =
@@ -155,7 +166,10 @@ let all_checkers =
     }
   ; { checker= Pulse
     ; callbacks=
-        (let pulse = interprocedural Payloads.Fields.pulse Pulse.checker in
+        (let pulse =
+           interprocedural_with_specialization Payloads.Fields.pulse Pulse.checker
+             Pulse.is_already_specialized
+         in
          [(pulse, Clang); (pulse, Erlang); (pulse, Hack); (pulse, Java); (pulse, CIL)] ) }
   ; { checker= Datalog
     ; callbacks=
@@ -236,6 +250,9 @@ let register checkers =
       match callback with
       | Procedure procedure_cb ->
           Callbacks.register_procedure_callback checker language procedure_cb
+      | ProcedureWithSpecialization {procedure_cb; is_already_specialized} ->
+          Callbacks.register_procedure_callback_with_specialization checker language procedure_cb
+            ~is_already_specialized
       | DynamicDispatch procedure_cb ->
           Callbacks.register_procedure_callback checker ~dynamic_dispatch:true language procedure_cb
       | File callback ->

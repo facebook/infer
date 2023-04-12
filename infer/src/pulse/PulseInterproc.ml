@@ -88,6 +88,13 @@ let log_contradiction = function
       ()
 
 
+let is_aliasing_contradiction = function
+  | Aliasing _ ->
+      true
+  | CapturedFormalActualLength _ | FormalActualLength _ | PathCondition ->
+      false
+
+
 exception Contradiction of contradiction
 
 let raise_if_unsat contradiction = function

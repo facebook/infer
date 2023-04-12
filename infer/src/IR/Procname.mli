@@ -401,10 +401,6 @@ val is_java : t -> bool
 val as_java_exn : explanation:string -> t -> Java.t
 (** Converts to a Java.t. Throws if [is_java] is false *)
 
-val with_aliasing_parameters : t -> Mangled.t list list -> t
-(** Create a procedure name instantiated with aliasing parameters from a base procedure name and a
-    list aliases. *)
-
 val with_function_parameters : t -> FunctionParameters.t list -> t option
 (** Create a procedure name instantiated with function parameters from a base procedure name and a
     list of function procedures. It returns [None] when the given function parameter list is empty. *)

@@ -58,7 +58,7 @@ val leq : lhs:t -> rhs:t -> bool
 
 val pp : Format.formatter -> t -> unit
 
-val mk_initial : Tenv.t -> Procname.t -> ProcAttributes.t -> t
+val mk_initial : Tenv.t -> Procname.t -> Specialization.Pulse.t option -> ProcAttributes.t -> t
 
 (** stack operations like {!BaseStack} but that also take care of propagating facts to the
     precondition *)

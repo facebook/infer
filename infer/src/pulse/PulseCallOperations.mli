@@ -15,7 +15,7 @@ val call :
      Tenv.t
   -> PathContext.t
   -> caller_proc_desc:Procdesc.t
-  -> callee_data:PulseSummary.t option
+  -> analyze_dependency:(?specialization:Specialization.t -> Procname.t -> PulseSummary.t option)
   -> Location.t
   -> Procname.t
   -> ret:Ident.t * Typ.t
@@ -23,7 +23,9 @@ val call :
   -> formals_opt:(Pvar.t * Typ.t) list option
   -> call_kind:PulseOperations.call_kind
   -> t
-  -> ExecutionDomain.t AccessResult.t list * PulseInterproc.contradiction option
+  -> ExecutionDomain.t AccessResult.t list
+     * PulseInterproc.contradiction option
+     * [`KnownCall | `UnknownCall]
 (** perform an interprocedural call: apply the summary for the call proc name passed as argument if
     it exists *)
 

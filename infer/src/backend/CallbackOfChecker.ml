@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 (* make sure callbacks are set or the checkers will not be able to call into them (and get a nice
    crash) *)
@@ -14,9 +15,11 @@ let () = AnalysisCallbacks.set_callbacks {html_debug_new_node_session_f= NodePri
 let mk_interprocedural_t ~f_analyze_dep ~get_payload
     {Callbacks.exe_env; proc_desc; summary= {Summary.stats; proc_name; err_log} as caller_summary}
     ?(tenv = Exe_env.get_proc_tenv exe_env proc_name) () =
-  let analyze_dependency proc_name =
+  let analyze_dependency ?specialization proc_name =
     let open IOption.Let_syntax in
-    let* {Summary.payloads} = Ondemand.analyze_proc_name exe_env ~caller_summary proc_name in
+    let* {Summary.payloads} =
+      Ondemand.analyze_proc_name exe_env ?specialization ~caller_summary proc_name
+    in
     f_analyze_dep (get_payload payloads)
   in
   let stats = ref stats in
@@ -42,6 +45,29 @@ let interprocedural_with_field payload_field checker ({Callbacks.summary} as arg
   let analysis_data, stats_ref = mk_interprocedural_field_t payload_field args () in
   let result = checker analysis_data |> Lazy.from_val in
   {summary with payloads= Field.fset payload_field summary.payloads result; stats= !stats_ref}
+
+
+let interprocedural_with_field_and_specialization payload_field checker ?specialization
+    ({Callbacks.summary} as args) =
+  let get_payload {Summary.payloads} = Field.get payload_field payloads |> Lazy.force in
+  let analysis_data, stats_ref = mk_interprocedural_field_t payload_field args () in
+  let specialization =
+    let open IOption.Let_syntax in
+    let* summary = get_payload summary in
+    let+ specialization in
+    (summary, specialization)
+  in
+  let result = checker ?specialization analysis_data |> Lazy.from_val in
+  {summary with payloads= Field.fset payload_field summary.payloads result; stats= !stats_ref}
+
+
+let make_is_already_specialized_test payload_field is_already_specialized specialization summary =
+  let get_payload {Summary.payloads} = Field.get payload_field payloads |> Lazy.force in
+  match get_payload summary with
+  | Some summary ->
+      is_already_specialized specialization summary
+  | _ ->
+      L.die InternalError "make_is_already_specialized_test: unexpected None payload"
 
 
 let interprocedural_with_field_dependency ~dep_field payload_field checker

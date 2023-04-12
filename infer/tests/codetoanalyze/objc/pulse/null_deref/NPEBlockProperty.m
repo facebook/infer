@@ -133,7 +133,7 @@ int test_explicitCaptured_specialized_no_alias_bad() {
 }
 
 // needs alias'ed disjunct
-int test_explicitCaptured_specialized_with_alias_bad_FN() {
+int test_explicitCaptured_specialized_with_alias_bad() {
   ExplicitCaptured* a = [ExplicitCaptured new];
   a.set_explicitProperty(0);
   int explicit = test_explicitCaptured_specializable(

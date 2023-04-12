@@ -24,9 +24,7 @@ void call_array_mod_impure(int a[10]) {
 
 void call_array_mod_with_fresh_pure() {
   int a[10];
-  array_mod_impure(a, a, 0); // aliasing of arguments, pulse returns empty
-                             // summary which causes the function to be
-                             // considered impure
+  array_mod_impure(a, a, 0);
 }
 void call_array_mod_with_both_fresh_pure() {
   int a[10];

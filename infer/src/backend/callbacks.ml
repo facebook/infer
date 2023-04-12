@@ -12,13 +12,19 @@ type proc_callback_args = {summary: Summary.t; exe_env: Exe_env.t; proc_desc: Pr
 
 type proc_callback_t = proc_callback_args -> Summary.t
 
+type proc_callback_with_specialization_t = ?specialization:Specialization.t -> proc_callback_t
+
 type file_callback_args =
   {procedures: Procname.t list; source_file: SourceFile.t; exe_env: Exe_env.t}
 
 type file_callback_t = file_callback_args -> IssueLog.t
 
 type procedure_callback =
-  {checker: Checker.t; dynamic_dispatch: bool; language: Language.t; callback: proc_callback_t}
+  { checker: Checker.t
+  ; dynamic_dispatch: bool
+  ; language: Language.t
+  ; callback: proc_callback_with_specialization_t
+  ; is_already_specialized: Specialization.t -> Summary.t -> bool }
 
 type file_callback = {checker: Checker.t; language: Language.t; callback: file_callback_t}
 
@@ -28,15 +34,27 @@ let file_callbacks_rev = ref []
 
 let register_procedure_callback checker ?(dynamic_dispatch = false) language
     (callback : proc_callback_t) =
+  let callback ?specialization ({summary} as arg) =
+    if Option.is_some specialization then summary else callback arg
+  in
+  let is_already_specialized _ _ = true in
   procedure_callbacks_rev :=
-    {checker; dynamic_dispatch; language; callback} :: !procedure_callbacks_rev
+    {checker; dynamic_dispatch; language; callback; is_already_specialized}
+    :: !procedure_callbacks_rev
+
+
+let register_procedure_callback_with_specialization checker ?(dynamic_dispatch = false) language
+    (callback : proc_callback_with_specialization_t) ~is_already_specialized =
+  procedure_callbacks_rev :=
+    {checker; dynamic_dispatch; language; callback; is_already_specialized}
+    :: !procedure_callbacks_rev
 
 
 let register_file_callback checker language (callback : file_callback_t) =
   file_callbacks_rev := {checker; language; callback} :: !file_callbacks_rev
 
 
-let iterate_procedure_callbacks exe_env ({Summary.proc_name} as summary) proc_desc =
+let iterate_procedure_callbacks exe_env ?specialization ({Summary.proc_name} as summary) proc_desc =
   let procedure_language = Procname.get_language proc_name in
   Language.curr_language := procedure_language ;
   let is_specialized = Procdesc.is_specialized proc_desc in
@@ -50,7 +68,7 @@ let iterate_procedure_callbacks exe_env ({Summary.proc_name} as summary) proc_de
                 () ) ) ;
         let summary =
           Timer.time (Checker checker)
-            ~f:(fun () -> callback {summary; exe_env; proc_desc})
+            ~f:(fun () -> callback ?specialization {summary; exe_env; proc_desc})
             ~on_timeout:(fun span ->
               L.debug Analysis Quiet "TIMEOUT in %s after %fs of CPU time analyzing %a:%a@\n"
                 (Checker.get_id checker) span SourceFile.pp
@@ -60,6 +78,11 @@ let iterate_procedure_callbacks exe_env ({Summary.proc_name} as summary) proc_de
         PerfEvent.(log (fun logger -> log_end_event logger ())) ;
         summary )
       else summary )
+
+
+let is_specialized_for specialization summary =
+  List.for_all !procedure_callbacks_rev ~f:(fun {is_already_specialized} ->
+      is_already_specialized specialization summary )
 
 
 let iterate_file_callbacks_and_store_issues procedures exe_env source_file =

@@ -163,19 +163,23 @@ module PulseTransferFunctions = struct
       List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
           (arg_payload, typ) )
     in
+    let call_kind_of call_exp =
+      match call_exp with
+      | Exp.Closure {captured_vars} ->
+          `Closure captured_vars
+      | Exp.Var id ->
+          `Var id
+      | _ ->
+          `ResolvedProcname
+    in
+    let eval_args_and_call callee_pname call_exp astate =
+      let formals_opt = get_pvar_formals callee_pname in
+      let call_kind = call_kind_of call_exp in
+      PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency call_loc
+        callee_pname ~ret ~actuals ~formals_opt ~call_kind astate
+    in
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
-        let formals_opt = get_pvar_formals callee_pname in
-        let callee_data = analyze_dependency callee_pname in
-        let call_kind_of call_exp =
-          match call_exp with
-          | Exp.Closure {captured_vars} ->
-              `Closure captured_vars
-          | Exp.Var id ->
-              `Var id
-          | _ ->
-              `ResolvedProcname
-        in
         (* [needed_specialization] = current function already needs specialization before
            the upcoming call (i.e. we did not have enough information to sufficiently
            specialize a callee). *)
@@ -184,34 +188,7 @@ module PulseTransferFunctions = struct
            detect calls that need specialization. The value will be set back to true
            (if it was) in the end by [reset_need_specialization] *)
         let astate = AbductiveDomain.unset_need_specialization astate in
-        let call_kind = call_kind_of call_exp in
-        let maybe_call_with_alias callee_pname call_exp ((res, contradiction) as call_res) =
-          if List.is_empty res then
-            match contradiction with
-            | Some (PulseInterproc.Aliasing _) -> (
-                L.d_printfln "Trying to alias-specialize %a" Exp.pp call_exp ;
-                match
-                  PulseAliasSpecialization.make_specialized_call_exp callee_pname func_args
-                    (call_kind_of call_exp) path call_loc astate
-                with
-                | Some (callee_pname, call_exp, astate) ->
-                    L.d_printfln "Succesfully alias-specialized %a@\n" Exp.pp call_exp ;
-                    let formals_opt = get_pvar_formals callee_pname in
-                    let callee_data = analyze_dependency callee_pname in
-                    let call_res =
-                      PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data
-                        call_loc callee_pname ~ret ~actuals ~formals_opt
-                        ~call_kind:(call_kind_of call_exp) astate
-                    in
-                    (callee_pname, call_exp, call_res)
-                | None ->
-                    L.d_printfln "Failed to alias-specialize %a@\n" Exp.pp call_exp ;
-                    (callee_pname, call_exp, call_res) )
-            | _ ->
-                (callee_pname, call_exp, call_res)
-          else (callee_pname, call_exp, call_res)
-        in
-        let maybe_call_specialization callee_pname call_exp ((res, _) as call_res) =
+        let maybe_call_specialization callee_pname call_exp ((res, _, _) as call_res) =
           if (not needed_specialization) && need_specialization res then (
             L.d_printfln "Trying to closure-specialize %a" Exp.pp call_exp ;
             match
@@ -220,27 +197,18 @@ module PulseTransferFunctions = struct
             with
             | Some (callee_pname, call_exp, astate) ->
                 L.d_printfln "Succesfully closure-specialized %a@\n" Exp.pp call_exp ;
-                let formals_opt = get_pvar_formals callee_pname in
-                let callee_data = analyze_dependency callee_pname in
-                PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
-                  callee_pname ~ret ~actuals ~formals_opt ~call_kind:(call_kind_of call_exp) astate
-                |> maybe_call_with_alias callee_pname call_exp
+                let call_res = eval_args_and_call callee_pname call_exp astate in
+                (callee_pname, call_exp, call_res)
             | None ->
                 L.d_printfln "Failed to closure-specialize %a@\n" Exp.pp call_exp ;
                 (callee_pname, call_exp, call_res) )
           else (callee_pname, call_exp, call_res)
         in
-        let res, _contradiction =
-          let callee_pname, call_exp, call_res =
-            PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data call_loc
-              callee_pname ~ret ~actuals ~formals_opt ~call_kind astate
-            |> maybe_call_with_alias callee_pname call_exp
-          in
-          let _, _, call_res = maybe_call_specialization callee_pname call_exp call_res in
-          call_res
+        let _, _, (res, _, is_known_call) =
+          eval_args_and_call callee_pname call_exp astate
+          |> maybe_call_specialization callee_pname call_exp
         in
-        ( reset_need_specialization needed_specialization res
-        , if Option.is_none callee_data then `UnknownCall else `KnownCall )
+        (reset_need_specialization needed_specialization res, is_known_call)
     | _ ->
         (* dereference call expression to catch nil issues *)
         ( (let<**> astate, _ =
@@ -1055,9 +1023,9 @@ let with_html_debug_node node ~desc ~f =
     ~f
 
 
-let initial tenv proc_name proc_attrs =
+let initial tenv proc_name specialization proc_attrs =
   let initial_astate =
-    AbductiveDomain.mk_initial tenv proc_name proc_attrs
+    AbductiveDomain.mk_initial tenv proc_name specialization proc_attrs
     |> PulseSummary.initial_with_positive_self proc_name proc_attrs
     |> PulseTaintOperations.taint_initial tenv proc_name proc_attrs
   in
@@ -1114,7 +1082,8 @@ let log_summary_count proc_name summary =
   Out_channel.output_char (Lazy.force summary_count_channel) '\n'
 
 
-let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) =
+let analyze specialization
+    ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) =
   if should_analyze proc_desc then
     let proc_name = Procdesc.get_proc_name proc_desc in
     let proc_attrs = Procdesc.get_attributes proc_desc in
@@ -1122,7 +1091,7 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as anal
     let initial =
       with_html_debug_node (Procdesc.get_start_node proc_desc) ~desc:"initial state creation"
         ~f:(fun () ->
-          let initial_disjuncts = initial tenv proc_name proc_attrs in
+          let initial_disjuncts = initial tenv proc_name specialization proc_attrs in
           let initial_non_disj =
             PulseNonDisjunctiveOperations.init_const_refable_parameters proc_desc
               integer_type_widths tenv
@@ -1205,11 +1174,27 @@ let analyze ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as anal
   else None
 
 
-let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
+let checker ?specialization ({InterproceduralAnalysis.proc_desc} as analysis_data) =
+  let open IOption.Let_syntax in
   if should_analyze proc_desc then (
-    try analyze analysis_data
+    try
+      match specialization with
+      | None ->
+          let+ pre_post_list = analyze None analysis_data in
+          {PulseSummary.main= pre_post_list; alias_specialized= Specialization.Pulse.Map.empty}
+      | Some (current_summary, Specialization.Pulse specialization) ->
+          let+ pre_post_list = analyze (Some specialization) analysis_data in
+          let alias_specialized =
+            Specialization.Pulse.Map.add specialization pre_post_list
+              current_summary.PulseSummary.alias_specialized
+          in
+          {current_summary with PulseSummary.alias_specialized}
     with AboutToOOM ->
       (* We trigger GC to avoid skipping the next procedure that will be analyzed. *)
       Gc.major () ;
       None )
   else None
+
+
+let is_already_specialized (Pulse specialization : Specialization.t) (summary : PulseSummary.t) =
+  Specialization.Pulse.Map.mem specialization summary.alias_specialized

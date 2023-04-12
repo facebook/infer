@@ -412,11 +412,9 @@ module Function = struct
           :: List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
                  (arg_payload, typ) )
         in
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc
-          ~callee_data:(analyze_dependency callee_proc_name)
-          location callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname
-          astate
-        |> fst
+        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
+          callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
+        |> fst3
 
 
   let assign dest ProcnameDispatcher.Call.FuncArg.{arg_payload= src; typ= src_typ} ~desc : model =

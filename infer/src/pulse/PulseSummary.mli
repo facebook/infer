@@ -9,9 +9,13 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 
-type t = ExecutionDomain.summary list [@@deriving yojson_of]
+type pre_post_list = ExecutionDomain.summary list [@@deriving yojson_of]
 
-val of_posts : Tenv.t -> Procdesc.t -> Errlog.t -> Location.t -> ExecutionDomain.t list -> t
+type t = {main: pre_post_list; alias_specialized: pre_post_list Specialization.Pulse.Map.t}
+[@@deriving yojson_of]
+
+val of_posts :
+  Tenv.t -> Procdesc.t -> Errlog.t -> Location.t -> ExecutionDomain.t list -> pre_post_list
 
 val force_exit_program :
      Tenv.t

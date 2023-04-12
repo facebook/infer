@@ -9,11 +9,11 @@ open! IStd
 module FuncArg = ProcnameDispatcher.Call.FuncArg
 open PulseBasicInterface
 
-val make_specialized_call_exp :
+val make_specialization :
      Procname.t
-  -> (AbstractValue.t * ValueHistory.t) FuncArg.t list
+  -> ((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> PulseOperations.call_kind
   -> PulsePathContext.t
   -> Location.t
   -> PulseAbductiveDomain.t
-  -> (Procname.t * Exp.t * PulseAbductiveDomain.t) option
+  -> Specialization.Pulse.Aliases.t option

@@ -89,13 +89,15 @@ let update_taskbar proc_name_opt source_file_opt =
   !ProcessPoolState.update_status t0 status
 
 
-let analyze exe_env callee_summary callee_pdesc =
-  let summary = Callbacks.iterate_procedure_callbacks exe_env callee_summary callee_pdesc in
+let analyze exe_env ?specialization callee_summary callee_pdesc =
+  let summary =
+    Callbacks.iterate_procedure_callbacks exe_env ?specialization callee_summary callee_pdesc
+  in
   Stats.incr_ondemand_procs_analyzed () ;
   summary
 
 
-let run_proc_analysis exe_env ?caller_pname callee_pdesc =
+let run_proc_analysis exe_env ?specialization ?caller_pname callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
   let log_elapsed_time =
@@ -114,10 +116,16 @@ let run_proc_analysis exe_env ?caller_pname callee_pdesc =
     incr nesting ;
     let source_file = callee_attributes.ProcAttributes.translation_unit in
     update_taskbar (Some callee_pname) (Some source_file) ;
-    let initial_callee_summary = Summary.OnDisk.reset callee_pname in
     Preanal.do_preanalysis exe_env callee_pdesc ;
-    if Config.debug_mode then
-      DotCfg.emit_proc_desc callee_attributes.translation_unit callee_pdesc |> ignore ;
+    let initial_callee_summary =
+      match specialization with
+      | None ->
+          if Config.debug_mode then
+            DotCfg.emit_proc_desc callee_attributes.translation_unit callee_pdesc |> ignore ;
+          Summary.OnDisk.reset callee_pname
+      | Some (current_summary, _) ->
+          current_summary
+    in
     add_active callee_pname ;
     initial_callee_summary
   in
@@ -151,7 +159,8 @@ let run_proc_analysis exe_env ?caller_pname callee_pdesc =
   try
     let callee_summary =
       if callee_attributes.ProcAttributes.is_defined then
-        analyze exe_env initial_callee_summary callee_pdesc
+        let specialization = Option.map ~f:snd specialization in
+        analyze exe_env ?specialization initial_callee_summary callee_pdesc
       else initial_callee_summary
     in
     let final_callee_summary = postprocess callee_summary in
@@ -187,14 +196,14 @@ let run_proc_analysis exe_env ?caller_pname callee_pdesc =
 
 
 (* shadowed for tracing *)
-let run_proc_analysis exe_env ?caller_pname callee_pdesc =
+let run_proc_analysis exe_env ?specialization ?caller_pname callee_pdesc =
   PerfEvent.(
     log (fun logger ->
         let callee_pname = Procdesc.get_proc_name callee_pdesc in
         log_begin_event logger ~name:"ondemand" ~categories:["backend"]
           ~arguments:[("proc", `String (Procname.to_string callee_pname))]
           () ) ) ;
-  let summary = run_proc_analysis exe_env ?caller_pname callee_pdesc in
+  let summary = run_proc_analysis exe_env ?specialization ?caller_pname callee_pdesc in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   summary
 
@@ -235,43 +244,55 @@ let register_callee ?caller_summary callee =
       Dependencies.record_pname_dep ~caller callee )
 
 
-let analyze_callee exe_env ~lazy_payloads ?caller_summary callee_pname =
+let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary callee_pname =
   register_callee ?caller_summary callee_pname ;
   if is_active callee_pname then None
   else
-    match Summary.OnDisk.get ~lazy_payloads callee_pname with
-    | Some _ as summ_opt ->
+    let analyze_callee_aux ~specialization =
+      Procdesc.load callee_pname
+      >>= fun callee_pdesc ->
+      RestartScheduler.lock_exn callee_pname ;
+      let previous_global_state = AnalysisGlobalState.save () in
+      AnalysisGlobalState.initialize callee_pname ;
+      let callee_summary =
+        protect
+          ~f:(fun () ->
+            Timer.time Preanalysis
+              ~f:(fun () ->
+                let caller_pname = caller_summary >>| fun summ -> summ.Summary.proc_name in
+                Some (run_proc_analysis exe_env ?specialization ?caller_pname callee_pdesc) )
+              ~on_timeout:(fun span ->
+                L.debug Analysis Quiet
+                  "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any checkers \
+                   (pre-analysis timeout?)@\n"
+                  span SourceFile.pp (Procdesc.get_attributes callee_pdesc).translation_unit
+                  Procname.pp callee_pname ;
+                None ) )
+          ~finally:(fun () -> AnalysisGlobalState.restore previous_global_state)
+      in
+      RestartScheduler.unlock callee_pname ;
+      callee_summary
+    in
+    match (Summary.OnDisk.get ~lazy_payloads callee_pname, specialization) with
+    | (Some _ as summ_opt), None ->
         summ_opt
-    | None when procedure_should_be_analyzed callee_pname ->
-        Procdesc.load callee_pname
-        >>= fun callee_pdesc ->
-        RestartScheduler.lock_exn callee_pname ;
-        let previous_global_state = AnalysisGlobalState.save () in
-        AnalysisGlobalState.initialize callee_pname ;
-        let callee_summary =
-          protect
-            ~f:(fun () ->
-              Timer.time Preanalysis
-                ~f:(fun () ->
-                  let caller_pname = caller_summary >>| fun summ -> summ.Summary.proc_name in
-                  Some (run_proc_analysis exe_env ?caller_pname callee_pdesc) )
-                ~on_timeout:(fun span ->
-                  L.debug Analysis Quiet
-                    "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any checkers \
-                     (pre-analysis timeout?)@\n"
-                    span SourceFile.pp (Procdesc.get_attributes callee_pdesc).translation_unit
-                    Procname.pp callee_pname ;
-                  None ) )
-            ~finally:(fun () -> AnalysisGlobalState.restore previous_global_state)
-        in
-        RestartScheduler.unlock callee_pname ;
-        callee_summary
-    | _ ->
+    | None, Some _ ->
+        L.die InternalError "specialization should always happend after regular analysis"
+    | (Some summary as summ_opt), Some specialization
+      when Callbacks.is_specialized_for specialization summary ->
+        (* the current summary is specialized enough for this request *)
+        summ_opt
+    | Some summary, Some specialization when procedure_should_be_analyzed callee_pname ->
+        (* the current summary is not suitable for this specialization request *)
+        analyze_callee_aux ~specialization:(Some (summary, specialization))
+    | None, None when procedure_should_be_analyzed callee_pname ->
+        analyze_callee_aux ~specialization:None
+    | _, _ ->
         None
 
 
-let analyze_proc_name exe_env ~caller_summary callee_pname =
-  analyze_callee ~lazy_payloads:false exe_env ~caller_summary callee_pname
+let analyze_proc_name exe_env ?specialization ~caller_summary callee_pname =
+  analyze_callee ~lazy_payloads:false ?specialization exe_env ~caller_summary callee_pname
 
 
 let analyze_proc_name_no_caller exe_env callee_pname =

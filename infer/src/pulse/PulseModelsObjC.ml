@@ -34,11 +34,10 @@ let call args : model =
         IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
       in
       let formals_opt = get_pvar_formals c.name in
-      let callee_data = analyze_dependency c.name in
       let call_kind = `Closure c.captured_vars in
-      let r, _contradiction =
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data location c.name
-          ~ret ~actuals ~formals_opt ~call_kind astate
+      let r, _contradiction, _ =
+        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
+          c.name ~ret ~actuals ~formals_opt ~call_kind astate
       in
       PerfEvent.(log (fun logger -> log_end_event logger ())) ;
       r

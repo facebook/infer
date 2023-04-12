@@ -28,6 +28,8 @@ type contradiction = private
       {formals: (Var.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
   | PathCondition
 
+val is_aliasing_contradiction : contradiction -> bool
+
 val apply_summary :
      PathContext.t
   -> Procname.t

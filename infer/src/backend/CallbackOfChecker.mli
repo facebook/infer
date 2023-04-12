@@ -30,8 +30,24 @@ val interprocedural_with_field :
      (Payloads.t, 'payload option Lazy.t) Field.t
   -> ('payload InterproceduralAnalysis.t -> 'payload option)
   -> Callbacks.proc_callback_t
-(** [interprocedural field checker] expects [checker] to compute a payload (option) suitable for
-    [field], given an inter-procedural analysis of callees that computes the same payload type *)
+(** [interprocedural_with_field field checker] expects [checker] to compute a payload (option)
+    suitable for [field], given an inter-procedural analysis of callees that computes the same
+    payload type *)
+
+val interprocedural_with_field_and_specialization :
+     (Payloads.t, 'payload option Lazy.t) Field.t
+  -> (   ?specialization:'payload * Specialization.t
+      -> 'payload InterproceduralAnalysis.t
+      -> 'payload option )
+  -> Callbacks.proc_callback_with_specialization_t
+(** same as [interprocedural_with_field] but allowing specialization *)
+
+val make_is_already_specialized_test :
+     (Payloads.t, 'payload option Lazy.t) Field.t
+  -> (Specialization.t -> 'payload -> bool)
+  -> Specialization.t
+  -> Summary.t
+  -> bool
 
 val interprocedural_with_field_dependency :
      dep_field:(Payloads.t, 'payload_dep Lazy.t) Field.t

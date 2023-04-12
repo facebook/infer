@@ -12,14 +12,37 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 
-type t = ExecutionDomain.summary list [@@deriving yojson_of]
+type pre_post_list = ExecutionDomain.summary list [@@deriving yojson_of]
 
-let pp fmt pre_posts =
+type t =
+  { main: pre_post_list
+  ; alias_specialized: (pre_post_list Specialization.Pulse.Map.t[@yojson.opaque]) }
+[@@deriving yojson_of]
+
+let pp_pre_post_list fmt ~pp_kind pre_posts =
   F.open_vbox 0 ;
-  F.fprintf fmt "%d pre/post(s)@;" (List.length pre_posts) ;
+  F.fprintf fmt "%d%t pre/post(s)@;" (List.length pre_posts) pp_kind ;
   List.iteri pre_posts ~f:(fun i (pre_post : ExecutionDomain.summary) ->
       F.fprintf fmt "#%d: @[%a@]@;" i ExecutionDomain.pp_summary pre_post ) ;
   F.close_box ()
+
+
+let pp fmt {main; alias_specialized} =
+  if Specialization.Pulse.Map.is_empty alias_specialized then
+    pp_pre_post_list fmt ~pp_kind:(fun _fmt -> ()) main
+  else
+    let pp_kind fmt = F.pp_print_string fmt " main" in
+    F.open_hvbox 0 ;
+    pp_pre_post_list fmt ~pp_kind main ;
+    Specialization.Pulse.Map.iter
+      (fun specialization pre_posts ->
+        F.fprintf fmt "@," ;
+        let pp_kind fmt =
+          F.fprintf fmt " alias-specialization with %a" Specialization.Pulse.pp specialization
+        in
+        pp_pre_post_list fmt ~pp_kind pre_posts )
+      alias_specialized ;
+    F.close_box ()
 
 
 let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_desc err_log location
@@ -161,7 +184,7 @@ let mk_nil_messaging_summary_aux tenv proc_name (proc_attrs : ProcAttributes.t) 
   let path = PathContext.initial in
   let t0 = path.PathContext.timestamp in
   let self = mk_objc_self_pvar proc_name in
-  let astate = AbductiveDomain.mk_initial tenv proc_name proc_attrs in
+  let astate = AbductiveDomain.mk_initial tenv proc_name None proc_attrs in
   let** astate, (self_value, self_history) =
     PulseOperations.eval_deref path proc_attrs.loc (Lvar self) astate
   in
@@ -190,7 +213,7 @@ let mk_nil_messaging_summary_aux tenv proc_name (proc_attrs : ProcAttributes.t) 
 let mk_latent_non_POD_nil_messaging tenv proc_name (proc_attrs : ProcAttributes.t) =
   let path = PathContext.initial in
   let self = mk_objc_self_pvar proc_name in
-  let astate = AbductiveDomain.mk_initial tenv proc_name proc_attrs in
+  let astate = AbductiveDomain.mk_initial tenv proc_name None proc_attrs in
   let** astate, (self_value, _self_history) =
     PulseOperations.eval_deref path proc_attrs.loc (Lvar self) astate
   in

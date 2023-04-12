@@ -9,9 +9,15 @@ open! IStd
 
 (** Module for on-demand analysis. *)
 
-val analyze_proc_name : Exe_env.t -> caller_summary:Summary.t -> Procname.t -> Summary.t option
+val analyze_proc_name :
+     Exe_env.t
+  -> ?specialization:Specialization.t
+  -> caller_summary:Summary.t
+  -> Procname.t
+  -> Summary.t option
 (** [analyze_proc_name exe_env ~caller_summary callee_pname] performs an on-demand analysis of
-    [callee_pname] triggered during the analysis of [caller_summary] *)
+    [callee_pname] triggered during the analysis of [caller_summary] If [specialization] is given,
+    the callee is requesting a specialization. *)
 
 val analyze_proc_name_no_caller : Exe_env.t -> Procname.t -> Summary.t option
 (** [analyze_proc_name_no_caller exe_env callee_pname] performs an on-demand analysis of

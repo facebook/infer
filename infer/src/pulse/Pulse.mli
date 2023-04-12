@@ -7,4 +7,9 @@
 
 open! IStd
 
-val checker : PulseSummary.t InterproceduralAnalysis.t -> PulseSummary.t option
+val checker :
+     ?specialization:PulseSummary.t * Specialization.t
+  -> PulseSummary.t InterproceduralAnalysis.t
+  -> PulseSummary.t option
+
+val is_already_specialized : Specialization.t -> PulseSummary.t -> bool

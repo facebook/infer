@@ -782,8 +782,6 @@ let rec compare_name x y =
 (** hash function for procname *)
 let hash = Hashtbl.hash
 
-let with_aliasing_parameters base aliases = WithAliasingParameters (base, aliases)
-
 let with_function_parameters base functions =
   if List.is_empty functions then None else Some (WithFunctionParameters (base, functions))
 

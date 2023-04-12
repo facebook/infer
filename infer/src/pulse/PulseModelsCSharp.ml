@@ -423,17 +423,15 @@ module Resource = struct
       List.map args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
           (arg_payload, typ) )
     in
-    let callee_data = analyze_dependency callee_procname in
-    (* let () = Printf.printf "analysis occurs here.  Found callee_data for %s? : %b \n" *)
-    (*     (Procname.to_string callee_procname) (Option.is_some callee_data) *)
-    (* in *)
-    match callee_data with
-    | Some _ ->
+    let res, _, is_known_call =
+      PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
+        callee_procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
+    in
+    match is_known_call with
+    | `KnownCall ->
         (* if we have what we need for a callee match, use it *)
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~callee_data location
-          callee_procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
-        |> fst
-    | None ->
+        res
+    | `UnknownCall ->
         Basic.ok_continue astate (* is this too generic? *)
 
 

@@ -646,7 +646,7 @@ let add_static_types astate formals_and_captured =
   List.fold formals_and_captured ~init:astate ~f:record_static_type
 
 
-let mk_initial tenv proc_name (proc_attrs : ProcAttributes.t) =
+let mk_initial tenv proc_name specialization (proc_attrs : ProcAttributes.t) =
   (* HACK: save the formals in the stacks of the pre and the post to remember which local variables
      correspond to formals *)
   let formals_and_captured =
@@ -725,10 +725,10 @@ let mk_initial tenv proc_name (proc_attrs : ProcAttributes.t) =
          mem  ={ v1 -> { * -> v3 }, v2 -> { * -> v3 }, v3 -> { } };
          attrs={ };
     *)
-    match proc_attrs.specialized_with_aliasing_info with
+    match specialization with
     | None ->
         astate
-    | Some {aliases} ->
+    | Some (Specialization.Pulse.Aliases aliases) ->
         let pre_heap = (astate.pre :> base_domain).heap in
         let post_heap = (astate.post :> base_domain).heap in
         let pre_heap, post_heap =
