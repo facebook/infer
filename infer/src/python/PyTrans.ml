@@ -6,15 +6,16 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 module T = Textual
 module PyBuiltins = PyCommon.Builtins
 
 module DataStack = struct
   type cell =
-    | Const of int  (** index in co_consts *)
-    | Name of int  (** reference to a global name, stored in co_names *)
-    | VarName of int  (** reference to a local name, stored in co_varnames *)
+    | Const of int  (** index in [co_consts] *)
+    | Name of int  (** reference to a global name, stored in [co_names] *)
+    | VarName of int  (** reference to a local name, stored in [co_varnames] *)
     | Temp of T.Ident.t  (** SSA variable *)
     | Fun of string  (** top level user-defined function name *)
   [@@deriving show]
@@ -129,7 +130,11 @@ module Debug = struct
      I'll move to Logging once it's done. *)
   let debug = false
 
-  let p fmt = if debug then Printf.fprintf stdout fmt else Printf.ifprintf stdout fmt
+  (* Inspired by PulseFormula.Debug. Check there if we want to plug it into Logging too *)
+  let dummy_formatter = F.make_formatter (fun _ _ _ -> ()) (fun () -> ())
+
+  let p fmt =
+    if debug then F.kasprintf (fun s -> F.printf "%s" s) fmt else F.ifprintf dummy_formatter fmt
 end
 
 let var_name ?(loc = T.Location.Unknown) value = T.VarName.{value; loc}
@@ -189,91 +194,83 @@ let pop_tos opname env =
       (env, cell)
 
 
-(* TODO: merge the LOAD_* code in a single function *)
-module LOAD_CONST = struct
-  (* LOAD_CONST(consti)
-     Pushes co_consts[consti] onto the stack. *)
+(* We are now going to implement support for Python opcodes. Most of the documentation directly
+   comes from the official python documentation and is only altered to improve readability.
 
-  let run env FFI.Code.{co_consts} FFI.Instruction.{opname; arg} =
-    let const = co_consts.(arg) in
-    Debug.p "[%s] arg = %s\n" opname (FFI.Constant.show const) ;
-    let cell = DataStack.Const arg in
+   https://docs.python.org/3.8/library/dis.html *)
+module LOAD = struct
+  type kind =
+    | CONST  (** {v LOAD_CONST(consti) v}
+
+                 Pushes [co_consts\[consti\]] onto the stack. *)
+    | FAST
+        (** {v LOAD_FAST(var_num) v}
+
+            Pushes a reference to the local [co_varnames\[var_num\]] onto the stack. *)
+    | GLOBAL
+        (** {v LOAD_GLOBAL(namei) v}
+
+            Loads the global named [co_names\[namei\]] onto the stack. *)
+    | NAME
+        (** {v LOAD_NAME(namei) v}
+
+            Pushes the value associated with [co_names\[namei\]] onto the stack. *)
+
+  let run kind env code FFI.Instruction.{opname; arg} =
+    let pp {FFI.Code.co_names; co_varnames; co_consts} fmt = function
+      | CONST ->
+          FFI.Constant.pp fmt co_consts.(arg)
+      | FAST ->
+          F.fprintf fmt "%s" co_varnames.(arg)
+      | NAME | GLOBAL ->
+          F.fprintf fmt "%s" co_names.(arg)
+    in
+    let cell =
+      match kind with
+      | CONST ->
+          DataStack.Const arg
+      | FAST ->
+          DataStack.VarName arg
+      | NAME | GLOBAL ->
+          DataStack.Name arg
+    in
+    Debug.p "[%s] arg = %a\n" opname (pp code) kind ;
     (Env.push env cell, None)
 end
 
-module LOAD_FAST = struct
-  (* LOAD_FAST(var_num)
-     Pushes a reference to the local co_varnames[var_num] onto the stack. *)
+module STORE = struct
+  type kind =
+    | FAST
+        (** {v STORE_FAST(var_num) v}
 
-  let run env FFI.Code.{co_varnames} FFI.Instruction.{opname; arg} =
-    let var = co_varnames.(arg) in
-    Debug.p "[%s] var_num = %s\n" opname var ;
-    let cell = DataStack.VarName arg in
-    (Env.push env cell, None)
-end
+            Stores top-of-stack into the local [co_varnames\[var_num\]]. *)
+    | NAME
+        (** {v STORE_NAME(namei) v}
 
-module LOAD_GLOBAL = struct
-  (* LOAD_GLOBAL(namei)
-     Loads the global named co_names[namei] onto the stack. *)
+            Implements name = top-of-stack. namei is the index of name in the attribute co_names of
+            the code object. The compiler tries to use [STORE_FAST] or [STORE_GLOBAL] if possible.
 
-  let run env FFI.Code.{co_names} FFI.Instruction.{opname; arg} =
-    let var = co_names.(arg) in
-    Debug.p "[%s] namei = %s\n" opname var ;
-    let cell = DataStack.Name arg in
-    (Env.push env cell, None)
-end
+            Notes: this should only happen in global nodes, to update global variables from the
+            global scope.
 
-module LOAD_NAME = struct
-  (* LOAD_NAME(namei)
-     Pushes the value associated with co_names[namei] onto the stack. *)
+            In a function, local varialbes are updated using [STORE_FAST], and global variables are
+            updated using [STORE_GLOBAL]. *)
+    | GLOBAL
+        (** {v STORE_GLOBAL(namei) v}
 
-  let run env FFI.Code.{co_names} FFI.Instruction.{opname; arg} =
-    let name = co_names.(arg) in
-    Debug.p "[%s] arg = %s\n" opname name ;
-    let cell = DataStack.Name arg in
-    (Env.push env cell, None)
-end
+            Works as [STORE_NAME], but stores the name as a global.
 
-module STORE_FAST = struct
-  (* STORE_FAST(var_num)
-     Stores top-of-stack into the local co_varnames[var_num]. *)
+            Since we have a special namespace for global varialbes, this is in fact the same as
+            [STORE_NAME], but only called from within a function/method. *)
 
-  let run env FFI.Code.({co_varnames} as code) FFI.Instruction.{opname; arg} =
-    let name = co_varnames.(arg) in
-    Debug.p "[%s] name = %s\n" opname name ;
-    let loc = Env.loc env in
-    let var_name = var_name ~loc name in
-    let env, cell = pop_tos opname env in
-    let env, expty = load_cell env code cell in
-    match expty with
-    | `Ok (exp, typ) ->
-        let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
-        (Env.push_instr env instr, None)
-    | `Error s ->
-        L.die InternalError "[%s] %s" opname s
-    | `Fun f ->
-        L.die InternalError "[%s] no support for closure at the moment: %s" opname f
-end
-
-module STORE_NAME = struct
-  (* STORE_NAME(namei)
-     Implements name = top-of-stack. namei is the index of name in the attribute co_names of the code
-     object. The compiler tries to use STORE_FAST or STORE_GLOBAL if possible.
-
-     Notes: this should only happen in global nodes, to update global variables from the global
-     scope.
-
-     In a function, local varialbes are updated using STORE_FAST, and global variables are
-     updated using STORE_GLOBAL.
-
-     STORE_GLOBAL(namei)
-     Works as STORE_NAME, but stores the name as a global.
-
-     Since we have a special namespace for global varialbes, this is in fact the same as
-     STORE_NAME, but only called from within a function/method. *)
-
-  let run env FFI.Code.({co_names} as code) FFI.Instruction.{opname; arg} =
-    let name = global co_names.(arg) in
+  let run kind env FFI.Code.({co_names; co_varnames} as code) FFI.Instruction.{opname; arg} =
+    let name, is_global =
+      match kind with
+      | FAST ->
+          (co_varnames.(arg), false)
+      | NAME | GLOBAL ->
+          (global co_names.(arg), true)
+    in
     Debug.p "[%s] name = %s\n" opname name ;
     let loc = Env.loc env in
     let var_name = var_name ~loc name in
@@ -281,19 +278,22 @@ module STORE_NAME = struct
     let env, exp_ty = load_cell env code cell in
     match exp_ty with
     | `Ok (exp, typ) ->
-        let env = Env.register_global env var_name in
+        let env = if is_global then Env.register_global env var_name else env in
         let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
         (Env.push_instr env instr, None)
     | `Error s ->
         L.die InternalError "[%s] %s" opname s
     | `Fun f ->
-        Debug.p "  top-level function defined: %s" f ;
-        (env, None)
+        if is_global then (
+          Debug.p "  top-level function defined: %s" f ;
+          (env, None) )
+        else L.die InternalError "[%s] no support for closure at the moment: %s" opname f
 end
 
 module RETURN_VALUE = struct
-  (* RETURN_VALUE
-     returns the top-of-stack *)
+  (** {v RETURN_VALUE v}
+
+      Returns the top-of-stack *)
   let run env code FFI.Instruction.{opname} =
     Debug.p "[%s]\n" opname ;
     let env, cell = pop_tos opname env in
@@ -309,8 +309,9 @@ module RETURN_VALUE = struct
 end
 
 module POP_TOP = struct
-  (* POP_TOP
-     pop the top-of-stack and discard it *)
+  (** {v POP_TOP v}
+
+      Pop the top-of-stack and discard it *)
   let run env _code FFI.Instruction.{opname} =
     Debug.p "[%s]\n" opname ;
     let env, _cell = pop_tos opname env in
@@ -318,15 +319,16 @@ module POP_TOP = struct
 end
 
 module CALL_FUNCTION = struct
-  (* CALL_FUNCTION(argc)
-     Calls a callable object with positional arguments. argc indicates the number of positional
-     arguments. The top of the stack contains positional arguments, with the right-most argument
-     on top. Below the arguments is a callable object to call. This opcode pushes a fresh result
-     on the top of the stack.
+  (** {v CALL_FUNCTION(argc) v}
 
-     Before: argN | ... | arg1 | arg0 | code-object | rest-of-the-stack
-     After:  result | rest-of-the-stack
-  *)
+      Calls a callable object with positional arguments. [argc] indicates the number of positional
+      arguments. The top of the stack contains positional arguments, with the right-most argument on
+      top. Below the arguments is a callable object to call. This opcode pushes a fresh result on
+      the top of the stack.
+
+      Before: [ argN | ... | arg1 | arg0 | code-object | rest-of-the-stack ]
+
+      After: [ result | rest-of-the-stack v} ] *)
 
   let pop_n_tos opname code =
     let rec pop env n acc =
@@ -377,14 +379,16 @@ module CALL_FUNCTION = struct
 end
 
 module BINARY_ADD = struct
-  (* BINARY_ADD
-     Implements top-of-stack = top-of-stack1 + top-of-stack.
+  (** {v BINARY_ADD v}
 
-     Before: TOS (rhs) | TOS1 (lhs) | rest-of-stack
-     After: TOS1 + TOS (lhs + rhs) | rest-of-stack
+      Implements top-of-stack = top-of-stack1 + top-of-stack.
 
-     Since Python is using runtime types to know which `+` to do (addition, string concatenation,
-     custom operator, ...), we'll need to write a model for this one. *)
+      Before: [ TOS (rhs) | TOS1 (lhs) | rest-of-stack ]
+
+      After: [ TOS1 + TOS (lhs + rhs) | rest-of-stack ]
+
+      Since Python is using runtime types to know which [+] to do (addition, string concatenation,
+      custom operator, ...), we'll need to write a model for this one. *)
   let run env code FFI.Instruction.{opname} =
     Debug.p "[%s]\n" opname ;
     let env, tos = pop_tos opname env in
@@ -429,20 +433,21 @@ module BINARY_ADD = struct
 end
 
 module MAKE_FUNCTION = struct
-  (* MAKE_FUNCTION(flags)
-     Pushes a new function object on the stack. From bottom to top, the consumed stack must
-     consist of values if the argument carries a specified flag value
-     - 0x01 a tuple of default values for positional-only and positional-or-keyword parameters in
-            positional order
-     - 0x02 a dictionary of keyword-only parameters’ default values
-     - 0x04 an annotation dictionary
-     - 0x08 a tuple containing cells for free variables, making a closure
-     - the code associated with the function (at TOS1)
-     - the qualified name of the function (at TOS)
+  (** {v MAKE_FUNCTION(flags) v}
 
-     In this first version, we will only support flag = 0x00. Also we won't support closures or
-     nested functions
-  *)
+      Pushes a new function object on the stack. From bottom to top, the consumed stack must consist
+      of values if the argument carries a specified flag value
+
+      - [0x01] a tuple of default values for positional-only and positional-or-keyword parameters in
+        positional order
+      - [0x02] a dictionary of keyword-only parameters’ default values
+      - [0x04] an annotation dictionary
+      - [0x08] a tuple containing cells for free variables, making a closure
+      - the code associated with the function (at TOS1)
+      - the qualified name of the function (at TOS)
+
+      In this first version, we will only support [flags = 0x00]. Also we won't support closures or
+      nested functions *)
   let run env FFI.Code.({co_consts} as code) FFI.Instruction.{opname; arg} =
     Debug.p "[%s] flags = 0x%x\n" opname arg ;
     if arg <> 0 then L.die InternalError "%s: support for flag 0x%x is not implemented" opname arg ;
@@ -480,19 +485,19 @@ let run_instruction env code FFI.Instruction.({opname; starts_line} as instr) =
   let env, maybe_term =
     match opname with
     | "LOAD_CONST" ->
-        LOAD_CONST.run env code instr
+        LOAD.(run CONST env code instr)
     | "LOAD_FAST" ->
-        LOAD_FAST.run env code instr
+        LOAD.(run FAST env code instr)
     | "LOAD_GLOBAL" ->
-        LOAD_GLOBAL.run env code instr
+        LOAD.(run GLOBAL env code instr)
     | "LOAD_NAME" ->
-        LOAD_NAME.run env code instr
+        LOAD.(run NAME env code instr)
     | "STORE_FAST" ->
-        STORE_FAST.run env code instr
+        STORE.(run FAST env code instr)
     | "STORE_GLOBAL" ->
-        STORE_NAME.run env code instr
+        STORE.(run GLOBAL env code instr)
     | "STORE_NAME" ->
-        STORE_NAME.run env code instr
+        STORE.(run NAME env code instr)
     | "RETURN_VALUE" ->
         RETURN_VALUE.run env code instr
     | "POP_TOP" ->
