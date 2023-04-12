@@ -36,11 +36,7 @@ end
 module Env = struct
   (* Part of the environment shared by most structures. It gathers information like which
      builtin has been spotted, or what idents have been generated so far. *)
-  type shared =
-    { idents: T.Ident.Set.t
-    ; globals: T.VarName.Set.t
-    ; builtins: PyBuiltins.Set.t
-    ; spotted_builtins: PyBuiltins.Set.t }
+  type shared = {idents: T.Ident.Set.t; globals: T.VarName.Set.t; builtins: PyBuiltins.t}
 
   (* State of the capture while processing a single node: each node has a dedicated data stack,
      and generates its own set of instructions.
@@ -53,12 +49,7 @@ module Env = struct
 
   let reset_idents env = {env with idents= T.Ident.Set.empty}
 
-  let mk builtins =
-    { idents= T.Ident.Set.empty
-    ; globals= T.VarName.Set.empty
-    ; builtins
-    ; spotted_builtins= PyBuiltins.Set.empty }
-
+  let empty = {idents= T.Ident.Set.empty; globals= T.VarName.Set.empty; builtins= PyBuiltins.empty}
 
   let push ({stack} as env) cell =
     let stack = DataStack.push stack cell in
@@ -99,15 +90,11 @@ module Env = struct
 
   let register_global ({shared} as env) name = {env with shared= register_global shared name}
 
-  let register_builtin ({spotted_builtins} as env) name =
-    {env with spotted_builtins= PyBuiltins.register name spotted_builtins}
+  let register_builtin ({builtins} as env) name =
+    {env with builtins= PyBuiltins.register builtins name}
 
 
   let register_builtin ({shared} as env) name = {env with shared= register_builtin shared name}
-
-  let is_builtin {builtins} name = PyBuiltins.is_builtin name builtins
-
-  let is_builtin {shared} name = is_builtin shared name
 end
 
 module Debug = struct
@@ -139,17 +126,19 @@ let load_cell env FFI.Code.{co_consts; co_names} cell =
       match FFI.Constant.to_exp const with
       | None ->
           (env, Error "[load_cell] Constant contains code objects")
-      | Some exp ->
-          (env, Ok exp) )
+      | Some exp_ty ->
+          (env, Ok exp_ty) )
   | DataStack.Name ndx ->
       let name = global co_names.(ndx) in
       let env, id = Env.temp env in
       let exp = T.Exp.Lvar (var_name name) in
       let instr = T.Instr.Load {id; exp; typ= pyObject; loc= T.Location.Unknown} in
       let env = Env.push_instr env instr in
-      (env, Ok (T.Exp.Var id))
+      (* TODO: try to trace the type of names ? *)
+      (env, Ok (T.Exp.Var id, PyCommon.pyObject))
   | DataStack.Temp id ->
-      (env, Ok (T.Exp.Var id))
+      (* TODO: try to trace the type of ids ? *)
+      (env, Ok (T.Exp.Var id, PyCommon.pyObject))
 
 
 let pop_tos opname env =
@@ -199,12 +188,11 @@ module STORE_NAME = struct
     let var_name = var_name name in
     let env = Env.register_global env var_name in
     let env, cell = pop_tos opname env in
-    let env, exp = load_cell env code cell in
-    match exp with
-    | Ok exp ->
+    let env, exp_ty = load_cell env code cell in
+    match exp_ty with
+    | Ok (exp, typ) ->
         let instr =
-          T.Instr.Store
-            {exp1= T.Exp.Lvar var_name; typ= pyObject; exp2= exp; loc= T.Location.Unknown}
+          T.Instr.Store {exp1= T.Exp.Lvar var_name; typ; exp2= exp; loc= T.Location.Unknown}
         in
         (Env.push_instr env instr, None)
     | Error s ->
@@ -217,9 +205,9 @@ module RETURN_VALUE = struct
   let run env code FFI.Instruction.{opname} =
     Debug.p "[%s]\n" opname ;
     let env, cell = pop_tos opname env in
-    let env, exp = load_cell env code cell in
-    match exp with
-    | Ok exp ->
+    let env, exp_ty = load_cell env code cell in
+    match exp_ty with
+    | Ok (exp, _) ->
         let term = T.Terminator.Ret exp in
         (env, Some term)
     | Error s ->
@@ -251,9 +239,9 @@ module CALL_FUNCTION = struct
       if n > 0 then (
         let env, cell = pop_tos opname env in
         Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
-        let env, exp = load_cell env code cell in
-        match exp with
-        | Ok exp ->
+        let env, exp_ty = load_cell env code cell in
+        match exp_ty with
+        | Ok (exp, _) ->
             pop env (n - 1) (exp :: acc)
         | Error s ->
             L.die UserError "[%s] failed to fetch from the stack: %s" opname s )
@@ -279,7 +267,7 @@ module CALL_FUNCTION = struct
     in
     let env, id = Env.temp env in
     let env, proc =
-      if Env.is_builtin env fname then
+      if PyBuiltins.is_builtin fname then
         let env = Env.register_builtin env fname in
         (env, PyCommon.builtin_name fname)
       else (env, qualified_procname @@ proc_name fname)
@@ -305,9 +293,13 @@ module BINARY_ADD = struct
     let env, tos = pop_tos opname env in
     let env, tos1 = pop_tos opname env in
     let env, lhs = load_cell env code tos1 in
-    let lhs = match lhs with Ok rhs -> rhs | Error s -> L.die InternalError "[%s] %s" opname s in
+    let lhs =
+      match lhs with Ok (lhs, _) -> lhs | Error s -> L.die InternalError "[%s] %s" opname s
+    in
     let env, rhs = load_cell env code tos in
-    let rhs = match rhs with Ok rhs -> rhs | Error s -> L.die InternalError "[%s] %s" opname s in
+    let rhs =
+      match rhs with Ok (rhs, _) -> rhs | Error s -> L.die InternalError "[%s] %s" opname s
+    in
     let fname = "binary_add" in
     let env = Env.register_builtin env fname in
     let env, id = Env.temp env in
@@ -408,7 +400,7 @@ let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python
 
 let to_module ~sourcefile module_name code =
   let name = proc_name module_name in
-  let env = PyBuiltins.mk () |> Env.mk in
+  let env = Env.empty in
   let env, decl = to_proc_desc env name code in
   let globals =
     T.VarName.Set.fold
@@ -417,5 +409,5 @@ let to_module ~sourcefile module_name code =
         T.Module.Global global :: acc )
       env.Env.globals []
   in
-  let decls = (T.Module.Proc decl :: globals) @ PyBuiltins.to_textual env.Env.spotted_builtins in
+  let decls = (T.Module.Proc decl :: globals) @ PyBuiltins.to_textual env.Env.builtins in
   T.Module.{attrs= [python_attribute]; decls; sourcefile}

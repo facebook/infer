@@ -219,23 +219,26 @@ module Constant = struct
   let rec to_exp = function
     | PYCBool b ->
         let b = if b then Z.one else Z.zero in
-        Some T.(Exp.Const (Const.Int b))
+        let exp = T.(Exp.Const (Const.Int b)) in
+        Some (exp, T.Typ.Int)
     | PYCInt i ->
-        Some (PyCommon.mk_int i)
+        Some PyCommon.(mk_int i, pyInt)
     | PYCString s ->
-        Some (PyCommon.mk_string s)
+        Some PyCommon.(mk_string s, pyString)
     | PYCNone ->
-        Some T.(Exp.Const Const.Null)
+        let exp = T.(Exp.Const Const.Null) in
+        Some (exp, T.Typ.Null)
     | PYCCode _ ->
         None
     | PYCTuple arr -> (
         let l = Array.to_list arr in
-        let l = List.map ~f:to_exp l in
+        let l = List.map ~f:(fun c -> to_exp c |> Option.map ~f:fst) l in
         match Option.all l with
         | None ->
             None
         | Some args ->
-            Some (T.Exp.Call {proc= PyCommon.python_tuple; args; kind= NonVirtual}) )
+            let exp = T.Exp.Call {proc= PyCommon.python_tuple; args; kind= NonVirtual} in
+            Some (exp, PyCommon.pyObject) )
 end
 
 module Code = struct

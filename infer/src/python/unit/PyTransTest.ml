@@ -25,18 +25,18 @@ let%test_module "to_proc_desc" =
 
         define $toplevel::main() : *PyObject {
           #b0:
-              store &$globals::x <- $builtins.python_int(42):*PyObject
+              store &$globals::x <- $builtins.python_int(42):*PyInt
               ret null
 
         }
 
         global $globals::x: *PyObject
 
-        declare $builtins.python_int(int) : *PyObject
+        declare $builtins.python_tuple(...) : *PyObject
 
-        declare $builtins.python_string(*PyObject) : *PyObject
+        declare $builtins.python_string(*PyObject) : *PyString
 
-        declare $builtins.python_tuple(*PyObject) : *PyObject |}]
+        declare $builtins.python_int(int) : *PyInt |}]
 
 
     let%expect_test _ =
@@ -55,7 +55,7 @@ print(x)
 
         define $toplevel::main() : *PyObject {
           #b0:
-              store &$globals::x <- $builtins.python_int(42):*PyObject
+              store &$globals::x <- $builtins.python_int(42):*PyInt
               n0:*PyObject = load &$globals::x
               n1 = $builtins.print(n0)
               ret null
@@ -64,13 +64,13 @@ print(x)
 
         global $globals::x: *PyObject
 
-        declare $builtins.print() : *PyObject
+        declare $builtins.print(...) : *PyObject
 
-        declare $builtins.python_int(int) : *PyObject
+        declare $builtins.python_tuple(...) : *PyObject
 
-        declare $builtins.python_string(*PyObject) : *PyObject
+        declare $builtins.python_string(*PyObject) : *PyString
 
-        declare $builtins.python_tuple(*PyObject) : *PyObject |}]
+        declare $builtins.python_int(int) : *PyInt |}]
 
 
     let%expect_test _ =
@@ -90,8 +90,8 @@ print(x + y)
 
         define $toplevel::main() : *PyObject {
           #b0:
-              store &$globals::x <- $builtins.python_int(42):*PyObject
-              store &$globals::y <- $builtins.python_int(10):*PyObject
+              store &$globals::x <- $builtins.python_int(42):*PyInt
+              store &$globals::y <- $builtins.python_int(10):*PyInt
               n0:*PyObject = load &$globals::x
               n1:*PyObject = load &$globals::y
               n2 = $builtins.binary_add(n0, n1)
@@ -104,13 +104,13 @@ print(x + y)
 
         global $globals::x: *PyObject
 
-        declare $builtins.print() : *PyObject
+        declare $builtins.print(...) : *PyObject
 
-        declare $builtins.binary_add() : *PyObject
+        declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
 
-        declare $builtins.python_int(int) : *PyObject
+        declare $builtins.python_tuple(...) : *PyObject
 
-        declare $builtins.python_string(*PyObject) : *PyObject
+        declare $builtins.python_string(*PyObject) : *PyString
 
-        declare $builtins.python_tuple(*PyObject) : *PyObject |}]
+        declare $builtins.python_int(int) : *PyInt |}]
   end )

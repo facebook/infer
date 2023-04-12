@@ -18,25 +18,30 @@ val python_tuple : Textual.qualified_procname
 (* Pointer to pyObject *)
 val pyObject : Textual.Typ.t
 
+val pyInt : Textual.Typ.t
+
+val pyString : Textual.Typ.t
+
 val mk_int : int64 -> Textual.Exp.t
 
 val mk_string : string -> Textual.Exp.t
 
 module Builtins : sig
-  module Set : Caml.Set.S with type elt = string
+  (* With this type we keep track of the builtins some piece of code is using. This enables us to
+     only generate the textual declaration we need.
+     Note that we always generate the primite wrapper (python_int, ...) *)
+  type t
 
-  (* Turn a set of builtin we spotted while processing the code into their textual
-     representation. This way we only consider builtins that are actually used by the code.
-     (note that we always export python_int, python_string and python_tuple *)
-  val to_textual : Set.t -> Textual.Module.decl list
+  val to_textual : t -> Textual.Module.decl list
 
-  val register : string -> Set.t -> Set.t
+  (* Call this function when a builtin is spotted in the code *)
+  val register : t -> string -> t
 
-  (* TODO(vsiles): to keep things simple, we pass the set of known builtins around. We could also
-     keep a set and just refer to it. But I'd like to keep the option to configure this set
-     before infer is started, so I don't hard-code it for now. *)
-  val is_builtin : string -> Set.t -> bool
+  (* Is a function name a builtin.
+     TODO: once we get toplevel definitions, one can shadow builtins, so we'll need to take this
+     into account. *)
+  val is_builtin : string -> bool
 
-  (* Create a set of all the currently known builtins *)
-  val mk : unit -> Set.t
+  (* An empty set of builtins *)
+  val empty : t
 end

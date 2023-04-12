@@ -12,7 +12,7 @@ module rec Constant : sig
 
   val create : Pytypes.pyobject -> t
 
-  val to_exp : t -> Textual.Exp.t option
+  val to_exp : t -> (Textual.Exp.t * Textual.Typ.t) option
 end
 
 and Code : sig

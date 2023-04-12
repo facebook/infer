@@ -8,10 +8,15 @@
 open! IStd
 module T = Textual
 
-let pyObject =
-  let name = T.TypeName.{value= "PyObject"; loc= T.Location.Unknown} in
-  T.Typ.(Ptr (Struct name))
+let type_name value = T.TypeName.{value; loc= T.Location.Unknown}
 
+let mk_type name = T.Typ.(Ptr (Struct (type_name name)))
+
+let pyObject = mk_type "PyObject"
+
+let pyInt = mk_type "PyInt"
+
+let pyString = mk_type "PyString"
 
 let builtin_scope = T.Enclosing T.{TypeName.value= "$builtins"; loc= Unknown}
 
@@ -41,37 +46,57 @@ let mk_string (s : string) =
 
 
 module Builtins = struct
-  module Set = Caml.Set.Make (struct
-    type t = string [@@deriving compare]
-  end)
+  type elt = {formals_types: T.Typ.annotated list option; result_type: T.Typ.annotated}
+
+  module Info = Caml.Map.Make (String)
+  module Set = Caml.Set.Make (String)
+
+  type t = Set.t
+
+  let mk_builtin {formals_types; result_type} name =
+    let qualified_name = builtin_name name in
+    let formals_types, are_formal_types_fully_declared =
+      match formals_types with None -> ([], false) | Some l -> (l, true)
+    in
+    T.Module.Procdecl
+      T.ProcDecl.
+        {qualified_name; formals_types; are_formal_types_fully_declared; result_type; attributes= []}
+
+
+  let annot typ = T.Typ.{typ; attributes= []}
+
+  let primitive_builtins =
+    let builtins =
+      [ ("python_int", {formals_types= Some [annot T.Typ.Int]; result_type= annot pyInt})
+      ; ("python_string", {formals_types= Some [annot pyObject]; result_type= annot pyString})
+      ; ("python_tuple", {formals_types= None; result_type= annot pyObject}) ]
+    in
+    List.fold_left
+      ~f:(fun acc (name, builtin) -> Info.add name builtin acc)
+      ~init:Info.empty builtins
+
+
+  let supported_builtins =
+    let builtins =
+      [ ("print", {formals_types= None; result_type= annot pyObject})
+      ; ( "binary_add"
+        , {formals_types= Some [annot pyObject; annot pyObject]; result_type= annot pyObject} ) ]
+    in
+    List.fold_left
+      ~f:(fun acc (name, builtin) -> Info.add name builtin acc)
+      ~init:primitive_builtins builtins
+
 
   let to_textual spotted =
-    let annot typ = T.Typ.{typ; attributes= []} in
-    let mk ?typ qualified_name =
-      let formals_types = Option.to_list @@ Option.map ~f:annot typ in
-      let result_type = annot pyObject in
-      T.Module.Procdecl
-        T.ProcDecl.
-          { qualified_name
-          ; formals_types
-          ; are_formal_types_fully_declared= true
-          ; result_type
-          ; attributes= [] }
-    in
-    let python_int = mk python_int ~typ:T.Typ.Int in
-    let python_string = mk python_string ~typ:pyObject in
-    let python_tuple = mk python_tuple ~typ:pyObject in
-    Set.fold
-      (fun name acc ->
-        let builtin_name = builtin_name name in
-        mk builtin_name :: acc )
-      spotted
-      [python_int; python_string; python_tuple]
+    let init = Info.fold (fun key elt l -> mk_builtin elt key :: l) primitive_builtins [] in
+    Info.fold
+      (fun key elt l -> if Set.mem key spotted then mk_builtin elt key :: l else l)
+      supported_builtins init
 
 
-  let register name spotted = Set.add name spotted
+  let register spotted name = Set.add name spotted
 
-  let is_builtin name builtins = Set.mem name builtins
+  let is_builtin name = Info.mem name supported_builtins
 
-  let mk () = register "print" Set.empty |> register "binary_add"
+  let empty = Set.empty
 end
