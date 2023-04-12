@@ -77,3 +77,13 @@ let erlang_namespace = "erlang"
 let unsupported = "__unsupported"
 
 let infer_erlang_namespace = "__infer__erlang"
+
+module Normalizer = struct
+  let tuple_cache_size = 256
+
+  let tuple = Array.init tuple_cache_size ~f:(fun size -> Tuple size)
+
+  type nonrec t = t
+
+  let normalize x = match x with Tuple size when size < tuple_cache_size -> tuple.(size) | x -> x
+end

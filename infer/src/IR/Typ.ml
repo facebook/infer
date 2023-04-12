@@ -1002,7 +1002,7 @@ and NameNormalizer : (HashNormalizer.S with type t = name) = HashNormalizer.Make
 
   let normalize t =
     match t with
-    | ErlangType _ | HackClass _ ->
+    | HackClass _ ->
         (* TODO *)
         t
     | CStruct qualified_name ->
@@ -1022,6 +1022,9 @@ and NameNormalizer : (HashNormalizer.S with type t = name) = HashNormalizer.Make
         let template_spec_info' = TemplateSpecInfoNormalizer.normalize template_spec_info in
         if phys_equal name name' && phys_equal template_spec_info template_spec_info' then t
         else CppClass {name= name'; template_spec_info= template_spec_info'; is_union}
+    | ErlangType name ->
+        let name' = ErlangTypeName.Normalizer.normalize name in
+        if phys_equal name name' then t else ErlangType name'
     | JavaClass java_class_name ->
         let java_class_name' = JavaClassName.Normalizer.normalize java_class_name in
         if phys_equal java_class_name java_class_name' then t else JavaClass java_class_name'
