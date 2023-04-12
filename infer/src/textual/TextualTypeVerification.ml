@@ -337,6 +337,8 @@ and typeof_exp (exp : Exp.t) : Typ.t monad =
       typeof_allocate_array_builtin proc args
   | Call {proc; args} when ProcDecl.is_cast_builtin proc ->
       typeof_cast_builtin proc args
+  | Call {proc; args} when ProcDecl.is_lazy_class_initialize_builtin proc ->
+      typeof_allocate_builtin proc args
   | Call {proc; args} ->
       let* result_type, formals_types, exact_args_number = typeof_procname proc in
       let* loc = get_location in

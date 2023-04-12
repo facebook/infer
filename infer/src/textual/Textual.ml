@@ -138,6 +138,8 @@ let builtin_allocate = "__sil_allocate"
 
 let builtin_allocate_array = "__sil_allocate_array"
 
+let builtin_lazy_class_initialize = "__sil_lazy_class_initialize"
+
 let builtin_cast = "__sil_cast"
 
 module TypeName : NAME = Name
@@ -330,6 +332,8 @@ module ProcDecl = struct
 
   let allocate_array_name = make_toplevel_name builtin_allocate_array Location.Unknown
 
+  let lazy_class_initialize_name = make_toplevel_name builtin_lazy_class_initialize Location.Unknown
+
   let cast_name = make_toplevel_name builtin_cast Location.Unknown
 
   let unop_table : (Unop.t * string) list =
@@ -441,10 +445,16 @@ module ProcDecl = struct
     equal_qualified_procname allocate_array_name qualified_name
 
 
+  let is_lazy_class_initialize_builtin qualified_name =
+    equal_qualified_procname lazy_class_initialize_name qualified_name
+
+
   let is_cast_builtin qualified_name = equal_qualified_procname cast_name qualified_name
 
-  let is_allocate_builtin qualified_name =
-    is_allocate_object_builtin qualified_name || is_allocate_array_builtin qualified_name
+  let is_type_builtin qualified_name =
+    is_allocate_object_builtin qualified_name
+    || is_allocate_array_builtin qualified_name
+    || is_lazy_class_initialize_builtin qualified_name
 
 
   let is_side_effect_free_sil_expr ({enclosing_class; name} as qualified_name : qualified_procname)
@@ -460,7 +470,7 @@ module ProcDecl = struct
         false
 
 
-  let is_not_regular_proc proc = is_allocate_builtin proc || is_side_effect_free_sil_expr proc
+  let is_not_regular_proc proc = is_type_builtin proc || is_side_effect_free_sil_expr proc
 
   let to_binop ({enclosing_class; name} : qualified_procname) : Binop.t option =
     match enclosing_class with TopLevel -> Map.Poly.find binop_inverse_map name.value | _ -> None
@@ -610,7 +620,7 @@ module Instr = struct
         Exp.do_not_contain_regular_call exp1 && Exp.do_not_contain_regular_call exp2
     | Prune {exp} ->
         Exp.do_not_contain_regular_call exp
-    | Let {exp= Call {proc; args= []}} when ProcDecl.is_allocate_builtin proc ->
+    | Let {exp= Call {proc; args= []}} when ProcDecl.is_type_builtin proc ->
         true
     | Let {exp= Call {proc; args}} ->
         (not (ProcDecl.is_not_regular_proc proc))

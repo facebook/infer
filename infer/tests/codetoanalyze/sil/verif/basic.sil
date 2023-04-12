@@ -56,6 +56,8 @@ define type_as_expr() : void {
     n2 = __sil_cast(<node>, n1)
     n3 = __sil_allocate_array(<node[][]>, 5, 3)
     n4 = __sil_allocate(<node>, 3)
+    n5 = __sil_lazy_class_initialize(<node>)
+    n6 = __sil_lazy_class_initialize(0)
     ret n2
 }
 

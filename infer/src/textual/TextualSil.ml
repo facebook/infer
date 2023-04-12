@@ -573,6 +573,21 @@ module InstrBridge = struct
         let loc = LocationBridge.to_sil sourcefile loc in
         let builtin_new = SilExp.Const (SilConst.Cfun BuiltinDecl.__new_array) in
         Call ((ret, class_type), builtin_new, args, loc, CallFlags.default)
+    | Let {id; exp= Call {proc; args= [Typ typ]}; loc}
+      when ProcDecl.is_lazy_class_initialize_builtin proc ->
+        let typ = TypBridge.to_sil lang typ in
+        let sizeof =
+          SilExp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+        in
+        let class_type = SilTyp.mk_ptr typ in
+        let args = [(sizeof, class_type)] in
+        let ret = IdentBridge.to_sil id in
+        let loc = LocationBridge.to_sil sourcefile loc in
+        let builtin_lazy_class_initialize =
+          SilExp.Const (Cfun BuiltinDecl.__lazy_class_initialize)
+        in
+        (* TODO: we may want to use the class_of_class type here *)
+        Call ((ret, class_type), builtin_lazy_class_initialize, args, loc, CallFlags.default)
     | Let {id; exp= Call {proc; args; kind}; loc} ->
         let ret = IdentBridge.to_sil id in
         let ({formals_types; are_formal_types_fully_declared} as procname : ProcDecl.t) =

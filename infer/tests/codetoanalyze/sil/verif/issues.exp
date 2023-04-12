@@ -12,6 +12,7 @@ basic.sil, line 25, column 4: textual type error: expression &x has type *int, w
 basic.sil, line 29, column 4: textual type error: expression n3 has type *int[], while a pointer of struct type was expected
 basic.sil, line 47, column 4: textual type error: ident n1 is read before being written
 basic.sil, line 58, column 4: textual type error: builtin __sil_allocate is called with 2 arguments while it expects 1
+basic.sil, line 60, column 4: textual type error: expression 0 has type int, while the type of all types was expected
 basic_error_argnum.sil, line 19, column 2: SIL consistency error: function $builtins.bar2 called with 1 arguments while at least 2 are expected
 basic_error_argnum.sil, line 18, column 2: SIL consistency error: function $builtins.bar2 called with 0 arguments while at least 2 are expected
 basic_error_argnum.sil, line 10, column 2: SIL consistency error: function $builtins.bar called with 0 arguments while declared with 1 parameters
