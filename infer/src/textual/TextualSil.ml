@@ -99,9 +99,9 @@ module TypeNameBridge = struct
   let to_sil (lang : Lang.t) {value} = value_to_sil lang value
 
   let java_lang_object = of_java_name "java.lang.Object"
-
-  let hack_mixed = SilTyp.HackClass (HackClassName.make "HackMixed")
 end
+
+let hack_mixed_type_name = SilTyp.HackClass (HackClassName.make "HackMixed")
 
 let mangle_java_procname jpname =
   let method_name =
@@ -201,7 +201,7 @@ module TypBridge = struct
   let annotated_of_sil typ = of_sil typ |> mk_without_attributes
 
   let hack_mixed =
-    let mixed_struct = SilTyp.mk_struct TypeNameBridge.hack_mixed in
+    let mixed_struct = SilTyp.mk_struct hack_mixed_type_name in
     SilTyp.mk_ptr mixed_struct
 end
 

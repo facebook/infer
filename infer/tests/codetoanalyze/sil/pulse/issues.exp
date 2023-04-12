@@ -1,4 +1,5 @@
 basic.sil, basic_flow, 8, TAINT_ERROR, no_bucket, ERROR, [source of the taint here: value returned from __taint_source with kind Simple,passed as argument #0 to __taint_sink with kind Simple]
+hack_dim_field_get.sil, bad, 9, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 npe.sil, $TOPLEVEL$CLASS$.basic_bad(list):void, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 npe.sil, $TOPLEVEL$CLASS$.if_test_lt_bad(list):void, 9, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 npe.sil, $TOPLEVEL$CLASS$.if_test_eq_bad(list):void, 9, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
