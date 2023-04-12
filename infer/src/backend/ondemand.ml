@@ -279,7 +279,7 @@ let analyze_proc_name_no_caller exe_env callee_pname =
      and we don't want to load all payloads at once (to avoid high memory usage when only a few of
      the payloads are actually needed), or we are starting a procedure analysis in which case we're
      not interested in loading the summary if it has already been computed *)
-  analyze_callee ~lazy_payloads:true exe_env ?caller_summary:None callee_pname
+  analyze_callee ~lazy_payloads:true exe_env callee_pname
 
 
 let analyze_procedures exe_env procs_to_analyze source_file_opt =
