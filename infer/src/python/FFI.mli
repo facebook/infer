@@ -81,6 +81,8 @@ val python_string : Textual.qualified_procname
 
 val python_tuple : Textual.qualified_procname
 
+val builtin_name : string -> Textual.qualified_procname
+
 val from_string : source:string -> filename:string -> Code.t [@@warning "-unused-value-declaration"]
 
 val from_file : is_binary:bool -> string -> Code.t [@@warning "-unused-value-declaration"]
