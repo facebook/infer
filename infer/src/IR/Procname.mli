@@ -226,6 +226,8 @@ end
 
 module Hack : sig
   type t = private {class_name: HackClassName.t option; function_name: string}
+
+  val get_class_name_as_a_string : t -> string option
 end
 
 (** Type of procedure names. WithFunctionParameters is used for creating an instantiation of a

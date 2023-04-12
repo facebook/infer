@@ -1,0 +1,34 @@
+.source_language = "hack"
+
+type cell = { value:int; next: *cell }
+
+type list = { header: *cell }
+
+define use_hack_new_dict_builtin_bad(l: *list) : void {
+  #entry:
+    n0: *list = load &l
+    store n0.list.header <- null: *cell
+    n1: *list = load &l
+    n2 = $builtins.hack_new_dict(n1, n1, n1, n1)
+    n3: *cell = load n0.list.header
+    n4: int = load n3.cell.value
+    ret null
+}
+
+define FN_use_not_modeled_bad(l: *list) : void {
+  #entry:
+    n0: *list = load &l
+    store n0.list.header <- null: *cell
+    n1: *list = load &l
+    // because we do not have implementation or model for this call,
+    // Pulse hides any signal related to something reachable from n1
+    // in the heap
+    n2 = $builtins.not_modeled(n1, n1, n1, n1)
+    n3: *cell = load n0.list.header
+    n4: int = load n3.cell.value
+    ret null
+}
+
+
+declare $builtins.hack_new_dict(...): *HackMixed
+declare $builtins.not_modeled(...): *HackMixed

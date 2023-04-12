@@ -677,7 +677,7 @@ module Hack = struct
           F.fprintf fmt "%s" t.function_name )
 
 
-  let get_class_name {class_name} = Option.map class_name ~f:HackClassName.classname
+  let get_class_name_as_a_string {class_name} = Option.map class_name ~f:HackClassName.classname
 end
 
 (** Type of procedure names. *)
@@ -956,7 +956,7 @@ let get_class_name t =
   | Block block ->
       Block.get_class_name block
   | Hack hack_pname ->
-      Hack.get_class_name hack_pname
+      Hack.get_class_name_as_a_string hack_pname
   | C _ | Erlang _ | WithAliasingParameters _ | WithFunctionParameters _ | Linters_dummy_method ->
       None
 
