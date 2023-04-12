@@ -596,10 +596,10 @@ let get_message diagnostic =
         else F.fprintf f "stack variable `%a`" Var.pp var
       in
       F.asprintf "Address of %a is returned by the function" pp_var variable
-  | TaintFlow {expr; source= source, _; sink= sink, _; flow_kind; policy_description} ->
+  | TaintFlow {expr; source= source, _; sink= sink, _; policy_description} ->
       (* TODO: say what line the source happened in the current function *)
-      F.asprintf "`%a` is tainted by %a and flows to %a (%a) and policy (%s)" DecompilerExpr.pp expr
-        Taint.pp source Taint.pp sink pp_flow_kind flow_kind policy_description
+      F.asprintf "%s. `%a` is tainted by %a and flows to %a" policy_description DecompilerExpr.pp
+        expr Taint.pp source Taint.pp sink
   | UnnecessaryCopy {copied_into; copied_location= Some (callee, {file; line})} ->
       let open PulseAttribute in
       F.asprintf

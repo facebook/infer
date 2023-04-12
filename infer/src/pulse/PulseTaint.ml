@@ -39,7 +39,7 @@ module Kind = struct
 
 
   let pp fmt kind =
-    F.fprintf fmt "%s%s" kind (if is_data_flow_only kind then " (data flow only)" else "")
+    F.fprintf fmt "`%s`%s" kind (if is_data_flow_only kind then " (data flow only)" else "")
 end
 
 type origin =
@@ -51,13 +51,13 @@ type origin =
 
 let rec pp_origin fmt = function
   | Argument {index} ->
-      F.fprintf fmt "passed as argument #%d to" index
+      F.fprintf fmt "value passed as argument `#%d` to" index
   | ReturnValue ->
       F.fprintf fmt "value returned from"
   | Allocation {typ} ->
-      F.fprintf fmt "allocation of type %s by" typ
+      F.fprintf fmt "allocation of type `%s` by" typ
   | Field {name; origin} ->
-      F.fprintf fmt "field %s of %a" name pp_origin origin
+      F.fprintf fmt "field `%s` of %a" name pp_origin origin
 
 
 type t =
@@ -68,9 +68,9 @@ let pp fmt {kinds; proc_name; origin; block_passed_to} =
   let proc_name_s =
     match block_passed_to with
     | Some passed_to_proc_name ->
-        F.asprintf "a block passed to %a" Procname.pp passed_to_proc_name
+        F.asprintf "a block passed to `%a`" Procname.pp passed_to_proc_name
     | None ->
-        F.asprintf "%a" Procname.pp proc_name
+        F.asprintf "`%a`" Procname.pp proc_name
   in
   F.fprintf fmt "%a %s with kind%s %a" pp_origin origin proc_name_s
     (match kinds with [_] -> "" | _ -> "s")
