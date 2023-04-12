@@ -590,7 +590,7 @@ module InstrBridge = struct
         Call ((ret, class_type), builtin_lazy_class_initialize, args, loc, CallFlags.default)
     | Let {id; exp= Call {proc; args; kind}; loc} ->
         let ret = IdentBridge.to_sil id in
-        let ({formals_types; are_formal_types_fully_declared} as procname : ProcDecl.t) =
+        let ({formals_types; are_formal_types_fully_declared} as callee_procname : ProcDecl.t) =
           match TextualDecls.get_procdecl decls_env proc with
           | Some procname ->
               procname
@@ -600,8 +600,8 @@ module InstrBridge = struct
               in
               raise (TextualTransformError [{loc; msg}])
         in
-        let pname = ProcDeclBridge.to_sil lang procname in
-        let result_type = TypBridge.to_sil lang procname.result_type.typ in
+        let pname = ProcDeclBridge.to_sil lang callee_procname in
+        let result_type = TypBridge.to_sil lang callee_procname.result_type.typ in
         let args = List.map ~f:(ExpBridge.to_sil lang decls_env procname) args in
         let formals_types =
           if are_formal_types_fully_declared then

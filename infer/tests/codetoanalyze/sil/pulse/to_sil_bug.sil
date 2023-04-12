@@ -22,7 +22,7 @@ define use_get_next_on_pure_var_bad(l: *list) : void {
     ret null
 }
 
-define FN_use_get_next_on_program_var_bad(l: *list) : void {
+define use_get_next_on_program_var_bad(l: *list) : void {
   #entry:
     store &l <- null: *list
     n1 = get_header(&l)
