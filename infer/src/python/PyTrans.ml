@@ -8,6 +8,7 @@
 open! IStd
 module L = Logging
 module T = Textual
+module PyBuiltins = PyCommon.Builtins
 
 module DataStack = struct
   type cell =
@@ -32,28 +33,48 @@ module DataStack = struct
   let pop = function [] -> None | hd :: stack -> Some (stack, hd)
 end
 
-module Builtins = Caml.Set.Make (struct
-  type t = string [@@deriving compare]
-end)
-
-(* TODO: maybe split the env into the RO part and the moving part *)
 module Env = struct
-  type t =
-    { stack: DataStack.t
-    ; idents: T.Ident.Set.t
+  (* Part of the environment shared by most structures. It gathers information like which
+     builtin has been spotted, or what idents have been generated so far. *)
+  type shared =
+    { idents: T.Ident.Set.t
     ; globals: T.VarName.Set.t
-    ; builtins: Builtins.t
-    ; spotted_builtins: Builtins.t
-    ; instructions: T.Instr.t list }
+    ; builtins: PyBuiltins.Set.t
+    ; spotted_builtins: PyBuiltins.Set.t }
 
-  let push env cell =
-    let stack = DataStack.push env.stack cell in
+  (* State of the capture while processing a single node: each node has a dedicated data stack,
+     and generates its own set of instructions.
+     TODO(vsiles): revisit the data stack status once generators and conditions are in the mix *)
+  type node = {stack: DataStack.t; instructions: T.Instr.t list}
+
+  type t = {shared: shared; node: node}
+
+  let mk_node shared = {shared; node= {stack= []; instructions= []}}
+
+  let reset_idents env = {env with idents= T.Ident.Set.empty}
+
+  let mk builtins =
+    { idents= T.Ident.Set.empty
+    ; globals= T.VarName.Set.empty
+    ; builtins
+    ; spotted_builtins= PyBuiltins.Set.empty }
+
+
+  let push ({stack} as env) cell =
+    let stack = DataStack.push stack cell in
     {env with stack}
+
+
+  let push ({node} as env) cell =
+    let node = push node cell in
+    {env with node}
 
 
   let pop ({stack} as env) =
     DataStack.pop stack |> Option.map ~f:(fun (stack, cell) -> ({env with stack}, cell))
 
+
+  let pop ({node} as env) = pop node |> Option.map ~f:(fun (node, cell) -> ({env with node}, cell))
 
   let temp ({idents} as env) =
     let fresh = T.Ident.fresh idents in
@@ -61,14 +82,32 @@ module Env = struct
     ({env with idents}, fresh)
 
 
+  let temp ({shared} as env) =
+    let shared, fresh = temp shared in
+    ({env with shared}, fresh)
+
+
   let push_instr ({instructions} as env) instr = {env with instructions= instr :: instructions}
+
+  let push_instr ({node} as env) instr = {env with node= push_instr node instr}
 
   let get_instructions {instructions} = List.rev instructions
 
+  let get_instructions {node} = get_instructions node
+
   let register_global ({globals} as env) name = {env with globals= T.VarName.Set.add name globals}
 
+  let register_global ({shared} as env) name = {env with shared= register_global shared name}
+
   let register_builtin ({spotted_builtins} as env) name =
-    {env with spotted_builtins= Builtins.add name spotted_builtins}
+    {env with spotted_builtins= PyBuiltins.register name spotted_builtins}
+
+
+  let register_builtin ({shared} as env) name = {env with shared= register_builtin shared name}
+
+  let is_builtin {builtins} name = PyBuiltins.is_builtin name builtins
+
+  let is_builtin {shared} name = is_builtin shared name
 end
 
 module Debug = struct
@@ -79,20 +118,19 @@ module Debug = struct
   let p fmt = if debug then Printf.fprintf stdout fmt else Printf.ifprintf stdout fmt
 end
 
-let var_name value = T.VarName.{value; loc= T.Location.Unknown}
+let var_name ?(loc = T.Location.Unknown) value = T.VarName.{value; loc}
 
-let type_name value = T.TypeName.{value; loc= T.Location.Unknown}
+let node_name ?(loc = T.Location.Unknown) value = T.NodeName.{value; loc}
 
-let pyObject = T.Typ.(Ptr (Struct (type_name "PyObject")))
-
-let node_name value = T.NodeName.{value; loc= T.Location.Unknown}
-
-let proc_name value = T.ProcName.{value; loc= T.Location.Unknown}
+let proc_name ?(loc = T.Location.Unknown) value = T.ProcName.{value; loc}
 
 (* TODO: We only deal with toplevel functions for now *)
 let qualified_procname name : T.qualified_procname = {enclosing_class= TopLevel; name}
 
 let global name = sprintf "$globals::%s" name
+
+(* Until we support python types, everything is a *Object *)
+let pyObject = PyCommon.pyObject
 
 let load_cell env FFI.Code.{co_consts; co_names} cell =
   match cell with
@@ -179,7 +217,7 @@ module RETURN_VALUE = struct
   let run env code FFI.Instruction.{opname} =
     Debug.p "[%s]\n" opname ;
     let env, cell = pop_tos opname env in
-    let _env, exp = load_cell env code cell in
+    let env, exp = load_cell env code cell in
     match exp with
     | Ok exp ->
         let term = T.Terminator.Ret exp in
@@ -240,11 +278,10 @@ module CALL_FUNCTION = struct
             (DataStack.show_cell_kind fname)
     in
     let env, id = Env.temp env in
-    let is_builtin = Builtins.mem fname env.Env.builtins in
     let env, proc =
-      if is_builtin then
+      if Env.is_builtin env fname then
         let env = Env.register_builtin env fname in
-        (env, FFI.builtin_name fname)
+        (env, PyCommon.builtin_name fname)
       else (env, qualified_procname @@ proc_name fname)
     in
     let call = Textual.Exp.Call {proc; args; kind= Textual.Exp.NonVirtual} in
@@ -284,8 +321,8 @@ let rec run env code = function
       match maybe_term with Some term -> (env, Some term, rest) | None -> run env code rest )
 
 
-let node globals builtins spotted_builtins idents label FFI.Code.({instructions} as code) =
-  let env = Env.{stack= []; idents; globals; builtins; spotted_builtins; instructions= []} in
+let node env label FFI.Code.({instructions} as code) =
+  let env = Env.mk_node env in
   let env, maybe_term, rest = run env code instructions in
   match maybe_term with
   | None ->
@@ -301,10 +338,10 @@ let node globals builtins spotted_builtins idents label FFI.Code.({instructions}
           ; last_loc= T.Location.Unknown
           ; label_loc= T.Location.Unknown }
       in
-      (env.Env.idents, env.Env.globals, env.Env.spotted_builtins, rest, node)
+      (env.Env.shared, rest, node)
 
 
-let to_proc_desc name globals builtins spotted_builtins code =
+let to_proc_desc env name code =
   let qualified_name = qualified_procname name in
   let pyObject = T.Typ.{typ= pyObject; attributes= []} in
   let procdecl =
@@ -316,14 +353,11 @@ let to_proc_desc name globals builtins spotted_builtins code =
       ; attributes= [] }
   in
   let label = node_name "b0" in
-  let idents = T.Ident.Set.empty in
-  let _idents, globals, spotted_builtins, remaining_instructions, node =
-    node globals builtins spotted_builtins idents label code
-  in
+  let env = Env.reset_idents env in
+  let env, remaining_instructions, node = node env label code in
   if not (List.is_empty remaining_instructions) then
     L.die InternalError "%d instructions are left" (List.length remaining_instructions) ;
-  ( globals
-  , spotted_builtins
+  ( env
   , Textual.ProcDesc.
       { procdecl
       ; nodes= [node]
@@ -333,44 +367,18 @@ let to_proc_desc name globals builtins spotted_builtins code =
       ; exit_loc= Textual.Location.Unknown } )
 
 
-let std_builtins builtins =
-  let annot typ = T.Typ.{typ; attributes= []} in
-  let mk ?typ qualified_name =
-    let formals_types = Option.to_list @@ Option.map ~f:annot typ in
-    let result_type = annot pyObject in
-    T.Module.Procdecl
-      T.ProcDecl.
-        { qualified_name
-        ; formals_types
-        ; are_formal_types_fully_declared= true
-        ; result_type
-        ; attributes= [] }
-  in
-  let python_int = mk FFI.python_int ~typ:Textual.Typ.Int in
-  let python_string = mk FFI.python_string ~typ:pyObject in
-  let python_tuple = mk FFI.python_tuple ~typ:pyObject in
-  Builtins.fold
-    (fun name acc ->
-      let builtin_name = FFI.builtin_name name in
-      mk builtin_name :: acc )
-    builtins
-    [python_int; python_string; python_tuple]
-
-
 let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python
 
 let to_module ~sourcefile module_name code =
   let name = proc_name module_name in
-  let globals = T.VarName.Set.empty in
-  let spotted_builtins = Builtins.empty in
-  let builtins = Builtins.add "print" spotted_builtins in
-  let globals, spotted_builtins, decl = to_proc_desc name globals builtins spotted_builtins code in
+  let env = PyBuiltins.mk () |> Env.mk in
+  let env, decl = to_proc_desc env name code in
   let globals =
     T.VarName.Set.fold
       (fun name acc ->
         let global = T.Global.{name; typ= pyObject; attributes= []} in
         T.Module.Global global :: acc )
-      globals []
+      env.Env.globals []
   in
-  let decls = (T.Module.Proc decl :: globals) @ std_builtins spotted_builtins in
+  let decls = (T.Module.Proc decl :: globals) @ PyBuiltins.to_textual env.Env.spotted_builtins in
   T.Module.{attrs= [python_attribute]; decls; sourcefile}

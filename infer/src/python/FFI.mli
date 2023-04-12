@@ -8,14 +8,7 @@
 open! IStd
 
 module rec Constant : sig
-  type t =
-    | PYCBool of bool
-    | PYCInt of int64
-    | PYCString of string
-    | PYCTuple of t array
-    | PYCCode of Code.t
-    | PYCNone
-  [@@deriving show, compare]
+  type t [@@deriving show, compare]
 
   val create : Pytypes.pyobject -> t
 
@@ -74,14 +67,6 @@ and Instruction : sig
 
   val create : Pytypes.pyobject -> t
 end
-
-val python_int : Textual.qualified_procname
-
-val python_string : Textual.qualified_procname
-
-val python_tuple : Textual.qualified_procname
-
-val builtin_name : string -> Textual.qualified_procname
 
 val from_string : source:string -> filename:string -> Code.t [@@warning "-unused-value-declaration"]
 
