@@ -264,7 +264,13 @@ module STORE_NAME = struct
      scope.
 
      In a function, local varialbes are updated using STORE_FAST, and global variables are
-     updated using STORE_GLOBAL *)
+     updated using STORE_GLOBAL.
+
+     STORE_GLOBAL(namei)
+     Works as STORE_NAME, but stores the name as a global.
+
+     Since we have a special namespace for global varialbes, this is in fact the same as
+     STORE_NAME, but only called from within a function/method. *)
 
   let run env FFI.Code.({co_names} as code) FFI.Instruction.{opname; arg} =
     let name = global co_names.(arg) in
@@ -483,6 +489,8 @@ let run_instruction env code FFI.Instruction.({opname; starts_line} as instr) =
         LOAD_NAME.run env code instr
     | "STORE_FAST" ->
         STORE_FAST.run env code instr
+    | "STORE_GLOBAL" ->
+        STORE_NAME.run env code instr
     | "STORE_NAME" ->
         STORE_NAME.run env code instr
     | "RETURN_VALUE" ->

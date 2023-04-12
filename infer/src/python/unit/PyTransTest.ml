@@ -182,4 +182,58 @@ print(z)
         declare $builtins.python_string(*PyObject) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+# testing global python attribute
+def update_global():
+        global z
+        z = z + 1
+
+z = 0
+update_global()
+print(z)
+      |}
+      in
+      Py.initialize ~version:3 ~minor:8 () ;
+      let code = FFI.from_string ~source ~filename:"dummy" in
+      Py.finalize () ;
+      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      F.printf "%a" Textual.Module.pp res ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define $toplevel::main() : *PyObject {
+          #b0:
+              store &$globals::z <- $builtins.python_int(0):*PyInt
+              n0 = update_global()
+              n1:*PyObject = load &$globals::z
+              n2 = $builtins.print(n1)
+              ret null
+
+        }
+
+        define update_global() : *PyObject {
+          #b0:
+              n0:*PyObject = load &$globals::z
+              n1 = $builtins.binary_add(n0, $builtins.python_int(1))
+              store &$globals::z <- n1:*PyObject
+              ret null
+
+        }
+
+        global $globals::z: *PyObject
+
+        declare $builtins.print(...) : *PyObject
+
+        declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_string(*PyObject) : *PyString
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )
