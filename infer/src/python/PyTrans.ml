@@ -62,71 +62,95 @@ module Env = struct
       generates its own set of instructions. *)
   type node = {stack: DataStack.t; instructions: T.Instr.t list; last_line: int option}
 
+  let empty_node = {stack= []; instructions= []; last_line= None}
+
   type t = {shared: shared; node: node}
 
-  let mk_node shared = {shared; node= {stack= []; instructions= []; last_line= None}}
+  (** Reset the [node] part of an environment, and all of its [idents], to prepare it to process a
+      new code unit *)
+  let reset_for_proc shared =
+    let shared = {shared with idents= T.Ident.Set.empty} in
+    {shared; node= empty_node}
 
-  let reset_idents env = {env with idents= T.Ident.Set.empty}
 
   let empty = {idents= T.Ident.Set.empty; globals= T.VarName.Set.empty; builtins= PyBuiltins.empty}
 
-  (* Only update last_line if some line information is available *)
-  let starts_line node last_line = if Option.is_some last_line then {node with last_line} else node
-
-  let starts_line ({node} as env) last_line = {env with node= starts_line node last_line}
-
-  let loc {last_line} =
-    last_line
-    |> Option.map ~f:(fun line -> T.Location.known ~line ~col:0)
-    |> Option.value ~default:T.Location.Unknown
+  (** Update the [last_line] field of an env, if new information is availbe. *)
+  let update_last_line ({node} as env) last_line =
+    let update_last_line node last_line =
+      if Option.is_some last_line then {node with last_line} else node
+    in
+    {env with node= update_last_line node last_line}
 
 
-  let loc {node} = loc node
+  (** Return the last recorded line information from the Python code-unit, if any. *)
+  let loc {node} =
+    let loc {last_line} =
+      last_line
+      |> Option.map ~f:(fun line -> T.Location.known ~line ~col:0)
+      |> Option.value ~default:T.Location.Unknown
+    in
+    loc node
 
-  let push ({stack} as env) cell =
-    let stack = DataStack.push stack cell in
-    {env with stack}
 
-
+  (** Push a new [DataStack.cell] on the datastack *)
   let push ({node} as env) cell =
+    let push ({stack} as env) cell =
+      let stack = DataStack.push stack cell in
+      {env with stack}
+    in
     let node = push node cell in
     {env with node}
 
 
-  let pop ({stack} as env) =
-    DataStack.pop stack |> Option.map ~f:(fun (stack, cell) -> ({env with stack}, cell))
+  (** Pop a [DataStack.cell] from the datastack, if any is available *)
+  let pop ({node} as env) =
+    let pop ({stack} as env) =
+      DataStack.pop stack |> Option.map ~f:(fun (stack, cell) -> ({env with stack}, cell))
+    in
+    pop node |> Option.map ~f:(fun (node, cell) -> ({env with node}, cell))
 
 
-  let pop ({node} as env) = pop node |> Option.map ~f:(fun (node, cell) -> ({env with node}, cell))
-
-  let temp ({idents} as env) =
-    let fresh = T.Ident.fresh idents in
-    let idents = T.Ident.Set.add fresh idents in
-    ({env with idents}, fresh)
-
-
+  (** Generate a fresh temporary name *)
   let temp ({shared} as env) =
+    let temp ({idents} as env) =
+      let fresh = T.Ident.fresh idents in
+      let idents = T.Ident.Set.add fresh idents in
+      ({env with idents}, fresh)
+    in
     let shared, fresh = temp shared in
     ({env with shared}, fresh)
 
 
-  let push_instr ({instructions} as env) instr = {env with instructions= instr :: instructions}
-
-  let push_instr ({node} as env) instr = {env with node= push_instr node instr}
-
-  let get_instructions {instructions} = List.rev instructions
-
-  let get_instructions {node} = get_instructions node
-
-  let register_global ({globals} as env) name = {env with globals= T.VarName.Set.add name globals}
-
-  let register_global ({shared} as env) name = {env with shared= register_global shared name}
-
-  let register_builtin ({builtins} as env) name =
-    {env with builtins= PyBuiltins.register builtins name}
+  (** Record a new instruction for the current code unit *)
+  let push_instr ({node} as env) instr =
+    let push_instr ({instructions} as env) instr = {env with instructions= instr :: instructions} in
+    {env with node= push_instr node instr}
 
 
-  let register_builtin ({shared} as env) name = {env with shared= register_builtin shared name}
+  (** Returns the list of all instructions recorded for the current code unit *)
+  let get_instructions {node} =
+    let get_instructions {instructions} = List.rev instructions in
+    get_instructions node
+
+
+  (** Register a global name (function, variable, ...). Since Python allows "toplevel" code, we
+      encode this with a specially named function that behaves as a toplevel scope, and we need to
+      correctly scope global identifiers, so we don't mix them with locals with the same name. *)
+  let register_global ({shared} as env) name =
+    let register_global ({globals} as env) name =
+      {env with globals= T.VarName.Set.add name globals}
+    in
+    {env with shared= register_global shared name}
+
+
+  (** Register a known builtin, so we can correctly scope them, and add the relevant Textual
+      declarations for them. *)
+  let register_builtin ({shared} as env) name =
+    let register_builtin ({builtins} as env) name =
+      {env with builtins= PyBuiltins.register builtins name}
+    in
+    {env with shared= register_builtin shared name}
 end
 
 module Debug = struct
@@ -152,14 +176,15 @@ let qualified_procname name : T.qualified_procname = {enclosing_class= TopLevel;
 
 let global name = sprintf "$globals::%s" name
 
-(* Until there is support for python types, everything is a *Object *)
+(* Until there is support for python types, everything is a [*object] *)
 let pyObject = PyCommon.pyObject
 
-(* Python only stores references to objects on the data stack, so when data needs to be really
-   accessed, [load_cell] is used to get information from the code information ([co_consts], ...).
-   These data are mapped to Textual.Exp.t values as much as possible. But it's not always
-   desirable (see MAKE_FUNCTION) *)
+(** Try to load the data referenced by a [DataStack.cell], into a [Textual.Exp.t] *)
 let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
+  (* Python only stores references to objects on the data stack, so when data needs to be really
+     accessed, [load_cell] is used to get information from the code information ([co_consts], ...).
+     These data are mapped to Textual.Exp.t values as much as possible. But it's not always
+     desirable (see MAKE_FUNCTION) *)
   let loc = Env.loc env in
   match cell with
   | DataStack.Const ndx -> (
@@ -194,6 +219,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       (env, `Fun f)
 
 
+(** Pop the top of the datastack. Fails with an [InternalError] if the stack is empty. *)
 let pop_tos opname env =
   match Env.pop env with
   | None ->
@@ -207,7 +233,6 @@ let pop_tos opname env =
 
    https://docs.python.org/3.8/library/dis.html *)
 
-(* Encoding of the LOAD_* bytecode operations *)
 module LOAD = struct
   type kind =
     | CONST  (** {v LOAD_CONST(consti) v}
@@ -226,7 +251,7 @@ module LOAD = struct
 
             Pushes the value associated with [co_names\[namei\]] onto the stack. *)
 
-  let run kind env code FFI.Instruction.{opname; arg} =
+  let run kind env code {FFI.Instruction.opname; arg} =
     let pp {FFI.Code.co_names; co_varnames; co_consts} fmt = function
       | CONST ->
           FFI.Constant.pp fmt co_consts.(arg)
@@ -248,7 +273,6 @@ module LOAD = struct
     (Env.push env cell, None)
 end
 
-(* Encoding of the STORE_* bytecode operations *)
 module STORE = struct
   type kind =
     | FAST
@@ -274,7 +298,7 @@ module STORE = struct
             Since there is a special namespace for global varialbes, this is in fact the same as
             [STORE_NAME], but only called from within a function/method. *)
 
-  let run kind env FFI.Code.({co_names; co_varnames} as code) FFI.Instruction.{opname; arg} =
+  let run kind env ({FFI.Code.co_names; co_varnames} as code) {FFI.Instruction.opname; arg} =
     let name, is_global =
       match kind with
       | FAST ->
@@ -305,7 +329,7 @@ module RETURN_VALUE = struct
   (** {v RETURN_VALUE v}
 
       Returns the top-of-stack *)
-  let run env code FFI.Instruction.{opname} =
+  let run env code {FFI.Instruction.opname} =
     Debug.p "[%s]\n" opname ;
     let env, cell = pop_tos opname env in
     let env, exp_ty = load_cell env code cell in
@@ -323,7 +347,7 @@ module POP_TOP = struct
   (** {v POP_TOP v}
 
       Pop the top-of-stack and discard it *)
-  let run env _code FFI.Instruction.{opname} =
+  let run env {FFI.Instruction.opname} =
     Debug.p "[%s]\n" opname ;
     let env, _cell = pop_tos opname env in
     (env, None)
@@ -360,7 +384,7 @@ module CALL_FUNCTION = struct
     pop
 
 
-  let run env FFI.Code.({co_names} as code) FFI.Instruction.{opname; arg} =
+  let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
     Debug.p "[%s] argc = %d\n" opname arg ;
     let env, args = pop_n_tos opname code env arg [] in
     Debug.p "  #args = %d\n" (List.length args) ;
@@ -382,7 +406,7 @@ module CALL_FUNCTION = struct
         (env, PyCommon.builtin_name fname)
       else (env, qualified_procname @@ proc_name ~loc fname)
     in
-    let call = T.Exp.Call {proc; args; kind= T.Exp.NonVirtual} in
+    let call = T.Exp.Call {proc; args; kind= NonVirtual} in
     let let_instr = T.Instr.Let {id; exp= call; loc} in
     let env = Env.push_instr env let_instr in
     let env = Env.push env (DataStack.Temp id) in
@@ -400,7 +424,7 @@ module BINARY_ADD = struct
 
       Since Python is using runtime types to know which [+] to do (addition, string concatenation,
       custom operator, ...), we'll need to write a model for this one. *)
-  let run env code FFI.Instruction.{opname} =
+  let run env code {FFI.Instruction.opname} =
     Debug.p "[%s]\n" opname ;
     let env, tos = pop_tos opname env in
     let env, tos1 = pop_tos opname env in
@@ -459,7 +483,7 @@ module MAKE_FUNCTION = struct
 
       In this first version, only support for [flags = 0x00] is implemented. Also there is no
       support for closures or nested functions *)
-  let run env FFI.Code.({co_consts} as code) FFI.Instruction.{opname; arg} =
+  let run env ({FFI.Code.co_consts} as code) {FFI.Instruction.opname; arg} =
     Debug.p "[%s] flags = 0x%x\n" opname arg ;
     if arg <> 0 then L.die InternalError "%s: support for flag 0x%x is not implemented" opname arg ;
     let env, qual = pop_tos opname env in
@@ -490,8 +514,9 @@ module MAKE_FUNCTION = struct
     (env, None)
 end
 
+(** Main opcode dispatch function. *)
 let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
-  let env = Env.starts_line env starts_line in
+  let env = Env.update_last_line env starts_line in
   (* TODO: there are < 256 opcodes, could setup an array of callbacks instead *)
   let env, maybe_term =
     match opname with
@@ -512,7 +537,7 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
     | "RETURN_VALUE" ->
         RETURN_VALUE.run env code instr
     | "POP_TOP" ->
-        POP_TOP.run env code instr
+        POP_TOP.run env instr
     | "CALL_FUNCTION" ->
         CALL_FUNCTION.run env code instr
     | "BINARY_ADD" ->
@@ -525,6 +550,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
   (env, maybe_term)
 
 
+(** Iterator on [run_instruction]: this function will interpret instructions as long as terminator
+    is not reached. *)
 let rec run env code = function
   | [] ->
       (env, None, [])
@@ -533,11 +560,19 @@ let rec run env code = function
       match maybe_term with Some term -> (env, Some term, rest) | None -> run env code rest )
 
 
-(* TODO: No support for jumps and conditionals for now, so it's pretty straightforward *)
+(** Return the location of the first available instruction, if any *)
+let first_loc_of_code instructions =
+  match instructions with
+  | {FFI.Instruction.starts_line= Some line} :: _ ->
+      T.Location.known ~line ~col:0
+  | _ ->
+      T.Location.Unknown
 
-(** Process the instructions of a code object up to the point where a * terminator is reached. *)
-let node env ({T.NodeName.loc= label_loc} as label) ({FFI.Code.instructions} as code) =
-  let env = Env.mk_node env in
+
+(** Process a sequence of instructions into a single [Textual.Node.t] unit *)
+let node env label_name code instructions =
+  let label_loc = first_loc_of_code instructions in
+  let label = T.NodeName.{value= label_name; loc= label_loc} in
   let env, maybe_term, rest = run env code instructions in
   let last_loc = Env.loc env in
   match maybe_term with
@@ -554,55 +589,47 @@ let node env ({T.NodeName.loc= label_loc} as label) ({FFI.Code.instructions} as 
           ; last_loc
           ; label_loc }
       in
-      (env.Env.shared, rest, node)
-
-
-let first_loc_of_code FFI.Code.{instructions} =
-  match instructions with
-  | {starts_line= Some line} :: _ ->
-      T.Location.known ~line ~col:0
-  | _ ->
-      T.Location.Unknown
+      (env, rest, [node])
 
 
 (** Process a single code unit (toplevel code, function body, ...) *)
-let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames} as code) =
+let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames; instructions} as code) =
+  Debug.p "[to_proc_desc] %s\n" name.T.ProcName.value ;
   let qualified_name = qualified_procname name in
   let pyObject = T.Typ.{typ= pyObject; attributes= []} in
-  let loc = first_loc_of_code code in
-  let label = node_name ~loc "b0" in
+  let loc = name.T.ProcName.loc in
   let nr_varnames = Array.length co_varnames in
   let params = Array.sub co_varnames ~pos:0 ~len:co_argcount in
   let locals = Array.sub co_varnames ~pos:co_argcount ~len:(nr_varnames - co_argcount) in
   let params = Array.map ~f:(var_name ~loc) params |> Array.to_list in
   let locals = Array.map ~f:(fun name -> (var_name ~loc name, pyObject)) locals |> Array.to_list in
   let procdecl =
-    T.ProcDecl.
-      { qualified_name
-      ; formals_types= List.map ~f:(fun _ -> pyObject) params
-      ; are_formal_types_fully_declared= true
-      ; result_type= pyObject
-      ; attributes= [] }
+    { T.ProcDecl.qualified_name
+    ; formals_types= List.map ~f:(fun _ -> pyObject) params
+    ; are_formal_types_fully_declared= true
+    ; result_type= pyObject
+    ; attributes= [] }
   in
-  let env = Env.reset_idents env in
-  let env, remaining_instructions, node = node env label code in
+  let env = Env.reset_for_proc env in
+  let label = node_name ~loc "b0" in
+  (* Now that a full unit has been processed, discard all the local information (local variable
+     names, labels, ...) and only keep the [shared] part of the environment *)
+  let {Env.shared= env}, remaining_instructions, nodes = node env "b0" code instructions in
   if not (List.is_empty remaining_instructions) then
     L.die InternalError "%d instructions are left" (List.length remaining_instructions) ;
-  ( env
-  , Textual.ProcDesc.
-      {procdecl; nodes= [node]; start= label; params; locals; exit_loc= Textual.Location.Unknown} )
+  (env, {Textual.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown})
 
 
 (* TODO: No support for nested functions/methods at the moment *)
 
-(** Process multiple code objects. Usually called by the toplevel function. *)
+(** Process multiple [code] objects. Usually called by the toplevel function. *)
 let to_proc_descs env codes =
   Array.fold codes ~init:(env, []) ~f:(fun (env, decls) const ->
       match FFI.Constant.as_code const with
       | None ->
           (env, decls)
-      | Some FFI.Code.({co_name} as code) ->
-          let loc = first_loc_of_code code in
+      | Some ({FFI.Code.co_name; instructions} as code) ->
+          let loc = first_loc_of_code instructions in
           let name = proc_name ~loc co_name in
           let env, decl = to_proc_desc env name code in
           (env, T.Module.Proc decl :: decls) )
@@ -611,12 +638,13 @@ let to_proc_descs env codes =
 let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python
 
 (** Entry point of the module: process a whole Python file / compilation unit into Textual *)
-let to_module ~sourcefile module_name ({FFI.Code.co_consts} as code) =
+let to_module ~sourcefile module_name ({FFI.Code.co_consts; instructions} as code) =
+  Debug.p "[to_module] %s\n" module_name ;
   let env = Env.empty in
   (* First, process any code body that is in code.co_consts *)
   let env, decls = to_proc_descs env co_consts in
   (* Process top level module *)
-  let loc = first_loc_of_code code in
+  let loc = first_loc_of_code instructions in
   let name = proc_name ~loc module_name in
   let env, decl = to_proc_desc env name code in
   (* Translate globals to Textual *)
@@ -629,4 +657,4 @@ let to_module ~sourcefile module_name ({FFI.Code.co_consts} as code) =
   in
   (* Gather everything into a Textual module *)
   let decls = ((T.Module.Proc decl :: decls) @ globals) @ PyBuiltins.to_textual env.Env.builtins in
-  T.Module.{attrs= [python_attribute]; decls; sourcefile}
+  {T.Module.attrs= [python_attribute]; decls; sourcefile}
