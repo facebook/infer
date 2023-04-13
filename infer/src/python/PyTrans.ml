@@ -11,6 +11,9 @@ module L = Logging
 module T = Textual
 module PyBuiltins = PyCommon.Builtins
 
+(* In Python, everything is an object, and the interpreter maintains a stack of references to
+   such objects. Pushing and popping on the stack are always references to objets that leave in a
+   heap. There is no need to model this heap, but the data stack is quite important. *)
 module DataStack = struct
   type cell =
     | Const of int  (** index in [co_consts] *)
@@ -49,13 +52,14 @@ module DataStack = struct
 end
 
 module Env = struct
-  (* Part of the environment shared by most structures. It gathers information like which
-     builtin has been spotted, or what idents have been generated so far. *)
+  (** Part of the environment shared by most structures. It gathers information like which builtin
+      has been spotted, or what idents have been generated so far. *)
   type shared = {idents: T.Ident.Set.t; globals: T.VarName.Set.t; builtins: PyBuiltins.t}
 
-  (* State of the capture while processing a single node: each node has a dedicated data stack,
-     and generates its own set of instructions.
-     TODO(vsiles): revisit the data stack status once generators and conditions are in the mix *)
+  (* TODO(vsiles): revisit the data stack status once generators and conditions are in the mix *)
+
+  (** State of the capture while processing a single node: each node has a dedicated data stack, and
+      generates its own set of instructions. *)
   type node = {stack: DataStack.t; instructions: T.Instr.t list; last_line: int option}
 
   type t = {shared: shared; node: node}
@@ -130,7 +134,7 @@ module Debug = struct
      I'll move to Logging once it's done. *)
   let debug = false
 
-  (* Inspired by PulseFormula.Debug. Check there if we want to plug it into Logging too *)
+  (* Inspired by PulseFormula.Debug. Check there for plugging it into Logging too *)
   let dummy_formatter = F.make_formatter (fun _ _ _ -> ()) (fun () -> ())
 
   let p fmt =
@@ -143,14 +147,18 @@ let node_name ?(loc = T.Location.Unknown) value = T.NodeName.{value; loc}
 
 let proc_name ?(loc = T.Location.Unknown) value = T.ProcName.{value; loc}
 
-(* TODO: We only deal with toplevel functions for now *)
+(* TODO: only deal with toplevel functions for now *)
 let qualified_procname name : T.qualified_procname = {enclosing_class= TopLevel; name}
 
 let global name = sprintf "$globals::%s" name
 
-(* Until we support python types, everything is a *Object *)
+(* Until there is support for python types, everything is a *Object *)
 let pyObject = PyCommon.pyObject
 
+(* Python only stores references to objects on the data stack, so when data needs to be really
+   accessed, [load_cell] is used to get information from the code information ([co_consts], ...).
+   These data are mapped to Textual.Exp.t values as much as possible. But it's not always
+   desirable (see MAKE_FUNCTION) *)
 let load_cell env FFI.Code.{co_consts; co_names; co_varnames} cell =
   let loc = Env.loc env in
   match cell with
@@ -194,10 +202,12 @@ let pop_tos opname env =
       (env, cell)
 
 
-(* We are now going to implement support for Python opcodes. Most of the documentation directly
-   comes from the official python documentation and is only altered to improve readability.
+(* Python opcodes support. Most of the documentation directly comes from the official python
+   documentation and is only altered to improve readability.
 
    https://docs.python.org/3.8/library/dis.html *)
+
+(* Encoding of the LOAD_* bytecode operations *)
 module LOAD = struct
   type kind =
     | CONST  (** {v LOAD_CONST(consti) v}
@@ -238,6 +248,7 @@ module LOAD = struct
     (Env.push env cell, None)
 end
 
+(* Encoding of the STORE_* bytecode operations *)
 module STORE = struct
   type kind =
     | FAST
@@ -260,7 +271,7 @@ module STORE = struct
 
             Works as [STORE_NAME], but stores the name as a global.
 
-            Since we have a special namespace for global varialbes, this is in fact the same as
+            Since there is a special namespace for global varialbes, this is in fact the same as
             [STORE_NAME], but only called from within a function/method. *)
 
   let run kind env FFI.Code.({co_names; co_varnames} as code) FFI.Instruction.{opname; arg} =
@@ -446,13 +457,13 @@ module MAKE_FUNCTION = struct
       - the code associated with the function (at TOS1)
       - the qualified name of the function (at TOS)
 
-      In this first version, we will only support [flags = 0x00]. Also we won't support closures or
-      nested functions *)
+      In this first version, only support for [flags = 0x00] is implemented. Also there is no
+      support for closures or nested functions *)
   let run env FFI.Code.({co_consts} as code) FFI.Instruction.{opname; arg} =
     Debug.p "[%s] flags = 0x%x\n" opname arg ;
     if arg <> 0 then L.die InternalError "%s: support for flag 0x%x is not implemented" opname arg ;
     let env, qual = pop_tos opname env in
-    (* We don't care about the code object, but we'll check it is indeed some code *)
+    (* don't care about the content of the code object, but we'll check it is indeed code *)
     let env, body = pop_tos opname env in
     let body =
       match DataStack.as_code code body with
@@ -481,7 +492,7 @@ end
 
 let run_instruction env code FFI.Instruction.({opname; starts_line} as instr) =
   let env = Env.starts_line env starts_line in
-  (* TODO: there are < 256 opcodes, we could setup an array of callbacks instead *)
+  (* TODO: there are < 256 opcodes, could setup an array of callbacks instead *)
   let env, maybe_term =
     match opname with
     | "LOAD_CONST" ->
@@ -522,6 +533,9 @@ let rec run env code = function
       match maybe_term with Some term -> (env, Some term, rest) | None -> run env code rest )
 
 
+(* TODO: No support for jumps and conditionals for now, so it's pretty straightforward *)
+
+(** Process the instructions of a code object up to the point where a * terminator is reached. *)
 let node env (T.NodeName.{loc= label_loc} as label) FFI.Code.({instructions} as code) =
   let env = Env.mk_node env in
   let env, maybe_term, rest = run env code instructions in
@@ -551,6 +565,7 @@ let first_loc_of_code FFI.Code.{instructions} =
       T.Location.Unknown
 
 
+(** Process a single code unit (toplevel code, function body, ...) *)
 let to_proc_desc env name FFI.Code.({co_argcount; co_varnames} as code) =
   let qualified_name = qualified_procname name in
   let pyObject = T.Typ.{typ= pyObject; attributes= []} in
@@ -578,7 +593,9 @@ let to_proc_desc env name FFI.Code.({co_argcount; co_varnames} as code) =
       {procdecl; nodes= [node]; start= label; params; locals; exit_loc= Textual.Location.Unknown} )
 
 
-(* No support for nested functions/methods at the moment *)
+(* TODO: No support for nested functions/methods at the moment *)
+
+(** Process multiple code objects. Usually called by the toplevel function. *)
 let to_proc_descs env codes =
   Array.fold codes ~init:(env, []) ~f:(fun (env, decls) const ->
       match FFI.Constant.as_code const with
@@ -593,9 +610,10 @@ let to_proc_descs env codes =
 
 let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python
 
+(** Entry point of the module: process a whole Python file / compilation unit into Textual *)
 let to_module ~sourcefile module_name FFI.Code.({co_consts} as code) =
   let env = Env.empty in
-  (* First we process any code body that is in code.co_consts *)
+  (* First, process any code body that is in code.co_consts *)
   let env, decls = to_proc_descs env co_consts in
   (* Process top level module *)
   let loc = first_loc_of_code code in

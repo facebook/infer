@@ -8,39 +8,51 @@
 open! IStd
 
 val builtin_name : string -> Textual.qualified_procname
+(** Helper function to encode known builtin names correctly *)
 
 val python_int : Textual.qualified_procname
+(** Encoding of Python [int] type. Since Python integers are of arbitrary precision, they are not
+    modeled directly with [int]. *)
 
 val python_string : Textual.qualified_procname
+(** Encoding of Python [str] type. *)
 
 val python_tuple : Textual.qualified_procname
+(** Encoding of Python [tuple] type. It is the raw "untyped" one where every item is of type
+    [object]. *)
 
-(* Pointer to pyObject *)
 val pyObject : Textual.Typ.t
+(** [object] is the top type of Python. It helps us when no type information is available. *)
 
 val pyInt : Textual.Typ.t
+(** Textual encoding of the primitive Python type [int] *)
 
 val pyString : Textual.Typ.t
+(** Textual encoding of the primitive Python type [str] *)
 
 val mk_int : int64 -> Textual.Exp.t
+(** Helper function to define typed Textual expression for literal integers. *)
 
 val mk_string : string -> Textual.Exp.t
+(** Helper function to define typed Textual expression for literal strings. *)
 
 module Builtins : sig
-  (* With this type we keep track of the builtins some piece of code is using. This enables us to
-     only generate the textual declaration we need.
-     Note that we always generate the primite wrapper (python_int, ...) *)
+  (** This module keeps track of the builtins used by a code unit. Only the necessary the Textual
+      declarations are generated. Note that primitive wrappers are always generated ([python_int],
+      ...) *)
   type t
 
   val to_textual : t -> Textual.Module.decl list
+  (** Encode a set of builtin declarations into Textual declarations *)
 
-  (* Call this function when a builtin is spotted in the code *)
   val register : t -> string -> t
+  (** Call this function when a builtin is spotted in the code *)
 
-  (* Is a function name a builtin.
-     TODO: once we get toplevel definitions, one can shadow builtins, so we'll need to take this
-     into account. *)
+  (* TODO: once toplevel definitions are supported , one can shadow builtins, so we'll need to
+     take this into account. *)
+
   val is_builtin : string -> bool
+  (** Check if a function name is a known buitlin. *)
 
   (* An empty set of builtins *)
   val empty : t

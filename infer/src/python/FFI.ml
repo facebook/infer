@@ -19,8 +19,7 @@ type pyConstant =
 and pyCode =
   { co_name: string
   ; co_filename: string
-  ; (* TODO we don't use it really at the moment, just keeping it around not to
-       forget about it *)
+  ; (* TODO Not in use at the moment, just keeping it around not to forget about it *)
     co_flags: int
   ; co_cellvars: string array
   ; co_freevars: string array
@@ -34,8 +33,7 @@ and pyCode =
   ; co_kwonlyargcount: int
   ; co_lnotab: char array
   ; co_consts: pyConstant array
-  ; (* we don't keep co_code around, we use the front-end Instructions
-       to get more info right away *)
+  ; (* Instead of keeping [co_code], they are translated into Python's [Instruction] *)
     instructions: pyInstruction list }
 
 and pyInstruction =
@@ -44,7 +42,7 @@ and pyInstruction =
   ; opcode: int
   ; arg: int
   ; argval: pyConstant
-  ; (* TODO: python provides argval, not sure we need it ? *)
+  ; (* TODO: python provides argval, not sure t is needed ? *)
     offset: int
   ; starts_line: int option
   ; is_jump_target: bool }
@@ -288,8 +286,7 @@ module Instruction = struct
     ; opcode: int
     ; arg: int
     ; argval: pyConstant
-    ; (* TODO: python provides argval, not sure we need it ... *)
-      offset: int
+    ; offset: int
     ; starts_line: int option
     ; is_jump_target: bool }
   [@@deriving show, compare]
@@ -336,9 +333,9 @@ let from_bytecode filename =
     if read_magic <> 4 || not (Base.Bytes.equal magic mref) then
       L.die UserError "Invalid magic number for Python 3.8. Expected %s but got %s"
         (show_array mref) (show_array magic) ;
-    (* We skip 4 words = 16 bytes from the beginning, the rest is just marshalled data *)
+    (* skipping 4 words = 16 bytes from the beginning, the rest is just marshalled data *)
     Core.In_channel.seek fp 16L ;
-    (* We read the full file here instead of passing the channel to pyml because there's a bug:
+    (* Reading the full file here instead of passing the channel to pyml because there's a bug:
        In_channel read already too much, and pyml bindings don't account for that. So we'll do the
        reading explicitely and pass in a data buffer instead *)
     let data = Core.In_channel.input_all fp in

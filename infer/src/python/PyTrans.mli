@@ -8,3 +8,4 @@
 open! IStd
 
 val to_module : sourcefile:Textual.SourceFile.t -> string -> FFI.Code.t -> Textual.Module.t
+(** Translate a Python code object into its Textual counter part *)
