@@ -375,8 +375,11 @@ let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile
        || ExternalConfigImpactData.is_in_config_data_file proc_name )
     && is_in_files_to_analyze loc
   then
-    if ConfigImpactPostProcess.is_in_gated_classes proc_name then ()
-      (* Ignore reporting methods of gated classes *)
+    if
+      (* Ignore reporting methods of gated classes or anonymous classes *)
+      ConfigImpactPostProcess.is_in_gated_classes proc_name
+      || Procname.is_java_anonymous_inner_class_method proc_name
+    then ()
     else
       let config_impact_opt =
         Option.map config_impact_opt ~f:ConfigImpactPostProcess.instantiate_unchecked_callees_cond
