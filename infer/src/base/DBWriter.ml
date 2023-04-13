@@ -497,6 +497,9 @@ module Server = struct
   (* Check whether we can create a socket to communicate with the asynchronous DBWriter process. *)
   let can_use_socket () =
     try
+      (* This function is called very early, and the infer-out directory may not have been created
+         yet. Ensure it exists before attempting to create the socket. *)
+      Unix.mkdir_p Config.toplevel_results_dir ;
       let socket = setup_socket () in
       remove_socket socket ;
       true

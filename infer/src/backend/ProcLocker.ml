@@ -21,12 +21,21 @@ let locks_dir = ResultsDir.get_path ProcnamesLocks
 
 let locks_target = locks_dir ^/ "locks_target"
 
+let use_symlinks =
+  match Config.os_type with
+  | Cygwin | Win32 ->
+      false (* symlinks are likely too slow under Cygwin *)
+  | Unix ->
+      (* Symlinks may not be supported on crippled filesystems, such as VMs, etc. *)
+      Caml_unix.has_symlink ()
+
+
 let create_file filename = Unix.openfile ~mode:[O_CREAT; O_RDONLY] filename |> Unix.close
 
 let setup () =
   Utils.rmtree locks_dir ;
   Utils.create_dir locks_dir ;
-  create_file locks_target
+  if use_symlinks then create_file locks_target
 
 
 let lock_of_filename filename = locks_dir ^/ filename
@@ -40,12 +49,17 @@ let unlock pname =
         Die.die InternalError "Tried to unlock not-locked pname: %a@\n" Procname.pp pname )
 
 
+let try_taking_lock filename =
+  if use_symlinks then Unix.symlink ~target:locks_target ~link_name:filename
+  else Unix.openfile ~mode:[O_CREAT; O_RDONLY; O_EXCL] filename |> Unix.close
+
+
 let try_lock pname =
   record_time_of ~log_f:log_lock_time ~f:(fun () ->
       try
-        Unix.symlink ~target:locks_target ~link_name:(lock_of_procname pname) ;
+        try_taking_lock (lock_of_procname pname) ;
         true
-      with Unix.Unix_error (EEXIST, _, _) -> false )
+      with Unix.Unix_error ((EEXIST | EACCES), _, _) -> false )
 
 
 let is_locked ~proc_filename =

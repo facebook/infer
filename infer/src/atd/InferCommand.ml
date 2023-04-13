@@ -37,5 +37,7 @@ let exe_name_of_command_string name = Printf.sprintf "%s-%s" infer_exe_name name
 let to_exe_name cmd = to_string cmd |> exe_name_of_command_string
 
 let of_exe_name exe_name =
+  (* Strip potential .exe under Windows *)
+  let exe_no_extension = Stdlib.Filename.remove_extension exe_name in
   List.find_map command_to_string ~f:(function cmd, name ->
-      if String.equal exe_name (exe_name_of_command_string name) then Some cmd else None )
+      if String.equal exe_no_extension (exe_name_of_command_string name) then Some cmd else None )
