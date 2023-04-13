@@ -14,3 +14,76 @@ define $builtins.hack_string(str: *string) : *HackMixed {
     store n0.HackString.val <- n1 : *string
     ret n0
 }
+
+define $builtins.hack_int(i: int) : *HackMixed {
+  #entry:
+    ret null
+}
+
+type HackBool = { val: int }
+
+define $builtins.hack_make_true(): *HackBool {
+  #entry:
+    n0 = __sil_allocate(<HackBool>)
+    store n0.HackBool.val <- 1 : int
+    ret n0
+}
+
+define $builtins.hack_make_false(): *HackBool {
+  #entry:
+    n0 = __sil_allocate(<HackBool>)
+    store n0.HackBool.val <- 0 : int
+    ret n0
+}
+
+define $builtins.hack_is_true(b: *HackMixed) : int {
+  #entry:
+    n0: *HackMixed = load &b
+    n1: int = load n0.HackBool.val
+    ret n1
+}
+
+define $builtins.hhbc_class_has_reified_generics(class: *HackMixed): *HackMixed {
+  #entry:
+    ret $builtins.hack_make_false()
+}
+
+define $builtins.hhbc_has_reified_parent(class: *HackMixed): *HackMixed {
+  #entry:
+    ret $builtins.hack_make_false()
+}
+
+define $builtins.hhbc_is_type_struct_c(o: *HackMixed, dict: *HackMixed, i: *HackMixed): *HackMixed {
+  #entry:
+    ret null
+}
+
+define $builtins.hhbc_verify_type_pred(o: *HackMixed, typ: *HackMixed): *HackMixed {
+  #entry:
+    ret null
+}
+
+define $builtins.hhbc_lock_obj(o: *HackMixed): *HackMixed {
+  #entry:
+    ret null
+}
+
+define $builtins.hhbc_new_col_vector(): *HackMixed {
+  #entry:
+    ret null
+}
+
+define $builtins.hhbc_cast_vec(vec: *HackMixed): *HackMixed {
+  #entry:
+    ret null
+}
+
+define $builtins.hhbc_check_this(o: *HackMixed): *HackMixed {
+  #entry:
+    ret null
+}
+
+define HackMixed._86reifiedinit(o: *HackMixed): *HackMixed {
+  #entry:
+    ret null
+}

@@ -1,0 +1,189 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "hack"
+
+type F = .kind="class" { val: * HackMixed }
+
+type A$static = .kind="class" .static {}
+
+type A = .kind="class" { f: .public *F }
+
+// class A {
+//   public int $i = 42;
+//   private F $f;
+//
+//   public function __construct(F $f) {
+//     $this->f = $f;
+//   }
+
+define A.__construct($this: *A, $f: *F) : *HackMixed {
+#b0:
+  n0: *HackMixed = load &$this
+  n1 = $builtins.hhbc_check_this(n0)
+  n2: *HackMixed = load &$f
+  n3 = &$this
+  n4 = $builtins.hack_string("f")
+  n5 = $builtins.hack_dim_field_get(n3, n4)
+  store n5 <- n2: *HackMixed
+  ret null
+}
+
+//  public function getField() : F {
+//    return $this->f;
+//  }
+
+define A.getField($this: *A) : *F {
+#b0:
+  n0 = $builtins.hack_new_dict($builtins.hack_string("kind"), $builtins.hack_int(101), $builtins.hack_string("classname"), $builtins.hack_string("F"))
+  n1: *HackMixed = load &$this
+  n2 = $builtins.hhbc_check_this(n1)
+  n3 = &$this
+  n4 = $builtins.hack_string("f")
+  n5 = $builtins.hack_dim_field_get(n3, n4)
+  n6: *HackMixed = load n5
+  n7 = $builtins.hhbc_is_type_struct_c(n6, n0, $builtins.hack_int(1))
+  n8 = $builtins.hhbc_verify_type_pred(n6, n7)
+  ret n6
+}
+
+//  public function setField(F $f) : void {
+//    $this->f = $f;
+//  }
+
+define A.setField($this: *A, $f: *F) : *void {
+#b0:
+  n0: *HackMixed = load &$this
+  n1 = $builtins.hhbc_check_this(n0)
+  n2: *HackMixed = load &$f
+  n3 = &$this
+  n4 = $builtins.hack_string("f")
+  n5 = $builtins.hack_dim_field_get(n3, n4)
+  store n5 <- n2: *HackMixed
+  ret null
+}
+
+define A._86pinit($this: *A) : *HackMixed {
+#b0:
+  ret null
+}
+
+//  function make(F $f) : A {
+//    return new A($f);
+//  }
+
+// we pass the class object as extra argument to sumplify the test
+define make($cl: *A$static, $f: *F) : *A {
+local $a: *void, $0: *void, $1: *void, $2: *void
+#entry:
+  n0: *A$static = load &$cl
+  store &$0 <- n0: *HackMixed
+  n2 = __sil_allocate(<A>)
+  n3 = A._86pinit(n2)
+  store &$2 <- n2: *HackMixed
+  n4: *HackMixed = load &$0
+  n5 = $builtins.hhbc_class_has_reified_generics(n0)
+  jmp b2, b5
+  .handlers b7
+#b2:
+  prune ! $builtins.hack_is_true(n5)
+  n6: *HackMixed = load &$0
+  n7 = $builtins.hhbc_has_reified_parent(n6)
+  jmp b3, b4
+  .handlers b7
+#b3:
+  prune ! $builtins.hack_is_true(n7)
+  jmp b6
+#b4:
+  prune $builtins.hack_is_true(n7)
+  n8: *HackMixed = load &$2
+  n9 = $builtins.hhbc_cast_vec($builtins.hhbc_new_col_vector())
+  n10 = n8.HackMixed._86reifiedinit(n9)
+  jmp b6
+  .handlers b7
+#b5:
+  prune $builtins.hack_is_true(n5)
+  n11: *HackMixed = load &$0
+  n12 = $builtins.hhbc_class_get_c(n11)
+  jmp b6
+  .handlers b7
+#b6:
+  n13: *HackMixed = load &$2
+  jmp b8
+  .handlers b7
+#b7(n14: *HackMixed):
+  store &$0 <- null: *HackMixed
+  store &$1 <- null: *HackMixed
+  store &$2 <- null: *HackMixed
+  n15 = $builtins.hhbc_throw(n14)
+  unreachable
+#b8:
+  store &$0 <- null: *HackMixed
+  store &$1 <- null: *HackMixed
+  store &$2 <- null: *HackMixed
+  n16: *HackMixed = load &$f
+  n17 = n13.HackMixed.__construct(n16)
+  n18 = $builtins.hhbc_lock_obj(n13)
+  n24 = $builtins.hhbc_is_type_struct_c(n13, n0, $builtins.hack_int(1))
+  n25 = $builtins.hhbc_verify_type_pred(n13, n24)
+  ret n13
+}
+
+// $a = make($f)
+// $a->setField(null);
+// $a->getField()->val
+define set_get_bad($cl: *A$static, $f: *F) : *A {
+local $a: *A
+#entry:
+  n0: *A$static = load &$cl
+  n1: *F = load &$f
+  n2 = make(n0, n1)
+  store &$a <- n2: *HackMixed
+  n20: *HackMixed = load &$a
+  n21 = n20.HackMixed.setField(null)
+  n22: *HackMixed = load &$a
+  n23 = n22.HackMixed.getField()
+  n24 : *HackMixed = load n23.F.val
+  ret null
+}
+
+// $a = make($f)
+// $a->setField(... new ...);
+// $a->getField()->val
+define set_get_good($cl: *A$static, $f: *F) : *A {
+local $a: *A
+#entry:
+  n0: *A$static = load &$cl
+  n1: *F = load &$f
+  n2 = make(n0, n1)
+  store &$a <- n2: *HackMixed
+  n20: *HackMixed = load &$a
+  n21 = n20.HackMixed.setField(__sil_allocate(<F>))
+  n22: *HackMixed = load &$a
+  n23 = n22.HackMixed.getField()
+  n24 : *HackMixed = load n23.F.val
+  ret null
+}
+
+declare $builtins.hhbc_cast_vec(...): *HackMixed
+declare $builtins.hhbc_check_this(...): *HackMixed
+declare $builtins.hhbc_class_get_c(...): *HackMixed
+declare $builtins.hhbc_class_has_reified_generics(...): *HackMixed
+declare $builtins.hhbc_has_reified_parent(...): *HackMixed
+declare $builtins.hhbc_is_type_struct_c(...): *HackMixed
+declare $builtins.hhbc_lock_obj(...): *HackMixed
+declare $builtins.hhbc_throw(...): *HackMixed
+declare $builtins.hhbc_verify_type_pred(...): *HackMixed
+declare HackMixed._86reifiedinit(...): *HackMixed
+declare HackMixed.__construct(...): *HackMixed
+declare HackMixed.getField(...): *HackMixed
+declare HackMixed.setField(...): *HackMixed
+
+declare $builtins.hack_dim_field_get(**HackMixed, *HackMixed): **HackMixed
+declare $builtins.hack_int(int): *HackInt
+declare $builtins.hack_is_true(*HackMixed): int
+declare $builtins.hack_new_dict(...): *HackMixed
+declare $builtins.hack_string(*string): *HackString
+declare $builtins.hhbc_new_col_vector(): *HackMixed
