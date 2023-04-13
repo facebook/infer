@@ -416,11 +416,13 @@ let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~act
   let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =
     let result_unknown =
       let<++> astate_unknown =
+        L.d_printfln "Appending positive self to state" ;
         PulseSummary.append_objc_actual_self_positive proc_name proc_attrs (List.hd actuals)
           astate_unknown
       in
       astate_unknown
     in
+    L.d_printfln "@\nMaking and applying Objective-C nil messaging summary@\n" ;
     let result_unknown_nil, contradiction =
       PulseSummary.mk_objc_nil_messaging_summary tenv proc_name proc_attrs
       |> Option.value_map ~default:([], None) ~f:(fun nil_summary ->
