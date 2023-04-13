@@ -19,6 +19,9 @@ val mk : unit -> t
 val get_proc_tenv : t -> Procname.t -> Tenv.t
 (** return the type environment associated with the procedure *)
 
+val get_source_tenv : t -> SourceFile.t -> Tenv.t option
+(** return the type environment associated with the source file *)
+
 val load_java_global_tenv : t -> Tenv.t
 (** Load Java type environment (if not done yet), and return it. Useful for accessing type info not
     related to any concrete function. *)

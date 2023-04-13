@@ -339,7 +339,7 @@ module PulseTransferFunctions = struct
         None
 
 
-  let find_override tenv astate actuals proc_name proc_name_opt =
+  let find_override exe_env tenv astate actuals proc_name proc_name_opt =
     let open IOption.Let_syntax in
     let* {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver, _} =
       get_receiver proc_name actuals
@@ -351,13 +351,16 @@ module PulseTransferFunctions = struct
       let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
       (* if we have a source file then do the look up in the (local) tenv
          for that source file instead of in the tenv for the current file *)
-      let tenv = Option.bind source_file_opt ~f:Tenv.load |> Option.value ~default:tenv in
+      let tenv =
+        Option.bind source_file_opt ~f:(Exe_env.get_source_tenv exe_env)
+        |> Option.value ~default:tenv
+      in
       Tenv.resolve_method ~method_exists tenv dynamic_type_name proc_name
 
 
-  let resolve_virtual_call tenv astate actuals proc_name_opt =
+  let resolve_virtual_call exe_env tenv astate actuals proc_name_opt =
     Option.map proc_name_opt ~f:(fun proc_name ->
-        match find_override tenv astate actuals proc_name proc_name_opt with
+        match find_override exe_env tenv astate actuals proc_name proc_name_opt with
         | Some proc_name' ->
             L.d_printfln "Dynamic dispatch: %a resolved to %a" Procname.pp proc_name Procname.pp
               proc_name' ;
@@ -388,12 +391,12 @@ module PulseTransferFunctions = struct
     | NoModel
 
   let rec dispatch_call_eval_args
-      ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) path ret call_exp
-      actuals func_args call_loc flags astate callee_pname =
+      ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) path ret
+      call_exp actuals func_args call_loc flags astate callee_pname =
     let callee_pname =
       if flags.CallFlags.cf_virtual then
         improve_receiver_static_type astate func_args callee_pname
-        |> resolve_virtual_call tenv astate func_args
+        |> resolve_virtual_call exe_env tenv astate func_args
       else callee_pname
     in
     let astate =

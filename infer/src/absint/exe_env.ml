@@ -106,6 +106,11 @@ let get_proc_tenv =
     ~column_name:"tenv"
 
 
+let get_source_tenv exe_env source =
+  let file_data = file_data_of_source exe_env source in
+  Lazy.force file_data.tenv
+
+
 (** return the integer type widths associated to the procedure *)
 let get_integer_type_widths =
   get_column_value
