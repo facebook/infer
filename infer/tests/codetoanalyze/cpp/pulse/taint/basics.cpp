@@ -9,6 +9,7 @@
 #include <chrono>
 #include <string>
 #include <assert.h>
+#include <stdlib.h>
 
 extern void* __infer_taint_source();
 extern void __infer_taint_sink(void*);
@@ -18,9 +19,9 @@ namespace basics {
 
 class Obj {
  public:
-  void* method_source() { return (void*)0; }
+  void* method_source() { return (void*)malloc(sizeof(int)); }
   void method_sink(void*) {}
-  static void* static_source() { return (void*)0; }
+  static void* static_source() { return (void*)malloc(sizeof(int)); }
   static void static_sink(void*) {}
   std::string string_source(int i) { return ""; }
   static int taint_arg_source(int* arg) { return 1; }
@@ -71,12 +72,14 @@ void propagateBad() {
 void object_source_sink_bad(Obj obj) {
   void* source = obj.method_source();
   obj.method_sink(source);
+  free(source);
 }
 
 // make sure specifying external sources/sinks as static methods works
 void static_source_sink_bad(Obj obj) {
   void* source = Obj::static_source();
   Obj::static_sink(source);
+  free(source);
 }
 
 void compound_stmt_bad() {
@@ -97,7 +100,7 @@ void compound_stmt_taint_arg_bad(Obj* obj) {
 
 template <class T>
 T* template_source() {
-  return nullptr;
+  return new T();
 }
 
 template <class T>

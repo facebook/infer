@@ -25,7 +25,12 @@
       {"block_passed_to": "InferTaint.call_block:", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
       {"block_passed_to": "call_block_log", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
       {"procedure": "taintSourceParameterBad", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
-      {"procedure": "NSURL.initWithString:", "kinds": ["SensitiveURLSource"]}
+      {"procedure": "NSURL.initWithString:", "kinds": ["SensitiveURLSource"]},
+      {
+        "class_names": ["Data"],
+        "method_names": ["data", "nil_data"],
+        "kinds": ["SimpleSource"]
+      }
   ],
   "pulse-taint-sanitizers": [
     { "class_names": ["InferTaint"],
@@ -44,6 +49,11 @@
     },
     {
       "procedure": "log_string",
+      "taint_target": ["ArgumentPositions", [0]],
+      "kinds": ["SimpleSink"]
+    },
+    {
+      "procedure": "taint_data",
       "taint_target": ["ArgumentPositions", [0]],
       "kinds": ["SimpleSink"]
     }

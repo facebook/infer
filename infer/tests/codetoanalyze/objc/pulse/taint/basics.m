@@ -187,7 +187,7 @@ void taintSourceParameterBlockIndirectSink() {
   });
 }
 
-void taintUnifiedValueGood_FP() {
+void taintUnifiedValueGood() {
   NSObject* obj1 = NULL;
   NSObject* obj2 = NULL;
   [InferTaint taintsArg:obj1];

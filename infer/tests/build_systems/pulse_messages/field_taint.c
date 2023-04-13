@@ -50,7 +50,7 @@ void test_sanitize_field_bad(structure s) {
   // propagated again when a new manipulated appears. `s.other` and
   // `s.manipulated` need to have different values otherwise they are both
   // referencing the same value and sanitizing one would sanitize the other
-  s.other = 0; // makes s.other exist in memory before tainting s
+  s.other = 2; // makes s.other exist in memory before tainting s
   s.manipulated = 1; // makes s.manipulated exist in memory before tainting s
   taint_structure(s);
   sanitize_manipulated(s);
@@ -58,7 +58,7 @@ void test_sanitize_field_bad(structure s) {
 }
 
 void test_sanitize_field_good(structure s) {
-  s.other = 0; // makes s.other exist in memory before tainting s
+  s.other = 2; // makes s.other exist in memory before tainting s
   s.manipulated = 1; // makes s.manipulated exist in memory before tainting s
   taint_structure(s);
   sanitize_manipulated(s);

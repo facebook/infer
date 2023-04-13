@@ -171,7 +171,7 @@ class InterfaceSpecImpl implements InterfaceSpec {
 
   @Override
   public Object source() {
-    return null;
+    return new Object();
   }
 
   @Override

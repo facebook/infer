@@ -589,9 +589,16 @@ let taint_sources tenv path location ~intra_procedural_only return ~has_added_re
           ; intra_procedural_only }
       in
       taint_and_explore v astate ~taint:(fun v astate ->
-          AbductiveDomain.AddressAttributes.add_one v
-            (Tainted (Attribute.TaintedSet.singleton tainted))
-            astate ) )
+          let path_condition = astate.AbductiveDomain.path_condition in
+          if not (PulseFormula.is_known_zero path_condition v) then
+            AbductiveDomain.AddressAttributes.add_one v
+              (Tainted (Attribute.TaintedSet.singleton tainted))
+              astate
+          else (
+            L.d_printfln
+              "Not adding Tainted attribute to the value %a because it is known to be zero"
+              AbstractValue.pp v ;
+            astate ) ) )
 
 
 let taint_sanitizers tenv path return ~has_added_return_param ~location proc_name actuals astate =
