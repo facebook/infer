@@ -159,7 +159,7 @@ let pyObject = PyCommon.pyObject
    accessed, [load_cell] is used to get information from the code information ([co_consts], ...).
    These data are mapped to Textual.Exp.t values as much as possible. But it's not always
    desirable (see MAKE_FUNCTION) *)
-let load_cell env FFI.Code.{co_consts; co_names; co_varnames} cell =
+let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
   let loc = Env.loc env in
   match cell with
   | DataStack.Const ndx -> (
@@ -490,7 +490,7 @@ module MAKE_FUNCTION = struct
     (env, None)
 end
 
-let run_instruction env code FFI.Instruction.({opname; starts_line} as instr) =
+let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
   let env = Env.starts_line env starts_line in
   (* TODO: there are < 256 opcodes, could setup an array of callbacks instead *)
   let env, maybe_term =
@@ -536,7 +536,7 @@ let rec run env code = function
 (* TODO: No support for jumps and conditionals for now, so it's pretty straightforward *)
 
 (** Process the instructions of a code object up to the point where a * terminator is reached. *)
-let node env (T.NodeName.{loc= label_loc} as label) FFI.Code.({instructions} as code) =
+let node env ({T.NodeName.loc= label_loc} as label) ({FFI.Code.instructions} as code) =
   let env = Env.mk_node env in
   let env, maybe_term, rest = run env code instructions in
   let last_loc = Env.loc env in
@@ -566,7 +566,7 @@ let first_loc_of_code FFI.Code.{instructions} =
 
 
 (** Process a single code unit (toplevel code, function body, ...) *)
-let to_proc_desc env name FFI.Code.({co_argcount; co_varnames} as code) =
+let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames} as code) =
   let qualified_name = qualified_procname name in
   let pyObject = T.Typ.{typ= pyObject; attributes= []} in
   let loc = first_loc_of_code code in
@@ -611,7 +611,7 @@ let to_proc_descs env codes =
 let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python
 
 (** Entry point of the module: process a whole Python file / compilation unit into Textual *)
-let to_module ~sourcefile module_name FFI.Code.({co_consts} as code) =
+let to_module ~sourcefile module_name ({FFI.Code.co_consts} as code) =
   let env = Env.empty in
   (* First, process any code body that is in code.co_consts *)
   let env, decls = to_proc_descs env co_consts in
