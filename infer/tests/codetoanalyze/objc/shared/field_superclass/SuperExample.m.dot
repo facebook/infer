@@ -30,16 +30,16 @@ digraph cfg {
 	
 
 	 "dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_3" -> "dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_2" ;
-"dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_4" [label="4:  Call dealloc \n   n$0=*&self:ASuper* [line 26, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:ASuper*) [line 26, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:ASuper*,(n$1 - 1):unsigned int) [line 26, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:ASuper*) [line 26, column 1]\n " shape="box"]
+"dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_4" [label="4:  Call dealloc \n   n$4=*&self:ASuper* [line 26, column 1]\n  n$5=_fun___objc_get_ref_count(n$4:ASuper*) [line 26, column 1]\n  n$6=_fun___objc_set_ref_count(n$4:ASuper*,(n$5 - 1):unsigned int) [line 26, column 1]\n  n$7=_fun___objc_get_ref_count(n$4:ASuper*) [line 26, column 1]\n " shape="box"]
 	
 
 	 "dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_4" -> "dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_5" ;
 	 "dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_4" -> "dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_6" ;
-"dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 26, column 1]\n " shape="invhouse"]
+"dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$7 == 0), true); [line 26, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_5" -> "dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_3" ;
-"dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 26, column 1]\n " shape="invhouse"]
+"dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$7 != 0), false); [line 26, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_6" -> "dealloc#ASuper#[instance].af1f1b4772d33d6baba4f5669aa3affc_2" ;
@@ -77,16 +77,16 @@ digraph cfg {
 	
 
 	 "dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_3" -> "dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_2" ;
-"dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_4" [label="4:  Call dealloc \n   n$4=*&self:BSuper* [line 14, column 1]\n  n$5=_fun___objc_get_ref_count(n$4:BSuper*) [line 14, column 1]\n  n$6=_fun___objc_set_ref_count(n$4:BSuper*,(n$5 - 1):unsigned int) [line 14, column 1]\n  n$7=_fun___objc_get_ref_count(n$4:BSuper*) [line 14, column 1]\n " shape="box"]
+"dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_4" [label="4:  Call dealloc \n   n$0=*&self:BSuper* [line 14, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:BSuper*) [line 14, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:BSuper*,(n$1 - 1):unsigned int) [line 14, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:BSuper*) [line 14, column 1]\n " shape="box"]
 	
 
 	 "dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_4" -> "dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_5" ;
 	 "dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_4" -> "dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_6" ;
-"dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$7 == 0), true); [line 14, column 1]\n " shape="invhouse"]
+"dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 14, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_5" -> "dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_3" ;
-"dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$7 != 0), false); [line 14, column 1]\n " shape="invhouse"]
+"dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 14, column 1]\n " shape="invhouse"]
 	
 
 	 "dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_6" -> "dealloc#BSuper#[instance].78811ac30df49305af8abd686e88a740_2" ;

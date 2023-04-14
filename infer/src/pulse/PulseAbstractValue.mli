@@ -8,7 +8,7 @@ open! IStd
 module F = Format
 
 (** An abstract value (or "symbolic variable"), eg an address in memory. *)
-type t = private int [@@deriving compare, equal, yojson_of]
+type t = private int [@@deriving compare, equal, hash, yojson_of]
 
 val mk_fresh : unit -> t
 (** create an abstract value guaranteed not to appear in the current state *)

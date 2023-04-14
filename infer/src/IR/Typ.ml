@@ -475,8 +475,6 @@ module Name = struct
         1
 
 
-  let hash = Hashtbl.hash
-
   let qual_name = function
     | CStruct name | CUnion name | ObjcProtocol name | ObjcClass name ->
         name
@@ -920,17 +918,13 @@ let rec is_java_type t =
 
 
 module TypeQualsNormalizer = HashNormalizer.Make (struct
-  type t = type_quals [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type t = type_quals [@@deriving equal, hash]
 
   let normalize = Fn.id
 end)
 
 module rec DescNormalizer : (HashNormalizer.S with type t = desc) = HashNormalizer.Make (struct
-  type t = desc [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type t = desc [@@deriving equal, hash]
 
   let normalize t =
     match t with
@@ -953,8 +947,6 @@ end)
 and Normalizer : (HashNormalizer.S with type t = t) = HashNormalizer.Make (struct
   include T
 
-  let hash = Hashtbl.hash
-
   let normalize t =
     let quals = TypeQualsNormalizer.normalize t.quals in
     let desc = DescNormalizer.normalize t.desc in
@@ -963,9 +955,7 @@ end)
 
 and TemplateArgNormalizer : (HashNormalizer.S with type t = template_arg) =
 HashNormalizer.Make (struct
-  type t = template_arg [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type t = template_arg [@@deriving equal, hash]
 
   let normalize t =
     match t with
@@ -978,9 +968,7 @@ end)
 
 and TemplateSpecInfoNormalizer : (HashNormalizer.S with type t = template_spec_info) =
 HashNormalizer.Make (struct
-  type t = template_spec_info [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type t = template_spec_info [@@deriving equal, hash]
 
   let normalize t =
     match t with
@@ -996,9 +984,7 @@ HashNormalizer.Make (struct
 end)
 
 and NameNormalizer : (HashNormalizer.S with type t = name) = HashNormalizer.Make (struct
-  type nonrec t = name [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type nonrec t = name [@@deriving equal, hash]
 
   let normalize t =
     match t with

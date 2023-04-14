@@ -49,11 +49,7 @@ module Loader = struct
 end
 
 module G = struct
-  module Vertex = struct
-    include SourceFile
-
-    let hash = Caml.Hashtbl.hash
-  end
+  module Vertex = SourceFile
 
   module Edge = struct
     (** An edge labelled by the number of calls from procedures in the source file to procedures in

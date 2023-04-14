@@ -10,11 +10,9 @@ module F = Format
 
 (** mocks for creating CFG's from adjacency lists *)
 module MockNode = struct
-  type t = int
+  type t = int [@@deriving hash]
 
-  type id = int [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type id = int [@@deriving equal, hash]
 
   let id n = n
 

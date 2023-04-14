@@ -17,7 +17,7 @@ val equal : t -> t -> bool
 (** Equality for identifiers. *)
 
 (** Names used to replace strings. *)
-type name [@@deriving compare]
+type name [@@deriving compare, hash]
 
 val equal_name : name -> name -> bool
 (** Equality for names. *)

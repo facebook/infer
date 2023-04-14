@@ -50,11 +50,11 @@ module InstrNode : sig
 
   val to_instr : instr_index -> t -> t
 end = struct
-  type instr_index = int [@@deriving compare, equal]
+  type instr_index = int [@@deriving compare, equal, hash]
 
   type t = Procdesc.Node.t * instr_index [@@deriving compare, equal]
 
-  type id = Procdesc.Node.id * instr_index [@@deriving compare, equal]
+  type id = Procdesc.Node.id * instr_index [@@deriving compare, equal, hash]
 
   let kind (t, _) = Procdesc.Node.get_kind t
 
@@ -64,7 +64,7 @@ end = struct
 
   let id (t, index) = (Procdesc.Node.get_id t, index)
 
-  let hash node = Hashtbl.hash (id node)
+  let hash node = hash_id (id node)
 
   let loc (t, _) = Procdesc.Node.get_loc t
 

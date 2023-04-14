@@ -17,14 +17,14 @@ let list_to_string list =
 
 
 type t' = Exact  (** denotes the current type only *) | Subtypes of Typ.Name.t list
-[@@deriving compare, equal]
+[@@deriving compare, equal, hash]
 
 let equal_modulo_flag (st1, _) (st2, _) = equal_t' st1 st2
 
 (** denotes the current type and a list of types that are not their subtypes *)
-type kind = CAST | INSTOF | NORMAL [@@deriving compare, equal]
+type kind = CAST | INSTOF | NORMAL [@@deriving compare, equal, hash]
 
-type t = t' * kind [@@deriving compare, equal]
+type t = t' * kind [@@deriving compare, equal, hash]
 
 type result = No | Unknown | Yes [@@deriving compare, equal]
 

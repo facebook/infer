@@ -23,7 +23,7 @@ end
 
 (* =============== START of module Node =============== *)
 module Node = struct
-  type id = int [@@deriving compare, equal]
+  type id = int [@@deriving compare, equal, hash]
 
   type destruction_kind =
     | DestrBreakStmt
@@ -164,7 +164,7 @@ module Node = struct
 
   let compare node1 node2 = Int.compare node1.id node2.id
 
-  let hash node = Hashtbl.hash node.id
+  let hash node = hash_id node.id
 
   let equal = [%compare.equal: t]
 

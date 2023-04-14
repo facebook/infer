@@ -27,6 +27,5 @@ void DecodeCurrentValue() {
   newp = GetVarint64Ptr(newp, limit);
   while (!newp) {
   }
-  // TODO: ensure this does not trigger assertion failure in Absarray (see
-  // T42274983)
+  // ensure this does not trigger assertion failure in Absarray (see T42274983)
 }

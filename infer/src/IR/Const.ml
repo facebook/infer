@@ -17,7 +17,7 @@ type t =
   | Cstr of string  (** string constants *)
   | Cfloat of float  (** float constants *)
   | Cclass of Ident.name  (** class constant *)
-[@@deriving compare, equal]
+[@@deriving compare, equal, hash]
 
 let kind_equal c1 c2 =
   let const_kind_number = function

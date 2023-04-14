@@ -14,7 +14,7 @@ module F = Format
 module L = Logging
 
 (* reverse the natural order on Var *)
-type ident_ = Ident.t [@@deriving equal]
+type ident_ = Ident.t [@@deriving equal, hash]
 
 let compare_ident_ x y = Ident.compare y x
 
@@ -47,9 +47,7 @@ and t =
       (** A field offset, the type is the surrounding struct type *)
   | Lindex of t * t  (** An array index offset: [exp1\[exp2\]] *)
   | Sizeof of sizeof_data
-[@@deriving compare, equal]
-
-let hash = Hashtbl.hash
+[@@deriving compare, equal, hash]
 
 module Set = Caml.Set.Make (struct
   type nonrec t = t [@@deriving compare]
@@ -60,9 +58,7 @@ module Map = Caml.Map.Make (struct
 end)
 
 module Hash = Hashtbl.Make (struct
-  type nonrec t = t [@@deriving equal]
-
-  let hash = hash
+  type nonrec t = t [@@deriving equal, hash]
 end)
 
 let is_null_literal = function Const (Cint n) -> IntLit.isnull n | _ -> false

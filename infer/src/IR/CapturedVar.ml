@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-type capture_mode = ByReference | ByValue [@@deriving compare, equal]
+type capture_mode = ByReference | ByValue [@@deriving compare, equal, hash]
 
 let string_of_capture_mode = function ByReference -> "by ref" | ByValue -> "by value"
 

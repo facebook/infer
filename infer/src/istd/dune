@@ -20,7 +20,7 @@
   str
   yojson)
  (preprocess
-  (pps ppx_compare)))
+  (pps ppx_compare ppx_hash)))
 
 (documentation
  (package infer)

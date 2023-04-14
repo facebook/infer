@@ -247,7 +247,30 @@ let%test_module "to_sil" =
       F.printf "%a@\n" Tenv.pp tenv ;
       [%expect
         {|
+         hack Foo
+         fields: {}
+         statics: {}
+         supers: {}
+         objc_protocols: {}
+         methods: {
+                     Foo.f
+                     Foo.undef
+                   }
+         exported_obj_methods: {}
+         annots: {<>}
+         java_class_info: {[None]}
+         dummy: false
          hack Quux
+         fields: {}
+         statics: {}
+         supers: {}
+         objc_protocols: {}
+         methods: {}
+         exported_obj_methods: {}
+         annots: {<>}
+         java_class_info: {[None]}
+         dummy: true
+         hack Baz
          fields: {}
          statics: {}
          supers: {}
@@ -264,29 +287,6 @@ let%test_module "to_sil" =
          objc_protocols: {}
          methods: {
                      Bar.f
-                   }
-         exported_obj_methods: {}
-         annots: {<>}
-         java_class_info: {[None]}
-         dummy: false
-         hack Baz
-         fields: {}
-         statics: {}
-         supers: {}
-         objc_protocols: {}
-         methods: {}
-         exported_obj_methods: {}
-         annots: {<>}
-         java_class_info: {[None]}
-         dummy: true
-         hack Foo
-         fields: {}
-         statics: {}
-         supers: {}
-         objc_protocols: {}
-         methods: {
-                     Foo.f
-                     Foo.undef
                    }
          exported_obj_methods: {}
          annots: {<>}

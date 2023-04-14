@@ -7,7 +7,7 @@
 open! IStd
 module F = Format
 
-type t = int [@@deriving compare, equal]
+type t = int [@@deriving compare, equal, hash]
 
 let initial_next_fresh = 1
 

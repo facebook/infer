@@ -233,7 +233,7 @@ let to_callee pname pvar =
       assert false
 
 
-let name_hash (name : Mangled.t) = Hashtbl.hash name
+let name_hash (name : Mangled.t) = Mangled.hash name
 
 (** [mk name proc_name] creates a program var with the given function name *)
 let mk (name : Mangled.t) (proc_name : Procname.t) : t =

@@ -37,7 +37,6 @@ codetoanalyze/c/biabduction/memory_leaks/test.c, conditional_last_instruction, 2
 codetoanalyze/c/biabduction/memory_leaks/test.c, malloc_sizeof_value_leak_bad, 7, BIABDUCTION_MEMORY_LEAK, no_bucket
 codetoanalyze/c/biabduction/memory_leaks/test.c, malloc_sizeof_value_leak_bad, 8, ARRAY_OUT_OF_BOUNDS_L3, no_bucket
 codetoanalyze/c/biabduction/misc/abduce.c, FN_set_ptr_param_array_get_null_bad, 3, PRECONDITION_NOT_MET, no_bucket
-codetoanalyze/c/biabduction/misc/arrays.c, DecodeCurrentValue, 5, Assert_failure, no_bucket
 codetoanalyze/c/biabduction/misc/example.c, null_deref_bad, 2, NULL_DEREFERENCE, B1
 codetoanalyze/c/biabduction/misc/example.c, local_addr_noalias_bad, 4, NULL_DEREFERENCE, B1
 codetoanalyze/c/biabduction/misc/example.c, global_addr_alias_bad, 3, NULL_DEREFERENCE, B1

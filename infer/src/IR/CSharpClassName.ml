@@ -49,9 +49,7 @@ let pp_with_verbosity ~verbose fmt t =
 
 
 module Normalizer = HashNormalizer.Make (struct
-  type nonrec t = t [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type nonrec t = t [@@deriving equal, hash]
 
   let normalize t =
     let classname = HashNormalizer.StringNormalizer.normalize t.classname in

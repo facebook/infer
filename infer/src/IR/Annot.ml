@@ -14,7 +14,7 @@ module F = Format
 (** Type to represent an [@Annotation] with potentially complex parameter values such as arrays or
     other annotations. *)
 type t = {class_name: string  (** name of the annotation *); parameters: parameter list}
-[@@deriving compare, equal]
+[@@deriving compare, equal, hash]
 
 and parameter = {name: string option; value: value} [@@deriving compare]
 
@@ -84,9 +84,7 @@ and pp fmt annotation =
 
 module rec ValueNormalizer : (HashNormalizer.S with type t = value) = struct
   module rec V : (HashNormalizer.NormalizedT with type t = value) = struct
-    type t = value [@@deriving equal]
-
-    let hash = Hashtbl.hash
+    type t = value [@@deriving equal, hash]
 
     let normalize value =
       match value with
@@ -117,9 +115,7 @@ module rec ValueNormalizer : (HashNormalizer.S with type t = value) = struct
 end
 
 and ParameterNormalizer : (HashNormalizer.S with type t = parameter) = HashNormalizer.Make (struct
-  type t = parameter [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type t = parameter [@@deriving equal, hash]
 
   let normalize_str_opt str_opt =
     IOption.map_changed str_opt ~equal:phys_equal ~f:HashNormalizer.StringNormalizer.normalize
@@ -133,9 +129,7 @@ and ParameterNormalizer : (HashNormalizer.S with type t = parameter) = HashNorma
 end)
 
 and TNormalizer : (HashNormalizer.S with type t = t) = HashNormalizer.Make (struct
-  type nonrec t = t [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type nonrec t = t [@@deriving equal, hash]
 
   let normalize t =
     let class_name = HashNormalizer.StringNormalizer.normalize t.class_name in
@@ -148,7 +142,7 @@ end)
 
 module Item = struct
   (** Annotation for one item: a list of annotations with visibility. *)
-  type nonrec t = t list [@@deriving compare, equal]
+  type nonrec t = t list [@@deriving compare, equal, hash]
 
   (** Pretty print an item annotation. *)
   let pp fmt ann = F.fprintf fmt "<%a>" (Pp.seq pp) ann
@@ -162,9 +156,7 @@ module Item = struct
   let is_final ia = List.exists ia ~f:is_final
 
   module Normalizer = HashNormalizer.Make (struct
-    type nonrec t = t [@@deriving equal]
-
-    let hash = Hashtbl.hash
+    type nonrec t = t [@@deriving equal, hash]
 
     let normalize pairs = IList.map_changed pairs ~equal:phys_equal ~f:TNormalizer.normalize
   end)

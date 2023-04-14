@@ -32,9 +32,9 @@ let tests =
     ; ( "basic_live_then_dead"
       , [assert_empty; var_assign_int "b" 1; invariant "normal:{ b }"; id_assign_var "a" "b"] )
     ; ( "iterative_live"
-      , [ invariant "normal:{ b, f, d }"
+      , [ invariant "normal:{ d, b, f }"
         ; id_assign_var "e" "f"
-        ; invariant "normal:{ b, d }"
+        ; invariant "normal:{ d, b }"
         ; id_assign_var "c" "d"
         ; invariant "normal:{ b }"
         ; id_assign_var "a" "b" ] )
@@ -60,7 +60,7 @@ let tests =
     ; ( "while_exp_live"
       , [assert_empty; var_assign_int "x" 1; invariant "normal:{ x }"; While (var_of_str "x", [])]
       )
-    ; ("call_params_live", [invariant "normal:{ b, a, c }"; call_unknown ["a"; "b"; "c"]])
+    ; ("call_params_live", [invariant "normal:{ c, b, a }"; call_unknown ["a"; "b"; "c"]])
     ; ( "dead_after_call_with_retval"
       , [ assert_empty
         ; call_unknown ~return:("y", Typ.mk (Tint IInt)) []
@@ -72,7 +72,7 @@ let tests =
     ; ( "if_conservative_live1"
       , [invariant "normal:{ b }"; If (unknown_cond, [id_assign_var "a" "b"], [])] )
     ; ( "if_conservative_live2"
-      , [ invariant "normal:{ b, d }"
+      , [ invariant "normal:{ d, b }"
         ; If (unknown_cond, [id_assign_var "a" "b"], [id_assign_var "c" "d"]) ] )
     ; ( "if_conservative_kill"
       , [ invariant "normal:{ b }"
@@ -80,7 +80,7 @@ let tests =
         ; invariant "normal:{ b }"
         ; id_assign_var "a" "b" ] )
     ; ( "if_conservative_kill_live"
-      , [ invariant "normal:{ b, d }"
+      , [ invariant "normal:{ d, b }"
         ; If (unknown_cond, [var_assign_int "b" 1], [id_assign_var "c" "d"])
         ; invariant "normal:{ b }"
         ; id_assign_var "a" "b" ] )
@@ -102,12 +102,12 @@ let tests =
         ; invariant "normal:{ b }"
         ; id_assign_var "a" "b" ] )
     ; ( "loop_before_after"
-      , [ invariant "normal:{ b, d }"
+      , [ invariant "normal:{ d, b }"
         ; While (unknown_cond, [id_assign_var "b" "d"])
         ; invariant "normal:{ b }"
         ; id_assign_var "a" "b" ] )
     ; ( "java_exceptions"
-      , [ invariant "normal:{ b, a, c }"
+      , [ invariant "normal:{ c, b, a }"
         ; Try
             ( Java
             , [ id_assign_var "x" "c"
@@ -122,7 +122,7 @@ let tests =
             (Java, [], [invariant "normal:{ b, a }"; id_assign_var "x" "b"], [id_assign_var "x" "a"])
         ] )
     ; ( "c_exceptions"
-      , [ invariant "normal:{ b, c }"
+      , [ invariant "normal:{ c, b }"
         ; Try
             ( Cpp {try_id= 0}
             , [ id_assign_var "x" "c"

@@ -50,7 +50,7 @@ codetoanalyze/c/performance/instantiate.c, do_half_m2_times_quadratic, 2 + 4 ⋅
 codetoanalyze/c/performance/instantiate.c, do_m2_times_quadratic, 2 + 6 ⋅ m + 4 ⋅ m × m + 2 ⋅ m × (1+max(0, m)) + 2 ⋅ (1+max(0, m)),  OnUIThread:false, [{1+max(0, m)},Loop,{1+max(0, m)},Call to do_n_times,Loop,{m},Call to do_n_times,Loop,{m},Loop]
 codetoanalyze/c/performance/instantiate.c, do_n_times, 2 + 4 ⋅ n + 2 ⋅ (1+max(0, n)),  OnUIThread:false, [{1+max(0, n)},Loop,{n},Loop]
 codetoanalyze/c/performance/instantiate.c, no_op, 1,  OnUIThread:false, []
-codetoanalyze/c/performance/invariant.c, do_n_m_times_nested, 6 + 5 ⋅ n + 3 ⋅ n × m + 2 ⋅ n × (1+max(0, m)) + 2 ⋅ (1+max(0, n)),  OnUIThread:false, [{1+max(0, n)},Loop,{1+max(0, m)},Loop,{m},Loop,{n},Loop]
+codetoanalyze/c/performance/invariant.c, do_n_m_times_nested, 6 + 3 ⋅ m × n + 5 ⋅ n + 2 ⋅ n × (1+max(0, m)) + 2 ⋅ (1+max(0, n)),  OnUIThread:false, [{1+max(0, n)},Loop,{1+max(0, m)},Loop,{n},Loop,{n},Loop,{m},Loop]
 codetoanalyze/c/performance/invariant.c, two_loops_nested_invariant, 5 + 23 ⋅ p + 2 ⋅ (1+max(0, p)),  OnUIThread:false, [{1+max(0, p)},Loop,{p},Loop]
 codetoanalyze/c/performance/invariant.c, while_infinite_FN, 2,  OnUIThread:false, []
 codetoanalyze/c/performance/invariant.c, while_unique_def_FN, 14,  OnUIThread:false, []

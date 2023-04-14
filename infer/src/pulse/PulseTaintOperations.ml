@@ -657,9 +657,7 @@ let check_policies ~sink ~source ~source_times ~sanitizers =
 
 module TaintDependencies = struct
   module G = Graph.Imperative.Digraph.Concrete (struct
-    type t = AbstractValue.t [@@deriving compare, equal]
-
-    let hash = Hashtbl.hash
+    type t = AbstractValue.t [@@deriving compare, equal, hash]
   end)
 
   type t = {root: G.vertex; graph: G.t}

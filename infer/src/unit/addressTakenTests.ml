@@ -33,9 +33,9 @@ let tests =
       , [ var_assign_addrof_var ~rhs_typ:int_ptr_typ "a" "b"
         ; invariant "{ &b }"
         ; var_assign_addrof_var ~rhs_typ:int_ptr_typ "c" "d"
-        ; invariant "{ &b, &d }"
+        ; invariant "{ &d, &b }"
         ; var_assign_addrof_var ~rhs_typ:int_typ "e" "f"
-        ; invariant "{ &b, &d }" ] )
+        ; invariant "{ &d, &b }" ] )
     ; ( "address_not_taken_closure"
       , [ var_assign_addrof_var ~rhs_typ:int_ptr_typ "a" "b"
         ; var_assign_exp ~rhs_typ:fun_ptr_typ "c" (closure_exp ["d"; "e"])
@@ -48,7 +48,7 @@ let tests =
             ( unknown_exp
             , [var_assign_addrof_var ~rhs_typ:int_ptr_typ "a" "b"]
             , [var_assign_addrof_var ~rhs_typ:int_ptr_typ "c" "d"] )
-        ; invariant "{ &b, &d }" ] )
+        ; invariant "{ &d, &b }" ] )
     ; ( "loop_as_if"
       , [ While (unknown_exp, [var_assign_addrof_var ~rhs_typ:int_ptr_typ "a" "b"])
         ; invariant "{ &b }" ] )
@@ -56,9 +56,9 @@ let tests =
       , [ var_assign_addrof_var ~rhs_typ:int_ptr_typ "a" "b"
         ; invariant "{ &b }"
         ; While (unknown_exp, [var_assign_addrof_var ~rhs_typ:int_ptr_typ "c" "d"])
-        ; invariant "{ &b, &d }"
+        ; invariant "{ &d, &b }"
         ; var_assign_addrof_var ~rhs_typ:int_ptr_typ "e" "f"
-        ; invariant "{ &b, &f, &d }" ] ) ]
+        ; invariant "{ &d, &b, &f }" ] ) ]
     |> TestInterpreter.create_tests (fun _summary -> ()) ~initial:AddressTaken.Domain.empty
   in
   "address_taken_suite" >::: test_list

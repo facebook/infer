@@ -8,19 +8,19 @@
 open! IStd
 module F = Format
 
-type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare, equal]
+type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare, equal, hash]
 
-type fields = field list [@@deriving equal]
+type fields = field list [@@deriving equal, hash]
 
 type java_class_kind = Interface | AbstractClass | NormalClass
-[@@deriving equal, compare, show {with_path= false}]
+[@@deriving equal, compare, hash, show {with_path= false}]
 
 type java_class_info =
   { kind: java_class_kind  (** class kind in Java *)
   ; loc: Location.t option
         (** None should correspond to rare cases when it was impossible to fetch the location in
             source file *) }
-[@@deriving equal, show {with_path= false}]
+[@@deriving equal, hash, show {with_path= false}]
 
 let pp_java_class_info_opt fmt jopt = Pp.option pp_java_class_info fmt jopt
 
@@ -36,7 +36,7 @@ type t =
   ; java_class_info: java_class_info option  (** present if and only if the class is Java *)
   ; dummy: bool  (** dummy struct for class including static method *)
   ; source_file: SourceFile.t option  (** source file containing this struct's declaration *) }
-[@@deriving equal]
+[@@deriving equal, hash]
 
 type lookup = Typ.Name.t -> t option
 
@@ -385,9 +385,7 @@ let is_not_java_interface = function
 
 
 module FieldNormalizer = HashNormalizer.Make (struct
-  type t = field [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type t = field [@@deriving equal, hash]
 
   let normalize f =
     let field_name, typ, annot = f in
@@ -399,9 +397,7 @@ module FieldNormalizer = HashNormalizer.Make (struct
 end)
 
 module JavaClassInfoOptNormalizer = HashNormalizer.Make (struct
-  type t = java_class_info option [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type t = java_class_info option [@@deriving equal, hash]
 
   let normalize_location_opt loc_opt =
     IOption.map_changed loc_opt ~equal:phys_equal ~f:Location.Normalizer.normalize
@@ -417,9 +413,7 @@ module JavaClassInfoOptNormalizer = HashNormalizer.Make (struct
 end)
 
 module Normalizer = HashNormalizer.Make (struct
-  type nonrec t = t [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type nonrec t = t [@@deriving equal, hash]
 
   let normalize t =
     let fields = IList.map_changed ~equal:phys_equal ~f:FieldNormalizer.normalize t.fields in

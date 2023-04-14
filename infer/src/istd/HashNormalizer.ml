@@ -46,9 +46,7 @@ module StringNormalizer = Make (struct
 end)
 
 module rec StringListNormalizer : (S with type t = string list) = Make (struct
-  type t = string list [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type t = string list [@@deriving equal, hash]
 
   let normalize string_list =
     match string_list with

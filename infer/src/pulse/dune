@@ -44,4 +44,4 @@
   Topllib
   Nullsafe)
  (preprocess
-  (pps ppx_compare ppx_show ppx_variants_conv ppx_yojson_conv)))
+  (pps ppx_compare ppx_hash ppx_show ppx_variants_conv ppx_yojson_conv)))

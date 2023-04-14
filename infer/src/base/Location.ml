@@ -59,9 +59,7 @@ module Map = PrettyPrintable.MakePPMap (struct
 end)
 
 module Normalizer = HashNormalizer.Make (struct
-  type nonrec t = t [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type nonrec t = t [@@deriving equal, hash]
 
   let normalize t =
     let file = SourceFile.Normalizer.normalize t.file in

@@ -272,9 +272,7 @@ module Java = struct
 
 
   module Normalizer = HashNormalizer.Make (struct
-    type nonrec t = t [@@deriving equal]
-
-    let hash = Hashtbl.hash
+    type nonrec t = t [@@deriving equal, hash]
 
     let normalize t =
       let method_name = HashNormalizer.StringNormalizer.normalize t.method_name in
@@ -302,9 +300,7 @@ module Parameter = struct
   type clang_parameter = Typ.Name.t option [@@deriving compare, equal, yojson_of, sexp, hash]
 
   module ClangParameterNormalizer = HashNormalizer.Make (struct
-    type nonrec t = clang_parameter [@@deriving equal]
-
-    let hash = Hashtbl.hash
+    type nonrec t = clang_parameter [@@deriving equal, hash]
 
     let normalize t = IOption.map_changed t ~equal:phys_equal ~f:Typ.NameNormalizer.normalize
   end)
@@ -443,9 +439,7 @@ module ObjC_Cpp = struct
   let replace_parameters new_parameters osig = {osig with parameters= new_parameters}
 
   module Normalizer = HashNormalizer.Make (struct
-    type nonrec t = t [@@deriving equal]
-
-    let hash = Hashtbl.hash
+    type nonrec t = t [@@deriving equal, hash]
 
     let normalize t =
       let class_name = Typ.NameNormalizer.normalize t.class_name in
@@ -516,9 +510,7 @@ module C = struct
   let is_std_move c = is_std_function ~prefix:"move" c
 
   module Normalizer = HashNormalizer.Make (struct
-    type nonrec t = t [@@deriving equal]
-
-    let hash = Hashtbl.hash
+    type nonrec t = t [@@deriving equal, hash]
 
     let normalize t =
       let name = QualifiedCppName.Normalizer.normalize t.name in
@@ -778,9 +770,6 @@ let rec compare_name x y =
     , (WithAliasingParameters (y, _) | WithFunctionParameters (y, _)) ) ->
       compare_name x y
 
-
-(** hash function for procname *)
-let hash = Hashtbl.hash
 
 let with_function_parameters base functions =
   if List.is_empty functions then None else Some (WithFunctionParameters (base, functions))

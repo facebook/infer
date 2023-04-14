@@ -15,7 +15,7 @@ type t =
   | Neg  (** Unary minus *)
   | BNot  (** Bitwise complement (~) *)
   | LNot  (** Logical Not (!) *)
-[@@deriving compare, equal]
+[@@deriving compare, equal, hash]
 
 (** String representation of unary operator. *)
 let to_string = function Neg -> "-" | BNot -> "~" | LNot -> "!"

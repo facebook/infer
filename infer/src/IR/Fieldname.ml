@@ -148,9 +148,7 @@ let is_java_outer_instance ({field_name} as field) =
 
 
 module Normalizer = HashNormalizer.Make (struct
-  type nonrec t = t [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type nonrec t = t [@@deriving equal, hash]
 
   let normalize t =
     let class_name = Typ.NameNormalizer.normalize t.class_name in

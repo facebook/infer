@@ -23,9 +23,7 @@ type t =
 [@@deriving compare, equal, sexp, hash]
 
 module T = struct
-  type nonrec t = t [@@deriving compare, equal, sexp]
-
-  let hash = Caml.Hashtbl.hash
+  type nonrec t = t [@@deriving compare, equal, hash, sexp]
 end
 
 module Map = Caml.Map.Make (T)
@@ -394,9 +392,7 @@ module SQLite = struct
 end
 
 module Normalizer = HashNormalizer.Make (struct
-  type nonrec t = t [@@deriving equal]
-
-  let hash = Hashtbl.hash
+  type nonrec t = t [@@deriving equal, hash]
 
   let normalize fname =
     let string_normalize = HashNormalizer.StringNormalizer.normalize in
