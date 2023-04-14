@@ -231,8 +231,8 @@ module Hack : sig
 end
 
 (** Type of procedure names. WithFunctionParameters is used for creating an instantiation of a
-    method that contains function parameters and it's called with concrete functions. For example:
-    [foo(Block block) {block();}] [bar() {foo(my_block)}] is executed as
+    method that contains non-empty function parameters and it's called with concrete functions. For
+    example: [foo(Block block) {block();}] [bar() {foo(my_block)}] is executed as
     [foo_my_block() {my_block(); }] where foo_my_block is created with WithFunctionParameters (foo,
     [my_block]) *)
 type t =
@@ -245,7 +245,7 @@ type t =
   | Linters_dummy_method
   | ObjC_Cpp of ObjC_Cpp.t
   | WithAliasingParameters of t * Mangled.t list list
-  | WithFunctionParameters of t * FunctionParameters.t list
+  | WithFunctionParameters of t * FunctionParameters.t * FunctionParameters.t list
 [@@deriving compare, yojson_of, sexp, hash]
 
 val base_of : t -> t

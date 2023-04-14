@@ -228,7 +228,7 @@ module NSAttributedString = struct
             str cost_model_env ~ret inferbo_mem
         in
         match pname with
-        | WithFunctionParameters (_, [function_parameter]) -> (
+        | WithFunctionParameters (_, function_parameter, []) -> (
             let pname = Procname.of_function_parameter function_parameter in
             match get_summary pname with
             | Some {CostDomain.post= callee_summary} ->
@@ -268,7 +268,7 @@ module NSCollection = struct
             array cost_model_env ~ret inferbo_mem
         in
         match pname with
-        | WithFunctionParameters (_, [function_parameter]) -> (
+        | WithFunctionParameters (_, function_parameter, []) -> (
             let pname = Procname.of_function_parameter function_parameter in
             match get_summary pname with
             | Some {CostDomain.post= callee_summary} ->

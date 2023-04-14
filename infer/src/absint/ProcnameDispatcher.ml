@@ -704,7 +704,7 @@ module Call = struct
             on_erlang context erlang args
         | CSharp csharp ->
             on_csharp context csharp args
-        | WithFunctionParameters (procname, _) ->
+        | WithFunctionParameters (procname, _, _) ->
             match_procname procname
         | _ ->
             None
