@@ -771,9 +771,6 @@ let rec compare_name x y =
       compare_name x y
 
 
-(** hash function for procname *)
-let hash = Hashtbl.hash
-
 let with_function_parameters base = function
   | [] ->
       None
