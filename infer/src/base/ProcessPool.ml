@@ -388,53 +388,51 @@ let rec child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilo
 
     Children never return. Instead they exit when done. *)
 let child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic =
-  match true with
-  | _ ->
-      ProcessPoolState.in_child := true ;
-      ProcessPoolState.reset_pid () ;
-      child_prologue () ;
-      let send_to_parent (message : 'b worker_message) = marshal_to_pipe updates_oc message in
-      let send_final (final_message : 'a final_worker_message) =
-        marshal_to_pipe updates_oc final_message
-      in
-      (* Function to send updates up the pipe to the parent instead of directly to the task
-         bar. This is because only the parent knows about all the children, hence it's in charge of
-         actually updating the task bar. *)
-      let update_status t status =
-        match Config.progress_bar with
-        | `Quiet | `Plain ->
-            ()
-        | `MultiLine ->
-            let status =
-              (* Truncate status if too big: it's pointless to spam the status bar with long status, and
-                 also difficult to achieve technically over pipes (it's easier if all the messages fit
-                 into a buffer of reasonable size). *)
-              if String.length status > 100 then String.subo ~len:100 status ^ "..." else status
-            in
-            send_to_parent (UpdateStatus (slot, t, status))
-      in
-      ProcessPoolState.update_status := update_status ;
-      let update_heap_words () =
-        match Config.progress_bar with
-        | `MultiLine ->
-            let heap_words = (Gc.quick_stat ()).heap_words in
-            send_to_parent (UpdateHeapWords (slot, heap_words))
-        | `Quiet | `Plain ->
-            ()
-      in
-      ProcessPoolState.update_heap_words := update_heap_words ;
-      let receive_from_parent () =
-        PerfEvent.log (fun logger ->
-            PerfEvent.log_begin_event logger ~categories:["sys"] ~name:"receive from pipe" () ) ;
-        let x = Marshal.from_channel orders_ic in
-        PerfEvent.(log (fun logger -> log_end_event logger ())) ;
-        x
-      in
-      child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilogue ~prev_result:None ;
-      Out_channel.close updates_oc ;
-      In_channel.close orders_ic ;
-      Epilogues.run () ;
-      Stdlib.exit 0
+  ProcessPoolState.in_child := true ;
+  ProcessPoolState.reset_pid () ;
+  child_prologue () ;
+  let send_to_parent (message : 'b worker_message) = marshal_to_pipe updates_oc message in
+  let send_final (final_message : 'a final_worker_message) =
+    marshal_to_pipe updates_oc final_message
+  in
+  (* Function to send updates up the pipe to the parent instead of directly to the task
+     bar. This is because only the parent knows about all the children, hence it's in charge of
+     actually updating the task bar. *)
+  let update_status t status =
+    match Config.progress_bar with
+    | `Quiet | `Plain ->
+        ()
+    | `MultiLine ->
+        let status =
+          (* Truncate status if too big: it's pointless to spam the status bar with long status, and
+             also difficult to achieve technically over pipes (it's easier if all the messages fit
+             into a buffer of reasonable size). *)
+          if String.length status > 100 then String.subo ~len:100 status ^ "..." else status
+        in
+        send_to_parent (UpdateStatus (slot, t, status))
+  in
+  ProcessPoolState.update_status := update_status ;
+  let update_heap_words () =
+    match Config.progress_bar with
+    | `MultiLine ->
+        let heap_words = (Gc.quick_stat ()).heap_words in
+        send_to_parent (UpdateHeapWords (slot, heap_words))
+    | `Quiet | `Plain ->
+        ()
+  in
+  ProcessPoolState.update_heap_words := update_heap_words ;
+  let receive_from_parent () =
+    PerfEvent.log (fun logger ->
+        PerfEvent.log_begin_event logger ~categories:["sys"] ~name:"receive from pipe" () ) ;
+    let x = Marshal.from_channel orders_ic in
+    PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+    x
+  in
+  child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilogue ~prev_result:None ;
+  Out_channel.close updates_oc ;
+  In_channel.close orders_ic ;
+  Epilogues.run () ;
+  Stdlib.exit 0
 
 
 (** Fork a new child and start it so that it is ready for work.
