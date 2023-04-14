@@ -221,21 +221,21 @@ let do_finally_swallow_timeout ~f ~finally =
 
 
 let with_file_in file ~f =
+  (* Use custom code instead of In_channel.create to be able to pass [O_SHARE_DELETE] *)
   let ic =
-    let open Unix in
     let fd =
-      try openfile ~mode:[O_RDONLY; O_SHARE_DELETE] file
-      with Unix_error (e, _, _) ->
+      try Unix.openfile ~mode:[Unix.O_RDONLY; Unix.O_SHARE_DELETE] file
+      with Unix.Unix_error (e, _, _) ->
         let msg =
           match e with
-          | ENOENT ->
+          | Unix.ENOENT ->
               ": no such file or directory"
           | _ ->
               ": error " ^ Unix.Error.message e
         in
         raise (Sys_error (file ^ msg))
     in
-    in_channel_of_descr fd
+    Unix.in_channel_of_descr fd
   in
   let f () = f ic in
   let finally () = In_channel.close ic in
@@ -254,16 +254,17 @@ let with_intermediate_temp_file_out ?(retry = false) file ~f =
   let f () = f temp_oc in
   let finally () =
     Out_channel.close temp_oc ;
-    let rec rename n =
+    (* Retry n times with exponential backoff when [retry] is true *)
+    let rec rename n delay =
       try Unix.rename ~src:temp_filename ~dst:file
       with e ->
         if Int.equal n 0 then raise e
         else
-          let delay = Random.float_range 0.1 0.3 in
-          ignore (Unix.nanosleep delay : float) ;
-          rename (n - 1)
+          let delay = delay ** 2.0 in
+          ignore (Unix.nanosleep delay) ;
+          rename (n - 1) delay
     in
-    if retry then rename 10 else rename 0
+    if retry then rename 5 0.1 else rename 0 0.0
   in
   Exception.try_finally ~f ~finally
 
@@ -342,7 +343,7 @@ let realpath ?(warn_on_error = true) path =
 
 (* never closed *)
 let devnull =
-  let file = if String.equal Sys.os_type "Win32" then "NUL" else "/dev/null" in
+  let file = if Sys.win32 then "NUL" else "/dev/null" in
   lazy (Unix.openfile file ~mode:[Unix.O_WRONLY])
 
 

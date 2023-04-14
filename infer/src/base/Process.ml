@@ -66,20 +66,20 @@ let create_process_and_wait_with_output ~prog ~args action =
 
 
 let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
-  let open Unix in
-  let pipe_in, pipe_out = pipe () in
+  let pipe_in, pipe_out = Unix.pipe () in
   let producer_args = Array.of_list producer_args in
   let consumer_args = Array.of_list consumer_args in
   let producer_pid =
-    UnixLabels.create_process ~prog:producer_prog ~args:producer_args ~stdin ~stdout:pipe_out
-      ~stderr
+    UnixLabels.create_process ~prog:producer_prog ~args:producer_args ~stdin:Unix.stdin
+      ~stdout:pipe_out ~stderr:Unix.stderr
   in
   let consumer_pid =
-    UnixLabels.create_process ~prog:consumer_prog ~args:consumer_args ~stdin:pipe_in ~stdout ~stderr
+    UnixLabels.create_process ~prog:consumer_prog ~args:consumer_args ~stdin:pipe_in
+      ~stdout:Unix.stdout ~stderr:Unix.stderr
   in
   (* wait for children *)
-  let producer_status = waitpid (Pid.of_int producer_pid) in
-  let consumer_status = waitpid (Pid.of_int consumer_pid) in
-  close pipe_out ;
-  close pipe_in ;
+  let producer_status = Unix.waitpid (Pid.of_int producer_pid) in
+  let consumer_status = Unix.waitpid (Pid.of_int consumer_pid) in
+  Unix.close pipe_out ;
+  Unix.close pipe_in ;
   (producer_status, consumer_status)

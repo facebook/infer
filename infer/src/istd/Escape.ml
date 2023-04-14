@@ -105,7 +105,7 @@ let escape_filename s =
   let map c =
     match c with
     | '/' ->
-        (* This character is fobidden on Windows and Unix *)
+        (* This character is forbidden on Windows and Unix *)
         encode c
     | '<' | '>' | ':' | '"' | '\\' | '|' | '?' | '*' | '\n' | '\r' | '\t' ->
         (* All these characters are forbidden on Windows. See

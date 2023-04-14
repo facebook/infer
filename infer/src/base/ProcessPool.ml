@@ -188,9 +188,8 @@ let killall pool ~slot status =
       with Unix.Unix_error (ECHILD, _, _) ->
         (* some children may have died already, it's fine *) () ) ;
   ProcessPoolState.has_running_children := false ;
-  (* We use an UserError here, because Internal and ExternalError print the parent's backtrace in
-     the console -- which is really unhelpful. The emitted message is 'Usage Error: <msg>'. *)
-  L.die UserError "Subprocess %d: %s" slot status
+  L.internal_error "Subprocess %d: %s@\n" slot status ;
+  L.exit 1
 
 
 let has_dead_child pool =
