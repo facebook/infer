@@ -1032,7 +1032,7 @@ let add_missing_field_to_tenv ~missing_sigma exe_env caller_tenv callee_pname hp
       try Some (Exe_env.get_proc_tenv exe_env callee_pname)
       with _ ->
         let source_file = callee_attributes.ProcAttributes.loc.Location.file in
-        Tenv.load source_file
+        Exe_env.get_source_tenv exe_env source_file
     in
     match callee_tenv_opt with
     | None ->

@@ -27,7 +27,9 @@ let ocamlc_flags =
   ; "-principal"
   ; "-strict-formats"
   ; "-strict-sequence"
-  ; "-bin-annot" ]
+  ; "-bin-annot"
+  ; "-alert"
+  ; "@tenv" ]
 
 
 let lenient_flags = ocamlc_flags @ ["-w"; warnings] |> String.concat " "

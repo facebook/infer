@@ -18,7 +18,8 @@ module L = Logging
 type file_data = {tenv: Tenv.t option Lazy.t; integer_type_widths: Typ.IntegerWidths.t option Lazy.t}
 
 (** create a new file_data *)
-let new_file_data source =
+let[@alert "-tenv"] new_file_data source =
+  (* exceptionally allow [Tenv.load] as it goes through a cache *)
   { tenv= lazy (Tenv.load source)
   ; integer_type_widths=
       lazy (Option.first_some (Typ.IntegerWidths.load source) (Some Typ.IntegerWidths.java)) }

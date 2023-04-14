@@ -16,6 +16,7 @@ val create : unit -> t
 (** Create a new type environment. *)
 
 val load : SourceFile.t -> t option
+  [@@alert tenv "Analysis code should use [Exe_env.get_source_tenv] instead."]
 (** Load a type environment for a source file *)
 
 val store_debug_file_for_source : SourceFile.t -> t -> unit
