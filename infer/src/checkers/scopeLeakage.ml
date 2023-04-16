@@ -21,6 +21,22 @@ let pp_loc_opt fmt loc_opt =
       F.pp_print_string fmt "(unknown source location)"
 
 
+(* Converts an expression that amounts to a pointer variable a Var
+   and returns None for any other type of expression. *)
+let rec var_of_ptr_exp (exp_var : Exp.t) =
+  match exp_var with
+  | Var id ->
+      Some (Var.of_id id)
+  | Exn exp' ->
+      var_of_ptr_exp exp'
+  | Lvar pvar ->
+      Some (Var.of_pvar pvar)
+  | Cast (typ, obj_exp) when Typ.is_pointer typ ->
+      var_of_ptr_exp obj_exp
+  | _ ->
+      None
+
+
 (* A module for parsing a JSON configuration into a custom data type. *)
 module AnalysisConfig : sig
   (** A class name and the method names of that class that are known to "generate" a scope. That is,
@@ -676,10 +692,14 @@ module Aliasing = struct
     let open Sil in
     let open Exp in
     match instr with
-    | Load {id= lvar; typ; e= Lvar rvar} when Typ.is_pointer typ ->
-        Some (Var.of_id lvar, Var.of_pvar rvar)
-    | Store {e1= Lvar lhs; e2= Var rhs} ->
-        Some (Var.of_pvar lhs, Var.of_id rhs)
+    | Load {id= lvar; typ; e} when Typ.is_pointer typ ->
+        Option.bind (var_of_ptr_exp e) ~f:(fun rvar -> Some (Var.of_id lvar, rvar))
+    | Store {e1= Lvar lhs; e2} ->
+        Option.bind (var_of_ptr_exp e2) ~f:(fun rvar -> Some (Var.of_pvar lhs, rvar))
+    (* Built-in casts are essentially assignments. *)
+    | Call ((ret_id, _), Const (Cfun name), [(var_exp, _); (_, _)], _, _)
+      when Procname.equal name BuiltinDecl.__cast ->
+        Option.bind (var_of_ptr_exp var_exp) ~f:(fun rvar -> Some (Var.of_id ret_id, rvar))
     | _ ->
         None
 
@@ -754,14 +774,14 @@ module Summary = VarToScope
 
 (* The top-level variable to which we should assign a scope in the given
    expression, if this expression indeed starts with a variable. *)
-let rec scope_target_var_of_expr (e : Exp.t) =
+let rec scope_target_var_of_ptr_expr (e : Exp.t) =
   match e with
   | Var id ->
       Some (Var.of_id id)
   | Lvar pvar ->
       Some (Var.of_pvar pvar)
   | Lfield (e, _, _) | Cast (_, e) | Exn e | Lindex (e, _) ->
-      scope_target_var_of_expr e
+      scope_target_var_of_ptr_expr e
   | Const _ | Closure _ | Sizeof _ | UnOp _ | BinOp _ ->
       None
 
@@ -770,7 +790,7 @@ let rec scope_target_var_of_expr (e : Exp.t) =
    to associate the given scopes with it. Otherwise, returns an empty list
     of updates. *)
 let update_of_expr (e : Exp.t) (scopes : Scope.explained_scope list) =
-  match scope_target_var_of_expr e with Some v -> [(v, scopes)] | None -> []
+  match scope_target_var_of_ptr_expr e with Some v -> [(v, scopes)] | None -> []
 
 
 (* Creates a summary that assigns scopes to parameters based on the annotations
@@ -798,11 +818,7 @@ let get_or_make_summary attributes tenv procname analyze_dependency =
   | Some summary ->
       summary
   | None ->
-      let result = type_based_summary attributes tenv procname in
-      L.debug Analysis Verbose
-        "@[<v2> ScopeLeakage: no summary found for procname `%a`. Creating a type-based summary.@]@,"
-        Procname.pp procname ;
-      result
+      type_based_summary attributes tenv procname
 
 
 (* Returns a list of scope updates for the (top-level) variables in the actual
@@ -845,23 +861,21 @@ let procname_of_exp (e : Exp.t) : Procname.t option =
   match e with Closure {name} | Const (Cfun name) -> Some name | _ -> None
 
 
-(** Local inference of scopes for left-hand side variables from individual instructions. *)
 let exec_instr scope_env tenv analyze_dependency instr =
   match (instr : Sil.instr) with
-  | Load {id; (*e;*) typ} when Typ.is_pointer typ ->
+  | Load {id; typ} when Typ.is_pointer typ ->
       let lhs_var = Var.of_id id in
       let typ_scope = Scope.of_type tenv typ in
       [(lhs_var, typ_scope)]
-  | Store {e1= Lvar pvar; typ (*; e2*)} when Typ.is_pointer typ ->
+  | Store {e1= Lvar pvar; typ} when Typ.is_pointer typ ->
       let lhs_var = Var.of_pvar pvar in
       [(lhs_var, Scope.of_type tenv typ)]
-      (* TODOL specialize for right-hand side variable expressions? *)
-  | Store {e1= Lfield (Var lvar, fldname, _); typ; e2; loc} when Typ.is_pointer typ ->
+  | Store {e1= Lfield (var_exp, fldname, _); typ; e2; loc} when Typ.is_pointer typ ->
+      let lhs_var = Option.value_exn (var_of_ptr_exp var_exp) in
       let rhs_typ_scope = Scope.of_type tenv typ in
       let extended_typ_scope = Scope.extend_with_field_access rhs_typ_scope fldname (Some loc) in
-      let lhs_var = Var.of_id lvar in
       let rhs_updates =
-        match scope_target_var_of_expr e2 with
+        match scope_target_var_of_ptr_expr e2 with
         | Some rhs_var ->
             let rhs_var_scope = VarToScope.find_or_bottom scope_env rhs_var in
             let extended_rhs_scope =
@@ -872,7 +886,7 @@ let exec_instr scope_env tenv analyze_dependency instr =
             []
       in
       rhs_updates @ [(lhs_var, extended_typ_scope)]
-  | Sil.Call ((ret_id, _), call_exp, actuals, loc, _) ->
+  | Call ((ret_id, _), call_exp, actuals, loc, _) ->
       procname_of_exp call_exp
       |> Option.value_map ~default:[] ~f:(fun callee_pname ->
              (* Check for a scope-generator procname and only if this fails use the summary. *)
@@ -915,48 +929,43 @@ let report_bad_field_assignments err_log proc_desc scoping =
   Procdesc.iter_instrs
     (fun _ instr ->
       match instr with
-      | Store {e1= Lfield (Var lpvar, fldname, lvar_type); e2= Var rvar; loc; typ}
-        when Typ.is_pointer typ ->
-          let lvar = Var.of_id lpvar in
-          let lvar_type_str = PatternMatch.get_type_name lvar_type in
-          let lvar_scope = VarToScope.find_or_bottom scoping lvar in
-          let rvar_scope = VarToScope.find_or_bottom scoping (Var.of_id rvar) in
-          let violations = Scope.must_not_hold_violations lvar_scope rvar_scope in
-          List.iter violations ~f:(fun (left, right) ->
-              let access_path = fldname :: Scope.get_field_path right in
-              let leak_level = List.length access_path in
-              let ltr =
-                Scope.trace left @ Scope.trace right
-                @ [Errlog.make_trace_element 0 loc "Assignment of scoped object to field" []]
-              in
-              if equal_int leak_level 1 then (
-                let description =
-                  Format.asprintf
-                    "Type '%s' has scope '%a' and must not retain an object of scope '%a' via the \
-                     field '%a'."
-                    lvar_type_str Scope.pp_explained_type left Scope.pp_explained_type right
-                    Fieldname.pp fldname
-                in
-                L.debug Analysis Verbose
-                  "Detected violation at %a with\nLeft scope: %a\nRight scope: %a\b"
-                  (Sil.pp_instr ~print_types:false Pp.text)
-                  instr Scope.pp_explained_scope_debug left Scope.pp_explained_scope_debug right ;
-                Reporting.log_issue proc_desc err_log ~loc ~ltr ScopeLeakage IssueType.scope_leakage
-                  description )
-              else
-                let description =
-                  Format.asprintf
-                    "Type '%s' has scope '%a' and must not retain an object of scope '%a' via the \
-                     field path '%a' (%i-level leak)."
-                    lvar_type_str Scope.pp_explained_type left Scope.pp_explained_type right
-                    pp_field_path access_path leak_level
-                in
-                L.debug Analysis Verbose
-                  "Detected violation at %a with\nLeft scope: %a\nRight scope: %a\b"
-                  (Sil.pp_instr ~print_types:false Pp.text)
-                  instr Scope.pp_explained_scope_debug left Scope.pp_explained_scope_debug right ;
-                Reporting.log_issue proc_desc err_log ~loc ~ltr ScopeLeakage IssueType.scope_leakage
-                  description )
+      | Store {e1= Lfield (lvar_exp, fldname, lvar_type); e2; loc; typ} when Typ.is_pointer typ -> (
+          let lvar = Option.value_exn (var_of_ptr_exp lvar_exp) in
+          match var_of_ptr_exp e2 with
+          | Some rvar ->
+              let lvar_type_str = PatternMatch.get_type_name lvar_type in
+              let lvar_scope = VarToScope.find_or_bottom scoping lvar in
+              let rvar_scope = VarToScope.find_or_bottom scoping rvar in
+              let violations = Scope.must_not_hold_violations lvar_scope rvar_scope in
+              List.iter violations ~f:(fun (left, right) ->
+                  let access_path = fldname :: Scope.get_field_path right in
+                  let leak_level = List.length access_path in
+                  let ltr =
+                    Scope.trace left @ Scope.trace right
+                    @ [Errlog.make_trace_element 0 loc "Assignment of scoped object to field" []]
+                  in
+                  let description =
+                    if equal_int leak_level 1 then
+                      Format.asprintf
+                        "Class '%s' has scope '%a' and must not retain an object of scope '%a' via \
+                         the field '%a'."
+                        lvar_type_str Scope.pp_explained_type left Scope.pp_explained_type right
+                        Fieldname.pp fldname
+                    else
+                      Format.asprintf
+                        "Class '%s' has scope '%a' and must not retain an object of scope '%a' via \
+                         the field path '%a' (%i-level leak)."
+                        lvar_type_str Scope.pp_explained_type left Scope.pp_explained_type right
+                        pp_field_path access_path leak_level
+                  in
+                  L.debug Analysis Verbose
+                    "Detected violation at %a with\nLeft scope: %a\nRight scope: %a\n"
+                    (Sil.pp_instr ~print_types:false Pp.text)
+                    instr Scope.pp_explained_scope_debug left Scope.pp_explained_scope_debug right ;
+                  Reporting.log_issue proc_desc err_log ~loc ~ltr ScopeLeakage
+                    IssueType.scope_leakage description )
+          | None ->
+              () )
       | _ ->
           () )
     proc_desc
@@ -988,9 +997,9 @@ let checker {InterproceduralAnalysis.proc_desc; tenv; err_log; analyze_dependenc
     (Procdesc.get_proc_name proc_desc) ;
   let aliasing = Aliasing.of_proc_desc proc_desc in
   L.debug Analysis Verbose "SCOPE LEAKAGE: Aliasing= %a\n" Aliasing.pp aliasing ;
-  let scoping = assign_scopes_to_vars proc_desc tenv analyze_dependency aliasing in
-  report_bad_field_assignments err_log proc_desc scoping ;
-  let summary = to_summary proc_desc scoping in
+  let scope_env = assign_scopes_to_vars proc_desc tenv analyze_dependency aliasing in
+  report_bad_field_assignments err_log proc_desc scope_env ;
+  let summary = to_summary proc_desc scope_env in
   L.debug Analysis Verbose "SCOPE LEAKAGE: Summary of %a= %a\n" Procname.pp
     (Procdesc.get_proc_name proc_desc)
     VarToScope.pp summary ;
