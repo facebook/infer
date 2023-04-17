@@ -51,7 +51,8 @@ type procedure_matcher =
       {class_names: string list; method_return_type_names: string list}
   | OverridesOfClassWithAnnotation of {annotation: string}
   | MethodWithAnnotation of {annotation: string}
-  | Block
+  | Block of {name: string}
+  | BlockNameRegex of {name_regex: Str.regexp}
   | Allocation of {class_name: string}
 
 type matcher =
@@ -59,7 +60,7 @@ type matcher =
   ; arguments: Pulse_config_t.argument_constraint list
   ; kinds: Taint.Kind.t list
   ; target: Pulse_config_t.taint_target
-  ; block_passed_to: string option }
+  ; block_passed_to: procedure_matcher }
 
 type sink_policy =
   { source_kinds: Taint.Kind.t list [@ignore]
@@ -222,9 +223,19 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
           ; method_names= None
           ; overrides_of_class_with_annotation= None
           ; method_with_annotation= None
-          ; block_passed_to= Some _
+          ; block_passed_to= Some s
           ; allocation= None } ->
-            Block
+            Block {name= s}
+        | { procedure= None
+          ; procedure_regex= None
+          ; class_name_regex= None
+          ; class_names= None
+          ; method_names= None
+          ; overrides_of_class_with_annotation= None
+          ; method_with_annotation= None
+          ; block_passed_to_regex= Some name_regex
+          ; allocation= None } ->
+            BlockNameRegex {name_regex= Str.regexp name_regex}
         | _ ->
             L.die UserError
               "When parsing option %s: Unexpected JSON format: Exactly one of \n\
@@ -232,6 +243,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
               \ \"procedure_regex\", \n\
               \ \"class_name_regex\", \n\
               \ \"block_passed_to\", \n\
+              \ \"block_passed_to_regex\", \n\
               \ \"allocation\" or \n\
               \ \"overrides_of_class_with_annotation\" must be provided, \n\
                or else \"class_names\" and \"method_names\" must be provided, \n\
@@ -246,6 +258,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
               \ \"overrides_of_class_with_annotation\": %a,\n\
               \ \"method_with_annotation\": %a, \n\
               \ \"block_passed_to\": %a, \n\
+              \ \"block_passed_to_regex\": %a, \n\
               \ \"allocation\": %a" option_name (Pp.option F.pp_print_string) matcher.procedure
               (Pp.option F.pp_print_string) matcher.procedure_regex (Pp.option F.pp_print_string)
               matcher.class_name_regex
@@ -257,13 +270,14 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
               matcher.method_return_type_names (Pp.option F.pp_print_string)
               matcher.overrides_of_class_with_annotation (Pp.option F.pp_print_string)
               matcher.method_with_annotation (Pp.option F.pp_print_string) matcher.block_passed_to
+              (Pp.option F.pp_print_string) matcher.block_passed_to_regex
               (Pp.option F.pp_print_string) matcher.allocation
       in
       { procedure_matcher
       ; arguments= matcher.argument_constraints
       ; kinds= kinds_of_strings_opt matcher.kinds
       ; target= Option.value ~default:default_taint_target matcher.taint_target
-      ; block_passed_to= matcher.block_passed_to } )
+      ; block_passed_to= procedure_matcher } )
 
 
 let allocation_sources, source_matchers =
@@ -353,16 +367,22 @@ let procedure_matches tenv matchers ?block_passed_to proc_name actuals =
         | MethodWithAnnotation {annotation} ->
             Annotations.pname_has_return_annot proc_name (fun annot_item ->
                 Annotations.ia_ends_with annot_item annotation )
-        | Allocation _ | Block ->
+        | Allocation _ | Block _ | BlockNameRegex _ ->
             false
       in
       let block_passed_to_matches =
         match (matcher.block_passed_to, block_passed_to) with
-        | Some name, Some block_passed_to_proc_name ->
-            let block_passed_to_proc_name_s =
-              F.asprintf "%a" Procname.pp_verbose block_passed_to_proc_name
-            in
-            String.is_substring ~substring:name block_passed_to_proc_name_s
+        | Block {name}, Some block_passed_to_proc_name ->
+            let proc_name_s = F.asprintf "%a" Procname.pp_verbose block_passed_to_proc_name in
+            String.is_substring ~substring:name proc_name_s
+        | BlockNameRegex {name_regex}, Some block_passed_to_proc_name -> (
+            let proc_name_s = F.asprintf "%a" Procname.pp_verbose block_passed_to_proc_name in
+            L.d_printfln "Matching regex wrt %s" proc_name_s ;
+            match Str.search_forward name_regex proc_name_s 0 with
+            | _ ->
+                true
+            | exception Caml.Not_found ->
+                false )
         | _ ->
             false
       in
@@ -1024,7 +1044,11 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
 let pulse_models_to_treat_as_unknown_for_taint =
   (* HACK: make a list of matchers just to reuse the matching code below *)
   let dummy_matcher_of_procedure_matcher procedure_matcher =
-    {procedure_matcher; arguments= []; kinds= []; target= `ReturnValue; block_passed_to= None}
+    { procedure_matcher
+    ; arguments= []
+    ; kinds= []
+    ; target= `ReturnValue
+    ; block_passed_to= Block {name= ""} }
   in
   [ ClassAndMethodNames
       { class_names= ["java.lang.StringBuilder"]

@@ -30,6 +30,7 @@ type matcher = {
   ?overrides_of_class_with_annotation: string option;
   ?method_with_annotation: string option;
   ?block_passed_to: string option;
+  ?block_passed_to_regex: string option;
   ?allocation: string option;
   ~argument_constraints: argument_constraint list;
   ?kinds: string list option; (** default is [Simple] which matches all Simple sources to all Simple sinks provided they haven't been sanitized by a Simple sanitizer *)

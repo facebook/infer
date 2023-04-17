@@ -21,7 +21,7 @@
         "method_names": ["source"],
         "kinds": ["SimpleSource"]
       },
-      {"block_passed_to": "InferTaint.callBlockUnknown:", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
+      {"block_passed_to_regex": "InferTaint.callBlock.*", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
       {"block_passed_to": "InferTaint.call_block:", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
       {"block_passed_to": "call_block_log", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},
       {"procedure": "taintSourceParameterBad", "kinds": ["SimpleSource"], "taint_target": ["ArgumentPositions", [0]]},

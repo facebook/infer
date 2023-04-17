@@ -2513,6 +2513,8 @@ and pulse_taint_sources =
       match allocations of the exact class name supplied
   - "block_passed_to": $(i,\(for taint sources only\))
      match a substring of the procedure name that the block is passed to
+  - "block_passed_to_regex": $(i,\(for taint sources only\))
+     as above, but match using an OCaml regex
 
   Each object can also optionally specify:
   - "kinds": the kinds of taint, used in $(b,--pulse-taint-policies)
