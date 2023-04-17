@@ -485,24 +485,30 @@ let call tenv path ~caller_proc_desc
       in
       if needs_aliasing_specialization res contradiction then
         if Specialization.Pulse.Map.cardinal summary.PulseSummary.alias_specialized <= 20 then
-          let alias_specialization =
+          match
             PulseAliasSpecialization.make_specialization callee_pname actuals call_kind path
               call_loc astate
-            |> Option.value_exn
-          in
-          let specialization = Specialization.Pulse.Aliases alias_specialization in
-          let specialized_summary : PulseSummary.t =
-            analyze_dependency ~specialization:(Pulse specialization) callee_pname
-            |> Option.value_exn
-          in
-          match
-            Specialization.Pulse.Map.find_opt specialization specialized_summary.alias_specialized
           with
           | None ->
-              L.die InternalError "ondemand engine did not return the expected specialied summary"
-          | Some pre_posts ->
-              let res, contradiction = call_aux pre_posts in
-              (res, contradiction, `KnownCall)
+              L.debug Analysis Verbose "alias specialization of %a failed@;" Procname.pp
+                callee_pname ;
+              (res, contradiction, `UnknownCall)
+          | Some alias_specialization -> (
+              let specialization = Specialization.Pulse.Aliases alias_specialization in
+              let specialized_summary : PulseSummary.t =
+                analyze_dependency ~specialization:(Pulse specialization) callee_pname
+                |> Option.value_exn
+              in
+              match
+                Specialization.Pulse.Map.find_opt specialization
+                  specialized_summary.alias_specialized
+              with
+              | None ->
+                  L.die InternalError
+                    "ondemand engine did not return the expected specialized summary"
+              | Some pre_posts ->
+                  let res, contradiction = call_aux pre_posts in
+                  (res, contradiction, `KnownCall) )
         else (res, contradiction, `UnknownCall)
       else (res, contradiction, `KnownCall)
   | None ->
