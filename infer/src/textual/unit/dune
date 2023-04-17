@@ -4,7 +4,7 @@
 ; LICENSE file in the root directory of this source tree.
 
 (library
- (name IRTest)
+ (name TextuallibTest)
  (flags
   (:standard -open IR -open Textuallib -open IStdlib -open IStd -open IBase))
  (libraries IStdlib Textuallib)
