@@ -8,9 +8,9 @@
 
     open! IStd
     open Textual
-    open DoliAst
-    open DoliJavaAst
-    open DoliObjCAst
+    open Doli
+    open Doli.Java
+    open Doli.ObjC
 
     let location_of_pos pos : Location.t =
       let line = pos.Lexing.pos_lnum in
@@ -97,7 +97,7 @@
 
 
 %start <Textual.SourceFile.t -> Textual.Module.t> main
-%start <DoliAst.doliProgram> doliProgram
+%start <Doli.doliProgram> doliProgram
 %type <Attr.t> attribute
 %type <Module.decl> declaration
 %type <qualified_procname> qualified_pname

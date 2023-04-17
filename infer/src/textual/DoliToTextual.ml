@@ -6,29 +6,28 @@
  *)
 
 open! IStd
-open DoliAst
 module L = Logging
 
-let global_doli_matcher = ref ([] : (DoliAst.matching * Procname.t) list)
+let global_doli_matcher = ref ([] : (Doli.matching * Procname.t) list)
 
 let lastLocation (ndList : Textual.Node.t list) : Textual.Location.t =
   match ndList with [] -> Unknown | nd :: _ -> nd.last_loc
 
 
 (* warning: it will assign the global [global_doli_matcher] *)
-let program_to_textual_module sourcefile (DoliProgram rules) : Textual.Module.t =
+let program_to_textual_module sourcefile (Doli.DoliProgram rules) : Textual.Module.t =
   let open Textual in
   let lang = Lang.Java in
   (* we have the choice between Hack or Java currently *)
-  let make_decl_from_rule (rule : doliRule) : Textual.ProcDecl.t =
+  let make_decl_from_rule (rule : Doli.doliRule) : Textual.ProcDecl.t =
     (* TODO make the entries in this record  more precise *)
     { qualified_name= {enclosing_class= TopLevel; name= {value= rule.ruleName; loc= Unknown}}
-    ; formals_types= DoliAst.param_types_to_textual rule
+    ; formals_types= Doli.param_types_to_textual rule
     ; are_formal_types_fully_declared= true
-    ; result_type= {typ= DoliAst.return_type_to_textual rule; attributes= []}
+    ; result_type= {typ= Doli.return_type_to_textual rule; attributes= []}
     ; attributes= [] }
   in
-  let make_desc_from_rule (rule : doliRule) : ProcDesc.t =
+  let make_desc_from_rule (rule : Doli.doliRule) : ProcDesc.t =
     let nodes = rule.body.nodes in
     (* FIXME make the entries in this record  more precise *)
     { procdecl= make_decl_from_rule rule
@@ -36,20 +35,20 @@ let program_to_textual_module sourcefile (DoliProgram rules) : Textual.Module.t 
     ; start=
         { value= (match nodes with [] -> "error_string" | hd_node :: _ -> hd_node.label.value)
         ; loc= Unknown }
-    ; params= DoliAst.get_parameter_names rule
+    ; params= Doli.get_parameter_names rule
     ; locals= []
     ; exit_loc= lastLocation nodes }
   in
   let rules_with_decls = List.map ~f:(fun rule -> (rule, make_desc_from_rule rule)) rules in
   let decls = List.map ~f:(fun (_, procdesc) -> Module.Proc procdesc) rules_with_decls in
   global_doli_matcher :=
-    List.map rules_with_decls ~f:(fun (instr, procdesc) ->
+    List.map rules_with_decls ~f:(fun ((instr : Doli.doliRule), procdesc) ->
         let procname = TextualSil.proc_decl_to_sil Lang.Java procdesc.ProcDesc.procdecl in
         (instr.match_, procname) ) ;
   {attrs= [Attr.mk_source_language lang]; decls; sourcefile}
 
 
-let rec match_type_paths (str_list : string list) (doli_class_types : DoliJavaAst.classType list) :
+let rec match_type_paths (str_list : string list) (doli_class_types : Doli.Java.classType list) :
     bool =
   match (str_list, doli_class_types) with
   | [], [] ->
@@ -60,7 +59,7 @@ let rec match_type_paths (str_list : string list) (doli_class_types : DoliJavaAs
       false
 
 
-let match_receiver_classes (ext_sign : DoliJavaAst.extendedSignature)
+let match_receiver_classes (ext_sign : Doli.Java.extendedSignature)
     (java_proc_name : Procname.Java.t) :
     bool
     (* checks whether the two patchs to the tyoes are identical *)
@@ -70,15 +69,13 @@ let match_receiver_classes (ext_sign : DoliJavaAst.extendedSignature)
   match ext_sign.under with RT classTypes -> match_type_paths strs classTypes
 
 
-let match_sign_with_procname (sign : DoliJavaAst.signature) (java_proc_name : Procname.Java.t) :
-    bool =
+let match_sign_with_procname (sign : Doli.Java.signature) (java_proc_name : Procname.Java.t) : bool
+    =
   (* matches the identifiers of the methods *)
-  String.equal
-    (DoliJavaAst.get_func_identifier_simple sign)
-    (Procname.Java.get_method java_proc_name)
+  String.equal (Doli.Java.get_func_identifier_simple sign) (Procname.Java.get_method java_proc_name)
 
 
-let match_ext_sign_with_procname (ext_sign : DoliJavaAst.extendedSignature)
+let match_ext_sign_with_procname (ext_sign : Doli.Java.extendedSignature)
     (java_proc_name : Procname.Java.t) : bool =
   (* mathes the identifiers as well as the receivers *)
   (* TODO: also match the argument types *)
@@ -87,7 +84,7 @@ let match_ext_sign_with_procname (ext_sign : DoliJavaAst.extendedSignature)
   && List.exists ~f:(fun sign -> match_sign_with_procname sign java_proc_name) ext_sign.signs
 
 
-let exec_matching (matching : matching) (ir_procname : Procname.t) : bool =
+let exec_matching (matching : Doli.matching) (ir_procname : Procname.t) : bool =
   (* tests whether [ir_procname] is matched by [match_] *)
   match (matching, ir_procname) with
   | ObjCMatching _, _ ->

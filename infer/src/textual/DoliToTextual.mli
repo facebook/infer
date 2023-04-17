@@ -7,7 +7,7 @@
 
 open! IStd
 
-val program_to_textual_module : Textual.SourceFile.t -> DoliAst.doliProgram -> Textual.Module.t
+val program_to_textual_module : Textual.SourceFile.t -> Doli.doliProgram -> Textual.Module.t
 (** [program_to_textual_module] takes a string representing a filename, and a doliProgram, and
     returns a module which contains declarations for all the doli rules from the program. Moreover,
     it stores the declarations in the global variable [global_doli_matcher] *)
