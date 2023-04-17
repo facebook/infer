@@ -29,7 +29,11 @@ module Lang = struct
 end
 
 module Location = struct
-  type t = Known of {line: int; col: int} | Unknown [@@deriving compare]
+  module T = struct
+    type t = Known of {line: int; col: int} | Unknown [@@deriving compare]
+  end
+
+  include T
 
   let known ~line ~col = Known {line; col}
 
@@ -47,11 +51,7 @@ module Location = struct
         F.fprintf fmt "<unknown line>"
 
 
-  module Set = Caml.Set.Make (struct
-    type nonrec t = t
-
-    let compare = compare
-  end)
+  module Set = Caml.Set.Make (T)
 end
 
 module SourceFile = struct
@@ -92,8 +92,12 @@ module type NAME = sig
 end
 
 module Name : NAME = struct
-  type t = {value: string; loc: Location.t [@compare.ignore] [@equal.ignore] [@hash.ignore]}
-  [@@deriving compare, equal, hash]
+  module T = struct
+    type t = {value: string; loc: Location.t [@compare.ignore] [@equal.ignore] [@hash.ignore]}
+    [@@deriving compare, equal, hash]
+  end
+
+  include T
 
   let replace_dot_with_2colons str = String.substr_replace_all str ~pattern:"." ~with_:"::"
 
@@ -101,33 +105,10 @@ module Name : NAME = struct
 
   let pp fmt name = F.pp_print_string fmt name.value
 
-  module Hashtbl = Hashtbl.Make (struct
-    type nonrec t = t
-
-    let equal = equal
-
-    let hash = hash
-  end)
-
-  module HashSet = HashSet.Make (struct
-    type nonrec t = t
-
-    let equal = equal
-
-    let hash = hash
-  end)
-
-  module Map = Caml.Map.Make (struct
-    type nonrec t = t
-
-    let compare = compare
-  end)
-
-  module Set = Caml.Set.Make (struct
-    type nonrec t = t
-
-    let compare = compare
-  end)
+  module Hashtbl = Hashtbl.Make (T)
+  module HashSet = HashSet.Make (T)
+  module Map = Caml.Map.Make (T)
+  module Set = Caml.Set.Make (T)
 end
 
 module ProcName : NAME = Name
