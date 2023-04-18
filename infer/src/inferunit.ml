@@ -49,4 +49,5 @@ let () =
       @ ClangTests.tests @ AllNullsafeTests.tests )
   in
   let test_suite = "all" >::: tests in
-  run_test_tt_main test_suite
+  run_test_tt_main test_suite ;
+  Epilogues.run ()
