@@ -130,6 +130,14 @@ AC_ARG_ENABLE(java-analyzers,
 BUILD_JAVA_ANALYZERS=$enable_java_analyzers
 AC_SUBST([BUILD_JAVA_ANALYZERS])
 
+AC_ARG_ENABLE(python-analyzers,
+  AS_HELP_STRING([--disable-python-analyzers],
+    [do not build the Python analyzers (default is to build them)]),
+  ,
+  enable_python_analyzers=yes)
+BUILD_python_ANALYZERS=$enable_python_analyzers
+AC_SUBST([BUILD_python_ANALYZERS])
+
 AC_ARG_WITH(fcp-clang,
   AS_HELP_STRING([--with-fcp-clang],
     [use $CLANG_PREFIX/bin/clang to override the default compiler (default is not to override)]),
@@ -166,6 +174,17 @@ AS_IF([test "x$enable_c_analyzers" = "xyes"], [
   AC_SUBST([ENABLE_OCAMLOPT_CUSTOM_CC])
 ])
 # end if($enable_c_analyzers)
+
+AS_IF([test "x$enable_python_analyzers" = "xyes"], [
+  AC_CHECK_TOOL([PYTHON], [python3], [no])
+  AC_ASSERT_PROG([python3], [$PYTHON])
+  AC_MSG_CHECKING([python version])
+  python_version=$("$PYTHON" --version)
+  case $python_version in
+    Python\ 3.8.*) AC_MSG_RESULT([$python_version]); break;;
+    *) AC_MSG_ERROR([python version $python_version is not supported, please install python version 3.8 instead or disable python support with --disable-python-analyzers]); break;;
+  esac
+]) # end if($enable_python_analyzers)
 
 AC_CHECK_TOOL([XCODE_SELECT], [xcode-select], [no])
 AS_IF([test "x$XCODE_SELECT" != "xno"], [XCODE_SELECT_OUT=`xcode-select -p`])
@@ -281,7 +300,7 @@ AC_ARG_VAR([OPAMSWITCH], [Opam switch used for building infer.])
 AC_CHECK_TOOL([OPAM], [opam], [no])
 AS_IF([test "$OPAM" != "no"], [
   AC_MSG_CHECKING([opam version])
-  opam_version=$(opam --version)
+  opam_version=$("$OPAM" --version)
   case $opam_version in
     2.*) AC_MSG_RESULT([$opam_version]); break;;
     *) AC_MSG_ERROR([opam version $opam_version is not supported, please install opam version 2 instead]); break;;

@@ -56,7 +56,8 @@ GENERATED_FROM_AUTOCONF = dune.common ../dune-workspace base/Version.ml
 .PHONY: dune-workspace
 dune-workspace: ../dune-workspace
 
-GENERATED_DUNES += dune clang/dune integration/dune java/dune opensource/dune unit/dune
+GENERATED_DUNES += \
+  dune clang/dune integration/dune java/dune opensource/dune python/unit/dune unit/dune
 
 SRC_BUILD_COMMON = $(GENERATED_FROM_AUTOCONF) $(GENERATED_DUNES) $(OCAML_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
@@ -233,6 +234,7 @@ $(GENERATED_FROM_AUTOCONF): $(MAKEFILE_LIST)
 	  -e "s|@OPAMSWITCH[@]|$(OPAMSWITCH)|g" \
 	  -e "s|@XCODE_SELECT[@]|$(XCODE_SELECT)|g" \
 	  -e "s|@INFER_MAN_LAST_MODIFIED[@]|$(INFER_MAN_LAST_MODIFIED)|g" \
+	  -e "s|@PYTHON[@]|$(PYTHON)|g" \
 	  $@.in > "$$TMPFILE"; \
 	cat "$$TMPFILE" > $@; \
 	echo -e "\n;;" >> $@; \
@@ -249,6 +251,7 @@ clang/dune: clang/dune.in
 integration/dune: integration/dune.in
 java/dune: java/dune.in
 opensource/dune: opensource/dune.in
+python/unit/dune: python/unit/dune.in
 unit/dune: unit/dune.in
 
 .PHONY: clean

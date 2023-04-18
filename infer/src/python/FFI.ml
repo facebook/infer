@@ -345,7 +345,7 @@ let from_bytecode filename =
 
 
 let from_file ~is_binary filename =
-  Py.initialize ~interpreter:"/usr/bin/python3.8" () ;
+  Py.initialize ~interpreter:Version.python_exe () ;
   let code = if is_binary then from_bytecode filename else from_source filename in
   Py.finalize () ;
   code

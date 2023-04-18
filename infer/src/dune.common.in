@@ -19,6 +19,8 @@ let hack = is_yes "@BUILD_HACK_ANALYZERS@"
 
 let java = is_yes "@BUILD_JAVA_ANALYZERS@"
 
+let python = is_yes "@BUILD_PYTHON_ANALYZERS@"
+
 let facebook = is_yes "@IS_FACEBOOK_TREE@"
 
 let extra_cflags = if is_empty "@EXTRA_CFLAGS@" then [] else ["@EXTRA_CFLAGS@"]

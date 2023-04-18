@@ -34,6 +34,7 @@ function usage() {
   echo "   erlang   build Erlang analyzer"
   echo "   hack     build Hack analyzer"
   echo "   java     build Java analyzer"
+  echo "   python   build Python analyzer"
   echo
   echo " options:"
   echo "   -h,--help             show this message"
@@ -56,6 +57,7 @@ BUILD_CLANG=${BUILD_CLANG:-no}
 BUILD_ERLANG=${BUILD_ERLANG:-no}
 BUILD_HACK=${BUILD_HACK:-no}
 BUILD_JAVA=${BUILD_JAVA:-no}
+BUILD_PYTHON=${BUILD_PYTHON:-no}
 INTERACTIVE=${INTERACTIVE:-yes}
 JOBS=${JOBS:-$NCPU}
 ONLY_SETUP_OPAM=${ONLY_SETUP_OPAM:-no}
@@ -69,6 +71,7 @@ function build_all() {
   BUILD_ERLANG=yes
   BUILD_HACK=yes
   BUILD_JAVA=yes
+  BUILD_PYTHON=yes
 }
 
 while [[ $# -gt 0 ]]; do
@@ -96,6 +99,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     java)
       BUILD_JAVA=yes
+      shift
+      continue
+      ;;
+    python)
+      BUILD_PYTHON=yes
       shift
       continue
       ;;
@@ -137,7 +145,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ "$BUILD_CLANG" == "no" ] && [ "$BUILD_ERLANG" == "no" ] && \
-    [ "$BUILD_HACK" == "no" ] && [ "$BUILD_JAVA" == "no" ]; then
+   [ "$BUILD_HACK" == "no" ] && [ "$BUILD_JAVA" == "no" ] && \
+   [ "$BUILD_PYTHON" == "no" ]; then
   build_all
 fi
 
@@ -197,6 +206,9 @@ if [ "$BUILD_HACK" == "no" ]; then
 fi
 if [ "$BUILD_JAVA" == "no" ]; then
   CONFIGURE_PREPEND_OPTS+=" --disable-java-analyzers"
+fi
+if [ "$BUILD_PYTHON" == "no" ]; then
+  CONFIGURE_PREPEND_OPTS+=" --disable-python-analyzers"
 fi
 
 set -x

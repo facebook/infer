@@ -36,3 +36,5 @@ val java_version : int option
 val xcode_enabled : bool
 
 val man_pages_last_modify_date : string
+
+val python_exe : string [@@warning "-unused-value-declaration"] (* used in unit tests *)

@@ -13,7 +13,7 @@ let%test_module "load_code" =
     let source = "x = 42"
 
     let%expect_test _ =
-      Py.initialize ~version:3 ~minor:8 () ;
+      Py.initialize ~interpreter:Version.python_exe () ;
       let res = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
       F.printf "%s" (FFI.Code.show res) ;

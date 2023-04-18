@@ -17,7 +17,7 @@ build-targets:
 	make -C java_targets
 
 test-classdump: build-targets
-	python3 $(SCRIPTS_DIR)/classdump.py --output $(SCRIPTS_DIR)/test/classdump_out $(JAR_FILES)
+	"$PYTHON" $(SCRIPTS_DIR)/classdump.py --output $(SCRIPTS_DIR)/test/classdump_out $(JAR_FILES)
 	@$(foreach jarfile,$(notdir $(JAR_FILES)),$(call check_no_diff,$(SCRIPTS_DIR)/test/classdump_out/$(jarfile).classes,$(SCRIPTS_DIR)/test/classdump_exp/$(jarfile).classes.exp);)
 
 clean:

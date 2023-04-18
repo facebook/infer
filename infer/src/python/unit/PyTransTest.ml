@@ -14,7 +14,7 @@ let%test_module "to_proc_desc" =
 
     let%expect_test _ =
       let source = "x = 42" in
-      Py.initialize ~version:3 ~minor:8 () ;
+      Py.initialize ~interpreter:Version.python_exe () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
       let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
@@ -44,7 +44,7 @@ let%test_module "to_proc_desc" =
 x = 42
 print(x)
       |} in
-      Py.initialize ~version:3 ~minor:8 () ;
+      Py.initialize ~interpreter:Version.python_exe () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
       let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
@@ -79,7 +79,7 @@ x = 42
 y = 10
 print(x + y)
       |} in
-      Py.initialize ~version:3 ~minor:8 () ;
+      Py.initialize ~interpreter:Version.python_exe () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
       let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
@@ -132,7 +132,7 @@ z = my_fun(42, a)
 print(z)
       |}
       in
-      Py.initialize ~version:3 ~minor:8 () ;
+      Py.initialize ~interpreter:Version.python_exe () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
       let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
@@ -197,7 +197,7 @@ update_global()
 print(z)
       |}
       in
-      Py.initialize ~version:3 ~minor:8 () ;
+      Py.initialize ~interpreter:Version.python_exe () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
       let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in

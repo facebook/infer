@@ -56,3 +56,5 @@ let java_version = int_of_string_opt "@JAVA_MAJOR_VERSION@"
 let xcode_enabled = is_not_no "@XCODE_SELECT@"
 
 let man_pages_last_modify_date = "@INFER_MAN_LAST_MODIFIED@"
+
+let python_exe = "@PYTHON@"

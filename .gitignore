@@ -199,6 +199,7 @@ rebar3.crashdump
 /infer/src/java/dune
 /infer/src/nullsafe/unit/dune
 /infer/src/opensource/dune
+/infer/src/python/unit/dune
 /infer/src/unit/dune
 .merlin
 
