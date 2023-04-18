@@ -130,13 +130,18 @@ AC_ARG_ENABLE(java-analyzers,
 BUILD_JAVA_ANALYZERS=$enable_java_analyzers
 AC_SUBST([BUILD_JAVA_ANALYZERS])
 
+enable_python_analyzers_default=auto
+AS_IF([test "x$is_release_tree" = "xyes"], [
+  enable_python_analyzers_default=yes
+])
+
 AC_ARG_ENABLE(python-analyzers,
   AS_HELP_STRING([--disable-python-analyzers],
-    [do not build the Python analyzers (default is to build them)]),
+    [do not build the Python analyzers (default is to build them in release mode, otherwise auto-detect)]),
   ,
-  enable_python_analyzers=yes)
-BUILD_python_ANALYZERS=$enable_python_analyzers
-AC_SUBST([BUILD_python_ANALYZERS])
+  enable_python_analyzers=$enable_python_analyzers_default)
+BUILD_PYTHON_ANALYZERS=$enable_python_analyzers
+AC_SUBST([BUILD_PYTHON_ANALYZERS])
 
 AC_ARG_WITH(fcp-clang,
   AS_HELP_STRING([--with-fcp-clang],
@@ -175,14 +180,20 @@ AS_IF([test "x$enable_c_analyzers" = "xyes"], [
 ])
 # end if($enable_c_analyzers)
 
-AS_IF([test "x$enable_python_analyzers" = "xyes"], [
+AS_IF([test "x$enable_python_analyzers" != "xno"], [
   AC_CHECK_TOOL([PYTHON], [python3], [no])
   AC_ASSERT_PROG([python3], [$PYTHON])
   AC_MSG_CHECKING([python version])
   python_version=$("$PYTHON" --version)
+  AC_MSG_RESULT([$python_version])
   case $python_version in
-    Python\ 3.8.*) AC_MSG_RESULT([$python_version]); break;;
-    *) AC_MSG_ERROR([python version $python_version is not supported, please install python version 3.8 instead or disable python support with --disable-python-analyzers]); break;;
+    Python\ 3.8.*) break;;
+    *) 
+      AS_IF([test "x$enable_python_analyzers" = "xauto"], [
+        AC_MSG_WARN([python version $python_version is not supported, disabling python support])
+        ], [
+        AC_MSG_ERROR([python version $python_version is not supported, please install python version 3.8 instead or disable python support with --disable-python-analyzers])
+      ]); break;;
   esac
 ]) # end if($enable_python_analyzers)
 
@@ -490,3 +501,28 @@ AC_CONFIG_FILES([
 ])
 
 AC_OUTPUT
+
+enabled_languages=""
+enabled_sequence_sep=""
+disabled_languages=""
+disabled_sequence_sep=""
+AC_DEFUN([AC_CLASSIFY_FRONTEND_SUPPORT],
+[dnl
+  AS_IF([test "$2" = "yes"],
+  [dnl
+    enabled_languages=${enabled_languages}${enabled_sequence_sep}$1;
+    enabled_sequence_sep=", "
+  ], [dnl
+    disabled_languages=${disabled_languages}${disabled_sequence_sep}$1;
+    disabled_sequence_sep=", "
+  ])
+])
+
+AC_CLASSIFY_FRONTEND_SUPPORT([clang], [$BUILD_C_ANALYZERS])
+AC_CLASSIFY_FRONTEND_SUPPORT([erlang], [$BUILD_ERLANG_ANALYZERS])
+AC_CLASSIFY_FRONTEND_SUPPORT([hack], [$BUILD_HACK_ANALYZERS])
+AC_CLASSIFY_FRONTEND_SUPPORT([java], [$BUILD_JAVA_ANALYZERS])
+AC_CLASSIFY_FRONTEND_SUPPORT([python], [$BUILD_PYTHON_ANALYZERS])
+
+AC_MSG_NOTICE([enabled language frontends:  $enabled_languages])
+AC_MSG_NOTICE([disabled language frontends: $disabled_languages])
