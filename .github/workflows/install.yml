@@ -118,7 +118,11 @@ jobs:
           ./facebook-clang-plugins/clang/src/prepare_clang_src.sh
           CC=clang CXX=clang++ ./facebook-clang-plugins/clang/setup.sh --ninja --sequential-link
 
-      - run: ./build-infer.sh --yes --user-opam-switch all
+      - if: runner.os == 'Linux'
+        run: ./build-infer.sh --yes --user-opam-switch
+
+      - if: runner.os == 'macOS'
+        run: ./build-infer.sh --yes --user-opam-switch --disable-python-analyzers
 
       - run: make install BUILD_MODE=opt
         if: runner.os == 'macOS'
