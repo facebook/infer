@@ -26,7 +26,7 @@ PLUGIN_SETUP_SCRIPT=${PLUGIN_SETUP_SCRIPT:-setup.sh}
 PLUGIN_SETUP="${PLUGIN_DIR}/clang/${PLUGIN_SETUP_SCRIPT}"
 
 function usage() {
-  echo "Usage: $0 [-y] [targets]"
+  echo "Usage: $0 [options] [targets] [-- options for ./configure]"
   echo
   echo " targets:"
   echo "   all      build everything (default)"
@@ -41,19 +41,21 @@ function usage() {
   echo "   --only-setup-opam     initialize opam, install the opam dependencies of infer, and exit"
   echo "   --user-opam-switch    use the current opam switch to install infer (default: $INFER_OPAM_DEFAULT_SWITCH)"
   echo "   -y,--yes              automatically agree to everything"
+  echo "   --                    stop parsing options and pass the remaining ones to ./configure"
   echo
   echo " examples:"
-  echo "    $0                    # build Java, Erlang and C/Objective-C analyzers"
-  echo "    $0 java erlang clang  # equivalent way of doing the above"
-  echo "    $0 java               # build only the Java analyzer"
+  echo "    $0                                 # build infer with default options"
+  echo "    $0 -- --help                       # display the options from ./configure"
+  echo "    $0 java                            # build only the Java analyzer"
+  echo "    $0 -y -- --disable-clang-analyzers # build everything but clang support, agree to all questions"
 }
 
 # arguments
+CONFIGURE_OPTS=()
 BUILD_CLANG=${BUILD_CLANG:-no}
 BUILD_ERLANG=${BUILD_ERLANG:-no}
 BUILD_HACK=${BUILD_HACK:-no}
 BUILD_JAVA=${BUILD_JAVA:-no}
-INFER_CONFIGURE_OPTS=${INFER_CONFIGURE_OPTS:-""}
 INTERACTIVE=${INTERACTIVE:-yes}
 JOBS=${JOBS:-$NCPU}
 ONLY_SETUP_OPAM=${ONLY_SETUP_OPAM:-no}
@@ -121,6 +123,12 @@ while [[ $# -gt 0 ]]; do
       shift
       continue
      ;;
+    --)
+      shift
+      CONFIGURE_OPTS+=("$*")
+      shift $#
+      continue
+     ;;
      *)
       usage
       exit 1
@@ -174,22 +182,31 @@ fi
 echo "preparing build... " >&2
 ./autogen.sh > /dev/null
 
+# we want to add these before the ones passed explicitly by the user, if only because they
+# correspond to options that appear earlier on the command line of this script so it's the more
+# natural behaviour
+CONFIGURE_PREPEND_OPTS=""
 if [ "$BUILD_CLANG" == "no" ]; then
-  INFER_CONFIGURE_OPTS+=" --disable-c-analyzers"
+  CONFIGURE_PREPEND_OPTS+=" --disable-c-analyzers"
 fi
 if [ "$BUILD_ERLANG" == "no" ]; then
-  INFER_CONFIGURE_OPTS+=" --disable-erlang-analyzers"
+  CONFIGURE_PREPEND_OPTS+=" --disable-erlang-analyzers"
 fi
 if [ "$BUILD_HACK" == "no" ]; then
-  INFER_CONFIGURE_OPTS+=" --disable-hack-analyzers"
+  CONFIGURE_PREPEND_OPTS+=" --disable-hack-analyzers"
 fi
 if [ "$BUILD_JAVA" == "no" ]; then
-  INFER_CONFIGURE_OPTS+=" --disable-java-analyzers"
+  CONFIGURE_PREPEND_OPTS+=" --disable-java-analyzers"
 fi
 
-./configure $INFER_CONFIGURE_OPTS
+set -x
+# empty arrays trigger unbound variable errors, use horrible syntax to work around it
+./configure $CONFIGURE_PREPEND_OPTS ${CONFIGURE_OPTS[@]+"${CONFIGURE_OPTS[@]}"}
+set +x
 
-if [ "$BUILD_CLANG" == "yes" ]; then
+# test if clang is enabled and if so are we about to build it? we cannot rely on $BUILD_CLANG
+# because the user can also set --disable-clang-analyzers
+if [ $(grep BUILD_C_ANALYZERS Makefile.autoconf | cut -d ' ' -f 3) = "yes" ]; then
   if ! "$PLUGIN_SETUP" --only-check-install; then
     echo ""
     echo "  Warning: you are not using a release of Infer. The C and"
