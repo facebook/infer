@@ -74,10 +74,9 @@ let get_instantiated_cost
 
 
 let prepare_call_args
-    ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency} as analysis_data) call =
+    ({InterproceduralAnalysis.proc_desc; exe_env; analyze_dependency; tenv} as analysis_data) call =
   let open IOption.Let_syntax in
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let tenv = Exe_env.get_proc_tenv exe_env proc_name in
   let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
   let+ inferbo_invariant_map =
     BufferOverrunAnalysis.cached_compute_invariant_map

@@ -117,10 +117,8 @@ let report_errors proc_desc tenv err_log get_callee_purity reaching_defs_invaria
     loop_head_to_inv_instrs
 
 
-let checker
-    ({InterproceduralAnalysis.proc_desc; exe_env; err_log; analyze_dependency} as analysis_data) =
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  let tenv = Exe_env.get_proc_tenv exe_env proc_name in
+let checker ({InterproceduralAnalysis.proc_desc; err_log; analyze_dependency; tenv} as analysis_data)
+    =
   let cfg = InstrCFG.from_pdesc proc_desc in
   (* computes reaching defs: node -> (var -> node set) *)
   let reaching_defs_invariant_map = ReachingDefs.compute_invariant_map proc_desc in
