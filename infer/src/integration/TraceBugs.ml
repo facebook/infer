@@ -44,17 +44,20 @@ let pp_issue_with_trace ~show_source_context ~max_nested_level fmt issue_with_n 
 
 
 let user_select_issue ~selector_limit report =
+  F.printf "@[" ;
   List.fold_until report
     ~finish:(fun _ -> ())
     ~init:0
     ~f:(fun n issue ->
       if is_past_limit selector_limit n then Stop ()
       else (
-        L.result "%a@\n" TextReport.pp_jsonbug_with_number (n, issue) ;
+        F.printf "%a@\n" TextReport.pp_jsonbug_with_number (n, issue) ;
         Continue (n + 1) ) ) ;
+  F.printf "@]@\n" ;
   let rec ask_until_valid_input max_report =
-    L.result "@\nSelect report to display (0-%d) (default: 0): %!" max_report ;
+    F.printf "@[Select report to display (0-%d) (default: 0): @]%!" max_report ;
     let input = In_channel.input_line_exn In_channel.stdin in
+    F.printf "@\n" ;
     if String.is_empty input then 0
     else
       match int_of_string_opt input with
@@ -77,7 +80,7 @@ let explore ~selector_limit ~report_txt:_ ~report_json ~show_source_context ~sel
     ~max_nested_level =
   let report = read_report report_json in
   let display_issue issue =
-    L.result "@\n%a" (pp_issue_with_trace ~show_source_context ~max_nested_level) issue
+    F.printf "@\n%a" (pp_issue_with_trace ~show_source_context ~max_nested_level) issue
   in
   match (selected, report) with
   | Some `All, _ ->
