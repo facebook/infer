@@ -45,6 +45,12 @@ let mk_string (s : string) =
   Textual.Exp.Call {proc; args; kind= NonVirtual}
 
 
+let mk_is_true exp =
+  let proc = builtin_name "is_true" in
+  let args = [exp] in
+  Textual.Exp.Call {proc; args; kind= NonVirtual}
+
+
 module Builtins = struct
   type elt = {formals_types: T.Typ.annotated list option; result_type: T.Typ.annotated}
 
@@ -79,6 +85,7 @@ module Builtins = struct
   let supported_builtins =
     let builtins =
       [ ("print", {formals_types= None; result_type= annot pyObject})
+      ; ("is_true", {formals_types= Some [annot pyObject]; result_type= annot pyInt})
       ; ( "binary_add"
         , {formals_types= Some [annot pyObject; annot pyObject]; result_type= annot pyObject} ) ]
     in

@@ -236,4 +236,65 @@ print(z)
         declare $builtins.python_string(*PyObject) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+def coin():
+    return False
+
+def f(x, y):
+    if coin():
+          return x
+    else:
+          return y
+      |}
+      in
+      Py.initialize ~version:3 ~minor:8 () ;
+      let code = FFI.from_string ~source ~filename:"dummy" in
+      Py.finalize () ;
+      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      F.printf "%a" Textual.Module.pp res ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define $toplevel::main() : *PyObject {
+          #b0:
+              ret null
+
+        }
+
+        define f(x: *PyObject, y: *PyObject) : *PyObject {
+          #b0:
+              n0 = coin()
+              jmp b1, b2
+
+          #b1:
+              prune $builtins.is_true(n0)
+              n1:*PyObject = load &x
+              ret n1
+
+          #b2:
+              prune $builtins.is_true(__sil_lnot(n0))
+              n2:*PyObject = load &y
+              ret n2
+
+          #b3:
+              ret null
+
+        }
+
+        define coin() : *PyObject {
+          #b0:
+              ret 0
+
+        }
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_string(*PyObject) : *PyString
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )

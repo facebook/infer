@@ -36,6 +36,8 @@ val mk_int : int64 -> Textual.Exp.t
 val mk_string : string -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal strings. *)
 
+val mk_is_true : Textual.Exp.t -> Textual.Exp.t
+
 module Builtins : sig
   (** This module keeps track of the builtins used by a code unit. Only the necessary the Textual
       declarations are generated. Note that primitive wrappers are always generated ([python_int],

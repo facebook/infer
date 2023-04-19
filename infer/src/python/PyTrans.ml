@@ -52,11 +52,21 @@ module DataStack = struct
 end
 
 module Env = struct
-  (** Part of the environment shared by most structures. It gathers information like which builtin
-      has been spotted, or what idents have been generated so far. *)
-  type shared = {idents: T.Ident.Set.t; globals: T.VarName.Set.t; builtins: PyBuiltins.t}
+  module Labels = Caml.Map.Make (Int)
 
-  (* TODO(vsiles): revisit the data stack status once generators and conditions are in the mix *)
+  (** Part of the environment shared by most structures. It gathers information like which builtin
+      has been spotted, or what idents and labels have been generated so far. *)
+  type shared =
+    { idents: T.Ident.Set.t
+    ; globals: T.VarName.Set.t
+    ; builtins: PyBuiltins.t
+    ; next_label: int
+    ; forward_labels: (string * T.Exp.t option) Labels.t
+          (** Map from offset of labels the code might eventually jump to, to the label name and the
+              Textual expression that might need pruning. They are kept around to correctly split
+              code unit into Textual nodes. *) }
+
+  (* TODO(vsiles): revisit the data stack status once generators are in the mix *)
 
   (** State of the capture while processing a single node: each node has a dedicated data stack, and
       generates its own set of instructions. *)
@@ -66,14 +76,28 @@ module Env = struct
 
   type t = {shared: shared; node: node}
 
+  let empty =
+    { idents= T.Ident.Set.empty
+    ; globals= T.VarName.Set.empty
+    ; builtins= PyBuiltins.empty
+    ; next_label= 0
+    ; forward_labels= Labels.empty }
+
+
   (** Reset the [node] part of an environment, and all of its [idents], to prepare it to process a
       new code unit *)
   let reset_for_proc shared =
-    let shared = {shared with idents= T.Ident.Set.empty} in
+    let shared = {shared with idents= T.Ident.Set.empty; next_label= 0} in
     {shared; node= empty_node}
 
 
-  let empty = {idents= T.Ident.Set.empty; globals= T.VarName.Set.empty; builtins= PyBuiltins.empty}
+  (** Reset the [instructions] field of a [node] to prepare the env to deal with a new set of
+      instructions. *)
+  let reset_for_node ({node} as env) =
+    let reset_for_node env = {env with instructions= []} in
+    let node = reset_for_node node in
+    {env with node}
+
 
   (** Update the [last_line] field of an env, if new information is availbe. *)
   let update_last_line ({node} as env) last_line =
@@ -128,15 +152,56 @@ module Env = struct
     {env with node= push_instr node instr}
 
 
+  (** Generate a fresh label name *)
+  let label ({shared} as env) =
+    let label ({next_label} as env) =
+      let fresh_label = sprintf "b%d" next_label in
+      let env = {env with next_label= next_label + 1} in
+      (env, fresh_label)
+    in
+    let shared, fresh_label = label shared in
+    let env = {env with shared} in
+    (env, fresh_label)
+
+
+  (** Register the fact that a [label] must be inserted before the instruction at [offset] *)
+  let register_label offset label pruned ({shared} as env) =
+    let register_label offset label pruned ({forward_labels} as env) =
+      let forward_labels = Labels.add offset (label, pruned) forward_labels in
+      {env with forward_labels}
+    in
+    let shared = register_label offset label pruned shared in
+    {env with shared}
+
+
+  (** Check if the instruction is a possible jump location, and return the label information found
+      there, if any. The entry is removed from the set to avoid infinite recursion in the main
+      [nodes] function. *)
+  let label_of_offset ({shared} as env) offset =
+    let label_of_offset ({forward_labels} as env) offset =
+      let res = Labels.find_opt offset forward_labels in
+      let env =
+        if Option.is_some res then
+          let forward_labels = Labels.remove offset forward_labels in
+          {env with forward_labels}
+        else env
+      in
+      (env, res)
+    in
+    let shared, res = label_of_offset shared offset in
+    ({env with shared}, res)
+
+
   (** Returns the list of all instructions recorded for the current code unit *)
   let get_instructions {node} =
     let get_instructions {instructions} = List.rev instructions in
     get_instructions node
 
 
-  (** Register a global name (function, variable, ...). Since Python allows "toplevel" code, we
-      encode this with a specially named function that behaves as a toplevel scope, and we need to
-      correctly scope global identifiers, so we don't mix them with locals with the same name. *)
+  (** Register a global name (function, variable, ...). Since Python allows "toplevel" code, they
+      are encoded within a specially named function that behaves as a toplevel scope, and global
+      identifiers are scope accordingly. That way, there is no mixing them with locals with the same
+      name. *)
   let register_global ({shared} as env) name =
     let register_global ({globals} as env) name =
       {env with globals= T.VarName.Set.add name globals}
@@ -144,7 +209,7 @@ module Env = struct
     {env with shared= register_global shared name}
 
 
-  (** Register a known builtin, so we can correctly scope them, and add the relevant Textual
+  (** Register a known builtin, so they are correctly scoped, and add the relevant Textual
       declarations for them. *)
   let register_builtin ({shared} as env) name =
     let register_builtin ({builtins} as env) name =
@@ -320,7 +385,7 @@ module STORE = struct
         L.die InternalError "[%s] %s" opname s
     | `Fun f ->
         if is_global then (
-          Debug.p "  top-level function defined: %s" f ;
+          Debug.p "  top-level function defined: %s\n" f ;
           (env, None) )
         else L.die InternalError "[%s] no support for closure at the moment: %s" opname f
 end
@@ -336,7 +401,7 @@ module RETURN_VALUE = struct
     match exp_ty with
     | `Ok (exp, _) ->
         let term = T.Terminator.Ret exp in
-        (env, Some term)
+        (env, Some (`Return term))
     | `Error s ->
         L.die InternalError "[%s] %s" opname s
     | `Fun f ->
@@ -487,7 +552,7 @@ module MAKE_FUNCTION = struct
     Debug.p "[%s] flags = 0x%x\n" opname arg ;
     if arg <> 0 then L.die InternalError "%s: support for flag 0x%x is not implemented" opname arg ;
     let env, qual = pop_tos opname env in
-    (* don't care about the content of the code object, but we'll check it is indeed code *)
+    (* don't care about the content of the code object, but check it is indeed code *)
     let env, body = pop_tos opname env in
     let body =
       match DataStack.as_code code body with
@@ -512,6 +577,33 @@ module MAKE_FUNCTION = struct
     in
     let env = Env.push env (DataStack.Fun qual) in
     (env, None)
+end
+
+module JUMP = struct
+  module POP_IF = struct
+    (** {v POP_JUMP_IF_TRUE(target) v}
+
+        If top-of-stack is true, sets the bytecode counter to target. top-of-stack is popped.
+
+        {v POP_JUMP_IF_FALSE(target) v}
+
+        If top-of-stack is false, sets the bytecode counter to target. top-of-steack is popped. *)
+    let run ~next_is_true env code {FFI.Instruction.opname; arg} =
+      Debug.p "[%s] target = %d\n" opname arg ;
+      let env, tos = pop_tos opname env in
+      let env, cell = load_cell env code tos in
+      let cond =
+        match cell with
+        | `Ok (cond, _) ->
+            cond
+        | `Error s ->
+            L.die InternalError "[%s] %s" opname s
+        | `Fun f ->
+            L.die InternalError "[%s] Can't evaluate jump condition based on a function: %s" opname
+              f
+      in
+      (env, Some (`TwoWay (next_is_true, arg, cond)))
+  end
 end
 
 (** Main opcode dispatch function. *)
@@ -544,20 +636,39 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
         BINARY_ADD.run env code instr
     | "MAKE_FUNCTION" ->
         MAKE_FUNCTION.run env code instr
+    | "POP_JUMP_IF_TRUE" ->
+        JUMP.POP_IF.run ~next_is_true:false env code instr
+    | "POP_JUMP_IF_FALSE" ->
+        JUMP.POP_IF.run ~next_is_true:true env code instr
     | _ ->
         L.die InternalError "Unsupported opcode: %s" opname
   in
   (env, maybe_term)
 
 
+(** Helper function to check if the next instructions has a label attached to it *)
+let has_jump_target env instructions =
+  match List.hd instructions with
+  | None ->
+      (env, None)
+  | Some {FFI.Instruction.offset; is_jump_target} ->
+      (* Python provides us with jump target info too, so we can do a sanity check. *)
+      let env, maybe_label = Env.label_of_offset env offset in
+      if Option.is_some maybe_label then
+        if not is_jump_target then
+          L.die InternalError "Label at offset %d is not a jump target" offset ;
+      (env, maybe_label)
+
+
 (** Iterator on [run_instruction]: this function will interpret instructions as long as terminator
     is not reached. *)
-let rec run env code = function
+let rec run env code instructions =
+  match instructions with
   | [] ->
       (env, None, [])
-  | instr :: rest -> (
+  | instr :: rest ->
       let env, maybe_term = run_instruction env code instr in
-      match maybe_term with Some term -> (env, Some term, rest) | None -> run env code rest )
+      if Option.is_some maybe_term then (env, maybe_term, rest) else run env code rest
 
 
 (** Return the location of the first available instruction, if any *)
@@ -569,16 +680,46 @@ let first_loc_of_code instructions =
       T.Location.Unknown
 
 
-(** Process a sequence of instructions into a single [Textual.Node.t] unit *)
-let node env label_name code instructions =
+let mk_jump loc labels =
+  let nodes =
+    List.map
+      ~f:(fun value ->
+        let label = {T.NodeName.value; loc} in
+        {T.Terminator.label; ssa_args= []} )
+      labels
+  in
+  T.Terminator.Jump nodes
+
+
+(** Process the instructions of a code object up to the point where a terminator is reached. It will
+    return the remaining instructions, new allocated node, along with any label that should be used
+    to start the next node, if any (and prunning information).
+
+    If the terminator is [`Return], just return the single node describing all the instruction that
+    have been recorded so far, and the remaining instructions, on the side.
+
+    If the terminator is [`TwoWay], record the current node, and register two fresh labels for the
+    two possible jump locations. One is always the follow-up instruction, the "next" instruction,
+    and the "other" might be located further away in case of nested "if/then/else" scenarios.*)
+let until_terminator env label_name pruned code instructions =
+  Debug.p "[until_terminator] %s\n" label_name ;
   let label_loc = first_loc_of_code instructions in
-  let label = T.NodeName.{value= label_name; loc= label_loc} in
+  let label = {T.NodeName.value= label_name; loc= label_loc} in
+  (* Prune necessary expressions *)
+  let env =
+    match pruned with
+    | None ->
+        env
+    | Some exp ->
+        let instr = T.Instr.Prune {exp; loc= label_loc} in
+        Env.push_instr env instr
+  in
   let env, maybe_term, rest = run env code instructions in
   let last_loc = Env.loc env in
   match maybe_term with
   | None ->
       L.die InternalError "Reached the end of code without spotting a terminator"
-  | Some last ->
+  | Some (`Return last) ->
       let node =
         T.Node.
           { label
@@ -589,7 +730,61 @@ let node env label_name code instructions =
           ; last_loc
           ; label_loc }
       in
-      (env, rest, [node])
+      (env, rest, node, None)
+  | Some (`TwoWay (next_is_true, other_offset, cond)) ->
+      (* The current node ended up with a two-way jump. Either continue to the "next"
+         (fall-through) part of the code, or jump to the "other" section of the code. For this
+         purpose, register a fresh label for the jump. *)
+      let jump_loc = Env.loc env in
+      let env, next_label = Env.label env in
+      let env, other_label = Env.label env in
+      (* Compute the relevant pruning expressions *)
+      let condT = PyCommon.mk_is_true cond in
+      let condF = PyCommon.mk_is_true (T.Exp.not cond) in
+      let next_prune = if next_is_true then condT else condF in
+      let other_prune = if next_is_true then condF else condT in
+      (* Register the jump target *)
+      let env = Env.register_label other_offset other_label (Some other_prune) env in
+      let jump = mk_jump jump_loc [next_label; other_label] in
+      let node =
+        T.Node.
+          { label
+          ; ssa_parameters= []
+          ; exn_succs= []
+          ; last= jump
+          ; instrs= Env.get_instructions env
+          ; last_loc
+          ; label_loc }
+      in
+      (env, rest, node, Some (next_label, Some next_prune))
+
+
+(** Process a sequence of instructions until there is no more left to process. *)
+let rec nodes env label_name pruned code instructions =
+  let env, instructions, textual_node, forward_label =
+    until_terminator env label_name pruned code instructions
+  in
+  if List.is_empty instructions then (env, [textual_node])
+  else
+    let env = Env.reset_for_node env in
+    let env, label_name, pruned =
+      (* If the previous node provides the name of the next label, take it.
+         Otherwise, check if execution reached a jump location, and use it.
+         Otherwise pick up a fresh label. *)
+      match forward_label with
+      | Some (name, pruned) ->
+          (env, name, pruned)
+      | None -> (
+          let env, jump_target = has_jump_target env instructions in
+          match jump_target with
+          | Some (name, pruned) ->
+              (env, name, pruned)
+          | None ->
+              let env, name = Env.label env in
+              (env, name, None) )
+    in
+    let env, more_textual_nodes = nodes env label_name pruned code instructions in
+    (env, textual_node :: more_textual_nodes)
 
 
 (** Process a single code unit (toplevel code, function body, ...) *)
@@ -610,13 +805,13 @@ let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames; instructions} as 
     ; result_type= pyObject
     ; attributes= [] }
   in
+  (* Create the original environment for this code unit *)
   let env = Env.reset_for_proc env in
-  let label = node_name ~loc "b0" in
+  let env, entry_label = Env.label env in
+  let label = node_name ~loc entry_label in
   (* Now that a full unit has been processed, discard all the local information (local variable
      names, labels, ...) and only keep the [shared] part of the environment *)
-  let {Env.shared= env}, remaining_instructions, nodes = node env "b0" code instructions in
-  if not (List.is_empty remaining_instructions) then
-    L.die InternalError "%d instructions are left" (List.length remaining_instructions) ;
+  let {Env.shared= env}, nodes = nodes env entry_label None code instructions in
   (env, {Textual.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown})
 
 
