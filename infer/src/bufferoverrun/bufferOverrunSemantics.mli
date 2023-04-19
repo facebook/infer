@@ -10,21 +10,20 @@ open! IStd
 val is_stack_exp : Exp.t -> BufferOverrunDomain.Mem.t -> bool
 (** Check if an expression is a stack variable such as [n$0] or local variable for C array *)
 
-val eval : Typ.IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
+val eval : IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
 (** Evalute an expression *)
 
 val eval_locs : Exp.t -> BufferOverrunDomain.Mem.t -> AbsLoc.PowLoc.t
 (** [eval_locs exp mem] is like [eval exp mem |> Val.get_all_locs] but takes some shortcuts to avoid
     computing useless and/or problematic intermediate values *)
 
-val eval_arr :
-  Typ.IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
+val eval_arr : IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
 (** Return the array value of the input expression. For example, when [x] is a program variable,
     [eval_arr x] returns array blocks the [x] is pointing to, on the other hand, [eval x] returns
     the abstract location of [x]. *)
 
 val eval_lindex :
-  Typ.IntegerWidths.t -> Exp.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
+  IntegerWidths.t -> Exp.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
 (** Evaluate array location with index, i.e.,
     [eval_lindex integer_type_widths array_exp index_exp mem] *)
 
@@ -66,7 +65,7 @@ type eval_mode =
 
 val mk_eval_sym_trace :
      ?is_args_ref:bool
-  -> Typ.IntegerWidths.t
+  -> IntegerWidths.t
   -> (Pvar.t * Typ.t) list
   -> (Exp.t * Typ.t) list
   -> (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
@@ -76,7 +75,7 @@ val mk_eval_sym_trace :
 (** Make [eval_sym] function for on-demand symbol evaluation *)
 
 val mk_eval_sym_cost :
-     Typ.IntegerWidths.t
+     IntegerWidths.t
   -> (Pvar.t * Typ.t) list
   -> (Exp.t * Typ.t) list
   -> (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list
@@ -86,10 +85,6 @@ val mk_eval_sym_cost :
 
 module Prune : sig
   val prune :
-       Location.t
-    -> Typ.IntegerWidths.t
-    -> Exp.t
-    -> BufferOverrunDomain.Mem.t
-    -> BufferOverrunDomain.Mem.t
+    Location.t -> IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Mem.t
   (** Prune memory with the given condition expression *)
 end

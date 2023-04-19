@@ -54,7 +54,7 @@ module ConditionSet : sig
     -> checked_t
 
   val add_binary_operation :
-       Typ.IntegerWidths.t
+       IntegerWidths.t
     -> Location.t
     -> Procname.t
     -> Binop.t

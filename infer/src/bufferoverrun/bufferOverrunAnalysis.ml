@@ -161,7 +161,7 @@ module TransferFunctions = struct
 
   let instantiate_mem :
          is_args_ref:bool
-      -> Typ.IntegerWidths.t
+      -> IntegerWidths.t
       -> Ident.t
       -> (Pvar.t * Typ.t) list
       -> Procname.t

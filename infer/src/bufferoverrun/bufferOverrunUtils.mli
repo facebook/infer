@@ -17,7 +17,7 @@ module ModelEnv : sig
     ; node_hash: int
     ; location: Location.t
     ; tenv: Tenv.t
-    ; integer_type_widths: Typ.IntegerWidths.t
+    ; integer_type_widths: IntegerWidths.t
     ; get_summary: BufferOverrunAnalysisSummary.get_summary }
 
   val mk_model_env :
@@ -26,7 +26,7 @@ module ModelEnv : sig
     -> node_hash:int
     -> Location.t
     -> Tenv.t
-    -> Typ.IntegerWidths.t
+    -> IntegerWidths.t
     -> BufferOverrunAnalysisSummary.get_summary
     -> model_env
   (** Make model environment. caller_pname is relevant only when the model environment is used to
@@ -80,7 +80,7 @@ module Check : sig
     -> PO.ConditionSet.checked_t
 
   val lindex :
-       Typ.IntegerWidths.t
+       IntegerWidths.t
     -> array_exp:Exp.t
     -> index_exp:Exp.t
     -> last_included:bool
@@ -90,7 +90,7 @@ module Check : sig
     -> PO.ConditionSet.checked_t
 
   val lindex_byte :
-       Typ.IntegerWidths.t
+       IntegerWidths.t
     -> array_exp:Exp.t
     -> byte_index_exp:Exp.t
     -> last_included:bool
@@ -100,7 +100,7 @@ module Check : sig
     -> PO.ConditionSet.checked_t
 
   val binary_operation :
-       Typ.IntegerWidths.t
+       IntegerWidths.t
     -> Procname.t
     -> Binop.t
     -> lhs:Dom.Val.t

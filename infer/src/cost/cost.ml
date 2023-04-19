@@ -18,7 +18,7 @@ module Node = ProcCfg.DefaultNode
 
 type extras_WorstCaseCost =
   { inferbo_invariant_map: BufferOverrunAnalysis.invariant_map
-  ; integer_type_widths: Typ.IntegerWidths.t
+  ; integer_type_widths: IntegerWidths.t
   ; inferbo_get_summary: BufferOverrunAnalysisSummary.get_summary
   ; get_node_nb_exec: Node.t -> BasicCost.t
   ; get_summary: Procname.t -> CostDomain.summary option

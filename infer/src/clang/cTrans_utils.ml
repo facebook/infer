@@ -418,7 +418,7 @@ let create_alloc_instrs integer_type_widths ~alloc_builtin ?size_exp ?placement_
     let nbytes =
       match function_type_np.Typ.desc with
       | Tint ikind ->
-          Some (Typ.width_of_ikind integer_type_widths ikind / 8)
+          Some (IntegerWidths.width_of_ikind integer_type_widths ikind / 8)
       | _ ->
           None
     in

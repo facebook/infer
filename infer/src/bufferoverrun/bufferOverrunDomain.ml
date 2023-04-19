@@ -243,7 +243,7 @@ module Val = struct
    fun allocsite ~length ~traces -> {bot with arrayblk= ArrayBlk.make_java allocsite ~length; traces}
 
 
-  let of_literal_string : Typ.IntegerWidths.t -> string -> t =
+  let of_literal_string : IntegerWidths.t -> string -> t =
    fun integer_type_widths s ->
     let allocsite = Allocsite.literal_string s in
     let stride = Some (integer_type_widths.char_width / 8) in
@@ -578,7 +578,7 @@ module Val = struct
         let stride =
           match elt with
           | Some {Typ.desc= Tint ikind} ->
-              Itv.of_int (Typ.width_of_ikind integer_type_widths ikind)
+              Itv.of_int (IntegerWidths.width_of_ikind integer_type_widths ikind)
           | _ ->
               Itv.nat
         in

@@ -16,7 +16,7 @@ type t =
   ; typ_of_param_path: SPath.partial -> Typ.t option
   ; may_last_field: SPath.partial -> bool
   ; entry_location: Location.t
-  ; integer_type_widths: Typ.IntegerWidths.t
+  ; integer_type_widths: IntegerWidths.t
   ; class_name: Typ.name option }
 
 let mk pdesc =

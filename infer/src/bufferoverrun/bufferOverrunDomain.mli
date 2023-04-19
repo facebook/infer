@@ -79,7 +79,7 @@ module Val : sig
 
   val of_itv : ?traces:BufferOverrunTrace.Set.t -> Itv.t -> t
 
-  val of_literal_string : Typ.IntegerWidths.t -> string -> t
+  val of_literal_string : IntegerWidths.t -> string -> t
 
   val of_loc : ?traces:BufferOverrunTrace.Set.t -> AbsLoc.Loc.t -> t
   (** Create a value for a pointer pointing to x.*)

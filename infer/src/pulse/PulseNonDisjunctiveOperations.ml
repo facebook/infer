@@ -164,7 +164,7 @@ let rec get_fixed_size integer_widths tenv name =
           let+ size =
             match desc with
             | Tint ikind ->
-                Some (Typ.width_of_ikind integer_widths ikind)
+                Some (IntegerWidths.width_of_ikind integer_widths ikind)
             | Tfloat fkind ->
                 Some (match fkind with FFloat -> 32 | FDouble -> 64 | FLongDouble -> 128)
             | Tstruct name ->

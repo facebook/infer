@@ -11,19 +11,6 @@
 open! IStd
 module F = Format
 
-module IntegerWidths : sig
-  type t = {char_width: int; short_width: int; int_width: int; long_width: int; longlong_width: int}
-  [@@deriving compare, equal]
-
-  val java : t
-
-  val load : SourceFile.t -> t option
-
-  module SQLite : sig
-    val serialize : t option -> Sqlite3.Data.t
-  end
-end
-
 (** Kinds of integers *)
 type ikind =
   | IChar  (** [char] *)
@@ -41,10 +28,6 @@ type ikind =
   | I128  (** [__int128_t] *)
   | IU128  (** [__uint128_t] *)
 [@@deriving compare, equal, hash]
-
-val width_of_ikind : IntegerWidths.t -> ikind -> int
-
-val range_of_ikind : IntegerWidths.t -> ikind -> Z.t * Z.t
 
 val ikind_is_char : ikind -> bool
 (** Check whether the integer kind is a char *)

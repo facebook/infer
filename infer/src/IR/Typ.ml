@@ -13,31 +13,6 @@ module Hashtbl = Caml.Hashtbl
 module L = Logging
 module F = Format
 
-module IntegerWidths = struct
-  type t = {char_width: int; short_width: int; int_width: int; long_width: int; longlong_width: int}
-  [@@deriving compare, equal]
-
-  let java = {char_width= 16; short_width= 16; int_width= 32; long_width= 64; longlong_width= 64}
-
-  module SQLite = SqliteUtils.MarshalledNullableDataNOTForComparison (struct
-    type nonrec t = t
-  end)
-
-  let load_statement =
-    Database.register_statement CaptureDatabase
-      "SELECT integer_type_widths FROM source_files WHERE source_file = :k"
-
-
-  let load source =
-    Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
-        SourceFile.SQLite.serialize source
-        |> Sqlite3.bind load_stmt 1
-        |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
-        SqliteUtils.result_single_column_option ~finalize:false ~log:"Typ.IntegerWidths.load" db
-          load_stmt
-        |> Option.bind ~f:SQLite.deserialize )
-end
-
 (** Kinds of integers *)
 type ikind =
   | IChar  (** [char] *)
@@ -87,41 +62,11 @@ let ikind_to_string = function
       "__uint128_t"
 
 
-let width_of_ikind {IntegerWidths.char_width; short_width; int_width; long_width; longlong_width} =
-  function
-  | IBool ->
-      8
-  | ISChar | IChar | IUChar ->
-      char_width
-  | IShort | IUShort ->
-      short_width
-  | IInt | IUInt ->
-      int_width
-  | ILong | IULong ->
-      long_width
-  | ILongLong | IULongLong ->
-      longlong_width
-  | I128 | IU128 ->
-      128
-
-
 let ikind_is_unsigned = function
   | IBool | IUChar | IUShort | IUInt | IULong | IULongLong | IU128 ->
       true
   | ISChar | IChar | IShort | IInt | ILong | ILongLong | I128 ->
       false
-
-
-let range_of_ikind =
-  let range bits ~unsigned =
-    if unsigned then Z.(~$0, shift_left ~$1 bits - ~$1)
-    else
-      let bound = Z.(shift_left ~$1) (bits - 1) in
-      Z.(~-bound, bound - ~$1)
-  in
-  fun integer_widths x ->
-    let bits_for_range = match x with IBool -> 1 | _ -> width_of_ikind integer_widths x in
-    range bits_for_range ~unsigned:(ikind_is_unsigned x)
 
 
 let ikind_is_char = function IChar | ISChar | IUChar -> true | _ -> false

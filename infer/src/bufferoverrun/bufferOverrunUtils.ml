@@ -24,7 +24,7 @@ module ModelEnv = struct
     ; node_hash: int
     ; location: Location.t
     ; tenv: Tenv.t
-    ; integer_type_widths: Typ.IntegerWidths.t
+    ; integer_type_widths: IntegerWidths.t
     ; get_summary: BoSummary.get_summary }
 
   let mk_model_env pname ?caller_pname ~node_hash location tenv integer_type_widths get_summary =
@@ -221,7 +221,7 @@ module Exec = struct
             if Language.curr_language_is Java then
               Dom.Val.of_java_array_alloc allocsite ~length:size ~traces
             else
-              let stride = Some (Typ.width_of_ikind integer_type_widths IChar / 8) in
+              let stride = Some (IntegerWidths.width_of_ikind integer_type_widths IChar / 8) in
               let offset = Itv.zero in
               Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces
           in

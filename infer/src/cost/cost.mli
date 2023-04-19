@@ -17,7 +17,7 @@ val checker :
 val instantiate_cost :
      ?get_closure_callee_cost:(Procname.t -> CostDomain.BasicCostWithReason.t option)
   -> default_closure_cost:Ints.NonNegativeInt.t
-  -> Typ.IntegerWidths.t
+  -> IntegerWidths.t
   -> inferbo_caller_mem:BufferOverrunDomain.Mem.t
   -> callee_pname:Procname.t
   -> callee_formals:(Pvar.t * Typ.t) list

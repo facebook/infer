@@ -13,7 +13,7 @@ val has_copy_in : string -> bool
 
 val init_const_refable_parameters :
      Procdesc.t
-  -> Typ.IntegerWidths.t
+  -> IntegerWidths.t
   -> Tenv.t
   -> ExecutionDomain.t list
   -> NonDisjDomain.t

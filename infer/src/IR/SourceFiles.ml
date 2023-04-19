@@ -88,7 +88,7 @@ let add source_file cfg tenv integer_type_widths =
   DBWriter.add_source_file
     ~source_file:(SourceFile.SQLite.serialize source_file)
     ~tenv:(Tenv.SQLite.serialize tenv)
-    ~integer_type_widths:(Typ.IntegerWidths.SQLite.serialize integer_type_widths)
+    ~integer_type_widths:(IntegerWidths.SQLite.serialize integer_type_widths)
     ~proc_names:(Procname.SQLiteList.serialize proc_names)
 
 

@@ -394,7 +394,7 @@ module BinaryOperationCondition = struct
   type t =
     { binop: binop_t
     ; typ: Typ.ikind
-    ; integer_widths: Typ.IntegerWidths.t
+    ; integer_widths: IntegerWidths.t
     ; lhs: ItvPure.t
     ; rhs: ItvPure.t
     ; pname: Procname.t }
@@ -456,7 +456,7 @@ module BinaryOperationCondition = struct
     | _ ->
         F.fprintf fmt "%s%d"
           (if Typ.ikind_is_unsigned typ then "unsigned" else "signed")
-          (Typ.width_of_ikind integer_widths typ)
+          (IntegerWidths.width_of_ikind integer_widths typ)
 
 
   let pp = pp_description ~markup:false
@@ -516,7 +516,7 @@ module BinaryOperationCondition = struct
       in
       let v_lb, v_ub = (ItvPure.lb v, ItvPure.ub v) in
       let typ_lb, typ_ub =
-        let lb, ub = Typ.range_of_ikind integer_widths typ in
+        let lb, ub = IntegerWidths.range_of_ikind integer_widths typ in
         (Bound.of_big_int lb, Bound.of_big_int ub)
       in
       let check_underflow, check_overflow = should_check c in

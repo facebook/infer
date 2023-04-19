@@ -16,7 +16,7 @@ val equal_clang_lang : clang_lang -> clang_lang -> bool
 type translation_unit_context =
   { lang: clang_lang
   ; source_file: SourceFile.t
-  ; integer_type_widths: Typ.IntegerWidths.t
+  ; integer_type_widths: IntegerWidths.t
   ; is_objc_arc_on: bool }
 
 type decl_trans_context = [`DeclTraversal | `Translation | `CppLambdaExprTranslation]

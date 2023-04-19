@@ -117,7 +117,7 @@ let add_unreachable_code (cfg : CFG.t) (node : CFG.Node.t) instr rem_instrs (che
 
 
 let check_binop_array_access :
-       Typ.IntegerWidths.t
+       IntegerWidths.t
     -> is_plus:bool
     -> e1:Exp.t
     -> e2:Exp.t
@@ -133,7 +133,7 @@ let check_binop_array_access :
 
 
 let check_binop :
-       Typ.IntegerWidths.t
+       IntegerWidths.t
     -> bop:Binop.t
     -> e1:Exp.t
     -> e2:Exp.t
@@ -153,7 +153,7 @@ let check_binop :
 
 let check_expr_for_array_access :
        ?sub_expr_only:bool
-    -> Typ.IntegerWidths.t
+    -> IntegerWidths.t
     -> Exp.t
     -> Location.t
     -> Dom.Mem.t
@@ -234,7 +234,7 @@ let rec check_expr_for_integer_overflow integer_type_widths pname exp location m
 
 let instantiate_cond :
        is_args_ref:bool
-    -> Typ.IntegerWidths.t
+    -> IntegerWidths.t
     -> Procname.t
     -> (Pvar.t * Typ.t) list
     -> (Exp.t * Typ.t) list
@@ -294,7 +294,7 @@ let check_instr :
     -> BoUtils.get_formals
     -> Procname.t
     -> Tenv.t
-    -> Typ.IntegerWidths.t
+    -> IntegerWidths.t
     -> CFG.Node.t
     -> Sil.instr
     -> Dom.Mem.t
@@ -341,7 +341,7 @@ let check_instrs :
     -> BoUtils.get_formals
     -> Procname.t
     -> Tenv.t
-    -> Typ.IntegerWidths.t
+    -> IntegerWidths.t
     -> CFG.t
     -> CFG.Node.t
     -> Instrs.not_reversed_t
@@ -379,7 +379,7 @@ let check_node :
     -> BoUtils.get_formals
     -> Procname.t
     -> Tenv.t
-    -> Typ.IntegerWidths.t
+    -> IntegerWidths.t
     -> CFG.t
     -> BufferOverrunAnalysis.invariant_map
     -> Checks.t
@@ -404,7 +404,7 @@ let compute_checks :
     -> BoUtils.get_formals
     -> Procname.t
     -> Tenv.t
-    -> Typ.IntegerWidths.t
+    -> IntegerWidths.t
     -> CFG.t
     -> BufferOverrunAnalysis.invariant_map
     -> checks =

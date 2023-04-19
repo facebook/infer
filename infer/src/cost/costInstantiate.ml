@@ -23,7 +23,7 @@ end
 
 type cost_args =
   { tenv: Tenv.t
-  ; integer_type_widths: Typ.IntegerWidths.t
+  ; integer_type_widths: IntegerWidths.t
   ; get_callee_cost_summary_and_formals:
       Procname.t -> (CostDomain.summary * (Pvar.t * Typ.t) list) option
   ; inferbo_invariant_map: BufferOverrunAnalysis.invariant_map

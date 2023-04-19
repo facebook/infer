@@ -15,7 +15,7 @@ module BoField = BufferOverrunField
 module L = Logging
 module TraceSet = BufferOverrunTrace.Set
 
-let eval_const : Typ.IntegerWidths.t -> Const.t -> Val.t =
+let eval_const : IntegerWidths.t -> Const.t -> Val.t =
  fun integer_type_widths -> function
   | Const.Cint intlit ->
       Val.of_big_int (IntLit.to_big_int intlit)
@@ -144,13 +144,13 @@ let rec must_alias_cmp : Exp.t -> Mem.t -> bool =
 let set_array_stride integer_type_widths typ v =
   match typ with
   | Typ.{desc= Tptr ({desc= Tint ikind}, Pk_pointer)} ->
-      let width = Typ.width_of_ikind integer_type_widths ikind in
+      let width = IntegerWidths.width_of_ikind integer_type_widths ikind in
       Val.set_array_stride (Z.of_int (width / 8)) v
   | _ ->
       v
 
 
-let rec eval : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
+let rec eval : IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
  fun integer_type_widths exp mem ->
   if (not (Language.curr_language_is Java)) && must_alias_cmp exp mem then Val.Itv.zero
   else
@@ -224,13 +224,13 @@ and eval_lindex integer_type_widths array_exp index_exp mem =
         Val.plus_pi array_v index_v
 
 
-and eval_unop : Typ.IntegerWidths.t -> Unop.t -> Exp.t -> Mem.t -> Val.t =
+and eval_unop : IntegerWidths.t -> Unop.t -> Exp.t -> Mem.t -> Val.t =
  fun integer_type_widths unop e mem ->
   let v = eval integer_type_widths e mem in
   match unop with Unop.Neg -> Val.neg v | Unop.BNot -> Val.unknown_bit v | Unop.LNot -> Val.lnot v
 
 
-and eval_binop : Typ.IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.t -> Val.t =
+and eval_binop : IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.t -> Val.t =
  fun integer_type_widths binop e1 e2 mem ->
   let v1 = eval integer_type_widths e1 mem in
   let v2 = eval integer_type_widths e2 mem in
@@ -307,7 +307,7 @@ let rec eval_locs : Exp.t -> Mem.t -> PowLoc.t =
    when "x" is a program variable, (eval_arr "x") returns array blocks
    the "x" is pointing to, on the other hand, (eval "x") returns the
    abstract location of "x". *)
-let rec eval_arr : Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
+let rec eval_arr : IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
  fun integer_type_widths exp mem ->
   match exp with
   | Exp.Var id ->
@@ -821,7 +821,7 @@ module Prune = struct
     gen_prune_alias_functions ~prune_alias_core
 
 
-  let rec prune_binop_left : Location.t -> Typ.IntegerWidths.t -> Exp.t -> t -> t =
+  let rec prune_binop_left : Location.t -> IntegerWidths.t -> Exp.t -> t -> t =
    fun location integer_type_widths e astate ->
     match e with
     | Exp.BinOp (comp, Exp.Cast (_, e1), e2) ->
@@ -857,7 +857,7 @@ module Prune = struct
         astate
 
 
-  let prune_binop_right : Location.t -> Typ.IntegerWidths.t -> Exp.t -> t -> t =
+  let prune_binop_right : Location.t -> IntegerWidths.t -> Exp.t -> t -> t =
    fun location integer_type_widths e astate ->
     match e with
     | Exp.BinOp (((Binop.Lt | Binop.Gt | Binop.Le | Binop.Ge | Binop.Eq | Binop.Ne) as c), e1, e2)
@@ -867,7 +867,7 @@ module Prune = struct
         astate
 
 
-  let prune_unreachable : Typ.IntegerWidths.t -> Exp.t -> t -> t =
+  let prune_unreachable : IntegerWidths.t -> Exp.t -> t -> t =
    fun integer_type_widths e ({mem} as astate) ->
     match mem with
     | Mem.(Unreachable | ExcRaised) ->
@@ -943,7 +943,7 @@ module Prune = struct
         astate
 
 
-  let prune : Location.t -> Typ.IntegerWidths.t -> Exp.t -> Mem.t -> Mem.t =
+  let prune : Location.t -> IntegerWidths.t -> Exp.t -> Mem.t -> Mem.t =
    fun location integer_type_widths e mem ->
     let mem, prune_pairs = Mem.apply_latest_prune e mem in
     let {mem; prune_pairs} = prune_helper location integer_type_widths e {mem; prune_pairs} in

@@ -506,7 +506,7 @@ module ItvPure = struct
 
 
   let max_of_ikind integer_type_widths ikind =
-    let _, max = Typ.range_of_ikind integer_type_widths ikind in
+    let _, max = IntegerWidths.range_of_ikind integer_type_widths ikind in
     of_big_int max
 
 
