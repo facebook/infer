@@ -14,11 +14,16 @@
 open! IStd
 
 module rec Constant : sig
-  type t [@@deriving show, compare]
+  type t =
+    | PYCBool of bool
+    | PYCInt of int64
+    | PYCString of string
+    | PYCTuple of t array
+    | PYCCode of Code.t
+    | PYCNone
+  [@@deriving show, compare]
 
   val create : Pytypes.pyobject -> t
-
-  val to_exp : t -> (Textual.Exp.t * Textual.Typ.t) option
 
   val as_code : t -> Code.t option
 

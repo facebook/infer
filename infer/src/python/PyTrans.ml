@@ -233,6 +233,32 @@ module Debug = struct
     if debug then F.kasprintf (fun s -> F.printf "%s" s) fmt else F.ifprintf dummy_formatter fmt
 end
 
+let rec py_to_exp c =
+  match (c : FFI.Constant.t) with
+  | PYCBool b ->
+      let b = if b then Z.one else Z.zero in
+      let exp = T.(Exp.Const (Const.Int b)) in
+      Some (exp, T.Typ.Int)
+  | PYCInt i ->
+      Some PyCommon.(mk_int i, pyInt)
+  | PYCString s ->
+      Some PyCommon.(mk_string s, pyString)
+  | PYCNone ->
+      let exp = T.(Exp.Const Const.Null) in
+      Some (exp, T.Typ.Null)
+  | PYCCode _ ->
+      None
+  | PYCTuple arr -> (
+      let l = Array.to_list arr in
+      let l = List.map ~f:(fun c -> py_to_exp c |> Option.map ~f:fst) l in
+      match Option.all l with
+      | None ->
+          None
+      | Some args ->
+          let exp = T.Exp.Call {proc= PyCommon.python_tuple; args; kind= NonVirtual} in
+          Some (exp, PyCommon.pyObject) )
+
+
 let var_name ?(loc = T.Location.Unknown) value = T.VarName.{value; loc}
 
 let node_name ?(loc = T.Location.Unknown) value = T.NodeName.{value; loc}
@@ -254,15 +280,15 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
      These data are mapped to Textual.Exp.t values as much as possible. But it's not always
      desirable (see MAKE_FUNCTION) *)
   let loc = Env.loc env in
-  match cell with
-  | DataStack.Const ndx -> (
+  match (cell : DataStack.cell) with
+  | Const ndx -> (
       let const = co_consts.(ndx) in
-      match FFI.Constant.to_exp const with
+      match py_to_exp const with
       | None ->
           (env, `Error "[load_cell] Constant contains code objects")
       | Some exp_ty ->
           (env, `Ok exp_ty) )
-  | DataStack.Name ndx ->
+  | Name ndx ->
       let name = global co_names.(ndx) in
       let env, id = Env.temp env in
       let exp = T.Exp.Lvar (var_name ~loc name) in
@@ -271,7 +297,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let env = Env.push_instr env instr in
       (* TODO: try to trace the type of names ? *)
       (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
-  | DataStack.VarName ndx ->
+  | VarName ndx ->
       let name = co_varnames.(ndx) in
       let env, id = Env.temp env in
       let exp = T.Exp.Lvar (var_name ~loc name) in
@@ -280,10 +306,10 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let env = Env.push_instr env instr in
       (* TODO: try to trace the type of names ? *)
       (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
-  | DataStack.Temp id ->
+  | Temp id ->
       (* TODO: try to trace the type of ids ? *)
       (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
-  | DataStack.Fun f ->
+  | Fun f ->
       (env, `Fun f)
 
 
