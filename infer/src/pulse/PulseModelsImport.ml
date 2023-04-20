@@ -186,7 +186,7 @@ module Basic = struct
       don't have the implementation. This triggers a bunch of heuristics, e.g. to havoc arguments we
       suspect are passed by reference. *)
   let unknown_call skip_reason args : model =
-   fun {path; callee_procname; location; ret} astate ->
+   fun {path; callee_procname; analysis_data= {tenv}; location; ret} astate ->
     let actuals =
       List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
           (actual, typ) )
@@ -195,8 +195,8 @@ module Basic = struct
       IRAttributes.load callee_procname |> Option.map ~f:ProcAttributes.get_pvar_formals
     in
     let<++> astate =
-      PulseCallOperations.unknown_call path location (Model skip_reason) (Some callee_procname) ~ret
-        ~actuals ~formals_opt astate
+      PulseCallOperations.unknown_call tenv path location (Model skip_reason) (Some callee_procname)
+        ~ret ~actuals ~formals_opt astate
     in
     astate
 

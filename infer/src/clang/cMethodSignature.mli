@@ -30,6 +30,7 @@ type t =
   ; attributes: Clang_ast_t.attribute list
   ; loc: Clang_ast_t.source_range
   ; method_kind: ClangMethodKind.t
+  ; is_cpp_const_member_fun: bool
   ; is_cpp_virtual: bool
   ; is_cpp_copy_assignment: bool
   ; is_cpp_copy_ctor: bool
@@ -59,6 +60,7 @@ val mk :
   -> Clang_ast_t.attribute list
   -> Clang_ast_t.source_range
   -> ClangMethodKind.t
+  -> ?is_cpp_const_member_fun:bool
   -> ?is_cpp_virtual:bool
   -> ?is_cpp_copy_assignment:bool
   -> ?is_cpp_copy_ctor:bool

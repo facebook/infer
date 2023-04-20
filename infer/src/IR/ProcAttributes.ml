@@ -83,6 +83,7 @@ type t =
   ; is_abstract: bool  (** the procedure is abstract *)
   ; is_biabduction_model: bool  (** the procedure is a model for the biabduction analysis *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
+  ; is_cpp_const_member_fun: bool  (** true if the procedure is a const function *)
   ; is_cpp_copy_assignment: bool  (** true if the procedure is a copy assignment *)
   ; is_cpp_copy_ctor: bool  (** true if the procedure is a copy constructor *)
   ; is_cpp_move_ctor: bool  (** true if the procedure is a move constructor *)
@@ -168,6 +169,7 @@ let default translation_unit proc_name =
   ; is_abstract= false
   ; is_biabduction_model= false
   ; is_bridge_method= false
+  ; is_cpp_const_member_fun= false
   ; is_cpp_copy_assignment= false
   ; is_cpp_copy_ctor= false
   ; is_cpp_move_ctor= false
@@ -242,6 +244,7 @@ let pp f
      ; is_abstract
      ; is_biabduction_model
      ; is_bridge_method
+     ; is_cpp_const_member_fun
      ; is_cpp_copy_assignment
      ; is_cpp_copy_ctor
      ; is_cpp_move_ctor
@@ -300,6 +303,8 @@ let pp f
   pp_bool_default ~default:default.is_abstract "is_abstract" is_abstract f () ;
   pp_bool_default ~default:default.is_biabduction_model "is_model" is_biabduction_model f () ;
   pp_bool_default ~default:default.is_bridge_method "is_bridge_method" is_bridge_method f () ;
+  pp_bool_default ~default:default.is_cpp_const_member_fun "is_cpp_const_member_fun "
+    is_cpp_const_member_fun f () ;
   pp_bool_default ~default:default.is_cpp_copy_assignment "is_cpp_copy_assignment"
     is_cpp_copy_assignment f () ;
   pp_bool_default ~default:default.is_cpp_copy_ctor "is_cpp_copy_ctor" is_cpp_copy_ctor f () ;

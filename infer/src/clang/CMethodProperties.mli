@@ -23,6 +23,8 @@ val get_point_of_instantiation : Clang_ast_t.decl -> Clang_ast_t.source_location
 
 val is_cpp_lambda_call_operator : Clang_ast_t.decl -> bool
 
+val is_cpp_const_member_fun : Clang_ast_t.decl -> bool
+
 val is_cpp_virtual : Clang_ast_t.decl -> bool
 
 val is_cpp_copy_assignment : Clang_ast_t.decl -> bool

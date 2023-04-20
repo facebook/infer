@@ -59,6 +59,7 @@ type t =
   ; is_abstract: bool  (** the procedure is abstract *)
   ; is_biabduction_model: bool  (** the procedure is a model for the biabduction analysis *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
+  ; is_cpp_const_member_fun: bool  (** true if the procedure is a const function *)
   ; is_cpp_copy_assignment: bool  (** true if the procedure is a copy assignment *)
   ; is_cpp_copy_ctor: bool  (** true if the procedure is a copy constructor *)
   ; is_cpp_move_ctor: bool  (** true if the procedure is a move constructor *)

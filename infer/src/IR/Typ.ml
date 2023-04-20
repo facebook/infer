@@ -640,6 +640,8 @@ let is_ptr_to_ignore_quals t ~ptr =
   match ptr.desc with Tptr (t', _) -> equal_ignore_quals t t' | _ -> false
 
 
+let is_ptr_to_const typ = match typ.desc with Tptr (t, _) -> is_const t.quals | _ -> false
+
 (** If an array type, return the type of the element. If not, return the default type if given,
     otherwise raise an exception *)
 let array_elem default_opt typ =

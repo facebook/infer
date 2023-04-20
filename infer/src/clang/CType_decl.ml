@@ -20,22 +20,22 @@ module BuildMethodSignature = struct
         None
 
 
-  let param_type_of_qual_type ?(is_const_member_function = false) qual_type_to_sil_type tenv name
-      qual_type =
+  let param_type_of_qual_type ?(is_cpp_const_member_function = false) qual_type_to_sil_type tenv
+      name qual_type =
     let typ = qual_type_to_sil_type tenv qual_type in
     let is_pointer_to_const = CType.is_pointer_to_const qual_type in
     (* non-static member functions declared as const cannot modify their this*
        object parameter, hence should have pointer to const type
        https://en.cppreference.com/w/cpp/language/member_functions *)
     let typ =
-      if Mangled.is_this name && is_const_member_function then Typ.set_ptr_to_const typ else typ
+      if Mangled.is_this name && is_cpp_const_member_function then Typ.set_ptr_to_const typ else typ
     in
     let annot = CAst_utils.sil_annot_of_type qual_type in
     CMethodSignature.mk_param_type ~is_pointer_to_const ~annot name typ
 
 
   let get_class_param qual_type_to_sil_type tenv method_decl =
-    let aux ~is_const_member_function parent_pointer =
+    let aux ~is_cpp_const_member_function parent_pointer =
       let method_kind = CMethodProperties.get_method_kind method_decl in
       match method_kind with
       | ClangMethodKind.CPP_INSTANCE | ClangMethodKind.OBJC_INSTANCE -> (
@@ -44,7 +44,7 @@ module BuildMethodSignature = struct
             let qual_type = CAst_utils.qual_type_of_decl_ptr parent_pointer in
             let pointer_qual_type = Ast_expressions.create_pointer_qual_type qual_type in
             Some
-              (param_type_of_qual_type ~is_const_member_function qual_type_to_sil_type tenv name
+              (param_type_of_qual_type ~is_cpp_const_member_function qual_type_to_sil_type tenv name
                  pointer_qual_type )
         | _ ->
             None )
@@ -56,12 +56,12 @@ module BuildMethodSignature = struct
     | FunctionDecl _ | BlockDecl _ ->
         None
     | CXXMethodDecl (decl_info, _, _, _, cmdi) ->
-        aux ~is_const_member_function:cmdi.Clang_ast_t.xmdi_is_const decl_info.di_parent_pointer
+        aux ~is_cpp_const_member_function:cmdi.Clang_ast_t.xmdi_is_const decl_info.di_parent_pointer
     | CXXConstructorDecl (decl_info, _, _, _, _)
     | CXXConversionDecl (decl_info, _, _, _, _)
     | CXXDestructorDecl (decl_info, _, _, _, _)
     | ObjCMethodDecl (decl_info, _, _) ->
-        aux ~is_const_member_function:false decl_info.di_parent_pointer
+        aux ~is_cpp_const_member_function:false decl_info.di_parent_pointer
     | _ ->
         raise CFrontend_errors.Invalid_declaration
 
@@ -187,6 +187,7 @@ module BuildMethodSignature = struct
     let class_param = get_class_param qual_type_to_sil_type tenv method_decl in
     let params = get_parameters qual_type_to_sil_type tenv ~block_return_type method_decl in
     let attributes = decl_info.Clang_ast_t.di_attributes in
+    let is_cpp_const_member_fun = CMethodProperties.is_cpp_const_member_fun method_decl in
     let is_cpp_virtual = CMethodProperties.is_cpp_virtual method_decl in
     let is_cpp_copy_assignment = CMethodProperties.is_cpp_copy_assignment method_decl in
     let is_cpp_copy_ctor = CMethodProperties.is_cpp_copy_ctor method_decl in
@@ -201,6 +202,7 @@ module BuildMethodSignature = struct
     ; access
     ; class_param
     ; params
+    ; is_cpp_const_member_fun
     ; is_cpp_copy_assignment
     ; is_cpp_copy_ctor
     ; is_cpp_move_ctor

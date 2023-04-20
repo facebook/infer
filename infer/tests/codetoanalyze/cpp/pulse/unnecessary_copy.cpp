@@ -283,10 +283,9 @@ void source_dispatch_const_fcn_bad(const std::set<int>& source) {
   auto it = source.find(3); // const find is dispatched since argument is const
 }
 
-void source_dispatch_non_const_fcn_bad_FN(std::set<int> source) {
+void source_dispatch_non_const_fcn_bad(std::set<int> source) {
   auto cpy = source;
-  auto it = source.find(3); // non-const version is dispatched, but find doesn't
-                            // actually change this*
+  auto it = source.find(3);
 }
 
 void iterator_ptr_modified_ok(const std::vector<int>& numbers) {

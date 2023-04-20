@@ -144,6 +144,18 @@ let is_cpp_copy_assignment method_decl =
       false
 
 
+let is_cpp_const_member_fun method_decl =
+  let open Clang_ast_t in
+  match method_decl with
+  | CXXMethodDecl (_, _, _, _, mdi)
+  | CXXConstructorDecl (_, _, _, _, mdi)
+  | CXXConversionDecl (_, _, _, _, mdi)
+  | CXXDestructorDecl (_, _, _, _, mdi) ->
+      mdi.xmdi_is_const
+  | _ ->
+      false
+
+
 let is_cpp_copy_ctor method_decl =
   let open Clang_ast_t in
   match method_decl with

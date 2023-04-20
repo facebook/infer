@@ -14,10 +14,7 @@ open PulseOperationResult.Import
 
 type t = AbductiveDomain.t
 
-let is_ptr_to_const formal_typ_opt =
-  Option.exists formal_typ_opt ~f:(fun (formal_typ : Typ.t) ->
-      match formal_typ.desc with Typ.Tptr (t, _) -> Typ.is_const t.quals | _ -> false )
-
+let is_ptr_to_const formal_typ_opt = Option.exists formal_typ_opt ~f:Typ.is_ptr_to_const
 
 let add_returned_from_unknown callee_pname_opt ret_val actuals astate =
   if
@@ -41,8 +38,23 @@ let trim_actuals_if_var_arg proc_name_opt ~formals ~actuals =
   else actuals
 
 
-let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t) callee_pname_opt
-    ~ret ~actuals ~formals_opt ({AbductiveDomain.post; path_condition} as astate) =
+let is_const_version pname_method other_method =
+  String.equal pname_method (Procname.get_method other_method)
+  && Option.exists (IRAttributes.load other_method) ~f:(fun attr ->
+         attr.ProcAttributes.is_cpp_const_member_fun )
+
+
+let is_const_version_available tenv pname =
+  Procname.get_class_type_name pname
+  |> Option.exists ~f:(fun name ->
+         Tenv.lookup tenv name
+         |> Option.exists ~f:(fun Struct.{methods} ->
+                let pname_method = Procname.get_method pname in
+                List.exists ~f:(is_const_version pname_method) methods ) )
+
+
+let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t)
+    callee_pname_opt ~ret ~actuals ~formals_opt ({AbductiveDomain.post; path_condition} as astate) =
   let hist =
     ValueHistory.singleton
       (Call {f= reason; location= call_loc; in_call= ValueHistory.epoch; timestamp})
@@ -72,7 +84,7 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
     | _ ->
         `DoNotHavoc
   in
-  let havoc_actual_if_ptr ((actual, _), actual_typ) formal_typ_opt astate =
+  let havoc_actual_if_ptr ((actual, _), actual_typ) formal_opt astate =
     let fold_on_reachable_from_arg astate f =
       let reachable_from_arg =
         BaseDomain.reachable_addresses_from (Caml.List.to_seq [actual]) (post :> BaseDomain.t)
@@ -80,7 +92,7 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
       AbstractValue.Set.fold f reachable_from_arg astate
     in
     (* We should not havoc when the corresponding formal is a pointer to const *)
-    match should_havoc actual_typ formal_typ_opt with
+    match should_havoc actual_typ (Option.map ~f:snd formal_opt) with
     | `ShouldHavoc ->
         is_functional := false ;
         (* this will deallocate anything reachable from the [actual] and havoc the values pointed to
@@ -100,17 +112,23 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
               || Procname.is_destructor p )
         then astate
         else
-          (* record the [WrittenTo] attribute for all reachable values
-             starting from actual argument so that we don't assume
-             that they are not modified in the unnecessary copy analysis. *)
-          let call_trace = Trace.Immediate {location= call_loc; history= hist} in
-          let written_attrs = Attributes.singleton (WrittenTo (timestamp, call_trace)) in
-          fold_on_reachable_from_arg astate (fun reachable_actual acc ->
-              if Formula.is_known_non_pointer path_condition reachable_actual then
-                (* not add [WrittenTo] for the non-pointer value, because primitive constant value
-                   is immutable, i.e. cannot be modified. *)
-                acc
-              else AddressAttributes.add_attrs reachable_actual written_attrs acc )
+          let is_const_version_available =
+            Option.exists formal_opt ~f:(fun (formal, _) -> Pvar.is_this formal)
+            && Option.exists callee_pname_opt ~f:(is_const_version_available tenv)
+          in
+          if is_const_version_available then astate
+          else
+            (* record the [WrittenTo] attribute for all reachable values
+               starting from actual argument so that we don't assume
+               that they are not modified in the unnecessary copy analysis. *)
+            let call_trace = Trace.Immediate {location= call_loc; history= hist} in
+            let written_attrs = Attributes.singleton (WrittenTo (timestamp, call_trace)) in
+            fold_on_reachable_from_arg astate (fun reachable_actual acc ->
+                if Formula.is_known_non_pointer path_condition reachable_actual then
+                  (* not add [WrittenTo] for the non-pointer value, because primitive constant value
+                     is immutable, i.e. cannot be modified. *)
+                  acc
+                else AddressAttributes.add_attrs reachable_actual written_attrs acc )
     | `DoNotHavoc ->
         astate
     | `ShouldOnlyHavocResources ->
@@ -160,15 +178,15 @@ let unknown_call ({PathContext.timestamp} as path) call_loc (reason : CallEvent.
   | actual_typ :: _, _ when Option.exists callee_pname_opt ~f:Procname.is_constructor ->
       (* when the callee is an unknown constructor, havoc the first arg (the constructed object)
          only *)
-      let formal_typ_opt = Option.bind formals_opt ~f:List.hd |> Option.map ~f:snd in
-      havoc_actual_if_ptr actual_typ formal_typ_opt astate
+      let formal_opt = Option.bind formals_opt ~f:List.hd in
+      havoc_actual_if_ptr actual_typ formal_opt astate
   | _, None ->
       havoc_actuals_without_typ_info astate
   | _, Some formals -> (
       let actuals = trim_actuals_if_var_arg callee_pname_opt ~actuals ~formals in
       match
-        List.fold2 actuals formals ~init:astate ~f:(fun astate actual_typ (_, formal_typ) ->
-            havoc_actual_if_ptr actual_typ (Some formal_typ) astate )
+        List.fold2 actuals formals ~init:astate ~f:(fun astate actual_typ formal ->
+            havoc_actual_if_ptr actual_typ (Some formal) astate )
       with
       | Unequal_lengths ->
           L.d_printfln "ERROR: formals have length %d but actuals have length %d"
@@ -434,8 +452,8 @@ let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~act
   let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
   let<**> astate_unknown =
     PulseOperations.conservatively_initialize_args arg_values astate
-    |> unknown_call path call_loc (SkippedKnownCall callee_pname) (Some callee_pname) ~ret ~actuals
-         ~formals_opt
+    |> unknown_call tenv path call_loc (SkippedKnownCall callee_pname) (Some callee_pname) ~ret
+         ~actuals ~formals_opt
   in
   ScubaLogging.pulse_log_message ~label:"unmodeled_function_operation_pulse"
     ~message:

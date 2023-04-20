@@ -456,6 +456,8 @@ codetoanalyze/cpp/pulse/unnecessary_copy.cpp, set_erase_ok, 0, PULSE_CONST_REFAB
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, source_const_fcn_bad, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter source with type `std::set<int,std::less<int>,std::allocator<int>>`]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, source_const_fcn_bad, 1, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `std::set<int,std::less<int>,std::allocator<int>>&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, source_dispatch_const_fcn_bad, 1, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `std::set<int,std::less<int>,std::allocator<int>> const &`)]
+codetoanalyze/cpp/pulse/unnecessary_copy.cpp, source_dispatch_non_const_fcn_bad, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter source with type `std::set<int,std::less<int>,std::allocator<int>>`]
+codetoanalyze/cpp/pulse/unnecessary_copy.cpp, source_dispatch_non_const_fcn_bad, 1, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `std::set<int,std::less<int>,std::allocator<int>>&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, capture_by_value_ok, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter arg with type `SimpleS`]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, capture_by_value_bad_FN, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter arg with type `SimpleS`]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, constructor_bad, 2, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `std::vector<int,std::allocator<int>>&`)]

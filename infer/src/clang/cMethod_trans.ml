@@ -240,6 +240,7 @@ let create_attributes_helper ?loc_instantiated ?(set_objc_accessor_attr = false)
   ; is_ret_type_pod= ms.CMethodSignature.is_ret_type_pod
   ; is_ret_constexpr= ms.CMethodSignature.is_ret_constexpr
   ; access
+  ; is_cpp_const_member_fun= ms.CMethodSignature.is_cpp_const_member_fun
   ; is_cpp_copy_ctor= ms.CMethodSignature.is_cpp_copy_ctor
   ; is_cpp_move_ctor= ms.CMethodSignature.is_cpp_move_ctor
   ; is_cpp_copy_assignment= ms.CMethodSignature.is_cpp_copy_assignment

@@ -245,7 +245,7 @@ module PulseTransferFunctions = struct
              PulseOperations.conservatively_initialize_args arg_values astate
            in
            let<++> astate =
-             PulseCallOperations.unknown_call path call_loc (SkippedUnknownCall call_exp)
+             PulseCallOperations.unknown_call tenv path call_loc (SkippedUnknownCall call_exp)
                callee_pname ~ret ~actuals ~formals_opt:None astate
            in
            astate )
