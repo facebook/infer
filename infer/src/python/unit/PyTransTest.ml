@@ -297,4 +297,177 @@ def f(x, y):
         declare $builtins.python_string(*PyObject) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+def coin():
+    return False
+
+def f(x, y):
+    z = 0
+    if coin():
+          z = x
+    else:
+          z = y
+    return z
+      |}
+      in
+      Py.initialize ~version:3 ~minor:8 () ;
+      let code = FFI.from_string ~source ~filename:"dummy" in
+      Py.finalize () ;
+      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      F.printf "%a" Textual.Module.pp res ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define $toplevel::main() : *PyObject {
+          #b0:
+              ret null
+
+        }
+
+        define f(x: *PyObject, y: *PyObject) : *PyObject {
+          local z: *PyObject
+          #b0:
+              store &z <- $builtins.python_int(0):*PyInt
+              n0 = coin()
+              jmp b1, b2
+
+          #b1:
+              prune $builtins.is_true(n0)
+              n1:*PyObject = load &x
+              store &z <- n1:*PyObject
+              jmp b3
+
+          #b2:
+              prune $builtins.is_true(__sil_lnot(n0))
+              n2:*PyObject = load &y
+              store &z <- n2:*PyObject
+              jmp b3
+
+          #b3:
+              n3:*PyObject = load &z
+              ret n3
+
+        }
+
+        define coin() : *PyObject {
+          #b0:
+              ret 0
+
+        }
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_string(*PyObject) : *PyString
+
+        declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+def coin():
+    return False
+
+def f(x, y):
+    z = 0
+    if coin():
+          if coin():
+            z = x
+          else:
+            return 1664
+          z = z + 1
+    else:
+          z = z + 1
+          if coin():
+            return 42
+          else:
+            z = y
+    return z
+      |}
+      in
+      Py.initialize ~version:3 ~minor:8 () ;
+      let code = FFI.from_string ~source ~filename:"dummy" in
+      Py.finalize () ;
+      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      F.printf "%a" Textual.Module.pp res ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define $toplevel::main() : *PyObject {
+          #b0:
+              ret null
+
+        }
+
+        define f(x: *PyObject, y: *PyObject) : *PyObject {
+          local z: *PyObject
+          #b0:
+              store &z <- $builtins.python_int(0):*PyInt
+              n0 = coin()
+              jmp b1, b2
+
+          #b1:
+              prune $builtins.is_true(n0)
+              n1 = coin()
+              jmp b3, b4
+
+          #b3:
+              prune $builtins.is_true(n1)
+              n2:*PyObject = load &x
+              store &z <- n2:*PyObject
+              jmp b5
+
+          #b4:
+              prune $builtins.is_true(__sil_lnot(n1))
+              ret $builtins.python_int(1664)
+
+          #b5:
+              n3:*PyObject = load &z
+              n4 = $builtins.binary_add(n3, $builtins.python_int(1))
+              store &z <- n4:*PyObject
+              jmp b6
+
+          #b2:
+              prune $builtins.is_true(__sil_lnot(n0))
+              n5:*PyObject = load &z
+              n6 = $builtins.binary_add(n5, $builtins.python_int(1))
+              store &z <- n6:*PyObject
+              n7 = coin()
+              jmp b7, b8
+
+          #b7:
+              prune $builtins.is_true(n7)
+              ret $builtins.python_int(42)
+
+          #b8:
+              prune $builtins.is_true(__sil_lnot(n7))
+              n8:*PyObject = load &y
+              store &z <- n8:*PyObject
+              jmp b6
+
+          #b6:
+              n9:*PyObject = load &z
+              ret n9
+
+        }
+
+        define coin() : *PyObject {
+          #b0:
+              ret 0
+
+        }
+
+        declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_string(*PyObject) : *PyString
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )

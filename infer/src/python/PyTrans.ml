@@ -390,24 +390,6 @@ module STORE = struct
         else L.die InternalError "[%s] no support for closure at the moment: %s" opname f
 end
 
-module RETURN_VALUE = struct
-  (** {v RETURN_VALUE v}
-
-      Returns the top-of-stack *)
-  let run env code {FFI.Instruction.opname} =
-    Debug.p "[%s]\n" opname ;
-    let env, cell = pop_tos opname env in
-    let env, exp_ty = load_cell env code cell in
-    match exp_ty with
-    | `Ok (exp, _) ->
-        let term = T.Terminator.Ret exp in
-        (env, Some (`Return term))
-    | `Error s ->
-        L.die InternalError "[%s] %s" opname s
-    | `Fun f ->
-        L.die InternalError "[%s] can't support returning closure: %s" opname f
-end
-
 module POP_TOP = struct
   (** {v POP_TOP v}
 
@@ -580,6 +562,12 @@ module MAKE_FUNCTION = struct
 end
 
 module JUMP = struct
+  type kind =
+    | Label of string * T.Exp.t option
+    | Return of T.Terminator.t
+    | TwoWay of {next_is_true: bool; offset: int; cond: T.Exp.t}
+    | Relative of {delta: int}
+
   module POP_IF = struct
     (** {v POP_JUMP_IF_TRUE(target) v}
 
@@ -602,8 +590,35 @@ module JUMP = struct
             L.die InternalError "[%s] Can't evaluate jump condition based on a function: %s" opname
               f
       in
-      (env, Some (`TwoWay (next_is_true, arg, cond)))
+      (env, Some (TwoWay {next_is_true; offset= arg; cond}))
   end
+
+  module FORWARD = struct
+    (** {v JUMP_FORWARD(delta) v}
+
+        Increments bytecode counter by [delta]. *)
+    let run env {FFI.Instruction.opname; arg} =
+      Debug.p "[%s] delta = %d\n" opname arg ;
+      (env, Some (Relative {delta= arg}))
+  end
+end
+
+module RETURN_VALUE = struct
+  (** {v RETURN_VALUE v}
+
+      Returns the top-of-stack *)
+  let run env code {FFI.Instruction.opname} =
+    Debug.p "[%s]\n" opname ;
+    let env, cell = pop_tos opname env in
+    let env, exp_ty = load_cell env code cell in
+    match exp_ty with
+    | `Ok (exp, _) ->
+        let term = T.Terminator.Ret exp in
+        (env, Some (JUMP.Return term))
+    | `Error s ->
+        L.die InternalError "[%s] %s" opname s
+    | `Fun f ->
+        L.die InternalError "[%s] can't support returning closure: %s" opname f
 end
 
 (** Main opcode dispatch function. *)
@@ -640,6 +655,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
         JUMP.POP_IF.run ~next_is_true:false env code instr
     | "POP_JUMP_IF_FALSE" ->
         JUMP.POP_IF.run ~next_is_true:true env code instr
+    | "JUMP_FORWARD" ->
+        JUMP.FORWARD.run env instr
     | _ ->
         L.die InternalError "Unsupported opcode: %s" opname
   in
@@ -651,13 +668,8 @@ let has_jump_target env instructions =
   match List.hd instructions with
   | None ->
       (env, None)
-  | Some {FFI.Instruction.offset; is_jump_target} ->
-      (* Python provides us with jump target info too, so we can do a sanity check. *)
-      let env, maybe_label = Env.label_of_offset env offset in
-      if Option.is_some maybe_label then
-        if not is_jump_target then
-          L.die InternalError "Label at offset %d is not a jump target" offset ;
-      (env, maybe_label)
+  | Some {FFI.Instruction.offset} ->
+      Env.label_of_offset env offset
 
 
 (** Iterator on [run_instruction]: this function will interpret instructions as long as terminator
@@ -666,9 +678,17 @@ let rec run env code instructions =
   match instructions with
   | [] ->
       (env, None, [])
-  | instr :: rest ->
-      let env, maybe_term = run_instruction env code instr in
-      if Option.is_some maybe_term then (env, maybe_term, rest) else run env code rest
+  | instr :: rest -> (
+      (* Is the current instruction a jump target ? *)
+      let env, maybe_label = has_jump_target env instructions in
+      match maybe_label with
+      | None ->
+          (* Nop, just continue processing the stream of instrunctions *)
+          let env, maybe_term = run_instruction env code instr in
+          if Option.is_some maybe_term then (env, maybe_term, rest) else run env code rest
+      | Some (label, pruned) ->
+          (* Yes, let's stop there, and don't forget to keep [instr] around *)
+          (env, Some (JUMP.Label (label, pruned)), instructions) )
 
 
 (** Return the location of the first available instruction, if any *)
@@ -678,6 +698,11 @@ let first_loc_of_code instructions =
       T.Location.known ~line ~col:0
   | _ ->
       T.Location.Unknown
+
+
+(** Return the offset of the next opcode, if any *)
+let offset_of_code instructions =
+  match instructions with FFI.Instruction.{offset} :: _ -> Some offset | _ -> None
 
 
 let mk_jump loc labels =
@@ -695,12 +720,19 @@ let mk_jump loc labels =
     return the remaining instructions, new allocated node, along with any label that should be used
     to start the next node, if any (and prunning information).
 
-    If the terminator is [`Return], just return the single node describing all the instruction that
-    have been recorded so far, and the remaining instructions, on the side.
+    If the terminator is [Label], insert a jump to the next instruction to split the current stream
+    of instructions into two valid nodes.
 
-    If the terminator is [`TwoWay], record the current node, and register two fresh labels for the
-    two possible jump locations. One is always the follow-up instruction, the "next" instruction,
-    and the "other" might be located further away in case of nested "if/then/else" scenarios.*)
+    If the terminator is [Return], just return the single node describing all the instruction we saw
+    until now, and the remaining instructions.
+
+    If the terminator is [TwoWay], we have to record the current node, and we register two fresh
+    labels for the two possible jump locations. One is always the follow-up instruction, the "next"
+    instruction, and the "other" might be located further away in case of nested "if/then/else"
+    scenarios.
+
+    If the terminator is [Relative], an unconditional jump forward is performed, based on the offset
+    of the next instruction. *)
 let until_terminator env label_name pruned code instructions =
   Debug.p "[until_terminator] %s\n" label_name ;
   let label_loc = first_loc_of_code instructions in
@@ -716,36 +748,20 @@ let until_terminator env label_name pruned code instructions =
   in
   let env, maybe_term, rest = run env code instructions in
   let last_loc = Env.loc env in
+  let next_offset () =
+    match offset_of_code rest with
+    | None ->
+        L.die InternalError "Relative jump forward at the end of code"
+    | Some offset ->
+        offset
+  in
   match maybe_term with
   | None ->
       L.die InternalError "Reached the end of code without spotting a terminator"
-  | Some (`Return last) ->
-      let node =
-        T.Node.
-          { label
-          ; ssa_parameters= []
-          ; exn_succs= []
-          ; last
-          ; instrs= Env.get_instructions env
-          ; last_loc
-          ; label_loc }
-      in
-      (env, rest, node, None)
-  | Some (`TwoWay (next_is_true, other_offset, cond)) ->
-      (* The current node ended up with a two-way jump. Either continue to the "next"
-         (fall-through) part of the code, or jump to the "other" section of the code. For this
-         purpose, register a fresh label for the jump. *)
-      let jump_loc = Env.loc env in
-      let env, next_label = Env.label env in
-      let env, other_label = Env.label env in
-      (* Compute the relevant pruning expressions *)
-      let condT = PyCommon.mk_is_true cond in
-      let condF = PyCommon.mk_is_true (T.Exp.not cond) in
-      let next_prune = if next_is_true then condT else condF in
-      let other_prune = if next_is_true then condF else condT in
-      (* Register the jump target *)
-      let env = Env.register_label other_offset other_label (Some other_prune) env in
-      let jump = mk_jump jump_loc [next_label; other_label] in
+  | Some (Label (next_label, pruned)) ->
+      (* A label was spotted without having a clear Textual terminator. Insert a jump to this
+         label to create a proper node, and resume the processing. *)
+      let jump = mk_jump last_loc [next_label] in
       let node =
         T.Node.
           { label
@@ -756,32 +772,96 @@ let until_terminator env label_name pruned code instructions =
           ; last_loc
           ; label_loc }
       in
-      (env, rest, node, Some (next_label, Some next_prune))
+      Debug.p "  Label: splitting instructions alongside %s\n" next_label ;
+      let offset = next_offset () in
+      let env = Env.register_label offset next_label pruned env in
+      (env, rest, node)
+  | Some (Return last) ->
+      let node =
+        T.Node.
+          { label
+          ; ssa_parameters= []
+          ; exn_succs= []
+          ; last
+          ; instrs= Env.get_instructions env
+          ; last_loc
+          ; label_loc }
+      in
+      Debug.p "  Return\n" ;
+      (env, rest, node)
+  | Some (TwoWay {next_is_true; offset= other_offset; cond}) ->
+      (* The current node ended up with a two-way jump. Either continue to the "next"
+         (fall-through) part of the code, or jump to the "other" section of the code. For this
+         purpose, register a fresh label for the jump. *)
+      let env, next_label = Env.label env in
+      let env, other_label = Env.label env in
+      (* Compute the relevant pruning expressions *)
+      let condT = PyCommon.mk_is_true cond in
+      let condF = PyCommon.mk_is_true (T.Exp.not cond) in
+      let next_prune = if next_is_true then condT else condF in
+      let other_prune = if next_is_true then condF else condT in
+      (* Register the jump target *)
+      Debug.p "  TwoWay: register %s at %d\n" other_label other_offset ;
+      let next_offset = next_offset () in
+      let env = Env.register_label next_offset next_label (Some next_prune) env in
+      let env = Env.register_label other_offset other_label (Some other_prune) env in
+      let jump = mk_jump last_loc [next_label; other_label] in
+      let node =
+        T.Node.
+          { label
+          ; ssa_parameters= []
+          ; exn_succs= []
+          ; last= jump
+          ; instrs= Env.get_instructions env
+          ; last_loc
+          ; label_loc }
+      in
+      (env, rest, node)
+  | Some (Relative {delta}) ->
+      (* The current node ends up with a relative jump to [+delta]. The first thing to get is the
+         offset of the next instruction, which is the base of the jump. Since Python
+         bytecode is not of fixed size, the easiest way is to check the next instruction. *)
+      let offset =
+        match offset_of_code rest with
+        | None ->
+            L.die InternalError "Relative jump forward at the end of code"
+        | Some offset ->
+            offset
+      in
+      (* create a new label and register it *)
+      let env, forward_label = Env.label env in
+      let jump = mk_jump last_loc [forward_label] in
+      let node =
+        T.Node.
+          { label
+          ; ssa_parameters= []
+          ; exn_succs= []
+          ; last= jump
+          ; instrs= Env.get_instructions env
+          ; last_loc
+          ; label_loc }
+      in
+      (* Now record the future label *)
+      let env = Env.register_label (offset + delta) forward_label None env in
+      Debug.p "  Relative: register %s at %d\n" forward_label (offset + delta) ;
+      (env, rest, node)
 
 
 (** Process a sequence of instructions until there is no more left to process. *)
 let rec nodes env label_name pruned code instructions =
-  let env, instructions, textual_node, forward_label =
-    until_terminator env label_name pruned code instructions
-  in
+  let env, instructions, textual_node = until_terminator env label_name pruned code instructions in
   if List.is_empty instructions then (env, [textual_node])
   else
     let env = Env.reset_for_node env in
     let env, label_name, pruned =
-      (* If the previous node provides the name of the next label, take it.
-         Otherwise, check if execution reached a jump location, and use it.
-         Otherwise pick up a fresh label. *)
-      match forward_label with
+      (* If the next instruction has a label, use it, otherwise pick a fresh one. *)
+      let env, jump_target = has_jump_target env instructions in
+      match jump_target with
       | Some (name, pruned) ->
           (env, name, pruned)
-      | None -> (
-          let env, jump_target = has_jump_target env instructions in
-          match jump_target with
-          | Some (name, pruned) ->
-              (env, name, pruned)
-          | None ->
-              let env, name = Env.label env in
-              (env, name, None) )
+      | None ->
+          let env, name = Env.label env in
+          (env, name, None)
     in
     let env, more_textual_nodes = nodes env label_name pruned code instructions in
     (env, textual_node :: more_textual_nodes)
