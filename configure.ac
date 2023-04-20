@@ -180,15 +180,15 @@ AS_IF([test "x$enable_c_analyzers" = "xyes"], [
 ])
 # end if($enable_c_analyzers)
 
+AC_CHECK_TOOL([PYTHON], [python3], [no])
 AS_IF([test "x$enable_python_analyzers" != "xno"], [
-  AC_CHECK_TOOL([PYTHON], [python3], [no])
   AC_ASSERT_PROG([python3], [$PYTHON])
   AC_MSG_CHECKING([python version])
   python_version=$("$PYTHON" --version)
   AC_MSG_RESULT([$python_version])
   case $python_version in
-    Python\ 3.8.*) break;;
-    *) 
+    Python\ 3.8.*) BUILD_PYTHON_ANALYZERS=yes; break;;
+    *) BUILD_PYTHON_ANALYZERS=no;
       AS_IF([test "x$enable_python_analyzers" = "xauto"], [
         AC_MSG_WARN([python version $python_version is not supported, disabling python support])
         ], [
