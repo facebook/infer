@@ -54,6 +54,10 @@ end
 module Env = struct
   module Labels = Caml.Map.Make (Int)
 
+  (** Information about a "yet to reach" label location, with its name, type of ssa parameters, and
+      an optional expression to prune, if any. *)
+  type label_info = {label_name: string; ssa_parameters: T.Typ.t list; pruned: T.Exp.t option}
+
   (** Part of the environment shared by most structures. It gathers information like which builtin
       has been spotted, or what idents and labels have been generated so far. *)
   type shared =
@@ -61,10 +65,9 @@ module Env = struct
     ; globals: T.VarName.Set.t
     ; builtins: PyBuiltins.t
     ; next_label: int
-    ; forward_labels: (string * T.Exp.t option) Labels.t
-          (** Map from offset of labels the code might eventually jump to, to the label name and the
-              Textual expression that might need pruning. They are kept around to correctly split
-              code unit into Textual nodes. *) }
+    ; forward_labels: label_info Labels.t
+          (** Map from offset of labels the code might eventually jump to, to the label info
+              necessary to create Textual nodes. *) }
 
   (* TODO(vsiles): revisit the data stack status once generators are in the mix *)
 
@@ -165,12 +168,12 @@ module Env = struct
 
 
   (** Register the fact that a [label] must be inserted before the instruction at [offset] *)
-  let register_label offset label pruned ({shared} as env) =
-    let register_label offset label pruned ({forward_labels} as env) =
-      let forward_labels = Labels.add offset (label, pruned) forward_labels in
+  let register_label offset label_info ({shared} as env) =
+    let register_label offset label_info ({forward_labels} as env) =
+      let forward_labels = Labels.add offset label_info forward_labels in
       {env with forward_labels}
     in
-    let shared = register_label offset label pruned shared in
+    let shared = register_label offset label_info shared in
     {env with shared}
 
 
@@ -563,7 +566,7 @@ end
 
 module JUMP = struct
   type kind =
-    | Label of string * T.Exp.t option
+    | Label of Env.label_info
     | Return of T.Terminator.t
     | TwoWay of {next_is_true: bool; offset: int; cond: T.Exp.t}
     | Relative of {delta: int}
@@ -686,9 +689,9 @@ let rec run env code instructions =
           (* Nop, just continue processing the stream of instrunctions *)
           let env, maybe_term = run_instruction env code instr in
           if Option.is_some maybe_term then (env, maybe_term, rest) else run env code rest
-      | Some (label, pruned) ->
+      | Some label_info ->
           (* Yes, let's stop there, and don't forget to keep [instr] around *)
-          (env, Some (JUMP.Label (label, pruned)), instructions) )
+          (env, Some (JUMP.Label label_info), instructions) )
 
 
 (** Return the location of the first available instruction, if any *)
@@ -733,10 +736,16 @@ let mk_jump loc labels =
 
     If the terminator is [Relative], an unconditional jump forward is performed, based on the offset
     of the next instruction. *)
-let until_terminator env label_name pruned code instructions =
+let until_terminator env {Env.label_name; ssa_parameters; pruned} code instructions =
   Debug.p "[until_terminator] %s\n" label_name ;
   let label_loc = first_loc_of_code instructions in
   let label = {T.NodeName.value= label_name; loc= label_loc} in
+  (* TODO: this list is currently always empty, so check if reverse is needed or not *)
+  let env, ssa_parameters =
+    List.fold_left ~init:(env, []) ssa_parameters ~f:(fun (env, ssa_parameters) typ ->
+        let env, id = Env.temp env in
+        (env, (id, typ) :: ssa_parameters) )
+  in
   (* Prune necessary expressions *)
   let env =
     match pruned with
@@ -758,14 +767,14 @@ let until_terminator env label_name pruned code instructions =
   match maybe_term with
   | None ->
       L.die InternalError "Reached the end of code without spotting a terminator"
-  | Some (Label (next_label, pruned)) ->
+  | Some (Label ({label_name= next_label} as label_info)) ->
       (* A label was spotted without having a clear Textual terminator. Insert a jump to this
          label to create a proper node, and resume the processing. *)
       let jump = mk_jump last_loc [next_label] in
       let node =
         T.Node.
           { label
-          ; ssa_parameters= []
+          ; ssa_parameters
           ; exn_succs= []
           ; last= jump
           ; instrs= Env.get_instructions env
@@ -774,13 +783,13 @@ let until_terminator env label_name pruned code instructions =
       in
       Debug.p "  Label: splitting instructions alongside %s\n" next_label ;
       let offset = next_offset () in
-      let env = Env.register_label offset next_label pruned env in
+      let env = Env.register_label offset label_info env in
       (env, rest, node)
   | Some (Return last) ->
       let node =
         T.Node.
           { label
-          ; ssa_parameters= []
+          ; ssa_parameters
           ; exn_succs= []
           ; last
           ; instrs= Env.get_instructions env
@@ -800,16 +809,20 @@ let until_terminator env label_name pruned code instructions =
       let condF = PyCommon.mk_is_true (T.Exp.not cond) in
       let next_prune = if next_is_true then condT else condF in
       let other_prune = if next_is_true then condF else condT in
+      let next_info = {Env.label_name= next_label; ssa_parameters= []; pruned= Some next_prune} in
+      let other_info =
+        {Env.label_name= other_label; ssa_parameters= []; pruned= Some other_prune}
+      in
       (* Register the jump target *)
       Debug.p "  TwoWay: register %s at %d\n" other_label other_offset ;
       let next_offset = next_offset () in
-      let env = Env.register_label next_offset next_label (Some next_prune) env in
-      let env = Env.register_label other_offset other_label (Some other_prune) env in
+      let env = Env.register_label next_offset next_info env in
+      let env = Env.register_label other_offset other_info env in
       let jump = mk_jump last_loc [next_label; other_label] in
       let node =
         T.Node.
           { label
-          ; ssa_parameters= []
+          ; ssa_parameters
           ; exn_succs= []
           ; last= jump
           ; instrs= Env.get_instructions env
@@ -834,7 +847,7 @@ let until_terminator env label_name pruned code instructions =
       let node =
         T.Node.
           { label
-          ; ssa_parameters= []
+          ; ssa_parameters
           ; exn_succs= []
           ; last= jump
           ; instrs= Env.get_instructions env
@@ -842,28 +855,29 @@ let until_terminator env label_name pruned code instructions =
           ; label_loc }
       in
       (* Now record the future label *)
-      let env = Env.register_label (offset + delta) forward_label None env in
+      let label_info = {Env.label_name= forward_label; ssa_parameters= []; pruned= None} in
+      let env = Env.register_label (offset + delta) label_info env in
       Debug.p "  Relative: register %s at %d\n" forward_label (offset + delta) ;
       (env, rest, node)
 
 
 (** Process a sequence of instructions until there is no more left to process. *)
-let rec nodes env label_name pruned code instructions =
-  let env, instructions, textual_node = until_terminator env label_name pruned code instructions in
+let rec nodes env label_info code instructions =
+  let env, instructions, textual_node = until_terminator env label_info code instructions in
   if List.is_empty instructions then (env, [textual_node])
   else
     let env = Env.reset_for_node env in
-    let env, label_name, pruned =
+    let env, label_info =
       (* If the next instruction has a label, use it, otherwise pick a fresh one. *)
       let env, jump_target = has_jump_target env instructions in
       match jump_target with
-      | Some (name, pruned) ->
-          (env, name, pruned)
+      | Some label_info ->
+          (env, label_info)
       | None ->
-          let env, name = Env.label env in
-          (env, name, None)
+          let env, label_name = Env.label env in
+          (env, {Env.label_name; ssa_parameters= []; pruned= None})
     in
-    let env, more_textual_nodes = nodes env label_name pruned code instructions in
+    let env, more_textual_nodes = nodes env label_info code instructions in
     (env, textual_node :: more_textual_nodes)
 
 
@@ -889,9 +903,10 @@ let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames; instructions} as 
   let env = Env.reset_for_proc env in
   let env, entry_label = Env.label env in
   let label = node_name ~loc entry_label in
+  let label_info = {Env.label_name= entry_label; ssa_parameters= []; pruned= None} in
   (* Now that a full unit has been processed, discard all the local information (local variable
      names, labels, ...) and only keep the [shared] part of the environment *)
-  let {Env.shared= env}, nodes = nodes env entry_label None code instructions in
+  let {Env.shared= env}, nodes = nodes env label_info code instructions in
   (env, {Textual.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown})
 
 
