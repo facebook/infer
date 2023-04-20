@@ -12,11 +12,17 @@ let type_name value = T.TypeName.{value; loc= T.Location.Unknown}
 
 let mk_type name = T.Typ.(Ptr (Struct (type_name name)))
 
+let string_ = T.Typ.(Ptr (Struct (type_name "String")))
+
 let pyObject = mk_type "PyObject"
 
 let pyInt = mk_type "PyInt"
 
 let pyString = mk_type "PyString"
+
+let pyCode = mk_type "PyCode"
+
+let is_pyCode = function T.Typ.Ptr (Struct {value}) -> String.equal value "PyCode" | _ -> false
 
 let builtin_scope = T.Enclosing T.{TypeName.value= "$builtins"; loc= Unknown}
 
@@ -74,7 +80,7 @@ module Builtins = struct
   let primitive_builtins =
     let builtins =
       [ ("python_int", {formals_types= Some [annot T.Typ.Int]; result_type= annot pyInt})
-      ; ("python_string", {formals_types= Some [annot pyObject]; result_type= annot pyString})
+      ; ("python_string", {formals_types= Some [annot string_]; result_type= annot pyString})
       ; ("python_tuple", {formals_types= None; result_type= annot pyObject}) ]
     in
     List.fold_left
@@ -87,7 +93,8 @@ module Builtins = struct
       [ ("print", {formals_types= None; result_type= annot pyObject})
       ; ("is_true", {formals_types= Some [annot pyObject]; result_type= annot pyInt})
       ; ( "binary_add"
-        , {formals_types= Some [annot pyObject; annot pyObject]; result_type= annot pyObject} ) ]
+        , {formals_types= Some [annot pyObject; annot pyObject]; result_type= annot pyObject} )
+      ; ("python_code", {formals_types= Some [annot string_]; result_type= annot pyCode}) ]
     in
     List.fold_left
       ~f:(fun acc (name, builtin) -> Info.add name builtin acc)
@@ -104,6 +111,11 @@ module Builtins = struct
   let register spotted name = Set.add name spotted
 
   let is_builtin name = Info.mem name supported_builtins
+
+  let get_type name =
+    let info = Info.find_opt name supported_builtins in
+    Option.map info ~f:(fun b -> b.result_type.typ) |> Option.value ~default:pyObject
+
 
   let empty = Set.empty
 end

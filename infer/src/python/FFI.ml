@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
+module F = Format
 module L = Logging
 
 type pyConstant =
@@ -246,6 +247,14 @@ module Code = struct
     ; co_consts: pyConstant array
     ; instructions: pyInstruction list }
   [@@deriving show, compare]
+
+  let full_show = show
+
+  let full_pp = pp
+
+  let show code = code.co_name
+
+  let pp fmt code = F.pp_print_string fmt code.co_name
 
   let create obj = new_py_code obj
 

@@ -61,6 +61,10 @@ and Code : sig
     ; instructions: Instruction.t list }
   [@@deriving show, compare]
 
+  val full_show : t -> string
+
+  val full_pp : Format.formatter -> t -> unit
+
   val create : Pytypes.pyobject -> t
 
   val is_closure : t -> bool

@@ -34,7 +34,7 @@ let%test_module "to_proc_desc" =
 
         declare $builtins.python_tuple(...) : *PyObject
 
-        declare $builtins.python_string(*PyObject) : *PyString
+        declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -68,7 +68,7 @@ print(x)
 
         declare $builtins.python_tuple(...) : *PyObject
 
-        declare $builtins.python_string(*PyObject) : *PyString
+        declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -110,7 +110,7 @@ print(x + y)
 
         declare $builtins.python_tuple(...) : *PyObject
 
-        declare $builtins.python_string(*PyObject) : *PyString
+        declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -143,12 +143,13 @@ print(z)
 
         define $toplevel::main() : *PyObject {
           #b0:
+              n0 = $builtins.python_code("my_fun")
               store &$globals::a <- $builtins.python_int(10):*PyInt
-              n0:*PyObject = load &$globals::a
-              n1 = my_fun($builtins.python_int(42), n0)
-              store &$globals::z <- n1:*PyObject
-              n2:*PyObject = load &$globals::z
-              n3 = $builtins.print(n2)
+              n1:*PyObject = load &$globals::a
+              n2 = my_fun($builtins.python_int(42), n1)
+              store &$globals::z <- n2:*PyObject
+              n3:*PyObject = load &$globals::z
+              n4 = $builtins.print(n3)
               ret null
 
         }
@@ -173,13 +174,15 @@ print(z)
 
         global $globals::a: *PyObject
 
+        declare $builtins.python_code(*String) : *PyCode
+
         declare $builtins.print(...) : *PyObject
 
         declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
 
         declare $builtins.python_tuple(...) : *PyObject
 
-        declare $builtins.python_string(*PyObject) : *PyString
+        declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -208,10 +211,11 @@ print(z)
 
         define $toplevel::main() : *PyObject {
           #b0:
+              n0 = $builtins.python_code("update_global")
               store &$globals::z <- $builtins.python_int(0):*PyInt
-              n0 = update_global()
-              n1:*PyObject = load &$globals::z
-              n2 = $builtins.print(n1)
+              n1 = update_global()
+              n2:*PyObject = load &$globals::z
+              n3 = $builtins.print(n2)
               ret null
 
         }
@@ -227,13 +231,15 @@ print(z)
 
         global $globals::z: *PyObject
 
+        declare $builtins.python_code(*String) : *PyCode
+
         declare $builtins.print(...) : *PyObject
 
         declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
 
         declare $builtins.python_tuple(...) : *PyObject
 
-        declare $builtins.python_string(*PyObject) : *PyString
+        declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -262,6 +268,8 @@ def f(x, y):
 
         define $toplevel::main() : *PyObject {
           #b0:
+              n0 = $builtins.python_code("coin")
+              n1 = $builtins.python_code("f")
               ret null
 
         }
@@ -292,9 +300,11 @@ def f(x, y):
 
         }
 
+        declare $builtins.python_code(*String) : *PyCode
+
         declare $builtins.python_tuple(...) : *PyObject
 
-        declare $builtins.python_string(*PyObject) : *PyString
+        declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -325,6 +335,8 @@ def f(x, y):
 
         define $toplevel::main() : *PyObject {
           #b0:
+              n0 = $builtins.python_code("coin")
+              n1 = $builtins.python_code("f")
               ret null
 
         }
@@ -360,9 +372,11 @@ def f(x, y):
 
         }
 
+        declare $builtins.python_code(*String) : *PyCode
+
         declare $builtins.python_tuple(...) : *PyObject
 
-        declare $builtins.python_string(*PyObject) : *PyString
+        declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -401,6 +415,8 @@ def f(x, y):
 
         define $toplevel::main() : *PyObject {
           #b0:
+              n0 = $builtins.python_code("coin")
+              n1 = $builtins.python_code("f")
               ret null
 
         }
@@ -463,11 +479,13 @@ def f(x, y):
 
         }
 
+        declare $builtins.python_code(*String) : *PyCode
+
         declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
 
         declare $builtins.python_tuple(...) : *PyObject
 
-        declare $builtins.python_string(*PyObject) : *PyString
+        declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )

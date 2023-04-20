@@ -20,28 +20,18 @@ module DataStack = struct
     | Name of int  (** reference to a global name, stored in [co_names] *)
     | VarName of int  (** reference to a local name, stored in [co_varnames] *)
     | Temp of T.Ident.t  (** SSA variable *)
-    | Fun of string  (** top level user-defined function name *)
+    | Fun of (string * FFI.Code.t)
+        (** [code] Python object with its qualified name. It can be a function, class, closure, ... *)
   [@@deriving show]
 
   let as_code FFI.Code.{co_consts} = function
     | Const n ->
         let code = co_consts.(n) in
         FFI.Constant.as_code code
-    | Name _ | Temp _ | Fun _ | VarName _ ->
+    | Fun (_, code) ->
+        Some code
+    | Name _ | Temp _ | VarName _ ->
         None
-
-
-  let show_cell_kind = function
-    | Const _ ->
-        "DataStack.Const"
-    | Name _ ->
-        "DataStack.Name"
-    | VarName _ ->
-        "DataStack.VarName"
-    | Temp _ ->
-        "DataStack.Temp"
-    | Fun _ ->
-        "DataStack.Fun"
 
 
   type t = cell list
@@ -85,6 +75,16 @@ module Env = struct
     ; builtins= PyBuiltins.empty
     ; next_label= 0
     ; forward_labels= Labels.empty }
+
+
+  (** Similar to [List.map] but an [env] is threaded along the way *)
+  let rec map ~f ~(env : t) = function
+    | [] ->
+        (env, [])
+    | hd :: tl ->
+        let env, hd = f env hd in
+        let env, tl = map ~f ~env tl in
+        (env, hd :: tl)
 
 
   (** Reset the [node] part of an environment, and all of its [idents], to prepare it to process a
@@ -233,32 +233,6 @@ module Debug = struct
     if debug then F.kasprintf (fun s -> F.printf "%s" s) fmt else F.ifprintf dummy_formatter fmt
 end
 
-let rec py_to_exp c =
-  match (c : FFI.Constant.t) with
-  | PYCBool b ->
-      let b = if b then Z.one else Z.zero in
-      let exp = T.(Exp.Const (Const.Int b)) in
-      Some (exp, T.Typ.Int)
-  | PYCInt i ->
-      Some PyCommon.(mk_int i, pyInt)
-  | PYCString s ->
-      Some PyCommon.(mk_string s, pyString)
-  | PYCNone ->
-      let exp = T.(Exp.Const Const.Null) in
-      Some (exp, T.Typ.Null)
-  | PYCCode _ ->
-      None
-  | PYCTuple arr -> (
-      let l = Array.to_list arr in
-      let l = List.map ~f:(fun c -> py_to_exp c |> Option.map ~f:fst) l in
-      match Option.all l with
-      | None ->
-          None
-      | Some args ->
-          let exp = T.Exp.Call {proc= PyCommon.python_tuple; args; kind= NonVirtual} in
-          Some (exp, PyCommon.pyObject) )
-
-
 let var_name ?(loc = T.Location.Unknown) value = T.VarName.{value; loc}
 
 let node_name ?(loc = T.Location.Unknown) value = T.NodeName.{value; loc}
@@ -273,6 +247,54 @@ let global name = sprintf "$globals::%s" name
 (* Until there is support for python types, everything is a [*object] *)
 let pyObject = PyCommon.pyObject
 
+let mk_builtin_call env name args =
+  let typ = PyCommon.Builtins.get_type name in
+  let env = Env.register_builtin env name in
+  let env, id = Env.temp env in
+  let proc = PyCommon.builtin_name name in
+  let exp = T.Exp.Call {proc; args; kind= T.Exp.NonVirtual} in
+  let loc = Env.loc env in
+  let instr = T.Instr.Let {id; exp; loc} in
+  let env = Env.push_instr env instr in
+  (env, id, typ)
+
+
+(** Turn a Python [FFI.Code.t] into a Textual [T.Exp.t], along with the required instructions to
+    effectively perform the translation. *)
+let code_to_exp env c =
+  let name = T.(Exp.Const (Const.Str c.FFI.Code.co_name)) in
+  let env, id, typ = mk_builtin_call env "python_code" [name] in
+  (env, (T.Exp.Var id, typ))
+
+
+(** Turn a Python [FFI.Constant.t] into a Textual [T.Exp.t], along with the required instructions to
+    effectively perform the translation. *)
+let rec py_to_exp env c =
+  match (c : FFI.Constant.t) with
+  | PYCBool b ->
+      let b = if b then Z.one else Z.zero in
+      let exp = T.(Exp.Const (Const.Int b)) in
+      (env, (exp, T.Typ.Int))
+  | PYCInt i ->
+      (env, PyCommon.(mk_int i, pyInt))
+  | PYCString s ->
+      (env, PyCommon.(mk_string s, pyString))
+  | PYCNone ->
+      let exp = T.(Exp.Const Const.Null) in
+      (env, (exp, T.Typ.Null))
+  | PYCCode c ->
+      code_to_exp env c
+  | PYCTuple arr ->
+      let l = Array.to_list arr in
+      let env, args =
+        Env.map ~env l ~f:(fun env c ->
+            let env, (e, _) = py_to_exp env c in
+            (env, e) )
+      in
+      let exp = T.Exp.Call {proc= PyCommon.python_tuple; args; kind= NonVirtual} in
+      (env, (exp, PyCommon.pyObject))
+
+
 (** Try to load the data referenced by a [DataStack.cell], into a [Textual.Exp.t] *)
 let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
   (* Python only stores references to objects on the data stack, so when data needs to be really
@@ -281,13 +303,10 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
      desirable (see MAKE_FUNCTION) *)
   let loc = Env.loc env in
   match (cell : DataStack.cell) with
-  | Const ndx -> (
+  | Const ndx ->
       let const = co_consts.(ndx) in
-      match py_to_exp const with
-      | None ->
-          (env, `Error "[load_cell] Constant contains code objects")
-      | Some exp_ty ->
-          (env, `Ok exp_ty) )
+      let env, exp_ty = py_to_exp env const in
+      (env, `Ok exp_ty)
   | Name ndx ->
       let name = global co_names.(ndx) in
       let env, id = Env.temp env in
@@ -309,8 +328,9 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
   | Temp id ->
       (* TODO: try to trace the type of ids ? *)
       (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
-  | Fun f ->
-      (env, `Fun f)
+  | Fun (_, c) ->
+      let env, exp_ty = code_to_exp env c in
+      (env, `Ok exp_ty)
 
 
 (** Pop the top of the datastack. Fails with an [InternalError] if the stack is empty. *)
@@ -407,16 +427,17 @@ module STORE = struct
     let env, exp_ty = load_cell env code cell in
     match exp_ty with
     | `Ok (exp, typ) ->
-        let env = if is_global then Env.register_global env var_name else env in
-        let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
-        (Env.push_instr env instr, None)
+        if PyCommon.is_pyCode typ then
+          if is_global then (
+            Debug.p "  top-level function defined\n" ;
+            (env, None) )
+          else L.die InternalError "[%s] no support for closure at the moment: %s" opname name
+        else
+          let env = if is_global then Env.register_global env var_name else env in
+          let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
+          (Env.push_instr env instr, None)
     | `Error s ->
         L.die InternalError "[%s] %s" opname s
-    | `Fun f ->
-        if is_global then (
-          Debug.p "  top-level function defined: %s\n" f ;
-          (env, None) )
-        else L.die InternalError "[%s] no support for closure at the moment: %s" opname f
 end
 
 module POP_TOP = struct
@@ -439,7 +460,7 @@ module CALL_FUNCTION = struct
 
       Before: [ argN | ... | arg1 | arg0 | code-object | rest-of-the-stack ]
 
-      After: [ result | rest-of-the-stack v} ] *)
+      After: [ result | rest-of-the-stack ] *)
 
   let pop_n_tos opname code =
     let rec pop env n acc =
@@ -450,8 +471,6 @@ module CALL_FUNCTION = struct
         match exp_ty with
         | `Ok (exp, _) ->
             pop env (n - 1) (exp :: acc)
-        | `Fun f ->
-            L.die InternalError "[%s] failed to get closure as function argument: %s" opname f
         | `Error s ->
             L.die UserError "[%s] failed to fetch from the stack: %s" opname s )
       else (env, acc)
@@ -470,9 +489,11 @@ module CALL_FUNCTION = struct
       match fname with
       | DataStack.Name ndx ->
           co_names.(ndx)
-      | VarName _ | Fun _ | Const _ | Temp _ ->
+      | Fun (f, _) ->
+          f
+      | VarName _ | Const _ | Temp _ ->
           L.die UserError "[%s] invalid function on the stack: %s" opname
-            (DataStack.show_cell_kind fname)
+            (DataStack.show_cell fname)
     in
     let env, id = Env.temp env in
     let loc = Env.loc env in
@@ -506,28 +527,12 @@ module BINARY_ADD = struct
     let env, tos1 = pop_tos opname env in
     let env, lhs = load_cell env code tos1 in
     let lhs =
-      match lhs with
-      | `Ok (lhs, _) ->
-          lhs
-      | `Error s ->
-          L.die InternalError "[%s] %s" opname s
-      | `Fun f ->
-          L.die InternalError "[%s] Can't add function %s" opname f
+      match lhs with `Ok (lhs, _) -> lhs | `Error s -> L.die InternalError "[%s] %s" opname s
     in
     let env, rhs = load_cell env code tos in
     let rhs =
-      match rhs with
-      | `Ok (rhs, _) ->
-          rhs
-      | `Error s ->
-          L.die InternalError "[%s] %s" opname s
-      | `Fun f ->
-          L.die InternalError "[%s] Can't add function %s" opname f
+      match rhs with `Ok (rhs, _) -> rhs | `Error s -> L.die InternalError "[%s] %s" opname s
     in
-    let fname = "binary_add" in
-    let env = Env.register_builtin env fname in
-    let env, id = Env.temp env in
-    let proc = PyCommon.builtin_name fname in
     (* Even if the call can be considered as virtual because, it's logic is not symetric. Based
        on what I gathered, like in [0], I think the best course of action is to write a model for
        it and leave it non virtual. TODO: ask David.
@@ -535,10 +540,7 @@ module BINARY_ADD = struct
        [0]:
        https://stackoverflow.com/questions/58828522/is-radd-called-if-add-raises-notimplementederror
     *)
-    let exp = T.Exp.Call {proc; args= [lhs; rhs]; kind= T.Exp.NonVirtual} in
-    let loc = Env.loc env in
-    let let_instr = T.Instr.Let {id; exp; loc} in
-    let env = Env.push_instr env let_instr in
+    let env, id, _typ = mk_builtin_call env "binary_add" [lhs; rhs] in
     let env = Env.push env (DataStack.Temp id) in
     (env, None)
 end
@@ -568,7 +570,7 @@ module MAKE_FUNCTION = struct
     let body =
       match DataStack.as_code code body with
       | None ->
-          L.die InternalError "%s: payload is not code: %s" opname (DataStack.show_cell_kind body)
+          L.die InternalError "%s: payload is not code: %s" opname (DataStack.show_cell body)
       | Some body ->
           body
     in
@@ -576,7 +578,7 @@ module MAKE_FUNCTION = struct
     let qual =
       match qual with
       | DataStack.(VarName _ | Name _ | Temp _ | Fun _) ->
-          L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell_kind qual)
+          L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell qual)
       | DataStack.Const ndx -> (
           let const = co_consts.(ndx) in
           match FFI.Constant.as_name const with
@@ -586,7 +588,7 @@ module MAKE_FUNCTION = struct
               L.die InternalError "%s: can't read qualified name from stack: %s" opname
                 (FFI.Constant.show const) )
     in
-    let env = Env.push env (DataStack.Fun qual) in
+    let env = Env.push env (DataStack.Fun (qual, body)) in
     (env, None)
 end
 
@@ -610,14 +612,7 @@ module JUMP = struct
       let env, tos = pop_tos opname env in
       let env, cell = load_cell env code tos in
       let cond =
-        match cell with
-        | `Ok (cond, _) ->
-            cond
-        | `Error s ->
-            L.die InternalError "[%s] %s" opname s
-        | `Fun f ->
-            L.die InternalError "[%s] Can't evaluate jump condition based on a function: %s" opname
-              f
+        match cell with `Ok (cond, _) -> cond | `Error s -> L.die InternalError "[%s] %s" opname s
       in
       (env, Some (TwoWay {next_is_true; offset= arg; cond}))
   end
@@ -646,8 +641,6 @@ module RETURN_VALUE = struct
         (env, Some (JUMP.Return term))
     | `Error s ->
         L.die InternalError "[%s] %s" opname s
-    | `Fun f ->
-        L.die InternalError "[%s] can't support returning closure: %s" opname f
 end
 
 (** Main opcode dispatch function. *)
@@ -768,9 +761,9 @@ let until_terminator env {Env.label_name; ssa_parameters; pruned} code instructi
   let label = {T.NodeName.value= label_name; loc= label_loc} in
   (* TODO: this list is currently always empty, so check if reverse is needed or not *)
   let env, ssa_parameters =
-    List.fold_left ~init:(env, []) ssa_parameters ~f:(fun (env, ssa_parameters) typ ->
+    Env.map ~env ssa_parameters ~f:(fun env typ ->
         let env, id = Env.temp env in
-        (env, (id, typ) :: ssa_parameters) )
+        (env, (id, typ)) )
   in
   (* Prune necessary expressions *)
   let env =

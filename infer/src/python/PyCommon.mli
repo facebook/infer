@@ -24,6 +24,12 @@ val python_tuple : Textual.qualified_procname
 val pyObject : Textual.Typ.t
 (** [object] is the top type of Python. It helps us when no type information is available. *)
 
+val pyCode : Textual.Typ.t
+(** [code] is a builtin Python type to describe any code (function, class, ...) object *)
+
+val is_pyCode : Textual.Typ.t -> bool
+(** Return [true] iff the type is [pyCode] *)
+
 val pyInt : Textual.Typ.t
 (** Textual encoding of the primitive Python type [int] *)
 
@@ -55,6 +61,8 @@ module Builtins : sig
 
   val is_builtin : string -> bool
   (** Check if a function name is a known buitlin. *)
+
+  val get_type : string -> Textual.Typ.t
 
   (* An empty set of builtins *)
   val empty : t
