@@ -105,7 +105,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
              | Some deps ->
                  ControlDepSet.union deps acc
              | None ->
-                 L.internal_error
+                 L.debug Analysis Quiet
                    "Failed to get the definition of the control variable %a in exp %a \n" Ident.pp
                    id Exp.pp exp ;
                  acc ) )
