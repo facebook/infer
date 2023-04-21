@@ -63,67 +63,48 @@ let if_restart_scheduler f =
     match Config.scheduler with File | SyntacticCallGraph -> () | Restart -> f ()
 
 
-type locked_proc =
-  {pname: Procname.t; start: ExecutionDuration.counter; mutable callees_useful: ExecutionDuration.t}
+let setup () = if_restart_scheduler ProcLocker.setup
+
+type locked_proc = {start: ExecutionDuration.counter; mutable callees_useful: ExecutionDuration.t}
 
 let locked_procs = Stack.create ()
 
-let record_locked_proc (pname : Procname.t) =
-  Stack.push locked_procs
-    {pname; start= ExecutionDuration.counter (); callees_useful= ExecutionDuration.zero}
+let lock_exn pname =
+  if ProcLocker.try_lock pname then
+    Stack.push locked_procs
+      {start= ExecutionDuration.counter (); callees_useful= ExecutionDuration.zero}
+  else
+    raise
+      (RestartSchedulerException.ProcnameAlreadyLocked
+         {dependency_filename= Procname.to_filename pname} )
 
 
-let add_to_useful_time from =
-  Stats.add_to_restart_scheduler_useful_time (ExecutionDuration.since from)
-
-
-let add_to_useful_exe_duration exe_duration =
-  Stats.add_to_restart_scheduler_useful_time exe_duration
-
-
-let add_to_total_time from =
-  Stats.add_to_restart_scheduler_total_time (ExecutionDuration.since from)
-
-
-let unlock_all () =
-  Stack.until_empty locked_procs (fun {pname; start; callees_useful} ->
+let unlock ~after_exn pname =
+  match Stack.pop locked_procs with
+  | None ->
+      L.internal_error "Trying to unlock %a but it does not appear to be locked.@\n" Procname.pp
+        pname
+  | Some {start; callees_useful} ->
       ( match Stack.top locked_procs with
       | Some caller ->
-          caller.callees_useful <- ExecutionDuration.add caller.callees_useful callees_useful
+          caller.callees_useful <-
+            ( if after_exn then ExecutionDuration.add caller.callees_useful callees_useful
+              else ExecutionDuration.add_duration_since caller.callees_useful start )
       | None ->
-          add_to_useful_exe_duration callees_useful ;
-          add_to_total_time start ) ;
-      ProcLocker.unlock pname )
+          Stats.add_to_restart_scheduler_useful_time
+            (if after_exn then callees_useful else ExecutionDuration.since start) ;
+          Stats.add_to_restart_scheduler_total_time (ExecutionDuration.since start) ) ;
+      ProcLocker.unlock pname
 
 
-let lock_exn pname =
-  if_restart_scheduler (fun () ->
-      if ProcLocker.try_lock pname then record_locked_proc pname
-      else (
-        unlock_all () ;
-        raise
-          (RestartSchedulerException.ProcnameAlreadyLocked
-             {dependency_filename= Procname.to_filename pname} ) ) )
-
-
-let unlock pname =
-  if_restart_scheduler (fun () ->
-      match Stack.pop locked_procs with
-      | None ->
-          L.die InternalError "Trying to unlock %s but it does not appear to be locked.@."
-            (Procname.to_string pname)
-      | Some {pname= stack_pname} when not (Procname.equal pname stack_pname) ->
-          L.die InternalError "Trying to unlock %s but top of stack is %s.@."
-            (Procname.to_string pname) (Procname.to_string stack_pname)
-      | Some {start} ->
-          ( match Stack.top locked_procs with
-          | Some caller ->
-              caller.callees_useful <-
-                ExecutionDuration.add_duration_since caller.callees_useful start
-          | None ->
-              add_to_useful_time start ;
-              add_to_total_time start ) ;
-          ProcLocker.unlock pname )
-
-
-let setup () = if_restart_scheduler ProcLocker.setup
+let with_lock ~f pname =
+  match Config.scheduler with
+  | File | SyntacticCallGraph ->
+      f ()
+  | Restart ->
+      lock_exn pname ;
+      let res =
+        try f () with exn -> IExn.reraise_after ~f:(fun () -> unlock ~after_exn:true pname) exn
+      in
+      unlock ~after_exn:false pname ;
+      res

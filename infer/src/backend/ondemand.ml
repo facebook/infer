@@ -251,27 +251,23 @@ let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary callee
     let analyze_callee_aux ~specialization =
       Procdesc.load callee_pname
       >>= fun callee_pdesc ->
-      RestartScheduler.lock_exn callee_pname ;
-      let previous_global_state = AnalysisGlobalState.save () in
-      AnalysisGlobalState.initialize callee_pname ;
-      let callee_summary =
-        protect
-          ~f:(fun () ->
-            Timer.time Preanalysis
-              ~f:(fun () ->
-                let caller_pname = caller_summary >>| fun summ -> summ.Summary.proc_name in
-                Some (run_proc_analysis exe_env ?specialization ?caller_pname callee_pdesc) )
-              ~on_timeout:(fun span ->
-                L.debug Analysis Quiet
-                  "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any checkers \
-                   (pre-analysis timeout?)@\n"
-                  span SourceFile.pp (Procdesc.get_attributes callee_pdesc).translation_unit
-                  Procname.pp callee_pname ;
-                None ) )
-          ~finally:(fun () -> AnalysisGlobalState.restore previous_global_state)
-      in
-      RestartScheduler.unlock callee_pname ;
-      callee_summary
+      RestartScheduler.with_lock callee_pname ~f:(fun () ->
+          let previous_global_state = AnalysisGlobalState.save () in
+          AnalysisGlobalState.initialize callee_pname ;
+          protect
+            ~f:(fun () ->
+              Timer.time Preanalysis
+                ~f:(fun () ->
+                  let caller_pname = caller_summary >>| fun summ -> summ.Summary.proc_name in
+                  Some (run_proc_analysis exe_env ?specialization ?caller_pname callee_pdesc) )
+                ~on_timeout:(fun span ->
+                  L.debug Analysis Quiet
+                    "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any checkers \
+                     (pre-analysis timeout?)@\n"
+                    span SourceFile.pp (Procdesc.get_attributes callee_pdesc).translation_unit
+                    Procname.pp callee_pname ;
+                  None ) )
+            ~finally:(fun () -> AnalysisGlobalState.restore previous_global_state) )
     in
     match (Summary.OnDisk.get ~lazy_payloads callee_pname, specialization) with
     | (Some _ as summ_opt), None ->

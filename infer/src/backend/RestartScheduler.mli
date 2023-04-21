@@ -8,8 +8,11 @@ open! IStd
 
 val setup : unit -> unit
 
-val lock_exn : Procname.t -> unit
-
-val unlock : Procname.t -> unit
-
 val make : SourceFile.t list -> (TaskSchedulerTypes.target, string) ProcessPool.TaskGenerator.t
+
+val with_lock : f:(unit -> 'a) -> Procname.t -> 'a
+(** Run [f] after having taken a lock on the given [Procname.t] and unlock after. If the lock is
+    already held by another worker, throw [RestartSchedulerException.ProcnameAlreadyLocked] so that
+    the dependency can be sent to the scheduler process. Finally, account for time spent analysing
+    each procedure as useful (finished analysis) or not (an exception was thrown, terminating
+    analysis early). *)
