@@ -163,7 +163,8 @@ module SQLite = struct
   let all_load_statements =
     let mk_load_statements payload_id =
       let for_table table =
-        Database.register_statement AnalysisDatabase "SELECT %s FROM %s WHERE rowid = :k" payload_id
+        Database.register_statement AnalysisDatabase "SELECT %s FROM %s WHERE proc_uid = :k"
+          payload_id
           (Database.string_of_analysis_table table)
       in
       {specs= for_table Specs; model_specs= for_table BiabductionModelsSpecs; name= payload_id}
@@ -176,35 +177,35 @@ module SQLite = struct
     match table with Specs -> specs | BiabductionModelsSpecs -> model_specs
 
 
-  let load table ~rowid payload_id =
+  let load table ~proc_uid payload_id =
     let load_statement = get_load_statement table payload_id in
     Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
-        Sqlite3.bind_int64 load_stmt 1 rowid
-        |> SqliteUtils.check_result_code db ~log:"load payloads bind rowid" ;
+        Sqlite3.bind_text load_stmt 1 proc_uid
+        |> SqliteUtils.check_result_code db ~log:"load payloads bind proc_uid" ;
         SqliteUtils.result_option ~finalize:false db ~log:"load payloads exec" load_stmt
           ~read_row:(fun stmt -> Sqlite3.column stmt 0 |> deserialize_payload_opt |> Lazy.force) )
     |> Option.join
 
 
-  let lazy_load table ~rowid =
-    { annot_map= lazy (load table ~rowid AnnotMap)
-    ; biabduction= lazy (load table ~rowid Biabduction)
-    ; buffer_overrun_analysis= lazy (load table ~rowid BufferOverrunAnalysis)
-    ; buffer_overrun_checker= lazy (load table ~rowid BufferOverrunChecker)
-    ; config_impact_analysis= lazy (load table ~rowid ConfigImpactAnalysis)
-    ; cost= lazy (load table ~rowid Cost)
-    ; disjunctive_demo= lazy (load table ~rowid DisjunctiveDemo)
-    ; lab_resource_leaks= lazy (load table ~rowid LabResourceLeaks)
-    ; litho_required_props= lazy (load table ~rowid LithoRequiredProps)
-    ; pulse= lazy (load table ~rowid Pulse)
-    ; purity= lazy (load table ~rowid Purity)
-    ; quandary= lazy (load table ~rowid Quandary)
-    ; racerd= lazy (load table ~rowid RacerD)
-    ; scope_leakage= lazy (load table ~rowid ScopeLeakage)
-    ; siof= lazy (load table ~rowid SIOF)
-    ; simple_lineage= lazy (load table ~rowid SimpleLineage)
-    ; simple_shape= lazy (load table ~rowid SimpleShape)
-    ; starvation= lazy (load table ~rowid Starvation)
-    ; nullsafe= lazy (load table ~rowid Nullsafe)
-    ; uninit= lazy (load table ~rowid Uninit) }
+  let lazy_load table ~proc_uid =
+    { annot_map= lazy (load table ~proc_uid AnnotMap)
+    ; biabduction= lazy (load table ~proc_uid Biabduction)
+    ; buffer_overrun_analysis= lazy (load table ~proc_uid BufferOverrunAnalysis)
+    ; buffer_overrun_checker= lazy (load table ~proc_uid BufferOverrunChecker)
+    ; config_impact_analysis= lazy (load table ~proc_uid ConfigImpactAnalysis)
+    ; cost= lazy (load table ~proc_uid Cost)
+    ; disjunctive_demo= lazy (load table ~proc_uid DisjunctiveDemo)
+    ; lab_resource_leaks= lazy (load table ~proc_uid LabResourceLeaks)
+    ; litho_required_props= lazy (load table ~proc_uid LithoRequiredProps)
+    ; pulse= lazy (load table ~proc_uid Pulse)
+    ; purity= lazy (load table ~proc_uid Purity)
+    ; quandary= lazy (load table ~proc_uid Quandary)
+    ; racerd= lazy (load table ~proc_uid RacerD)
+    ; scope_leakage= lazy (load table ~proc_uid ScopeLeakage)
+    ; siof= lazy (load table ~proc_uid SIOF)
+    ; simple_lineage= lazy (load table ~proc_uid SimpleLineage)
+    ; simple_shape= lazy (load table ~proc_uid SimpleShape)
+    ; starvation= lazy (load table ~proc_uid Starvation)
+    ; nullsafe= lazy (load table ~proc_uid Nullsafe)
+    ; uninit= lazy (load table ~proc_uid Uninit) }
 end

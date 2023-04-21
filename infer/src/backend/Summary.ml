@@ -149,7 +149,7 @@ module OnDisk = struct
   let spec_of_procname, spec_of_model =
     let mk_lazy_load_stmt table =
       Database.register_statement AnalysisDatabase
-        "SELECT rowid, report_summary, summary_metadata FROM %s WHERE proc_uid = :k"
+        "SELECT report_summary, summary_metadata FROM %s WHERE proc_uid = :k"
         (Database.string_of_analysis_table table)
     in
     let mk_eager_load_stmt table =
@@ -160,24 +160,16 @@ module OnDisk = struct
     in
     let load_spec ~lazy_payloads ~load_statement table proc_name =
       Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
-          Sqlite3.bind load_stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id proc_name))
+          let proc_uid = Procname.to_unique_id proc_name in
+          Sqlite3.bind load_stmt 1 (Sqlite3.Data.TEXT proc_uid)
           |> SqliteUtils.check_result_code db ~log:"load proc specs bind proc_name" ;
           SqliteUtils.result_option ~finalize:false db ~log:"load proc specs run" load_stmt
             ~read_row:(fun stmt ->
-              let offset = if lazy_payloads then (* column 0 holds [rowid] *) 1 else 0 in
-              let report_summary =
-                Sqlite3.column stmt (offset + 0) |> ReportSummary.SQLite.deserialize
-              in
-              let summary_metadata =
-                Sqlite3.column stmt (offset + 1) |> SummaryMetadata.SQLite.deserialize
-              in
+              let report_summary = Sqlite3.column stmt 0 |> ReportSummary.SQLite.deserialize in
+              let summary_metadata = Sqlite3.column stmt 1 |> SummaryMetadata.SQLite.deserialize in
               let payloads =
-                if lazy_payloads then
-                  let rowid = Sqlite3.column_int64 stmt 0 in
-                  Payloads.SQLite.lazy_load table ~rowid
-                else
-                  (* NOTE: [offset] = 0 at this point *)
-                  Payloads.SQLite.eager_load ~first_column:(offset + 2) stmt
+                if lazy_payloads then Payloads.SQLite.lazy_load table ~proc_uid
+                else Payloads.SQLite.eager_load ~first_column:2 stmt
               in
               mk_full_summary payloads report_summary summary_metadata ) )
     in
@@ -262,7 +254,7 @@ module OnDisk = struct
     (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
     Sqlite3.prepare db
       {|
-      SELECT rowid, proc_name, report_summary, summary_metadata
+      SELECT proc_uid, proc_name, report_summary, summary_metadata
       FROM specs
       ORDER BY proc_uid ASC
       |}
@@ -270,10 +262,10 @@ module OnDisk = struct
          ~f:(fun stmt ->
            let proc_name = Sqlite3.column stmt 1 |> Procname.SQLite.deserialize in
            if filter dummy_source_file proc_name then
-             let rowid = Sqlite3.column_int64 stmt 0 in
+             let proc_uid = Sqlite3.column_text stmt 0 in
              let report_summary = Sqlite3.column stmt 2 |> ReportSummary.SQLite.deserialize in
              let summary_metadata = Sqlite3.column stmt 3 |> SummaryMetadata.SQLite.deserialize in
-             let payloads = Payloads.SQLite.lazy_load Specs ~rowid in
+             let payloads = Payloads.SQLite.lazy_load Specs ~proc_uid in
              let spec = mk_full_summary payloads report_summary summary_metadata in
              f spec )
 
