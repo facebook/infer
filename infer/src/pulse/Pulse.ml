@@ -340,22 +340,30 @@ module PulseTransferFunctions = struct
 
 
   let find_override exe_env tenv astate actuals proc_name proc_name_opt =
+    let tenv_resolve_method tenv type_name proc_name =
+      let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
+      Tenv.resolve_method ~method_exists tenv type_name proc_name
+    in
     let open IOption.Let_syntax in
     let* {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver, _} =
       get_receiver proc_name actuals
     in
-    let* dynamic_type_name, source_file_opt = get_dynamic_type_name astate receiver in
-    let* type_name = Procname.get_class_type_name proc_name in
-    if Typ.Name.equal type_name dynamic_type_name then proc_name_opt
-    else
-      let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
-      (* if we have a source file then do the look up in the (local) tenv
-         for that source file instead of in the tenv for the current file *)
-      let tenv =
-        Option.bind source_file_opt ~f:(Exe_env.get_source_tenv exe_env)
-        |> Option.value ~default:tenv
-      in
-      Tenv.resolve_method ~method_exists tenv dynamic_type_name proc_name
+    match get_dynamic_type_name astate receiver with
+    | Some (dynamic_type_name, source_file_opt) ->
+        (* if we have a source file then do the look up in the (local) tenv
+           for that source file instead of in the tenv for the current file *)
+        let tenv =
+          Option.bind source_file_opt ~f:(Exe_env.get_source_tenv exe_env)
+          |> Option.value ~default:tenv
+        in
+        tenv_resolve_method tenv dynamic_type_name proc_name
+    | None ->
+        let* type_name = Procname.get_class_type_name proc_name in
+        if Language.curr_language_is Hack then
+          (* contrary to the Java frontend, the Hack frontend does not perform
+             static resolution so we have to do it here *)
+          tenv_resolve_method tenv type_name proc_name
+        else proc_name_opt
 
 
   let resolve_virtual_call exe_env tenv astate actuals proc_name_opt =
@@ -379,6 +387,8 @@ module PulseTransferFunctions = struct
       match AbductiveDomain.AddressAttributes.get_static_type receiver astate with
       | Some typ_name ->
           let improved_proc_name = Procname.replace_class proc_name typ_name in
+          L.d_printfln "Progagating declared type to improve callee name: %a replaced by %a"
+            Procname.pp proc_name Procname.pp improved_proc_name ;
           Some improved_proc_name
       | _ ->
           proc_name_opt

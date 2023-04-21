@@ -17,7 +17,7 @@ class Main {
     taintSink($tainted);
   }
 
-  function FN_fromBBad(): void {
+  function fromBBad(): void {
     $tainted = (new B())->source();
     taintSink($tainted);
   }
