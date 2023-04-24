@@ -7,14 +7,14 @@
 
 open! IStd
 module F = Format
-open Textual
+module T = Textual
 open TextualTestHelpers
 
 let%expect_test _ =
   let no_lang = {|define nothing() : void { #node: ret null }|} in
   let m = parse_module no_lang in
   try TextualSil.module_to_sil m |> ignore
-  with TextualTransformError errs ->
+  with T.TextualTransformError errs ->
     List.iter errs ~f:(Textual.pp_transform_error sourcefile F.std_formatter) ;
     [%expect
       {| dummy.sil, <unknown location>: transformation error: Missing or unsupported source_language attribute |}]
@@ -50,8 +50,8 @@ let%expect_test "undefined types are included in tenv" =
          supers: {}
          objc_protocols: {}
          methods: {
-                     Foo.undef
-                     Foo.f
+                     Foo.undef#0
+                     Foo.f#2
                    }
          exported_obj_methods: {}
          annots: {<>}
@@ -83,7 +83,7 @@ let%expect_test "undefined types are included in tenv" =
          supers: {}
          objc_protocols: {}
          methods: {
-                     Bar.f
+                     Bar.f#0
                    }
          exported_obj_methods: {}
          annots: {<>}
@@ -159,3 +159,99 @@ let%expect_test "hack extends is ordered" =
   F.printf "%a@\n" (Fmt.list ~sep:(Fmt.any " ") IR.Typ.Name.pp) (List.rev supers) ;
   [%expect {|
     hack A hack T1 hack T0 hack T2 hack T3 hack P0 hack P1 hack P2 hack P3 |}]
+
+
+let%expect_test "overloads in tenv" =
+  let source =
+    {|
+     .source_language = "hack"
+     define C.f(x: int) : void { #n0: ret null }
+     define C.f(x: int, y: bool) : void { #n0: ret null }
+     |}
+  in
+  let m = parse_module source in
+  let _, tenv = TextualSil.module_to_sil m in
+  F.printf "%a" Tenv.pp tenv ;
+  [%expect
+    {|
+    hack C
+    fields: {}
+    statics: {}
+    supers: {}
+    objc_protocols: {}
+    methods: {
+                C.f#2
+                C.f#1
+              }
+    exported_obj_methods: {}
+    annots: {<>}
+    java_class_info: {[None]}
+    dummy: false
+    hack bool
+    fields: {}
+    statics: {}
+    supers: {}
+    objc_protocols: {}
+    methods: {}
+    exported_obj_methods: {}
+    annots: {<>}
+    java_class_info: {[None]}
+    dummy: true |}]
+
+
+let%expect_test "undefined + overloads in merged tenv" =
+  let main_source =
+    {|
+     .source_language = "hack"
+
+     declare Dep.f(...) : *HackMixed
+
+     define Main.main(x: int, y: bool) : void {
+       #b0:
+         n0:int = load &x
+         n1:bool = load &y
+         n2 = Dep.f(n0)
+         n3 = Dep.f(n0, n1)
+         ret null
+     }
+     |}
+  in
+  let dep_source =
+    {|
+     .source_language = "hack"
+
+     define Dep.f(x: int) : *int {
+       #n0:
+         ret null
+     }
+     define Dep.f(x: int, y: bool) : *float {
+       #n0:
+         ret null
+     }
+     |}
+  in
+  let tenvs =
+    List.map [main_source; dep_source] ~f:(fun x ->
+        parse_module x |> TextualSil.module_to_sil |> snd )
+  in
+  let tenv_merged = Tenv.create () in
+  List.iter tenvs ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:tenv_merged) ;
+  let dep_name = Typ.HackClass (HackClassName.make "Dep") in
+  let dep_struct = Tenv.lookup tenv_merged dep_name |> Option.value_exn in
+  F.printf "%a" (Struct.pp Pp.text dep_name) dep_struct ;
+  [%expect
+    {|
+    hack Dep
+    fields: {}
+    statics: {}
+    supers: {}
+    objc_protocols: {}
+    methods: {
+                Dep.f
+                Dep.f#1
+                Dep.f#2
+              }
+    exported_obj_methods: {}
+    annots: {<>}
+    java_class_info: {[None]}
+    dummy: false |}]

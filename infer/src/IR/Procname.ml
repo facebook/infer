@@ -662,7 +662,7 @@ module Hack = struct
       match verbosity with
       | Verbose -> (
         match t.arity with Some arity -> F.fprintf fmt "#%d" arity | None -> () )
-      | Simple | Non_verbose | NameOnly ->
+      | Non_verbose | Simple | NameOnly ->
           ()
     in
     match verbosity with

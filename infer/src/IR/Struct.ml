@@ -86,9 +86,9 @@ let pp pe name f
     supers
     (seq (fun f n -> F.fprintf f "@;<0 2>%a" Typ.Name.pp n))
     objc_protocols
-    (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp m))
+    (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp_verbose m))
     methods
-    (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp m))
+    (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp_verbose m))
     exported_objc_methods Annot.Item.pp annots pp_java_class_info_opt java_class_info dummy
     (fun fs -> Option.iter ~f:(Format.fprintf fs "source_file: %a@," SourceFile.pp))
     source_file
