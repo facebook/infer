@@ -60,7 +60,7 @@
 
 (defvar sil--font-lock-default
   (let (
-	(keywords-regex (rx-to-string `(or ,@sil--keywords)))
+	(keywords-regex (rx-to-string `(: bow (or ,@sil--keywords) eow)))
 	(block-label-regex (rx-to-string `(: "#" ,sil--var-name-regex)))
 	(type-use-regex (rx-to-string `(: (not ":") ":" (* blank) (: (* "*") (group ,sil--type-name-regex)))))
 	(type-def-regex (rx-to-string `(: "type" (+ blank) (group ,sil--type-name-regex))))
