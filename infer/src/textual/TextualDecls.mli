@@ -15,7 +15,7 @@ module ProcEntry : sig
   val decl : t -> Textual.ProcDecl.t
 end
 
-val init : Textual.SourceFile.t -> t
+val init : Textual.SourceFile.t -> Textual.Lang.t option -> t
 
 val declare_global : t -> Textual.Global.t -> unit
 
@@ -33,7 +33,7 @@ val get_fielddecl : t -> Textual.qualified_fieldname -> Textual.FieldDecl.t opti
 
 val get_global : t -> Textual.VarName.t -> Textual.Global.t option
 
-val get_procdecl : t -> Textual.qualified_procname -> Textual.ProcDecl.t option
+val get_procdecl : t -> Textual.ProcSig.t -> Textual.ProcDecl.t option
 
 val get_proc_entries_by_enclosing_class :
   t -> ProcEntry.t list Textual.TypeName.Map.t * Textual.TypeName.Set.t
@@ -45,6 +45,8 @@ val get_struct : t -> Textual.TypeName.t -> Textual.Struct.t option
 val is_field_declared : t -> Textual.qualified_fieldname -> bool
 
 val source_file : t -> Textual.SourceFile.t
+
+val lang : t -> Textual.Lang.t option
 
 val get_undefined_types : t -> Textual.TypeName.t Seq.t
 

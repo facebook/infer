@@ -201,3 +201,50 @@ let%expect_test "keywords as idents" =
                 jmp type
 
           } |}]
+
+
+let%expect_test "overloaded functions" =
+  let text =
+    {|
+     .source_language = "hack"
+
+     define f(a: int) : void {#b0: ret null }
+     define f(a: int, b: bool) : void {#b0: ret null}
+
+     define g(a: int, b: bool) : void {
+     #b0:
+       n0:int = load &a
+       n1:bool = load &b
+       n2 = f(n0)
+       n3 = f(n0, n1)
+       ret null
+     }
+     |}
+  in
+  let m = parse_module text in
+  F.printf "%a" Module.pp m ;
+  [%expect
+    {|
+    .source_language = "hack"
+
+    define f(a: int) : void {
+      #b0:
+          ret null
+
+    }
+
+    define f(a: int, b: bool) : void {
+      #b0:
+          ret null
+
+    }
+
+    define g(a: int, b: bool) : void {
+      #b0:
+          n0:int = load &a
+          n1:bool = load &b
+          n2 = f(n0)
+          n3 = f(n0, n1)
+          ret null
+
+    } |}]

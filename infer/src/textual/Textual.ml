@@ -182,7 +182,7 @@ end
 
 module Typ = struct
   type t = Int | Float | Null | Void | Ptr of t | Struct of TypeName.t | Array of t
-  [@@deriving equal]
+  [@@deriving equal, hash]
 
   let rec pp fmt = function
     | Int ->
@@ -270,6 +270,24 @@ end
 
 let pp_list_with_comma pp fmt l = Pp.seq ~sep:", " pp fmt l
 
+module ProcSig = struct
+  module T = struct
+    type t =
+      | Hack of {qualified_name: qualified_procname; arity: int option}
+      | Other of {qualified_name: qualified_procname}
+    [@@deriving equal, hash]
+  end
+
+  include T
+
+  let to_qualified_procname = function
+    | Hack {qualified_name} | Other {qualified_name} ->
+        qualified_name
+
+
+  module Hashtbl = Hashtbl.Make (T)
+end
+
 module ProcDecl = struct
   type t =
     { qualified_name: qualified_procname
@@ -281,6 +299,13 @@ module ProcDecl = struct
     Option.value_or_thunk formals_types ~default:(fun () ->
         L.die InternalError "List of formals is unknown in %a: %s" pp_qualified_procname
           qualified_name context )
+
+
+  let to_sig {qualified_name; formals_types} = function
+    | Some Lang.Hack ->
+        ProcSig.Hack {qualified_name; arity= Option.map formals_types ~f:List.length}
+    | Some Lang.Java | Some Lang.Python | None ->
+        ProcSig.Other {qualified_name}
 
 
   let pp_formals fmt formals =
@@ -502,6 +527,13 @@ module Exp = struct
   let call_non_virtual proc args = Call {proc; args; kind= NonVirtual}
 
   let call_virtual proc recv args = Call {proc; args= recv :: args; kind= Virtual}
+
+  let call_sig qualified_name args = function
+    | Some Lang.Hack ->
+        ProcSig.Hack {qualified_name; arity= Some (List.length args)}
+    | Some Lang.Java | Some Lang.Python | None ->
+        ProcSig.Other {qualified_name}
+
 
   let not exp = call_non_virtual (ProcDecl.of_unop Unop.LNot) [exp]
 

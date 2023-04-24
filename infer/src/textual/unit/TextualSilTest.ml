@@ -50,8 +50,8 @@ let%expect_test "undefined types are included in tenv" =
          supers: {}
          objc_protocols: {}
          methods: {
-                     Foo.f
                      Foo.undef
+                     Foo.f
                    }
          exported_obj_methods: {}
          annots: {<>}

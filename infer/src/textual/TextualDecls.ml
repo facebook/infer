@@ -8,14 +8,6 @@
 open! IStd
 open Textual
 
-module QualifiedNameHashtbl = Hashtbl.Make (struct
-  type t = qualified_procname
-
-  let equal = equal_qualified_procname
-
-  let hash = hash_qualified_procname
-end)
-
 module ProcEntry = struct
   type t = Decl of ProcDecl.t | Desc of ProcDesc.t
 
@@ -25,21 +17,23 @@ module ProcEntry = struct
 
   let desc = function Decl _ -> None | Desc p -> Some p
 
-  let name t = (decl t).qualified_name
+  let signature t lang = ProcDecl.to_sig (decl t) lang
 end
 
 type t =
   { globals: Global.t VarName.Hashtbl.t
-  ; procs: ProcEntry.t QualifiedNameHashtbl.t
+  ; procs: ProcEntry.t ProcSig.Hashtbl.t
         (** the boolean records whether an implementation was given *)
   ; structs: Struct.t TypeName.Hashtbl.t
-  ; sourcefile: SourceFile.t }
+  ; sourcefile: SourceFile.t
+  ; lang: Lang.t option }
 
-let init sourcefile =
+let init sourcefile lang =
   { globals= VarName.Hashtbl.create 17
-  ; procs= QualifiedNameHashtbl.create 17
+  ; procs= ProcSig.Hashtbl.create 17
   ; structs= TypeName.Hashtbl.create 17
-  ; sourcefile }
+  ; sourcefile
+  ; lang }
 
 
 type error =
@@ -78,17 +72,19 @@ let declare_global decls (global : Global.t) =
 let is_global_declared decls (global : Global.t) = VarName.Hashtbl.mem decls.globals global.name
 
 let is_proc_implemented decls proc =
-  QualifiedNameHashtbl.find_opt decls.procs proc.ProcDecl.qualified_name
+  let procsig = ProcDecl.to_sig proc decls.lang in
+  ProcSig.Hashtbl.find_opt decls.procs procsig
   |> Option.value_map ~default:false ~f:ProcEntry.is_implemented
 
 
 let declare_proc decls (proc : ProcEntry.t) =
-  let existing_proc = QualifiedNameHashtbl.find_opt decls.procs (ProcEntry.name proc) in
+  let procsig = ProcEntry.signature proc decls.lang in
+  let existing_proc = ProcSig.Hashtbl.find_opt decls.procs procsig in
   match (existing_proc, proc) with
   | Some (Desc _), Decl _ ->
       ()
   | _, _ ->
-      QualifiedNameHashtbl.replace decls.procs (ProcEntry.name proc) proc
+      ProcSig.Hashtbl.replace decls.procs procsig proc
 
 
 let declare_struct decls (s : Struct.t) = TypeName.Hashtbl.replace decls.structs s.name s
@@ -113,9 +109,20 @@ let get_fielddecl decls ({name; enclosing_class} : qualified_fieldname) =
       FieldName.equal qualified_name.name name )
 
 
-let get_procdecl decls qualified_name =
-  QualifiedNameHashtbl.find_opt decls.procs qualified_name |> Option.map ~f:ProcEntry.decl
+let rec get_procentry decls procsig =
+  match procsig with
+  | ProcSig.Hack {qualified_name; arity= Some _} ->
+      (* Hack translation can have some procs declared with unknown formals, while at call sites the
+         proc is called with some arguments. To accomodate this case we first look for a proc with
+         the corresponding arity and then for its 'unknown formals' variation. *)
+      ProcSig.Hashtbl.find_opt decls.procs procsig
+      |> IOption.if_none_evalopt ~f:(fun () ->
+             get_procentry decls (ProcSig.Hack {qualified_name; arity= None}) )
+  | ProcSig.Hack {arity= None; _} | ProcSig.Other _ ->
+      ProcSig.Hashtbl.find_opt decls.procs procsig
 
+
+let get_procdecl decls procsig = get_procentry decls procsig |> Option.map ~f:ProcEntry.decl
 
 let get_struct decls tname = TypeName.Hashtbl.find_opt decls.structs tname
 
@@ -123,9 +130,7 @@ let fold_globals decls ~init ~f =
   VarName.Hashtbl.fold (fun key data x -> f x key data) decls.globals init
 
 
-let fold_procs decls ~init ~f =
-  QualifiedNameHashtbl.fold (fun _ proc x -> f x proc) decls.procs init
-
+let fold_procs decls ~init ~f = ProcSig.Hashtbl.fold (fun _ proc x -> f x proc) decls.procs init
 
 let fold_procdecls decls ~init ~f =
   fold_procs decls ~init ~f:(fun x proc -> f x (ProcEntry.decl proc))
@@ -149,7 +154,9 @@ let get_proc_entries_by_enclosing_class decls =
           (map, set) )
 
 
-let source_file {sourcefile; _} = sourcefile
+let source_file {sourcefile} = sourcefile
+
+let lang {lang} = lang
 
 let check_fieldnames_not_declared_twice errors struct_ =
   List.fold struct_.Struct.fields ~init:(errors, FieldName.Set.empty)
@@ -284,7 +291,7 @@ let get_undefined_types decls =
   VarName.Hashtbl.to_seq_values decls.globals
   |> Seq.iter (fun ({typ} : Global.t) -> register_typ typ referenced_tnames) ;
   (* Collect type names from Procdecls  *)
-  QualifiedNameHashtbl.to_seq_values decls.procs
+  ProcSig.Hashtbl.to_seq_values decls.procs
   |> Seq.iter (fun (proc : ProcEntry.t) ->
          let procdecl = ProcEntry.decl proc in
          register_annotated_typ procdecl.result_type referenced_tnames ;
@@ -308,8 +315,9 @@ let get_undefined_types decls =
   TypeName.HashSet.seq referenced_tnames
 
 
-let make_decls ({decls; sourcefile} : Module.t) : error list * t =
-  let decls_env = init sourcefile in
+let make_decls ({decls; sourcefile} as module_ : Module.t) : error list * t =
+  let lang = Module.lang module_ in
+  let decls_env = init sourcefile lang in
   let register errors decl =
     match (decl : Module.decl) with
     | Global global ->

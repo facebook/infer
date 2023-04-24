@@ -132,6 +132,29 @@ module Const : sig
     | Float of float  (** float constants *)
 end
 
+module ProcSig : sig
+  (** Signature uniquely identifies a called procedure in a target language. *)
+  type t =
+    | Hack of {qualified_name: qualified_procname; arity: int option}
+        (** Hack doesn't support function overloading but it does support functions with default
+            arguments. This means that a procedure is uniquely identified by its name and the number
+            of arguments. *)
+    | Other of {qualified_name: qualified_procname}
+        (** Catch-all case for languages that currently lack support for function overloading at the
+            Textual level.
+
+            For instance, in C++ and Java the signature consists of a procedure name and types of
+            formals. However, the syntax of procedure calls in Textual doesn't give us the types of
+            formals and inferring them from the types of arguments would be brittle. We should
+            extend the syntax of Textual to allow unambiguous call target resolution when we need to
+            add support for other languages. *)
+  [@@deriving equal, hash]
+
+  val to_qualified_procname : t -> qualified_procname
+
+  module Hashtbl : Hashtbl.S with type key = t
+end
+
 module ProcDecl : sig
   type t =
     { qualified_name: qualified_procname
@@ -144,6 +167,8 @@ module ProcDecl : sig
     ; attributes: Attr.t list }
 
   val formals_or_die : ?context:string -> t -> Typ.annotated list
+
+  val to_sig : t -> Lang.t option -> ProcSig.t
 
   val pp : F.formatter -> t -> unit
 
@@ -195,6 +220,8 @@ module Exp : sig
   val call_non_virtual : qualified_procname -> t list -> t
 
   val call_virtual : qualified_procname -> t -> t list -> t
+
+  val call_sig : qualified_procname -> t list -> Lang.t option -> ProcSig.t
 
   (* logical not ! *)
   val not : t -> t
@@ -293,7 +320,7 @@ module Module : sig
 
   type t = {attrs: Attr.t list; decls: decl list; sourcefile: SourceFile.t}
 
-  val lang : t -> Lang.t option [@@warning "-unused-value-declaration"]
+  val lang : t -> Lang.t option
 
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 end

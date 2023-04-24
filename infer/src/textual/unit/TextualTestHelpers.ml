@@ -15,7 +15,7 @@ let parse_module text =
   | Ok m ->
       m
   | Error es ->
-      List.iter es ~f:(fun e -> F.printf "%a" (TextualParser.pp_error sourcefile) e) ;
+      List.iter es ~f:(fun e -> F.printf "%a@\n" (TextualParser.pp_error sourcefile) e) ;
       raise (Failure "Couldn't parse a module")
 
 

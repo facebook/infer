@@ -472,25 +472,26 @@ module ExpBridge = struct
       | Call {proc; args= [Typ typ; exp]} when ProcDecl.is_cast_builtin proc ->
           Cast (TypBridge.to_sil lang typ, aux exp)
       | Call {proc; args} -> (
-        match
-          ( TextualDecls.get_procdecl decls_env proc
-          , ProcDecl.to_unop proc
-          , ProcDecl.to_binop proc
-          , args )
-        with
-        | Some _, None, None, _ ->
-            (* TODO(arr): expression locations *)
-            let loc = Location.Unknown in
-            let msg = lazy (F.asprintf "%a contains a call inside a sub-expression" pp exp) in
-            raise (TextualTransformError [{loc; msg}])
-        | None, Some unop, None, [exp] ->
-            UnOp (unop, aux exp, Some (TypBridge.to_sil lang Int)) (* FIXME: fix the typ *)
-        | None, None, Some binop, [exp1; exp2] ->
-            BinOp (binop, aux exp1, aux exp2)
-        | _, _, _, _ ->
-            L.die InternalError "Internal error: procname %a has an unexpected property"
-              pp_qualified_procname proc
-            (* FIXME: transform instruction to put call at head of expressions *) )
+          let procsig = Exp.call_sig proc args (TextualDecls.lang decls_env) in
+          match
+            ( TextualDecls.get_procdecl decls_env procsig
+            , ProcDecl.to_unop proc
+            , ProcDecl.to_binop proc
+            , args )
+          with
+          | Some _, None, None, _ ->
+              (* TODO(arr): expression locations *)
+              let loc = Location.Unknown in
+              let msg = lazy (F.asprintf "%a contains a call inside a sub-expression" pp exp) in
+              raise (TextualTransformError [{loc; msg}])
+          | None, Some unop, None, [exp] ->
+              UnOp (unop, aux exp, Some (TypBridge.to_sil lang Int)) (* FIXME: fix the typ *)
+          | None, None, Some binop, [exp1; exp2] ->
+              BinOp (binop, aux exp1, aux exp2)
+          | _, _, _, _ ->
+              L.die InternalError "Internal error: procname %a has an unexpected property"
+                pp_qualified_procname proc
+          (* FIXME: transform instruction to put call at head of expressions *) )
       | Typ _ ->
           L.die InternalError "Internal error: type expressions should not appear outside builtins"
     in
@@ -610,8 +611,9 @@ module InstrBridge = struct
         Call ((ret, class_type), builtin_lazy_class_initialize, args, loc, CallFlags.default)
     | Let {id; exp= Call {proc; args; kind}; loc} ->
         let ret = IdentBridge.to_sil id in
+        let procsig = Exp.call_sig proc args (TextualDecls.lang decls_env) in
         let ({formals_types} as callee_procname : ProcDecl.t) =
-          match TextualDecls.get_procdecl decls_env proc with
+          match TextualDecls.get_procdecl decls_env procsig with
           | Some procname ->
               procname
           | None ->
@@ -948,7 +950,7 @@ module ModuleBridge = struct
 
 
   let of_sil ~sourcefile ~lang tenv cfg =
-    let env = TextualDecls.init sourcefile in
+    let env = TextualDecls.init sourcefile (Some lang) in
     let decls =
       Cfg.fold_sorted cfg ~init:[] ~f:(fun decls pdesc ->
           let textual_pdesc = ProcDescBridge.of_sil env tenv pdesc in

@@ -186,6 +186,8 @@ let set_location loc : unit monad = fun state -> (Value (), {state with loc})
 
 let get_result_type : Typ.t monad = fun state -> (Value state.pdesc.procdecl.result_type.typ, state)
 
+let get_lang : Lang.t option monad = fun state -> (Value (TextualDecls.lang state.decls), state)
+
 let typeof_ident id : (Typ.t * Location.t) monad =
  fun state ->
   let optional_typ_and_loc = Ident.Map.find_opt id state.idents in
@@ -282,9 +284,9 @@ let typeof_reserved_proc (proc : qualified_procname) : Typ.t * Typ.t list option
 
 
 (* Since procname can be both defined and declared in a file we should account for unknown formals in declarations. *)
-let typeof_procname (proc : qualified_procname) : (Typ.t * Typ.t list option) monad =
+let typeof_procname (procsig : ProcSig.t) : (Typ.t * Typ.t list option) monad =
  fun state ->
-  match TextualDecls.get_procdecl state.decls proc with
+  match TextualDecls.get_procdecl state.decls procsig with
   | Some (procdecl : ProcDecl.t) ->
       let formals_types =
         procdecl.formals_types
@@ -292,7 +294,7 @@ let typeof_procname (proc : qualified_procname) : (Typ.t * Typ.t list option) mo
       in
       ret (procdecl.result_type.typ, formals_types) state
   | None ->
-      ret (typeof_reserved_proc proc) state
+      ret (typeof_reserved_proc (ProcSig.to_qualified_procname procsig)) state
 
 
 let rec typecheck_exp exp ~check ~expected ~loc : unit monad =
@@ -342,7 +344,9 @@ and typeof_exp (exp : Exp.t) : Typ.t monad =
   | Call {proc; args} when ProcDecl.is_lazy_class_initialize_builtin proc ->
       typeof_allocate_builtin proc args
   | Call {proc; args} ->
-      let* result_type, formals_types = typeof_procname proc in
+      let* lang = get_lang in
+      let procsig = Exp.call_sig proc args lang in
+      let* result_type, formals_types = typeof_procname procsig in
       let* loc = get_location in
       let* () =
         match formals_types with

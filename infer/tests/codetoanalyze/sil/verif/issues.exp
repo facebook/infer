@@ -13,9 +13,9 @@ basic.sil, line 29, column 4: textual type error: expression n3 has type *int[],
 basic.sil, line 47, column 4: textual type error: ident n1 is read before being written
 basic.sil, line 58, column 4: textual type error: builtin __sil_allocate is called with 2 arguments while it expects 1
 basic.sil, line 60, column 4: textual type error: expression 0 has type int, while the type of all types was expected
-basic_error_argnum.sil, line 12, column 2: SIL consistency error: function $builtins.bar called with 0 arguments while declared with 1 parameters
+basic_error_argnum.sil, line 12, column 17: SIL consistency error: function $builtins.bar which can be called with 0 arguments is not declared
 error1.sil, line 12, column 4: SIL syntax error: unexpected token x
-error2.sil, line 19, column 9: SIL consistency error: function g is not declared
+error2.sil, line 19, column 9: SIL consistency error: function g which can be called with 0 arguments is not declared
 error2.sil, line 18, column 13: SIL consistency error: field cell.n is not declared
 error2.sil, line 15, column 8: SIL consistency error: label lab2 is not declared in function f
 error3.sil, line 4, column 0: SIL syntax error: unexpected token ^
