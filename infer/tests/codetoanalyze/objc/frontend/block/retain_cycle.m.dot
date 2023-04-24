@@ -1,16 +1,16 @@
 /* @generated */
 digraph cfg {
-"objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_1" [label="1: Start objc_blockA.capture_1\nFormals:  d:D*\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
+"objc_block_A.capture_1(class A,class D).e88ebb9e15006f2e6e376b4f8ab85158_1" [label="1: Start objc_block_A.capture_1\nFormals:  d:D*\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
 	
 
-	 "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_1" -> "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_3" ;
-"objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_2" [label="2: Exit objc_blockA.capture_1 \n  " color=yellow style=filled]
+	 "objc_block_A.capture_1(class A,class D).e88ebb9e15006f2e6e376b4f8ab85158_1" -> "objc_block_A.capture_1(class A,class D).e88ebb9e15006f2e6e376b4f8ab85158_3" ;
+"objc_block_A.capture_1(class A,class D).e88ebb9e15006f2e6e376b4f8ab85158_2" [label="2: Exit objc_block_A.capture_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&self:A* [line 46, column 5]\n  n$2=*&d:D* [line 46, column 13]\n  *n$1._data:D*=n$2 [line 46, column 5]\n " shape="box"]
+"objc_block_A.capture_1(class A,class D).e88ebb9e15006f2e6e376b4f8ab85158_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&self:A* [line 46, column 5]\n  n$2=*&d:D* [line 46, column 13]\n  *n$1._data:D*=n$2 [line 46, column 5]\n " shape="box"]
 	
 
-	 "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_3" -> "objc_blockA.capture_1(class A,class D).8e9a52049a11f3e729d697583cda7110_2" ;
+	 "objc_block_A.capture_1(class A,class D).e88ebb9e15006f2e6e376b4f8ab85158_3" -> "objc_block_A.capture_1(class A,class D).e88ebb9e15006f2e6e376b4f8ab85158_2" ;
 "foo.acbd18db4cc2f85cedef654fccc4a4d8_1" [label="1: Start foo\nFormals:  a:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -56,7 +56,7 @@ digraph cfg {
 "capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_2" [label="2: Exit A.capture \n  " color=yellow style=filled]
 	
 
-"capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_3" [label="3:  Compound statement \n   n$3=*&self:A* [line 45, column 4]\n  n$4=*n$3._b:B* [line 45, column 4]\n  n$0=*&self:A* [line 45, column 16]\n  n$5=_fun_B.sHandler:(n$4:B*,(_fun_objc_blockA.capture_1,([by value]n$0 &self:A*)):_fn_(*)) virtual [line 45, column 3]\n " shape="box"]
+"capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_3" [label="3:  Compound statement \n   n$3=*&self:A* [line 45, column 4]\n  n$4=*n$3._b:B* [line 45, column 4]\n  n$0=*&self:A* [line 45, column 16]\n  n$5=_fun_B.sHandler:(n$4:B*,(_fun_objc_block_A.capture_1,([by value]n$0 &self:A*)):_fn_(*)) virtual [line 45, column 3]\n " shape="box"]
 	
 
 	 "capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_3" -> "capture#A#[instance].ca0ec9307f9d5110b0cca62f257d73c8_2" ;

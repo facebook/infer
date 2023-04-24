@@ -1,16 +1,16 @@
 /* @generated */
 digraph cfg {
-"objc_blockB.f_1(class B).c1c611f4be5cea3fe56d67e34da1fffd_1" [label="1: Start objc_blockB.f_1\nFormals: \nLocals: \nCaptured:  [by value]&self:B* const  \n  " color=yellow style=filled]
+"objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_1" [label="1: Start objc_block_B.f_1\nFormals: \nLocals: \nCaptured:  [by value]&self:B* const  \n  " color=yellow style=filled]
 	
 
-	 "objc_blockB.f_1(class B).c1c611f4be5cea3fe56d67e34da1fffd_1" -> "objc_blockB.f_1(class B).c1c611f4be5cea3fe56d67e34da1fffd_3" ;
-"objc_blockB.f_1(class B).c1c611f4be5cea3fe56d67e34da1fffd_2" [label="2: Exit objc_blockB.f_1 \n  " color=yellow style=filled]
+	 "objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_1" -> "objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_3" ;
+"objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_2" [label="2: Exit objc_block_B.f_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockB.f_1(class B).c1c611f4be5cea3fe56d67e34da1fffd_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&self:B* [line 25, column 9]\n  *n$3.x:int=5 [line 25, column 9]\n " shape="box"]
+"objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&self:B* [line 25, column 9]\n  *n$3.x:int=5 [line 25, column 9]\n " shape="box"]
 	
 
-	 "objc_blockB.f_1(class B).c1c611f4be5cea3fe56d67e34da1fffd_3" -> "objc_blockB.f_1(class B).c1c611f4be5cea3fe56d67e34da1fffd_2" ;
+	 "objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_3" -> "objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_2" ;
 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_1" [label="1: Start B.dealloc\nFormals:  self:B*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -50,7 +50,7 @@ digraph cfg {
 	
 
 	 "f#B#[instance].7d89f0db14025fe61cd8db3755387380_4" -> "f#B#[instance].7d89f0db14025fe61cd8db3755387380_2" ;
-"f#B#[instance].7d89f0db14025fe61cd8db3755387380_5" [label="5:  Compound statement \n   n$4=*&self:B* [line 23, column 10]\n  n$5=*n$4.h:int [line 23, column 10]\n  n$2=*&self:B* const  [line 24, column 11]\n  n$6=_fun_B.foo:and:(n$5:int,(_fun_objc_blockB.f_1,([by value]n$2 &self:B* const )):_fn_(*)) [line 23, column 3]\n " shape="box"]
+"f#B#[instance].7d89f0db14025fe61cd8db3755387380_5" [label="5:  Compound statement \n   n$4=*&self:B* [line 23, column 10]\n  n$5=*n$4.h:int [line 23, column 10]\n  n$2=*&self:B* const  [line 24, column 11]\n  n$6=_fun_B.foo:and:(n$5:int,(_fun_objc_block_B.f_1,([by value]n$2 &self:B* const )):_fn_(*)) [line 23, column 3]\n " shape="box"]
 	
 
 	 "f#B#[instance].7d89f0db14025fe61cd8db3755387380_5" -> "f#B#[instance].7d89f0db14025fe61cd8db3755387380_3" ;

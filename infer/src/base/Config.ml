@@ -107,7 +107,7 @@ let build_system_of_exe_name name =
 
 let anonymous_block_num_sep = "_"
 
-let anonymous_block_prefix = "objc_block"
+let anonymous_block_prefix = "objc_block_"
 
 let assign = "<\"Assign\">"
 

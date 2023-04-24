@@ -1,16 +1,16 @@
 /* @generated */
 digraph cfg {
-"objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_1" [label="1: Start objc_blockDispatchInMacroTest_1\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"objc_block_DispatchInMacroTest_1.23d97eba800cf3ca43a8d26e9789031f_1" [label="1: Start objc_block_DispatchInMacroTest_1\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_1" -> "objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_3" ;
-"objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_2" [label="2: Exit objc_blockDispatchInMacroTest_1 \n  " color=yellow style=filled]
+	 "objc_block_DispatchInMacroTest_1.23d97eba800cf3ca43a8d26e9789031f_1" -> "objc_block_DispatchInMacroTest_1.23d97eba800cf3ca43a8d26e9789031f_3" ;
+"objc_block_DispatchInMacroTest_1.23d97eba800cf3ca43a8d26e9789031f_2" [label="2: Exit objc_block_DispatchInMacroTest_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=NSObject):unsigned long) [line 21, column 10]\n  n$2=_fun_NSObject.init(n$1:NSObject*) virtual [line 21, column 10]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest.static_storage:NSObject*=n$2 [line 21, column 10]\n " shape="box"]
+"objc_block_DispatchInMacroTest_1.23d97eba800cf3ca43a8d26e9789031f_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=NSObject):unsigned long) [line 21, column 10]\n  n$2=_fun_NSObject.init(n$1:NSObject*) virtual [line 21, column 10]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest.static_storage:NSObject*=n$2 [line 21, column 10]\n " shape="box"]
 	
 
-	 "objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_3" -> "objc_blockDispatchInMacroTest_1.0a2ff27838c52acc175e58f653e6eaad_2" ;
+	 "objc_block_DispatchInMacroTest_1.23d97eba800cf3ca43a8d26e9789031f_3" -> "objc_block_DispatchInMacroTest_1.23d97eba800cf3ca43a8d26e9789031f_2" ;
 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_1" [label="1: Start DispatchInMacroTest\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -22,7 +22,7 @@ digraph cfg {
 	
 
 	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_5" ;
-"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" [label="4:  Call _fun__dispatch_once \n   n$3=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest.once_token:long*,(_fun_objc_blockDispatchInMacroTest_1):_fn_(*)) [line 21, column 10]\n " shape="box"]
+"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" [label="4:  Call _fun__dispatch_once \n   n$3=_fun__dispatch_once(&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest.once_token:long*,(_fun_objc_block_DispatchInMacroTest_1):_fn_(*)) [line 21, column 10]\n " shape="box"]
 	
 
 	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" ;

@@ -1,16 +1,16 @@
 /* @generated */
 digraph cfg {
-"objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_1" [label="1: Start objc_blockBlock_no_args.m_1\nFormals: \nLocals: \nCaptured:  [by value]&z:int \n  " color=yellow style=filled]
+"objc_block_Block_no_args.m_1.68592789fae7a0ea343487fc068a39c1_1" [label="1: Start objc_block_Block_no_args.m_1\nFormals: \nLocals: \nCaptured:  [by value]&z:int \n  " color=yellow style=filled]
 	
 
-	 "objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_1" -> "objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_3" ;
-"objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_2" [label="2: Exit objc_blockBlock_no_args.m_1 \n  " color=yellow style=filled]
+	 "objc_block_Block_no_args.m_1.68592789fae7a0ea343487fc068a39c1_1" -> "objc_block_Block_no_args.m_1.68592789fae7a0ea343487fc068a39c1_3" ;
+"objc_block_Block_no_args.m_1.68592789fae7a0ea343487fc068a39c1_2" [label="2: Exit objc_block_Block_no_args.m_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&z:int [line 24, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$8 + 3) [line 24, column 5]\n " shape="box"]
+"objc_block_Block_no_args.m_1.68592789fae7a0ea343487fc068a39c1_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&z:int [line 24, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$8 + 3) [line 24, column 5]\n " shape="box"]
 	
 
-	 "objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_3" -> "objc_blockBlock_no_args.m_1.4d7585adf186f5ddc971eca39c81e1b8_2" ;
+	 "objc_block_Block_no_args.m_1.68592789fae7a0ea343487fc068a39c1_3" -> "objc_block_Block_no_args.m_1.68592789fae7a0ea343487fc068a39c1_2" ;
 "dealloc#Block_no_args#[instance].505e14ab24bbd2024c1d4199a31d1dc2_1" [label="1: Start Block_no_args.dealloc\nFormals:  self:Block_no_args*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -87,7 +87,7 @@ digraph cfg {
 	
 
 	 "m#Block_no_args#[instance].e3d1ef26a895583025217b6b5c388d9b_13" -> "m#Block_no_args#[instance].e3d1ef26a895583025217b6b5c388d9b_12" ;
-"m#Block_no_args#[instance].e3d1ef26a895583025217b6b5c388d9b_14" [label="14:  Compound statement \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockBlock_no_args.m_1,([by value]n$7 &z:int)) [line 23, column 3]\n  n$9=*&b:_fn_(*) [line 23, column 3]\n " shape="box"]
+"m#Block_no_args#[instance].e3d1ef26a895583025217b6b5c388d9b_14" [label="14:  Compound statement \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_block_Block_no_args.m_1,([by value]n$7 &z:int)) [line 23, column 3]\n  n$9=*&b:_fn_(*) [line 23, column 3]\n " shape="box"]
 	
 
 	 "m#Block_no_args#[instance].e3d1ef26a895583025217b6b5c388d9b_14" -> "m#Block_no_args#[instance].e3d1ef26a895583025217b6b5c388d9b_13" ;

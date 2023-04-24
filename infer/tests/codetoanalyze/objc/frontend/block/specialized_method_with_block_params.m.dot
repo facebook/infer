@@ -1,60 +1,60 @@
 /* @generated */
 digraph cfg {
-"objc_blockA.bar2_3(class A).d749ef9e4d7f0a45237d8fe9e40fc593_1" [label="1: Start objc_blockA.bar2_3\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
+"objc_block_A.bar2_3(class A).968031ecc85ebf22686b473b7ce840e5_1" [label="1: Start objc_block_A.bar2_3\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
 	
 
-	 "objc_blockA.bar2_3(class A).d749ef9e4d7f0a45237d8fe9e40fc593_1" -> "objc_blockA.bar2_3(class A).d749ef9e4d7f0a45237d8fe9e40fc593_3" ;
-"objc_blockA.bar2_3(class A).d749ef9e4d7f0a45237d8fe9e40fc593_2" [label="2: Exit objc_blockA.bar2_3 \n  " color=yellow style=filled]
+	 "objc_block_A.bar2_3(class A).968031ecc85ebf22686b473b7ce840e5_1" -> "objc_block_A.bar2_3(class A).968031ecc85ebf22686b473b7ce840e5_3" ;
+"objc_block_A.bar2_3(class A).968031ecc85ebf22686b473b7ce840e5_2" [label="2: Exit objc_block_A.bar2_3 \n  " color=yellow style=filled]
 	
 
-"objc_blockA.bar2_3(class A).d749ef9e4d7f0a45237d8fe9e40fc593_3" [label="3:  BinaryOperatorStmt: Assign \n   n$15=*&self:A* [line 41, column 9]\n  *n$15.x:int=5 [line 41, column 9]\n " shape="box"]
+"objc_block_A.bar2_3(class A).968031ecc85ebf22686b473b7ce840e5_3" [label="3:  BinaryOperatorStmt: Assign \n   n$15=*&self:A* [line 41, column 9]\n  *n$15.x:int=5 [line 41, column 9]\n " shape="box"]
 	
 
-	 "objc_blockA.bar2_3(class A).d749ef9e4d7f0a45237d8fe9e40fc593_3" -> "objc_blockA.bar2_3(class A).d749ef9e4d7f0a45237d8fe9e40fc593_2" ;
-"objc_blockA.bar2_4(class A).a4f29e420077ca6ce7e44776941a7430_1" [label="1: Start objc_blockA.bar2_4\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
+	 "objc_block_A.bar2_3(class A).968031ecc85ebf22686b473b7ce840e5_3" -> "objc_block_A.bar2_3(class A).968031ecc85ebf22686b473b7ce840e5_2" ;
+"objc_block_A.bar2_4(class A).31b0a8dada99423a1ef75dc61be9870a_1" [label="1: Start objc_block_A.bar2_4\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
 	
 
-	 "objc_blockA.bar2_4(class A).a4f29e420077ca6ce7e44776941a7430_1" -> "objc_blockA.bar2_4(class A).a4f29e420077ca6ce7e44776941a7430_3" ;
-"objc_blockA.bar2_4(class A).a4f29e420077ca6ce7e44776941a7430_2" [label="2: Exit objc_blockA.bar2_4 \n  " color=yellow style=filled]
+	 "objc_block_A.bar2_4(class A).31b0a8dada99423a1ef75dc61be9870a_1" -> "objc_block_A.bar2_4(class A).31b0a8dada99423a1ef75dc61be9870a_3" ;
+"objc_block_A.bar2_4(class A).31b0a8dada99423a1ef75dc61be9870a_2" [label="2: Exit objc_block_A.bar2_4 \n  " color=yellow style=filled]
 	
 
-"objc_blockA.bar2_4(class A).a4f29e420077ca6ce7e44776941a7430_3" [label="3:  BinaryOperatorStmt: Assign \n   n$17=*&self:A* [line 44, column 9]\n  *n$17.x:int=5 [line 44, column 9]\n " shape="box"]
+"objc_block_A.bar2_4(class A).31b0a8dada99423a1ef75dc61be9870a_3" [label="3:  BinaryOperatorStmt: Assign \n   n$17=*&self:A* [line 44, column 9]\n  *n$17.x:int=5 [line 44, column 9]\n " shape="box"]
 	
 
-	 "objc_blockA.bar2_4(class A).a4f29e420077ca6ce7e44776941a7430_3" -> "objc_blockA.bar2_4(class A).a4f29e420077ca6ce7e44776941a7430_2" ;
-"objc_blockA.bar:_1(class A).3dfd8f5104e9624c9f972777203745e3_1" [label="1: Start objc_blockA.bar:_1\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* [by value]&x:int \n  " color=yellow style=filled]
+	 "objc_block_A.bar2_4(class A).31b0a8dada99423a1ef75dc61be9870a_3" -> "objc_block_A.bar2_4(class A).31b0a8dada99423a1ef75dc61be9870a_2" ;
+"objc_block_A.bar:_1(class A).08ec268b0c7833462b59756482fabb2f_1" [label="1: Start objc_block_A.bar:_1\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* [by value]&x:int \n  " color=yellow style=filled]
 	
 
-	 "objc_blockA.bar:_1(class A).3dfd8f5104e9624c9f972777203745e3_1" -> "objc_blockA.bar:_1(class A).3dfd8f5104e9624c9f972777203745e3_3" ;
-"objc_blockA.bar:_1(class A).3dfd8f5104e9624c9f972777203745e3_2" [label="2: Exit objc_blockA.bar:_1 \n  " color=yellow style=filled]
+	 "objc_block_A.bar:_1(class A).08ec268b0c7833462b59756482fabb2f_1" -> "objc_block_A.bar:_1(class A).08ec268b0c7833462b59756482fabb2f_3" ;
+"objc_block_A.bar:_1(class A).08ec268b0c7833462b59756482fabb2f_2" [label="2: Exit objc_block_A.bar:_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockA.bar:_1(class A).3dfd8f5104e9624c9f972777203745e3_3" [label="3:  BinaryOperatorStmt: Assign \n   n$5=*&self:A* [line 28, column 9]\n  n$6=*&x:int [line 28, column 19]\n  *n$5.x:int=n$6 [line 28, column 9]\n " shape="box"]
+"objc_block_A.bar:_1(class A).08ec268b0c7833462b59756482fabb2f_3" [label="3:  BinaryOperatorStmt: Assign \n   n$5=*&self:A* [line 28, column 9]\n  n$6=*&x:int [line 28, column 19]\n  *n$5.x:int=n$6 [line 28, column 9]\n " shape="box"]
 	
 
-	 "objc_blockA.bar:_1(class A).3dfd8f5104e9624c9f972777203745e3_3" -> "objc_blockA.bar:_1(class A).3dfd8f5104e9624c9f972777203745e3_2" ;
-"objc_blockA.bar:_2(class A).714c02790d023adc163c946a9f0220cd_1" [label="1: Start objc_blockA.bar:_2\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
+	 "objc_block_A.bar:_1(class A).08ec268b0c7833462b59756482fabb2f_3" -> "objc_block_A.bar:_1(class A).08ec268b0c7833462b59756482fabb2f_2" ;
+"objc_block_A.bar:_2(class A).20dc072df19c24c250333d518c4d89b0_1" [label="1: Start objc_block_A.bar:_2\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
 	
 
-	 "objc_blockA.bar:_2(class A).714c02790d023adc163c946a9f0220cd_1" -> "objc_blockA.bar:_2(class A).714c02790d023adc163c946a9f0220cd_3" ;
-"objc_blockA.bar:_2(class A).714c02790d023adc163c946a9f0220cd_2" [label="2: Exit objc_blockA.bar:_2 \n  " color=yellow style=filled]
+	 "objc_block_A.bar:_2(class A).20dc072df19c24c250333d518c4d89b0_1" -> "objc_block_A.bar:_2(class A).20dc072df19c24c250333d518c4d89b0_3" ;
+"objc_block_A.bar:_2(class A).20dc072df19c24c250333d518c4d89b0_2" [label="2: Exit objc_block_A.bar:_2 \n  " color=yellow style=filled]
 	
 
-"objc_blockA.bar:_2(class A).714c02790d023adc163c946a9f0220cd_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&self:A* [line 31, column 9]\n  n$9=*&i:int [line 31, column 19]\n  *n$8.x:int=n$9 [line 31, column 9]\n " shape="box"]
+"objc_block_A.bar:_2(class A).20dc072df19c24c250333d518c4d89b0_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&self:A* [line 31, column 9]\n  n$9=*&i:int [line 31, column 19]\n  *n$8.x:int=n$9 [line 31, column 9]\n " shape="box"]
 	
 
-	 "objc_blockA.bar:_2(class A).714c02790d023adc163c946a9f0220cd_3" -> "objc_blockA.bar:_2(class A).714c02790d023adc163c946a9f0220cd_2" ;
-"objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_1" [label="1: Start objc_blockA.call_foo_with_same_param_5\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
+	 "objc_block_A.bar:_2(class A).20dc072df19c24c250333d518c4d89b0_3" -> "objc_block_A.bar:_2(class A).20dc072df19c24c250333d518c4d89b0_2" ;
+"objc_block_A.call_foo_with_same_param_5(class A).15923c0eae272586de942aeb281d78da_1" [label="1: Start objc_block_A.call_foo_with_same_param_5\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
 	
 
-	 "objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_1" -> "objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_3" ;
-"objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_2" [label="2: Exit objc_blockA.call_foo_with_same_param_5 \n  " color=yellow style=filled]
+	 "objc_block_A.call_foo_with_same_param_5(class A).15923c0eae272586de942aeb281d78da_1" -> "objc_block_A.call_foo_with_same_param_5(class A).15923c0eae272586de942aeb281d78da_3" ;
+"objc_block_A.call_foo_with_same_param_5(class A).15923c0eae272586de942aeb281d78da_2" [label="2: Exit objc_block_A.call_foo_with_same_param_5 \n  " color=yellow style=filled]
 	
 
-"objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_3" [label="3:  BinaryOperatorStmt: Assign \n   n$31=*&self:A* [line 52, column 5]\n  *n$31.x:int=5 [line 52, column 5]\n " shape="box"]
+"objc_block_A.call_foo_with_same_param_5(class A).15923c0eae272586de942aeb281d78da_3" [label="3:  BinaryOperatorStmt: Assign \n   n$31=*&self:A* [line 52, column 5]\n  *n$31.x:int=5 [line 52, column 5]\n " shape="box"]
 	
 
-	 "objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_3" -> "objc_blockA.call_foo_with_same_param_5(class A).03c7f776ebd8253258577359808dec16_2" ;
+	 "objc_block_A.call_foo_with_same_param_5(class A).15923c0eae272586de942aeb281d78da_3" -> "objc_block_A.call_foo_with_same_param_5(class A).15923c0eae272586de942aeb281d78da_2" ;
 "foo.acbd18db4cc2f85cedef654fccc4a4d8_1" [label="1: Start foo\nFormals:  <_Nullable> my_block1:_fn_(*) <_Nullable> my_block2:_fn_(*) <_Nonnull> a:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -92,7 +92,7 @@ digraph cfg {
 	
 
 	 "bar2#A#[instance].2f0519276ed04788653f2f680698efeb_4" -> "bar2#A#[instance].2f0519276ed04788653f2f680698efeb_2" ;
-"bar2#A#[instance].2f0519276ed04788653f2f680698efeb_5" [label="5:  Compound statement \n   n$14=*&self:A* [line 40, column 7]\n  n$16=*&self:A* [line 43, column 7]\n  n$18=*&self:A* [line 46, column 7]\n  n$19=_fun_foo((_fun_objc_blockA.bar2_3,([by value]n$14 &self:A*)):_fn_(*),(_fun_objc_blockA.bar2_4,([by value]n$16 &self:A*)):_fn_(*),n$18:A*) [line 39, column 3]\n " shape="box"]
+"bar2#A#[instance].2f0519276ed04788653f2f680698efeb_5" [label="5:  Compound statement \n   n$14=*&self:A* [line 40, column 7]\n  n$16=*&self:A* [line 43, column 7]\n  n$18=*&self:A* [line 46, column 7]\n  n$19=_fun_foo((_fun_objc_block_A.bar2_3,([by value]n$14 &self:A*)):_fn_(*),(_fun_objc_block_A.bar2_4,([by value]n$16 &self:A*)):_fn_(*),n$18:A*) [line 39, column 3]\n " shape="box"]
 	
 
 	 "bar2#A#[instance].2f0519276ed04788653f2f680698efeb_5" -> "bar2#A#[instance].2f0519276ed04788653f2f680698efeb_3" ;
@@ -115,7 +115,7 @@ digraph cfg {
 	
 
 	 "bar:#A(class A)#[instance].8e6cfff8b86359b65ec968a8166a08c2_5" -> "bar:#A(class A)#[instance].8e6cfff8b86359b65ec968a8166a08c2_3" ;
-"bar:#A(class A)#[instance].8e6cfff8b86359b65ec968a8166a08c2_6" [label="6:  Compound statement \n   n$3=*&self:A* [line 27, column 7]\n  n$4=*&x:int [line 27, column 7]\n  n$7=*&self:A* [line 30, column 7]\n  n$10=*&a:A* [line 33, column 7]\n  n$11=_fun_foo((_fun_objc_blockA.bar:_1,([by value]n$3 &self:A*),([by value]n$4 &x:int)):_fn_(*),(_fun_objc_blockA.bar:_2,([by value]n$7 &self:A*)):_fn_(*),n$10:A*) [line 26, column 3]\n " shape="box"]
+"bar:#A(class A)#[instance].8e6cfff8b86359b65ec968a8166a08c2_6" [label="6:  Compound statement \n   n$3=*&self:A* [line 27, column 7]\n  n$4=*&x:int [line 27, column 7]\n  n$7=*&self:A* [line 30, column 7]\n  n$10=*&a:A* [line 33, column 7]\n  n$11=_fun_foo((_fun_objc_block_A.bar:_1,([by value]n$3 &self:A*),([by value]n$4 &x:int)):_fn_(*),(_fun_objc_block_A.bar:_2,([by value]n$7 &self:A*)):_fn_(*),n$10:A*) [line 26, column 3]\n " shape="box"]
 	
 
 	 "bar:#A(class A)#[instance].8e6cfff8b86359b65ec968a8166a08c2_6" -> "bar:#A(class A)#[instance].8e6cfff8b86359b65ec968a8166a08c2_5" ;
@@ -146,7 +146,7 @@ digraph cfg {
 	
 
 	 "call_foo_with_same_param#A#[instance].0f7e046192340a4940afea8740e23732_6" -> "call_foo_with_same_param#A#[instance].0f7e046192340a4940afea8740e23732_5" ;
-"call_foo_with_same_param#A#[instance].0f7e046192340a4940afea8740e23732_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(b:_fn_(*)); [line 51, column 3]\n  n$30=*&self:A* [line 51, column 20]\n  *&b:_fn_(*)=(_fun_objc_blockA.call_foo_with_same_param_5,([by value]n$30 &self:A*)) [line 51, column 3]\n " shape="box"]
+"call_foo_with_same_param#A#[instance].0f7e046192340a4940afea8740e23732_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(b:_fn_(*)); [line 51, column 3]\n  n$30=*&self:A* [line 51, column 20]\n  *&b:_fn_(*)=(_fun_objc_block_A.call_foo_with_same_param_5,([by value]n$30 &self:A*)) [line 51, column 3]\n " shape="box"]
 	
 
 	 "call_foo_with_same_param#A#[instance].0f7e046192340a4940afea8740e23732_7" -> "call_foo_with_same_param#A#[instance].0f7e046192340a4940afea8740e23732_6" ;

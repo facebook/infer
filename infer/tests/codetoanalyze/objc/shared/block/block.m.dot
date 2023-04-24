@@ -1,62 +1,62 @@
 /* @generated */
 digraph cfg {
-"objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_1" [label="1: Start objc_blockobjc_blockmain1_2_3\nFormals:  z:int\nLocals: \nCaptured:  [by value]&x:int [by value]&bla:int \n  " color=yellow style=filled]
+"objc_block_objc_block_main1_2_3.ea254f7f05fb9213eaac2432d43b8a22_1" [label="1: Start objc_block_objc_block_main1_2_3\nFormals:  z:int\nLocals: \nCaptured:  [by value]&x:int [by value]&bla:int \n  " color=yellow style=filled]
 	
 
-	 "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_1" -> "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_3" ;
-"objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_2" [label="2: Exit objc_blockobjc_blockmain1_2_3 \n  " color=yellow style=filled]
+	 "objc_block_objc_block_main1_2_3.ea254f7f05fb9213eaac2432d43b8a22_1" -> "objc_block_objc_block_main1_2_3.ea254f7f05fb9213eaac2432d43b8a22_3" ;
+"objc_block_objc_block_main1_2_3.ea254f7f05fb9213eaac2432d43b8a22_2" [label="2: Exit objc_block_objc_block_main1_2_3 \n  " color=yellow style=filled]
 	
 
-"objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_3" [label="3:  Return Stmt \n   n$17=*&z:int [line 22, column 14]\n  n$18=*&#GB<codetoanalyze/objc/shared/block/block.m|ice>$main1.s:int [line 22, column 18]\n  n$19=*&x:int [line 22, column 22]\n  n$20=*&bla:int [line 22, column 26]\n " shape="box"]
+"objc_block_objc_block_main1_2_3.ea254f7f05fb9213eaac2432d43b8a22_3" [label="3:  Return Stmt \n   n$17=*&z:int [line 22, column 14]\n  n$18=*&#GB<codetoanalyze/objc/shared/block/block.m|ice>$main1.s:int [line 22, column 18]\n  n$19=*&x:int [line 22, column 22]\n  n$20=*&bla:int [line 22, column 26]\n " shape="box"]
 	
 
-	 "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_3" -> "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_4" ;
-"objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_4" [label="4:  Return Stmt \n   *&return:int=(((n$17 + n$18) + n$19) + n$20) [line 22, column 7]\n " shape="box"]
+	 "objc_block_objc_block_main1_2_3.ea254f7f05fb9213eaac2432d43b8a22_3" -> "objc_block_objc_block_main1_2_3.ea254f7f05fb9213eaac2432d43b8a22_4" ;
+"objc_block_objc_block_main1_2_3.ea254f7f05fb9213eaac2432d43b8a22_4" [label="4:  Return Stmt \n   *&return:int=(((n$17 + n$18) + n$19) + n$20) [line 22, column 7]\n " shape="box"]
 	
 
-	 "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_4" -> "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_2" ;
-"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_1" [label="1: Start objc_blockmain1_1\nFormals:  e:int f:int\nLocals:  \n  " color=yellow style=filled]
+	 "objc_block_objc_block_main1_2_3.ea254f7f05fb9213eaac2432d43b8a22_4" -> "objc_block_objc_block_main1_2_3.ea254f7f05fb9213eaac2432d43b8a22_2" ;
+"objc_block_main1_1.7a255e572bed002db64562ce2d0f7069_1" [label="1: Start objc_block_main1_1\nFormals:  e:int f:int\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_1" -> "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" ;
-"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_2" [label="2: Exit objc_blockmain1_1 \n  " color=yellow style=filled]
+	 "objc_block_main1_1.7a255e572bed002db64562ce2d0f7069_1" -> "objc_block_main1_1.7a255e572bed002db64562ce2d0f7069_3" ;
+"objc_block_main1_1.7a255e572bed002db64562ce2d0f7069_2" [label="2: Exit objc_block_main1_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" [label="3:  Return Stmt \n   n$5=*&e:int [line 32, column 12]\n  n$6=*&#GB<codetoanalyze/objc/shared/block/block.m|ice>$main1.s:int [line 32, column 16]\n " shape="box"]
+"objc_block_main1_1.7a255e572bed002db64562ce2d0f7069_3" [label="3:  Return Stmt \n   n$5=*&e:int [line 32, column 12]\n  n$6=*&#GB<codetoanalyze/objc/shared/block/block.m|ice>$main1.s:int [line 32, column 16]\n " shape="box"]
 	
 
-	 "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_3" -> "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_4" ;
-"objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_4" [label="4:  Return Stmt \n   *&return:int=(n$5 - n$6) [line 32, column 5]\n " shape="box"]
+	 "objc_block_main1_1.7a255e572bed002db64562ce2d0f7069_3" -> "objc_block_main1_1.7a255e572bed002db64562ce2d0f7069_4" ;
+"objc_block_main1_1.7a255e572bed002db64562ce2d0f7069_4" [label="4:  Return Stmt \n   *&return:int=(n$5 - n$6) [line 32, column 5]\n " shape="box"]
 	
 
-	 "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_4" -> "objc_blockmain1_1.74199543de3b6a9a736f23ef5e45586a_2" ;
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_1" [label="1: Start objc_blockmain1_2\nFormals:  c:int d:int\nLocals:  bla:int add2:int addblock2:_fn_(*)\nCaptured:  [by value]&x:int \n  " color=yellow style=filled]
+	 "objc_block_main1_1.7a255e572bed002db64562ce2d0f7069_4" -> "objc_block_main1_1.7a255e572bed002db64562ce2d0f7069_2" ;
+"objc_block_main1_2.cbfd19902667537719448aedc929ed94_1" [label="1: Start objc_block_main1_2\nFormals:  c:int d:int\nLocals:  bla:int add2:int addblock2:_fn_(*)\nCaptured:  [by value]&x:int \n  " color=yellow style=filled]
 	
 
-	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_1" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_7" ;
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_2" [label="2: Exit objc_blockmain1_2 \n  " color=yellow style=filled]
+	 "objc_block_main1_2.cbfd19902667537719448aedc929ed94_1" -> "objc_block_main1_2.cbfd19902667537719448aedc929ed94_7" ;
+"objc_block_main1_2.cbfd19902667537719448aedc929ed94_2" [label="2: Exit objc_block_main1_2 \n  " color=yellow style=filled]
 	
 
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_3" [label="3:  Return Stmt \n   n$10=*&c:int [line 26, column 12]\n  n$11=*&add2:int [line 26, column 16]\n  n$12=*&bla:int [line 26, column 23]\n " shape="box"]
+"objc_block_main1_2.cbfd19902667537719448aedc929ed94_3" [label="3:  Return Stmt \n   n$10=*&c:int [line 26, column 12]\n  n$11=*&add2:int [line 26, column 16]\n  n$12=*&bla:int [line 26, column 23]\n " shape="box"]
 	
 
-	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_3" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_4" ;
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_4" [label="4:  Return Stmt \n   *&return:int=((n$10 + n$11) + n$12) [line 26, column 5]\n " shape="box"]
+	 "objc_block_main1_2.cbfd19902667537719448aedc929ed94_3" -> "objc_block_main1_2.cbfd19902667537719448aedc929ed94_4" ;
+"objc_block_main1_2.cbfd19902667537719448aedc929ed94_4" [label="4:  Return Stmt \n   *&return:int=((n$10 + n$11) + n$12) [line 26, column 5]\n " shape="box"]
 	
 
-	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_4" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_2" ;
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_5" [label="5:  BinaryOperatorStmt: Assign \n   n$13=*&addblock2:_fn_(*) [line 25, column 12]\n  n$14=n$13(1:int) objc_block [line 25, column 12]\n  *&add2:int=n$14 [line 25, column 5]\n " shape="box"]
+	 "objc_block_main1_2.cbfd19902667537719448aedc929ed94_4" -> "objc_block_main1_2.cbfd19902667537719448aedc929ed94_2" ;
+"objc_block_main1_2.cbfd19902667537719448aedc929ed94_5" [label="5:  BinaryOperatorStmt: Assign \n   n$13=*&addblock2:_fn_(*) [line 25, column 12]\n  n$14=n$13(1:int) objc_block [line 25, column 12]\n  *&add2:int=n$14 [line 25, column 5]\n " shape="box"]
 	
 
-	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_5" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_3" ;
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_6" [label="6:  Compound statement \n   n$15=*&x:int [line 21, column 17]\n  n$16=*&bla:int [line 21, column 17]\n  *&addblock2:_fn_(*)=(_fun_objc_blockobjc_blockmain1_2_3,([by value]n$15 &x:int),([by value]n$16 &bla:int)) [line 21, column 5]\n  n$21=*&addblock2:_fn_(*) [line 21, column 5]\n " shape="box"]
+	 "objc_block_main1_2.cbfd19902667537719448aedc929ed94_5" -> "objc_block_main1_2.cbfd19902667537719448aedc929ed94_3" ;
+"objc_block_main1_2.cbfd19902667537719448aedc929ed94_6" [label="6:  Compound statement \n   n$15=*&x:int [line 21, column 17]\n  n$16=*&bla:int [line 21, column 17]\n  *&addblock2:_fn_(*)=(_fun_objc_block_objc_block_main1_2_3,([by value]n$15 &x:int),([by value]n$16 &bla:int)) [line 21, column 5]\n  n$21=*&addblock2:_fn_(*) [line 21, column 5]\n " shape="box"]
 	
 
-	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_6" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_5" ;
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(bla:int); [line 19, column 5]\n  *&bla:int=3 [line 19, column 5]\n " shape="box"]
+	 "objc_block_main1_2.cbfd19902667537719448aedc929ed94_6" -> "objc_block_main1_2.cbfd19902667537719448aedc929ed94_5" ;
+"objc_block_main1_2.cbfd19902667537719448aedc929ed94_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(bla:int); [line 19, column 5]\n  *&bla:int=3 [line 19, column 5]\n " shape="box"]
 	
 
-	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_7" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_6" ;
+	 "objc_block_main1_2.cbfd19902667537719448aedc929ed94_7" -> "objc_block_main1_2.cbfd19902667537719448aedc929ed94_6" ;
 "BlockMain.116013dceff9629776ec833c9d43561d_1" [label="1: Start BlockMain\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -95,7 +95,7 @@ digraph cfg {
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_6" -> "main1.38f534a9576db7ec6ebcbca8c111f942_5" ;
-"main1.38f534a9576db7ec6ebcbca8c111f942_7" [label="7:  BinaryOperatorStmt: Assign \n   *&addblock:_fn_(*)=(_fun_objc_blockmain1_1) [line 31, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec6ebcbca8c111f942_7" [label="7:  BinaryOperatorStmt: Assign \n   *&addblock:_fn_(*)=(_fun_objc_block_main1_1) [line 31, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_7" -> "main1.38f534a9576db7ec6ebcbca8c111f942_6" ;
@@ -103,7 +103,7 @@ digraph cfg {
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_8" -> "main1.38f534a9576db7ec6ebcbca8c111f942_7" ;
-"main1.38f534a9576db7ec6ebcbca8c111f942_9" [label="9:  Compound statement \n   n$9=*&x:int [line 16, column 14]\n  *&addblock:_fn_(*)=(_fun_objc_blockmain1_2,([by value]n$9 &x:int)) [line 16, column 3]\n  n$22=*&addblock:_fn_(*) [line 16, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec6ebcbca8c111f942_9" [label="9:  Compound statement \n   n$9=*&x:int [line 16, column 14]\n  *&addblock:_fn_(*)=(_fun_objc_block_main1_2,([by value]n$9 &x:int)) [line 16, column 3]\n  n$22=*&addblock:_fn_(*) [line 16, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_9" -> "main1.38f534a9576db7ec6ebcbca8c111f942_8" ;

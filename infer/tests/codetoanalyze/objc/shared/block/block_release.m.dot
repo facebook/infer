@@ -1,33 +1,33 @@
 /* @generated */
 digraph cfg {
-"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_1" [label="1: Start objc_blockMy_manager.blockReleaseNoLeak_1\nFormals:  a:int\nLocals: \nCaptured:  [by value]&newImage:CGImage* \n  " color=yellow style=filled]
+"objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_1" [label="1: Start objc_block_My_manager.blockReleaseNoLeak_1\nFormals:  a:int\nLocals: \nCaptured:  [by value]&newImage:CGImage* \n  " color=yellow style=filled]
 	
 
-	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_1" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_5" ;
-	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_1" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_6" ;
-"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_2" [label="2: Exit objc_blockMy_manager.blockReleaseNoLeak_1 \n  " color=yellow style=filled]
+	 "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_1" -> "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_5" ;
+	 "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_1" -> "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_6" ;
+"objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_2" [label="2: Exit objc_block_My_manager.blockReleaseNoLeak_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_3" [label="3: + \n   END_BRANCHES\n " ]
+"objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
-	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_3" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_4" ;
-"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
+	 "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_3" -> "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_4" ;
+"objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
-	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_4" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_2" ;
-"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_5" [label="5: Prune (true branch, if (terminated)) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(n$10, true); [line 24, column 9]\n " shape="invhouse"]
+	 "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_4" -> "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_2" ;
+"objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_5" [label="5: Prune (true branch, if (terminated)) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(n$10, true); [line 24, column 9]\n " shape="invhouse"]
 	
 
-	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_5" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_7" ;
-"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_6" [label="6: Prune (false branch, if (terminated)) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(!n$10, false); [line 24, column 9]\n " shape="invhouse"]
+	 "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_5" -> "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_7" ;
+"objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_6" [label="6: Prune (false branch, if (terminated)) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(!n$10, false); [line 24, column 9]\n " shape="invhouse"]
 	
 
-	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_6" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_3" ;
-"objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_7" [label="7:  Call _fun_CGImageRelease \n   n$11=*&newImage:CGImage* [line 25, column 22]\n  n$12=_fun_CGImageRelease(n$11:CGImage*) [line 25, column 7]\n " shape="box"]
+	 "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_6" -> "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_3" ;
+"objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_7" [label="7:  Call _fun_CGImageRelease \n   n$11=*&newImage:CGImage* [line 25, column 22]\n  n$12=_fun_CGImageRelease(n$11:CGImage*) [line 25, column 7]\n " shape="box"]
 	
 
-	 "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_7" -> "objc_blockMy_manager.blockReleaseNoLeak_1(struct CGImage).d2039f8bbb0530575d5ff258d059d268_3" ;
+	 "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_7" -> "objc_block_My_manager.blockReleaseNoLeak_1(struct CGImage).a83259fe861f0509ff491aaf206b43dc_3" ;
 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_1" [label="1: Start My_manager.blockReleaseNoLeak\nFormals:  self:My_manager*\nLocals:  newImage:CGImage* context:CGContext* z:int b:_fn_(*) \n  " color=yellow style=filled]
 	
 
@@ -64,7 +64,7 @@ digraph cfg {
 
 	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_9" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_6" ;
 	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_9" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_7" ;
-"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_10" [label="10:  Compound statement \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager.blockReleaseNoLeak_1,([by value]n$9 &newImage:CGImage*)) [line 23, column 3]\n  n$15=*&b:_fn_(*) [line 23, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_10" [label="10:  Compound statement \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_block_My_manager.blockReleaseNoLeak_1,([by value]n$9 &newImage:CGImage*)) [line 23, column 3]\n  n$15=*&b:_fn_(*) [line 23, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_10" -> "blockReleaseNoLeak#My_manager#[instance].d6f2b8011ad550e74922e7b3702423e3_9" ;
