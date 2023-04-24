@@ -121,7 +121,7 @@ let%expect_test "unknown formal calls" =
         ; loc= dummy.sil:6:16
         ; locals= []
         ; ret_type= void
-        ; proc_id= foo }
+        ; proc_id= foo#2 }
             #n1:
 
             #n3:

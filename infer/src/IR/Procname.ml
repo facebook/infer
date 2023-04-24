@@ -652,21 +652,28 @@ module FunctionParameters = struct
 end
 
 module Hack = struct
-  type t = {class_name: HackClassName.t option; function_name: string}
+  type t = {class_name: HackClassName.t option; function_name: string; arity: int option}
   [@@deriving compare, equal, yojson_of, sexp, hash]
 
   let get_class_type_name {class_name} = Option.map class_name ~f:(fun cn -> Typ.HackClass cn)
 
   let pp verbosity fmt t =
+    let pp_arity verbosity fmt =
+      match verbosity with
+      | Verbose -> (
+        match t.arity with Some arity -> F.fprintf fmt "#%d" arity | None -> () )
+      | Simple | Non_verbose | NameOnly ->
+          ()
+    in
     match verbosity with
     | NameOnly ->
         F.fprintf fmt "%s" t.function_name
     | Simple | Non_verbose | Verbose -> (
       match t.class_name with
       | Some class_name ->
-          F.fprintf fmt "%a.%s" HackClassName.pp class_name t.function_name
+          F.fprintf fmt "%a.%s%t" HackClassName.pp class_name t.function_name (pp_arity verbosity)
       | _ ->
-          F.fprintf fmt "%s" t.function_name )
+          F.fprintf fmt "%s%t" t.function_name (pp_arity verbosity) )
 
 
   let get_class_name_as_a_string {class_name} = Option.map class_name ~f:HackClassName.classname
@@ -1464,7 +1471,7 @@ let make_csharp ~class_name ~return_type ~method_name ~parameters ~kind =
 
 let make_erlang ~module_name ~function_name ~arity = Erlang {module_name; function_name; arity}
 
-let make_hack ~class_name ~function_name = Hack {class_name; function_name}
+let make_hack ~class_name ~function_name ~arity = Hack {class_name; function_name; arity}
 
 let make_objc_dealloc name = ObjC_Cpp (ObjC_Cpp.make_dealloc name)
 

@@ -278,6 +278,13 @@ module ProcDeclBridge = struct
           pname
 
 
+  let hack_class_name_to_sil = function
+    | TopLevel ->
+        None
+    | Enclosing name ->
+        Some (HackClassName.make name.value)
+
+
   let to_sil lang t : SilProcname.t =
     let method_name = t.qualified_name.name.ProcName.value in
     match (lang : Lang.t) with
@@ -301,16 +308,35 @@ module ProcDeclBridge = struct
         let kind = SilProcname.Java.Non_Static (* FIXME when handling inheritance *) in
         SilProcname.make_java ~class_name ~return_type ~method_name ~parameters:formals_types ~kind
     | Hack ->
-        let class_name =
-          match t.qualified_name.enclosing_class with
-          | TopLevel ->
-              None
-          | Enclosing name ->
-              Some (HackClassName.make name.value)
-        in
-        SilProcname.make_hack ~class_name ~function_name:method_name
+        let class_name = hack_class_name_to_sil t.qualified_name.enclosing_class in
+        let arity = Option.map t.formals_types ~f:List.length in
+        SilProcname.make_hack ~class_name ~function_name:method_name ~arity
     | Python ->
         L.die InternalError "to_sil not yet implemented for Python"
+
+
+  let call_to_sil (lang : Lang.t) (callsig : ProcSig.t) t : SilProcname.t =
+    match lang with
+    | Java | Python ->
+        to_sil lang t
+    | Hack ->
+        (* When we translate function calls in Hack, the ProcDecl we get from TextualDecls may have
+           unknown args. In such case we need to conjure up a procname with the arity matching that
+           of the call site signature. This way we'll be able to match a particular overload of the
+           procname with its definition from a different translation unit during the analysis
+           phase. *)
+        if Option.is_some t.formals_types then to_sil lang t
+        else
+          let class_name = hack_class_name_to_sil t.qualified_name.enclosing_class in
+          let function_name = t.qualified_name.name.value in
+          let arity =
+            match callsig with
+            | Hack {arity} ->
+                arity
+            | Other _ ->
+                L.die InternalError "Unexpected non-Hack signature for Hack proc"
+          in
+          Procname.make_hack ~class_name ~function_name ~arity
 end
 
 module GlobalBridge = struct
@@ -622,7 +648,7 @@ module InstrBridge = struct
               in
               raise (TextualTransformError [{loc; msg}])
         in
-        let pname = ProcDeclBridge.to_sil lang callee_procname in
+        let pname = ProcDeclBridge.call_to_sil lang procsig callee_procname in
         let result_type = TypBridge.to_sil lang callee_procname.result_type.typ in
         let args = List.map ~f:(ExpBridge.to_sil lang decls_env procname) args in
         let formals_types =
@@ -970,7 +996,7 @@ module ModuleBridge = struct
     {attrs; decls; sourcefile}
 end
 
-let proc_decl_to_sil = ProcDeclBridge.to_sil
+let proc_decl_to_sil lang procdecl = ProcDeclBridge.to_sil lang procdecl
 
 let module_to_sil = ModuleBridge.to_sil
 

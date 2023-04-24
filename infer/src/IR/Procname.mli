@@ -225,7 +225,12 @@ module FunctionParameters : sig
 end
 
 module Hack : sig
-  type t = private {class_name: HackClassName.t option; function_name: string}
+  (** Hack procedure is identified by the class and function names and its arity. The arity can be
+      absent for external function declarations of the form [declare F.f(...): ...]
+
+      TODO(arr): consider making the arity non-optional if we remove function declarations from the
+      Tenv *)
+  type t = private {class_name: HackClassName.t option; function_name: string; arity: int option}
 
   val get_class_name_as_a_string : t -> string option
 end
@@ -347,7 +352,7 @@ val make_csharp :
 val make_erlang : module_name:string -> function_name:string -> arity:int -> t
 (** Create an Erlang procedure name. *)
 
-val make_hack : class_name:HackClassName.t option -> function_name:string -> t
+val make_hack : class_name:HackClassName.t option -> function_name:string -> arity:int option -> t
 (** Create a Hack procedure name. *)
 
 val make_objc_dealloc : Typ.Name.t -> t
