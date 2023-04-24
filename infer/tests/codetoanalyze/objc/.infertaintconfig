@@ -30,6 +30,11 @@
         "class_names": ["Data"],
         "method_names": ["data", "nil_data"],
         "kinds": ["SimpleSource"]
+      },
+      {
+        "class_names": ["AccessLibrary"],
+        "method_names": ["fetchResult"],
+        "kinds": ["SimpleSource"]
       }
   ],
   "pulse-taint-sanitizers": [
@@ -56,7 +61,12 @@
       "procedure": "taint_data",
       "taint_target": ["ArgumentPositions", [0]],
       "kinds": ["SimpleSink"]
-    }
+    },
+    { "class_names": ["Builder"],
+    "method_names": ["setValue:"],
+    "kinds": ["SimpleSink"],
+    "taint_target": ["ArgumentPositions", [1]]
+  }
   ],
   "pulse-taint-propagators": [
     { "procedure": "URLCreate",
