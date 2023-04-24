@@ -67,12 +67,7 @@ module Builtins = struct
 
   let mk_builtin {formals_types; result_type} name =
     let qualified_name = builtin_name name in
-    let formals_types, are_formal_types_fully_declared =
-      match formals_types with None -> ([], false) | Some l -> (l, true)
-    in
-    T.Module.Procdecl
-      T.ProcDecl.
-        {qualified_name; formals_types; are_formal_types_fully_declared; result_type; attributes= []}
+    T.Module.Procdecl T.ProcDecl.{qualified_name; formals_types; result_type; attributes= []}
 
 
   let annot typ = T.Typ.{typ; attributes= []}

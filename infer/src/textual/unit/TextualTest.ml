@@ -17,8 +17,7 @@ let%test_module "procnames" =
           { qualified_name=
               { enclosing_class= TopLevel
               ; name= {value= "toplevel"; loc= Location.known ~line:0 ~col:0} }
-          ; formals_types= []
-          ; are_formal_types_fully_declared= true
+          ; formals_types= Some []
           ; result_type= Typ.mk_without_attributes Typ.Void
           ; attributes= [] }
       in

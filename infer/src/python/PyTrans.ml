@@ -913,8 +913,7 @@ let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames; instructions} as 
   let locals = Array.map ~f:(fun name -> (var_name ~loc name, pyObject)) locals |> Array.to_list in
   let procdecl =
     { T.ProcDecl.qualified_name
-    ; formals_types= List.map ~f:(fun _ -> pyObject) params
-    ; are_formal_types_fully_declared= true
+    ; formals_types= Some (List.map ~f:(fun _ -> pyObject) params)
     ; result_type= pyObject
     ; attributes= [] }
   in

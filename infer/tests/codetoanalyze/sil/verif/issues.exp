@@ -13,9 +13,7 @@ basic.sil, line 29, column 4: textual type error: expression n3 has type *int[],
 basic.sil, line 47, column 4: textual type error: ident n1 is read before being written
 basic.sil, line 58, column 4: textual type error: builtin __sil_allocate is called with 2 arguments while it expects 1
 basic.sil, line 60, column 4: textual type error: expression 0 has type int, while the type of all types was expected
-basic_error_argnum.sil, line 19, column 2: SIL consistency error: function $builtins.bar2 called with 1 arguments while at least 2 are expected
-basic_error_argnum.sil, line 18, column 2: SIL consistency error: function $builtins.bar2 called with 0 arguments while at least 2 are expected
-basic_error_argnum.sil, line 10, column 2: SIL consistency error: function $builtins.bar called with 0 arguments while declared with 1 parameters
+basic_error_argnum.sil, line 12, column 2: SIL consistency error: function $builtins.bar called with 0 arguments while declared with 1 parameters
 error1.sil, line 12, column 4: SIL syntax error: unexpected token x
 error2.sil, line 19, column 9: SIL consistency error: function g is not declared
 error2.sil, line 18, column 13: SIL consistency error: field cell.n is not declared
@@ -31,5 +29,5 @@ twice.sil: SIL consistency error: function f is implemented twice in the same fi
 twice.sil: SIL consistency error: field next is declared twice in type node
 twice.sil: SIL consistency error: type node is declared twice in the same file
 twice.sil: SIL consistency error: global I is declared twice in the same file
-type_error_argnum.sil, line 27, column 2: textual type error: expression n0 has type *HackMixed, while a subtype of int was expected
+type_error_argnum.sil, line 19, column 2: textual type error: expression n0 has type *HackMixed, while a subtype of int was expected
 type_token_clash.sil, line 7, column 2: SIL syntax error: unexpected token n00b

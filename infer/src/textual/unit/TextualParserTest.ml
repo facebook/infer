@@ -107,13 +107,12 @@ let%expect_test _ =
         type C extends A, B = {f4: bool} |}]
 
 
-let%expect_test "ellipsis" =
+let%expect_test "standalone ellipsis are OK" =
   let m =
     parse_module
       {|
            .source_language = "hack"
            declare todo(...): *Mixed
-           declare todo2(int, float, ...): *Mixed
            declare foo(): *Mixed
            declare bar(int, float): *Mixed
            |}
@@ -121,15 +120,22 @@ let%expect_test "ellipsis" =
   F.printf "%a" Module.pp m ;
   [%expect
     {|
-        .source_language = "hack"
+    .source_language = "hack"
 
-        declare todo(...) : *Mixed
+    declare todo(...) : *Mixed
 
-        declare todo2(int, float, ...) : *Mixed
+    declare foo() : *Mixed
 
-        declare foo() : *Mixed
+    declare bar(int, float) : *Mixed |}]
 
-        declare bar(int, float) : *Mixed |}]
+
+let%expect_test "mixing regular formals and ellipsis is BAD" =
+  parse_module_print_errors
+    {|
+             .source_language = "hack"
+             declare foo(int, ...) : *HackMixed
+             |} ;
+  [%expect {| dummy.sil, line 3, column 30: SIL syntax error: unexpected token ... |}]
 
 
 let%expect_test "numbers lexing" =

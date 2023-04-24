@@ -288,7 +288,8 @@ let get_undefined_types decls =
   |> Seq.iter (fun (proc : ProcEntry.t) ->
          let procdecl = ProcEntry.decl proc in
          register_annotated_typ procdecl.result_type referenced_tnames ;
-         register_annotated_typs procdecl.formals_types referenced_tnames ;
+         let formals_types = Option.value procdecl.formals_types ~default:[] in
+         register_annotated_typs formals_types referenced_tnames ;
          Option.iter (ProcEntry.desc proc) ~f:(fun pdesc ->
              let types = get_procdesc_referenced_types pdesc in
              register_tnames types referenced_tnames ) ) ;

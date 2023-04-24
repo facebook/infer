@@ -22,8 +22,7 @@ let program_to_textual_module sourcefile (Doli.DoliProgram rules) : Textual.Modu
   let make_decl_from_rule (rule : Doli.doliRule) : Textual.ProcDecl.t =
     (* TODO make the entries in this record  more precise *)
     { qualified_name= {enclosing_class= TopLevel; name= {value= rule.ruleName; loc= Unknown}}
-    ; formals_types= Doli.param_types_to_textual rule
-    ; are_formal_types_fully_declared= true
+    ; formals_types= Some (Doli.param_types_to_textual rule)
     ; result_type= {typ= Doli.return_type_to_textual rule; attributes= []}
     ; attributes= [] }
   in

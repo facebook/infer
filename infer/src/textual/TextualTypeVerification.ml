@@ -273,22 +273,24 @@ let typeof_const (const : Const.t) : Typ.t =
       Float
 
 
-let typeof_reserved_proc (proc : qualified_procname) : Typ.t * Typ.t list * bool =
-  let exact_args_number = true in
-  if ProcDecl.to_binop proc |> Option.is_some then (Int, [Int; Int], exact_args_number)
-  else if ProcDecl.to_unop proc |> Option.is_some then (Int, [Int], exact_args_number)
+let typeof_reserved_proc (proc : qualified_procname) : Typ.t * Typ.t list option =
+  if ProcDecl.to_binop proc |> Option.is_some then (Int, Some [Int; Int])
+  else if ProcDecl.to_unop proc |> Option.is_some then (Int, Some [Int])
   else
     L.die InternalError "procname %a should be user-declared or a builtin" pp_qualified_procname
       proc
 
 
 (* Since procname can be both defined and declared in a file we should account for unknown formals in declarations. *)
-let typeof_procname (proc : qualified_procname) : (Typ.t * Typ.t list * bool) monad =
+let typeof_procname (proc : qualified_procname) : (Typ.t * Typ.t list option) monad =
  fun state ->
   match TextualDecls.get_procdecl state.decls proc with
   | Some (procdecl : ProcDecl.t) ->
-      let formals_types = List.map procdecl.formals_types ~f:(fun {Typ.typ} -> typ) in
-      ret (procdecl.result_type.typ, formals_types, procdecl.are_formal_types_fully_declared) state
+      let formals_types =
+        procdecl.formals_types
+        |> Option.map ~f:(fun formals_types -> List.map formals_types ~f:(fun {Typ.typ} -> typ))
+      in
+      ret (procdecl.result_type.typ, formals_types) state
   | None ->
       ret (typeof_reserved_proc proc) state
 
@@ -340,20 +342,17 @@ and typeof_exp (exp : Exp.t) : Typ.t monad =
   | Call {proc; args} when ProcDecl.is_lazy_class_initialize_builtin proc ->
       typeof_allocate_builtin proc args
   | Call {proc; args} ->
-      let* result_type, formals_types, exact_args_number = typeof_procname proc in
+      let* result_type, formals_types = typeof_procname proc in
       let* loc = get_location in
-      let expected = List.length formals_types in
-      let given = List.length args in
       let* () =
-        if (not (Int.equal given expected)) && exact_args_number then
-          (* this situation can not happen for user-defined function because of
-                 TextualBasicVerification verification *)
-          add_error (WrongNumberBuiltinArgs {proc; expected; given; at_least= false; loc})
-        else
-          iter2 ~strict:exact_args_number args formals_types ~f:(fun exp assigned ->
-              typecheck_exp exp
-                ~check:(fun given -> compat ~assigned ~given)
-                ~expected:(SubTypeOf assigned) ~loc )
+        match formals_types with
+        | None ->
+            ret ()
+        | Some formals_types ->
+            iter2 ~strict:true args formals_types ~f:(fun exp assigned ->
+                typecheck_exp exp
+                  ~check:(fun given -> compat ~assigned ~given)
+                  ~expected:(SubTypeOf assigned) ~loc )
       in
       ret result_type
   | Typ _ ->

@@ -205,11 +205,10 @@ declaration:
       let supers = Option.value supers ~default:[] in
       Module.Struct {name= typ_name; supers; fields; attributes} }
   | DECLARE attributes=annots qualified_name=qualified_pname LPAREN
-            formals_types=formals_types
+            formals_types=declaration_types
             RPAREN COLON result_type=annotated_typ
-    { let formals_types, are_formal_types_fully_declared = formals_types in
-      let procdecl : ProcDecl.t =
-        {qualified_name; formals_types= formals_types; are_formal_types_fully_declared; result_type; attributes} in
+    { let procdecl : ProcDecl.t =
+        {qualified_name; formals_types; result_type; attributes} in
       Module.Procdecl procdecl
     }
   | DEFINE attributes=annots qualified_name=qualified_pname LPAREN
@@ -217,7 +216,7 @@ declaration:
            body = body
     { let formals_types = List.map ~f:snd params in
       let procdecl : ProcDecl.t =
-        {qualified_name; formals_types; are_formal_types_fully_declared=true; result_type; attributes} in
+        {qualified_name; formals_types= Some formals_types; result_type; attributes} in
       let {locals; nodes} : Body.t = body in
       let start_node = List.hd_exn nodes in
       let params = List.map ~f:fst params in
@@ -225,21 +224,13 @@ declaration:
       Module.Proc { procdecl; nodes; start= start_node.Node.label; params; locals; exit_loc}
     }
 
-formals_types:
-  | { [], true }
-  | formals_types=formals_types_rec
-    { formals_types }
-
-formals_types_rec:
+declaration_types:
   | ELLIPSIS
-   /* Declarations with an ellipsis is a temporary syntax to support declarations of external functions
-      in Hack where formals number and types are unknown. */
-    { [], false }
-  | typ=annotated_typ
-    { [typ], true }
-  | typ=annotated_typ COMMA queue=formals_types_rec
-    { let l, b = queue in
-      typ :: l, b}
+    /* Declaration with an ellipsis is a special syntax to support declarations of external
+       functions in Hack where the number and types of formals is unknown. */
+    { None }
+  | types = separated_list(COMMA, annotated_typ)
+    { Some types }
 
 body:
  | LBRACKET lcls = locals nds=block+ RBRACKET

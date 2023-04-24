@@ -271,9 +271,8 @@ module ProcDeclBridge = struct
             (this_type :: formals_types, [])
         in
         let result_type = Procname.Java.get_return_typ jpname |> TypBridge.annotated_of_sil in
-        let are_formal_types_fully_declared = true in
         (* FIXME when adding inheritance *)
-        {qualified_name; formals_types; result_type; are_formal_types_fully_declared; attributes}
+        {qualified_name; formals_types= Some formals_types; result_type; attributes}
     | _ ->
         L.die InternalError "Non-Java procname %a should not appear in Java mode" Procname.describe
           pname
@@ -611,7 +610,7 @@ module InstrBridge = struct
         Call ((ret, class_type), builtin_lazy_class_initialize, args, loc, CallFlags.default)
     | Let {id; exp= Call {proc; args; kind}; loc} ->
         let ret = IdentBridge.to_sil id in
-        let ({formals_types; are_formal_types_fully_declared} as callee_procname : ProcDecl.t) =
+        let ({formals_types} as callee_procname : ProcDecl.t) =
           match TextualDecls.get_procdecl decls_env proc with
           | Some procname ->
               procname
@@ -625,30 +624,18 @@ module InstrBridge = struct
         let result_type = TypBridge.to_sil lang callee_procname.result_type.typ in
         let args = List.map ~f:(ExpBridge.to_sil lang decls_env procname) args in
         let formals_types =
-          if are_formal_types_fully_declared then
-            List.map formals_types ~f:(fun ({typ} : Typ.annotated) -> TypBridge.to_sil lang typ)
-          else
+          match formals_types with
+          | Some formals_types ->
+              List.map formals_types ~f:(fun ({typ} : Typ.annotated) -> TypBridge.to_sil lang typ)
+          | None -> (
             match lang with
             | Lang.Hack ->
                 (* Declarations with unknown formals are expected in Hack. Assume that unknown
                    formal types are *HackMixed and their number matches that of the arguments. *)
-                let rec map_and_complete_with_mixed formals args =
-                  match (formals, args) with
-                  | [], [] ->
-                      []
-                  | [], _ :: _ ->
-                      List.map args ~f:(fun _ -> TypBridge.hack_mixed)
-                  | typ :: formals, _ :: args ->
-                      TypBridge.to_sil lang typ.Typ.typ :: map_and_complete_with_mixed formals args
-                  | _ :: _, [] ->
-                      L.die InternalError
-                        "less arguments than expected: the type checker should have report this \
-                         issue"
-                in
-                map_and_complete_with_mixed formals_types args
+                List.map args ~f:(fun _ -> TypBridge.hack_mixed)
             | other ->
                 L.die InternalError "Unexpected unknown formals outside of Hack: %s"
-                  (Lang.to_string other)
+                  (Lang.to_string other) )
         in
         let args =
           match List.zip args formals_types with
