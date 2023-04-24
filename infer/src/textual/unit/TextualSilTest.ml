@@ -132,3 +132,30 @@ let%expect_test "unknown formal calls" =
               *&return:void=0 [line 12, column 11];
 
             #n2: |}]
+
+
+let%expect_test "hack extends is ordered" =
+  let source =
+    {|
+      .source_language = "hack"
+      type A extends P0, P1, T1, P2, T0, T2, P3, T3 = .kind="class" { }
+
+      type T3 = .kind="trait" {}
+      type T0 = .kind="trait" {}
+      type T2 = .kind="trait" {}
+      type T1 = .kind="trait" {}
+
+      type P3 = .kind="class" {}
+      type P1 = .kind="class" {}
+      type P0 = .kind="class" {}
+      type P2 = .kind="class" {}
+
+      |}
+  in
+  let m = parse_module source in
+  let _, tenv = TextualSil.module_to_sil m in
+  let name = IR.Typ.HackClass (IR.HackClassName.make "A") in
+  let supers = Tenv.fold_supers tenv name ~init:[] ~f:(fun name _ acc -> name :: acc) in
+  F.printf "%a@\n" (Fmt.list ~sep:(Fmt.any " ") IR.Typ.Name.pp) (List.rev supers) ;
+  [%expect {|
+    hack A hack T1 hack T0 hack T2 hack T3 hack P0 hack P1 hack P2 hack P3 |}]

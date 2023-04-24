@@ -170,6 +170,8 @@ module Attr = struct
 
   let mk_final = {name= "final"; values= []; loc= Location.Unknown}
 
+  let is_trait {name; values} = String.equal name "kind" && List.equal String.equal values ["trait"]
+
   let pp fmt {name; values} =
     if List.is_empty values then F.fprintf fmt ".%s" name
     else F.fprintf fmt ".%s = \"%a\"" name (Pp.comma_seq F.pp_print_string) values
