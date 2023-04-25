@@ -39,7 +39,7 @@ module Implementation = struct
 
 
   let canonicalize () =
-    Database.get_database AnalysisDatabase
+    Database.get_database CaptureDatabase
     |> SqliteUtils.exec ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint"
 
 

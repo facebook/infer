@@ -16,7 +16,7 @@ val add_source_file :
   -> unit
 
 val canonicalize : unit -> unit
-(** put the database on disk in deterministic form *)
+(** put the **capture** database on disk in deterministic form *)
 
 val delete_all_specs : unit -> unit
 
