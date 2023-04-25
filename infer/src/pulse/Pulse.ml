@@ -935,6 +935,10 @@ module PulseTransferFunctions = struct
               ~astates_before astates astate_n
           in
           let astate_n = NonDisjDomain.set_passed_to loc timestamp call_exp actuals astate_n in
+          let astate_n =
+            List.fold actuals ~init:astate_n ~f:(fun astate_n (exp, _) ->
+                NonDisjDomain.set_captured_variables exp astate_n )
+          in
           (astates, path, astate_n)
       | Prune (condition, loc, is_then_branch, if_kind) ->
           let prune_result =
