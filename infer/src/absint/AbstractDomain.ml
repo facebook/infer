@@ -872,6 +872,8 @@ struct
 
   let pp = M.pp
 
+  let singleton k v = M.singleton k (S.singleton v)
+
   let add k v m =
     M.update k (function None -> Some (S.singleton v) | Some s -> Some (S.add v s)) m
 

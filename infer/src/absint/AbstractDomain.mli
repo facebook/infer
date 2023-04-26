@@ -295,6 +295,8 @@ include sig
       (Value : PrettyPrintable.PrintableOrderedType) : sig
     include WithBottom
 
+    val singleton : Key.t -> Value.t -> t
+
     val add : Key.t -> Value.t -> t -> t [@@warning "-unused-value-declaration"]
 
     val set_to_single_value : Key.t -> Value.t -> t -> t
