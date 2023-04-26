@@ -79,10 +79,6 @@ module VariableIndex : sig
   (** Given an index, fold the [f] function over all the terminal indices that can be obtained as
       "sub fields" of the index. *)
 
-  val concat_map_terminal : SimpleShape.Summary.t -> _ t -> f:(terminal t -> 'a list) -> 'a list
-  (** Given an index, accumulates the results of the [f] function computed over all the terminal
-      indices that can be obtained as "sub fields" of the index. *)
-
   val fold_terminal_pairs :
        SimpleShape.Summary.t
     -> _ t
@@ -137,11 +133,6 @@ end = struct
       ~prevent_cycles ~init ~f:(fun acc fields -> f acc (make var fields))
 
 
-  let concat_map_terminal shapes (var, fields) ~f =
-    SimpleShape.Summary.concat_map_terminal_fields shapes (var, fields) ~max_width ~max_depth
-      ~prevent_cycles ~f:(fun fields -> f (make var fields))
-
-
   let fold_terminal_pairs shapes (var1, fields1) (var2, fields2) ~init ~f =
     SimpleShape.Summary.fold_terminal_fields_2 shapes (var1, fields1) (var2, fields2) ~max_width
       ~max_depth ~prevent_cycles ~init ~f:(fun acc fields1 fields2 ->
@@ -161,18 +152,45 @@ end = struct
   end
 end
 
+module Local = struct
+  module T = struct
+    type t =
+      | ConstantAtom of string
+      | ConstantInt of string
+      | ConstantString of string
+      | VariableIndex of (VariableIndex.Terminal.t[@sexp.opaque])
+    [@@deriving compare, equal, sexp]
+  end
+
+  include T
+  include Comparable.Make (T)
+
+  let pp fmt local =
+    match local with
+    | ConstantAtom atom_name ->
+        Format.fprintf fmt "A(%s)" atom_name
+    | ConstantInt digits ->
+        Format.fprintf fmt "I(%s)" digits
+    | ConstantString s ->
+        Format.fprintf fmt "S(%s)" s
+    | VariableIndex variable ->
+        Format.fprintf fmt "V(%a)" VariableIndex.pp variable
+
+
+  module Set = struct
+    include Set
+
+    (** Shortcut for adding a VariableIndex-variant local *)
+    let add_variable_index set index = add set (VariableIndex index)
+  end
+end
+
 module LineageGraph = struct
   (** INV: Constants occur only as sources of flow. NOTE: Constants are "local" because type [data]
       associates them with a location, in a proc. *)
-  type local =
-    | ConstantAtom of string
-    | ConstantInt of string
-    | ConstantString of string
-    | VariableIndex of (VariableIndex.Terminal.t[@sexp.opaque])
-  [@@deriving compare, equal, sexp]
 
   type data =
-    | Local of ((local * PPNode.t)[@sexp.opaque])
+    | Local of ((Local.t * PPNode.t)[@sexp.opaque])
     | Argument of int * Fields.t
     | ArgumentOf of int * (Procname.t[@sexp.opaque])
     | Captured of int
@@ -199,6 +217,17 @@ module LineageGraph = struct
         | DynamicCallFunction
         | DynamicCallModule
       [@@deriving compare, equal, sexp, variants]
+
+      (** Edges from fields of a formal parameter will represent a Projection of those fields from
+          the eventual summarised Argument node *)
+      let from_formal_arg arg_fields : t =
+        match arg_fields with [] -> Direct | subfields -> Project subfields
+
+
+      (** Edges into fields of the formal return will represent an Injection of those fields into
+          the eventual summarised Return node *)
+      let to_formal_ret ret_fields : t =
+        match ret_fields with [] -> Direct | subfields -> Inject subfields
     end
 
     include T
@@ -214,6 +243,10 @@ module LineageGraph = struct
 
   type t = flow list
 
+  let empty = []
+
+  let is_empty = List.is_empty
+
   (** Make [data] usable in Maps/Sets. *)
   module Vertex = struct
     module T = struct
@@ -224,22 +257,10 @@ module LineageGraph = struct
     include Comparable.Make (T)
   end
 
-  let pp_local fmt local =
-    match local with
-    | ConstantAtom atom_name ->
-        Format.fprintf fmt "A(%s)" atom_name
-    | ConstantInt digits ->
-        Format.fprintf fmt "I(%s)" digits
-    | ConstantString s ->
-        Format.fprintf fmt "S(%s)" s
-    | VariableIndex variable ->
-        Format.fprintf fmt "V(%a)" VariableIndex.pp variable
-
-
   let pp_data fmt data =
     match data with
     | Local (local, node) ->
-        Format.fprintf fmt "%a@@%a" pp_local local PPNode.pp node
+        Format.fprintf fmt "%a@@%a" Local.pp local PPNode.pp node
     | Argument (index, fields) ->
         Format.fprintf fmt "arg%d%a" index Fields.pp fields
     | Captured index ->
@@ -470,7 +491,7 @@ module LineageGraph = struct
         - With some information lost/summarised, such as fields of procedure arguments (although the
           Derive edges will be generated taking fields into account, we only output one node for
           each argument in the Json graph to denote function calls). *)
-    type data_local = Argument of int | Captured of int | Return | Normal of local | Function
+    type data_local = Argument of int | Captured of int | Return | Normal of Local.t | Function
 
     module Id = struct
       (** Internal representation of an Id. *)
@@ -1002,7 +1023,9 @@ module PartialSummary = struct
 
   let pp = LineageGraph.pp
 
-  let bottom = []
+  let bottom = LineageGraph.empty
+
+  let is_bottom = LineageGraph.is_empty
 
   let leq ~lhs:_ ~rhs:_ = true
 
@@ -1011,15 +1034,317 @@ module PartialSummary = struct
   let widen ~prev:_ ~next ~num_iters:_ = next
 end
 
-module Domain = struct
+module Domain : sig
+  (** As seen from the outside, an abstract state has two handlable components:
+
+      - A partial set of Lineage graph edges: the final graph for a procedure shall be constructed
+        by accumulating the edges collected at each procedure node and adding special edges for the
+        parameters and return;
+      - A boolean [has_unsupported_features] that records if the current procedure makes use of
+        Erlang features unsupported by Infer. *)
+
+  include AbstractDomain.WithBottom
+
+  module Src : sig
+    (** Constructors for data that can be used a source node of edges in the flow graph.
+
+        Each function corresponds to a variant of the {!LineageGraph.data} type.
+
+        This module does not provide constructors for [Local]-typed sources (eg. variables), as
+        [Domain] itself implements functions that directly take these values as sources and fetches
+        the corresponding nodes accordingly. *)
+
+    type t
+
+    val function_ : Procname.t -> t
+
+    val argument : int -> Fields.t -> t
+
+    val captured : int -> t
+
+    val return_of : Procname.t -> t
+  end
+
+  module Dst : sig
+    (** Constructors for data that can be used as destination node of edges in the flow graph.
+
+        Each function corresponds to a variant of the {!LineageGraph.data} type.
+
+        As for the {!Src} module, we don't provide [Local] destinations here (that is,
+        [VariableIndex] ones), as they should be processed differently. This is done by using the
+        [add_write_...] family of functions of the {!Domain} module itself. *)
+
+    type t
+
+    val captured_by : int -> Procname.t -> t
+
+    val argument_of : int -> Procname.t -> t
+
+    val return : t
+  end
+
+  val get_lineage_partial_graph : t -> LineageGraph.flow list
+  (** Extract the edges accumulated in an abstract state. *)
+
+  val clear_graph : t -> t
+  (** Forget the collected edges. One can use this when going to analyse another instruction as the
+      finalisation of the procedure analysis will go through all nodes to collect the complete edges
+      set. *)
+
+  val has_unsupported_features : t -> bool
+  (** Check if the abstract state recorded unsupported Erlang features. *)
+
+  val record_supported : Procname.t -> t -> t
+  (** If the given procedure is an unsupported Erlang feature, record that in the abstract state. *)
+
+  val add_flow_from_local_set :
+    node:PPNode.t -> kind:LineageGraph.flow_kind -> src:(Local.t, _) Set.t -> dst:Dst.t -> t -> t
+
+  (** {2 Add flow to non-variable nodes} *)
+
+  (** The [add_flow_...] functions can be used to record a taint flow from various types of sources
+      to destinations that are not written variables. To record flow to a variable, use the
+      corresponding [add_write_...] function instead. *)
+
+  val add_flow_from_var_index :
+       shapes:SimpleShape.Summary.t
+    -> node:PPNode.t
+    -> kind:LineageGraph.flow_kind
+    -> src:_ VariableIndex.t
+    -> dst:Dst.t
+    -> t
+    -> t
+
+  val add_flow_from_var_index_f :
+       shapes:SimpleShape.Summary.t
+    -> node:PPNode.t
+    -> kind_f:(Fields.t -> LineageGraph.flow_kind)
+    -> src:_ VariableIndex.t
+    -> dst_f:(Fields.t -> Dst.t)
+    -> t
+    -> t
+  (** [add_flow_from_var_index_f] allows recording flow whose kind and destination can be different
+      for every terminal field of the source variable index. This can be used for instance to record
+      [Injection] edges where the edge holds the field information. *)
+
+  (** {2 Add flow to non-variable nodes} *)
+
+  (** The [add_write_...] functions can be used to record a taint flow from various types of sources
+      to written variable destinations. To record flow to another type of node, use the
+      corresponding [add_flow_...] function instead. *)
+
+  val add_write :
+       shapes:SimpleShape.Summary.t
+    -> node:PPNode.t
+    -> kind:LineageGraph.flow_kind
+    -> src:Src.t
+    -> dst:_ VariableIndex.t
+    -> t
+    -> t
+
+  val add_write_f :
+       shapes:SimpleShape.Summary.t
+    -> node:PPNode.t
+    -> kind_f:(Fields.t -> LineageGraph.flow_kind)
+    -> src_f:(Fields.t -> Src.t)
+    -> dst:_ VariableIndex.t
+    -> t
+    -> t
+  (** [add_flow_from_var_index_f] allows recording flow whose kind and source can be different for
+      every terminal field of the destination variable index. This can be used for instance to
+      record [Projection] edges where the edge holds the field information. *)
+
+  val add_write_from_local :
+       shapes:SimpleShape.Summary.t
+    -> node:PPNode.t
+    -> kind:LineageGraph.flow_kind
+    -> src:Local.t
+    -> dst:_ VariableIndex.t
+    -> t
+    -> t
+
+  val add_write_from_local_set :
+       shapes:SimpleShape.Summary.t
+    -> node:PPNode.t
+    -> kind:LineageGraph.flow_kind
+    -> src:(Local.t, _) Set.t
+    -> dst:_ VariableIndex.t
+    -> t
+    -> t
+
+  val add_write_parallel :
+       shapes:SimpleShape.Summary.t
+    -> node:PPNode.t
+    -> kind:LineageGraph.flow_kind
+    -> src:_ VariableIndex.t
+    -> dst:_ VariableIndex.t
+    -> t
+    -> t
+  (** Add flow from every terminal field of the source variable index to the corresponding terminal
+      field of the destination variable index. See {!VariableIndex.fold_terminal_pairs}. *)
+end = struct
   module Real = struct
     module LastWrites = AbstractDomain.FiniteMultiMap (VariableIndex.Terminal) (PPNode)
     module UnsupportedFeatures = AbstractDomain.BooleanOr
-    include AbstractDomain.Pair (LastWrites) (UnsupportedFeatures)
+    include AbstractDomain.PairWithBottom (LastWrites) (UnsupportedFeatures)
   end
 
   module Unit = PartialSummary
-  include AbstractDomain.Pair (Real) (Unit)
+  include AbstractDomain.PairWithBottom (Real) (Unit)
+
+  let get_lineage_partial_graph (_, graph) = graph
+
+  let clear_graph (real, _graph) = (real, [])
+
+  let has_unsupported_features ((_, has_unsupported_features), _) = has_unsupported_features
+
+  let record_supported name (((last_writes, has_unsupported_features), local_graph) : t) : t =
+    let has_unsupported_features =
+      has_unsupported_features || Procname.is_erlang_unsupported name
+    in
+    ((last_writes, has_unsupported_features), local_graph)
+
+
+  module Src = struct
+    type t = LineageGraph.data
+
+    let function_ procname : t = Function procname
+
+    let argument i fields : t = Argument (i, fields)
+
+    let captured i : t = Captured i
+
+    let return_of procname : t = ReturnOf procname
+
+    module Private = struct
+      (** A module grouping functions that should only be used inside Domain and not exported. *)
+
+      (** Fold over the sources of a given local. *)
+      let fold_local ~f ~init node ((last_writes, _), _) (local : Local.t) =
+        match local with
+        | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
+            f init (LineageGraph.Local (local, node))
+        | VariableIndex var_idx ->
+            let source_nodes = Real.LastWrites.get_all var_idx last_writes in
+            List.fold
+              ~f:(fun acc node -> f acc (LineageGraph.Local (local, node)))
+              ~init source_nodes
+    end
+  end
+
+  module Dst = struct
+    type t = LineageGraph.data
+
+    let captured_by i proc_name : t = CapturedBy (i, proc_name)
+
+    let argument_of i callee_pname : t = ArgumentOf (i, callee_pname)
+
+    let return : t = Return
+
+    module Private = struct
+      (** A module grouping functions that should only be used inside Domain and not exported. *)
+
+      let var_index node var_index : t = Local (VariableIndex var_index, node)
+    end
+  end
+
+  let update_write ~node ~var_index ((last_writes, has_unsupported_features), graph) =
+    let last_writes = Real.LastWrites.set_to_single_value var_index node last_writes in
+    ((last_writes, has_unsupported_features), graph)
+
+
+  let add_flow ~node ~kind ~src ~dst ((last_writes, has_unsupported_features), graph) : t =
+    let graph = LineageGraph.add_flow ~node ~kind ~source:src ~target:dst graph in
+    ((last_writes, has_unsupported_features), graph)
+
+
+  let add_flow_from_local ~node ~kind ~src ~dst astate : t =
+    Src.Private.fold_local
+      ~f:(fun acc_astate one_source -> add_flow ~node ~kind ~src:one_source ~dst acc_astate)
+      ~init:astate node astate src
+
+
+  let add_flow_from_local_set ~node ~kind ~src ~dst astate =
+    Set.fold
+      ~f:(fun acc_astate one_local -> add_flow_from_local ~node ~kind ~src:one_local ~dst acc_astate)
+      ~init:astate src
+
+
+  let add_flow_from_var_index ~shapes ~node ~kind ~src ~dst astate =
+    VariableIndex.fold_terminal
+      ~f:(fun acc src_term_index ->
+        add_flow_from_local ~node ~kind ~src:(VariableIndex src_term_index) ~dst acc )
+      ~init:astate shapes src
+
+
+  let add_flow_from_var_index_f ~shapes ~node ~kind_f ~src ~dst_f astate =
+    VariableIndex.fold_terminal
+      ~f:(fun acc src_term_index ->
+        let source_fields = VariableIndex.get_fields src_term_index in
+        add_flow_from_local ~node ~kind:(kind_f source_fields) ~src:(VariableIndex src_term_index)
+          ~dst:(dst_f source_fields) acc )
+      ~init:astate shapes src
+
+
+  let add_terminal_write ~node ~kind ~src ~dst astate =
+    astate
+    |> add_flow ~node ~kind ~src ~dst:(Dst.Private.var_index node dst)
+    |> update_write ~node ~var_index:dst
+
+
+  let add_terminal_write_from_local ~node ~kind ~src ~dst astate =
+    astate
+    |> add_flow_from_local ~node ~kind ~src ~dst:(Dst.Private.var_index node dst)
+    |> update_write ~node ~var_index:dst
+
+
+  let add_terminal_write_from_local_set ~node ~kind ~src ~dst astate =
+    astate
+    |> add_flow_from_local_set ~node ~kind ~src ~dst:(Dst.Private.var_index node dst)
+    |> update_write ~node ~var_index:dst
+
+
+  (* Update all the terminal fields of an index, as obtained from the shapes information. *)
+  let add_write ~shapes ~node ~kind ~src ~dst astate =
+    VariableIndex.fold_terminal
+      ~f:(fun acc_astate dst_terminal ->
+        add_terminal_write ~node ~kind ~src ~dst:dst_terminal acc_astate )
+      ~init:astate shapes dst
+
+
+  let add_write_f ~shapes ~node ~kind_f ~src_f ~dst astate =
+    VariableIndex.fold_terminal
+      ~f:(fun acc_astate dst_terminal ->
+        let dst_fields = VariableIndex.get_fields dst_terminal in
+        add_terminal_write ~node ~kind:(kind_f dst_fields) ~src:(src_f dst_fields) ~dst:dst_terminal
+          acc_astate )
+      ~init:astate shapes dst
+
+
+  (* Update all the terminal fields of an index, as obtained from the shapes information. *)
+  let add_write_from_local ~shapes ~node ~kind ~src ~dst astate =
+    VariableIndex.fold_terminal
+      ~f:(fun acc_astate dst_terminal ->
+        add_terminal_write_from_local ~node ~kind ~src ~dst:dst_terminal acc_astate )
+      ~init:astate shapes dst
+
+
+  (* Update all the terminal fields of an index, as obtained from the shapes information. *)
+  let add_write_from_local_set ~shapes ~node ~kind ~src ~dst astate =
+    VariableIndex.fold_terminal
+      ~f:(fun acc_astate dst_terminal ->
+        add_terminal_write_from_local_set ~node ~kind ~src ~dst:dst_terminal acc_astate )
+      ~init:astate shapes dst
+
+
+  (* Update all the terminal fields of an destination index, as obtained from the shapes information,
+     as being written in parallel from the corresponding terminal fields of a source index. *)
+  let add_write_parallel ~shapes ~node ~kind ~src ~dst astate =
+    VariableIndex.fold_terminal_pairs
+      ~f:(fun acc_astate src_terminal dst_terminal ->
+        add_terminal_write_from_local ~node ~kind ~src:(VariableIndex src_terminal)
+          ~dst:dst_terminal acc_astate )
+      ~init:astate shapes src dst
 end
 
 module TransferFunctions = struct
@@ -1027,24 +1352,6 @@ module TransferFunctions = struct
   module Domain = Domain
 
   type analysis_data = SimpleShape.Summary.t * Summary.t InterproceduralAnalysis.t
-
-  module Local = struct
-    module T = struct
-      type t = LineageGraph.local [@@deriving compare, equal, sexp]
-    end
-
-    include T
-
-    (** Make [LineageGraph.local] usable in Maps/Sets. *)
-    include Comparable.Make (T)
-
-    module Set = struct
-      include Set
-
-      (** Shortcut for adding a VariableIndex-variant local *)
-      let add_variable_index set index = add set (VariableIndex index)
-    end
-  end
 
   (** If an expression is made of a single variable, return it *)
   let exp_as_single_var (e : Exp.t) : Var.t option =
@@ -1088,7 +1395,7 @@ module TransferFunctions = struct
 
 
   (** Return the terminal free indices that can be derived from an index *)
-  let terminal_free_locals_from_index shapes index =
+  let free_locals_from_index shapes index =
     VariableIndex.fold_terminal shapes index ~f:Local.Set.add_variable_index ~init:Local.Set.empty
 
 
@@ -1096,9 +1403,9 @@ module TransferFunctions = struct
   let rec free_locals_of_exp shapes (e : Exp.t) : Local.Set.t =
     match e with
     | Lvar pvar ->
-        terminal_free_locals_from_index shapes (VariableIndex.pvar pvar)
+        free_locals_from_index shapes (VariableIndex.pvar pvar)
     | Var id ->
-        terminal_free_locals_from_index shapes (VariableIndex.ident id)
+        free_locals_from_index shapes (VariableIndex.ident id)
     | Lfield _ -> (
       (* We only allow (sequences of) fields to be "applied" to a single variable, yielding a single index  *)
       match exp_as_single_var_index e with
@@ -1107,7 +1414,7 @@ module TransferFunctions = struct
              frontend to introduce a temporary variable. *)
           L.die InternalError "I don't support fields sequences from non-variables expressions"
       | Some index ->
-          terminal_free_locals_from_index shapes index )
+          free_locals_from_index shapes index )
     | Const (Cint x) ->
         Local.Set.singleton (ConstantInt (IntLit.to_string x))
     | Const (Cstr x) ->
@@ -1130,7 +1437,7 @@ module TransferFunctions = struct
   let captured_locals_of_exp shapes (e : Exp.t) : Local.Set.t =
     let add locals {Exp.captured_vars} =
       List.fold captured_vars ~init:locals ~f:(fun locals (_exp, pvar, _typ, _mode) ->
-          Local.Set.union locals (terminal_free_locals_from_index shapes (VariableIndex.pvar pvar)) )
+          Local.Set.union locals (free_locals_from_index shapes (VariableIndex.pvar pvar)) )
     in
     Sequence.fold ~init:Local.Set.empty ~f:add (Exp.closures e)
 
@@ -1155,15 +1462,6 @@ module TransferFunctions = struct
     match e with Closure {name} | Const (Cfun name) -> Some name | _ -> None
 
 
-  let sources_of_local here last_writes (local : Local.t) : LineageGraph.data list =
-    match local with
-    | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
-        [LineageGraph.Local (local, here)]
-    | VariableIndex var_idx ->
-        let source_nodes = Domain.Real.LastWrites.get_all var_idx last_writes in
-        List.map ~f:(fun node -> LineageGraph.Local (local, node)) source_nodes
-
-
   (** For all closures in [instr], record capture flows. *)
   let add_cap_flows shapes node (instr : Sil.instr) (astate : Domain.t) : Domain.t =
     let rec one_exp astate (exp : Exp.t) =
@@ -1177,19 +1475,10 @@ module TransferFunctions = struct
       | Closure c ->
           closure astate c
     and closure astate ({name; captured_vars} : Exp.closure) =
-      let one_var index ((last_writes, has_unsupported_features), local_edges)
-          (_exp, pvar, _typ, _mode) =
-        let source_list =
-          VariableIndex.concat_map_terminal shapes (VariableIndex.pvar pvar) ~f:(fun index ->
-              sources_of_local node last_writes (VariableIndex index) )
-        in
-        let add_one_flow local_edges source =
-          LineageGraph.add_flow ~kind:Direct ~node ~source
-            ~target:(CapturedBy (index, name))
-            local_edges
-        in
-        let local_edges = List.fold source_list ~f:add_one_flow ~init:local_edges in
-        ((last_writes, has_unsupported_features), local_edges)
+      let one_var index astate (_exp, pvar, _typ, _mode) =
+        Domain.add_flow_from_var_index ~shapes ~node ~kind:Direct ~src:(VariableIndex.pvar pvar)
+          ~dst:(Domain.Dst.captured_by index name)
+          astate
       in
       List.foldi ~init:astate ~f:one_var captured_vars
     in
@@ -1206,37 +1495,27 @@ module TransferFunctions = struct
   (* Add Call flow from the concrete arguments to the special ArgumentOf nodes *)
   let add_arg_flows shapes (call_node : PPNode.t) (callee_pname : Procname.t)
       (argument_list : Exp.t list) (astate : Domain.t) : Domain.t =
-    let add_one_arg_flows index ((last_writes, has_unsupported_features), local_edges) arg =
-      let add_one_source_edge local_edges source ~injected_arg_field =
-        LineageGraph.add_flow ~kind:(Call injected_arg_field) ~node:call_node ~source
-          ~target:(ArgumentOf (index, callee_pname))
-          local_edges
-      in
-      let add_one_local_flows local_edges (local : Local.t) ~injected_arg_field =
-        let sources = sources_of_local call_node last_writes local in
-        List.fold sources ~f:(add_one_source_edge ~injected_arg_field) ~init:local_edges
-      in
-      let local_edges =
-        match exp_as_single_var arg with
-        | None ->
-            (* The Erlang frontend probably doesn't generate non-single-var arguments. If that
-               happens however, we may simply collect all the locals from the actual argument and
-               have them flow on the full formal parameter (that is inject into the empty list of
-               nested fields) *)
-            warn_on_complex_arg arg ;
-            let read_set = free_locals_of_exp shapes arg in
-            Set.fold read_set ~init:local_edges ~f:(add_one_local_flows ~injected_arg_field:[])
-        | Some arg_var ->
-            (* The concrete argument is a single var: we collect all its terminal fields and have
-               them flow onto the corresponding field of the formal parameter. *)
-            let arg_as_index = VariableIndex.var arg_var in
-            VariableIndex.fold_terminal shapes arg_as_index
-              ~f:(fun acc arg_terminal ->
-                add_one_local_flows acc (VariableIndex arg_terminal)
-                  ~injected_arg_field:(VariableIndex.get_fields arg_terminal) )
-              ~init:local_edges
-      in
-      ((last_writes, has_unsupported_features), local_edges)
+    let add_one_arg_flows index astate actual_arg =
+      match exp_as_single_var actual_arg with
+      | None ->
+          (* The Erlang frontend probably doesn't generate non-single-var arguments. If that
+             happens however, we may simply collect all the locals from the actual argument and
+             have them flow on the full formal parameter (that is inject into the empty list of
+             nested fields) *)
+          warn_on_complex_arg actual_arg ;
+          let read_set = free_locals_of_exp shapes actual_arg in
+          Domain.add_flow_from_local_set ~node:call_node ~kind:(Call []) ~src:read_set
+            ~dst:(Domain.Dst.argument_of index callee_pname)
+            astate
+      | Some actual_arg_var ->
+          (* The concrete argument is a single var: we collect all its terminal fields and have
+             them flow onto the corresponding field of the formal parameter. *)
+          let actual_arg_var_index = VariableIndex.var actual_arg_var in
+          Domain.add_flow_from_var_index_f ~shapes ~node:call_node
+            ~kind_f:(fun arg_fields -> Call arg_fields)
+            ~src:actual_arg_var_index
+            ~dst_f:(fun _ -> Domain.Dst.argument_of index callee_pname)
+            astate
     in
     List.foldi argument_list ~init:astate ~f:add_one_arg_flows
 
@@ -1244,70 +1523,18 @@ module TransferFunctions = struct
   (* Add Return flow from the special ReturnOf nodes to the destination variable of a call *)
   let add_ret_flows shapes node (callee_pname : Procname.t) (ret_id : Ident.t) (astate : Domain.t) :
       Domain.t =
-    let last_writes, local_edges = astate in
-    let add_one_return_edge local_edges ret_terminal_index =
-      (* Add flow from the formal return to a terminal subfield of the actual ret_id: project the
-         return into the corresponding fields. *)
-      let target_field = VariableIndex.get_fields ret_terminal_index in
-      LineageGraph.add_flow ~kind:(Return target_field) ~node ~source:(ReturnOf callee_pname)
-        ~target:(Local (VariableIndex ret_terminal_index, node))
-        local_edges
+    Domain.add_write_f ~shapes ~node
+      ~kind_f:(fun fields -> Return fields)
+      ~src_f:(Fn.const @@ Domain.Src.return_of callee_pname)
+      ~dst:(VariableIndex.ident ret_id) astate
+
+
+  let add_lambda_edges shapes node write_var_index lambdas astate =
+    let add_one_lambda one_lambda astate =
+      Domain.add_write ~shapes ~node ~kind:Direct ~dst:write_var_index
+        ~src:(Domain.Src.function_ one_lambda) astate
     in
-    let local_edges =
-      VariableIndex.fold_terminal ~f:add_one_return_edge ~init:local_edges shapes
-        (VariableIndex.ident ret_id)
-    in
-    (last_writes, local_edges)
-
-
-  let add_lambda_edges shapes node write_var_index lambdas (real_state, local_edges) =
-    let add_one_lambda one_lambda local_edges =
-      VariableIndex.fold_terminal
-        ~f:(fun acc target ->
-          LineageGraph.add_flow ~kind:Direct ~node ~source:(Function one_lambda)
-            ~target:(Local (VariableIndex target, node))
-            acc )
-        ~init:local_edges shapes write_var_index
-    in
-    let local_edges = Procname.Set.fold add_one_lambda lambdas local_edges in
-    (real_state, local_edges)
-
-
-  (* Add a write for a single variable index -- this should usually not be used directly as it will
-     not take any shapes into account. *)
-  let update_one_write node kind (write_var : VariableIndex.Terminal.t) (read_set : Local.Set.t)
-      (((last_writes, has_unsupported_features), local_edges) : Domain.t) : Domain.t =
-    let target = LineageGraph.Local (VariableIndex write_var, node) in
-    let add_read local_edges (read_local : Local.t) =
-      let sources = sources_of_local node last_writes read_local in
-      let add_edge local_edges source =
-        LineageGraph.add_flow ~node ~kind ~source ~target local_edges
-      in
-      let local_edges = List.fold ~init:local_edges ~f:add_edge sources in
-      local_edges
-    in
-    let local_edges = Set.fold read_set ~init:local_edges ~f:add_read in
-    let last_writes = Domain.Real.LastWrites.remove_all write_var last_writes in
-    let last_writes = Domain.Real.LastWrites.add write_var node last_writes in
-    ((last_writes, has_unsupported_features), local_edges)
-
-
-  (* Update all the terminal fields of an index, as obtained from the shapes information. *)
-  let update_write shapes node kind dst_index read_set astate =
-    VariableIndex.fold_terminal
-      ~f:(fun acc_astate terminal -> update_one_write node kind terminal read_set acc_astate)
-      ~init:astate shapes dst_index
-
-
-  (* Update all the terminal fields of an destination index, as obtained from the shapes information,
-     as being written in parallel from the corresponding terminal fields of a source index. *)
-  let update_write_parallel shapes node kind dst_index src_index astate =
-    VariableIndex.fold_terminal_pairs
-      ~f:(fun acc_astate dst_terminal src_terminal ->
-        update_one_write node kind dst_terminal
-          (Local.Set.singleton (VariableIndex src_terminal))
-          acc_astate )
-      ~init:astate shapes dst_index src_index
+    Procname.Set.fold add_one_lambda lambdas astate
 
 
   let exec_assignment shapes node dst_index src_exp astate =
@@ -1315,15 +1542,17 @@ module TransferFunctions = struct
     | Some src_index ->
         (* Simple assignment of the form [dst := src_index]: we copy the fields of [src_index] into
            the corresponding fields of [dst]. *)
-        update_write_parallel shapes node Direct dst_index src_index astate
+        Domain.add_write_parallel ~shapes ~node ~kind:Direct ~src:src_index ~dst:dst_index astate
     | None ->
         (* Complex assignment of any other form: we copy every terminal field from the source to
            (every terminal field of) the destination, and also process the potential captured indices
            and lambdas. *)
         let {free_locals; captured_locals; lambdas} = read_set_of_exp shapes src_exp in
         astate
-        |> update_write shapes node LineageGraph.FlowKind.Direct dst_index free_locals
-        |> update_write shapes node LineageGraph.FlowKind.Capture dst_index captured_locals
+        |> Domain.add_write_from_local_set ~shapes ~node ~kind:Direct ~dst:dst_index
+             ~src:free_locals
+        |> Domain.add_write_from_local_set ~shapes ~node ~kind:Capture ~dst:dst_index
+             ~src:captured_locals
         |> add_lambda_edges shapes node dst_index lambdas
 
 
@@ -1352,7 +1581,8 @@ module TransferFunctions = struct
           )
         argument_list
     in
-    update_write shapes node kind (VariableIndex.ident ret_id) tito_locals astate
+    Domain.add_write_from_local_set ~shapes ~node ~kind ~src:tito_locals
+      ~dst:(VariableIndex.ident ret_id) astate
 
 
   (* Add all the possible Summary/Direct (see add_tito) call edges from arguments to destination for
@@ -1375,21 +1605,13 @@ module TransferFunctions = struct
         add_tito shapes node kind tito_arguments argument_list ret_id astate
 
 
-  let record_supported name (((last_writes, has_unsupported_features), local_edges) : Domain.t) :
-      Domain.t =
-    let has_unsupported_features =
-      has_unsupported_features || Procname.is_erlang_unsupported name
-    in
-    ((last_writes, has_unsupported_features), local_edges)
-
-
   let generic_call_model shapes node analyze_dependency ret_id procname args astate =
     let rm_builtin =
       (not Config.simple_lineage_include_builtins) && BuiltinDecl.is_declared procname
     in
     let if_not_builtin transform state = if rm_builtin then state else transform state in
     let summary_type : LineageGraph.FlowKind.t = if rm_builtin then Direct else Summary in
-    astate |> record_supported procname
+    astate |> Domain.record_supported procname
     |> if_not_builtin (add_arg_flows shapes node procname args)
     |> if_not_builtin (add_ret_flows shapes node procname ret_id)
     |> add_summary_flows shapes node summary_type (analyze_dependency procname) args ret_id
@@ -1401,8 +1623,8 @@ module TransferFunctions = struct
       | fun_ :: _ ->
           astate
           |> generic_call_model shapes node analyze_dependency ret_id procname args
-          |> update_write shapes node DynamicCallFunction (VariableIndex.ident ret_id)
-               (free_locals_of_exp shapes fun_)
+          |> Domain.add_write_from_local_set ~shapes ~node ~kind:DynamicCallFunction
+               ~dst:(VariableIndex.ident ret_id) ~src:(free_locals_of_exp shapes fun_)
       | _ ->
           L.die InternalError "Expecting at least one argument for '__erlang_call_unqualified'"
 
@@ -1412,10 +1634,11 @@ module TransferFunctions = struct
       | module_ :: fun_ :: _ ->
           astate
           |> generic_call_model shapes node analyze_dependency ret_id procname args
-          |> update_write shapes node DynamicCallFunction (VariableIndex.ident ret_id)
-               (free_locals_of_exp shapes fun_)
-          |> update_write shapes node DynamicCallModule (VariableIndex.ident ret_id)
-               (free_locals_of_exp shapes module_)
+          |> Domain.add_write_from_local_set ~shapes ~node ~kind:DynamicCallFunction
+               ~dst:(VariableIndex.ident ret_id) ~src:(free_locals_of_exp shapes fun_)
+          |> Domain.add_write_from_local_set ~shapes ~node ~kind:DynamicCallModule
+               ~dst:(VariableIndex.ident ret_id)
+               ~src:(free_locals_of_exp shapes module_)
       | _ ->
           L.die InternalError "Expecting at least two arguments for '__erlang_call_qualified'"
 
@@ -1428,9 +1651,8 @@ module TransferFunctions = struct
         | _ ->
             L.die InternalError "Expecting first argument of 'make_atom' to be its name"
       in
-      let sources = Local.Set.singleton (ConstantAtom atom_name) in
-      update_write shapes node LineageGraph.FlowKind.Direct (VariableIndex.ident ret_id) sources
-        astate
+      Domain.add_write_from_local ~shapes ~node ~kind:LineageGraph.FlowKind.Direct
+        ~dst:(VariableIndex.ident ret_id) ~src:(ConstantAtom atom_name) astate
 
 
     let make_tuple shapes node _analyze_dependency ret_id _procname (args : Exp.t list) astate =
@@ -1487,7 +1709,8 @@ module TransferFunctions = struct
       (instr : Sil.instr) =
     if not (Int.equal instr_index 0) then
       L.die InternalError "SimpleLineage: INV broken: CFGs should be single instruction@\n" ;
-    let astate = add_cap_flows shapes node instr (fst astate, [ (* don't repeat edges*) ]) in
+    let astate = Domain.clear_graph astate (* Don't repeat edges *) in
+    let astate = add_cap_flows shapes node instr astate in
     match instr with
     | Load {id; e; _} ->
         if Ident.is_none id then astate
@@ -1520,89 +1743,54 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
   in
   let analysis_data = (shapes, analysis) in
   let cfg = CFG.from_pdesc proc_desc in
-  let initial =
+  (* Build the initial abstract state *)
+  let initial_astate =
     let formals = get_formals proc_desc in
     let captured = get_captured proc_desc in
     let start_node = CFG.start_node cfg in
-    let add_arg_index last_writes arg_index =
-      Domain.Real.LastWrites.add arg_index start_node last_writes
+    let add_arg_flow i astate arg_var =
+      TransferFunctions.Domain.add_write_f ~shapes ~node:start_node
+        ~kind_f:LineageGraph.FlowKind.from_formal_arg ~dst:(VariableIndex.var arg_var)
+        ~src_f:(Domain.Src.argument i) astate
     in
-    let add_arg last_writes var =
-      VariableIndex.fold_terminal ~f:add_arg_index ~init:last_writes shapes (VariableIndex.var var)
+    let add_cap_flow i astate var =
+      TransferFunctions.Domain.add_write ~shapes ~node:start_node ~kind:Direct
+        ~dst:(VariableIndex.var var) ~src:(Domain.Src.captured i) astate
     in
-    let last_writes =
-      List.fold ~init:Domain.Real.LastWrites.bottom ~f:add_arg (captured @ formals)
-    in
-    let local_edges =
-      let add_proc_start_flow ~source ~kind local_edges var_index =
-        LineageGraph.add_flow ~kind ~node:start_node ~source
-          ~target:(Local (VariableIndex var_index, start_node))
-          local_edges
-      in
-      let arg_edge_kind arg_fields : LineageGraph.FlowKind.t =
-        (* Record that edges from fields of a formal parameter will represent a Projection of those
-           fields from the eventual summarised Argument node *)
-        match arg_fields with [] -> Direct | subfields -> Project subfields
-      in
-      let add_arg_flow i local_edges arg_var =
-        VariableIndex.fold_terminal
-          ~f:(fun acc idx ->
-            let fields = VariableIndex.get_fields idx in
-            add_proc_start_flow ~kind:(arg_edge_kind fields) ~source:(Argument (i, fields)) acc idx
-            )
-          ~init:local_edges shapes (VariableIndex.var arg_var)
-      in
-      let add_cap_flow i local_edges var =
-        VariableIndex.fold_terminal
-          ~f:(add_proc_start_flow ~kind:Direct ~source:(Captured i))
-          ~init:local_edges shapes (VariableIndex.var var)
-      in
-      let local_edges = [] in
-      let local_edges = List.foldi ~init:local_edges ~f:add_arg_flow formals in
-      let local_edges = List.foldi ~init:local_edges ~f:add_cap_flow captured in
-      local_edges
-    in
-    let has_unsupported_features = false in
-    ((last_writes, has_unsupported_features), local_edges)
+    let astate = Domain.bottom in
+    let astate = List.foldi ~init:astate ~f:add_arg_flow formals in
+    let astate = List.foldi ~init:astate ~f:add_cap_flow captured in
+    astate
   in
-  let invmap = Analyzer.exec_pdesc analysis_data ~initial proc_desc in
+  (* Analyse the procedure to get the invmap *)
+  let invmap = Analyzer.exec_pdesc analysis_data ~initial:initial_astate proc_desc in
   let exit_node = CFG.exit_node cfg in
-  let (exit_last_writes, exit_has_unsupported_features), _ =
+  let ret_var_index = VariableIndex.pvar (Procdesc.get_ret_var proc_desc) in
+  (* Add Return edges *)
+  let exit_astate =
     match Analyzer.InvariantMap.find_opt (PPNode.id exit_node) invmap with
     | None ->
         L.die InternalError "no post for exit_node?"
     | Some {AbstractInterpreter.State.post} ->
         post
   in
+  let final_astate =
+    Domain.add_flow_from_var_index_f ~shapes ~node:exit_node
+      ~kind_f:LineageGraph.FlowKind.to_formal_ret ~src:ret_var_index
+      ~dst_f:(Fn.const Domain.Dst.return) exit_astate
+  in
+  (* Collect the graph from all nodes *)
   let graph =
     let collect _nodeid {AbstractInterpreter.State.post} edges =
-      let _last_writes, post_edges = post in
+      let post_edges = Domain.get_lineage_partial_graph post in
       post_edges :: edges
     in
-    let ret_var = VariableIndex.pvar (Procdesc.get_ret_var proc_desc) in
-    let ret_edge_kind into_ret_index : LineageGraph.FlowKind.t =
-      (* Record that edges into fields of the formal return will represent an Injection of those
-         fields into the eventual summarised Return node *)
-      match VariableIndex.get_fields into_ret_index with
-      | [] ->
-          Direct
-      | subfields ->
-          Inject subfields
-    in
-    let add_one_ret_index_edge local_edges ret_index ret_source_node =
-      LineageGraph.add_flow ~kind:(ret_edge_kind ret_index) ~node:exit_node
-        ~source:(Local (VariableIndex ret_index, ret_source_node))
-        ~target:Return local_edges
-    in
-    let add_ret_index_edges local_edges ret_index =
-      List.fold ~init:local_edges
-        ~f:(fun acc source -> add_one_ret_index_edge acc ret_index source)
-        (Domain.Real.LastWrites.get_all ret_index exit_last_writes)
-    in
-    let graph = Analyzer.InvariantMap.fold collect invmap [snd initial] |> List.concat in
-    let graph = VariableIndex.fold_terminal ~init:graph ~f:add_ret_index_edges shapes ret_var in
-    graph
+    Analyzer.InvariantMap.fold collect invmap
+      [ Domain.get_lineage_partial_graph initial_astate
+      ; Domain.get_lineage_partial_graph final_astate ]
+    |> List.concat
   in
+  let exit_has_unsupported_features = Domain.has_unsupported_features exit_astate in
   let summary = Summary.make exit_has_unsupported_features proc_desc graph in
   if Config.simple_lineage_json_report then Summary.report summary proc_desc ;
   Some summary

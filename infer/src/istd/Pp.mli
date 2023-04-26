@@ -64,6 +64,9 @@ val color_string : color -> string
 
 val html_with_color : color -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a -> unit
 
+val colon_sp : F.formatter -> 'a -> unit
+(** [colon_sp] is [Fmt.any ":@ "]. It prints a colon and a space break hint. *)
+
 val option : (F.formatter -> 'a -> unit) -> F.formatter -> 'a option -> unit
 
 val cli_args : F.formatter -> string list -> unit

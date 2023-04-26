@@ -297,11 +297,14 @@ include sig
 
     val add : Key.t -> Value.t -> t -> t [@@warning "-unused-value-declaration"]
 
+    val set_to_single_value : Key.t -> Value.t -> t -> t
+    (** [set_to_single_value k v m] is equivalent (but faster) to [add k v (remove_all k m)]. *)
+
     val mem : Key.t -> t -> bool [@@warning "-unused-value-declaration"]
 
     val remove : Key.t -> Value.t -> t -> t [@@warning "-unused-value-declaration"]
 
-    val remove_all : Key.t -> t -> t
+    val remove_all : Key.t -> t -> t [@@warning "-unused-value-declaration"]
 
     val get_all : Key.t -> t -> Value.t list
 

@@ -115,6 +115,11 @@ let color_wrapper pe ppf x ~f =
       f pe ppf x
 
 
+let colon_sp ppf _ =
+  Format.pp_print_string ppf ":" ;
+  Fmt.sp ppf ()
+
+
 let seq ?(print_env = text) ?sep:(sep_text = " ") ?(sep_html = sep_text) pp =
   let rec aux f = function
     | [] ->

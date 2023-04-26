@@ -143,16 +143,6 @@ module Shape : sig
       -> 'accum
     (* Doc in .mli *)
 
-    val concat_map_terminal_fields :
-         t
-      -> Var.t * Fieldname.t list
-      -> max_width:int
-      -> max_depth:int
-      -> prevent_cycles:bool
-      -> f:(Fieldname.t list -> 'a list)
-      -> 'a list
-    (* Doc in .mli *)
-
     val fold_terminal_fields_2 :
          t
       -> Var.t * Fieldname.t list
@@ -186,8 +176,6 @@ end = struct
   (* Pretty-printing *)
 
   let pp_arrow = Fmt.any " ->@ "
-
-  let pp_colon = Fmt.any ":@ "
 
   let pp_binding ~bind pp_key pp_value fmt (key, value) =
     Format.fprintf fmt "@[%a%a%a@]" pp_key key bind () pp_value value
@@ -241,7 +229,7 @@ end = struct
       Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPES@ @[%a@]@]@ @[<v4>SHAPE_FIELDS@ @[%a@]@]@]"
         (pp_hashtbl ~bind:pp_arrow Var.pp pp_shape)
         var_shapes
-        (pp_hashtbl ~bind:pp_arrow Shape_id.pp (pp_hashtbl ~bind:pp_colon Fieldname.pp pp_shape))
+        (pp_hashtbl ~bind:pp_arrow Shape_id.pp (pp_hashtbl ~bind:Pp.colon_sp Fieldname.pp pp_shape))
         shape_fields
 
 
@@ -336,7 +324,7 @@ end = struct
         (pp_caml_hashtbl ~bind:pp_arrow Var.pp Shape_id.pp)
         var_shapes
         (pp_caml_hashtbl ~bind:pp_arrow Shape_id.pp
-           (pp_caml_hashtbl ~bind:pp_colon Fieldname.pp Shape_id.pp) )
+           (pp_caml_hashtbl ~bind:Pp.colon_sp Fieldname.pp Shape_id.pp) )
         shape_fields
 
 
@@ -462,7 +450,7 @@ end = struct
 
     let pp_field_table field_table =
       Fmt.iter_bindings ~sep:Fmt.comma Caml.Hashtbl.iter
-        (Fmt.pair ~sep:(Fmt.any ":@ ") Fieldname.pp Shape_id.pp)
+        (Fmt.pair ~sep:Pp.colon_sp Fieldname.pp Shape_id.pp)
         field_table
 
 
@@ -576,11 +564,6 @@ end = struct
         ~root_shapes ~traversed ~prevent_cycles
         ~f:(fun acc Ilist.[x] -> f acc x)
         ~init
-
-
-    let concat_map_terminal_fields env (var, fields) ~max_width ~max_depth ~prevent_cycles ~f =
-      fold_terminal_fields env (var, fields) ~max_width ~max_depth ~prevent_cycles ~init:[]
-        ~f:(fun acc index -> f index @ acc)
 
 
     let fold_terminal_fields_2 {var_shapes; shape_fields} (var1, fields1) (var2, fields2) ~max_width

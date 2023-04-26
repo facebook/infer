@@ -32,17 +32,6 @@ module Summary : sig
       of the parameter does. For instance, if some variable [X] has a huge number of fields, the
       only terminal field of [X#field1] will be [X] itself. *)
 
-  val concat_map_terminal_fields :
-       t
-    -> Var.t * Fieldname.t list
-    -> max_width:int
-    -> max_depth:int
-    -> prevent_cycles:bool
-    -> f:(Fieldname.t list -> 'a list)
-    -> 'a list
-  (** A specialised version of {!fold_terminal_fields} for when you want to accumulate in a list
-      some results obtained from each terminal field. *)
-
   val fold_terminal_fields_2 :
        t
     -> Var.t * Fieldname.t list

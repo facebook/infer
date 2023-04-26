@@ -876,6 +876,8 @@ struct
     M.update k (function None -> Some (S.singleton v) | Some s -> Some (S.add v s)) m
 
 
+  let set_to_single_value k v m = M.add k (S.singleton v) m
+
   let mem k m = M.mem k m
 
   let exists f m = M.exists (fun key values -> S.exists (fun value -> f key value) values) m
