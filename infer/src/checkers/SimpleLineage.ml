@@ -38,41 +38,6 @@ module VariableIndex : sig
 
   type _ t
 
-  val var : Var.t -> transient t
-
-  val subfield : _ t -> Fields.t -> transient t
-  (** Sub-field of an index. *)
-
-  val get_var : _ t -> Var.t
-
-  val get_fields : terminal t -> Fields.t
-
-  val make : Var.t -> Fields.t -> transient t
-
-  val pvar : Pvar.t -> transient t
-
-  val ident : Ident.t -> transient t
-
-  val pp : Format.formatter -> _ t -> unit
-
-  val var_appears_in_source_code : _ t -> bool
-
-  val fold_terminal :
-    SimpleShape.Summary.t -> _ t -> init:'accum -> f:('accum -> terminal t -> 'accum) -> 'accum
-  (** Given an index, fold the [f] function over all the terminal indices that can be obtained as
-      "sub fields" of the index. *)
-
-  val fold_terminal_pairs :
-       SimpleShape.Summary.t
-    -> _ t
-    -> _ t
-    -> init:'accum
-    -> f:('accum -> terminal t -> terminal t -> 'accum)
-    -> 'accum
-  (** Given two indices that must have the same type, fold the [f] function over all the pairs of
-      terminal indices that can be obtained as "sub fields" of the indices. [f] will always be
-      called on corresponding sub-indices: see {!SimpleShape.Summary.fold_terminal_fields_2}. *)
-
   module Terminal : sig
     (** Utility module for standard functor calls *)
 
@@ -80,6 +45,49 @@ module VariableIndex : sig
 
     val pp : Format.formatter -> t -> unit
   end
+
+  module Transient : sig
+    type nonrec t = transient t
+  end
+
+  val var : Var.t -> Transient.t
+
+  val subfield : Transient.t -> Fields.t -> Transient.t
+  (** Sub-field of an index. *)
+
+  val get_var : Terminal.t -> Var.t
+
+  val get_fields : Terminal.t -> Fields.t
+
+  val make : Var.t -> Fields.t -> Transient.t
+
+  val pvar : Pvar.t -> Transient.t
+
+  val ident : Ident.t -> Transient.t
+
+  val pp : Format.formatter -> Terminal.t -> unit
+
+  val var_appears_in_source_code : Terminal.t -> bool
+
+  val fold_terminal :
+       SimpleShape.Summary.t
+    -> Transient.t
+    -> init:'accum
+    -> f:('accum -> Terminal.t -> 'accum)
+    -> 'accum
+  (** Given an index, fold the [f] function over all the terminal indices that can be obtained as
+      "sub fields" of the index. *)
+
+  val fold_terminal_pairs :
+       SimpleShape.Summary.t
+    -> Transient.t
+    -> Transient.t
+    -> init:'accum
+    -> f:('accum -> Terminal.t -> Terminal.t -> 'accum)
+    -> 'accum
+  (** Given two indices that must have the same type, fold the [f] function over all the pairs of
+      terminal indices that can be obtained as "sub fields" of the indices. [f] will always be
+      called on corresponding sub-indices: see {!SimpleShape.Summary.fold_terminal_fields_2}. *)
 end = struct
   type terminal
 
@@ -121,6 +129,10 @@ end = struct
       ~max_depth ~prevent_cycles ~init ~f:(fun acc fields1 fields2 ->
         f acc (make var1 fields1) (make var2 fields2) )
 
+
+  module Transient = struct
+    type nonrec t = transient t
+  end
 
   module Terminal = struct
     type nonrec t = terminal t
@@ -1125,7 +1137,7 @@ module Domain : sig
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
-    -> src:_ VariableIndex.t
+    -> src:VariableIndex.Transient.t
     -> dst:Dst.t
     -> t
     -> t
@@ -1134,7 +1146,7 @@ module Domain : sig
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
     -> kind_f:(Fields.t -> LineageGraph.flow_kind)
-    -> src:_ VariableIndex.t
+    -> src:VariableIndex.Transient.t
     -> dst_f:(Fields.t -> Dst.t)
     -> t
     -> t
@@ -1153,7 +1165,7 @@ module Domain : sig
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:Src.t
-    -> dst:_ VariableIndex.t
+    -> dst:VariableIndex.Transient.t
     -> t
     -> t
 
@@ -1162,7 +1174,7 @@ module Domain : sig
     -> node:PPNode.t
     -> kind_f:(Fields.t -> LineageGraph.flow_kind)
     -> src_f:(Fields.t -> Src.t)
-    -> dst:_ VariableIndex.t
+    -> dst:VariableIndex.Transient.t
     -> t
     -> t
   (** [add_flow_from_var_index_f] allows recording flow whose kind and source can be different for
@@ -1174,7 +1186,7 @@ module Domain : sig
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:Local.t
-    -> dst:_ VariableIndex.t
+    -> dst:VariableIndex.Transient.t
     -> t
     -> t
 
@@ -1183,7 +1195,7 @@ module Domain : sig
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:(Local.t, _) Set.t
-    -> dst:_ VariableIndex.t
+    -> dst:VariableIndex.Transient.t
     -> t
     -> t
 
@@ -1191,8 +1203,8 @@ module Domain : sig
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
-    -> src:_ VariableIndex.t
-    -> dst:_ VariableIndex.t
+    -> src:VariableIndex.Transient.t
+    -> dst:VariableIndex.Transient.t
     -> t
     -> t
   (** Add flow from every terminal field of the source variable index to the corresponding terminal
@@ -1202,8 +1214,8 @@ module Domain : sig
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
-    -> src:_ VariableIndex.t
-    -> dst:_ VariableIndex.t
+    -> src:VariableIndex.Transient.t
+    -> dst:VariableIndex.Transient.t
     -> t
     -> t
   (** Add flow from every terminal field of the source variable index to every terminal field of the
@@ -1407,7 +1419,7 @@ module TransferFunctions = struct
 
 
   (** If an expression is made of a single variable index, return it *)
-  let exp_as_single_var_index (e : Exp.t) : _ VariableIndex.t option =
+  let exp_as_single_var_index (e : Exp.t) : VariableIndex.Transient.t option =
     let rec aux fields_acc = function
       | Exp.Lvar pvar ->
           Some (VariableIndex.make (Var.of_pvar pvar) fields_acc)
