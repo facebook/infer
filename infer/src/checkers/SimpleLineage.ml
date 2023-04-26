@@ -24,30 +24,22 @@ module Fields = SimpleShape.Fields
 module VariableIndex : sig
   (** A [VariableIndex] is a variable and a possibly empty list of subscripted fields. *)
 
-  (** The type {!t} has a phantom parameter, which is used to statically encode the information that
-      some variable indexes are "terminal", which means that no subfield of them will be considered
+  (** Some variable indexes are {!Terminal}, which means that no subfield of them will be considered
       by the analysis (either because they have none, or that would lead to too deep or too wide
       field sequences).
 
-      Only terminal indices can be used to build the lineage graph. *)
-
-  type terminal
-
-  (** For indices that are not known to be terminal *)
-  type transient
-
-  type _ t
-
-  module Terminal : sig
-    (** Utility module for standard functor calls *)
-
-    type nonrec t = terminal t [@@deriving compare, equal]
-
-    val pp : Format.formatter -> t -> unit
-  end
+      The lineage graph is built on terminal indices. *)
 
   module Transient : sig
-    type nonrec t = transient t
+    (** For indices that are not known to be terminal *)
+
+    type t
+  end
+
+  module Terminal : sig
+    type t [@@deriving compare, equal]
+
+    val pp : Format.formatter -> t -> unit
   end
 
   val var : Var.t -> Transient.t
@@ -89,11 +81,15 @@ module VariableIndex : sig
       terminal indices that can be obtained as "sub fields" of the indices. [f] will always be
       called on corresponding sub-indices: see {!SimpleShape.Summary.fold_terminal_fields_2}. *)
 end = struct
-  type terminal
+  module Transient = struct
+    type t = Var.t * Fields.t
+  end
 
-  type transient
+  module Terminal = struct
+    type t = Var.t * Fields.t [@@deriving compare, equal]
 
-  type _ t = Var.t * Fields.t [@@deriving compare, equal]
+    let pp fmt (var, fields) = Format.fprintf fmt "%a%a" Var.pp var Fields.pp fields
+  end
 
   let var v = (v, [])
 
@@ -109,7 +105,7 @@ end = struct
 
   let ident id = var (Var.of_id id)
 
-  let pp fmt (var, fields) = Format.fprintf fmt "%a%a" Var.pp var Fields.pp fields
+  let pp = Terminal.pp
 
   let var_appears_in_source_code (var, _) = Var.appears_in_source_code var
 
@@ -128,23 +124,6 @@ end = struct
     SimpleShape.Summary.fold_terminal_fields_2 shapes (var1, fields1) (var2, fields2) ~max_width
       ~max_depth ~prevent_cycles ~init ~f:(fun acc fields1 fields2 ->
         f acc (make var1 fields1) (make var2 fields2) )
-
-
-  module Transient = struct
-    type nonrec t = transient t
-  end
-
-  module Terminal = struct
-    type nonrec t = terminal t
-
-    (* Ignore the phantom type variable in comparisons *)
-
-    let compare = compare [%compare: _]
-
-    let equal = equal [%equal: _]
-
-    let pp = pp
-  end
 end
 
 module Local = struct
