@@ -173,21 +173,26 @@ let search_classes path =
     path
 
 
+let is_valid_source_file path =
+  ( Filename.check_suffix path ".java"
+  || (Config.kotlin_capture && Filename.check_suffix path Config.kotlin_source_extension) )
+  && PolyVariantEqual.(Sys.is_file path <> `No)
+
+
 let search_sources () =
   let initial_map =
-    List.fold ~f:(fun map path -> add_source_file path map) ~init:String.Map.empty Config.sources
+    List.fold Config.sources ~init:String.Map.empty ~f:(fun map path ->
+        if is_valid_source_file path then add_source_file path map
+        else (
+          L.external_warning "'%s' does not appear to be a valid source file, skipping@\n" path ;
+          map ) )
   in
   match Config.sourcepath with
   | None ->
       initial_map
   | Some sourcepath ->
       Utils.directory_fold
-        (fun map p ->
-          if
-            Filename.check_suffix p "java"
-            || (Config.kotlin_capture && Filename.check_suffix p Config.kotlin_source_extension)
-          then add_source_file p map
-          else map )
+        (fun map path -> if is_valid_source_file path then add_source_file path map else map)
         initial_map sourcepath
 
 
