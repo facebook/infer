@@ -21,8 +21,8 @@ end
 
 module Fields = SimpleShape.Fields
 
-module VariableIndex : sig
-  (** A [VariableIndex] is a variable and a possibly empty list of subscripted fields. *)
+module VariableIndex = struct
+  (** A [VariableIndex] is a variable or a field of it. *)
 
   (** Some variable indexes are {!Terminal}, which means that no subfield of them will be considered
       by the analysis (either because they have none, or that would lead to too deep or too wide
@@ -33,7 +33,8 @@ module VariableIndex : sig
   module Transient : sig
     (** For indices that are not known to be terminal *)
 
-    type t
+    (** A [Transient] index is a variable and a possibly empty list of subscripted fields. *)
+    type t = Var.t * Fields.t
 
     val var : Var.t -> t
 
@@ -45,6 +46,18 @@ module VariableIndex : sig
     val pvar : Pvar.t -> t
 
     val ident : Ident.t -> t
+  end = struct
+    type t = Var.t * Fields.t
+
+    let var v = (v, [])
+
+    let subfield (var, fields) subfields = (var, fields @ subfields)
+
+    let make var fields = (var, fields)
+
+    let pvar pvar = var (Var.of_pvar pvar)
+
+    let ident id = var (Var.of_id id)
   end
 
   module Terminal : sig
@@ -73,23 +86,7 @@ module VariableIndex : sig
     (** Given two indices that must have the same type, fold the [f] function over all the pairs of
         terminal indices that can be obtained as "sub fields" of the indices. [f] will always be
         called on corresponding sub-indices: see {!SimpleShape.Summary.fold_terminal_fields_2}. *)
-  end
-end = struct
-  module Transient = struct
-    type t = Var.t * Fields.t
-
-    let var v = (v, [])
-
-    let subfield (var, fields) subfields = (var, fields @ subfields)
-
-    let make var fields = (var, fields)
-
-    let pvar pvar = var (Var.of_pvar pvar)
-
-    let ident id = var (Var.of_id id)
-  end
-
-  module Terminal = struct
+  end = struct
     type t = Var.t * Fields.t [@@deriving compare, equal]
 
     let pp fmt (var, fields) = Format.fprintf fmt "%a%a" Var.pp var Fields.pp fields
