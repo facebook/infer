@@ -36,20 +36,10 @@ module VariableIndex : sig
     type t
   end
 
-  module Terminal : sig
-    type t [@@deriving compare, equal]
-
-    val pp : Format.formatter -> t -> unit
-  end
-
   val var : Var.t -> Transient.t
 
   val subfield : Transient.t -> Fields.t -> Transient.t
   (** Sub-field of an index. *)
-
-  val get_var : Terminal.t -> Var.t
-
-  val get_fields : Terminal.t -> Fields.t
 
   val make : Var.t -> Fields.t -> Transient.t
 
@@ -57,7 +47,17 @@ module VariableIndex : sig
 
   val ident : Ident.t -> Transient.t
 
+  module Terminal : sig
+    type t [@@deriving compare, equal]
+
+    val pp : Format.formatter -> t -> unit
+  end
+
   val pp : Format.formatter -> Terminal.t -> unit
+
+  val get_var : Terminal.t -> Var.t
+
+  val get_fields : Terminal.t -> Fields.t
 
   val var_appears_in_source_code : Terminal.t -> bool
 
@@ -85,27 +85,27 @@ end = struct
     type t = Var.t * Fields.t
   end
 
-  module Terminal = struct
-    type t = Var.t * Fields.t [@@deriving compare, equal]
-
-    let pp fmt (var, fields) = Format.fprintf fmt "%a%a" Var.pp var Fields.pp fields
-  end
-
   let var v = (v, [])
 
   let subfield (var, fields) subfields = (var, fields @ subfields)
 
   let make var fields = (var, fields)
 
-  let get_var (v, _) = v
-
-  let get_fields (_, fields) = fields
-
   let pvar pvar = var (Var.of_pvar pvar)
 
   let ident id = var (Var.of_id id)
 
+  module Terminal = struct
+    type t = Var.t * Fields.t [@@deriving compare, equal]
+
+    let pp fmt (var, fields) = Format.fprintf fmt "%a%a" Var.pp var Fields.pp fields
+  end
+
   let pp = Terminal.pp
+
+  let get_var (v, _) = v
+
+  let get_fields (_, fields) = fields
 
   let var_appears_in_source_code (var, _) = Var.appears_in_source_code var
 
