@@ -7,6 +7,12 @@
 
 open! IStd
 
+module Fields : sig
+  type t = Fieldname.t list [@@deriving compare, equal, sexp, yojson_of]
+
+  val pp : t Fmt.t
+end
+
 module Summary : sig
   type t
 
@@ -14,12 +20,12 @@ module Summary : sig
 
   val fold_terminal_fields :
        t
-    -> Var.t * Fieldname.t list
+    -> Var.t * Fields.t
     -> max_width:int
     -> max_depth:int
     -> prevent_cycles:bool
     -> init:'accum
-    -> f:('accum -> Fieldname.t list -> 'accum)
+    -> f:('accum -> Fields.t -> 'accum)
     -> 'accum
   (** Folds over all terminal fields of a variable with fields. A field list is "terminal" if its
       length (that includes the prefixed fields given as parameters) is equal to [max_depth], or no
@@ -34,13 +40,13 @@ module Summary : sig
 
   val fold_terminal_fields_2 :
        t
-    -> Var.t * Fieldname.t list
-    -> Var.t * Fieldname.t list
+    -> Var.t * Fields.t
+    -> Var.t * Fields.t
     -> max_width:int
     -> max_depth:int
     -> prevent_cycles:bool
     -> init:'accum
-    -> f:('accum -> Fieldname.t list -> Fieldname.t list -> 'accum)
+    -> f:('accum -> Fields.t -> Fields.t -> 'accum)
     -> 'accum
   (** Folds over all terminal fields of two same-shape variables with their fields. See
       {!fold_terminal_fields}.

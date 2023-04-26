@@ -19,24 +19,7 @@ module PPNode = struct
   let pp fmt node = pp_id fmt (id node)
 end
 
-module Fields = struct
-  (** A module to help manipulating lists of (nested) fields. *)
-
-  (** We define a type alias to be able use our own json exporting function *)
-  type fieldname = Fieldname.t [@@deriving compare, equal, sexp]
-
-  let yojson_of_fieldname fieldname =
-    (* The ppx-generated [yojson_of] is unnecessarily complex for our purposes (it's a record that
-       involves "class_name", which incidentally seems to always be "_".) *)
-    `String (Fieldname.to_string fieldname)
-
-
-  (* The list is to be understood in "syntactic order": [["a"; "b"]] represents the field part of
-     [X#a#b].*)
-  type t = fieldname list [@@deriving compare, equal, sexp, yojson_of]
-
-  let pp = Fmt.(list ~sep:nop (any "#" ++ Fieldname.pp))
-end
+module Fields = SimpleShape.Fields
 
 module VariableIndex : sig
   (** A [VariableIndex] is a variable and a possibly empty list of subscripted fields. *)
