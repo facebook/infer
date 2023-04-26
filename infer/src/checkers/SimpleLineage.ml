@@ -21,100 +21,98 @@ end
 
 module Fields = SimpleShape.Fields
 
-module VariableIndex = struct
-  (** A [VariableIndex] is a variable or a field of it. *)
+(** Variable Indices designate a variable with a possibly empty list of fields.
 
-  (** Some variable indexes are {!Terminal}, which means that no subfield of them will be considered
-      by the analysis (either because they have none, or that would lead to too deep or too wide
-      field sequences).
+    Some variable indices are {{!TerminalIndex} Terminal}, which means that no subfield of them will
+    be considered by the analysis (either because they have none, or that would lead to too deep or
+    too wide field sequences).
 
-      The lineage graph is built on terminal indices. *)
+    The lineage graph is built on terminal indices. *)
 
-  module Transient : sig
-    (** For indices that are not known to be terminal *)
+module TransientIndex : sig
+  (** Indices built from their in-program occurences. They are not known to be terminal. *)
 
-    (** A [Transient] index is a variable and a possibly empty list of subscripted fields. *)
-    type t = Var.t * Fields.t
+  (** A [Transient] index is a variable and a possibly empty list of subscripted fields. *)
+  type t = Var.t * Fields.t
 
-    val var : Var.t -> t
+  val var : Var.t -> t
 
-    val subfield : t -> Fields.t -> t
-    (** Sub-field of an index. *)
+  val subfield : t -> Fields.t -> t
+  (** Sub-field of an index. *)
 
-    val make : Var.t -> Fields.t -> t
+  val make : Var.t -> Fields.t -> t
 
-    val pvar : Pvar.t -> t
+  val pvar : Pvar.t -> t
 
-    val ident : Ident.t -> t
-  end = struct
-    type t = Var.t * Fields.t
+  val ident : Ident.t -> t
+end = struct
+  type t = Var.t * Fields.t
 
-    let var v = (v, [])
+  let var v = (v, [])
 
-    let subfield (var, fields) subfields = (var, fields @ subfields)
+  let subfield (var, fields) subfields = (var, fields @ subfields)
 
-    let make var fields = (var, fields)
+  let make var fields = (var, fields)
 
-    let pvar pvar = var (Var.of_pvar pvar)
+  let pvar pvar = var (Var.of_pvar pvar)
 
-    let ident id = var (Var.of_id id)
-  end
+  let ident id = var (Var.of_id id)
+end
 
-  module Terminal : sig
-    type t [@@deriving compare, equal]
+module TerminalIndex : sig
+  type t [@@deriving compare, equal]
 
-    val pp : Format.formatter -> t -> unit
+  val pp : Format.formatter -> t -> unit
 
-    val get_var : t -> Var.t
+  val get_var : t -> Var.t
 
-    val get_fields : t -> Fields.t
+  val get_fields : t -> Fields.t
 
-    val var_appears_in_source_code : t -> bool
+  val var_appears_in_source_code : t -> bool
 
-    val fold_terminal :
-      SimpleShape.Summary.t -> Transient.t -> init:'accum -> f:('accum -> t -> 'accum) -> 'accum
-    (** Given an index, fold the [f] function over all the terminal indices that can be obtained as
-        "sub fields" of the index. *)
+  val fold_terminal :
+    SimpleShape.Summary.t -> TransientIndex.t -> init:'accum -> f:('accum -> t -> 'accum) -> 'accum
+  (** Given an index, fold the [f] function over all the terminal indices that can be obtained as
+      "sub fields" of the index. *)
 
-    val fold_terminal_pairs :
-         SimpleShape.Summary.t
-      -> Transient.t
-      -> Transient.t
-      -> init:'accum
-      -> f:('accum -> t -> t -> 'accum)
-      -> 'accum
-    (** Given two indices that must have the same type, fold the [f] function over all the pairs of
-        terminal indices that can be obtained as "sub fields" of the indices. [f] will always be
-        called on corresponding sub-indices: see {!SimpleShape.Summary.fold_terminal_fields_2}. *)
-  end = struct
-    type t = Var.t * Fields.t [@@deriving compare, equal]
+  val fold_terminal_pairs :
+       SimpleShape.Summary.t
+    -> TransientIndex.t
+    -> TransientIndex.t
+    -> init:'accum
+    -> f:('accum -> t -> t -> 'accum)
+    -> 'accum
+  (** Given two indices that must have the same type, fold the [f] function over all the pairs of
+      terminal indices that can be obtained as "sub fields" of the indices. [f] will always be
+      called on corresponding sub-indices: see {!SimpleShape.Summary.fold_terminal_fields_2}. *)
+end = struct
+  type t = Var.t * Fields.t [@@deriving compare, equal]
 
-    let pp fmt (var, fields) = Format.fprintf fmt "%a%a" Var.pp var Fields.pp fields
+  let pp fmt (var, fields) = Format.fprintf fmt "%a%a" Var.pp var Fields.pp fields
 
-    let make var fields = (var, fields)
+  let make var fields = (var, fields)
 
-    let get_var (v, _) = v
+  let get_var (v, _) = v
 
-    let get_fields (_, fields) = fields
+  let get_fields (_, fields) = fields
 
-    let var_appears_in_source_code (var, _) = Var.appears_in_source_code var
+  let var_appears_in_source_code (var, _) = Var.appears_in_source_code var
 
-    let max_depth = Config.simple_lineage_field_depth
+  let max_depth = Config.simple_lineage_field_depth
 
-    let max_width = Option.value ~default:Int.max_value Config.simple_lineage_field_width
+  let max_width = Option.value ~default:Int.max_value Config.simple_lineage_field_width
 
-    let prevent_cycles = Config.simple_lineage_prevent_cycles
+  let prevent_cycles = Config.simple_lineage_prevent_cycles
 
-    let fold_terminal shapes (var, fields) ~init ~f =
-      SimpleShape.Summary.fold_terminal_fields shapes (var, fields) ~max_width ~max_depth
-        ~prevent_cycles ~init ~f:(fun acc fields -> f acc (make var fields))
+  let fold_terminal shapes (var, fields) ~init ~f =
+    SimpleShape.Summary.fold_terminal_fields shapes (var, fields) ~max_width ~max_depth
+      ~prevent_cycles ~init ~f:(fun acc fields -> f acc (make var fields))
 
 
-    let fold_terminal_pairs shapes (var1, fields1) (var2, fields2) ~init ~f =
-      SimpleShape.Summary.fold_terminal_fields_2 shapes (var1, fields1) (var2, fields2) ~max_width
-        ~max_depth ~prevent_cycles ~init ~f:(fun acc fields1 fields2 ->
-          f acc (make var1 fields1) (make var2 fields2) )
-  end
+  let fold_terminal_pairs shapes (var1, fields1) (var2, fields2) ~init ~f =
+    SimpleShape.Summary.fold_terminal_fields_2 shapes (var1, fields1) (var2, fields2) ~max_width
+      ~max_depth ~prevent_cycles ~init ~f:(fun acc fields1 fields2 ->
+        f acc (make var1 fields1) (make var2 fields2) )
 end
 
 module Local = struct
@@ -123,7 +121,7 @@ module Local = struct
       | ConstantAtom of string
       | ConstantInt of string
       | ConstantString of string
-      | VariableIndex of (VariableIndex.Terminal.t[@sexp.opaque])
+      | VariableIndex of (TerminalIndex.t[@sexp.opaque])
     [@@deriving compare, equal, sexp]
   end
 
@@ -139,7 +137,7 @@ module Local = struct
     | ConstantString s ->
         Format.fprintf fmt "S(%s)" s
     | VariableIndex variable ->
-        Format.fprintf fmt "V(%a)" VariableIndex.Terminal.pp variable
+        Format.fprintf fmt "V(%a)" TerminalIndex.pp variable
 
 
   module Set = struct
@@ -534,7 +532,7 @@ module LineageGraph = struct
         | Return ->
             "$ret"
         | Normal (VariableIndex x) ->
-            Format.asprintf "%a" VariableIndex.Terminal.pp x
+            Format.asprintf "%a" TerminalIndex.pp x
         | Normal (ConstantAtom x) | Normal (ConstantInt x) | Normal (ConstantString x) ->
             x
         | Function ->
@@ -547,8 +545,7 @@ module LineageGraph = struct
         | Return ->
             Return
         | Normal (VariableIndex x) ->
-            if VariableIndex.Terminal.var_appears_in_source_code x then UserVariable
-            else TemporaryVariable
+            if TerminalIndex.var_appears_in_source_code x then UserVariable else TemporaryVariable
         | Normal (ConstantAtom _) ->
             ConstantAtom
         | Normal (ConstantInt _) ->
@@ -897,8 +894,8 @@ module Summary = struct
     let is_interesting_data (data : LineageGraph.data) =
       match data with
       | Local (VariableIndex var_idx, _node) ->
-          VariableIndex.Terminal.var_appears_in_source_code var_idx
-          && not (Var.Set.mem (VariableIndex.Terminal.get_var var_idx) special_variables)
+          TerminalIndex.var_appears_in_source_code var_idx
+          && not (Var.Set.mem (TerminalIndex.get_var var_idx) special_variables)
       | Argument _ | Captured _ | Return _ | CapturedBy _ | ArgumentOf _ | ReturnOf _ ->
           true
       | Local (ConstantAtom _, _) | Local (ConstantInt _, _) | Local (ConstantString _, _) ->
@@ -1108,7 +1105,7 @@ module Domain : sig
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
-    -> src:VariableIndex.Transient.t
+    -> src:TransientIndex.t
     -> dst:Dst.t
     -> t
     -> t
@@ -1117,7 +1114,7 @@ module Domain : sig
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
     -> kind_f:(Fields.t -> LineageGraph.flow_kind)
-    -> src:VariableIndex.Transient.t
+    -> src:TransientIndex.t
     -> dst_f:(Fields.t -> Dst.t)
     -> t
     -> t
@@ -1136,7 +1133,7 @@ module Domain : sig
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:Src.t
-    -> dst:VariableIndex.Transient.t
+    -> dst:TransientIndex.t
     -> t
     -> t
 
@@ -1145,7 +1142,7 @@ module Domain : sig
     -> node:PPNode.t
     -> kind_f:(Fields.t -> LineageGraph.flow_kind)
     -> src_f:(Fields.t -> Src.t)
-    -> dst:VariableIndex.Transient.t
+    -> dst:TransientIndex.t
     -> t
     -> t
   (** [add_flow_from_var_index_f] allows recording flow whose kind and source can be different for
@@ -1157,7 +1154,7 @@ module Domain : sig
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:Local.t
-    -> dst:VariableIndex.Transient.t
+    -> dst:TransientIndex.t
     -> t
     -> t
 
@@ -1166,7 +1163,7 @@ module Domain : sig
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:(Local.t, _) Set.t
-    -> dst:VariableIndex.Transient.t
+    -> dst:TransientIndex.t
     -> t
     -> t
 
@@ -1174,26 +1171,26 @@ module Domain : sig
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
-    -> src:VariableIndex.Transient.t
-    -> dst:VariableIndex.Transient.t
+    -> src:TransientIndex.t
+    -> dst:TransientIndex.t
     -> t
     -> t
   (** Add flow from every terminal field of the source variable index to the corresponding terminal
-      field of the destination variable index. See {!VariableIndex.Terminal.fold_terminal_pairs}. *)
+      field of the destination variable index. See {!TerminalIndex.fold_terminal_pairs}. *)
 
   val add_write_product :
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
-    -> src:VariableIndex.Transient.t
-    -> dst:VariableIndex.Transient.t
+    -> src:TransientIndex.t
+    -> dst:TransientIndex.t
     -> t
     -> t
   (** Add flow from every terminal field of the source variable index to every terminal field of the
       destination variable index. *)
 end = struct
   module Real = struct
-    module LastWrites = AbstractDomain.FiniteMultiMap (VariableIndex.Terminal) (PPNode)
+    module LastWrites = AbstractDomain.FiniteMultiMap (TerminalIndex) (PPNode)
     module UnsupportedFeatures = AbstractDomain.BooleanOr
     include AbstractDomain.PairWithBottom (LastWrites) (UnsupportedFeatures)
   end
@@ -1280,16 +1277,16 @@ end = struct
 
 
   let add_flow_from_var_index ~shapes ~node ~kind ~src ~dst astate =
-    VariableIndex.Terminal.fold_terminal
+    TerminalIndex.fold_terminal
       ~f:(fun acc src_term_index ->
         add_flow_from_local ~node ~kind ~src:(VariableIndex src_term_index) ~dst acc )
       ~init:astate shapes src
 
 
   let add_flow_from_var_index_f ~shapes ~node ~kind_f ~src ~dst_f astate =
-    VariableIndex.Terminal.fold_terminal
+    TerminalIndex.fold_terminal
       ~f:(fun acc src_term_index ->
-        let source_fields = VariableIndex.Terminal.get_fields src_term_index in
+        let source_fields = TerminalIndex.get_fields src_term_index in
         add_flow_from_local ~node ~kind:(kind_f source_fields) ~src:(VariableIndex src_term_index)
           ~dst:(dst_f source_fields) acc )
       ~init:astate shapes src
@@ -1315,16 +1312,16 @@ end = struct
 
   (* Update all the terminal fields of an index, as obtained from the shapes information. *)
   let add_write ~shapes ~node ~kind ~src ~dst astate =
-    VariableIndex.Terminal.fold_terminal
+    TerminalIndex.fold_terminal
       ~f:(fun acc_astate dst_terminal ->
         add_terminal_write ~node ~kind ~src ~dst:dst_terminal acc_astate )
       ~init:astate shapes dst
 
 
   let add_write_f ~shapes ~node ~kind_f ~src_f ~dst astate =
-    VariableIndex.Terminal.fold_terminal
+    TerminalIndex.fold_terminal
       ~f:(fun acc_astate dst_terminal ->
-        let dst_fields = VariableIndex.Terminal.get_fields dst_terminal in
+        let dst_fields = TerminalIndex.get_fields dst_terminal in
         add_terminal_write ~node ~kind:(kind_f dst_fields) ~src:(src_f dst_fields) ~dst:dst_terminal
           acc_astate )
       ~init:astate shapes dst
@@ -1332,7 +1329,7 @@ end = struct
 
   (* Update all the terminal fields of an index, as obtained from the shapes information. *)
   let add_write_from_local ~shapes ~node ~kind ~src ~dst astate =
-    VariableIndex.Terminal.fold_terminal
+    TerminalIndex.fold_terminal
       ~f:(fun acc_astate dst_terminal ->
         add_terminal_write_from_local ~node ~kind ~src ~dst:dst_terminal acc_astate )
       ~init:astate shapes dst
@@ -1340,7 +1337,7 @@ end = struct
 
   (* Update all the terminal fields of an index, as obtained from the shapes information. *)
   let add_write_from_local_set ~shapes ~node ~kind ~src ~dst astate =
-    VariableIndex.Terminal.fold_terminal
+    TerminalIndex.fold_terminal
       ~f:(fun acc_astate dst_terminal ->
         add_terminal_write_from_local_set ~node ~kind ~src ~dst:dst_terminal acc_astate )
       ~init:astate shapes dst
@@ -1349,7 +1346,7 @@ end = struct
   (* Update all the terminal fields of an destination index, as obtained from the shapes information,
      as being written in parallel from the corresponding terminal fields of a source index. *)
   let add_write_parallel ~shapes ~node ~kind ~src ~dst astate =
-    VariableIndex.Terminal.fold_terminal_pairs
+    TerminalIndex.fold_terminal_pairs
       ~f:(fun acc_astate src_terminal dst_terminal ->
         add_terminal_write_from_local ~node ~kind ~src:(VariableIndex src_terminal)
           ~dst:dst_terminal acc_astate )
@@ -1357,7 +1354,7 @@ end = struct
 
 
   let add_write_product ~shapes ~node ~kind ~src ~dst astate =
-    VariableIndex.Terminal.fold_terminal
+    TerminalIndex.fold_terminal
       ~f:(fun acc_astate src_terminal ->
         add_write_from_local ~shapes ~node ~kind ~src:(VariableIndex src_terminal) ~dst acc_astate
         )
@@ -1390,12 +1387,12 @@ module TransferFunctions = struct
 
 
   (** If an expression is made of a single variable index, return it *)
-  let exp_as_single_var_index (e : Exp.t) : VariableIndex.Transient.t option =
+  let exp_as_single_var_index (e : Exp.t) : TransientIndex.t option =
     let rec aux fields_acc = function
       | Exp.Lvar pvar ->
-          Some (VariableIndex.Transient.make (Var.of_pvar pvar) fields_acc)
+          Some (TransientIndex.make (Var.of_pvar pvar) fields_acc)
       | Exp.Var id ->
-          Some (VariableIndex.Transient.make (Var.of_id id) fields_acc)
+          Some (TransientIndex.make (Var.of_id id) fields_acc)
       | Exp.Lfield (e, fieldname, _) ->
           aux (fieldname :: fields_acc) e
       | Exp.UnOp (_, _, _)
@@ -1413,17 +1410,16 @@ module TransferFunctions = struct
 
   (** Return the terminal free indices that can be derived from an index *)
   let free_locals_from_index shapes index =
-    VariableIndex.Terminal.fold_terminal shapes index ~f:Local.Set.add_variable_index
-      ~init:Local.Set.empty
+    TerminalIndex.fold_terminal shapes index ~f:Local.Set.add_variable_index ~init:Local.Set.empty
 
 
   (** Return constants and free terminal indices that occur in [e]. *)
   let rec free_locals_of_exp shapes (e : Exp.t) : Local.Set.t =
     match e with
     | Lvar pvar ->
-        free_locals_from_index shapes (VariableIndex.Transient.pvar pvar)
+        free_locals_from_index shapes (TransientIndex.pvar pvar)
     | Var id ->
-        free_locals_from_index shapes (VariableIndex.Transient.ident id)
+        free_locals_from_index shapes (TransientIndex.ident id)
     | Lfield _ -> (
       (* We only allow (sequences of) fields to be "applied" to a single variable, yielding a single index  *)
       match exp_as_single_var_index e with
@@ -1455,7 +1451,7 @@ module TransferFunctions = struct
   let captured_locals_of_exp shapes (e : Exp.t) : Local.Set.t =
     let add locals {Exp.captured_vars} =
       List.fold captured_vars ~init:locals ~f:(fun locals (_exp, pvar, _typ, _mode) ->
-          Local.Set.union locals (free_locals_from_index shapes (VariableIndex.Transient.pvar pvar)) )
+          Local.Set.union locals (free_locals_from_index shapes (TransientIndex.pvar pvar)) )
     in
     Sequence.fold ~init:Local.Set.empty ~f:add (Exp.closures e)
 
@@ -1494,8 +1490,7 @@ module TransferFunctions = struct
           closure astate c
     and closure astate ({name; captured_vars} : Exp.closure) =
       let one_var index astate (_exp, pvar, _typ, _mode) =
-        Domain.add_flow_from_var_index ~shapes ~node ~kind:Direct
-          ~src:(VariableIndex.Transient.pvar pvar)
+        Domain.add_flow_from_var_index ~shapes ~node ~kind:Direct ~src:(TransientIndex.pvar pvar)
           ~dst:(Domain.Dst.captured_by index name)
           astate
       in
@@ -1529,7 +1524,7 @@ module TransferFunctions = struct
       | Some actual_arg_var ->
           (* The concrete argument is a single var: we collect all its terminal fields and have
              them flow onto the corresponding field of the formal parameter. *)
-          let actual_arg_var_index = VariableIndex.Transient.var actual_arg_var in
+          let actual_arg_var_index = TransientIndex.var actual_arg_var in
           Domain.add_flow_from_var_index_f ~shapes ~node:call_node
             ~kind_f:(fun arg_fields -> Call arg_fields)
             ~src:actual_arg_var_index
@@ -1545,8 +1540,7 @@ module TransferFunctions = struct
     Domain.add_write_f ~shapes ~node
       ~kind_f:(fun fields -> Return fields)
       ~src_f:(Fn.const @@ Domain.Src.return_of callee_pname)
-      ~dst:(VariableIndex.Transient.ident ret_id)
-      astate
+      ~dst:(TransientIndex.ident ret_id) astate
 
 
   let add_lambda_edges shapes node write_var_index lambdas astate =
@@ -1583,7 +1577,7 @@ module TransferFunctions = struct
       =
     let add_one_tito_flow ~arg_index ~arg_field ~ret_field astate =
       let arg_expr = List.nth_exn argument_list arg_index in
-      let ret_index = VariableIndex.Transient.make (Var.of_id ret_id) ret_field in
+      let ret_index = TransientIndex.make (Var.of_id ret_id) ret_field in
       match exp_as_single_var_index arg_expr with
       | None ->
           warn_on_complex_arg arg_expr ;
@@ -1592,7 +1586,7 @@ module TransferFunctions = struct
             astate
       | Some arg_index ->
           Domain.add_write_product ~shapes ~node ~kind ~dst:ret_index
-            ~src:(VariableIndex.Transient.subfield arg_index arg_field)
+            ~src:(TransientIndex.subfield arg_index arg_field)
             astate
     in
     Tito.fold tito ~init:astate ~f:add_one_tito_flow
@@ -1637,8 +1631,7 @@ module TransferFunctions = struct
           astate
           |> generic_call_model shapes node analyze_dependency ret_id procname args
           |> Domain.add_write_from_local_set ~shapes ~node ~kind:DynamicCallFunction
-               ~dst:(VariableIndex.Transient.ident ret_id)
-               ~src:(free_locals_of_exp shapes fun_)
+               ~dst:(TransientIndex.ident ret_id) ~src:(free_locals_of_exp shapes fun_)
       | _ ->
           L.die InternalError "Expecting at least one argument for '__erlang_call_unqualified'"
 
@@ -1649,10 +1642,9 @@ module TransferFunctions = struct
           astate
           |> generic_call_model shapes node analyze_dependency ret_id procname args
           |> Domain.add_write_from_local_set ~shapes ~node ~kind:DynamicCallFunction
-               ~dst:(VariableIndex.Transient.ident ret_id)
-               ~src:(free_locals_of_exp shapes fun_)
+               ~dst:(TransientIndex.ident ret_id) ~src:(free_locals_of_exp shapes fun_)
           |> Domain.add_write_from_local_set ~shapes ~node ~kind:DynamicCallModule
-               ~dst:(VariableIndex.Transient.ident ret_id)
+               ~dst:(TransientIndex.ident ret_id)
                ~src:(free_locals_of_exp shapes module_)
       | _ ->
           L.die InternalError "Expecting at least two arguments for '__erlang_call_qualified'"
@@ -1667,8 +1659,7 @@ module TransferFunctions = struct
             L.die InternalError "Expecting first argument of 'make_atom' to be its name"
       in
       Domain.add_write_from_local ~shapes ~node ~kind:LineageGraph.FlowKind.Direct
-        ~dst:(VariableIndex.Transient.ident ret_id)
-        ~src:(ConstantAtom atom_name) astate
+        ~dst:(TransientIndex.ident ret_id) ~src:(ConstantAtom atom_name) astate
 
 
     let make_tuple shapes node _analyze_dependency ret_id _procname (args : Exp.t list) astate =
@@ -1676,7 +1667,7 @@ module TransferFunctions = struct
       let tuple_type = ErlangTypeName.Tuple size in
       let field_names = ErlangTypeName.tuple_field_names size in
       let fieldname name = Fieldname.make (ErlangType tuple_type) name in
-      let ret_field name = VariableIndex.Transient.make (Var.of_id ret_id) [fieldname name] in
+      let ret_field name = TransientIndex.make (Var.of_id ret_id) [fieldname name] in
       List.fold2_exn
         ~f:(fun astate field_name arg ->
           exec_assignment shapes node (ret_field field_name) arg astate )
@@ -1730,9 +1721,9 @@ module TransferFunctions = struct
     match instr with
     | Load {id; e; _} ->
         if Ident.is_none id then astate
-        else exec_assignment shapes node (VariableIndex.Transient.ident id) e astate
+        else exec_assignment shapes node (TransientIndex.ident id) e astate
     | Store {e1= Lvar lhs; e2; _} ->
-        exec_assignment shapes node (VariableIndex.Transient.pvar lhs) e2 astate
+        exec_assignment shapes node (TransientIndex.pvar lhs) e2 astate
     | Store _ ->
         L.debug Analysis Verbose
           "SimpleLineage: The only lhs I can handle (now) for Store is Lvar@\n" ;
@@ -1766,13 +1757,12 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
     let start_node = CFG.start_node cfg in
     let add_arg_flow i astate arg_var =
       TransferFunctions.Domain.add_write_f ~shapes ~node:start_node
-        ~kind_f:LineageGraph.FlowKind.from_formal_arg
-        ~dst:(VariableIndex.Transient.var arg_var)
+        ~kind_f:LineageGraph.FlowKind.from_formal_arg ~dst:(TransientIndex.var arg_var)
         ~src_f:(Domain.Src.argument i) astate
     in
     let add_cap_flow i astate var =
       TransferFunctions.Domain.add_write ~shapes ~node:start_node ~kind:Direct
-        ~dst:(VariableIndex.Transient.var var) ~src:(Domain.Src.captured i) astate
+        ~dst:(TransientIndex.var var) ~src:(Domain.Src.captured i) astate
     in
     let astate = Domain.bottom in
     let astate = List.foldi ~init:astate ~f:add_arg_flow formals in
@@ -1782,7 +1772,7 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
   (* Analyse the procedure to get the invmap *)
   let invmap = Analyzer.exec_pdesc analysis_data ~initial:initial_astate proc_desc in
   let exit_node = CFG.exit_node cfg in
-  let ret_var_index = VariableIndex.Transient.pvar (Procdesc.get_ret_var proc_desc) in
+  let ret_var_index = TransientIndex.pvar (Procdesc.get_ret_var proc_desc) in
   (* Add Return edges *)
   let exit_astate =
     match Analyzer.InvariantMap.find_opt (PPNode.id exit_node) invmap with
@@ -1809,8 +1799,8 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
   in
   (* Collect the return fields to finish the summary *)
   let ret_fields =
-    VariableIndex.Terminal.fold_terminal shapes ret_var_index ~init:[] ~f:(fun acc idx ->
-        VariableIndex.Terminal.get_fields idx :: acc )
+    TerminalIndex.fold_terminal shapes ret_var_index ~init:[] ~f:(fun acc idx ->
+        TerminalIndex.get_fields idx :: acc )
   in
   let exit_has_unsupported_features = Domain.has_unsupported_features exit_astate in
   let summary = Summary.make exit_has_unsupported_features proc_desc graph ret_fields in
