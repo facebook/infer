@@ -876,6 +876,7 @@ let until_terminator env {Env.label_name; ssa_parameters; pruned} code instructi
       let env, next_label = Env.label env in
       let env, other_label = Env.label env in
       (* Compute the relevant pruning expressions *)
+      let env = Env.register_builtin env "is_true" in
       let condT = PyCommon.mk_is_true cond in
       let env, id = Env.temp env in
       let instr = T.Instr.Let {id; exp= condT; loc= last_loc} in

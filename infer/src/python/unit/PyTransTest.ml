@@ -16,8 +16,19 @@ let run_test source =
   Py.finalize () ;
   (* Since Textual doesn't have a concept of toplevel code, we create a function for this code,
      with a non-denotable name, so we don't clash with existing python code *)
-  let res = PyTrans.to_module ~sourcefile (PyCommon.global "$toplevel$") code in
-  F.printf "%a" Textual.Module.pp res
+  let module_ = PyTrans.to_module ~sourcefile (PyCommon.global "$toplevel$") code in
+  let res = TextualTypeVerification.type_check module_ in
+  match (res : TextualTypeVerification.type_check_result) with
+  | Ok ->
+      F.printf "%a" Textual.Module.pp module_
+  | Type_errors errors ->
+      let pp_error = TextualTypeVerification.pp_error sourcefile in
+      F.printf "Errors while type checking the test:\n" ;
+      List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err)
+  | Decl_errors errors ->
+      let pp_error = TextualDecls.pp_error sourcefile in
+      F.printf "Errors while creating the decls:\n" ;
+      List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err)
 
 
 let%test_module "basic_tests" =
@@ -305,6 +316,8 @@ def f(x, y):
 
         declare $builtins.python_code(*String) : *PyCode
 
+        declare $builtins.is_true(*PyObject) : int
+
         declare $builtins.python_tuple(...) : *PyObject
 
         declare $builtins.python_string(*String) : *PyString
@@ -375,6 +388,8 @@ def f(x, y):
         }
 
         declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.is_true(*PyObject) : int
 
         declare $builtins.python_tuple(...) : *PyObject
 
@@ -484,6 +499,8 @@ def f(x, y):
 
         declare $builtins.python_code(*String) : *PyCode
 
+        declare $builtins.is_true(*PyObject) : int
+
         declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
 
         declare $builtins.python_tuple(...) : *PyObject
@@ -546,6 +563,8 @@ def f(x):
       declare $builtins.python_code(*String) : *PyCode
 
       declare $builtins.python_call(...) : *PyObject
+
+      declare $builtins.is_true(*PyObject) : int
 
       declare $builtins.python_tuple(...) : *PyObject
 
