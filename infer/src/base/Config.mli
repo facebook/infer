@@ -118,6 +118,8 @@ val wrappers_dir : string
 
 val annotation_reachability_cxx : Yojson.Basic.t
 
+val run_as_child : int option
+
 val annotation_reachability_cxx_sources : Yojson.Basic.t
 
 val annotation_reachability_custom_pairs : Yojson.Basic.t
@@ -374,6 +376,8 @@ val filtering : bool
 val force_delete_results_dir : bool
 
 val force_integration : build_system option
+
+val fork_mode : bool
 
 val from_json_report : string
 

@@ -9,8 +9,11 @@ open! IStd
 module L = Logging
 
 let protect ~f x =
-  Epilogues.reset () ;
-  L.reset_formatters () ;
+  (* Some steps must be done only in 'fork' mode. In fork-exec mode, the process just went through
+     Infer's initialization phase, and those steps need not be redone. *)
+  if Option.is_none Config.run_as_child then (
+    Epilogues.reset () ;
+    L.reset_formatters () ) ;
   Database.new_database_connection () ;
   (* get different streams of random numbers in each fork, in particular to lessen contention in
      `Filename.mk_temp` *)

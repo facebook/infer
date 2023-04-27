@@ -1517,7 +1517,7 @@ let get_qualifiers pname =
       QualifiedCppName.empty
 
 
-let to_filename pname =
+let to_short_unique_name pname =
   (* filenames for clang procs are REVERSED qualifiers with '#' as separator *)
   let pp_rev_qualified fmt pname =
     let rev_qualifiers = get_qualifiers pname |> QualifiedCppName.to_rev_list in
@@ -1535,8 +1535,10 @@ let to_filename pname =
     | _ ->
         F.asprintf "%a" pp_unique_id pname
   in
-  DB.append_crc_cutoff proc_id |> fst
+  DB.append_crc_cutoff proc_id
 
+
+let to_filename pname = to_short_unique_name pname |> Escape.escape_filename
 
 module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
   type nonrec t = t

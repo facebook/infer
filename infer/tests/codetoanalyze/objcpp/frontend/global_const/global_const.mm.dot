@@ -1,64 +1,64 @@
 /* @generated */
 digraph cfg {
-"__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_1" [label="1: Start __infer_globals_initializer___someFields\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"__infer_globals_initializer___som.794b83eea8b5794c_1" [label="1: Start __infer_globals_initializer___someFields\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_1" -> "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_3" ;
-"__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_2" [label="2: Exit __infer_globals_initializer___someFields \n  " color=yellow style=filled]
+	 "__infer_globals_initializer___som.794b83eea8b5794c_1" -> "__infer_globals_initializer___som.794b83eea8b5794c_3" ;
+"__infer_globals_initializer___som.794b83eea8b5794c_2" [label="2: Exit __infer_globals_initializer___someFields \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields:Fields const ); [line 14, column 1]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field1:float=1 [line 14, column 36]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field2:float=2 [line 14, column 36]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field3:float=3 [line 14, column 36]\n " shape="box"]
+"__infer_globals_initializer___som.794b83eea8b5794c_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields:Fields const ); [line 14, column 1]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field1:float=1 [line 14, column 36]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field2:float=2 [line 14, column 36]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field3:float=3 [line 14, column 36]\n " shape="box"]
 	
 
-	 "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_3" -> "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_2" ;
-"fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_1" [label="1: Start fields\nFormals:  __return_param:Fields*\nLocals:  \n  " color=yellow style=filled]
+	 "__infer_globals_initializer___som.794b83eea8b5794c_3" -> "__infer_globals_initializer___som.794b83eea8b5794c_2" ;
+"fields(class Fields)#303762988678.ade89225d198ce50_1" [label="1: Start fields\nFormals:  __return_param:Fields*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_1" -> "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_3" ;
-"fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_2" [label="2: Exit fields \n  " color=yellow style=filled]
+	 "fields(class Fields)#303762988678.ade89225d198ce50_1" -> "fields(class Fields)#303762988678.ade89225d198ce50_3" ;
+"fields(class Fields)#303762988678.ade89225d198ce50_2" [label="2: Exit fields \n  " color=yellow style=filled]
 	
 
-"fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_3" [label="3:  Return Stmt \n   n$0=*&__return_param:Fields* [line 20, column 19]\n " shape="box"]
+"fields(class Fields)#303762988678.ade89225d198ce50_3" [label="3:  Return Stmt \n   n$0=*&__return_param:Fields* [line 20, column 19]\n " shape="box"]
 	
 
-	 "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_3" -> "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_4" ;
-"fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_4" [label="4:  Return Stmt \n   n$1=_fun_Fields::Fields(n$0:Fields*,&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields:Fields const &) [line 20, column 26]\n " shape="box"]
+	 "fields(class Fields)#303762988678.ade89225d198ce50_3" -> "fields(class Fields)#303762988678.ade89225d198ce50_4" ;
+"fields(class Fields)#303762988678.ade89225d198ce50_4" [label="4:  Return Stmt \n   n$1=_fun_Fields::Fields(n$0:Fields*,&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields:Fields const &) [line 20, column 26]\n " shape="box"]
 	
 
-	 "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_4" -> "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_5" ;
-"fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_5" [label="5:  Return Stmt \n  " shape="box"]
+	 "fields(class Fields)#303762988678.ade89225d198ce50_4" -> "fields(class Fields)#303762988678.ade89225d198ce50_5" ;
+"fields(class Fields)#303762988678.ade89225d198ce50_5" [label="5:  Return Stmt \n  " shape="box"]
 	
 
-	 "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_5" -> "fields(class Fields)#3037629886785813687.ade89225d198ce505301d5cdffda48f1_2" ;
-"Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_1" [label="1: Start Fields::Fields\nFormals:  this:Fields* __param_0:Fields const &\nLocals:  \n  " color=yellow style=filled]
+	 "fields(class Fields)#303762988678.ade89225d198ce50_5" -> "fields(class Fields)#303762988678.ade89225d198ce50_2" ;
+"Fields#Fields#{168902558046857490.9c3a33926ef53994_1" [label="1: Start Fields::Fields\nFormals:  this:Fields* __param_0:Fields const &\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_1" -> "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_7" ;
-"Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_2" [label="2: Exit Fields::Fields \n  " color=yellow style=filled]
+	 "Fields#Fields#{168902558046857490.9c3a33926ef53994_1" -> "Fields#Fields#{168902558046857490.9c3a33926ef53994_7" ;
+"Fields#Fields#{168902558046857490.9c3a33926ef53994_2" [label="2: Exit Fields::Fields \n  " color=yellow style=filled]
 	
 
-"Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_3" [label="3:  Constructor Init \n   n$1=*&this:Fields* [line 8, column 9]\n " shape="box"]
+"Fields#Fields#{168902558046857490.9c3a33926ef53994_3" [label="3:  Constructor Init \n   n$1=*&this:Fields* [line 8, column 9]\n " shape="box"]
 	
 
-	 "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_3" -> "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_4" ;
-"Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_4" [label="4:  Constructor Init \n   n$2=*&__param_0:Fields const & [line 8, column 9]\n  n$3=*n$2.field3:float [line 8, column 9]\n  *n$1.field3:float=n$3 [line 8, column 9]\n " shape="box"]
+	 "Fields#Fields#{168902558046857490.9c3a33926ef53994_3" -> "Fields#Fields#{168902558046857490.9c3a33926ef53994_4" ;
+"Fields#Fields#{168902558046857490.9c3a33926ef53994_4" [label="4:  Constructor Init \n   n$2=*&__param_0:Fields const & [line 8, column 9]\n  n$3=*n$2.field3:float [line 8, column 9]\n  *n$1.field3:float=n$3 [line 8, column 9]\n " shape="box"]
 	
 
-	 "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_4" -> "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_2" ;
-"Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_5" [label="5:  Constructor Init \n   n$4=*&this:Fields* [line 8, column 9]\n " shape="box"]
+	 "Fields#Fields#{168902558046857490.9c3a33926ef53994_4" -> "Fields#Fields#{168902558046857490.9c3a33926ef53994_2" ;
+"Fields#Fields#{168902558046857490.9c3a33926ef53994_5" [label="5:  Constructor Init \n   n$4=*&this:Fields* [line 8, column 9]\n " shape="box"]
 	
 
-	 "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_5" -> "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_6" ;
-"Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_6" [label="6:  Constructor Init \n   n$5=*&__param_0:Fields const & [line 8, column 9]\n  n$6=*n$5.field2:float [line 8, column 9]\n  *n$4.field2:float=n$6 [line 8, column 9]\n " shape="box"]
+	 "Fields#Fields#{168902558046857490.9c3a33926ef53994_5" -> "Fields#Fields#{168902558046857490.9c3a33926ef53994_6" ;
+"Fields#Fields#{168902558046857490.9c3a33926ef53994_6" [label="6:  Constructor Init \n   n$5=*&__param_0:Fields const & [line 8, column 9]\n  n$6=*n$5.field2:float [line 8, column 9]\n  *n$4.field2:float=n$6 [line 8, column 9]\n " shape="box"]
 	
 
-	 "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_6" -> "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_3" ;
-"Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_7" [label="7:  Constructor Init \n   n$7=*&this:Fields* [line 8, column 9]\n " shape="box"]
+	 "Fields#Fields#{168902558046857490.9c3a33926ef53994_6" -> "Fields#Fields#{168902558046857490.9c3a33926ef53994_3" ;
+"Fields#Fields#{168902558046857490.9c3a33926ef53994_7" [label="7:  Constructor Init \n   n$7=*&this:Fields* [line 8, column 9]\n " shape="box"]
 	
 
-	 "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_7" -> "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_8" ;
-"Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_8" [label="8:  Constructor Init \n   n$8=*&__param_0:Fields const & [line 8, column 9]\n  n$9=*n$8.field1:float [line 8, column 9]\n  *n$7.field1:float=n$9 [line 8, column 9]\n " shape="box"]
+	 "Fields#Fields#{168902558046857490.9c3a33926ef53994_7" -> "Fields#Fields#{168902558046857490.9c3a33926ef53994_8" ;
+"Fields#Fields#{168902558046857490.9c3a33926ef53994_8" [label="8:  Constructor Init \n   n$8=*&__param_0:Fields const & [line 8, column 9]\n  n$9=*n$8.field1:float [line 8, column 9]\n  *n$7.field1:float=n$9 [line 8, column 9]\n " shape="box"]
 	
 
-	 "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_8" -> "Fields#Fields#{16890255804685749094}.9c3a33926ef5399434544ef4ba31d3b0_5" ;
+	 "Fields#Fields#{168902558046857490.9c3a33926ef53994_8" -> "Fields#Fields#{168902558046857490.9c3a33926ef53994_5" ;
 }

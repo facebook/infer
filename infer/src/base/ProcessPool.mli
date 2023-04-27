@@ -72,3 +72,8 @@ val create :
 val run : (_, 'final, 'result) t -> 'final option Array.t
 (** use the processes in the given process pool to run all the given tasks in parallel and return
     the results of the epilogues *)
+
+val run_as_child : unit -> never_returns
+(** run a child that has been started by [create_process], on platforms where [fork] is not
+    available. The child will take care of executing the proper code. Once it has started, it
+    receives order from the parent through [stdin], and send status updates through [stdout]. *)

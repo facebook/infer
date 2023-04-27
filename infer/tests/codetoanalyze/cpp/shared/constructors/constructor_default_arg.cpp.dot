@@ -1,48 +1,48 @@
 /* @generated */
 digraph cfg {
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" [label="1: Start test\nFormals: \nLocals:  x3:X x2:X x1:X \n  " color=yellow style=filled]
+"test#18241244337164948030.afc14f193ad97442_1" [label="1: Start test\nFormals: \nLocals:  x3:X x2:X x1:X \n  " color=yellow style=filled]
 	
 
-	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_1" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" [label="2: Exit test \n  " color=yellow style=filled]
+	 "test#18241244337164948030.afc14f193ad97442_1" -> "test#18241244337164948030.afc14f193ad97442_5" ;
+"test#18241244337164948030.afc14f193ad97442_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x3:X); [line 21, column 3]\n  n$0=_fun_X::X(&x3:X*,0:int,1:int) [line 21, column 5]\n " shape="box"]
+"test#18241244337164948030.afc14f193ad97442_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x3:X); [line 21, column 3]\n  n$0=_fun_X::X(&x3:X*,0:int,1:int) [line 21, column 5]\n " shape="box"]
 	
 
-	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_2" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x2:X); [line 20, column 3]\n  n$1=_fun_X::X(&x2:X*,1:int,0:int) [line 20, column 5]\n " shape="box"]
+	 "test#18241244337164948030.afc14f193ad97442_3" -> "test#18241244337164948030.afc14f193ad97442_2" ;
+"test#18241244337164948030.afc14f193ad97442_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x2:X); [line 20, column 3]\n  n$1=_fun_X::X(&x2:X*,1:int,0:int) [line 20, column 5]\n " shape="box"]
 	
 
-	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_3" ;
-"test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x1:X); [line 19, column 3]\n  n$2=_fun_X::X(&x1:X*,0:int,0:int) [line 19, column 5]\n " shape="box"]
+	 "test#18241244337164948030.afc14f193ad97442_4" -> "test#18241244337164948030.afc14f193ad97442_3" ;
+"test#18241244337164948030.afc14f193ad97442_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x1:X); [line 19, column 3]\n  n$2=_fun_X::X(&x1:X*,0:int,0:int) [line 19, column 5]\n " shape="box"]
 	
 
-	 "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_5" -> "test#18241244337164948030.afc14f193ad97442f67ac7183be789bc_4" ;
-"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_1" [label="1: Start X::div\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
+	 "test#18241244337164948030.afc14f193ad97442_5" -> "test#18241244337164948030.afc14f193ad97442_4" ;
+"div#X#(18085298371773708552).78228fdd912ebeeb_1" [label="1: Start X::div\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_1" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" ;
-"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" [label="2: Exit X::div \n  " color=yellow style=filled]
+	 "div#X#(18085298371773708552).78228fdd912ebeeb_1" -> "div#X#(18085298371773708552).78228fdd912ebeeb_3" ;
+"div#X#(18085298371773708552).78228fdd912ebeeb_2" [label="2: Exit X::div \n  " color=yellow style=filled]
 	
 
-"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 13, column 26]\n  n$1=*n$0.f:int [line 13, column 26]\n " shape="box"]
+"div#X#(18085298371773708552).78228fdd912ebeeb_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 13, column 26]\n  n$1=*n$0.f:int [line 13, column 26]\n " shape="box"]
 	
 
-	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_3" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_4" ;
-"div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 13, column 15]\n " shape="box"]
+	 "div#X#(18085298371773708552).78228fdd912ebeeb_3" -> "div#X#(18085298371773708552).78228fdd912ebeeb_4" ;
+"div#X#(18085298371773708552).78228fdd912ebeeb_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 13, column 15]\n " shape="box"]
 	
 
-	 "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_4" -> "div#X#(18085298371773708552).78228fdd912ebeeb718ac23bdc727c87_2" ;
-"X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_1" [label="1: Start X::X\nFormals:  this:X* a:int b:int\nLocals:  \n  " color=yellow style=filled]
+	 "div#X#(18085298371773708552).78228fdd912ebeeb_4" -> "div#X#(18085298371773708552).78228fdd912ebeeb_2" ;
+"X#X#{14428669737419226111}.bcdced57ebd07811_1" [label="1: Start X::X\nFormals:  this:X* a:int b:int\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_1" -> "X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_3" ;
-"X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_2" [label="2: Exit X::X \n  " color=yellow style=filled]
+	 "X#X#{14428669737419226111}.bcdced57ebd07811_1" -> "X#X#{14428669737419226111}.bcdced57ebd07811_3" ;
+"X#X#{14428669737419226111}.bcdced57ebd07811_2" [label="2: Exit X::X \n  " color=yellow style=filled]
 	
 
-"X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:X* [line 16, column 22]\n  n$1=*&a:int [line 16, column 26]\n  n$2=*&b:int [line 16, column 30]\n  *n$0.f:int=(n$1 + n$2) [line 16, column 22]\n " shape="box"]
+"X#X#{14428669737419226111}.bcdced57ebd07811_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:X* [line 16, column 22]\n  n$1=*&a:int [line 16, column 26]\n  n$2=*&b:int [line 16, column 30]\n  *n$0.f:int=(n$1 + n$2) [line 16, column 22]\n " shape="box"]
 	
 
-	 "X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_3" -> "X#X#{14428669737419226111}.bcdced57ebd07811007dd9555b8e9fc0_2" ;
+	 "X#X#{14428669737419226111}.bcdced57ebd07811_3" -> "X#X#{14428669737419226111}.bcdced57ebd07811_2" ;
 }

@@ -1,57 +1,57 @@
 /* @generated */
 digraph cfg {
-"objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_1" [label="1: Start objc_block_B.f_1\nFormals: \nLocals: \nCaptured:  [by value]&self:B* const  \n  " color=yellow style=filled]
+"objc_block_B.f_1(class B).1cc45e153af22dd4_1" [label="1: Start objc_block_B.f_1\nFormals: \nLocals: \nCaptured:  [by value]&self:B* const  \n  " color=yellow style=filled]
 	
 
-	 "objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_1" -> "objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_3" ;
-"objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_2" [label="2: Exit objc_block_B.f_1 \n  " color=yellow style=filled]
+	 "objc_block_B.f_1(class B).1cc45e153af22dd4_1" -> "objc_block_B.f_1(class B).1cc45e153af22dd4_3" ;
+"objc_block_B.f_1(class B).1cc45e153af22dd4_2" [label="2: Exit objc_block_B.f_1 \n  " color=yellow style=filled]
 	
 
-"objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&self:B* [line 25, column 9]\n  *n$3.x:int=5 [line 25, column 9]\n " shape="box"]
+"objc_block_B.f_1(class B).1cc45e153af22dd4_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&self:B* [line 25, column 9]\n  *n$3.x:int=5 [line 25, column 9]\n " shape="box"]
 	
 
-	 "objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_3" -> "objc_block_B.f_1(class B).1cc45e153af22dd40a6736b22392bfbc_2" ;
-"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_1" [label="1: Start B.dealloc\nFormals:  self:B*\nLocals:  \n  " color=yellow style=filled]
+	 "objc_block_B.f_1(class B).1cc45e153af22dd4_3" -> "objc_block_B.f_1(class B).1cc45e153af22dd4_2" ;
+"dealloc#B#[instance].62d516b6d74de70c_1" [label="1: Start B.dealloc\nFormals:  self:B*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_1" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" ;
-"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_2" [label="2: Exit B.dealloc \n  " color=yellow style=filled]
+	 "dealloc#B#[instance].62d516b6d74de70c_1" -> "dealloc#B#[instance].62d516b6d74de70c_4" ;
+"dealloc#B#[instance].62d516b6d74de70c_2" [label="2: Exit B.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#B#[instance].62d516b6d74de70c_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_3" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_2" ;
-"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" [label="4:  Call dealloc \n   n$0=*&self:B* [line 20, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:B*) [line 20, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:B*,(n$1 - 1):unsigned int) [line 20, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:B*) [line 20, column 1]\n " shape="box"]
+	 "dealloc#B#[instance].62d516b6d74de70c_3" -> "dealloc#B#[instance].62d516b6d74de70c_2" ;
+"dealloc#B#[instance].62d516b6d74de70c_4" [label="4:  Call dealloc \n   n$0=*&self:B* [line 20, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:B*) [line 20, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:B*,(n$1 - 1):unsigned int) [line 20, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:B*) [line 20, column 1]\n " shape="box"]
 	
 
-	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" ;
-	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_4" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" ;
-"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 20, column 1]\n " shape="invhouse"]
+	 "dealloc#B#[instance].62d516b6d74de70c_4" -> "dealloc#B#[instance].62d516b6d74de70c_5" ;
+	 "dealloc#B#[instance].62d516b6d74de70c_4" -> "dealloc#B#[instance].62d516b6d74de70c_6" ;
+"dealloc#B#[instance].62d516b6d74de70c_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 20, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_5" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_3" ;
-"dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 20, column 1]\n " shape="invhouse"]
+	 "dealloc#B#[instance].62d516b6d74de70c_5" -> "dealloc#B#[instance].62d516b6d74de70c_3" ;
+"dealloc#B#[instance].62d516b6d74de70c_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 20, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_6" -> "dealloc#B#[instance].62d516b6d74de70c89763cc0b77e5655_2" ;
-"f#B#[instance].7d89f0db14025fe61cd8db3755387380_1" [label="1: Start B.f\nFormals:  self:B*\nLocals:  \n  " color=yellow style=filled]
+	 "dealloc#B#[instance].62d516b6d74de70c_6" -> "dealloc#B#[instance].62d516b6d74de70c_2" ;
+"f#B#[instance].7d89f0db14025fe6_1" [label="1: Start B.f\nFormals:  self:B*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "f#B#[instance].7d89f0db14025fe61cd8db3755387380_1" -> "f#B#[instance].7d89f0db14025fe61cd8db3755387380_5" ;
-"f#B#[instance].7d89f0db14025fe61cd8db3755387380_2" [label="2: Exit B.f \n  " color=yellow style=filled]
+	 "f#B#[instance].7d89f0db14025fe6_1" -> "f#B#[instance].7d89f0db14025fe6_5" ;
+"f#B#[instance].7d89f0db14025fe6_2" [label="2: Exit B.f \n  " color=yellow style=filled]
 	
 
-"f#B#[instance].7d89f0db14025fe61cd8db3755387380_3" [label="3:  Return Stmt \n   n$0=*&self:B* [line 27, column 10]\n  n$1=*n$0.y:int [line 27, column 10]\n " shape="box"]
+"f#B#[instance].7d89f0db14025fe6_3" [label="3:  Return Stmt \n   n$0=*&self:B* [line 27, column 10]\n  n$1=*n$0.y:int [line 27, column 10]\n " shape="box"]
 	
 
-	 "f#B#[instance].7d89f0db14025fe61cd8db3755387380_3" -> "f#B#[instance].7d89f0db14025fe61cd8db3755387380_4" ;
-"f#B#[instance].7d89f0db14025fe61cd8db3755387380_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 27, column 3]\n " shape="box"]
+	 "f#B#[instance].7d89f0db14025fe6_3" -> "f#B#[instance].7d89f0db14025fe6_4" ;
+"f#B#[instance].7d89f0db14025fe6_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 27, column 3]\n " shape="box"]
 	
 
-	 "f#B#[instance].7d89f0db14025fe61cd8db3755387380_4" -> "f#B#[instance].7d89f0db14025fe61cd8db3755387380_2" ;
-"f#B#[instance].7d89f0db14025fe61cd8db3755387380_5" [label="5:  Compound statement \n   n$4=*&self:B* [line 23, column 10]\n  n$5=*n$4.h:int [line 23, column 10]\n  n$2=*&self:B* const  [line 24, column 11]\n  n$6=_fun_B.foo:and:(n$5:int,(_fun_objc_block_B.f_1,([by value]n$2 &self:B* const )):_fn_(*)) [line 23, column 3]\n " shape="box"]
+	 "f#B#[instance].7d89f0db14025fe6_4" -> "f#B#[instance].7d89f0db14025fe6_2" ;
+"f#B#[instance].7d89f0db14025fe6_5" [label="5:  Compound statement \n   n$4=*&self:B* [line 23, column 10]\n  n$5=*n$4.h:int [line 23, column 10]\n  n$2=*&self:B* const  [line 24, column 11]\n  n$6=_fun_B.foo:and:(n$5:int,(_fun_objc_block_B.f_1,([by value]n$2 &self:B* const )):_fn_(*)) [line 23, column 3]\n " shape="box"]
 	
 
-	 "f#B#[instance].7d89f0db14025fe61cd8db3755387380_5" -> "f#B#[instance].7d89f0db14025fe61cd8db3755387380_3" ;
+	 "f#B#[instance].7d89f0db14025fe6_5" -> "f#B#[instance].7d89f0db14025fe6_3" ;
 }

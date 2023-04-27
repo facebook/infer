@@ -1,175 +1,175 @@
 /* @generated */
 digraph cfg {
-"test.098f6bcd4621d373cade4e832627b4f6_1" [label="1: Start test\nFormals:  a2:PropertyA*\nLocals:  a:PropertyA* \n  " color=yellow style=filled]
+"test.098f6bcd4621d373_1" [label="1: Start test\nFormals:  a2:PropertyA*\nLocals:  a:PropertyA* \n  " color=yellow style=filled]
 	
 
-	 "test.098f6bcd4621d373cade4e832627b4f6_1" -> "test.098f6bcd4621d373cade4e832627b4f6_6" ;
-"test.098f6bcd4621d373cade4e832627b4f6_2" [label="2: Exit test \n  " color=yellow style=filled]
+	 "test.098f6bcd4621d373_1" -> "test.098f6bcd4621d373_6" ;
+"test.098f6bcd4621d373_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  Return Stmt \n   *&return:int=0 [line 44, column 3]\n " shape="box"]
+"test.098f6bcd4621d373_3" [label="3:  Return Stmt \n   *&return:int=0 [line 44, column 3]\n " shape="box"]
 	
 
-	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;
-"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  Message Call: release \n   n$0=*&a:PropertyA* [line 43, column 4]\n  n$1=_fun_NSObject.release(n$0:PropertyA*) virtual [line 43, column 3]\n " shape="box"]
+	 "test.098f6bcd4621d373_3" -> "test.098f6bcd4621d373_2" ;
+"test.098f6bcd4621d373_4" [label="4:  Message Call: release \n   n$0=*&a:PropertyA* [line 43, column 4]\n  n$1=_fun_NSObject.release(n$0:PropertyA*) virtual [line 43, column 3]\n " shape="box"]
 	
 
-	 "test.098f6bcd4621d373cade4e832627b4f6_4" -> "test.098f6bcd4621d373cade4e832627b4f6_3" ;
-"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  Message Call: setLast_name: \n   n$3=*&a:PropertyA* [line 42, column 3]\n  n$2=*&a2:PropertyA* [line 42, column 17]\n  n$4=_fun_PropertyA.setLast_name:(n$3:PropertyA*,n$2:PropertyA*) [line 42, column 5]\n " shape="box"]
+	 "test.098f6bcd4621d373_4" -> "test.098f6bcd4621d373_3" ;
+"test.098f6bcd4621d373_5" [label="5:  Message Call: setLast_name: \n   n$3=*&a:PropertyA* [line 42, column 3]\n  n$2=*&a2:PropertyA* [line 42, column 17]\n  n$4=_fun_PropertyA.setLast_name:(n$3:PropertyA*,n$2:PropertyA*) [line 42, column 5]\n " shape="box"]
 	
 
-	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_4" ;
-"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:PropertyA*); [line 41, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 41, column 19]\n  n$6=_fun_PropertyA.init(n$5:PropertyA*) virtual [line 41, column 18]\n  *&a:PropertyA*=n$6 [line 41, column 3]\n " shape="box"]
+	 "test.098f6bcd4621d373_5" -> "test.098f6bcd4621d373_4" ;
+"test.098f6bcd4621d373_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(a:PropertyA*); [line 41, column 3]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 41, column 19]\n  n$6=_fun_PropertyA.init(n$5:PropertyA*) virtual [line 41, column 18]\n  *&a:PropertyA*=n$6 [line 41, column 3]\n " shape="box"]
 	
 
-	 "test.098f6bcd4621d373cade4e832627b4f6_6" -> "test.098f6bcd4621d373cade4e832627b4f6_5" ;
-"child#PropertyA#[instance].ddbb6d6fd671f9f36f7d4b05dde5e9f3_1" [label="1: Start PropertyA.child\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
+	 "test.098f6bcd4621d373_6" -> "test.098f6bcd4621d373_5" ;
+"child#PropertyA#[instance].ddbb6d6fd671f9f3_1" [label="1: Start PropertyA.child\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "child#PropertyA#[instance].ddbb6d6fd671f9f36f7d4b05dde5e9f3_1" -> "child#PropertyA#[instance].ddbb6d6fd671f9f36f7d4b05dde5e9f3_3" ;
-"child#PropertyA#[instance].ddbb6d6fd671f9f36f7d4b05dde5e9f3_2" [label="2: Exit PropertyA.child \n  " color=yellow style=filled]
+	 "child#PropertyA#[instance].ddbb6d6fd671f9f3_1" -> "child#PropertyA#[instance].ddbb6d6fd671f9f3_3" ;
+"child#PropertyA#[instance].ddbb6d6fd671f9f3_2" [label="2: Exit PropertyA.child \n  " color=yellow style=filled]
 	
 
-"child#PropertyA#[instance].ddbb6d6fd671f9f36f7d4b05dde5e9f3_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 12, column 39]\n  n$1=*n$0._child:PropertyA* [line 12, column 39]\n  *&return:PropertyA*=n$1 [line 12, column 39]\n " shape="box"]
+"child#PropertyA#[instance].ddbb6d6fd671f9f3_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 12, column 39]\n  n$1=*n$0._child:PropertyA* [line 12, column 39]\n  *&return:PropertyA*=n$1 [line 12, column 39]\n " shape="box"]
 	
 
-	 "child#PropertyA#[instance].ddbb6d6fd671f9f36f7d4b05dde5e9f3_3" -> "child#PropertyA#[instance].ddbb6d6fd671f9f36f7d4b05dde5e9f3_2" ;
-"copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_1" [label="1: Start PropertyA.copy\nFormals:  self:PropertyA*\nLocals:  other:PropertyA* \n  " color=yellow style=filled]
+	 "child#PropertyA#[instance].ddbb6d6fd671f9f3_3" -> "child#PropertyA#[instance].ddbb6d6fd671f9f3_2" ;
+"copy#PropertyA#[instance].069a3c4354a28603_1" [label="1: Start PropertyA.copy\nFormals:  self:PropertyA*\nLocals:  other:PropertyA* \n  " color=yellow style=filled]
 	
 
-	 "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_1" -> "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_11" ;
-"copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_2" [label="2: Exit PropertyA.copy \n  " color=yellow style=filled]
+	 "copy#PropertyA#[instance].069a3c4354a28603_1" -> "copy#PropertyA#[instance].069a3c4354a28603_11" ;
+"copy#PropertyA#[instance].069a3c4354a28603_2" [label="2: Exit PropertyA.copy \n  " color=yellow style=filled]
 	
 
-"copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_3" [label="3:  Return Stmt \n   n$1=*&other:PropertyA* [line 35, column 10]\n " shape="box"]
+"copy#PropertyA#[instance].069a3c4354a28603_3" [label="3:  Return Stmt \n   n$1=*&other:PropertyA* [line 35, column 10]\n " shape="box"]
 	
 
-	 "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_3" -> "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_4" ;
-"copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_4" [label="4:  Return Stmt \n   *&return:PropertyA*=n$1 [line 35, column 3]\n " shape="box"]
+	 "copy#PropertyA#[instance].069a3c4354a28603_3" -> "copy#PropertyA#[instance].069a3c4354a28603_4" ;
+"copy#PropertyA#[instance].069a3c4354a28603_4" [label="4:  Return Stmt \n   *&return:PropertyA*=n$1 [line 35, column 3]\n " shape="box"]
 	
 
-	 "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_4" -> "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_2" ;
-"copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_5" [label="5: + \n   END_BRANCHES\n " ]
+	 "copy#PropertyA#[instance].069a3c4354a28603_4" -> "copy#PropertyA#[instance].069a3c4354a28603_2" ;
+"copy#PropertyA#[instance].069a3c4354a28603_5" [label="5: + \n   END_BRANCHES\n " ]
 	
 
-	 "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_5" -> "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_3" ;
-"copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_6" [label="6: Prune (true branch, if (terminated)) \n   n$2=*&other:PropertyA* [line 30, column 7]\n  PRUNE(n$2, true); [line 30, column 7]\n " shape="invhouse"]
+	 "copy#PropertyA#[instance].069a3c4354a28603_5" -> "copy#PropertyA#[instance].069a3c4354a28603_3" ;
+"copy#PropertyA#[instance].069a3c4354a28603_6" [label="6: Prune (true branch, if (terminated)) \n   n$2=*&other:PropertyA* [line 30, column 7]\n  PRUNE(n$2, true); [line 30, column 7]\n " shape="invhouse"]
 	
 
-	 "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_6" -> "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_10" ;
-"copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_7" [label="7: Prune (false branch, if (terminated)) \n   n$2=*&other:PropertyA* [line 30, column 7]\n  PRUNE(!n$2, false); [line 30, column 7]\n " shape="invhouse"]
+	 "copy#PropertyA#[instance].069a3c4354a28603_6" -> "copy#PropertyA#[instance].069a3c4354a28603_10" ;
+"copy#PropertyA#[instance].069a3c4354a28603_7" [label="7: Prune (false branch, if (terminated)) \n   n$2=*&other:PropertyA* [line 30, column 7]\n  PRUNE(!n$2, false); [line 30, column 7]\n " shape="invhouse"]
 	
 
-	 "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_7" -> "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_5" ;
-"copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_8" [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&other:PropertyA* [line 33, column 5]\n  n$4=*&self:PropertyA* [line 33, column 21]\n  n$5=*n$4._child:PropertyA* [line 33, column 21]\n  *n$3._child:PropertyA*=n$5 [line 33, column 5]\n " shape="box"]
+	 "copy#PropertyA#[instance].069a3c4354a28603_7" -> "copy#PropertyA#[instance].069a3c4354a28603_5" ;
+"copy#PropertyA#[instance].069a3c4354a28603_8" [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&other:PropertyA* [line 33, column 5]\n  n$4=*&self:PropertyA* [line 33, column 21]\n  n$5=*n$4._child:PropertyA* [line 33, column 21]\n  *n$3._child:PropertyA*=n$5 [line 33, column 5]\n " shape="box"]
 	
 
-	 "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_8" -> "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_5" ;
-"copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_9" [label="9:  BinaryOperatorStmt: Assign \n   n$6=*&other:PropertyA* [line 32, column 5]\n  n$7=*&self:PropertyA* [line 32, column 25]\n  n$8=*n$7._last_name:PropertyA* [line 32, column 25]\n  *n$6._last_name:PropertyA*=n$8 [line 32, column 5]\n " shape="box"]
+	 "copy#PropertyA#[instance].069a3c4354a28603_8" -> "copy#PropertyA#[instance].069a3c4354a28603_5" ;
+"copy#PropertyA#[instance].069a3c4354a28603_9" [label="9:  BinaryOperatorStmt: Assign \n   n$6=*&other:PropertyA* [line 32, column 5]\n  n$7=*&self:PropertyA* [line 32, column 25]\n  n$8=*n$7._last_name:PropertyA* [line 32, column 25]\n  *n$6._last_name:PropertyA*=n$8 [line 32, column 5]\n " shape="box"]
 	
 
-	 "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_9" -> "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_8" ;
-"copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_10" [label="10:  BinaryOperatorStmt: Assign \n   n$9=*&other:PropertyA* [line 31, column 5]\n  n$10=*&self:PropertyA* [line 31, column 20]\n  n$11=*n$10._name:PropertyA* [line 31, column 20]\n  *n$9._name:PropertyA*=n$11 [line 31, column 5]\n " shape="box"]
+	 "copy#PropertyA#[instance].069a3c4354a28603_9" -> "copy#PropertyA#[instance].069a3c4354a28603_8" ;
+"copy#PropertyA#[instance].069a3c4354a28603_10" [label="10:  BinaryOperatorStmt: Assign \n   n$9=*&other:PropertyA* [line 31, column 5]\n  n$10=*&self:PropertyA* [line 31, column 20]\n  n$11=*n$10._name:PropertyA* [line 31, column 20]\n  *n$9._name:PropertyA*=n$11 [line 31, column 5]\n " shape="box"]
 	
 
-	 "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_10" -> "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_9" ;
-"copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(other:PropertyA*); [line 29, column 3]\n  n$14=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 29, column 23]\n  n$15=_fun_PropertyA.init(n$14:PropertyA*) virtual [line 29, column 22]\n  *&other:PropertyA*=n$15 [line 29, column 3]\n " shape="box"]
+	 "copy#PropertyA#[instance].069a3c4354a28603_10" -> "copy#PropertyA#[instance].069a3c4354a28603_9" ;
+"copy#PropertyA#[instance].069a3c4354a28603_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(other:PropertyA*); [line 29, column 3]\n  n$14=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 29, column 23]\n  n$15=_fun_PropertyA.init(n$14:PropertyA*) virtual [line 29, column 22]\n  *&other:PropertyA*=n$15 [line 29, column 3]\n " shape="box"]
 	
 
-	 "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_11" -> "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_6" ;
-	 "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_11" -> "copy#PropertyA#[instance].069a3c4354a28603963b304cafced5ef_7" ;
-"dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_1" [label="1: Start PropertyA.dealloc\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
+	 "copy#PropertyA#[instance].069a3c4354a28603_11" -> "copy#PropertyA#[instance].069a3c4354a28603_6" ;
+	 "copy#PropertyA#[instance].069a3c4354a28603_11" -> "copy#PropertyA#[instance].069a3c4354a28603_7" ;
+"dealloc#PropertyA#[instance].a406af22c8aadb53_1" [label="1: Start PropertyA.dealloc\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_1" -> "dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_4" ;
-"dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_2" [label="2: Exit PropertyA.dealloc \n  " color=yellow style=filled]
+	 "dealloc#PropertyA#[instance].a406af22c8aadb53_1" -> "dealloc#PropertyA#[instance].a406af22c8aadb53_4" ;
+"dealloc#PropertyA#[instance].a406af22c8aadb53_2" [label="2: Exit PropertyA.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_3" [label="3:  Call dealloc \n   n$0=*&self:PropertyA* [line 38, column 1]\n  n$1=*n$0._last_name:PropertyA* [line 38, column 1]\n  n$2=_fun_PropertyA.dealloc(n$1:PropertyA*) [line 38, column 1]\n  n$3=*&self:PropertyA* [line 38, column 1]\n  n$4=*n$3._name:PropertyA* [line 38, column 1]\n  n$5=_fun_PropertyA.dealloc(n$4:PropertyA*) [line 38, column 1]\n  n$6=*&self:PropertyA* [line 38, column 1]\n  n$7=*n$6._child:PropertyA* [line 38, column 1]\n  n$8=_fun_PropertyA.dealloc(n$7:PropertyA*) [line 38, column 1]\n " shape="box"]
+"dealloc#PropertyA#[instance].a406af22c8aadb53_3" [label="3:  Call dealloc \n   n$0=*&self:PropertyA* [line 38, column 1]\n  n$1=*n$0._last_name:PropertyA* [line 38, column 1]\n  n$2=_fun_PropertyA.dealloc(n$1:PropertyA*) [line 38, column 1]\n  n$3=*&self:PropertyA* [line 38, column 1]\n  n$4=*n$3._name:PropertyA* [line 38, column 1]\n  n$5=_fun_PropertyA.dealloc(n$4:PropertyA*) [line 38, column 1]\n  n$6=*&self:PropertyA* [line 38, column 1]\n  n$7=*n$6._child:PropertyA* [line 38, column 1]\n  n$8=_fun_PropertyA.dealloc(n$7:PropertyA*) [line 38, column 1]\n " shape="box"]
 	
 
-	 "dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_3" -> "dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_2" ;
-"dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_4" [label="4:  Call dealloc \n   n$9=*&self:PropertyA* [line 22, column 1]\n  n$10=_fun___objc_get_ref_count(n$9:PropertyA*) [line 22, column 1]\n  n$11=_fun___objc_set_ref_count(n$9:PropertyA*,(n$10 - 1):unsigned int) [line 22, column 1]\n  n$12=_fun___objc_get_ref_count(n$9:PropertyA*) [line 22, column 1]\n " shape="box"]
+	 "dealloc#PropertyA#[instance].a406af22c8aadb53_3" -> "dealloc#PropertyA#[instance].a406af22c8aadb53_2" ;
+"dealloc#PropertyA#[instance].a406af22c8aadb53_4" [label="4:  Call dealloc \n   n$9=*&self:PropertyA* [line 22, column 1]\n  n$10=_fun___objc_get_ref_count(n$9:PropertyA*) [line 22, column 1]\n  n$11=_fun___objc_set_ref_count(n$9:PropertyA*,(n$10 - 1):unsigned int) [line 22, column 1]\n  n$12=_fun___objc_get_ref_count(n$9:PropertyA*) [line 22, column 1]\n " shape="box"]
 	
 
-	 "dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_4" -> "dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_5" ;
-	 "dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_4" -> "dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_6" ;
-"dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$12 == 0), true); [line 22, column 1]\n " shape="invhouse"]
+	 "dealloc#PropertyA#[instance].a406af22c8aadb53_4" -> "dealloc#PropertyA#[instance].a406af22c8aadb53_5" ;
+	 "dealloc#PropertyA#[instance].a406af22c8aadb53_4" -> "dealloc#PropertyA#[instance].a406af22c8aadb53_6" ;
+"dealloc#PropertyA#[instance].a406af22c8aadb53_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$12 == 0), true); [line 22, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_5" -> "dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_3" ;
-"dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$12 != 0), false); [line 22, column 1]\n " shape="invhouse"]
+	 "dealloc#PropertyA#[instance].a406af22c8aadb53_5" -> "dealloc#PropertyA#[instance].a406af22c8aadb53_3" ;
+"dealloc#PropertyA#[instance].a406af22c8aadb53_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$12 != 0), false); [line 22, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_6" -> "dealloc#PropertyA#[instance].a406af22c8aadb53359203ff38ba5ab2_2" ;
-"init#PropertyA#[instance].f6d33a23a7d0df107d9777e155fa199f_1" [label="1: Start PropertyA.init\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
+	 "dealloc#PropertyA#[instance].a406af22c8aadb53_6" -> "dealloc#PropertyA#[instance].a406af22c8aadb53_2" ;
+"init#PropertyA#[instance].f6d33a23a7d0df10_1" [label="1: Start PropertyA.init\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "init#PropertyA#[instance].f6d33a23a7d0df107d9777e155fa199f_1" -> "init#PropertyA#[instance].f6d33a23a7d0df107d9777e155fa199f_3" ;
-"init#PropertyA#[instance].f6d33a23a7d0df107d9777e155fa199f_2" [label="2: Exit PropertyA.init \n  " color=yellow style=filled]
+	 "init#PropertyA#[instance].f6d33a23a7d0df10_1" -> "init#PropertyA#[instance].f6d33a23a7d0df10_3" ;
+"init#PropertyA#[instance].f6d33a23a7d0df10_2" [label="2: Exit PropertyA.init \n  " color=yellow style=filled]
 	
 
-"init#PropertyA#[instance].f6d33a23a7d0df107d9777e155fa199f_3" [label="3:  Return Stmt \n   n$0=*&self:PropertyA* [line 25, column 10]\n " shape="box"]
+"init#PropertyA#[instance].f6d33a23a7d0df10_3" [label="3:  Return Stmt \n   n$0=*&self:PropertyA* [line 25, column 10]\n " shape="box"]
 	
 
-	 "init#PropertyA#[instance].f6d33a23a7d0df107d9777e155fa199f_3" -> "init#PropertyA#[instance].f6d33a23a7d0df107d9777e155fa199f_4" ;
-"init#PropertyA#[instance].f6d33a23a7d0df107d9777e155fa199f_4" [label="4:  Return Stmt \n   *&return:objc_object*=n$0 [line 25, column 3]\n " shape="box"]
+	 "init#PropertyA#[instance].f6d33a23a7d0df10_3" -> "init#PropertyA#[instance].f6d33a23a7d0df10_4" ;
+"init#PropertyA#[instance].f6d33a23a7d0df10_4" [label="4:  Return Stmt \n   *&return:objc_object*=n$0 [line 25, column 3]\n " shape="box"]
 	
 
-	 "init#PropertyA#[instance].f6d33a23a7d0df107d9777e155fa199f_4" -> "init#PropertyA#[instance].f6d33a23a7d0df107d9777e155fa199f_2" ;
-"last_name#PropertyA#[instance].a7135f930883ad7af1966d63366d8b3c_1" [label="1: Start PropertyA.last_name\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
+	 "init#PropertyA#[instance].f6d33a23a7d0df10_4" -> "init#PropertyA#[instance].f6d33a23a7d0df10_2" ;
+"last_name#PropertyA#[instance].a7135f930883ad7a_1" [label="1: Start PropertyA.last_name\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "last_name#PropertyA#[instance].a7135f930883ad7af1966d63366d8b3c_1" -> "last_name#PropertyA#[instance].a7135f930883ad7af1966d63366d8b3c_3" ;
-"last_name#PropertyA#[instance].a7135f930883ad7af1966d63366d8b3c_2" [label="2: Exit PropertyA.last_name \n  " color=yellow style=filled]
+	 "last_name#PropertyA#[instance].a7135f930883ad7a_1" -> "last_name#PropertyA#[instance].a7135f930883ad7a_3" ;
+"last_name#PropertyA#[instance].a7135f930883ad7a_2" [label="2: Exit PropertyA.last_name \n  " color=yellow style=filled]
 	
 
-"last_name#PropertyA#[instance].a7135f930883ad7af1966d63366d8b3c_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 16, column 52]\n  n$1=*n$0._last_name:PropertyA* [line 16, column 52]\n  *&return:PropertyA*=n$1 [line 16, column 52]\n " shape="box"]
+"last_name#PropertyA#[instance].a7135f930883ad7a_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 16, column 52]\n  n$1=*n$0._last_name:PropertyA* [line 16, column 52]\n  *&return:PropertyA*=n$1 [line 16, column 52]\n " shape="box"]
 	
 
-	 "last_name#PropertyA#[instance].a7135f930883ad7af1966d63366d8b3c_3" -> "last_name#PropertyA#[instance].a7135f930883ad7af1966d63366d8b3c_2" ;
-"name#PropertyA#[instance].001ac67fa2321888abdf724f7e2c3db5_1" [label="1: Start PropertyA.name\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
+	 "last_name#PropertyA#[instance].a7135f930883ad7a_3" -> "last_name#PropertyA#[instance].a7135f930883ad7a_2" ;
+"name#PropertyA#[instance].001ac67fa2321888_1" [label="1: Start PropertyA.name\nFormals:  self:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "name#PropertyA#[instance].001ac67fa2321888abdf724f7e2c3db5_1" -> "name#PropertyA#[instance].001ac67fa2321888abdf724f7e2c3db5_3" ;
-"name#PropertyA#[instance].001ac67fa2321888abdf724f7e2c3db5_2" [label="2: Exit PropertyA.name \n  " color=yellow style=filled]
+	 "name#PropertyA#[instance].001ac67fa2321888_1" -> "name#PropertyA#[instance].001ac67fa2321888_3" ;
+"name#PropertyA#[instance].001ac67fa2321888_2" [label="2: Exit PropertyA.name \n  " color=yellow style=filled]
 	
 
-"name#PropertyA#[instance].001ac67fa2321888abdf724f7e2c3db5_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 14, column 41]\n  n$1=*n$0._name:PropertyA* [line 14, column 41]\n  *&return:PropertyA*=n$1 [line 14, column 41]\n " shape="box"]
+"name#PropertyA#[instance].001ac67fa2321888_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 14, column 41]\n  n$1=*n$0._name:PropertyA* [line 14, column 41]\n  *&return:PropertyA*=n$1 [line 14, column 41]\n " shape="box"]
 	
 
-	 "name#PropertyA#[instance].001ac67fa2321888abdf724f7e2c3db5_3" -> "name#PropertyA#[instance].001ac67fa2321888abdf724f7e2c3db5_2" ;
-"setChild:#PropertyA(class PropertyA)#[instance].d0716bfbd35a49befc545a543952e6a1_1" [label="1: Start PropertyA.setChild:\nFormals:  self:PropertyA* child:PropertyA*\nLocals:  \n  " color=yellow style=filled]
+	 "name#PropertyA#[instance].001ac67fa2321888_3" -> "name#PropertyA#[instance].001ac67fa2321888_2" ;
+"setChild:#PropertyA(class Propert.d0716bfbd35a49be_1" [label="1: Start PropertyA.setChild:\nFormals:  self:PropertyA* child:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "setChild:#PropertyA(class PropertyA)#[instance].d0716bfbd35a49befc545a543952e6a1_1" -> "setChild:#PropertyA(class PropertyA)#[instance].d0716bfbd35a49befc545a543952e6a1_3" ;
-"setChild:#PropertyA(class PropertyA)#[instance].d0716bfbd35a49befc545a543952e6a1_2" [label="2: Exit PropertyA.setChild: \n  " color=yellow style=filled]
+	 "setChild:#PropertyA(class Propert.d0716bfbd35a49be_1" -> "setChild:#PropertyA(class Propert.d0716bfbd35a49be_3" ;
+"setChild:#PropertyA(class Propert.d0716bfbd35a49be_2" [label="2: Exit PropertyA.setChild: \n  " color=yellow style=filled]
 	
 
-"setChild:#PropertyA(class PropertyA)#[instance].d0716bfbd35a49befc545a543952e6a1_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 12, column 39]\n  n$1=*&child:PropertyA* [line 12, column 39]\n  *n$0._child:PropertyA*=n$1 [line 12, column 39]\n " shape="box"]
+"setChild:#PropertyA(class Propert.d0716bfbd35a49be_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 12, column 39]\n  n$1=*&child:PropertyA* [line 12, column 39]\n  *n$0._child:PropertyA*=n$1 [line 12, column 39]\n " shape="box"]
 	
 
-	 "setChild:#PropertyA(class PropertyA)#[instance].d0716bfbd35a49befc545a543952e6a1_3" -> "setChild:#PropertyA(class PropertyA)#[instance].d0716bfbd35a49befc545a543952e6a1_2" ;
-"setLast_name:#PropertyA(class PropertyA)#[instance].402d582c602c51e4a31f1797726605cc_1" [label="1: Start PropertyA.setLast_name:\nFormals:  self:PropertyA* last_name:PropertyA*\nLocals:  \n  " color=yellow style=filled]
+	 "setChild:#PropertyA(class Propert.d0716bfbd35a49be_3" -> "setChild:#PropertyA(class Propert.d0716bfbd35a49be_2" ;
+"setLast_name:#PropertyA(class Pro.402d582c602c51e4_1" [label="1: Start PropertyA.setLast_name:\nFormals:  self:PropertyA* last_name:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "setLast_name:#PropertyA(class PropertyA)#[instance].402d582c602c51e4a31f1797726605cc_1" -> "setLast_name:#PropertyA(class PropertyA)#[instance].402d582c602c51e4a31f1797726605cc_3" ;
-"setLast_name:#PropertyA(class PropertyA)#[instance].402d582c602c51e4a31f1797726605cc_2" [label="2: Exit PropertyA.setLast_name: \n  " color=yellow style=filled]
+	 "setLast_name:#PropertyA(class Pro.402d582c602c51e4_1" -> "setLast_name:#PropertyA(class Pro.402d582c602c51e4_3" ;
+"setLast_name:#PropertyA(class Pro.402d582c602c51e4_2" [label="2: Exit PropertyA.setLast_name: \n  " color=yellow style=filled]
 	
 
-"setLast_name:#PropertyA(class PropertyA)#[instance].402d582c602c51e4a31f1797726605cc_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 16, column 52]\n  n$1=*&last_name:PropertyA* [line 16, column 52]\n  *n$0._last_name:PropertyA*=n$1 [line 16, column 52]\n " shape="box"]
+"setLast_name:#PropertyA(class Pro.402d582c602c51e4_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 16, column 52]\n  n$1=*&last_name:PropertyA* [line 16, column 52]\n  *n$0._last_name:PropertyA*=n$1 [line 16, column 52]\n " shape="box"]
 	
 
-	 "setLast_name:#PropertyA(class PropertyA)#[instance].402d582c602c51e4a31f1797726605cc_3" -> "setLast_name:#PropertyA(class PropertyA)#[instance].402d582c602c51e4a31f1797726605cc_2" ;
-"setName:#PropertyA(class PropertyA)#[instance].32cd32d963bb2f6ed6ec216c8671941f_1" [label="1: Start PropertyA.setName:\nFormals:  self:PropertyA* name:PropertyA*\nLocals:  \n  " color=yellow style=filled]
+	 "setLast_name:#PropertyA(class Pro.402d582c602c51e4_3" -> "setLast_name:#PropertyA(class Pro.402d582c602c51e4_2" ;
+"setName:#PropertyA(class Property.32cd32d963bb2f6e_1" [label="1: Start PropertyA.setName:\nFormals:  self:PropertyA* name:PropertyA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "setName:#PropertyA(class PropertyA)#[instance].32cd32d963bb2f6ed6ec216c8671941f_1" -> "setName:#PropertyA(class PropertyA)#[instance].32cd32d963bb2f6ed6ec216c8671941f_3" ;
-"setName:#PropertyA(class PropertyA)#[instance].32cd32d963bb2f6ed6ec216c8671941f_2" [label="2: Exit PropertyA.setName: \n  " color=yellow style=filled]
+	 "setName:#PropertyA(class Property.32cd32d963bb2f6e_1" -> "setName:#PropertyA(class Property.32cd32d963bb2f6e_3" ;
+"setName:#PropertyA(class Property.32cd32d963bb2f6e_2" [label="2: Exit PropertyA.setName: \n  " color=yellow style=filled]
 	
 
-"setName:#PropertyA(class PropertyA)#[instance].32cd32d963bb2f6ed6ec216c8671941f_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 14, column 41]\n  n$1=*&name:PropertyA* [line 14, column 41]\n  *n$0._name:PropertyA*=n$1 [line 14, column 41]\n " shape="box"]
+"setName:#PropertyA(class Property.32cd32d963bb2f6e_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:PropertyA* [line 14, column 41]\n  n$1=*&name:PropertyA* [line 14, column 41]\n  *n$0._name:PropertyA*=n$1 [line 14, column 41]\n " shape="box"]
 	
 
-	 "setName:#PropertyA(class PropertyA)#[instance].32cd32d963bb2f6ed6ec216c8671941f_3" -> "setName:#PropertyA(class PropertyA)#[instance].32cd32d963bb2f6ed6ec216c8671941f_2" ;
+	 "setName:#PropertyA(class Property.32cd32d963bb2f6e_3" -> "setName:#PropertyA(class Property.32cd32d963bb2f6e_2" ;
 }

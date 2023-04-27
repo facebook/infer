@@ -1633,6 +1633,13 @@ and force_integration =
        |> String.concat ~sep:", " ) )
 
 
+and fork_mode =
+  CLOpt.mk_bool ~long:"fork-mode"
+    ~default:(not (Stdlib.( = ) Version.build_platform Version.Windows))
+    "Use 'fork' system call to spawn sub-processes. If not set, use the equivalent of 'fork/exec' \
+     -- which  is usually slower, but is available on all OSes."
+
+
 and from_json_report =
   CLOpt.mk_path_opt ~long:"from-json-report"
     ~in_help:InferCommand.[(Report, manual_generic)]
@@ -2753,6 +2760,12 @@ and results_dir =
     ~meta:"dir" "Write results and internal files in the specified directory"
 
 
+and run_as_child =
+  CLOpt.mk_int_opt ~in_help:[] ~long:"run-as-child"
+    "Enable child mode. The integer argument is the identity of the child. This is an internal \
+     option."
+
+
 and sarif =
   CLOpt.mk_bool ~long:"sarif" ~default:false
     ~in_help:InferCommand.[(Run, manual_generic)]
@@ -3743,6 +3756,8 @@ and force_delete_results_dir = !force_delete_results_dir
 
 and force_integration = !force_integration
 
+and fork_mode = !fork_mode
+
 and from_json_report =
   Option.value !from_json_report
     ~default:(ResultsDirEntryName.get_path ~results_dir:!results_dir ReportJson)
@@ -4169,6 +4184,8 @@ and report_suppress_errors = RevList.to_list !report_suppress_errors
 and reports_include_ml_loc = !reports_include_ml_loc
 
 and results_dir = !results_dir
+
+and run_as_child = !run_as_child
 
 and sarif = !sarif
 

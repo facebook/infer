@@ -1,77 +1,77 @@
 /* @generated */
 digraph cfg {
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_1" [label="1: Start __infer_globals_initializer_global\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"__infer_globals_initializer_globa.bdc08c089842ce08_1" [label="1: Start __infer_globals_initializer_global\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_1" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" ;
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
+	 "__infer_globals_initializer_globa.bdc08c089842ce08_1" -> "__infer_globals_initializer_globa.bdc08c089842ce08_3" ;
+"__infer_globals_initializer_globa.bdc08c089842ce08_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const ); [line 11, column 1]\n  n$0=_fun_X::X(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const *) [line 11, column 9]\n " shape="box"]
+"__infer_globals_initializer_globa.bdc08c089842ce08_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const ); [line 11, column 1]\n  n$0=_fun_X::X(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const *) [line 11, column 9]\n " shape="box"]
 	
 
-	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
-"__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_1" [label="1: Start __infer_globals_initializer_v\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "__infer_globals_initializer_globa.bdc08c089842ce08_3" -> "__infer_globals_initializer_globa.bdc08c089842ce08_2" ;
+"__infer_globals_initializer_v#708.588095fa475e4a9e_1" [label="1: Start __infer_globals_initializer_v\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_1" -> "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_3" ;
-"__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_2" [label="2: Exit __infer_globals_initializer_v \n  " color=yellow style=filled]
+	 "__infer_globals_initializer_v#708.588095fa475e4a9e_1" -> "__infer_globals_initializer_v#708.588095fa475e4a9e_3" ;
+"__infer_globals_initializer_v#708.588095fa475e4a9e_2" [label="2: Exit __infer_globals_initializer_v \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int const ); [line 15, column 1]\n  *&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int=2 [line 15, column 1]\n " shape="box"]
+"__infer_globals_initializer_v#708.588095fa475e4a9e_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int const ); [line 15, column 1]\n  *&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int=2 [line 15, column 1]\n " shape="box"]
 	
 
-	 "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_3" -> "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_2" ;
-"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_1" [label="1: Start test\nFormals:  __return_param:X*\nLocals:  \n  " color=yellow style=filled]
+	 "__infer_globals_initializer_v#708.588095fa475e4a9e_3" -> "__infer_globals_initializer_v#708.588095fa475e4a9e_2" ;
+"test(class X)#1824124433716494803.76ba1cf61f22b6e7_1" [label="1: Start test\nFormals:  __return_param:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_1" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" ;
-"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_2" [label="2: Exit test \n  " color=yellow style=filled]
+	 "test(class X)#1824124433716494803.76ba1cf61f22b6e7_1" -> "test(class X)#1824124433716494803.76ba1cf61f22b6e7_3" ;
+"test(class X)#1824124433716494803.76ba1cf61f22b6e7_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 13, column 12]\n " shape="box"]
+"test(class X)#1824124433716494803.76ba1cf61f22b6e7_3" [label="3:  Return Stmt \n   n$0=*&__return_param:X* [line 13, column 12]\n " shape="box"]
 	
 
-	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_3" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_4" ;
-"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_4" [label="4:  Return Stmt \n   n$1=_fun_X::X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) [line 13, column 19]\n " shape="box"]
+	 "test(class X)#1824124433716494803.76ba1cf61f22b6e7_3" -> "test(class X)#1824124433716494803.76ba1cf61f22b6e7_4" ;
+"test(class X)#1824124433716494803.76ba1cf61f22b6e7_4" [label="4:  Return Stmt \n   n$1=_fun_X::X(n$0:X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:X const &) [line 13, column 19]\n " shape="box"]
 	
 
-	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_4" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_5" ;
-"test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_5" [label="5:  Return Stmt \n  " shape="box"]
+	 "test(class X)#1824124433716494803.76ba1cf61f22b6e7_4" -> "test(class X)#1824124433716494803.76ba1cf61f22b6e7_5" ;
+"test(class X)#1824124433716494803.76ba1cf61f22b6e7_5" [label="5:  Return Stmt \n  " shape="box"]
 	
 
-	 "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_5" -> "test(class X)#18241244337164948030.76ba1cf61f22b6e7f39fb9940d283ba3_2" ;
-"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_1" [label="1: Start test2\nFormals: \nLocals:  local:int \n  " color=yellow style=filled]
+	 "test(class X)#1824124433716494803.76ba1cf61f22b6e7_5" -> "test(class X)#1824124433716494803.76ba1cf61f22b6e7_2" ;
+"test2#3587805488049044947.69e45cfdc4e36a6f_1" [label="1: Start test2\nFormals: \nLocals:  local:int \n  " color=yellow style=filled]
 	
 
-	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_1" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_5" ;
-"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_2" [label="2: Exit test2 \n  " color=yellow style=filled]
+	 "test2#3587805488049044947.69e45cfdc4e36a6f_1" -> "test2#3587805488049044947.69e45cfdc4e36a6f_5" ;
+"test2#3587805488049044947.69e45cfdc4e36a6f_2" [label="2: Exit test2 \n  " color=yellow style=filled]
 	
 
-"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 19, column 10]\n " shape="box"]
+"test2#3587805488049044947.69e45cfdc4e36a6f_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 19, column 10]\n " shape="box"]
 	
 
-	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" ;
-"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 19, column 3]\n " shape="box"]
+	 "test2#3587805488049044947.69e45cfdc4e36a6f_3" -> "test2#3587805488049044947.69e45cfdc4e36a6f_4" ;
+"test2#3587805488049044947.69e45cfdc4e36a6f_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 19, column 3]\n " shape="box"]
 	
 
-	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_4" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_2" ;
-"test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(local:int); [line 18, column 3]\n  n$1=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 18, column 15]\n  *&local:int=n$1 [line 18, column 3]\n " shape="box"]
+	 "test2#3587805488049044947.69e45cfdc4e36a6f_4" -> "test2#3587805488049044947.69e45cfdc4e36a6f_2" ;
+"test2#3587805488049044947.69e45cfdc4e36a6f_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(local:int); [line 18, column 3]\n  n$1=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|ice>$v:int [line 18, column 15]\n  *&local:int=n$1 [line 18, column 3]\n " shape="box"]
 	
 
-	 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_5" -> "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_3" ;
-"X#X#{5585564522356237825}.f0691bf51109589e6407e972842a942a_1" [label="1: Start X::X\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
+	 "test2#3587805488049044947.69e45cfdc4e36a6f_5" -> "test2#3587805488049044947.69e45cfdc4e36a6f_3" ;
+"X#X#{5585564522356237825}.f0691bf51109589e_1" [label="1: Start X::X\nFormals:  this:X*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "X#X#{5585564522356237825}.f0691bf51109589e6407e972842a942a_1" -> "X#X#{5585564522356237825}.f0691bf51109589e6407e972842a942a_2" ;
-"X#X#{5585564522356237825}.f0691bf51109589e6407e972842a942a_2" [label="2: Exit X::X \n  " color=yellow style=filled]
+	 "X#X#{5585564522356237825}.f0691bf51109589e_1" -> "X#X#{5585564522356237825}.f0691bf51109589e_2" ;
+"X#X#{5585564522356237825}.f0691bf51109589e_2" [label="2: Exit X::X \n  " color=yellow style=filled]
 	
 
-"X#X#{7390596848467712836}.af8c5bb42250f73c0cb8c8878493ac3f_1" [label="1: Start X::X\nFormals:  this:X* __param_0:X const &\nLocals:  \n  " color=yellow style=filled]
+"X#X#{7390596848467712836}.af8c5bb42250f73c_1" [label="1: Start X::X\nFormals:  this:X* __param_0:X const &\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "X#X#{7390596848467712836}.af8c5bb42250f73c0cb8c8878493ac3f_1" -> "X#X#{7390596848467712836}.af8c5bb42250f73c0cb8c8878493ac3f_2" ;
-"X#X#{7390596848467712836}.af8c5bb42250f73c0cb8c8878493ac3f_2" [label="2: Exit X::X \n  " color=yellow style=filled]
+	 "X#X#{7390596848467712836}.af8c5bb42250f73c_1" -> "X#X#{7390596848467712836}.af8c5bb42250f73c_2" ;
+"X#X#{7390596848467712836}.af8c5bb42250f73c_2" [label="2: Exit X::X \n  " color=yellow style=filled]
 	
 
 }

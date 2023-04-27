@@ -1,38 +1,38 @@
 /* @generated */
 digraph cfg {
-"dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_1" [label="1: Start MyClass.dealloc\nFormals:  self:MyClass*\nLocals:  \n  " color=yellow style=filled]
+"dealloc#MyClass#[instance].0aa424a13256897b_1" [label="1: Start MyClass.dealloc\nFormals:  self:MyClass*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_1" -> "dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_4" ;
-"dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_2" [label="2: Exit MyClass.dealloc \n  " color=yellow style=filled]
+	 "dealloc#MyClass#[instance].0aa424a13256897b_1" -> "dealloc#MyClass#[instance].0aa424a13256897b_4" ;
+"dealloc#MyClass#[instance].0aa424a13256897b_2" [label="2: Exit MyClass.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#MyClass#[instance].0aa424a13256897b_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_3" -> "dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_2" ;
-"dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_4" [label="4:  Call dealloc \n   n$0=*&self:MyClass* [line 10, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:MyClass*) [line 10, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:MyClass*,(n$1 - 1):unsigned int) [line 10, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:MyClass*) [line 10, column 1]\n " shape="box"]
+	 "dealloc#MyClass#[instance].0aa424a13256897b_3" -> "dealloc#MyClass#[instance].0aa424a13256897b_2" ;
+"dealloc#MyClass#[instance].0aa424a13256897b_4" [label="4:  Call dealloc \n   n$0=*&self:MyClass* [line 10, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:MyClass*) [line 10, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:MyClass*,(n$1 - 1):unsigned int) [line 10, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:MyClass*) [line 10, column 1]\n " shape="box"]
 	
 
-	 "dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_4" -> "dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_5" ;
-	 "dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_4" -> "dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_6" ;
-"dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 10, column 1]\n " shape="invhouse"]
+	 "dealloc#MyClass#[instance].0aa424a13256897b_4" -> "dealloc#MyClass#[instance].0aa424a13256897b_5" ;
+	 "dealloc#MyClass#[instance].0aa424a13256897b_4" -> "dealloc#MyClass#[instance].0aa424a13256897b_6" ;
+"dealloc#MyClass#[instance].0aa424a13256897b_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 10, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_5" -> "dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_3" ;
-"dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 10, column 1]\n " shape="invhouse"]
+	 "dealloc#MyClass#[instance].0aa424a13256897b_5" -> "dealloc#MyClass#[instance].0aa424a13256897b_3" ;
+"dealloc#MyClass#[instance].0aa424a13256897b_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 10, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_6" -> "dealloc#MyClass#[instance].0aa424a13256897b1878b6d108aa3add_2" ;
-"myNumber#MyClass#[instance].817511ece01a87851935762d7061120d_1" [label="1: Start MyClass.myNumber\nFormals:  self:MyClass*\nLocals:  \n  " color=yellow style=filled]
+	 "dealloc#MyClass#[instance].0aa424a13256897b_6" -> "dealloc#MyClass#[instance].0aa424a13256897b_2" ;
+"myNumber#MyClass#[instance].817511ece01a8785_1" [label="1: Start MyClass.myNumber\nFormals:  self:MyClass*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "myNumber#MyClass#[instance].817511ece01a87851935762d7061120d_1" -> "myNumber#MyClass#[instance].817511ece01a87851935762d7061120d_3" ;
-"myNumber#MyClass#[instance].817511ece01a87851935762d7061120d_2" [label="2: Exit MyClass.myNumber \n  " color=yellow style=filled]
+	 "myNumber#MyClass#[instance].817511ece01a8785_1" -> "myNumber#MyClass#[instance].817511ece01a8785_3" ;
+"myNumber#MyClass#[instance].817511ece01a8785_2" [label="2: Exit MyClass.myNumber \n  " color=yellow style=filled]
 	
 
-"myNumber#MyClass#[instance].817511ece01a87851935762d7061120d_3" [label="3:  Return Stmt \n   *&return:int=1 [line 13, column 3]\n " shape="box"]
+"myNumber#MyClass#[instance].817511ece01a8785_3" [label="3:  Return Stmt \n   *&return:int=1 [line 13, column 3]\n " shape="box"]
 	
 
-	 "myNumber#MyClass#[instance].817511ece01a87851935762d7061120d_3" -> "myNumber#MyClass#[instance].817511ece01a87851935762d7061120d_2" ;
+	 "myNumber#MyClass#[instance].817511ece01a8785_3" -> "myNumber#MyClass#[instance].817511ece01a8785_2" ;
 }

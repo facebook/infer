@@ -2276,6 +2276,11 @@ INTERNAL OPTIONS
        --force-integration-reset
            Cancel the effect of --force-integration.
 
+       --no-fork-mode
+           Deactivates: Use 'fork' system call to spawn sub-processes. If not
+           set, use the equivalent of 'fork/exec' -- which is usually slower,
+           but is available on all OSes. (Conversely: --fork-mode)
+
        --from-json-config-impact-report-reset
            Cancel the effect of --from-json-config-impact-report.
 
@@ -2691,6 +2696,13 @@ INTERNAL OPTIONS
            Activates: checker resource-leak-lab: Toy checker for the
            "resource leak" write-your-own-checker exercise. (Conversely:
            --no-resource-leak-lab)
+
+       --run-as-child int
+           Enable child mode. The integer argument is the identity of the
+           child. This is an internal option.
+
+       --run-as-child-reset
+           Cancel the effect of --run-as-child.
 
        --scope-leakage-config json
            Specifies the annotation class, the set of scopes, and the

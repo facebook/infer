@@ -61,7 +61,7 @@ let create_serializer (key : Key.t) : 'a serializer =
     let filename = DB.filename_to_string fname in
     PerfEvent.(
       log (fun logger -> log_begin_event logger ~name:("writing " ^ key.name) ~categories:["io"] ()) ) ;
-    Utils.with_intermediate_temp_file_out filename ~f:(fun outc ->
+    Utils.with_intermediate_temp_file_out ~retry:Sys.win32 filename ~f:(fun outc ->
         Marshal.to_channel outc (key.key, version, data) [] ) ;
     PerfEvent.(log (fun logger -> log_end_event logger ()))
   in

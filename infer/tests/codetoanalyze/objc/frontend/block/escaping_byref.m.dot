@@ -1,141 +1,141 @@
 /* @generated */
 digraph cfg {
-"objc_block_EscapingByref.capture_global_byref_1.fc83d5937d930a5fa268bc99aa11d88a_1" [label="1: Start objc_block_EscapingByref.capture_global_byref_1\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"objc_block_EscapingByref.capture_.fc83d5937d930a5f_1" [label="1: Start objc_block_EscapingByref.capture_global_byref_1\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "objc_block_EscapingByref.capture_global_byref_1.fc83d5937d930a5fa268bc99aa11d88a_1" -> "objc_block_EscapingByref.capture_global_byref_1.fc83d5937d930a5fa268bc99aa11d88a_3" ;
-"objc_block_EscapingByref.capture_global_byref_1.fc83d5937d930a5fa268bc99aa11d88a_2" [label="2: Exit objc_block_EscapingByref.capture_global_byref_1 \n  " color=yellow style=filled]
+	 "objc_block_EscapingByref.capture_.fc83d5937d930a5f_1" -> "objc_block_EscapingByref.capture_.fc83d5937d930a5f_3" ;
+"objc_block_EscapingByref.capture_.fc83d5937d930a5f_2" [label="2: Exit objc_block_EscapingByref.capture_global_byref_1 \n  " color=yellow style=filled]
 	
 
-"objc_block_EscapingByref.capture_global_byref_1.fc83d5937d930a5fa268bc99aa11d88a_3" [label="3:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/objc/frontend/block/escaping_byref.m>$global:int=3 [line 19, column 5]\n " shape="box"]
+"objc_block_EscapingByref.capture_.fc83d5937d930a5f_3" [label="3:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/objc/frontend/block/escaping_byref.m>$global:int=3 [line 19, column 5]\n " shape="box"]
 	
 
-	 "objc_block_EscapingByref.capture_global_byref_1.fc83d5937d930a5fa268bc99aa11d88a_3" -> "objc_block_EscapingByref.capture_global_byref_1.fc83d5937d930a5fa268bc99aa11d88a_2" ;
-"objc_block_EscapingByref.capture_local_block_byref_3.35282c2a390cb775a4a487466ab9e573_1" [label="1: Start objc_block_EscapingByref.capture_local_block_byref_3\nFormals: \nLocals: \nCaptured:  [by ref]&local:int& \n  " color=yellow style=filled]
+	 "objc_block_EscapingByref.capture_.fc83d5937d930a5f_3" -> "objc_block_EscapingByref.capture_.fc83d5937d930a5f_2" ;
+"objc_block_EscapingByref.capture_.35282c2a390cb775_1" [label="1: Start objc_block_EscapingByref.capture_local_block_byref_3\nFormals: \nLocals: \nCaptured:  [by ref]&local:int& \n  " color=yellow style=filled]
 	
 
-	 "objc_block_EscapingByref.capture_local_block_byref_3.35282c2a390cb775a4a487466ab9e573_1" -> "objc_block_EscapingByref.capture_local_block_byref_3.35282c2a390cb775a4a487466ab9e573_3" ;
-"objc_block_EscapingByref.capture_local_block_byref_3.35282c2a390cb775a4a487466ab9e573_2" [label="2: Exit objc_block_EscapingByref.capture_local_block_byref_3 \n  " color=yellow style=filled]
+	 "objc_block_EscapingByref.capture_.35282c2a390cb775_1" -> "objc_block_EscapingByref.capture_.35282c2a390cb775_3" ;
+"objc_block_EscapingByref.capture_.35282c2a390cb775_2" [label="2: Exit objc_block_EscapingByref.capture_local_block_byref_3 \n  " color=yellow style=filled]
 	
 
-"objc_block_EscapingByref.capture_local_block_byref_3.35282c2a390cb775a4a487466ab9e573_3" [label="3:  BinaryOperatorStmt: Assign \n   n$2=*&local:int& [line 33, column 5]\n  *n$2:int=3 [line 33, column 5]\n " shape="box"]
+"objc_block_EscapingByref.capture_.35282c2a390cb775_3" [label="3:  BinaryOperatorStmt: Assign \n   n$2=*&local:int& [line 33, column 5]\n  *n$2:int=3 [line 33, column 5]\n " shape="box"]
 	
 
-	 "objc_block_EscapingByref.capture_local_block_byref_3.35282c2a390cb775a4a487466ab9e573_3" -> "objc_block_EscapingByref.capture_local_block_byref_3.35282c2a390cb775a4a487466ab9e573_2" ;
-"objc_block_EscapingByref.capture_local_byvalue_2.e8a5d497babbe9458c48496d0def3dca_1" [label="1: Start objc_block_EscapingByref.capture_local_byvalue_2\nFormals: \nLocals:  x:int\nCaptured:  [by value]&local:int \n  " color=yellow style=filled]
+	 "objc_block_EscapingByref.capture_.35282c2a390cb775_3" -> "objc_block_EscapingByref.capture_.35282c2a390cb775_2" ;
+"objc_block_EscapingByref.capture_.e8a5d497babbe945_1" [label="1: Start objc_block_EscapingByref.capture_local_byvalue_2\nFormals: \nLocals:  x:int\nCaptured:  [by value]&local:int \n  " color=yellow style=filled]
 	
 
-	 "objc_block_EscapingByref.capture_local_byvalue_2.e8a5d497babbe9458c48496d0def3dca_1" -> "objc_block_EscapingByref.capture_local_byvalue_2.e8a5d497babbe9458c48496d0def3dca_3" ;
-"objc_block_EscapingByref.capture_local_byvalue_2.e8a5d497babbe9458c48496d0def3dca_2" [label="2: Exit objc_block_EscapingByref.capture_local_byvalue_2 \n  " color=yellow style=filled]
+	 "objc_block_EscapingByref.capture_.e8a5d497babbe945_1" -> "objc_block_EscapingByref.capture_.e8a5d497babbe945_3" ;
+"objc_block_EscapingByref.capture_.e8a5d497babbe945_2" [label="2: Exit objc_block_EscapingByref.capture_local_byvalue_2 \n  " color=yellow style=filled]
 	
 
-"objc_block_EscapingByref.capture_local_byvalue_2.e8a5d497babbe9458c48496d0def3dca_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 26, column 5]\n  n$1=*&local:int [line 26, column 13]\n  *&x:int=n$1 [line 26, column 5]\n " shape="box"]
+"objc_block_EscapingByref.capture_.e8a5d497babbe945_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 26, column 5]\n  n$1=*&local:int [line 26, column 13]\n  *&x:int=n$1 [line 26, column 5]\n " shape="box"]
 	
 
-	 "objc_block_EscapingByref.capture_local_byvalue_2.e8a5d497babbe9458c48496d0def3dca_3" -> "objc_block_EscapingByref.capture_local_byvalue_2.e8a5d497babbe9458c48496d0def3dca_2" ;
-"objc_block_EscapingByref.capture_local_static_byvalue_4.bd9a6deb4723fd3f758a3a626550da76_1" [label="1: Start objc_block_EscapingByref.capture_local_static_byvalue_4\nFormals: \nLocals:  x:int \n  " color=yellow style=filled]
+	 "objc_block_EscapingByref.capture_.e8a5d497babbe945_3" -> "objc_block_EscapingByref.capture_.e8a5d497babbe945_2" ;
+"objc_block_EscapingByref.capture_.bd9a6deb4723fd3f_1" [label="1: Start objc_block_EscapingByref.capture_local_static_byvalue_4\nFormals: \nLocals:  x:int \n  " color=yellow style=filled]
 	
 
-	 "objc_block_EscapingByref.capture_local_static_byvalue_4.bd9a6deb4723fd3f758a3a626550da76_1" -> "objc_block_EscapingByref.capture_local_static_byvalue_4.bd9a6deb4723fd3f758a3a626550da76_3" ;
-"objc_block_EscapingByref.capture_local_static_byvalue_4.bd9a6deb4723fd3f758a3a626550da76_2" [label="2: Exit objc_block_EscapingByref.capture_local_static_byvalue_4 \n  " color=yellow style=filled]
+	 "objc_block_EscapingByref.capture_.bd9a6deb4723fd3f_1" -> "objc_block_EscapingByref.capture_.bd9a6deb4723fd3f_3" ;
+"objc_block_EscapingByref.capture_.bd9a6deb4723fd3f_2" [label="2: Exit objc_block_EscapingByref.capture_local_static_byvalue_4 \n  " color=yellow style=filled]
 	
 
-"objc_block_EscapingByref.capture_local_static_byvalue_4.bd9a6deb4723fd3f758a3a626550da76_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 40, column 5]\n  n$3=*&#GB<codetoanalyze/objc/frontend/block/escaping_byref.m|ice>$EscapingByref.capture_local_static_byvalue.local:int [line 40, column 13]\n  *&x:int=n$3 [line 40, column 5]\n " shape="box"]
+"objc_block_EscapingByref.capture_.bd9a6deb4723fd3f_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 40, column 5]\n  n$3=*&#GB<codetoanalyze/objc/frontend/block/escaping_byref.m|ice>$EscapingByref.capture_local_static_byvalue.local:int [line 40, column 13]\n  *&x:int=n$3 [line 40, column 5]\n " shape="box"]
 	
 
-	 "objc_block_EscapingByref.capture_local_static_byvalue_4.bd9a6deb4723fd3f758a3a626550da76_3" -> "objc_block_EscapingByref.capture_local_static_byvalue_4.bd9a6deb4723fd3f758a3a626550da76_2" ;
-"objc_block_EscapingByref.capture_param_byvalue:_5.b65b2ccc2c097c3762fd3957d474b7a9_1" [label="1: Start objc_block_EscapingByref.capture_param_byvalue:_5\nFormals: \nLocals:  x:int\nCaptured:  [by value]&param:int \n  " color=yellow style=filled]
+	 "objc_block_EscapingByref.capture_.bd9a6deb4723fd3f_3" -> "objc_block_EscapingByref.capture_.bd9a6deb4723fd3f_2" ;
+"objc_block_EscapingByref.capture_.b65b2ccc2c097c37_1" [label="1: Start objc_block_EscapingByref.capture_param_byvalue:_5\nFormals: \nLocals:  x:int\nCaptured:  [by value]&param:int \n  " color=yellow style=filled]
 	
 
-	 "objc_block_EscapingByref.capture_param_byvalue:_5.b65b2ccc2c097c3762fd3957d474b7a9_1" -> "objc_block_EscapingByref.capture_param_byvalue:_5.b65b2ccc2c097c3762fd3957d474b7a9_3" ;
-"objc_block_EscapingByref.capture_param_byvalue:_5.b65b2ccc2c097c3762fd3957d474b7a9_2" [label="2: Exit objc_block_EscapingByref.capture_param_byvalue:_5 \n  " color=yellow style=filled]
+	 "objc_block_EscapingByref.capture_.b65b2ccc2c097c37_1" -> "objc_block_EscapingByref.capture_.b65b2ccc2c097c37_3" ;
+"objc_block_EscapingByref.capture_.b65b2ccc2c097c37_2" [label="2: Exit objc_block_EscapingByref.capture_param_byvalue:_5 \n  " color=yellow style=filled]
 	
 
-"objc_block_EscapingByref.capture_param_byvalue:_5.b65b2ccc2c097c3762fd3957d474b7a9_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 46, column 5]\n  n$5=*&param:int [line 46, column 13]\n  *&x:int=n$5 [line 46, column 5]\n " shape="box"]
+"objc_block_EscapingByref.capture_.b65b2ccc2c097c37_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 46, column 5]\n  n$5=*&param:int [line 46, column 13]\n  *&x:int=n$5 [line 46, column 5]\n " shape="box"]
 	
 
-	 "objc_block_EscapingByref.capture_param_byvalue:_5.b65b2ccc2c097c3762fd3957d474b7a9_3" -> "objc_block_EscapingByref.capture_param_byvalue:_5.b65b2ccc2c097c3762fd3957d474b7a9_2" ;
-"capture_global_byref#EscapingByref#[class].5627d2435a0b799f99e02d8da3231adb_1" [label="1: Start EscapingByref.capture_global_byref\nFormals: \nLocals:  closure:_fn_(*) \n  " color=yellow style=filled]
+	 "objc_block_EscapingByref.capture_.b65b2ccc2c097c37_3" -> "objc_block_EscapingByref.capture_.b65b2ccc2c097c37_2" ;
+"capture_global_byref#EscapingByre.5627d2435a0b799f_1" [label="1: Start EscapingByref.capture_global_byref\nFormals: \nLocals:  closure:_fn_(*) \n  " color=yellow style=filled]
 	
 
-	 "capture_global_byref#EscapingByref#[class].5627d2435a0b799f99e02d8da3231adb_1" -> "capture_global_byref#EscapingByref#[class].5627d2435a0b799f99e02d8da3231adb_3" ;
-"capture_global_byref#EscapingByref#[class].5627d2435a0b799f99e02d8da3231adb_2" [label="2: Exit EscapingByref.capture_global_byref \n  " color=yellow style=filled]
+	 "capture_global_byref#EscapingByre.5627d2435a0b799f_1" -> "capture_global_byref#EscapingByre.5627d2435a0b799f_3" ;
+"capture_global_byref#EscapingByre.5627d2435a0b799f_2" [label="2: Exit EscapingByref.capture_global_byref \n  " color=yellow style=filled]
 	
 
-"capture_global_byref#EscapingByref#[class].5627d2435a0b799f99e02d8da3231adb_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 18, column 3]\n  *&closure:_fn_(*)=(_fun_objc_block_EscapingByref.capture_global_byref_1) [line 18, column 3]\n " shape="box"]
+"capture_global_byref#EscapingByre.5627d2435a0b799f_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 18, column 3]\n  *&closure:_fn_(*)=(_fun_objc_block_EscapingByref.capture_global_byref_1) [line 18, column 3]\n " shape="box"]
 	
 
-	 "capture_global_byref#EscapingByref#[class].5627d2435a0b799f99e02d8da3231adb_3" -> "capture_global_byref#EscapingByref#[class].5627d2435a0b799f99e02d8da3231adb_2" ;
-"capture_local_block_byref#EscapingByref#[class].b31698393681600a6dfc59ffcbd7b46e_1" [label="1: Start EscapingByref.capture_local_block_byref\nFormals: \nLocals:  closure:_fn_(*) local:int(__block) \n  " color=yellow style=filled]
+	 "capture_global_byref#EscapingByre.5627d2435a0b799f_3" -> "capture_global_byref#EscapingByre.5627d2435a0b799f_2" ;
+"capture_local_block_byref#Escapin.b31698393681600a_1" [label="1: Start EscapingByref.capture_local_block_byref\nFormals: \nLocals:  closure:_fn_(*) local:int(__block) \n  " color=yellow style=filled]
 	
 
-	 "capture_local_block_byref#EscapingByref#[class].b31698393681600a6dfc59ffcbd7b46e_1" -> "capture_local_block_byref#EscapingByref#[class].b31698393681600a6dfc59ffcbd7b46e_3" ;
-"capture_local_block_byref#EscapingByref#[class].b31698393681600a6dfc59ffcbd7b46e_2" [label="2: Exit EscapingByref.capture_local_block_byref \n  " color=yellow style=filled]
+	 "capture_local_block_byref#Escapin.b31698393681600a_1" -> "capture_local_block_byref#Escapin.b31698393681600a_3" ;
+"capture_local_block_byref#Escapin.b31698393681600a_2" [label="2: Exit EscapingByref.capture_local_block_byref \n  " color=yellow style=filled]
 	
 
-"capture_local_block_byref#EscapingByref#[class].b31698393681600a6dfc59ffcbd7b46e_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 32, column 3]\n  *&closure:_fn_(*)=(_fun_objc_block_EscapingByref.capture_local_block_byref_3,&local) [line 32, column 3]\n " shape="box"]
+"capture_local_block_byref#Escapin.b31698393681600a_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 32, column 3]\n  *&closure:_fn_(*)=(_fun_objc_block_EscapingByref.capture_local_block_byref_3,&local) [line 32, column 3]\n " shape="box"]
 	
 
-	 "capture_local_block_byref#EscapingByref#[class].b31698393681600a6dfc59ffcbd7b46e_3" -> "capture_local_block_byref#EscapingByref#[class].b31698393681600a6dfc59ffcbd7b46e_2" ;
-"capture_local_byvalue#EscapingByref#[class].8d045efe006beeeaebecd191caa58852_1" [label="1: Start EscapingByref.capture_local_byvalue\nFormals: \nLocals:  closure:_fn_(*) local:int \n  " color=yellow style=filled]
+	 "capture_local_block_byref#Escapin.b31698393681600a_3" -> "capture_local_block_byref#Escapin.b31698393681600a_2" ;
+"capture_local_byvalue#EscapingByr.8d045efe006beeea_1" [label="1: Start EscapingByref.capture_local_byvalue\nFormals: \nLocals:  closure:_fn_(*) local:int \n  " color=yellow style=filled]
 	
 
-	 "capture_local_byvalue#EscapingByref#[class].8d045efe006beeeaebecd191caa58852_1" -> "capture_local_byvalue#EscapingByref#[class].8d045efe006beeeaebecd191caa58852_3" ;
-"capture_local_byvalue#EscapingByref#[class].8d045efe006beeeaebecd191caa58852_2" [label="2: Exit EscapingByref.capture_local_byvalue \n  " color=yellow style=filled]
+	 "capture_local_byvalue#EscapingByr.8d045efe006beeea_1" -> "capture_local_byvalue#EscapingByr.8d045efe006beeea_3" ;
+"capture_local_byvalue#EscapingByr.8d045efe006beeea_2" [label="2: Exit EscapingByref.capture_local_byvalue \n  " color=yellow style=filled]
 	
 
-"capture_local_byvalue#EscapingByref#[class].8d045efe006beeeaebecd191caa58852_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 25, column 3]\n  n$0=*&local:int [line 25, column 23]\n  *&closure:_fn_(*)=(_fun_objc_block_EscapingByref.capture_local_byvalue_2,([by value]n$0 &local:int)) [line 25, column 3]\n " shape="box"]
+"capture_local_byvalue#EscapingByr.8d045efe006beeea_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 25, column 3]\n  n$0=*&local:int [line 25, column 23]\n  *&closure:_fn_(*)=(_fun_objc_block_EscapingByref.capture_local_byvalue_2,([by value]n$0 &local:int)) [line 25, column 3]\n " shape="box"]
 	
 
-	 "capture_local_byvalue#EscapingByref#[class].8d045efe006beeeaebecd191caa58852_3" -> "capture_local_byvalue#EscapingByref#[class].8d045efe006beeeaebecd191caa58852_2" ;
-"capture_local_static_byvalue#EscapingByref#[class].db3bfc0da6f6c37e237a5d473d64dc16_1" [label="1: Start EscapingByref.capture_local_static_byvalue\nFormals: \nLocals:  closure:_fn_(*) \n  " color=yellow style=filled]
+	 "capture_local_byvalue#EscapingByr.8d045efe006beeea_3" -> "capture_local_byvalue#EscapingByr.8d045efe006beeea_2" ;
+"capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_1" [label="1: Start EscapingByref.capture_local_static_byvalue\nFormals: \nLocals:  closure:_fn_(*) \n  " color=yellow style=filled]
 	
 
-	 "capture_local_static_byvalue#EscapingByref#[class].db3bfc0da6f6c37e237a5d473d64dc16_1" -> "capture_local_static_byvalue#EscapingByref#[class].db3bfc0da6f6c37e237a5d473d64dc16_4" ;
-"capture_local_static_byvalue#EscapingByref#[class].db3bfc0da6f6c37e237a5d473d64dc16_2" [label="2: Exit EscapingByref.capture_local_static_byvalue \n  " color=yellow style=filled]
+	 "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_1" -> "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_4" ;
+"capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_2" [label="2: Exit EscapingByref.capture_local_static_byvalue \n  " color=yellow style=filled]
 	
 
-"capture_local_static_byvalue#EscapingByref#[class].db3bfc0da6f6c37e237a5d473d64dc16_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 39, column 3]\n  *&closure:_fn_(*)=(_fun_objc_block_EscapingByref.capture_local_static_byvalue_4) [line 39, column 3]\n " shape="box"]
+"capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 39, column 3]\n  *&closure:_fn_(*)=(_fun_objc_block_EscapingByref.capture_local_static_byvalue_4) [line 39, column 3]\n " shape="box"]
 	
 
-	 "capture_local_static_byvalue#EscapingByref#[class].db3bfc0da6f6c37e237a5d473d64dc16_3" -> "capture_local_static_byvalue#EscapingByref#[class].db3bfc0da6f6c37e237a5d473d64dc16_2" ;
-"capture_local_static_byvalue#EscapingByref#[class].db3bfc0da6f6c37e237a5d473d64dc16_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objc/frontend/block/escaping_byref.m|ice>$EscapingByref.capture_local_static_byvalue.local:int); [line 38, column 3]\n  *&#GB<codetoanalyze/objc/frontend/block/escaping_byref.m|ice>$EscapingByref.capture_local_static_byvalue.local:int=3 [line 38, column 3]\n " shape="box"]
+	 "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_3" -> "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_2" ;
+"capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objc/frontend/block/escaping_byref.m|ice>$EscapingByref.capture_local_static_byvalue.local:int); [line 38, column 3]\n  *&#GB<codetoanalyze/objc/frontend/block/escaping_byref.m|ice>$EscapingByref.capture_local_static_byvalue.local:int=3 [line 38, column 3]\n " shape="box"]
 	
 
-	 "capture_local_static_byvalue#EscapingByref#[class].db3bfc0da6f6c37e237a5d473d64dc16_4" -> "capture_local_static_byvalue#EscapingByref#[class].db3bfc0da6f6c37e237a5d473d64dc16_3" ;
-"capture_param_byvalue:#EscapingByref#[class].edd8806d01c527d0ca4cac44d44bf3ff_1" [label="1: Start EscapingByref.capture_param_byvalue:\nFormals:  param:int\nLocals:  closure:_fn_(*) \n  " color=yellow style=filled]
+	 "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_4" -> "capture_local_static_byvalue#Esca.db3bfc0da6f6c37e_3" ;
+"capture_param_byvalue:#EscapingBy.edd8806d01c527d0_1" [label="1: Start EscapingByref.capture_param_byvalue:\nFormals:  param:int\nLocals:  closure:_fn_(*) \n  " color=yellow style=filled]
 	
 
-	 "capture_param_byvalue:#EscapingByref#[class].edd8806d01c527d0ca4cac44d44bf3ff_1" -> "capture_param_byvalue:#EscapingByref#[class].edd8806d01c527d0ca4cac44d44bf3ff_3" ;
-"capture_param_byvalue:#EscapingByref#[class].edd8806d01c527d0ca4cac44d44bf3ff_2" [label="2: Exit EscapingByref.capture_param_byvalue: \n  " color=yellow style=filled]
+	 "capture_param_byvalue:#EscapingBy.edd8806d01c527d0_1" -> "capture_param_byvalue:#EscapingBy.edd8806d01c527d0_3" ;
+"capture_param_byvalue:#EscapingBy.edd8806d01c527d0_2" [label="2: Exit EscapingByref.capture_param_byvalue: \n  " color=yellow style=filled]
 	
 
-"capture_param_byvalue:#EscapingByref#[class].edd8806d01c527d0ca4cac44d44bf3ff_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 45, column 3]\n  n$4=*&param:int [line 45, column 23]\n  *&closure:_fn_(*)=(_fun_objc_block_EscapingByref.capture_param_byvalue:_5,([by value]n$4 &param:int)) [line 45, column 3]\n " shape="box"]
+"capture_param_byvalue:#EscapingBy.edd8806d01c527d0_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(closure:_fn_(*)); [line 45, column 3]\n  n$4=*&param:int [line 45, column 23]\n  *&closure:_fn_(*)=(_fun_objc_block_EscapingByref.capture_param_byvalue:_5,([by value]n$4 &param:int)) [line 45, column 3]\n " shape="box"]
 	
 
-	 "capture_param_byvalue:#EscapingByref#[class].edd8806d01c527d0ca4cac44d44bf3ff_3" -> "capture_param_byvalue:#EscapingByref#[class].edd8806d01c527d0ca4cac44d44bf3ff_2" ;
-"dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_1" [label="1: Start EscapingByref.dealloc\nFormals:  self:EscapingByref*\nLocals:  \n  " color=yellow style=filled]
+	 "capture_param_byvalue:#EscapingBy.edd8806d01c527d0_3" -> "capture_param_byvalue:#EscapingBy.edd8806d01c527d0_2" ;
+"dealloc#EscapingByref#[instance].44524944baf37cea_1" [label="1: Start EscapingByref.dealloc\nFormals:  self:EscapingByref*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_1" -> "dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_4" ;
-"dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_2" [label="2: Exit EscapingByref.dealloc \n  " color=yellow style=filled]
+	 "dealloc#EscapingByref#[instance].44524944baf37cea_1" -> "dealloc#EscapingByref#[instance].44524944baf37cea_4" ;
+"dealloc#EscapingByref#[instance].44524944baf37cea_2" [label="2: Exit EscapingByref.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#EscapingByref#[instance].44524944baf37cea_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_3" -> "dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_2" ;
-"dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_4" [label="4:  Call dealloc \n   n$0=*&self:EscapingByref* [line 13, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:EscapingByref*) [line 13, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:EscapingByref*,(n$1 - 1):unsigned int) [line 13, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:EscapingByref*) [line 13, column 1]\n " shape="box"]
+	 "dealloc#EscapingByref#[instance].44524944baf37cea_3" -> "dealloc#EscapingByref#[instance].44524944baf37cea_2" ;
+"dealloc#EscapingByref#[instance].44524944baf37cea_4" [label="4:  Call dealloc \n   n$0=*&self:EscapingByref* [line 13, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:EscapingByref*) [line 13, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:EscapingByref*,(n$1 - 1):unsigned int) [line 13, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:EscapingByref*) [line 13, column 1]\n " shape="box"]
 	
 
-	 "dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_4" -> "dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_5" ;
-	 "dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_4" -> "dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_6" ;
-"dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 13, column 1]\n " shape="invhouse"]
+	 "dealloc#EscapingByref#[instance].44524944baf37cea_4" -> "dealloc#EscapingByref#[instance].44524944baf37cea_5" ;
+	 "dealloc#EscapingByref#[instance].44524944baf37cea_4" -> "dealloc#EscapingByref#[instance].44524944baf37cea_6" ;
+"dealloc#EscapingByref#[instance].44524944baf37cea_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 13, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_5" -> "dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_3" ;
-"dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 13, column 1]\n " shape="invhouse"]
+	 "dealloc#EscapingByref#[instance].44524944baf37cea_5" -> "dealloc#EscapingByref#[instance].44524944baf37cea_3" ;
+"dealloc#EscapingByref#[instance].44524944baf37cea_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 13, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_6" -> "dealloc#EscapingByref#[instance].44524944baf37ceae528a3026739a82d_2" ;
+	 "dealloc#EscapingByref#[instance].44524944baf37cea_6" -> "dealloc#EscapingByref#[instance].44524944baf37cea_2" ;
 }

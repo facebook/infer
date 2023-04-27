@@ -1,59 +1,59 @@
 /* @generated */
 digraph cfg {
-"dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_1" [label="1: Start Bla.dealloc\nFormals:  self:Bla*\nLocals:  \n  " color=yellow style=filled]
+"dealloc#Bla#[instance].c79658283ce8dcce_1" [label="1: Start Bla.dealloc\nFormals:  self:Bla*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_1" -> "dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_4" ;
-"dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_2" [label="2: Exit Bla.dealloc \n  " color=yellow style=filled]
+	 "dealloc#Bla#[instance].c79658283ce8dcce_1" -> "dealloc#Bla#[instance].c79658283ce8dcce_4" ;
+"dealloc#Bla#[instance].c79658283ce8dcce_2" [label="2: Exit Bla.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#Bla#[instance].c79658283ce8dcce_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_3" -> "dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_2" ;
-"dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_4" [label="4:  Call dealloc \n   n$0=*&self:Bla* [line 20, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:Bla*) [line 20, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:Bla*,(n$1 - 1):unsigned int) [line 20, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:Bla*) [line 20, column 1]\n " shape="box"]
+	 "dealloc#Bla#[instance].c79658283ce8dcce_3" -> "dealloc#Bla#[instance].c79658283ce8dcce_2" ;
+"dealloc#Bla#[instance].c79658283ce8dcce_4" [label="4:  Call dealloc \n   n$0=*&self:Bla* [line 20, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:Bla*) [line 20, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:Bla*,(n$1 - 1):unsigned int) [line 20, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:Bla*) [line 20, column 1]\n " shape="box"]
 	
 
-	 "dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_4" -> "dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_5" ;
-	 "dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_4" -> "dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_6" ;
-"dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 20, column 1]\n " shape="invhouse"]
+	 "dealloc#Bla#[instance].c79658283ce8dcce_4" -> "dealloc#Bla#[instance].c79658283ce8dcce_5" ;
+	 "dealloc#Bla#[instance].c79658283ce8dcce_4" -> "dealloc#Bla#[instance].c79658283ce8dcce_6" ;
+"dealloc#Bla#[instance].c79658283ce8dcce_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 20, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_5" -> "dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_3" ;
-"dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 20, column 1]\n " shape="invhouse"]
+	 "dealloc#Bla#[instance].c79658283ce8dcce_5" -> "dealloc#Bla#[instance].c79658283ce8dcce_3" ;
+"dealloc#Bla#[instance].c79658283ce8dcce_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 20, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_6" -> "dealloc#Bla#[instance].c79658283ce8dcce7ed2913d1230c9de_2" ;
-"fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_1" [label="1: Start Bla.fooMethod\nFormals:  self:Bla*\nLocals:  \n  " color=yellow style=filled]
+	 "dealloc#Bla#[instance].c79658283ce8dcce_6" -> "dealloc#Bla#[instance].c79658283ce8dcce_2" ;
+"fooMethod#Bla#[instance].e5f7c6f68c7957b0_1" [label="1: Start Bla.fooMethod\nFormals:  self:Bla*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_1" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_5" ;
-"fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_2" [label="2: Exit Bla.fooMethod \n  " color=yellow style=filled]
+	 "fooMethod#Bla#[instance].e5f7c6f68c7957b0_1" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b0_5" ;
+"fooMethod#Bla#[instance].e5f7c6f68c7957b0_2" [label="2: Exit Bla.fooMethod \n  " color=yellow style=filled]
 	
 
-"fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_3" [label="3: + \n   END_BRANCHES\n " ]
+"fooMethod#Bla#[instance].e5f7c6f68c7957b0_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
-	 "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_3" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_4" ;
-"fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
+	 "fooMethod#Bla#[instance].e5f7c6f68c7957b0_3" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b0_4" ;
+"fooMethod#Bla#[instance].e5f7c6f68c7957b0_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
-	 "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_4" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_2" ;
-"fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:Bla* [line 23, column 8]\n  n$1=_fun_NSObject.conformsToProtocol:(n$0:Bla*,\"Foo\":Protocol*) virtual [line 23, column 7]\n " shape="box"]
+	 "fooMethod#Bla#[instance].e5f7c6f68c7957b0_4" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b0_2" ;
+"fooMethod#Bla#[instance].e5f7c6f68c7957b0_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:Bla* [line 23, column 8]\n  n$1=_fun_NSObject.conformsToProtocol:(n$0:Bla*,\"Foo\":Protocol*) virtual [line 23, column 7]\n " shape="box"]
 	
 
-	 "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_5" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_6" ;
-	 "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_5" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_7" ;
-"fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE(n$1, true); [line 23, column 7]\n " shape="invhouse"]
+	 "fooMethod#Bla#[instance].e5f7c6f68c7957b0_5" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b0_6" ;
+	 "fooMethod#Bla#[instance].e5f7c6f68c7957b0_5" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b0_7" ;
+"fooMethod#Bla#[instance].e5f7c6f68c7957b0_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE(n$1, true); [line 23, column 7]\n " shape="invhouse"]
 	
 
-	 "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_6" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_8" ;
-"fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!n$1, false); [line 23, column 7]\n " shape="invhouse"]
+	 "fooMethod#Bla#[instance].e5f7c6f68c7957b0_6" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b0_8" ;
+"fooMethod#Bla#[instance].e5f7c6f68c7957b0_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!n$1, false); [line 23, column 7]\n " shape="invhouse"]
 	
 
-	 "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_7" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_3" ;
-"fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_8" [label="8:  Return Stmt \n  " shape="box"]
+	 "fooMethod#Bla#[instance].e5f7c6f68c7957b0_7" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b0_3" ;
+"fooMethod#Bla#[instance].e5f7c6f68c7957b0_8" [label="8:  Return Stmt \n  " shape="box"]
 	
 
-	 "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_8" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b07137d0a679a0340a_2" ;
+	 "fooMethod#Bla#[instance].e5f7c6f68c7957b0_8" -> "fooMethod#Bla#[instance].e5f7c6f68c7957b0_2" ;
 }

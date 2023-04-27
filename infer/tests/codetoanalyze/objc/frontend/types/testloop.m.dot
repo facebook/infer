@@ -1,64 +1,64 @@
 /* @generated */
 digraph cfg {
-"__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_1" [label="1: Start __infer_globals_initializer___iPadVideoAdLayout\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"__infer_globals_initializer___iPa.91a439a98050a5c8_1" [label="1: Start __infer_globals_initializer___iPadVideoAdLayout\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_1" -> "__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_3" ;
-"__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_2" [label="2: Exit __infer_globals_initializer___iPadVideoAdLayout \n  " color=yellow style=filled]
+	 "__infer_globals_initializer___iPa.91a439a98050a5c8_1" -> "__infer_globals_initializer___iPa.91a439a98050a5c8_3" ;
+"__infer_globals_initializer___iPa.91a439a98050a5c8_2" [label="2: Exit __infer_globals_initializer___iPadVideoAdLayout \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout:FBVideoAdLayout const ); [line 24, column 1]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.placeHolderWidth:float=554 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.placeHolderHeight:float=350 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.contentLeftSidePadding:float=140 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.contentRightSidePadding:float=60 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.additionalPlaceholderOffset:float=40 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.contentGap:float=11 [line 24, column 52]\n " shape="box"]
+"__infer_globals_initializer___iPa.91a439a98050a5c8_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout:FBVideoAdLayout const ); [line 24, column 1]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.placeHolderWidth:float=554 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.placeHolderHeight:float=350 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.contentLeftSidePadding:float=140 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.contentRightSidePadding:float=60 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.additionalPlaceholderOffset:float=40 [line 24, column 52]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPadVideoAdLayout.contentGap:float=11 [line 24, column 52]\n " shape="box"]
 	
 
-	 "__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_3" -> "__infer_globals_initializer___iPadVideoAdLayout#774934d200ab6ea201ea7444923ebf03.91a439a98050a5c80fe23fc56f573207_2" ;
-"__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_1" [label="1: Start __infer_globals_initializer___iPhoneVideoAdLayout\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 "__infer_globals_initializer___iPa.91a439a98050a5c8_3" -> "__infer_globals_initializer___iPa.91a439a98050a5c8_2" ;
+"__infer_globals_initializer___iPh.1e6bd750ce4ce651_1" [label="1: Start __infer_globals_initializer___iPhoneVideoAdLayout\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_1" -> "__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_3" ;
-"__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_2" [label="2: Exit __infer_globals_initializer___iPhoneVideoAdLayout \n  " color=yellow style=filled]
+	 "__infer_globals_initializer___iPh.1e6bd750ce4ce651_1" -> "__infer_globals_initializer___iPh.1e6bd750ce4ce651_3" ;
+"__infer_globals_initializer___iPh.1e6bd750ce4ce651_2" [label="2: Exit __infer_globals_initializer___iPhoneVideoAdLayout \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout:FBVideoAdLayout const ); [line 33, column 1]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderWidth:float=244 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderHeight:float=175 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentLeftSidePadding:float=20 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentRightSidePadding:float=20 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.additionalPlaceholderOffset:float=0 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentGap:float=7 [line 33, column 54]\n " shape="box"]
+"__infer_globals_initializer___iPh.1e6bd750ce4ce651_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout:FBVideoAdLayout const ); [line 33, column 1]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderWidth:float=244 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderHeight:float=175 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentLeftSidePadding:float=20 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentRightSidePadding:float=20 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.additionalPlaceholderOffset:float=0 [line 33, column 54]\n  *&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentGap:float=7 [line 33, column 54]\n " shape="box"]
 	
 
-	 "__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_3" -> "__infer_globals_initializer___iPhoneVideoAdLayout#774934d200ab6ea201ea7444923ebf03.1e6bd750ce4ce65119ad54cee8ee01a8_2" ;
-"layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_1" [label="1: Start FBScrollViewDelegateProxy.layoutToUse\nFormals:  __return_param:FBVideoAdLayout*\nLocals:  \n  " color=yellow style=filled]
+	 "__infer_globals_initializer___iPh.1e6bd750ce4ce651_3" -> "__infer_globals_initializer___iPh.1e6bd750ce4ce651_2" ;
+"layoutToUse#FBScrollViewDelegateP.619d46e4569eb183_1" [label="1: Start FBScrollViewDelegateProxy.layoutToUse\nFormals:  __return_param:FBVideoAdLayout*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_1" -> "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_3" ;
-"layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_2" [label="2: Exit FBScrollViewDelegateProxy.layoutToUse \n  " color=yellow style=filled]
+	 "layoutToUse#FBScrollViewDelegateP.619d46e4569eb183_1" -> "layoutToUse#FBScrollViewDelegateP.619d46e4569eb183_3" ;
+"layoutToUse#FBScrollViewDelegateP.619d46e4569eb183_2" [label="2: Exit FBScrollViewDelegateProxy.layoutToUse \n  " color=yellow style=filled]
 	
 
-"layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_3" [label="3:  Return Stmt \n   n$0=*&__return_param:FBVideoAdLayout* [line 43, column 3]\n " shape="box"]
+"layoutToUse#FBScrollViewDelegateP.619d46e4569eb183_3" [label="3:  Return Stmt \n   n$0=*&__return_param:FBVideoAdLayout* [line 43, column 3]\n " shape="box"]
 	
 
-	 "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_3" -> "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_4" ;
-"layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_4" [label="4:  Return Stmt \n   n$1=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderWidth:float [line 43, column 3]\n  *n$0.placeHolderWidth:float=n$1 [line 43, column 3]\n  n$2=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderHeight:float [line 43, column 3]\n  *n$0.placeHolderHeight:float=n$2 [line 43, column 3]\n  n$3=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentLeftSidePadding:float [line 43, column 3]\n  *n$0.contentLeftSidePadding:float=n$3 [line 43, column 3]\n  n$4=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentRightSidePadding:float [line 43, column 3]\n  *n$0.contentRightSidePadding:float=n$4 [line 43, column 3]\n  n$5=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.additionalPlaceholderOffset:float [line 43, column 3]\n  *n$0.additionalPlaceholderOffset:float=n$5 [line 43, column 3]\n  n$6=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentGap:float [line 43, column 3]\n  *n$0.contentGap:float=n$6 [line 43, column 3]\n " shape="box"]
+	 "layoutToUse#FBScrollViewDelegateP.619d46e4569eb183_3" -> "layoutToUse#FBScrollViewDelegateP.619d46e4569eb183_4" ;
+"layoutToUse#FBScrollViewDelegateP.619d46e4569eb183_4" [label="4:  Return Stmt \n   n$1=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderWidth:float [line 43, column 3]\n  *n$0.placeHolderWidth:float=n$1 [line 43, column 3]\n  n$2=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.placeHolderHeight:float [line 43, column 3]\n  *n$0.placeHolderHeight:float=n$2 [line 43, column 3]\n  n$3=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentLeftSidePadding:float [line 43, column 3]\n  *n$0.contentLeftSidePadding:float=n$3 [line 43, column 3]\n  n$4=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentRightSidePadding:float [line 43, column 3]\n  *n$0.contentRightSidePadding:float=n$4 [line 43, column 3]\n  n$5=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.additionalPlaceholderOffset:float [line 43, column 3]\n  *n$0.additionalPlaceholderOffset:float=n$5 [line 43, column 3]\n  n$6=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout.contentGap:float [line 43, column 3]\n  *n$0.contentGap:float=n$6 [line 43, column 3]\n " shape="box"]
 	
 
-	 "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_4" -> "layoutToUse#FBScrollViewDelegateProxy(struct FBVideoAdLayout)#[class].619d46e4569eb183da6da72db83656cb_2" ;
-"dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_1" [label="1: Start FBScrollViewDelegateProxy.dealloc\nFormals:  self:FBScrollViewDelegateProxy*\nLocals:  \n  " color=yellow style=filled]
+	 "layoutToUse#FBScrollViewDelegateP.619d46e4569eb183_4" -> "layoutToUse#FBScrollViewDelegateP.619d46e4569eb183_2" ;
+"dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_1" [label="1: Start FBScrollViewDelegateProxy.dealloc\nFormals:  self:FBScrollViewDelegateProxy*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_1" -> "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_4" ;
-"dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_2" [label="2: Exit FBScrollViewDelegateProxy.dealloc \n  " color=yellow style=filled]
+	 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_1" -> "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_4" ;
+"dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_2" [label="2: Exit FBScrollViewDelegateProxy.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_3" -> "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_2" ;
-"dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_4" [label="4:  Call dealloc \n   n$0=*&self:FBScrollViewDelegateProxy* [line 13, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:FBScrollViewDelegateProxy*) [line 13, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:FBScrollViewDelegateProxy*,(n$1 - 1):unsigned int) [line 13, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:FBScrollViewDelegateProxy*) [line 13, column 1]\n " shape="box"]
+	 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_3" -> "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_2" ;
+"dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_4" [label="4:  Call dealloc \n   n$0=*&self:FBScrollViewDelegateProxy* [line 13, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:FBScrollViewDelegateProxy*) [line 13, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:FBScrollViewDelegateProxy*,(n$1 - 1):unsigned int) [line 13, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:FBScrollViewDelegateProxy*) [line 13, column 1]\n " shape="box"]
 	
 
-	 "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_4" -> "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_5" ;
-	 "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_4" -> "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_6" ;
-"dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 13, column 1]\n " shape="invhouse"]
+	 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_4" -> "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_5" ;
+	 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_4" -> "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_6" ;
+"dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 13, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_5" -> "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_3" ;
-"dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 13, column 1]\n " shape="invhouse"]
+	 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_5" -> "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_3" ;
+"dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 13, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_6" -> "dealloc#FBScrollViewDelegateProxy#[instance].77dd0d0c4c34fe511f38d3f63d17c023_2" ;
+	 "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_6" -> "dealloc#FBScrollViewDelegateProxy.77dd0d0c4c34fe51_2" ;
 }

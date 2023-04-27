@@ -100,6 +100,26 @@ let escape_path s =
   escape_map map s
 
 
+let escape_filename s =
+  let encode c = Some (Format.sprintf "%%%X" (Char.to_int c)) in
+  let map c =
+    match c with
+    | '/' ->
+        (* This character is forbidden on Windows and Unix *)
+        encode c
+    | '<' | '>' | ':' | '"' | '\\' | '|' | '?' | '*' | '\n' | '\r' | '\t' ->
+        (* All these characters are forbidden on Windows. See
+           https://stackoverflow.com/questions/1976007/what-characters-are-forbidden-in-windows-and-linux-directory-names *)
+        if String.equal "Unix" Sys.os_type then None else encode c
+    | '\127' .. '\255' ->
+        (* Probably Unicode characters in filename. In doubt, encode *)
+        encode c
+    | _ ->
+        None
+  in
+  escape_map map s
+
+
 let escape_json s = escape_map (function '"' -> Some "\\\"" | '\\' -> Some "\\\\" | _ -> None) s
 
 let escape_double_quotes s = escape_map (function '"' -> Some "\\\"" | _ -> None) s

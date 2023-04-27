@@ -89,7 +89,8 @@ let infer_exe_stanza =
     (if clang then "" else "-open ClangFrontendStubs")
     (if java then "" else "-open JavaFrontendStubs")
     verbose extlib_if_java
-    (if_platform_env_and_not_byte_mode "(:include linking-flags.sexp)")
+    (if windows then "(:standard -cclib -lgcc_s -cclib -lole32)"
+     else if_platform_env_and_not_byte_mode "(:include linking-flags.sexp)")
 
 
 let inferunit_stanza =

@@ -1,46 +1,46 @@
 /* @generated */
 digraph cfg {
-"dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_1" [label="1: Start MySubclass.dealloc\nFormals:  self:MySubclass*\nLocals:  \n  " color=yellow style=filled]
+"dealloc#MySubclass#[instance].f3d20c0d47543cc0_1" [label="1: Start MySubclass.dealloc\nFormals:  self:MySubclass*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_1" -> "dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_4" ;
-"dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_2" [label="2: Exit MySubclass.dealloc \n  " color=yellow style=filled]
+	 "dealloc#MySubclass#[instance].f3d20c0d47543cc0_1" -> "dealloc#MySubclass#[instance].f3d20c0d47543cc0_4" ;
+"dealloc#MySubclass#[instance].f3d20c0d47543cc0_2" [label="2: Exit MySubclass.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#MySubclass#[instance].f3d20c0d47543cc0_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_3" -> "dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_2" ;
-"dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_4" [label="4:  Call dealloc \n   n$0=*&self:MySubclass* [line 10, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:MySubclass*) [line 10, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:MySubclass*,(n$1 - 1):unsigned int) [line 10, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:MySubclass*) [line 10, column 1]\n " shape="box"]
+	 "dealloc#MySubclass#[instance].f3d20c0d47543cc0_3" -> "dealloc#MySubclass#[instance].f3d20c0d47543cc0_2" ;
+"dealloc#MySubclass#[instance].f3d20c0d47543cc0_4" [label="4:  Call dealloc \n   n$0=*&self:MySubclass* [line 10, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:MySubclass*) [line 10, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:MySubclass*,(n$1 - 1):unsigned int) [line 10, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:MySubclass*) [line 10, column 1]\n " shape="box"]
 	
 
-	 "dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_4" -> "dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_5" ;
-	 "dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_4" -> "dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_6" ;
-"dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 10, column 1]\n " shape="invhouse"]
+	 "dealloc#MySubclass#[instance].f3d20c0d47543cc0_4" -> "dealloc#MySubclass#[instance].f3d20c0d47543cc0_5" ;
+	 "dealloc#MySubclass#[instance].f3d20c0d47543cc0_4" -> "dealloc#MySubclass#[instance].f3d20c0d47543cc0_6" ;
+"dealloc#MySubclass#[instance].f3d20c0d47543cc0_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 10, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_5" -> "dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_3" ;
-"dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 10, column 1]\n " shape="invhouse"]
+	 "dealloc#MySubclass#[instance].f3d20c0d47543cc0_5" -> "dealloc#MySubclass#[instance].f3d20c0d47543cc0_3" ;
+"dealloc#MySubclass#[instance].f3d20c0d47543cc0_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 10, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_6" -> "dealloc#MySubclass#[instance].f3d20c0d47543cc074ade89e6f289f0b_2" ;
-"myNumber#MySubclass#[instance].340af5b3a36f95be93031ebdd3704a98_1" [label="1: Start MySubclass.myNumber\nFormals:  self:MySubclass*\nLocals:  subclassNumber:int \n  " color=yellow style=filled]
+	 "dealloc#MySubclass#[instance].f3d20c0d47543cc0_6" -> "dealloc#MySubclass#[instance].f3d20c0d47543cc0_2" ;
+"myNumber#MySubclass#[instance].340af5b3a36f95be_1" [label="1: Start MySubclass.myNumber\nFormals:  self:MySubclass*\nLocals:  subclassNumber:int \n  " color=yellow style=filled]
 	
 
-	 "myNumber#MySubclass#[instance].340af5b3a36f95be93031ebdd3704a98_1" -> "myNumber#MySubclass#[instance].340af5b3a36f95be93031ebdd3704a98_5" ;
-"myNumber#MySubclass#[instance].340af5b3a36f95be93031ebdd3704a98_2" [label="2: Exit MySubclass.myNumber \n  " color=yellow style=filled]
+	 "myNumber#MySubclass#[instance].340af5b3a36f95be_1" -> "myNumber#MySubclass#[instance].340af5b3a36f95be_5" ;
+"myNumber#MySubclass#[instance].340af5b3a36f95be_2" [label="2: Exit MySubclass.myNumber \n  " color=yellow style=filled]
 	
 
-"myNumber#MySubclass#[instance].340af5b3a36f95be93031ebdd3704a98_3" [label="3:  Return Stmt \n   n$0=*&subclassNumber:int [line 16, column 10]\n " shape="box"]
+"myNumber#MySubclass#[instance].340af5b3a36f95be_3" [label="3:  Return Stmt \n   n$0=*&subclassNumber:int [line 16, column 10]\n " shape="box"]
 	
 
-	 "myNumber#MySubclass#[instance].340af5b3a36f95be93031ebdd3704a98_3" -> "myNumber#MySubclass#[instance].340af5b3a36f95be93031ebdd3704a98_4" ;
-"myNumber#MySubclass#[instance].340af5b3a36f95be93031ebdd3704a98_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 16, column 3]\n " shape="box"]
+	 "myNumber#MySubclass#[instance].340af5b3a36f95be_3" -> "myNumber#MySubclass#[instance].340af5b3a36f95be_4" ;
+"myNumber#MySubclass#[instance].340af5b3a36f95be_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 16, column 3]\n " shape="box"]
 	
 
-	 "myNumber#MySubclass#[instance].340af5b3a36f95be93031ebdd3704a98_4" -> "myNumber#MySubclass#[instance].340af5b3a36f95be93031ebdd3704a98_2" ;
-"myNumber#MySubclass#[instance].340af5b3a36f95be93031ebdd3704a98_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(subclassNumber:int); [line 15, column 3]\n  n$1=*&self:MySubclass* [line 15, column 24]\n  n$2=_fun_MyClass.myNumber(n$1:MySubclass*) [line 15, column 24]\n  *&subclassNumber:int=(n$2 + 1) [line 15, column 3]\n " shape="box"]
+	 "myNumber#MySubclass#[instance].340af5b3a36f95be_4" -> "myNumber#MySubclass#[instance].340af5b3a36f95be_2" ;
+"myNumber#MySubclass#[instance].340af5b3a36f95be_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(subclassNumber:int); [line 15, column 3]\n  n$1=*&self:MySubclass* [line 15, column 24]\n  n$2=_fun_MyClass.myNumber(n$1:MySubclass*) [line 15, column 24]\n  *&subclassNumber:int=(n$2 + 1) [line 15, column 3]\n " shape="box"]
 	
 
-	 "myNumber#MySubclass#[instance].340af5b3a36f95be93031ebdd3704a98_5" -> "myNumber#MySubclass#[instance].340af5b3a36f95be93031ebdd3704a98_3" ;
+	 "myNumber#MySubclass#[instance].340af5b3a36f95be_5" -> "myNumber#MySubclass#[instance].340af5b3a36f95be_3" ;
 }

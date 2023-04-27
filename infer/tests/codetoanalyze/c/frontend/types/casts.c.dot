@@ -1,25 +1,25 @@
 /* @generated */
 digraph cfg {
-"integral_cast.d5430d978bb8b1ae1351542df63116f0_1" [label="1: Start integral_cast\nFormals: \nLocals:  b:int a:int \n  " color=yellow style=filled]
+"integral_cast.d5430d978bb8b1ae_1" [label="1: Start integral_cast\nFormals: \nLocals:  b:int a:int \n  " color=yellow style=filled]
 	
 
-	 "integral_cast.d5430d978bb8b1ae1351542df63116f0_1" -> "integral_cast.d5430d978bb8b1ae1351542df63116f0_3" ;
-"integral_cast.d5430d978bb8b1ae1351542df63116f0_2" [label="2: Exit integral_cast \n  " color=yellow style=filled]
+	 "integral_cast.d5430d978bb8b1ae_1" -> "integral_cast.d5430d978bb8b1ae_3" ;
+"integral_cast.d5430d978bb8b1ae_2" [label="2: Exit integral_cast \n  " color=yellow style=filled]
 	
 
-"integral_cast.d5430d978bb8b1ae1351542df63116f0_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 10, column 3]\n  n$0=*&a:char [line 10, column 18]\n  *&b:int=(n$0 + 2) [line 10, column 3]\n " shape="box"]
+"integral_cast.d5430d978bb8b1ae_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 10, column 3]\n  n$0=*&a:char [line 10, column 18]\n  *&b:int=(n$0 + 2) [line 10, column 3]\n " shape="box"]
 	
 
-	 "integral_cast.d5430d978bb8b1ae1351542df63116f0_3" -> "integral_cast.d5430d978bb8b1ae1351542df63116f0_2" ;
-"pointer_cast.3dc53891f7776356b25a5fbcd7d3c442_1" [label="1: Start pointer_cast\nFormals: \nLocals:  f:int obj:void* \n  " color=yellow style=filled]
+	 "integral_cast.d5430d978bb8b1ae_3" -> "integral_cast.d5430d978bb8b1ae_2" ;
+"pointer_cast.3dc53891f7776356_1" [label="1: Start pointer_cast\nFormals: \nLocals:  f:int obj:void* \n  " color=yellow style=filled]
 	
 
-	 "pointer_cast.3dc53891f7776356b25a5fbcd7d3c442_1" -> "pointer_cast.3dc53891f7776356b25a5fbcd7d3c442_3" ;
-"pointer_cast.3dc53891f7776356b25a5fbcd7d3c442_2" [label="2: Exit pointer_cast \n  " color=yellow style=filled]
+	 "pointer_cast.3dc53891f7776356_1" -> "pointer_cast.3dc53891f7776356_3" ;
+"pointer_cast.3dc53891f7776356_2" [label="2: Exit pointer_cast \n  " color=yellow style=filled]
 	
 
-"pointer_cast.3dc53891f7776356b25a5fbcd7d3c442_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(f:int); [line 19, column 3]\n  n$0=*&obj:object* [line 19, column 28]\n  n$1=*n$0.field:int [line 19, column 11]\n  *&f:int=n$1 [line 19, column 3]\n " shape="box"]
+"pointer_cast.3dc53891f7776356_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(f:int); [line 19, column 3]\n  n$0=*&obj:object* [line 19, column 28]\n  n$1=*n$0.field:int [line 19, column 11]\n  *&f:int=n$1 [line 19, column 3]\n " shape="box"]
 	
 
-	 "pointer_cast.3dc53891f7776356b25a5fbcd7d3c442_3" -> "pointer_cast.3dc53891f7776356b25a5fbcd7d3c442_2" ;
+	 "pointer_cast.3dc53891f7776356_3" -> "pointer_cast.3dc53891f7776356_2" ;
 }

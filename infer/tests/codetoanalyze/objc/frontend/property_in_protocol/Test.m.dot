@@ -1,49 +1,49 @@
 /* @generated */
 digraph cfg {
-"dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_1" [label="1: Start Test.dealloc\nFormals:  self:Test*\nLocals:  \n  " color=yellow style=filled]
+"dealloc#Test#[instance].13d2b3cd0029963a_1" [label="1: Start Test.dealloc\nFormals:  self:Test*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_1" -> "dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_4" ;
-"dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_2" [label="2: Exit Test.dealloc \n  " color=yellow style=filled]
+	 "dealloc#Test#[instance].13d2b3cd0029963a_1" -> "dealloc#Test#[instance].13d2b3cd0029963a_4" ;
+"dealloc#Test#[instance].13d2b3cd0029963a_2" [label="2: Exit Test.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_3" [label="3:  Call dealloc \n  " shape="box"]
+"dealloc#Test#[instance].13d2b3cd0029963a_3" [label="3:  Call dealloc \n  " shape="box"]
 	
 
-	 "dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_3" -> "dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_2" ;
-"dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_4" [label="4:  Call dealloc \n   n$0=*&self:Test* [line 10, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:Test*) [line 10, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:Test*,(n$1 - 1):unsigned int) [line 10, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:Test*) [line 10, column 1]\n " shape="box"]
+	 "dealloc#Test#[instance].13d2b3cd0029963a_3" -> "dealloc#Test#[instance].13d2b3cd0029963a_2" ;
+"dealloc#Test#[instance].13d2b3cd0029963a_4" [label="4:  Call dealloc \n   n$0=*&self:Test* [line 10, column 1]\n  n$1=_fun___objc_get_ref_count(n$0:Test*) [line 10, column 1]\n  n$2=_fun___objc_set_ref_count(n$0:Test*,(n$1 - 1):unsigned int) [line 10, column 1]\n  n$3=_fun___objc_get_ref_count(n$0:Test*) [line 10, column 1]\n " shape="box"]
 	
 
-	 "dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_4" -> "dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_5" ;
-	 "dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_4" -> "dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_6" ;
-"dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 10, column 1]\n " shape="invhouse"]
+	 "dealloc#Test#[instance].13d2b3cd0029963a_4" -> "dealloc#Test#[instance].13d2b3cd0029963a_5" ;
+	 "dealloc#Test#[instance].13d2b3cd0029963a_4" -> "dealloc#Test#[instance].13d2b3cd0029963a_6" ;
+"dealloc#Test#[instance].13d2b3cd0029963a_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$3 == 0), true); [line 10, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_5" -> "dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_3" ;
-"dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 10, column 1]\n " shape="invhouse"]
+	 "dealloc#Test#[instance].13d2b3cd0029963a_5" -> "dealloc#Test#[instance].13d2b3cd0029963a_3" ;
+"dealloc#Test#[instance].13d2b3cd0029963a_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$3 != 0), false); [line 10, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_6" -> "dealloc#Test#[instance].13d2b3cd0029963ab677ed56dd46fbe5_2" ;
-"numberOfFiles#MyProtocol#[instance].73af22ab7b312683aff2aca12d5b0139_1" [label="1: Start MyProtocol.numberOfFiles\nFormals:  self:MyProtocol*\nLocals:  \n  " color=yellow style=filled]
+	 "dealloc#Test#[instance].13d2b3cd0029963a_6" -> "dealloc#Test#[instance].13d2b3cd0029963a_2" ;
+"numberOfFiles#MyProtocol#[instanc.73af22ab7b312683_1" [label="1: Start MyProtocol.numberOfFiles\nFormals:  self:MyProtocol*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "numberOfFiles#MyProtocol#[instance].73af22ab7b312683aff2aca12d5b0139_1" -> "numberOfFiles#MyProtocol#[instance].73af22ab7b312683aff2aca12d5b0139_3" ;
-"numberOfFiles#MyProtocol#[instance].73af22ab7b312683aff2aca12d5b0139_2" [label="2: Exit MyProtocol.numberOfFiles \n  " color=yellow style=filled]
+	 "numberOfFiles#MyProtocol#[instanc.73af22ab7b312683_1" -> "numberOfFiles#MyProtocol#[instanc.73af22ab7b312683_3" ;
+"numberOfFiles#MyProtocol#[instanc.73af22ab7b312683_2" [label="2: Exit MyProtocol.numberOfFiles \n  " color=yellow style=filled]
 	
 
-"numberOfFiles#MyProtocol#[instance].73af22ab7b312683aff2aca12d5b0139_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:MyProtocol* [line 12, column 15]\n  n$1=*n$0.numberOfFiles:int [line 12, column 15]\n  *&return:int=n$1 [line 12, column 15]\n " shape="box"]
+"numberOfFiles#MyProtocol#[instanc.73af22ab7b312683_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:MyProtocol* [line 12, column 15]\n  n$1=*n$0.numberOfFiles:int [line 12, column 15]\n  *&return:int=n$1 [line 12, column 15]\n " shape="box"]
 	
 
-	 "numberOfFiles#MyProtocol#[instance].73af22ab7b312683aff2aca12d5b0139_3" -> "numberOfFiles#MyProtocol#[instance].73af22ab7b312683aff2aca12d5b0139_2" ;
-"setNumberOfFiles:#MyProtocol#[instance].0f8e8004df25473cb62fa47e73fb7868_1" [label="1: Start MyProtocol.setNumberOfFiles:\nFormals:  self:MyProtocol* numberOfFiles:int\nLocals:  \n  " color=yellow style=filled]
+	 "numberOfFiles#MyProtocol#[instanc.73af22ab7b312683_3" -> "numberOfFiles#MyProtocol#[instanc.73af22ab7b312683_2" ;
+"setNumberOfFiles:#MyProtocol#[ins.0f8e8004df25473c_1" [label="1: Start MyProtocol.setNumberOfFiles:\nFormals:  self:MyProtocol* numberOfFiles:int\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "setNumberOfFiles:#MyProtocol#[instance].0f8e8004df25473cb62fa47e73fb7868_1" -> "setNumberOfFiles:#MyProtocol#[instance].0f8e8004df25473cb62fa47e73fb7868_3" ;
-"setNumberOfFiles:#MyProtocol#[instance].0f8e8004df25473cb62fa47e73fb7868_2" [label="2: Exit MyProtocol.setNumberOfFiles: \n  " color=yellow style=filled]
+	 "setNumberOfFiles:#MyProtocol#[ins.0f8e8004df25473c_1" -> "setNumberOfFiles:#MyProtocol#[ins.0f8e8004df25473c_3" ;
+"setNumberOfFiles:#MyProtocol#[ins.0f8e8004df25473c_2" [label="2: Exit MyProtocol.setNumberOfFiles: \n  " color=yellow style=filled]
 	
 
-"setNumberOfFiles:#MyProtocol#[instance].0f8e8004df25473cb62fa47e73fb7868_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:MyProtocol* [line 12, column 15]\n  n$1=*&numberOfFiles:int [line 12, column 15]\n  *n$0.numberOfFiles:int=n$1 [line 12, column 15]\n " shape="box"]
+"setNumberOfFiles:#MyProtocol#[ins.0f8e8004df25473c_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:MyProtocol* [line 12, column 15]\n  n$1=*&numberOfFiles:int [line 12, column 15]\n  *n$0.numberOfFiles:int=n$1 [line 12, column 15]\n " shape="box"]
 	
 
-	 "setNumberOfFiles:#MyProtocol#[instance].0f8e8004df25473cb62fa47e73fb7868_3" -> "setNumberOfFiles:#MyProtocol#[instance].0f8e8004df25473cb62fa47e73fb7868_2" ;
+	 "setNumberOfFiles:#MyProtocol#[ins.0f8e8004df25473c_3" -> "setNumberOfFiles:#MyProtocol#[ins.0f8e8004df25473c_2" ;
 }

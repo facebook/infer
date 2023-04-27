@@ -188,7 +188,8 @@ let killall pool ~slot status =
       with Unix.Unix_error (ECHILD, _, _) ->
         (* some children may have died already, it's fine *) () ) ;
   ProcessPoolState.has_running_children := false ;
-  L.die InternalError "Subprocess %d: %s" slot status
+  L.internal_error "Subprocess %d: %s@\n" slot status ;
+  L.exit 1
 
 
 let has_dead_child pool =
@@ -377,6 +378,62 @@ let rec child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilo
         ~prev_result:result
 
 
+(** This function implements what the [slot]th child worker is supposed to do:
+
+    - execute [child_prologue]
+    - execute [f] in a loop
+    - once the loop ends, transmits the results of calling [epilogue] to the parent
+    - receives orders from [orders_ic], send status updates through [updates_oc]
+
+    Children never return. Instead they exit when done. *)
+let child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic =
+  ProcessPoolState.in_child := true ;
+  ProcessPoolState.reset_pid () ;
+  child_prologue () ;
+  let send_to_parent (message : 'b worker_message) = marshal_to_pipe updates_oc message in
+  let send_final (final_message : 'a final_worker_message) =
+    marshal_to_pipe updates_oc final_message
+  in
+  (* Function to send updates up the pipe to the parent instead of directly to the task
+     bar. This is because only the parent knows about all the children, hence it's in charge of
+     actually updating the task bar. *)
+  let update_status t status =
+    match Config.progress_bar with
+    | `Quiet | `Plain ->
+        ()
+    | `MultiLine ->
+        let status =
+          (* Truncate status if too big: it's pointless to spam the status bar with long status, and
+             also difficult to achieve technically over pipes (it's easier if all the messages fit
+             into a buffer of reasonable size). *)
+          if String.length status > 100 then String.subo ~len:100 status ^ "..." else status
+        in
+        send_to_parent (UpdateStatus (slot, t, status))
+  in
+  ProcessPoolState.update_status := update_status ;
+  let update_heap_words () =
+    match Config.progress_bar with
+    | `MultiLine ->
+        let heap_words = (Gc.quick_stat ()).heap_words in
+        send_to_parent (UpdateHeapWords (slot, heap_words))
+    | `Quiet | `Plain ->
+        ()
+  in
+  ProcessPoolState.update_heap_words := update_heap_words ;
+  let receive_from_parent () =
+    PerfEvent.log (fun logger ->
+        PerfEvent.log_begin_event logger ~categories:["sys"] ~name:"receive from pipe" () ) ;
+    let x = Marshal.from_channel orders_ic in
+    PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+    x
+  in
+  child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilogue ~prev_result:None ;
+  Out_channel.close updates_oc ;
+  In_channel.close orders_ic ;
+  Epilogues.run () ;
+  Stdlib.exit 0
+
+
 (** Fork a new child and start it so that it is ready for work.
 
     The child inherits [updates_w] to send updates up to the parent, and a new pipe is set up for
@@ -387,53 +444,9 @@ let fork_child ~child_prologue ~slot (updates_r, updates_w) ~f ~epilogue =
   | `In_the_child ->
       Unix.close updates_r ;
       Unix.close to_child_w ;
-      ProcessPoolState.in_child := true ;
-      ProcessPoolState.reset_pid () ;
-      child_prologue () ;
-      let updates_oc = Unix.out_channel_of_descr updates_w in
-      let send_to_parent (message : 'b worker_message) = marshal_to_pipe updates_oc message in
-      let send_final (final_message : 'a final_worker_message) =
-        marshal_to_pipe updates_oc final_message
-      in
-      (* Function to send updates up the pipe to the parent instead of directly to the task
-         bar. This is because only the parent knows about all the children, hence it's in charge of
-         actually updating the task bar. *)
-      let update_status t status =
-        match Config.progress_bar with
-        | `Quiet | `Plain ->
-            ()
-        | `MultiLine ->
-            let status =
-              (* Truncate status if too big: it's pointless to spam the status bar with long status, and
-                 also difficult to achieve technically over pipes (it's easier if all the messages fit
-                 into a buffer of reasonable size). *)
-              if String.length status > 100 then String.subo ~len:100 status ^ "..." else status
-            in
-            send_to_parent (UpdateStatus (slot, t, status))
-      in
-      ProcessPoolState.update_status := update_status ;
-      let update_heap_words () =
-        match Config.progress_bar with
-        | `MultiLine ->
-            let heap_words = (Gc.quick_stat ()).heap_words in
-            send_to_parent (UpdateHeapWords (slot, heap_words))
-        | `Quiet | `Plain ->
-            ()
-      in
-      ProcessPoolState.update_heap_words := update_heap_words ;
       let orders_ic = Unix.in_channel_of_descr to_child_r in
-      let receive_from_parent () =
-        PerfEvent.log (fun logger ->
-            PerfEvent.log_begin_event logger ~categories:["sys"] ~name:"receive from pipe" () ) ;
-        let x = Marshal.from_channel orders_ic in
-        PerfEvent.(log (fun logger -> log_end_event logger ())) ;
-        x
-      in
-      child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilogue ~prev_result:None ;
-      Out_channel.close updates_oc ;
-      In_channel.close orders_ic ;
-      Epilogues.run () ;
-      Stdlib.exit 0
+      let updates_oc = Unix.out_channel_of_descr updates_w in
+      child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic
   | `In_the_parent pid ->
       Unix.close to_child_r ;
       Unix.close updates_w ;
@@ -445,6 +458,56 @@ module Worker = struct
 
   let id_to_int = Fn.id
 end
+
+(** Data marshalled to describe what a child spawned by [spawn_child] below must do. *)
+type ('work, 'result, 'final) child_data =
+  {slot: int; child_prologue: unit -> unit; f: 'work -> 'result option; epilogue: unit -> 'final}
+
+(** Spawn a new child and start it so that it is ready for work.
+
+    The child inherits [updates_w] to send updates up to the parent, and a new pipe is set up for
+    the parent to send instructions down to the child. *)
+let spawn_child ~child_prologue ~slot (_updates_r, updates_w) ~f ~epilogue =
+  let to_child_r, to_child_w = Unix.pipe () in
+  let orig_args = Sys.get_argv () in
+  let args =
+    (* Craft the command-line for the subprocesses: add --run-as-child <n> to the current one *)
+    match Array.to_list orig_args with
+    | [] ->
+        assert false (* always contain the name of the binary *)
+    | hd_args :: tl_args ->
+        let new_argl = hd_args :: "--run-as-child" :: string_of_int slot :: tl_args in
+        Array.of_list new_argl
+  in
+  let pid =
+    UnixLabels.create_process ~prog:orig_args.(0) ~args ~stdin:to_child_r ~stdout:updates_w
+      ~stderr:Unix.stderr
+  in
+  let down_pipe = Unix.out_channel_of_descr to_child_w in
+  Stdlib.set_binary_mode_out down_pipe true ;
+  (* Send the closure _after_ the child has been created, so that it may start reading
+     it, hence unblocking the parent if the closure is too big. The scary messages
+     warnings in the comments above ("LIMITATION") do not apply, because the child will
+     not use [really_read] to access the contents of the pipe. *)
+  Marshal.to_channel down_pipe {slot; f; child_prologue; epilogue} [Marshal.Closures] ;
+  let[@warning "-26"] to_child_r = Unix.close to_child_r in
+  {pid= Pid.of_int pid; down_pipe}
+
+
+let run_as_child () =
+  let updates_oc = Unix.out_channel_of_descr Unix.stdout in
+  (* Note: the documentation in the Unix module is lying on that point, and this call seems
+     to be required under Windows. *)
+  Stdlib.set_binary_mode_out updates_oc true ;
+  let orders_ic = Unix.in_channel_of_descr Unix.stdin in
+  (* Same remark as for [updates_oc]. *)
+  Stdlib.set_binary_mode_in orders_ic true ;
+  (* Get what we should do and who we are from our parent. Do NOT use [really_read] here,
+     as we want the child and the parent to dialogue if the closure is too big.
+  *)
+  let ({slot; f; child_prologue; epilogue} : _ child_data) = Marshal.from_channel orders_ic in
+  child slot ~child_prologue ~f ~updates_oc ~orders_ic ~epilogue
+
 
 let rec create_pipes n = if Int.equal n 0 then [] else Unix.pipe () :: create_pipes (n - 1)
 
@@ -460,10 +523,11 @@ let create :
   let children_pipes = create_pipes jobs in
   (* Flush formatters in the parent before we start forking children. *)
   L.flush_formatters () ;
+  let make_child = if Config.fork_mode then fork_child else spawn_child in
   let slots =
     Array.init jobs ~f:(fun slot ->
         let child_pipe = List.nth_exn children_pipes slot in
-        fork_child
+        make_child
           ~child_prologue:(fun () -> child_prologue (slot :> Worker.id))
           ~slot child_pipe ~f
           ~epilogue:(fun () -> child_epilogue (slot :> Worker.id)) )

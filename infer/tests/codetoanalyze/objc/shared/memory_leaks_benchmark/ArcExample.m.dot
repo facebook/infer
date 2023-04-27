@@ -1,87 +1,87 @@
 /* @generated */
 digraph cfg {
-"dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_1" [label="1: Start ArcA.dealloc\nFormals:  self:ArcA*\nLocals:  \n  " color=yellow style=filled]
+"dealloc#ArcA#[instance].5f1e5f20486ad787_1" [label="1: Start ArcA.dealloc\nFormals:  self:ArcA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_1" -> "dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_4" ;
-"dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_2" [label="2: Exit ArcA.dealloc \n  " color=yellow style=filled]
+	 "dealloc#ArcA#[instance].5f1e5f20486ad787_1" -> "dealloc#ArcA#[instance].5f1e5f20486ad787_4" ;
+"dealloc#ArcA#[instance].5f1e5f20486ad787_2" [label="2: Exit ArcA.dealloc \n  " color=yellow style=filled]
 	
 
-"dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_3" [label="3:  Call dealloc \n   n$0=*&self:ArcA* [line 31, column 1]\n  n$1=*n$0._son:ArcA* [line 31, column 1]\n  n$2=_fun_ArcA.dealloc(n$1:ArcA*) [line 31, column 1]\n " shape="box"]
+"dealloc#ArcA#[instance].5f1e5f20486ad787_3" [label="3:  Call dealloc \n   n$0=*&self:ArcA* [line 31, column 1]\n  n$1=*n$0._son:ArcA* [line 31, column 1]\n  n$2=_fun_ArcA.dealloc(n$1:ArcA*) [line 31, column 1]\n " shape="box"]
 	
 
-	 "dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_3" -> "dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_2" ;
-"dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_4" [label="4:  Call dealloc \n   n$3=*&self:ArcA* [line 17, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:ArcA*) [line 17, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:ArcA*,(n$4 - 1):unsigned int) [line 17, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:ArcA*) [line 17, column 1]\n " shape="box"]
+	 "dealloc#ArcA#[instance].5f1e5f20486ad787_3" -> "dealloc#ArcA#[instance].5f1e5f20486ad787_2" ;
+"dealloc#ArcA#[instance].5f1e5f20486ad787_4" [label="4:  Call dealloc \n   n$3=*&self:ArcA* [line 17, column 1]\n  n$4=_fun___objc_get_ref_count(n$3:ArcA*) [line 17, column 1]\n  n$5=_fun___objc_set_ref_count(n$3:ArcA*,(n$4 - 1):unsigned int) [line 17, column 1]\n  n$6=_fun___objc_get_ref_count(n$3:ArcA*) [line 17, column 1]\n " shape="box"]
 	
 
-	 "dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_4" -> "dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_5" ;
-	 "dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_4" -> "dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_6" ;
-"dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 17, column 1]\n " shape="invhouse"]
+	 "dealloc#ArcA#[instance].5f1e5f20486ad787_4" -> "dealloc#ArcA#[instance].5f1e5f20486ad787_5" ;
+	 "dealloc#ArcA#[instance].5f1e5f20486ad787_4" -> "dealloc#ArcA#[instance].5f1e5f20486ad787_6" ;
+"dealloc#ArcA#[instance].5f1e5f20486ad787_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE((n$6 == 0), true); [line 17, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_5" -> "dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_3" ;
-"dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 17, column 1]\n " shape="invhouse"]
+	 "dealloc#ArcA#[instance].5f1e5f20486ad787_5" -> "dealloc#ArcA#[instance].5f1e5f20486ad787_3" ;
+"dealloc#ArcA#[instance].5f1e5f20486ad787_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE((n$6 != 0), false); [line 17, column 1]\n " shape="invhouse"]
 	
 
-	 "dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_6" -> "dealloc#ArcA#[instance].5f1e5f20486ad787abc874ffe3c28d3f_2" ;
-"getS#ArcA#[instance].d8dec537eb5599fb6d77b512ceb596a6_1" [label="1: Start ArcA.getS\nFormals:  self:ArcA*\nLocals:  s:NSString* \n  " color=yellow style=filled]
+	 "dealloc#ArcA#[instance].5f1e5f20486ad787_6" -> "dealloc#ArcA#[instance].5f1e5f20486ad787_2" ;
+"getS#ArcA#[instance].d8dec537eb5599fb_1" [label="1: Start ArcA.getS\nFormals:  self:ArcA*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
-	 "getS#ArcA#[instance].d8dec537eb5599fb6d77b512ceb596a6_1" -> "getS#ArcA#[instance].d8dec537eb5599fb6d77b512ceb596a6_5" ;
-"getS#ArcA#[instance].d8dec537eb5599fb6d77b512ceb596a6_2" [label="2: Exit ArcA.getS \n  " color=yellow style=filled]
+	 "getS#ArcA#[instance].d8dec537eb5599fb_1" -> "getS#ArcA#[instance].d8dec537eb5599fb_5" ;
+"getS#ArcA#[instance].d8dec537eb5599fb_2" [label="2: Exit ArcA.getS \n  " color=yellow style=filled]
 	
 
-"getS#ArcA#[instance].d8dec537eb5599fb6d77b512ceb596a6_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 22, column 10]\n " shape="box"]
+"getS#ArcA#[instance].d8dec537eb5599fb_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 22, column 10]\n " shape="box"]
 	
 
-	 "getS#ArcA#[instance].d8dec537eb5599fb6d77b512ceb596a6_3" -> "getS#ArcA#[instance].d8dec537eb5599fb6d77b512ceb596a6_4" ;
-"getS#ArcA#[instance].d8dec537eb5599fb6d77b512ceb596a6_4" [label="4:  Return Stmt \n   *&return:NSString*=n$0 [line 22, column 3]\n " shape="box"]
+	 "getS#ArcA#[instance].d8dec537eb5599fb_3" -> "getS#ArcA#[instance].d8dec537eb5599fb_4" ;
+"getS#ArcA#[instance].d8dec537eb5599fb_4" [label="4:  Return Stmt \n   *&return:NSString*=n$0 [line 22, column 3]\n " shape="box"]
 	
 
-	 "getS#ArcA#[instance].d8dec537eb5599fb6d77b512ceb596a6_4" -> "getS#ArcA#[instance].d8dec537eb5599fb6d77b512ceb596a6_2" ;
-"getS#ArcA#[instance].d8dec537eb5599fb6d77b512ceb596a6_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 21, column 3]\n  n$1=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 21, column 17]\n  *&s:NSString*=n$1 [line 21, column 3]\n " shape="box"]
+	 "getS#ArcA#[instance].d8dec537eb5599fb_4" -> "getS#ArcA#[instance].d8dec537eb5599fb_2" ;
+"getS#ArcA#[instance].d8dec537eb5599fb_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 21, column 3]\n  n$1=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 21, column 17]\n  *&s:NSString*=n$1 [line 21, column 3]\n " shape="box"]
 	
 
-	 "getS#ArcA#[instance].d8dec537eb5599fb6d77b512ceb596a6_5" -> "getS#ArcA#[instance].d8dec537eb5599fb6d77b512ceb596a6_3" ;
-"newS#ArcA#[instance].fea20ee6147f321a82b56a4db27d20fc_1" [label="1: Start ArcA.newS\nFormals:  self:ArcA*\nLocals:  s:NSString* \n  " color=yellow style=filled]
+	 "getS#ArcA#[instance].d8dec537eb5599fb_5" -> "getS#ArcA#[instance].d8dec537eb5599fb_3" ;
+"newS#ArcA#[instance].fea20ee6147f321a_1" [label="1: Start ArcA.newS\nFormals:  self:ArcA*\nLocals:  s:NSString* \n  " color=yellow style=filled]
 	
 
-	 "newS#ArcA#[instance].fea20ee6147f321a82b56a4db27d20fc_1" -> "newS#ArcA#[instance].fea20ee6147f321a82b56a4db27d20fc_5" ;
-"newS#ArcA#[instance].fea20ee6147f321a82b56a4db27d20fc_2" [label="2: Exit ArcA.newS \n  " color=yellow style=filled]
+	 "newS#ArcA#[instance].fea20ee6147f321a_1" -> "newS#ArcA#[instance].fea20ee6147f321a_5" ;
+"newS#ArcA#[instance].fea20ee6147f321a_2" [label="2: Exit ArcA.newS \n  " color=yellow style=filled]
 	
 
-"newS#ArcA#[instance].fea20ee6147f321a82b56a4db27d20fc_3" [label="3:  Return Stmt \n   n$2=*&s:NSString* [line 28, column 10]\n " shape="box"]
+"newS#ArcA#[instance].fea20ee6147f321a_3" [label="3:  Return Stmt \n   n$2=*&s:NSString* [line 28, column 10]\n " shape="box"]
 	
 
-	 "newS#ArcA#[instance].fea20ee6147f321a82b56a4db27d20fc_3" -> "newS#ArcA#[instance].fea20ee6147f321a82b56a4db27d20fc_4" ;
-"newS#ArcA#[instance].fea20ee6147f321a82b56a4db27d20fc_4" [label="4:  Return Stmt \n   *&return:NSString*=n$2 [line 28, column 3]\n " shape="box"]
+	 "newS#ArcA#[instance].fea20ee6147f321a_3" -> "newS#ArcA#[instance].fea20ee6147f321a_4" ;
+"newS#ArcA#[instance].fea20ee6147f321a_4" [label="4:  Return Stmt \n   *&return:NSString*=n$2 [line 28, column 3]\n " shape="box"]
 	
 
-	 "newS#ArcA#[instance].fea20ee6147f321a82b56a4db27d20fc_4" -> "newS#ArcA#[instance].fea20ee6147f321a82b56a4db27d20fc_2" ;
-"newS#ArcA#[instance].fea20ee6147f321a82b56a4db27d20fc_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 27, column 3]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 27, column 17]\n  *&s:NSString*=n$3 [line 27, column 3]\n " shape="box"]
+	 "newS#ArcA#[instance].fea20ee6147f321a_4" -> "newS#ArcA#[instance].fea20ee6147f321a_2" ;
+"newS#ArcA#[instance].fea20ee6147f321a_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:NSString*); [line 27, column 3]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 27, column 17]\n  *&s:NSString*=n$3 [line 27, column 3]\n " shape="box"]
 	
 
-	 "newS#ArcA#[instance].fea20ee6147f321a82b56a4db27d20fc_5" -> "newS#ArcA#[instance].fea20ee6147f321a82b56a4db27d20fc_3" ;
-"setSon:#ArcA(class ArcA)#[instance].72d3bde2428b31e30d2bccef74104731_1" [label="1: Start ArcA.setSon:\nFormals:  self:ArcA* son:ArcA*\nLocals:  \n  " color=yellow style=filled]
+	 "newS#ArcA#[instance].fea20ee6147f321a_5" -> "newS#ArcA#[instance].fea20ee6147f321a_3" ;
+"setSon:#ArcA(class ArcA)#[instanc.72d3bde2428b31e3_1" [label="1: Start ArcA.setSon:\nFormals:  self:ArcA* son:ArcA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "setSon:#ArcA(class ArcA)#[instance].72d3bde2428b31e30d2bccef74104731_1" -> "setSon:#ArcA(class ArcA)#[instance].72d3bde2428b31e30d2bccef74104731_3" ;
-"setSon:#ArcA(class ArcA)#[instance].72d3bde2428b31e30d2bccef74104731_2" [label="2: Exit ArcA.setSon: \n  " color=yellow style=filled]
+	 "setSon:#ArcA(class ArcA)#[instanc.72d3bde2428b31e3_1" -> "setSon:#ArcA(class ArcA)#[instanc.72d3bde2428b31e3_3" ;
+"setSon:#ArcA(class ArcA)#[instanc.72d3bde2428b31e3_2" [label="2: Exit ArcA.setSon: \n  " color=yellow style=filled]
 	
 
-"setSon:#ArcA(class ArcA)#[instance].72d3bde2428b31e30d2bccef74104731_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:ArcA* [line 14, column 17]\n  n$1=*&son:ArcA* [line 14, column 17]\n  *n$0._son:ArcA*=n$1 [line 14, column 17]\n " shape="box"]
+"setSon:#ArcA(class ArcA)#[instanc.72d3bde2428b31e3_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:ArcA* [line 14, column 17]\n  n$1=*&son:ArcA* [line 14, column 17]\n  *n$0._son:ArcA*=n$1 [line 14, column 17]\n " shape="box"]
 	
 
-	 "setSon:#ArcA(class ArcA)#[instance].72d3bde2428b31e30d2bccef74104731_3" -> "setSon:#ArcA(class ArcA)#[instance].72d3bde2428b31e30d2bccef74104731_2" ;
-"son#ArcA#[instance].e35458ab53fa39827ec658a0b6af1ed6_1" [label="1: Start ArcA.son\nFormals:  self:ArcA*\nLocals:  \n  " color=yellow style=filled]
+	 "setSon:#ArcA(class ArcA)#[instanc.72d3bde2428b31e3_3" -> "setSon:#ArcA(class ArcA)#[instanc.72d3bde2428b31e3_2" ;
+"son#ArcA#[instance].e35458ab53fa3982_1" [label="1: Start ArcA.son\nFormals:  self:ArcA*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "son#ArcA#[instance].e35458ab53fa39827ec658a0b6af1ed6_1" -> "son#ArcA#[instance].e35458ab53fa39827ec658a0b6af1ed6_3" ;
-"son#ArcA#[instance].e35458ab53fa39827ec658a0b6af1ed6_2" [label="2: Exit ArcA.son \n  " color=yellow style=filled]
+	 "son#ArcA#[instance].e35458ab53fa3982_1" -> "son#ArcA#[instance].e35458ab53fa3982_3" ;
+"son#ArcA#[instance].e35458ab53fa3982_2" [label="2: Exit ArcA.son \n  " color=yellow style=filled]
 	
 
-"son#ArcA#[instance].e35458ab53fa39827ec658a0b6af1ed6_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:ArcA* [line 14, column 17]\n  n$1=*n$0._son:ArcA* [line 14, column 17]\n  *&return:ArcA*=n$1 [line 14, column 17]\n " shape="box"]
+"son#ArcA#[instance].e35458ab53fa3982_3" [label="3:  BinaryOperatorStmt: Node \n   n$0=*&self:ArcA* [line 14, column 17]\n  n$1=*n$0._son:ArcA* [line 14, column 17]\n  *&return:ArcA*=n$1 [line 14, column 17]\n " shape="box"]
 	
 
-	 "son#ArcA#[instance].e35458ab53fa39827ec658a0b6af1ed6_3" -> "son#ArcA#[instance].e35458ab53fa39827ec658a0b6af1ed6_2" ;
+	 "son#ArcA#[instance].e35458ab53fa3982_3" -> "son#ArcA#[instance].e35458ab53fa3982_2" ;
 }

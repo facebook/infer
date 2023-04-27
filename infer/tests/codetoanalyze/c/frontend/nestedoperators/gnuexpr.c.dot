@@ -1,89 +1,89 @@
 /* @generated */
 digraph cfg {
-"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals: \nLocals:  X:int y:int \n  " color=yellow style=filled]
+"main.fad58de7366495db_1" [label="1: Start main\nFormals: \nLocals:  X:int y:int \n  " color=yellow style=filled]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
+	 "main.fad58de7366495db_1" -> "main.fad58de7366495db_7" ;
+"main.fad58de7366495db_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  Return Stmt \n   *&return:int=0 [line 15, column 3]\n " shape="box"]
+"main.fad58de7366495db_3" [label="3:  Return Stmt \n   *&return:int=0 [line 15, column 3]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
-"main.fad58de7366495db4650cfefac2fcd61_4" [label="4:  Compound statement \n   n$0=*&X:int [line 13, column 5]\n " shape="box"]
+	 "main.fad58de7366495db_3" -> "main.fad58de7366495db_2" ;
+"main.fad58de7366495db_4" [label="4:  Compound statement \n   n$0=*&X:int [line 13, column 5]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_4" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
-"main.fad58de7366495db4650cfefac2fcd61_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(X:int); [line 12, column 5]\n  *&X:int=4 [line 12, column 5]\n " shape="box"]
+	 "main.fad58de7366495db_4" -> "main.fad58de7366495db_6" ;
+"main.fad58de7366495db_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(X:int); [line 12, column 5]\n  *&X:int=4 [line 12, column 5]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"main.fad58de7366495db4650cfefac2fcd61_6" [label="6:  BinaryOperatorStmt: Assign \n   *&y:int=n$0 [line 11, column 3]\n " shape="box"]
+	 "main.fad58de7366495db_5" -> "main.fad58de7366495db_4" ;
+"main.fad58de7366495db_6" [label="6:  BinaryOperatorStmt: Assign \n   *&y:int=n$0 [line 11, column 3]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(y:int); [line 9, column 3]\n  *&y:int=3 [line 9, column 3]\n " shape="box"]
+	 "main.fad58de7366495db_6" -> "main.fad58de7366495db_3" ;
+"main.fad58de7366495db_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(y:int); [line 9, column 3]\n  *&y:int=3 [line 9, column 3]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
-"test.098f6bcd4621d373cade4e832627b4f6_1" [label="1: Start test\nFormals:  p:int*\nLocals:  y:int x:int \n  " color=yellow style=filled]
+	 "main.fad58de7366495db_7" -> "main.fad58de7366495db_5" ;
+"test.098f6bcd4621d373_1" [label="1: Start test\nFormals:  p:int*\nLocals:  y:int x:int \n  " color=yellow style=filled]
 	
 
-	 "test.098f6bcd4621d373cade4e832627b4f6_1" -> "test.098f6bcd4621d373cade4e832627b4f6_5" ;
-"test.098f6bcd4621d373cade4e832627b4f6_2" [label="2: Exit test \n  " color=yellow style=filled]
+	 "test.098f6bcd4621d373_1" -> "test.098f6bcd4621d373_5" ;
+"test.098f6bcd4621d373_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test.098f6bcd4621d373cade4e832627b4f6_3" [label="3:  BinaryOperatorStmt: Add \n   n$0=*&x:int [line 22, column 5]\n  n$1=*&y:int [line 22, column 9]\n " shape="box"]
+"test.098f6bcd4621d373_3" [label="3:  BinaryOperatorStmt: Add \n   n$0=*&x:int [line 22, column 5]\n  n$1=*&y:int [line 22, column 9]\n " shape="box"]
 	
 
-	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_6" ;
-"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(y:int); [line 21, column 5]\n  *&y:int=1 [line 21, column 5]\n " shape="box"]
+	 "test.098f6bcd4621d373_3" -> "test.098f6bcd4621d373_6" ;
+"test.098f6bcd4621d373_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(y:int); [line 21, column 5]\n  *&y:int=1 [line 21, column 5]\n " shape="box"]
 	
 
-	 "test.098f6bcd4621d373cade4e832627b4f6_4" -> "test.098f6bcd4621d373cade4e832627b4f6_3" ;
-"test.098f6bcd4621d373cade4e832627b4f6_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 20, column 5]\n  n$2=*&p:int* [line 20, column 14]\n  n$3=*n$2:int [line 20, column 13]\n  *&x:int=n$3 [line 20, column 5]\n " shape="box"]
+	 "test.098f6bcd4621d373_4" -> "test.098f6bcd4621d373_3" ;
+"test.098f6bcd4621d373_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 20, column 5]\n  n$2=*&p:int* [line 20, column 14]\n  n$3=*n$2:int [line 20, column 13]\n  *&x:int=n$3 [line 20, column 5]\n " shape="box"]
 	
 
-	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_4" ;
-"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 19, column 3]\n " shape="box"]
+	 "test.098f6bcd4621d373_5" -> "test.098f6bcd4621d373_4" ;
+"test.098f6bcd4621d373_6" [label="6:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 19, column 3]\n " shape="box"]
 	
 
-	 "test.098f6bcd4621d373cade4e832627b4f6_6" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_1" [label="1: Start with_conditional\nFormals:  p:int*\nLocals:  x:int \n  " color=yellow style=filled]
+	 "test.098f6bcd4621d373_6" -> "test.098f6bcd4621d373_2" ;
+"with_conditional.c7f3381cc5bd6cfe_1" [label="1: Start with_conditional\nFormals:  p:int*\nLocals:  x:int \n  " color=yellow style=filled]
 	
 
-	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_1" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_8" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_2" [label="2: Exit with_conditional \n  " color=yellow style=filled]
+	 "with_conditional.c7f3381cc5bd6cfe_1" -> "with_conditional.c7f3381cc5bd6cfe_8" ;
+"with_conditional.c7f3381cc5bd6cfe_2" [label="2: Exit with_conditional \n  " color=yellow style=filled]
 	
 
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_3" [label="3: + \n   END_BRANCHES\n " ]
+"with_conditional.c7f3381cc5bd6cfe_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
-	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_3" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_9" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_4" [label="4: Prune (true branch, boolean exp (terminated)) \n   n$0=*&p:int* [line 29, column 5]\n  PRUNE(n$0, true); [line 29, column 5]\n " shape="invhouse"]
+	 "with_conditional.c7f3381cc5bd6cfe_3" -> "with_conditional.c7f3381cc5bd6cfe_9" ;
+"with_conditional.c7f3381cc5bd6cfe_4" [label="4: Prune (true branch, boolean exp (terminated)) \n   n$0=*&p:int* [line 29, column 5]\n  PRUNE(n$0, true); [line 29, column 5]\n " shape="invhouse"]
 	
 
-	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_4" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_6" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_5" [label="5: Prune (false branch, boolean exp (terminated)) \n   n$0=*&p:int* [line 29, column 5]\n  PRUNE(!n$0, false); [line 29, column 5]\n " shape="invhouse"]
+	 "with_conditional.c7f3381cc5bd6cfe_4" -> "with_conditional.c7f3381cc5bd6cfe_6" ;
+"with_conditional.c7f3381cc5bd6cfe_5" [label="5: Prune (false branch, boolean exp (terminated)) \n   n$0=*&p:int* [line 29, column 5]\n  PRUNE(!n$0, false); [line 29, column 5]\n " shape="invhouse"]
 	
 
-	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_5" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_7" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_6" [label="6:  ConditionalStmt Branch \n   n$1=*&p:int* [line 29, column 10]\n  n$2=*n$1:int [line 29, column 9]\n  n$3=*&x:int [line 29, column 14]\n  *&return:int=(n$2 + n$3) [line 29, column 5]\n " shape="box"]
+	 "with_conditional.c7f3381cc5bd6cfe_5" -> "with_conditional.c7f3381cc5bd6cfe_7" ;
+"with_conditional.c7f3381cc5bd6cfe_6" [label="6:  ConditionalStmt Branch \n   n$1=*&p:int* [line 29, column 10]\n  n$2=*n$1:int [line 29, column 9]\n  n$3=*&x:int [line 29, column 14]\n  *&return:int=(n$2 + n$3) [line 29, column 5]\n " shape="box"]
 	
 
-	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_6" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_3" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_7" [label="7:  ConditionalStmt Branch \n   n$4=*&x:int [line 29, column 18]\n  *&return:int=n$4 [line 29, column 5]\n " shape="box"]
+	 "with_conditional.c7f3381cc5bd6cfe_6" -> "with_conditional.c7f3381cc5bd6cfe_3" ;
+"with_conditional.c7f3381cc5bd6cfe_7" [label="7:  ConditionalStmt Branch \n   n$4=*&x:int [line 29, column 18]\n  *&return:int=n$4 [line 29, column 5]\n " shape="box"]
 	
 
-	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_7" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_3" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 28, column 5]\n  *&x:int=1 [line 28, column 5]\n " shape="box"]
+	 "with_conditional.c7f3381cc5bd6cfe_7" -> "with_conditional.c7f3381cc5bd6cfe_3" ;
+"with_conditional.c7f3381cc5bd6cfe_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 28, column 5]\n  *&x:int=1 [line 28, column 5]\n " shape="box"]
 	
 
-	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_8" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_4" ;
-	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_8" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_5" ;
-"with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_9" [label="9:  Return Stmt \n  " shape="box"]
+	 "with_conditional.c7f3381cc5bd6cfe_8" -> "with_conditional.c7f3381cc5bd6cfe_4" ;
+	 "with_conditional.c7f3381cc5bd6cfe_8" -> "with_conditional.c7f3381cc5bd6cfe_5" ;
+"with_conditional.c7f3381cc5bd6cfe_9" [label="9:  Return Stmt \n  " shape="box"]
 	
 
-	 "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_9" -> "with_conditional.c7f3381cc5bd6cfe19bc60c013ae8f1c_2" ;
+	 "with_conditional.c7f3381cc5bd6cfe_9" -> "with_conditional.c7f3381cc5bd6cfe_2" ;
 }

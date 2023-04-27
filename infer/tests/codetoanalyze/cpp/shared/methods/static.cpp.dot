@@ -1,40 +1,40 @@
 /* @generated */
 digraph cfg {
-"div0_class#4984704850372216251.260ce38d809793fc3e38787f8d1eb4d6_1" [label="1: Start div0_class\nFormals: \nLocals:  \n  " color=yellow style=filled]
+"div0_class#4984704850372216251.260ce38d809793fc_1" [label="1: Start div0_class\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_class#4984704850372216251.260ce38d809793fc3e38787f8d1eb4d6_1" -> "div0_class#4984704850372216251.260ce38d809793fc3e38787f8d1eb4d6_3" ;
-"div0_class#4984704850372216251.260ce38d809793fc3e38787f8d1eb4d6_2" [label="2: Exit div0_class \n  " color=yellow style=filled]
+	 "div0_class#4984704850372216251.260ce38d809793fc_1" -> "div0_class#4984704850372216251.260ce38d809793fc_3" ;
+"div0_class#4984704850372216251.260ce38d809793fc_2" [label="2: Exit div0_class \n  " color=yellow style=filled]
 	
 
-"div0_class#4984704850372216251.260ce38d809793fc3e38787f8d1eb4d6_3" [label="3:  Call _fun_A::fun \n   n$1=_fun_A::fun(0:int) [line 15, column 21]\n " shape="box"]
+"div0_class#4984704850372216251.260ce38d809793fc_3" [label="3:  Call _fun_A::fun \n   n$1=_fun_A::fun(0:int) [line 15, column 21]\n " shape="box"]
 	
 
-	 "div0_class#4984704850372216251.260ce38d809793fc3e38787f8d1eb4d6_3" -> "div0_class#4984704850372216251.260ce38d809793fc3e38787f8d1eb4d6_2" ;
-"div0_instance(class A)#13376949534750090437.fc775825a5031b981817dd20651240b0_1" [label="1: Start div0_instance\nFormals:  a:A*\nLocals:  \n  " color=yellow style=filled]
+	 "div0_class#4984704850372216251.260ce38d809793fc_3" -> "div0_class#4984704850372216251.260ce38d809793fc_2" ;
+"div0_instance(class A)#1337694953.fc775825a5031b98_1" [label="1: Start div0_instance\nFormals:  a:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_instance(class A)#13376949534750090437.fc775825a5031b981817dd20651240b0_1" -> "div0_instance(class A)#13376949534750090437.fc775825a5031b981817dd20651240b0_3" ;
-"div0_instance(class A)#13376949534750090437.fc775825a5031b981817dd20651240b0_2" [label="2: Exit div0_instance \n  " color=yellow style=filled]
+	 "div0_instance(class A)#1337694953.fc775825a5031b98_1" -> "div0_instance(class A)#1337694953.fc775825a5031b98_3" ;
+"div0_instance(class A)#1337694953.fc775825a5031b98_2" [label="2: Exit div0_instance \n  " color=yellow style=filled]
 	
 
-"div0_instance(class A)#13376949534750090437.fc775825a5031b981817dd20651240b0_3" [label="3:  Call _fun_A::fun \n   n$0=*&a:A* [line 19, column 3]\n  n$2=_fun_A::fun(0:int) [line 19, column 3]\n " shape="box"]
+"div0_instance(class A)#1337694953.fc775825a5031b98_3" [label="3:  Call _fun_A::fun \n   n$0=*&a:A* [line 19, column 3]\n  n$2=_fun_A::fun(0:int) [line 19, column 3]\n " shape="box"]
 	
 
-	 "div0_instance(class A)#13376949534750090437.fc775825a5031b981817dd20651240b0_3" -> "div0_instance(class A)#13376949534750090437.fc775825a5031b981817dd20651240b0_2" ;
-"fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_1" [label="1: Start A::fun\nFormals:  a:int\nLocals:  \n  " color=yellow style=filled]
+	 "div0_instance(class A)#1337694953.fc775825a5031b98_3" -> "div0_instance(class A)#1337694953.fc775825a5031b98_2" ;
+"fun#A#(6769534270530582672).0ab578f4190d39d2_1" [label="1: Start A::fun\nFormals:  a:int\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_1" -> "fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_3" ;
-"fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_2" [label="2: Exit A::fun \n  " color=yellow style=filled]
+	 "fun#A#(6769534270530582672).0ab578f4190d39d2_1" -> "fun#A#(6769534270530582672).0ab578f4190d39d2_3" ;
+"fun#A#(6769534270530582672).0ab578f4190d39d2_2" [label="2: Exit A::fun \n  " color=yellow style=filled]
 	
 
-"fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 13, column 32]\n " shape="box"]
+"fun#A#(6769534270530582672).0ab578f4190d39d2_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 13, column 32]\n " shape="box"]
 	
 
-	 "fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_3" -> "fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_4" ;
-"fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 13, column 21]\n " shape="box"]
+	 "fun#A#(6769534270530582672).0ab578f4190d39d2_3" -> "fun#A#(6769534270530582672).0ab578f4190d39d2_4" ;
+"fun#A#(6769534270530582672).0ab578f4190d39d2_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 13, column 21]\n " shape="box"]
 	
 
-	 "fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_4" -> "fun#A#(6769534270530582672).0ab578f4190d39d2c1b23c6d46a310c6_2" ;
+	 "fun#A#(6769534270530582672).0ab578f4190d39d2_4" -> "fun#A#(6769534270530582672).0ab578f4190d39d2_2" ;
 }
