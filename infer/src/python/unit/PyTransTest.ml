@@ -8,10 +8,10 @@
 open! IStd
 module F = Format
 
-let%test_module "to_proc_desc" =
-  ( module struct
-    let sourcefile = Textual.SourceFile.create "dummy.py"
+let sourcefile = Textual.SourceFile.create "dummy.py"
 
+let%test_module "basic_tests" =
+  ( module struct
     let%expect_test _ =
       let source = "x = 42" in
       Py.initialize ~interpreter:Version.python_exe () ;
@@ -113,8 +113,11 @@ print(x + y)
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
+  end )
 
 
+let%test_module "top_level_calls" =
+  ( module struct
     let%expect_test _ =
       let source =
         {|
@@ -242,8 +245,11 @@ print(z)
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
+  end )
 
 
+let%test_module "conditionals" =
+  ( module struct
     let%expect_test _ =
       let source =
         {|
