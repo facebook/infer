@@ -488,4 +488,66 @@ def f(x, y):
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+def foo(x):
+    pass
+
+def f(x):
+    foo(1 if x else 0)
+      |} in
+      Py.initialize ~version:3 ~minor:8 () ;
+      let code = FFI.from_string ~source ~filename:"dummy" in
+      Py.finalize () ;
+      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      F.printf "%a" Textual.Module.pp res ;
+      [%expect
+        {|
+      .source_language = "python"
+
+      define $toplevel::main() : *PyObject {
+        #b0:
+            n0 = $builtins.python_code("foo")
+            n1 = $builtins.python_code("f")
+            ret null
+
+      }
+
+      define f(x: *PyObject) : *PyObject {
+        #b0:
+            n0:*PyObject = load &x
+            n1:*PyObject = load &$globals::foo
+            jmp b1(n1), b2(n1)
+
+        #b1(n2: *PyObject):
+            prune $builtins.is_true(n0)
+            jmp b3($builtins.python_int(1), n2)
+
+        #b2(n3: *PyObject):
+            prune $builtins.is_true(__sil_lnot(n0))
+            jmp b3($builtins.python_int(0), n3)
+
+        #b3(n4: *PyInt, n5: *PyObject):
+            n6 = $builtins.python_call(n5, n4)
+            ret null
+
+      }
+
+      define foo(x: *PyObject) : *PyObject {
+        #b0:
+            ret null
+
+      }
+
+      declare $builtins.python_code(*String) : *PyCode
+
+      declare $builtins.python_call(...) : *PyObject
+
+      declare $builtins.python_tuple(...) : *PyObject
+
+      declare $builtins.python_string(*String) : *PyString
+
+      declare $builtins.python_int(int) : *PyInt |}]
   end )

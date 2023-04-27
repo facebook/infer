@@ -89,7 +89,8 @@ module Builtins = struct
       ; ("is_true", {formals_types= Some [annot pyObject]; result_type= annot pyInt})
       ; ( "binary_add"
         , {formals_types= Some [annot pyObject; annot pyObject]; result_type= annot pyObject} )
-      ; ("python_code", {formals_types= Some [annot string_]; result_type= annot pyCode}) ]
+      ; ("python_code", {formals_types= Some [annot string_]; result_type= annot pyCode})
+      ; ("python_call", {formals_types= None; result_type= annot pyObject}) ]
     in
     List.fold_left
       ~f:(fun acc (name, builtin) -> Info.add name builtin acc)

@@ -77,6 +77,8 @@ module Env = struct
     ; forward_labels= Labels.empty }
 
 
+  let stack {node= {stack}} = stack
+
   (** Similar to [List.map] but an [env] is threaded along the way *)
   let rec map ~f ~(env : t) = function
     | [] ->
@@ -101,6 +103,9 @@ module Env = struct
     let node = reset_for_node node in
     {env with node}
 
+
+  (** Reset the [stack] field of a [node] *)
+  let reset_stack ({node} as env) = {env with node= {node with stack= []}}
 
   (** Update the [last_line] field of an env, if new information is availbe. *)
   let update_last_line ({node} as env) last_line =
@@ -196,10 +201,7 @@ module Env = struct
 
 
   (** Returns the list of all instructions recorded for the current code unit *)
-  let get_instructions {node} =
-    let get_instructions {instructions} = List.rev instructions in
-    get_instructions node
-
+  let get_instructions {node= {instructions}} = List.rev instructions
 
   (** Register a global name (function, variable, ...). Since Python allows "toplevel" code, they
       are encoded within a specially named function that behaves as a toplevel scope, and global
@@ -479,22 +481,7 @@ module CALL_FUNCTION = struct
     pop
 
 
-  let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
-    Debug.p "[%s] argc = %d\n" opname arg ;
-    let env, args = pop_n_tos opname code env arg [] in
-    Debug.p "  #args = %d\n" (List.length args) ;
-    let env, fname = pop_tos opname env in
-    Debug.p "  fname = %s\n" (DataStack.show_cell fname) ;
-    let fname =
-      match fname with
-      | DataStack.Name ndx ->
-          co_names.(ndx)
-      | Fun (f, _) ->
-          f
-      | VarName _ | Const _ | Temp _ ->
-          L.die UserError "[%s] invalid function on the stack: %s" opname
-            (DataStack.show_cell fname)
-    in
+  let static_call env fname args =
     let env, id = Env.temp env in
     let loc = Env.loc env in
     let env, proc =
@@ -508,6 +495,31 @@ module CALL_FUNCTION = struct
     let env = Env.push_instr env let_instr in
     let env = Env.push env (DataStack.Temp id) in
     (env, None)
+
+
+  let dynamic_call env caller_id args =
+    let args = T.Exp.Var caller_id :: args in
+    let env, id, _typ = mk_builtin_call env "python_call" args in
+    let env = Env.push env (DataStack.Temp id) in
+    (env, None)
+
+
+  let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
+    Debug.p "[%s] argc = %d\n" opname arg ;
+    let env, args = pop_n_tos opname code env arg [] in
+    Debug.p "  #args = %d\n" (List.length args) ;
+    let env, fname = pop_tos opname env in
+    Debug.p "  fname = %s\n" (DataStack.show_cell fname) ;
+    match fname with
+    | DataStack.Name ndx ->
+        let fname = co_names.(ndx) in
+        static_call env fname args
+    | Temp id ->
+        dynamic_call env id args
+    | Fun (f, _) ->
+        static_call env f args
+    | VarName _ | Const _ ->
+        L.die UserError "[%s] invalid function on the stack: %s" opname (DataStack.show_cell fname)
 end
 
 module BINARY_ADD = struct
@@ -645,6 +657,8 @@ end
 
 (** Main opcode dispatch function. *)
 let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
+  Debug.p "\n[run_instruction] Dump stack before opcode\n" ;
+  List.iter (Env.stack env) ~f:(fun cell -> Debug.p "        %s\n" (DataStack.show_cell cell)) ;
   let env = Env.update_last_line env starts_line in
   (* TODO: there are < 256 opcodes, could setup an array of callbacks instead *)
   let env, maybe_term =
@@ -727,15 +741,30 @@ let offset_of_code instructions =
   match instructions with FFI.Instruction.{offset} :: _ -> Some offset | _ -> None
 
 
-let mk_jump loc labels =
+let mk_jump loc labels ssa_args =
   let nodes =
     List.map
       ~f:(fun value ->
         let label = {T.NodeName.value; loc} in
-        {T.Terminator.label; ssa_args= []} )
+        {T.Terminator.label; ssa_args} )
       labels
   in
   T.Terminator.Jump nodes
+
+
+(** When reaching a jump instruction with a non empty datastack, turn it into loads/ssa variables
+    and properly set the jump/label ssa_args and ssa_parameters *)
+let stack_to_ssa env code =
+  let env, zipped =
+    Env.map ~env (Env.stack env) ~f:(fun env cell ->
+        let env, exp = load_cell env code cell in
+        match exp with
+        | `Ok (exp, typ) ->
+            (env, (exp, typ))
+        | `Error s ->
+            L.die InternalError "[stack_to_ssa] %s" s )
+  in
+  (Env.reset_stack env, List.unzip zipped)
 
 
 (** Process the instructions of a code object up to the point where a terminator is reached. It will
@@ -756,10 +785,9 @@ let mk_jump loc labels =
     If the terminator is [Relative], an unconditional jump forward is performed, based on the offset
     of the next instruction. *)
 let until_terminator env {Env.label_name; ssa_parameters; pruned} code instructions =
-  Debug.p "[until_terminator] %s\n" label_name ;
+  Debug.p "[ut] %s\n" label_name ;
   let label_loc = first_loc_of_code instructions in
   let label = {T.NodeName.value= label_name; loc= label_loc} in
-  (* TODO: this list is currently always empty, so check if reverse is needed or not *)
   let env, ssa_parameters =
     Env.map ~env ssa_parameters ~f:(fun env typ ->
         let env, id = Env.temp env in
@@ -772,8 +800,17 @@ let until_terminator env {Env.label_name; ssa_parameters; pruned} code instructi
         env
     | Some exp ->
         let instr = T.Instr.Prune {exp; loc= label_loc} in
+        Debug.p "[ut] pruning %a\n" T.Exp.pp exp ;
         Env.push_instr env instr
   in
+  (* If we have ssa_parameters, we need to push them on the stack to restore its right shape.
+     Doing a fold_right is important to keep the correct order. *)
+  let env =
+    List.fold_right ~init:env ssa_parameters ~f:(fun (id, _) env ->
+        Debug.p "[ut] restoring stack after jump: %d\n" (T.Ident.to_int id) ;
+        Env.push env (DataStack.Temp id) )
+  in
+  (* process instructions until the next terminator *)
   let env, maybe_term, rest = run env code instructions in
   let last_loc = Env.loc env in
   let next_offset () =
@@ -783,13 +820,15 @@ let until_terminator env {Env.label_name; ssa_parameters; pruned} code instructi
     | Some offset ->
         offset
   in
+  Debug.p "[ut] After [run], stack size is %d\n" (List.length @@ Env.stack env) ;
+  let env, (ssa_args, label_ssa_parameters) = stack_to_ssa env code in
   match maybe_term with
   | None ->
       L.die InternalError "Reached the end of code without spotting a terminator"
   | Some (Label ({label_name= next_label} as label_info)) ->
       (* A label was spotted without having a clear Textual terminator. Insert a jump to this
          label to create a proper node, and resume the processing. *)
-      let jump = mk_jump last_loc [next_label] in
+      let jump = mk_jump last_loc [next_label] ssa_args in
       let node =
         T.Node.
           { label
@@ -828,16 +867,18 @@ let until_terminator env {Env.label_name; ssa_parameters; pruned} code instructi
       let condF = PyCommon.mk_is_true (T.Exp.not cond) in
       let next_prune = if next_is_true then condT else condF in
       let other_prune = if next_is_true then condF else condT in
-      let next_info = {Env.label_name= next_label; ssa_parameters= []; pruned= Some next_prune} in
+      let next_info =
+        {Env.label_name= next_label; ssa_parameters= label_ssa_parameters; pruned= Some next_prune}
+      in
       let other_info =
-        {Env.label_name= other_label; ssa_parameters= []; pruned= Some other_prune}
+        {Env.label_name= other_label; ssa_parameters= label_ssa_parameters; pruned= Some other_prune}
       in
       (* Register the jump target *)
       Debug.p "  TwoWay: register %s at %d\n" other_label other_offset ;
       let next_offset = next_offset () in
       let env = Env.register_label next_offset next_info env in
       let env = Env.register_label other_offset other_info env in
-      let jump = mk_jump last_loc [next_label; other_label] in
+      let jump = mk_jump last_loc [next_label; other_label] ssa_args in
       let node =
         T.Node.
           { label
@@ -862,7 +903,7 @@ let until_terminator env {Env.label_name; ssa_parameters; pruned} code instructi
       in
       (* create a new label and register it *)
       let env, forward_label = Env.label env in
-      let jump = mk_jump last_loc [forward_label] in
+      let jump = mk_jump last_loc [forward_label] ssa_args in
       let node =
         T.Node.
           { label
@@ -874,7 +915,9 @@ let until_terminator env {Env.label_name; ssa_parameters; pruned} code instructi
           ; label_loc }
       in
       (* Now record the future label *)
-      let label_info = {Env.label_name= forward_label; ssa_parameters= []; pruned= None} in
+      let label_info =
+        {Env.label_name= forward_label; ssa_parameters= label_ssa_parameters; pruned= None}
+      in
       let env = Env.register_label (offset + delta) label_info env in
       Debug.p "  Relative: register %s at %d\n" forward_label (offset + delta) ;
       (env, rest, node)
@@ -882,10 +925,10 @@ let until_terminator env {Env.label_name; ssa_parameters; pruned} code instructi
 
 (** Process a sequence of instructions until there is no more left to process. *)
 let rec nodes env label_info code instructions =
+  let env = Env.reset_for_node env in
   let env, instructions, textual_node = until_terminator env label_info code instructions in
   if List.is_empty instructions then (env, [textual_node])
   else
-    let env = Env.reset_for_node env in
     let env, label_info =
       (* If the next instruction has a label, use it, otherwise pick a fresh one. *)
       let env, jump_target = has_jump_target env instructions in
@@ -902,7 +945,7 @@ let rec nodes env label_info code instructions =
 
 (** Process a single code unit (toplevel code, function body, ...) *)
 let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames; instructions} as code) =
-  Debug.p "[to_proc_desc] %s\n" name.T.ProcName.value ;
+  Debug.p "\n\n[to_proc_desc] %s\n" name.T.ProcName.value ;
   let qualified_name = qualified_procname name in
   let pyObject = T.Typ.{typ= pyObject; attributes= []} in
   let loc = name.T.ProcName.loc in
