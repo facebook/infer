@@ -2276,11 +2276,6 @@ INTERNAL OPTIONS
        --force-integration-reset
            Cancel the effect of --force-integration.
 
-       --no-fork-mode
-           Deactivates: Use 'fork' system call to spawn sub-processes. If not
-           set, use the equivalent of 'fork/exec' -- which is usually slower,
-           but is available on all OSes. (Conversely: --fork-mode)
-
        --from-json-config-impact-report-reset
            Cancel the effect of --from-json-config-impact-report.
 
@@ -2890,6 +2885,12 @@ INTERNAL OPTIONS
        --uninit-interproc
            Activates: Run uninit check in the experimental interprocedural
            mode (Conversely: --no-uninit-interproc)
+
+       --no-unix-fork
+           Deactivates: Use the fork(2) system call to spawn sub-processes.
+           Otherwise use the equivalent of fork(2) followed by undefined(3)
+           -- which is usually slower, but is available on all OSes.
+           (Conversely: --unix-fork)
 
        --version-vcs
            Print version control system commit and exit

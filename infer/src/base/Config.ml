@@ -1633,13 +1633,6 @@ and force_integration =
        |> String.concat ~sep:", " ) )
 
 
-and fork_mode =
-  CLOpt.mk_bool ~long:"fork-mode"
-    ~default:(not (Stdlib.( = ) Version.build_platform Version.Windows))
-    "Use 'fork' system call to spawn sub-processes. If not set, use the equivalent of 'fork/exec' \
-     -- which  is usually slower, but is available on all OSes."
-
-
 and from_json_report =
   CLOpt.mk_path_opt ~long:"from-json-report"
     ~in_help:InferCommand.[(Report, manual_generic)]
@@ -3200,6 +3193,14 @@ and uninit_interproc =
   CLOpt.mk_bool ~long:"uninit-interproc" "Run uninit check in the experimental interprocedural mode"
 
 
+and unix_fork =
+  CLOpt.mk_bool ~long:"unix-fork"
+    ~default:(not (Stdlib.( = ) Version.build_platform Version.Windows))
+    "Use the $(b,fork)(2) system call to spawn sub-processes. Otherwise use the equivalent of \
+     $(b,fork)(2) followed by $(exec)(3) -- which  is usually slower, but is available on all \
+     OSes."
+
+
 and version =
   let var = ref `None in
   CLOpt.mk_set var `Full ~deprecated:["version"] ~long:"version"
@@ -3755,8 +3756,6 @@ and filtering = !filtering
 and force_delete_results_dir = !force_delete_results_dir
 
 and force_integration = !force_integration
-
-and fork_mode = !fork_mode
 
 and from_json_report =
   Option.value !from_json_report
@@ -4346,6 +4345,8 @@ and trace_ondemand = !trace_ondemand
 and trace_topl = !trace_topl
 
 and uninit_interproc = !uninit_interproc
+
+and unix_fork = !unix_fork
 
 and workspace = !workspace
 

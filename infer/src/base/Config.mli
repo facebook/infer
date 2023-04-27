@@ -377,8 +377,6 @@ val force_delete_results_dir : bool
 
 val force_integration : build_system option
 
-val fork_mode : bool
-
 val from_json_report : string
 
 val from_json_config_impact_report : string
@@ -829,6 +827,8 @@ val trace_ondemand : bool
 val trace_topl : bool
 
 val uninit_interproc : bool
+
+val unix_fork : bool
 
 val workspace : string option
 

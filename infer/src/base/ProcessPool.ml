@@ -523,7 +523,7 @@ let create :
   let children_pipes = create_pipes jobs in
   (* Flush formatters in the parent before we start forking children. *)
   L.flush_formatters () ;
-  let make_child = if Config.fork_mode then fork_child else spawn_child in
+  let make_child = if Config.unix_fork then fork_child else spawn_child in
   let slots =
     Array.init jobs ~f:(fun slot ->
         let child_pipe = List.nth_exn children_pipes slot in
