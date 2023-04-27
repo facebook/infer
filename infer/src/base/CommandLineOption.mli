@@ -18,8 +18,7 @@ type parse_mode =
   | NoParse  (** all arguments are anonymous arguments, no parsing is attempted *)
 [@@deriving compare]
 
-val is_originator : bool
-(** Do not use this value, use [Config.is_originator] instead *)
+val is_originator : bool [@@deprecated "Do not use this value, use [Config.is_originator] instead"]
 
 val init_work_dir : string
 

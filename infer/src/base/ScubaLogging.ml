@@ -30,7 +30,7 @@ let set_common_fields sample =
   let open Scuba in
   sample
   |> add_int ~name:"pid" ~value:(ProcessPoolState.get_pid () |> Pid.to_int)
-  |> add_int ~name:"is_main_process" ~value:(Bool.to_int CommandLineOption.is_originator)
+  |> add_int ~name:"is_main_process" ~value:(Bool.to_int Config.is_originator)
   |> add_normal ~name:"hostname" ~value:hostname
   |> maybe_add_normal ~name:"job_id" ~value:Config.job_id
   |> add_normal ~name:"command" ~value:(InferCommand.to_string Config.command)

@@ -3318,7 +3318,7 @@ let inferconfig_file =
 
 
 let post_parsing_initialization command_opt =
-  if CommandLineOption.is_originator then
+  if CLOpt.is_originator [@warning "-3"] then
     (* make sure subprocesses read from the same .inferconfig as the toplevel process *)
     Option.iter inferconfig_file ~f:(fun filename ->
         let abs_filename =
@@ -4438,7 +4438,7 @@ let scuba_execution_id =
 let is_originator =
   (* in remote execution environments, the environment variable used by
      [CommandLineOption.is_originator] will not carry over *)
-  CLOpt.is_originator && not buck_cache_mode
+  (CLOpt.is_originator [@warning "-3"]) && not buck_cache_mode
 
 
 let toplevel_results_dir =

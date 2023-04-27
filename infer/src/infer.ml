@@ -127,7 +127,7 @@ let log_environment_info () =
 let () =
   (* We specifically want to collect samples only from the main process until
      we figure out what other entries and how we want to collect *)
-  if CommandLineOption.is_originator then ScubaLogging.register_global_log_flushing_at_exit () ;
+  if Config.is_originator then ScubaLogging.register_global_log_flushing_at_exit () ;
   ( match Config.check_version with
   | Some check_version ->
       if not (String.equal check_version Version.versionString) then

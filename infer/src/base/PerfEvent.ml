@@ -227,7 +227,7 @@ let logger =
        (* if invoked in a sub-dir (e.g., in Buck integrations), log inside the original log file *)
        ResultsDirEntryName.get_path ~results_dir:Config.toplevel_results_dir PerfEvents
      in
-     let is_toplevel_process = CommandLineOption.is_originator && not !ProcessPoolState.in_child in
+     let is_toplevel_process = Config.is_originator && not !ProcessPoolState.in_child in
      ( if is_toplevel_process then
          let preexisting_logfile = ISys.file_exists log_file in
          if preexisting_logfile then Unix.unlink log_file ) ;
