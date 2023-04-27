@@ -138,14 +138,14 @@ let () =
       () ) ;
   if Config.print_builtins then Builtin.print_and_exit () ;
   let has_results_dir = setup () in
-  if has_results_dir then log_environment_info () ;
+  if has_results_dir && Config.is_originator then log_environment_info () ;
   if has_results_dir && Config.debug_mode && Config.is_originator then (
     L.progress "Logs in %s@." (ResultsDir.get_path Logs) ;
     Option.iter Config.scuba_execution_id ~f:(fun id -> L.progress "Execution ID %Ld@." id) ) ;
-  if Option.is_some Config.run_as_child then (
-    InferAnalyze.register_active_checkers () ;
-    never_returns (ProcessPool.run_as_child ()) ) ;
   ( match Config.command with
+  | _ when Option.is_some Config.run_as_child ->
+      InferAnalyze.register_active_checkers () ;
+      never_returns (ProcessPool.run_as_child ())
   | _ when Config.test_determinator && not Config.process_clang_ast ->
       TestDeterminator.compute_and_emit_test_to_run ()
   | _ when Option.is_some Config.java_debug_source_file_info ->

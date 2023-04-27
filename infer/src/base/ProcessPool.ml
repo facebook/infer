@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module CLOpt = CommandLineOption
 module L = Logging
 
 module TaskGenerator = struct
@@ -459,9 +460,10 @@ module Worker = struct
   let id_to_int = Fn.id
 end
 
-(** Data marshalled to describe what a child spawned by [spawn_child] below must do. *)
-type ('work, 'result, 'final) child_data =
-  {slot: int; child_prologue: unit -> unit; f: 'work -> 'result option; epilogue: unit -> 'final}
+(** Data marshalled to describe what a child spawned by [spawn_child] below must do. The only data
+    we need that isn't captured in this closure are the in/out channels to communicate with the
+    orchestrator (main) process. *)
+type child_data = updates_oc:Out_channel.t -> orders_ic:In_channel.t -> never_returns
 
 (** Spawn a new child and start it so that it is ready for work.
 
@@ -469,19 +471,15 @@ type ('work, 'result, 'final) child_data =
     the parent to send instructions down to the child. *)
 let spawn_child ~child_prologue ~slot (_updates_r, updates_w) ~f ~epilogue =
   let to_child_r, to_child_w = Unix.pipe () in
-  let orig_args = Sys.get_argv () in
-  let args =
-    (* Craft the command-line for the subprocesses: add --run-as-child <n> to the current one *)
-    match Array.to_list orig_args with
-    | [] ->
-        assert false (* always contain the name of the binary *)
-    | hd_args :: tl_args ->
-        let new_argl = hd_args :: "--run-as-child" :: string_of_int slot :: tl_args in
-        Array.of_list new_argl
-  in
+  let prog = (Sys.get_argv ()).(0) in
   let pid =
-    UnixLabels.create_process ~prog:orig_args.(0) ~args ~stdin:to_child_r ~stdout:updates_w
-      ~stderr:Unix.stderr
+    CLOpt.in_env_with_extra_args
+      ["--run-as-child"; string_of_int slot]
+      ~f:(fun () ->
+        (* reset [args] to only include the program name since all other args are passed via
+           [INFER_ARGS] *)
+        UnixLabels.create_process ~prog ~args:[|prog|] ~stdin:to_child_r ~stdout:updates_w
+          ~stderr:Unix.stderr )
   in
   let down_pipe = Unix.out_channel_of_descr to_child_w in
   Stdlib.set_binary_mode_out down_pipe true ;
@@ -489,8 +487,11 @@ let spawn_child ~child_prologue ~slot (_updates_r, updates_w) ~f ~epilogue =
      it, hence unblocking the parent if the closure is too big. The scary messages
      warnings in the comments above ("LIMITATION") do not apply, because the child will
      not use [really_read] to access the contents of the pipe. *)
-  Marshal.to_channel down_pipe {slot; f; child_prologue; epilogue} [Marshal.Closures] ;
-  let[@warning "-26"] to_child_r = Unix.close to_child_r in
+  let child_thunk ~updates_oc ~orders_ic =
+    child slot ~child_prologue ~f ~updates_oc ~orders_ic ~epilogue
+  in
+  Marshal.to_channel down_pipe (child_thunk : child_data) [Closures] ;
+  Unix.close to_child_r ;
   {pid= Pid.of_int pid; down_pipe}
 
 
@@ -505,8 +506,8 @@ let run_as_child () =
   (* Get what we should do and who we are from our parent. Do NOT use [really_read] here,
      as we want the child and the parent to dialogue if the closure is too big.
   *)
-  let ({slot; f; child_prologue; epilogue} : _ child_data) = Marshal.from_channel orders_ic in
-  child slot ~child_prologue ~f ~updates_oc ~orders_ic ~epilogue
+  let child_thunk : child_data = Marshal.from_channel orders_ic in
+  child_thunk ~updates_oc ~orders_ic
 
 
 let rec create_pipes n = if Int.equal n 0 then [] else Unix.pipe () :: create_pipes (n - 1)

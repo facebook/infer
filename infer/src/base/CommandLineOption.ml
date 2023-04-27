@@ -1216,3 +1216,22 @@ let show_manual ?(scrub_defaults = false) ?internal_section format default_doc c
   in
   Cmdliner.Manpage.print format Format.std_formatter (command_doc.title, blocks) ;
   ()
+
+
+let add_to_env_args extra_args =
+  let old_infer_args = Sys.getenv args_env_var |> Option.value ~default:"" in
+  let args =
+    if String.equal old_infer_args "" then extra_args
+    else
+      (* HACK: it's ok to consider the string corresponding to potentially several args as one arg
+         here because when we'll format the final string it will keep it intact *)
+      old_infer_args :: extra_args
+  in
+  let env_value = String.concat ~sep:(String.of_char env_var_sep) args in
+  Unix.putenv ~key:args_env_var ~data:env_value
+
+
+let in_env_with_extra_args extra_args ~f =
+  let old_infer_args = Sys.getenv args_env_var |> Option.value ~default:"" in
+  add_to_env_args extra_args ;
+  protect ~f ~finally:(fun () -> Unix.putenv ~key:args_env_var ~data:old_infer_args)

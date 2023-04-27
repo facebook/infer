@@ -103,6 +103,8 @@ let build_system_of_exe_name name =
       |> List.dedup_and_sort ~compare:String.compare )
 
 
+let progress_bar_style_symbols = [("auto", `Auto); ("plain", `Plain); ("multiline", `MultiLine)]
+
 (** Constant configuration values *)
 
 let anonymous_block_num_sep = "_"
@@ -2211,9 +2213,8 @@ and progress_bar =
 
 
 and progress_bar_style =
-  CLOpt.mk_symbol ~long:"progress-bar-style"
-    ~symbols:[("auto", `Auto); ("plain", `Plain); ("multiline", `MultiLine)]
-    ~eq:Stdlib.( = ) ~default:`Auto
+  CLOpt.mk_symbol ~long:"progress-bar-style" ~symbols:progress_bar_style_symbols
+    ~eq:PolyVariantEqual.( = ) ~default:`Auto
     ~in_help:[(Analyze, manual_generic); (Capture, manual_generic)]
     "Style of the progress bar. $(b,auto) selects $(b,multiline) if connected to a tty, otherwise \
      $(b,plain)."
@@ -3959,15 +3960,31 @@ and procedures_summary_skip_empty = !procedures_summary_skip_empty
 and process_clang_ast = !process_clang_ast
 
 and progress_bar =
-  if !progress_bar && not !quiet then
-    match !progress_bar_style with
-    | `Auto when Unix.(isatty stdin && isatty stderr) && not (Utils.is_term_dumb ()) ->
-        `MultiLine
-    | `Auto ->
-        `Plain
-    | (`Plain | `MultiLine) as style ->
-        style
-  else `Quiet
+  let style =
+    if !progress_bar && not !quiet then
+      match !progress_bar_style with
+      | `Auto when Unix.(isatty stdin && isatty stderr) && not (Utils.is_term_dumb ()) ->
+          `MultiLine
+      | `Auto ->
+          `Plain
+      | (`Plain | `MultiLine) as style ->
+          style
+    else `Quiet
+  in
+  (* export the chosen style to the potential infer sub-processes as they won't necessarily get to
+     make the same choices, eg if they are run as children with a pipe from their parent on stdin as
+     it happens in [--no-unix-fork] *)
+  ( match style with
+  | `Quiet ->
+      CLOpt.add_to_env_args ["--quiet"]
+  | (`Plain | `MultiLine) as style ->
+      let symbol =
+        List.Assoc.find_exn ~equal:PolyVariantEqual.( = )
+          (List.Assoc.inverse progress_bar_style_symbols)
+          style
+      in
+      CLOpt.add_to_env_args ["--progress-bar-style"; symbol] ) ;
+  style
 
 
 and project_root = !project_root
