@@ -75,11 +75,11 @@ let timed_evaluate ~f =
 
 
 let to_scuba_entries ~prefix exe_duration =
-  let secs_to_ms s = s *. 1000. |> Float.to_int in
-  [ LogEntry.mk_time ~label:(prefix ^ "_sys") ~duration_ms:(sys_time exe_duration |> secs_to_ms)
-  ; LogEntry.mk_time ~label:(prefix ^ "_user") ~duration_ms:(user_time exe_duration |> secs_to_ms)
+  let secs_to_us s = s *. 1000_000. |> Float.to_int in
+  [ LogEntry.mk_time ~label:(prefix ^ "_sys") ~duration_us:(sys_time exe_duration |> secs_to_us)
+  ; LogEntry.mk_time ~label:(prefix ^ "_user") ~duration_us:(user_time exe_duration |> secs_to_us)
   ; LogEntry.mk_time ~label:(prefix ^ "_wall")
-      ~duration_ms:(wall_time exe_duration |> IMtime.span_to_ms_int) ]
+      ~duration_us:(wall_time exe_duration |> IMtime.span_to_us_int) ]
 
 
 let log ~prefix debug_kind exe_duration =

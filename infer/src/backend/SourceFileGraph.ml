@@ -9,8 +9,8 @@ module F = Format
 module L = Logging
 
 let time_and_run ~f ~msg =
-  let result, duration_ms = Utils.timeit ~f in
-  L.debug Capture Medium "%s took %d ms.@\n" msg duration_ms ;
+  let result, duration = Utils.timeit ~f in
+  L.debug Capture Medium "%s took %a.@\n" msg Mtime.Span.pp duration ;
   result
 
 

@@ -10,13 +10,13 @@ module L = Logging
 module PulseSumCountMap = Caml.Map.Make (Int)
 
 module DurationItem = struct
-  type t = {duration_ms: int; pname: string} [@@deriving equal]
+  type t = {duration_us: int; pname: string} [@@deriving equal]
 
-  let dummy = {duration_ms= 0; pname= ""}
+  let dummy = {duration_us= 0; pname= ""}
 
-  let compare {duration_ms= dr1} {duration_ms= dr2} = Int.compare dr1 dr2
+  let compare {duration_us= dr1} {duration_us= dr2} = Int.compare dr1 dr2
 
-  let pp f {pname; duration_ms} = F.fprintf f "%5dms: %s" duration_ms pname
+  let pp f {pname; duration_us} = F.fprintf f "%5dus: %s" duration_us pname
 end
 
 module LongestProcDurationHeap = struct
@@ -27,7 +27,7 @@ module LongestProcDurationHeap = struct
   let update (new_elt : DurationItem.t) heap =
     Option.iter Config.top_longest_proc_duration_size ~f:(fun heap_size ->
         if Heap.length heap < heap_size then Heap.add heap new_elt
-        else if new_elt.duration_ms > (Heap.minimum heap).duration_ms then (
+        else if new_elt.duration_us > (Heap.minimum heap).duration_us then (
           Heap.remove heap ;
           Heap.add heap new_elt ) )
 
@@ -155,9 +155,9 @@ let add_pulse_summaries_count n =
       PulseSumCountMap.update n (fun i -> Some (1 + Option.value ~default:0 i)) counters )
 
 
-let add_proc_duration pname duration_ms =
+let add_proc_duration_us pname duration_us =
   update_with Fields.longest_proc_duration_heap ~f:(fun heap ->
-      let new_elt = DurationItem.{pname; duration_ms} in
+      let new_elt = DurationItem.{pname; duration_us} in
       LongestProcDurationHeap.update new_elt heap ;
       heap )
 
@@ -313,10 +313,10 @@ let log_to_scuba stats =
   in
   let create_longest_proc_duration_heap field =
     Field.get field stats |> LongestProcDurationHeap.to_list
-    |> List.mapi ~f:(fun i DurationItem.{duration_ms} ->
+    |> List.mapi ~f:(fun i DurationItem.{duration_us} ->
            LogEntry.mk_time
              ~label:(F.sprintf "backend_stats.longest_proc_duration_heap_%d" i)
-             ~duration_ms )
+             ~duration_us )
   in
   let create_time_entry field =
     Field.get field stats

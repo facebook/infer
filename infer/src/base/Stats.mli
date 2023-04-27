@@ -38,7 +38,7 @@ val incr_pulse_captured_vars_length_contradictions : unit -> unit
 
 val add_pulse_summaries_count : int -> unit
 
-val add_proc_duration : string -> int -> unit
+val add_proc_duration_us : string -> int -> unit
 
 val incr_timeouts : unit -> unit
 

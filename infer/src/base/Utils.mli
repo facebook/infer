@@ -138,8 +138,8 @@ val yojson_lookup :
     json_value ~src) where src has element name appended. f is typically one of the above _of_yojson
     functions. *)
 
-val timeit : f:(unit -> 'a) -> 'a * int
-(** Returns the execution time of [f] in milliseconds together with its result *)
+val timeit : f:(unit -> 'a) -> 'a * Mtime.Span.t
+(** Returns the execution time of [f] together with its result *)
 
 val do_in_dir : dir:string -> f:(unit -> 'a) -> 'a
 (** executes [f] after cding into [dir] and then restores original cwd *)

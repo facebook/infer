@@ -9,7 +9,7 @@ open! IStd
 
 type count_entry_data = {value: int}
 
-type time_entry_data = {duration_ms: int}
+type time_entry_data = {duration_us: int}
 
 type string_data = {message: string}
 
@@ -23,9 +23,9 @@ let mk_count ~label ~value =
   {label; created_at_ts; data}
 
 
-let mk_time ~label ~duration_ms =
+let mk_time ~label ~duration_us =
   let created_at_ts = Unix.time () |> int_of_float in
-  let data = Time {duration_ms} in
+  let data = Time {duration_us} in
   {label; created_at_ts; data}
 
 

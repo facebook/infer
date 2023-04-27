@@ -49,9 +49,9 @@ let sample_from_event ({label; created_at_ts; data} : LogEntry.t) =
   | Count {value} ->
       create_sample_with_label (Printf.sprintf "count.%s" label)
       |> Scuba.add_int ~name:"value" ~value
-  | Time {duration_ms} ->
+  | Time {duration_us} ->
       create_sample_with_label (Printf.sprintf "time.%s" label)
-      |> Scuba.add_int ~name:"value" ~value:duration_ms
+      |> Scuba.add_int ~name:"value" ~value:duration_us
   | String {message} ->
       create_sample_with_label (Printf.sprintf "msg.%s" label)
       |> Scuba.add_normal ~name:"message" ~value:message
@@ -80,8 +80,9 @@ let pulse_log_message ~label ~message =
 
 
 let execute_with_time_logging label f =
-  let ret_val, duration_ms = Utils.timeit ~f in
-  let entry = LogEntry.mk_time ~label ~duration_ms in
+  let ret_val, duration = Utils.timeit ~f in
+  let duration_us = IMtime.span_to_us_int duration in
+  let entry = LogEntry.mk_time ~label ~duration_us in
   log_one entry ;
   ret_val
 

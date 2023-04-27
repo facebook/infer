@@ -224,11 +224,11 @@ let merge_reports () =
 
 
 let merge_report_summaries () =
-  let (), duration_ms =
+  let (), duration =
     Utils.timeit ~f:(fun () ->
         DBWriter.merge_report_summaries ~infer_outs:Config.merge_report_summaries )
   in
-  L.debug Analysis Quiet "Merging report summaries took %d ms.@\n" duration_ms
+  L.debug Analysis Quiet "Merging report summaries took %a.@\n" Mtime.Span.pp duration
 
 
 let report () =

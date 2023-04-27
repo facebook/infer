@@ -11,4 +11,4 @@ val span_to_s_float : Mtime.Span.t -> float
 
 val span_to_us_int : Mtime.Span.t -> int
 
-val span_to_ms_int : Mtime.Span.t -> int
+val span_to_ms_int : Mtime.Span.t -> int [@@warning "-unused-value-declaration"]

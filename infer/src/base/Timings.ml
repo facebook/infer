@@ -70,11 +70,11 @@ let to_scuba timings =
   |> List.concat_map ~f:(fun (timeable, digest) ->
          let _updated_digest, percentile_values = Tdigest.percentiles digest percentiles in
          List.map2_exn percentiles percentile_values ~f:(fun percentile pvalue_opt ->
-             (* log [0ms] if we don't have any measurement, i.e. the timeable didn't run *)
+             (* log [0s] if we don't have any measurement, i.e. the timeable didn't run *)
              let pvalue = Option.value ~default:0.0 pvalue_opt in
              let label =
                F.sprintf "backend_stats.analysis_%s_p%g" (Timeable.to_string timeable)
                  (100. *. percentile)
              in
-             let duration_ms = 1000. *. pvalue |> Float.to_int in
-             LogEntry.mk_time ~label ~duration_ms ) )
+             let duration_us = 1000_000. *. pvalue |> Float.to_int in
+             LogEntry.mk_time ~label ~duration_us ) )

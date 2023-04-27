@@ -421,8 +421,8 @@ let yojson_lookup yojson_assoc elt_name ~src ~f ~default =
 let timeit ~f =
   let start_time = Mtime_clock.counter () in
   let ret_val = f () in
-  let duration_ms = Mtime_clock.count start_time |> IMtime.span_to_ms_int in
-  (ret_val, duration_ms)
+  let duration = Mtime_clock.count start_time in
+  (ret_val, duration)
 
 
 let do_in_dir ~dir ~f =
