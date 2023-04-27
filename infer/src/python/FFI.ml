@@ -202,32 +202,6 @@ and new_py_instruction obj =
   {opname; opcode; arg; argval; offset; starts_line; is_jump_target}
 
 
-module Constant = struct
-  type t = pyConstant =
-    | PYCBool of bool
-    | PYCInt of int64
-    | PYCString of string
-    | PYCTuple of pyConstant array
-    | PYCCode of pyCode
-    | PYCNone
-  [@@deriving show, compare]
-
-  let create obj = new_py_constant obj
-
-  let as_code = function
-    | PYCCode c ->
-        Some c
-    | PYCBool _ | PYCInt _ | PYCString _ | PYCTuple _ | PYCNone ->
-        None
-
-
-  let as_name = function
-    | PYCString name ->
-        Some name
-    | PYCBool _ | PYCInt _ | PYCCode _ | PYCTuple _ | PYCNone ->
-        None
-end
-
 module Code = struct
   type t = pyCode =
     { co_name: string
@@ -260,6 +234,36 @@ module Code = struct
 
   let is_closure {co_freevars; co_cellvars} =
     Array.length co_freevars + Array.length co_cellvars <> 0
+end
+
+module Constant = struct
+  let full_show = show_pyConstant
+
+  type t = pyConstant =
+    | PYCBool of bool
+    | PYCInt of int64
+    | PYCString of string
+    | PYCTuple of t array
+    | PYCCode of Code.t
+    | PYCNone
+  [@@deriving show, compare]
+
+  let show ?(full = false) c = if full then full_show c else show c
+
+  let create obj = new_py_constant obj
+
+  let as_code = function
+    | PYCCode c ->
+        Some c
+    | PYCBool _ | PYCInt _ | PYCString _ | PYCTuple _ | PYCNone ->
+        None
+
+
+  let as_name = function
+    | PYCString name ->
+        Some name
+    | PYCBool _ | PYCInt _ | PYCCode _ | PYCTuple _ | PYCNone ->
+        None
 end
 
 module Instruction = struct

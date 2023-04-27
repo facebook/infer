@@ -131,5 +131,3 @@ module Builtins = struct
 end
 
 let global name = sprintf "$globals::%s" name
-
-let toplevel name = sprintf "$toplevel::%s" name

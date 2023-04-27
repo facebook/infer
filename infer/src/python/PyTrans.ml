@@ -64,7 +64,9 @@ module Env = struct
       has been spotted, or what idents and labels have been generated so far. *)
   type shared =
     { idents: T.Ident.Set.t
-    ; globals: T.VarName.Set.t
+    ; globals: bool T.VarName.Map.t
+          (** Name of the globals spotted while processing the module topevel. The boolean tells us
+              if the globals is some code/function or just a variable. *)
     ; builtins: PyBuiltins.t
     ; next_label: int
     ; forward_labels: label_info Labels.t
@@ -83,7 +85,7 @@ module Env = struct
 
   let empty =
     { idents= T.Ident.Set.empty
-    ; globals= T.VarName.Set.empty
+    ; globals= T.VarName.Map.empty
     ; builtins= PyBuiltins.empty
     ; next_label= 0
     ; forward_labels= Labels.empty }
@@ -219,12 +221,15 @@ module Env = struct
       are encoded within a specially named function that behaves as a toplevel scope, and global
       identifiers are scope accordingly. That way, there is no mixing them with locals with the same
       name. *)
-  let register_global ({shared} as env) name =
-    let register_global ({globals} as env) name =
-      {env with globals= T.VarName.Set.add name globals}
+  let register_global ({shared} as env) name is_code =
+    let register_global ({globals} as env) name is_code =
+      {env with globals= T.VarName.Map.add name is_code globals}
     in
-    {env with shared= register_global shared name}
+    {env with shared= register_global shared name is_code}
 
+
+  (** Return the [globals] map *)
+  let globals {shared= {globals}} = globals
 
   (** Register a known builtin, so they are correctly scoped, and add the relevant Textual
       declarations for them. *)
@@ -261,8 +266,8 @@ let mk_builtin_call env name args =
 
 (** Turn a Python [FFI.Code.t] into a Textual [T.Exp.t], along with the required instructions to
     effectively perform the translation. *)
-let code_to_exp env c =
-  let name = T.(Exp.Const (Const.Str c.FFI.Code.co_name)) in
+let code_to_exp env name =
+  let name = T.Exp.Const (Str name) in
   let env, id, typ = mk_builtin_call env "python_code" [name] in
   (env, (T.Exp.Var id, typ))
 
@@ -281,7 +286,7 @@ let rec py_to_exp env c =
       let exp = T.(Exp.Const Const.Null) in
       (env, (exp, T.Typ.Null))
   | PYCCode c ->
-      code_to_exp env c
+      code_to_exp env c.FFI.Code.co_name
   | PYCTuple arr ->
       let l = Array.to_list arr in
       let env, args =
@@ -307,13 +312,22 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       (env, `Ok exp_ty)
   | Name ndx ->
       let name = PyCommon.global co_names.(ndx) in
-      let env, id = Env.temp env in
-      let exp = T.Exp.Lvar (var_name ~loc name) in
-      let loc = Env.loc env in
-      let instr = T.Instr.Load {id; exp; typ= pyObject; loc} in
-      let env = Env.push_instr env instr in
-      (* TODO: try to trace the type of names ? *)
-      (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
+      let var_name = var_name ~loc name in
+      let is_code =
+        T.VarName.Map.find_opt var_name (Env.globals env) |> Option.value ~default:false
+      in
+      (* If we are trying to load some code, use the dedicated builtin *)
+      if is_code then
+        let env, exp_ty = code_to_exp env name in
+        (env, `Ok exp_ty)
+      else
+        let env, id = Env.temp env in
+        let exp = T.Exp.Lvar var_name in
+        let loc = Env.loc env in
+        let instr = T.Instr.Load {id; exp; typ= pyObject; loc} in
+        let env = Env.push_instr env instr in
+        (* TODO: try to trace the type of names ? *)
+        (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
   | VarName ndx ->
       let name = co_varnames.(ndx) in
       let env, id = Env.temp env in
@@ -327,7 +341,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       (* TODO: try to trace the type of ids ? *)
       (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
   | Fun (_, c) ->
-      let env, exp_ty = code_to_exp env c in
+      let env, exp_ty = code_to_exp env c.FFI.Code.co_name in
       (env, `Ok exp_ty)
 
 
@@ -425,13 +439,14 @@ module STORE = struct
     let env, exp_ty = load_cell env code cell in
     match exp_ty with
     | `Ok (exp, typ) ->
-        if PyCommon.is_pyCode typ then
+        let is_code = PyCommon.is_pyCode typ in
+        let env = if is_global then Env.register_global env var_name is_code else env in
+        if is_code then
           if is_global then (
             Debug.p "  top-level function defined\n" ;
             (env, None) )
           else L.die InternalError "[%s] no support for closure at the moment: %s" opname name
         else
-          let env = if is_global then Env.register_global env var_name else env in
           let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
           (Env.push_instr env instr, None)
     | `Error s ->
@@ -485,7 +500,7 @@ module CALL_FUNCTION = struct
         let env = Env.register_builtin env fname in
         (env, PyCommon.builtin_name fname)
       else
-        let fname = PyCommon.toplevel fname in
+        let fname = PyCommon.global fname in
         (env, qualified_procname @@ proc_name ~loc fname)
     in
     let call = T.Exp.Call {proc; args; kind= NonVirtual} in
@@ -983,7 +998,7 @@ let to_proc_descs env codes =
           (env, decls)
       | Some ({FFI.Code.co_name; instructions} as code) ->
           let loc = first_loc_of_code instructions in
-          let name = PyCommon.toplevel co_name in
+          let name = PyCommon.global co_name in
           let name = proc_name ~loc name in
           let env, decl = to_proc_desc env name code in
           (env, T.Module.Proc decl :: decls) )
@@ -995,20 +1010,24 @@ let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python
 let to_module ~sourcefile module_name ({FFI.Code.co_consts; instructions} as code) =
   Debug.p "[to_module] %s\n" module_name ;
   let env = Env.empty in
-  (* First, process any code body that is in code.co_consts *)
-  let env, decls = to_proc_descs env co_consts in
-  (* Process top level module *)
+  (* Process top level module first, to gather all global definitions *)
   let loc = first_loc_of_code instructions in
   let name = proc_name ~loc module_name in
   let env, decl = to_proc_desc env name code in
   (* Translate globals to Textual *)
   let globals =
-    T.VarName.Set.fold
-      (fun name acc ->
-        let global = T.Global.{name; typ= pyObject; attributes= []} in
-        T.Module.Global global :: acc )
+    T.VarName.Map.fold
+      (fun name is_code acc ->
+        if is_code then
+          (* don't generate a global variable name, it will be declared as a toplevel decl *)
+          acc
+        else
+          let global = T.Global.{name; typ= pyObject; attributes= []} in
+          T.Module.Global global :: acc )
       env.Env.globals []
   in
+  (* Then, process any code body that is in code.co_consts *)
+  let env, decls = to_proc_descs env co_consts in
   (* Gather everything into a Textual module *)
   let decls = ((T.Module.Proc decl :: decls) @ globals) @ PyBuiltins.to_textual env.Env.builtins in
   {T.Module.attrs= [python_attribute]; decls; sourcefile}

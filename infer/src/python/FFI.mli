@@ -21,7 +21,12 @@ module rec Constant : sig
     | PYCTuple of t array
     | PYCCode of Code.t
     | PYCNone
-  [@@deriving show, compare]
+  [@@deriving compare]
+
+  val show : ?full:bool -> t -> string
+  (** Only shows the name of a [PYCCode] constant if [full] is [false]. Otherwise, shows everything. *)
+
+  val pp : Format.formatter -> t -> unit
 
   val create : Pytypes.pyobject -> t
 

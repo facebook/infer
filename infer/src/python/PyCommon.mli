@@ -79,6 +79,3 @@ end
 
 val global : string -> string
 (** Wrap a variable name into the [global] namespace *)
-
-(* Wrap a function name into the [toplevel] namespace *)
-val toplevel : string -> string
