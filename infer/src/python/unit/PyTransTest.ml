@@ -17,7 +17,7 @@ let%test_module "to_proc_desc" =
       Py.initialize ~interpreter:Version.python_exe () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
-      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      let res = PyTrans.to_module ~sourcefile (PyCommon.toplevel "main") code in
       F.printf "%a" Textual.Module.pp res ;
       [%expect
         {|
@@ -47,7 +47,7 @@ print(x)
       Py.initialize ~interpreter:Version.python_exe () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
-      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      let res = PyTrans.to_module ~sourcefile (PyCommon.toplevel "main") code in
       F.printf "%a" Textual.Module.pp res ;
       [%expect
         {|
@@ -82,7 +82,7 @@ print(x + y)
       Py.initialize ~interpreter:Version.python_exe () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
-      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      let res = PyTrans.to_module ~sourcefile (PyCommon.toplevel "main") code in
       F.printf "%a" Textual.Module.pp res ;
       [%expect
         {|
@@ -135,7 +135,7 @@ print(z)
       Py.initialize ~interpreter:Version.python_exe () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
-      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      let res = PyTrans.to_module ~sourcefile (PyCommon.toplevel "main") code in
       F.printf "%a" Textual.Module.pp res ;
       [%expect
         {|
@@ -146,7 +146,7 @@ print(z)
               n0 = $builtins.python_code("my_fun")
               store &$globals::a <- $builtins.python_int(10):*PyInt
               n1:*PyObject = load &$globals::a
-              n2 = my_fun($builtins.python_int(42), n1)
+              n2 = $toplevel::my_fun($builtins.python_int(42), n1)
               store &$globals::z <- n2:*PyObject
               n3:*PyObject = load &$globals::z
               n4 = $builtins.print(n3)
@@ -154,7 +154,7 @@ print(z)
 
         }
 
-        define my_fun(x: *PyObject, y: *PyObject) : *PyObject {
+        define $toplevel::my_fun(x: *PyObject, y: *PyObject) : *PyObject {
           local z: *PyObject
           #b0:
               n0:*PyObject = load &x
@@ -203,7 +203,7 @@ print(z)
       Py.initialize ~interpreter:Version.python_exe () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
-      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      let res = PyTrans.to_module ~sourcefile (PyCommon.toplevel "main") code in
       F.printf "%a" Textual.Module.pp res ;
       [%expect
         {|
@@ -213,14 +213,14 @@ print(z)
           #b0:
               n0 = $builtins.python_code("update_global")
               store &$globals::z <- $builtins.python_int(0):*PyInt
-              n1 = update_global()
+              n1 = $toplevel::update_global()
               n2:*PyObject = load &$globals::z
               n3 = $builtins.print(n2)
               ret null
 
         }
 
-        define update_global() : *PyObject {
+        define $toplevel::update_global() : *PyObject {
           #b0:
               n0:*PyObject = load &$globals::z
               n1 = $builtins.binary_add(n0, $builtins.python_int(1))
@@ -260,7 +260,7 @@ def f(x, y):
       Py.initialize ~version:3 ~minor:8 () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
-      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      let res = PyTrans.to_module ~sourcefile (PyCommon.toplevel "main") code in
       F.printf "%a" Textual.Module.pp res ;
       [%expect
         {|
@@ -274,9 +274,9 @@ def f(x, y):
 
         }
 
-        define f(x: *PyObject, y: *PyObject) : *PyObject {
+        define $toplevel::f(x: *PyObject, y: *PyObject) : *PyObject {
           #b0:
-              n0 = coin()
+              n0 = $toplevel::coin()
               jmp b1, b2
 
           #b1:
@@ -294,7 +294,7 @@ def f(x, y):
 
         }
 
-        define coin() : *PyObject {
+        define $toplevel::coin() : *PyObject {
           #b0:
               ret 0
 
@@ -327,7 +327,7 @@ def f(x, y):
       Py.initialize ~version:3 ~minor:8 () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
-      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      let res = PyTrans.to_module ~sourcefile (PyCommon.toplevel "main") code in
       F.printf "%a" Textual.Module.pp res ;
       [%expect
         {|
@@ -341,11 +341,11 @@ def f(x, y):
 
         }
 
-        define f(x: *PyObject, y: *PyObject) : *PyObject {
+        define $toplevel::f(x: *PyObject, y: *PyObject) : *PyObject {
           local z: *PyObject
           #b0:
               store &z <- $builtins.python_int(0):*PyInt
-              n0 = coin()
+              n0 = $toplevel::coin()
               jmp b1, b2
 
           #b1:
@@ -366,7 +366,7 @@ def f(x, y):
 
         }
 
-        define coin() : *PyObject {
+        define $toplevel::coin() : *PyObject {
           #b0:
               ret 0
 
@@ -407,7 +407,7 @@ def f(x, y):
       Py.initialize ~version:3 ~minor:8 () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
-      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      let res = PyTrans.to_module ~sourcefile (PyCommon.toplevel "main") code in
       F.printf "%a" Textual.Module.pp res ;
       [%expect
         {|
@@ -421,16 +421,16 @@ def f(x, y):
 
         }
 
-        define f(x: *PyObject, y: *PyObject) : *PyObject {
+        define $toplevel::f(x: *PyObject, y: *PyObject) : *PyObject {
           local z: *PyObject
           #b0:
               store &z <- $builtins.python_int(0):*PyInt
-              n0 = coin()
+              n0 = $toplevel::coin()
               jmp b1, b2
 
           #b1:
               prune $builtins.is_true(n0)
-              n1 = coin()
+              n1 = $toplevel::coin()
               jmp b3, b4
 
           #b3:
@@ -454,7 +454,7 @@ def f(x, y):
               n5:*PyObject = load &z
               n6 = $builtins.binary_add(n5, $builtins.python_int(1))
               store &z <- n6:*PyObject
-              n7 = coin()
+              n7 = $toplevel::coin()
               jmp b7, b8
 
           #b7:
@@ -473,7 +473,7 @@ def f(x, y):
 
         }
 
-        define coin() : *PyObject {
+        define $toplevel::coin() : *PyObject {
           #b0:
               ret 0
 
@@ -501,7 +501,7 @@ def f(x):
       Py.initialize ~version:3 ~minor:8 () ;
       let code = FFI.from_string ~source ~filename:"dummy" in
       Py.finalize () ;
-      let res = PyTrans.to_module ~sourcefile "$toplevel::main" code in
+      let res = PyTrans.to_module ~sourcefile (PyCommon.toplevel "main") code in
       F.printf "%a" Textual.Module.pp res ;
       [%expect
         {|
@@ -515,7 +515,7 @@ def f(x):
 
       }
 
-      define f(x: *PyObject) : *PyObject {
+      define $toplevel::f(x: *PyObject) : *PyObject {
         #b0:
             n0:*PyObject = load &x
             n1:*PyObject = load &$globals::foo
@@ -535,7 +535,7 @@ def f(x):
 
       }
 
-      define foo(x: *PyObject) : *PyObject {
+      define $toplevel::foo(x: *PyObject) : *PyObject {
         #b0:
             ret null
 

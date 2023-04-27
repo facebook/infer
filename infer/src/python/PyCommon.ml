@@ -115,3 +115,7 @@ module Builtins = struct
 
   let empty = Set.empty
 end
+
+let global name = sprintf "$globals::%s" name
+
+let toplevel name = sprintf "$toplevel::%s" name

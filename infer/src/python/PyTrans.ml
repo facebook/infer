@@ -244,8 +244,6 @@ let proc_name ?(loc = T.Location.Unknown) value = T.ProcName.{value; loc}
 (* TODO: only deal with toplevel functions for now *)
 let qualified_procname name : T.qualified_procname = {enclosing_class= TopLevel; name}
 
-let global name = sprintf "$globals::%s" name
-
 (* Until there is support for python types, everything is a [*object] *)
 let pyObject = PyCommon.pyObject
 
@@ -310,7 +308,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let env, exp_ty = py_to_exp env const in
       (env, `Ok exp_ty)
   | Name ndx ->
-      let name = global co_names.(ndx) in
+      let name = PyCommon.global co_names.(ndx) in
       let env, id = Env.temp env in
       let exp = T.Exp.Lvar (var_name ~loc name) in
       let loc = Env.loc env in
@@ -420,7 +418,7 @@ module STORE = struct
       | FAST ->
           (co_varnames.(arg), false)
       | NAME | GLOBAL ->
-          (global co_names.(arg), true)
+          (PyCommon.global co_names.(arg), true)
     in
     Debug.p "[%s] name = %s\n" opname name ;
     let loc = Env.loc env in
@@ -488,7 +486,9 @@ module CALL_FUNCTION = struct
       if PyBuiltins.is_builtin fname then
         let env = Env.register_builtin env fname in
         (env, PyCommon.builtin_name fname)
-      else (env, qualified_procname @@ proc_name ~loc fname)
+      else
+        let fname = PyCommon.toplevel fname in
+        (env, qualified_procname @@ proc_name ~loc fname)
     in
     let call = T.Exp.Call {proc; args; kind= NonVirtual} in
     let let_instr = T.Instr.Let {id; exp= call; loc} in
@@ -517,7 +517,7 @@ module CALL_FUNCTION = struct
     | Temp id ->
         dynamic_call env id args
     | Fun (f, _) ->
-        static_call env f args
+        L.die UserError "[%s] no support for calling raw code : %s" opname f
     | VarName _ | Const _ ->
         L.die UserError "[%s] invalid function on the stack: %s" opname (DataStack.show_cell fname)
 end
@@ -981,7 +981,8 @@ let to_proc_descs env codes =
           (env, decls)
       | Some ({FFI.Code.co_name; instructions} as code) ->
           let loc = first_loc_of_code instructions in
-          let name = proc_name ~loc co_name in
+          let name = PyCommon.toplevel co_name in
+          let name = proc_name ~loc name in
           let env, decl = to_proc_desc env name code in
           (env, T.Module.Proc decl :: decls) )
 

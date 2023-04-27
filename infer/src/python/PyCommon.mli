@@ -67,3 +67,9 @@ module Builtins : sig
   (* An empty set of builtins *)
   val empty : t
 end
+
+val global : string -> string
+(** Wrap a variable name into the [global] namespace *)
+
+(* Wrap a function name into the [toplevel] namespace *)
+val toplevel : string -> string
