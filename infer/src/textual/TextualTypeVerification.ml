@@ -558,3 +558,13 @@ let run (module_ : Module.t) decls_env : error list =
             typecheck_procdesc decls_env globals_type pdesc errors )
   in
   List.rev errors
+
+
+type type_check_result = Ok | Decl_errors of TextualDecls.error list | Type_errors of error list
+
+let type_check module_ =
+  let decls_errors, decls_env = TextualDecls.make_decls module_ in
+  if not (List.is_empty decls_errors) then Decl_errors decls_errors
+  else
+    let errors = run module_ decls_env in
+    if List.is_empty errors then Ok else Type_errors errors
