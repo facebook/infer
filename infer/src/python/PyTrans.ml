@@ -11,6 +11,18 @@ module L = Logging
 module T = Textual
 module PyBuiltins = PyCommon.Builtins
 
+module Debug = struct
+  (* Custom verbose flag, while I'm still building this front end.
+     I'll move to Logging once it's done. *)
+  let debug = ref false
+
+  (* Inspired by PulseFormula.Debug. Check there for plugging it into Logging too *)
+  let dummy_formatter = F.make_formatter (fun _ _ _ -> ()) (fun () -> ())
+
+  let p fmt =
+    if !debug then F.kasprintf (fun s -> F.printf "%s" s) fmt else F.ifprintf dummy_formatter fmt
+end
+
 (* In Python, everything is an object, and the interpreter maintains a stack of references to
    such objects. Pushing and popping on the stack are always references to objets that leave in a
    heap. There is no need to model this heap, but the data stack is quite important. *)
@@ -223,18 +235,6 @@ module Env = struct
     {env with shared= register_builtin shared name}
 end
 
-module Debug = struct
-  (* Custom verbose flag, while I'm still building this front end.
-     I'll move to Logging once it's done. *)
-  let debug = false
-
-  (* Inspired by PulseFormula.Debug. Check there for plugging it into Logging too *)
-  let dummy_formatter = F.make_formatter (fun _ _ _ -> ()) (fun () -> ())
-
-  let p fmt =
-    if debug then F.kasprintf (fun s -> F.printf "%s" s) fmt else F.ifprintf dummy_formatter fmt
-end
-
 let var_name ?(loc = T.Location.Unknown) value = T.VarName.{value; loc}
 
 let node_name ?(loc = T.Location.Unknown) value = T.NodeName.{value; loc}
@@ -272,9 +272,7 @@ let code_to_exp env c =
 let rec py_to_exp env c =
   match (c : FFI.Constant.t) with
   | PYCBool b ->
-      let b = if b then Z.one else Z.zero in
-      let exp = T.(Exp.Const (Const.Int b)) in
-      (env, (exp, T.Typ.Int))
+      (env, PyCommon.(mk_bool b, pyBool))
   | PYCInt i ->
       (env, PyCommon.(mk_int i, pyInt))
   | PYCString s ->
@@ -864,7 +862,11 @@ let until_terminator env {Env.label_name; ssa_parameters; pruned} code instructi
       let env, other_label = Env.label env in
       (* Compute the relevant pruning expressions *)
       let condT = PyCommon.mk_is_true cond in
-      let condF = PyCommon.mk_is_true (T.Exp.not cond) in
+      let env, id = Env.temp env in
+      let instr = T.Instr.Let {id; exp= condT; loc= last_loc} in
+      let env = Env.push_instr env instr in
+      let condT = T.Exp.Var id in
+      let condF = T.Exp.not condT in
       let next_prune = if next_is_true then condT else condF in
       let other_prune = if next_is_true then condF else condT in
       let next_info =

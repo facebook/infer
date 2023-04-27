@@ -20,6 +20,8 @@ let pyInt = mk_type "PyInt"
 
 let pyString = mk_type "PyString"
 
+let pyBool = mk_type "PyBool"
+
 let pyCode = mk_type "PyCode"
 
 let is_pyCode = function T.Typ.Ptr (Struct {value}) -> String.equal value "PyCode" | _ -> false
@@ -31,7 +33,11 @@ let builtin_name (value : string) : T.qualified_procname =
   {enclosing_class= builtin_scope; name}
 
 
-(* Helper to box Python's int/string into Textual *)
+(* Helper to box Python's int/string into Textual.
+   Until we support Python types, we can't use Textual types, like `int` for
+   bool so we wrap them all. *)
+let python_bool = builtin_name "python_bool"
+
 let python_int = builtin_name "python_int"
 
 let python_string = builtin_name "python_string"
@@ -41,13 +47,20 @@ let python_tuple = builtin_name "python_tuple"
 let mk_int (i : int64) =
   let proc = python_int in
   let z = Z.of_int64 i in
-  let args = [Textual.(Exp.Const (Const.Int z))] in
+  let args = [Textual.Exp.Const (Int z)] in
   Textual.Exp.Call {proc; args; kind= NonVirtual}
 
 
 let mk_string (s : string) =
   let proc = python_string in
-  let args = [Textual.(Exp.Const (Const.Str s))] in
+  let args = [Textual.Exp.Const (Str s)] in
+  Textual.Exp.Call {proc; args; kind= NonVirtual}
+
+
+let mk_bool (b : bool) =
+  let proc = python_bool in
+  let z = if b then Z.one else Z.zero in
+  let args = [Textual.Exp.Const (Int z)] in
   Textual.Exp.Call {proc; args; kind= NonVirtual}
 
 
@@ -75,6 +88,7 @@ module Builtins = struct
   let primitive_builtins =
     let builtins =
       [ ("python_int", {formals_types= Some [annot T.Typ.Int]; result_type= annot pyInt})
+      ; ("python_bool", {formals_types= Some [annot T.Typ.Int]; result_type= annot pyBool})
       ; ("python_string", {formals_types= Some [annot string_]; result_type= annot pyString})
       ; ("python_tuple", {formals_types= None; result_type= annot pyObject}) ]
     in
@@ -86,7 +100,7 @@ module Builtins = struct
   let supported_builtins =
     let builtins =
       [ ("print", {formals_types= None; result_type= annot pyObject})
-      ; ("is_true", {formals_types= Some [annot pyObject]; result_type= annot pyInt})
+      ; ("is_true", {formals_types= Some [annot pyObject]; result_type= annot T.Typ.Int})
       ; ( "binary_add"
         , {formals_types= Some [annot pyObject; annot pyObject]; result_type= annot pyObject} )
       ; ("python_code", {formals_types= Some [annot string_]; result_type= annot pyCode})

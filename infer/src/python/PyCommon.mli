@@ -17,6 +17,9 @@ val python_int : Textual.qualified_procname
 val python_string : Textual.qualified_procname
 (** Encoding of Python [str] type. *)
 
+val python_bool : Textual.qualified_procname
+(** Encoding of Python [bool] type. *)
+
 val python_tuple : Textual.qualified_procname
 (** Encoding of Python [tuple] type. It is the raw "untyped" one where every item is of type
     [object]. *)
@@ -36,11 +39,17 @@ val pyInt : Textual.Typ.t
 val pyString : Textual.Typ.t
 (** Textual encoding of the primitive Python type [str] *)
 
+val pyBool : Textual.Typ.t
+(** Textual encoding of the primitive Python type [bool] *)
+
 val mk_int : int64 -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal integers. *)
 
 val mk_string : string -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal strings. *)
+
+val mk_bool : bool -> Textual.Exp.t
+(** Helper function to define typed Textual expression for boolean. *)
 
 val mk_is_true : Textual.Exp.t -> Textual.Exp.t
 

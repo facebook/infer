@@ -40,7 +40,9 @@ let%test_module "basic_tests" =
 
         declare $builtins.python_string(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt |}]
+        declare $builtins.python_int(int) : *PyInt
+
+        declare $builtins.python_bool(int) : *PyBool |}]
 
 
     let%expect_test _ =
@@ -70,7 +72,9 @@ print(x)
 
         declare $builtins.python_string(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt |}]
+        declare $builtins.python_int(int) : *PyInt
+
+        declare $builtins.python_bool(int) : *PyBool |}]
 
 
     let%expect_test _ =
@@ -108,7 +112,9 @@ print(x + y)
 
         declare $builtins.python_string(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt |}]
+        declare $builtins.python_int(int) : *PyInt
+
+        declare $builtins.python_bool(int) : *PyBool |}]
   end )
 
 
@@ -179,7 +185,9 @@ print(z)
 
         declare $builtins.python_string(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt |}]
+        declare $builtins.python_int(int) : *PyInt
+
+        declare $builtins.python_bool(int) : *PyBool |}]
 
 
     let%expect_test _ =
@@ -232,7 +240,9 @@ print(z)
 
         declare $builtins.python_string(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt |}]
+        declare $builtins.python_int(int) : *PyInt
+
+        declare $builtins.python_bool(int) : *PyBool |}]
   end )
 
 
@@ -267,17 +277,18 @@ def f(x, y):
         define $toplevel::f(x: *PyObject, y: *PyObject) : *PyObject {
           #b0:
               n0 = $toplevel::coin()
+              n1 = $builtins.is_true(n0)
               jmp b1, b2
 
           #b1:
-              prune $builtins.is_true(n0)
-              n1:*PyObject = load &x
-              ret n1
+              prune n1
+              n2:*PyObject = load &x
+              ret n2
 
           #b2:
-              prune $builtins.is_true(__sil_lnot(n0))
-              n2:*PyObject = load &y
-              ret n2
+              prune __sil_lnot(n1)
+              n3:*PyObject = load &y
+              ret n3
 
           #b3:
               ret null
@@ -286,7 +297,7 @@ def f(x, y):
 
         define $toplevel::coin() : *PyObject {
           #b0:
-              ret 0
+              ret $builtins.python_bool(0)
 
         }
 
@@ -296,7 +307,9 @@ def f(x, y):
 
         declare $builtins.python_string(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt |}]
+        declare $builtins.python_int(int) : *PyInt
+
+        declare $builtins.python_bool(int) : *PyBool |}]
 
 
     let%expect_test _ =
@@ -332,29 +345,30 @@ def f(x, y):
           #b0:
               store &z <- $builtins.python_int(0):*PyInt
               n0 = $toplevel::coin()
+              n1 = $builtins.is_true(n0)
               jmp b1, b2
 
           #b1:
-              prune $builtins.is_true(n0)
-              n1:*PyObject = load &x
-              store &z <- n1:*PyObject
-              jmp b3
-
-          #b2:
-              prune $builtins.is_true(__sil_lnot(n0))
-              n2:*PyObject = load &y
+              prune n1
+              n2:*PyObject = load &x
               store &z <- n2:*PyObject
               jmp b3
 
+          #b2:
+              prune __sil_lnot(n1)
+              n3:*PyObject = load &y
+              store &z <- n3:*PyObject
+              jmp b3
+
           #b3:
-              n3:*PyObject = load &z
-              ret n3
+              n4:*PyObject = load &z
+              ret n4
 
         }
 
         define $toplevel::coin() : *PyObject {
           #b0:
-              ret 0
+              ret $builtins.python_bool(0)
 
         }
 
@@ -364,7 +378,9 @@ def f(x, y):
 
         declare $builtins.python_string(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt |}]
+        declare $builtins.python_int(int) : *PyInt
+
+        declare $builtins.python_bool(int) : *PyBool |}]
 
 
     let%expect_test _ =
@@ -408,56 +424,59 @@ def f(x, y):
           #b0:
               store &z <- $builtins.python_int(0):*PyInt
               n0 = $toplevel::coin()
+              n1 = $builtins.is_true(n0)
               jmp b1, b2
 
           #b1:
-              prune $builtins.is_true(n0)
-              n1 = $toplevel::coin()
+              prune n1
+              n2 = $toplevel::coin()
+              n3 = $builtins.is_true(n2)
               jmp b3, b4
 
           #b3:
-              prune $builtins.is_true(n1)
-              n2:*PyObject = load &x
-              store &z <- n2:*PyObject
+              prune n3
+              n4:*PyObject = load &x
+              store &z <- n4:*PyObject
               jmp b5
 
           #b4:
-              prune $builtins.is_true(__sil_lnot(n1))
+              prune __sil_lnot(n3)
               ret $builtins.python_int(1664)
 
           #b5:
-              n3:*PyObject = load &z
-              n4 = $builtins.binary_add(n3, $builtins.python_int(1))
-              store &z <- n4:*PyObject
-              jmp b6
-
-          #b2:
-              prune $builtins.is_true(__sil_lnot(n0))
               n5:*PyObject = load &z
               n6 = $builtins.binary_add(n5, $builtins.python_int(1))
               store &z <- n6:*PyObject
-              n7 = $toplevel::coin()
+              jmp b6
+
+          #b2:
+              prune __sil_lnot(n1)
+              n7:*PyObject = load &z
+              n8 = $builtins.binary_add(n7, $builtins.python_int(1))
+              store &z <- n8:*PyObject
+              n9 = $toplevel::coin()
+              n10 = $builtins.is_true(n9)
               jmp b7, b8
 
           #b7:
-              prune $builtins.is_true(n7)
+              prune n10
               ret $builtins.python_int(42)
 
           #b8:
-              prune $builtins.is_true(__sil_lnot(n7))
-              n8:*PyObject = load &y
-              store &z <- n8:*PyObject
+              prune __sil_lnot(n10)
+              n11:*PyObject = load &y
+              store &z <- n11:*PyObject
               jmp b6
 
           #b6:
-              n9:*PyObject = load &z
-              ret n9
+              n12:*PyObject = load &z
+              ret n12
 
         }
 
         define $toplevel::coin() : *PyObject {
           #b0:
-              ret 0
+              ret $builtins.python_bool(0)
 
         }
 
@@ -469,7 +488,9 @@ def f(x, y):
 
         declare $builtins.python_string(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt |}]
+        declare $builtins.python_int(int) : *PyInt
+
+        declare $builtins.python_bool(int) : *PyBool |}]
 
 
     let%expect_test _ =
@@ -497,18 +518,19 @@ def f(x):
         #b0:
             n0:*PyObject = load &x
             n1:*PyObject = load &$globals::foo
+            n2 = $builtins.is_true(n0)
             jmp b1(n1), b2(n1)
 
-        #b1(n2: *PyObject):
-            prune $builtins.is_true(n0)
-            jmp b3($builtins.python_int(1), n2)
+        #b1(n3: *PyObject):
+            prune n2
+            jmp b3($builtins.python_int(1), n3)
 
-        #b2(n3: *PyObject):
-            prune $builtins.is_true(__sil_lnot(n0))
-            jmp b3($builtins.python_int(0), n3)
+        #b2(n4: *PyObject):
+            prune __sil_lnot(n2)
+            jmp b3($builtins.python_int(0), n4)
 
-        #b3(n4: *PyInt, n5: *PyObject):
-            n6 = $builtins.python_call(n5, n4)
+        #b3(n5: *PyInt, n6: *PyObject):
+            n7 = $builtins.python_call(n6, n5)
             ret null
 
       }
@@ -527,5 +549,7 @@ def f(x):
 
       declare $builtins.python_string(*String) : *PyString
 
-      declare $builtins.python_int(int) : *PyInt |}]
+      declare $builtins.python_int(int) : *PyInt
+
+      declare $builtins.python_bool(int) : *PyBool |}]
   end )
