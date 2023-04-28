@@ -53,6 +53,11 @@
         "class_names": ["NSArray"],
         "taint_target": ["ArgumentPositions", [2]],
         "method_names": ["initWithContentsOfURL:error:"]
+      },
+      {
+        "class_names": ["NSMutableArray"],
+        "taint_target": ["ArgumentPositions", [0]],
+        "method_names": ["addObject:"]
       }
   ]
 }

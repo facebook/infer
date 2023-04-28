@@ -32,6 +32,11 @@
         "kinds": ["SimpleSource"]
       },
       {
+        "class_names": ["SensitiveData"],
+        "method_names": ["getSensitiveData"],
+        "kinds": ["SimpleSource"]
+      },
+      {
         "class_names": ["AccessLibrary"],
         "method_names": ["fetchResult"],
         "kinds": ["SimpleSource"]
@@ -51,6 +56,9 @@
     },
     { "procedure": "logEvent",
       "kinds": ["Logger"]
+    },
+    { "procedure": "my_log",
+      "kinds": ["SimpleSink"]
     },
     {
       "procedure": "log_string",
