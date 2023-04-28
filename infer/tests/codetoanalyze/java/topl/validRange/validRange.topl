@@ -1,0 +1,6 @@
+property ValidVN
+   prefix "Valid"
+   start -> error: "id_to_vn"(IgnoreArg, IgnoreRet)
+   start -> ok: "is_valid_vn"(Arg, Ret) when Ret != 0 => good := Arg
+   ok -> ok: "is_valid_vn"(Arg, Ret) when Ret != 0 => good := Arg
+   ok -> error: "id_to_vn"(Arg, IgnoreRet) when Arg != good
