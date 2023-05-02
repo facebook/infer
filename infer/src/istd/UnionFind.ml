@@ -204,4 +204,9 @@ struct
     (* rebuild [reprs] directly from [classes]: does path compression and garbage collection on the
        old [reprs] *)
     of_classes classes
+
+
+  let fold_elements uf ~init ~f =
+    fold_congruences uf ~init ~f:(fun acc (repr, xs) ->
+        XSet.fold (Fn.flip f) xs (f acc (repr :> X.t)) )
 end

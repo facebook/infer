@@ -64,10 +64,15 @@ let sub_list : 'a substitutor -> 'a list substitutor =
 
 type pulse_state = {pulse_post: BaseDomain.t; pulse_pre: BaseDomain.t; path_condition: Formula.t}
 
-let get_reachable {pulse_post; pulse_pre} =
+let get_reachable {pulse_post; pulse_pre; path_condition} =
   let post_keep = BaseDomain.reachable_addresses pulse_post in
   let pre_keep = BaseDomain.reachable_addresses pulse_pre in
-  AbstractValue.Set.union post_keep pre_keep
+  let path_condition_keep =
+    Formula.fold_variables path_condition ~init:AbstractValue.Set.empty
+      ~f:(Fn.flip AbstractValue.Set.add)
+  in
+  let ( + ) = AbstractValue.Set.union in
+  post_keep + pre_keep + path_condition_keep
 
 
 let get_dynamic_type {pulse_post} = BaseAddressAttributes.get_dynamic_type pulse_post.attrs
@@ -350,7 +355,7 @@ end = struct
         (path_condition, heap)
       in
       (* Handle disequalities. *)
-      let _path_condition =
+      let* _path_condition =
         let f path_condition (l, r) =
           let l, r = (rep path_condition l, rep path_condition r) in
           if Formula.equal_operand l r then Unsat

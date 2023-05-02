@@ -1300,6 +1300,10 @@ module Atom = struct
 
   let exists_subterm atom ~f = Container.exists ~iter:iter_subterms atom ~f
 
+  let fold_variables atom ~init ~f =
+    fold_terms atom ~init ~f:(fun acc t -> Term.fold_variables t ~init:acc ~f)
+
+
   let equal t1 t2 = Equal (t1, t2)
 
   let not_equal t1 t2 = NotEqual (t1, t2)
@@ -1671,6 +1675,30 @@ module Formula = struct
         [@warning "+missing-record-field-pattern"] ) =
     VarUF.is_empty var_eqs && Var.Map.is_empty linear_eqs && Term.VarMap.is_empty term_eqs
     && Var.Map.is_empty tableau && Var.Map.is_empty intervals && Atom.Set.is_empty atoms
+
+
+  let fold_linear_eqs_vars linear_eqs ~init ~f =
+    let f_eq var linarith acc = Seq.fold_left f (f acc var) (LinArith.get_variables linarith) in
+    Var.Map.fold f_eq linear_eqs init
+
+
+  let fold_term_eqs_vars term_eqs ~init ~f =
+    let f_eq term var acc = Term.fold_variables term ~f ~init:(f acc var) in
+    Term.VarMap.fold f_eq term_eqs init
+
+
+  let fold_intervals_vars intervals ~init ~f =
+    let f_interval var _interval acc = f acc var in
+    Var.Map.fold f_interval intervals init
+
+
+  let fold_variables {var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms} ~init ~f =
+    let init = VarUF.fold_elements var_eqs ~init ~f in
+    let init = fold_linear_eqs_vars linear_eqs ~init ~f in
+    let init = fold_term_eqs_vars term_eqs ~init ~f in
+    let init = fold_linear_eqs_vars tableau ~init ~f in
+    let init = fold_intervals_vars intervals ~init ~f in
+    Atom.Set.fold (fun atom acc -> Atom.fold_variables atom ~init:acc ~f) atoms init
 
 
   let pp_with_pp_var pp_var fmt
@@ -2924,3 +2952,11 @@ let and_callee_pre subst formula ~callee:formula_callee =
 
 let and_callee_post subst formula_caller ~callee:formula_callee =
   and_fold_subst_variables formula_caller ~up_to_f:formula_callee ~f:subst_find_or_new ~init:subst
+
+
+let fold_variables {conditions; phi} ~init ~f =
+  let init =
+    let f atom acc = Atom.fold_variables atom ~init:acc ~f in
+    Atom.Set.fold f conditions init
+  in
+  Formula.fold_variables phi ~init ~f

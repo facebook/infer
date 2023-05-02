@@ -55,4 +55,6 @@ module Make
 
   val filter : f:(X.t -> bool) -> t -> t
   (** only keep items satisfying [f] *)
+
+  val fold_elements : (t, X.t, 'acc) Container.fold
 end

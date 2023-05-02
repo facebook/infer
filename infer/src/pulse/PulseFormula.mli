@@ -117,3 +117,6 @@ val and_callee_post :
   -> t
   -> callee:t
   -> ((Var.t * ValueHistory.t) Var.Map.t * t * new_eqs) SatUnsat.t
+
+val fold_variables : (t, Var.t, 'acc) Container.fold
+(** note: each variable mentioned in the formula is visited at least once, possibly more *)
