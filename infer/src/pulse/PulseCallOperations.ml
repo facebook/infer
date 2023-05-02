@@ -430,25 +430,6 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
 
 let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals ~formals_opt
     ~call_kind (astate : AbductiveDomain.t) =
-  (* a special case for objc nil messaging *)
-  let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =
-    let result_unknown =
-      let<++> astate_unknown =
-        L.d_printfln "Appending positive self to state" ;
-        PulseSummary.append_objc_actual_self_positive proc_name proc_attrs (List.hd actuals)
-          astate_unknown
-      in
-      astate_unknown
-    in
-    L.d_printfln "@\nMaking and applying Objective-C nil messaging summary@\n" ;
-    let result_unknown_nil, contradiction =
-      PulseSummary.mk_objc_nil_messaging_summary tenv proc_name proc_attrs
-      |> Option.value_map ~default:([], None) ~f:(fun nil_summary ->
-             call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-               proc_attrs [nil_summary] astate )
-    in
-    (result_unknown @ result_unknown_nil, contradiction)
-  in
   let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
   let<**> astate_unknown =
     PulseOperations.conservatively_initialize_args arg_values astate
@@ -458,10 +439,31 @@ let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~act
   ScubaLogging.pulse_log_message ~label:"unmodeled_function_operation_pulse"
     ~message:
       (Format.asprintf "Unmodeled Function[Pulse] : %a" Procname.pp_without_templates callee_pname) ;
-  IRAttributes.load callee_pname
-  |> Option.value_map
-       ~default:([Ok (ContinueProgram astate_unknown)], None)
-       ~f:(unknown_objc_nil_messaging astate_unknown callee_pname)
+  if Procname.is_objc_instance_method callee_pname then
+    (* a special case for objc nil messaging *)
+    let unknown_objc_nil_messaging astate_unknown proc_name proc_attrs =
+      let result_unknown =
+        let<++> astate_unknown =
+          L.d_printfln "Appending positive self to state" ;
+          PulseSummary.append_objc_actual_self_positive proc_name proc_attrs (List.hd actuals)
+            astate_unknown
+        in
+        astate_unknown
+      in
+      L.d_printfln "@\nMaking and applying Objective-C nil messaging summary@\n" ;
+      let result_unknown_nil, contradiction =
+        PulseSummary.mk_objc_nil_messaging_summary tenv proc_name proc_attrs
+        |> Option.value_map ~default:([], None) ~f:(fun nil_summary ->
+               call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
+                 proc_attrs [nil_summary] astate )
+      in
+      (result_unknown @ result_unknown_nil, contradiction)
+    in
+    IRAttributes.load callee_pname
+    |> Option.value_map
+         ~default:([Ok (ContinueProgram astate_unknown)], None)
+         ~f:(unknown_objc_nil_messaging astate_unknown callee_pname)
+  else ([Ok (ContinueProgram astate_unknown)], None)
 
 
 let call tenv path ~caller_proc_desc
