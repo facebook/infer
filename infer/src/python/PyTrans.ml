@@ -57,12 +57,15 @@ module Env = struct
   module Labels = Caml.Map.Make (Int)
 
   (** Information about a "yet to reach" label location, with its name, type of ssa parameters, and
-      an optional expression to prune, if any. *)
-  type label_info = {label_name: string; ssa_parameters: T.Typ.t list; pruned: T.Exp.t option}
+      a function to update the environment before processing the code after the label. For example,
+      inserting some pruning operations before the label and the code. Since we don't always know
+      the location of the label before-hand, the [prelude] is expecting one. *)
+  type label_info =
+    {label_name: string; ssa_parameters: T.Typ.t list; prelude: T.Location.t -> t -> t}
 
   (** Part of the environment shared by most structures. It gathers information like which builtin
       has been spotted, or what idents and labels have been generated so far. *)
-  type shared =
+  and shared =
     { idents: T.Ident.Set.t
     ; globals: bool T.VarName.Map.t
           (** Name of the globals spotted while processing the module topevel. The boolean tells us
@@ -72,16 +75,15 @@ module Env = struct
     ; forward_labels: label_info Labels.t
           (** Map from offset of labels the code might eventually jump to, to the label info
               necessary to create Textual nodes. *) }
-
   (* TODO(vsiles): revisit the data stack status once generators are in the mix *)
 
   (** State of the capture while processing a single node: each node has a dedicated data stack, and
       generates its own set of instructions. *)
-  type node = {stack: DataStack.t; instructions: T.Instr.t list; last_line: int option}
+  and node = {stack: DataStack.t; instructions: T.Instr.t list; last_line: int option}
+
+  and t = {shared: shared; node: node}
 
   let empty_node = {stack= []; instructions= []; last_line= None}
-
-  type t = {shared: shared; node: node}
 
   let empty =
     { idents= T.Ident.Set.empty
@@ -680,8 +682,10 @@ module JUMP = struct
       let condF = T.Exp.not condT in
       let next_prune = if next_is_true then condT else condF in
       let other_prune = if next_is_true then condF else condT in
-      let next_info = {Env.label_name= next_label; ssa_parameters; pruned= Some next_prune} in
-      let other_info = {Env.label_name= other_label; ssa_parameters; pruned= Some other_prune} in
+      let next_prelude loc env = Env.push_instr env (T.Instr.Prune {exp= next_prune; loc}) in
+      let other_prelude loc env = Env.push_instr env (T.Instr.Prune {exp= other_prune; loc}) in
+      let next_info = {Env.label_name= next_label; ssa_parameters; prelude= next_prelude} in
+      let other_info = {Env.label_name= other_label; ssa_parameters; prelude= other_prelude} in
       (env, Some (TwoWay {ssa_args; offset= arg; next_info; other_info}))
   end
 
@@ -693,7 +697,8 @@ module JUMP = struct
       Debug.p "[%s] delta = %d\n" opname arg ;
       let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
       let env, forward_label = Env.label env in
-      let label_info = {Env.label_name= forward_label; ssa_parameters; pruned= None} in
+      let prelude (_ : T.Location.t) env = env in
+      let label_info = {Env.label_name= forward_label; ssa_parameters; prelude} in
       (env, Some (Relative {ssa_args; label_info; delta= arg}))
   end
 end
@@ -818,7 +823,7 @@ let offset_of_code instructions =
 
     If the terminator is [Relative], an unconditional jump forward is performed, based on the offset
     of the next instruction. *)
-let until_terminator env {Env.label_name; ssa_parameters; pruned} code instructions =
+let until_terminator env {Env.label_name; ssa_parameters; prelude} code instructions =
   Debug.p "[ut] %s\n" label_name ;
   let label_loc = first_loc_of_code instructions in
   let label = {T.NodeName.value= label_name; loc= label_loc} in
@@ -827,16 +832,8 @@ let until_terminator env {Env.label_name; ssa_parameters; pruned} code instructi
         let env, id = Env.temp env in
         (env, (id, typ)) )
   in
-  (* Prune necessary expressions *)
-  let env =
-    match pruned with
-    | None ->
-        env
-    | Some exp ->
-        let instr = T.Instr.Prune {exp; loc= label_loc} in
-        Debug.p "[ut] pruning %a\n" T.Exp.pp exp ;
-        Env.push_instr env instr
-  in
+  (* Install the prelude before processing the instructions *)
+  let env = prelude label_loc env in
   (* If we have ssa_parameters, we need to push them on the stack to restore its right shape.
      Doing a fold_right is important to keep the correct order. *)
   let env =
@@ -955,7 +952,8 @@ let rec nodes env label_info code instructions =
           (env, label_info)
       | None ->
           let env, label_name = Env.label env in
-          (env, {Env.label_name; ssa_parameters= []; pruned= None})
+          let prelude (_ : T.Location.t) env = env in
+          (env, {Env.label_name; ssa_parameters= []; prelude})
     in
     let env, more_textual_nodes = nodes env label_info code instructions in
     (env, textual_node :: more_textual_nodes)
@@ -982,7 +980,8 @@ let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames; instructions} as 
   let env = Env.reset_for_proc env in
   let env, entry_label = Env.label env in
   let label = node_name ~loc entry_label in
-  let label_info = {Env.label_name= entry_label; ssa_parameters= []; pruned= None} in
+  let prelude (_ : T.Location.t) env = env in
+  let label_info = {Env.label_name= entry_label; ssa_parameters= []; prelude} in
   (* Now that a full unit has been processed, discard all the local information (local variable
      names, labels, ...) and only keep the [shared] part of the environment *)
   let {Env.shared= env}, nodes = nodes env label_info code instructions in
