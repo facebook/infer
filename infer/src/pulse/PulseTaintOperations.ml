@@ -576,19 +576,15 @@ let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator v astat
 
 
 let taint_and_explore ~taint v astate =
-  let visited = ref AbstractValue.Set.empty in
-  let rec aux v astate =
-    if AbstractValue.Set.mem v !visited then astate
-    else (
-      visited := AbstractValue.Set.add v !visited ;
+  let rec aux (astate, visited) v =
+    if AbstractValue.Set.mem v visited then (astate, visited)
+    else
+      let visited = AbstractValue.Set.add v visited in
       let astate = taint v astate in
-      match AbductiveDomain.Memory.find_opt v astate with
-      | None ->
-          astate
-      | Some edges ->
-          BaseMemory.Edges.fold edges ~init:astate ~f:(fun astate (_, (v, _)) -> aux v astate) )
+      AbductiveDomain.Memory.fold_edges v astate ~init:(astate, visited)
+        ~f:(fun astate_visited (_, (v, _)) -> aux astate_visited v)
   in
-  aux v astate
+  aux (astate, AbstractValue.Set.empty) v |> fst
 
 
 let taint_sources tenv path location ~intra_procedural_only return ~has_added_return_param
@@ -719,14 +715,14 @@ let gather_taint_dependencies v astate =
       (* NOTE: we could do the same for field accesses or really all accesses if we want the taint
           analysis to consider that the insides of objects are tainted whenever the object is. This
           might not be a very efficient way to do this though? *)
-      Option.iter (AbductiveDomain.Memory.find_opt v astate) ~f:(fun edges ->
-          BaseMemory.Edges.iter edges ~f:(function
-            | ArrayAccess _, (dest, _) ->
-                Option.iter (AbductiveDomain.Memory.find_edge_opt dest Dereference astate)
-                  ~f:(fun (dest_value, _) ->
-                    TaintDependencies.add_edge taint_dependencies v dest_value )
-            | (FieldAccess _ | TakeAddress | Dereference), _ ->
-                () ) ) )
+      AbductiveDomain.Memory.fold_edges v astate ~init:() ~f:(fun () (access, (dest, _hist)) ->
+          match access with
+          | ArrayAccess _ ->
+              Option.iter (AbductiveDomain.Memory.find_edge_opt dest Dereference astate)
+                ~f:(fun (dest_value, _) ->
+                  TaintDependencies.add_edge taint_dependencies v dest_value )
+          | FieldAccess _ | TakeAddress | Dereference ->
+              () ) )
   in
   gather_taint_dependencies_aux v ;
   taint_dependencies
@@ -811,21 +807,16 @@ let taint_sinks tenv path location return ~has_added_return_param proc_name actu
               check_flows_wrt_sink ~policy_violations_reported path location (sink, sink_trace) v
                 astate
             in
-            let* policy_violations_reported, astate = res in
-            match AbductiveDomain.Memory.find_opt v astate with
-            | None ->
-                Ok (policy_violations_reported, astate)
-            | Some edges ->
-                BaseMemory.Edges.fold edges ~init:res ~f:(fun res (access, (v, _)) ->
-                    match access with
-                    | HilExp.Access.FieldAccess fieldname
-                      when Fieldname.equal fieldname PulseOperations.ModeledField.internal_string
-                           || Fieldname.equal fieldname
-                                PulseOperations.ModeledField.internal_ref_count ->
-                        res
-                    | _ ->
-                        let* policy_violations_reported, astate = res in
-                        mark_sinked policy_violations_reported v astate ) )
+            AbductiveDomain.Memory.fold_edges v astate ~init:res ~f:(fun res (access, (v, _)) ->
+                match access with
+                | HilExp.Access.FieldAccess fieldname
+                  when Fieldname.equal fieldname PulseOperations.ModeledField.internal_string
+                       || Fieldname.equal fieldname PulseOperations.ModeledField.internal_ref_count
+                  ->
+                    res
+                | _ ->
+                    let* policy_violations_reported, astate = res in
+                    mark_sinked policy_violations_reported v astate ) )
         in
         let+ _, astate = mark_sinked IntSet.empty v astate in
         astate )

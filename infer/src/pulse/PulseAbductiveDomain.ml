@@ -558,7 +558,12 @@ module Memory = struct
     (astate, addr_hist_dst)
 
 
-  let find_opt address astate = BaseMemory.find_opt address (astate.post :> base_domain).heap
+  let fold_edges address astate ~init ~f =
+    match BaseMemory.find_opt address (astate.post :> base_domain).heap with
+    | None ->
+        init
+    | Some edges ->
+        Edges.fold edges ~init ~f
 end
 
 let add_edge_on_src timestamp src location stack =

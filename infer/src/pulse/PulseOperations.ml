@@ -48,8 +48,6 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
 
 
 module Closures = struct
-  module Memory = AbductiveDomain.Memory
-
   let is_captured_by_ref_fake_access (access : _ HilExp.Access.t) =
     match access with
     | FieldAccess fieldname ->
@@ -59,8 +57,8 @@ module Closures = struct
 
 
   let mk_capture_edges captured =
-    List.foldi captured ~init:Memory.Edges.empty ~f:(fun id edges (mode, typ, addr, trace) ->
-        Memory.Edges.add
+    List.foldi captured ~init:BaseMemory.Edges.empty ~f:(fun id edges (mode, typ, addr, trace) ->
+        BaseMemory.Edges.add
           (HilExp.Access.FieldAccess (Fieldname.mk_fake_capture_field ~id typ mode))
           (addr, trace) edges )
 
@@ -73,7 +71,7 @@ module Closures = struct
         Attributes.fold attributes ~init:(Ok astate) ~f:(fun astate_result (attr : Attribute.t) ->
             match attr with
             | Closure _ ->
-                Memory.Edges.fold edges ~init:astate_result
+                BaseMemory.Edges.fold edges ~init:astate_result
                   ~f:(fun astate_result (access, addr_trace) ->
                     if is_captured_by_ref_fake_access access then
                       astate_result >>= check_addr_access path Read action addr_trace
@@ -460,20 +458,15 @@ let invalidate_deref_access path location cause ref_addr_hist access astate =
 
 let invalidate_array_elements path location cause addr_trace astate =
   let+ astate = check_addr_access path NoAccess location addr_trace astate in
-  match Memory.find_opt (fst addr_trace) astate with
-  | None ->
-      astate
-  | Some edges ->
-      Memory.Edges.fold edges ~init:astate ~f:(fun astate (access, dest_addr_trace) ->
-          match (access : Memory.Access.t) with
-          | ArrayAccess _ as access ->
-              AddressAttributes.invalidate dest_addr_trace cause location astate
-              |> record_invalidation path
-                   (MemoryAccess {pointer= addr_trace; access; hist_obj_default= snd dest_addr_trace}
-                   )
-                   location cause
-          | _ ->
-              astate )
+  Memory.fold_edges (fst addr_trace) astate ~init:astate ~f:(fun astate (access, dest_addr_trace) ->
+      match (access : Memory.Access.t) with
+      | ArrayAccess _ as access ->
+          AddressAttributes.invalidate dest_addr_trace cause location astate
+          |> record_invalidation path
+               (MemoryAccess {pointer= addr_trace; access; hist_obj_default= snd dest_addr_trace})
+               location cause
+      | _ ->
+          astate )
 
 
 let shallow_copy ({PathContext.timestamp} as path) location addr_hist astate =

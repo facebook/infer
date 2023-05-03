@@ -85,7 +85,6 @@ end
     precondition *)
 module Memory : sig
   module Access = BaseMemory.Access
-  module Edges = BaseMemory.Edges
 
   val add_edge :
        PathContext.t
@@ -101,7 +100,8 @@ module Memory : sig
   (** [eval_edge (addr,hist) access astate] follows the edge [addr --access--> .] in memory and
       returns what it points to or creates a fresh value if that edge didn't exist. *)
 
-  val find_opt : AbstractValue.t -> t -> BaseMemory.Edges.t option
+  val fold_edges :
+    AbstractValue.t -> (t, Access.t * (AbstractValue.t * ValueHistory.t), _) Container.fold
 
   val find_edge_opt : AbstractValue.t -> Access.t -> t -> (AbstractValue.t * ValueHistory.t) option
 end

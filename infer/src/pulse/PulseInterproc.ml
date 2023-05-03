@@ -215,7 +215,7 @@ let rec materialize_pre_from_address ~pre ~addr_pre ~addr_hist_caller call_state
       | None ->
           Ok call_state
       | Some edges_pre ->
-          PulseResult.container_fold ~fold:Memory.Edges.fold ~init:call_state edges_pre
+          PulseResult.container_fold ~fold:BaseMemory.Edges.fold ~init:call_state edges_pre
             ~f:(fun call_state (access_callee, (addr_pre_dest, _)) ->
               (* HACK: we should probably visit the value in the (array) access too, but since it's
                  a value normally it shouldn't appear in the heap anyway so there should be nothing
@@ -486,7 +486,7 @@ let rec record_post_for_address path callee_proc_name call_loc callee_summary ~a
             record_post_cell path callee_proc_name call_loc ~edges_pre_opt addr_hist_caller
               ~cell_callee_post:(edges_post, attrs_post) call_state
         in
-        Memory.Edges.fold ~init:call_state_after_post edges_post
+        BaseMemory.Edges.fold ~init:call_state_after_post edges_post
           ~f:(fun call_state (_access, (addr_callee_dest, _)) ->
             let call_state, addr_hist_curr_dest =
               call_state_subst_find_or_new call_state addr_callee_dest
