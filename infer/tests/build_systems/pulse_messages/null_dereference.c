@@ -66,3 +66,9 @@ void propagate_latent_2_latent(int a2) { propagate_latent_1_latent(a2); }
 void propagate_latent_3_latent(int a3) { propagate_latent_2_latent(a3); }
 
 void make_latent_manifest() { propagate_latent_3_latent(4); }
+
+void malloc_no_check_bad() {
+  int* p = (int*)malloc(sizeof(int));
+  *p = 42;
+  free(p);
+}

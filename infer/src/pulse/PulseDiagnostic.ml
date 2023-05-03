@@ -380,7 +380,7 @@ let get_message diagnostic =
         let pp_invalidation_trace line fmt (trace : Trace.t) =
           match immediate_or_first_call calling_context trace with
           | `Immediate ->
-              F.fprintf fmt "(last assigned on line %d)" line
+              F.fprintf fmt "(null value originating from line %d)" line
           | `Call f ->
               F.fprintf fmt "(from the call to %a on line %d)" CallEvent.describe f line
         in
