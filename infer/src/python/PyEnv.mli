@@ -32,9 +32,6 @@ module BuiltinSet : sig
 
   val empty : t
   (** An empty set of builtins *)
-
-  val is_builtin : string -> bool
-  (** Check if a function name is a known builtin. *)
 end
 
 (** In Python, everything is an object, and the interpreter maintains a stack of references to such
@@ -157,13 +154,17 @@ val register_global : t -> T.VarName.t -> global_info -> t
     identifiers are scope accordingly. That way, there is no mixing them with locals with the same
     name. *)
 
+val is_builtin : t -> string -> bool
+(** Check if a function is a Python builtin. All the other ones have a non-denotable in normal
+    Python code. *)
+
 val register_call : t -> string -> t
 (** Register a function call. It enables us to deal correctly with builtin declaration. *)
-
-val register_toplevel : t -> string -> t
-(** Register a function declaration. In enables us to deal correctly with global/builtin scoping,
-    and also with builtin function shadowing. *)
 
 val mk_builtin_call : t -> Builtin.textual -> T.Exp.t list -> t * T.Ident.t * T.Typ.t
 (** Wrapper to compute the Textual version of a call to a "textual" builtin * function (a builtin we
     introduced for modeling purpose) *)
+
+val register_toplevel : t -> string -> t
+(** Register a top level function declaration. We keep track of them since they might shadow Python
+    builtins *)

@@ -61,6 +61,7 @@ module Builtin = struct
         PyCommon.builtin_name str
 
 
+  (** Lookup a [Python] builtin from its name *)
   let of_string name =
     match name with "print" -> Some (Python Print) | "range" -> Some (Python Range) | _ -> None
 end
@@ -139,15 +140,7 @@ module BuiltinSet = struct
       supported_builtins init
 
 
-  (* TODO: once toplevel definitions are supported , one can shadow builtins, so we'll need to
-     take this into account. *)
   let register spotted name = Set.add name spotted
-
-  let is_builtin name =
-    Builtin.of_string name
-    |> Option.map ~f:(fun name -> Info.mem name supported_builtins)
-    |> Option.value ~default:false
-
 
   let get_type builtin =
     let info = Info.find_opt builtin supported_builtins in
@@ -198,6 +191,7 @@ type label_info =
 and shared =
   { idents: T.Ident.Set.t
   ; globals: global_info T.VarName.Map.t
+  ; shadowed_builtins: BuiltinSet.t
   ; builtins: BuiltinSet.t
   ; next_label: int
   ; labels: label_info Labels.t }
@@ -279,6 +273,7 @@ let empty_node = {stack= []; instructions= []; last_line= None}
 let empty =
   { idents= T.Ident.Set.empty
   ; globals= T.VarName.Map.empty
+  ; shadowed_builtins= BuiltinSet.empty
   ; builtins= BuiltinSet.empty
   ; next_label= 0
   ; labels= Labels.empty }
@@ -389,15 +384,30 @@ let mk_builtin_call env builtin args =
   (env, id, typ)
 
 
+let is_builtin_shadowed {shared= {shadowed_builtins}} python_builtin =
+  BuiltinSet.Set.mem python_builtin shadowed_builtins
+
+
+let get_as_builtin env fname =
+  let open Option.Monad_infix in
+  Builtin.of_string fname
+  >>= fun python_builtin ->
+  Option.some_if (not @@ is_builtin_shadowed env python_builtin) python_builtin
+
+
+let is_builtin env fname = get_as_builtin env fname |> Option.is_some
+
 let register_call env fname =
+  match get_as_builtin env fname with None -> env | Some builtin -> register_builtin env builtin
+
+
+let register_toplevel ({shared} as env) fname =
   let builtin = Builtin.of_string fname in
-  (* TODO: deal with shadowing *)
   match builtin with
   | None ->
       env
   | Some builtin ->
-      if BuiltinSet.is_builtin fname then register_builtin env builtin else env
-
-
-(* TODO: deal with shadowing *)
-let register_toplevel env fname = register_call env fname
+      let {shadowed_builtins} = shared in
+      let shadowed_builtins = BuiltinSet.Set.add builtin shadowed_builtins in
+      let shared = {shared with shadowed_builtins} in
+      {env with shared}

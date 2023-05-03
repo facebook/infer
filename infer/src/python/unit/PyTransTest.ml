@@ -291,6 +291,12 @@ def f(x, y):
 
         }
 
+        define $globals::coin() : *PyObject {
+          #b0:
+              ret $builtins.$python_bool$(0)
+
+        }
+
         define $globals::f(x: *PyObject, y: *PyObject) : *PyObject {
           #b0:
               n0 = $globals::coin()
@@ -309,12 +315,6 @@ def f(x, y):
 
           #b3:
               ret null
-
-        }
-
-        define $globals::coin() : *PyObject {
-          #b0:
-              ret $builtins.$python_bool$(0)
 
         }
 
@@ -359,6 +359,12 @@ def f(x, y):
 
         }
 
+        define $globals::coin() : *PyObject {
+          #b0:
+              ret $builtins.$python_bool$(0)
+
+        }
+
         define $globals::f(x: *PyObject, y: *PyObject) : *PyObject {
           local z: *PyObject
           #b0:
@@ -382,12 +388,6 @@ def f(x, y):
           #b3:
               n4:*PyObject = load &z
               ret n4
-
-        }
-
-        define $globals::coin() : *PyObject {
-          #b0:
-              ret $builtins.$python_bool$(0)
 
         }
 
@@ -437,6 +437,12 @@ def f(x, y):
               n0 = $builtins.$python_code$("coin")
               n1 = $builtins.$python_code$("f")
               ret null
+
+        }
+
+        define $globals::coin() : *PyObject {
+          #b0:
+              ret $builtins.$python_bool$(0)
 
         }
 
@@ -495,12 +501,6 @@ def f(x, y):
 
         }
 
-        define $globals::coin() : *PyObject {
-          #b0:
-              ret $builtins.$python_bool$(0)
-
-        }
-
         declare $builtins.$python_code$(*String) : *PyCode
 
         declare $builtins.$binary_add$(*PyObject, *PyObject) : *PyObject
@@ -537,6 +537,12 @@ def f(x):
 
       }
 
+      define $globals::foo(x: *PyObject) : *PyObject {
+        #b0:
+            ret null
+
+      }
+
       define $globals::f(x: *PyObject) : *PyObject {
         #b0:
             n0:*PyObject = load &x
@@ -554,12 +560,6 @@ def f(x):
 
         #b3(n5: *PyInt, n6: *PyObject):
             n7 = $builtins.$python_call$(n6, n5)
-            ret null
-
-      }
-
-      define $globals::foo(x: *PyObject) : *PyObject {
-        #b0:
             ret null
 
       }
@@ -627,6 +627,66 @@ for x in range(10):
         declare $builtins.$python_iter_next$(*PyObject) : int
 
         declare $builtins.$python_iter$(*PyObject) : *PyObject
+
+        declare $builtins.$python_tuple$(...) : *PyObject
+
+        declare $builtins.$python_string$(*String) : *PyString
+
+        declare $builtins.$python_bool$(int) : *PyBool
+
+        declare $builtins.$python_int$(int) : *PyInt |}]
+  end )
+
+
+let%test_module "shadowing" =
+  ( module struct
+    let%expect_test _ =
+      let source =
+        {|
+print(42)
+
+def print(x):
+        return x
+
+print(42)
+
+def f(x):
+        print(x)
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define $globals::$toplevel$() : *PyObject {
+          #b0:
+              n0 = $builtins.print($builtins.$python_int$(42))
+              n1 = $builtins.$python_code$("print")
+              n2 = $globals::print($builtins.$python_int$(42))
+              n3 = $builtins.$python_code$("f")
+              ret null
+
+        }
+
+        define $globals::print(x: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &x
+              ret n0
+
+        }
+
+        define $globals::f(x: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &x
+              n1 = $globals::print(n0)
+              ret null
+
+        }
+
+        declare $builtins.print(...) : *PyObject
+
+        declare $builtins.$python_code$(*String) : *PyCode
 
         declare $builtins.$python_tuple$(...) : *PyObject
 

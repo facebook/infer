@@ -261,7 +261,7 @@ module CALL_FUNCTION = struct
     let loc = Env.loc env in
     let env, proc =
       let env = Env.register_call env fname in
-      if Env.BuiltinSet.is_builtin fname then (env, PyCommon.builtin_name fname)
+      if Env.is_builtin env fname then (env, PyCommon.builtin_name fname)
       else
         let fname = PyCommon.global fname in
         (env, qualified_procname @@ proc_name ~loc fname)
@@ -864,6 +864,7 @@ let to_proc_descs env codes =
           let name = PyCommon.global co_name in
           let name = proc_name ~loc name in
           let env, decl = to_proc_desc env name code in
+          let env = PyEnv.register_toplevel env co_name in
           (env, T.Module.Proc decl :: decls) )
 
 
@@ -873,7 +874,30 @@ let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python
 let to_module ~sourcefile module_name ({FFI.Code.co_consts; instructions} as code) =
   Debug.p "[to_module] %s\n" module_name ;
   let env = Env.empty in
-  (* Process top level module first, to gather all global definitions *)
+  (* Process top level module first, to gather all global definitions.
+     TODO: this require fixing.
+
+     Python allows multiple toplevel declaration of the same name and resolution is done
+     dynamically. E.g.
+
+     ```
+     def f():
+         return 10
+
+     def g():
+         return f()
+
+     print(g())
+
+     def f():
+         return "cat"
+
+     print (g())
+     ```
+
+     this would print `10` and then `"cat"`.  We should investigate if suche code exists, and in
+     which quantity, to see if it is worth finding a solution for it.
+  *)
   let loc = first_loc_of_code instructions in
   let name = proc_name ~loc module_name in
   let env, decl = to_proc_desc env name code in
@@ -891,6 +915,7 @@ let to_module ~sourcefile module_name ({FFI.Code.co_consts; instructions} as cod
   in
   (* Then, process any code body that is in code.co_consts *)
   let env, decls = to_proc_descs env co_consts in
+  let decls = List.rev decls in
   (* Gather everything into a Textual module *)
   let decls =
     ((T.Module.Proc decl :: decls) @ globals) @ Env.BuiltinSet.to_textual (Env.builtins env)
