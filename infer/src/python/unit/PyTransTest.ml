@@ -23,10 +23,12 @@ let run_test source =
       F.printf "%a" Textual.Module.pp module_
   | Type_errors errors ->
       let pp_error = TextualTypeVerification.pp_error sourcefile in
+      F.printf "%a" Textual.Module.pp module_ ;
       F.printf "Errors while type checking the test:\n" ;
       List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err)
   | Decl_errors errors ->
       let pp_error = TextualDecls.pp_error sourcefile in
+      F.printf "%a" Textual.Module.pp module_ ;
       F.printf "Errors while creating the decls:\n" ;
       List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err)
 
@@ -573,4 +575,62 @@ def f(x):
       declare $builtins.python_int(int) : *PyInt
 
       declare $builtins.python_bool(int) : *PyBool |}]
+  end )
+
+
+let%test_module "iter" =
+  ( module struct
+    let%expect_test _ =
+      let source = {|
+for x in range(10):
+    print(x)
+      |} in
+      run_test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define $globals::$toplevel$() : *PyObject {
+          #b0:
+              n0 = $builtins.range($builtins.python_int(10))
+              n1 = $builtins.python_iter(n0)
+              jmp b1(n1)
+
+          #b1(n2: *PyObject):
+              n3 = $builtins.python_iter_next(n2)
+              jmp b2, b3
+
+          #b2:
+              prune n3
+              n4 = $builtins.python_iter_item(n2)
+              store &$globals::x <- n4:*PyObject
+              n5:*PyObject = load &$globals::x
+              n6 = $builtins.print(n5)
+              jmp b1(n2)
+
+          #b3:
+              prune __sil_lnot(n3)
+              ret null
+
+        }
+
+        global $globals::x: *PyObject
+
+        declare $builtins.range(...) : *PyObject
+
+        declare $builtins.python_iter_next(*PyObject) : int
+
+        declare $builtins.python_iter_item(*PyObject) : *PyObject
+
+        declare $builtins.python_iter(*PyObject) : *PyObject
+
+        declare $builtins.print(...) : *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_int(int) : *PyInt
+
+        declare $builtins.python_bool(int) : *PyBool |}]
   end )

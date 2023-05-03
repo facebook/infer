@@ -101,10 +101,15 @@ module Builtins = struct
     let builtins =
       [ ("print", {formals_types= None; result_type= annot pyObject})
       ; ("is_true", {formals_types= Some [annot pyObject]; result_type= annot T.Typ.Int})
+      ; ("range", {formals_types= None; result_type= annot pyObject})
       ; ( "binary_add"
         , {formals_types= Some [annot pyObject; annot pyObject]; result_type= annot pyObject} )
       ; ("python_code", {formals_types= Some [annot string_]; result_type= annot pyCode})
-      ; ("python_call", {formals_types= None; result_type= annot pyObject}) ]
+      ; ("python_call", {formals_types= None; result_type= annot pyObject})
+        (* TODO: should we introduce a Textual type for iterators ? *)
+      ; ("python_iter", {formals_types= Some [annot pyObject]; result_type= annot pyObject})
+      ; ("python_iter_next", {formals_types= Some [annot pyObject]; result_type= annot T.Typ.Int})
+      ; ("python_iter_item", {formals_types= Some [annot pyObject]; result_type= annot pyObject}) ]
     in
     List.fold_left
       ~f:(fun acc (name, builtin) -> Info.add name builtin acc)

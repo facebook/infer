@@ -7,5 +7,9 @@
 
 open! IStd
 
+val enable_debug : unit -> unit
+
+val disable_debug : unit -> unit
+
 val to_module : sourcefile:Textual.SourceFile.t -> string -> FFI.Code.t -> Textual.Module.t
 (** Translate a Python code object into its Textual counter part *)
