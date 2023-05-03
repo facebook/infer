@@ -10,25 +10,7 @@ module F = Format
 module L = Logging
 module T = Textual
 module PyBuiltins = PyCommon.Builtins
-
-module Debug = struct
-  (* Custom verbose flag, while I'm still building this front end.
-     I'll move to Logging once it's done. *)
-  let debug = ref false
-
-  let debug_level = ref 0
-
-  (* Inspired by PulseFormula.Debug. Check there for plugging it into Logging too *)
-  let dummy_formatter = F.make_formatter (fun _ _ _ -> ()) (fun () -> ())
-
-  let p ?(level = 0) fmt =
-    if !debug && level <= !debug_level then F.kasprintf (fun s -> F.printf "%s" s) fmt
-    else F.ifprintf dummy_formatter fmt
-end
-
-let enable_debug () = Debug.debug := true
-
-let disable_debug () = Debug.debug := false
+module Debug = PyDebug
 
 (* In Python, everything is an object, and the interpreter maintains a stack of references to
    such objects. Pushing and popping on the stack are always references to objets that leave in a
