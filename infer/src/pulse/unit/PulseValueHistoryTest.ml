@@ -52,9 +52,7 @@ let iter_print_history history =
         F.printf "ev%a" Timestamp.pp (ValueHistory.timestamp_of_event event)
   in
   F.printf "@[<hv>" ;
-  Iter.rev
-    (Iter.from_labelled_iter (ValueHistory.iter_main history))
-    (fun event ->
+  (ValueHistory.iter ~main_only:false history) ~f:(fun event ->
       if not !is_first then F.printf ";@," ;
       is_first := false ;
       print_time event ) ;

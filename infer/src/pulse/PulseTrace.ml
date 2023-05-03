@@ -108,9 +108,9 @@ let rec iter trace ~f =
   let f_event = function ValueHistory.Event event -> f event | _ -> () in
   match trace with
   | Immediate {history} ->
-      ValueHistory.iter_main history ~f:f_event
+      ValueHistory.rev_iter_main history ~f:f_event
   | ViaCall {history; in_call} ->
-      ValueHistory.iter_main history ~f:f_event ;
+      ValueHistory.rev_iter_main history ~f:f_event ;
       iter in_call ~f
 
 

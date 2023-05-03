@@ -138,15 +138,15 @@ type iter_event =
   | ReturnFromCall of CallEvent.t * Location.t
   | Event of event
 
-let rec iter_branches ~main_only hists ~f =
+let rec rev_iter_branches ~main_only hists ~f =
   if List.is_empty hists then ()
   else
     let latest_events, hists = pop_least_timestamp ~main_only hists in
-    iter_simultaneous_events ~main_only latest_events ~f ;
-    iter_branches ~main_only hists ~f
+    rev_iter_simultaneous_events ~main_only latest_events ~f ;
+    rev_iter_branches ~main_only hists ~f
 
 
-and iter_simultaneous_events ~main_only events ~f =
+and rev_iter_simultaneous_events ~main_only events ~f =
   let is_nonempty = function Epoch -> false | Sequence _ | InContext _ | BinaryOp _ -> true in
   let in_call = function Call {in_call} when is_nonempty in_call -> Some in_call | _ -> None in
   match events with
@@ -158,7 +158,7 @@ and iter_simultaneous_events ~main_only events ~f =
       ( match event with
       | Call {f= callee; location; in_call= in_call'} when is_nonempty in_call' ->
           f (ReturnFromCall (callee, location)) ;
-          iter_branches ~main_only (List.filter_map events ~f:in_call) ~f ;
+          rev_iter_branches ~main_only (List.filter_map events ~f:in_call) ~f ;
           f (EnterCall (callee, location)) ;
           ()
       | _ ->
@@ -166,23 +166,25 @@ and iter_simultaneous_events ~main_only events ~f =
       f (Event event)
 
 
-and iter ~main_only (history : t) ~f =
+and rev_iter ~main_only (history : t) ~f =
   match history with
   | Epoch ->
       ()
   | Sequence (event, rest) ->
-      iter_simultaneous_events ~main_only [event] ~f ;
-      iter ~main_only rest ~f
+      rev_iter_simultaneous_events ~main_only [event] ~f ;
+      rev_iter ~main_only rest ~f
   | InContext {main} when main_only ->
-      iter ~main_only main ~f
+      rev_iter ~main_only main ~f
   | InContext {main; context} ->
       (* [not main_only] *)
-      iter_branches ~main_only (main :: context) ~f
+      rev_iter_branches ~main_only (main :: context) ~f
   | BinaryOp (_, hist1, hist2) ->
-      iter_branches ~main_only [hist1; hist2] ~f
+      rev_iter_branches ~main_only [hist1; hist2] ~f
 
 
-let iter_main = iter ~main_only:true
+let rev_iter_main = rev_iter ~main_only:true
+
+let iter ~main_only history ~f = Iter.rev (Iter.from_labelled_iter (rev_iter ~main_only history)) f
 
 let yojson_of_event = [%yojson_of: _]
 
@@ -305,10 +307,10 @@ let add_to_errlog ~nesting history errlog =
         errlog := add_returned_from_call_to_errlog ~nesting:!nesting call location !errlog ;
         incr nesting
   in
-  iter ~main_only:false history ~f:one_iter_event ;
+  rev_iter ~main_only:false history ~f:one_iter_event ;
   !errlog
 
 
 let get_first_main_event hist =
-  Iter.head (Iter.rev (fun f -> iter ~main_only:true hist ~f))
+  Iter.head (Iter.from_labelled_iter (iter ~main_only:true hist))
   |> Option.bind ~f:(function Event event -> Some event | _ -> None)
