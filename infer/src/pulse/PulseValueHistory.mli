@@ -78,6 +78,9 @@ val iter_main : t -> f:(iter_event -> unit) -> unit
 
 val location_of_event : event -> Location.t
 
+val timestamp_of_event : event -> Timestamp.t [@@warning "-unused-value-declaration"]
+(* used in unit tests *)
+
 val add_to_errlog : nesting:int -> t -> Errlog.loc_trace_elem list -> Errlog.loc_trace_elem list
 
 val get_first_main_event : t -> event option

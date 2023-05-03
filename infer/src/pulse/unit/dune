@@ -6,8 +6,8 @@
 (library
  (name PulseTest)
  (flags
-  (:standard -open IStdlib -open IStd -open Pulselib -open IR))
- (libraries IStdlib Pulselib)
+  (:standard -open IStdlib -open IStd -open IBase -open IR -open Pulselib))
+ (libraries Pulselib)
  (preprocess
   (pps ppx_expect ppx_inline_test))
  (inline_tests))
