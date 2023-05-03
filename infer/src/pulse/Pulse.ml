@@ -271,14 +271,14 @@ module PulseTransferFunctions = struct
     match (exec_state : ExecutionDomain.t) with
     | ContinueProgram astate | ExceptionRaised astate ->
         let gone_out_of_scope = Invalidation.GoneOutOfScope (pvar, typ) in
-        let+* astate, out_of_scope_base =
+        let++ astate, out_of_scope_base =
           PulseOperations.eval path NoAccess call_loc (Exp.Lvar pvar) astate
         in
         (* invalidate [&x] *)
         PulseOperations.invalidate path
           (StackAddress (Var.of_pvar pvar, ValueHistory.epoch))
           call_loc gone_out_of_scope out_of_scope_base astate
-        >>| ExecutionDomain.continue
+        |> ExecutionDomain.continue
     | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
         Sat (Ok exec_state)
 

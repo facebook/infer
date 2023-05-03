@@ -181,8 +181,18 @@ val invalidate :
   -> Invalidation.t
   -> AbstractValue.t * ValueHistory.t
   -> t
-  -> t AccessResult.t
+  -> t
 (** record that the address is invalid *)
+
+val check_and_invalidate :
+     PathContext.t
+  -> invalidation_access
+  -> Location.t
+  -> Invalidation.t
+  -> AbstractValue.t * ValueHistory.t
+  -> t
+  -> t AccessResult.t
+(** check that the address is currently valid then record that the address is now invalid *)
 
 val always_reachable : AbstractValue.t -> t -> t
 
@@ -213,7 +223,7 @@ val invalidate_access :
   -> AbstractValue.t * ValueHistory.t
   -> BaseMemory.Access.t
   -> t
-  -> t AccessResult.t
+  -> t
 (** record that what the address points via the access to is invalid *)
 
 val invalidate_deref_access :
@@ -223,7 +233,7 @@ val invalidate_deref_access :
   -> AbstractValue.t * ValueHistory.t
   -> BaseMemory.Access.t
   -> t
-  -> t AccessResult.t
+  -> t
 (** Like [invalidate_access] but invalidates dereferenced address. *)
 
 val invalidate_array_elements :

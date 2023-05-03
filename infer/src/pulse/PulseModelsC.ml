@@ -27,7 +27,7 @@ let alloc_common allocator ~size_exp_opt : model =
     let ret_null_value = (ret_addr, ret_null_hist) in
     PulseOperations.write_id ret_id ret_null_value astate
     |> PulseArithmetic.and_eq_int ret_addr IntLit.zero
-    >>|= PulseOperations.invalidate path
+    >>|| PulseOperations.invalidate path
            (StackAddress (Var.of_id ret_id, ret_null_hist))
            location (ConstantDereference IntLit.zero) ret_null_value
     >>|| ExecutionDomain.continue |> SatUnsat.to_list

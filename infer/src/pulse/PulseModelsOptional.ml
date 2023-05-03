@@ -40,13 +40,10 @@ let assign_value_fresh path location this history ~desc astate =
 let assign_none history this ~desc : model =
  fun {path; location} astate ->
   let<*> astate, (pointer, value) = assign_value_fresh path location this history ~desc astate in
-  let<**> astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
-  let<+> astate =
-    PulseOperations.invalidate path
-      (MemoryAccess {pointer; access= Dereference; hist_obj_default= snd value})
-      location OptionalEmpty value astate
-  in
-  astate
+  let<++> astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
+  PulseOperations.invalidate path
+    (MemoryAccess {pointer; access= Dereference; hist_obj_default= snd value})
+    location OptionalEmpty value astate
 
 
 let assign_non_empty_value history ProcnameDispatcher.Call.FuncArg.{arg_payload= this} ~desc : model
@@ -176,7 +173,7 @@ let get_pointer optional ~desc : model =
     PulseOperations.write_id ret_id nullptr astate
     |> PulseArithmetic.prune_eq_zero (fst value_addr)
     >>== PulseArithmetic.and_eq_int (fst nullptr) IntLit.zero
-    >>|= PulseOperations.invalidate path
+    >>|| PulseOperations.invalidate path
            (StackAddress (Var.of_id ret_id, snd nullptr))
            location (ConstantDereference IntLit.zero) nullptr
     >>|| ExecutionDomain.continue

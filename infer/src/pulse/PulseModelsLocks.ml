@@ -36,7 +36,7 @@ let assign_value_nullptr path location this ~desc astate =
       ~value:(AbstractValue.mk_fresh (), ValueHistory.epoch)
       ~desc astate
   in
-  let+* astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
+  let++ astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
   PulseOperations.invalidate path
     (MemoryAccess {pointer; access= Dereference; hist_obj_default= snd value})
     location (ConstantDereference IntLit.zero) value astate

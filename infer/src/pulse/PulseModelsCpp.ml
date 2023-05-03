@@ -330,7 +330,7 @@ module BasicString = struct
     let<*> astate, (string_addr, string_hist) = to_internal_string path location this_hist astate in
     let string_hist = Hist.add_event path call_event string_hist in
     let<+> astate =
-      PulseOperations.invalidate path
+      PulseOperations.check_and_invalidate path
         (MemoryAccess
            {pointer= this_hist; access= internal_string_access; hist_obj_default= string_hist} )
         location CppDelete (string_addr, string_hist) astate
@@ -456,7 +456,7 @@ module Vector = struct
     in
     PulseOperations.invalidate_array_elements path location (StdVector vector_f) array_address
       astate
-    >>= PulseOperations.invalidate_deref_access path location (StdVector vector_f) vector
+    >>| PulseOperations.invalidate_deref_access path location (StdVector vector_f) vector
           GenericArrayBackedCollection.access
     >>= PulseOperations.havoc_deref_field path location vector GenericArrayBackedCollection.field
           trace

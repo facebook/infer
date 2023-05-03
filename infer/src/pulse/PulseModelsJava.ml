@@ -454,7 +454,7 @@ module Collection = struct
      (2) in such case we can return 0 *)
   let get_elem_coll_is_empty path is_empty_val is_empty_expected_val event location ret_id astate =
     let not_found_val = AbstractValue.mk_fresh () in
-    let+* astate =
+    let++ astate =
       PulseArithmetic.prune_binop ~negated:false Binop.Eq (AbstractValueOperand is_empty_val)
         (AbstractValueOperand is_empty_expected_val) astate
       >>== PulseArithmetic.and_eq_int not_found_val IntLit.zero

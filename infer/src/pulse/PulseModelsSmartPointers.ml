@@ -39,7 +39,7 @@ let assign_value_nullptr path location this ~desc astate =
       ~value:(AbstractValue.mk_fresh (), ValueHistory.epoch)
       ~desc astate
   in
-  let+* astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
+  let++ astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
   PulseOperations.invalidate path
     (MemoryAccess {pointer; access= Dereference; hist_obj_default= snd value})
     location (ConstantDereference IntLit.zero) value astate
@@ -108,7 +108,7 @@ module SharedPtr = struct
 
   let delete_internal_count path location this ~desc astate =
     let call_event = Hist.call_event path location desc in
-    let* astate, (value_addr, value_hist) = to_internal_count path Read location this astate in
+    let+ astate, (value_addr, value_hist) = to_internal_count path Read location this astate in
     let value_addr_hist = (value_addr, Hist.add_event path call_event value_hist) in
     PulseOperations.invalidate_access path location CppDelete value_addr_hist Dereference astate
 

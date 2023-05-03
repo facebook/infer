@@ -320,7 +320,7 @@ module Basic = struct
           match exec_state with
           | ContinueProgram astate ->
               let<+> astate =
-                PulseOperations.invalidate path UntraceableAccess location invalidation
+                PulseOperations.check_and_invalidate path UntraceableAccess location invalidation
                   deleted_access astate
               in
               astate

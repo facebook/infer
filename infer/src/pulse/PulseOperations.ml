@@ -432,9 +432,13 @@ let record_invalidation ({PathContext.timestamp; conditions} as path) access_pat
 
 
 let invalidate path access_path location cause addr_trace astate =
+  AddressAttributes.invalidate addr_trace cause location astate
+  |> record_invalidation path access_path location cause
+
+
+let check_and_invalidate path access_path location cause addr_trace astate =
   check_addr_access path NoAccess location addr_trace astate
-  >>| AddressAttributes.invalidate addr_trace cause location
-  >>| record_invalidation path access_path location cause
+  >>| invalidate path access_path location cause addr_trace
 
 
 let invalidate_access path location cause ref_addr_hist access astate =
