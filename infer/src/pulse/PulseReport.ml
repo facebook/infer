@@ -73,11 +73,12 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
         ; config_usage_extra
         ; taint_extra }
     in
+    let issue_type = get_issue_type ~latent diagnostic in
+    let message = get_message diagnostic in
+    L.d_printfln ~color:Red "Reporting issue: %a: %s" IssueType.pp issue_type message ;
     Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic) ?loc_instantiated
       ~ltr:(extra_trace @ get_trace diagnostic)
-      ~extras Pulse
-      (get_issue_type ~latent diagnostic)
-      (get_message diagnostic)
+      ~extras Pulse issue_type message
 
 
 let report_latent_issue proc_desc err_log latent_issue ~is_suppressed =
