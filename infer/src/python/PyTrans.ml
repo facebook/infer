@@ -11,233 +11,8 @@ module L = Logging
 module T = Textual
 module PyBuiltins = PyCommon.Builtins
 module Debug = PyDebug
-
-(* In Python, everything is an object, and the interpreter maintains a stack of references to
-   such objects. Pushing and popping on the stack are always references to objets that leave in a
-   heap. There is no need to model this heap, but the data stack is quite important. *)
-module DataStack = struct
-  type cell =
-    | Const of int  (** index in [co_consts] *)
-    | Name of int  (** reference to a global name, stored in [co_names] *)
-    | VarName of int  (** reference to a local name, stored in [co_varnames] *)
-    | Temp of T.Ident.t  (** SSA variable *)
-    | Fun of (string * FFI.Code.t)
-        (** [code] Python object with its qualified name. It can be a function, class, closure, ... *)
-  [@@deriving show]
-
-  let as_code FFI.Code.{co_consts} = function
-    | Const n ->
-        let code = co_consts.(n) in
-        FFI.Constant.as_code code
-    | Fun (_, code) ->
-        Some code
-    | Name _ | Temp _ | VarName _ ->
-        None
-
-
-  type t = cell list
-
-  let push stack cell = cell :: stack
-
-  let pop = function [] -> None | hd :: stack -> Some (stack, hd)
-end
-
-module Env = struct
-  module Labels = Caml.Map.Make (Int)
-
-  (** Information about global/toplevel declaration *)
-  type global_info = {is_code: bool}
-
-  (** Information about a "yet to reach" label location, with its name, type of ssa parameters, and
-      a function to update the environment before processing the code after the label. For example,
-      inserting some pruning operations before the label and the code. Since we don't always know
-      the location of the label before-hand, the [prelude] is expecting one.
-
-      We also keep track of the label status: if we already [processed] it within the [nodes]
-      function. This is to avoid infinite loops. *)
-  type label_info =
-    { label_name: string
-    ; ssa_parameters: T.Typ.t list
-    ; prelude: T.Location.t -> t -> t
-    ; processed: bool }
-
-  (** Part of the environment shared by most structures. It gathers information like which builtin
-      has been spotted, or what idents and labels have been generated so far. *)
-  and shared =
-    { idents: T.Ident.Set.t
-    ; globals: global_info T.VarName.Map.t
-          (** Name of the globals spotted while processing the module topevel. The boolean tells us
-              if the globals is some code/function or just a variable. *)
-    ; builtins: PyBuiltins.t
-    ; next_label: int
-    ; labels: label_info Labels.t
-          (** Map from offset of labels the code might eventually jump to, to the label info
-              necessary to create Textual nodes. *) }
-  (* TODO(vsiles): revisit the data stack status once generators are in the mix *)
-
-  (** State of the capture while processing a single node: each node has a dedicated data stack, and
-      generates its own set of instructions. *)
-  and node = {stack: DataStack.t; instructions: T.Instr.t list; last_line: int option}
-
-  and t = {shared: shared; node: node}
-
-  let empty_node = {stack= []; instructions= []; last_line= None}
-
-  let empty =
-    { idents= T.Ident.Set.empty
-    ; globals= T.VarName.Map.empty
-    ; builtins= PyBuiltins.empty
-    ; next_label= 0
-    ; labels= Labels.empty }
-
-
-  let mk_label_info ?(ssa_parameters = []) ?prelude label_name =
-    let default _loc env = env in
-    let prelude = Option.value prelude ~default in
-    {label_name; ssa_parameters; prelude; processed= false}
-
-
-  let stack {node= {stack}} = stack
-
-  (** Similar to [List.map] but an [env] is threaded along the way *)
-  let rec map ~f ~(env : t) = function
-    | [] ->
-        (env, [])
-    | hd :: tl ->
-        let env, hd = f env hd in
-        let env, tl = map ~f ~env tl in
-        (env, hd :: tl)
-
-
-  (** Reset the [node] part of an environment, and all of its [idents], to prepare it to process a
-      new code unit *)
-  let reset_for_proc shared =
-    let shared = {shared with idents= T.Ident.Set.empty; next_label= 0} in
-    {shared; node= empty_node}
-
-
-  (** Reset the [instructions] field of a [node] to prepare the env to deal with a new set of
-      instructions. *)
-  let reset_for_node ({node} as env) =
-    let reset_for_node env = {env with instructions= []} in
-    let node = reset_for_node node in
-    {env with node}
-
-
-  (** Reset the [stack] field of a [node] *)
-  let reset_stack ({node} as env) = {env with node= {node with stack= []}}
-
-  (** Update the [last_line] field of an env, if new information is availbe. *)
-  let update_last_line ({node} as env) last_line =
-    let update_last_line node last_line =
-      if Option.is_some last_line then {node with last_line} else node
-    in
-    {env with node= update_last_line node last_line}
-
-
-  (** Return the last recorded line information from the Python code-unit, if any. *)
-  let loc {node} =
-    let loc {last_line} =
-      last_line
-      |> Option.map ~f:(fun line -> T.Location.known ~line ~col:0)
-      |> Option.value ~default:T.Location.Unknown
-    in
-    loc node
-
-
-  (** Push a new [DataStack.cell] on the datastack *)
-  let push ({node} as env) cell =
-    let push ({stack} as env) cell =
-      let stack = DataStack.push stack cell in
-      {env with stack}
-    in
-    let node = push node cell in
-    {env with node}
-
-
-  (** Pop a [DataStack.cell] from the datastack, if any is available *)
-  let pop ({node} as env) =
-    let pop ({stack} as env) =
-      DataStack.pop stack |> Option.map ~f:(fun (stack, cell) -> ({env with stack}, cell))
-    in
-    pop node |> Option.map ~f:(fun (node, cell) -> ({env with node}, cell))
-
-
-  (** Generate a fresh temporary name *)
-  let mk_fresh_ident ({shared} as env) =
-    let mk_fresh_ident ({idents} as env) =
-      let fresh = T.Ident.fresh idents in
-      let idents = T.Ident.Set.add fresh idents in
-      ({env with idents}, fresh)
-    in
-    let shared, fresh = mk_fresh_ident shared in
-    ({env with shared}, fresh)
-
-
-  (** Record a new instruction for the current code unit *)
-  let push_instr ({node} as env) instr =
-    let push_instr ({instructions} as env) instr = {env with instructions= instr :: instructions} in
-    {env with node= push_instr node instr}
-
-
-  (** Generate a fresh label name *)
-  let label ({shared} as env) =
-    let label ({next_label} as env) =
-      let fresh_label = sprintf "b%d" next_label in
-      let env = {env with next_label= next_label + 1} in
-      (env, fresh_label)
-    in
-    let shared, fresh_label = label shared in
-    let env = {env with shared} in
-    (env, fresh_label)
-
-
-  (** Register the fact that a [label] must be inserted before the instruction at [offset] *)
-  let register_label offset label_info ({shared} as env) =
-    let register_label offset label_info ({labels} as env) =
-      let exists = Labels.mem offset labels in
-      let exists = if exists then "existing" else "non existing" in
-      if label_info.processed then Debug.p "processing %s label at %d\n" exists offset
-      else Debug.p "registering %s label at %d\n" exists offset ;
-      let labels = Labels.add offset label_info labels in
-      {env with labels}
-    in
-    let shared = register_label offset label_info shared in
-    {env with shared}
-
-
-  (** Check if the instruction is a possible jump location, and return the label information found
-      there, if any. *)
-  let label_of_offset {shared} offset =
-    let label_of_offset {labels} offset = Labels.find_opt offset labels in
-    label_of_offset shared offset
-
-
-  (** Returns the list of all instructions recorded for the current code unit *)
-  let get_instructions {node= {instructions}} = List.rev instructions
-
-  (** Register a global name (function, variable, ...). Since Python allows "toplevel" code, they
-      are encoded within a specially named function that behaves as a toplevel scope, and global
-      identifiers are scope accordingly. That way, there is no mixing them with locals with the same
-      name. *)
-  let register_global ({shared} as env) name is_code =
-    let register_global ({globals} as env) name is_code =
-      {env with globals= T.VarName.Map.add name is_code globals}
-    in
-    {env with shared= register_global shared name is_code}
-
-
-  (** Return the [globals] map *)
-  let globals {shared= {globals}} = globals
-
-  (** Register a known builtin, so they are correctly scoped, and add the relevant Textual
-      declarations for them. *)
-  let register_builtin ({shared} as env) name =
-    let register_builtin ({builtins} as env) name =
-      {env with builtins= PyBuiltins.register builtins name}
-    in
-    {env with shared= register_builtin shared name}
-end
+module Env = PyEnv
+module DataStack = PyEnv.DataStack
 
 let var_name ?(loc = T.Location.Unknown) value = T.VarName.{value; loc}
 
@@ -672,8 +447,8 @@ module JUMP = struct
         match cell with `Ok (cond, _) -> cond | `Error s -> L.die InternalError "[%s] %s" opname s
       in
       let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
-      let env, next_label = Env.label env in
-      let env, other_label = Env.label env in
+      let env, next_label = Env.mk_fresh_label env in
+      let env, other_label = Env.mk_fresh_label env in
       (* Compute the relevant pruning expressions *)
       let env = Env.register_builtin env "is_true" in
       let condT = PyCommon.mk_is_true cond in
@@ -699,7 +474,7 @@ module JUMP = struct
     let run env code {FFI.Instruction.opname; arg} =
       Debug.p "[%s] delta = %d\n" opname arg ;
       let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
-      let env, label_name = Env.label env in
+      let env, label_name = Env.mk_fresh_label env in
       let label_info = Env.mk_label_info ~ssa_parameters label_name in
       (env, Some (Relative {ssa_args; label_info; delta= arg}))
   end
@@ -726,7 +501,7 @@ module JUMP = struct
                  %d"
                 opname offset arg
         else
-          let env, label_name = Env.label env in
+          let env, label_name = Env.mk_fresh_label env in
           let label_info = Env.mk_label_info ~ssa_parameters label_name in
           (env, label_info)
       in
@@ -786,8 +561,8 @@ module ITER = struct
           let env, id, _ = mk_builtin_call env "python_iter_next" [iter] in
           let cond = T.Exp.Var id in
           let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
-          let env, next_label = Env.label env in
-          let env, other_label = Env.label env in
+          let env, next_label = Env.mk_fresh_label env in
+          let env, other_label = Env.mk_fresh_label env in
           (* Compute the relevant pruning expressions *)
           let condT = cond in
           let condF = T.Exp.not condT in
@@ -869,7 +644,7 @@ let has_jump_target env instructions =
     | None ->
         if is_jump_target then
           (* Probably the target of a back edge. Let's register and empty label info here. *)
-          let env, label_name = Env.label env in
+          let env, label_name = Env.mk_fresh_label env in
           let label_info = Env.mk_label_info label_name in
           (env, Some (offset, true, label_info))
         else (env, None) )
@@ -1069,7 +844,7 @@ let rec nodes env label_info code instructions =
           let env = Env.register_label offset label_info env in
           (env, label_info)
       | None ->
-          let env, label_name = Env.label env in
+          let env, label_name = Env.mk_fresh_label env in
           (env, Env.mk_label_info label_name)
     in
     let env, more_textual_nodes = nodes env label_info code instructions in
@@ -1095,7 +870,7 @@ let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames; instructions} as 
   in
   (* Create the original environment for this code unit *)
   let env = Env.reset_for_proc env in
-  let env, entry_label = Env.label env in
+  let env, entry_label = Env.mk_fresh_label env in
   let label = node_name ~loc entry_label in
   let label_info = Env.mk_label_info entry_label in
   (* Now that a full unit has been processed, discard all the local information (local variable
