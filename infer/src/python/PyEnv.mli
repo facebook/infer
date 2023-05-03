@@ -32,60 +32,76 @@ module DataStack : sig
   val pop : t -> (t * cell) option
 end
 
-module Labels : Caml.Map.S with type key = int
-
 (** Information about global/toplevel declaration *)
 type global_info = {is_code: bool}
 
-(** Information about a "yet to reach" label location, with its name, type of ssa parameters, and a
-    function to update the environment before processing the code after the label. For example,
-    inserting some pruning operations before the label and the code. Since we don't always know the
-    location of the label before-hand, the [prelude] is expecting one.
+(** Global environment used during bytecode processing. Stores common global information like the
+    toplevel symbols processed so far, or more local ones like the set of labels or variable ids
+    currently used by a declaration. *)
+type t
 
-    We also keep track of the label status: if we already [processed] it within the [nodes]
-    function. This is to avoid infinite loops. *)
-type label_info =
-  { label_name: string
-  ; ssa_parameters: T.Typ.t list
-  ; prelude: T.Location.t -> t -> t
-  ; processed: bool }
+module Label : sig
+  (** Information about a "yet to reach" label location, with its name, type of ssa parameters, and
+      a function to update the environment before processing the code after the label. For example,
+      inserting some pruning operations before the label and the code. Since we don't always know
+      the location of the label before-hand, the [prelude] is expecting one.
 
-(** Part of the environment shared by most structures. It gathers information like which builtin has
-    been spotted, or what idents and labels have been generated so far. *)
-and shared =
-  { idents: T.Ident.Set.t
-  ; globals: global_info T.VarName.Map.t
-        (** Name of the globals spotted while processing the module topevel. The boolean tells us if
-            the globals is some code/function or just a variable. *)
-  ; builtins: PyBuiltins.t
-  ; next_label: int
-  ; labels: label_info Labels.t
-        (** Map from offset of labels the code might eventually jump to, to the label info necessary
-            to create Textual nodes. *) }
+      We also keep track of the label status: if we already [processed] it within the [nodes]
+      function. This is to avoid infinite loops. *)
+  type info
 
-(** State of the capture while processing a single node: each node has a dedicated data stack, and
-    generates its own set of instructions. *)
-and node = {stack: DataStack.t; instructions: T.Instr.t list; last_line: int option}
+  val mk : ?ssa_parameters:T.Typ.t list -> ?prelude:(T.Location.t -> t -> t) -> string -> info
+  (** Create a [label_info] with the provided arguments. Mostly used with the defaults *)
 
-and t = {shared: shared; node: node}
+  val update_ssa_parameters : info -> T.Typ.t list -> info
+  (** Update the [ssa_parameters] of a label *)
 
-val empty : shared
+  val is_processed : info -> bool
+  (** Returns true iff the label was already encountered during processing *)
 
-val mk_label_info :
-  ?ssa_parameters:T.Typ.t list -> ?prelude:(T.Location.t -> t -> t) -> string -> label_info
+  val name : info -> string
+  (** Returns the [name] of a label *)
+
+  val to_textual : t -> T.Location.t -> info -> t * string * (T.Ident.t * T.Typ.t) list
+  (** Process a label [info] and turn it into Textual information *)
+end
+
+val empty : t
+
+val loc : t -> T.Location.t
+(** Return the last recorded line information from the Python code-unit, if any. *)
 
 val stack : t -> DataStack.t
+(** Returns the [DataStack.t] for the current declaration *)
+
+val globals : t -> global_info T.VarName.Map.t
+(** Return the [globals] map *)
+
+val builtins : t -> PyBuiltins.t
+(** Return the [builtins] map *)
+
+val instructions : t -> T.Instr.t list
+(** Returns the list of all instructions recorded for the current code unit *)
+
+val label_of_offset : t -> int -> Label.info option
+(** Check if the instruction is a possible jump location, and return the label information found
+    there, if any. *)
+
+val mk_fresh_ident : t -> t * T.Ident.t
+(** Generate a fresh temporary name *)
+
+val mk_fresh_label : t -> t * string
+(** Generate a fresh label name *)
 
 val map : f:(t -> 'a -> t * 'b) -> env:t -> 'a list -> t * 'b list
 (** Similar to [List.map] but an [env] is threaded along the way *)
 
-val reset_for_proc : shared -> t
-(** Reset the [node] part of an environment, and all of its [idents], to prepare it to process a new
-    code unit *)
+val enter_proc : t -> t
+(** Set the environment when entering a new code unit (like reset the instruction buffer, or
+    id/label generators. *)
 
-val reset_for_node : t -> t
-(** Reset the [instructions] field of a [node] to prepare the env to deal with a new set of
-    instructions. *)
+val enter_node : t -> t
+(** Set the environment when entering a new node. Reset the [instructions] buffer. *)
 
 val reset_stack : t -> t
 (** Reset the [stack] field of a [node] *)
@@ -93,42 +109,26 @@ val reset_stack : t -> t
 val update_last_line : t -> int option -> t
 (** Update the [last_line] field of an env, if new information is availbe. *)
 
-val loc : t -> T.Location.t
-(** Return the last recorded line information from the Python code-unit, if any. *)
-
 val push : t -> DataStack.cell -> t
 (** Push a new [DataStack.cell] on the datastack *)
 
 val pop : t -> (t * DataStack.cell) option
 (** Pop a [DataStack.cell] from the datastack, if any is available *)
 
-val mk_fresh_ident : t -> t * T.Ident.t
-(** Generate a fresh temporary name *)
-
 val push_instr : t -> T.Instr.t -> t
 (** Record a new instruction for the current code unit *)
 
-val mk_fresh_label : t -> t * string
-(** Generate a fresh label name *)
+val register_label : offset:int -> Label.info -> t -> t
+(** Register the fact that a new label [info] must be inserted before the instruction at [offset] *)
 
-val register_label : int -> label_info -> t -> t
-(** Register the fact that a [label] must be inserted before the instruction at [offset] *)
-
-val label_of_offset : t -> int -> label_info option
-(** Check if the instruction is a possible jump location, and return the label information found
-    there, if any. *)
-
-val get_instructions : t -> T.Instr.t list
-(** Returns the list of all instructions recorded for the current code unit *)
+val process_label : offset:int -> Label.info -> t -> t
+(** Mark the label [info] at [offset] as processed *)
 
 val register_global : t -> T.VarName.t -> global_info -> t
 (** Register a global name (function, variable, ...). Since Python allows "toplevel" code, they are
     encoded within a specially named function that behaves as a toplevel scope, and global
     identifiers are scope accordingly. That way, there is no mixing them with locals with the same
     name. *)
-
-val globals : t -> global_info T.VarName.Map.t
-(** Return the [globals] map *)
 
 val register_builtin : t -> string -> t
 (** Register a known builtin, so they are correctly scoped, and add the relevant Textual

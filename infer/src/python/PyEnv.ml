@@ -46,17 +46,86 @@ type label_info =
   ; prelude: T.Location.t -> t -> t
   ; processed: bool }
 
+(** Part of the environment shared by most structures. It gathers information like which builtin has
+    been spotted, or what idents and labels have been generated so far. *)
 and shared =
   { idents: T.Ident.Set.t
   ; globals: global_info T.VarName.Map.t
   ; builtins: PyBuiltins.t
   ; next_label: int
   ; labels: label_info Labels.t }
-(* TODO(vsiles): revisit the data stack status once generators are in the mix *)
 
+(** State of the capture while processing a single node: each node has a dedicated data stack, and
+    generates its own set of instructions. *)
 and node = {stack: DataStack.t; instructions: T.Instr.t list; last_line: int option}
 
 and t = {shared: shared; node: node}
+
+let rec map ~f ~(env : t) = function
+  | [] ->
+      (env, [])
+  | hd :: tl ->
+      let env, hd = f env hd in
+      let env, tl = map ~f ~env tl in
+      (env, hd :: tl)
+
+
+let mk_fresh_ident ({shared} as env) =
+  let mk_fresh_ident ({idents} as env) =
+    let fresh = T.Ident.fresh idents in
+    let idents = T.Ident.Set.add fresh idents in
+    ({env with idents}, fresh)
+  in
+  let shared, fresh = mk_fresh_ident shared in
+  ({env with shared}, fresh)
+
+
+let push ({node} as env) cell =
+  let push ({stack} as env) cell =
+    let stack = DataStack.push stack cell in
+    {env with stack}
+  in
+  let node = push node cell in
+  {env with node}
+
+
+let pop ({node} as env) =
+  let pop ({stack} as env) =
+    DataStack.pop stack |> Option.map ~f:(fun (stack, cell) -> ({env with stack}, cell))
+  in
+  pop node |> Option.map ~f:(fun (node, cell) -> ({env with node}, cell))
+
+
+module Label = struct
+  type info = label_info
+
+  let mk ?(ssa_parameters = []) ?prelude label_name =
+    let default _loc env = env in
+    let prelude = Option.value prelude ~default in
+    {label_name; ssa_parameters; prelude; processed= false}
+
+
+  let update_ssa_parameters label_info ssa_parameters = {label_info with ssa_parameters}
+
+  let is_processed {processed} = processed
+
+  let name {label_name} = label_name
+
+  let to_textual env label_loc {label_name; ssa_parameters; prelude} =
+    let env, ssa_parameters =
+      map ~env ssa_parameters ~f:(fun env typ ->
+          let env, id = mk_fresh_ident env in
+          (env, (id, typ)) )
+    in
+    (* Install the prelude before processing the instructions *)
+    let env = prelude label_loc env in
+    (* If we have ssa_parameters, we need to push them on the stack to restore its right shape.
+       Doing a fold_right is important to keep the correct order. *)
+    let env =
+      List.fold_right ~init:env ssa_parameters ~f:(fun (id, _) env -> push env (DataStack.Temp id))
+    in
+    (env, label_name, ssa_parameters)
+end
 
 let empty_node = {stack= []; instructions= []; last_line= None}
 
@@ -68,29 +137,16 @@ let empty =
   ; labels= Labels.empty }
 
 
-let mk_label_info ?(ssa_parameters = []) ?prelude label_name =
-  let default _loc env = env in
-  let prelude = Option.value prelude ~default in
-  {label_name; ssa_parameters; prelude; processed= false}
-
+let empty = {shared= empty; node= empty_node}
 
 let stack {node= {stack}} = stack
 
-let rec map ~f ~(env : t) = function
-  | [] ->
-      (env, [])
-  | hd :: tl ->
-      let env, hd = f env hd in
-      let env, tl = map ~f ~env tl in
-      (env, hd :: tl)
-
-
-let reset_for_proc shared =
+let enter_proc {shared} =
   let shared = {shared with idents= T.Ident.Set.empty; next_label= 0} in
   {shared; node= empty_node}
 
 
-let reset_for_node ({node} as env) =
+let enter_node ({node} as env) =
   let reset_for_node env = {env with instructions= []} in
   let node = reset_for_node node in
   {env with node}
@@ -114,32 +170,6 @@ let loc {node} =
   loc node
 
 
-let push ({node} as env) cell =
-  let push ({stack} as env) cell =
-    let stack = DataStack.push stack cell in
-    {env with stack}
-  in
-  let node = push node cell in
-  {env with node}
-
-
-let pop ({node} as env) =
-  let pop ({stack} as env) =
-    DataStack.pop stack |> Option.map ~f:(fun (stack, cell) -> ({env with stack}, cell))
-  in
-  pop node |> Option.map ~f:(fun (node, cell) -> ({env with node}, cell))
-
-
-let mk_fresh_ident ({shared} as env) =
-  let mk_fresh_ident ({idents} as env) =
-    let fresh = T.Ident.fresh idents in
-    let idents = T.Ident.Set.add fresh idents in
-    ({env with idents}, fresh)
-  in
-  let shared, fresh = mk_fresh_ident shared in
-  ({env with shared}, fresh)
-
-
 let push_instr ({node} as env) instr =
   let push_instr ({instructions} as env) instr = {env with instructions= instr :: instructions} in
   {env with node= push_instr node instr}
@@ -156,7 +186,7 @@ let mk_fresh_label ({shared} as env) =
   (env, fresh_label)
 
 
-let register_label offset label_info ({shared} as env) =
+let register_label ~offset label_info ({shared} as env) =
   let register_label offset label_info ({labels} as env) =
     let exists = Labels.mem offset labels in
     let exists = if exists then "existing" else "non existing" in
@@ -169,20 +199,18 @@ let register_label offset label_info ({shared} as env) =
   {env with shared}
 
 
-(** Check if the instruction is a possible jump location, and return the label information found
-    there, if any. *)
+let process_label ~offset label_info env =
+  let label_info = {label_info with processed= true} in
+  register_label ~offset label_info env
+
+
 let label_of_offset {shared} offset =
   let label_of_offset {labels} offset = Labels.find_opt offset labels in
   label_of_offset shared offset
 
 
-(** Returns the list of all instructions recorded for the current code unit *)
-let get_instructions {node= {instructions}} = List.rev instructions
+let instructions {node= {instructions}} = List.rev instructions
 
-(** Register a global name (function, variable, ...). Since Python allows "toplevel" code, they are
-    encoded within a specially named function that behaves as a toplevel scope, and global
-    identifiers are scope accordingly. That way, there is no mixing them with locals with the same
-    name. *)
 let register_global ({shared} as env) name is_code =
   let register_global ({globals} as env) name is_code =
     {env with globals= T.VarName.Map.add name is_code globals}
@@ -190,11 +218,10 @@ let register_global ({shared} as env) name is_code =
   {env with shared= register_global shared name is_code}
 
 
-(** Return the [globals] map *)
 let globals {shared= {globals}} = globals
 
-(** Register a known builtin, so they are correctly scoped, and add the relevant Textual
-    declarations for them. *)
+let builtins {shared= {builtins}} = builtins
+
 let register_builtin ({shared} as env) name =
   let register_builtin ({builtins} as env) name =
     {env with builtins= PyBuiltins.register builtins name}
