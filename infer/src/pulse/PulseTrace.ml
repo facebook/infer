@@ -125,10 +125,6 @@ let find_map_last_main trace ~f = Container.find_map ~iter:rev_iter_main_events 
 
 let exists_main trace ~f = Container.exists ~iter:rev_iter_main_events trace ~f
 
-let has_invalidation trace =
-  exists_main trace ~f:(function ValueHistory.Invalidated _ -> true | _ -> false)
-
-
 let of_call_stack calls imm_location =
   let rec wrap_in_calls trace = function
     | [] ->

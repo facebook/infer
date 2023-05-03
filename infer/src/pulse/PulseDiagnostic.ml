@@ -763,7 +763,9 @@ let pp_copy_typ fmt =
 let get_trace = function
   | AccessToInvalidAddress {calling_context; invalidation; invalidation_trace; access_trace} ->
       let in_context_nesting = List.length calling_context in
-      let should_print_invalidation_trace = not (Trace.has_invalidation access_trace) in
+      let should_print_invalidation_trace =
+        not (Trace.exists_main access_trace ~f:(function Invalidated _ -> true | _ -> false))
+      in
       get_trace_calling_context calling_context
       @@ ( if should_print_invalidation_trace then
              add_invalidation_trace ~nesting:in_context_nesting invalidation invalidation_trace

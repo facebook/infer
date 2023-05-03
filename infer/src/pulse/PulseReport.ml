@@ -101,7 +101,7 @@ let is_constant_deref_without_invalidation (invalidation : Invalidation.t) acces
   let res =
     match invalidation with
     | ConstantDereference _ ->
-        not (Trace.has_invalidation access_trace)
+        not (Trace.exists_main access_trace ~f:(function Invalidated _ -> true | _ -> false))
     | CFree
     | CppDelete
     | CppDeleteArray

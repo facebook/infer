@@ -50,8 +50,8 @@ val synchronous_add_to_errlog :
 val find_map_last_main : t -> f:(ValueHistory.event -> 'a option) -> 'a option
 (** [find_map] applied to history events in reverse order; does not look into contextual events *)
 
-val has_invalidation : t -> bool
-(** whether the main part of the trace contains an invalidation event *)
+val exists_main : t -> f:(ValueHistory.event -> bool) -> bool
+(** whether the trace contains an event satisfying [f]; does not look into contextual events *)
 
 val get_trace_until : t -> f:(ValueHistory.event -> bool) -> t option
 (** build a sub-trace leading to the first element of the trace satisfying [f] *)
