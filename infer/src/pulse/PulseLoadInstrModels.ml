@@ -22,11 +22,11 @@ type model =
 let std_is_same_v t1 t2 : model =
  fun {path; location} astate ->
   if Typ.equal_template_arg t1 t2 then
-    let one = AbstractValue.Constants.get_int IntLit.one in
+    let one = Formula.absval_of_int IntLit.one in
     let++ astate = PulseArithmetic.and_eq_int one IntLit.one astate in
     (astate, (one, Hist.single_call path location "std_is_same_v is true"))
   else
-    let zero = AbstractValue.Constants.get_int IntLit.zero in
+    let zero = Formula.absval_of_int IntLit.zero in
     let++ astate = PulseArithmetic.and_eq_int zero IntLit.zero astate in
     (astate, (zero, Hist.single_call path location "std_is_same_v is false"))
 

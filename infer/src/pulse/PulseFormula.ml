@@ -2960,3 +2960,25 @@ let fold_variables {conditions; phi} ~init ~f =
     Atom.Set.fold f conditions init
   in
   Formula.fold_variables phi ~init ~f
+
+
+module Constants = struct
+  module M = Caml.Map.Make (IntLit)
+
+  let initial_cache = M.empty
+
+  let cache = ref initial_cache
+
+  let get_int i =
+    match M.find_opt i !cache with
+    | Some v ->
+        v
+    | None ->
+        let v = Var.mk_fresh () in
+        cache := M.add i v !cache ;
+        v
+end
+
+let () = AnalysisGlobalState.register_ref Constants.cache ~init:(fun () -> Constants.initial_cache)
+
+let absval_of_int i = Constants.get_int i

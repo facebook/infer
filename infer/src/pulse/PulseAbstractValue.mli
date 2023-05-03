@@ -34,14 +34,6 @@ val pp : F.formatter -> t -> unit
 val compare_unrestricted_first : t -> t -> int
 (** an alternative comparison function that sorts unrestricted variables before restricted variables *)
 
-module Constants : sig
-  val get_int : IntLit.t -> t
-  (** Get or create an abstract value associated with a constant {!IR.IntLit.t}. The idea is that
-      clients will record in the abstract state that the returned [t] is equal to the given integer.
-      If the same integer is queried later on then this module will return the same abstract
-      variable. *)
-end
-
 module Set : PrettyPrintable.PPSet with type elt = t
 
 module Map : sig

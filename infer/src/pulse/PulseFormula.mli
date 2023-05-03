@@ -120,3 +120,9 @@ val and_callee_post :
 
 val fold_variables : (t, Var.t, 'acc) Container.fold
 (** note: each variable mentioned in the formula is visited at least once, possibly more *)
+
+val absval_of_int : IntLit.t -> Var.t
+(** Get or create an abstract value ([Var.t] is [AbstractValue.t]) associated with a constant
+    {!IR.IntLit.t}. The idea is that clients will record in the abstract state that the returned [t]
+    is equal to the given integer. If the same integer is queried later on then this module will
+    return the same abstract variable. *)

@@ -162,7 +162,7 @@ module Basic = struct
   let return_int ~desc : Int64.t -> model =
    fun i64 {path; location; ret= ret_id, _} astate ->
     let i = IntLit.of_int64 i64 in
-    let ret_addr = AbstractValue.Constants.get_int i in
+    let ret_addr = Formula.absval_of_int i in
     let<++> astate = PulseArithmetic.and_eq_int ret_addr i astate in
     PulseOperations.write_id ret_id (ret_addr, Hist.single_call path location desc) astate
 

@@ -62,26 +62,8 @@ module Map = struct
     `List (List.map ~f:(fun (k, v) -> `List [yojson_of_t k; yojson_of_val v]) (bindings m))
 end
 
-module Constants = struct
-  module M = Caml.Map.Make (IntLit)
-
-  let initial_cache = M.empty
-
-  let cache = ref initial_cache
-
-  let get_int i =
-    match M.find_opt i !cache with
-    | Some v ->
-        v
-    | None ->
-        let v = mk_fresh () in
-        cache := M.add i v !cache ;
-        v
-end
-
 let () =
   AnalysisGlobalState.register_ref next_fresh ~init:(fun () -> initial_next_fresh) ;
   AnalysisGlobalState.register_ref next_fresh_restricted ~init:(fun () ->
       initial_next_fresh_restricted ) ;
-  AnalysisGlobalState.register_ref Constants.cache ~init:(fun () -> Constants.initial_cache) ;
   ()
