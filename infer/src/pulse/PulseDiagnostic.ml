@@ -368,89 +368,99 @@ let get_message diagnostic =
       ; invalidation_trace
       ; access_trace
       ; must_be_valid_reason } -> (
-    match invalidation with
-    | ConstantDereference i when IntLit.equal i IntLit.zero ->
-        let pp_access_trace fmt (trace : Trace.t) =
-          match immediate_or_first_call calling_context trace with
-          | `Immediate ->
-              ()
-          | `Call f ->
-              F.fprintf fmt " in the call to %a" CallEvent.describe f
-        in
-        let pp_invalidation_trace line fmt (trace : Trace.t) =
-          match immediate_or_first_call calling_context trace with
-          | `Immediate ->
-              F.fprintf fmt "(null value originating from line %d)" line
-          | `Call f ->
-              F.fprintf fmt "(from the call to %a on line %d)" CallEvent.describe f line
-        in
-        let invalidation_line =
-          let {Location.line; _} = Trace.get_outer_location invalidation_trace in
-          line
-        in
-        let pp_must_be_valid_reason fmt expr =
-          let pp_prefix fmt null_nil_block =
-            if DecompilerExpr.is_unknown expr then
-              F.fprintf fmt "%s %a" null_nil_block
-                (pp_invalidation_trace invalidation_line)
-                invalidation_trace
-            else
-              F.fprintf fmt "`%a` could be %s %a and" DecompilerExpr.pp expr null_nil_block
-                (pp_invalidation_trace invalidation_line)
-                invalidation_trace
+      (* [invalidation_trace] comes from the [Invalid] attribute and may not be about the exact
+         thing we are looking at but about some other value that happens to be equal to it (as we'll
+         keep only one such attribute per value). [access_trace] has the most accurate info and if
+         all goes well it should itself contain a sub-trace leading to how the value became invalid
+         prior to being accessed (see also [PulseReport]. *)
+      let invalidation_trace =
+        Trace.get_trace_until access_trace ~f:(function Invalidated _ -> true | _ -> false)
+        |> Option.value ~default:invalidation_trace
+      in
+      match invalidation with
+      | ConstantDereference i when IntLit.equal i IntLit.zero ->
+          let pp_access_trace fmt (trace : Trace.t) =
+            match immediate_or_first_call calling_context trace with
+            | `Immediate ->
+                ()
+            | `Call f ->
+                F.fprintf fmt " in the call to %a" CallEvent.describe f
           in
-          match must_be_valid_reason with
-          | Some (SelfOfNonPODReturnMethod non_pod_typ) ->
-              F.fprintf fmt
-                "%a is used to call a C++ method with a non-POD return type `%a`%a; nil messaging \
-                 such methods is undefined behaviour"
-                pp_prefix "nil" (Typ.pp_full Pp.text) non_pod_typ pp_access_trace access_trace
-          | Some (InsertionIntoCollectionKey | InsertionIntoCollectionValue) ->
-              F.fprintf fmt
-                "%a is used as a %s when inserting into a collection%a, potentially causing a crash"
-                pp_prefix "nil"
-                ( match[@warning "-partial-match"] must_be_valid_reason with
-                | Some InsertionIntoCollectionKey ->
-                    "key"
-                | Some InsertionIntoCollectionValue ->
-                    "value" )
-                pp_access_trace access_trace
-          | Some BlockCall ->
-              F.fprintf fmt "%a is called%a, causing a crash" pp_prefix "nil block" pp_access_trace
-                access_trace
-          | Some (NullArgumentWhereNonNullExpected procname) ->
-              F.fprintf fmt
-                "%a is passed as argument to %s; this function requires a non-nil argument"
-                pp_prefix "nil" procname
-          | None ->
-              F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
-        in
-        F.asprintf "%a%a" pp_calling_context_prefix calling_context pp_must_be_valid_reason
-          invalid_address
-    | _ ->
-        let pp_access_trace fmt (trace : Trace.t) =
-          match immediate_or_first_call calling_context trace with
-          | `Immediate ->
-              F.fprintf fmt "accessing memory that "
-          | `Call f ->
-              F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
-        in
-        let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
-          let pp_line fmt line = F.fprintf fmt " on line %d" line in
-          match immediate_or_first_call calling_context trace with
-          | `Immediate ->
-              F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
-          | `Call f ->
-              F.fprintf fmt "%a during the call to %a%a" Invalidation.describe invalidation
-                CallEvent.describe f pp_line line
-        in
-        let invalidation_line =
-          let {Location.line; _} = Trace.get_outer_location invalidation_trace in
-          line
-        in
-        F.asprintf "%a%a%a" pp_calling_context_prefix calling_context pp_access_trace access_trace
-          (pp_invalidation_trace invalidation_line invalidation)
-          invalidation_trace )
+          let pp_invalidation_trace line fmt (trace : Trace.t) =
+            match immediate_or_first_call calling_context trace with
+            | `Immediate ->
+                F.fprintf fmt "(null value originating from line %d)" line
+            | `Call f ->
+                F.fprintf fmt "(from the call to %a on line %d)" CallEvent.describe f line
+          in
+          let invalidation_line =
+            let {Location.line; _} = Trace.get_outer_location invalidation_trace in
+            line
+          in
+          let pp_must_be_valid_reason fmt expr =
+            let pp_prefix fmt null_nil_block =
+              if DecompilerExpr.is_unknown expr then
+                F.fprintf fmt "%s %a" null_nil_block
+                  (pp_invalidation_trace invalidation_line)
+                  invalidation_trace
+              else
+                F.fprintf fmt "`%a` could be %s %a and" DecompilerExpr.pp expr null_nil_block
+                  (pp_invalidation_trace invalidation_line)
+                  invalidation_trace
+            in
+            match must_be_valid_reason with
+            | Some (SelfOfNonPODReturnMethod non_pod_typ) ->
+                F.fprintf fmt
+                  "%a is used to call a C++ method with a non-POD return type `%a`%a; nil \
+                   messaging such methods is undefined behaviour"
+                  pp_prefix "nil" (Typ.pp_full Pp.text) non_pod_typ pp_access_trace access_trace
+            | Some (InsertionIntoCollectionKey | InsertionIntoCollectionValue) ->
+                F.fprintf fmt
+                  "%a is used as a %s when inserting into a collection%a, potentially causing a \
+                   crash"
+                  pp_prefix "nil"
+                  ( match[@warning "-partial-match"] must_be_valid_reason with
+                  | Some InsertionIntoCollectionKey ->
+                      "key"
+                  | Some InsertionIntoCollectionValue ->
+                      "value" )
+                  pp_access_trace access_trace
+            | Some BlockCall ->
+                F.fprintf fmt "%a is called%a, causing a crash" pp_prefix "nil block"
+                  pp_access_trace access_trace
+            | Some (NullArgumentWhereNonNullExpected procname) ->
+                F.fprintf fmt
+                  "%a is passed as argument to %s; this function requires a non-nil argument"
+                  pp_prefix "nil" procname
+            | None ->
+                F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
+          in
+          F.asprintf "%a%a" pp_calling_context_prefix calling_context pp_must_be_valid_reason
+            invalid_address
+      | _ ->
+          let pp_access_trace fmt (trace : Trace.t) =
+            match immediate_or_first_call calling_context trace with
+            | `Immediate ->
+                F.fprintf fmt "accessing memory that "
+            | `Call f ->
+                F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
+          in
+          let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
+            let pp_line fmt line = F.fprintf fmt " on line %d" line in
+            match immediate_or_first_call calling_context trace with
+            | `Immediate ->
+                F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
+            | `Call f ->
+                F.fprintf fmt "%a during the call to %a%a" Invalidation.describe invalidation
+                  CallEvent.describe f pp_line line
+          in
+          let invalidation_line =
+            let {Location.line; _} = Trace.get_outer_location invalidation_trace in
+            line
+          in
+          F.asprintf "%a%a%a" pp_calling_context_prefix calling_context pp_access_trace access_trace
+            (pp_invalidation_trace invalidation_line invalidation)
+            invalidation_trace )
   | ConfigUsage {pname; config; branch_location} ->
       F.asprintf "Function %a used config %a at %a." Procname.pp pname ConfigName.pp config
         Location.pp branch_location
@@ -548,9 +558,13 @@ let get_message diagnostic =
         Var.pp param Location.pp_line location pp_used_locations
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
-        Trace.find_map trace ~f:(function VariableDeclared (pvar, _, _) -> Some pvar | _ -> None)
+        Trace.find_map_last_main trace ~f:(function
+          | VariableDeclared (pvar, _, _) ->
+              Some pvar
+          | _ ->
+              None )
         |> IOption.if_none_evalopt ~f:(fun () ->
-               Trace.find_map trace ~f:(function
+               Trace.find_map_last_main trace ~f:(function
                  | FormalDeclared (pvar, _, _) ->
                      Some pvar
                  | _ ->
@@ -558,7 +572,7 @@ let get_message diagnostic =
         |> Option.map ~f:(F.asprintf "%a" Pvar.pp_value_non_verbose)
       in
       let declared_fields =
-        Trace.find_map trace ~f:(function
+        Trace.find_map_last_main trace ~f:(function
           | StructFieldAddressCreated (fields, _, _) ->
               Some fields
           | _ ->

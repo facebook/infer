@@ -72,3 +72,9 @@ void malloc_no_check_bad() {
   *p = 42;
   free(p);
 }
+
+void deref_null_correct_null_assignment_bad() {
+  int* p = NULL;
+  int* q = NULL;
+  *q = 42; // should pick the NULL from the line just above, not the one about p
+}

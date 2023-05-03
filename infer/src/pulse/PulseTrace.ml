@@ -104,19 +104,64 @@ let rec synchronous_add_to_errlog ~nesting ~pp_immediate traces errlog =
       synchronous_add_to_errlog ~nesting ~pp_immediate (List.rev out_sync) errlog
 
 
-let rec iter trace ~f =
-  let f_event = function ValueHistory.Event event -> f event | _ -> () in
+let rec rev_iter_main trace ~f =
   match trace with
   | Immediate {history} ->
-      ValueHistory.rev_iter_main history ~f:f_event
-  | ViaCall {history; in_call} ->
-      ValueHistory.rev_iter_main history ~f:f_event ;
-      iter in_call ~f
+      ValueHistory.rev_iter_main history ~f
+  | ViaCall {history; in_call; f= call; location} ->
+      f (ValueHistory.ReturnFromCall (call, location)) ;
+      rev_iter_main in_call ~f ;
+      f (ValueHistory.EnterCall (call, location)) ;
+      ValueHistory.rev_iter_main history ~f
 
 
-let find_map trace ~f = Container.find_map ~iter trace ~f
+let rev_iter_main_events trace ~f =
+  rev_iter_main trace ~f:(function ValueHistory.Event event -> f event | _ -> ())
 
-let exists trace ~f = Container.exists ~iter trace ~f
+
+let iter_main trace ~f = Iter.rev (Iter.from_labelled_iter (rev_iter_main trace)) f
+
+let find_map_last_main trace ~f = Container.find_map ~iter:rev_iter_main_events trace ~f
+
+let exists_main trace ~f = Container.exists ~iter:rev_iter_main_events trace ~f
 
 let has_invalidation trace =
-  exists trace ~f:(function ValueHistory.Invalidated _ -> true | _ -> false)
+  exists_main trace ~f:(function ValueHistory.Invalidated _ -> true | _ -> false)
+
+
+let of_call_stack calls imm_location =
+  let rec wrap_in_calls trace = function
+    | [] ->
+        trace
+    | (call, location) :: calls' ->
+        wrap_in_calls
+          (ViaCall {location; in_call= trace; history= ValueHistory.epoch; f= call})
+          calls'
+  in
+  wrap_in_calls (Immediate {location= imm_location; history= ValueHistory.epoch}) calls
+
+
+let get_trace_until trace ~f =
+  let exception Found of t in
+  let call_stack = ref [] in
+  match
+    iter_main trace ~f:(fun (event : ValueHistory.iter_event) ->
+        match event with
+        | EnterCall (call, loc) ->
+            call_stack := (call, loc) :: !call_stack
+        | ReturnFromCall _ -> (
+            call_stack :=
+              match List.tl !call_stack with
+              | Some tail ->
+                  tail
+              | None ->
+                  CommandLineOption.warnf "ill-parenthesised call stack" ;
+                  [] )
+        | Event event ->
+            if f event then
+              raise (Found (of_call_stack !call_stack (ValueHistory.location_of_event event))) )
+  with
+  | () ->
+      None
+  | exception Found trace ->
+      Some trace
