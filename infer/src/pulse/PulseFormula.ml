@@ -2969,10 +2969,10 @@ module Constants = struct
 
   let cache = ref initial_cache
 
-  let get_int i =
+  let get_int formula i =
     match M.find_opt i !cache with
     | Some v ->
-        v
+        get_var_repr formula v
     | None ->
         let v = Var.mk_fresh () in
         cache := M.add i v !cache ;
@@ -2981,4 +2981,4 @@ end
 
 let () = AnalysisGlobalState.register_ref Constants.cache ~init:(fun () -> Constants.initial_cache)
 
-let absval_of_int i = Constants.get_int i
+let absval_of_int formula i = Constants.get_int formula i

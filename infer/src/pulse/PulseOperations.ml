@@ -180,7 +180,7 @@ let eval path mode location exp0 astate =
     | Cast (_, exp') ->
         eval path mode exp' astate
     | Const (Cint i) ->
-        let v = Formula.absval_of_int i in
+        let v = Formula.absval_of_int astate.AbductiveDomain.path_condition i in
         let invalidation = Invalidation.ConstantDereference i in
         let++ astate =
           PulseArithmetic.and_eq_int v i astate
