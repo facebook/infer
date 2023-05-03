@@ -958,8 +958,8 @@ let check_retain_cycles ~dead_addresses tenv astate =
                                 assignment_traces
                           in
                           let decompiler =
-                            Decompiler.add_access_source ~allow_cycle:true accessed_addr access
-                              ~src:addr (astate.post :> base_domain).attrs decompiler
+                            Decompiler.add_access_source accessed_addr access ~src:addr
+                              (astate.post :> base_domain).attrs decompiler
                           in
                           let seen = AbstractValue.Set.add addr seen in
                           contains_cycle decompiler ~assignment_traces ~seen accessed_addr

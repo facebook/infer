@@ -30,12 +30,6 @@ val add_call_source :
   AbstractValue.t -> CallEvent.t -> ((AbstractValue.t * ValueHistory.t) * Typ.t) list -> t -> t
 
 val add_access_source :
-     ?allow_cycle:bool
-  -> AbstractValue.t
-  -> BaseMemory.Access.t
-  -> src:AbstractValue.t
-  -> BaseAddressAttributes.t
-  -> t
-  -> t
+  AbstractValue.t -> BaseMemory.Access.t -> src:AbstractValue.t -> BaseAddressAttributes.t -> t -> t
 
 val find : AbstractValue.t -> t -> DecompilerExpr.t

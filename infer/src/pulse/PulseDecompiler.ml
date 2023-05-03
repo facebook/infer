@@ -105,31 +105,10 @@ let access_of_memory_access src attrs decompiler (access : BaseMemory.Access.t) 
       Dereference
 
 
-let add_access_source ?(allow_cycle = false) v (access : BaseMemory.Access.t) ~src attrs decompiler
-    =
-  let contains_access v src =
-    match (v, src) with
-    | ( DecompilerExpr.SourceExpr ((PVar pvar_v, access_v), _)
-      , DecompilerExpr.SourceExpr ((PVar pvar_src, access_src), _) )
-      when Pvar.equal pvar_v pvar_src ->
-        let rec is_sub_access sub access =
-          match (sub, access) with
-          | [], _ ->
-              true
-          | _, [] ->
-              false
-          | s :: sub, a :: access ->
-              DecompilerExpr.equal_access s a && is_sub_access sub access
-        in
-        is_sub_access (List.rev access_v) (List.rev access_src)
-    | _ ->
-        false
-  in
+let add_access_source v (access : BaseMemory.Access.t) ~src attrs decompiler =
   let+ decompiler in
   match Map.find src decompiler with
   | Unknown _ ->
-      decompiler
-  | src when (not allow_cycle) && contains_access (Map.find v decompiler) src ->
       decompiler
   | SourceExpr ((base, accesses), _) ->
       Map.add v (base, access_of_memory_access src attrs decompiler access :: accesses) decompiler
