@@ -7,8 +7,35 @@
 
 open! IStd
 module T = Textual
-module PyBuiltins = PyCommon.Builtins
 module Debug = PyDebug
+
+module Builtin : sig
+  type textual =
+    | IsTrue
+    | BinaryAdd
+    | PythonCode
+    | PythonCall
+    | PythonIter
+    | PythonIterNext
+    | PythonIterItem
+  [@@deriving compare]
+end
+
+module BuiltinSet : sig
+  (** This module keeps track of the builtins used by a code unit. Only the necessary Textual
+      declarations are generated. Note that primitive wrappers are always generated ([python_int],
+      ...) *)
+  type t
+
+  val to_textual : t -> Textual.Module.decl list
+  (** Encode a set of builtin declarations into Textual declarations *)
+
+  val empty : t
+  (** An empty set of builtins *)
+
+  val is_builtin : string -> bool
+  (** Check if a function name is a known builtin. *)
+end
 
 (** In Python, everything is an object, and the interpreter maintains a stack of references to such
     objects. Pushing and popping on the stack are always references to objets that leave in a heap.
@@ -77,7 +104,7 @@ val stack : t -> DataStack.t
 val globals : t -> global_info T.VarName.Map.t
 (** Return the [globals] map *)
 
-val builtins : t -> PyBuiltins.t
+val builtins : t -> BuiltinSet.t
 (** Return the [builtins] map *)
 
 val instructions : t -> T.Instr.t list
@@ -130,6 +157,13 @@ val register_global : t -> T.VarName.t -> global_info -> t
     identifiers are scope accordingly. That way, there is no mixing them with locals with the same
     name. *)
 
-val register_builtin : t -> string -> t
-(** Register a known builtin, so they are correctly scoped, and add the relevant Textual
-    declarations for them. *)
+val register_call : t -> string -> t
+(** Register a function call. It enables us to deal correctly with builtin declaration. *)
+
+val register_toplevel : t -> string -> t
+(** Register a function declaration. In enables us to deal correctly with global/builtin scoping,
+    and also with builtin function shadowing. *)
+
+val mk_builtin_call : t -> Builtin.textual -> T.Exp.t list -> t * T.Ident.t * T.Typ.t
+(** Wrapper to compute the Textual version of a call to a "textual" builtin * function (a builtin we
+    introduced for modeling purpose) *)

@@ -9,10 +9,10 @@ open! IStd
 module F = Format
 module L = Logging
 module T = Textual
-module PyBuiltins = PyCommon.Builtins
 module Debug = PyDebug
 module Env = PyEnv
 module DataStack = PyEnv.DataStack
+module Builtin = PyEnv.Builtin
 
 let var_name ?(loc = T.Location.Unknown) value = T.VarName.{value; loc}
 
@@ -26,23 +26,11 @@ let qualified_procname name : T.qualified_procname = {enclosing_class= TopLevel;
 (* Until there is support for python types, everything is a [*object] *)
 let pyObject = PyCommon.pyObject
 
-let mk_builtin_call env name args =
-  let typ = PyCommon.Builtins.get_type name in
-  let env = Env.register_builtin env name in
-  let env, id = Env.mk_fresh_ident env in
-  let proc = PyCommon.builtin_name name in
-  let exp = T.Exp.Call {proc; args; kind= T.Exp.NonVirtual} in
-  let loc = Env.loc env in
-  let instr = T.Instr.Let {id; exp; loc} in
-  let env = Env.push_instr env instr in
-  (env, id, typ)
-
-
 (** Turn a Python [FFI.Code.t] into a Textual [T.Exp.t], along with the required instructions to
     effectively perform the translation. *)
 let code_to_exp env name =
   let name = T.Exp.Const (Str name) in
-  let env, id, typ = mk_builtin_call env "python_code" [name] in
+  let env, id, typ = Env.mk_builtin_call env Builtin.PythonCode [name] in
   (env, (T.Exp.Var id, typ))
 
 
@@ -272,9 +260,8 @@ module CALL_FUNCTION = struct
     let env, id = Env.mk_fresh_ident env in
     let loc = Env.loc env in
     let env, proc =
-      if PyBuiltins.is_builtin fname then
-        let env = Env.register_builtin env fname in
-        (env, PyCommon.builtin_name fname)
+      let env = Env.register_call env fname in
+      if Env.BuiltinSet.is_builtin fname then (env, PyCommon.builtin_name fname)
       else
         let fname = PyCommon.global fname in
         (env, qualified_procname @@ proc_name ~loc fname)
@@ -288,7 +275,7 @@ module CALL_FUNCTION = struct
 
   let dynamic_call env caller_id args =
     let args = T.Exp.Var caller_id :: args in
-    let env, id, _typ = mk_builtin_call env "python_call" args in
+    let env, id, _typ = Env.mk_builtin_call env Builtin.PythonCall args in
     let env = Env.push env (DataStack.Temp id) in
     (env, None)
 
@@ -341,7 +328,7 @@ module BINARY_ADD = struct
        [0]:
        https://stackoverflow.com/questions/58828522/is-radd-called-if-add-raises-notimplementederror
     *)
-    let env, id, _typ = mk_builtin_call env "binary_add" [lhs; rhs] in
+    let env, id, _typ = Env.mk_builtin_call env Builtin.BinaryAdd [lhs; rhs] in
     let env = Env.push env (DataStack.Temp id) in
     (env, None)
 end
@@ -389,6 +376,7 @@ module MAKE_FUNCTION = struct
               L.die InternalError "%s: can't read qualified name from stack: %s" opname
                 (FFI.Constant.show const) )
     in
+    let env = Env.register_toplevel env qual in
     let env = Env.push env (DataStack.Fun (qual, body)) in
     (env, None)
 end
@@ -450,12 +438,7 @@ module JUMP = struct
       let env, next_label = Env.mk_fresh_label env in
       let env, other_label = Env.mk_fresh_label env in
       (* Compute the relevant pruning expressions *)
-      let env = Env.register_builtin env "is_true" in
-      let condT = PyCommon.mk_is_true cond in
-      let env, id = Env.mk_fresh_ident env in
-      let loc = Env.loc env in
-      let instr = T.Instr.Let {id; exp= condT; loc} in
-      let env = Env.push_instr env instr in
+      let env, id, _ = Env.mk_builtin_call env Env.Builtin.IsTrue [cond] in
       let condT = T.Exp.Var id in
       let condF = T.Exp.not condT in
       let next_prune = if next_is_true then condT else condF in
@@ -537,7 +520,7 @@ module ITER = struct
       let env, exp_ty = load_cell env code cell in
       match exp_ty with
       | `Ok (exp, _) ->
-          let env, id, _ = mk_builtin_call env "python_iter" [exp] in
+          let env, id, _ = Env.mk_builtin_call env Builtin.PythonIter [exp] in
           let env = Env.push env (DataStack.Temp id) in
           (env, None)
       | `Error s ->
@@ -558,7 +541,7 @@ module ITER = struct
       | `Ok (iter, _) ->
           (* TODO: Not sure I know how to write a model for python_iter_next/python_iter_item
              as two separate functions. Maybe introduce a single one that returns a pair. *)
-          let env, id, _ = mk_builtin_call env "python_iter_next" [iter] in
+          let env, id, _ = Env.mk_builtin_call env Builtin.PythonIterNext [iter] in
           let cond = T.Exp.Var id in
           let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
           let env, next_label = Env.mk_fresh_label env in
@@ -572,7 +555,7 @@ module ITER = struct
             (* The iterator object stays on the stack while in the for loop, let's push it back *)
             let env = Env.push env iter_cell in
             let env = Env.push_instr env (T.Instr.Prune {exp= condT; loc}) in
-            let env, item_id, _ = mk_builtin_call env "python_iter_item" [iter] in
+            let env, item_id, _ = Env.mk_builtin_call env Builtin.PythonIterItem [iter] in
             Env.push env (DataStack.Temp item_id)
           in
           let other_prelude loc env = Env.push_instr env (T.Instr.Prune {exp= condF; loc}) in
@@ -910,6 +893,6 @@ let to_module ~sourcefile module_name ({FFI.Code.co_consts; instructions} as cod
   let env, decls = to_proc_descs env co_consts in
   (* Gather everything into a Textual module *)
   let decls =
-    ((T.Module.Proc decl :: decls) @ globals) @ PyBuiltins.to_textual (Env.builtins env)
+    ((T.Module.Proc decl :: decls) @ globals) @ Env.BuiltinSet.to_textual (Env.builtins env)
   in
   {T.Module.attrs= [python_attribute]; decls; sourcefile}

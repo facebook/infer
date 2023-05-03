@@ -10,27 +10,29 @@ module F = Format
 
 let sourcefile = Textual.SourceFile.create "dummy.py"
 
-let test source =
+let test ?(typecheck = true) source =
   Py.initialize ~interpreter:Version.python_exe () ;
   let code = FFI.from_string ~source ~filename:"dummy" in
   Py.finalize () ;
   (* Since Textual doesn't have a concept of toplevel code, we create a function for this code,
      with a non-denotable name, so we don't clash with existing python code *)
   let module_ = PyTrans.to_module ~sourcefile (PyCommon.global "$toplevel$") code in
-  let res = TextualTypeVerification.type_check module_ in
-  match (res : TextualTypeVerification.type_check_result) with
-  | Ok ->
-      F.printf "%a" Textual.Module.pp module_
-  | Type_errors errors ->
-      let pp_error = TextualTypeVerification.pp_error sourcefile in
-      F.printf "%a" Textual.Module.pp module_ ;
-      F.printf "Errors while type checking the test:\n" ;
-      List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err)
-  | Decl_errors errors ->
-      let pp_error = TextualDecls.pp_error sourcefile in
-      F.printf "%a" Textual.Module.pp module_ ;
-      F.printf "Errors while creating the decls:\n" ;
-      List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err)
+  if typecheck then (
+    let res = TextualTypeVerification.type_check module_ in
+    match (res : TextualTypeVerification.type_check_result) with
+    | Ok ->
+        F.printf "%a" Textual.Module.pp module_
+    | Type_errors errors ->
+        let pp_error = TextualTypeVerification.pp_error sourcefile in
+        F.printf "%a" Textual.Module.pp module_ ;
+        F.printf "Errors while type checking the test:\n" ;
+        List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err)
+    | Decl_errors errors ->
+        let pp_error = TextualDecls.pp_error sourcefile in
+        F.printf "%a" Textual.Module.pp module_ ;
+        F.printf "Errors while creating the decls:\n" ;
+        List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err) )
+  else F.printf "%a" Textual.Module.pp module_
 
 
 let%test_module "basic_tests" =
@@ -44,20 +46,20 @@ let%test_module "basic_tests" =
 
         define $globals::$toplevel$() : *PyObject {
           #b0:
-              store &$globals::x <- $builtins.python_int(42):*PyInt
+              store &$globals::x <- $builtins.$python_int$(42):*PyInt
               ret null
 
         }
 
         global $globals::x: *PyObject
 
-        declare $builtins.python_tuple(...) : *PyObject
+        declare $builtins.$python_tuple$(...) : *PyObject
 
-        declare $builtins.python_string(*String) : *PyString
+        declare $builtins.$python_string$(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt
+        declare $builtins.$python_bool$(int) : *PyBool
 
-        declare $builtins.python_bool(int) : *PyBool |}]
+        declare $builtins.$python_int$(int) : *PyInt |}]
 
 
     let%expect_test _ =
@@ -72,7 +74,7 @@ print(x)
 
         define $globals::$toplevel$() : *PyObject {
           #b0:
-              store &$globals::x <- $builtins.python_int(42):*PyInt
+              store &$globals::x <- $builtins.$python_int$(42):*PyInt
               n0:*PyObject = load &$globals::x
               n1 = $builtins.print(n0)
               ret null
@@ -83,13 +85,13 @@ print(x)
 
         declare $builtins.print(...) : *PyObject
 
-        declare $builtins.python_tuple(...) : *PyObject
+        declare $builtins.$python_tuple$(...) : *PyObject
 
-        declare $builtins.python_string(*String) : *PyString
+        declare $builtins.$python_string$(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt
+        declare $builtins.$python_bool$(int) : *PyBool
 
-        declare $builtins.python_bool(int) : *PyBool |}]
+        declare $builtins.$python_int$(int) : *PyInt |}]
 
 
     let%expect_test _ =
@@ -105,11 +107,11 @@ print(x + y)
 
         define $globals::$toplevel$() : *PyObject {
           #b0:
-              store &$globals::x <- $builtins.python_int(42):*PyInt
-              store &$globals::y <- $builtins.python_int(10):*PyInt
+              store &$globals::x <- $builtins.$python_int$(42):*PyInt
+              store &$globals::y <- $builtins.$python_int$(10):*PyInt
               n0:*PyObject = load &$globals::x
               n1:*PyObject = load &$globals::y
-              n2 = $builtins.binary_add(n0, n1)
+              n2 = $builtins.$binary_add$(n0, n1)
               n3 = $builtins.print(n2)
               ret null
 
@@ -121,15 +123,15 @@ print(x + y)
 
         declare $builtins.print(...) : *PyObject
 
-        declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
+        declare $builtins.$binary_add$(*PyObject, *PyObject) : *PyObject
 
-        declare $builtins.python_tuple(...) : *PyObject
+        declare $builtins.$python_tuple$(...) : *PyObject
 
-        declare $builtins.python_string(*String) : *PyString
+        declare $builtins.$python_string$(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt
+        declare $builtins.$python_bool$(int) : *PyBool
 
-        declare $builtins.python_bool(int) : *PyBool |}]
+        declare $builtins.$python_int$(int) : *PyInt |}]
   end )
 
 
@@ -159,10 +161,10 @@ print(z)
 
         define $globals::$toplevel$() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("my_fun")
-              store &$globals::a <- $builtins.python_int(10):*PyInt
+              n0 = $builtins.$python_code$("my_fun")
+              store &$globals::a <- $builtins.$python_int$(10):*PyInt
               n1:*PyObject = load &$globals::a
-              n2 = $globals::my_fun($builtins.python_int(42), n1)
+              n2 = $globals::my_fun($builtins.$python_int$(42), n1)
               store &$globals::z <- n2:*PyObject
               n3:*PyObject = load &$globals::z
               n4 = $builtins.print(n3)
@@ -179,7 +181,7 @@ print(z)
               n3 = $builtins.print(n2)
               n4:*PyObject = load &x
               n5:*PyObject = load &y
-              n6 = $builtins.binary_add(n4, n5)
+              n6 = $builtins.$binary_add$(n4, n5)
               store &z <- n6:*PyObject
               n7:*PyObject = load &z
               ret n7
@@ -190,19 +192,19 @@ print(z)
 
         global $globals::a: *PyObject
 
-        declare $builtins.python_code(*String) : *PyCode
-
         declare $builtins.print(...) : *PyObject
 
-        declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
+        declare $builtins.$python_code$(*String) : *PyCode
 
-        declare $builtins.python_tuple(...) : *PyObject
+        declare $builtins.$binary_add$(*PyObject, *PyObject) : *PyObject
 
-        declare $builtins.python_string(*String) : *PyString
+        declare $builtins.$python_tuple$(...) : *PyObject
 
-        declare $builtins.python_int(int) : *PyInt
+        declare $builtins.$python_string$(*String) : *PyString
 
-        declare $builtins.python_bool(int) : *PyBool |}]
+        declare $builtins.$python_bool$(int) : *PyBool
+
+        declare $builtins.$python_int$(int) : *PyInt |}]
 
 
     let%expect_test _ =
@@ -225,8 +227,8 @@ print(z)
 
         define $globals::$toplevel$() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("update_global")
-              store &$globals::z <- $builtins.python_int(0):*PyInt
+              n0 = $builtins.$python_code$("update_global")
+              store &$globals::z <- $builtins.$python_int$(0):*PyInt
               n1 = $globals::update_global()
               n2:*PyObject = load &$globals::z
               n3 = $builtins.print(n2)
@@ -237,7 +239,7 @@ print(z)
         define $globals::update_global() : *PyObject {
           #b0:
               n0:*PyObject = load &$globals::z
-              n1 = $builtins.binary_add(n0, $builtins.python_int(1))
+              n1 = $builtins.$binary_add$(n0, $builtins.$python_int$(1))
               store &$globals::z <- n1:*PyObject
               ret null
 
@@ -245,19 +247,19 @@ print(z)
 
         global $globals::z: *PyObject
 
-        declare $builtins.python_code(*String) : *PyCode
-
         declare $builtins.print(...) : *PyObject
 
-        declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
+        declare $builtins.$python_code$(*String) : *PyCode
 
-        declare $builtins.python_tuple(...) : *PyObject
+        declare $builtins.$binary_add$(*PyObject, *PyObject) : *PyObject
 
-        declare $builtins.python_string(*String) : *PyString
+        declare $builtins.$python_tuple$(...) : *PyObject
 
-        declare $builtins.python_int(int) : *PyInt
+        declare $builtins.$python_string$(*String) : *PyString
 
-        declare $builtins.python_bool(int) : *PyBool |}]
+        declare $builtins.$python_bool$(int) : *PyBool
+
+        declare $builtins.$python_int$(int) : *PyInt |}]
   end )
 
 
@@ -283,8 +285,8 @@ def f(x, y):
 
         define $globals::$toplevel$() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("coin")
-              n1 = $builtins.python_code("f")
+              n0 = $builtins.$python_code$("coin")
+              n1 = $builtins.$python_code$("f")
               ret null
 
         }
@@ -292,7 +294,7 @@ def f(x, y):
         define $globals::f(x: *PyObject, y: *PyObject) : *PyObject {
           #b0:
               n0 = $globals::coin()
-              n1 = $builtins.is_true(n0)
+              n1 = $builtins.$python_is_true$(n0)
               jmp b1, b2
 
           #b1:
@@ -312,21 +314,21 @@ def f(x, y):
 
         define $globals::coin() : *PyObject {
           #b0:
-              ret $builtins.python_bool(0)
+              ret $builtins.$python_bool$(0)
 
         }
 
-        declare $builtins.python_code(*String) : *PyCode
+        declare $builtins.$python_code$(*String) : *PyCode
 
-        declare $builtins.is_true(*PyObject) : int
+        declare $builtins.$python_is_true$(*PyObject) : int
 
-        declare $builtins.python_tuple(...) : *PyObject
+        declare $builtins.$python_tuple$(...) : *PyObject
 
-        declare $builtins.python_string(*String) : *PyString
+        declare $builtins.$python_string$(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt
+        declare $builtins.$python_bool$(int) : *PyBool
 
-        declare $builtins.python_bool(int) : *PyBool |}]
+        declare $builtins.$python_int$(int) : *PyInt |}]
 
 
     let%expect_test _ =
@@ -351,8 +353,8 @@ def f(x, y):
 
         define $globals::$toplevel$() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("coin")
-              n1 = $builtins.python_code("f")
+              n0 = $builtins.$python_code$("coin")
+              n1 = $builtins.$python_code$("f")
               ret null
 
         }
@@ -360,9 +362,9 @@ def f(x, y):
         define $globals::f(x: *PyObject, y: *PyObject) : *PyObject {
           local z: *PyObject
           #b0:
-              store &z <- $builtins.python_int(0):*PyInt
+              store &z <- $builtins.$python_int$(0):*PyInt
               n0 = $globals::coin()
-              n1 = $builtins.is_true(n0)
+              n1 = $builtins.$python_is_true$(n0)
               jmp b1, b2
 
           #b1:
@@ -385,21 +387,21 @@ def f(x, y):
 
         define $globals::coin() : *PyObject {
           #b0:
-              ret $builtins.python_bool(0)
+              ret $builtins.$python_bool$(0)
 
         }
 
-        declare $builtins.python_code(*String) : *PyCode
+        declare $builtins.$python_code$(*String) : *PyCode
 
-        declare $builtins.is_true(*PyObject) : int
+        declare $builtins.$python_is_true$(*PyObject) : int
 
-        declare $builtins.python_tuple(...) : *PyObject
+        declare $builtins.$python_tuple$(...) : *PyObject
 
-        declare $builtins.python_string(*String) : *PyString
+        declare $builtins.$python_string$(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt
+        declare $builtins.$python_bool$(int) : *PyBool
 
-        declare $builtins.python_bool(int) : *PyBool |}]
+        declare $builtins.$python_int$(int) : *PyInt |}]
 
 
     let%expect_test _ =
@@ -432,8 +434,8 @@ def f(x, y):
 
         define $globals::$toplevel$() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("coin")
-              n1 = $builtins.python_code("f")
+              n0 = $builtins.$python_code$("coin")
+              n1 = $builtins.$python_code$("f")
               ret null
 
         }
@@ -441,15 +443,15 @@ def f(x, y):
         define $globals::f(x: *PyObject, y: *PyObject) : *PyObject {
           local z: *PyObject
           #b0:
-              store &z <- $builtins.python_int(0):*PyInt
+              store &z <- $builtins.$python_int$(0):*PyInt
               n0 = $globals::coin()
-              n1 = $builtins.is_true(n0)
+              n1 = $builtins.$python_is_true$(n0)
               jmp b1, b2
 
           #b1:
               prune n1
               n2 = $globals::coin()
-              n3 = $builtins.is_true(n2)
+              n3 = $builtins.$python_is_true$(n2)
               jmp b3, b4
 
           #b3:
@@ -460,26 +462,26 @@ def f(x, y):
 
           #b4:
               prune __sil_lnot(n3)
-              ret $builtins.python_int(1664)
+              ret $builtins.$python_int$(1664)
 
           #b5:
               n5:*PyObject = load &z
-              n6 = $builtins.binary_add(n5, $builtins.python_int(1))
+              n6 = $builtins.$binary_add$(n5, $builtins.$python_int$(1))
               store &z <- n6:*PyObject
               jmp b6
 
           #b2:
               prune __sil_lnot(n1)
               n7:*PyObject = load &z
-              n8 = $builtins.binary_add(n7, $builtins.python_int(1))
+              n8 = $builtins.$binary_add$(n7, $builtins.$python_int$(1))
               store &z <- n8:*PyObject
               n9 = $globals::coin()
-              n10 = $builtins.is_true(n9)
+              n10 = $builtins.$python_is_true$(n9)
               jmp b7, b8
 
           #b7:
               prune n10
-              ret $builtins.python_int(42)
+              ret $builtins.$python_int$(42)
 
           #b8:
               prune __sil_lnot(n10)
@@ -495,23 +497,23 @@ def f(x, y):
 
         define $globals::coin() : *PyObject {
           #b0:
-              ret $builtins.python_bool(0)
+              ret $builtins.$python_bool$(0)
 
         }
 
-        declare $builtins.python_code(*String) : *PyCode
+        declare $builtins.$python_code$(*String) : *PyCode
 
-        declare $builtins.is_true(*PyObject) : int
+        declare $builtins.$binary_add$(*PyObject, *PyObject) : *PyObject
 
-        declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
+        declare $builtins.$python_is_true$(*PyObject) : int
 
-        declare $builtins.python_tuple(...) : *PyObject
+        declare $builtins.$python_tuple$(...) : *PyObject
 
-        declare $builtins.python_string(*String) : *PyString
+        declare $builtins.$python_string$(*String) : *PyString
 
-        declare $builtins.python_int(int) : *PyInt
+        declare $builtins.$python_bool$(int) : *PyBool
 
-        declare $builtins.python_bool(int) : *PyBool |}]
+        declare $builtins.$python_int$(int) : *PyInt |}]
 
 
     let%expect_test _ =
@@ -529,8 +531,8 @@ def f(x):
 
       define $globals::$toplevel$() : *PyObject {
         #b0:
-            n0 = $builtins.python_code("foo")
-            n1 = $builtins.python_code("f")
+            n0 = $builtins.$python_code$("foo")
+            n1 = $builtins.$python_code$("f")
             ret null
 
       }
@@ -538,20 +540,20 @@ def f(x):
       define $globals::f(x: *PyObject) : *PyObject {
         #b0:
             n0:*PyObject = load &x
-            n1 = $builtins.python_code("$globals::foo")
-            n2 = $builtins.is_true(n0)
+            n1 = $builtins.$python_code$("$globals::foo")
+            n2 = $builtins.$python_is_true$(n0)
             jmp b1(n1), b2(n1)
 
         #b1(n3: *PyCode):
             prune n2
-            jmp b3($builtins.python_int(1), n3)
+            jmp b3($builtins.$python_int$(1), n3)
 
         #b2(n4: *PyCode):
             prune __sil_lnot(n2)
-            jmp b3($builtins.python_int(0), n4)
+            jmp b3($builtins.$python_int$(0), n4)
 
         #b3(n5: *PyInt, n6: *PyObject):
-            n7 = $builtins.python_call(n6, n5)
+            n7 = $builtins.$python_call$(n6, n5)
             ret null
 
       }
@@ -562,19 +564,19 @@ def f(x):
 
       }
 
-      declare $builtins.python_code(*String) : *PyCode
+      declare $builtins.$python_call$(...) : *PyObject
 
-      declare $builtins.python_call(...) : *PyObject
+      declare $builtins.$python_code$(*String) : *PyCode
 
-      declare $builtins.is_true(*PyObject) : int
+      declare $builtins.$python_is_true$(*PyObject) : int
 
-      declare $builtins.python_tuple(...) : *PyObject
+      declare $builtins.$python_tuple$(...) : *PyObject
 
-      declare $builtins.python_string(*String) : *PyString
+      declare $builtins.$python_string$(*String) : *PyString
 
-      declare $builtins.python_int(int) : *PyInt
+      declare $builtins.$python_bool$(int) : *PyBool
 
-      declare $builtins.python_bool(int) : *PyBool |}]
+      declare $builtins.$python_int$(int) : *PyInt |}]
   end )
 
 
@@ -592,17 +594,17 @@ for x in range(10):
 
         define $globals::$toplevel$() : *PyObject {
           #b0:
-              n0 = $builtins.range($builtins.python_int(10))
-              n1 = $builtins.python_iter(n0)
+              n0 = $builtins.range($builtins.$python_int$(10))
+              n1 = $builtins.$python_iter$(n0)
               jmp b1(n1)
 
           #b1(n2: *PyObject):
-              n3 = $builtins.python_iter_next(n2)
+              n3 = $builtins.$python_iter_next$(n2)
               jmp b2, b3
 
           #b2:
               prune n3
-              n4 = $builtins.python_iter_item(n2)
+              n4 = $builtins.$python_iter_item$(n2)
               store &$globals::x <- n4:*PyObject
               n5:*PyObject = load &$globals::x
               n6 = $builtins.print(n5)
@@ -618,19 +620,19 @@ for x in range(10):
 
         declare $builtins.range(...) : *PyObject
 
-        declare $builtins.python_iter_next(*PyObject) : int
-
-        declare $builtins.python_iter_item(*PyObject) : *PyObject
-
-        declare $builtins.python_iter(*PyObject) : *PyObject
-
         declare $builtins.print(...) : *PyObject
 
-        declare $builtins.python_tuple(...) : *PyObject
+        declare $builtins.$python_iter_item$(*PyObject) : *PyObject
 
-        declare $builtins.python_string(*String) : *PyString
+        declare $builtins.$python_iter_next$(*PyObject) : int
 
-        declare $builtins.python_int(int) : *PyInt
+        declare $builtins.$python_iter$(*PyObject) : *PyObject
 
-        declare $builtins.python_bool(int) : *PyBool |}]
+        declare $builtins.$python_tuple$(...) : *PyObject
+
+        declare $builtins.$python_string$(*String) : *PyString
+
+        declare $builtins.$python_bool$(int) : *PyBool
+
+        declare $builtins.$python_int$(int) : *PyInt |}]
   end )
