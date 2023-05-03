@@ -63,6 +63,9 @@ end
 module Env = struct
   module Labels = Caml.Map.Make (Int)
 
+  (** Information about global/toplevel declaration *)
+  type global_info = {is_code: bool}
+
   (** Information about a "yet to reach" label location, with its name, type of ssa parameters, and
       a function to update the environment before processing the code after the label. For example,
       inserting some pruning operations before the label and the code. Since we don't always know
@@ -80,7 +83,7 @@ module Env = struct
       has been spotted, or what idents and labels have been generated so far. *)
   and shared =
     { idents: T.Ident.Set.t
-    ; globals: bool T.VarName.Map.t
+    ; globals: global_info T.VarName.Map.t
           (** Name of the globals spotted while processing the module topevel. The boolean tells us
               if the globals is some code/function or just a variable. *)
     ; builtins: PyBuiltins.t
@@ -328,7 +331,9 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let name = PyCommon.global co_names.(ndx) in
       let var_name = var_name ~loc name in
       let is_code =
-        T.VarName.Map.find_opt var_name (Env.globals env) |> Option.value ~default:false
+        T.VarName.Map.find_opt var_name (Env.globals env)
+        |> Option.map ~f:(fun {Env.is_code} -> is_code)
+        |> Option.value ~default:false
       in
       (* If we are trying to load some code, use the dedicated builtin *)
       if is_code then
@@ -454,7 +459,7 @@ module STORE = struct
     match exp_ty with
     | `Ok (exp, typ) ->
         let is_code = PyCommon.is_pyCode typ in
-        let env = if is_global then Env.register_global env var_name is_code else env in
+        let env = if is_global then Env.register_global env var_name {Env.is_code} else env in
         if is_code then
           if is_global then (
             Debug.p "  top-level function defined\n" ;
@@ -1146,7 +1151,7 @@ let to_module ~sourcefile module_name ({FFI.Code.co_consts; instructions} as cod
   (* Translate globals to Textual *)
   let globals =
     T.VarName.Map.fold
-      (fun name is_code acc ->
+      (fun name {Env.is_code} acc ->
         if is_code then
           (* don't generate a global variable name, it will be declared as a toplevel decl *)
           acc
