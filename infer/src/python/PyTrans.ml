@@ -182,13 +182,13 @@ module Env = struct
 
 
   (** Generate a fresh temporary name *)
-  let temp ({shared} as env) =
-    let temp ({idents} as env) =
+  let mk_fresh_ident ({shared} as env) =
+    let mk_fresh_ident ({idents} as env) =
       let fresh = T.Ident.fresh idents in
       let idents = T.Ident.Set.add fresh idents in
       ({env with idents}, fresh)
     in
-    let shared, fresh = temp shared in
+    let shared, fresh = mk_fresh_ident shared in
     ({env with shared}, fresh)
 
 
@@ -272,7 +272,7 @@ let pyObject = PyCommon.pyObject
 let mk_builtin_call env name args =
   let typ = PyCommon.Builtins.get_type name in
   let env = Env.register_builtin env name in
-  let env, id = Env.temp env in
+  let env, id = Env.mk_fresh_ident env in
   let proc = PyCommon.builtin_name name in
   let exp = T.Exp.Call {proc; args; kind= T.Exp.NonVirtual} in
   let loc = Env.loc env in
@@ -340,7 +340,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
         let env, exp_ty = code_to_exp env name in
         (env, `Ok exp_ty)
       else
-        let env, id = Env.temp env in
+        let env, id = Env.mk_fresh_ident env in
         let exp = T.Exp.Lvar var_name in
         let loc = Env.loc env in
         let instr = T.Instr.Load {id; exp; typ= pyObject; loc} in
@@ -349,7 +349,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
         (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
   | VarName ndx ->
       let name = co_varnames.(ndx) in
-      let env, id = Env.temp env in
+      let env, id = Env.mk_fresh_ident env in
       let exp = T.Exp.Lvar (var_name ~loc name) in
       let loc = Env.loc env in
       let instr = T.Instr.Load {id; exp; typ= pyObject; loc} in
@@ -512,7 +512,7 @@ module CALL_FUNCTION = struct
 
 
   let static_call env fname args =
-    let env, id = Env.temp env in
+    let env, id = Env.mk_fresh_ident env in
     let loc = Env.loc env in
     let env, proc =
       if PyBuiltins.is_builtin fname then
@@ -695,7 +695,7 @@ module JUMP = struct
       (* Compute the relevant pruning expressions *)
       let env = Env.register_builtin env "is_true" in
       let condT = PyCommon.mk_is_true cond in
-      let env, id = Env.temp env in
+      let env, id = Env.mk_fresh_ident env in
       let loc = Env.loc env in
       let instr = T.Instr.Let {id; exp= condT; loc} in
       let env = Env.push_instr env instr in
@@ -953,7 +953,7 @@ let until_terminator env {Env.label_name; ssa_parameters; prelude} code instruct
   let label = {T.NodeName.value= label_name; loc= label_loc} in
   let env, ssa_parameters =
     Env.map ~env ssa_parameters ~f:(fun env typ ->
-        let env, id = Env.temp env in
+        let env, id = Env.mk_fresh_ident env in
         (env, (id, typ)) )
   in
   (* Install the prelude before processing the instructions *)
