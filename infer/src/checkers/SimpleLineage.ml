@@ -769,9 +769,7 @@ end = struct
 
     let pp pp_data =
       let sep = Fmt.any ":@ " in
-      Fmt.iter_bindings ~sep:Fmt.comma
-        (fun f -> iteri ~f:(fun ~key ~data -> f key data))
-        Fmt.(pair ~sep int pp_data)
+      IFmt.Labelled.iter_bindings ~sep:Fmt.comma iteri Fmt.(pair ~sep int pp_data)
   end
 
   (** A [Tito.t] is a map from arguments indexes [i] to the set of [fields] field sequences such

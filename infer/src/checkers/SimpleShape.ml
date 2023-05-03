@@ -204,9 +204,7 @@ end = struct
     let sep = Fmt.semi in
     let pp_binding = pp_binding ~bind pp_key pp_value in
     Format.fprintf fmt "@[(%a)@]"
-      (Fmt.iter_bindings ~sep
-         (fun f -> Hashtbl.iteri ~f:(fun ~key ~data -> f key data))
-         pp_binding )
+      (IFmt.Labelled.iter_bindings ~sep Hashtbl.iteri pp_binding)
       hashtbl
 
 
@@ -248,7 +246,8 @@ end = struct
       Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPES@ @[%a@]@]@ @[<v4>SHAPE_FIELDS@ @[%a@]@]@]"
         (pp_hashtbl ~bind:pp_arrow Var.pp pp_shape)
         var_shapes
-        (pp_hashtbl ~bind:pp_arrow Shape_id.pp (pp_hashtbl ~bind:Pp.colon_sp Fieldname.pp pp_shape))
+        (pp_hashtbl ~bind:pp_arrow Shape_id.pp
+           (pp_hashtbl ~bind:IFmt.colon_sp Fieldname.pp pp_shape) )
         shape_fields
 
 
@@ -343,7 +342,7 @@ end = struct
         (pp_caml_hashtbl ~bind:pp_arrow Var.pp Shape_id.pp)
         var_shapes
         (pp_caml_hashtbl ~bind:pp_arrow Shape_id.pp
-           (pp_caml_hashtbl ~bind:Pp.colon_sp Fieldname.pp Shape_id.pp) )
+           (pp_caml_hashtbl ~bind:IFmt.colon_sp Fieldname.pp Shape_id.pp) )
         shape_fields
 
 
@@ -469,7 +468,7 @@ end = struct
 
     let pp_field_table field_table =
       Fmt.iter_bindings ~sep:Fmt.comma Caml.Hashtbl.iter
-        (Fmt.pair ~sep:Pp.colon_sp Fieldname.pp Shape_id.pp)
+        (Fmt.pair ~sep:IFmt.colon_sp Fieldname.pp Shape_id.pp)
         field_table
 
 
