@@ -10,7 +10,7 @@ module F = Format
 
 let sourcefile = Textual.SourceFile.create "dummy.py"
 
-let run_test source =
+let test source =
   Py.initialize ~interpreter:Version.python_exe () ;
   let code = FFI.from_string ~source ~filename:"dummy" in
   Py.finalize () ;
@@ -37,7 +37,7 @@ let%test_module "basic_tests" =
   ( module struct
     let%expect_test _ =
       let source = "x = 42" in
-      run_test source ;
+      test source ;
       [%expect
         {|
         .source_language = "python"
@@ -65,7 +65,7 @@ let%test_module "basic_tests" =
 x = 42
 print(x)
       |} in
-      run_test source ;
+      test source ;
       [%expect
         {|
         .source_language = "python"
@@ -98,7 +98,7 @@ x = 42
 y = 10
 print(x + y)
       |} in
-      run_test source ;
+      test source ;
       [%expect
         {|
         .source_language = "python"
@@ -152,7 +152,7 @@ z = my_fun(42, a)
 print(z)
       |}
       in
-      run_test source ;
+      test source ;
       [%expect
         {|
         .source_language = "python"
@@ -218,7 +218,7 @@ update_global()
 print(z)
       |}
       in
-      run_test source ;
+      test source ;
       [%expect
         {|
         .source_language = "python"
@@ -276,7 +276,7 @@ def f(x, y):
           return y
       |}
       in
-      run_test source ;
+      test source ;
       [%expect
         {|
         .source_language = "python"
@@ -344,7 +344,7 @@ def f(x, y):
     return z
       |}
       in
-      run_test source ;
+      test source ;
       [%expect
         {|
         .source_language = "python"
@@ -425,7 +425,7 @@ def f(x, y):
     return z
       |}
       in
-      run_test source ;
+      test source ;
       [%expect
         {|
         .source_language = "python"
@@ -522,7 +522,7 @@ def foo(x):
 def f(x):
     foo(1 if x else 0)
       |} in
-      run_test source ;
+      test source ;
       [%expect
         {|
       .source_language = "python"
@@ -585,7 +585,7 @@ let%test_module "iter" =
 for x in range(10):
     print(x)
       |} in
-      run_test source ;
+      test source ;
       [%expect
         {|
         .source_language = "python"
