@@ -28,53 +28,6 @@ module FieldPath = struct
   let pp = Fmt.(list ~sep:nop (any "#" ++ Fieldname.pp))
 end
 
-module Ilist = struct
-  (** Size-indexed lists *)
-
-  (** These will be used for traversing "in parallel" the shape information structures, accumulating
-      a set of a generic (but static) number of field paths.
-
-      For instance, searching the possible fields of a single variable will return a set of
-      one-sized lists of field paths. Searching the corresponding fields of two (variable+fields) of
-      the same shape will return a set of two-sized lists of field paths.
-
-      Having the size as part of the type allows both having one generic code (parameterised over
-      that size type) being able to perform these two traversals, and statically know at the call
-      sites how many field paths we are accumulating. *)
-
-  (** Natural integers as types *)
-
-  type z = |
-
-  type 'a s = |
-
-  (** Lists indexed by their length (second parameter) *)
-  type (_, _) t = [] : (_, z) t | ( :: ) : ('a * ('a, 'len) t) -> ('a, 'len s) t
-
-  let rec for_all : type len. ('a, len) t -> f:('a -> bool) -> bool =
-   fun li ~f -> match li with [] -> true | x :: xs -> f x && for_all ~f xs
-
-
-  let rec map : type len. ('a, len) t -> f:('a -> 'b) -> ('b, len) t =
-   fun li ~f ->
-    match li with
-    | [] ->
-        []
-    | x :: xs ->
-        let r = f x in
-        r :: map ~f xs
-
-
-  let rec map2 : type len. ('a, len) t -> ('b, len) t -> f:('a -> 'b -> 'c) -> ('c, len) t =
-   fun li li' ~f ->
-    match (li, li') with
-    | [], [] ->
-        []
-    | x :: xs, y :: ys ->
-        let r = f x y in
-        r :: map2 ~f xs ys
-end
-
 module Id () : sig
   include Unique_id.Id
 
@@ -374,10 +327,11 @@ end = struct
             field_table
 
 
-    let find_field_shape shape_fields shape fields =
+    let find_var_path_shape {var_shapes; shape_fields} var field_path =
+      let var_shape = find_var_shape var_shapes var in
       List.fold
         ~f:(fun shape field -> find_next_field_shape shape_fields shape field)
-        ~init:shape fields
+        ~init:var_shape field_path
 
 
     let make {Env.var_shapes; shape_fields} =
@@ -483,18 +437,15 @@ end = struct
         fieldname
 
 
-    let finalise_prefixes shape_fields max_width max_depths prevent_cycles root_shapes rev_prefixes
-        =
-      let rev_and_trim_depth max_depth rev_prefix =
-        (* Reverse the reversed prefixes and trim them to the max depths *)
-        List.rev (List.drop rev_prefix (-max_depth))
-      in
-      let rec enforce_width_and_cycles cycle_set shape_fields max_width shape = function
+    let finalise {var_shapes; shape_fields} var field_path ~max_width ~max_depth ~prevent_cycles =
+      let rec aux remaining_depth traversed_shape_set shape field_path =
+        match field_path with
         (* Walk through the fields and ensure that we do not:
            - Traverse a field table wider than max_width
-           - Traverse cycles while forbidden by the option
+           - Traverse cycles if forbidden by the option
            - "Traverse" (they must be in last position) internal "boxing" fields that should be
              ignored
+           Also limit the depth by stopping the traversal once the remaining depth reaches zero.
         *)
         | [] ->
             []
@@ -505,108 +456,105 @@ end = struct
         | field :: fields ->
             let field_table = find_field_table shape_fields shape in
             if
-              Caml.Hashtbl.length field_table > max_width
-              || (prevent_cycles && Set.mem cycle_set shape)
+              Int.(remaining_depth <= 0)
+              || Caml.Hashtbl.length field_table > max_width
+              || (prevent_cycles && Set.mem traversed_shape_set shape)
             then []
             else
-              field
-              :: enforce_width_and_cycles (Set.add cycle_set shape) shape_fields max_width
-                   (Caml.Hashtbl.find field_table field)
-                   fields
+              let terminal_sub_path =
+                aux (remaining_depth - 1)
+                  (Set.add traversed_shape_set shape)
+                  (Caml.Hashtbl.find field_table field)
+                  fields
+              in
+              field :: terminal_sub_path
       in
-      rev_prefixes
-      |> Ilist.map2 ~f:rev_and_trim_depth max_depths
-      |> Ilist.map2
-           ~f:(enforce_width_and_cycles (Set.empty (module Shape_id)) shape_fields max_width)
-           root_shapes
-
-
-    (** Given field shapes, a particular shape, a maximal width and three size-indexed lists of
-        maximal depths, var shapes (cf. later) and reversed field prefixes, traverses the field
-        shapes table and builds in parallel the sequence of field prefixes by recursively adding all
-        the defined fieldname of the considered shape to the prefixes.
-
-        The [var_shapes] list is expected to contain the list of the shapes of the variables from
-        which the fields [rev_prefixes] are being taken. It will be used to ensure that the result
-        will not cross a field table wider than [max_width] even if one of the argument does. For
-        instance, the terminal fields of [X#field1], where [X] itself has a huge number of fields,
-        will only be [X].
-
-        A shape having more than max_width fields will be considered as "terminal", ie. not having
-        any field at all.
-
-        Once every possible subfield has been traversed or the maximal depth has been reached for
-        every prefix, the traversal will consider that a "terminal" field has been reached (and the
-        folding function will be called). *)
-    let rec fold_terminal_fields_of_shape shape_fields shape ~max_width ~max_depths ~prevent_cycles
-        ~traversed ~root_shapes ~rev_prefixes ~init ~f =
-      if
-        Ilist.for_all ~f:Int.is_non_positive max_depths
-        || (prevent_cycles && Set.mem traversed shape)
-      then
-        f init
-          (finalise_prefixes shape_fields max_width max_depths prevent_cycles root_shapes
-             rev_prefixes )
-      else
-        match Caml.Hashtbl.find_opt shape_fields shape with
-        | None ->
-            f init
-              (finalise_prefixes shape_fields max_width max_depths prevent_cycles root_shapes
-                 rev_prefixes )
-        | Some fields ->
-            let len = Caml.Hashtbl.length fields in
-            if Int.(len = 0 || len > max_width) then
-              f init
-                (finalise_prefixes shape_fields max_width max_depths prevent_cycles root_shapes
-                   rev_prefixes )
-            else
-              let traversed = Set.add traversed shape in
-              Caml.Hashtbl.fold
-                (fun fieldname fieldshape acc ->
-                  let rev_prefixes = Ilist.map ~f:(List.cons fieldname) rev_prefixes in
-                  let max_depths = Ilist.map ~f:Int.pred max_depths in
-                  fold_terminal_fields_of_shape shape_fields fieldshape ~max_width ~max_depths
-                    ~root_shapes ~traversed ~prevent_cycles ~rev_prefixes ~init:acc ~f )
-                fields init
-
-
-    let fold_terminal_fields {var_shapes; shape_fields} (var, fields) ~max_width ~max_depth
-        ~prevent_cycles ~init ~f =
       let var_shape = find_var_shape var_shapes var in
-      let shape = find_field_shape shape_fields var_shape fields in
-      let root_shapes = Ilist.[var_shape] in
-      let rev_prefixes = Ilist.[List.rev fields] in
-      let max_depths = Ilist.[max_depth - List.length fields] in
-      let traversed = Set.empty (module Shape_id) in
-      fold_terminal_fields_of_shape shape_fields shape ~max_width ~max_depths ~rev_prefixes
-        ~root_shapes ~traversed ~prevent_cycles
-        ~f:(fun acc Ilist.[x] -> f acc x)
-        ~init
+      let field_path = aux max_depth (Set.empty (module Shape_id)) var_shape field_path in
+      field_path
 
 
-    let fold_terminal_fields_2 {var_shapes; shape_fields} (var1, fields1) (var2, fields2) ~max_width
-        ~max_depth ~prevent_cycles ~init ~f =
-      let var_shape1 = find_var_shape var_shapes var1 in
-      let var_shape2 = find_var_shape var_shapes var2 in
-      let shape1 = find_field_shape shape_fields var_shape1 fields1 in
-      let shape2 = find_field_shape shape_fields var_shape2 fields2 in
-      if not ([%equal: Shape_id.t] shape1 shape2) then
+    (** Given field shapes, a particular shape, a maximal width, a maximal search depth and a
+        boolean indicating that cycles should not be traversed, traverses the field shapes table and
+        builds the field paths obtained by recursively adding all the defined fieldnames of the
+        considered shape to the prefixes.
+
+        The traversal building a field path will stop when the maximal search depth has been
+        reached, a shape with more than [max_width] fields is encountered, or a shape that has
+        already been traversed is encountered and [prevent_cycles] is true.
+
+        When the building of a field path stops, the folding function [f] will be called on the path
+        built so far.
+
+        Note that the traversal and the calling of [f] is done from the original argument shape: for
+        instance, if [X] has the field [X#foo#bar#baz], the depth limit is 2 and this function is
+        called from the shape of [X#foo], then [f] will be called with the field path [bar#baz] --
+        even if [X#foo] and [X#bar#baz] have the same shape, or [X] has a thousand other fields.
+        This is why [~max_search_depth] is labelled differently from the [~max_depth] of the other
+        functions (it has a slightly different semantics).
+
+        The typical use-case is to then have [f] call {!finalise}, with [X#foo] in the parameters,
+        which will repeat a similar traversal to only yield [X#foo#bar] as a final field path. This
+        allows implementing {!fold_terminal_fields_2} by first getting the candidate terminal fields
+        from a common shape of two different origin paths, then finalising separately wrt. these two
+        paths (which could have different depths to begin with). *)
+    let fold_terminal_fields_of_shape shape_fields shape ~max_width ~max_search_depth
+        ~prevent_cycles ~init ~f =
+      let rec aux shape depth traversed field_path_acc ~init =
+        if Int.(depth >= max_search_depth) || (prevent_cycles && Set.mem traversed shape) then
+          f init (List.rev field_path_acc)
+        else
+          match Caml.Hashtbl.find_opt shape_fields shape with
+          | None ->
+              f init (List.rev field_path_acc)
+          | Some fields ->
+              let len = Caml.Hashtbl.length fields in
+              if Int.(len = 0 || len > max_width) then f init (List.rev field_path_acc)
+              else
+                let traversed = Set.add traversed shape in
+                Caml.Hashtbl.fold
+                  (fun fieldname fieldshape acc ->
+                    aux fieldshape (depth + 1) traversed (fieldname :: field_path_acc) ~init:acc )
+                  fields init
+      in
+      aux shape 0 (Set.empty (module Shape_id)) [] ~init
+
+
+    let fold_terminal_fields {var_shapes; shape_fields} (var, field_path) ~max_width ~max_depth
+        ~prevent_cycles ~init ~f =
+      let var_path_shape = find_var_path_shape {var_shapes; shape_fields} var field_path in
+      let max_search_depth = max_depth - List.length field_path in
+      fold_terminal_fields_of_shape shape_fields var_path_shape ~max_width ~max_search_depth
+        ~prevent_cycles ~init ~f:(fun acc sub_path ->
+          f acc
+            (finalise {var_shapes; shape_fields} ~max_width ~max_depth ~prevent_cycles var
+               (field_path @ sub_path) ) )
+
+
+    let fold_terminal_fields_2 {var_shapes; shape_fields} (var_1, field_path_1)
+        (var_2, field_path_2) ~max_width ~max_depth ~prevent_cycles ~init ~f =
+      let var_path_shape_1 = find_var_path_shape {var_shapes; shape_fields} var_1 field_path_1 in
+      let var_path_shape_2 = find_var_path_shape {var_shapes; shape_fields} var_2 field_path_2 in
+      if not ([%equal: Shape_id.t] var_path_shape_1 var_path_shape_2) then
         L.die InternalError
           "@[Attempting to get related fields of differently shaped fields: @[%a={%a}@]@ vs@ \
            @[%a={%a}@]@]"
-          Shape_id.pp shape1 pp_field_table
-          (Caml.Hashtbl.find shape_fields shape1)
-          Shape_id.pp shape2 pp_field_table
-          (Caml.Hashtbl.find shape_fields shape1)
+          Shape_id.pp var_path_shape_1 pp_field_table
+          (Caml.Hashtbl.find shape_fields var_path_shape_1)
+          Shape_id.pp var_path_shape_2 pp_field_table
+          (Caml.Hashtbl.find shape_fields var_path_shape_2)
       else
-        let max_depths = Ilist.[max_depth - List.length fields1; max_depth - List.length fields2] in
-        let rev_prefixes = Ilist.[List.rev fields1; List.rev fields2] in
-        let root_shapes = Ilist.[var_shape1; var_shape2] in
-        let traversed = Set.empty (module Shape_id) in
-        fold_terminal_fields_of_shape shape_fields shape1 ~max_width ~max_depths ~rev_prefixes
-          ~root_shapes ~traversed ~prevent_cycles
-          ~f:(fun acc Ilist.[x; y] -> f acc x y)
-          ~init
+        let max_search_depth =
+          (* Use the shallowest argument to determine the search depth. *)
+          max_depth - Int.min (List.length field_path_1) (List.length field_path_2)
+        in
+        fold_terminal_fields_of_shape shape_fields var_path_shape_1 ~max_width ~max_search_depth
+          ~prevent_cycles ~init ~f:(fun acc sub_path ->
+            f acc
+              (finalise {var_shapes; shape_fields} ~max_width ~max_depth ~prevent_cycles var_1
+                 (field_path_1 @ sub_path) )
+              (finalise {var_shapes; shape_fields} ~max_width ~max_depth ~prevent_cycles var_2
+                 (field_path_2 @ sub_path) ) )
   end
 end
 
