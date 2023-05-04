@@ -19,82 +19,82 @@ module PPNode = struct
   let pp fmt node = pp_id fmt (id node)
 end
 
-module Fields = SimpleShape.Fields
+module FieldPath = SimpleShape.FieldPath
 
-(** Variable Indices designate a variable with a possibly empty list of fields.
+module VarPath : sig
+  (** A variable path is a pair of a variable and a possibly empty list of subscripted fields. They
+      are built from their in-program occurrences. They may semantically have sub-fields themselves:
+      it is the job of the {!Cell} module to determine the final graph nodes constructed from paths. *)
 
-    Some variable indices are {{!TerminalIndex} Terminal}, which means that no subfield of them will
-    be considered by the analysis (either because they have none, or that would lead to too deep or
-    too wide field sequences).
-
-    The lineage graph is built on terminal indices. *)
-
-module TransientIndex : sig
-  (** Indices built from their in-program occurences. They are not known to be terminal. *)
-
-  (** A [Transient] index is a variable and a possibly empty list of subscripted fields. *)
-  type t = Var.t * Fields.t
+  (** The type of variable paths: a variable and a possibly empty list of subscripted fields. *)
+  type t = Var.t * FieldPath.t
 
   val var : Var.t -> t
 
-  val subfield : t -> Fields.t -> t
-  (** Sub-field of an index. *)
+  val sub_path : t -> FieldPath.t -> t
+  (** Subscript nested sub-fields from a variable path. *)
 
-  val make : Var.t -> Fields.t -> t
+  val make : Var.t -> FieldPath.t -> t
 
   val pvar : Pvar.t -> t
 
   val ident : Ident.t -> t
 end = struct
-  type t = Var.t * Fields.t
+  type t = Var.t * FieldPath.t
 
   let var v = (v, [])
 
-  let subfield (var, fields) subfields = (var, fields @ subfields)
+  let sub_path (var, field_path) subfields = (var, field_path @ subfields)
 
-  let make var fields = (var, fields)
+  let make var field_path = (var, field_path)
 
   let pvar pvar = var (Var.of_pvar pvar)
 
   let ident id = var (Var.of_id id)
 end
 
-module TerminalIndex : sig
+module Cell : sig
+  (** Cells correspond to variable paths for which no subfield will be considered by the analysis,
+      either because they semantically have none, or because the abstract domain decides that
+      considering them would lead to too deep or too wide field structures.
+
+      The lineage graph is built on cells. *)
+
   type t [@@deriving compare, equal]
 
   val pp : Format.formatter -> t -> unit
 
   val get_var : t -> Var.t
 
-  val get_fields : t -> Fields.t
+  val get_field_path : t -> FieldPath.t
 
   val var_appears_in_source_code : t -> bool
 
-  val fold_terminal :
-    SimpleShape.Summary.t -> TransientIndex.t -> init:'accum -> f:('accum -> t -> 'accum) -> 'accum
-  (** Given an index, fold the [f] function over all the terminal indices that can be obtained as
-      "sub fields" of the index. *)
+  val fold_from_path :
+    SimpleShape.Summary.t -> VarPath.t -> init:'accum -> f:('accum -> t -> 'accum) -> 'accum
+  (** Given a {!VarPath.t}, fold the [f] function over all the cells that correspond to "sub fields"
+      of that variable path. *)
 
-  val fold_terminal_pairs :
+  val fold_pairs_from_paths :
        SimpleShape.Summary.t
-    -> TransientIndex.t
-    -> TransientIndex.t
+    -> VarPath.t
+    -> VarPath.t
     -> init:'accum
     -> f:('accum -> t -> t -> 'accum)
     -> 'accum
-  (** Given two indices that must have the same type, fold the [f] function over all the pairs of
-      terminal indices that can be obtained as "sub fields" of the indices. [f] will always be
-      called on corresponding sub-indices: see {!SimpleShape.Summary.fold_terminal_fields_2}. *)
+  (** Given two variable paths that must have the same type, fold the [f] function over all the
+      pairs of cells that correspond to "sub fields" of the indices. [f] will always be called on
+      corresponding sub-paths: see {!SimpleShape.Summary.fold_terminal_fields_2}. *)
 end = struct
-  type t = Var.t * Fields.t [@@deriving compare, equal]
+  type t = Var.t * FieldPath.t [@@deriving compare, equal]
 
-  let pp fmt (var, fields) = Format.fprintf fmt "%a%a" Var.pp var Fields.pp fields
+  let pp fmt (var, field_path) = Format.fprintf fmt "%a%a" Var.pp var FieldPath.pp field_path
 
-  let make var fields = (var, fields)
+  let make var field_path = (var, field_path)
 
   let get_var (v, _) = v
 
-  let get_fields (_, fields) = fields
+  let get_field_path (_, field_path) = field_path
 
   let var_appears_in_source_code (var, _) = Var.appears_in_source_code var
 
@@ -104,15 +104,15 @@ end = struct
 
   let prevent_cycles = Config.simple_lineage_prevent_cycles
 
-  let fold_terminal shapes (var, fields) ~init ~f =
-    SimpleShape.Summary.fold_terminal_fields shapes (var, fields) ~max_width ~max_depth
-      ~prevent_cycles ~init ~f:(fun acc fields -> f acc (make var fields))
+  let fold_from_path shapes (var, field_path) ~init ~f =
+    SimpleShape.Summary.fold_terminal_fields shapes (var, field_path) ~max_width ~max_depth
+      ~prevent_cycles ~init ~f:(fun acc field_path -> f acc (make var field_path))
 
 
-  let fold_terminal_pairs shapes (var1, fields1) (var2, fields2) ~init ~f =
-    SimpleShape.Summary.fold_terminal_fields_2 shapes (var1, fields1) (var2, fields2) ~max_width
-      ~max_depth ~prevent_cycles ~init ~f:(fun acc fields1 fields2 ->
-        f acc (make var1 fields1) (make var2 fields2) )
+  let fold_pairs_from_paths shapes (var_1, field_path_1) (var_2, field_path_2) ~init ~f =
+    SimpleShape.Summary.fold_terminal_fields_2 shapes (var_1, field_path_1) (var_2, field_path_2)
+      ~max_width ~max_depth ~prevent_cycles ~init ~f:(fun acc cell_field_path_1 cell_field_path_2 ->
+        f acc (make var_1 cell_field_path_1) (make var_2 cell_field_path_2) )
 end
 
 module Local = struct
@@ -121,7 +121,7 @@ module Local = struct
       | ConstantAtom of string
       | ConstantInt of string
       | ConstantString of string
-      | VariableIndex of (TerminalIndex.t[@sexp.opaque])
+      | Cell of (Cell.t[@sexp.opaque])
     [@@deriving compare, equal, sexp]
   end
 
@@ -136,15 +136,15 @@ module Local = struct
         Format.fprintf fmt "I(%s)" digits
     | ConstantString s ->
         Format.fprintf fmt "S(%s)" s
-    | VariableIndex variable ->
-        Format.fprintf fmt "V(%a)" TerminalIndex.pp variable
+    | Cell cell ->
+        Format.fprintf fmt "V(%a)" Cell.pp cell
 
 
   module Set = struct
     include Set
 
-    (** Shortcut for adding a VariableIndex-variant local *)
-    let add_variable_index set index = add set (VariableIndex index)
+    (** Shortcut for adding a Cell-variant local *)
+    let add_cell set cell = add set (Cell cell)
   end
 end
 
@@ -154,11 +154,11 @@ module LineageGraph = struct
 
   type data =
     | Local of ((Local.t * PPNode.t)[@sexp.opaque])
-    | Argument of int * Fields.t
+    | Argument of int * FieldPath.t
     | ArgumentOf of int * (Procname.t[@sexp.opaque])
     | Captured of int
     | CapturedBy of int * (Procname.t[@sexp.opaque])
-    | Return of Fields.t
+    | Return of FieldPath.t
     | ReturnOf of (Procname.t[@sexp.opaque])
     | Self
     | Function of (Procname.t[@sexp.opaque])
@@ -171,26 +171,26 @@ module LineageGraph = struct
           - INV2: There is no loop, because they don't mean anything. *)
       type t =
         | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
-        | Inject of Fields.t
-        | Project of Fields.t
-        | Call of Fields.t  (** Target is ArgumentOf, fields are injected into arg *)
-        | Return of Fields.t  (** Source is ReturnOf, fields are projected from return *)
+        | Inject of FieldPath.t
+        | Project of FieldPath.t
+        | Call of FieldPath.t  (** Target is ArgumentOf, field path is injected into arg *)
+        | Return of FieldPath.t  (** Source is ReturnOf, field path is projected from return *)
         | Capture  (** [X=1, F=fun()->X end] has Capture flow from X to F *)
         | Summary  (** Summarizes the effect of a procedure call *)
         | DynamicCallFunction
         | DynamicCallModule
       [@@deriving compare, equal, sexp, variants]
 
-      (** Edges from fields of a formal parameter will represent a Projection of those fields from
-          the eventual summarised Argument node *)
-      let from_formal_arg arg_fields : t =
-        match arg_fields with [] -> Direct | subfields -> Project subfields
+      (** Edges from a field_path of a formal parameter will represent a Projection of this field
+          path from the eventual summarised Argument node *)
+      let from_formal_arg arg_field_path : t =
+        match arg_field_path with [] -> Direct | _ :: _ -> Project arg_field_path
 
 
-      (** Edges into fields of the formal return will represent an Injection of those fields into
-          the eventual summarised Return node *)
-      let to_formal_ret ret_fields : t =
-        match ret_fields with [] -> Direct | subfields -> Inject subfields
+      (** Edges into a field path of the formal return will represent an Injection of this field
+          path into the eventual summarised Return node *)
+      let to_formal_ret ret_field_path : t =
+        match ret_field_path with [] -> Direct | _ :: _ -> Inject ret_field_path
     end
 
     include T
@@ -224,12 +224,12 @@ module LineageGraph = struct
     match data with
     | Local (local, node) ->
         Format.fprintf fmt "%a@@%a" Local.pp local PPNode.pp node
-    | Argument (index, fields) ->
-        Format.fprintf fmt "arg%d%a" index Fields.pp fields
+    | Argument (index, field_path) ->
+        Format.fprintf fmt "arg%d%a" index FieldPath.pp field_path
     | Captured index ->
         Format.fprintf fmt "cap%d" index
-    | Return fields ->
-        Format.fprintf fmt "ret%a" Fields.pp fields
+    | Return field_path ->
+        Format.fprintf fmt "ret%a" FieldPath.pp field_path
     | CapturedBy (index, proc_name) ->
         Format.fprintf fmt "%a.cap%d" Procname.pp proc_name index
     | ArgumentOf (index, proc_name) ->
@@ -248,14 +248,14 @@ module LineageGraph = struct
         Format.fprintf fmt "Capture"
     | Direct ->
         Format.fprintf fmt "Direct"
-    | Call fields ->
-        Format.fprintf fmt "Call%a" Fields.pp fields
-    | Inject fields ->
-        Format.fprintf fmt "Inject%a" Fields.pp fields
-    | Project fields ->
-        Format.fprintf fmt "Project%a" Fields.pp fields
-    | Return fields ->
-        Format.fprintf fmt "Return%a" Fields.pp fields
+    | Call field_path ->
+        Format.fprintf fmt "Call%a" FieldPath.pp field_path
+    | Inject field_path ->
+        Format.fprintf fmt "Inject%a" FieldPath.pp field_path
+    | Project field_path ->
+        Format.fprintf fmt "Project%a" FieldPath.pp field_path
+    | Return field_path ->
+        Format.fprintf fmt "Return%a" FieldPath.pp field_path
     | Summary ->
         Format.fprintf fmt "Summary"
     | DynamicCallFunction ->
@@ -382,13 +382,13 @@ module LineageGraph = struct
         | Return
 
       type edge_metadata =
-        { inject: Fields.t [@default []] [@yojson_drop_default.equal]
-        ; project: Fields.t [@default []] [@yojson_drop_default.equal] }
+        { inject: FieldPath.t [@default []] [@yojson_drop_default.equal]
+        ; project: FieldPath.t [@default []] [@yojson_drop_default.equal] }
       [@@deriving yojson_of]
 
-      let metadata_inject fields = {inject= fields; project= []}
+      let metadata_inject field_path = {inject= field_path; project= []}
 
-      let metadata_project fields = {inject= []; project= fields}
+      let metadata_project field_path = {inject= []; project= field_path}
 
       let yojson_of_edge_type typ =
         match typ with
@@ -531,8 +531,8 @@ module LineageGraph = struct
             Format.asprintf "$cap%d" index
         | Return ->
             "$ret"
-        | Normal (VariableIndex x) ->
-            Format.asprintf "%a" TerminalIndex.pp x
+        | Normal (Cell cell) ->
+            Format.asprintf "%a" Cell.pp cell
         | Normal (ConstantAtom x) | Normal (ConstantInt x) | Normal (ConstantString x) ->
             x
         | Function ->
@@ -544,8 +544,8 @@ module LineageGraph = struct
             Argument
         | Return ->
             Return
-        | Normal (VariableIndex x) ->
-            if TerminalIndex.var_appears_in_source_code x then UserVariable else TemporaryVariable
+        | Normal (Cell cell) ->
+            if Cell.var_appears_in_source_code cell then UserVariable else TemporaryVariable
         | Normal (ConstantAtom _) ->
             ConstantAtom
         | Normal (ConstantInt _) ->
@@ -629,7 +629,7 @@ module LineageGraph = struct
       match data with
       | Local (var, node) ->
           save procname (Normal node) (Normal var)
-      | Argument (index, _fields) ->
+      | Argument (index, _field_path) ->
           (* We don't distinguish the fields of arguments when generating Argument nodes. See
              {!type:data_local}. *)
           save procname start (Argument index)
@@ -639,7 +639,7 @@ module LineageGraph = struct
           save procname start (Captured index)
       | CapturedBy (index, lambda_procname) ->
           save ~write:false lambda_procname (Start Location.dummy) (Captured index)
-      | Return _fields ->
+      | Return _field_path ->
           (* We don't distinguish the fields of the returned value when generating Return nodes. See
              {!type:data_local}. *)
           save procname exit Return
@@ -688,10 +688,10 @@ module LineageGraph = struct
         | Call [] | Return [] ->
             (* Don't generate "trivial" metadata *)
             None
-        | Call fields | Inject fields ->
-            Some (Json.metadata_inject fields)
-        | Return fields | Project fields ->
-            Some (Json.metadata_project fields)
+        | Call field_path | Inject field_path ->
+            Some (Json.metadata_inject field_path)
+        | Return field_path | Project field_path ->
+            Some (Json.metadata_project field_path)
       in
       write_json Edge edge_id
         (Json.yojson_of_edge
@@ -754,15 +754,20 @@ module Tito : sig
       abstraction, it is equivalent to having a path from every [Argument (i, \[\])] to
       [Return \[\]].*)
 
-  val add : arg_index:int -> arg_field:Fields.t -> ret_field:Fields.t -> t -> t
+  val add : arg_index:int -> arg_field_path:FieldPath.t -> ret_field_path:FieldPath.t -> t -> t
 
   val fold :
        t
     -> init:'init
-    -> f:(arg_index:int -> arg_field:Fields.t -> ret_field:Fields.t -> 'init -> 'init)
+    -> f:
+         (   arg_index:int
+          -> arg_field_path:FieldPath.t
+          -> ret_field_path:FieldPath.t
+          -> 'init
+          -> 'init )
     -> 'init
 end = struct
-  module ArgToRetMap = AbstractDomain.FiniteMultiMap (Fields) (Fields)
+  module ArgToRetMap = AbstractDomain.FiniteMultiMap (FieldPath) (FieldPath)
 
   module IntMap = struct
     include Map.Make_tree (Int)
@@ -772,31 +777,31 @@ end = struct
       IFmt.Labelled.iter_bindings ~sep:Fmt.comma iteri Fmt.(pair ~sep int pp_data)
   end
 
-  (** A [Tito.t] is a map from arguments indexes [i] to the set of [fields] field sequences such
-      that [i#fields] is a Tito argument. Note: for any sequence of [fields], if [i#fields] is a
-      Tito argument, then every [i#fields#foo] subfield of should be considered as also being one
-      (even if not explicitly present in the map). *)
+  (** A [Tito.t] is a map from arguments indices [i] to the set of [fields] field paths such that
+      [i#fields] is a Tito argument. Note: for any [fields] path, if [i#fields] is a Tito argument,
+      then every [i#fields#foo] subfield of it should be considered as also being one (even if not
+      explicitly present in the map). *)
   type t = ArgToRetMap.t IntMap.t
-  (* Note: using an array for the IntMap could improve the performance (arguments indexes are small
+  (* Note: using an array for the IntMap could improve the performance (arguments indices are small
      and contiguous). *)
 
   let pp = IntMap.pp ArgToRetMap.pp
 
   let empty = IntMap.empty
 
-  let add ~arg_index ~arg_field ~ret_field tito =
+  let add ~arg_index ~arg_field_path ~ret_field_path tito =
     IntMap.update tito arg_index ~f:(function
       | None ->
           (* No TITO arg for this ret field yet. We create one. *)
-          ArgToRetMap.singleton arg_field ret_field
-      | Some field_map ->
-          ArgToRetMap.add arg_field ret_field field_map )
+          ArgToRetMap.singleton arg_field_path ret_field_path
+      | Some arg_to_ret_map ->
+          ArgToRetMap.add arg_field_path ret_field_path arg_to_ret_map )
 
 
   let fold tito ~init ~f =
     IntMap.fold tito ~init ~f:(fun ~key:arg_index ~data:arg_to_ret_map acc ->
         ArgToRetMap.fold
-          (fun arg_field ret_field acc -> f ~arg_index ~arg_field ~ret_field acc)
+          (fun arg_field_path ret_field_path acc -> f ~arg_index ~arg_field_path ~ret_field_path acc)
           arg_to_ret_map acc )
 
 
@@ -819,7 +824,7 @@ module Summary = struct
       LineageGraph.pp graph
 
 
-  let tito_arguments_of_graph graph return_fields =
+  let tito_arguments_of_graph graph return_field_paths =
     (* Construct an adjacency list representation of the reversed graph. *)
     let graph_rev =
       let add_flow g {LineageGraph.source; target} =
@@ -839,19 +844,19 @@ module Summary = struct
         let parents = Map.find_multi graph_rev node in
         List.fold ~init:seen ~f:dfs parents
     in
-    let reachable return_field =
-      dfs LineageGraph.Vertex.Set.empty (LineageGraph.Return return_field)
+    let reachable return_field_path =
+      dfs LineageGraph.Vertex.Set.empty (LineageGraph.Return return_field_path)
     in
-    (* Collect reachable arguments from a Return field. *)
-    let collect_tito tito ret_field =
-      Set.fold (reachable ret_field) ~init:tito ~f:(fun acc (node : LineageGraph.data) ->
+    (* Collect reachable arguments from a Return field path. *)
+    let collect_tito tito ret_field_path =
+      Set.fold (reachable ret_field_path) ~init:tito ~f:(fun acc (node : LineageGraph.data) ->
           match node with
-          | Argument (arg_index, arg_field) ->
-              Tito.add ~arg_index ~arg_field ~ret_field acc
+          | Argument (arg_index, arg_field_path) ->
+              Tito.add ~arg_index ~arg_field_path ~ret_field_path acc
           | _ ->
               acc )
     in
-    List.fold return_fields ~init:Tito.empty ~f:collect_tito
+    List.fold return_field_paths ~init:Tito.empty ~f:collect_tito
 
 
   (** Reduces the size of the graph by possibly some data and some flows. Consider the following
@@ -891,9 +896,9 @@ module Summary = struct
     in
     let is_interesting_data (data : LineageGraph.data) =
       match data with
-      | Local (VariableIndex var_idx, _node) ->
-          TerminalIndex.var_appears_in_source_code var_idx
-          && not (Var.Set.mem (TerminalIndex.get_var var_idx) special_variables)
+      | Local (Cell cell, _node) ->
+          Cell.var_appears_in_source_code cell
+          && not (Var.Set.mem (Cell.get_var cell) special_variables)
       | Argument _ | Captured _ | Return _ | CapturedBy _ | ArgumentOf _ | ReturnOf _ ->
           true
       | Local (ConstantAtom _, _) | Local (ConstantInt _, _) | Local (ConstantString _, _) ->
@@ -995,11 +1000,11 @@ module Summary = struct
 
 
   (** Given a graph, computes tito_arguments, and makes a summary. *)
-  let make has_unsupported_features proc_desc graph return_fields =
+  let make has_unsupported_features proc_desc graph return_field_paths =
     let graph =
       if Config.simple_lineage_keep_temporaries then graph else remove_temporaries proc_desc graph
     in
-    let tito_arguments = tito_arguments_of_graph graph return_fields in
+    let tito_arguments = tito_arguments_of_graph graph return_field_paths in
     {graph; tito_arguments; has_unsupported_features}
 
 
@@ -1051,7 +1056,7 @@ module Domain : sig
 
     val function_ : Procname.t -> t
 
-    val argument : int -> Fields.t -> t
+    val argument : int -> FieldPath.t -> t
 
     val captured : int -> t
 
@@ -1063,9 +1068,9 @@ module Domain : sig
 
         Each function corresponds to a variant of the {!LineageGraph.data} type.
 
-        As for the {!Src} module, we don't provide [Local] destinations here (that is,
-        [VariableIndex] ones), as they should be processed differently. This is done by using the
-        [add_write_...] family of functions of the {!Domain} module itself. *)
+        As for the {!Src} module, we don't provide [Local] destinations here (that is, [Cell] ones),
+        as they should be processed differently. This is done by using the [add_write_...] family of
+        functions of the {!Domain} module itself. *)
 
     type t
 
@@ -1073,7 +1078,7 @@ module Domain : sig
 
     val argument_of : int -> Procname.t -> t
 
-    val return : Fields.t -> t
+    val return : FieldPath.t -> t
   end
 
   val get_lineage_partial_graph : t -> LineageGraph.flow list
@@ -1099,25 +1104,25 @@ module Domain : sig
       to destinations that are not written variables. To record flow to a variable, use the
       corresponding [add_write_...] function instead. *)
 
-  val add_flow_from_var_index :
+  val add_flow_from_path :
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
-    -> src:TransientIndex.t
+    -> src:VarPath.t
     -> dst:Dst.t
     -> t
     -> t
 
-  val add_flow_from_var_index_f :
+  val add_flow_from_path_f :
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
-    -> kind_f:(Fields.t -> LineageGraph.flow_kind)
-    -> src:TransientIndex.t
-    -> dst_f:(Fields.t -> Dst.t)
+    -> kind_f:(FieldPath.t -> LineageGraph.flow_kind)
+    -> src:VarPath.t
+    -> dst_f:(FieldPath.t -> Dst.t)
     -> t
     -> t
-  (** [add_flow_from_var_index_f] allows recording flow whose kind and destination can be different
-      for every terminal field of the source variable index. This can be used for instance to record
+  (** [add_flow_from_path_f] allows recording flow whose kind and destination can be different for
+      every terminal field of the source variable path. This can be used for instance to record
       [Injection] edges where the edge holds the field information. *)
 
   (** {2 Add flow to non-variable nodes} *)
@@ -1131,28 +1136,28 @@ module Domain : sig
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:Src.t
-    -> dst:TransientIndex.t
+    -> dst:VarPath.t
     -> t
     -> t
 
   val add_write_f :
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
-    -> kind_f:(Fields.t -> LineageGraph.flow_kind)
-    -> src_f:(Fields.t -> Src.t)
-    -> dst:TransientIndex.t
+    -> kind_f:(FieldPath.t -> LineageGraph.flow_kind)
+    -> src_f:(FieldPath.t -> Src.t)
+    -> dst:VarPath.t
     -> t
     -> t
-  (** [add_flow_from_var_index_f] allows recording flow whose kind and source can be different for
-      every terminal field of the destination variable index. This can be used for instance to
-      record [Projection] edges where the edge holds the field information. *)
+  (** [add_flow_from_path_f] allows recording flow whose kind and source can be different for every
+      terminal field of the destination variable path. This can be used for instance to record
+      [Projection] edges where the edge holds the field information. *)
 
   val add_write_from_local :
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:Local.t
-    -> dst:TransientIndex.t
+    -> dst:VarPath.t
     -> t
     -> t
 
@@ -1161,7 +1166,7 @@ module Domain : sig
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:(Local.t, _) Set.t
-    -> dst:TransientIndex.t
+    -> dst:VarPath.t
     -> t
     -> t
 
@@ -1169,26 +1174,26 @@ module Domain : sig
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
-    -> src:TransientIndex.t
-    -> dst:TransientIndex.t
+    -> src:VarPath.t
+    -> dst:VarPath.t
     -> t
     -> t
-  (** Add flow from every terminal field of the source variable index to the corresponding terminal
-      field of the destination variable index. See {!TerminalIndex.fold_terminal_pairs}. *)
+  (** Add flow from every terminal field of the source variable path to the corresponding terminal
+      field of the destination variable path. See {!Cell.fold_terminal_pairs}. *)
 
   val add_write_product :
        shapes:SimpleShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
-    -> src:TransientIndex.t
-    -> dst:TransientIndex.t
+    -> src:VarPath.t
+    -> dst:VarPath.t
     -> t
     -> t
-  (** Add flow from every terminal field of the source variable index to every terminal field of the
-      destination variable index. *)
+  (** Add flow from every terminal field of the source variable path to every terminal field of the
+      destination variable path. *)
 end = struct
   module Real = struct
-    module LastWrites = AbstractDomain.FiniteMultiMap (TerminalIndex) (PPNode)
+    module LastWrites = AbstractDomain.FiniteMultiMap (Cell) (PPNode)
     module UnsupportedFeatures = AbstractDomain.BooleanOr
     include AbstractDomain.PairWithBottom (LastWrites) (UnsupportedFeatures)
   end
@@ -1214,7 +1219,7 @@ end = struct
 
     let function_ procname : t = Function procname
 
-    let argument i fields : t = Argument (i, fields)
+    let argument i field_path : t = Argument (i, field_path)
 
     let captured i : t = Captured i
 
@@ -1228,8 +1233,8 @@ end = struct
         match local with
         | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
             f init (LineageGraph.Local (local, node))
-        | VariableIndex var_idx ->
-            let source_nodes = Real.LastWrites.get_all var_idx last_writes in
+        | Cell cell ->
+            let source_nodes = Real.LastWrites.get_all cell last_writes in
             List.fold
               ~f:(fun acc node -> f acc (LineageGraph.Local (local, node)))
               ~init source_nodes
@@ -1243,17 +1248,17 @@ end = struct
 
     let argument_of i callee_pname : t = ArgumentOf (i, callee_pname)
 
-    let return fields : t = Return fields
+    let return field_path : t = Return field_path
 
     module Private = struct
       (** A module grouping functions that should only be used inside Domain and not exported. *)
 
-      let var_index node var_index : t = Local (VariableIndex var_index, node)
+      let cell node cell : t = Local (Cell cell, node)
     end
   end
 
-  let update_write ~node ~var_index ((last_writes, has_unsupported_features), graph) =
-    let last_writes = Real.LastWrites.set_to_single_value var_index node last_writes in
+  let update_write ~node ~var_path ((last_writes, has_unsupported_features), graph) =
+    let last_writes = Real.LastWrites.set_to_single_value var_path node last_writes in
     ((last_writes, has_unsupported_features), graph)
 
 
@@ -1274,88 +1279,85 @@ end = struct
       ~init:astate src
 
 
-  let add_flow_from_var_index ~shapes ~node ~kind ~src ~dst astate =
-    TerminalIndex.fold_terminal
-      ~f:(fun acc src_term_index ->
-        add_flow_from_local ~node ~kind ~src:(VariableIndex src_term_index) ~dst acc )
+  let add_flow_from_path ~shapes ~node ~kind ~src ~dst astate =
+    Cell.fold_from_path
+      ~f:(fun acc src_cell -> add_flow_from_local ~node ~kind ~src:(Cell src_cell) ~dst acc)
       ~init:astate shapes src
 
 
-  let add_flow_from_var_index_f ~shapes ~node ~kind_f ~src ~dst_f astate =
-    TerminalIndex.fold_terminal
-      ~f:(fun acc src_term_index ->
-        let source_fields = TerminalIndex.get_fields src_term_index in
-        add_flow_from_local ~node ~kind:(kind_f source_fields) ~src:(VariableIndex src_term_index)
-          ~dst:(dst_f source_fields) acc )
+  let add_flow_from_path_f ~shapes ~node ~kind_f ~src ~dst_f astate =
+    Cell.fold_from_path
+      ~f:(fun acc src_cell ->
+        let source_field_path = Cell.get_field_path src_cell in
+        add_flow_from_local ~node ~kind:(kind_f source_field_path) ~src:(Cell src_cell)
+          ~dst:(dst_f source_field_path) acc )
       ~init:astate shapes src
 
 
   let add_terminal_write ~node ~kind ~src ~dst astate =
     astate
-    |> add_flow ~node ~kind ~src ~dst:(Dst.Private.var_index node dst)
-    |> update_write ~node ~var_index:dst
+    |> add_flow ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
+    |> update_write ~node ~var_path:dst
 
 
   let add_terminal_write_from_local ~node ~kind ~src ~dst astate =
     astate
-    |> add_flow_from_local ~node ~kind ~src ~dst:(Dst.Private.var_index node dst)
-    |> update_write ~node ~var_index:dst
+    |> add_flow_from_local ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
+    |> update_write ~node ~var_path:dst
 
 
   let add_terminal_write_from_local_set ~node ~kind ~src ~dst astate =
     astate
-    |> add_flow_from_local_set ~node ~kind ~src ~dst:(Dst.Private.var_index node dst)
-    |> update_write ~node ~var_index:dst
+    |> add_flow_from_local_set ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
+    |> update_write ~node ~var_path:dst
 
 
-  (* Update all the terminal fields of an index, as obtained from the shapes information. *)
+  (* Update all the terminal fields of a path, as obtained from the shapes information. *)
   let add_write ~shapes ~node ~kind ~src ~dst astate =
-    TerminalIndex.fold_terminal
+    Cell.fold_from_path
       ~f:(fun acc_astate dst_terminal ->
         add_terminal_write ~node ~kind ~src ~dst:dst_terminal acc_astate )
       ~init:astate shapes dst
 
 
   let add_write_f ~shapes ~node ~kind_f ~src_f ~dst astate =
-    TerminalIndex.fold_terminal
+    Cell.fold_from_path
       ~f:(fun acc_astate dst_terminal ->
-        let dst_fields = TerminalIndex.get_fields dst_terminal in
-        add_terminal_write ~node ~kind:(kind_f dst_fields) ~src:(src_f dst_fields) ~dst:dst_terminal
-          acc_astate )
+        let dst_field_path = Cell.get_field_path dst_terminal in
+        add_terminal_write ~node ~kind:(kind_f dst_field_path) ~src:(src_f dst_field_path)
+          ~dst:dst_terminal acc_astate )
       ~init:astate shapes dst
 
 
-  (* Update all the terminal fields of an index, as obtained from the shapes information. *)
+  (* Update all the terminal fields of a path, as obtained from the shapes information. *)
   let add_write_from_local ~shapes ~node ~kind ~src ~dst astate =
-    TerminalIndex.fold_terminal
+    Cell.fold_from_path
       ~f:(fun acc_astate dst_terminal ->
         add_terminal_write_from_local ~node ~kind ~src ~dst:dst_terminal acc_astate )
       ~init:astate shapes dst
 
 
-  (* Update all the terminal fields of an index, as obtained from the shapes information. *)
+  (* Update all the terminal fields of a path, as obtained from the shapes information. *)
   let add_write_from_local_set ~shapes ~node ~kind ~src ~dst astate =
-    TerminalIndex.fold_terminal
+    Cell.fold_from_path
       ~f:(fun acc_astate dst_terminal ->
         add_terminal_write_from_local_set ~node ~kind ~src ~dst:dst_terminal acc_astate )
       ~init:astate shapes dst
 
 
-  (* Update all the terminal fields of an destination index, as obtained from the shapes information,
-     as being written in parallel from the corresponding terminal fields of a source index. *)
+  (* Update all the terminal fields of a destination path, as obtained from the shapes information,
+     as being written in parallel from the corresponding terminal fields of a source path. *)
   let add_write_parallel ~shapes ~node ~kind ~src ~dst astate =
-    TerminalIndex.fold_terminal_pairs
-      ~f:(fun acc_astate src_terminal dst_terminal ->
-        add_terminal_write_from_local ~node ~kind ~src:(VariableIndex src_terminal)
-          ~dst:dst_terminal acc_astate )
+    Cell.fold_pairs_from_paths
+      ~f:(fun acc_astate src_cell dst_cell ->
+        add_terminal_write_from_local ~node ~kind ~src:(Cell src_cell) ~dst:dst_cell acc_astate )
       ~init:astate shapes src dst
 
 
   let add_write_product ~shapes ~node ~kind ~src ~dst astate =
-    TerminalIndex.fold_terminal
-      ~f:(fun acc_astate src_terminal ->
-        add_write_from_local ~shapes ~node ~kind ~src:(VariableIndex src_terminal) ~dst acc_astate
-        )
+    Cell.fold_from_path
+      ~f:(fun acc_astate src_cell ->
+        add_write_from_local ~shapes ~node ~kind ~src:(Cell src_cell) ~dst acc_astate )
       ~init:astate shapes src
 end
 
@@ -1384,15 +1386,15 @@ module TransferFunctions = struct
         None
 
 
-  (** If an expression is made of a single variable index, return it *)
-  let exp_as_single_var_index (e : Exp.t) : TransientIndex.t option =
-    let rec aux fields_acc = function
+  (** If an expression is made of a single variable path, return it *)
+  let exp_as_single_var_path (e : Exp.t) : VarPath.t option =
+    let rec aux field_path_acc = function
       | Exp.Lvar pvar ->
-          Some (TransientIndex.make (Var.of_pvar pvar) fields_acc)
+          Some (VarPath.make (Var.of_pvar pvar) field_path_acc)
       | Exp.Var id ->
-          Some (TransientIndex.make (Var.of_id id) fields_acc)
+          Some (VarPath.make (Var.of_id id) field_path_acc)
       | Exp.Lfield (e, fieldname, _) ->
-          aux (fieldname :: fields_acc) e
+          aux (fieldname :: field_path_acc) e
       | Exp.UnOp (_, _, _)
       | Exp.BinOp (_, _, _)
       | Exp.Exn _
@@ -1406,27 +1408,27 @@ module TransferFunctions = struct
     aux [] e
 
 
-  (** Return the terminal free indices that can be derived from an index *)
-  let free_locals_from_index shapes index =
-    TerminalIndex.fold_terminal shapes index ~f:Local.Set.add_variable_index ~init:Local.Set.empty
+  (** Return the free cells that can be derived from a variable path *)
+  let free_locals_from_path shapes var_path =
+    Cell.fold_from_path shapes var_path ~f:Local.Set.add_cell ~init:Local.Set.empty
 
 
   (** Return constants and free terminal indices that occur in [e]. *)
   let rec free_locals_of_exp shapes (e : Exp.t) : Local.Set.t =
     match e with
     | Lvar pvar ->
-        free_locals_from_index shapes (TransientIndex.pvar pvar)
+        free_locals_from_path shapes (VarPath.pvar pvar)
     | Var id ->
-        free_locals_from_index shapes (TransientIndex.ident id)
+        free_locals_from_path shapes (VarPath.ident id)
     | Lfield _ -> (
-      (* We only allow (sequences of) fields to be "applied" to a single variable, yielding a single index  *)
-      match exp_as_single_var_index e with
+      (* We only allow (sequences of) fields to be "applied" to a single variable, yielding a single path *)
+      match exp_as_single_var_path e with
       | None ->
           (* Debugging hint: if you run into this assertion, the easiest is likely to change the
              frontend to introduce a temporary variable. *)
-          L.die InternalError "I don't support fields sequences from non-variables expressions"
-      | Some index ->
-          free_locals_from_index shapes index )
+          L.die InternalError "I don't support field paths from non-variables expressions"
+      | Some var_path ->
+          free_locals_from_path shapes var_path )
     | Const (Cint x) ->
         Local.Set.singleton (ConstantInt (IntLit.to_string x))
     | Const (Cstr x) ->
@@ -1449,7 +1451,7 @@ module TransferFunctions = struct
   let captured_locals_of_exp shapes (e : Exp.t) : Local.Set.t =
     let add locals {Exp.captured_vars} =
       List.fold captured_vars ~init:locals ~f:(fun locals (_exp, pvar, _typ, _mode) ->
-          Local.Set.union locals (free_locals_from_index shapes (TransientIndex.pvar pvar)) )
+          Local.Set.union locals (free_locals_from_path shapes (VarPath.pvar pvar)) )
     in
     Sequence.fold ~init:Local.Set.empty ~f:add (Exp.closures e)
 
@@ -1488,7 +1490,7 @@ module TransferFunctions = struct
           closure astate c
     and closure astate ({name; captured_vars} : Exp.closure) =
       let one_var index astate (_exp, pvar, _typ, _mode) =
-        Domain.add_flow_from_var_index ~shapes ~node ~kind:Direct ~src:(TransientIndex.pvar pvar)
+        Domain.add_flow_from_path ~shapes ~node ~kind:Direct ~src:(VarPath.pvar pvar)
           ~dst:(Domain.Dst.captured_by index name)
           astate
       in
@@ -1520,12 +1522,12 @@ module TransferFunctions = struct
             ~dst:(Domain.Dst.argument_of index callee_pname)
             astate
       | Some actual_arg_var ->
-          (* The concrete argument is a single var: we collect all its terminal fields and have
-             them flow onto the corresponding field of the formal parameter. *)
-          let actual_arg_var_index = TransientIndex.var actual_arg_var in
-          Domain.add_flow_from_var_index_f ~shapes ~node:call_node
-            ~kind_f:(fun arg_fields -> Call arg_fields)
-            ~src:actual_arg_var_index
+          (* The concrete argument is a single var: we collect all its cells and have
+             them flow onto the corresponding field path of the formal parameter. *)
+          let actual_arg_var_path = VarPath.var actual_arg_var in
+          Domain.add_flow_from_path_f ~shapes ~node:call_node
+            ~kind_f:(fun arg_field_path -> Call arg_field_path)
+            ~src:actual_arg_var_path
             ~dst_f:(fun _ -> Domain.Dst.argument_of index callee_pname)
             astate
     in
@@ -1536,55 +1538,54 @@ module TransferFunctions = struct
   let add_ret_flows shapes node (callee_pname : Procname.t) (ret_id : Ident.t) (astate : Domain.t) :
       Domain.t =
     Domain.add_write_f ~shapes ~node
-      ~kind_f:(fun fields -> Return fields)
+      ~kind_f:(fun field_path -> Return field_path)
       ~src_f:(Fn.const @@ Domain.Src.return_of callee_pname)
-      ~dst:(TransientIndex.ident ret_id) astate
+      ~dst:(VarPath.ident ret_id) astate
 
 
-  let add_lambda_edges shapes node write_var_index lambdas astate =
+  let add_lambda_edges shapes node written_var_path lambdas astate =
     let add_one_lambda one_lambda astate =
-      Domain.add_write ~shapes ~node ~kind:Direct ~dst:write_var_index
+      Domain.add_write ~shapes ~node ~kind:Direct ~dst:written_var_path
         ~src:(Domain.Src.function_ one_lambda) astate
     in
     Procname.Set.fold add_one_lambda lambdas astate
 
 
-  let exec_assignment shapes node dst_index src_exp astate =
-    match exp_as_single_var_index src_exp with
-    | Some src_index ->
-        (* Simple assignment of the form [dst := src_index]: we copy the fields of [src_index] into
+  let exec_assignment shapes node dst_path src_exp astate =
+    match exp_as_single_var_path src_exp with
+    | Some src_path ->
+        (* Simple assignment of the form [dst := src_path]: we copy the fields of [src_path] into
            the corresponding fields of [dst]. *)
-        Domain.add_write_parallel ~shapes ~node ~kind:Direct ~src:src_index ~dst:dst_index astate
+        Domain.add_write_parallel ~shapes ~node ~kind:Direct ~src:src_path ~dst:dst_path astate
     | None ->
         (* Complex assignment of any other form: we copy every terminal field from the source to
            (every terminal field of) the destination, and also process the potential captured indices
            and lambdas. *)
         let {free_locals; captured_locals; lambdas} = read_set_of_exp shapes src_exp in
         astate
-        |> Domain.add_write_from_local_set ~shapes ~node ~kind:Direct ~dst:dst_index
-             ~src:free_locals
-        |> Domain.add_write_from_local_set ~shapes ~node ~kind:Capture ~dst:dst_index
+        |> Domain.add_write_from_local_set ~shapes ~node ~kind:Direct ~dst:dst_path ~src:free_locals
+        |> Domain.add_write_from_local_set ~shapes ~node ~kind:Capture ~dst:dst_path
              ~src:captured_locals
-        |> add_lambda_edges shapes node dst_index lambdas
+        |> add_lambda_edges shapes node dst_path lambdas
 
 
-  (* Add Summary (or Direct if this is a suppressed builtin call) edges from the concrete parameters
+  (* Add Summary (or Direct if this is a suppressed builtin call) edges from the concrete arguments
      to the concrete destination variable of a call, as specified by the tito_arguments summary information *)
   let add_tito (shapes : SimpleShape.Summary.t) node (kind : LineageGraph.FlowKind.t)
       (tito : Tito.t) (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t
       =
-    let add_one_tito_flow ~arg_index ~arg_field ~ret_field astate =
+    let add_one_tito_flow ~arg_index ~arg_field_path ~ret_field_path astate =
       let arg_expr = List.nth_exn argument_list arg_index in
-      let ret_index = TransientIndex.make (Var.of_id ret_id) ret_field in
-      match exp_as_single_var_index arg_expr with
+      let ret_path = VarPath.make (Var.of_id ret_id) ret_field_path in
+      match exp_as_single_var_path arg_expr with
       | None ->
           warn_on_complex_arg arg_expr ;
-          Domain.add_write_from_local_set ~shapes ~node ~kind ~dst:ret_index
+          Domain.add_write_from_local_set ~shapes ~node ~kind ~dst:ret_path
             ~src:(free_locals_of_exp shapes arg_expr)
             astate
-      | Some arg_index ->
-          Domain.add_write_product ~shapes ~node ~kind ~dst:ret_index
-            ~src:(TransientIndex.subfield arg_index arg_field)
+      | Some arg_path ->
+          Domain.add_write_product ~shapes ~node ~kind ~dst:ret_path
+            ~src:(VarPath.sub_path arg_path arg_field_path)
             astate
     in
     Tito.fold tito ~init:astate ~f:add_one_tito_flow
@@ -1629,7 +1630,7 @@ module TransferFunctions = struct
           astate
           |> generic_call_model shapes node analyze_dependency ret_id procname args
           |> Domain.add_write_from_local_set ~shapes ~node ~kind:DynamicCallFunction
-               ~dst:(TransientIndex.ident ret_id) ~src:(free_locals_of_exp shapes fun_)
+               ~dst:(VarPath.ident ret_id) ~src:(free_locals_of_exp shapes fun_)
       | _ ->
           L.die InternalError "Expecting at least one argument for '__erlang_call_unqualified'"
 
@@ -1640,9 +1641,9 @@ module TransferFunctions = struct
           astate
           |> generic_call_model shapes node analyze_dependency ret_id procname args
           |> Domain.add_write_from_local_set ~shapes ~node ~kind:DynamicCallFunction
-               ~dst:(TransientIndex.ident ret_id) ~src:(free_locals_of_exp shapes fun_)
+               ~dst:(VarPath.ident ret_id) ~src:(free_locals_of_exp shapes fun_)
           |> Domain.add_write_from_local_set ~shapes ~node ~kind:DynamicCallModule
-               ~dst:(TransientIndex.ident ret_id)
+               ~dst:(VarPath.ident ret_id)
                ~src:(free_locals_of_exp shapes module_)
       | _ ->
           L.die InternalError "Expecting at least two arguments for '__erlang_call_qualified'"
@@ -1657,7 +1658,7 @@ module TransferFunctions = struct
             L.die InternalError "Expecting first argument of 'make_atom' to be its name"
       in
       Domain.add_write_from_local ~shapes ~node ~kind:LineageGraph.FlowKind.Direct
-        ~dst:(TransientIndex.ident ret_id) ~src:(ConstantAtom atom_name) astate
+        ~dst:(VarPath.ident ret_id) ~src:(ConstantAtom atom_name) astate
 
 
     let make_tuple shapes node _analyze_dependency ret_id _procname (args : Exp.t list) astate =
@@ -1665,10 +1666,10 @@ module TransferFunctions = struct
       let tuple_type = ErlangTypeName.Tuple size in
       let field_names = ErlangTypeName.tuple_field_names size in
       let fieldname name = Fieldname.make (ErlangType tuple_type) name in
-      let ret_field name = TransientIndex.make (Var.of_id ret_id) [fieldname name] in
+      let ret_path name = VarPath.make (Var.of_id ret_id) [fieldname name] in
       List.fold2_exn
         ~f:(fun astate field_name arg ->
-          exec_assignment shapes node (ret_field field_name) arg astate )
+          exec_assignment shapes node (ret_path field_name) arg astate )
         ~init:astate field_names args
 
 
@@ -1718,10 +1719,9 @@ module TransferFunctions = struct
     let astate = add_cap_flows shapes node instr astate in
     match instr with
     | Load {id; e; _} ->
-        if Ident.is_none id then astate
-        else exec_assignment shapes node (TransientIndex.ident id) e astate
+        if Ident.is_none id then astate else exec_assignment shapes node (VarPath.ident id) e astate
     | Store {e1= Lvar lhs; e2; _} ->
-        exec_assignment shapes node (TransientIndex.pvar lhs) e2 astate
+        exec_assignment shapes node (VarPath.pvar lhs) e2 astate
     | Store _ ->
         L.debug Analysis Verbose
           "SimpleLineage: The only lhs I can handle (now) for Store is Lvar@\n" ;
@@ -1755,12 +1755,12 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
     let start_node = CFG.start_node cfg in
     let add_arg_flow i astate arg_var =
       TransferFunctions.Domain.add_write_f ~shapes ~node:start_node
-        ~kind_f:LineageGraph.FlowKind.from_formal_arg ~dst:(TransientIndex.var arg_var)
+        ~kind_f:LineageGraph.FlowKind.from_formal_arg ~dst:(VarPath.var arg_var)
         ~src_f:(Domain.Src.argument i) astate
     in
     let add_cap_flow i astate var =
       TransferFunctions.Domain.add_write ~shapes ~node:start_node ~kind:Direct
-        ~dst:(TransientIndex.var var) ~src:(Domain.Src.captured i) astate
+        ~dst:(VarPath.var var) ~src:(Domain.Src.captured i) astate
     in
     let astate = Domain.bottom in
     let astate = List.foldi ~init:astate ~f:add_arg_flow formals in
@@ -1770,7 +1770,7 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
   (* Analyse the procedure to get the invmap *)
   let invmap = Analyzer.exec_pdesc analysis_data ~initial:initial_astate proc_desc in
   let exit_node = CFG.exit_node cfg in
-  let ret_var_index = TransientIndex.pvar (Procdesc.get_ret_var proc_desc) in
+  let ret_var_path = VarPath.pvar (Procdesc.get_ret_var proc_desc) in
   (* Add Return edges *)
   let exit_astate =
     match Analyzer.InvariantMap.find_opt (PPNode.id exit_node) invmap with
@@ -1780,9 +1780,8 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
         post
   in
   let final_astate =
-    Domain.add_flow_from_var_index_f ~shapes ~node:exit_node
-      ~kind_f:LineageGraph.FlowKind.to_formal_ret ~src:ret_var_index ~dst_f:Domain.Dst.return
-      exit_astate
+    Domain.add_flow_from_path_f ~shapes ~node:exit_node ~kind_f:LineageGraph.FlowKind.to_formal_ret
+      ~src:ret_var_path ~dst_f:Domain.Dst.return exit_astate
   in
   (* Collect the graph from all nodes *)
   let graph =
@@ -1796,12 +1795,12 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
     |> List.concat
   in
   (* Collect the return fields to finish the summary *)
-  let ret_fields =
-    TerminalIndex.fold_terminal shapes ret_var_index ~init:[] ~f:(fun acc idx ->
-        TerminalIndex.get_fields idx :: acc )
+  let known_ret_field_paths =
+    Cell.fold_from_path shapes ret_var_path ~init:[] ~f:(fun acc cell ->
+        Cell.get_field_path cell :: acc )
   in
   let exit_has_unsupported_features = Domain.has_unsupported_features exit_astate in
-  let summary = Summary.make exit_has_unsupported_features proc_desc graph ret_fields in
+  let summary = Summary.make exit_has_unsupported_features proc_desc graph known_ret_field_paths in
   if Config.simple_lineage_json_report then Summary.report summary proc_desc ;
   Some summary
 

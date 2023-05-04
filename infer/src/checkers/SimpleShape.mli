@@ -7,7 +7,7 @@
 
 open! IStd
 
-module Fields : sig
+module FieldPath : sig
   type t = Fieldname.t list [@@deriving compare, equal, sexp, yojson_of]
 
   val pp : t Fmt.t
@@ -20,14 +20,14 @@ module Summary : sig
 
   val fold_terminal_fields :
        t
-    -> Var.t * Fields.t
+    -> Var.t * FieldPath.t
     -> max_width:int
     -> max_depth:int
     -> prevent_cycles:bool
     -> init:'accum
-    -> f:('accum -> Fields.t -> 'accum)
+    -> f:('accum -> FieldPath.t -> 'accum)
     -> 'accum
-  (** Folds over all terminal fields of a variable with fields. A field list is "terminal" if its
+  (** Folds over all terminal fields of a variable with fields. A field path is "terminal" if its
       length (that includes the prefixed fields given as parameters) is equal to [max_depth], or no
       more field can be subscripted from its corresponding type, or it has strictly more than
       [max_width] immediate subfields.
@@ -40,13 +40,13 @@ module Summary : sig
 
   val fold_terminal_fields_2 :
        t
-    -> Var.t * Fields.t
-    -> Var.t * Fields.t
+    -> Var.t * FieldPath.t
+    -> Var.t * FieldPath.t
     -> max_width:int
     -> max_depth:int
     -> prevent_cycles:bool
     -> init:'accum
-    -> f:('accum -> Fields.t -> Fields.t -> 'accum)
+    -> f:('accum -> FieldPath.t -> FieldPath.t -> 'accum)
     -> 'accum
   (** Folds over all terminal fields of two same-shape variables with their fields. See
       {!fold_terminal_fields}.
@@ -55,8 +55,8 @@ module Summary : sig
 
       The folding function [f] will always be called on pairs of terminal fields.
 
-      Note that, since the parameters field lists may not have the same length, [f] may be called on
-      field lists of different lengths. For instance, if the parameters [var#field1] and
+      Note that, since the parameters field paths may not have the same length, [f] may be called on
+      field paths of different lengths. For instance, if the parameters [var#field1] and
       [var'#field2#field3] don't have any subfield, then [f] will be called with [#field1] and
       [#field2#field3].
 

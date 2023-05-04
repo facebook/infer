@@ -9,19 +9,38 @@ open! IStd
 module L = Logging
 module CFG = ProcCfg.NormalOneInstrPerNode
 
+module FieldPath = struct
+  (** A module to help manipulating lists of (nested) fields. *)
+
+  (** We define a type alias to be able use our own json exporting function *)
+  type fieldname = Fieldname.t [@@deriving compare, equal, sexp]
+
+  let yojson_of_fieldname fieldname =
+    (* The ppx-generated [yojson_of] is unnecessarily complex for our purposes (it's a record that
+       involves "class_name", which incidentally seems to always be "_".) *)
+    `String (Fieldname.to_string fieldname)
+
+
+  (* The list is to be understood in "syntactic order": [["a"; "b"]] represents the field part of
+     [X#a#b].*)
+  type t = fieldname list [@@deriving compare, equal, sexp, yojson_of]
+
+  let pp = Fmt.(list ~sep:nop (any "#" ++ Fieldname.pp))
+end
+
 module Ilist = struct
   (** Size-indexed lists *)
 
   (** These will be used for traversing "in parallel" the shape information structures, accumulating
-      a set of a generic (but static) number of field sequences.
+      a set of a generic (but static) number of field paths.
 
       For instance, searching the possible fields of a single variable will return a set of
-      one-sized lists of field sequences. Searching the corresponding fields of two
-      (variable+fields) of the same shape will return a set of two-sized lists of field sequences.
+      one-sized lists of field paths. Searching the corresponding fields of two (variable+fields) of
+      the same shape will return a set of two-sized lists of field paths.
 
       Having the size as part of the type allows both having one generic code (parameterised over
       that size type) being able to perform these two traversals, and statically know at the call
-      sites how many field sequences we are accumulating. *)
+      sites how many field paths we are accumulating. *)
 
   (** Natural integers as types *)
 
@@ -66,25 +85,6 @@ end = struct
   include Unique_id.Int63 ()
 
   let pp fmt x = Format.fprintf fmt "<%a>" Int63.pp (x : t :> Int63.t)
-end
-
-module Fields = struct
-  (** A module to help manipulating lists of (nested) fields. *)
-
-  (** We define a type alias to be able use our own json exporting function *)
-  type fieldname = Fieldname.t [@@deriving compare, equal, sexp]
-
-  let yojson_of_fieldname fieldname =
-    (* The ppx-generated [yojson_of] is unnecessarily complex for our purposes (it's a record that
-       involves "class_name", which incidentally seems to always be "_".) *)
-    `String (Fieldname.to_string fieldname)
-
-
-  (* The list is to be understood in "syntactic order": [["a"; "b"]] represents the field part of
-     [X#a#b].*)
-  type t = fieldname list [@@deriving compare, equal, sexp, yojson_of]
-
-  let pp = Fmt.(list ~sep:nop (any "#" ++ Fieldname.pp))
 end
 
 (** This analysis aims at inferring all the fields that may be accessed from some variable, possibly
@@ -153,24 +153,24 @@ module Shape : sig
 
     val fold_terminal_fields :
          t
-      -> Var.t * Fields.t
+      -> Var.t * FieldPath.t
       -> max_width:int
       -> max_depth:int
       -> prevent_cycles:bool
       -> init:'accum
-      -> f:('accum -> Fields.t -> 'accum)
+      -> f:('accum -> FieldPath.t -> 'accum)
       -> 'accum
     (* Doc in .mli *)
 
     val fold_terminal_fields_2 :
          t
-      -> Var.t * Fields.t
-      -> Var.t * Fields.t
+      -> Var.t * FieldPath.t
+      -> Var.t * FieldPath.t
       -> max_width:int
       -> max_depth:int
       -> prevent_cycles:bool
       -> init:'accum
-      -> f:('accum -> Fields.t -> Fields.t -> 'accum)
+      -> f:('accum -> FieldPath.t -> FieldPath.t -> 'accum)
       -> 'accum
     (* Doc in .mli *)
 
