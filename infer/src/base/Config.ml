@@ -2242,7 +2242,7 @@ and pulse_cut_to_one_path_procedures_pattern =
 
 
 and pulse_force_continue =
-  CLOpt.mk_bool ~long:"pulse-force_continue" ~default:false
+  CLOpt.mk_bool ~long:"pulse-force-continue" ~default:false
     "The code coming after a function call is not analyzed if the callee has no summary of type \
      ContinueProgram, which may happen if the callee implementation was hard to analyze. With this \
      option, we force the analysis to continue, treating the callee as an unknown function. (Note \
