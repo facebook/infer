@@ -30,6 +30,7 @@ type mode =
   | JsonSIL of {cfg_json: string; tenv_json: string}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
+  | PythonBytecode of {pyc: string}
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
   | Hackc of {prog: string; args: string list}

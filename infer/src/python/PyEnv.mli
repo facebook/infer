@@ -7,7 +7,6 @@
 
 open! IStd
 module T = Textual
-module Debug = PyDebug
 
 module Builtin : sig
   type textual =
@@ -29,9 +28,6 @@ module BuiltinSet : sig
 
   val to_textual : t -> Textual.Module.decl list
   (** Encode a set of builtin declarations into Textual declarations *)
-
-  val empty : t
-  (** An empty set of builtins *)
 end
 
 (** In Python, everything is an object, and the interpreter maintains a stack of references to such
@@ -50,10 +46,6 @@ module DataStack : sig
   val as_code : FFI.Code.t -> cell -> FFI.Code.t option
 
   type t = cell list
-
-  val push : t -> cell -> t
-
-  val pop : t -> (t * cell) option
 end
 
 (** Information about global/toplevel declaration *)

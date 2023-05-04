@@ -2579,6 +2579,10 @@ and pure_by_default =
     "[Purity]Consider unknown functions to be pure by default"
 
 
+and pyc_file =
+  CLOpt.mk_path_opt ~long:"pyc-file" "Location of a file that contains a compiled Python module"
+
+
 and quandary_endpoints =
   CLOpt.mk_json ~long:"quandary-endpoints"
     ~in_help:InferCommand.[(Analyze, manual_quandary)]
@@ -4148,6 +4152,8 @@ and pulse_taint_config =
 and pulse_widen_threshold = !pulse_widen_threshold
 
 and pure_by_default = !pure_by_default
+
+and pyc_file = !pyc_file
 
 and quandary_endpoints = !quandary_endpoints
 

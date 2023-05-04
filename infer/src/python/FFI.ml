@@ -8,6 +8,10 @@ open! IStd
 module F = Format
 module L = Logging
 
+let pp_array pp_item fmt arr =
+  F.fprintf fmt "[|@[%a@]|]" (Pp.collection ~fold:Array.fold ~sep:"; " ~pp_item) arr
+
+
 type pyConstant =
   | PYCBool of bool
   | PYCInt of int64
@@ -230,8 +234,6 @@ module Code = struct
 
   let pp fmt code = F.pp_print_string fmt code.co_name
 
-  let create obj = new_py_code obj
-
   let is_closure {co_freevars; co_cellvars} =
     Array.length co_freevars + Array.length co_cellvars <> 0
 end
@@ -249,8 +251,6 @@ module Constant = struct
   [@@deriving show, compare]
 
   let show ?(full = false) c = if full then full_show c else show c
-
-  let create obj = new_py_constant obj
 
   let as_code = function
     | PYCCode c ->
@@ -277,8 +277,6 @@ module Instruction = struct
     ; starts_line: int option
     ; is_jump_target: bool }
   [@@deriving show, compare]
-
-  let create obj = new_py_instruction obj
 end
 
 let from_python_object obj =
@@ -316,7 +314,10 @@ let from_bytecode filename =
     Base.Bytes.set mref 1 (Char.of_int_exn 13) ;
     Base.Bytes.set mref 2 (Char.of_int_exn 13) ;
     Base.Bytes.set mref 3 (Char.of_int_exn 10) ;
-    let show_array = [%derive.show: bytes] in
+    let show_array bytes =
+      let arr = Base.Bytes.to_array bytes in
+      Format.asprintf "%a" (pp_array Char.pp) arr
+    in
     if read_magic <> 4 || not (Base.Bytes.equal magic mref) then
       L.die UserError "Invalid magic number for Python 3.8. Expected %s but got %s"
         (show_array mref) (show_array magic) ;
@@ -331,6 +332,8 @@ let from_bytecode filename =
     from_python_object pyobj
 
 
+(* TODO: Revisit when we initialize/finalize the Python interpreter when we'll support
+   more than one file at a time *)
 let from_file ~is_binary filename =
   Py.initialize ~interpreter:Version.python_exe () ;
   let code = if is_binary then from_bytecode filename else from_source filename in

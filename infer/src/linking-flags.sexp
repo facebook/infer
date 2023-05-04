@@ -33,7 +33,8 @@
  -cclib -lmtime_clock_stubs -cclib -lrt -cclib -lcamlstr -cclib -lfilename_unix_stubs
  -cclib -lsys_unix_stubs -cclib -lcore_unix_stubs -cclib -lspawn_stubs -cclib -lsignal_unix_stubs
  -cclib -lerror_checking_mutex_stubs -cclib -lthreadsnat -cclib -lpthread
- -cclib -lANSITerminal_stubs -cclib -lcore_stubs -cclib -lbase_bigstring_stubs
- -cclib -lexpect_test_collector_stubs -cclib -ltime_now_stubs -cclib -lbin_prot_stubs -cclib -lunix
- -cclib -lbase_stubs -cclib -lbase_internalhash_types_stubs -cclib -lasmrun -cclib -lm -cclib -ldl
+ -cclib -lANSITerminal_stubs -cclib -lpyml_stubs -cclib -lstdcompat_stubs -cclib -lcore_stubs
+ -cclib -lbase_bigstring_stubs -cclib -lexpect_test_collector_stubs -cclib -ltime_now_stubs
+ -cclib -lbin_prot_stubs -cclib -lunix -cclib -lbase_stubs -cclib -lbase_internalhash_types_stubs
+ -cclib -lasmrun -cclib -lm -cclib -ldl
 )

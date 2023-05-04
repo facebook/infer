@@ -646,6 +646,8 @@ val pulse_log_summary_count : bool
 
 val pure_by_default : bool
 
+val pyc_file : string option
+
 val quandary_endpoints : Yojson.Basic.t
 
 val quandary_sanitizers : Yojson.Basic.t

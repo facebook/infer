@@ -31,6 +31,7 @@ type mode =
   | JsonSIL of {cfg_json: string; tenv_json: string}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
+  | PythonBytecode of {pyc: string}
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
   | Hackc of {prog: string; args: string list}
@@ -40,7 +41,12 @@ type mode =
 
 let is_analyze_mode = function Analyze -> true | _ -> false
 
-let is_compatible_with_textual_generation = function Javac _ -> true | _ -> false
+let is_compatible_with_textual_generation = function
+  | Javac _ | PythonBytecode _ ->
+      true
+  | _ ->
+      false
+
 
 let pp_mode fmt = function
   | Analyze ->
@@ -80,6 +86,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Maven driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | NdkBuild {build_cmd} ->
       F.fprintf fmt "NdkBuild driver mode: build_cmd = %a" Pp.cli_args build_cmd
+  | PythonBytecode {pyc} ->
+      F.fprintf fmt "Python driver mode:@\npyc = '%s'" pyc
   | Rebar3 {args} ->
       F.fprintf fmt "Rebar3 driver mode:@\nargs = %a" Pp.cli_args args
   | Erlc {args} ->
@@ -204,6 +212,9 @@ let capture ~changed_files mode =
       | NdkBuild {build_cmd} ->
           L.progress "Capturing in ndk-build mode...@." ;
           NdkBuild.capture ~build_cmd
+      | PythonBytecode {pyc} ->
+          L.progress "Capturing python byte-code from %s...@." pyc ;
+          Python.capture ~pyc
       | Rebar3 {args} ->
           L.progress "Capturing in rebar3 mode...@." ;
           Erlang.capture ~command:"rebar3" ~args
@@ -456,6 +467,9 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   match build_cmd with
   | [] when Config.bxl_file_capture ->
       BxlClangFile
+  | [] when Option.is_some Config.pyc_file ->
+      let pyc = Option.value_exn Config.pyc_file in
+      PythonBytecode {pyc}
   | [] -> (
       let textualfiles = Config.capture_textual in
       match (Config.clang_compilation_dbs, textualfiles) with

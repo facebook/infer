@@ -1016,3 +1016,11 @@ let from_java ~filename tenv cfg =
       pp_copyright fmt ;
       Module.pp fmt (ModuleBridge.of_sil ~sourcefile ~lang:Java tenv cfg) ;
       Format.pp_print_flush fmt () )
+
+
+let dump_module ~filename module_ =
+  Utils.with_file_out filename ~f:(fun oc ->
+      let fmt = F.formatter_of_out_channel oc in
+      pp_copyright fmt ;
+      Module.pp fmt module_ ;
+      Format.pp_print_flush fmt () )

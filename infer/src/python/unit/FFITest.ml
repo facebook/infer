@@ -23,19 +23,19 @@ let%test_module "load_code" =
           co_cellvars = [||]; co_freevars = [||]; co_names = [|"x"|];
           co_varnames = [||]; co_nlocals = 0; co_argcount = 0; co_firstlineno = 1;
           co_posonlyargcount = 0; co_stacksize = 1; co_kwonlyargcount = 0;
-          co_lnotab = [||]; co_consts = [|(FFI.PYCInt 42L); FFI.PYCNone|];
+          co_lnotab = [||]; co_consts = [|FFI.PYCInt (42L); FFI.PYCNone|];
           instructions =
-          [{ FFI.opname = "LOAD_CONST"; opcode = 100; arg = 0;
-             argval = (FFI.PYCInt 42L); offset = 0; starts_line = (Some 1);
-             is_jump_target = false };
-            { FFI.opname = "STORE_NAME"; opcode = 90; arg = 0;
-              argval = (FFI.PYCString "x"); offset = 2; starts_line = None;
-              is_jump_target = false };
-            { FFI.opname = "LOAD_CONST"; opcode = 100; arg = 1; argval = FFI.PYCNone;
-              offset = 4; starts_line = None; is_jump_target = false };
-            { FFI.opname = "RETURN_VALUE"; opcode = 83; arg = 0;
-              argval = FFI.PYCNone; offset = 6; starts_line = None;
-              is_jump_target = false }
-            ]
+          [{ FFI.opname = "LOAD_CONST"; FFI.opcode = 100; FFI.arg = 0;
+             FFI.argval = FFI.PYCInt (42L); FFI.offset = 0;
+             FFI.starts_line = Some (1); FFI.is_jump_target = false };
+           { FFI.opname = "STORE_NAME"; FFI.opcode = 90; FFI.arg = 0;
+             FFI.argval = FFI.PYCString ("x"); FFI.offset = 2;
+             FFI.starts_line = None; FFI.is_jump_target = false };
+           { FFI.opname = "LOAD_CONST"; FFI.opcode = 100; FFI.arg = 1;
+             FFI.argval = FFI.PYCNone; FFI.offset = 4; FFI.starts_line = None;
+             FFI.is_jump_target = false };
+           { FFI.opname = "RETURN_VALUE"; FFI.opcode = 83; FFI.arg = 0;
+             FFI.argval = FFI.PYCNone; FFI.offset = 6; FFI.starts_line = None;
+             FFI.is_jump_target = false }]
           } |}]
   end )

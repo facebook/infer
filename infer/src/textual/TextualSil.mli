@@ -14,4 +14,7 @@ val module_to_sil : Textual.Module.t -> Cfg.t * Tenv.t
 val from_java : filename:string -> Tenv.t -> Cfg.t -> unit
 (** generate a .sil file with name [filename] containing all the functions in the given cfg *)
 
+val dump_module : filename:string -> Textual.Module.t -> unit
+(** generate a .sil file with name [filename] with all the content of the input module *)
+
 val hack_mixed_type_name : Typ.name

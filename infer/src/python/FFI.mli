@@ -14,7 +14,7 @@
 open! IStd
 
 module rec Constant : sig
-  type t =
+  type t = private
     | PYCBool of bool
     | PYCInt of int64
     | PYCString of string
@@ -28,15 +28,13 @@ module rec Constant : sig
 
   val pp : Format.formatter -> t -> unit
 
-  val create : Pytypes.pyobject -> t
-
   val as_code : t -> Code.t option
 
   val as_name : t -> string option
 end
 
 and Code : sig
-  type t =
+  type t = private
     { co_name: string
     ; co_filename: string
     ; co_flags: int
@@ -66,18 +64,16 @@ and Code : sig
     ; instructions: Instruction.t list }
   [@@deriving show, compare]
 
-  val full_show : t -> string
+  val full_show : t -> string [@@warning "-unused-value-declaration"]
 
-  val full_pp : Format.formatter -> t -> unit
-
-  val create : Pytypes.pyobject -> t
+  val full_pp : Format.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 
   val is_closure : t -> bool
 end
 
 and Instruction : sig
   (** @see <https://docs.python.org/3.8/library/dis.html#dis.Instruction> *)
-  type t =
+  type t = private
     { opname: string
     ; opcode: int
     ; arg: int
@@ -86,8 +82,6 @@ and Instruction : sig
     ; starts_line: int option
     ; is_jump_target: bool }
   [@@deriving show, compare]
-
-  val create : Pytypes.pyobject -> t
 end
 
 val from_string : source:string -> filename:string -> Code.t

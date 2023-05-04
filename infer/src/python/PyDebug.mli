@@ -9,6 +9,6 @@ open! IStd
 
 val p : ?level:int -> ('a, Format.formatter, unit, unit) format4 -> 'a
 
-val enable_debug : unit -> unit
+val enable_debug : unit -> unit [@@warning "-unused-value-declaration"]
 
-val disable_debug : unit -> unit
+val disable_debug : unit -> unit [@@warning "-unused-value-declaration"]

@@ -81,7 +81,7 @@ let infer_exe_stanza =
      -open Core -open IStdlib -open IStd -open IBase -open IR -open Textuallib -open Backend -open Integration
      -open Biabduction -open TestDeterminators -open ClangFrontend
      %s -open JavaFrontend %s %s))
- (libraries %s core IStdlib IBase IR Textuallib Backend Integration Biabduction TestDeterminators ClangFrontend)
+ (libraries %s core pyml IStdlib IBase IR Textuallib Backend Integration Biabduction TestDeterminators ClangFrontend)
  (link_flags %s)
  (preprocess (pps ppx_compare))
  (promote (until-clean) (into ../bin))

@@ -18,6 +18,6 @@
    IBase
    -open
    Textuallib))
- (libraries core IStdlib IBase pyml Textuallib)
+ (libraries core IStdlib IBase pyml Textuallib ppx_show.runtime)
  (preprocess
-  (pps ppx_compare ppx_deriving.std)))
+  (pps ppx_compare ppx_show)))
