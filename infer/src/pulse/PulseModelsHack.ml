@@ -40,8 +40,15 @@ let hack_dim_field_get this_obj (field_string_obj, _) : model =
       astate |> Basic.ok_continue
 
 
+let hack_await (argv, hist) : model =
+ fun {ret=ret_id, _} astate ->
+  let astate = AddressAttributes.hack_async_await argv astate in
+  PulseOperations.write_id ret_id (argv, hist) astate |> Basic.ok_continue
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"$builtins" &:: "hack_dim_field_get" <>$ capt_arg_payload $+ capt_arg_payload
     $--> hack_dim_field_get
-  ; -"$builtins" &:: "hack_new_dict" <>$ any_arg $+...$--> Basic.skip ]
+  ; -"$builtins" &:: "hack_new_dict" <>$ any_arg $+...$--> Basic.skip
+  ; -"$builtins" &:: "await" <>$ capt_arg_payload $--> hack_await ]

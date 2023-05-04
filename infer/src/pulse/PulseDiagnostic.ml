@@ -130,6 +130,8 @@ type t =
   | ErlangError of ErlangError.t
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
+    (* TODO: add more data to HackUnawaitedAwaitable tracking the parameter type *)
+  | HackUnawaitedAwaitable of {allocation_trace: Trace.t; location: Location.t}
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | ReadonlySharedPtrParameter of
       {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
@@ -180,6 +182,9 @@ let pp fmt diagnostic =
   | JavaResourceLeak {class_name; allocation_trace; location} ->
       F.fprintf fmt "ResourceLeak {@[class_name=%a;@;allocation_trace:%a;@;location:%a@]}"
         JavaClassName.pp class_name (Trace.pp ~pp_immediate) allocation_trace Location.pp location
+  | HackUnawaitedAwaitable {allocation_trace; location} ->
+      F.fprintf fmt "UnawaitedAwaitable {@[allocation_trace:%a;@;location:%a@]}"
+        (Trace.pp ~pp_immediate) allocation_trace Location.pp location
   | MemoryLeak {allocator; allocation_trace; location} ->
       F.fprintf fmt "MemoryLeak {@[allocator=%a;@;allocation_trace=%a;@;location=%a@]}"
         Attribute.pp_allocator allocator (Trace.pp ~pp_immediate) allocation_trace Location.pp
@@ -264,6 +269,7 @@ let get_location = function
   | ConstRefableParameter {location}
   | CSharpResourceLeak {location}
   | JavaResourceLeak {location}
+  | HackUnawaitedAwaitable {location}
   | MemoryLeak {location}
   | ReadonlySharedPtrParameter {location}
   | RetainCycle {location}
@@ -311,6 +317,7 @@ let aborts_execution = function
   | ConstRefableParameter _
   | CSharpResourceLeak _
   | JavaResourceLeak _
+  | HackUnawaitedAwaitable _
   | MemoryLeak _
   | ReadonlySharedPtrParameter _
   | RetainCycle _
@@ -523,6 +530,22 @@ let get_message diagnostic =
               JavaClassName.pp class_name CallEvent.describe f allocation_line
       in
       F.asprintf "Resource dynamically allocated %a is not closed after the last access at %a"
+        pp_allocation_trace allocation_trace Location.pp location
+  | HackUnawaitedAwaitable {location; allocation_trace} ->
+      (* NOTE: this is very similar to the MemoryLeak case *)
+      let allocation_line =
+        let {Location.line; _} = Trace.get_outer_location allocation_trace in
+        line
+      in
+      let pp_allocation_trace fmt (trace : Trace.t) =
+        match trace with
+        | Immediate _ ->
+            F.fprintf fmt " on line %d" allocation_line
+        | ViaCall {f; _} ->
+            F.fprintf fmt "indirectly via call to %a on line %d" CallEvent.describe f
+              allocation_line
+      in
+      F.asprintf "Awaitable dynamically allocated %a is not awaited after the last access at %a"
         pp_allocation_trace allocation_trace Location.pp location
   | MemoryLeak {allocator; location; allocation_trace} ->
       let allocation_line =
@@ -833,6 +856,15 @@ let get_trace = function
              F.fprintf fmt "allocated by constructor %a() here" JavaClassName.pp class_name )
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
+  | HackUnawaitedAwaitable {location; allocation_trace} ->
+      (* NOTE: this is very similar to the MemoryLeak case *)
+      let access_start_location = Trace.get_start_location allocation_trace in
+      add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
+        access_start_location
+      @@ Trace.add_to_errlog ~nesting:1
+           ~pp_immediate:(fun fmt -> F.fprintf fmt "allocated here")
+           allocation_trace
+      @@ [Errlog.make_trace_element 0 location "awaitable becomes unreachable here" []]
   | MemoryLeak {allocator; location; allocation_trace} ->
       let access_start_location = Trace.get_start_location allocation_trace in
       add_errlog_header ~nesting:0 ~title:"allocation part of the trace starts here"
@@ -896,7 +928,7 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_config_usage
   | ConstRefableParameter _, false ->
       IssueType.pulse_const_refable
-  | CSharpResourceLeak _, false | JavaResourceLeak _, false ->
+  | CSharpResourceLeak _, false | JavaResourceLeak _, false | HackUnawaitedAwaitable _, false ->
       IssueType.pulse_resource_leak
   | ErlangError (Badarg _), _ ->
       IssueType.bad_arg ~latent
@@ -924,10 +956,10 @@ let get_issue_type ~latent issue_type =
         IssueType.pulse_memory_leak_c
     | CppNew | CppNewArray ->
         IssueType.pulse_memory_leak_cpp
-    | JavaResource _ | CSharpResource _ | ObjCAlloc ->
+    | JavaResource _ | CSharpResource _ | ObjCAlloc | HackAsync ->
         L.die InternalError
-          "Memory leaks should not have a Java resource, C sharp, or Objective-C alloc as allocator"
-    )
+          "Memory leaks should not have a Java resource, Hack async, C sharp, or Objective-C alloc \
+           as allocator" )
   | ReadonlySharedPtrParameter _, false ->
       IssueType.readonly_shared_ptr_param
   | ReadUninitializedValue _, _ ->
@@ -970,6 +1002,7 @@ let get_issue_type ~latent issue_type =
       | ConstRefableParameter _
       | CSharpResourceLeak _
       | JavaResourceLeak _
+      | HackUnawaitedAwaitable _
       | MemoryLeak _
       | ReadonlySharedPtrParameter _
       | RetainCycle _

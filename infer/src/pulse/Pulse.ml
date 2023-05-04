@@ -495,8 +495,24 @@ module PulseTransferFunctions = struct
               match call_was_unknown with `UnknownCall -> true | `KnownCall -> false
             in
             let+ astate =
+              let astate_after_call =
+                (* TODO: move to PulseModelsHack *)
+                match callee_pname with
+                | Some proc_name when Procname.is_hack_async proc_name -> (
+                    L.d_printfln "did return from asynccall of %a, ret=%a" Procname.pp proc_name
+                      Ident.pp (fst ret) ;
+                    match PulseOperations.read_id (fst ret) astate with
+                    | None ->
+                        L.d_printfln "couldn't find ret in state" ;
+                        astate
+                    | Some (rv, _) ->
+                        L.d_printfln "return value %a" AbstractValue.pp rv ;
+                        PulseOperations.allocate Attribute.HackAsync call_loc rv astate )
+                | _ ->
+                    astate
+              in
               PulseTaintOperations.call tenv path call_loc ret ~call_was_unknown call_event
-                func_args astate
+                func_args astate_after_call
             in
             ContinueProgram astate
         | ( ExceptionRaised _

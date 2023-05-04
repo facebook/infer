@@ -77,6 +77,11 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
               {astate; diagnostic= JavaResourceLeak {class_name; allocation_trace; location}}
           , summary )
         |> Option.value ~default:(exec_domain_of_summary summary)
+    | Error (`HackUnawaitedAwaitable (summary, astate, allocation_trace, location)) ->
+        PulseReport.report_summary_error tenv proc_desc err_log
+          ( ReportableError {astate; diagnostic= HackUnawaitedAwaitable {allocation_trace; location}}
+          , summary )
+        |> Option.value ~default:(exec_domain_of_summary summary)
     | Error (`CSharpResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
         PulseReport.report_summary_error tenv proc_desc err_log
           ( ReportableError

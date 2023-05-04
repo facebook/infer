@@ -140,6 +140,8 @@ module AddressAttributes : sig
 
   val java_resource_release : AbstractValue.t -> t -> t
 
+  val hack_async_await : AbstractValue.t -> t -> t
+
   val is_java_resource_released : AbstractValue.t -> t -> bool
 
   val csharp_resource_release : AbstractValue.t -> t -> t
@@ -295,6 +297,7 @@ module Summary : sig
     -> t
     -> ( summary
        , [> `JavaResourceLeak of summary * t * JavaClassName.t * Trace.t * Location.t
+         | `HackUnawaitedAwaitable of summary * t * Trace.t * Location.t
          | `CSharpResourceLeak of summary * t * CSharpClassName.t * Trace.t * Location.t
          | `RetainCycle of
            summary * t * Trace.t list * DecompilerExpr.t * DecompilerExpr.t * Location.t

@@ -26,6 +26,7 @@ type allocator =
   | JavaResource of JavaClassName.t
   | CSharpResource of CSharpClassName.t
   | ObjCAlloc
+  | HackAsync
 [@@deriving equal]
 
 val pp_allocator : F.formatter -> allocator -> unit
@@ -93,6 +94,7 @@ type t =
   | MustNotBeTainted of TaintSinkSet.t
   | JavaResourceReleased
   | CSharpResourceReleased
+  | HackAsyncAwaited
   | PropagateTaintFrom of taint_in list
   | RefCounted
   | ReturnedFromUnknown of AbstractValue.t list

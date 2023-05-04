@@ -28,6 +28,8 @@ val always_reachable : AbstractValue.t -> t -> t
 
 val java_resource_release : AbstractValue.t -> t -> t
 
+val hack_async_await : AbstractValue.t -> t -> t
+
 val csharp_resource_release : AbstractValue.t -> t -> t
 
 val fold : (AbstractValue.t -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a

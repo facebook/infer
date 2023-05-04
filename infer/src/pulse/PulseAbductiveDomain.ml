@@ -337,6 +337,10 @@ module AddressAttributes = struct
     map_post_attrs astate ~f:(BaseAddressAttributes.java_resource_release address)
 
 
+  let hack_async_await address astate =
+    map_post_attrs astate ~f:(BaseAddressAttributes.hack_async_await address)
+
+
   let csharp_resource_release address astate =
     map_post_attrs astate ~f:(BaseAddressAttributes.csharp_resource_release address)
 
@@ -1480,6 +1484,13 @@ module Summary = struct
                 ( astate
                 , astate_before_filter
                 , class_name
+                , trace
+                , Option.value unreachable_location ~default:location ) )
+        | Error (unreachable_location, HackAsync, trace) ->
+            Error
+              (`HackUnawaitedAwaitable
+                ( astate
+                , astate_before_filter
                 , trace
                 , Option.value unreachable_location ~default:location ) )
         | Error (unreachable_location, CSharpResource class_name, trace) ->

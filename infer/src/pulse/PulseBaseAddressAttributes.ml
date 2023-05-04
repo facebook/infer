@@ -147,6 +147,8 @@ let allocate allocator address location memory =
 
 let java_resource_release address memory = add_one address Attribute.JavaResourceReleased memory
 
+let hack_async_await address memory = add_one address Attribute.HackAsyncAwaited memory
+
 let csharp_resource_release address memory = add_one address Attribute.CSharpResourceReleased memory
 
 let mark_as_end_of_collection address memory = add_one address Attribute.EndOfCollection memory
