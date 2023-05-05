@@ -41,7 +41,7 @@ let hack_dim_field_get this_obj (field_string_obj, _) : model =
 
 
 let hack_await (argv, hist) : model =
- fun {ret=ret_id, _} astate ->
+ fun {ret= ret_id, _} astate ->
   let astate = AddressAttributes.hack_async_await argv astate in
   PulseOperations.write_id ret_id (argv, hist) astate |> Basic.ok_continue
 
