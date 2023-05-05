@@ -12,7 +12,7 @@ module CallEvent = PulseCallEvent
 module ConfigName = FbPulseConfigName
 module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
-module Taint = PulseTaint
+module TaintItem = PulseTaintItem
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
@@ -88,8 +88,8 @@ type t =
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
       { expr: DecompilerExpr.t
-      ; source: Taint.t * ValueHistory.t
-      ; sink: Taint.t * Trace.t
+      ; source: TaintItem.t * ValueHistory.t
+      ; sink: TaintItem.t * Trace.t
       ; location: Location.t
       ; flow_kind: flow_kind
       ; policy_description: string

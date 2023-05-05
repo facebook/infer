@@ -11,7 +11,7 @@ module CallEvent = PulseCallEvent
 module ConfigName = FbPulseConfigName
 module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
-module Taint = PulseTaint
+module TaintItem = PulseTaintItem
 module Timestamp = PulseTimestamp
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -35,20 +35,23 @@ type taint_in = {v: AbstractValue.t} [@@deriving compare, equal]
 
 module Tainted : sig
   type t =
-    {source: Taint.t; time_trace: Timestamp.trace; hist: ValueHistory.t; intra_procedural_only: bool}
+    { source: TaintItem.t
+    ; time_trace: Timestamp.trace
+    ; hist: ValueHistory.t
+    ; intra_procedural_only: bool }
   [@@deriving compare, equal]
 end
 
 module TaintedSet : PrettyPrintable.PPSet with type elt = Tainted.t
 
 module TaintSink : sig
-  type t = {sink: Taint.t; time: Timestamp.t; trace: Trace.t} [@@deriving compare, equal]
+  type t = {sink: TaintItem.t; time: Timestamp.t; trace: Trace.t} [@@deriving compare, equal]
 end
 
 module TaintSinkSet : PrettyPrintable.PPSet with type elt = TaintSink.t
 
 module TaintSanitized : sig
-  type t = {sanitizer: Taint.t; time_trace: Timestamp.trace; trace: Trace.t}
+  type t = {sanitizer: TaintItem.t; time_trace: Timestamp.trace; trace: Trace.t}
   [@@deriving compare, equal]
 end
 

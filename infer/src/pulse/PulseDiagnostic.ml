@@ -13,7 +13,7 @@ module CallEvent = PulseCallEvent
 module ConfigName = FbPulseConfigName
 module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
-module Taint = PulseTaint
+module TaintItem = PulseTaintItem
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
 
@@ -144,8 +144,8 @@ type t =
   | StackVariableAddressEscape of {variable: Var.t; history: ValueHistory.t; location: Location.t}
   | TaintFlow of
       { expr: DecompilerExpr.t
-      ; source: Taint.t * ValueHistory.t
-      ; sink: Taint.t * Trace.t
+      ; source: TaintItem.t * ValueHistory.t
+      ; sink: TaintItem.t * Trace.t
       ; location: Location.t
       ; flow_kind: flow_kind
       ; policy_description: string
@@ -209,9 +209,9 @@ let pp fmt diagnostic =
   | TaintFlow {expr; source; sink; location; flow_kind; _} ->
       F.fprintf fmt "TaintFlow {@[expr=%a;@;source=%a;@;sink=%a;@;location:%a;@;flow_kind=%a@]}"
         DecompilerExpr.pp_with_abstract_value expr
-        (Pp.pair ~fst:Taint.pp ~snd:ValueHistory.pp)
+        (Pp.pair ~fst:TaintItem.pp ~snd:ValueHistory.pp)
         source
-        (Pp.pair ~fst:Taint.pp ~snd:(Trace.pp ~pp_immediate))
+        (Pp.pair ~fst:TaintItem.pp ~snd:(Trace.pp ~pp_immediate))
         sink Location.pp location pp_flow_kind flow_kind
   | UnnecessaryCopy
       {copied_into; source_typ; source_opt; location; copied_location; from; location_instantiated}
@@ -636,7 +636,7 @@ let get_message diagnostic =
   | TaintFlow {expr; source= source, _; sink= sink, _; policy_description} ->
       (* TODO: say what line the source happened in the current function *)
       F.asprintf "%s. `%a` is tainted by %a and flows to %a" policy_description DecompilerExpr.pp
-        expr Taint.pp source Taint.pp sink
+        expr TaintItem.pp source TaintItem.pp sink
   | UnnecessaryCopy {copied_into; copied_location= Some (callee, {file; line})} ->
       let open PulseAttribute in
       F.asprintf
@@ -904,7 +904,7 @@ let get_trace = function
          altogether. *)
       ValueHistory.add_to_errlog ~nesting:0 source_history
       @@ Trace.add_to_errlog ~include_value_history:false ~nesting:0
-           ~pp_immediate:(fun fmt -> Taint.pp fmt sink)
+           ~pp_immediate:(fun fmt -> TaintItem.pp fmt sink)
            sink_trace
       @@ []
   | UnnecessaryCopy {location; source_typ; copied_location= None; from} ->

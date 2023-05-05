@@ -130,7 +130,7 @@ module AddressAttributes : sig
 
   val check_initialized : PathContext.t -> Trace.t -> AbstractValue.t -> t -> (t, unit) result
 
-  val add_taint_sink : PathContext.t -> Taint.t -> Trace.t -> AbstractValue.t -> t -> t
+  val add_taint_sink : PathContext.t -> TaintItem.t -> Trace.t -> AbstractValue.t -> t -> t
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 

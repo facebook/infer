@@ -36,7 +36,7 @@ val check_flows_wrt_sink :
      ?policy_violations_reported:IntSet.t
   -> PathContext.t
   -> Location.t
-  -> Taint.t * Trace.t
+  -> TaintItem.t * Trace.t
   -> AbstractValue.t
   -> AbductiveDomain.t
   -> (IntSet.t * AbductiveDomain.t) AccessResult.t

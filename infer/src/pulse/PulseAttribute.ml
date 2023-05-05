@@ -12,7 +12,7 @@ module CallEvent = PulseCallEvent
 module ConfigName = FbPulseConfigName
 module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
-module Taint = PulseTaint
+module TaintItem = PulseTaintItem
 module Timestamp = PulseTimestamp
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -60,25 +60,25 @@ module Attribute = struct
 
   module Tainted = struct
     type t =
-      { source: Taint.t
+      { source: TaintItem.t
       ; time_trace: Timestamp.trace
       ; hist: ValueHistory.t
       ; intra_procedural_only: bool }
     [@@deriving compare, equal]
 
     let pp fmt {source; hist; time_trace; intra_procedural_only} =
-      F.fprintf fmt "(%a, %a, %b, t=%a)" Taint.pp source ValueHistory.pp hist intra_procedural_only
-        Timestamp.pp_trace time_trace
+      F.fprintf fmt "(%a, %a, %b, t=%a)" TaintItem.pp source ValueHistory.pp hist
+        intra_procedural_only Timestamp.pp_trace time_trace
   end
 
   module TaintedSet = PrettyPrintable.MakePPSet (Tainted)
 
   module TaintSink = struct
-    type t = {sink: Taint.t; time: Timestamp.t; trace: Trace.t} [@@deriving compare, equal]
+    type t = {sink: TaintItem.t; time: Timestamp.t; trace: Trace.t} [@@deriving compare, equal]
 
     let pp fmt {time; sink; trace} =
       F.fprintf fmt "(%a, t=%d)"
-        (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp fmt sink))
+        (Trace.pp ~pp_immediate:(fun fmt -> TaintItem.pp fmt sink))
         trace
         (time :> int)
   end
@@ -86,12 +86,12 @@ module Attribute = struct
   module TaintSinkSet = PrettyPrintable.MakePPSet (TaintSink)
 
   module TaintSanitized = struct
-    type t = {sanitizer: Taint.t; time_trace: Timestamp.trace; trace: Trace.t}
+    type t = {sanitizer: TaintItem.t; time_trace: Timestamp.trace; trace: Trace.t}
     [@@deriving compare, equal]
 
     let pp fmt {sanitizer; time_trace; trace} =
       F.fprintf fmt "(%a, t=%a)"
-        (Trace.pp ~pp_immediate:(fun fmt -> Taint.pp fmt sanitizer))
+        (Trace.pp ~pp_immediate:(fun fmt -> TaintItem.pp fmt sanitizer))
         trace Timestamp.pp_trace time_trace
   end
 
