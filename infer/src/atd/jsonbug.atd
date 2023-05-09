@@ -106,6 +106,7 @@ type taint_extra = {
   ?taint_source : string option;
   ?taint_sink : string option;
   ?taint_policy_privacy_effect : string option;
+  ?tainted_expression : string option;
 }
 
 type extra = {

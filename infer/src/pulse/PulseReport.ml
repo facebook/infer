@@ -40,6 +40,13 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
         | _ ->
             (None, None)
       in
+      let tainted_expression =
+        match diagnostic with
+        | TaintFlow {expr} ->
+            Some (F.asprintf "%a" DecompilerExpr.pp expr)
+        | _ ->
+            None
+      in
       let taint_policy_privacy_effect =
         match diagnostic with
         | TaintFlow {flow_kind= TaintedFlow; policy_privacy_effect; _} ->
@@ -48,11 +55,11 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
             None
       in
       let taint_extra : Jsonbug_t.taint_extra option =
-        match (taint_source, taint_sink, taint_policy_privacy_effect) with
-        | None, None, None ->
+        match (taint_source, taint_sink, taint_policy_privacy_effect, tainted_expression) with
+        | None, None, None, None ->
             None
-        | _, _, _ ->
-            Some {taint_source; taint_sink; taint_policy_privacy_effect}
+        | _, _, _, _ ->
+            Some {taint_source; taint_sink; taint_policy_privacy_effect; tainted_expression}
       in
       let config_usage_extra : Jsonbug_t.config_usage_extra option =
         match diagnostic with
