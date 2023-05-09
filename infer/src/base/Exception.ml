@@ -17,7 +17,9 @@ type failure_kind =
 exception Analysis_failure_exe of failure_kind
 
 let exn_not_failure = function
-  | Analysis_failure_exe _ | RestartSchedulerException.ProcnameAlreadyLocked _ ->
+  | Analysis_failure_exe _
+  | RestartSchedulerException.ProcnameAlreadyLocked _
+  | MissingDependencyException.MissingDependencyException ->
       false
   | _ ->
       true
@@ -30,10 +32,12 @@ let try_finally ~f ~finally =
       r
   | exception (Analysis_failure_exe _ as f_exn) ->
       IExn.reraise_after f_exn ~f:(fun () ->
-          try finally ()
-          with finally_exn when RestartSchedulerException.is_not_restart_exception finally_exn ->
-            (* swallow in favor of the original exception unless it's the restart scheduler exception *)
-            () )
+          try finally () with
+          | MissingDependencyException.MissingDependencyException ->
+              ()
+          | finally_exn when RestartSchedulerException.is_not_restart_exception finally_exn ->
+              (* swallow in favor of the original exception unless it's the restart scheduler exception *)
+              () )
   | exception f_exn when RestartSchedulerException.is_not_restart_exception f_exn ->
       IExn.reraise_after f_exn ~f:(fun () ->
           try finally ()

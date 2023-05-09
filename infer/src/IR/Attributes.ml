@@ -43,8 +43,13 @@ let load_from_uid, load, clear_cache, store =
     match Procname.Hash.find_opt cache pname with
     | Some _ as result ->
         result
-    | None ->
-        load_from_uid (Procname.to_unique_id pname)
+    | None -> (
+      match load_from_uid (Procname.to_unique_id pname) with
+      | None ->
+          MissingDependencies.record_procname pname ;
+          None
+      | some ->
+          some )
   in
   let clear_cache () = Procname.Hash.clear cache in
   let store ~proc_desc (attr : ProcAttributes.t) ~analysis =

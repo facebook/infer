@@ -1027,6 +1027,10 @@ OPTIONS
            Do not start new parallel jobs if the load average is greater than
            that specified (Buck and make only)           See also infer-capture(1).
 
+       --log-missing-deps
+           Activates: Log analysis dependencies that cannot be found.
+           (Conversely: --no-log-missing-deps)           See also infer-analyze(1).
+
        --loop-hoisting
            Activates: checker loop-hoisting: Detect opportunities to hoist
            function calls that are invariant outside of loop bodies for

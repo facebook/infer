@@ -1918,6 +1918,12 @@ and load_average =
      make only)"
 
 
+and log_missing_deps =
+  CLOpt.mk_bool ~long:"log-missing-deps" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Log analysis dependencies that cannot be found."
+
+
 and margin =
   CLOpt.mk_int ~deprecated:["set_pp_margin"] ~long:"margin" ~default:100 ~meta:"int"
     "Set right margin for the pretty printing functions"
@@ -3873,6 +3879,8 @@ and liveness_ignored_constant = RevList.to_list !liveness_ignored_constant
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
 
+
+and log_missing_deps = !log_missing_deps
 
 and margin_html = !margin_html
 

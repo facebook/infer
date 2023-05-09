@@ -166,11 +166,6 @@ let merge_per_file ~src ~dst =
       L.die InternalError "Cannot merge Global tenv with FileLocal tenv"
 
 
-let load_statement =
-  Database.register_statement CaptureDatabase
-    "SELECT type_environment FROM source_files WHERE source_file = :k"
-
-
 (** Serializer for type environments *)
 let tenv_serializer : t Serialization.serializer =
   Serialization.create_serializer Serialization.Key.tenv
@@ -187,14 +182,28 @@ let load_global () : t option =
   !global_tenv
 
 
-let load source =
-  Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
-      SourceFile.SQLite.serialize source
-      |> Sqlite3.bind load_stmt 1
-      |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
-      SqliteUtils.result_single_column_option ~finalize:false ~log:"Tenv.load" db load_stmt
-      >>| SQLite.deserialize
-      >>= function Global -> load_global () | FileLocal tenv -> Some tenv )
+let load =
+  let load_statement =
+    Database.register_statement CaptureDatabase
+      "SELECT type_environment FROM source_files WHERE source_file = :k"
+  in
+  fun source ->
+    let res_opt =
+      Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
+          SourceFile.SQLite.serialize source
+          |> Sqlite3.bind load_stmt 1
+          |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
+          SqliteUtils.result_single_column_option ~finalize:false ~log:"Tenv.load" db load_stmt
+          >>| SQLite.deserialize )
+    in
+    match res_opt with
+    | None ->
+        MissingDependencies.record_sourcefile source ;
+        None
+    | Some Global ->
+        load_global ()
+    | Some (FileLocal tenv) ->
+        Some tenv
 
 
 let store_debug_file tenv tenv_filename =

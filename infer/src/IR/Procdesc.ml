@@ -981,13 +981,20 @@ let load =
           Sqlite3.bind stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id pname))
           |> SqliteUtils.check_result_code db ~log:"load bind proc_uid" ;
           SqliteUtils.result_single_column_option ~finalize:false ~log:"Procdesc.load" db stmt
-          |> Option.bind ~f:SQLite.deserialize )
+          |> Option.map ~f:SQLite.deserialize )
     in
     (* Since the procedure table can be updated in the analysis phase,
        we need to query both databases, analysisdb first *)
-    IOption.if_none_evalopt
-      ~f:(fun () -> run_query load_statement_cdb)
-      (run_query load_statement_adb)
+    match run_query load_statement_adb with
+    | Some (Some _ as procdesc_opt) ->
+        procdesc_opt
+    | _ -> (
+      match run_query load_statement_cdb with
+      | Some procdesc_opt ->
+          procdesc_opt
+      | None ->
+          MissingDependencies.record_procname pname ;
+          None )
 
 
 let load_exn procname = load procname |> Option.value_exn

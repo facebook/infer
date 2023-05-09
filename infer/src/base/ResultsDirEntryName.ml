@@ -26,6 +26,8 @@ type id =
   | DuplicateFunctions
   | JavaGlobalTypeEnvironment
   | Logs
+  | MissingSourceFiles
+  | MissingProcedures
   | PerfEvents
   | ProcnamesLocks
   | ReportConfigImpactJson
@@ -135,6 +137,16 @@ let of_id = function
       { rel_path= "logs"
       ; kind= File
       ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete }
+  | MissingSourceFiles ->
+      { rel_path= "missing-source-files"
+      ; kind= File
+      ; before_incremental_analysis= Delete
+      ; before_caching_capture= Delete }
+  | MissingProcedures ->
+      { rel_path= "missing-procedures"
+      ; kind= File
+      ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete }
   | PerfEvents ->
       { rel_path= "perf_events.json"

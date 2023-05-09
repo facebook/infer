@@ -26,6 +26,8 @@ type id =
   | JavaGlobalTypeEnvironment
       (** internal {!IR.Tenv.t} object corresponding to the whole project *)
   | Logs  (** log file *)
+  | MissingSourceFiles  (** Source files missing during analysis *)
+  | MissingProcedures  (** Procedures missing during analysis *)
   | PerfEvents  (** file containing events for performance profiling *)
   | ProcnamesLocks
       (** directory of per-{!IR.Procname.t} file locks, used by the analysis scheduler in certain

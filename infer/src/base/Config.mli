@@ -468,6 +468,8 @@ val liveness_ignored_constant : string list
 
 val load_average : float option
 
+val log_missing_deps : bool
+
 val margin_html : int
 
 val mark_unchanged_procs : bool

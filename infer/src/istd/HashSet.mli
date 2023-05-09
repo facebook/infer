@@ -35,6 +35,10 @@ module type S = sig
   val mem : t -> elt -> bool
 
   val clear : t -> unit
+
+  val union_into : into:t -> t -> unit
+
+  val is_empty : t -> bool
 end
 
 module Make (Key : Caml.Hashtbl.HashedType) : S with type elt = Key.t

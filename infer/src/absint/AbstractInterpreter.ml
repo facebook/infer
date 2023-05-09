@@ -512,7 +512,9 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
           post
       | Error (exn, backtrace, instr) ->
           ( match exn with
-          | RestartSchedulerException.ProcnameAlreadyLocked _ | Timer.Timeout _ ->
+          | RestartSchedulerException.ProcnameAlreadyLocked _
+          | MissingDependencyException.MissingDependencyException
+          | Timer.Timeout _ ->
               (* this isn't an error; don't log it *)
               ()
           | _ ->

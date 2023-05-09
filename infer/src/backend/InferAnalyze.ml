@@ -69,8 +69,11 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
           Ondemand.analyze_file exe_env source_file ;
           if Config.write_html then Printer.write_all_html_files source_file ;
           None
-        with RestartSchedulerException.ProcnameAlreadyLocked {dependency_filename} ->
-          Some dependency_filename )
+        with
+        | RestartSchedulerException.ProcnameAlreadyLocked {dependency_filename} ->
+            Some dependency_filename
+        | MissingDependencyException.MissingDependencyException ->
+            None )
   in
   (* In call-graph scheduling, log progress every [per_procedure_logging_granularity] procedures.
      The default roughly reflects the average number of procedures in a C++ file. *)
@@ -86,8 +89,11 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
     try
       Ondemand.analyze_proc_name_toplevel exe_env proc_name ;
       None
-    with RestartSchedulerException.ProcnameAlreadyLocked {dependency_filename} ->
-      Some dependency_filename
+    with
+    | RestartSchedulerException.ProcnameAlreadyLocked {dependency_filename} ->
+        Some dependency_filename
+    | MissingDependencyException.MissingDependencyException ->
+        None
   in
   fun target ->
     let exe_env = Exe_env.mk () in
@@ -189,7 +195,9 @@ let analyze source_files_to_analyze =
     in
     let pre_analysis_gc_stats = GCStats.get ~since:ProgramStart in
     Tasks.run_sequentially ~f:analyze_target target_files ;
-    ([Stats.get ()], [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]) )
+    ( [Stats.get ()]
+    , [GCStats.get ~since:(PreviousStats pre_analysis_gc_stats)]
+    , [MissingDependencies.get ()] ) )
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     let build_tasks_generator () =
@@ -227,24 +235,25 @@ let analyze source_files_to_analyze =
               L.internal_error "child did not store GC stats in its prologue, what happened?" ;
               None
         in
-        (Stats.get (), gc_stats_in_fork)
+        (Stats.get (), gc_stats_in_fork, MissingDependencies.get ())
       in
       ScubaLogging.log_count ~label:"num_analysis_workers" ~value:Config.jobs ;
       Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_prologue ~child_epilogue
         ~tasks:build_tasks_generator
     in
     let workers_stats = Tasks.Runner.run runner in
-    let collected_stats =
-      Array.fold workers_stats ~init:([], [])
-        ~f:(fun ((backend_stats_list, gc_stats_list) as stats_list) stats_opt ->
+    let collected_backend_stats, collected_gc_stats, collected_missing_deps =
+      Array.fold workers_stats ~init:([], [], [])
+        ~f:(fun ((backend_stats_list, gc_stats_list, missing_deps_list) as stats_list) stats_opt ->
           match stats_opt with
           | None ->
               stats_list
-          | Some (backend_stats, gc_stats_opt) ->
+          | Some (backend_stats, gc_stats_opt, missing_deps) ->
               ( backend_stats :: backend_stats_list
-              , Option.fold ~init:gc_stats_list ~f:(fun l x -> x :: l) gc_stats_opt ) )
+              , Option.fold ~init:gc_stats_list ~f:(fun l x -> x :: l) gc_stats_opt
+              , missing_deps :: missing_deps_list ) )
     in
-    collected_stats )
+    (collected_backend_stats, collected_gc_stats, collected_missing_deps) )
 
 
 let main ~changed_files =
@@ -264,7 +273,8 @@ let main ~changed_files =
   let initial_spec_count =
     if Config.incremental_analysis then Some (Summary.OnDisk.get_count ()) else None
   in
-  let backend_stats_list, gc_stats_list = analyze source_files in
+  let backend_stats_list, gc_stats_list, missing_deps_list = analyze source_files in
+  MissingDependencies.save missing_deps_list ;
   if Config.incremental_analysis then (
     let final_spec_count = Summary.OnDisk.get_count () in
     let initial_spec_count = Option.value_exn initial_spec_count in

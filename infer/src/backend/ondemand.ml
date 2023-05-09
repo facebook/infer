@@ -171,7 +171,8 @@ let run_proc_analysis exe_env ?specialization ?caller_pname callee_pdesc =
     let backtrace = Printexc.get_backtrace () in
     IExn.reraise_if exn ~f:(fun () ->
         match exn with
-        | RestartSchedulerException.ProcnameAlreadyLocked _ ->
+        | RestartSchedulerException.ProcnameAlreadyLocked _
+        | MissingDependencyException.MissingDependencyException ->
             clear_actives () ;
             true
         | exn ->

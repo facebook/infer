@@ -232,6 +232,10 @@ OPTIONS
            Activates: Enable liveness and disable all other checkers
            (Conversely: --no-liveness-only)
 
+       --log-missing-deps
+           Activates: Log analysis dependencies that cannot be found.
+           (Conversely: --no-log-missing-deps)
+
        --loop-hoisting
            Activates: checker loop-hoisting: Detect opportunities to hoist
            function calls that are invariant outside of loop bodies for

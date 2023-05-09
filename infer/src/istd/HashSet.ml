@@ -34,6 +34,10 @@ module type S = sig
   val mem : t -> elt -> bool
 
   val clear : t -> unit
+
+  val union_into : into:t -> t -> unit
+
+  val is_empty : t -> bool
 end
 
 module Make (Key : Hashtbl.HashedType) : S with type elt = Key.t = struct
@@ -68,4 +72,8 @@ module Make (Key : Hashtbl.HashedType) : S with type elt = Key.t = struct
   let mem = mem
 
   let clear = clear
+
+  let union_into ~into xs = iter xs (fun x -> add x into)
+
+  let is_empty xs = Int.equal 0 (length xs)
 end

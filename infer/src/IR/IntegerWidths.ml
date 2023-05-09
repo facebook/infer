@@ -19,19 +19,27 @@ module SQLite = SqliteUtils.MarshalledNullableDataNOTForComparison (struct
   type nonrec t = t
 end)
 
-let load_statement =
-  Database.register_statement CaptureDatabase
-    "SELECT integer_type_widths FROM source_files WHERE source_file = :k"
-
-
-let load source =
-  Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
-      SourceFile.SQLite.serialize source
-      |> Sqlite3.bind load_stmt 1
-      |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
-      SqliteUtils.result_single_column_option ~finalize:false ~log:"Typ.IntegerWidths.load" db
-        load_stmt
-      |> Option.bind ~f:SQLite.deserialize )
+let load =
+  let load_statement =
+    Database.register_statement CaptureDatabase
+      "SELECT integer_type_widths FROM source_files WHERE source_file = :k"
+  in
+  fun source ->
+    let res_opt =
+      Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
+          SourceFile.SQLite.serialize source
+          |> Sqlite3.bind load_stmt 1
+          |> SqliteUtils.check_result_code db ~log:"load bind source file" ;
+          SqliteUtils.result_single_column_option ~finalize:false ~log:"Typ.IntegerWidths.load" db
+            load_stmt
+          |> Option.map ~f:SQLite.deserialize )
+    in
+    match res_opt with
+    | None ->
+        MissingDependencies.record_sourcefile source ;
+        None
+    | Some some_opt ->
+        some_opt
 
 
 let width_of_ikind {char_width; short_width; int_width; long_width; longlong_width} ikind =
