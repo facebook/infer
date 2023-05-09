@@ -56,6 +56,8 @@ module Unit : sig
     ; kinds: Kind.t list
     ; target: Target.t
     ; block_passed_to: procedure_matcher }
+
+  val pp : F.formatter -> t -> unit
 end
 
 module SinkPolicy : sig
@@ -70,4 +72,6 @@ module SinkPolicy : sig
   val next_policy_id : unit -> int
 
   val sink_policies : (Kind.t, t list) Base.Hashtbl.t
+
+  val pp_sink_policies : F.formatter -> (Kind.t, t list) Base.Hashtbl.t -> unit
 end

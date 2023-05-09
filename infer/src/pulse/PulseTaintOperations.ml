@@ -85,6 +85,24 @@ let propagator_matchers =
     ~option_name:"--pulse-taint-propagators" Config.pulse_taint_config.propagators
 
 
+let log_taint_config () =
+  let open TaintConfig in
+  L.debug Analysis Verbose "@\nSink policies:@\n%a@." SinkPolicy.pp_sink_policies
+    SinkPolicy.sink_policies ;
+  L.debug Analysis Verbose "All source matchers:@\n%a@\n@."
+    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp)
+    source_matchers ;
+  L.debug Analysis Verbose "Sink matchers:@\n %a@\n@."
+    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp)
+    sink_matchers ;
+  L.debug Analysis Verbose "Sanitizer matchers:@\n%a@\n@."
+    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp)
+    sanitizer_matchers ;
+  L.debug Analysis Verbose "Propagator matchers:@\n%a@\n@."
+    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp)
+    propagator_matchers
+
+
 let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator v astate =
   (* Micro-optimisation: do not convert types to strings unless necessary *)
   if List.is_empty allocation_sources then astate

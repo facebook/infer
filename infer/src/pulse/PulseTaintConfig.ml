@@ -60,6 +60,22 @@ module Target = struct
     | ArgumentsMatchingTypes of string list
     | Fields of (string * t) list
 
+  let rec pp f target =
+    match target with
+    | ReturnValue ->
+        F.pp_print_string f "ReturnValue"
+    | AllArguments ->
+        F.pp_print_string f "AllArguments"
+    | ArgumentPositions positions ->
+        F.fprintf f "ArgumentPositions %a" (Pp.comma_seq Int.pp) positions
+    | AllArgumentsButPositions positions ->
+        F.fprintf f "AllArgumentsButPositions %a" (Pp.comma_seq Int.pp) positions
+    | ArgumentsMatchingTypes types ->
+        F.fprintf f "ArgumentsMatchingTypes %a" (Pp.comma_seq String.pp) types
+    | Fields targets ->
+        F.fprintf f "Fields %a" (Pp.comma_seq (Pp.pair ~fst:String.pp ~snd:pp)) targets
+
+
   let rec target_of_gen_target (gen_target : Pulse_config_t.taint_target) =
     match gen_target with
     | `ReturnValue ->
@@ -90,12 +106,48 @@ module Unit = struct
     | BlockNameRegex of {name_regex: Str.regexp}
     | Allocation of {class_name: string}
 
+  let pp_procedure_matcher f procedure_matcher =
+    match procedure_matcher with
+    | ProcedureName {name} ->
+        F.fprintf f "Procedure %s" name
+    | ProcedureNameRegex _ ->
+        F.pp_print_string f "Procedure name regex"
+    | ClassNameRegex _ ->
+        F.pp_print_string f "Class Name regex"
+    | ClassAndMethodNames {class_names; method_names} ->
+        F.fprintf f "class_names=%a, method_names=%a" (Pp.comma_seq String.pp) class_names
+          (Pp.comma_seq String.pp) method_names
+    | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
+        F.fprintf f "class_names=%a, method_return_type_names=%a" (Pp.comma_seq String.pp)
+          class_names (Pp.comma_seq String.pp) method_return_type_names
+    | OverridesOfClassWithAnnotation {annotation} ->
+        F.fprintf f "overrides of class with annotation=%s" annotation
+    | MethodWithAnnotation {annotation} ->
+        F.fprintf f "method with annotation=%s" annotation
+    | Block {name} ->
+        F.fprintf f "Block %s" name
+    | BlockNameRegex _ ->
+        F.fprintf f "Block regex"
+    | Allocation {class_name} ->
+        F.fprintf f "allocation %s" class_name
+
+
   type t =
     { procedure_matcher: procedure_matcher
     ; arguments: Pulse_config_t.argument_constraint list
     ; kinds: Kind.t list
     ; target: Target.t
     ; block_passed_to: procedure_matcher }
+
+  let pp_arguments f arguments =
+    F.pp_print_string f (Pulse_config_j.string_of_argument_constraint arguments)
+
+
+  let pp f unit =
+    F.fprintf f "procedure_matcher=%a, arguments=%a, kinds=%a, target=%a, block_passed_to=%a"
+      pp_procedure_matcher unit.procedure_matcher (Pp.comma_seq pp_arguments) unit.arguments
+      (Pp.comma_seq Kind.pp) unit.kinds Target.pp unit.target pp_procedure_matcher
+      unit.block_passed_to
 end
 
 module SinkPolicy = struct
@@ -107,6 +159,14 @@ module SinkPolicy = struct
     ; privacy_effect: string option [@ignore] }
   [@@deriving equal]
 
+  let pp f policy =
+    F.fprintf f
+      "source_kinds=%a, description=%a, sanitizer_kinds=%a, policy_id=%d, privacy_effect=%a"
+      (Pp.comma_seq Kind.pp) policy.source_kinds F.pp_print_string policy.description
+      (Pp.comma_seq Kind.pp) policy.sanitizer_kinds policy.policy_id (Pp.option String.pp)
+      policy.privacy_effect
+
+
   let next_policy_id =
     let policy_id_counter = ref 0 in
     fun () ->
@@ -115,4 +175,8 @@ module SinkPolicy = struct
 
 
   let sink_policies : (Kind.t, t list) Base.Hashtbl.t = Hashtbl.create (module Kind)
+
+  let pp_sink_policies f sink_policies =
+    Hashtbl.iteri sink_policies ~f:(fun ~key:kind ~data:policies_by_kind ->
+        F.fprintf f "%a -> %a@\n" Kind.pp kind (Pp.comma_seq pp) policies_by_kind )
 end
