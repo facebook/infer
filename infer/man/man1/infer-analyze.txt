@@ -204,6 +204,14 @@ OPTIONS
            Activates: Keep going when the analysis or capture encounter a
            failure (Conversely: --no-keep-going)
 
+       --lineage
+           Activates: checker lineage: Computes a dataflow graph (Conversely:
+           --no-lineage)
+
+       --lineage-only
+           Activates: Enable lineage and disable all other checkers
+           (Conversely: --no-lineage-only)
+
        --litho-required-props
            Activates: checker litho-required-props: Checks that all
            non-optional `@Prop`s have been specified when constructing Litho
@@ -386,14 +394,6 @@ OPTIONS
            Activates: Enable sil-validation and disable all other checkers
            (Conversely: --no-sil-validation-only)
 
-       --simple-lineage
-           Activates: checker simple-lineage: Computes a dataflow graph
-           (Conversely: --no-simple-lineage)
-
-       --simple-lineage-only
-           Activates: Enable simple-lineage and disable all other checkers
-           (Conversely: --no-simple-lineage-only)
-
        --no-siof
            Deactivates: checker siof: Catches Static Initialization Order
            Fiascos in C++, that can lead to subtle,
@@ -572,6 +572,55 @@ JAVA OPTIONS
        --java-version int
            The version of Java being used. Set it to your Java version if mvn
            is failing.
+LINEAGE OPTIONS
+       --no-lineage-dedup
+           Deactivates: In JSON output, attempt to print each entity at most
+           once. This is the default. The only reason you may want to turn
+           this off is to make hash collisions more visible; that is, cases
+           in which distinct entities get assigned the same ID. (Conversely:
+           --lineage-dedup)
+
+       --lineage-field-depth int
+           [EXPERIMENTAL] Maximal field depth sensitivity for lineage
+           analysis. 0 will make the analysis field insensitive.
+
+       --lineage-field-width int
+           [EXPERIMENTAL] Maximal width of structures for field sensitive
+           lineage analysis. Structure that have a higher number of fields
+           will be smashed into a single element. 0 will make the analysis
+           field insensitive. If not set, field width will be unlimited.
+
+       --lineage-include-builtins
+           Activates: Include call/return edges to/from procedures that model
+           primitive Erlang operations, such as constructing a list.
+           (Conversely: --no-lineage-include-builtins)
+
+       --lineage-json-report
+           Activates: Enable lineage report in JSON format. (Conversely:
+           --no-lineage-json-report)
+
+       --lineage-keep-temporaries
+           Activates: Normally, lineage summaries do not mention temporary
+           variables introduced while compiling the high-level code to
+           Infer's IR (intermediate representation). If this option is
+           enabled, then the lineage graph produced corresponds to Infer's
+           IR. (Conversely: --no-lineage-keep-temporaries)
+
+       --lineage-max-cfg-size int
+           If set, larger CFGs are skipped.
+
+       --lineage-prevent-cycles
+           Activates: [EXPERIMENTAL] If set, Lineage will stop distinguishing
+           the fields of a variable when it notices recursive types (that is,
+           a sub-field having the same type as one of its "ancestors").
+           (Conversely: --no-lineage-prevent-cycles)
+
+       --lineage-seed int
+           Set the random seed used for hashing. (Various entities that get
+           reported need unique identifiers. To generate these unique
+           identifiers, in a distributed way without communication, we use
+           hashing. If you are unlucky and get collisions, you can try a
+           different seed.
 PULSE CHECKER OPTIONS
        --pulse-cut-to-one-path-procedures-pattern string
            Regex of methods for which pulse will only explore one path. Can
@@ -822,55 +871,6 @@ RACERD CHECKER OPTIONS
        --threadsafe-aliases json
            Specify custom annotations that should be considered aliases of
            @ThreadSafe
-SIMPLE LINEAGE OPTIONS
-       --no-simple-lineage-dedup
-           Deactivates: In JSON output, attempt to print each entity at most
-           once. This is the default. The only reason you may want to turn
-           this off is to make hash collisions more visible; that is, cases
-           in which distinct entities get assigned the same ID. (Conversely:
-           --simple-lineage-dedup)
-
-       --simple-lineage-field-depth int
-           [EXPERIMENTAL] Maximal field depth sensitivity for lineage
-           analysis. 0 will make the analysis field insensitive.
-
-       --simple-lineage-field-width int
-           [EXPERIMENTAL] Maximal width of structures for field sensitive
-           lineage analysis. Structure that have a higher number of fields
-           will be smashed into a single element. 0 will make the analysis
-           field insensitive. If not set, field width will be unlimited.
-
-       --simple-lineage-include-builtins
-           Activates: Include call/return edges to/from procedures that model
-           primitive Erlang operations, such as constructing a list.
-           (Conversely: --no-simple-lineage-include-builtins)
-
-       --simple-lineage-json-report
-           Activates: Enable simple lineage report in JSON format.
-           (Conversely: --no-simple-lineage-json-report)
-
-       --simple-lineage-keep-temporaries
-           Activates: Normally, lineage summaries do not mention temporary
-           variables introduced while compiling the high-level code to
-           Infer's IR (intermediate representation). If this option is
-           enabled, then the lineage graph produced corresponds to Infer's
-           IR. (Conversely: --no-simple-lineage-keep-temporaries)
-
-       --simple-lineage-max-cfg-size int
-           If set, larger CFGs are skipped.
-
-       --simple-lineage-prevent-cycles
-           Activates: [EXPERIMENTAL] If set, SimpleLineage will stop
-           distinguishing the fields of a variable when it notices recursive
-           types (that is, a sub-field having the same type as one of its
-           "ancestors"). (Conversely: --no-simple-lineage-prevent-cycles)
-
-       --simple-lineage-seed int
-           Set the random seed used for hashing. (Various entities that get
-           reported need unique identifiers. To generate these unique
-           identifiers, in a distributed way without communication, we use
-           hashing. If you are unlucky and get collisions, you can try a
-           different seed.
 SIOF CHECKER OPTIONS
        --siof-check-iostreams
            Activates: Do not assume that iostreams (cout, cerr, ...) are

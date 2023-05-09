@@ -720,23 +720,23 @@ val show_buckets : bool
 
 val shrink_analysis_db : bool
 
-val simple_lineage_include_builtins : bool
+val lineage_include_builtins : bool
 
-val simple_lineage_field_depth : int
+val lineage_field_depth : int
 
-val simple_lineage_prevent_cycles : bool
+val lineage_prevent_cycles : bool
 
-val simple_lineage_field_width : int option
+val lineage_field_width : int option
 
-val simple_lineage_json_report : bool
+val lineage_json_report : bool
 
-val simple_lineage_keep_temporaries : bool
+val lineage_keep_temporaries : bool
 
-val simple_lineage_max_cfg_size : int option
+val lineage_max_cfg_size : int option
 
-val simple_lineage_dedup : bool
+val lineage_dedup : bool
 
-val simple_lineage_seed : int
+val lineage_seed : int
 
 val siof_check_iostreams : bool
 

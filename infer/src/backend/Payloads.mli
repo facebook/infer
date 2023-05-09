@@ -34,8 +34,8 @@ include sig
     ; racerd: RacerDDomain.summary option Lazy.t
     ; scope_leakage: ScopeLeakage.Summary.t option Lazy.t
     ; siof: SiofDomain.Summary.t option Lazy.t
-    ; simple_lineage: SimpleLineage.Summary.t option Lazy.t
-    ; simple_shape: SimpleShape.Summary.t option Lazy.t
+    ; lineage: Lineage.Summary.t option Lazy.t
+    ; lineage_shape: LineageShape.Summary.t option Lazy.t
     ; starvation: StarvationDomain.summary option Lazy.t
     ; nullsafe: NullsafeSummary.t option Lazy.t
     ; uninit: UninitDomain.Summary.t option Lazy.t }

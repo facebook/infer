@@ -172,7 +172,7 @@ let manual_quandary = "QUANDARY CHECKER OPTIONS"
 
 let manual_racerd = "RACERD CHECKER OPTIONS"
 
-let manual_simple_lineage = "SIMPLE LINEAGE OPTIONS"
+let manual_lineage = "LINEAGE OPTIONS"
 
 let manual_siof = "SIOF CHECKER OPTIONS"
 
@@ -2862,67 +2862,73 @@ and shrink_analysis_db =
      database."
 
 
-and simple_lineage_include_builtins =
-  CLOpt.mk_bool ~long:"simple-lineage-include-builtins"
-    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+and lineage_include_builtins =
+  CLOpt.mk_bool
+    ~deprecated:["-simple-lineage-include-builtins"]
+    ~long:"lineage-include-builtins"
+    ~in_help:InferCommand.[(Analyze, manual_lineage)]
     "Include call/return edges to/from procedures that model primitive Erlang operations, such as \
      constructing a list."
 
 
-and simple_lineage_field_depth =
-  CLOpt.mk_int ~long:"simple-lineage-field-depth" ~default:0
-    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+and lineage_field_depth =
+  CLOpt.mk_int ~deprecated:["-simple-lineage-field-depth"] ~long:"lineage-field-depth" ~default:0
+    ~in_help:InferCommand.[(Analyze, manual_lineage)]
     "[EXPERIMENTAL] Maximal field depth sensitivity for lineage analysis. 0 will make the analysis \
      field insensitive."
 
 
-and simple_lineage_prevent_cycles =
-  CLOpt.mk_bool ~long:"simple-lineage-prevent-cycles" ~default:false
-    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
-    "[EXPERIMENTAL] If set, SimpleLineage will stop distinguishing the fields of a variable when \
-     it notices recursive types (that is, a sub-field having the same type as one of its \
+and lineage_prevent_cycles =
+  CLOpt.mk_bool
+    ~deprecated:["-simple-lineage-prevent-cycles"]
+    ~long:"lineage-prevent-cycles" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_lineage)]
+    "[EXPERIMENTAL] If set, Lineage will stop distinguishing the fields of a variable when it \
+     notices recursive types (that is, a sub-field having the same type as one of its \
      \"ancestors\")."
 
 
-and simple_lineage_field_width =
-  CLOpt.mk_int_opt ~long:"simple-lineage-field-width"
-    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+and lineage_field_width =
+  CLOpt.mk_int_opt ~deprecated:["-simple-lineage-field-width"] ~long:"lineage-field-width"
+    ~in_help:InferCommand.[(Analyze, manual_lineage)]
     "[EXPERIMENTAL] Maximal width of structures for field sensitive lineage analysis. Structure \
      that have a higher number of fields will be smashed into a single element. 0 will make the \
      analysis field insensitive. If not set, field width will be unlimited."
 
 
-and simple_lineage_max_cfg_size =
-  CLOpt.mk_int_opt ~long:"simple-lineage-max-cfg-size"
-    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+and lineage_max_cfg_size =
+  CLOpt.mk_int_opt ~deprecated:["-simple-lineage-max-cfg-size"] ~long:"lineage-max-cfg-size"
+    ~in_help:InferCommand.[(Analyze, manual_lineage)]
     "If set, larger CFGs are skipped."
 
 
-and simple_lineage_json_report =
-  CLOpt.mk_bool ~long:"simple-lineage-json-report"
-    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
-    "Enable simple lineage report in JSON format."
+and lineage_json_report =
+  CLOpt.mk_bool ~deprecated:["-simple-lineage-json-report"] ~long:"lineage-json-report"
+    ~in_help:InferCommand.[(Analyze, manual_lineage)]
+    "Enable lineage report in JSON format."
 
 
-and simple_lineage_dedup =
-  CLOpt.mk_bool ~long:"simple-lineage-dedup" ~default:true
-    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+and lineage_dedup =
+  CLOpt.mk_bool ~deprecated:["-simple-lineage-dedup"] ~long:"lineage-dedup" ~default:true
+    ~in_help:InferCommand.[(Analyze, manual_lineage)]
     "In JSON output, attempt to print each entity at most once. This is the default. The only \
      reason you may want to turn this off is to make hash collisions more visible; that is, cases \
      in which distinct entities get assigned the same ID."
 
 
-and simple_lineage_keep_temporaries =
-  CLOpt.mk_bool ~long:"simple-lineage-keep-temporaries"
-    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+and lineage_keep_temporaries =
+  CLOpt.mk_bool
+    ~deprecated:["-simple-lineage-keep-temporaries"]
+    ~long:"lineage-keep-temporaries"
+    ~in_help:InferCommand.[(Analyze, manual_lineage)]
     "Normally, lineage summaries do not mention temporary variables introduced while compiling the \
      high-level code to Infer's IR (intermediate representation). If this option is enabled, then \
      the lineage graph produced corresponds to Infer's IR."
 
 
-and simple_lineage_seed =
-  CLOpt.mk_int ~long:"simple-lineage-seed" ~default:123
-    ~in_help:InferCommand.[(Analyze, manual_simple_lineage)]
+and lineage_seed =
+  CLOpt.mk_int ~deprecated:["-simple-lineage-seed"] ~long:"lineage-seed" ~default:123
+    ~in_help:InferCommand.[(Analyze, manual_lineage)]
     "Set the random seed used for hashing. (Various entities that get reported need unique \
      identifiers. To generate these unique identifiers, in a distributed way without \
      communication, we use hashing. If you are unlucky and get collisions, you can try a different \
@@ -4238,23 +4244,23 @@ and show_buckets = !print_buckets
 
 and shrink_analysis_db = !shrink_analysis_db
 
-and simple_lineage_include_builtins = !simple_lineage_include_builtins
+and lineage_include_builtins = !lineage_include_builtins
 
-and simple_lineage_field_depth = !simple_lineage_field_depth
+and lineage_field_depth = !lineage_field_depth
 
-and simple_lineage_prevent_cycles = !simple_lineage_prevent_cycles
+and lineage_prevent_cycles = !lineage_prevent_cycles
 
-and simple_lineage_field_width = !simple_lineage_field_width
+and lineage_field_width = !lineage_field_width
 
-and simple_lineage_max_cfg_size = !simple_lineage_max_cfg_size
+and lineage_max_cfg_size = !lineage_max_cfg_size
 
-and simple_lineage_json_report = !simple_lineage_json_report
+and lineage_json_report = !lineage_json_report
 
-and simple_lineage_dedup = !simple_lineage_dedup
+and lineage_dedup = !lineage_dedup
 
-and simple_lineage_keep_temporaries = !simple_lineage_keep_temporaries
+and lineage_keep_temporaries = !lineage_keep_temporaries
 
-and simple_lineage_seed = !simple_lineage_seed
+and lineage_seed = !lineage_seed
 
 and siof_check_iostreams = !siof_check_iostreams
 

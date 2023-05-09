@@ -24,8 +24,8 @@ type t =
   ; racerd: RacerDDomain.summary option Lazy.t
   ; scope_leakage: ScopeLeakage.Summary.t option Lazy.t
   ; siof: SiofDomain.Summary.t option Lazy.t
-  ; simple_lineage: SimpleLineage.Summary.t option Lazy.t
-  ; simple_shape: SimpleShape.Summary.t option Lazy.t
+  ; lineage: Lineage.Summary.t option Lazy.t
+  ; lineage_shape: LineageShape.Summary.t option Lazy.t
   ; starvation: StarvationDomain.summary option Lazy.t
   ; nullsafe: NullsafeSummary.t option Lazy.t
   ; uninit: UninitDomain.Summary.t option Lazy.t }
@@ -59,8 +59,8 @@ let all_fields =
     ~lab_resource_leaks:(fun f -> mk f LabResourceLeaks ResourceLeakDomain.pp)
     ~scope_leakage:(fun f -> mk f ScopeLeakage ScopeLeakage.Summary.pp)
     ~siof:(fun f -> mk f SIOF SiofDomain.Summary.pp)
-    ~simple_lineage:(fun f -> mk f SimpleLineage SimpleLineage.Summary.pp)
-    ~simple_shape:(fun f -> mk f SimpleShape SimpleShape.Summary.pp)
+    ~lineage:(fun f -> mk f Lineage Lineage.Summary.pp)
+    ~lineage_shape:(fun f -> mk f LineageShape LineageShape.Summary.pp)
     ~starvation:(fun f -> mk f Starvation StarvationDomain.pp_summary)
     ~nullsafe:(fun f -> mk f Nullsafe NullsafeSummary.pp)
     ~uninit:(fun f -> mk f Uninit UninitDomain.Summary.pp)
@@ -95,8 +95,8 @@ let empty =
   ; racerd= no_payload
   ; scope_leakage= no_payload
   ; siof= no_payload
-  ; simple_lineage= no_payload
-  ; simple_shape= no_payload
+  ; lineage= no_payload
+  ; lineage_shape= no_payload
   ; starvation= no_payload
   ; nullsafe= no_payload
   ; uninit= no_payload }
@@ -146,7 +146,7 @@ module SQLite = struct
       ~pulse:data_of_sqlite_column ~purity:data_of_sqlite_column ~quandary:data_of_sqlite_column
       ~racerd:data_of_sqlite_column ~lab_resource_leaks:data_of_sqlite_column
       ~scope_leakage:data_of_sqlite_column ~siof:data_of_sqlite_column
-      ~simple_lineage:data_of_sqlite_column ~simple_shape:data_of_sqlite_column
+      ~lineage:data_of_sqlite_column ~lineage_shape:data_of_sqlite_column
       ~starvation:data_of_sqlite_column ~nullsafe:data_of_sqlite_column
       ~uninit:data_of_sqlite_column
 
@@ -203,8 +203,8 @@ module SQLite = struct
     ; racerd= lazy (load table ~proc_uid RacerD)
     ; scope_leakage= lazy (load table ~proc_uid ScopeLeakage)
     ; siof= lazy (load table ~proc_uid SIOF)
-    ; simple_lineage= lazy (load table ~proc_uid SimpleLineage)
-    ; simple_shape= lazy (load table ~proc_uid SimpleShape)
+    ; lineage= lazy (load table ~proc_uid Lineage)
+    ; lineage_shape= lazy (load table ~proc_uid LineageShape)
     ; starvation= lazy (load table ~proc_uid Starvation)
     ; nullsafe= lazy (load table ~proc_uid Nullsafe)
     ; uninit= lazy (load table ~proc_uid Uninit) }

@@ -248,7 +248,7 @@ let report () =
     ( Config.issues_tests
     , Config.cost_issues_tests
     , Config.config_impact_issues_tests
-    , Config.simple_lineage_json_report
+    , Config.lineage_json_report
     , Config.merge_report
     , Config.merge_report_summaries
     , Config.pulse_report_flows_from_taint_source
@@ -272,7 +272,7 @@ let report () =
       Option.iter out_path ~f:write_from_json ;
       Option.iter cost_out_path ~f:write_from_cost_json ;
       Option.iter config_impact_out_path ~f:write_from_config_impact_json ;
-      if report_lineage then ReportSimpleLineage.report () ;
+      if report_lineage then ReportLineage.report () ;
       Option.iter taint_source
         ~f:(ReportDataFlows.report_data_flows_of_procname ~flow_type:FromSource) ;
       Option.iter taint_sink ~f:(ReportDataFlows.report_data_flows_of_procname ~flow_type:ToSink)
@@ -281,7 +281,7 @@ let report () =
   | _, _, _, _, _ :: _, _, _, _ | _, _, _, _, _, _ :: _, _, _ ->
       L.die UserError
         "Options '--merge-report' or '--merge-summaries' cannot be used with '--issues-tests', \
-         '--cost-issues-tests', '--config-impact-issues-tests', '--simple-lineage-json-report', \
+         '--cost-issues-tests', '--config-impact-issues-tests', '--lineage-json-report', \
          '--pulse-report-flows-from-taint-source', '--pulse-report-flows-to-taint-sink', or each \
          other.@\n"
 

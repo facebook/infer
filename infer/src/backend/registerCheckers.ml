@@ -216,15 +216,15 @@ let all_checkers =
              Payloads.Fields.cost ConfigImpactAnalysis.checker
          in
          [(checker, Clang); (checker, Java)] ) }
-  ; { checker= SimpleShape
+  ; { checker= LineageShape
     ; callbacks=
-        (let checker = interprocedural Payloads.Fields.simple_shape SimpleShape.checker in
+        (let checker = interprocedural Payloads.Fields.lineage_shape LineageShape.checker in
          [(checker, Erlang)] ) }
-  ; { checker= SimpleLineage
+  ; { checker= Lineage
     ; callbacks=
         (let checker =
-           interprocedural_with_field_dependency ~dep_field:Payloads.Fields.simple_shape
-             Payloads.Fields.simple_lineage SimpleLineage.checker
+           interprocedural_with_field_dependency ~dep_field:Payloads.Fields.lineage_shape
+             Payloads.Fields.lineage Lineage.checker
          in
          [(checker, Erlang)] ) }
   ; { checker= ScopeLeakage

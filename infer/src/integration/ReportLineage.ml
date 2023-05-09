@@ -8,12 +8,12 @@
 open! IStd
 module L = Logging
 
-let report {Summary.payloads= {simple_lineage}; proc_name} =
-  match Lazy.force simple_lineage with
+let report {Summary.payloads= {lineage}; proc_name} =
+  match Lazy.force lineage with
   | None ->
       L.user_warning "No summary for %a@\n" Procname.pp proc_name
   | Some lineage_summary ->
-      Procdesc.load_exn proc_name |> SimpleLineage.Summary.report lineage_summary
+      Procdesc.load_exn proc_name |> Lineage.Summary.report lineage_summary
 
 
 let worker source_file =

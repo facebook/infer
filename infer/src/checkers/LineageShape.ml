@@ -452,7 +452,7 @@ end = struct
         | [field] when is_boxing_field field ->
             []
         | field :: _ when is_boxing_field field ->
-            L.die InternalError "SimpleShape: unexpected boxing field in non tail position."
+            L.die InternalError "LineageShape: unexpected boxing field in non tail position."
         | field :: fields ->
             let field_table = find_field_table shape_fields shape in
             if
@@ -654,7 +654,7 @@ struct
 
 
     let unknown_model procname ret_var args =
-      L.debug Analysis Verbose "@[<v2> SimpleShape: no model found for expression `%a`@]@,"
+      L.debug Analysis Verbose "@[<v2> LineageShape: no model found for expression `%a`@]@,"
         Procname.pp procname ;
       ignore_shape_ret_and_args ret_var args ;
       ()
@@ -719,7 +719,7 @@ struct
         match procname_of_exp fun_exp with
         | None ->
             CallModel.ignore_shape_ret_and_args ret_var args ;
-            L.debug Analysis Verbose "@[<v>SimpleShape: call of unsupported expression `%a`.@]@,"
+            L.debug Analysis Verbose "@[<v>LineageShape: call of unsupported expression `%a`.@]@,"
               Exp.pp fun_exp
         | Some procname ->
             CallModel.exec analyze_dependency procname ret_var args )
@@ -733,7 +733,7 @@ struct
         (* Same as Load *)
         exec_assignment (Var.of_pvar pvar) e2
     | Store _ ->
-        L.die InternalError "SimpleShape: Store instructions are only supported with Lvar lhs"
+        L.die InternalError "LineageShape: Store instructions are only supported with Lvar lhs"
 
 
   (** Mutates the environment and then return an abstract state (which is actually the same as the
@@ -743,7 +743,7 @@ struct
     astate
 
 
-  let pp_session_name _node fmt = Format.pp_print_string fmt "SimpleLineageShape"
+  let pp_session_name _node fmt = Format.pp_print_string fmt "LineageShape"
 end
 
 (** A generative module that creates a fresh environment and passes it to the {!TransferFunctions}
@@ -771,5 +771,5 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
 
 
 let checker analysis_data =
-  (* We skip the functions that would not be analysed by SimpleLineage anyway *)
-  SimpleLineageUtils.skip_unwanted (fun data () -> unskipped_checker data) analysis_data ()
+  (* We skip the functions that would not be analysed by Lineage anyway *)
+  LineageUtils.skip_unwanted (fun data () -> unskipped_checker data) analysis_data ()

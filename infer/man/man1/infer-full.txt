@@ -926,6 +926,65 @@ OPTIONS
            Activates: Enable Kotlin capture (experimental, do not use).
            (Conversely: --no-kotlin-capture)           See also infer-capture(1).
 
+       --lineage
+           Activates: checker lineage: Computes a dataflow graph (Conversely:
+           --no-lineage)           See also infer-analyze(1).
+
+       --no-lineage-dedup
+           Deactivates: In JSON output, attempt to print each entity at most
+           once. This is the default. The only reason you may want to turn
+           this off is to make hash collisions more visible; that is, cases
+           in which distinct entities get assigned the same ID. (Conversely:
+           --lineage-dedup)           See also infer-analyze(1).
+
+       --lineage-field-depth int
+           [EXPERIMENTAL] Maximal field depth sensitivity for lineage
+           analysis. 0 will make the analysis field insensitive.       
+    See also infer-analyze(1).
+
+       --lineage-field-width int
+           [EXPERIMENTAL] Maximal width of structures for field sensitive
+           lineage analysis. Structure that have a higher number of fields
+           will be smashed into a single element. 0 will make the analysis
+           field insensitive. If not set, field width will be unlimited.       
+    See also infer-analyze(1).
+
+       --lineage-include-builtins
+           Activates: Include call/return edges to/from procedures that model
+           primitive Erlang operations, such as constructing a list.
+           (Conversely: --no-lineage-include-builtins)           See also infer-analyze(1).
+
+       --lineage-json-report
+           Activates: Enable lineage report in JSON format. (Conversely:
+           --no-lineage-json-report)           See also infer-analyze(1).
+
+       --lineage-keep-temporaries
+           Activates: Normally, lineage summaries do not mention temporary
+           variables introduced while compiling the high-level code to
+           Infer's IR (intermediate representation). If this option is
+           enabled, then the lineage graph produced corresponds to Infer's
+           IR. (Conversely: --no-lineage-keep-temporaries)           See also infer-analyze(1).
+
+       --lineage-max-cfg-size int
+           If set, larger CFGs are skipped.           See also infer-analyze(1).
+
+       --lineage-only
+           Activates: Enable lineage and disable all other checkers
+           (Conversely: --no-lineage-only)           See also infer-analyze(1).
+
+       --lineage-prevent-cycles
+           Activates: [EXPERIMENTAL] If set, Lineage will stop distinguishing
+           the fields of a variable when it notices recursive types (that is,
+           a sub-field having the same type as one of its "ancestors").
+           (Conversely: --no-lineage-prevent-cycles)           See also infer-analyze(1).
+
+       --lineage-seed int
+           Set the random seed used for hashing. (Various entities that get
+           reported need unique identifiers. To generate these unique
+           identifiers, in a distributed way without communication, we use
+           hashing. If you are unlucky and get collisions, you can try a
+           different seed.           See also infer-analyze(1).
+
        --list-checkers
            Activates: Show the list of all available checkers. (Conversely:
            --no-list-checkers)           See also infer-help(1).
@@ -1566,67 +1625,6 @@ OPTIONS
        --sil-validation-only
            Activates: Enable sil-validation and disable all other checkers
            (Conversely: --no-sil-validation-only)           See also infer-analyze(1).
-
-       --simple-lineage
-           Activates: checker simple-lineage: Computes a dataflow graph
-           (Conversely: --no-simple-lineage)           See also infer-analyze(1).
-
-       --no-simple-lineage-dedup
-           Deactivates: In JSON output, attempt to print each entity at most
-           once. This is the default. The only reason you may want to turn
-           this off is to make hash collisions more visible; that is, cases
-           in which distinct entities get assigned the same ID. (Conversely:
-           --simple-lineage-dedup)           See also infer-analyze(1).
-
-       --simple-lineage-field-depth int
-           [EXPERIMENTAL] Maximal field depth sensitivity for lineage
-           analysis. 0 will make the analysis field insensitive.       
-    See also infer-analyze(1).
-
-       --simple-lineage-field-width int
-           [EXPERIMENTAL] Maximal width of structures for field sensitive
-           lineage analysis. Structure that have a higher number of fields
-           will be smashed into a single element. 0 will make the analysis
-           field insensitive. If not set, field width will be unlimited.       
-    See also infer-analyze(1).
-
-       --simple-lineage-include-builtins
-           Activates: Include call/return edges to/from procedures that model
-           primitive Erlang operations, such as constructing a list.
-           (Conversely: --no-simple-lineage-include-builtins)           See also infer-analyze(1).
-
-       --simple-lineage-json-report
-           Activates: Enable simple lineage report in JSON format.
-           (Conversely: --no-simple-lineage-json-report)           See also infer-analyze(1).
-
-       --simple-lineage-keep-temporaries
-           Activates: Normally, lineage summaries do not mention temporary
-           variables introduced while compiling the high-level code to
-           Infer's IR (intermediate representation). If this option is
-           enabled, then the lineage graph produced corresponds to Infer's
-           IR. (Conversely: --no-simple-lineage-keep-temporaries)       
-    See also infer-analyze(1).
-
-       --simple-lineage-max-cfg-size int
-           If set, larger CFGs are skipped.           See also infer-analyze(1).
-
-       --simple-lineage-only
-           Activates: Enable simple-lineage and disable all other checkers
-           (Conversely: --no-simple-lineage-only)           See also infer-analyze(1).
-
-       --simple-lineage-prevent-cycles
-           Activates: [EXPERIMENTAL] If set, SimpleLineage will stop
-           distinguishing the fields of a variable when it notices recursive
-           types (that is, a sub-field having the same type as one of its
-           "ancestors"). (Conversely: --no-simple-lineage-prevent-cycles)       
-    See also infer-analyze(1).
-
-       --simple-lineage-seed int
-           Set the random seed used for hashing. (Various entities that get
-           reported need unique identifiers. To generate these unique
-           identifiers, in a distributed way without communication, we use
-           hashing. If you are unlucky and get collisions, you can try a
-           different seed.           See also infer-analyze(1).
 
        --no-siof
            Deactivates: checker siof: Catches Static Initialization Order
@@ -2379,6 +2377,16 @@ INTERNAL OPTIONS
        --job-id-reset
            Cancel the effect of --job-id.
 
+       --lineage-field-width-reset
+           Cancel the effect of --lineage-field-width.
+
+       --lineage-max-cfg-size-reset
+           Cancel the effect of --lineage-max-cfg-size.
+
+       --lineage-shape
+           Activates: checker lineage-shape: Computes shape informations to
+           be used in the Lineage analysis (Conversely: --no-lineage-shape)
+
        --liveness-ignored-constant-reset
            Set --liveness-ignored-constant to the empty list.
 
@@ -2759,17 +2767,6 @@ INTERNAL OPTIONS
 
        --select-reset
            Cancel the effect of --select.
-
-       --simple-lineage-field-width-reset
-           Cancel the effect of --simple-lineage-field-width.
-
-       --simple-lineage-max-cfg-size-reset
-           Cancel the effect of --simple-lineage-max-cfg-size.
-
-       --simple-shape
-           Activates: checker simple-shape: Computes simple shape
-           informations to be used in the Lineage analysis (Conversely:
-           --no-simple-shape)
 
        --siof-safe-methods-reset
            Set --siof-safe-methods to the empty list.

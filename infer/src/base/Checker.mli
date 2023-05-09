@@ -36,8 +36,8 @@ type t =
   | ScopeLeakage
   | SIOF
   | SILValidation
-  | SimpleLineage
-  | SimpleShape
+  | Lineage
+  | LineageShape
   | SelfInBlock
   | Starvation
   | Topl

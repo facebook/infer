@@ -856,7 +856,7 @@ let apply_summary tenv loc procname analyze_dependency ret_exp args =
       []
 
 
-(** Copied from SimpleShape.ml. I think this should be shared in, e.g., PatternMatch. *)
+(** Copied from LineageShape.ml. I think this should be shared in, e.g., PatternMatch. *)
 let procname_of_exp (e : Exp.t) : Procname.t option =
   match e with Closure {name} | Const (Cfun name) -> Some name | _ -> None
 

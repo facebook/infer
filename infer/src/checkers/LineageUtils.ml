@@ -10,9 +10,7 @@ module L = Logging
 
 let skip_big_cfg checker ({InterproceduralAnalysis.proc_desc} as analysis_data) arg =
   let proc_size = Procdesc.size proc_desc in
-  let too_big =
-    Option.exists ~f:(fun limit -> proc_size > limit) Config.simple_lineage_max_cfg_size
-  in
+  let too_big = Option.exists ~f:(fun limit -> proc_size > limit) Config.lineage_max_cfg_size in
   if too_big then (
     L.user_warning "Skipped large (%d) procedure (%a)@." proc_size Procname.pp
       (Procdesc.get_proc_name proc_desc) ;

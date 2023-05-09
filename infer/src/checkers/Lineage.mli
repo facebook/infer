@@ -16,4 +16,4 @@ module Summary : sig
 end
 
 val checker :
-  Summary.t InterproceduralAnalysis.t -> SimpleShape.Summary.t option -> Summary.t option
+  Summary.t InterproceduralAnalysis.t -> LineageShape.Summary.t option -> Summary.t option

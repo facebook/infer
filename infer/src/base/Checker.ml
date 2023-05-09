@@ -37,8 +37,8 @@ type t =
   | ScopeLeakage
   | SIOF
   | SILValidation
-  | SimpleLineage
-  | SimpleShape
+  | Lineage
+  | LineageShape
   | SelfInBlock
   | Starvation
   | Topl
@@ -403,19 +403,19 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
-  | SimpleLineage ->
-      { id= "simple-lineage"
-      ; kind= UserFacing {title= "Simple Lineage"; markdown_body= ""}
+  | Lineage ->
+      { id= "lineage"
+      ; kind= UserFacing {title= "Lineage"; markdown_body= ""}
       ; support= mk_support_func ~erlang:Support ()
       ; short_documentation= "Computes a dataflow graph"
-      ; cli_flags= Some {deprecated= []; show_in_help= true}
+      ; cli_flags= Some {deprecated= ["-simple-lineage"]; show_in_help= true}
       ; enabled_by_default= false
-      ; activates= [SimpleShape] }
-  | SimpleShape ->
-      { id= "simple-shape"
+      ; activates= [LineageShape] }
+  | LineageShape ->
+      { id= "lineage-shape"
       ; kind= Internal
       ; support= mk_support_func ~erlang:Support ()
-      ; short_documentation= "Computes simple shape informations to be used in the Lineage analysis"
+      ; short_documentation= "Computes shape informations to be used in the Lineage analysis"
       ; cli_flags= Some {deprecated= []; show_in_help= false}
       ; enabled_by_default= false
       ; activates= [] }

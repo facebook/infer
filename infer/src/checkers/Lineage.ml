@@ -19,7 +19,7 @@ module PPNode = struct
   let pp fmt node = pp_id fmt (id node)
 end
 
-module FieldPath = SimpleShape.FieldPath
+module FieldPath = LineageShape.FieldPath
 
 module VarPath : sig
   (** A variable path is a pair of a variable and a possibly empty list of subscripted fields. They
@@ -71,12 +71,12 @@ module Cell : sig
   val var_appears_in_source_code : t -> bool
 
   val fold_from_path :
-    SimpleShape.Summary.t -> VarPath.t -> init:'accum -> f:('accum -> t -> 'accum) -> 'accum
+    LineageShape.Summary.t -> VarPath.t -> init:'accum -> f:('accum -> t -> 'accum) -> 'accum
   (** Given a {!VarPath.t}, fold the [f] function over all the cells that correspond to "sub fields"
       of that variable path. *)
 
   val fold_pairs_from_paths :
-       SimpleShape.Summary.t
+       LineageShape.Summary.t
     -> VarPath.t
     -> VarPath.t
     -> init:'accum
@@ -84,7 +84,7 @@ module Cell : sig
     -> 'accum
   (** Given two variable paths that must have the same type, fold the [f] function over all the
       pairs of cells that correspond to "sub fields" of the indices. [f] will always be called on
-      corresponding sub-paths: see {!SimpleShape.Summary.fold_terminal_fields_2}. *)
+      corresponding sub-paths: see {!LineageShape.Summary.fold_terminal_fields_2}. *)
 end = struct
   type t = Var.t * FieldPath.t [@@deriving compare, equal]
 
@@ -98,19 +98,19 @@ end = struct
 
   let var_appears_in_source_code (var, _) = Var.appears_in_source_code var
 
-  let max_depth = Config.simple_lineage_field_depth
+  let max_depth = Config.lineage_field_depth
 
-  let max_width = Option.value ~default:Int.max_value Config.simple_lineage_field_width
+  let max_width = Option.value ~default:Int.max_value Config.lineage_field_width
 
-  let prevent_cycles = Config.simple_lineage_prevent_cycles
+  let prevent_cycles = Config.lineage_prevent_cycles
 
   let fold_from_path shapes (var, field_path) ~init ~f =
-    SimpleShape.Summary.fold_terminal_fields shapes (var, field_path) ~max_width ~max_depth
+    LineageShape.Summary.fold_terminal_fields shapes (var, field_path) ~max_width ~max_depth
       ~prevent_cycles ~init ~f:(fun acc field_path -> f acc (make var field_path))
 
 
   let fold_pairs_from_paths shapes (var_1, field_path_1) (var_2, field_path_2) ~init ~f =
-    SimpleShape.Summary.fold_terminal_fields_2 shapes (var_1, field_path_1) (var_2, field_path_2)
+    LineageShape.Summary.fold_terminal_fields_2 shapes (var_1, field_path_1) (var_2, field_path_2)
       ~max_width ~max_depth ~prevent_cycles ~init ~f:(fun acc cell_field_path_1 cell_field_path_2 ->
         f acc (make var_1 cell_field_path_1) (make var_2 cell_field_path_2) )
 end
@@ -429,6 +429,8 @@ module LineageGraph = struct
     let channel_ref = ref None
 
     let channel () =
+      (* We keep the old simple-lineage output dir for historical reasons and should change it to
+         lineage once no external infra code depends on it anymore *)
       let output_dir = Filename.concat Config.results_dir "simple-lineage" in
       Unix.mkdir_p output_dir ;
       match !channel_ref with
@@ -476,7 +478,7 @@ module LineageGraph = struct
         let rec gen prng =
           yield (Z.of_int64 (Random.State.int64 prng modulo_i64)) >>= fun () -> gen prng
         in
-        Sequence.memoize (run (gen (Random.State.make [|Config.simple_lineage_seed|])))
+        Sequence.memoize (run (gen (Random.State.make [|Config.lineage_seed|])))
 
 
       let of_sequence ids =
@@ -574,7 +576,7 @@ module LineageGraph = struct
         Yojson.Safe.to_channel (channel ()) json ;
         Out_channel.newline (channel ())
       in
-      if Config.simple_lineage_dedup then ( fun category id json ->
+      if Config.lineage_dedup then ( fun category id json ->
         let key = (category, Id.out id) in
         if not (Hash_set.mem write_json_cache key) then (
           Hash_set.add write_json_cache key ;
@@ -1002,7 +1004,7 @@ module Summary = struct
   (** Given a graph, computes tito_arguments, and makes a summary. *)
   let make has_unsupported_features proc_desc graph return_field_paths =
     let graph =
-      if Config.simple_lineage_keep_temporaries then graph else remove_temporaries proc_desc graph
+      if Config.lineage_keep_temporaries then graph else remove_temporaries proc_desc graph
     in
     let tito_arguments = tito_arguments_of_graph graph return_field_paths in
     {graph; tito_arguments; has_unsupported_features}
@@ -1105,7 +1107,7 @@ module Domain : sig
       corresponding [add_write_...] function instead. *)
 
   val add_flow_from_path :
-       shapes:SimpleShape.Summary.t
+       shapes:LineageShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:VarPath.t
@@ -1114,7 +1116,7 @@ module Domain : sig
     -> t
 
   val add_flow_from_path_f :
-       shapes:SimpleShape.Summary.t
+       shapes:LineageShape.Summary.t
     -> node:PPNode.t
     -> kind_f:(FieldPath.t -> LineageGraph.flow_kind)
     -> src:VarPath.t
@@ -1132,7 +1134,7 @@ module Domain : sig
       corresponding [add_flow_...] function instead. *)
 
   val add_write :
-       shapes:SimpleShape.Summary.t
+       shapes:LineageShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:Src.t
@@ -1141,7 +1143,7 @@ module Domain : sig
     -> t
 
   val add_write_f :
-       shapes:SimpleShape.Summary.t
+       shapes:LineageShape.Summary.t
     -> node:PPNode.t
     -> kind_f:(FieldPath.t -> LineageGraph.flow_kind)
     -> src_f:(FieldPath.t -> Src.t)
@@ -1153,7 +1155,7 @@ module Domain : sig
       [Projection] edges where the edge holds the field information. *)
 
   val add_write_from_local :
-       shapes:SimpleShape.Summary.t
+       shapes:LineageShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:Local.t
@@ -1162,7 +1164,7 @@ module Domain : sig
     -> t
 
   val add_write_from_local_set :
-       shapes:SimpleShape.Summary.t
+       shapes:LineageShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:(Local.t, _) Set.t
@@ -1171,7 +1173,7 @@ module Domain : sig
     -> t
 
   val add_write_parallel :
-       shapes:SimpleShape.Summary.t
+       shapes:LineageShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:VarPath.t
@@ -1182,7 +1184,7 @@ module Domain : sig
       field of the destination variable path. See {!Cell.fold_terminal_pairs}. *)
 
   val add_write_product :
-       shapes:SimpleShape.Summary.t
+       shapes:LineageShape.Summary.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:VarPath.t
@@ -1365,7 +1367,7 @@ module TransferFunctions = struct
   module CFG = CFG
   module Domain = Domain
 
-  type analysis_data = SimpleShape.Summary.t * Summary.t InterproceduralAnalysis.t
+  type analysis_data = LineageShape.Summary.t * Summary.t InterproceduralAnalysis.t
 
   (** If an expression is made of a single variable, return it *)
   let exp_as_single_var (e : Exp.t) : Var.t option =
@@ -1501,8 +1503,8 @@ module TransferFunctions = struct
 
   let warn_on_complex_arg arg_exp =
     L.debug Analysis Verbose
-      "SimpleLineage: the analysis assumes that the frontend uses only single-var expressions as \
-       actual arguments, otherwise it will lose precision (found actual argument `%a` instead).@;"
+      "Lineage: the analysis assumes that the frontend uses only single-var expressions as actual \
+       arguments, otherwise it will lose precision (found actual argument `%a` instead).@;"
       Exp.pp arg_exp
 
 
@@ -1571,7 +1573,7 @@ module TransferFunctions = struct
 
   (* Add Summary (or Direct if this is a suppressed builtin call) edges from the concrete arguments
      to the concrete destination variable of a call, as specified by the tito_arguments summary information *)
-  let add_tito (shapes : SimpleShape.Summary.t) node (kind : LineageGraph.FlowKind.t)
+  let add_tito (shapes : LineageShape.Summary.t) node (kind : LineageGraph.FlowKind.t)
       (tito : Tito.t) (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t
       =
     let add_one_tito_flow ~arg_index ~arg_field_path ~ret_field_path astate =
@@ -1593,7 +1595,7 @@ module TransferFunctions = struct
 
   (* Add all the possible Summary/Direct (see add_tito) call edges from arguments to destination for
      when no summary is available. *)
-  let add_tito_all (shapes : SimpleShape.Summary.t) node (kind : LineageGraph.FlowKind.t)
+  let add_tito_all (shapes : LineageShape.Summary.t) node (kind : LineageGraph.FlowKind.t)
       (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     let arity = List.length argument_list in
     let tito_full = Tito.full ~arity in
@@ -1612,9 +1614,7 @@ module TransferFunctions = struct
 
 
   let generic_call_model shapes node analyze_dependency ret_id procname args astate =
-    let rm_builtin =
-      (not Config.simple_lineage_include_builtins) && BuiltinDecl.is_declared procname
-    in
+    let rm_builtin = (not Config.lineage_include_builtins) && BuiltinDecl.is_declared procname in
     let if_not_builtin transform state = if rm_builtin then state else transform state in
     let summary_type : LineageGraph.FlowKind.t = if rm_builtin then Direct else Summary in
     astate |> Domain.record_supported procname
@@ -1714,7 +1714,7 @@ module TransferFunctions = struct
   let exec_instr astate (shapes, {InterproceduralAnalysis.analyze_dependency; _}) node instr_index
       (instr : Sil.instr) =
     if not (Int.equal instr_index 0) then
-      L.die InternalError "SimpleLineage: INV broken: CFGs should be single instruction@\n" ;
+      L.die InternalError "Lineage: INV broken: CFGs should be single instruction@\n" ;
     let astate = Domain.clear_graph astate (* Don't repeat edges *) in
     let astate = add_cap_flows shapes node instr astate in
     match instr with
@@ -1723,8 +1723,7 @@ module TransferFunctions = struct
     | Store {e1= Lvar lhs; e2; _} ->
         exec_assignment shapes node (VarPath.pvar lhs) e2 astate
     | Store _ ->
-        L.debug Analysis Verbose
-          "SimpleLineage: The only lhs I can handle (now) for Store is Lvar@\n" ;
+        L.debug Analysis Verbose "Lineage: The only lhs I can handle (now) for Store is Lvar@\n" ;
         astate
     | Call ((ret_id, _ret_typ), name, args, _location, _flags) ->
         exec_call shapes node analyze_dependency ret_id name args astate
@@ -1732,7 +1731,7 @@ module TransferFunctions = struct
         astate
 
 
-  let pp_session_name _node fmt = Format.pp_print_string fmt "SimpleLineage"
+  let pp_session_name _node fmt = Format.pp_print_string fmt "Lineage"
 end
 
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
@@ -1801,8 +1800,8 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
   in
   let exit_has_unsupported_features = Domain.has_unsupported_features exit_astate in
   let summary = Summary.make exit_has_unsupported_features proc_desc graph known_ret_field_paths in
-  if Config.simple_lineage_json_report then Summary.report summary proc_desc ;
+  if Config.lineage_json_report then Summary.report summary proc_desc ;
   Some summary
 
 
-let checker = SimpleLineageUtils.skip_unwanted unskipped_checker
+let checker = LineageUtils.skip_unwanted unskipped_checker
