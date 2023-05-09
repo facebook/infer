@@ -528,9 +528,10 @@ let () =
   in
   List.iter Checker.all ~f:mk_checker ;
   let mk_only (_checker, config, var) =
-    Option.iter config.cli_flags ~f:(fun {show_in_help} ->
+    Option.iter config.cli_flags ~f:(fun {show_in_help; deprecated} ->
         let (_ : bool ref) =
           CLOpt.mk_bool_group ~long:(config.id ^ "-only")
+            ~deprecated:(List.map ~f:(fun opt -> opt ^ "-only") deprecated)
             ~in_help:InferCommand.[(Analyze, manual_generic)]
             ~f:(fun b ->
               disable_all_checkers () ;
