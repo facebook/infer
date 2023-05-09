@@ -23,6 +23,7 @@ type t =
   | LineOffset
   | QualifierContainsPotentialExceptionNote
   | NullsafeExtra
+  | TaintExtra
 [@@deriving equal]
 
 val all_symbols : (string * t) list

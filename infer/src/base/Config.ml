@@ -1815,7 +1815,7 @@ and issues_tests_fields =
     ~in_help:InferCommand.[(Report, manual_generic)]
     ~default:
       IssuesTestField.
-        [File; Procedure; LineOffset; BugType; Bucket; Severity; BugTrace; NullsafeExtra]
+        [File; Procedure; LineOffset; BugType; Bucket; Severity; BugTrace; NullsafeExtra; TaintExtra]
     ~symbols:IssuesTestField.all_symbols ~eq:IssuesTestField.equal
     "Fields to emit with $(b,--issues-tests)"
 
