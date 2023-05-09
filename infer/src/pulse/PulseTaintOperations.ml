@@ -614,11 +614,7 @@ let pulse_models_to_treat_as_unknown_for_taint =
   (* HACK: make a list of matchers just to reuse the matching code below *)
   let dummy_matcher_of_procedure_matcher procedure_matcher =
     let open TaintConfig in
-    { Unit.procedure_matcher
-    ; arguments= []
-    ; kinds= []
-    ; target= ReturnValue
-    ; block_passed_to= Block {name= ""} }
+    {Unit.procedure_matcher; arguments= []; kinds= []; target= ReturnValue}
   in
   [ ClassAndMethodNames
       { class_names= ["java.lang.StringBuilder"]

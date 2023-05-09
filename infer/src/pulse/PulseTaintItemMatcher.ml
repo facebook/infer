@@ -163,8 +163,7 @@ let matcher_of_config ~default_taint_target ~option_name matchers =
       ; kinds= TaintConfig.Kind.kinds_of_strings_opt matcher.kinds
       ; target=
           TaintConfig.Target.target_of_gen_target
-            (Option.value ~default:default_taint_target matcher.taint_target)
-      ; block_passed_to= procedure_matcher } )
+            (Option.value ~default:default_taint_target matcher.taint_target) } )
 
 
 let type_matches tenv actual_typ types =
@@ -261,7 +260,7 @@ let procedure_matches tenv matchers ?block_passed_to proc_name actuals =
             false
       in
       let block_passed_to_matches =
-        match (matcher.block_passed_to, block_passed_to) with
+        match (matcher.procedure_matcher, block_passed_to) with
         | Block {name}, Some block_passed_to_proc_name ->
             let proc_name_s = F.asprintf "%a" Procname.pp_verbose block_passed_to_proc_name in
             String.is_substring ~substring:name proc_name_s

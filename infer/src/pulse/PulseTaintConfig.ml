@@ -136,18 +136,16 @@ module Unit = struct
     { procedure_matcher: procedure_matcher
     ; arguments: Pulse_config_t.argument_constraint list
     ; kinds: Kind.t list
-    ; target: Target.t
-    ; block_passed_to: procedure_matcher }
+    ; target: Target.t }
 
   let pp_arguments f arguments =
     F.pp_print_string f (Pulse_config_j.string_of_argument_constraint arguments)
 
 
   let pp f unit =
-    F.fprintf f "procedure_matcher=%a, arguments=%a, kinds=%a, target=%a, block_passed_to=%a"
-      pp_procedure_matcher unit.procedure_matcher (Pp.comma_seq pp_arguments) unit.arguments
-      (Pp.comma_seq Kind.pp) unit.kinds Target.pp unit.target pp_procedure_matcher
-      unit.block_passed_to
+    F.fprintf f "procedure_matcher=%a, arguments=%a, kinds=%a, target=%a" pp_procedure_matcher
+      unit.procedure_matcher (Pp.comma_seq pp_arguments) unit.arguments (Pp.comma_seq Kind.pp)
+      unit.kinds Target.pp unit.target
 end
 
 module SinkPolicy = struct

@@ -54,8 +54,7 @@ module Unit : sig
     { procedure_matcher: procedure_matcher
     ; arguments: Pulse_config_t.argument_constraint list
     ; kinds: Kind.t list
-    ; target: Target.t
-    ; block_passed_to: procedure_matcher }
+    ; target: Target.t }
 
   val pp : F.formatter -> t -> unit
 end
