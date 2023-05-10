@@ -340,7 +340,7 @@ module PulseTransferFunctions = struct
 
 
   let find_override exe_env tenv astate actuals proc_name proc_name_opt =
-    let tenv_resolve_method tenv type_name proc_name =
+    let resolve_method tenv type_name proc_name =
       let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
       Tenv.resolve_method ~method_exists tenv type_name proc_name
     in
@@ -356,13 +356,13 @@ module PulseTransferFunctions = struct
           Option.bind source_file_opt ~f:(Exe_env.get_source_tenv exe_env)
           |> Option.value ~default:tenv
         in
-        tenv_resolve_method tenv dynamic_type_name proc_name
+        resolve_method tenv dynamic_type_name proc_name
     | None ->
         let* type_name = Procname.get_class_type_name proc_name in
         if Language.curr_language_is Hack then
           (* contrary to the Java frontend, the Hack frontend does not perform
              static resolution so we have to do it here *)
-          tenv_resolve_method tenv type_name proc_name
+          resolve_method tenv type_name proc_name
         else proc_name_opt
 
 
@@ -375,6 +375,35 @@ module PulseTransferFunctions = struct
             proc_name'
         | None ->
             proc_name )
+
+
+  (* Hack static methods can be overriden so we need class hierarchy walkup *)
+  let resolve_hack_static_method tenv opt_callee_pname =
+    let resolve_method tenv type_name proc_name =
+      let equal pname1 pname2 =
+        String.equal (Procname.get_method pname1) (Procname.get_method pname2)
+      in
+      let is_already_resolved proc_name =
+        (* these methods will never be found in Tenv but we can assume they exist *)
+        Option.exists (Procname.get_class_type_name proc_name) ~f:(fun class_name ->
+            List.mem ~equal:Typ.Name.equal
+              [ TextualSil.hack_mixed_type_name
+              ; TextualSil.hack_mixed_static_companion_type_name
+              ; TextualSil.hack_builtins_type_name ]
+              class_name )
+      in
+      let method_exists proc_name methods = List.mem ~equal methods proc_name in
+      if is_already_resolved proc_name then (
+        L.d_printfln "always_implemented %a" Procname.pp proc_name ;
+        Some proc_name )
+      else Tenv.resolve_method ~method_exists tenv type_name proc_name
+    in
+    let open IOption.Let_syntax in
+    let* callee_pname = opt_callee_pname in
+    Procname.get_class_type_name callee_pname
+    |> Option.value_map ~default:opt_callee_pname ~f:(fun static_class_name ->
+           L.d_printfln "hack static dispatch from %a" Procname.pp callee_pname ;
+           resolve_method tenv static_class_name callee_pname )
 
 
   let improve_receiver_static_type astate actuals proc_name_opt =
@@ -407,6 +436,9 @@ module PulseTransferFunctions = struct
       if flags.CallFlags.cf_virtual then
         improve_receiver_static_type astate func_args callee_pname
         |> resolve_virtual_call exe_env tenv astate func_args
+      else if Language.curr_language_is Hack then
+        (* In Hack, a static method can be inherited *)
+        resolve_hack_static_method tenv callee_pname
       else callee_pname
     in
     let astate =

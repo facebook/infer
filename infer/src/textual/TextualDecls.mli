@@ -11,8 +11,6 @@ type t
 
 module ProcEntry : sig
   type t = Decl of Textual.ProcDecl.t | Desc of Textual.ProcDesc.t
-
-  val decl : t -> Textual.ProcDecl.t
 end
 
 val init : Textual.SourceFile.t -> Textual.Lang.t option -> t

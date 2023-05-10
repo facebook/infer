@@ -103,6 +103,10 @@ end
 
 let hack_mixed_type_name = SilTyp.HackClass (HackClassName.make "HackMixed")
 
+let hack_mixed_static_companion_type_name = SilTyp.Name.Hack.static_companion hack_mixed_type_name
+
+let hack_builtins_type_name = SilTyp.HackClass (HackClassName.make "$builtins")
+
 let mangle_java_procname jpname =
   let method_name =
     match Procname.Java.get_method jpname with "<init>" -> "__sil_java_constructor" | s -> s
@@ -392,8 +396,13 @@ module StructBridge = struct
     let supers = sort_supers lang decls_env supers in
     let supers = List.map supers ~f:(TypeNameBridge.to_sil lang) in
     let methods =
-      List.map proc_entries ~f:(fun proc ->
-          TextualDecls.ProcEntry.decl proc |> ProcDeclBridge.to_sil lang )
+      List.filter_map proc_entries ~f:(fun proc_entry ->
+          match (proc_entry : TextualDecls.ProcEntry.t) with
+          | Desc proc ->
+              Some proc.procdecl
+          | Decl _ ->
+              None )
+      |> List.map ~f:(ProcDeclBridge.to_sil lang)
     in
     let fields =
       List.map fields ~f:(fun (fdecl : FieldDecl.t) ->

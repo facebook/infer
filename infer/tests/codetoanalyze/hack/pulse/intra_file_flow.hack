@@ -4,6 +4,10 @@
 // LICENSE file in the root directory of this source tree.
 
 class IntraFileFlow {
+  public static function explicitSinkMethodDirectOnHackMixedSinkBad(SensitiveClass $sc): void {
+    HackMixed::explicitSinkAllArgs($sc);
+  }
+
   public static function explicitSinkMethodDirectBad(SensitiveClass $sc): void {
     // This is a base case: sensitive data flows directly into the taint sink
     UnknownClass::explicitSinkAllArgs($sc);
@@ -43,4 +47,12 @@ class IntraFileFlow {
   private function callExplicitSinkAllArgs(int $data): void {
     UnknownClass::explicitSinkAllArgs($data);
   }
+}
+
+class UnknownClass {
+  public static function explicitSinkAllArgs(mixed $_): void {}
+}
+
+class Logger {
+  public static function someLogMethod(mixed $_): void {}
 }

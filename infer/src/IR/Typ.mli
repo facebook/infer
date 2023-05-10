@@ -196,6 +196,11 @@ module Name : sig
     val is_class : t -> bool
   end
 
+  module Hack : sig
+    val static_companion : t -> t
+    (** See {!HackClassName.static_companion} *)
+  end
+
   module Java : sig
     val from_string : string -> t
     (** Create a typename from a Java classname in the form "package.class" *)

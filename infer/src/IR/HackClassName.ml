@@ -28,3 +28,5 @@ let pp fmt {namespace; classname} =
 
 
 let to_string = Pp.string_of_pp pp
+
+let static_companion {namespace; classname} = {namespace; classname= classname ^ "$static"}

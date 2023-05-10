@@ -522,6 +522,15 @@ module Name = struct
     let is_class = function CSharpClass _ -> true | _ -> false
   end
 
+  module Hack = struct
+    let static_companion typename =
+      match typename with
+      | HackClass class_name ->
+          HackClass (HackClassName.static_companion class_name)
+      | _ ->
+          L.die InternalError "static_companion is only implemented for Hack class names"
+  end
+
   module Java = struct
     let from_string name_str = JavaClass (JavaClassName.from_string name_str)
 

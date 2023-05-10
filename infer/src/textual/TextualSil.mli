@@ -18,3 +18,7 @@ val dump_module : filename:string -> Textual.Module.t -> unit
 (** generate a .sil file with name [filename] with all the content of the input module *)
 
 val hack_mixed_type_name : Typ.name
+
+val hack_mixed_static_companion_type_name : Typ.name
+
+val hack_builtins_type_name : Typ.name

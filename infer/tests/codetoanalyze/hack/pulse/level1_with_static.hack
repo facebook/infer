@@ -20,7 +20,7 @@ class Main {
     \Level1\taintSink($tainted);
   }
 
-  function FN_fromBBad(): void {
+  function fromBBad(): void {
     $tainted = B::source();
     \Level1\taintSink($tainted);
   }
