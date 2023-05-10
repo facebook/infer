@@ -16,5 +16,6 @@ default: test
 $(INFER_OUT)/report.json: $(SOURCES) $(INFER_BIN) $(HACKC)
 	$(INFER_BIN) --quiet --no-progress-bar --pulse-only --debug-exceptions\
 		--dump-duplicate-symbols -o $(INFER_OUT) \
+                --pulse-force-continue \
                 --hack-models ../../sil/pulse/models/models.sil \
                 --hackc-binary $(HACKC) -- hackc compile-infer $(SOURCES)

@@ -81,7 +81,7 @@ final class Level5 extends Level5Base {
     return new Dao($ctx);
   }
 
-  protected function FN_runBad(): int {
+  protected function runBad(): int {
     $tainted_dao = self::loadUsingSuperContext();
     self::useDaoContext($tainted_dao);
     return 0;
