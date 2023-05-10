@@ -418,17 +418,7 @@ module PulseTransferFunctions = struct
 
 
   let need_dynamic_type_specialization proc_desc astate receiver_addr =
-    (let open IOption.Let_syntax in
-     let+ pvar =
-       Procdesc.get_pvar_formals proc_desc
-       |> List.find_map ~f:(fun (pvar, _) ->
-              let var = Var.of_pvar pvar in
-              let* addr, _ = AbductiveDomain.Stack.find_opt var astate in
-              let* deref_addr, _ = AbductiveDomain.Memory.find_edge_opt addr Dereference astate in
-              if AbstractValue.equal deref_addr receiver_addr then Some pvar else None )
-     in
-     AbductiveDomain.add_need_dynamic_type_specialization pvar astate )
-    |> Option.value ~default:astate
+    AbductiveDomain.add_need_dynamic_type_specialization proc_desc receiver_addr astate
 
 
   let improve_receiver_static_type astate receiver proc_name_opt =

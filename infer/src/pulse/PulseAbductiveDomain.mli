@@ -243,7 +243,7 @@ val set_need_closure_specialization : t -> t
 
 val unset_need_closure_specialization : t -> t
 
-val add_need_dynamic_type_specialization : Pvar.t -> t -> t
+val add_need_dynamic_type_specialization : Procdesc.t -> AbstractValue.t -> t -> t
 
 val map_decompiler : t -> f:(Decompiler.t -> Decompiler.t) -> t
 

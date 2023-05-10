@@ -141,11 +141,6 @@ let set_need_closure_specialization astate = {astate with need_closure_specializ
 
 let unset_need_closure_specialization astate = {astate with need_closure_specialization= false}
 
-let add_need_dynamic_type_specialization pvar astate =
-  { astate with
-    need_dynamic_type_specialization= Pvar.Set.add pvar astate.need_dynamic_type_specialization }
-
-
 let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}
 
 let leq ~lhs ~rhs =
@@ -641,6 +636,20 @@ let rec set_uninitialized_post tenv timestamp src typ location ?(fields_prefix =
 
 let set_uninitialized tenv {PathContext.timestamp} src typ location x =
   {x with post= set_uninitialized_post tenv timestamp src typ location x.post}
+
+
+let add_need_dynamic_type_specialization proc_desc receiver_addr astate =
+  Procdesc.get_pvar_formals proc_desc
+  |> List.find_map ~f:(fun (pvar, _) ->
+         let open IOption.Let_syntax in
+         let var = Var.of_pvar pvar in
+         let* addr, _ = Stack.find_opt var astate in
+         let* deref_addr, _ = Memory.find_edge_opt addr Dereference astate in
+         if AbstractValue.equal deref_addr receiver_addr then Some pvar else None )
+  |> Option.value_map ~default:astate ~f:(fun pvar ->
+         { astate with
+           need_dynamic_type_specialization=
+             Pvar.Set.add pvar astate.need_dynamic_type_specialization } )
 
 
 let add_static_types tenv astate formals_and_captured =

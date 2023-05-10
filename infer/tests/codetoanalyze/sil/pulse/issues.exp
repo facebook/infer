@@ -22,3 +22,4 @@ to_sil_bug.sil, use_get_next_on_program_var_bad, 3, NULLPTR_DEREFERENCE, no_buck
 virt.sil, plusBad, -36, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,when calling `plus` here,when calling `Int.value` here,invalid access occurs here]
 virt.sil, test_dyntype_specialization_bad, 6, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 virt.sil, devirtualize_with_final_bad, 8, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+virt.sil, devirtualize_with_static_call_bad, 8, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]

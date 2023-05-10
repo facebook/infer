@@ -15,7 +15,6 @@ class A {
 class B extends A {
 
   public static function caller2(): int {
-    // We need to model lazy_class_initialize builtin here.
     return static::call_with_late_binding();
   }
 
@@ -39,7 +38,7 @@ class C extends B {
 
 class Main {
 
-  public function FN_call_caller_bad(): void {
+  public function call_caller_bad(): void {
     $tainted = \Level1\taintSource();
     $i = C::caller2();
     if ($i == 0) {
@@ -47,7 +46,7 @@ class Main {
     }
   }
 
-  public function FP_call_caller_good(): void {
+  public function call_caller_good(): void {
     $tainted = \Level1\taintSource();
     $i = C::caller2();
     if ($i != 0) {

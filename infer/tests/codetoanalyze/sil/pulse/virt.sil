@@ -108,3 +108,48 @@ define devirtualize_with_final_good(arg: *I42) : void {
     n2: int = load n1.Int.value
     ret null
 }
+
+// static call through the class object of an object
+type Num$static = .static {}
+
+declare Num$static.zero(*Num$static): int
+
+type Int$static extends Num$static = .static {}
+
+define Int$static.zero(this: *Int$static): int {
+  #entry:
+    ret 0
+}
+
+define Int.zero(this: *Int): int {
+  #entry:
+    n0: *Int = load &this
+    n1 = $builtins.hack_get_static_class(n0)
+    ret n1.Num$static.zero()
+}
+
+define devirtualize_with_static_call_bad() : void {
+  local x: *Int
+  #b0:
+    n3 = __sil_allocate(<Int>)
+    n0 = __sil_eq(n3.Int.zero(), 0)
+    prune n0
+    store &x <- null : *Int
+    n1: *Int = load &x
+    n2: int = load n1.Int.value
+    ret null
+}
+
+define devirtualize_with_static_call_good(arg: *I42) : void {
+  local x: *Int
+  #b0:
+    n3 = __sil_allocate(<Int>)
+    n0 = __sil_eq(n3.Int.zero(), 0)
+    prune !n0
+    store &x <- null : *Int
+    n1: *Int = load &x
+    n2: int = load n1.Int.value
+    ret null
+}
+
+declare $builtins.hack_get_static_class(*void): *class
