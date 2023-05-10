@@ -391,7 +391,7 @@ module StructBridge = struct
     match lang with Lang.Hack -> sort_hack_supers decls_env supers | _ -> supers
 
 
-  let to_sil lang decls_env tenv proc_entries {name; supers; fields} =
+  let to_sil lang decls_env tenv proc_entries {name; supers; fields; attributes} =
     let name = TypeNameBridge.to_sil lang name in
     let supers = sort_supers lang decls_env supers in
     let supers = List.map supers ~f:(TypeNameBridge.to_sil lang) in
@@ -408,8 +408,12 @@ module StructBridge = struct
       List.map fields ~f:(fun (fdecl : FieldDecl.t) ->
           (FieldDeclBridge.to_sil lang fdecl, TypBridge.to_sil lang fdecl.typ, Annot.Item.empty) )
     in
+    let annots =
+      List.filter_map attributes ~f:(fun attr ->
+          if Attr.is_final attr then Some Annot.final else None )
+    in
     (* FIXME: generate static fields *)
-    Tenv.mk_struct tenv ~fields ~supers ~methods name |> ignore
+    Tenv.mk_struct tenv ~fields ~annots ~supers ~methods name |> ignore
 
 
   let of_sil name (sil_struct : SilStruct.t) =

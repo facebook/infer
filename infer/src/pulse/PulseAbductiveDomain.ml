@@ -643,7 +643,7 @@ let set_uninitialized tenv {PathContext.timestamp} src typ location x =
   {x with post= set_uninitialized_post tenv timestamp src typ location x.post}
 
 
-let add_static_types astate formals_and_captured =
+let add_static_types tenv astate formals_and_captured =
   let record_static_type astate (_var, typ, (src_addr, _)) =
     match typ with
     | {Typ.desc= Tptr ({desc= Tstruct typ_name}, _)} ->
@@ -662,7 +662,12 @@ let add_static_types astate formals_and_captured =
             pre= PreDomain.update ~heap:pre_heap astate.pre
           ; post= PostDomain.update ~heap:post_heap astate.post }
         in
-        AddressAttributes.add_static_type typ_name addr astate
+        let is_final =
+          Tenv.lookup tenv typ_name
+          |> Option.value_map ~default:false ~f:(fun {Struct.annots} -> Annot.Item.is_final annots)
+        in
+        if is_final then AddressAttributes.add_dynamic_type (Typ.mk_struct typ_name) addr astate
+        else AddressAttributes.add_static_type typ_name addr astate
     | _ ->
         astate
   in
@@ -817,7 +822,7 @@ let mk_initial tenv proc_name specialization (proc_attrs : ProcAttributes.t) =
     if Language.curr_language_is Hack then
       (* The Hack frontend does not propagate types from declarations to usage,
          so we redo part of the work ourself *)
-      add_static_types astate formals_and_captured
+      add_static_types tenv astate formals_and_captured
     else astate
   in
   apply_specialization proc_name specialization astate

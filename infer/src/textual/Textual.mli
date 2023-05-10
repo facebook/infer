@@ -79,6 +79,8 @@ module Attr : sig
 
   val mk_final : t
 
+  val is_final : t -> bool
+
   val is_trait : t -> bool
 
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]

@@ -97,7 +97,7 @@ define devirtualize_with_final_bad(arg: *I42) : void {
     ret null
 }
 
-define FP_devirtualize_with_final_good(arg: *I42) : void {
+define devirtualize_with_final_good(arg: *I42) : void {
   local x: *Int
   #b0:
     n3: *I42 = load &arg
