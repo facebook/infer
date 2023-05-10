@@ -28,6 +28,9 @@ module Pulse = struct
 
     let compare = compare
   end)
+
+  let is_pulse_specialization_limit_not_reached map =
+    Map.cardinal map < Config.pulse_specialization_limit
 end
 
 type t = Pulse of Pulse.t

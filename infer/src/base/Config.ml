@@ -2467,6 +2467,12 @@ and pulse_skip_procedures =
     ~meta:"regex" "Regex of procedures that should not be analyzed by Pulse."
 
 
+and pulse_specialization_limit =
+  CLOpt.mk_int ~long:"pulse-specialization-limit" ~default:20
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Maximum number of summary specialization by procedure."
+
+
 and pulse_taint_policies =
   CLOpt.mk_json ~long:"pulse-taint-policies"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4104,6 +4110,8 @@ and pulse_sanity_checks = !pulse_sanity_checks
 and pulse_scuba_logging = !pulse_scuba_logging
 
 and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
+
+and pulse_specialization_limit = !pulse_specialization_limit
 
 and pulse_taint_config =
   (* TODO: write our own json handling using [Yojson] directly as atdgen generated parsers ignore

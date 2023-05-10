@@ -18,6 +18,8 @@ module Pulse : sig
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 
   module Map : PrettyPrintable.PPMap with type key = t
+
+  val is_pulse_specialization_limit_not_reached : 'a Map.t -> bool
 end
 
 (** Summary specialization is a technique that permits to increase the precision of summary by

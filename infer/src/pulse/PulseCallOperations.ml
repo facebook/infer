@@ -504,7 +504,8 @@ let call tenv path ~caller_proc_desc
         List.is_empty res && Option.exists contradiction ~f:PulseInterproc.is_aliasing_contradiction
       in
       if needs_aliasing_specialization res contradiction then
-        if Specialization.Pulse.Map.cardinal summary.PulseSummary.alias_specialized <= 20 then
+        if Specialization.Pulse.is_pulse_specialization_limit_not_reached summary.alias_specialized
+        then
           match
             PulseAliasSpecialization.make_specialization callee_pname actuals call_kind path
               call_loc astate

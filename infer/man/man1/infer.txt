@@ -1368,6 +1368,10 @@ OPTIONS
            Regex of procedures that should not be analyzed by Pulse.       
     See also infer-analyze(1).
 
+       --pulse-specialization-limit int
+           Maximum number of summary specialization by procedure.       
+    See also infer-analyze(1).
+
        --pulse-taint-config +path
            Path to a taint analysis configuration file or a directory
            containing such files. This file can define --pulse-taint-sources,

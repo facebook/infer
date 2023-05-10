@@ -632,6 +632,8 @@ val pulse_scuba_logging : bool
 
 val pulse_skip_procedures : Str.regexp option
 
+val pulse_specialization_limit : int
+
 type pulse_taint_config =
   { sources: Pulse_config_t.matchers
   ; sanitizers: Pulse_config_t.matchers

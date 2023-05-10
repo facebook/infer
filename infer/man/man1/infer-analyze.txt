@@ -753,6 +753,9 @@ PULSE CHECKER OPTIONS
        --pulse-skip-procedures regex
            Regex of procedures that should not be analyzed by Pulse.
 
+       --pulse-specialization-limit int
+           Maximum number of summary specialization by procedure.
+
        --pulse-taint-config +path
            Path to a taint analysis configuration file or a directory
            containing such files. This file can define --pulse-taint-sources,
