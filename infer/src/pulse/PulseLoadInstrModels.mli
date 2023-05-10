@@ -8,7 +8,6 @@
 open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
-open PulseOperationResult.Import
 
 (** {1 Models for "Load" instructions, for now just reading from variables with particular names} *)
 
@@ -17,6 +16,6 @@ type model_data = {path: PathContext.t; location: Location.t}
 type model =
      model_data
   -> AbductiveDomain.t
-  -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t), base_error) PulseOperationResult.t
+  -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.t
 
 val dispatch : load:Exp.t -> model option

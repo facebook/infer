@@ -58,7 +58,7 @@ val increase_size :
   -> AbstractValue.t * ValueHistory.t
   -> desc:string
   -> AbductiveDomain.t
-  -> (AbductiveDomain.t, base_error) PulseOperationResult.t
+  -> AbductiveDomain.t PulseOperationResult.t
 
 val decrease_size :
      PathContext.t
@@ -66,7 +66,7 @@ val decrease_size :
   -> AbstractValue.t * ValueHistory.t
   -> desc:string
   -> AbductiveDomain.t
-  -> (AbductiveDomain.t, base_error) PulseOperationResult.t
+  -> AbductiveDomain.t PulseOperationResult.t
 
 val empty : AbstractValue.t * ValueHistory.t -> desc:string -> model
 
@@ -87,7 +87,7 @@ val assign_size_constant :
   -> constant:IntLit.t
   -> desc:string
   -> AbductiveDomain.t
-  -> (AbductiveDomain.t, base_error) PulseOperationResult.t
+  -> AbductiveDomain.t PulseOperationResult.t
 
 module Iterator : sig
   val internal_pointer : Fieldname.t

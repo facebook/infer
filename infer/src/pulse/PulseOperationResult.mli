@@ -9,28 +9,26 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 
-type ('ok, 'err) t = ('ok, 'err) PulseResult.t SatUnsat.t
+type 'a t = 'a AccessResult.t SatUnsat.t
 
-type 'a access_t = 'a AccessResult.t SatUnsat.t
+val sat_ok : 'a AccessResult.t SatUnsat.t -> 'a option
 
-val sat_ok : ('ok, _) PulseResult.t SatUnsat.t -> 'ok option
-
-val list_fold : 'a list -> init:'ok -> f:('ok -> 'a -> ('ok, 'err) t) -> ('ok, 'err) t
+val list_fold : 'a list -> init:'b -> f:('b -> 'a -> 'b t) -> 'b t
 
 (** For [open]ing in other modules. *)
 module Import : sig
-  (** {2 Monadic operations on the combined monad of [SatUnsat] and [PulseResult].}
+  (** {2 Monadic operations on the combined monad of [SatUnsat] and [AccessResult].}
 
       [let] operators produce [_ t] values following the naming convention [letXY] where [X] and [Y]
       depend on the types of the inputs: in [letXY a = b in c], [X] is according to the [SatUnsat.t]
-      behaviour and [Y] about the [PulseResult.t] behaviour:
+      behaviour and [Y] about the [AccessResult.t] behaviour:
 
       - [X] is [*] if [b] is a [SatUnsat.t] and [c] a [SatUnsat.t] too (bind)
       - [X] is [+] if [b] is a [SatUnsat.t] and [c] is not (map)
       - [X] is [=] if [b] is *not* a [SatUnsat.t] and [c] is a [SatUnsat.t]
 
       Similarly [Y] is [*] or [+] depending on whether the operation on the underlying
-      [PulseResult.t] is a map or or bind.
+      [AccessResult.t] is a map or or bind.
 
       We also define inline operations [>>UV] with [U] being [=], [|], or [>] corresponding to [*],
       [+], or [=] above, and similarly for [V].
@@ -41,42 +39,34 @@ module Import : sig
 
   include module type of PulseResult.Let_syntax
 
-  val ( let** ) : ('ok, 'err) t -> ('ok -> ('okk, 'err) t) -> ('okk, 'err) t
+  val ( let** ) : 'a t -> ('a -> 'b t) -> 'b t
 
-  val ( >>== ) : ('ok, 'err) t -> ('ok -> ('okk, 'err) t) -> ('okk, 'err) t
+  val ( >>== ) : 'a t -> ('a -> 'b t) -> 'b t
 
-  val ( let++ ) : ('ok, 'err) t -> ('ok -> 'okk) -> ('okk, 'err) t
+  val ( let++ ) : 'a t -> ('a -> 'b) -> 'b t
 
-  val ( >>|| ) : ('ok, 'err) t -> ('ok -> 'okk) -> ('okk, 'err) t
+  val ( >>|| ) : 'a t -> ('a -> 'b) -> 'b t
 
-  val ( let+* ) : ('ok, 'err) t -> ('ok -> ('okk, 'err) PulseResult.t) -> ('okk, 'err) t
+  val ( let+* ) : 'a t -> ('a -> 'b AccessResult.t) -> 'b t
 
-  val ( >>|= ) : ('ok, 'err) t -> ('ok -> ('okk, 'err) PulseResult.t) -> ('okk, 'err) t
+  val ( >>|= ) : 'a t -> ('a -> 'b AccessResult.t) -> 'b t
 
-  val ( let=* ) : ('ok, 'err) PulseResult.t -> ('ok -> ('okk, 'err) t) -> ('okk, 'err) t
+  val ( let=* ) : 'a AccessResult.t -> ('a -> 'b t) -> 'b t
 
-  val ( >>>= ) : ('ok, 'err) PulseResult.t -> ('ok -> ('okk, 'err) t) -> ('okk, 'err) t
+  val ( >>>= ) : 'a AccessResult.t -> ('a -> 'b t) -> 'b t
 
-  val ( let<*> ) :
-       ('a, 'err) PulseResult.t
-    -> ('a -> ('b, 'err) PulseResult.t list)
-    -> ('b, 'err) PulseResult.t list
-  (** monadic "bind" but not really that turns an [PulseResult.t] into a list of [PulseResult.t]s
-      (not really because the first type is not an [PulseResult.t list] but just an [PulseResult.t]) *)
+  val ( let<*> ) : 'a AccessResult.t -> ('a -> 'b AccessResult.t list) -> 'b AccessResult.t list
+  (** monadic "bind" but not really that turns an [AccessResult.t] into a list of [AccessResult.t]s
+      (not really because the first type is not an [AccessResult.t list] but just an
+      [AccessResult.t]) *)
 
-  val ( let<**> ) :
-    ('a, 'err) t -> ('a -> ('b, 'err) PulseResult.t list) -> ('b, 'err) PulseResult.t list
+  val ( let<**> ) : 'a t -> ('a -> 'b AccessResult.t list) -> 'b AccessResult.t list
 
   val ( let<+> ) :
-       ('a, 'err) PulseResult.t
-    -> ('a -> 'abductive_domain_t)
-    -> ('abductive_domain_t ExecutionDomain.base_t, 'err) PulseResult.t list
-  (** monadic "map" but even less really that turns a [PulseResult.t] into an analysis result *)
+    'a AccessResult.t -> ('a -> AbductiveDomain.t) -> ExecutionDomain.t AccessResult.t list
+  (** monadic "map" but even less really that turns a [AccessResult.t] into an analysis result *)
 
-  val ( let<++> ) :
-       ('a, 'err) t
-    -> ('a -> 'abductive_domain_t)
-    -> ('abductive_domain_t ExecutionDomain.base_t, 'err) PulseResult.t list
+  val ( let<++> ) : 'a t -> ('a -> AbductiveDomain.t) -> ExecutionDomain.t AccessResult.t list
 
   (** {2 Imported types for ease of use and so we can write variants without the corresponding
       module prefix} *)

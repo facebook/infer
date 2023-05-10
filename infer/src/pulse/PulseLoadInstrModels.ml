@@ -17,7 +17,7 @@ type model_data = {path: PathContext.t; location: Location.t}
 type model =
      model_data
   -> AbductiveDomain.t
-  -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t), base_error) PulseOperationResult.t
+  -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.t
 
 let std_is_same_v t1 t2 : model =
  fun {path; location} astate ->

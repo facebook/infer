@@ -9,9 +9,7 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 
-type ('ok, 'err) t = ('ok, 'err) PulseResult.t SatUnsat.t
-
-type 'a access_t = 'a AccessResult.t SatUnsat.t
+type 'ok t = 'ok AccessResult.t SatUnsat.t
 
 module Import = struct
   include PulseResult.Let_syntax
@@ -136,7 +134,7 @@ end
 
 open Import
 
-let sat_ok : ('ok, _) t -> _ = function
+let sat_ok : 'ok t -> _ = function
   | Sat (Ok x) ->
       Some x
   | Unsat | Sat (FatalError _ | Recoverable _) ->

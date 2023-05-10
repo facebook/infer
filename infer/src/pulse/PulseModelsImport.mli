@@ -110,14 +110,14 @@ module Basic : sig
     -> value:AbstractValue.t * ValueHistory.t
     -> desc:string
     -> AbductiveDomain.t
-    -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.access_t
+    -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.t
 
   val alloc_value_address :
        Typ.t
     -> desc:string
     -> model_data
     -> AbductiveDomain.t
-    -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.access_t
+    -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.t
 
   val early_exit : model
 
@@ -142,7 +142,7 @@ module Basic : sig
     -> initialize:bool
     -> model_data
     -> AbductiveDomain.t
-    -> AbductiveDomain.t AccessResult.t SatUnsat.t
+    -> AbductiveDomain.t PulseOperationResult.t
 
   val alloc_no_leak_not_null :
        ?desc:string
@@ -150,7 +150,7 @@ module Basic : sig
     -> initialize:bool
     -> model_data
     -> AbductiveDomain.t
-    -> AbductiveDomain.t AccessResult.t SatUnsat.t
+    -> AbductiveDomain.t PulseOperationResult.t
 
   val call_constructor :
        Typ.name
