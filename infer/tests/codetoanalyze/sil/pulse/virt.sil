@@ -44,7 +44,7 @@ define num_value(arg: *Num) : int {
     ret n0.Num.value()
 }
 
-define call_num_value() : int {
+define call_num_value_on_allocated_int() : int {
   #entry:
     n0 = __sil_allocate(<Int>)
     store n0.Int.value <- 42 : int
@@ -53,7 +53,7 @@ define call_num_value() : int {
 
 define test_dyntype_specialization_bad(x: *Int) : void {
   #entry:
-    n0 = __sil_eq(call_num_value(), 42)
+    n0 = __sil_eq(call_num_value_on_allocated_int(), 42)
     prune n0
     store &x <- null : *Int
     n1: *Int = load &x
@@ -63,7 +63,45 @@ define test_dyntype_specialization_bad(x: *Int) : void {
 
 define test_dyntype_specialization_good(x: *Int) : void {
   #entry:
-    n0 = __sil_eq(call_num_value(), 42)
+    n0 = __sil_eq(call_num_value_on_allocated_int(), 42)
+    prune !n0
+    store &x <- null : *Int
+    n1: *Int = load &x
+    n2: int = load n1.Int.value
+    ret null
+}
+
+// devirtualization on final class should be easier
+type I42 extends Int .final { }
+
+define I42.value(this: *I42): int {
+  #b0:
+    ret 42
+}
+
+define call_num_value_on_declared_i42(arg: *I42) : int {
+  #entry:
+    n0: *I42 = load &arg
+    ret num_value(n0)
+}
+
+define devirtualize_with_final_bad(arg: *I42) : void {
+  local x: *Int
+  #b0:
+    n3: *I42 = load &arg
+    n0 = __sil_eq(call_num_value_on_declared_i42(n3), 42)
+    prune n0
+    store &x <- null : *Int
+    n1: *Int = load &x
+    n2: int = load n1.Int.value
+    ret null
+}
+
+define FP_devirtualize_with_final_good(arg: *I42) : void {
+  local x: *Int
+  #b0:
+    n3: *I42 = load &arg
+    n0 = __sil_eq(call_num_value_on_declared_i42(n3), 42)
     prune !n0
     store &x <- null : *Int
     n1: *Int = load &x
