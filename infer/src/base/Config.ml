@@ -1683,6 +1683,8 @@ and hackc_binary =
     "Specify hackc binary to use (either name or path)"
 
 
+and hack_models = CLOpt.mk_string_opt ~long:"hack-models" "Specify .sil file to use as models"
+
 and hack_naming_table =
   CLOpt.mk_path_opt ~long:"hack-naming-table" "Location of a Hack naming table (sqlite)"
 
@@ -3803,6 +3805,8 @@ and genrule_mode = !genrule_mode
 and hack_naming_table = !hack_naming_table
 
 and hackc_binary = !hackc_binary
+
+and hack_models = !hack_models
 
 and help_checker =
   RevList.rev_map !help_checker ~f:(fun checker_string ->

@@ -334,6 +334,16 @@ let start_hackc compiler args =
   (pid, stdout)
 
 
+let load_textual_model filename =
+  L.progress "Loading textual models in %s@\n" filename ;
+  match TextualParser.TextualFile.translate (StandaloneFile filename) with
+  | Ok sil ->
+      TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
+      Tenv.load_global () |> Option.iter ~f:(fun dst -> Tenv.merge ~src:sil.tenv ~dst)
+  | Error (sourcefile, errs) ->
+      List.iter errs ~f:(L.external_error "%a@\n" (TextualParser.pp_error sourcefile))
+
+
 (** Run hackc [compiler] with [args] and consume results of translation from its stdout. We don't do
     any pre-processing of [args] and let hackc deal with multiple files on its own. We also pipe
     stderr into a temp file just in case. *)
@@ -352,6 +362,7 @@ let compile compiler args =
          fine. *)
       () ) ;
   L.progress "Finished capture: success %d files, error %d files.@\n" n_captured n_error ;
+  Option.iter Config.hack_models ~f:load_textual_model ;
   if (not Config.keep_going) && n_error > 0 then
     L.die ExternalError
       "There were errors during capture. Re-run with --keep-going to ignore the errors."

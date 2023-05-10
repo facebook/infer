@@ -14,5 +14,7 @@ SOURCES = $(sort $(wildcard *.hack))
 default: test
 
 $(INFER_OUT)/report.json: $(SOURCES) $(INFER_BIN) $(HACKC)
-	$(INFER_BIN) --quiet --no-progress-bar --pulse-only --debug-exceptions \
-		--dump-duplicate-symbols -o $(INFER_OUT) --hackc-binary $(HACKC) -- hackc compile-infer $(SOURCES)
+	$(INFER_BIN) --quiet --no-progress-bar --pulse-only --debug-exceptions\
+		--dump-duplicate-symbols -o $(INFER_OUT) \
+                --hack-models ../../sil/pulse/models/models.sil \
+                --hackc-binary $(HACKC) -- hackc compile-infer $(SOURCES)

@@ -15,9 +15,14 @@ define $builtins.hack_string(str: *string) : *HackMixed {
     ret n0
 }
 
+type HackInt = { val: int }
+
 define $builtins.hack_int(i: int) : *HackMixed {
   #entry:
-    ret null
+    n0 = __sil_allocate(<HackInt>)
+    n1: int = load &i
+    store n0.HackInt.val <- n1 : int
+    ret n0
 }
 
 type HackBool = { val: int }
@@ -43,6 +48,32 @@ define $builtins.hack_is_true(b: *HackMixed) : int {
     ret n1
 }
 
+define $builtins.hhbc_cmp_eq(x: *HackMixed, y: *HackMixed) : *HackBool {
+  //TODO: provide something more generic (right now, it works for int only)
+  #entry:
+    n0: *HackMixed = load &x
+    n1: *HackMixed = load &y
+    n2: int = load n0.HackInt.val
+    n3: int = load n1.HackInt.val
+    n4 = __sil_eq(n2, n3)
+    n5 = __sil_allocate(<HackBool>)
+    store n5.HackBool.val <- n4 : int
+    ret n5
+}
+
+define $builtins.hhbc_cmp_neq(x: *HackMixed, y: *HackMixed) : *HackBool {
+  //TODO: provide something more generic (right now, it works for int only)
+  #entry:
+    n0: *HackMixed = load &x
+    n1: *HackMixed = load &y
+    n2: int = load n0.HackInt.val
+    n3: int = load n1.HackInt.val
+    n4 = __sil_ne(n2, n3)
+    n5 = __sil_allocate(<HackBool>)
+    store n5.HackBool.val <- n4 : int
+    ret n5
+}
+
 define $builtins.hhbc_class_has_reified_generics(class: *HackMixed): *HackMixed {
   #entry:
     ret $builtins.hack_make_false()
@@ -54,6 +85,11 @@ define $builtins.hhbc_has_reified_parent(class: *HackMixed): *HackMixed {
 }
 
 define $builtins.hhbc_is_type_struct_c(o: *HackMixed, dict: *HackMixed, i: *HackMixed): *HackMixed {
+  #entry:
+    ret null
+}
+
+define $builtins.hhbc_is_type_int(o: *HackMixed): *HackMixed {
   #entry:
     ret null
 }
