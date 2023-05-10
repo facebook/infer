@@ -105,24 +105,46 @@ type t =
   ; path_condition: Formula.t
   ; decompiler: (Decompiler.t[@yojson.opaque] [@equal.ignore] [@compare.ignore])
   ; topl: (PulseTopl.state[@yojson.opaque])
-  ; need_specialization: bool
+  ; need_closure_specialization: bool
+  ; need_dynamic_type_specialization: (Pvar.Set.t[@yojson.opaque])
   ; skipped_calls: SkippedCalls.t }
 [@@deriving compare, equal, yojson_of]
 
-let pp f {post; pre; path_condition; decompiler; need_specialization; topl; skipped_calls} =
+let pp f
+    { post
+    ; pre
+    ; path_condition
+    ; decompiler
+    ; need_closure_specialization
+    ; need_dynamic_type_specialization
+    ; topl
+    ; skipped_calls } =
   let pp_decompiler f =
     if Config.debug_level_analysis >= 3 then F.fprintf f "decompiler=%a;@;" Decompiler.pp decompiler
   in
-  F.fprintf f "@[<v>%a@;%a@;PRE=[%a]@;%tneed_specialization=%b@;skipped_calls=%a@;Topl=%a@]"
-    Formula.pp path_condition PostDomain.pp post PreDomain.pp pre pp_decompiler need_specialization
-    SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
+  F.fprintf f
+    "@[<v>%a@;\
+     %a@;\
+     PRE=[%a]@;\
+     %tneed_closure_specialization=%b@;\
+     need_dynamic_type_specialization=%a@;\
+     skipped_calls=%a@;\
+     Topl=%a@]"
+    Formula.pp path_condition PostDomain.pp post PreDomain.pp pre pp_decompiler
+    need_closure_specialization Pvar.Set.pp need_dynamic_type_specialization SkippedCalls.pp
+    skipped_calls PulseTopl.pp_state topl
 
 
 let set_path_condition path_condition astate = {astate with path_condition}
 
-let set_need_specialization astate = {astate with need_specialization= true}
+let set_need_closure_specialization astate = {astate with need_closure_specialization= true}
 
-let unset_need_specialization astate = {astate with need_specialization= false}
+let unset_need_closure_specialization astate = {astate with need_closure_specialization= false}
+
+let add_need_dynamic_type_specialization pvar astate =
+  { astate with
+    need_dynamic_type_specialization= Pvar.Set.add pvar astate.need_dynamic_type_specialization }
+
 
 let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}
 
@@ -182,14 +204,10 @@ module Stack = struct
               PreDomain.update ~stack:foot_stack ~heap:foot_heap astate.pre
             else astate.pre
           in
-          ( { post= PostDomain.update astate.post ~stack:post_stack ~heap:post_heap ~attrs:post_attrs
-            ; pre
-            ; path_condition= astate.path_condition
-            ; decompiler= astate.decompiler
-            ; need_specialization= astate.need_specialization
-            ; topl= astate.topl
-            ; skipped_calls= astate.skipped_calls }
-          , addr_hist )
+          let post =
+            PostDomain.update astate.post ~stack:post_stack ~heap:post_heap ~attrs:post_attrs
+          in
+          ({astate with post; pre}, addr_hist)
     in
     let astate =
       map_decompiler astate ~f:(fun decompiler ->
@@ -545,13 +563,9 @@ module Memory = struct
                  (not (TaintSanitizedSet.is_empty taint_sanitizers))
                  (TaintSanitized taint_sanitizers)
           in
-          ( { post= PostDomain.update astate.post ~heap:post_heap
-            ; pre= PreDomain.update astate.pre ~heap:foot_heap
-            ; path_condition= astate.path_condition
-            ; decompiler= astate.decompiler
-            ; need_specialization= astate.need_specialization
-            ; topl= astate.topl
-            ; skipped_calls= astate.skipped_calls }
+          ( { astate with
+              post= PostDomain.update astate.post ~heap:post_heap
+            ; pre= PreDomain.update astate.pre ~heap:foot_heap }
           , addr_hist_dst )
     in
     let astate =
@@ -655,6 +669,88 @@ let add_static_types astate formals_and_captured =
   List.fold formals_and_captured ~init:astate ~f:record_static_type
 
 
+let fold_on_pvar proc_name stack ~f ~default pvar =
+  match BaseStack.find_opt (Var.of_pvar pvar) stack with
+  | None ->
+      L.d_printfln "Misnamed %a. Not found in initial_stack of %a" Pvar.pp_value pvar Procname.pp
+        proc_name ;
+      ( match Pvar.get_declaring_function pvar with
+      | None ->
+          ()
+      | Some pname ->
+          L.d_printfln "%a belongs to %a" Pvar.pp_value pvar Procname.pp pname ) ;
+      default
+  | Some addr ->
+      f addr
+
+
+let apply_specialization proc_name specialization astate =
+  match specialization with
+  | None ->
+      astate
+  | Some (Specialization.Pulse.Aliases aliases) ->
+      (* If a function is alias-specialized, then we want to make sure all the captured
+         variables and parameters aliasing each other share the same memory. To do so, we
+         simply add a dereference access from each aliasing variables' address to the same
+         address in the pre and the post of the initial state.
+
+         e.g. f(x, y) with the aliasing information x = y will have the following pre:
+           roots={ &x=v1, &y=v2 };
+           mem  ={ v1 -> { * -> v3 }, v2 -> { * -> v3 }, v3 -> { } };
+           attrs={ };
+      *)
+      let pre_heap = (astate.pre :> base_domain).heap in
+      let post_heap = (astate.post :> base_domain).heap in
+      let pre_heap, post_heap =
+        List.fold aliases ~init:(pre_heap, post_heap) ~f:(fun (pre_heap, post_heap) alias ->
+            let pre_heap, post_heap, _ =
+              List.fold alias ~init:(pre_heap, post_heap, None)
+                ~f:(fun ((pre_heap, post_heap, addr) as acc) pvar ->
+                  fold_on_pvar proc_name (astate.pre :> base_domain).stack pvar ~default:acc
+                    ~f:(fun (src_addr, addr_hist) ->
+                      let addr =
+                        match addr with None -> AbstractValue.mk_fresh () | Some addr -> addr
+                      in
+                      let pre_heap =
+                        BaseMemory.add_edge src_addr Dereference (addr, ValueHistory.epoch) pre_heap
+                        |> BaseMemory.register_address addr
+                      in
+                      let post_heap =
+                        BaseMemory.add_edge src_addr Dereference (addr, addr_hist) post_heap
+                      in
+                      (pre_heap, post_heap, Some addr) ) )
+            in
+            (pre_heap, post_heap) )
+      in
+      { astate with
+        pre= PreDomain.update ~heap:pre_heap astate.pre
+      ; post= PostDomain.update ~heap:post_heap astate.post }
+  | Some (Specialization.Pulse.DynamicTypes dtypes) ->
+      let pre = (astate.pre :> base_domain) in
+      let post = (astate.post :> base_domain) in
+      let pre_heap, post_heap, attrs =
+        Pvar.Map.fold
+          (fun pvar typename (pre_heap, post_heap, attrs) ->
+            fold_on_pvar proc_name (astate.pre :> base_domain).stack pvar
+              ~default:(pre_heap, post_heap, attrs) ~f:(fun (src_addr, addr_hist) ->
+                let addr = AbstractValue.mk_fresh () in
+                let pre_heap =
+                  BaseMemory.add_edge src_addr Dereference (addr, ValueHistory.epoch) pre_heap
+                  |> BaseMemory.register_address addr
+                in
+                let post_heap =
+                  BaseMemory.add_edge src_addr Dereference (addr, addr_hist) post_heap
+                in
+                let typ = Typ.mk_struct typename in
+                let attrs = BaseAddressAttributes.add_dynamic_type typ addr attrs in
+                (pre_heap, post_heap, attrs) ) )
+          dtypes (pre.heap, post.heap, post.attrs)
+      in
+      { astate with
+        pre= PreDomain.update ~heap:pre_heap ~attrs astate.pre
+      ; post= PostDomain.update ~heap:post_heap ~attrs astate.post }
+
+
 let mk_initial tenv proc_name specialization (proc_attrs : ProcAttributes.t) =
   (* HACK: save the formals in the stacks of the pre and the post to remember which local variables
      correspond to formals *)
@@ -712,7 +808,8 @@ let mk_initial tenv proc_name specialization (proc_attrs : ProcAttributes.t) =
     ; post
     ; path_condition= Formula.ttrue
     ; decompiler= Decompiler.empty
-    ; need_specialization= false
+    ; need_closure_specialization= false
+    ; need_dynamic_type_specialization= Pvar.Set.empty
     ; topl= PulseTopl.start ()
     ; skipped_calls= SkippedCalls.empty }
   in
@@ -723,59 +820,7 @@ let mk_initial tenv proc_name specialization (proc_attrs : ProcAttributes.t) =
       add_static_types astate formals_and_captured
     else astate
   in
-  let apply_aliases astate =
-    (* If a function is alias-specialized, then we want to make sure all the captured
-       variables and parameters aliasing each other share the same memory. To do so, we
-       simply add a dereference access from each aliasing variables' address to the same
-       address in the pre and the post of the initial state.
-
-       e.g. f(x, y) with the aliasing information x = y will have the following pre:
-         roots={ &x=v1, &y=v2 };
-         mem  ={ v1 -> { * -> v3 }, v2 -> { * -> v3 }, v3 -> { } };
-         attrs={ };
-    *)
-    match specialization with
-    | None ->
-        astate
-    | Some (Specialization.Pulse.Aliases aliases) ->
-        let pre_heap = (astate.pre :> base_domain).heap in
-        let post_heap = (astate.post :> base_domain).heap in
-        let pre_heap, post_heap =
-          List.fold aliases ~init:(pre_heap, post_heap) ~f:(fun (pre_heap, post_heap) alias ->
-              let pre_heap, post_heap, _ =
-                List.fold alias ~init:(pre_heap, post_heap, None)
-                  ~f:(fun ((pre_heap, post_heap, addr) as acc) pvar ->
-                    match BaseStack.find_opt (Var.of_pvar pvar) initial_stack with
-                    | None ->
-                        L.d_printfln "Misnamed %a. Not found in intial_stack of %a" Pvar.pp_value
-                          pvar Procname.pp proc_name ;
-                        ( match Pvar.get_declaring_function pvar with
-                        | None ->
-                            ()
-                        | Some pname ->
-                            L.d_printfln "%a belongs to %a" Pvar.pp_value pvar Procname.pp pname ) ;
-                        acc
-                    | Some (src_addr, addr_hist) ->
-                        let addr =
-                          match addr with None -> AbstractValue.mk_fresh () | Some addr -> addr
-                        in
-                        let pre_heap =
-                          BaseMemory.add_edge src_addr Dereference (addr, ValueHistory.epoch)
-                            pre_heap
-                          |> BaseMemory.register_address addr
-                        in
-                        let post_heap =
-                          BaseMemory.add_edge src_addr Dereference (addr, addr_hist) post_heap
-                        in
-                        (pre_heap, post_heap, Some addr) )
-              in
-              (pre_heap, post_heap) )
-        in
-        { astate with
-          pre= PreDomain.update ~heap:pre_heap pre
-        ; post= PostDomain.update ~heap:post_heap post }
-  in
-  apply_aliases astate
+  apply_specialization proc_name specialization astate
 
 
 let add_skipped_call pname trace astate =
@@ -1427,7 +1472,11 @@ module Summary = struct
 
   let get_topl {topl} = topl
 
-  let need_specialization {need_specialization} = need_specialization
+  let need_closure_specialization {need_closure_specialization} = need_closure_specialization
+
+  let need_dynamic_type_specialization {need_dynamic_type_specialization} =
+    need_dynamic_type_specialization
+
 
   let get_skipped_calls {skipped_calls} = skipped_calls
 
@@ -1526,7 +1575,7 @@ module Summary = struct
           astate.skipped_calls )
 
 
-  let with_need_specialization summary = {summary with need_specialization= true}
+  let with_need_closure_specialization summary = {summary with need_closure_specialization= true}
 end
 
 module Topl = struct

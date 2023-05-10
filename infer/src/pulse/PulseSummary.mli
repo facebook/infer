@@ -11,7 +11,7 @@ open PulseDomainInterface
 
 type pre_post_list = ExecutionDomain.summary list [@@deriving yojson_of]
 
-type t = {main: pre_post_list; alias_specialized: pre_post_list Specialization.Pulse.Map.t}
+type t = {main: pre_post_list; specialized: pre_post_list Specialization.Pulse.Map.t}
 [@@deriving yojson_of]
 
 val of_posts :

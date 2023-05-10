@@ -54,6 +54,7 @@ type contradiction =
           addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to a
           single address [caller_addr] in the caller's current state. Typically raised when calling
           [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
+  | DynamicTypeNeeded of Pvar.Set.t
   | CapturedFormalActualLength of
       { captured_formals: (Var.t * Typ.t) list
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
@@ -67,6 +68,8 @@ let pp_contradiction fmt = function
         "address %a in caller already bound to %a, not %a@\nnote: current call state was %a"
         AbstractValue.pp addr_caller AbstractValue.pp addr_callee' AbstractValue.pp addr_callee
         pp_call_state call_state
+  | DynamicTypeNeeded pvars ->
+      F.fprintf fmt "formals %a need to give their dynamic types" Pvar.Set.pp pvars
   | CapturedFormalActualLength {captured_formals; captured_actuals} ->
       F.fprintf fmt "captured formals have length %d but captured actuals have length %d"
         (List.length captured_formals) (List.length captured_actuals)
@@ -80,6 +83,8 @@ let pp_contradiction fmt = function
 let log_contradiction = function
   | Aliasing _ ->
       Stats.incr_pulse_aliasing_contradictions ()
+  | DynamicTypeNeeded _ ->
+      ()
   | FormalActualLength _ ->
       Stats.incr_pulse_args_length_contradictions ()
   | CapturedFormalActualLength _ ->
@@ -91,8 +96,15 @@ let log_contradiction = function
 let is_aliasing_contradiction = function
   | Aliasing _ ->
       true
-  | CapturedFormalActualLength _ | FormalActualLength _ | PathCondition ->
+  | DynamicTypeNeeded _ | CapturedFormalActualLength _ | FormalActualLength _ | PathCondition ->
       false
+
+
+let is_dynamic_type_needed_contradiction = function
+  | DynamicTypeNeeded pvars ->
+      Some pvars
+  | Aliasing _ | CapturedFormalActualLength _ | FormalActualLength _ | PathCondition ->
+      None
 
 
 exception Contradiction of contradiction
@@ -651,9 +663,9 @@ let record_skipped_calls callee_proc_name call_loc callee_summary call_state =
   {call_state with astate}
 
 
-let record_need_specialization callee_summary call_state =
-  if AbductiveDomain.Summary.need_specialization callee_summary then
-    {call_state with astate= AbductiveDomain.set_need_specialization call_state.astate}
+let record_need_closure_specialization callee_summary call_state =
+  if AbductiveDomain.Summary.need_closure_specialization callee_summary then
+    {call_state with astate= AbductiveDomain.set_need_closure_specialization call_state.astate}
   else call_state
 
 
@@ -868,7 +880,7 @@ let apply_post path callee_proc_name call_location callee_summary ~captured_form
     let+ call_state =
       record_post_remaining_attributes path callee_proc_name call_location callee_summary call_state
       |> record_skipped_calls callee_proc_name call_location callee_summary
-      |> record_need_specialization callee_summary
+      |> record_need_closure_specialization callee_summary
       |> conjoin_callee_arith `Post (AbductiveDomain.Summary.get_path_condition callee_summary)
       (* normalize subst again now that we know more arithmetic facts *)
       >>| normalize_subst_for_post
@@ -1050,7 +1062,11 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
         in
         (astate, return_caller, call_state.subst)
       in
-      (Sat res, None)
+      let contradiciton =
+        let pvars = AbductiveDomain.Summary.need_dynamic_type_specialization callee_summary in
+        if Pvar.Set.is_empty pvars then None else Some (DynamicTypeNeeded pvars)
+      in
+      (Sat res, contradiciton)
     with Contradiction reason ->
       L.d_printfln "Cannot apply post-condition: %a" pp_contradiction reason ;
       log_contradiction reason ;

@@ -21,6 +21,7 @@ type contradiction = private
           addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to a
           single address [caller_addr] in the caller's current state. Typically raised when calling
           [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
+  | DynamicTypeNeeded of Pvar.Set.t
   | CapturedFormalActualLength of
       { captured_formals: (Var.t * Typ.t) list
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
@@ -29,6 +30,8 @@ type contradiction = private
   | PathCondition
 
 val is_aliasing_contradiction : contradiction -> bool
+
+val is_dynamic_type_needed_contradiction : contradiction -> Pvar.Set.t option
 
 val apply_summary :
      PathContext.t

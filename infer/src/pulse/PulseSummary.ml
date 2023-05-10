@@ -15,8 +15,7 @@ open PulseOperationResult.Import
 type pre_post_list = ExecutionDomain.summary list [@@deriving yojson_of]
 
 type t =
-  { main: pre_post_list
-  ; alias_specialized: (pre_post_list Specialization.Pulse.Map.t[@yojson.opaque]) }
+  {main: pre_post_list; specialized: (pre_post_list Specialization.Pulse.Map.t[@yojson.opaque])}
 [@@deriving yojson_of]
 
 let pp_pre_post_list fmt ~pp_kind pre_posts =
@@ -27,8 +26,8 @@ let pp_pre_post_list fmt ~pp_kind pre_posts =
   F.close_box ()
 
 
-let pp fmt {main; alias_specialized} =
-  if Specialization.Pulse.Map.is_empty alias_specialized then
+let pp fmt {main; specialized} =
+  if Specialization.Pulse.Map.is_empty specialized then
     pp_pre_post_list fmt ~pp_kind:(fun _fmt -> ()) main
   else
     let pp_kind fmt = F.pp_print_string fmt " main" in
@@ -36,12 +35,12 @@ let pp fmt {main; alias_specialized} =
     pp_pre_post_list fmt ~pp_kind main ;
     Specialization.Pulse.Map.iter
       (fun specialization pre_posts ->
-        F.fprintf fmt "@," ;
+        F.fprintf fmt "@\n" ;
         let pp_kind fmt =
-          F.fprintf fmt " alias-specialization with %a" Specialization.Pulse.pp specialization
+          F.fprintf fmt " specialized with %a" Specialization.Pulse.pp specialization
         in
         pp_pre_post_list fmt ~pp_kind pre_posts )
-      alias_specialized ;
+      specialized ;
     F.close_box ()
 
 

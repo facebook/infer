@@ -110,47 +110,49 @@ module PulseTransferFunctions = struct
     IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
-  let need_specialization astates =
+  let need_closure_specialization astates =
     List.exists astates ~f:(fun res ->
         match PulseResult.ok res with
         | Some
-            ( ContinueProgram {AbductiveDomain.need_specialization}
-            | ExceptionRaised {AbductiveDomain.need_specialization} ) ->
-            need_specialization
+            ( ContinueProgram {AbductiveDomain.need_closure_specialization}
+            | ExceptionRaised {AbductiveDomain.need_closure_specialization} ) ->
+            need_closure_specialization
         | Some
             ( ExitProgram astate
             | AbortProgram astate
             | LatentAbortProgram {astate}
             | LatentInvalidAccess {astate} ) ->
-            AbductiveDomain.Summary.need_specialization astate
+            AbductiveDomain.Summary.need_closure_specialization astate
         | None ->
             false )
 
 
-  let reset_need_specialization needed_specialization astates =
-    if needed_specialization then
+  let reset_need_closure_specialization needed_closure_specialization astates =
+    if needed_closure_specialization then
       List.map astates ~f:(fun res ->
           PulseResult.map res ~f:(function
             | ExceptionRaised astate ->
-                let astate = AbductiveDomain.set_need_specialization astate in
+                let astate = AbductiveDomain.set_need_closure_specialization astate in
                 ExceptionRaised astate
             | ContinueProgram astate ->
-                let astate = AbductiveDomain.set_need_specialization astate in
+                let astate = AbductiveDomain.set_need_closure_specialization astate in
                 ContinueProgram astate
             | ExitProgram astate ->
-                let astate = AbductiveDomain.Summary.with_need_specialization astate in
+                let astate = AbductiveDomain.Summary.with_need_closure_specialization astate in
                 ExitProgram astate
             | AbortProgram astate ->
-                let astate = AbductiveDomain.Summary.with_need_specialization astate in
+                let astate = AbductiveDomain.Summary.with_need_closure_specialization astate in
                 AbortProgram astate
             | LatentAbortProgram latent_abort_program ->
                 let astate =
-                  AbductiveDomain.Summary.with_need_specialization latent_abort_program.astate
+                  AbductiveDomain.Summary.with_need_closure_specialization
+                    latent_abort_program.astate
                 in
                 LatentAbortProgram {latent_abort_program with astate}
             | LatentInvalidAccess latent_invalid_access ->
                 let astate =
-                  AbductiveDomain.Summary.with_need_specialization latent_invalid_access.astate
+                  AbductiveDomain.Summary.with_need_closure_specialization
+                    latent_invalid_access.astate
                 in
                 LatentInvalidAccess {latent_invalid_access with astate} ) )
     else astates
@@ -180,16 +182,16 @@ module PulseTransferFunctions = struct
     in
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
-        (* [needed_specialization] = current function already needs specialization before
+        (* [needed_closure_specialization] = current function already needs specialization before
            the upcoming call (i.e. we did not have enough information to sufficiently
            specialize a callee). *)
-        let needed_specialization = astate.AbductiveDomain.need_specialization in
-        (* [astate.need_specialization] is false when entering the call. This is to
+        let needed_closure_specialization = astate.AbductiveDomain.need_closure_specialization in
+        (* [astate.need_closure_specialization] is false when entering the call. This is to
            detect calls that need specialization. The value will be set back to true
-           (if it was) in the end by [reset_need_specialization] *)
-        let astate = AbductiveDomain.unset_need_specialization astate in
+           (if it was) in the end by [reset_need_closure_specialization] *)
+        let astate = AbductiveDomain.unset_need_closure_specialization astate in
         let maybe_call_specialization callee_pname call_exp ((res, _, _) as call_res) =
-          if (not needed_specialization) && need_specialization res then (
+          if (not needed_closure_specialization) && need_closure_specialization res then (
             L.d_printfln "Trying to closure-specialize %a" Exp.pp call_exp ;
             match
               PulseClosureSpecialization.make_specialized_call_exp analysis_data func_args
@@ -208,7 +210,7 @@ module PulseTransferFunctions = struct
           eval_args_and_call callee_pname call_exp astate
           |> maybe_call_specialization callee_pname call_exp
         in
-        (reset_need_specialization needed_specialization res, is_known_call)
+        (reset_need_closure_specialization needed_closure_specialization res, is_known_call)
     | _ ->
         (* dereference call expression to catch nil issues *)
         ( (let<**> astate, _ =
@@ -218,10 +220,10 @@ module PulseTransferFunctions = struct
                   as an argument or retrieved from an object. We do not handle blocks
                   inside objects yet so we assume we are in the former case. In this
                   case, we tell the caller that we are missing some information by
-                  setting [need_specialization] in the resulting state and the caller
+                  setting [need_closure_specialization] in the resulting state and the caller
                   will then try to specialize the current function with its available
                   information. *)
-               let astate = AbductiveDomain.set_need_specialization astate in
+               let astate = AbductiveDomain.set_need_closure_specialization astate in
                PulseOperations.eval_deref path ~must_be_valid_reason:BlockCall call_loc call_exp
                  astate
              else
@@ -234,7 +236,7 @@ module PulseTransferFunctions = struct
                    Config.function_pointer_specialization
                    && Language.equal Language.Clang
                         (Procname.get_language (Procdesc.get_proc_name proc_desc))
-                 then AbductiveDomain.set_need_specialization astate
+                 then AbductiveDomain.set_need_closure_specialization astate
                  else astate
                in
                PulseOperations.eval_deref path call_loc call_exp astate
@@ -339,15 +341,12 @@ module PulseTransferFunctions = struct
         None
 
 
-  let find_override exe_env tenv astate actuals proc_name proc_name_opt =
-    let resolve_method tenv type_name proc_name =
+  let find_override exe_env tenv astate receiver proc_name proc_name_opt =
+    let tenv_resolve_method tenv type_name proc_name =
       let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
       Tenv.resolve_method ~method_exists tenv type_name proc_name
     in
     let open IOption.Let_syntax in
-    let* {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver, _} =
-      get_receiver proc_name actuals
-    in
     match get_dynamic_type_name astate receiver with
     | Some (dynamic_type_name, source_file_opt) ->
         (* if we have a source file then do the look up in the (local) tenv
@@ -356,25 +355,37 @@ module PulseTransferFunctions = struct
           Option.bind source_file_opt ~f:(Exe_env.get_source_tenv exe_env)
           |> Option.value ~default:tenv
         in
-        resolve_method tenv dynamic_type_name proc_name
+        let+ proc_name = tenv_resolve_method tenv dynamic_type_name proc_name in
+        (proc_name, `ExactDevirtualization)
     | None ->
-        let* type_name = Procname.get_class_type_name proc_name in
-        if Language.curr_language_is Hack then
-          (* contrary to the Java frontend, the Hack frontend does not perform
-             static resolution so we have to do it here *)
-          resolve_method tenv type_name proc_name
-        else proc_name_opt
+        let+ proc_name =
+          if Language.curr_language_is Hack then
+            (* contrary to the Java frontend, the Hack frontend does not perform
+               static resolution so we have to do it here *)
+            let* type_name = Procname.get_class_type_name proc_name in
+            tenv_resolve_method tenv type_name proc_name
+          else proc_name_opt
+        in
+        (proc_name, `ApproxDevirtualization)
 
 
-  let resolve_virtual_call exe_env tenv astate actuals proc_name_opt =
+  let string_of_devirtualization_status = function
+    | `ExactDevirtualization ->
+        "exactly"
+    | `ApproxDevirtualization ->
+        "approximately"
+
+
+  let resolve_virtual_call exe_env tenv astate receiver proc_name_opt =
     Option.map proc_name_opt ~f:(fun proc_name ->
-        match find_override exe_env tenv astate actuals proc_name proc_name_opt with
-        | Some proc_name' ->
-            L.d_printfln "Dynamic dispatch: %a resolved to %a" Procname.pp proc_name Procname.pp
-              proc_name' ;
-            proc_name'
+        match find_override exe_env tenv astate receiver proc_name proc_name_opt with
+        | Some (proc_name', devirtualization_status) ->
+            L.d_printfln "Dynamic dispatch: %a %s resolved to %a" Procname.pp proc_name
+              (string_of_devirtualization_status devirtualization_status)
+              Procname.pp proc_name' ;
+            (proc_name', devirtualization_status)
         | None ->
-            proc_name )
+            (proc_name, `ApproxDevirtualization) )
 
 
   (* Hack static methods can be overriden so we need class hierarchy walkup *)
@@ -406,13 +417,24 @@ module PulseTransferFunctions = struct
            resolve_method tenv static_class_name callee_pname )
 
 
-  let improve_receiver_static_type astate actuals proc_name_opt =
+  let need_dynamic_type_specialization proc_desc astate receiver_addr =
+    (let open IOption.Let_syntax in
+     let+ pvar =
+       Procdesc.get_pvar_formals proc_desc
+       |> List.find_map ~f:(fun (pvar, _) ->
+              let var = Var.of_pvar pvar in
+              let* addr, _ = AbductiveDomain.Stack.find_opt var astate in
+              let* deref_addr, _ = AbductiveDomain.Memory.find_edge_opt addr Dereference astate in
+              if AbstractValue.equal deref_addr receiver_addr then Some pvar else None )
+     in
+     AbductiveDomain.add_need_dynamic_type_specialization pvar astate )
+    |> Option.value ~default:astate
+
+
+  let improve_receiver_static_type astate receiver proc_name_opt =
     if Language.curr_language_is Hack then
       let open IOption.Let_syntax in
       let* proc_name = proc_name_opt in
-      let* {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver, _} =
-        get_receiver proc_name actuals
-      in
       match AbductiveDomain.AddressAttributes.get_static_type receiver astate with
       | Some typ_name ->
           let improved_proc_name = Procname.replace_class proc_name typ_name in
@@ -432,14 +454,27 @@ module PulseTransferFunctions = struct
   let rec dispatch_call_eval_args
       ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) path ret
       call_exp actuals func_args call_loc flags astate callee_pname =
-    let callee_pname =
+    let callee_pname, astate =
       if flags.CallFlags.cf_virtual then
-        improve_receiver_static_type astate func_args callee_pname
-        |> resolve_virtual_call exe_env tenv astate func_args
+        match get_receiver callee_pname func_args with
+        | None ->
+            L.internal_error "No receiver on virtual call" ;
+            (callee_pname, astate)
+        | Some {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver, _} -> (
+          match
+            improve_receiver_static_type astate receiver callee_pname
+            |> resolve_virtual_call exe_env tenv astate receiver
+          with
+          | Some (proc_name, `ExactDevirtualization) ->
+              (Some proc_name, astate)
+          | Some (proc_name, `ApproxDevirtualization) ->
+              (Some proc_name, need_dynamic_type_specialization proc_desc astate receiver)
+          | None ->
+              (None, astate) )
       else if Language.curr_language_is Hack then
         (* In Hack, a static method can be inherited *)
-        resolve_hack_static_method tenv callee_pname
-      else callee_pname
+        (resolve_hack_static_method tenv callee_pname, astate)
+      else (callee_pname, astate)
     in
     let astate =
       match (callee_pname, func_args) with
@@ -1246,26 +1281,14 @@ let checker ?specialization ({InterproceduralAnalysis.proc_desc} as analysis_dat
       match specialization with
       | None ->
           let+ pre_post_list = analyze None analysis_data in
-          {PulseSummary.main= pre_post_list; alias_specialized= Specialization.Pulse.Map.empty}
+          {PulseSummary.main= pre_post_list; specialized= Specialization.Pulse.Map.empty}
       | Some (current_summary, Specialization.Pulse specialization) ->
           let+ pre_post_list = analyze (Some specialization) analysis_data in
-          let () =
-            L.debug Analysis Quiet "[specialization]adding %a@ for %a." Specialization.Pulse.pp
-              specialization Procname.pp
-              (Procdesc.get_proc_name proc_desc)
-          in
-          let () =
-            Specialization.Pulse.Map.iter
-              (fun specialization _ ->
-                L.debug Analysis Quiet "[specialization]current key: %a@." Specialization.Pulse.pp
-                  specialization )
-              current_summary.PulseSummary.alias_specialized
-          in
-          let alias_specialized =
+          let specialized =
             Specialization.Pulse.Map.add specialization pre_post_list
-              current_summary.PulseSummary.alias_specialized
+              current_summary.PulseSummary.specialized
           in
-          {current_summary with PulseSummary.alias_specialized}
+          {current_summary with PulseSummary.specialized}
     with AboutToOOM ->
       (* We trigger GC to avoid skipping the next procedure that will be analyzed. *)
       Gc.major () ;
@@ -1274,4 +1297,4 @@ let checker ?specialization ({InterproceduralAnalysis.proc_desc} as analysis_dat
 
 
 let is_already_specialized (Pulse specialization : Specialization.t) (summary : PulseSummary.t) =
-  Specialization.Pulse.Map.mem specialization summary.alias_specialized
+  Specialization.Pulse.Map.mem specialization summary.specialized

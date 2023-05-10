@@ -466,6 +466,48 @@ let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~act
   else ([Ok (ContinueProgram astate_unknown)], None)
 
 
+let mk_actuals_map actuals formals =
+  match
+    List.fold2 actuals formals ~init:Pvar.Map.empty ~f:(fun map actual (formal, _) ->
+        Pvar.Map.add formal actual map )
+  with
+  | Unequal_lengths ->
+      None
+  | Ok map ->
+      Some map
+
+
+let maybe_dynamic_type_specialization_is_needed run_analysis formals_opt actuals contradiction
+    astate =
+  let open IOption.Let_syntax in
+  let* contradiction in
+  let* pvars = PulseInterproc.is_dynamic_type_needed_contradiction contradiction in
+  let make_dynamic_type_specialization pvars =
+    (* we try to find a dynamic type name for each pvar in the [pvars] set in order to devirtualize all
+             calls in the callee (and its own callees) *)
+    let open IOption.Let_syntax in
+    let* formals = formals_opt in
+    let* actuals_map = mk_actuals_map actuals formals in
+    Pvar.Set.fold
+      (fun pvar opt_map ->
+        let* map = opt_map in
+        let* (addr, _), _ = Pvar.Map.find_opt pvar actuals_map in
+        let* dynamic_type = AbductiveDomain.AddressAttributes.get_dynamic_type addr astate in
+        let+ dynamic_type_name = Typ.name dynamic_type in
+        Pvar.Map.add pvar dynamic_type_name map )
+      pvars (Some Pvar.Map.empty)
+  in
+  match make_dynamic_type_specialization pvars with
+  | Some map ->
+      let specialization = Specialization.Pulse.DynamicTypes map in
+      L.d_printfln "requesting dyntypes specialization %a" Specialization.Pulse.pp specialization ;
+      let res, contradiction = run_analysis specialization in
+      Some (res, contradiction, `KnownCall)
+  | None ->
+      (* TODO: not implemented yet *)
+      None
+
+
 let call tenv path ~caller_proc_desc
     ~(analyze_dependency : ?specialization:Specialization.t -> Procname.t -> PulseSummary.t option)
     call_loc callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) =
@@ -503,35 +545,38 @@ let call tenv path ~caller_proc_desc
       let needs_aliasing_specialization res contradiction =
         List.is_empty res && Option.exists contradiction ~f:PulseInterproc.is_aliasing_contradiction
       in
+      let request_specialization specialization =
+        let specialized_summary : PulseSummary.t =
+          analyze_dependency ~specialization:(Pulse specialization) callee_pname |> Option.value_exn
+        in
+        match Specialization.Pulse.Map.find_opt specialization specialized_summary.specialized with
+        | None ->
+            L.die InternalError "ondemand engine did not return the expected specialized summary"
+        | Some pre_posts ->
+            pre_posts
+      in
       if needs_aliasing_specialization res contradiction then
-        if Specialization.Pulse.is_pulse_specialization_limit_not_reached summary.alias_specialized
-        then
+        if Specialization.Pulse.is_pulse_specialization_limit_not_reached summary.specialized then (
           match
             PulseAliasSpecialization.make_specialization callee_pname actuals call_kind path
               call_loc astate
           with
           | None ->
-              L.debug Analysis Verbose "alias specialization of %a failed@;" Procname.pp
-                callee_pname ;
+              L.internal_error "Alias specialization of %a failed@;" Procname.pp callee_pname ;
               (res, contradiction, `UnknownCall)
-          | Some alias_specialization -> (
+          | Some alias_specialization ->
               let specialization = Specialization.Pulse.Aliases alias_specialization in
-              let specialized_summary : PulseSummary.t =
-                analyze_dependency ~specialization:(Pulse specialization) callee_pname
-                |> Option.value_exn
-              in
-              match
-                Specialization.Pulse.Map.find_opt specialization
-                  specialized_summary.alias_specialized
-              with
-              | None ->
-                  L.die InternalError
-                    "ondemand engine did not return the expected specialized summary"
-              | Some pre_posts ->
-                  let res, contradiction = call_aux pre_posts in
-                  (res, contradiction, `KnownCall) )
+              L.d_printfln "requesting alias specialization %a" Specialization.Pulse.pp
+                specialization ;
+              let pre_posts = request_specialization specialization in
+              let res, contradiction = call_aux pre_posts in
+              (res, contradiction, `KnownCall) )
         else (res, contradiction, `UnknownCall)
-      else (res, contradiction, `KnownCall)
+      else
+        maybe_dynamic_type_specialization_is_needed
+          (fun specialization -> request_specialization specialization |> call_aux)
+          formals_opt actuals contradiction astate
+        |> Option.value ~default:(res, contradiction, `KnownCall)
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln_escaped "No spec found for %a@\n" Procname.pp callee_pname ;

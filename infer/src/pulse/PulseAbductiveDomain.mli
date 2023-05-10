@@ -48,8 +48,12 @@ type t = private
   ; decompiler: Decompiler.t
   ; topl: PulseTopl.state
         (** state at of the Topl monitor at the current program point, when Topl is enabled *)
-  ; need_specialization: bool
+  ; need_closure_specialization: bool
         (** a call that could be resolved via analysis-time specialization has been skipped *)
+  ; need_dynamic_type_specialization: Pvar.Set.t
+        (** a set of parameter that are used as receiver of method calls in the instructions reached
+            so far (would be better placed in the non-dijunctive abstract state, but we plan to
+            improve that later) *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 [@@deriving equal]
@@ -235,9 +239,11 @@ val add_skipped_calls : SkippedCalls.t -> t -> t
 
 val set_path_condition : Formula.t -> t -> t
 
-val set_need_specialization : t -> t
+val set_need_closure_specialization : t -> t
 
-val unset_need_specialization : t -> t
+val unset_need_closure_specialization : t -> t
+
+val add_need_dynamic_type_specialization : Pvar.t -> t -> t
 
 val map_decompiler : t -> f:(Decompiler.t -> Decompiler.t) -> t
 
@@ -287,7 +293,7 @@ module Summary : sig
 
   val skipped_calls_match_pattern : summary -> bool
 
-  val with_need_specialization : summary -> summary
+  val with_need_closure_specialization : summary -> summary
 
   val of_post :
        Tenv.t
@@ -322,7 +328,9 @@ module Summary : sig
 
   val get_topl : summary -> PulseTopl.state
 
-  val need_specialization : summary -> bool
+  val need_closure_specialization : summary -> bool
+
+  val need_dynamic_type_specialization : summary -> Pvar.Set.t
 
   val get_skipped_calls : summary -> SkippedCalls.t
 

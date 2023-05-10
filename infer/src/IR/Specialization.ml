@@ -17,9 +17,24 @@ module Pulse = struct
       Pp.seq ~sep:"^" pp_alias fmt aliases
   end
 
-  type t = Aliases of Aliases.t [@@deriving equal, compare]
+  module DynamicTypes = struct
+    type t = Typ.name Pvar.Map.t [@@deriving equal, compare]
 
-  let pp fmt = function Aliases aliases -> Aliases.pp fmt aliases
+    let pp fmt dtypes =
+      let pp_binding fmt (pvar, typename) =
+        F.fprintf fmt "%a: %a" (Pvar.pp Pp.text) pvar Typ.Name.pp typename
+      in
+      Pvar.Map.bindings dtypes |> F.fprintf fmt "{%a}" (Pp.seq ~sep:"," pp_binding)
+  end
+
+  type t = Aliases of Aliases.t | DynamicTypes of DynamicTypes.t [@@deriving equal, compare]
+
+  let pp fmt = function
+    | Aliases aliases ->
+        F.fprintf fmt "(alias) %a" Aliases.pp aliases
+    | DynamicTypes dtypes ->
+        F.fprintf fmt "(dynamic types) %a" DynamicTypes.pp dtypes
+
 
   module Map = PrettyPrintable.MakePPMap (struct
     type nonrec t = t

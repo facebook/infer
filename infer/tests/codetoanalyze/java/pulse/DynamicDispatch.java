@@ -100,13 +100,13 @@ public class DynamicDispatch {
     dynamicDispatchWrapperBar(o).toString();
   }
 
-  static void FN_dynamicDispatchCallsWrapperWithSubtypeBad() {
+  static void dynamicDispatchCallsWrapperWithSubtypeBad() {
     // Should report because Subtype.foo() returns null
     Supertype o = new Subtype();
     dynamicDispatchWrapperFoo(o).toString();
   }
 
-  static void FP_dynamicDispatchCallsWrapperWithSubtypeOK() {
+  static void dynamicDispatchCallsWrapperWithSubtypeOK() {
     // Should not report because Subtype.bar() does not returns null
     Supertype o = new Subtype();
     dynamicDispatchWrapperBar(o).toString();
@@ -137,7 +137,7 @@ public class DynamicDispatch {
     return o.foo();
   }
 
-  void FN_dynamicResolutionWithPrivateMethodBad() {
+  void dynamicResolutionWithPrivateMethodBad() {
     Supertype subtype = new Subtype();
     callFoo(subtype).toString();
   }
