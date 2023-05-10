@@ -22,3 +22,10 @@ val to_string : t -> string
 
 val static_companion : t -> t
 (** return the class of the companion class object of this class eg: Foo -> Foo$static *)
+
+val static_companion_origin : t -> t
+(** return the origin class of a companion class object eg: Foo$static -> Foo. the result is not
+    specified if is the name is not a valid static class name *)
+
+val is_static : t -> bool
+(** tests if the name is a valid static class name (ie. ends with "$static") *)

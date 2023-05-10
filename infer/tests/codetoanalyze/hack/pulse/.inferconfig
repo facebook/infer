@@ -1,8 +1,8 @@
 {
   "pulse-taint-sources": [
     { "procedure": "$root.Level1::taintSource" },
-    { "class_names": ["OuterFile$static"], "method_names": ["taintSource"] },
-    { "class_names": ["OuterFileSuper$static"], "method_names": ["superTaintSource"] },
+    { "class_names": ["OuterFile"], "method_names": ["taintSource"] },
+    { "class_names": ["OuterFileSuper"], "method_names": ["superTaintSource"] },
     { "class_names": ["Level5Base"], "method_names": ["getSuperContext"] },
     {
       "procedure_regex": ".*",
@@ -17,7 +17,7 @@
   "pulse-taint-sinks": [
     { "procedure": "explicitSinkAllArgs" },
     { "procedure": "$root.Level1::taintSink" },
-    { "class_names": ["OuterFile$static"], "method_names": ["taintSink"] },
+    { "class_names": ["OuterFile"], "method_names": ["taintSink"] },
     { "class_names": ["DaoQueries"], "method_names": ["query"] },
     { "class_name_regex": "Logger.*" }
   ]

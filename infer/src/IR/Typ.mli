@@ -199,6 +199,12 @@ module Name : sig
   module Hack : sig
     val static_companion : t -> t
     (** See {!HackClassName.static_companion} *)
+
+    val static_companion_origin : t -> t
+    (** See {!HackClassName.static_companion_origin} *)
+
+    val is_static : t -> bool
+    (** See {!HackClassName.is_static} *)
   end
 
   module Java : sig

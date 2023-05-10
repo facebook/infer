@@ -201,6 +201,13 @@ let procedure_matches tenv matchers ?block_passed_to proc_name actuals =
   List.filter_map matchers ~f:(fun matcher ->
       let class_names_match class_names =
         Option.exists (Procname.get_class_type_name proc_name) ~f:(fun class_name ->
+            let class_name =
+              if Language.curr_language_is Hack && Typ.Name.Hack.is_static class_name then
+                (* in Hack, instance and static method are dispatched in the class and in its static
+                   companion, but they can not appear in both *)
+                Typ.Name.Hack.static_companion_origin class_name
+              else class_name
+            in
             PatternMatch.supertype_exists tenv
               (fun class_name _ ->
                 List.mem ~equal:String.equal class_names (Typ.Name.name class_name) )

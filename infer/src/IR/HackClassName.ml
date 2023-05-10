@@ -29,4 +29,17 @@ let pp fmt {namespace; classname} =
 
 let to_string = Pp.string_of_pp pp
 
-let static_companion {namespace; classname} = {namespace; classname= classname ^ "$static"}
+let static_suffix = "$static"
+
+let len_static_suffix = String.length static_suffix
+
+let static_companion {namespace; classname} = {namespace; classname= classname ^ static_suffix}
+
+let is_static {classname} = StringLabels.ends_with ~suffix:static_suffix classname
+
+let static_companion_origin ({namespace; classname} as name) =
+  let len_classname = String.length classname in
+  if len_classname > len_static_suffix then
+    let len = len_classname - len_static_suffix in
+    {namespace; classname= StringLabels.sub ~pos:0 ~len classname}
+  else name
