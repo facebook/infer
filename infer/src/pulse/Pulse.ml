@@ -1249,6 +1249,18 @@ let checker ?specialization ({InterproceduralAnalysis.proc_desc} as analysis_dat
           {PulseSummary.main= pre_post_list; alias_specialized= Specialization.Pulse.Map.empty}
       | Some (current_summary, Specialization.Pulse specialization) ->
           let+ pre_post_list = analyze (Some specialization) analysis_data in
+          let () =
+            L.debug Analysis Quiet "[specialization]adding %a@ for %a." Specialization.Pulse.pp
+              specialization Procname.pp
+              (Procdesc.get_proc_name proc_desc)
+          in
+          let () =
+            Specialization.Pulse.Map.iter
+              (fun specialization _ ->
+                L.debug Analysis Quiet "[specialization]current key: %a@." Specialization.Pulse.pp
+                  specialization )
+              current_summary.PulseSummary.alias_specialized
+          in
           let alias_specialized =
             Specialization.Pulse.Map.add specialization pre_post_list
               current_summary.PulseSummary.alias_specialized

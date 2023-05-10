@@ -689,14 +689,13 @@ type t =
   | Java of Java.t
   | Linters_dummy_method
   | ObjC_Cpp of ObjC_Cpp.t
-  | WithAliasingParameters of t * Mangled.t list list
   | WithFunctionParameters of t * FunctionParameters.t * FunctionParameters.t list
 [@@deriving compare, equal, yojson_of, sexp, hash]
 
 let rec is_c = function
   | C _ ->
       true
-  | WithAliasingParameters (base, _) | WithFunctionParameters (base, _, _) ->
+  | WithFunctionParameters (base, _, _) ->
       is_c base
   | _ ->
       false
@@ -782,8 +781,7 @@ let rec compare_name x y =
       -1
   | _, ObjC_Cpp _ ->
       1
-  | ( (WithAliasingParameters (x, _) | WithFunctionParameters (x, _, _))
-    , (WithAliasingParameters (y, _) | WithFunctionParameters (y, _, _)) ) ->
+  | WithFunctionParameters (x, _, _), WithFunctionParameters (y, _, _) ->
       compare_name x y
 
 
@@ -794,12 +792,7 @@ let with_function_parameters base = function
       Some (WithFunctionParameters (base, func, functions))
 
 
-let rec base_of = function
-  | WithAliasingParameters (base, _) | WithFunctionParameters (base, _, _) ->
-      base_of base
-  | base ->
-      base
-
+let rec base_of = function WithFunctionParameters (base, _, _) -> base_of base | base -> base
 
 let is_std_move t = match base_of t with C c_pname -> C.is_std_move c_pname | _ -> false
 
@@ -853,7 +846,7 @@ let is_java_autogen_method = is_java_lift Java.is_autogen_method
 let rec on_objc_helper ~f ~default = function
   | ObjC_Cpp objc_cpp_pname ->
       f objc_cpp_pname
-  | WithAliasingParameters (base, _) | WithFunctionParameters (base, _, _) ->
+  | WithFunctionParameters (base, _, _) ->
       on_objc_helper ~f ~default base
   | Block _ | C _ | CSharp _ | Erlang _ | Hack _ | Java _ | Linters_dummy_method ->
       default
@@ -927,8 +920,6 @@ let rec replace_class t (new_class : Typ.Name.t) =
             L.die InternalError "replace_class on ill-formed Hack type"
       in
       Hack {h with class_name= Some name}
-  | WithAliasingParameters (base, aliases) ->
-      WithAliasingParameters (replace_class base new_class, aliases)
   | WithFunctionParameters (base, func, functions) ->
       WithFunctionParameters (replace_class base new_class, func, functions)
   | C _ | Block _ | Erlang _ | Linters_dummy_method ->
@@ -947,7 +938,7 @@ let get_class_type_name t =
       Block.get_class_type_name block
   | Hack hack ->
       Hack.get_class_type_name hack
-  | C _ | Erlang _ | WithAliasingParameters _ | WithFunctionParameters _ | Linters_dummy_method ->
+  | C _ | Erlang _ | WithFunctionParameters _ | Linters_dummy_method ->
       None
 
 
@@ -963,7 +954,7 @@ let get_class_name t =
       Block.get_class_name block
   | Hack hack_pname ->
       Hack.get_class_name_as_a_string hack_pname
-  | C _ | Erlang _ | WithAliasingParameters _ | WithFunctionParameters _ | Linters_dummy_method ->
+  | C _ | Erlang _ | WithFunctionParameters _ | Linters_dummy_method ->
       None
 
 
@@ -975,8 +966,6 @@ let rec objc_cpp_replace_method_name t (new_method_name : string) =
   match t with
   | ObjC_Cpp osig ->
       ObjC_Cpp {osig with method_name= new_method_name}
-  | WithAliasingParameters (base, aliases) ->
-      WithAliasingParameters (objc_cpp_replace_method_name base new_method_name, aliases)
   | WithFunctionParameters (base, func, functions) ->
       WithFunctionParameters (objc_cpp_replace_method_name base new_method_name, func, functions)
   | C _ | CSharp _ | Block _ | Erlang _ | Hack _ | Linters_dummy_method | Java _ ->
@@ -988,7 +977,7 @@ let rec objc_cpp_replace_method_name t (new_method_name : string) =
 let rec get_method = function
   | ObjC_Cpp name ->
       name.method_name
-  | WithAliasingParameters (base, _) | WithFunctionParameters (base, _, _) ->
+  | WithFunctionParameters (base, _, _) ->
       get_method base
   | C {name} ->
       QualifiedCppName.to_qual_string name
@@ -1007,21 +996,12 @@ let rec get_method = function
 
 
 (** Return whether the procname is a block procname. *)
-let rec is_objc_block = function
-  | Block _ ->
-      true
-  | WithAliasingParameters (base, _) ->
-      is_objc_block base
-  | _ ->
-      false
-
+let is_objc_block = function Block _ -> true | _ -> false
 
 (** Return whether the procname is a specialized with functions procname. *)
-let rec is_specialized_with_function_parameters = function
+let is_specialized_with_function_parameters = function
   | WithFunctionParameters _ ->
       true
-  | WithAliasingParameters (base, _) ->
-      is_specialized_with_function_parameters base
   | _ ->
       false
 
@@ -1049,7 +1029,7 @@ let rec get_language = function
       Language.Clang
   | Linters_dummy_method ->
       Language.Clang
-  | WithAliasingParameters (base, _) | WithFunctionParameters (base, _, _) ->
+  | WithFunctionParameters (base, _, _) ->
       get_language base
   | Java _ ->
       Language.Java
@@ -1095,8 +1075,6 @@ let rec is_static = function
   | Linters_dummy_method
   | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
       None
-  | WithAliasingParameters (base, _) ->
-      is_static base
   | WithFunctionParameters (base, _, _) ->
       is_static base
 
@@ -1108,7 +1086,7 @@ let is_shared_ptr_observer =
     | ObjC_Cpp {class_name= CppClass {name}; method_name} ->
         QualifiedCppName.Match.match_qualifiers Typ.shared_pointer_matcher name
         && List.mem observer_methods method_name ~equal:String.equal
-    | WithAliasingParameters (pname, _) | WithFunctionParameters (pname, _, _) ->
+    | WithFunctionParameters (pname, _, _) ->
         aux pname
     | _ ->
         false
@@ -1137,22 +1115,10 @@ let rec is_lambda_or_block = function
         true
     | _ ->
         false )
-  | WithAliasingParameters (base, _) | WithFunctionParameters (base, _, _) ->
+  | WithFunctionParameters (base, _, _) ->
       is_lambda_or_block base
   | _ ->
       false
-
-
-let pp_with_aliasing_parameters verbose pp fmt base aliases =
-  pp fmt base ;
-  F.pp_print_string fmt "[" ;
-  ( match verbose with
-  | Non_verbose | Simple | NameOnly ->
-      F.pp_print_string fmt "specialized with aliases"
-  | Verbose ->
-      let pp_alias fmt alias = Pp.seq ~sep:"=" Mangled.pp fmt alias in
-      Pp.seq ~sep:"^" pp_alias fmt aliases ) ;
-  F.pp_print_string fmt "]"
 
 
 let pp_with_function_parameters verbose pp fmt base functions =
@@ -1196,10 +1162,6 @@ let rec pp_unique_id fmt = function
       ObjC_Cpp.pp Verbose fmt osig
   | Block bsig ->
       Block.pp Verbose fmt bsig
-  | WithAliasingParameters (base, []) ->
-      pp_unique_id fmt base
-  | WithAliasingParameters (base, aliases) ->
-      pp_with_aliasing_parameters Verbose pp_unique_id fmt base aliases
   | WithFunctionParameters (base, func, functions) ->
       pp_with_function_parameters Verbose pp_unique_id fmt base (func :: functions)
   | Linters_dummy_method ->
@@ -1224,10 +1186,6 @@ let rec pp_with_verbosity verbosity fmt = function
       ObjC_Cpp.pp verbosity fmt osig
   | Block bsig ->
       Block.pp verbosity fmt bsig
-  | WithAliasingParameters (base, []) ->
-      pp_with_verbosity verbosity fmt base
-  | WithAliasingParameters (base, aliases) ->
-      pp_with_aliasing_parameters verbosity (pp_with_verbosity verbosity) fmt base aliases
   | WithFunctionParameters (base, func, functions) ->
       pp_with_function_parameters verbosity (pp_with_verbosity verbosity) fmt base
         (func :: functions)
@@ -1274,7 +1232,7 @@ let rec pp_name_only fmt = function
       ObjC_Cpp.pp NameOnly fmt osig
   | Block bsig ->
       Block.pp NameOnly fmt bsig
-  | WithAliasingParameters (base, _) | WithFunctionParameters (base, _, _) ->
+  | WithFunctionParameters (base, _, _) ->
       pp_name_only fmt base
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method
@@ -1301,7 +1259,7 @@ let rec pp_simplified_string ?(withclass = false) fmt = function
       ObjC_Cpp.pp (if withclass then Non_verbose else Simple) fmt osig
   | Block bsig ->
       Block.pp Simple fmt bsig
-  | WithAliasingParameters (base, _) | WithFunctionParameters (base, _, _) ->
+  | WithFunctionParameters (base, _, _) ->
       pp_simplified_string fmt base
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method
@@ -1375,7 +1333,7 @@ let rec get_parameters procname =
       clang_param_to_param (ObjC_Cpp.get_parameters osig)
   | Block bsig ->
       clang_param_to_param (Block.get_parameters bsig)
-  | WithAliasingParameters (base, _) | WithFunctionParameters (base, _, _) ->
+  | WithFunctionParameters (base, _, _) ->
       get_parameters base
   | Linters_dummy_method ->
       []
@@ -1443,8 +1401,6 @@ let rec replace_parameters new_parameters procname =
       ObjC_Cpp (ObjC_Cpp.replace_parameters (params_to_clang_params new_parameters) osig)
   | Block bsig ->
       Block (Block.replace_parameters (params_to_clang_params new_parameters) bsig)
-  | WithAliasingParameters (base, aliases) ->
-      WithAliasingParameters (replace_parameters new_parameters base, aliases)
   | WithFunctionParameters (base, func, functions) ->
       WithFunctionParameters (replace_parameters new_parameters base, func, functions)
   | Linters_dummy_method ->
@@ -1583,7 +1539,7 @@ module Normalizer = HashNormalizer.Make (struct
     | ObjC_Cpp objc_cpp ->
         let objc_cpp' = ObjC_Cpp.Normalizer.normalize objc_cpp in
         if phys_equal objc_cpp objc_cpp' then t else ObjC_Cpp objc_cpp'
-    | Linters_dummy_method | WithAliasingParameters _ | WithFunctionParameters _ ->
+    | Linters_dummy_method | WithFunctionParameters _ ->
         (* these kinds should not appear inside a type environment *)
         t
     | Block _ | CSharp _ | Erlang _ | Hack _ ->

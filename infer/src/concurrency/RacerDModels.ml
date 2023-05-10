@@ -226,7 +226,7 @@ let is_container_write tenv pn =
       false
 
 
-let rec is_container_read tenv pn =
+let is_container_read tenv pn =
   match (pn : Procname.t) with
   | CSharp _ ->
       is_csharp_container_read tenv pn []
@@ -237,8 +237,6 @@ let rec is_container_read tenv pn =
      treatment between std::map::operator[] and all other operator[]. *)
   | ObjC_Cpp _ | C _ ->
       (not (is_cpp_container_write pn)) && is_cpp_container_read pn
-  | WithAliasingParameters (base, _) ->
-      is_container_read tenv base
   | Erlang _ | Hack _ | Linters_dummy_method | Block _ | WithFunctionParameters _ ->
       false
 

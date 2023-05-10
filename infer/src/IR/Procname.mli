@@ -249,7 +249,6 @@ type t =
   | Java of Java.t
   | Linters_dummy_method
   | ObjC_Cpp of ObjC_Cpp.t
-  | WithAliasingParameters of t * Mangled.t list list
   | WithFunctionParameters of t * FunctionParameters.t * FunctionParameters.t list
 [@@deriving compare, yojson_of, sexp, hash]
 

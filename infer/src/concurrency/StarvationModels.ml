@@ -412,7 +412,7 @@ let is_java_main_method (pname : Procname.t) =
   let check_main_args args =
     match args with [arg] -> Typ.equal pointer_to_array_of_java_lang_string arg | _ -> false
   in
-  let rec test_pname pname =
+  let test_pname pname =
     match (pname : Procname.t) with
     | C _
     | Erlang _
@@ -423,8 +423,6 @@ let is_java_main_method (pname : Procname.t) =
     | CSharp _
     | WithFunctionParameters _ ->
         false
-    | WithAliasingParameters (base, _) ->
-        test_pname base
     | Java java_pname ->
         Procname.Java.is_static java_pname
         && String.equal "main" (Procname.get_method pname)

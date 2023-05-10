@@ -338,7 +338,6 @@ let swap_proc_in_local_pvar pvar proc_name =
 
 let rec specialize_pvar pvar proc_name =
   match proc_name with
-  | Procname.WithAliasingParameters (orig_pname, _)
   | Procname.WithFunctionParameters (orig_pname, _, _) ->
       let pvar = specialize_pvar pvar orig_pname in
       if equal (mk (get_name pvar) orig_pname) pvar then swap_proc_in_local_pvar pvar proc_name

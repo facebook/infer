@@ -365,7 +365,7 @@ let is_android_lifecycle_method tenv pname =
     | _ ->
         false
   in
-  let rec test_pname pname =
+  let test_pname pname =
     match (pname : Procname.t) with
     | C _
     | Erlang _
@@ -376,8 +376,6 @@ let is_android_lifecycle_method tenv pname =
     | CSharp _
     | WithFunctionParameters _ ->
         false
-    | WithAliasingParameters (base, _) ->
-        test_pname base
     | Java _ ->
         method_starts_with_on pname
         && (not (is_allow_listed pname))
