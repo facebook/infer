@@ -94,6 +94,11 @@ define $builtins.hhbc_is_type_int(o: *HackMixed): *HackMixed {
     ret null
 }
 
+define $builtins.hhbc_is_late_bound_cls(o: *HackMixed): *HackMixed {
+  #entry:
+    ret null
+}
+
 define $builtins.hhbc_verify_type_pred(o: *HackMixed, typ: *HackMixed): *HackMixed {
   #entry:
     ret null

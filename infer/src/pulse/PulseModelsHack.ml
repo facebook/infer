@@ -102,4 +102,9 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hack_dim_field_get" <>$ capt_arg_payload $+ capt_arg_payload
     $--> hack_dim_field_get
   ; -"$builtins" &:: "hack_new_dict" <>$ any_arg $+...$--> Basic.skip
+  ; -"$builtins" &:: "hack_get_class" <>$ capt_arg_payload
+    $--> Basic.id_first_arg ~desc:"hack_get_class"
+    (* not clear why HackC generate this builtin call *)
+  ; -"$builtins" &:: "hhbc_class_get_c" <>$ capt_arg_payload $--> get_static_class
+    (* we should be able to model that directly in Textual once specialization will be stronger *)
   ; -"$builtins" &:: "hack_get_static_class" <>$ capt_arg_payload $--> get_static_class ]

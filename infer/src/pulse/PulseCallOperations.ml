@@ -504,6 +504,7 @@ let maybe_dynamic_type_specialization_is_needed run_analysis formals_opt actuals
       let res, contradiction = run_analysis specialization in
       Some (res, contradiction, `KnownCall)
   | None ->
+      L.d_printfln "[specialization] not enough dyntypes information in the caller context" ;
       (* TODO: not implemented yet *)
       None
 
