@@ -97,7 +97,7 @@ let analyze exe_env ?specialization callee_summary callee_pdesc =
   summary
 
 
-let run_proc_analysis exe_env ?specialization ?caller_pname callee_pdesc =
+let run_proc_analysis exe_env tenv ?specialization ?caller_pname callee_pdesc =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let callee_attributes = Procdesc.get_attributes callee_pdesc in
   let log_elapsed_time =
@@ -116,7 +116,7 @@ let run_proc_analysis exe_env ?specialization ?caller_pname callee_pdesc =
     incr nesting ;
     let source_file = callee_attributes.ProcAttributes.translation_unit in
     update_taskbar (Some callee_pname) (Some source_file) ;
-    Preanal.do_preanalysis exe_env callee_pdesc ;
+    Preanal.do_preanalysis tenv callee_pdesc ;
     let initial_callee_summary =
       match specialization with
       | None ->
@@ -197,14 +197,14 @@ let run_proc_analysis exe_env ?specialization ?caller_pname callee_pdesc =
 
 
 (* shadowed for tracing *)
-let run_proc_analysis exe_env ?specialization ?caller_pname callee_pdesc =
+let run_proc_analysis exe_env tenv ?specialization ?caller_pname callee_pdesc =
   PerfEvent.(
     log (fun logger ->
         let callee_pname = Procdesc.get_proc_name callee_pdesc in
         log_begin_event logger ~name:"ondemand" ~categories:["backend"]
           ~arguments:[("proc", `String (Procname.to_string callee_pname))]
           () ) ) ;
-  let summary = run_proc_analysis exe_env ?specialization ?caller_pname callee_pdesc in
+  let summary = run_proc_analysis exe_env tenv ?specialization ?caller_pname callee_pdesc in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   summary
 
@@ -255,12 +255,15 @@ let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary callee
       RestartScheduler.with_lock callee_pname ~f:(fun () ->
           let previous_global_state = AnalysisGlobalState.save () in
           AnalysisGlobalState.initialize callee_pname ;
+          (* preload tenv to avoid tainting preanalysis timing with IO *)
+          let tenv = Exe_env.get_proc_tenv exe_env callee_pname in
           protect
             ~f:(fun () ->
               Timer.time Preanalysis
                 ~f:(fun () ->
                   let caller_pname = caller_summary >>| fun summ -> summ.Summary.proc_name in
-                  Some (run_proc_analysis exe_env ?specialization ?caller_pname callee_pdesc) )
+                  Some (run_proc_analysis exe_env tenv ?specialization ?caller_pname callee_pdesc)
+                  )
                 ~on_timeout:(fun span ->
                   L.debug Analysis Quiet
                     "TIMEOUT after %fs of CPU time analyzing %a:%a, outside of any checkers \
