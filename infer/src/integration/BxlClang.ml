@@ -9,18 +9,23 @@ module L = Logging
 module F = Format
 
 let rec traverse ~root acc target_path =
-  let target_path = if Filename.is_absolute target_path then target_path else root ^/ target_path in
-  match Sys.is_directory target_path with
-  | `Yes when ISys.file_exists (ResultsDirEntryName.get_path ~results_dir:target_path CaptureDB) ->
-      (* we found a capture DB so add this as a target line *)
-      Printf.sprintf "dummy\t-\t%s" target_path :: acc
-  | `Yes ->
-      (* recurse into non-infer-out directory *)
-      Sys.readdir target_path
-      |> Array.fold ~init:acc ~f:(fun acc entry ->
-             traverse ~root acc (Filename.concat target_path entry) )
-  | _ ->
-      acc
+  if String.is_empty target_path then acc
+  else
+    let target_path =
+      if Filename.is_absolute target_path then target_path else root ^/ target_path
+    in
+    match Sys.is_directory target_path with
+    | `Yes when ISys.file_exists (ResultsDirEntryName.get_path ~results_dir:target_path CaptureDB)
+      ->
+        (* we found a capture DB so add this as a target line *)
+        Printf.sprintf "dummy\t-\t%s" target_path :: acc
+    | `Yes ->
+        (* recurse into non-infer-out directory *)
+        Sys.readdir target_path
+        |> Array.fold ~init:acc ~f:(fun acc entry ->
+               traverse ~root acc (Filename.concat target_path entry) )
+    | _ ->
+        acc
 
 
 let run_capture buck2_build_cmd =
