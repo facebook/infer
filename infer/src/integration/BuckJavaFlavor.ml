@@ -30,15 +30,17 @@ let capture build_cmd =
   in
   L.(debug Capture Quiet)
     "Processed buck command '%a'@." (Pp.seq F.pp_print_string) updated_buck_cmd ;
-  if List.is_empty targets then L.external_warning "WARNING: found no buck targets to analyze.@."
-  else
-    let time0 = Mtime_clock.counter () in
-    Buck.wrap_buck_call ~label:"build" V1 updated_buck_cmd |> ignore ;
-    let infer_deps_lines =
-      BuckBuildReport.parse_infer_deps ~root:Config.project_root ~build_report_file
-    in
-    let infer_deps = ResultsDir.get_path CaptureDependencies in
-    Utils.with_file_out infer_deps ~f:(fun out_channel ->
-        Out_channel.output_lines out_channel infer_deps_lines ) ;
-    L.progress "Java flavor capture took %a.@." Mtime.Span.pp (Mtime_clock.count time0) ;
-    ()
+  let infer_deps_lines =
+    if List.is_empty targets then (
+      L.external_warning "WARNING: found no buck targets to analyze.@." ;
+      [] )
+    else
+      let time0 = Mtime_clock.counter () in
+      Buck.wrap_buck_call ~label:"build" V1 updated_buck_cmd |> ignore ;
+      let lines = BuckBuildReport.parse_infer_deps ~root:Config.project_root ~build_report_file in
+      L.progress "Java flavor capture took %a.@." Mtime.Span.pp (Mtime_clock.count time0) ;
+      lines
+  in
+  let infer_deps = ResultsDir.get_path CaptureDependencies in
+  Utils.with_file_out infer_deps ~f:(fun out_channel ->
+      Out_channel.output_lines out_channel infer_deps_lines )
