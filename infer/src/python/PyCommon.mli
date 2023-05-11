@@ -42,6 +42,12 @@ val pyString : Textual.Typ.t
 val pyBool : Textual.Typ.t
 (** Textual encoding of the primitive Python type [bool] *)
 
+val pyFloat : Textual.Typ.t
+(** Textual encoding of the primitive Python type [float] *)
+
+val pyNone : Textual.Typ.t
+(** Textual encoding of the primitive Python type [None] *)
+
 val mk_int : int64 -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal integers. *)
 

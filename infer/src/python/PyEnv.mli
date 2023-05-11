@@ -39,8 +39,9 @@ module DataStack : sig
     | Name of int  (** reference to a global name, stored in [co_names] *)
     | VarName of int  (** reference to a local name, stored in [co_varnames] *)
     | Temp of T.Ident.t  (** SSA variable *)
-    | Fun of (string * FFI.Code.t)
+    | Fun of {qualified_name: string; code: FFI.Code.t}
         (** [code] Python object with its qualified name. It can be a function, class, closure, ... *)
+    | Map of (string * cell) list
   [@@deriving show]
 
   val as_code : FFI.Code.t -> cell -> FFI.Code.t option
@@ -157,6 +158,8 @@ val mk_builtin_call : t -> Builtin.textual -> T.Exp.t list -> t * T.Ident.t * T.
 (** Wrapper to compute the Textual version of a call to a "textual" builtin * function (a builtin we
     introduced for modeling purpose) *)
 
-val register_toplevel : t -> string -> t
+val register_toplevel : t -> string -> (string * string) list -> t
 (** Register a top level function declaration. We keep track of them since they might shadow Python
     builtins *)
+
+val lookup_signature : t -> T.ProcName.t -> (string * string) list option

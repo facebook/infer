@@ -20,6 +20,10 @@ let pyString = mk_type "PyString"
 
 let pyBool = mk_type "PyBool"
 
+let pyFloat = mk_type "PyFloat"
+
+let pyNone = mk_type "PyNone"
+
 let pyCode = mk_type "PyCode"
 
 let is_pyCode = function T.Typ.Ptr (Struct {value}) -> String.equal value "PyCode" | _ -> false

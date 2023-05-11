@@ -696,3 +696,152 @@ def f(x):
 
         declare $builtins.$python_int$(int) : *PyInt |}]
   end )
+
+
+let%test_module "toplevel typing" =
+  ( module struct
+    let%expect_test _ =
+      let source =
+        {|
+def f0(x: int, y, z:float):
+        pass
+
+def f1(x, y:str) -> bool:
+        pass
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define $globals::$toplevel$() : *PyObject {
+          #b0:
+              n0 = $builtins.$python_code$("f0")
+              n1 = $builtins.$python_code$("f1")
+              ret null
+
+        }
+
+        define $globals::f0(x: *PyInt, y: *PyObject, z: *PyFloat) : *PyObject {
+          #b0:
+              ret null
+
+        }
+
+        define $globals::f1(x: *PyObject, y: *PyString) : *PyBool {
+          #b0:
+              ret null
+
+        }
+
+        declare $builtins.$python_code$(*String) : *PyCode
+
+        declare $builtins.$python_tuple$(...) : *PyObject
+
+        declare $builtins.$python_string$(*String) : *PyString
+
+        declare $builtins.$python_bool$(int) : *PyBool
+
+        declare $builtins.$python_int$(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+def expect_int(x: int):
+        pass
+
+def get() -> int:
+        return 42
+
+expect_int(get())
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define $globals::$toplevel$() : *PyObject {
+          #b0:
+              n0 = $builtins.$python_code$("expect_int")
+              n1 = $builtins.$python_code$("get")
+              n2 = $globals::get()
+              n3 = $globals::expect_int(n2)
+              ret null
+
+        }
+
+        define $globals::expect_int(x: *PyInt) : *PyObject {
+          #b0:
+              ret null
+
+        }
+
+        define $globals::get() : *PyInt {
+          #b0:
+              ret $builtins.$python_int$(42)
+
+        }
+
+        declare $builtins.$python_code$(*String) : *PyCode
+
+        declare $builtins.$python_tuple$(...) : *PyObject
+
+        declare $builtins.$python_string$(*String) : *PyString
+
+        declare $builtins.$python_bool$(int) : *PyBool
+
+        declare $builtins.$python_int$(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+def expect(x: object) -> None:
+        pass
+
+def get() -> int:
+        return 42
+
+expect(get())
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define $globals::$toplevel$() : *PyObject {
+          #b0:
+              n0 = $builtins.$python_code$("expect")
+              n1 = $builtins.$python_code$("get")
+              n2 = $globals::get()
+              n3 = $globals::expect(n2)
+              ret null
+
+        }
+
+        define $globals::expect(x: *PyObject) : *PyNone {
+          #b0:
+              ret null
+
+        }
+
+        define $globals::get() : *PyInt {
+          #b0:
+              ret $builtins.$python_int$(42)
+
+        }
+
+        declare $builtins.$python_code$(*String) : *PyCode
+
+        declare $builtins.$python_tuple$(...) : *PyObject
+
+        declare $builtins.$python_string$(*String) : *PyString
+
+        declare $builtins.$python_bool$(int) : *PyBool
+
+        declare $builtins.$python_int$(int) : *PyInt |}]
+  end )

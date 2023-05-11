@@ -156,16 +156,17 @@ module DataStack = struct
     | Name of int
     | VarName of int
     | Temp of T.Ident.t
-    | Fun of (string * FFI.Code.t)
+    | Fun of {qualified_name: string; code: FFI.Code.t}
+    | Map of (string * cell) list
   [@@deriving show]
 
   let as_code FFI.Code.{co_consts} = function
     | Const n ->
         let code = co_consts.(n) in
         FFI.Constant.as_code code
-    | Fun (_, code) ->
+    | Fun {code} ->
         Some code
-    | Name _ | Temp _ | VarName _ ->
+    | Name _ | Temp _ | VarName _ | Map _ ->
         None
 
 
@@ -177,6 +178,12 @@ module DataStack = struct
 end
 
 module Labels = Caml.Map.Make (Int)
+
+module Signature = struct
+  type t = (string * string) list
+
+  module Map = Caml.Map.Make (String)
+end
 
 type global_info = {is_code: bool}
 
@@ -193,6 +200,7 @@ and shared =
   ; globals: global_info T.VarName.Map.t
   ; shadowed_builtins: BuiltinSet.t
   ; builtins: BuiltinSet.t
+  ; toplevel_signatures: Signature.t Signature.Map.t
   ; next_label: int
   ; labels: label_info Labels.t }
 
@@ -275,6 +283,7 @@ let empty =
   ; globals= T.VarName.Map.empty
   ; shadowed_builtins= BuiltinSet.empty
   ; builtins= BuiltinSet.empty
+  ; toplevel_signatures= Signature.Map.empty
   ; next_label= 0
   ; labels= Labels.empty }
 
@@ -401,13 +410,21 @@ let register_call env fname =
   match get_as_builtin env fname with None -> env | Some builtin -> register_builtin env builtin
 
 
-let register_toplevel ({shared} as env) fname =
+let register_toplevel ({shared} as env) fname annotations =
   let builtin = Builtin.of_string fname in
   match builtin with
   | None ->
-      env
+      let fname = PyCommon.global fname in
+      let {toplevel_signatures} = shared in
+      let toplevel_signatures = Signature.Map.add fname annotations toplevel_signatures in
+      let shared = {shared with toplevel_signatures} in
+      {env with shared}
   | Some builtin ->
       let {shadowed_builtins} = shared in
       let shadowed_builtins = BuiltinSet.Set.add builtin shadowed_builtins in
       let shared = {shared with shadowed_builtins} in
       {env with shared}
+
+
+let lookup_signature {shared= {toplevel_signatures}} {T.ProcName.value} =
+  Signature.Map.find_opt value toplevel_signatures

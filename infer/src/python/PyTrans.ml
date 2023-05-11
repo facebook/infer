@@ -104,9 +104,11 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
   | Temp id ->
       (* TODO: try to trace the type of ids ? *)
       (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
-  | Fun (_, c) ->
-      let env, exp_ty = code_to_exp env c.FFI.Code.co_name in
+  | Fun {code} ->
+      let env, exp_ty = code_to_exp env code.FFI.Code.co_name in
       (env, `Ok exp_ty)
+  | Map _map ->
+      (env, `Error "TODO: load Map cells")
 
 
 (** Pop the top of the datastack. Fails with an [InternalError] if the stack is empty. *)
@@ -292,9 +294,9 @@ module CALL_FUNCTION = struct
         static_call env fname args
     | Temp id ->
         dynamic_call env id args
-    | Fun (f, _) ->
-        L.die UserError "[%s] no support for calling raw code : %s" opname f
-    | VarName _ | Const _ ->
+    | Fun {qualified_name} ->
+        L.die UserError "[%s] no support for calling raw code : %s" opname qualified_name
+    | VarName _ | Const _ | Map _ ->
         L.die UserError "[%s] invalid function on the stack: %s" opname (DataStack.show_cell fname)
 end
 
@@ -334,6 +336,39 @@ module BINARY_ADD = struct
 end
 
 module MAKE_FUNCTION = struct
+  let check_flags opname flag =
+    let support_tuple_of_defaults = flag land 1 <> 0 in
+    let support_dict_of_defaults = flag land 2 <> 0 in
+    let support_closure = flag land 8 <> 0 in
+    let unsupported = support_tuple_of_defaults || support_dict_of_defaults || support_closure in
+    if unsupported then
+      L.die InternalError "%s: support for flag 0x%x is not implemented" opname flag
+
+
+  let unpack_annotations {FFI.Code.co_names; co_consts} annotations =
+    let unpack =
+      List.fold_left ~init:(Some [])
+        ~f:(fun acc (key, c) ->
+          match (acc, c) with
+          | None, _ ->
+              None
+          | Some acc, DataStack.Name ndx ->
+              let annot = co_names.(ndx) in
+              Some ((key, annot) :: acc)
+          | Some acc, DataStack.Const ndx -> (
+            match co_consts.(ndx) with
+            | FFI.Constant.PYCNone ->
+                Some ((key, "None") :: acc)
+            | _ ->
+                Some acc )
+          | Some acc, c ->
+              Debug.p "[unpack_annotations] unsupported cell %a\n" DataStack.pp_cell c ;
+              Some acc )
+        annotations
+    in
+    Option.value unpack ~default:[]
+
+
   (** {v MAKE_FUNCTION(flags) v}
 
       Pushes a new function object on the stack. From bottom to top, the consumed stack must consist
@@ -351,21 +386,32 @@ module MAKE_FUNCTION = struct
       support for closures or nested functions *)
   let run env ({FFI.Code.co_consts} as code) {FFI.Instruction.opname; arg} =
     Debug.p "[%s] flags = 0x%x\n" opname arg ;
-    if arg <> 0 then L.die InternalError "%s: support for flag 0x%x is not implemented" opname arg ;
+    check_flags opname arg ;
     let env, qual = pop_tos opname env in
     (* don't care about the content of the code object, but check it is indeed code *)
     let env, body = pop_tos opname env in
-    let body =
+    let env, annotations =
+      if arg land 4 <> 0 then (
+        let env, cell = pop_tos opname env in
+        Debug.p "[%s] spotted annotations\n  %s\n" opname (DataStack.show_cell cell) ;
+        let annotations = match cell with Env.DataStack.Map map -> Some map | _ -> None in
+        (env, annotations) )
+      else (env, None)
+    in
+    let annotations =
+      Option.map ~f:(unpack_annotations code) annotations |> Option.value ~default:[]
+    in
+    let code =
       match DataStack.as_code code body with
       | None ->
           L.die InternalError "%s: payload is not code: %s" opname (DataStack.show_cell body)
       | Some body ->
           body
     in
-    if FFI.Code.is_closure body then L.die InternalError "%s: can't create closure" opname ;
-    let qual =
+    if FFI.Code.is_closure code then L.die InternalError "%s: can't create closure" opname ;
+    let qualified_name =
       match qual with
-      | DataStack.(VarName _ | Name _ | Temp _ | Fun _) ->
+      | DataStack.(VarName _ | Name _ | Temp _ | Fun _ | Map _) ->
           L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell qual)
       | DataStack.Const ndx -> (
           let const = co_consts.(ndx) in
@@ -376,9 +422,69 @@ module MAKE_FUNCTION = struct
               L.die InternalError "%s: can't read qualified name from stack: %s" opname
                 (FFI.Constant.show const) )
     in
-    let env = Env.register_toplevel env qual in
-    let env = Env.push env (DataStack.Fun (qual, body)) in
+    let env = Env.register_toplevel env qualified_name annotations in
+    let env = Env.push env (DataStack.Fun {qualified_name; code}) in
     (env, None)
+end
+
+module BUILD = struct
+  module CONST_KEY_MAP = struct
+    let pop_n_tos opname =
+      let rec pop env n acc =
+        if n > 0 then (
+          let env, cell = pop_tos opname env in
+          Debug.p ~level:1 "  popped %s\n" (DataStack.show_cell cell) ;
+          pop env (n - 1) (cell :: acc) )
+        else (env, acc)
+      in
+      Debug.p ~level:1 "[pop_n_tos]\n" ;
+      pop
+
+
+    let is_tuple_ids {FFI.Code.co_consts} cell =
+      let as_key = function FFI.Constant.PYCString s -> Some s | _ -> None in
+      match cell with
+      | DataStack.Const ndx -> (
+          let c = co_consts.(ndx) in
+          match c with
+          | FFI.Constant.PYCTuple keys ->
+              Array.fold_result keys ~init:[] ~f:(fun keys c ->
+                  match as_key c with Some key -> Ok (key :: keys) | None -> Error () )
+          | _ ->
+              Error () )
+      | _ ->
+          Error ()
+
+
+    (** {v BUILD_CONST_KEY_MAP(count) v}
+
+        The version of [BUILD_MAP] specialized for constant keys. Pops the top element on the stack
+        which contains a tuple of keys, then starting from [top-of-stack+1], pops [count] values to
+        form values in the built dictionary, which is pushed back on the stack. *)
+    let run env code {FFI.Instruction.opname; arg} =
+      Debug.p "[%s] count = %d\n" opname arg ;
+      let env, cell = pop_tos opname env in
+      let keys =
+        match is_tuple_ids code cell with
+        | Ok keys ->
+            List.rev keys
+        | Error () ->
+            L.die UserError "[%s] expecting tuple of literal keys" opname
+      in
+      (* TODO check cells is a tuple of literal strings *)
+      let env, values = pop_n_tos opname env arg [] in
+      Debug.p "  #values = %d\n" (List.length values) ;
+      let map =
+        match List.zip keys values with
+        | List.Or_unequal_lengths.Ok map ->
+            map
+        | Base.List.Or_unequal_lengths.Unequal_lengths ->
+            L.die UserError "[%s] keys length (%d) doesn't match values length (%d)" opname
+              (List.length keys) (List.length values)
+      in
+      let env = Env.push env (DataStack.Map map) in
+      (env, None)
+  end
 end
 
 let mk_jump loc labels ssa_args =
@@ -609,6 +715,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
         ITER.GET.run env code instr
     | "FOR_ITER" ->
         ITER.FOR.run env code instr
+    | "BUILD_CONST_KEY_MAP" ->
+        BUILD.CONST_KEY_MAP.run env code instr
     | _ ->
         L.die InternalError "Unsupported opcode: %s" opname
   in
@@ -823,6 +931,28 @@ let rec nodes env label_info code instructions =
     (env, textual_node :: more_textual_nodes)
 
 
+let type_of_annotation typ =
+  let typ =
+    match typ with
+    | "int" ->
+        PyCommon.pyInt
+    | "str" ->
+        PyCommon.pyString
+    | "bool" ->
+        PyCommon.pyBool
+    | "float" ->
+        PyCommon.pyFloat
+    | "None" ->
+        PyCommon.pyNone
+    | "object" ->
+        PyCommon.pyObject
+    | _ ->
+        Debug.p "[type_of_annotation] unsupported type: %s\n" typ ;
+        pyObject
+  in
+  T.Typ.{typ; attributes= []}
+
+
 (** Process a single code unit (toplevel code, function body, ...) *)
 let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames; instructions} as code) =
   Debug.p "\n\n[to_proc_desc] %s\n" name.T.ProcName.value ;
@@ -834,12 +964,6 @@ let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames; instructions} as 
   let locals = Array.sub co_varnames ~pos:co_argcount ~len:(nr_varnames - co_argcount) in
   let params = Array.map ~f:(var_name ~loc) params |> Array.to_list in
   let locals = Array.map ~f:(fun name -> (var_name ~loc name, pyObject)) locals |> Array.to_list in
-  let procdecl =
-    { T.ProcDecl.qualified_name
-    ; formals_types= Some (List.map ~f:(fun _ -> pyObject) params)
-    ; result_type= pyObject
-    ; attributes= [] }
-  in
   (* Create the original environment for this code unit *)
   let env = Env.enter_proc env in
   let env, entry_label = Env.mk_fresh_label env in
@@ -848,6 +972,21 @@ let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames; instructions} as 
   (* Now that a full unit has been processed, discard all the local information (local variable
      names, labels, ...) and only keep the [shared] part of the environment *)
   let env, nodes = nodes env label_info code instructions in
+  let annotations = Env.lookup_signature env name |> Option.value ~default:[] in
+  let types = List.map ~f:(fun (n, t) -> (n, type_of_annotation t)) annotations in
+  let formals_types =
+    List.map
+      ~f:(fun {T.VarName.value} ->
+        let typ = List.Assoc.find types ~equal:String.equal value in
+        Option.value typ ~default:pyObject )
+      params
+  in
+  let result_type =
+    List.Assoc.find types ~equal:String.equal "return" |> Option.value ~default:pyObject
+  in
+  let procdecl =
+    {T.ProcDecl.qualified_name; formals_types= Some formals_types; result_type; attributes= []}
+  in
   (env, {Textual.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown})
 
 
@@ -864,7 +1003,6 @@ let to_proc_descs env codes =
           let name = PyCommon.global co_name in
           let name = proc_name ~loc name in
           let env, decl = to_proc_desc env name code in
-          let env = PyEnv.register_toplevel env co_name in
           (env, T.Module.Proc decl :: decls) )
 
 
