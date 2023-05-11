@@ -66,4 +66,4 @@ let mk_bool (b : bool) =
   Textual.Exp.Call {proc; args; kind= NonVirtual}
 
 
-let global name = sprintf "$globals::%s" name
+let global name = sprintf "$module$::%s" name

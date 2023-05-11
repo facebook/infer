@@ -16,7 +16,7 @@ let test ?(typecheck = true) source =
   Py.finalize () ;
   (* Since Textual doesn't have a concept of toplevel code, we create a function for this code,
      with a non-denotable name, so we don't clash with existing python code *)
-  let module_ = PyTrans.to_module ~sourcefile (PyCommon.global "$toplevel$") code in
+  let module_ = PyTrans.to_module ~sourcefile code in
   if typecheck then (
     let res = TextualTypeVerification.type_check module_ in
     match (res : TextualTypeVerification.type_check_result) with
@@ -44,14 +44,14 @@ let%test_module "basic_tests" =
         {|
         .source_language = "python"
 
-        define $globals::$toplevel$() : *PyObject {
+        define $module$::toplevel() : *PyObject {
           #b0:
-              store &$globals::x <- $builtins.$python_int$(42):*PyInt
+              store &$module$::x <- $builtins.$python_int$(42):*PyInt
               ret null
 
         }
 
-        global $globals::x: *PyObject
+        global $module$::x: *PyObject
 
         declare $builtins.$python_tuple$(...) : *PyObject
 
@@ -72,16 +72,16 @@ print(x)
         {|
         .source_language = "python"
 
-        define $globals::$toplevel$() : *PyObject {
+        define $module$::toplevel() : *PyObject {
           #b0:
-              store &$globals::x <- $builtins.$python_int$(42):*PyInt
-              n0:*PyObject = load &$globals::x
+              store &$module$::x <- $builtins.$python_int$(42):*PyInt
+              n0:*PyObject = load &$module$::x
               n1 = $builtins.print(n0)
               ret null
 
         }
 
-        global $globals::x: *PyObject
+        global $module$::x: *PyObject
 
         declare $builtins.print(...) : *PyObject
 
@@ -105,21 +105,21 @@ print(x + y)
         {|
         .source_language = "python"
 
-        define $globals::$toplevel$() : *PyObject {
+        define $module$::toplevel() : *PyObject {
           #b0:
-              store &$globals::x <- $builtins.$python_int$(42):*PyInt
-              store &$globals::y <- $builtins.$python_int$(10):*PyInt
-              n0:*PyObject = load &$globals::x
-              n1:*PyObject = load &$globals::y
+              store &$module$::x <- $builtins.$python_int$(42):*PyInt
+              store &$module$::y <- $builtins.$python_int$(10):*PyInt
+              n0:*PyObject = load &$module$::x
+              n1:*PyObject = load &$module$::y
               n2 = $builtins.$binary_add$(n0, n1)
               n3 = $builtins.print(n2)
               ret null
 
         }
 
-        global $globals::y: *PyObject
+        global $module$::y: *PyObject
 
-        global $globals::x: *PyObject
+        global $module$::x: *PyObject
 
         declare $builtins.print(...) : *PyObject
 
@@ -159,20 +159,20 @@ print(z)
         {|
         .source_language = "python"
 
-        define $globals::$toplevel$() : *PyObject {
+        define $module$::toplevel() : *PyObject {
           #b0:
               n0 = $builtins.$python_code$("my_fun")
-              store &$globals::a <- $builtins.$python_int$(10):*PyInt
-              n1:*PyObject = load &$globals::a
-              n2 = $globals::my_fun($builtins.$python_int$(42), n1)
-              store &$globals::z <- n2:*PyObject
-              n3:*PyObject = load &$globals::z
+              store &$module$::a <- $builtins.$python_int$(10):*PyInt
+              n1:*PyObject = load &$module$::a
+              n2 = $module$::my_fun($builtins.$python_int$(42), n1)
+              store &$module$::z <- n2:*PyObject
+              n3:*PyObject = load &$module$::z
               n4 = $builtins.print(n3)
               ret null
 
         }
 
-        define $globals::my_fun(x: *PyObject, y: *PyObject) : *PyObject {
+        define $module$::my_fun(x: *PyObject, y: *PyObject) : *PyObject {
           local z: *PyObject
           #b0:
               n0:*PyObject = load &x
@@ -188,9 +188,9 @@ print(z)
 
         }
 
-        global $globals::z: *PyObject
+        global $module$::z: *PyObject
 
-        global $globals::a: *PyObject
+        global $module$::a: *PyObject
 
         declare $builtins.print(...) : *PyObject
 
@@ -225,27 +225,27 @@ print(z)
         {|
         .source_language = "python"
 
-        define $globals::$toplevel$() : *PyObject {
+        define $module$::toplevel() : *PyObject {
           #b0:
               n0 = $builtins.$python_code$("update_global")
-              store &$globals::z <- $builtins.$python_int$(0):*PyInt
-              n1 = $globals::update_global()
-              n2:*PyObject = load &$globals::z
+              store &$module$::z <- $builtins.$python_int$(0):*PyInt
+              n1 = $module$::update_global()
+              n2:*PyObject = load &$module$::z
               n3 = $builtins.print(n2)
               ret null
 
         }
 
-        define $globals::update_global() : *PyObject {
+        define $module$::update_global() : *PyObject {
           #b0:
-              n0:*PyObject = load &$globals::z
+              n0:*PyObject = load &$module$::z
               n1 = $builtins.$binary_add$(n0, $builtins.$python_int$(1))
-              store &$globals::z <- n1:*PyObject
+              store &$module$::z <- n1:*PyObject
               ret null
 
         }
 
-        global $globals::z: *PyObject
+        global $module$::z: *PyObject
 
         declare $builtins.print(...) : *PyObject
 
@@ -283,7 +283,7 @@ def f(x, y):
         {|
         .source_language = "python"
 
-        define $globals::$toplevel$() : *PyObject {
+        define $module$::toplevel() : *PyObject {
           #b0:
               n0 = $builtins.$python_code$("coin")
               n1 = $builtins.$python_code$("f")
@@ -291,15 +291,15 @@ def f(x, y):
 
         }
 
-        define $globals::coin() : *PyObject {
+        define $module$::coin() : *PyObject {
           #b0:
               ret $builtins.$python_bool$(0)
 
         }
 
-        define $globals::f(x: *PyObject, y: *PyObject) : *PyObject {
+        define $module$::f(x: *PyObject, y: *PyObject) : *PyObject {
           #b0:
-              n0 = $globals::coin()
+              n0 = $module$::coin()
               n1 = $builtins.$python_is_true$(n0)
               jmp b1, b2
 
@@ -351,7 +351,7 @@ def f(x, y):
         {|
         .source_language = "python"
 
-        define $globals::$toplevel$() : *PyObject {
+        define $module$::toplevel() : *PyObject {
           #b0:
               n0 = $builtins.$python_code$("coin")
               n1 = $builtins.$python_code$("f")
@@ -359,17 +359,17 @@ def f(x, y):
 
         }
 
-        define $globals::coin() : *PyObject {
+        define $module$::coin() : *PyObject {
           #b0:
               ret $builtins.$python_bool$(0)
 
         }
 
-        define $globals::f(x: *PyObject, y: *PyObject) : *PyObject {
+        define $module$::f(x: *PyObject, y: *PyObject) : *PyObject {
           local z: *PyObject
           #b0:
               store &z <- $builtins.$python_int$(0):*PyInt
-              n0 = $globals::coin()
+              n0 = $module$::coin()
               n1 = $builtins.$python_is_true$(n0)
               jmp b1, b2
 
@@ -432,7 +432,7 @@ def f(x, y):
         {|
         .source_language = "python"
 
-        define $globals::$toplevel$() : *PyObject {
+        define $module$::toplevel() : *PyObject {
           #b0:
               n0 = $builtins.$python_code$("coin")
               n1 = $builtins.$python_code$("f")
@@ -440,23 +440,23 @@ def f(x, y):
 
         }
 
-        define $globals::coin() : *PyObject {
+        define $module$::coin() : *PyObject {
           #b0:
               ret $builtins.$python_bool$(0)
 
         }
 
-        define $globals::f(x: *PyObject, y: *PyObject) : *PyObject {
+        define $module$::f(x: *PyObject, y: *PyObject) : *PyObject {
           local z: *PyObject
           #b0:
               store &z <- $builtins.$python_int$(0):*PyInt
-              n0 = $globals::coin()
+              n0 = $module$::coin()
               n1 = $builtins.$python_is_true$(n0)
               jmp b1, b2
 
           #b1:
               prune n1
-              n2 = $globals::coin()
+              n2 = $module$::coin()
               n3 = $builtins.$python_is_true$(n2)
               jmp b3, b4
 
@@ -481,7 +481,7 @@ def f(x, y):
               n7:*PyObject = load &z
               n8 = $builtins.$binary_add$(n7, $builtins.$python_int$(1))
               store &z <- n8:*PyObject
-              n9 = $globals::coin()
+              n9 = $module$::coin()
               n10 = $builtins.$python_is_true$(n9)
               jmp b7, b8
 
@@ -529,7 +529,7 @@ def f(x):
         {|
       .source_language = "python"
 
-      define $globals::$toplevel$() : *PyObject {
+      define $module$::toplevel() : *PyObject {
         #b0:
             n0 = $builtins.$python_code$("foo")
             n1 = $builtins.$python_code$("f")
@@ -537,16 +537,16 @@ def f(x):
 
       }
 
-      define $globals::foo(x: *PyObject) : *PyObject {
+      define $module$::foo(x: *PyObject) : *PyObject {
         #b0:
             ret null
 
       }
 
-      define $globals::f(x: *PyObject) : *PyObject {
+      define $module$::f(x: *PyObject) : *PyObject {
         #b0:
             n0:*PyObject = load &x
-            n1 = $builtins.$python_code$("$globals::foo")
+            n1 = $builtins.$python_code$("$module$::foo")
             n2 = $builtins.$python_is_true$(n0)
             jmp b1(n1), b2(n1)
 
@@ -592,7 +592,7 @@ for x in range(10):
         {|
         .source_language = "python"
 
-        define $globals::$toplevel$() : *PyObject {
+        define $module$::toplevel() : *PyObject {
           #b0:
               n0 = $builtins.range($builtins.$python_int$(10))
               n1 = $builtins.$python_iter$(n0)
@@ -605,8 +605,8 @@ for x in range(10):
           #b2:
               prune n3
               n4 = $builtins.$python_iter_item$(n2)
-              store &$globals::x <- n4:*PyObject
-              n5:*PyObject = load &$globals::x
+              store &$module$::x <- n4:*PyObject
+              n5:*PyObject = load &$module$::x
               n6 = $builtins.print(n5)
               jmp b1(n2)
 
@@ -616,7 +616,7 @@ for x in range(10):
 
         }
 
-        global $globals::x: *PyObject
+        global $module$::x: *PyObject
 
         declare $builtins.range(...) : *PyObject
 
@@ -659,27 +659,27 @@ def f(x):
         {|
         .source_language = "python"
 
-        define $globals::$toplevel$() : *PyObject {
+        define $module$::toplevel() : *PyObject {
           #b0:
               n0 = $builtins.print($builtins.$python_int$(42))
               n1 = $builtins.$python_code$("print")
-              n2 = $globals::print($builtins.$python_int$(42))
+              n2 = $module$::print($builtins.$python_int$(42))
               n3 = $builtins.$python_code$("f")
               ret null
 
         }
 
-        define $globals::print(x: *PyObject) : *PyObject {
+        define $module$::print(x: *PyObject) : *PyObject {
           #b0:
               n0:*PyObject = load &x
               ret n0
 
         }
 
-        define $globals::f(x: *PyObject) : *PyObject {
+        define $module$::f(x: *PyObject) : *PyObject {
           #b0:
               n0:*PyObject = load &x
-              n1 = $globals::print(n0)
+              n1 = $module$::print(n0)
               ret null
 
         }
@@ -715,7 +715,7 @@ def f1(x, y:str) -> bool:
         {|
         .source_language = "python"
 
-        define $globals::$toplevel$() : *PyObject {
+        define $module$::toplevel() : *PyObject {
           #b0:
               n0 = $builtins.$python_code$("f0")
               n1 = $builtins.$python_code$("f1")
@@ -723,13 +723,13 @@ def f1(x, y:str) -> bool:
 
         }
 
-        define $globals::f0(x: *PyInt, y: *PyObject, z: *PyFloat) : *PyObject {
+        define $module$::f0(x: *PyInt, y: *PyObject, z: *PyFloat) : *PyObject {
           #b0:
               ret null
 
         }
 
-        define $globals::f1(x: *PyObject, y: *PyString) : *PyBool {
+        define $module$::f1(x: *PyObject, y: *PyString) : *PyBool {
           #b0:
               ret null
 
@@ -763,23 +763,23 @@ expect_int(get())
         {|
         .source_language = "python"
 
-        define $globals::$toplevel$() : *PyObject {
+        define $module$::toplevel() : *PyObject {
           #b0:
               n0 = $builtins.$python_code$("expect_int")
               n1 = $builtins.$python_code$("get")
-              n2 = $globals::get()
-              n3 = $globals::expect_int(n2)
+              n2 = $module$::get()
+              n3 = $module$::expect_int(n2)
               ret null
 
         }
 
-        define $globals::expect_int(x: *PyInt) : *PyObject {
+        define $module$::expect_int(x: *PyInt) : *PyObject {
           #b0:
               ret null
 
         }
 
-        define $globals::get() : *PyInt {
+        define $module$::get() : *PyInt {
           #b0:
               ret $builtins.$python_int$(42)
 
@@ -813,23 +813,23 @@ expect(get())
         {|
         .source_language = "python"
 
-        define $globals::$toplevel$() : *PyObject {
+        define $module$::toplevel() : *PyObject {
           #b0:
               n0 = $builtins.$python_code$("expect")
               n1 = $builtins.$python_code$("get")
-              n2 = $globals::get()
-              n3 = $globals::expect(n2)
+              n2 = $module$::get()
+              n3 = $module$::expect(n2)
               ret null
 
         }
 
-        define $globals::expect(x: *PyObject) : *PyNone {
+        define $module$::expect(x: *PyObject) : *PyNone {
           #b0:
               ret null
 
         }
 
-        define $globals::get() : *PyInt {
+        define $module$::get() : *PyInt {
           #b0:
               ret $builtins.$python_int$(42)
 

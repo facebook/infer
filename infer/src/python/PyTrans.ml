@@ -14,17 +14,16 @@ module Env = PyEnv
 module DataStack = PyEnv.DataStack
 module Builtin = PyEnv.Builtin
 
-let var_name ?(loc = T.Location.Unknown) value = T.VarName.{value; loc}
+let var_name ?(loc = T.Location.Unknown) value = {T.VarName.value; loc}
 
-let node_name ?(loc = T.Location.Unknown) value = T.NodeName.{value; loc}
+let node_name ?(loc = T.Location.Unknown) value = {T.NodeName.value; loc}
 
-let proc_name ?(loc = T.Location.Unknown) value = T.ProcName.{value; loc}
+let proc_name ?(loc = T.Location.Unknown) value = {T.ProcName.value; loc}
 
 (* TODO: only deal with toplevel functions for now *)
-let qualified_procname name : T.qualified_procname = {enclosing_class= TopLevel; name}
+let qualified_procname ?(enclosing_class = T.TopLevel) name : T.qualified_procname =
+  {enclosing_class; name}
 
-(* Until there is support for python types, everything is a [*object] *)
-let pyObject = PyCommon.pyObject
 
 (** Turn a Python [FFI.Code.t] into a Textual [T.Exp.t], along with the required instructions to
     effectively perform the translation. *)
@@ -88,7 +87,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
         let env, id = Env.mk_fresh_ident env in
         let exp = T.Exp.Lvar var_name in
         let loc = Env.loc env in
-        let instr = T.Instr.Load {id; exp; typ= pyObject; loc} in
+        let instr = T.Instr.Load {id; exp; typ= PyCommon.pyObject; loc} in
         let env = Env.push_instr env instr in
         (* TODO: try to trace the type of names ? *)
         (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
@@ -97,7 +96,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let env, id = Env.mk_fresh_ident env in
       let exp = T.Exp.Lvar (var_name ~loc name) in
       let loc = Env.loc env in
-      let instr = T.Instr.Load {id; exp; typ= pyObject; loc} in
+      let instr = T.Instr.Load {id; exp; typ= PyCommon.pyObject; loc} in
       let env = Env.push_instr env instr in
       (* TODO: try to trace the type of names ? *)
       (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
@@ -948,17 +947,17 @@ let type_of_annotation typ =
         PyCommon.pyObject
     | _ ->
         Debug.p "[type_of_annotation] unsupported type: %s\n" typ ;
-        pyObject
+        PyCommon.pyObject
   in
   T.Typ.{typ; attributes= []}
 
 
 (** Process a single code unit (toplevel code, function body, ...) *)
-let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames; instructions} as code) =
+let to_proc_desc env loc enclosing_class name
+    ({FFI.Code.co_argcount; co_varnames; instructions} as code) =
   Debug.p "\n\n[to_proc_desc] %s\n" name.T.ProcName.value ;
-  let qualified_name = qualified_procname name in
-  let pyObject = T.Typ.{typ= pyObject; attributes= []} in
-  let loc = name.T.ProcName.loc in
+  let qualified_name = qualified_procname ~enclosing_class name in
+  let pyObject = T.Typ.{typ= PyCommon.pyObject; attributes= []} in
   let nr_varnames = Array.length co_varnames in
   let params = Array.sub co_varnames ~pos:0 ~len:co_argcount in
   let locals = Array.sub co_varnames ~pos:co_argcount ~len:(nr_varnames - co_argcount) in
@@ -992,8 +991,9 @@ let to_proc_desc env name ({FFI.Code.co_argcount; co_varnames; instructions} as 
 
 (* TODO: No support for nested functions/methods at the moment *)
 
-(** Process multiple [code] objects. Usually called by the toplevel function. *)
-let to_proc_descs env codes =
+(** Process multiple [code] objects. Usually called by the toplevel function or by a class
+    definition. *)
+let to_proc_descs env enclosing_class codes =
   Array.fold codes ~init:(env, []) ~f:(fun (env, decls) const ->
       match FFI.Constant.as_code const with
       | None ->
@@ -1002,19 +1002,26 @@ let to_proc_descs env codes =
           let loc = first_loc_of_code instructions in
           let name = PyCommon.global co_name in
           let name = proc_name ~loc name in
-          let env, decl = to_proc_desc env name code in
+          let env, decl = to_proc_desc env loc enclosing_class name code in
           (env, T.Module.Proc decl :: decls) )
 
 
 let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python
 
 (** Entry point of the module: process a whole Python file / compilation unit into Textual *)
-let to_module ~sourcefile module_name ({FFI.Code.co_consts; instructions} as code) =
-  Debug.p "[to_module] %s\n" module_name ;
+let to_module ~sourcefile ({FFI.Code.co_consts; co_name; instructions} as code) =
+  Debug.p "[to_module] %a %s\n" T.SourceFile.pp sourcefile co_name ;
+  if not (String.equal co_name "<module>") then
+    L.die ExternalError "Toplevel modules must be named '<module>'. Got %s" co_name ;
   let env = Env.empty in
   (* Process top level module first, to gather all global definitions.
-     TODO: this require fixing.
+     This will also help us identify what is a class and what is a function,
+     before processing the rest of the [co_consts]. There is no flag to
+     distinguish class definitions from function definitions in the bytecode
+     format.
 
+
+     TODO: scoping might require fixing.
      Python allows multiple toplevel declaration of the same name and resolution is done
      dynamically. E.g.
 
@@ -1037,8 +1044,9 @@ let to_module ~sourcefile module_name ({FFI.Code.co_consts; instructions} as cod
      which quantity, to see if it is worth finding a solution for it.
   *)
   let loc = first_loc_of_code instructions in
+  let module_name = PyCommon.global "toplevel" in
   let name = proc_name ~loc module_name in
-  let env, decl = to_proc_desc env name code in
+  let env, decl = to_proc_desc env loc T.TopLevel name code in
   (* Translate globals to Textual *)
   let globals =
     T.VarName.Map.fold
@@ -1047,12 +1055,12 @@ let to_module ~sourcefile module_name ({FFI.Code.co_consts; instructions} as cod
           (* don't generate a global variable name, it will be declared as a toplevel decl *)
           acc
         else
-          let global = T.Global.{name; typ= pyObject; attributes= []} in
+          let global = T.Global.{name; typ= PyCommon.pyObject; attributes= []} in
           T.Module.Global global :: acc )
       (Env.globals env) []
   in
   (* Then, process any code body that is in code.co_consts *)
-  let env, decls = to_proc_descs env co_consts in
+  let env, decls = to_proc_descs env T.TopLevel co_consts in
   let decls = List.rev decls in
   (* Gather everything into a Textual module *)
   let decls =
