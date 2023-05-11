@@ -8,7 +8,15 @@
 open! IStd
 
 (* TODO: Add other types as they are needed by translation (otherwise it's dead code). *)
-type t = Any | Atom | Integer | Cons | Nil | Tuple of int | Map
+type t =
+  | Any
+  | Atom
+  | Integer
+  | Cons
+  | Nil
+  | Tuple of int
+  | Map
+  | GenServerPid of {module_name: string option}
 [@@deriving compare, equal, yojson_of, sexp, hash]
 
 let pp f = function
@@ -26,13 +34,15 @@ let pp f = function
       Format.fprintf f "ErlangTuple%d" arity
   | Map ->
       Format.fprintf f "ErlangMap"
+  | GenServerPid {module_name} ->
+      Format.fprintf f "ErlangGenServerPid_%s" (Option.value module_name ~default:"")
 
 
 let to_string name = Format.asprintf "%a" pp name
 
 let from_string s =
-  let tuple_opt format =
-    try Scanf.sscanf s format (fun d -> Some (Tuple d)) with Scanf.Scan_failure _ -> None
+  let constr_opt format constr =
+    try Scanf.sscanf s format (fun d -> Some (constr d)) with Scanf.Scan_failure _ -> None
   in
   match s with
   | "ErlangAny" | "Any" ->
@@ -48,7 +58,20 @@ let from_string s =
   | "ErlangNil" | "Nil" ->
       Some Nil
   | _ ->
-      Option.first_some (tuple_opt "ErlangTuple%d%!") (tuple_opt "Tuple%d%!")
+      let mk_tuple i = Tuple i in
+      let mk_genserverpid m =
+        match m with
+        | "" ->
+            GenServerPid {module_name= None}
+        | _ ->
+            GenServerPid {module_name= Some m}
+      in
+      let find_some li = List.find_map ~f:Fn.id li in
+      find_some
+        [ constr_opt "ErlangTuple%d%!" mk_tuple
+        ; constr_opt "Tuple%d%!" mk_tuple
+        ; constr_opt "ErlangGenServerPid_%s%!" mk_genserverpid
+        ; constr_opt "GenServerPid_%s%!" mk_genserverpid ]
 
 
 let atom_value = "value"

@@ -6,7 +6,15 @@
  *)
 open! IStd
 
-type t = Any | Atom | Integer | Cons | Nil | Tuple of int | Map
+type t =
+  | Any
+  | Atom
+  | Integer
+  | Cons
+  | Nil
+  | Tuple of int
+  | Map
+  | GenServerPid of {module_name: string option}
 [@@deriving compare, equal, yojson_of, sexp, hash]
 
 val pp : Format.formatter -> t -> unit

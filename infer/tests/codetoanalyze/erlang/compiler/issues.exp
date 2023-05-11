@@ -1,7 +1,3 @@
------ otp_gen_server -----
-otp_gen_server:test_cast_Bad/0: badmatch
-otp_gen_server:test_cast_Ok/0: ok
-
 ----- otp_lists -----
 otp_lists:fp_test_any1_Ok/0: ok
 otp_lists:test_any2_Bad/0: case_clause
@@ -186,6 +182,14 @@ features_functions:test_call4_Bad/0: expected_crash
 features_functions:test_call4_Ok/0: ok
 features_functions:test_override_Bad/0: expected_crash
 features_functions:test_override_Ok/0: ok
+
+----- features_gen_server -----
+features_gen_server:fn_test_call_callee_Bad/0: expected_crash
+features_gen_server:test_call1_Bad/0: expected_crash
+features_gen_server:test_call2_Bad/0: expected_crash
+features_gen_server:test_call3_Bad/0: expected_crash
+features_gen_server:test_call_and_cast_Ok/0: ok
+features_gen_server:test_cast_Bad/0: expected_crash
 
 ----- features_guard_bifs -----
 features_guard_bifs:test_accepts_atom1_Ok/0: ok

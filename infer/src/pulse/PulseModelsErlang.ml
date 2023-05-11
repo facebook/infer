@@ -1045,6 +1045,7 @@ module Custom = struct
     | IntLit of string
     | List of erlang_value list
     | Tuple of erlang_value list
+    | GenServer of {module_name: string option}
 
   type selector =
     | ModuleFunctionArity of
@@ -1102,6 +1103,15 @@ module Custom = struct
                , (ret_addr, ret_hist) ) )
       | Some (Atom (Some name)) ->
           Atoms.of_string location path name astate
+      | Some (GenServer {module_name}) ->
+          let ret_addr = AbstractValue.mk_fresh () in
+          let ret_hist = Hist.single_alloc path location "gen_server_pid" in
+          Sat
+            (Ok
+               ( PulseOperations.add_dynamic_type
+                   (Typ.mk_struct (ErlangType (GenServerPid {module_name})))
+                   ret_addr astate
+               , (ret_addr, ret_hist) ) )
       | Some (IntLit intlit) ->
           Integers.of_string location path intlit astate
       | Some (List elements) ->
@@ -1131,20 +1141,27 @@ module Custom = struct
 
   let rec argument_value_helper path location actual_arg (pre_arg : erlang_value) astate :
       AbductiveDomain.t result =
+    let of_atom_like typ value_opt =
+      match value_opt with
+      | None ->
+          prune_type path location actual_arg typ astate
+      | Some value ->
+          let> astate = prune_type path location actual_arg typ astate in
+          let astate, _, (arg_hash, _hist) =
+            load_field path Atoms.hash_field location actual_arg astate
+          in
+          let name_hash : Const.t = Cint (IntLit.of_int (ErlangTypeName.calculate_hash value)) in
+          PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand arg_hash)
+            (ConstOperand name_hash) astate
+          |> SatUnsat.to_list
+    in
     match pre_arg with
     | None ->
         [Ok astate]
-    | Some (Atom None) ->
-        prune_type path location actual_arg Atom astate
-    | Some (Atom (Some name)) ->
-        let> astate = prune_type path location actual_arg Atom astate in
-        let astate, _, (arg_hash, _hist) =
-          load_field path Atoms.hash_field location actual_arg astate
-        in
-        let name_hash : Const.t = Cint (IntLit.of_int (ErlangTypeName.calculate_hash name)) in
-        PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand arg_hash)
-          (ConstOperand name_hash) astate
-        |> SatUnsat.to_list
+    | Some (Atom value_opt) ->
+        of_atom_like Atom value_opt
+    | Some (GenServer {module_name}) ->
+        of_atom_like (GenServerPid {module_name}) module_name
     | Some (IntLit intlit) ->
         let> astate = prune_type path location actual_arg Integer astate in
         let astate, _, (value, _hist) =
@@ -1249,6 +1266,75 @@ module Custom = struct
     List.map ~f:matcher_of_rule spec
 end
 
+module GenServer = struct
+  type request = Call | Cast
+
+  let start_link module_atom _ _ : model =
+   (* gen_server:start_link(Module, _, _) -> {ok, Pid}
+      where Pid is `GenServerPid of Module` *)
+   fun ({path; location} as data) astate ->
+    let module_name =
+      match get_erlang_type_or_any (fst module_atom) astate with
+      | Atom ->
+          let _astate, _addr, (field, _) =
+            load_field path Atoms.value_field location module_atom astate
+          in
+          AbductiveDomain.AddressAttributes.get_const_string field astate
+      | typ ->
+          L.debug Analysis Verbose
+            "@[First argument of gen_server:start_link is of unsupported type %a@."
+            ErlangTypeName.pp typ ;
+          None
+    in
+    let rval =
+      Some (Custom.Tuple [Some (Custom.Atom (Some "ok")); Some (Custom.GenServer {module_name})])
+    in
+    Custom.return_value_model rval data astate
+
+
+  let handle_request req_type server_ref request
+      {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate =
+    match get_erlang_type_or_any (fst server_ref) astate with
+    | GenServerPid {module_name= Some module_name} ->
+        let arg_nondet () =
+          ( (AbstractValue.mk_fresh (), Hist.single_alloc path location "nondet")
+          , Typ.mk_struct (ErlangType Any) )
+        in
+        let arg_req =
+          (request, Typ.mk_struct (ErlangType (get_erlang_type_or_any (fst request) astate)))
+        in
+        let procname, actuals =
+          match req_type with
+          | Call ->
+              ( Procname.make_erlang ~module_name ~function_name:"handle_call" ~arity:3
+              , [arg_req; arg_nondet (); arg_nondet ()] )
+          | Cast ->
+              ( Procname.make_erlang ~module_name ~function_name:"handle_cast" ~arity:2
+              , [arg_req; arg_nondet ()] )
+        in
+        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
+          procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
+        |> fst3
+    | GenServerPid {module_name= None} ->
+        L.debug Analysis Verbose "@[gen_server:call/cast called with unnamed GenServerPid@." ;
+        [Ok (ContinueProgram astate)]
+    | typ ->
+        L.debug Analysis Verbose
+          "@[gen_server:call/cast called with unsupported `gen_server:server_ref()`: %a@."
+          ErlangTypeName.pp typ ;
+        [Ok (ContinueProgram astate)]
+
+
+  let call2 server_ref request : model =
+   fun data astate -> handle_request Call server_ref request data astate
+
+
+  let call3 server_ref request _timeout : model = call2 server_ref request
+
+  let cast server_ref request : model =
+   fun data astate -> handle_request Cast server_ref request data astate
+end
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let arg = capt_arg_payload in
@@ -1290,6 +1376,10 @@ let matchers : matcher list =
     ; -"maps" &:: "get" <>$ arg $+ arg $--> Maps.get
     ; -"maps" &:: "put" <>$ arg $+ arg $+ arg $--> Maps.put
     ; -"maps" &:: "new" <>$$--> Maps.new_
+    ; -"gen_server" &:: "start_link" <>$ arg $+ arg $+ arg $--> GenServer.start_link
+    ; -"gen_server" &:: "call" <>$ arg $+ arg $--> GenServer.call2
+    ; -"gen_server" &:: "call" <>$ arg $+ arg $+ arg $--> GenServer.call3
+    ; -"gen_server" &:: "cast" <>$ arg $+ arg $--> GenServer.cast
     ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Tuples.make
     ; -erlang_ns &:: "is_atom" <>$ arg $--> BIF.is_atom
     ; -erlang_ns &:: "is_boolean" <>$ arg $--> BIF.is_boolean
