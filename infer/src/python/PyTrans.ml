@@ -25,12 +25,12 @@ let qualified_procname ?(enclosing_class = T.TopLevel) name : T.qualified_procna
   {enclosing_class; name}
 
 
-(** Turn a Python [FFI.Code.t] into a Textual [T.Exp.t], along with the required instructions to
-    effectively perform the translation. *)
+(** Turn a Python function [FFI.Code.t] into a Textual [T.Exp.t], along with the required
+    instructions to effectively perform the translation. *)
 let code_to_exp env name =
   let name = T.Exp.Const (Str name) in
   let env, id, typ = Env.mk_builtin_call env Builtin.PythonCode [name] in
-  (env, (T.Exp.Var id, typ))
+  (env, T.Exp.Var id, typ)
 
 
 (** Turn a Python [FFI.Constant.t] into a Textual [T.Exp.t], along with the required instructions to
@@ -38,29 +38,31 @@ let code_to_exp env name =
 let rec py_to_exp env c =
   match (c : FFI.Constant.t) with
   | PYCBool b ->
-      (env, PyCommon.(mk_bool b, pyBool))
+      (env, PyCommon.mk_bool b, PyCommon.pyBool)
   | PYCInt i ->
-      (env, PyCommon.(mk_int i, pyInt))
+      (env, PyCommon.mk_int i, PyCommon.pyInt)
   | PYCString s ->
-      (env, PyCommon.(mk_string s, pyString))
+      (env, PyCommon.mk_string s, PyCommon.pyString)
   | PYCNone ->
       let exp = T.(Exp.Const Const.Null) in
-      (env, (exp, T.Typ.Null))
+      (env, exp, T.Typ.Null)
   | PYCCode c ->
       code_to_exp env c.FFI.Code.co_name
   | PYCTuple arr ->
       let l = Array.to_list arr in
       let env, args =
         Env.map ~env l ~f:(fun env c ->
-            let env, (e, _) = py_to_exp env c in
+            let env, e, _ = py_to_exp env c in
             (env, e) )
       in
       let exp = T.Exp.Call {proc= PyCommon.python_tuple; args; kind= NonVirtual} in
-      (env, (exp, PyCommon.pyObject))
+      (env, exp, PyCommon.pyObject)
 
 
 (** Try to load the data referenced by a [DataStack.cell], into a [Textual.Exp.t] *)
 let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
+  let info typ = {Env.typ; is_code= false} in
+  let default = info PyCommon.pyObject in
   (* Python only stores references to objects on the data stack, so when data needs to be really
      accessed, [load_cell] is used to get information from the code information ([co_consts], ...).
      These data are mapped to Textual.Exp.t values as much as possible. But it's not always
@@ -69,45 +71,48 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
   match (cell : DataStack.cell) with
   | Const ndx ->
       let const = co_consts.(ndx) in
-      let env, exp_ty = py_to_exp env const in
-      (env, `Ok exp_ty)
+      let env, exp, ty = py_to_exp env const in
+      let info = info ty in
+      (env, `Ok exp, info)
   | Name ndx ->
       let name = PyCommon.global co_names.(ndx) in
       let var_name = var_name ~loc name in
-      let is_code =
-        T.VarName.Map.find_opt var_name (Env.globals env)
-        |> Option.map ~f:(fun {Env.is_code} -> is_code)
-        |> Option.value ~default:false
+      let ({Env.typ; is_code} as info) =
+        T.VarName.Map.find_opt var_name (Env.globals env) |> Option.value ~default
       in
       (* If we are trying to load some code, use the dedicated builtin *)
       if is_code then
-        let env, exp_ty = code_to_exp env name in
-        (env, `Ok exp_ty)
+        let env, exp, typ = code_to_exp env name in
+        let info = {info with Env.typ} in
+        (env, `Ok exp, info)
       else
-        let env, id = Env.mk_fresh_ident env in
         let exp = T.Exp.Lvar var_name in
         let loc = Env.loc env in
-        let instr = T.Instr.Load {id; exp; typ= PyCommon.pyObject; loc} in
+        let env, id = Env.mk_fresh_ident env info in
+        let instr = T.Instr.Load {id; exp; typ; loc} in
         let env = Env.push_instr env instr in
-        (* TODO: try to trace the type of names ? *)
-        (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
+        (* TODO: try to trace the type of names, not only global ones ? *)
+        (env, `Ok (T.Exp.Var id), info)
   | VarName ndx ->
       let name = co_varnames.(ndx) in
-      let env, id = Env.mk_fresh_ident env in
       let exp = T.Exp.Lvar (var_name ~loc name) in
       let loc = Env.loc env in
-      let instr = T.Instr.Load {id; exp; typ= PyCommon.pyObject; loc} in
+      let typ = PyCommon.pyObject in
+      let info = info typ in
+      let env, id = Env.mk_fresh_ident env info in
+      let instr = T.Instr.Load {id; exp; typ; loc} in
       let env = Env.push_instr env instr in
-      (* TODO: try to trace the type of names ? *)
-      (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
+      (* TODO: try to trace the type of names and their kind ? *)
+      (env, `Ok (T.Exp.Var id), info)
   | Temp id ->
-      (* TODO: try to trace the type of ids ? *)
-      (env, `Ok (T.Exp.Var id, PyCommon.pyObject))
+      let info = Env.get_ident_info env id |> Option.value ~default in
+      (env, `Ok (T.Exp.Var id), info)
   | Fun {code} ->
-      let env, exp_ty = code_to_exp env code.FFI.Code.co_name in
-      (env, `Ok exp_ty)
+      let env, exp, typ = code_to_exp env code.FFI.Code.co_name in
+      let info = {Env.typ; is_code= true} in
+      (env, `Ok exp, info)
   | Map _map ->
-      (env, `Error "TODO: load Map cells")
+      (env, `Error "TODO: load Map cells", default)
 
 
 (** Pop the top of the datastack. Fails with an [InternalError] if the stack is empty. *)
@@ -201,11 +206,11 @@ module STORE = struct
     let loc = Env.loc env in
     let var_name = var_name ~loc name in
     let env, cell = pop_tos opname env in
-    let env, exp_ty = load_cell env code cell in
-    match exp_ty with
-    | `Ok (exp, typ) ->
-        let is_code = PyCommon.is_pyCode typ in
-        let env = if is_global then Env.register_global env var_name {Env.is_code} else env in
+    let env, exp, info = load_cell env code cell in
+    match exp with
+    | `Ok exp ->
+        let {Env.typ; is_code} = info in
+        let env = if is_global then Env.register_global env var_name info else env in
         if is_code then
           if is_global then (
             Debug.p "  top-level function defined\n" ;
@@ -240,34 +245,42 @@ module CALL_FUNCTION = struct
 
       After: [ result | rest-of-the-stack ] *)
 
-  let pop_n_tos opname code =
+  let pop_n_tos opname =
     let rec pop env n acc =
       if n > 0 then (
         let env, cell = pop_tos opname env in
-        Debug.p ~level:1 "  popped %s\n" (DataStack.show_cell cell) ;
-        let env, exp_ty = load_cell env code cell in
-        match exp_ty with
-        | `Ok (exp, _) ->
-            pop env (n - 1) (exp :: acc)
-        | `Error s ->
-            L.die UserError "[%s] failed to fetch from the stack: %s" opname s )
+        Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
+        pop env (n - 1) (cell :: acc) )
       else (env, acc)
     in
-    Debug.p ~level:1 "[pop_n_tos]\n" ;
+    Debug.p "[pop_n_tos]\n" ;
     pop
 
 
+  let to_textual env opname code cells =
+    Env.map ~env cells ~f:(fun env cell ->
+        let env, exp, _ = load_cell env code cell in
+        match exp with
+        | `Ok exp ->
+            (env, exp)
+        | `Error s ->
+            L.die UserError "[%s] failed to fetch from the stack: %s" opname s )
+
+
   let static_call env fname args =
-    let env, id = Env.mk_fresh_ident env in
     let loc = Env.loc env in
     let env, proc =
       let env = Env.register_call env fname in
       if Env.is_builtin env fname then (env, PyCommon.builtin_name fname)
       else
         let fname = PyCommon.global fname in
+        (* TODO: update this when static method calls will be available *)
         (env, qualified_procname @@ proc_name ~loc fname)
     in
     let call = T.Exp.Call {proc; args; kind= NonVirtual} in
+    (* TODO: read return type of proc if available *)
+    let info = {Env.typ= PyCommon.pyObject; is_code= false} in
+    let env, id = Env.mk_fresh_ident env info in
     let let_instr = T.Instr.Let {id; exp= call; loc} in
     let env = Env.push_instr env let_instr in
     let env = Env.push env (DataStack.Temp id) in
@@ -283,10 +296,11 @@ module CALL_FUNCTION = struct
 
   let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
     Debug.p "[%s] argc = %d\n" opname arg ;
-    let env, args = pop_n_tos opname code env arg [] in
+    let env, cells = pop_n_tos opname env arg [] in
+    let env, args = to_textual env opname code cells in
     Debug.p "  #args = %d\n" (List.length args) ;
     let env, fname = pop_tos opname env in
-    Debug.p "  fname = %s\n" (DataStack.show_cell fname) ;
+    Debug.p "  fname = %a\n" DataStack.pp_cell fname ;
     match fname with
     | DataStack.Name ndx ->
         let fname = co_names.(ndx) in
@@ -314,13 +328,13 @@ module BINARY_ADD = struct
     Debug.p "[%s]\n" opname ;
     let env, tos = pop_tos opname env in
     let env, tos1 = pop_tos opname env in
-    let env, lhs = load_cell env code tos1 in
+    let env, lhs, _ = load_cell env code tos1 in
     let lhs =
-      match lhs with `Ok (lhs, _) -> lhs | `Error s -> L.die InternalError "[%s] %s" opname s
+      match lhs with `Ok lhs -> lhs | `Error s -> L.die InternalError "[%s] %s" opname s
     in
-    let env, rhs = load_cell env code tos in
+    let env, rhs, _ = load_cell env code tos in
     let rhs =
-      match rhs with `Ok (rhs, _) -> rhs | `Error s -> L.die InternalError "[%s] %s" opname s
+      match rhs with `Ok rhs -> rhs | `Error s -> L.die InternalError "[%s] %s" opname s
     in
     (* Even if the call can be considered as virtual because, it's logic is not symetric. Based
        on what I gathered, like in [0], I think the best course of action is to write a model for
@@ -409,10 +423,10 @@ module MAKE_FUNCTION = struct
     in
     if FFI.Code.is_closure code then L.die InternalError "%s: can't create closure" opname ;
     let qualified_name =
-      match qual with
-      | DataStack.(VarName _ | Name _ | Temp _ | Fun _ | Map _) ->
+      match (qual : DataStack.cell) with
+      | VarName _ | Name _ | Temp _ | Fun _ | Map _ ->
           L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell qual)
-      | DataStack.Const ndx -> (
+      | Const ndx -> (
           let const = co_consts.(ndx) in
           match FFI.Constant.as_name const with
           | Some name ->
@@ -432,11 +446,11 @@ module BUILD = struct
       let rec pop env n acc =
         if n > 0 then (
           let env, cell = pop_tos opname env in
-          Debug.p ~level:1 "  popped %s\n" (DataStack.show_cell cell) ;
+          Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
           pop env (n - 1) (cell :: acc) )
         else (env, acc)
       in
-      Debug.p ~level:1 "[pop_n_tos]\n" ;
+      Debug.p "[pop_n_tos]\n" ;
       pop
 
 
@@ -502,9 +516,9 @@ let mk_jump loc labels ssa_args =
 let stack_to_ssa env code =
   let env, zipped =
     Env.map ~env (Env.stack env) ~f:(fun env cell ->
-        let env, exp = load_cell env code cell in
+        let env, exp, {Env.typ} = load_cell env code cell in
         match exp with
-        | `Ok (exp, typ) ->
+        | `Ok exp ->
             (env, (exp, typ))
         | `Error s ->
             L.die InternalError "[stack_to_ssa] %s" s )
@@ -535,9 +549,9 @@ module JUMP = struct
     let run ~next_is_true env code {FFI.Instruction.opname; arg} =
       Debug.p "[%s] target = %d\n" opname arg ;
       let env, tos = pop_tos opname env in
-      let env, cell = load_cell env code tos in
+      let env, cell, _ = load_cell env code tos in
       let cond =
-        match cell with `Ok (cond, _) -> cond | `Error s -> L.die InternalError "[%s] %s" opname s
+        match cell with `Ok cond -> cond | `Error s -> L.die InternalError "[%s] %s" opname s
       in
       let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
       let env, next_label = Env.mk_fresh_label env in
@@ -604,9 +618,9 @@ module RETURN_VALUE = struct
   let run env code {FFI.Instruction.opname} =
     Debug.p "[%s]\n" opname ;
     let env, cell = pop_tos opname env in
-    let env, exp_ty = load_cell env code cell in
-    match exp_ty with
-    | `Ok (exp, _) ->
+    let env, exp, _ = load_cell env code cell in
+    match exp with
+    | `Ok exp ->
         let term = T.Terminator.Ret exp in
         (env, Some (JUMP.Return term))
     | `Error s ->
@@ -622,9 +636,9 @@ module ITER = struct
     let run env code {FFI.Instruction.opname} =
       Debug.p "[%s]\n" opname ;
       let env, cell = pop_tos opname env in
-      let env, exp_ty = load_cell env code cell in
-      match exp_ty with
-      | `Ok (exp, _) ->
+      let env, exp, _ = load_cell env code cell in
+      match exp with
+      | `Ok exp ->
           let env, id, _ = Env.mk_builtin_call env Builtin.PythonIter [exp] in
           let env = Env.push env (DataStack.Temp id) in
           (env, None)
@@ -641,9 +655,9 @@ module ITER = struct
     let run env code {FFI.Instruction.opname; arg} =
       Debug.p "[%s] delta = %d\n" opname arg ;
       let env, iter_cell = pop_tos opname env in
-      let env, iter_exp_ty = load_cell env code iter_cell in
-      match iter_exp_ty with
-      | `Ok (iter, _) ->
+      let env, iter_exp, _ = load_cell env code iter_cell in
+      match iter_exp with
+      | `Ok iter ->
           (* TODO: Not sure I know how to write a model for python_iter_next/python_iter_item
              as two separate functions. Maybe introduce a single one that returns a pair. *)
           let env, id, _ = Env.mk_builtin_call env Builtin.PythonIterNext [iter] in

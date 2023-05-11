@@ -12,11 +12,11 @@ module Builtin : sig
   type textual =
     | IsTrue
     | BinaryAdd
-    | PythonCode
     | PythonCall
+    | PythonCode
     | PythonIter
-    | PythonIterNext
     | PythonIterItem
+    | PythonIterNext
   [@@deriving compare]
 end
 
@@ -49,8 +49,10 @@ module DataStack : sig
   type t = cell list
 end
 
-(** Information about global/toplevel declaration *)
-type global_info = {is_code: bool}
+(** Type information about various entities (toplevel declarations, temporaries, ...). *)
+type info =
+  { is_code: bool  (** is the entity a function / method ? *)
+  ; typ: T.Typ.t  (** Type annotation, if any (otherwise, [object] is used) *) }
 
 (** Global environment used during bytecode processing. Stores common global information like the
     toplevel symbols processed so far, or more local ones like the set of labels or variable ids
@@ -91,7 +93,7 @@ val loc : t -> T.Location.t
 val stack : t -> DataStack.t
 (** Returns the [DataStack.t] for the current declaration *)
 
-val globals : t -> global_info T.VarName.Map.t
+val globals : t -> info T.VarName.Map.t
 (** Return the [globals] map *)
 
 val builtins : t -> BuiltinSet.t
@@ -104,8 +106,10 @@ val label_of_offset : t -> int -> Label.info option
 (** Check if the instruction is a possible jump location, and return the label information found
     there, if any. *)
 
-val mk_fresh_ident : t -> t * T.Ident.t
+val mk_fresh_ident : t -> info -> t * T.Ident.t
 (** Generate a fresh temporary name *)
+
+val get_ident_info : t -> T.Ident.t -> info option
 
 val mk_fresh_label : t -> t * string
 (** Generate a fresh label name *)
@@ -141,7 +145,7 @@ val register_label : offset:int -> Label.info -> t -> t
 val process_label : offset:int -> Label.info -> t -> t
 (** Mark the label [info] at [offset] as processed *)
 
-val register_global : t -> T.VarName.t -> global_info -> t
+val register_global : t -> T.VarName.t -> info -> t
 (** Register a global name (function, variable, ...). Since Python allows "toplevel" code, they are
     encoded within a specially named function that behaves as a toplevel scope, and global
     identifiers are scope accordingly. That way, there is no mixing them with locals with the same

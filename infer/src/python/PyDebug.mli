@@ -7,7 +7,9 @@
 
 open! IStd
 
-val p : ?level:int -> ('a, Format.formatter, unit, unit) format4 -> 'a
+val p : ('a, Format.formatter, unit, unit) format4 -> 'a
+
+val todo : ('a, Format.formatter, unit, unit) format4 -> 'a [@@warning "-unused-value-declaration"]
 
 val enable_debug : unit -> unit [@@warning "-unused-value-declaration"]
 

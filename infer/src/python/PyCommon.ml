@@ -26,8 +26,6 @@ let pyNone = mk_type "PyNone"
 
 let pyCode = mk_type "PyCode"
 
-let is_pyCode = function T.Typ.Ptr (Struct {value}) -> String.equal value "PyCode" | _ -> false
-
 let builtin_scope = T.Enclosing T.{TypeName.value= "$builtins"; loc= Unknown}
 
 let builtin_name (value : string) : T.qualified_procname =

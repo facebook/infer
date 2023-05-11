@@ -15,11 +15,11 @@ module Builtin = struct
   type textual =
     | IsTrue
     | BinaryAdd
-    | PythonCode
     | PythonCall
+    | PythonCode
     | PythonIter
-    | PythonIterNext
     | PythonIterItem
+    | PythonIterNext
   [@@deriving compare]
 
   type python = Print | Range [@@deriving compare]
@@ -44,16 +44,16 @@ module Builtin = struct
               "$python_is_true$"
           | BinaryAdd ->
               "$binary_add$"
-          | PythonCode ->
-              "$python_code$"
           | PythonCall ->
               "$python_call$"
+          | PythonCode ->
+              "$python_code$"
           | PythonIter ->
               "$python_iter$"
-          | PythonIterNext ->
-              "$python_iter_next$"
           | PythonIterItem ->
               "$python_iter_item$"
+          | PythonIterNext ->
+              "$python_iter_next$"
         in
         PyCommon.builtin_name str
     | Python python ->
@@ -107,16 +107,16 @@ module BuiltinSet = struct
       ; ( Builtin.BinaryAdd
         , { formals_types= Some [annot PyCommon.pyObject; annot PyCommon.pyObject]
           ; result_type= annot PyCommon.pyObject } )
+      ; (Builtin.PythonCall, {formals_types= None; result_type= annot PyCommon.pyObject})
       ; ( Builtin.PythonCode
         , {formals_types= Some [annot string_]; result_type= annot PyCommon.pyCode} )
-      ; (Builtin.PythonCall, {formals_types= None; result_type= annot PyCommon.pyObject})
         (* TODO: should we introduce a Textual type for iterators ? *)
       ; ( Builtin.PythonIter
         , {formals_types= Some [annot PyCommon.pyObject]; result_type= annot PyCommon.pyObject} )
-      ; ( Builtin.PythonIterNext
-        , {formals_types= Some [annot PyCommon.pyObject]; result_type= annot T.Typ.Int} )
       ; ( Builtin.PythonIterItem
-        , {formals_types= Some [annot PyCommon.pyObject]; result_type= annot PyCommon.pyObject} ) ]
+        , {formals_types= Some [annot PyCommon.pyObject]; result_type= annot PyCommon.pyObject} )
+      ; ( Builtin.PythonIterNext
+        , {formals_types= Some [annot PyCommon.pyObject]; result_type= annot T.Typ.Int} ) ]
     in
     List.fold_left
       ~f:(fun acc (builtin, elt) -> Info.add (Builtin.Textual builtin) elt acc)
@@ -185,7 +185,7 @@ module Signature = struct
   module Map = Caml.Map.Make (String)
 end
 
-type global_info = {is_code: bool}
+type info = {is_code: bool; typ: T.Typ.t}
 
 type label_info =
   { label_name: string
@@ -197,7 +197,8 @@ type label_info =
     been spotted, or what idents and labels have been generated so far. *)
 and shared =
   { idents: T.Ident.Set.t
-  ; globals: global_info T.VarName.Map.t
+  ; idents_info: info T.Ident.Map.t
+  ; globals: info T.VarName.Map.t
   ; shadowed_builtins: BuiltinSet.t
   ; builtins: BuiltinSet.t
   ; toplevel_signatures: Signature.t Signature.Map.t
@@ -219,15 +220,18 @@ let rec map ~f ~(env : t) = function
       (env, hd :: tl)
 
 
-let mk_fresh_ident ({shared} as env) =
-  let mk_fresh_ident ({idents} as env) =
+let mk_fresh_ident ({shared} as env) info =
+  let mk_fresh_ident ({idents; idents_info} as env) =
     let fresh = T.Ident.fresh idents in
     let idents = T.Ident.Set.add fresh idents in
-    ({env with idents}, fresh)
+    let idents_info = T.Ident.Map.add fresh info idents_info in
+    ({env with idents; idents_info}, fresh)
   in
   let shared, fresh = mk_fresh_ident shared in
   ({env with shared}, fresh)
 
+
+let get_ident_info {shared= {idents_info}} id = T.Ident.Map.find_opt id idents_info
 
 let push ({node} as env) cell =
   let push ({stack} as env) cell =
@@ -263,7 +267,11 @@ module Label = struct
   let to_textual env label_loc {label_name; ssa_parameters; prelude} =
     let env, ssa_parameters =
       map ~env ssa_parameters ~f:(fun env typ ->
-          let env, id = mk_fresh_ident env in
+          let info =
+            (* TODO: track code/class for SSA parameters *)
+            {typ; is_code= false}
+          in
+          let env, id = mk_fresh_ident env info in
           (env, (id, typ)) )
     in
     (* Install the prelude before processing the instructions *)
@@ -280,6 +288,7 @@ let empty_node = {stack= []; instructions= []; last_line= None}
 
 let empty =
   { idents= T.Ident.Set.empty
+  ; idents_info= T.Ident.Map.empty
   ; globals= T.VarName.Map.empty
   ; shadowed_builtins= BuiltinSet.empty
   ; builtins= BuiltinSet.empty
@@ -381,11 +390,12 @@ let register_builtin ({shared} as env) builtin =
 
 
 let mk_builtin_call env builtin args =
-  let builtin = Builtin.Textual builtin in
-  let typ = BuiltinSet.get_type builtin in
-  let env = register_builtin env builtin in
-  let env, id = mk_fresh_ident env in
-  let proc = Builtin.to_proc_name builtin in
+  let textual_builtin = Builtin.Textual builtin in
+  let typ = BuiltinSet.get_type textual_builtin in
+  let info = {typ; is_code= false} in
+  let env = register_builtin env textual_builtin in
+  let env, id = mk_fresh_ident env info in
+  let proc = Builtin.to_proc_name textual_builtin in
   let exp = T.Exp.Call {proc; args; kind= T.Exp.NonVirtual} in
   let loc = loc env in
   let instr = T.Instr.Let {id; exp; loc} in

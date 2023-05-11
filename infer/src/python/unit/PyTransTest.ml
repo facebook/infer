@@ -75,7 +75,7 @@ print(x)
         define $module$::toplevel() : *PyObject {
           #b0:
               store &$module$::x <- $builtins.$python_int$(42):*PyInt
-              n0:*PyObject = load &$module$::x
+              n0:*PyInt = load &$module$::x
               n1 = $builtins.print(n0)
               ret null
 
@@ -109,8 +109,8 @@ print(x + y)
           #b0:
               store &$module$::x <- $builtins.$python_int$(42):*PyInt
               store &$module$::y <- $builtins.$python_int$(10):*PyInt
-              n0:*PyObject = load &$module$::x
-              n1:*PyObject = load &$module$::y
+              n0:*PyInt = load &$module$::x
+              n1:*PyInt = load &$module$::y
               n2 = $builtins.$binary_add$(n0, n1)
               n3 = $builtins.print(n2)
               ret null
@@ -163,7 +163,7 @@ print(z)
           #b0:
               n0 = $builtins.$python_code$("my_fun")
               store &$module$::a <- $builtins.$python_int$(10):*PyInt
-              n1:*PyObject = load &$module$::a
+              n1:*PyInt = load &$module$::a
               n2 = $module$::my_fun($builtins.$python_int$(42), n1)
               store &$module$::z <- n2:*PyObject
               n3:*PyObject = load &$module$::z
@@ -230,7 +230,7 @@ print(z)
               n0 = $builtins.$python_code$("update_global")
               store &$module$::z <- $builtins.$python_int$(0):*PyInt
               n1 = $module$::update_global()
-              n2:*PyObject = load &$module$::z
+              n2:*PyInt = load &$module$::z
               n3 = $builtins.print(n2)
               ret null
 
@@ -238,7 +238,7 @@ print(z)
 
         define $module$::update_global() : *PyObject {
           #b0:
-              n0:*PyObject = load &$module$::z
+              n0:*PyInt = load &$module$::z
               n1 = $builtins.$binary_add$(n0, $builtins.$python_int$(1))
               store &$module$::z <- n1:*PyObject
               ret null
@@ -558,15 +558,15 @@ def f(x):
             prune __sil_lnot(n2)
             jmp b3($builtins.$python_int$(0), n4)
 
-        #b3(n5: *PyInt, n6: *PyObject):
+        #b3(n5: *PyInt, n6: *PyCode):
             n7 = $builtins.$python_call$(n6, n5)
             ret null
 
       }
 
-      declare $builtins.$python_call$(...) : *PyObject
-
       declare $builtins.$python_code$(*String) : *PyCode
+
+      declare $builtins.$python_call$(...) : *PyObject
 
       declare $builtins.$python_is_true$(*PyObject) : int
 
@@ -622,9 +622,9 @@ for x in range(10):
 
         declare $builtins.print(...) : *PyObject
 
-        declare $builtins.$python_iter_item$(*PyObject) : *PyObject
-
         declare $builtins.$python_iter_next$(*PyObject) : int
+
+        declare $builtins.$python_iter_item$(*PyObject) : *PyObject
 
         declare $builtins.$python_iter$(*PyObject) : *PyObject
 

@@ -12,15 +12,14 @@ module F = Format
    I'll move to Logging once it's done. *)
 let debug = ref false
 
-let debug_level = ref 0
-
 (* Inspired by PulseFormula.Debug. Check there for plugging it into Logging too *)
 let dummy_formatter = F.make_formatter (fun _ _ _ -> ()) (fun () -> ())
 
-let p ?(level = 0) fmt =
-  if !debug && level <= !debug_level then F.kasprintf (fun s -> F.printf "%s" s) fmt
-  else F.ifprintf dummy_formatter fmt
+let p fmt =
+  if !debug then F.kasprintf (fun s -> F.printf "%s" s) fmt else F.ifprintf dummy_formatter fmt
 
+
+let todo fmt = F.kasprintf (fun s -> F.printf "%s" s) fmt
 
 let enable_debug () = debug := true
 
