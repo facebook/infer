@@ -517,8 +517,10 @@ let call tenv proc_desc path loc ~call_exp ~actuals ~astates_before astates asta
       (astate_n, astates)
 
 
-let is_folly_coro_task =
-  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["folly::coro::Task"] in
+let is_folly_coro =
+  let matcher =
+    QualifiedCppName.Match.of_fuzzy_qual_names ["folly::coro::Generator"; "folly::coro::Task"]
+  in
   fun typ ->
     match typ.Typ.desc with
     | Tptr ({desc= Tstruct (CppClass {name})}, _) ->
@@ -529,7 +531,7 @@ let is_folly_coro_task =
 
 let init_const_refable_parameters procdesc integer_type_widths tenv astates astate_n =
   if
-    Option.exists (Procdesc.get_ret_param_type procdesc) ~f:is_folly_coro_task
+    Option.exists (Procdesc.get_ret_param_type procdesc) ~f:is_folly_coro
     || Procname.is_lambda_or_block (Procdesc.get_proc_name procdesc)
   then astate_n
   else
