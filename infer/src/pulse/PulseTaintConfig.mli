@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 module Kind : sig
-  type t = string [@@deriving compare, equal]
+  type t [@@deriving compare, equal]
 
   val pp : F.formatter -> t -> unit
 
@@ -21,7 +21,7 @@ module Kind : sig
 
   val simple_kind : t
 
-  val kinds_of_strings_opt : t list option -> t list
+  val kinds_of_strings_opt : string list option -> t list
 end
 
 module Target : sig
