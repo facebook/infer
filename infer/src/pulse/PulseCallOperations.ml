@@ -552,7 +552,9 @@ let call tenv path ~caller_proc_desc
         in
         match Specialization.Pulse.Map.find_opt specialization specialized_summary.specialized with
         | None ->
-            L.die InternalError "ondemand engine did not return the expected specialized summary"
+            L.internal_error "ondemand engine did not return the expected specialized summary" ;
+            (* we use the non-specialized summary instead *)
+            specialized_summary.main
         | Some pre_posts ->
             pre_posts
       in
