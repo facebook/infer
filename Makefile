@@ -164,7 +164,8 @@ endif # HAS_OBJC
 endif # BUILD_C_ANALYZERS
 
 ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
-ifneq ($(REBAR3),no)
+ifneq ($(ERLC),no)
+ifneq ($(ESCRIPT),no)
 DIRECT_TESTS += \
   erlang_pulse \
   erlang_pulse-otp \
@@ -172,6 +173,9 @@ DIRECT_TESTS += \
   erlang_topl \
   erlang_compiler \
 
+endif
+endif
+ifneq ($(REBAR3),no)
 BUILD_SYSTEMS_TESTS += rebar3
 endif
 endif # BUILD_ERLANG_ANALYZERS

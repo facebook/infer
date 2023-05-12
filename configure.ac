@@ -331,6 +331,7 @@ AC_SUBST([OPAMSWITCH])
 
 if test "x$enable_erlang_analyzers" = "xyes"; then
   AC_CHECK_TOOL([ESCRIPT], [escript], [no])
+  AC_CHECK_TOOL([ERLC], [erlc], [no])
   AC_CHECK_TOOL([REBAR3], [rebar3], [no])
 fi
 # end if($enable_erlang_analyzers)
