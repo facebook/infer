@@ -43,23 +43,23 @@ module Builtin = struct
         let str =
           match textual with
           | IsTrue ->
-              "$python_is_true$"
+              "python_is_true"
           | BinaryAdd ->
-              "$binary_add$"
+              "binary_add"
           | PythonCall ->
-              "$python_call$"
+              "python_call"
           | PythonClass ->
-              "$python_class$"
+              "python_class"
           | PythonClassConstructor ->
-              "$python_class_constructor$"
+              "python_class_constructor"
           | PythonCode ->
-              "$python_code$"
+              "python_code"
           | PythonIter ->
-              "$python_iter$"
+              "python_iter"
           | PythonIterItem ->
-              "$python_iter_item$"
+              "python_iter_item"
           | PythonIterNext ->
-              "$python_iter_next$"
+              "python_iter_next"
         in
         PyCommon.builtin_name str
     | Python python ->

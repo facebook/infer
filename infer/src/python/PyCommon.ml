@@ -38,13 +38,13 @@ let builtin_name (value : string) : T.qualified_procname =
 (* Helper to box Python's int/string into Textual.
    Until we support Python types, we can't use Textual types, like `int` for
    bool so we wrap them all. *)
-let python_bool = builtin_name "$python_bool$"
+let python_bool = builtin_name "python_bool"
 
-let python_int = builtin_name "$python_int$"
+let python_int = builtin_name "python_int"
 
-let python_string = builtin_name "$python_string$"
+let python_string = builtin_name "python_string"
 
-let python_tuple = builtin_name "$python_tuple$"
+let python_tuple = builtin_name "python_tuple"
 
 let mk_int (i : int64) =
   let proc = python_int in
@@ -66,4 +66,4 @@ let mk_bool (b : bool) =
   Textual.Exp.Call {proc; args; kind= NonVirtual}
 
 
-let global name = sprintf "$module$::%s" name
+let global name = sprintf "$module::%s" name
