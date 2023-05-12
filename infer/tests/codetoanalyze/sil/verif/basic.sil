@@ -27,6 +27,8 @@ define f(x: int, y: float, n: *node, a: *int[]) : void {
     n4: *node = load &n
     store n4.node.val <- n1:int
     store n3.node.val <- n1:int
+    store n4.?.val <- n1:int
+    n5 = ?.cons(1, n3)
     ret n2
   #lab2:
     store &z <- 1: int

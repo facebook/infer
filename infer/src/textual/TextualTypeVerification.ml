@@ -45,7 +45,7 @@ let rec compat ~assigned:(t1 : Typ.t) ~given:(t2 : Typ.t) =
 
 let is_ptr = function Typ.Ptr _ -> true | _ -> false
 
-let is_ptr_struct = function Typ.Ptr (Struct _) -> true | _ -> false
+let is_ptr_struct = function Typ.Ptr (Struct _) | Typ.Void -> true | _ -> false
 
 let is_int = function Typ.Int -> true | _ -> false
 
@@ -213,6 +213,8 @@ let typeof_var var : Typ.t monad =
 let typeof_field field : Typ.t monad =
  fun state ->
   match TextualDecls.get_fielddecl state.decls field with
+  | None when TypeName.equal field.enclosing_class TypeName.wildcard ->
+      ret Typ.Void state
   | None ->
       (* such an error should have been caught in TextualVerification *)
       L.die InternalError "Textual type verification: field %a is unknown" pp_qualified_fieldname
@@ -293,6 +295,8 @@ let typeof_procname (procsig : ProcSig.t) : (Typ.t * Typ.t list option) monad =
         |> Option.map ~f:(fun formals_types -> List.map formals_types ~f:(fun {Typ.typ} -> typ))
       in
       ret (procdecl.result_type.typ, formals_types) state
+  | None when ProcSig.to_qualified_procname procsig |> qualified_procname_contains_wildcard ->
+      ret (Typ.Void, None) state
   | None ->
       ret (typeof_reserved_proc (ProcSig.to_qualified_procname procsig)) state
 

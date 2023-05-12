@@ -100,7 +100,7 @@ local $a: *void, $0: *void, $1: *void, $2: *void
   prune $builtins.hack_is_true(n7)
   n8: *HackMixed = load &$2
   n9 = $builtins.hhbc_cast_vec($builtins.hhbc_new_col_vector())
-  n10 = n8.HackMixed._86reifiedinit(n9)
+  n10 = n8.?._86reifiedinit(n9)
   jmp b6
   .handlers b7
 #b5:
@@ -124,7 +124,7 @@ local $a: *void, $0: *void, $1: *void, $2: *void
   store &$1 <- null: *HackMixed
   store &$2 <- null: *HackMixed
   n16: *HackMixed = load &$f
-  n17 = n13.HackMixed.__construct(n16)
+  n17 = n13.?.__construct(n16)
   n18 = $builtins.hhbc_lock_obj(n13)
   n24 = $builtins.hhbc_is_type_struct_c(n13, n0, $builtins.hack_int(1))
   n25 = $builtins.hhbc_verify_type_pred(n13, n24)
@@ -142,9 +142,9 @@ local $a: *A
   n2 = make(n0, n1)
   store &$a <- n2: *HackMixed
   n20: *HackMixed = load &$a
-  n21 = n20.HackMixed.setField(null)
+  n21 = n20.?.setField(null)
   n22: *HackMixed = load &$a
-  n23 = n22.HackMixed.getField()
+  n23 = n22.?.getField()
   n24 : *HackMixed = load n23.F.val
   ret null
 }
@@ -160,9 +160,9 @@ local $a: *A
   n2 = make(n0, n1)
   store &$a <- n2: *HackMixed
   n20: *HackMixed = load &$a
-  n21 = n20.HackMixed.setField(__sil_allocate(<F>))
+  n21 = n20.?.setField(__sil_allocate(<F>))
   n22: *HackMixed = load &$a
-  n23 = n22.HackMixed.getField()
+  n23 = n22.?.getField()
   n24 : *HackMixed = load n23.F.val
   ret null
 }
@@ -176,10 +176,6 @@ declare $builtins.hhbc_is_type_struct_c(...): *HackMixed
 declare $builtins.hhbc_lock_obj(...): *HackMixed
 declare $builtins.hhbc_throw(...): *HackMixed
 declare $builtins.hhbc_verify_type_pred(...): *HackMixed
-declare HackMixed._86reifiedinit(...): *HackMixed
-declare HackMixed.__construct(...): *HackMixed
-declare HackMixed.getField(...): *HackMixed
-declare HackMixed.setField(...): *HackMixed
 
 declare $builtins.hack_dim_field_get(**HackMixed, *HackMixed): **HackMixed
 declare $builtins.hack_int(int): *HackInt

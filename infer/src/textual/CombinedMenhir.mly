@@ -101,10 +101,12 @@
 %type <Attr.t> attribute
 %type <Module.decl> declaration
 %type <qualified_procname> qualified_pname
+%type <qualified_procname> opt_qualified_pname
 %type <ProcName.t> pname
 %type <FieldName.t> fname
 %type <NodeName.t> nname
 %type <TypeName.t> tname
+%type <TypeName.t> opt_tname
 %type <VarName.t> vname
 %type <Attr.t list> annots
 %type <Attr.t> annot
@@ -169,12 +171,24 @@ tname:
   | id=ident
     { { TypeName.value=id; loc=location_of_pos $startpos(id) } }
 
+opt_tname:
+  | tname=tname
+    { tname }
+  | QUESTION
+    { { TypeName.value="?"; loc=location_of_pos $startpos } }
+
 vname:
   | id=ident
     { { VarName.value=id; loc=location_of_pos $startpos(id) } }
 
 qualified_pname:
   | tname=tname DOT name=pname
+    { ( {enclosing_class=Enclosing tname; name} : qualified_procname) }
+  | name=pname
+    { ( {enclosing_class=TopLevel; name} : qualified_procname ) }
+
+opt_qualified_pname:
+  | tname=opt_tname DOT name=pname
     { ( {enclosing_class=Enclosing tname; name} : qualified_procname) }
   | name=pname
     { ( {enclosing_class=TopLevel; name} : qualified_procname ) }
@@ -363,16 +377,16 @@ expression:
     { Exp.Var (Ident.of_int id) }
   | AMPERSAND name=vname
     { Exp.Lvar name }
-  | exp=expression DOT enclosing_class=tname DOT name=fname
+  | exp=expression DOT enclosing_class=opt_tname DOT name=fname
     { let field : qualified_fieldname = {enclosing_class; name} in
       Exp.Field {exp; field} }
   | e1=expression LSBRACKET e2=expression RSBRACKET
     { Exp.Index (e1, e2) }
   | c=const
     { Exp.Const c }
-  | proc=qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
+  | proc=opt_qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
     { Exp.Call {proc; args; kind= Exp.NonVirtual} }
-  | recv=expression DOT proc=qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
+  | recv=expression DOT proc=opt_qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
     { Exp.call_virtual proc recv args }
   | LABRACKET typ=typ RABRACKET
     { Exp.Typ typ }

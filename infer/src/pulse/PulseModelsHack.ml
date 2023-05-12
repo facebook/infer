@@ -25,8 +25,7 @@ let hack_dim_field_get this_obj (field_string_obj, _) : model =
   match read_boxed_string_value field_string_obj astate with
   | Some string_val ->
       (* TODO: add a move up in the class hierarchy to find the right field declaration *)
-      let class_name = TextualSil.hack_mixed_type_name in
-      let field = Fieldname.make class_name string_val in
+      let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack string_val in
       let<*> astate, this_val =
         PulseOperations.eval_access path Read location this_obj Dereference astate
       in

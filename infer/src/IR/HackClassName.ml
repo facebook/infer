@@ -19,6 +19,8 @@ let components {namespace; classname} =
   match namespace with Some ns -> [ns; classname] | _ -> [classname]
 
 
+let wildcard = make "?"
+
 let pp fmt {namespace; classname} =
   match namespace with
   | Some ns ->

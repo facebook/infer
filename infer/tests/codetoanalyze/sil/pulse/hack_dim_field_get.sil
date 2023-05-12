@@ -7,9 +7,7 @@
 
 type cell = { value:int; next: *cell }
 
-type list extends HackMixed = {}
-
-type HackMixed = { header: *cell }
+type list = {}
 
 define bad(l: *list) : void {
   local temp : **list
@@ -19,7 +17,7 @@ define bad(l: *list) : void {
     n2 = $builtins.hack_dim_field_get(n0, n1)
     store n2 <- null: *cell
     n3: *list = load &l
-    n4: *cell = load n3.HackMixed.header
+    n4: *cell = load n3.?.header
     n5: *cell = load n4.cell.next
     ret null
 }
@@ -32,7 +30,7 @@ define good(l: *list) : void {
     n2 = $builtins.hack_dim_field_get(n0, n1)
     store n2 <- __sil_allocate(<cell>): *cell
     n3: *list = load &l
-    n4: *cell = load n3.HackMixed.header
+    n4: *cell = load n3.?.header
     n5: *cell = load n4.cell.next
     ret null
 }

@@ -51,7 +51,12 @@ module FieldName : NAME (* field names, without their enclosing types *)
 
 module NodeName : NAME (* node names, also called labels *)
 
-module TypeName : NAME (* structured value type name *)
+module TypeName : sig
+  (* structured value type name *)
+  include NAME
+
+  val wildcard : t
+end
 
 type enclosing_class = TopLevel | Enclosing of TypeName.t
 
@@ -60,6 +65,8 @@ type qualified_procname = {enclosing_class: enclosing_class; name: ProcName.t}
 (* procedure name [name] is attached to the name space [enclosing_class] *)
 
 val pp_qualified_procname : F.formatter -> qualified_procname -> unit
+
+val qualified_procname_contains_wildcard : qualified_procname -> bool
 
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
 (* field name [name] must be declared in type [enclosing_class] *)

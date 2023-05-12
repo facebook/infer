@@ -50,13 +50,19 @@ let verify_decl ~env errors (decl : Module.decl) =
     else UnknownLabel {label; pname} :: errors
   in
   let verify_field errors field =
-    if TextualDecls.is_field_declared env field then errors else UnknownField field :: errors
+    if
+      TypeName.equal field.enclosing_class TypeName.wildcard
+      || TextualDecls.is_field_declared env field
+    then errors
+    else UnknownField field :: errors
   in
   let verify_call loc errors proc args =
     if ProcDecl.is_not_regular_proc proc then errors
     else
       let procsig = Exp.call_sig proc args (TextualDecls.lang env) in
       match TextualDecls.get_procdecl env procsig with
+      | None when qualified_procname_contains_wildcard proc ->
+          errors
       | None ->
           UnknownProc {proc; args= List.length args} :: errors
       | Some {formals_types= Some formals_types} ->

@@ -3,16 +3,16 @@ annotated.sil, line 22, column 4: textual type error: expression &n has type **n
 basic.sil, line 17, column 4: textual type error: expression &y has type *float, while a subtype of *int was expected
 basic.sil, line 18, column 4: textual type error: expression &n has type **node, while a pointer of array type was expected
 basic.sil, line 20, column 4: textual type error: expression n1 has type int, while a subtype of *node was expected
-basic.sil, line 33, column 4: textual type error: variable u has not been declared
-basic.sil, line 34, column 4: textual type error: ident n0 is given the type float, but it has already been given the type int at line 17
+basic.sil, line 35, column 4: textual type error: variable u has not been declared
+basic.sil, line 36, column 4: textual type error: ident n0 is given the type float, but it has already been given the type int at line 17
 basic.sil, line 24, column 4: textual type error: expression n0 has type int, while a subtype of float was expected
 basic.sil, line 24, column 4: textual type error: expression &x has type *int, while a supertype of *float was expected
 basic.sil, line 25, column 4: textual type error: expression n1 has type int, while a subtype of float was expected
 basic.sil, line 25, column 4: textual type error: expression &x has type *int, while a pointer of array type was expected
 basic.sil, line 29, column 4: textual type error: expression n3 has type *int[], while a pointer of struct type was expected
-basic.sil, line 47, column 4: textual type error: ident n1 is read before being written
-basic.sil, line 58, column 4: textual type error: builtin __sil_allocate is called with 2 arguments while it expects 1
-basic.sil, line 60, column 4: textual type error: expression 0 has type int, while the type of all types was expected
+basic.sil, line 49, column 4: textual type error: ident n1 is read before being written
+basic.sil, line 60, column 4: textual type error: builtin __sil_allocate is called with 2 arguments while it expects 1
+basic.sil, line 62, column 4: textual type error: expression 0 has type int, while the type of all types was expected
 basic_error_argnum.sil, line 12, column 17: SIL consistency error: function $builtins.bar which can be called with 0 arguments is not declared
 error1.sil, line 12, column 4: SIL syntax error: unexpected token x
 error2.sil, line 19, column 9: SIL consistency error: function g which can be called with 0 arguments is not declared

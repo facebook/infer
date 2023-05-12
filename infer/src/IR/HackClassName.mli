@@ -16,6 +16,8 @@ val classname : t -> string
 
 val components : t -> string list
 
+val wildcard : t
+
 val pp : F.formatter -> t -> unit
 
 val to_string : t -> string

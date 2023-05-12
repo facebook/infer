@@ -155,6 +155,14 @@ let mangle_java_procname jpname =
   F.asprintf "%s%a" method_name pp_java_types parameter_types
 
 
+let wildcard_sil_fieldname lang name =
+  match (lang : Lang.t) with
+  | Java | Python ->
+      L.die InternalError "a wildcard fieldname is only supported in Hack"
+  | Hack ->
+      SilFieldname.make (HackClass HackClassName.wildcard) name
+
+
 module TypBridge = struct
   open Typ
 
@@ -499,6 +507,8 @@ module ExpBridge = struct
           Lvar pvar
       | Field {exp; field} -> (
         match TextualDecls.get_fielddecl decls_env field with
+        | None when TypeName.equal field.enclosing_class TypeName.wildcard ->
+            Lfield (aux exp, wildcard_sil_fieldname lang field.name.value, SilTyp.mk SilTyp.Tvoid)
         | None ->
             L.die InternalError "field %a.%a has not been declared" TypeName.pp
               field.enclosing_class FieldName.pp field.name
@@ -655,6 +665,11 @@ module InstrBridge = struct
           match TextualDecls.get_procdecl decls_env procsig with
           | Some procname ->
               procname
+          | None when qualified_procname_contains_wildcard proc ->
+              { ProcDecl.qualified_name= proc
+              ; formals_types= None
+              ; result_type= Typ.mk_without_attributes Typ.Void
+              ; attributes= [] }
           | None ->
               let msg =
                 lazy (F.asprintf "the expression in %a should start with a regular call" pp i)

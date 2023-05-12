@@ -123,7 +123,15 @@ let builtin_lazy_class_initialize = "__sil_lazy_class_initialize"
 
 let builtin_cast = "__sil_cast"
 
-module TypeName : NAME = Name
+module TypeName : sig
+  include NAME
+
+  val wildcard : t
+end = struct
+  include Name
+
+  let wildcard = {value= "?"; loc= Location.Unknown}
+end
 
 type enclosing_class = TopLevel | Enclosing of TypeName.t [@@deriving equal, hash]
 
@@ -140,6 +148,14 @@ let pp_enclosing_class fmt = function
 
 let pp_qualified_procname fmt ({enclosing_class; name} : qualified_procname) =
   F.fprintf fmt "%a%a" pp_enclosing_class enclosing_class ProcName.pp name
+
+
+let qualified_procname_contains_wildcard {enclosing_class} =
+  match enclosing_class with
+  | Enclosing class_name ->
+      TypeName.equal class_name TypeName.wildcard
+  | TopLevel ->
+      false
 
 
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
