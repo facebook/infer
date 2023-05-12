@@ -30,6 +30,9 @@ val pyObject : Textual.Typ.t
 val pyCode : Textual.Typ.t
 (** [code] is a builtin Python type to describe any code (function, class, ...) object *)
 
+val pyClass : Textual.Typ.t
+(** Like [pyCode] but for class creation *)
+
 val pyInt : Textual.Typ.t
 (** Textual encoding of the primitive Python type [int] *)
 

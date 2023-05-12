@@ -16,6 +16,8 @@ module Builtin = struct
     | IsTrue
     | BinaryAdd
     | PythonCall
+    | PythonClass
+    | PythonClassConstructor
     | PythonCode
     | PythonIter
     | PythonIterItem
@@ -46,6 +48,10 @@ module Builtin = struct
               "$binary_add$"
           | PythonCall ->
               "$python_call$"
+          | PythonClass ->
+              "$python_class$"
+          | PythonClassConstructor ->
+              "$python_class_constructor$"
           | PythonCode ->
               "$python_code$"
           | PythonIter ->
@@ -108,6 +114,13 @@ module BuiltinSet = struct
         , { formals_types= Some [annot PyCommon.pyObject; annot PyCommon.pyObject]
           ; result_type= annot PyCommon.pyObject } )
       ; (Builtin.PythonCall, {formals_types= None; result_type= annot PyCommon.pyObject})
+      ; ( Builtin.PythonClass
+        , {formals_types= Some [annot string_]; result_type= annot PyCommon.pyClass} )
+      ; ( Builtin.PythonClassConstructor
+          (* Class constructors can be implicitly inherited, so we are never sure of their
+             arity. Also, we'll override their return type when we setup the call, to make it
+             more precise. *)
+        , {formals_types= None; result_type= annot PyCommon.pyObject} )
       ; ( Builtin.PythonCode
         , {formals_types= Some [annot string_]; result_type= annot PyCommon.pyCode} )
         (* TODO: should we introduce a Textual type for iterators ? *)
@@ -156,17 +169,18 @@ module DataStack = struct
     | Name of int
     | VarName of int
     | Temp of T.Ident.t
-    | Fun of {qualified_name: string; code: FFI.Code.t}
+    | Code of {fun_or_class: bool; qualified_name: string; code: FFI.Code.t}
     | Map of (string * cell) list
+    | BuiltinBuildClass
   [@@deriving show]
 
   let as_code FFI.Code.{co_consts} = function
     | Const n ->
         let code = co_consts.(n) in
         FFI.Constant.as_code code
-    | Fun {code} ->
+    | Code {code} ->
         Some code
-    | Name _ | Temp _ | VarName _ | Map _ ->
+    | Name _ | Temp _ | VarName _ | Map _ | BuiltinBuildClass ->
         None
 
 
@@ -185,7 +199,7 @@ module Signature = struct
   module Map = Caml.Map.Make (String)
 end
 
-type info = {is_code: bool; typ: T.Typ.t}
+type info = {is_code: bool; is_class: bool; typ: T.Typ.t}
 
 type label_info =
   { label_name: string
@@ -201,6 +215,7 @@ and shared =
   ; globals: info T.VarName.Map.t
   ; shadowed_builtins: BuiltinSet.t
   ; builtins: BuiltinSet.t
+  ; classes: string list
   ; toplevel_signatures: Signature.t Signature.Map.t
   ; next_label: int
   ; labels: label_info Labels.t }
@@ -269,7 +284,7 @@ module Label = struct
       map ~env ssa_parameters ~f:(fun env typ ->
           let info =
             (* TODO: track code/class for SSA parameters *)
-            {typ; is_code= false}
+            {typ; is_code= false; is_class= false}
           in
           let env, id = mk_fresh_ident env info in
           (env, (id, typ)) )
@@ -292,6 +307,7 @@ let empty =
   ; globals= T.VarName.Map.empty
   ; shadowed_builtins= BuiltinSet.empty
   ; builtins= BuiltinSet.empty
+  ; classes= []
   ; toplevel_signatures= Signature.Map.empty
   ; next_label= 0
   ; labels= Labels.empty }
@@ -391,8 +407,17 @@ let register_builtin ({shared} as env) builtin =
 
 let mk_builtin_call env builtin args =
   let textual_builtin = Builtin.Textual builtin in
-  let typ = BuiltinSet.get_type textual_builtin in
-  let info = {typ; is_code= false} in
+  let typ =
+    (* Special casing to make the type of new instances more precise *)
+    match (builtin, args) with
+    | Builtin.PythonClassConstructor, T.Exp.Const (T.Const.Str arg) :: _ ->
+        (* TODO: how can we track the loc ? via args ?*)
+        let type_name = {T.TypeName.value= arg; loc= T.Location.Unknown} in
+        T.Typ.Ptr (T.Typ.Struct type_name)
+    | _, _ ->
+        BuiltinSet.get_type textual_builtin
+  in
+  let info = {typ; is_class= false; is_code= false} in
   let env = register_builtin env textual_builtin in
   let env, id = mk_fresh_ident env info in
   let proc = Builtin.to_proc_name textual_builtin in
@@ -438,3 +463,13 @@ let register_toplevel ({shared} as env) fname annotations =
 
 let lookup_signature {shared= {toplevel_signatures}} {T.ProcName.value} =
   Signature.Map.find_opt value toplevel_signatures
+
+
+let register_class ({shared} as env) class_name =
+  let {classes} = shared in
+  let classes = class_name :: classes in
+  let shared = {shared with classes} in
+  {env with shared}
+
+
+let get_classes {shared= {classes}} = classes

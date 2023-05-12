@@ -13,6 +13,8 @@ module Builtin : sig
     | IsTrue
     | BinaryAdd
     | PythonCall
+    | PythonClass
+    | PythonClassConstructor
     | PythonCode
     | PythonIter
     | PythonIterItem
@@ -39,9 +41,11 @@ module DataStack : sig
     | Name of int  (** reference to a global name, stored in [co_names] *)
     | VarName of int  (** reference to a local name, stored in [co_varnames] *)
     | Temp of T.Ident.t  (** SSA variable *)
-    | Fun of {qualified_name: string; code: FFI.Code.t}
+    | Code of {fun_or_class: bool; qualified_name: string; code: FFI.Code.t}
         (** [code] Python object with its qualified name. It can be a function, class, closure, ... *)
     | Map of (string * cell) list
+        (** Light encoding of raw Python tuples/dicts. Only used for type annotations at the moment. *)
+    | BuiltinBuildClass  (** see Python's [LOAD_BUILD_CLASS] *)
   [@@deriving show]
 
   val as_code : FFI.Code.t -> cell -> FFI.Code.t option
@@ -52,6 +56,7 @@ end
 (** Type information about various entities (toplevel declarations, temporaries, ...). *)
 type info =
   { is_code: bool  (** is the entity a function / method ? *)
+  ; is_class: bool  (** is the entity a class ? *)
   ; typ: T.Typ.t  (** Type annotation, if any (otherwise, [object] is used) *) }
 
 (** Global environment used during bytecode processing. Stores common global information like the
@@ -110,6 +115,7 @@ val mk_fresh_ident : t -> info -> t * T.Ident.t
 (** Generate a fresh temporary name *)
 
 val get_ident_info : t -> T.Ident.t -> info option
+(** Get back the information of a temporary *)
 
 val mk_fresh_label : t -> t * string
 (** Generate a fresh label name *)
@@ -167,3 +173,10 @@ val register_toplevel : t -> string -> (string * string) list -> t
     builtins *)
 
 val lookup_signature : t -> T.ProcName.t -> (string * string) list option
+(** Lookup the signature of a function / method *)
+
+val register_class : t -> string -> t
+(** Register a class declaration (based on [LOAD_BUILD_CLASS]) *)
+
+val get_classes : t -> string list
+(** Get back the list of registered classes *)

@@ -845,3 +845,48 @@ expect(get())
 
         declare $builtins.$python_int$(int) : *PyInt |}]
   end )
+
+
+let%test_module "simple user classes" =
+  ( module struct
+    let%expect_test _ =
+      let source = {|
+class C:
+          pass
+
+
+c = C()
+        |} in
+      test source ;
+      [%expect
+        {|
+          .source_language = "python"
+
+          define $module$::toplevel() : *PyObject {
+            #b0:
+                n0 = $builtins.$python_code$("C")
+                n1 = $builtins.$python_class$("C")
+                n2 = $builtins.$python_class_constructor$("C")
+                store &$module$::c <- n2:*C
+                ret null
+
+          }
+
+          type C = {}
+
+          global $module$::c: *PyObject
+
+          declare $builtins.$python_code$(*String) : *PyCode
+
+          declare $builtins.$python_class_constructor$(...) : *PyObject
+
+          declare $builtins.$python_class$(*String) : *PyClass
+
+          declare $builtins.$python_tuple$(...) : *PyObject
+
+          declare $builtins.$python_string$(*String) : *PyString
+
+          declare $builtins.$python_bool$(int) : *PyBool
+
+          declare $builtins.$python_int$(int) : *PyInt |}]
+  end )

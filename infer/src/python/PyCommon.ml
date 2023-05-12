@@ -26,6 +26,8 @@ let pyNone = mk_type "PyNone"
 
 let pyCode = mk_type "PyCode"
 
+let pyClass = mk_type "PyClass"
+
 let builtin_scope = T.Enclosing T.{TypeName.value= "$builtins"; loc= Unknown}
 
 let builtin_name (value : string) : T.qualified_procname =
