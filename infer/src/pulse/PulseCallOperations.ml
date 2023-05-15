@@ -173,7 +173,8 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
     List.fold actuals ~init:astate ~f:(fun astate actual_typ ->
         havoc_actual_if_ptr actual_typ None astate )
   in
-  L.d_printfln "skipping unknown procedure" ;
+  L.d_printfln ~color:Orange "skipping unknown procedure %a" (Pp.option Procname.pp)
+    callee_pname_opt ;
   ( match (actuals, formals_opt) with
   | actual_typ :: _, _ when Option.exists callee_pname_opt ~f:Procname.is_constructor ->
       (* when the callee is an unknown constructor, havoc the first arg (the constructed object)
@@ -516,6 +517,20 @@ let call tenv path ~caller_proc_desc
     let f one_result = match one_result with Ok (ContinueProgram _astate) -> true | _ -> false in
     List.exists results ~f
   in
+  let call_as_unknown () =
+    let results, contradiction =
+      call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals ~formals_opt
+        ~call_kind astate
+    in
+    if Option.is_some contradiction then (
+      L.debug Analysis Verbose
+        "@[<v>@[Failed to honor --pulse-force-continue, because attempting to treat the procedure \
+         as unknown caused a contradiction: %a@]@;\
+         @]"
+        Procname.pp callee_pname ;
+      [] )
+    else results
+  in
   match (analyze_dependency callee_pname : PulseSummary.t option) with
   | Some summary ->
       let call_aux exec_states =
@@ -524,23 +539,20 @@ let call tenv path ~caller_proc_desc
             (IRAttributes.load_exn callee_pname)
             exec_states astate
         in
-        if
-          (not Config.pulse_force_continue) || Option.is_some contradiction
-          || has_continue_program results
-        then (results, contradiction)
-        else
-          let more_results, more_contradiction =
-            call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals
-              ~formals_opt ~call_kind astate
-          in
-          if Option.is_some more_contradiction then (
-            L.debug Analysis Verbose
-              "@[<v>@[Failed to honor --pulse-force-continue, because attempting to treat the \
-               procedure as unknown caused a contradiction: %a@]@;\
-               @]"
-              Procname.pp callee_pname ;
-            (results, None) )
-          else (more_results @ results, None)
+        (* When a function call does not have a post of type ContinueProgram, we may want to treat
+           the call as unknown to make the analysis continue. This may introduce false positives but
+           could uncover additional true positives too. *)
+        let should_try_as_unknown =
+          Config.pulse_force_continue && Option.is_none contradiction
+          && not (has_continue_program results)
+        in
+        if should_try_as_unknown then (
+          L.d_printfln_escaped ~color:Orange
+            "No disjuncts of type ContinueProgram, treating the call to %a as unknown" Procname.pp
+            callee_pname ;
+          let unknown_results = call_as_unknown () in
+          (unknown_results @ results, None) )
+        else (results, contradiction)
       in
       let res, contradiction = call_aux summary.main in
       let needs_aliasing_specialization res contradiction =
