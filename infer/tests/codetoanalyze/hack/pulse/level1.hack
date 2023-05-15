@@ -9,7 +9,7 @@ function taintSource(): int {
   return 42;
 }
 
-function taintSink(int $i): void {
+function taintSink(mixed... $args): void {
 }
 
 function basicFlowBad(): void {
