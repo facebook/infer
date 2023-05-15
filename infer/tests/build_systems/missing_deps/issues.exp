@@ -1,0 +1,4 @@
+src/a.c, a, 3, DEAD_STORE, no_bucket, ERROR, [Write of unused value (type `int`)]
+src/a.c, a, 3, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure a(),start of procedure a_get()]
+src/b.c, b, 3, DEAD_STORE, no_bucket, ERROR, [Write of unused value (type `int`)]
+src/b.c, b, 3, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure b(),start of procedure b_get()]

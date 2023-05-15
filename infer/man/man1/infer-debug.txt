@@ -107,6 +107,21 @@ DEBUG PROCEDURES
            --procedures-summary-json. See also --changed-files-index.)
            (Conversely: --no-procedures-summary-skip-empty)
 DEBUG SOURCE FILES
+       --complete-capture-from path
+           Provide the path to an infer results directory containing a
+           capture database. The capture database specified with
+           --results-dir) (which must exist) will be completed from the input
+           database and according to the missing-* files in the results
+           directory. The exit code will be equal to the number of rows added
+           to the capture database.
+
+       --extract-capture-from path
+           Provide the path to an infer results directory containing a
+           capture database. Together with a list of files provided through
+           the obligatory use of --changed-files-index, create a new capture
+           database containing only the artefacts related to these files (in
+           the location specified with --results-dir).
+
        --source-files
            Activates: Print source files discovered by infer (Conversely:
            --no-source-files)

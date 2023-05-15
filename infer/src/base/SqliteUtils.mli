@@ -60,7 +60,7 @@ val result_unit : ?finalize:bool -> Sqlite3.db -> log:string -> Sqlite3.stmt -> 
 val db_close : Sqlite3.db -> unit
 (** Close the given database and asserts that it was effective. Raises {!Error} if not. *)
 
-val with_attached_db : Sqlite3.db -> db_file:string -> db_name:string -> f:(unit -> unit) -> unit
+val with_attached_db : Sqlite3.db -> db_file:string -> db_name:string -> f:(unit -> 'a) -> 'a
 (** Attach the given [db_file] as [db_name], execute [f], then detach. *)
 
 (** An API commonly needed to store and retrieve objects from the database *)

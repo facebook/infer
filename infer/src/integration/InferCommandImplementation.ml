@@ -70,6 +70,20 @@ let debug () =
       else if Option.is_some Config.source_files_call_graph_partition then
         Option.iter Config.source_files_call_graph_partition ~f:(fun n_workers ->
             SourceFileGraph.partition_source_file_call_graph ~n_workers )
+      else if Option.is_some Config.extract_capture_from then
+        match SourceFile.read_config_changed_files () with
+        | None ->
+            L.die UserError
+              "When extracting a capture database, --changed-files-index must be specified."
+        | Some files ->
+            CaptureManipulation.extract ~files
+              ~input_capture_path:(Option.value_exn Config.extract_capture_from)
+      else if Option.is_some Config.complete_capture_from then
+        let changes_made =
+          CaptureManipulation.complete
+            ~input_capture_path:(Option.value_exn Config.complete_capture_from)
+        in
+        L.exit (if changes_made then 1 else 0)
       else
         let filter = Lazy.force Filtering.source_files_filter in
         L.result "%a"

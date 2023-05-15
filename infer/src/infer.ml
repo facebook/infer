@@ -56,6 +56,9 @@ let setup () =
         SourceFiles.mark_all_stale () )
   | Explore ->
       ResultsDir.assert_results_dir "please run an infer analysis first"
+  | Debug when Option.is_some Config.extract_capture_from ->
+      ResultsDir.remove_results_dir () ;
+      ResultsDir.create_results_dir ()
   | Debug ->
       ResultsDir.assert_results_dir "please run an infer analysis or capture first"
   | Help ->

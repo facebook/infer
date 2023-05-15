@@ -24,5 +24,5 @@ val get : unit -> t
 val save : t list -> unit
 (** destructively merge missing dependencies and store into the results directory *)
 
-val load : unit -> t [@@warning "-unused-value-declaration"]
+val load : unit -> t
 (** load from results directory *)

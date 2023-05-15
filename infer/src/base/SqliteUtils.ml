@@ -93,8 +93,9 @@ let with_attached_db db ~db_file ~db_name ~f =
   exec db
     ~stmt:(Printf.sprintf "ATTACH '%s' AS %s" db_file db_name)
     ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
-  f () ;
-  exec db ~stmt:("DETACH " ^ db_name) ~log:(Printf.sprintf "detaching database '%s'" db_file)
+  let result = f () in
+  exec db ~stmt:("DETACH " ^ db_name) ~log:(Printf.sprintf "detaching database '%s'" db_file) ;
+  result
 
 
 module type Data = sig

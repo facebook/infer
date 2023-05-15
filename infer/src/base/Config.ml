@@ -1121,6 +1121,15 @@ and compilation_database_escaped =
      from Xcode (can be specified multiple times)"
 
 
+and complete_capture_from =
+  CLOpt.mk_path_opt ~long:"complete-capture-from"
+    ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
+    "Provide the path to an infer results directory containing a capture database.  The capture \
+     database specified with $(b, --results-dir)) (which must exist) will be completed from the \
+     input database and according to the $(b, missing-*) files in the results directory.  The exit \
+     code will be equal to the number of rows added to the capture database."
+
+
 and config_impact_config_field_patterns =
   CLOpt.mk_string_list ~long:"config-impact-config-field-patterns" ~meta:"regex"
     "Register known config fields that have a config value.  The matched name contains class and \
@@ -1586,6 +1595,15 @@ and external_java_packages =
     ~meta:"prefix"
     "Specify a list of Java package prefixes for external Java packages. If set, the analysis will \
      not report non-actionable warnings on those packages."
+
+
+and extract_capture_from =
+  CLOpt.mk_path_opt ~long:"extract-capture-from"
+    ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
+    "Provide the path to an infer results directory containing a capture database. Together with a \
+     list of files provided through the obligatory use of $(b,--changed-files-index), create a new \
+     capture database containing only the artefacts related to these files (in the location \
+     specified with $(b, --results-dir))."
 
 
 and fail_on_bug =
@@ -3669,6 +3687,8 @@ and compaction_if_heap_greater_equal_to_GB = !compaction_if_heap_greater_equal_t
 
 and compaction_minimum_interval_s = !compaction_minimum_interval_s
 
+and complete_capture_from = !complete_capture_from
+
 and config_impact_config_field_patterns =
   RevList.rev_map !config_impact_config_field_patterns ~f:Re.Str.regexp
 
@@ -3770,6 +3790,8 @@ and erlang_with_otp_specs = !erlang_with_otp_specs
 and erlang_list_unfold_depth = !erlang_list_unfold_depth
 
 and external_java_packages = !external_java_packages
+
+and extract_capture_from = !extract_capture_from
 
 and fail_on_bug = !fail_on_bug
 

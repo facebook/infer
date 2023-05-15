@@ -1,0 +1,8 @@
+a
+  source_file: src/a.c
+  defined: true
+  
+b
+  source_file: src/b.c
+  defined: true
+  

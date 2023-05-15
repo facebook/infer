@@ -32,9 +32,11 @@ BUILD_SYSTEMS_TESTS += \
   delete_results_dir \
   disjunctive_domain \
   duplicate_symbols \
+  extract_capture \
   fail_on_issue \
   infer-debug \
   j1 \
+  missing_deps \
   project_root_rel \
   pulse_messages \
   reactive \
