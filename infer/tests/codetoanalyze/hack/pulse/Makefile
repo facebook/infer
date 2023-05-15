@@ -14,7 +14,6 @@ SOURCES = $(sort $(wildcard *.hack))
 default: test
 
 $(INFER_OUT)/report.json: $(SOURCES) $(INFER_BIN) $(HACKC)
-	$(INFER_BIN) --quiet --no-progress-bar --pulse-only --debug-exceptions\
+	$(INFER_BIN) --quiet --no-progress-bar --debug-exceptions\
 		--dump-duplicate-symbols -o $(INFER_OUT) \
-                --pulse-force-continue \
                 --hackc-binary $(HACKC) -- hackc compile-infer $(SOURCES)

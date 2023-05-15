@@ -1,4 +1,7 @@
 {
+  "scheduler": "callgraph",
+  "pulse-only": true,
+  "pulse-force-continue": true,
   "pulse-taint-sources": [
     { "procedure": "$root.Level1::taintSource" },
     { "class_names": ["OuterFile"], "method_names": ["taintSource"] },
