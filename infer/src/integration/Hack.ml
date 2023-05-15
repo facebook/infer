@@ -335,7 +335,7 @@ let start_hackc compiler args =
 
 
 let load_textual_model filename =
-  L.progress "Loading textual models in %s@\n" filename ;
+  L.debug Capture Quiet "Loading textual models in %s@\n" filename ;
   match TextualParser.TextualFile.translate (StandaloneFile filename) with
   | Ok sil ->
       TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
@@ -362,7 +362,7 @@ let compile compiler args =
          fine. *)
       () ) ;
   L.progress "Finished capture: success %d files, error %d files.@\n" n_captured n_error ;
-  Option.iter Config.hack_models ~f:load_textual_model ;
+  load_textual_model Config.hack_models ;
   if (not Config.keep_going) && n_error > 0 then
     L.die ExternalError
       "There were errors during capture. Re-run with --keep-going to ignore the errors."

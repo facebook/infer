@@ -731,6 +731,10 @@ ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/java/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/java/'
 endif
+ifeq ($(BUILD_HACK_ANALYZERS),yes)
+	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/hack/' || \
+	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/hack/'
+endif
 ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/lib/erlang/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/erlang/'
@@ -748,6 +752,10 @@ endif
 # copy files
 	$(INSTALL_DATA) -C          'infer/lib/models.sql' \
 	  '$(DESTDIR)$(libdir)/infer/infer/lib/models.sql'
+ifeq ($(BUILD_HACK_ANALYZERS),yes)
+	$(INSTALL_DATA) -C          'infer/lib/hack/models.sil' \
+	  '$(DESTDIR)$(libdir)/infer/infer/lib/hack/models.sil'
+endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(INSTALL_DATA) -C          'facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib' \
 	  '$(DESTDIR)$(libdir)/infer/facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib'

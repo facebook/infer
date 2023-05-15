@@ -2309,10 +2309,8 @@ INTERNAL OPTIONS
            integration (Conversely: --no-genrule-mode)
 
        --hack-models string
-           Specify .sil file to use as models
-
-       --hack-models-reset
-           Cancel the effect of --hack-models.
+           Specify .sil file to use as Hack models (uses bundled models by
+           default)
 
        --hack-naming-table path
            Location of a Hack naming table (sqlite)

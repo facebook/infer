@@ -399,7 +399,7 @@ val hack_naming_table : string option [@@warning "-unused-value-declaration"]
 
 val hackc_binary : string
 
-val hack_models : string option
+val hack_models : string
 
 val help_checker : Checker.t list
 
