@@ -255,10 +255,10 @@ let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary callee
       RestartScheduler.with_lock callee_pname ~f:(fun () ->
           let previous_global_state = AnalysisGlobalState.save () in
           AnalysisGlobalState.initialize callee_pname ;
-          (* preload tenv to avoid tainting preanalysis timing with IO *)
-          let tenv = Exe_env.get_proc_tenv exe_env callee_pname in
           protect
             ~f:(fun () ->
+              (* preload tenv to avoid tainting preanalysis timing with IO *)
+              let tenv = Exe_env.get_proc_tenv exe_env callee_pname in
               Timer.time Preanalysis
                 ~f:(fun () ->
                   let caller_pname = caller_summary >>| fun summ -> summ.Summary.proc_name in
