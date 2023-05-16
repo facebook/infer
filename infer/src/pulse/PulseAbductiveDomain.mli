@@ -295,6 +295,8 @@ module Summary : sig
 
   val with_need_closure_specialization : summary -> summary
 
+  val add_need_dynamic_type_specialization : Procdesc.t -> AbstractValue.t -> summary -> summary
+
   val of_post :
        Tenv.t
     -> Procname.t

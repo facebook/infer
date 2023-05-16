@@ -1590,6 +1590,9 @@ module Summary = struct
 
 
   let with_need_closure_specialization summary = {summary with need_closure_specialization= true}
+
+  let add_need_dynamic_type_specialization proc_desc receiver_addr summary =
+    add_need_dynamic_type_specialization proc_desc receiver_addr summary
 end
 
 module Topl = struct

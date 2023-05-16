@@ -97,7 +97,7 @@ define test_dyntype_specialization_from_caller_bad(x: *Int) : void {
     ret null
 }
 
-define FP_test_dyntype_specialization_from_caller_good(x: *Int) : void {
+define test_dyntype_specialization_from_caller_good(x: *Int) : void {
   #entry:
     n0 = __sil_eq(call_num_value_caller_on_allocated_int(), 42)
     prune !n0

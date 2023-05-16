@@ -478,36 +478,72 @@ let mk_actuals_map actuals formals =
       Some map
 
 
-let maybe_dynamic_type_specialization_is_needed run_analysis formals_opt actuals contradiction
-    astate =
-  let open IOption.Let_syntax in
-  let* contradiction in
-  let* pvars = PulseInterproc.is_dynamic_type_needed_contradiction contradiction in
-  let make_dynamic_type_specialization pvars =
+let maybe_dynamic_type_specialization_is_needed formals_opt actuals contradiction astate =
+  let make_dynamic_type_specialization =
     (* we try to find a dynamic type name for each pvar in the [pvars] set in order to devirtualize all
-             calls in the callee (and its own callees) *)
+       calls in the callee (and its own callees). If we do not find a dynanmic type, we record the
+       address in a set [need_specialization_from_caller] in order to propagate the need to the caller
+       state *)
     let open IOption.Let_syntax in
+    let* contradiction in
+    let* pvars = PulseInterproc.is_dynamic_type_needed_contradiction contradiction in
     let* formals = formals_opt in
-    let* actuals_map = mk_actuals_map actuals formals in
+    let+ actuals_map = mk_actuals_map actuals formals in
     Pvar.Set.fold
-      (fun pvar opt_map ->
-        let* map = opt_map in
-        let* (addr, _), _ = Pvar.Map.find_opt pvar actuals_map in
-        let* dynamic_type = AbductiveDomain.AddressAttributes.get_dynamic_type addr astate in
-        let+ dynamic_type_name = Typ.name dynamic_type in
-        Pvar.Map.add pvar dynamic_type_name map )
-      pvars (Some Pvar.Map.empty)
+      (fun pvar (dyntypes_map, need_specialization_from_caller) ->
+        let (addr, _), _ = Pvar.Map.find pvar actuals_map in
+        (* will succeed thanks to [mk_actuals_map] *)
+        let ( let** ) opt f =
+          Option.value_map opt ~f
+            ~default:(dyntypes_map, AbstractValue.Set.add addr need_specialization_from_caller)
+        in
+        let** dynamic_type = AbductiveDomain.AddressAttributes.get_dynamic_type addr astate in
+        let** dynamic_type_name = Typ.name dynamic_type in
+        (Pvar.Map.add pvar dynamic_type_name dyntypes_map, need_specialization_from_caller) )
+      pvars
+      (Pvar.Map.empty, AbstractValue.Set.empty)
   in
-  match make_dynamic_type_specialization pvars with
-  | Some map ->
-      let specialization = Specialization.Pulse.DynamicTypes map in
+  match make_dynamic_type_specialization with
+  | Some (dyntypes_map, need_specialization_from_caller)
+    when AbstractValue.Set.is_empty need_specialization_from_caller ->
+      let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
       L.d_printfln "requesting dyntypes specialization %a" Specialization.Pulse.pp specialization ;
-      let res, contradiction = run_analysis specialization in
-      Some (res, contradiction, `KnownCall)
-  | None ->
+      `RequestSpecializedAnalysis dyntypes_map
+  | Some (_, need_specialization_from_caller) ->
       L.d_printfln "[specialization] not enough dyntypes information in the caller context" ;
-      (* TODO: not implemented yet *)
-      None
+      let add_need_dynamic_type_specialization caller_proc_desc execution_state =
+        let update_astate astate =
+          AbstractValue.Set.fold
+            (fun addr astate ->
+              AbductiveDomain.add_need_dynamic_type_specialization caller_proc_desc addr astate )
+            need_specialization_from_caller astate
+        in
+        let update_summary summary =
+          AbstractValue.Set.fold
+            (fun addr summary ->
+              AbductiveDomain.Summary.add_need_dynamic_type_specialization caller_proc_desc addr
+                summary )
+            need_specialization_from_caller summary
+        in
+        match (execution_state : ExecutionDomain.t) with
+        | ExceptionRaised astate ->
+            ExceptionRaised (update_astate astate)
+        | ContinueProgram astate ->
+            ContinueProgram (update_astate astate)
+        | ExitProgram summary ->
+            ExitProgram (update_summary summary)
+        | AbortProgram summary ->
+            AbortProgram (update_summary summary)
+        | LatentAbortProgram latent_abort_program ->
+            let astate = update_summary latent_abort_program.astate in
+            LatentAbortProgram {latent_abort_program with astate}
+        | LatentInvalidAccess latent_invalid_access ->
+            let astate = update_summary latent_invalid_access.astate in
+            LatentInvalidAccess {latent_invalid_access with astate}
+      in
+      `NeedCallerSpecialization add_need_dynamic_type_specialization
+  | None ->
+      `AbortAndUseMainSummary
 
 
 let call tenv path ~caller_proc_desc
@@ -532,7 +568,7 @@ let call tenv path ~caller_proc_desc
     else results
   in
   match (analyze_dependency callee_pname : PulseSummary.t option) with
-  | Some summary ->
+  | Some summary -> (
       let call_aux exec_states =
         let results, contradiction =
           call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
@@ -588,10 +624,23 @@ let call tenv path ~caller_proc_desc
               (res, contradiction, `KnownCall) )
         else (res, contradiction, `UnknownCall)
       else
-        maybe_dynamic_type_specialization_is_needed
-          (fun specialization -> request_specialization specialization |> call_aux)
-          formals_opt actuals contradiction astate
-        |> Option.value ~default:(res, contradiction, `KnownCall)
+        match
+          maybe_dynamic_type_specialization_is_needed formals_opt actuals contradiction astate
+        with
+        | `RequestSpecializedAnalysis dyntypes_map ->
+            let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
+            let res, contradiction = request_specialization specialization |> call_aux in
+            (* TODO: maybe this specialized summary still require specialization *)
+            (res, contradiction, `KnownCall)
+        | `NeedCallerSpecialization add_need_dynamic_type_specialization ->
+            let f exec_state = add_need_dynamic_type_specialization caller_proc_desc exec_state in
+            (* remark: we could also run an analysis of the callee with the partial information we have,
+               but here we chose to keep the default summary and wait for a full specialization.
+               Advantage: we only store specialized summary that are *sound* while the main summary
+               is a best effort computation that can be *unsound* *)
+            (List.map res ~f:(PulseResult.map ~f), contradiction, `KnownCall)
+        | `AbortAndUseMainSummary ->
+            (res, contradiction, `KnownCall) )
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln_escaped "No spec found for %a@\n" Procname.pp callee_pname ;

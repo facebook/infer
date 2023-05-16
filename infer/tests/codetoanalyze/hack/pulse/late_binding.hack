@@ -54,7 +54,7 @@ class Main {
     }
   }
 
-  public function FN_call_parent_caller_bad(): void {
+  public function call_parent_caller_bad(): void {
     $tainted = \Level1\taintSource();
     $i = C::parent_caller();
     if ($i == 0) {
@@ -62,7 +62,7 @@ class Main {
     }
   }
 
-  public function FP_call_parent_caller_good(): void {
+  public function call_parent_caller_good(): void {
     $tainted = \Level1\taintSource();
     $i = C::parent_caller();
     if ($i != 0) {
