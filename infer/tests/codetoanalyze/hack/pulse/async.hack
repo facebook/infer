@@ -3,17 +3,11 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-class C {}
-
-async function genC () : Awaitable<C> {
-  return new C();
-}
-
 async function genInt () : Awaitable<int> {
   return 42;
 }
 
-async function genGood () : Awaitable<void> {
+async function genOk () : Awaitable<void> {
   await genInt();
 }
 
@@ -21,12 +15,16 @@ async function genBad () : Awaitable<void> {
   $x = genInt();
 }
 
-function returnInt () : int {
-  return 42;
+function produce_awaitable_int () : Awaitable<int> {
+  return genInt();
 }
 
-function callgood () : void {
-  returnInt();
+async function genBadIndirect () : Awaitable<void> {
+  produce_awaitable_int();
+}
+
+async function genOkIndirect() : Awaitable<void> {
+  await produce_awaitable_int();
 }
 
 // Can't do this yet because front end doesn't actually deal with await properly

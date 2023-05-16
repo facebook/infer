@@ -116,6 +116,12 @@ define $builtins.hhbc_verify_type_pred(o: *HackMixed, typ: *HackMixed): *HackMix
     ret null
 }
 
+
+define $builtins.hhbc_verify_param_type_ts(o: *HackMixed, typ: *HackMixed): *HackMixed {
+  #entry:
+    ret null
+}
+
 // TODO: Treating this as unknown causes FPs
 define $builtins.hhbc_lock_obj(o: *HackMixed): *HackMixed {
   #entry:
@@ -123,6 +129,16 @@ define $builtins.hhbc_lock_obj(o: *HackMixed): *HackMixed {
 }
 
 define $builtins.hhbc_check_this(o: *HackMixed): *HackMixed {
+  #entry:
+    ret null
+}
+
+define $builtins.hhbc_new_vec(o: *HackMixed): *HackMixed {
+  #entry:
+    ret null
+}
+
+define HackMixed._86reifiedinit(o: *HackMixed): *HackMixed {
   #entry:
     ret null
 }
