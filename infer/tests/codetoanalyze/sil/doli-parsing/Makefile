@@ -21,12 +21,13 @@ analyze:
 print:
 
 .PHONY: test
-test: issues.exp.test
+test: issues.exp.test$(TEST_SUFFIX)
 	$(QUIET)cd $(TESTS_DIR) && \
 	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp$(TEST_RESULT_SUFFIX),$(TEST_REL_DIR)/issues.exp.test$(TEST_SUFFIX))
 
-issues.exp.test: $(SOURCES) $(INFER_BIN)
-	@for f in $(SOURCES); do $(INFER_BIN) --parse-doli $${f}; done >& $@
+issues.exp.test$(TEST_SUFFIX): $(SOURCES) $(INFER_BIN)
+	$(QUIET)$(REMOVE_DIR) $(INFER_OUT)
+	@for f in $(SOURCES); do $(INFER_BIN) -o $(INFER_OUT) --parse-doli $${f}; done >& $@
 
 .PHONY: replace
 replace: issues.exp.test

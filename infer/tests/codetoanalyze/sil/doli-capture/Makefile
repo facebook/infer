@@ -16,20 +16,21 @@ CAPTURE_CMD = $(patsubst %.doli, --capture-doli  %.doli, $(SOURCES))
 
 CLEAN_EXTRA = $(CAPTURE_DIR)
 
-issues.exp.test: $(SOURCES) $(INFER_BIN)
-	$(INFER_BIN) -j 1 --quiet --no-progress-bar -o $(CAPTURE_DIR) $(CAPTURE_CMD) &> $@
+issues.exp.test$(TEST_SUFFIX): $(SOURCES) $(INFER_BIN)
+	$(QUIET)$(REMOVE_DIR) $(CAPTURE_DIR)
+	$(QUIET)$(INFER_BIN) -j 1 --quiet --no-progress-bar -o $(CAPTURE_DIR) $(CAPTURE_CMD) &> $@
 
 .PHONY: compile
-compile: issues.exp.test
+compile: issues.exp.test$(TEST_SUFFIX)
 
 .PHONY: test
-test: issues.exp.test
+test: issues.exp.test$(TEST_SUFFIX)
 	$(QUIET)cd $(TESTS_DIR) && \
 	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp$(TEST_RESULT_SUFFIX),$(TEST_REL_DIR)/issues.exp.test$(TEST_SUFFIX))
 
 .PHONY: replace
-replace: issues.exp.test
-	cp $< issues.exp
+replace: issues.exp.test$(TEST_SUFFIX)
+	cp $< issues.exp$(TEST_RESULT_SUFFIX)
 
 .PHONY: clean
 clean:
