@@ -2539,11 +2539,14 @@ and pulse_taint_sources =
   CLOpt.mk_json ~long:"pulse-taint-sources"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
     {|Together with $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and $(b,--pulse-taint-data-flow-kinds), specify taint properties. The JSON format of sources also applies to sinks and sanitizers. It consists of a list of objects, each with one of the following combinations of fields to identify relevant procedures:
+  - "field_regex": match a field name using an OCaml regex
   - "procedure": match a substring of the procedure name
   - "procedure_regex": as above, but match using an OCaml regex
   - "class_name_regex": match all methods of classes whose names match the OCaml regex
   - "class_names" and "method_names":
       match exact uses of methods of particular classes
+  - "class_names" and "field_names":
+      match exact uses of fields of particular classes
   - "class_names" and "method_return_type_names":
       match exact uses of methods with particular return types of particular classes
   - "overrides_of_class_with_annotation":
@@ -2570,7 +2573,7 @@ and pulse_taint_sources =
           all arguments except given indices (zero-indexed)
       - ["ArgumentsMatchingTypes", [<type list>]]:
           arguments with types containing supplied strings
-      - ["Fields", [<(string * taint_target) list>]]:
+      - ["FieldsOfValue", [<(string * taint_target) list>]]:
           fields given by name in return value, arguments or other fields
     $(i,N.B.) for methods, index 0 is $(i,this)/$(i,self).|}
 
