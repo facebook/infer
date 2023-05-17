@@ -17,17 +17,17 @@ val matcher_of_config :
 
 val procedure_matches :
      Tenv.t
-  -> TaintConfig.Unit.t list
+  -> TaintConfig.Unit.procedure_unit list
   -> ?block_passed_to:Procname.t
   -> Procname.t
   -> 'a ProcnameDispatcher.Call.FuncArg.t list
-  -> TaintConfig.Unit.t list
+  -> TaintConfig.Unit.procedure_unit list
 
 val get_tainted :
      Tenv.t
   -> PathContext.t
   -> Location.t
-  -> TaintConfig.Unit.t list
+  -> TaintConfig.Unit.procedure_unit list
   -> (Ident.t * Typ.t) option
   -> has_added_return_param:bool
   -> ?block_passed_to:Procname.t

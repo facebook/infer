@@ -25,15 +25,21 @@ module Kind : sig
 end
 
 module Target : sig
-  type t =
+  type procedure_target =
     | ReturnValue
     | AllArguments
     | ArgumentPositions of int list
     | AllArgumentsButPositions of int list
     | ArgumentsMatchingTypes of string list
-    | Fields of (string * t) list
+    | Fields of (string * procedure_target) list
+
+  type field_target = SetField
+
+  type t = ProcedureTarget of procedure_target | FieldTarget of field_target
 
   val target_of_gen_target : Pulse_config_t.taint_target -> t
+
+  val pp : F.formatter -> t -> unit
 end
 
 module Unit : sig
@@ -50,13 +56,24 @@ module Unit : sig
     | BlockNameRegex of {name_regex: Str.regexp}
     | Allocation of {class_name: string}
 
-  type t =
+  type field_matcher =
+    | FieldRegex of {name_regex: Str.regexp}
+    | ClassAndFieldNames of {class_names: string list; field_names: string list}
+
+  type procedure_unit =
     { procedure_matcher: procedure_matcher
     ; arguments: Pulse_config_t.argument_constraint list
     ; kinds: Kind.t list
-    ; target: Target.t }
+    ; procedure_target: Target.procedure_target }
 
-  val pp : F.formatter -> t -> unit
+  val pp_procedure_unit : F.formatter -> procedure_unit -> unit
+
+  type field_unit =
+    {field_matcher: field_matcher; kinds: Kind.t list; field_target: Target.field_target}
+
+  val pp_field_unit : F.formatter -> field_unit -> unit
+
+  type t = ProcedureUnit of procedure_unit | FieldUnit of field_unit
 end
 
 module SinkPolicy : sig

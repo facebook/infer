@@ -56,33 +56,79 @@ let () =
   fill_policies_from_config ()
 
 
-let allocation_sources, source_matchers =
-  let all_source_matchers =
-    TaintItemMatcher.matcher_of_config ~default_taint_target:`ReturnValue
-      ~option_name:"--pulse-taint-sources" Config.pulse_taint_config.sources
+let get_procedure_field_matchers matchers ~field_matchers_allowed ~option_name =
+  let procedure_matchers, field_matchers =
+    List.partition_map matchers ~f:(fun matcher ->
+        match matcher with
+        | TaintConfig.Unit.ProcedureUnit procedure_matcher ->
+            Either.First procedure_matcher
+        | TaintConfig.Unit.FieldUnit field_unit ->
+            Either.Second field_unit )
   in
-  List.partition_map all_source_matchers
-    ~f:(fun ({TaintConfig.Unit.procedure_matcher; kinds} as matcher) ->
-      match procedure_matcher with
-      | Allocation {class_name} ->
-          Either.First (class_name, kinds)
-      | _ ->
-          Either.Second matcher )
+  if (not field_matchers_allowed) && List.length field_matchers > 0 then
+    L.die UserError
+      "field_matchers are not allowed in the option %s but got the following\n   field matchers: %a"
+      option_name
+      (Pp.comma_seq TaintConfig.Unit.pp_field_unit)
+      field_matchers
+  else (procedure_matchers, field_matchers)
 
 
-let sink_matchers =
-  TaintItemMatcher.matcher_of_config ~default_taint_target:`AllArguments
-    ~option_name:"--pulse-taint-sinks" Config.pulse_taint_config.sinks
+let allocation_sources, source_matchers =
+  let option_name = "--pulse-taint-sources" in
+  let all_source_matchers =
+    TaintItemMatcher.matcher_of_config ~default_taint_target:`ReturnValue ~option_name
+      Config.pulse_taint_config.sources
+  in
+  let allocation_sources, source_matchers =
+    List.partition_map all_source_matchers ~f:(fun matcher ->
+        match matcher with
+        | TaintConfig.Unit.ProcedureUnit {TaintConfig.Unit.procedure_matcher; kinds} -> (
+          match procedure_matcher with
+          | Allocation {class_name} ->
+              Either.First (class_name, kinds)
+          | _ ->
+              Either.Second matcher )
+        | _ ->
+            Either.Second matcher )
+  in
+  let procedure_matchers, _ =
+    get_procedure_field_matchers source_matchers ~field_matchers_allowed:false ~option_name
+  in
+  (allocation_sources, procedure_matchers)
+
+
+let sink_procedure_matchers, sink_field_matchers =
+  let option_name = "--pulse-taint-sinks" in
+  let sink_matchers =
+    TaintItemMatcher.matcher_of_config ~default_taint_target:`AllArguments ~option_name
+      Config.pulse_taint_config.sinks
+  in
+  get_procedure_field_matchers sink_matchers ~field_matchers_allowed:true ~option_name
 
 
 let sanitizer_matchers =
-  TaintItemMatcher.matcher_of_config ~default_taint_target:`AllArguments
-    ~option_name:"--pulse-taint-sanitizers" Config.pulse_taint_config.sanitizers
+  let option_name = "--pulse-taint-sanitizer" in
+  let sink_matchers =
+    TaintItemMatcher.matcher_of_config ~default_taint_target:`AllArguments ~option_name
+      Config.pulse_taint_config.sanitizers
+  in
+  let procedure_matchers, _ =
+    get_procedure_field_matchers sink_matchers ~field_matchers_allowed:false ~option_name
+  in
+  procedure_matchers
 
 
 let propagator_matchers =
-  TaintItemMatcher.matcher_of_config ~default_taint_target:`ReturnValue
-    ~option_name:"--pulse-taint-propagators" Config.pulse_taint_config.propagators
+  let option_name = "--pulse-taint-propagators" in
+  let propagator_matchers =
+    TaintItemMatcher.matcher_of_config ~default_taint_target:`ReturnValue ~option_name
+      Config.pulse_taint_config.propagators
+  in
+  let procedure_matchers, _ =
+    get_procedure_field_matchers propagator_matchers ~field_matchers_allowed:false ~option_name
+  in
+  procedure_matchers
 
 
 let log_taint_config () =
@@ -90,16 +136,19 @@ let log_taint_config () =
   L.debug Analysis Verbose "@\nSink policies:@\n%a@." SinkPolicy.pp_sink_policies
     SinkPolicy.sink_policies ;
   L.debug Analysis Verbose "All source matchers:@\n%a@\n@."
-    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp)
+    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_procedure_unit)
     source_matchers ;
-  L.debug Analysis Verbose "Sink matchers:@\n %a@\n@."
-    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp)
-    sink_matchers ;
+  L.debug Analysis Verbose "Sink procedure matchers:@\n %a@\n@."
+    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_procedure_unit)
+    sink_procedure_matchers ;
+  L.debug Analysis Verbose "Sink field matchers:@\n %a@\n@."
+    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_field_unit)
+    sink_field_matchers ;
   L.debug Analysis Verbose "Sanitizer matchers:@\n%a@\n@."
-    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp)
+    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_procedure_unit)
     sanitizer_matchers ;
   L.debug Analysis Verbose "Propagator matchers:@\n%a@\n@."
-    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp)
+    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_procedure_unit)
     propagator_matchers
 
 
@@ -365,8 +414,8 @@ let should_ignore_all_flows_to proc_name =
 
 let taint_sinks tenv path location return ~has_added_return_param proc_name actuals astate =
   let astate, tainted =
-    TaintItemMatcher.get_tainted tenv path location sink_matchers return ~has_added_return_param
-      proc_name actuals astate
+    TaintItemMatcher.get_tainted tenv path location sink_procedure_matchers return
+      ~has_added_return_param proc_name actuals astate
   in
   PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ, _)) ->
       if should_ignore_all_flows_to proc_name then Ok astate
@@ -614,7 +663,7 @@ let pulse_models_to_treat_as_unknown_for_taint =
   (* HACK: make a list of matchers just to reuse the matching code below *)
   let dummy_matcher_of_procedure_matcher procedure_matcher =
     let open TaintConfig in
-    {Unit.procedure_matcher; arguments= []; kinds= []; target= ReturnValue}
+    {Unit.procedure_matcher; arguments= []; kinds= []; procedure_target= ReturnValue}
   in
   [ ClassAndMethodNames
       { class_names= ["java.lang.StringBuilder"]

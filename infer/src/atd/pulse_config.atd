@@ -12,19 +12,24 @@ type taint_target = [
  | AllArgumentsButPositions of int list
  | ArgumentsMatchingTypes of string list
  | Fields of (string * taint_target) list
+ | SetField (* only for field matchers *)
 ]
 
 type argument_constraint = { index: int; type_matches: string list }
 
 type matcher = {
-  (* exactly one of procedure or procedure_regex or class_name_regex or allocation must be specified,
+  (* exactly one of field_regex or procedure or procedure_regex or class_name_regex or allocation
+  or block_passed_to or block_passed_to_regex must be specified,
   or else class_names and method_names must be specified,
+  or else class_names and field_names must be specified,
   or else class_names and method_return_type_names must be specified,
   or else overrides_of_class_with_annotation/method_with_annotation *)
+  ?field_regex: string option;
   ?procedure: string option;
   ?procedure_regex: string option;
   ?class_name_regex: string option;
   ?class_names: string list option;
+  ?field_names: string list option;
   ?method_names: string list option;
   ?method_return_type_names: string list option;
   ?overrides_of_class_with_annotation: string option;

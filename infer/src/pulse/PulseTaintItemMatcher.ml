@@ -12,158 +12,228 @@ module IRAttributes = Attributes
 open PulseDomainInterface
 open PulseBasicInterface
 
-let matcher_of_config ~default_taint_target ~option_name matchers =
+let pp_procedure_matcher_error_message f (matcher : Pulse_config_t.matcher) =
+  let pp_procedure_matcher f (matcher : Pulse_config_t.matcher) =
+    F.fprintf f
+      "\"procedure\": %a, \n\
+      \ \"procedure_regex\": %a, \n\
+      \ \"class_name_regex\": %a, \n\
+      \ \"class_names\": %a, \n\
+      \ \"method_names\": %a, \n\
+      \ \"method_return_type_names\": %a, \n\
+      \ \"overrides_of_class_with_annotation\": %a,\n\
+      \ \"method_with_annotation\": %a, \n\
+      \ \"block_passed_to\": %a, \n\
+      \ \"block_passed_to_regex\": %a, \n\
+      \ \"allocation\": %a" (Pp.option F.pp_print_string) matcher.procedure
+      (Pp.option F.pp_print_string) matcher.procedure_regex (Pp.option F.pp_print_string)
+      matcher.class_name_regex
+      (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
+      matcher.class_names
+      (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
+      matcher.method_names
+      (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
+      matcher.method_return_type_names (Pp.option F.pp_print_string)
+      matcher.overrides_of_class_with_annotation (Pp.option F.pp_print_string)
+      matcher.method_with_annotation (Pp.option F.pp_print_string) matcher.block_passed_to
+      (Pp.option F.pp_print_string) matcher.block_passed_to_regex (Pp.option F.pp_print_string)
+      matcher.allocation
+  in
+  F.fprintf f
+    "To build a procedure matcher, exactly one of \n\
+    \ \"procedure\", \n\
+    \ \"procedure_regex\", \n\
+    \ \"class_name_regex\", \n\
+    \ \"block_passed_to\", \n\
+    \ \"block_passed_to_regex\", \n\
+    \ \"allocation\" or \n\
+    \ \"overrides_of_class_with_annotation\" must be provided, \n\
+     or else \"class_names\" and \"method_names\" must be provided, \n\
+     or else \"class_names\" and \"method_return_type_names\" must be provided, \n\
+     but got \n\
+    \ %a." pp_procedure_matcher matcher
+
+
+let pp_field_matcher_error_message f (matcher : Pulse_config_t.matcher) =
+  let pp_field_matcher f (matcher : Pulse_config_t.matcher) =
+    F.fprintf f "\"field_regex\": %a, \n \"class_names\": %a, \n \"field_names\": %a"
+      (Pp.option F.pp_print_string) matcher.field_regex
+      (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
+      matcher.class_names
+      (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
+      matcher.field_names
+  in
+  F.fprintf f
+    "To build a field matcher, exactly one of \n\
+    \ \"field_regex\", \n\
+     or else \"class_names\" and \"field_names\" must be provided, \n\
+     but got \n\
+    \ %a" pp_field_matcher matcher
+
+
+let procedure_matcher_of_config ~default_taint_target ~option_name (matcher : Pulse_config_t.matcher)
+    =
   let open TaintConfig.Unit in
-  List.map matchers ~f:(fun (matcher : Pulse_config_j.matcher) ->
-      let procedure_matcher =
-        match matcher with
-        | { procedure= Some name
-          ; procedure_regex= None
-          ; class_name_regex= None
-          ; class_names= None
-          ; method_names= None
-          ; method_return_type_names= None
-          ; overrides_of_class_with_annotation= None
-          ; method_with_annotation= None
-          ; block_passed_to= None
-          ; allocation= None } ->
-            ProcedureName {name}
-        | { procedure= None
-          ; procedure_regex= Some name_regex
-          ; class_name_regex= None
-          ; class_names= None
-          ; method_names= None
-          ; method_return_type_names= None
-          ; overrides_of_class_with_annotation= None
-          ; method_with_annotation= None
-          ; block_passed_to= None
-          ; allocation= None } ->
-            ProcedureNameRegex {name_regex= Str.regexp name_regex}
-        | { procedure= None
-          ; procedure_regex= None
-          ; class_name_regex= Some name_regex
-          ; class_names= None
-          ; method_names= None
-          ; overrides_of_class_with_annotation= None
-          ; method_with_annotation= None
-          ; block_passed_to= None
-          ; allocation= None } ->
-            ClassNameRegex {name_regex= Str.regexp name_regex}
-        | { procedure= None
-          ; procedure_regex= None
-          ; class_name_regex= None
-          ; class_names= Some class_names
-          ; method_names= Some method_names
-          ; method_return_type_names= None
-          ; overrides_of_class_with_annotation= None
-          ; method_with_annotation= None
-          ; block_passed_to= None
-          ; allocation= None } ->
-            ClassAndMethodNames {class_names; method_names}
-        | { procedure= None
-          ; procedure_regex= None
-          ; class_name_regex= None
-          ; class_names= Some class_names
-          ; method_names= None
-          ; method_return_type_names= Some method_return_type_names
-          ; overrides_of_class_with_annotation= None
-          ; method_with_annotation= None
-          ; allocation= None } ->
-            ClassAndMethodReturnTypeNames {class_names; method_return_type_names}
-        | { procedure= None
-          ; procedure_regex= None
-          ; class_names= None
-          ; method_names= None
-          ; method_return_type_names= None
-          ; overrides_of_class_with_annotation= Some annotation
-          ; method_with_annotation= None
-          ; allocation= None } ->
-            OverridesOfClassWithAnnotation {annotation}
-        | { procedure= None
-          ; procedure_regex= None
-          ; class_name_regex= None
-          ; class_names= None
-          ; method_names= None
-          ; method_return_type_names= None
-          ; overrides_of_class_with_annotation= None
-          ; method_with_annotation= Some annotation
-          ; block_passed_to= None
-          ; allocation= None } ->
-            MethodWithAnnotation {annotation}
-        | { procedure= None
-          ; procedure_regex= None
-          ; class_name_regex= None
-          ; class_names= None
-          ; method_names= None
-          ; method_return_type_names= None
-          ; overrides_of_class_with_annotation= None
-          ; method_with_annotation= None
-          ; block_passed_to= None
-          ; allocation= Some class_name } ->
-            Allocation {class_name}
-        | { procedure= None
-          ; procedure_regex= None
-          ; class_name_regex= None
-          ; class_names= None
-          ; method_names= None
-          ; overrides_of_class_with_annotation= None
-          ; method_with_annotation= None
-          ; block_passed_to= Some s
-          ; allocation= None } ->
-            Block {name= s}
-        | { procedure= None
-          ; procedure_regex= None
-          ; class_name_regex= None
-          ; class_names= None
-          ; method_names= None
-          ; overrides_of_class_with_annotation= None
-          ; method_with_annotation= None
-          ; block_passed_to_regex= Some name_regex
-          ; allocation= None } ->
-            BlockNameRegex {name_regex= Str.regexp name_regex}
-        | _ ->
-            L.die UserError
-              "When parsing option %s: Unexpected JSON format: Exactly one of \n\
-              \ \"procedure\", \n\
-              \ \"procedure_regex\", \n\
-              \ \"class_name_regex\", \n\
-              \ \"block_passed_to\", \n\
-              \ \"block_passed_to_regex\", \n\
-              \ \"allocation\" or \n\
-              \ \"overrides_of_class_with_annotation\" must be provided, \n\
-               or else \"class_names\" and \"method_names\" must be provided, \n\
-               or else \"class_names\" and \"method_return_type_names\" must be provided, \n\
-               but got \n\
-              \ \"procedure\": %a, \n\
-              \ \"procedure_regex\": %a, \n\
-              \ \"class_name_regex\": %a, \n\
-              \ \"class_names\": %a, \n\
-              \ \"method_names\": %a, \n\
-              \ \"method_return_type_names\": %a, \n\
-              \ \"overrides_of_class_with_annotation\": %a,\n\
-              \ \"method_with_annotation\": %a, \n\
-              \ \"block_passed_to\": %a, \n\
-              \ \"block_passed_to_regex\": %a, \n\
-              \ \"allocation\": %a" option_name (Pp.option F.pp_print_string) matcher.procedure
-              (Pp.option F.pp_print_string) matcher.procedure_regex (Pp.option F.pp_print_string)
-              matcher.class_name_regex
-              (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
-              matcher.class_names
-              (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
-              matcher.method_names
-              (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
-              matcher.method_return_type_names (Pp.option F.pp_print_string)
-              matcher.overrides_of_class_with_annotation (Pp.option F.pp_print_string)
-              matcher.method_with_annotation (Pp.option F.pp_print_string) matcher.block_passed_to
-              (Pp.option F.pp_print_string) matcher.block_passed_to_regex
-              (Pp.option F.pp_print_string) matcher.allocation
-      in
+  let procedure_matcher =
+    match matcher with
+    | { procedure= Some name
+      ; procedure_regex= None
+      ; class_name_regex= None
+      ; class_names= None
+      ; method_names= None
+      ; method_return_type_names= None
+      ; overrides_of_class_with_annotation= None
+      ; method_with_annotation= None
+      ; block_passed_to= None
+      ; allocation= None } ->
+        ProcedureName {name}
+    | { procedure= None
+      ; procedure_regex= Some name_regex
+      ; class_name_regex= None
+      ; class_names= None
+      ; method_names= None
+      ; method_return_type_names= None
+      ; overrides_of_class_with_annotation= None
+      ; method_with_annotation= None
+      ; block_passed_to= None
+      ; allocation= None } ->
+        ProcedureNameRegex {name_regex= Str.regexp name_regex}
+    | { procedure= None
+      ; procedure_regex= None
+      ; class_name_regex= Some name_regex
+      ; class_names= None
+      ; method_names= None
+      ; overrides_of_class_with_annotation= None
+      ; method_with_annotation= None
+      ; block_passed_to= None
+      ; allocation= None } ->
+        ClassNameRegex {name_regex= Str.regexp name_regex}
+    | { procedure= None
+      ; procedure_regex= None
+      ; class_name_regex= None
+      ; class_names= Some class_names
+      ; method_names= Some method_names
+      ; method_return_type_names= None
+      ; overrides_of_class_with_annotation= None
+      ; method_with_annotation= None
+      ; block_passed_to= None
+      ; allocation= None } ->
+        ClassAndMethodNames {class_names; method_names}
+    | { procedure= None
+      ; procedure_regex= None
+      ; class_name_regex= None
+      ; class_names= Some class_names
+      ; method_names= None
+      ; method_return_type_names= Some method_return_type_names
+      ; overrides_of_class_with_annotation= None
+      ; method_with_annotation= None
+      ; allocation= None } ->
+        ClassAndMethodReturnTypeNames {class_names; method_return_type_names}
+    | { procedure= None
+      ; procedure_regex= None
+      ; class_names= None
+      ; method_names= None
+      ; method_return_type_names= None
+      ; overrides_of_class_with_annotation= Some annotation
+      ; method_with_annotation= None
+      ; allocation= None } ->
+        OverridesOfClassWithAnnotation {annotation}
+    | { procedure= None
+      ; procedure_regex= None
+      ; class_name_regex= None
+      ; class_names= None
+      ; method_names= None
+      ; method_return_type_names= None
+      ; overrides_of_class_with_annotation= None
+      ; method_with_annotation= Some annotation
+      ; block_passed_to= None
+      ; allocation= None } ->
+        MethodWithAnnotation {annotation}
+    | { procedure= None
+      ; procedure_regex= None
+      ; class_name_regex= None
+      ; class_names= None
+      ; method_names= None
+      ; method_return_type_names= None
+      ; overrides_of_class_with_annotation= None
+      ; method_with_annotation= None
+      ; block_passed_to= None
+      ; allocation= Some class_name } ->
+        Allocation {class_name}
+    | { procedure= None
+      ; procedure_regex= None
+      ; class_name_regex= None
+      ; class_names= None
+      ; method_names= None
+      ; overrides_of_class_with_annotation= None
+      ; method_with_annotation= None
+      ; block_passed_to= Some s
+      ; allocation= None } ->
+        Block {name= s}
+    | { procedure= None
+      ; procedure_regex= None
+      ; class_name_regex= None
+      ; class_names= None
+      ; method_names= None
+      ; overrides_of_class_with_annotation= None
+      ; method_with_annotation= None
+      ; block_passed_to_regex= Some name_regex
+      ; allocation= None } ->
+        BlockNameRegex {name_regex= Str.regexp name_regex}
+    | _ ->
+        L.die UserError "When parsing option %s: Unexpected JSON format: %a \n %a" option_name
+          pp_procedure_matcher_error_message matcher pp_field_matcher_error_message matcher
+  in
+  let taint_target =
+    TaintConfig.Target.target_of_gen_target
+      (Option.value ~default:default_taint_target matcher.taint_target)
+  in
+  match taint_target with
+  | ProcedureTarget procedure_target ->
       { procedure_matcher
       ; arguments= matcher.argument_constraints
       ; kinds= TaintConfig.Kind.kinds_of_strings_opt matcher.kinds
-      ; target=
-          TaintConfig.Target.target_of_gen_target
-            (Option.value ~default:default_taint_target matcher.taint_target) } )
+      ; procedure_target }
+  | FieldTarget _ ->
+      L.die UserError
+        "Target %a found but one of the following targets must be provided:\n\
+        \         ReturnValue, AllArguments, ArgumentPositions, AllArgumentsButPositions, \
+         ArgumentsMatchingTypes, Fields"
+        TaintConfig.Target.pp taint_target
+
+
+let field_matcher_of_config ~default_taint_target ~option_name (matcher : Pulse_config_t.matcher) =
+  let open TaintConfig.Unit in
+  let field_matcher =
+    match matcher with
+    | {field_regex= Some name_regex; class_names= None; field_names= None} ->
+        FieldRegex {name_regex= Str.regexp name_regex}
+    | {field_regex= None; class_names= Some class_names; field_names= Some field_names} ->
+        ClassAndFieldNames {class_names; field_names}
+    | _ ->
+        L.die UserError "When parsing option %s: Unexpected JSON format: %a %a" option_name
+          pp_field_matcher_error_message matcher pp_procedure_matcher_error_message matcher
+  in
+  let taint_target =
+    TaintConfig.Target.target_of_gen_target
+      (Option.value ~default:default_taint_target matcher.taint_target)
+  in
+  match taint_target with
+  | FieldTarget field_target ->
+      {field_matcher; kinds= TaintConfig.Kind.kinds_of_strings_opt matcher.kinds; field_target}
+  | ProcedureTarget _ ->
+      L.die UserError "Target %a found but one of the following targets must be provided: SetField"
+        TaintConfig.Target.pp taint_target
+
+
+let matcher_of_config ~default_taint_target ~option_name (matchers : Pulse_config_t.matcher list) =
+  List.map matchers ~f:(fun (matcher : Pulse_config_t.matcher) ->
+      if Option.is_some matcher.field_regex || Option.is_some matcher.field_names then
+        TaintConfig.Unit.FieldUnit
+          (field_matcher_of_config ~default_taint_target ~option_name matcher)
+      else
+        TaintConfig.Unit.ProcedureUnit
+          (procedure_matcher_of_config ~default_taint_target ~option_name matcher) )
 
 
 let type_matches tenv actual_typ types =
@@ -306,8 +376,8 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param ?
     List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ; exp} ->
         (arg_payload, typ, Some exp) )
   in
-  List.fold matches ~init:(astate, []) ~f:(fun acc matcher ->
-      let {kinds} = matcher in
+  List.fold matches ~init:(astate, []) ~f:(fun acc (matcher : TaintConfig.Unit.procedure_unit) ->
+      let ({kinds}) = (matcher : TaintConfig.Unit.procedure_unit) in
       let rec match_target acc = function
         | ReturnValue -> (
             L.d_printf "matching return value... " ;
@@ -425,4 +495,4 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param ?
                 List.fold new_taints ~init:acc ~f:(fun acc taint ->
                     move_taint_to_field acc taint fieldname ) )
       in
-      match_target acc matcher.target )
+      match_target acc matcher.procedure_target )

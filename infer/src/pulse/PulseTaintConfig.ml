@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 
 module Kind = struct
   type t = string [@@deriving compare, equal, hash]
@@ -52,16 +53,20 @@ module Kind = struct
 end
 
 module Target = struct
-  type t =
+  type procedure_target =
     | ReturnValue
     | AllArguments
     | ArgumentPositions of int list
     | AllArgumentsButPositions of int list
     | ArgumentsMatchingTypes of string list
-    | Fields of (string * t) list
+    | Fields of (string * procedure_target) list
 
-  let rec pp f target =
-    match target with
+  type field_target = SetField
+
+  type t = ProcedureTarget of procedure_target | FieldTarget of field_target
+
+  let rec pp_procedure_target f procedure_target =
+    match procedure_target with
     | ReturnValue ->
         F.pp_print_string f "ReturnValue"
     | AllArguments ->
@@ -73,23 +78,49 @@ module Target = struct
     | ArgumentsMatchingTypes types ->
         F.fprintf f "ArgumentsMatchingTypes %a" (Pp.comma_seq String.pp) types
     | Fields targets ->
-        F.fprintf f "Fields %a" (Pp.comma_seq (Pp.pair ~fst:String.pp ~snd:pp)) targets
+        F.fprintf f "Fields %a"
+          (Pp.comma_seq (Pp.pair ~fst:String.pp ~snd:pp_procedure_target))
+          targets
+
+
+  let pp_field_target f field_target =
+    match field_target with SetField -> F.pp_print_string f "SetField"
+
+
+  let pp f target =
+    match target with
+    | ProcedureTarget target ->
+        pp_procedure_target f target
+    | FieldTarget target ->
+        pp_field_target f target
 
 
   let rec target_of_gen_target (gen_target : Pulse_config_t.taint_target) =
     match gen_target with
     | `ReturnValue ->
-        ReturnValue
+        ProcedureTarget ReturnValue
     | `AllArguments ->
-        AllArguments
+        ProcedureTarget AllArguments
     | `ArgumentPositions l ->
-        ArgumentPositions l
+        ProcedureTarget (ArgumentPositions l)
     | `AllArgumentsButPositions l ->
-        AllArgumentsButPositions l
+        ProcedureTarget (AllArgumentsButPositions l)
     | `ArgumentsMatchingTypes l ->
-        ArgumentsMatchingTypes l
+        ProcedureTarget (ArgumentsMatchingTypes l)
     | `Fields l ->
-        Fields (List.map ~f:(fun (field, target) -> (field, target_of_gen_target target)) l)
+        let fields_targets =
+          List.map l ~f:(fun (field, target) ->
+              match target_of_gen_target target with
+              | ProcedureTarget procedure_target ->
+                  (field, procedure_target)
+              | FieldTarget field_target ->
+                  L.die UserError
+                    "Only procedure targets are allowed within Fields target, but found %a"
+                    pp_field_target field_target )
+        in
+        ProcedureTarget (Fields fields_targets)
+    | `SetField ->
+        FieldTarget SetField
 end
 
 module Unit = struct
@@ -132,20 +163,44 @@ module Unit = struct
         F.fprintf f "allocation %s" class_name
 
 
-  type t =
+  type field_matcher =
+    | FieldRegex of {name_regex: Str.regexp}
+    | ClassAndFieldNames of {class_names: string list; field_names: string list}
+
+  let pp_field_matcher f field_matcher =
+    match field_matcher with
+    | FieldRegex _ ->
+        F.pp_print_string f "Field name regex"
+    | ClassAndFieldNames {class_names; field_names} ->
+        F.fprintf f "class_names=%a, field_names=%a" (Pp.comma_seq String.pp) class_names
+          (Pp.comma_seq String.pp) field_names
+
+
+  type procedure_unit =
     { procedure_matcher: procedure_matcher
     ; arguments: Pulse_config_t.argument_constraint list
     ; kinds: Kind.t list
-    ; target: Target.t }
+    ; procedure_target: Target.procedure_target }
 
   let pp_arguments f arguments =
     F.pp_print_string f (Pulse_config_j.string_of_argument_constraint arguments)
 
 
-  let pp f unit =
+  let pp_procedure_unit f unit =
     F.fprintf f "procedure_matcher=%a, arguments=%a, kinds=%a, target=%a" pp_procedure_matcher
       unit.procedure_matcher (Pp.comma_seq pp_arguments) unit.arguments (Pp.comma_seq Kind.pp)
-      unit.kinds Target.pp unit.target
+      unit.kinds Target.pp_procedure_target unit.procedure_target
+
+
+  type field_unit =
+    {field_matcher: field_matcher; kinds: Kind.t list; field_target: Target.field_target}
+
+  let pp_field_unit f unit =
+    F.fprintf f "field_matcher=%a, kinds=%a, field_target=%a" pp_field_matcher unit.field_matcher
+      (Pp.comma_seq Kind.pp) unit.kinds Target.pp_field_target unit.field_target
+
+
+  type t = ProcedureUnit of procedure_unit | FieldUnit of field_unit
 end
 
 module SinkPolicy = struct
