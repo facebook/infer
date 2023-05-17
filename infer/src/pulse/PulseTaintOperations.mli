@@ -21,6 +21,15 @@ val call :
   -> AbductiveDomain.t AccessResult.t
 (** add sources and sinks coming from a particular call site *)
 
+val store :
+     Tenv.t
+  -> PathContext.t
+  -> Location.t
+  -> lhs:Exp.t
+  -> rhs:Exp.t * BaseStack.value * Typ.t
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t AccessResult.t
+
 val taint_allocation :
      Tenv.t
   -> PathContext.t

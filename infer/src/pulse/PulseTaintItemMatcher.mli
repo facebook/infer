@@ -27,11 +27,11 @@ val get_tainted :
      Tenv.t
   -> PathContext.t
   -> Location.t
-  -> TaintConfig.Unit.procedure_unit list
+  -> procedure_matchers:TaintConfig.Unit.procedure_unit list
+  -> field_matchers:TaintConfig.Unit.field_unit list
   -> (Ident.t * Typ.t) option
   -> has_added_return_param:bool
-  -> ?block_passed_to:Procname.t
-  -> Procname.t
+  -> TaintItem.value
   -> BaseStack.value ProcnameDispatcher.Call.FuncArg.t list
   -> AbductiveDomain.t
   -> AbductiveDomain.t * (TaintItem.t * (BaseStack.value * Typ.t * Exp.t option)) list

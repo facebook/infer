@@ -25,6 +25,8 @@ type value =
 
 type t = {kinds: TaintConfig.Kind.t list; value: value; origin: origin} [@@deriving compare, equal]
 
+val pp_value : F.formatter -> value -> unit
+
 val pp_value_plain : F.formatter -> value -> unit
 
 val pp : F.formatter -> t -> unit

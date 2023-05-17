@@ -954,6 +954,11 @@ module PulseTransferFunctions = struct
               List.concat_map ls_astate_lhs_addr_hist ~f:(fun result ->
                   let<*> astate, lhs_addr_hist = result in
                   let<**> astate = and_is_int_if_integer_type typ rhs_addr astate in
+                  let<*> astate =
+                    PulseTaintOperations.store tenv path loc ~lhs:lhs_exp
+                      ~rhs:(rhs_exp, (rhs_addr, hist), typ)
+                      astate
+                  in
                   [ PulseOperations.write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, hist)
                       astate ] )
             in

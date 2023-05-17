@@ -14,6 +14,20 @@
           "sink_kinds": ["Logger"]
         }
       ]
+    },
+    { "short_description": "Token stored in ivar",
+    "taint_flows": [
+      { "source_kinds": ["Token"],
+        "sink_kinds": ["StoreIvar"]
+      }
+    ]
+    },
+    { "short_description": "Token stored in ivar",
+    "taint_flows": [
+      { "source_kinds": ["SimpleSource"],
+        "sink_kinds": ["StoreOtherIvar"]
+      }
+    ]
     }
   ],
   "pulse-taint-sources": [
@@ -39,6 +53,16 @@
       {
         "class_names": ["AccessLibrary"],
         "method_names": ["fetchResult"],
+        "kinds": ["SimpleSource"]
+      },
+      {
+        "block_passed_to": "Library.fetchWithCompletion:",
+        "taint_target": ["ArgumentPositions", [0]],
+        "kinds": ["Token"]
+      },
+      {
+        "class_names": ["OtherClass"],
+        "method_names": ["getSource"],
         "kinds": ["SimpleSource"]
       }
   ],
@@ -70,11 +94,23 @@
       "taint_target": ["ArgumentPositions", [0]],
       "kinds": ["SimpleSink"]
     },
-    { "class_names": ["Builder"],
-    "method_names": ["setValue:"],
-    "kinds": ["SimpleSink"],
-    "taint_target": ["ArgumentPositions", [1]]
-  }
+    {
+      "class_names": ["Builder"],
+      "method_names": ["setValue:"],
+      "kinds": ["SimpleSink"],
+      "taint_target": ["ArgumentPositions", [1]]
+    },
+    {
+      "field_regex": ".*",
+      "taint_target": "SetField",
+      "kinds": ["StoreIvar"]
+    },
+    {
+      "class_names": ["OtherClass"],
+      "field_names": ["_item"],
+      "taint_target": "SetField",
+      "kinds": ["StoreOtherIvar"]
+    }
   ],
   "pulse-taint-propagators": [
     { "procedure": "URLCreate",
