@@ -11,10 +11,6 @@ include $(ROOT_DIR)/Makefile.config
 
 MAKE_SOURCE = $(MAKE) -C $(SRC_DIR)
 
-ifneq ($(UTOP),no)
-BUILD_SYSTEMS_TESTS += infertop
-endif
-
 ifeq ($(BUILD_C_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
   annotation-reachability-sources-override \
@@ -681,6 +677,9 @@ mod_dep: src_build_common
 .PHONY: config_tests
 config_tests: ocaml_unit_test validate-skel mod_dep
 	$(MAKE) endtoend_test checkCopyright
+ifneq ($(UTOP),no)
+	$(MAKE) build_infertop_test
+endif
 	$(MAKE) manuals
 
 ifneq ($(filter endtoend_test,$(MAKECMDGOALS)),)
@@ -697,6 +696,10 @@ endif
 .PHONY: test-replace
 test-replace: $(BUILD_SYSTEMS_TESTS:%=build_%_replace) $(DIRECT_TESTS:%=direct_%_replace) \
               clang_plugin_test_replace
+ifneq ($(UTOP),no)
+	$(MAKE) build_infertop_replace
+endif
+
 
 .PHONY: uninstall
 uninstall:
