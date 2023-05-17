@@ -68,7 +68,7 @@
     {
       "procedure": "taint_manipulated",
       "kinds": ["Simple"],
-      "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]
+      "taint_target": ["FieldsOfValue", [["manipulated", ["ArgumentPositions", [0]]]]]
     },
     {"procedure": "makeRequest", "kinds": ["SimpleSource"]}
   ],
@@ -104,7 +104,7 @@
     {
       "procedure": "sink_manipulated",
       "kinds": ["Simple"],
-      "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]
+      "taint_target": ["FieldsOfValue", [["manipulated", ["ArgumentPositions", [0]]]]]
     },
     {"procedure": "requestSink", "kinds": ["SimpleSink"]}
   ],
@@ -120,7 +120,7 @@
      {
        "procedure": "sanitize_manipulated",
        "kinds": ["Simple"],
-       "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]
+       "taint_target": ["FieldsOfValue", [["manipulated", ["ArgumentPositions", [0]]]]]
      }
   ],
   "pulse-taint-propagators": [
@@ -130,7 +130,7 @@
     },
     {
       "procedure": "propagate_to_manipulated",
-      "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]
+      "taint_target": ["FieldsOfValue", [["manipulated", ["ArgumentPositions", [0]]]]]
     }
   ]
 }

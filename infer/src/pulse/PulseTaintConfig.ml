@@ -59,7 +59,7 @@ module Target = struct
     | ArgumentPositions of int list
     | AllArgumentsButPositions of int list
     | ArgumentsMatchingTypes of string list
-    | Fields of (string * procedure_target) list
+    | FieldsOfValue of (string * procedure_target) list
 
   type field_target = SetField
 
@@ -77,7 +77,7 @@ module Target = struct
         F.fprintf f "AllArgumentsButPositions %a" (Pp.comma_seq Int.pp) positions
     | ArgumentsMatchingTypes types ->
         F.fprintf f "ArgumentsMatchingTypes %a" (Pp.comma_seq String.pp) types
-    | Fields targets ->
+    | FieldsOfValue targets ->
         F.fprintf f "Fields %a"
           (Pp.comma_seq (Pp.pair ~fst:String.pp ~snd:pp_procedure_target))
           targets
@@ -107,7 +107,7 @@ module Target = struct
         ProcedureTarget (AllArgumentsButPositions l)
     | `ArgumentsMatchingTypes l ->
         ProcedureTarget (ArgumentsMatchingTypes l)
-    | `Fields l ->
+    | `FieldsOfValue l ->
         let fields_targets =
           List.map l ~f:(fun (field, target) ->
               match target_of_gen_target target with
@@ -118,7 +118,7 @@ module Target = struct
                     "Only procedure targets are allowed within Fields target, but found %a"
                     pp_field_target field_target )
         in
-        ProcedureTarget (Fields fields_targets)
+        ProcedureTarget (FieldsOfValue fields_targets)
     | `SetField ->
         FieldTarget SetField
 end

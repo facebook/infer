@@ -276,7 +276,7 @@ let taint_procedure_target_matches tenv taint_target actual_index actual_typ =
       not (List.mem ~equal:Int.equal indices actual_index)
   | ArgumentsMatchingTypes types ->
       type_matches tenv actual_typ types
-  | Fields _ | ReturnValue ->
+  | FieldsOfValue _ | ReturnValue ->
       false
 
 
@@ -463,7 +463,7 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
               L.d_printfln_escaped "no match for #%d with type %a" i (Typ.pp_full Pp.text)
                 actual_typ ;
               acc ) )
-    | Fields fields ->
+    | FieldsOfValue fields ->
         let type_check astate value typ fieldname =
           (* Dereference the value as much as possible and verify the result
              is of structure type holding the expected fieldname. *)
@@ -514,7 +514,8 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
                     L.d_printfln "match! tainting field %s with type %a" fieldname
                       (Typ.pp_full Pp.text) field_typ ;
                     ( astate
-                    , ( TaintItem.{taint with origin= Field {name= fieldname; origin= taint.origin}}
+                    , ( TaintItem.
+                          {taint with origin= FieldOfValue {name= fieldname; origin= taint.origin}}
                       , (ret_value, field_typ, None) )
                       :: tainted ) ) )
         in

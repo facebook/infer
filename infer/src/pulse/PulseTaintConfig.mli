@@ -31,7 +31,7 @@ module Target : sig
     | ArgumentPositions of int list
     | AllArgumentsButPositions of int list
     | ArgumentsMatchingTypes of string list
-    | Fields of (string * procedure_target) list
+    | FieldsOfValue of (string * procedure_target) list
 
   type field_target = SetField
 

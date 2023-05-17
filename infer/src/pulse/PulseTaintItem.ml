@@ -14,7 +14,7 @@ type origin =
   | ReturnValue
   | Allocation of {typ: string}
   | SetField
-  | Field of {name: string; origin: origin}
+  | FieldOfValue of {name: string; origin: origin}
 [@@deriving compare, equal]
 
 let rec pp_origin fmt = function
@@ -24,7 +24,7 @@ let rec pp_origin fmt = function
       F.fprintf fmt "value returned from"
   | Allocation {typ} ->
       F.fprintf fmt "allocation of type `%s` by" typ
-  | Field {name; origin} ->
+  | FieldOfValue {name; origin} ->
       F.fprintf fmt "field `%s` of %a" name pp_origin origin
   | SetField ->
       F.fprintf fmt "is stored in the field"

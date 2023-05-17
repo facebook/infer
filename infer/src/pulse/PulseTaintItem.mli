@@ -14,7 +14,7 @@ type origin =
   | ReturnValue
   | Allocation of {typ: string}
   | SetField
-  | Field of {name: string; origin: origin}
+  | FieldOfValue of {name: string; origin: origin}
 [@@deriving compare, equal]
 
 type value =

@@ -56,7 +56,7 @@
         "taint_target": ["ArgumentPositions", [0]]},
       { "procedure": "taint_manipulated",
         "kinds": ["Simple"],
-        "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]}
+        "taint_target": ["FieldsOfValue", [["manipulated", ["ArgumentPositions", [0]]]]]}
   ],
   "pulse-taint-sinks": [
       { "class_names": ["InferTaint"],
@@ -90,7 +90,7 @@
       {"procedure": "sink_number", "kinds": ["Simple"]},
       { "procedure": "sink_manipulated",
         "kinds": ["Simple"],
-        "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]},
+        "taint_target": ["FieldsOfValue", [["manipulated", ["ArgumentPositions", [0]]]]]},
       {"procedure": "sink_ptr", "kinds": ["Simple"]}
   ],
   "pulse-taint-sanitizers": [
@@ -99,10 +99,10 @@
         "taint_target": ["ArgumentPositions", [0]] },
       { "procedure": "sanitize_manipulated",
         "kinds": ["Simple"],
-        "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]}
+        "taint_target": ["FieldsOfValue", [["manipulated", ["ArgumentPositions", [0]]]]]}
   ],
   "pulse-taint-propagators": [
       { "procedure": "propagate_to_manipulated",
-        "taint_target": ["Fields", [["manipulated", ["ArgumentPositions", [0]]]]]}
+        "taint_target": ["FieldsOfValue", [["manipulated", ["ArgumentPositions", [0]]]]]}
   ]
 }
