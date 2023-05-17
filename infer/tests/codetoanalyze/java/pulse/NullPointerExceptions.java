@@ -91,6 +91,12 @@ public class NullPointerExceptions {
   class B {
     A a;
 
+    public B() {}
+
+    public B(A a) {
+      this.a = a;
+    }
+
     void test() {}
   }
 
@@ -103,6 +109,14 @@ public class NullPointerExceptions {
   // npe with a chain of fields
   class C {
     B b;
+  }
+
+  public int FN_nullPointerExceptionWithNullByDefaultBad(C c) {
+    return (new B()).a.x;
+  }
+
+  public int nullPointerExceptionWithExplicitNullInitBad(C c) {
+    return (new B(null)).a.x;
   }
 
   public int FN_nullPointerExceptionWithAChainOfFields(C c) {
