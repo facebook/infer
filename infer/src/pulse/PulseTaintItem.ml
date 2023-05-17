@@ -27,7 +27,7 @@ let rec pp_origin fmt = function
   | Field {name; origin} ->
       F.fprintf fmt "field `%s` of %a" name pp_origin origin
   | SetField ->
-      F.fprintf fmt "set"
+      F.fprintf fmt "is stored in the field"
 
 
 type value =
