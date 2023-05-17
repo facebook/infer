@@ -28,6 +28,7 @@ val get_tainted :
   -> PathContext.t
   -> Location.t
   -> procedure_matchers:TaintConfig.Unit.procedure_unit list
+  -> block_matchers:TaintConfig.Unit.procedure_unit list
   -> field_matchers:TaintConfig.Unit.field_unit list
   -> (Ident.t * Typ.t) option
   -> has_added_return_param:bool

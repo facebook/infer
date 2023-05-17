@@ -532,18 +532,18 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
       match_target matcher.kinds acc matcher.procedure_target )
 
 
-let get_tainted tenv path location ~procedure_matchers ~field_matchers return_opt
+let get_tainted tenv path location ~procedure_matchers ~block_matchers ~field_matchers return_opt
     ~has_added_return_param potential_taint_value actuals astate =
-  let block_passed_to =
+  let block_passed_to, matchers =
     match potential_taint_value with
     | TaintItem.TaintBlockPassedTo proc_name ->
-        Some proc_name
+        (Some proc_name, block_matchers)
     | _ ->
-        None
+        (None, procedure_matchers)
   in
   match potential_taint_value with
   | TaintItem.TaintProcedure proc_name | TaintItem.TaintBlockPassedTo proc_name ->
-      let matches = procedure_matches tenv procedure_matchers ?block_passed_to proc_name actuals in
+      let matches = procedure_matches tenv matchers ?block_passed_to proc_name actuals in
       if not (List.is_empty matches) then L.d_printfln "taint matches" ;
       match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
         actuals potential_taint_value

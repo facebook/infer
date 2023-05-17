@@ -56,7 +56,8 @@ let () =
   fill_policies_from_config ()
 
 
-let get_procedure_field_matchers matchers ~field_matchers_allowed ~option_name =
+let get_procedure_field_matchers matchers ~field_matchers_allowed ~block_matchers_allowed
+    ~option_name =
   let procedure_matchers, field_matchers =
     List.partition_map matchers ~f:(fun matcher ->
         match matcher with
@@ -65,16 +66,30 @@ let get_procedure_field_matchers matchers ~field_matchers_allowed ~option_name =
         | TaintConfig.Unit.FieldUnit field_unit ->
             Either.Second field_unit )
   in
+  let block_matchers, procedure_matchers =
+    List.partition_map procedure_matchers ~f:(fun (matcher : TaintConfig.Unit.procedure_unit) ->
+        match matcher.procedure_matcher with
+        | TaintConfig.Unit.Block _ | TaintConfig.Unit.BlockNameRegex _ ->
+            Either.First matcher
+        | _ ->
+            Either.Second matcher )
+  in
   if (not field_matchers_allowed) && List.length field_matchers > 0 then
     L.die UserError
       "field_matchers are not allowed in the option %s but got the following\n   field matchers: %a"
       option_name
       (Pp.comma_seq TaintConfig.Unit.pp_field_unit)
-      field_matchers
-  else (procedure_matchers, field_matchers)
+      field_matchers ;
+  if (not block_matchers_allowed) && List.length block_matchers > 0 then
+    L.die UserError
+      "block_matchers are not allowed in the option %s but got the following\n   block matchers: %a"
+      option_name
+      (Pp.comma_seq TaintConfig.Unit.pp_procedure_unit)
+      block_matchers ;
+  (procedure_matchers, block_matchers, field_matchers)
 
 
-let allocation_sources, source_matchers =
+let allocation_sources, source_procedure_matchers, source_block_matchers =
   let option_name = "--pulse-taint-sources" in
   let all_source_matchers =
     TaintItemMatcher.matcher_of_config ~default_taint_target:`ReturnValue ~option_name
@@ -92,10 +107,11 @@ let allocation_sources, source_matchers =
         | _ ->
             Either.Second matcher )
   in
-  let procedure_matchers, _ =
-    get_procedure_field_matchers source_matchers ~field_matchers_allowed:false ~option_name
+  let procedure_matchers, block_matchers, _ =
+    get_procedure_field_matchers source_matchers ~field_matchers_allowed:false
+      ~block_matchers_allowed:true ~option_name
   in
-  (allocation_sources, procedure_matchers)
+  (allocation_sources, procedure_matchers, block_matchers)
 
 
 let sink_procedure_matchers, sink_field_matchers =
@@ -104,7 +120,11 @@ let sink_procedure_matchers, sink_field_matchers =
     TaintItemMatcher.matcher_of_config ~default_taint_target:`AllArguments ~option_name
       Config.pulse_taint_config.sinks
   in
-  get_procedure_field_matchers sink_matchers ~field_matchers_allowed:true ~option_name
+  let sink_procedure_matchers, _, sink_field_matchers =
+    get_procedure_field_matchers sink_matchers ~field_matchers_allowed:true
+      ~block_matchers_allowed:false ~option_name
+  in
+  (sink_procedure_matchers, sink_field_matchers)
 
 
 let sanitizer_matchers =
@@ -113,8 +133,9 @@ let sanitizer_matchers =
     TaintItemMatcher.matcher_of_config ~default_taint_target:`AllArguments ~option_name
       Config.pulse_taint_config.sanitizers
   in
-  let procedure_matchers, _ =
-    get_procedure_field_matchers sink_matchers ~field_matchers_allowed:false ~option_name
+  let procedure_matchers, _, _ =
+    get_procedure_field_matchers sink_matchers ~field_matchers_allowed:false
+      ~block_matchers_allowed:false ~option_name
   in
   procedure_matchers
 
@@ -125,8 +146,9 @@ let propagator_matchers =
     TaintItemMatcher.matcher_of_config ~default_taint_target:`ReturnValue ~option_name
       Config.pulse_taint_config.propagators
   in
-  let procedure_matchers, _ =
-    get_procedure_field_matchers propagator_matchers ~field_matchers_allowed:false ~option_name
+  let procedure_matchers, _, _ =
+    get_procedure_field_matchers propagator_matchers ~field_matchers_allowed:false
+      ~block_matchers_allowed:false ~option_name
   in
   procedure_matchers
 
@@ -135,9 +157,12 @@ let log_taint_config () =
   let open TaintConfig in
   L.debug Analysis Verbose "@\nSink policies:@\n%a@." SinkPolicy.pp_sink_policies
     SinkPolicy.sink_policies ;
-  L.debug Analysis Verbose "All source matchers:@\n%a@\n@."
+  L.debug Analysis Verbose "Procedure source matchers:@\n%a@\n@."
     (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_procedure_unit)
-    source_matchers ;
+    source_procedure_matchers ;
+  L.debug Analysis Verbose "Block source matchers:@\n%a@\n@."
+    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_procedure_unit)
+    source_block_matchers ;
   L.debug Analysis Verbose "Sink procedure matchers:@\n %a@\n@."
     (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_procedure_unit)
     sink_procedure_matchers ;
@@ -216,8 +241,9 @@ let taint_and_explore ~taint v astate =
 let taint_sources tenv path location ~intra_procedural_only return ~has_added_return_param
     potential_taint_value actuals astate =
   let astate, tainted =
-    TaintItemMatcher.get_tainted tenv path location ~procedure_matchers:source_matchers
-      ~field_matchers:[] return ~has_added_return_param potential_taint_value actuals astate
+    TaintItemMatcher.get_tainted tenv path location ~procedure_matchers:source_procedure_matchers
+      ~block_matchers:source_block_matchers ~field_matchers:[] return ~has_added_return_param
+      potential_taint_value actuals astate
   in
   List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _, _)) ->
       let hist =
@@ -247,7 +273,8 @@ let taint_sanitizers tenv path return ~has_added_return_param ~location potentia
     actuals astate =
   let astate, tainted =
     TaintItemMatcher.get_tainted tenv path location ~procedure_matchers:sanitizer_matchers
-      ~field_matchers:[] return ~has_added_return_param potential_taint_value actuals astate
+      ~block_matchers:[] ~field_matchers:[] return ~has_added_return_param potential_taint_value
+      actuals astate
   in
   let astate =
     List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, history), _, _)) ->
@@ -422,8 +449,8 @@ let taint_sinks tenv path location return ~has_added_return_param potential_tain
     astate =
   let astate, tainted =
     TaintItemMatcher.get_tainted tenv path location ~procedure_matchers:sink_procedure_matchers
-      ~field_matchers:sink_field_matchers return ~has_added_return_param potential_taint_value
-      actuals astate
+      ~block_matchers:[] ~field_matchers:sink_field_matchers return ~has_added_return_param
+      potential_taint_value actuals astate
   in
   PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ, _)) ->
       if should_ignore_all_flows_to potential_taint_value then Ok astate
@@ -523,7 +550,8 @@ let taint_propagators tenv path location return ~has_added_return_param proc_nam
   let astate, tainted =
     let potential_taint_value = TaintItem.TaintProcedure proc_name in
     TaintItemMatcher.get_tainted tenv path location ~procedure_matchers:propagator_matchers
-      ~field_matchers:[] return ~has_added_return_param potential_taint_value actuals astate
+      ~block_matchers:[] ~field_matchers:[] return ~has_added_return_param potential_taint_value
+      actuals astate
   in
   List.fold tainted ~init:astate ~f:(fun astate (_propagator, ((v, _history), _, _)) ->
       let other_actuals =
