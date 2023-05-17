@@ -175,8 +175,9 @@ let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator v astat
               List.fold matching_allocations ~init:astate ~f:(fun astate (_, kinds) ->
                   let source =
                     let proc_name = Procname.from_string_c_fun alloc_desc in
+                    let value = TaintItem.TaintProcedure proc_name in
                     let origin = TaintItem.Allocation {typ= type_name} in
-                    {TaintItem.kinds; proc_name; origin; block_passed_to= None}
+                    {TaintItem.kinds; value; origin}
                   in
                   let hist =
                     ValueHistory.singleton

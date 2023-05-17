@@ -13,14 +13,18 @@ type origin =
   | Argument of {index: int}
   | ReturnValue
   | Allocation of {typ: string}
+  | SetField
   | Field of {name: string; origin: origin}
 [@@deriving compare, equal]
 
-type t =
-  { kinds: TaintConfig.Kind.t list
-  ; proc_name: Procname.t
-  ; origin: origin
-  ; block_passed_to: Procname.t option }
+type value =
+  | TaintBlockPassedTo of Procname.t
+  | TaintField of Fieldname.t
+  | TaintProcedure of Procname.t
 [@@deriving compare, equal]
+
+type t = {kinds: TaintConfig.Kind.t list; value: value; origin: origin} [@@deriving compare, equal]
+
+val pp_value_plain : F.formatter -> value -> unit
 
 val pp : F.formatter -> t -> unit

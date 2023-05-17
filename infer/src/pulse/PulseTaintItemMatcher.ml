@@ -376,6 +376,13 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param ?
     List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ; exp} ->
         (arg_payload, typ, Some exp) )
   in
+  let value =
+    match block_passed_to with
+    | Some proc_name ->
+        TaintItem.TaintBlockPassedTo proc_name
+    | None ->
+        TaintItem.TaintProcedure proc_name
+  in
   List.fold matches ~init:(astate, []) ~f:(fun acc (matcher : TaintConfig.Unit.procedure_unit) ->
       let ({kinds}) = (matcher : TaintConfig.Unit.procedure_unit) in
       let rec match_target acc = function
@@ -391,9 +398,7 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param ?
                 match return_as_actual with
                 | Some actual ->
                     let astate, acc = acc in
-                    let taint =
-                      {TaintItem.proc_name; origin= ReturnValue; kinds; block_passed_to}
-                    in
+                    let taint = {TaintItem.value; origin= ReturnValue; kinds} in
                     (astate, (taint, actual) :: acc)
                 | None ->
                     let return = Var.of_id return in
@@ -405,9 +410,7 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param ?
                     in
                     Stack.find_opt return astate
                     |> Option.fold ~init:acc ~f:(fun (_, tainted) return_value ->
-                           let taint =
-                             {TaintItem.proc_name; origin= ReturnValue; kinds; block_passed_to}
-                           in
+                           let taint = {TaintItem.value; origin= ReturnValue; kinds} in
                            (astate, (taint, (return_value, return_typ, None)) :: tainted) ) ) )
         | ( AllArguments
           | ArgumentPositions _
@@ -420,9 +423,7 @@ let get_tainted tenv path location matchers return_opt ~has_added_return_param ?
                 if taint_target_matches tenv taint_target i actual_typ && not is_const_exp then (
                   L.d_printfln_escaped "match! tainting actual #%d with type %a" i
                     (Typ.pp_full Pp.text) actual_typ ;
-                  let taint =
-                    {TaintItem.proc_name; origin= Argument {index= i}; kinds; block_passed_to}
-                  in
+                  let taint = {TaintItem.value; origin= Argument {index= i}; kinds} in
                   (astate, (taint, actual_hist_and_typ) :: tainted) )
                 else (
                   L.d_printfln_escaped "no match for #%d with type %a" i (Typ.pp_full Pp.text)

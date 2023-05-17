@@ -29,7 +29,9 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
     let extras =
       let copy_type = get_copy_type diagnostic |> Option.map ~f:Typ.to_string in
       let taint_source, taint_sink =
-        let proc_name_of_taint TaintItem.{proc_name} = Format.asprintf "%a" Procname.pp proc_name in
+        let proc_name_of_taint TaintItem.{value} =
+          Format.asprintf "%a" TaintItem.pp_value_plain value
+        in
         match diagnostic with
         | TaintFlow {flow_kind= FlowFromSource; source= source, _} ->
             (Some (proc_name_of_taint source), None)
