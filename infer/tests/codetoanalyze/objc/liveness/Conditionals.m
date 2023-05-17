@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#import <Foundation/Foundation.h>
+
 int conditionalBasicOK() {
   int x = 5;
   x = x ? x : 1;
@@ -15,4 +17,11 @@ int conditionalOpaqueOk() {
   int x = 5;
   x = x ?: 1;
   return x;
+}
+
+NSURLRequest* const getRequest();
+
+NSURL* const conditionalOpaque2Ok(NSURL* x) {
+  NSURLRequest* const request = getRequest();
+  return x ?: request.URL;
 }

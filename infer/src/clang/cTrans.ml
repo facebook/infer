@@ -1831,7 +1831,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | None ->
           None
     in
-    let trans_state_param = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+    let trans_state_param =
+      {trans_state_pri with succ_nodes= []; var_exp_typ= None; opaque_exp= None}
+    in
     let obj_c_message_expr_info, res_trans_subexpr_list =
       objCMessageExpr_translate_args trans_state_param stmt_list obj_c_message_expr_info
         callee_ms_opt
