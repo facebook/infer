@@ -19,7 +19,9 @@ module PPNode = struct
   let pp fmt node = pp_id fmt (id node)
 end
 
+module Shapes = LineageShape.Summary
 module FieldPath = LineageShape.FieldPath
+module Cell = LineageShape.Cell
 
 module VarPath : sig
   (** A variable path is a pair of a variable and a possibly empty list of subscripted fields. They
@@ -51,68 +53,6 @@ end = struct
   let pvar pvar = var (Var.of_pvar pvar)
 
   let ident id = var (Var.of_id id)
-end
-
-module Cell : sig
-  (** Cells correspond to variable paths for which no subfield will be considered by the analysis,
-      either because they semantically have none, or because the abstract domain decides that
-      considering them would lead to too deep or too wide field structures.
-
-      The lineage graph is built on cells. *)
-
-  type t [@@deriving compare, equal]
-
-  val pp : Format.formatter -> t -> unit
-
-  val get_var : t -> Var.t
-
-  val get_field_path : t -> FieldPath.t
-
-  val var_appears_in_source_code : t -> bool
-
-  val fold_from_path :
-    LineageShape.Summary.t -> VarPath.t -> init:'accum -> f:('accum -> t -> 'accum) -> 'accum
-  (** Given a {!VarPath.t}, fold the [f] function over all the cells that correspond to "sub fields"
-      of that variable path. *)
-
-  val fold_pairs_from_paths :
-       LineageShape.Summary.t
-    -> VarPath.t
-    -> VarPath.t
-    -> init:'accum
-    -> f:('accum -> t -> t -> 'accum)
-    -> 'accum
-  (** Given two variable paths that must have the same type, fold the [f] function over all the
-      pairs of cells that correspond to "sub fields" of the indices. [f] will always be called on
-      corresponding sub-paths: see {!LineageShape.Summary.fold_terminal_fields_2}. *)
-end = struct
-  type t = Var.t * FieldPath.t [@@deriving compare, equal]
-
-  let pp fmt (var, field_path) = Format.fprintf fmt "%a%a" Var.pp var FieldPath.pp field_path
-
-  let make var field_path = (var, field_path)
-
-  let get_var (v, _) = v
-
-  let get_field_path (_, field_path) = field_path
-
-  let var_appears_in_source_code (var, _) = Var.appears_in_source_code var
-
-  let max_depth = Config.lineage_field_depth
-
-  let max_width = Option.value ~default:Int.max_value Config.lineage_field_width
-
-  let prevent_cycles = Config.lineage_prevent_cycles
-
-  let fold_from_path shapes (var, field_path) ~init ~f =
-    LineageShape.Summary.fold_terminal_fields shapes (var, field_path) ~max_width ~max_depth
-      ~prevent_cycles ~init ~f:(fun acc field_path -> f acc (make var field_path))
-
-
-  let fold_pairs_from_paths shapes (var_1, field_path_1) (var_2, field_path_2) ~init ~f =
-    LineageShape.Summary.fold_terminal_fields_2 shapes (var_1, field_path_1) (var_2, field_path_2)
-      ~max_width ~max_depth ~prevent_cycles ~init ~f:(fun acc cell_field_path_1 cell_field_path_2 ->
-        f acc (make var_1 cell_field_path_1) (make var_2 cell_field_path_2) )
 end
 
 module Local = struct
@@ -900,7 +840,7 @@ module Summary = struct
       match data with
       | Local (Cell cell, _node) ->
           Cell.var_appears_in_source_code cell
-          && not (Var.Set.mem (Cell.get_var cell) special_variables)
+          && not (Var.Set.mem (Cell.var cell) special_variables)
       | Argument _ | Captured _ | Return _ | CapturedBy _ | ArgumentOf _ | ReturnOf _ ->
           true
       | Local (ConstantAtom _, _) | Local (ConstantInt _, _) | Local (ConstantString _, _) ->
@@ -1107,7 +1047,7 @@ module Domain : sig
       corresponding [add_write_...] function instead. *)
 
   val add_flow_from_path :
-       shapes:LineageShape.Summary.t
+       shapes:Shapes.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:VarPath.t
@@ -1116,7 +1056,7 @@ module Domain : sig
     -> t
 
   val add_flow_from_path_f :
-       shapes:LineageShape.Summary.t
+       shapes:Shapes.t
     -> node:PPNode.t
     -> kind_f:(FieldPath.t -> LineageGraph.flow_kind)
     -> src:VarPath.t
@@ -1134,7 +1074,7 @@ module Domain : sig
       corresponding [add_flow_...] function instead. *)
 
   val add_write :
-       shapes:LineageShape.Summary.t
+       shapes:Shapes.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:Src.t
@@ -1143,7 +1083,7 @@ module Domain : sig
     -> t
 
   val add_write_f :
-       shapes:LineageShape.Summary.t
+       shapes:Shapes.t
     -> node:PPNode.t
     -> kind_f:(FieldPath.t -> LineageGraph.flow_kind)
     -> src_f:(FieldPath.t -> Src.t)
@@ -1155,7 +1095,7 @@ module Domain : sig
       [Projection] edges where the edge holds the field information. *)
 
   val add_write_from_local :
-       shapes:LineageShape.Summary.t
+       shapes:Shapes.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:Local.t
@@ -1164,7 +1104,7 @@ module Domain : sig
     -> t
 
   val add_write_from_local_set :
-       shapes:LineageShape.Summary.t
+       shapes:Shapes.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:(Local.t, _) Set.t
@@ -1173,7 +1113,7 @@ module Domain : sig
     -> t
 
   val add_write_parallel :
-       shapes:LineageShape.Summary.t
+       shapes:Shapes.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:VarPath.t
@@ -1184,7 +1124,7 @@ module Domain : sig
       field of the destination variable path. See {!Cell.fold_terminal_pairs}. *)
 
   val add_write_product :
-       shapes:LineageShape.Summary.t
+       shapes:Shapes.t
     -> node:PPNode.t
     -> kind:LineageGraph.flow_kind
     -> src:VarPath.t
@@ -1282,15 +1222,15 @@ end = struct
 
 
   let add_flow_from_path ~shapes ~node ~kind ~src ~dst astate =
-    Cell.fold_from_path
+    Shapes.fold_cells
       ~f:(fun acc src_cell -> add_flow_from_local ~node ~kind ~src:(Cell src_cell) ~dst acc)
       ~init:astate shapes src
 
 
   let add_flow_from_path_f ~shapes ~node ~kind_f ~src ~dst_f astate =
-    Cell.fold_from_path
+    Shapes.fold_cells
       ~f:(fun acc src_cell ->
-        let source_field_path = Cell.get_field_path src_cell in
+        let source_field_path = Cell.field_path src_cell in
         add_flow_from_local ~node ~kind:(kind_f source_field_path) ~src:(Cell src_cell)
           ~dst:(dst_f source_field_path) acc )
       ~init:astate shapes src
@@ -1316,16 +1256,16 @@ end = struct
 
   (* Update all the terminal fields of a path, as obtained from the shapes information. *)
   let add_write ~shapes ~node ~kind ~src ~dst astate =
-    Cell.fold_from_path
+    Shapes.fold_cells
       ~f:(fun acc_astate dst_terminal ->
         add_terminal_write ~node ~kind ~src ~dst:dst_terminal acc_astate )
       ~init:astate shapes dst
 
 
   let add_write_f ~shapes ~node ~kind_f ~src_f ~dst astate =
-    Cell.fold_from_path
+    Shapes.fold_cells
       ~f:(fun acc_astate dst_terminal ->
-        let dst_field_path = Cell.get_field_path dst_terminal in
+        let dst_field_path = Cell.field_path dst_terminal in
         add_terminal_write ~node ~kind:(kind_f dst_field_path) ~src:(src_f dst_field_path)
           ~dst:dst_terminal acc_astate )
       ~init:astate shapes dst
@@ -1333,7 +1273,7 @@ end = struct
 
   (* Update all the terminal fields of a path, as obtained from the shapes information. *)
   let add_write_from_local ~shapes ~node ~kind ~src ~dst astate =
-    Cell.fold_from_path
+    Shapes.fold_cells
       ~f:(fun acc_astate dst_terminal ->
         add_terminal_write_from_local ~node ~kind ~src ~dst:dst_terminal acc_astate )
       ~init:astate shapes dst
@@ -1341,7 +1281,7 @@ end = struct
 
   (* Update all the terminal fields of a path, as obtained from the shapes information. *)
   let add_write_from_local_set ~shapes ~node ~kind ~src ~dst astate =
-    Cell.fold_from_path
+    Shapes.fold_cells
       ~f:(fun acc_astate dst_terminal ->
         add_terminal_write_from_local_set ~node ~kind ~src ~dst:dst_terminal acc_astate )
       ~init:astate shapes dst
@@ -1350,14 +1290,14 @@ end = struct
   (* Update all the terminal fields of a destination path, as obtained from the shapes information,
      as being written in parallel from the corresponding terminal fields of a source path. *)
   let add_write_parallel ~shapes ~node ~kind ~src ~dst astate =
-    Cell.fold_pairs_from_paths
+    Shapes.fold_cell_pairs
       ~f:(fun acc_astate src_cell dst_cell ->
         add_terminal_write_from_local ~node ~kind ~src:(Cell src_cell) ~dst:dst_cell acc_astate )
       ~init:astate shapes src dst
 
 
   let add_write_product ~shapes ~node ~kind ~src ~dst astate =
-    Cell.fold_from_path
+    Shapes.fold_cells
       ~f:(fun acc_astate src_cell ->
         add_write_from_local ~shapes ~node ~kind ~src:(Cell src_cell) ~dst acc_astate )
       ~init:astate shapes src
@@ -1367,7 +1307,7 @@ module TransferFunctions = struct
   module CFG = CFG
   module Domain = Domain
 
-  type analysis_data = LineageShape.Summary.t * Summary.t InterproceduralAnalysis.t
+  type analysis_data = Shapes.t * Summary.t InterproceduralAnalysis.t
 
   (** If an expression is made of a single variable, return it *)
   let exp_as_single_var (e : Exp.t) : Var.t option =
@@ -1412,7 +1352,7 @@ module TransferFunctions = struct
 
   (** Return the free cells that can be derived from a variable path *)
   let free_locals_from_path shapes var_path =
-    Cell.fold_from_path shapes var_path ~f:Local.Set.add_cell ~init:Local.Set.empty
+    Shapes.fold_cells shapes var_path ~f:Local.Set.add_cell ~init:Local.Set.empty
 
 
   (** Return constants and free terminal indices that occur in [e]. *)
@@ -1573,9 +1513,8 @@ module TransferFunctions = struct
 
   (* Add Summary (or Direct if this is a suppressed builtin call) edges from the concrete arguments
      to the concrete destination variable of a call, as specified by the tito_arguments summary information *)
-  let add_tito (shapes : LineageShape.Summary.t) node (kind : LineageGraph.FlowKind.t)
-      (tito : Tito.t) (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t
-      =
+  let add_tito (shapes : Shapes.t) node (kind : LineageGraph.FlowKind.t) (tito : Tito.t)
+      (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     let add_one_tito_flow ~arg_index ~arg_field_path ~ret_field_path astate =
       let arg_expr = List.nth_exn argument_list arg_index in
       let ret_path = VarPath.make (Var.of_id ret_id) ret_field_path in
@@ -1595,7 +1534,7 @@ module TransferFunctions = struct
 
   (* Add all the possible Summary/Direct (see add_tito) call edges from arguments to destination for
      when no summary is available. *)
-  let add_tito_all (shapes : LineageShape.Summary.t) node (kind : LineageGraph.FlowKind.t)
+  let add_tito_all (shapes : Shapes.t) node (kind : LineageGraph.FlowKind.t)
       (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     let arity = List.length argument_list in
     let tito_full = Tito.full ~arity in
@@ -1795,8 +1734,7 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
   in
   (* Collect the return fields to finish the summary *)
   let known_ret_field_paths =
-    Cell.fold_from_path shapes ret_var_path ~init:[] ~f:(fun acc cell ->
-        Cell.get_field_path cell :: acc )
+    Shapes.fold_cells shapes ret_var_path ~init:[] ~f:(fun acc cell -> Cell.field_path cell :: acc)
   in
   let exit_has_unsupported_features = Domain.has_unsupported_features exit_astate in
   let summary = Summary.make exit_has_unsupported_features proc_desc graph known_ret_field_paths in

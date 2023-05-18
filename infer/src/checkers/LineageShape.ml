@@ -9,6 +9,14 @@ open! IStd
 module L = Logging
 module CFG = ProcCfg.NormalOneInstrPerNode
 
+module LineageConfig = struct
+  let field_depth = Config.lineage_field_depth
+
+  let field_width = Option.value ~default:Int.max_value Config.lineage_field_width
+
+  let prevent_cycles = Config.lineage_prevent_cycles
+end
+
 module FieldPath = struct
   (** A module to help manipulating lists of (nested) fields. *)
 
@@ -21,11 +29,43 @@ module FieldPath = struct
     `String (Fieldname.to_string fieldname)
 
 
-  (* The list is to be understood in "syntactic order": [["a"; "b"]] represents the field part of
-     [X#a#b].*)
-  type t = fieldname list [@@deriving compare, equal, sexp, yojson_of]
+  module T = struct
+    (* The list is to be understood in "syntactic order": [["a"; "b"]] represents the field part of
+       [X#a#b].*)
+    type t = fieldname list [@@deriving compare, equal, sexp, yojson_of]
+  end
+
+  include T
+  include Comparable.Make (T)
 
   let pp = Fmt.(list ~sep:nop (any "#" ++ Fieldname.pp))
+end
+
+module Cell : sig
+  type t [@@deriving compare, equal, sexp, yojson_of]
+
+  val create : var:Var.t -> field_path:FieldPath.t -> t
+
+  val pp : t Fmt.t
+
+  val var : t -> Var.t
+
+  val field_path : t -> FieldPath.t
+
+  val var_appears_in_source_code : t -> bool
+end = struct
+  type t = {var: Var.t; field_path: FieldPath.t} [@@deriving compare, equal, sexp, fields]
+
+  let create = Fields.create
+
+  let pp fmt {var; field_path} =
+    Var.pp fmt var ;
+    FieldPath.pp fmt field_path
+
+
+  let yojson_of_t x = `String (Fmt.to_to_string pp x)
+
+  let var_appears_in_source_code x = Var.appears_in_source_code (var x)
 end
 
 module Id () : sig
@@ -104,26 +144,16 @@ module Shape : sig
     (** Makes a summary from a typing environment. Further updates to the environment will have no
         effect on the summary. *)
 
-    val fold_terminal_fields :
-         t
-      -> Var.t * FieldPath.t
-      -> max_width:int
-      -> max_depth:int
-      -> prevent_cycles:bool
-      -> init:'accum
-      -> f:('accum -> FieldPath.t -> 'accum)
-      -> 'accum
+    val fold_cells :
+      t -> Var.t * FieldPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
     (* Doc in .mli *)
 
-    val fold_terminal_fields_2 :
+    val fold_cell_pairs :
          t
       -> Var.t * FieldPath.t
       -> Var.t * FieldPath.t
-      -> max_width:int
-      -> max_depth:int
-      -> prevent_cycles:bool
       -> init:'accum
-      -> f:('accum -> FieldPath.t -> FieldPath.t -> 'accum)
+      -> f:('accum -> Cell.t -> Cell.t -> 'accum)
       -> 'accum
     (* Doc in .mli *)
 
@@ -437,11 +467,11 @@ end = struct
         fieldname
 
 
-    let finalise {var_shapes; shape_fields} var field_path ~max_width ~max_depth ~prevent_cycles =
+    let finalise {var_shapes; shape_fields} var field_path =
       let rec aux remaining_depth traversed_shape_set shape field_path =
         match field_path with
         (* Walk through the fields and ensure that we do not:
-           - Traverse a field table wider than max_width
+           - Traverse a field table wider than LineageConfig.field_width
            - Traverse cycles if forbidden by the option
            - "Traverse" (they must be in last position) internal "boxing" fields that should be
              ignored
@@ -457,8 +487,8 @@ end = struct
             let field_table = find_field_table shape_fields shape in
             if
               Int.(remaining_depth <= 0)
-              || Caml.Hashtbl.length field_table > max_width
-              || (prevent_cycles && Set.mem traversed_shape_set shape)
+              || Caml.Hashtbl.length field_table > LineageConfig.field_width
+              || (LineageConfig.prevent_cycles && Set.mem traversed_shape_set shape)
             then []
             else
               let terminal_sub_path =
@@ -470,8 +500,10 @@ end = struct
               field :: terminal_sub_path
       in
       let var_shape = find_var_shape var_shapes var in
-      let field_path = aux max_depth (Set.empty (module Shape_id)) var_shape field_path in
-      field_path
+      let field_path =
+        aux LineageConfig.field_depth (Set.empty (module Shape_id)) var_shape field_path
+      in
+      Cell.create ~var ~field_path
 
 
     (** Given field shapes, a particular shape, a maximal width, a maximal search depth and a
@@ -480,8 +512,9 @@ end = struct
         considered shape to the prefixes.
 
         The traversal building a field path will stop when the maximal search depth has been
-        reached, a shape with more than [max_width] fields is encountered, or a shape that has
-        already been traversed is encountered and [prevent_cycles] is true.
+        reached, a shape with more than [LineageConfig.field_width] fields is encountered, or a
+        shape that has already been traversed is encountered and [LineageConfig.prevent_cycles] is
+        true.
 
         When the building of a field path stops, the folding function [f] will be called on the path
         built so far.
@@ -489,27 +522,27 @@ end = struct
         Note that the traversal and the calling of [f] is done from the original argument shape: for
         instance, if [X] has the field [X#foo#bar#baz], the depth limit is 2 and this function is
         called from the shape of [X#foo], then [f] will be called with the field path [bar#baz] --
-        even if [X#foo] and [X#bar#baz] have the same shape, or [X] has a thousand other fields.
-        This is why [~max_search_depth] is labelled differently from the [~max_depth] of the other
-        functions (it has a slightly different semantics).
+        even if [X#foo] and [X#bar#baz] have the same shape, or [X] has a thousand other fields. For
+        this reason, [~max_search_depth] is an explicit parameter, different from the
+        {!LineageConfig.field_depth} configuration option.
 
         The typical use-case is to then have [f] call {!finalise}, with [X#foo] in the parameters,
         which will repeat a similar traversal to only yield [X#foo#bar] as a final field path. This
-        allows implementing {!fold_terminal_fields_2} by first getting the candidate terminal fields
-        from a common shape of two different origin paths, then finalising separately wrt. these two
-        paths (which could have different depths to begin with). *)
-    let fold_terminal_fields_of_shape shape_fields shape ~max_width ~max_search_depth
-        ~prevent_cycles ~init ~f =
+        allows implementing {!fold_cell_pairs} by first getting the candidate terminal fields from a
+        common shape of two different origin paths, then finalising separately wrt. these two paths
+        (which could have different depths to begin with). *)
+    let fold_terminal_fields_of_shape shape_fields shape ~search_depth ~init ~f =
       let rec aux shape depth traversed field_path_acc ~init =
-        if Int.(depth >= max_search_depth) || (prevent_cycles && Set.mem traversed shape) then
-          f init (List.rev field_path_acc)
+        if Int.(depth >= search_depth) || (LineageConfig.prevent_cycles && Set.mem traversed shape)
+        then f init (List.rev field_path_acc)
         else
           match Caml.Hashtbl.find_opt shape_fields shape with
           | None ->
               f init (List.rev field_path_acc)
           | Some fields ->
               let len = Caml.Hashtbl.length fields in
-              if Int.(len = 0 || len > max_width) then f init (List.rev field_path_acc)
+              if Int.(len = 0 || len > LineageConfig.field_width) then
+                f init (List.rev field_path_acc)
               else
                 let traversed = Set.add traversed shape in
                 Caml.Hashtbl.fold
@@ -520,19 +553,16 @@ end = struct
       aux shape 0 (Set.empty (module Shape_id)) [] ~init
 
 
-    let fold_terminal_fields {var_shapes; shape_fields} (var, field_path) ~max_width ~max_depth
-        ~prevent_cycles ~init ~f =
+    let fold_cells {var_shapes; shape_fields} (var, field_path) ~init ~f =
       let var_path_shape = find_var_path_shape {var_shapes; shape_fields} var field_path in
-      let max_search_depth = max_depth - List.length field_path in
-      fold_terminal_fields_of_shape shape_fields var_path_shape ~max_width ~max_search_depth
-        ~prevent_cycles ~init ~f:(fun acc sub_path ->
-          f acc
-            (finalise {var_shapes; shape_fields} ~max_width ~max_depth ~prevent_cycles var
-               (field_path @ sub_path) ) )
+      let search_depth = LineageConfig.field_depth - List.length field_path in
+      fold_terminal_fields_of_shape shape_fields var_path_shape ~search_depth ~init
+        ~f:(fun acc sub_path ->
+          f acc (finalise {var_shapes; shape_fields} var (field_path @ sub_path)) )
 
 
-    let fold_terminal_fields_2 {var_shapes; shape_fields} (var_1, field_path_1)
-        (var_2, field_path_2) ~max_width ~max_depth ~prevent_cycles ~init ~f =
+    let fold_cell_pairs {var_shapes; shape_fields} (var_1, field_path_1) (var_2, field_path_2) ~init
+        ~f =
       let var_path_shape_1 = find_var_path_shape {var_shapes; shape_fields} var_1 field_path_1 in
       let var_path_shape_2 = find_var_path_shape {var_shapes; shape_fields} var_2 field_path_2 in
       if not ([%equal: Shape_id.t] var_path_shape_1 var_path_shape_2) then
@@ -544,17 +574,15 @@ end = struct
           Shape_id.pp var_path_shape_2 pp_field_table
           (Caml.Hashtbl.find shape_fields var_path_shape_2)
       else
-        let max_search_depth =
+        let search_depth =
           (* Use the shallowest argument to determine the search depth. *)
-          max_depth - Int.min (List.length field_path_1) (List.length field_path_2)
+          LineageConfig.field_depth - Int.min (List.length field_path_1) (List.length field_path_2)
         in
-        fold_terminal_fields_of_shape shape_fields var_path_shape_1 ~max_width ~max_search_depth
-          ~prevent_cycles ~init ~f:(fun acc sub_path ->
+        fold_terminal_fields_of_shape shape_fields var_path_shape_1 ~search_depth ~init
+          ~f:(fun acc sub_path ->
             f acc
-              (finalise {var_shapes; shape_fields} ~max_width ~max_depth ~prevent_cycles var_1
-                 (field_path_1 @ sub_path) )
-              (finalise {var_shapes; shape_fields} ~max_width ~max_depth ~prevent_cycles var_2
-                 (field_path_2 @ sub_path) ) )
+              (finalise {var_shapes; shape_fields} var_1 (field_path_1 @ sub_path))
+              (finalise {var_shapes; shape_fields} var_2 (field_path_2 @ sub_path)) )
   end
 end
 
@@ -581,12 +609,11 @@ module Report = struct
     L.debug Analysis Verbose "@[<v2>FIELDS OF RETURN:@ (%a)@]"
       (Fmt.iter
          (fun f summary ->
-           Shape.Summary.fold_terminal_fields summary ~max_depth:3 ~max_width:5 ~prevent_cycles:true
+           Shape.Summary.fold_cells summary
              (Var.of_pvar (Procdesc.get_ret_var proc_desc), [])
              ~f:(fun () fields -> f fields)
              ~init:() )
-         ~sep:Fmt.comma
-         (Fmt.list ~sep:(Fmt.any "#") Fieldname.pp) )
+         ~sep:Fmt.comma Cell.pp )
       summary ;
     L.debug Analysis Verbose "@]@ @]"
 end

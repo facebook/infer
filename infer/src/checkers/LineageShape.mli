@@ -8,9 +8,49 @@
 open! IStd
 
 module FieldPath : sig
+  (** The fields are listed in syntactic order: [\[a; b\]] for [x#a#b]. *)
   type t = Fieldname.t list [@@deriving compare, equal, sexp, yojson_of]
 
+  include Comparable.S with type t := t
+
   val pp : t Fmt.t
+end
+
+module Cell : sig
+  (** Cells correspond to variable fields for which no subfield will be considered by the analysis,
+      either because they semantically have none, or because the abstract domain decides that
+      considering them would lead to too deep or too wide field structures.
+
+      A field path of a cell:
+
+      - Cannot have a length greater than {!Config.lineage_field_depth}. For instance, if that limit
+        is [2], the only cell under both [X#foo#bar#baz] and [X#foo#bar#ham] will be [X#foo#bar].
+
+      - Cannot cross a field whose field table is wider than {!Config.lineage_field_width}. For
+        instance, of the variable [X] has a huge number of fields, the only cell under [X#field1]
+        will be [X] itself.
+
+      - Cannot go twice on same-typed fields if {!Config.lineage_prevent_cycles} is set. For
+        instance, if [X] has fields [X#head] and [X#tail], and [X#tail] has the same shape as [X],
+        then the cells under [X] will be [X#head] and [X#tail].
+
+      If one of these conditions happens, then the cell field path will be truncated before reaching
+      a "scalar" field and the cell will be "abstract".
+
+      To make sure that the aforementioned properties hold, one cannot construct cells directly, but
+      should access them through the {!Summary.fold_cells} and {!Summary.fold_cell_pairs} functions.
+
+      The lineage graph is built on cells. *)
+
+  type t [@@deriving compare, equal, sexp, yojson_of]
+
+  val pp : t Fmt.t
+
+  val var : t -> Var.t
+
+  val field_path : t -> FieldPath.t
+
+  val var_appears_in_source_code : t -> bool
 end
 
 module Summary : sig
@@ -18,42 +58,29 @@ module Summary : sig
 
   val pp : Format.formatter -> t -> unit
 
-  val fold_terminal_fields :
-       t
-    -> Var.t * FieldPath.t
-    -> max_width:int
-    -> max_depth:int
-    -> prevent_cycles:bool
-    -> init:'accum
-    -> f:('accum -> FieldPath.t -> 'accum)
-    -> 'accum
-  (** Folds over all terminal fields of a variable with fields. A field path is "terminal" if its
-      length (that includes the prefixed fields given as parameters) is equal to [max_depth], or no
-      more field can be subscripted from its corresponding type, or it has strictly more than
-      [max_width] immediate subfields.
+  val fold_cells :
+    t -> Var.t * FieldPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
+  (** Folds over all cells under a variable and field path. A field path is "terminal" if its length
+      (that includes the prefixed fields given as parameters) is equal to
+      [Config.lineage_field_depth], or no more field can be subscripted from its corresponding type,
+      or it has strictly more than [Config.lineage_field_width] immediate subfields.
 
-      The parameter fields are expected in syntactic order: [\[a; b\]] for [x#a#b].
+      The result will not cross any shape whose field table is wider than
+      [Config.lineage_field_width], even if one of the parameter does. For instance, if some
+      variable [X] has a huge number of fields, the only terminal field of [X#field1] will be [X]
+      itself. *)
 
-      The result will not cross any shape whose field table is wider than [max_width], even if one
-      of the parameter does. For instance, if some variable [X] has a huge number of fields, the
-      only terminal field of [X#field1] will be [X] itself. *)
-
-  val fold_terminal_fields_2 :
+  val fold_cell_pairs :
        t
     -> Var.t * FieldPath.t
     -> Var.t * FieldPath.t
-    -> max_width:int
-    -> max_depth:int
-    -> prevent_cycles:bool
     -> init:'accum
-    -> f:('accum -> FieldPath.t -> FieldPath.t -> 'accum)
+    -> f:('accum -> Cell.t -> Cell.t -> 'accum)
     -> 'accum
-  (** Folds over all terminal fields of two same-shape variables with their fields. See
+  (** Folds over all corresponding cell pairs of two same-shape variable and field paths. See
       {!fold_terminal_fields}.
 
       Dies if the parameters do not have the same shape.
-
-      The folding function [f] will always be called on pairs of terminal fields.
 
       Note that, since the parameters field paths may not have the same length, [f] may be called on
       field paths of different lengths. For instance, if the parameters [var#field1] and
@@ -62,11 +89,11 @@ module Summary : sig
 
       Also, since the parameters lengths are taken into account for determining the depth of the
       result, the arguments of [f] may not have the same suffix when extracting these parameters:
-      for instance, if [max_depth = 1] and [var] and [var'#field] have a subfield [foo], then [f]
-      will be called on [#foo] and [#field].
+      for instance, if [Config.lineage_field_depth = 1] and [var] and [var'#field] have a subfield
+      [foo], then [f] will be called on [#foo] and [#field].
 
-      The same width limitation as the function {!fold_terminal_fields} is ensured for both
-      parameters (even if these parameters cross wide shapes, the result will not). *)
+      The same width limitation as the function {!fold_cells} is ensured for both parameters (even
+      if these parameters cross wide shapes, the result will not). *)
 end
 
 val checker : Summary.t InterproceduralAnalysis.t -> Summary.t option
