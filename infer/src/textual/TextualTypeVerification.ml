@@ -31,6 +31,8 @@ let rec compat ~assigned:(t1 : Typ.t) ~given:(t2 : Typ.t) =
       true
   | _, Void ->
       true
+  | Int, Ptr _ ->
+      true
   | Ptr t1, Ptr t2 ->
       compat ~assigned:t1 ~given:t2
   | Ptr _, Null ->

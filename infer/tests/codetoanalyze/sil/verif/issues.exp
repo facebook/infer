@@ -29,5 +29,5 @@ twice.sil: SIL consistency error: function f is implemented twice in the same fi
 twice.sil: SIL consistency error: field next is declared twice in type node
 twice.sil: SIL consistency error: type node is declared twice in the same file
 twice.sil: SIL consistency error: global I is declared twice in the same file
-type_error_argnum.sil, line 19, column 2: textual type error: expression n0 has type *HackMixed, while a subtype of int was expected
+type_error_argnum.sil, line 19, column 2: textual type error: expression n0 has type *HackMixed, while a subtype of bool was expected
 type_token_clash.sil, line 7, column 2: SIL syntax error: unexpected token n00b

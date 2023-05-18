@@ -98,7 +98,7 @@ let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"$builtins" &:: "nondet" <>$$--> Basic.nondet ~desc:"nondet"
   ; +BuiltinDecl.(match_builtin __lazy_class_initialize) <>$ capt_exp $--> lazy_class_initialize
-  ; -"$builtins" &:: "await" <>$ capt_arg_payload $--> hack_await
+  ; -"$builtins" &:: "hhbc_await" <>$ capt_arg_payload $--> hack_await
   ; -"$builtins" &:: "hack_dim_field_get" <>$ capt_arg_payload $+ capt_arg_payload
     $--> hack_dim_field_get
   ; -"$builtins" &:: "hack_new_dict" <>$ any_arg $+...$--> Basic.skip

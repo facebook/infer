@@ -105,6 +105,26 @@ define $builtins.hhbc_is_type_int(o: *HackMixed): *HackMixed {
     ret $builtins.hack_make_random_bool()
 }
 
+define $builtins.hhbc_is_type_null(o: *HackMixed): *HackMixed {
+  #entry:
+    jmp tlab, flab
+
+  #tlab:
+    n0: *HackMixed = load &o
+    prune __sil_ne(n0, 0)
+    ret $builtins.hack_make_false()
+
+  #flab:
+    n0: *HackMixed = load &o
+    prune __sil_lnot(__sil_ne(n0, 0))
+    ret $builtins.hack_make_true()
+
+    // n0 = __sil_ne(n2, 0)
+    // n1 = __sil_allocate(<HackBool>)
+    // store n1.HackBool.val <- n0 : int
+    // ret n1
+}
+
 define $builtins.hhbc_is_late_bound_cls(o: *HackMixed): *HackMixed {
   #entry:
     ret $builtins.hack_make_random_bool()

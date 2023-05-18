@@ -8,7 +8,8 @@ async function genInt () : Awaitable<int> {
 }
 
 async function genOk () : Awaitable<void> {
-  await genInt();
+  $x = genInt();
+  await $x;
 }
 
 async function genBad () : Awaitable<void> {
@@ -27,14 +28,23 @@ async function genOkIndirect() : Awaitable<void> {
   await produce_awaitable_int();
 }
 
-// Can't do this yet because front end doesn't actually deal with await properly
-// async function genAwaitParam(Awaitable<int> $a) : Awaitable<void> {
-//   await($a);
-//   return;
-// }
+async function genAwaitParam(Awaitable<int> $a) : Awaitable<void> {
+   await($a);
+   return;
+ }
 
-// async function genFoo() : Awaitable<void> {
-//   $x = genInt();
-//   genAwaitParam($x);
-//   return;
-// }
+async function genDontAwaitParam(Awaitable<int> $a) : Awaitable<void> {
+  return;
+}
+
+async function genAndAwaitOk() : Awaitable<void> {
+   $x = genInt();
+   genAwaitParam($x);
+   return;
+}
+
+async function genAndAwaitBad() : Awaitable<void> {
+  $x = genInt();
+  genDontAwaitParam($x);
+  return;
+}

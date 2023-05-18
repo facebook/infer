@@ -13,7 +13,7 @@ define caller_unknown_args_number() : void {
   ret null
 }
 
-define caller_unknown_args_number_bad_result_type() : int {
+define caller_unknown_args_number_bad_result_type() : bool {
 #b0:
   n0 = $builtins.foo()       // allowed
   ret n0                     // but still the typechecker uses foo's result type here
