@@ -10,6 +10,9 @@ module F = Format
 
 (** Module for Procedure Names. *)
 
+(** Level of verbosity of some to_string functions. *)
+type detail_level = Verbose | Non_verbose | Simple | NameOnly
+
 (** Type of csharp procedure names. *)
 module CSharp : sig
   type kind =
@@ -433,7 +436,7 @@ val pp : Format.formatter -> t -> unit
 val pp_verbose : Format.formatter -> t -> unit
 (** Pretty print a proc name for the user to see with verbosity parameter. *)
 
-val to_string : t -> string
+val to_string : ?verbosity:detail_level -> t -> string
 (** Convert a proc name into a string for the user to see. *)
 
 val describe : Format.formatter -> t -> unit

@@ -83,7 +83,7 @@ end = struct
         line ;
       F.fprintf fmt "PROC: %a LINE: %a@\n"
         (Io_infer.Html.pp_proc_link [".."] proc_name)
-        (Escape.escape_xml (Procname.to_string proc_name))
+        (Escape.escape_xml (Procname.to_string ~verbosity:Verbose proc_name))
         (Io_infer.Html.pp_line_link source [".."])
         line ;
       F.fprintf fmt "<br>PREDS:@\n" ;
@@ -129,7 +129,7 @@ end = struct
     let fd, fmt = Io_infer.Html.create source [Procname.to_filename pname] in
     F.fprintf fmt "<center><h1>Procedure %a</h1></center>@\n"
       (Io_infer.Html.pp_line_link source
-         ~text:(Some (Escape.escape_xml (Procname.to_string pname)))
+         ~text:(Some (Escape.escape_xml (Procname.to_string ~verbosity:Verbose pname)))
          [] )
       linenum ;
     pp_node_link_seq [] ~description:true fmt nodes ;
@@ -211,7 +211,9 @@ end = struct
               match Procdesc.Node.get_kind n with
               | Procdesc.Node.Start_node ->
                   let proc_name = Procdesc.Node.get_proc_name n in
-                  let proc_name_escaped = Escape.escape_xml (Procname.to_string proc_name) in
+                  let proc_name_escaped =
+                    Escape.escape_xml (Procname.to_string ~verbosity:Verbose proc_name)
+                  in
                   if Summary.OnDisk.get ~lazy_payloads:true proc_name |> Option.is_some then (
                     F.pp_print_char fmt ' ' ;
                     let label = F.asprintf "summary for %s" proc_name_escaped in

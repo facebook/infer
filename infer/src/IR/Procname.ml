@@ -10,7 +10,6 @@ module Hashtbl = Caml.Hashtbl
 module F = Format
 module L = Logging
 
-(** Level of verbosity of some to_string functions. *)
 type detail_level = Verbose | Non_verbose | Simple | NameOnly
 
 let is_verbose v = match v with Verbose -> true | _ -> false
@@ -1207,7 +1206,9 @@ let pp_without_templates fmt = function
       pp fmt other
 
 
-let to_string proc_name = F.asprintf "%a" pp proc_name
+let to_string ?(verbosity = Non_verbose) proc_name =
+  F.asprintf "%a" (pp_with_verbosity verbosity) proc_name
+
 
 let get_block_type proc =
   match base_of proc with
