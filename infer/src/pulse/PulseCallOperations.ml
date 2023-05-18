@@ -568,27 +568,28 @@ let call tenv path ~caller_proc_desc
     else results
   in
   match (analyze_dependency callee_pname : PulseSummary.t option) with
-  | Some summary -> (
+  | Some summary ->
       let call_aux exec_states =
-        let results, contradiction =
-          call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-            (IRAttributes.load_exn callee_pname)
-            exec_states astate
-        in
-        (* When a function call does not have a post of type ContinueProgram, we may want to treat
-           the call as unknown to make the analysis continue. This may introduce false positives but
-           could uncover additional true positives too. *)
-        let should_try_as_unknown =
-          Config.pulse_force_continue && Option.is_none contradiction
-          && not (has_continue_program results)
-        in
-        if should_try_as_unknown then (
-          L.d_printfln_escaped ~color:Orange
-            "No disjuncts of type ContinueProgram, treating the call to %a as unknown" Procname.pp
-            callee_pname ;
-          let unknown_results = call_as_unknown () in
-          (unknown_results @ results, None) )
-        else (results, contradiction)
+        L.d_with_indent ~name:"call->call_aux" (fun () ->
+            let results, contradiction =
+              call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
+                (IRAttributes.load_exn callee_pname)
+                exec_states astate
+            in
+            (* When a function call does not have a post of type ContinueProgram, we may want to treat
+               the call as unknown to make the analysis continue. This may introduce false positives but
+               could uncover additional true positives too. *)
+            let should_try_as_unknown =
+              Config.pulse_force_continue && Option.is_none contradiction
+              && not (has_continue_program results)
+            in
+            if should_try_as_unknown then (
+              L.d_printfln_escaped ~color:Orange
+                "No disjuncts of type ContinueProgram, treating the call to %a as unknown"
+                Procname.pp callee_pname ;
+              let unknown_results = call_as_unknown () in
+              (unknown_results @ results, None) )
+            else (results, contradiction) )
       in
       let res, contradiction = call_aux summary.main in
       let needs_aliasing_specialization res contradiction =
@@ -623,16 +624,19 @@ let call tenv path ~caller_proc_desc
               let res, contradiction = call_aux pre_posts in
               (res, contradiction, `KnownCall) )
         else (res, contradiction, `UnknownCall)
-      else
+      else (
+        L.d_printfln "checking dynamic type specialization" ;
         match
           maybe_dynamic_type_specialization_is_needed formals_opt actuals contradiction astate
         with
         | `RequestSpecializedAnalysis dyntypes_map ->
             let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
+            L.d_printfln "requesting specialized analysis %a" Specialization.Pulse.pp specialization ;
             let res, contradiction = request_specialization specialization |> call_aux in
             (* TODO: maybe this specialized summary still require specialization *)
             (res, contradiction, `KnownCall)
         | `NeedCallerSpecialization add_need_dynamic_type_specialization ->
+            L.d_printfln "need caller specialization" ;
             let f exec_state = add_need_dynamic_type_specialization caller_proc_desc exec_state in
             (* remark: we could also run an analysis of the callee with the partial information we have,
                but here we chose to keep the default summary and wait for a full specialization.
@@ -640,6 +644,7 @@ let call tenv path ~caller_proc_desc
                is a best effort computation that can be *unsound* *)
             (List.map res ~f:(PulseResult.map ~f), contradiction, `KnownCall)
         | `AbortAndUseMainSummary ->
+            L.d_printfln "abort, using main summary" ;
             (res, contradiction, `KnownCall) )
   | None ->
       (* no spec found for some reason (unknown function, ...) *)

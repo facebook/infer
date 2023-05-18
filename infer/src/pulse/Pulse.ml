@@ -380,9 +380,9 @@ module PulseTransferFunctions = struct
     Option.map proc_name_opt ~f:(fun proc_name ->
         match find_override exe_env tenv astate receiver proc_name proc_name_opt with
         | Some (proc_name', devirtualization_status) ->
-            L.d_printfln "Dynamic dispatch: %a %s resolved to %a" Procname.pp proc_name
+            L.d_printfln "Dynamic dispatch: %a %s resolved to %a" Procname.pp_verbose proc_name
               (string_of_devirtualization_status devirtualization_status)
-              Procname.pp proc_name' ;
+              Procname.pp_verbose proc_name' ;
             (proc_name', devirtualization_status)
         | None ->
             (proc_name, `ApproxDevirtualization) )
