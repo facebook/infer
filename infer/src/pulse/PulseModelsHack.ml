@@ -36,7 +36,27 @@ let hack_dim_field_get this_obj (field_string_obj, _) : model =
       PulseOperations.write_id ret_id field_val astate
   | None ->
       (* TODO: invalidate the access if the string field is unknown *)
-      Logging.d_printfln "reading field failed@." ;
+      Logging.d_printfln "reading field failed" ;
+      astate |> Basic.ok_continue
+
+
+let hack_dim_array_get this_obj (key_string_obj, _) : model =
+ fun {path; location; ret} astate ->
+  (* TODO: a key could be also a int *)
+  match read_boxed_string_value key_string_obj astate with
+  | Some string_val ->
+      let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack string_val in
+      let<*> astate, this_val =
+        PulseOperations.eval_access path Read location this_obj Dereference astate
+      in
+      let<+> astate, field_val =
+        PulseOperations.eval_access path Read location this_val (FieldAccess field) astate
+      in
+      let ret_id, _ = ret in
+      PulseOperations.write_id ret_id field_val astate
+  | None ->
+      (* TODO: invalidate the access if the string key is unknown (raise an exception in Hack)*)
+      Logging.d_printfln "reading dict failed" ;
       astate |> Basic.ok_continue
 
 
@@ -86,12 +106,43 @@ let get_static_class (addr, _) : model =
   match AbductiveDomain.AddressAttributes.get_dynamic_type addr astate with
   | Some {desc= Tstruct type_name} ->
       let addr, astate = get_static_companion type_name astate in
-      let event = Hist.call_event path location "get_static_class" in
-      let hist = Hist.single_event path event in
+      let hist = Hist.single_call path location "get_static_class" in
       PulseOperations.write_id ret_id (addr, hist) astate |> Basic.ok_continue
   | _ ->
       AbductiveDomain.add_need_dynamic_type_specialization analysis_data.proc_desc addr astate
       |> Basic.ok_continue
+
+
+(* We model dict/shape keys as fields. This is a bit unorthodox in Pulse, but we need
+   maximum precision on this ubiquitous Hack data structure. *)
+let new_dict args : model =
+ fun {path; location; ret= ret_id, _} astate ->
+  let open IOption.Let_syntax in
+  let bindings =
+    args
+    |> List.map ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= addr, _} -> addr)
+    |> List.chunks_of ~length:2
+    |> List.filter_map ~f:(function
+         | [string_addr; val_addr] ->
+             let+ string_val = read_boxed_string_value string_addr astate in
+             (string_val, val_addr)
+         | _ ->
+             None )
+  in
+  let addr = PulseAbstractValue.mk_fresh () in
+  let typ = Typ.mk_struct TextualSil.hack_dict_type_name in
+  let astate = PulseOperations.add_dynamic_type typ addr astate in
+  let hist = Hist.single_call path location "new_dict" in
+  let open PulseResult.Let_syntax in
+  let<+> astate =
+    List.fold bindings ~init:(Ok astate) ~f:(fun acc (key, addr_val) ->
+        let* astate = acc in
+        let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack key in
+        let ref = (addr, hist) in
+        let obj = (addr_val, hist) in
+        PulseOperations.write_deref_field path location ~ref ~obj field astate )
+  in
+  PulseOperations.write_id ret_id (addr, hist) astate
 
 
 let matchers : matcher list =
@@ -101,7 +152,9 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_await" <>$ capt_arg_payload $--> hack_await
   ; -"$builtins" &:: "hack_dim_field_get" <>$ capt_arg_payload $+ capt_arg_payload
     $--> hack_dim_field_get
-  ; -"$builtins" &:: "hack_new_dict" <>$ any_arg $+...$--> Basic.skip
+  ; -"$builtins" &:: "hack_dim_array_get" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> hack_dim_array_get
+  ; -"$builtins" &:: "hack_new_dict" &::.*++> new_dict
   ; -"$builtins" &:: "hack_get_class" <>$ capt_arg_payload
     $--> Basic.id_first_arg ~desc:"hack_get_class"
     (* not clear why HackC generate this builtin call *)

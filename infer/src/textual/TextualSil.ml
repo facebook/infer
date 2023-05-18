@@ -101,6 +101,8 @@ module TypeNameBridge = struct
   let java_lang_object = of_java_name "java.lang.Object"
 end
 
+let hack_dict_type_name = SilTyp.HackClass (HackClassName.make "HackDict")
+
 let hack_mixed_type_name = SilTyp.HackClass (HackClassName.make "HackMixed")
 
 let hack_mixed_static_companion_type_name = SilTyp.Name.Hack.static_companion hack_mixed_type_name
