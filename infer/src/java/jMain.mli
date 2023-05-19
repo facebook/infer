@@ -8,7 +8,7 @@
 
 open! IStd
 
-val from_arguments : string -> unit
+val from_arguments : sources:string list -> string -> unit
 (** loads the source files from command line arguments and translates them *)
 
 val from_verbose_out : string -> unit

@@ -23,6 +23,7 @@ type build_system =
   | BHackc
   | BJava
   | BJavac
+  | BKotlinc
   | BMake
   | BMvn
   | BNdk

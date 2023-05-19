@@ -20,7 +20,7 @@ type t =
 type source =
   | FromVerboseOut of {verbose_out_file: string}
       (** load the list of source files and the list of classes from the javac verbose file *)
-  | FromArguments of {path: string}
+  | FromArguments of {path: string; sources: string list}
       (** load the list of source files and the list of classes from [Config.generated_classes] *)
 
 val with_classpath : f:(t -> unit) -> source -> unit

@@ -8,7 +8,7 @@
 open! IStd
 
 module JMain = struct
-  let from_arguments _ = ()
+  let from_arguments ~sources:_ _ = ()
 
   let from_verbose_out _ = ()
 end

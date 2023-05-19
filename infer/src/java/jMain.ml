@@ -126,6 +126,6 @@ let main load_sources_and_classes =
       do_all_files classpath.sources program )
 
 
-let from_arguments path = main (JClasspath.FromArguments {path})
+let from_arguments ~sources path = main (JClasspath.FromArguments {path; sources})
 
 let from_verbose_out verbose_out_file = main (JClasspath.FromVerboseOut {verbose_out_file})

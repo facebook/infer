@@ -28,6 +28,7 @@ type mode =
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
   | Gradle of {prog: string; args: string list}
   | Javac of {compiler: Javac.compiler; prog: string; args: string list}
+  | Kotlinc of {prog: string; args: string list}
   | JsonSIL of {cfg_json: string; tenv_json: string}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
@@ -80,6 +81,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Gradle driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Javac {prog; args} ->
       F.fprintf fmt "Javac driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
+  | Kotlinc {prog; args} ->
+      F.fprintf fmt "Kotlinc driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | JsonSIL {cfg_json; tenv_json} ->
       F.fprintf fmt "Json driver mode:@\ncfg_json= '%s'@\ntenv_json = %s" cfg_json tenv_json
   | Maven {prog; args} ->
@@ -181,7 +184,7 @@ let capture ~changed_files mode =
           Erlang.capture_buck ~command:prog ~args
       | BuckGenrule {prog} ->
           L.progress "Capturing for Buck genrule compatibility...@." ;
-          JMain.from_arguments prog
+          JMain.from_arguments prog ~sources:Config.sources
       | BuckJavaFlavor {build_cmd} ->
           L.progress "Capturing for BuckJavaFlavor integration...@." ;
           BuckJavaFlavor.capture build_cmd
@@ -203,6 +206,9 @@ let capture ~changed_files mode =
       | Javac {compiler; prog; args} ->
           if Config.is_originator then L.progress "Capturing in javac mode...@." ;
           Javac.capture compiler ~prog ~args
+      | Kotlinc {prog; args} ->
+          if Config.is_originator then L.progress "Capturing in kotlinc mode...@." ;
+          Kotlinc.capture ~prog ~args
       | JsonSIL {cfg_json; tenv_json} ->
           L.progress "Capturing using JSON mode...@." ;
           CaptureSILJson.capture ~cfg_json ~tenv_json
@@ -419,7 +425,7 @@ let error_no_buck_mode_specified () =
 
 let assert_supported_build_system build_system =
   match (build_system : Config.build_system) with
-  | BAnt | BGradle | BJava | BJavac | BMvn ->
+  | BAnt | BGradle | BJava | BJavac | BKotlinc | BMvn ->
       Config.string_of_build_system build_system |> assert_supported_mode `Java
   | BClang | BMake | BNdk ->
       Config.string_of_build_system build_system |> assert_supported_mode `Clang
@@ -537,6 +543,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           Javac {compiler= Javac.Java; prog; args}
       | BJavac ->
           Javac {compiler= Javac.Javac; prog; args}
+      | BKotlinc ->
+          Kotlinc {prog; args}
       | BMake ->
           Clang {compiler= Clang.Make; prog; args}
       | BMvn ->

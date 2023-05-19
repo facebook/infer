@@ -14,7 +14,7 @@ open! IStd
     support. The stubs implemented here do nothing. *)
 
 module JMain : sig
-  val from_arguments : string -> unit
+  val from_arguments : sources:string list -> string -> unit
 
   val from_verbose_out : string -> unit
 end

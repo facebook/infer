@@ -75,9 +75,10 @@ OPTIONS
 
        --force-integration command
            Proceed as if the first argument after -- was command. Possible
-           values: ant, buck, buck1, buck2, gradle, gradlew, java, javac, cc,
-           clang, gcc, clang++, c++, g++, hackc, make, configure, cmake, waf,
-           mvn, mvnw, ndk-build, rebar3, erlc, xcodebuild.
+           values: ant, buck, buck1, buck2, gradle, gradlew, java, javac,
+           kotlinc, cc, clang, gcc, clang++, c++, g++, hackc, make,
+           configure, cmake, waf, mvn, mvnw, ndk-build, rebar3, erlc,
+           xcodebuild.
 
        --help
            Show this manual

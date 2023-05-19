@@ -179,9 +179,9 @@ let is_valid_source_file path =
   && PolyVariantEqual.(Sys.is_file path <> `No)
 
 
-let search_sources () =
+let search_sources sources =
   let initial_map =
-    List.fold Config.sources ~init:String.Map.empty ~f:(fun map path ->
+    List.fold sources ~init:String.Map.empty ~f:(fun map path ->
         if is_valid_source_file path then add_source_file path map
         else (
           L.external_warning "'%s' does not appear to be a valid source file, skipping@\n" path ;
@@ -196,7 +196,7 @@ let search_sources () =
         initial_map sourcepath
 
 
-let load_from_arguments classes_out_path =
+let load_from_arguments classes_out_path sources =
   let roots, classes = search_classes classes_out_path in
   let split cp_option = Option.value_map ~f:split_classpath ~default:[] cp_option in
   let classpath =
@@ -204,18 +204,20 @@ let load_from_arguments classes_out_path =
     split Config.bootclasspath @ split Config.classpath @ String.Set.elements roots
     |> classpath_of_paths
   in
-  {classpath_channel= Javalib.class_path classpath; sources= search_sources (); classes}
+  {classpath_channel= Javalib.class_path classpath; sources= search_sources sources; classes}
 
 
-type source = FromVerboseOut of {verbose_out_file: string} | FromArguments of {path: string}
+type source =
+  | FromVerboseOut of {verbose_out_file: string}
+  | FromArguments of {path: string; sources: string list}
 
 let with_classpath ~f source =
   let classpath =
     match source with
     | FromVerboseOut {verbose_out_file} ->
         load_from_verbose_output verbose_out_file
-    | FromArguments {path} ->
-        load_from_arguments path
+    | FromArguments {path; sources} ->
+        load_from_arguments path sources
   in
   if String.Map.is_empty classpath.sources then
     L.(die InternalError) "Failed to load any Java source code" ;
