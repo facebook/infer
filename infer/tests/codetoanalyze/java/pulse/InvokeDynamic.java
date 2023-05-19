@@ -54,4 +54,64 @@ public class InvokeDynamic {
     Function<String, Integer> f = (s) -> s.length();
     return f.apply(null);
   }
+
+  static class A {
+    int val;
+  }
+
+  static class Box {
+    A a;
+
+    public Box(A a) {
+      this.a = a;
+    }
+
+    public Box map(Function<A, A> f) {
+      return new Box(f.apply(this.a));
+    }
+  }
+
+  public static A mix(A a1, A a2) {
+    if (a1 == null && a2 == null) return null;
+    else return new A();
+  }
+
+  // this one uses abduction
+  public static A sum(A a1, A a2) {
+    A a = new A();
+    a.val = a1.val + a2.val;
+    return a;
+  }
+
+  int testBoxMapMixBad() {
+    A a0 = null;
+    Box b = new Box(null);
+    Function<A, A> f = (a) -> mix(a0, a);
+    return b.map(f).a.val;
+  }
+
+  int testBoxMapMixGood(A a0) {
+    Box b = new Box(new A());
+    Function<A, A> f = (a) -> mix(a0, a);
+    return b.map(f).a.val;
+  }
+
+  int testBoxMapSum1Bad(A a0) {
+    Box b = new Box(null);
+    Function<A, A> f = (a) -> sum(a0, a);
+    return b.map(f).a.val;
+  }
+
+  int testBoxMapSum2Bad(A a1) {
+    Box b = new Box(a1);
+    Function<A, A> f = (a) -> sum(null, a);
+    return b.map(f).a.val;
+  }
+
+  int testBoxMapSumGood() {
+    Box b = new Box(new A());
+    A a0 = new A();
+    Function<A, A> f = (a) -> sum(a0, a);
+    return b.map(f).a.val;
+  }
 }
