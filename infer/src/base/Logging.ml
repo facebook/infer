@@ -490,23 +490,27 @@ let d_increase_indent () = d_printf "  @["
 
 let d_decrease_indent () = d_printf "@]"
 
-let d_call_with_indent_impl ~f =
-  d_increase_indent () ;
-  let result = f () in
-  d_decrease_indent () ;
-  d_ln () ;
-  (* Without a new line decreasing identation does not fully work *)
-  result
-
-
-let d_with_indent ?pp_result ~name f =
+let d_with_indent ?name_color ?(collapsible = false) ?(escape_result = true) ?pp_result ~name f =
   if not Config.write_html then f ()
-  else (
-    d_printf "Executing %s:@\n" name ;
-    let result = d_call_with_indent_impl ~f in
+  else
+    let block_tag, name_tag = if collapsible then ("details", "summary") else ("div", "div") in
+    (* Open details block that has a summary + collapsible execution trace *)
+    d_printf "<%s class='d_with_indent'>" block_tag ;
+    (* Write a summary that also acts as a toggle for details  *)
+    d_printf "<%s class='d_with_indent_name'>" name_tag ;
+    d_printf_escaped ?color:name_color "%s" name ;
+    d_printf "</%s>" name_tag ;
+    (* Open a paragraph for the log of [f] *)
+    d_printf "<DIV class='details_child'>" ;
+    let result = f () in
+    d_printf "</DIV>" ;
     (* Print result if needed *)
     Option.iter pp_result ~f:(fun pp_result ->
-        d_printf "Result of %s:@\n" name ;
-        d_call_with_indent_impl ~f:(fun () -> d_printf_escaped "%a" pp_result result) ;
-        d_ln () ) ;
-    result )
+        d_printfln "<DIV class='details_result'>" ;
+        d_printfln ~color:Green "Result of %s" name ;
+        let ppf = if escape_result then d_printf_escaped else d_printf in
+        ppf "%a" pp_result result ;
+        d_printfln "</DIV>" ) ;
+    (* Close details *)
+    d_printf "</%s>" block_tag ;
+    result

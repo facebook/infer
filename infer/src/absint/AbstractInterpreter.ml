@@ -337,19 +337,20 @@ struct
           if n_disjuncts >= limit then (
             L.d_printfln "@[<v2>Reached max disjuncts limit, skipping disjunct #%d@;@]" i ;
             (post_astate, n_disjuncts) )
-          else (
-            L.d_printfln "@[<v2>Executing instruction from disjunct #%d@;" i ;
-            (* check timeout once per disjunct to execute instead of once for all disjuncts *)
-            Timer.check_timeout () ;
-            let disjuncts', non_disj' =
-              T.exec_instr (pre_disjunct, non_disj) analysis_data node instr
-            in
-            L.d_printfln "@]@\n" ;
-            ( if Config.write_html then
-                let n = List.length disjuncts' in
-                L.d_printfln "@[Got %d disjunct%s back@]" n (if Int.equal n 1 then "" else "s") ) ;
-            let post_disj', n = Domain.join_up_to ~limit ~into:post disjuncts' in
-            ((post_disj', non_disj' :: non_disj_astates), n) ) )
+          else
+            let name = "Executing instruction from disjunct #" ^ string_of_int i in
+            L.d_with_indent ~name (fun () ->
+                (* check timeout once per disjunct to execute instead of once for all disjuncts *)
+                Timer.check_timeout () ;
+                let disjuncts', non_disj' =
+                  T.exec_instr (pre_disjunct, non_disj) analysis_data node instr
+                in
+                ( if Config.write_html then
+                    let n = List.length disjuncts' in
+                    L.d_printfln "@[Got %d disjunct%s back@]" n (if Int.equal n 1 then "" else "s")
+                ) ;
+                let post_disj', n = Domain.join_up_to ~limit ~into:post disjuncts' in
+                ((post_disj', non_disj' :: non_disj_astates), n) ) )
     in
     (disjuncts, List.fold ~init:T.NonDisjDomain.bottom ~f:T.NonDisjDomain.join non_disj_astates)
 
@@ -418,6 +419,14 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
   (** extract the precondition of node [n] from [inv_map] *)
   let extract_pre node_id inv_map = extract_state node_id inv_map |> Option.map ~f:State.pre
 
+  let pp_domain_html f state =
+    let domain_pp_escaped f state =
+      F.fprintf f "%s" (F.asprintf "%a" Domain.pp state |> Escape.escape_xml)
+    in
+    F.fprintf f "<DETAILS class='state'><SUMMARY>Show/hide state</SUMMARY><P>%a</P></DETAILS>"
+      domain_pp_escaped state
+
+
   let debug_absint_operation op =
     let pp_op fmt op =
       match op with
@@ -428,14 +437,14 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
     in
     let left, right, result = match op with `Join lrr | `Widen (_, lrr) -> lrr in
     let pp_right f =
-      if phys_equal right left then F.pp_print_string f "= LEFT" else Domain.pp f right
+      if phys_equal right left then F.pp_print_string f "= LEFT" else pp_domain_html f right
     in
     let pp_result f =
       if phys_equal result left then F.pp_print_string f "= LEFT"
       else if phys_equal result right then F.pp_print_string f "= RIGHT"
-      else Domain.pp f result
+      else pp_domain_html f result
     in
-    L.d_printfln_escaped "%a@\n@\nLEFT:   %a@\nRIGHT:  %t@\nRESULT: %t@." pp_op op Domain.pp left
+    L.d_printfln "%a@\n@\nLEFT:   %a@\nRIGHT:  %t@\nRESULT: %t@." pp_op op pp_domain_html left
       pp_right pp_result
 
 
@@ -445,15 +454,15 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
         debug_absint_operation (`Join (left, right, result))
     | _, _ ->
         let pp_into f =
-          Option.iter into ~f:(fun into -> F.fprintf f "@[<2>INTO:@ %a@]@\n@\n" Domain.pp into)
+          Option.iter into ~f:(fun into -> F.fprintf f "@[<2>INTO:@ %a@]@\n@\n" pp_domain_html into)
         in
         (* We set the max number of [inputs] as 99, which is the number of predecessor nodes, but we
            do not expect it to be hit in usual CFGs. *)
-        L.d_printfln_escaped "JOIN@\n@\n@[<v>INPUTS:@,%a@]@\n@\n%t@[<2>RESULT:@ %a@]@\n"
+        L.d_printfln "JOIN@\n@\n@[<v>INPUTS:@,%a@]@\n@\n%t@[<2>RESULT:@ %a@]@\n"
           (IList.pp_print_list ~max:99 (fun f (node, astate) ->
                F.fprintf f "@[<2>FROM Node %a:@ @[%a@]@]" Procdesc.Node.pp
-                 (Node.underlying_node node) Domain.pp astate ) )
-          inputs pp_into Domain.pp result
+                 (Node.underlying_node node) pp_domain_html astate ) )
+          inputs pp_into pp_domain_html result
 
 
   (** reference to log errors only at the innermost recursive call *)
@@ -469,7 +478,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
       match post with
       | Ok astate_post ->
           if phys_equal astate_post pre then F.pp_print_string f "STATE UNCHANGED"
-          else F.fprintf f "STATE:@\n@[%a@]" Domain.pp astate_post
+          else F.fprintf f "STATE:@\n@[%a@]" pp_domain_html astate_post
       | Error err ->
           pp_post_error f err
     in
@@ -487,15 +496,19 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
 
   let exec_node_instrs old_state_opt ~pp_instr proc_data node pre =
     let instrs = CFG.instrs node in
-    if Config.write_html then L.d_printfln_escaped "PRE STATE:@\n@[%a@]@\n" Domain.pp pre ;
+    if Config.write_html then L.d_printfln "PRE STATE:@\n@[%a@]@\n" pp_domain_html pre ;
     let exec_instr idx pre instr =
       call_once_in_ten ~f:!ProcessPoolState.update_heap_words () ;
       AnalysisState.set_instr instr ;
       let pp_result f result = dump_html f pre result in
       let result =
-        L.d_with_indent ~name:"exec_instr" ~pp_result (fun () ->
-            Option.iter (pp_instr pre instr)
-              ~f:(L.d_printfln_escaped ~color:Pp.Blue "@[<h>INSTR=  %t@]") ;
+        let instr_str =
+          pp_instr pre instr
+          |> Option.value_map ~f:(fun ppf -> F.asprintf "%t" ppf) ~default:"<unknown>"
+        in
+        let name = "exec_instr " ^ instr_str in
+        L.d_with_indent ~name_color:Blue ~collapsible:true ~name ~pp_result ~escape_result:false
+          (fun () ->
             try
               let post = TransferFunctions.exec_instr pre proc_data node idx instr in
               Timer.check_timeout () ;
