@@ -16,10 +16,12 @@ PROJECT_ROOT ?= $(TESTS_DIR)
 
 JAVAC_FLAGS = -g -source 8 -target 8
 
+KOTLINC_FLAGS = -nowarn
+
 infer-out$(TEST_SUFFIX)/report.json: $(JAVA_DEPS) $(JAVA_SOURCES) $(KOTLIN_SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Testing infer/java/kotlin in $(TEST_REL_DIR),\
 	  $(INFER_BIN) capture --project-root $(PROJECT_ROOT) --kotlin-capture \
-	    -o $(@D) $(INFER_OPTIONS) -- $(KOTLINC) -cp $(CLASSPATH) $(KOTLIN_SOURCES) $(JAVA_SOURCES) && \
+	    -o $(@D) $(INFER_OPTIONS) -- $(KOTLINC) $(KOTLINC_FLAGS) -cp $(CLASSPATH) $(KOTLIN_SOURCES) $(JAVA_SOURCES) && \
 	  $(INFER_BIN) capture --continue --project-root $(PROJECT_ROOT) --dump-duplicate-symbols \
 	    -o $(@D) $(INFER_OPTIONS) -- $(JAVAC) $(JAVAC_FLAGS) -cp $(CLASSPATH) $(JAVA_SOURCES) \
 	    && \

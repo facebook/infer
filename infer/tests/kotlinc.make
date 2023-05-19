@@ -12,7 +12,9 @@
 include $(TESTS_DIR)/infer.make
 include $(TESTS_DIR)/java.make
 
+KOTLINC_FLAGS = -nowarn
+
 infer-out$(TEST_SUFFIX)/report.json: $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Testing infer/kotlin in $(TEST_REL_DIR),\
 	  $(INFER_BIN) --kotlin-capture -o $(@D) $(INFER_OPTIONS) -- \
-	  $(KOTLINC) -cp $(CLASSPATH) $(SOURCES))
+	  $(KOTLINC) $(KOTLINC_FLAGS) -cp $(CLASSPATH) $(SOURCES))
