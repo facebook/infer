@@ -9,15 +9,10 @@
 # Makefiles that include this one must define the SOURCES variable, and may optionally define
 # INFER_OPTIONS, INFERPRINT_OPTIONS, CLEAN_EXTRA.
 
-OBJECTS = $(patsubst %.kt,%.class,$(SOURCES))
-SOURCES_ARGS = $(patsubst %,--sources %,$(SOURCES))
-
-$(OBJECTS): $(SOURCES)
-	$(QUIET)$(call silent_on_success,Compile Kotlin code,$(KOTLINC) -cp $(CLASSPATH) $(SOURCES))
-
 include $(TESTS_DIR)/infer.make
 include $(TESTS_DIR)/java.make
 
-infer-out$(TEST_SUFFIX)/report.json: $(OBJECTS) $(MAKEFILE_LIST)
+infer-out$(TEST_SUFFIX)/report.json: $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Testing infer/kotlin in $(TEST_REL_DIR),\
-	  $(INFER_BIN) --kotlin-capture --generated-classes . $(SOURCES_ARGS) -o $(@D) $(INFER_OPTIONS))
+	  $(INFER_BIN) --kotlin-capture -o $(@D) $(INFER_OPTIONS) -- \
+	  $(KOTLINC) -cp $(CLASSPATH) $(SOURCES))
