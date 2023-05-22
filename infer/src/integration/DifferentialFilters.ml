@@ -142,6 +142,25 @@ let skip_duplicated_types_on_filenames renamings (diff : Differential.t) : Diffe
   {introduced; fixed; preexisting; costs_summary= diff.costs_summary}
 
 
+type stat = {all: int; mutable filtered_out: int; mutable filtered_out_header: int}
+
+let incr_stat is_interesting_path file stat =
+  if not is_interesting_path then (
+    stat.filtered_out <- stat.filtered_out + 1 ;
+    if String.is_suffix file ~suffix:".h" then
+      stat.filtered_out_header <- stat.filtered_out_header + 1 )
+
+
+let log_to_scuba {all; filtered_out; filtered_out_header} =
+  let mk_entry ~label ~value =
+    LogEntry.mk_count ~label:(Printf.sprintf "differential_filters.%s" label) ~value
+  in
+  ScubaLogging.log_many
+    [ mk_entry ~label:"all" ~value:all
+    ; mk_entry ~label:"filtered_out" ~value:filtered_out
+    ; mk_entry ~label:"filtered_out_header" ~value:filtered_out_header ]
+
+
 (* Strip issues whose paths are not among those we're interested in *)
 let interesting_paths_filter (interesting_paths : SourceFile.t list option) =
   match interesting_paths with
@@ -154,12 +173,20 @@ let interesting_paths_filter (interesting_paths : SourceFile.t list option) =
                else None )
         |> String.Set.of_list
       in
-      fun report ->
-        List.filter
-          ~f:(fun issue -> String.Set.mem interesting_paths_set issue.Jsonbug_t.file)
-          report
+      fun ~do_log report ->
+        let stat = {all= List.length report; filtered_out= 0; filtered_out_header= 0} in
+        let filtered_report =
+          List.filter
+            ~f:(fun issue ->
+              let is_interesting_path = String.Set.mem interesting_paths_set issue.Jsonbug_t.file in
+              if do_log then incr_stat is_interesting_path issue.Jsonbug_t.file stat ;
+              is_interesting_path )
+            report
+        in
+        if do_log then log_to_scuba stat ;
+        filtered_report
   | None ->
-      Fn.id
+      fun ~do_log:_ -> Fn.id
 
 
 let do_filter (diff : Differential.t) (renamings : FileRenamings.t) ~(skip_duplicated_types : bool)
@@ -167,7 +194,7 @@ let do_filter (diff : Differential.t) (renamings : FileRenamings.t) ~(skip_dupli
   let paths_filter = interesting_paths_filter interesting_paths in
   let apply_paths_filter_if_needed label issues =
     if List.exists ~f:(PolyVariantEqual.( = ) label) Config.differential_filter_set then
-      paths_filter issues
+      paths_filter ~do_log:(PolyVariantEqual.( = ) label `Introduced) issues
     else issues
   in
   let diff' =
@@ -184,5 +211,6 @@ module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
 
   let skip_duplicated_types_on_filenames = skip_duplicated_types_on_filenames
 
-  let interesting_paths_filter = interesting_paths_filter
+  let interesting_paths_filter interesting_paths report =
+    interesting_paths_filter interesting_paths ~do_log:false report
 end
