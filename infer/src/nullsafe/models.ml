@@ -134,7 +134,7 @@ let find_nonnullable_alternative proc_name =
 
 
 let is_field_nonnullable field_name =
-  Logging.d_with_indent ~name:"is_field_nonnullable" (fun () ->
+  Logging.d_with_indent "is_field_nonnullable" ~f:(fun () ->
       let full_name = Fieldname.to_full_string field_name in
       let from_model =
         Hashtbl.find_opt field_nullability_table full_name

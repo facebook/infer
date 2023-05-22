@@ -570,7 +570,7 @@ let call tenv path ~caller_proc_desc
   match (analyze_dependency callee_pname : PulseSummary.t option) with
   | Some summary ->
       let call_aux exec_states =
-        L.d_with_indent ~name:"call->call_aux" (fun () ->
+        L.d_with_indent "call->call_aux" ~f:(fun () ->
             let results, contradiction =
               call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
                 (IRAttributes.load_exn callee_pname)

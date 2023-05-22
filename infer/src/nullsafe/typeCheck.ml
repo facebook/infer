@@ -120,7 +120,7 @@ type checks = {eradicate: bool; check_ret_type: check_return_type list}
 let rec typecheck_expr ({IntraproceduralAnalysis.tenv; proc_desc= curr_proc_desc} as analysis_data)
     ~nullsafe_mode find_canonical_duplicate visited checks node instr_ref typestate e tr_default loc
     : TypeState.range =
-  L.d_with_indent ~name:"typecheck_expr" ~pp_result:TypeState.pp_range (fun () ->
+  L.d_with_indent "typecheck_expr" ~pp_result:TypeState.pp_range ~f:(fun () ->
       L.d_printfln "Expr: %a" Exp.pp e ;
       match e with
       (* null literal or 0 *)
@@ -260,7 +260,7 @@ let funcall_exp_to_original_pvar_exp tenv curr_pname typestate exp ~is_assignmen
 
 let add_field_to_typestate_if_absent tenv access_loc typestate pvar object_origin field_name
     ~field_class_typ ~class_under_analysis =
-  L.d_with_indent ~name:"add_field_to_typestate_if_absent" (fun () ->
+  L.d_with_indent "add_field_to_typestate_if_absent" ~f:(fun () ->
       match TypeState.lookup_pvar pvar typestate with
       | Some _ ->
           typestate
@@ -290,10 +290,10 @@ let add_field_to_typestate_if_absent tenv access_loc typestate pvar object_origi
 let convert_complex_exp_to_pvar_and_register_field_in_typestate tenv idenv curr_pname
     (curr_annotated_signature : AnnotatedSignature.t) ~node ~(original_node : Procdesc.Node.t)
     ~is_assignment exp_ typestate loc =
-  L.d_with_indent ~name:"convert_complex_exp_to_pvar_and_register_field_in_typestate"
+  L.d_with_indent "convert_complex_exp_to_pvar_and_register_field_in_typestate"
     ~pp_result:(fun f (exp, typestate) ->
       F.fprintf f "Exp: %a;@\nTypestate: @\n%a" Exp.pp exp TypeState.pp typestate )
-    (fun () ->
+    ~f:(fun () ->
       let exp =
         handle_field_access_via_temporary idenv curr_pname typestate (IDEnv.expand_expr idenv exp_)
       in
@@ -400,7 +400,7 @@ let convert_complex_exp_to_pvar_and_register_field_in_typestate tenv idenv curr_
 let convert_complex_exp_to_pvar tenv idenv curr_pname ~is_assignment
     (curr_annotated_signature : AnnotatedSignature.t) ~node ~(original_node : Procdesc.Node.t) exp
     typestate loc =
-  L.d_with_indent ~name:"convert_complex_exp_to_pvar" ~pp_result:Exp.pp (fun () ->
+  L.d_with_indent "convert_complex_exp_to_pvar" ~pp_result:Exp.pp ~f:(fun () ->
       (* For now, we implement the function via the generic version that modifies the typestate.
       *)
       let exp, _ =
@@ -462,7 +462,7 @@ let drop_unchecked_signature_params proc_attributes annotated_signature =
 (* Apply a function to a pvar and its associated content if front-end generated. *)
 let pvar_apply instr_ref idenv tenv curr_pname curr_annotated_signature loc handle_pvar typestate
     pvar node =
-  L.d_with_indent ~name:"pvar_apply" ~pp_result:TypeState.pp (fun () ->
+  L.d_with_indent "pvar_apply" ~pp_result:TypeState.pp ~f:(fun () ->
       let typestate' = handle_pvar typestate pvar in
       let curr_node = TypeErr.InstrRef.get_node instr_ref in
       let frontent_variable_assignment =
@@ -706,8 +706,8 @@ let do_map_put ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as anal
    The main idea is to take a quick look back in the CFG for any assignments
    from [pvar]. *)
 let handle_assignment_in_condition_for_sil_prune idenv node pvar =
-  L.d_with_indent ~pp_result:(Pp.option Exp.pp) ~name:"handle_assignment_in_condition_for_sil_prune"
-    (fun () ->
+  L.d_with_indent ~pp_result:(Pp.option Exp.pp) "handle_assignment_in_condition_for_sil_prune"
+    ~f:(fun () ->
       L.d_printfln "Pvar being pruned: %a" (Pvar.pp Pp.text) pvar ;
       (* We need to find the first *unique* immediate predecessor with non-empty
          list of instructions. Since some nodes like Join_node can have empty list of instrs,
@@ -748,7 +748,7 @@ let handle_assignment_in_condition_for_sil_prune idenv node pvar =
 let pp_normalized_cond fmt (_, exp) = Exp.pp fmt exp
 
 let rec normalize_cond_for_sil_prune_rec idenv ~node ~original_node cond =
-  L.d_with_indent ~name:"normalize_cond_for_sil_prune_rec" ~pp_result:pp_normalized_cond (fun () ->
+  L.d_with_indent "normalize_cond_for_sil_prune_rec" ~pp_result:pp_normalized_cond ~f:(fun () ->
       L.d_printfln "cond=%a" Exp.pp cond ;
       match cond with
       | Exp.UnOp (Unop.LNot, c, top) ->
@@ -1123,7 +1123,7 @@ let typecheck_sil_call_function
     ({IntraproceduralAnalysis.proc_desc= curr_pdesc; tenv; _} as analysis_data)
     find_canonical_duplicate checks instr_ref typestate idenv ~callee_pname curr_annotated_signature
     calls_this ~nullsafe_mode ret_id_typ etl_ loc callee_pname_java cflags node =
-  L.d_with_indent ~name:"typecheck_sil_call_function" (fun () ->
+  L.d_with_indent "typecheck_sil_call_function" ~f:(fun () ->
       let callee_attributes =
         match PatternMatch.lookup_attributes tenv callee_pname with
         | Some proc_attributes ->

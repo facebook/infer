@@ -338,8 +338,7 @@ struct
             L.d_printfln "@[<v2>Reached max disjuncts limit, skipping disjunct #%d@;@]" i ;
             (post_astate, n_disjuncts) )
           else
-            let name = "Executing instruction from disjunct #" ^ string_of_int i in
-            L.d_with_indent ~name (fun () ->
+            L.d_with_indent "Executing instruction from disjunct #%d" i ~f:(fun () ->
                 (* check timeout once per disjunct to execute instead of once for all disjuncts *)
                 Timer.check_timeout () ;
                 let disjuncts', non_disj' =
@@ -502,13 +501,15 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
       AnalysisState.set_instr instr ;
       let pp_result f result = dump_html f pre result in
       let result =
-        let instr_str =
-          pp_instr pre instr
-          |> Option.value_map ~f:(fun ppf -> F.asprintf "%t" ppf) ~default:"<unknown>"
+        let pp_instr =
+          match pp_instr pre instr with
+          | Some ppf ->
+              ppf
+          | None ->
+              fun fmt -> F.fprintf fmt "<unknown>"
         in
-        let name = "exec_instr " ^ instr_str in
-        L.d_with_indent ~name_color:Blue ~collapsible:true ~name ~pp_result ~escape_result:false
-          (fun () ->
+        L.d_with_indent ~name_color:Blue ~collapsible:true ~pp_result ~escape_result:false
+          "exec_instr %t" pp_instr ~f:(fun () ->
             try
               let post = TransferFunctions.exec_instr pre proc_data node idx instr in
               Timer.check_timeout () ;

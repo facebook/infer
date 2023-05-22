@@ -490,27 +490,31 @@ let d_increase_indent () = d_printf "  @["
 
 let d_decrease_indent () = d_printf "@]"
 
-let d_with_indent ?name_color ?(collapsible = false) ?(escape_result = true) ?pp_result ~name f =
-  if not Config.write_html then f ()
+let d_with_indent ?name_color ?(collapsible = false) ?(escape_result = true) ?pp_result ~f name_fmt
+    =
+  if not Config.write_html then F.ikfprintf (fun _ -> f ()) Format.err_formatter name_fmt
   else
-    let block_tag, name_tag = if collapsible then ("details", "summary") else ("div", "div") in
-    (* Open details block that has a summary + collapsible execution trace *)
-    d_printf "<%s class='d_with_indent'>" block_tag ;
-    (* Write a summary that also acts as a toggle for details  *)
-    d_printf "<%s class='d_with_indent_name'>" name_tag ;
-    d_printf_escaped ?color:name_color "%s" name ;
-    d_printf "</%s>" name_tag ;
-    (* Open a paragraph for the log of [f] *)
-    d_printf "<DIV class='details_child'>" ;
-    let result = f () in
-    d_printf "</DIV>" ;
-    (* Print result if needed *)
-    Option.iter pp_result ~f:(fun pp_result ->
-        d_printfln "<DIV class='details_result'>" ;
-        d_printfln ~color:Green "Result of %s" name ;
-        let ppf = if escape_result then d_printf_escaped else d_printf in
-        ppf "%a" pp_result result ;
-        d_printfln "</DIV>" ) ;
-    (* Close details *)
-    d_printf "</%s>" block_tag ;
-    result
+    let print_block name =
+      let block_tag, name_tag = if collapsible then ("details", "summary") else ("div", "div") in
+      (* Open details block that has a summary + collapsible execution trace *)
+      d_printf "<%s class='d_with_indent'>" block_tag ;
+      (* Write a summary that also acts as a toggle for details  *)
+      d_printf "<%s class='d_with_indent_name'>" name_tag ;
+      d_printf_escaped ?color:name_color "%s" name ;
+      d_printf "</%s>" name_tag ;
+      (* Open a paragraph for the log of [f] *)
+      d_printf "<DIV class='details_child'>" ;
+      let result = f () in
+      d_printf "</DIV>" ;
+      (* Print result if needed *)
+      Option.iter pp_result ~f:(fun pp_result ->
+          d_printfln "<DIV class='details_result'>" ;
+          d_printfln ~color:Green "Result of %s" name ;
+          let ppf = if escape_result then d_printf_escaped else d_printf in
+          ppf "%a" pp_result result ;
+          d_printfln "</DIV>" ) ;
+      (* Close details *)
+      d_printf "</%s>" block_tag ;
+      result
+    in
+    F.kasprintf print_block name_fmt

@@ -145,9 +145,9 @@ val d_with_indent :
   -> ?collapsible:bool
   -> ?escape_result:bool
   -> ?pp_result:(F.formatter -> 'a -> unit)
-  -> name:string
-  -> (unit -> 'a)
-  -> 'a
+  -> f:(unit -> 'a)
+  -> ('b, F.formatter, unit, 'a) format4
+  -> 'b
 (** Execute arbitrary function (the last argument) with a given [name] so that all logs written
     inside (if any) are written with indentation.
 
