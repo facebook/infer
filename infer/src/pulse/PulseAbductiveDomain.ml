@@ -1431,9 +1431,10 @@ let topl_view : t -> PulseTopl.pulse_state = function
 
 let filter_for_summary tenv proc_name astate0 =
   let open SatUnsat.Import in
-  L.d_printfln "Canonicalizing...@\n" ;
+  L.d_printfln "Canonicalizing..." ;
   let* astate_before_filter = canonicalize astate0 in
-  L.d_printfln "Canonicalized state: %a@\n" pp astate_before_filter ;
+  let pp_state = Pp.html_collapsible_block ~name:"Show/hide canonicalized state" pp in
+  L.d_printfln "%a" pp_state astate_before_filter ;
   (* Remove the stack from the post as it's not used: the values of formals are the same as in the
      pre. Moreover, formals can be treated as local variables inside the function's body so we need
      to restore their initial values at the end of the function. Removing them altogether achieves

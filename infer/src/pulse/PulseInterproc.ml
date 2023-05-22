@@ -44,6 +44,8 @@ let pp_call_state fmt {astate; subst; rev_subst; visited} =
     rev_subst AddressSet.pp visited
 
 
+let pp_call_state = Pp.html_collapsible_block ~name:"Show/hide the call state" pp_call_state
+
 type contradiction =
   | Aliasing of
       { addr_caller: AbstractValue.t
@@ -671,7 +673,7 @@ let record_need_closure_specialization callee_summary call_state =
 
 let apply_unknown_effects callee_summary call_state =
   let open IOption.Let_syntax in
-  L.d_printfln "call_state = {%a}@\n" pp_call_state call_state ;
+  L.d_printfln "Applying unknown effects, call_state before = %a" pp_call_state call_state ;
   let is_modified_by_call addr_caller access =
     match AddressMap.find_opt addr_caller call_state.rev_subst with
     | None ->
@@ -1005,69 +1007,77 @@ let check_all_taint_valid path callee_proc_name call_location callee_summary ast
    - if aliasing is introduced at any time then give up *)
 let apply_summary path callee_proc_name call_location ~callee_summary ~captured_formals
     ~captured_actuals ~formals ~actuals astate =
-  L.d_printfln_escaped "Applying pre/post for %a(%a):@\n%a" Procname.pp callee_proc_name
-    (Pp.seq ~sep:"," (fun f (var, _) -> Var.pp f var))
-    formals AbductiveDomain.Summary.pp callee_summary ;
-  let empty_call_state =
-    {astate; subst= AddressMap.empty; rev_subst= AddressMap.empty; visited= AddressSet.empty}
+  let aux () =
+    let empty_call_state =
+      {astate; subst= AddressMap.empty; rev_subst= AddressMap.empty; visited= AddressSet.empty}
+    in
+    (* read the precondition *)
+    match
+      materialize_pre path callee_proc_name call_location callee_summary ~captured_formals
+        ~captured_actuals ~formals ~actuals empty_call_state
+    with
+    | exception Contradiction reason ->
+        (* can't make sense of the pre-condition in the current context: give up on that particular
+           pre/post pair *)
+        L.d_printfln ~color:Orange "Cannot apply precondition: %a@\n" pp_contradiction reason ;
+        log_contradiction reason ;
+        (Unsat, Some reason)
+    | result -> (
+      try
+        let res =
+          let open PulseResult.Let_syntax in
+          let* call_state = result in
+          L.d_printfln "Pre applied successfully, call_state after = %a" pp_call_state call_state ;
+          let pre = AbductiveDomain.Summary.get_pre callee_summary in
+          let* astate =
+            check_all_valid path callee_proc_name call_location ~pre call_state
+            |> AccessResult.of_result
+          in
+          let* astate = check_config_usage_at_call call_location ~pre call_state.subst astate in
+          (* reset [visited] *)
+          let call_state = {call_state with astate; visited= AddressSet.empty} in
+          (* apply the postcondition *)
+          let* call_state, return_caller =
+            apply_post path callee_proc_name call_location callee_summary ~captured_formals
+              ~captured_actuals ~formals ~actuals call_state
+          in
+          let astate =
+            if Topl.is_active () then
+              let callee_is_manifest = PulseArithmetic.is_manifest callee_summary in
+              AbductiveDomain.Topl.large_step ~call_location ~callee_proc_name
+                ~substitution:call_state.subst
+                ~callee_summary:(AbductiveDomain.Summary.get_topl callee_summary)
+                ~callee_is_manifest call_state.astate
+            else call_state.astate
+          in
+          let astate =
+            Option.fold ~init:astate return_caller ~f:(fun astate ret_v ->
+                Decompiler.add_call_source (fst ret_v) (Call callee_proc_name) actuals astate )
+          in
+          let+ astate =
+            (* This has to happen after the post has been applied so that we are aware of any
+               sanitizers applied to tainted values too, otherwise we'll report false positives if
+               the callee both taints and sanitizes a value *)
+            check_all_taint_valid path callee_proc_name call_location callee_summary astate
+              call_state
+          in
+          (astate, return_caller, call_state.subst)
+        in
+        let contradiciton =
+          let pvars = AbductiveDomain.Summary.need_dynamic_type_specialization callee_summary in
+          if Pvar.Set.is_empty pvars then None else Some (DynamicTypeNeeded pvars)
+        in
+        (Sat res, contradiciton)
+      with Contradiction reason ->
+        L.d_printfln "Cannot apply post-condition: %a" pp_contradiction reason ;
+        log_contradiction reason ;
+        (Unsat, Some reason) )
   in
-  (* read the precondition *)
-  match
-    materialize_pre path callee_proc_name call_location callee_summary ~captured_formals
-      ~captured_actuals ~formals ~actuals empty_call_state
-  with
-  | exception Contradiction reason ->
-      (* can't make sense of the pre-condition in the current context: give up on that particular
-         pre/post pair *)
-      L.d_printfln ~color:Orange "Cannot apply precondition: %a@\n" pp_contradiction reason ;
-      log_contradiction reason ;
-      (Unsat, Some reason)
-  | result -> (
-    try
-      let res =
-        let open PulseResult.Let_syntax in
-        let* call_state = result in
-        L.d_printfln "Pre applied successfully. call_state=%a" pp_call_state call_state ;
-        let pre = AbductiveDomain.Summary.get_pre callee_summary in
-        let* astate =
-          check_all_valid path callee_proc_name call_location ~pre call_state
-          |> AccessResult.of_result
-        in
-        let* astate = check_config_usage_at_call call_location ~pre call_state.subst astate in
-        (* reset [visited] *)
-        let call_state = {call_state with astate; visited= AddressSet.empty} in
-        (* apply the postcondition *)
-        let* call_state, return_caller =
-          apply_post path callee_proc_name call_location callee_summary ~captured_formals
-            ~captured_actuals ~formals ~actuals call_state
-        in
-        let astate =
-          if Topl.is_active () then
-            let callee_is_manifest = PulseArithmetic.is_manifest callee_summary in
-            AbductiveDomain.Topl.large_step ~call_location ~callee_proc_name
-              ~substitution:call_state.subst
-              ~callee_summary:(AbductiveDomain.Summary.get_topl callee_summary)
-              ~callee_is_manifest call_state.astate
-          else call_state.astate
-        in
-        let astate =
-          Option.fold ~init:astate return_caller ~f:(fun astate ret_v ->
-              Decompiler.add_call_source (fst ret_v) (Call callee_proc_name) actuals astate )
-        in
-        let+ astate =
-          (* This has to happen after the post has been applied so that we are aware of any
-             sanitizers applied to tainted values too, otherwise we'll report false positives if
-             the callee both taints and sanitizes a value *)
-          check_all_taint_valid path callee_proc_name call_location callee_summary astate call_state
-        in
-        (astate, return_caller, call_state.subst)
-      in
-      let contradiciton =
-        let pvars = AbductiveDomain.Summary.need_dynamic_type_specialization callee_summary in
-        if Pvar.Set.is_empty pvars then None else Some (DynamicTypeNeeded pvars)
-      in
-      (Sat res, contradiciton)
-    with Contradiction reason ->
-      L.d_printfln "Cannot apply post-condition: %a" pp_contradiction reason ;
-      log_contradiction reason ;
-      (Unsat, Some reason) )
+  let pp_formals = Pp.seq ~sep:"," (fun f (var, _) -> Var.pp f var) in
+  let pp_summary =
+    Pp.html_collapsible_block ~name:"Show/hide the summary" AbductiveDomain.Summary.pp
+  in
+  L.d_with_indent ~collapsible:true "Applying pre/post for %a(%a):" Procname.pp callee_proc_name
+    pp_formals formals ~f:(fun () ->
+      L.d_printfln "%a" pp_summary callee_summary ;
+      aux () )
