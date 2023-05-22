@@ -123,7 +123,7 @@ val mk_fresh_label : t -> t * string
 val map : f:(t -> 'a -> t * 'b) -> env:t -> 'a list -> t * 'b list
 (** Similar to [List.map] but an [env] is threaded along the way *)
 
-val enter_proc : t -> t
+val enter_proc : is_toplevel:bool -> t -> t
 (** Set the environment when entering a new code unit (like reset the instruction buffer, or
     id/label generators. *)
 
@@ -180,3 +180,6 @@ val register_class : t -> string -> t
 
 val get_classes : t -> string list
 (** Get back the list of registered classes *)
+
+val is_toplevel : t -> bool
+(** Are we processing top level instructions, or something in a function/class ? *)

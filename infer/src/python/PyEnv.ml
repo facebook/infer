@@ -217,6 +217,7 @@ and shared =
   ; builtins: BuiltinSet.t
   ; classes: string list
   ; toplevel_signatures: Signature.t Signature.Map.t
+  ; is_toplevel: bool
   ; next_label: int
   ; labels: label_info Labels.t }
 
@@ -309,6 +310,7 @@ let empty =
   ; builtins= BuiltinSet.empty
   ; classes= []
   ; toplevel_signatures= Signature.Map.empty
+  ; is_toplevel= true
   ; next_label= 0
   ; labels= Labels.empty }
 
@@ -317,8 +319,8 @@ let empty = {shared= empty; node= empty_node}
 
 let stack {node= {stack}} = stack
 
-let enter_proc {shared} =
-  let shared = {shared with idents= T.Ident.Set.empty; next_label= 0} in
+let enter_proc ~is_toplevel {shared} =
+  let shared = {shared with is_toplevel; idents= T.Ident.Set.empty; next_label= 0} in
   {shared; node= empty_node}
 
 
@@ -473,3 +475,5 @@ let register_class ({shared} as env) class_name =
 
 
 let get_classes {shared= {classes}} = classes
+
+let is_toplevel {shared= {is_toplevel}} = is_toplevel

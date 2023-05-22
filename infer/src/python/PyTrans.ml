@@ -80,24 +80,27 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let info = info ty in
       (env, `Ok exp, info)
   | Name ndx ->
-      let name = PyCommon.global co_names.(ndx) in
-      let var_name = var_name ~loc name in
-      let ({Env.typ; is_code} as info) =
-        T.VarName.Map.find_opt var_name (Env.globals env) |> Option.value ~default
-      in
-      (* If we are trying to load some code, use the dedicated builtin *)
-      if is_code then
-        let env, exp, typ = code_to_exp ~fun_or_class:true env name in
-        let info = {info with Env.typ} in
-        (env, `Ok exp, info)
+      if not (Env.is_toplevel env) then
+        L.die InternalError "TODO: load_cell inside a class declaration"
       else
-        let exp = T.Exp.Lvar var_name in
-        let loc = Env.loc env in
-        let env, id = Env.mk_fresh_ident env info in
-        let instr = T.Instr.Load {id; exp; typ; loc} in
-        let env = Env.push_instr env instr in
-        (* TODO: try to trace the type of names, not only global ones ? *)
-        (env, `Ok (T.Exp.Var id), info)
+        let name = PyCommon.global co_names.(ndx) in
+        let var_name = var_name ~loc name in
+        let ({Env.typ; is_code} as info) =
+          T.VarName.Map.find_opt var_name (Env.globals env) |> Option.value ~default
+        in
+        (* If we are trying to load some code, use the dedicated builtin *)
+        if is_code then
+          let env, exp, typ = code_to_exp ~fun_or_class:true env name in
+          let info = {info with Env.typ} in
+          (env, `Ok exp, info)
+        else
+          let exp = T.Exp.Lvar var_name in
+          let loc = Env.loc env in
+          let env, id = Env.mk_fresh_ident env info in
+          let instr = T.Instr.Load {id; exp; typ; loc} in
+          let env = Env.push_instr env instr in
+          (* TODO: try to trace the type of names, not only global ones ? *)
+          (env, `Ok (T.Exp.Var id), info)
   | VarName ndx ->
       let name = co_varnames.(ndx) in
       let exp = T.Exp.Lvar (var_name ~loc name) in
@@ -200,8 +203,8 @@ module STORE = struct
             Implements name = top-of-stack. namei is the index of name in the attribute co_names of
             the code object. The compiler tries to use [STORE_FAST] or [STORE_GLOBAL] if possible.
 
-            Notes: this should only happen in global nodes, to update global variables from the
-            global scope.
+            Notes: this might happen in toplevel code, where it's equivalent to [STORE_GLOBAL].
+            Otherwise, it stores information in the context of the current class declaration.
 
             In a function, local varialbes are updated using [STORE_FAST], and global variables are
             updated using [STORE_GLOBAL]. *)
@@ -218,7 +221,10 @@ module STORE = struct
       match kind with
       | FAST ->
           (co_varnames.(arg), false)
-      | NAME | GLOBAL ->
+      | NAME ->
+          if Env.is_toplevel env then (PyCommon.global co_names.(arg), true)
+          else L.die InternalError "[%s] TODO in class declrataion" opname
+      | GLOBAL ->
           (PyCommon.global co_names.(arg), true)
     in
     Debug.p "[%s] name = %s\n" opname name ;
@@ -1037,6 +1043,7 @@ let type_of_annotation typ =
 let to_proc_desc env loc enclosing_class name
     ({FFI.Code.co_argcount; co_varnames; instructions} as code) =
   Debug.p "\n\n[to_proc_desc] %s\n" name.T.ProcName.value ;
+  let is_toplevel = match enclosing_class with T.TopLevel -> true | _ -> false in
   let qualified_name = qualified_procname ~enclosing_class name in
   let pyObject = T.Typ.{typ= PyCommon.pyObject; attributes= []} in
   let nr_varnames = Array.length co_varnames in
@@ -1045,7 +1052,7 @@ let to_proc_desc env loc enclosing_class name
   let params = Array.map ~f:(var_name ~loc) params |> Array.to_list in
   let locals = Array.map ~f:(fun name -> (var_name ~loc name, pyObject)) locals |> Array.to_list in
   (* Create the original environment for this code unit *)
-  let env = Env.enter_proc env in
+  let env = Env.enter_proc ~is_toplevel env in
   let env, entry_label = Env.mk_fresh_label env in
   let label = node_name ~loc entry_label in
   let label_info = Env.Label.mk entry_label in
