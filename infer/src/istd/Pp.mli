@@ -64,6 +64,10 @@ val color_string : color -> string
 
 val html_with_color : color -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a -> unit
 
+val html_collapsible_block : name:string -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a -> unit
+(** Output the value in a named summary-details block. Both the name and the result of inner
+    pretty-printer will be escaped. *)
+
 val option : (F.formatter -> 'a -> unit) -> F.formatter -> 'a option -> unit
 
 val cli_args : F.formatter -> string list -> unit
