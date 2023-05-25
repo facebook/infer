@@ -8,7 +8,6 @@ TESTS_DIR = ../..
 include $(TESTS_DIR)/base.make
 
 SOURCES = ../codetoanalyze/hello.c
-OBJECTS = hello.o
 
 default: print
 
@@ -50,4 +49,4 @@ replace: test
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) $(OBJECTS) infer-out $(CLEAN_EXTRA)
+	$(REMOVE_DIR) infer-out $(CLEAN_EXTRA)

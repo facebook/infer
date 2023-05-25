@@ -7,17 +7,11 @@ TESTS_DIR = ../..
 
 APP_DIR = ../codetoanalyze/xcodebuild/simple_app
 SOURCES = $(wildcard $(APP_DIR)/simple_app/*.m)
-OBJECTS = $(APP_DIR)/app_built
 INFERPRINT_OPTIONS = --issues-tests
 
 include $(TESTS_DIR)/infer.make
 
 XCODEBUILD = xcodebuild -verbose -target simple_app -configuration Release -sdk iphonesimulator
-
-$(OBJECTS): $(SOURCES)
-	cd $(APP_DIR) && \
-	$(XCODEBUILD) && \
-	touch app_built
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
 	$(QUIET)cd $(APP_DIR) && \

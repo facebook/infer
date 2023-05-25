@@ -8,16 +8,11 @@ ROOT_DIR = $(TESTS_DIR)/../..
 
 BUCK_TARGET = //src:hello
 SOURCES = $(wildcard src/hello.c)
-OBJECTS = buck-out/gen/src/hello\#compile-hello.c.o1f717d69,default/hello.c.o
 INFER_OPTIONS = --report-custom-error
 INFERPRINT_OPTIONS = --issues-tests
 CLEAN_EXTRA = buck-out capture_hash-1.sha capture_hash-2.sha
 
 include $(TESTS_DIR)/base.make
-
-$(OBJECTS): $(JAVA_SOURCE_FILES)
-	$(QUIET)$(call silent_on_success,Compiling Buck flavors tests,\
-	$(BUCK) build --no-cache $(BUCK_TARGET))
 
 differences.exp.test: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(BUCK) clean && \
@@ -50,4 +45,4 @@ replace: differences.exp.test
 
 .PHONY: clean
 clean:
-	$(QUIET)$(REMOVE_DIR) infer-out differences.exp.test $(OBJECTS) $(CLEAN_EXTRA)
+	$(QUIET)$(REMOVE_DIR) infer-out differences.exp.test $(CLEAN_EXTRA)

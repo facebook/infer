@@ -13,17 +13,12 @@ SOURCES = A.java B.java
 ARGSFILE = argsfile
 CLEAN_EXTRA = infer-out-A infer-out-B $(ARGSFILE)
 
-OBJECTS = $(patsubst %.java,%.class,$(SOURCES))
-
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/infer.make
 
 PROJECT_ROOT ?= $(TESTS_DIR)
 
 JAVAC_FLAGS = -g -source 8 -target 8
-
-$(OBJECTS): $(SOURCES)
-	$(QUIET)$(JAVAC) $(JAVAC_FLAGS) -cp $(CLASSPATH) $(SOURCES)
 
 infer-out$(TEST_SUFFIX)/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Capturing A.java,\

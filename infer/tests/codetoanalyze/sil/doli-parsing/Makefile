@@ -35,7 +35,7 @@ replace: issues.exp.test
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) issues.exp.test$(TEST_SUFFIX) $(OBJECTS) $(CLEAN_EXTRA)
+	$(REMOVE_DIR) issues.exp.test$(TEST_SUFFIX) $(CLEAN_EXTRA)
 ifneq ($(INFER_OUT),.)
 	$(REMOVE_DIR) $(INFER_OUT)
 endif

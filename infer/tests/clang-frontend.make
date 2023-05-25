@@ -3,16 +3,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-OBJECTS = $(foreach source,$(SOURCES),$(basename $(notdir $(source))).o)
-
 include $(TESTS_DIR)/base.make
 include $(TESTS_DIR)/clang-base.make
 
 ONE_SOURCE = $(lastword $(SOURCES))
 
-default: compile
-
-compile: $(OBJECTS)
+default: test
 
 $(ONE_SOURCE).test.dot: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
 	$(QUIET)$(call silent_on_success,Testing the infer/clang frontend in $(TEST_REL_DIR),\
@@ -40,4 +36,4 @@ replace: capture
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) infer-out $(OBJECTS) */*.test.dot */*/*.test.dot $(CLEAN_EXTRA)
+	$(REMOVE_DIR) infer-out */*.test.dot */*/*.test.dot $(CLEAN_EXTRA)

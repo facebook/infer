@@ -7,7 +7,6 @@ TESTS_DIR = ../..
 
 INFER_OPTIONS = --report-custom-error --developer-mode
 SOURCES = ../codetoanalyze/path\ with\ spaces/hel\ lo.c
-OBJECTS = $(SOURCES:.c=.o)
 CLEAN_EXTRA = compile_commands.json
 INFERPRINT_OPTIONS = --issues-tests
 

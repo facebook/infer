@@ -9,7 +9,6 @@ SOURCE_DIR = ../codetoanalyze
 
 INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(SOURCE_DIR)
 SOURCES = $(wildcard $(SOURCE_DIR)/*.cpp $(SOURCE_DIR)/*.h)
-OBJECTS = '$(SOURCE_DIR)/buck-out/gen/clang_compilation_database/__Hel lo\#compilation-database,x86_64.json'
 INFERPRINT_OPTIONS = --issues-tests
 CLEAN_EXTRA = $(SOURCE_DIR)/buck-out
 

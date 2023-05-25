@@ -8,16 +8,11 @@ ROOT_DIR = $(TESTS_DIR)/../..
 
 BUCK_TARGET = //src:hello
 SOURCES = src/hello.c src/hello2.c
-OBJECTS = buck-out/gen/src/hello\#compile-hello.c.o1f717d69,default/hello.c.o
 INFER_OPTIONS = --report-custom-error --developer-mode --buck-clang
 INFERPRINT_OPTIONS = --issues-tests
 CLEAN_EXTRA = buck-out
 
 include $(TESTS_DIR)/infer.make
-
-$(OBJECTS): $(SOURCES)
-	$(QUIET)$(call silent_on_success,Compiling Buck flavors tests,\
-	$(BUCK) build --no-cache $(BUCK_TARGET))
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(BUCK) clean

@@ -9,16 +9,11 @@ ROOT_DIR = $(TESTS_DIR)/../..
 ANALYZER = checkers
 BUCK_TARGET = //src:hello @buck_target.txt
 SOURCES = $(wildcard src/*.c) $(wildcard src/subtarget1/*.c) $(wildcard src/subtarget2/*.c)
-OBJECTS = buck-out/gen/src/hello\#compile-hello.c.o1f717d69,default/hello.c.o
 INFER_OPTIONS = --report-custom-error --developer-mode
 INFERPRINT_OPTIONS = --issues-tests
 CLEAN_EXTRA = buck-out
 
 include $(TESTS_DIR)/infer.make
-
-$(OBJECTS): $(JAVA_SOURCE_FILES)
-	$(QUIET)$(call silent_on_success,Compiling Buck flavors tests,\
-	$(BUCK) build --no-cache $(BUCK_TARGET))
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(BUCK) clean

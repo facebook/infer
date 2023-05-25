@@ -7,14 +7,11 @@ INFER_OUT ?= infer-out$(TEST_SUFFIX)
 
 include $(TESTS_DIR)/base.make
 
-default: compile
+default: test
 
 issues.exp.test$(TEST_SUFFIX): $(INFER_OUT)/report.json $(INFER_BIN) $(MAKEFILE_LIST)
 	$(QUIET)$(INFER_BIN) report -q --results-dir $(<D) \
 	   $(INFERPRINT_OPTIONS) $@
-
-.PHONY: compile
-compile: $(OBJECTS)
 
 .PHONY: analyze
 analyze: $(INFER_OUT)/report.json
@@ -34,7 +31,7 @@ replace: issues.exp.test$(TEST_SUFFIX)
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) codetoanalyze com issues.exp.test$(TEST_SUFFIX) $(OBJECTS) $(CLEAN_EXTRA)
+	$(REMOVE_DIR) codetoanalyze com issues.exp.test$(TEST_SUFFIX) $(CLEAN_EXTRA)
 ifneq ($(INFER_OUT),.)
 	$(REMOVE_DIR) $(INFER_OUT)
 endif

@@ -6,16 +6,11 @@
 TESTS_DIR = ../..
 
 SOURCES = $(wildcard src/*.java)
-CLASS_FILES = $(notdir $(patsubst %.java,%.class,$(SOURCES)))
-OBJECTS = $(CLASS_FILES:%=ant_out/%)
 INFERPRINT_OPTIONS = --issues-tests
 CLEAN_EXTRA = ant_out
 
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/infer.make
-
-$(OBJECTS): $(SOURCES)
-	$(ANT)
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
 	$(QUIET)$(call silent_on_success,Testing ant integration,\

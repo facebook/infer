@@ -6,7 +6,7 @@
 ROOT_DIR = ../../../..
 include $(ROOT_DIR)/Makefile.config
 
-default: compile
+default: test
 
 .PHONY: print replace test clean
 print replace test clean:

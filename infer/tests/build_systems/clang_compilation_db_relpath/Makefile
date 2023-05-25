@@ -9,7 +9,6 @@ INFER_OPTIONS = --report-custom-error --developer-mode
 SOURCES = \
   ../codetoanalyze/hello.c ../codetoanalyze/hello2.c ../codetoanalyze/hello3.c \
   ../codetoanalyze/path\ with\ spaces/hel\ lo.c ../codetoanalyze/path\ with\ spaces/hel\ lo2.c
-OBJECTS = $(SOURCES:.c=.o)
 CLEAN_EXTRA = compile_commands.json ../codetoanalyze/path\ with\ spaces
 INFERPRINT_OPTIONS = --issues-tests
 

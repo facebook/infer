@@ -8,7 +8,6 @@ ROOT_DIR = $(TESTS_DIR)/../..
 CODETOANALYZE_DIR = ../codetoanalyze/objc_getters_setters
 
 SOURCES = $(CODETOANALYZE_DIR)/A.m $(CODETOANALYZE_DIR)/B.m
-OBJECTS = $(SOURCES:$(CODETOANALYZE_DIR)/%.m=%.o)
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 INFER_OPTIONS = --biabduction-only --report-custom-error --developer-mode --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests

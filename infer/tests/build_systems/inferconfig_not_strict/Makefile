@@ -11,7 +11,6 @@ CMAKE_BUILD_DIR = $(CURDIR)/_build_infer
 CLEAN_EXTRA = $(CMAKE_BUILD_DIR)
 INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(CMAKE_DIR)
 SOURCES = $(CMAKE_DIR)/hello.cpp
-OBJECTS = $(CMAKE_BUILD_DIR)/compile_commands.json
 INFERPRINT_OPTIONS = --issues-tests
 
 include $(TESTS_DIR)/infer.make
