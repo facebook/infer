@@ -83,7 +83,7 @@ let debug () =
           CaptureManipulation.complete
             ~input_capture_path:(Option.value_exn Config.complete_capture_from)
         in
-        L.exit (if changes_made then 1 else 0)
+        L.result "%s" (if changes_made then "MODIFIED" else "UNMODIFIED")
       else
         let filter = Lazy.force Filtering.source_files_filter in
         L.result "%a"

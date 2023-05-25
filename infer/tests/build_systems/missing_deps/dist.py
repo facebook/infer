@@ -39,7 +39,7 @@ def extract(results_dir, index_file, source):
 def complete(results_dir, index_file, source):
     cmd = [INFER, 'debug', '--source-files', '-o', results_dir,
         '--changed-files-index', index_file, '--complete-capture-from', source, '--debug-level=2']
-    return subprocess.run(cmd).returncode == 0
+    return get_cmd_output(cmd).strip() == "UNMODIFIED"
 
 
 def main():
