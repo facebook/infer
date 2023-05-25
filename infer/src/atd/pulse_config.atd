@@ -12,6 +12,7 @@ type taint_target = [
  | AllArgumentsButPositions of int list
  | ArgumentsMatchingTypes of string list
  | FieldsOfValue of (string * taint_target) list
+ | GetField (* only for field matchers *)
  | SetField (* only for field matchers *)
 ]
 

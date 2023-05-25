@@ -926,7 +926,21 @@ module PulseTransferFunctions = struct
             | _ ->
                 astate_n
           in
-          (List.concat_map astates ~f:deref_rhs, path, astate_n)
+          let astates, path, non_disj = (List.concat_map astates ~f:deref_rhs, path, astate_n) in
+          let astates =
+            let procname = Procdesc.get_proc_name proc_desc in
+            List.concat_map astates ~f:(fun astate ->
+                match astate with
+                | ContinueProgram astate ->
+                    let astates =
+                      [ PulseTaintOperations.load procname tenv path loc ~lhs:(lhs_id, typ)
+                          ~rhs:rhs_exp astate ]
+                    in
+                    PulseReport.report_results tenv proc_desc err_log loc astates
+                | _ ->
+                    [astate] )
+          in
+          (astates, path, non_disj)
       | Store {e1= lhs_exp; e2= rhs_exp; loc; typ} ->
           (* [*lhs_exp := rhs_exp] *)
           let event =

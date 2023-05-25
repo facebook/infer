@@ -13,6 +13,7 @@ type origin =
   | Argument of {index: int}
   | ReturnValue
   | Allocation of {typ: string}
+  | GetField
   | SetField
   | FieldOfValue of {name: string; origin: origin}
 [@@deriving compare, equal]

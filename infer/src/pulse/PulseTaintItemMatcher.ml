@@ -198,7 +198,7 @@ let procedure_matcher_of_config ~default_taint_target ~option_name (matcher : Pu
       L.die UserError
         "Target %a found but one of the following targets must be provided:\n\
         \         ReturnValue, AllArguments, ArgumentPositions, AllArgumentsButPositions, \
-         ArgumentsMatchingTypes, Fields"
+         ArgumentsMatchingTypes, FieldsOfValue"
         TaintConfig.Target.pp taint_target
 
 
@@ -222,7 +222,8 @@ let field_matcher_of_config ~default_taint_target ~option_name (matcher : Pulse_
   | FieldTarget field_target ->
       {field_matcher; kinds= TaintConfig.Kind.kinds_of_strings_opt matcher.kinds; field_target}
   | ProcedureTarget _ ->
-      L.die UserError "Target %a found but one of the following targets must be provided: SetField"
+      L.die UserError
+        "Target %a found but one of the following targets must be provided: GetField or SetField"
         TaintConfig.Target.pp taint_target
 
 
@@ -376,12 +377,11 @@ let match_field_target matches actual potential_taint_value =
         (arg_payload, typ, Some exp)
   in
   let match_target acc (matcher : TaintConfig.Unit.field_unit) =
-    match matcher.field_target with
-    | SetField ->
-        let taint =
-          {TaintItem.value= potential_taint_value; origin= SetField; kinds= matcher.kinds}
-        in
-        (taint, actual) :: acc
+    let origin : TaintItem.origin =
+      match matcher.field_target with GetField -> GetField | SetField -> SetField
+    in
+    let taint = {TaintItem.value= potential_taint_value; origin; kinds= matcher.kinds} in
+    (taint, actual) :: acc
   in
   List.fold matches ~init:[] ~f:(fun acc (matcher : TaintConfig.Unit.field_unit) ->
       match_target acc matcher )

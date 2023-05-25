@@ -30,6 +30,16 @@ val store :
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t
 
+val load :
+     Procname.t
+  -> Tenv.t
+  -> PathContext.t
+  -> Location.t
+  -> lhs:Ident.t * Typ.t
+  -> rhs:Exp.t
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t AccessResult.t
+
 val taint_allocation :
      Tenv.t
   -> PathContext.t

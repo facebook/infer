@@ -28,6 +28,13 @@
         "sink_kinds": ["StoreOtherIvar"]
       }
     ]
+    },
+    { "short_description": "Field _elem logged",
+    "taint_flows": [
+      { "source_kinds": ["TaintedField"],
+        "sink_kinds": ["SimpleSink"]
+      }
+    ]
     }
   ],
   "pulse-taint-sources": [
@@ -64,6 +71,12 @@
         "class_names": ["OtherClass"],
         "method_names": ["getSource"],
         "kinds": ["SimpleSource"]
+      },
+      {
+        "class_names" : [ "LoadIvarTaint" ],
+        "field_names" : ["_elem"],
+        "taint_target": "GetField",
+        "kinds": ["TaintedField"]
       }
   ],
   "pulse-taint-sanitizers": [
@@ -110,6 +123,12 @@
       "field_names": ["_item"],
       "taint_target": "SetField",
       "kinds": ["StoreOtherIvar"]
+    },
+    {
+      "class_names": ["LoadIvarTaint"],
+      "method_names": ["logString:"],
+      "kinds": ["SimpleSink"],
+      "taint_target": ["ArgumentPositions", [1]]
     }
   ],
   "pulse-taint-propagators": [

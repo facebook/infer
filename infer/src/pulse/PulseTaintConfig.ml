@@ -61,7 +61,7 @@ module Target = struct
     | ArgumentsMatchingTypes of string list
     | FieldsOfValue of (string * procedure_target) list
 
-  type field_target = SetField
+  type field_target = GetField | SetField
 
   type t = ProcedureTarget of procedure_target | FieldTarget of field_target
 
@@ -84,7 +84,11 @@ module Target = struct
 
 
   let pp_field_target f field_target =
-    match field_target with SetField -> F.pp_print_string f "SetField"
+    match field_target with
+    | GetField ->
+        F.pp_print_string f "GetField"
+    | SetField ->
+        F.pp_print_string f "SetField"
 
 
   let pp f target =
@@ -115,10 +119,12 @@ module Target = struct
                   (field, procedure_target)
               | FieldTarget field_target ->
                   L.die UserError
-                    "Only procedure targets are allowed within Fields target, but found %a"
+                    "Only procedure targets are allowed within FieldsOfValue target, but found %a"
                     pp_field_target field_target )
         in
         ProcedureTarget (FieldsOfValue fields_targets)
+    | `GetField ->
+        FieldTarget GetField
     | `SetField ->
         FieldTarget SetField
 end

@@ -33,7 +33,7 @@ module Target : sig
     | ArgumentsMatchingTypes of string list
     | FieldsOfValue of (string * procedure_target) list
 
-  type field_target = SetField
+  type field_target = GetField | SetField
 
   type t = ProcedureTarget of procedure_target | FieldTarget of field_target
 
