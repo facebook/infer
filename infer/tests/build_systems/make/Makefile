@@ -9,6 +9,7 @@ CLANG_OPTIONS = -c
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard ../codetoanalyze/make/*.c)
+CLEAN_EXTRA = hello
 
 include $(TESTS_DIR)/clang.make
 

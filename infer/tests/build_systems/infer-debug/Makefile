@@ -14,6 +14,7 @@ INFER_OPTIONS = --project-root $(CODETOANALYZE_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(CODETOANALYZE_DIR)/hello.c
+CLEAN_EXTRA = $(SOURCES:$(CODETOANALYZE_DIR)/%.c=%.o)
 
 default: test
 
@@ -50,4 +51,4 @@ replace: output.exp.test
 
 .PHONY: clean
 clean:
-	rm -rf output.exp.test infer-out
+	rm -rf output.exp.test infer-out $(CLEAN_EXTRA)

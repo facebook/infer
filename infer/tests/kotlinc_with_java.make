@@ -12,6 +12,8 @@
 include $(TESTS_DIR)/infer.make
 include $(TESTS_DIR)/java.make
 
+CLEAN_EXTRA = *.class META-INF
+
 PROJECT_ROOT ?= $(TESTS_DIR)
 
 JAVAC_FLAGS = -g -source 8 -target 8

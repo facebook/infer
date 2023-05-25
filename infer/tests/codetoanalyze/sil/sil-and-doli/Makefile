@@ -61,4 +61,4 @@ replace: issues.exp.test
 	cp $< issues.exp
 
 clean:
-	$(QUIET)$(REMOVE) issues.exp.test
+	$(QUIET)$(REMOVE_DIR) infer-out issues.exp.test

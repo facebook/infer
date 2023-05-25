@@ -8,6 +8,7 @@ SOURCES = $(SOURCES_C) $(SOURCES_CPP)
 ROOT_DIR = $(TESTS_DIR)/../..
 
 CLEAN_EXTRA += duplicates.txt
+CLEAN_EXTRA += $(foreach source,$(filter %.c %.cpp %.m %.mm,$(SOURCES)),$(basename $(source)).o)
 
 include $(TESTS_DIR)/infer.make
 include $(TESTS_DIR)/clang-base.make

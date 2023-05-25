@@ -9,7 +9,7 @@ CMAKE_DIR = ../codetoanalyze/cmake
 CMAKE_BUILD_DIR = $(CMAKE_DIR)/_build
 CMAKE_ANALYZE_DIR = $(CMAKE_DIR)/_build_infer
 
-CLEAN_EXTRA = $(CMAKE_BUILD_DIR) $(CMAKE_ANALYZE_DIR)
+CLEAN_EXTRA = $(CMAKE_BUILD_DIR) $(CMAKE_ANALYZE_DIR) $(CMAKE_DIR)/infer-out
 INFER_OPTIONS = --project-root $(TESTS_DIR)
 SOURCES = $(CMAKE_DIR)/hello.c
 INFERPRINT_OPTIONS = --issues-tests

@@ -11,6 +11,7 @@ SOURCES = $(CODETOANALYZE_DIR)/A.m $(CODETOANALYZE_DIR)/B.m
 CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
 INFER_OPTIONS = --biabduction-only --report-custom-error --developer-mode --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests
+CLEAN_EXTRA = $(SOURCES:$(CODETOANALYZE_DIR)/%.m=%.o)
 
 include $(TESTS_DIR)/infer.make
 include $(TESTS_DIR)/objc.make

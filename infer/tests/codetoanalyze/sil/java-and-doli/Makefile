@@ -27,4 +27,4 @@ replace: issues.exp.test
 
 clean:
 	$(REMOVE) issues.exp.test
-	$(REMOVE_DIR) infer-out
+	$(REMOVE_DIR) infer-out codetoanalyze

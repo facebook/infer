@@ -14,6 +14,8 @@ SOURCES = $(shell find $(MVN_ROOT) -type f -name '*.java' -o -name 'pom.xml')
 
 CLEAN_EXTRA = \
   $(MVN_DIRS:%=../codetoanalyze/mvn/%/target) \
+  $(MVN_DIRS:%=../codetoanalyze/mvn/%/module1/target) \
+  $(MVN_DIRS:%=../codetoanalyze/mvn/%/module2parent/module2/target) \
   $(MVN_DIRS:%=../codetoanalyze/mvn/%/com) \
   $(MVN_DIRS:%=infer-out-%) \
   $(MVN_DIRS:%=issues-%.exp.test)

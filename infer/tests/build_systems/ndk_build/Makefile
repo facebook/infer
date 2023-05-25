@@ -8,7 +8,7 @@ TESTS_DIR = ../..
 PROJECT_ROOT = ../codetoanalyze/ndk-build/hello_app
 SOURCES = $(PROJECT_ROOT)/hello.c
 INFERPRINT_OPTIONS = --issues-tests
-CLEAN_EXTRA = $(PROJECT_ROOT)/libs $(PROJECT_ROOT)/obj
+CLEAN_EXTRA = $(PROJECT_ROOT)/libs $(PROJECT_ROOT)/obj $(PROJECT_ROOT)/hello.o
 NDKROOT = $(dir $(NDKBUILD))
 NDKTOOLCHAIN = $(NDKROOT)/toolchains/llvm/prebuilt/linux-x86_64
 

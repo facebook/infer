@@ -8,6 +8,7 @@ TESTS_DIR = ../..
 include $(TESTS_DIR)/base.make
 
 SOURCES = ../codetoanalyze/hello.c
+CLEAN_EXTRA = hello.o
 
 default: print
 

@@ -7,7 +7,7 @@ TESTS_DIR = ../../..
 INFER_OPTIONS = --dependencies
 INFERPRINT_OPTIONS = --issues-tests-fields "file,procedure,line_offset,bug_type,bucket,severity,bug_trace" --issues-tests
 SOURCES = my/Application.java
-CLEAN_EXTRA += $(wildcard my/*.class)
+CLEAN_EXTRA += $(wildcard my/*.class) $(wildcard lib/*.class)
 
 include $(TESTS_DIR)/infer.make
 

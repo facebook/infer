@@ -12,6 +12,8 @@
 include $(TESTS_DIR)/infer.make
 include $(TESTS_DIR)/java.make
 
+CLEAN_EXTRA = *.class META-INF
+
 KOTLINC_FLAGS = -nowarn
 
 infer-out$(TEST_SUFFIX)/report.json: $(SOURCES) $(MAKEFILE_LIST)

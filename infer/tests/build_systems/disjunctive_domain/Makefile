@@ -42,4 +42,4 @@ replace: disjunctive.exp.test
 
 .PHONY: clean
 clean:
-	$(QUIET)$(REMOVE) disjunctive.exp.test $(SRC:.c=.o)
+	$(QUIET)$(REMOVE_DIR) infer-out disjunctive.exp.test $(SRC:.c=.o)

@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+CLEAN_EXTRA = $(foreach source,$(SOURCES),$(basename $(notdir $(source))).o)
+
 include $(TESTS_DIR)/base.make
 include $(TESTS_DIR)/clang-base.make
 
