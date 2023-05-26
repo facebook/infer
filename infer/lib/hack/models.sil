@@ -30,26 +30,27 @@ define $builtins.hack_int(i: int) : *HackMixed {
 
 type HackBool = { val: int }
 
-define $builtins.hack_make_random_bool(): *HackBool {
+define $builtins.hack_bool(b: int): *HackBool {
   #entry:
     n0 = __sil_allocate(<HackBool>)
-    n1 = $builtins.nondet()
+    n1: int = load &b
     store n0.HackBool.val <- n1 : int
     ret n0
 }
 
 define $builtins.hack_make_true(): *HackBool {
   #entry:
-    n0 = __sil_allocate(<HackBool>)
-    store n0.HackBool.val <- 1 : int
-    ret n0
+    ret $builtins.hack_bool(1)
 }
 
 define $builtins.hack_make_false(): *HackBool {
   #entry:
-    n0 = __sil_allocate(<HackBool>)
-    store n0.HackBool.val <- 0 : int
-    ret n0
+    ret $builtins.hack_bool(0)
+}
+
+define $builtins.hack_make_random_bool(): *HackBool {
+  #entry:
+    ret $builtins.hack_bool($builtins.nondet())
 }
 
 define $builtins.hack_is_true(b: *HackMixed) : int {
