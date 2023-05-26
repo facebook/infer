@@ -5,8 +5,9 @@
 
 .source_language = "hack"
 
-// This function has an OCaml model
+// These functions have OCaml models
 declare $builtins.nondet() : int
+declare $builtins.hack_dim_field_get(**HackMixed, *HackMixed): **HackMixed
 
 type HackString = { val: *string }
 

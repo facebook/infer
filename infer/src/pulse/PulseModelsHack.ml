@@ -7,6 +7,7 @@
 
 open! IStd
 module L = Logging
+open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
@@ -20,14 +21,14 @@ let read_boxed_string_value address astate =
   AddressAttributes.get_const_string string_val astate
 
 
-let hack_dim_field_get this_obj (field_string_obj, _) : model =
+let hack_dim_field_get this_obj_dbl_ptr (field_string_obj, _) : model =
  fun {path; location; ret} astate ->
   match read_boxed_string_value field_string_obj astate with
   | Some string_val ->
       (* TODO: add a move up in the class hierarchy to find the right field declaration *)
       let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack string_val in
       let<*> astate, this_val =
-        PulseOperations.eval_access path Read location this_obj Dereference astate
+        PulseOperations.eval_access path Read location this_obj_dbl_ptr Dereference astate
       in
       let<+> astate, field_val =
         PulseOperations.eval_access path Read location this_val (FieldAccess field) astate
@@ -38,6 +39,25 @@ let hack_dim_field_get this_obj (field_string_obj, _) : model =
       (* TODO: invalidate the access if the string field is unknown *)
       Logging.d_printfln "reading field failed" ;
       astate |> Basic.ok_continue
+
+
+let hack_dim_field_get_or_null this_obj_dbl_ptr field : model =
+ fun ({path; location; ret= ret_id, _} as model_data) astate ->
+  let<*> astate, (this_obj, _) =
+    PulseOperations.eval_access path Read location this_obj_dbl_ptr Dereference astate
+  in
+  (* Case 1: this_obj is a null ptr *)
+  let astate1 =
+    let<++> astate = PulseArithmetic.prune_eq_zero this_obj astate in
+    let null_ret = (AbstractValue.mk_fresh (), Hist.single_call path location "null ptr case") in
+    PulseOperations.write_id ret_id null_ret astate
+  in
+  (* Case 2: this_obj is not null in which case we call the regular hack_dim_field_get *)
+  let astate2 =
+    let<**> astate = PulseArithmetic.prune_ne_zero this_obj astate in
+    hack_dim_field_get this_obj_dbl_ptr field model_data astate
+  in
+  astate1 @ astate2
 
 
 let hack_dim_array_get this_obj (key_string_obj, _) : model =
@@ -78,8 +98,8 @@ let get_static_companion type_name astate =
   | Some (addr, _) ->
       (addr, astate)
   | None ->
-      let addr = PulseAbstractValue.mk_fresh () in
-      let astate = AbductiveDomain.Stack.add var (addr, PulseValueHistory.epoch) astate in
+      let addr = AbstractValue.mk_fresh () in
+      let astate = AbductiveDomain.Stack.add var (addr, ValueHistory.epoch) astate in
       let static_type_name = Typ.Name.Hack.static_companion type_name in
       let typ = Typ.mk_struct static_type_name in
       let astate = PulseOperations.add_dynamic_type typ addr astate in
@@ -129,7 +149,7 @@ let new_dict args : model =
          | _ ->
              None )
   in
-  let addr = PulseAbstractValue.mk_fresh () in
+  let addr = AbstractValue.mk_fresh () in
   let typ = Typ.mk_struct TextualSil.hack_dict_type_name in
   let astate = PulseOperations.add_dynamic_type typ addr astate in
   let hist = Hist.single_call path location "new_dict" in
@@ -152,6 +172,8 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_await" <>$ capt_arg_payload $--> hack_await
   ; -"$builtins" &:: "hack_dim_field_get" <>$ capt_arg_payload $+ capt_arg_payload
     $--> hack_dim_field_get
+  ; -"$builtins" &:: "hack_dim_field_get_or_null" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> hack_dim_field_get_or_null
   ; -"$builtins" &:: "hack_dim_array_get" <>$ capt_arg_payload $+ capt_arg_payload
     $--> hack_dim_array_get
   ; -"$builtins" &:: "hack_new_dict" &::.*++> new_dict

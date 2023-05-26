@@ -6,8 +6,26 @@
 namespace ControlFlow;
 
 
-function typeCheckDoesntConfuseTheAnalysis_maintainsTaint_Bad(mixed $arg1, SensitiveClass $sc) {
+function typeCheckDoesntConfuseTheAnalysis_maintainsTaint_Bad(mixed $arg1, SensitiveClass $sc): void {
   if ($arg1 is Foo) {
     \Level1\taintSink($sc);
   }
+}
+
+class C {
+  public mixed $data;
+}
+
+function nullsafeLog(?C $arg): void {
+  \Level1\taintSink($arg?->data);
+}
+
+function nullsafeAccessTaintedBad(SensitiveClass $sc): void {
+  $c = new C();
+  $c->data = $sc;
+  nullsafeLog($c);
+}
+
+function nullsafeAccessNullOk(): void {
+  nullsafeLog(null);
 }
