@@ -59,6 +59,20 @@ define $builtins.hack_is_true(b: *HackMixed) : int {
     ret n1
 }
 
+define $builtins.hack_neg(b: *HackBool) : *HackBool {
+  #entry:
+    n0: *HackBool = load &b
+    n1: int = load n0.HackBool.val
+    jmp is_true, is_false
+  #is_true:
+    prune n1
+    ret $builtins.hack_make_false()
+  #is_false:
+    prune !n1
+    ret $builtins.hack_make_true()
+
+}
+
 define $builtins.hhbc_cmp_eq(x: *HackMixed, y: *HackMixed) : *HackBool {
   //TODO: provide something more generic (right now, it works for int only)
   #entry:
@@ -83,6 +97,37 @@ define $builtins.hhbc_cmp_neq(x: *HackMixed, y: *HackMixed) : *HackBool {
     n5 = __sil_allocate(<HackBool>)
     store n5.HackBool.val <- n4 : int
     ret n5
+}
+
+define $builtins.hhbc_cmp_same(x: *HackMixed, y: *HackMixed) : *HackBool {
+  #entry:
+    n0: *HackMixed = load &x
+    n1: *HackMixed = load &y
+    jmp eq, x_eq_null, x_ne_null, ne
+  #eq:
+    prune __sil_eq(n0, n1)
+    ret $builtins.hack_make_true()
+  #x_eq_null:
+    prune __sil_eq(n0, 0)
+    prune __sil_ne(n1, 0)
+    ret $builtins.hack_make_false()
+  #x_ne_null:
+    prune __sil_ne(n0, 0)
+    prune __sil_eq(n1, 0)
+    ret $builtins.hack_make_false()
+  #ne:
+    prune __sil_ne(n0, n1)
+    prune __sil_ne(n0, 0)
+    prune __sil_ne(n1, 0)
+    ret $builtins.hack_make_random_bool()
+    // TODO: refine for primitives value (because they are boxed)
+}
+
+define $builtins.hhbc_cmp_nsame(x: *HackMixed, y: *HackMixed) : *HackBool {
+  #entry:
+    n0: *HackMixed = load &x
+    n1: *HackMixed = load &y
+    ret $builtins.hack_neg($builtins.hhbc_cmp_same(n0, n1))
 }
 
 define $builtins.hhbc_class_has_reified_generics(class: *HackMixed): *HackMixed {
