@@ -392,7 +392,7 @@ module Command = struct
         "Terminate"
 
 
-  let pp fmt cmd = F.pp_print_string fmt (to_string cmd)
+  let[@warning "-unused-value-declaration"] pp fmt cmd = F.pp_print_string fmt (to_string cmd)
 
   let execute = function
     | AddSourceFile {source_file; tenv; integer_type_widths; proc_names} ->
@@ -451,7 +451,6 @@ module Server = struct
     let in_channel = Unix.in_channel_of_descr client_sock
     and out_channel = Unix.out_channel_of_descr client_sock in
     let command : Command.t = Marshal.from_channel in_channel in
-    L.debug Analysis Verbose "Sqlite write daemon: received command %a@." Command.pp command ;
     ( try
         Command.execute command ;
         Marshal.to_channel out_channel Ack []
@@ -461,7 +460,6 @@ module Server = struct
           [] ) ;
     Out_channel.flush out_channel ;
     In_channel.close in_channel ;
-    L.debug Analysis Verbose "Sqlite write daemon: closing connection@." ;
     match command with
     | Terminate ->
         L.debug Analysis Quiet "Sqlite write daemon: terminating@." ;
