@@ -102,6 +102,13 @@ module TextualFile = struct
 
   type sil = {sourcefile: Textual.SourceFile.t; cfg: Cfg.t; tenv: Tenv.t}
 
+  let translate_module sourcefile module_ =
+    try
+      let cfg, tenv = TextualSil.module_to_sil module_ in
+      Ok {sourcefile; cfg; tenv}
+    with Textual.TextualTransformError errors -> Error (sourcefile, [TransformError errors])
+
+
   let translate_textual_or_doli ~capture file =
     let sourcefile, parsed =
       match file with
@@ -115,11 +122,8 @@ module TextualFile = struct
           (sourcefile, parse_string sourcefile content)
     in
     match parsed with
-    | Ok module_ -> (
-      try
-        let cfg, tenv = TextualSil.module_to_sil module_ in
-        Ok {sourcefile; cfg; tenv}
-      with Textual.TextualTransformError errors -> Error (sourcefile, [TransformError errors]) )
+    | Ok module_ ->
+        translate_module sourcefile module_
     | Error errs ->
         Error (sourcefile, errs)
 
