@@ -2566,7 +2566,7 @@ and pulse_taint_sources =
       to specify flows between sources/sanitizers/sinks
       ("Simple" by default).
   - "taint_target":
-      where the taint should be applied in the procedure.
+      where the taint should be applied in the procedure or field.
       - "ReturnValue": (default for taint sources and propagators)
       - "AllArguments": (default for taint sanitizers and sinks)
       - ["ArgumentPositions", [<int list>]]:
@@ -2577,6 +2577,8 @@ and pulse_taint_sources =
           arguments with types containing supplied strings
       - ["FieldsOfValue", [<(string * taint_target) list>]]:
           fields given by name in return value, arguments or other fields
+      - "GetField" : a given field is read
+      - "SetField" : a given field is set
     $(i,N.B.) for methods, index 0 is $(i,this)/$(i,self).|}
 
 
