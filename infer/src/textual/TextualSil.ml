@@ -756,7 +756,19 @@ module NodeBridge = struct
     let last_loc = LocationBridge.to_sil sourcefile node.last_loc in
     let last = TerminatorBridge.to_sil lang decls_env procname pdesc last_loc node.last in
     let instrs = Option.value_map ~default:instrs ~f:(fun instr -> instrs @ [instr]) last in
-    let loc = LocationBridge.to_sil sourcefile node.label_loc in
+    (* Use min instr line for node's loc. This makes node placement in a debug HTML a bit more
+       predictable and relevant compared to using block labels' locations which can be more detached
+       from the actual source code when we're dealing with translated sources
+       (e.g. Hack->Textual). *)
+    let loc =
+      let known_instr_lines =
+        List.filter_map instrs ~f:(fun instr ->
+            match (Sil.location_of_instr instr).line with -1 -> None | other -> Some other )
+      in
+      let label_loc = LocationBridge.to_sil sourcefile node.label_loc in
+      let first_line = List.fold known_instr_lines ~init:label_loc.line ~f:min in
+      {label_loc with line= first_line}
+    in
     let nkind = SilProcdesc.Node.Stmt_node MethodBody in
     SilProcdesc.create_node pdesc loc nkind instrs
 
