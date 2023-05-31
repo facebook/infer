@@ -31,7 +31,9 @@ type build_system =
   | BRebar3
   | BXcode
 
-type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
+type scheduler = File | ReplayAnalysis | Restart | SyntacticCallGraph [@@deriving equal]
+
+val string_of_scheduler : scheduler -> string
 
 val build_system_of_exe_name : string -> build_system
 

@@ -85,14 +85,7 @@ let print_active_checkers () =
 
 
 let print_scheduler () =
-  L.environment_info "Scheduler: %s@\n"
-    ( match Config.scheduler with
-    | File ->
-        "file"
-    | Restart ->
-        "restart"
-    | SyntacticCallGraph ->
-        "callgraph" )
+  L.environment_info "Scheduler: %s@\n" (Config.string_of_scheduler Config.scheduler)
 
 
 let print_cores_used () = L.environment_info "Cores used: %d@\n" Config.jobs

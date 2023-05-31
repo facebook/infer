@@ -71,6 +71,21 @@ let build ~changed_files =
   graph
 
 
+let build_for_analysis_replay () =
+  let graph = CallGraph.(create default_initial_capacity) in
+  Summary.OnDisk.iter_specs ~f:(fun {Summary.proc_name; dependencies} ->
+      let {Dependencies.summary_loads} =
+        match dependencies with
+        | Complete c ->
+            c
+        | Partial ->
+            L.die InternalError "deserialized summary with incomplete dependencies"
+      in
+      CallGraph.create_node graph proc_name summary_loads ) ;
+  if Config.debug_level_analysis > 0 then CallGraph.to_dotty graph "analysis_call_graph.dot" ;
+  graph
+
+
 let invalidate ~changed_files =
   let changed_files =
     match changed_files with

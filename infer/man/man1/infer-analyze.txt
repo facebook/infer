@@ -355,10 +355,14 @@ OPTIONS
        --results-dir,-o dir
            Write results and internal files in the specified directory
 
-       --scheduler { file | restart | callgraph }
+       --scheduler { file | restart | callgraph | replay }
            Specify the scheduler used for the analysis phase:           - file: schedule one job per file
            - callgraph: schedule one job per procedure, following the
            syntactic call graph. Usually faster than "file".
+           - replay: replay the same analysis order between procedures as
+           the previous analysis. This should drastically limit
+           non-determinism in the results. Only works if a previous analysis
+           has just run on the same code.
            - restart: same as callgraph but uses locking to try and avoid
            duplicate work between different analysis processes and thus
            performs better in some circumstances

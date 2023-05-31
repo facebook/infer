@@ -45,7 +45,19 @@ type build_system =
   | BXcode
 [@@deriving compare, equal]
 
-type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
+type scheduler = File | ReplayAnalysis | Restart | SyntacticCallGraph [@@deriving equal]
+
+(** association list used to both pretty-print and parse symbols from the command line *)
+let scheduler_symbols =
+  [ ("file", File)
+  ; ("restart", Restart)
+  ; ("callgraph", SyntacticCallGraph)
+  ; ("replay", ReplayAnalysis) ]
+
+
+let string_of_scheduler scheduler =
+  List.Assoc.find_exn (List.Assoc.inverse scheduler_symbols) ~equal:equal_scheduler scheduler
+
 
 type pulse_taint_config =
   { sources: Pulse_config_t.matchers
@@ -2821,11 +2833,14 @@ and sarif =
 and scheduler =
   CLOpt.mk_symbol ~long:"scheduler" ~default:File ~eq:equal_scheduler
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    ~symbols:[("file", File); ("restart", Restart); ("callgraph", SyntacticCallGraph)]
+    ~symbols:scheduler_symbols
     "Specify the scheduler used for the analysis phase:\n\
      - file: schedule one job per file\n\
      - callgraph: schedule one job per procedure, following the syntactic call graph. Usually \
      faster than \"file\".\n\
+     - replay: replay the same analysis order between procedures as the previous analysis. This \
+     should drastically limit non-determinism in the results. Only works if a previous analysis \
+     has just run on the same code.\n\
      - restart: same as callgraph but uses locking to try and avoid duplicate work between \
      different analysis processes and thus performs better in some circumstances"
 

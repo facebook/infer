@@ -60,7 +60,7 @@ let make sources =
 
 let if_restart_scheduler f =
   if not (Int.equal Config.jobs 1) then
-    match Config.scheduler with File | SyntacticCallGraph -> () | Restart -> f ()
+    match Config.scheduler with File | ReplayAnalysis | SyntacticCallGraph -> () | Restart -> f ()
 
 
 let setup () = if_restart_scheduler ProcLocker.setup
@@ -99,7 +99,7 @@ let unlock ~after_exn pname =
 
 let with_lock ~f pname =
   match Config.scheduler with
-  | File | SyntacticCallGraph ->
+  | File | ReplayAnalysis | SyntacticCallGraph ->
       f ()
   | Restart ->
       lock_exn pname ;
