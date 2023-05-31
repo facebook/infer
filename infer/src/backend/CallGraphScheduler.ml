@@ -39,7 +39,7 @@ let bottom_up call_graph =
         next ()
     | Some n ->
         incr scheduled ;
-        CallGraph.flag call_graph n.pname ;
+        CallGraph.Node.set_flag n ;
         Some (Procname n.pname)
   in
   let finished ~result:_ = function

@@ -111,8 +111,6 @@ let add_edge ({node_map} as graph) pname ~successor:successor_pname =
   Node.add_successor node successor
 
 
-let flag g pname = node_of_procname g pname |> Option.iter ~f:Node.set_flag
-
 let flag_reachable g start_pname =
   let process_node init (n : Node.t) =
     if n.flag then init

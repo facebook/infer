@@ -8,6 +8,8 @@ open! IStd
 
 module Node : sig
   type t = private {id: int; pname: Procname.t; mutable successors: int list; mutable flag: bool}
+
+  val set_flag : t -> unit
 end
 
 type t
@@ -26,8 +28,6 @@ val mem : t -> int -> bool
 
 val mem_procname : t -> Procname.t -> bool
 (** is there a node for [procname] in the graph? *)
-
-val flag : t -> Procname.t -> unit
 
 val flag_reachable : t -> Procname.t -> unit
 (** flag all nodes reachable from the node of the given procname, if it exists *)
