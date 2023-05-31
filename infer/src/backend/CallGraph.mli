@@ -5,23 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
-module F = Format
 
-module type NodeSig = sig
+module Node : sig
   type t = private {id: int; pname: Procname.t; mutable successors: int list; mutable flag: bool}
-
-  val make : int -> Procname.t -> int list -> t
-
-  val add_successor : t -> int -> unit
-
-  val set_flag : t -> unit
-
-  val unset_flag : t -> unit
-
-  val pp_dot : mem:(int -> bool) -> F.formatter -> t -> unit
 end
-
-module Node : NodeSig
 
 type t
 

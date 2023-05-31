@@ -7,7 +7,7 @@
 open! IStd
 module F = Format
 
-module type NodeSig = sig
+module NodeUnsafe : sig
   type t = private {id: int; pname: Procname.t; mutable successors: int list; mutable flag: bool}
 
   val make : int -> Procname.t -> int list -> t
@@ -15,13 +15,7 @@ module type NodeSig = sig
   val add_successor : t -> int -> unit
 
   val set_flag : t -> unit
-
-  val unset_flag : t -> unit
-
-  val pp_dot : mem:(int -> bool) -> F.formatter -> t -> unit
-end
-
-module Node : NodeSig = struct
+end = struct
   type t = {id: int; pname: Procname.t; mutable successors: int list; mutable flag: bool}
 
   let make id pname successors = {id; pname; successors; flag= false}
@@ -29,8 +23,12 @@ module Node : NodeSig = struct
   let add_successor node successor = node.successors <- successor :: node.successors
 
   let set_flag n = n.flag <- true
+end
 
-  let unset_flag n = n.flag <- false
+(* defined in two parts just to avoid having to write types for functions only used in this file
+   that don't need to violate [private] *)
+module Node = struct
+  include NodeUnsafe
 
   let pp_dot ~mem fmt {id; pname; successors; flag} =
     let pp_id fmt id = F.fprintf fmt "N%d" id in
