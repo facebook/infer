@@ -53,9 +53,9 @@ val remove : t -> Procname.t -> unit
 val to_dotty : t -> string -> unit
 (** output call graph in dotty format with the given filename in results dir *)
 
-val add_edge : t -> pname:Procname.t -> successor_pname:Procname.t -> unit
-(** add an edge from [pname] to [successor_pname] in the graph, creating a node for [pname] if there
-    isn't one already *)
+val add_edge : t -> Procname.t -> successor:Procname.t -> unit
+(** add an edge from the proc name to [successor] in the graph, creating a node for the proc name if
+    there isn't one already *)
 
 val create_node : t -> Procname.t -> Procname.t list -> unit
 (** create a new node with edges from [pname] to [successor_pnames] in the graph *)
