@@ -358,12 +358,11 @@ let analyze_and_report ~changed_files mode =
   | (Analyze | Run), _ when Config.invalidate_only ->
       ()
   | (Analyze | Run), _ ->
-      if Config.capture then
-        if SourceFiles.is_empty () then error_nothing_to_analyze mode
-        else (
-          execute_analyze ~changed_files ;
-          if Config.starvation_whole_program then StarvationGlobalAnalysis.whole_program_analysis () ;
-          if Config.shrink_analysis_db then DBWriter.shrink_analysis_db () ) ;
+      if SourceFiles.is_empty () then error_nothing_to_analyze mode
+      else (
+        execute_analyze ~changed_files ;
+        if Config.starvation_whole_program then StarvationGlobalAnalysis.whole_program_analysis () ;
+        if Config.shrink_analysis_db then DBWriter.shrink_analysis_db () ) ;
       if Config.report then report ()
 
 
