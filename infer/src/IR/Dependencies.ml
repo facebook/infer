@@ -4,7 +4,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
+module F = Format
 module L = Logging
 
 let currently_under_analysis : Procname.t option ref = ref None
@@ -62,3 +64,11 @@ let record_srcfile_dep src_file =
 let clear () =
   Procname.Hash.clear deps_in_progress ;
   currently_under_analysis := None
+
+
+let pp fmt = function
+  | Partial ->
+      L.die InternalError "pretty-printing Partial dependencies unimplemented"
+  | Complete {callees; used_tenv_sources} ->
+      F.fprintf fmt "callees: @[<hv>%a@]@\ntype environments from sources: @[<hv>%a@]@\n"
+        (Pp.seq ~sep:", " Procname.pp) callees (Pp.seq ~sep:", " SourceFile.pp) used_tenv_sources

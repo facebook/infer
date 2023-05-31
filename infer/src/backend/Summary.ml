@@ -67,9 +67,10 @@ let pp_signature fmt {proc_name} =
 
 let pp_no_stats_specs fmt summary = F.fprintf fmt "%a@\n" pp_signature summary
 
-let pp_text fmt ({err_log; payloads; stats} as summary) =
+let pp_text fmt ({err_log; payloads; stats; dependencies} as summary) =
   pp_no_stats_specs fmt summary ;
-  F.fprintf fmt "%a@\n%a%a" pp_errlog err_log Stats.pp stats (Payloads.pp Pp.text) payloads
+  F.fprintf fmt "%a@\n%a%a%a" pp_errlog err_log Stats.pp stats (Payloads.pp Pp.text) payloads
+    Dependencies.pp dependencies
 
 
 let pp_html source fmt ({err_log; payloads; stats} as summary) =
