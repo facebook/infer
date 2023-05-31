@@ -93,7 +93,7 @@ module TypeNameBridge = struct
     | Hack ->
         HackClass (HackClassName.make value)
     | Python ->
-        L.die InternalError "value_to_sil not yet implemented for Python mode"
+        PythonClass (PythonClassName.make value)
 
 
   let to_sil (lang : Lang.t) {value} = value_to_sil lang value
@@ -108,6 +108,8 @@ let hack_mixed_type_name = SilTyp.HackClass (HackClassName.make "HackMixed")
 let hack_mixed_static_companion_type_name = SilTyp.Name.Hack.static_companion hack_mixed_type_name
 
 let hack_builtins_type_name = SilTyp.HackClass (HackClassName.make "$builtins")
+
+let python_mixed_type_name = SilTyp.PythonClass (PythonClassName.make "PyObject")
 
 let mangle_java_procname jpname =
   let method_name =
@@ -217,6 +219,11 @@ module TypBridge = struct
   let hack_mixed =
     let mixed_struct = SilTyp.mk_struct hack_mixed_type_name in
     SilTyp.mk_ptr mixed_struct
+
+
+  let python_mixed =
+    let mixed_struct = SilTyp.mk_struct python_mixed_type_name in
+    SilTyp.mk_ptr mixed_struct
 end
 
 module IdentBridge = struct
@@ -299,6 +306,15 @@ module ProcDeclBridge = struct
         Some (HackClassName.make name.value)
 
 
+  (* TODO: revamp this once we decide how to encode Python modules, since "toplevel" won't really
+     mean anything then *)
+  let python_class_name_to_sil = function
+    | TopLevel ->
+        None
+    | Enclosing name ->
+        Some (PythonClassName.make name.value)
+
+
   let to_sil lang t : SilProcname.t =
     let method_name = t.qualified_name.name.ProcName.value in
     match (lang : Lang.t) with
@@ -326,7 +342,9 @@ module ProcDeclBridge = struct
         let arity = Option.map t.formals_types ~f:List.length in
         SilProcname.make_hack ~class_name ~function_name:method_name ~arity
     | Python ->
-        L.die InternalError "to_sil not yet implemented for Python"
+        let class_name = python_class_name_to_sil t.qualified_name.enclosing_class in
+        let arity = Option.map t.formals_types ~f:List.length in
+        SilProcname.make_python ~class_name ~function_name:method_name ~arity
 
 
   let call_to_sil (lang : Lang.t) (callsig : ProcSig.t) t : SilProcname.t =
@@ -691,6 +709,10 @@ module InstrBridge = struct
                 (* Declarations with unknown formals are expected in Hack. Assume that unknown
                    formal types are *HackMixed and their number matches that of the arguments. *)
                 List.map args ~f:(fun _ -> TypBridge.hack_mixed)
+            | Lang.Python ->
+                (* Declarations with unknown formals are expected in Python. Assume that unknown
+                   formal types are *PyObject and their number matches that of the arguments. *)
+                List.map args ~f:(fun _ -> TypBridge.python_mixed)
             | other ->
                 L.die InternalError "Unexpected unknown formals outside of Hack: %s"
                   (Lang.to_string other) )

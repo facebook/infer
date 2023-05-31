@@ -678,6 +678,31 @@ module Hack = struct
   let get_class_name_as_a_string {class_name} = Option.map class_name ~f:HackClassName.classname
 end
 
+module Python = struct
+  type t = {class_name: PythonClassName.t option; function_name: string; arity: int option}
+  [@@deriving compare, equal, yojson_of, sexp, hash]
+
+  let get_class_type_name {class_name} = Option.map class_name ~f:(fun cn -> Typ.PythonClass cn)
+
+  let pp verbosity fmt t =
+    let pp_arity verbosity fmt =
+      match verbosity with
+      | Verbose -> (
+        match t.arity with Some arity -> F.fprintf fmt "#%d" arity | None -> () )
+      | Non_verbose | Simple | NameOnly ->
+          ()
+    in
+    match verbosity with
+    | NameOnly ->
+        F.fprintf fmt "%s" t.function_name
+    | Simple | Non_verbose | Verbose -> (
+      match t.class_name with
+      | Some class_name ->
+          F.fprintf fmt "%a.%s%t" PythonClassName.pp class_name t.function_name (pp_arity verbosity)
+      | _ ->
+          F.fprintf fmt "%s%t" t.function_name (pp_arity verbosity) )
+end
+
 (** Type of procedure names. *)
 type t =
   | Block of Block.t
@@ -688,6 +713,7 @@ type t =
   | Java of Java.t
   | Linters_dummy_method
   | ObjC_Cpp of ObjC_Cpp.t
+  | Python of Python.t
   | WithFunctionParameters of t * FunctionParameters.t * FunctionParameters.t list
 [@@deriving compare, equal, yojson_of, sexp, hash]
 
@@ -780,6 +806,12 @@ let rec compare_name x y =
       -1
   | _, ObjC_Cpp _ ->
       1
+  | Python name1, Python name2 ->
+      Python.compare name1 name2
+  | Python _, _ ->
+      -1
+  | _, Python _ ->
+      1
   | WithFunctionParameters (x, _, _), WithFunctionParameters (y, _, _) ->
       compare_name x y
 
@@ -847,7 +879,7 @@ let rec on_objc_helper ~f ~default = function
       f objc_cpp_pname
   | WithFunctionParameters (base, _, _) ->
       on_objc_helper ~f ~default base
-  | Block _ | C _ | CSharp _ | Erlang _ | Hack _ | Java _ | Linters_dummy_method ->
+  | Block _ | C _ | CSharp _ | Erlang _ | Hack _ | Java _ | Linters_dummy_method | Python _ ->
       default
 
 
@@ -919,6 +951,8 @@ let rec replace_class t (new_class : Typ.Name.t) =
             L.die InternalError "replace_class on ill-formed Hack type"
       in
       Hack {h with class_name= Some name}
+  | Python _ ->
+      L.die InternalError "TODO: replace_class for Python type"
   | WithFunctionParameters (base, func, functions) ->
       WithFunctionParameters (replace_class base new_class, func, functions)
   | C _ | Block _ | Erlang _ | Linters_dummy_method ->
@@ -937,6 +971,8 @@ let get_class_type_name t =
       Block.get_class_type_name block
   | Hack hack ->
       Hack.get_class_type_name hack
+  | Python python ->
+      Python.get_class_type_name python
   | C _ | Erlang _ | WithFunctionParameters _ | Linters_dummy_method ->
       None
 
@@ -953,6 +989,8 @@ let get_class_name t =
       Block.get_class_name block
   | Hack hack_pname ->
       Hack.get_class_name_as_a_string hack_pname
+  | Python _ ->
+      L.die InternalError "TODO: get_class_name for Python type"
   | C _ | Erlang _ | WithFunctionParameters _ | Linters_dummy_method ->
       None
 
@@ -967,7 +1005,7 @@ let rec objc_cpp_replace_method_name t (new_method_name : string) =
       ObjC_Cpp {osig with method_name= new_method_name}
   | WithFunctionParameters (base, func, functions) ->
       WithFunctionParameters (objc_cpp_replace_method_name base new_method_name, func, functions)
-  | C _ | CSharp _ | Block _ | Erlang _ | Hack _ | Linters_dummy_method | Java _ ->
+  | C _ | CSharp _ | Block _ | Erlang _ | Hack _ | Linters_dummy_method | Java _ | Python _ ->
       t
 
 
@@ -992,6 +1030,8 @@ let rec get_method = function
       cs.method_name
   | Linters_dummy_method ->
       "Linters_dummy_method"
+  | Python name ->
+      name.function_name
 
 
 (** Return whether the procname is a block procname. *)
@@ -1034,6 +1074,8 @@ let rec get_language = function
       Language.Java
   | CSharp _ ->
       Language.CIL
+  | Python _ ->
+      Language.Python
 
 
 (** [is_constructor pname] returns true if [pname] is a constructor *)
@@ -1072,7 +1114,8 @@ let rec is_static = function
   | Erlang _
   | Hack _
   | Linters_dummy_method
-  | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
+  | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _}
+  | Python _ ->
       None
   | WithFunctionParameters (base, _, _) ->
       is_static base
@@ -1165,6 +1208,8 @@ let rec pp_unique_id fmt = function
       pp_with_function_parameters Verbose pp_unique_id fmt base (func :: functions)
   | Linters_dummy_method ->
       F.pp_print_string fmt "Linters_dummy_method"
+  | Python h ->
+      Python.pp Verbose fmt h
 
 
 let to_unique_id proc_name = F.asprintf "%a" pp_unique_id proc_name
@@ -1190,6 +1235,8 @@ let rec pp_with_verbosity verbosity fmt = function
         (func :: functions)
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method
+  | Python h ->
+      Python.pp verbosity fmt h
 
 
 let pp = pp_with_verbosity Non_verbose
@@ -1237,6 +1284,8 @@ let rec pp_name_only fmt = function
       pp_name_only fmt base
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method
+  | Python h ->
+      Python.pp NameOnly fmt h
 
 
 let patterns_match patterns proc_name =
@@ -1264,6 +1313,8 @@ let rec pp_simplified_string ?(withclass = false) fmt = function
       pp_simplified_string fmt base
   | Linters_dummy_method ->
       pp_unique_id fmt Linters_dummy_method
+  | Python h ->
+      Python.pp Simple fmt h
 
 
 let to_simplified_string ?withclass proc_name =
@@ -1338,6 +1389,9 @@ let rec get_parameters procname =
       get_parameters base
   | Linters_dummy_method ->
       []
+  | Python _ ->
+      (* TODO(vsiles) get inspiration from Hack :D *)
+      []
 
 
 let rec replace_parameters new_parameters procname =
@@ -1406,6 +1460,8 @@ let rec replace_parameters new_parameters procname =
       WithFunctionParameters (replace_parameters new_parameters base, func, functions)
   | Linters_dummy_method ->
       procname
+  | Python _ ->
+      procname
 
 
 let parameter_of_name procname class_name =
@@ -1442,6 +1498,8 @@ let make_hack ~class_name ~function_name ~arity = Hack {class_name; function_nam
 let make_objc_dealloc name = ObjC_Cpp (ObjC_Cpp.make_dealloc name)
 
 let make_objc_copyWithZone ~is_mutable name = ObjC_Cpp (ObjC_Cpp.make_copyWithZone ~is_mutable name)
+
+let make_python ~class_name ~function_name ~arity = Python {class_name; function_name; arity}
 
 let erlang_call_unqualified ~arity = Erlang (Erlang.call_unqualified arity)
 
@@ -1543,7 +1601,7 @@ module Normalizer = HashNormalizer.Make (struct
     | Linters_dummy_method | WithFunctionParameters _ ->
         (* these kinds should not appear inside a type environment *)
         t
-    | Block _ | CSharp _ | Erlang _ | Hack _ ->
+    | Block _ | CSharp _ | Erlang _ | Hack _ | Python _ ->
         (* TODO *)
         t
 end)

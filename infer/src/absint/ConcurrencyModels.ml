@@ -347,7 +347,8 @@ let is_android_lifecycle_method tenv pname =
            | ErlangType _
            | HackClass _
            | ObjcClass _
-           | ObjcProtocol _ ->
+           | ObjcProtocol _
+           | PythonClass _ ->
                false
            | JavaClass java_class_name ->
                JavaClassName.package java_class_name
@@ -374,6 +375,7 @@ let is_android_lifecycle_method tenv pname =
     | Block _
     | ObjC_Cpp _
     | CSharp _
+    | Python _
     | WithFunctionParameters _ ->
         false
     | Java _ ->

@@ -238,6 +238,11 @@ module Hack : sig
   val get_class_name_as_a_string : t -> string option
 end
 
+module Python : sig
+  (* TODO: revamp this once modules are implemented *)
+  type t = private {class_name: PythonClassName.t option; function_name: string; arity: int option}
+end
+
 (** Type of procedure names. WithFunctionParameters is used for creating an instantiation of a
     method that contains non-empty function parameters and it's called with concrete functions. For
     example: [foo(Block block) {block();}] [bar() {foo(my_block)}] is executed as
@@ -252,6 +257,7 @@ type t =
   | Java of Java.t
   | Linters_dummy_method
   | ObjC_Cpp of ObjC_Cpp.t
+  | Python of Python.t
   | WithFunctionParameters of t * FunctionParameters.t * FunctionParameters.t list
 [@@deriving compare, yojson_of, sexp, hash]
 
@@ -363,6 +369,10 @@ val make_objc_dealloc : Typ.Name.t -> t
 
 val make_objc_copyWithZone : is_mutable:bool -> Typ.Name.t -> t
 (** Create an Objective-C method for copyWithZone: or mutableCopyWithZone: according to is_mutable. *)
+
+val make_python :
+  class_name:PythonClassName.t option -> function_name:string -> arity:int option -> t
+(** Create a Python procedure name. *)
 
 val empty_block : t
 (** Empty block name. *)

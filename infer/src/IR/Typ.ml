@@ -141,6 +141,7 @@ module T = struct
     | JavaClass of JavaClassName.t
     | ObjcClass of QualifiedCppName.t
     | ObjcProtocol of QualifiedCppName.t
+    | PythonClass of PythonClassName.t
   [@@deriving hash, sexp]
 
   and template_arg = TType of t | TInt of int64 | TNull | TNullPtr | TOpaque
@@ -333,6 +334,8 @@ and pp_name_c_syntax pe f = function
       JavaClassName.pp f name
   | CSharpClass name ->
       CSharpClassName.pp f name
+  | PythonClass name ->
+      PythonClassName.pp f name
 
 
 and pp_template_spec_info pe f = function
@@ -418,6 +421,12 @@ module Name = struct
         -1
     | _, HackClass _ ->
         1
+    | PythonClass name1, PythonClass name2 ->
+        PythonClassName.compare name1 name2
+    | PythonClass _, _ ->
+        -1
+    | _, PythonClass _ ->
+        1
 
 
   let qual_name = function
@@ -426,7 +435,7 @@ module Name = struct
     | CppClass {name; template_spec_info} ->
         let template_suffix = F.asprintf "%a" (pp_template_spec_info Pp.text) template_spec_info in
         QualifiedCppName.append_template_args_to_last name ~args:template_suffix
-    | JavaClass _ | CSharpClass _ | ErlangType _ | HackClass _ ->
+    | JavaClass _ | CSharpClass _ | ErlangType _ | HackClass _ | PythonClass _ ->
         QualifiedCppName.empty
 
 
@@ -435,7 +444,7 @@ module Name = struct
         name
     | CppClass {name} ->
         name
-    | JavaClass _ | CSharpClass _ | ErlangType _ | HackClass _ ->
+    | JavaClass _ | CSharpClass _ | ErlangType _ | HackClass _ | PythonClass _ ->
         QualifiedCppName.empty
 
 
@@ -460,6 +469,8 @@ module Name = struct
         ErlangTypeName.to_string name
     | HackClass name ->
         HackClassName.to_string name
+    | PythonClass name ->
+        PythonClassName.to_string name
 
 
   let pp fmt tname =
@@ -474,6 +485,8 @@ module Name = struct
           "erlang"
       | HackClass _ ->
           "hack"
+      | PythonClass _ ->
+          "python"
       | ObjcProtocol _ ->
           "protocol"
     in
@@ -483,7 +496,7 @@ module Name = struct
   let to_string = F.asprintf "%a" pp
 
   let is_class = function
-    | CppClass _ | JavaClass _ | HackClass _ | ObjcClass _ | CSharpClass _ ->
+    | CppClass _ | JavaClass _ | HackClass _ | ObjcClass _ | CSharpClass _ | PythonClass _ ->
         true
     | CStruct _ | CUnion _ | ErlangType _ | ObjcProtocol _ ->
         false
@@ -961,6 +974,9 @@ and NameNormalizer : (HashNormalizer.S with type t = name) = HashNormalizer.Make
   let normalize t =
     match t with
     | HackClass _ ->
+        (* TODO *)
+        t
+    | PythonClass _ ->
         (* TODO *)
         t
     | CStruct qualified_name ->

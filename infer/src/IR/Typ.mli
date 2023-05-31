@@ -97,6 +97,7 @@ and name =
   | JavaClass of JavaClassName.t
   | ObjcClass of QualifiedCppName.t  (** ObjC class *)
   | ObjcProtocol of QualifiedCppName.t
+  | PythonClass of PythonClassName.t
 
 and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque
 

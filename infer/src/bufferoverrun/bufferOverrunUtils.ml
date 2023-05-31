@@ -95,6 +95,8 @@ module Exec = struct
             L.die InternalError "Erlang not supported"
         | Language.Hack ->
             L.die InternalError "Hack not supported"
+        | Language.Python ->
+            L.die InternalError "Python not supported"
       in
       if Int.equal dimension 1 then Dom.Mem.add_stack ~represents_multiple_values loc arr mem
       else Dom.Mem.add_heap ~represents_multiple_values loc arr mem

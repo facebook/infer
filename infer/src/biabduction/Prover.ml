@@ -2252,6 +2252,8 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
           L.die InternalError "Erlang not supported"
       | Hack ->
           L.die InternalError "Hack not supported"
+      | Python ->
+          L.die InternalError "Python not supported"
     in
     let const_string_texp =
       match !Language.curr_language with
@@ -2281,6 +2283,8 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
           L.die InternalError "Erlang not supported"
       | Hack ->
           L.die InternalError "Hack not supported"
+      | Python ->
+          L.die InternalError "Python not supported"
     in
     Predicates.Hpointsto (root, sexp, const_string_texp)
   in

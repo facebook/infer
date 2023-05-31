@@ -39,6 +39,8 @@ let pp_exp fmt exp =
       L.die InternalError "Erlang not supported"
   | Hack ->
       L.die InternalError "Hack not supported"
+  | Python ->
+      L.die InternalError "Python not supported"
 
 
 let rec should_keep_exp formals (exp : AccessExpression.t) =

@@ -104,7 +104,4 @@ let capture input =
       if not (String.equal prog "python3") then
         L.die UserError "python3 should be explicitly used instead of %s." prog ;
       capture_files args ;
-      L.progress "Finished capture.@\n" ;
-      if not Config.keep_going then
-        L.die ExternalError
-          "There were errors during capture. Re-run with --keep-going to ignore the errors."
+      L.progress "Finished capture.@\n"

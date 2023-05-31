@@ -170,7 +170,12 @@ let all_checkers =
            interprocedural_with_specialization Payloads.Fields.pulse Pulse.checker
              Pulse.is_already_specialized
          in
-         [(pulse, Clang); (pulse, Erlang); (pulse, Hack); (pulse, Java); (pulse, CIL)] ) }
+         [ (pulse, Clang)
+         ; (pulse, Erlang)
+         ; (pulse, Hack)
+         ; (pulse, Java)
+         ; (pulse, CIL)
+         ; (pulse, Python) ] ) }
   ; { checker= Datalog
     ; callbacks=
         (let datalog = intraprocedural DatalogAnalysis.checker in

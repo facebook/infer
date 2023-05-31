@@ -55,6 +55,8 @@ let pp_with_base pp_base fmt (base, accesses) =
         L.internal_error "Erlang not supported"
     | _, Hack ->
         L.internal_error "Hack not supported"
+    | _, Python ->
+        L.internal_error "Python not supported"
     | [], _ ->
         pp_base fmt base
     | ArrayAccess _ :: rest, _ ->
@@ -72,6 +74,8 @@ let pp_with_base pp_base fmt (base, accesses) =
               L.die InternalError "Erlang not supported"
           | Hack ->
               L.die InternalError "Hack not supported"
+          | Python ->
+              L.die InternalError "Python not supported"
         in
         F.fprintf fmt "%a%s%a" pp_rev_accesses rest op Fieldname.pp field_name
     | FieldAccess field_name :: rest, _ ->

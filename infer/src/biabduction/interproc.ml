@@ -632,6 +632,8 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
             L.die InternalError "Erlang not supported"
         | Hack ->
             L.die InternalError "Hack not supported"
+        | Python ->
+            L.die InternalError "Python not supported"
       in
       Prop.mk_ptsto_lvar tenv Prop.Fld_init Predicates.inst_formal (pv, texp, None)
     in

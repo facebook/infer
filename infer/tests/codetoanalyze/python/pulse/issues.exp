@@ -1,0 +1,1 @@
+level1.py, $module::basicFlowBad, 1, TAINT_ERROR, no_bucket, ERROR, [source of the taint here: value returned from `$module::taintSource` with kind `Simple`,value passed as argument `#0` to `$module::taintSink` with kind `Simple`], source: $module::taintSource, sink: $module::taintSink, tainted expression: tainted

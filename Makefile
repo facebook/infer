@@ -187,6 +187,12 @@ DIRECT_TESTS += \
 endif
 endif # BUILD_PLATFORM+BUILD_HACK_ANALYZERS
 
+ifeq ($(BUILD_PLATFORM)+$(BUILD_PYTHON_ANALYZERS)+$(IS_FACEBOOK_TREE),Linux+yes+yes)
+DIRECT_TESTS += \
+  python_pulse \
+
+endif # BUILD_PLATFORM+BUILD_HACK_ANALYZERS
+
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
   differential_interesting_paths_filter \

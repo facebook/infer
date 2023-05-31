@@ -1,0 +1,11 @@
+{
+  "scheduler": "callgraph",
+  "pulse-only": true,
+  "pulse-force-continue": true,
+  "pulse-taint-sources": [
+    { "procedure": "$module::taintSource" }
+  ],
+  "pulse-taint-sinks": [
+    { "procedure": "$module::taintSink" }
+  ]
+}

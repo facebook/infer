@@ -421,6 +421,7 @@ let is_java_main_method (pname : Procname.t) =
     | Block _
     | ObjC_Cpp _
     | CSharp _
+    | Python _
     | WithFunctionParameters _ ->
         false
     | Java java_pname ->

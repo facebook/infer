@@ -375,6 +375,8 @@ let merge typename ~newer ~current =
           Group 2 are valid cases. There's not much benefit in differentiating between all these
           cases, hence when we see two non-dummy Hack structs we just do a full merge. *)
       full_merge ~newer ~current
+  | PythonClass _ ->
+      Logging.die InternalError "TODO: IR.Struct.merge for Python"
 
 
 let is_not_java_interface = function
