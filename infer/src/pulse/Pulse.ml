@@ -28,6 +28,10 @@ let report_topl_errors proc_desc err_log summary =
   List.iter ~f summary
 
 
+let is_hack_async pname =
+  Option.exists (IRAttributes.load pname) ~f:(fun attrs -> attrs.ProcAttributes.is_hack_async)
+
+
 let is_not_implicit_or_copy_ctor_assignment pname =
   not
     (Option.exists (IRAttributes.load pname) ~f:(fun attrs ->
@@ -555,7 +559,7 @@ module PulseTransferFunctions = struct
               let astate_after_call =
                 (* TODO: move to PulseModelsHack *)
                 match callee_pname with
-                | Some proc_name when Procname.is_hack_async proc_name -> (
+                | Some proc_name when is_hack_async proc_name -> (
                     L.d_printfln "did return from asynccall of %a, ret=%a" Procname.pp proc_name
                       Ident.pp (fst ret) ;
                     match PulseOperations.read_id (fst ret) astate with

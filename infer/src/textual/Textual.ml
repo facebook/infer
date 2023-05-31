@@ -186,6 +186,8 @@ module Attr = struct
 
   let mk_final = {name= "final"; values= []; loc= Location.Unknown}
 
+  let is_async {name; values} = String.equal name "async" && List.is_empty values
+
   let is_final {name; values} = String.equal name "final" && List.is_empty values
 
   let is_trait {name; values} = String.equal name "kind" && List.equal String.equal values ["trait"]

@@ -412,8 +412,6 @@ val is_csharp : t -> bool
 val is_hack : t -> bool
 (** Check if this is a Hack procedure name. *)
 
-val is_hack_async : t -> bool
-
 val is_java : t -> bool
 (** Check if this is a Java procedure name. *)
 

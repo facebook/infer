@@ -7,12 +7,30 @@ async function genInt () : Awaitable<int> {
   return 42;
 }
 
+// this should be picked up as async
+async function an_async_not_starting_with_gen () : Awaitable<int> {
+  return 42;
+}
+
+// this is not async even though the name starts with "gen"
+function generate_a_boolean() : bool {
+  return true;
+}
+
 async function genOk () : Awaitable<void> {
+  await genInt();
+}
+
+async function genOK2 () : Awaitable<void> {
   $x = genInt();
   await $x;
 }
 
 async function genBad () : Awaitable<void> {
+  genInt();
+}
+
+async function genBad2 () : Awaitable<void> {
   $x = genInt();
 }
 

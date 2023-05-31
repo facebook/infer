@@ -94,6 +94,7 @@ type t =
   ; is_defined: bool  (** true if the procedure is defined, and not just declared *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
   ; is_csharp_synchronized_method: bool  (** the procedure is a C# synchronized method *)
+  ; is_hack_async: bool
   ; block_as_arg_attributes: block_as_arg_attributes option
         (** Present if the procedure is an Objective-C block that has been passed to a given method
             as argument, including whether it is in a position annotated with the NS_NOESCAPE
@@ -178,6 +179,7 @@ let default translation_unit proc_name =
   ; is_defined= false
   ; is_java_synchronized_method= false
   ; is_csharp_synchronized_method= false
+  ; is_hack_async= false
   ; block_as_arg_attributes= None
   ; is_no_return= false
   ; is_objc_arc_on= false
@@ -253,6 +255,7 @@ let pp f
      ; is_defined
      ; is_java_synchronized_method
      ; is_csharp_synchronized_method
+     ; is_hack_async
      ; block_as_arg_attributes
      ; is_no_return
      ; is_objc_arc_on
@@ -316,6 +319,7 @@ let pp f
     is_java_synchronized_method f () ;
   pp_bool_default ~default:default.is_csharp_synchronized_method "is_csharp_synchronized_method"
     is_csharp_synchronized_method f () ;
+  pp_bool_default ~default:default.is_hack_async "is_hack_async" is_hack_async f () ;
   if
     not
       ([%equal: block_as_arg_attributes option] default.block_as_arg_attributes

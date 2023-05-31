@@ -51,6 +51,8 @@ let is_ptr_struct = function Typ.Ptr (Struct _) | Typ.Void -> true | _ -> false
 
 let is_int = function Typ.Int -> true | _ -> false
 
+let sub_int = function ty -> compat ~assigned:Int ~given:ty
+
 (** for type errors *)
 type expected_kind = Ptr | PtrArray | PtrStruct | Typ | SubTypeOf of Typ.t | SuperTypeOf of Typ.t
 
@@ -452,7 +454,7 @@ let typecheck_instr (instr : Instr.t) : unit monad =
         ~expected:(SuperTypeOf (Ptr typ)) ~loc
   | Prune {exp; loc} ->
       let* () = set_location loc in
-      typecheck_exp exp ~check:is_int ~expected:(SubTypeOf Int) ~loc
+      typecheck_exp exp ~check:sub_int ~expected:(SubTypeOf Int) ~loc
   | Let {id; exp; loc} ->
       let* () = set_location loc in
       let* typ = typeof_exp exp in

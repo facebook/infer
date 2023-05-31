@@ -90,6 +90,8 @@ module Attr : sig
 
   val is_trait : t -> bool
 
+  val is_async : t -> bool
+
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 
   val pp_with_loc : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]

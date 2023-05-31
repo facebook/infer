@@ -744,15 +744,6 @@ let is_erlang_call_qualified name =
 
 let is_erlang = function Erlang _ -> true | _ -> false
 
-(* temporary hack for testing *)
-let is_hack_async name =
-  match name with
-  | Hack {function_name} ->
-      StringLabels.starts_with ~prefix:"gen" function_name
-  | _ ->
-      false
-
-
 let rec compare_name x y =
   let open ICompare in
   match (x, y) with

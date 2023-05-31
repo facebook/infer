@@ -858,11 +858,13 @@ module ProcDescBridge = struct
     let sil_procname = ProcDeclBridge.to_sil lang procdecl in
     let sil_ret_type = TypBridge.to_sil lang procdecl.result_type.typ in
     let definition_loc = LocationBridge.to_sil sourcefile procdecl.qualified_name.name.loc in
+    let is_hack_async = List.exists procdecl.attributes ~f:Attr.is_async in
     let formals = build_formals lang pdesc in
     let locals = build_locals lang pdesc in
     let pattributes =
       { (ProcAttributes.default (SourceFile.file sourcefile) sil_procname) with
         is_defined= true
+      ; is_hack_async
       ; formals
       ; locals
       ; ret_type= sil_ret_type
