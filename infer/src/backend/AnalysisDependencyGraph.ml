@@ -24,7 +24,7 @@ let build ~changed_files =
   let deleted_procs = ref [] in
   (* First, build a reverse analysis callgraph [graph] and tenv dependency map [tenv_deps]. *)
   Summary.OnDisk.iter_specs ~f:(fun {Summary.proc_name; dependencies} ->
-      let Dependencies.{callees; used_tenv_sources} =
+      let {Dependencies.summary_loads; other_proc_names; used_tenv_sources} =
         match dependencies with
         | Complete c ->
             c
@@ -42,7 +42,10 @@ let build ~changed_files =
                     (SourceFile.Hash.find procs_in_changed_files translation_unit) )
       in
       if is_deleted_proc then deleted_procs := proc_name :: !deleted_procs ;
-      List.iter callees ~f:(fun callee -> CallGraph.add_edge graph callee ~successor:proc_name) ;
+      List.iter summary_loads ~f:(fun callee ->
+          CallGraph.add_edge graph callee ~successor:proc_name ) ;
+      List.iter other_proc_names ~f:(fun callee ->
+          CallGraph.add_edge graph callee ~successor:proc_name ) ;
       List.iter used_tenv_sources ~f:(fun src_file ->
           match SourceFile.Hash.find_opt tenv_deps src_file with
           | Some deps ->

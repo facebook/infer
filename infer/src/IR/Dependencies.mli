@@ -8,7 +8,10 @@
 open! IStd
 module F = Format
 
-type complete = {callees: Procname.t list; used_tenv_sources: SourceFile.t list}
+type complete =
+  { summary_loads: Procname.t list
+  ; other_proc_names: Procname.t list
+  ; used_tenv_sources: SourceFile.t list }
 
 type t =
   | Partial
@@ -33,7 +36,7 @@ val freeze : Procname.t -> t -> complete
 
 val complete_exn : t -> complete
 
-val record_pname_dep : ?caller:Procname.t -> Procname.t -> unit
+val record_pname_dep : ?caller:Procname.t -> is_summary_load:bool -> Procname.t -> unit
 
 val record_srcfile_dep : SourceFile.t -> unit
 

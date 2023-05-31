@@ -39,7 +39,7 @@ let load_from_uid, load, clear_cache, store =
     result
   in
   let load pname =
-    Dependencies.record_pname_dep pname ;
+    Dependencies.record_pname_dep ~is_summary_load:false pname ;
     match Procname.Hash.find_opt cache pname with
     | Some _ as result ->
         result

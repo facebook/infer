@@ -240,14 +240,15 @@ let dump_duplicate_procs source_file procs =
   if not (List.is_empty duplicate_procs) then output_to_file duplicate_procs
 
 
-let register_callee ?caller_summary callee =
+let register_callee ~is_active ?caller_summary callee =
   Option.iter caller_summary ~f:(fun {Summary.proc_name= caller} ->
-      Dependencies.record_pname_dep ~caller callee )
+      Dependencies.record_pname_dep ~caller ~is_summary_load:(not is_active) callee )
 
 
 let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary callee_pname =
-  register_callee ?caller_summary callee_pname ;
-  if is_active callee_pname then None
+  let is_active = is_active callee_pname in
+  register_callee ~is_active ?caller_summary callee_pname ;
+  if is_active then None
   else
     let analyze_callee_aux ~specialization =
       Procdesc.load callee_pname
