@@ -40,6 +40,7 @@ type build_system =
   | BMake
   | BMvn
   | BNdk
+  | BPython
   | BRebar3
   | BXcode
 [@@deriving compare, equal]
@@ -81,6 +82,7 @@ let build_system_exe_assoc =
   ; (BMvn, "mvn")
   ; (BMvn, "mvnw")
   ; (BNdk, "ndk-build")
+  ; (BPython, "python3")
   ; (BRebar3, "rebar3")
   ; (BErlc, "erlc")
   ; (BXcode, "xcodebuild") ]

@@ -33,7 +33,6 @@ module TextualFile : sig
 
   val translate_module :
     Textual.SourceFile.t -> Textual.Module.t -> (sil, Textual.SourceFile.t * error list) result
-    [@@warning "-unused-value-declaration"]
 
   val translate : t -> (sil, Textual.SourceFile.t * error list) result
 

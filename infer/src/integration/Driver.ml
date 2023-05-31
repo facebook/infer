@@ -32,6 +32,7 @@ type mode =
   | JsonSIL of {cfg_json: string; tenv_json: string}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
+  | Python of {prog: string; args: string list}
   | PythonBytecode of {pyc: string}
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
@@ -89,6 +90,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Maven driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | NdkBuild {build_cmd} ->
       F.fprintf fmt "NdkBuild driver mode: build_cmd = %a" Pp.cli_args build_cmd
+  | Python {prog; args} ->
+      F.fprintf fmt "Python driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | PythonBytecode {pyc} ->
       F.fprintf fmt "Python driver mode:@\npyc = '%s'" pyc
   | Rebar3 {args} ->
@@ -218,9 +221,12 @@ let capture ~changed_files mode =
       | NdkBuild {build_cmd} ->
           L.progress "Capturing in ndk-build mode...@." ;
           NdkBuild.capture ~build_cmd
+      | Python {prog; args} ->
+          L.progress "Capturing in python mode...@." ;
+          Python.capture (Python.Files {prog; args})
       | PythonBytecode {pyc} ->
           L.progress "Capturing python byte-code from %s...@." pyc ;
-          Python.capture ~pyc
+          Python.capture (Python.Bytecode pyc)
       | Rebar3 {args} ->
           L.progress "Capturing in rebar3 mode...@." ;
           Erlang.capture ~command:"rebar3" ~args
@@ -391,6 +397,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
         Version.erlang_enabled
     | `Hack ->
         Version.hack_enabled
+    | `Python ->
+        Version.python_enabled
     | `Xcode ->
         Version.clang_enabled && Version.xcode_enabled
   in
@@ -407,6 +415,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
           "erlang"
       | `Hack ->
           "hack"
+      | `Python ->
+          "python"
       | `Xcode ->
           "clang and xcode"
     in
@@ -435,6 +445,8 @@ let assert_supported_build_system build_system =
       Config.string_of_build_system build_system |> assert_supported_mode `Erlang
   | BHackc ->
       Config.string_of_build_system build_system |> assert_supported_mode `Hack
+  | BPython ->
+      Config.string_of_build_system build_system |> assert_supported_mode `Python
   | BXcode ->
       Config.string_of_build_system build_system |> assert_supported_mode `Xcode
   | BBuck ->
@@ -557,6 +569,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           Erlc {args}
       | BHackc ->
           Hackc {prog; args}
+      | BPython ->
+          Python {prog; args}
       | BXcode when Config.xcpretty ->
           XcodeXcpretty {prog; args}
       | BXcode ->

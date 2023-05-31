@@ -58,3 +58,5 @@ let xcode_enabled = is_not_no "@XCODE_SELECT@"
 let man_pages_last_modify_date = "@INFER_MAN_LAST_MODIFIED@"
 
 let python_exe = "@PYTHON@"
+
+let python_enabled = is_yes "@BUILD_PYTHON_ANALYZERS@"

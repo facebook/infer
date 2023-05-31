@@ -27,6 +27,7 @@ type build_system =
   | BMake
   | BMvn
   | BNdk
+  | BPython
   | BRebar3
   | BXcode
 
