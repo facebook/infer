@@ -28,7 +28,7 @@ let build ~changed_files =
         match dependencies with
         | Complete c ->
             c
-        | Partial _ ->
+        | Partial ->
             L.die InternalError "deserialized summary with incomplete dependencies"
       in
       let is_deleted_proc =

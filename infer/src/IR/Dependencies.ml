@@ -11,11 +11,9 @@ let currently_under_analysis : Procname.t option ref = ref None
 
 let () = AnalysisGlobalState.register_ref_with_proc_name currently_under_analysis ~init:Option.some
 
-type partial = Procname.HashSet.t
-
 type complete = {callees: Procname.t list; used_tenv_sources: SourceFile.t list}
 
-type t = Partial of partial | Complete of complete
+type t = Partial | Complete of complete
 
 let deps_in_progress : (SourceFile.HashSet.t * Procname.HashSet.t) Procname.Hash.t =
   Procname.Hash.create 0
@@ -25,12 +23,12 @@ let reset pname =
   let pname_deps = Procname.HashSet.create 0 in
   let srcfile_deps = SourceFile.HashSet.create 0 in
   Procname.Hash.replace deps_in_progress pname (srcfile_deps, pname_deps) ;
-  Partial pname_deps
+  Partial
 
 
 let freeze pname deps =
   match deps with
-  | Partial _ ->
+  | Partial ->
       let srcfile_deps, pname_deps = Procname.Hash.find deps_in_progress pname in
       let callees = Iter.to_list (Procname.HashSet.iter pname_deps) in
       let used_tenv_sources = Iter.to_list (SourceFile.HashSet.iter srcfile_deps) in
@@ -42,7 +40,7 @@ let freeze pname deps =
 let complete_exn = function
   | Complete c ->
       c
-  | Partial _ ->
+  | Partial ->
       L.die InternalError "complete dependency info unavailable for partially-computed summary"
 
 

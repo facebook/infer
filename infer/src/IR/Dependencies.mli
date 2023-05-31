@@ -7,12 +7,10 @@
 
 open! IStd
 
-type partial = Procname.HashSet.t
-
 type complete = {callees: Procname.t list; used_tenv_sources: SourceFile.t list}
 
 type t =
-  | Partial of partial
+  | Partial
   | Complete of complete
       (** Dependencies are [partial] and mutable while the summary to which they belong is being
           computed, then made [complete] and immutable once the summary is fully analyzed. *)
