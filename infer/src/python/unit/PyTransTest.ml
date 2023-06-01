@@ -854,13 +854,13 @@ let%test_module "simple user classes" =
       let source =
         {|
 class C:
-        def __init__(self, x: int) -> None:
+        def __init__(self, x):
             self.x = x
 
-        def get(self) -> int:
+        def get(self):
             return self.x
 
-        def set(self, x: int) -> None:
+        def set(self, x):
             self.x = x
 
 c = C()
@@ -892,7 +892,7 @@ c.set(42)
 
           }
 
-          define C.__init__(self: *PyObject, x: *PyInt) : *PyNone {
+          define C.__init__(self: *PyObject, x: *PyObject) : *PyObject {
             #b0:
                 n0:*PyObject = load &self
                 n1:*PyObject = load &x
@@ -901,7 +901,7 @@ c.set(42)
 
           }
 
-          define C.get(self: *PyObject) : *PyInt {
+          define C.get(self: *PyObject) : *PyObject {
             #b0:
                 n0:*PyObject = load &self
                 n1 = n0.?.x
@@ -909,7 +909,7 @@ c.set(42)
 
           }
 
-          define C.set(self: *PyObject, x: *PyInt) : *PyNone {
+          define C.set(self: *PyObject, x: *PyObject) : *PyObject {
             #b0:
                 n0:*PyObject = load &self
                 n1:*PyObject = load &x
@@ -941,4 +941,133 @@ c.set(42)
           declare $builtins.python_bool(int) : *PyBool
 
           declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+class IntBox:
+        x: int
+        f: Callable[[int, bool, str], None]
+
+        def __init__(self, x: int) -> None:
+            self.x = x
+            self.f = lambda i: lambda b: lambda s: print(42)
+
+        def get(self) -> int:
+            return self.x
+
+        def set(self, x: int) -> None:
+            self.x = x
+
+        def run(self) -> None:
+            self.f(3)(False)("yolo")
+
+c = IntBox(10)
+c.x
+c.z = 10
+c.get()
+c.set(42)
+c.run()
+print(c.z)
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define $module::toplevel() : *PyObject {
+          #b0:
+              n0 = $builtins.python_code("IntBox")
+              n1 = $builtins.python_class("IntBox")
+              n2 = $builtins.python_class_constructor("IntBox", $builtins.python_int(10))
+              store &$module::c <- n2:*IntBox
+              n3:*IntBox = load &$module::c
+              n4 = n3.?.x
+              n5:*IntBox = load &$module::c
+              store n5.?.z <- $builtins.python_int(10):*PyInt
+              n6:*IntBox = load &$module::c
+              n7 = $builtins.python_load_method(n6, "get")
+              n8 = $builtins.python_call_method(n7)
+              n9:*IntBox = load &$module::c
+              n10 = $builtins.python_load_method(n9, "set")
+              n11 = $builtins.python_call_method(n10, $builtins.python_int(42))
+              n12:*IntBox = load &$module::c
+              n13 = $builtins.python_load_method(n12, "run")
+              n14 = $builtins.python_call_method(n13)
+              n15:*IntBox = load &$module::c
+              n16 = n15.?.z
+              n17 = $builtins.print(n16)
+              ret null
+
+        }
+
+        define IntBox.__init__(self: *PyObject, x: *PyInt) : *PyNone {
+          #b0:
+              n0:*PyObject = load &self
+              n1:*PyObject = load &x
+              store n0.?.x <- n1:*PyObject
+              n2:*PyObject = load &self
+              n3 = $builtins.python_code("<lambda>")
+              store n2.?.f <- n3:*PyCode
+              ret null
+
+        }
+
+        define IntBox.get(self: *PyObject) : *PyInt {
+          #b0:
+              n0:*PyObject = load &self
+              n1 = n0.?.x
+              ret n1
+
+        }
+
+        define IntBox.set(self: *PyObject, x: *PyInt) : *PyNone {
+          #b0:
+              n0:*PyObject = load &self
+              n1:*PyObject = load &x
+              store n0.?.x <- n1:*PyObject
+              ret null
+
+        }
+
+        define IntBox.run(self: *PyObject) : *PyNone {
+          #b0:
+              n0:*PyObject = load &self
+              n1 = $builtins.python_load_method(n0, "f")
+              n2 = $builtins.python_call_method(n1, $builtins.python_int(3))
+              n3 = $builtins.python_call(n2, $builtins.python_bool(0))
+              n4 = $builtins.python_call(n3, $builtins.python_string("yolo"))
+              ret null
+
+        }
+
+        type IntBox = {f: *PyObject; x: *PyInt}
+
+        global $module::c: *PyObject
+
+        declare $builtins.print(...) : *PyObject
+
+        declare $builtins.python_load_method(*PyObject, *String) : *PyMethod
+
+        type PyMethod = {code: *PyCode; self: *PyObject}
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_class_constructor(...) : *PyObject
+
+        declare $builtins.python_class(*String) : *PyClass
+
+        declare $builtins.python_call_method(...) : *PyObject
+
+        declare $builtins.python_call(...) : *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )

@@ -107,3 +107,12 @@ let mk_bool (b : bool) =
 
 
 let global name = sprintf "$module::%s" name
+
+type annotated_name = {name: string; annotation: string}
+
+type method_info =
+  { name: string
+  ; raw_qualified_name: string
+  ; code: FFI.Constant.t
+  ; signature: annotated_name list
+  ; flags: int }

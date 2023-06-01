@@ -229,7 +229,7 @@ end
 module Labels = Caml.Map.Make (Int)
 
 module Signature = struct
-  type t = (string * string) list
+  type t = PyCommon.annotated_name list
 end
 
 module SMap = Caml.Map.Make (String)

@@ -84,3 +84,14 @@ val mk_bool : bool -> Textual.Exp.t
 
 val global : string -> string
 (** Wrap a variable name into the [global] namespace *)
+
+(** Encoding of some type annotation like [x: int] *)
+type annotated_name = {name: string; annotation: string}
+
+(** Method declaration info (name, signature, ... *)
+type method_info =
+  { name: string
+  ; raw_qualified_name: string
+  ; code: FFI.Constant.t
+  ; signature: annotated_name list
+  ; flags: int }

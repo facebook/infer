@@ -169,15 +169,15 @@ val mk_builtin_call : t -> Builtin.textual -> T.Exp.t list -> t * T.Ident.t * T.
 (** Wrapper to compute the Textual version of a call to a "textual" builtin * function (a builtin we
     introduced for modeling purpose) *)
 
-val register_toplevel : t -> string -> (string * string) list -> t
+val register_toplevel : t -> string -> PyCommon.annotated_name list -> t
 (** Register a top level function declaration. We keep track of them since they might shadow Python
     builtins *)
 
 val register_method :
-  t -> enclosing_class:string -> method_name:string -> (string * string) list -> t
+  t -> enclosing_class:string -> method_name:string -> PyCommon.annotated_name list -> t
 (** Register a method declaration. We mostly keep track of their signatures *)
 
-val lookup_signature : t -> T.enclosing_class -> T.ProcName.t -> (string * string) list option
+val lookup_signature : t -> T.enclosing_class -> T.ProcName.t -> PyCommon.annotated_name list option
 (** Lookup the signature of a function / method *)
 
 val register_class : t -> string -> t

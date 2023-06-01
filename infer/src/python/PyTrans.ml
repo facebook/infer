@@ -20,6 +20,8 @@ let node_name ?(loc = T.Location.Unknown) value = {T.NodeName.value; loc}
 
 let proc_name ?(loc = T.Location.Unknown) value = {T.ProcName.value; loc}
 
+let field_name ?(loc = T.Location.Unknown) value = {T.FieldName.value; loc}
+
 let type_name ?(loc = T.Location.Unknown) value = {T.TypeName.value; loc}
 
 (* TODO: only deal with toplevel functions for now *)
@@ -125,6 +127,16 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       L.die InternalError "[load_cell] Can't load LOAD_BUILD_CLASS, something went wrong"
 
 
+let cells_to_textual env opname code cells =
+  Env.map ~env cells ~f:(fun env cell ->
+      let env, exp, _ = load_cell env code cell in
+      match exp with
+      | `Ok exp ->
+          (env, exp)
+      | `Error s ->
+          L.die UserError "[%s] failed to fetch from the stack: %s" opname s )
+
+
 (** Pop the top of the datastack. Fails with an [InternalError] if the stack is empty. *)
 let pop_tos opname env =
   match Env.pop env with
@@ -132,6 +144,18 @@ let pop_tos opname env =
       L.die ExternalError "[%s] stack is empty" opname
   | Some (env, cell) ->
       (env, cell)
+
+
+let pop_n_tos opname =
+  let rec pop env n acc =
+    if n > 0 then (
+      let env, cell = pop_tos opname env in
+      Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
+      pop env (n - 1) (cell :: acc) )
+    else (env, acc)
+  in
+  Debug.p "[pop_n_tos]\n" ;
+  pop
 
 
 (* Python opcodes support. Most of the documentation directly comes from the official python
@@ -180,18 +204,18 @@ module LOAD = struct
           (env, DataStack.Name arg)
       | ATTR -> (
           let env, cell = pop_tos opname env in
-          let field_name = co_names.(arg) in
+          let fname = co_names.(arg) in
           let env, res, _info = load_cell env code cell in
           match res with
           | `Error s ->
-              L.die ExternalError "Failed to load attribute %s from cell %a: %s" field_name
+              L.die ExternalError "Failed to load attribute %s from cell %a: %s" fname
                 DataStack.pp_cell cell s
           | `Ok exp ->
               (* TODO: refine typ if possible *)
               let info = Env.{typ= PyCommon.pyObject; is_class= false; is_code= false} in
               let env, id = Env.mk_fresh_ident env info in
               let loc = Env.loc env in
-              let name = {T.FieldName.value= field_name; loc} in
+              let name = field_name ~loc fname in
               let field = {T.enclosing_class= T.TypeName.wildcard; name} in
               let exp = T.Exp.Field {exp; field} in
               let instr = T.Instr.Let {id; exp; loc} in
@@ -242,28 +266,6 @@ module METHOD = struct
   end
 
   module CALL = struct
-    let pop_n_tos opname =
-      let rec pop env n acc =
-        if n > 0 then (
-          let env, cell = pop_tos opname env in
-          Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
-          pop env (n - 1) (cell :: acc) )
-        else (env, acc)
-      in
-      Debug.p "[pop_n_tos]\n" ;
-      pop
-
-
-    let to_textual env opname code cells =
-      Env.map ~env cells ~f:(fun env cell ->
-          let env, exp, _ = load_cell env code cell in
-          match exp with
-          | `Ok exp ->
-              (env, exp)
-          | `Error s ->
-              L.die UserError "[%s] failed to fetch from the stack: %s" opname s )
-
-
     (** {v CALL_METHOD(argc) v}
 
         Calls a method. [argc] is the number of positional arguments. Keyword arguments are not
@@ -274,7 +276,7 @@ module METHOD = struct
     let run env code {FFI.Instruction.opname; arg} =
       Debug.p "[%s] argc = %d" opname arg ;
       let env, cells = pop_n_tos opname env arg [] in
-      let env, args = to_textual env opname code cells in
+      let env, args = cells_to_textual env opname code cells in
       let env, cell_mi = pop_tos opname env in
       let env, mi, _ = load_cell env code cell_mi in
       match mi with
@@ -349,10 +351,10 @@ module STORE = struct
           | `Error s ->
               L.die InternalError "[%s] %s" opname s
           | `Ok value ->
-              let field_name = co_names.(arg) in
+              let fname = co_names.(arg) in
               (* TODO: refine typ if possible *)
               let loc = Env.loc env in
-              let name = {T.FieldName.value= field_name; loc} in
+              let name = field_name ~loc fname in
               let field = {T.enclosing_class= T.TypeName.wildcard; name} in
               let exp1 = T.Exp.Field {exp; field} in
               let instr = T.Instr.Store {exp1; typ; exp2= value; loc} in
@@ -404,28 +406,6 @@ module FUNCTION = struct
 
         After: [ result | rest-of-the-stack ] *)
 
-    let pop_n_tos opname =
-      let rec pop env n acc =
-        if n > 0 then (
-          let env, cell = pop_tos opname env in
-          Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
-          pop env (n - 1) (cell :: acc) )
-        else (env, acc)
-      in
-      Debug.p "[pop_n_tos]\n" ;
-      pop
-
-
-    let to_textual env opname code cells =
-      Env.map ~env cells ~f:(fun env cell ->
-          let env, exp, _ = load_cell env code cell in
-          match exp with
-          | `Ok exp ->
-              (env, exp)
-          | `Error s ->
-              L.die UserError "[%s] failed to fetch from the stack: %s" opname s )
-
-
     let static_call env fname args =
       let loc = Env.loc env in
       let classes = Env.get_classes env in
@@ -466,7 +446,7 @@ module FUNCTION = struct
     let run env ({FFI.Code.co_names; co_consts} as code) {FFI.Instruction.opname; arg} =
       Debug.p "[%s] argc = %d\n" opname arg ;
       let env, cells = pop_n_tos opname env arg [] in
-      let env, args = to_textual env opname code cells in
+      let env, args = cells_to_textual env opname code cells in
       Debug.p "  #args = %d\n" (List.length args) ;
       let env, fname = pop_tos opname env in
       Debug.p "  fname = %a\n" DataStack.pp_cell fname ;
@@ -522,17 +502,17 @@ module FUNCTION = struct
     let unpack_annotations {FFI.Code.co_names; co_consts} annotations =
       let unpack =
         List.fold_left ~init:(Some [])
-          ~f:(fun acc (key, c) ->
+          ~f:(fun acc (name, c) ->
             match (acc, c) with
             | None, _ ->
                 None
             | Some acc, DataStack.Name ndx ->
-                let annot = co_names.(ndx) in
-                Some ((key, annot) :: acc)
+                let annotation = co_names.(ndx) in
+                Some ({PyCommon.name; annotation} :: acc)
             | Some acc, DataStack.Const ndx -> (
               match co_consts.(ndx) with
               | FFI.Constant.PYCNone ->
-                  Some ((key, "None") :: acc)
+                  Some ({PyCommon.name; annotation= "None"} :: acc)
               | _ ->
                   Some acc )
             | Some acc, c ->
@@ -1165,25 +1145,27 @@ let rec nodes env label_info code instructions =
 
 
 let type_of_annotation typ =
-  let typ =
-    match typ with
-    | "int" ->
-        PyCommon.pyInt
-    | "str" ->
-        PyCommon.pyString
-    | "bool" ->
-        PyCommon.pyBool
-    | "float" ->
-        PyCommon.pyFloat
-    | "None" ->
-        PyCommon.pyNone
-    | "object" ->
-        PyCommon.pyObject
-    (* TODO: allow user denotable types here :D *)
-    | _ ->
-        Debug.p "[type_of_annotation] unsupported type: %s\n" typ ;
-        PyCommon.pyObject
-  in
+  match typ with
+  | "int" ->
+      PyCommon.pyInt
+  | "str" ->
+      PyCommon.pyString
+  | "bool" ->
+      PyCommon.pyBool
+  | "float" ->
+      PyCommon.pyFloat
+  | "None" ->
+      PyCommon.pyNone
+  | "object" ->
+      PyCommon.pyObject
+  (* TODO: allow user denotable types here :D *)
+  | _ ->
+      Debug.p "[type_of_annotation] unsupported type: %s\n" typ ;
+      PyCommon.pyObject
+
+
+let annotated_type_of_annotation typ =
+  let typ = type_of_annotation typ in
   T.Typ.{typ; attributes= []}
 
 
@@ -1217,7 +1199,13 @@ let to_proc_desc env loc enclosing_class name
      names, labels, ...) and only keep the [shared] part of the environment *)
   let env, nodes = nodes env label_info code instructions in
   let annotations = Env.lookup_signature env enclosing_class name |> Option.value ~default:[] in
-  let types = List.map ~f:(fun (n, t) -> (n, type_of_annotation t)) annotations in
+  let types =
+    List.map
+      ~f:(fun {PyCommon.name; annotation} ->
+        let annotation = annotated_type_of_annotation annotation in
+        (name, annotation) )
+      annotations
+  in
   let formals_types =
     List.map
       ~f:(fun {T.VarName.value} ->
@@ -1234,137 +1222,39 @@ let to_proc_desc env loc enclosing_class name
   (env, {Textual.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown})
 
 
-module MethodDeclaration = struct
-  (** A generic method declaration looks like the followin example opcode * sequence:
-
-      {[
-        LOAD_NAME                3 (int)
-        LOAD_CONST               1 (('x',))
-        BUILD_CONST_KEY_MAP      1
-        LOAD_CONST               2 (<code object foobar at 0x7f42d8084f50, file "obj.py", line 2>)
-        LOAD_CONST               3 ('C.foobar')
-        MAKE_FUNCTION            4 (annotations)
-        STORE_NAME               4 (foobar)
-      ]}
-
-      Depending on annotations being present, usage of keyword parameters, ... the size of this
-      stack might change. So we process the commands until the [MAKE_FUNCTION, STORE_NAME] sequence
-      and return it a structure version of it *)
-
-  let try_sig_pattern {FFI.Code.co_names; co_consts} instrs =
-    let rec gather_types instrs acc =
-      match instrs with
-      | [] ->
-          (acc, [])
-      | {FFI.Instruction.opname; arg} :: tl ->
-          if String.equal opname "LOAD_NAME" then
-            let typ = co_names.(arg) in
-            gather_types tl (typ :: acc)
-          else if String.equal opname "LOAD_CONST" then
-            match co_consts.(arg) with
-            | FFI.Constant.PYCNone ->
-                gather_types tl ("None" :: acc)
-            | FFI.Constant.PYCString name ->
-                gather_types tl (name :: acc)
-            | _ ->
-                (acc, instrs)
-          else (acc, instrs)
-    in
-    let unpack_names names =
-      let res =
-        List.fold_result names ~init:[] ~f:(fun acc c ->
-            match c with FFI.Constant.PYCString name -> Ok (name :: acc) | _ -> Error () )
-      in
-      match res with Ok names -> Some names | Error () -> None
-    in
-    let types, instrs = gather_types instrs [] in
-    match (instrs : FFI.Instruction.t list) with
-    | {opname= name1; arg= arg1} :: {opname= name2; arg= arg2} :: tl
-      when String.equal name1 "LOAD_CONST" && String.equal name2 "BUILD_CONST_KEY_MAP" -> (
-      match co_consts.(arg1) with
-      | FFI.Constant.PYCTuple names when Int.equal (Array.length names) arg2 -> (
-        match unpack_names @@ Array.to_list names with
-        | None ->
-            (instrs, None)
-        | Some names -> (
-          match List.zip names types with
-          | Ok signature ->
-              (tl, Some (List.rev signature))
-          | Unequal_lengths ->
-              (instrs, None) ) )
-      | _ ->
-          (instrs, None) )
-    | _ ->
-        (instrs, None)
-
-
-  let try_decl_pattern {FFI.Code.co_consts} instrs =
-    let head, tail = List.split_n instrs 4 in
-    match (head : FFI.Instruction.t list) with
-    | [{opname= name0; arg= arg0}; {opname= name1}; {opname= name2; arg= arg2}; {opname= name3}]
-      when String.equal name0 "LOAD_CONST" && String.equal name1 "LOAD_CONST"
-           && String.equal name2 "MAKE_FUNCTION"
-           && String.equal name3 "STORE_NAME" ->
-        let code = co_consts.(arg0) in
-        (tail, Some (code, arg2))
-    | _ ->
-        (* Not enough opcode to read, or pattern doesn't match *)
-        (instrs, None)
-
-
-  let try_register code instrs =
-    let instrs, maybe_sig = try_sig_pattern code instrs in
-    let instrs, maybe_code = try_decl_pattern code instrs in
-    match maybe_code with
-    | None ->
-        (instrs, None)
-    | Some (code, flags) ->
-        check_flags "<DECLARE METHOD>" flags ;
-        (instrs, Some (code, maybe_sig))
-
-
-  let rec register code instrs codes =
-    let instrs, maybe_code = try_register code instrs in
-    match maybe_code with Some c -> register code instrs (c :: codes) | None -> (instrs, codes)
-end
-
 (** Process the special function generated by the Python compiler to create a class instances. This
     is where we can see some of the type annotations for fields, and method definitions. *)
 let rec class_declaration env ({FFI.Code.instructions; co_name} as code) loc =
-  (* TODO: some of the initialization sets up static definitions, like
-          [__module__] or [__qualname__] is happening first. For now, let's skip
-          them
-     Disassembly of <code object C at 0x7f3698784ea0, file "obj.py", line 1>:
-       1           0 LOAD_NAME                0 (__name__)
-                   2 STORE_NAME               1 (__module__)
-                   4 LOAD_CONST               0 ('C')
-                   6 STORE_NAME               2 (__qualname__)
+  (* TODO:
+     - use annotations to declare class member types
+     - pass in [env] to PyClassDecl when we'll support decorators
   *)
-  let _skipped, instructions = List.split_n instructions 4 in
-  (* Now, there should be some type information about class members, if provided. We assume there
-     is none for now.
-     TODO: support/ignore correctly type declaration for class members *)
-  (* Now, there is a sequence of opcodes that will setup the class methods.
-     Let's register them.
-     At this point, only two instructions for [return None] should remain, we can ignore them *)
-  let _remaining_instructions, codes = MethodDeclaration.register code instructions [] in
-  let name = type_name ~loc co_name in
-  let enclosing_class = T.Enclosing name in
+  let member_infos, method_infos = PyClassDecl.parse_class_declaration code instructions in
+  let type_name = type_name ~loc co_name in
+  let enclosing_class = T.Enclosing type_name in
   let env, codes =
-    List.fold_left codes ~init:(env, []) ~f:(fun (env, codes) (const, maybe_annotations) ->
-        match (FFI.Constant.as_code const, maybe_annotations) with
-        | Some co, Some annotations ->
-            (* TODO: if self doesn't have a type, we could give it the current class. *)
-            let env =
-              Env.register_method env ~enclosing_class:co_name ~method_name:co.FFI.Code.co_name
-                annotations
-            in
-            (env, const :: codes)
-        | _, _ ->
-            (env, const :: codes) )
+    List.fold_left method_infos ~init:(env, [])
+      ~f:(fun (env, codes) {PyCommon.code; signature; flags} ->
+        check_flags "<METHOD_DECLARATION>" flags ;
+        let env =
+          match FFI.Constant.as_code code with
+          | Some code ->
+              Env.register_method env ~enclosing_class:co_name ~method_name:code.FFI.Code.co_name
+                signature
+          | None ->
+              env
+        in
+        (env, code :: codes) )
+  in
+  let fields =
+    List.map member_infos ~f:(fun {PyCommon.name; annotation} ->
+        let name = field_name ~loc name in
+        let qualified_name = {T.enclosing_class= type_name; name} in
+        let typ = type_of_annotation annotation in
+        {T.FieldDecl.qualified_name; typ; attributes= []} )
   in
   let env, decls = to_proc_descs env enclosing_class (Array.of_list codes) in
-  let t = {T.Struct.name; supers= []; fields= []; attributes= []} in
+  let t = {T.Struct.name= type_name; supers= []; fields; attributes= []} in
   (env, T.Module.Struct t :: decls)
 
 (* TODO: No support for nested functions/methods at the moment *)
