@@ -35,7 +35,6 @@ let get_procname_and_captured value analysis_data astate =
 
 
 let get_caller_values_to_closures {InterproceduralAnalysis.proc_desc} path call_loc astate =
-  let post = (astate.AbductiveDomain.post :> BaseDomain.t) in
   let caller_attributes = Procdesc.get_attributes proc_desc in
   let caller_pname = Procdesc.get_proc_name proc_desc in
   match caller_attributes.ProcAttributes.specialized_with_closures_info with
@@ -51,13 +50,9 @@ let get_caller_values_to_closures {InterproceduralAnalysis.proc_desc} path call_
           with
           | Some (_, (value, _)) ->
               let rec get_deepest value =
-                match BaseMemory.find_opt value post.heap with
-                | None ->
-                    value
-                | Some edges ->
-                    BaseMemory.Edges.fold edges ~init:value
-                      ~f:(fun value (access, (accessed_value, _)) ->
-                        match access with Dereference -> get_deepest accessed_value | _ -> value )
+                Memory.fold_edges value astate ~init:value
+                  ~f:(fun value (access, (accessed_value, _)) ->
+                    match access with Dereference -> get_deepest accessed_value | _ -> value )
               in
               AbstractValue.Map.add (get_deepest value) passed_closure map
           | None ->
@@ -155,22 +150,17 @@ let captured_by_actuals ({InterproceduralAnalysis.proc_desc} as analysis_data) f
                 None
           in
           IOption.if_none_eval astate_captured_vars ~f:(fun () ->
-              let post = (astate.AbductiveDomain.post :> BaseDomain.t) in
-              match BaseMemory.find_opt value post.heap with
-              | None ->
-                  (astate, [])
-              | Some edges ->
-                  let astate, captured_vars =
-                    BaseMemory.Edges.fold edges ~init:(astate, [])
-                      ~f:(fun (astate, res) (_, ((accessed_value, _) as addr_hist)) ->
-                        let id = Ident.create_fresh Ident.knormal in
-                        let astate = PulseOperations.write_id id addr_hist astate in
-                        let astate, captured_vars =
-                          captured_vars_of accessed_value (Exp.Var id) astate
-                        in
-                        (astate, captured_vars :: res) )
-                  in
-                  (astate, List.concat captured_vars) ) )
+              let astate, captured_vars =
+                Memory.fold_edges value astate ~init:(astate, [])
+                  ~f:(fun (astate, res) (_, ((accessed_value, _) as addr_hist)) ->
+                    let id = Ident.create_fresh Ident.knormal in
+                    let astate = PulseOperations.write_id id addr_hist astate in
+                    let astate, captured_vars =
+                      captured_vars_of accessed_value (Exp.Var id) astate
+                    in
+                    (astate, captured_vars :: res) )
+              in
+              (astate, List.concat captured_vars) ) )
   in
   let astate, captured_vars =
     List.fold func_actuals ~init:(astate, [])
@@ -188,7 +178,6 @@ let captured_by_actuals ({InterproceduralAnalysis.proc_desc} as analysis_data) f
 
 
 let actuals_of_func analysis_data func_actuals caller_values_to_closures astate =
-  let post = (astate.AbductiveDomain.post :> BaseDomain.t) in
   let actual_of value =
     let rec actual_of value seen =
       if AbstractValue.Set.mem value seen then (* cycles not handled yet *) None
@@ -198,29 +187,25 @@ let actuals_of_func analysis_data func_actuals caller_values_to_closures astate 
         | Some (pname, captured) ->
             let captured = specialize_captured_vars analysis_data captured in
             Some (ProcAttributes.Closure (pname, captured))
-        | None -> (
+        | None ->
             let default = AbstractValue.Map.find_opt value caller_values_to_closures in
-            match BaseMemory.find_opt value post.heap with
-            | None ->
-                default
-            | Some edges ->
-                BaseMemory.Edges.fold edges ~init:default
-                  ~f:(fun res (access, (accessed_value, _)) ->
-                    match access with
-                    | FieldAccess fieldname -> (
-                      match actual_of accessed_value seen with
-                      | Some passed_closure -> (
-                        match res with
-                        | Some (ProcAttributes.Fields closures) ->
-                            Some (ProcAttributes.Fields ((fieldname, passed_closure) :: closures))
-                        | _ ->
-                            Some (ProcAttributes.Fields [(fieldname, passed_closure)]) )
-                      | None ->
-                          res )
-                    | Dereference when Option.is_none res ->
-                        actual_of accessed_value seen
+            Memory.fold_edges value astate ~init:default
+              ~f:(fun res (access, (accessed_value, _)) ->
+                match access with
+                | FieldAccess fieldname -> (
+                  match actual_of accessed_value seen with
+                  | Some passed_closure -> (
+                    match res with
+                    | Some (ProcAttributes.Fields closures) ->
+                        Some (ProcAttributes.Fields ((fieldname, passed_closure) :: closures))
                     | _ ->
-                        res ) )
+                        Some (ProcAttributes.Fields [(fieldname, passed_closure)]) )
+                  | None ->
+                      res )
+                | Dereference when Option.is_none res ->
+                    actual_of accessed_value seen
+                | _ ->
+                    res )
     in
     actual_of value AbstractValue.Set.empty
   in
@@ -266,7 +251,7 @@ let deep_formals_to_closures_of_captured_vars ({InterproceduralAnalysis.proc_des
       match get_procname_and_captured value analysis_data astate with
       | Some (pname, captured) ->
           dftb_and_passed_closure_of_closure (pname, captured) ~exp map astate seen
-      | None -> (
+      | None ->
           (* If we already have a passed_closure associated with the current value, we want
              to keep it and build the new passed_closure over it because the information it
              holds may not exist in memory. E.g. if a caller's captured var is a closure and
@@ -308,47 +293,39 @@ let deep_formals_to_closures_of_captured_vars ({InterproceduralAnalysis.proc_des
             | None ->
                 (astate, map, None)
           in
-          let post = (astate.AbductiveDomain.post :> BaseDomain.t) in
-          match BaseMemory.find_opt value post.heap with
-          | None ->
-              default
-          | Some edges ->
-              BaseMemory.Edges.fold edges ~init:default
-                ~f:(fun (astate, map, res) (access, ((accessed_value, _) as addr_hist)) ->
-                  match access with
-                  | FieldAccess fieldname -> (
-                      let id = Ident.create_fresh Ident.knormal in
-                      let astate' = PulseOperations.write_id id addr_hist astate in
-                      match
-                        dftb_and_passed_closure_of_value accessed_value (Exp.Var id) map astate'
-                          seen
-                      with
-                      | _, _, None ->
-                          (astate, map, res)
-                      | astate, map, Some passed_closure -> (
-                        match res with
-                        | None ->
-                            (astate, map, Some (ProcAttributes.Fields [(fieldname, passed_closure)]))
-                        | Some (ProcAttributes.Fields fields) ->
-                            ( astate
-                            , map
-                            , Some (ProcAttributes.Fields ((fieldname, passed_closure) :: fields))
-                            )
-                        | Some _ ->
-                            (astate, map, res) ) )
-                  | Dereference -> (
-                      let id = Ident.create_fresh Ident.knormal in
-                      let astate' = PulseOperations.write_id id addr_hist astate in
-                      match
-                        dftb_and_passed_closure_of_value accessed_value (Exp.Var id) map astate'
-                          seen
-                      with
-                      | _, _, None ->
-                          (astate, map, res)
-                      | astate_map_res ->
-                          astate_map_res )
-                  | _ ->
-                      (astate, map, res) ) )
+          Memory.fold_edges value astate ~init:default
+            ~f:(fun (astate, map, res) (access, ((accessed_value, _) as addr_hist)) ->
+              match access with
+              | FieldAccess fieldname -> (
+                  let id = Ident.create_fresh Ident.knormal in
+                  let astate' = PulseOperations.write_id id addr_hist astate in
+                  match
+                    dftb_and_passed_closure_of_value accessed_value (Exp.Var id) map astate' seen
+                  with
+                  | _, _, None ->
+                      (astate, map, res)
+                  | astate, map, Some passed_closure -> (
+                    match res with
+                    | None ->
+                        (astate, map, Some (ProcAttributes.Fields [(fieldname, passed_closure)]))
+                    | Some (ProcAttributes.Fields fields) ->
+                        ( astate
+                        , map
+                        , Some (ProcAttributes.Fields ((fieldname, passed_closure) :: fields)) )
+                    | Some _ ->
+                        (astate, map, res) ) )
+              | Dereference -> (
+                  let id = Ident.create_fresh Ident.knormal in
+                  let astate' = PulseOperations.write_id id addr_hist astate in
+                  match
+                    dftb_and_passed_closure_of_value accessed_value (Exp.Var id) map astate' seen
+                  with
+                  | _, _, None ->
+                      (astate, map, res)
+                  | astate_map_res ->
+                      astate_map_res )
+              | _ ->
+                  (astate, map, res) )
   in
   PulseOperationResult.list_fold captured_vars ~init:(astate, Pvar.Map.empty)
     ~f:(fun (astate, map) captured_var ->

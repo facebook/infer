@@ -716,6 +716,11 @@ module Internal = struct
 
     let fold_edges address astate ~init ~f =
       SafeBaseMemory.fold_edges astate address (astate.post :> base_domain).heap ~init ~f
+
+
+    let iter_edges v astate ~f = Container.iter ~fold:(fold_edges v) astate ~f
+
+    let exists_edge v astate ~f = Container.exists ~iter:(iter_edges v) astate ~f
   end
 
   let add_static_types tenv astate formals_and_captured =
@@ -1829,6 +1834,14 @@ module Memory = struct
       (CanonValue.canon_access astate access)
       astate
     |> Option.map ~f:downcast_fst
+
+
+  let exists_edge addr astate ~f =
+    SafeMemory.exists_edge (CanonValue.canon' astate addr) astate ~f:(fun access_addr_hist ->
+        f
+          ( access_addr_hist
+            : Access.t * (CanonValue.t * ValueHistory.t)
+            :> PulseBaseMemory.Access.t * (AbstractValue.t * ValueHistory.t) ) )
 end
 
 module AddressAttributes = struct

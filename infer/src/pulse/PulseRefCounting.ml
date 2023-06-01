@@ -14,7 +14,6 @@ open PulseDomainInterface
    stack but has no strong reference, then it considered as strongly
    referenced by the stack *)
 let count_references tenv astate =
-  let post = (astate.AbductiveDomain.post :> BaseDomain.t) in
   let rec count_references_from addr seen ref_counts =
     if AbstractValue.Set.mem addr seen then (seen, ref_counts)
     else
@@ -24,22 +23,18 @@ let count_references tenv astate =
         else ref_counts
       in
       let seen = AbstractValue.Set.add addr seen in
-      match BaseMemory.find_opt addr post.heap with
-      | None ->
-          (seen, ref_counts)
-      | Some edges ->
-          BaseMemory.Edges.fold edges ~init:(seen, ref_counts)
-            ~f:(fun (seen, ref_counts) (access, (accessed_addr, _)) ->
-              if Access.is_strong_access tenv access then
-                let ref_counts =
-                  if PulseOperations.is_ref_counted accessed_addr astate then
-                    AbstractValue.Map.update accessed_addr
-                      (function None -> Some 1 | Some n -> Some (n + 1))
-                      ref_counts
-                  else ref_counts
-                in
-                count_references_from accessed_addr seen ref_counts
-              else (seen, ref_counts) )
+      Memory.fold_edges addr astate ~init:(seen, ref_counts)
+        ~f:(fun (seen, ref_counts) (access, (accessed_addr, _)) ->
+          if Access.is_strong_access tenv access then
+            let ref_counts =
+              if PulseOperations.is_ref_counted accessed_addr astate then
+                AbstractValue.Map.update accessed_addr
+                  (function None -> Some 1 | Some n -> Some (n + 1))
+                  ref_counts
+              else ref_counts
+            in
+            count_references_from accessed_addr seen ref_counts
+          else (seen, ref_counts) )
   in
   Stack.fold
     (fun _var (addr, _) (seen, ref_counts) -> count_references_from addr seen ref_counts)
@@ -54,18 +49,13 @@ let count_references tenv astate =
 
 let is_released tenv astate addr non_retaining_addrs =
   let is_retaining addr = not (List.mem non_retaining_addrs addr ~equal:AbstractValue.equal) in
-  let post = (astate.AbductiveDomain.post :> BaseDomain.t) in
   let rec is_retained_by src_addr seen =
     if List.mem seen src_addr ~equal:AbstractValue.equal then false
     else
-      match BaseMemory.find_opt src_addr post.heap with
-      | None ->
-          false
-      | Some edges ->
-          BaseMemory.Edges.exists edges ~f:(fun (access, (accessed_addr, _)) ->
-              Access.is_strong_access tenv access
-              && ( AbstractValue.equal accessed_addr addr
-                 || is_retained_by accessed_addr (src_addr :: seen) ) )
+      Memory.exists_edge src_addr astate ~f:(fun (access, (accessed_addr, _)) ->
+          Access.is_strong_access tenv access
+          && ( AbstractValue.equal accessed_addr addr
+             || is_retained_by accessed_addr (src_addr :: seen) ) )
   in
   Stack.exists
     (fun _var (src_addr, _) ->

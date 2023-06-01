@@ -1612,7 +1612,7 @@ module VarUF =
     (struct
       type t = Var.t [@@deriving compare, equal]
 
-      let is_simpler_than (v1 : Var.t) (v2 : Var.t) = (v1 :> int) < (v2 :> int)
+      let is_simpler_than v1 v2 = Var.compare v1 v2 < 0
     end)
     (Var.Set)
     (Var.Map)

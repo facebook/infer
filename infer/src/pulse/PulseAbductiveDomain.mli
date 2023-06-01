@@ -125,6 +125,12 @@ module Memory : sig
 
   val find_edge_opt :
     AbstractValue.t -> PulseBaseMemory.Access.t -> t -> (AbstractValue.t * ValueHistory.t) option
+
+  val exists_edge :
+       AbstractValue.t
+    -> t
+    -> f:(PulseBaseMemory.Access.t * (AbstractValue.t * ValueHistory.t) -> bool)
+    -> bool
 end
 
 (** Safe version of {!PulseBaseAddressAttributes} *)

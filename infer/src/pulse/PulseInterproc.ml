@@ -168,8 +168,8 @@ let visit call_state ~pre ~addr_callee ~addr_hist_caller =
              which means they must be disjoint. If so, raise a contradiction, but if not then
              continue as it just means that the callee doesn't care about the value of these
              variables, but record that they are equal. *)
-          BaseMemory.mem addr_callee pre.BaseDomain.heap
-          && BaseMemory.mem addr_callee' pre.BaseDomain.heap
+          UnsafeMemory.mem addr_callee pre.BaseDomain.heap
+          && UnsafeMemory.mem addr_callee' pre.BaseDomain.heap
         then
           raise_notrace
             (Contradiction (Aliasing {addr_caller; addr_callee; addr_callee'; call_state}))
@@ -228,11 +228,11 @@ let rec materialize_pre_from_address ~pre ~addr_pre ~addr_hist_caller call_state
   | `NotAlreadyVisited, call_state -> (
       L.d_printfln "visiting from address %a <-> %a" AbstractValue.pp addr_pre AbstractValue.pp
         (fst addr_hist_caller) ;
-      match BaseMemory.find_opt addr_pre pre.BaseDomain.heap with
+      match UnsafeMemory.find_opt addr_pre pre.BaseDomain.heap with
       | None ->
           Ok call_state
       | Some edges_pre ->
-          PulseResult.container_fold ~fold:BaseMemory.Edges.fold ~init:call_state edges_pre
+          PulseResult.container_fold ~fold:UnsafeMemory.Edges.fold ~init:call_state edges_pre
             ~f:(fun call_state (access_callee, (addr_pre_dest, _)) ->
               (* HACK: we should probably visit the value in the (array) access too, but since it's
                  a value normally it shouldn't appear in the heap anyway so there should be nothing
@@ -248,12 +248,12 @@ let rec materialize_pre_from_address ~pre ~addr_pre ~addr_hist_caller call_state
                 ~addr_hist_caller:addr_hist_dest_caller call_state ) )
 
 
-let deref_non_c_struct addr typ astate =
+let callee_deref_non_c_struct addr typ astate =
   match typ.Typ.desc with
   | Tstruct _ ->
       Some addr
   | _ ->
-      BaseMemory.find_edge_opt addr Dereference astate |> Option.map ~f:fst
+      UnsafeMemory.find_edge_opt addr Dereference astate |> Option.map ~f:fst
 
 
 (** materialize subgraph of [pre] rooted at the address represented by a [formal] parameter that has
@@ -262,7 +262,7 @@ let materialize_pre_from_actual ~pre ~formal:(formal, typ) ~actual:(actual, _) c
   L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractValue.pp (fst actual) ;
   (let open IOption.Let_syntax in
    let* addr_formal_pre, _ = UnsafeStack.find_opt formal pre.BaseDomain.stack in
-   let+ formal_pre = deref_non_c_struct addr_formal_pre typ pre.BaseDomain.heap in
+   let+ formal_pre = callee_deref_non_c_struct addr_formal_pre typ pre.BaseDomain.heap in
    materialize_pre_from_address ~pre ~addr_pre:formal_pre ~addr_hist_caller:actual call_state )
   |> function Some result -> result | None -> Ok call_state
 
@@ -403,7 +403,7 @@ let call_state_subst_find_or_new call_state addr_callee ~default_hist_caller =
 
 let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state =
   match
-    BaseMemory.find_opt addr_caller (call_state.astate.AbductiveDomain.post :> BaseDomain.t).heap
+    UnsafeMemory.find_opt addr_caller (call_state.astate.AbductiveDomain.post :> BaseDomain.t).heap
   with
   | None ->
       (call_state.subst, BaseMemory.Edges.empty)
@@ -413,13 +413,16 @@ let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state
         (call_state.subst, old_post_edges)
     | Some edges_pre ->
         let subst, translated_accesses_pre =
-          BaseMemory.Edges.fold ~init:(call_state.subst, AccessSet.empty) edges_pre
+          UnsafeMemory.Edges.fold ~init:(call_state.subst, AccessSet.empty) edges_pre
             ~f:(fun (subst, accesses) (access_callee, _) ->
               let subst, access = translate_access_to_caller subst access_callee in
               (subst, AccessSet.add access accesses) )
         in
         let post_edges =
-          BaseMemory.Edges.filter old_post_edges ~f:(fun (access_caller, _) ->
+          (* abuse of [UnsafeMemory.Edges]; it's fine because [post_edges] is used to *write* to
+             the current state. Edges are allowed to contain non-normalized values (though it
+             shouldn't even be the case here!) since we'll normalize them on the fly on read. *)
+          UnsafeMemory.Edges.filter old_post_edges ~f:(fun (access_caller, _) ->
               (* delete edge if some edge for the same access exists in the pre *)
               not (AccessSet.mem access_caller translated_accesses_pre) )
         in
@@ -444,14 +447,14 @@ let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc
     {call_state with astate}
   in
   let subst, translated_post_edges =
-    BaseMemory.Edges.fold ~init:(call_state.subst, BaseMemory.Edges.empty) edges_callee_post
+    UnsafeMemory.Edges.fold ~init:(call_state.subst, BaseMemory.Edges.empty) edges_callee_post
       ~f:(fun (subst, translated_edges) (access_callee, (addr_callee, trace_post)) ->
         let subst, (addr_curr, hist_curr) =
           subst_find_or_new subst addr_callee ~default_hist_caller:hist_caller
         in
         let subst, access = translate_access_to_caller subst access_callee in
         let translated_edges =
-          BaseMemory.Edges.add access
+          UnsafeMemory.Edges.add access
             ( addr_curr
             , ValueHistory.sequence ~context:path.conditions
                 (Call {f= Call callee_proc_name; location= call_loc; in_call= trace_post; timestamp})
@@ -491,7 +494,7 @@ let rec record_post_for_address path callee_proc_name call_loc callee_summary ~a
         call_state
     | Some ((edges_post, attrs_post) as cell_callee_post) ->
         let edges_pre_opt =
-          BaseMemory.find_opt addr_callee
+          UnsafeMemory.find_opt addr_callee
             (AbductiveDomain.Summary.get_pre callee_summary).BaseDomain.heap
         in
         let call_state_after_post =
@@ -502,7 +505,7 @@ let rec record_post_for_address path callee_proc_name call_loc callee_summary ~a
             record_post_cell path callee_proc_name call_loc ~edges_pre_opt addr_hist_caller
               ~cell_callee_post:(edges_post, attrs_post) call_state
         in
-        BaseMemory.Edges.fold ~init:call_state_after_post edges_post
+        UnsafeMemory.Edges.fold ~init:call_state_after_post edges_post
           ~f:(fun call_state (_access, (addr_callee_dest, _)) ->
             let call_state, addr_hist_curr_dest =
               call_state_subst_find_or_new call_state addr_callee_dest
@@ -521,7 +524,7 @@ let record_post_for_actual path callee_proc_name call_loc callee_summary ~formal
       UnsafeStack.find_opt formal (AbductiveDomain.Summary.get_pre callee_summary).BaseDomain.stack
     in
     let+ formal_pre =
-      deref_non_c_struct addr_formal_pre typ
+      callee_deref_non_c_struct addr_formal_pre typ
         (AbductiveDomain.Summary.get_pre callee_summary).BaseDomain.heap
     in
     record_post_for_address path callee_proc_name call_loc callee_summary ~addr_callee:formal_pre
@@ -541,7 +544,7 @@ let record_post_for_return ({PathContext.timestamp} as path) callee_proc_name ca
       (call_state, None)
   | Some (addr_return, _) -> (
     match
-      BaseMemory.find_edge_opt addr_return Dereference
+      UnsafeMemory.find_edge_opt addr_return Dereference
         (AbductiveDomain.Summary.get_post callee_summary).BaseDomain.heap
     with
     | None ->
@@ -680,15 +683,15 @@ let apply_unknown_effects callee_summary call_state =
         false
     | Some addr_callee ->
         let edges_callee_pre =
-          BaseMemory.find_opt addr_callee (AbductiveDomain.Summary.get_pre callee_summary).heap
+          UnsafeMemory.find_opt addr_callee (AbductiveDomain.Summary.get_pre callee_summary).heap
           |> Option.value ~default:BaseMemory.Edges.empty
         in
         let edges_callee_post =
-          BaseMemory.find_opt addr_callee (AbductiveDomain.Summary.get_post callee_summary).heap
+          UnsafeMemory.find_opt addr_callee (AbductiveDomain.Summary.get_post callee_summary).heap
           |> Option.value ~default:BaseMemory.Edges.empty
         in
-        let pre_value = BaseMemory.Edges.find_opt access edges_callee_pre >>| fst in
-        let post_value = BaseMemory.Edges.find_opt access edges_callee_post >>| fst in
+        let pre_value = UnsafeMemory.Edges.find_opt access edges_callee_pre >>| fst in
+        let post_value = UnsafeMemory.Edges.find_opt access edges_callee_post >>| fst in
         (* havoc only fields that haven't been havoc'd already during the call *)
         not (Option.equal AbstractValue.equal post_value pre_value)
   in
@@ -747,7 +750,7 @@ let canonicalize ~actuals call_state =
     let rec aux visited addrs astate replaced =
       (* We keep track of the values from the callee that we replaced with values
          from the caller to later remove their edges from the memory to avoid
-         getting an [Unsat] in [PulseBaseMemory.subst_var] which happens when we
+         getting an [Unsat] in [PulseUnsafeMemory.subst_var] which happens when we
          [AbductiveDomain.incorporate_new_eqs] during the application of the post *)
       let post_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in
       match addrs with
@@ -757,7 +760,7 @@ let canonicalize ~actuals call_state =
           aux visited addrs astate replaced
       | addr :: addrs -> (
           let visited = AddressSet.add addr visited in
-          match BaseMemory.find_opt addr post_heap with
+          match UnsafeMemory.find_opt addr post_heap with
           | None ->
               aux visited addrs astate replaced
           | Some edges ->
@@ -765,21 +768,21 @@ let canonicalize ~actuals call_state =
                 (* Given 2 addresses [accessed] and [accessed'], merge their canonicalized
                    edges and update the edges of accessed' with the result. In case an
                    edge belongs to both addresses, the one from [accessed'] is kept. *)
-                match BaseMemory.find_opt accessed post_heap with
+                match UnsafeMemory.find_opt accessed post_heap with
                 | None ->
                     astate
                 | Some edges ->
                     (* the callee value may know some edges that the caller is
                        not aware of. We want to add them *)
                     let edges' =
-                      match BaseMemory.find_opt accessed' post_heap with
+                      match UnsafeMemory.find_opt accessed' post_heap with
                       | None ->
-                          BaseMemory.Edges.empty
+                          UnsafeMemory.Edges.empty
                       | Some edges' ->
-                          BaseMemory.Edges.canonicalize ~get_var_repr edges'
+                          UnsafeMemory.Edges.canonicalize ~get_var_repr edges'
                     in
-                    let edges = BaseMemory.Edges.canonicalize ~get_var_repr edges in
-                    let merged_edges = BaseMemory.Edges.union_left_biased edges' edges in
+                    let edges = UnsafeMemory.Edges.canonicalize ~get_var_repr edges in
+                    let merged_edges = UnsafeMemory.Edges.union_left_biased edges' edges in
                     AbductiveDomain.set_post_edges accessed' merged_edges astate
               in
               let add_new_eq_aux accessed accessed' (replaced, astate) =
@@ -805,7 +808,7 @@ let canonicalize ~actuals call_state =
                    [accessed] in [astate.path_condition] and merge their edges *)
                 let formula = astate.AbductiveDomain.path_condition in
                 let get_var_repr v = Formula.get_var_repr formula v in
-                match BaseMemory.find_edge_opt ~get_var_repr addr' access' post_heap with
+                match UnsafeMemory.find_edge_opt ~get_var_repr addr' access' post_heap with
                 | None ->
                     acc
                 | Some (accessed', _)
@@ -815,7 +818,7 @@ let canonicalize ~actuals call_state =
                     add_new_eq_aux accessed accessed' acc
               in
               let replaced, astate, addrs =
-                BaseMemory.Edges.fold edges ~init:(replaced, astate, addrs)
+                UnsafeMemory.Edges.fold edges ~init:(replaced, astate, addrs)
                   ~f:(fun (replaced, astate, addrs) (access, (accessed, _)) ->
                     let formula = astate.AbductiveDomain.path_condition in
                     let get_var_repr v = Formula.get_var_repr formula v in

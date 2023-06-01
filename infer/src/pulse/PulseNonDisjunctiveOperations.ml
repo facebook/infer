@@ -557,10 +557,11 @@ let init_const_refable_parameters procdesc integer_type_widths tenv astates asta
             else astate_n ) )
 
 
+(* [UnsafeMemory] is legit here as we are going to normalize all the values we need *)
 let is_matching_edges ~get_repr ~edges_curr ~edges_orig =
   Option.value_map edges_orig ~default:true ~f:(fun edges_orig ->
-      BaseMemory.Edges.for_all edges_curr ~f:(fun (access_curr, (addr_curr, _)) ->
-          match BaseMemory.Edges.find_opt access_curr edges_orig with
+      UnsafeMemory.Edges.for_all edges_curr ~f:(fun (access_curr, (addr_curr, _)) ->
+          match UnsafeMemory.Edges.find_opt access_curr edges_orig with
           | Some (addr_orig, _) ->
               (* check matching for the addresses on the copy and the current heap. *)
               AbstractValue.equal (get_repr addr_curr) (get_repr addr_orig)
@@ -570,6 +571,7 @@ let is_matching_edges ~get_repr ~edges_curr ~edges_orig =
               true ) )
 
 
+(* [UnsafeMemory] is legit here as we are going to normalize all the values we need *)
 let is_modified_since_detected addr ~is_param ~get_repr ~current_heap astate ~copy_heap
     ~(copy_timestamp : Timestamp.t) ~source_addr_opt =
   let is_written_after_copy addr =
@@ -591,17 +593,17 @@ let is_modified_since_detected addr ~is_param ~get_repr ~current_heap astate ~co
           in
           is_moved || is_written_after_copy addr
           ||
-          match BaseMemory.find_opt addr current_heap with
+          match UnsafeMemory.find_opt addr current_heap with
           | None ->
               aux ~addr_to_explore ~visited
           | Some edges_curr ->
               (not
                  (is_matching_edges ~get_repr ~edges_curr
-                    ~edges_orig:(BaseMemory.find_opt addr copy_heap) ) )
+                    ~edges_orig:(UnsafeMemory.find_opt addr copy_heap) ) )
               ||
               let addr_to_explore =
-                BaseMemory.Edges.fold edges_curr ~init:addr_to_explore ~f:(fun acc (_, (addr, _)) ->
-                    addr :: acc )
+                UnsafeMemory.Edges.fold edges_curr ~init:addr_to_explore
+                  ~f:(fun acc (_, (addr, _)) -> addr :: acc)
               in
               aux ~addr_to_explore ~visited )
   in
@@ -626,7 +628,7 @@ let is_modified origin ~source_addr_opt address astate copy_heap copy_timestamp 
         (astate.AbductiveDomain.post :> BaseDomain.t)
     in
     let reachable_from heap =
-      BaseMemory.filter
+      UnsafeMemory.filter
         (fun address _ -> AbstractValue.Set.mem address reachable_addresses_from_copy)
         heap
     in

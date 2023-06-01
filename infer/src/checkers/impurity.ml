@@ -19,8 +19,8 @@ let get_matching_dest_addr_opt ~edges_pre ~edges_post : (Access.t * AbstractValu
         if AbstractValue.equal addr_dest_pre addr_dest_post then
           Option.map acc ~f:(fun acc -> (access, addr_dest_pre) :: acc)
         else None )
-      (BaseMemory.Edges.bindings edges_pre |> List.sort ~compare:[%compare: Access.t * _])
-      (BaseMemory.Edges.bindings edges_post |> List.sort ~compare:[%compare: Access.t * _])
+      (UnsafeMemory.Edges.bindings edges_pre |> List.sort ~compare:[%compare: Access.t * _])
+      (UnsafeMemory.Edges.bindings edges_post |> List.sort ~compare:[%compare: Access.t * _])
   with
   | Unequal_lengths ->
       debug "Mismatch in pre and post.\n" ;
@@ -75,7 +75,7 @@ let add_to_modified pname ~pvar ~access ~addr pre_heap post modified_vars =
         if AbstractValue.Set.mem addr visited then
           aux (access_list, modified_vars) ~addr_to_explore ~visited
         else
-          let edges_pre_opt = BaseMemory.find_opt addr pre_heap in
+          let edges_pre_opt = UnsafeMemory.find_opt addr pre_heap in
           let cell_post_opt = BaseDomain.find_cell_opt addr post in
           let visited = AbstractValue.Set.add addr visited in
           match (edges_pre_opt, cell_post_opt) with
@@ -86,7 +86,7 @@ let add_to_modified pname ~pvar ~access ~addr pre_heap post modified_vars =
                 "%a is in the pre but not the post of the call to %a@\n\
                  callee heap pre: @[%a@]@\n\
                  callee post: @[%a@]@\n"
-                AbstractValue.pp addr Procname.pp pname BaseMemory.pp pre_heap BaseDomain.pp post ;
+                AbstractValue.pp addr Procname.pp pname UnsafeMemory.pp pre_heap BaseDomain.pp post ;
               aux (access_list, modified_vars) ~addr_to_explore ~visited
           | None, Some (_, attrs_post) ->
               aux
@@ -122,9 +122,9 @@ let get_modified_params pname (summary : AbductiveDomain.Summary.t) post pre_hea
       let pvar = Pvar.mk name pname in
       match Stack.find_opt (Var.of_pvar pvar) (summary :> AbductiveDomain.t) with
       | Some (addr, _) when Typ.is_pointer typ -> (
-        match BaseMemory.find_opt addr pre_heap with
+        match UnsafeMemory.find_opt addr pre_heap with
         | Some edges_pre ->
-            BaseMemory.Edges.fold edges_pre ~init:acc ~f:(fun acc (access, (addr, _)) ->
+            UnsafeMemory.Edges.fold edges_pre ~init:acc ~f:(fun acc (access, (addr, _)) ->
                 add_to_modified pname ~pvar ~access ~addr pre_heap post acc )
         | None ->
             debug "The address %a is not materialized in pre-heap.\n" AbstractValue.pp addr ;

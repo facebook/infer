@@ -28,6 +28,9 @@ module CanonValue = AbductiveDomain.CanonValue
 (** {2 Low-level modules operating on individual elements of the abductive domain} *)
 
 module BaseStack = CanonValue.Stack
+module BaseMemory = CanonValue.Memory
+module CanonAccess = BaseMemory.Access
+module CanonAccessSet = BaseMemory.AccessSet
 module Access = PulseBaseMemory.Access
 module AccessSet = PulseBaseMemory.AccessSet
 module BaseAddressAttributes = CanonValue.Attributes
@@ -54,7 +57,7 @@ module LatentIssue = PulseLatentIssue
 
 module BaseDomain = PulseBaseDomain
 module UnsafeStack = PulseBaseStack
-module BaseMemory = PulseBaseMemory
+module UnsafeMemory = PulseBaseMemory
 module UnsafeAttributes = PulseBaseAddressAttributes
 
 (** {2 Enforce short form usage} *)

@@ -58,26 +58,22 @@ module Closures = struct
 
   let mk_capture_edges captured =
     List.foldi captured ~init:BaseMemory.Edges.empty ~f:(fun id edges (mode, typ, addr, trace) ->
-        BaseMemory.Edges.add
+        (* it's ok to use [UnsafeMemory] here because we are building edges *)
+        UnsafeMemory.Edges.add
           (HilExp.Access.FieldAccess (Fieldname.mk_fake_capture_field ~id typ mode))
           (addr, trace) edges )
 
 
   let check_captured_addresses path action lambda_addr (astate : t) =
-    match AbductiveDomain.find_post_cell_opt lambda_addr astate with
+    match AddressAttributes.get_closure_proc_name lambda_addr astate with
     | None ->
         Ok astate
-    | Some (edges, attributes) ->
-        Attributes.fold attributes ~init:(Ok astate) ~f:(fun astate_result (attr : Attribute.t) ->
-            match attr with
-            | Closure _ ->
-                BaseMemory.Edges.fold edges ~init:astate_result
-                  ~f:(fun astate_result (access, addr_trace) ->
-                    if is_captured_by_ref_fake_access access then
-                      astate_result >>= check_addr_access path Read action addr_trace
-                    else astate_result )
-            | _ ->
-                astate_result )
+    | Some _ ->
+        Memory.fold_edges lambda_addr astate ~init:(Ok astate)
+          ~f:(fun astate_result (access, addr_trace) ->
+            if is_captured_by_ref_fake_access access then
+              astate_result >>= check_addr_access path Read action addr_trace
+            else astate_result )
 
 
   let record ({PathContext.timestamp; conditions} as path) location pname captured astate =
@@ -482,31 +478,31 @@ let shallow_copy ({PathContext.timestamp} as path) location addr_hist astate =
   , copy )
 
 
-let rec deep_copy ?depth_max ({PathContext.timestamp} as path) location addr_hist astate =
+let rec deep_copy ?depth_max ({PathContext.timestamp} as path) location addr_hist_src astate =
   match depth_max with
   | Some 0 ->
-      shallow_copy path location addr_hist astate
-  | _ -> (
+      shallow_copy path location addr_hist_src astate
+  | _ ->
       let depth_max = Option.map ~f:(fun n -> n - 1) depth_max in
-      let* astate = check_addr_access path Read location addr_hist astate in
-      let cell_opt = AbductiveDomain.find_post_cell_opt (fst addr_hist) astate in
+      let* astate = check_addr_access path Read location addr_hist_src astate in
       let copy =
         (AbstractValue.mk_fresh (), ValueHistory.singleton (Assignment (location, timestamp)))
       in
-      match cell_opt with
-      | None ->
-          Ok (astate, copy)
-      | Some (edges, attributes) ->
-          let+ astate, edges =
-            BaseMemory.Edges.fold edges
-              ~init:(Ok (astate, BaseMemory.Edges.empty))
-              ~f:(fun astate_edges (access, addr_hist) ->
-                let* astate, edges = astate_edges in
-                let+ astate, addr_hist = deep_copy ?depth_max path location addr_hist astate in
-                let edges = BaseMemory.Edges.add access addr_hist edges in
-                (astate, edges) )
-          in
-          (AbductiveDomain.set_post_cell path copy (edges, attributes) location astate, copy) )
+      let+ astate =
+        Memory.fold_edges (fst addr_hist_src) astate ~init:(Ok astate)
+          ~f:(fun astate_result (access, addr_hist_dest) ->
+            let* astate = astate_result in
+            let+ astate, addr_hist_dest_copy =
+              deep_copy ?depth_max path location addr_hist_dest astate
+            in
+            Memory.add_edge path copy access addr_hist_dest_copy location astate )
+      in
+      let astate =
+        AddressAttributes.find_opt (fst addr_hist_src) astate
+        |> Option.value_map ~default:astate ~f:(fun src_attrs ->
+               AddressAttributes.add_attrs (fst copy) src_attrs astate )
+      in
+      (astate, copy)
 
 
 let check_address_escape escape_location proc_desc address history astate =
@@ -636,11 +632,11 @@ let filter_live_addresses ~is_dead_root potential_leak_addrs astate =
     let formal_values =
       UnsafeStack.to_seq pre.stack
       |> Seq.flat_map (fun (_, (formal_addr, _)) ->
-             match BaseMemory.find_opt formal_addr pre.heap with
+             match UnsafeMemory.find_opt formal_addr pre.heap with
              | None ->
                  Seq.empty
              | Some edges ->
-                 BaseMemory.Edges.to_seq edges
+                 UnsafeMemory.Edges.to_seq edges
                  |> Seq.map (fun (_access, (value, _)) ->
                         mark_reachable value ;
                         value ) )
