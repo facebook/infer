@@ -850,14 +850,19 @@ expect(get())
 let%test_module "simple user classes" =
   ( module struct
     let%expect_test _ =
-      let source = {|
+      let source =
+        {|
 class C:
-        def get():
-            return 42
+        def __init__(self, x):
+            self.x = x
 
+        def get(self):
+            return self.x
 
 c = C()
-        |} in
+c.x
+        |}
+      in
       test source ;
       [%expect
         {|
@@ -869,13 +874,26 @@ c = C()
                 n1 = $builtins.python_class("C")
                 n2 = $builtins.python_class_constructor("C")
                 store &$module::c <- n2:*C
+                n3:*C = load &$module::c
+                n4 = n3.?.x
                 ret null
 
           }
 
-          define C.get() : *PyObject {
+          define C.get(self: *PyObject) : *PyObject {
             #b0:
-                ret $builtins.python_int(42)
+                n0:*PyObject = load &self
+                n1 = n0.?.x
+                ret n1
+
+          }
+
+          define C.__init__(self: *PyObject, x: *PyObject) : *PyObject {
+            #b0:
+                n0:*PyObject = load &self
+                n1:*PyObject = load &x
+                store n0.?.x <- n1:*PyObject
+                ret null
 
           }
 

@@ -141,6 +141,10 @@ let pop_tos opname env =
 
 module LOAD = struct
   type kind =
+    | ATTR
+        (** {v LOAD_ATTR(namei) v}
+
+            Replaces top-of-stack with [getattr(top-of-stack, co_names\[namei\])]. *)
     | CONST  (** {v LOAD_CONST(consti) v}
 
                  Pushes [co_consts\[consti\]] onto the stack. *)
@@ -157,23 +161,42 @@ module LOAD = struct
 
             Pushes the value associated with [co_names\[namei\]] onto the stack. *)
 
-  let run kind env code {FFI.Instruction.opname; arg} =
+  let run kind env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
     let pp {FFI.Code.co_names; co_varnames; co_consts} fmt = function
       | CONST ->
           FFI.Constant.pp fmt co_consts.(arg)
       | FAST ->
           F.fprintf fmt "%s" co_varnames.(arg)
-      | NAME | GLOBAL ->
+      | ATTR | NAME | GLOBAL ->
           F.fprintf fmt "%s" co_names.(arg)
     in
-    let cell =
+    let env, cell =
       match kind with
       | CONST ->
-          DataStack.Const arg
+          (env, DataStack.Const arg)
       | FAST ->
-          DataStack.VarName arg
+          (env, DataStack.VarName arg)
       | NAME | GLOBAL ->
-          DataStack.Name arg
+          (env, DataStack.Name arg)
+      | ATTR -> (
+          let env, cell = pop_tos opname env in
+          let field_name = co_names.(arg) in
+          let env, res, _info = load_cell env code cell in
+          match res with
+          | `Error s ->
+              L.die ExternalError "Failed to load attribute %s from cell %a: %s" field_name
+                DataStack.pp_cell cell s
+          | `Ok exp ->
+              (* TODO: refine typ if possible *)
+              let info = Env.{typ= PyCommon.pyObject; is_class= false; is_code= false} in
+              let env, id = Env.mk_fresh_ident env info in
+              let loc = Env.loc env in
+              let name = {T.FieldName.value= field_name; loc} in
+              let field = {T.enclosing_class= T.TypeName.wildcard; name} in
+              let exp = T.Exp.Field {exp; field} in
+              let instr = T.Instr.Let {id; exp; loc} in
+              let env = Env.push_instr env instr in
+              (env, DataStack.Temp id) )
     in
     Debug.p "[%s] arg = %a\n" opname (pp code) kind ;
     (Env.push env cell, None)
@@ -193,6 +216,11 @@ end
 
 module STORE = struct
   type kind =
+    | ATTR
+        (** {v STORE_ATTR(namei) v}
+
+            Implements [top-of-stack.name = top-of-stack-1], where [namei] is the index of name in
+            [co_names]. *)
     | FAST
         (** {v STORE_FAST(var_num) v}
 
@@ -217,15 +245,17 @@ module STORE = struct
             [STORE_NAME], but only called from within a function/method. *)
 
   let run kind env ({FFI.Code.co_names; co_varnames} as code) {FFI.Instruction.opname; arg} =
-    let name, is_global =
+    let name, is_global, is_attr =
       match kind with
       | FAST ->
-          (co_varnames.(arg), false)
+          (co_varnames.(arg), false, false)
       | NAME ->
-          if Env.is_toplevel env then (PyCommon.global co_names.(arg), true)
+          if Env.is_toplevel env then (PyCommon.global co_names.(arg), true, false)
           else L.die InternalError "[%s] TODO in class declrataion" opname
+      | ATTR ->
+          (co_names.(arg), false, true)
       | GLOBAL ->
-          (PyCommon.global co_names.(arg), true)
+          (PyCommon.global co_names.(arg), true, false)
     in
     Debug.p "[%s] name = %s\n" opname name ;
     let loc = Env.loc env in
@@ -235,19 +265,34 @@ module STORE = struct
     match exp with
     | `Ok exp ->
         let {Env.typ; is_code; is_class} = info in
-        if is_class then (
+        let env = if is_global then Env.register_global env var_name info else env in
+        if is_attr then
+          let env, cell = pop_tos opname env in
+          let env, value, {Env.typ} = load_cell env code cell in
+          match value with
+          | `Error s ->
+              L.die InternalError "[%s] %s" opname s
+          | `Ok value ->
+              let field_name = co_names.(arg) in
+              (* TODO: refine typ if possible *)
+              let loc = Env.loc env in
+              let name = {T.FieldName.value= field_name; loc} in
+              let field = {T.enclosing_class= T.TypeName.wildcard; name} in
+              let exp1 = T.Exp.Field {exp; field} in
+              let instr = T.Instr.Store {exp1; typ; exp2= value; loc} in
+              let env = Env.push_instr env instr in
+              (env, None)
+        else if is_class then (
           Debug.p "  top-level class declaration initialized\n" ;
           (env, None) )
+        else if is_code then
+          if is_global then (
+            Debug.p "  top-level function defined\n" ;
+            (env, None) )
+          else L.die InternalError "[%s] no support for closure at the moment: %s" opname name
         else
-          let env = if is_global then Env.register_global env var_name info else env in
-          if is_code then
-            if is_global then (
-              Debug.p "  top-level function defined\n" ;
-              (env, None) )
-            else L.die InternalError "[%s] no support for closure at the moment: %s" opname name
-          else
-            let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
-            (Env.push_instr env instr, None)
+          let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
+          (Env.push_instr env instr, None)
     | `Error s ->
         L.die InternalError "[%s] %s" opname s
 end
@@ -340,8 +385,8 @@ module CALL_FUNCTION = struct
     Debug.p "  #args = %d\n" (List.length args) ;
     let env, fname = pop_tos opname env in
     Debug.p "  fname = %a\n" DataStack.pp_cell fname ;
-    match fname with
-    | DataStack.Name ndx ->
+    match (fname : DataStack.cell) with
+    | Name ndx ->
         let fname = co_names.(ndx) in
         static_call env fname args
     | Temp id ->
@@ -763,20 +808,24 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
   (* TODO: there are < 256 opcodes, could setup an array of callbacks instead *)
   let env, maybe_term =
     match opname with
+    | "LOAD_ATTR" ->
+        LOAD.run ATTR env code instr
     | "LOAD_CONST" ->
-        LOAD.(run CONST env code instr)
+        LOAD.run CONST env code instr
     | "LOAD_FAST" ->
-        LOAD.(run FAST env code instr)
+        LOAD.run FAST env code instr
     | "LOAD_GLOBAL" ->
-        LOAD.(run GLOBAL env code instr)
+        LOAD.run GLOBAL env code instr
     | "LOAD_NAME" ->
-        LOAD.(run NAME env code instr)
+        LOAD.run NAME env code instr
+    | "STORE_ATTR" ->
+        STORE.run ATTR env code instr
     | "STORE_FAST" ->
-        STORE.(run FAST env code instr)
+        STORE.run FAST env code instr
     | "STORE_GLOBAL" ->
-        STORE.(run GLOBAL env code instr)
+        STORE.run GLOBAL env code instr
     | "STORE_NAME" ->
-        STORE.(run NAME env code instr)
+        STORE.run NAME env code instr
     | "RETURN_VALUE" ->
         RETURN_VALUE.run env code instr
     | "POP_TOP" ->
