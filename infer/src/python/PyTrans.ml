@@ -80,7 +80,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let const = co_consts.(ndx) in
       let env, exp, ty = py_to_exp env const in
       let info = info ty in
-      (env, `Ok exp, info)
+      (env, Ok exp, info)
   | Name ndx ->
       if not (Env.is_toplevel env) then
         L.die InternalError "TODO: load_cell inside a class declaration"
@@ -94,7 +94,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
         if is_code then
           let env, exp, typ = code_to_exp ~fun_or_class:true env name in
           let info = {info with Env.typ} in
-          (env, `Ok exp, info)
+          (env, Ok exp, info)
         else
           let exp = T.Exp.Lvar var_name in
           let loc = Env.loc env in
@@ -102,7 +102,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
           let instr = T.Instr.Load {id; exp; typ; loc} in
           let env = Env.push_instr env instr in
           (* TODO: try to trace the type of names, not only global ones ? *)
-          (env, `Ok (T.Exp.Var id), info)
+          (env, Ok (T.Exp.Var id), info)
   | VarName ndx ->
       let name = co_varnames.(ndx) in
       let exp = T.Exp.Lvar (var_name ~loc name) in
@@ -113,16 +113,16 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let instr = T.Instr.Load {id; exp; typ; loc} in
       let env = Env.push_instr env instr in
       (* TODO: try to trace the type of names and their kind ? *)
-      (env, `Ok (T.Exp.Var id), info)
+      (env, Ok (T.Exp.Var id), info)
   | Temp id ->
       let info = Env.get_ident_info env id |> Option.value ~default in
-      (env, `Ok (T.Exp.Var id), info)
+      (env, Ok (T.Exp.Var id), info)
   | Code {fun_or_class; code} ->
       let env, exp, typ = code_to_exp env ~fun_or_class code.FFI.Code.co_name in
       let info = {Env.typ; is_code= true; is_class= false} in
-      (env, `Ok exp, info)
+      (env, Ok exp, info)
   | Map _map ->
-      (env, `Error "TODO: load Map cells", default)
+      (env, Error "TODO: load Map cells", default)
   | BuiltinBuildClass ->
       L.die InternalError "[load_cell] Can't load LOAD_BUILD_CLASS, something went wrong"
 
@@ -131,9 +131,9 @@ let cells_to_textual env opname code cells =
   Env.map ~env cells ~f:(fun env cell ->
       let env, exp, _ = load_cell env code cell in
       match exp with
-      | `Ok exp ->
+      | Ok exp ->
           (env, exp)
-      | `Error s ->
+      | Error s ->
           L.die UserError "[%s] failed to fetch from the stack: %s" opname s )
 
 
@@ -207,10 +207,10 @@ module LOAD = struct
           let fname = co_names.(arg) in
           let env, res, _info = load_cell env code cell in
           match res with
-          | `Error s ->
+          | Error s ->
               L.die ExternalError "Failed to load attribute %s from cell %a: %s" fname
                 DataStack.pp_cell cell s
-          | `Ok exp ->
+          | Ok exp ->
               (* TODO: refine typ if possible *)
               let info = Env.{typ= PyCommon.pyObject; is_class= false; is_code= false} in
               let env, id = Env.mk_fresh_ident env info in
@@ -253,10 +253,10 @@ module METHOD = struct
       let env, cell = pop_datastack opname env in
       let env, res, _info = load_cell env code cell in
       match res with
-      | `Error s ->
+      | Error s ->
           L.die ExternalError "Failed to load method %s from cell %a: %s" method_name
             DataStack.pp_cell cell s
-      | `Ok self ->
+      | Ok self ->
           let method_name = T.Exp.Const (T.Const.Str method_name) in
           let env, id, _typ =
             Env.mk_builtin_call env Builtin.PythonLoadMethod [self; method_name]
@@ -280,10 +280,10 @@ module METHOD = struct
       let env, cell_mi = pop_datastack opname env in
       let env, mi, _ = load_cell env code cell_mi in
       match mi with
-      | `Error s ->
+      | Error s ->
           L.die InternalError "[%s] failed to load method information from cell %a: %s" opname
             DataStack.pp_cell cell_mi s
-      | `Ok mi ->
+      | Ok mi ->
           (* The method code and self are bundled in [mi]. The builtin will decide if it is a
              proper method call, or a call to an arbitrary callable (lambda, ...) *)
           let env, id, _typ = Env.mk_builtin_call env PythonCallMethod (mi :: args) in
@@ -341,16 +341,16 @@ module STORE = struct
     let env, cell = pop_datastack opname env in
     let env, exp, info = load_cell env code cell in
     match exp with
-    | `Ok exp ->
+    | Ok exp ->
         let {Env.typ; is_code; is_class} = info in
         let env = if is_global then Env.register_global env var_name info else env in
         if is_attr then
           let env, cell = pop_datastack opname env in
           let env, value, {Env.typ} = load_cell env code cell in
           match value with
-          | `Error s ->
+          | Error s ->
               L.die InternalError "[%s] %s" opname s
-          | `Ok value ->
+          | Ok value ->
               let fname = co_names.(arg) in
               (* TODO: refine typ if possible *)
               let loc = Env.loc env in
@@ -371,7 +371,7 @@ module STORE = struct
         else
           let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
           (Env.push_instr env instr, None)
-    | `Error s ->
+    | Error s ->
         L.die InternalError "[%s] %s" opname s
 end
 
@@ -598,13 +598,9 @@ module BINARY_ADD = struct
     let env, tos = pop_datastack opname env in
     let env, tos1 = pop_datastack opname env in
     let env, lhs, _ = load_cell env code tos1 in
-    let lhs =
-      match lhs with `Ok lhs -> lhs | `Error s -> L.die InternalError "[%s] %s" opname s
-    in
+    let lhs = match lhs with Ok lhs -> lhs | Error s -> L.die InternalError "[%s] %s" opname s in
     let env, rhs, _ = load_cell env code tos in
-    let rhs =
-      match rhs with `Ok rhs -> rhs | `Error s -> L.die InternalError "[%s] %s" opname s
-    in
+    let rhs = match rhs with Ok rhs -> rhs | Error s -> L.die InternalError "[%s] %s" opname s in
     (* Even if the call can be considered as virtual because, it's logic is not symetric. Based
        on what I gathered, like in [0], I think the best course of action is to write a model for
        it and leave it non virtual. TODO: ask David.
@@ -683,9 +679,9 @@ let stack_to_ssa env code =
     Env.map ~env (Env.stack env) ~f:(fun env cell ->
         let env, exp, {Env.typ} = load_cell env code cell in
         match exp with
-        | `Ok exp ->
+        | Ok exp ->
             (env, (exp, typ))
-        | `Error s ->
+        | Error s ->
             L.die InternalError "[stack_to_ssa] %s" s )
   in
   (Env.reset_stack env, List.unzip zipped)
@@ -716,7 +712,7 @@ module JUMP = struct
       let env, tos = pop_datastack opname env in
       let env, cell, _ = load_cell env code tos in
       let cond =
-        match cell with `Ok cond -> cond | `Error s -> L.die InternalError "[%s] %s" opname s
+        match cell with Ok cond -> cond | Error s -> L.die InternalError "[%s] %s" opname s
       in
       let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
       let env, next_label = Env.mk_fresh_label env in
@@ -785,10 +781,10 @@ module RETURN_VALUE = struct
     let env, cell = pop_datastack opname env in
     let env, exp, _ = load_cell env code cell in
     match exp with
-    | `Ok exp ->
+    | Ok exp ->
         let term = T.Terminator.Ret exp in
         (env, Some (JUMP.Return term))
-    | `Error s ->
+    | Error s ->
         L.die InternalError "[%s] %s" opname s
 end
 
@@ -803,11 +799,11 @@ module ITER = struct
       let env, cell = pop_datastack opname env in
       let env, exp, _ = load_cell env code cell in
       match exp with
-      | `Ok exp ->
+      | Ok exp ->
           let env, id, _ = Env.mk_builtin_call env Builtin.PythonIter [exp] in
           let env = Env.push env (DataStack.Temp id) in
           (env, None)
-      | `Error s ->
+      | Error s ->
           L.die InternalError "[%s] %s" opname s
   end
 
@@ -822,7 +818,7 @@ module ITER = struct
       let env, iter_cell = pop_datastack opname env in
       let env, iter_exp, _ = load_cell env code iter_cell in
       match iter_exp with
-      | `Ok iter ->
+      | Ok iter ->
           let loc = Env.loc env in
           let env, id, _ = Env.mk_builtin_call env Builtin.PythonIterNext [iter] in
           let has_item = T.Exp.Field {exp= T.Exp.Var id; field= PyCommon.py_iter_item_has_item} in
@@ -859,7 +855,7 @@ module ITER = struct
           let next_info = Env.Label.mk ~ssa_parameters ~prelude:next_prelude next_label in
           let other_info = Env.Label.mk ~ssa_parameters ~prelude:other_prelude other_label in
           (env, Some (JUMP.TwoWay {ssa_args; offset= (false, arg); next_info; other_info}))
-      | `Error s ->
+      | Error s ->
           L.die InternalError "[%s] %s" opname s
   end
 end
