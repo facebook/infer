@@ -233,6 +233,8 @@ module type S = sig
   module Edges : sig
     include RecencyMap.S with type key = Access.t and type value = out_of_map_t
 
+    val mapi : t -> f:(key -> out_of_map_t -> in_map_t) -> t
+
     val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
   end
 

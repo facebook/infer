@@ -9,16 +9,32 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
-module BaseMemory = PulseBaseMemory
-module BaseStack = PulseBaseStack
 module Decompiler = PulseDecompiler
 module DecompilerExpr = PulseDecompilerExpr
 module PathContext = PulsePathContext
 
-(** Layer on top of {!BaseDomain} to propagate operations on the current state to the pre-condition
-    when necessary
+(** {2 Abductive, value-normalizing layer on top of {!BaseDomain}}
 
-    The abstract type [t] is a pre/post pair in the style of biabduction. *)
+    The operations in this module take care of two things that are important for the safety of
+    domain operations:
+
+    1. Propagate operations on the current state to the pre-condition when necessary. This is the
+    "abductive" part of the domain and follows the principles of biabduction as laid out in
+    *Compositional Shape Analysis by Means of Bi-Abduction*, JACM, 2011,
+    https://doi.org/10.1145/2049697.2049700. Simply put, a read from a memory location that is
+    reachable from the precondition for the first time is taken to mean that this memory location
+    had better been allocated since the beginning of the function for the operation to be safe,
+    hence we "abduce" that this was the case and add it to the pre-condition (unless we already know
+    that address to be invalid of course).
+
+    2. Normalize values ([AbstractValue.t]) in and out of the state according to their canonical
+    representatives as per the current path condition. The idea is that one can ask about any
+    abstract value and functions in this API will normalize it as needed first before querying the
+    abstract state, and normalize any value found in the abstract state as needed too. For example,
+    values in the raw map corresponding to the memory are not necessarily normalized at all times
+    but the API allows one to pretend they are by normalizing them on the fly. On the other hand,
+    *keys* in the memory map are always normalized so values must be normalized before being looked
+    up in the map and this module takes care of that transparently too. See also [PulseCanonValue]. *)
 
 (** signature common to the "normal" [Domain], representing the post at the current program point,
     and the inverted [PreDomain], representing the inferred pre-condition*)
@@ -64,54 +80,54 @@ val pp : Format.formatter -> t -> unit
 
 val mk_initial : Tenv.t -> Procname.t -> Specialization.Pulse.t option -> ProcAttributes.t -> t
 
-(** stack operations like {!BaseStack} but that also take care of propagating facts to the
-    precondition *)
+(** Safe version of {!PulseBaseStack} *)
 module Stack : sig
-  val add : Var.t -> BaseStack.value -> t -> t
+  val add : Var.t -> PulseBaseStack.value -> t -> t
 
   val remove_vars : Var.t list -> t -> t
 
-  val fold : (Var.t -> BaseStack.value -> 'a -> 'a) -> t -> 'a -> 'a
+  val fold : (Var.t -> PulseBaseStack.value -> 'a -> 'a) -> t -> 'a -> 'a
 
-  val find_opt : Var.t -> t -> BaseStack.value option
+  val find_opt : Var.t -> t -> PulseBaseStack.value option
 
   val eval : ValueHistory.t -> Var.t -> t -> t * (AbstractValue.t * ValueHistory.t)
   (** return the value of the variable in the stack or create a fresh one if needed *)
 
   val mem : Var.t -> t -> bool
 
-  val exists : (Var.t -> BaseStack.value -> bool) -> t -> bool
+  val exists : (Var.t -> PulseBaseStack.value -> bool) -> t -> bool
 
   val keys : t -> Var.t list
 end
 
-(** memory operations like {!BaseMemory} but that also take care of propagating facts to the
-    precondition *)
+(** Safe version of {!PulseBaseMemory} *)
 module Memory : sig
-  module Access = BaseMemory.Access
-
   val add_edge :
        PathContext.t
     -> AbstractValue.t * ValueHistory.t
-    -> Access.t
+    -> PulseBaseMemory.Access.t
     -> AbstractValue.t * ValueHistory.t
     -> Location.t
     -> t
     -> t
 
   val eval_edge :
-    AbstractValue.t * ValueHistory.t -> Access.t -> t -> t * (AbstractValue.t * ValueHistory.t)
+       AbstractValue.t * ValueHistory.t
+    -> PulseBaseMemory.Access.t
+    -> t
+    -> t * (AbstractValue.t * ValueHistory.t)
   (** [eval_edge (addr,hist) access astate] follows the edge [addr --access--> .] in memory and
       returns what it points to or creates a fresh value if that edge didn't exist. *)
 
   val fold_edges :
-    AbstractValue.t -> (t, Access.t * (AbstractValue.t * ValueHistory.t), _) Container.fold
+       AbstractValue.t
+    -> (t, PulseBaseMemory.Access.t * (AbstractValue.t * ValueHistory.t), _) Container.fold
 
-  val find_edge_opt : AbstractValue.t -> Access.t -> t -> (AbstractValue.t * ValueHistory.t) option
+  val find_edge_opt :
+    AbstractValue.t -> PulseBaseMemory.Access.t -> t -> (AbstractValue.t * ValueHistory.t) option
 end
 
-(** attribute operations like {!PulseBaseAddressAttributes} but that also take care of propagating
-    facts to the precondition *)
+(** Safe version of {!PulseBaseAddressAttributes} *)
 module AddressAttributes : sig
   val abduce_attribute : AbstractValue.t -> Attribute.t -> t -> t
   (** add the attribute to the pre, if the address is in pre *)
@@ -233,7 +249,7 @@ val should_havoc_if_unknown : unit -> [> `ShouldHavoc | `ShouldOnlyHavocResource
 
 val apply_unknown_effect :
      ?havoc_filter:
-       (AbstractValue.t -> BaseMemory.Access.t -> AbstractValue.t * ValueHistory.t -> bool)
+       (AbstractValue.t -> PulseBaseMemory.Access.t -> AbstractValue.t * ValueHistory.t -> bool)
   -> ValueHistory.t
   -> AbstractValue.t
   -> t
@@ -263,7 +279,7 @@ val add_need_dynamic_type_specialization : Procdesc.t -> AbstractValue.t -> t ->
 
 val map_decompiler : t -> f:(Decompiler.t -> Decompiler.t) -> t
 
-val set_post_edges : AbstractValue.t -> BaseMemory.Edges.t -> t -> t
+val set_post_edges : AbstractValue.t -> PulseBaseMemory.Edges.t -> t -> t
 (** directly set the edges for the given address, bypassing abduction altogether *)
 
 val set_post_cell :
@@ -289,7 +305,8 @@ val incorporate_new_eqs_on_val : Formula.new_eqs -> AbstractValue.t -> AbstractV
 (** Similar to [incorporate_new_eqs], but apply to an abstract value. *)
 
 module Summary : sig
-  (** private type to make sure {!of_post} is always called when creating summaries *)
+  (** private type to make sure {!of_post} is always called when creating summaries and that it is
+      not called twice *)
   type summary = private t [@@deriving compare, equal, yojson_of]
 
   val skipped_calls_match_pattern : summary -> bool

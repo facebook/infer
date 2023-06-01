@@ -16,6 +16,8 @@ module ValueHistory = PulseValueHistory
 
 (** {1 Describe abstract values in terms of source code elements} *)
 
+type key = AbstractValue.t
+
 type t
 
 val pp : F.formatter -> t -> unit
@@ -24,12 +26,11 @@ val empty : t
 
 val invalid : t
 
-val add_var_source : AbstractValue.t -> Var.t -> t -> t
+val add_var_source : key -> Var.t -> t -> t
 
 val add_call_source :
-  AbstractValue.t -> CallEvent.t -> ((AbstractValue.t * ValueHistory.t) * Typ.t) list -> t -> t
+  key -> CallEvent.t -> ((AbstractValue.t * ValueHistory.t) * Typ.t) list -> t -> t
 
-val add_access_source :
-  AbstractValue.t -> BaseMemory.Access.t -> src:AbstractValue.t -> BaseAddressAttributes.t -> t -> t
+val add_access_source : key -> BaseMemory.Access.t -> src:key -> BaseAddressAttributes.t -> t -> t
 
 val find : AbstractValue.t -> t -> DecompilerExpr.t

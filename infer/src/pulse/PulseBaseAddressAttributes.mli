@@ -51,11 +51,12 @@ module type S = sig
 
   val get_copied_into : key -> t -> Attribute.CopiedInto.t option
 
-  val get_copied_return : key -> t -> (key * bool * Attribute.CopyOrigin.t * Location.t) option
+  val get_copied_return :
+    key -> t -> (AbstractValue.t * bool * Attribute.CopyOrigin.t * Location.t) option
 
   val remove_copied_return : key -> t -> t
 
-  val get_source_origin_of_copy : key -> t -> key option
+  val get_source_origin_of_copy : key -> t -> AbstractValue.t option
 
   val is_copied_from_const_ref : key -> t -> bool
 
@@ -64,7 +65,7 @@ module type S = sig
 
   val get_must_not_be_tainted : key -> t -> Attribute.TaintSinkSet.t
 
-  val get_returned_from_unknown : key -> t -> key list option
+  val get_returned_from_unknown : key -> t -> AbstractValue.t list option
 
   val get_must_be_initialized : key -> t -> (Timestamp.t * Trace.t) option
 

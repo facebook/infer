@@ -15,6 +15,8 @@ module CallEvent = PulseCallEvent
 module DecompilerExpr = PulseDecompilerExpr
 module ValueHistory = PulseValueHistory
 
+type key = AbstractValue.t
+
 module Map : sig
   type t
 
