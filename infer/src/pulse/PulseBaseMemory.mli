@@ -69,4 +69,4 @@ val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t S
     equality relation, represented by [get_var_repr]; also remove addresses that point to empty
     edges *)
 
-val subst_var : AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
+val subst_var : for_summary:bool -> AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t

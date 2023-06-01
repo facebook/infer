@@ -345,7 +345,7 @@ end = struct
           let incorporate_eq heap (eq : Formula.new_eq) =
             match eq with
             | Equal (v1, v2) ->
-                Memory.subst_var (v1, v2) heap
+                Memory.subst_var ~for_summary:true (v1, v2) heap
             | EqZero _ ->
                 (* TODO: Detect more contradictions here. *)
                 Sat heap

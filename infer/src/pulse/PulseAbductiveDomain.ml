@@ -38,7 +38,7 @@ module type BaseDomainSig_ = sig
     -> t
     -> t
 
-  val subst_var : AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
+  val subst_var : for_summary:bool -> AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
 
   val pp : F.formatter -> t -> unit
 end
@@ -1208,7 +1208,7 @@ module Internal = struct
 
   let subst_var_in_post subst astate =
     let open SatUnsat.Import in
-    let+ post = PostDomain.subst_var subst astate.post in
+    let+ post = PostDomain.subst_var ~for_summary:false subst astate.post in
     if phys_equal astate.post post then astate else {astate with post}
 
 

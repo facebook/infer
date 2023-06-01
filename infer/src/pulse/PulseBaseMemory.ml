@@ -177,15 +177,19 @@ let canonicalize ~get_var_repr memory =
   with AliasingContradiction -> Unsat
 
 
-let subst_var (v, v') memory =
-  (* subst in edges *)
+let subst_var ~for_summary (v, v') memory =
+  (* subst in edges only if we are computing the summary; otherwise avoid this expensive rewriting
+     as values are normalized when going out of the edges (on reads) on the fly which is
+     functionally equivalent *)
   let memory =
-    let v_appears_in_edges =
-      Graph.exists
-        (fun _ edges -> Edges.exists ~f:(fun (_, (dest, _)) -> AbstractValue.equal v dest) edges)
-        memory
-    in
-    if v_appears_in_edges then Graph.map (Edges.subst_var (v, v')) memory else memory
+    if for_summary then
+      let v_appears_in_edges =
+        Graph.exists
+          (fun _ edges -> Edges.exists ~f:(fun (_, (dest, _)) -> AbstractValue.equal v dest) edges)
+          memory
+      in
+      if v_appears_in_edges then Graph.map (Edges.subst_var (v, v')) memory else memory
+    else memory
   in
   (* subst in the domain of the graph, already substituted in edges above *)
   match Graph.find_opt v memory with

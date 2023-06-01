@@ -313,7 +313,14 @@ let get_address_of_stack_variable address attrs =
   get_attribute Attributes.get_address_of_stack_variable address attrs
 
 
-let canonicalize_common ~for_post ~get_var_repr attrs_map =
+let merge attrs attrs' =
+  (* "merge" attributes if two different values ([addr] and [addr']) are found to be
+     equal after attributes of the same kind were recorded for them. This arbitrarily
+     keeps one of them, with unclear but likely benign consequences. *)
+  Attributes.union_prefer_left attrs' attrs
+
+
+let canonicalize_post ~get_var_repr attrs_map =
   (* TODO: merging attributes together can produce contradictory attributes, eg [MustBeValid] +
      [Invalid]. We could detect these and abort execution. This is not really restricted to merging
      as it might be possible to get a contradiction by accident too so maybe here is not the best
@@ -323,28 +330,21 @@ let canonicalize_common ~for_post ~get_var_repr attrs_map =
       if Attributes.is_empty attrs then g
       else
         let addr' = get_var_repr addr in
-        let attrs' =
-          Graph.find_opt addr' g
-          |> Option.fold ~init:attrs ~f:(fun attrs attrs' ->
-                 (* "merge" attributes if two different values ([addr] and [addr']) are found to be
-                    equal after attributes of the same kind were recorded for them. This arbitrarily
-                    keeps one of them, with unclear but likely benign consequences. *)
-                 Attributes.union_prefer_left attrs' attrs )
-        in
+        let attrs' = Graph.find_opt addr' g |> Option.fold ~init:attrs ~f:merge in
         add addr' attrs' g )
-    (if for_post then make_suitable_for_post_summary attrs_map else attrs_map)
+    (make_suitable_for_post_summary attrs_map)
     Graph.empty
 
 
-let canonicalize_post ~get_var_repr attrs_map =
-  canonicalize_common ~for_post:true ~get_var_repr attrs_map
-
-
 let subst_var (v, v') attrs_map =
-  if Graph.mem v attrs_map then
-    canonicalize_common ~for_post:false attrs_map ~get_var_repr:(fun addr ->
-        if AbstractValue.equal addr v then v' else addr )
-  else attrs_map
+  match Graph.find_opt v attrs_map with
+  | None ->
+      attrs_map
+  | Some attrs ->
+      let attrs_to_add =
+        match Graph.find_opt v' attrs_map with None -> attrs | Some attrs' -> merge attrs attrs'
+      in
+      add v' attrs_to_add attrs_map
 
 
 (* copied verbatim from .mli, has to be kept in sync because ocaml *)

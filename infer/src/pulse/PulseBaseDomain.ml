@@ -302,10 +302,10 @@ let reachable_addresses_from ?(already_visited = AbstractValue.Set.empty) addres
   |> fst
 
 
-let subst_var subst ({heap; stack; attrs} as astate) =
+let subst_var ~for_summary subst ({heap; stack; attrs} as astate) =
   let open SatUnsat.Import in
-  let* stack' = Stack.subst_var subst stack in
-  let+ heap' = Memory.subst_var subst heap in
+  let* stack' = if for_summary then Stack.subst_var subst stack else Sat stack in
+  let+ heap' = Memory.subst_var ~for_summary subst heap in
   let attrs' = AddressAttributes.subst_var subst attrs in
   if phys_equal heap heap' && phys_equal stack stack' && phys_equal attrs attrs' then astate
   else {heap= heap'; stack= stack'; attrs= attrs'}
