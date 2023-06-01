@@ -242,7 +242,7 @@ end
 
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
-  [ -"std" &:: "__wrap_iter" &:: "__wrap_iter" <>$ capt_arg_payload $+ capt_arg_payload
+  [ -"std" &:: "__wrap_iter" &:: "__wrap_iter" $ capt_arg_payload $+ capt_arg_payload
     $+...$--> Iterator.constructor ~desc:"iterator constructor"
   ; -"std" &:: "__wrap_iter" &:: "operator*" <>$ capt_arg_payload
     $--> Iterator.operator_star ~desc:"iterator operator*"
@@ -258,7 +258,7 @@ let matchers : matcher list =
     $ capt_arg_payload_of_typ (-"std" &:: "__wrap_iter")
     $+ capt_arg_payload_of_typ (-"std" &:: "__wrap_iter")
     $--> Iterator.operator_compare `NotEqual ~desc:"iterator operator!="
-  ; -"__gnu_cxx" &:: "__normal_iterator" &:: "__normal_iterator" <>$ capt_arg_payload
+  ; -"__gnu_cxx" &:: "__normal_iterator" &:: "__normal_iterator" $ capt_arg_payload
     $+ capt_arg_payload
     $+...$--> Iterator.constructor ~desc:"iterator constructor"
   ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator*" <>$ capt_arg_payload

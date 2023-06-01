@@ -532,18 +532,19 @@ module Vector = struct
     let pointer_val = (AbstractValue.mk_fresh (), pointer_hist) in
     let index_zero = AbstractValue.mk_fresh () in
     let<**> astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
-    let<*> astate, ((arr_addr, _) as arr) =
+    let<*> astate, (arr_addr, _arr_hist) =
       GenericArrayBackedCollection.eval path Read location vector astate
     in
-    let<*> astate, _ =
-      GenericArrayBackedCollection.eval_element path location arr index_zero astate
+    let<*> astate, elem_at_zero =
+      GenericArrayBackedCollection.eval_element path location (arr_addr, pointer_hist) index_zero
+        astate
     in
     let<+> astate =
       PulseOperations.write_deref_field path location ~ref:iter GenericArrayBackedCollection.field
         ~obj:(arr_addr, pointer_hist) astate
       >>= PulseOperations.write_field path location ~ref:iter
             GenericArrayBackedCollection.Iterator.internal_pointer ~obj:pointer_val
-      >>= PulseOperations.write_deref path location ~ref:pointer_val ~obj:(index_zero, pointer_hist)
+      >>= PulseOperations.write_deref path location ~ref:pointer_val ~obj:elem_at_zero
     in
     astate
 
