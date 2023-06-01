@@ -134,6 +134,9 @@ val to_return_type : t -> Typ.t
 (** the return type from method signature, taking into account if the procedure has added return
     parameter *)
 
+val get_this : t -> Pvar.t option
+(** if the procedures is an instance method then this is its [self] or [this] variable *)
+
 val pp_block_as_arg_attributes : F.formatter -> block_as_arg_attributes -> unit
 
 module SQLite : SqliteUtils.Data with type t = t

@@ -1412,7 +1412,8 @@ let get_pre {pre} = (pre :> BaseDomain.t)
 
 let get_post {post} = (post :> BaseDomain.t)
 
-let mk_initial tenv proc_name specialization (proc_attrs : ProcAttributes.t) =
+let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
+  let proc_name = proc_attrs.proc_name in
   (* HACK: save the formals in the stacks of the pre and the post to remember which local variables
      correspond to formals *)
   let formals_and_captured =

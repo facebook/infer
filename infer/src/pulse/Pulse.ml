@@ -1136,11 +1136,11 @@ let with_html_debug_node node ~desc ~f =
     ~f
 
 
-let initial tenv proc_name specialization proc_attrs =
+let initial tenv proc_attrs specialization =
   let initial_astate =
-    AbductiveDomain.mk_initial tenv proc_name specialization proc_attrs
-    |> PulseSummary.initial_with_positive_self proc_name proc_attrs
-    |> PulseTaintOperations.taint_initial tenv proc_name proc_attrs
+    AbductiveDomain.mk_initial tenv proc_attrs specialization
+    |> PulseSummary.initial_with_positive_self proc_attrs
+    |> PulseTaintOperations.taint_initial tenv proc_attrs
   in
   [(ContinueProgram initial_astate, PathContext.initial)]
 
@@ -1203,7 +1203,7 @@ let analyze specialization
     let initial =
       with_html_debug_node (Procdesc.get_start_node proc_desc) ~desc:"initial state creation"
         ~f:(fun () ->
-          let initial_disjuncts = initial tenv proc_name specialization proc_attrs in
+          let initial_disjuncts = initial tenv proc_attrs specialization in
           let initial_non_disj =
             PulseNonDisjunctiveOperations.init_const_refable_parameters proc_desc
               integer_type_widths tenv
@@ -1237,9 +1237,7 @@ let analyze specialization
           in
           let summary =
             if is_exit_node then
-              let objc_nil_summary =
-                PulseSummary.mk_objc_nil_messaging_summary tenv proc_name proc_attrs
-              in
+              let objc_nil_summary = PulseSummary.mk_objc_nil_messaging_summary tenv proc_attrs in
               Option.to_list objc_nil_summary @ summary
             else summary
           in

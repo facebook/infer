@@ -453,7 +453,7 @@ let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~act
       in
       L.d_printfln "@\nMaking and applying Objective-C nil messaging summary@\n" ;
       let result_unknown_nil, contradiction =
-        PulseSummary.mk_objc_nil_messaging_summary tenv proc_name proc_attrs
+        PulseSummary.mk_objc_nil_messaging_summary tenv proc_attrs
         |> Option.value_map ~default:([], None) ~f:(fun nil_summary ->
                call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
                  proc_attrs [nil_summary] astate )

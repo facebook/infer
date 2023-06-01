@@ -375,6 +375,21 @@ let pp f
   F.fprintf f "; proc_id= %a }@]" Procname.pp_unique_id proc_name
 
 
+let get_this attributes =
+  let open IOption.Let_syntax in
+  let+ name =
+    match Procname.get_language attributes.proc_name with
+    | Java ->
+        if Procname.is_java_instance_method attributes.proc_name then Some Mangled.this else None
+    | Clang -> (
+        if Procname.is_objc_instance_method attributes.proc_name then Some Mangled.self
+        else match attributes.clang_method_kind with CPP_INSTANCE -> Some Mangled.this | _ -> None )
+    | CIL | Erlang | Hack | Python ->
+        None
+  in
+  Pvar.mk name attributes.proc_name
+
+
 module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
   type nonrec t = t
 end)

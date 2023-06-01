@@ -60,7 +60,6 @@ val check_flows_wrt_sink :
   -> AbductiveDomain.t
   -> (IntSet.t * AbductiveDomain.t) AccessResult.t
 
-val taint_initial :
-  Tenv.t -> Procname.t -> ProcAttributes.t -> AbductiveDomain.t -> AbductiveDomain.t
+val taint_initial : Tenv.t -> ProcAttributes.t -> AbductiveDomain.t -> AbductiveDomain.t
 
 val log_taint_config : unit -> unit [@@warning "-unused-value-declaration"]

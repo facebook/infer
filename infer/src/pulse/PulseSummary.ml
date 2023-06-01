@@ -148,19 +148,6 @@ let of_posts tenv proc_desc err_log location posts =
 
 let mk_objc_self_pvar proc_name = Pvar.mk Mangled.self proc_name
 
-let mk_this_pvar proc_name = Pvar.mk Mangled.this proc_name
-
-let find_self proc_name (proc_attrs : ProcAttributes.t) =
-  if Procname.is_objc_instance_method proc_name then Some (mk_objc_self_pvar proc_name)
-  else if Procname.is_java_instance_method proc_name then Some (mk_this_pvar proc_name)
-  else
-    match proc_attrs.clang_method_kind with
-    | CPP_INSTANCE ->
-        Some (mk_this_pvar proc_name)
-    | _ ->
-        None
-
-
 let init_fields_zero tenv path location ~zero addr typ astate =
   let get_fields typ =
     match typ.Typ.desc with
@@ -188,7 +175,7 @@ let mk_nil_messaging_summary_aux tenv proc_name (proc_attrs : ProcAttributes.t) 
   let path = PathContext.initial in
   let t0 = path.PathContext.timestamp in
   let self = mk_objc_self_pvar proc_name in
-  let astate = AbductiveDomain.mk_initial tenv proc_name None proc_attrs in
+  let astate = AbductiveDomain.mk_initial tenv proc_attrs None in
   let** astate, (self_value, self_history) =
     PulseOperations.eval_deref path proc_attrs.loc (Lvar self) astate
   in
@@ -217,7 +204,7 @@ let mk_nil_messaging_summary_aux tenv proc_name (proc_attrs : ProcAttributes.t) 
 let mk_latent_non_POD_nil_messaging tenv proc_name (proc_attrs : ProcAttributes.t) =
   let path = PathContext.initial in
   let self = mk_objc_self_pvar proc_name in
-  let astate = AbductiveDomain.mk_initial tenv proc_name None proc_attrs in
+  let astate = AbductiveDomain.mk_initial tenv proc_attrs None in
   let** astate, (self_value, _self_history) =
     PulseOperations.eval_deref path proc_attrs.loc (Lvar self) astate
   in
@@ -237,7 +224,8 @@ let mk_latent_non_POD_nil_messaging tenv proc_name (proc_attrs : ProcAttributes.
     ; calling_context= [] }
 
 
-let mk_objc_nil_messaging_summary tenv proc_name (proc_attrs : ProcAttributes.t) =
+let mk_objc_nil_messaging_summary tenv (proc_attrs : ProcAttributes.t) =
+  let proc_name = proc_attrs.proc_name in
   if Procname.is_objc_instance_method proc_name then (
     if proc_attrs.is_ret_type_pod then (
       (* In ObjC, when a method is called on nil, there is no NPE, the method is actually not called
@@ -287,15 +275,15 @@ let positive_allocated_self proc_name location self_address astate =
   >>|| fst
 
 
-let initial_with_positive_self proc_name (proc_attrs : ProcAttributes.t) initial_astate =
-  match find_self proc_name proc_attrs with
+let initial_with_positive_self (proc_attrs : ProcAttributes.t) initial_astate =
+  match ProcAttributes.get_this proc_attrs with
   | Some self_var -> (
       let result =
         let** astate, self_address =
           PulseOperations.eval_deref PathContext.initial proc_attrs.loc (Lvar self_var)
             initial_astate
         in
-        positive_allocated_self proc_name proc_attrs.loc self_address astate
+        positive_allocated_self proc_attrs.proc_name proc_attrs.loc self_address astate
       in
       match PulseOperationResult.sat_ok result with
       | Some astate ->
@@ -303,7 +291,7 @@ let initial_with_positive_self proc_name (proc_attrs : ProcAttributes.t) initial
       | None ->
           L.internal_error
             "found an error or an unsat state when adding [self > 0] to %a's initial state %a"
-            AbductiveDomain.pp initial_astate Procname.pp proc_name ;
+            AbductiveDomain.pp initial_astate Procname.pp proc_attrs.proc_name ;
           initial_astate )
   | None ->
       initial_astate

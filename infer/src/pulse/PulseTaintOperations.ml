@@ -801,7 +801,7 @@ let load procname tenv path location ~lhs:(lhs_id, typ) ~rhs:rhs_exp astate =
       Ok astate
 
 
-let taint_initial tenv proc_name (proc_attrs : ProcAttributes.t) astate0 =
+let taint_initial tenv (proc_attrs : ProcAttributes.t) astate0 =
   let result =
     let++ astate, rev_actuals =
       List.fold
@@ -826,7 +826,7 @@ let taint_initial tenv proc_name (proc_attrs : ProcAttributes.t) astate0 =
       | Some proc_name ->
           TaintItem.TaintBlockPassedTo proc_name
       | None ->
-          TaintItem.TaintProcedure proc_name
+          TaintItem.TaintProcedure proc_attrs.proc_name
     in
     taint_sources tenv PathContext.initial proc_attrs.loc ~intra_procedural_only:true None
       ~has_added_return_param:false potential_taint_value (List.rev rev_actuals) astate
@@ -838,5 +838,5 @@ let taint_initial tenv proc_name (proc_attrs : ProcAttributes.t) astate0 =
       L.internal_error
         "could not add taint to the initial state for %a, got an error or an unsat state starting \
          from %a"
-        Procname.pp proc_name AbductiveDomain.pp astate0 ;
+        Procname.pp proc_attrs.proc_name AbductiveDomain.pp astate0 ;
       astate0
