@@ -138,6 +138,21 @@ module AddressAttributes : sig
 
   val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
+  val initialize : AbstractValue.t -> t -> t
+  (** Remove "Uninitialized" attribute of the given address *)
+
+  val set_uninitialized :
+       Tenv.t
+    -> PathContext.t
+    -> [ `LocalDecl of Pvar.t * AbstractValue.t option
+         (** the second optional parameter is for the address of the variable *)
+       | `Malloc of AbstractValue.t  (** the address parameter is a newly allocated address *) ]
+    -> Typ.t
+    -> Location.t
+    -> t
+    -> t
+  (** Add "Uninitialized" attributes when a variable is declared or a memory is allocated by malloc. *)
+
   val always_reachable : AbstractValue.t -> t -> t
 
   val allocate : Attribute.allocator -> AbstractValue.t -> Location.t -> t -> t
@@ -272,21 +287,6 @@ val incorporate_new_eqs :
 
 val incorporate_new_eqs_on_val : Formula.new_eqs -> AbstractValue.t -> AbstractValue.t
 (** Similar to [incorporate_new_eqs], but apply to an abstract value. *)
-
-val initialize : AbstractValue.t -> t -> t
-(** Remove "Uninitialized" attribute of the given address *)
-
-val set_uninitialized :
-     Tenv.t
-  -> PathContext.t
-  -> [ `LocalDecl of Pvar.t * AbstractValue.t option
-       (** the second optional parameter is for the address of the variable *)
-     | `Malloc of AbstractValue.t  (** the address parameter is a newly allocated address *) ]
-  -> Typ.t
-  -> Location.t
-  -> t
-  -> t
-(** Add "Uninitialized" attributes when a variable is declared or a memory is allocated by malloc. *)
 
 module Summary : sig
   (** private type to make sure {!of_post} is always called when creating summaries *)

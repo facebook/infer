@@ -34,14 +34,6 @@ module type BaseDomainSig_ = sig
 
   val update : ?stack:BaseStack.t -> ?heap:BaseMemory.t -> ?attrs:BaseAddressAttributes.t -> t -> t
 
-  val filter_addr : f:(AbstractValue.t -> bool) -> t -> t
-  (** filter both heap and attrs *)
-
-  val filter_addr_with_discarded_addrs :
-    heap_only:bool -> f:(AbstractValue.t -> bool) -> t -> t * AbstractValue.t list
-  (** compute new state containing only reachable addresses in its heap and attributes, as well as
-      the list of discarded unreachable addresses *)
-
   val subst_var : AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t
 
   val pp : F.formatter -> t -> unit
@@ -53,11 +45,7 @@ type base_domain = BaseDomain.t =
   {heap: BaseMemory.t; stack: BaseStack.t; attrs: BaseAddressAttributes.t}
 
 (** represents the post abstract state at each program point *)
-module PostDomain : sig
-  include BaseDomainSig_
-
-  val initialize : AbstractValue.t -> t -> t
-end = struct
+module PostDomain : BaseDomainSig_ = struct
   include BaseDomain
 
   let update ?stack ?heap ?attrs foot =
@@ -71,26 +59,6 @@ end = struct
       && phys_equal new_attrs foot.attrs
     then foot
     else {stack= new_stack; heap= new_heap; attrs= new_attrs}
-
-
-  let filter_addr ~f foot =
-    let heap' = BaseMemory.filter (fun address _ -> f address) foot.heap in
-    let attrs' = BaseAddressAttributes.filter (fun address _ -> f address) foot.attrs in
-    update ~heap:heap' ~attrs:attrs' foot
-
-
-  let filter_addr_with_discarded_addrs ~heap_only ~f foot =
-    let heap' = BaseMemory.filter (fun address _ -> f address) foot.heap in
-    let attrs', discarded_addresses =
-      if heap_only then (foot.attrs, [])
-      else BaseAddressAttributes.filter_with_discarded_addrs f foot.attrs
-    in
-    (update ~heap:heap' ~attrs:attrs' foot, discarded_addresses)
-
-
-  let initialize address x =
-    let attrs = BaseAddressAttributes.initialize address x.attrs in
-    update ~attrs x
 end
 
 (* NOTE: [PreDomain] and [Domain] theoretically differ in that [PreDomain] should be the inverted lattice of [Domain], but since we never actually join states or check implication the two collapse into one. *)
@@ -163,8 +131,6 @@ let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}
 
 (** stuff that generally shouldn't be exposed *)
 module Internal = struct
-  let initialize address astate = {astate with post= PostDomain.initialize address astate.post}
-
   module Stack = struct
     let is_abducible astate var =
       (* HACK: formals are pre-registered in the initial state *)
@@ -274,6 +240,10 @@ module Internal = struct
       if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
+    let initialize address astate =
+      map_post_attrs astate ~f:(fun attrs -> BaseAddressAttributes.initialize address attrs)
+
+
     let add_one address attributes astate =
       map_post_attrs astate ~f:(BaseAddressAttributes.add_one address attributes)
 
@@ -337,6 +307,65 @@ module Internal = struct
     let map_pre_attrs ~f astate =
       let new_pre = PreDomain.update astate.pre ~attrs:(f (astate.pre :> base_domain).attrs) in
       if phys_equal new_pre astate.pre then astate else {astate with pre= new_pre}
+
+
+    let add_edge_on_src timestamp src location stack =
+      match src with
+      | `LocalDecl (pvar, addr_opt) -> (
+        match addr_opt with
+        | None ->
+            let addr = AbstractValue.mk_fresh () in
+            let history = ValueHistory.singleton (VariableDeclared (pvar, location, timestamp)) in
+            (BaseStack.add (Var.of_pvar pvar) (addr, history) stack, addr)
+        | Some addr ->
+            (stack, addr) )
+      | `Malloc addr ->
+          (stack, addr)
+
+
+    let rec set_uninitialized_post tenv timestamp src typ location ?(fields_prefix = RevList.empty)
+        (post : PostDomain.t) =
+      match typ.Typ.desc with
+      | Tint _ | Tfloat _ | Tptr _ ->
+          let {stack; attrs} = (post :> base_domain) in
+          let stack, addr = add_edge_on_src timestamp src location stack in
+          let attrs = BaseAddressAttributes.add_one addr Uninitialized attrs in
+          PostDomain.update ~stack ~attrs post
+      | Tstruct typ_name when UninitBlocklist.is_blocklisted_struct typ_name ->
+          post
+      | Tstruct (CUnion _) | Tstruct (CppClass {is_union= true}) ->
+          (* Ignore union fields in the uninitialized checker *)
+          post
+      | Tstruct _ -> (
+        match Typ.name typ |> Option.bind ~f:(Tenv.lookup tenv) with
+        | None | Some {fields= [_]} ->
+            (* Ignore single field structs: see D26146578 *)
+            post
+        | Some {fields} ->
+            let stack, addr = add_edge_on_src timestamp src location (post :> base_domain).stack in
+            let init = PostDomain.update ~stack post in
+            List.fold fields ~init ~f:(fun (acc : PostDomain.t) (field, field_typ, _) ->
+                if Fieldname.is_internal field then acc
+                else
+                  let field_addr = AbstractValue.mk_fresh () in
+                  let fields = RevList.cons field fields_prefix in
+                  let history =
+                    ValueHistory.singleton (StructFieldAddressCreated (fields, location, timestamp))
+                  in
+                  let heap =
+                    BaseMemory.add_edge addr (HilExp.Access.FieldAccess field) (field_addr, history)
+                      (acc :> base_domain).heap
+                  in
+                  PostDomain.update ~heap acc
+                  |> set_uninitialized_post tenv timestamp (`Malloc field_addr) field_typ location
+                       ~fields_prefix:fields ) )
+      | Tarray _ | Tvoid | Tfun | TVar _ ->
+          (* We ignore tricky types to mark uninitialized addresses. *)
+          post
+
+
+    let set_uninitialized tenv {PathContext.timestamp} src typ location x =
+      {x with post= set_uninitialized_post tenv timestamp src typ location x.post}
 
 
     let invalidate address invalidation location astate =
@@ -583,61 +612,6 @@ module Internal = struct
       | Some edges ->
           Edges.fold edges ~init ~f
   end
-
-  let add_edge_on_src timestamp src location stack =
-    match src with
-    | `LocalDecl (pvar, addr_opt) -> (
-      match addr_opt with
-      | None ->
-          let addr = AbstractValue.mk_fresh () in
-          let history = ValueHistory.singleton (VariableDeclared (pvar, location, timestamp)) in
-          (BaseStack.add (Var.of_pvar pvar) (addr, history) stack, addr)
-      | Some addr ->
-          (stack, addr) )
-    | `Malloc addr ->
-        (stack, addr)
-
-
-  let rec set_uninitialized_post tenv timestamp src typ location ?(fields_prefix = RevList.empty)
-      (post : PostDomain.t) =
-    match typ.Typ.desc with
-    | Tint _ | Tfloat _ | Tptr _ ->
-        let {stack; attrs} = (post :> base_domain) in
-        let stack, addr = add_edge_on_src timestamp src location stack in
-        let attrs = BaseAddressAttributes.add_one addr Uninitialized attrs in
-        PostDomain.update ~stack ~attrs post
-    | Tstruct typ_name when UninitBlocklist.is_blocklisted_struct typ_name ->
-        post
-    | Tstruct (CUnion _) | Tstruct (CppClass {is_union= true}) ->
-        (* Ignore union fields in the uninitialized checker *)
-        post
-    | Tstruct _ -> (
-      match Typ.name typ |> Option.bind ~f:(Tenv.lookup tenv) with
-      | None | Some {fields= [_]} ->
-          (* Ignore single field structs: see D26146578 *)
-          post
-      | Some {fields} ->
-          let stack, addr = add_edge_on_src timestamp src location (post :> base_domain).stack in
-          let init = PostDomain.update ~stack post in
-          List.fold fields ~init ~f:(fun (acc : PostDomain.t) (field, field_typ, _) ->
-              if Fieldname.is_internal field then acc
-              else
-                let field_addr = AbstractValue.mk_fresh () in
-                let fields = RevList.cons field fields_prefix in
-                let history =
-                  ValueHistory.singleton (StructFieldAddressCreated (fields, location, timestamp))
-                in
-                let heap =
-                  BaseMemory.add_edge addr (HilExp.Access.FieldAccess field) (field_addr, history)
-                    (acc :> base_domain).heap
-                in
-                PostDomain.update ~heap acc
-                |> set_uninitialized_post tenv timestamp (`Malloc field_addr) field_typ location
-                     ~fields_prefix:fields ) )
-    | Tarray _ | Tvoid | Tfun | TVar _ ->
-        (* We ignore tricky types to mark uninitialized addresses. *)
-        post
-
 
   let add_static_types tenv astate formals_and_captured =
     let record_static_type astate (_var, typ, (src_addr, _)) =
@@ -952,10 +926,27 @@ module Internal = struct
       (post :> BaseDomain.t).attrs Seq.empty
 
 
+  let filter_pre_addr ~f (foot : PreDomain.t) =
+    let heap' = BaseMemory.filter (fun address _ -> f address) (foot :> BaseDomain.t).heap in
+    let attrs' =
+      BaseAddressAttributes.filter (fun address _ -> f address) (foot :> BaseDomain.t).attrs
+    in
+    PreDomain.update ~heap:heap' ~attrs:attrs' foot
+
+
+  let filter_post_addr_with_discarded_addrs ~heap_only ~f (foot : PostDomain.t) =
+    let heap' = PulseBaseMemory.filter (fun address _ -> f address) (foot :> BaseDomain.t).heap in
+    let attrs', discarded_addresses =
+      if heap_only then ((foot :> BaseDomain.t).attrs, [])
+      else PulseBaseAddressAttributes.filter_with_discarded_addrs f (foot :> BaseDomain.t).attrs
+    in
+    (PostDomain.update ~heap:heap' ~attrs:attrs' foot, discarded_addresses)
+
+
   let discard_unreachable_ ~for_summary ({pre; post} as astate) =
     let pre_addresses = BaseDomain.reachable_addresses (pre :> BaseDomain.t) in
     let pre_new =
-      PreDomain.filter_addr ~f:(fun address -> AbstractValue.Set.mem address pre_addresses) pre
+      filter_pre_addr ~f:(fun address -> AbstractValue.Set.mem address pre_addresses) pre
     in
     let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
     let post_addresses =
@@ -980,7 +971,7 @@ module Internal = struct
     in
     let post_new, dead_addresses =
       (* keep attributes of dead addresses unless we are creating a summary *)
-      PostDomain.filter_addr_with_discarded_addrs ~heap_only:(not for_summary)
+      filter_post_addr_with_discarded_addrs ~heap_only:(not for_summary)
         ~f:(fun address ->
           AbstractValue.Set.mem address pre_addresses
           || AbstractValue.Set.mem address post_addresses
@@ -1359,7 +1350,7 @@ let mk_initial tenv proc_name specialization (proc_attrs : ProcAttributes.t) =
       ~f:(fun (acc : PostDomain.t) {ProcAttributes.name; typ; modify_in_block; is_constexpr} ->
         if modify_in_block || is_constexpr then acc
         else
-          set_uninitialized_post tenv Timestamp.t0
+          AddressAttributes.set_uninitialized_post tenv Timestamp.t0
             (`LocalDecl (Pvar.mk name proc_name, None))
             typ proc_attrs.loc acc )
   in
@@ -1608,10 +1599,6 @@ module Topl = struct
     PulseTopl.report_errors proc_desc err_log ~pulse_is_manifest astate.topl
 end
 
-let set_uninitialized tenv {PathContext.timestamp} src typ location x =
-  {x with post= set_uninitialized_post tenv timestamp src typ location x.post}
-
-
 let add_skipped_call pname trace astate =
   let new_skipped_calls = SkippedCalls.add pname trace astate.skipped_calls in
   if phys_equal new_skipped_calls astate.skipped_calls then astate
@@ -1629,8 +1616,6 @@ let add_skipped_calls new_skipped_calls astate =
 
 
 let is_local = is_local
-
-let initialize = initialize
 
 let incorporate_new_eqs new_eqs astate =
   let open SatUnsat.Import in

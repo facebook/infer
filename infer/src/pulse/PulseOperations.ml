@@ -40,9 +40,9 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
                ; astate } )
       |> AccessResult.of_result_f ~f:(fun _ ->
              (* do not report further uninitialized reads errors on this value *)
-             AbductiveDomain.initialize address astate )
+             AddressAttributes.initialize address astate )
   | Write ->
-      Ok (AbductiveDomain.initialize address astate)
+      Ok (AddressAttributes.initialize address astate)
   | NoAccess ->
       Ok astate
 
@@ -120,7 +120,7 @@ let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate)
   let reachable_values =
     BaseDomain.reachable_addresses_from (Caml.List.to_seq arg_values) (post :> BaseDomain.t)
   in
-  AbstractValue.Set.fold AbductiveDomain.initialize reachable_values astate
+  AbstractValue.Set.fold AddressAttributes.initialize reachable_values astate
 
 
 let eval_access path ?must_be_valid_reason mode location addr_hist access astate =
@@ -284,7 +284,7 @@ let realloc_pvar tenv ({PathContext.timestamp} as path) pvar typ location astate
       (addr, ValueHistory.singleton (VariableDeclared (pvar, location, timestamp)))
       astate
   in
-  AbductiveDomain.set_uninitialized tenv path (`LocalDecl (pvar, Some addr)) typ location astate
+  AddressAttributes.set_uninitialized tenv path (`LocalDecl (pvar, Some addr)) typ location astate
 
 
 let write_id id new_addr_loc astate = Stack.add (Var.of_id id) new_addr_loc astate
