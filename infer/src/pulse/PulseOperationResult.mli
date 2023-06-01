@@ -39,6 +39,8 @@ module Import : sig
 
   include module type of PulseResult.Let_syntax
 
+  [@@@warning "-unused-value-declaration"]
+
   val ( let** ) : 'a t -> ('a -> 'b t) -> 'b t
 
   val ( >>== ) : 'a t -> ('a -> 'b t) -> 'b t
@@ -55,6 +57,10 @@ module Import : sig
 
   val ( >>>= ) : 'a AccessResult.t -> ('a -> 'b t) -> 'b t
 
+  val ( let=+ ) : 'a AccessResult.t -> ('a -> 'b AccessResult.t) -> 'b t
+
+  val ( >>>| ) : 'a AccessResult.t -> ('a -> 'b AccessResult.t) -> 'b t
+
   val ( let<*> ) : 'a AccessResult.t -> ('a -> 'b AccessResult.t list) -> 'b AccessResult.t list
   (** monadic "bind" but not really that turns an [AccessResult.t] into a list of [AccessResult.t]s
       (not really because the first type is not an [AccessResult.t list] but just an
@@ -67,6 +73,8 @@ module Import : sig
   (** monadic "map" but even less really that turns a [AccessResult.t] into an analysis result *)
 
   val ( let<++> ) : 'a t -> ('a -> AbductiveDomain.t) -> ExecutionDomain.t AccessResult.t list
+
+  [@@@warning "+unused-value-declaration"]
 
   (** {2 Imported types for ease of use and so we can write variants without the corresponding
       module prefix} *)

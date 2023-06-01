@@ -968,43 +968,33 @@ module PulseTransferFunctions = struct
                    NonDisjDomain.set_store loc timestamp pvar astate_n )
           in
           let result =
-            let<**> astate, (rhs_addr, rhs_history) =
+            let** astate, (rhs_addr, rhs_history) =
               PulseOperations.eval path NoAccess loc rhs_exp astate
             in
-            let<**> ls_astate_lhs_addr_hist =
-              let++ astate, lhs_addr_hist = PulseOperations.eval path Write loc lhs_exp astate in
-              [Ok (astate, lhs_addr_hist)]
-            in
+            let** astate, lhs_addr_hist = PulseOperations.eval path Write loc lhs_exp astate in
             let hist = ValueHistory.sequence ~context:path.conditions event rhs_history in
-            let astates =
-              List.concat_map ls_astate_lhs_addr_hist ~f:(fun result ->
-                  let<*> astate, lhs_addr_hist = result in
-                  let<**> astate = and_is_int_if_integer_type typ rhs_addr astate in
-                  let<*> astate =
-                    PulseTaintOperations.store tenv path loc ~lhs:lhs_exp
-                      ~rhs:(rhs_exp, (rhs_addr, hist), typ)
-                      astate
-                  in
-                  [ PulseOperations.write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, hist)
-                      astate ] )
+            let** astate = and_is_int_if_integer_type typ rhs_addr astate in
+            let=* astate =
+              PulseTaintOperations.store tenv path loc ~lhs:lhs_exp
+                ~rhs:(rhs_exp, (rhs_addr, hist), typ)
+                astate
             in
-            let astates =
-              if Topl.is_active () then
-                List.map astates ~f:(fun result ->
-                    let+ astate = result in
-                    topl_store_step path loc ~lhs:lhs_exp ~rhs:rhs_exp astate )
-              else astates
+            let=+ astate =
+              PulseOperations.write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, hist) astate
+            in
+            let astate =
+              if Topl.is_active () then topl_store_step path loc ~lhs:lhs_exp ~rhs:rhs_exp astate
+              else astate
             in
             match lhs_exp with
             | Lvar pvar when Pvar.is_return pvar ->
-                List.map astates ~f:(fun result ->
-                    let* astate = result in
-                    PulseOperations.check_address_escape loc proc_desc rhs_addr rhs_history astate )
+                PulseOperations.check_address_escape loc proc_desc rhs_addr rhs_history astate
             | _ ->
-                astates
+                Ok astate
           in
           let astate_n = NonDisjDomain.set_captured_variables rhs_exp astate_n in
-          (PulseReport.report_results tenv proc_desc err_log loc result, path, astate_n)
+          let results = SatUnsat.to_list result in
+          (PulseReport.report_results tenv proc_desc err_log loc results, path, astate_n)
       | Call (ret, call_exp, actuals, loc, call_flags) ->
           let astate_n = check_modified_before_dtor actuals call_exp astate astate_n in
           let astates =

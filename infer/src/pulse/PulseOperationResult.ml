@@ -65,6 +65,12 @@ module Import = struct
 
   let ( >>>= ) result f = bind_result result ~f
 
+  let map_result result ~f = bind_result result ~f:(fun x -> Sat (f x))
+
+  let ( let=+ ) result f = map_result result ~f
+
+  let ( >>>| ) result f = map_result result ~f
+
   let ( let<*> ) x f =
     match (x : _ PulseResult.t) with
     | FatalError _ as err ->
