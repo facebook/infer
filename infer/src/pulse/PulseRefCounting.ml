@@ -41,9 +41,9 @@ let count_references tenv astate =
                 count_references_from accessed_addr seen ref_counts
               else (seen, ref_counts) )
   in
-  BaseStack.fold
+  Stack.fold
     (fun _var (addr, _) (seen, ref_counts) -> count_references_from addr seen ref_counts)
-    post.stack
+    astate
     (AbstractValue.Set.empty, AbstractValue.Map.empty)
   |> snd
   (* a refcount of 0 indicates a value that was not deallocated when seen in an ExitScope
@@ -67,10 +67,10 @@ let is_released tenv astate addr non_retaining_addrs =
               && ( AbstractValue.equal accessed_addr addr
                  || is_retained_by accessed_addr (src_addr :: seen) ) )
   in
-  BaseStack.exists
+  Stack.exists
     (fun _var (src_addr, _) ->
       (is_retaining src_addr || AbstractValue.equal src_addr addr) && is_retained_by src_addr [] )
-    post.stack
+    astate
   |> not
 
 
@@ -89,14 +89,11 @@ let is_released tenv astate addr non_retaining_addrs =
    removed. *)
 let removable_vars tenv astate vars =
   let non_retaining_addrs =
-    List.filter_map vars ~f:(fun var ->
-        BaseStack.find_opt var (astate.AbductiveDomain.post :> BaseDomain.t).stack
-        |> Option.map ~f:fst )
+    List.filter_map vars ~f:(fun var -> Stack.find_opt var astate |> Option.map ~f:fst)
   in
   let is_removable addr =
     (not (PulseOperations.is_ref_counted addr astate))
     || is_released tenv astate addr non_retaining_addrs
   in
   List.filter vars ~f:(fun var ->
-      BaseStack.find_opt var (astate.AbductiveDomain.post :> BaseDomain.t).stack
-      |> Option.for_all ~f:(fun (addr, _) -> is_removable addr) )
+      Stack.find_opt var astate |> Option.for_all ~f:(fun (addr, _) -> is_removable addr) )

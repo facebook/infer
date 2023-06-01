@@ -9,8 +9,8 @@ open! IStd
 module F = Format
 module L = Logging
 module IRAttributes = Attributes
-open PulseDomainInterface
 open PulseBasicInterface
+open PulseDomainInterface
 
 let pp_procedure_matcher_error_message f (matcher : Pulse_config_t.matcher) =
   let pp_procedure_matcher f (matcher : Pulse_config_t.matcher) =

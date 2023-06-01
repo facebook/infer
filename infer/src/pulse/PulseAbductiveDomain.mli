@@ -379,3 +379,6 @@ module Topl : sig
 
   val report_errors : Procdesc.t -> Errlog.t -> pulse_is_manifest:bool -> Summary.t -> unit
 end
+
+(** see {!PulseCanonValue} *)
+module CanonValue : PulseCanonValue.S with type astate = t

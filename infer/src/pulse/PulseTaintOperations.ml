@@ -23,9 +23,9 @@ let fill_policies_from_config () =
   let open TaintConfig in
   Config.pulse_taint_config.policies
   |> List.iter
-       ~f:(fun {Pulse_config_j.short_description= description; taint_flows; privacy_effect} ->
+       ~f:(fun {Pulse_config_t.short_description= description; taint_flows; privacy_effect} ->
          let policy_id = SinkPolicy.next_policy_id () in
-         List.iter taint_flows ~f:(fun {Pulse_config_j.source_kinds; sanitizer_kinds; sink_kinds} ->
+         List.iter taint_flows ~f:(fun {Pulse_config_t.source_kinds; sanitizer_kinds; sink_kinds} ->
              let source_kinds = List.map source_kinds ~f:Kind.of_string in
              let sanitizer_kinds = List.map sanitizer_kinds ~f:Kind.of_string in
              List.iter sink_kinds ~f:(fun sink_kind_s ->

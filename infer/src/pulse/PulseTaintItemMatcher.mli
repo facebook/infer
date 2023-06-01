@@ -12,7 +12,7 @@ open PulseDomainInterface
 val matcher_of_config :
      default_taint_target:Pulse_config_t.taint_target
   -> option_name:string
-  -> Pulse_config_j.matcher list
+  -> Pulse_config_t.matcher list
   -> TaintConfig.Unit.t list
 
 val procedure_matches :
@@ -33,6 +33,7 @@ val get_tainted :
   -> (Ident.t * Typ.t) option
   -> has_added_return_param:bool
   -> TaintItem.value
-  -> BaseStack.value ProcnameDispatcher.Call.FuncArg.t list
+  -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
   -> AbductiveDomain.t
-  -> AbductiveDomain.t * (TaintItem.t * (BaseStack.value * Typ.t * Exp.t option)) list
+  -> AbductiveDomain.t
+     * (TaintItem.t * ((AbstractValue.t * ValueHistory.t) * Typ.t * Exp.t option)) list

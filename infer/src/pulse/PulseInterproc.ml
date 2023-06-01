@@ -11,8 +11,11 @@ module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 
-(* {2 machinery to apply a pre/post pair corresponding to a function's summary in a function call
-   to the current state} *)
+(** {2 machinery to apply a pre/post pair corresponding to a function's summary in a function call
+    to the current state}
+
+    *Unsafe* Stack, etc. modules used here are safe when used on the callee's summary (because
+    values in summaries are all canonical) *)
 
 module AddressSet = AbstractValue.Set
 module AddressMap = AbstractValue.Map
@@ -118,8 +121,9 @@ let raise_if_unsat contradiction = function
       raise_notrace (Contradiction contradiction)
 
 
-let fold_globals_of_stack {PathContext.timestamp} call_loc stack call_state ~f =
-  PulseResult.container_fold ~fold:(IContainer.fold_of_pervasives_map_fold BaseStack.fold)
+let fold_globals_of_callee_stack {PathContext.timestamp} call_loc stack call_state ~f =
+  (* safe to use [UnsafeStack] because these stacks come from a summary *)
+  PulseResult.container_fold ~fold:(IContainer.fold_of_pervasives_map_fold UnsafeStack.fold)
     stack ~init:call_state ~f:(fun call_state (var, stack_value) ->
       match var with
       | Var.ProgramVar pvar when Pvar.is_global pvar ->
@@ -258,7 +262,7 @@ let deref_non_c_struct addr typ astate =
 let materialize_pre_from_actual ~pre ~formal:(formal, typ) ~actual:(actual, _) call_state =
   L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractValue.pp (fst actual) ;
   (let open IOption.Let_syntax in
-   let* addr_formal_pre, _ = BaseStack.find_opt formal pre.BaseDomain.stack in
+   let* addr_formal_pre, _ = UnsafeStack.find_opt formal pre.BaseDomain.stack in
    let+ formal_pre = deref_non_c_struct addr_formal_pre typ pre.BaseDomain.heap in
    materialize_pre_from_address ~pre ~addr_pre:formal_pre ~addr_hist_caller:actual call_state )
   |> function Some result -> result | None -> Ok call_state
@@ -295,7 +299,7 @@ let materialize_pre_for_parameters ~pre ~formals ~actuals call_state =
 
 
 let materialize_pre_for_globals path call_location ~pre call_state =
-  fold_globals_of_stack path call_location pre.BaseDomain.stack call_state
+  fold_globals_of_callee_stack path call_location pre.BaseDomain.stack call_state
     ~f:(fun _var ~stack_value:(addr_pre, _) ~addr_hist_caller call_state ->
       materialize_pre_from_address ~pre ~addr_pre ~addr_hist_caller call_state )
 
@@ -516,7 +520,7 @@ let record_post_for_actual path callee_proc_name call_loc callee_summary ~formal
   match
     let open IOption.Let_syntax in
     let* addr_formal_pre, _ =
-      BaseStack.find_opt formal (AbductiveDomain.Summary.get_pre callee_summary).BaseDomain.stack
+      UnsafeStack.find_opt formal (AbductiveDomain.Summary.get_pre callee_summary).BaseDomain.stack
     in
     let+ formal_pre =
       deref_non_c_struct addr_formal_pre typ
@@ -532,11 +536,9 @@ let record_post_for_actual path callee_proc_name call_loc callee_summary ~formal
 
 
 let record_post_for_return ({PathContext.timestamp} as path) callee_proc_name call_loc
-    callee_summary call_state =
+    (callee_summary : AbductiveDomain.Summary.t) call_state =
   let return_var = Var.of_pvar (Pvar.get_ret_pvar callee_proc_name) in
-  match
-    BaseStack.find_opt return_var (AbductiveDomain.Summary.get_post callee_summary).BaseDomain.stack
-  with
+  match Stack.find_opt return_var (callee_summary :> AbductiveDomain.t) with
   | None ->
       (call_state, None)
   | Some (addr_return, _) -> (
@@ -622,7 +624,7 @@ let apply_post_for_captured_vars path callee_proc_name call_location callee_summ
 
 
 let apply_post_for_globals path callee_proc_name call_location callee_summary call_state =
-  fold_globals_of_stack path call_location
+  fold_globals_of_callee_stack path call_location
     (AbductiveDomain.Summary.get_pre callee_summary).BaseDomain.stack call_state
     ~f:(fun _var ~stack_value:(addr_callee, _) ~addr_hist_caller call_state ->
       Ok

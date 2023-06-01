@@ -636,7 +636,7 @@ let filter_live_addresses ~is_dead_root potential_leak_addrs astate =
     (* start from the *values* of variables, not their addresses; addresses of formals are
        meaningless for callers so are not reachable outside the current function *)
     let formal_values =
-      BaseStack.to_seq pre.stack
+      UnsafeStack.to_seq pre.stack
       |> Seq.flat_map (fun (_, (formal_addr, _)) ->
              match BaseMemory.find_opt formal_addr pre.heap with
              | None ->

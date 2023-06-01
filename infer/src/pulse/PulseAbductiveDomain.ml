@@ -133,12 +133,14 @@ let unset_need_closure_specialization astate = {astate with need_closure_special
 
 let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}
 
+let canon astate v = Formula.get_var_repr astate.path_condition v
+
 (** Versions of the stack/heap/attributes that are safe wrt value normalization; see the
     documentation for [PulseCanonValue] *)
 module CanonValue = PulseCanonValue.Make (struct
   type astate = t
 
-  let canon astate v = Formula.get_var_repr astate.path_condition v
+  let canon = canon
 end)
 
 (** The internals define here are safe (wrt normalization) to use but expose the

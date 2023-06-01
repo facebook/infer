@@ -1165,11 +1165,10 @@ let exit_function analysis_data location posts non_disj_astate =
         | LatentInvalidAccess _ ->
             (exec_state :: acc_astates, astate_n)
         | ContinueProgram astate ->
-            let post = (astate.AbductiveDomain.post :> BaseDomain.t) in
             let vars =
-              BaseStack.fold
+              Stack.fold
                 (fun var _ vars -> if Var.is_return var then vars else var :: vars)
-                post.stack []
+                astate []
             in
             let astates, _, astate_n =
               PulseTransferFunctions.exit_scope vars location path astate astate_n analysis_data

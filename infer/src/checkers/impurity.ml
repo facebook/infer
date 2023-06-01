@@ -119,10 +119,10 @@ let add_to_modified pname ~pvar ~access ~addr pre_heap post modified_vars =
   aux ([], modified_vars) ~addr_to_explore:[(access, addr)] ~visited:AbstractValue.Set.empty
 
 
-let get_modified_params pname post_stack pre_heap post formals =
+let get_modified_params pname (summary : AbductiveDomain.Summary.t) post pre_heap formals =
   List.fold_left formals ~init:ImpurityDomain.ModifiedVarMap.bottom ~f:(fun acc (name, typ, _) ->
       let pvar = Pvar.mk name pname in
-      match BaseStack.find_opt (Var.of_pvar pvar) post_stack with
+      match Stack.find_opt (Var.of_pvar pvar) (summary :> AbductiveDomain.t) with
       | Some (addr, _) when Typ.is_pointer typ -> (
         match BaseMemory.find_opt addr pre_heap with
         | Some edges_pre ->
@@ -135,8 +135,8 @@ let get_modified_params pname post_stack pre_heap post formals =
           acc )
 
 
-let get_modified_globals pname pre_heap post post_stack =
-  BaseStack.fold
+let get_modified_globals pname (summary : AbductiveDomain.Summary.t) pre_heap post =
+  Stack.fold
     (fun var (addr, _) modified_globals ->
       if Var.is_global var then
         (* since global vars are rooted in the stack, we don't have
@@ -146,7 +146,8 @@ let get_modified_globals pname pre_heap post post_stack =
           ~pvar:(Option.value_exn (Var.get_pvar var))
           ~access:HilExp.Access.Dereference ~addr pre_heap post modified_globals
       else modified_globals )
-    post_stack ImpurityDomain.ModifiedVarMap.bottom
+    (summary :> AbductiveDomain.t)
+    ImpurityDomain.ModifiedVarMap.bottom
 
 
 let is_modeled_pure tenv pname =
@@ -167,9 +168,8 @@ let extract_impurity tenv pname formals (exec_state : ExecutionDomain.summary) :
   in
   let pre_heap = (AbductiveDomain.Summary.get_pre astate).BaseDomain.heap in
   let post = AbductiveDomain.Summary.get_post astate in
-  let post_stack = post.BaseDomain.stack in
-  let modified_params = get_modified_params pname post_stack pre_heap post formals in
-  let modified_globals = get_modified_globals pname pre_heap post post_stack in
+  let modified_params = get_modified_params pname astate post pre_heap formals in
+  let modified_globals = get_modified_globals pname astate pre_heap post in
   let skipped_calls =
     SkippedCalls.filter
       (fun proc_name _ ->

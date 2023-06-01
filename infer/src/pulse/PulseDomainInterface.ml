@@ -6,28 +6,53 @@
  *)
 
 open! IStd
-module AccessResult = PulseAccessResult
-module ExecutionDomain = PulseExecutionDomain
 
-(** if you do any mutations of the state in pulse you probably want this module *)
+[@@@warning "-unused-module"]
+
+(** {1 High-level Pulse Operations}
+
+    If you do any mutations of the state in pulse that go beyond what {!PulseOperations} offers you
+    may want these modules (but consider adding what you need to [PulseOperations] or to one of the
+    models modules if appropriate). In addition to defining short names for safe versions of
+    stack/heap/... it ensures only those safe versions are used. Do not use lower-level modules
+    directly! *)
+
+(** {2 High-level modules operating on the entire biabductive state} *)
+
 module AbductiveDomain = PulseAbductiveDomain
-
-module NonDisjDomain = PulseNonDisjunctiveDomain
 module Stack = AbductiveDomain.Stack
 module Memory = AbductiveDomain.Memory
 module AddressAttributes = AbductiveDomain.AddressAttributes
+module CanonValue = AbductiveDomain.CanonValue
 
-(** use only if you know what you are doing or you risk break bi-abduction *)
-module BaseDomain = PulseBaseDomain
+(** {2 Low-level modules operating on individual elements of the abductive domain} *)
 
-module BaseStack = PulseBaseStack
-module BaseMemory = PulseBaseMemory
-module BaseAddressAttributes = PulseBaseAddressAttributes
+module BaseStack = CanonValue.Stack
 module Decompiler = PulseAbductiveDecompiler
+module NonDisjDomain = PulseNonDisjunctiveDomain
+module PathContext = PulsePathContext
+
+(** {2 Miscellaneous} *)
+
+module AccessResult = PulseAccessResult
 module DecompilerExpr = PulseDecompilerExpr
 module Diagnostic = PulseDiagnostic
+module ExecutionDomain = PulseExecutionDomain
 module LatentIssue = PulseLatentIssue
-module PathContext = PulsePathContext
+
+(** {2 Unsafe modules, use with caution}
+
+    Misusing these modules may miss abducing addresses to the pre-condition or mistakenly manipulate
+    non-normalized values. See {!PulseAbductiveDomain} for more information.
+
+    These can usually safely be used when manipulating pre-conditions where values shouldn't be
+    normalized against the current path condition, or when reading summaries, where all values have
+    already been normalized on creation. *)
+
+module BaseDomain = PulseBaseDomain
+module UnsafeStack = PulseBaseStack
+module BaseMemory = PulseBaseMemory
+module BaseAddressAttributes = PulseBaseAddressAttributes
 
 (** {2 Enforce short form usage} *)
 
