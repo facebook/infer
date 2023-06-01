@@ -852,7 +852,8 @@ let%test_module "simple user classes" =
     let%expect_test _ =
       let source = {|
 class C:
-          pass
+        def get():
+            return 42
 
 
 c = C()
@@ -869,6 +870,12 @@ c = C()
                 n2 = $builtins.python_class_constructor("C")
                 store &$module::c <- n2:*C
                 ret null
+
+          }
+
+          define C.get() : *PyObject {
+            #b0:
+                ret $builtins.python_int(42)
 
           }
 
