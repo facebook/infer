@@ -1745,15 +1745,27 @@ let add_skipped_calls new_skipped_calls astate =
 
 let is_local = is_local
 
+let is_allocated_this_pointer proc_attrs astate address =
+  let open IOption.Let_syntax in
+  let address = CanonValue.canon' astate address in
+  Option.exists ~f:Fn.id
+    (let* this = ProcAttributes.get_this proc_attrs in
+     let* this_pointer_address, _ = SafeStack.find_opt (Var.of_pvar this) astate in
+     let+ this_pointer, _ = SafeMemory.find_edge_opt this_pointer_address Dereference astate in
+     CanonValue.equal this_pointer address )
+
+
 let incorporate_new_eqs new_eqs astate =
   let open SatUnsat.Import in
-  let+ astate, potential_invalid_access_opt = incorporate_new_eqs astate new_eqs in
+  let proc_attrs = Procdesc.get_attributes (PulseCurrentProcedure.proc_desc ()) in
+  let* astate, potential_invalid_access_opt = incorporate_new_eqs astate new_eqs in
   match potential_invalid_access_opt with
   | None ->
-      Ok astate
+      Sat (Ok astate)
   | Some (address, must_be_valid) ->
       L.d_printfln ~color:Red "potential error if %a is null" AbstractValue.pp address ;
-      Error (`PotentialInvalidAccess (astate, address, must_be_valid))
+      if is_allocated_this_pointer proc_attrs astate address then Unsat
+      else Sat (Error (`PotentialInvalidAccess (astate, address, must_be_valid)))
 
 
 let incorporate_new_eqs_on_val new_eqs v =

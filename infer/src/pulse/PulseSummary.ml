@@ -262,15 +262,18 @@ let mk_objc_nil_messaging_summary tenv (proc_attrs : ProcAttributes.t) =
 
 
 let positive_allocated_self proc_name location self_address astate =
-  (* it's important to do the prune *first* before the dereference to detect contradictions if the
+  (* For objc the method is called only if self>0, so we use [prune_positive] to send [self>0] to
+     the precondition instead of relying on the fact that [self] is allocated (which is done in
+     [AbductiveDomain.mk_initial]).
+
+     It's important to do the prune *first* before the dereference to detect contradictions if the
      address is equal to 0 *)
-  let set_positive_self =
+  let astate =
     if Procname.is_objc_method proc_name then
-      (* for objc the method is called only if self>0, so we use prune_positive instead of and_positive*)
-      PulseArithmetic.prune_positive
-    else PulseArithmetic.and_positive
+      PulseArithmetic.prune_positive (fst self_address) astate
+    else Sat (Ok astate)
   in
-  set_positive_self (fst self_address) astate
+  astate
   >>|= PulseOperations.eval_access PathContext.initial Read location self_address Dereference
   >>|| fst
 
