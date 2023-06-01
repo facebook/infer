@@ -30,6 +30,8 @@ val pp : F.formatter -> t -> unit
     in the Backend module to conservatively invalidate procedure summaries that were computed using
     out-of-date type environment information. *)
 
+val currently_under_analysis : Procname.t option ref
+
 val reset : Procname.t -> t
 
 val freeze : Procname.t -> t -> complete

@@ -62,7 +62,12 @@ let () =
      they live in base/ which is too low in the dependency tree *)
   AnalysisGlobalState.register ~save:L.get_and_reset_delayed_prints ~restore:L.set_delayed_prints
     ~init:L.reset_delayed_prints ;
-  AnalysisGlobalState.register ~save:Timer.suspend ~restore:Timer.resume ~init:(fun () -> ())
+  AnalysisGlobalState.register ~save:Timer.suspend ~restore:Timer.resume ~init:(fun () -> ()) ;
+  AnalysisGlobalState.register ~save:Ident.NameGenerator.get_current
+    ~restore:Ident.NameGenerator.set_current ~init:Ident.NameGenerator.reset ;
+  AnalysisGlobalState.register_ref_with_proc_desc Dependencies.currently_under_analysis
+    ~init:(fun proc_desc -> Option.some (Procdesc.get_proc_name proc_desc)) ;
+  ()
 
 
 (** reference to log errors only at the innermost recursive call *)
@@ -255,7 +260,7 @@ let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary callee
       >>= fun callee_pdesc ->
       RestartScheduler.with_lock callee_pname ~f:(fun () ->
           let previous_global_state = AnalysisGlobalState.save () in
-          AnalysisGlobalState.initialize callee_pname ;
+          AnalysisGlobalState.initialize callee_pdesc ;
           protect
             ~f:(fun () ->
               (* preload tenv to avoid tainting preanalysis timing with IO *)

@@ -11,10 +11,6 @@ open PulseBasicInterface
 
 (** Stacks: map addresses of variables to values and histoy. *)
 
-let current_proc_name = ref Procname.Linters_dummy_method
-
-let () = AnalysisGlobalState.register_ref_with_proc_name current_proc_name ~init:Fn.id
-
 module VarAddress = struct
   include Var
 
@@ -23,7 +19,11 @@ module VarAddress = struct
     let pp_proc_name f var =
       let open IOption.Let_syntax in
       match Var.get_pvar var >>= Pvar.get_declaring_function with
-      | Some pvar_proc_name when not (Procname.equal !current_proc_name pvar_proc_name) ->
+      | Some pvar_proc_name
+        when not
+               (Procname.equal
+                  (Procdesc.get_proc_name (PulseCurrentProcedure.proc_desc ()))
+                  pvar_proc_name ) ->
           F.fprintf f "|%a" Procname.pp pvar_proc_name
       | _ ->
           ()

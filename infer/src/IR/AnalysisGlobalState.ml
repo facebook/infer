@@ -9,7 +9,7 @@ open! IStd
 
 (** ['a state_store] is a piece of global state of type ['a] encapsulated via the interface offered
     by the functions in the record *)
-type 'a state_store = {init: Procname.t -> unit; save: unit -> 'a; restore: 'a -> unit}
+type 'a state_store = {init: Procdesc.t -> unit; save: unit -> 'a; restore: 'a -> unit}
 
 (** a GADT to hold pieces of global state with heterogenous types in a list *)
 type sealed_state_store = StateManager : 'a state_store -> sealed_state_store
@@ -17,24 +17,24 @@ type sealed_state_store = StateManager : 'a state_store -> sealed_state_store
 (** list of all the pieces of global state we know about *)
 let stores : sealed_state_store list ref = ref []
 
-let register_with_proc_name ~init ~save ~restore =
+let register_with_proc_desc ~init ~save ~restore =
   stores := StateManager {init; save; restore} :: !stores
 
 
 let register ~init ~save ~restore =
-  register_with_proc_name ~save ~restore ~init:(fun _proc_name -> init ())
+  register_with_proc_desc ~save ~restore ~init:(fun _proc_desc -> init ())
 
 
-let register_ref_with_proc_name ~init ref_ =
+let register_ref_with_proc_desc ~init ref_ =
   stores :=
     StateManager
       { save= (fun () -> !ref_)
       ; restore= (fun x -> ref_ := x)
-      ; init= (fun proc_name -> ref_ := init proc_name) }
+      ; init= (fun proc_desc -> ref_ := init proc_desc) }
     :: !stores
 
 
-let register_ref ~init ref_ = register_ref_with_proc_name ref_ ~init:(fun _proc_name -> init ())
+let register_ref ~init ref_ = register_ref_with_proc_desc ref_ ~init:(fun _proc_desc -> init ())
 
 (** intermediate datatype to hold saved pieces of state in a heterogenously-typed list, see [save] *)
 type saved_state = Saved : 'a * ('a -> unit) -> saved_state
@@ -51,4 +51,4 @@ let save () =
 
 let restore saved_states = List.iter saved_states ~f:(function Saved (x, restore) -> restore x)
 
-let initialize proc_name = List.iter !stores ~f:(function StateManager {init} -> init proc_name)
+let initialize proc_desc = List.iter !stores ~f:(function StateManager {init} -> init proc_desc)

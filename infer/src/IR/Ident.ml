@@ -120,8 +120,6 @@ module NameGenerator = struct
   (** Reset the name generator *)
   let reset () = name_map := create ()
 
-  let () = AnalysisGlobalState.register_ref ~init:create name_map
-
   (** Create a fresh identifier with the given kind and name. *)
   let create_fresh_ident kind name =
     let stamp =

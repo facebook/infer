@@ -11,8 +11,6 @@ module L = Logging
 
 let currently_under_analysis : Procname.t option ref = ref None
 
-let () = AnalysisGlobalState.register_ref_with_proc_name currently_under_analysis ~init:Option.some
-
 type complete =
   { summary_loads: Procname.t list
   ; other_proc_names: Procname.t list

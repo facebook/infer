@@ -21,7 +21,7 @@ val save : unit -> t
 
 val restore : t -> unit
 
-val initialize : Procname.t -> unit
+val initialize : Procdesc.t -> unit
 
 val register : init:(unit -> unit) -> save:(unit -> 'a) -> restore:('a -> unit) -> unit
 (** Register pieces of global state from other analysis modules:
@@ -33,5 +33,5 @@ val register : init:(unit -> unit) -> save:(unit -> 'a) -> restore:('a -> unit) 
 val register_ref : init:(unit -> 'a) -> 'a ref -> unit
 (** special case of a value stored in a reference; [init] sets the ref to [init ()] *)
 
-val register_ref_with_proc_name : init:(Procname.t -> 'a) -> 'a ref -> unit
-(** same as [register_ref] but [init] takes a proc name *)
+val register_ref_with_proc_desc : init:(Procdesc.t -> 'a) -> 'a ref -> unit
+(** same as [register_ref] but [init] takes a proc desc *)
