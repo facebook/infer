@@ -217,7 +217,8 @@ end
 val should_havoc_if_unknown : unit -> [> `ShouldHavoc | `ShouldOnlyHavocResources]
 
 val apply_unknown_effect :
-     ?havoc_filter:(AbstractValue.t -> BaseMemory.Access.t -> BaseMemory.AddrTrace.t -> bool)
+     ?havoc_filter:
+       (AbstractValue.t -> BaseMemory.Access.t -> AbstractValue.t * ValueHistory.t -> bool)
   -> ValueHistory.t
   -> AbstractValue.t
   -> t

@@ -84,3 +84,13 @@ let pp fmt m =
     F.fprintf fmt "%a=%a" VarAddress.pp var_address AddrHistPair.pp v
   in
   PrettyPrintable.pp_collection ~pp_item fmt (M.bindings m)
+
+
+(* copy/pasted from the .mli because ocaml *)
+module type S = sig
+  include PrettyPrintable.PPMonoMap with type key = Var.t
+
+  val compare : t -> t -> int
+
+  val equal : t -> t -> bool
+end

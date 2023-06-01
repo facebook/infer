@@ -8,51 +8,59 @@
 open! IStd
 open PulseBasicInterface
 
-module Access : sig
-  include PrettyPrintable.PrintableOrderedType with type t = AbstractValue.t HilExp.Access.t
+module type S = sig
+  type key
+
+  type in_map_t
+
+  type out_of_map_t
+
+  module Access : sig
+    include PrettyPrintable.PrintableEquatableOrderedType with type t = key HilExp.Access.t
+
+    val is_strong_access : Tenv.t -> t -> bool
+
+    val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
+  end
+
+  module AccessSet : Caml.Set.S with type elt = Access.t
+
+  module Edges : sig
+    include RecencyMap.S with type key = Access.t and type value = out_of_map_t
+
+    val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
+  end
+
+  include PrettyPrintable.PPMonoMap with type key := key and type value = Edges.t
+
+  val compare : t -> t -> int
 
   val equal : t -> t -> bool
 
-  val is_strong_access : Tenv.t -> t -> bool
+  val register_address : key -> t -> t
 
-  val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
+  val add_edge : key -> Access.t -> in_map_t -> t -> t
+
+  val find_edge_opt :
+       ?get_var_repr:(AbstractValue.t -> AbstractValue.t)
+    -> key
+    -> Access.t
+    -> t
+    -> out_of_map_t option
+
+  val has_edge : key -> Access.t -> t -> bool
+
+  val is_allocated : t -> key -> bool
+  (** whether the address has a non-empty set of edges *)
 end
 
-module AccessSet : Caml.Set.S with type elt = Access.t
-
-module AddrTrace : sig
-  type t = AbstractValue.t * ValueHistory.t
-end
-
-module Edges : sig
-  include RecencyMap.S with type key = Access.t and type value = AddrTrace.t
-
-  val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
-end
-
-include PrettyPrintable.PPMonoMap with type key = AbstractValue.t and type value = Edges.t
-
-val compare : t -> t -> int
-
-val equal : t -> t -> bool
-
-val register_address : AbstractValue.t -> t -> t
-
-val add_edge : AbstractValue.t -> Access.t -> AddrTrace.t -> t -> t
-
-val find_edge_opt :
-     ?get_var_repr:(AbstractValue.t -> AbstractValue.t)
-  -> AbstractValue.t
-  -> Access.t
-  -> t
-  -> AddrTrace.t option
-
-val has_edge : AbstractValue.t -> Access.t -> t -> bool
+include
+  S
+    with type key := AbstractValue.t
+     and type out_of_map_t := AbstractValue.t * ValueHistory.t
+     and type in_map_t := AbstractValue.t * ValueHistory.t
 
 val yojson_of_t : t -> Yojson.Safe.t
-
-val is_allocated : t -> AbstractValue.t -> bool
-(** whether the address has a non-empty set of edges *)
 
 val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t SatUnsat.t
 (** replace each address in the heap by its canonical representative according to the current

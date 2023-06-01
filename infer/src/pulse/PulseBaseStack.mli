@@ -7,14 +7,17 @@
 open! IStd
 open PulseBasicInterface
 
-include
-  PrettyPrintable.PPMonoMap with type key = Var.t and type value = AbstractValue.t * ValueHistory.t
+module type S = sig
+  include PrettyPrintable.PPMonoMap with type key = Var.t
 
-(* need to shadow the declaration in [MonoMap] even though it is unused since [MapS.compare] has a
-     different type *)
-val compare : t -> t -> int [@@warning "-unused-value-declaration"]
+  (* need to shadow the declaration in [MonoMap] even though it is unused since [Map.S.compare] has
+     a different type *)
+  val compare : t -> t -> int [@@warning "-unused-value-declaration"]
 
-val equal : t -> t -> bool
+  val equal : t -> t -> bool
+end
+
+include S with type value = AbstractValue.t * ValueHistory.t
 
 val yojson_of_t : t -> Yojson.Safe.t
 

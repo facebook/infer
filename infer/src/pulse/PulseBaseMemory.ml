@@ -212,3 +212,48 @@ include Graph
 let compare = Graph.compare Edges.compare
 
 let equal = Graph.equal Edges.equal
+
+module type S = sig
+  type key
+
+  type in_map_t
+
+  type out_of_map_t
+
+  module Access : sig
+    include PrettyPrintable.PrintableEquatableOrderedType with type t = key HilExp.Access.t
+
+    val is_strong_access : Tenv.t -> t -> bool
+
+    val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
+  end
+
+  module AccessSet : Caml.Set.S with type elt = Access.t
+
+  module Edges : sig
+    include RecencyMap.S with type key = Access.t and type value = out_of_map_t
+
+    val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
+  end
+
+  include PrettyPrintable.PPMonoMap with type key := key and type value = Edges.t
+
+  val compare : t -> t -> int
+
+  val equal : t -> t -> bool
+
+  val register_address : key -> t -> t
+
+  val add_edge : key -> Access.t -> in_map_t -> t -> t
+
+  val find_edge_opt :
+       ?get_var_repr:(AbstractValue.t -> AbstractValue.t)
+    -> key
+    -> Access.t
+    -> t
+    -> out_of_map_t option
+
+  val has_edge : key -> Access.t -> t -> bool
+
+  val is_allocated : t -> key -> bool
+end

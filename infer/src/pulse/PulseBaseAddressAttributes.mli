@@ -8,122 +8,121 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-type t [@@deriving compare, equal, yojson_of]
+module type S = sig
+  type t [@@deriving compare, equal, yojson_of]
 
-val empty : t
+  type key
 
-val filter : (AbstractValue.t -> Attributes.t -> bool) -> t -> t
+  val pp : F.formatter -> t -> unit
 
-val filter_with_discarded_addrs : (AbstractValue.t -> bool) -> t -> t * AbstractValue.t list
+  val empty : t
 
-val find_opt : AbstractValue.t -> t -> Attributes.t option
+  val filter : (key -> Attributes.t -> bool) -> t -> t
 
-val add_one : AbstractValue.t -> Attribute.t -> t -> t
+  val filter_with_discarded_addrs : (key -> bool) -> t -> t * AbstractValue.t list
 
-val add : AbstractValue.t -> Attributes.t -> t -> t
+  val find_opt : key -> t -> Attributes.t option
 
-val allocate : Attribute.allocator -> AbstractValue.t -> Location.t -> t -> t
+  val add_one : key -> Attribute.t -> t -> t
 
-val always_reachable : AbstractValue.t -> t -> t
+  val add : key -> Attributes.t -> t -> t
 
-val java_resource_release : AbstractValue.t -> t -> t
+  val allocate : Attribute.allocator -> key -> Location.t -> t -> t
 
-val hack_async_await : AbstractValue.t -> t -> t
+  val always_reachable : key -> t -> t
 
-val csharp_resource_release : AbstractValue.t -> t -> t
+  val java_resource_release : key -> t -> t
 
-val fold : (AbstractValue.t -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a
+  val hack_async_await : key -> t -> t
 
-val check_valid : AbstractValue.t -> t -> (unit, Invalidation.t * Trace.t) result
+  val csharp_resource_release : key -> t -> t
 
-val check_initialized : AbstractValue.t -> t -> (unit, unit) result
+  val fold : (key -> Attributes.t -> 'a -> 'a) -> t -> 'a -> 'a
 
-val invalidate : AbstractValue.t * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
+  val check_valid : key -> t -> (unit, Invalidation.t * Trace.t) result
 
-val get_allocation : AbstractValue.t -> t -> (Attribute.allocator * Trace.t) option
+  val check_initialized : key -> t -> (unit, unit) result
 
-val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
+  val invalidate : key * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 
-val get_copied_into : AbstractValue.t -> t -> Attribute.CopiedInto.t option
+  val get_allocation : key -> t -> (Attribute.allocator * Trace.t) option
 
-val get_copied_return :
-  AbstractValue.t -> t -> (AbstractValue.t * bool * Attribute.CopyOrigin.t * Location.t) option
+  val get_closure_proc_name : key -> t -> Procname.t option
 
-val remove_copied_return : AbstractValue.t -> t -> t
+  val get_copied_into : key -> t -> Attribute.CopiedInto.t option
 
-val get_source_origin_of_copy : AbstractValue.t -> t -> AbstractValue.t option
+  val get_copied_return : key -> t -> (key * bool * Attribute.CopyOrigin.t * Location.t) option
 
-val is_copied_from_const_ref : AbstractValue.t -> t -> bool
+  val remove_copied_return : key -> t -> t
 
-val get_must_be_valid :
-  AbstractValue.t -> t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
+  val get_source_origin_of_copy : key -> t -> key option
 
-val get_must_not_be_tainted : AbstractValue.t -> t -> Attribute.TaintSinkSet.t
+  val is_copied_from_const_ref : key -> t -> bool
 
-val get_returned_from_unknown : AbstractValue.t -> t -> AbstractValue.t list option
+  val get_must_be_valid :
+    key -> t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
-val get_must_be_initialized : AbstractValue.t -> t -> (Timestamp.t * Trace.t) option
+  val get_must_not_be_tainted : key -> t -> Attribute.TaintSinkSet.t
 
-val add_dynamic_type : Typ.t -> AbstractValue.t -> t -> t
+  val get_returned_from_unknown : key -> t -> key list option
 
-val add_dynamic_type_source_file : Typ.t -> SourceFile.t -> AbstractValue.t -> t -> t
+  val get_must_be_initialized : key -> t -> (Timestamp.t * Trace.t) option
 
-val get_dynamic_type : t -> AbstractValue.t -> Typ.t option
+  val add_dynamic_type : Typ.t -> key -> t -> t
 
-val get_dynamic_type_source_file : t -> AbstractValue.t -> (Typ.t * SourceFile.t option) option
+  val add_dynamic_type_source_file : Typ.t -> SourceFile.t -> key -> t -> t
 
-val add_static_type : Typ.Name.t -> AbstractValue.t -> t -> t
+  val get_dynamic_type : t -> key -> Typ.t option
 
-val get_static_type : t -> AbstractValue.t -> Typ.Name.t option
+  val get_dynamic_type_source_file : t -> key -> (Typ.t * SourceFile.t option) option
 
-val add_ref_counted : AbstractValue.t -> t -> t
+  val add_static_type : Typ.Name.t -> key -> t -> t
 
-val is_ref_counted : AbstractValue.t -> t -> bool
+  val get_static_type : t -> key -> Typ.Name.t option
 
-val get_written_to : AbstractValue.t -> t -> (Timestamp.t * Trace.t) option
+  val add_ref_counted : key -> t -> t
 
-val std_vector_reserve : AbstractValue.t -> t -> t
+  val is_ref_counted : key -> t -> bool
 
-val is_java_resource_released : AbstractValue.t -> t -> bool
+  val get_written_to : key -> t -> (Timestamp.t * Trace.t) option
 
-val is_csharp_resource_released : AbstractValue.t -> t -> bool
+  val std_vector_reserve : key -> t -> t
 
-val is_std_moved : AbstractValue.t -> t -> bool
+  val is_java_resource_released : key -> t -> bool
 
-val is_std_vector_reserved : AbstractValue.t -> t -> bool
+  val is_csharp_resource_released : key -> t -> bool
 
-val mark_as_end_of_collection : AbstractValue.t -> t -> t
+  val is_std_moved : key -> t -> bool
 
-val is_end_of_collection : AbstractValue.t -> t -> bool
+  val is_std_vector_reserved : key -> t -> bool
 
-val add_unreachable_at : AbstractValue.t -> Location.t -> t -> t
+  val mark_as_end_of_collection : key -> t -> t
 
-val add_copied_return :
-     AbstractValue.t
-  -> source:AbstractValue.t
-  -> is_const_ref:bool
-  -> Attribute.CopyOrigin.t
-  -> Location.t
-  -> t
-  -> t
+  val is_end_of_collection : key -> t -> bool
 
-val get_config_usage : AbstractValue.t -> t -> Attribute.ConfigUsage.t option
+  val add_unreachable_at : key -> Location.t -> t -> t
 
-val get_const_string : AbstractValue.t -> t -> string option
+  val add_copied_return :
+    key -> source:key -> is_const_ref:bool -> Attribute.CopyOrigin.t -> Location.t -> t -> t
 
-val get_used_as_branch_cond : AbstractValue.t -> t -> (Procname.t * Location.t * Trace.t) option
+  val get_config_usage : key -> t -> Attribute.ConfigUsage.t option
 
-val pp : F.formatter -> t -> unit
+  val get_const_string : key -> t -> string option
 
-val remove_allocation_attr : AbstractValue.t -> t -> t
+  val get_used_as_branch_cond : key -> t -> (Procname.t * Location.t * Trace.t) option
 
-val remove_taint_attrs : AbstractValue.t -> t -> t
+  val remove_allocation_attr : key -> t -> t
 
-val remove_must_be_valid_attr : AbstractValue.t -> t -> t
+  val remove_taint_attrs : key -> t -> t
+
+  val remove_must_be_valid_attr : key -> t -> t
+
+  val initialize : key -> t -> t
+end
+
+include S with type key := AbstractValue.t
 
 val make_suitable_for_pre_summary : t -> t
-
-val initialize : AbstractValue.t -> t -> t
 
 val canonicalize_post : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
 (** merge the attributes of all the variables that are equal according to [get_var_repr] and remove
