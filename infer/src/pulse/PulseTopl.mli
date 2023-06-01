@@ -24,7 +24,11 @@ type state [@@deriving compare, equal]
     non-topl parts without looking at the topl parts, which is why [PulseTopl.state] is abstract,
     and (b) trigger the evolution of the topl parts, which *should* look at the non-topl parts of
     the abductive domain. Those necessary non-topl parts are what [PulseTopl.pulse_state] contains.*)
-type pulse_state = {pulse_post: BaseDomain.t; pulse_pre: BaseDomain.t; path_condition: Formula.t}
+type pulse_state =
+  { pulse_post: BaseDomain.t
+  ; pulse_pre: BaseDomain.t
+  ; path_condition: Formula.t
+  ; get_reachable: unit -> AbstractValue.Set.t }
 
 val start : unit -> state
 (** Return the initial state of [Topl.automaton ()]. *)

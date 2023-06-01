@@ -62,18 +62,11 @@ let sub_list : 'a substitutor -> 'a list substitutor =
   (sub, List.rev xs)
 
 
-type pulse_state = {pulse_post: BaseDomain.t; pulse_pre: BaseDomain.t; path_condition: Formula.t}
-
-let get_reachable {pulse_post; pulse_pre; path_condition} =
-  let post_keep = BaseDomain.reachable_addresses pulse_post in
-  let pre_keep = BaseDomain.reachable_addresses pulse_pre in
-  let path_condition_keep =
-    Formula.fold_variables path_condition ~init:AbstractValue.Set.empty
-      ~f:(Fn.flip AbstractValue.Set.add)
-  in
-  let ( + ) = AbstractValue.Set.union in
-  post_keep + pre_keep + path_condition_keep
-
+type pulse_state =
+  { pulse_post: BaseDomain.t
+  ; pulse_pre: BaseDomain.t
+  ; path_condition: Formula.t
+  ; get_reachable: unit -> AbstractValue.Set.t }
 
 let get_dynamic_type {pulse_post} = BaseAddressAttributes.get_dynamic_type pulse_post.attrs
 
@@ -785,13 +778,14 @@ let drop_garbage ~keep state =
 let simplify pulse_state state =
   (* NOTE: For dropping garbage, we do not consider registers live. If the Topl monitor has a hold
      of something that is garbage for the program, then that something is still garbage. *)
+  let reachable = pulse_state.get_reachable () in
   let eliminate_exists {pre; post; pruned; last_step} =
     L.d_printfln "@[<v>@[DBG eliminate_exists pulse_state.path_condition %a@]@;@]" Formula.pp
       pulse_state.path_condition ;
     let collect memory keep =
       List.fold ~init:keep ~f:(fun keep (_reg, value) -> AbstractValue.Set.add value keep) memory
     in
-    let keep = get_reachable pulse_state |> collect pre.memory |> collect post.memory in
+    let keep = reachable |> collect pre.memory |> collect post.memory in
     L.d_printfln "@[<v>@[DBG eliminate_exists keep = %a@]@;@]" AbstractValue.Set.pp keep ;
     let keep v = AbstractValue.Set.mem v keep in
     let keep v =
@@ -812,7 +806,7 @@ let simplify pulse_state state =
     (* T147875161 *)
     if false then List.map ~f:eliminate_exists state else state
   in
-  let state = drop_garbage ~keep:(get_reachable pulse_state) state in
+  let state = drop_garbage ~keep:reachable state in
   let state = List.map ~f:simplify_pruned state in
   let state = drop_infeasible pulse_state state in
   List.dedup_and_sort ~compare:compare_simple_state state

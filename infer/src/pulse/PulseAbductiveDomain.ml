@@ -1049,11 +1049,8 @@ module Internal = struct
     (PostDomain.update ~heap:heap' ~attrs:attrs' foot, discarded_addresses)
 
 
-  let discard_unreachable_ ~for_summary ({pre; post} as astate) =
+  let get_reachable ({pre; post} as astate) =
     let pre_addresses = BaseDomain.reachable_addresses (pre :> BaseDomain.t) in
-    let pre_new =
-      filter_pre_addr ~f:(fun address -> AbstractValue.Set.mem (downcast address) pre_addresses) pre
-    in
     let post_addresses = BaseDomain.reachable_addresses (post :> BaseDomain.t) in
     let post_addresses =
       (* Also include post addresses reachable from pre addresses *)
@@ -1077,17 +1074,27 @@ module Internal = struct
              AbstractValue.Set.add (Formula.get_var_repr astate.path_condition addr) acc )
            post_addresses
     in
+    (pre_addresses, post_addresses, always_reachable_trans_closure, canon_addresses)
+
+
+  let discard_unreachable_ ~for_summary ({pre; post} as astate) =
+    let pre_addresses, post_addresses, always_reachable_trans_closure, canon_addresses =
+      get_reachable astate
+    in
+    let is_live address =
+      AbstractValue.Set.mem address pre_addresses
+      || AbstractValue.Set.mem address post_addresses
+      || AbstractValue.Set.mem address always_reachable_trans_closure
+      ||
+      let canon_addr = Formula.get_var_repr astate.path_condition address in
+      AbstractValue.Set.mem canon_addr canon_addresses
+    in
+    let pre_new =
+      filter_pre_addr ~f:(fun address -> AbstractValue.Set.mem (downcast address) pre_addresses) pre
+    in
     let post_new, dead_addresses =
       (* keep attributes of dead addresses unless we are creating a summary *)
-      filter_post_addr_with_discarded_addrs ~heap_only:(not for_summary)
-        ~f:(fun address ->
-          AbstractValue.Set.mem address pre_addresses
-          || AbstractValue.Set.mem address post_addresses
-          || AbstractValue.Set.mem address always_reachable_trans_closure
-          ||
-          let canon_addr = Formula.get_var_repr astate.path_condition address in
-          AbstractValue.Set.mem canon_addr canon_addresses )
-        post
+      filter_post_addr_with_discarded_addrs ~heap_only:(not for_summary) ~f:is_live post
     in
     (* note: we don't call {!Formula.simplify} *)
     let astate =
@@ -1366,11 +1373,22 @@ module Internal = struct
     {astate with pre; post}
 
 
-  let topl_view : t -> PulseTopl.pulse_state = function
-    | {pre; post; path_condition} ->
-        let pulse_pre = (pre :> BaseDomain.t) in
-        let pulse_post = (post :> BaseDomain.t) in
-        {pulse_pre; pulse_post; path_condition}
+  let topl_view ({pre; post; path_condition} as astate) =
+    let pulse_pre = (pre :> BaseDomain.t) in
+    let pulse_post = (post :> BaseDomain.t) in
+    let get_reachable () =
+      let pre_addresses, post_addresses, always_reachable_trans_closure, canon_addresses =
+        get_reachable astate
+      in
+      let path_condition =
+        Formula.fold_variables path_condition ~init:AbstractValue.Set.empty ~f:(fun vars v ->
+            AbstractValue.Set.add v vars )
+      in
+      let ( ++ ) = AbstractValue.Set.union in
+      pre_addresses ++ post_addresses ++ always_reachable_trans_closure ++ canon_addresses
+      ++ path_condition
+    in
+    {PulseTopl.pulse_pre; pulse_post; path_condition; get_reachable}
 
 
   let filter_for_summary tenv proc_name astate0 =
