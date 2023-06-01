@@ -140,6 +140,8 @@ module AddressAttributes : sig
 
   val add_attrs : AbstractValue.t -> Attributes.t -> t -> t
 
+  val find_opt : AbstractValue.t -> t -> Attributes.t option
+
   val check_valid :
        PathContext.t
     -> ?must_be_valid_reason:Invalidation.must_be_valid_reason
@@ -242,7 +244,13 @@ module AddressAttributes : sig
 
   val get_const_string : AbstractValue.t -> t -> string option
 
-  val find_opt : AbstractValue.t -> t -> Attributes.t option
+  val get_returned_from_unknown : AbstractValue.t -> t -> AbstractValue.t list option
+
+  val get_written_to : AbstractValue.t -> t -> (Timestamp.t * Trace.t) option
+
+  val is_copied_from_const_ref : AbstractValue.t -> t -> bool
+
+  val is_std_moved : AbstractValue.t -> t -> bool
 end
 
 val should_havoc_if_unknown : unit -> [> `ShouldHavoc | `ShouldOnlyHavocResources]
@@ -381,4 +389,8 @@ module Topl : sig
 end
 
 (** see {!PulseCanonValue} *)
-module CanonValue : PulseCanonValue.S with type astate = t
+module CanonValue : sig
+  include PulseCanonValue.S with type astate = t
+
+  val downcast : t -> AbstractValue.t [@@inline always]
+end

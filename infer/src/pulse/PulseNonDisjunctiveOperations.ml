@@ -570,10 +570,10 @@ let is_matching_edges ~get_repr ~edges_curr ~edges_orig =
               true ) )
 
 
-let is_modified_since_detected addr ~is_param ~get_repr ~current_heap ~current_attrs ~copy_heap
+let is_modified_since_detected addr ~is_param ~get_repr ~current_heap astate ~copy_heap
     ~(copy_timestamp : Timestamp.t) ~source_addr_opt =
   let is_written_after_copy addr =
-    BaseAddressAttributes.get_written_to addr current_attrs
+    AddressAttributes.get_written_to addr astate
     |> Option.exists ~f:(fun ((timestamp : Timestamp.t), _) ->
            (copy_timestamp :> int) < (timestamp :> int) )
   in
@@ -586,8 +586,8 @@ let is_modified_since_detected addr ~is_param ~get_repr ~current_heap ~current_a
         else
           let visited = AbstractValue.Set.add addr visited in
           let is_moved =
-            (is_param || BaseAddressAttributes.is_copied_from_const_ref addr current_attrs)
-            && BaseAddressAttributes.is_std_moved addr current_attrs
+            (is_param || AddressAttributes.is_copied_from_const_ref addr astate)
+            && AddressAttributes.is_std_moved addr astate
           in
           is_moved || is_written_after_copy addr
           ||
@@ -610,7 +610,7 @@ let is_modified_since_detected addr ~is_param ~get_repr ~current_heap ~current_a
   let addr_to_explore_opt =
     let open IOption.Let_syntax in
     let* source_addr = source_addr_opt in
-    let+ return = BaseAddressAttributes.get_returned_from_unknown source_addr current_attrs in
+    let+ return = AddressAttributes.get_returned_from_unknown source_addr astate in
     addr :: return
   in
   let addr_to_explore = Option.value addr_to_explore_opt ~default:[addr] in
@@ -620,7 +620,6 @@ let is_modified_since_detected addr ~is_param ~get_repr ~current_heap ~current_a
 let is_modified origin ~source_addr_opt address astate copy_heap copy_timestamp =
   let get_repr x = Formula.get_var_repr astate.AbductiveDomain.path_condition x in
   let current_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in
-  let current_attrs = (astate.AbductiveDomain.post :> BaseDomain.t).attrs in
   if Config.debug_mode then (
     let reachable_addresses_from_copy =
       BaseDomain.reachable_addresses_from (Caml.List.to_seq [address])
@@ -634,8 +633,8 @@ let is_modified origin ~source_addr_opt address astate copy_heap copy_timestamp 
     L.d_printfln_escaped "Current reachable heap %a" BaseMemory.pp (reachable_from current_heap) ;
     L.d_printfln_escaped "%a reachable heap %a" pp_origin origin BaseMemory.pp
       (reachable_from copy_heap) ) ;
-  is_modified_since_detected address ~is_param:(is_param origin) ~get_repr ~current_heap
-    ~current_attrs ~copy_heap ~copy_timestamp ~source_addr_opt
+  is_modified_since_detected address ~is_param:(is_param origin) ~get_repr ~current_heap astate
+    ~copy_heap ~copy_timestamp ~source_addr_opt
 
 
 let mark_modified_address_at ~address ~source_addr_opt origin ~copied_into astate

@@ -363,8 +363,7 @@ let apply_arithmetic_constraints pre_or_post {PathContext.timestamp} callee_proc
   AddressMap.fold
     (fun addr_callee addr_hist_caller call_state ->
       match
-        BaseAddressAttributes.find_opt addr_callee
-          (AbductiveDomain.Summary.get_pre callee_summary).attrs
+        UnsafeAttributes.find_opt addr_callee (AbductiveDomain.Summary.get_pre callee_summary).attrs
       with
       | None ->
           call_state
@@ -636,11 +635,11 @@ let record_post_remaining_attributes {PathContext.timestamp} callee_proc_name ca
     callee_summary call_state =
   BaseAddressAttributes.fold
     (fun addr_callee attrs call_state ->
-      if AddressSet.mem addr_callee call_state.visited then
+      if AddressSet.mem (CanonValue.downcast addr_callee) call_state.visited then
         (* already recorded the attributes when we were walking the edges map *)
         call_state
       else
-        match AddressMap.find_opt addr_callee call_state.subst with
+        match AddressMap.find_opt (CanonValue.downcast addr_callee) call_state.subst with
         | None ->
             (* callee address has no meaning for the caller *) call_state
         | Some (addr_caller, history) ->
@@ -697,7 +696,9 @@ let apply_unknown_effects callee_summary call_state =
     BaseAddressAttributes.fold
       (fun addr_callee attrs astate ->
         (let* _, havoc_hist = Attributes.get_unknown_effect attrs in
-         let+ addr_caller, _ = AddressMap.find_opt addr_callee call_state.subst in
+         let+ addr_caller, _ =
+           AddressMap.find_opt (CanonValue.downcast addr_callee) call_state.subst
+         in
          (* NOTE: could be optimized to remember the addresses already visited in case many
             addresses have the [UnknownEffect] attribute and share important parts of the memory
             graph (unlikely) *)
@@ -906,13 +907,13 @@ let check_all_valid path callee_proc_name call_location ~pre call_state =
     AddressMap.fold
       (fun addr_pre addr_hist_caller to_check ->
         let to_check =
-          match BaseAddressAttributes.get_must_be_valid addr_pre pre.BaseDomain.attrs with
+          match UnsafeAttributes.get_must_be_valid addr_pre pre.BaseDomain.attrs with
           | None ->
               to_check
           | Some must_be_valid_data ->
               (addr_hist_caller, `MustBeValid must_be_valid_data) :: to_check
         in
-        match BaseAddressAttributes.get_must_be_initialized addr_pre pre.BaseDomain.attrs with
+        match UnsafeAttributes.get_must_be_initialized addr_pre pre.BaseDomain.attrs with
         | None ->
             to_check
         | Some must_be_init_data ->
@@ -966,8 +967,8 @@ let check_config_usage_at_call location ~pre:{BaseDomain.attrs= pre_attrs} subst
   let open PulseResult.Let_syntax in
   AddressMap.fold
     (fun addr_pre addr_hist acc ->
-      Option.value_map (BaseAddressAttributes.get_used_as_branch_cond addr_pre pre_attrs)
-        ~default:acc ~f:(fun (pname_using_config, branch_location, trace) ->
+      Option.value_map (UnsafeAttributes.get_used_as_branch_cond addr_pre pre_attrs) ~default:acc
+        ~f:(fun (pname_using_config, branch_location, trace) ->
           let* acc in
           PulseOperations.check_used_as_branch_cond addr_hist ~pname_using_config ~branch_location
             ~location trace acc ) )
@@ -979,7 +980,7 @@ let check_all_taint_valid path callee_proc_name call_location callee_summary ast
   AddressMap.fold
     (fun addr_pre (addr_caller, hist_caller) astate_result ->
       let sinks =
-        BaseAddressAttributes.get_must_not_be_tainted addr_pre
+        UnsafeAttributes.get_must_not_be_tainted addr_pre
           (AbductiveDomain.Summary.get_pre callee_summary).attrs
       in
       let trace_via_call trace =

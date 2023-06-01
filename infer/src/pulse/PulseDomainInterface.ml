@@ -30,6 +30,7 @@ module CanonValue = AbductiveDomain.CanonValue
 module BaseStack = CanonValue.Stack
 module Access = PulseBaseMemory.Access
 module AccessSet = PulseBaseMemory.AccessSet
+module BaseAddressAttributes = CanonValue.Attributes
 module Decompiler = PulseAbductiveDecompiler
 module NonDisjDomain = PulseNonDisjunctiveDomain
 module PathContext = PulsePathContext
@@ -54,7 +55,7 @@ module LatentIssue = PulseLatentIssue
 module BaseDomain = PulseBaseDomain
 module UnsafeStack = PulseBaseStack
 module BaseMemory = PulseBaseMemory
-module BaseAddressAttributes = PulseBaseAddressAttributes
+module UnsafeAttributes = PulseBaseAddressAttributes
 
 (** {2 Enforce short form usage} *)
 

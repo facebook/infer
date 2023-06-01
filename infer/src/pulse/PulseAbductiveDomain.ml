@@ -135,14 +135,6 @@ let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}
 
 let canon astate v = Formula.get_var_repr astate.path_condition v
 
-(** Versions of the stack/heap/attributes that are safe wrt value normalization; see the
-    documentation for [PulseCanonValue] *)
-module CanonValue = PulseCanonValue.Make (struct
-  type astate = t
-
-  let canon = canon
-end)
-
 (** The internals define here are safe (wrt normalization) to use but expose the
     canonical/non-canonical (sub-)types of abstract values inherited from [PulseCanonValue]. We want
     to hide these in the external API of this file and pretend everything is just an
@@ -150,6 +142,14 @@ end)
     [AbstractValue.t] so feel free to change at some point) so we confine the trickier exposed bits
     to this [Internal] module. *)
 module Internal = struct
+  (** Versions of the stack/heap/attributes that are safe wrt value normalization; see the
+      documentation for [PulseCanonValue] *)
+  module CanonValue = PulseCanonValue.Make (struct
+    type astate = t
+
+    let canon = canon
+  end)
+
   module RawStack = PulseBaseStack
   module RawMemory = PulseBaseMemory
   module BaseStack = CanonValue.Stack
@@ -350,6 +350,10 @@ module Internal = struct
             if Attribute.is_suitable_for_post attr then add_one value attr astate else astate
           in
           match attr with Attribute.WrittenTo _ -> initialize value astate | _ -> astate )
+
+
+    let find_opt address astate =
+      BaseAddressAttributes.find_opt address (astate.post :> base_domain).attrs
 
 
     let check_valid path ?must_be_valid_reason access_trace addr astate =
@@ -616,8 +620,20 @@ module Internal = struct
           match attr with Attribute.WrittenTo _ -> initialize value astate | _ -> astate )
 
 
-    let find_opt address astate =
-      BaseAddressAttributes.find_opt address (astate.post :> base_domain).attrs
+    let get_returned_from_unknown addr astate =
+      BaseAddressAttributes.get_returned_from_unknown addr (astate.post :> base_domain).attrs
+
+
+    let get_written_to addr astate =
+      BaseAddressAttributes.get_written_to addr (astate.post :> base_domain).attrs
+
+
+    let is_copied_from_const_ref addr astate =
+      BaseAddressAttributes.is_copied_from_const_ref addr (astate.post :> base_domain).attrs
+
+
+    let is_std_moved addr astate =
+      BaseAddressAttributes.is_std_moved addr (astate.post :> base_domain).attrs
   end
 
   module SafeMemory = struct
@@ -1815,6 +1831,8 @@ module AddressAttributes = struct
 
   let add_attrs v attrs astate = SafeAttributes.add_attrs (CanonValue.canon' astate v) attrs astate
 
+  let find_opt v astate = SafeAttributes.find_opt (CanonValue.canon' astate v) astate
+
   let check_valid path ?must_be_valid_reason trace v astate =
     SafeAttributes.check_valid path ?must_be_valid_reason trace (CanonValue.canon' astate v) astate
 
@@ -1966,9 +1984,24 @@ module AddressAttributes = struct
     SafeAttributes.get_config_usage (CanonValue.canon' astate v) astate
 
 
+  let get_returned_from_unknown v astate =
+    SafeAttributes.get_returned_from_unknown (CanonValue.canon' astate v) astate
+
+
+  let get_written_to v astate = SafeAttributes.get_written_to (CanonValue.canon' astate v) astate
+
+  let is_copied_from_const_ref v astate =
+    SafeAttributes.is_copied_from_const_ref (CanonValue.canon' astate v) astate
+
+
+  let is_std_moved v astate = SafeAttributes.is_std_moved (CanonValue.canon' astate v) astate
+
   let get_const_string v astate =
     SafeAttributes.get_const_string (CanonValue.canon' astate v) astate
+end
 
+module CanonValue = struct
+  include CanonValue
 
-  let find_opt v astate = SafeAttributes.find_opt (CanonValue.canon' astate v) astate
+  let downcast = downcast
 end
