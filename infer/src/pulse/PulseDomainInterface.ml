@@ -28,6 +28,8 @@ module CanonValue = AbductiveDomain.CanonValue
 (** {2 Low-level modules operating on individual elements of the abductive domain} *)
 
 module BaseStack = CanonValue.Stack
+module Access = PulseBaseMemory.Access
+module AccessSet = PulseBaseMemory.AccessSet
 module Decompiler = PulseAbductiveDecompiler
 module NonDisjDomain = PulseNonDisjunctiveDomain
 module PathContext = PulsePathContext

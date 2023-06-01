@@ -205,8 +205,7 @@ let subst_find_or_new subst addr_callee ~default_hist_caller =
       (subst, addr_hist_caller)
 
 
-let translate_access_to_caller subst (access_callee : BaseMemory.Access.t) : _ * BaseMemory.Access.t
-    =
+let translate_access_to_caller subst (access_callee : Access.t) : _ * Access.t =
   match access_callee with
   | ArrayAccess (typ, val_callee) ->
       let subst, (val_caller, _) =
@@ -415,15 +414,15 @@ let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state
         (call_state.subst, old_post_edges)
     | Some edges_pre ->
         let subst, translated_accesses_pre =
-          BaseMemory.Edges.fold ~init:(call_state.subst, BaseMemory.AccessSet.empty) edges_pre
+          BaseMemory.Edges.fold ~init:(call_state.subst, AccessSet.empty) edges_pre
             ~f:(fun (subst, accesses) (access_callee, _) ->
               let subst, access = translate_access_to_caller subst access_callee in
-              (subst, BaseMemory.AccessSet.add access accesses) )
+              (subst, AccessSet.add access accesses) )
         in
         let post_edges =
           BaseMemory.Edges.filter old_post_edges ~f:(fun (access_caller, _) ->
               (* delete edge if some edge for the same access exists in the pre *)
-              not (BaseMemory.AccessSet.mem access_caller translated_accesses_pre) )
+              not (AccessSet.mem access_caller translated_accesses_pre) )
         in
         (subst, post_edges) )
 
@@ -820,7 +819,7 @@ let canonicalize ~actuals call_state =
                     let formula = astate.AbductiveDomain.path_condition in
                     let get_var_repr v = Formula.get_var_repr formula v in
                     let addr' = get_var_repr addr in
-                    let access' = BaseMemory.Access.canonicalize ~get_var_repr access in
+                    let access' = Access.canonicalize ~get_var_repr access in
                     let replaced, astate =
                       add_new_eq accessed addr' access (replaced, astate)
                       |> add_new_eq accessed addr access'

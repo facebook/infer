@@ -86,7 +86,7 @@ val eval_access :
   -> access_mode
   -> Location.t
   -> AbstractValue.t * ValueHistory.t
-  -> BaseMemory.Access.t
+  -> Access.t
   -> t
   -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 (** Like [eval] but starts from an address instead of an expression, checks that it is valid, and if
@@ -98,7 +98,7 @@ val eval_deref_access :
   -> access_mode
   -> Location.t
   -> AbstractValue.t * ValueHistory.t
-  -> BaseMemory.Access.t
+  -> Access.t
   -> t
   -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 (** Like [eval_access] but does additional dereference. *)
@@ -167,9 +167,7 @@ val write_deref :
     invalidation point in its history in addition to inside the [Invalid] attribute *)
 type invalidation_access =
   | MemoryAccess of
-      { pointer: AbstractValue.t * ValueHistory.t
-      ; access: BaseMemory.Access.t
-      ; hist_obj_default: ValueHistory.t }
+      {pointer: AbstractValue.t * ValueHistory.t; access: Access.t; hist_obj_default: ValueHistory.t}
       (** the value was read from the heap following the [access] edge at address [pointer] *)
   | StackAddress of Var.t * ValueHistory.t  (** the value was read from the stack *)
   | UntraceableAccess  (** we don't know where the value came from; avoid using if possible *)
@@ -221,7 +219,7 @@ val invalidate_access :
   -> Location.t
   -> Invalidation.t
   -> AbstractValue.t * ValueHistory.t
-  -> BaseMemory.Access.t
+  -> Access.t
   -> t
   -> t
 (** record that what the address points via the access to is invalid *)
@@ -231,7 +229,7 @@ val invalidate_deref_access :
   -> Location.t
   -> Invalidation.t
   -> AbstractValue.t * ValueHistory.t
-  -> BaseMemory.Access.t
+  -> Access.t
   -> t
   -> t
 (** Like [invalidate_access] but invalidates dereferenced address. *)

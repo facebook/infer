@@ -30,7 +30,7 @@ let count_references tenv astate =
       | Some edges ->
           BaseMemory.Edges.fold edges ~init:(seen, ref_counts)
             ~f:(fun (seen, ref_counts) (access, (accessed_addr, _)) ->
-              if BaseMemory.Access.is_strong_access tenv access then
+              if Access.is_strong_access tenv access then
                 let ref_counts =
                   if PulseOperations.is_ref_counted accessed_addr astate then
                     AbstractValue.Map.update accessed_addr
@@ -63,7 +63,7 @@ let is_released tenv astate addr non_retaining_addrs =
           false
       | Some edges ->
           BaseMemory.Edges.exists edges ~f:(fun (access, (accessed_addr, _)) ->
-              BaseMemory.Access.is_strong_access tenv access
+              Access.is_strong_access tenv access
               && ( AbstractValue.equal accessed_addr addr
                  || is_retained_by accessed_addr (src_addr :: seen) ) )
   in

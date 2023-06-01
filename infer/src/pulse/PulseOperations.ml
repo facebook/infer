@@ -398,9 +398,7 @@ let remove_allocation_attr address astate = AddressAttributes.remove_allocation_
 
 type invalidation_access =
   | MemoryAccess of
-      { pointer: AbstractValue.t * ValueHistory.t
-      ; access: BaseMemory.Access.t
-      ; hist_obj_default: ValueHistory.t }
+      {pointer: AbstractValue.t * ValueHistory.t; access: Access.t; hist_obj_default: ValueHistory.t}
   | StackAddress of Var.t * ValueHistory.t
   | UntraceableAccess
 
@@ -463,7 +461,7 @@ let invalidate_deref_access path location cause ref_addr_hist access astate =
 let invalidate_array_elements path location cause addr_trace astate =
   let+ astate = check_addr_access path NoAccess location addr_trace astate in
   Memory.fold_edges (fst addr_trace) astate ~init:astate ~f:(fun astate (access, dest_addr_trace) ->
-      match (access : BaseMemory.Access.t) with
+      match (access : Access.t) with
       | ArrayAccess _ as access ->
           AddressAttributes.invalidate dest_addr_trace cause location astate
           |> record_invalidation path
