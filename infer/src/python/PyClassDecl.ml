@@ -11,13 +11,16 @@ module F = Format
 module Type = struct
   type t = Atom of string | List of t list | Apply of string * t
 
-  let rec show = function
+  let rec pp fmt = function
     | Atom a ->
-        a
+        F.pp_print_string fmt a
     | List lst ->
-        List.map ~f:show lst |> String.concat ~sep:", " |> F.sprintf "[%s]"
+        F.fprintf fmt "[@[%a@]]" (Pp.collection ~fold:List.fold ~sep:", " ~pp_item:pp) lst
     | Apply (name, ty) ->
-        F.sprintf "%s%s" name (show ty)
+        F.fprintf fmt "%s%a" name pp ty
+
+
+  let show ty : string = F.asprintf "%a" pp ty
 end
 
 module Stack = struct
@@ -34,8 +37,8 @@ module Stack = struct
 end
 
 (** Simple types like [int] are loaded in a single [LOAD_NAME] instruction, but more complex ones
-    like [Callable\[\[int\], int\]] will require a more elaborate sequence. This is function will do
-    a best effort to parse type annotation, and will stop when it encounters the load of the special
+    like [Callable\[\[int\], int\]] will require a more elaborate sequence. This function will do a
+    best effort to parse type annotations, and will stop when it encounters the load of the special
     dictionary [__annotations__] (used to record types of class members) or [LOAD_CONST] trying to
     load a tuple (used to record method signatures). *)
 let rec parse_tys stack ({FFI.Code.co_names; co_consts} as code) instructions =

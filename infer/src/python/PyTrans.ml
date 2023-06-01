@@ -138,7 +138,7 @@ let cells_to_textual env opname code cells =
 
 
 (** Pop the top of the datastack. Fails with an [InternalError] if the stack is empty. *)
-let pop_tos opname env =
+let pop_datastack opname env =
   match Env.pop env with
   | None ->
       L.die ExternalError "[%s] stack is empty" opname
@@ -146,15 +146,15 @@ let pop_tos opname env =
       (env, cell)
 
 
-let pop_n_tos opname =
+let pop_n_datastack opname =
   let rec pop env n acc =
     if n > 0 then (
-      let env, cell = pop_tos opname env in
+      let env, cell = pop_datastack opname env in
       Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
       pop env (n - 1) (cell :: acc) )
     else (env, acc)
   in
-  Debug.p "[pop_n_tos]\n" ;
+  Debug.p "[pop_n_datastack]\n" ;
   pop
 
 
@@ -203,7 +203,7 @@ module LOAD = struct
       | NAME | GLOBAL ->
           (env, DataStack.Name arg)
       | ATTR -> (
-          let env, cell = pop_tos opname env in
+          let env, cell = pop_datastack opname env in
           let fname = co_names.(arg) in
           let env, res, _info = load_cell env code cell in
           match res with
@@ -250,7 +250,7 @@ module METHOD = struct
     let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
       let method_name = co_names.(arg) in
       Debug.p "[%s] namei = %s\n" opname method_name ;
-      let env, cell = pop_tos opname env in
+      let env, cell = pop_datastack opname env in
       let env, res, _info = load_cell env code cell in
       match res with
       | `Error s ->
@@ -275,9 +275,9 @@ module METHOD = struct
         them are popped and the return value is pushed. *)
     let run env code {FFI.Instruction.opname; arg} =
       Debug.p "[%s] argc = %d" opname arg ;
-      let env, cells = pop_n_tos opname env arg [] in
+      let env, cells = pop_n_datastack opname env arg [] in
       let env, args = cells_to_textual env opname code cells in
-      let env, cell_mi = pop_tos opname env in
+      let env, cell_mi = pop_datastack opname env in
       let env, mi, _ = load_cell env code cell_mi in
       match mi with
       | `Error s ->
@@ -338,14 +338,14 @@ module STORE = struct
     Debug.p "[%s] name = %s\n" opname name ;
     let loc = Env.loc env in
     let var_name = var_name ~loc name in
-    let env, cell = pop_tos opname env in
+    let env, cell = pop_datastack opname env in
     let env, exp, info = load_cell env code cell in
     match exp with
     | `Ok exp ->
         let {Env.typ; is_code; is_class} = info in
         let env = if is_global then Env.register_global env var_name info else env in
         if is_attr then
-          let env, cell = pop_tos opname env in
+          let env, cell = pop_datastack opname env in
           let env, value, {Env.typ} = load_cell env code cell in
           match value with
           | `Error s ->
@@ -381,7 +381,7 @@ module POP_TOP = struct
       Pop the top-of-stack and discard it *)
   let run env {FFI.Instruction.opname} =
     Debug.p "[%s]\n" opname ;
-    let env, _cell = pop_tos opname env in
+    let env, _cell = pop_datastack opname env in
     (env, None)
 end
 
@@ -445,10 +445,10 @@ module FUNCTION = struct
 
     let run env ({FFI.Code.co_names; co_consts} as code) {FFI.Instruction.opname; arg} =
       Debug.p "[%s] argc = %d\n" opname arg ;
-      let env, cells = pop_n_tos opname env arg [] in
+      let env, cells = pop_n_datastack opname env arg [] in
       let env, args = cells_to_textual env opname code cells in
       Debug.p "  #args = %d\n" (List.length args) ;
-      let env, fname = pop_tos opname env in
+      let env, fname = pop_datastack opname env in
       Debug.p "  fname = %a\n" DataStack.pp_cell fname ;
       match (fname : DataStack.cell) with
       | Name ndx ->
@@ -541,12 +541,12 @@ module FUNCTION = struct
     let run env ({FFI.Code.co_consts} as code) {FFI.Instruction.opname; arg} =
       Debug.p "[%s] flags = 0x%x\n" opname arg ;
       check_flags opname arg ;
-      let env, qual = pop_tos opname env in
+      let env, qual = pop_datastack opname env in
       (* don't care about the content of the code object, but check it is indeed code *)
-      let env, body = pop_tos opname env in
+      let env, body = pop_datastack opname env in
       let env, annotations =
         if arg land 4 <> 0 then (
-          let env, cell = pop_tos opname env in
+          let env, cell = pop_datastack opname env in
           Debug.p "[%s] spotted annotations\n  %s\n" opname (DataStack.show_cell cell) ;
           let annotations = match cell with Env.DataStack.Map map -> Some map | _ -> None in
           (env, annotations) )
@@ -595,8 +595,8 @@ module BINARY_ADD = struct
       custom operator, ...), we'll need to write a model for this one. *)
   let run env code {FFI.Instruction.opname} =
     Debug.p "[%s]\n" opname ;
-    let env, tos = pop_tos opname env in
-    let env, tos1 = pop_tos opname env in
+    let env, tos = pop_datastack opname env in
+    let env, tos1 = pop_datastack opname env in
     let env, lhs, _ = load_cell env code tos1 in
     let lhs =
       match lhs with `Ok lhs -> lhs | `Error s -> L.die InternalError "[%s] %s" opname s
@@ -619,18 +619,6 @@ end
 
 module BUILD = struct
   module CONST_KEY_MAP = struct
-    let pop_n_tos opname =
-      let rec pop env n acc =
-        if n > 0 then (
-          let env, cell = pop_tos opname env in
-          Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
-          pop env (n - 1) (cell :: acc) )
-        else (env, acc)
-      in
-      Debug.p "[pop_n_tos]\n" ;
-      pop
-
-
     let is_tuple_ids {FFI.Code.co_consts} cell =
       let as_key = function FFI.Constant.PYCString s -> Some s | _ -> None in
       match cell with
@@ -653,7 +641,7 @@ module BUILD = struct
         form values in the built dictionary, which is pushed back on the stack. *)
     let run env code {FFI.Instruction.opname; arg} =
       Debug.p "[%s] count = %d\n" opname arg ;
-      let env, cell = pop_tos opname env in
+      let env, cell = pop_datastack opname env in
       let keys =
         match is_tuple_ids code cell with
         | Ok keys ->
@@ -662,7 +650,7 @@ module BUILD = struct
             L.die UserError "[%s] expecting tuple of literal keys" opname
       in
       (* TODO check cells is a tuple of literal strings *)
-      let env, values = pop_n_tos opname env arg [] in
+      let env, values = pop_n_datastack opname env arg [] in
       Debug.p "  #values = %d\n" (List.length values) ;
       let map =
         match List.zip keys values with
@@ -725,7 +713,7 @@ module JUMP = struct
         If top-of-stack is false, sets the bytecode counter to target. top-of-steack is popped. *)
     let run ~next_is_true env code {FFI.Instruction.opname; arg} =
       Debug.p "[%s] target = %d\n" opname arg ;
-      let env, tos = pop_tos opname env in
+      let env, tos = pop_datastack opname env in
       let env, cell, _ = load_cell env code tos in
       let cond =
         match cell with `Ok cond -> cond | `Error s -> L.die InternalError "[%s] %s" opname s
@@ -794,7 +782,7 @@ module RETURN_VALUE = struct
       Returns the top-of-stack *)
   let run env code {FFI.Instruction.opname} =
     Debug.p "[%s]\n" opname ;
-    let env, cell = pop_tos opname env in
+    let env, cell = pop_datastack opname env in
     let env, exp, _ = load_cell env code cell in
     match exp with
     | `Ok exp ->
@@ -812,7 +800,7 @@ module ITER = struct
         on the top of the stack. Might be C code for builtin types, so we'll model it as a builtin *)
     let run env code {FFI.Instruction.opname} =
       Debug.p "[%s]\n" opname ;
-      let env, cell = pop_tos opname env in
+      let env, cell = pop_datastack opname env in
       let env, exp, _ = load_cell env code cell in
       match exp with
       | `Ok exp ->
@@ -831,7 +819,7 @@ module ITER = struct
         top-of-stack is popped, and the byte code counter is incremented by delta. *)
     let run env code {FFI.Instruction.opname; arg} =
       Debug.p "[%s] delta = %d\n" opname arg ;
-      let env, iter_cell = pop_tos opname env in
+      let env, iter_cell = pop_datastack opname env in
       let env, iter_exp, _ = load_cell env code iter_cell in
       match iter_exp with
       | `Ok iter ->
