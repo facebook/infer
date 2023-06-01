@@ -257,6 +257,9 @@ module AddressAttributes : sig
   val is_copied_from_const_ref : AbstractValue.t -> t -> bool
 
   val is_std_moved : AbstractValue.t -> t -> bool
+
+  val get_address_of_stack_variable :
+    AbstractValue.t -> t -> (Var.t * Location.t * ValueHistory.t) option
 end
 
 val should_havoc_if_unknown : unit -> [> `ShouldHavoc | `ShouldOnlyHavocResources]

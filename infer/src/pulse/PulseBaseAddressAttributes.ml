@@ -309,6 +309,10 @@ let is_std_vector_reserved address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_std_vector_reserved
 
 
+let get_address_of_stack_variable address attrs =
+  get_attribute Attributes.get_address_of_stack_variable address attrs
+
+
 let canonicalize_common ~for_post ~get_var_repr attrs_map =
   (* TODO: merging attributes together can produce contradictory attributes, eg [MustBeValid] +
      [Invalid]. We could detect these and abort execution. This is not really restricted to merging
@@ -455,4 +459,6 @@ module type S = sig
   val remove_must_be_valid_attr : key -> t -> t
 
   val initialize : key -> t -> t
+
+  val get_address_of_stack_variable : key -> t -> (Var.t * Location.t * ValueHistory.t) option
 end

@@ -634,6 +634,10 @@ module Internal = struct
 
     let is_std_moved addr astate =
       BaseAddressAttributes.is_std_moved addr (astate.post :> base_domain).attrs
+
+
+    let get_address_of_stack_variable addr astate =
+      BaseAddressAttributes.get_address_of_stack_variable addr (astate.post :> base_domain).attrs
   end
 
   module SafeMemory = struct
@@ -2024,6 +2028,10 @@ module AddressAttributes = struct
 
   let get_const_string v astate =
     SafeAttributes.get_const_string (CanonValue.canon' astate v) astate
+
+
+  let get_address_of_stack_variable v astate =
+    SafeAttributes.get_address_of_stack_variable (CanonValue.canon' astate v) astate
 end
 
 module CanonValue = struct

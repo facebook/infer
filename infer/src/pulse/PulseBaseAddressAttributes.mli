@@ -119,6 +119,8 @@ module type S = sig
   val remove_must_be_valid_attr : key -> t -> t
 
   val initialize : key -> t -> t
+
+  val get_address_of_stack_variable : key -> t -> (Var.t * Location.t * ValueHistory.t) option
 end
 
 include S with type key := AbstractValue.t

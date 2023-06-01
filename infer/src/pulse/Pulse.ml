@@ -765,14 +765,22 @@ module PulseTransferFunctions = struct
 
 
   let remove_vars vars location astates =
-    List.map astates ~f:(fun (exec_state : ExecutionDomain.t) ->
+    List.filter_map astates ~f:(fun (exec_state : ExecutionDomain.t) ->
         match exec_state with
         | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
-            exec_state
-        | ContinueProgram astate ->
-            ContinueProgram (PulseOperations.remove_vars vars location astate)
-        | ExceptionRaised astate ->
-            ExceptionRaised (PulseOperations.remove_vars vars location astate) )
+            Some exec_state
+        | ContinueProgram astate -> (
+          match PulseOperations.remove_vars vars location astate with
+          | Sat astate ->
+              Some (ContinueProgram astate)
+          | Unsat ->
+              None )
+        | ExceptionRaised astate -> (
+          match PulseOperations.remove_vars vars location astate with
+          | Sat astate ->
+              Some (ExceptionRaised astate)
+          | Unsat ->
+              None ) )
 
 
   let exit_scope vars location path astate astate_n

@@ -566,7 +566,18 @@ let mark_address_of_cpp_temporary history variable address astate =
 
 
 let mark_address_of_stack_variable history variable location address astate =
-  AddressAttributes.add_one address (AddressOfStackVariable (variable, location, history)) astate
+  match AddressAttributes.get_address_of_stack_variable address astate with
+  | None ->
+      Sat
+        (AddressAttributes.add_one address
+           (AddressOfStackVariable (variable, location, history))
+           astate )
+  | Some (variable', location', _) ->
+      L.d_printfln ~color:Orange
+        "UNSAT: variables %a and %a have the same address on the stack.@\n  %a: %a@\n  %a: %a"
+        Var.pp variable Var.pp variable' Var.pp variable Location.pp location Var.pp variable'
+        Location.pp location' ;
+      Unsat
 
 
 let get_dynamic_type_unreachable_values vars astate =
@@ -671,22 +682,23 @@ let mark_potential_leaks location ~dead_roots astate =
 
 
 let remove_vars vars location astate =
+  let open SatUnsat.Import in
   let astate = mark_potential_leaks location ~dead_roots:vars astate in
   (* remember addresses that will marked invalid later *)
-  let astate =
-    List.fold vars ~init:astate ~f:(fun astate var ->
+  let+ astate =
+    SatUnsat.list_fold vars ~init:astate ~f:(fun astate var ->
         match Stack.find_opt var astate with
         | Some (address, history) ->
-            let astate =
+            let* astate =
               if Var.appears_in_source_code var && AbductiveDomain.is_local var astate then
                 mark_address_of_stack_variable history var location address astate
-              else astate
+              else Sat astate
             in
             if Var.is_cpp_temporary var then
-              mark_address_of_cpp_temporary history var address astate
-            else astate
+              Sat (mark_address_of_cpp_temporary history var address astate)
+            else Sat astate
         | _ ->
-            astate )
+            Sat astate )
   in
   Stack.remove_vars vars astate
 
