@@ -193,3 +193,23 @@ void uninit_interproc_manifest_bad() {
     // currently FN as uninit does in fact terminate symbolic execution
   }
 }
+
+// another interprocedural test
+
+void check_range(int range_var_valid, int* range_var) {
+  if (range_var_valid) {
+    *range_var = *range_var + 1;
+  }
+
+  assert(range_var_valid >= 0 && range_var_valid <= 1);
+}
+
+void check_range_wrapper(int range_var_valid, int* range_var) {
+  check_range(range_var_valid, range_var);
+}
+
+void FP_uninit_var_not_read_interproc_ok() {
+  int range_var_valid = 0;
+  int range_var;
+  check_range_wrapper(range_var_valid, &range_var);
+}
