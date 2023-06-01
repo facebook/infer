@@ -230,9 +230,9 @@ module Labels = Caml.Map.Make (Int)
 
 module Signature = struct
   type t = (string * string) list
-
-  module Map = Caml.Map.Make (String)
 end
+
+module SMap = Caml.Map.Make (String)
 
 type info = {is_code: bool; is_class: bool; typ: T.Typ.t}
 
@@ -251,7 +251,10 @@ and shared =
   ; shadowed_builtins: BuiltinSet.t
   ; builtins: BuiltinSet.t
   ; classes: string list
-  ; toplevel_signatures: Signature.t Signature.Map.t
+  ; toplevel_signatures: Signature.t SMap.t
+        (** Map from top level function names to their signature *)
+  ; method_signatures: Signature.t SMap.t SMap.t
+        (** Map from class names to the signature of all of their methods *)
   ; is_toplevel: bool
   ; next_label: int
   ; labels: label_info Labels.t }
@@ -344,7 +347,8 @@ let empty =
   ; shadowed_builtins= BuiltinSet.empty
   ; builtins= BuiltinSet.empty
   ; classes= []
-  ; toplevel_signatures= Signature.Map.empty
+  ; toplevel_signatures= SMap.empty
+  ; method_signatures= SMap.empty
   ; is_toplevel= true
   ; next_label= 0
   ; labels= Labels.empty }
@@ -488,7 +492,7 @@ let register_toplevel ({shared} as env) fname annotations =
   | None ->
       let fname = PyCommon.global fname in
       let {toplevel_signatures} = shared in
-      let toplevel_signatures = Signature.Map.add fname annotations toplevel_signatures in
+      let toplevel_signatures = SMap.add fname annotations toplevel_signatures in
       let shared = {shared with toplevel_signatures} in
       {env with shared}
   | Some builtin ->
@@ -498,8 +502,25 @@ let register_toplevel ({shared} as env) fname annotations =
       {env with shared}
 
 
-let lookup_signature {shared= {toplevel_signatures}} {T.ProcName.value} =
-  Signature.Map.find_opt value toplevel_signatures
+let register_method ({shared} as env) ~enclosing_class ~method_name annotations =
+  let {method_signatures} = shared in
+  let class_info =
+    SMap.find_opt enclosing_class method_signatures |> Option.value ~default:SMap.empty
+  in
+  let class_info = SMap.add method_name annotations class_info in
+  let method_signatures = SMap.add enclosing_class class_info method_signatures in
+  let shared = {shared with method_signatures} in
+  {env with shared}
+
+
+let lookup_signature {shared= {toplevel_signatures; method_signatures}} enclosing_class
+    {T.ProcName.value= name} =
+  match enclosing_class with
+  | T.TopLevel ->
+      SMap.find_opt name toplevel_signatures
+  | T.Enclosing {T.TypeName.value} ->
+      SMap.find_opt value method_signatures
+      |> Option.bind ~f:(fun class_info -> SMap.find_opt name class_info)
 
 
 let register_class ({shared} as env) class_name =

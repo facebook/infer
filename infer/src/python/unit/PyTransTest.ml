@@ -854,13 +854,13 @@ let%test_module "simple user classes" =
       let source =
         {|
 class C:
-        def __init__(self, x):
+        def __init__(self, x: int) -> None:
             self.x = x
 
-        def get(self):
+        def get(self) -> int:
             return self.x
 
-        def set(self, x):
+        def set(self, x: int) -> None:
             self.x = x
 
 c = C()
@@ -892,7 +892,7 @@ c.set(42)
 
           }
 
-          define C.set(self: *PyObject, x: *PyObject) : *PyObject {
+          define C.__init__(self: *PyObject, x: *PyInt) : *PyNone {
             #b0:
                 n0:*PyObject = load &self
                 n1:*PyObject = load &x
@@ -901,7 +901,7 @@ c.set(42)
 
           }
 
-          define C.get(self: *PyObject) : *PyObject {
+          define C.get(self: *PyObject) : *PyInt {
             #b0:
                 n0:*PyObject = load &self
                 n1 = n0.?.x
@@ -909,7 +909,7 @@ c.set(42)
 
           }
 
-          define C.__init__(self: *PyObject, x: *PyObject) : *PyObject {
+          define C.set(self: *PyObject, x: *PyInt) : *PyNone {
             #b0:
                 n0:*PyObject = load &self
                 n1:*PyObject = load &x

@@ -383,6 +383,14 @@ module POP_TOP = struct
     (env, None)
 end
 
+let check_flags opname flag =
+  let support_tuple_of_defaults = flag land 1 <> 0 in
+  let support_dict_of_defaults = flag land 2 <> 0 in
+  let support_closure = flag land 8 <> 0 in
+  let unsupported = support_tuple_of_defaults || support_dict_of_defaults || support_closure in
+  if unsupported then L.die InternalError "%s: support for flag 0x%x is not implemented" opname flag
+
+
 module FUNCTION = struct
   module CALL = struct
     (** {v CALL_FUNCTION(argc) v}
@@ -511,15 +519,6 @@ module FUNCTION = struct
   end
 
   module MAKE = struct
-    let check_flags opname flag =
-      let support_tuple_of_defaults = flag land 1 <> 0 in
-      let support_dict_of_defaults = flag land 2 <> 0 in
-      let support_closure = flag land 8 <> 0 in
-      let unsupported = support_tuple_of_defaults || support_dict_of_defaults || support_closure in
-      if unsupported then
-        L.die InternalError "%s: support for flag 0x%x is not implemented" opname flag
-
-
     let unpack_annotations {FFI.Code.co_names; co_consts} annotations =
       let unpack =
         List.fold_left ~init:(Some [])
@@ -1180,6 +1179,7 @@ let type_of_annotation typ =
         PyCommon.pyNone
     | "object" ->
         PyCommon.pyObject
+    (* TODO: allow user denotable types here :D *)
     | _ ->
         Debug.p "[type_of_annotation] unsupported type: %s\n" typ ;
         PyCommon.pyObject
@@ -1216,7 +1216,7 @@ let to_proc_desc env loc enclosing_class name
   (* Now that a full unit has been processed, discard all the local information (local variable
      names, labels, ...) and only keep the [shared] part of the environment *)
   let env, nodes = nodes env label_info code instructions in
-  let annotations = Env.lookup_signature env name |> Option.value ~default:[] in
+  let annotations = Env.lookup_signature env enclosing_class name |> Option.value ~default:[] in
   let types = List.map ~f:(fun (n, t) -> (n, type_of_annotation t)) annotations in
   let formals_types =
     List.map
@@ -1234,9 +1234,103 @@ let to_proc_desc env loc enclosing_class name
   (env, {Textual.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown})
 
 
+module MethodDeclaration = struct
+  (** A generic method declaration looks like the followin example opcode * sequence:
+
+      {[
+        LOAD_NAME                3 (int)
+        LOAD_CONST               1 (('x',))
+        BUILD_CONST_KEY_MAP      1
+        LOAD_CONST               2 (<code object foobar at 0x7f42d8084f50, file "obj.py", line 2>)
+        LOAD_CONST               3 ('C.foobar')
+        MAKE_FUNCTION            4 (annotations)
+        STORE_NAME               4 (foobar)
+      ]}
+
+      Depending on annotations being present, usage of keyword parameters, ... the size of this
+      stack might change. So we process the commands until the [MAKE_FUNCTION, STORE_NAME] sequence
+      and return it a structure version of it *)
+
+  let try_sig_pattern {FFI.Code.co_names; co_consts} instrs =
+    let rec gather_types instrs acc =
+      match instrs with
+      | [] ->
+          (acc, [])
+      | {FFI.Instruction.opname; arg} :: tl ->
+          if String.equal opname "LOAD_NAME" then
+            let typ = co_names.(arg) in
+            gather_types tl (typ :: acc)
+          else if String.equal opname "LOAD_CONST" then
+            match co_consts.(arg) with
+            | FFI.Constant.PYCNone ->
+                gather_types tl ("None" :: acc)
+            | FFI.Constant.PYCString name ->
+                gather_types tl (name :: acc)
+            | _ ->
+                (acc, instrs)
+          else (acc, instrs)
+    in
+    let unpack_names names =
+      let res =
+        List.fold_result names ~init:[] ~f:(fun acc c ->
+            match c with FFI.Constant.PYCString name -> Ok (name :: acc) | _ -> Error () )
+      in
+      match res with Ok names -> Some names | Error () -> None
+    in
+    let types, instrs = gather_types instrs [] in
+    match (instrs : FFI.Instruction.t list) with
+    | {opname= name1; arg= arg1} :: {opname= name2; arg= arg2} :: tl
+      when String.equal name1 "LOAD_CONST" && String.equal name2 "BUILD_CONST_KEY_MAP" -> (
+      match co_consts.(arg1) with
+      | FFI.Constant.PYCTuple names when Int.equal (Array.length names) arg2 -> (
+        match unpack_names @@ Array.to_list names with
+        | None ->
+            (instrs, None)
+        | Some names -> (
+          match List.zip names types with
+          | Ok signature ->
+              (tl, Some (List.rev signature))
+          | Unequal_lengths ->
+              (instrs, None) ) )
+      | _ ->
+          (instrs, None) )
+    | _ ->
+        (instrs, None)
+
+
+  let try_decl_pattern {FFI.Code.co_consts} instrs =
+    let head, tail = List.split_n instrs 4 in
+    match (head : FFI.Instruction.t list) with
+    | [{opname= name0; arg= arg0}; {opname= name1}; {opname= name2; arg= arg2}; {opname= name3}]
+      when String.equal name0 "LOAD_CONST" && String.equal name1 "LOAD_CONST"
+           && String.equal name2 "MAKE_FUNCTION"
+           && String.equal name3 "STORE_NAME" ->
+        let code = co_consts.(arg0) in
+        (tail, Some (code, arg2))
+    | _ ->
+        (* Not enough opcode to read, or pattern doesn't match *)
+        (instrs, None)
+
+
+  let try_register code instrs =
+    let instrs, maybe_sig = try_sig_pattern code instrs in
+    let instrs, maybe_code = try_decl_pattern code instrs in
+    match maybe_code with
+    | None ->
+        (instrs, None)
+    | Some (code, flags) ->
+        check_flags "<DECLARE METHOD>" flags ;
+        (instrs, Some (code, maybe_sig))
+
+
+  let rec register code instrs codes =
+    let instrs, maybe_code = try_register code instrs in
+    match maybe_code with Some c -> register code instrs (c :: codes) | None -> (instrs, codes)
+end
+
 (** Process the special function generated by the Python compiler to create a class instances. This
     is where we can see some of the type annotations for fields, and method definitions. *)
-let rec class_declaration env {FFI.Code.instructions; co_consts; co_name} loc =
+let rec class_declaration env ({FFI.Code.instructions; co_name} as code) loc =
   (* TODO: some of the initialization sets up static definitions, like
           [__module__] or [__qualname__] is happening first. For now, let's skip
           them
@@ -1250,48 +1344,26 @@ let rec class_declaration env {FFI.Code.instructions; co_consts; co_name} loc =
   (* Now, there should be some type information about class members, if provided. We assume there
      is none for now.
      TODO: support/ignore correctly type declaration for class members *)
-  (* Now, there is a sequence of opcodes that will setup the class methods. Let's register them.
-     TODO: support type annotations for method signatures. *)
-  let register_method instructions codes =
-    let head, rest = List.split_n instructions 4 in
-    if List.length head < 4 then (codes, None)
-    else
-      match head with
-      | [i0; i1; i2; i3] ->
-          let {FFI.Instruction.opname= opname0; arg= arg0} = i0 in
-          (* LOAD_CONST [code] object *)
-          let {FFI.Instruction.opname= opname1} = i1 in
-          (* LOAD_CONST full qualified name, like C.__init__ *)
-          let {FFI.Instruction.opname= opname2; arg= arg2} = i2 in
-          (* MAKE_FUNCTION 2 *)
-          let {FFI.Instruction.opname= opname3} = i3 in
-          (* STORE_NAME short name, like __init__ *)
-          if arg2 <> 0 then
-            (* TODO: should we care about MAKE_FUNCTION's argument *)
-            L.d_printf "[class_declaration] spotted MAKE_FUNCTION with flags 0x%x\n" arg2 ;
-          if
-            String.equal opname0 "LOAD_CONST" && String.equal opname1 "LOAD_CONST"
-            && String.equal opname2 "MAKE_FUNCTION"
-            && String.equal opname3 "STORE_NAME"
-          then
-            let code = co_consts.(arg0) in
-            (code :: codes, Some rest)
-          else (codes, None)
-      | _ ->
-          (codes, None)
-  in
-  let rec register_methods instructions codes =
-    match register_method instructions codes with
-    | codes, Some rest ->
-        register_methods rest codes
-    | codes, None ->
-        codes
-  in
-  let codes = register_methods instructions [] in
+  (* Now, there is a sequence of opcodes that will setup the class methods.
+     Let's register them.
+     At this point, only two instructions for [return None] should remain, we can ignore them *)
+  let _remaining_instructions, codes = MethodDeclaration.register code instructions [] in
   let name = type_name ~loc co_name in
   let enclosing_class = T.Enclosing name in
+  let env, codes =
+    List.fold_left codes ~init:(env, []) ~f:(fun (env, codes) (const, maybe_annotations) ->
+        match (FFI.Constant.as_code const, maybe_annotations) with
+        | Some co, Some annotations ->
+            (* TODO: if self doesn't have a type, we could give it the current class. *)
+            let env =
+              Env.register_method env ~enclosing_class:co_name ~method_name:co.FFI.Code.co_name
+                annotations
+            in
+            (env, const :: codes)
+        | _, _ ->
+            (env, const :: codes) )
+  in
   let env, decls = to_proc_descs env enclosing_class (Array.of_list codes) in
-  (* At this point, only two instructions for [return None] should remain, we can ignore them *)
   let t = {T.Struct.name; supers= []; fields= []; attributes= []} in
   (env, T.Module.Struct t :: decls)
 

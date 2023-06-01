@@ -173,7 +173,11 @@ val register_toplevel : t -> string -> (string * string) list -> t
 (** Register a top level function declaration. We keep track of them since they might shadow Python
     builtins *)
 
-val lookup_signature : t -> T.ProcName.t -> (string * string) list option
+val register_method :
+  t -> enclosing_class:string -> method_name:string -> (string * string) list -> t
+(** Register a method declaration. We mostly keep track of their signatures *)
+
+val lookup_signature : t -> T.enclosing_class -> T.ProcName.t -> (string * string) list option
 (** Lookup the signature of a function / method *)
 
 val register_class : t -> string -> t
