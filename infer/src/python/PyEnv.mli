@@ -17,7 +17,6 @@ module Builtin : sig
     | PythonClassConstructor
     | PythonCode
     | PythonIter
-    | PythonIterItem
     | PythonIterNext
   [@@deriving compare]
 end

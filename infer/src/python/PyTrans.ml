@@ -774,10 +774,14 @@ module ITER = struct
       let env, iter_exp, _ = load_cell env code iter_cell in
       match iter_exp with
       | `Ok iter ->
-          (* TODO: Not sure I know how to write a model for python_iter_next/python_iter_item
-             as two separate functions. Maybe introduce a single one that returns a pair. *)
+          let loc = Env.loc env in
           let env, id, _ = Env.mk_builtin_call env Builtin.PythonIterNext [iter] in
-          let cond = T.Exp.Var id in
+          let has_item = T.Exp.Field {exp= T.Exp.Var id; field= PyCommon.py_iter_item_has_item} in
+          let has_item_info = Env.{typ= T.Typ.Int; is_code= false; is_class= false} in
+          let env, has_item_id = Env.mk_fresh_ident env has_item_info in
+          let has_item_load = T.Instr.Load {id= has_item_id; exp= has_item; typ= T.Typ.Int; loc} in
+          let env = Env.push_instr env has_item_load in
+          let cond = T.Exp.Var has_item_id in
           let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
           let env, next_label = Env.mk_fresh_label env in
           let env, other_label = Env.mk_fresh_label env in
@@ -790,8 +794,17 @@ module ITER = struct
             (* The iterator object stays on the stack while in the for loop, let's push it back *)
             let env = Env.push env iter_cell in
             let env = Env.push_instr env (T.Instr.Prune {exp= condT; loc}) in
-            let env, item_id, _ = Env.mk_builtin_call env Builtin.PythonIterItem [iter] in
-            Env.push env (DataStack.Temp item_id)
+            let next_item =
+              T.Exp.Field {exp= T.Exp.Var id; field= PyCommon.py_iter_item_next_item}
+            in
+            (* TODO: try to track iterator types *)
+            let next_item_info = Env.{typ= PyCommon.pyObject; is_code= false; is_class= false} in
+            let env, next_item_id = Env.mk_fresh_ident env next_item_info in
+            let next_item_load =
+              T.Instr.Load {id= next_item_id; exp= next_item; typ= PyCommon.pyObject; loc}
+            in
+            let env = Env.push_instr env next_item_load in
+            Env.push env (DataStack.Temp next_item_id)
           in
           let other_prelude loc env = Env.push_instr env (T.Instr.Prune {exp= condF; loc}) in
           let next_info = Env.Label.mk ~ssa_parameters ~prelude:next_prelude next_label in

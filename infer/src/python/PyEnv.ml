@@ -20,7 +20,6 @@ module Builtin = struct
     | PythonClassConstructor
     | PythonCode
     | PythonIter
-    | PythonIterItem
     | PythonIterNext
   [@@deriving compare]
 
@@ -56,8 +55,6 @@ module Builtin = struct
               "python_code"
           | PythonIter ->
               "python_iter"
-          | PythonIterItem ->
-              "python_iter_item"
           | PythonIterNext ->
               "python_iter_next"
         in
@@ -77,14 +74,20 @@ module BuiltinSet = struct
 
   let string_ = T.Typ.(Ptr (Struct (type_name "String")))
 
-  type elt = {formals_types: T.Typ.annotated list option; result_type: T.Typ.annotated}
+  type elt =
+    { formals_types: T.Typ.annotated list option
+    ; result_type: T.Typ.annotated
+    ; used_struct_types: T.Struct.t list }
 
   module Info = Caml.Map.Make (Builtin)
   module Set = Caml.Set.Make (Builtin)
 
-  let mk_builtin {formals_types; result_type} builtin =
+  let mk_builtin {formals_types; result_type; used_struct_types} builtin =
     let qualified_name = Builtin.to_proc_name builtin in
-    T.Module.Procdecl T.ProcDecl.{qualified_name; formals_types; result_type; attributes= []}
+    let procdecl =
+      T.Module.Procdecl T.ProcDecl.{qualified_name; formals_types; result_type; attributes= []}
+    in
+    procdecl :: List.map ~f:(fun strct -> T.Module.Struct strct) used_struct_types
 
 
   let annot typ = T.Typ.{typ; attributes= []}
@@ -94,12 +97,19 @@ module BuiltinSet = struct
   let primitive_builtins =
     let builtins =
       [ ( Builtin.PythonInt
-        , {formals_types= Some [annot T.Typ.Int]; result_type= annot PyCommon.pyInt} )
+        , { formals_types= Some [annot T.Typ.Int]
+          ; result_type= annot PyCommon.pyInt
+          ; used_struct_types= [] } )
       ; ( Builtin.PythonBool
-        , {formals_types= Some [annot T.Typ.Int]; result_type= annot PyCommon.pyBool} )
+        , { formals_types= Some [annot T.Typ.Int]
+          ; result_type= annot PyCommon.pyBool
+          ; used_struct_types= [] } )
       ; ( Builtin.PythonString
-        , {formals_types= Some [annot string_]; result_type= annot PyCommon.pyString} )
-      ; (Builtin.PythonTuple, {formals_types= None; result_type= annot PyCommon.pyObject}) ]
+        , { formals_types= Some [annot string_]
+          ; result_type= annot PyCommon.pyString
+          ; used_struct_types= [] } )
+      ; ( Builtin.PythonTuple
+        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} ) ]
     in
     List.fold_left
       ~f:(fun acc (builtin, elt) -> Info.add (Builtin.Primitive builtin) elt acc)
@@ -109,27 +119,37 @@ module BuiltinSet = struct
   let textual_builtins =
     let builtins =
       [ ( Builtin.IsTrue
-        , {formals_types= Some [annot PyCommon.pyObject]; result_type= annot T.Typ.Int} )
+        , { formals_types= Some [annot PyCommon.pyObject]
+          ; result_type= annot T.Typ.Int
+          ; used_struct_types= [] } )
       ; ( Builtin.BinaryAdd
         , { formals_types= Some [annot PyCommon.pyObject; annot PyCommon.pyObject]
-          ; result_type= annot PyCommon.pyObject } )
-      ; (Builtin.PythonCall, {formals_types= None; result_type= annot PyCommon.pyObject})
+          ; result_type= annot PyCommon.pyObject
+          ; used_struct_types= [] } )
+      ; ( Builtin.PythonCall
+        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
       ; ( Builtin.PythonClass
-        , {formals_types= Some [annot string_]; result_type= annot PyCommon.pyClass} )
+        , { formals_types= Some [annot string_]
+          ; result_type= annot PyCommon.pyClass
+          ; used_struct_types= [] } )
       ; ( Builtin.PythonClassConstructor
           (* Class constructors can be implicitly inherited, so we are never sure of their
              arity. Also, we'll override their return type when we setup the call, to make it
              more precise. *)
-        , {formals_types= None; result_type= annot PyCommon.pyObject} )
+        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
       ; ( Builtin.PythonCode
-        , {formals_types= Some [annot string_]; result_type= annot PyCommon.pyCode} )
+        , { formals_types= Some [annot string_]
+          ; result_type= annot PyCommon.pyCode
+          ; used_struct_types= [] } )
         (* TODO: should we introduce a Textual type for iterators ? *)
       ; ( Builtin.PythonIter
-        , {formals_types= Some [annot PyCommon.pyObject]; result_type= annot PyCommon.pyObject} )
-      ; ( Builtin.PythonIterItem
-        , {formals_types= Some [annot PyCommon.pyObject]; result_type= annot PyCommon.pyObject} )
+        , { formals_types= Some [annot PyCommon.pyObject]
+          ; result_type= annot PyCommon.pyObject
+          ; used_struct_types= [] } )
       ; ( Builtin.PythonIterNext
-        , {formals_types= Some [annot PyCommon.pyObject]; result_type= annot T.Typ.Int} ) ]
+        , { formals_types= Some [annot PyCommon.pyObject]
+          ; result_type= annot PyCommon.pyIterItem
+          ; used_struct_types= [PyCommon.pyIterItemStruct] } ) ]
     in
     List.fold_left
       ~f:(fun acc (builtin, elt) -> Info.add (Builtin.Textual builtin) elt acc)
@@ -138,18 +158,21 @@ module BuiltinSet = struct
 
   let supported_builtins =
     let builtins =
-      [ (Builtin.Print, {formals_types= None; result_type= annot PyCommon.pyObject})
-      ; (Builtin.Range, {formals_types= None; result_type= annot PyCommon.pyObject}) ]
+      [ ( Builtin.Print
+        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
+      ; ( Builtin.Range
+        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} ) ]
     in
     List.fold_left
       ~f:(fun acc (builtin, elt) -> Info.add (Builtin.Python builtin) elt acc)
       ~init:textual_builtins builtins
 
 
+  (* [mk_builtin] always returns very small list, the nested iteration should be quite cheap *)
   let to_textual spotted =
-    let init = Info.fold (fun key elt l -> mk_builtin elt key :: l) primitive_builtins [] in
+    let init = Info.fold (fun key elt l -> mk_builtin elt key @ l) primitive_builtins [] in
     Info.fold
-      (fun key elt l -> if Set.mem key spotted then mk_builtin elt key :: l else l)
+      (fun key elt l -> if Set.mem key spotted then mk_builtin elt key @ l else l)
       supported_builtins init
 
 

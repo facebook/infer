@@ -33,6 +33,17 @@ val pyCode : Textual.Typ.t
 val pyClass : Textual.Typ.t
 (** Like [pyCode] but for class creation *)
 
+val pyIterItem : Textual.Typ.t
+(** Wrapper type to implement [next] access on an iterator. Declared as [pyIterItemStruct] *)
+
+val py_iter_item_has_item : Textual.qualified_fieldname
+
+val py_iter_item_next_item : Textual.qualified_fieldname
+
+val pyIterItemStruct : Textual.Struct.t
+(** Textual structure with two fields. [has_item] indicates if something was read from the iterator
+    or if it was empty. If [has_item] is true, [next_item] holds the value read from the iterator. *)
+
 val pyInt : Textual.Typ.t
 (** Textual encoding of the primitive Python type [int] *)
 

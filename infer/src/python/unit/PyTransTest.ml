@@ -600,18 +600,19 @@ for x in range(10):
 
           #b1(n2: *PyObject):
               n3 = $builtins.python_iter_next(n2)
+              n4:int = load n3.PyIterItem.has_item
               jmp b2, b3
 
           #b2:
-              prune n3
-              n4 = $builtins.python_iter_item(n2)
-              store &$module::x <- n4:*PyObject
-              n5:*PyObject = load &$module::x
-              n6 = $builtins.print(n5)
+              prune n4
+              n5:*PyObject = load n3.PyIterItem.next_item
+              store &$module::x <- n5:*PyObject
+              n6:*PyObject = load &$module::x
+              n7 = $builtins.print(n6)
               jmp b1(n2)
 
           #b3:
-              prune __sil_lnot(n3)
+              prune __sil_lnot(n4)
               ret null
 
         }
@@ -622,9 +623,9 @@ for x in range(10):
 
         declare $builtins.print(...) : *PyObject
 
-        declare $builtins.python_iter_next(*PyObject) : int
+        declare $builtins.python_iter_next(*PyObject) : *PyIterItem
 
-        declare $builtins.python_iter_item(*PyObject) : *PyObject
+        type PyIterItem = {has_item: int; next_item: *PyObject}
 
         declare $builtins.python_iter(*PyObject) : *PyObject
 

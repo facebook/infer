@@ -28,6 +28,27 @@ let pyCode = mk_type "PyCode"
 
 let pyClass = mk_type "PyClass"
 
+let py_iter_item = type_name "PyIterItem"
+
+let pyIterItem = T.Typ.Ptr (Struct py_iter_item)
+
+let py_iter_item_has_item =
+  {T.enclosing_class= py_iter_item; name= {value= "has_item"; loc= Unknown}}
+
+
+let py_iter_item_next_item =
+  {T.enclosing_class= py_iter_item; name= {value= "next_item"; loc= Unknown}}
+
+
+let pyIterItemStruct =
+  let has_item =
+    {T.FieldDecl.qualified_name= py_iter_item_has_item; typ= T.Typ.Int; attributes= []}
+  in
+  let item = {T.FieldDecl.qualified_name= py_iter_item_next_item; typ= pyObject; attributes= []} in
+  let fields = [has_item; item] in
+  {T.Struct.name= py_iter_item; supers= []; fields; attributes= []}
+
+
 let builtin_scope = T.Enclosing T.{TypeName.value= "$builtins"; loc= Unknown}
 
 let builtin_name (value : string) : T.qualified_procname =
