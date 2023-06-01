@@ -214,6 +214,82 @@ module LOAD = struct
   end
 end
 
+module METHOD = struct
+  module LOAD = struct
+    (** {v LOAD_METHOD(namei) v}
+
+        Loads a method named [co_names\[namei\]] from the top-of-stack object. top-of-stack is
+        popped. This bytecode distinguishes two cases: if top-of-stack has a method with the correct
+        name, the bytecode pushes the unbound method and top-of-stack. top-of-stack will be used as
+        the first argument ([self]) by [CALL_METHOD] when calling the unbound method. Otherwise,
+        [NULL] and the object return by the attribute lookup are pushed. *)
+    let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
+      let method_name = co_names.(arg) in
+      Debug.p "[%s] namei = %s\n" opname method_name ;
+      let env, cell = pop_tos opname env in
+      let env, res, _info = load_cell env code cell in
+      match res with
+      | `Error s ->
+          L.die ExternalError "Failed to load method %s from cell %a: %s" method_name
+            DataStack.pp_cell cell s
+      | `Ok self ->
+          let method_name = T.Exp.Const (T.Const.Str method_name) in
+          let env, id, _typ =
+            Env.mk_builtin_call env Builtin.PythonLoadMethod [self; method_name]
+          in
+          let env = Env.push env (DataStack.Temp id) in
+          (env, None)
+  end
+
+  module CALL = struct
+    let pop_n_tos opname =
+      let rec pop env n acc =
+        if n > 0 then (
+          let env, cell = pop_tos opname env in
+          Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
+          pop env (n - 1) (cell :: acc) )
+        else (env, acc)
+      in
+      Debug.p "[pop_n_tos]\n" ;
+      pop
+
+
+    let to_textual env opname code cells =
+      Env.map ~env cells ~f:(fun env cell ->
+          let env, exp, _ = load_cell env code cell in
+          match exp with
+          | `Ok exp ->
+              (env, exp)
+          | `Error s ->
+              L.die UserError "[%s] failed to fetch from the stack: %s" opname s )
+
+
+    (** {v CALL_METHOD(argc) v}
+
+        Calls a method. [argc] is the number of positional arguments. Keyword arguments are not
+        supported. This opcode is designed to be used with [LOAD_METHOD]. Positional arguments are
+        on top of the stack. Below them, the two items described in [LOAD_METHOD] are on the stack
+        (either [self] and an unbound method object or [NULL] and an arbitrary callable). All of
+        them are popped and the return value is pushed. *)
+    let run env code {FFI.Instruction.opname; arg} =
+      Debug.p "[%s] argc = %d" opname arg ;
+      let env, cells = pop_n_tos opname env arg [] in
+      let env, args = to_textual env opname code cells in
+      let env, cell_mi = pop_tos opname env in
+      let env, mi, _ = load_cell env code cell_mi in
+      match mi with
+      | `Error s ->
+          L.die InternalError "[%s] failed to load method information from cell %a: %s" opname
+            DataStack.pp_cell cell_mi s
+      | `Ok mi ->
+          (* The method code and self are bundled in [mi]. The builtin will decide if it is a
+             proper method call, or a call to an arbitrary callable (lambda, ...) *)
+          let env, id, _typ = Env.mk_builtin_call env PythonCallMethod (mi :: args) in
+          let env = Env.push env (Temp id) in
+          (env, None)
+  end
+end
+
 module STORE = struct
   type kind =
     | ATTR
@@ -307,126 +383,224 @@ module POP_TOP = struct
     (env, None)
 end
 
-module CALL_FUNCTION = struct
-  (** {v CALL_FUNCTION(argc) v}
+module FUNCTION = struct
+  module CALL = struct
+    (** {v CALL_FUNCTION(argc) v}
 
-      Calls a callable object with positional arguments. [argc] indicates the number of positional
-      arguments. The top of the stack contains positional arguments, with the right-most argument on
-      top. Below the arguments is a callable object to call. This opcode pushes a fresh result on
-      the top of the stack.
+        Calls a callable object with positional arguments. [argc] indicates the number of positional
+        arguments. The top of the stack contains positional arguments, with the right-most argument
+        on top. Below the arguments is a callable object to call. This opcode pushes a fresh result
+        on the top of the stack.
 
-      Before: [ argN | ... | arg1 | arg0 | code-object | rest-of-the-stack ]
+        Before: [ argN | ... | arg1 | arg0 | code-object | rest-of-the-stack ]
 
-      After: [ result | rest-of-the-stack ] *)
+        After: [ result | rest-of-the-stack ] *)
 
-  let pop_n_tos opname =
-    let rec pop env n acc =
-      if n > 0 then (
-        let env, cell = pop_tos opname env in
-        Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
-        pop env (n - 1) (cell :: acc) )
-      else (env, acc)
-    in
-    Debug.p "[pop_n_tos]\n" ;
-    pop
-
-
-  let to_textual env opname code cells =
-    Env.map ~env cells ~f:(fun env cell ->
-        let env, exp, _ = load_cell env code cell in
-        match exp with
-        | `Ok exp ->
-            (env, exp)
-        | `Error s ->
-            L.die UserError "[%s] failed to fetch from the stack: %s" opname s )
-
-
-  let static_call env fname args =
-    let loc = Env.loc env in
-    let classes = Env.get_classes env in
-    if List.mem ~equal:String.equal classes fname then
-      let name = T.Exp.Const (T.Const.Str fname) in
-      (* Calling a class constructor *)
-      (* FYI, Python3 constructors first call __new__ to allocate the object, and then call
-         __init__ to initialize it. Both can be overloaded in the user-declared code. *)
-      let env, id, _typ = Env.mk_builtin_call env Builtin.PythonClassConstructor (name :: args) in
-      let env = Env.push env (DataStack.Temp id) in
-      (env, None)
-    else
-      let env, proc =
-        let env = Env.register_call env fname in
-        if Env.is_builtin env fname then (env, PyCommon.builtin_name fname)
-        else
-          let fname = PyCommon.global fname in
-          (* TODO: update this when static method calls will be available *)
-          (env, qualified_procname @@ proc_name ~loc fname)
+    let pop_n_tos opname =
+      let rec pop env n acc =
+        if n > 0 then (
+          let env, cell = pop_tos opname env in
+          Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
+          pop env (n - 1) (cell :: acc) )
+        else (env, acc)
       in
-      let call = T.Exp.Call {proc; args; kind= NonVirtual} in
-      (* TODO: read return type of proc if available *)
-      let info = {Env.typ= PyCommon.pyObject; is_code= false; is_class= false} in
-      let env, id = Env.mk_fresh_ident env info in
-      let let_instr = T.Instr.Let {id; exp= call; loc} in
-      let env = Env.push_instr env let_instr in
+      Debug.p "[pop_n_tos]\n" ;
+      pop
+
+
+    let to_textual env opname code cells =
+      Env.map ~env cells ~f:(fun env cell ->
+          let env, exp, _ = load_cell env code cell in
+          match exp with
+          | `Ok exp ->
+              (env, exp)
+          | `Error s ->
+              L.die UserError "[%s] failed to fetch from the stack: %s" opname s )
+
+
+    let static_call env fname args =
+      let loc = Env.loc env in
+      let classes = Env.get_classes env in
+      if List.mem ~equal:String.equal classes fname then
+        let name = T.Exp.Const (T.Const.Str fname) in
+        (* Calling a class constructor *)
+        (* FYI, Python3 constructors first call __new__ to allocate the object, and then call
+           __init__ to initialize it. Both can be overloaded in the user-declared code. *)
+        let env, id, _typ = Env.mk_builtin_call env Builtin.PythonClassConstructor (name :: args) in
+        let env = Env.push env (DataStack.Temp id) in
+        (env, None)
+      else
+        let env, proc =
+          let env = Env.register_call env fname in
+          if Env.is_builtin env fname then (env, PyCommon.builtin_name fname)
+          else
+            let fname = PyCommon.global fname in
+            (* TODO: update this when static method calls will be available *)
+            (env, qualified_procname @@ proc_name ~loc fname)
+        in
+        let call = T.Exp.Call {proc; args; kind= NonVirtual} in
+        (* TODO: read return type of proc if available *)
+        let info = {Env.typ= PyCommon.pyObject; is_code= false; is_class= false} in
+        let env, id = Env.mk_fresh_ident env info in
+        let let_instr = T.Instr.Let {id; exp= call; loc} in
+        let env = Env.push_instr env let_instr in
+        let env = Env.push env (DataStack.Temp id) in
+        (env, None)
+
+
+    let dynamic_call env caller_id args =
+      let args = T.Exp.Var caller_id :: args in
+      let env, id, _typ = Env.mk_builtin_call env Builtin.PythonCall args in
       let env = Env.push env (DataStack.Temp id) in
       (env, None)
 
 
-  let dynamic_call env caller_id args =
-    let args = T.Exp.Var caller_id :: args in
-    let env, id, _typ = Env.mk_builtin_call env Builtin.PythonCall args in
-    let env = Env.push env (DataStack.Temp id) in
-    (env, None)
+    let run env ({FFI.Code.co_names; co_consts} as code) {FFI.Instruction.opname; arg} =
+      Debug.p "[%s] argc = %d\n" opname arg ;
+      let env, cells = pop_n_tos opname env arg [] in
+      let env, args = to_textual env opname code cells in
+      Debug.p "  #args = %d\n" (List.length args) ;
+      let env, fname = pop_tos opname env in
+      Debug.p "  fname = %a\n" DataStack.pp_cell fname ;
+      match (fname : DataStack.cell) with
+      | Name ndx ->
+          let fname = co_names.(ndx) in
+          static_call env fname args
+      | Temp id ->
+          dynamic_call env id args
+      | Code {qualified_name} ->
+          L.die UserError "[%s] no support for calling raw class/code : %s" opname qualified_name
+      | VarName _ | Const _ | Map _ ->
+          L.die UserError "[%s] invalid function on the stack: %s" opname
+            (DataStack.show_cell fname)
+      | BuiltinBuildClass -> (
+        match cells with
+        | [code_cell; name_cell] -> (
+            let qualified_name =
+              match (name_cell : DataStack.cell) with
+              | Const ndx ->
+                  let const = co_consts.(ndx) in
+                  FFI.Constant.as_name const
+              | _ ->
+                  L.die ExternalError "[%s] expected literal class name but got %a" opname
+                    DataStack.pp_cell name_cell
+            in
+            let code =
+              match (code_cell : DataStack.cell) with
+              | Const ndx ->
+                  let const = co_consts.(ndx) in
+                  FFI.Constant.as_code const
+              | Code {code} ->
+                  Some code
+              | _ ->
+                  L.die ExternalError "[%s] expected code object but got %a" opname
+                    DataStack.pp_cell code_cell
+            in
+            match (code, qualified_name) with
+            | _, None | None, _ ->
+                L.die UserError "[%s] Invalid class declaration" opname
+            | Some code, Some qualified_name ->
+                let env = Env.register_class env qualified_name in
+                let env =
+                  Env.push env (DataStack.Code {fun_or_class= false; qualified_name; code})
+                in
+                (env, None) )
+        | _ ->
+            L.die InternalError "[%s] unsupported call to LOAD_BUILD_CLASS with arg = %d" opname arg
+        )
+  end
+
+  module MAKE = struct
+    let check_flags opname flag =
+      let support_tuple_of_defaults = flag land 1 <> 0 in
+      let support_dict_of_defaults = flag land 2 <> 0 in
+      let support_closure = flag land 8 <> 0 in
+      let unsupported = support_tuple_of_defaults || support_dict_of_defaults || support_closure in
+      if unsupported then
+        L.die InternalError "%s: support for flag 0x%x is not implemented" opname flag
 
 
-  let run env ({FFI.Code.co_names; co_consts} as code) {FFI.Instruction.opname; arg} =
-    Debug.p "[%s] argc = %d\n" opname arg ;
-    let env, cells = pop_n_tos opname env arg [] in
-    let env, args = to_textual env opname code cells in
-    Debug.p "  #args = %d\n" (List.length args) ;
-    let env, fname = pop_tos opname env in
-    Debug.p "  fname = %a\n" DataStack.pp_cell fname ;
-    match (fname : DataStack.cell) with
-    | Name ndx ->
-        let fname = co_names.(ndx) in
-        static_call env fname args
-    | Temp id ->
-        dynamic_call env id args
-    | Code {qualified_name} ->
-        L.die UserError "[%s] no support for calling raw class/code : %s" opname qualified_name
-    | VarName _ | Const _ | Map _ ->
-        L.die UserError "[%s] invalid function on the stack: %s" opname (DataStack.show_cell fname)
-    | BuiltinBuildClass -> (
-      match cells with
-      | [code_cell; name_cell] -> (
-          let qualified_name =
-            match (name_cell : DataStack.cell) with
-            | Const ndx ->
-                let const = co_consts.(ndx) in
-                FFI.Constant.as_name const
-            | _ ->
-                L.die ExternalError "[%s] expected literal class name but got %a" opname
-                  DataStack.pp_cell name_cell
-          in
-          let code =
-            match (code_cell : DataStack.cell) with
-            | Const ndx ->
-                let const = co_consts.(ndx) in
-                FFI.Constant.as_code const
-            | Code {code} ->
-                Some code
-            | _ ->
-                L.die ExternalError "[%s] expected code object but got %a" opname DataStack.pp_cell
-                  code_cell
-          in
-          match (code, qualified_name) with
-          | _, None | None, _ ->
-              L.die UserError "[%s] Invalid class declaration" opname
-          | Some code, Some qualified_name ->
-              let env = Env.register_class env qualified_name in
-              let env = Env.push env (DataStack.Code {fun_or_class= false; qualified_name; code}) in
-              (env, None) )
-      | _ ->
-          L.die InternalError "[%s] unsupported call to LOAD_BUILD_CLASS with arg = %d" opname arg )
+    let unpack_annotations {FFI.Code.co_names; co_consts} annotations =
+      let unpack =
+        List.fold_left ~init:(Some [])
+          ~f:(fun acc (key, c) ->
+            match (acc, c) with
+            | None, _ ->
+                None
+            | Some acc, DataStack.Name ndx ->
+                let annot = co_names.(ndx) in
+                Some ((key, annot) :: acc)
+            | Some acc, DataStack.Const ndx -> (
+              match co_consts.(ndx) with
+              | FFI.Constant.PYCNone ->
+                  Some ((key, "None") :: acc)
+              | _ ->
+                  Some acc )
+            | Some acc, c ->
+                Debug.p "[unpack_annotations] unsupported cell %a\n" DataStack.pp_cell c ;
+                Some acc )
+          annotations
+      in
+      Option.value unpack ~default:[]
+
+
+    (** {v MAKE_FUNCTION(flags) v}
+
+        Pushes a new function object on the stack. From bottom to top, the consumed stack must
+        consist of values if the argument carries a specified flag value
+
+        - [0x01] a tuple of default values for positional-only and positional-or-keyword parameters
+          in positional order
+        - [0x02] a dictionary of keyword-only parameters’ default values
+        - [0x04] an annotation dictionary
+        - [0x08] a tuple containing cells for free variables, making a closure
+        - the code associated with the function (at TOS1)
+        - the qualified name of the function (at TOS)
+
+        In this first version, only support for [flags = 0x00] is implemented. Also there is no
+        support for closures or nested functions *)
+    let run env ({FFI.Code.co_consts} as code) {FFI.Instruction.opname; arg} =
+      Debug.p "[%s] flags = 0x%x\n" opname arg ;
+      check_flags opname arg ;
+      let env, qual = pop_tos opname env in
+      (* don't care about the content of the code object, but check it is indeed code *)
+      let env, body = pop_tos opname env in
+      let env, annotations =
+        if arg land 4 <> 0 then (
+          let env, cell = pop_tos opname env in
+          Debug.p "[%s] spotted annotations\n  %s\n" opname (DataStack.show_cell cell) ;
+          let annotations = match cell with Env.DataStack.Map map -> Some map | _ -> None in
+          (env, annotations) )
+        else (env, None)
+      in
+      let annotations =
+        Option.map ~f:(unpack_annotations code) annotations |> Option.value ~default:[]
+      in
+      let code =
+        match DataStack.as_code code body with
+        | None ->
+            L.die InternalError "%s: payload is not code: %s" opname (DataStack.show_cell body)
+        | Some body ->
+            body
+      in
+      if FFI.Code.is_closure code then L.die InternalError "%s: can't create closure" opname ;
+      let qualified_name =
+        match (qual : DataStack.cell) with
+        | VarName _ | Name _ | Temp _ | Code _ | Map _ | BuiltinBuildClass ->
+            L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell qual)
+        | Const ndx -> (
+            let const = co_consts.(ndx) in
+            match FFI.Constant.as_name const with
+            | Some name ->
+                name
+            | None ->
+                L.die InternalError "%s: can't read qualified name from stack: %s" opname
+                  (FFI.Constant.show const) )
+      in
+      let env = Env.register_toplevel env qualified_name annotations in
+      let env = Env.push env (DataStack.Code {fun_or_class= true; qualified_name; code}) in
+      (env, None)
+  end
 end
 
 module BINARY_ADD = struct
@@ -461,98 +635,6 @@ module BINARY_ADD = struct
     *)
     let env, id, _typ = Env.mk_builtin_call env Builtin.BinaryAdd [lhs; rhs] in
     let env = Env.push env (DataStack.Temp id) in
-    (env, None)
-end
-
-module MAKE_FUNCTION = struct
-  let check_flags opname flag =
-    let support_tuple_of_defaults = flag land 1 <> 0 in
-    let support_dict_of_defaults = flag land 2 <> 0 in
-    let support_closure = flag land 8 <> 0 in
-    let unsupported = support_tuple_of_defaults || support_dict_of_defaults || support_closure in
-    if unsupported then
-      L.die InternalError "%s: support for flag 0x%x is not implemented" opname flag
-
-
-  let unpack_annotations {FFI.Code.co_names; co_consts} annotations =
-    let unpack =
-      List.fold_left ~init:(Some [])
-        ~f:(fun acc (key, c) ->
-          match (acc, c) with
-          | None, _ ->
-              None
-          | Some acc, DataStack.Name ndx ->
-              let annot = co_names.(ndx) in
-              Some ((key, annot) :: acc)
-          | Some acc, DataStack.Const ndx -> (
-            match co_consts.(ndx) with
-            | FFI.Constant.PYCNone ->
-                Some ((key, "None") :: acc)
-            | _ ->
-                Some acc )
-          | Some acc, c ->
-              Debug.p "[unpack_annotations] unsupported cell %a\n" DataStack.pp_cell c ;
-              Some acc )
-        annotations
-    in
-    Option.value unpack ~default:[]
-
-
-  (** {v MAKE_FUNCTION(flags) v}
-
-      Pushes a new function object on the stack. From bottom to top, the consumed stack must consist
-      of values if the argument carries a specified flag value
-
-      - [0x01] a tuple of default values for positional-only and positional-or-keyword parameters in
-        positional order
-      - [0x02] a dictionary of keyword-only parameters’ default values
-      - [0x04] an annotation dictionary
-      - [0x08] a tuple containing cells for free variables, making a closure
-      - the code associated with the function (at TOS1)
-      - the qualified name of the function (at TOS)
-
-      In this first version, only support for [flags = 0x00] is implemented. Also there is no
-      support for closures or nested functions *)
-  let run env ({FFI.Code.co_consts} as code) {FFI.Instruction.opname; arg} =
-    Debug.p "[%s] flags = 0x%x\n" opname arg ;
-    check_flags opname arg ;
-    let env, qual = pop_tos opname env in
-    (* don't care about the content of the code object, but check it is indeed code *)
-    let env, body = pop_tos opname env in
-    let env, annotations =
-      if arg land 4 <> 0 then (
-        let env, cell = pop_tos opname env in
-        Debug.p "[%s] spotted annotations\n  %s\n" opname (DataStack.show_cell cell) ;
-        let annotations = match cell with Env.DataStack.Map map -> Some map | _ -> None in
-        (env, annotations) )
-      else (env, None)
-    in
-    let annotations =
-      Option.map ~f:(unpack_annotations code) annotations |> Option.value ~default:[]
-    in
-    let code =
-      match DataStack.as_code code body with
-      | None ->
-          L.die InternalError "%s: payload is not code: %s" opname (DataStack.show_cell body)
-      | Some body ->
-          body
-    in
-    if FFI.Code.is_closure code then L.die InternalError "%s: can't create closure" opname ;
-    let qualified_name =
-      match (qual : DataStack.cell) with
-      | VarName _ | Name _ | Temp _ | Code _ | Map _ | BuiltinBuildClass ->
-          L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell qual)
-      | Const ndx -> (
-          let const = co_consts.(ndx) in
-          match FFI.Constant.as_name const with
-          | Some name ->
-              name
-          | None ->
-              L.die InternalError "%s: can't read qualified name from stack: %s" opname
-                (FFI.Constant.show const) )
-    in
-    let env = Env.register_toplevel env qualified_name annotations in
-    let env = Env.push env (DataStack.Code {fun_or_class= true; qualified_name; code}) in
     (env, None)
 end
 
@@ -844,11 +926,11 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
     | "POP_TOP" ->
         POP_TOP.run env instr
     | "CALL_FUNCTION" ->
-        CALL_FUNCTION.run env code instr
+        FUNCTION.CALL.run env code instr
     | "BINARY_ADD" ->
         BINARY_ADD.run env code instr
     | "MAKE_FUNCTION" ->
-        MAKE_FUNCTION.run env code instr
+        FUNCTION.MAKE.run env code instr
     | "POP_JUMP_IF_TRUE" ->
         JUMP.POP_IF.run ~next_is_true:false env code instr
     | "POP_JUMP_IF_FALSE" ->
@@ -865,6 +947,10 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
         BUILD.CONST_KEY_MAP.run env code instr
     | "LOAD_BUILD_CLASS" ->
         LOAD.BUILD_CLASS.run env instr
+    | "LOAD_METHOD" ->
+        METHOD.LOAD.run env code instr
+    | "CALL_METHOD" ->
+        METHOD.CALL.run env code instr
     | _ ->
         L.die InternalError "Unsupported opcode: %s" opname
   in

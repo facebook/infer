@@ -860,8 +860,13 @@ class C:
         def get(self):
             return self.x
 
+        def set(self, x):
+            self.x = x
+
 c = C()
 c.x
+c.get()
+c.set(42)
         |}
       in
       test source ;
@@ -877,6 +882,21 @@ c.x
                 store &$module::c <- n2:*C
                 n3:*C = load &$module::c
                 n4 = n3.?.x
+                n5:*C = load &$module::c
+                n6 = $builtins.python_load_method(n5, "get")
+                n7 = $builtins.python_call_method(n6)
+                n8:*C = load &$module::c
+                n9 = $builtins.python_load_method(n8, "set")
+                n10 = $builtins.python_call_method(n9, $builtins.python_int(42))
+                ret null
+
+          }
+
+          define C.set(self: *PyObject, x: *PyObject) : *PyObject {
+            #b0:
+                n0:*PyObject = load &self
+                n1:*PyObject = load &x
+                store n0.?.x <- n1:*PyObject
                 ret null
 
           }
@@ -902,11 +922,17 @@ c.x
 
           global $module::c: *PyObject
 
+          declare $builtins.python_load_method(*PyObject, *String) : *PyMethod
+
+          type PyMethod = {code: *PyCode; self: *PyObject}
+
           declare $builtins.python_code(*String) : *PyCode
 
           declare $builtins.python_class_constructor(...) : *PyObject
 
           declare $builtins.python_class(*String) : *PyClass
+
+          declare $builtins.python_call_method(...) : *PyObject
 
           declare $builtins.python_tuple(...) : *PyObject
 

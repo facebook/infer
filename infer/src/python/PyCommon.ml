@@ -49,6 +49,25 @@ let pyIterItemStruct =
   {T.Struct.name= py_iter_item; supers= []; fields; attributes= []}
 
 
+let py_method = type_name "PyMethod"
+
+let pyMethod = T.Typ.Ptr (T.Typ.Struct py_method)
+
+let py_method_code =
+  {T.enclosing_class= py_method; name= {T.FieldName.value= "code"; loc= T.Location.Unknown}}
+
+
+let py_method_self =
+  {T.enclosing_class= py_method; name= {T.FieldName.value= "self"; loc= T.Location.Unknown}}
+
+
+let pyMethodStruct =
+  let code = {T.FieldDecl.qualified_name= py_method_code; typ= pyCode; attributes= []} in
+  let self = {T.FieldDecl.qualified_name= py_method_self; typ= pyObject; attributes= []} in
+  let fields = [code; self] in
+  {T.Struct.name= py_method; supers= []; fields; attributes= []}
+
+
 let builtin_scope = T.Enclosing T.{TypeName.value= "$builtins"; loc= Unknown}
 
 let builtin_name (value : string) : T.qualified_procname =

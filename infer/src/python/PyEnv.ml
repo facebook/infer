@@ -16,11 +16,13 @@ module Builtin = struct
     | IsTrue
     | BinaryAdd
     | PythonCall
+    | PythonCallMethod
     | PythonClass
     | PythonClassConstructor
     | PythonCode
     | PythonIter
     | PythonIterNext
+    | PythonLoadMethod
   [@@deriving compare]
 
   type python = Print | Range [@@deriving compare]
@@ -47,6 +49,8 @@ module Builtin = struct
               "binary_add"
           | PythonCall ->
               "python_call"
+          | PythonCallMethod ->
+              "python_call_method"
           | PythonClass ->
               "python_class"
           | PythonClassConstructor ->
@@ -57,6 +61,8 @@ module Builtin = struct
               "python_iter"
           | PythonIterNext ->
               "python_iter_next"
+          | PythonLoadMethod ->
+              "python_load_method"
         in
         PyCommon.builtin_name str
     | Python python ->
@@ -128,6 +134,8 @@ module BuiltinSet = struct
           ; used_struct_types= [] } )
       ; ( Builtin.PythonCall
         , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
+      ; ( Builtin.PythonCallMethod
+        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
       ; ( Builtin.PythonClass
         , { formals_types= Some [annot string_]
           ; result_type= annot PyCommon.pyClass
@@ -149,7 +157,11 @@ module BuiltinSet = struct
       ; ( Builtin.PythonIterNext
         , { formals_types= Some [annot PyCommon.pyObject]
           ; result_type= annot PyCommon.pyIterItem
-          ; used_struct_types= [PyCommon.pyIterItemStruct] } ) ]
+          ; used_struct_types= [PyCommon.pyIterItemStruct] } )
+      ; ( Builtin.PythonLoadMethod
+        , { formals_types= Some [annot PyCommon.pyObject; annot string_]
+          ; result_type= annot PyCommon.pyMethod
+          ; used_struct_types= [PyCommon.pyMethodStruct] } ) ]
     in
     List.fold_left
       ~f:(fun acc (builtin, elt) -> Info.add (Builtin.Textual builtin) elt acc)

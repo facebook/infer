@@ -13,11 +13,13 @@ module Builtin : sig
     | IsTrue
     | BinaryAdd
     | PythonCall
+    | PythonCallMethod
     | PythonClass
     | PythonClassConstructor
     | PythonCode
     | PythonIter
     | PythonIterNext
+    | PythonLoadMethod
   [@@deriving compare]
 end
 

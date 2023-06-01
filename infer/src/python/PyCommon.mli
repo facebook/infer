@@ -44,6 +44,20 @@ val pyIterItemStruct : Textual.Struct.t
 (** Textual structure with two fields. [has_item] indicates if something was read from the iterator
     or if it was empty. If [has_item] is true, [next_item] holds the value read from the iterator. *)
 
+val pyMethod : Textual.Typ.t
+(** Wrapper type to implement [LOAD_METHOD]. Declared as [pyMethodStruct] *)
+
+val py_method_code : Textual.qualified_fieldname [@@warning "-unused-value-declaration"]
+
+val py_method_self : Textual.qualified_fieldname [@@warning "-unused-value-declaration"]
+
+val pyMethodStruct : Textual.Struct.t
+(** Textual structure with three fields.
+
+    - [code] stores the code of the method called, or an arbitrary callable the method was not found
+    - [self] stores a reference to the instance where the method was found, or [NULL] if the method
+      was not found *)
+
 val pyInt : Textual.Typ.t
 (** Textual encoding of the primitive Python type [int] *)
 
