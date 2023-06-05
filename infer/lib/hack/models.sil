@@ -61,7 +61,7 @@ define $builtins.hack_is_true(b: *HackMixed) : int {
     ret n1
 }
 
-define $builtins.hack_neg(b: *HackBool) : *HackBool {
+define $builtins.hhbc_not(b: *HackBool) : *HackBool {
   #entry:
     n0: *HackBool = load &b
     n1: int = load n0.HackBool.val
@@ -129,7 +129,7 @@ define $builtins.hhbc_cmp_nsame(x: *HackMixed, y: *HackMixed) : *HackBool {
   #entry:
     n0: *HackMixed = load &x
     n1: *HackMixed = load &y
-    ret $builtins.hack_neg($builtins.hhbc_cmp_same(n0, n1))
+    ret $builtins.hhbc_not($builtins.hhbc_cmp_same(n0, n1))
 }
 
 define $builtins.hhbc_class_has_reified_generics(class: *HackMixed): *HackMixed {
