@@ -575,9 +575,11 @@ let get_message diagnostic =
               used_locations
       in
       F.asprintf
-        "Function parameter `%a` is passed by-value but its lifetime is not extended inside the \
-         function on %a. This might result in an unnecessary copy at the callsite of this \
-         function. Consider passing a raw pointer instead and changing its usages if necessary%t."
+        "Function parameter `%a` is passed as a shared pointer but its lifetime is not extended \
+         inside the function on %a. At the callsite, this might cause a potentially expensive \
+         unnecessary copy of the shared pointer, especially when many number of threads are \
+         sharing it. To avoid this, consider passing the raw pointer instead and changing its \
+         usages if necessary%t."
         Var.pp param Location.pp_line location pp_used_locations
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
