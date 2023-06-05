@@ -648,6 +648,18 @@ module InstrBridge = struct
         let loc = LocationBridge.to_sil sourcefile loc in
         let builtin_new = SilExp.Const (SilConst.Cfun BuiltinDecl.__new) in
         Call ((ret, class_type), builtin_new, args, loc, CallFlags.default)
+    | Let {id; exp= Call {proc; args= [target; Typ typ]}; loc}
+      when ProcDecl.is_instanceof_builtin proc ->
+        let typ = TypBridge.to_sil lang typ in
+        let sizeof =
+          SilExp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes_instof}
+        in
+        let target = ExpBridge.to_sil lang decls_env procname target in
+        let args = [(target, StdTyp.void_star); (sizeof, StdTyp.void)] in
+        let ret = IdentBridge.to_sil id in
+        let loc = LocationBridge.to_sil sourcefile loc in
+        let builtin_instanceof = SilExp.Const (SilConst.Cfun BuiltinDecl.__instanceof) in
+        Call ((ret, StdTyp.boolean), builtin_instanceof, args, loc, CallFlags.default)
     | Let {id; exp= Call {proc; args= Typ element_typ :: exp :: _}; loc}
       when ProcDecl.is_allocate_array_builtin proc ->
         let element_typ = TypBridge.to_sil lang element_typ in

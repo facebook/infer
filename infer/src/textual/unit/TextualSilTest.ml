@@ -288,3 +288,51 @@ let%expect_test "undefined + overloads in merged tenv" =
     annots: {<>}
     java_class_info: {[None]}
     dummy: false |}]
+
+
+let%expect_test "instanceof translation" =
+  let source =
+    {|
+     .source_language = "hack"
+     declare foo() : *HackMixed
+
+     define bar() : int {
+       #b0:
+         n0 = foo()
+         jmp b1, b2
+       #b1:
+         n1 = __sil_instanceof(n0, <*HackBool>)
+         ret n1
+       #b2:
+         ret __sil_instanceof(n0, <*HackBool>)
+     }
+     |}
+  in
+  let m = parse_module source in
+  let cfg, _ = TextualSil.module_to_sil m in
+  Cfg.iter_sorted cfg ~f:(fun pdesc ->
+      F.printf "%a" (Procdesc.pp_with_instrs ~print_types:true) pdesc ) ;
+  [%expect
+    {|
+    { proc_name= bar
+    ; translation_unit= dummy.sil
+    ; formals= []
+    ; is_defined= true
+    ; loc= dummy.sil:5:12
+    ; locals= []
+    ; ret_type= int
+    ; proc_id= bar#0 }
+        #n1:
+
+        #n3:
+          n$0=_fun_foo() [line 7, column 9];
+
+        #n4:
+          n$1=_fun___instanceof(n$0:void*,sizeof(t=HackBool*):void) [line 10, column 9];
+          *&return:int=n$1 [line 11, column 9];
+
+        #n5:
+          n$2=_fun___instanceof(n$0:void*,sizeof(t=HackBool*):void) [line -1];
+          *&return:int=n$2 [line 13, column 9];
+
+        #n2: |}]

@@ -349,6 +349,8 @@ and typeof_exp (exp : Exp.t) : Typ.t monad =
       typeof_allocate_array_builtin proc args
   | Call {proc; args} when ProcDecl.is_cast_builtin proc ->
       typeof_cast_builtin proc args
+  | Call {proc; args} when ProcDecl.is_instanceof_builtin proc ->
+      typeof_instanceof_builtin proc args
   | Call {proc; args} when ProcDecl.is_lazy_class_initialize_builtin proc ->
       typeof_allocate_builtin proc args
   | Call {proc; args} ->
@@ -419,6 +421,25 @@ and typeof_cast_builtin (proc : qualified_procname) args =
       let* _old_typ = typeof_exp exp in
       ret typ
   | [exp; _] ->
+      let* loc = get_location in
+      let* typ = typeof_exp exp in
+      let* () = add_error (mk_type_mismatch_error Typ loc exp typ) in
+      abort
+  | _ ->
+      let* loc = get_location in
+      let* () =
+        add_error
+          (WrongNumberBuiltinArgs {proc; expected= 2; given= List.length args; at_least= false; loc})
+      in
+      abort
+
+
+and typeof_instanceof_builtin (proc : qualified_procname) args =
+  match args with
+  | [exp; Exp.Typ _] ->
+      let* _ = typeof_exp exp in
+      ret Typ.Int
+  | [_; exp] ->
       let* loc = get_location in
       let* typ = typeof_exp exp in
       let* () = add_error (mk_type_mismatch_error Typ loc exp typ) in

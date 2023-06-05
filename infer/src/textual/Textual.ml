@@ -123,6 +123,8 @@ let builtin_lazy_class_initialize = "__sil_lazy_class_initialize"
 
 let builtin_cast = "__sil_cast"
 
+let builtin_instanceof = "__sil_instanceof"
+
 module TypeName : sig
   include NAME
 
@@ -355,6 +357,8 @@ module ProcDecl = struct
 
   let cast_name = make_toplevel_name builtin_cast Location.Unknown
 
+  let instanceof_name = make_toplevel_name builtin_instanceof Location.Unknown
+
   let unop_table : (Unop.t * string) list =
     [(Neg, "__sil_neg"); (BNot, "__sil_bnot"); (LNot, "__sil_lnot")]
 
@@ -468,12 +472,15 @@ module ProcDecl = struct
     equal_qualified_procname lazy_class_initialize_name qualified_name
 
 
-  let is_cast_builtin qualified_name = equal_qualified_procname cast_name qualified_name
+  let is_cast_builtin = equal_qualified_procname cast_name
+
+  let is_instanceof_builtin = equal_qualified_procname instanceof_name
 
   let is_type_builtin qualified_name =
     is_allocate_object_builtin qualified_name
     || is_allocate_array_builtin qualified_name
     || is_lazy_class_initialize_builtin qualified_name
+    || is_instanceof_builtin qualified_name
 
 
   let is_side_effect_free_sil_expr ({enclosing_class; name} as qualified_name : qualified_procname)

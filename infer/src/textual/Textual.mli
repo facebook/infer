@@ -193,6 +193,8 @@ module ProcDecl : sig
 
   val is_cast_builtin : qualified_procname -> bool
 
+  val is_instanceof_builtin : qualified_procname -> bool
+
   val allocate_object_name : qualified_procname
 
   val is_allocate_object_builtin : qualified_procname -> bool
