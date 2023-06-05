@@ -279,7 +279,6 @@ features_lc:test_two_gen2_Ok/0: ok
 features_lists:fn_test_listadd4_Bad/0: expected_crash
 features_lists:fn_test_listappend4_Bad/0: expected_crash
 features_lists:fn_test_reverse4_Bad/0: expected_crash
-features_lists:fp_test_listappend7_Ok/0: ok
 features_lists:fp_test_listappend8_Ok/0: ok
 features_lists:fp_test_listsub1_Ok/0: ok
 features_lists:fp_test_listsub2_Ok/0: ok
@@ -317,6 +316,7 @@ features_lists:test_listappend5_Bad/0: badarg
 features_lists:test_listappend6_Bad/0: badarg
 features_lists:test_listappend6_Ok/0: ok
 features_lists:test_listappend7_Bad/0: badarg
+features_lists:test_listappend7_Ok/0: ok
 features_lists:test_listappend8_Bad/0: badarg
 features_lists:test_listappend9_Ok/0: ok
 features_lists:test_listforeach_returnvalue_Bad/0: expected_crash
@@ -405,9 +405,9 @@ features_receive:test_receive8_Bad/0: case_clause
 features_receive:test_receive_bad_timeout_Bad/0: badmatch
 
 ----- features_records -----
+features_records:fn_test_lyse_user_pattern_matching_fun_Bad/0: expected_crash
 features_records:fp_test_lyse_robot_nested_Ok/0: ok
 features_records:fp_test_lyse_robot_update_Ok/0: ok
-features_records:fp_test_lyse_user_pattern_matching_fun_Ok/0: ok
 features_records:test_field2_Bad/0: expected_crash
 features_records:test_field2_Ok/0: ok
 features_records:test_field3_Bad/0: expected_crash
@@ -460,7 +460,7 @@ features_records:test_lyse_robot_update_literals_Bad/0: expected_crash
 features_records:test_lyse_robot_update_literals_Ok/0: ok
 features_records:test_lyse_user_guard_Bad/0: expected_crash
 features_records:test_lyse_user_guard_Ok/0: ok
-features_records:test_lyse_user_pattern_matching_fun_Bad/0: expected_crash
+features_records:test_lyse_user_pattern_matching_fun_Ok/0: ok
 features_records:test_lyse_user_pattern_matching_fun_literals_Bad/0: expected_crash
 features_records:test_lyse_user_pattern_matching_fun_literals_Ok/0: ok
 features_records:test_nested_Bad/0: expected_crash

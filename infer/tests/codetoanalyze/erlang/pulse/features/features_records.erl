@@ -68,8 +68,8 @@
     test_lyse_robot_update_Bad/0,
     test_lyse_robot_update_literals_Ok/0,
     test_lyse_robot_update_literals_Bad/0,
-    fp_test_lyse_user_pattern_matching_fun_Ok/0,
-    test_lyse_user_pattern_matching_fun_Bad/0,
+    test_lyse_user_pattern_matching_fun_Ok/0,
+    fn_test_lyse_user_pattern_matching_fun_Bad/0,
     test_lyse_user_pattern_matching_fun_literals_Ok/0,
     test_lyse_user_pattern_matching_fun_literals_Bad/0,
     test_lyse_user_guard_Ok/0,
@@ -336,8 +336,7 @@ test_lyse_robot_update_literals_Bad() ->
 
 -record(user, {id = 0, name, group, age}).
 
-%% Probably related to string handling. See: T93361792
-fp_test_lyse_user_pattern_matching_fun_Ok() ->
+test_lyse_user_pattern_matching_fun_Ok() ->
     User = #user{name = "User", group = admin},
     F = fun
         (#user{name = Name, group = admin}) ->
@@ -347,7 +346,7 @@ fp_test_lyse_user_pattern_matching_fun_Ok() ->
     end,
     ?ASSERT_EQUAL("User is allowed!", F(User)).
 
-test_lyse_user_pattern_matching_fun_Bad() ->
+fn_test_lyse_user_pattern_matching_fun_Bad() ->
     User = #user{name = "User", group = admin},
     F = fun
         (#user{name = Name, group = admin}) ->

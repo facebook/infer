@@ -118,6 +118,10 @@ let result_foldi list ~init ~f =
   List.foldi list ~init ~f
 
 
+let value_die message opt =
+  match opt with Some value -> value | None -> L.die InternalError message
+
+
 (** Builds as an abstract value the truth value of the predicate "The value given as an argument as
     the erlang type given as the other argument" *)
 let has_erlang_type value typ : value_maker =
@@ -283,16 +287,18 @@ module Integers = struct
     PulseOperations.write_id ret_id ret astate
 
 
-  let of_intlit location path (intlit : IntLit.t) : maker =
+  let of_intlit location path (intlit : IntLit.t) : sat_maker =
    fun astate ->
-    let+* astate, name =
+    let* astate, name =
       let intlit_exp : Exp.t = Const (Cint intlit) in
       PulseOperations.eval path Read location intlit_exp astate
+      |> SatUnsat.sat
+      |> value_die "intlit failed evaluation"
     in
     make_raw location path name astate
 
 
-  let of_string location path (intlit : string) : maker =
+  let of_string location path (intlit : string) : sat_maker =
     of_intlit location path (IntLit.of_string intlit)
 end
 
@@ -628,6 +634,42 @@ module Lists = struct
     (astate, addr_cons)
 
 
+  (* helper funtion to add a set of field to a cons cell. The fields are passed as a non-empty list of pairs (field name, filed value) *)
+  let rec add_field_to_cons path location addr_cons hist fld_ls : sat_maker =
+   fun astate ->
+    match fld_ls with
+    | [] ->
+        L.die InternalError "[ERROR] function add_field_to_state cannot add an empty field."
+    | [(fname, fval)] ->
+        let field = Fieldname.make (ErlangType Cons) fname in
+        let+ astate' =
+          write_field_and_deref path location ~struct_addr:addr_cons
+            ~field_addr:(AbstractValue.mk_fresh (), hist)
+            ~field_val:fval field astate
+        in
+        let astate' =
+          PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Cons)) (fst addr_cons) astate'
+        in
+        (astate', addr_cons)
+    | (fname, fval) :: fld_ls' ->
+        let field = Fieldname.make (ErlangType Cons) fname in
+        let* astate' =
+          write_field_and_deref path location ~struct_addr:addr_cons
+            ~field_addr:(AbstractValue.mk_fresh (), hist)
+            ~field_val:fval field astate
+        in
+        add_field_to_cons path location addr_cons hist fld_ls' astate'
+
+
+  (* add a set of field to a cons cell. The set of field are passed in a list *)
+  let make_cons_raw_general path location fld_ls : sat_maker =
+   fun astate ->
+    let hist = Hist.single_alloc path location "[X|Xs]" in
+    let addr_cons_val = AbstractValue.mk_fresh () in
+    let addr_cons = (addr_cons_val, hist) in
+    add_field_to_cons path location addr_cons hist fld_ls astate
+
+
   (** Create a Cons structure and assign it to return value *)
   let make_cons head tail : model =
    fun {location; path; ret= ret_id, _} astate ->
@@ -913,36 +955,42 @@ module Strings = struct
   (** This is a temporary solution for strings to avoid false positives. For now, we consider that
       the type of strings is list and compute this information whenever a string is created. Strings
       should be fully supported in future. T93361792 **)
-  let value_field = Fieldname.make (ErlangType Integer) ErlangTypeName.cons_tail
 
-  let make_raw location path (value, _) : disjunction_maker =
+  let of_const_string location path (const_str : String.t) : sat_maker =
    fun astate ->
-    let new_hist = Hist.single_alloc path location "string" in
-    let astate_nil =
-      let+* astate_nil = PulseArithmetic.and_eq_int value IntLit.zero astate in
-      let+ astate_nil, addr_nil = Lists.make_nil_raw location path astate_nil in
-      (astate_nil, addr_nil)
+    let const_str_exp : Exp.t = Const (Cstr const_str) in
+    PulseOperations.eval path Read location const_str_exp astate
+    |> SatUnsat.sat
+    |> value_die "'of_const_string' failed evaluation"
+
+
+  (* recurese caracter by caracter of the string and build suitable heap allocated data structure *)
+  let rec handle_string_content location path value str_lst : sat_maker =
+   fun astate ->
+    match str_lst with
+    | [] ->
+        Lists.make_nil_raw location path astate
+    | c :: str_lst' ->
+        let ascii_code = IntLit.of_int (Char.to_int c) in
+        let* astate, tail = handle_string_content location path value str_lst' astate in
+        let* astate, head = Integers.of_intlit location path ascii_code astate in
+        let* astate, str_val = of_const_string location path (String.of_char_list str_lst) astate in
+        let fld_ls = [("head", head); ("tail", tail); ("strval", str_val)] in
+        Lists.make_cons_raw_general path location fld_ls astate
+
+
+  let make_raw location path (value, _) : sat_maker =
+   fun astate ->
+    let string_value =
+      AddressAttributes.get_const_string value astate |> value_die "expected string value attribute"
     in
-    let astate_not_nil =
-      let val_not_nil = AbstractValue.mk_fresh () in
-      let+* astate_not_nil = PulseArithmetic.and_positive value astate in
-      let astate_not_nil =
-        PulseOperations.add_dynamic_type (Typ.mk_struct (ErlangType Cons)) val_not_nil
-          astate_not_nil
-      in
-      let+ astate_not_nil =
-        write_field_and_deref path location ~struct_addr:(val_not_nil, new_hist)
-          ~field_addr:(AbstractValue.mk_fresh (), new_hist)
-          ~field_val:(value, new_hist) value_field astate_not_nil
-      in
-      (astate_not_nil, (val_not_nil, new_hist))
-    in
-    SatUnsat.to_list astate_nil @ SatUnsat.to_list astate_not_nil
+    let ls_str = String.to_list string_value in
+    handle_string_content location path value ls_str astate
 
 
   let make value : model =
    fun {location; path; ret= ret_id, _} astate ->
-    let> astate, (result, _hist) = make_raw location path value astate in
+    let> astate, (result, _hist) = [make_raw location path value astate] in
     PulseOperations.write_id ret_id (result, _hist) astate |> Basic.ok_continue
 end
 
@@ -1113,7 +1161,7 @@ module Custom = struct
                    ret_addr astate
                , (ret_addr, ret_hist) ) )
       | Some (IntLit intlit) ->
-          Integers.of_string location path intlit astate
+          Sat (Integers.of_string location path intlit astate)
       | Some (List elements) ->
           let mk = Lists.make_raw location path in
           many mk elements astate
