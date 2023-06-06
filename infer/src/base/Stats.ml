@@ -77,6 +77,7 @@ include struct
     ; mutable pulse_args_length_contradictions: int
     ; mutable pulse_captured_vars_length_contradictions: int
     ; mutable pulse_summaries_count: int PulseSumCountMap.t
+    ; mutable topl_reachable_calls: int
     ; mutable timeouts: int
     ; mutable timings: (Timings.t, Timings.serialized) serialize_before_marshal
     ; mutable longest_proc_duration_heap: LongestProcDurationHeap.t }
@@ -100,6 +101,7 @@ let global_stats =
   ; pulse_args_length_contradictions= 0
   ; pulse_captured_vars_length_contradictions= 0
   ; pulse_summaries_count= PulseSumCountMap.empty
+  ; topl_reachable_calls= 0
   ; timeouts= 0
   ; timings= T Timings.init }
 
@@ -162,6 +164,8 @@ let add_proc_duration_us pname duration_us =
       heap )
 
 
+let incr_topl_reachable_calls () = incr Fields.topl_reachable_calls
+
 let incr_timeouts () = incr Fields.timeouts
 
 let add_timing timeable t =
@@ -184,6 +188,7 @@ let copy from ~into : unit =
        ; pulse_args_length_contradictions
        ; pulse_captured_vars_length_contradictions
        ; pulse_summaries_count
+       ; topl_reachable_calls
        ; timeouts
        ; timings } [@warning "+9"] ) =
     from
@@ -192,7 +197,8 @@ let copy from ~into : unit =
     ~summary_read_from_disk ~summary_cache_hits ~summary_cache_misses ~ondemand_procs_analyzed
     ~proc_locker_lock_time ~proc_locker_unlock_time ~restart_scheduler_useful_time
     ~restart_scheduler_total_time ~pulse_aliasing_contradictions ~pulse_args_length_contradictions
-    ~pulse_captured_vars_length_contradictions ~pulse_summaries_count ~timeouts ~timings
+    ~pulse_captured_vars_length_contradictions ~pulse_summaries_count ~topl_reachable_calls
+    ~timeouts ~timings
 
 
 let merge stats1 stats2 =
@@ -224,6 +230,7 @@ let merge stats1 stats2 =
       PulseSumCountMap.merge
         (fun _ i j -> Some (Option.value ~default:0 i + Option.value ~default:0 j))
         stats1.pulse_summaries_count stats2.pulse_summaries_count
+  ; topl_reachable_calls= stats1.topl_reachable_calls + stats2.topl_reachable_calls
   ; timeouts= stats1.timeouts + stats2.timeouts
   ; timings=
       T
@@ -247,6 +254,7 @@ let initial =
   ; pulse_args_length_contradictions= 0
   ; pulse_captured_vars_length_contradictions= 0
   ; pulse_summaries_count= PulseSumCountMap.empty
+  ; topl_reachable_calls= 0
   ; timeouts= 0
   ; timings= T Timings.init }
 
@@ -302,6 +310,7 @@ let pp fmt stats =
       ~pulse_args_length_contradictions:(pp_int_field fmt)
       ~pulse_captured_vars_length_contradictions:(pp_int_field fmt)
       ~pulse_summaries_count:(pp_pulse_summaries_count fmt) ~timeouts:(pp_int_field fmt)
+      ~topl_reachable_calls:(pp_int_field fmt)
       ~timings:(pp_serialized_field Timings.deserialize Timings.pp fmt)
   in
   F.fprintf fmt "@[Backend stats:@\n@[<v2>  %t@]@]@." pp_stats
@@ -343,7 +352,7 @@ let log_to_scuba stats =
       ~pulse_args_length_contradictions:create_counter
       ~pulse_captured_vars_length_contradictions:create_counter
       ~pulse_summaries_count:create_pulse_summaries_count_entry ~timeouts:create_counter
-      ~timings:create_timings_entry
+      ~topl_reachable_calls:create_counter ~timings:create_timings_entry
     |> List.concat
   in
   ScubaLogging.log_many entries

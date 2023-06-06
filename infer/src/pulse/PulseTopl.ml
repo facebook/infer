@@ -678,6 +678,8 @@ let static_match_call return arguments procname label : tcontext option =
 
 
 module Debug = struct
+  let dropped_disjuncts_count = ref 0
+
   let rec matched_transitions =
     lazy
       ( Epilogues.register ~f:log_unseen
@@ -702,8 +704,6 @@ module Debug = struct
       L.user_warning "@[<v>@[<v2>The following Topl transitions never match:@;%a@]@;@]"
         (F.pp_print_list pp) unseen
 
-
-  let dropped_disjuncts_count = ref 0
 
   let () = AnalysisGlobalState.register_ref dropped_disjuncts_count ~init:(fun () -> 0)
 
@@ -763,7 +763,6 @@ let normalize_state state = List.map ~f:normalize_simple_state state
       empirically rare, we just under-approximate by dropping always when a register has garbage.
     - We never drop simple-states corresponding to "error" vertices. *)
 let drop_garbage ~keep state =
-  L.d_printfln "@[<v>@[DBG drop_garbage keep = %a@]@;@]" AbstractValue.Set.pp keep ;
   let should_keep {pre; post} =
     ToplAutomaton.is_error (Topl.automaton ()) post.vertex
     ||
@@ -778,7 +777,10 @@ let drop_garbage ~keep state =
 let simplify pulse_state state =
   (* NOTE: For dropping garbage, we do not consider registers live. If the Topl monitor has a hold
      of something that is garbage for the program, then that something is still garbage. *)
-  let reachable = pulse_state.get_reachable () in
+  let reachable =
+    Stats.incr_topl_reachable_calls () ;
+    pulse_state.get_reachable ()
+  in
   let eliminate_exists {pre; post; pruned; last_step} =
     L.d_printfln "@[<v>@[DBG eliminate_exists pulse_state.path_condition %a@]@;@]" Formula.pp
       pulse_state.path_condition ;
@@ -1056,3 +1058,26 @@ let report_errors proc_desc err_log ~pulse_is_manifest state =
             message
   in
   List.iter ~f:report_simple_state state
+
+
+(* {1 Fast path} *)
+
+let small_step location pulse_state event state =
+  match state with [] -> state | _ -> small_step location pulse_state event state
+
+
+let large_step ~call_location ~callee_proc_name ~substitution pulse_state ~callee_summary
+    ~callee_is_manifest state =
+  match state with
+  | [] ->
+      state
+  | _ ->
+      large_step ~call_location ~callee_proc_name ~substitution pulse_state ~callee_summary
+        ~callee_is_manifest state
+
+
+let filter_for_summary pulse_state state =
+  match state with [] -> state | _ -> filter_for_summary pulse_state state
+
+
+let simplify pulse_state state = match state with [] -> state | _ -> simplify pulse_state state
