@@ -324,7 +324,7 @@ module Implementation = struct
   let terminate () =
     let overwrites = IntHash.fold (fun _hash count acc -> acc + count) specs_overwrite_counts 0 in
     ScubaLogging.log_count ~label:"overwritten_specs" ~value:overwrites ;
-    L.debug Analysis Quiet "Detected %d spec overwrittes.@\n" overwrites
+    L.debug Analysis Quiet "Detected %d spec overwrites.@\n" overwrites
 end
 
 module Command = struct
