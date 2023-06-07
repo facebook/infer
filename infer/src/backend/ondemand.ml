@@ -280,12 +280,35 @@ let register_callee ~cycle_detected ?caller_summary callee =
       Dependencies.record_pname_dep ~caller dependency_kind callee )
 
 
-let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary callee_pname =
+let error_if_ondemand_analysis_during_replay ~from_file_analysis caller_summary callee_pname =
+  let is_replay =
+    match Config.scheduler with
+    | ReplayAnalysis ->
+        true
+    | File | Restart | SyntacticCallGraph ->
+        false
+  in
+  if is_replay then
+    if Option.is_some caller_summary then
+      L.internal_error
+        "analyzing procedure %a via ondemand when computing the summary for %a; this should not \
+         happen, we may have recorded analysis dependencies wrongly@\n"
+        Procname.pp callee_pname (Pp.option Summary.pp_text) caller_summary
+    else if from_file_analysis then
+      L.internal_error
+        "analyzing procedure %a for a file-level analysis; this should not happen, we may have \
+         recorded analysis dependencies wrongly@\n"
+        Procname.pp callee_pname
+
+
+let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary
+    ?(from_file_analysis = false) callee_pname =
   let cycle_detected = in_mutual_recursion_cycle ~caller_summary ~callee:callee_pname in
   register_callee ~cycle_detected ?caller_summary callee_pname ;
   if cycle_detected then None
   else
     let analyze_callee_aux ~specialization =
+      error_if_ondemand_analysis_during_replay ~from_file_analysis caller_summary callee_pname ;
       Procdesc.load callee_pname
       >>= fun callee_pdesc ->
       RestartScheduler.with_lock callee_pname ~f:(fun () ->
@@ -336,7 +359,7 @@ let analyze_proc_name_for_file_analysis exe_env callee_pname =
      and we don't want to load all payloads at once (to avoid high memory usage when only a few of
      the payloads are actually needed), or we are starting a procedure analysis in which case we're
      not interested in loading the summary if it has already been computed *)
-  analyze_callee ~lazy_payloads:true exe_env callee_pname
+  analyze_callee ~lazy_payloads:true exe_env ~from_file_analysis:true callee_pname
 
 
 let analyze_file_procedures exe_env procs_to_analyze source_file_opt =
