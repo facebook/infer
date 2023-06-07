@@ -496,7 +496,10 @@ let get_copied astate_n =
                   ; source_opt= Some (PVar pvar, _) as source_opt
                   ; from
                   ; copied_timestamp } ) ) ->
-              if is_never_used_after_copy_into_intermediate_or_field pvar copied_timestamp astate_n
+              if
+                (not (Pvar.is_global pvar))
+                && is_never_used_after_copy_into_intermediate_or_field pvar copied_timestamp
+                     astate_n
               then
                 (* if source var is never used later on, we can still suggest removing the copy even though the copy is modified *)
                 (copied_into, source_typ, source_opt, location, copied_location, from) :: acc

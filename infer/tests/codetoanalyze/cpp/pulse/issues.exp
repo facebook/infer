@@ -490,6 +490,7 @@ codetoanalyze/cpp/pulse/unnecessary_copy.cpp, intermediate_copy_modified_unused_
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, intermediate_copy_modified_used_ok, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter input with type `std::vector<int,std::allocator<int>>`]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, intermediate_copy_modified_local_unused_bad, 3, PULSE_UNNECESSARY_COPY_INTERMEDIATE, no_bucket, ERROR, [copied here (with type `std::vector<int,std::allocator<int>>&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, FieldCopyClass::copy_assign_bad, 0, PULSE_UNNECESSARY_COPY_ASSIGNMENT, no_bucket, ERROR, [copy assigned here (with type `NonTrivialCopyClass&`)]
+codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_from_global_bad, 0, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `Arr&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_assignment_from_lvalue_ref_ok_intermediate_bad, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter arr with type `Arr`]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, copy_assignment_from_lvalue_ref_ok_intermediate_bad, 5, PULSE_UNNECESSARY_COPY_INTERMEDIATE, no_bucket, ERROR, [copied here (with type `Arr&`)]
 codetoanalyze/cpp/pulse/unnecessary_copy.cpp, normal_copy_from_lvalue_ref_bad, 1, PULSE_UNNECESSARY_COPY, no_bucket, ERROR, [copied here (with type `std::basic_string<char,std::char_traits<char>,std::allocator<char>>&`)]

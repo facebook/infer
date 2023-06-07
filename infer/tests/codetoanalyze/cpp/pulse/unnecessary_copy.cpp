@@ -724,6 +724,15 @@ void intermediate_copy_global_ok() {
   get_first_elem(global); // we cannot suggest moving global
 }
 
+class CopyConstructGlobalOk {
+  Arr my_arr;
+
+ public:
+  CopyConstructGlobalOk() : my_arr(global) {}
+};
+
+void copy_from_global_bad(bool b) { auto x = b ? global : global; }
+
 std::map<std::string, std::string> unreliable_source_ok(
     const std::map<std::string, std::string>& input) {
   auto modified = input; // the source of `modified` was `input` in the copy map
