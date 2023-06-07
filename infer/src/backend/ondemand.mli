@@ -29,3 +29,6 @@ val analyze_file : Exe_env.t -> SourceFile.t -> unit
 
 val analyze_proc_name_toplevel : Exe_env.t -> Procname.t -> unit
 (** Invoke all the callbacks registered in {!Callbacks} on the given procedure. *)
+
+val edges_to_ignore : Procname.Set.t Procname.Map.t option ref
+(** used by the replay analysis to cut mutual recursion cycles in the same places again *)

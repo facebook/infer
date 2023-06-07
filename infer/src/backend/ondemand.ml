@@ -20,6 +20,10 @@ let () = AnalysisGlobalState.register_ref nesting ~init:(fun () -> -1)
 
 let max_nesting_to_print = 8
 
+(* keep track of the "call stack" of procedures we are currently analyzing; used to break mutual
+   recursion cycles in a naive way: if we are already analyzing a procedure and another one (whose
+   summary we transitively need to analyze the original procedure) asks for its summary, return no
+   summary instead of triggering a recursive analysis of the original procedure. *)
 let is_active, add_active, remove_active, clear_actives =
   let open Procname.HashSet in
   let currently_analyzed = create 0 in
@@ -28,6 +32,22 @@ let is_active, add_active, remove_active, clear_actives =
   let remove_active proc_name = remove proc_name currently_analyzed in
   let clear_actives () = clear currently_analyzed in
   (is_active, add_active, remove_active, clear_actives)
+
+
+(** an alternative mean of "cutting" recursion cycles used when replaying a previous analysis: times
+    where [is_active] caused ondemand to return an empty summary to avoid a recursive analysis in
+    the previous analysis scheduling are recorded in this variable *)
+let edges_to_ignore = ref None
+
+(** use either [is_active] or [edges_to_ignore] to determine if we should return an empty summary to
+    avoid mutual recursion cycles *)
+let in_mutual_recursion_cycle ~caller_summary ~callee =
+  match (!edges_to_ignore, caller_summary) with
+  | Some edges_to_ignore, Some {Summary.proc_name} ->
+      Procname.Map.find_opt proc_name edges_to_ignore
+      |> Option.exists ~f:(fun recursive_callees -> Procname.Set.mem callee recursive_callees)
+  | None, _ | _, None ->
+      is_active callee
 
 
 let procedure_should_be_analyzed proc_name =
@@ -136,6 +156,15 @@ let run_proc_analysis exe_env tenv ?specialization ?caller_pname callee_pdesc =
   in
   let postprocess summary =
     decr nesting ;
+    (* copy the previous recursion edges over to the new summary if doing a replay analysis so that
+       subsequent replay analyses can pick them up too *)
+    Option.iter !edges_to_ignore ~f:(fun edges_to_ignore ->
+        Procname.Map.find_opt callee_pname edges_to_ignore
+        |> Option.iter ~f:(fun recursive_callees ->
+               Procname.Set.iter
+                 (fun callee ->
+                   Dependencies.record_pname_dep ~caller:callee_pname RecursionEdge callee )
+                 recursive_callees ) ) ;
     Summary.OnDisk.store summary ;
     remove_active callee_pname ;
     Printer.write_proc_html callee_pdesc ;
@@ -245,16 +274,16 @@ let dump_duplicate_procs source_file procs =
   if not (List.is_empty duplicate_procs) then output_to_file duplicate_procs
 
 
-let register_callee ~is_active ?caller_summary callee =
-  let dependency_kind : Dependencies.kind = if is_active then RecursionEdge else SummaryLoad in
+let register_callee ~cycle_detected ?caller_summary callee =
+  let dependency_kind : Dependencies.kind = if cycle_detected then RecursionEdge else SummaryLoad in
   Option.iter caller_summary ~f:(fun {Summary.proc_name= caller} ->
       Dependencies.record_pname_dep ~caller dependency_kind callee )
 
 
 let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary callee_pname =
-  let is_active = is_active callee_pname in
-  register_callee ~is_active ?caller_summary callee_pname ;
-  if is_active then None
+  let cycle_detected = in_mutual_recursion_cycle ~caller_summary ~callee:callee_pname in
+  register_callee ~cycle_detected ?caller_summary callee_pname ;
+  if cycle_detected then None
   else
     let analyze_callee_aux ~specialization =
       Procdesc.load callee_pname
