@@ -24,6 +24,14 @@ type java_class_info =
 
 let pp_java_class_info_opt fmt jopt = Pp.option pp_java_class_info fmt jopt
 
+module Hack = struct
+  type kind = Class | Trait [@@deriving equal, hash, show {with_path= false}]
+
+  type t = {kind: kind} [@@deriving equal, hash, show {with_path= false}]
+
+  let pp_opt fmt t = Pp.option pp fmt t
+end
+
 (** Type for a structured value. *)
 type t =
   { fields: fields  (** non-static fields *)
@@ -35,7 +43,8 @@ type t =
   ; annots: Annot.Item.t  (** annotations *)
   ; java_class_info: java_class_info option  (** present if and only if the class is Java *)
   ; dummy: bool  (** dummy struct for class including static method *)
-  ; source_file: SourceFile.t option  (** source file containing this struct's declaration *) }
+  ; source_file: SourceFile.t option  (** source file containing this struct's declaration *)
+  ; hack_class_info: Hack.t option  (** Hack classish information *) }
 [@@deriving equal, hash]
 
 type lookup = Typ.Name.t -> t option
@@ -53,6 +62,7 @@ let pp pe name f
      ; exported_objc_methods
      ; annots
      ; java_class_info
+     ; hack_class_info
      ; dummy
      ; source_file } [@warning "+missing-record-field-pattern"] ) =
   let pp_field pe f (field_name, typ, ann) =
@@ -75,6 +85,7 @@ let pp pe name f
      exported_obj_methods: {@[<v>%a@]}@,\
      annots: {@[<v>%a@]}@,\
      java_class_info: {@[<v>%a@]}@,\
+     hack_class_info: {@[<v>%a@]}@,\
      dummy: %b@,\
      %a@]"
     Typ.Name.pp name
@@ -89,7 +100,8 @@ let pp pe name f
     (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp_verbose m))
     methods
     (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp_verbose m))
-    exported_objc_methods Annot.Item.pp annots pp_java_class_info_opt java_class_info dummy
+    exported_objc_methods Annot.Item.pp annots pp_java_class_info_opt java_class_info Hack.pp_opt
+    hack_class_info dummy
     (fun fs -> Option.iter ~f:(Format.fprintf fs "source_file: %a@," SourceFile.pp))
     source_file
 
@@ -110,12 +122,13 @@ let make_java_struct fields' statics' methods' supers' annots' java_class_info ?
   ; objc_protocols= []
   ; annots
   ; java_class_info
+  ; hack_class_info= None
   ; dummy
   ; source_file }
 
 
 let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
-    ?objc_protocols ?annots ?java_class_info ?dummy ?source_file typename =
+    ?objc_protocols ?annots ?java_class_info ?hack_class_info ?dummy ?source_file typename =
   let default_ =
     { fields= []
     ; statics= []
@@ -125,6 +138,7 @@ let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods
     ; objc_protocols= []
     ; annots= Annot.Item.empty
     ; java_class_info= None
+    ; hack_class_info= None
     ; dummy= false
     ; source_file= None }
   in
@@ -144,6 +158,7 @@ let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods
         ; objc_protocols
         ; annots
         ; java_class_info
+        ; hack_class_info
         ; dummy
         ; source_file }
   in
@@ -414,6 +429,15 @@ module JavaClassInfoOptNormalizer = HashNormalizer.Make (struct
     IOption.map_changed java_class_info_opt ~equal:phys_equal ~f:normalize_java_class_info
 end)
 
+module HackClassInfoOptNormalizer = HashNormalizer.Make (struct
+  type t = Hack.t option [@@deriving equal, hash]
+
+  let normalize_hack_class_info {Hack.kind} = {Hack.kind}
+
+  let normalize hack_class_info_opt : Hack.t option =
+    IOption.map_changed hack_class_info_opt ~equal:phys_equal ~f:normalize_hack_class_info
+end)
+
 module Normalizer = HashNormalizer.Make (struct
   type nonrec t = t [@@deriving equal, hash]
 
@@ -430,6 +454,7 @@ module Normalizer = HashNormalizer.Make (struct
     in
     let annots = Annot.Item.Normalizer.normalize t.annots in
     let java_class_info = JavaClassInfoOptNormalizer.normalize t.java_class_info in
+    let hack_class_info = HackClassInfoOptNormalizer.normalize t.hack_class_info in
     let source_file =
       IOption.map_changed ~equal:phys_equal ~f:SourceFile.Normalizer.normalize t.source_file
     in
@@ -440,6 +465,7 @@ module Normalizer = HashNormalizer.Make (struct
       && phys_equal exported_objc_methods t.exported_objc_methods
       && phys_equal annots t.annots
       && phys_equal java_class_info t.java_class_info
+      && phys_equal hack_class_info t.hack_class_info
       && phys_equal source_file t.source_file
     then t
     else
@@ -451,6 +477,7 @@ module Normalizer = HashNormalizer.Make (struct
       ; exported_objc_methods
       ; annots
       ; java_class_info
+      ; hack_class_info
       ; dummy= t.dummy
       ; source_file }
 end)

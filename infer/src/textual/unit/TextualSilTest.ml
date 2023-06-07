@@ -55,6 +55,7 @@ let%expect_test "undefined types are included in tenv" =
          exported_obj_methods: {}
          annots: {<>}
          java_class_info: {[None]}
+         hack_class_info: {[None]}
          dummy: false
          hack Quux
          fields: {}
@@ -65,6 +66,7 @@ let%expect_test "undefined types are included in tenv" =
          exported_obj_methods: {}
          annots: {<>}
          java_class_info: {[None]}
+         hack_class_info: {[None]}
          dummy: true
          hack Baz
          fields: {}
@@ -75,6 +77,7 @@ let%expect_test "undefined types are included in tenv" =
          exported_obj_methods: {}
          annots: {<>}
          java_class_info: {[None]}
+         hack_class_info: {[None]}
          dummy: true
          hack Bar
          fields: {}
@@ -87,6 +90,7 @@ let%expect_test "undefined types are included in tenv" =
          exported_obj_methods: {}
          annots: {<>}
          java_class_info: {[None]}
+         hack_class_info: {[None]}
          dummy: false |}]
 
 
@@ -112,6 +116,7 @@ let%expect_test "final annotation" =
       exported_obj_methods: {}
       annots: {<_final>}
       java_class_info: {[None]}
+      hack_class_info: {[None]}
       dummy: false
       hack Bar
       fields: {}
@@ -122,6 +127,7 @@ let%expect_test "final annotation" =
       exported_obj_methods: {}
       annots: {<>}
       java_class_info: {[None]}
+      hack_class_info: {[None]}
       dummy: false |}]
 
 
@@ -220,6 +226,7 @@ let%expect_test "overloads in tenv" =
     exported_obj_methods: {}
     annots: {<>}
     java_class_info: {[None]}
+    hack_class_info: {[None]}
     dummy: false
     hack bool
     fields: {}
@@ -230,6 +237,7 @@ let%expect_test "overloads in tenv" =
     exported_obj_methods: {}
     annots: {<>}
     java_class_info: {[None]}
+    hack_class_info: {[None]}
     dummy: true |}]
 
 
@@ -287,6 +295,7 @@ let%expect_test "undefined + overloads in merged tenv" =
     exported_obj_methods: {}
     annots: {<>}
     java_class_info: {[None]}
+    hack_class_info: {[None]}
     dummy: false |}]
 
 

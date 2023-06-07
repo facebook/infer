@@ -21,6 +21,12 @@ type java_class_info =
         (** None should correspond to rare cases when it was impossible to fetch the location in
             source file *) }
 
+module Hack : sig
+  type kind = Class | Trait
+
+  type t = {kind: kind}
+end
+
 (** Type for a structured value. *)
 type t = private
   { fields: fields  (** non-static fields *)
@@ -32,7 +38,8 @@ type t = private
   ; annots: Annot.Item.t  (** annotations *)
   ; java_class_info: java_class_info option  (** present if and only if the class is Java *)
   ; dummy: bool  (** dummy struct for class including static method *)
-  ; source_file: SourceFile.t option  (** source file containing this struct's declaration *) }
+  ; source_file: SourceFile.t option  (** source file containing this struct's declaration *)
+  ; hack_class_info: Hack.t option  (** present if and only if the class is Hack *) }
 
 type lookup = Typ.Name.t -> t option
 
@@ -51,6 +58,7 @@ val internal_mk_struct :
   -> ?objc_protocols:Typ.Name.t list
   -> ?annots:Annot.Item.t
   -> ?java_class_info:java_class_info
+  -> ?hack_class_info:Hack.t
   -> ?dummy:bool
   -> ?source_file:SourceFile.t
   -> Typ.name
