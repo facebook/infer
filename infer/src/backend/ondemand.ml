@@ -246,8 +246,9 @@ let dump_duplicate_procs source_file procs =
 
 
 let register_callee ~is_active ?caller_summary callee =
+  let dependency_kind : Dependencies.kind = if is_active then RecursionEdge else SummaryLoad in
   Option.iter caller_summary ~f:(fun {Summary.proc_name= caller} ->
-      Dependencies.record_pname_dep ~caller ~is_summary_load:(not is_active) callee )
+      Dependencies.record_pname_dep ~caller dependency_kind callee )
 
 
 let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary callee_pname =
