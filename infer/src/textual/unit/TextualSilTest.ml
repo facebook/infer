@@ -55,7 +55,7 @@ let%expect_test "undefined types are included in tenv" =
          exported_obj_methods: {}
          annots: {<>}
          java_class_info: {[None]}
-         hack_class_info: {[None]}
+         hack_class_info: {[Some { kind = Class }]}
          dummy: false
          hack Quux
          fields: {}
@@ -116,7 +116,7 @@ let%expect_test "final annotation" =
       exported_obj_methods: {}
       annots: {<_final>}
       java_class_info: {[None]}
-      hack_class_info: {[None]}
+      hack_class_info: {[Some { kind = Class }]}
       dummy: false
       hack Bar
       fields: {}
@@ -127,7 +127,7 @@ let%expect_test "final annotation" =
       exported_obj_methods: {}
       annots: {<>}
       java_class_info: {[None]}
-      hack_class_info: {[None]}
+      hack_class_info: {[Some { kind = Class }]}
       dummy: false |}]
 
 
@@ -345,3 +345,41 @@ let%expect_test "instanceof translation" =
           *&return:int=n$2 [line 13, column 9];
 
         #n2: |}]
+
+
+let%expect_test "trait vs class kind" =
+  let source =
+    {|
+          .source_language = "hack"
+
+          type T = .kind="trait" {}
+          type C = .kind="class" {}
+    |}
+  in
+  let m = parse_module source in
+  let _, tenv = TextualSil.module_to_sil m in
+  F.printf "%a@\n" Tenv.pp tenv ;
+  [%expect
+    {|
+      hack C
+      fields: {}
+      statics: {}
+      supers: {}
+      objc_protocols: {}
+      methods: {}
+      exported_obj_methods: {}
+      annots: {<>}
+      java_class_info: {[None]}
+      hack_class_info: {[Some { kind = Class }]}
+      dummy: false
+      hack T
+      fields: {}
+      statics: {}
+      supers: {}
+      objc_protocols: {}
+      methods: {}
+      exported_obj_methods: {}
+      annots: {<>}
+      java_class_info: {[None]}
+      hack_class_info: {[Some { kind = Trait }]}
+      dummy: false |}]

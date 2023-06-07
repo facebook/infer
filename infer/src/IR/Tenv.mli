@@ -47,6 +47,7 @@ val mk_struct :
   -> ?objc_protocols:Typ.Name.t list
   -> ?annots:Annot.Item.t
   -> ?java_class_info:Struct.java_class_info
+  -> ?hack_class_info:Struct.Hack.t
   -> ?dummy:bool
   -> ?source_file:SourceFile.t
   -> Typ.Name.t
