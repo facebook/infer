@@ -458,7 +458,12 @@ let is_never_used_after_copy_into_intermediate_or_field pvar (copied_timestamp :
       not (is_loaded_after_copy || is_stored_after_copy || is_passed_to_non_destructor_after_copy)
 
 
-let get_copied astate_n =
+let is_lvalue_ref_param ~ref_formals pvar =
+  Option.exists (List.Assoc.find ref_formals ~equal:Pvar.equal pvar) ~f:(fun typ ->
+      not (Typ.is_rvalue_reference typ) )
+
+
+let get_copied ~ref_formals astate_n =
   match astate_n with
   | Top ->
       []
@@ -498,6 +503,7 @@ let get_copied astate_n =
                   ; copied_timestamp } ) ) ->
               if
                 (not (Pvar.is_global pvar))
+                && (not (is_lvalue_ref_param ~ref_formals pvar))
                 && is_never_used_after_copy_into_intermediate_or_field pvar copied_timestamp
                      astate_n
               then

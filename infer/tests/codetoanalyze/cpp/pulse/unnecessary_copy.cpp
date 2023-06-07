@@ -733,6 +733,27 @@ class CopyConstructGlobalOk {
 
 void copy_from_global_bad(bool b) { auto x = b ? global : global; }
 
+class CopyConstructFromRefOk {
+  Arr my_arr;
+
+ public:
+  CopyConstructFromRefOk(Arr& arr) : my_arr(arr) {}
+};
+
+class CopyConstructFromRefBad1 {
+  Arr my_arr;
+
+ public:
+  CopyConstructFromRefBad1(Arr arr) : my_arr(arr) {}
+};
+
+class CopyConstructFromRefBad2 {
+  Arr my_arr;
+
+ public:
+  CopyConstructFromRefBad2(Arr&& arr) : my_arr(arr) {}
+};
+
 std::map<std::string, std::string> unreliable_source_ok(
     const std::map<std::string, std::string>& input) {
   auto modified = input; // the source of `modified` was `input` in the copy map

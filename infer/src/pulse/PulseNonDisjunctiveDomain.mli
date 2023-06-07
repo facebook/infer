@@ -57,7 +57,8 @@ val mark_parameter_as_modified :
   is_modified:(BaseMemory.t -> Timestamp.t -> bool) -> var:Var.t -> t -> t
 
 val get_copied :
-     t
+     ref_formals:(Pvar.t * Typ.t) list
+  -> t
   -> ( Attribute.CopiedInto.t
      * Typ.t option
      * DecompilerExpr.source_expr option
