@@ -66,6 +66,7 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
   if is_not_implicit_or_copy_ctor_assignment pname then
     PulseNonDisjunctiveDomain.get_copied
       ~ref_formals:(Procdesc.get_passed_by_ref_formals proc_desc)
+      ~ptr_formals:(Procdesc.get_pointer_formals proc_desc)
       non_disj_astate
     |> List.iter ~f:(fun (copied_into, source_typ, source_opt, location, copied_location, from) ->
            let copy_name = Format.asprintf "%a" Attribute.CopiedInto.pp copied_into in

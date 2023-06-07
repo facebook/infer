@@ -266,6 +266,9 @@ val get_passed_by_value_formals : t -> (Pvar.t * Typ.t) list
 val get_passed_by_ref_formals : t -> (Pvar.t * Typ.t) list
 (** Return pvar and type of formal parameters that are passed by reference *)
 
+val get_pointer_formals : t -> (Pvar.t * Typ.t) list
+(** Return pvar and type of formal parameters that are passed as pointer, i.e. [T*] *)
+
 val get_loc : t -> Location.t
 (** Return loc information for the procedure *)
 

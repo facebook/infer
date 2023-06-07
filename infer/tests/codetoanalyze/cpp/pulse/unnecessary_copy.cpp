@@ -777,7 +777,9 @@ void normal_copy_from_lvalue_ref_bad(std::string& str) {
   auto f = str; // still report here
 }
 
-void infermediate_copy_from_lvalue_ref_ok(Arr& arr) {
+void intermediate_copy_from_lvalue_ref_ok(Arr& arr) {
   get_first_elem(arr); // don't report since we can't safely move str without
                        // affecting callees
 }
+
+void intermediate_copy_from_pointer_ok(Arr* arr) { get_first_elem(*arr); }

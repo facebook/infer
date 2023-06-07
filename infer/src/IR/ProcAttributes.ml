@@ -143,6 +143,10 @@ let get_passed_by_ref_formals attributes =
       List.mem ~equal:Int.equal attributes.reference_formals i )
 
 
+let get_pointer_formals attributes =
+  List.filter (get_pvar_formals attributes) ~f:(fun (_, typ) -> Typ.is_strong_pointer typ)
+
+
 let get_proc_name attributes = attributes.proc_name
 
 let get_loc attributes = attributes.loc

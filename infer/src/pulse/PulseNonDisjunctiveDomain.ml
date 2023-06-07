@@ -463,7 +463,7 @@ let is_lvalue_ref_param ~ref_formals pvar =
       not (Typ.is_rvalue_reference typ) )
 
 
-let get_copied ~ref_formals astate_n =
+let get_copied ~ref_formals ~ptr_formals astate_n =
   match astate_n with
   | Top ->
       []
@@ -504,6 +504,7 @@ let get_copied ~ref_formals astate_n =
               if
                 (not (Pvar.is_global pvar))
                 && (not (is_lvalue_ref_param ~ref_formals pvar))
+                && (not (List.Assoc.mem ptr_formals ~equal:Pvar.equal pvar))
                 && is_never_used_after_copy_into_intermediate_or_field pvar copied_timestamp
                      astate_n
               then

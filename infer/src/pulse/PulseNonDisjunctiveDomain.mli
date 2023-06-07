@@ -58,6 +58,7 @@ val mark_parameter_as_modified :
 
 val get_copied :
      ref_formals:(Pvar.t * Typ.t) list
+  -> ptr_formals:(Pvar.t * Typ.t) list
   -> t
   -> ( Attribute.CopiedInto.t
      * Typ.t option
