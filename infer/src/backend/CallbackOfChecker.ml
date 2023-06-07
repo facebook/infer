@@ -80,7 +80,7 @@ let interprocedural_with_field_dependency ~dep_field payload_field checker
 
 let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; source_file} =
   let analyze_file_dependency proc_name =
-    Ondemand.analyze_proc_name_no_caller exe_env proc_name
+    Ondemand.analyze_proc_name_for_file_analysis exe_env proc_name
     |> Option.bind ~f:(fun {Summary.payloads; _} -> Field.get payload_field payloads |> Lazy.force)
   in
   checker

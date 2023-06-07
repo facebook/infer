@@ -19,10 +19,10 @@ val analyze_proc_name :
     [callee_pname] triggered during the analysis of [caller_summary] If [specialization] is given,
     the callee is requesting a specialization. *)
 
-val analyze_proc_name_no_caller : Exe_env.t -> Procname.t -> Summary.t option
-(** [analyze_proc_name_no_caller exe_env callee_pname] performs an on-demand analysis of
-    [callee_pname] triggered by the top-level of a file-level checker. This must not be used in any
-    other context, as this will break incremental analysis. *)
+val analyze_proc_name_for_file_analysis : Exe_env.t -> Procname.t -> Summary.t option
+(** [analyze_proc_name_for_file_analysis exe_env callee_pname] performs an on-demand analysis of
+    [callee_pname] as triggered by a file-level checker. This must not be used in any other context,
+    as this will break incremental analysis. *)
 
 val analyze_file : Exe_env.t -> SourceFile.t -> unit
 (** Invoke all the callbacks registered in {!Callbacks} on the given file. *)

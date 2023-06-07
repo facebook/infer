@@ -301,7 +301,7 @@ let analyze_proc_name exe_env ?specialization ~caller_summary callee_pname =
   analyze_callee ~lazy_payloads:false ?specialization exe_env ~caller_summary callee_pname
 
 
-let analyze_proc_name_no_caller exe_env callee_pname =
+let analyze_proc_name_for_file_analysis exe_env callee_pname =
   (* load payloads lazily (and thus field by field as needed): we are either doing a file analysis
      and we don't want to load all payloads at once (to avoid high memory usage when only a few of
      the payloads are actually needed), or we are starting a procedure analysis in which case we're
@@ -309,10 +309,10 @@ let analyze_proc_name_no_caller exe_env callee_pname =
   analyze_callee ~lazy_payloads:true exe_env callee_pname
 
 
-let analyze_procedures exe_env procs_to_analyze source_file_opt =
+let analyze_file_procedures exe_env procs_to_analyze source_file_opt =
   let saved_language = !Language.curr_language in
   let analyze_proc_name_call pname =
-    ignore (analyze_proc_name_no_caller exe_env pname : Summary.t option)
+    ignore (analyze_proc_name_for_file_analysis exe_env pname : Summary.t option)
   in
   List.iter ~f:analyze_proc_name_call procs_to_analyze ;
   Option.iter source_file_opt ~f:(fun source_file ->
@@ -325,10 +325,10 @@ let analyze_procedures exe_env procs_to_analyze source_file_opt =
 let analyze_file exe_env source_file =
   update_taskbar None (Some source_file) ;
   let procs_to_analyze = SourceFiles.proc_names_of_source source_file in
-  analyze_procedures exe_env procs_to_analyze (Some source_file)
+  analyze_file_procedures exe_env procs_to_analyze (Some source_file)
 
 
 (** Invoke procedure callbacks on a given environment. *)
 let analyze_proc_name_toplevel exe_env proc_name =
   update_taskbar (Some proc_name) None ;
-  analyze_procedures exe_env [proc_name] None
+  analyze_callee ~lazy_payloads:true exe_env proc_name |> ignore

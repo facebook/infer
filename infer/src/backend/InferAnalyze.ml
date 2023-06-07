@@ -175,28 +175,30 @@ let get_source_files_to_analyze ~changed_files =
   source_files_to_analyze
 
 
-let tasks_generator_builder_for replay_task_gen_opt sources =
-  match (replay_task_gen_opt, Config.scheduler) with
+let tasks_generator_builder_for replay_call_graph_opt sources =
+  match (replay_call_graph_opt, Config.scheduler) with
   | None, File ->
       FileScheduler.make sources
   | None, Restart ->
       RestartScheduler.make sources
   | None, SyntacticCallGraph ->
       SyntacticCallGraph.make sources
-  | Some replay_tasks, ReplayAnalysis ->
-      (* If the replay scheduler has been selected then [replay_task_gen_opt] should have been
+  | Some replay_call_graph, ReplayAnalysis ->
+      (* If the replay scheduler has been selected then [replay_call_graph_opt] should have been
          pre-computed before calling this function.
 
          After the procedure-level tasks from [replay_tasks] have been completed, run the file-level
          analyses. This is done by chaining the file scheduler after [replay_tasks]. This is similar
          to how callgraph does it but the expectation here is that by then all procedure-level
          analyses required by those have been done already. *)
-      ProcessPool.TaskGenerator.chain replay_tasks (FileScheduler.make sources)
+      ProcessPool.TaskGenerator.chain
+        (CallGraphScheduler.bottom_up replay_call_graph)
+        (FileScheduler.make sources)
   | _ ->
-      L.die InternalError "unexpected combination of replay_task_gen_opt and Config.scheduler"
+      L.die InternalError "unexpected combination of replay_call_graph_opt and Config.scheduler"
 
 
-let analyze replay_task_gen_opt source_files_to_analyze =
+let analyze replay_call_graph_opt source_files_to_analyze =
   if Config.is_checker_enabled ConfigImpactAnalysis then
     L.debug Analysis Quiet "Config impact strict mode: %a@." ConfigImpactAnalysis.pp_mode
       ConfigImpactAnalysis.mode ;
@@ -212,7 +214,7 @@ let analyze replay_task_gen_opt source_files_to_analyze =
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     let build_tasks_generator () =
-      tasks_generator_builder_for replay_task_gen_opt (Lazy.force source_files_to_analyze)
+      tasks_generator_builder_for replay_call_graph_opt (Lazy.force source_files_to_analyze)
     in
     (* Prepare tasks one file at a time while executing in parallel *)
     RestartScheduler.setup () ;
@@ -271,10 +273,10 @@ let main ~changed_files =
   (* Pre-compute the task generator for a replay analysis if needed. Since this depends on reading
      the previously-computed summaries, this needs to happen before we start deleting them in
      preparation for the new analysis, hence the awkward pre-computation here. *)
-  let replay_task_gen_opt =
+  let replay_call_graph_opt =
     match Config.scheduler with
     | ReplayAnalysis ->
-        Some (CallGraphScheduler.bottom_up @@ AnalysisDependencyGraph.build_for_analysis_replay ())
+        Some (AnalysisDependencyGraph.build_for_analysis_replay ())
     | File | Restart | SyntacticCallGraph ->
         None
   in
@@ -295,7 +297,7 @@ let main ~changed_files =
     if Config.incremental_analysis then Some (Summary.OnDisk.get_count ()) else None
   in
   let backend_stats_list, gc_stats_list, missing_deps_list =
-    analyze replay_task_gen_opt source_files
+    analyze replay_call_graph_opt source_files
   in
   MissingDependencies.save missing_deps_list ;
   if Config.incremental_analysis then (
