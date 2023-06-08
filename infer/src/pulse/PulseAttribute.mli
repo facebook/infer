@@ -58,7 +58,8 @@ end
 module TaintSanitizedSet : PrettyPrintable.PPSet with type elt = TaintSanitized.t
 
 module CopyOrigin : sig
-  type t = CopyCtor | CopyAssignment | CopyToOptional [@@deriving compare, equal]
+  type t = CopyCtor | CopyAssignment | CopyToOptional | CopyInGetDefault
+  [@@deriving compare, equal]
 
   val pp : Formatter.t -> t -> unit
 end

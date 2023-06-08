@@ -98,7 +98,8 @@ module Attribute = struct
   module TaintSanitizedSet = PrettyPrintable.MakePPSet (TaintSanitized)
 
   module CopyOrigin = struct
-    type t = CopyCtor | CopyAssignment | CopyToOptional [@@deriving compare, equal]
+    type t = CopyCtor | CopyAssignment | CopyToOptional | CopyInGetDefault
+    [@@deriving compare, equal]
 
     let pp fmt = function
       | CopyCtor ->
@@ -107,6 +108,8 @@ module Attribute = struct
           F.fprintf fmt "copy assigned"
       | CopyToOptional ->
           F.fprintf fmt "copied by Optional value construction"
+      | CopyInGetDefault ->
+          F.fprintf fmt "copied in `folly::get_default`"
   end
 
   module CopiedInto = struct

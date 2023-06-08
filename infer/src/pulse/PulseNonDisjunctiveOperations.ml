@@ -21,9 +21,11 @@ type origin =
 let is_param = function Parameter -> true | Source | Copy -> false
 
 let get_modeled_as_returning_copy_opt proc_name =
-  Option.value_map ~default:None Config.pulse_model_returns_copy_pattern ~f:(fun r ->
-      let s = Procname.to_string proc_name in
-      if Str.string_match r s 0 then Some Attribute.CopyOrigin.CopyCtor else None )
+  let s = Procname.to_string proc_name in
+  if String.is_prefix s ~prefix:"folly::get_default" then Some Attribute.CopyOrigin.CopyInGetDefault
+  else
+    Option.value_map ~default:None Config.pulse_model_returns_copy_pattern ~f:(fun r ->
+        if Str.string_match r s 0 then Some Attribute.CopyOrigin.CopyCtor else None )
 
 
 let get_copy_origin pname =

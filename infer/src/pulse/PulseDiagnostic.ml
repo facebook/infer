@@ -685,6 +685,12 @@ let get_message diagnostic =
         | CopyToOptional, _ ->
             if is_from_const then get_suggestion_msg_move source_opt
             else get_suggestion_msg_move source_opt ^ " or changing the callee's type"
+        | CopyInGetDefault, _ ->
+            F.asprintf
+              "To avoid the copy, consider using `folly::get_ref_default` or `folly::get_ptr` \
+               instead%t" (fun f ->
+                Option.iter FbInternalLinks.bad_pattern_folly_get_default ~f:(fun link ->
+                    F.fprintf f " ([[%s | bad patterns]])" link ) )
         | _, IntoIntermediate _ ->
             get_suggestion_msg_move_intermediate source_opt
         | _, IntoField _ ->
@@ -998,9 +1004,11 @@ let get_issue_type ~latent issue_type =
     , false )
     when Option.exists ~f:Typ.is_const_reference source_typ ->
       IssueType.unnecessary_copy_intermediate_const_pulse
-  | UnnecessaryCopy {copied_into= IntoField _ | IntoIntermediate _; from= CopyCtor}, false ->
+  | ( UnnecessaryCopy
+        {copied_into= IntoField _ | IntoIntermediate _; from= CopyCtor | CopyInGetDefault}
+    , false ) ->
       IssueType.unnecessary_copy_intermediate_pulse
-  | UnnecessaryCopy {copied_into= IntoVar _; from= CopyCtor}, false ->
+  | UnnecessaryCopy {copied_into= IntoVar _; from= CopyCtor | CopyInGetDefault}, false ->
       IssueType.unnecessary_copy_pulse
   | UnnecessaryCopy {from= CopyAssignment; source_typ}, false ->
       if Option.exists ~f:Typ.is_const_reference source_typ then
