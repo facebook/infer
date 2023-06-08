@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <vector>
@@ -59,5 +60,10 @@ void call_std_distance_ok(const std::string& s) {
   std::string t = s;
   t.data()[0] = 'a'; // t is modified
   std::distance(t.begin(), t.end());
+}
+
+void cheap_directory_iterator_ok(const std::string& path) {
+  for (auto const& entry : std::filesystem::directory_iterator{path}) {
+  }
 }
 } // namespace unnecessary_copy

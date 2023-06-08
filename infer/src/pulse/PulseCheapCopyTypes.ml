@@ -15,6 +15,7 @@ let dispatch : (unit, bool, unit) ProcnameDispatcher.TypName.dispatcher =
   let open ProcnameDispatcher.TypName in
   make_dispatcher
     [ -"folly" &:: "Optional" < capt_typ >--> is_small_type
+    ; -"std" &:: "filesystem" &:: "directory_iterator" <>--> true
     ; -"std" &:: "optional" < capt_typ >--> is_small_type
     ; -"std" &:: "pair" < capt_typ &+ capt_typ >--> is_pair_small_type ]
 
