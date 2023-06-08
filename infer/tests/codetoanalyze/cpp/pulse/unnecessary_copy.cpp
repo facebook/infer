@@ -695,6 +695,23 @@ class NonTrivialCopyClass {
     }
     return *this;
   }
+
+ private:
+  long my_int1_;
+  long my_int2_;
+};
+
+class NonTrivialCopySmallClass {
+ public:
+  NonTrivialCopySmallClass& operator=(const NonTrivialCopySmallClass& rhs) {
+    if (this == &rhs) {
+      return *this;
+    }
+    return *this;
+  }
+
+ private:
+  int my_int1_;
 };
 
 class FieldCopyClass {
@@ -703,12 +720,16 @@ class FieldCopyClass {
   Arr my_arr1_;
   Arr my_arr2_;
   NonTrivialCopyClass nt_;
+  NonTrivialCopySmallClass nt_small_;
 
   void set_field_ok(Arr arg) {
     my_arr1_ = my_arr2_; // rhs is a field, we cannot suggest move
   }
 
   void copy_assign_bad(NonTrivialCopyClass arg) { nt_ = arg; }
+
+  void copy_assign_small_ok(NonTrivialCopySmallClass arg) { nt_small_ = arg; }
+
   void copy_assign_from_global_ok() {
     my_arr1_ = global; // rhs is a global, we cannot suggest move
   }

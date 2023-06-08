@@ -147,12 +147,6 @@ let is_known_cheap_copy typ =
       false
 
 
-let is_cheap_to_copy tenv typ =
-  (Typ.is_pointer typ && Typ.is_trivially_copyable (Typ.strip_ptr typ).quals)
-  || is_modeled_as_cheap_to_copy tenv typ
-  || is_known_cheap_copy typ
-
-
 (* NOTE: While we calculate width of class here for detecting small types to ignore, this function
    is NOT for precisely calculating the size in general. *)
 let rec get_fixed_size integer_widths tenv name =
@@ -183,6 +177,13 @@ let is_smaller_than_64_bits integer_type_widths tenv typ =
       Option.exists (get_fixed_size integer_type_widths tenv name) ~f:(fun size -> size <= 64)
   | _ ->
       false
+
+
+let is_cheap_to_copy integer_type_widths tenv typ =
+  (Typ.is_pointer typ && Typ.is_trivially_copyable (Typ.strip_ptr typ).quals)
+  || is_modeled_as_cheap_to_copy tenv typ
+  || is_known_cheap_copy typ
+  || is_smaller_than_64_bits integer_type_widths tenv typ
 
 
 let has_copy_in str = String.is_substring (String.lowercase str) ~substring:"copy"
@@ -282,12 +283,13 @@ let is_reachable_from_lvalue_ref_params ~is_intermediate ~from source_expr_opt s
           false )
 
 
-let add_copies_to_pvar_or_field proc_lvalue_ref_parameters tenv path location from args
-    ~astates_before (astate_n, astate) =
+let add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths tenv path location
+    from args ~astates_before (astate_n, astate) =
   let open IOption.Let_syntax in
   match (args : (Exp.t * Typ.t) list) with
   | ((Lvar copy_pvar | Lindex (Lvar copy_pvar, _)), copy_type) :: rest_args
-    when (not (is_cheap_to_copy tenv copy_type)) && not (NonDisjDomain.is_locked astate_n) ->
+    when (not (is_cheap_to_copy integer_type_widths tenv copy_type))
+         && not (NonDisjDomain.is_locked astate_n) ->
       let copied_var = Var.of_pvar copy_pvar in
       let get_copy_spec, astate, source_addr_typ_opt =
         get_copied_and_source path rest_args location from astate
@@ -349,7 +351,7 @@ let add_copies_to_pvar_or_field proc_lvalue_ref_parameters tenv path location fr
               (get_copy_spec source_opt) astate_n
           , astate' ) )
   | ((Lfield (_, field, _) as exp), copy_type) :: ((_, source_typ) :: _ as rest_args)
-    when not (is_cheap_to_copy tenv copy_type) ->
+    when not (is_cheap_to_copy integer_type_widths tenv copy_type) ->
       (* NOTE: Before running get_copied_and_source, we need to evaluate exp first to update the decompiler map in the abstract state. *)
       try_eval path location exp astate
       |> Option.bind ~f:(fun (astate, copy_addr) ->
@@ -397,11 +399,12 @@ let get_copied_return_addr proc_desc path location copy_var astate =
   if AbstractValue.equal copy_addr return_addr then Some (copy_addr, astate) else None
 
 
-let add_copies_to_return tenv proc_desc path location from args (astate_n, astate) =
+let add_copies_to_return integer_type_widths tenv proc_desc path location from args
+    (astate_n, astate) =
   let open IOption.Let_syntax in
   match (args : (Exp.t * Typ.t) list) with
   | (Var copy_var, copy_type) :: (source_exp, source_typ) :: _
-    when (not (is_cheap_to_copy tenv copy_type))
+    when (not (is_cheap_to_copy integer_type_widths tenv copy_type))
          && (not (Typ.is_pointer_to_smart_pointer copy_type))
          && (not (has_copy_in_name (Procdesc.get_proc_name proc_desc)))
          && (not (NonDisjDomain.is_locked astate_n))
@@ -429,7 +432,8 @@ let remove_optional_copies_to_return proc_desc path location pname args (astate_
       None
 
 
-let add_copies tenv proc_desc path location pname actuals ~astates_before default =
+let add_copies integer_type_widths tenv proc_desc path location pname actuals ~astates_before
+    default =
   let aux copy_check_fn args_map_fn default =
     Option.bind (copy_check_fn pname) ~f:(fun from ->
         let ( |-> ) = IOption.continue ~default in
@@ -438,9 +442,9 @@ let add_copies tenv proc_desc path location pname actuals ~astates_before defaul
           Procdesc.get_passed_by_ref_formals proc_desc
           |> List.filter ~f:(fun (_, typ) -> not (Typ.is_rvalue_reference typ))
         in
-        add_copies_to_pvar_or_field proc_lvalue_ref_parameters tenv path location from args
-          ~astates_before default
-        |-> add_copies_to_return tenv proc_desc path location from args
+        add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths tenv path
+          location from args ~astates_before default
+        |-> add_copies_to_return integer_type_widths tenv proc_desc path location from args
         (* Ignore optional copies to return value to avoid false positives w.r.t. RVO/NRVO *)
         |-> remove_optional_copies_to_return proc_desc path location pname args )
   in
@@ -505,13 +509,15 @@ let add_copied_return path location pname actuals (astate_n, astate) =
   else None
 
 
-let call tenv proc_desc path loc ~call_exp ~actuals ~astates_before astates astate_n =
+let call integer_type_widths tenv proc_desc path loc ~call_exp ~actuals ~astates_before astates
+    astate_n =
   match (call_exp : Exp.t) with
   | Const (Cfun pname) | Closure {name= pname} ->
       continue_fold_map astates ~init:astate_n ~f:(fun astate_n astate ->
           let default = (astate_n, astate) in
           let ( |-> ) = IOption.continue ~default in
-          add_copies tenv proc_desc path loc pname actuals ~astates_before default
+          add_copies integer_type_widths tenv proc_desc path loc pname actuals ~astates_before
+            default
           |-> add_copied_return path loc pname actuals )
   | _ ->
       (astate_n, astates)
@@ -542,8 +548,7 @@ let init_const_refable_parameters procdesc integer_type_widths tenv astates asta
             let var = Var.of_pvar pvar in
             if
               Var.appears_in_source_code var && Typ.is_reference typ
-              && (not (is_cheap_to_copy tenv typ))
-              && (not (is_smaller_than_64_bits integer_type_widths tenv typ))
+              && (not (is_cheap_to_copy integer_type_widths tenv typ))
               && (not (Var.is_cpp_unnamed_param var))
               && (* [unique_ptr] is ignored since it is not copied. This condition can be removed if
                     we can distinguish whether a class has a copy constructor or not. *)

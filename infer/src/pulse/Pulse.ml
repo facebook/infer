@@ -897,7 +897,7 @@ module PulseTransferFunctions = struct
 
   let exec_instr_aux ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t)
-      ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) _cfg_node
+      ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) _cfg_node
       (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
     | AbortProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
@@ -1028,8 +1028,10 @@ module PulseTransferFunctions = struct
             (PulseReport.report_exec_results tenv proc_desc err_log loc res, astates_before)
           in
           let astate_n, astates =
-            PulseNonDisjunctiveOperations.call tenv proc_desc path loc ~call_exp ~actuals
-              ~astates_before astates astate_n
+            let pname = Procdesc.get_proc_name proc_desc in
+            let integer_type_widths = Exe_env.get_integer_type_widths exe_env pname in
+            PulseNonDisjunctiveOperations.call integer_type_widths tenv proc_desc path loc ~call_exp
+              ~actuals ~astates_before astates astate_n
           in
           let astate_n = NonDisjDomain.set_passed_to loc timestamp call_exp actuals astate_n in
           let astate_n =
