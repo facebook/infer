@@ -17,16 +17,14 @@
   NSString* _elem;
 }
 
-
 - (void)logElem {
   NSString* elem = [self getElem];
   [self logString:elem];
 }
 
-
 - (NSString*)getElem {
-    NSString* s = _elem;
-    return s;
+  NSString* s = _elem;
+  return s;
 }
 
 
