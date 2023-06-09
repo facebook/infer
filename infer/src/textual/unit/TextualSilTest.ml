@@ -55,7 +55,7 @@ let%expect_test "undefined types are included in tenv" =
          exported_obj_methods: {}
          annots: {<>}
          java_class_info: {[None]}
-         hack_class_info: {[Some { kind = Class }]}
+         hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = false }]}
          dummy: false
          hack Quux
          fields: {}
@@ -116,7 +116,7 @@ let%expect_test "final annotation" =
       exported_obj_methods: {}
       annots: {<_final>}
       java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class }]}
+      hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = false }]}
       dummy: false
       hack Bar
       fields: {}
@@ -127,7 +127,7 @@ let%expect_test "final annotation" =
       exported_obj_methods: {}
       annots: {<>}
       java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class }]}
+      hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = false }]}
       dummy: false |}]
 
 
@@ -370,7 +370,7 @@ let%expect_test "trait vs class kind" =
       exported_obj_methods: {}
       annots: {<>}
       java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class }]}
+      hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = false }]}
       dummy: false
       hack T
       fields: {}
@@ -381,5 +381,44 @@ let%expect_test "trait vs class kind" =
       exported_obj_methods: {}
       annots: {<>}
       java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Trait }]}
+      hack_class_info: {[Some { kind = Trait; experimental_self_parent_in_trait = false }]}
+      dummy: false |}]
+
+
+let%expect_test "experimental self/parent in trait" =
+  let source =
+    {|
+          .source_language = "hack"
+          .experimental_options = "self_parent_in_trait"
+
+          type T = .kind="trait" {}
+          type C = .kind="class" {}
+    |}
+  in
+  let m = parse_module source in
+  let _, tenv = TextualSil.module_to_sil m in
+  F.printf "%a@\n" Tenv.pp tenv ;
+  [%expect
+    {|
+      hack C
+      fields: {}
+      statics: {}
+      supers: {}
+      objc_protocols: {}
+      methods: {}
+      exported_obj_methods: {}
+      annots: {<>}
+      java_class_info: {[None]}
+      hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = true }]}
+      dummy: false
+      hack T
+      fields: {}
+      statics: {}
+      supers: {}
+      objc_protocols: {}
+      methods: {}
+      exported_obj_methods: {}
+      annots: {<>}
+      java_class_info: {[None]}
+      hack_class_info: {[Some { kind = Trait; experimental_self_parent_in_trait = true }]}
       dummy: false |}]

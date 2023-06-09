@@ -24,7 +24,7 @@ type java_class_info =
 module Hack : sig
   type kind = Class | Trait
 
-  type t = {kind: kind}
+  type t = {kind: kind; experimental_self_parent_in_trait: bool}
 end
 
 (** Type for a structured value. *)

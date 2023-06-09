@@ -27,7 +27,8 @@ let pp_java_class_info_opt fmt jopt = Pp.option pp_java_class_info fmt jopt
 module Hack = struct
   type kind = Class | Trait [@@deriving equal, hash, show {with_path= false}]
 
-  type t = {kind: kind} [@@deriving equal, hash, show {with_path= false}]
+  type t = {kind: kind; experimental_self_parent_in_trait: bool}
+  [@@deriving equal, hash, show {with_path= false}]
 
   let pp_opt fmt t = Pp.option pp fmt t
 end
@@ -432,7 +433,7 @@ end)
 module HackClassInfoOptNormalizer = HashNormalizer.Make (struct
   type t = Hack.t option [@@deriving equal, hash]
 
-  let normalize_hack_class_info {Hack.kind} = {Hack.kind}
+  let normalize_hack_class_info info = info
 
   let normalize hack_class_info_opt : Hack.t option =
     IOption.map_changed hack_class_info_opt ~equal:phys_equal ~f:normalize_hack_class_info

@@ -196,6 +196,11 @@ module Attr = struct
 
   let is_trait {name; values} = String.equal name "kind" && List.equal String.equal values ["trait"]
 
+  let is_experimental_self_parent_in_trait {name; values} =
+    String.equal name "experimental_options"
+    && List.mem ~equal:String.equal values "self_parent_in_trait"
+
+
   let pp fmt {name; values} =
     if List.is_empty values then F.fprintf fmt ".%s" name
     else F.fprintf fmt ".%s = \"%a\"" name (Pp.comma_seq F.pp_print_string) values
