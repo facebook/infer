@@ -11,6 +11,7 @@
     test_call1_Bad/0,
     test_call2_Bad/0,
     test_call3_Bad/0,
+    test_call4_Bad/0,
     test_cast_Bad/0,
     fn_test_call_callee_Bad/0
 ]).
@@ -42,12 +43,12 @@ run_test(Test) ->
 test_call_and_cast_Ok() ->
     Test = fun() ->
         {ok, Pid} = gen_server:start_link(?MODULE, [], []),
-        gen_server:call(Pid, expected),
-        gen_server:call(Pid, expected, 1000),
+        expected = gen_server:call(Pid, expected),
+        expected = gen_server:call(Pid, expected, 1000),
         gen_server:cast(Pid, expected),
         Pid1 = get_pid(),
-        gen_server:call(Pid1, expected),
-        gen_server:call(Pid1, expected, 1000),
+        expected = gen_server:call(Pid1, expected),
+        expected = gen_server:call(Pid1, expected, 1000),
         gen_server:cast(Pid1, expected),
         ok
     end,
@@ -74,6 +75,15 @@ test_call3_Bad() ->
     end,
     run_test(Test).
 
+test_call4_Bad() ->
+    Test = fun() ->
+        Pid = get_pid(),
+        Result = gen_server:call(Pid, silent, 1),
+        ?CRASH_IF_EQUAL(any, Result)
+    end,
+    run_test(Test).
+
+
 test_cast_Bad() ->
     Test = fun() ->
         Pid = get_pid(),
@@ -95,9 +105,11 @@ fn_test_call_callee_Bad() ->
 init(State) -> {ok, State}.
 
 handle_call(Request, _From, State) ->
-    ?CRASH_IF_EQUAL(oops, Request),
-    ?ASSERT_EQUAL(expected, Request),
-    {reply, ok, State}.
+    case Request of
+        expected -> {reply, Request, State};
+        oops -> ?EXPECTED_CRASH;
+        silent -> {noreply, State}
+    end.
 
 handle_cast(Request, State) ->
     ?CRASH_IF_EQUAL(oops, Request),

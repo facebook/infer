@@ -204,6 +204,11 @@ module Atoms = struct
 
   let hash_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_hash
 
+  let get_value path location var astate : string option =
+    let _astate, _addr, (value, _) = load_field path value_field location var astate in
+    AbductiveDomain.AddressAttributes.get_const_string value astate
+
+
   let make_raw location path value hash : sat_maker =
    fun astate ->
     let hist = Hist.single_alloc path location "atom" in
@@ -1324,10 +1329,7 @@ module GenServer = struct
     let module_name =
       match get_erlang_type_or_any (fst module_atom) astate with
       | Atom ->
-          let _astate, _addr, (field, _) =
-            load_field path Atoms.value_field location module_atom astate
-          in
-          AbductiveDomain.AddressAttributes.get_const_string field astate
+          Atoms.get_value path location module_atom astate
       | typ ->
           L.debug Analysis Verbose
             "@[First argument of gen_server:start_link is of unsupported type %a@."
@@ -1374,7 +1376,71 @@ module GenServer = struct
 
 
   let call2 server_ref request : model =
-   fun data astate -> handle_request Call server_ref request data astate
+   fun ({ret; path; location} as data) astate ->
+    let res_list = handle_request Call server_ref request data astate in
+    let post_process_handle_call res =
+      match PulseResult.ok res with
+      | None ->
+          res
+      | Some exec_state -> (
+        match exec_state with
+        | ContinueProgram astate ->
+            let _, ret_val = PulseOperations.eval_ident (fst ret) astate in
+            let val_nondet () =
+              (AbstractValue.mk_fresh (), Hist.single_alloc path location "nondet")
+            in
+            let proc_ret_val =
+              match get_erlang_type_or_any (fst ret_val) astate with
+              | Tuple n when n > 1 -> (
+                  let _, _, first_element =
+                    load_field path (Tuples.field_name n 1) location ret_val astate
+                  in
+                  match get_erlang_type_or_any (fst first_element) astate with
+                  | Atom -> (
+                    (*
+                      valid atoms are `reply`, `noreply` and `stop`
+                      https://www.erlang.org/doc/man/gen_server.html#Module:handle_call-3
+                    *)
+                    match Atoms.get_value path location first_element astate with
+                    | Some "reply" ->
+                        (* the second element is sent back to the client request and there becomes its return value *)
+                        let _, _, second_element =
+                          load_field path (Tuples.field_name n 2) location ret_val astate
+                        in
+                        second_element
+                    | Some "noreply" | Some "stop" ->
+                        val_nondet ()
+                    | Some value ->
+                        L.debug Analysis Verbose
+                          "@[<v>gen_server:handle_call returned tuple with unexpected first \
+                           element Atom `%s`@;\
+                           @]"
+                          value ;
+                        val_nondet ()
+                    | None ->
+                        L.debug Analysis Verbose
+                          "@[<v>gen_server:handle_call returned tuple with unknown first element \
+                           Atom @;\
+                           @]" ;
+                        val_nondet () )
+                  | typ ->
+                      L.debug Analysis Verbose
+                        "@[<v>gen_server:handle_call returned tuple with first element unexpected \
+                         type %a@;\
+                         @]"
+                        ErlangTypeName.pp typ ;
+                      val_nondet () )
+              | typ ->
+                  L.debug Analysis Verbose
+                    "@[<v>gen_server:handle_call returned unexpected type %a@;@]" ErlangTypeName.pp
+                    typ ;
+                  val_nondet ()
+            in
+            Ok (PulseOperations.write_id (fst ret) proc_ret_val astate) |> Basic.map_continue
+        | _ ->
+            res )
+    in
+    List.map res_list ~f:post_process_handle_call
 
 
   let call3 server_ref request _timeout : model = call2 server_ref request

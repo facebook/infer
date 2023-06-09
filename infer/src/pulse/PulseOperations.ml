@@ -135,6 +135,8 @@ let eval_var {PathContext.timestamp} location pvar astate =
     (Var.of_pvar pvar) astate
 
 
+let eval_ident id astate = Stack.eval ValueHistory.epoch (Var.of_id id) astate
+
 let eval path mode location exp0 astate =
   let rec eval ({PathContext.timestamp} as path) mode exp astate =
     match (exp : Exp.t) with

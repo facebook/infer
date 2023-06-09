@@ -188,6 +188,7 @@ features_gen_server:fn_test_call_callee_Bad/0: expected_crash
 features_gen_server:test_call1_Bad/0: expected_crash
 features_gen_server:test_call2_Bad/0: expected_crash
 features_gen_server:test_call3_Bad/0: expected_crash
+features_gen_server:test_call4_Bad/0: timeout
 features_gen_server:test_call_and_cast_Ok/0: ok
 features_gen_server:test_cast_Bad/0: expected_crash
 

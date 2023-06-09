@@ -64,6 +64,8 @@ val eval :
 val eval_var : PathContext.t -> Location.t -> Pvar.t -> t -> t * (AbstractValue.t * ValueHistory.t)
 (** Similar to eval but for pvar only. Always succeeds. *)
 
+val eval_ident : Ident.t -> t -> t * (AbstractValue.t * ValueHistory.t)
+
 val prune :
      PathContext.t
   -> Location.t
