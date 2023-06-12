@@ -144,7 +144,7 @@ define $builtins.hhbc_has_reified_parent(class: *HackMixed): *HackMixed {
 
 define $builtins.hhbc_is_type_struct_c(o: *HackMixed, dict: *HackMixed, i: *HackMixed): *HackMixed {
   #entry:
-    ret $builtins.hack_make_random_bool()
+    ret $builtins.hack_make_true()
 }
 
 define $builtins.hhbc_is_type_int(o: *HackMixed): *HackMixed {
