@@ -88,6 +88,8 @@ module Attr : sig
 
   val is_final : t -> bool
 
+  val is_static : t -> bool
+
   val is_trait : t -> bool
 
   val is_async : t -> bool

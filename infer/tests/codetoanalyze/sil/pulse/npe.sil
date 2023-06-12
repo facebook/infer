@@ -9,7 +9,7 @@ type cell = { value:int; next: *cell }
 
 type list = { header: *cell }
 
-define basic_bad(l: *list) : void {
+define .static basic_bad(l: *list) : void {
   #entry:
     store &l <- null: *list
     n0: *list = load &l
@@ -17,7 +17,7 @@ define basic_bad(l: *list) : void {
     ret null
 }
 
-define if_test_lt_ok(l: *list) : void {
+define .static if_test_lt_ok(l: *list) : void {
   #entry:
     n4 = 2
     n5 = __sil_lt(n4, 3)
@@ -33,7 +33,7 @@ define if_test_lt_ok(l: *list) : void {
     ret null
 }
 
-define if_test_lt_bad(l: *list) : void {
+define .static if_test_lt_bad(l: *list) : void {
   #entry:
     n4 = 2
     n5 = __sil_lt(n4, 3)
@@ -49,7 +49,7 @@ define if_test_lt_bad(l: *list) : void {
     ret null
 }
 
-define if_test_eq_ok(l: *list) : void {
+define .static if_test_eq_ok(l: *list) : void {
   #entry:
     n4 = 2
     n5 = __sil_eq(n4, 2)
@@ -65,7 +65,7 @@ define if_test_eq_ok(l: *list) : void {
     ret null
 }
 
-define if_test_eq_bad(l: *list) : void {
+define .static if_test_eq_bad(l: *list) : void {
   #entry:
     n4 = 2
     n5 = __sil_eq(n4, 2)
@@ -81,7 +81,7 @@ define if_test_eq_bad(l: *list) : void {
     ret null
 }
 
-define conditional_latent(n: int) : void {
+define .static conditional_latent(n: int) : void {
   local l: *list
   #entry:
     n4 : int = load &n
@@ -98,19 +98,19 @@ define conditional_latent(n: int) : void {
     ret null
 }
 
-define call_ok() : void {
+define .static call_ok() : void {
   #entry:
     n1 = conditional_latent(1)
     ret null
 }
 
-define call_bad() : void {
+define .static call_bad() : void {
   #entry:
     n1 = conditional_latent(2)
     ret null
 }
 
-define store_bad(l1: *list, l2: *list) : void {
+define .static store_bad(l1: *list, l2: *list) : void {
   #entry:
     n0: *list = load &l1
     store n0.list.header <- null: *cell
@@ -124,7 +124,7 @@ define store_bad(l1: *list, l2: *list) : void {
     ret null
 }
 
-define array_bad(a: (*cell)[]) : void {
+define .static array_bad(a: (*cell)[]) : void {
   #entry:
     n0 = __sil_allocate(<cell>)
     store &a[0] <- null: *cell
@@ -134,7 +134,7 @@ define array_bad(a: (*cell)[]) : void {
     ret null
 }
 
-define array_ok(a: (*cell)[]) : void {
+define .static array_ok(a: (*cell)[]) : void {
   #entry:
     n0 = __sil_allocate(<cell>)
     store &a[0] <- null: *cell
@@ -144,32 +144,32 @@ define array_ok(a: (*cell)[]) : void {
     ret null
 }
 
-define return_null_ok(): *cell {
+define .static return_null_ok(): *cell {
   #entry:
     ret null
 }
 
-define return_cell_ok(): *cell {
+define .static return_cell_ok(): *cell {
   #entry:
     n0 = __sil_allocate(<cell>)
     ret n0
 }
 
-define call_and_npe_bad() : void {
+define .static call_and_npe_bad() : void {
   #entry:
     n0 = return_null_ok()
     n1: int = load n0.cell.value
     ret null
 }
 
-define call_and_no_npe_ok() : void {
+define .static call_and_no_npe_ok() : void {
   #entry:
     n0 = return_cell_ok()
     n1: int = load n0.cell.value
     ret null
 }
 
-define load_bad() : void {
+define .static load_bad() : void {
   local locvar: *cell
   #entry:
     store &locvar <- null: *cell
@@ -178,7 +178,7 @@ define load_bad() : void {
     ret null
 }
 
-define load_internal_bad() : void {
+define .static load_internal_bad() : void {
   local locvar: cell
   #entry:
     store &locvar.cell.next <- null: *cell
@@ -188,11 +188,11 @@ define load_internal_bad() : void {
 }
 
 
-define external_call_and_npe_bad() : void {
+define .static external_call_and_npe_bad() : void {
   #entry:
     n0 = external_return_null()
     n1: int = load n0.cell.value
     ret null
 }
 
-declare external_return_null() : *cell
+declare .static external_return_null() : *cell

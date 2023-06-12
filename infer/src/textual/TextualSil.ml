@@ -335,7 +335,13 @@ module ProcDeclBridge = struct
         let formals_types =
           List.map ~f:(fun ({typ} : Typ.annotated) -> TypBridge.to_sil lang typ) formals_types
         in
-        let kind = SilProcname.Java.Non_Static (* FIXME when handling inheritance *) in
+        let kind =
+          match List.find t.attributes ~f:(fun attr -> Attr.is_static attr) with
+          | Some _ ->
+              SilProcname.Java.Static
+          | None ->
+              SilProcname.Java.Non_Static
+        in
         SilProcname.make_java ~class_name ~return_type ~method_name ~parameters:formals_types ~kind
     | Hack ->
         let class_name = hack_class_name_to_sil t.qualified_name.enclosing_class in

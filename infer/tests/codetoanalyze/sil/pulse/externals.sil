@@ -5,7 +5,7 @@
 
 .source_language = "java"
 
-define external_return_null() : *cell {
+define .static external_return_null() : *cell {
   #entry:
     ret null
 }
