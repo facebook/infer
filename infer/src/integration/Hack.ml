@@ -362,7 +362,7 @@ let compile compiler args =
          fine. *)
       () ) ;
   L.progress "Finished capture: success %d files, error %d files.@\n" n_captured n_error ;
-  load_textual_model Config.hack_models ;
+  load_textual_model Config.hack_builtin_models ;
   if (not Config.keep_going) && n_error > 0 then
     L.die ExternalError
       "There were errors during capture. Re-run with --keep-going to ignore the errors."

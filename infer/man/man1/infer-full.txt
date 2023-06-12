@@ -2349,9 +2349,9 @@ INTERNAL OPTIONS
            Activates: Enable the genrule compatibility mode used for the Buck
            integration (Conversely: --no-genrule-mode)
 
-       --hack-models string
-           Specify .sil file to use as Hack models (uses bundled models by
-           default)
+       --hack-builtin-models string
+           Specify .sil file to use as Hack builtin models (uses bundled
+           models by default)
 
        --hack-naming-table path
            Location of a Hack naming table (sqlite)

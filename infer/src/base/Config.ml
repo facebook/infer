@@ -385,7 +385,7 @@ let biabduction_models_sql = lib_dir ^/ "models.sql"
 let biabduction_models_jar = lib_dir ^/ "java" ^/ "models.jar"
 
 (** Path to the textual file with Hack models *)
-let default_hack_models = lib_dir ^/ "hack" ^/ "models.sil"
+let default_hack_builtin_models = lib_dir ^/ "hack" ^/ "models.sil"
 
 let pulse_default_taint_config = config_dir ^/ "taint"
 
@@ -1720,9 +1720,9 @@ and hackc_binary =
     "Specify hackc binary to use (either name or path)"
 
 
-and hack_models =
-  CLOpt.mk_string ~long:"hack-models" ~default:default_hack_models
-    "Specify .sil file to use as Hack models (uses bundled models by default)"
+and hack_builtin_models =
+  CLOpt.mk_string ~long:"hack-builtin-models" ~default:default_hack_builtin_models
+    "Specify .sil file to use as Hack builtin models (uses bundled models by default)"
 
 
 and hack_naming_table =
@@ -3873,7 +3873,7 @@ and hack_naming_table = !hack_naming_table
 
 and hackc_binary = !hackc_binary
 
-and hack_models = !hack_models
+and hack_builtin_models = !hack_builtin_models
 
 and help_checker =
   RevList.rev_map !help_checker ~f:(fun checker_string ->
