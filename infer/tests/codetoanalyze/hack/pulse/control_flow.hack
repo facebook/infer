@@ -16,6 +16,10 @@ class C {
   public mixed $data;
 }
 
+class D {
+  public mixed $data;
+}
+
 function nullsafeLog(?C $arg): void {
   \Level1\taintSink($arg?->data);
 }
@@ -29,6 +33,8 @@ function nullsafeAccessTaintedBad(SensitiveClass $sc): void {
 function nullsafeAccessNullOk(): void {
   nullsafeLog(null);
 }
+
+// Checking handling of `is (non)null
 
 function logWhenNonnull(?mixed $arg): void {
   if ($arg is nonnull) {
@@ -49,5 +55,44 @@ function loggingSensitiveNonnullCheckedBad(?SensitiveClass $sc): void {
 function loggingSensitiveWhenNullOk(?SensitiveClass $sc): void {
   if ($sc is null) {
     logWhenNonnull($sc);
+  }
+}
+
+// Checking handling of `is <type>` where type is constant
+
+function logWhenSensitive(mixed $arg): void {
+  if ($arg is SensitiveClass) {
+    \Level1\taintSink($arg);
+  }
+}
+
+function loggingSensitiveBad(SensitiveClass $sc): void {
+  logWhenSensitive($sc);
+}
+
+function FN_loggingSensitiveCheckedBad(mixed $arg): void {
+  if ($arg is SensitiveClass) {
+    logWhenSensitive($arg);
+  }
+}
+
+function logWhenC(mixed $arg): void {
+  if ($arg is C) {
+    \Level1\taintSink($arg->data);
+  }
+}
+
+
+function loggingSensitiveViaCBad(SensitiveClass $sc, mixed $carrier): void {
+  if ($carrier is C) {
+    $carrier->data = $sc;
+    logWhenC($carrier);
+  }
+}
+
+function FP_notLoggingSensitiveViaDOk(SensitiveClass $sc, mixed $carrier): void {
+  if ($carrier is D) {
+    $carrier->data = $sc;
+    logWhenC($carrier);
   }
 }
