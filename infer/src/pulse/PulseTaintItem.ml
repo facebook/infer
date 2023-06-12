@@ -11,6 +11,7 @@ module TaintConfig = PulseTaintConfig
 
 type origin =
   | Argument of {index: int}
+  | InstanceReference
   | ReturnValue
   | Allocation of {typ: string}
   | GetField
@@ -21,6 +22,8 @@ type origin =
 let rec pp_origin fmt = function
   | Argument {index} ->
       F.fprintf fmt "value passed as argument `#%d` to" index
+  | InstanceReference ->
+      F.fprintf fmt "this/self reference"
   | ReturnValue ->
       F.fprintf fmt "value returned from"
   | Allocation {typ} ->

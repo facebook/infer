@@ -11,6 +11,7 @@ module TaintConfig = PulseTaintConfig
 
 type origin =
   | Argument of {index: int}
+  | InstanceReference
   | ReturnValue
   | Allocation of {typ: string}
   | GetField

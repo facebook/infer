@@ -20,6 +20,11 @@
     { "class_names": ["codetoanalyze.kotlin.pulse.Constants"],
       "method_names": ["source"],
       "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["codetoanalyze.kotlin.pulse.TaintedThis"],
+      "method_names": ["taintThisBad"],
+      "taint_target": "InstanceReference",
+      "kinds": ["Simple"]
     }
   ],
   "pulse-taint-sinks": [

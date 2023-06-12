@@ -11,6 +11,7 @@ type taint_target = [
  | ArgumentPositions of int list
  | AllArgumentsButPositions of int list
  | ArgumentsMatchingTypes of string list
+ | InstanceReference
  | FieldsOfValue of (string * taint_target) list
  | GetField (* only for field matchers *)
  | SetField (* only for field matchers *)

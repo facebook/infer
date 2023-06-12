@@ -59,6 +59,7 @@ module Target = struct
     | ArgumentPositions of int list
     | AllArgumentsButPositions of int list
     | ArgumentsMatchingTypes of string list
+    | InstanceReference
     | FieldsOfValue of (string * procedure_target) list
 
   type field_target = GetField | SetField
@@ -77,6 +78,8 @@ module Target = struct
         F.fprintf f "AllArgumentsButPositions %a" (Pp.comma_seq Int.pp) positions
     | ArgumentsMatchingTypes types ->
         F.fprintf f "ArgumentsMatchingTypes %a" (Pp.comma_seq String.pp) types
+    | InstanceReference ->
+        F.pp_print_string f "InstanceReference"
     | FieldsOfValue targets ->
         F.fprintf f "Fields %a"
           (Pp.comma_seq (Pp.pair ~fst:String.pp ~snd:pp_procedure_target))
@@ -111,6 +114,8 @@ module Target = struct
         ProcedureTarget (AllArgumentsButPositions l)
     | `ArgumentsMatchingTypes l ->
         ProcedureTarget (ArgumentsMatchingTypes l)
+    | `InstanceReference ->
+        ProcedureTarget InstanceReference
     | `FieldsOfValue l ->
         let fields_targets =
           List.map l ~f:(fun (field, target) ->

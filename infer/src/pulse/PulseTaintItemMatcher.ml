@@ -198,7 +198,7 @@ let procedure_matcher_of_config ~default_taint_target ~option_name (matcher : Pu
       L.die UserError
         "Target %a found but one of the following targets must be provided:\n\
         \         ReturnValue, AllArguments, ArgumentPositions, AllArgumentsButPositions, \
-         ArgumentsMatchingTypes, FieldsOfValue"
+         ArgumentsMatchingTypes, InstanceReference, FieldsOfValue"
         TaintConfig.Target.pp taint_target
 
 
@@ -277,7 +277,7 @@ let taint_procedure_target_matches tenv taint_target actual_index actual_typ =
       not (List.mem ~equal:Int.equal indices actual_index)
   | ArgumentsMatchingTypes types ->
       type_matches tenv actual_typ types
-  | FieldsOfValue _ | ReturnValue ->
+  | FieldsOfValue _ | ReturnValue | InstanceReference ->
       false
 
 
@@ -409,7 +409,7 @@ let field_matches tenv matchers field_name =
 
 
 let match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
-    actuals potential_taint_value =
+    actuals ~instance_reference potential_taint_value =
   let open TaintConfig.Target in
   let actuals =
     List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ; exp} ->
@@ -463,6 +463,23 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
               L.d_printfln_escaped "no match for #%d with type %a" i (Typ.pp_full Pp.text)
                 actual_typ ;
               acc ) )
+    | InstanceReference -> (
+        L.d_printf "matching this/self... " ;
+        match instance_reference with
+        | Some instance_reference ->
+            let instance_reference =
+              match instance_reference with
+              | {ProcnameDispatcher.Call.FuncArg.arg_payload; typ; exp} ->
+                  (arg_payload, typ, Some exp)
+            in
+            let taint =
+              {TaintItem.value= potential_taint_value; origin= InstanceReference; kinds}
+            in
+            let astate, tainted = acc in
+            (astate, (taint, instance_reference) :: tainted)
+        | None ->
+            L.die UserError "Error in taint configuration: `%a` is not an instance method"
+              TaintItem.pp_value potential_taint_value )
     | FieldsOfValue fields ->
         let type_check astate value typ fieldname =
           (* Dereference the value as much as possible and verify the result
@@ -541,16 +558,30 @@ let get_tainted tenv path location ~procedure_matchers ~block_matchers ~field_ma
     | _ ->
         (None, procedure_matchers)
   in
+  let match_procedure proc_name actuals ~instance_reference =
+    let matches = procedure_matches tenv matchers ?block_passed_to proc_name actuals in
+    if not (List.is_empty matches) then L.d_printfln "taint matches" ;
+    match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
+      actuals ~instance_reference potential_taint_value
+  in
   match potential_taint_value with
-  | TaintItem.TaintProcedure proc_name | TaintItem.TaintBlockPassedTo proc_name ->
-      (* Drop implicit this from instance method formals *)
-      let actuals =
-        if Procname.is_java_instance_method proc_name then List.drop actuals 1 else actuals
+  | TaintItem.TaintProcedure proc_name ->
+      (* Drop implicit this/self from instance method formals *)
+      let instance_reference, actuals =
+        (* For now enabled only for Java/Kotlin *)
+        if Procname.is_java_instance_method proc_name then
+          (* Instance method a guaranteed to have this/self as a first formal *)
+          match actuals with
+          | instance_reference :: actuals ->
+              (Some instance_reference, actuals)
+          | [] ->
+              L.die InternalError "Procedure %a is supposed to have this/self as a first parameter"
+                Procname.pp proc_name
+        else (None, actuals)
       in
-      let matches = procedure_matches tenv matchers ?block_passed_to proc_name actuals in
-      if not (List.is_empty matches) then L.d_printfln "taint matches" ;
-      match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
-        actuals potential_taint_value
+      match_procedure proc_name actuals ~instance_reference
+  | TaintItem.TaintBlockPassedTo proc_name ->
+      match_procedure proc_name actuals ~instance_reference:None
   | TaintItem.TaintField field_name -> (
       let matches = field_matches tenv field_matchers field_name in
       if not (List.is_empty matches) then L.d_printfln "taint matches" ;
