@@ -2724,6 +2724,14 @@ and remodel_class =
      \"_<property name>\"."
 
 
+and replay_ondemand_should_error =
+  CLOpt.mk_bool ~long:"replay-ondemand-should-error"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Whether triggering the analysis of a procedure via ondemand should log an error when the \
+     scheduler is $(b,replay). Enable when replaying the same analysis on the same capture data to \
+     debug cases where dependencies that were recorded are insufficient."
+
+
 and report =
   CLOpt.mk_bool ~long:"report" ~default:true
     ~in_help:InferCommand.[(Analyze, manual_generic); (Run, manual_generic)]
@@ -4259,6 +4267,8 @@ and reanalyze = !reanalyze
 and relative_path_backtrack = !relative_path_backtrack
 
 and remodel_class = !remodel_class
+
+and replay_ondemand_should_error = !replay_ondemand_should_error
 
 and report = !report
 

@@ -281,24 +281,25 @@ let register_callee ~cycle_detected ?caller_summary callee =
 
 
 let error_if_ondemand_analysis_during_replay ~from_file_analysis caller_summary callee_pname =
-  let is_replay =
-    match Config.scheduler with
-    | ReplayAnalysis ->
-        true
-    | File | Restart | SyntacticCallGraph ->
-        false
-  in
-  if is_replay then
-    if Option.is_some caller_summary then
-      L.internal_error
-        "analyzing procedure %a via ondemand when computing the summary for %a; this should not \
-         happen, we may have recorded analysis dependencies wrongly@\n"
-        Procname.pp callee_pname (Pp.option Summary.pp_text) caller_summary
-    else if from_file_analysis then
-      L.internal_error
-        "analyzing procedure %a for a file-level analysis; this should not happen, we may have \
-         recorded analysis dependencies wrongly@\n"
-        Procname.pp callee_pname
+  match (Config.scheduler, caller_summary, from_file_analysis) with
+  | ReplayAnalysis, Some caller_summary, false ->
+      if Config.replay_ondemand_should_error then
+        L.internal_error
+          "analyzing procedure %a via ondemand when computing the summary for %a; we may have \
+           recorded analysis dependencies wrongly@\n"
+          Procname.pp callee_pname Procname.pp caller_summary.Summary.proc_name
+  | ReplayAnalysis, None, true ->
+      if Config.replay_ondemand_should_error then
+        L.internal_error
+          "analyzing procedure %a for a file-level analysis; we may have recorded analysis \
+           dependencies wrongly@\n"
+          Procname.pp callee_pname
+  | _, Some _, true ->
+      (* the origin of the ondemand analysis cannot be both computing all procedure summaries for a
+         file-level analysis *and* computing a summary for another procedure *)
+      assert false
+  | ReplayAnalysis, None, false | File, _, _ | Restart, _, _ | SyntacticCallGraph, _, _ ->
+      ()
 
 
 let analyze_callee exe_env ~lazy_payloads ?specialization ?caller_summary

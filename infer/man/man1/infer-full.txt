@@ -1558,6 +1558,13 @@ OPTIONS
            captured since the infer command started (Conversely:
            --no-reactive | -R)           See also infer-analyze(1).
 
+       --replay-ondemand-should-error
+           Activates: Whether triggering the analysis of a procedure via
+           ondemand should log an error when the scheduler is replay. Enable
+           when replaying the same analysis on the same capture data to debug
+           cases where dependencies that were recorded are insufficient.
+           (Conversely: --no-replay-ondemand-should-error)           See also infer-analyze(1).
+
        --no-report
            Deactivates: Run the reporting phase once the analysis has
            completed (Conversely: --report)           See also infer-analyze(1) and infer-run(1).

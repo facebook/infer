@@ -688,6 +688,8 @@ val relative_path_backtrack : int
 
 val remodel_class : string option
 
+val replay_ondemand_should_error : bool
+
 val report : bool
 
 val report_block_list_files_containing : string list
