@@ -29,3 +29,25 @@ function nullsafeAccessTaintedBad(SensitiveClass $sc): void {
 function nullsafeAccessNullOk(): void {
   nullsafeLog(null);
 }
+
+function logWhenNonnull(?mixed $arg): void {
+  if ($arg is nonnull) {
+    \Level1\taintSink($arg->data);
+  }
+}
+
+function loggingSensitiveNonnullBad(SensitiveClass $sc): void {
+  logWhenNonnull($sc);
+}
+
+function loggingSensitiveNonnullCheckedBad(?SensitiveClass $sc): void {
+  if ($sc is nonnull) {
+    logWhenNonnull($sc);
+  }
+}
+
+function loggingSensitiveWhenNullOk(?SensitiveClass $sc): void {
+  if ($sc is null) {
+    logWhenNonnull($sc);
+  }
+}
