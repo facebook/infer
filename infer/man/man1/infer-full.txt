@@ -2355,7 +2355,7 @@ INTERNAL OPTIONS
 
        --hack-models +string
            Specify .sil and .hack files to use as Hack models on top of
-           builtins
+           builtins. Relative filenames are resolved against project's root
 
        --hack-models-reset
            Set --hack-models to the empty list.

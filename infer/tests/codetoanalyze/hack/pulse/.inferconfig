@@ -2,6 +2,10 @@
   "scheduler": "callgraph",
   "pulse-only": true,
   "pulse-force-continue": true,
+  "hack-models": [
+    "models/test_models.sil",
+    "models/test_models.hack"
+  ],
   "pulse-taint-sources": [
     { "procedure": "$root.Level1::taintSource" },
     { "class_names": ["OuterFile"], "method_names": ["taintSource"] },

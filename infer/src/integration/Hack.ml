@@ -250,7 +250,7 @@ end
     output (this shouldn't happen normally).
 
     When the whole compilation unit has been accumulated, [Unit.capture_unit] is called. *)
-let process_output ic =
+let process_output_in_parallel ic =
   let unit_count, units = Unit.extract_units ic in
   Option.iter unit_count ~f:(L.progress "Expecting to capture %d files@\n") ;
   let n_captured, n_error = (ref 0, ref 0) in
@@ -315,9 +315,26 @@ let process_output ic =
             L.die ExternalError "Child %d did't return a path to its tenv" child_num )
   in
   L.progress "Merging type environments...@\n%!" ;
-  MergeCapture.merge_global_tenv ~normalize:false (Array.to_list child_tenv_paths) ;
+  let tenv = MergeCapture.merge (Array.to_list child_tenv_paths) in
   Array.iter child_tenv_paths ~f:(fun filename -> DB.filename_to_string filename |> Unix.unlink) ;
-  (!n_captured, !n_error)
+  L.progress "Finished capture: success %d files, error %d files.@\n" !n_captured !n_error ;
+  (tenv, !n_captured, !n_error)
+
+
+let process_output_sequentially hackc_stdout =
+  let _, units = Unit.extract_units hackc_stdout in
+  let units = Caml.List.of_seq units in
+  let acc_tenv = Tenv.create () in
+  let n_captured, n_error =
+    List.fold units ~init:(0, 0) ~f:(fun (n_captured, n_error) unit ->
+        match Unit.capture_unit unit with
+        | Ok tenv ->
+            Tenv.merge ~src:tenv ~dst:acc_tenv ;
+            (n_captured + 1, n_error)
+        | Error () ->
+            (n_captured, n_error + 1) )
+  in
+  (acc_tenv, n_captured, n_error)
 
 
 (** Start hackc [compiler] with [args] in a subprocess returning its pid and stdout. *)
@@ -334,22 +351,12 @@ let start_hackc compiler args =
   (pid, stdout)
 
 
-let load_textual_model filename =
-  L.debug Capture Quiet "Loading textual models in %s@\n" filename ;
-  match TextualParser.TextualFile.translate (StandaloneFile filename) with
-  | Ok sil ->
-      TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
-      Tenv.load_global () |> Option.iter ~f:(fun dst -> Tenv.merge ~src:sil.tenv ~dst)
-  | Error (sourcefile, errs) ->
-      List.iter errs ~f:(L.external_error "%a@\n" (TextualParser.pp_error sourcefile))
-
-
 (** Run hackc [compiler] with [args] and consume results of translation from its stdout. We don't do
     any pre-processing of [args] and let hackc deal with multiple files on its own. We also pipe
     stderr into a temp file just in case. *)
-let compile compiler args =
+let compile compiler args ~process_output =
   let hackc_pid, hackc_stdout = start_hackc compiler args in
-  let n_captured, n_error = process_output hackc_stdout in
+  let tenv, _, n_error = process_output hackc_stdout in
   In_channel.close hackc_stdout ;
   ( match Unix.waitpid hackc_pid with
   | Error _ as status ->
@@ -361,19 +368,58 @@ let compile compiler args =
          including possibly a hackc process. When this happens a waitpid above will raise, but it's
          fine. *)
       () ) ;
-  L.progress "Finished capture: success %d files, error %d files.@\n" n_captured n_error ;
-  load_textual_model Config.hack_builtin_models ;
   if (not Config.keep_going) && n_error > 0 then
     L.die ExternalError
       "There were errors during capture. Re-run with --keep-going to ignore the errors."
+  else tenv
+
+
+let load_textual_models filenames =
+  let acc_tenv = Tenv.create () in
+  List.iter filenames ~f:(fun filename ->
+      L.debug Capture Quiet "Loading textual models in %s@\n" filename ;
+      match TextualParser.TextualFile.translate (StandaloneFile filename) with
+      | Ok sil ->
+          TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
+          Tenv.merge ~src:sil.tenv ~dst:acc_tenv
+      | Error (sourcefile, errs) ->
+          List.iter errs ~f:(L.external_error "%a@\n" (TextualParser.pp_error sourcefile)) ) ;
+  acc_tenv
+
+
+let load_hack_models compiler filenames =
+  if List.is_empty filenames then (
+    L.debug Capture Quiet "No hack models supplied, skipping...@\n" ;
+    Tenv.create () )
+  else (
+    L.debug Capture Quiet "Preparing to capture %d hack model files:@\n  @[%a@]@\n"
+      (List.length filenames) (Pp.seq F.pp_print_string) filenames ;
+    let args = textual_subcommand :: filenames in
+    compile compiler args ~process_output:process_output_sequentially )
+
+
+let load_models compiler =
+  let builtins = Config.hack_builtin_models in
+  let textual, hack =
+    Config.hack_models
+    |> List.map ~f:(Utils.filename_to_absolute ~root:Config.project_root)
+    |> List.partition_tf ~f:(String.is_suffix ~suffix:textual_ext)
+  in
+  let textual_tenv = load_textual_models (builtins :: textual) in
+  let hack_tenv = load_hack_models compiler hack in
+  (textual_tenv, hack_tenv)
 
 
 let capture ~prog ~args =
-  if List.exists args ~f:(fun arg -> String.equal arg textual_subcommand) then
+  if List.exists args ~f:(fun arg -> String.equal arg textual_subcommand) then (
     (* In force_integration mode we should use whatever program is provided on the command line to
        support cases where hackc is invoked via buck run or similar. *)
     let compiler = if Option.is_some Config.force_integration then prog else Config.hackc_binary in
-    compile compiler args
+    let captured_tenv = compile compiler args ~process_output:process_output_in_parallel in
+    let textual_model_tenv, hack_model_tenv = load_models compiler in
+    Tenv.merge ~src:hack_model_tenv ~dst:captured_tenv ;
+    Tenv.merge ~src:textual_model_tenv ~dst:captured_tenv ;
+    Tenv.store_global ~normalize:false captured_tenv )
   else L.die UserError "hackc command line is missing %s subcommand" textual_subcommand
 
 

@@ -11,13 +11,25 @@ module L = Logging
 (** Module to merge the results of capture for different buck/gradle targets. *)
 
 module TenvMerger = struct
-  let merge_into_global ~normalize paths =
-    let time0 = Mtime_clock.counter () in
-    let global_tenv = Tenv.create () in
+  let merge paths =
+    let output = Tenv.create () in
     let do_merge path =
-      Tenv.read path |> Option.iter ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:global_tenv)
+      Tenv.read path |> Option.iter ~f:(fun tenv -> Tenv.merge ~src:tenv ~dst:output)
     in
     List.iter paths ~f:do_merge ;
+    output
+
+
+  let merge_with_progress paths =
+    let time0 = Mtime_clock.counter () in
+    let merged_tenv = merge paths in
+    L.progress "Merging type environments took %a@." Mtime.Span.pp (Mtime_clock.count time0) ;
+    merged_tenv
+
+
+  let merge_into_global ~normalize paths =
+    let time0 = Mtime_clock.counter () in
+    let global_tenv = merge paths in
     let time1 = Mtime_clock.counter () in
     Tenv.store_global ~normalize global_tenv ;
     L.progress "Merging type environments took %a, of which %a were spent storing the global tenv@."
@@ -59,6 +71,8 @@ module TenvMerger = struct
     | Ok () ->
         ()
 end
+
+let merge = TenvMerger.merge_with_progress
 
 let merge_global_tenv = TenvMerger.merge_into_global
 

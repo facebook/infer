@@ -1727,7 +1727,8 @@ and hack_builtin_models =
 
 and hack_models =
   CLOpt.mk_string_list ~long:"hack-models"
-    "Specify .sil and .hack files to use as Hack models on top of builtins"
+    "Specify .sil and .hack files to use as Hack models on top of builtins. Relative filenames are \
+     resolved against project's root"
 
 
 and hack_naming_table =
