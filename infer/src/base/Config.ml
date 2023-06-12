@@ -2589,6 +2589,7 @@ and pulse_taint_sources =
           all arguments except given indices (zero-indexed)
       - ["ArgumentsMatchingTypes", [<type list>]]:
           arguments with types containing supplied strings
+      - "InstanceReference": this/self references of instance methods
       - ["FieldsOfValue", [<(string * taint_target) list>]]:
           fields given by name in return value, arguments or other fields
       - "GetField" : a given field is read
