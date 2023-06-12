@@ -118,7 +118,7 @@
       "class_names": ["Builder"],
       "method_names": ["setValue:"],
       "kinds": ["SimpleSink"],
-      "taint_target": ["ArgumentPositions", [1]]
+      "taint_target": ["ArgumentPositions", [0]]
     },
     {
       "field_regex": ".*",
@@ -135,7 +135,7 @@
       "class_names": ["LoadIvarTaint"],
       "method_names": ["logString:"],
       "kinds": ["SimpleSink"],
-      "taint_target": ["ArgumentPositions", [1]]
+      "taint_target": ["ArgumentPositions", [0]]
     },
     {
       "class_names" : [ "LoadIvarTaint" ],

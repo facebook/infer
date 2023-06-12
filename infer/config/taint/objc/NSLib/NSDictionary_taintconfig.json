@@ -29,7 +29,7 @@
       },
       {
         "class_names": ["NSDictionary"],
-        "taint_target": ["ArgumentPositions", [0]],
+        "taint_target": "InstanceReference",
         "method_names": ["enumerateKeysAndObjectsUsingBlock:", "enumerateKeysAndObjectsWithOptions:usingBlock:"]
       },
       {
@@ -39,12 +39,12 @@
       },
       {
         "class_names": ["NSDictionary"],
-        "taint_target": ["ArgumentPositions", [1,2]],
+        "taint_target": ["ArgumentPositions", [0,1]],
         "method_names": ["getObjects:andKeys:count:", "writeToURL:error:"]
       },
       {
         "class_names": ["NSDictionary"],
-        "taint_target": ["ArgumentPositions", [2]],
+        "taint_target": ["ArgumentPositions", [1]],
         "method_names": ["countByEnumeratingWithState:objects:count:"]
       }
   ]

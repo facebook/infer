@@ -32,7 +32,7 @@
       },
       {
         "class_names": ["NSArray"],
-        "taint_target": ["ArgumentPositions", [0]],
+        "taint_target": "InstanceReference",
         "method_names":
           [ "makeObjectsPerformSelector:", "makeObjectsPerformSelector:withObject:"
           , "enumerateObjectsUsingBlock:", "enumerateObjectsWithOptions:usingBlock:"
@@ -41,22 +41,27 @@
       },
       {
         "class_names": ["NSArray"],
-        "taint_target": ["ArgumentPositions", [1]],
-        "method_names": ["getObjects:range:", "arrayWithContentsOfURL:error:"]
+        "taint_target": ["ArgumentPositions", [0]],
+        "method_names": ["getObjects:range:"]
       },
       {
         "class_names": ["NSArray"],
-        "taint_target": ["ArgumentPositions", [1,2]],
+        "taint_target": ["ArgumentPositions", [1]],
+        "method_names": ["arrayWithContentsOfURL:error:"]
+      },
+      {
+        "class_names": ["NSArray"],
+        "taint_target": ["ArgumentPositions", [0,1]],
         "method_names": ["writeToURL:error:"]
       },
       {
         "class_names": ["NSArray"],
-        "taint_target": ["ArgumentPositions", [2]],
+        "taint_target": ["ArgumentPositions", [1]],
         "method_names": ["initWithContentsOfURL:error:"]
       },
       {
         "class_names": ["NSMutableArray"],
-        "taint_target": ["ArgumentPositions", [0]],
+        "taint_target": "InstanceReference",
         "method_names": ["addObject:"]
       }
   ]

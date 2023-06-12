@@ -568,16 +568,20 @@ let get_tainted tenv path location ~procedure_matchers ~block_matchers ~field_ma
   | TaintItem.TaintProcedure proc_name ->
       (* Drop implicit this/self from instance method formals *)
       let instance_reference, actuals =
-        (* For now enabled only for Java/Kotlin *)
-        if Procname.is_java_instance_method proc_name then
-          (* Instance method a guaranteed to have this/self as a first formal *)
-          match actuals with
-          | instance_reference :: actuals ->
-              (Some instance_reference, actuals)
-          | [] ->
-              L.die InternalError "Procedure %a is supposed to have this/self as a first parameter"
-                Procname.pp proc_name
-        else (None, actuals)
+        match Procname.is_static proc_name with
+        | Some is_static -> (
+            if is_static then (None, actuals)
+            else
+              (* Instance method a guaranteed to have this/self as a first formal *)
+              match actuals with
+              | instance_reference :: actuals ->
+                  (Some instance_reference, actuals)
+              | [] ->
+                  L.die InternalError
+                    "Procedure %a is supposed to have this/self as a first parameter" Procname.pp
+                    proc_name )
+        | None ->
+            (None, actuals)
       in
       match_procedure proc_name actuals ~instance_reference
   | TaintItem.TaintBlockPassedTo proc_name ->
