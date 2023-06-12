@@ -8,18 +8,18 @@
     },
     { "class_names": ["codetoanalyze.kotlin.pulse.Basics"],
       "method_names": ["firstParameterTainted"],
-      "taint_target": ["ArgumentPositions", [1]],
+      "taint_target": ["ArgumentPositions", [0]],
       "kinds": ["Simple"]
     },
     { "class_names": ["codetoanalyze.kotlin.pulse.Callback"],
       "method_names": ["onCompletion"],
-      "taint_target": ["ArgumentPositions", [1]],
+      "taint_target": ["ArgumentPositions", [0]],
       "kinds": ["Simple"]
     },
     { "method_with_annotation": "codetoanalyze.kotlin.pulse.SensitiveSourceMarker" },
     { "class_names": ["codetoanalyze.kotlin.pulse.Constants"],
       "method_names": ["source"],
-      "taint_target": ["ArgumentPositions", [1]]
+      "taint_target": ["ArgumentPositions", [0]]
     }
   ],
   "pulse-taint-sinks": [

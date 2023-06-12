@@ -31,12 +31,12 @@
         {
             "class_names": ["lib.MyStream"],
             "method_names": ["<init>"],
-            "taint_target": ["ArgumentPositions", [1]]
+            "taint_target": ["ArgumentPositions", [0]]
         },
         {
             "class_names": ["my.Application"],
             "method_names": ["sink"],
-            "taint_target": ["ArgumentPositions", [1]]
+            "taint_target": ["ArgumentPositions", [0]]
         }
     ]
 }

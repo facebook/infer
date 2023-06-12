@@ -543,6 +543,10 @@ let get_tainted tenv path location ~procedure_matchers ~block_matchers ~field_ma
   in
   match potential_taint_value with
   | TaintItem.TaintProcedure proc_name | TaintItem.TaintBlockPassedTo proc_name ->
+      (* Drop implicit this from instance method formals *)
+      let actuals =
+        if Procname.is_java_instance_method proc_name then List.drop actuals 1 else actuals
+      in
       let matches = procedure_matches tenv matchers ?block_passed_to proc_name actuals in
       if not (List.is_empty matches) then L.d_printfln "taint matches" ;
       match_procedure_target tenv astate matches path location return_opt ~has_added_return_param

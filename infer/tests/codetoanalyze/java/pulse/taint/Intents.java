@@ -127,8 +127,8 @@ public class Intents {
 
   public void callAllActivitySinksBad(Activity activity)
       throws SendIntentException, IOException, URISyntaxException, XmlPullParserException {
-    Uri uri = (Uri) new Object();
-    Intent intent = new Intent("", uri);
+    Uri taintedUri = (Uri) InferTaint.inferSecretSource();
+    Intent intent = new Intent("", taintedUri);
 
     // 20 sinks, 20 expected reports
     activity.bindService(intent, null, 0);

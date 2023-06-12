@@ -296,4 +296,17 @@ public class Basics {
           InferTaint.inferSensitiveSink(result);
         });
   }
+
+  // first parameter of constructor is tainted
+  Basics(Object tainted) {
+    InferTaint.inferSensitiveSink(tainted);
+  }
+
+  static void staticFirstParameterTainted(Object tainted) {
+    InferTaint.inferSensitiveSink(tainted);
+  }
+
+  void instanceFirstParameterTainted(Object tainted) {
+    InferTaint.inferSensitiveSink(tainted);
+  }
 }
