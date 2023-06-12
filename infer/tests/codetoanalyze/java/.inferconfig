@@ -142,7 +142,7 @@
       "method_return_type_names": ["java.lang.String"],
       "kinds": ["Simple"]
     },
-    { "class_names": ["codetoanalyze.java.pulse.Basics"],
+    { "class_names": ["codetoanalyze.java.pulse.TaintedFormals"],
       "method_names": ["firstParameterTainted"],
       "taint_target": ["ArgumentPositions", [0]],
       "kinds": ["Simple"]
@@ -152,17 +152,17 @@
       "taint_target": ["ArgumentPositions", [0]],
       "kinds": ["Simple"]
     },
-    { "class_names": ["codetoanalyze.java.pulse.Basics"],
+    { "class_names": ["codetoanalyze.java.pulse.TaintedFormals"],
       "method_names": ["<init>"],
       "taint_target": ["ArgumentPositions", [0]],
       "kinds": ["Simple"]
     },
-    { "class_names": ["codetoanalyze.java.pulse.Basics"],
+    { "class_names": ["codetoanalyze.java.pulse.TaintedFormals"],
       "method_names": ["staticFirstParameterTainted"],
       "taint_target": ["ArgumentPositions", [0]],
       "kinds": ["Simple"]
     },
-    { "class_names": ["codetoanalyze.java.pulse.Basics"],
+    { "class_names": ["codetoanalyze.java.pulse.TaintedFormals"],
       "method_names": ["instanceFirstParameterTainted"],
       "taint_target": ["ArgumentPositions", [0]],
       "kinds": ["Simple"]

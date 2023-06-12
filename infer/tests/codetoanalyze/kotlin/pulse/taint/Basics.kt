@@ -6,8 +6,6 @@
  */
 package codetoanalyze.kotlin.pulse
 
-import codetoanalyze.kotlin.pulse.sinks.InferTaintSinks
-
 /** testing basic intraprocedural functionality: assignment, ifs, loops, casts */
 class Basics {
 
@@ -210,66 +208,5 @@ class Basics {
   fun taintedToSanitizedToSinkOk() {
     InferTaint.inferSensitiveSink(
         InferTaint.inferUniversalSanitizer(InferTaint.inferSecretSource()))
-  }
-
-  fun taintedBasedOnClassNameRegexBad() {
-    val src = InferTaint.inferSecretSource()
-    InferTaintSinks.sink1(src)
-    InferTaintSinks.sink2(src)
-  }
-
-  fun notTaintedBasedOnClassNameRegexOk() {
-    val src = InferTaint.inferSecretSource()
-    InferTaint.sink1(src)
-    InferTaint.sink2(src)
-  }
-
-  fun taintedFromInferBaseSourceBad() {
-    val ics = InferChildSource()
-    val source = ics.inferBaseSecretSource()
-    InferTaint.inferSensitiveSink(source)
-  }
-
-  fun notTaintedFromInferBaseNotSourceGood() {
-    val ics = InferChildSource()
-    val notSource = ics.inferBaseNotSource()
-    InferTaint.inferSensitiveSink(notSource)
-  }
-
-  fun taintedFromInferChildSourceBad() {
-    val ics = InferChildSource()
-    val source = ics.inferChildSecretSource()
-    InferTaint.inferSensitiveSink(source)
-  }
-
-  fun notTaintedFromInferChildNotSourceGood() {
-    val ics = InferChildSource()
-    val notSource = ics.inferChildNotSource()
-    InferTaint.inferSensitiveSink(notSource)
-  }
-
-  // first parameter is tainted based on the config
-  fun firstParameterTainted(tainted: Any, notTainted: Any) {
-    // should be tainted
-    InferTaint.inferSensitiveSink(tainted)
-    // should not be tainted
-    InferTaint.inferSensitiveSink(notTainted)
-  }
-
-  fun callbackAnonymousClassTaintedBad() {
-    InferTaint.addCallback(
-        object : Callback {
-          // result parameter is tainted based on the config
-          override fun onCompletion(result: Any) {
-            InferTaint.inferSensitiveSink(result)
-          }
-        })
-  }
-
-  fun callbackLambdaTaintedBad() {
-    InferTaint.addCallback { result ->
-      // result parameter is tainted based on the config
-      InferTaint.inferSensitiveSink(result)
-    }
   }
 }

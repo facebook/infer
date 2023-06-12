@@ -6,7 +6,7 @@
       "method_return_type_names": ["java.lang.String"],
       "kinds": ["Simple"]
     },
-    { "class_names": ["codetoanalyze.kotlin.pulse.Basics"],
+    { "class_names": ["codetoanalyze.kotlin.pulse.TaintFormals"],
       "method_names": ["firstParameterTainted"],
       "taint_target": ["ArgumentPositions", [0]],
       "kinds": ["Simple"]

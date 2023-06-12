@@ -57,4 +57,43 @@ public class TaintedFormals {
   public void callTaintedContextOk2() {
     taintedContextBad(null, null, new Integer(1));
   }
+
+  // first parameter is tainted based on the config
+  void firstParameterTainted(Object tainted, Object notTainted) {
+    // should be tainted
+    InferTaint.inferSensitiveSink(tainted);
+    // should not be tainted
+    InferTaint.inferSensitiveSink(notTainted);
+  }
+
+  void callbackAnonymousClassTaintedBad() {
+    InferTaint.addCallback(
+        new Callback() {
+          // result parameter is tainted based on the config
+          public void onCompletion(Object result) {
+            InferTaint.inferSensitiveSink(result);
+          }
+        });
+  }
+
+  void callbackLambdaTaintedBad() {
+    InferTaint.addCallback(
+        // result parameter is tainted based on the config
+        result -> {
+          InferTaint.inferSensitiveSink(result);
+        });
+  }
+
+  // first parameter of constructor is tainted
+  TaintedFormals(Object tainted) {
+    InferTaint.inferSensitiveSink(tainted);
+  }
+
+  static void staticFirstParameterTainted(Object tainted) {
+    InferTaint.inferSensitiveSink(tainted);
+  }
+
+  void instanceFirstParameterTainted(Object tainted) {
+    InferTaint.inferSensitiveSink(tainted);
+  }
 }
