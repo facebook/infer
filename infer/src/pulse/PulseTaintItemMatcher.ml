@@ -566,22 +566,27 @@ let get_tainted tenv path location ~procedure_matchers ~block_matchers ~field_ma
   in
   match potential_taint_value with
   | TaintItem.TaintProcedure proc_name ->
+      let get_this_from_actuals = function
+        (* Instance method a guaranteed to have this/self as a first formal *)
+        | instance_reference :: actuals ->
+            (Some instance_reference, actuals)
+        | [] ->
+            L.die InternalError "Procedure %a is supposed to have this/self as a first parameter"
+              Procname.pp proc_name
+      in
       (* Drop implicit this/self from instance method formals *)
       let instance_reference, actuals =
         match Procname.is_static proc_name with
-        | Some is_static -> (
-            if is_static then (None, actuals)
-            else
-              (* Instance method a guaranteed to have this/self as a first formal *)
-              match actuals with
-              | instance_reference :: actuals ->
-                  (Some instance_reference, actuals)
-              | [] ->
-                  L.die InternalError
-                    "Procedure %a is supposed to have this/self as a first parameter" Procname.pp
-                    proc_name )
+        | Some is_static ->
+            if is_static then (None, actuals) else get_this_from_actuals actuals
         | None ->
-            (None, actuals)
+            (* Hack is special with each method having a reference to this/self except some special cases *)
+            if
+              Procname.is_hack proc_name
+              && Procname.has_hack_classname proc_name
+              && not (Procname.is_hack_builtins proc_name)
+            then get_this_from_actuals actuals
+            else (None, actuals)
       in
       match_procedure proc_name actuals ~instance_reference
   | TaintItem.TaintBlockPassedTo proc_name ->

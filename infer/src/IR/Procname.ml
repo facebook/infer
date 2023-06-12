@@ -1127,6 +1127,15 @@ let is_shared_ptr_observer =
   fun pname -> aux pname
 
 
+let is_hack_builtins = function
+  | Hack {class_name= Some classname} ->
+      HackClassName.is_builtins classname
+  | _ ->
+      false
+
+
+let has_hack_classname = function Hack {class_name= Some _} -> true | _ -> false
+
 let get_global_name_of_initializer t =
   match base_of t with
   | C {name}

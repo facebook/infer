@@ -31,3 +31,6 @@ val static_companion_origin : t -> t
 
 val is_static : t -> bool
 (** tests if the name is a valid static class name (ie. ends with "$static") *)
+
+val is_builtins : t -> bool
+(** tests if the name of the class is $builtins where hhbc functions and models belong to *)

@@ -22,6 +22,10 @@
     { "procedure": "$root.Level1::taintSink" },
     { "class_names": ["OuterFile"], "method_names": ["taintSink"] },
     { "class_names": ["DaoQueries"], "method_names": ["query"] },
-    { "class_name_regex": "Logger.*" }
+    { "class_name_regex": "Logger.*" },
+    { "class_names": ["ArgIndexMatcher"],
+      "method_names": ["sink1", "sink2"],
+      "taint_target": ["ArgumentPositions", [1]]
+    }
   ]
 }

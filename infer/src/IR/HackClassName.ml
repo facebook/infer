@@ -45,3 +45,6 @@ let static_companion_origin ({namespace; classname} as name) =
     let len = len_classname - len_static_suffix in
     {namespace; classname= StringLabels.sub ~pos:0 ~len classname}
   else name
+
+
+let is_builtins {classname} = String.equal classname "$builtins"
