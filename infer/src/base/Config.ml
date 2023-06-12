@@ -1725,6 +1725,11 @@ and hack_builtin_models =
     "Specify .sil file to use as Hack builtin models (uses bundled models by default)"
 
 
+and hack_models =
+  CLOpt.mk_string_list ~long:"hack-models"
+    "Specify .sil and .hack files to use as Hack models on top of builtins"
+
+
 and hack_naming_table =
   CLOpt.mk_path_opt ~long:"hack-naming-table" "Location of a Hack naming table (sqlite)"
 
@@ -3874,6 +3879,8 @@ and hack_naming_table = !hack_naming_table
 and hackc_binary = !hackc_binary
 
 and hack_builtin_models = !hack_builtin_models
+
+and hack_models = RevList.to_list !hack_models
 
 and help_checker =
   RevList.rev_map !help_checker ~f:(fun checker_string ->

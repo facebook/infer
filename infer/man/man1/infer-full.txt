@@ -2353,6 +2353,13 @@ INTERNAL OPTIONS
            Specify .sil file to use as Hack builtin models (uses bundled
            models by default)
 
+       --hack-models +string
+           Specify .sil and .hack files to use as Hack models on top of
+           builtins
+
+       --hack-models-reset
+           Set --hack-models to the empty list.
+
        --hack-naming-table path
            Location of a Hack naming table (sqlite)
 

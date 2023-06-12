@@ -409,6 +409,8 @@ val hackc_binary : string
 
 val hack_builtin_models : string
 
+val hack_models : string list
+
 val help_checker : Checker.t list
 
 val help_issue_type : IssueType.t list
