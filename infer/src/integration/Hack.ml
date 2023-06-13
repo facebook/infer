@@ -163,7 +163,7 @@ end = struct
 
   let to_textual_filename path =
     let flat = flatten_path path in
-    let noext = Filename.chop_extension flat in
+    let noext, _ = Filename.split_extension flat in
     noext ^ textual_ext
 
 
