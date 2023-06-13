@@ -46,19 +46,19 @@ end
 module Unit : sig
   type procedure_matcher =
     | ProcedureName of {name: string}
-    | ProcedureNameRegex of {name_regex: Str.regexp}
-    | ClassNameRegex of {name_regex: Str.regexp}
+    | ProcedureNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
+    | ClassNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndMethodNames of {class_names: string list; method_names: string list}
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
     | OverridesOfClassWithAnnotation of {annotation: string}
     | MethodWithAnnotation of {annotation: string}
     | Block of {name: string}
-    | BlockNameRegex of {name_regex: Str.regexp}
+    | BlockNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | Allocation of {class_name: string}
 
   type field_matcher =
-    | FieldRegex of {name_regex: Str.regexp}
+    | FieldRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndFieldNames of {class_names: string list; field_names: string list}
 
   type procedure_unit =

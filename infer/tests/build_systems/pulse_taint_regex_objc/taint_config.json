@@ -1,0 +1,26 @@
+{
+    "pulse-taint-policies": [
+        { "short_description": "MessageData to Logging",
+          "taint_flows": [
+            { "source_kinds": ["MessageData"],
+              "sink_kinds": ["Logging"] }
+          ]
+        }
+    ],
+    "pulse-taint-sources": [
+      {
+        "procedure_regex": "message.*",
+        "exclude_from_regex_in": ["Message.h"],
+        "kinds": ["MessageData"]
+      },
+      {
+        "procedure_regex": ".*data",
+        "kinds": ["MessageData"]
+      }
+    ],
+    "pulse-taint-sinks": [
+      { "procedure": "NSLog",
+        "kinds": ["Logging"]
+      }
+    ]
+  }

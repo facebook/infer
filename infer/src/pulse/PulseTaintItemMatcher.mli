@@ -19,6 +19,7 @@ val procedure_matches :
      Tenv.t
   -> TaintConfig.Unit.procedure_unit list
   -> ?block_passed_to:Procname.t
+  -> ?proc_attributes:ProcAttributes.t
   -> Procname.t
   -> 'a ProcnameDispatcher.Call.FuncArg.t list
   -> TaintConfig.Unit.procedure_unit list
@@ -32,6 +33,7 @@ val get_tainted :
   -> field_matchers:TaintConfig.Unit.field_unit list
   -> (Ident.t * Typ.t) option
   -> has_added_return_param:bool
+  -> ?proc_attributes:ProcAttributes.t
   -> TaintItem.value
   -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
   -> AbductiveDomain.t

@@ -137,15 +137,15 @@ end
 module Unit = struct
   type procedure_matcher =
     | ProcedureName of {name: string}
-    | ProcedureNameRegex of {name_regex: Str.regexp}
-    | ClassNameRegex of {name_regex: Str.regexp}
+    | ProcedureNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
+    | ClassNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndMethodNames of {class_names: string list; method_names: string list}
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
     | OverridesOfClassWithAnnotation of {annotation: string}
     | MethodWithAnnotation of {annotation: string}
     | Block of {name: string}
-    | BlockNameRegex of {name_regex: Str.regexp}
+    | BlockNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | Allocation of {class_name: string}
 
   let pp_procedure_matcher f procedure_matcher =
@@ -175,7 +175,7 @@ module Unit = struct
 
 
   type field_matcher =
-    | FieldRegex of {name_regex: Str.regexp}
+    | FieldRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndFieldNames of {class_names: string list; field_names: string list}
 
   let pp_field_matcher f field_matcher =

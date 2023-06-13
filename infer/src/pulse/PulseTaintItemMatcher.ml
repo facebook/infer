@@ -8,7 +8,6 @@
 open! IStd
 module F = Format
 module L = Logging
-module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 
@@ -97,7 +96,8 @@ let procedure_matcher_of_config ~default_taint_target ~option_name (matcher : Pu
       ; method_with_annotation= None
       ; block_passed_to= None
       ; allocation= None } ->
-        ProcedureNameRegex {name_regex= Str.regexp name_regex}
+        ProcedureNameRegex
+          {name_regex= Str.regexp name_regex; exclude_in= matcher.exclude_from_regex_in}
     | { procedure= None
       ; procedure_regex= None
       ; class_name_regex= Some name_regex
@@ -107,7 +107,7 @@ let procedure_matcher_of_config ~default_taint_target ~option_name (matcher : Pu
       ; method_with_annotation= None
       ; block_passed_to= None
       ; allocation= None } ->
-        ClassNameRegex {name_regex= Str.regexp name_regex}
+        ClassNameRegex {name_regex= Str.regexp name_regex; exclude_in= matcher.exclude_from_regex_in}
     | { procedure= None
       ; procedure_regex= None
       ; class_name_regex= None
@@ -179,7 +179,7 @@ let procedure_matcher_of_config ~default_taint_target ~option_name (matcher : Pu
       ; method_with_annotation= None
       ; block_passed_to_regex= Some name_regex
       ; allocation= None } ->
-        BlockNameRegex {name_regex= Str.regexp name_regex}
+        BlockNameRegex {name_regex= Str.regexp name_regex; exclude_in= matcher.exclude_from_regex_in}
     | _ ->
         L.die UserError "When parsing option %s: Unexpected JSON format: %a \n %a" option_name
           pp_procedure_matcher_error_message matcher pp_field_matcher_error_message matcher
@@ -207,7 +207,7 @@ let field_matcher_of_config ~default_taint_target ~option_name (matcher : Pulse_
   let field_matcher =
     match matcher with
     | {field_regex= Some name_regex; class_names= None; field_names= None} ->
-        FieldRegex {name_regex= Str.regexp name_regex}
+        FieldRegex {name_regex= Str.regexp name_regex; exclude_in= matcher.exclude_from_regex_in}
     | {field_regex= None; class_names= Some class_names; field_names= Some field_names} ->
         ClassAndFieldNames {class_names; field_names}
     | _ ->
@@ -281,7 +281,31 @@ let taint_procedure_target_matches tenv taint_target actual_index actual_typ =
       false
 
 
-let procedure_matches tenv matchers ?block_passed_to proc_name actuals =
+let check_regex name_regex elem ?location exclude_in =
+  L.d_printfln "Matching regex wrt %s" elem ;
+  let should_exclude_location =
+    match (location, exclude_in) with
+    | Some location, Some exclude_in ->
+        L.d_printfln "Checking exclude_in list with location of elem = %a and exclude_in = %a"
+          SourceFile.pp location.Location.file (Pp.semicolon_seq String.pp) exclude_in ;
+        List.exists exclude_in ~f:(fun exclude ->
+            (* This is needed because in clang languages the location of the elem can be either in the header
+               or in the source file, depending whether the source file is available in the analysis or not.
+               So we assume exclude_in always ends in .h for clang languages, we drop the suffix and then we
+               can compare the remaining name with the location. *)
+            let exclude_header = String.chop_suffix_if_exists exclude ~suffix:".h" in
+            String.is_substring
+              (SourceFile.to_string location.Location.file)
+              ~substring:exclude_header )
+    | _ ->
+        false
+  in
+  if should_exclude_location then false
+  else
+    match Str.search_forward name_regex elem 0 with _ -> true | exception Caml.Not_found -> false
+
+
+let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name actuals =
   let open TaintConfig.Unit in
   List.filter_map matchers ~f:(fun matcher ->
       let class_name = Procname.get_class_type_name proc_name in
@@ -290,32 +314,23 @@ let procedure_matches tenv matchers ?block_passed_to proc_name actuals =
         | ProcedureName {name} ->
             let proc_name_s = F.asprintf "%a" Procname.pp_verbose proc_name in
             String.is_substring ~substring:name proc_name_s
-        | ProcedureNameRegex {name_regex} -> (
+        | ProcedureNameRegex {name_regex; exclude_in} ->
             let proc_name_s = F.asprintf "%a" Procname.pp_verbose proc_name in
-            L.d_printfln "Matching regex wrt %s" proc_name_s ;
-            match Str.search_forward name_regex proc_name_s 0 with
-            | _ ->
-                true
-            | exception Caml.Not_found ->
-                false )
-        | ClassNameRegex {name_regex} ->
+            let location = Option.map ~f:(fun attr -> attr.ProcAttributes.loc) proc_attributes in
+            check_regex name_regex proc_name_s ?location exclude_in
+        | ClassNameRegex {name_regex; exclude_in} ->
             Option.exists (Procname.get_class_type_name proc_name) ~f:(fun class_name ->
                 PatternMatch.supertype_exists tenv
                   (fun class_name _ ->
                     let class_name_s = Typ.Name.name class_name in
-                    L.d_printfln "Matching regex wrt %s" class_name_s ;
-                    match Str.search_forward name_regex class_name_s 0 with
-                    | _ ->
-                        true
-                    | exception Caml.Not_found ->
-                        false )
+                    check_regex name_regex class_name_s exclude_in )
                   class_name )
         | ClassAndMethodNames {class_names; method_names} ->
             class_names_match tenv class_names class_name
             && List.mem ~equal:String.equal method_names (Procname.get_method proc_name)
         | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
             let procedure_return_type_match method_return_type_names =
-              Option.exists (IRAttributes.load proc_name) ~f:(fun attrs ->
+              Option.exists proc_attributes ~f:(fun attrs ->
                   type_matches tenv attrs.ProcAttributes.ret_type method_return_type_names )
             in
             class_names_match tenv class_names class_name
@@ -344,14 +359,10 @@ let procedure_matches tenv matchers ?block_passed_to proc_name actuals =
         | Block {name}, Some block_passed_to_proc_name ->
             let proc_name_s = F.asprintf "%a" Procname.pp_verbose block_passed_to_proc_name in
             String.is_substring ~substring:name proc_name_s
-        | BlockNameRegex {name_regex}, Some block_passed_to_proc_name -> (
+        | BlockNameRegex {name_regex; exclude_in}, Some block_passed_to_proc_name ->
             let proc_name_s = F.asprintf "%a" Procname.pp_verbose block_passed_to_proc_name in
             L.d_printfln "Matching regex wrt %s" proc_name_s ;
-            match Str.search_forward name_regex proc_name_s 0 with
-            | _ ->
-                true
-            | exception Caml.Not_found ->
-                false )
+            check_regex name_regex proc_name_s exclude_in
         | _ ->
             false
       in
@@ -391,14 +402,9 @@ let field_matches tenv matchers field_name =
   let open TaintConfig.Unit in
   List.filter_map matchers ~f:(fun matcher ->
       match matcher.field_matcher with
-      | FieldRegex {name_regex} -> (
+      | FieldRegex {name_regex; exclude_in} ->
           let field_name_s = Fieldname.get_field_name field_name in
-          L.d_printfln "Matching regex wrt %s" field_name_s ;
-          match Str.search_forward name_regex field_name_s 0 with
-          | _ ->
-              Some matcher
-          | exception Caml.Not_found ->
-              None )
+          if check_regex name_regex field_name_s exclude_in then Some matcher else None
       | ClassAndFieldNames {class_names; field_names} ->
           let class_name = Fieldname.get_class_name field_name in
           if
@@ -550,7 +556,7 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
 
 
 let get_tainted tenv path location ~procedure_matchers ~block_matchers ~field_matchers return_opt
-    ~has_added_return_param potential_taint_value actuals astate =
+    ~has_added_return_param ?proc_attributes potential_taint_value actuals astate =
   let block_passed_to, matchers =
     match potential_taint_value with
     | TaintItem.TaintBlockPassedTo proc_name ->
@@ -559,7 +565,9 @@ let get_tainted tenv path location ~procedure_matchers ~block_matchers ~field_ma
         (None, procedure_matchers)
   in
   let match_procedure proc_name actuals ~instance_reference =
-    let matches = procedure_matches tenv matchers ?block_passed_to proc_name actuals in
+    let matches =
+      procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name actuals
+    in
     if not (List.is_empty matches) then L.d_printfln "taint matches" ;
     match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
       actuals ~instance_reference potential_taint_value

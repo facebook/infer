@@ -1,0 +1,1 @@
+build_systems/pulse_taint_regex_objc/TaintFunctionRegex.m, log_data, 0, TAINT_ERROR, no_bucket, ERROR, [source of the taint here: value returned from `important_data` with kind `MessageData`,value passed as argument `#0` to `NSLog` with kind `Logging`], source: important_data, sink: NSLog, tainted expression: important_data()

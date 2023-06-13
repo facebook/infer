@@ -242,11 +242,11 @@ let taint_and_explore ~taint v astate =
 
 
 let taint_sources tenv path location ~intra_procedural_only return ~has_added_return_param
-    potential_taint_value actuals astate =
+    ?proc_attributes potential_taint_value actuals astate =
   let astate, tainted =
     TaintItemMatcher.get_tainted tenv path location ~procedure_matchers:source_procedure_matchers
       ~block_matchers:source_block_matchers ~field_matchers:source_field_matchers return
-      ~has_added_return_param potential_taint_value actuals astate
+      ~has_added_return_param ?proc_attributes potential_taint_value actuals astate
   in
   List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _, _)) ->
       let hist =
@@ -272,12 +272,12 @@ let taint_sources tenv path location ~intra_procedural_only return ~has_added_re
             astate ) ) )
 
 
-let taint_sanitizers tenv path return ~has_added_return_param ~location potential_taint_value
-    actuals astate =
+let taint_sanitizers tenv path return ~has_added_return_param ~location ?proc_attributes
+    potential_taint_value actuals astate =
   let astate, tainted =
     TaintItemMatcher.get_tainted tenv path location ~procedure_matchers:sanitizer_matchers
-      ~block_matchers:[] ~field_matchers:[] return ~has_added_return_param potential_taint_value
-      actuals astate
+      ~block_matchers:[] ~field_matchers:[] return ~has_added_return_param ?proc_attributes
+      potential_taint_value actuals astate
   in
   let astate =
     List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, history), _, _)) ->
@@ -448,12 +448,12 @@ let should_ignore_all_flows_to potential_taint_value =
       false
 
 
-let taint_sinks tenv path location return ~has_added_return_param potential_taint_value actuals
-    astate =
+let taint_sinks tenv path location return ~has_added_return_param ?proc_attributes
+    potential_taint_value actuals astate =
   let astate, tainted =
     TaintItemMatcher.get_tainted tenv path location ~procedure_matchers:sink_procedure_matchers
       ~block_matchers:[] ~field_matchers:sink_field_matchers return ~has_added_return_param
-      potential_taint_value actuals astate
+      ?proc_attributes potential_taint_value actuals astate
   in
   PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ, _)) ->
       if should_ignore_all_flows_to potential_taint_value then Ok astate
@@ -549,12 +549,13 @@ let propagate_to path location v values call astate =
             astate ) )
 
 
-let taint_propagators tenv path location return ~has_added_return_param proc_name actuals astate =
+let taint_propagators tenv path location return ~has_added_return_param ?proc_attributes proc_name
+    actuals astate =
   let astate, tainted =
     let potential_taint_value = TaintItem.TaintProcedure proc_name in
     TaintItemMatcher.get_tainted tenv path location ~procedure_matchers:propagator_matchers
-      ~block_matchers:[] ~field_matchers:[] return ~has_added_return_param potential_taint_value
-      actuals astate
+      ~block_matchers:[] ~field_matchers:[] return ~has_added_return_param ?proc_attributes
+      potential_taint_value actuals astate
   in
   List.fold tainted ~init:astate ~f:(fun astate (_propagator, ((v, _history), _, _)) ->
       let other_actuals =
@@ -708,16 +709,18 @@ let pulse_models_to_treat_as_unknown_for_taint =
   [ ClassAndMethodNames
       { class_names= ["java.lang.StringBuilder"]
       ; method_names= ["append"; "delete"; "replace"; "setLength"] }
-  ; ProcedureNameRegex {name_regex= Str.regexp "std::basic_string<.*>::basic_string"} ]
+  ; ProcedureNameRegex
+      {name_regex= Str.regexp "std::basic_string<.*>::basic_string"; exclude_in= None} ]
   |> List.map ~f:dummy_matcher_of_procedure_matcher
 
 
-let should_treat_as_unknown_for_taint tenv proc_name =
+let should_treat_as_unknown_for_taint tenv ?proc_attributes proc_name =
   (* HACK: we already have a function for matching procedure names so just re-use it even though we
      don't need its full power *)
-  Option.exists (IRAttributes.load proc_name) ~f:(fun attrs -> attrs.ProcAttributes.is_cpp_implicit)
+  Option.exists proc_attributes ~f:(fun attrs -> attrs.ProcAttributes.is_cpp_implicit)
   && Procname.is_constructor proc_name
-  || TaintItemMatcher.procedure_matches tenv pulse_models_to_treat_as_unknown_for_taint proc_name []
+  || TaintItemMatcher.procedure_matches tenv pulse_models_to_treat_as_unknown_for_taint
+       ?proc_attributes proc_name []
      |> List.is_empty |> not
 
 
@@ -731,30 +734,33 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
       else Ok astate
   | Second proc_name ->
       let potential_taint_value = TaintItem.TaintProcedure proc_name in
-      let call_was_unknown = call_was_unknown || should_treat_as_unknown_for_taint tenv proc_name in
+      let proc_attributes = IRAttributes.load proc_name in
+      let call_was_unknown =
+        call_was_unknown || should_treat_as_unknown_for_taint tenv ?proc_attributes proc_name
+      in
       let has_added_return_param =
-        match IRAttributes.load proc_name with
+        match proc_attributes with
         | Some attrs when attrs.ProcAttributes.has_added_return_param ->
             true
         | _ ->
             false
       in
       let astate =
-        taint_sanitizers tenv path (Some return) ~has_added_return_param ~location
+        taint_sanitizers tenv path (Some return) ~has_added_return_param ~location ?proc_attributes
           potential_taint_value actuals astate
       in
       let astate =
         taint_sources tenv path location ~intra_procedural_only:false (Some return)
-          ~has_added_return_param potential_taint_value actuals astate
+          ~has_added_return_param ?proc_attributes potential_taint_value actuals astate
       in
       let+ astate =
-        taint_sinks tenv path location (Some return) ~has_added_return_param potential_taint_value
-          actuals astate
+        taint_sinks tenv path location (Some return) ~has_added_return_param ?proc_attributes
+          potential_taint_value actuals astate
       in
       let astate, call_was_unknown =
         let new_astate =
-          taint_propagators tenv path location (Some return) ~has_added_return_param proc_name
-            actuals astate
+          taint_propagators tenv path location (Some return) ~has_added_return_param
+            ?proc_attributes proc_name actuals astate
         in
         (new_astate, call_was_unknown && phys_equal astate new_astate)
       in
