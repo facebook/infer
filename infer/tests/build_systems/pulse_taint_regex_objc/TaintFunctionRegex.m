@@ -6,6 +6,18 @@
  */
 #import "Message.h"
 
-void log_message() { NSLog(message_to_me()); }
+void log_message_good() { NSLog(message_to_me()); }
 
-void log_data() { NSLog(important_data()); }
+void log_data_bad() { NSLog(important_data()); }
+
+void log_message_from_block_good() {
+  process_message(^(NSString* message) {
+    NSLog(message);
+  });
+}
+
+void log_message_from_block_bad() {
+  process_data(^(NSString* message) {
+    NSLog(message);
+  });
+}

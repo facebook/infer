@@ -827,15 +827,16 @@ let taint_initial tenv (proc_attrs : ProcAttributes.t) astate0 =
         ~f:(fun ({passed_to} : ProcAttributes.block_as_arg_attributes) -> passed_to)
         proc_attrs.ProcAttributes.block_as_arg_attributes
     in
-    let potential_taint_value =
+    let potential_taint_value, proc_attributes =
       match block_passed_to with
       | Some proc_name ->
-          TaintItem.TaintBlockPassedTo proc_name
+          (TaintItem.TaintBlockPassedTo proc_name, IRAttributes.load proc_name)
       | None ->
-          TaintItem.TaintProcedure proc_attrs.proc_name
+          (TaintItem.TaintProcedure proc_attrs.proc_name, Some proc_attrs)
     in
     taint_sources tenv PathContext.initial proc_attrs.loc ~intra_procedural_only:true None
-      ~has_added_return_param:false potential_taint_value (List.rev rev_actuals) astate
+      ~has_added_return_param:false ?proc_attributes potential_taint_value (List.rev rev_actuals)
+      astate
   in
   match PulseOperationResult.sat_ok result with
   | Some astate_tainted ->

@@ -361,8 +361,8 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
             String.is_substring ~substring:name proc_name_s
         | BlockNameRegex {name_regex; exclude_in}, Some block_passed_to_proc_name ->
             let proc_name_s = F.asprintf "%a" Procname.pp_verbose block_passed_to_proc_name in
-            L.d_printfln "Matching regex wrt %s" proc_name_s ;
-            check_regex name_regex proc_name_s exclude_in
+            let location = Option.map ~f:(fun attr -> attr.ProcAttributes.loc) proc_attributes in
+            check_regex name_regex ?location proc_name_s exclude_in
         | _ ->
             false
       in

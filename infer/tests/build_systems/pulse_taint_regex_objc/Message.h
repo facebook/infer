@@ -9,3 +9,9 @@
 NSString* message_to_me();
 
 NSString* important_data();
+
+typedef void (^MessageBlock)(NSString* message);
+
+void process_message(MessageBlock completion);
+
+void process_data(MessageBlock completion);

@@ -9,3 +9,7 @@
 NSString* message_to_me() { return @"hello"; }
 
 NSString* important_data() { return @"my_data"; }
+
+void process_message(MessageBlock completion) { completion(@"my_message"); }
+
+void process_data(MessageBlock completion) { completion(@"my_data"); }
