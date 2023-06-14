@@ -38,6 +38,7 @@ const features = [
 ];
 
 const poweredByImages = [
+  { url: "https://www.adacore.com", name: "/img/who/adacore.png" },
   { url: "https://aws.amazon.com", image: "/img/who/aws.svg" },
   { url: "https://facebook.com", image: "/img/who/facebook.png" },
   { url: "https://freefem.org", image: "/img/who/freefem.png" },
