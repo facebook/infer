@@ -20,7 +20,7 @@ class Utils {
 }
 
 class C1 {
-  public function FN_f1Bad(SensitiveClass $sc) : void {
+  public function f1Bad(SensitiveClass $sc) : void {
     new Utils()->logDelayed($sc);
   }
 }
