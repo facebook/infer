@@ -659,6 +659,8 @@ module Attributes = struct
           else
             let sinks = get_must_not_be_tainted attrs in
             update (MustNotBeTainted (TaintSinkSet.union new_sinks sinks)) attrs
+      | WrittenTo _ ->
+          update value attrs
       | _ ->
           add attrs value
   end

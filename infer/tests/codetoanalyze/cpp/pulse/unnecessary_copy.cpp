@@ -804,3 +804,9 @@ void intermediate_copy_from_lvalue_ref_ok(Arr& arr) {
 }
 
 void intermediate_copy_from_pointer_ok(Arr* arr) { get_first_elem(*arr); }
+
+std::string unknown_modification_twice_ok(std::string p) {
+  std::string path = p;
+  std::replace(path.begin(), path.end(), '\\', '/');
+  return path;
+}
