@@ -614,12 +614,12 @@ let is_modified_since_detected addr ~is_param ~get_repr ~current_heap astate ~co
               in
               aux ~addr_to_explore ~visited )
   in
-  (* check for modifications to values coming from addresses
+  (* check for modifications to values coming from valid addresses
      that is returned from unknown calls *)
   let addr_to_explore_opt =
     let open IOption.Let_syntax in
     let* source_addr = source_addr_opt in
-    let+ return = AddressAttributes.get_returned_from_unknown source_addr astate in
+    let+ return = AddressAttributes.get_valid_returned_from_unknown source_addr astate in
     addr :: return
   in
   let addr_to_explore = Option.value addr_to_explore_opt ~default:[addr] in

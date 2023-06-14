@@ -620,8 +620,16 @@ module Internal = struct
           match attr with Attribute.WrittenTo _ -> initialize value astate | _ -> astate )
 
 
-    let get_returned_from_unknown addr astate =
-      BaseAddressAttributes.get_returned_from_unknown addr (astate.post :> base_domain).attrs
+    let get_valid_returned_from_unknown addr astate =
+      let open IOption.Let_syntax in
+      let+ returned_from =
+        BaseAddressAttributes.get_returned_from_unknown addr (astate.post :> base_domain).attrs
+      in
+      List.filter
+        ~f:(fun addr ->
+          let addr = CanonValue.canon' astate addr in
+          BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs |> is_ok )
+        returned_from
 
 
     let get_written_to addr astate =
@@ -2032,8 +2040,8 @@ module AddressAttributes = struct
     SafeAttributes.get_config_usage (CanonValue.canon' astate v) astate
 
 
-  let get_returned_from_unknown v astate =
-    SafeAttributes.get_returned_from_unknown (CanonValue.canon' astate v) astate
+  let get_valid_returned_from_unknown v astate =
+    SafeAttributes.get_valid_returned_from_unknown (CanonValue.canon' astate v) astate
 
 
   let get_written_to v astate = SafeAttributes.get_written_to (CanonValue.canon' astate v) astate

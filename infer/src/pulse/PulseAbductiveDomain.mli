@@ -250,7 +250,7 @@ module AddressAttributes : sig
 
   val get_const_string : AbstractValue.t -> t -> string option
 
-  val get_returned_from_unknown : AbstractValue.t -> t -> AbstractValue.t list option
+  val get_valid_returned_from_unknown : AbstractValue.t -> t -> AbstractValue.t list option
 
   val get_written_to : AbstractValue.t -> t -> (Timestamp.t * Trace.t) option
 
