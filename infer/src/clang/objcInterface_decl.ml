@@ -63,6 +63,10 @@ let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info na
   let interface_name = Typ.Name.Objc.from_qual_name class_name in
   let interface_desc = Typ.Tstruct interface_name in
   let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
+  let source_file =
+    let source_loc = fst decl_info.Clang_ast_t.di_source_range in
+    Option.map ~f:(fun file -> SourceFile.from_abs_path file) source_loc.Clang_ast_t.sl_file
+  in
   CAst_utils.update_sil_types_map decl_key interface_desc ;
   let new_objc_protocols =
     List.filter_map
@@ -100,14 +104,18 @@ let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info na
         let objc_protocols =
           append_no_duplicates_typ_name new_objc_protocols struct_typ.objc_protocols
         in
+        let source_file =
+          if Option.is_some struct_typ.Struct.source_file then struct_typ.Struct.source_file
+          else source_file
+        in
         ignore
           (Tenv.mk_struct tenv ~default:struct_typ ~fields ~supers ~objc_protocols ~methods
-             ~exported_objc_methods interface_name )
+             ~exported_objc_methods interface_name ?source_file )
     | None ->
         ignore
           (Tenv.mk_struct tenv ~fields:new_fields ~supers:new_supers
              ~objc_protocols:new_objc_protocols ~methods:new_methods ~annots:Annot.Class.objc
-             ~exported_objc_methods:new_exported_objc_methods interface_name )
+             ~exported_objc_methods:new_exported_objc_methods interface_name ?source_file )
   in
   interface_desc
 
