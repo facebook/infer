@@ -586,7 +586,9 @@ let get_tainted tenv path location ~procedure_matchers ~block_matchers ~field_ma
       let instance_reference, actuals =
         match Procname.is_static proc_name with
         | Some is_static ->
-            if is_static then (None, actuals) else get_this_from_actuals actuals
+            (* NSObject.self is a special method that doesn't have implicit self param *)
+            if is_static || Procname.is_objc_nsobject_self_method proc_name then (None, actuals)
+            else get_this_from_actuals actuals
         | None ->
             (* Hack is special with each method having a reference to this/self except some special cases *)
             if

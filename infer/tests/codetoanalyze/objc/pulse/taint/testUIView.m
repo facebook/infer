@@ -32,6 +32,15 @@
 - (int)getNumber {
   return self.number;
 }
+
+- (bool)foo:(id)sender {
+  // Used to crash due to NSObject.self being a special insatnce method without
+  // an implicit self parameter
+  if ([sender isKindOfClass:UIView.self]) {
+    return YES;
+  }
+  return NO;
+}
 @end
 
 TestUIView* TestUIViewCreate(int number) {
