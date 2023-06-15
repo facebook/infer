@@ -31,8 +31,8 @@ cp infer-out/report.json report-feature.json
 ## second run: main branch
 git checkout main
 # run capture in reactive mode so that previously-captured source files are kept if they are up-to-date
-infer capture --reactive -- make -j 4
-infer analyze --reactive --changed-files-index index.txt
+infer capture --reactive --mark-if-unchanged -- make -j 4
+infer analyze --incremental-analysis --changed-files-index index.txt
 # compare reports
 infer reportdiff --report-current report-feature.json --report-previous infer-out/report.json
 ```
