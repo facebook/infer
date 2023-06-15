@@ -30,7 +30,7 @@ val fold_last : 'a list -> init:'b -> f:('b -> 'a -> 'b) -> f_last:('b -> 'a -> 
 (** like fold, but apply f_last to the last element *)
 
 val split_last_rev : 'a list -> ('a * 'a list) option
-(** [split_last_rev l] is [Some (last, rev_prefix)] where [last :: (List.rev rev_prefix) == l],
+(** [split_last_rev l] is [Some (last, rev_prefix)] where [l == List.rev (last :: rev_prefix)],
     [None] if [l] is empty *)
 
 val append_no_duplicates : cmp:('a -> 'a -> int) -> ('a list -> 'a list -> 'a list) Staged.t

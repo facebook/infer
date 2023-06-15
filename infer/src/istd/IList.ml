@@ -117,14 +117,7 @@ let rec fold_last l ~init ~f ~f_last =
       fold_last tl ~init:(f init hd) ~f ~f_last
 
 
-let split_last_rev l =
-  let result, _rev_prefix =
-    fold_last l ~init:(None, [])
-      ~f:(fun (_, rev_prefix) x -> (None, x :: rev_prefix))
-      ~f_last:(fun (_, rev_prefix) last -> (Some (last, rev_prefix), rev_prefix))
-  in
-  result
-
+let split_last_rev l = match List.rev l with x :: xs -> Some (x, xs) | [] -> None
 
 let append_no_duplicates (type a) ~(cmp : a -> a -> int) =
   (* roughly based on [Core.List.stable_dedup_staged] but also takes care of the append and takes
