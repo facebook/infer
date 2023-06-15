@@ -11,7 +11,7 @@ include $(TESTS_DIR)/base.make
 
 .PHONY: test
 test:
-	$(QUIET)$(INFER_BIN) capture -- clang -c src/*.c
+	$(QUIET)$(INFER_BIN) capture --buck -- clang -c src/*.c
 	$(QUIET)$(INFER_BIN) debug -o extracted-out --source-files --extract-capture-from infer-out --changed-files-index files.index
 	$(QUIET)$(INFER_BIN) debug -o extracted-out --source-files > source-files.test
 	$(QUIET)$(INFER_BIN) debug -o extracted-out --procedures > procedures.test

@@ -89,10 +89,16 @@ let db_close db =
             (Sqlite3.errmsg db) ) )
 
 
-let with_attached_db db ~db_file ~db_name ~f =
-  exec db
-    ~stmt:(Printf.sprintf "ATTACH '%s' AS %s" db_file db_name)
-    ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
+let with_attached_db ~db_file ~db_name ?(immutable = false) ~f db =
+  let attach_stmt =
+    Printf.sprintf "ATTACH '%s%s%s' AS %s"
+      (if immutable then "file:" else "")
+      (if immutable then Escape.escape_url db_file else db_file)
+      (if immutable then "?immutable=1" else "")
+      db_name
+  in
+  L.debug Capture Quiet "Attach: %s@\n" attach_stmt ;
+  exec db ~stmt:attach_stmt ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
   let result = f () in
   exec db ~stmt:("DETACH " ^ db_name) ~log:(Printf.sprintf "detaching database '%s'" db_file) ;
   result

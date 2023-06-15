@@ -126,7 +126,7 @@ let copy_sourcefile_with_procedures_recursively acc file =
 let extract ~files ~input_capture_path =
   let db_file = ResultsDirEntryName.get_path ~results_dir:input_capture_path CaptureDB in
   let db = Database.get_database CaptureDatabase in
-  SqliteUtils.with_attached_db db ~db_file ~db_name:"attached" ~f:(fun () ->
+  SqliteUtils.with_attached_db db ~db_file ~db_name:"attached" ~immutable:true ~f:(fun () ->
       if SourceFile.Set.is_empty files then L.die UserError "No files where found in the index." ;
       copy_undefined_procedures () ;
       let sources_to_copy = SourceFile.HashSet.create 1 in
@@ -143,7 +143,7 @@ let complete ~input_capture_path =
   let db_file = ResultsDirEntryName.get_path ~results_dir:input_capture_path CaptureDB in
   let db = Database.get_database CaptureDatabase in
   let rows_changed =
-    SqliteUtils.with_attached_db db ~db_file ~db_name:"attached" ~f:(fun () ->
+    SqliteUtils.with_attached_db db ~db_file ~db_name:"attached" ~immutable:true ~f:(fun () ->
         MissingDependencies.ProcUidSet.fold
           (fun proc_uid acc -> copy_procedure_and_callees missing_deps.sources ~proc_uid || acc)
           missing_deps.procedures false

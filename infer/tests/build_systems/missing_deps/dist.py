@@ -22,11 +22,8 @@ def get_cmd_output(cmd):
 def run(cmd):
     subprocess.run(cmd, check=True)
 
-def capture_and_get_files():
-    run([INFER, 'capture', '-o', SOURCE_CAPTURE, '--', 'clang', '-c'] + SOURCES)
-
-    FILES=get_cmd_output([INFER, 'debug', '-o', SOURCE_CAPTURE, '--source-files'])
-    return [f.strip() for f in FILES.splitlines() if not f.endswith('.h')]
+def capture():
+    run([INFER, 'capture', '-o', SOURCE_CAPTURE, '--buck', '--', 'clang', '-c'] + SOURCES)
 
 def analyze(results_dir, index_file):
     run([INFER, 'analyze', '-o', results_dir, '--log-missing-deps', '--no-progress-bar',
@@ -45,7 +42,9 @@ def complete(results_dir, index_file, source):
 def main():
     extra_args = []
 
-    for idx, file in enumerate(capture_and_get_files()):
+    capture()
+
+    for idx, file in enumerate(SOURCES):
         results_dir = ROOT + '/' + str(idx) + '-out'
 
         index_file = ROOT + '/' + str(idx) + '.index'

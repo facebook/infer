@@ -22,9 +22,9 @@ JAVAC_FLAGS = -g -source 8 -target 8
 
 infer-out$(TEST_SUFFIX)/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Capturing A.java,\
-	  $(INFER_BIN) capture --project-root $(PROJECT_ROOT) -o infer-out-A -- $(JAVAC) $(JAVAC_FLAGS) A.java)
+	  $(INFER_BIN) capture --buck --project-root $(PROJECT_ROOT) -o infer-out-A -- $(JAVAC) $(JAVAC_FLAGS) A.java)
 	$(QUIET)$(call silent_on_success,Capturing B.java,\
-	  $(INFER_BIN) capture --project-root $(PROJECT_ROOT) -o infer-out-B -- $(JAVAC) $(JAVAC_FLAGS) B.java)
+	  $(INFER_BIN) capture --buck --project-root $(PROJECT_ROOT) -o infer-out-B -- $(JAVAC) $(JAVAC_FLAGS) B.java)
 	$(QUIET)echo $$(realpath infer-out-B) > $(ARGSFILE)
 	$(QUIET)$(call silent_on_success,Merging infer-outs,\
 	  $(INFER_BIN) capture --project-root $(PROJECT_ROOT) --merge-capture $$(realpath infer-out-A) --merge-capture @$(ARGSFILE) -o infer-out)

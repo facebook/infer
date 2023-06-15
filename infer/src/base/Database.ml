@@ -271,7 +271,7 @@ end = struct
 
   let do_new_database id =
     let db =
-      Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex:`FULL ?vfs:Config.sqlite_vfs
+      Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex:`FULL ?vfs:Config.sqlite_vfs ~uri:true
         (results_dir_get_path (get_dbpath id))
     in
     Sqlite3.busy_timeout db Config.sqlite_lock_timeout ;
