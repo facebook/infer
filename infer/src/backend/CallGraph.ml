@@ -132,8 +132,8 @@ let pp_dot fmt ({node_map} as g) =
   F.fprintf fmt "}@."
 
 
-let to_dotty g filename =
-  let outc = Filename.concat Config.results_dir filename |> Out_channel.create in
+let to_dotty g results_dir_entry =
+  let outc = ResultsDir.get_path results_dir_entry |> Out_channel.create in
   let fmt = F.formatter_of_out_channel outc in
   pp_dot fmt g ;
   Out_channel.close outc

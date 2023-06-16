@@ -47,7 +47,7 @@ let bottom_up call_graph =
         remaining := 0 ;
         L.progress "Finished call graph scheduling, %d procs remaining (in, or reaching, cycles).@."
           (CallGraph.n_procs call_graph) ;
-        if Config.debug_level_analysis > 0 then CallGraph.to_dotty call_graph "cycles.dot" ;
+        if Config.debug_level_analysis > 0 then CallGraph.to_dotty call_graph CallGraphCyclesDot ;
         (* save some memory *)
         CallGraph.reset call_graph ;
         (* there is no equivalent to [Hashtbl.reset] so set capacity to min, freeing the old array *)

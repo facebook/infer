@@ -84,7 +84,7 @@ let build_for_analysis_replay () =
       in
       edges_to_ignore := Procname.Map.add proc_name recursion_edges !edges_to_ignore ;
       CallGraph.create_node graph proc_name summary_loads ) ;
-  if Config.debug_level_analysis > 0 then CallGraph.to_dotty graph "analysis_call_graph.dot" ;
+  if Config.debug_level_analysis > 0 then CallGraph.to_dotty graph AnalysisDependencyGraphDot ;
   Ondemand.edges_to_ignore := Some !edges_to_ignore ;
   graph
 
@@ -105,7 +105,7 @@ let invalidate ~changed_files =
      results stored in the db. *)
   if total_nodes > 0 then (
     if Config.debug_level_analysis > 0 then
-      CallGraph.to_dotty dependency_graph "analysis_dependency_graph.dot" ;
+      CallGraph.to_dotty dependency_graph AnalysisDependencyInvalidationGraphDot ;
     let invalidated_nodes, invalidated_files =
       CallGraph.fold_flagged dependency_graph
         ~f:(fun node (acc_nodes, acc_files) ->

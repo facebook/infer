@@ -11,9 +11,12 @@ let buck_infer_deps_file_name = "infer-deps.txt"
 
 type id =
   | AllocationTraces
+  | AnalysisDependencyGraphDot
+  | AnalysisDependencyInvalidationGraphDot
   | AnalysisDB
   | AnalysisDBShm
   | AnalysisDBWal
+  | CallGraphCyclesDot
   | CaptureDB
   | CaptureDBShm
   | CaptureDBWal
@@ -39,6 +42,7 @@ type id =
   | ReportXML
   | RetainCycles
   | RunState
+  | SyntacticDependencyGraphDot
   | Temporary
   | TestDeterminatorReport
   | TestDeterminatorTempResults
@@ -63,6 +67,16 @@ let of_id = function
       ; kind= Directory
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete }
+  | AnalysisDependencyGraphDot ->
+      { rel_path= "analysis_dependency_graph.dot"
+      ; kind= File
+      ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete }
+  | AnalysisDependencyInvalidationGraphDot ->
+      { rel_path= "analysis_dependency_invalidation_graph.dot"
+      ; kind= File
+      ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete }
   | AnalysisDB ->
       { rel_path= "results.db"
       ; kind= File
@@ -78,11 +92,11 @@ let of_id = function
       ; kind= File
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Delete }
-  | CaptureDependencies ->
-      { rel_path= buck_infer_deps_file_name
+  | CallGraphCyclesDot ->
+      { rel_path= "call_graph_cycles.dot"
       ; kind= File
-      ; before_incremental_analysis= Keep
-      ; before_caching_capture= Delete }
+      ; before_incremental_analysis= Delete
+      ; before_caching_capture= Keep }
   | CaptureDB ->
       { rel_path= "capture.db"
       ; kind= File
@@ -95,6 +109,11 @@ let of_id = function
       ; before_caching_capture= Delete }
   | CaptureDBWal ->
       { rel_path= "capture.db-wal"
+      ; kind= File
+      ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete }
+  | CaptureDependencies ->
+      { rel_path= buck_infer_deps_file_name
       ; kind= File
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Delete }
@@ -200,6 +219,11 @@ let of_id = function
       ; before_caching_capture= Delete }
   | RunState ->
       { rel_path= ".infer_runstate.json"
+      ; kind= File
+      ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete }
+  | SyntacticDependencyGraphDot ->
+      { rel_path= "syntactic_dependency_graph.dot"
       ; kind= File
       ; before_incremental_analysis= Keep
       ; before_caching_capture= Delete }

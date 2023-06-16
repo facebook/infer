@@ -37,7 +37,7 @@ val iter_unflagged_leaves : f:(Node.t -> unit) -> t -> unit
 
 val remove : t -> Procname.t -> unit
 
-val to_dotty : t -> string -> unit
+val to_dotty : t -> ResultsDirEntryName.id -> unit
 (** output call graph in dotty format with the given filename in results dir *)
 
 val add_edge : t -> Procname.t -> successor:Procname.t -> unit
