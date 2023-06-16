@@ -402,5 +402,9 @@ val load : Procname.t -> t option
 val load_exn : Procname.t -> t
 (** like [load], but raises an exception if no procdesc is available. *)
 
+val load_uid : ?capture_only:bool -> string -> t option
+(** like [load] but takes a database key for the procedure directly (generated from
+    [Procname.to_unique_id]) and optionally only looks inside the capture database *)
+
 val mark_if_unchanged : old_pdesc:t -> new_pdesc:t -> unit
 (** Record the [changed] attribute in-place on [new_pdesc] if it is unchanged wrt [old_pdsec] *)

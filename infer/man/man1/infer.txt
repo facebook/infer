@@ -56,6 +56,10 @@ OPTIONS
        supported options. The following is a list of all the supported
        options (see also --help-full for options reserved for internal use).
 
+       --analysis-schedule-file path
+           The file where an analysis schedule is stored. The default is
+           infer-out/analysis_dependency_graph           See also infer-analyze(1).
+
        --annotation-reachability
            Activates: checker annotation-reachability: Given a pair of source
            and sink annotation, e.g. `@PerformanceCritical` and `@Expensive`,
@@ -1565,12 +1569,22 @@ OPTIONS
            captured since the infer command started (Conversely:
            --no-reactive | -R)           See also infer-analyze(1).
 
+       --replay-analysis-schedule
+           Activates: Replay the analysis schedule stored in
+           --replay-analysis-schedule-file, which should analyze the
+           procedures in the same order as the previous analysis. This should
+           drastically limit non-determinism in the results, as well as
+           prevent repeated work, leading to a faster second analysis. Only
+           works if a previous analysis has just run on the same code.
+           (Conversely: --no-replay-analysis-schedule)           See also infer-analyze(1).
+
        --replay-ondemand-should-error
-           Activates: Whether triggering the analysis of a procedure via
-           ondemand should log an error when the scheduler is replay. Enable
-           when replaying the same analysis on the same capture data to debug
-           cases where dependencies that were recorded are insufficient.
-           (Conversely: --no-replay-ondemand-should-error)           See also infer-analyze(1).
+           Activates: [debug] Whether triggering the analysis of a procedure
+           via ondemand should log an error when replaying an analysis
+           schedule with --replay-analysis-schedule. Enable when replaying
+           the same analysis on the same capture data to debug cases where
+           dependencies that were recorded are insufficient. (Conversely:
+           --no-replay-ondemand-should-error)           See also infer-analyze(1).
 
        --no-report
            Deactivates: Run the reporting phase once the analysis has
@@ -1621,14 +1635,10 @@ OPTIONS
            Interchange Format) in infer-out/report.sarif (Conversely:
            --no-sarif)           See also infer-run(1).
 
-       --scheduler { file | restart | callgraph | replay }
+       --scheduler { file | restart | callgraph }
            Specify the scheduler used for the analysis phase:           - file: schedule one job per file
            - callgraph: schedule one job per procedure, following the
            syntactic call graph. Usually faster than "file".
-           - replay: replay the same analysis order between procedures as
-           the previous analysis. This should drastically limit
-           non-determinism in the results. Only works if a previous analysis
-           has just run on the same code.
            - restart: same as callgraph but uses locking to try and avoid
            duplicate work between different analysis processes and thus
            performs better in some circumstances
@@ -1788,6 +1798,16 @@ OPTIONS
        --starvation-only
            Activates: Enable starvation and disable all other checkers
            (Conversely: --no-starvation-only)           See also infer-analyze(1).
+
+       --store-analysis-schedule
+           Activates: Store the analysis schedule for later replay, honoring
+           --replay-analysis-schedule-file if present. This can be useful to
+           store a schedule done with one version of infer to load with
+           another version of infer. There is no guarantee infer will be able
+           to load the previous schedule but using this mechanism gives a
+           higher chance of success compared with having to read the previous
+           results database successfully as fewer datatypes are involved.
+           (Conversely: --no-store-analysis-schedule)           See also infer-analyze(1).
 
        --tenv-json file
            Path to TEnv json file           See also infer-capture(1).

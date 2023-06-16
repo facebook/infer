@@ -971,35 +971,41 @@ module SQLite = SqliteUtils.MarshalledNullableDataNOTForComparison (struct
   type nonrec t = t
 end)
 
-let load =
+let load_uid_ =
   let load_statement db =
     Database.register_statement db "SELECT cfg FROM procedures WHERE proc_uid = :k"
   in
   let load_statement_adb = load_statement AnalysisDatabase in
   let load_statement_cdb = load_statement CaptureDatabase in
-  fun pname ->
+  fun ?(capture_only = false) proc_uid ->
     let run_query stmt =
       Database.with_registered_statement stmt ~f:(fun db stmt ->
-          Sqlite3.bind stmt 1 (Sqlite3.Data.TEXT (Procname.to_unique_id pname))
+          Sqlite3.bind stmt 1 (Sqlite3.Data.TEXT proc_uid)
           |> SqliteUtils.check_result_code db ~log:"load bind proc_uid" ;
           SqliteUtils.result_single_column_option ~finalize:false ~log:"Procdesc.load" db stmt
           |> Option.map ~f:SQLite.deserialize )
     in
-    (* Since the procedure table can be updated in the analysis phase,
-       we need to query both databases, analysisdb first *)
-    match run_query load_statement_adb with
-    | Some (Some _ as procdesc_opt) ->
-        procdesc_opt
-    | _ -> (
-      match run_query load_statement_cdb with
-      | Some procdesc_opt ->
-          procdesc_opt
-      | None ->
-          MissingDependencies.record_procname pname ;
-          None )
+    (* Since the procedure table can be updated in the analysis phase, we need to query both
+       databases, analysisdb first *)
+    match if capture_only then None else run_query load_statement_adb with
+    | Some (Some _) as procdesc_opt_opt ->
+        procdesc_opt_opt
+    | _ ->
+        run_query load_statement_cdb
 
 
-let load_exn procname = load procname |> Option.value_exn
+let load proc_name =
+  match load_uid_ (Procname.to_unique_id proc_name) with
+  | Some proc_desc_opt ->
+      proc_desc_opt
+  | None ->
+      MissingDependencies.record_procname proc_name ;
+      None
+
+
+let load_uid ?capture_only proc_uid = load_uid_ ?capture_only proc_uid |> Option.join
+
+let load_exn proc_name = load proc_name |> Option.value_exn
 
 let mark_if_unchanged ~old_pdesc ~new_pdesc =
   (* map from exp names in [old_pdesc] to exp names in [new_pdesc] *)

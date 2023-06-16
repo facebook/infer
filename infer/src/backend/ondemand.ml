@@ -281,14 +281,14 @@ let register_callee ~cycle_detected ?caller_summary callee =
 
 
 let error_if_ondemand_analysis_during_replay ~from_file_analysis caller_summary callee_pname =
-  match (Config.scheduler, caller_summary, from_file_analysis) with
-  | ReplayAnalysis, Some caller_summary, false ->
+  match (Config.replay_analysis_schedule, caller_summary, from_file_analysis) with
+  | true, Some caller_summary, false ->
       if Config.replay_ondemand_should_error then
         L.internal_error
           "analyzing procedure %a via ondemand when computing the summary for %a; we may have \
            recorded analysis dependencies wrongly@\n"
           Procname.pp callee_pname Procname.pp caller_summary.Summary.proc_name
-  | ReplayAnalysis, None, true ->
+  | true, None, true ->
       if Config.replay_ondemand_should_error then
         L.internal_error
           "analyzing procedure %a for a file-level analysis; we may have recorded analysis \
@@ -298,7 +298,7 @@ let error_if_ondemand_analysis_during_replay ~from_file_analysis caller_summary 
       (* the origin of the ondemand analysis cannot be both computing all procedure summaries for a
          file-level analysis *and* computing a summary for another procedure *)
       assert false
-  | ReplayAnalysis, None, false | File, _, _ | Restart, _, _ | SyntacticCallGraph, _, _ ->
+  | true, None, false | false, _, _ ->
       ()
 
 

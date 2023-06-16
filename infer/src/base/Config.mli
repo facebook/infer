@@ -31,7 +31,7 @@ type build_system =
   | BRebar3
   | BXcode
 
-type scheduler = File | ReplayAnalysis | Restart | SyntacticCallGraph [@@deriving equal]
+type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
 
 val string_of_scheduler : scheduler -> string
 
@@ -119,6 +119,8 @@ val allow_listed_cpp_methods : string list
 val wrappers_dir : string
 
 (** {2 Configuration values specified by command-line options} *)
+
+val analysis_schedule_file : string option
 
 val annotation_reachability_cxx : Yojson.Basic.t
 
@@ -690,6 +692,8 @@ val relative_path_backtrack : int
 
 val remodel_class : string option
 
+val replay_analysis_schedule : bool
+
 val replay_ondemand_should_error : bool
 
 val report : bool
@@ -805,6 +809,8 @@ val starvation_skip_analysis : Yojson.Basic.t
 val starvation_strict_mode : bool
 
 val starvation_whole_program : bool
+
+val store_analysis_schedule : bool
 
 val subtype_multirange : bool
 

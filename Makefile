@@ -36,6 +36,7 @@ BUILD_SYSTEMS_TESTS += \
   project_root_rel \
   pulse_messages \
   reactive \
+  replay_scheduler \
   results_xml \
   tracebugs \
   utf8_in_procname \

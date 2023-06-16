@@ -47,6 +47,10 @@ val add_edge : t -> Procname.t -> successor:Procname.t -> unit
 val create_node : t -> Procname.t -> Procname.t list -> unit
 (** create a new node with edges from [pname] to [successor_pnames] in the graph *)
 
+val create_node_with_id : t -> id:int -> Procname.t -> successors:int list -> unit
+
+val node_of_id : t -> int -> Node.t option
+
 val fold_flagged : t -> f:(Node.t -> 'a -> 'a) -> 'a -> 'a
 (** perform a fold over the nodes in the graph with flag set to true *)
 

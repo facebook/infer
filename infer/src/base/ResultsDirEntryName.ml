@@ -11,6 +11,7 @@ let buck_infer_deps_file_name = "infer-deps.txt"
 
 type id =
   | AllocationTraces
+  | AnalysisDependencyGraph
   | AnalysisDependencyGraphDot
   | AnalysisDependencyInvalidationGraphDot
   | AnalysisDB
@@ -70,6 +71,12 @@ let of_id = function
       ; before_incremental_analysis= Delete
       ; before_caching_capture= Delete
       ; before_new_capture= Delete }
+  | AnalysisDependencyGraph ->
+      { rel_path= "analysis_dependency_graph"
+      ; kind= File
+      ; before_incremental_analysis= Keep
+      ; before_caching_capture= Delete
+      ; before_new_capture= Keep }
   | AnalysisDependencyGraphDot ->
       { rel_path= "analysis_dependency_graph.dot"
       ; kind= File

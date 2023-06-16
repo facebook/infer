@@ -46,7 +46,9 @@ let setup () =
                   continue_capture || infer_is_clang || infer_is_javac || reactive_mode
                   || incremental_analysis || mark_unchanged_procs || Option.is_some run_as_child )
              )
-      then ResultsDir.remove_results_dir () ;
+      then (
+        AnalysisDependencyGraph.store_previous_schedule_if_needed () ;
+        ResultsDir.remove_results_dir () ) ;
       ResultsDir.create_results_dir () ;
       if
         Config.is_originator && (not Config.continue_capture)
@@ -57,6 +59,7 @@ let setup () =
   | Explore ->
       ResultsDir.assert_results_dir "please run an infer analysis first"
   | Debug when Option.is_some Config.extract_capture_from ->
+      AnalysisDependencyGraph.store_previous_schedule_if_needed () ;
       ResultsDir.remove_results_dir () ;
       ResultsDir.create_results_dir ()
   | Debug ->

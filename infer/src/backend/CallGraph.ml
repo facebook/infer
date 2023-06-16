@@ -92,6 +92,12 @@ let create_node ({node_map} as graph) pname successor_pnames =
   NodeMap.replace node_map id node
 
 
+let create_node_with_id {id_map; node_map} ~id proc_name ~successors =
+  let node = Node.make id proc_name successors in
+  IdMap.replace id_map proc_name id ;
+  NodeMap.replace node_map id node
+
+
 let get_or_init_node node_map id pname =
   match NodeMap.find_opt node_map id with
   | Some node ->

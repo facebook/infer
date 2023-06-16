@@ -175,20 +175,18 @@ let get_source_files_to_analyze ~changed_files =
   source_files_to_analyze
 
 
-let tasks_generator_builder_for replay_call_graph sources =
-  match (replay_call_graph, Config.scheduler) with
-  | `NoReplay, File ->
-      FileScheduler.make sources
-  | `NoReplay, Restart ->
-      RestartScheduler.make sources
-  | `NoReplay, SyntacticCallGraph ->
-      SyntacticCallGraph.make sources
-  | `CallGraph replay_call_graph, ReplayAnalysis ->
-      (* If the replay scheduler has been selected then [replay_call_graph_opt] should have been
-         pre-computed before calling this function. *)
+let tasks_generator_builder_for replay_call_graph_opt sources =
+  match replay_call_graph_opt with
+  | Some replay_call_graph ->
       ReplayScheduler.make replay_call_graph sources
-  | _ ->
-      L.die InternalError "unexpected combination of replay_call_graph and Config.scheduler"
+  | None -> (
+    match Config.scheduler with
+    | File ->
+        FileScheduler.make sources
+    | Restart ->
+        RestartScheduler.make sources
+    | SyntacticCallGraph ->
+        SyntacticCallGraph.make sources )
 
 
 let analyze replay_call_graph source_files_to_analyze =
@@ -207,6 +205,9 @@ let analyze replay_call_graph source_files_to_analyze =
   else (
     L.environment_info "Parallel jobs: %d@." Config.jobs ;
     let build_tasks_generator () =
+      (* USELESS HACK: this is called only in the orchestrator, which doesn't need to do any
+         analysis itself so we can unset this ref to save minute amount of memory *)
+      Ondemand.edges_to_ignore := None ;
       tasks_generator_builder_for replay_call_graph (Lazy.force source_files_to_analyze)
     in
     (* Prepare tasks one file at a time while executing in parallel *)
@@ -263,15 +264,14 @@ let analyze replay_call_graph source_files_to_analyze =
 
 
 let main ~changed_files =
-  (* Pre-compute the task generator for a replay analysis if needed. Since this depends on reading
-     the previously-computed summaries, this needs to happen before we start deleting them in
-     preparation for the new analysis, hence the awkward pre-computation here. *)
-  let replay_call_graph =
-    match Config.scheduler with
-    | ReplayAnalysis ->
-        `CallGraph (AnalysisDependencyGraph.from_summaries ())
-    | File | Restart | SyntacticCallGraph ->
-        `NoReplay
+  (* Pre-compute the task generator for a replay analysis if needed. This needs to happen now
+     because it could depend on reading the previously-computed summaries (which we are about to
+     delete in preparation for the new analysis), but also because loading the dependency graph now
+     has an important side-effect: it sets [Ondemand.edges_to_ignore], which is information that
+     worker processes will need *)
+  let replay_call_graph_opt =
+    if Config.replay_analysis_schedule then AnalysisDependencyGraph.load_previous_schedule ()
+    else None
   in
   let start = ExecutionDuration.counter () in
   register_active_checkers () ;
@@ -290,7 +290,7 @@ let main ~changed_files =
     if Config.incremental_analysis then Some (Summary.OnDisk.get_count ()) else None
   in
   let backend_stats_list, gc_stats_list, missing_deps_list =
-    analyze replay_call_graph source_files
+    analyze replay_call_graph_opt source_files
   in
   MissingDependencies.save missing_deps_list ;
   if Config.incremental_analysis then (
@@ -306,4 +306,9 @@ let main ~changed_files =
     (ExecutionDuration.wall_time analysis_duration) ;
   ExecutionDuration.log ~prefix:"backend_stats.scheduler_process_analysis_time" Analysis
     analysis_duration ;
+  (* delete any previous analysis schedule once the new analysis has finished to avoid keeping a
+     stale schedule around that could be misused later *)
+  ( try Unix.unlink (ResultsDir.get_path AnalysisDependencyGraph) with _ -> () ) ;
+  if Config.is_originator && Config.store_analysis_schedule then
+    AnalysisDependencyGraph.store_previous_schedule () ;
   ()

@@ -1,0 +1,4 @@
+schema_version=0
+0|foo|1,2|
+1|goo|3|0
+3|moo||

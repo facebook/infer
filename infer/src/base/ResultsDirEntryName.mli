@@ -10,9 +10,10 @@ open! IStd
 
 type id =
   | AllocationTraces  (** directory for storing allocation traces *)
-  | AnalysisDependencyGraphDot
-      (** the inter-procedures dependencies revealed during an analysis phase used for the replay,
-          in dotty format for debug *)
+  | AnalysisDependencyGraph
+      (** the inter-procedures dependencies revealed during an analysis phase; used for the replay
+          analysis *)
+  | AnalysisDependencyGraphDot  (** the above in dotty format, for debug *)
   | AnalysisDependencyInvalidationGraphDot
       (** the inter-procedures dependencies revealed during an analysis phase used for invalidating
           procedure summaries that need re-analyzing, in dotty format for debug *)

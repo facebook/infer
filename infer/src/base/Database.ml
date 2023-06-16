@@ -242,6 +242,8 @@ module UnsafeDatabaseRef : sig
   val db_close : unit -> unit
 
   val new_database_connection : unit -> unit
+
+  val ensure_database_connection : id -> unit
 end = struct
   let capture_database : Sqlite3.db option ref = ref None
 
@@ -287,6 +289,9 @@ end = struct
     (* we always want at most one connection alive throughout the lifetime of the module *)
     db_close () ;
     List.iter ~f:do_new_database [CaptureDatabase; AnalysisDatabase]
+
+
+  let ensure_database_connection id = if Option.is_none !(get_db id) then do_new_database id
 end
 
 include UnsafeDatabaseRef

@@ -28,6 +28,9 @@ val new_database_connection : unit -> unit
 (** Closes the previous connection to the database (if any), and opens a new one. Needed after calls
     to fork(2). *)
 
+val ensure_database_connection : id -> unit
+(** open a new connection to the specified database if there isn't one already *)
+
 val db_close : unit -> unit
 (** close the current connection to the database *)
 

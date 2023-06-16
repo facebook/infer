@@ -45,15 +45,10 @@ type build_system =
   | BXcode
 [@@deriving compare, equal]
 
-type scheduler = File | ReplayAnalysis | Restart | SyntacticCallGraph [@@deriving equal]
+type scheduler = File | Restart | SyntacticCallGraph [@@deriving equal]
 
 (** association list used to both pretty-print and parse symbols from the command line *)
-let scheduler_symbols =
-  [ ("file", File)
-  ; ("restart", Restart)
-  ; ("callgraph", SyntacticCallGraph)
-  ; ("replay", ReplayAnalysis) ]
-
+let scheduler_symbols = [("file", File); ("restart", Restart); ("callgraph", SyntacticCallGraph)]
 
 let string_of_scheduler scheduler =
   List.Assoc.find_exn (List.Assoc.inverse scheduler_symbols) ~equal:equal_scheduler scheduler
@@ -182,13 +177,15 @@ let manual_internal = "INTERNAL OPTIONS"
 
 let manual_java = "JAVA OPTIONS"
 
+let manual_lineage = "LINEAGE OPTIONS"
+
 let manual_pulse = "PULSE CHECKER OPTIONS"
 
 let manual_quandary = "QUANDARY CHECKER OPTIONS"
 
 let manual_racerd = "RACERD CHECKER OPTIONS"
 
-let manual_lineage = "LINEAGE OPTIONS"
+let manual_scheduler = "ANALYSIS SCHEDULER OPTIONS"
 
 let manual_siof = "SIOF CHECKER OPTIONS"
 
@@ -593,7 +590,14 @@ let () =
   ()
 
 
-let annotation_reachability_cxx =
+let analysis_schedule_file =
+  CLOpt.mk_path_opt ~long:"analysis-schedule-file"
+    ~in_help:InferCommand.[(Analyze, manual_scheduler)]
+    ( "The file where an analysis schedule is stored. The default is "
+    ^ ResultsDirEntryName.get_path ~results_dir:"infer-out" AnalysisDependencyGraph )
+
+
+and annotation_reachability_cxx =
   CLOpt.mk_json ~long:"annotation-reachability-cxx"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
     ( "Specify annotation reachability analyses to be performed on C/C++/ObjC code. Each entry is \
@@ -2734,12 +2738,22 @@ and remodel_class =
      \"_<property name>\"."
 
 
+and replay_analysis_schedule =
+  CLOpt.mk_bool ~long:"replay-analysis-schedule"
+    ~in_help:InferCommand.[(Analyze, manual_scheduler)]
+    "Replay the analysis schedule stored in $(b,--replay-analysis-schedule-file), which should \
+     analyze the procedures in the same order as the previous analysis. This should drastically \
+     limit non-determinism in the results, as well as prevent repeated work, leading to a faster \
+     second analysis. Only works if a previous analysis has just run on the same code."
+
+
 and replay_ondemand_should_error =
   CLOpt.mk_bool ~long:"replay-ondemand-should-error"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Whether triggering the analysis of a procedure via ondemand should log an error when the \
-     scheduler is $(b,replay). Enable when replaying the same analysis on the same capture data to \
-     debug cases where dependencies that were recorded are insufficient."
+    ~in_help:InferCommand.[(Analyze, manual_scheduler)]
+    "[debug] Whether triggering the analysis of a procedure via ondemand should log an error when \
+     replaying an analysis schedule with $(b,--replay-analysis-schedule). Enable when replaying \
+     the same analysis on the same capture data to debug cases where dependencies that were \
+     recorded are insufficient."
 
 
 and report =
@@ -2850,15 +2864,12 @@ and sarif =
 
 and scheduler =
   CLOpt.mk_symbol ~long:"scheduler" ~default:File ~eq:equal_scheduler
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    ~in_help:InferCommand.[(Analyze, manual_scheduler)]
     ~symbols:scheduler_symbols
     "Specify the scheduler used for the analysis phase:\n\
      - file: schedule one job per file\n\
      - callgraph: schedule one job per procedure, following the syntactic call graph. Usually \
      faster than \"file\".\n\
-     - replay: replay the same analysis order between procedures as the previous analysis. This \
-     should drastically limit non-determinism in the results. Only works if a previous analysis \
-     has just run on the same code.\n\
      - restart: same as callgraph but uses locking to try and avoid duplicate work between \
      different analysis processes and thus performs better in some circumstances"
 
@@ -3142,6 +3153,16 @@ and starvation_skip_analysis =
 and starvation_whole_program =
   CLOpt.mk_bool ~long:"starvation-whole-program" ~default:false
     "Run whole-program starvation analysis"
+
+
+and store_analysis_schedule =
+  CLOpt.mk_bool ~long:"store-analysis-schedule"
+    ~in_help:InferCommand.[(Analyze, manual_scheduler)]
+    "Store the analysis schedule for later replay, honoring $(b,--replay-analysis-schedule-file) \
+     if present. This can be useful to store a schedule done with one version of infer to load \
+     with another version of infer. There is no guarantee infer will be able to load the previous \
+     schedule but using this mechanism gives a higher chance of success compared with having to \
+     read the previous results database successfully as fewer datatypes are involved."
 
 
 and suppress_lint_ignore_types =
@@ -3545,6 +3566,8 @@ let command =
 (** Freeze initialized configuration values *)
 
 let rest = !rest
+
+and analysis_schedule_file = !analysis_schedule_file
 
 and biabduction_abs_struct = !biabduction_abs_struct
 
@@ -4280,6 +4303,8 @@ and relative_path_backtrack = !relative_path_backtrack
 
 and remodel_class = !remodel_class
 
+and replay_analysis_schedule = !replay_analysis_schedule
+
 and replay_ondemand_should_error = !replay_ondemand_should_error
 
 and report = !report
@@ -4411,6 +4436,8 @@ and starvation_skip_analysis = !starvation_skip_analysis
 and starvation_strict_mode = !starvation_strict_mode
 
 and starvation_whole_program = !starvation_whole_program
+
+and store_analysis_schedule = !store_analysis_schedule
 
 and subtype_multirange = !subtype_multirange
 
