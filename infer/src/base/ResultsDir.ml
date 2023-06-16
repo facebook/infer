@@ -81,7 +81,11 @@ let non_empty_directory_exists results_dir =
   (* Look if [results_dir] exists and is a non-empty directory. If it's an empty directory, leave it
      alone. This allows users to create a temporary directory for the infer results without infer
      removing it to recreate it, which could be racy. *)
-  Sys.is_directory results_dir = `Yes && not (Utils.directory_is_empty results_dir)
+  let safe_entries = ResultsDirEntryName.to_keep_before_new_capture ~results_dir in
+  Sys.is_directory results_dir = `Yes
+  && Iter.exists
+       (fun entry -> not (List.mem ~equal:String.equal safe_entries entry))
+       (Utils.iter_dir results_dir |> Iter.from_labelled_iter)
 
 
 let remove_results_dir () =
@@ -91,7 +95,8 @@ let remove_results_dir () =
           L.(die UserError)
             "ERROR: '%s' exists but does not seem to be an infer results directory: %s@\n\
              ERROR: Please delete '%s' and try again@." Config.results_dir err Config.results_dir ) ;
-    Utils.rmtree Config.results_dir ) ;
+    Utils.rm_all_in_dir Config.results_dir
+      ~except:(ResultsDirEntryName.to_keep_before_new_capture ~results_dir:Config.results_dir) ) ;
   RunState.reset ()
 
 

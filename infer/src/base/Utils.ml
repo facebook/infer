@@ -201,8 +201,6 @@ let directory_iter f path =
   if Sys.is_directory path = `Yes then loop [path] else f path
 
 
-let directory_is_empty path = Sys.readdir path |> Array.is_empty
-
 let string_crc_hex32 s = Caml.Digest.to_hex (Caml.Digest.string s)
 
 let read_json_file path =
@@ -359,29 +357,52 @@ let suppress_stderr2 f2 x1 x2 =
   protect ~f ~finally
 
 
-let rec rmtree name =
-  match Unix.((lstat name).st_kind) with
-  | S_DIR ->
-      let dir = Unix.opendir name in
-      let rec rmdir dir =
-        match Unix.readdir_opt dir with
-        | Some entry ->
-            if
-              not
-                ( String.equal entry Filename.current_dir_name
-                || String.equal entry Filename.parent_dir_name )
-            then rmtree (name ^/ entry) ;
-            rmdir dir
-        | None ->
-            Unix.closedir dir ;
-            Unix.rmdir name
-      in
-      rmdir dir
-  | _ ->
-      Unix.unlink name
-  | exception Unix.Unix_error (ENOENT, _, _) ->
-      ()
+let iter_dir name ~f =
+  let dir = Unix.opendir name in
+  let rec iter dir =
+    match Unix.readdir_opt dir with
+    | Some entry ->
+        if
+          not
+            ( String.equal entry Filename.current_dir_name
+            || String.equal entry Filename.parent_dir_name )
+        then f (name ^/ entry) ;
+        iter dir
+    | None ->
+        Unix.closedir dir
+  in
+  iter dir
 
+
+(** delete [name] recursively, return whether the file is not there at the end *)
+let rec rmtree_ ?(except = []) name =
+  match (Unix.lstat name).st_kind with
+  | S_DIR ->
+      if rm_all_in_dir_ ~except name then (
+        Unix.rmdir name ;
+        true )
+      else false
+  | _ ->
+      if List.mem ~equal:String.equal except name then false
+      else (
+        Unix.unlink name ;
+        true )
+  | exception Unix.Unix_error (ENOENT, _, _) ->
+      (* no entry: already deleted/was never there *)
+      true
+
+
+and rm_all_in_dir_ ?except name =
+  let no_files_left = ref true in
+  iter_dir name ~f:(fun entry ->
+      let entry_was_deleted = rmtree_ ?except entry in
+      no_files_left := !no_files_left && entry_was_deleted ) ;
+  !no_files_left
+
+
+let rm_all_in_dir ?except name = rm_all_in_dir_ ?except name |> ignore
+
+let rmtree ?except name = rmtree_ ?except name |> ignore
 
 let better_hash x = Marshal.to_string x [Marshal.No_sharing] |> Caml.Digest.string
 

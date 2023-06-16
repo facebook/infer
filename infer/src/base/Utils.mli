@@ -59,9 +59,6 @@ val directory_fold : ('a -> string -> 'a) -> 'a -> string -> 'a
 val directory_iter : (string -> unit) -> string -> unit
 (** Functional iter function over all the files of a directory *)
 
-val directory_is_empty : string -> bool
-(** Returns true if a given directory is empty. The directory is assumed to exist. *)
-
 val read_json_file : string -> (Yojson.Basic.t, string) Result.t
 
 val read_safe_json_file : string -> (Yojson.Safe.t, string) Result.t
@@ -101,8 +98,18 @@ val suppress_stderr2 : ('a -> 'b -> 'c) -> 'a -> 'b -> 'c
 (** wraps a function expecting 2 arguments in another that temporarily redirects stderr to /dev/null
     for the duration of the function call *)
 
-val rmtree : string -> unit
-(** [rmtree path] removes [path] and, if [path] is a directory, recursively removes its contents *)
+val rmtree : ?except:string list -> string -> unit
+(** [rmtree path] removes [path] and, if [path] is a directory, recursively removes its contents.
+    Files whose name matches the absolute paths in [except] are not removed. If [except] is
+    specified then [path] will only be spared if [path] appears literally in [except] (whereas files
+    that are deeper will match if their absolute path is in [except]). *)
+
+val rm_all_in_dir : ?except:string list -> string -> unit
+(** [rm_all_in_dir ?except path] removes all entries in [path]/* except for the (absolute) paths in
+    [except] *)
+
+val iter_dir : string -> f:(string -> unit) -> unit
+(** iterate on each entry in the directory except for "." and ".." *)
 
 val better_hash : 'a -> Caml.Digest.t
 (** Hashtbl.hash only hashes the first 10 meaningful values, [better_hash] uses everything. *)

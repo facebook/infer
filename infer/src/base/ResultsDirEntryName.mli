@@ -65,6 +65,9 @@ val to_delete_before_incremental_capture_and_analysis : results_dir:string -> st
 val to_delete_before_caching_capture : results_dir:string -> string list
 (** utility for {!ResultsDir.scrub_for_caching}, you probably want to use that instead *)
 
+val to_keep_before_new_capture : results_dir:string -> string list
+(** utility for {!ResultsDir.remove_results_dir}, you probably want to use that instead *)
+
 val buck_infer_deps_file_name : string
 (** sad that we have to have this here but some code path is looking for all files with that name in
     buck-out/ *)
