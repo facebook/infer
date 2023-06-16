@@ -16,13 +16,20 @@ void process_message(MessageBlock completion);
 
 void process_data(MessageBlock completion);
 
-@interface ImportantNews
+@interface ImportantNews : NSObject {
+
+ @public
+  NSString* news;
+}
 
 + (NSString*)produce_news;
 
 @end
 
-@interface GlobalNews
+@interface GlobalNews : NSObject {
+ @public
+  NSString* presenter;
+}
 
 + (NSString*)produce_news;
 

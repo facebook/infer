@@ -36,6 +36,17 @@
       {
         "class_name_regex": "Global.*",
         "kinds": ["MessageData"]
+      },
+      {
+        "field_regex": ".*news",
+        "exclude_from_regex_in": ["Message.h"],
+        "taint_target": "GetField",
+        "kinds": ["MessageData"]
+      },
+      {
+        "field_regex": ".*presenter",
+        "taint_target": "GetField",
+        "kinds": ["MessageData"]
       }
     ],
     "pulse-taint-sinks": [

@@ -25,3 +25,13 @@ void log_message_from_block_bad() {
 void log_important_news_good() { NSLog([ImportantNews produce_news]); }
 
 void log_important_global_bad() { NSLog([GlobalNews produce_news]); }
+
+void log_news_field_good() {
+  ImportantNews* my_news = [ImportantNews new];
+  NSLog(my_news->news);
+}
+
+void log_presenter_field_bad() {
+  GlobalNews* my_news = [GlobalNews new];
+  NSLog(my_news->presenter);
+}

@@ -427,7 +427,15 @@ let field_matches tenv matchers field_name =
       match matcher.field_matcher with
       | FieldRegex {name_regex; exclude_in} ->
           let field_name_s = Fieldname.get_field_name field_name in
-          if check_regex name_regex field_name_s exclude_in then Some matcher else None
+          let class_name = Fieldname.get_class_name field_name in
+          let source_file =
+            if Option.is_some exclude_in then
+              let class_struct_opt = Tenv.lookup tenv class_name in
+              Option.value_map ~default:None class_struct_opt ~f:(fun class_struct ->
+                  class_struct.Struct.source_file )
+            else None
+          in
+          if check_regex ?source_file name_regex field_name_s exclude_in then Some matcher else None
       | ClassAndFieldNames {class_names; field_names} ->
           let class_name = Fieldname.get_class_name field_name in
           if
