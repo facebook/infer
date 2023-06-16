@@ -71,9 +71,7 @@ let build ~changed_files =
   graph
 
 
-let build_for_analysis_replay () =
-  let graph = CallGraph.(create default_initial_capacity) in
-  let edges_to_ignore = ref Procname.Map.empty in
+let iter_on_disk_dependencies ~f =
   Summary.OnDisk.iter_specs ~f:(fun {Summary.proc_name; dependencies} ->
       let {Dependencies.summary_loads; recursion_edges} =
         match dependencies with
@@ -82,6 +80,13 @@ let build_for_analysis_replay () =
         | Partial ->
             L.die InternalError "deserialized summary with incomplete dependencies"
       in
+      f proc_name summary_loads recursion_edges )
+
+
+let from_summaries () =
+  let graph = CallGraph.(create default_initial_capacity) in
+  let edges_to_ignore = ref Procname.Map.empty in
+  iter_on_disk_dependencies ~f:(fun proc_name summary_loads recursion_edges ->
       edges_to_ignore := Procname.Map.add proc_name recursion_edges !edges_to_ignore ;
       CallGraph.create_node graph proc_name summary_loads ) ;
   if Config.debug_level_analysis > 0 then CallGraph.to_dotty graph AnalysisDependencyGraphDot ;
