@@ -898,11 +898,10 @@ let is_objc_class_method =
   is_objc_helper ~f:(function {kind= ObjCClassMethod} -> true | _ -> false)
 
 
-let is_objc_nsobject_self_method = function
-  | ObjC_Cpp {class_name; method_name} ->
-      String.equal (Typ.Name.name class_name) "NSObject" && String.equal method_name "self"
-  | _ ->
-      false
+let is_objc_nsobject_self_or_class_method =
+  is_objc_helper ~f:(function {class_name; method_name} ->
+      String.equal (Typ.Name.name class_name) "NSObject"
+      && (String.equal method_name "self" || String.equal method_name "class") )
 
 
 let get_objc_class_name proc_name =

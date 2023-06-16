@@ -39,6 +39,11 @@
   if ([sender isKindOfClass:UIView.self]) {
     return YES;
   }
+
+  // Used to crash due to NSObject.class being a special insatnce method without
+  // an implicit self parameter
+  Class cNSProxy = [NSProxy class];
+
   return NO;
 }
 @end
