@@ -89,18 +89,18 @@ are specified, they are applied in the order in which they
 are specified. Each filter is applied to each issue
 detected, and only issues which are accepted by all filters
 are reported. Each filter is of the form:
-&rsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&rsquo;.
+&lsquo;&lt;issue_type_regex&gt;:&lt;filename_regex&gt;:&lt;reason_string&gt;&lsquo;.
 The first two components are OCaml Str regular expressions,
-with an optional &rsquo;!&rsquo; character prefix. If a
-regex has a &rsquo;!&rsquo; prefix, the polarity is
+with an optional &lsquo;!&lsquo; character prefix. If a
+regex has a &lsquo;!&lsquo; prefix, the polarity is
 inverted, and the filter becomes a &quot;block list&quot;
 instead of a &quot;allow list&quot;. Each filter is
 interpreted as an implication: an issue matches if it does
-not match the &rsquo;issue_type_regex&rsquo; or if it does
-match the &rsquo;filename_regex&rsquo;. The filenames that
+not match the &lsquo;issue_type_regex&lsquo; or if it does
+match the &lsquo;filename_regex&lsquo;. The filenames that
 are tested by the regex are relative to the
-&rsquo;--project-root&rsquo; directory. The
-&rsquo;&lt;reason_string&gt;&rsquo; is a non-empty string
+&lsquo;--project-root&lsquo; directory. The
+&lsquo;&lt;reason_string&gt;&lsquo; is a non-empty string
 used to explain why the issue was filtered.</p>
 
 
@@ -326,6 +326,7 @@ INTEGER_OVERFLOW_L2 (enabled by default), <br>
 INTEGER_OVERFLOW_L5 (disabled by default), <br>
 INTEGER_OVERFLOW_U5 (disabled by default), <br>
 INTERFACE_NOT_THREAD_SAFE (enabled by default), <br>
+INVALID_SIL (enabled by default), <br>
 INVARIANT_CALL (disabled by default), <br>
 IPC_ON_UI_THREAD (enabled by default), <br>
 Internal_error (enabled by default), <br>
@@ -373,7 +374,7 @@ PRECONDITION_NOT_FOUND (enabled by default), <br>
 PRECONDITION_NOT_MET (enabled by default), <br>
 PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
 <br>
-PULSE_CONST_REFABLE (disabled by default), <br>
+PULSE_CONST_REFABLE (enabled by default), <br>
 PULSE_READONLY_SHARED_PTR_PARAM (enabled by default), <br>
 PULSE_RESOURCE_LEAK (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
@@ -389,7 +390,7 @@ PULSE_UNNECESSARY_COPY_INTERMEDIATE (disabled by default),
 PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST (disabled by <br>
 default), <br>
 PULSE_UNNECESSARY_COPY_MOVABLE (enabled by default), <br>
-PULSE_UNNECESSARY_COPY_OPTIONAL (disabled by default), <br>
+PULSE_UNNECESSARY_COPY_OPTIONAL (enabled by default), <br>
 PULSE_UNNECESSARY_COPY_OPTIONAL_CONST (disabled by default),
 <br>
 PULSE_UNNECESSARY_COPY_RETURN (disabled by default), <br>
@@ -415,6 +416,7 @@ Symexec_memory_error (enabled by default), <br>
 TAINT_ERROR (enabled by default), <br>
 THREAD_SAFETY_VIOLATION (enabled by default), <br>
 TOPL_ERROR (enabled by default), <br>
+TOPL_ERROR_LATENT (disabled by default), <br>
 UNINITIALIZED_VALUE (enabled by default), <br>
 UNREACHABLE_CODE (enabled by default), <br>
 UNTRUSTED_BUFFER_ACCESS (disabled by default), <br>
@@ -504,7 +506,8 @@ qualifier | severity | line | column | procedure |
 procedure_start_line <br>
 | file | bug_trace | key | hash | line_offset | <br>
 qualifier_contains_potential_exception_note | nullsafe_extra
-}</i></p>
+| <br>
+taint_extra }</i></p>
 
 <p style="margin-left:17%;">Fields to emit with
 <b>--issues-tests</b></p>

@@ -161,11 +161,11 @@ infer results directory. (Conversely:
 argument after <b>--</b> was <i>command</i>. Possible
 values: <i>ant</i>, <i>buck</i>, <i>buck1</i>, <i>buck2</i>,
 <i>gradle</i>, <i>gradlew</i>, <i>java</i>, <i>javac</i>,
-<i>cc</i>, <i>clang</i>, <i>gcc</i>, <i>clang++</i>,
-<i>c++</i>, <i>g++</i>, <i>hackc</i>, <i>make</i>,
-<i>configure</i>, <i>cmake</i>, <i>waf</i>, <i>mvn</i>,
-<i>mvnw</i>, <i>ndk-build</i>, <i>rebar3</i>, <i>erlc</i>,
-<i>xcodebuild</i>.</p>
+<i>kotlinc</i>, <i>cc</i>, <i>clang</i>, <i>gcc</i>,
+<i>clang++</i>, <i>c++</i>, <i>g++</i>, <i>hackc</i>,
+<i>make</i>, <i>configure</i>, <i>cmake</i>, <i>waf</i>,
+<i>mvn</i>, <i>mvnw</i>, <i>ndk-build</i>, <i>python3</i>,
+<i>rebar3</i>, <i>erlc</i>, <i>xcodebuild</i>.</p>
 
 <p style="margin-left:11%;"><b>--help</b></p>
 
@@ -197,6 +197,17 @@ analysis or capture encounter a failure (Conversely:
 <p style="margin-left:17%;">Do not start new parallel jobs
 if the load average is greater than that specified (Buck and
 make only)</p>
+
+
+<p style="margin-left:11%;"><b>--mark-unchanged-procs</b></p>
+
+<p style="margin-left:17%;">Activates: Check structural
+identity of newly-captured procedures with
+previously-captured versions, marking the new procedure as
+unchanged if the two are equivalent. Also prevents removing
+results db during capture, so that unchanged results can be
+reused during future incremental analyses (Conversely:
+<b>--no-mark-unchanged-procs</b>)</p>
 
 <p style="margin-left:11%;"><b>--merge-capture</b>
 <i>+string</i></p>
@@ -433,14 +444,14 @@ specified by <b>--buck2_bxl_target</b>. (Conversely:
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck build&rsquo;</i>.
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;"><b>--Xbuck-no-inline</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck build&rsquo;</i>,
+arguments to invocations of <i>&lsquo;buck build&lsquo;</i>,
 don't inline any args starting with '@'. Only valid for
 <b>--buck-clang</b>.</p>
 
@@ -448,15 +459,15 @@ don't inline any args starting with '@'. Only valid for
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck2
-build&rsquo;</i>. Only valid for <b>--buck-clang</b>.</p>
+arguments to invocations of <i>&lsquo;buck2
+build&lsquo;</i>. Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;"><b>--Xbuck2-no-inline</b>
 <i>+string</i></p>
 
 <p style="margin-left:17%;">Pass values as command-line
-arguments to invocations of <i>&rsquo;buck2
-build&rsquo;</i>, don't inline any args starting with '@'.
+arguments to invocations of <i>&lsquo;buck2
+build&lsquo;</i>, don't inline any args starting with '@'.
 Only valid for <b>--buck-clang</b>.</p>
 
 <p style="margin-left:11%;"><b>--xcode-developer-dir</b>
@@ -571,8 +582,8 @@ arguments to invocations of clang</p>
 <p style="margin-left:17%;">Activates: Infer will use
 xcpretty together with xcodebuild to analyze an iOS app.
 xcpretty just needs to be in the path, infer command is
-still just <i>&rsquo;infer -- &lt;xcodebuild
-command&gt;&rsquo;</i>. (Conversely:
+still just <i>&lsquo;infer -- &lt;xcodebuild
+command&gt;&lsquo;</i>. (Conversely:
 <b>--no-xcpretty</b>)</p>
 
 <h2>ERLANG OPTIONS

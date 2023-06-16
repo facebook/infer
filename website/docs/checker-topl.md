@@ -13,6 +13,7 @@ Supported languages:
 - Erlang: Experimental
 - Hack: No
 - Java: Experimental
+- Python: No
 
 # Topl
 
@@ -124,3 +125,4 @@ For several examples, see https://github.com/facebook/infer/tree/main/infer/test
 
 The following issue types are reported by this checker:
 - [TOPL_ERROR](/docs/next/all-issue-types#topl_error)
+- [TOPL_ERROR_LATENT](/docs/next/all-issue-types#topl_error_latent)

@@ -13,6 +13,7 @@ Supported languages:
 - Erlang: No
 - Hack: No
 - Java: Yes
+- Python: No
 
 Cost analysis statically estimates an upper bound on the worst-case execution cost of a program (WCET). This page gives an overview of how the analysis works for *Java* code. The analyser also has limited support for C/C++ and Objective-C.
 

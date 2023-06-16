@@ -13,6 +13,7 @@ Supported languages:
 - Erlang: No
 - Hack: No
 - Java: Yes
+- Python: No
 
 
 

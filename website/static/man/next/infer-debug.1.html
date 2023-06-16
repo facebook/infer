@@ -94,6 +94,14 @@ undefined, and to <b>pager</b> otherwise.</p>
 <p style="margin-left:17%;">Show this manual with all
 internal options in the INTERNAL OPTIONS section</p>
 
+<p style="margin-left:11%;"><b>--preanalysis-html</b></p>
+
+<p style="margin-left:17%;">Activates: Whether the HTML
+node printing for preanalysis is enabled or not. Set to
+false by default since this helps focus on debugging just
+the enabled analyses. (Conversely:
+<b>--no-preanalysis-html</b>)</p>
+
 <p style="margin-left:11%;"><b>--select</b>
 <i>(N|all)</i></p>
 
@@ -187,8 +195,9 @@ found in the output of <b>--procedures</b> (Conversely:
 <p style="margin-left:11%;"><b>--procedures-summary</b></p>
 
 <p style="margin-left:17%;">Activates: Print the summaries
-of each procedure in the output of <b>--procedures</b>
-(Conversely: <b>--no-procedures-summary</b>)</p>
+of each procedure in the output of <b>--procedures</b>. See
+also <b>--procedures-summary-nonempty</b>. (Conversely:
+<b>--no-procedures-summary</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--procedures-summary-json</b></p>
@@ -197,13 +206,45 @@ of each procedure in the output of <b>--procedures</b>
 of each procedure in the output of <b>--procedures</b> as
 JSON (Conversely: <b>--no-procedures-summary-json</b>)</p>
 
+
+<p style="margin-left:11%;"><b>--procedures-summary-skip-empty</b></p>
+
+<p style="margin-left:17%;">Activates: Completely skip
+procedures that do not have summaries. Useful when analyzing
+a small part of a big project. (To use in conjunction with
+<b>--procedures-summary</b> or
+<b>--procedures-summary-json</b>. See also
+<b>--changed-files-index</b>.) (Conversely:
+<b>--no-procedures-summary-skip-empty</b>)</p>
+
 <h2>DEBUG SOURCE FILES
 <a name="DEBUG SOURCE FILES"></a>
 </h2>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--source-files</b></p>
+<p style="margin-left:11%; margin-top: 1em"><b>--complete-capture-from</b>
+<i>path</i></p>
+
+<p style="margin-left:17%;">Provide the path to an infer
+results directory containing a capture database. The capture
+database specified with <b>--results-dir</b>) (which must
+exist) will be completed from the input database and
+according to the <b>missing-*</b> files in the results
+directory. The exit code will be equal to the number of rows
+added to the capture database.</p>
+
+<p style="margin-left:11%;"><b>--extract-capture-from</b>
+<i>path</i></p>
+
+<p style="margin-left:17%;">Provide the path to an infer
+results directory containing a capture database. Together
+with a list of files provided through the obligatory use of
+<b>--changed-files-index</b>, create a new capture database
+containing only the artefacts related to these files (in the
+location specified with <b>--results-dir</b>).</p>
+
+<p style="margin-left:11%;"><b>--source-files</b></p>
 
 <p style="margin-left:17%;">Activates: Print source files
 discovered by infer (Conversely:

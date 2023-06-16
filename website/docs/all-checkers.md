@@ -151,11 +151,17 @@ Catches Static Initialization Order Fiascos in C++, that can lead to subtle, com
 
 [Visit here for more information.](/docs/next/checker-siof)
 
-## Simple Lineage
+## SIL validation
+
+This checker validates that all SIL instructions in all procedure bodies conform to a (front-end specific) subset of SIL.
+
+[Visit here for more information.](/docs/next/checker-sil-validation)
+
+## Lineage
 
 Computes a dataflow graph
 
-[Visit here for more information.](/docs/next/checker-simple-lineage)
+[Visit here for more information.](/docs/next/checker-lineage)
 
 ## Self in Block
 

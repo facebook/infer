@@ -13,6 +13,7 @@ Supported languages:
 - Erlang: No
 - Hack: No
 - Java: Yes
+- Python: No
 
 Quandary is a static taint analyzer that identifies a variety of unsafe
 information flows. It has a small list of built-in

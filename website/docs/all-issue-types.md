@@ -1301,6 +1301,13 @@ interface or to the interface method. For background on why these annotations
 are needed, see the detailed explanation
 [here](/docs/next/checker-racerd#interface-not-thread-safe).
 
+## INVALID_SIL
+
+Reported as "Invalid Sil" by [sil-validation](/docs/next/checker-sil-validation).
+
+The SIL instruction does not conform to the expected subset of instructions
+expected for the front-end of the language for the analyzed code.
+
 ## INVARIANT_CALL
 
 Reported as "Invariant Call" by [loop-hoisting](/docs/next/checker-loop-hoisting).
@@ -2102,7 +2109,31 @@ See [PULSE_UNNECESSARY_COPY_MOVABLE](#pulse_unnecessary_copy_movable).
 
 Reported as "Unnecessary Copy Intermediate" by [pulse](/docs/next/checker-pulse).
 
-See [PULSE_UNNECESSARY_COPY](#pulse_unnecessary_copy).
+This is reported when Infer detects an unnecessary temporary copy of an intermediate object where copy is created to be passed down to a function unnecessarily. Instead, the intermediate object should either be moved into the callee or the type of the callee's parameter should be made `const &`.
+
+A prime example of this occurs when we call a function with a call-by-value parameter as follows:
+
+```cpp
+void callee(ExpensiveObject obj) {
+  // ....
+}
+
+void caller() {
+  callee(myExpensiveObj); // a copy of myExpensiveObj is created
+  // the copy is destroyed right after the call  
+}
+```
+
+In this case, when we call `callee`, under the hood, a copy of the argument `myExpensiveObj` is created to be passed to the function call. However, the copy might be unnecessary if
+
+ -   `callee` doesn’t modify its parameter → then we can change its type to `const ExpensiveObject&`, getting rid of the copy at caller
+ -   even if `callee` might modify the object, if the argument `myExpensiveObj` is never used later on, we can get rid of the copy by moving it instead: `callee(std::move(myExpensiveObj))`.
+
+
+The analysis is careful about suggesting moves blindly though: if the argument `myExpensiveObj` is of type `const & ExpensiveObject` then we also recommend that for move to work, const-reference needs to be removed.
+
+
+PS: We check for other conditions on the argument here: e.g. it should be local to the procedure, as moving a non-local member might cause other memory correctness issues like use-after-move later on.
 ## PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST
 
 Reported as "Unnecessary Copy Intermediate from Const" by [pulse](/docs/next/checker-pulse).
@@ -2871,6 +2902,11 @@ This indicates that the code has a user-defined undesired behavior.
 
 See [Topl](/docs/next/checker-topl##what-is-it) for an example
 
+## TOPL_ERROR_LATENT
+
+Reported as "Topl Error Latent" by [topl](/docs/next/checker-topl).
+
+A latent [TOPL_ERROR](#topl_error). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## UNINITIALIZED_VALUE
 
 Reported as "Uninitialized Value" by [uninit](/docs/next/checker-uninit).

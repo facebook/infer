@@ -13,6 +13,7 @@ Supported languages:
 - Erlang: No
 - Hack: No
 - Java: Yes
+- Python: No
 
 RacerD finds data races in your C++/Objective C and Java code. This page gives a more in-depth
 explanation of how the analysis works *for Java code*, but may be less complete than the

@@ -13,6 +13,7 @@ Supported languages:
 - Erlang: No
 - Hack: No
 - Java: Yes
+- Python: No
 
 Read more about its foundations in the [Separation Logic and Biabduction page](separation-logic-and-bi-abduction).
 

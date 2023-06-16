@@ -15,6 +15,7 @@ Supported languages:
 - Erlang: No
 - Hack: No
 - Java: Yes
+- Python: No
 
 > "I call it my billion-dollar mistake. It was the invention of the null
 > reference in 1965."

@@ -13,6 +13,7 @@ Supported languages:
 - Erlang: No
 - Hack: No
 - Java: Experimental
+- Python: No
 
 This is an experimental inter-procedural analysis that detects pure (side-effect free) functions. For each function, purity analysis keeps track of not only the purity of the function but also some additional information such as whether the function modifies a global variable or which of the parameters are modified. It models functions with no summary/model as modifying the global state (hence impure).
 

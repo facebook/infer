@@ -11,7 +11,7 @@
     "checker-parameter-not-null-checked", "checker-printf-args",
     "checker-pulse", "checker-purity", "checker-quandary", "checker-racerd",
     "checker-resource-leak-lab", "checker-scope-leakage", "checker-siof",
-    "checker-simple-lineage", "checker-self-in-block", "checker-starvation",
-    "checker-topl", "checker-uninit"
+    "checker-sil-validation", "checker-lineage", "checker-self-in-block",
+    "checker-starvation", "checker-topl", "checker-uninit"
   ]
 }
