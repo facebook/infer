@@ -82,29 +82,28 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let info = info ty in
       (env, Ok exp, info)
   | Name ndx ->
-      if not (Env.is_toplevel env) then
-        L.die InternalError "TODO: load_cell inside a class declaration"
+      let global = Env.is_toplevel env in
+      let name = co_names.(ndx) in
+      let ({Env.typ; is_code} as info), qualified_name =
+        Env.lookup_symbol ~global env name
+        |> Option.value_map
+             ~default:(default, PyCommon.global name)
+             ~f:(fun {Env.qualified_name= {value}; info} -> (info, value))
+      in
+      let var_name = var_name ~loc qualified_name in
+      (* If we are trying to load some code, use the dedicated builtin *)
+      if is_code then
+        let env, exp, typ = code_to_exp ~fun_or_class:true env qualified_name in
+        let info = {info with Env.typ} in
+        (env, Ok exp, info)
       else
-        let name = co_names.(ndx) in
-        let gname = PyCommon.global name in
-        let var_name = var_name ~loc gname in
-        let ({Env.typ; is_code} as info) =
-          Env.SMap.find_opt name (Env.globals env)
-          |> Option.value_map ~default ~f:(fun {Env.info} -> info)
-        in
-        (* If we are trying to load some code, use the dedicated builtin *)
-        if is_code then
-          let env, exp, typ = code_to_exp ~fun_or_class:true env gname in
-          let info = {info with Env.typ} in
-          (env, Ok exp, info)
-        else
-          let exp = T.Exp.Lvar var_name in
-          let loc = Env.loc env in
-          let env, id = Env.mk_fresh_ident env info in
-          let instr = T.Instr.Load {id; exp; typ; loc} in
-          let env = Env.push_instr env instr in
-          (* TODO: try to trace the type of names, not only global ones ? *)
-          (env, Ok (T.Exp.Var id), info)
+        let exp = T.Exp.Lvar var_name in
+        let loc = Env.loc env in
+        let env, id = Env.mk_fresh_ident env info in
+        let instr = T.Instr.Load {id; exp; typ; loc} in
+        let env = Env.push_instr env instr in
+        (* TODO: try to trace the type of names, not only global ones ? *)
+        (env, Ok (T.Exp.Var id), info)
   | VarName ndx ->
       let name = co_varnames.(ndx) in
       let exp = T.Exp.Lvar (var_name ~loc name) in
@@ -321,23 +320,22 @@ module STORE = struct
 
             Works as [STORE_NAME], but stores the name as a global.
 
-            Since there is a special namespace for global varialbes, this is in fact the same as
+            Since there is a special namespace for global variables, this is in fact the same as
             [STORE_NAME], but only called from within a function/method. *)
 
   let run kind env ({FFI.Code.co_names; co_varnames} as code) {FFI.Instruction.opname; arg} =
-    let name, is_global, is_attr =
+    let name, global, is_attr =
       match kind with
       | FAST ->
           (co_varnames.(arg), false, false)
       | NAME ->
-          if Env.is_toplevel env then (co_names.(arg), true, false)
-          else L.die InternalError "[%s] TODO in class declartaion" opname
+          (co_names.(arg), Env.is_toplevel env, false)
       | ATTR ->
           (co_names.(arg), false, true)
       | GLOBAL ->
           (co_names.(arg), true, false)
     in
-    let gname = if is_global then PyCommon.global name else name in
+    let gname = if global then PyCommon.global name else name in
     Debug.p "[%s] name = %s\n" opname gname ;
     let loc = Env.loc env in
     let var_name = var_name ~loc gname in
@@ -347,7 +345,7 @@ module STORE = struct
     match exp with
     | Ok exp ->
         let {Env.typ; is_code; is_class} = info in
-        let env = if is_global then Env.register_global env name global_name info else env in
+        let env = Env.register_symbol ~global env name global_name info in
         if is_attr then
           let env, cell = pop_datastack opname env in
           let env, value, {Env.typ} = load_cell env code cell in
@@ -368,7 +366,7 @@ module STORE = struct
           Debug.p "  top-level class declaration initialized\n" ;
           (env, None) )
         else if is_code then
-          if is_global then (
+          if global then (
             Debug.p "  top-level function defined\n" ;
             (env, None) )
           else L.die InternalError "[%s] no support for closure at the moment: %s" opname name
@@ -425,7 +423,7 @@ module FUNCTION = struct
         let known_globals = Env.globals env in
         let proc =
           match Env.SMap.find_opt fname known_globals with
-          | Some {Env.global_name= {value; loc}; is_builtin} ->
+          | Some {Env.qualified_name= {value; loc}; is_builtin} ->
               if is_builtin then PyCommon.builtin_name value
               else qualified_procname @@ proc_name ~loc value
           | None ->
@@ -584,7 +582,7 @@ module FUNCTION = struct
                   (FFI.Constant.show const) )
       in
       let loc = Env.loc env in
-      let env = Env.register_toplevel env qualified_name loc annotations in
+      let env = Env.register_function env qualified_name loc annotations in
       let env = Env.push env (DataStack.Code {fun_or_class= true; qualified_name; code}) in
       (env, None)
   end
@@ -1310,7 +1308,7 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; instructions} as code) 
   (* Translate globals to Textual *)
   let globals =
     Env.SMap.fold
-      (fun _name {Env.global_name= {value; loc}; info= {is_code}} acc ->
+      (fun _name {Env.qualified_name= {value; loc}; info= {is_code}} acc ->
         let varname = var_name ~loc value in
         if is_code then
           (* don't generate a global variable name, it will be declared as a toplevel decl *)

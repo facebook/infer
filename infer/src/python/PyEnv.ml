@@ -239,9 +239,10 @@ module SMap = Caml.Map.Make (String)
 
 type info = {is_code: bool; is_class: bool; typ: T.Typ.t}
 
-type global_name = {value: string; loc: T.Location.t}
+(* TODO: check how much structure we need once we start investigating nested classes/functions *)
+type qualified_name = {value: string; loc: T.Location.t}
 
-type global_info = {global_name: global_name; is_builtin: bool; info: info}
+type symbol_info = {qualified_name: qualified_name; is_builtin: bool; info: info}
 
 type label_info =
   { label_name: string
@@ -254,7 +255,8 @@ type label_info =
 and shared =
   { idents: T.Ident.Set.t
   ; idents_info: info T.Ident.Map.t
-  ; globals: global_info SMap.t
+  ; globals: symbol_info SMap.t
+  ; names: symbol_info SMap.t
   ; builtins: BuiltinSet.t
   ; classes: string list
   ; toplevel_signatures: Signature.t SMap.t
@@ -350,9 +352,9 @@ let initial_globals =
   List.fold ~init:SMap.empty
     ~f:(fun acc (b, _) ->
       let value = Builtin.python_to_string b in
-      let global_name = {value; loc= T.Location.Unknown} in
+      let qualified_name = {value; loc= T.Location.Unknown} in
       let info = {is_code= true; is_class= false; typ= PyCommon.pyCode} in
-      let global_info = {global_name; is_builtin= true; info} in
+      let global_info = {qualified_name; is_builtin= true; info} in
       SMap.add value global_info acc )
     BuiltinSet.python_builtins
 
@@ -361,6 +363,7 @@ let empty =
   { idents= T.Ident.Set.empty
   ; idents_info= T.Ident.Map.empty
   ; globals= initial_globals
+  ; names= SMap.empty
   ; builtins= BuiltinSet.empty
   ; classes= []
   ; toplevel_signatures= SMap.empty
@@ -375,7 +378,9 @@ let empty = {shared= empty; node= empty_node}
 let stack {node= {stack}} = stack
 
 let enter_proc ~is_toplevel {shared} =
-  let shared = {shared with is_toplevel; idents= T.Ident.Set.empty; next_label= 0} in
+  let shared =
+    {shared with is_toplevel; idents= T.Ident.Set.empty; next_label= 0; names= SMap.empty}
+  in
   {shared; node= empty_node}
 
 
@@ -444,12 +449,26 @@ let label_of_offset {shared} offset =
 
 let instructions {node= {instructions}} = List.rev instructions
 
-let register_global ({shared} as env) name global_name info =
-  let register_global ({globals} as env) name global_name info =
-    let global_info = {global_name; is_builtin= false; info} in
-    {env with globals= SMap.add name global_info globals}
+let register_symbol ({shared} as env) ~global name qualified_name info =
+  let register map name qualified_name info =
+    let symbol_info = {qualified_name; is_builtin= false; info} in
+    SMap.add name symbol_info map
   in
-  {env with shared= register_global shared name global_name info}
+  let {globals; names} = shared in
+  if global then
+    let globals = register globals name qualified_name info in
+    let shared = {shared with globals} in
+    {env with shared}
+  else
+    let names = register names name qualified_name info in
+    let shared = {shared with names} in
+    {env with shared}
+
+
+let lookup_symbol {shared} ~global name =
+  let lookup map name = SMap.find_opt name map in
+  let {globals; names} = shared in
+  if global then lookup globals name else lookup names name
 
 
 let globals {shared= {globals}} = globals
@@ -498,14 +517,14 @@ let register_call env fname =
       env
 
 
-let register_toplevel ({shared} as env) name loc annotations =
+let register_function ({shared} as env) name loc annotations =
   let value = PyCommon.global name in
-  let global_name = {value; loc} in
+  let qualified_name = {value; loc} in
   let info = {is_code= true; is_class= false; typ= PyCommon.pyObject} in
-  let global_info = {global_name; is_builtin= false; info} in
+  let symbol_info = {qualified_name; is_builtin= false; info} in
   let {toplevel_signatures; globals} = shared in
   let toplevel_signatures = SMap.add value annotations toplevel_signatures in
-  let globals = SMap.add name global_info globals in
+  let globals = SMap.add name symbol_info globals in
   let shared = {shared with toplevel_signatures; globals} in
   {env with shared}
 

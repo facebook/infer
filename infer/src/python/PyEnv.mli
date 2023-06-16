@@ -62,11 +62,11 @@ type info =
 
 module SMap : Caml.Map.S with type key = string
 
-(** Fully expanded name of a global symbol *)
-type global_name = {value: string; loc: T.Location.t}
+(** Fully expanded name of a symbol *)
+type qualified_name = {value: string; loc: T.Location.t}
 
-(** Global information for global symbols *)
-type global_info = {global_name: global_name; is_builtin: bool; info: info}
+(** Information about symbols to correct do the translation to Textual's qualified names *)
+type symbol_info = {qualified_name: qualified_name; is_builtin: bool; info: info}
 
 (** Global environment used during bytecode processing. Stores common global information like the
     toplevel symbols processed so far, or more local ones like the set of labels or variable ids
@@ -107,7 +107,7 @@ val loc : t -> T.Location.t
 val stack : t -> DataStack.t
 (** Returns the [DataStack.t] for the current declaration *)
 
-val globals : t -> global_info SMap.t
+val globals : t -> symbol_info SMap.t
 (** Return the [globals] map *)
 
 val builtins : t -> BuiltinSet.t
@@ -160,11 +160,12 @@ val register_label : offset:int -> Label.info -> t -> t
 val process_label : offset:int -> Label.info -> t -> t
 (** Mark the label [info] at [offset] as processed *)
 
-val register_global : t -> string -> global_name -> info -> t
-(** Register a global name (function, variable, ...). Since Python allows "toplevel" code, they are
-    encoded within a specially named function that behaves as a toplevel scope, and global
-    identifiers are scope accordingly. That way, there is no mixing them with locals with the same
-    name. *)
+val register_symbol : t -> global:bool -> string -> qualified_name -> info -> t
+(** Register a name (function, variable, ...). It might be a [global] symbol at the module level or
+    in a local object. *)
+
+val lookup_symbol : t -> global:bool -> string -> symbol_info option
+(** Lookup information about a global/local symbol previously registered via [register_symbol] *)
 
 val register_call : t -> string -> t
 (** Register a function call. It enables us to deal correctly with builtin declaration. *)
@@ -173,9 +174,9 @@ val mk_builtin_call : t -> Builtin.textual -> T.Exp.t list -> t * T.Ident.t * T.
 (** Wrapper to compute the Textual version of a call to a "textual" builtin * function (a builtin we
     introduced for modeling purpose) *)
 
-val register_toplevel : t -> string -> T.Location.t -> PyCommon.annotated_name list -> t
-(** Register a top level function declaration. We keep track of them since they might shadow Python
-    builtins *)
+val register_function : t -> string -> T.Location.t -> PyCommon.annotated_name list -> t
+(** Register a function declaration. We keep track of them since they might shadow Python builtins
+    or previous definitions *)
 
 val register_method :
   t -> enclosing_class:string -> method_name:string -> PyCommon.annotated_name list -> t
