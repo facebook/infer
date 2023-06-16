@@ -185,15 +185,8 @@ let tasks_generator_builder_for replay_call_graph_opt sources =
       SyntacticCallGraph.make sources
   | Some replay_call_graph, ReplayAnalysis ->
       (* If the replay scheduler has been selected then [replay_call_graph_opt] should have been
-         pre-computed before calling this function.
-
-         After the procedure-level tasks from [replay_tasks] have been completed, run the file-level
-         analyses. This is done by chaining the file scheduler after [replay_tasks]. This is similar
-         to how callgraph does it but the expectation here is that by then all procedure-level
-         analyses required by those have been done already. *)
-      ProcessPool.TaskGenerator.chain
-        (CallGraphScheduler.bottom_up replay_call_graph)
-        (FileScheduler.make sources)
+         pre-computed before calling this function. *)
+      ReplayScheduler.make replay_call_graph sources
   | _ ->
       L.die InternalError "unexpected combination of replay_call_graph_opt and Config.scheduler"
 
