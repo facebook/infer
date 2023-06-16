@@ -181,14 +181,18 @@ let wait_for_updates pool buffer =
   update
 
 
-let killall pool ~slot status =
-  Array.iter pool.slots ~f:(fun {pid} ->
+let killall slots =
+  Array.iter slots ~f:(fun {pid} ->
       match Signal_unix.send Signal.term (`Pid pid) with `Ok | `No_such_process -> () ) ;
-  Array.iter pool.slots ~f:(fun {pid} ->
+  Array.iter slots ~f:(fun {pid} ->
       try Unix.wait (`Pid pid) |> ignore
       with Unix.Unix_error (ECHILD, _, _) ->
         (* some children may have died already, it's fine *) () ) ;
-  ProcessPoolState.has_running_children := false ;
+  ProcessPoolState.has_running_children := false
+
+
+let one_child_died pool ~slot status =
+  killall pool.slots ;
   L.internal_error "Subprocess %d: %s@\n" slot status ;
   L.exit 1
 
@@ -253,7 +257,7 @@ let process_updates pool buffer =
   (* abort everything if some child has died unexpectedly *)
   has_dead_child pool
   |> Option.iter ~f:(fun (slot, status) ->
-         killall pool ~slot (Unix.Exit_or_signal.to_string_hum status) ) ;
+         one_child_died pool ~slot (Unix.Exit_or_signal.to_string_hum status) ) ;
   wait_for_updates pool buffer
   |> List.iter ~f:(function
        | UpdateStatus (slot, t, status) ->
@@ -266,7 +270,7 @@ let process_updates pool buffer =
            let {pid} = pool.slots.(slot) in
            (* clean crash, give the child process a chance to cleanup *)
            Unix.wait (`Pid pid) |> ignore ;
-           killall pool ~slot "see backtrace above"
+           one_child_died pool ~slot "see backtrace above"
        | Ready {worker= slot; heap_words; result} ->
            ( match pool.children_states.(slot) with
            | Initializing ->
@@ -302,7 +306,7 @@ let collect_results (pool : (_, 'final, _) t) =
         | FinalCrash slot ->
             (* NOTE: the workers only send this message if {!Config.keep_going} is not [true] so if
                we receive it we know we should fail hard *)
-            killall pool ~slot "see backtrace above"
+            one_child_died pool ~slot "see backtrace above"
         | Finished (_slot, data) ->
             data )
 
@@ -535,10 +539,7 @@ let create :
   in
   ProcessPoolState.has_running_children := true ;
   Epilogues.register ~description:"Wait children processes exit" ~f:(fun () ->
-      if !ProcessPoolState.has_running_children then (
-        Array.iter slots ~f:(fun {pid} ->
-            ignore (Unix.wait (`Pid pid) : Pid.t * Unix.Exit_or_signal.t) ) ;
-        ProcessPoolState.has_running_children := false ) ) ;
+      if !ProcessPoolState.has_running_children then killall slots ) ;
   (* we have forked the child processes and are now in the parent *)
   let children_updates = List.map children_pipes ~f:(fun (pipe_child_r, _) -> pipe_child_r) in
   let children_states = Array.create ~len:jobs Initializing in
