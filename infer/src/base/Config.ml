@@ -2600,7 +2600,10 @@ and pulse_taint_sources =
           fields given by name in return value, arguments or other fields
       - "GetField" : a given field is read
       - "SetField" : a given field is set
-    $(i,N.B.) for methods, index 0 is $(i,this)/$(i,self).|}
+    $(i,N.B.) for methods, index 0 is $(i,this)/$(i,self).
+
+  For all the regex-based matchers, we can also specify:
+  - "exclude_from_regex_in" - to specify a list of header files, such that we exclude any classes, field or methods from those files from the regexes.|}
 
 
 and pulse_taint_data_flow_kinds =
