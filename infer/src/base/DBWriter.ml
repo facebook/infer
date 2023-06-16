@@ -40,7 +40,7 @@ module Implementation = struct
 
   let canonicalize () =
     Database.get_database CaptureDatabase
-    |> SqliteUtils.exec ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint"
+    |> SqliteUtils.exec ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint(TRUNCATE)"
 
 
   let delete_all_specs () =
@@ -266,7 +266,7 @@ module Implementation = struct
               (Pp.seq ~sep:", " (fun fmt payload_name -> F.fprintf fmt "%s=NULL" payload_name))
               PayloadId.database_fields ) ) ;
     SqliteUtils.exec db ~log:"vacuum analysis database" ~stmt:"VACUUM" ;
-    SqliteUtils.exec db ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint"
+    SqliteUtils.exec db ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint(TRUNCATE)"
 
 
   let store_issue_log =

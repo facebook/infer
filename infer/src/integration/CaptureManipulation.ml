@@ -135,7 +135,7 @@ let extract ~files ~input_capture_path =
         files ;
       SourceFile.HashSet.iter sources_to_copy
       |> Iter.iter (fun s -> copy_sourcefile_with_procedures s |> ignore) ) ;
-  SqliteUtils.exec db ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint"
+  DBWriter.canonicalize ()
 
 
 let complete ~input_capture_path =
@@ -153,5 +153,5 @@ let complete ~input_capture_path =
   in
   Unix.unlink (ResultsDirEntryName.get_path ~results_dir:Config.results_dir MissingProcedures) ;
   Unix.unlink (ResultsDirEntryName.get_path ~results_dir:Config.results_dir MissingSourceFiles) ;
-  SqliteUtils.exec db ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint" ;
+  DBWriter.canonicalize () ;
   rows_changed
