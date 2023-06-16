@@ -281,28 +281,34 @@ let taint_procedure_target_matches tenv taint_target actual_index actual_typ =
       false
 
 
-let check_regex name_regex elem ?location exclude_in =
+let check_regex name_regex elem ?source_file exclude_in =
   L.d_printfln "Matching regex wrt %s" elem ;
   let should_exclude_location =
-    match (location, exclude_in) with
-    | Some location, Some exclude_in ->
+    match (source_file, exclude_in) with
+    | Some source_file, Some exclude_in ->
         L.d_printfln "Checking exclude_in list with location of elem = %a and exclude_in = %a"
-          SourceFile.pp location.Location.file (Pp.semicolon_seq String.pp) exclude_in ;
+          SourceFile.pp source_file (Pp.semicolon_seq String.pp) exclude_in ;
         List.exists exclude_in ~f:(fun exclude ->
             (* This is needed because in clang languages the location of the elem can be either in the header
                or in the source file, depending whether the source file is available in the analysis or not.
                So we assume exclude_in always ends in .h for clang languages, we drop the suffix and then we
                can compare the remaining name with the location. *)
             let exclude_header = String.chop_suffix_if_exists exclude ~suffix:".h" in
-            String.is_substring
-              (SourceFile.to_string location.Location.file)
-              ~substring:exclude_header )
+            String.is_substring (SourceFile.to_string source_file) ~substring:exclude_header )
     | _ ->
         false
   in
-  if should_exclude_location then false
+  if should_exclude_location then (
+    L.d_printfln "No match because of exclude_in" ;
+    false )
   else
-    match Str.search_forward name_regex elem 0 with _ -> true | exception Caml.Not_found -> false
+    match Str.search_forward name_regex elem 0 with
+    | _ ->
+        L.d_printfln "Found match" ;
+        true
+    | exception Caml.Not_found ->
+        L.d_printfln "No match" ;
+        false
 
 
 let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name actuals =
@@ -316,15 +322,30 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
             String.is_substring ~substring:name proc_name_s
         | ProcedureNameRegex {name_regex; exclude_in} ->
             let proc_name_s = F.asprintf "%a" Procname.pp_verbose proc_name in
-            let location = Option.map ~f:(fun attr -> attr.ProcAttributes.loc) proc_attributes in
-            check_regex name_regex proc_name_s ?location exclude_in
-        | ClassNameRegex {name_regex; exclude_in} ->
-            Option.exists (Procname.get_class_type_name proc_name) ~f:(fun class_name ->
-                PatternMatch.supertype_exists tenv
-                  (fun class_name _ ->
-                    let class_name_s = Typ.Name.name class_name in
-                    check_regex name_regex class_name_s exclude_in )
-                  class_name )
+            let source_file =
+              Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
+            in
+            check_regex name_regex proc_name_s ?source_file exclude_in
+        | ClassNameRegex {name_regex; exclude_in} -> (
+            let check_regex_class class_name class_struct_opt =
+              let class_name_s = Typ.Name.name class_name in
+              let source_file =
+                Option.value_map class_struct_opt ~default:None ~f:(fun class_struct ->
+                    class_struct.Struct.source_file )
+              in
+              (* Sometimes the classes don't get added to the tenv, so we use the proc_attributes loc as a backup *)
+              let source_file =
+                if Option.is_some source_file then source_file
+                else
+                  Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
+              in
+              check_regex ?source_file name_regex class_name_s exclude_in
+            in
+            match class_name with
+            | Some class_name ->
+                Tenv.mem_supers tenv ~f:check_regex_class class_name
+            | None ->
+                false )
         | ClassAndMethodNames {class_names; method_names} ->
             class_names_match tenv class_names class_name
             && List.mem ~equal:String.equal method_names (Procname.get_method proc_name)
@@ -361,8 +382,10 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
             String.is_substring ~substring:name proc_name_s
         | BlockNameRegex {name_regex; exclude_in}, Some block_passed_to_proc_name ->
             let proc_name_s = F.asprintf "%a" Procname.pp_verbose block_passed_to_proc_name in
-            let location = Option.map ~f:(fun attr -> attr.ProcAttributes.loc) proc_attributes in
-            check_regex name_regex ?location proc_name_s exclude_in
+            let source_file =
+              Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
+            in
+            check_regex name_regex ?source_file proc_name_s exclude_in
         | _ ->
             false
       in

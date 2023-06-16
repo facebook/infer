@@ -27,6 +27,15 @@
         "block_passed_to_regex": ".*data",
         "taint_target": ["ArgumentPositions", [0]],
         "kinds": ["MessageData"]
+      },
+      {
+        "class_name_regex": "Important.*",
+        "exclude_from_regex_in": ["Message.h"],
+        "kinds": ["MessageData"]
+      },
+      {
+        "class_name_regex": "Global.*",
+        "kinds": ["MessageData"]
       }
     ],
     "pulse-taint-sinks": [

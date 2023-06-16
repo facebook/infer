@@ -15,3 +15,15 @@ typedef void (^MessageBlock)(NSString* message);
 void process_message(MessageBlock completion);
 
 void process_data(MessageBlock completion);
+
+@interface ImportantNews
+
++ (NSString*)produce_news;
+
+@end
+
+@interface GlobalNews
+
++ (NSString*)produce_news;
+
+@end

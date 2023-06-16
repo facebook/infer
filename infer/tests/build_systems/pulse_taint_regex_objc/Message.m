@@ -13,3 +13,19 @@ NSString* important_data() { return @"my_data"; }
 void process_message(MessageBlock completion) { completion(@"my_message"); }
 
 void process_data(MessageBlock completion) { completion(@"my_data"); }
+
+@implementation ImportantNews
+
++ (NSString*)produce_news {
+  return @"the news";
+}
+
+@end
+
+@implementation GlobalNews
+
++ (NSString*)produce_news {
+  return @"the news";
+}
+
+@end

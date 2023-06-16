@@ -21,3 +21,7 @@ void log_message_from_block_bad() {
     NSLog(message);
   });
 }
+
+void log_important_news_good() { NSLog([ImportantNews produce_news]); }
+
+void log_important_global_bad() { NSLog([GlobalNews produce_news]); }
