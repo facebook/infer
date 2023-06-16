@@ -85,14 +85,16 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       if not (Env.is_toplevel env) then
         L.die InternalError "TODO: load_cell inside a class declaration"
       else
-        let name = PyCommon.global co_names.(ndx) in
-        let var_name = var_name ~loc name in
+        let name = co_names.(ndx) in
+        let gname = PyCommon.global name in
+        let var_name = var_name ~loc gname in
         let ({Env.typ; is_code} as info) =
-          T.VarName.Map.find_opt var_name (Env.globals env) |> Option.value ~default
+          Env.SMap.find_opt name (Env.globals env)
+          |> Option.value_map ~default ~f:(fun {Env.info} -> info)
         in
         (* If we are trying to load some code, use the dedicated builtin *)
         if is_code then
-          let env, exp, typ = code_to_exp ~fun_or_class:true env name in
+          let env, exp, typ = code_to_exp ~fun_or_class:true env gname in
           let info = {info with Env.typ} in
           (env, Ok exp, info)
         else
@@ -328,22 +330,24 @@ module STORE = struct
       | FAST ->
           (co_varnames.(arg), false, false)
       | NAME ->
-          if Env.is_toplevel env then (PyCommon.global co_names.(arg), true, false)
-          else L.die InternalError "[%s] TODO in class declrataion" opname
+          if Env.is_toplevel env then (co_names.(arg), true, false)
+          else L.die InternalError "[%s] TODO in class declartaion" opname
       | ATTR ->
           (co_names.(arg), false, true)
       | GLOBAL ->
-          (PyCommon.global co_names.(arg), true, false)
+          (co_names.(arg), true, false)
     in
-    Debug.p "[%s] name = %s\n" opname name ;
+    let gname = if is_global then PyCommon.global name else name in
+    Debug.p "[%s] name = %s\n" opname gname ;
     let loc = Env.loc env in
-    let var_name = var_name ~loc name in
+    let var_name = var_name ~loc gname in
+    let global_name = {Env.value= gname; loc} in
     let env, cell = pop_datastack opname env in
     let env, exp, info = load_cell env code cell in
     match exp with
     | Ok exp ->
         let {Env.typ; is_code; is_class} = info in
-        let env = if is_global then Env.register_global env var_name info else env in
+        let env = if is_global then Env.register_global env name global_name info else env in
         if is_attr then
           let env, cell = pop_datastack opname env in
           let env, value, {Env.typ} = load_cell env code cell in
@@ -418,14 +422,19 @@ module FUNCTION = struct
         let env = Env.push env (DataStack.Temp id) in
         (env, None)
       else
-        let env, proc =
-          let env = Env.register_call env fname in
-          if Env.is_builtin env fname then (env, PyCommon.builtin_name fname)
-          else
-            let fname = PyCommon.global fname in
-            (* TODO: update this when static method calls will be available *)
-            (env, qualified_procname @@ proc_name ~loc fname)
+        let known_globals = Env.globals env in
+        let proc =
+          match Env.SMap.find_opt fname known_globals with
+          | Some {Env.global_name= {value; loc}; is_builtin} ->
+              if is_builtin then PyCommon.builtin_name value
+              else qualified_procname @@ proc_name ~loc value
+          | None ->
+              (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
+                 further analysis *)
+              let gname = PyCommon.global fname in
+              qualified_procname @@ proc_name ~loc gname
         in
+        let env = Env.register_call env fname in
         let call = T.Exp.Call {proc; args; kind= NonVirtual} in
         (* TODO: read return type of proc if available *)
         let info = {Env.typ= PyCommon.pyObject; is_code= false; is_class= false} in
@@ -552,9 +561,7 @@ module FUNCTION = struct
           (env, annotations) )
         else (env, None)
       in
-      let annotations =
-        Option.map ~f:(unpack_annotations code) annotations |> Option.value ~default:[]
-      in
+      let annotations = Option.value_map ~default:[] ~f:(unpack_annotations code) annotations in
       let code =
         match DataStack.as_code code body with
         | None ->
@@ -576,7 +583,8 @@ module FUNCTION = struct
                 L.die InternalError "%s: can't read qualified name from stack: %s" opname
                   (FFI.Constant.show const) )
       in
-      let env = Env.register_toplevel env qualified_name annotations in
+      let loc = Env.loc env in
+      let env = Env.register_toplevel env qualified_name loc annotations in
       let env = Env.push env (DataStack.Code {fun_or_class= true; qualified_name; code}) in
       (env, None)
   end
@@ -1301,13 +1309,14 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; instructions} as code) 
   let env, decl = to_proc_desc env loc T.TopLevel "toplevel" code in
   (* Translate globals to Textual *)
   let globals =
-    T.VarName.Map.fold
-      (fun name {Env.is_code} acc ->
+    Env.SMap.fold
+      (fun _name {Env.global_name= {value; loc}; info= {is_code}} acc ->
+        let varname = var_name ~loc value in
         if is_code then
           (* don't generate a global variable name, it will be declared as a toplevel decl *)
           acc
         else
-          let global = T.Global.{name; typ= PyCommon.pyObject; attributes= []} in
+          let global = T.Global.{name= varname; typ= PyCommon.pyObject; attributes= []} in
           T.Module.Global global :: acc )
       (Env.globals env) []
   in

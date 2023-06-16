@@ -27,6 +27,8 @@ module Builtin = struct
 
   type python = Print | Range [@@deriving compare]
 
+  let python_to_string = function Print -> "print" | Range -> "range"
+
   type t = Primitive of primitive | Textual of textual | Python of python [@@deriving compare]
 
   let to_proc_name = function
@@ -65,8 +67,8 @@ module Builtin = struct
               "python_load_method"
         in
         PyCommon.builtin_name str
-    | Python python ->
-        let str = match python with Print -> "print" | Range -> "range" in
+    | Python p ->
+        let str = python_to_string p in
         PyCommon.builtin_name str
 
 
@@ -76,7 +78,7 @@ module Builtin = struct
 end
 
 module BuiltinSet = struct
-  let type_name value = T.TypeName.{value; loc= T.Location.Unknown}
+  let type_name value = {T.TypeName.value; loc= Unknown}
 
   let string_ = T.Typ.(Ptr (Struct (type_name "String")))
 
@@ -168,16 +170,17 @@ module BuiltinSet = struct
       ~init:primitive_builtins builtins
 
 
+  let python_builtins =
+    [ ( Builtin.Print
+      , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
+    ; ( Builtin.Range
+      , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} ) ]
+
+
   let supported_builtins =
-    let builtins =
-      [ ( Builtin.Print
-        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
-      ; ( Builtin.Range
-        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} ) ]
-    in
     List.fold_left
       ~f:(fun acc (builtin, elt) -> Info.add (Builtin.Python builtin) elt acc)
-      ~init:textual_builtins builtins
+      ~init:textual_builtins python_builtins
 
 
   (* [mk_builtin] always returns very small list, the nested iteration should be quite cheap *)
@@ -236,6 +239,10 @@ module SMap = Caml.Map.Make (String)
 
 type info = {is_code: bool; is_class: bool; typ: T.Typ.t}
 
+type global_name = {value: string; loc: T.Location.t}
+
+type global_info = {global_name: global_name; is_builtin: bool; info: info}
+
 type label_info =
   { label_name: string
   ; ssa_parameters: T.Typ.t list
@@ -247,8 +254,7 @@ type label_info =
 and shared =
   { idents: T.Ident.Set.t
   ; idents_info: info T.Ident.Map.t
-  ; globals: info T.VarName.Map.t
-  ; shadowed_builtins: BuiltinSet.t
+  ; globals: global_info SMap.t
   ; builtins: BuiltinSet.t
   ; classes: string list
   ; toplevel_signatures: Signature.t SMap.t
@@ -340,11 +346,21 @@ end
 
 let empty_node = {stack= []; instructions= []; last_line= None}
 
+let initial_globals =
+  List.fold ~init:SMap.empty
+    ~f:(fun acc (b, _) ->
+      let value = Builtin.python_to_string b in
+      let global_name = {value; loc= T.Location.Unknown} in
+      let info = {is_code= true; is_class= false; typ= PyCommon.pyCode} in
+      let global_info = {global_name; is_builtin= true; info} in
+      SMap.add value global_info acc )
+    BuiltinSet.python_builtins
+
+
 let empty =
   { idents= T.Ident.Set.empty
   ; idents_info= T.Ident.Map.empty
-  ; globals= T.VarName.Map.empty
-  ; shadowed_builtins= BuiltinSet.empty
+  ; globals= initial_globals
   ; builtins= BuiltinSet.empty
   ; classes= []
   ; toplevel_signatures= SMap.empty
@@ -428,11 +444,12 @@ let label_of_offset {shared} offset =
 
 let instructions {node= {instructions}} = List.rev instructions
 
-let register_global ({shared} as env) name is_code =
-  let register_global ({globals} as env) name is_code =
-    {env with globals= T.VarName.Map.add name is_code globals}
+let register_global ({shared} as env) name global_name info =
+  let register_global ({globals} as env) name global_name info =
+    let global_info = {global_name; is_builtin= false; info} in
+    {env with globals= SMap.add name global_info globals}
   in
-  {env with shared= register_global shared name is_code}
+  {env with shared= register_global shared name global_name info}
 
 
 let globals {shared= {globals}} = globals
@@ -469,37 +486,28 @@ let mk_builtin_call env builtin args =
   (env, id, typ)
 
 
-let is_builtin_shadowed {shared= {shadowed_builtins}} python_builtin =
-  BuiltinSet.Set.mem python_builtin shadowed_builtins
+let is_builtin {shared= {globals}} fname =
+  match SMap.find_opt fname globals with Some {is_builtin} -> is_builtin | None -> false
 
-
-let get_as_builtin env fname =
-  let open Option.Monad_infix in
-  Builtin.of_string fname
-  >>= fun python_builtin ->
-  Option.some_if (not @@ is_builtin_shadowed env python_builtin) python_builtin
-
-
-let is_builtin env fname = get_as_builtin env fname |> Option.is_some
 
 let register_call env fname =
-  match get_as_builtin env fname with None -> env | Some builtin -> register_builtin env builtin
+  match (is_builtin env fname, Builtin.of_string fname) with
+  | true, Some builtin ->
+      register_builtin env builtin
+  | _, _ ->
+      env
 
 
-let register_toplevel ({shared} as env) fname annotations =
-  let builtin = Builtin.of_string fname in
-  match builtin with
-  | None ->
-      let fname = PyCommon.global fname in
-      let {toplevel_signatures} = shared in
-      let toplevel_signatures = SMap.add fname annotations toplevel_signatures in
-      let shared = {shared with toplevel_signatures} in
-      {env with shared}
-  | Some builtin ->
-      let {shadowed_builtins} = shared in
-      let shadowed_builtins = BuiltinSet.Set.add builtin shadowed_builtins in
-      let shared = {shared with shadowed_builtins} in
-      {env with shared}
+let register_toplevel ({shared} as env) name loc annotations =
+  let value = PyCommon.global name in
+  let global_name = {value; loc} in
+  let info = {is_code= true; is_class= false; typ= PyCommon.pyObject} in
+  let global_info = {global_name; is_builtin= false; info} in
+  let {toplevel_signatures; globals} = shared in
+  let toplevel_signatures = SMap.add value annotations toplevel_signatures in
+  let globals = SMap.add name global_info globals in
+  let shared = {shared with toplevel_signatures; globals} in
+  {env with shared}
 
 
 let register_method ({shared} as env) ~enclosing_class ~method_name annotations =
