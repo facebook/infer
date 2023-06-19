@@ -308,7 +308,7 @@ val is_objc_instance_method : t -> bool
 val is_objc_class_method : t -> bool
 (** Includes specialized objective-c class methods*)
 
-val is_objc_nsobject_self_or_class_method : t -> bool
+val is_objc_nsobject_class : t -> bool
 
 val get_objc_class_name : t -> string option
 
