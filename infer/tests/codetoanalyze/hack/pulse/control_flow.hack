@@ -5,6 +5,9 @@
 
 namespace ControlFlow;
 
+class SensitiveClass {
+  public function __construct(public $flag) {}
+}
 
 function typeCheckDoesntConfuseTheAnalysis_maintainsTaint_Bad(mixed $arg1, SensitiveClass $sc): void {
   if ($arg1 is Foo) {
@@ -94,5 +97,16 @@ function FP_notLoggingSensitiveViaDOk(SensitiveClass $sc, mixed $carrier): void 
   if ($carrier is D) {
     $carrier->data = $sc;
     logWhenC($carrier);
+  }
+}
+
+// This example shows a case where a taint is assigned to an unrelated bool because the abstract
+// values get unified (a = b = 0) and taint attributes from one affect the other
+function FP_taintOnUnrelatedBoolOk(SensitiveClass $sc, bool $flag): void {
+  $tainted_flag = $sc->flag;
+  $uber_flag = $flag || $tainted_flag;
+  if (!$uber_flag) {
+    // This is OK but $flag is considered tainted because of the merged attributes
+    \Level1\taintSink($flag);
   }
 }
