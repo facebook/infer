@@ -1537,7 +1537,13 @@ let get_unreachable_attributes {post} =
 
 
 let should_havoc_if_unknown () =
-  if Language.curr_language_is Java then `ShouldOnlyHavocResources else `ShouldHavoc
+  match !Language.curr_language with
+  | Java
+    (* TODO(T138610370): temporary until we improve the way taint propagates for unknown calls *)
+  | Hack ->
+      `ShouldOnlyHavocResources
+  | _ ->
+      `ShouldHavoc
 
 
 let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =

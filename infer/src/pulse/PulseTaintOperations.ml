@@ -362,6 +362,23 @@ end
 let gather_taint_dependencies v astate =
   let taint_dependencies = TaintDependencies.create v in
   let visited = ref AbstractValue.Set.empty in
+  let should_follow_access (access : Access.t) =
+    (* NOTE: if the value is an array we propagate the check to the array elements. Similarly for
+       fields in Hack because we have use-cases around shapes where only a field is tainted, hence
+       we either need to follow the fields or need to add taint operations into all relevant
+       models.
+
+       We could do the same for all accesses if we want the taint analysis to consider that the
+       insides of objects are tainted whenever the object is. This might not be a very efficient
+       way to do this though? *)
+    match access with
+    | ArrayAccess _ ->
+        true
+    | FieldAccess _ ->
+        Language.curr_language_is Hack
+    | TakeAddress | Dereference ->
+        false
+  in
   let rec gather_taint_dependencies_aux v =
     if not (AbstractValue.Set.mem v !visited) then (
       visited := AbstractValue.Set.add v !visited ;
@@ -370,18 +387,13 @@ let gather_taint_dependencies v astate =
           List.iter taints_in ~f:(fun {Attribute.v= v'} ->
               TaintDependencies.add_edge taint_dependencies v v' ;
               gather_taint_dependencies_aux v' ) ) ;
-      (* if the value is an array we propagate the check to the array elements *)
-      (* NOTE: we could do the same for field accesses or really all accesses if we want the taint
-          analysis to consider that the insides of objects are tainted whenever the object is. This
-          might not be a very efficient way to do this though? *)
       AbductiveDomain.Memory.fold_edges v astate ~init:() ~f:(fun () (access, (dest, _hist)) ->
-          match access with
-          | ArrayAccess _ ->
-              Option.iter (AbductiveDomain.Memory.find_edge_opt dest Dereference astate)
-                ~f:(fun (dest_value, _) ->
-                  TaintDependencies.add_edge taint_dependencies v dest_value )
-          | FieldAccess _ | TakeAddress | Dereference ->
-              () ) )
+          if should_follow_access access then
+            Option.iter (AbductiveDomain.Memory.find_edge_opt dest Dereference astate)
+              ~f:(fun (dest_value, _) ->
+                TaintDependencies.add_edge taint_dependencies v dest_value ;
+                gather_taint_dependencies_aux dest_value )
+          else () ) )
   in
   gather_taint_dependencies_aux v ;
   taint_dependencies
@@ -429,15 +441,18 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
       sources (Ok policy_violations_reported)
     |> PulseResult.map ~f:(fun res -> (res, sanitizers))
   in
-  let taint_dependencies = gather_taint_dependencies v astate in
-  TaintDependencies.fold taint_dependencies ~init:(policy_violations_reported, astate)
-    ~stack_init:Attribute.TaintSanitizedSet.empty
-    ~f:(fun (policy_violations_reported, astate) sanitizers v ->
-      let astate = AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate in
-      let+ policy_violations_reported, sanitizers =
-        check_tainted_flows policy_violations_reported sanitizers v astate
-      in
-      ((policy_violations_reported, astate), sanitizers) )
+  L.d_with_indent "check flows wrt sink from %a" AbstractValue.pp v ~collapsible:true ~f:(fun () ->
+      let taint_dependencies = gather_taint_dependencies v astate in
+      TaintDependencies.fold taint_dependencies ~init:(policy_violations_reported, astate)
+        ~stack_init:Attribute.TaintSanitizedSet.empty
+        ~f:(fun (policy_violations_reported, astate) sanitizers v ->
+          let astate =
+            AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate
+          in
+          let+ policy_violations_reported, sanitizers =
+            check_tainted_flows policy_violations_reported sanitizers v astate
+          in
+          ((policy_violations_reported, astate), sanitizers) ) )
 
 
 let should_ignore_all_flows_to potential_taint_value =

@@ -17,16 +17,16 @@ class ShapeLogger {
 }
 
 class C1 {
-  public function FN_passViaShapeBad(SensitiveClass $sc) {
+  public function passViaShapeBad(SensitiveClass $sc) {
     ShapeLogger::logData(shape('msg' => 'Oh-oh', 'debug_data' => $sc->sensitiveField));
   }
 
-  public function FN_passViaUnknownBad(SensitiveClass $sc) {
+  public function passViaUnknownBad(SensitiveClass $sc) {
     $data = unknown($sc);
     ShapeLogger::logData(shape('msg' => 'Oh-oh', 'debug_data' => $data));
   }
 
-  public function FN_passViaShapeAndUnknownBad(SensitiveClass $sc) {
+  public function passViaShapeAndUnknownBad(SensitiveClass $sc) {
     $data = unknown(shape("sc" => $sc));
     ShapeLogger::logData(shape('msg' => 'Oh-oh', 'debug_data' => $data));
   }

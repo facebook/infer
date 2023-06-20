@@ -20,14 +20,14 @@ define use_hack_new_dict_builtin_bad(l: *list) : void {
     ret null
 }
 
-define FN_use_not_modeled_bad(l: *list) : void {
+define use_not_modeled_bad(l: *list) : void {
   #entry:
     n0: *list = load &l
     store n0.list.header <- null: *cell
     n1: *list = load &l
-    // because we do not have implementation or model for this call,
-    // Pulse hides any signal related to something reachable from n1
-    // in the heap
+    // We do not have an implementation or model for this call.
+    // Pulse used to hide any signal related to something reachable
+    // from n1 in the heap, but not anymore
     n2 = $builtins.not_modeled(n1, n1, n1, n1)
     n3: *cell = load n0.list.header
     n4: int = load n3.cell.value
