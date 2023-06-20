@@ -7,12 +7,12 @@
 
 type A = { }
 
-define FP_compare_nulls_Ok() : *HackBool {
+define compare_nulls_Ok() : *HackBool {
   #entry:
      ret $builtins.hhbc_cmp_eq(null, null)
 }
 
-define FP_checking_is_true_on_null_Ok() : int {
+define checking_is_true_on_null_Ok() : int {
   #entry:
     ret $builtins.hack_is_true(null)
 }

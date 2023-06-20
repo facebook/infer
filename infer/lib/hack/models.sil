@@ -11,7 +11,7 @@ declare $builtins.hack_dim_field_get(**HackMixed, *HackMixed): **HackMixed
 
 type HackString = { val: *string }
 
-define $builtins.hack_string(str: *string) : *HackMixed {
+define $builtins.hack_string(str: *string): *HackMixed {
   #entry:
     n0 = __sil_allocate(<HackString>)
     n1: *string = load &str
@@ -21,7 +21,7 @@ define $builtins.hack_string(str: *string) : *HackMixed {
 
 type HackInt = { val: int }
 
-define $builtins.hack_int(i: int) : *HackMixed {
+define $builtins.hack_int(i: int): *HackInt {
   #entry:
     n0 = __sil_allocate(<HackInt>)
     n1: int = load &i
@@ -57,6 +57,9 @@ define $builtins.hack_make_random_bool(): *HackBool {
 define $builtins.hack_is_true(b: *HackMixed) : int {
   #entry:
     n0: *HackMixed = load &b
+    // We assume that this function is never called with null in a valid execution. Values of type
+    // ?bool should have the necessary null-checks in place
+    prune __sil_ne(n0, 0)
     n1: int = load n0.HackBool.val
     ret n1
 }
@@ -64,6 +67,8 @@ define $builtins.hack_is_true(b: *HackMixed) : int {
 define $builtins.hhbc_not(b: *HackBool) : *HackBool {
   #entry:
     n0: *HackBool = load &b
+    // We assume a not-null argument similar to hack_is_true
+    prune __sil_ne(n0, 0)
     n1: int = load n0.HackBool.val
     jmp is_true, is_false
   #is_true:
@@ -76,29 +81,37 @@ define $builtins.hhbc_not(b: *HackBool) : *HackBool {
 }
 
 define $builtins.hhbc_cmp_eq(x: *HackMixed, y: *HackMixed) : *HackBool {
-  //TODO: provide something more generic (right now, it works for int only)
+  // TODO: we need a better model for polymorphic equality. The current one is null-safe and works
+  // for ints but otherwise is questionable when applied to some random types
   #entry:
     n0: *HackMixed = load &x
     n1: *HackMixed = load &y
+    jmp eq, x_eq_null, x_ne_null, ne
+  #eq:
+    prune __sil_eq(n0, n1)
+    ret $builtins.hack_make_true()
+  #x_eq_null:
+    prune __sil_eq(n0, 0)
+    prune __sil_ne(n1, 0)
+    ret $builtins.hack_make_false()
+  #x_ne_null:
+    prune __sil_ne(n0, 0)
+    prune __sil_eq(n1, 0)
+    ret $builtins.hack_make_false()
+  #ne:
+    prune __sil_ne(n0, n1)
+    prune __sil_ne(n0, 0)
+    prune __sil_ne(n1, 0)
     n2: int = load n0.HackInt.val
     n3: int = load n1.HackInt.val
-    n4 = __sil_eq(n2, n3)
-    n5 = __sil_allocate(<HackBool>)
-    store n5.HackBool.val <- n4 : int
-    ret n5
+    ret $builtins.hack_bool(__sil_eq(n2, n3))
 }
 
 define $builtins.hhbc_cmp_neq(x: *HackMixed, y: *HackMixed) : *HackBool {
-  //TODO: provide something more generic (right now, it works for int only)
   #entry:
     n0: *HackMixed = load &x
     n1: *HackMixed = load &y
-    n2: int = load n0.HackInt.val
-    n3: int = load n1.HackInt.val
-    n4 = __sil_ne(n2, n3)
-    n5 = __sil_allocate(<HackBool>)
-    store n5.HackBool.val <- n4 : int
-    ret n5
+    ret $builtins.hhbc_not($builtins.hhbc_cmp_eq(n0, n1))
 }
 
 define $builtins.hhbc_cmp_same(x: *HackMixed, y: *HackMixed) : *HackBool {
@@ -165,11 +178,6 @@ define $builtins.hhbc_is_type_null(o: *HackMixed): *HackMixed {
     n0: *HackMixed = load &o
     prune __sil_lnot(__sil_ne(n0, 0))
     ret $builtins.hack_make_true()
-
-    // n0 = __sil_ne(n2, 0)
-    // n1 = __sil_allocate(<HackBool>)
-    // store n1.HackBool.val <- n0 : int
-    // ret n1
 }
 
 define $builtins.hhbc_is_late_bound_cls(o: *HackMixed): *HackMixed {
@@ -177,7 +185,6 @@ define $builtins.hhbc_is_late_bound_cls(o: *HackMixed): *HackMixed {
     ret $builtins.hack_make_random_bool()
 }
 
-// TODO: Treating this as unknown causes FPs
 define $builtins.hhbc_verify_type_pred(o: *HackMixed, typ: *HackMixed): *HackMixed {
   #entry:
     ret null
@@ -189,7 +196,6 @@ define $builtins.hhbc_verify_param_type_ts(o: *HackMixed, typ: *HackMixed): *Hac
     ret null
 }
 
-// TODO: Treating this as unknown causes FPs
 define $builtins.hhbc_lock_obj(o: *HackMixed): *HackMixed {
   #entry:
     ret null
