@@ -1,0 +1,27 @@
+{
+    "pulse-taint-policies": [
+        { "short_description": "Using Ivar accountID not allowed",
+          "taint_flows": [
+            { "source_kinds": ["AccountID"],
+              "sink_kinds": ["AccountID"] }
+          ]
+        }
+    ],
+    "pulse-taint-sources": [
+      {
+        "class_names": ["Account"],
+        "field_names": ["accountID"],
+        "taint_target": "GetField",
+        "sanitized_in": ["Account.m"],
+        "kinds": ["AccountID"]
+      }
+    ],
+    "pulse-taint-sinks": [
+      {
+        "class_names": ["Account"],
+        "field_names": ["accountID"],
+        "taint_target": "GetField",
+        "kinds": ["AccountID"]
+      }
+    ]
+  }

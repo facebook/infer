@@ -70,7 +70,10 @@ module Unit : sig
   val pp_procedure_unit : F.formatter -> procedure_unit -> unit
 
   type field_unit =
-    {field_matcher: field_matcher; kinds: Kind.t list; field_target: Target.field_target}
+    { field_matcher: field_matcher
+    ; kinds: Kind.t list
+    ; field_target: Target.field_target
+    ; sanitized_in: string list option }
 
   val pp_field_unit : F.formatter -> field_unit -> unit
 

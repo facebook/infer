@@ -204,11 +204,16 @@ module Unit = struct
 
 
   type field_unit =
-    {field_matcher: field_matcher; kinds: Kind.t list; field_target: Target.field_target}
+    { field_matcher: field_matcher
+    ; kinds: Kind.t list
+    ; field_target: Target.field_target
+    ; sanitized_in: string list option }
 
   let pp_field_unit f unit =
-    F.fprintf f "field_matcher=%a, kinds=%a, field_target=%a" pp_field_matcher unit.field_matcher
-      (Pp.comma_seq Kind.pp) unit.kinds Target.pp_field_target unit.field_target
+    F.fprintf f "field_matcher=%a, kinds=%a, field_target=%a, sanitized_in=%a" pp_field_matcher
+      unit.field_matcher (Pp.comma_seq Kind.pp) unit.kinds Target.pp_field_target unit.field_target
+      (Pp.option (Pp.comma_seq String.pp))
+      unit.sanitized_in
 
 
   type t = ProcedureUnit of procedure_unit | FieldUnit of field_unit

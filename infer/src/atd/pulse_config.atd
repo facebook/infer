@@ -43,6 +43,7 @@ type matcher = {
   ?kinds: string list option; (** default is [Simple] which matches all Simple sources to all Simple sinks provided they haven't been sanitized by a Simple sanitizer *)
   ?taint_target: taint_target option; (** default is all formals for sinks and sanitizers, return value for sources *)
   ?exclude_from_regex_in: string list option; (** Optional, only relevant for procedure, field or class regexes *)
+  ?sanitized_in: string list option (** Optional, only relevant for field matchers *)
 }
 
 type matchers = matcher list

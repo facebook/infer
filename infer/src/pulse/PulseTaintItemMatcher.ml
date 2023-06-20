@@ -220,7 +220,10 @@ let field_matcher_of_config ~default_taint_target ~option_name (matcher : Pulse_
   in
   match taint_target with
   | FieldTarget field_target ->
-      {field_matcher; kinds= TaintConfig.Kind.kinds_of_strings_opt matcher.kinds; field_target}
+      { field_matcher
+      ; kinds= TaintConfig.Kind.kinds_of_strings_opt matcher.kinds
+      ; field_target
+      ; sanitized_in= matcher.Pulse_config_t.sanitized_in }
   | ProcedureTarget _ ->
       L.die UserError
         "Target %a found but one of the following targets must be provided: GetField or SetField"
@@ -287,7 +290,7 @@ let check_regex name_regex elem ?source_file exclude_in =
     match (source_file, exclude_in) with
     | Some source_file, Some exclude_in ->
         L.d_printfln "Checking exclude_in list with location of elem = %a and exclude_in = %a"
-          SourceFile.pp source_file (Pp.semicolon_seq String.pp) exclude_in ;
+          SourceFile.pp source_file (Pp.comma_seq String.pp) exclude_in ;
         List.exists exclude_in ~f:(fun exclude ->
             (* This is needed because in clang languages the location of the elem can be either in the header
                or in the source file, depending whether the source file is available in the analysis or not.
@@ -421,28 +424,42 @@ let match_field_target matches actual potential_taint_value =
       match_target acc matcher )
 
 
-let field_matches tenv matchers field_name =
+let sanitized_in_loc source_file sanitize_in =
+  match sanitize_in with
+  | Some sanitize_in ->
+      L.d_printfln "Checking sanitized_in list with loc = %a and sanitized_in = %a" SourceFile.pp
+        source_file (Pp.comma_seq String.pp) sanitize_in ;
+      List.exists sanitize_in ~f:(fun sanitize_in ->
+          String.is_substring (SourceFile.to_string source_file) ~substring:sanitize_in )
+  | _ ->
+      false
+
+
+let field_matches tenv loc matchers field_name =
   let open TaintConfig.Unit in
   List.filter_map matchers ~f:(fun matcher ->
-      match matcher.field_matcher with
-      | FieldRegex {name_regex; exclude_in} ->
-          let field_name_s = Fieldname.get_field_name field_name in
-          let class_name = Fieldname.get_class_name field_name in
-          let source_file =
-            if Option.is_some exclude_in then
-              let class_struct_opt = Tenv.lookup tenv class_name in
-              Option.value_map ~default:None class_struct_opt ~f:(fun class_struct ->
-                  class_struct.Struct.source_file )
+      if sanitized_in_loc loc.Location.file matcher.sanitized_in then None
+      else
+        match matcher.field_matcher with
+        | FieldRegex {name_regex; exclude_in} ->
+            let field_name_s = Fieldname.get_field_name field_name in
+            let class_name = Fieldname.get_class_name field_name in
+            let source_file =
+              if Option.is_some exclude_in then
+                let class_struct_opt = Tenv.lookup tenv class_name in
+                Option.value_map ~default:None class_struct_opt ~f:(fun class_struct ->
+                    class_struct.Struct.source_file )
+              else None
+            in
+            if check_regex ?source_file name_regex field_name_s exclude_in then Some matcher
             else None
-          in
-          if check_regex ?source_file name_regex field_name_s exclude_in then Some matcher else None
-      | ClassAndFieldNames {class_names; field_names} ->
-          let class_name = Fieldname.get_class_name field_name in
-          if
-            class_names_match tenv class_names (Some class_name)
-            && List.mem ~equal:String.equal field_names (Fieldname.get_field_name field_name)
-          then Some matcher
-          else None )
+        | ClassAndFieldNames {class_names; field_names} ->
+            let class_name = Fieldname.get_class_name field_name in
+            if
+              class_names_match tenv class_names (Some class_name)
+              && List.mem ~equal:String.equal field_names (Fieldname.get_field_name field_name)
+            then Some matcher
+            else None )
 
 
 let match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
@@ -633,7 +650,7 @@ let get_tainted tenv path location ~procedure_matchers ~block_matchers ~field_ma
   | TaintItem.TaintBlockPassedTo proc_name ->
       match_procedure proc_name actuals ~instance_reference:None
   | TaintItem.TaintField field_name -> (
-      let matches = field_matches tenv field_matchers field_name in
+      let matches = field_matches tenv location field_matchers field_name in
       if not (List.is_empty matches) then L.d_printfln "taint matches" ;
       match actuals with
       | [actual] ->
