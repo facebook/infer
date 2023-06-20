@@ -550,7 +550,13 @@ let call tenv path ~caller_proc_desc
     ~(analyze_dependency : ?specialization:Specialization.t -> Procname.t -> PulseSummary.t option)
     call_loc callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t) =
   let has_continue_program results =
-    let f one_result = match one_result with Ok (ContinueProgram _astate) -> true | _ -> false in
+    let f one_result =
+      match one_result with
+      | Ok (ContinueProgram _astate) | Recoverable (ContinueProgram _astate, _) ->
+          true
+      | _ ->
+          false
+    in
     List.exists results ~f
   in
   let call_as_unknown () =
