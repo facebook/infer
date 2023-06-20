@@ -1,0 +1,21 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "hack"
+
+type A = { }
+
+define FP_compare_nulls_Ok() : *HackBool {
+  #entry:
+     ret $builtins.hhbc_cmp_eq(null, null)
+}
+
+define FP_checking_is_true_on_null_Ok() : int {
+  #entry:
+    ret $builtins.hack_is_true(null)
+}
+
+declare $builtins.hhbc_cmp_eq(*HackMixed, *HackMixed): *HackBool
+declare $builtins.hack_is_true(*HackMixed) : int
