@@ -3,8 +3,10 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
+namespace IntraFile;
+
 class IntraFileFlow {
-  public static function explicitSinkMethodDirectOnHackMixedSinkBad(SensitiveClass $sc): void {
+  public static function FN_explicitSinkMethodDirectOnHackMixedSinkBad(SensitiveClass $sc): void {
     HackMixed::explicitSinkAllArgs($sc);
   }
 

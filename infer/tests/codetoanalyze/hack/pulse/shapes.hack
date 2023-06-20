@@ -17,7 +17,7 @@ class ShapeLogger {
 }
 
 class C1 {
-  public function passViaShapeBad(SensitiveClass $sc) {
+  public function FN_passViaShapeBad(SensitiveClass $sc) {
     ShapeLogger::logData(shape('msg' => 'Oh-oh', 'debug_data' => $sc->sensitiveField));
   }
 }
