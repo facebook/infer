@@ -554,6 +554,8 @@ val procedures : bool
 
 val procedures_attributes : bool
 
+val procedures_callees : bool
+
 val procedures_call_graph : bool
 
 val procedures_cfg : bool

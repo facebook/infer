@@ -67,7 +67,7 @@ let select_proc_names_interactive ~filter =
 
 
 let pp_all ~filter ~proc_name:proc_name_cond ~defined ~source_file:source_file_cond ~proc_attributes
-    ~proc_cfg fmt () =
+    ~proc_cfg ~callees fmt () =
   let db = Database.get_database CaptureDatabase in
   let deserialize_bool_int = function
     | Sqlite3.Data.INT int64 -> (
@@ -95,7 +95,7 @@ let pp_all ~filter ~proc_name:proc_name_cond ~defined ~source_file:source_file_c
           let path = DotCfg.emit_proc_desc source_file cfg in
           F.fprintf fmt "'%s'" path
     in
-    F.fprintf fmt "@[<v2>%s@,%a%a%a%a%a@]@\n" proc_uid
+    F.fprintf fmt "@[<v2>%s@,%a%a%a%a%a%a@]@\n" proc_uid
       (pp_if source_file_cond "source_file" SourceFile.pp)
       source_file
       (pp_if proc_name_cond "proc_name" Procname.pp)
@@ -105,9 +105,12 @@ let pp_all ~filter ~proc_name:proc_name_cond ~defined ~source_file:source_file_c
       (pp_column_if stmt ~new_line:true proc_attributes "attributes"
          ProcAttributes.SQLite.deserialize ProcAttributes.pp )
       2
-      (pp_column_if stmt ~new_line:false proc_cfg "control-flow graph" Procdesc.SQLite.deserialize
+      (pp_column_if stmt ~new_line:true proc_cfg "control-flow graph" Procdesc.SQLite.deserialize
          dump_cfg )
       3
+      (pp_column_if stmt ~new_line:false callees "callees" Procname.SQLiteList.deserialize
+         (Pp.seq ~sep:", " Procname.pp) )
+      4
   in
   (* we could also register this statement but it's typically used only once per run so just prepare
      it inside the function *)
@@ -117,7 +120,8 @@ let pp_all ~filter ~proc_name:proc_name_cond ~defined ~source_file:source_file_c
          proc_uid,
          cfg IS NOT NULL,
          proc_attributes,
-         cfg
+         cfg,
+         callees
        FROM procedures ORDER BY proc_uid
     |}
   |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"print all procedures")

@@ -63,7 +63,7 @@ let debug () =
             Config.(
               Procedures.pp_all ~filter ~proc_name:procedures_name ~defined:procedures_definedness
                 ~source_file:procedures_source_file ~proc_attributes:procedures_attributes
-                ~proc_cfg:procedures_cfg )
+                ~proc_cfg:procedures_cfg ~callees:procedures_callees )
             () ) ;
     if Config.source_files then (
       if Config.source_files_call_graph then SourceFileGraph.to_dotty "file-call-graph.dot"

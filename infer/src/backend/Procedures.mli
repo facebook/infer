@@ -16,6 +16,7 @@ val pp_all :
   -> source_file:bool
   -> proc_attributes:bool
   -> proc_cfg:bool
+  -> callees:bool
   -> Format.formatter
   -> unit
   -> unit

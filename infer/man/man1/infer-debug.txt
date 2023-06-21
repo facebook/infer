@@ -63,6 +63,10 @@ DEBUG PROCEDURES
            or those determined by the option --changed-files-index.
            (Conversely: --no-procedures-call-graph)
 
+       --procedures-callees
+           Activates: Print the static callees of each procedure in the
+           output of --procedures (Conversely: --no-procedures-callees)
+
        --procedures-cfg
            Activates: Output a dotty file in
            infer-out/captured/<file_name>/<proc_name>.dot for each procedure
