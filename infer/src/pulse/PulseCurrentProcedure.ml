@@ -11,4 +11,4 @@ let proc_desc_ref = ref None
 
 let () = AnalysisGlobalState.register_ref_with_proc_desc proc_desc_ref ~init:Option.some
 
-let proc_desc () = Option.value_exn !proc_desc_ref
+let proc_desc () = !proc_desc_ref

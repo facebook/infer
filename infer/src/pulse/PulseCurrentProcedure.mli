@@ -7,4 +7,4 @@
 
 open! IStd
 
-val proc_desc : unit -> Procdesc.t
+val proc_desc : unit -> Procdesc.t option

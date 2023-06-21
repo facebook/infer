@@ -21,9 +21,8 @@ module VarAddress = struct
       match Var.get_pvar var >>= Pvar.get_declaring_function with
       | Some pvar_proc_name
         when not
-               (Procname.equal
-                  (Procdesc.get_proc_name (PulseCurrentProcedure.proc_desc ()))
-                  pvar_proc_name ) ->
+               (Option.exists (PulseCurrentProcedure.proc_desc ()) ~f:(fun proc_desc ->
+                    Procname.equal (Procdesc.get_proc_name proc_desc) pvar_proc_name ) ) ->
           F.fprintf f "|%a" Procname.pp pvar_proc_name
       | _ ->
           ()

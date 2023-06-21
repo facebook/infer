@@ -1798,7 +1798,9 @@ let is_allocated_this_pointer proc_attrs astate address =
 
 let incorporate_new_eqs new_eqs astate =
   let open SatUnsat.Import in
-  let proc_attrs = Procdesc.get_attributes (PulseCurrentProcedure.proc_desc ()) in
+  let proc_attrs =
+    Procdesc.get_attributes (PulseCurrentProcedure.proc_desc () |> Option.value_exn)
+  in
   let* astate, potential_invalid_access_opt = incorporate_new_eqs astate new_eqs in
   match potential_invalid_access_opt with
   | None ->
