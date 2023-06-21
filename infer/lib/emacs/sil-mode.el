@@ -42,6 +42,7 @@
     "attribute"
     "declare"
     "define"
+    "extends"
     "global"
     "jmp"
     "load"
