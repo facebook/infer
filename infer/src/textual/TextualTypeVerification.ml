@@ -119,7 +119,28 @@ let pp_error sourcefile fmt error =
       F.fprintf fmt "variable %a has not been declared" VarName.pp var
 
 
-let mk_type_mismatch_error expected loc exp typ : error = TypeMismatch {exp; typ; expected; loc}
+let rec loc_of_exp exp =
+  match (exp : Exp.t) with
+  | Var _ ->
+      None
+  | Lvar {loc} ->
+      Some loc
+  | Field {exp} ->
+      loc_of_exp exp
+  | Index (exp, _) ->
+      loc_of_exp exp
+  | Const _ ->
+      None
+  | Call {proc} ->
+      Some proc.name.loc
+  | Typ _ ->
+      None
+
+
+let mk_type_mismatch_error expected loc exp typ : error =
+  let loc = loc_of_exp exp |> Option.value ~default:loc in
+  TypeMismatch {exp; typ; expected; loc}
+
 
 (** state + error monad *)
 type state =
@@ -208,7 +229,7 @@ let typeof_var var : Typ.t monad =
   let optional_typ = VarName.Map.find_opt var state.vars in
   option_value_map optional_typ state
     ~none:
-      (let* loc = get_location in
+      (let loc = var.VarName.loc in
        let* () = add_error (VarTypeNotDeclared {var; loc}) in
        abort )
     ~some:ret
