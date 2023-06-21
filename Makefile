@@ -285,7 +285,8 @@ endif
 ifneq ($(MVN),no)
 BUILD_SYSTEMS_TESTS += \
 	mvn \
-	jar
+	jar \
+	jar_without_sources
 endif
 endif # BUILD_JAVA_ANALYZERS
 
