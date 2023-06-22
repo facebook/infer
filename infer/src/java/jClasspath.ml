@@ -220,7 +220,9 @@ let with_classpath ~f source =
         load_from_arguments path sources
   in
   if String.Map.is_empty classpath.sources then
-    L.(die InternalError) "Failed to load any Java source code" ;
+    L.user_warning "No Java source code loaded. Analyzing JAR/WAR files directly" ;
+  if String.Map.is_empty classpath.sources && JBasics.ClassSet.is_empty classpath.classes then
+    L.(die InternalError) "Failed to load any Java source or class files" ;
   L.(debug Capture Quiet)
     "Translating %d source files (%d classes)@."
     (String.Map.length classpath.sources)
