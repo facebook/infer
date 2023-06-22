@@ -2431,11 +2431,12 @@ and pulse_model_skip_pattern =
 and pulse_models_for_erlang =
   CLOpt.mk_path_list ~long:"pulse-models-for-erlang"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
-    "Provide custom models for Erlang in JSON files. If a path to a directory is given then the \
-     JSON files must have the `.json` extension. Any other file will be ignored. The \
-     subdirectories will be explored and must follow the same convention.\n\
+    "Provide custom models for Erlang in JSON files or SQLite3. Files must end with `.json` or \
+     `.db` respectively. If a path to a directory is given then the subdirectories will be \
+     explored and names must follow the same convention. SQLite3 format is preferable when \
+     providing a large number of models because they will be internally indexed by mfa.\n\
     \ \n\
-    \ The format is [SelectorBehavior, ...] where\n\
+    \ The format for JSON is [SelectorBehavior, ...] where\n\
     \ SelectorBehavior := {\"selector\": Selector, \"behavior\": Behavior}\n\
     \ Selector := [\"MFA\", {\n\
     \   \"module\": \"<module_name>\",\n\
@@ -2458,7 +2459,14 @@ and pulse_models_for_erlang =
     \   | [\"Tuple\", [ErlangValue, ...] \n\
     \   | null\n\
     \ \n\
-    \ ErlangValue = null is to represent nondeterministic value"
+    \ ErlangValue = null is to represent nondeterministic value \n\n\
+    \ The format for SQLite3 is a DB with schema:\n\
+    \    CREATE TABLE models(\n\
+    \      \"mfa\" TEXT,\n\
+    \      \"behavior\" TEXT\n\
+    \    );\n\
+    \ - `mfa` is module:function/arity, e.g. \"mymod:f/0\"\n\
+    \ - `behavior` is a JSON `Behavior` (see above)\n"
 
 
 and pulse_model_transfer_ownership =

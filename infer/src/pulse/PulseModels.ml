@@ -20,4 +20,9 @@ module ProcNameDispatcher = struct
       @ Basic.matchers )
 end
 
-let dispatch tenv proc_name args = ProcNameDispatcher.dispatch (tenv, proc_name) proc_name args
+let dispatch tenv proc_name args =
+  match ProcNameDispatcher.dispatch (tenv, proc_name) proc_name args with
+  | None ->
+      PulseModelsErlang.get_model_from_db proc_name args
+  | m ->
+      m

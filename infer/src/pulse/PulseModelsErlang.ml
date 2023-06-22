@@ -1279,6 +1279,22 @@ module Custom = struct
 
   let matcher_of_rule {selector; behavior} = make_selector selector (make_model behavior)
 
+  let load_files suffix loader =
+    let maybe_load models path =
+      if Filename.check_suffix path suffix then loader path :: models else models
+    in
+    List.fold Config.pulse_models_for_erlang ~init:[] ~f:(fun models path ->
+        match (Unix.stat path).st_kind with
+        | S_DIR ->
+            Utils.fold_files ~init:models ~f:maybe_load ~path
+        | S_REG ->
+            maybe_load models path
+        | _ ->
+            models
+        | exception Unix.Unix_error (ENOENT, _, _) ->
+            models )
+
+
   let matchers () : matcher list =
     let load_spec path =
       try spec_of_yojson (Yojson.Safe.from_file path) with
@@ -1289,7 +1305,7 @@ module Custom = struct
              @]"
             path what ;
           []
-      | Ppx_yojson_conv_lib__Yojson_conv.Of_yojson_error (what, json) ->
+      | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (what, json) ->
           let details = match what with Failure what -> Printf.sprintf " (%s)" what | _ -> "" in
           L.user_error
             "@[<v>Failed to parse --pulse-models-for-erlang from %s %s:@;\
@@ -1299,24 +1315,56 @@ module Custom = struct
             path details Yojson.Safe.pp json ;
           []
     in
-    let spec =
-      List.fold Config.pulse_models_for_erlang ~init:[] ~f:(fun spec path ->
-          match (Unix.stat path).st_kind with
-          | S_DIR ->
-              Utils.fold_files ~init:spec
-                ~f:(fun spec filepath ->
-                  if Filename.check_suffix filepath "json" then
-                    List.append (load_spec filepath) spec
-                  else spec )
-                ~path
-          | S_REG ->
-              List.append (load_spec path) spec
-          | _ ->
-              spec
-          | exception Unix.Unix_error (ENOENT, _, _) ->
-              spec )
-    in
+    let spec = List.concat (load_files ".json" load_spec) in
     List.map ~f:matcher_of_rule spec
+
+
+  let mfa_to_db_map =
+    let load_db path =
+      let db =
+        Sqlite3.db_open ~mode:`READONLY ~cache:`PRIVATE ~mutex:`NO ?vfs:Config.sqlite_vfs path
+      in
+      let stmt = Sqlite3.prepare db "SELECT mfa FROM models" in
+      let mfas =
+        SqliteUtils.result_fold_rows db stmt ~log:"Erlang models" ~init:[] ~f:(fun acc stmt ->
+            Sqlite3.column_text stmt 0 :: acc )
+      in
+      (db, mfas)
+    in
+    let db_mfas = load_files ".db" load_db in
+    List.fold db_mfas
+      ~init:(Map.empty (module String))
+      ~f:(fun map (db, mfas) ->
+        List.fold mfas ~init:map ~f:(fun map mfa -> Map.set map ~key:mfa ~data:db) )
+
+
+  let fetch_model db mfa =
+    let query = "SELECT behavior FROM models WHERE mfa = ? LIMIT 1" in
+    let stmt = Sqlite3.prepare db query in
+    Sqlite3.bind_text stmt 1 mfa |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
+    let model =
+      match Sqlite3.step stmt with
+      | Sqlite3.Rc.ROW -> (
+          let behavior_json = Sqlite3.column_text stmt 0 in
+          match behavior_of_yojson (Yojson.Safe.from_string behavior_json) with
+          | behavior ->
+              Some (make_model behavior)
+          | exception (Yojson.Json_error _ | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error _) ->
+              L.user_error "@[<v>Failed to parse json from db for %s .@;@]" mfa ;
+              None )
+      | _ ->
+          None
+    in
+    Sqlite3.finalize stmt |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
+    model
+
+
+  let get_model_from_db proc_name args =
+    let mfa = Fmt.to_to_string Procname.pp_verbose proc_name in
+    let open IOption.Let_syntax in
+    let* db = Map.find mfa_to_db_map mfa in
+    let+ m = fetch_model db mfa in
+    m args
 end
 
 module GenServer = struct
@@ -1500,3 +1548,6 @@ let matchers : matcher list =
     ; -erlang_ns &:: "is_integer" <>$ arg $--> BIF.is_integer
     ; -erlang_ns &:: "is_list" <>$ arg $--> BIF.is_list
     ; -erlang_ns &:: "is_map" <>$ arg $--> BIF.is_map ]
+
+
+let get_model_from_db = Custom.get_model_from_db

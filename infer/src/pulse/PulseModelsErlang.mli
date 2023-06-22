@@ -7,5 +7,11 @@
 
 open! IStd
 open PulseModelsImport
+open PulseBasicInterface
 
 val matchers : matcher list
+
+val get_model_from_db :
+     Procname.t
+  -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
+  -> model option
