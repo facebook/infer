@@ -33,7 +33,7 @@ module Node = struct
   let pp_dot ~mem fmt {id; pname; successors; flag} =
     let pp_id fmt id = F.fprintf fmt "N%d" id in
     let pp_edge fmt src dst = if mem dst then F.fprintf fmt "  %a -> %a ;@\n" pp_id src pp_id dst in
-    let node_info = F.asprintf "%a\nflag=%B" Procname.pp pname flag in
+    let node_info = F.asprintf "%a\nflag=%B" Procname.pp_verbose pname flag in
     F.fprintf fmt "  %a [ label = %S ];@\n" pp_id id node_info ;
     List.iter successors ~f:(pp_edge fmt id) ;
     F.pp_print_newline fmt ()
