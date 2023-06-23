@@ -28,7 +28,7 @@ module Location : sig
 end
 
 module type NAME = sig
-  type t = {value: string; loc: Location.t} [@@deriving equal, hash]
+  type t = {value: string; loc: Location.t} [@@deriving compare, equal, hash]
 
   val of_java_name : string -> t
 
@@ -61,7 +61,7 @@ end
 type enclosing_class = TopLevel | Enclosing of TypeName.t
 
 type qualified_procname = {enclosing_class: enclosing_class; name: ProcName.t}
-[@@deriving equal, hash]
+[@@deriving compare, equal, hash]
 (* procedure name [name] is attached to the name space [enclosing_class] *)
 
 val pp_qualified_procname : F.formatter -> qualified_procname -> unit

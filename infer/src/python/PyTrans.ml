@@ -17,18 +17,17 @@ module Symbol = Env.Symbol
 
 let prefix_name ~module_name name = module_name ^ "::" ^ name
 
-let var_name ?(loc = T.Location.Unknown) value = {T.VarName.value; loc}
+let var_name = PyCommon.var_name
 
-let node_name ?(loc = T.Location.Unknown) value = {T.NodeName.value; loc}
+let node_name = PyCommon.node_name
 
-let proc_name ?(loc = T.Location.Unknown) value = {T.ProcName.value; loc}
+let proc_name = PyCommon.proc_name
 
-let field_name ?(loc = T.Location.Unknown) value = {T.FieldName.value; loc}
+let field_name = PyCommon.field_name
 
-let type_name ?(loc = T.Location.Unknown) value = {T.TypeName.value; loc}
+let type_name = PyCommon.type_name
 
-(* TODO: only deal with toplevel functions for now *)
-let qualified_procname ~enclosing_class name : T.qualified_procname = {enclosing_class; name}
+let qualified_procname = PyCommon.qualified_procname
 
 (** Turn a Python [FFI.Code.t] into a Textual [T.Exp.t], along with the required instructions to
     effectively perform the translation. *)
@@ -37,9 +36,9 @@ let code_to_exp ~fun_or_class env name =
     (* TODO: support closures *)
     let opt_sym = Env.lookup_symbol ~global:true env name in
     match (opt_sym : Symbol.t option) with
-    | Some (Name _ as symbol) | Some (Class _ as symbol) ->
+    | Some (Name _ as symbol) | Some (Class _ as symbol) | Some (Import _ as symbol) ->
         let qname = Symbol.to_string symbol in
-        L.die InternalError "[code_to_exp] Name or Class %s is not a code object" qname
+        L.die InternalError "[code_to_exp] Name/Class/Import %s is not a code object" qname
     | Some (Code _ as symbol) ->
         Symbol.to_string symbol
     | Some Builtin ->
@@ -111,6 +110,9 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
         | Some (Code _ as code_info) ->
             let qname = Symbol.to_string code_info in
             ({Env.is_code= true; is_class= false; typ= PyCommon.pyCode}, qname)
+        | Some (Import _ as symbol) ->
+            let qname = Symbol.to_string symbol in
+            L.die InternalError "[load_cell] called with %s" qname
         | Some Builtin | None ->
             (default, PyCommon.unknown_global name)
       in
@@ -151,6 +153,8 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       (env, Error "TODO: load Map cells", default)
   | BuiltinBuildClass ->
       L.die InternalError "[load_cell] Can't load LOAD_BUILD_CLASS, something went wrong"
+  | Import _ | ImportCall _ ->
+      L.die InternalError "[load_cell] Can't load IMPORT, something went wrong"
 
 
 let cells_to_textual env opname code cells =
@@ -276,6 +280,17 @@ let check_flags opname flag =
 
 module FUNCTION = struct
   module CALL = struct
+    let mk env fname loc proc args =
+      let env = Option.value_map ~default:env ~f:(Env.register_call env) fname in
+      let call = T.Exp.Call {proc; args; kind= NonVirtual} in
+      (* TODO: read return type of proc if available *)
+      let info = {Env.typ= PyCommon.pyObject; is_code= false; is_class= false} in
+      let env, id = Env.mk_fresh_ident env info in
+      let let_instr = T.Instr.Let {id; exp= call; loc} in
+      let env = Env.push_instr env let_instr in
+      Env.push env (DataStack.Temp id)
+
+
     (** {v CALL_FUNCTION(argc) v}
 
         Calls a callable object with positional arguments. [argc] indicates the number of positional
@@ -288,27 +303,19 @@ module FUNCTION = struct
         After: [ result | rest-of-the-stack ] *)
 
     let static_call env fname args =
-      let mk env loc proc =
-        let env = Env.register_call env fname in
-        let call = T.Exp.Call {proc; args; kind= NonVirtual} in
-        (* TODO: read return type of proc if available *)
-        let info = {Env.typ= PyCommon.pyObject; is_code= false; is_class= false} in
-        let env, id = Env.mk_fresh_ident env info in
-        let let_instr = T.Instr.Let {id; exp= call; loc} in
-        let env = Env.push_instr env let_instr in
-        Env.push env (DataStack.Temp id)
-      in
       let loc = Env.loc env in
       (* TODO: support nesting *)
       let opt_sym = Env.lookup_symbol ~global:true env fname in
       match (opt_sym : Symbol.t option) with
+      | Some (Import _ as symbol) ->
+          L.die InternalError "[static_call] Invalid Import (%s) spotted" (Symbol.to_string symbol)
       | Some Builtin ->
           let proc = PyCommon.builtin_name fname in
-          let env = mk env loc proc in
+          let env = mk env (Some fname) loc proc args in
           (env, None)
       | Some (Name _ as symbol) | Some (Code _ as symbol) ->
           let proc = Symbol.to_qualified_procname symbol in
-          let env = mk env loc proc in
+          let env = mk env (Some fname) loc proc args in
           (env, None)
       | Some (Class _ as symbol) ->
           let qname = Symbol.to_string symbol in
@@ -325,10 +332,10 @@ module FUNCTION = struct
           (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
              further analysis *)
           let proc =
-            let enclosing_class = T.Enclosing T.TypeName.wildcard in
+            let enclosing_class = T.TypeName.wildcard in
             qualified_procname ~enclosing_class @@ proc_name ~loc fname
           in
-          let env = mk env loc proc in
+          let env = mk env (Some fname) loc proc args in
           (env, None)
 
 
@@ -391,6 +398,8 @@ module FUNCTION = struct
         | _ ->
             L.die InternalError "[%s] unsupported call to LOAD_BUILD_CLASS with arg = %d" opname arg
         )
+      | Import _ | ImportCall _ ->
+          L.die InternalError "[%s] unsupported call to IMPORT with arg = %d" opname arg
   end
 
   module MAKE = struct
@@ -458,7 +467,8 @@ module FUNCTION = struct
       if FFI.Code.is_closure code then L.die InternalError "%s: can't create closure" opname ;
       let code_name =
         match (qual : DataStack.cell) with
-        | VarName _ | Name _ | Temp _ | Code _ | Map _ | BuiltinBuildClass ->
+        | VarName _ | Name _ | Temp _ | Code _ | Map _ | BuiltinBuildClass | Import _ | ImportCall _
+          ->
             L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell qual)
         | Const ndx -> (
             let const = co_consts.(ndx) in
@@ -478,17 +488,7 @@ end
 
 module METHOD = struct
   module LOAD = struct
-    (** {v LOAD_METHOD(namei) v}
-
-        Loads a method named [co_names\[namei\]] from the top-of-stack object. top-of-stack is
-        popped. This bytecode distinguishes two cases: if top-of-stack has a method with the correct
-        name, the bytecode pushes the unbound method and top-of-stack. top-of-stack will be used as
-        the first argument ([self]) by [CALL_METHOD] when calling the unbound method. Otherwise,
-        [NULL] and the object return by the attribute lookup are pushed. *)
-    let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
-      let method_name = co_names.(arg) in
-      Debug.p "[%s] namei = %s\n" opname method_name ;
-      let env, cell = pop_datastack opname env in
+    let load env code cell method_name =
       let env, res, _info = load_cell env code cell in
       match res with
       | Error s ->
@@ -501,9 +501,51 @@ module METHOD = struct
           in
           let env = Env.push env (DataStack.Temp id) in
           (env, None)
+
+
+    (** {v LOAD_METHOD(namei) v}
+
+        Loads a method named [co_names\[namei\]] from the top-of-stack object. top-of-stack is
+        popped. This bytecode distinguishes two cases: if top-of-stack has a method with the correct
+        name, the bytecode pushes the unbound method and top-of-stack. top-of-stack will be used as
+        the first argument ([self]) by [CALL_METHOD] when calling the unbound method. Otherwise,
+        [NULL] and the object return by the attribute lookup are pushed. *)
+    let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
+      let method_name = co_names.(arg) in
+      Debug.p "[%s] namei = %s\n" opname method_name ;
+      let env, cell = pop_datastack opname env in
+      match (cell : DataStack.cell) with
+      | Name {global; ndx} -> (
+          let name = co_names.(ndx) in
+          let opt_sym = Env.lookup_symbol env ~global name in
+          match (opt_sym : Symbol.t option) with
+          | Some (Import {import_path}) ->
+              let loc = Env.loc env in
+              let enclosing_class = type_name ~loc import_path in
+              let proc = qualified_procname ~enclosing_class @@ proc_name ~loc method_name in
+              let env = Env.push env (DataStack.ImportCall proc) in
+              (env, None)
+          | _ ->
+              load env code cell method_name )
+      | _ ->
+          load env code cell method_name
   end
 
   module CALL = struct
+    let method_call env code opname cell_mi args =
+      let env, mi, _ = load_cell env code cell_mi in
+      match mi with
+      | Error s ->
+          L.die InternalError "[%s] failed to load method information from cell %a: %s" opname
+            DataStack.pp_cell cell_mi s
+      | Ok mi ->
+          (* The method code and self are bundled in [mi]. The builtin will decide if it is a
+             proper method call, or a call to an arbitrary callable (lambda, ...) *)
+          let env, id, _typ = Env.mk_builtin_call env PythonCallMethod (mi :: args) in
+          let env = Env.push env (Temp id) in
+          (env, None)
+
+
     (** {v CALL_METHOD(argc) v}
 
         Calls a method. [argc] is the number of positional arguments. Keyword arguments are not
@@ -516,17 +558,14 @@ module METHOD = struct
       let env, cells = pop_n_datastack opname env arg [] in
       let env, args = cells_to_textual env opname code cells in
       let env, cell_mi = pop_datastack opname env in
-      let env, mi, _ = load_cell env code cell_mi in
-      match mi with
-      | Error s ->
-          L.die InternalError "[%s] failed to load method information from cell %a: %s" opname
-            DataStack.pp_cell cell_mi s
-      | Ok mi ->
-          (* The method code and self are bundled in [mi]. The builtin will decide if it is a
-             proper method call, or a call to an arbitrary callable (lambda, ...) *)
-          let env, id, _typ = Env.mk_builtin_call env PythonCallMethod (mi :: args) in
-          let env = Env.push env (Temp id) in
+      match (cell_mi : DataStack.cell) with
+      | ImportCall proc ->
+          let loc = Env.loc env in
+          let env = Env.register_import env (Env.Import.Call proc) in
+          let env = FUNCTION.CALL.mk env None loc proc args in
           (env, None)
+      | _ ->
+          method_call env code opname cell_mi args
   end
 end
 
@@ -560,21 +599,7 @@ module STORE = struct
             Since there is a special namespace for global variables, this is in fact the same as
             [STORE_NAME], but only called from within a function/method. *)
 
-  let run kind env ({FFI.Code.co_names; co_varnames} as code) {FFI.Instruction.opname; arg} =
-    let name, global, is_attr =
-      match kind with
-      | FAST ->
-          (co_varnames.(arg), false, false)
-      | NAME ->
-          (co_names.(arg), Env.is_toplevel env, false)
-      | ATTR ->
-          (co_names.(arg), false, true)
-      | GLOBAL ->
-          (co_names.(arg), true, false)
-    in
-    Debug.p "[%s] namei=%d (global=%b, name=%s)\n" opname arg global name ;
-    let loc = Env.loc env in
-    let env, cell = pop_datastack opname env in
+  let store env ({FFI.Code.co_names} as code) opname loc arg cell name global is_attr =
     let env, exp, info = load_cell env code cell in
     match exp with
     | Ok exp ->
@@ -591,7 +616,7 @@ module STORE = struct
         in
         let gname = Symbol.to_string symbol_info in
         let var_name = var_name ~loc gname in
-        let env = Env.register_symbol ~global env name symbol_info in
+        let _, env = Env.register_symbol ~global env name symbol_info in
         if is_attr then
           let env, cell = pop_datastack opname env in
           let env, value, {Env.typ} = load_cell env code cell in
@@ -621,6 +646,40 @@ module STORE = struct
           (Env.push_instr env instr, None)
     | Error s ->
         L.die InternalError "[%s] %s" opname s
+
+
+  let run kind env ({FFI.Code.co_names; co_varnames} as code) {FFI.Instruction.opname; arg} =
+    let name, global, is_attr =
+      match kind with
+      | FAST ->
+          (co_varnames.(arg), false, false)
+      | NAME ->
+          (co_names.(arg), Env.is_toplevel env, false)
+      | ATTR ->
+          (co_names.(arg), false, true)
+      | GLOBAL ->
+          (co_names.(arg), true, false)
+    in
+    Debug.p "[%s] namei=%d (global=%b, name=%s)\n" opname arg global name ;
+    let loc = Env.loc env in
+    let env, cell = pop_datastack opname env in
+    match (cell : DataStack.cell) with
+    | Import import_path ->
+        let symbol_info = Symbol.Import {import_path} in
+        let already_imported, env = Env.register_symbol ~global env name symbol_info in
+        let env =
+          (* Side effects from imports are only run once *)
+          if already_imported then env
+          else
+            let enclosing_class = type_name ~loc import_path in
+            let proc =
+              qualified_procname ~enclosing_class @@ proc_name ~loc PyCommon.toplevel_function
+            in
+            FUNCTION.CALL.mk env None loc proc []
+        in
+        (env, None)
+    | _ ->
+        store env code opname loc arg cell name global is_attr
 end
 
 module POP_TOP = struct
@@ -911,6 +970,48 @@ module ITER = struct
   end
 end
 
+module IMPORT = struct
+  module NAME = struct
+    (** {v IMPORT_NAME(namei) v}
+
+        Imports the module [co_names\[namei\]]. The two top elements from the the stack are popped
+        and provide the [fromlist] and [level] arguments of [__import__()]. The module object is
+        pushed onto the stack. The current namespace is not affected: for a proper import statement,
+        a subsequent STORE_FAST instruction modifies the namespace.
+
+        For now:
+
+        - we only support [level = 0] and an empty [fromlist].
+        - we don't support renamaing using [import foo as bar].
+        - we don't support complex paths like [import foo.bar.baz]. *)
+    let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
+      Debug.p "[%s] namei = %d\n" opname arg ;
+      let env, from_list = pop_datastack opname env in
+      let env, level = pop_datastack opname env in
+      let env, from_list, _ = load_cell env code from_list in
+      (* TODO: maybe revisit this and do the constant lookup by hand so we directly get an int ?
+         Unsure if it can be something else than a plain constant. *)
+      let env, level, _ = load_cell env code level in
+      ( match (from_list, level) with
+      | Ok from_list, Ok level ->
+          let is_none = function T.Exp.Const T.Const.Null -> true | _ -> false in
+          let is_zero e =
+            PyCommon.read_int e |> Option.value_map ~default:false ~f:(Z.equal Z.zero)
+          in
+          if (not (is_none from_list)) || not (is_zero level) then
+            L.die InternalError "[%s] missing support from [fromlist] or [level]" opname
+      | Error s, _ ->
+          L.die UserError "[%s] failed to load [fromlist] from the stack: %s" opname s
+      | _, Error s ->
+          L.die UserError "[%s] failed to load [level] from the stack: %s" opname s ) ;
+      (* TODO: split the path on '.'. For now, only support [import foo] *)
+      let import_path = co_names.(arg) in
+      let env = Env.register_import env (Env.Import.TopLevel import_path) in
+      let env = Env.push env (DataStack.Import import_path) in
+      (env, None)
+  end
+end
+
 (** Main opcode dispatch function. *)
 let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
   let env = Env.update_last_line env starts_line in
@@ -965,6 +1066,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
         METHOD.LOAD.run env code instr
     | "CALL_METHOD" ->
         METHOD.CALL.run env code instr
+    | "IMPORT_NAME" ->
+        IMPORT.NAME.run env code instr
     | _ ->
         L.die InternalError "Unsupported opcode: %s" opname
   in
@@ -1208,11 +1311,11 @@ let annotated_type_of_annotation typ =
 let to_proc_desc env loc enclosing_class_name opt_name
     ({FFI.Code.co_argcount; co_varnames; instructions} as code) =
   let is_toplevel, name =
-    match opt_name with None -> (true, "$toplevel") | Some name -> (false, name)
+    match opt_name with None -> (true, PyCommon.toplevel_function) | Some name -> (false, name)
   in
   Debug.p "\n\n[to_proc_desc] %s\n" name ;
   let name = proc_name ~loc name in
-  let enclosing_class = T.Enclosing (type_name ~loc enclosing_class_name) in
+  let enclosing_class = type_name ~loc enclosing_class_name in
   let qualified_name = qualified_procname ~enclosing_class name in
   let pyObject = T.Typ.{typ= PyCommon.pyObject; attributes= []} in
   let nr_varnames = Array.length co_varnames in
@@ -1239,6 +1342,7 @@ let to_proc_desc env loc enclosing_class_name opt_name
   (* Now that a full unit has been processed, discard all the local information (local variable
      names, labels, ...) and only keep the [shared] part of the environment *)
   let env, nodes = nodes env label_info code instructions in
+  let enclosing_class = T.Enclosing enclosing_class in
   let annotations = Env.lookup_signature env enclosing_class name |> Option.value ~default:[] in
   let types =
     List.map
@@ -1370,7 +1474,7 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
             let varname = var_name ~loc qname in
             let global = T.Global.{name= varname; typ= PyCommon.pyObject; attributes= []} in
             T.Module.Global global :: acc
-        | Builtin | Code _ | Class _ ->
+        | Builtin | Code _ | Class _ | Import _ ->
             (* don't generate a global variable name, it will be declared as a toplevel decl *)
             acc )
       (Env.globals env) []
@@ -1378,9 +1482,11 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
   (* Then, process any code body that is in code.co_consts *)
   let env, decls = to_proc_descs env module_name co_consts in
   let decls = List.rev decls in
+  (* Declare all the import top level calls *)
+  let imports = Env.get_textual_imports env in
   (* Gather everything into a Textual module *)
   let decls =
-    ((T.Module.Proc decl :: decls) @ globals)
+    ((T.Module.Proc decl :: decls) @ globals @ imports)
     @ Env.BuiltinSet.to_textual (Env.get_used_builtins env)
   in
   {T.Module.attrs= [python_attribute]; decls; sourcefile}

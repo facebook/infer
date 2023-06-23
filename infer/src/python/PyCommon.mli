@@ -7,6 +7,19 @@
 
 open! IStd
 
+val type_name : ?loc:Textual.Location.t -> string -> Textual.TypeName.t
+
+val proc_name : ?loc:Textual.Location.t -> string -> Textual.ProcName.t
+
+val var_name : ?loc:Textual.Location.t -> string -> Textual.VarName.t
+
+val node_name : ?loc:Textual.Location.t -> string -> Textual.NodeName.t
+
+val field_name : ?loc:Textual.Location.t -> string -> Textual.FieldName.t
+
+val qualified_procname :
+  enclosing_class:Textual.TypeName.t -> Textual.ProcName.t -> Textual.qualified_procname
+
 val builtin_name : string -> Textual.qualified_procname
 (** Helper function to encode known builtin names correctly *)
 
@@ -76,6 +89,9 @@ val pyNone : Textual.Typ.t
 val mk_int : int64 -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal integers. *)
 
+val read_int : Textual.Exp.t -> Z.t option
+(** Helper function to extract an integer from a Textual expression, if possible. *)
+
 val mk_string : string -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal strings. *)
 
@@ -95,3 +111,5 @@ type method_info =
   ; code: FFI.Constant.t
   ; signature: annotated_name list
   ; flags: int }
+
+val toplevel_function : string

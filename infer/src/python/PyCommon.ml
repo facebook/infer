@@ -8,7 +8,20 @@
 open! IStd
 module T = Textual
 
-let type_name value = T.TypeName.{value; loc= T.Location.Unknown}
+let proc_name ?(loc = T.Location.Unknown) value = {T.ProcName.value; loc}
+
+let type_name ?(loc = T.Location.Unknown) value = {T.TypeName.value; loc}
+
+let var_name ?(loc = T.Location.Unknown) value = {T.VarName.value; loc}
+
+let node_name ?(loc = T.Location.Unknown) value = {T.NodeName.value; loc}
+
+let field_name ?(loc = T.Location.Unknown) value = {T.FieldName.value; loc}
+
+(* TODO: only deal with toplevel functions for now *)
+let qualified_procname ~enclosing_class name : T.qualified_procname =
+  {enclosing_class= Enclosing enclosing_class; name}
+
 
 let mk_type name = T.Typ.(Ptr (Struct (type_name name)))
 
@@ -89,21 +102,29 @@ let python_tuple = builtin_name "python_tuple"
 let mk_int (i : int64) =
   let proc = python_int in
   let z = Z.of_int64 i in
-  let args = [Textual.Exp.Const (Int z)] in
-  Textual.Exp.Call {proc; args; kind= NonVirtual}
+  let args = [T.Exp.Const (Int z)] in
+  T.Exp.Call {proc; args; kind= NonVirtual}
+
+
+let read_int = function
+  | T.Exp.Call {proc; args= [arg]; kind= NonVirtual} when T.equal_qualified_procname python_int proc
+    -> (
+    match arg with T.Exp.Const (Int z) -> Some z | _ -> None )
+  | _ ->
+      None
 
 
 let mk_string (s : string) =
   let proc = python_string in
-  let args = [Textual.Exp.Const (Str s)] in
-  Textual.Exp.Call {proc; args; kind= NonVirtual}
+  let args = [T.Exp.Const (Str s)] in
+  T.Exp.Call {proc; args; kind= NonVirtual}
 
 
 let mk_bool (b : bool) =
   let proc = python_bool in
   let z = if b then Z.one else Z.zero in
-  let args = [Textual.Exp.Const (Int z)] in
-  Textual.Exp.Call {proc; args; kind= NonVirtual}
+  let args = [T.Exp.Const (Int z)] in
+  T.Exp.Call {proc; args; kind= NonVirtual}
 
 
 let unknown_global name = sprintf "$ambiguous::%s" name
@@ -116,3 +137,5 @@ type method_info =
   ; code: FFI.Constant.t
   ; signature: annotated_name list
   ; flags: int }
+
+let toplevel_function = "$toplevel"

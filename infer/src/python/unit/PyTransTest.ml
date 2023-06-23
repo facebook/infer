@@ -1073,3 +1073,42 @@ print(c.z)
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
+
+
+let%test_module "simple import" =
+  ( module struct
+    let%expect_test _ =
+      let source =
+        {|
+import base
+import base # should only call base.$toplevel once
+
+base.f(0)
+
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyObject {
+          #b0:
+              n0 = base.$toplevel()
+              n1 = base.f($builtins.python_int(0))
+              ret null
+
+        }
+
+        declare base.f(...) : *PyObject
+
+        declare base.$toplevel() : *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_int(int) : *PyInt |}]
+  end )

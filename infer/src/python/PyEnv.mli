@@ -47,6 +47,8 @@ module DataStack : sig
     | Map of (string * cell) list
         (** Light encoding of raw Python tuples/dicts. Only used for type annotations at the moment. *)
     | BuiltinBuildClass  (** see Python's [LOAD_BUILD_CLASS] *)
+    | Import of string  (** imported module path *)
+    | ImportCall of T.qualified_procname  (** Static call to export definition *)
   [@@deriving show]
 
   val as_code : FFI.Code.t -> cell -> FFI.Code.t option
@@ -64,10 +66,12 @@ module SMap : Caml.Map.S with type key = string
 
 module Symbol : sig
   module Qualified : sig
+    type prefix = string list
+
     (** Fully expanded name of a symbol *)
     type t
 
-    val mk : prefix:string list -> string -> T.Location.t -> t
+    val mk : prefix:prefix -> string -> T.Location.t -> t
   end
 
   (** A symbol can either be a name (a variable), a function, a class name or a supported builtin
@@ -77,10 +81,16 @@ module Symbol : sig
     | Builtin
     | Code of {code_name: Qualified.t}
     | Class of {class_name: Qualified.t}
+    | Import of {import_path: string}
 
   val to_string : t -> string
 
   val to_qualified_procname : t -> T.qualified_procname
+end
+
+module Import : sig
+  (** Tracking data about external information, from import *)
+  type t = TopLevel of string | Call of T.qualified_procname
 end
 
 (** Global environment used during bytecode processing. Stores common global information like the
@@ -175,9 +185,9 @@ val register_label : offset:int -> Label.info -> t -> t
 val process_label : offset:int -> Label.info -> t -> t
 (** Mark the label [info] at [offset] as processed *)
 
-val register_symbol : t -> global:bool -> string -> Symbol.t -> t
+val register_symbol : t -> global:bool -> string -> Symbol.t -> bool * t
 (** Register a name (function, variable, ...). It might be a [global] symbol at the module level or
-    in a local object. *)
+    in a local object. Also returns if the symbol was already bound *)
 
 val lookup_symbol : t -> global:bool -> string -> Symbol.t option
 (** Lookup information about a global/local symbol previously registered via [register_symbol] *)
@@ -204,7 +214,12 @@ val register_class : t -> string -> t
 (** Register a class declaration (based on [LOAD_BUILD_CLASS]) *)
 
 val get_declared_classes : t -> string list
-(** Get back the list of declared classes in the file *)
+
+val register_import : t -> Import.t -> t
+(** Register a import declaration (based on [IMPORT_NAME]) *)
+
+val get_textual_imports : t -> T.Module.decl list
+(** Get back the list of registered imports *)
 
 val is_toplevel : t -> bool
 (** Are we processing top level instructions, or something in a function/class ? *)

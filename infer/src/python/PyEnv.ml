@@ -9,6 +9,8 @@ open! IStd
 module T = Textual
 module Debug = PyDebug
 
+let type_name = PyCommon.type_name
+
 module Builtin = struct
   type primitive = PythonInt | PythonBool | PythonString | PythonTuple [@@deriving compare]
 
@@ -77,9 +79,9 @@ module Builtin = struct
     match name with "print" -> Some (Python Print) | "range" -> Some (Python Range) | _ -> None
 end
 
-module BuiltinSet = struct
-  let type_name value = {T.TypeName.value; loc= Unknown}
+let annot typ = T.Typ.{typ; attributes= []}
 
+module BuiltinSet = struct
   let string_ = T.Typ.(Ptr (Struct (type_name "String")))
 
   type elt =
@@ -97,8 +99,6 @@ module BuiltinSet = struct
     in
     procdecl :: List.map ~f:(fun strct -> T.Module.Struct strct) used_struct_types
 
-
-  let annot typ = T.Typ.{typ; attributes= []}
 
   type t = Set.t
 
@@ -210,6 +210,8 @@ module DataStack = struct
     | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
     | Map of (string * cell) list
     | BuiltinBuildClass
+    | Import of string (* TODO: move to list when we supported structured path foo.bar.baz *)
+    | ImportCall of T.qualified_procname
   [@@deriving show]
 
   let as_code FFI.Code.{co_consts} = function
@@ -218,7 +220,7 @@ module DataStack = struct
         FFI.Constant.as_code code
     | Code {code} ->
         Some code
-    | Name _ | Temp _ | VarName _ | Map _ | BuiltinBuildClass ->
+    | Name _ | Temp _ | VarName _ | Map _ | BuiltinBuildClass | Import _ | ImportCall _ ->
         None
 
 
@@ -238,22 +240,27 @@ module Signature = struct
 end
 
 module SMap = Caml.Map.Make (String)
+module SSet = Caml.Set.Make (String)
 
 type info = {is_code: bool; is_class: bool; typ: T.Typ.t}
 
 module Symbol = struct
   module Qualified = struct
+    type prefix = string list
+
     (** Fully qualified name. Each identifier for global variables / function names / class names
         have a prefix sequence with the module and optional class names. The suffix is usually the
         original "short" name. *)
-    type t = {prefix: string list; name: string; loc: T.Location.t}
+    type t = {prefix: prefix; name: string; loc: T.Location.t}
 
     let mk ~prefix name loc = {prefix; name; loc}
+
+    let prefix_to_string prefix = String.concat ~sep:"::" prefix
 
     let to_string ~sep {prefix; name} =
       if List.is_empty prefix then name
       else
-        let prefix = String.concat ~sep:"::" prefix in
+        let prefix = prefix_to_string prefix in
         sprintf "%s%s%s" prefix sep name
 
 
@@ -262,7 +269,7 @@ module Symbol = struct
         if List.is_empty prefix then T.TopLevel
         else
           let value = String.concat ~sep:"::" prefix in
-          let type_name = {T.TypeName.value; loc} in
+          let type_name = type_name ~loc value in
           T.Enclosing type_name
       in
       let name = {T.ProcName.value= name; loc} in
@@ -274,6 +281,7 @@ module Symbol = struct
     | Builtin
     | Code of {code_name: Qualified.t}
     | Class of {class_name: Qualified.t}
+    | Import of {import_path: string}
 
   let to_string = function
     | Name {symbol_name} ->
@@ -286,6 +294,8 @@ module Symbol = struct
         (* While functions and types are used as qualified_procnames so we using "." as a
            separator *)
         Qualified.to_string ~sep:"." qname
+    | Import {import_path} ->
+        import_path
 
 
   let to_qualified_procname = function
@@ -293,6 +303,8 @@ module Symbol = struct
         Logging.die InternalError "Symbol.to_qualified_procname called with Name"
     | Builtin ->
         Logging.die InternalError "Symbol.to_qualified_procname called with Builtin"
+    | Import _ ->
+        Logging.die InternalError "Symbol.to_qualified_procname called with Import"
     | Code {code_name= qname} | Class {class_name= qname} ->
         Qualified.to_textual qname
 
@@ -306,7 +318,15 @@ module Symbol = struct
         Format.fprintf fmt "Code(%s)" (Qualified.to_string ~sep:"." code_name)
     | Class {class_name} ->
         Format.fprintf fmt "Class(%s)" (Qualified.to_string ~sep:"." class_name)
+    | Import {import_path} ->
+        Format.fprintf fmt "Import(%s)" import_path
 end
+
+module Import = struct
+  type t = TopLevel of string | Call of T.qualified_procname [@@deriving compare]
+end
+
+module ImportSet = Caml.Set.Make (Import)
 
 type label_info =
   { label_name: string
@@ -324,7 +344,8 @@ and shared =
   ; builtins: BuiltinSet.t
         (** All the builtins that have been called, so we only export them in textual to avoid too
             much noise *)
-  ; classes: string list  (** All the classes that have been defined *)
+  ; classes: SSet.t  (** All the classes that have been defined *)
+  ; imports: ImportSet.t
   ; toplevel_signatures: Signature.t SMap.t
         (** Map from top level function names to their signature *)
   ; method_signatures: Signature.t SMap.t SMap.t
@@ -430,7 +451,8 @@ let empty =
   ; globals= initial_globals
   ; locals= SMap.empty
   ; builtins= BuiltinSet.empty
-  ; classes= []
+  ; classes= SSet.empty
+  ; imports= ImportSet.empty
   ; toplevel_signatures= SMap.empty
   ; method_signatures= SMap.empty
   ; module_name= ""
@@ -521,16 +543,20 @@ let instructions {node= {instructions}} = List.rev instructions
 
 let register_symbol ({shared} as env) ~global name symbol_info =
   PyDebug.p "[register_symbol] %b %s %a\n" global name Symbol.pp symbol_info ;
-  let register map name symbol_info = SMap.add name symbol_info map in
+  let register map name symbol_info =
+    let exists = SMap.mem name map in
+    let map = SMap.add name symbol_info map in
+    (exists, map)
+  in
   let {globals; locals} = shared in
   if global then
-    let globals = register globals name symbol_info in
+    let exists, globals = register globals name symbol_info in
     let shared = {shared with globals} in
-    {env with shared}
+    (exists, {env with shared})
   else
-    let locals = register locals name symbol_info in
+    let exists, locals = register locals name symbol_info in
     let shared = {shared with locals} in
-    {env with shared}
+    (exists, {env with shared})
 
 
 let lookup_symbol {shared} ~global name =
@@ -561,7 +587,7 @@ let mk_builtin_call env builtin args =
     match (builtin, args) with
     | Builtin.PythonClassConstructor, T.Exp.Const (T.Const.Str arg) :: _ ->
         (* TODO: how can we track the loc ? via args ?*)
-        let type_name = {T.TypeName.value= arg; loc= T.Location.Unknown} in
+        let type_name = type_name arg in
         T.Typ.Ptr (T.Typ.Struct type_name)
     | _, _ ->
         BuiltinSet.get_type textual_builtin
@@ -581,7 +607,7 @@ let is_builtin {shared= {globals}} fname =
   match SMap.find_opt fname globals with
   | Some Symbol.Builtin ->
       true
-  | None | Some (Name _ | Class _ | Code _) ->
+  | None | Some (Name _ | Class _ | Code _ | Import _) ->
       false
 
 
@@ -635,12 +661,40 @@ let lookup_signature {shared= {toplevel_signatures; method_signatures}} enclosin
 let register_class ({shared} as env) class_name =
   PyDebug.p "[register_class] %s\n" class_name ;
   let {classes} = shared in
-  let classes = class_name :: classes in
+  let classes = SSet.add class_name classes in
   let shared = {shared with classes} in
   {env with shared}
 
 
-let get_declared_classes {shared= {classes}} = classes
+let register_import ({shared} as env) import_name =
+  let {imports} = shared in
+  let imports = ImportSet.add import_name imports in
+  let shared = {shared with imports} in
+  {env with shared}
+
+
+let get_declared_classes {shared= {classes}} = SSet.fold (fun cls acc -> cls :: acc) classes []
+
+(* TODO: rethink that when adding more support for imports, probably changing it into a
+   "lookup_import" version *)
+let get_textual_imports {shared= {imports}} =
+  let result_type = annot PyCommon.pyObject in
+  ImportSet.fold
+    (fun import acc ->
+      match (import : Import.t) with
+      | TopLevel import_name ->
+          let enclosing_class = type_name import_name in
+          let qualified_name =
+            PyCommon.qualified_procname ~enclosing_class
+            @@ PyCommon.proc_name PyCommon.toplevel_function
+          in
+          T.Module.Procdecl {qualified_name; formals_types= Some []; result_type; attributes= []}
+          :: acc
+      | Call qualified_name ->
+          T.Module.Procdecl {qualified_name; formals_types= None; result_type; attributes= []}
+          :: acc )
+    imports []
+
 
 let is_toplevel {shared= {is_toplevel}} = is_toplevel
 
