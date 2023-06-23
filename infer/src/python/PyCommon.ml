@@ -118,14 +118,6 @@ let mk_float (f : float) =
   T.Exp.Call {proc; args; kind= NonVirtual}
 
 
-let read_int = function
-  | T.Exp.Call {proc; args= [arg]; kind= NonVirtual} when T.equal_qualified_procname python_int proc
-    -> (
-    match arg with T.Exp.Const (Int z) -> Some z | _ -> None )
-  | _ ->
-      None
-
-
 let mk_string (s : string) =
   let proc = python_string in
   let args = [T.Exp.Const (Str s)] in

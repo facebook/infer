@@ -101,9 +101,6 @@ val mk_int : int64 -> Textual.Exp.t
 val mk_float : float -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal floats. *)
 
-val read_int : Textual.Exp.t -> Z.t option
-(** Helper function to extract an integer from a Textual expression, if possible. *)
-
 val mk_string : string -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal strings. *)
 

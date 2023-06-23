@@ -175,9 +175,18 @@ let cells_to_textual env opname code cells =
 let pop_datastack opname env =
   match Env.pop env with
   | None ->
-      L.die ExternalError "[%s] stack is empty" opname
+      L.die ExternalError "[%s] can't pop, stack is empty" opname
   | Some (env, cell) ->
       (env, cell)
+
+
+(** Peek the top of the datastack. Fails with an [InternalError] if the stack is empty. *)
+let peek_datastack opname env =
+  match Env.peek env with
+  | None ->
+      L.die ExternalError "[%s] can't peek, stack is empty" opname
+  | Some cell ->
+      cell
 
 
 let pop_n_datastack opname =
@@ -317,7 +326,12 @@ module FUNCTION = struct
           let proc = PyCommon.builtin_name fname in
           let env = mk env (Some fname) loc proc args in
           (env, None)
-      | Some (Name _ as symbol) | Some (Code _ as symbol) ->
+      | Some (Name {is_imported} as symbol) ->
+          let proc = Symbol.to_qualified_procname symbol in
+          let env = if is_imported then Env.register_import env (Env.Import.Call proc) else env in
+          let env = mk env (Some fname) loc proc args in
+          (env, None)
+      | Some (Code _ as symbol) ->
           let proc = Symbol.to_qualified_procname symbol in
           let env = mk env (Some fname) loc proc args in
           (env, None)
@@ -616,7 +630,7 @@ module STORE = struct
           else
             let prefix = if global then [module_name] else [] in
             let qname = Symbol.Qualified.mk ~prefix name loc in
-            Symbol.Name {symbol_name= qname; typ}
+            Symbol.Name {symbol_name= qname; is_imported= false; typ}
         in
         let gname = Symbol.to_string symbol_info in
         let var_name = var_name ~loc gname in
@@ -668,7 +682,7 @@ module STORE = struct
     let loc = Env.loc env in
     let env, cell = pop_datastack opname env in
     match (cell : DataStack.cell) with
-    | Import import_path ->
+    | Import {import_path; symbols} ->
         let symbol_info = Symbol.Import {import_path} in
         let already_imported, env = Env.register_symbol ~global env name symbol_info in
         let env =
@@ -680,6 +694,13 @@ module STORE = struct
               qualified_procname ~enclosing_class @@ proc_name ~loc PyCommon.toplevel_function
             in
             FUNCTION.CALL.mk env None loc proc []
+        in
+        let env =
+          List.fold_left ~init:env symbols ~f:(fun env symbol ->
+              let symbol_name = Symbol.Qualified.mk ~prefix:[import_path] symbol loc in
+              let typ = PyCommon.pyObject in
+              let symbol_info = Symbol.Name {symbol_name; is_imported= true; typ} in
+              snd @@ Env.register_symbol ~global env symbol symbol_info )
         in
         (env, None)
     | _ ->
@@ -975,6 +996,37 @@ module ITER = struct
 end
 
 module IMPORT = struct
+  (* Specialized version of [py_to_exp] when an int is expected *)
+  let py_to_int c = match (c : FFI.Constant.t) with PYCInt i -> Some i | _ -> None
+
+  (* Specialized version of [py_to_exp] when a tuple of strings is expected (for imports) *)
+  let rec py_to_strings c =
+    match (c : FFI.Constant.t) with
+    | PYCString s ->
+        Some [s]
+    | PYCBytes bs ->
+        let s = Bytes.to_string bs in
+        Some [s]
+        (* TODO: unsure *)
+    | PYCTuple arr ->
+        Array.fold ~init:(Some [])
+          ~f:(fun acc c ->
+            match (py_to_strings c, acc) with Some hd, Some tl -> Some (hd @ tl) | _, _ -> None )
+          arr
+    | PYCNone ->
+        Some []
+    | _ ->
+        None
+
+
+  let load_int {FFI.Code.co_consts} cell =
+    match (cell : DataStack.cell) with Const ndx -> py_to_int co_consts.(ndx) | _ -> None
+
+
+  let load_strings {FFI.Code.co_consts} cell =
+    match (cell : DataStack.cell) with Const ndx -> py_to_strings co_consts.(ndx) | _ -> None
+
+
   module NAME = struct
     (** {v IMPORT_NAME(namei) v}
 
@@ -985,34 +1037,58 @@ module IMPORT = struct
 
         For now:
 
-        - we only support [level = 0] and an empty [fromlist].
+        - we only support [level = 0].
         - we don't support renamaing using [import foo as bar].
         - we don't support complex paths like [import foo.bar.baz]. *)
     let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
       Debug.p "[%s] namei = %d\n" opname arg ;
       let env, from_list = pop_datastack opname env in
       let env, level = pop_datastack opname env in
-      let env, from_list, _ = load_cell env code from_list in
-      (* TODO: maybe revisit this and do the constant lookup by hand so we directly get an int ?
-         Unsure if it can be something else than a plain constant. *)
-      let env, level, _ = load_cell env code level in
-      ( match (from_list, level) with
-      | Ok from_list, Ok level ->
-          let is_none = function T.Exp.Const T.Const.Null -> true | _ -> false in
-          let is_zero e =
-            PyCommon.read_int e |> Option.value_map ~default:false ~f:(Z.equal Z.zero)
-          in
-          if (not (is_none from_list)) || not (is_zero level) then
+      let from_list = load_strings code from_list in
+      let level = load_int code level in
+      ( match level with
+      | Some level ->
+          if not (Int64.equal level Int64.zero) then
             L.die InternalError "[%s] missing support from [fromlist] or [level]" opname
-      | Error s, _ ->
-          L.die UserError "[%s] failed to load [fromlist] from the stack: %s" opname s
-      | _, Error s ->
-          L.die UserError "[%s] failed to load [level] from the stack: %s" opname s ) ;
+      | None ->
+          L.die UserError "[%s] failed to load [level] from the stack" opname ) ;
       (* TODO: split the path on '.'. For now, only support [import foo] *)
       let import_path = co_names.(arg) in
       let env = Env.register_import env (Env.Import.TopLevel import_path) in
-      let env = Env.push env (DataStack.Import import_path) in
+      let from_list =
+        if Option.is_none from_list then
+          L.debug Capture Quiet "[IMPORT_NAME] failed to process `from_list`\n" ;
+        Option.value ~default:[] from_list
+      in
+      let env = Env.push env (DataStack.Import {import_path; symbols= from_list}) in
       (env, None)
+  end
+
+  module FROM = struct
+    (** {v IMPORT_FROM(namei) v}
+
+        Loads the attribute [co_names\[namei\]] from the module found in the top of the stack. The
+        resulting object is pushed onto the stack, to be subsequently stored by a [STORE_FAST]
+        instruction. *)
+    let run env {FFI.Code.co_names} {FFI.Instruction.opname; arg} =
+      Debug.p "[%s] namei = %d\n" opname arg ;
+      let symbol_name = co_names.(arg) in
+      let import_cell = peek_datastack opname env in
+      match (import_cell : DataStack.cell) with
+      | Import {import_path; symbols} ->
+          let env =
+            if List.mem ~equal:String.equal symbols symbol_name then
+              (* TODO: should we do more structure ? I just reuse `Import` with a single name
+                 instead of the full list. *)
+              Env.push env (DataStack.Import {import_path; symbols= [symbol_name]})
+            else (
+              L.debug Capture Quiet "[IMPORT_FROM] symbol %s is not part of the expect list [%s]\n"
+                symbol_name (String.concat ~sep:", " symbols) ;
+              env )
+          in
+          (env, None)
+      | _ ->
+          L.die UserError "[%s] invalid TOS: %a spotted" opname DataStack.pp_cell import_cell
   end
 end
 
@@ -1072,6 +1148,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
         METHOD.CALL.run env code instr
     | "IMPORT_NAME" ->
         IMPORT.NAME.run env code instr
+    | "IMPORT_FROM" ->
+        IMPORT.FROM.run env code instr
     | _ ->
         L.die InternalError "Unsupported opcode: %s" opname
   in
@@ -1473,11 +1551,13 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
     Env.SMap.fold
       (fun _name sym acc ->
         match (sym : Symbol.t) with
-        | Name _ ->
-            let qname = Symbol.to_string sym in
-            let varname = var_name ~loc qname in
-            let global = T.Global.{name= varname; typ= PyCommon.pyObject; attributes= []} in
-            T.Module.Global global :: acc
+        | Name {is_imported} ->
+            if is_imported then acc
+            else
+              let qname = Symbol.to_string sym in
+              let varname = var_name ~loc qname in
+              let global = T.Global.{name= varname; typ= PyCommon.pyObject; attributes= []} in
+              T.Module.Global global :: acc
         | Builtin | Code _ | Class _ | Import _ ->
             (* don't generate a global variable name, it will be declared as a toplevel decl *)
             acc )

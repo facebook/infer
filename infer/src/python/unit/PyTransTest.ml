@@ -1241,4 +1241,63 @@ base.f(0)
         declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+
+def f():
+        pass
+
+f()
+
+from base import f, g
+
+f()
+from base import f, g # to test that import.toplevel is only called once
+g()
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyObject {
+          #b0:
+              n0 = $builtins.python_code("dummy.f")
+              n1 = dummy.f()
+              n2 = base.$toplevel()
+              n3 = base.f()
+              n4 = base.g()
+              ret null
+
+        }
+
+        define dummy.f() : *PyObject {
+          #b0:
+              ret null
+
+        }
+
+        declare base.g(...) : *PyObject
+
+        declare base.f(...) : *PyObject
+
+        declare base.$toplevel() : *PyObject
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )

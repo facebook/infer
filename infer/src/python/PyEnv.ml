@@ -21,7 +21,8 @@ module DataStack = struct
     | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
     | Map of (string * cell) list
     | BuiltinBuildClass
-    | Import of string (* TODO: move to list when we supported structured path foo.bar.baz *)
+    | Import of {import_path: string; symbols: string list}
+      (* TODO: change import_path into a list when we supported structured path foo.bar.baz *)
     | ImportCall of T.qualified_procname
   [@@deriving show]
 
@@ -40,6 +41,8 @@ module DataStack = struct
   let push stack cell = cell :: stack
 
   let pop = function [] -> None | hd :: stack -> Some (stack, hd)
+
+  let peek = function [] -> None | hd :: _ -> Some hd
 end
 
 module Labels = Caml.Map.Make (Int)
@@ -88,7 +91,7 @@ module Symbol = struct
   end
 
   type t =
-    | Name of {symbol_name: Qualified.t; typ: T.Typ.t}
+    | Name of {symbol_name: Qualified.t; is_imported: bool; typ: T.Typ.t}
     | Builtin
     | Code of {code_name: Qualified.t}
     | Class of {class_name: Qualified.t}
@@ -110,13 +113,11 @@ module Symbol = struct
 
 
   let to_qualified_procname = function
-    | Name _ ->
-        Logging.die InternalError "Symbol.to_qualified_procname called with Name"
     | Builtin ->
         Logging.die InternalError "Symbol.to_qualified_procname called with Builtin"
     | Import _ ->
         Logging.die InternalError "Symbol.to_qualified_procname called with Import"
-    | Code {code_name= qname} | Class {class_name= qname} ->
+    | Name {symbol_name= qname} | Code {code_name= qname} | Class {class_name= qname} ->
         Qualified.to_textual qname
 
 
@@ -209,6 +210,8 @@ let pop ({node} as env) =
   in
   pop node |> Option.map ~f:(fun (node, cell) -> ({env with node}, cell))
 
+
+let peek {node= {stack}} = DataStack.peek stack
 
 module Label = struct
   type info = label_info

@@ -22,7 +22,8 @@ module DataStack : sig
     | Map of (string * cell) list
         (** Light encoding of raw Python tuples/dicts. Only used for type annotations at the moment. *)
     | BuiltinBuildClass  (** see Python's [LOAD_BUILD_CLASS] *)
-    | Import of string  (** imported module path *)
+    | Import of {import_path: string; symbols: string list}
+        (** imported module path, with optional name of symbols *)
     | ImportCall of T.qualified_procname  (** Static call to export definition *)
   [@@deriving show]
 
@@ -52,7 +53,7 @@ module Symbol : sig
   (** A symbol can either be a name (a variable), a function, a class name or a supported builtin
       (like [print]) *)
   type t =
-    | Name of {symbol_name: Qualified.t; typ: T.Typ.t}
+    | Name of {symbol_name: Qualified.t; is_imported: bool; typ: T.Typ.t}
     | Builtin
     | Code of {code_name: Qualified.t}
     | Class of {class_name: Qualified.t}
@@ -150,6 +151,9 @@ val push : t -> DataStack.cell -> t
 
 val pop : t -> (t * DataStack.cell) option
 (** Pop a [DataStack.cell] from the datastack, if any is available *)
+
+val peek : t -> DataStack.cell option
+(** Peek a [DataStack.cell] from the datastack, if any is available *)
 
 val push_instr : t -> T.Instr.t -> t
 (** Record a new instruction for the current code unit *)
