@@ -241,13 +241,25 @@ type info = {is_code: bool; is_class: bool; typ: T.Typ.t}
 
 module Symbol = struct
   (* TODO: check how much structure we need once we start investigating nested classes/functions *)
-  (* TODO: check if we ever read the loc *)
   type qualified_name = {value: string; loc: T.Location.t}
 
-  type symbol_info = {qualified_name: qualified_name; info: info}
+  type t =
+    | Name of {symbol_name: qualified_name; typ: T.Typ.t}
+    | Builtin
+    | Code of {code_name: qualified_name}
+    | Class of {class_name: qualified_name}
 
-  (* TODO: split symbol_info into Name/Class/Function *)
-  type t = Name of symbol_info | Builtin
+  let pp_opt fmt = function
+    | Some (Name {symbol_name= {value}; typ}) ->
+        Format.fprintf fmt "Name(%s: %a)" value T.Typ.pp typ
+    | Some Builtin ->
+        Format.pp_print_string fmt "Builtin"
+    | Some (Code {code_name= {value}}) ->
+        Format.fprintf fmt "Code(%s)" value
+    | Some (Class {class_name= {value}}) ->
+        Format.fprintf fmt "Class(%s)" value
+    | None ->
+        Format.pp_print_string fmt "None"
 end
 
 type label_info =
@@ -461,19 +473,23 @@ let label_of_offset {shared} offset =
 
 let instructions {node= {instructions}} = List.rev instructions
 
-let register_symbol ({shared} as env) ~global name ({Symbol.value} as qualified_name) info =
-  PyDebug.p "[register_symbol] %b %s %s\n" global name value ;
-  let register map name qualified_name info =
-    let symbol_info = Symbol.Name {qualified_name; info} in
-    SMap.add name symbol_info map
+let register_symbol ({shared} as env) ~global name symbol_info =
+  let value =
+    match (symbol_info : Symbol.t) with
+    | Builtin ->
+        "%BUILTIN%"
+    | Class {class_name= {value}} | Code {code_name= {value}} | Name {symbol_name= {value}} ->
+        value
   in
+  PyDebug.p "[register_symbol] %b %s %s\n" global name value ;
+  let register map name symbol_info = SMap.add name symbol_info map in
   let {globals; locals} = shared in
   if global then
-    let globals = register globals name qualified_name info in
+    let globals = register globals name symbol_info in
     let shared = {shared with globals} in
     {env with shared}
   else
-    let locals = register locals name qualified_name info in
+    let locals = register locals name symbol_info in
     let shared = {shared with locals} in
     {env with shared}
 
@@ -482,18 +498,17 @@ let lookup_symbol {shared} ~global name =
   PyDebug.p "[lookup_symbol] %b %s\n" global name ;
   let lookup map name = SMap.find_opt name map in
   let {globals; locals} = shared in
-  if global then lookup globals name else lookup locals name
+  let res = if global then lookup globals name else lookup locals name in
+  PyDebug.p "> %a\n" Symbol.pp_opt res ;
+  res
 
 
-let globals {shared= {globals}} =
-  SMap.filter_map
-    (fun _name info -> match (info : Symbol.t) with Name info -> Some info | Builtin -> None)
-    globals
-
+let globals {shared= {globals}} = globals
 
 let get_used_builtins {shared= {builtins}} = builtins
 
 let register_builtin ({shared} as env) builtin =
+  PyDebug.p "[register_builtin] %a\n" T.pp_qualified_procname (Builtin.to_proc_name builtin) ;
   let register_builtin ({builtins} as env) builtin =
     {env with builtins= BuiltinSet.register builtins builtin}
   in
@@ -527,11 +542,12 @@ let is_builtin {shared= {globals}} fname =
   match SMap.find_opt fname globals with
   | Some Symbol.Builtin ->
       true
-  | None | Some (Name _) ->
+  | None | Some (Name _ | Class _ | Code _) ->
       false
 
 
 let register_call env fname =
+  PyDebug.p "[register_call] %s\n" fname ;
   match (is_builtin env fname, Builtin.of_string fname) with
   | true, Some builtin ->
       register_builtin env builtin
@@ -547,9 +563,8 @@ let register_function ({shared} as env) name loc annotations =
      we need this '.'
   *)
   let value = module_name ^ "." ^ name in
-  let qualified_name = {Symbol.value; loc} in
-  let info = {is_code= true; is_class= false; typ= PyCommon.pyObject} in
-  let symbol_info = Symbol.Name {qualified_name; info} in
+  let code_name = {Symbol.value; loc} in
+  let symbol_info = Symbol.Code {code_name} in
   let {toplevel_signatures; globals} = shared in
   let toplevel_signatures = SMap.add value annotations toplevel_signatures in
   let globals = SMap.add name symbol_info globals in

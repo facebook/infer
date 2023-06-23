@@ -66,12 +66,13 @@ module Symbol : sig
   (** Fully expanded name of a symbol *)
   type qualified_name = {value: string; loc: T.Location.t}
 
-  (** Information about symbols to correct do the translation to Textual's qualified names *)
-  type symbol_info = {qualified_name: qualified_name; info: info}
-
-  (** A symbol can either be a name (a variable, a function name, class name, ...) or a supported
-      builtin (like [print]) *)
-  type t = Name of symbol_info | Builtin
+  (** A symbol can either be a name (a variable), a function, a class name or a supported builtin
+      (like [print]) *)
+  type t =
+    | Name of {symbol_name: qualified_name; typ: T.Typ.t}
+    | Builtin
+    | Code of {code_name: qualified_name}
+    | Class of {class_name: qualified_name}
 end
 
 (** Global environment used during bytecode processing. Stores common global information like the
@@ -113,7 +114,7 @@ val loc : t -> T.Location.t
 val stack : t -> DataStack.t
 (** Returns the [DataStack.t] for the current declaration *)
 
-val globals : t -> Symbol.symbol_info SMap.t
+val globals : t -> Symbol.t SMap.t
 (** Return the [globals] map *)
 
 val get_used_builtins : t -> BuiltinSet.t
@@ -166,7 +167,7 @@ val register_label : offset:int -> Label.info -> t -> t
 val process_label : offset:int -> Label.info -> t -> t
 (** Mark the label [info] at [offset] as processed *)
 
-val register_symbol : t -> global:bool -> string -> Symbol.qualified_name -> info -> t
+val register_symbol : t -> global:bool -> string -> Symbol.t -> t
 (** Register a name (function, variable, ...). It might be a [global] symbol at the module level or
     in a local object. *)
 
