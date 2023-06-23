@@ -7,7 +7,7 @@ TESTS_DIR = ../..
 
 INFERPRINT_OPTIONS = --issues-tests
 
-MVN_DIR = ../codetoanalyze/mvn/simple_app
+MVN_DIR = ../codetoanalyze/mvn/simple_app_for_jar_test
 SOURCES = $(MVN_DIR)/pom.xml $(shell find $(MVN_DIR) -type f -name '*.java')
 JAR_FILE = $(MVN_DIR)/target/simple-app-1.0-SNAPSHOT.jar
 
