@@ -11,8 +11,9 @@ module L = Logging
 module T = Textual
 module Debug = PyDebug
 module Env = PyEnv
-module DataStack = PyEnv.DataStack
-module Builtin = PyEnv.Builtin
+module DataStack = Env.DataStack
+module Builtin = Env.Builtin
+module Symbol = Env.Symbol
 
 let prefix_name ~module_name name = module_name ^ "::" ^ name
 
@@ -35,9 +36,11 @@ let code_to_exp ~fun_or_class env name =
   let module_name = Env.module_name env in
   let fname =
     (* TODO: support closures *)
-    Env.lookup_symbol ~global:true env name
-    |> Option.value_map ~default:(prefix_name ~module_name name)
-         ~f:(fun {Env.qualified_name= {value}} -> value)
+    match Env.lookup_symbol ~global:true env name with
+    | Some (Symbol.Name {qualified_name= {value}}) ->
+        value
+    | Some Builtin | None ->
+        prefix_name ~module_name name
   in
   let kind = if fun_or_class then Builtin.PythonCode else Builtin.PythonClass in
   let name = T.Exp.Const (Str fname) in
@@ -91,10 +94,11 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
   | Name {global; ndx} ->
       let name = co_names.(ndx) in
       let ({Env.typ; is_code} as info), qualified_name =
-        Env.lookup_symbol ~global env name
-        |> Option.value_map
-             ~default:(default, PyCommon.unknown_global name)
-             ~f:(fun {Env.qualified_name= {value}; info} -> (info, value))
+        match Env.lookup_symbol ~global env name with
+        | Some (Symbol.Name {qualified_name= {value}; info}) ->
+            (info, value)
+        | Some Builtin | None ->
+            (default, PyCommon.unknown_global name)
       in
       let var_name = var_name ~loc qualified_name in
       (* If we are trying to load some code, use the dedicated builtin *)
@@ -284,7 +288,7 @@ module METHOD = struct
         (either [self] and an unbound method object or [NULL] and an arbitrary callable). All of
         them are popped and the return value is pushed. *)
     let run env code {FFI.Instruction.opname; arg} =
-      Debug.p "[%s] argc = %d" opname arg ;
+      Debug.p "[%s] argc = %d\n" opname arg ;
       let env, cells = pop_n_datastack opname env arg [] in
       let env, args = cells_to_textual env opname code cells in
       let env, cell_mi = pop_datastack opname env in
@@ -344,6 +348,7 @@ module STORE = struct
       | GLOBAL ->
           (co_names.(arg), true, false)
     in
+    Debug.p "[%s] namei=%d (global=%b, name=%s)\n" opname arg global name ;
     let loc = Env.loc env in
     let env, cell = pop_datastack opname env in
     let env, exp, info = load_cell env code cell in
@@ -363,7 +368,7 @@ module STORE = struct
           else name
         in
         let var_name = var_name ~loc gname in
-        let global_name = {Env.value= gname; loc} in
+        let global_name = {Symbol.value= gname; loc} in
         let env = Env.register_symbol ~global env name global_name info in
         if is_attr then
           let env, cell = pop_datastack opname env in
@@ -428,38 +433,7 @@ module FUNCTION = struct
         After: [ result | rest-of-the-stack ] *)
 
     let static_call env fname args =
-      let loc = Env.loc env in
-      let classes = Env.get_classes env in
-      if List.mem ~equal:String.equal classes fname then
-        let fname =
-          (* TODO: support nested classes *)
-          Env.lookup_symbol ~global:true env fname
-          |> Option.value_map ~default:(PyCommon.unknown_global fname)
-               ~f:(fun {Env.qualified_name= {value}} -> value)
-        in
-        let name = T.Exp.Const (T.Const.Str fname) in
-        (* Calling a class constructor *)
-        (* FYI, Python3 constructors first call __new__ to allocate the object, and then call
-           __init__ to initialize it. Both can be overloaded in the user-declared code. *)
-        let env, id, _typ = Env.mk_builtin_call env Builtin.PythonClassConstructor (name :: args) in
-        let env = Env.push env (DataStack.Temp id) in
-        (env, None)
-      else
-        let known_globals = Env.globals env in
-        let proc =
-          match Env.SMap.find_opt fname known_globals with
-          | Some {Env.qualified_name= {value; loc}; is_builtin} ->
-              if is_builtin then PyCommon.builtin_name value
-              else
-                let enclosing_class_name = type_name ~loc (Env.module_name env) in
-                let enclosing_class = T.Enclosing enclosing_class_name in
-                qualified_procname ~enclosing_class @@ proc_name ~loc value
-          | None ->
-              (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
-                 further analysis *)
-              let enclosing_class = T.Enclosing T.TypeName.wildcard in
-              qualified_procname ~enclosing_class @@ proc_name ~loc fname
-        in
+      let mk env loc proc =
         let env = Env.register_call env fname in
         let call = T.Exp.Call {proc; args; kind= NonVirtual} in
         (* TODO: read return type of proc if available *)
@@ -467,8 +441,43 @@ module FUNCTION = struct
         let env, id = Env.mk_fresh_ident env info in
         let let_instr = T.Instr.Let {id; exp= call; loc} in
         let env = Env.push_instr env let_instr in
-        let env = Env.push env (DataStack.Temp id) in
-        (env, None)
+        Env.push env (DataStack.Temp id)
+      in
+      let loc = Env.loc env in
+      (* TODO: support nesting *)
+      match Env.lookup_symbol ~global:true env fname with
+      | Some Builtin ->
+          let proc = PyCommon.builtin_name fname in
+          let env = mk env loc proc in
+          (env, None)
+      | Some (Name {qualified_name= {value; loc}; info= {is_class}}) ->
+          if is_class then
+            let name = T.Exp.Const (T.Const.Str value) in
+            (* Calling a class constructor *)
+            (* FYI, Python3 constructors first call __new__ to allocate the object, and then call
+               __init__ to initialize it. Both can be overloaded in the user-declared code. *)
+            let env, id, _typ =
+              Env.mk_builtin_call env Builtin.PythonClassConstructor (name :: args)
+            in
+            let env = Env.push env (DataStack.Temp id) in
+            (env, None)
+          else
+            let proc =
+              let enclosing_class_name = type_name ~loc (Env.module_name env) in
+              let enclosing_class = T.Enclosing enclosing_class_name in
+              qualified_procname ~enclosing_class @@ proc_name ~loc value
+            in
+            let env = mk env loc proc in
+            (env, None)
+      | None ->
+          (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
+             further analysis *)
+          let proc =
+            let enclosing_class = T.Enclosing T.TypeName.wildcard in
+            qualified_procname ~enclosing_class @@ proc_name ~loc fname
+          in
+          let env = mk env loc proc in
+          (env, None)
 
 
     let dynamic_call env caller_id args =
@@ -523,6 +532,7 @@ module FUNCTION = struct
             | _, None | None, _ ->
                 L.die UserError "[%s] Invalid class declaration" opname
             | Some code, Some code_name ->
+                let () = Debug.p "[register_class/0] %s\n" code_name in
                 let env = Env.register_class env code_name in
                 let env = Env.push env (DataStack.Code {fun_or_class= false; code_name; code}) in
                 (env, None) )
@@ -1198,6 +1208,17 @@ let to_proc_desc env loc enclosing_class_name opt_name
   let pyObject = T.Typ.{typ= PyCommon.pyObject; attributes= []} in
   let nr_varnames = Array.length co_varnames in
   let params = Array.sub co_varnames ~pos:0 ~len:co_argcount in
+  (* TODO: pass the locals in Env as it affects function lookup:
+     def f(x):
+       print(x)
+
+     def g():
+       f(10) # works
+
+     def h():
+       f(10)   # error, since f is listed as a local and seems to be used before being defined
+       f = 42
+  *)
   let locals = Array.sub co_varnames ~pos:co_argcount ~len:(nr_varnames - co_argcount) in
   let params = Array.map ~f:(var_name ~loc) params |> Array.to_list in
   let locals = Array.map ~f:(fun name -> (var_name ~loc name, pyObject)) locals |> Array.to_list in
@@ -1283,7 +1304,7 @@ and to_proc_descs env enclosing_class_name codes =
           (env, decls)
       | Some ({FFI.Code.co_name; instructions} as code) ->
           let loc = first_loc_of_code instructions in
-          let classes = Env.get_classes env in
+          let classes = Env.get_declared_classes env in
           if List.mem ~equal:String.equal classes co_name then class_declaration env code loc
           else
             let env, decl = to_proc_desc env loc enclosing_class_name (Some co_name) code in
@@ -1333,7 +1354,7 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
   (* Translate globals to Textual *)
   let globals =
     Env.SMap.fold
-      (fun _name {Env.qualified_name= {value; loc}; info= {is_code; is_class}} acc ->
+      (fun _name {Symbol.qualified_name= {value; loc}; info= {is_code; is_class}} acc ->
         let varname = var_name ~loc value in
         if is_code || is_class then
           (* don't generate a global variable name, it will be declared as a toplevel decl *)
@@ -1348,6 +1369,7 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
   let decls = List.rev decls in
   (* Gather everything into a Textual module *)
   let decls =
-    ((T.Module.Proc decl :: decls) @ globals) @ Env.BuiltinSet.to_textual (Env.builtins env)
+    ((T.Module.Proc decl :: decls) @ globals)
+    @ Env.BuiltinSet.to_textual (Env.get_used_builtins env)
   in
   {T.Module.attrs= [python_attribute]; decls; sourcefile}

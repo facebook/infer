@@ -239,10 +239,16 @@ module SMap = Caml.Map.Make (String)
 
 type info = {is_code: bool; is_class: bool; typ: T.Typ.t}
 
-(* TODO: check how much structure we need once we start investigating nested classes/functions *)
-type qualified_name = {value: string; loc: T.Location.t}
+module Symbol = struct
+  (* TODO: check how much structure we need once we start investigating nested classes/functions *)
+  (* TODO: check if we ever read the loc *)
+  type qualified_name = {value: string; loc: T.Location.t}
 
-type symbol_info = {qualified_name: qualified_name; is_builtin: bool; info: info}
+  type symbol_info = {qualified_name: qualified_name; info: info}
+
+  (* TODO: split symbol_info into Name/Class/Function *)
+  type t = Name of symbol_info | Builtin
+end
 
 type label_info =
   { label_name: string
@@ -255,10 +261,12 @@ type label_info =
 and shared =
   { idents: T.Ident.Set.t
   ; idents_info: info T.Ident.Map.t
-  ; globals: symbol_info SMap.t
-  ; names: symbol_info SMap.t
+  ; globals: Symbol.t SMap.t
+  ; locals: Symbol.t SMap.t
   ; builtins: BuiltinSet.t
-  ; classes: string list
+        (** All the builtins that have been called, so we only export them in textual to avoid too
+            much noise *)
+  ; classes: string list  (** All the classes that have been defined *)
   ; toplevel_signatures: Signature.t SMap.t
         (** Map from top level function names to their signature *)
   ; method_signatures: Signature.t SMap.t SMap.t
@@ -351,11 +359,9 @@ let empty_node = {stack= []; instructions= []; last_line= None}
 
 let initial_globals =
   List.fold ~init:SMap.empty
-    ~f:(fun acc (b, _) ->
+    ~f:(fun acc (b, _elt) ->
       let value = Builtin.python_to_string b in
-      let qualified_name = {value; loc= T.Location.Unknown} in
-      let info = {is_code= true; is_class= false; typ= PyCommon.pyCode} in
-      let global_info = {qualified_name; is_builtin= true; info} in
+      let global_info = Symbol.Builtin in
       SMap.add value global_info acc )
     BuiltinSet.python_builtins
 
@@ -364,7 +370,7 @@ let empty =
   { idents= T.Ident.Set.empty
   ; idents_info= T.Ident.Map.empty
   ; globals= initial_globals
-  ; names= SMap.empty
+  ; locals= SMap.empty
   ; builtins= BuiltinSet.empty
   ; classes= []
   ; toplevel_signatures= SMap.empty
@@ -386,7 +392,7 @@ let enter_proc ~is_toplevel ~module_name {shared} =
     ; is_toplevel
     ; idents= T.Ident.Set.empty
     ; next_label= 0
-    ; names= SMap.empty }
+    ; locals= SMap.empty }
   in
   {shared; node= empty_node}
 
@@ -455,31 +461,37 @@ let label_of_offset {shared} offset =
 
 let instructions {node= {instructions}} = List.rev instructions
 
-let register_symbol ({shared} as env) ~global name qualified_name info =
+let register_symbol ({shared} as env) ~global name ({Symbol.value} as qualified_name) info =
+  PyDebug.p "[register_symbol] %b %s %s\n" global name value ;
   let register map name qualified_name info =
-    let symbol_info = {qualified_name; is_builtin= false; info} in
+    let symbol_info = Symbol.Name {qualified_name; info} in
     SMap.add name symbol_info map
   in
-  let {globals; names} = shared in
+  let {globals; locals} = shared in
   if global then
     let globals = register globals name qualified_name info in
     let shared = {shared with globals} in
     {env with shared}
   else
-    let names = register names name qualified_name info in
-    let shared = {shared with names} in
+    let locals = register locals name qualified_name info in
+    let shared = {shared with locals} in
     {env with shared}
 
 
 let lookup_symbol {shared} ~global name =
+  PyDebug.p "[lookup_symbol] %b %s\n" global name ;
   let lookup map name = SMap.find_opt name map in
-  let {globals; names} = shared in
-  if global then lookup globals name else lookup names name
+  let {globals; locals} = shared in
+  if global then lookup globals name else lookup locals name
 
 
-let globals {shared= {globals}} = globals
+let globals {shared= {globals}} =
+  SMap.filter_map
+    (fun _name info -> match (info : Symbol.t) with Name info -> Some info | Builtin -> None)
+    globals
 
-let builtins {shared= {builtins}} = builtins
+
+let get_used_builtins {shared= {builtins}} = builtins
 
 let register_builtin ({shared} as env) builtin =
   let register_builtin ({builtins} as env) builtin =
@@ -512,7 +524,11 @@ let mk_builtin_call env builtin args =
 
 
 let is_builtin {shared= {globals}} fname =
-  match SMap.find_opt fname globals with Some {is_builtin} -> is_builtin | None -> false
+  match SMap.find_opt fname globals with
+  | Some Symbol.Builtin ->
+      true
+  | None | Some (Name _) ->
+      false
 
 
 let register_call env fname =
@@ -524,15 +540,16 @@ let register_call env fname =
 
 
 let register_function ({shared} as env) name loc annotations =
+  PyDebug.p "[register_function] %s\n" name ;
   let {module_name} = shared in
   (* We use '.' here as we are building a strip that should match the
      qualified_procname with enclosing_class set to module_name, so
      we need this '.'
   *)
   let value = module_name ^ "." ^ name in
-  let qualified_name = {value; loc} in
+  let qualified_name = {Symbol.value; loc} in
   let info = {is_code= true; is_class= false; typ= PyCommon.pyObject} in
-  let symbol_info = {qualified_name; is_builtin= false; info} in
+  let symbol_info = Symbol.Name {qualified_name; info} in
   let {toplevel_signatures; globals} = shared in
   let toplevel_signatures = SMap.add value annotations toplevel_signatures in
   let globals = SMap.add name symbol_info globals in
@@ -562,13 +579,14 @@ let lookup_signature {shared= {toplevel_signatures; method_signatures}} enclosin
 
 
 let register_class ({shared} as env) class_name =
+  PyDebug.p "[register_class] %s\n" class_name ;
   let {classes} = shared in
   let classes = class_name :: classes in
   let shared = {shared with classes} in
   {env with shared}
 
 
-let get_classes {shared= {classes}} = classes
+let get_declared_classes {shared= {classes}} = classes
 
 let is_toplevel {shared= {is_toplevel}} = is_toplevel
 

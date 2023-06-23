@@ -62,11 +62,17 @@ type info =
 
 module SMap : Caml.Map.S with type key = string
 
-(** Fully expanded name of a symbol *)
-type qualified_name = {value: string; loc: T.Location.t}
+module Symbol : sig
+  (** Fully expanded name of a symbol *)
+  type qualified_name = {value: string; loc: T.Location.t}
 
-(** Information about symbols to correct do the translation to Textual's qualified names *)
-type symbol_info = {qualified_name: qualified_name; is_builtin: bool; info: info}
+  (** Information about symbols to correct do the translation to Textual's qualified names *)
+  type symbol_info = {qualified_name: qualified_name; info: info}
+
+  (** A symbol can either be a name (a variable, a function name, class name, ...) or a supported
+      builtin (like [print]) *)
+  type t = Name of symbol_info | Builtin
+end
 
 (** Global environment used during bytecode processing. Stores common global information like the
     toplevel symbols processed so far, or more local ones like the set of labels or variable ids
@@ -107,11 +113,11 @@ val loc : t -> T.Location.t
 val stack : t -> DataStack.t
 (** Returns the [DataStack.t] for the current declaration *)
 
-val globals : t -> symbol_info SMap.t
+val globals : t -> Symbol.symbol_info SMap.t
 (** Return the [globals] map *)
 
-val builtins : t -> BuiltinSet.t
-(** Return the [builtins] map *)
+val get_used_builtins : t -> BuiltinSet.t
+(** Return a set of [Builtin] the we spotted in the code *)
 
 val instructions : t -> T.Instr.t list
 (** Returns the list of all instructions recorded for the current code unit *)
@@ -160,11 +166,11 @@ val register_label : offset:int -> Label.info -> t -> t
 val process_label : offset:int -> Label.info -> t -> t
 (** Mark the label [info] at [offset] as processed *)
 
-val register_symbol : t -> global:bool -> string -> qualified_name -> info -> t
+val register_symbol : t -> global:bool -> string -> Symbol.qualified_name -> info -> t
 (** Register a name (function, variable, ...). It might be a [global] symbol at the module level or
     in a local object. *)
 
-val lookup_symbol : t -> global:bool -> string -> symbol_info option
+val lookup_symbol : t -> global:bool -> string -> Symbol.t option
 (** Lookup information about a global/local symbol previously registered via [register_symbol] *)
 
 val register_call : t -> string -> t
@@ -188,8 +194,8 @@ val lookup_signature : t -> T.enclosing_class -> T.ProcName.t -> PyCommon.annota
 val register_class : t -> string -> t
 (** Register a class declaration (based on [LOAD_BUILD_CLASS]) *)
 
-val get_classes : t -> string list
-(** Get back the list of registered classes *)
+val get_declared_classes : t -> string list
+(** Get back the list of declared classes in the file *)
 
 val is_toplevel : t -> bool
 (** Are we processing top level instructions, or something in a function/class ? *)
