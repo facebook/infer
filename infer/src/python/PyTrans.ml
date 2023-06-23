@@ -266,163 +266,6 @@ module LOAD = struct
   end
 end
 
-module METHOD = struct
-  module LOAD = struct
-    (** {v LOAD_METHOD(namei) v}
-
-        Loads a method named [co_names\[namei\]] from the top-of-stack object. top-of-stack is
-        popped. This bytecode distinguishes two cases: if top-of-stack has a method with the correct
-        name, the bytecode pushes the unbound method and top-of-stack. top-of-stack will be used as
-        the first argument ([self]) by [CALL_METHOD] when calling the unbound method. Otherwise,
-        [NULL] and the object return by the attribute lookup are pushed. *)
-    let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
-      let method_name = co_names.(arg) in
-      Debug.p "[%s] namei = %s\n" opname method_name ;
-      let env, cell = pop_datastack opname env in
-      let env, res, _info = load_cell env code cell in
-      match res with
-      | Error s ->
-          L.die ExternalError "Failed to load method %s from cell %a: %s" method_name
-            DataStack.pp_cell cell s
-      | Ok self ->
-          let method_name = T.Exp.Const (T.Const.Str method_name) in
-          let env, id, _typ =
-            Env.mk_builtin_call env Builtin.PythonLoadMethod [self; method_name]
-          in
-          let env = Env.push env (DataStack.Temp id) in
-          (env, None)
-  end
-
-  module CALL = struct
-    (** {v CALL_METHOD(argc) v}
-
-        Calls a method. [argc] is the number of positional arguments. Keyword arguments are not
-        supported. This opcode is designed to be used with [LOAD_METHOD]. Positional arguments are
-        on top of the stack. Below them, the two items described in [LOAD_METHOD] are on the stack
-        (either [self] and an unbound method object or [NULL] and an arbitrary callable). All of
-        them are popped and the return value is pushed. *)
-    let run env code {FFI.Instruction.opname; arg} =
-      Debug.p "[%s] argc = %d\n" opname arg ;
-      let env, cells = pop_n_datastack opname env arg [] in
-      let env, args = cells_to_textual env opname code cells in
-      let env, cell_mi = pop_datastack opname env in
-      let env, mi, _ = load_cell env code cell_mi in
-      match mi with
-      | Error s ->
-          L.die InternalError "[%s] failed to load method information from cell %a: %s" opname
-            DataStack.pp_cell cell_mi s
-      | Ok mi ->
-          (* The method code and self are bundled in [mi]. The builtin will decide if it is a
-             proper method call, or a call to an arbitrary callable (lambda, ...) *)
-          let env, id, _typ = Env.mk_builtin_call env PythonCallMethod (mi :: args) in
-          let env = Env.push env (Temp id) in
-          (env, None)
-  end
-end
-
-module STORE = struct
-  type kind =
-    | ATTR
-        (** {v STORE_ATTR(namei) v}
-
-            Implements [top-of-stack.name = top-of-stack-1], where [namei] is the index of name in
-            [co_names]. *)
-    | FAST
-        (** {v STORE_FAST(var_num) v}
-
-            Stores top-of-stack into the local [co_varnames\[var_num\]]. *)
-    | NAME
-        (** {v STORE_NAME(namei) v}
-
-            Implements name = top-of-stack. namei is the index of name in the attribute co_names of
-            the code object. The compiler tries to use [STORE_FAST] or [STORE_GLOBAL] if possible.
-
-            Notes: this might happen in toplevel code, where it's equivalent to [STORE_GLOBAL].
-            Otherwise, it stores information in the context of the current class declaration.
-
-            In a function, local varialbes are updated using [STORE_FAST], and global variables are
-            updated using [STORE_GLOBAL]. *)
-    | GLOBAL
-        (** {v STORE_GLOBAL(namei) v}
-
-            Works as [STORE_NAME], but stores the name as a global.
-
-            Since there is a special namespace for global variables, this is in fact the same as
-            [STORE_NAME], but only called from within a function/method. *)
-
-  let run kind env ({FFI.Code.co_names; co_varnames} as code) {FFI.Instruction.opname; arg} =
-    let name, global, is_attr =
-      match kind with
-      | FAST ->
-          (co_varnames.(arg), false, false)
-      | NAME ->
-          (co_names.(arg), Env.is_toplevel env, false)
-      | ATTR ->
-          (co_names.(arg), false, true)
-      | GLOBAL ->
-          (co_names.(arg), true, false)
-    in
-    Debug.p "[%s] namei=%d (global=%b, name=%s)\n" opname arg global name ;
-    let loc = Env.loc env in
-    let env, cell = pop_datastack opname env in
-    let env, exp, info = load_cell env code cell in
-    match exp with
-    | Ok exp ->
-        let {Env.typ; is_code; is_class} = info in
-        let module_name = Env.module_name env in
-        let qname = Symbol.Qualified.mk ~prefix:[module_name] name loc in
-        let symbol_info =
-          if is_code then Symbol.Code {code_name= qname}
-          else if is_class then Symbol.Class {class_name= qname}
-          else
-            let prefix = if global then [module_name] else [] in
-            let qname = Symbol.Qualified.mk ~prefix name loc in
-            Symbol.Name {symbol_name= qname; typ}
-        in
-        let gname = Symbol.to_string symbol_info in
-        let var_name = var_name ~loc gname in
-        let env = Env.register_symbol ~global env name symbol_info in
-        if is_attr then
-          let env, cell = pop_datastack opname env in
-          let env, value, {Env.typ} = load_cell env code cell in
-          match value with
-          | Error s ->
-              L.die InternalError "[%s] %s" opname s
-          | Ok value ->
-              let fname = co_names.(arg) in
-              (* TODO: refine typ if possible *)
-              let loc = Env.loc env in
-              let name = field_name ~loc fname in
-              let field = {T.enclosing_class= T.TypeName.wildcard; name} in
-              let exp1 = T.Exp.Field {exp; field} in
-              let instr = T.Instr.Store {exp1; typ; exp2= value; loc} in
-              let env = Env.push_instr env instr in
-              (env, None)
-        else if is_class then (
-          Debug.p "  top-level class declaration initialized\n" ;
-          (env, None) )
-        else if is_code then
-          if global then (
-            Debug.p "  top-level function defined\n" ;
-            (env, None) )
-          else L.die InternalError "[%s] no support for closure at the moment: %s" opname name
-        else
-          let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
-          (Env.push_instr env instr, None)
-    | Error s ->
-        L.die InternalError "[%s] %s" opname s
-end
-
-module POP_TOP = struct
-  (** {v POP_TOP v}
-
-      Pop the top-of-stack and discard it *)
-  let run env {FFI.Instruction.opname} =
-    Debug.p "[%s]\n" opname ;
-    let env, _cell = pop_datastack opname env in
-    (env, None)
-end
-
 let check_flags opname flag =
   let support_tuple_of_defaults = flag land 1 <> 0 in
   let support_dict_of_defaults = flag land 2 <> 0 in
@@ -631,6 +474,163 @@ module FUNCTION = struct
       let env = Env.push env (DataStack.Code {fun_or_class= true; code_name; code}) in
       (env, None)
   end
+end
+
+module METHOD = struct
+  module LOAD = struct
+    (** {v LOAD_METHOD(namei) v}
+
+        Loads a method named [co_names\[namei\]] from the top-of-stack object. top-of-stack is
+        popped. This bytecode distinguishes two cases: if top-of-stack has a method with the correct
+        name, the bytecode pushes the unbound method and top-of-stack. top-of-stack will be used as
+        the first argument ([self]) by [CALL_METHOD] when calling the unbound method. Otherwise,
+        [NULL] and the object return by the attribute lookup are pushed. *)
+    let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
+      let method_name = co_names.(arg) in
+      Debug.p "[%s] namei = %s\n" opname method_name ;
+      let env, cell = pop_datastack opname env in
+      let env, res, _info = load_cell env code cell in
+      match res with
+      | Error s ->
+          L.die ExternalError "Failed to load method %s from cell %a: %s" method_name
+            DataStack.pp_cell cell s
+      | Ok self ->
+          let method_name = T.Exp.Const (T.Const.Str method_name) in
+          let env, id, _typ =
+            Env.mk_builtin_call env Builtin.PythonLoadMethod [self; method_name]
+          in
+          let env = Env.push env (DataStack.Temp id) in
+          (env, None)
+  end
+
+  module CALL = struct
+    (** {v CALL_METHOD(argc) v}
+
+        Calls a method. [argc] is the number of positional arguments. Keyword arguments are not
+        supported. This opcode is designed to be used with [LOAD_METHOD]. Positional arguments are
+        on top of the stack. Below them, the two items described in [LOAD_METHOD] are on the stack
+        (either [self] and an unbound method object or [NULL] and an arbitrary callable). All of
+        them are popped and the return value is pushed. *)
+    let run env code {FFI.Instruction.opname; arg} =
+      Debug.p "[%s] argc = %d\n" opname arg ;
+      let env, cells = pop_n_datastack opname env arg [] in
+      let env, args = cells_to_textual env opname code cells in
+      let env, cell_mi = pop_datastack opname env in
+      let env, mi, _ = load_cell env code cell_mi in
+      match mi with
+      | Error s ->
+          L.die InternalError "[%s] failed to load method information from cell %a: %s" opname
+            DataStack.pp_cell cell_mi s
+      | Ok mi ->
+          (* The method code and self are bundled in [mi]. The builtin will decide if it is a
+             proper method call, or a call to an arbitrary callable (lambda, ...) *)
+          let env, id, _typ = Env.mk_builtin_call env PythonCallMethod (mi :: args) in
+          let env = Env.push env (Temp id) in
+          (env, None)
+  end
+end
+
+module STORE = struct
+  type kind =
+    | ATTR
+        (** {v STORE_ATTR(namei) v}
+
+            Implements [top-of-stack.name = top-of-stack-1], where [namei] is the index of name in
+            [co_names]. *)
+    | FAST
+        (** {v STORE_FAST(var_num) v}
+
+            Stores top-of-stack into the local [co_varnames\[var_num\]]. *)
+    | NAME
+        (** {v STORE_NAME(namei) v}
+
+            Implements name = top-of-stack. namei is the index of name in the attribute co_names of
+            the code object. The compiler tries to use [STORE_FAST] or [STORE_GLOBAL] if possible.
+
+            Notes: this might happen in toplevel code, where it's equivalent to [STORE_GLOBAL].
+            Otherwise, it stores information in the context of the current class declaration.
+
+            In a function, local varialbes are updated using [STORE_FAST], and global variables are
+            updated using [STORE_GLOBAL]. *)
+    | GLOBAL
+        (** {v STORE_GLOBAL(namei) v}
+
+            Works as [STORE_NAME], but stores the name as a global.
+
+            Since there is a special namespace for global variables, this is in fact the same as
+            [STORE_NAME], but only called from within a function/method. *)
+
+  let run kind env ({FFI.Code.co_names; co_varnames} as code) {FFI.Instruction.opname; arg} =
+    let name, global, is_attr =
+      match kind with
+      | FAST ->
+          (co_varnames.(arg), false, false)
+      | NAME ->
+          (co_names.(arg), Env.is_toplevel env, false)
+      | ATTR ->
+          (co_names.(arg), false, true)
+      | GLOBAL ->
+          (co_names.(arg), true, false)
+    in
+    Debug.p "[%s] namei=%d (global=%b, name=%s)\n" opname arg global name ;
+    let loc = Env.loc env in
+    let env, cell = pop_datastack opname env in
+    let env, exp, info = load_cell env code cell in
+    match exp with
+    | Ok exp ->
+        let {Env.typ; is_code; is_class} = info in
+        let module_name = Env.module_name env in
+        let qname = Symbol.Qualified.mk ~prefix:[module_name] name loc in
+        let symbol_info =
+          if is_code then Symbol.Code {code_name= qname}
+          else if is_class then Symbol.Class {class_name= qname}
+          else
+            let prefix = if global then [module_name] else [] in
+            let qname = Symbol.Qualified.mk ~prefix name loc in
+            Symbol.Name {symbol_name= qname; typ}
+        in
+        let gname = Symbol.to_string symbol_info in
+        let var_name = var_name ~loc gname in
+        let env = Env.register_symbol ~global env name symbol_info in
+        if is_attr then
+          let env, cell = pop_datastack opname env in
+          let env, value, {Env.typ} = load_cell env code cell in
+          match value with
+          | Error s ->
+              L.die InternalError "[%s] %s" opname s
+          | Ok value ->
+              let fname = co_names.(arg) in
+              (* TODO: refine typ if possible *)
+              let loc = Env.loc env in
+              let name = field_name ~loc fname in
+              let field = {T.enclosing_class= T.TypeName.wildcard; name} in
+              let exp1 = T.Exp.Field {exp; field} in
+              let instr = T.Instr.Store {exp1; typ; exp2= value; loc} in
+              let env = Env.push_instr env instr in
+              (env, None)
+        else if is_class then (
+          Debug.p "  top-level class declaration initialized\n" ;
+          (env, None) )
+        else if is_code then
+          if global then (
+            Debug.p "  top-level function defined\n" ;
+            (env, None) )
+          else L.die InternalError "[%s] no support for closure at the moment: %s" opname name
+        else
+          let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
+          (Env.push_instr env instr, None)
+    | Error s ->
+        L.die InternalError "[%s] %s" opname s
+end
+
+module POP_TOP = struct
+  (** {v POP_TOP v}
+
+      Pop the top-of-stack and discard it *)
+  let run env {FFI.Instruction.opname} =
+    Debug.p "[%s]\n" opname ;
+    let env, _cell = pop_datastack opname env in
+    (env, None)
 end
 
 module BINARY_ADD = struct
