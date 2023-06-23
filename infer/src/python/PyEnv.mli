@@ -8,31 +8,6 @@
 open! IStd
 module T = Textual
 
-module Builtin : sig
-  type textual =
-    | IsTrue
-    | BinaryAdd
-    | PythonCall
-    | PythonCallMethod
-    | PythonClass
-    | PythonClassConstructor
-    | PythonCode
-    | PythonIter
-    | PythonIterNext
-    | PythonLoadMethod
-  [@@deriving compare]
-end
-
-module BuiltinSet : sig
-  (** This module keeps track of the builtins used by a code unit. Only the necessary Textual
-      declarations are generated. Note that primitive wrappers are always generated ([python_int],
-      ...) *)
-  type t
-
-  val to_textual : t -> Textual.Module.decl list
-  (** Encode a set of builtin declarations into Textual declarations *)
-end
-
 (** In Python, everything is an object, and the interpreter maintains a stack of references to such
     objects. Pushing and popping on the stack are always references to objets that leave in a heap.
     There is no need to model this heap, but the data stack is quite important. *)
@@ -135,7 +110,7 @@ val stack : t -> DataStack.t
 val globals : t -> Symbol.t SMap.t
 (** Return the [globals] map *)
 
-val get_used_builtins : t -> BuiltinSet.t
+val get_used_builtins : t -> PyBuiltin.Set.t
 (** Return a set of [Builtin] the we spotted in the code *)
 
 val instructions : t -> T.Instr.t list
@@ -195,7 +170,7 @@ val lookup_symbol : t -> global:bool -> string -> Symbol.t option
 val register_call : t -> string -> t
 (** Register a function call. It enables us to deal correctly with builtin declaration. *)
 
-val mk_builtin_call : t -> Builtin.textual -> T.Exp.t list -> t * T.Ident.t * T.Typ.t
+val mk_builtin_call : t -> PyBuiltin.textual -> T.Exp.t list -> t * T.Ident.t * T.Typ.t
 (** Wrapper to compute the Textual version of a call to a "textual" builtin * function (a builtin we
     introduced for modeling purpose) *)
 

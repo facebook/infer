@@ -8,198 +8,9 @@
 open! IStd
 module T = Textual
 module Debug = PyDebug
+module Builtin = PyBuiltin
 
 let type_name = PyCommon.type_name
-
-module Builtin = struct
-  type primitive = PythonInt | PythonBool | PythonString | PythonTuple [@@deriving compare]
-
-  type textual =
-    | IsTrue
-    | BinaryAdd
-    | PythonCall
-    | PythonCallMethod
-    | PythonClass
-    | PythonClassConstructor
-    | PythonCode
-    | PythonIter
-    | PythonIterNext
-    | PythonLoadMethod
-  [@@deriving compare]
-
-  type python = Print | Range [@@deriving compare]
-
-  let python_to_string = function Print -> "print" | Range -> "range"
-
-  type t = Primitive of primitive | Textual of textual | Python of python [@@deriving compare]
-
-  let to_proc_name = function
-    | Primitive primitive -> (
-      match primitive with
-      | PythonInt ->
-          PyCommon.python_int
-      | PythonBool ->
-          PyCommon.python_bool
-      | PythonString ->
-          PyCommon.python_string
-      | PythonTuple ->
-          PyCommon.python_tuple )
-    | Textual textual ->
-        let str =
-          match textual with
-          | IsTrue ->
-              "python_is_true"
-          | BinaryAdd ->
-              "binary_add"
-          | PythonCall ->
-              "python_call"
-          | PythonCallMethod ->
-              "python_call_method"
-          | PythonClass ->
-              "python_class"
-          | PythonClassConstructor ->
-              "python_class_constructor"
-          | PythonCode ->
-              "python_code"
-          | PythonIter ->
-              "python_iter"
-          | PythonIterNext ->
-              "python_iter_next"
-          | PythonLoadMethod ->
-              "python_load_method"
-        in
-        PyCommon.builtin_name str
-    | Python p ->
-        let str = python_to_string p in
-        PyCommon.builtin_name str
-
-
-  (** Lookup a [Python] builtin from its name *)
-  let of_string name =
-    match name with "print" -> Some (Python Print) | "range" -> Some (Python Range) | _ -> None
-end
-
-let annot typ = T.Typ.{typ; attributes= []}
-
-module BuiltinSet = struct
-  let string_ = T.Typ.(Ptr (Struct (type_name "String")))
-
-  type elt =
-    { formals_types: T.Typ.annotated list option
-    ; result_type: T.Typ.annotated
-    ; used_struct_types: T.Struct.t list }
-
-  module Info = Caml.Map.Make (Builtin)
-  module Set = Caml.Set.Make (Builtin)
-
-  let mk_builtin {formals_types; result_type; used_struct_types} builtin =
-    let qualified_name = Builtin.to_proc_name builtin in
-    let procdecl =
-      T.Module.Procdecl T.ProcDecl.{qualified_name; formals_types; result_type; attributes= []}
-    in
-    procdecl :: List.map ~f:(fun strct -> T.Module.Struct strct) used_struct_types
-
-
-  type t = Set.t
-
-  let primitive_builtins =
-    let builtins =
-      [ ( Builtin.PythonInt
-        , { formals_types= Some [annot T.Typ.Int]
-          ; result_type= annot PyCommon.pyInt
-          ; used_struct_types= [] } )
-      ; ( Builtin.PythonBool
-        , { formals_types= Some [annot T.Typ.Int]
-          ; result_type= annot PyCommon.pyBool
-          ; used_struct_types= [] } )
-      ; ( Builtin.PythonString
-        , { formals_types= Some [annot string_]
-          ; result_type= annot PyCommon.pyString
-          ; used_struct_types= [] } )
-      ; ( Builtin.PythonTuple
-        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} ) ]
-    in
-    List.fold_left
-      ~f:(fun acc (builtin, elt) -> Info.add (Builtin.Primitive builtin) elt acc)
-      ~init:Info.empty builtins
-
-
-  let textual_builtins =
-    let builtins =
-      [ ( Builtin.IsTrue
-        , { formals_types= Some [annot PyCommon.pyObject]
-          ; result_type= annot T.Typ.Int
-          ; used_struct_types= [] } )
-      ; ( Builtin.BinaryAdd
-        , { formals_types= Some [annot PyCommon.pyObject; annot PyCommon.pyObject]
-          ; result_type= annot PyCommon.pyObject
-          ; used_struct_types= [] } )
-      ; ( Builtin.PythonCall
-        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
-      ; ( Builtin.PythonCallMethod
-        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
-      ; ( Builtin.PythonClass
-        , { formals_types= Some [annot string_]
-          ; result_type= annot PyCommon.pyClass
-          ; used_struct_types= [] } )
-      ; ( Builtin.PythonClassConstructor
-          (* Class constructors can be implicitly inherited, so we are never sure of their
-             arity. Also, we'll override their return type when we setup the call, to make it
-             more precise. *)
-        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
-      ; ( Builtin.PythonCode
-        , { formals_types= Some [annot string_]
-          ; result_type= annot PyCommon.pyCode
-          ; used_struct_types= [] } )
-        (* TODO: should we introduce a Textual type for iterators ? *)
-      ; ( Builtin.PythonIter
-        , { formals_types= Some [annot PyCommon.pyObject]
-          ; result_type= annot PyCommon.pyObject
-          ; used_struct_types= [] } )
-      ; ( Builtin.PythonIterNext
-        , { formals_types= Some [annot PyCommon.pyObject]
-          ; result_type= annot PyCommon.pyIterItem
-          ; used_struct_types= [PyCommon.pyIterItemStruct] } )
-      ; ( Builtin.PythonLoadMethod
-        , { formals_types= Some [annot PyCommon.pyObject; annot string_]
-          ; result_type= annot PyCommon.pyMethod
-          ; used_struct_types= [PyCommon.pyMethodStruct] } ) ]
-    in
-    List.fold_left
-      ~f:(fun acc (builtin, elt) -> Info.add (Builtin.Textual builtin) elt acc)
-      ~init:primitive_builtins builtins
-
-
-  let python_builtins =
-    [ ( Builtin.Print
-      , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
-    ; ( Builtin.Range
-      , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} ) ]
-
-
-  let supported_builtins =
-    List.fold_left
-      ~f:(fun acc (builtin, elt) -> Info.add (Builtin.Python builtin) elt acc)
-      ~init:textual_builtins python_builtins
-
-
-  (* [mk_builtin] always returns very small list, the nested iteration should be quite cheap *)
-  let to_textual spotted =
-    let init = Info.fold (fun key elt l -> mk_builtin elt key @ l) primitive_builtins [] in
-    Info.fold
-      (fun key elt l -> if Set.mem key spotted then mk_builtin elt key @ l else l)
-      supported_builtins init
-
-
-  let register spotted name = Set.add name spotted
-
-  let get_type builtin =
-    let info = Info.find_opt builtin supported_builtins in
-    Option.value_map ~default:PyCommon.pyObject info ~f:(fun b -> b.result_type.typ)
-
-
-  let empty = Set.empty
-end
 
 module DataStack = struct
   type cell =
@@ -341,7 +152,7 @@ and shared =
   ; idents_info: info T.Ident.Map.t
   ; globals: Symbol.t SMap.t
   ; locals: Symbol.t SMap.t
-  ; builtins: BuiltinSet.t
+  ; builtins: Builtin.Set.t
         (** All the builtins that have been called, so we only export them in textual to avoid too
             much noise *)
   ; classes: SSet.t  (** All the classes that have been defined *)
@@ -438,11 +249,10 @@ let empty_node = {stack= []; instructions= []; last_line= None}
 
 let initial_globals =
   List.fold ~init:SMap.empty
-    ~f:(fun acc (b, _elt) ->
-      let value = Builtin.python_to_string b in
+    ~f:(fun acc value ->
       let global_info = Symbol.Builtin in
       SMap.add value global_info acc )
-    BuiltinSet.python_builtins
+    (Builtin.Set.supported_builtins ())
 
 
 let empty =
@@ -450,7 +260,7 @@ let empty =
   ; idents_info= T.Ident.Map.empty
   ; globals= initial_globals
   ; locals= SMap.empty
-  ; builtins= BuiltinSet.empty
+  ; builtins= Builtin.Set.empty
   ; classes= SSet.empty
   ; imports= ImportSet.empty
   ; toplevel_signatures= SMap.empty
@@ -575,13 +385,13 @@ let get_used_builtins {shared= {builtins}} = builtins
 let register_builtin ({shared} as env) builtin =
   PyDebug.p "[register_builtin] %a\n" T.pp_qualified_procname (Builtin.to_proc_name builtin) ;
   let register_builtin ({builtins} as env) builtin =
-    {env with builtins= BuiltinSet.register builtins builtin}
+    {env with builtins= Builtin.Set.register builtins builtin}
   in
   {env with shared= register_builtin shared builtin}
 
 
 let mk_builtin_call env builtin args =
-  let textual_builtin = Builtin.Textual builtin in
+  let textual_builtin = Builtin.textual builtin in
   let typ =
     (* Special casing to make the type of new instances more precise *)
     match (builtin, args) with
@@ -590,7 +400,7 @@ let mk_builtin_call env builtin args =
         let type_name = type_name arg in
         T.Typ.Ptr (T.Typ.Struct type_name)
     | _, _ ->
-        BuiltinSet.get_type textual_builtin
+        Builtin.Set.get_type textual_builtin
   in
   let info = {typ; is_class= false; is_code= false} in
   let env = register_builtin env textual_builtin in
@@ -678,7 +488,7 @@ let get_declared_classes {shared= {classes}} = SSet.fold (fun cls acc -> cls :: 
 (* TODO: rethink that when adding more support for imports, probably changing it into a
    "lookup_import" version *)
 let get_textual_imports {shared= {imports}} =
-  let result_type = annot PyCommon.pyObject in
+  let result_type = {T.Typ.typ= PyCommon.pyObject; attributes= []} in
   ImportSet.fold
     (fun import acc ->
       match (import : Import.t) with

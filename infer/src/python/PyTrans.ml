@@ -12,7 +12,7 @@ module T = Textual
 module Debug = PyDebug
 module Env = PyEnv
 module DataStack = Env.DataStack
-module Builtin = Env.Builtin
+module Builtin = PyBuiltin
 module Symbol = Env.Symbol
 
 let prefix_name ~module_name name = module_name ^ "::" ^ name
@@ -828,7 +828,7 @@ module JUMP = struct
       let env, next_label = Env.mk_fresh_label env in
       let env, other_label = Env.mk_fresh_label env in
       (* Compute the relevant pruning expressions *)
-      let env, id, _ = Env.mk_builtin_call env Env.Builtin.IsTrue [cond] in
+      let env, id, _ = Env.mk_builtin_call env Builtin.IsTrue [cond] in
       let condT = T.Exp.Var id in
       let condF = T.Exp.not condT in
       let next_prune = if next_is_true then condT else condF in
@@ -1487,6 +1487,6 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
   (* Gather everything into a Textual module *)
   let decls =
     ((T.Module.Proc decl :: decls) @ globals @ imports)
-    @ Env.BuiltinSet.to_textual (Env.get_used_builtins env)
+    @ Builtin.Set.to_textual (Env.get_used_builtins env)
   in
   {T.Module.attrs= [python_attribute]; decls; sourcefile}
