@@ -548,7 +548,7 @@ def f(x):
       define dummy.f(x: *PyObject) : *PyObject {
         #b0:
             n0:*PyObject = load &x
-            n1 = $builtins.python_code("foo")
+            n1 = $builtins.python_code("dummy.foo")
             n2 = $builtins.python_is_true(n0)
             jmp b1(n1), b2(n1)
 
@@ -1011,7 +1011,7 @@ print(c.z)
               n1:*PyObject = load &x
               store n0.?.x <- n1:*PyObject
               n2:*PyObject = load &self
-              n3 = $builtins.python_code("dummy::IntBox::<lambda>")
+              n3 = $builtins.python_code("<lambda>")
               store n2.?.f <- n3:*PyCode
               ret null
 

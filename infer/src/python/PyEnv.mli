@@ -63,16 +63,24 @@ type info =
 module SMap : Caml.Map.S with type key = string
 
 module Symbol : sig
-  (** Fully expanded name of a symbol *)
-  type qualified_name = {value: string; loc: T.Location.t}
+  module Qualified : sig
+    (** Fully expanded name of a symbol *)
+    type t
+
+    val mk : prefix:string list -> string -> T.Location.t -> t
+  end
 
   (** A symbol can either be a name (a variable), a function, a class name or a supported builtin
       (like [print]) *)
   type t =
-    | Name of {symbol_name: qualified_name; typ: T.Typ.t}
+    | Name of {symbol_name: Qualified.t; typ: T.Typ.t}
     | Builtin
-    | Code of {code_name: qualified_name}
-    | Class of {class_name: qualified_name}
+    | Code of {code_name: Qualified.t}
+    | Class of {class_name: Qualified.t}
+
+  val to_string : t -> string
+
+  val to_qualified_procname : t -> T.qualified_procname
 end
 
 (** Global environment used during bytecode processing. Stores common global information like the

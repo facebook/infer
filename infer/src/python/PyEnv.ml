@@ -231,6 +231,8 @@ end
 
 module Labels = Caml.Map.Make (Int)
 
+(* TODO(vsiles): maybe revamp Signature maps to benefits from the new
+   qualified name structure *)
 module Signature = struct
   type t = PyCommon.annotated_name list
 end
@@ -240,26 +242,70 @@ module SMap = Caml.Map.Make (String)
 type info = {is_code: bool; is_class: bool; typ: T.Typ.t}
 
 module Symbol = struct
-  (* TODO: check how much structure we need once we start investigating nested classes/functions *)
-  type qualified_name = {value: string; loc: T.Location.t}
+  module Qualified = struct
+    (** Fully qualified name. Each identifier for global variables / function names / class names
+        have a prefix sequence with the module and optional class names. The suffix is usually the
+        original "short" name. *)
+    type t = {prefix: string list; name: string; loc: T.Location.t}
+
+    let mk ~prefix name loc = {prefix; name; loc}
+
+    let to_string ~sep {prefix; name} =
+      if List.is_empty prefix then name
+      else
+        let prefix = String.concat ~sep:"::" prefix in
+        sprintf "%s%s%s" prefix sep name
+
+
+    let to_textual {prefix; name; loc} : T.qualified_procname =
+      let enclosing_class =
+        if List.is_empty prefix then T.TopLevel
+        else
+          let value = String.concat ~sep:"::" prefix in
+          let type_name = {T.TypeName.value; loc} in
+          T.Enclosing type_name
+      in
+      let name = {T.ProcName.value= name; loc} in
+      {T.enclosing_class; name}
+  end
 
   type t =
-    | Name of {symbol_name: qualified_name; typ: T.Typ.t}
+    | Name of {symbol_name: Qualified.t; typ: T.Typ.t}
     | Builtin
-    | Code of {code_name: qualified_name}
-    | Class of {class_name: qualified_name}
+    | Code of {code_name: Qualified.t}
+    | Class of {class_name: Qualified.t}
 
-  let pp_opt fmt = function
-    | Some (Name {symbol_name= {value}; typ}) ->
-        Format.fprintf fmt "Name(%s: %a)" value T.Typ.pp typ
-    | Some Builtin ->
+  let to_string = function
+    | Name {symbol_name} ->
+        (* Names are global symobls, without an enclosing class, so we mangle them using the "::"
+           separator *)
+        Qualified.to_string ~sep:"::" symbol_name
+    | Builtin ->
+        Logging.die InternalError "Symbol.to_string called with Builtin"
+    | Code {code_name= qname} | Class {class_name= qname} ->
+        (* While functions and types are used as qualified_procnames so we using "." as a
+           separator *)
+        Qualified.to_string ~sep:"." qname
+
+
+  let to_qualified_procname = function
+    | Name _ ->
+        Logging.die InternalError "Symbol.to_qualified_procname called with Name"
+    | Builtin ->
+        Logging.die InternalError "Symbol.to_qualified_procname called with Builtin"
+    | Code {code_name= qname} | Class {class_name= qname} ->
+        Qualified.to_textual qname
+
+
+  let pp fmt = function
+    | Name {symbol_name; typ} ->
+        Format.fprintf fmt "Name(%s: %a)" (Qualified.to_string ~sep:"::" symbol_name) T.Typ.pp typ
+    | Builtin ->
         Format.pp_print_string fmt "Builtin"
-    | Some (Code {code_name= {value}}) ->
-        Format.fprintf fmt "Code(%s)" value
-    | Some (Class {class_name= {value}}) ->
-        Format.fprintf fmt "Class(%s)" value
-    | None ->
-        Format.pp_print_string fmt "None"
+    | Code {code_name} ->
+        Format.fprintf fmt "Code(%s)" (Qualified.to_string ~sep:"." code_name)
+    | Class {class_name} ->
+        Format.fprintf fmt "Class(%s)" (Qualified.to_string ~sep:"." class_name)
 end
 
 type label_info =
@@ -474,14 +520,7 @@ let label_of_offset {shared} offset =
 let instructions {node= {instructions}} = List.rev instructions
 
 let register_symbol ({shared} as env) ~global name symbol_info =
-  let value =
-    match (symbol_info : Symbol.t) with
-    | Builtin ->
-        "%BUILTIN%"
-    | Class {class_name= {value}} | Code {code_name= {value}} | Name {symbol_name= {value}} ->
-        value
-  in
-  PyDebug.p "[register_symbol] %b %s %s\n" global name value ;
+  PyDebug.p "[register_symbol] %b %s %a\n" global name Symbol.pp symbol_info ;
   let register map name symbol_info = SMap.add name symbol_info map in
   let {globals; locals} = shared in
   if global then
@@ -499,7 +538,7 @@ let lookup_symbol {shared} ~global name =
   let lookup map name = SMap.find_opt name map in
   let {globals; locals} = shared in
   let res = if global then lookup globals name else lookup locals name in
-  PyDebug.p "> %a\n" Symbol.pp_opt res ;
+  PyDebug.p "> %a\n" (Pp.option Symbol.pp) res ;
   res
 
 
@@ -562,11 +601,11 @@ let register_function ({shared} as env) name loc annotations =
      qualified_procname with enclosing_class set to module_name, so
      we need this '.'
   *)
-  let value = module_name ^ "." ^ name in
-  let code_name = {Symbol.value; loc} in
+  let code_name = Symbol.Qualified.mk ~prefix:[module_name] name loc in
   let symbol_info = Symbol.Code {code_name} in
+  let fname = Symbol.Qualified.to_string ~sep:"." code_name in
   let {toplevel_signatures; globals} = shared in
-  let toplevel_signatures = SMap.add value annotations toplevel_signatures in
+  let toplevel_signatures = SMap.add fname annotations toplevel_signatures in
   let globals = SMap.add name symbol_info globals in
   let shared = {shared with toplevel_signatures; globals} in
   {env with shared}

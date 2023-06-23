@@ -33,17 +33,20 @@ let qualified_procname ~enclosing_class name : T.qualified_procname = {enclosing
 (** Turn a Python [FFI.Code.t] into a Textual [T.Exp.t], along with the required instructions to
     effectively perform the translation. *)
 let code_to_exp ~fun_or_class env name =
-  let module_name = Env.module_name env in
   let fname =
     (* TODO: support closures *)
     let opt_sym = Env.lookup_symbol ~global:true env name in
     match (opt_sym : Symbol.t option) with
-    | Some (Name {symbol_name= {value}}) | Some (Class {class_name= {value}}) ->
-        L.die InternalError "[code_to_exp] Name or Class %s is not a code object" value
-    | Some (Code {code_name= {value}}) ->
-        value
-    | Some Builtin | None ->
-        prefix_name ~module_name name
+    | Some (Name _ as symbol) | Some (Class _ as symbol) ->
+        let qname = Symbol.to_string symbol in
+        L.die InternalError "[code_to_exp] Name or Class %s is not a code object" qname
+    | Some (Code _ as symbol) ->
+        Symbol.to_string symbol
+    | Some Builtin ->
+        L.die InternalError "[code_to_exp] unexpected Builtin: %s\n" name
+    | None ->
+        (* Corner cases for things we don't support nicely at the moment *)
+        name
   in
   let kind = if fun_or_class then Builtin.PythonCode else Builtin.PythonClass in
   let name = T.Exp.Const (Str fname) in
@@ -99,12 +102,15 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let ({Env.typ; is_code} as info), qualified_name =
         let opt_sym = Env.lookup_symbol ~global env name in
         match (opt_sym : Symbol.t option) with
-        | Some (Name {symbol_name= {value}; typ}) ->
-            ({Env.is_code= false; is_class= false; typ}, value)
-        | Some (Class {class_name= {value}}) ->
-            ({Env.is_code= false; is_class= true; typ= PyCommon.pyObject}, value)
-        | Some (Code {code_name= {value}}) ->
-            ({Env.is_code= true; is_class= false; typ= PyCommon.pyCode}, value)
+        | Some (Name {typ} as symbol_info) ->
+            let qname = Symbol.to_string symbol_info in
+            ({Env.is_code= false; is_class= false; typ}, qname)
+        | Some (Class _ as class_info) ->
+            let qname = Symbol.to_string class_info in
+            ({Env.is_code= false; is_class= true; typ= PyCommon.pyObject}, qname)
+        | Some (Code _ as code_info) ->
+            let qname = Symbol.to_string code_info in
+            ({Env.is_code= true; is_class= false; typ= PyCommon.pyCode}, qname)
         | Some Builtin | None ->
             (default, PyCommon.unknown_global name)
       in
@@ -364,22 +370,16 @@ module STORE = struct
     | Ok exp ->
         let {Env.typ; is_code; is_class} = info in
         let module_name = Env.module_name env in
-        let gname, symbol_info =
-          if is_code then
-            let code_name = {Symbol.value= name; loc} in
-            let symbol_info = Symbol.Code {code_name} in
-            (name, symbol_info)
-          else if is_class then
-            let gname = if global then module_name ^ "." ^ name else name in
-            let class_name = {Symbol.value= gname; loc} in
-            let symbol_info = Symbol.Class {class_name} in
-            (gname, symbol_info)
+        let qname = Symbol.Qualified.mk ~prefix:[module_name] name loc in
+        let symbol_info =
+          if is_code then Symbol.Code {code_name= qname}
+          else if is_class then Symbol.Class {class_name= qname}
           else
-            let gname = if global then prefix_name ~module_name name else name in
-            let symbol_name = {Symbol.value= gname; loc} in
-            let symbol_info = Symbol.Name {symbol_name; typ} in
-            (gname, symbol_info)
+            let prefix = if global then [module_name] else [] in
+            let qname = Symbol.Qualified.mk ~prefix name loc in
+            Symbol.Name {symbol_name= qname; typ}
         in
+        let gname = Symbol.to_string symbol_info in
         let var_name = var_name ~loc gname in
         let env = Env.register_symbol ~global env name symbol_info in
         if is_attr then
@@ -463,16 +463,13 @@ module FUNCTION = struct
           let proc = PyCommon.builtin_name fname in
           let env = mk env loc proc in
           (env, None)
-      | Some (Name {symbol_name= {value; loc}}) | Some (Code {code_name= {value; loc}}) ->
-          let proc =
-            let enclosing_class_name = type_name ~loc (Env.module_name env) in
-            let enclosing_class = T.Enclosing enclosing_class_name in
-            qualified_procname ~enclosing_class @@ proc_name ~loc value
-          in
+      | Some (Name _ as symbol) | Some (Code _ as symbol) ->
+          let proc = Symbol.to_qualified_procname symbol in
           let env = mk env loc proc in
           (env, None)
-      | Some (Class {class_name= {value}}) ->
-          let name = T.Exp.Const (T.Const.Str value) in
+      | Some (Class _ as symbol) ->
+          let qname = Symbol.to_string symbol in
+          let name = T.Exp.Const (T.Const.Str qname) in
           (* Calling a class constructor *)
           (* FYI, Python3 constructors first call __new__ to allocate the object, and then call
              __init__ to initialize it. Both can be overloaded in the user-declared code. *)
@@ -1368,8 +1365,9 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
     Env.SMap.fold
       (fun _name sym acc ->
         match (sym : Symbol.t) with
-        | Name {symbol_name= {value; loc}} ->
-            let varname = var_name ~loc value in
+        | Name _ ->
+            let qname = Symbol.to_string sym in
+            let varname = var_name ~loc qname in
             let global = T.Global.{name= varname; typ= PyCommon.pyObject; attributes= []} in
             T.Module.Global global :: acc
         | Builtin | Code _ | Class _ ->
