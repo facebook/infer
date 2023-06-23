@@ -57,9 +57,13 @@ let%test_module "basic_tests" =
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -89,9 +93,13 @@ print(x)
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -129,9 +137,75 @@ print(x + y)
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+pi = 3.14
+      |} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyObject {
+          #b0:
+              store &dummy::pi <- $builtins.python_float(3.14):*PyFloat
+              ret null
+
+        }
+
+        global dummy::pi: *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+byte_data = b'\x48\x65\x6C\x6C\x6F'  # Equivalent to b'Hello'
+      |} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyObject {
+          #b0:
+              store &dummy::byte_data <- $builtins.python_bytes("Hello"):*PyBytes
+              ret null
+
+        }
+
+        global dummy::byte_data: *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
@@ -202,9 +276,13 @@ print(z)
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -257,9 +335,13 @@ print(z)
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
@@ -326,9 +408,13 @@ def f(x, y):
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -399,9 +485,13 @@ def f(x, y):
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -511,9 +601,13 @@ def f(x, y):
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -574,9 +668,13 @@ def f(x):
 
       declare $builtins.python_tuple(...) : *PyObject
 
+      declare $builtins.python_bytes(*Bytes) : *PyBytes
+
       declare $builtins.python_string(*String) : *PyString
 
       declare $builtins.python_bool(int) : *PyBool
+
+      declare $builtins.python_float(float) : *PyFloat
 
       declare $builtins.python_int(int) : *PyInt |}]
   end )
@@ -633,9 +731,13 @@ for x in range(10):
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
@@ -693,9 +795,13 @@ def f(x):
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
@@ -742,9 +848,13 @@ def f1(x, y:str) -> bool:
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -792,9 +902,13 @@ expect_int(get())
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
 
@@ -842,9 +956,13 @@ expect(get())
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
@@ -938,9 +1056,13 @@ c.set(42)
 
           declare $builtins.python_tuple(...) : *PyObject
 
+          declare $builtins.python_bytes(*Bytes) : *PyBytes
+
           declare $builtins.python_string(*String) : *PyString
 
           declare $builtins.python_bool(int) : *PyBool
+
+          declare $builtins.python_float(float) : *PyFloat
 
           declare $builtins.python_int(int) : *PyInt |}]
 
@@ -1067,9 +1189,13 @@ print(c.z)
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
@@ -1106,9 +1232,13 @@ base.f(0)
 
         declare $builtins.python_tuple(...) : *PyObject
 
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
         declare $builtins.python_string(*String) : *PyString
 
         declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )

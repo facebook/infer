@@ -9,7 +9,8 @@ open! IStd
 module T = Textual
 
 module Builtin = struct
-  type primitive = PythonInt | PythonBool | PythonString | PythonTuple [@@deriving compare]
+  type primitive = PythonInt | PythonFloat | PythonBool | PythonString | PythonBytes | PythonTuple
+  [@@deriving compare]
 
   type textual =
     | IsTrue
@@ -43,10 +44,14 @@ let to_proc_name = function
     match primitive with
     | PythonInt ->
         PyCommon.python_int
+    | PythonFloat ->
+        PyCommon.python_float
     | PythonBool ->
         PyCommon.python_bool
     | PythonString ->
         PyCommon.python_string
+    | PythonBytes ->
+        PyCommon.python_bytes
     | PythonTuple ->
         PyCommon.python_tuple )
   | Textual textual ->
@@ -89,6 +94,8 @@ let annot typ = T.Typ.{typ; attributes= []}
 module Set = struct
   let string_ = T.Typ.(Ptr (Struct (PyCommon.type_name "String")))
 
+  let bytes_ = T.Typ.(Ptr (Struct (PyCommon.type_name "Bytes")))
+
   type elt =
     { formals_types: T.Typ.annotated list option
     ; result_type: T.Typ.annotated
@@ -113,6 +120,10 @@ module Set = struct
         , { formals_types= Some [annot T.Typ.Int]
           ; result_type= annot PyCommon.pyInt
           ; used_struct_types= [] } )
+      ; ( Builtin.PythonFloat
+        , { formals_types= Some [annot T.Typ.Float]
+          ; result_type= annot PyCommon.pyFloat
+          ; used_struct_types= [] } )
       ; ( Builtin.PythonBool
         , { formals_types= Some [annot T.Typ.Int]
           ; result_type= annot PyCommon.pyBool
@@ -120,6 +131,10 @@ module Set = struct
       ; ( Builtin.PythonString
         , { formals_types= Some [annot string_]
           ; result_type= annot PyCommon.pyString
+          ; used_struct_types= [] } )
+      ; ( Builtin.PythonBytes
+        , { formals_types= Some [annot bytes_]
+          ; result_type= annot PyCommon.pyBytes
           ; used_struct_types= [] } )
       ; ( Builtin.PythonTuple
         , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} ) ]

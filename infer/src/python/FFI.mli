@@ -17,7 +17,9 @@ module rec Constant : sig
   type t = private
     | PYCBool of bool
     | PYCInt of int64
+    | PYCFloat of float
     | PYCString of string
+    | PYCBytes of bytes
     | PYCTuple of t array
     | PYCCode of Code.t
     | PYCNone

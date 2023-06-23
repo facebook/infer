@@ -61,8 +61,12 @@ let rec py_to_exp env c =
       (env, PyCommon.mk_bool b, PyCommon.pyBool)
   | PYCInt i ->
       (env, PyCommon.mk_int i, PyCommon.pyInt)
+  | PYCFloat f ->
+      (env, PyCommon.mk_float f, PyCommon.pyFloat)
   | PYCString s ->
       (env, PyCommon.mk_string s, PyCommon.pyString)
+  | PYCBytes s ->
+      (env, PyCommon.mk_bytes s, PyCommon.pyBytes)
   | PYCNone ->
       let exp = T.(Exp.Const Const.Null) in
       (env, exp, T.Typ.Null)

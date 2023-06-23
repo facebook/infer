@@ -27,8 +27,14 @@ val python_int : Textual.qualified_procname
 (** Encoding of Python [int] type. Since Python integers are of arbitrary precision, they are not
     modeled directly with [int]. *)
 
+val python_float : Textual.qualified_procname
+(** Encoding of Python [float] type. *)
+
 val python_string : Textual.qualified_procname
 (** Encoding of Python [str] type. *)
+
+val python_bytes : Textual.qualified_procname
+(** Encoding of Python [bytes] type. *)
 
 val python_bool : Textual.qualified_procname
 (** Encoding of Python [bool] type. *)
@@ -77,6 +83,9 @@ val pyInt : Textual.Typ.t
 val pyString : Textual.Typ.t
 (** Textual encoding of the primitive Python type [str] *)
 
+val pyBytes : Textual.Typ.t
+(** Textual encoding of the primitive Python type [bytes] *)
+
 val pyBool : Textual.Typ.t
 (** Textual encoding of the primitive Python type [bool] *)
 
@@ -89,11 +98,17 @@ val pyNone : Textual.Typ.t
 val mk_int : int64 -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal integers. *)
 
+val mk_float : float -> Textual.Exp.t
+(** Helper function to define typed Textual expression for literal floats. *)
+
 val read_int : Textual.Exp.t -> Z.t option
 (** Helper function to extract an integer from a Textual expression, if possible. *)
 
 val mk_string : string -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal strings. *)
+
+val mk_bytes : bytes -> Textual.Exp.t
+(** Helper function to define typed Textual expression for literal bytes. *)
 
 val mk_bool : bool -> Textual.Exp.t
 (** Helper function to define typed Textual expression for boolean. *)

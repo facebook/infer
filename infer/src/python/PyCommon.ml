@@ -29,11 +29,13 @@ let pyObject = mk_type "PyObject"
 
 let pyInt = mk_type "PyInt"
 
+let pyFloat = mk_type "PyFloat"
+
 let pyString = mk_type "PyString"
 
-let pyBool = mk_type "PyBool"
+let pyBytes = mk_type "PyBytes"
 
-let pyFloat = mk_type "PyFloat"
+let pyBool = mk_type "PyBool"
 
 let pyNone = mk_type "PyNone"
 
@@ -97,12 +99,22 @@ let python_int = builtin_name "python_int"
 
 let python_string = builtin_name "python_string"
 
+let python_float = builtin_name "python_float"
+
+let python_bytes = builtin_name "python_bytes"
+
 let python_tuple = builtin_name "python_tuple"
 
 let mk_int (i : int64) =
   let proc = python_int in
   let z = Z.of_int64 i in
   let args = [T.Exp.Const (Int z)] in
+  T.Exp.Call {proc; args; kind= NonVirtual}
+
+
+let mk_float (f : float) =
+  let proc = python_float in
+  let args = [T.Exp.Const (Float f)] in
   T.Exp.Call {proc; args; kind= NonVirtual}
 
 
@@ -116,6 +128,13 @@ let read_int = function
 
 let mk_string (s : string) =
   let proc = python_string in
+  let args = [T.Exp.Const (Str s)] in
+  T.Exp.Call {proc; args; kind= NonVirtual}
+
+
+let mk_bytes (s : bytes) =
+  let proc = python_bytes in
+  let s = Bytes.to_string s in
   let args = [T.Exp.Const (Str s)] in
   T.Exp.Call {proc; args; kind= NonVirtual}
 

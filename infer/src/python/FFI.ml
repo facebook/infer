@@ -15,7 +15,9 @@ let pp_array pp_item fmt arr =
 type pyConstant =
   | PYCBool of bool
   | PYCInt of int64
+  | PYCFloat of float
   | PYCString of string
+  | PYCBytes of bytes
   | PYCTuple of pyConstant array
   | PYCCode of pyCode
   | PYCNone
@@ -115,7 +117,13 @@ let rec new_py_constant obj =
       PYCString s
   | Unknown ->
       PYCCode (new_py_code obj)
-  | Callable | Capsule | Closure | Dict | Float | List | Module | Type | Bytes | Iter | Set ->
+  | Bytes ->
+      let s = Py.Bytes.to_bytes obj in
+      PYCBytes s
+  | Float ->
+      let f = Py.Float.to_float obj in
+      PYCFloat f
+  | Callable | Capsule | Closure | Dict | List | Module | Type | Iter | Set ->
       L.die InternalError "[new_py_constant] unknown bytecode constant: %s" (Py.Type.name ty)
 
 
@@ -244,7 +252,9 @@ module Constant = struct
   type t = pyConstant =
     | PYCBool of bool
     | PYCInt of int64
+    | PYCFloat of float
     | PYCString of string
+    | PYCBytes of bytes
     | PYCTuple of t array
     | PYCCode of Code.t
     | PYCNone
@@ -255,14 +265,17 @@ module Constant = struct
   let as_code = function
     | PYCCode c ->
         Some c
-    | PYCBool _ | PYCInt _ | PYCString _ | PYCTuple _ | PYCNone ->
+    | PYCBool _ | PYCInt _ | PYCString _ | PYCTuple _ | PYCNone | PYCFloat _ | PYCBytes _ ->
         None
 
 
   let as_name = function
     | PYCString name ->
         Some name
-    | PYCBool _ | PYCInt _ | PYCCode _ | PYCTuple _ | PYCNone ->
+    (* TODO: not sure if we should do that. Experience will tell *)
+    | PYCBytes bs ->
+        Some (Bytes.to_string bs)
+    | PYCBool _ | PYCInt _ | PYCCode _ | PYCTuple _ | PYCNone | PYCFloat _ ->
         None
 end
 
