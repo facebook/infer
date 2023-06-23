@@ -8,11 +8,13 @@
 open! IStd
 module F = Format
 
-let sourcefile = Textual.SourceFile.create "dummy.py"
+let filename = "dummy.py"
+
+let sourcefile = Textual.SourceFile.create filename
 
 let test ?(typecheck = true) source =
   Py.initialize ~interpreter:Version.python_exe () ;
-  let code = FFI.from_string ~source ~filename:"dummy" in
+  let code = FFI.from_string ~source ~filename in
   Py.finalize () ;
   (* Since Textual doesn't have a concept of toplevel code, we create a function for this code,
      with a non-denotable name, so we don't clash with existing python code *)
@@ -44,14 +46,14 @@ let%test_module "basic_tests" =
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
-              store &$module::x <- $builtins.python_int(42):*PyInt
+              store &dummy::x <- $builtins.python_int(42):*PyInt
               ret null
 
         }
 
-        global $module::x: *PyObject
+        global dummy::x: *PyObject
 
         declare $builtins.python_tuple(...) : *PyObject
 
@@ -72,16 +74,16 @@ print(x)
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
-              store &$module::x <- $builtins.python_int(42):*PyInt
-              n0:*PyInt = load &$module::x
+              store &dummy::x <- $builtins.python_int(42):*PyInt
+              n0:*PyInt = load &dummy::x
               n1 = $builtins.print(n0)
               ret null
 
         }
 
-        global $module::x: *PyObject
+        global dummy::x: *PyObject
 
         declare $builtins.print(...) : *PyObject
 
@@ -105,21 +107,21 @@ print(x + y)
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
-              store &$module::x <- $builtins.python_int(42):*PyInt
-              store &$module::y <- $builtins.python_int(10):*PyInt
-              n0:*PyInt = load &$module::x
-              n1:*PyInt = load &$module::y
+              store &dummy::x <- $builtins.python_int(42):*PyInt
+              store &dummy::y <- $builtins.python_int(10):*PyInt
+              n0:*PyInt = load &dummy::x
+              n1:*PyInt = load &dummy::y
               n2 = $builtins.binary_add(n0, n1)
               n3 = $builtins.print(n2)
               ret null
 
         }
 
-        global $module::y: *PyObject
+        global dummy::y: *PyObject
 
-        global $module::x: *PyObject
+        global dummy::x: *PyObject
 
         declare $builtins.print(...) : *PyObject
 
@@ -159,20 +161,20 @@ print(z)
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("my_fun")
-              store &$module::a <- $builtins.python_int(10):*PyInt
-              n1:*PyInt = load &$module::a
-              n2 = $module::my_fun($builtins.python_int(42), n1)
-              store &$module::z <- n2:*PyObject
-              n3:*PyObject = load &$module::z
+              n0 = $builtins.python_code("dummy.my_fun")
+              store &dummy::a <- $builtins.python_int(10):*PyInt
+              n1:*PyInt = load &dummy::a
+              n2 = dummy.my_fun($builtins.python_int(42), n1)
+              store &dummy::z <- n2:*PyObject
+              n3:*PyObject = load &dummy::z
               n4 = $builtins.print(n3)
               ret null
 
         }
 
-        define $module::my_fun(x: *PyObject, y: *PyObject) : *PyObject {
+        define dummy.my_fun(x: *PyObject, y: *PyObject) : *PyObject {
           local z: *PyObject
           #b0:
               n0:*PyObject = load &x
@@ -188,9 +190,9 @@ print(z)
 
         }
 
-        global $module::z: *PyObject
+        global dummy::z: *PyObject
 
-        global $module::a: *PyObject
+        global dummy::a: *PyObject
 
         declare $builtins.print(...) : *PyObject
 
@@ -225,27 +227,27 @@ print(z)
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("update_global")
-              store &$module::z <- $builtins.python_int(0):*PyInt
-              n1 = $module::update_global()
-              n2:*PyInt = load &$module::z
+              n0 = $builtins.python_code("dummy.update_global")
+              store &dummy::z <- $builtins.python_int(0):*PyInt
+              n1 = dummy.update_global()
+              n2:*PyInt = load &dummy::z
               n3 = $builtins.print(n2)
               ret null
 
         }
 
-        define $module::update_global() : *PyObject {
+        define dummy.update_global() : *PyObject {
           #b0:
-              n0:*PyInt = load &$module::z
+              n0:*PyInt = load &dummy::z
               n1 = $builtins.binary_add(n0, $builtins.python_int(1))
-              store &$module::z <- n1:*PyObject
+              store &dummy::z <- n1:*PyObject
               ret null
 
         }
 
-        global $module::z: *PyObject
+        global dummy::z: *PyObject
 
         declare $builtins.print(...) : *PyObject
 
@@ -283,23 +285,23 @@ def f(x, y):
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("coin")
-              n1 = $builtins.python_code("f")
+              n0 = $builtins.python_code("dummy.coin")
+              n1 = $builtins.python_code("dummy.f")
               ret null
 
         }
 
-        define $module::coin() : *PyObject {
+        define dummy.coin() : *PyObject {
           #b0:
               ret $builtins.python_bool(0)
 
         }
 
-        define $module::f(x: *PyObject, y: *PyObject) : *PyObject {
+        define dummy.f(x: *PyObject, y: *PyObject) : *PyObject {
           #b0:
-              n0 = $module::coin()
+              n0 = dummy.coin()
               n1 = $builtins.python_is_true(n0)
               jmp b1, b2
 
@@ -351,25 +353,25 @@ def f(x, y):
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("coin")
-              n1 = $builtins.python_code("f")
+              n0 = $builtins.python_code("dummy.coin")
+              n1 = $builtins.python_code("dummy.f")
               ret null
 
         }
 
-        define $module::coin() : *PyObject {
+        define dummy.coin() : *PyObject {
           #b0:
               ret $builtins.python_bool(0)
 
         }
 
-        define $module::f(x: *PyObject, y: *PyObject) : *PyObject {
+        define dummy.f(x: *PyObject, y: *PyObject) : *PyObject {
           local z: *PyObject
           #b0:
               store &z <- $builtins.python_int(0):*PyInt
-              n0 = $module::coin()
+              n0 = dummy.coin()
               n1 = $builtins.python_is_true(n0)
               jmp b1, b2
 
@@ -432,31 +434,31 @@ def f(x, y):
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("coin")
-              n1 = $builtins.python_code("f")
+              n0 = $builtins.python_code("dummy.coin")
+              n1 = $builtins.python_code("dummy.f")
               ret null
 
         }
 
-        define $module::coin() : *PyObject {
+        define dummy.coin() : *PyObject {
           #b0:
               ret $builtins.python_bool(0)
 
         }
 
-        define $module::f(x: *PyObject, y: *PyObject) : *PyObject {
+        define dummy.f(x: *PyObject, y: *PyObject) : *PyObject {
           local z: *PyObject
           #b0:
               store &z <- $builtins.python_int(0):*PyInt
-              n0 = $module::coin()
+              n0 = dummy.coin()
               n1 = $builtins.python_is_true(n0)
               jmp b1, b2
 
           #b1:
               prune n1
-              n2 = $module::coin()
+              n2 = dummy.coin()
               n3 = $builtins.python_is_true(n2)
               jmp b3, b4
 
@@ -481,7 +483,7 @@ def f(x, y):
               n7:*PyObject = load &z
               n8 = $builtins.binary_add(n7, $builtins.python_int(1))
               store &z <- n8:*PyObject
-              n9 = $module::coin()
+              n9 = dummy.coin()
               n10 = $builtins.python_is_true(n9)
               jmp b7, b8
 
@@ -529,24 +531,24 @@ def f(x):
         {|
       .source_language = "python"
 
-      define $module::toplevel() : *PyObject {
+      define dummy.$toplevel() : *PyObject {
         #b0:
-            n0 = $builtins.python_code("foo")
-            n1 = $builtins.python_code("f")
+            n0 = $builtins.python_code("dummy.foo")
+            n1 = $builtins.python_code("dummy.f")
             ret null
 
       }
 
-      define $module::foo(x: *PyObject) : *PyObject {
+      define dummy.foo(x: *PyObject) : *PyObject {
         #b0:
             ret null
 
       }
 
-      define $module::f(x: *PyObject) : *PyObject {
+      define dummy.f(x: *PyObject) : *PyObject {
         #b0:
             n0:*PyObject = load &x
-            n1 = $builtins.python_code("$module::foo")
+            n1 = $builtins.python_code("foo")
             n2 = $builtins.python_is_true(n0)
             jmp b1(n1), b2(n1)
 
@@ -592,7 +594,7 @@ for x in range(10):
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
               n0 = $builtins.range($builtins.python_int(10))
               n1 = $builtins.python_iter(n0)
@@ -606,8 +608,8 @@ for x in range(10):
           #b2:
               prune n4
               n5:*PyObject = load n3.PyIterItem.next_item
-              store &$module::x <- n5:*PyObject
-              n6:*PyObject = load &$module::x
+              store &dummy::x <- n5:*PyObject
+              n6:*PyObject = load &dummy::x
               n7 = $builtins.print(n6)
               jmp b1(n2)
 
@@ -617,7 +619,7 @@ for x in range(10):
 
         }
 
-        global $module::x: *PyObject
+        global dummy::x: *PyObject
 
         declare $builtins.range(...) : *PyObject
 
@@ -660,27 +662,27 @@ def f(x):
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
               n0 = $builtins.print($builtins.python_int(42))
-              n1 = $builtins.python_code("print")
-              n2 = $module::print($builtins.python_int(42))
-              n3 = $builtins.python_code("f")
+              n1 = $builtins.python_code("dummy.print")
+              n2 = dummy.print($builtins.python_int(42))
+              n3 = $builtins.python_code("dummy.f")
               ret null
 
         }
 
-        define $module::print(x: *PyObject) : *PyObject {
+        define dummy.print(x: *PyObject) : *PyObject {
           #b0:
               n0:*PyObject = load &x
               ret n0
 
         }
 
-        define $module::f(x: *PyObject) : *PyObject {
+        define dummy.f(x: *PyObject) : *PyObject {
           #b0:
               n0:*PyObject = load &x
-              n1 = $module::print(n0)
+              n1 = dummy.print(n0)
               ret null
 
         }
@@ -716,21 +718,21 @@ def f1(x, y:str) -> bool:
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("f0")
-              n1 = $builtins.python_code("f1")
+              n0 = $builtins.python_code("dummy.f0")
+              n1 = $builtins.python_code("dummy.f1")
               ret null
 
         }
 
-        define $module::f0(x: *PyInt, y: *PyObject, z: *PyFloat) : *PyObject {
+        define dummy.f0(x: *PyObject, y: *PyObject, z: *PyObject) : *PyObject {
           #b0:
               ret null
 
         }
 
-        define $module::f1(x: *PyObject, y: *PyString) : *PyBool {
+        define dummy.f1(x: *PyObject, y: *PyObject) : *PyObject {
           #b0:
               ret null
 
@@ -764,23 +766,23 @@ expect_int(get())
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("expect_int")
-              n1 = $builtins.python_code("get")
-              n2 = $module::get()
-              n3 = $module::expect_int(n2)
+              n0 = $builtins.python_code("dummy.expect_int")
+              n1 = $builtins.python_code("dummy.get")
+              n2 = dummy.get()
+              n3 = dummy.expect_int(n2)
               ret null
 
         }
 
-        define $module::expect_int(x: *PyInt) : *PyObject {
+        define dummy.expect_int(x: *PyObject) : *PyObject {
           #b0:
               ret null
 
         }
 
-        define $module::get() : *PyInt {
+        define dummy.get() : *PyObject {
           #b0:
               ret $builtins.python_int(42)
 
@@ -814,23 +816,23 @@ expect(get())
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("expect")
-              n1 = $builtins.python_code("get")
-              n2 = $module::get()
-              n3 = $module::expect(n2)
+              n0 = $builtins.python_code("dummy.expect")
+              n1 = $builtins.python_code("dummy.get")
+              n2 = dummy.get()
+              n3 = dummy.expect(n2)
               ret null
 
         }
 
-        define $module::expect(x: *PyObject) : *PyNone {
+        define dummy.expect(x: *PyObject) : *PyObject {
           #b0:
               ret null
 
         }
 
-        define $module::get() : *PyInt {
+        define dummy.get() : *PyObject {
           #b0:
               ret $builtins.python_int(42)
 
@@ -874,25 +876,25 @@ c.set(42)
         {|
           .source_language = "python"
 
-          define $module::toplevel() : *PyObject {
+          define dummy.$toplevel() : *PyObject {
             #b0:
-                n0 = $builtins.python_code("C")
-                n1 = $builtins.python_class("C")
-                n2 = $builtins.python_class_constructor("C")
-                store &$module::c <- n2:*C
-                n3:*C = load &$module::c
+                n0 = $builtins.python_code("dummy.C")
+                n1 = $builtins.python_class("dummy.C")
+                n2 = $builtins.python_class_constructor("dummy.C")
+                store &dummy::c <- n2:*dummy.C
+                n3:*dummy.C = load &dummy::c
                 n4 = n3.?.x
-                n5:*C = load &$module::c
+                n5:*dummy.C = load &dummy::c
                 n6 = $builtins.python_load_method(n5, "get")
                 n7 = $builtins.python_call_method(n6)
-                n8:*C = load &$module::c
+                n8:*dummy.C = load &dummy::c
                 n9 = $builtins.python_load_method(n8, "set")
                 n10 = $builtins.python_call_method(n9, $builtins.python_int(42))
                 ret null
 
           }
 
-          define C.__init__(self: *PyObject, x: *PyObject) : *PyObject {
+          define dummy::C.__init__(self: *PyObject, x: *PyObject) : *PyObject {
             #b0:
                 n0:*PyObject = load &self
                 n1:*PyObject = load &x
@@ -901,7 +903,7 @@ c.set(42)
 
           }
 
-          define C.get(self: *PyObject) : *PyObject {
+          define dummy::C.get(self: *PyObject) : *PyObject {
             #b0:
                 n0:*PyObject = load &self
                 n1 = n0.?.x
@@ -909,7 +911,7 @@ c.set(42)
 
           }
 
-          define C.set(self: *PyObject, x: *PyObject) : *PyObject {
+          define dummy::C.set(self: *PyObject, x: *PyObject) : *PyObject {
             #b0:
                 n0:*PyObject = load &self
                 n1:*PyObject = load &x
@@ -918,9 +920,9 @@ c.set(42)
 
           }
 
-          type C = {}
+          type dummy::C = {}
 
-          global $module::c: *PyObject
+          global dummy::c: *PyObject
 
           declare $builtins.python_load_method(*PyObject, *String) : *PyMethod
 
@@ -977,45 +979,45 @@ print(c.z)
         {|
         .source_language = "python"
 
-        define $module::toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("IntBox")
-              n1 = $builtins.python_class("IntBox")
-              n2 = $builtins.python_class_constructor("IntBox", $builtins.python_int(10))
-              store &$module::c <- n2:*IntBox
-              n3:*IntBox = load &$module::c
+              n0 = $builtins.python_code("dummy.IntBox")
+              n1 = $builtins.python_class("dummy.IntBox")
+              n2 = $builtins.python_class_constructor("dummy.IntBox", $builtins.python_int(10))
+              store &dummy::c <- n2:*dummy.IntBox
+              n3:*dummy.IntBox = load &dummy::c
               n4 = n3.?.x
-              n5:*IntBox = load &$module::c
+              n5:*dummy.IntBox = load &dummy::c
               store n5.?.z <- $builtins.python_int(10):*PyInt
-              n6:*IntBox = load &$module::c
+              n6:*dummy.IntBox = load &dummy::c
               n7 = $builtins.python_load_method(n6, "get")
               n8 = $builtins.python_call_method(n7)
-              n9:*IntBox = load &$module::c
+              n9:*dummy.IntBox = load &dummy::c
               n10 = $builtins.python_load_method(n9, "set")
               n11 = $builtins.python_call_method(n10, $builtins.python_int(42))
-              n12:*IntBox = load &$module::c
+              n12:*dummy.IntBox = load &dummy::c
               n13 = $builtins.python_load_method(n12, "run")
               n14 = $builtins.python_call_method(n13)
-              n15:*IntBox = load &$module::c
+              n15:*dummy.IntBox = load &dummy::c
               n16 = n15.?.z
               n17 = $builtins.print(n16)
               ret null
 
         }
 
-        define IntBox.__init__(self: *PyObject, x: *PyInt) : *PyNone {
+        define dummy::IntBox.__init__(self: *PyObject, x: *PyInt) : *PyNone {
           #b0:
               n0:*PyObject = load &self
               n1:*PyObject = load &x
               store n0.?.x <- n1:*PyObject
               n2:*PyObject = load &self
-              n3 = $builtins.python_code("<lambda>")
+              n3 = $builtins.python_code("dummy::IntBox::<lambda>")
               store n2.?.f <- n3:*PyCode
               ret null
 
         }
 
-        define IntBox.get(self: *PyObject) : *PyInt {
+        define dummy::IntBox.get(self: *PyObject) : *PyInt {
           #b0:
               n0:*PyObject = load &self
               n1 = n0.?.x
@@ -1023,7 +1025,7 @@ print(c.z)
 
         }
 
-        define IntBox.set(self: *PyObject, x: *PyInt) : *PyNone {
+        define dummy::IntBox.set(self: *PyObject, x: *PyInt) : *PyNone {
           #b0:
               n0:*PyObject = load &self
               n1:*PyObject = load &x
@@ -1032,7 +1034,7 @@ print(c.z)
 
         }
 
-        define IntBox.run(self: *PyObject) : *PyNone {
+        define dummy::IntBox.run(self: *PyObject) : *PyNone {
           #b0:
               n0:*PyObject = load &self
               n1 = $builtins.python_load_method(n0, "f")
@@ -1043,9 +1045,9 @@ print(c.z)
 
         }
 
-        type IntBox = {f: *PyObject; x: *PyInt}
+        type dummy::IntBox = {f: *PyObject; x: *PyInt}
 
-        global $module::c: *PyObject
+        global dummy::c: *PyObject
 
         declare $builtins.print(...) : *PyObject
 

@@ -39,11 +39,11 @@ end
 module DataStack : sig
   type cell =
     | Const of int  (** index in [co_consts] *)
-    | Name of int  (** reference to a global name, stored in [co_names] *)
+    | Name of {global: bool; ndx: int}  (** reference to a name, stored in [co_names]. *)
     | VarName of int  (** reference to a local name, stored in [co_varnames] *)
     | Temp of T.Ident.t  (** SSA variable *)
-    | Code of {fun_or_class: bool; qualified_name: string; code: FFI.Code.t}
-        (** [code] Python object with its qualified name. It can be a function, class, closure, ... *)
+    | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
+        (** [code] Python object with its name. It can be a function, class, closure, ... *)
     | Map of (string * cell) list
         (** Light encoding of raw Python tuples/dicts. Only used for type annotations at the moment. *)
     | BuiltinBuildClass  (** see Python's [LOAD_BUILD_CLASS] *)
@@ -132,7 +132,7 @@ val mk_fresh_label : t -> t * string
 val map : f:(t -> 'a -> t * 'b) -> env:t -> 'a list -> t * 'b list
 (** Similar to [List.map] but an [env] is threaded along the way *)
 
-val enter_proc : is_toplevel:bool -> t -> t
+val enter_proc : is_toplevel:bool -> module_name:string -> t -> t
 (** Set the environment when entering a new code unit (like reset the instruction buffer, or
     id/label generators. *)
 
@@ -193,3 +193,6 @@ val get_classes : t -> string list
 
 val is_toplevel : t -> bool
 (** Are we processing top level instructions, or something in a function/class ? *)
+
+val module_name : t -> string
+(** Returns the name of the current module *)

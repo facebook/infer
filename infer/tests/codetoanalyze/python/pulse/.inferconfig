@@ -3,9 +3,9 @@
   "pulse-only": true,
   "pulse-force-continue": true,
   "pulse-taint-sources": [
-    { "procedure": "$module::taintSource" }
+    { "procedure": "level1.taintSource" }
   ],
   "pulse-taint-sinks": [
-    { "procedure": "$module::taintSink" }
+    { "procedure": "level1.taintSink" }
   ]
 }

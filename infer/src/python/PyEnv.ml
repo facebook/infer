@@ -195,7 +195,7 @@ module BuiltinSet = struct
 
   let get_type builtin =
     let info = Info.find_opt builtin supported_builtins in
-    Option.map info ~f:(fun b -> b.result_type.typ) |> Option.value ~default:PyCommon.pyObject
+    Option.value_map ~default:PyCommon.pyObject info ~f:(fun b -> b.result_type.typ)
 
 
   let empty = Set.empty
@@ -204,10 +204,10 @@ end
 module DataStack = struct
   type cell =
     | Const of int
-    | Name of int
+    | Name of {global: bool; ndx: int}
     | VarName of int
     | Temp of T.Ident.t
-    | Code of {fun_or_class: bool; qualified_name: string; code: FFI.Code.t}
+    | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
     | Map of (string * cell) list
     | BuiltinBuildClass
   [@@deriving show]
@@ -263,6 +263,7 @@ and shared =
         (** Map from top level function names to their signature *)
   ; method_signatures: Signature.t SMap.t SMap.t
         (** Map from class names to the signature of all of their methods *)
+  ; module_name: string
   ; is_toplevel: bool
   ; next_label: int
   ; labels: label_info Labels.t }
@@ -368,6 +369,7 @@ let empty =
   ; classes= []
   ; toplevel_signatures= SMap.empty
   ; method_signatures= SMap.empty
+  ; module_name= ""
   ; is_toplevel= true
   ; next_label= 0
   ; labels= Labels.empty }
@@ -377,9 +379,14 @@ let empty = {shared= empty; node= empty_node}
 
 let stack {node= {stack}} = stack
 
-let enter_proc ~is_toplevel {shared} =
+let enter_proc ~is_toplevel ~module_name {shared} =
   let shared =
-    {shared with is_toplevel; idents= T.Ident.Set.empty; next_label= 0; names= SMap.empty}
+    { shared with
+      module_name
+    ; is_toplevel
+    ; idents= T.Ident.Set.empty
+    ; next_label= 0
+    ; names= SMap.empty }
   in
   {shared; node= empty_node}
 
@@ -402,8 +409,7 @@ let update_last_line ({node} as env) last_line =
 let loc {node} =
   let loc {last_line} =
     last_line
-    |> Option.map ~f:(fun line -> T.Location.known ~line ~col:0)
-    |> Option.value ~default:T.Location.Unknown
+    |> Option.value_map ~default:T.Location.Unknown ~f:(fun line -> T.Location.known ~line ~col:0)
   in
   loc node
 
@@ -518,7 +524,12 @@ let register_call env fname =
 
 
 let register_function ({shared} as env) name loc annotations =
-  let value = PyCommon.global name in
+  let {module_name} = shared in
+  (* We use '.' here as we are building a strip that should match the
+     qualified_procname with enclosing_class set to module_name, so
+     we need this '.'
+  *)
+  let value = module_name ^ "." ^ name in
   let qualified_name = {value; loc} in
   let info = {is_code= true; is_class= false; typ= PyCommon.pyObject} in
   let symbol_info = {qualified_name; is_builtin= false; info} in
@@ -560,3 +571,5 @@ let register_class ({shared} as env) class_name =
 let get_classes {shared= {classes}} = classes
 
 let is_toplevel {shared= {is_toplevel}} = is_toplevel
+
+let module_name {shared= {module_name}} = module_name

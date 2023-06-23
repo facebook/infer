@@ -82,8 +82,8 @@ val mk_string : string -> Textual.Exp.t
 val mk_bool : bool -> Textual.Exp.t
 (** Helper function to define typed Textual expression for boolean. *)
 
-val global : string -> string
-(** Wrap a variable name into the [global] namespace *)
+val unknown_global : string -> string
+(** Wrap a variable name into a special enclosing class when a global's origin can't be found. *)
 
 (** Encoding of some type annotation like [x: int] *)
 type annotated_name = {name: string; annotation: string}

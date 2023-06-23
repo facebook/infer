@@ -14,6 +14,8 @@ module Env = PyEnv
 module DataStack = PyEnv.DataStack
 module Builtin = PyEnv.Builtin
 
+let prefix_name ~module_name name = module_name ^ "::" ^ name
+
 let var_name ?(loc = T.Location.Unknown) value = {T.VarName.value; loc}
 
 let node_name ?(loc = T.Location.Unknown) value = {T.NodeName.value; loc}
@@ -25,15 +27,20 @@ let field_name ?(loc = T.Location.Unknown) value = {T.FieldName.value; loc}
 let type_name ?(loc = T.Location.Unknown) value = {T.TypeName.value; loc}
 
 (* TODO: only deal with toplevel functions for now *)
-let qualified_procname ?(enclosing_class = T.TopLevel) name : T.qualified_procname =
-  {enclosing_class; name}
-
+let qualified_procname ~enclosing_class name : T.qualified_procname = {enclosing_class; name}
 
 (** Turn a Python [FFI.Code.t] into a Textual [T.Exp.t], along with the required instructions to
     effectively perform the translation. *)
 let code_to_exp ~fun_or_class env name =
+  let module_name = Env.module_name env in
+  let fname =
+    (* TODO: support closures *)
+    Env.lookup_symbol ~global:true env name
+    |> Option.value_map ~default:(prefix_name ~module_name name)
+         ~f:(fun {Env.qualified_name= {value}} -> value)
+  in
   let kind = if fun_or_class then Builtin.PythonCode else Builtin.PythonClass in
-  let name = T.Exp.Const (Str name) in
+  let name = T.Exp.Const (Str fname) in
   let env, id, typ = Env.mk_builtin_call env kind [name] in
   (env, T.Exp.Var id, typ)
 
@@ -81,13 +88,12 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let env, exp, ty = py_to_exp env const in
       let info = info ty in
       (env, Ok exp, info)
-  | Name ndx ->
-      let global = Env.is_toplevel env in
+  | Name {global; ndx} ->
       let name = co_names.(ndx) in
       let ({Env.typ; is_code} as info), qualified_name =
         Env.lookup_symbol ~global env name
         |> Option.value_map
-             ~default:(default, PyCommon.global name)
+             ~default:(default, PyCommon.unknown_global name)
              ~f:(fun {Env.qualified_name= {value}; info} -> (info, value))
       in
       let var_name = var_name ~loc qualified_name in
@@ -120,7 +126,8 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       (env, Ok (T.Exp.Var id), info)
   | Code {fun_or_class; code} ->
       let env, exp, typ = code_to_exp env ~fun_or_class code.FFI.Code.co_name in
-      let info = {Env.typ; is_code= true; is_class= false} in
+      let is_code, is_class = if fun_or_class then (true, false) else (false, true) in
+      let info = {Env.typ; is_code; is_class} in
       (env, Ok exp, info)
   | Map _map ->
       (env, Error "TODO: load Map cells", default)
@@ -201,8 +208,10 @@ module LOAD = struct
           (env, DataStack.Const arg)
       | FAST ->
           (env, DataStack.VarName arg)
-      | NAME | GLOBAL ->
-          (env, DataStack.Name arg)
+      | NAME ->
+          (env, DataStack.Name {global= Env.is_toplevel env; ndx= arg})
+      | GLOBAL ->
+          (env, DataStack.Name {global= true; ndx= arg})
       | ATTR -> (
           let env, cell = pop_datastack opname env in
           let fname = co_names.(arg) in
@@ -335,16 +344,26 @@ module STORE = struct
       | GLOBAL ->
           (co_names.(arg), true, false)
     in
-    let gname = if global then PyCommon.global name else name in
-    Debug.p "[%s] name = %s\n" opname gname ;
     let loc = Env.loc env in
-    let var_name = var_name ~loc gname in
-    let global_name = {Env.value= gname; loc} in
     let env, cell = pop_datastack opname env in
     let env, exp, info = load_cell env code cell in
     match exp with
     | Ok exp ->
         let {Env.typ; is_code; is_class} = info in
+        let gname =
+          let module_name = Env.module_name env in
+          (* We use '.' here as we are building a strip that should match the
+             qualified_procname with enclosing_class set to module_name, so
+             we need this '.'
+          *)
+          if global then
+            if is_code then name
+            else if is_class then module_name ^ "." ^ name
+            else prefix_name ~module_name name
+          else name
+        in
+        let var_name = var_name ~loc gname in
+        let global_name = {Env.value= gname; loc} in
         let env = Env.register_symbol ~global env name global_name info in
         if is_attr then
           let env, cell = pop_datastack opname env in
@@ -412,6 +431,12 @@ module FUNCTION = struct
       let loc = Env.loc env in
       let classes = Env.get_classes env in
       if List.mem ~equal:String.equal classes fname then
+        let fname =
+          (* TODO: support nested classes *)
+          Env.lookup_symbol ~global:true env fname
+          |> Option.value_map ~default:(PyCommon.unknown_global fname)
+               ~f:(fun {Env.qualified_name= {value}} -> value)
+        in
         let name = T.Exp.Const (T.Const.Str fname) in
         (* Calling a class constructor *)
         (* FYI, Python3 constructors first call __new__ to allocate the object, and then call
@@ -425,12 +450,15 @@ module FUNCTION = struct
           match Env.SMap.find_opt fname known_globals with
           | Some {Env.qualified_name= {value; loc}; is_builtin} ->
               if is_builtin then PyCommon.builtin_name value
-              else qualified_procname @@ proc_name ~loc value
+              else
+                let enclosing_class_name = type_name ~loc (Env.module_name env) in
+                let enclosing_class = T.Enclosing enclosing_class_name in
+                qualified_procname ~enclosing_class @@ proc_name ~loc value
           | None ->
               (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
                  further analysis *)
-              let gname = PyCommon.global fname in
-              qualified_procname @@ proc_name ~loc gname
+              let enclosing_class = T.Enclosing T.TypeName.wildcard in
+              qualified_procname ~enclosing_class @@ proc_name ~loc fname
         in
         let env = Env.register_call env fname in
         let call = T.Exp.Call {proc; args; kind= NonVirtual} in
@@ -458,13 +486,13 @@ module FUNCTION = struct
       let env, fname = pop_datastack opname env in
       Debug.p "  fname = %a\n" DataStack.pp_cell fname ;
       match (fname : DataStack.cell) with
-      | Name ndx ->
+      | Name {ndx} ->
           let fname = co_names.(ndx) in
           static_call env fname args
       | Temp id ->
           dynamic_call env id args
-      | Code {qualified_name} ->
-          L.die UserError "[%s] no support for calling raw class/code : %s" opname qualified_name
+      | Code {code_name} ->
+          L.die UserError "[%s] no support for calling raw class/code : %s" opname code_name
       | VarName _ | Const _ | Map _ ->
           L.die UserError "[%s] invalid function on the stack: %s" opname
             (DataStack.show_cell fname)
@@ -494,11 +522,9 @@ module FUNCTION = struct
             match (code, qualified_name) with
             | _, None | None, _ ->
                 L.die UserError "[%s] Invalid class declaration" opname
-            | Some code, Some qualified_name ->
-                let env = Env.register_class env qualified_name in
-                let env =
-                  Env.push env (DataStack.Code {fun_or_class= false; qualified_name; code})
-                in
+            | Some code, Some code_name ->
+                let env = Env.register_class env code_name in
+                let env = Env.push env (DataStack.Code {fun_or_class= false; code_name; code}) in
                 (env, None) )
         | _ ->
             L.die InternalError "[%s] unsupported call to LOAD_BUILD_CLASS with arg = %d" opname arg
@@ -513,7 +539,7 @@ module FUNCTION = struct
             match (acc, c) with
             | None, _ ->
                 None
-            | Some acc, DataStack.Name ndx ->
+            | Some acc, DataStack.Name {ndx} ->
                 let annotation = co_names.(ndx) in
                 Some ({PyCommon.name; annotation} :: acc)
             | Some acc, DataStack.Const ndx -> (
@@ -568,7 +594,7 @@ module FUNCTION = struct
             body
       in
       if FFI.Code.is_closure code then L.die InternalError "%s: can't create closure" opname ;
-      let qualified_name =
+      let code_name =
         match (qual : DataStack.cell) with
         | VarName _ | Name _ | Temp _ | Code _ | Map _ | BuiltinBuildClass ->
             L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell qual)
@@ -582,8 +608,8 @@ module FUNCTION = struct
                   (FFI.Constant.show const) )
       in
       let loc = Env.loc env in
-      let env = Env.register_function env qualified_name loc annotations in
-      let env = Env.push env (DataStack.Code {fun_or_class= true; qualified_name; code}) in
+      let env = Env.register_function env code_name loc annotations in
+      let env = Env.push env (DataStack.Code {fun_or_class= true; code_name; code}) in
       (env, None)
   end
 end
@@ -1160,19 +1186,14 @@ let annotated_type_of_annotation typ =
 
 
 (** Process a single code unit (toplevel code, function body, ...) *)
-let to_proc_desc env loc enclosing_class name
+let to_proc_desc env loc enclosing_class_name opt_name
     ({FFI.Code.co_argcount; co_varnames; instructions} as code) =
-  Debug.p "\n\n[to_proc_desc] %s\n" name ;
-  let name, is_toplevel =
-    match enclosing_class with
-    | T.TopLevel ->
-        let name = PyCommon.global name in
-        let name = proc_name ~loc name in
-        (name, true)
-    | T.Enclosing _ ->
-        let name = proc_name ~loc name in
-        (name, false)
+  let is_toplevel, name =
+    match opt_name with None -> (true, "$toplevel") | Some name -> (false, name)
   in
+  Debug.p "\n\n[to_proc_desc] %s\n" name ;
+  let name = proc_name ~loc name in
+  let enclosing_class = T.Enclosing (type_name ~loc enclosing_class_name) in
   let qualified_name = qualified_procname ~enclosing_class name in
   let pyObject = T.Typ.{typ= PyCommon.pyObject; attributes= []} in
   let nr_varnames = Array.length co_varnames in
@@ -1181,7 +1202,7 @@ let to_proc_desc env loc enclosing_class name
   let params = Array.map ~f:(var_name ~loc) params |> Array.to_list in
   let locals = Array.map ~f:(fun name -> (var_name ~loc name, pyObject)) locals |> Array.to_list in
   (* Create the original environment for this code unit *)
-  let env = Env.enter_proc ~is_toplevel env in
+  let env = Env.enter_proc ~is_toplevel ~module_name:enclosing_class_name env in
   let env, entry_label = Env.mk_fresh_label env in
   let label = node_name ~loc entry_label in
   let label_info = Env.Label.mk entry_label in
@@ -1214,14 +1235,15 @@ let to_proc_desc env loc enclosing_class name
 
 (** Process the special function generated by the Python compiler to create a class instances. This
     is where we can see some of the type annotations for fields, and method definitions. *)
-let rec class_declaration env ({FFI.Code.instructions; co_name} as code) loc =
+let rec class_declaration env ({FFI.Code.instructions; co_filename; co_name} as code) loc =
   (* TODO:
      - use annotations to declare class member types
      - pass in [env] to PyClassDecl when we'll support decorators
   *)
   let member_infos, method_infos = PyClassDecl.parse_class_declaration code instructions in
-  let type_name = type_name ~loc co_name in
-  let enclosing_class = T.Enclosing type_name in
+  let module_name = Env.module_name env in
+  let class_name = prefix_name ~module_name co_name in
+  let type_name = type_name ~loc class_name in
   let env, codes =
     List.fold_left method_infos ~init:(env, [])
       ~f:(fun (env, codes) {PyCommon.code; signature; flags} ->
@@ -1229,7 +1251,7 @@ let rec class_declaration env ({FFI.Code.instructions; co_name} as code) loc =
         let env =
           match FFI.Constant.as_code code with
           | Some code ->
-              Env.register_method env ~enclosing_class:co_name ~method_name:code.FFI.Code.co_name
+              Env.register_method env ~enclosing_class:class_name ~method_name:code.FFI.Code.co_name
                 signature
           | None ->
               env
@@ -1243,7 +1265,9 @@ let rec class_declaration env ({FFI.Code.instructions; co_name} as code) loc =
         let typ = type_of_annotation annotation in
         {T.FieldDecl.qualified_name; typ; attributes= []} )
   in
-  let env, decls = to_proc_descs env enclosing_class (Array.of_list codes) in
+  let module_name = Stdlib.Filename.remove_extension co_filename in
+  let module_name = prefix_name ~module_name co_name in
+  let env, decls = to_proc_descs env module_name (Array.of_list codes) in
   let t = {T.Struct.name= type_name; supers= []; fields; attributes= []} in
   (env, T.Module.Struct t :: decls)
 
@@ -1252,7 +1276,7 @@ let rec class_declaration env ({FFI.Code.instructions; co_name} as code) loc =
 
 (** Process multiple [code] objects. Usually called by the toplevel function or by a class
     definition. *)
-and to_proc_descs env enclosing_class codes =
+and to_proc_descs env enclosing_class_name codes =
   Array.fold codes ~init:(env, []) ~f:(fun (env, decls) const ->
       match FFI.Constant.as_code const with
       | None ->
@@ -1262,17 +1286,18 @@ and to_proc_descs env enclosing_class codes =
           let classes = Env.get_classes env in
           if List.mem ~equal:String.equal classes co_name then class_declaration env code loc
           else
-            let env, decl = to_proc_desc env loc enclosing_class co_name code in
+            let env, decl = to_proc_desc env loc enclosing_class_name (Some co_name) code in
             (env, T.Module.Proc decl :: decls) )
 
 
 let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python
 
 (** Entry point of the module: process a whole Python file / compilation unit into Textual *)
-let to_module ~sourcefile ({FFI.Code.co_consts; co_name; instructions} as code) =
+let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructions} as code) =
   Debug.p "[to_module] %a %s\n" T.SourceFile.pp sourcefile co_name ;
   if not (String.equal co_name "<module>") then
     L.die ExternalError "Toplevel modules must be named '<module>'. Got %s" co_name ;
+  let module_name = Stdlib.Filename.remove_extension co_filename in
   let env = Env.empty in
   (* Process top level module first, to gather all global definitions.
      This will also help us identify what is a class and what is a function,
@@ -1304,13 +1329,13 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; instructions} as code) 
      which quantity, to see if it is worth finding a solution for it.
   *)
   let loc = first_loc_of_code instructions in
-  let env, decl = to_proc_desc env loc T.TopLevel "toplevel" code in
+  let env, decl = to_proc_desc env loc module_name None code in
   (* Translate globals to Textual *)
   let globals =
     Env.SMap.fold
-      (fun _name {Env.qualified_name= {value; loc}; info= {is_code}} acc ->
+      (fun _name {Env.qualified_name= {value; loc}; info= {is_code; is_class}} acc ->
         let varname = var_name ~loc value in
-        if is_code then
+        if is_code || is_class then
           (* don't generate a global variable name, it will be declared as a toplevel decl *)
           acc
         else
@@ -1319,7 +1344,7 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; instructions} as code) 
       (Env.globals env) []
   in
   (* Then, process any code body that is in code.co_consts *)
-  let env, decls = to_proc_descs env T.TopLevel co_consts in
+  let env, decls = to_proc_descs env module_name co_consts in
   let decls = List.rev decls in
   (* Gather everything into a Textual module *)
   let decls =
