@@ -78,7 +78,7 @@ type t =
   ; decompiler: (Decompiler.t[@yojson.opaque] [@equal.ignore] [@compare.ignore])
   ; topl: (PulseTopl.state[@yojson.opaque])
   ; need_closure_specialization: bool
-  ; need_dynamic_type_specialization: (Pvar.Set.t[@yojson.opaque])
+  ; need_dynamic_type_specialization: (AbstractValue.Set.t[@yojson.opaque])
   ; skipped_calls: SkippedCalls.t }
 [@@deriving compare, equal, yojson_of]
 
@@ -103,8 +103,8 @@ let pp f
      skipped_calls=%a@;\
      Topl=%a@]"
     Formula.pp path_condition PostDomain.pp post PreDomain.pp pre pp_decompiler
-    need_closure_specialization Pvar.Set.pp need_dynamic_type_specialization SkippedCalls.pp
-    skipped_calls PulseTopl.pp_state topl
+    need_closure_specialization AbstractValue.Set.pp need_dynamic_type_specialization
+    SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
 
 
 let leq ~lhs ~rhs =
@@ -817,24 +817,59 @@ module Internal = struct
     | Some (Specialization.Pulse.DynamicTypes dtypes) ->
         let pre = (astate.pre :> base_domain) in
         let post = (astate.post :> base_domain) in
-        let pre_heap, post_heap, attrs =
-          Pvar.Map.fold
-            (fun pvar typename (pre_heap, post_heap, attrs) ->
+        let add_edge_in_pre_and_post pre_heap post_heap src_addr access =
+          match BaseMemory.find_edge_opt src_addr access pre_heap with
+          | Some (addr, _) ->
+              (pre_heap, post_heap, CanonValue.canon astate addr)
+          | None ->
+              let addr = CanonValue.mk_fresh () in
+              let pre_heap =
+                BaseMemory.add_edge src_addr access (downcast addr, ValueHistory.epoch) pre_heap
+                |> BaseMemory.register_address addr
+              in
+              let post_heap =
+                BaseMemory.add_edge src_addr access (downcast addr, ValueHistory.epoch) post_heap
+              in
+              (pre_heap, post_heap, addr)
+        in
+        let rec initialize_heap_path heap_path (pre_heap, post_heap) =
+          match (heap_path : Specialization.HeapPath.t) with
+          | Pvar pvar ->
               SafeStack.map_var_address_pre proc_name astate pvar
-                ~default:(pre_heap, post_heap, attrs) ~f:(fun (src_addr, addr_hist) ->
-                  let addr = CanonValue.mk_fresh () in
-                  let pre_heap =
-                    BaseMemory.add_edge src_addr Dereference
-                      (downcast addr, ValueHistory.epoch)
-                      pre_heap
-                    |> BaseMemory.register_address addr
+                ~default:(pre_heap, post_heap, None) ~f:(fun (addr, _) ->
+                  (pre_heap, post_heap, Some addr) )
+          | FieldAccess (fieldname, heap_path) ->
+              let pre_heap, post_heap, opt_addr =
+                initialize_heap_path heap_path (pre_heap, post_heap)
+              in
+              Option.value_map opt_addr ~default:(pre_heap, post_heap, None) ~f:(fun src_addr ->
+                  let access = HilExp.Access.FieldAccess fieldname in
+                  let pre_heap, post_heap, addr =
+                    add_edge_in_pre_and_post pre_heap post_heap src_addr access
                   in
-                  let post_heap =
-                    BaseMemory.add_edge src_addr Dereference (downcast addr, addr_hist) post_heap
+                  (pre_heap, post_heap, Some addr) )
+          | Dereference heap_path ->
+              let pre_heap, post_heap, opt_addr =
+                initialize_heap_path heap_path (pre_heap, post_heap)
+              in
+              Option.value_map opt_addr ~default:(pre_heap, post_heap, None) ~f:(fun src_addr ->
+                  let pre_heap, post_heap, addr =
+                    add_edge_in_pre_and_post pre_heap post_heap src_addr Dereference
                   in
-                  let typ = Typ.mk_struct typename in
-                  let attrs = BaseAddressAttributes.add_dynamic_type typ addr attrs in
-                  (pre_heap, post_heap, attrs) ) )
+                  (pre_heap, post_heap, Some addr) )
+        in
+        let pre_heap, post_heap, attrs =
+          Specialization.HeapPath.Map.fold
+            (fun heap_path typename (pre_heap, post_heap, attrs) ->
+              let pre_heap, post_heap, opt_addr =
+                initialize_heap_path heap_path (pre_heap, post_heap)
+              in
+              let attrs =
+                Option.value_map opt_addr ~default:attrs ~f:(fun addr ->
+                    let typ = Typ.mk_struct typename in
+                    BaseAddressAttributes.add_dynamic_type typ addr attrs )
+              in
+              (pre_heap, post_heap, attrs) )
             dtypes (pre.heap, post.heap, post.attrs)
         in
         { astate with
@@ -1511,7 +1546,7 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
     ; path_condition= Formula.ttrue
     ; decompiler= Decompiler.empty
     ; need_closure_specialization= false
-    ; need_dynamic_type_specialization= Pvar.Set.empty
+    ; need_dynamic_type_specialization= AbstractValue.Set.empty
     ; topl= PulseTopl.start ()
     ; skipped_calls= SkippedCalls.empty }
   in
@@ -1585,19 +1620,11 @@ let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =
   {astate with post= PostDomain.update ~attrs ~heap astate.post}
 
 
-let add_need_dynamic_type_specialization proc_desc receiver_addr astate =
-  let receiver_addr = lazy (CanonValue.canon' astate receiver_addr) in
-  Procdesc.get_pvar_formals proc_desc
-  |> List.find_map ~f:(fun (pvar, _) ->
-         let open IOption.Let_syntax in
-         let var = Var.of_pvar pvar in
-         let* addr, _ = SafeStack.find_opt var astate in
-         let* deref_addr, _ = SafeMemory.find_edge_opt addr Dereference astate in
-         if CanonValue.equal deref_addr (Lazy.force receiver_addr) then Some pvar else None )
-  |> Option.value_map ~default:astate ~f:(fun pvar ->
-         { astate with
-           need_dynamic_type_specialization=
-             Pvar.Set.add pvar astate.need_dynamic_type_specialization } )
+let add_need_dynamic_type_specialization receiver_addr astate =
+  let need_dynamic_type_specialization =
+    AbstractValue.Set.add receiver_addr astate.need_dynamic_type_specialization
+  in
+  {astate with need_dynamic_type_specialization}
 
 
 let remove_from_post addr astate =
@@ -1639,10 +1666,6 @@ module Summary = struct
   let get_topl {topl} = topl
 
   let need_closure_specialization {need_closure_specialization} = need_closure_specialization
-
-  let need_dynamic_type_specialization {need_dynamic_type_specialization} =
-    need_dynamic_type_specialization
-
 
   let get_skipped_calls {skipped_calls} = skipped_calls
 
@@ -1747,8 +1770,40 @@ module Summary = struct
 
   let with_need_closure_specialization summary = {summary with need_closure_specialization= true}
 
-  let add_need_dynamic_type_specialization proc_desc receiver_addr summary =
-    add_need_dynamic_type_specialization proc_desc receiver_addr summary
+  let add_need_dynamic_type_specialization = add_need_dynamic_type_specialization
+
+  let heap_paths_that_need_dynamic_type_specialization summary =
+    let pre = (summary.pre :> BaseDomain.t) in
+    let addresses = summary.need_dynamic_type_specialization in
+    let rec mk_heap_path var rev_accesses =
+      let open IOption.Let_syntax in
+      match (rev_accesses : PulseBaseMemory.Access.t list) with
+      | [] ->
+          let+ pvar = Var.get_pvar var in
+          Specialization.HeapPath.Pvar pvar
+      | FieldAccess fieldname :: rev_accesses ->
+          let+ heap_path = mk_heap_path var rev_accesses in
+          Specialization.HeapPath.FieldAccess (fieldname, heap_path)
+      | Dereference :: rev_accesses ->
+          let+ heap_path = mk_heap_path var rev_accesses in
+          Specialization.HeapPath.Dereference heap_path
+      | (TakeAddress | ArrayAccess _) :: _ ->
+          None
+    in
+    BaseDomain.GraphVisit.fold pre
+      ~var_filter:(fun _ -> true)
+      ~init:(Specialization.HeapPath.Map.empty, AbstractValue.Set.empty)
+      ~finish:(fun heap_paths -> heap_paths)
+      ~f:(fun var (heap_paths, already_found) addr rev_accesses ->
+        Continue
+          ( if AbstractValue.Set.mem addr addresses && not (AbstractValue.Set.mem addr already_found)
+            then
+              mk_heap_path var rev_accesses
+              |> Option.value_map ~default:(heap_paths, already_found) ~f:(fun heap_path ->
+                     ( Specialization.HeapPath.Map.add heap_path addr heap_paths
+                     , AbstractValue.Set.add addr already_found ) )
+            else (heap_paths, already_found) ) )
+    |> snd |> fst
 end
 
 module Topl = struct

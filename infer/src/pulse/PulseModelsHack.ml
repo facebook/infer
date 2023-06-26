@@ -122,15 +122,14 @@ let lazy_class_initialize size_exp : model =
 
 
 let get_static_class (addr, _) : model =
- fun {analysis_data; path; location; ret= ret_id, _} astate ->
+ fun {path; location; ret= ret_id, _} astate ->
   match AbductiveDomain.AddressAttributes.get_dynamic_type addr astate with
   | Some {desc= Tstruct type_name} ->
       let addr, astate = get_static_companion type_name astate in
       let hist = Hist.single_call path location "get_static_class" in
       PulseOperations.write_id ret_id (addr, hist) astate |> Basic.ok_continue
   | _ ->
-      AbductiveDomain.add_need_dynamic_type_specialization analysis_data.proc_desc addr astate
-      |> Basic.ok_continue
+      AbductiveDomain.add_need_dynamic_type_specialization addr astate |> Basic.ok_continue
 
 
 (* We model dict/shape keys as fields. This is a bit unorthodox in Pulse, but we need

@@ -59,7 +59,7 @@ type contradiction =
           addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to a
           single address [caller_addr] in the caller's current state. Typically raised when calling
           [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
-  | DynamicTypeNeeded of Pvar.Set.t
+  | DynamicTypeNeeded of AbstractValue.t Specialization.HeapPath.Map.t
   | CapturedFormalActualLength of
       { captured_formals: (Var.t * Typ.t) list
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
@@ -73,8 +73,10 @@ let pp_contradiction fmt = function
         "address %a in caller already bound to %a, not %a@\nnote: current call state was %a"
         AbstractValue.pp addr_caller AbstractValue.pp addr_callee' AbstractValue.pp addr_callee
         pp_call_state call_state
-  | DynamicTypeNeeded pvars ->
-      F.fprintf fmt "formals %a need to give their dynamic types" Pvar.Set.pp pvars
+  | DynamicTypeNeeded heap_paths ->
+      F.fprintf fmt "Heap paths %a need to give their dynamic types"
+        (Specialization.HeapPath.Map.pp ~pp_value:AbstractValue.pp)
+        heap_paths
   | CapturedFormalActualLength {captured_formals; captured_actuals} ->
       F.fprintf fmt "captured formals have length %d but captured actuals have length %d"
         (List.length captured_formals) (List.length captured_actuals)
@@ -106,8 +108,8 @@ let is_aliasing_contradiction = function
 
 
 let is_dynamic_type_needed_contradiction = function
-  | DynamicTypeNeeded pvars ->
-      Some pvars
+  | DynamicTypeNeeded heap_paths ->
+      Some heap_paths
   | Aliasing _ | CapturedFormalActualLength _ | FormalActualLength _ | PathCondition ->
       None
 
@@ -1029,6 +1031,12 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
         (Unsat, Some reason)
     | result -> (
       try
+        let subst =
+          (let open IOption.Let_syntax in
+           let+ call_state = PulseResult.ok result in
+           call_state.subst )
+          |> Option.value ~default:AbstractValue.Map.empty
+        in
         let res =
           let open PulseResult.Let_syntax in
           let* call_state = result in
@@ -1069,8 +1077,31 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
           (astate, return_caller, call_state.subst)
         in
         let contradiciton =
-          let pvars = AbductiveDomain.Summary.need_dynamic_type_specialization callee_summary in
-          if Pvar.Set.is_empty pvars then None else Some (DynamicTypeNeeded pvars)
+          let callee_heap_paths =
+            AbductiveDomain.Summary.heap_paths_that_need_dynamic_type_specialization callee_summary
+          in
+          if Specialization.HeapPath.Map.is_empty callee_heap_paths then None
+          else
+            let caller_heap_paths =
+              Specialization.HeapPath.Map.fold
+                (fun heap_path addr map ->
+                  match AbstractValue.Map.find_opt addr subst with
+                  | Some (addr_in_caller, _) ->
+                      L.d_printfln
+                        "dynamic type is required for address %a reachable from heap path %a in \
+                         callee (%a in caller)"
+                        AbstractValue.pp addr Specialization.HeapPath.pp heap_path AbstractValue.pp
+                        addr_in_caller ;
+                      Specialization.HeapPath.Map.add heap_path addr_in_caller map
+                  | None ->
+                      L.d_printfln
+                        "dynamic type is required for address %a reachable from heap path %a in \
+                         callee (not found in caller)"
+                        AbstractValue.pp addr Specialization.HeapPath.pp heap_path ;
+                      map )
+                callee_heap_paths Specialization.HeapPath.Map.empty
+            in
+            Some (DynamicTypeNeeded caller_heap_paths)
         in
         (Sat res, contradiciton)
       with Contradiction reason ->

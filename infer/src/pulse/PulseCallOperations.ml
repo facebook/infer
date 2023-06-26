@@ -467,41 +467,25 @@ let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~act
   else ([Ok (ContinueProgram astate_unknown)], None)
 
 
-let mk_actuals_map actuals formals =
-  match
-    List.fold2 actuals formals ~init:Pvar.Map.empty ~f:(fun map actual (formal, _) ->
-        Pvar.Map.add formal actual map )
-  with
-  | Unequal_lengths ->
-      None
-  | Ok map ->
-      Some map
-
-
-let maybe_dynamic_type_specialization_is_needed formals_opt actuals specialization contradiction
-    astate =
+let maybe_dynamic_type_specialization_is_needed specialization contradiction astate =
   let already_specialized =
     match specialization with
-    | Some (Specialization.Pulse.DynamicTypes dyntypes_map) ->
-        dyntypes_map
+    | Some (Specialization.Pulse.DynamicTypes heap_paths) ->
+        heap_paths
     | _ ->
-        Pvar.Map.empty
+        Specialization.HeapPath.Map.empty
   in
   let make_dynamic_type_specialization =
     (* we try to find a dynamic type name for each pvar in the [pvars] set in order to devirtualize all
-       calls in the callee (and its own callees). If we do not find a dynanmic type, we record the
+       calls in the callee (and its own callees). If we do not find a dynamic type, we record the
        address in a set [need_specialization_from_caller] in order to propagate the need to the caller
        state *)
     let open IOption.Let_syntax in
     if Option.is_none contradiction then L.d_printfln "no dynamic type specialization needed" ;
     let* contradiction in
-    let* pvars = PulseInterproc.is_dynamic_type_needed_contradiction contradiction in
-    let* formals = formals_opt in
-    let+ actuals_map = mk_actuals_map actuals formals in
-    Pvar.Set.fold
-      (fun pvar (dyntypes_map, need_specialization_from_caller) ->
-        let (addr, _), _ = Pvar.Map.find pvar actuals_map in
-        (* will succeed thanks to [mk_actuals_map] *)
+    let+ needed_heap_paths = PulseInterproc.is_dynamic_type_needed_contradiction contradiction in
+    Specialization.HeapPath.Map.fold
+      (fun heap_path addr (dyntypes_map, need_specialization_from_caller) ->
         let ( let** ) opt f =
           Option.value_map opt ~f
             ~default:(dyntypes_map, AbstractValue.Set.add addr need_specialization_from_caller)
@@ -509,29 +493,27 @@ let maybe_dynamic_type_specialization_is_needed formals_opt actuals specializati
         let** dynamic_type = AbductiveDomain.AddressAttributes.get_dynamic_type addr astate in
         let** dynamic_type_name = Typ.name dynamic_type in
         let dyntypes_map =
-          if Pvar.Map.mem pvar already_specialized then dyntypes_map
-          else Pvar.Map.add pvar dynamic_type_name dyntypes_map
+          if Specialization.HeapPath.Map.mem heap_path already_specialized then dyntypes_map
+          else Specialization.HeapPath.Map.add heap_path dynamic_type_name dyntypes_map
         in
         (dyntypes_map, need_specialization_from_caller) )
-      pvars
-      (Pvar.Map.empty, AbstractValue.Set.empty)
+      needed_heap_paths
+      (Specialization.HeapPath.Map.empty, AbstractValue.Set.empty)
   in
   match make_dynamic_type_specialization with
   | Some (_, need_specialization_from_caller)
     when not (AbstractValue.Set.is_empty need_specialization_from_caller) ->
       L.d_printfln "[specialization] not enough dyntypes information in the caller context" ;
-      let add_need_dynamic_type_specialization caller_proc_desc execution_state =
+      let add_need_dynamic_type_specialization execution_state =
         let update_astate astate =
           AbstractValue.Set.fold
-            (fun addr astate ->
-              AbductiveDomain.add_need_dynamic_type_specialization caller_proc_desc addr astate )
+            (fun addr astate -> AbductiveDomain.add_need_dynamic_type_specialization addr astate)
             need_specialization_from_caller astate
         in
         let update_summary summary =
           AbstractValue.Set.fold
             (fun addr summary ->
-              AbductiveDomain.Summary.add_need_dynamic_type_specialization caller_proc_desc addr
-                summary )
+              AbductiveDomain.Summary.add_need_dynamic_type_specialization addr summary )
             need_specialization_from_caller summary
         in
         match (execution_state : ExecutionDomain.t) with
@@ -551,10 +533,11 @@ let maybe_dynamic_type_specialization_is_needed formals_opt actuals specializati
             LatentInvalidAccess {latent_invalid_access with astate}
       in
       `NeedCallerSpecialization add_need_dynamic_type_specialization
-  | Some (dyntypes_map, _) when not (Pvar.Map.is_empty dyntypes_map) ->
+  | Some (dyntypes_map, _) when not (Specialization.HeapPath.Map.is_empty dyntypes_map) ->
       let dyntypes_map =
-        Pvar.Map.fold
-          (fun pvar type_name dyntypes_map -> Pvar.Map.add pvar type_name dyntypes_map)
+        Specialization.HeapPath.Map.fold
+          (fun heap_path type_name dyntypes_map ->
+            Specialization.HeapPath.Map.add heap_path type_name dyntypes_map )
           already_specialized dyntypes_map
       in
       let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
@@ -598,8 +581,8 @@ let call tenv path ~caller_proc_desc
         exec_states astate
     in
     (* When a function call does not have a post of type ContinueProgram, we may want to treat
-           the call as unknown to make the analysis continue. This may introduce false positives but
-           could uncover additional true positives too. *)
+       the call as unknown to make the analysis continue. This may introduce false positives but
+       could uncover additional true positives too. *)
     let should_try_as_unknown =
       Config.pulse_force_continue && Option.is_none contradiction
       && not (has_continue_program results)
@@ -648,10 +631,7 @@ let call tenv path ~caller_proc_desc
       else (res, contradiction, `UnknownCall)
     else
       L.d_with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
-          match
-            maybe_dynamic_type_specialization_is_needed formals_opt actuals specialization
-              contradiction astate
-          with
+          match maybe_dynamic_type_specialization_is_needed specialization contradiction astate with
           | `RequestSpecializedAnalysis dyntypes_map ->
               let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
               L.d_printfln "requesting specialized analysis %a" Specialization.Pulse.pp
@@ -667,7 +647,7 @@ let call tenv path ~caller_proc_desc
                 (res, contradiction, `KnownCall)
           | `NeedCallerSpecialization add_need_dynamic_type_specialization ->
               L.d_printfln "need caller specialization" ;
-              let f exec_state = add_need_dynamic_type_specialization caller_proc_desc exec_state in
+              let f exec_state = add_need_dynamic_type_specialization exec_state in
               (* remark: we could also run an analysis of the callee with the partial information we have,
                  but here we chose to keep the default summary and wait for a full specialization.
                  Advantage: we only store specialized summary that are *sound* while the main summary

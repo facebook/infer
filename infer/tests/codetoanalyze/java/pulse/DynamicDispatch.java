@@ -286,7 +286,7 @@ class Specialization {
     return box.f1.f2.f3.buildC();
   }
 
-  C FN_buildCOnBoxAndDerefBad() {
+  C buildCOnBoxAndDerefBad() {
     return callBuildCOnBoxGood(new Box1(new Box2(new Box3(new A_Bad())))).f;
   }
 

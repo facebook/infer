@@ -8,6 +8,28 @@
 open! IStd
 module F = Format
 
+module HeapPath = struct
+  (** this is the subset of HilExp.access_expression that make sense in a precondition TODO: deal
+      with ArrayAccess *)
+  type t = Pvar of Pvar.t | FieldAccess of (Fieldname.t * t) | Dereference of t
+  [@@deriving equal, compare]
+
+  let rec pp fmt = function
+    | Pvar pvar ->
+        Pvar.pp Pp.text fmt pvar
+    | FieldAccess (fieldname, path) ->
+        F.fprintf fmt "%a -> %a " pp path Fieldname.pp fieldname
+    | Dereference path ->
+        F.fprintf fmt "%a -> * " pp path
+
+
+  module Map = PrettyPrintable.MakePPMap (struct
+    type nonrec t = t [@@deriving compare]
+
+    let pp = pp
+  end)
+end
+
 module Pulse = struct
   module Aliases = struct
     type t = Pvar.t list list [@@deriving equal, compare]
@@ -18,13 +40,9 @@ module Pulse = struct
   end
 
   module DynamicTypes = struct
-    type t = Typ.name Pvar.Map.t [@@deriving equal, compare]
+    type t = Typ.name HeapPath.Map.t [@@deriving equal, compare]
 
-    let pp fmt dtypes =
-      let pp_binding fmt (pvar, typename) =
-        F.fprintf fmt "%a: %a" (Pvar.pp Pp.text) pvar Typ.Name.pp typename
-      in
-      Pvar.Map.bindings dtypes |> F.fprintf fmt "{%a}" (Pp.seq ~sep:"," pp_binding)
+    let pp fmt dtypes = HeapPath.Map.pp ~pp_value:Typ.Name.pp fmt dtypes
   end
 
   type t = Aliases of Aliases.t | DynamicTypes of DynamicTypes.t [@@deriving equal, compare]

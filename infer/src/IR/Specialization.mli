@@ -8,6 +8,16 @@
 open! IStd
 module F = Format
 
+module HeapPath : sig
+  (* Heap symbolic paths in a precondition context *)
+  type t = Pvar of Pvar.t | FieldAccess of (Fieldname.t * t) | Dereference of t
+  [@@deriving equal, compare]
+
+  val pp : F.formatter -> t -> unit
+
+  module Map : PrettyPrintable.PPMap with type key = t
+end
+
 module Pulse : sig
   module Aliases : sig
     (** set of alias sets (Note: list is enough because it is normalised during construction) *)
@@ -15,9 +25,9 @@ module Pulse : sig
   end
 
   module DynamicTypes : sig
-    (** binding from params to their inferred dynamic type (will be used for devirtualization in the
-        callee) *)
-    type t = Typ.name Pvar.Map.t [@@deriving equal, compare]
+    (** binding from heap paths to their inferred dynamic type (will be used for devirtualization in
+        the callee) *)
+    type t = Typ.name HeapPath.Map.t [@@deriving equal, compare]
   end
 
   type t = Aliases of Aliases.t | DynamicTypes of DynamicTypes.t [@@deriving equal, compare]

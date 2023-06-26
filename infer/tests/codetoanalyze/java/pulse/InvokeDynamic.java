@@ -137,7 +137,7 @@ public class InvokeDynamic {
   }
 
   // closure in a field
-  int FN_testBoxMapFunMixBad() {
+  int testBoxMapFunMixBad() {
     A a0 = null;
     Box b = new Box(null);
     Function<A, A> f = (a) -> mix(a0, a);
@@ -156,7 +156,7 @@ public class InvokeDynamic {
     return b.map(g);
   }
 
-  int FN_testBoxMapUseAuxiliaryBad() {
+  int testBoxMapUseAuxiliaryBad() {
     A a0 = null;
     Box b = new Box(null);
     BiFunction<A, A, A> f = (a1, a2) -> mix(a1, a2);

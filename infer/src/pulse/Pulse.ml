@@ -424,8 +424,8 @@ module PulseTransferFunctions = struct
            resolve_method tenv static_class_name callee_pname )
 
 
-  let need_dynamic_type_specialization proc_desc astate receiver_addr =
-    AbductiveDomain.add_need_dynamic_type_specialization proc_desc receiver_addr astate
+  let need_dynamic_type_specialization astate receiver_addr =
+    AbductiveDomain.add_need_dynamic_type_specialization receiver_addr astate
 
 
   let improve_receiver_static_type astate receiver proc_name_opt =
@@ -465,7 +465,7 @@ module PulseTransferFunctions = struct
           | Some (proc_name, `ExactDevirtualization) ->
               (Some proc_name, astate)
           | Some (proc_name, `ApproxDevirtualization) ->
-              (Some proc_name, need_dynamic_type_specialization proc_desc astate receiver)
+              (Some proc_name, need_dynamic_type_specialization astate receiver)
           | None ->
               (None, astate) )
       else if Language.curr_language_is Hack then
