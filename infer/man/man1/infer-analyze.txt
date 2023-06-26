@@ -795,6 +795,10 @@ PULSE CHECKER OPTIONS
        --pulse-skip-procedures regex
            Regex of procedures that should not be analyzed by Pulse.
 
+       --pulse-specialization-iteration-limit int
+           Maximum number of iterative summary specialization at each call
+           site.
+
        --pulse-specialization-limit int
            Maximum number of summary specialization by procedure.
 

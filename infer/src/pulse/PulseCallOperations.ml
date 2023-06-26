@@ -478,13 +478,22 @@ let mk_actuals_map actuals formals =
       Some map
 
 
-let maybe_dynamic_type_specialization_is_needed formals_opt actuals contradiction astate =
+let maybe_dynamic_type_specialization_is_needed formals_opt actuals specialization contradiction
+    astate =
+  let already_specialized =
+    match specialization with
+    | Some (Specialization.Pulse.DynamicTypes dyntypes_map) ->
+        dyntypes_map
+    | _ ->
+        Pvar.Map.empty
+  in
   let make_dynamic_type_specialization =
     (* we try to find a dynamic type name for each pvar in the [pvars] set in order to devirtualize all
        calls in the callee (and its own callees). If we do not find a dynanmic type, we record the
        address in a set [need_specialization_from_caller] in order to propagate the need to the caller
        state *)
     let open IOption.Let_syntax in
+    if Option.is_none contradiction then L.d_printfln "no dynamic type specialization needed" ;
     let* contradiction in
     let* pvars = PulseInterproc.is_dynamic_type_needed_contradiction contradiction in
     let* formals = formals_opt in
@@ -499,17 +508,17 @@ let maybe_dynamic_type_specialization_is_needed formals_opt actuals contradictio
         in
         let** dynamic_type = AbductiveDomain.AddressAttributes.get_dynamic_type addr astate in
         let** dynamic_type_name = Typ.name dynamic_type in
-        (Pvar.Map.add pvar dynamic_type_name dyntypes_map, need_specialization_from_caller) )
+        let dyntypes_map =
+          if Pvar.Map.mem pvar already_specialized then dyntypes_map
+          else Pvar.Map.add pvar dynamic_type_name dyntypes_map
+        in
+        (dyntypes_map, need_specialization_from_caller) )
       pvars
       (Pvar.Map.empty, AbstractValue.Set.empty)
   in
   match make_dynamic_type_specialization with
-  | Some (dyntypes_map, need_specialization_from_caller)
-    when AbstractValue.Set.is_empty need_specialization_from_caller ->
-      let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
-      L.d_printfln "requesting dyntypes specialization %a" Specialization.Pulse.pp specialization ;
-      `RequestSpecializedAnalysis dyntypes_map
-  | Some (_, need_specialization_from_caller) ->
+  | Some (_, need_specialization_from_caller)
+    when not (AbstractValue.Set.is_empty need_specialization_from_caller) ->
       L.d_printfln "[specialization] not enough dyntypes information in the caller context" ;
       let add_need_dynamic_type_specialization caller_proc_desc execution_state =
         let update_astate astate =
@@ -542,8 +551,17 @@ let maybe_dynamic_type_specialization_is_needed formals_opt actuals contradictio
             LatentInvalidAccess {latent_invalid_access with astate}
       in
       `NeedCallerSpecialization add_need_dynamic_type_specialization
-  | None ->
-      `AbortAndUseMainSummary
+  | Some (dyntypes_map, _) when not (Pvar.Map.is_empty dyntypes_map) ->
+      let dyntypes_map =
+        Pvar.Map.fold
+          (fun pvar type_name dyntypes_map -> Pvar.Map.add pvar type_name dyntypes_map)
+          already_specialized dyntypes_map
+      in
+      let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
+      L.d_printfln "requesting dyntypes specialization %a" Specialization.Pulse.pp specialization ;
+      `RequestSpecializedAnalysis dyntypes_map
+  | _ ->
+      `UseCurrentSummary
 
 
 let call tenv path ~caller_proc_desc
@@ -573,87 +591,100 @@ let call tenv path ~caller_proc_desc
       [] )
     else results
   in
-  match (analyze_dependency callee_pname : PulseSummary.t option) with
-  | Some summary ->
-      let call_aux exec_states =
-        let results, contradiction =
-          call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-            (IRAttributes.load_exn callee_pname)
-            exec_states astate
-        in
-        (* When a function call does not have a post of type ContinueProgram, we may want to treat
+  let call_aux exec_states =
+    let results, contradiction =
+      call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
+        (IRAttributes.load_exn callee_pname)
+        exec_states astate
+    in
+    (* When a function call does not have a post of type ContinueProgram, we may want to treat
            the call as unknown to make the analysis continue. This may introduce false positives but
            could uncover additional true positives too. *)
-        let should_try_as_unknown =
-          Config.pulse_force_continue && Option.is_none contradiction
-          && not (has_continue_program results)
-        in
-        if should_try_as_unknown then (
-          L.d_printfln_escaped ~color:Orange
-            "No disjuncts of type ContinueProgram, treating the call to %a as unknown" Procname.pp
-            callee_pname ;
-          let unknown_results = call_as_unknown () in
-          (unknown_results @ results, None) )
-        else (results, contradiction)
+    let should_try_as_unknown =
+      Config.pulse_force_continue && Option.is_none contradiction
+      && not (has_continue_program results)
+    in
+    if should_try_as_unknown then (
+      L.d_printfln_escaped ~color:Orange
+        "No disjuncts of type ContinueProgram, treating the call to %a as unknown" Procname.pp
+        callee_pname ;
+      let unknown_results = call_as_unknown () in
+      (unknown_results @ results, None) )
+    else (results, contradiction)
+  in
+  let rec iter_call ~max_iteration ~nth_iteration ~is_pulse_specialization_limit_not_reached
+      ?specialization pre_post_list =
+    let res, contradiction = call_aux pre_post_list in
+    let needs_aliasing_specialization res contradiction =
+      List.is_empty res && Option.exists contradiction ~f:PulseInterproc.is_aliasing_contradiction
+    in
+    let request_specialization specialization =
+      let specialized_summary : PulseSummary.t =
+        analyze_dependency ~specialization:(Pulse specialization) callee_pname |> Option.value_exn
       in
-      let res, contradiction = call_aux summary.main in
-      let needs_aliasing_specialization res contradiction =
-        List.is_empty res && Option.exists contradiction ~f:PulseInterproc.is_aliasing_contradiction
-      in
-      let request_specialization specialization =
-        let specialized_summary : PulseSummary.t =
-          analyze_dependency ~specialization:(Pulse specialization) callee_pname |> Option.value_exn
-        in
-        match Specialization.Pulse.Map.find_opt specialization specialized_summary.specialized with
+      match Specialization.Pulse.Map.find_opt specialization specialized_summary.specialized with
+      | None ->
+          L.internal_error "ondemand engine did not return the expected specialized summary" ;
+          (* we use the non-specialized summary instead *)
+          specialized_summary.main
+      | Some pre_posts ->
+          pre_posts
+    in
+    if needs_aliasing_specialization res contradiction then
+      if is_pulse_specialization_limit_not_reached then (
+        match
+          PulseAliasSpecialization.make_specialization callee_pname actuals call_kind path call_loc
+            astate
+        with
         | None ->
-            L.internal_error "ondemand engine did not return the expected specialized summary" ;
-            (* we use the non-specialized summary instead *)
-            specialized_summary.main
-        | Some pre_posts ->
-            pre_posts
-      in
-      if needs_aliasing_specialization res contradiction then
-        if Specialization.Pulse.is_pulse_specialization_limit_not_reached summary.specialized then (
+            L.internal_error "Alias specialization of %a failed@;" Procname.pp callee_pname ;
+            (res, contradiction, `UnknownCall)
+        | Some alias_specialization ->
+            let specialization = Specialization.Pulse.Aliases alias_specialization in
+            L.d_printfln "requesting alias specialization %a" Specialization.Pulse.pp specialization ;
+            let pre_posts = request_specialization specialization in
+            let res, contradiction = call_aux pre_posts in
+            (res, contradiction, `KnownCall) )
+      else (res, contradiction, `UnknownCall)
+    else
+      L.d_with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
           match
-            PulseAliasSpecialization.make_specialization callee_pname actuals call_kind path
-              call_loc astate
+            maybe_dynamic_type_specialization_is_needed formals_opt actuals specialization
+              contradiction astate
           with
-          | None ->
-              L.internal_error "Alias specialization of %a failed@;" Procname.pp callee_pname ;
-              (res, contradiction, `UnknownCall)
-          | Some alias_specialization ->
-              let specialization = Specialization.Pulse.Aliases alias_specialization in
-              L.d_printfln "requesting alias specialization %a" Specialization.Pulse.pp
+          | `RequestSpecializedAnalysis dyntypes_map ->
+              let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
+              L.d_printfln "requesting specialized analysis %a" Specialization.Pulse.pp
                 specialization ;
-              let pre_posts = request_specialization specialization in
-              let res, contradiction = call_aux pre_posts in
-              (res, contradiction, `KnownCall) )
-        else (res, contradiction, `UnknownCall)
-      else
-        L.d_with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
-            match
-              maybe_dynamic_type_specialization_is_needed formals_opt actuals contradiction astate
-            with
-            | `RequestSpecializedAnalysis dyntypes_map ->
-                let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
-                L.d_printfln "requesting specialized analysis %a" Specialization.Pulse.pp
-                  specialization ;
-                let res, contradiction = request_specialization specialization |> call_aux in
-                (* TODO: maybe this specialized summary still require specialization *)
+              let specialized_pre_post_lists = request_specialization specialization in
+              if nth_iteration < max_iteration then
+                iter_call ~max_iteration ~nth_iteration:(nth_iteration + 1)
+                  ~is_pulse_specialization_limit_not_reached ~specialization
+                  specialized_pre_post_lists
+              else
+                let res, contradiction = call_aux specialized_pre_post_lists in
+                L.d_printfln "need more specialization but limit %d is reached" max_iteration ;
                 (res, contradiction, `KnownCall)
-            | `NeedCallerSpecialization add_need_dynamic_type_specialization ->
-                L.d_printfln "need caller specialization" ;
-                let f exec_state =
-                  add_need_dynamic_type_specialization caller_proc_desc exec_state
-                in
-                (* remark: we could also run an analysis of the callee with the partial information we have,
-                   but here we chose to keep the default summary and wait for a full specialization.
-                   Advantage: we only store specialized summary that are *sound* while the main summary
-                   is a best effort computation that can be *unsound* *)
-                (List.map res ~f:(PulseResult.map ~f), contradiction, `KnownCall)
-            | `AbortAndUseMainSummary ->
-                L.d_printfln "abort, using main summary" ;
-                (res, contradiction, `KnownCall) )
+          | `NeedCallerSpecialization add_need_dynamic_type_specialization ->
+              L.d_printfln "need caller specialization" ;
+              let f exec_state = add_need_dynamic_type_specialization caller_proc_desc exec_state in
+              (* remark: we could also run an analysis of the callee with the partial information we have,
+                 but here we chose to keep the default summary and wait for a full specialization.
+                 Advantage: we only store specialized summary that are *sound* while the main summary
+                 is a best effort computation that can be *unsound* *)
+              (List.map res ~f:(PulseResult.map ~f), contradiction, `KnownCall)
+          | `UseCurrentSummary ->
+              L.d_printfln "abort, using current summary" ;
+              (res, contradiction, `KnownCall) )
+  in
+  match (analyze_dependency callee_pname : PulseSummary.t option) with
+  | Some summary ->
+      let is_pulse_specialization_limit_not_reached =
+        Specialization.Pulse.is_pulse_specialization_limit_not_reached summary.specialized
+      in
+      let max_iteration = Config.pulse_specialization_iteration_limit in
+      iter_call ~max_iteration ~nth_iteration:0 ~is_pulse_specialization_limit_not_reached
+        summary.main
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln_escaped "No spec found for %a@\n" Procname.pp callee_pname ;

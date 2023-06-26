@@ -299,7 +299,7 @@ class Specialization {
     return a1.callBuildC(a2);
   }
 
-  C FN_buildCTransitivelyAndDerefBad() {
+  C buildCTransitivelyAndDerefBad() {
     return callCallBuildC(new A_Good(), new A_Bad()).f;
   }
 
