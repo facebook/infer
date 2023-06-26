@@ -23,12 +23,12 @@ public class Lambdas {
     return function.apply(42);
   }
 
-  String FN_createAndInvokeFunctionBad() {
+  String createAndInvokeFunctionBad() {
     Function<Integer, String> function = createFunctionWithTaintedParam();
     return invokeFunction(function);
   }
 
-  String FN_createAndInvokeFunctionBad2() {
+  String createAndInvokeFunctionBad2() {
     Function<Integer, String> function = createFunctionWithTaintedParam();
     return function.apply(42);
   }

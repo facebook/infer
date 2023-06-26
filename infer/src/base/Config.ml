@@ -151,7 +151,9 @@ let idempotent_getters = true
 
 let ivar_attributes = "ivar_attributes"
 
-let java_lambda_marker_infix = "$Lambda$"
+let java_lambda_marker_infix_generated_by_javalib = "$Lambda$"
+
+let java_lambda_marker_prefix_generated_by_javac = "lambda$"
 
 let manual_buck = "BUCK OPTIONS"
 

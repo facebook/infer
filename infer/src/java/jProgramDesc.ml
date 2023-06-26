@@ -100,7 +100,7 @@ let create_sourcemap classes program =
   in
   let load cn =
     (* [prefix] must be a fresh class name *)
-    let prefix = JBasics.cn_name cn ^ Config.java_lambda_marker_infix in
+    let prefix = JBasics.cn_name cn ^ Config.java_lambda_marker_infix_generated_by_javalib in
     match javalib_get_class program.classpath_channel cn with
     | None ->
         ()

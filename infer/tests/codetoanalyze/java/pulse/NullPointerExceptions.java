@@ -750,7 +750,8 @@ public class NullPointerExceptions {
     void run(A a);
   }
 
-  void test_capture_alias_bad() {
+  // need combination of alias specialization and dynamic type specialization
+  void FN_test_capture_alias_bad() {
     A a = new A();
     a.x = 0;
     AFunction incr_deref =
@@ -766,8 +767,7 @@ public class NullPointerExceptions {
     b.x = 0;
   }
 
-  // FP because incr_deref.run(a) results in an unknown call
-  void test_capture_alias_good_FP() {
+  void test_capture_alias_good() {
     A a = new A();
     a.x = 0;
     AFunction incr_deref =
