@@ -91,7 +91,7 @@ value:
   | v=value COLON cid=identifier DOT fid=identifier
     { ToplAst.FieldAccess {value=v; class_name=cid; field_name=fid} }
   | LP v=value RP { v }
-  (* TODO(rgrigore): Add string literals. *)
+  | x=STRING { ToplAst.Constant (LiteralStr x) }
 
 predop_value: o=predop v=value { (o, v) }
 

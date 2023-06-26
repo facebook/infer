@@ -17,7 +17,7 @@ let pp_pattern f (pattern : ToplAst.label_pattern) =
 
 
 let pp_constant f (constant : ToplAst.constant) =
-  match constant with LiteralInt x -> F.fprintf f "%d" x
+  match constant with LiteralInt x -> F.fprintf f "%d" x | LiteralStr s -> F.fprintf f "'%s'" s
 
 
 let pp_register = F.pp_print_string

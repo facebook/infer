@@ -17,7 +17,7 @@ type field_name = string
 
 type class_name = string
 
-type constant = LiteralInt of int
+type constant = LiteralInt of int | LiteralStr of string
 
 type value =
   | Constant of constant

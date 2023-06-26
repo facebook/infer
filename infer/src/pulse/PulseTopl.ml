@@ -548,7 +548,7 @@ let make_field class_name field_name : Fieldname.t =
         (Language.to_string !Language.curr_language)
 
 
-let deref_field_access pulse_state value class_name field_name : value option =
+let deref_field_access pulse_state value class_name field_name : Formula.operand option =
   (* Dereferencing is done in 2 steps: (v) --f-> (v1) --*-> (v2) *)
   let heap = pulse_state.pulse_post.heap in
   let* edges = Memory.find_opt value heap in
@@ -556,7 +556,11 @@ let deref_field_access pulse_state value class_name field_name : value option =
   let* v1, _hist = Memory.Edges.find_opt (FieldAccess field) edges in
   let* edges = Memory.find_opt v1 heap in
   let* v2, _hist = Memory.Edges.find_opt Dereference edges in
-  Some v2
+  match BaseAddressAttributes.get_const_string v2 pulse_state.pulse_post.attrs with
+  | Some r ->
+      Some (Formula.ConstOperand (Const.Cstr r))
+  | _ ->
+      Some (Formula.AbstractValueOperand v2)
 
 
 let binop_to : ToplAst.binop -> Constraint.operator = function
@@ -581,6 +585,8 @@ let eval_guard pulse_state memory tcontext guard : Constraint.t =
     match value with
     | Constant (LiteralInt x) ->
         Some (ConstOperand (Cint (IntLit.of_int x)))
+    | Constant (LiteralStr s) ->
+        Some (ConstOperand (Cstr s))
     | Register reg ->
         Some (AbstractValueOperand (get memory reg))
     | Binding v ->
@@ -589,8 +595,7 @@ let eval_guard pulse_state memory tcontext guard : Constraint.t =
         let* value_op = operand_of_value value in
         match value_op with
         | Formula.AbstractValueOperand v ->
-            let* f = deref_field_access pulse_state v class_name field_name in
-            Some (Formula.AbstractValueOperand f)
+            deref_field_access pulse_state v class_name field_name
         | _ ->
             (* TODO: enforce in parser and make this an internal error. *)
             L.die UserError "Unsupported value for accessing field %s" field_name )

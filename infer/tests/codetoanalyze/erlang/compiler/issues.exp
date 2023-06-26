@@ -729,6 +729,11 @@ topl_atom_literal:test_1_Ok/0: ok
 topl_atom_literal:test_2_Ok/0: ok
 topl_atom_literal:test_3_Bad/0: taint_error
 
+----- topl_atom_str_literal -----
+topl_atom_str_literal:test_1_Ok/0: ok
+topl_atom_str_literal:test_2_Ok/0: ok
+topl_atom_str_literal:test_3_Bad/0: taint_error
+
 ----- topl_fields -----
 topl_fields:test_1_Ok/0: ok
 topl_fields:test_2_Ok/0: ok
