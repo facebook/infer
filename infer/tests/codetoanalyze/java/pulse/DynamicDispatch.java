@@ -211,3 +211,99 @@ class InheritanceDispatch {
     }
   }
 }
+
+class Specialization {
+
+  static class C {
+    C f;
+  }
+
+  abstract static class A {
+    abstract C buildC();
+
+    abstract C callBuildC(A a);
+  }
+
+  static class A_Good extends A {
+    C buildC() {
+      return new C();
+    }
+
+    C callBuildC(A a) {
+      return a.buildC();
+    }
+  }
+
+  static class A_Bad extends A {
+    C buildC() {
+      return null;
+    }
+
+    C callBuildC(A a) {
+      return a.buildC();
+    }
+  }
+
+  // basic specialization on parameters
+  C callBuildCGood(A a) {
+    return a.buildC();
+  }
+
+  C buildCAndDerefBad() {
+    return callBuildCGood(new A_Bad()).f;
+  }
+
+  C buildCAndDerefGood() {
+    return callBuildCGood(new A_Good()).f;
+  }
+
+  // specialization on field
+  static class Box1 {
+    Box2 f1;
+
+    Box1(Box2 f1) {
+      this.f1 = f1;
+    }
+  }
+
+  static class Box2 {
+    Box3 f2;
+
+    Box2(Box3 f2) {
+      this.f2 = f2;
+    }
+  }
+
+  static class Box3 {
+    A f3;
+
+    Box3(A f3) {
+      this.f3 = f3;
+    }
+  }
+
+  C callBuildCOnBoxGood(Box1 box) {
+    return box.f1.f2.f3.buildC();
+  }
+
+  C FN_buildCOnBoxAndDerefBad() {
+    return callBuildCOnBoxGood(new Box1(new Box2(new Box3(new A_Bad())))).f;
+  }
+
+  C buildCOnBoxAndDerefGood() {
+    return callBuildCOnBoxGood(new Box1(new Box2(new Box3(new A_Good())))).f;
+  }
+
+  // require iterative specialization
+  C callCallBuildC(A a1, A a2) {
+    return a1.callBuildC(a2);
+  }
+
+  C FN_buildCTransitivelyAndDerefBad() {
+    return callCallBuildC(new A_Good(), new A_Bad()).f;
+  }
+
+  C buildCTransitivelyAndDerefGood() {
+    return callCallBuildC(new A_Bad(), new A_Good()).f;
+  }
+}
