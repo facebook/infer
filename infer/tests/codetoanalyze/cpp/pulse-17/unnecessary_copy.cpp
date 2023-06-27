@@ -9,6 +9,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <map>
 
 namespace unnecessary_copy {
 struct Arr {
@@ -65,5 +66,29 @@ void call_std_distance_ok(const std::string& s) {
 void cheap_directory_iterator_ok(const std::string& path) {
   for (auto const& entry : std::filesystem::directory_iterator{path}) {
   }
+}
+
+void structured_binding_bad(Arr x) {
+
+  int y = 0;
+  auto tuple = std::tie(x, y); // Create a tuple-like object using std::tie
+  auto [first, second] = tuple;
+  auto c = first; // copy
+}
+
+void structured_binding_loop_bad_FN(std::map<int, std::string> mapEntity) {
+  for (auto [keyActual, mapValue] : mapEntity) {
+    // need to model std::get to handle this example
+  }
+}
+
+struct Pair {
+  Arr first;
+  Arr second;
+};
+
+void structured_binding_no_holding_var_bad(Pair myPair) {
+  auto [l1, l2] = myPair;
+  auto c = l1; // can detect the copy
 }
 } // namespace unnecessary_copy

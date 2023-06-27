@@ -292,7 +292,7 @@ let type_of_decl decl =
   | TypedefDecl (_, _, type_ptr, _)
   | UnresolvedUsingTypenameDecl (_, _, type_ptr) ->
       Some type_ptr
-  | BindingDecl (_, _, qual_type)
+  | BindingDecl (_, _, qual_type, _)
   | FieldDecl (_, _, qual_type, _)
   | ObjCAtDefsFieldDecl (_, _, qual_type, _)
   | ObjCIvarDecl (_, _, qual_type, _, _)
@@ -304,7 +304,7 @@ let type_of_decl decl =
   | MSPropertyDecl (_, _, qual_type)
   | NonTypeTemplateParmDecl (_, _, qual_type)
   | VarDecl (_, _, qual_type, _)
-  | DecompositionDecl (_, _, qual_type, _)
+  | DecompositionDecl (_, _, qual_type, _, _)
   | ImplicitParamDecl (_, _, qual_type, _)
   | OMPCapturedExprDecl (_, _, qual_type, _)
   | ParmVarDecl (_, _, qual_type, _)

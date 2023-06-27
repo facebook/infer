@@ -283,6 +283,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   void dumpName(const NamedDecl &decl);
   void dumpInputKind(const InputKind kind);
   void dumpIntegerTypeWidths(const TargetInfo &info);
+  void dumpVarDeclInfo(const VarDecl *D);
 
   bool alwaysEmitParent(const Decl *D);
 
@@ -341,6 +342,8 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(FunctionTemplateDecl)
   DECLARE_VISITOR(FriendDecl)
   DECLARE_VISITOR(VarTemplateSpecializationDecl)
+  DECLARE_VISITOR(DecompositionDecl)
+  DECLARE_VISITOR(BindingDecl)
 
   // ObjC Decls
   DECLARE_VISITOR(ObjCIvarDecl)
@@ -1683,7 +1686,7 @@ template <class ATDWriter>
 int ASTExporter<ATDWriter>::VarDeclTupleSize() {
   return ASTExporter::DeclaratorDeclTupleSize() + 1;
 }
-//@atd #define var_decl_tuple declarator_decl_tuple * var_decl_info
+
 //@atd type var_decl_info = {
 //@atd   ~is_global : bool;
 //@atd   ~is_extern : bool;
@@ -1697,9 +1700,7 @@ int ASTExporter<ATDWriter>::VarDeclTupleSize() {
 //@atd   ?parm_index_in_function : int option;
 //@atd } <ocaml field_prefix="vdi_">
 template <class ATDWriter>
-void ASTExporter<ATDWriter>::VisitVarDecl(const VarDecl *D) {
-  ASTExporter<ATDWriter>::VisitDeclaratorDecl(D);
-
+void ASTExporter<ATDWriter>::dumpVarDeclInfo(const VarDecl *D) {
   bool IsGlobal = D->hasGlobalStorage(); // including static function variables
   bool IsExtern = D->hasExternalStorage();
   bool IsStatic = false; // static variables
@@ -1738,6 +1739,13 @@ void ASTExporter<ATDWriter>::VisitVarDecl(const VarDecl *D) {
     OF.emitTag("parm_index_in_function");
     OF.emitInteger(ParmDecl->getFunctionScopeIndex());
   }
+}
+
+//@atd #define var_decl_tuple declarator_decl_tuple * var_decl_info
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitVarDecl(const VarDecl *D) {
+  ASTExporter<ATDWriter>::VisitDeclaratorDecl(D);
+  dumpVarDeclInfo(D);
 }
 
 template <class ATDWriter>
@@ -2099,6 +2107,48 @@ void ASTExporter<ATDWriter>::VisitVarTemplateSpecializationDecl(
     const VarTemplateSpecializationDecl *D) {
   dumpTemplateArguments(D->getTemplateArgs());
   VisitVarDecl(D);
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::DecompositionDeclTupleSize() {
+  return VarDeclTupleSize() + 1;
+}
+
+//@atd #define decomposition_decl_tuple var_decl_tuple * decl list
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitDecompositionDecl(
+    const DecompositionDecl *D) {
+  VisitVarDecl(D);
+
+  std::vector<const BindingDecl *> declsToDump;
+
+  for (const auto *B : D->bindings()) {
+    declsToDump.push_back(B);
+  }
+
+  ArrayScope Scope(OF, declsToDump.size());
+  for (const auto *spec : declsToDump) {
+    dumpDecl(spec);
+  }
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::BindingDeclTupleSize() {
+  return ValueDeclTupleSize() + 1;
+}
+
+//@atd #define binding_decl_tuple value_decl_tuple * holding_var_decl_info
+//@atd type holding_var_decl_info = {
+//@atd  ?binding_var: var_decl_info option;
+//@atd } <ocaml field_prefix="hvdi_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitBindingDecl(const BindingDecl *D) {
+  VisitValueDecl(D);
+  ObjectScope oScope(OF, 1);
+  if (VarDecl *V = D->getHoldingVar()) {
+    OF.emitTag("binding_var");
+    dumpVarDeclInfo(V);
+  }
 }
 
 template <class ATDWriter>

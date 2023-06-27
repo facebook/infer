@@ -908,7 +908,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         enum_constant_trans trans_state decl_ref
     | `Function, _ ->
         function_deref_trans trans_state decl_ref
-    | (`Var | `VarTemplateSpecialization | `ImplicitParam | `ParmVar), _ ->
+    | (`Var | `VarTemplateSpecialization | `ImplicitParam | `ParmVar | `Binding | `Decomposition), _
+      ->
         var_deref_trans trans_state stmt_info decl_ref
     | (`Field | `ObjCIvar), MemberOrIvar pre_trans_result ->
         (* a field outside of constructor initialization is probably a pointer to member, which we
@@ -3140,7 +3141,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let context = trans_state.context in
     let procdesc = context.CContext.procdesc in
     let procname = Procdesc.get_proc_name procdesc in
-    let do_var_dec var_decl qual_type vdi next_node =
+    let do_var_dec var_decl qual_type vdi next_node trans_state =
       let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
       let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
       CVar_decl.add_var_to_locals procdesc var_decl typ pvar ;
@@ -3148,38 +3149,46 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let var_exp_typ = (Exp.Lvar pvar, typ) in
       init_expr_trans trans_state var_exp_typ ~qual_type stmt_info vdi.Clang_ast_t.vdi_init_expr
     in
+    let aux_var res_trans_tl var_decl qt vdi =
+      (* Var are defined when procdesc is created, here we only take care of initialization *)
+      let root_nodes_tl, instrs_tl, initd_exps_tl, markers_tl =
+        match res_trans_tl with
+        | None ->
+            (next_nodes, [], [], [])
+        | Some {control= {root_nodes; instrs; initd_exps; cxx_temporary_markers_set}} ->
+            (root_nodes, instrs, initd_exps, cxx_temporary_markers_set)
+      in
+      let res_trans_tmp = do_var_dec var_decl qt vdi root_nodes_tl trans_state in
+      L.debug Capture Verbose "res_trans_tmp.control=%a@\n" pp_control res_trans_tmp.control ;
+      (* keep the last return and leaf_nodes from the list *)
+      let return, leaf_nodes =
+        match res_trans_tl with
+        | None ->
+            (res_trans_tmp.return, res_trans_tmp.control.leaf_nodes)
+        | Some {return; control= {leaf_nodes}} ->
+            (return, leaf_nodes)
+      in
+      Some
+        (mk_trans_result return
+           { root_nodes= res_trans_tmp.control.root_nodes
+           ; leaf_nodes
+           ; instrs= res_trans_tmp.control.instrs @ instrs_tl
+           ; initd_exps= res_trans_tmp.control.initd_exps @ initd_exps_tl
+           ; cxx_temporary_markers_set= res_trans_tmp.control.cxx_temporary_markers_set @ markers_tl
+           } )
+    in
     let rec aux : decl list -> trans_result option = function
       | [] ->
           None
-      | ((VarDecl (_, _, qt, vdi) | VarTemplateSpecializationDecl (_, _, _, qt, vdi)) as var_decl)
+      | ( ( VarDecl (_, _, qt, vdi)
+          | BindingDecl (_, _, qt, Clang_ast_t.{hvdi_binding_var= Some vdi})
+          | VarTemplateSpecializationDecl (_, _, _, qt, vdi) ) as var_decl )
         :: var_decls' ->
-          (* Var are defined when procdesc is created, here we only take care of initialization *)
           let res_trans_tl = aux var_decls' in
-          let root_nodes_tl, instrs_tl, initd_exps_tl, markers_tl =
-            match res_trans_tl with
-            | None ->
-                (next_nodes, [], [], [])
-            | Some {control= {root_nodes; instrs; initd_exps; cxx_temporary_markers_set}} ->
-                (root_nodes, instrs, initd_exps, cxx_temporary_markers_set)
-          in
-          let res_trans_tmp = do_var_dec var_decl qt vdi root_nodes_tl in
-          L.debug Capture Verbose "res_trans_tmp.control=%a@\n" pp_control res_trans_tmp.control ;
-          (* keep the last return and leaf_nodes from the list *)
-          let return, leaf_nodes =
-            match res_trans_tl with
-            | None ->
-                (res_trans_tmp.return, res_trans_tmp.control.leaf_nodes)
-            | Some {return; control= {leaf_nodes}} ->
-                (return, leaf_nodes)
-          in
-          Some
-            (mk_trans_result return
-               { root_nodes= res_trans_tmp.control.root_nodes
-               ; leaf_nodes
-               ; instrs= res_trans_tmp.control.instrs @ instrs_tl
-               ; initd_exps= res_trans_tmp.control.initd_exps @ initd_exps_tl
-               ; cxx_temporary_markers_set=
-                   res_trans_tmp.control.cxx_temporary_markers_set @ markers_tl } )
+          aux_var res_trans_tl var_decl qt vdi
+      | (DecompositionDecl (_, _, qt, vdi, list) as var_decl) :: var_decls' ->
+          let res_trans_tl = aux (list @ var_decls') in
+          aux_var res_trans_tl var_decl qt vdi
       | _ :: var_decls' ->
           (* Here we can get also record declarations or typedef declarations, which are dealt with
              somewhere else.  We just handle the variables here. *)
@@ -3200,6 +3209,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | VarDecl _ :: _
     | VarTemplateSpecializationDecl _ :: _
     | CXXRecordDecl _ :: _
+    | BindingDecl _ :: _
+    | DecompositionDecl _ :: _
     | RecordDecl _ :: _ ->
         collect_all_decl trans_state decl_list succ_nodes stmt_info
     | (NamespaceAliasDecl _ | TypedefDecl _ | TypeAliasDecl _ | UsingDecl _ | UsingDirectiveDecl _)
