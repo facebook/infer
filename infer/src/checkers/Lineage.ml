@@ -116,6 +116,7 @@ module LineageGraph = struct
         | Call of FieldPath.t  (** Target is ArgumentOf, field path is injected into arg *)
         | Return of FieldPath.t  (** Source is ReturnOf, field path is projected from return *)
         | Capture  (** [X=1, F=fun()->X end] has Capture flow from X to F *)
+        | Builtin  (** Flow coming from a suppressed builtin call, ultimately exported as a Copy *)
         | Summary  (** Summarizes the effect of a procedure call *)
         | DynamicCallFunction
         | DynamicCallModule
@@ -196,6 +197,8 @@ module LineageGraph = struct
         Format.fprintf fmt "Project%a" FieldPath.pp field_path
     | Return field_path ->
         Format.fprintf fmt "Return%a" FieldPath.pp field_path
+    | Builtin ->
+        Format.fprintf fmt "Builtin"
     | Summary ->
         Format.fprintf fmt "Summary"
     | DynamicCallFunction ->
@@ -226,6 +229,8 @@ module LineageGraph = struct
     match ((kind : FlowKind.t), equal_data target source, target, source) with
     | Direct, true, _, _ ->
         graph (* skip Direct loops *)
+    | Builtin, true, _, _ ->
+        graph (* skip Builtin loops *)
     | Summary, true, _, _ ->
         graph (* skip Summary loops*)
     | _, true, _, _ ->
@@ -614,6 +619,8 @@ module LineageGraph = struct
             Json.Copy
         | Project _ ->
             Json.Copy
+        | Builtin ->
+            Json.Copy
         | Summary ->
             Json.Derive
         | DynamicCallFunction ->
@@ -625,7 +632,7 @@ module LineageGraph = struct
       in
       let edge_metadata =
         match kind with
-        | Direct | Capture | Summary | DynamicCallFunction | DynamicCallModule ->
+        | Direct | Builtin | Capture | Summary | DynamicCallFunction | DynamicCallModule ->
             None
         | Call [] | Return [] ->
             (* Don't generate "trivial" metadata *)
@@ -896,6 +903,10 @@ module Summary = struct
       match kind with
       | Direct ->
           false
+      | Builtin ->
+          (* Suppressed builtins are considered as direct flows for being simplification
+             candidates. *)
+          false
       | Call _
       | Return _
       | Capture
@@ -905,6 +916,29 @@ module Summary = struct
       | Inject _
       | Project _ ->
           true
+    in
+    let merge_flows {LineageGraph.kind= kind_ab; source= source_ab; target= _; node= node_ab}
+        {LineageGraph.kind= kind_bc; source= _; target= target_bc; node= node_bc} :
+        LineageGraph.flow =
+      (* Merge both flows together, keeping source of the first one, the target of the second one,
+         and the kind of node of the most interesting one. The interesting order is Direct < Builtin
+         < anything. *)
+      let kind, node =
+        (* Both nodes should map to the same location, so we could just use the first one, but we
+           keep the one corresponding to the kind for good measure and least surprise. *)
+        match (kind_ab, kind_bc) with
+        | Direct, _ ->
+            (kind_bc, node_bc)
+        | _, Direct ->
+            (kind_ab, node_ab)
+        | Builtin, _ (* not Direct *) ->
+            (kind_bc, node_bc)
+        | _ (* not Direct *), Builtin ->
+            (kind_ab, node_ab)
+        | _ ->
+            L.die InternalError "I can't merge two interesting flows together"
+      in
+      {LineageGraph.kind; node; source= source_ab; target= target_bc}
     in
     (* The set [todo] contains vertices considered for removal. We initialize this set with all
      * uninteresting vertices. The main loop of the algorithm extracts a vertex from [todo] (in
@@ -951,10 +985,7 @@ module Summary = struct
             let parents, children = List.fold ~init:(parents, children) ~f:remove_flow after in
             let do_pair (todo, (parents, children))
                 ((flow_ab : LineageGraph.flow), (flow_bc : LineageGraph.flow)) =
-              let keep = if is_interesting_flow flow_ab then flow_ab else flow_bc in
-              let keep : LineageGraph.flow =
-                {keep with LineageGraph.source= flow_ab.source; target= flow_bc.target}
-              in
+              let keep = merge_flows flow_ab flow_bc in
               if LineageGraph.equal_data keep.source keep.target then
                 L.die InternalError "OOPS: I don't work with loops." ;
               (* (B) add new edges *)
@@ -1599,7 +1630,7 @@ module TransferFunctions = struct
   let generic_call_model shapes node analyze_dependency ret_id procname args astate =
     let rm_builtin = (not Config.lineage_include_builtins) && BuiltinDecl.is_declared procname in
     let if_not_builtin transform state = if rm_builtin then state else transform state in
-    let summary_type : LineageGraph.FlowKind.t = if rm_builtin then Direct else Summary in
+    let summary_type : LineageGraph.FlowKind.t = if rm_builtin then Builtin else Summary in
     astate |> Domain.record_supported procname
     |> if_not_builtin (add_arg_flows shapes node procname args)
     |> if_not_builtin (add_ret_flows shapes node procname ret_id)

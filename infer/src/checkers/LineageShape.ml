@@ -569,10 +569,10 @@ end = struct
         L.die InternalError
           "@[Attempting to get related fields of differently shaped fields: @[%a={%a}@]@ vs@ \
            @[%a={%a}@]@]"
-          Shape_id.pp var_path_shape_1 pp_field_table
-          (Caml.Hashtbl.find shape_fields var_path_shape_1)
-          Shape_id.pp var_path_shape_2 pp_field_table
-          (Caml.Hashtbl.find shape_fields var_path_shape_2)
+          Shape_id.pp var_path_shape_1 (Fmt.option pp_field_table)
+          (Caml.Hashtbl.find_opt shape_fields var_path_shape_1)
+          Shape_id.pp var_path_shape_2 (Fmt.option pp_field_table)
+          (Caml.Hashtbl.find_opt shape_fields var_path_shape_2)
       else
         let search_depth =
           (* Use the shallowest argument to determine the search depth. *)
