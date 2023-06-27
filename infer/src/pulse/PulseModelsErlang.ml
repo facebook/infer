@@ -1392,6 +1392,7 @@ module GenServer = struct
 
   let handle_request req_type server_ref request
       {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate =
+    let astate = AbductiveDomain.add_need_dynamic_type_specialization (fst server_ref) astate in
     match get_erlang_type_or_any (fst server_ref) astate with
     | GenServerPid {module_name= Some module_name} ->
         let arg_nondet () =

@@ -13,7 +13,7 @@
     test_call3_Bad/0,
     test_call4_Bad/0,
     test_cast_Bad/0,
-    fn_test_call_callee_Bad/0
+    test_call_callee_Bad/0
 ]).
 
 -export([
@@ -93,7 +93,7 @@ test_cast_Bad() ->
     end,
     run_test(Test).
 
-fn_test_call_callee_Bad() ->
+test_call_callee_Bad() ->
     Test = fun() ->
         Pid = get_pid(),
         call(Pid, oops)
