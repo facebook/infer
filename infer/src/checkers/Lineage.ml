@@ -1018,10 +1018,12 @@ module Summary = struct
 
   (** Given a graph, computes tito_arguments, and makes a summary. *)
   let make has_unsupported_features proc_desc graph return_field_paths =
+    (* We need to compute the Tito arguments before reducing the graph to make use of information
+       hold by temporary nodes (eg. if they're abstract or not). *)
+    let tito_arguments = tito_arguments_of_graph graph return_field_paths in
     let graph =
       if Config.lineage_keep_temporaries then graph else remove_temporaries proc_desc graph
     in
-    let tito_arguments = tito_arguments_of_graph graph return_field_paths in
     {graph; tito_arguments; has_unsupported_features}
 
 
