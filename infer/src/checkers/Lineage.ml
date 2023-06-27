@@ -217,7 +217,7 @@ module LineageGraph = struct
   let count_data flows = Set.length (vertices flows)
 
   let pp fmt flows =
-    Format.fprintf fmt "@;@[<v 2>LineageGraph flows %d data %d@;@[%a@]@]" (List.length flows)
+    Format.fprintf fmt "@[<v 2>LineageGraph: flows %d data %d@;@[%a@]@]" (List.length flows)
       (count_data flows) (Format.pp_print_list pp_flow) flows
 
 
@@ -709,47 +709,91 @@ module Tito : sig
           -> 'init )
     -> 'init
 end = struct
-  module ArgToRetMap = AbstractDomain.FiniteMultiMap (FieldPath) (FieldPath)
+  module ArgPathSet = struct
+    module FieldPathSet = struct
+      (* Sets of field paths, that shall be associated to an argument index *)
 
-  module IntMap = struct
-    include Map.Make_tree (Int)
+      module M = Set.Make_tree (FieldPath)
+      include M
 
-    let pp pp_data =
-      let sep = Fmt.any ":@ " in
-      IFmt.Labelled.iter_bindings ~sep:Fmt.comma iteri Fmt.(pair ~sep int pp_data)
+      let pp ~arg_index =
+        (* Prints: $argN#foo#bar $argN#other#field *)
+        IFmt.Labelled.iter ~sep:Fmt.sp M.iter Fmt.(any "$arg" ++ const int arg_index ++ FieldPath.pp)
+    end
+
+    (* Marshallable maps from integer indices. Note: using an array instead of Map could improve the
+       performance (arguments indices are small and contiguous). *)
+    module IntMap = Map.Make_tree (Int)
+
+    (* An ArgPathSet is a set of field paths for each argument index *)
+    type t = FieldPathSet.t IntMap.t
+
+    let pp : t Fmt.t =
+      (* Prints: $arg1#arg#field $arg1#other $arg2#foo#bar $arg3 *)
+      let pp_binding fmt (arg_index, path_set) = FieldPathSet.pp ~arg_index fmt path_set in
+      IFmt.Labelled.iter_bindings ~sep:Fmt.sp IntMap.iteri pp_binding
+
+
+    let singleton ~arg_index ~arg_field_path =
+      IntMap.singleton arg_index (FieldPathSet.singleton arg_field_path)
+
+
+    let full ~arity =
+      IntMap.of_sequence_exn
+      @@ Sequence.init arity ~f:(fun arg_index -> (arg_index, FieldPathSet.singleton []))
+
+
+    let add ~arg_index ~arg_field_path t =
+      IntMap.update t arg_index ~f:(function
+        | None ->
+            FieldPathSet.singleton arg_field_path
+        | Some field_path_set ->
+            FieldPathSet.add field_path_set arg_field_path )
+
+
+    let fold ~f ~init t =
+      IntMap.fold
+        ~f:(fun ~key:arg_index ~data:field_path_set acc ->
+          FieldPathSet.fold
+            ~f:(fun acc arg_field_path -> f ~arg_index ~arg_field_path acc)
+            ~init:acc field_path_set )
+        ~init t
   end
 
-  (** A [Tito.t] is a map from arguments indices [i] to the set of [fields] field paths such that
-      [i#fields] is a Tito argument. Note: for any [fields] path, if [i#fields] is a Tito argument,
-      then every [i#fields#foo] subfield of it should be considered as also being one (even if not
+  (* Marshallable maps from formal return field paths *)
+  module RetPathMap = Map.Make_tree (FieldPath)
+
+  (** A [Tito.t] is a collection, for every return field path, of the set of TITO argument field
+      paths. Note: for any [fields] path, if [i#fields] is a Tito source for [ret#fields'], then
+      every [i#fields#foo] subfield of it should be considered as also being one (even if not
       explicitly present in the map). *)
-  type t = ArgToRetMap.t IntMap.t
-  (* Note: using an array for the IntMap could improve the performance (arguments indices are small
-     and contiguous). *)
+  type t = ArgPathSet.t RetPathMap.t
 
-  let pp = IntMap.pp ArgToRetMap.pp
+  let pp =
+    (* Prints: ($ret#field: $arg0#foo) ($ret#other:$arg2 $arg3#bar) *)
+    IFmt.Labelled.iter_bindings ~sep:Fmt.comma RetPathMap.iteri
+      Fmt.(parens @@ pair ~sep:IFmt.colon_sp Fmt.(any "$ret" ++ FieldPath.pp) ArgPathSet.pp)
 
-  let empty = IntMap.empty
+
+  let empty = RetPathMap.empty
 
   let add ~arg_index ~arg_field_path ~ret_field_path tito =
-    IntMap.update tito arg_index ~f:(function
+    RetPathMap.update tito ret_field_path ~f:(function
       | None ->
           (* No TITO arg for this ret field yet. We create one. *)
-          ArgToRetMap.singleton arg_field_path ret_field_path
-      | Some arg_to_ret_map ->
-          ArgToRetMap.add arg_field_path ret_field_path arg_to_ret_map )
+          ArgPathSet.singleton ~arg_index ~arg_field_path
+      | Some arg_path_set ->
+          ArgPathSet.add ~arg_index ~arg_field_path arg_path_set )
 
 
   let fold tito ~init ~f =
-    IntMap.fold tito ~init ~f:(fun ~key:arg_index ~data:arg_to_ret_map acc ->
-        ArgToRetMap.fold
-          (fun arg_field_path ret_field_path acc -> f ~arg_index ~arg_field_path ~ret_field_path acc)
-          arg_to_ret_map acc )
+    RetPathMap.fold tito ~init ~f:(fun ~key:ret_field_path ~data:arg_path_set acc ->
+        ArgPathSet.fold
+          ~f:(fun ~arg_index ~arg_field_path acc -> f ~arg_index ~arg_field_path ~ret_field_path acc)
+          ~init:acc arg_path_set )
 
 
-  let full ~arity =
-    IntMap.of_sequence_exn
-    @@ Sequence.init arity ~f:(fun arg_index -> (arg_index, ArgToRetMap.singleton [] []))
+  let full ~arity = RetPathMap.singleton [] (ArgPathSet.full ~arity)
 end
 
 module Summary = struct
@@ -758,11 +802,11 @@ module Summary = struct
   type t = {graph: LineageGraph.t; tito_arguments: tito_arguments; has_unsupported_features: bool}
 
   let pp_tito_arguments fmt arguments =
-    Format.fprintf fmt "@;@[<2>TitoArguments@;%a@]" Tito.pp arguments
+    Format.fprintf fmt "@[@[<2>TitoArguments:@ {@;@[%a@]@]@,}@]" Tito.pp arguments
 
 
   let pp fmt {graph; tito_arguments} =
-    Format.fprintf fmt "@;@[<2>LineageSummary@;%a%a@]" pp_tito_arguments tito_arguments
+    Format.fprintf fmt "@;@[<v2>LineageSummary.@;%a@;%a@]" pp_tito_arguments tito_arguments
       LineageGraph.pp graph
 
 
@@ -1739,6 +1783,9 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
   let exit_has_unsupported_features = Domain.has_unsupported_features exit_astate in
   let summary = Summary.make exit_has_unsupported_features proc_desc graph known_ret_field_paths in
   if Config.lineage_json_report then Summary.report summary proc_desc ;
+  L.debug Analysis Verbose "@[Lineage summary for %a:@;@[%a@]@]@;" Procname.pp
+    (Procdesc.get_proc_name proc_desc)
+    Summary.pp summary ;
   Some summary
 
 
