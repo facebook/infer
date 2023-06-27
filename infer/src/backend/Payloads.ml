@@ -123,7 +123,7 @@ module SQLite = struct
     | None ->
         Sqlite3.Data.NULL
     | Some payload ->
-        Sqlite3.Data.BLOB (Marshal.to_string payload [])
+        Sqlite3.Data.BLOB (Marshal.to_string payload [Closures])
 
 
   let serialize payloads =
