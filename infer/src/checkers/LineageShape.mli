@@ -50,6 +50,8 @@ module Cell : sig
 
   val field_path : t -> FieldPath.t
 
+  val is_abstract : t -> bool
+
   val var_appears_in_source_code : t -> bool
 end
 

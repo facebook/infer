@@ -42,9 +42,11 @@ module FieldPath = struct
 end
 
 module Cell : sig
+  (** See .mli for doc *)
+
   type t [@@deriving compare, equal, sexp, yojson_of]
 
-  val create : var:Var.t -> field_path:FieldPath.t -> t
+  val create : var:Var.t -> field_path:FieldPath.t -> is_abstract:bool -> t
 
   val pp : t Fmt.t
 
@@ -52,15 +54,22 @@ module Cell : sig
 
   val field_path : t -> FieldPath.t
 
+  val is_abstract : t -> bool
+
   val var_appears_in_source_code : t -> bool
 end = struct
-  type t = {var: Var.t; field_path: FieldPath.t} [@@deriving compare, equal, sexp, fields]
+  type t = {var: Var.t; field_path: FieldPath.t; is_abstract: bool}
+  [@@deriving compare, equal, sexp, fields]
 
   let create = Fields.create
 
-  let pp fmt {var; field_path} =
+  let pp fmt {var; field_path; is_abstract} =
     Var.pp fmt var ;
-    FieldPath.pp fmt field_path
+    FieldPath.pp fmt field_path ;
+    if is_abstract && Config.debug_mode then
+      (* We could also consider printing that by default but that could break some other systems
+         expectations. *)
+      Fmt.pf fmt "#"
 
 
   let yojson_of_t x = `String (Fmt.to_to_string pp x)
@@ -337,6 +346,14 @@ end = struct
           L.die InternalError "No shape found for var %a" Var.pp var
 
 
+    let has_fields shape_fields shape =
+      match Caml.Hashtbl.find_opt shape_fields shape with
+      | None ->
+          false
+      | Some field_table ->
+          not ([%equal: int] 0 (Caml.Hashtbl.length field_table))
+
+
     let find_field_table shape_fields shape =
       match Caml.Hashtbl.find_opt shape_fields shape with
       | Some field_table ->
@@ -468,7 +485,7 @@ end = struct
 
 
     let finalise {var_shapes; shape_fields} var field_path =
-      let rec aux remaining_depth traversed_shape_set shape field_path =
+      let rec aux remaining_depth traversed_shape_set shape field_path : FieldPath.t * bool =
         match field_path with
         (* Walk through the fields and ensure that we do not:
            - Traverse a field table wider than LineageConfig.field_width
@@ -476,11 +493,15 @@ end = struct
            - "Traverse" (they must be in last position) internal "boxing" fields that should be
              ignored
            Also limit the depth by stopping the traversal once the remaining depth reaches zero.
+
+           Returns the terminal field path and a boolean indicating if the corresponding cell is
+           abstract; that is, it semantically has some fields but we forget about them because we hit
+           one of the aforementioned limits.
         *)
         | [] ->
-            []
+            ([], has_fields shape_fields shape)
         | [field] when is_boxing_field field ->
-            []
+            ([], false)
         | field :: _ when is_boxing_field field ->
             L.die InternalError "LineageShape: unexpected boxing field in non tail position."
         | field :: fields ->
@@ -489,21 +510,21 @@ end = struct
               Int.(remaining_depth <= 0)
               || Caml.Hashtbl.length field_table > LineageConfig.field_width
               || (LineageConfig.prevent_cycles && Set.mem traversed_shape_set shape)
-            then []
+            then ([], true)
             else
-              let terminal_sub_path =
+              let terminal_sub_path, is_abstract =
                 aux (remaining_depth - 1)
                   (Set.add traversed_shape_set shape)
                   (Caml.Hashtbl.find field_table field)
                   fields
               in
-              field :: terminal_sub_path
+              (field :: terminal_sub_path, is_abstract)
       in
       let var_shape = find_var_shape var_shapes var in
-      let field_path =
+      let field_path, is_abstract =
         aux LineageConfig.field_depth (Set.empty (module Shape_id)) var_shape field_path
       in
-      Cell.create ~var ~field_path
+      Cell.create ~var ~field_path ~is_abstract
 
 
     (** Given field shapes, a particular shape, a maximal width, a maximal search depth and a

@@ -104,6 +104,8 @@ module LineageGraph = struct
     | Function of (Procname.t[@sexp.opaque])
   [@@deriving compare, equal, sexp]
 
+  let is_abstract_cell = function Local (Cell cell, _node) -> Cell.is_abstract cell | _ -> false
+
   module FlowKind = struct
     module T = struct
       (** - INV1. There is no direct flow from ReturnOf to ArgumentOf. In that case a Return flow is
@@ -688,7 +690,17 @@ module Tito : sig
       [Argument (i, \[foo, bar\])] to [Return baz] not going through [ArgumentOf _] nodes.
 
       As the abstraction mandates, fields are to be considered in a prefix sense: a path from
-      [i#foo] to [ret#bar] means that any subfield of [i#foo] flows into all fields of [ret#bar]. *)
+      [i#foo] to [ret#bar] means that any subfield of [i#foo] flows into all fields of [ret#bar].
+
+      A path from [i#foo] to [ret#bar] can be marked as "shape-preserving", meaning that the
+      argument field and the return field have the same shape AND that the data flows induced by the
+      function call will go from each field of the argument into the same field of the return. This
+      allows for more precise analysis of functions such as `id(X) -> X` when called on structured
+      concrete arguments.
+
+      Note: shape preservation indicates direct copying, thus a return field cannot be
+      "shape-preserved" from more than one parameter field. The implementation will try to detect
+      this and raise, but that should be considered a programming error. *)
 
   (** Sets of tito flows *)
   type t
@@ -703,7 +715,13 @@ module Tito : sig
       abstraction, it is equivalent to having a path from every [Argument (i, \[\])] to
       [Return \[\]].*)
 
-  val add : arg_index:int -> arg_field_path:FieldPath.t -> ret_field_path:FieldPath.t -> t -> t
+  val add :
+       arg_index:int
+    -> arg_field_path:FieldPath.t
+    -> ret_field_path:FieldPath.t
+    -> shape_is_preserved:bool
+    -> t
+    -> t
 
   val fold :
        t
@@ -712,10 +730,17 @@ module Tito : sig
          (   arg_index:int
           -> arg_field_path:FieldPath.t
           -> ret_field_path:FieldPath.t
+          -> shape_is_preserved:bool
           -> 'init
           -> 'init )
     -> 'init
 end = struct
+  (* Utility pretty printers *)
+
+  let pp_arg_index = Fmt.fmt "$arg%d"
+
+  let pp_ret = Fmt.any "$ret"
+
   module ArgPathSet = struct
     module FieldPathSet = struct
       (* Sets of field paths, that shall be associated to an argument index *)
@@ -725,7 +750,8 @@ end = struct
 
       let pp ~arg_index =
         (* Prints: $argN#foo#bar $argN#other#field *)
-        IFmt.Labelled.iter ~sep:Fmt.sp M.iter Fmt.(any "$arg" ++ const int arg_index ++ FieldPath.pp)
+        let pp_field_path = Fmt.(const pp_arg_index arg_index ++ FieldPath.pp) in
+        IFmt.Labelled.iter ~sep:Fmt.sp M.iter pp_field_path
     end
 
     (* Marshallable maps from integer indices. Note: using an array instead of Map could improve the
@@ -750,7 +776,7 @@ end = struct
       @@ Sequence.init arity ~f:(fun arg_index -> (arg_index, FieldPathSet.singleton []))
 
 
-    let add ~arg_index ~arg_field_path t =
+    let add t ~arg_index ~arg_field_path =
       IntMap.update t arg_index ~f:(function
         | None ->
             FieldPathSet.singleton arg_field_path
@@ -758,7 +784,7 @@ end = struct
             FieldPathSet.add field_path_set arg_field_path )
 
 
-    let fold ~f ~init t =
+    let fold t ~f ~init =
       IntMap.fold
         ~f:(fun ~key:arg_index ~data:field_path_set acc ->
           FieldPathSet.fold
@@ -767,40 +793,89 @@ end = struct
         ~init t
   end
 
+  module Sources = struct
+    (** Data flow sources to be associated with return fields. *)
+
+    (** A source is either a single shape-preserved argument index, or a "shape mixed" set of those.
+
+        Remark: a shape-mixed set can be a singleton (eg. for unknown/recursive one-parameter
+        functions -- such as [mix(X) -> mix(X).]). Empty "shape-mixed" sets pose no theoretical
+        issue -- but we just don't generate them. *)
+    type t =
+      | Shape_preserved of {arg_index: int; arg_field_path: FieldPath.t}
+      | Shape_mixed of ArgPathSet.t
+
+    let pp fmt source =
+      match source with
+      | Shape_preserved {arg_index; arg_field_path} ->
+          Fmt.pf fmt "=%a%a" pp_arg_index arg_index FieldPath.pp arg_field_path
+      | Shape_mixed arg_path_set ->
+          Fmt.pf fmt "{%a}" ArgPathSet.pp arg_path_set
+
+
+    let singleton ~arg_index ~arg_field_path ~shape_is_preserved =
+      if shape_is_preserved then Shape_preserved {arg_index; arg_field_path}
+      else Shape_mixed (ArgPathSet.singleton ~arg_index ~arg_field_path)
+
+
+    let full ~arity = Shape_mixed (ArgPathSet.full ~arity)
+
+    let add source ~arg_index ~arg_field_path ~shape_is_preserved =
+      match source with
+      | Shape_mixed arg_path_set when not shape_is_preserved ->
+          Shape_mixed (ArgPathSet.add arg_path_set ~arg_index ~arg_field_path)
+      | Shape_mixed _ | Shape_preserved _ ->
+          L.die InternalError
+            "Lineage invariant broken: formal return shape cannot be preserved from several \
+             sources."
+
+
+    let fold source ~init ~f =
+      match source with
+      | Shape_preserved {arg_index; arg_field_path} ->
+          f ~arg_index ~arg_field_path ~shape_is_preserved:true init
+      | Shape_mixed arg_path_set ->
+          ArgPathSet.fold
+            ~f:(fun ~arg_index ~arg_field_path acc ->
+              f ~arg_index ~arg_field_path ~shape_is_preserved:false acc )
+            ~init arg_path_set
+  end
+
   (* Marshallable maps from formal return field paths *)
   module RetPathMap = Map.Make_tree (FieldPath)
 
-  (** A [Tito.t] is a collection, for every return field path, of the set of TITO argument field
-      paths. Note: for any [fields] path, if [i#fields] is a Tito source for [ret#fields'], then
-      every [i#fields#foo] subfield of it should be considered as also being one (even if not
-      explicitly present in the map). *)
-  type t = ArgPathSet.t RetPathMap.t
+  (** A [Tito.t] is a collection, for every return field path, of its TITO sources. Note: for any
+      [fields] path, if [i#fields] is a Tito source for [ret#fields'], then every [i#fields#foo]
+      subfield of it should be considered as also being one (even if not explicitly present in the
+      map value). *)
+  type t = Sources.t RetPathMap.t
 
   let pp =
     (* Prints: ($ret#field: $arg0#foo) ($ret#other:$arg2 $arg3#bar) *)
     IFmt.Labelled.iter_bindings ~sep:Fmt.comma RetPathMap.iteri
-      Fmt.(parens @@ pair ~sep:IFmt.colon_sp Fmt.(any "$ret" ++ FieldPath.pp) ArgPathSet.pp)
+      Fmt.(parens @@ pair ~sep:IFmt.colon_sp Fmt.(pp_ret ++ FieldPath.pp) Sources.pp)
 
 
   let empty = RetPathMap.empty
 
-  let add ~arg_index ~arg_field_path ~ret_field_path tito =
+  let add ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved tito =
     RetPathMap.update tito ret_field_path ~f:(function
       | None ->
           (* No TITO arg for this ret field yet. We create one. *)
-          ArgPathSet.singleton ~arg_index ~arg_field_path
-      | Some arg_path_set ->
-          ArgPathSet.add ~arg_index ~arg_field_path arg_path_set )
+          Sources.singleton ~arg_index ~arg_field_path ~shape_is_preserved
+      | Some source ->
+          Sources.add source ~arg_index ~arg_field_path ~shape_is_preserved )
 
 
   let fold tito ~init ~f =
     RetPathMap.fold tito ~init ~f:(fun ~key:ret_field_path ~data:arg_path_set acc ->
-        ArgPathSet.fold
-          ~f:(fun ~arg_index ~arg_field_path acc -> f ~arg_index ~arg_field_path ~ret_field_path acc)
+        Sources.fold
+          ~f:(fun ~arg_index ~arg_field_path ~shape_is_preserved acc ->
+            f ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved acc )
           ~init:acc arg_path_set )
 
 
-  let full ~arity = RetPathMap.singleton [] (ArgPathSet.full ~arity)
+  let full ~arity = RetPathMap.singleton [] (Sources.full ~arity)
 end
 
 module Summary = struct
@@ -818,34 +893,68 @@ module Summary = struct
 
 
   let tito_arguments_of_graph graph return_field_paths =
-    (* Construct an adjacency list representation of the reversed graph. *)
-    let graph_rev =
-      let add_flow g {LineageGraph.source; target} =
-        match target with
-        | ArgumentOf _ ->
-            g (* skip call edges *)
+    (* - Construct an adjacency list representation of the reversed graph.
+       - Collect a set of nodes that break shape preservation, due to either being abstract cells, or
+         being targets of edges that have this effect. *)
+    let graph_rev, shape_mixing_nodes =
+      let add_flow g {LineageGraph.source; target; kind} =
+        match kind with
+        | Call _ | Return _ ->
+            g (* skip call/return edges *)
         | _ ->
             Map.add_multi ~key:target ~data:source g
       in
-      List.fold ~init:LineageGraph.Vertex.Map.empty ~f:add_flow graph
+      let add_if_shape_mixing set {LineageGraph.source= _; target; kind} =
+        let may_be_shape_mixing =
+          match kind with
+          | Direct ->
+              LineageGraph.is_abstract_cell target
+          | Builtin ->
+              (* Builtins are considered as unknown functions for shape preservation purposes. *)
+              true
+          | Call _ | Return _ ->
+              false (* Skip Call/Return edges anyway *)
+          | Inject _ | Project _ ->
+              true (* Not shape-preserving by definition *)
+          | Summary ->
+              true (* TODO T154077173: which function is called? *)
+          | Capture ->
+              true (* TODO T154077173: investigate if more precision is worthwile *)
+          | DynamicCallFunction | DynamicCallModule ->
+              true (* TODO T154077173: model as a call? *)
+        in
+        if may_be_shape_mixing then Set.add set target else set
+      in
+      let walk_edge (g, s) edge = (add_flow g edge, add_if_shape_mixing s edge) in
+      List.fold
+        ~init:(LineageGraph.Vertex.Map.empty, LineageGraph.Vertex.Set.empty)
+        ~f:walk_edge graph
     in
-    (* Do a DFS, to see which arguments are reachable from return. *)
-    let rec dfs seen node =
-      if Set.mem seen node then seen
+    (* Do a DFS, to see which arguments are reachable from a return field path. *)
+    let rec dfs (shape_is_preserved, seen) node =
+      if Set.mem seen node then (shape_is_preserved, seen)
       else
         let seen = Set.add seen node in
         let parents = Map.find_multi graph_rev node in
-        List.fold ~init:seen ~f:dfs parents
+        let shape_is_preserved =
+          (* That return field path is shape-preserved if it is only reachable by a direct path
+             through shape-preserving one-source nodes. *)
+          shape_is_preserved
+          && (not (Set.mem shape_mixing_nodes node))
+          && match parents with [] | [_] -> true | _ -> false
+        in
+        List.fold ~init:(shape_is_preserved, seen) ~f:dfs parents
     in
-    let reachable return_field_path =
-      dfs LineageGraph.Vertex.Set.empty (LineageGraph.Return return_field_path)
+    let collect_reachable return_field_path =
+      dfs (true, LineageGraph.Vertex.Set.empty) (LineageGraph.Return return_field_path)
     in
     (* Collect reachable arguments from a Return field path. *)
     let collect_tito tito ret_field_path =
-      Set.fold (reachable ret_field_path) ~init:tito ~f:(fun acc (node : LineageGraph.data) ->
+      let shape_is_preserved, reachable = collect_reachable ret_field_path in
+      Set.fold reachable ~init:tito ~f:(fun acc (node : LineageGraph.data) ->
           match node with
           | Argument (arg_index, arg_field_path) ->
-              Tito.add ~arg_index ~arg_field_path ~ret_field_path acc
+              Tito.add ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved acc
           | _ ->
               acc )
     in
@@ -1592,7 +1701,7 @@ module TransferFunctions = struct
      to the concrete destination variable of a call, as specified by the tito_arguments summary information *)
   let add_tito (shapes : Shapes.t) node (kind : LineageGraph.FlowKind.t) (tito : Tito.t)
       (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
-    let add_one_tito_flow ~arg_index ~arg_field_path ~ret_field_path astate =
+    let add_one_tito_flow ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved astate =
       let arg_expr = List.nth_exn argument_list arg_index in
       let ret_path = VarPath.make (Var.of_id ret_id) ret_field_path in
       match exp_as_single_var_path arg_expr with
@@ -1602,7 +1711,10 @@ module TransferFunctions = struct
             ~src:(free_locals_of_exp shapes arg_expr)
             astate
       | Some arg_path ->
-          Domain.add_write_product ~shapes ~node ~kind ~dst:ret_path
+          let add_write =
+            if shape_is_preserved then Domain.add_write_parallel else Domain.add_write_product
+          in
+          add_write ~shapes ~node ~kind ~dst:ret_path
             ~src:(VarPath.sub_path arg_path arg_field_path)
             astate
     in
