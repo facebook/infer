@@ -178,9 +178,9 @@ end = struct
 
   let iter_hashtbl htbl f = Hashtbl.iteri ~f:(fun ~key ~data -> f (key, data)) htbl
 
-  let caml_hashtbl_of_iter iter =
-    let r = Caml.Hashtbl.create 42 in
-    iter (fun (key, data) -> Caml.Hashtbl.add r key data) ;
+  let hashtbl_of_iter key_module iter =
+    let r = Hashtbl.create key_module in
+    iter (fun (key, data) -> Hashtbl.set r ~key ~data) ;
     r
 
 
@@ -198,12 +198,6 @@ end = struct
     Format.fprintf fmt "@[(%a)@]"
       (IFmt.Labelled.iter_bindings ~sep Hashtbl.iteri pp_binding)
       hashtbl
-
-
-  let pp_caml_hashtbl ~bind pp_key pp_value fmt hashtbl =
-    let sep = Fmt.semi in
-    let pp_binding = pp_binding ~bind pp_key pp_value in
-    Format.fprintf fmt "@[(%a)@]" (Fmt.hashtbl ~sep pp_binding) hashtbl
 
 
   module Env = struct
@@ -312,34 +306,31 @@ end = struct
   end
 
   module Summary = struct
-    (* A summary is similar to the (final) typing environment of a function, with two differences:
-        - It uses Caml's hashtables, that can safely be marshalled
-        - It "freezes" the union-find shapes into some fixed marshallable values (which are still
-          essentially shapes ids, but with a different types to prevent inadvertent mixings) *)
+    (* A summary is similar to the (final) typing environment of a function. The difference is that
+       it "freezes" the union-find shapes into some fixed marshallable values (which are still
+       essentially shapes ids, but with a different types to prevent inadvertent mixings) *)
 
     (* Shape_id for use within the summary -- incompatible with ids from the environment *)
     module Shape_id = Id ()
 
-    (* Caml hashtables are marshallables, Core ones contain functional values *)
-    type fields = (Fieldname.t, Shape_id.t) Caml.Hashtbl.t
+    type fields = (Fieldname.t, Shape_id.t) Hashtbl.t
 
-    (** This is essentially a "frozen" and marshallable version of environments *)
+    (** This is essentially a "frozen" version of environments *)
     type t =
-      { var_shapes: (Var.t, Shape_id.t) Caml.Hashtbl.t
-      ; shape_fields: (Shape_id.t, fields) Caml.Hashtbl.t }
+      {var_shapes: (Var.t, Shape_id.t) Hashtbl.t; shape_fields: (Shape_id.t, fields) Hashtbl.t}
 
     let pp fmt {var_shapes; shape_fields} =
       Format.fprintf fmt
         "@[<v>@[<v4>SUMMARY VAR SHAPES@ @[%a@]@]@ @[<v4>SUMMARY SHAPES FIELDS@ @[%a@]@]@]"
-        (pp_caml_hashtbl ~bind:pp_arrow Var.pp Shape_id.pp)
+        (pp_hashtbl ~bind:pp_arrow Var.pp Shape_id.pp)
         var_shapes
-        (pp_caml_hashtbl ~bind:pp_arrow Shape_id.pp
-           (pp_caml_hashtbl ~bind:IFmt.colon_sp Fieldname.pp Shape_id.pp) )
+        (pp_hashtbl ~bind:pp_arrow Shape_id.pp
+           (pp_hashtbl ~bind:IFmt.colon_sp Fieldname.pp Shape_id.pp) )
         shape_fields
 
 
     let find_var_shape var_shapes var =
-      match Caml.Hashtbl.find_opt var_shapes var with
+      match Hashtbl.find var_shapes var with
       | Some shape ->
           shape
       | None ->
@@ -347,15 +338,15 @@ end = struct
 
 
     let has_fields shape_fields shape =
-      match Caml.Hashtbl.find_opt shape_fields shape with
+      match Hashtbl.find shape_fields shape with
       | None ->
           false
       | Some field_table ->
-          not ([%equal: int] 0 (Caml.Hashtbl.length field_table))
+          not ([%equal: int] 0 (Hashtbl.length field_table))
 
 
     let find_field_table shape_fields shape =
-      match Caml.Hashtbl.find_opt shape_fields shape with
+      match Hashtbl.find shape_fields shape with
       | Some field_table ->
           field_table
       | None ->
@@ -364,13 +355,15 @@ end = struct
 
     let find_next_field_shape shape_fields shape field =
       let field_table = find_field_table shape_fields shape in
-      match Caml.Hashtbl.find_opt field_table field with
+      match Hashtbl.find field_table field with
       | Some field_shape ->
           field_shape
       | None ->
           L.die InternalError "Field %a unknown for shape %a.@ Known fields are:@ @[{%a}@]"
             Fieldname.pp field Shape_id.pp shape
-            (Fmt.iter_bindings ~sep:Fmt.semi Caml.Hashtbl.iter @@ Fmt.pair Fieldname.pp Shape_id.pp)
+            (let sep = Fmt.semi in
+             let pp_binding = Fmt.pair Fieldname.pp Shape_id.pp in
+             IFmt.Labelled.iter_bindings ~sep Hashtbl.iteri pp_binding )
             field_table
 
 
@@ -394,17 +387,17 @@ end = struct
       let translate_fields fields =
         iter_hashtbl fields
         |> Iter.map2 (fun fieldname shape -> (fieldname, translate_shape shape))
-        |> caml_hashtbl_of_iter
+        |> hashtbl_of_iter (module Fieldname)
       in
       let var_shapes =
         iter_hashtbl var_shapes
         |> Iter.map2 (fun var shape -> (var, translate_shape shape))
-        |> caml_hashtbl_of_iter
+        |> hashtbl_of_iter (module Var)
       in
       let shape_fields =
         iter_hashtbl shape_fields
         |> Iter.map2 (fun shape fields -> (translate_shape_id shape, translate_fields fields))
-        |> caml_hashtbl_of_iter
+        |> hashtbl_of_iter (module Shape_id)
       in
       {var_shapes; shape_fields}
 
@@ -426,7 +419,7 @@ end = struct
              recursively introducing its fields. *)
           let env_shape = Env.create_shape () in
           Hashtbl.set id_translation_tbl ~key:shape_id ~data:env_shape ;
-          ( match Caml.Hashtbl.find_opt shape_fields shape_id with
+          ( match Hashtbl.find shape_fields shape_id with
           | None ->
               ()
           | Some fields ->
@@ -437,8 +430,8 @@ end = struct
 
     and introduce_fields id_translation_tbl fields shape_fields env_shape_fields =
       let env_fields = Hashtbl.create (module Fieldname) in
-      Caml.Hashtbl.iter
-        (fun fieldname shape_id ->
+      Hashtbl.iteri
+        ~f:(fun ~key:fieldname ~data:shape_id ->
           Hashtbl.set env_fields ~key:fieldname
             ~data:(introduce_shape id_translation_tbl shape_id shape_fields env_shape_fields) )
         fields ;
@@ -447,9 +440,8 @@ end = struct
 
     let introduce_var ~var id_translation_tbl {var_shapes; shape_fields}
         {Env.shape_fields= env_shape_fields; _} =
-      introduce_shape id_translation_tbl
-        (Caml.Hashtbl.find var_shapes var)
-        shape_fields env_shape_fields
+      introduce_shape id_translation_tbl (Hashtbl.find_exn var_shapes var) shape_fields
+        env_shape_fields
 
 
     let introduce ~formals ~return summary env =
@@ -468,7 +460,7 @@ end = struct
 
 
     let pp_field_table field_table =
-      Fmt.iter_bindings ~sep:Fmt.comma Caml.Hashtbl.iter
+      IFmt.Labelled.iter_bindings ~sep:Fmt.comma Hashtbl.iteri
         (Fmt.pair ~sep:IFmt.colon_sp Fieldname.pp Shape_id.pp)
         field_table
 
@@ -508,14 +500,14 @@ end = struct
             let field_table = find_field_table shape_fields shape in
             if
               Int.(remaining_depth <= 0)
-              || Caml.Hashtbl.length field_table > LineageConfig.field_width
+              || Hashtbl.length field_table > LineageConfig.field_width
               || (LineageConfig.prevent_cycles && Set.mem traversed_shape_set shape)
             then ([], true)
             else
               let terminal_sub_path, is_abstract =
                 aux (remaining_depth - 1)
                   (Set.add traversed_shape_set shape)
-                  (Caml.Hashtbl.find field_table field)
+                  (Hashtbl.find_exn field_table field)
                   fields
               in
               (field :: terminal_sub_path, is_abstract)
@@ -557,19 +549,19 @@ end = struct
         if Int.(depth >= search_depth) || (LineageConfig.prevent_cycles && Set.mem traversed shape)
         then f init (List.rev field_path_acc)
         else
-          match Caml.Hashtbl.find_opt shape_fields shape with
+          match Hashtbl.find shape_fields shape with
           | None ->
               f init (List.rev field_path_acc)
           | Some fields ->
-              let len = Caml.Hashtbl.length fields in
+              let len = Hashtbl.length fields in
               if Int.(len = 0 || len > LineageConfig.field_width) then
                 f init (List.rev field_path_acc)
               else
                 let traversed = Set.add traversed shape in
-                Caml.Hashtbl.fold
-                  (fun fieldname fieldshape acc ->
+                Hashtbl.fold
+                  ~f:(fun ~key:fieldname ~data:fieldshape acc ->
                     aux fieldshape (depth + 1) traversed (fieldname :: field_path_acc) ~init:acc )
-                  fields init
+                  fields ~init
       in
       aux shape 0 (Set.empty (module Shape_id)) [] ~init
 
@@ -591,9 +583,9 @@ end = struct
           "@[Attempting to get related fields of differently shaped fields: @[%a={%a}@]@ vs@ \
            @[%a={%a}@]@]"
           Shape_id.pp var_path_shape_1 (Fmt.option pp_field_table)
-          (Caml.Hashtbl.find_opt shape_fields var_path_shape_1)
+          (Hashtbl.find shape_fields var_path_shape_1)
           Shape_id.pp var_path_shape_2 (Fmt.option pp_field_table)
-          (Caml.Hashtbl.find_opt shape_fields var_path_shape_2)
+          (Hashtbl.find shape_fields var_path_shape_2)
       else
         let search_depth =
           (* Use the shallowest argument to determine the search depth. *)
