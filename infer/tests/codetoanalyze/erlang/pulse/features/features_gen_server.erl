@@ -12,6 +12,7 @@
     test_call2_Bad/0,
     test_call3_Bad/0,
     test_call4_Bad/0,
+    test_call5_Bad/0,
     test_cast_Bad/0,
     test_call_callee_Bad/0
 ]).
@@ -45,11 +46,11 @@ test_call_and_cast_Ok() ->
         {ok, Pid} = gen_server:start_link(?MODULE, [], []),
         expected = gen_server:call(Pid, expected),
         expected = gen_server:call(Pid, expected, 1000),
-        gen_server:cast(Pid, expected),
+        ok = gen_server:cast(Pid, expected),
         Pid1 = get_pid(),
         expected = gen_server:call(Pid1, expected),
         expected = gen_server:call(Pid1, expected, 1000),
-        gen_server:cast(Pid1, expected),
+        ok = gen_server:cast(Pid1, expected),
         ok
     end,
     run_test(Test).
@@ -83,6 +84,13 @@ test_call4_Bad() ->
     end,
     run_test(Test).
 
+test_call5_Bad() ->
+    Test = fun() ->
+        {ok, Pid} = gen_server:start_link(?MODULE, [], []),
+        register(?MODULE, Pid),
+        gen_server:call(?MODULE, oops)
+    end,
+    run_test(Test).
 
 test_cast_Bad() ->
     Test = fun() ->

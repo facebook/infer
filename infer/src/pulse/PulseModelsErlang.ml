@@ -1393,8 +1393,56 @@ module GenServer = struct
   let handle_request req_type server_ref request
       {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} astate =
     let astate = AbductiveDomain.add_need_dynamic_type_specialization (fst server_ref) astate in
-    match get_erlang_type_or_any (fst server_ref) astate with
-    | GenServerPid {module_name= Some module_name} ->
+    let module_name_opt =
+      (* Cf. https://www.erlang.org/doc/man/gen_server.html#type-server_ref :
+         server_ref() =
+             pid() |
+             (LocalName :: atom()) |
+             {Name :: atom(), Node :: atom()} |
+             {global, GlobalName :: term()} |
+             {via, RegMod :: module(), ViaName :: term()}
+      *)
+      match get_erlang_type_or_any (fst server_ref) astate with
+      | GenServerPid {module_name= Some module_name} ->
+          Some module_name
+      | GenServerPid {module_name= None} ->
+          L.debug Analysis Verbose "@[gen_server:call/cast called with unnamed GenServerPid@." ;
+          None
+      (* The following cases assume that the server is registered with its name. *)
+      | Atom ->
+          (* case `server_ref() = LocalName :: atom()` *)
+          Atoms.get_value path location server_ref astate
+      | Tuple 2 -> (
+          (* case `server_ref() = {Name :: atom(), Node :: atom()} | {global, GlobalName :: term()}
+             We model global and local registration on another node as local registration in the current node *)
+          let _, _, first_element =
+            load_field path (Tuples.field_name 2 1) location server_ref astate
+          in
+          match Atoms.get_value path location first_element astate with
+          | Some "global" ->
+              (* case `server_ref() = {global, GlobalName :: term()}` *)
+              let _, _, second_element =
+                load_field path (Tuples.field_name 2 2) location server_ref astate
+              in
+              Atoms.get_value path location second_element astate
+          | module_name_opt ->
+              (* case `server_ref() = {Name :: atom(), Node :: atom()}` *)
+              module_name_opt )
+      | Tuple 3 ->
+          (* unsupported case: `server_ref() = {via, RegMod :: module(), ViaName :: term()}`.
+             Note: we don't check that the first element is the atom `via` as we don't support that case yet anyway. *)
+          L.debug Analysis Verbose
+            "@[gen_server:call/cast called with unsupported `gen_server:server_ref()`: `{via, \
+             RegMod :: module(), ViaName :: term()}`@." ;
+          None
+      | typ ->
+          L.debug Analysis Verbose
+            "@[gen_server:call/cast called with Invalid server_ref of type: %a@." ErlangTypeName.pp
+            typ ;
+          None
+    in
+    match module_name_opt with
+    | Some module_name ->
         let arg_nondet () =
           ( (AbstractValue.mk_fresh (), Hist.single_alloc path location "nondet")
           , Typ.mk_struct (ErlangType Any) )
@@ -1414,13 +1462,8 @@ module GenServer = struct
         PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
           procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
         |> fst3
-    | GenServerPid {module_name= None} ->
-        L.debug Analysis Verbose "@[gen_server:call/cast called with unnamed GenServerPid@." ;
-        [Ok (ContinueProgram astate)]
-    | typ ->
-        L.debug Analysis Verbose
-          "@[gen_server:call/cast called with unsupported `gen_server:server_ref()`: %a@."
-          ErlangTypeName.pp typ ;
+    | None ->
+        L.debug Analysis Verbose "@[gen_server:call/cast failed to derive gen_server module name@." ;
         [Ok (ContinueProgram astate)]
 
 
@@ -1495,7 +1538,20 @@ module GenServer = struct
   let call3 server_ref request _timeout : model = call2 server_ref request
 
   let cast server_ref request : model =
-   fun data astate -> handle_request Cast server_ref request data astate
+   fun data astate ->
+    let res_list = handle_request Cast server_ref request data astate in
+    let post_process_handle_call res =
+      match PulseResult.ok res with
+      | None ->
+          [res]
+      | Some exec_state -> (
+        match exec_state with
+        | ContinueProgram astate ->
+            Custom.return_value_model (Some (Custom.Atom (Some "ok"))) data astate
+        | _ ->
+            [res] )
+    in
+    List.concat (List.map res_list ~f:post_process_handle_call)
 end
 
 let matchers : matcher list =
