@@ -1,7 +1,7 @@
 @charset "UTF-8";
 /* Copyright (c) 2016 The odoc contributors. All rights reserved.
    Distributed under the ISC license, see terms at the end of the file.
-   odoc 2.1.1 */
+   odoc 2.2.0 */
 
 /* Fonts */
 @import url('https://fonts.googleapis.com/css?family=Fira+Mono:400,500');
@@ -419,8 +419,8 @@ pre code {
   padding: 0.35em 0.5em;
 }
 
-.def-doc {
-  margin-bottom: 10px;
+li:not(:last-child) > .def-doc {
+  margin-bottom: 15px;
 }
 
 /* Spacing between items */
@@ -428,30 +428,41 @@ div.odoc-spec,.odoc-include {
   margin-bottom: 2em;
 }
 
-.spec.type .variant {
+.spec.type .variant p, .spec.type .record p {
+  margin: 5px;
+}
+
+.spec.type .variant, .spec.type .record {
   margin-left: 2ch;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 4px;
 }
-.spec.type .variant p {
-  margin: 0;
-  font-style: italic;
+
+.spec.type .record > code, .spec.type .variant > code {
+  min-width: 40%;
 }
-.spec.type .record {
-  margin-left: 2ch;
+
+.spec.type > ol {
+  margin-top: 0;
+  margin-bottom: 0;
 }
-.spec.type .record p {
-  margin: 0;
-  font-style: italic;
+
+.spec.type .record > .def-doc, .spec.type .variant > .def-doc {
+  min-width:50%;
+  padding: 0.25em 0.5em;
+  margin-left: 10%;
+  border-radius: 3px;
+  flex-grow:1;
+  background: var(--main-background);
+  box-shadow: 2px 2px 4px lightgrey;
 }
 
 div.def {
   margin-top: 0;
   text-indent: -2ex;
   padding-left: 2ex;
-}
-
-div.def+div.def-doc {
-  margin-left: 1ex;
-  margin-top: 2.5px
 }
 
 div.def-doc>*:first-child {
@@ -666,9 +677,8 @@ td.def-doc *:first-child {
 /* Mobile adjustements. */
 
 @media only screen and (max-width: 95ex) {
-  .odoc-content {
-    margin: auto;
-    padding: 2em;
+  body.odoc {
+    margin: 2em;
   }
   .odoc-toc {
     position: static;
@@ -678,6 +688,7 @@ td.def-doc *:first-child {
     border: none;
     padding: 0.2em 1em;
     border-radius: 5px;
+    margin-bottom: 2em;
   }
 }
 

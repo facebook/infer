@@ -117,6 +117,14 @@ of individual infer commands for details about their
 supported options. The following is a list of all the
 supported options (see also <b>--help-full</b> for options
 reserved for internal use). <b><br>
+--analysis-schedule-file</b> <i>path</i></p>
+
+<p style="margin-left:17%;">The file where an analysis
+schedule is stored. The default is
+infer-out/analysis_dependency_graph</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --annotation-reachability</b></p>
 
 <p style="margin-left:17%;">Activates: checker
@@ -264,6 +272,15 @@ results in different allocsites imported to the caller.
 
 <p style="margin-left:17%;">Debug level for buffer-overrun
 checker (0-4)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--bo-exit-frontend-gener-vars</b></p>
+
+<p style="margin-left:17%;">Activates: Put frontend
+generated variables out of scope when they are listed in
+exit scope instruction. (Conversely:
+<b>--no-bo-exit-frontend-gener-vars</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -562,6 +579,18 @@ coming from Xcode (can be specified multiple times)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
+--complete-capture-from</b> <i>path</i></p>
+
+<p style="margin-left:17%;">Provide the path to an infer
+results directory containing a capture database. The capture
+database specified with <b>--results-dir</b>) (which must
+exist) will be completed from the input database and
+according to the <b>missing-*</b> files in the results
+directory. The exit code will be equal to the number of rows
+added to the capture database.</p>
+
+<p style="margin-left:11%;">See also <b>infer-debug</b>(1).
+<b><br>
 --config-impact-analysis</b></p>
 
 <p style="margin-left:17%;">Activates: checker
@@ -949,6 +978,7 @@ INTEGER_OVERFLOW_L2 (enabled by default), <br>
 INTEGER_OVERFLOW_L5 (disabled by default), <br>
 INTEGER_OVERFLOW_U5 (disabled by default), <br>
 INTERFACE_NOT_THREAD_SAFE (enabled by default), <br>
+INVALID_SIL (enabled by default), <br>
 INVARIANT_CALL (disabled by default), <br>
 IPC_ON_UI_THREAD (enabled by default), <br>
 Internal_error (enabled by default), <br>
@@ -996,7 +1026,7 @@ PRECONDITION_NOT_FOUND (enabled by default), <br>
 PRECONDITION_NOT_MET (enabled by default), <br>
 PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
 <br>
-PULSE_CONST_REFABLE (disabled by default), <br>
+PULSE_CONST_REFABLE (enabled by default), <br>
 PULSE_READONLY_SHARED_PTR_PARAM (enabled by default), <br>
 PULSE_RESOURCE_LEAK (enabled by default), <br>
 PULSE_UNINITIALIZED_VALUE (enabled by default), <br>
@@ -1012,7 +1042,7 @@ PULSE_UNNECESSARY_COPY_INTERMEDIATE (disabled by default),
 PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST (disabled by <br>
 default), <br>
 PULSE_UNNECESSARY_COPY_MOVABLE (enabled by default), <br>
-PULSE_UNNECESSARY_COPY_OPTIONAL (disabled by default), <br>
+PULSE_UNNECESSARY_COPY_OPTIONAL (enabled by default), <br>
 PULSE_UNNECESSARY_COPY_OPTIONAL_CONST (disabled by default),
 <br>
 PULSE_UNNECESSARY_COPY_RETURN (disabled by default), <br>
@@ -1038,6 +1068,7 @@ Symexec_memory_error (enabled by default), <br>
 TAINT_ERROR (enabled by default), <br>
 THREAD_SAFETY_VIOLATION (enabled by default), <br>
 TOPL_ERROR (enabled by default), <br>
+TOPL_ERROR_LATENT (disabled by default), <br>
 UNINITIALIZED_VALUE (enabled by default), <br>
 UNREACHABLE_CODE (enabled by default), <br>
 UNTRUSTED_BUFFER_ACCESS (disabled by default), <br>
@@ -1157,6 +1188,17 @@ packages.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--extract-capture-from</b> <i>path</i></p>
+
+<p style="margin-left:17%;">Provide the path to an infer
+results directory containing a capture database. Together
+with a list of files provided through the obligatory use of
+<b>--changed-files-index</b>, create a new capture database
+containing only the artefacts related to these files (in the
+location specified with <b>--results-dir</b>).</p>
+
+<p style="margin-left:11%;">See also <b>infer-debug</b>(1).
+<b><br>
 --fail-on-issue</b></p>
 
 <p style="margin-left:17%;">Activates: Exit with error code
@@ -1206,11 +1248,11 @@ infer results directory. (Conversely:
 argument after <b>--</b> was <i>command</i>. Possible
 values: <i>ant</i>, <i>buck</i>, <i>buck1</i>, <i>buck2</i>,
 <i>gradle</i>, <i>gradlew</i>, <i>java</i>, <i>javac</i>,
-<i>cc</i>, <i>clang</i>, <i>gcc</i>, <i>clang++</i>,
-<i>c++</i>, <i>g++</i>, <i>hackc</i>, <i>make</i>,
-<i>configure</i>, <i>cmake</i>, <i>waf</i>, <i>mvn</i>,
-<i>mvnw</i>, <i>ndk-build</i>, <i>rebar3</i>, <i>erlc</i>,
-<i>xcodebuild</i>.</p>
+<i>kotlinc</i>, <i>cc</i>, <i>clang</i>, <i>gcc</i>,
+<i>clang++</i>, <i>c++</i>, <i>g++</i>, <i>hackc</i>,
+<i>make</i>, <i>configure</i>, <i>cmake</i>, <i>waf</i>,
+<i>mvn</i>, <i>mvnw</i>, <i>ndk-build</i>, <i>python3</i>,
+<i>rebar3</i>, <i>erlc</i>, <i>xcodebuild</i>.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1) and <b>infer-run</b>(1). <b><br>
@@ -1396,6 +1438,16 @@ to immutable fields in the Impurity checker (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--incremental-analysis</b></p>
+
+<p style="margin-left:17%;">Activates: Use incremental
+analysis for changed files. Not compatible with
+<b>--reanalyze</b> and <b>--continue-analysis</b>. Also sets
+<b>--mark-unchanged-procs</b>. (Conversely:
+<b>--no-incremental-analysis</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --no-inefficient-keyset-iterator</b></p>
 
 <p style="margin-left:17%;">Deactivates: checker
@@ -1415,6 +1467,24 @@ inefficient-keyset-iterator and disable all other checkers
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--inline-func-pointer-for-testing</b> <i>string</i></p>
+
+<p style="margin-left:17%;">Enables substituting global
+function pointers used for testing with the real function
+calls in the clang frontend. Pass the prefix used to build
+the global function pointers used for testing.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--invalidate-only</b></p>
+
+<p style="margin-left:17%;">Activates: Remove any summaries
+from the results database that transitively depend on a
+changed procedure, then exit without doing any actual
+analysis. (Conversely: <b>--no-invalidate-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --issues-tests</b> <i>file</i></p>
 
 <p style="margin-left:17%;">Write a list of issues in a
@@ -1428,7 +1498,8 @@ qualifier | severity | line | column | procedure |
 procedure_start_line <br>
 | file | bug_trace | key | hash | line_offset | <br>
 qualifier_contains_potential_exception_note | nullsafe_extra
-}</i></p>
+| <br>
+taint_extra }</i></p>
 
 <p style="margin-left:17%;">Fields to emit with
 <b>--issues-tests</b></p>
@@ -1472,6 +1543,108 @@ capture (experimental, do not use). (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
+--lineage</b></p>
+
+<p style="margin-left:17%;">Activates: checker lineage:
+Computes a dataflow graph (Conversely:
+<b>--no-lineage</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--no-lineage-dedup</b></p>
+
+<p style="margin-left:17%;">Deactivates: In JSON output,
+attempt to print each entity at most once. This is the
+default. The only reason you may want to turn this off is to
+make hash collisions more visible; that is, cases in which
+distinct entities get assigned the same ID. (Conversely:
+<b>--lineage-dedup</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--lineage-field-depth</b> <i>int</i></p>
+
+<p style="margin-left:17%;">[EXPERIMENTAL] Maximal field
+depth sensitivity for lineage analysis. 0 will make the
+analysis field insensitive.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--lineage-field-width</b> <i>int</i></p>
+
+<p style="margin-left:17%;">[EXPERIMENTAL] Maximal width of
+structures for field sensitive lineage analysis. Structure
+that have a higher number of fields will be smashed into a
+single element. 0 will make the analysis field insensitive.
+If not set, field width will be unlimited.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--lineage-include-builtins</b></p>
+
+<p style="margin-left:17%;">Activates: Include call/return
+edges to/from procedures that model primitive Erlang
+operations, such as constructing a list. (Conversely:
+<b>--no-lineage-include-builtins</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--lineage-json-report</b></p>
+
+<p style="margin-left:17%;">Activates: Enable lineage
+report in JSON format. (Conversely:
+<b>--no-lineage-json-report</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--lineage-keep-temporaries</b></p>
+
+<p style="margin-left:17%;">Activates: Normally, lineage
+summaries do not mention temporary variables introduced
+while compiling the high-level code to Infer's IR
+(intermediate representation). If this option is enabled,
+then the lineage graph produced corresponds to Infer's IR.
+(Conversely: <b>--no-lineage-keep-temporaries</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--lineage-max-cfg-size</b> <i>int</i></p>
+
+<p style="margin-left:17%;">If set, larger CFGs are
+skipped.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--lineage-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable lineage and
+disable all other checkers (Conversely:
+<b>--no-lineage-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--lineage-prevent-cycles</b></p>
+
+<p style="margin-left:17%;">Activates: [EXPERIMENTAL] If
+set, Lineage will stop distinguishing the fields of a
+variable when it notices recursive types (that is, a
+sub-field having the same type as one of its
+&quot;ancestors&quot;). (Conversely:
+<b>--no-lineage-prevent-cycles</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--lineage-seed</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Set the random seed used for
+hashing. (Various entities that get reported need unique
+identifiers. To generate these unique identifiers, in a
+distributed way without communication, we use hashing. If
+you are unlucky and get collisions, you can try a different
+seed.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --list-checkers</b></p>
 
 <p style="margin-left:17%;">Activates: Show the list of all
@@ -1549,6 +1722,14 @@ make only)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-capture</b>(1). <b><br>
+--log-missing-deps</b></p>
+
+<p style="margin-left:17%;">Activates: Log analysis
+dependencies that cannot be found. (Conversely:
+<b>--no-log-missing-deps</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
 --loop-hoisting</b></p>
 
 <p style="margin-left:17%;">Activates: checker
@@ -1566,6 +1747,18 @@ and disable all other checkers (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
+--mark-unchanged-procs</b></p>
+
+<p style="margin-left:17%;">Activates: Check structural
+identity of newly-captured procedures with
+previously-captured versions, marking the new procedure as
+unchanged if the two are equivalent. Also prevents removing
+results db during capture, so that unchanged results can be
+reused during future incremental analyses (Conversely:
+<b>--no-mark-unchanged-procs</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-capture</b>(1). <b><br>
 --no-mask-sawja-exceptions</b></p>
 
 <p style="margin-left:17%;">Deactivates: Mask exceptions
@@ -1677,6 +1870,16 @@ parameter-not-null-checked and disable all other checkers
 
 <p style="margin-left:11%;">See also <b>infer-run</b>(1).
 <b><br>
+--preanalysis-html</b></p>
+
+<p style="margin-left:17%;">Activates: Whether the HTML
+node printing for preanalysis is enabled or not. Set to
+false by default since this helps focus on debugging just
+the enabled analyses. (Conversely:
+<b>--no-preanalysis-html</b>)</p>
+
+<p style="margin-left:11%;">See also <b>infer-debug</b>(1).
+<b><br>
 --print-active-checkers</b></p>
 
 <p style="margin-left:17%;">Activates: Print the active
@@ -1741,6 +1944,15 @@ procedures or those determined by the option
 
 <p style="margin-left:11%;">See also <b>infer-debug</b>(1).
 <b><br>
+--procedures-callees</b></p>
+
+<p style="margin-left:17%;">Activates: Print the static
+callees of each procedure in the output of
+<b>--procedures</b> (Conversely:
+<b>--no-procedures-callees</b>)</p>
+
+<p style="margin-left:11%;">See also <b>infer-debug</b>(1).
+<b><br>
 --procedures-cfg</b></p>
 
 <p style="margin-left:17%;">Activates: Output a dotty file
@@ -1794,8 +2006,9 @@ found in the output of <b>--procedures</b> (Conversely:
 --procedures-summary</b></p>
 
 <p style="margin-left:17%;">Activates: Print the summaries
-of each procedure in the output of <b>--procedures</b>
-(Conversely: <b>--no-procedures-summary</b>)</p>
+of each procedure in the output of <b>--procedures</b>. See
+also <b>--procedures-summary-nonempty</b>. (Conversely:
+<b>--no-procedures-summary</b>)</p>
 
 <p style="margin-left:11%;">See also <b>infer-debug</b>(1).
 <b><br>
@@ -1804,6 +2017,18 @@ of each procedure in the output of <b>--procedures</b>
 <p style="margin-left:17%;">Activates: Emit the summaries
 of each procedure in the output of <b>--procedures</b> as
 JSON (Conversely: <b>--no-procedures-summary-json</b>)</p>
+
+<p style="margin-left:11%;">See also <b>infer-debug</b>(1).
+<b><br>
+--procedures-summary-skip-empty</b></p>
+
+<p style="margin-left:17%;">Activates: Completely skip
+procedures that do not have summaries. Useful when analyzing
+a small part of a big project. (To use in conjunction with
+<b>--procedures-summary</b> or
+<b>--procedures-summary-json</b>. See also
+<b>--changed-files-index</b>.) (Conversely:
+<b>--no-procedures-summary-skip-empty</b>)</p>
 
 <p style="margin-left:11%;">See also <b>infer-debug</b>(1).
 <b><br>
@@ -1999,12 +2224,14 @@ are method or namespace::method</p>
 --pulse-models-for-erlang</b> <i>+path</i></p>
 
 <p style="margin-left:17%;">Provide custom models for
-Erlang in JSON files. If a path to a directory is given then
-the JSON files must have the &rsquo;.json&rsquo; extension.
-Any other file will be ignored. The subdirectories will be
-explored and must follow the same convention.</p>
+Erlang in JSON files or SQLite3. Files must end with
+&rsquo;.json&rsquo; or &rsquo;.db&rsquo; respectively. If a
+path to a directory is given then the subdirectories will be
+explored and names must follow the same convention. SQLite3
+format is preferable when providing a large number of models
+because they will be internally indexed by mfa.</p>
 
-<p style="margin-left:11%;">The format is
+<p style="margin-left:11%;">The format for JSON is
 [SelectorBehavior, ...] where <br>
 SelectorBehavior := {&quot;selector&quot;: Selector,
 &quot;behavior&quot;: Behavior} <br>
@@ -2034,6 +2261,15 @@ ErlangValue := [&quot;Atom&quot;,
 | null <br>
 ErlangValue = null is to represent nondeterministic value
 <br>
+The format for SQLite3 is a DB with schema: <br>
+CREATE TABLE models( <br>
+&quot;mfa&quot; TEXT, <br>
+&quot;behavior&quot; TEXT <br>
+); <br>
+- &rsquo;mfa&rsquo; is module:function/arity, e.g.
+&quot;mymod:f/0&quot; <br>
+- &rsquo;behavior&rsquo; is a JSON &rsquo;Behavior&rsquo;
+(see above) <br>
 See also <b>infer-analyze</b>(1). <b><br>
 --no-pulse-nullsafe-report-npe</b></p>
 
@@ -2091,6 +2327,20 @@ patterns.</p>
 
 <p style="margin-left:17%;">Regex of procedures that should
 not be analyzed by Pulse.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-specialization-iteration-limit</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Maximum number of iterative
+summary specialization at each call site.</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--pulse-specialization-limit</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Maximum number of summary
+specialization by procedure.</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2188,25 +2438,46 @@ and sanitizers. It consists of a list of objects, each with
 one of the following combinations of fields to identify
 relevant procedures:</p>
 
-<p style="margin-left:11%;">- &quot;procedure&quot;: match
-a substring of the procedure name <br>
+<p style="margin-left:11%;">- &quot;field_regex&quot;:
+match a field name using an OCaml regex <br>
+- &quot;procedure&quot;: match a substring of the procedure
+name <br>
 - &quot;procedure_regex&quot;: as above, but match using an
 OCaml regex <br>
+- &quot;class_name_regex&quot;: match all methods of classes
+whose names <br>
+match the OCaml regex <br>
 - &quot;class_names&quot; and &quot;method_names&quot;: <br>
 match exact uses of methods of particular classes <br>
+- &quot;class_names&quot; and &quot;field_names&quot;: <br>
+match exact uses of fields of particular classes <br>
+- &quot;class_names&quot; and
+&quot;method_return_type_names&quot;: <br>
+match exact uses of methods with particular return types of
+<br>
+particular classes <br>
 - &quot;overrides_of_class_with_annotation&quot;: <br>
 match all procedures defined in classes which inherit <br>
 from a superclass with the specified annotation <br>
 - &quot;allocation&quot;: <i>(for taint sources only)</i>
 <br>
 match allocations of the exact class name supplied <br>
+- &quot;block_passed_to&quot;: <i>(for taint sources
+only)</i> <br>
+match a substring of the procedure name that the block is
+<br>
+passed to <br>
+- &quot;block_passed_to_regex&quot;: <i>(for taint sources
+only)</i> <br>
+as above, but match using an OCaml regex <br>
 Each object can also optionally specify: <br>
 - &quot;kinds&quot;: the kinds of taint, used in
 <b>--pulse-taint-policies</b> <br>
 to specify flows between sources/sanitizers/sinks <br>
 (&quot;Simple&quot; by default). <br>
 - &quot;taint_target&quot;: <br>
-where the taint should be applied in the procedure. <br>
+where the taint should be applied in the procedure or <br>
+field. <br>
 - &quot;ReturnValue&quot;: (default for taint sources and
 <br>
 propagators) <br>
@@ -2220,16 +2491,27 @@ all arguments except given indices (zero-indexed) <br>
 - [&quot;ArgumentsMatchingTypes&quot;, [&lt;type list&gt;]]:
 <br>
 arguments with types containing supplied strings <br>
-- [&quot;Fields&quot;, [&lt;(string * taint_target)
+- &quot;InstanceReference&quot;: this/self references of
+instance <br>
+methods <br>
+- [&quot;FieldsOfValue&quot;, [&lt;(string * taint_target)
 list&gt;]]: <br>
 fields given by name in return value, arguments or <br>
-other fields <i><br>
+other fields <br>
+- &quot;GetField&quot; : a given field is read <br>
+- &quot;SetField&quot; : a given field is set <i><br>
 N.B.</i> for methods, index 0 is <i>this</i>/<i>self</i>.
 <br>
-- &quot;match_objc_blocks&quot;: boolean, &quot;false&quot;
-by default <br>
-&quot;true&quot; if only Objective-C blocks should be
-matched. <br>
+For all the regex-based matchers, we can also specify: <br>
+- &quot;exclude_from_regex_in&quot; - to specify a list of
+header files, <br>
+such that we exclude any classes, field or methods from
+those <br>
+files from the regexes. <br>
+For field matchers, we can also specify: <br>
+- &quot;sanitized_in&quot; - to specify a list of files
+where using the <br>
+source shouldn't be flagged. <br>
 See also <b>infer-analyze</b>(1). <b><br>
 --pulse-widen-threshold</b> <i>int</i></p>
 
@@ -2354,6 +2636,31 @@ disable all other checkers (Conversely:
 analysis starts from the files captured since the
 <i>infer</i> command started (Conversely:
 <b>--no-reactive</b> | <b>-R</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--replay-analysis-schedule</b></p>
+
+<p style="margin-left:17%;">Activates: Replay the analysis
+schedule stored in <b>--replay-analysis-schedule-file</b>,
+which should analyze the procedures in the same order as the
+previous analysis. This should drastically limit
+non-determinism in the results, as well as prevent repeated
+work, leading to a faster second analysis. Only works if a
+previous analysis has just run on the same code.
+(Conversely: <b>--no-replay-analysis-schedule</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--replay-ondemand-should-error</b></p>
+
+<p style="margin-left:17%;">Activates: [debug] Whether
+triggering the analysis of a procedure via ondemand should
+log an error when replaying an analysis schedule with
+<b>--replay-analysis-schedule</b>. Enable when replaying the
+same analysis on the same capture data to debug cases where
+dependencies that were recorded are insufficient.
+(Conversely: <b>--no-replay-ondemand-should-error</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2522,106 +2829,21 @@ vacuum analysis database. (Conversely:
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---simple-lineage</b></p>
+--sil-validation</b></p>
 
 <p style="margin-left:17%;">Activates: checker
-simple-lineage: Computes a dataflow graph (Conversely:
-<b>--no-simple-lineage</b>)</p>
+sil-validation: This checker validates that all SIL
+instructions in all procedure bodies conform to a (front-end
+specific) subset of SIL. (Conversely:
+<b>--no-sil-validation</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
---no-simple-lineage-dedup</b></p>
-
-<p style="margin-left:17%;">Deactivates: In JSON output,
-attempt to print each entity at most once. This is the
-default. The only reason you may want to turn this off is to
-make hash collisions more visible; that is, cases in which
-distinct entities get assigned the same ID. (Conversely:
-<b>--simple-lineage-dedup</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---simple-lineage-field-depth</b> <i>int</i></p>
-
-<p style="margin-left:17%;">[EXPERIMENTAL] Maximal field
-depth sensitivity for lineage analysis. 0 will make the
-analysis field insensitive.</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---simple-lineage-field-width</b> <i>int</i></p>
-
-<p style="margin-left:17%;">[EXPERIMENTAL] Maximal width of
-structures for field sensitive lineage analysis. Structure
-that have a higher number of fields will be smashed into a
-single element. 0 will make the analysis field insensitive.
-If not set, field width will be unlimited.</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---simple-lineage-include-builtins</b></p>
-
-<p style="margin-left:17%;">Activates: Include call/return
-edges to/from procedures that model primitive Erlang
-operations, such as constructing a list. (Conversely:
-<b>--no-simple-lineage-include-builtins</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---simple-lineage-json-report</b></p>
-
-<p style="margin-left:17%;">Activates: Enable simple
-lineage report in JSON format. (Conversely:
-<b>--no-simple-lineage-json-report</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---simple-lineage-keep-temporaries</b></p>
-
-<p style="margin-left:17%;">Activates: Normally, lineage
-summaries do not mention temporary variables introduced
-while compiling the high-level code to Infer's IR
-(intermediate representation). If this option is enabled,
-then the lineage graph produced corresponds to Infer's IR.
-(Conversely:
-<b>--no-simple-lineage-keep-temporaries</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---simple-lineage-max-cfg-size</b> <i>int</i></p>
-
-<p style="margin-left:17%;">If set, larger CFGs are
-skipped.</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---simple-lineage-only</b></p>
+--sil-validation-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
-simple-lineage and disable all other checkers (Conversely:
-<b>--no-simple-lineage-only</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---simple-lineage-prevent-cycles</b></p>
-
-<p style="margin-left:17%;">Activates: [EXPERIMENTAL] If
-set, SimpleLineage will stop distinguishing the fields of a
-variable when it notices recursive types (that is, a
-sub-field having the same type as one of its
-&quot;ancestors&quot;). (Conversely:
-<b>--no-simple-lineage-prevent-cycles</b>)</p>
-
-<p style="margin-left:11%;">See also
-<b>infer-analyze</b>(1). <b><br>
---simple-lineage-seed</b> <i>int</i></p>
-
-<p style="margin-left:17%;">Set the random seed used for
-hashing. (Various entities that get reported need unique
-identifiers. To generate these unique identifiers, in a
-distributed way without communication, we use hashing. If
-you are unlucky and get collisions, you can try a different
-seed.</p>
+sil-validation and disable all other checkers (Conversely:
+<b>--no-sil-validation-only</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>
@@ -2826,6 +3048,21 @@ progress is being made because of concurrency errors.
 <p style="margin-left:17%;">Activates: Enable starvation
 and disable all other checkers (Conversely:
 <b>--no-starvation-only</b>)</p>
+
+<p style="margin-left:11%;">See also
+<b>infer-analyze</b>(1). <b><br>
+--store-analysis-schedule</b></p>
+
+<p style="margin-left:17%;">Activates: Store the analysis
+schedule for later replay, honoring
+<b>--replay-analysis-schedule-file</b> if present. This can
+be useful to store a schedule done with one version of infer
+to load with another version of infer. There is no guarantee
+infer will be able to load the previous schedule but using
+this mechanism gives a higher chance of success compared
+with having to read the previous results database
+successfully as fewer datatypes are involved. (Conversely:
+<b>--no-store-analysis-schedule</b>)</p>
 
 <p style="margin-left:11%;">See also
 <b>infer-analyze</b>(1). <b><br>

@@ -23,14 +23,15 @@
 <a href="#SYNOPSIS">SYNOPSIS</a><br>
 <a href="#DESCRIPTION">DESCRIPTION</a><br>
 <a href="#OPTIONS">OPTIONS</a><br>
+<a href="#ANALYSIS SCHEDULER OPTIONS">ANALYSIS SCHEDULER OPTIONS</a><br>
 <a href="#BUFFER OVERRUN OPTIONS">BUFFER OVERRUN OPTIONS</a><br>
 <a href="#CLANG OPTIONS">CLANG OPTIONS</a><br>
 <a href="#ERLANG OPTIONS">ERLANG OPTIONS</a><br>
 <a href="#JAVA OPTIONS">JAVA OPTIONS</a><br>
+<a href="#LINEAGE OPTIONS">LINEAGE OPTIONS</a><br>
 <a href="#PULSE CHECKER OPTIONS">PULSE CHECKER OPTIONS</a><br>
 <a href="#QUANDARY CHECKER OPTIONS">QUANDARY CHECKER OPTIONS</a><br>
 <a href="#RACERD CHECKER OPTIONS">RACERD CHECKER OPTIONS</a><br>
-<a href="#SIMPLE LINEAGE OPTIONS">SIMPLE LINEAGE OPTIONS</a><br>
 <a href="#SIOF CHECKER OPTIONS">SIOF CHECKER OPTIONS</a><br>
 <a href="#ENVIRONMENT">ENVIRONMENT</a><br>
 <a href="#FILES">FILES</a><br>
@@ -329,6 +330,15 @@ to immutable fields in the Impurity checker (Conversely:
 <b>--no-impurity-report-immutable-modifications</b>)</p>
 
 
+<p style="margin-left:11%;"><b>--incremental-analysis</b></p>
+
+<p style="margin-left:17%;">Activates: Use incremental
+analysis for changed files. Not compatible with
+<b>--reanalyze</b> and <b>--continue-analysis</b>. Also sets
+<b>--mark-unchanged-procs</b>. (Conversely:
+<b>--no-incremental-analysis</b>)</p>
+
+
 <p style="margin-left:11%;"><b>--no-inefficient-keyset-iterator</b></p>
 
 <p style="margin-left:17%;">Deactivates: checker
@@ -345,6 +355,13 @@ inefficient-keyset-iterator and disable all other checkers
 (Conversely:
 <b>--no-inefficient-keyset-iterator-only</b>)</p>
 
+<p style="margin-left:11%;"><b>--invalidate-only</b></p>
+
+<p style="margin-left:17%;">Activates: Remove any summaries
+from the results database that transitively depend on a
+changed procedure, then exit without doing any actual
+analysis. (Conversely: <b>--no-invalidate-only</b>)</p>
+
 <p style="margin-left:11%;"><b>--jobs</b>,<b>-j</b>
 <i>int</i></p>
 
@@ -356,6 +373,18 @@ analysis jobs simultaneously</p>
 <p style="margin-left:17%;">Activates: Keep going when the
 analysis or capture encounter a failure (Conversely:
 <b>--no-keep-going</b>)</p>
+
+<p style="margin-left:11%;"><b>--lineage</b></p>
+
+<p style="margin-left:17%;">Activates: checker lineage:
+Computes a dataflow graph (Conversely:
+<b>--no-lineage</b>)</p>
+
+<p style="margin-left:11%;"><b>--lineage-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable lineage and
+disable all other checkers (Conversely:
+<b>--no-lineage-only</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--litho-required-props</b></p>
@@ -391,6 +420,12 @@ ignored by liveness analysis</p>
 <p style="margin-left:17%;">Activates: Enable liveness and
 disable all other checkers (Conversely:
 <b>--no-liveness-only</b>)</p>
+
+<p style="margin-left:11%;"><b>--log-missing-deps</b></p>
+
+<p style="margin-left:17%;">Activates: Log analysis
+dependencies that cannot be found. (Conversely:
+<b>--no-log-missing-deps</b>)</p>
 
 <p style="margin-left:11%;"><b>--loop-hoisting</b></p>
 
@@ -584,24 +619,7 @@ absolute path to a relative path to the root directory
 <p style="margin-left:17%;">Write results and internal
 files in the specified directory</p>
 
-<p style="margin-left:11%;"><b>--scheduler</b> <i>{ file |
-restart | callgraph }</i></p>
-
-<p style="margin-left:17%;">Specify the scheduler used for
-the analysis phase:</p>
-
-<p style="margin-left:11%;">- file: schedule one job per
-file <br>
-- callgraph: schedule one job per procedure, following the
-<br>
-syntactic call graph. Usually faster than &quot;file&quot;.
-<br>
-- restart: same as callgraph but uses locking to try and
-avoid <br>
-duplicate work between different analysis processes and thus
-<br>
-performs better in some circumstances <b><br>
---scope-leakage</b></p>
+<p style="margin-left:11%;"><b>--scope-leakage</b></p>
 
 <p style="margin-left:17%;">Activates: checker
 scope-leakage: The Java/Kotlin checker takes into account a
@@ -641,18 +659,20 @@ delete analysis summaries (but not report summaries) and
 vacuum analysis database. (Conversely:
 <b>--no-shrink-analysis-db</b>)</p>
 
-<p style="margin-left:11%;"><b>--simple-lineage</b></p>
+<p style="margin-left:11%;"><b>--sil-validation</b></p>
 
 <p style="margin-left:17%;">Activates: checker
-simple-lineage: Computes a dataflow graph (Conversely:
-<b>--no-simple-lineage</b>)</p>
+sil-validation: This checker validates that all SIL
+instructions in all procedure bodies conform to a (front-end
+specific) subset of SIL. (Conversely:
+<b>--no-sil-validation</b>)</p>
 
 
-<p style="margin-left:11%;"><b>--simple-lineage-only</b></p>
+<p style="margin-left:11%;"><b>--sil-validation-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
-simple-lineage and disable all other checkers (Conversely:
-<b>--no-simple-lineage-only</b>)</p>
+sil-validation and disable all other checkers (Conversely:
+<b>--no-sil-validation-only</b>)</p>
 
 <p style="margin-left:11%;"><b>--no-siof</b></p>
 
@@ -761,6 +781,72 @@ node. (Conversely: <b>--no-write-html</b>) <b><br>
 <p style="margin-left:17%;">Specify the suffix of Xcode
 isysroot directory, to avoid absolute paths in tests</p>
 
+<h2>ANALYSIS SCHEDULER OPTIONS
+<a name="ANALYSIS SCHEDULER OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--analysis-schedule-file</b>
+<i>path</i></p>
+
+<p style="margin-left:17%;">The file where an analysis
+schedule is stored. The default is
+infer-out/analysis_dependency_graph</p>
+
+
+<p style="margin-left:11%;"><b>--replay-analysis-schedule</b></p>
+
+<p style="margin-left:17%;">Activates: Replay the analysis
+schedule stored in <b>--replay-analysis-schedule-file</b>,
+which should analyze the procedures in the same order as the
+previous analysis. This should drastically limit
+non-determinism in the results, as well as prevent repeated
+work, leading to a faster second analysis. Only works if a
+previous analysis has just run on the same code.
+(Conversely: <b>--no-replay-analysis-schedule</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--replay-ondemand-should-error</b></p>
+
+<p style="margin-left:17%;">Activates: [debug] Whether
+triggering the analysis of a procedure via ondemand should
+log an error when replaying an analysis schedule with
+<b>--replay-analysis-schedule</b>. Enable when replaying the
+same analysis on the same capture data to debug cases where
+dependencies that were recorded are insufficient.
+(Conversely: <b>--no-replay-ondemand-should-error</b>)</p>
+
+<p style="margin-left:11%;"><b>--scheduler</b> <i>{ file |
+restart | callgraph }</i></p>
+
+<p style="margin-left:17%;">Specify the scheduler used for
+the analysis phase:</p>
+
+<p style="margin-left:11%;">- file: schedule one job per
+file <br>
+- callgraph: schedule one job per procedure, following the
+<br>
+syntactic call graph. Usually faster than &quot;file&quot;.
+<br>
+- restart: same as callgraph but uses locking to try and
+avoid <br>
+duplicate work between different analysis processes and thus
+<br>
+performs better in some circumstances <b><br>
+--store-analysis-schedule</b></p>
+
+<p style="margin-left:17%;">Activates: Store the analysis
+schedule for later replay, honoring
+<b>--replay-analysis-schedule-file</b> if present. This can
+be useful to store a schedule done with one version of infer
+to load with another version of infer. There is no guarantee
+infer will be able to load the previous schedule but using
+this mechanism gives a higher chance of success compared
+with having to read the previous results database
+successfully as fewer datatypes are involved. (Conversely:
+<b>--no-store-analysis-schedule</b>)</p>
+
 <h2>BUFFER OVERRUN OPTIONS
 <a name="BUFFER OVERRUN OPTIONS"></a>
 </h2>
@@ -794,6 +880,14 @@ results in different allocsites imported to the caller.
 
 <p style="margin-left:17%;">Debug level for buffer-overrun
 checker (0-4)</p>
+
+
+<p style="margin-left:11%;"><b>--bo-exit-frontend-gener-vars</b></p>
+
+<p style="margin-left:17%;">Activates: Put frontend
+generated variables out of scope when they are listed in
+exit scope instruction. (Conversely:
+<b>--no-bo-exit-frontend-gener-vars</b>)</p>
 
 <p style="margin-left:11%;"><b>--bo-field-depth-limit</b>
 <i>int</i></p>
@@ -892,6 +986,15 @@ as dead stores.</p>
 get the JSON used for method name substitution</p>
 
 
+<p style="margin-left:11%;"><b>--inline-func-pointer-for-testing</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Enables substituting global
+function pointers used for testing with the real function
+calls in the clang frontend. Pass the prefix used to build
+the global function pointers used for testing.</p>
+
+
 <p style="margin-left:11%;"><b>--liveness-dangerous-classes</b>
 <i>json</i></p>
 
@@ -945,6 +1048,88 @@ packages.</p>
 
 <p style="margin-left:17%;">The version of Java being used.
 Set it to your Java version if mvn is failing.</p>
+
+<h2>LINEAGE OPTIONS
+<a name="LINEAGE OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--no-lineage-dedup</b></p>
+
+<p style="margin-left:17%;">Deactivates: In JSON output,
+attempt to print each entity at most once. This is the
+default. The only reason you may want to turn this off is to
+make hash collisions more visible; that is, cases in which
+distinct entities get assigned the same ID. (Conversely:
+<b>--lineage-dedup</b>)</p>
+
+<p style="margin-left:11%;"><b>--lineage-field-depth</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">[EXPERIMENTAL] Maximal field
+depth sensitivity for lineage analysis. 0 will make the
+analysis field insensitive.</p>
+
+<p style="margin-left:11%;"><b>--lineage-field-width</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">[EXPERIMENTAL] Maximal width of
+structures for field sensitive lineage analysis. Structure
+that have a higher number of fields will be smashed into a
+single element. 0 will make the analysis field insensitive.
+If not set, field width will be unlimited.</p>
+
+
+<p style="margin-left:11%;"><b>--lineage-include-builtins</b></p>
+
+<p style="margin-left:17%;">Activates: Include call/return
+edges to/from procedures that model primitive Erlang
+operations, such as constructing a list. (Conversely:
+<b>--no-lineage-include-builtins</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--lineage-json-report</b></p>
+
+<p style="margin-left:17%;">Activates: Enable lineage
+report in JSON format. (Conversely:
+<b>--no-lineage-json-report</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--lineage-keep-temporaries</b></p>
+
+<p style="margin-left:17%;">Activates: Normally, lineage
+summaries do not mention temporary variables introduced
+while compiling the high-level code to Infer's IR
+(intermediate representation). If this option is enabled,
+then the lineage graph produced corresponds to Infer's IR.
+(Conversely: <b>--no-lineage-keep-temporaries</b>)</p>
+
+<p style="margin-left:11%;"><b>--lineage-max-cfg-size</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">If set, larger CFGs are
+skipped.</p>
+
+
+<p style="margin-left:11%;"><b>--lineage-prevent-cycles</b></p>
+
+<p style="margin-left:17%;">Activates: [EXPERIMENTAL] If
+set, Lineage will stop distinguishing the fields of a
+variable when it notices recursive types (that is, a
+sub-field having the same type as one of its
+&quot;ancestors&quot;). (Conversely:
+<b>--no-lineage-prevent-cycles</b>)</p>
+
+<p style="margin-left:11%;"><b>--lineage-seed</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Set the random seed used for
+hashing. (Various entities that get reported need unique
+identifiers. To generate these unique identifiers, in a
+distributed way without communication, we use hashing. If
+you are unlucky and get collisions, you can try a different
+seed.</p>
 
 <h2>PULSE CHECKER OPTIONS
 <a name="PULSE CHECKER OPTIONS"></a>
@@ -1105,12 +1290,14 @@ are method or namespace::method</p>
 <i>+path</i></p>
 
 <p style="margin-left:17%;">Provide custom models for
-Erlang in JSON files. If a path to a directory is given then
-the JSON files must have the &rsquo;.json&rsquo; extension.
-Any other file will be ignored. The subdirectories will be
-explored and must follow the same convention.</p>
+Erlang in JSON files or SQLite3. Files must end with
+&rsquo;.json&rsquo; or &rsquo;.db&rsquo; respectively. If a
+path to a directory is given then the subdirectories will be
+explored and names must follow the same convention. SQLite3
+format is preferable when providing a large number of models
+because they will be internally indexed by mfa.</p>
 
-<p style="margin-left:11%;">The format is
+<p style="margin-left:11%;">The format for JSON is
 [SelectorBehavior, ...] where <br>
 SelectorBehavior := {&quot;selector&quot;: Selector,
 &quot;behavior&quot;: Behavior} <br>
@@ -1139,7 +1326,16 @@ ErlangValue := [&quot;Atom&quot;,
 | [&quot;Tuple&quot;, [ErlangValue, ...] <br>
 | null <br>
 ErlangValue = null is to represent nondeterministic value
-<b><br>
+<br>
+The format for SQLite3 is a DB with schema: <br>
+CREATE TABLE models( <br>
+&quot;mfa&quot; TEXT, <br>
+&quot;behavior&quot; TEXT <br>
+); <br>
+- &rsquo;mfa&rsquo; is module:function/arity, e.g.
+&quot;mymod:f/0&quot; <br>
+- &rsquo;behavior&rsquo; is a JSON &rsquo;Behavior&rsquo;
+(see above) <b><br>
 --no-pulse-nullsafe-report-npe</b></p>
 
 <p style="margin-left:17%;">Deactivates: Report null
@@ -1170,6 +1366,20 @@ patterns.</p>
 
 <p style="margin-left:17%;">Regex of procedures that should
 not be analyzed by Pulse.</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-specialization-iteration-limit</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Maximum number of iterative
+summary specialization at each call site.</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-specialization-limit</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Maximum number of summary
+specialization by procedure.</p>
 
 <p style="margin-left:11%;"><b>--pulse-taint-config</b>
 <i>+path</i></p>
@@ -1261,25 +1471,46 @@ and sanitizers. It consists of a list of objects, each with
 one of the following combinations of fields to identify
 relevant procedures:</p>
 
-<p style="margin-left:11%;">- &quot;procedure&quot;: match
-a substring of the procedure name <br>
+<p style="margin-left:11%;">- &quot;field_regex&quot;:
+match a field name using an OCaml regex <br>
+- &quot;procedure&quot;: match a substring of the procedure
+name <br>
 - &quot;procedure_regex&quot;: as above, but match using an
 OCaml regex <br>
+- &quot;class_name_regex&quot;: match all methods of classes
+whose names <br>
+match the OCaml regex <br>
 - &quot;class_names&quot; and &quot;method_names&quot;: <br>
 match exact uses of methods of particular classes <br>
+- &quot;class_names&quot; and &quot;field_names&quot;: <br>
+match exact uses of fields of particular classes <br>
+- &quot;class_names&quot; and
+&quot;method_return_type_names&quot;: <br>
+match exact uses of methods with particular return types of
+<br>
+particular classes <br>
 - &quot;overrides_of_class_with_annotation&quot;: <br>
 match all procedures defined in classes which inherit <br>
 from a superclass with the specified annotation <br>
 - &quot;allocation&quot;: <i>(for taint sources only)</i>
 <br>
 match allocations of the exact class name supplied <br>
+- &quot;block_passed_to&quot;: <i>(for taint sources
+only)</i> <br>
+match a substring of the procedure name that the block is
+<br>
+passed to <br>
+- &quot;block_passed_to_regex&quot;: <i>(for taint sources
+only)</i> <br>
+as above, but match using an OCaml regex <br>
 Each object can also optionally specify: <br>
 - &quot;kinds&quot;: the kinds of taint, used in
 <b>--pulse-taint-policies</b> <br>
 to specify flows between sources/sanitizers/sinks <br>
 (&quot;Simple&quot; by default). <br>
 - &quot;taint_target&quot;: <br>
-where the taint should be applied in the procedure. <br>
+where the taint should be applied in the procedure or <br>
+field. <br>
 - &quot;ReturnValue&quot;: (default for taint sources and
 <br>
 propagators) <br>
@@ -1293,16 +1524,27 @@ all arguments except given indices (zero-indexed) <br>
 - [&quot;ArgumentsMatchingTypes&quot;, [&lt;type list&gt;]]:
 <br>
 arguments with types containing supplied strings <br>
-- [&quot;Fields&quot;, [&lt;(string * taint_target)
+- &quot;InstanceReference&quot;: this/self references of
+instance <br>
+methods <br>
+- [&quot;FieldsOfValue&quot;, [&lt;(string * taint_target)
 list&gt;]]: <br>
 fields given by name in return value, arguments or <br>
-other fields <i><br>
+other fields <br>
+- &quot;GetField&quot; : a given field is read <br>
+- &quot;SetField&quot; : a given field is set <i><br>
 N.B.</i> for methods, index 0 is <i>this</i>/<i>self</i>.
 <br>
-- &quot;match_objc_blocks&quot;: boolean, &quot;false&quot;
-by default <br>
-&quot;true&quot; if only Objective-C blocks should be
-matched. <b><br>
+For all the regex-based matchers, we can also specify: <br>
+- &quot;exclude_from_regex_in&quot; - to specify a list of
+header files, <br>
+such that we exclude any classes, field or methods from
+those <br>
+files from the regexes. <br>
+For field matchers, we can also specify: <br>
+- &quot;sanitized_in&quot; - to specify a list of files
+where using the <br>
+source shouldn't be flagged. <b><br>
 --pulse-widen-threshold</b> <i>int</i></p>
 
 <p style="margin-left:17%;">Stop exploring new paths after
@@ -1367,92 +1609,6 @@ here will be ignored by RacerD.</p>
 
 <p style="margin-left:17%;">Specify custom annotations that
 should be considered aliases of @ThreadSafe</p>
-
-<h2>SIMPLE LINEAGE OPTIONS
-<a name="SIMPLE LINEAGE OPTIONS"></a>
-</h2>
-
-
-
-<p style="margin-left:11%; margin-top: 1em"><b>--no-simple-lineage-dedup</b></p>
-
-<p style="margin-left:17%;">Deactivates: In JSON output,
-attempt to print each entity at most once. This is the
-default. The only reason you may want to turn this off is to
-make hash collisions more visible; that is, cases in which
-distinct entities get assigned the same ID. (Conversely:
-<b>--simple-lineage-dedup</b>)</p>
-
-
-<p style="margin-left:11%;"><b>--simple-lineage-field-depth</b>
-<i>int</i></p>
-
-<p style="margin-left:17%;">[EXPERIMENTAL] Maximal field
-depth sensitivity for lineage analysis. 0 will make the
-analysis field insensitive.</p>
-
-
-<p style="margin-left:11%;"><b>--simple-lineage-field-width</b>
-<i>int</i></p>
-
-<p style="margin-left:17%;">[EXPERIMENTAL] Maximal width of
-structures for field sensitive lineage analysis. Structure
-that have a higher number of fields will be smashed into a
-single element. 0 will make the analysis field insensitive.
-If not set, field width will be unlimited.</p>
-
-
-<p style="margin-left:11%;"><b>--simple-lineage-include-builtins</b></p>
-
-<p style="margin-left:17%;">Activates: Include call/return
-edges to/from procedures that model primitive Erlang
-operations, such as constructing a list. (Conversely:
-<b>--no-simple-lineage-include-builtins</b>)</p>
-
-
-<p style="margin-left:11%;"><b>--simple-lineage-json-report</b></p>
-
-<p style="margin-left:17%;">Activates: Enable simple
-lineage report in JSON format. (Conversely:
-<b>--no-simple-lineage-json-report</b>)</p>
-
-
-<p style="margin-left:11%;"><b>--simple-lineage-keep-temporaries</b></p>
-
-<p style="margin-left:17%;">Activates: Normally, lineage
-summaries do not mention temporary variables introduced
-while compiling the high-level code to Infer's IR
-(intermediate representation). If this option is enabled,
-then the lineage graph produced corresponds to Infer's IR.
-(Conversely:
-<b>--no-simple-lineage-keep-temporaries</b>)</p>
-
-
-<p style="margin-left:11%;"><b>--simple-lineage-max-cfg-size</b>
-<i>int</i></p>
-
-<p style="margin-left:17%;">If set, larger CFGs are
-skipped.</p>
-
-
-<p style="margin-left:11%;"><b>--simple-lineage-prevent-cycles</b></p>
-
-<p style="margin-left:17%;">Activates: [EXPERIMENTAL] If
-set, SimpleLineage will stop distinguishing the fields of a
-variable when it notices recursive types (that is, a
-sub-field having the same type as one of its
-&quot;ancestors&quot;). (Conversely:
-<b>--no-simple-lineage-prevent-cycles</b>)</p>
-
-<p style="margin-left:11%;"><b>--simple-lineage-seed</b>
-<i>int</i></p>
-
-<p style="margin-left:17%;">Set the random seed used for
-hashing. (Various entities that get reported need unique
-identifiers. To generate these unique identifiers, in a
-distributed way without communication, we use hashing. If
-you are unlucky and get collisions, you can try a different
-seed.</p>
 
 <h2>SIOF CHECKER OPTIONS
 <a name="SIOF CHECKER OPTIONS"></a>
