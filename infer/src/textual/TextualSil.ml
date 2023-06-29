@@ -103,6 +103,8 @@ end
 
 let hack_dict_type_name = SilTyp.HackClass (HackClassName.make "HackDict")
 
+let hack_vec_type_name = SilTyp.HackClass (HackClassName.make "HackVec")
+
 let hack_mixed_type_name = SilTyp.HackClass (HackClassName.make "HackMixed")
 
 let hack_mixed_static_companion_type_name = SilTyp.Name.Hack.static_companion hack_mixed_type_name

@@ -60,30 +60,188 @@ let hack_dim_field_get_or_null this_obj_dbl_ptr field : model =
   astate1 @ astate2
 
 
-let hack_dim_array_get this_obj (key_string_obj, _) : model =
- fun {path; location; ret} astate ->
-  (* TODO: a key could be also a int *)
-  match read_boxed_string_value key_string_obj astate with
-  | Some string_val ->
-      let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack string_val in
-      let<*> astate, this_val =
-        PulseOperations.eval_access path Read location this_obj Dereference astate
-      in
-      let<+> astate, field_val =
-        PulseOperations.eval_access path Read location this_val (FieldAccess field) astate
-      in
-      let ret_id, _ = ret in
-      PulseOperations.write_id ret_id field_val astate
-  | None ->
-      (* TODO: invalidate the access if the string key is unknown (raise an exception in Hack)*)
-      Logging.d_printfln "reading dict failed" ;
-      astate |> Basic.ok_continue
+let mk_hack_field clazz field = Fieldname.make (Typ.HackClass (HackClassName.make clazz)) field
 
+let load_field path field location obj astate =
+  let* astate, field_addr =
+    PulseOperations.eval_access path Read location obj (FieldAccess field) astate
+  in
+  let+ astate, field_val =
+    PulseOperations.eval_access path Read location field_addr Dereference astate
+  in
+  (astate, field_addr, field_val)
+
+
+let write_field path field new_val location addr astate =
+  let* astate, field_addr =
+    PulseOperations.eval_access path Write location addr (FieldAccess field) astate
+  in
+  PulseOperations.write_deref path location ~ref:field_addr ~obj:new_val astate
+
+
+let await_hack_value v astate = AddressAttributes.hack_async_await v astate
 
 let hack_await (argv, hist) : model =
  fun {ret= ret_id, _} astate ->
-  let astate = AddressAttributes.hack_async_await argv astate in
+  let astate = await_hack_value argv astate in
   PulseOperations.write_id ret_id (argv, hist) astate |> Basic.ok_continue
+
+
+(* vecs, similar treatment of Java collections, though these are value types
+   Should be shared with dict (and keyset) but will generalise later.
+   We have an integer size field (rather than just an empty flag) and a
+   last_read field, which is 1 or 2 if we last produced the fst or snd field
+   as the result of an index operation. This is used to alternate returned values
+   so as to remove paths in which we return the same value repeatedly, which leads
+   to false awaitable positives because the *other* value is never awaited.
+   TODO: a more principled approach to collections of resources.
+*)
+module Vec = struct
+  let class_name = "HackVec"
+
+  let fst_field = mk_hack_field class_name "__infer_model_backing_vec_fst"
+
+  let snd_field = mk_hack_field class_name "__infer_model_backing_vec_snd"
+
+  let size_field = mk_hack_field class_name "__infer_model_backing_vec_size"
+
+  let last_read_field = mk_hack_field class_name "__infer_model_backing_last_read"
+
+  let new_vec args : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let arg_val_addrs =
+      List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= addr, _} -> addr)
+    in
+    let actual_size = List.length args in
+    let addr = AbstractValue.mk_fresh () in
+    let typ = Typ.mk_struct TextualSil.hack_vec_type_name in
+    let astate = PulseOperations.add_dynamic_type typ addr astate in
+    let hist = Hist.single_call path location "new_vec" in
+    let size_value = AbstractValue.mk_fresh () in
+    let last_read_value = AbstractValue.mk_fresh () in
+    let dummy_value = AbstractValue.mk_fresh () in
+    let<*> astate = write_field path size_field (size_value, hist) location (addr, hist) astate in
+    let<*> astate =
+      write_field path last_read_field (last_read_value, hist) location (addr, hist) astate
+    in
+    let<*> astate =
+      match arg_val_addrs with
+      | [] ->
+          let* astate =
+            write_field path fst_field (dummy_value, hist) location (addr, hist) astate
+          in
+          write_field path snd_field (dummy_value, hist) location (addr, hist) astate
+      | arg1 :: rest -> (
+          let* astate = write_field path fst_field (arg1, hist) location (addr, hist) astate in
+          match rest with
+          | [] ->
+              write_field path snd_field (dummy_value, hist) location (addr, hist) astate
+          | arg2 :: rest -> (
+              let* astate = write_field path snd_field (arg2, hist) location (addr, hist) astate in
+              match rest with
+              | [] ->
+                  Ok astate
+                  (* Do "fake" await on the values we drop on the floor. TODO: mark reachable too? *)
+              | rest ->
+                  Ok (List.fold rest ~init:astate ~f:(fun astate v -> await_hack_value v astate)) )
+          )
+    in
+    let<**> astate =
+      Ok (PulseOperations.write_id ret_id (addr, hist) astate)
+      >>>= PulseArithmetic.and_eq_int size_value (IntLit.of_int actual_size)
+    in
+    astate |> Basic.ok_continue
+
+
+  let get_vec argv index : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "vec index" in
+    let ret_val = AbstractValue.mk_fresh () in
+    let new_last_read_val = AbstractValue.mk_fresh () in
+    let<*> astate, _size_addr, (size_val, _) = load_field path size_field location argv astate in
+    let<*> astate, _, (fst_val, _) = load_field path fst_field location argv astate in
+    let<*> astate, _, (snd_val, _) = load_field path snd_field location argv astate in
+    let<*> astate, _, (last_read_val, _) = load_field path last_read_field location argv astate in
+    let astate = PulseOperations.write_id ret_id (ret_val, Hist.single_event path event) astate in
+    let<*> astate =
+      write_field path last_read_field
+        (new_last_read_val, Hist.single_event path event)
+        location argv astate
+    in
+    let<**> astate =
+      PulseArithmetic.prune_binop ~negated:false Binop.Lt (AbstractValueOperand index)
+        (AbstractValueOperand size_val) astate
+    in
+    (* TODO: work out how to incorporate type-based, or at least nullability, assertions on ret_val *)
+    (* case 1: return is some value equal to neither field
+       In this case, we leave the last_read_val field unchanged
+       And we also, to avoid false positives, do a fake await of the fst and snd fields
+    *)
+    let astate1 =
+      let astate = await_hack_value fst_val astate in
+      let astate = await_hack_value snd_val astate in
+      PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand ret_val)
+        (AbstractValueOperand fst_val) astate
+      >>== PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand ret_val)
+             (AbstractValueOperand snd_val)
+      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand new_last_read_val)
+             (AbstractValueOperand last_read_val)
+      >>|| ExecutionDomain.continue
+    in
+    (* case 2: given element is equal to fst_field *)
+    let astate2 =
+      PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand last_read_val)
+        (ConstOperand (Cint IntLit.two)) astate
+      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand ret_val)
+             (AbstractValueOperand fst_val)
+      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand new_last_read_val)
+             (ConstOperand (Cint IntLit.one))
+      >>|| ExecutionDomain.continue
+    in
+    (* case 3: given element is equal to snd_field *)
+    let astate3 =
+      PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand last_read_val)
+        (ConstOperand (Cint IntLit.one)) astate
+      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand ret_val)
+             (AbstractValueOperand snd_val)
+      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand new_last_read_val)
+             (ConstOperand (Cint IntLit.two))
+      >>|| ExecutionDomain.continue
+    in
+    SatUnsat.to_list astate1 @ SatUnsat.to_list astate2 @ SatUnsat.to_list astate3
+end
+
+let hack_dim_array_get this_obj key_obj : model =
+ fun ({path; location; ret} as md) astate ->
+  let<*> astate, (this_val, this_hist) =
+    PulseOperations.eval_access path Read location this_obj Dereference astate
+  in
+  (* see if it's a vec *)
+  match AbductiveDomain.AddressAttributes.get_dynamic_type this_val astate with
+  | Some {desc= Tstruct type_name} when Typ.Name.equal type_name TextualSil.hack_vec_type_name ->
+      L.d_printfln "doing Hack vector lookup" ;
+      let hackInt = Typ.HackClass (HackClassName.make "HackInt") in
+      let field = Fieldname.make hackInt "val" in
+      let<*> astate, _, (key_val, _) = load_field path field location key_obj astate in
+      Vec.get_vec (this_val, this_hist) key_val md astate
+  | _ -> (
+      (* TODO: a key for a non-vec could be also a int *)
+      let key_string_obj, _ = key_obj in
+      match read_boxed_string_value key_string_obj astate with
+      | Some string_val ->
+          let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack string_val in
+          let<*> astate, this_val =
+            PulseOperations.eval_access path Read location this_obj Dereference astate
+          in
+          let<+> astate, field_val =
+            PulseOperations.eval_access path Read location this_val (FieldAccess field) astate
+          in
+          let ret_id, _ = ret in
+          PulseOperations.write_id ret_id field_val astate
+      | None ->
+          (* TODO: invalidate the access if the string key is unknown (raise an exception in Hack)*)
+          Logging.d_printfln "reading dict failed" ;
+          astate |> Basic.ok_continue )
 
 
 let get_static_companion type_name astate =
@@ -175,7 +333,10 @@ let matchers : matcher list =
     $--> hack_dim_field_get_or_null
   ; -"$builtins" &:: "hack_dim_array_get" <>$ capt_arg_payload $+ capt_arg_payload
     $--> hack_dim_array_get
+  ; -"$builtins" &:: "hack_array_get" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> hack_dim_array_get
   ; -"$builtins" &:: "hack_new_dict" &::.*++> new_dict
+  ; -"$builtins" &:: "hhbc_new_vec" &::.*++> Vec.new_vec
   ; -"$builtins" &:: "hack_get_class" <>$ capt_arg_payload
     $--> Basic.id_first_arg ~desc:"hack_get_class"
     (* not clear why HackC generate this builtin call *)

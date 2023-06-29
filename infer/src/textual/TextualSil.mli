@@ -19,6 +19,8 @@ val dump_module : filename:string -> Textual.Module.t -> unit
 
 val hack_dict_type_name : Typ.name
 
+val hack_vec_type_name : Typ.name
+
 val hack_mixed_type_name : Typ.name
 
 val hack_mixed_static_companion_type_name : Typ.name
