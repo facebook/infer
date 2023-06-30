@@ -23,3 +23,13 @@ define $builtins.python_is_true(b: *PyObject) : int {
     n1: int = load n0.PyBool.val
     ret n1
 }
+
+type PyInt = { val: int }
+
+define $builtins.python_int(i: int): *PyInt {
+  #entry:
+    n0 = __sil_allocate(<PyInt>)
+    n1: int = load &i
+    store n0.PyInt.val <- n1 : int
+    ret n0
+}
