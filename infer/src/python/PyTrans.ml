@@ -1415,8 +1415,8 @@ let rec nodes env label_info code instructions =
     (env, textual_node :: more_textual_nodes)
 
 
-let type_of_annotation typ =
-  match typ with
+let type_of_annotation env raw_typ =
+  match raw_typ with
   | "int" ->
       PyCommon.pyInt
   | "str" ->
@@ -1429,14 +1429,21 @@ let type_of_annotation typ =
       PyCommon.pyNone
   | "object" ->
       PyCommon.pyObject
-  (* TODO: allow user denotable types here :D *)
-  | _ ->
-      Debug.p "[type_of_annotation] unsupported type: %s\n" typ ;
-      PyCommon.pyObject
+  | _ -> (
+      (* TODO: support nesting *)
+      let opt = Env.lookup_symbol env ~global:true raw_typ in
+      let typ = Option.bind ~f:Symbol.to_typ opt in
+      match typ with
+      | Some typ ->
+          typ
+      | None ->
+          Debug.p "[type_of_annotation] unsupported type: %s (%a)\n" raw_typ (Pp.option Symbol.pp)
+            opt ;
+          PyCommon.pyObject )
 
 
-let annotated_type_of_annotation typ =
-  let typ = type_of_annotation typ in
+let annotated_type_of_annotation env typ =
+  let typ = type_of_annotation env typ in
   T.Typ.{typ; attributes= []}
 
 
@@ -1484,7 +1491,7 @@ let to_proc_desc env loc enclosing_class_name opt_name
   let types =
     List.map
       ~f:(fun {PyCommon.name; annotation} ->
-        let annotation = annotated_type_of_annotation annotation in
+        let annotation = annotated_type_of_annotation env annotation in
         (name, annotation) )
       annotations
   in
@@ -1549,7 +1556,7 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
     List.map member_infos ~f:(fun {PyCommon.name; annotation} ->
         let name = field_name ~loc name in
         let qualified_name = {T.enclosing_class= class_type_name; name} in
-        let typ = type_of_annotation annotation in
+        let typ = type_of_annotation env annotation in
         {T.FieldDecl.qualified_name; typ; attributes= []} )
   in
   let module_name = prefix_name ~module_name co_name in

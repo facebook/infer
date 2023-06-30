@@ -99,7 +99,7 @@ module Symbol = struct
         sprintf "%s%s%s" prefix sep name
 
 
-    let to_textual {prefix; name; loc} : T.qualified_procname =
+    let to_qualified_procname {prefix; name; loc} : T.qualified_procname =
       let enclosing_class =
         if List.is_empty prefix then T.TopLevel
         else
@@ -116,6 +116,11 @@ module Symbol = struct
       let name = if is_static then PyCommon.static_companion name else name in
       let value = if String.is_empty value then name else sprintf "%s::%s" value name in
       type_name ~loc value
+
+
+    let to_typ qual : T.Typ.t =
+      let typ = to_type_name ~is_static:false qual in
+      T.Typ.(Ptr (Struct typ))
   end
 
   type t =
@@ -150,7 +155,7 @@ module Symbol = struct
     | Import _ ->
         L.die InternalError "Symbol.to_qualified_procname called with Import"
     | Name {symbol_name= qname} | Code {code_name= qname} | Class {class_name= qname} ->
-        Qualified.to_textual qname
+        Qualified.to_qualified_procname qname
 
 
   let to_type_name ~is_static = function
@@ -164,6 +169,13 @@ module Symbol = struct
         L.die InternalError "Symbol.to_type_name called with Code"
     | Class {class_name= qname} ->
         Qualified.to_type_name ~is_static qname
+
+
+  let to_typ = function
+    | Class {class_name} ->
+        Some (Qualified.to_typ class_name)
+    | Builtin | Import _ | Name _ | Code _ ->
+        None
 
 
   let pp fmt = function

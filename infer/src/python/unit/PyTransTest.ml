@@ -1088,6 +1088,9 @@ class IntBox:
         def run(self) -> None:
             self.f(3)(False)("yolo")
 
+def getX(box: IntBox) -> int:
+          return box.get()
+
 c = IntBox(10)
 c.x
 c.z = 10
@@ -1105,24 +1108,25 @@ print(c.z)
         define dummy.$toplevel() : *PyObject {
           #b0:
               n0 = $builtins.python_class("dummy::IntBox")
-              n1 = $builtins.python_class_constructor("dummy::IntBox", $builtins.python_int(10))
-              store &dummy::c <- n1:*dummy::IntBox
-              n2:*dummy::IntBox = load &dummy::c
-              n3 = n2.?.x
-              n4:*dummy::IntBox = load &dummy::c
-              store n4.?.z <- $builtins.python_int(10):*PyInt
+              n1 = $builtins.python_code("dummy.getX")
+              n2 = $builtins.python_class_constructor("dummy::IntBox", $builtins.python_int(10))
+              store &dummy::c <- n2:*dummy::IntBox
+              n3:*dummy::IntBox = load &dummy::c
+              n4 = n3.?.x
               n5:*dummy::IntBox = load &dummy::c
-              n6 = $builtins.python_load_method(n5, "get")
-              n7 = $builtins.python_call_method(n6)
-              n8:*dummy::IntBox = load &dummy::c
-              n9 = $builtins.python_load_method(n8, "set")
-              n10 = $builtins.python_call_method(n9, $builtins.python_int(42))
-              n11:*dummy::IntBox = load &dummy::c
-              n12 = $builtins.python_load_method(n11, "run")
-              n13 = $builtins.python_call_method(n12)
-              n14:*dummy::IntBox = load &dummy::c
-              n15 = n14.?.z
-              n16 = $builtins.print(n15)
+              store n5.?.z <- $builtins.python_int(10):*PyInt
+              n6:*dummy::IntBox = load &dummy::c
+              n7 = $builtins.python_load_method(n6, "get")
+              n8 = $builtins.python_call_method(n7)
+              n9:*dummy::IntBox = load &dummy::c
+              n10 = $builtins.python_load_method(n9, "set")
+              n11 = $builtins.python_call_method(n10, $builtins.python_int(42))
+              n12:*dummy::IntBox = load &dummy::c
+              n13 = $builtins.python_load_method(n12, "run")
+              n14 = $builtins.python_call_method(n13)
+              n15:*dummy::IntBox = load &dummy::c
+              n16 = n15.?.z
+              n17 = $builtins.print(n16)
               ret null
 
         }
@@ -1172,6 +1176,15 @@ print(c.z)
         type .static dummy::IntBox$static = {}
 
         type dummy::IntBox = {f: *PyObject; x: *PyInt}
+
+        define dummy.getX(box: *dummy::IntBox) : *PyInt {
+          #b0:
+              n0:*dummy::IntBox = load &box
+              n1 = $builtins.python_load_method(n0, "get")
+              n2 = $builtins.python_call_method(n1)
+              ret n2
+
+        }
 
         global dummy::c: *PyObject
 

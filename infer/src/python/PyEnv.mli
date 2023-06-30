@@ -68,6 +68,8 @@ module Symbol : sig
 
   val to_type_name : is_static:bool -> t -> T.TypeName.t
 
+  val to_typ : t -> T.Typ.t option
+
   val pp : Format.formatter -> t -> unit
 end
 
