@@ -1130,8 +1130,8 @@ print(c.z)
         define dummy::IntBox.__init__(self: *PyObject, x: *PyInt) : *PyNone {
           #b0:
               n0:*PyObject = load &self
-              n1:*PyObject = load &x
-              store n0.?.x <- n1:*PyObject
+              n1:*PyInt = load &x
+              store n0.?.x <- n1:*PyInt
               n2:*PyObject = load &self
               n3 = $builtins.python_code("<lambda>")
               store n2.?.f <- n3:*PyCode
@@ -1150,8 +1150,8 @@ print(c.z)
         define dummy::IntBox.set(self: *PyObject, x: *PyInt) : *PyNone {
           #b0:
               n0:*PyObject = load &self
-              n1:*PyObject = load &x
-              store n0.?.x <- n1:*PyObject
+              n1:*PyInt = load &x
+              store n0.?.x <- n1:*PyInt
               ret null
 
         }
@@ -1241,7 +1241,7 @@ class D(C):
 
         define dummy::C$static.typed_f(x: *PyInt) : *PyInt {
           #b0:
-              n0:*PyObject = load &x
+              n0:*PyInt = load &x
               ret n0
 
         }

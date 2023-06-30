@@ -140,12 +140,21 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let name = co_varnames.(ndx) in
       let exp = T.Exp.Lvar (var_name ~loc name) in
       let loc = Env.loc env in
-      let typ = PyCommon.pyObject in
+      let opt_sym = Env.lookup_symbol ~global:false env name in
+      let typ =
+        match (opt_sym : Symbol.t option) with
+        | Some (Name {typ}) ->
+            typ
+        | Some (Class _ | Code _ | Import _ | Builtin) ->
+            (* Note: maybe PyCommon.pyObject would be better here, but I fail to catch new behavior early *)
+            L.die InternalError "[load_cell] Can't load VarName %a\n" (Pp.option Symbol.pp) opt_sym
+        | None ->
+            PyCommon.pyObject
+      in
       let info = info typ in
       let env, id = Env.mk_fresh_ident env info in
       let instr = T.Instr.Load {id; exp; typ; loc} in
       let env = Env.push_instr env instr in
-      (* TODO: try to trace the type of names and their kind ? *)
       (env, Ok (T.Exp.Var id), info)
   | Temp id ->
       let info = Env.get_ident_info env id |> Option.value ~default in
@@ -674,7 +683,6 @@ module STORE = struct
         in
         let gname = Symbol.to_string symbol_info in
         let var_name = var_name ~loc gname in
-        let _, env = Env.register_symbol ~global env name symbol_info in
         if is_attr then
           let env, cell = pop_datastack opname env in
           let env, value, {Env.typ} = load_cell env code cell in
@@ -693,13 +701,16 @@ module STORE = struct
               (env, None)
         else if is_class then (
           Debug.p "  top-level class declaration initialized\n" ;
+          let _, env = Env.register_symbol ~global env name symbol_info in
           (env, None) )
         else if is_code then
+          let _, env = Env.register_symbol ~global env name symbol_info in
           if global then (
             Debug.p "  top-level function defined\n" ;
             (env, None) )
           else L.die InternalError "[%s] no support for closure at the moment: %s" opname name
         else
+          let _, env = Env.register_symbol ~global env name symbol_info in
           let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
           (Env.push_instr env instr, None)
     | Error s ->
@@ -1465,17 +1476,11 @@ let to_proc_desc env loc enclosing_class_name opt_name
        f(10)   # error, since f is listed as a local and seems to be used before being defined
        f = 42
   *)
+  (* Create the original environment for this code unit *)
+  let env = Env.enter_proc ~is_toplevel ~module_name:enclosing_class_name env in
   let locals = Array.sub co_varnames ~pos:co_argcount ~len:(nr_varnames - co_argcount) in
   let params = Array.map ~f:(var_name ~loc) params |> Array.to_list in
   let locals = Array.map ~f:(fun name -> (var_name ~loc name, pyObject)) locals |> Array.to_list in
-  (* Create the original environment for this code unit *)
-  let env = Env.enter_proc ~is_toplevel ~module_name:enclosing_class_name env in
-  let env, entry_label = Env.mk_fresh_label env in
-  let label = node_name ~loc entry_label in
-  let label_info = Env.Label.mk entry_label in
-  (* Now that a full unit has been processed, discard all the local information (local variable
-     names, labels, ...) and only keep the [shared] part of the environment *)
-  let env, nodes = nodes env label_info code instructions in
   let types =
     List.map
       ~f:(fun {PyCommon.name; annotation} ->
@@ -1483,11 +1488,15 @@ let to_proc_desc env loc enclosing_class_name opt_name
         (name, annotation) )
       annotations
   in
-  let formals_types =
-    List.map
-      ~f:(fun {T.VarName.value} ->
+  let env, formals_types =
+    Env.map ~env
+      ~f:(fun env {T.VarName.value; loc} ->
         let typ = List.Assoc.find types ~equal:String.equal value in
-        Option.value typ ~default:pyObject )
+        let typ = Option.value typ ~default:pyObject in
+        let symbol_name = Symbol.Qualified.mk ~prefix:[] value loc in
+        let sym = Symbol.Name {symbol_name; is_imported= false; typ= typ.T.Typ.typ} in
+        let env = Env.register_symbol env ~global:false value sym in
+        (snd env, typ) )
       params
   in
   let result_type =
@@ -1496,6 +1505,10 @@ let to_proc_desc env loc enclosing_class_name opt_name
   let procdecl =
     {T.ProcDecl.qualified_name; formals_types= Some formals_types; result_type; attributes= []}
   in
+  let env, entry_label = Env.mk_fresh_label env in
+  let label = node_name ~loc entry_label in
+  let label_info = Env.Label.mk entry_label in
+  let env, nodes = nodes env label_info code instructions in
   (env, {Textual.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown})
 
 
