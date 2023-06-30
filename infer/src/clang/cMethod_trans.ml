@@ -347,7 +347,14 @@ let create_external_procdesc trans_unit_ctx cfg proc_name clang_method_kind type
           ( ret_type
           , List.map ~f:(fun typ -> (Mangled.from_string "x", typ, Annot.Item.empty)) arg_types )
       | None ->
-          (StdTyp.void, [])
+          if
+            Option.exists (Procname.get_class_name proc_name) ~f:(String.equal "NSArray")
+            && String.equal (Procname.get_method proc_name) "objectEnumerator"
+          then
+            let nsenumerator_typ = Typ.mk_struct (Typ.Name.Objc.from_string "NSEnumerator") in
+            let nsarray_typ = Typ.mk_struct (Typ.Name.Objc.from_string "NSArray") in
+            (nsenumerator_typ, [(Mangled.from_string "self", nsarray_typ, Annot.Item.empty)])
+          else (StdTyp.void, [])
     in
     let proc_attributes =
       { (ProcAttributes.default trans_unit_ctx.CFrontend_config.source_file proc_name) with
