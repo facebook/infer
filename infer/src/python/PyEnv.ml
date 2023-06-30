@@ -25,6 +25,7 @@ module DataStack = struct
     | Import of {import_path: string; symbols: string list}
       (* TODO: change import_path into a list when we supported structured path foo.bar.baz *)
     | ImportCall of T.qualified_procname
+    | StaticCall of T.qualified_procname
   [@@deriving show]
 
   let as_code FFI.Code.{co_consts} = function
@@ -33,7 +34,14 @@ module DataStack = struct
         FFI.Constant.as_code code
     | Code {code} ->
         Some code
-    | Name _ | Temp _ | VarName _ | Map _ | BuiltinBuildClass | Import _ | ImportCall _ ->
+    | Name _
+    | Temp _
+    | VarName _
+    | Map _
+    | BuiltinBuildClass
+    | Import _
+    | ImportCall _
+    | StaticCall _ ->
         None
 
 
@@ -45,7 +53,7 @@ module DataStack = struct
         Some co_names.(ndx)
     | VarName ndx ->
         Some co_varnames.(ndx)
-    | Code _ | Temp _ | Map _ | BuiltinBuildClass | Import _ | ImportCall _ ->
+    | Code _ | Temp _ | Map _ | BuiltinBuildClass | Import _ | ImportCall _ | StaticCall _ ->
         None
 
 
@@ -83,7 +91,8 @@ module Symbol = struct
 
     let prefix_to_string prefix = String.concat ~sep:"::" prefix
 
-    let to_string ~sep {prefix; name} =
+    let to_string ~sep ?(static = false) {prefix; name} =
+      let name = if static then PyCommon.static_companion name else name in
       if List.is_empty prefix then name
       else
         let prefix = prefix_to_string prefix in
@@ -116,11 +125,11 @@ module Symbol = struct
     | Class of {class_name: Qualified.t}
     | Import of {import_path: string}
 
-  let to_string ?(code_sep = ".") = function
+  let to_string ?(code_sep = ".") ?(static = false) = function
     | Class {class_name= qname} | Name {symbol_name= qname} ->
         (* Names and classes are global symobls, without an enclosing class, so we mangle them
            using the "::" separator *)
-        Qualified.to_string ~sep:"::" qname
+        Qualified.to_string ~sep:"::" ~static qname
     | Builtin ->
         L.die InternalError "Symbol.to_string called with Builtin"
     | Code {code_name= qname} ->

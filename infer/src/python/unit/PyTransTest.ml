@@ -1037,6 +1037,8 @@ c.set(42)
 
           }
 
+          global dummy::C$static: *PyObject
+
           type .static dummy::C$static = {}
 
           type dummy::C = {}
@@ -1165,6 +1167,8 @@ print(c.z)
 
         }
 
+        global dummy::IntBox$static: *PyObject
+
         type .static dummy::IntBox$static = {}
 
         type dummy::IntBox = {f: *PyObject; x: *PyInt}
@@ -1242,13 +1246,66 @@ class D(C):
 
         }
 
+        global dummy::C$static: *PyObject
+
         type .static dummy::C$static = {}
 
         type dummy::C = {}
 
+        global dummy::D$static: *PyObject
+
         type .static dummy::D$static extends dummy::C$static = {}
 
         type dummy::D extends dummy::C = {}
+
+        declare $builtins.python_class(*String) : *PyClass
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+class C:
+    @staticmethod
+    def f():
+          pass
+
+C.f()
+        |} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyObject {
+          #b0:
+              n0 = $builtins.python_class("dummy::C")
+              n1 = dummy::C$static.f()
+              ret null
+
+        }
+
+        define dummy::C$static.f() : *PyObject {
+          #b0:
+              ret null
+
+        }
+
+        global dummy::C$static: *PyObject
+
+        type .static dummy::C$static = {}
+
+        type dummy::C = {}
 
         declare $builtins.python_class(*String) : *PyClass
 
@@ -1391,9 +1448,13 @@ class D(C):
 
           }
 
+          global dummy::C$static: *PyObject
+
           type .static dummy::C$static = {}
 
           type dummy::C = {}
+
+          global dummy::D$static: *PyObject
 
           type .static dummy::D$static extends dummy::C$static = {}
 

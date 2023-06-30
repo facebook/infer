@@ -25,6 +25,7 @@ module DataStack : sig
     | Import of {import_path: string; symbols: string list}
         (** imported module path, with optional name of symbols *)
     | ImportCall of T.qualified_procname  (** Static call to export definition *)
+    | StaticCall of T.qualified_procname  (** call to static method in class *)
   [@@deriving show]
 
   val as_code : FFI.Code.t -> cell -> FFI.Code.t option
@@ -61,7 +62,7 @@ module Symbol : sig
     | Class of {class_name: Qualified.t}
     | Import of {import_path: string}
 
-  val to_string : ?code_sep:string -> t -> string
+  val to_string : ?code_sep:string -> ?static:bool -> t -> string
 
   val to_qualified_procname : t -> T.qualified_procname
 

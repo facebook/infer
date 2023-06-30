@@ -110,8 +110,9 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
             let qname = Symbol.to_string symbol_info in
             ({Env.is_code= false; is_class= false; typ}, qname)
         | Some (Class _ as class_info) ->
-            let qname = Symbol.to_string class_info in
-            ({Env.is_code= false; is_class= true; typ= PyCommon.pyObject}, qname)
+            L.die InternalError "[load_cell] with class: should never happen ?  %s"
+              (Symbol.to_string class_info)
+            (* ({Env.is_code= false; is_class= true; typ= PyCommon.pyObject}, qname) *)
         | Some (Code _ as code_info) ->
             let qname = Symbol.to_string code_info in
             ({Env.is_code= true; is_class= false; typ= PyCommon.pyCode}, qname)
@@ -158,6 +159,8 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       (env, Error "TODO: load Map cells", default)
   | BuiltinBuildClass ->
       L.die InternalError "[load_cell] Can't load LOAD_BUILD_CLASS, something went wrong"
+  | StaticCall _ ->
+      L.die InternalError "[load_cell] Can't load StaticCall, something went wrong"
   | Import _ | ImportCall _ ->
       L.die InternalError "[load_cell] Can't load IMPORT, something went wrong"
 
@@ -435,6 +438,8 @@ module FUNCTION = struct
         )
       | Import _ | ImportCall _ ->
           L.die InternalError "[%s] unsupported call to IMPORT with arg = %d" opname arg
+      | StaticCall _ ->
+          L.die InternalError "[%s] unsupported call to StaticCall with arg = %d" opname arg
   end
 
   module MAKE = struct
@@ -502,8 +507,15 @@ module FUNCTION = struct
       if FFI.Code.is_closure code then L.die InternalError "%s: can't create closure" opname ;
       let code_name =
         match (qual : DataStack.cell) with
-        | VarName _ | Name _ | Temp _ | Code _ | Map _ | BuiltinBuildClass | Import _ | ImportCall _
-          ->
+        | VarName _
+        | Name _
+        | Temp _
+        | Code _
+        | Map _
+        | BuiltinBuildClass
+        | Import _
+        | ImportCall _
+        | StaticCall _ ->
             L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell qual)
         | Const ndx -> (
             let const = co_consts.(ndx) in
@@ -560,6 +572,13 @@ module METHOD = struct
               let proc = qualified_procname ~enclosing_class @@ proc_name ~loc method_name in
               let env = Env.push env (DataStack.ImportCall proc) in
               (env, None)
+          | Some (Class _ as qname) ->
+              let loc = Env.loc env in
+              let class_name = Symbol.to_string ~static:true qname in
+              let enclosing_class = type_name ~loc class_name in
+              let proc = qualified_procname ~enclosing_class @@ proc_name ~loc method_name in
+              let env = Env.push env (DataStack.StaticCall proc) in
+              (env, None)
           | _ ->
               load env code cell method_name )
       | _ ->
@@ -597,6 +616,10 @@ module METHOD = struct
       | ImportCall proc ->
           let loc = Env.loc env in
           let env = Env.register_import env (Env.Import.Call proc) in
+          let env = FUNCTION.CALL.mk env None loc proc args in
+          (env, None)
+      | StaticCall proc ->
+          let loc = Env.loc env in
           let env = FUNCTION.CALL.mk env None loc proc args in
           (env, None)
       | _ ->
@@ -1534,7 +1557,11 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
       ; fields= []
       ; attributes= [T.Attr.mk_static] }
   in
-  (env, t :: companion :: decls)
+  (* TODO(vsiles) compare with Hack's get_static_companion when we'll introduce static members *)
+  let companion_const =
+    T.Module.Global {name= var_name ~loc static_class_name; typ= PyCommon.pyObject; attributes= []}
+  in
+  (env, t :: companion :: companion_const :: decls)
 
 (* TODO: No support for nested functions/methods at the moment *)
 
