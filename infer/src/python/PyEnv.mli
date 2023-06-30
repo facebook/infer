@@ -186,7 +186,7 @@ val register_method :
   t -> enclosing_class:string -> method_name:string -> PyCommon.annotated_name list -> t
 (** Register a method declaration. We mostly keep track of their signatures *)
 
-val lookup_signature : t -> T.enclosing_class -> T.ProcName.t -> PyCommon.annotated_name list option
+val lookup_signature : t -> T.enclosing_class -> string -> PyCommon.annotated_name list option
 (** Lookup the signature of a function / method *)
 
 val register_class : t -> string -> t

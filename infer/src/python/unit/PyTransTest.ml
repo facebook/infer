@@ -832,13 +832,13 @@ def f1(x, y:str) -> bool:
 
         }
 
-        define dummy.f0(x: *PyObject, y: *PyObject, z: *PyObject) : *PyObject {
+        define dummy.f0(x: *PyInt, y: *PyObject, z: *PyFloat) : *PyObject {
           #b0:
               ret null
 
         }
 
-        define dummy.f1(x: *PyObject, y: *PyObject) : *PyObject {
+        define dummy.f1(x: *PyObject, y: *PyString) : *PyBool {
           #b0:
               ret null
 
@@ -886,13 +886,13 @@ expect_int(get())
 
         }
 
-        define dummy.expect_int(x: *PyObject) : *PyObject {
+        define dummy.expect_int(x: *PyInt) : *PyObject {
           #b0:
               ret null
 
         }
 
-        define dummy.get() : *PyObject {
+        define dummy.get() : *PyInt {
           #b0:
               ret $builtins.python_int(42)
 
@@ -940,13 +940,13 @@ expect(get())
 
         }
 
-        define dummy.expect(x: *PyObject) : *PyObject {
+        define dummy.expect(x: *PyObject) : *PyNone {
           #b0:
               ret null
 
         }
 
-        define dummy.get() : *PyObject {
+        define dummy.get() : *PyInt {
           #b0:
               ret $builtins.python_int(42)
 

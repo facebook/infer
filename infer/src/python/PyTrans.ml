@@ -1396,9 +1396,9 @@ let to_proc_desc env loc enclosing_class_name opt_name
     match opt_name with None -> (true, PyCommon.toplevel_function) | Some name -> (false, name)
   in
   Debug.p "\n\n[to_proc_desc] %s\n" name ;
-  let name = proc_name ~loc name in
+  let proc_name = proc_name ~loc name in
   let enclosing_class = type_name ~loc enclosing_class_name in
-  let qualified_name = qualified_procname ~enclosing_class name in
+  let qualified_name = qualified_procname ~enclosing_class proc_name in
   let pyObject = T.Typ.{typ= PyCommon.pyObject; attributes= []} in
   let nr_varnames = Array.length co_varnames in
   let params = Array.sub co_varnames ~pos:0 ~len:co_argcount in

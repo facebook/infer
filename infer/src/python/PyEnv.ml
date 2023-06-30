@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 module T = Textual
 module Debug = PyDebug
 module Builtin = PyBuiltin
@@ -158,10 +159,8 @@ and shared =
             much noise *)
   ; classes: SSet.t  (** All the classes that have been defined *)
   ; imports: ImportSet.t
-  ; toplevel_signatures: Signature.t SMap.t
-        (** Map from top level function names to their signature *)
-  ; method_signatures: Signature.t SMap.t SMap.t
-        (** Map from class names to the signature of all of their methods *)
+  ; signatures: Signature.t SMap.t SMap.t
+        (** Map from module names to the signature of all of their functions/methods *)
   ; module_name: string
   ; is_toplevel: bool
   ; next_label: int
@@ -266,8 +265,7 @@ let empty =
   ; builtins= Builtin.Set.empty
   ; classes= SSet.empty
   ; imports= ImportSet.empty
-  ; toplevel_signatures= SMap.empty
-  ; method_signatures= SMap.empty
+  ; signatures= SMap.empty
   ; module_name= ""
   ; is_toplevel= true
   ; next_label= 0
@@ -433,42 +431,35 @@ let register_call env fname =
       env
 
 
+let register_method ({shared} as env) ~enclosing_class ~method_name annotations =
+  PyDebug.p "[register_method] %s.%s" enclosing_class method_name ;
+  let {signatures} = shared in
+  let class_info = SMap.find_opt enclosing_class signatures |> Option.value ~default:SMap.empty in
+  let class_info = SMap.add method_name annotations class_info in
+  let signatures = SMap.add enclosing_class class_info signatures in
+  let shared = {shared with signatures} in
+  {env with shared}
+
+
 let register_function ({shared} as env) name loc annotations =
-  PyDebug.p "[register_function] %s\n" name ;
+  PyDebug.p "[register_function] %s" name ;
   let {module_name} = shared in
-  (* We use '.' here as we are building a strip that should match the
-     qualified_procname with enclosing_class set to module_name, so
-     we need this '.'
-  *)
+  let env = register_method env ~enclosing_class:module_name ~method_name:name annotations in
   let code_name = Symbol.Qualified.mk ~prefix:[module_name] name loc in
   let symbol_info = Symbol.Code {code_name} in
-  let fname = Symbol.Qualified.to_string ~sep:"." code_name in
-  let {toplevel_signatures; globals} = shared in
-  let toplevel_signatures = SMap.add fname annotations toplevel_signatures in
-  let globals = SMap.add name symbol_info globals in
-  let shared = {shared with toplevel_signatures; globals} in
-  {env with shared}
+  snd @@ register_symbol env ~global:true name symbol_info
 
 
-let register_method ({shared} as env) ~enclosing_class ~method_name annotations =
-  let {method_signatures} = shared in
-  let class_info =
-    SMap.find_opt enclosing_class method_signatures |> Option.value ~default:SMap.empty
+let lookup_signature {shared= {signatures}} enclosing_class name =
+  let enclosing_name =
+    match enclosing_class with
+    | T.TopLevel ->
+        L.die InternalError "[lookup_signature] spotted toplevel declaration %s\n" name
+    | T.Enclosing {T.TypeName.value} ->
+        value
   in
-  let class_info = SMap.add method_name annotations class_info in
-  let method_signatures = SMap.add enclosing_class class_info method_signatures in
-  let shared = {shared with method_signatures} in
-  {env with shared}
-
-
-let lookup_signature {shared= {toplevel_signatures; method_signatures}} enclosing_class
-    {T.ProcName.value= name} =
-  match enclosing_class with
-  | T.TopLevel ->
-      SMap.find_opt name toplevel_signatures
-  | T.Enclosing {T.TypeName.value} ->
-      SMap.find_opt value method_signatures
-      |> Option.bind ~f:(fun class_info -> SMap.find_opt name class_info)
+  SMap.find_opt enclosing_name signatures
+  |> Option.bind ~f:(fun class_info -> SMap.find_opt name class_info)
 
 
 let register_class ({shared} as env) class_name =
