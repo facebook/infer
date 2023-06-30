@@ -840,6 +840,8 @@ let is_hack t = match base_of t with Hack _ -> true | _ -> false
 
 let is_java t = match base_of t with Java _ -> true | _ -> false
 
+let is_python t = match base_of t with Python _ -> true | _ -> false
+
 let as_java_exn ~explanation t =
   match base_of t with
   | Java java ->

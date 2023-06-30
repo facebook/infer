@@ -3,9 +3,11 @@
   "pulse-only": true,
   "pulse-force-continue": true,
   "pulse-taint-sources": [
-    { "procedure": "level1.taintSource" }
+    { "procedure": "level1.taintSource" },
+    { "class_names": ["level2::C1$static"], "method_names": ["taintSource"] }
   ],
   "pulse-taint-sinks": [
-    { "procedure": "level1.taintSink" }
+    { "procedure": "level1.taintSink" },
+    { "class_names": ["level2::C2$static"], "method_names": ["taintSink"] }
   ]
 }

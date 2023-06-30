@@ -673,6 +673,8 @@ val pure_by_default : bool
 
 val pyc_file : string option
 
+val python_builtin_models : string
+
 val quandary_endpoints : Yojson.Basic.t
 
 val quandary_sanitizers : Yojson.Basic.t

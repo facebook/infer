@@ -2766,6 +2766,10 @@ INTERNAL OPTIONS
        --pyc-file-reset
            Cancel the effect of --pyc-file.
 
+       --python-builtin-models string
+           Specify .sil file to use as Python builtin models (uses bundled
+           models by default)
+
        --quandary-show-passthroughs
            Activates: In error traces, show intermediate steps that propagate
            data. When false, error traces are shorter and show only direct

@@ -417,6 +417,9 @@ val is_hack : t -> bool
 val is_java : t -> bool
 (** Check if this is a Java procedure name. *)
 
+val is_python : t -> bool
+(** Check if this is a Python procedure name. *)
+
 val as_java_exn : explanation:string -> t -> Java.t
 (** Converts to a Java.t. Throws if [is_java] is false *)
 

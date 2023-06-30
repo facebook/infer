@@ -1,0 +1,25 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "python"
+
+type PyBool = { val: int }
+
+define $builtins.python_bool(b: int) : *PyBool {
+  #entry:
+    n0 = __sil_allocate(<PyBool>)
+    n1: int = load &b
+    store n0.PyBool.val <- n1 : int
+    ret n0
+}
+
+define $builtins.python_is_true(b: *PyObject) : int {
+  #entry:
+    n0: *PyObject = load &b
+    // We assume b is never `None`. Optional should be checked firsthand
+    prune __sil_ne(n0, 0)
+    n1: int = load n0.PyBool.val
+    ret n1
+}

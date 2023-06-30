@@ -386,6 +386,9 @@ let biabduction_models_jar = lib_dir ^/ "java" ^/ "models.jar"
 (** Path to the textual file with Hack models *)
 let default_hack_builtin_models = lib_dir ^/ "hack" ^/ "models.sil"
 
+(** Path to the textual file with Python models *)
+let default_python_builtin_models = lib_dir ^/ "python" ^/ "models.sil"
+
 let pulse_default_taint_config = config_dir ^/ "taint"
 
 (* Normalize the path *)
@@ -2683,6 +2686,11 @@ and pyc_file =
   CLOpt.mk_path_opt ~long:"pyc-file" "Location of a file that contains a compiled Python module"
 
 
+and python_builtin_models =
+  CLOpt.mk_string ~long:"python-builtin-models" ~default:default_python_builtin_models
+    "Specify .sil file to use as Python builtin models (uses bundled models by default)"
+
+
 and quandary_endpoints =
   CLOpt.mk_json ~long:"quandary-endpoints"
     ~in_help:InferCommand.[(Analyze, manual_quandary)]
@@ -4306,6 +4314,8 @@ and pulse_widen_threshold = !pulse_widen_threshold
 and pure_by_default = !pure_by_default
 
 and pyc_file = !pyc_file
+
+and python_builtin_models = !python_builtin_models
 
 and quandary_endpoints = !quandary_endpoints
 

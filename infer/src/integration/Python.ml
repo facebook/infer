@@ -44,10 +44,26 @@ let capture_file file =
   res
 
 
+let load_textual_model filename =
+  let acc_tenv = Tenv.create () in
+  L.debug Capture Quiet "Loading textual models in %s@\n" filename ;
+  ( match TextualParser.TextualFile.translate (StandaloneFile filename) with
+  | Ok sil ->
+      TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
+      Tenv.merge ~src:sil.tenv ~dst:acc_tenv
+  | Error (sourcefile, errs) ->
+      List.iter errs ~f:(L.external_error "%a@\n" (TextualParser.pp_error sourcefile)) ) ;
+  acc_tenv
+
+
 let capture_files files =
+  let builtins = Config.python_builtin_models in
   let n_files = List.length files in
   let child_action, child_epilogue =
     let child_tenv = Tenv.create () in
+    (* TODO: is this the best place to do so ? *)
+    let builtin_model = load_textual_model builtins in
+    Tenv.merge ~src:builtin_model ~dst:child_tenv ;
     let child_action file =
       let t0 = Mtime_clock.now () in
       !ProcessPoolState.update_status t0 file ;
