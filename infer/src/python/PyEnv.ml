@@ -37,6 +37,18 @@ module DataStack = struct
         None
 
 
+  let as_name FFI.Code.{co_varnames; co_names; co_consts} = function
+    | Const ndx ->
+        let cst = co_consts.(ndx) in
+        FFI.Constant.as_name cst
+    | Name {ndx} ->
+        Some co_names.(ndx)
+    | VarName ndx ->
+        Some co_varnames.(ndx)
+    | Code _ | Temp _ | Map _ | BuiltinBuildClass | Import _ | ImportCall _ ->
+        None
+
+
   type t = cell list
 
   let push stack cell = cell :: stack
@@ -55,7 +67,6 @@ module Signature = struct
 end
 
 module SMap = Caml.Map.Make (String)
-module SSet = Caml.Set.Make (String)
 
 type info = {is_code: bool; is_class: bool; typ: T.Typ.t}
 
@@ -89,6 +100,12 @@ module Symbol = struct
       in
       let name = {T.ProcName.value= name; loc} in
       {T.enclosing_class; name}
+
+
+    let to_type_name {prefix; name; loc} : T.TypeName.t =
+      let value = String.concat ~sep:"::" prefix in
+      let value = if String.is_empty value then name else sprintf "%s::%s" value name in
+      type_name ~loc value
   end
 
   type t =
@@ -98,28 +115,45 @@ module Symbol = struct
     | Class of {class_name: Qualified.t}
     | Import of {import_path: string}
 
-  let to_string = function
-    | Name {symbol_name} ->
-        (* Names are global symobls, without an enclosing class, so we mangle them using the "::"
-           separator *)
-        Qualified.to_string ~sep:"::" symbol_name
+  let to_string ?(code_sep = ".") = function
+    | Class {class_name= qname} | Name {symbol_name= qname} ->
+        (* Names and classes are global symobls, without an enclosing class, so we mangle them
+           using the "::" separator *)
+        Qualified.to_string ~sep:"::" qname
     | Builtin ->
-        Logging.die InternalError "Symbol.to_string called with Builtin"
-    | Code {code_name= qname} | Class {class_name= qname} ->
-        (* While functions and types are used as qualified_procnames so we using "." as a
-           separator *)
-        Qualified.to_string ~sep:"." qname
+        L.die InternalError "Symbol.to_string called with Builtin"
+    | Code {code_name= qname} ->
+        (* Functions are used as qualified_procnames so we using "." as a separator.
+           However because of how classes are initialized, we might end up
+           registering a [Code] but really it's a class. Because we can't
+           detect this early, we allow to override "." with "::", using
+           [code_sep].
+        *)
+        Qualified.to_string ~sep:code_sep qname
     | Import {import_path} ->
         import_path
 
 
   let to_qualified_procname = function
     | Builtin ->
-        Logging.die InternalError "Symbol.to_qualified_procname called with Builtin"
+        L.die InternalError "Symbol.to_qualified_procname called with Builtin"
     | Import _ ->
-        Logging.die InternalError "Symbol.to_qualified_procname called with Import"
+        L.die InternalError "Symbol.to_qualified_procname called with Import"
     | Name {symbol_name= qname} | Code {code_name= qname} | Class {class_name= qname} ->
         Qualified.to_textual qname
+
+
+  let to_type_name = function
+    | Builtin ->
+        L.die InternalError "Symbol.to_type_name called with Builtin"
+    | Import _ ->
+        L.die InternalError "Symbol.to_type_name called with Import"
+    | Name _ ->
+        L.die InternalError "Symbol.to_type_name called with Name"
+    | Code _ ->
+        L.die InternalError "Symbol.to_type_name called with Code"
+    | Class {class_name= qname} ->
+        Qualified.to_type_name qname
 
 
   let pp fmt = function
@@ -130,7 +164,7 @@ module Symbol = struct
     | Code {code_name} ->
         Format.fprintf fmt "Code(%s)" (Qualified.to_string ~sep:"." code_name)
     | Class {class_name} ->
-        Format.fprintf fmt "Class(%s)" (Qualified.to_string ~sep:"." class_name)
+        Format.fprintf fmt "Class(%s)" (Qualified.to_string ~sep:"::" class_name)
     | Import {import_path} ->
         Format.fprintf fmt "Import(%s)" import_path
 end
@@ -140,6 +174,8 @@ module Import = struct
 end
 
 module ImportSet = Caml.Set.Make (Import)
+
+type class_info = {parent: Symbol.t option}
 
 type label_info =
   { label_name: string
@@ -157,7 +193,7 @@ and shared =
   ; builtins: Builtin.Set.t
         (** All the builtins that have been called, so we only export them in textual to avoid too
             much noise *)
-  ; classes: SSet.t  (** All the classes that have been defined *)
+  ; classes: class_info SMap.t  (** All the classes that have been defined *)
   ; imports: ImportSet.t
   ; signatures: Signature.t SMap.t SMap.t
         (** Map from module names to the signature of all of their functions/methods *)
@@ -263,7 +299,7 @@ let empty =
   ; globals= initial_globals
   ; locals= SMap.empty
   ; builtins= Builtin.Set.empty
-  ; classes= SSet.empty
+  ; classes= SMap.empty
   ; imports= ImportSet.empty
   ; signatures= SMap.empty
   ; module_name= ""
@@ -462,10 +498,15 @@ let lookup_signature {shared= {signatures}} enclosing_class name =
   |> Option.bind ~f:(fun class_info -> SMap.find_opt name class_info)
 
 
-let register_class ({shared} as env) class_name =
-  PyDebug.p "[register_class] %s\n" class_name ;
+let register_class ({shared} as env) class_name ({parent} as class_info) =
+  PyDebug.p "[register_class] %s" class_name ;
+  ( match parent with
+  | None ->
+      PyDebug.p "\n"
+  | Some parent ->
+      PyDebug.p " extending %a" Symbol.pp parent ) ;
   let {classes} = shared in
-  let classes = SSet.add class_name classes in
+  let classes = SMap.add class_name class_info classes in
   let shared = {shared with classes} in
   {env with shared}
 
@@ -477,7 +518,7 @@ let register_import ({shared} as env) import_name =
   {env with shared}
 
 
-let get_declared_classes {shared= {classes}} = SSet.fold (fun cls acc -> cls :: acc) classes []
+let get_declared_classes {shared= {classes}} = classes
 
 (* TODO: rethink that when adding more support for imports, probably changing it into a
    "lookup_import" version *)

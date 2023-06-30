@@ -37,10 +37,11 @@ let code_to_exp ~fun_or_class env name =
     let opt_sym = Env.lookup_symbol ~global:true env name in
     match (opt_sym : Symbol.t option) with
     | Some (Name _ as symbol) | Some (Class _ as symbol) | Some (Import _ as symbol) ->
-        let qname = Symbol.to_string symbol in
-        L.die InternalError "[code_to_exp] Name/Class/Import %s is not a code object" qname
+        L.die InternalError "[code_to_exp] Name/Class/Import %a is not a code object" Symbol.pp
+          symbol
     | Some (Code _ as symbol) ->
-        Symbol.to_string symbol
+        let code_sep = if fun_or_class then "." else "::" in
+        Symbol.to_string ~code_sep symbol
     | Some Builtin ->
         L.die InternalError "[code_to_exp] unexpected Builtin: %s\n" name
     | None ->
@@ -116,7 +117,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
             ({Env.is_code= true; is_class= false; typ= PyCommon.pyCode}, qname)
         | Some (Import _ as symbol) ->
             let qname = Symbol.to_string symbol in
-            L.die InternalError "[load_cell] called with %s" qname
+            L.die InternalError "[load_cell] called with %s (import)" qname
         | Some Builtin | None ->
             (default, PyCommon.unknown_global name)
       in
@@ -315,7 +316,8 @@ module FUNCTION = struct
 
         After: [ result | rest-of-the-stack ] *)
 
-    let static_call env fname args =
+    let static_call env opname code fname cells =
+      let env, args = cells_to_textual env opname code cells in
       let loc = Env.loc env in
       (* TODO: support nesting *)
       let opt_sym = Env.lookup_symbol ~global:true env fname in
@@ -357,26 +359,64 @@ module FUNCTION = struct
           (env, None)
 
 
-    let dynamic_call env caller_id args =
+    let dynamic_call env opname code caller_id cells =
+      let env, args = cells_to_textual env opname code cells in
       let args = T.Exp.Var caller_id :: args in
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonCall args in
       let env = Env.push env (DataStack.Temp id) in
       (env, None)
 
 
-    let run env ({FFI.Code.co_names; co_consts} as code) {FFI.Instruction.opname; arg} =
+    let builtin_build_class env code opname name_cell code_cell parent_cell =
+      let as_name kind cell =
+        match DataStack.as_name code cell with
+        | Some name ->
+            name
+        | None ->
+            L.die ExternalError "[%s] expected literal (%s) class name but got %a" kind opname
+              DataStack.pp_cell name_cell
+      in
+      let code_name = as_name "base" name_cell in
+      let parent_name =
+        Option.map
+          ~f:(fun cell ->
+            let short_parent = as_name "parent" cell in
+            let loc = Env.loc env in
+            let default =
+              Symbol.Class
+                { class_name=
+                    Symbol.Qualified.mk ~prefix:[] (PyCommon.unknown_global short_parent) loc }
+            in
+            (* TODO: support nesting *)
+            let sym = Env.lookup_symbol env ~global:true short_parent in
+            Option.value ~default sym )
+          parent_cell
+      in
+      let code =
+        match DataStack.as_code code code_cell with
+        | Some code ->
+            code
+        | None ->
+            L.die ExternalError "[%s] expected code object but got %a" opname DataStack.pp_cell
+              code_cell
+      in
+      let env = Env.register_class env code_name {Env.parent= parent_name} in
+      let env = Env.push env (DataStack.Code {fun_or_class= false; code_name; code}) in
+      env
+
+
+    let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
       Debug.p "[%s] argc = %d\n" opname arg ;
       let env, cells = pop_n_datastack opname env arg [] in
-      let env, args = cells_to_textual env opname code cells in
-      Debug.p "  #args = %d\n" (List.length args) ;
+      Debug.p "  #args = %d\n" (List.length cells) ;
       let env, fname = pop_datastack opname env in
       Debug.p "  fname = %a\n" DataStack.pp_cell fname ;
       match (fname : DataStack.cell) with
       | Name {ndx} ->
           let fname = co_names.(ndx) in
-          static_call env fname args
+          static_call env opname code fname cells
       | Temp id ->
-          dynamic_call env id args
+          dynamic_call env opname code id cells
       | Code {code_name} ->
           L.die UserError "[%s] no support for calling raw class/code : %s" opname code_name
       | VarName _ | Const _ | Map _ ->
@@ -384,35 +424,12 @@ module FUNCTION = struct
             (DataStack.show_cell fname)
       | BuiltinBuildClass -> (
         match cells with
-        | [code_cell; name_cell] -> (
-            let qualified_name =
-              match (name_cell : DataStack.cell) with
-              | Const ndx ->
-                  let const = co_consts.(ndx) in
-                  FFI.Constant.as_name const
-              | _ ->
-                  L.die ExternalError "[%s] expected literal class name but got %a" opname
-                    DataStack.pp_cell name_cell
-            in
-            let code =
-              match (code_cell : DataStack.cell) with
-              | Const ndx ->
-                  let const = co_consts.(ndx) in
-                  FFI.Constant.as_code const
-              | Code {code} ->
-                  Some code
-              | _ ->
-                  L.die ExternalError "[%s] expected code object but got %a" opname
-                    DataStack.pp_cell code_cell
-            in
-            match (code, qualified_name) with
-            | _, None | None, _ ->
-                L.die UserError "[%s] Invalid class declaration" opname
-            | Some code, Some code_name ->
-                let () = Debug.p "[register_class/0] %s\n" code_name in
-                let env = Env.register_class env code_name in
-                let env = Env.push env (DataStack.Code {fun_or_class= false; code_name; code}) in
-                (env, None) )
+        | [code_cell; name_cell] ->
+            let env = builtin_build_class env code opname name_cell code_cell None in
+            (env, None)
+        | [code_cell; name_cell; parent_cell] ->
+            let env = builtin_build_class env code opname name_cell code_cell (Some parent_cell) in
+            (env, None)
         | _ ->
             L.die InternalError "[%s] unsupported call to LOAD_BUILD_CLASS with arg = %d" opname arg
         )
@@ -1451,7 +1468,7 @@ let to_proc_desc env loc enclosing_class_name opt_name
 
 (** Process the special function generated by the Python compiler to create a class instances. This
     is where we can see some of the type annotations for fields, and method definitions. *)
-let rec class_declaration env ({FFI.Code.instructions; co_filename; co_name} as code) loc =
+let rec class_declaration env ({FFI.Code.instructions; co_filename; co_name} as code) loc parent =
   (* TODO:
      - use annotations to declare class member types
      - pass in [env] to PyClassDecl when we'll support decorators
@@ -1459,7 +1476,7 @@ let rec class_declaration env ({FFI.Code.instructions; co_filename; co_name} as 
   let member_infos, method_infos = PyClassDecl.parse_class_declaration code instructions in
   let module_name = Env.module_name env in
   let class_name = prefix_name ~module_name co_name in
-  let type_name = type_name ~loc class_name in
+  let class_type_name = type_name ~loc class_name in
   let env, codes =
     List.fold_left method_infos ~init:(env, [])
       ~f:(fun (env, codes) {PyCommon.code; signature; flags} ->
@@ -1477,14 +1494,17 @@ let rec class_declaration env ({FFI.Code.instructions; co_filename; co_name} as 
   let fields =
     List.map member_infos ~f:(fun {PyCommon.name; annotation} ->
         let name = field_name ~loc name in
-        let qualified_name = {T.enclosing_class= type_name; name} in
+        let qualified_name = {T.enclosing_class= class_type_name; name} in
         let typ = type_of_annotation annotation in
         {T.FieldDecl.qualified_name; typ; attributes= []} )
   in
   let module_name = Stdlib.Filename.remove_extension co_filename in
   let module_name = prefix_name ~module_name co_name in
   let env, decls = to_proc_descs env module_name (Array.of_list codes) in
-  let t = {T.Struct.name= type_name; supers= []; fields; attributes= []} in
+  let supers =
+    Option.value_map ~default:[] ~f:(fun parent -> [Symbol.to_type_name parent]) parent
+  in
+  let t = {T.Struct.name= class_type_name; supers; fields; attributes= []} in
   (env, T.Module.Struct t :: decls)
 
 (* TODO: No support for nested functions/methods at the moment *)
@@ -1497,13 +1517,16 @@ and to_proc_descs env enclosing_class_name codes =
       match FFI.Constant.as_code const with
       | None ->
           (env, decls)
-      | Some ({FFI.Code.co_name; instructions} as code) ->
+      | Some ({FFI.Code.co_name; instructions} as code) -> (
           let loc = first_loc_of_code instructions in
           let classes = Env.get_declared_classes env in
-          if List.mem ~equal:String.equal classes co_name then class_declaration env code loc
-          else
-            let env, decl = to_proc_desc env loc enclosing_class_name (Some co_name) code in
-            (env, T.Module.Proc decl :: decls) )
+          match Env.SMap.find_opt co_name classes with
+          | Some {Env.parent} ->
+              let env, new_decls = class_declaration env code loc parent in
+              (env, new_decls @ decls)
+          | None ->
+              let env, decl = to_proc_desc env loc enclosing_class_name (Some co_name) code in
+              (env, T.Module.Proc decl :: decls) ) )
 
 
 let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python

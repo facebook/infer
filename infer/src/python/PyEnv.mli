@@ -29,6 +29,8 @@ module DataStack : sig
 
   val as_code : FFI.Code.t -> cell -> FFI.Code.t option
 
+  val as_name : FFI.Code.t -> cell -> string option
+
   type t = cell list
 end
 
@@ -59,15 +61,22 @@ module Symbol : sig
     | Class of {class_name: Qualified.t}
     | Import of {import_path: string}
 
-  val to_string : t -> string
+  val to_string : ?code_sep:string -> t -> string
 
   val to_qualified_procname : t -> T.qualified_procname
+
+  val to_type_name : t -> T.TypeName.t
+
+  val pp : Format.formatter -> t -> unit
 end
 
 module Import : sig
   (** Tracking data about external information, from import *)
   type t = TopLevel of string | Call of T.qualified_procname
 end
+
+(** Information about class declaration. Right now, we only support single inheritance. *)
+type class_info = {parent: Symbol.t option}
 
 (** Global environment used during bytecode processing. Stores common global information like the
     toplevel symbols processed so far, or more local ones like the set of labels or variable ids
@@ -189,10 +198,10 @@ val register_method :
 val lookup_signature : t -> T.enclosing_class -> string -> PyCommon.annotated_name list option
 (** Lookup the signature of a function / method *)
 
-val register_class : t -> string -> t
+val register_class : t -> string -> class_info -> t
 (** Register a class declaration (based on [LOAD_BUILD_CLASS]) *)
 
-val get_declared_classes : t -> string list
+val get_declared_classes : t -> class_info SMap.t
 
 val register_import : t -> Import.t -> t
 (** Register a import declaration (based on [IMPORT_NAME]) *)

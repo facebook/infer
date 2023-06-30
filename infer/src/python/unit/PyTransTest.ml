@@ -996,18 +996,17 @@ c.set(42)
 
           define dummy.$toplevel() : *PyObject {
             #b0:
-                n0 = $builtins.python_code("dummy.C")
-                n1 = $builtins.python_class("dummy.C")
-                n2 = $builtins.python_class_constructor("dummy.C")
-                store &dummy::c <- n2:*dummy.C
-                n3:*dummy.C = load &dummy::c
-                n4 = n3.?.x
-                n5:*dummy.C = load &dummy::c
-                n6 = $builtins.python_load_method(n5, "get")
-                n7 = $builtins.python_call_method(n6)
-                n8:*dummy.C = load &dummy::c
-                n9 = $builtins.python_load_method(n8, "set")
-                n10 = $builtins.python_call_method(n9, $builtins.python_int(42))
+                n0 = $builtins.python_class("dummy::C")
+                n1 = $builtins.python_class_constructor("dummy::C")
+                store &dummy::c <- n1:*dummy::C
+                n2:*dummy::C = load &dummy::c
+                n3 = n2.?.x
+                n4:*dummy::C = load &dummy::c
+                n5 = $builtins.python_load_method(n4, "get")
+                n6 = $builtins.python_call_method(n5)
+                n7:*dummy::C = load &dummy::c
+                n8 = $builtins.python_load_method(n7, "set")
+                n9 = $builtins.python_call_method(n8, $builtins.python_int(42))
                 ret null
 
           }
@@ -1045,8 +1044,6 @@ c.set(42)
           declare $builtins.python_load_method(*PyObject, *String) : *PyMethod
 
           type PyMethod = {code: *PyCode; self: *PyObject}
-
-          declare $builtins.python_code(*String) : *PyCode
 
           declare $builtins.python_class_constructor(...) : *PyObject
 
@@ -1103,26 +1100,25 @@ print(c.z)
 
         define dummy.$toplevel() : *PyObject {
           #b0:
-              n0 = $builtins.python_code("dummy.IntBox")
-              n1 = $builtins.python_class("dummy.IntBox")
-              n2 = $builtins.python_class_constructor("dummy.IntBox", $builtins.python_int(10))
-              store &dummy::c <- n2:*dummy.IntBox
-              n3:*dummy.IntBox = load &dummy::c
-              n4 = n3.?.x
-              n5:*dummy.IntBox = load &dummy::c
-              store n5.?.z <- $builtins.python_int(10):*PyInt
-              n6:*dummy.IntBox = load &dummy::c
-              n7 = $builtins.python_load_method(n6, "get")
-              n8 = $builtins.python_call_method(n7)
-              n9:*dummy.IntBox = load &dummy::c
-              n10 = $builtins.python_load_method(n9, "set")
-              n11 = $builtins.python_call_method(n10, $builtins.python_int(42))
-              n12:*dummy.IntBox = load &dummy::c
-              n13 = $builtins.python_load_method(n12, "run")
-              n14 = $builtins.python_call_method(n13)
-              n15:*dummy.IntBox = load &dummy::c
-              n16 = n15.?.z
-              n17 = $builtins.print(n16)
+              n0 = $builtins.python_class("dummy::IntBox")
+              n1 = $builtins.python_class_constructor("dummy::IntBox", $builtins.python_int(10))
+              store &dummy::c <- n1:*dummy::IntBox
+              n2:*dummy::IntBox = load &dummy::c
+              n3 = n2.?.x
+              n4:*dummy::IntBox = load &dummy::c
+              store n4.?.z <- $builtins.python_int(10):*PyInt
+              n5:*dummy::IntBox = load &dummy::c
+              n6 = $builtins.python_load_method(n5, "get")
+              n7 = $builtins.python_call_method(n6)
+              n8:*dummy::IntBox = load &dummy::c
+              n9 = $builtins.python_load_method(n8, "set")
+              n10 = $builtins.python_call_method(n9, $builtins.python_int(42))
+              n11:*dummy::IntBox = load &dummy::c
+              n12 = $builtins.python_load_method(n11, "run")
+              n13 = $builtins.python_call_method(n12)
+              n14:*dummy::IntBox = load &dummy::c
+              n15 = n14.?.z
+              n16 = $builtins.print(n15)
               ret null
 
         }
@@ -1300,4 +1296,47 @@ g()
         declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
+  end )
+
+
+let%test_module "inheritance" =
+  ( module struct
+    let%expect_test _ =
+      let source = {|
+class C:
+  pass
+
+class D(C):
+  pass
+  |} in
+      test source ;
+      [%expect
+        {|
+          .source_language = "python"
+
+          define dummy.$toplevel() : *PyObject {
+            #b0:
+                n0 = $builtins.python_class("dummy::C")
+                n1 = $builtins.python_class("dummy::D")
+                ret null
+
+          }
+
+          type dummy::C = {}
+
+          type dummy::D extends dummy::C = {}
+
+          declare $builtins.python_class(*String) : *PyClass
+
+          declare $builtins.python_tuple(...) : *PyObject
+
+          declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+          declare $builtins.python_string(*String) : *PyString
+
+          declare $builtins.python_bool(int) : *PyBool
+
+          declare $builtins.python_float(float) : *PyFloat
+
+          declare $builtins.python_int(int) : *PyInt |}]
   end )
