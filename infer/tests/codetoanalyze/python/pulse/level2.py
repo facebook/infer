@@ -22,5 +22,5 @@ class C3:
             return "untainted"
 
 
-C2.taintSink(C3.transformer(True))
-C2.taintSink(C3.transformer(False))
+C2.taintSink(C3.transformer(True))  # Taint detected
+C2.taintSink(C3.transformer(False)) # untainted
