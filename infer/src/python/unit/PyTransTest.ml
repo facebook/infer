@@ -1000,13 +1000,11 @@ c.set(42)
                 n1 = $builtins.python_class_constructor("dummy::C")
                 store &dummy::c <- n1:*dummy::C
                 n2:*dummy::C = load &dummy::c
-                n3 = n2.?.x
+                n3:*PyObject = load n2.?.x
                 n4:*dummy::C = load &dummy::c
-                n5 = $builtins.python_load_method(n4, "get")
-                n6 = $builtins.python_call_method(n5)
-                n7:*dummy::C = load &dummy::c
-                n8 = $builtins.python_load_method(n7, "set")
-                n9 = $builtins.python_call_method(n8, $builtins.python_int(42))
+                n5 = n4.dummy::C.get()
+                n6:*dummy::C = load &dummy::c
+                n7 = n6.dummy::C.set($builtins.python_int(42))
                 ret null
 
           }
@@ -1023,7 +1021,7 @@ c.set(42)
           define dummy::C.get(self: *PyObject) : *PyObject {
             #b0:
                 n0:*PyObject = load &self
-                n1 = n0.?.x
+                n1:*PyObject = load n0.?.x
                 ret n1
 
           }
@@ -1045,15 +1043,9 @@ c.set(42)
 
           global dummy::c: *PyObject
 
-          declare $builtins.python_load_method(*PyObject, *String) : *PyMethod
-
-          type PyMethod = {code: *PyCode; self: *PyObject}
-
           declare $builtins.python_class_constructor(...) : *PyObject
 
           declare $builtins.python_class(*String) : *PyClass
-
-          declare $builtins.python_call_method(...) : *PyObject
 
           declare $builtins.python_tuple(...) : *PyObject
 
@@ -1112,21 +1104,18 @@ print(c.z)
               n2 = $builtins.python_class_constructor("dummy::IntBox", $builtins.python_int(10))
               store &dummy::c <- n2:*dummy::IntBox
               n3:*dummy::IntBox = load &dummy::c
-              n4 = n3.?.x
+              n4:*PyObject = load n3.?.x
               n5:*dummy::IntBox = load &dummy::c
               store n5.?.z <- $builtins.python_int(10):*PyInt
               n6:*dummy::IntBox = load &dummy::c
-              n7 = $builtins.python_load_method(n6, "get")
-              n8 = $builtins.python_call_method(n7)
-              n9:*dummy::IntBox = load &dummy::c
-              n10 = $builtins.python_load_method(n9, "set")
-              n11 = $builtins.python_call_method(n10, $builtins.python_int(42))
+              n7 = n6.dummy::IntBox.get()
+              n8:*dummy::IntBox = load &dummy::c
+              n9 = n8.dummy::IntBox.set($builtins.python_int(42))
+              n10:*dummy::IntBox = load &dummy::c
+              n11 = n10.dummy::IntBox.run()
               n12:*dummy::IntBox = load &dummy::c
-              n13 = $builtins.python_load_method(n12, "run")
-              n14 = $builtins.python_call_method(n13)
-              n15:*dummy::IntBox = load &dummy::c
-              n16 = n15.?.z
-              n17 = $builtins.print(n16)
+              n13:*PyObject = load n12.?.z
+              n14 = $builtins.print(n13)
               ret null
 
         }
@@ -1146,7 +1135,7 @@ print(c.z)
         define dummy::IntBox.get(self: *PyObject) : *PyInt {
           #b0:
               n0:*PyObject = load &self
-              n1 = n0.?.x
+              n1:*PyObject = load n0.?.x
               ret n1
 
         }
@@ -1163,10 +1152,9 @@ print(c.z)
         define dummy::IntBox.run(self: *PyObject) : *PyNone {
           #b0:
               n0:*PyObject = load &self
-              n1 = $builtins.python_load_method(n0, "f")
-              n2 = $builtins.python_call_method(n1, $builtins.python_int(3))
-              n3 = $builtins.python_call(n2, $builtins.python_bool(0))
-              n4 = $builtins.python_call(n3, $builtins.python_string("yolo"))
+              n1 = n0.?.f($builtins.python_int(3))
+              n2 = $builtins.python_call(n1, $builtins.python_bool(0))
+              n3 = $builtins.python_call(n2, $builtins.python_string("yolo"))
               ret null
 
         }
@@ -1180,9 +1168,8 @@ print(c.z)
         define dummy.getX(box: *dummy::IntBox) : *PyInt {
           #b0:
               n0:*dummy::IntBox = load &box
-              n1 = $builtins.python_load_method(n0, "get")
-              n2 = $builtins.python_call_method(n1)
-              ret n2
+              n1 = n0.dummy::IntBox.get()
+              ret n1
 
         }
 
@@ -1190,17 +1177,11 @@ print(c.z)
 
         declare $builtins.print(...) : *PyObject
 
-        declare $builtins.python_load_method(*PyObject, *String) : *PyMethod
-
-        type PyMethod = {code: *PyCode; self: *PyObject}
-
         declare $builtins.python_code(*String) : *PyCode
 
         declare $builtins.python_class_constructor(...) : *PyObject
 
         declare $builtins.python_class(*String) : *PyClass
-
-        declare $builtins.python_call_method(...) : *PyObject
 
         declare $builtins.python_call(...) : *PyObject
 

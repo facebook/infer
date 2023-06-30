@@ -11,13 +11,11 @@ type textual =
   | IsTrue
   | BinaryAdd
   | PythonCall
-  | PythonCallMethod
   | PythonClass
   | PythonClassConstructor
   | PythonCode
   | PythonIter
   | PythonIterNext
-  | PythonLoadMethod
 [@@deriving compare]
 
 type builtin

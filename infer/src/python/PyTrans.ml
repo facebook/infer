@@ -82,7 +82,7 @@ let rec py_to_exp env c =
             let env, e, _ = py_to_exp env c in
             (env, e) )
       in
-      let exp = T.Exp.Call {proc= PyCommon.python_tuple; args; kind= NonVirtual} in
+      let exp = T.Exp.call_non_virtual PyCommon.python_tuple args in
       (env, exp, PyCommon.pyObject)
 
 
@@ -166,12 +166,8 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       (env, Ok exp, info)
   | Map _map ->
       (env, Error "TODO: load Map cells", default)
-  | BuiltinBuildClass ->
-      L.die InternalError "[load_cell] Can't load LOAD_BUILD_CLASS, something went wrong"
-  | StaticCall _ ->
-      L.die InternalError "[load_cell] Can't load StaticCall, something went wrong"
-  | Import _ | ImportCall _ ->
-      L.die InternalError "[load_cell] Can't load IMPORT, something went wrong"
+  | BuiltinBuildClass | StaticCall _ | MethodCall _ | Import _ | ImportCall _ ->
+      L.die InternalError "[load_cell] Can't load %a, something went wrong" DataStack.pp_cell cell
 
 
 let cells_to_textual env opname code cells =
@@ -270,13 +266,14 @@ module LOAD = struct
                 DataStack.pp_cell cell s
           | Ok exp ->
               (* TODO: refine typ if possible *)
-              let info = Env.{typ= PyCommon.pyObject; is_class= false; is_code= false} in
+              let typ = PyCommon.pyObject in
+              let info = Env.{typ; is_class= false; is_code= false} in
               let env, id = Env.mk_fresh_ident env info in
               let loc = Env.loc env in
               let name = field_name ~loc fname in
               let field = {T.enclosing_class= T.TypeName.wildcard; name} in
               let exp = T.Exp.Field {exp; field} in
-              let instr = T.Instr.Let {id; exp; loc} in
+              let instr = T.Instr.Load {id; exp; typ; loc} in
               let env = Env.push_instr env instr in
               (env, DataStack.Temp id) )
     in
@@ -308,7 +305,7 @@ module FUNCTION = struct
   module CALL = struct
     let mk env fname loc proc args =
       let env = Option.value_map ~default:env ~f:(Env.register_call env) fname in
-      let call = T.Exp.Call {proc; args; kind= NonVirtual} in
+      let call = T.Exp.call_non_virtual proc args in
       (* TODO: read return type of proc if available *)
       let info = {Env.typ= PyCommon.pyObject; is_code= false; is_class= false} in
       let env, id = Env.mk_fresh_ident env info in
@@ -445,10 +442,9 @@ module FUNCTION = struct
         | _ ->
             L.die InternalError "[%s] unsupported call to LOAD_BUILD_CLASS with arg = %d" opname arg
         )
-      | Import _ | ImportCall _ ->
-          L.die InternalError "[%s] unsupported call to IMPORT with arg = %d" opname arg
-      | StaticCall _ ->
-          L.die InternalError "[%s] unsupported call to StaticCall with arg = %d" opname arg
+      | Import _ | ImportCall _ | StaticCall _ | MethodCall _ ->
+          L.die InternalError "[%s] unsupported call to %a with arg = %d" opname DataStack.pp_cell
+            fname arg
   end
 
   module MAKE = struct
@@ -524,6 +520,7 @@ module FUNCTION = struct
         | BuiltinBuildClass
         | Import _
         | ImportCall _
+        | MethodCall _
         | StaticCall _ ->
             L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell qual)
         | Const ndx -> (
@@ -544,18 +541,30 @@ end
 
 module METHOD = struct
   module LOAD = struct
+    let rec to_typename typ =
+      if T.Typ.equal typ PyCommon.pyObject then T.TypeName.wildcard
+      else
+        match (typ : T.Typ.t) with
+        | Struct tname ->
+            tname
+        | Ptr t ->
+            to_typename t
+        | Int | Float | Null | Void | Array _ ->
+            T.TypeName.wildcard
+
+
     let load env code cell method_name =
-      let env, res, _info = load_cell env code cell in
+      let env, res, {Env.typ} = load_cell env code cell in
+      let tname = to_typename typ in
       match res with
       | Error s ->
           L.die ExternalError "Failed to load method %s from cell %a: %s" method_name
             DataStack.pp_cell cell s
-      | Ok self ->
-          let method_name = T.Exp.Const (T.Const.Str method_name) in
-          let env, id, _typ =
-            Env.mk_builtin_call env Builtin.PythonLoadMethod [self; method_name]
-          in
-          let env = Env.push env (DataStack.Temp id) in
+      | Ok receiver ->
+          let loc = Env.loc env in
+          let name = proc_name ~loc method_name in
+          let name : T.qualified_procname = {T.enclosing_class= Enclosing tname; name} in
+          let env = Env.push env (DataStack.MethodCall {receiver; name}) in
           (env, None)
 
 
@@ -595,20 +604,6 @@ module METHOD = struct
   end
 
   module CALL = struct
-    let method_call env code opname cell_mi args =
-      let env, mi, _ = load_cell env code cell_mi in
-      match mi with
-      | Error s ->
-          L.die InternalError "[%s] failed to load method information from cell %a: %s" opname
-            DataStack.pp_cell cell_mi s
-      | Ok mi ->
-          (* The method code and self are bundled in [mi]. The builtin will decide if it is a
-             proper method call, or a call to an arbitrary callable (lambda, ...) *)
-          let env, id, _typ = Env.mk_builtin_call env PythonCallMethod (mi :: args) in
-          let env = Env.push env (Temp id) in
-          (env, None)
-
-
     (** {v CALL_METHOD(argc) v}
 
         Calls a method. [argc] is the number of positional arguments. Keyword arguments are not
@@ -631,8 +626,19 @@ module METHOD = struct
           let loc = Env.loc env in
           let env = FUNCTION.CALL.mk env None loc proc args in
           (env, None)
-      | _ ->
-          method_call env code opname cell_mi args
+      | MethodCall {receiver; name} ->
+          let loc = Env.loc env in
+          let exp = T.Exp.call_virtual name receiver args in
+          (* TODO: read return type of proc if available *)
+          let info = {Env.typ= PyCommon.pyObject; is_code= false; is_class= false} in
+          let env, id = Env.mk_fresh_ident env info in
+          let let_instr = T.Instr.Let {id; exp; loc} in
+          let env = Env.push_instr env let_instr in
+          let env = Env.push env (DataStack.Temp id) in
+          (env, None)
+      | Const _ | Name _ | VarName _ | Temp _ | Code _ | Map _ | BuiltinBuildClass | Import _ ->
+          L.die InternalError "[%s] failed to load method information from cell %a" opname
+            DataStack.pp_cell cell_mi
   end
 end
 

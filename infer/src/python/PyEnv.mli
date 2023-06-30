@@ -25,6 +25,9 @@ module DataStack : sig
     | Import of {import_path: string; symbols: string list}
         (** imported module path, with optional name of symbols *)
     | ImportCall of T.qualified_procname  (** Static call to export definition *)
+    | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
+        (** Virtual call, usually of a method of a class. Could be an access to a closure that is
+            called straight away *)
     | StaticCall of T.qualified_procname  (** call to static method in class *)
   [@@deriving show]
 

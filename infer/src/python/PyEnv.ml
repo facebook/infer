@@ -25,6 +25,7 @@ module DataStack = struct
     | Import of {import_path: string; symbols: string list}
       (* TODO: change import_path into a list when we supported structured path foo.bar.baz *)
     | ImportCall of T.qualified_procname
+    | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
     | StaticCall of T.qualified_procname
   [@@deriving show]
 
@@ -41,6 +42,7 @@ module DataStack = struct
     | BuiltinBuildClass
     | Import _
     | ImportCall _
+    | MethodCall _
     | StaticCall _ ->
         None
 
@@ -53,7 +55,14 @@ module DataStack = struct
         Some co_names.(ndx)
     | VarName ndx ->
         Some co_varnames.(ndx)
-    | Code _ | Temp _ | Map _ | BuiltinBuildClass | Import _ | ImportCall _ | StaticCall _ ->
+    | Code _
+    | Temp _
+    | Map _
+    | BuiltinBuildClass
+    | Import _
+    | ImportCall _
+    | MethodCall _
+    | StaticCall _ ->
         None
 
 
