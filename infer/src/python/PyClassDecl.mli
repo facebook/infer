@@ -8,4 +8,6 @@
 open! IStd
 
 val parse_class_declaration :
-  FFI.Code.t -> FFI.Instruction.t list -> PyCommon.annotated_name list * PyCommon.method_info list
+     FFI.Code.t
+  -> FFI.Instruction.t list
+  -> PyCommon.annotated_name list * PyCommon.method_info list * PyCommon.method_info list

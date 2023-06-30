@@ -125,3 +125,7 @@ type method_info =
   ; flags: int }
 
 val toplevel_function : string
+
+val static_method : string
+
+val static_companion : string -> string

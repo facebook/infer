@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 
 module Type = struct
   type t = Atom of string | List of t list | Apply of string * t
@@ -183,18 +184,18 @@ let parse_method_signature code stack instructions =
       None
 
 
-(** After the optional method signature is added on the stack, the same 4 instructions will be used
-    to declare a method, giving us its short name, (Python) qualified name, actual code object and
-    the method flags. *)
-let parse_method ({FFI.Code.co_consts; co_names} as code) stack instructions =
+(* Specialized decorator test for [@staticmethod], which is a builtin decorator *)
+let is_static_method co_names instructions =
   let open Option.Let_syntax in
-  let signature, stack, instructions =
-    match parse_method_signature code stack instructions with
-    | Some res ->
-        res
-    | None ->
-        ([], stack, instructions)
-  in
+  is_instruction "LOAD_NAME" instructions
+  >>= fun (arg, instructions) ->
+  let name = co_names.(arg) in
+  if String.equal name PyCommon.static_method then Some instructions else None
+
+
+(* Parses common bits of method declaration, both instance and static ones *)
+let parse_method_core co_consts instructions =
+  let open Option.Let_syntax in
   is_instruction "LOAD_CONST" instructions
   >>= fun (arg, instructions) ->
   let code = co_consts.(arg) in
@@ -203,22 +204,66 @@ let parse_method ({FFI.Code.co_consts; co_names} as code) stack instructions =
   FFI.Constant.as_name co_consts.(arg)
   >>= fun raw_qualified_name ->
   is_instruction "MAKE_FUNCTION" instructions
-  >>= fun (flags, instructions) ->
+  >>= fun (flags, instructions) -> Some (code, raw_qualified_name, flags, instructions)
+
+
+(** After the optional method signature is added on the stack, the same 4 instructions will be used
+    to declare a method, giving us its short name, (Python) qualified name, actual code object and
+    the method flags. *)
+let parse_method ({FFI.Code.co_consts; co_names} as code) stack instructions =
+  let open Option.Let_syntax in
+  (* First we check if the method is static or not *)
+  let is_static, instructions =
+    match is_static_method co_names instructions with
+    | None ->
+        (false, instructions)
+    | Some instructions ->
+        (true, instructions)
+  in
+  (* Then we check if there's type information or not *)
+  let signature, stack, instructions =
+    match parse_method_signature code stack instructions with
+    | Some res ->
+        res
+    | None ->
+        ([], stack, instructions)
+  in
+  (* Actual method declaration bytecode *)
+  parse_method_core co_consts instructions
+  >>= fun (code, raw_qualified_name, flags, instructions) ->
+  let instructions =
+    (* If the method was static, there's an additional CALL_FUNCTION *)
+    if is_static then
+      let opt =
+        is_instruction "CALL_FUNCTION" instructions
+        >>= fun (arg, instructions) ->
+        if arg <> 1 then
+          L.die ExternalError "[parse_method] missing CALL_FUNCTION for static method %s"
+            raw_qualified_name
+        else Some instructions
+      in
+      Option.value ~default:instructions opt
+    else instructions
+  in
   is_instruction "STORE_NAME" instructions
   >>= fun (arg, instructions) ->
   let name = co_names.(arg) in
-  Some ({PyCommon.name; code; signature; flags; raw_qualified_name}, stack, instructions)
+  Some (is_static, {PyCommon.name; code; signature; flags; raw_qualified_name}, stack, instructions)
 
 
 let parse_methods code instructions =
-  let rec aux stack method_infos instructions =
+  let rec aux stack method_infos static_method_infos instructions =
     match parse_method code stack instructions with
-    | Some (method_info, stack, instructions) ->
-        aux stack (method_info :: method_infos) instructions
+    | Some (is_static, method_info, stack, instructions) ->
+        let method_infos, static_method_infos =
+          if is_static then (method_infos, method_info :: static_method_infos)
+          else (method_info :: method_infos, static_method_infos)
+        in
+        aux stack method_infos static_method_infos instructions
     | None ->
-        (method_infos, instructions)
+        (method_infos, static_method_infos, instructions)
   in
-  aux [] [] instructions
+  aux [] [] [] instructions
 
 
 let parse_class_declaration code instructions =
@@ -240,5 +285,5 @@ let parse_class_declaration code instructions =
   in
   (* TODO: support Python method decorators *)
   (* Now we gather method declarations *)
-  let method_infos, _ = parse_methods code instructions in
-  (annotations, method_infos)
+  let method_infos, static_method_infos, _ = parse_methods code instructions in
+  (annotations, method_infos, static_method_infos)

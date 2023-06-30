@@ -65,9 +65,13 @@ module Symbol : sig
 
   val to_qualified_procname : t -> T.qualified_procname
 
-  val to_type_name : t -> T.TypeName.t
+  val to_type_name : is_static:bool -> t -> T.TypeName.t
 
   val pp : Format.formatter -> t -> unit
+end
+
+module Signature : sig
+  type t = {annotations: PyCommon.annotated_name list; is_static: bool}
 end
 
 module Import : sig
@@ -191,11 +195,12 @@ val register_function : t -> string -> T.Location.t -> PyCommon.annotated_name l
 (** Register a function declaration. We keep track of them since they might shadow Python builtins
     or previous definitions *)
 
-val register_method :
-  t -> enclosing_class:string -> method_name:string -> PyCommon.annotated_name list -> t
+val register_method : t -> enclosing_class:string -> method_name:string -> Signature.t -> t
 (** Register a method declaration. We mostly keep track of their signatures *)
 
-val lookup_signature : t -> T.enclosing_class -> string -> PyCommon.annotated_name list option
+val lookup_method : t -> enclosing_class:string -> string -> Signature.t option
+(** Lookup the information stored for a function/method in the relevant [enclosing_class] *)
+
 (** Lookup the signature of a function / method *)
 
 val register_class : t -> string -> class_info -> t

@@ -63,7 +63,7 @@ module Labels = Caml.Map.Make (Int)
 (* TODO(vsiles): maybe revamp Signature maps to benefits from the new
    qualified name structure *)
 module Signature = struct
-  type t = PyCommon.annotated_name list
+  type t = {annotations: PyCommon.annotated_name list; is_static: bool}
 end
 
 module SMap = Caml.Map.Make (String)
@@ -102,8 +102,9 @@ module Symbol = struct
       {T.enclosing_class; name}
 
 
-    let to_type_name {prefix; name; loc} : T.TypeName.t =
+    let to_type_name ~is_static {prefix; name; loc} : T.TypeName.t =
       let value = String.concat ~sep:"::" prefix in
+      let name = if is_static then PyCommon.static_companion name else name in
       let value = if String.is_empty value then name else sprintf "%s::%s" value name in
       type_name ~loc value
   end
@@ -143,7 +144,7 @@ module Symbol = struct
         Qualified.to_textual qname
 
 
-  let to_type_name = function
+  let to_type_name ~is_static = function
     | Builtin ->
         L.die InternalError "Symbol.to_type_name called with Builtin"
     | Import _ ->
@@ -153,7 +154,7 @@ module Symbol = struct
     | Code _ ->
         L.die InternalError "Symbol.to_type_name called with Code"
     | Class {class_name= qname} ->
-        Qualified.to_type_name qname
+        Qualified.to_type_name ~is_static qname
 
 
   let pp fmt = function
@@ -480,22 +481,16 @@ let register_method ({shared} as env) ~enclosing_class ~method_name annotations 
 let register_function ({shared} as env) name loc annotations =
   PyDebug.p "[register_function] %s" name ;
   let {module_name} = shared in
-  let env = register_method env ~enclosing_class:module_name ~method_name:name annotations in
+  let info = {Signature.is_static= false; annotations} in
+  let env = register_method env ~enclosing_class:module_name ~method_name:name info in
   let code_name = Symbol.Qualified.mk ~prefix:[module_name] name loc in
   let symbol_info = Symbol.Code {code_name} in
   snd @@ register_symbol env ~global:true name symbol_info
 
 
-let lookup_signature {shared= {signatures}} enclosing_class name =
-  let enclosing_name =
-    match enclosing_class with
-    | T.TopLevel ->
-        L.die InternalError "[lookup_signature] spotted toplevel declaration %s\n" name
-    | T.Enclosing {T.TypeName.value} ->
-        value
-  in
-  SMap.find_opt enclosing_name signatures
-  |> Option.bind ~f:(fun class_info -> SMap.find_opt name class_info)
+let lookup_method {shared= {signatures}} ~enclosing_class name =
+  let open Option.Let_syntax in
+  SMap.find_opt enclosing_class signatures >>= SMap.find_opt name
 
 
 let register_class ({shared} as env) class_name ({parent} as class_info) =

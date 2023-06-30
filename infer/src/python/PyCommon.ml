@@ -142,6 +142,8 @@ let unknown_global name = sprintf "$ambiguous::%s" name
 
 type annotated_name = {name: string; annotation: string}
 
+(* TODO: [raw_qualified_name] is not used at the moment. We might want to use it for some sanity
+   checks. *)
 type method_info =
   { name: string
   ; raw_qualified_name: string
@@ -150,3 +152,7 @@ type method_info =
   ; flags: int }
 
 let toplevel_function = "$toplevel"
+
+let static_method = "staticmethod"
+
+let static_companion name = sprintf "%s$static" name
