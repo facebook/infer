@@ -3,9 +3,9 @@ property AtomLiteralTaint
   prefix "topl_atom_literal"
   start -> start: *
   start -> tracking: "source/0"(Ret) => x := Ret
-  tracking -> error: "sink/2"(Arg0, Arg1, VoidRet) when x == Arg1 && Arg0:Atom.hash == 755456737280 // This number is the hash of 'not_okay'
+  tracking -> error: "sink/2"(Arg0, Arg1, VoidRet) when x == Arg1 && Arg0:Atom.hash == 18659775552472532 // This number is the hash of 'not_okay'
 
 // Note: to calculate hashes:
 // make toplevel
 // scripts/infer_repl
-// utop # String.hash "not_okay" lsl 16;;
+// utop # ErlangTypeName.calculate_hash "not_okay";;
