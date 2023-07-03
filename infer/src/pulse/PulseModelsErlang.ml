@@ -200,23 +200,23 @@ module Errors = struct
 end
 
 module Atoms = struct
-  let value_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_value
+  let name_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_name
 
   let hash_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_hash
 
-  let get_value path location var astate : string option =
-    let _astate, _addr, (value, _) = load_field path value_field location var astate in
-    AbductiveDomain.AddressAttributes.get_const_string value astate
+  let get_name path location var astate : string option =
+    let _astate, _addr, (name, _) = load_field path name_field location var astate in
+    AbductiveDomain.AddressAttributes.get_const_string name astate
 
 
-  let make_raw location path value hash : sat_maker =
+  let make_raw location path name hash : sat_maker =
    fun astate ->
     let hist = Hist.single_alloc path location "atom" in
     let addr_atom = (AbstractValue.mk_fresh (), hist) in
     let* astate =
       write_field_and_deref path location ~struct_addr:addr_atom
         ~field_addr:(AbstractValue.mk_fresh (), hist)
-        ~field_val:value value_field astate
+        ~field_val:name name_field astate
     in
     let+ astate =
       write_field_and_deref path location ~struct_addr:addr_atom
@@ -227,9 +227,9 @@ module Atoms = struct
     , addr_atom )
 
 
-  let make value hash : model =
+  let make name hash : model =
    fun {location; path; ret= ret_id, _} astate ->
-    let<+> astate, ret = make_raw location path value hash astate in
+    let<+> astate, ret = make_raw location path name hash astate in
     PulseOperations.write_id ret_id ret astate
 
 
@@ -1377,7 +1377,7 @@ module GenServer = struct
     let module_name =
       match get_erlang_type_or_any (fst module_atom) astate with
       | Atom ->
-          Atoms.get_value path location module_atom astate
+          Atoms.get_name path location module_atom astate
       | typ ->
           L.debug Analysis Verbose
             "@[First argument of gen_server:start_link is of unsupported type %a@."
@@ -1411,20 +1411,20 @@ module GenServer = struct
       (* The following cases assume that the server is registered with its name. *)
       | Atom ->
           (* case `server_ref() = LocalName :: atom()` *)
-          Atoms.get_value path location server_ref astate
+          Atoms.get_name path location server_ref astate
       | Tuple 2 -> (
           (* case `server_ref() = {Name :: atom(), Node :: atom()} | {global, GlobalName :: term()}
              We model global and local registration on another node as local registration in the current node *)
           let _, _, first_element =
             load_field path (Tuples.field_name 2 1) location server_ref astate
           in
-          match Atoms.get_value path location first_element astate with
+          match Atoms.get_name path location first_element astate with
           | Some "global" ->
               (* case `server_ref() = {global, GlobalName :: term()}` *)
               let _, _, second_element =
                 load_field path (Tuples.field_name 2 2) location server_ref astate
               in
-              Atoms.get_value path location second_element astate
+              Atoms.get_name path location second_element astate
           | module_name_opt ->
               (* case `server_ref() = {Name :: atom(), Node :: atom()}` *)
               module_name_opt )
@@ -1493,7 +1493,7 @@ module GenServer = struct
                       valid atoms are `reply`, `noreply` and `stop`
                       https://www.erlang.org/doc/man/gen_server.html#Module:handle_call-3
                     *)
-                    match Atoms.get_value path location first_element astate with
+                    match Atoms.get_name path location first_element astate with
                     | Some "reply" ->
                         (* the second element is sent back to the client request and there becomes its return value *)
                         let _, _, second_element =

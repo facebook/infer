@@ -454,7 +454,7 @@ end = struct
         analysis. *)
     let is_boxing_field fieldname =
       Array.mem ~equal:Fieldname.equal
-        [| Fieldname.make (ErlangType Atom) ErlangTypeName.atom_value
+        [| Fieldname.make (ErlangType Atom) ErlangTypeName.atom_name
          ; Fieldname.make (ErlangType Atom) ErlangTypeName.atom_hash
          ; Fieldname.make (ErlangType Integer) ErlangTypeName.integer_value |]
         fieldname

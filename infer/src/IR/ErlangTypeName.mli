@@ -23,7 +23,7 @@ val to_string : t -> string
 
 val from_string : string -> t option
 
-val atom_value : string
+val atom_name : string
 
 val atom_hash : string
 

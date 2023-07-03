@@ -101,10 +101,10 @@ let builtin_call_2 (env : (_, _) Env.t) ret_var builtin arg1 arg2 =
 
 
 let mk_atom_call (env : (_, _) Env.t) ret_var atom =
-  let value_exp = Exp.Const (Cstr atom) in
+  let name_exp = Exp.Const (Cstr atom) in
   let hash = ErlangTypeName.calculate_hash atom in
   let hash_exp = Exp.Const (Cint (IntLit.of_int hash)) in
-  builtin_call_2 env ret_var BuiltinDecl.__erlang_make_atom value_exp hash_exp
+  builtin_call_2 env ret_var BuiltinDecl.__erlang_make_atom name_exp hash_exp
 
 
 (** Calls make_integer on the value_exp expression. Does not check if value_exp is indeed an

@@ -74,7 +74,7 @@ let from_string s =
         ; constr_opt "GenServerPid_%s%!" mk_genserverpid ]
 
 
-let atom_value = "value"
+let atom_name = "name"
 
 let atom_hash = "hash"
 
