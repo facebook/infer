@@ -232,65 +232,48 @@ module SharedPtr = struct
     SatUnsat.to_list astate_not_nullptr @ SatUnsat.to_list astate_nullptr
 
 
-  let copy_constructor (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc :
-      model =
-   fun ({path; location} as model_data) astate ->
-    let astate = destructor arg ~desc model_data astate in
-    let astate =
-      List.concat_map astate ~f:(fun exec_state_result ->
-          let<*> exec_state = exec_state_result in
-          match exec_state with
-          | ContinueProgram astate ->
-              (* copy value pointer*)
-              let<*> astate, value = to_internal_value_deref path Read location other astate in
-              let<*> astate, _ = write_value path location this ~value ~desc astate in
-              (* if 'other' is managing an object *)
-              let astate_not_nullptr =
-                let** astate = PulseArithmetic.prune_positive (fst value) astate in
-                let=* astate, (this_internal_count, _) =
-                  to_internal_count path Read location this astate
-                in
-                let=* astate, (pointer, int_hist) =
-                  to_internal_count_deref path Read location other astate
-                in
-                let=* astate, count =
-                  PulseOperations.eval_access path Read location (pointer, int_hist) Dereference
-                    astate
-                in
-                let** astate = PulseArithmetic.and_positive (fst count) astate in
-                (* copy the pointer to ref count*)
-                let=* astate =
-                  PulseOperations.write_deref path location ~ref:(this_internal_count, int_hist)
-                    ~obj:(pointer, int_hist) astate
-                in
-                let hist = Hist.add_call path location desc int_hist in
-                (* compute the increased ref count *)
-                let=* astate, (count_addr, _) =
-                  PulseOperations.eval_access path Read location (pointer, hist) Dereference astate
-                in
-                let incremented_count = AbstractValue.mk_fresh () in
-                let+* astate, incremented_count =
-                  PulseArithmetic.eval_binop incremented_count (PlusA None)
-                    (AbstractValueOperand count_addr)
-                    (ConstOperand (Cint (IntLit.of_int 1)))
-                    astate
-                in
-                (* update the ref count *)
-                PulseOperations.write_deref path location ~ref:(pointer, int_hist)
-                  ~obj:(incremented_count, int_hist) astate
-                |> Basic.map_continue
-              in
-              (* if 'other' is not managing an object *)
-              let astate_nullptr =
-                PulseArithmetic.prune_eq_zero (fst value) astate
-                >>== assign_count path location this ~constant:IntLit.zero ~desc
-                >>|| ExecutionDomain.continue
-              in
-              SatUnsat.to_list astate_not_nullptr @ SatUnsat.to_list astate_nullptr
-          | _ ->
-              [Ok exec_state] )
+  let copy_constructor ProcnameDispatcher.Call.FuncArg.{arg_payload= this} other ~desc : model =
+   fun {path; location} astate ->
+    (* copy value pointer*)
+    let<*> astate, value = to_internal_value_deref path Read location other astate in
+    let<*> astate, _ = write_value path location this ~value ~desc astate in
+    (* if 'other' is managing an object *)
+    let astate_not_nullptr =
+      let** astate = PulseArithmetic.prune_positive (fst value) astate in
+      let=* astate, (this_internal_count, _) = to_internal_count path Read location this astate in
+      let=* astate, (pointer, int_hist) = to_internal_count_deref path Read location other astate in
+      let=* astate, count =
+        PulseOperations.eval_access path Read location (pointer, int_hist) Dereference astate
+      in
+      let** astate = PulseArithmetic.and_positive (fst count) astate in
+      (* copy the pointer to ref count*)
+      let=* astate =
+        PulseOperations.write_deref path location ~ref:(this_internal_count, int_hist)
+          ~obj:(pointer, int_hist) astate
+      in
+      let hist = Hist.add_call path location desc int_hist in
+      (* compute the increased ref count *)
+      let=* astate, (count_addr, _) =
+        PulseOperations.eval_access path Read location (pointer, hist) Dereference astate
+      in
+      let incremented_count = AbstractValue.mk_fresh () in
+      let+* astate, incremented_count =
+        PulseArithmetic.eval_binop incremented_count (PlusA None) (AbstractValueOperand count_addr)
+          (ConstOperand (Cint (IntLit.of_int 1)))
+          astate
+      in
+      (* update the ref count *)
+      PulseOperations.write_deref path location ~ref:(pointer, int_hist)
+        ~obj:(incremented_count, int_hist) astate
+      |> Basic.map_continue
     in
-    astate
+    (* if 'other' is not managing an object *)
+    let astate_nullptr =
+      PulseArithmetic.prune_eq_zero (fst value) astate
+      >>== assign_count path location this ~constant:IntLit.zero ~desc
+      >>|| ExecutionDomain.continue
+    in
+    SatUnsat.to_list astate_not_nullptr @ SatUnsat.to_list astate_nullptr
 
 
   let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc :
@@ -301,7 +284,16 @@ module SharedPtr = struct
     (* self-assignment *)
     let astate_equals = PulseArithmetic.and_equal op1 op2 astate >>|| ExecutionDomain.continue in
     let<**> astate_not_equals = PulseArithmetic.and_not_equal op1 op2 astate in
-    let astate_not_equals = copy_constructor arg other ~desc model_data astate_not_equals in
+    let astate_not_equals = destructor arg ~desc model_data astate_not_equals in
+    let astate_not_equals =
+      List.concat_map astate_not_equals ~f:(fun exec_state_result ->
+          let<*> exec_state = exec_state_result in
+          match exec_state with
+          | ContinueProgram astate_not_equals ->
+              copy_constructor arg other ~desc model_data astate_not_equals
+          | _ ->
+              [Ok exec_state] )
+    in
     SatUnsat.to_list astate_equals @ astate_not_equals
 
 
