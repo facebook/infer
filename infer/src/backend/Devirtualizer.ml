@@ -136,7 +136,8 @@ let process pdesc tenv =
               | None ->
                   L.d_printfln "(unexpected: no resolved method found)" ;
                   instr
-              | Some resolved_callee_pname ->
+              | Some method_info ->
+                  let resolved_callee_pname = Tenv.MethodInfo.get_procname method_info in
                   let resolved_call_flags =
                     {call_flags with cf_virtual= false; cf_interface= false}
                   in

@@ -436,8 +436,8 @@ let resolve_method tenv class_name proc_name =
       Logging.d_printfln "Couldn't find method in the hierarchy of type %s"
         (Typ.Name.name class_name) ;
       proc_name
-  | Some proc_name ->
-      proc_name
+  | Some method_info ->
+      Tenv.MethodInfo.get_procname method_info
 
 
 let resolve_typename prop receiver_exp =

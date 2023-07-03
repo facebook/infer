@@ -371,7 +371,7 @@ module PulseTransferFunctions = struct
                static resolution so we have to do it here *)
             let* type_name = Procname.get_class_type_name proc_name in
             tenv_resolve_method tenv type_name proc_name
-          else proc_name_opt
+          else Option.map ~f:Tenv.MethodInfo.mk_class proc_name_opt
         in
         (proc_name, `ApproxDevirtualization)
 
@@ -386,13 +386,14 @@ module PulseTransferFunctions = struct
   let resolve_virtual_call exe_env tenv astate receiver proc_name_opt =
     Option.map proc_name_opt ~f:(fun proc_name ->
         match find_override exe_env tenv astate receiver proc_name proc_name_opt with
-        | Some (proc_name', devirtualization_status) ->
+        | Some (info, devirtualization_status) ->
+            let proc_name' = Tenv.MethodInfo.get_procname info in
             L.d_printfln "Dynamic dispatch: %a %s resolved to %a" Procname.pp_verbose proc_name
               (string_of_devirtualization_status devirtualization_status)
               Procname.pp_verbose proc_name' ;
-            (proc_name', devirtualization_status)
+            (info, devirtualization_status)
         | None ->
-            (proc_name, `ApproxDevirtualization) )
+            (Tenv.MethodInfo.mk_class proc_name, `ApproxDevirtualization) )
 
 
   (* Hack static methods can be overriden so we need class hierarchy walkup *)
@@ -413,13 +414,15 @@ module PulseTransferFunctions = struct
       let method_exists proc_name methods = List.mem ~equal methods proc_name in
       if is_already_resolved proc_name then (
         L.d_printfln "always_implemented %a" Procname.pp proc_name ;
-        Some proc_name )
+        Some (Tenv.MethodInfo.mk_class proc_name) )
       else Tenv.resolve_method ~method_exists tenv type_name proc_name
     in
     let open IOption.Let_syntax in
     let* callee_pname = opt_callee_pname in
     Procname.get_class_type_name callee_pname
-    |> Option.value_map ~default:opt_callee_pname ~f:(fun static_class_name ->
+    |> Option.value_map
+         ~default:(Some (Tenv.MethodInfo.mk_class callee_pname))
+         ~f:(fun static_class_name ->
            L.d_printfln "hack static dispatch from %a" Procname.pp callee_pname ;
            resolve_method tenv static_class_name callee_pname )
 
@@ -448,31 +451,72 @@ module PulseTransferFunctions = struct
     | OcamlModel of (PulseModelsImport.model * Procname.t)
     | NoModel
 
+  (* TODO(vsiles)
+     This is a temporary solution until we decide what kind of data we want to pass to Hack
+     traits. Right now we pass primitive strings. *)
+  let string_to_arg name =
+    (* TODO(vsiles) Is this important? I need [Typ.t] but there's nothing for primitive strings. *)
+    let typ =
+      let quals = Typ.mk_type_quals () in
+      {Typ.desc= Tvoid; quals}
+    in
+    let cname = Const.Cstr name in
+    let exp = Exp.Const cname in
+    (* TODO(vsiles) Not sure about these. ValueHistory ? Restricted AV ? *)
+    let av = AbstractValue.mk_fresh () in
+    let vh = ValueHistory.epoch in
+    let arg_payload = (av, vh) in
+    {PulseAliasSpecialization.FuncArg.exp; typ; arg_payload}
+
+
+  (* When Hack traits are involved, we need to compute and pass an additional argument that is a
+     token to find the right class name for [self].
+
+     [hackc] adds these two arguments at the end of the signature. *)
+  let update_func_args method_info func_args =
+    let open IOption.Let_syntax in
+    let* method_info in
+    let* hack_kind = Tenv.MethodInfo.get_hack_kind method_info in
+    match (hack_kind : Tenv.MethodInfo.Hack.kind) with
+    | IsClass ->
+        Some func_args
+    | IsTrait {used} ->
+        let self = Typ.Name.to_string used |> string_to_arg in
+        Some (func_args @ [self])
+
+
+  let update_func_args method_info func_args =
+    update_func_args method_info func_args |> Option.value ~default:func_args
+
+
   let rec dispatch_call_eval_args
       ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) path ret
       call_exp actuals func_args call_loc flags astate callee_pname =
-    let callee_pname, astate =
+    let method_info, astate =
+      let default_info = Option.map ~f:Tenv.MethodInfo.mk_class callee_pname in
       if flags.CallFlags.cf_virtual then
         match get_receiver callee_pname func_args with
         | None ->
             L.internal_error "No receiver on virtual call" ;
-            (callee_pname, astate)
+            (default_info, astate)
         | Some {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver, _} -> (
           match
             improve_receiver_static_type astate receiver callee_pname
             |> resolve_virtual_call exe_env tenv astate receiver
           with
-          | Some (proc_name, `ExactDevirtualization) ->
-              (Some proc_name, astate)
-          | Some (proc_name, `ApproxDevirtualization) ->
-              (Some proc_name, need_dynamic_type_specialization astate receiver)
+          | Some (info, `ExactDevirtualization) ->
+              (Some info, astate)
+          | Some (info, `ApproxDevirtualization) ->
+              (Some info, need_dynamic_type_specialization astate receiver)
           | None ->
               (None, astate) )
       else if Language.curr_language_is Hack then
         (* In Hack, a static method can be inherited *)
         (resolve_hack_static_method tenv callee_pname, astate)
-      else (callee_pname, astate)
+      else (default_info, astate)
     in
+    let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in
+    let func_args = update_func_args method_info func_args in
     let astate =
       match (callee_pname, func_args) with
       | Some callee_pname, [{ProcnameDispatcher.Call.FuncArg.arg_payload= arg, _}]

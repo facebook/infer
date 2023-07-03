@@ -455,7 +455,7 @@ val to_string : ?verbosity:detail_level -> t -> string
 val describe : Format.formatter -> t -> unit
 (** to use in user messages *)
 
-val replace_class : t -> Typ.Name.t -> t
+val replace_class : t -> ?arity_incr:int -> Typ.Name.t -> t
 (** Replace the class name component of a procedure name. In case of Java, replace package and class
     name. *)
 

@@ -930,8 +930,10 @@ let to_function_parameter procname =
 let empty_block = Block (Block.make_surrounding None "" [])
 
 (** Replace the class name component of a procedure name. In case of Java, replace package and class
-    name. *)
-let rec replace_class t (new_class : Typ.Name.t) =
+    name. For Hack traits, we also update their arity. [hackc] introduces a new parameter to each
+    method in a trait. Therefore when we compare a method from a class and a method from a trait,
+    their arity won't match even if it was the case in the original Hack source file. *)
+let rec replace_class t ?(arity_incr = 0) (new_class : Typ.Name.t) =
   match t with
   | Java j ->
       Java {j with class_name= new_class}
@@ -939,7 +941,8 @@ let rec replace_class t (new_class : Typ.Name.t) =
       CSharp {cs with class_name= new_class}
   | ObjC_Cpp osig ->
       ObjC_Cpp {osig with class_name= new_class}
-  | Hack h ->
+  | Hack ({arity} as h) ->
+      let arity = Option.map ~f:(fun arity -> arity + arity_incr) arity in
       let name =
         match new_class with
         | HackClass name ->
@@ -947,7 +950,7 @@ let rec replace_class t (new_class : Typ.Name.t) =
         | _ ->
             L.die InternalError "replace_class on ill-formed Hack type"
       in
-      Hack {h with class_name= Some name}
+      Hack {h with class_name= Some name; arity}
   | Python _ ->
       L.die InternalError "TODO: replace_class for Python type"
   | WithFunctionParameters (base, func, functions) ->

@@ -264,9 +264,79 @@ let normalize = function
       FileLocal new_tenv
 
 
+module MethodInfo = struct
+  module Default = struct
+    type t = {proc_name: Procname.t}
+
+    let mk_class proc_name = {proc_name}
+  end
+
+  module Hack = struct
+    type kind = IsClass | IsTrait of {used: Typ.Name.t}
+
+    type t = {proc_name: Procname.t; kind: kind}
+
+    let mk_class ~is_class ~last_class_visited proc_name =
+      let kind =
+        match (is_class, last_class_visited) with
+        | false, Some used ->
+            IsTrait {used}
+        | _, _ ->
+            IsClass
+      in
+      {proc_name; kind}
+
+
+    (* [hackc] introduces an extra method argument in traits, to account for [self].
+       Because of this, the arity of the procname called might not match the arity of the procname in
+       the trait declaration.
+
+       This function computes the arity offset we must apply to make sure things are compared
+       correctly. *)
+    let compute_arity_incr {Struct.Hack.kind; experimental_self_parent_in_trait} =
+      match kind with
+      | Class ->
+          (true, 0)
+      | Trait ->
+          if experimental_self_parent_in_trait then (false, 1) else (true, 0)
+  end
+
+  type t = HackInfo of Hack.t | DefaultInfo of Default.t
+
+  let return ~is_class ~last_class_visited proc_name =
+    match proc_name with
+    | Procname.Hack _ ->
+        HackInfo (Hack.mk_class ~is_class ~last_class_visited proc_name)
+    | Procname.Block _
+    | Procname.C _
+    | Procname.CSharp _
+    | Procname.Erlang _
+    | Procname.Java _
+    | Procname.Linters_dummy_method
+    | Procname.ObjC_Cpp _
+    | Procname.Python _
+    | Procname.WithFunctionParameters _ ->
+        DefaultInfo (Default.mk_class proc_name)
+
+
+  let mk_class proc_name = return ~is_class:true ~last_class_visited:None proc_name
+
+  let compute_arity_incr {Struct.hack_class_info} =
+    hack_class_info |> Option.map ~f:Hack.compute_arity_incr |> Option.value ~default:(true, 0)
+
+
+  let get_procname = function HackInfo {proc_name} | DefaultInfo {proc_name} -> proc_name
+
+  let get_hack_kind = function HackInfo {kind} -> Some kind | _ -> None
+end
+
 let resolve_method ~method_exists tenv class_name proc_name =
   let visited = ref Typ.Name.Set.empty in
+  (* For Hack, we need to remember the last class we visited. Once we visit a trait, we are sure
+     we will only visit traits from now on *)
+  let last_class_visited = ref None in
   let rec resolve_name_struct (class_name : Typ.Name.t) (class_struct : Struct.t) =
+    let is_class, arity_incr = MethodInfo.compute_arity_incr class_struct in
     if
       (not (Typ.Name.is_class class_name))
       || (not (Struct.is_not_java_interface class_struct))
@@ -274,8 +344,10 @@ let resolve_method ~method_exists tenv class_name proc_name =
     then None
     else (
       visited := Typ.Name.Set.add class_name !visited ;
-      let right_proc_name = Procname.replace_class proc_name class_name in
-      if method_exists right_proc_name class_struct.methods then Some right_proc_name
+      if is_class then last_class_visited := Some class_name ;
+      let right_proc_name = Procname.replace_class ~arity_incr proc_name class_name in
+      if method_exists right_proc_name class_struct.methods then
+        Some (MethodInfo.return ~is_class ~last_class_visited:!last_class_visited right_proc_name)
       else
         let supers_to_search =
           match (class_name : Typ.Name.t) with
