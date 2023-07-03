@@ -1,0 +1,5 @@
+property AtomValueTaint
+  message "a value returned by source/0 is sent as argument to sink/2 with a specific atom"
+  start -> start: *
+  start -> tracking: "atom_name:source/0"(Ret) => secret := Ret
+  tracking -> error: "atom_name:sink/2"(X, Secret, Ret) when Secret == secret && X:Atom.name == "not_ok"
