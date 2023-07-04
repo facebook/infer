@@ -270,7 +270,7 @@ let taint_sources tenv path location ~intra_procedural_only return ~has_added_re
       ~block_matchers:source_block_matchers ~field_matchers return ~has_added_return_param
       ?proc_attributes potential_taint_value actuals astate
   in
-  List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _, _)) ->
+  List.fold tainted ~init:astate ~f:(fun astate TaintItemMatcher.{taint= source; addr_hist= v, _} ->
       let hist =
         ValueHistory.singleton (TaintSource (source, location, path.PathContext.timestamp))
       in
@@ -302,7 +302,8 @@ let taint_sanitizers tenv path return ~has_added_return_param ~location ?proc_at
       potential_taint_value actuals astate
   in
   let astate =
-    List.fold tainted ~init:astate ~f:(fun astate (sanitizer, ((v, history), _, _)) ->
+    List.fold tainted ~init:astate
+      ~f:(fun astate TaintItemMatcher.{taint= sanitizer; addr_hist= v, history} ->
         let trace = Trace.Immediate {location; history} in
         let taint_sanitized =
           Attribute.TaintSanitized.
@@ -506,7 +507,8 @@ let taint_sinks tenv path location return ~has_added_return_param ?proc_attribut
       ~block_matchers:[] ~field_matchers return ~has_added_return_param ?proc_attributes
       potential_taint_value actuals astate
   in
-  PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ, _)) ->
+  PulseResult.list_fold tainted ~init:astate
+    ~f:(fun astate TaintItemMatcher.{taint= sink; addr_hist= v, history} ->
       if should_ignore_all_flows_to potential_taint_value then Ok astate
       else
         let sink_trace = Trace.Immediate {location; history} in
@@ -608,7 +610,7 @@ let taint_propagators tenv path location return ~has_added_return_param ?proc_at
       ~block_matchers:[] ~field_matchers:[] return ~has_added_return_param ?proc_attributes
       potential_taint_value actuals astate
   in
-  List.fold tainted ~init:astate ~f:(fun astate (_propagator, ((v, _history), _, _)) ->
+  List.fold tainted ~init:astate ~f:(fun astate TaintItemMatcher.{addr_hist= v, _} ->
       let other_actuals =
         List.filter actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual, _hist} ->
             not (AbstractValue.equal v actual) )

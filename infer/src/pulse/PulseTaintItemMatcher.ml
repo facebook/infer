@@ -11,6 +11,9 @@ module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 
+type taint_match =
+  {taint: TaintItem.t; addr_hist: AbstractValue.t * ValueHistory.t; typ: Typ.t; exp: Exp.t option}
+
 let type_matches tenv actual_typ types =
   (* TODO: [Typ.Name.name] may not be the most intuitive representation of types here, also
      could be slow to generate. Maybe have more fine-grained matching for primitive types vs
@@ -177,19 +180,15 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
       else None )
 
 
-let match_field_target matches actual potential_taint_value =
+let match_field_target matches actual potential_taint_value : taint_match list =
   let open TaintConfig.Target in
-  let actual =
-    match actual with
-    | {ProcnameDispatcher.Call.FuncArg.arg_payload; typ; exp} ->
-        (arg_payload, typ, Some exp)
-  in
+  let {ProcnameDispatcher.Call.FuncArg.arg_payload= addr_hist; typ; exp} = actual in
   let match_target acc (matcher : TaintConfig.Unit.field_unit) =
     let origin : TaintItem.origin =
       match matcher.field_target with GetField -> GetField | SetField -> SetField
     in
     let taint = {TaintItem.value= potential_taint_value; origin; kinds= matcher.kinds} in
-    (taint, actual) :: acc
+    {taint; addr_hist; typ; exp= Some exp} :: acc
   in
   List.fold matches ~init:[] ~f:(fun acc (matcher : TaintConfig.Unit.field_unit) ->
       match_target acc matcher )
@@ -234,13 +233,13 @@ let field_matches tenv loc matchers field_name =
 
 
 let match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
-    actuals ~instance_reference potential_taint_value =
+    actuals ~instance_reference potential_taint_value : AbductiveDomain.t * taint_match list =
   let open TaintConfig.Target in
   let actuals =
-    List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ; exp} ->
-        (arg_payload, typ, Some exp) )
+    List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= addr_hist; typ; exp} ->
+        (addr_hist, typ, Some exp) )
   in
-  let rec match_target kinds acc procedure_target =
+  let rec match_target kinds acc procedure_target : AbductiveDomain.t * taint_match list =
     match procedure_target with
     | ReturnValue -> (
         L.d_printf "matching return value... " ;
@@ -255,7 +254,8 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
             | Some actual ->
                 let astate, acc = acc in
                 let taint = {TaintItem.value= potential_taint_value; origin= ReturnValue; kinds} in
-                (astate, (taint, actual) :: acc)
+                let addr_hist, typ, exp = actual in
+                (astate, {taint; addr_hist; typ; exp} :: acc)
             | None ->
                 let return = Var.of_id return in
                 let astate =
@@ -269,12 +269,14 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
                        let taint =
                          {TaintItem.value= potential_taint_value; origin= ReturnValue; kinds}
                        in
-                       (astate, (taint, (return_value, return_typ, None)) :: tainted) ) ) )
+                       ( astate
+                       , {taint; addr_hist= return_value; typ= return_typ; exp= None} :: tainted ) )
+            ) )
     | (AllArguments | ArgumentPositions _ | AllArgumentsButPositions _ | ArgumentsMatchingTypes _)
       as taint_target ->
         L.d_printf "matching actuals... " ;
         List.foldi actuals ~init:acc
-          ~f:(fun i ((astate, tainted) as acc) ((_, actual_typ, exp) as actual_hist_and_typ) ->
+          ~f:(fun i ((astate, tainted) as acc) (actual_addr_hist, actual_typ, exp) ->
             let is_const_exp = match exp with Some exp -> Exp.is_const exp | None -> false in
             if taint_procedure_target_matches tenv taint_target i actual_typ && not is_const_exp
             then (
@@ -283,7 +285,7 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
               let taint =
                 {TaintItem.value= potential_taint_value; origin= Argument {index= i}; kinds}
               in
-              (astate, (taint, actual_hist_and_typ) :: tainted) )
+              (astate, {taint; addr_hist= actual_addr_hist; typ= actual_typ; exp} :: tainted) )
             else (
               L.d_printfln_escaped "no match for #%d with type %a" i (Typ.pp_full Pp.text)
                 actual_typ ;
@@ -292,23 +294,24 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
         L.d_printf "matching this/self... " ;
         match instance_reference with
         | Some instance_reference ->
-            let instance_reference =
-              match instance_reference with
-              | {ProcnameDispatcher.Call.FuncArg.arg_payload; typ; exp} ->
-                  (arg_payload, typ, Some exp)
+            let {ProcnameDispatcher.Call.FuncArg.arg_payload= addr_hist; typ; exp} =
+              instance_reference
             in
             let taint =
               {TaintItem.value= potential_taint_value; origin= InstanceReference; kinds}
             in
             let astate, tainted = acc in
-            (astate, (taint, instance_reference) :: tainted)
+            (astate, {taint; addr_hist; typ; exp= Some exp} :: tainted)
         | None ->
             L.die UserError "Error in taint configuration: `%a` is not an instance method"
               TaintItem.pp_value potential_taint_value )
     | FieldsOfValue fields ->
         let type_check astate value typ fieldname =
-          (* Dereference the value as much as possible and verify the result
-             is of structure type holding the expected fieldname. *)
+          (* Dereference the value as much as possible and verify the result is of structure type
+             holding the expected fieldname.
+
+             TODO(arr): Do we really want to do it? This won't work for semi-statically or dynamically
+             typed languages like Hack or Python.*)
           let open IOption.Let_syntax in
           let rec get_val_and_typ_name astate value typ =
             match typ.Typ.desc with
@@ -331,22 +334,23 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
           in
           (astate, value, typ_name, field_typ)
         in
-        let move_taint_to_field ((astate, tainted) as acc) (taint, (value, typ, _)) fieldname =
-          (* Move the taint from [value] to [value]'s field [fieldname] *)
-          match type_check astate value typ fieldname with
+        let move_taint_to_field ((astate, taint_matches) as acc) taint_match fieldname =
+          (* Move the taint from [addr_hist] to [addr_hist]'s field [fieldname] *)
+          match type_check astate taint_match.addr_hist taint_match.typ fieldname with
           | None ->
               (* The value cannot hold the expected field.
                  This is a type mismatch and we need to inform the user. *)
               L.die UserError
                 "Type error in taint configuration: Model for `%a`:Type `%a` does not have a field \
                  `%s`"
-                TaintItem.pp_value potential_taint_value (Typ.pp_full Pp.text) typ fieldname
-          | Some (astate, value, typ_name, field_typ) ->
+                TaintItem.pp_value potential_taint_value (Typ.pp_full Pp.text) taint_match.typ
+                fieldname
+          | Some (astate, addr_hist, typ_name, field_typ) ->
               Option.value ~default:acc
                 (PulseResult.ok
                    (let open PulseResult.Let_syntax in
                     let* astate, ret_value =
-                      PulseOperations.eval_access path Read location value
+                      PulseOperations.eval_access path Read location addr_hist
                         (FieldAccess (Fieldname.make typ_name fieldname))
                         astate
                     in
@@ -355,11 +359,14 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
                     in
                     L.d_printfln "match! tainting field %s with type %a" fieldname
                       (Typ.pp_full Pp.text) field_typ ;
+                    let taint =
+                      TaintItem.
+                        { taint_match.taint with
+                          origin= FieldOfValue {name= fieldname; origin= taint_match.taint.origin}
+                        }
+                    in
                     ( astate
-                    , ( TaintItem.
-                          {taint with origin= FieldOfValue {name= fieldname; origin= taint.origin}}
-                      , (ret_value, field_typ, None) )
-                      :: tainted ) ) )
+                    , {taint; addr_hist= ret_value; typ= field_typ; exp= None} :: taint_matches ) ) )
         in
         List.fold fields ~init:acc ~f:(fun ((astate, tainted) as acc) (fieldname, origin) ->
             let astate', tainted' = match_target kinds acc origin in
@@ -404,7 +411,7 @@ let split_args procname args =
 
 
 let match_procedure tenv path location matchers return_opt ~has_added_return_param ?proc_attributes
-    procname actuals astate =
+    procname actuals astate : AbductiveDomain.t * taint_match list =
   let instance_reference, actuals = split_args procname actuals in
   let matches = procedure_matches tenv matchers ?proc_attributes procname actuals in
   if not (List.is_empty matches) then L.d_printfln "taint matches" ;
@@ -413,7 +420,7 @@ let match_procedure tenv path location matchers return_opt ~has_added_return_par
 
 
 let match_block tenv path location matchers return_opt ~has_added_return_param ?proc_attributes
-    procname actuals astate =
+    procname actuals astate : AbductiveDomain.t * taint_match list =
   let matches =
     procedure_matches tenv matchers ?proc_attributes procname ~block_passed_to:procname actuals
   in
@@ -422,7 +429,8 @@ let match_block tenv path location matchers return_opt ~has_added_return_param ?
     actuals ~instance_reference:None (TaintItem.TaintBlockPassedTo procname)
 
 
-let match_field tenv location matchers field_name actuals astate =
+let match_field tenv location matchers field_name actuals astate :
+    AbductiveDomain.t * taint_match list =
   let matches = field_matches tenv location matchers field_name in
   if not (List.is_empty matches) then L.d_printfln "taint matches" ;
   match actuals with
