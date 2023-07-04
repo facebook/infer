@@ -427,7 +427,7 @@ module Command = struct
         Implementation.terminate ()
 end
 
-type response = Ack | Error of (string * Caml.Printexc.raw_backtrace)
+type response = Ack | Error of (exn * Caml.Printexc.raw_backtrace)
 
 module Server = struct
   (* General comment about socket/channel destruction: closing the in_channel associated with the socket
@@ -455,9 +455,7 @@ module Server = struct
         Command.execute command ;
         Marshal.to_channel out_channel Ack []
       with exn ->
-        Marshal.to_channel out_channel
-          (Error (Caml.Printexc.to_string exn, Caml.Printexc.get_raw_backtrace ()))
-          [] ) ;
+        Marshal.to_channel out_channel (Error (exn, Caml.Printexc.get_raw_backtrace ())) [] ) ;
     Out_channel.flush out_channel ;
     In_channel.close in_channel ;
     match command with
@@ -517,10 +515,8 @@ module Server = struct
     ( match response with
     | Ack ->
         ()
-    | Error (exn_str, exn_backtrace) ->
-        Caml.Printexc.raise_with_backtrace
-          (Die.InferInternalError ("DBWriter raised " ^ exn_str))
-          exn_backtrace ) ;
+    | Error (exn, exn_backtrace) ->
+        Caml.Printexc.raise_with_backtrace exn exn_backtrace ) ;
     In_channel.close in_channel
 
 

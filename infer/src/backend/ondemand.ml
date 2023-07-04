@@ -165,7 +165,7 @@ let run_proc_analysis exe_env tenv ?specialization ?caller_pname callee_pdesc =
                  (fun callee ->
                    Dependencies.record_pname_dep ~caller:callee_pname RecursionEdge callee )
                  recursive_callees ) ) ;
-    Summary.OnDisk.store summary ;
+    let summary = Summary.OnDisk.store summary in
     remove_active callee_pname ;
     Printer.write_proc_html callee_pdesc ;
     log_elapsed_time () ;
@@ -184,7 +184,7 @@ let run_proc_analysis exe_env tenv ?specialization ?caller_pname callee_pdesc =
       {payloads with biabduction}
     in
     let new_summary = {summary with stats; payloads} in
-    Summary.OnDisk.store new_summary ;
+    let new_summary = Summary.OnDisk.store new_summary in
     remove_active callee_pname ;
     log_elapsed_time () ;
     new_summary

@@ -8,6 +8,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 module BStats = Stats
 
 module Stats = struct
@@ -99,6 +100,10 @@ module ReportSummary = struct
     ; err_log }
 
 
+  let empty () =
+    {loc= Location.dummy; cost_opt= None; config_impact_opt= None; err_log= Errlog.empty ()}
+
+
   module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
     type nonrec t = t
   end)
@@ -114,6 +119,13 @@ module SummaryMetadata = struct
     ; stats= f.stats
     ; proc_name= f.proc_name
     ; dependencies= Dependencies.complete_exn f.dependencies }
+
+
+  let empty proc_name =
+    { sessions= 0
+    ; stats= Stats.empty
+    ; proc_name
+    ; dependencies= Dependencies.reset proc_name |> Dependencies.freeze proc_name }
 
 
   module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
@@ -216,17 +228,29 @@ module OnDisk = struct
 
 
   (** Save summary for the procedure into the spec database *)
-  let store ({proc_name; dependencies; payloads} as summary : t) =
+  let rec store ({proc_name; dependencies; payloads} as summary : t) =
     (* Make sure the summary in memory is identical to the saved one *)
     add proc_name summary ;
     summary.dependencies <- Dependencies.(Complete (freeze proc_name dependencies)) ;
     let report_summary = ReportSummary.of_full_summary summary in
     let summary_metadata = SummaryMetadata.of_full_summary summary in
-    DBWriter.store_spec ~proc_uid:(Procname.to_unique_id proc_name)
-      ~proc_name:(Procname.SQLite.serialize proc_name)
-      ~payloads:(Payloads.SQLite.serialize payloads)
-      ~report_summary:(ReportSummary.SQLite.serialize report_summary)
-      ~summary_metadata:(SummaryMetadata.SQLite.serialize summary_metadata)
+    try
+      DBWriter.store_spec ~proc_uid:(Procname.to_unique_id proc_name)
+        ~proc_name:(Procname.SQLite.serialize proc_name)
+        ~payloads:(Payloads.SQLite.serialize payloads)
+        ~report_summary:(ReportSummary.SQLite.serialize report_summary)
+        ~summary_metadata:(SummaryMetadata.SQLite.serialize summary_metadata) ;
+      summary
+    with SqliteUtils.Error msg when String.is_substring msg ~substring:"TOOBIG" ->
+      (* Sqlite failed with [TOOBIG], reset to the empty summary and write it back *)
+      L.internal_error
+        "Summary for %a caused a TOOBIG Sqlite error, writing empty summary instead.@\n" Procname.pp
+        proc_name ;
+      let payloads = Payloads.empty in
+      let report_summary = ReportSummary.empty () in
+      let summary_metadata = SummaryMetadata.empty proc_name in
+      let new_summary = mk_full_summary payloads report_summary summary_metadata in
+      store new_summary
 
 
   let reset proc_name =

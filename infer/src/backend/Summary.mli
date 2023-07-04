@@ -53,8 +53,9 @@ module OnDisk : sig
   val reset : Procname.t -> t
   (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 
-  val store : t -> unit
-  (** Save summary for the procedure into the spec database *)
+  val store : t -> t
+  (** Save summary for the procedure into the spec database and return it. If the operation fails,
+      store an empty summary and return that instead. *)
 
   val delete : Procname.t -> unit
   (** Delete the .specs file corresponding to the procname and remove its summary from the Summary
