@@ -11,16 +11,15 @@ module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
+open TaintConfig
 module TaintItemMatcher = PulseTaintItemMatcher
 
 let fill_data_flow_kinds_from_config () =
-  let open TaintConfig in
   Config.pulse_taint_config.data_flow_kinds
   |> List.iter ~f:(fun kind -> Kind.of_string kind |> Kind.mark_data_flow_only)
 
 
 let fill_policies_from_config () =
-  let open TaintConfig in
   Config.pulse_taint_config.policies
   |> List.iter
        ~f:(fun {Pulse_config_t.short_description= description; taint_flows; privacy_effect} ->
@@ -41,7 +40,6 @@ let fill_policies_from_config () =
 
 
 let () =
-  let open TaintConfig in
   Hashtbl.add SinkPolicy.sink_policies ~key:Kind.simple_kind
     ~data:
       [ { SinkPolicy.description=
@@ -170,7 +168,6 @@ let propagator_matchers =
 
 
 let log_taint_config () =
-  let open TaintConfig in
   L.debug Analysis Verbose "@\nSink policies:@\n%a@." SinkPolicy.pp_sink_policies
     SinkPolicy.sink_policies ;
   L.debug Analysis Verbose "Procedure source matchers:@\n%a@\n@."
@@ -319,40 +316,51 @@ let taint_sanitizers tenv path return ~has_added_return_param ~location ?proc_at
   astate
 
 
+let source_matches_sink_policy sink_kind {SinkPolicy.source_kinds= sink_sources} source_kind =
+  (* We should ignore flows between data-flow-only sources and data-flow-only sinks *)
+  (not (Kind.is_data_flow_only source_kind && Kind.is_data_flow_only sink_kind))
+  && List.mem ~equal:Kind.equal sink_sources source_kind
+
+
+let sanitizer_matches_sink_policy {SinkPolicy.sanitizer_kinds= sink_sanitizers} sanitizer =
+  List.exists sanitizer.TaintItem.kinds ~f:(fun sanitizer_kind ->
+      List.mem ~equal:Kind.equal sink_sanitizers sanitizer_kind )
+
+
+let source_is_sanitized source_times sink_policy
+    ({sanitizer; time_trace= sanitizer_times} : Attribute.TaintSanitized.t) =
+  let is_sanitized_after_tainted = Timestamp.compare_trace source_times sanitizer_times <= 0 in
+  is_sanitized_after_tainted && sanitizer_matches_sink_policy sink_policy sanitizer
+
+
+let check_source_against_sink_policy source source_times sanitizers sink_kind sink_policy =
+  let open IOption.Let_syntax in
+  let* suspicious_source =
+    List.find source.TaintItem.kinds ~f:(source_matches_sink_policy sink_kind sink_policy)
+  in
+  L.d_printfln ~color:Red "TAINTED: %a -> %a" Kind.pp suspicious_source Kind.pp sink_kind ;
+  let matching_sanitizers =
+    Attribute.TaintSanitizedSet.filter (source_is_sanitized source_times sink_policy) sanitizers
+  in
+  if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
+    let {SinkPolicy.description; policy_id; privacy_effect} = sink_policy in
+    Some (suspicious_source, sink_kind, description, policy_id, privacy_effect)
+  else (
+    L.d_printfln ~color:Green "...but sanitized by %a" Attribute.TaintSanitizedSet.pp
+      matching_sanitizers ;
+    None )
+
+
 let check_policies ~sink ~source ~source_times ~sanitizers =
-  let open TaintConfig in
-  List.fold sink.TaintItem.kinds ~init:[] ~f:(fun acc sink_kind ->
-      let policies = Hashtbl.find_exn SinkPolicy.sink_policies sink_kind in
-      List.fold policies ~init:acc
-        ~f:(fun
-             acc
-             {SinkPolicy.source_kinds; sanitizer_kinds; description; policy_id; privacy_effect}
-           ->
-          match
-            List.find source.TaintItem.kinds ~f:(fun source_kind ->
-                (* We should ignore flows between data-flow-only sources and data-flow-only sinks *)
-                (not (Kind.is_data_flow_only source_kind && Kind.is_data_flow_only sink_kind))
-                && List.mem ~equal:Kind.equal source_kinds source_kind )
-          with
-          | None ->
-              acc
-          | Some suspicious_source ->
-              L.d_printfln ~color:Red "TAINTED: %a -> %a" Kind.pp suspicious_source Kind.pp
-                sink_kind ;
-              let matching_sanitizers =
-                Attribute.TaintSanitizedSet.filter
-                  (fun {sanitizer; time_trace= sanitizer_times} ->
-                    Timestamp.compare_trace source_times sanitizer_times <= 0
-                    && List.exists sanitizer.TaintItem.kinds ~f:(fun sanitizer_kind ->
-                           List.mem ~equal:Kind.equal sanitizer_kinds sanitizer_kind ) )
-                  sanitizers
-              in
-              if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
-                (suspicious_source, sink_kind, description, policy_id, privacy_effect) :: acc
-              else (
-                L.d_printfln ~color:Green "...but sanitized by %a" Attribute.TaintSanitizedSet.pp
-                  matching_sanitizers ;
-                acc ) ) )
+  let check_against_sink acc sink_kind =
+    let policies = Hashtbl.find_exn SinkPolicy.sink_policies sink_kind in
+    let check_against_policy =
+      check_source_against_sink_policy source source_times sanitizers sink_kind
+    in
+    let rev_matching_sources = List.rev_filter_map policies ~f:check_against_policy in
+    List.rev_append rev_matching_sources acc
+  in
+  List.fold sink.TaintItem.kinds ~init:[] ~f:check_against_sink
 
 
 module TaintDependencies = struct
@@ -746,7 +754,6 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
 let pulse_models_to_treat_as_unknown_for_taint =
   (* HACK: make a list of matchers just to reuse the matching code below *)
   let dummy_matcher_of_procedure_matcher procedure_matcher =
-    let open TaintConfig in
     {Unit.procedure_matcher; arguments= []; kinds= []; procedure_target= ReturnValue}
   in
   [ ClassAndMethodNames
