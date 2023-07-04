@@ -854,7 +854,8 @@ PULSE CHECKER OPTIONS
            taint properties. The JSON format of sources also applies to sinks
            and sanitizers. It consists of a list of objects, each with one of
            the following combinations of fields to identify relevant
-           procedures:             - "field_regex": match a field name using an OCaml regex
+           procedures:           
+             - "field_regex": match a field name using an OCaml regex
              - "procedure": match a substring of the procedure name
              - "procedure_regex": as above, but match using an OCaml regex
              - "class_name_regex": match all methods of classes whose names

@@ -2590,6 +2590,7 @@ and pulse_taint_sources =
   CLOpt.mk_json ~long:"pulse-taint-sources"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
     {|Together with $(b,--pulse-taint-sanitizers), $(b,--pulse-taint-sinks), $(b,--pulse-taint-policies), and $(b,--pulse-taint-data-flow-kinds), specify taint properties. The JSON format of sources also applies to sinks and sanitizers. It consists of a list of objects, each with one of the following combinations of fields to identify relevant procedures:
+
   - "field_regex": match a field name using an OCaml regex
   - "procedure": match a substring of the procedure name
   - "procedure_regex": as above, but match using an OCaml regex
