@@ -20,8 +20,6 @@ module Kind : sig
   val is_data_flow_only : t -> bool
 
   val simple_kind : t
-
-  val kinds_of_strings_opt : string list option -> t list
 end
 
 module Target : sig
@@ -35,12 +33,6 @@ module Target : sig
     | FieldsOfValue of (string * procedure_target) list
 
   type field_target = GetField | SetField
-
-  type t = ProcedureTarget of procedure_target | FieldTarget of field_target
-
-  val target_of_gen_target : Pulse_config_t.taint_target -> t
-
-  val pp : F.formatter -> t -> unit
 end
 
 module Unit : sig
@@ -78,6 +70,12 @@ module Unit : sig
   val pp_field_unit : F.formatter -> field_unit -> unit
 
   type t = ProcedureUnit of procedure_unit | FieldUnit of field_unit
+
+  val of_config :
+       default_taint_target:Pulse_config_t.taint_target
+    -> option_name:string
+    -> Pulse_config_t.matcher list
+    -> t list
 end
 
 module SinkPolicy : sig

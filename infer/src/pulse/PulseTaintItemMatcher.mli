@@ -9,12 +9,6 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 
-val matcher_of_config :
-     default_taint_target:Pulse_config_t.taint_target
-  -> option_name:string
-  -> Pulse_config_t.matcher list
-  -> TaintConfig.Unit.t list
-
 val procedure_matches_any :
   Tenv.t -> Procname.t -> ProcAttributes.t option -> TaintConfig.Unit.procedure_unit list -> bool
 

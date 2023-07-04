@@ -102,7 +102,7 @@ let ( allocation_sources
     , source_field_setters_matchers ) =
   let option_name = "--pulse-taint-sources" in
   let all_source_matchers =
-    TaintItemMatcher.matcher_of_config ~default_taint_target:`ReturnValue ~option_name
+    TaintConfig.Unit.of_config ~default_taint_target:`ReturnValue ~option_name
       Config.pulse_taint_config.sources
   in
   let allocation_sources, source_matchers =
@@ -131,7 +131,7 @@ let ( allocation_sources
 let sink_procedure_matchers, sink_field_getters_matchers, sink_field_setters_matchers =
   let option_name = "--pulse-taint-sinks" in
   let sink_matchers =
-    TaintItemMatcher.matcher_of_config ~default_taint_target:`AllArguments ~option_name
+    TaintConfig.Unit.of_config ~default_taint_target:`AllArguments ~option_name
       Config.pulse_taint_config.sinks
   in
   let procedure_matchers, _, field_getters_matchers, field_setters_matchers =
@@ -144,7 +144,7 @@ let sink_procedure_matchers, sink_field_getters_matchers, sink_field_setters_mat
 let sanitizer_matchers =
   let option_name = "--pulse-taint-sanitizer" in
   let sink_matchers =
-    TaintItemMatcher.matcher_of_config ~default_taint_target:`AllArguments ~option_name
+    TaintConfig.Unit.of_config ~default_taint_target:`AllArguments ~option_name
       Config.pulse_taint_config.sanitizers
   in
   let procedure_matchers, _, _, _ =
@@ -157,7 +157,7 @@ let sanitizer_matchers =
 let propagator_matchers =
   let option_name = "--pulse-taint-propagators" in
   let propagator_matchers =
-    TaintItemMatcher.matcher_of_config ~default_taint_target:`ReturnValue ~option_name
+    TaintConfig.Unit.of_config ~default_taint_target:`ReturnValue ~option_name
       Config.pulse_taint_config.propagators
   in
   let procedure_matchers, _, _, _ =
