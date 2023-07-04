@@ -66,6 +66,14 @@ let get_procedure_field_matchers matchers ~field_matchers_allowed ~block_matcher
         | TaintConfig.Unit.FieldUnit field_unit ->
             Either.Second field_unit )
   in
+  let field_getters_matchers, field_setters_matchers =
+    List.partition_map field_matchers ~f:(fun (field_unit : TaintConfig.Unit.field_unit) ->
+        match field_unit.field_target with
+        | GetField ->
+            Either.First field_unit
+        | SetField ->
+            Either.Second field_unit )
+  in
   let block_matchers, procedure_matchers =
     List.partition_map procedure_matchers ~f:(fun (matcher : TaintConfig.Unit.procedure_unit) ->
         match matcher.procedure_matcher with
@@ -86,10 +94,14 @@ let get_procedure_field_matchers matchers ~field_matchers_allowed ~block_matcher
       option_name
       (Pp.comma_seq TaintConfig.Unit.pp_procedure_unit)
       block_matchers ;
-  (procedure_matchers, block_matchers, field_matchers)
+  (procedure_matchers, block_matchers, field_getters_matchers, field_setters_matchers)
 
 
-let allocation_sources, source_procedure_matchers, source_block_matchers, source_field_matchers =
+let ( allocation_sources
+    , source_procedure_matchers
+    , source_block_matchers
+    , source_field_getters_matchers
+    , source_field_setters_matchers ) =
   let option_name = "--pulse-taint-sources" in
   let all_source_matchers =
     TaintItemMatcher.matcher_of_config ~default_taint_target:`ReturnValue ~option_name
@@ -107,24 +119,28 @@ let allocation_sources, source_procedure_matchers, source_block_matchers, source
         | _ ->
             Either.Second matcher )
   in
-  let procedure_matchers, block_matchers, field_matchers =
+  let procedure_matchers, block_matchers, field_getters_matchers, field_setters_matchers =
     get_procedure_field_matchers source_matchers ~field_matchers_allowed:true
       ~block_matchers_allowed:true ~option_name
   in
-  (allocation_sources, procedure_matchers, block_matchers, field_matchers)
+  ( allocation_sources
+  , procedure_matchers
+  , block_matchers
+  , field_getters_matchers
+  , field_setters_matchers )
 
 
-let sink_procedure_matchers, sink_field_matchers =
+let sink_procedure_matchers, sink_field_getters_matchers, sink_field_setters_matchers =
   let option_name = "--pulse-taint-sinks" in
   let sink_matchers =
     TaintItemMatcher.matcher_of_config ~default_taint_target:`AllArguments ~option_name
       Config.pulse_taint_config.sinks
   in
-  let sink_procedure_matchers, _, sink_field_matchers =
+  let procedure_matchers, _, field_getters_matchers, field_setters_matchers =
     get_procedure_field_matchers sink_matchers ~field_matchers_allowed:true
       ~block_matchers_allowed:false ~option_name
   in
-  (sink_procedure_matchers, sink_field_matchers)
+  (procedure_matchers, field_getters_matchers, field_setters_matchers)
 
 
 let sanitizer_matchers =
@@ -133,7 +149,7 @@ let sanitizer_matchers =
     TaintItemMatcher.matcher_of_config ~default_taint_target:`AllArguments ~option_name
       Config.pulse_taint_config.sanitizers
   in
-  let procedure_matchers, _, _ =
+  let procedure_matchers, _, _, _ =
     get_procedure_field_matchers sink_matchers ~field_matchers_allowed:false
       ~block_matchers_allowed:false ~option_name
   in
@@ -146,7 +162,7 @@ let propagator_matchers =
     TaintItemMatcher.matcher_of_config ~default_taint_target:`ReturnValue ~option_name
       Config.pulse_taint_config.propagators
   in
-  let procedure_matchers, _, _ =
+  let procedure_matchers, _, _, _ =
     get_procedure_field_matchers propagator_matchers ~field_matchers_allowed:false
       ~block_matchers_allowed:false ~option_name
   in
@@ -163,15 +179,21 @@ let log_taint_config () =
   L.debug Analysis Verbose "Block source matchers:@\n%a@\n@."
     (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_procedure_unit)
     source_block_matchers ;
-  L.debug Analysis Verbose "Field source matchers:@\n%a@\n@."
+  L.debug Analysis Verbose "Field getters source matchers:@\n%a@\n@."
     (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_field_unit)
-    source_field_matchers ;
-  L.debug Analysis Verbose "Sink procedure matchers:@\n %a@\n@."
+    source_field_getters_matchers ;
+  L.debug Analysis Verbose "Field setters source matchers:@\n%a@\n@."
+    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_field_unit)
+    source_field_setters_matchers ;
+  L.debug Analysis Verbose "Procedure sink matchers:@\n %a@\n@."
     (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_procedure_unit)
     sink_procedure_matchers ;
-  L.debug Analysis Verbose "Sink field matchers:@\n %a@\n@."
+  L.debug Analysis Verbose "Field getters sink matchers:@\n %a@\n@."
     (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_field_unit)
-    sink_field_matchers ;
+    sink_field_getters_matchers ;
+  L.debug Analysis Verbose "Field setters sink matchers:@\n %a@\n@."
+    (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_field_unit)
+    sink_field_setters_matchers ;
   L.debug Analysis Verbose "Sanitizer matchers:@\n%a@\n@."
     (Pp.seq ~sep:"\n" TaintConfig.Unit.pp_procedure_unit)
     sanitizer_matchers ;
@@ -242,11 +264,14 @@ let taint_and_explore ~taint v astate =
 
 
 let taint_sources tenv path location ~intra_procedural_only return ~has_added_return_param
-    ?proc_attributes potential_taint_value actuals astate =
+    ?proc_attributes ~field_getter potential_taint_value actuals astate =
+  let field_matchers =
+    if field_getter then source_field_getters_matchers else source_field_setters_matchers
+  in
   let astate, tainted =
     TaintItemMatcher.get_tainted tenv path location ~procedure_matchers:source_procedure_matchers
-      ~block_matchers:source_block_matchers ~field_matchers:source_field_matchers return
-      ~has_added_return_param ?proc_attributes potential_taint_value actuals astate
+      ~block_matchers:source_block_matchers ~field_matchers return ~has_added_return_param
+      ?proc_attributes potential_taint_value actuals astate
   in
   List.fold tainted ~init:astate ~f:(fun astate (source, ((v, _), _, _)) ->
       let hist =
@@ -463,12 +488,15 @@ let should_ignore_all_flows_to potential_taint_value =
       false
 
 
-let taint_sinks tenv path location return ~has_added_return_param ?proc_attributes
+let taint_sinks tenv path location return ~has_added_return_param ?proc_attributes ~field_getter
     potential_taint_value actuals astate =
+  let field_matchers =
+    if field_getter then sink_field_getters_matchers else sink_field_setters_matchers
+  in
   let astate, tainted =
     TaintItemMatcher.get_tainted tenv path location ~procedure_matchers:sink_procedure_matchers
-      ~block_matchers:[] ~field_matchers:sink_field_matchers return ~has_added_return_param
-      ?proc_attributes potential_taint_value actuals astate
+      ~block_matchers:[] ~field_matchers return ~has_added_return_param ?proc_attributes
+      potential_taint_value actuals astate
   in
   PulseResult.list_fold tainted ~init:astate ~f:(fun astate (sink, ((v, history), _typ, _)) ->
       if should_ignore_all_flows_to potential_taint_value then Ok astate
@@ -766,11 +794,12 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals
       in
       let astate =
         taint_sources tenv path location ~intra_procedural_only:false (Some return)
-          ~has_added_return_param ?proc_attributes potential_taint_value actuals astate
+          ~has_added_return_param ?proc_attributes ~field_getter:false potential_taint_value actuals
+          astate
       in
       let+ astate =
         taint_sinks tenv path location (Some return) ~has_added_return_param ?proc_attributes
-          potential_taint_value actuals astate
+          ~field_getter:false potential_taint_value actuals astate
       in
       let astate, call_was_unknown =
         let new_astate =
@@ -790,8 +819,8 @@ let store tenv path location ~lhs:lhs_exp ~rhs:(rhs_exp, rhs_addr, typ) astate =
   | Exp.Lfield (_, field_name, _) ->
       let potential_taint_value = TaintItem.TaintField field_name in
       let rhs = {ProcnameDispatcher.Call.FuncArg.exp= rhs_exp; typ; arg_payload= rhs_addr} in
-      taint_sinks tenv path location None ~has_added_return_param:false potential_taint_value [rhs]
-        astate
+      taint_sinks tenv path location None ~has_added_return_param:false ~field_getter:false
+        potential_taint_value [rhs] astate
   | _ ->
       Ok astate
 
@@ -809,10 +838,10 @@ let load procname tenv path location ~lhs:(lhs_id, typ) ~rhs:rhs_exp astate =
           in
           let astate =
             taint_sources tenv path location ~intra_procedural_only:false None
-              ~has_added_return_param:false potential_taint_value [lhs] astate
+              ~has_added_return_param:false ~field_getter:true potential_taint_value [lhs] astate
           in
-          taint_sinks tenv path location None ~has_added_return_param:false potential_taint_value
-            [lhs] astate
+          taint_sinks tenv path location None ~has_added_return_param:false ~field_getter:true
+            potential_taint_value [lhs] astate
       | None ->
           L.internal_error
             "could not add taint to the exp %a, got an error or an unsat state starting from %a"
@@ -850,8 +879,8 @@ let taint_initial tenv (proc_attrs : ProcAttributes.t) astate0 =
           (TaintItem.TaintProcedure proc_attrs.proc_name, Some proc_attrs)
     in
     taint_sources tenv PathContext.initial proc_attrs.loc ~intra_procedural_only:true None
-      ~has_added_return_param:false ?proc_attributes potential_taint_value (List.rev rev_actuals)
-      astate
+      ~has_added_return_param:false ?proc_attributes ~field_getter:false potential_taint_value
+      (List.rev rev_actuals) astate
   in
   match PulseOperationResult.sat_ok result with
   | Some astate_tainted ->

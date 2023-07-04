@@ -73,6 +73,10 @@ typedef void (^LibraryFetchCompletionBlock)(NSArray<id>* items,
   _item = item;
 }
 
+- (NSString*)getItem {
+  return _item;
+}
+
 @end
 
 void storeIvarBad() {
