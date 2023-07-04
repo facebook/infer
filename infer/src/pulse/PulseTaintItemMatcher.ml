@@ -603,57 +603,72 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
       match_target matcher.kinds acc matcher.procedure_target )
 
 
+let procedure_matches_any tenv procname proc_attributes procedure_matchers =
+  procedure_matches tenv procedure_matchers ?proc_attributes procname [] |> List.is_empty |> not
+
+
+(** Returns a pair of (instance_reference, args) depending on the type of the proc *)
+let split_args procname args =
+  let get_this_from_actuals = function
+    (* Instance method a guaranteed to have this/self as a first formal *)
+    | instance_reference :: actuals ->
+        (Some instance_reference, actuals)
+    | [] ->
+        L.die InternalError "Procedure %a is supposed to have this/self as a first parameter"
+          Procname.pp procname
+  in
+  match Procname.is_static procname with
+  | Some is_static ->
+      (* NSObject has some special methods that don't have implicit self param *)
+      if is_static || Procname.is_objc_nsobject_class procname then (None, args)
+      else get_this_from_actuals args
+  | None ->
+      (* Hack is special with each method having a reference to this/self except some special cases *)
+      if
+        Procname.is_hack procname
+        && Procname.has_hack_classname procname
+        && not (Procname.is_hack_builtins procname)
+      then get_this_from_actuals args
+      else (None, args)
+
+
+let match_procedure tenv path location matchers return_opt ~has_added_return_param ?proc_attributes
+    procname actuals astate =
+  let instance_reference, actuals = split_args procname actuals in
+  let matches = procedure_matches tenv matchers ?proc_attributes procname actuals in
+  if not (List.is_empty matches) then L.d_printfln "taint matches" ;
+  match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
+    actuals ~instance_reference (TaintItem.TaintProcedure procname)
+
+
+let match_block tenv path location matchers return_opt ~has_added_return_param ?proc_attributes
+    procname actuals astate =
+  let matches =
+    procedure_matches tenv matchers ?proc_attributes procname ~block_passed_to:procname actuals
+  in
+  if not (List.is_empty matches) then L.d_printfln "taint matches" ;
+  match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
+    actuals ~instance_reference:None (TaintItem.TaintBlockPassedTo procname)
+
+
+let match_field tenv location matchers field_name actuals astate =
+  let matches = field_matches tenv location matchers field_name in
+  if not (List.is_empty matches) then L.d_printfln "taint matches" ;
+  match actuals with
+  | [actual] ->
+      (astate, match_field_target matches actual (TaintItem.TaintField field_name))
+  | _ ->
+      (astate, [])
+
+
 let get_tainted tenv path location ~procedure_matchers ~block_matchers ~field_matchers return_opt
     ~has_added_return_param ?proc_attributes potential_taint_value actuals astate =
-  let block_passed_to, matchers =
-    match potential_taint_value with
-    | TaintItem.TaintBlockPassedTo proc_name ->
-        (Some proc_name, block_matchers)
-    | _ ->
-        (None, procedure_matchers)
-  in
-  let match_procedure proc_name actuals ~instance_reference =
-    let matches =
-      procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name actuals
-    in
-    if not (List.is_empty matches) then L.d_printfln "taint matches" ;
-    match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
-      actuals ~instance_reference potential_taint_value
-  in
   match potential_taint_value with
   | TaintItem.TaintProcedure proc_name ->
-      let get_this_from_actuals = function
-        (* Instance method a guaranteed to have this/self as a first formal *)
-        | instance_reference :: actuals ->
-            (Some instance_reference, actuals)
-        | [] ->
-            L.die InternalError "Procedure %a is supposed to have this/self as a first parameter"
-              Procname.pp proc_name
-      in
-      (* Drop implicit this/self from instance method formals *)
-      let instance_reference, actuals =
-        match Procname.is_static proc_name with
-        | Some is_static ->
-            (* NSObject has some special methods that don't have implicit self param *)
-            if is_static || Procname.is_objc_nsobject_class proc_name then (None, actuals)
-            else get_this_from_actuals actuals
-        | None ->
-            (* Hack is special with each method having a reference to this/self except some special cases *)
-            if
-              Procname.is_hack proc_name
-              && Procname.has_hack_classname proc_name
-              && not (Procname.is_hack_builtins proc_name)
-            then get_this_from_actuals actuals
-            else (None, actuals)
-      in
-      match_procedure proc_name actuals ~instance_reference
+      match_procedure tenv path location procedure_matchers return_opt ~has_added_return_param
+        ?proc_attributes proc_name actuals astate
   | TaintItem.TaintBlockPassedTo proc_name ->
-      match_procedure proc_name actuals ~instance_reference:None
-  | TaintItem.TaintField field_name -> (
-      let matches = field_matches tenv location field_matchers field_name in
-      if not (List.is_empty matches) then L.d_printfln "taint matches" ;
-      match actuals with
-      | [actual] ->
-          (astate, match_field_target matches actual potential_taint_value)
-      | _ ->
-          (astate, []) )
+      match_block tenv path location block_matchers return_opt ~has_added_return_param
+        ?proc_attributes proc_name actuals astate
+  | TaintItem.TaintField field_name ->
+      match_field tenv location field_matchers field_name actuals astate

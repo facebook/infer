@@ -15,14 +15,8 @@ val matcher_of_config :
   -> Pulse_config_t.matcher list
   -> TaintConfig.Unit.t list
 
-val procedure_matches :
-     Tenv.t
-  -> TaintConfig.Unit.procedure_unit list
-  -> ?block_passed_to:Procname.t
-  -> ?proc_attributes:ProcAttributes.t
-  -> Procname.t
-  -> 'a ProcnameDispatcher.Call.FuncArg.t list
-  -> TaintConfig.Unit.procedure_unit list
+val procedure_matches_any :
+  Tenv.t -> Procname.t -> ProcAttributes.t option -> TaintConfig.Unit.procedure_unit list -> bool
 
 val get_tainted :
      Tenv.t

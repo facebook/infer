@@ -765,13 +765,10 @@ let pulse_models_to_treat_as_unknown_for_taint =
 
 
 let should_treat_as_unknown_for_taint tenv ?proc_attributes proc_name =
-  (* HACK: we already have a function for matching procedure names so just re-use it even though we
-     don't need its full power *)
   Option.exists proc_attributes ~f:(fun attrs -> attrs.ProcAttributes.is_cpp_implicit)
   && Procname.is_constructor proc_name
-  || TaintItemMatcher.procedure_matches tenv pulse_models_to_treat_as_unknown_for_taint
-       ?proc_attributes proc_name []
-     |> List.is_empty |> not
+  || TaintItemMatcher.procedure_matches_any tenv proc_name proc_attributes
+       pulse_models_to_treat_as_unknown_for_taint
 
 
 let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals astate =
