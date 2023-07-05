@@ -200,41 +200,71 @@ end = struct
       hashtbl
 
 
+  module Types = struct
+    (** Type definitions, common to procedure analysis environments and summaries *)
+
+    module type Shape_class = sig
+      (** Shape classes are equivalence classes of shape identifiers, that is, sets of shape
+          identifiers that share a common set of fields. *)
+
+      type 'id t [@@deriving sexp_of]
+
+      val pp : 'id Fmt.t -> 'id t Fmt.t
+    end
+
+    module Make (Shape_class : Shape_class) () = struct
+      (** A functor that defines the common types and fundamental functions of shape environments.
+
+          Takes as parameter the (module) type of shape classes and is generative because it will
+          generate a fresh Id module. *)
+
+      (** A shape id is what links variables to defined fields. It is a unique identifier to which a
+          structure (eg. set of fields) is associated, and that will be indirectly assigned to every
+          variable.
+
+          Shape ids do not make sense by themselves and are only valid within the full context of
+          the corresponding environment for which they have been generated. *)
+      module Shape_id =
+      Id ()
+
+      (** A shape is an equivalence class of shape identifiers. *)
+      type shape = Shape_id.t Shape_class.t [@@deriving sexp_of]
+
+      type fields = (Fieldname.t, shape) Hashtbl.t [@@deriving sexp_of]
+
+      (** An environment associates to each variable its equivalence class, and to each shape
+          equivalence class representative its set of known fields. *)
+      type t = {var_shapes: (Var.t, shape) Hashtbl.t; shape_fields: (Shape_id.t, fields) Hashtbl.t}
+
+      let pp fmt {var_shapes; shape_fields} =
+        let pp_shape = Shape_class.pp Shape_id.pp in
+        Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPES@ @[%a@]@]@ @[<v4>SHAPE_FIELDS@ @[%a@]@]@]"
+          (pp_hashtbl ~bind:pp_arrow Var.pp pp_shape)
+          var_shapes
+          (pp_hashtbl ~bind:pp_arrow Shape_id.pp
+             (pp_hashtbl ~bind:IFmt.colon_sp Fieldname.pp pp_shape) )
+          shape_fields
+    end
+  end
+
   module State = struct
-    (** A shape id is what links variables to defined fields. It is a unique identifier to which a
-        set of fields is associated, and that will be indirectly assigned to every variable.
+    (** Environments for the in-progress analysis of a procedure. *)
 
-        Shape ids do not make sense by themselves and are only valid within the context of the
-        analysis of the function that defined them, that is, for a given environment. OCaml typing
-        should prevent them from being used elsewhere (for instance mixed in another environment). *)
-    module Shape_id =
-    Id ()
+    module Shape_class = struct
+      (** Equivalence classes are stored in a Union-find data structures. That allows cheap merging
+          of shapes that are inferred to be equivalent during the procedure analysis. *)
 
-    (** A shape is an equivalence class of shape identifiers, that is, shape identifiers that share
-        a common determined set of fields. *)
-    type shape = Shape_id.t Union_find.t
+      type 'id t = 'id Union_find.t
 
-    let sexp_of_shape x = [%sexp_of: _] (Union_find.get x)
+      let pp pp_id = Fmt.using Union_find.get pp_id
 
-    type fields = (Fieldname.t, shape) Hashtbl.t [@@deriving sexp_of]
+      let sexp_of_t sexp_of_id x = sexp_of_id (Union_find.get x)
+    end
 
-    (** An environment associates to each variable its equivalence class, and to each possible
-        representant of an equivalence class the set of known fields. *)
-    type t = {var_shapes: (Var.t, shape) Hashtbl.t; shape_fields: (Shape_id.t, fields) Hashtbl.t}
+    include Types.Make (Shape_class) ()
 
     let create () =
       {var_shapes= Hashtbl.create (module Var); shape_fields= Hashtbl.create (module Shape_id)}
-
-
-    let pp_shape fmt x = Shape_id.pp fmt (Union_find.get x)
-
-    let pp fmt {var_shapes; shape_fields} =
-      Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPES@ @[%a@]@]@ @[<v4>SHAPE_FIELDS@ @[%a@]@]@]"
-        (pp_hashtbl ~bind:pp_arrow Var.pp pp_shape)
-        var_shapes
-        (pp_hashtbl ~bind:pp_arrow Shape_id.pp
-           (pp_hashtbl ~bind:IFmt.colon_sp Fieldname.pp pp_shape) )
-        shape_fields
 
 
     let create_shape () =
@@ -307,27 +337,19 @@ end = struct
 
   module Summary = struct
     (* A summary is similar to the (final) typing state environment of a function. The difference is
-       that it "freezes" the union-find shapes into some fixed marshallable values (which are still
-       essentially shapes ids, but with a different types to prevent inadvertent mixings) *)
+       that it "freezes" the union-find classes into some fixed and marshallable values. *)
 
-    (* Shape_id for use within the summary -- incompatible with ids from the typing state *)
-    module Shape_id = Id ()
+    module Shape_class = struct
+      (** Once the analysis is done, each class can be frozen into its representative. Therefore
+          summary classes are simply shape ids, which trades off the now-uneeded mergeability for
+          marshallability. *)
 
-    type fields = (Fieldname.t, Shape_id.t) Hashtbl.t
+      type 'id t = 'id [@@deriving sexp]
 
-    (** This is essentially a "frozen" version of environments *)
-    type t =
-      {var_shapes: (Var.t, Shape_id.t) Hashtbl.t; shape_fields: (Shape_id.t, fields) Hashtbl.t}
+      let pp pp_id = pp_id
+    end
 
-    let pp fmt {var_shapes; shape_fields} =
-      Format.fprintf fmt
-        "@[<v>@[<v4>SUMMARY VAR SHAPES@ @[%a@]@]@ @[<v4>SUMMARY SHAPES FIELDS@ @[%a@]@]@]"
-        (pp_hashtbl ~bind:pp_arrow Var.pp Shape_id.pp)
-        var_shapes
-        (pp_hashtbl ~bind:pp_arrow Shape_id.pp
-           (pp_hashtbl ~bind:IFmt.colon_sp Fieldname.pp Shape_id.pp) )
-        shape_fields
-
+    include Types.Make (Shape_class) ()
 
     let find_var_shape var_shapes var =
       match Hashtbl.find var_shapes var with
@@ -373,10 +395,10 @@ end = struct
 
 
     let make {State.var_shapes; shape_fields} =
-      (* Making a summary from a state essentially amounts to converting State ids into Summary ids
-         and State hashtables into Summary hasthables. We keep an id translation table that maps
-         state ids into summary ids and generate a fresh summary id whenever we encounter a new state
-         id. *)
+      (* Making a summary from a state essentially amounts to freezing State shape classes into State
+         ids and converting those State ids into Summary ids. We keep an id translation table that
+         maps state ids into summary ids and generate a fresh summary id whenever we encounter a new
+         state id representative. *)
       let id_translation_tbl = Hashtbl.create (module State.Shape_id) in
       let translate_shape_id state_shape_id =
         Hashtbl.find_or_add id_translation_tbl ~default:Shape_id.create state_shape_id
@@ -433,7 +455,7 @@ end = struct
 
 
     let introduce ~formals ~return summary state =
-      (* [id_translation_tbl] maps Ids from the summary to their translation as Ids in the
+      (* [id_translation_tbl] maps Ids from the summary to their translation as Ids in the state
          environment of the caller function. *)
       let id_translation_tbl = Hashtbl.create (module Shape_id) in
       (* We introduce into the (caller) state the *formal* parameters and return value from the
