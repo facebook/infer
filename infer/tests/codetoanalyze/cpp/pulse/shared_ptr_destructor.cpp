@@ -6,6 +6,7 @@
  */
 
 #include <memory>
+#include <string>
 
 namespace destructor_shared_ptr {
 struct X {
@@ -129,4 +130,10 @@ int destructor5_bad() {
   return 0;
 }
 
+class MySharedPtrClass : public std::shared_ptr<std::string> {};
+
+void find_element_type_to_destruct_ok() {
+  MySharedPtrClass x;
+  x.reset();
+}
 } // namespace destructor_shared_ptr

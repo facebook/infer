@@ -124,6 +124,13 @@ module type NameCommon = sig
        ('context, 'f_in, 'f_out, _, 'arg_payload) templ_matcher
     -> 'f_in
     -> ('context, 'f_out, 'arg_payload) matcher
+  (** Ends template arguments with accept-NO further template arguments *)
+
+  val ( &+...>--> ) :
+       ('context, 'f_in, 'f_out, accept_more, 'arg_payload) templ_matcher
+    -> 'f_in
+    -> ('context, 'f_out, 'arg_payload) matcher
+  (** Ends template arguments with accept-ALL further template arguments *)
 
   val ( <>--> ) :
        ('context, 'f_in, 'f_out, 'arg_payload) name_matcher

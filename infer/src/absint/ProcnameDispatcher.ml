@@ -1006,6 +1006,11 @@ module type NameCommon = sig
     -> 'f_in
     -> ('context, 'f_out, 'arg_payload) matcher
 
+  val ( &+...>--> ) :
+       ('context, 'f_in, 'f_out, accept_more, 'arg_payload) templ_matcher
+    -> 'f_in
+    -> ('context, 'f_out, 'arg_payload) matcher
+
   val ( <>--> ) :
        ('context, 'f_in, 'f_out, 'arg_payload) name_matcher
     -> 'f_in
@@ -1048,6 +1053,8 @@ module NameCommon = struct
   let ( &-->! ) path_matcher f = make_matcher path_matcher f
 
   let ( >--> ) templ_matcher f = templ_matcher >! () &-->! f
+
+  let ( &+...>--> ) templ_matcher f = templ_matcher &+...>! () &-->! f
 
   let ( <>--> ) name_matcher f = name_matcher <! () >--> f
 

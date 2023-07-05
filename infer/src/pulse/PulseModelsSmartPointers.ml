@@ -92,6 +92,14 @@ let operator_bool this ~desc : model =
   PulseOperations.write_id ret_id (value_addr, Hist.single_call path location desc) astate
 
 
+let find_element_type_common matchers tenv typ =
+  match (Typ.strip_ptr typ).desc with
+  | Tstruct name ->
+      Tenv.find_map_supers tenv name ~f:(fun name _ -> matchers () name)
+  | _ ->
+      None
+
+
 module SharedPtr = struct
   let count = Fieldname.make PulseOperations.pulse_model_type "backing_count"
 
@@ -164,8 +172,21 @@ module SharedPtr = struct
     astate
 
 
+  let is_shared_ptr _context s =
+    String.equal s "shared_ptr" || String.equal s "__shared_ptr"
+    || String.equal s "__shared_ptr_access"
+
+
+  let find_element_type =
+    let matchers : (unit, Typ.t, unit) ProcnameDispatcher.TypName.dispatcher =
+      let open ProcnameDispatcher.TypName in
+      make_dispatcher [-"std" &::+ is_shared_ptr < capt_typ &+...>--> Fn.id]
+    in
+    fun tenv typ -> find_element_type_common matchers tenv typ
+
+
   let destructor ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : model =
-   fun ({path; location} as model_data) astate ->
+   fun ({analysis_data= {tenv}; path; location} as model_data) astate ->
     let<*> astate, pointer = to_internal_count_deref path Read location this astate in
     let<*> astate, count =
       PulseOperations.eval_access path Read location pointer Dereference astate
@@ -188,9 +209,9 @@ module SharedPtr = struct
     in
     (* ref_count is one: deallocate the backing_pointer and the ref_count *)
     let ref_count_one =
-      match (Typ.strip_ptr typ).desc with
-      | Typ.Tstruct (CppClass {template_spec_info= Template {args= TType t :: _}}) ->
-          let typ = {Typ.desc= Typ.Tptr (t, Typ.Pk_pointer); quals= Typ.mk_type_quals ()} in
+      match find_element_type tenv typ with
+      | Some elem_typ ->
+          let typ = {Typ.desc= Typ.Tptr (elem_typ, Typ.Pk_pointer); quals= Typ.mk_type_quals ()} in
           (* We need an expression corresponding to the value of the argument we pass to
              the destructor. See e.g. the comment in UniquePtr.destructor as well. *)
           let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
@@ -198,7 +219,7 @@ module SharedPtr = struct
             ProcnameDispatcher.Call.FuncArg.{arg_payload= value_addr_hist; exp= fake_exp; typ}
           in
           Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate
-      | _ ->
+      | None ->
           L.die InternalError "Cannot find template arguments"
     in
     let ref_count_one =
@@ -461,16 +482,24 @@ module UniquePtr = struct
     astate
 
 
+  let find_element_type =
+    let matchers : (unit, Typ.t, unit) ProcnameDispatcher.TypName.dispatcher =
+      let open ProcnameDispatcher.TypName in
+      make_dispatcher [-"std" &:: "unique_ptr" < capt_typ &+...>--> Fn.id]
+    in
+    fun tenv typ -> find_element_type_common matchers tenv typ
+
+
   let destructor ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : model =
-   fun ({path; location} as model_data) astate ->
+   fun ({analysis_data= {tenv}; path; location} as model_data) astate ->
     let<*> astate, (value_addr, value_hist) =
       to_internal_value_deref path Read location this astate
     in
     let value_addr_hist = (value_addr, Hist.add_call path location desc value_hist) in
-    match (Typ.strip_ptr typ).desc with
-    | Typ.Tstruct (CppClass {template_spec_info= Template {args= TType t :: _}}) ->
+    match find_element_type tenv typ with
+    | Some elem_typ ->
         (* create a pointer of the template argument t*)
-        let typ = Typ.mk (Tptr (t, Typ.Pk_pointer)) in
+        let typ = Typ.mk (Tptr (elem_typ, Typ.Pk_pointer)) in
         (* We need an expression corresponding to the value of the argument we pass to
             [free_or_delete]. We don't have one that corresponds to the value so we create a fake
             one from a fresh variable instead.
@@ -483,7 +512,7 @@ module UniquePtr = struct
           ProcnameDispatcher.Call.FuncArg.{arg_payload= value_addr_hist; exp= fake_exp; typ}
         in
         Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate
-    | _ ->
+    | None ->
         L.internal_error "Cannot find template arguments@." ;
         Basic.ok_continue astate
 
@@ -534,10 +563,6 @@ module UniquePtr = struct
 end
 
 let matchers : matcher list =
-  let is_shared_ptr _context s =
-    String.equal s "shared_ptr" || String.equal s "__shared_ptr"
-    || String.equal s "__shared_ptr_access"
-  in
   let open ProcnameDispatcher.Call in
   [ (* matchers for unique_ptr *)
     -"std" &:: "unique_ptr" &:: "unique_ptr" $ capt_arg_payload
@@ -596,21 +621,22 @@ let matchers : matcher list =
     $--> SharedPtr.destructor ~desc:"std::shared_ptr::~shared_ptr()"
   ; -"std" &:: "shared_ptr" &:: "~shared_ptr" $ capt_arg
     $--> SharedPtr.destructor ~desc:"std::shared_ptr::~shared_ptr()"
-  ; -"std" &::+ is_shared_ptr &:: "use_count" $ capt_arg_payload
+  ; -"std" &::+ SharedPtr.is_shared_ptr &:: "use_count" $ capt_arg_payload
     $--> SharedPtr.use_count ~desc:"std::shared_ptr::use_count()"
-  ; -"std" &::+ is_shared_ptr &:: "reset" $ capt_arg $+ capt_arg_payload
+  ; -"std" &::+ SharedPtr.is_shared_ptr &:: "reset" $ capt_arg $+ capt_arg_payload
     $--> SharedPtr.reset ~desc:"std::shared_ptr::reset(T*)"
-  ; -"std" &::+ is_shared_ptr &:: "reset" $ capt_arg
+  ; -"std" &::+ SharedPtr.is_shared_ptr &:: "reset" $ capt_arg
     $--> SharedPtr.default_reset ~desc:"std::shared_ptr::reset()"
-  ; -"std" &::+ is_shared_ptr &:: "operator[]" $ capt_arg_payload $+ capt_arg_payload
+  ; -"std" &::+ SharedPtr.is_shared_ptr &:: "operator[]" $ capt_arg_payload $+ capt_arg_payload
     $--> at ~desc:"std::shared_ptr::operator[]()"
-  ; -"std" &::+ is_shared_ptr &:: "get" $ capt_arg_payload $--> get ~desc:"std::shared_ptr::get()"
-  ; -"std" &::+ is_shared_ptr &:: "operator*" $ capt_arg_payload
+  ; -"std" &::+ SharedPtr.is_shared_ptr &:: "get" $ capt_arg_payload
+    $--> get ~desc:"std::shared_ptr::get()"
+  ; -"std" &::+ SharedPtr.is_shared_ptr &:: "operator*" $ capt_arg_payload
     $--> dereference ~desc:"std::shared_ptr::operator*()"
-  ; -"std" &::+ is_shared_ptr &:: "operator->" <>$ capt_arg_payload
+  ; -"std" &::+ SharedPtr.is_shared_ptr &:: "operator->" <>$ capt_arg_payload
     $--> dereference ~desc:"std::shared_ptr::operator->()"
-  ; -"std" &::+ is_shared_ptr &:: "swap" $ capt_arg_payload $+ capt_arg_payload
+  ; -"std" &::+ SharedPtr.is_shared_ptr &:: "swap" $ capt_arg_payload $+ capt_arg_payload
     $--> swap ~desc:"std::shared_ptr::swap(std::shared_ptr<T>)"
-  ; -"std" &::+ is_shared_ptr &:: "operator_bool" <>$ capt_arg_payload
+  ; -"std" &::+ SharedPtr.is_shared_ptr &:: "operator_bool" <>$ capt_arg_payload
     $--> operator_bool ~desc:"std::shared_ptr::operator_bool()"
   ; -"std" &:: "make_shared" &++> SharedPtr.make_shared ~desc:"std::make_shared()" ]
