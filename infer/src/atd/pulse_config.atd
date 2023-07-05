@@ -61,6 +61,7 @@ type taint_policy = {
   short_description: string;
   taint_flows: taint_flow list;
   ?privacy_effect: string option;
+  ?exclude_in: string list option;
 }
 
 type taint_policies = taint_policy list

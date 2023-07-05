@@ -116,7 +116,8 @@ BUILD_SYSTEMS_TESTS += \
   objc_retain_cycles_weak \
   pulse_messages_objc \
   pulse_taint_regex_objc \
-  pulse_taint_sanitize_objc
+  pulse_taint_sanitize_objc \
+  pulse_taint_exclude_in_objc
 
 ifeq ($(DIFF_CAN_FORMAT),yes)
 BUILD_SYSTEMS_TESTS += clang_test_determinator

@@ -22,7 +22,9 @@ let fill_data_flow_kinds_from_config () =
 let fill_policies_from_config () =
   Config.pulse_taint_config.policies
   |> List.iter
-       ~f:(fun {Pulse_config_t.short_description= description; taint_flows; privacy_effect} ->
+       ~f:(fun
+            {Pulse_config_t.short_description= description; taint_flows; privacy_effect; exclude_in}
+          ->
          let policy_id = SinkPolicy.next_policy_id () in
          List.iter taint_flows ~f:(fun {Pulse_config_t.source_kinds; sanitizer_kinds; sink_kinds} ->
              let source_kinds = List.map source_kinds ~f:Kind.of_string in
@@ -30,7 +32,12 @@ let fill_policies_from_config () =
              List.iter sink_kinds ~f:(fun sink_kind_s ->
                  let sink_kind = Kind.of_string sink_kind_s in
                  let flow =
-                   {SinkPolicy.source_kinds; sanitizer_kinds; description; policy_id; privacy_effect}
+                   { SinkPolicy.source_kinds
+                   ; sanitizer_kinds
+                   ; description
+                   ; policy_id
+                   ; privacy_effect
+                   ; exclude_in }
                  in
                  Hashtbl.update SinkPolicy.sink_policies sink_kind ~f:(function
                    | None ->
@@ -48,7 +55,8 @@ let () =
         ; source_kinds= [Kind.simple_kind]
         ; sanitizer_kinds= [Kind.simple_kind]
         ; policy_id= SinkPolicy.next_policy_id ()
-        ; privacy_effect= None } ]
+        ; privacy_effect= None
+        ; exclude_in= None } ]
   |> ignore ;
   fill_data_flow_kinds_from_config () ;
   fill_policies_from_config ()
@@ -334,7 +342,16 @@ let source_is_sanitized source_times sink_policy
   is_sanitized_after_tainted && sanitizer_matches_sink_policy sink_policy sanitizer
 
 
-let check_source_against_sink_policy source source_times sanitizers sink_kind sink_policy =
+let exclude_in_loc source_file exclude_in =
+  match exclude_in with
+  | Some exclude_in ->
+      List.exists exclude_in ~f:(fun exclude_in ->
+          String.is_substring (SourceFile.to_string source_file) ~substring:exclude_in )
+  | _ ->
+      false
+
+
+let check_source_against_sink_policy location source source_times sanitizers sink_kind sink_policy =
   let open IOption.Let_syntax in
   let* suspicious_source =
     List.find source.TaintItem.kinds ~f:(source_matches_sink_policy sink_kind sink_policy)
@@ -343,8 +360,12 @@ let check_source_against_sink_policy source source_times sanitizers sink_kind si
   let matching_sanitizers =
     Attribute.TaintSanitizedSet.filter (source_is_sanitized source_times sink_policy) sanitizers
   in
-  if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
-    let {SinkPolicy.description; policy_id; privacy_effect} = sink_policy in
+  let {SinkPolicy.description; policy_id; privacy_effect; exclude_in} = sink_policy in
+  if exclude_in_loc location.Location.file exclude_in then (
+    L.d_printfln ~color:Green "...but location %a should be excluded from reporting" SourceFile.pp
+      location.Location.file ;
+    None )
+  else if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
     Some (suspicious_source, sink_kind, description, policy_id, privacy_effect)
   else (
     L.d_printfln ~color:Green "...but sanitized by %a" Attribute.TaintSanitizedSet.pp
@@ -352,11 +373,11 @@ let check_source_against_sink_policy source source_times sanitizers sink_kind si
     None )
 
 
-let check_policies ~sink ~source ~source_times ~sanitizers =
+let check_policies ~sink ~source ~source_times ~sanitizers ~location =
   let check_against_sink acc sink_kind =
     let policies = Hashtbl.find_exn SinkPolicy.sink_policies sink_kind in
     let check_against_policy =
-      check_source_against_sink_policy source source_times sanitizers sink_kind
+      check_source_against_sink_policy location source source_times sanitizers sink_kind
     in
     let rev_matching_sources = List.rev_filter_map policies ~f:check_against_policy in
     List.rev_append rev_matching_sources acc
@@ -447,7 +468,9 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
       (fun {source; time_trace= source_times; hist= source_hist} policy_violations_reported_result ->
         let* policy_violations_reported = policy_violations_reported_result in
         L.d_printfln_escaped ~color:Red "Found source %a, checking policy..." TaintItem.pp source ;
-        let potential_policy_violations = check_policies ~sink ~source ~source_times ~sanitizers in
+        let potential_policy_violations =
+          check_policies ~sink ~source ~source_times ~sanitizers ~location
+        in
         let report_policy_violation reported_so_far
             (source_kind, sink_kind, policy_description, violated_policy_id, policy_privacy_effect)
             =

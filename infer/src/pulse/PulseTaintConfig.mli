@@ -84,7 +84,8 @@ module SinkPolicy : sig
     ; sanitizer_kinds: Kind.t list [@ignore]
     ; description: string [@ignore]
     ; policy_id: int
-    ; privacy_effect: string option [@ignore] }
+    ; privacy_effect: string option [@ignore]
+    ; exclude_in: string list option [@ignore] }
   [@@deriving equal]
 
   val next_policy_id : unit -> int

@@ -449,15 +449,19 @@ module SinkPolicy = struct
     ; sanitizer_kinds: Kind.t list [@ignore]
     ; description: string [@ignore]
     ; policy_id: int
-    ; privacy_effect: string option [@ignore] }
+    ; privacy_effect: string option [@ignore]
+    ; exclude_in: string list option [@ignore] }
   [@@deriving equal]
 
   let pp f policy =
     F.fprintf f
-      "source_kinds=%a, description=%a, sanitizer_kinds=%a, policy_id=%d, privacy_effect=%a"
+      "source_kinds=%a, description=%a, sanitizer_kinds=%a, policy_id=%d, privacy_effect=%a, \
+       exclude_in=%a"
       (Pp.comma_seq Kind.pp) policy.source_kinds F.pp_print_string policy.description
       (Pp.comma_seq Kind.pp) policy.sanitizer_kinds policy.policy_id (Pp.option String.pp)
       policy.privacy_effect
+      (Pp.option (Pp.comma_seq String.pp))
+      policy.exclude_in
 
 
   let next_policy_id =
