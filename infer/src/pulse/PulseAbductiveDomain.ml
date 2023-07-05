@@ -1156,14 +1156,16 @@ module Internal = struct
       [pre=&x=vx, vx --.f-> v1 --.g-> v2 --*-> v3] and
       [post = &x=vx, vx --.f-> v1 --.g-> v2 --*-> v4, vx --.h->v5] then we change [post] to
       [vx --.f-> v1 --.g-> v2 --*-> v3] (i.e. [post]=[pre]). *)
-  let restore_formals_for_summary astate =
+  let restore_formals_for_summary pname location astate =
     (* The [visited] accumulator is to avoid cycles; they are impossible in theory at the moment but
        this could change. *)
     let rec restore_pre_var_value visited ~is_value_visible_outside (addr : CanonValue.t) astate =
       if AbstractValue.Set.mem (downcast addr) visited then (
         L.internal_error
-          "Found a cycle when restoring the values of formals, how did this happen?@\n%a@\n" pp
-          astate ;
+          "Found a cycle when restoring the values of formals, how did this happen?@\n\
+           Analyzing %a at %a@\n\
+           %a@\n"
+          Procname.pp pname Location.pp location pp astate ;
         astate )
       else
         let visited = AbstractValue.Set.add (downcast addr) visited in
@@ -1434,7 +1436,7 @@ module Internal = struct
     {PulseTopl.pulse_pre; pulse_post; path_condition; get_reachable}
 
 
-  let filter_for_summary tenv proc_name astate0 =
+  let filter_for_summary tenv proc_name location astate0 =
     let open SatUnsat.Import in
     L.d_printfln "Canonicalizing..." ;
     let* astate_before_filter = canonicalize astate0 in
@@ -1444,7 +1446,7 @@ module Internal = struct
        pre. Moreover, formals can be treated as local variables inside the function's body so we need
        to restore their initial values at the end of the function. Removing them altogether achieves
        this. *)
-    let astate = restore_formals_for_summary astate_before_filter in
+    let astate = restore_formals_for_summary proc_name location astate_before_filter in
     let astate = {astate with topl= PulseTopl.simplify (topl_view astate) astate.topl} in
     let astate, pre_live_addresses, post_live_addresses, dead_addresses =
       discard_unreachable_ ~for_summary:true astate
@@ -1696,7 +1698,7 @@ module Summary = struct
        marking it invalid *)
     let astate = {astate with decompiler= Decompiler.invalid} in
     let* astate, live_addresses, dead_addresses, new_eqs =
-      filter_for_summary tenv proc_name astate
+      filter_for_summary tenv proc_name location astate
     in
     let+ astate, error =
       match error with None -> incorporate_new_eqs astate new_eqs | Some _ -> Sat (astate, error)
