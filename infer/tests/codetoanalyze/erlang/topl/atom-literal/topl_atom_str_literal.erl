@@ -4,9 +4,9 @@
 % LICENSE file in the root directory of this source tree.
 -module(topl_atom_str_literal).
 -export([
-     test_1_Ok/0,
-     test_2_Ok/0,
-    test_3_Bad/0
+    test_1_Ok/0,
+    test_2_Ok/0,
+    fn_test_3_Bad/0
 ]).
 
 source() -> "secret".
@@ -22,5 +22,5 @@ test_1_Ok() ->
 test_2_Ok() ->
     sink("not_okay", "not_secret").
 
-test_3_Bad() ->
+fn_test_3_Bad() ->
     sink("not_okay", source()).
