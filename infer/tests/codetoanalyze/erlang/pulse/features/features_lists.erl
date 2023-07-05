@@ -64,7 +64,9 @@
     test_listsub3_Bad/0,
     test_listsub4_Bad/0,
     test_listforeach_returnvalue_Ok/0,
-    test_listforeach_returnvalue_Bad/0
+    test_listforeach_returnvalue_Bad/0,
+    fp_test_string_Ok/0,
+    test_string_Bad/0
 ]).
 
 test_nil_Ok() ->

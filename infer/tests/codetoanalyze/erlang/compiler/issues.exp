@@ -284,6 +284,7 @@ features_lists:fn_test_reverse4_Bad/0: expected_crash
 features_lists:fp_test_listappend8_Ok/0: ok
 features_lists:fp_test_listsub1_Ok/0: ok
 features_lists:fp_test_listsub2_Ok/0: ok
+features_lists:fp_test_string_Ok/0: ok
 features_lists:test_cons1_Bad/0: case_clause
 features_lists:test_cons1_Ok/0: ok
 features_lists:test_cons2_Bad/0: case_clause
@@ -336,6 +337,7 @@ features_lists:test_reverse2_Ok/0: ok
 features_lists:test_reverse3_Bad/0: expected_crash
 features_lists:test_reverse3_Ok/0: ok
 features_lists:test_reverse4_Ok/0: ok
+features_lists:test_string_Bad/0: expected_crash
 
 ----- features_logic -----
 features_logic:test_and00_Bad/0: if_clause
