@@ -113,8 +113,6 @@ module LineageGraph = struct
           - INV2: There is no loop, because they don't mean anything. *)
       type t =
         | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
-        | Inject of FieldPath.t
-        | Project of FieldPath.t
         | Call of FieldPath.t  (** Target is ArgumentOf, field path is injected into arg *)
         | Return of FieldPath.t  (** Source is ReturnOf, field path is projected from return *)
         | Capture  (** [X=1, F=fun()->X end] has Capture flow from X to F *)
@@ -123,17 +121,6 @@ module LineageGraph = struct
         | DynamicCallFunction
         | DynamicCallModule
       [@@deriving compare, equal, sexp, variants]
-
-      (** Edges from a field_path of a formal parameter will represent a Projection of this field
-          path from the eventual summarised Argument node *)
-      let from_formal_arg arg_field_path : t =
-        match arg_field_path with [] -> Direct | _ :: _ -> Project arg_field_path
-
-
-      (** Edges into a field path of the formal return will represent an Injection of this field
-          path into the eventual summarised Return node *)
-      let to_formal_ret ret_field_path : t =
-        match ret_field_path with [] -> Direct | _ :: _ -> Inject ret_field_path
     end
 
     include T
@@ -193,10 +180,6 @@ module LineageGraph = struct
         Format.fprintf fmt "Direct"
     | Call field_path ->
         Format.fprintf fmt "Call%a" FieldPath.pp field_path
-    | Inject field_path ->
-        Format.fprintf fmt "Inject%a" FieldPath.pp field_path
-    | Project field_path ->
-        Format.fprintf fmt "Project%a" FieldPath.pp field_path
     | Return field_path ->
         Format.fprintf fmt "Return%a" FieldPath.pp field_path
     | Builtin ->
@@ -333,9 +316,16 @@ module LineageGraph = struct
         ; project: FieldPath.t [@default []] [@yojson_drop_default.equal] }
       [@@deriving yojson_of]
 
-      let metadata_inject field_path = {inject= field_path; project= []}
+      (** Returns [Some {inject; project}] metadata if at least one of them is non empty *)
+      let metadata_nonempty ~project ~inject =
+        match (project, inject) with [], [] -> None | _ -> Some {inject; project}
 
-      let metadata_project field_path = {inject= []; project= field_path}
+
+      (** Returns Some injection metadata if the field path is non empty *)
+      let metadata_nonempty_inject field_path = metadata_nonempty ~project:[] ~inject:field_path
+
+      (** Returns Some injection metadata if the field path is non empty *)
+      let metadata_nonempty_project field_path = metadata_nonempty ~inject:[] ~project:field_path
 
       let yojson_of_edge_type typ =
         match typ with
@@ -617,10 +607,6 @@ module LineageGraph = struct
             Json.Capture
         | Direct ->
             Json.Copy
-        | Inject _ ->
-            Json.Copy
-        | Project _ ->
-            Json.Copy
         | Builtin ->
             Json.Copy
         | Summary ->
@@ -634,15 +620,30 @@ module LineageGraph = struct
       in
       let edge_metadata =
         match kind with
-        | Direct | Builtin | Capture | Summary | DynamicCallFunction | DynamicCallModule ->
+        | Builtin | Capture | Summary | DynamicCallFunction | DynamicCallModule ->
             None
-        | Call [] | Return [] ->
-            (* Don't generate "trivial" metadata *)
-            None
-        | Call field_path | Inject field_path ->
-            Some (Json.metadata_inject field_path)
-        | Return field_path | Project field_path ->
-            Some (Json.metadata_project field_path)
+        | Call field_path ->
+            Json.metadata_nonempty_inject field_path
+        | Return field_path ->
+            Json.metadata_nonempty_project field_path
+        | Direct -> (
+          (* As the [Return ret_path] nodes will all be merged in a single [Return], we add the
+             [Injection ret_path] metadata to their incoming Copy edges to encode the information
+             that they're flowing into a specific field path of the returned value.
+
+             We similarly generate projection metadata from [Argument (index, path)] nodes, that will
+             be merged into a summarising [Argument index] one. *)
+          match (source, target) with
+          | Argument (_index, arg_path), Return ret_path ->
+              (* $arg -> $ret edges may happen in infer-generated procedures (that only get
+                 non-source-occurring variables by definition) *)
+              Json.metadata_nonempty ~project:arg_path ~inject:ret_path
+          | Argument (_index, arg_path), _ (* Not Return *) ->
+              Json.metadata_nonempty_project arg_path
+          | _ (* Not Argument *), Return ret_path ->
+              Json.metadata_nonempty_inject ret_path
+          | _ ->
+              None )
       in
       write_json Edge edge_id
         (Json.yojson_of_edge
@@ -914,8 +915,6 @@ module Summary = struct
               true
           | Call _ | Return _ ->
               false (* Skip Call/Return edges anyway *)
-          | Inject _ | Project _ ->
-              true (* Not shape-preserving by definition *)
           | Summary ->
               true (* TODO T154077173: which function is called? *)
           | Capture ->
@@ -1016,14 +1015,7 @@ module Summary = struct
           (* Suppressed builtins are considered as direct flows for being simplification
              candidates. *)
           false
-      | Call _
-      | Return _
-      | Capture
-      | Summary
-      | DynamicCallFunction
-      | DynamicCallModule
-      | Inject _
-      | Project _ ->
+      | Call _ | Return _ | Capture | Summary | DynamicCallFunction | DynamicCallModule ->
           true
     in
     let merge_flows {LineageGraph.kind= kind_ab; source= source_ab; target= _; node= node_ab}
@@ -1882,8 +1874,8 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
     let start_node = CFG.start_node cfg in
     let add_arg_flow i astate arg_var =
       TransferFunctions.Domain.add_write_f ~shapes ~node:start_node
-        ~kind_f:LineageGraph.FlowKind.from_formal_arg ~dst:(VarPath.var arg_var)
-        ~src_f:(Domain.Src.argument i) astate
+        ~kind_f:(Fn.const LineageGraph.FlowKind.Direct)
+        ~dst:(VarPath.var arg_var) ~src_f:(Domain.Src.argument i) astate
     in
     let add_cap_flow i astate var =
       TransferFunctions.Domain.add_write ~shapes ~node:start_node ~kind:Direct
@@ -1907,7 +1899,8 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
         post
   in
   let final_astate =
-    Domain.add_flow_from_path_f ~shapes ~node:exit_node ~kind_f:LineageGraph.FlowKind.to_formal_ret
+    Domain.add_flow_from_path_f ~shapes ~node:exit_node
+      ~kind_f:(Fn.const LineageGraph.FlowKind.Direct)
       ~src:ret_var_path ~dst_f:Domain.Dst.return exit_astate
   in
   (* Collect the graph from all nodes *)
