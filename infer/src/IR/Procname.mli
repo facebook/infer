@@ -405,6 +405,9 @@ val is_objc_init : t -> bool
 val is_c_method : t -> bool
 (** Return true this is an Objective-C/C++ method name. *)
 
+val is_clang : t -> bool
+(** Return true this is an Objective-C/C++ method name or a C function. *)
+
 val is_constructor : t -> bool
 (** Check if this is a constructor. *)
 

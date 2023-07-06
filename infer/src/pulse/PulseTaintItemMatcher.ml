@@ -88,6 +88,11 @@ let check_regex name_regex elem ?source_file exclude_in =
         false
 
 
+let get_proc_name_s proc_name =
+  if Procname.is_clang proc_name then F.asprintf "%a" Procname.pp proc_name
+  else F.asprintf "%a" Procname.pp_verbose proc_name
+
+
 let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name actuals =
   let open TaintConfig.Unit in
   List.filter_map matchers ~f:(fun matcher ->
@@ -95,14 +100,12 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
       let procedure_name_matches =
         match matcher.procedure_matcher with
         | ProcedureName {name} ->
-            let proc_name_s = F.asprintf "%a" Procname.pp_verbose proc_name in
-            String.is_substring ~substring:name proc_name_s
+            String.is_substring ~substring:name (get_proc_name_s proc_name)
         | ProcedureNameRegex {name_regex; exclude_in} ->
-            let proc_name_s = F.asprintf "%a" Procname.pp_verbose proc_name in
             let source_file =
               Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
             in
-            check_regex name_regex proc_name_s ?source_file exclude_in
+            check_regex name_regex (get_proc_name_s proc_name) ?source_file exclude_in
         | ClassNameRegex {name_regex; exclude_in} -> (
             let check_regex_class class_name class_struct_opt =
               let class_name_s = Typ.Name.name class_name in
@@ -155,10 +158,10 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
       let block_passed_to_matches =
         match (matcher.procedure_matcher, block_passed_to) with
         | Block {name}, Some block_passed_to_proc_name ->
-            let proc_name_s = F.asprintf "%a" Procname.pp_verbose block_passed_to_proc_name in
+            let proc_name_s = get_proc_name_s block_passed_to_proc_name in
             String.is_substring ~substring:name proc_name_s
         | BlockNameRegex {name_regex; exclude_in}, Some block_passed_to_proc_name ->
-            let proc_name_s = F.asprintf "%a" Procname.pp_verbose block_passed_to_proc_name in
+            let proc_name_s = get_proc_name_s block_passed_to_proc_name in
             let source_file =
               Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
             in

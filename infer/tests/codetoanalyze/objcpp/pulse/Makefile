@@ -11,7 +11,8 @@ INFER_OPTIONS = --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
 --pulse-model-alloc-pattern "AB[IF].*Create.*" \
 --pulse-model-release-pattern "ABFRelease" \
 --pulse-model-transfer-ownership "abf::BridgingRelease" \
---pulse-model-transfer-ownership "ABFBridgingRelease"
+--pulse-model-transfer-ownership "ABFBridgingRelease" \
+--pulse-taint-config taint_config_objcpp.json
 
 INFERPRINT_OPTIONS = --issues-tests
 

@@ -1,0 +1,26 @@
+{
+    "pulse-taint-policies": [
+      {
+        "short_description": "Logging data",
+        "taint_flows": [
+          {
+            "source_kinds": ["Data"],
+            "sink_kinds": ["Logging"]
+          }
+        ]
+      }
+    ],
+    "pulse-taint-sources": [
+      {
+        "block_passed_to_regex": "Data.*",
+        "taint_target": ["ArgumentPositions",[0]],
+        "kinds": ["Data"]
+      }
+    ],
+    "pulse-taint-sinks": [
+      {
+        "procedure": "NSLog",
+        "kinds": ["Logging"]
+      }
+    ]
+}
