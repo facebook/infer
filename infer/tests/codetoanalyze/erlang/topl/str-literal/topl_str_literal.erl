@@ -2,11 +2,11 @@
 %
 % This source code is licensed under the MIT license found in the
 % LICENSE file in the root directory of this source tree.
--module(topl_atom_str_literal).
+-module(topl_str_literal).
 -export([
     test_1_Ok/0,
     test_2_Ok/0,
-    fn_test_3_Bad/0
+    test_3_Bad/0
 ]).
 
 source() -> "secret".
@@ -22,5 +22,5 @@ test_1_Ok() ->
 test_2_Ok() ->
     sink("not_okay", "not_secret").
 
-fn_test_3_Bad() ->
+test_3_Bad() ->
     sink("not_okay", source()).

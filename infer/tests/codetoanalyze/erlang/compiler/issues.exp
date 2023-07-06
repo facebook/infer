@@ -732,11 +732,6 @@ topl_atom_literal:test_1_Ok/0: ok
 topl_atom_literal:test_2_Ok/0: ok
 topl_atom_literal:test_3_Bad/0: taint_error
 
------ topl_atom_str_literal -----
-topl_atom_str_literal:fn_test_3_Bad/0: taint_error
-topl_atom_str_literal:test_1_Ok/0: ok
-topl_atom_str_literal:test_2_Ok/0: ok
-
 ----- topl_fields -----
 topl_fields:test_1_Ok/0: ok
 topl_fields:test_2_Ok/0: ok
@@ -758,6 +753,11 @@ topl_less:test_e_Bad/0: topl_error
 topl_process:test_1_Ok/0: ok
 topl_process:test_2_Bad/0: expected_crash
 topl_process:test_3_Ok/0: ok
+
+----- topl_str_literal -----
+topl_str_literal:test_1_Ok/0: ok
+topl_str_literal:test_2_Ok/0: ok
+topl_str_literal:test_3_Bad/0: taint_error
 
 ----- topl_taint -----
 topl_taint:fn_test_send2_Bad/0: taint_error

@@ -1,6 +1,6 @@
 property AtomLiteralTaint2
   message "a value returned by source/0 is sent as argument to sink/2 with a specific string"
-  prefix "topl_atom_str_literal"
+  prefix "topl_str_literal"
   start -> start: *
   start -> tracking: "source/0"(Ret) => x := Ret
-  tracking -> error: "sink/2"(Arg0, Arg1, VoidRet) when Arg0:Cons.strval == "not_okay" // x == Arg1 &&
+  tracking -> error: "sink/2"(Arg0, Arg1, VoidRet) when x == Arg1 && Arg0:Cons.strval == "not_okay"
