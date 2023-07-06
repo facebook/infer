@@ -183,9 +183,13 @@ let has_name n a i =
   String.equal name n
 
 
-let is_start = has_name "start"
+let start_name = "start"
 
-let is_error = has_name "error"
+let error_name = "error"
+
+let is_start = has_name start_name
+
+let is_error = has_name error_name
 
 let message a i =
   let {messages} = a in

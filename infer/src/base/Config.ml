@@ -1454,6 +1454,12 @@ and ( biabduction_write_dotty
   , write_html )
 
 
+and data_flow_queries_on_topl =
+  CLOpt.mk_path_list ~default:[] ~long:"data-flow-queries-on-topl"
+    "[WIP] Specify files containing flow queries. Resolve them using Topl. You must also enable \
+     Topl; e.g., with $(b,--topl)."
+
+
 and dbwriter =
   CLOpt.mk_bool ~default:true ~long:"dbwriter"
     "Use a separate process to serialize writes to sqlite. Disabling this will degrade \
@@ -3841,6 +3847,8 @@ and cost_tests_only_autoreleasepool = !cost_tests_only_autoreleasepool
 and cxx = !cxx
 
 and cxx_scope_guards = !cxx_scope_guards
+
+and data_flow_queries_on_topl = RevList.to_list !data_flow_queries_on_topl
 
 and dbwriter = !dbwriter
 

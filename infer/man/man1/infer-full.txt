@@ -2271,6 +2271,13 @@ INTERNAL OPTIONS
        --costs-previous-reset
            Cancel the effect of --costs-previous.
 
+       --data-flow-queries-on-topl +path
+           [WIP] Specify files containing flow queries. Resolve them using
+           Topl. You must also enable Topl; e.g., with --topl.
+
+       --data-flow-queries-on-topl-reset
+           Set --data-flow-queries-on-topl to the empty list.
+
        --no-dbwriter
            Deactivates: Use a separate process to serialize writes to sqlite.
            Disabling this will degrade performance. Note that this is always

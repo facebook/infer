@@ -1,0 +1,69 @@
+{
+  "language": "Erlang",
+  "matchers": [
+    {
+      "tag": "Source",
+      "pattern": "test:tag",
+      "arity": 2,
+      "position": [
+        "arg",
+        0
+      ],
+      "condition": [
+        [
+          "equal",
+          [
+            "arg",
+            1
+          ],
+          [
+            "string",
+            "private"
+          ]
+        ]
+      ]
+    },
+    {
+      "tag": "Sink",
+      "pattern": "test:log",
+      "arity": 4,
+      "position": [
+        "arg",
+        3
+      ]
+    },
+    [
+      "Sink",
+      "test:sink_b",
+      1,
+      [
+        "arg",
+        0
+      ]
+    ],
+    [
+      "Sink",
+      "test:sink_c",
+      1,
+      [
+        "arg",
+        0
+      ]
+    ],
+    [
+      "Sink",
+      "test:sink_d",
+      4,
+      [
+        "arg",
+        3
+      ]
+    ]
+  ],
+  "questions": [
+    {
+      "source": "Source",
+      "sink": "Sink"
+    }
+  ]
+}

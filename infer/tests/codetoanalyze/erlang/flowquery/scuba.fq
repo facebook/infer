@@ -1,0 +1,40 @@
+{
+  "matchers": [
+    {
+      "tag": "Source",
+      "pattern": "test:get_name",
+      "arity": 3,
+      "position": [
+        "ret"
+      ],
+      "condition": [
+        [
+          "equal",
+          [
+            "arg",
+            2
+          ],
+          [
+            "atom",
+            "bad"
+          ]
+        ]
+      ]
+    },
+    [
+      "Sink",
+      "test:log",
+      4,
+      [
+        "arg",
+        0
+      ]
+    ]
+  ],
+  "questions": [
+    {
+      "source": "Source",
+      "sink": "Sink"
+    }
+  ]
+}

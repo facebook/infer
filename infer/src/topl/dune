@@ -24,6 +24,14 @@
    Absint
    -open
    Biabduction))
- (libraries core IStdlib ATDGenerated IBase IR Absint Biabduction)
+ (libraries
+  core
+  ATDGenerated
+  Absint
+  Biabduction
+  ErlangFrontend
+  IBase
+  IR
+  IStdlib)
  (preprocess
   (pps ppx_compare ppx_hash ppx_sexp_conv)))

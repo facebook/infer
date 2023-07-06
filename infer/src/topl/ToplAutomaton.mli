@@ -43,6 +43,10 @@ val registers : t -> ToplAst.register_name list
 
 val message : t -> vindex -> string
 
+val start_name : string
+
+val error_name : string
+
 val is_start : t -> vindex -> bool
 
 val is_error : t -> vindex -> bool

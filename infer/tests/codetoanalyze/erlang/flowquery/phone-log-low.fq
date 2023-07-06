@@ -1,0 +1,27 @@
+{
+  "matchers": [
+    [
+      "Data",
+      "test:source",
+      0,
+      [
+        "ret"
+      ]
+    ],
+    [
+      "Log",
+      "test:log",
+      4,
+      [
+        "arg",
+        3
+      ]
+    ]
+  ],
+  "questions": [
+    {
+      "source": "Data",
+      "sink": "Log"
+    }
+  ]
+}

@@ -29,7 +29,9 @@ let library =
   (pps ppx_deriving.std ppx_expect ppx_inline_test))
  %s
 )
-|} (if python then "(inline_tests)" else "")
+|}
+    (if python then "(inline_tests)" else "")
+
 ;;
 
 Jbuild_plugin.V1.send library

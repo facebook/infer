@@ -322,6 +322,8 @@ val cxx : bool
 
 val cxx_scope_guards : Yojson.Basic.t
 
+val data_flow_queries_on_topl : string list
+
 val dbwriter : bool
 
 val deduplicate : bool
