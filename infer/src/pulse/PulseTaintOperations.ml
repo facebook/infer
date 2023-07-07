@@ -278,28 +278,32 @@ let taint_sources tenv path location ~intra_procedural_only return ~has_added_re
       ~block_matchers:source_block_matchers ~field_matchers return ~has_added_return_param
       ?proc_attributes potential_taint_value actuals astate
   in
-  List.fold tainted ~init:astate ~f:(fun astate TaintItemMatcher.{taint= source; addr_hist= v, _} ->
-      let hist =
-        ValueHistory.singleton (TaintSource (source, location, path.PathContext.timestamp))
-      in
-      let tainted =
-        Attribute.Tainted.
-          { source
-          ; hist
-          ; time_trace= Timestamp.trace0 path.PathContext.timestamp
-          ; intra_procedural_only }
-      in
-      taint_and_explore v astate ~taint:(fun v astate ->
-          let path_condition = astate.AbductiveDomain.path_condition in
-          if not (PulseFormula.is_known_zero path_condition v) then
-            AbductiveDomain.AddressAttributes.add_one v
-              (Tainted (Attribute.TaintedSet.singleton tainted))
-              astate
-          else (
-            L.d_printfln
-              "Not adding Tainted attribute to the value %a because it is known to be zero"
-              AbstractValue.pp v ;
-            astate ) ) )
+  let aux () =
+    List.fold tainted ~init:astate
+      ~f:(fun astate TaintItemMatcher.{taint= source; addr_hist= v, _} ->
+        let hist =
+          ValueHistory.singleton (TaintSource (source, location, path.PathContext.timestamp))
+        in
+        let tainted =
+          Attribute.Tainted.
+            { source
+            ; hist
+            ; time_trace= Timestamp.trace0 path.PathContext.timestamp
+            ; intra_procedural_only }
+        in
+        taint_and_explore v astate ~taint:(fun v astate ->
+            let path_condition = astate.AbductiveDomain.path_condition in
+            if not (PulseFormula.is_known_zero path_condition v) then
+              AbductiveDomain.AddressAttributes.add_one v
+                (Tainted (Attribute.TaintedSet.singleton tainted))
+                astate
+            else (
+              L.d_printfln
+                "Not adding Tainted attribute to the value %a because it is known to be zero"
+                AbstractValue.pp v ;
+              astate ) ) )
+  in
+  L.d_with_indent "taint_sources" ~f:aux
 
 
 let taint_sanitizers tenv path return ~has_added_return_param ~location ?proc_attributes
@@ -309,7 +313,7 @@ let taint_sanitizers tenv path return ~has_added_return_param ~location ?proc_at
       ~block_matchers:[] ~field_matchers:[] return ~has_added_return_param ?proc_attributes
       potential_taint_value actuals astate
   in
-  let astate =
+  let aux () =
     List.fold tainted ~init:astate
       ~f:(fun astate TaintItemMatcher.{taint= sanitizer; addr_hist= v, history} ->
         let trace = Trace.Immediate {location; history} in
@@ -322,7 +326,7 @@ let taint_sanitizers tenv path return ~has_added_return_param ~location ?proc_at
               (TaintSanitized (Attribute.TaintSanitizedSet.singleton taint_sanitized))
               astate ) )
   in
-  astate
+  L.d_with_indent "taint_sanitizers" ~f:aux
 
 
 let source_matches_sink_policy sink_kind {SinkPolicy.source_kinds= sink_sources} source_kind =
@@ -530,37 +534,40 @@ let taint_sinks tenv path location return ~has_added_return_param ?proc_attribut
       ~block_matchers:[] ~field_matchers return ~has_added_return_param ?proc_attributes
       potential_taint_value actuals astate
   in
-  PulseResult.list_fold tainted ~init:astate
-    ~f:(fun astate TaintItemMatcher.{taint= sink; addr_hist= v, history} ->
-      if should_ignore_all_flows_to potential_taint_value then Ok astate
-      else
-        let sink_trace = Trace.Immediate {location; history} in
-        let visited = ref AbstractValue.Set.empty in
-        let open PulseResult.Let_syntax in
-        let rec mark_sinked policy_violations_reported v astate =
-          if AbstractValue.Set.mem v !visited then Ok (policy_violations_reported, astate)
-          else (
-            visited := AbstractValue.Set.add v !visited ;
-            let astate =
-              AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate
-            in
-            let res =
-              check_flows_wrt_sink ~policy_violations_reported path location (sink, sink_trace) v
-                astate
-            in
-            AbductiveDomain.Memory.fold_edges v astate ~init:res ~f:(fun res (access, (v, _)) ->
-                match access with
-                | HilExp.Access.FieldAccess fieldname
-                  when Fieldname.equal fieldname PulseOperations.ModeledField.internal_string
-                       || Fieldname.equal fieldname PulseOperations.ModeledField.internal_ref_count
-                  ->
-                    res
-                | _ ->
-                    let* policy_violations_reported, astate = res in
-                    mark_sinked policy_violations_reported v astate ) )
-        in
-        let+ _, astate = mark_sinked IntSet.empty v astate in
-        astate )
+  let aux () =
+    PulseResult.list_fold tainted ~init:astate
+      ~f:(fun astate TaintItemMatcher.{taint= sink; addr_hist= v, history} ->
+        if should_ignore_all_flows_to potential_taint_value then Ok astate
+        else
+          let sink_trace = Trace.Immediate {location; history} in
+          let visited = ref AbstractValue.Set.empty in
+          let open PulseResult.Let_syntax in
+          let rec mark_sinked policy_violations_reported v astate =
+            if AbstractValue.Set.mem v !visited then Ok (policy_violations_reported, astate)
+            else (
+              visited := AbstractValue.Set.add v !visited ;
+              let astate =
+                AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate
+              in
+              let res =
+                check_flows_wrt_sink ~policy_violations_reported path location (sink, sink_trace) v
+                  astate
+              in
+              AbductiveDomain.Memory.fold_edges v astate ~init:res ~f:(fun res (access, (v, _)) ->
+                  match access with
+                  | HilExp.Access.FieldAccess fieldname
+                    when Fieldname.equal fieldname PulseOperations.ModeledField.internal_string
+                         || Fieldname.equal fieldname
+                              PulseOperations.ModeledField.internal_ref_count ->
+                      res
+                  | _ ->
+                      let* policy_violations_reported, astate = res in
+                      mark_sinked policy_violations_reported v astate ) )
+          in
+          let+ _, astate = mark_sinked IntSet.empty v astate in
+          astate )
+  in
+  L.d_with_indent "taint_sinks" ~f:aux
 
 
 let propagate_to path location v values call astate =
@@ -633,12 +640,16 @@ let taint_propagators tenv path location return ~has_added_return_param ?proc_at
       ~block_matchers:[] ~field_matchers:[] return ~has_added_return_param ?proc_attributes
       potential_taint_value actuals astate
   in
-  List.fold tainted ~init:astate ~f:(fun astate TaintItemMatcher.{addr_hist= v, _} ->
-      let other_actuals =
-        List.filter actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual, _hist} ->
-            not (AbstractValue.equal v actual) )
-      in
-      propagate_to path location v other_actuals (Call proc_name) astate )
+  let aux () =
+    List.fold tainted ~init:astate ~f:(fun astate TaintItemMatcher.{addr_hist= v, _} ->
+        let other_actuals =
+          List.filter actuals
+            ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual, _hist} ->
+              not (AbstractValue.equal v actual) )
+        in
+        propagate_to path location v other_actuals (Call proc_name) astate )
+  in
+  L.d_with_indent "taint_propagators" ~f:aux
 
 
 let is_cpp_assignment_operator proc_name_opt =
@@ -797,50 +808,53 @@ let should_treat_as_unknown_for_taint tenv ?proc_attributes proc_name =
 
 
 let call tenv path location return ~call_was_unknown (call : _ Either.t) actuals astate =
-  match call with
-  | First call_exp ->
-      if call_was_unknown then
-        Ok
-          (propagate_taint_for_unknown_calls tenv path location return ~has_added_return_param:false
-             (SkippedUnknownCall call_exp) None actuals astate )
-      else Ok astate
-  | Second proc_name ->
-      let potential_taint_value = TaintItem.TaintProcedure proc_name in
-      let proc_attributes = IRAttributes.load proc_name in
-      let call_was_unknown =
-        call_was_unknown || should_treat_as_unknown_for_taint tenv ?proc_attributes proc_name
-      in
-      let has_added_return_param =
-        match proc_attributes with
-        | Some attrs when attrs.ProcAttributes.has_added_return_param ->
-            true
-        | _ ->
-            false
-      in
-      let astate =
-        taint_sanitizers tenv path (Some return) ~has_added_return_param ~location ?proc_attributes
-          potential_taint_value actuals astate
-      in
-      let astate =
-        taint_sources tenv path location ~intra_procedural_only:false (Some return)
-          ~has_added_return_param ?proc_attributes ~field_getter:false potential_taint_value actuals
-          astate
-      in
-      let+ astate =
-        taint_sinks tenv path location (Some return) ~has_added_return_param ?proc_attributes
-          ~field_getter:false potential_taint_value actuals astate
-      in
-      let astate, call_was_unknown =
-        let new_astate =
-          taint_propagators tenv path location (Some return) ~has_added_return_param
-            ?proc_attributes proc_name actuals astate
-        in
-        (new_astate, call_was_unknown && phys_equal astate new_astate)
-      in
-      if call_was_unknown then
-        propagate_taint_for_unknown_calls tenv path location return ~has_added_return_param
-          (SkippedKnownCall proc_name) (Some proc_name) actuals astate
-      else astate
+  L.d_with_indent "taint operations -> call" ~f:(fun () ->
+      match call with
+      | First call_exp ->
+          L.d_printfln "call to expression [unknown=%b]" call_was_unknown ;
+          if call_was_unknown then
+            Ok
+              (propagate_taint_for_unknown_calls tenv path location return
+                 ~has_added_return_param:false (SkippedUnknownCall call_exp) None actuals astate )
+          else Ok astate
+      | Second proc_name ->
+          let potential_taint_value = TaintItem.TaintProcedure proc_name in
+          let proc_attributes = IRAttributes.load proc_name in
+          let call_was_unknown =
+            call_was_unknown || should_treat_as_unknown_for_taint tenv ?proc_attributes proc_name
+          in
+          L.d_printfln "call to proc [unknown=%b]" call_was_unknown ;
+          let has_added_return_param =
+            match proc_attributes with
+            | Some attrs when attrs.ProcAttributes.has_added_return_param ->
+                true
+            | _ ->
+                false
+          in
+          let astate =
+            taint_sanitizers tenv path (Some return) ~has_added_return_param ~location
+              ?proc_attributes potential_taint_value actuals astate
+          in
+          let astate =
+            taint_sources tenv path location ~intra_procedural_only:false (Some return)
+              ~has_added_return_param ?proc_attributes ~field_getter:false potential_taint_value
+              actuals astate
+          in
+          let+ astate =
+            taint_sinks tenv path location (Some return) ~has_added_return_param ?proc_attributes
+              ~field_getter:false potential_taint_value actuals astate
+          in
+          let astate, call_was_unknown =
+            let new_astate =
+              taint_propagators tenv path location (Some return) ~has_added_return_param
+                ?proc_attributes proc_name actuals astate
+            in
+            (new_astate, call_was_unknown && phys_equal astate new_astate)
+          in
+          if call_was_unknown then
+            propagate_taint_for_unknown_calls tenv path location return ~has_added_return_param
+              (SkippedKnownCall proc_name) (Some proc_name) actuals astate
+          else astate )
 
 
 let store tenv path location ~lhs:lhs_exp ~rhs:(rhs_exp, rhs_addr, typ) astate =
