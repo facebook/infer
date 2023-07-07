@@ -149,6 +149,8 @@ module Vec = struct
     let<**> astate =
       Ok (PulseOperations.write_id ret_id (addr, hist) astate)
       >>>= PulseArithmetic.and_eq_int size_value (IntLit.of_int actual_size)
+      (* Making the dummy value something concrete (that can't be a Hack value) so we can avoid returning it, as that leads to FPs too *)
+      >>== PulseArithmetic.and_eq_int dummy_value (IntLit.of_int 9)
     in
     astate |> Basic.ok_continue
 
@@ -171,6 +173,12 @@ module Vec = struct
     let<**> astate =
       PulseArithmetic.prune_binop ~negated:false Binop.Lt (AbstractValueOperand index)
         (AbstractValueOperand size_val) astate
+    in
+    let<**> astate =
+      (* Don't return dummy value *)
+      PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand ret_val)
+        (ConstOperand (Cint (IntLit.of_int 9)))
+        astate
     in
     (* TODO: work out how to incorporate type-based, or at least nullability, assertions on ret_val *)
     (* case 1: return is some value equal to neither field
@@ -213,13 +221,10 @@ end
 
 let hack_dim_array_get this_obj key_obj : model =
  fun ({path; location; ret} as md) astate ->
-  let<*> astate, (this_val, this_hist) =
-    PulseOperations.eval_access path Read location this_obj Dereference astate
-  in
+  let this_val, this_hist = this_obj in
   (* see if it's a vec *)
   match AbductiveDomain.AddressAttributes.get_dynamic_type this_val astate with
   | Some {desc= Tstruct type_name} when Typ.Name.equal type_name TextualSil.hack_vec_type_name ->
-      L.d_printfln "doing Hack vector lookup" ;
       let hackInt = Typ.HackClass (HackClassName.make "HackInt") in
       let field = Fieldname.make hackInt "val" in
       let<*> astate, _, (key_val, _) = load_field path field location key_obj astate in
@@ -230,11 +235,8 @@ let hack_dim_array_get this_obj key_obj : model =
       match read_boxed_string_value key_string_obj astate with
       | Some string_val ->
           let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack string_val in
-          let<*> astate, this_val =
-            PulseOperations.eval_access path Read location this_obj Dereference astate
-          in
           let<+> astate, field_val =
-            PulseOperations.eval_access path Read location this_val (FieldAccess field) astate
+            PulseOperations.eval_access path Read location this_obj (FieldAccess field) astate
           in
           let ret_id, _ = ret in
           PulseOperations.write_id ret_id field_val astate

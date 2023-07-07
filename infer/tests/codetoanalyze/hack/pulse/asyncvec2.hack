@@ -1,3 +1,9 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+
 async function genInt2() : Awaitable<int> {
     return 42;
 }
@@ -23,7 +29,7 @@ async function constVecOk2() : Awaitable<void> {
 }
 
 //this is actually bad, but expect false negative with current implementation
-async function constVecBad2() : Awaitable<void> {
+async function constVecBad2FN() : Awaitable<void> {
     $v = vec[genInt2(), genInt2(), genInt2()];
     await $v[0];
     await $v[2];
@@ -38,7 +44,7 @@ async function loopyVecOk() : Awaitable<void> {
 
 // this is currently a false negative but I think we should be able to flag it
 // TODO: investigate translation of foreach and see what's happening here
-async function loopyVecBad() : Awaitable<void> {
+async function loopyVecBadFN() : Awaitable<void> {
     $v = vec[genInt2(), genInt2(), genInt2()];
     foreach ($v as $index => $elt) {
         if ($index === 2) {
