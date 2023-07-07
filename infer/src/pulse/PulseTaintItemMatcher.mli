@@ -15,17 +15,43 @@ type taint_match =
 val procedure_matches_any :
   Tenv.t -> Procname.t -> ProcAttributes.t option -> TaintConfig.Unit.procedure_unit list -> bool
 
-val get_tainted :
+val match_procedure_call :
      Tenv.t
   -> PathContext.t
   -> Location.t
-  -> procedure_matchers:TaintConfig.Unit.procedure_unit list
-  -> block_matchers:TaintConfig.Unit.procedure_unit list
-  -> field_matchers:TaintConfig.Unit.field_unit list
-  -> (Ident.t * Typ.t) option
-  -> has_added_return_param:bool
   -> ?proc_attributes:ProcAttributes.t
-  -> TaintItem.value
+  -> Procname.t
   -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
+  -> Ident.t * Typ.t
+  -> TaintConfig.Unit.procedure_unit list
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t * taint_match list
+
+val match_procedure :
+     Tenv.t
+  -> ProcAttributes.t
+  -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
+  -> TaintConfig.Unit.procedure_unit list
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t * taint_match list
+
+val match_block :
+     Tenv.t
+  -> Location.t
+  -> ?proc_attributes:ProcAttributes.t
+  -> Procname.t
+  -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
+  -> TaintConfig.Unit.procedure_unit list
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t * taint_match list
+
+val match_field :
+     Tenv.t
+  -> Location.t
+  -> Fieldname.t
+  -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t
+     (* TODO(arr): FuncArg.t is incidental here (matches the shape of data, but not its semantics
+        which is a source/dest of store/load instruction. *)
+  -> TaintConfig.Unit.field_unit list
   -> AbductiveDomain.t
   -> AbductiveDomain.t * taint_match list

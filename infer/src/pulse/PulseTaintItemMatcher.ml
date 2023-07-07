@@ -413,44 +413,49 @@ let split_args procname args =
       else (None, args)
 
 
-let match_procedure tenv path location matchers return_opt ~has_added_return_param ?proc_attributes
-    procname actuals astate : AbductiveDomain.t * taint_match list =
+let match_procedure_impl tenv path location ?proc_attributes procname actuals return_opt matchers
+    astate : AbductiveDomain.t * taint_match list =
   let instance_reference, actuals = split_args procname actuals in
   let matches = procedure_matches tenv matchers ?proc_attributes procname actuals in
   if not (List.is_empty matches) then L.d_printfln "taint matches" ;
+  let has_added_return_param =
+    match proc_attributes with
+    | Some attrs when attrs.ProcAttributes.has_added_return_param ->
+        true
+    | _ ->
+        false
+  in
   match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
     actuals ~instance_reference (TaintItem.TaintProcedure procname)
 
 
-let match_block tenv path location matchers return_opt ~has_added_return_param ?proc_attributes
-    procname actuals astate : AbductiveDomain.t * taint_match list =
+let match_procedure_call tenv path location ?proc_attributes procname actuals return matchers astate
+    =
+  match_procedure_impl tenv path location ?proc_attributes procname actuals (Some return) matchers
+    astate
+
+
+let match_procedure tenv (proc_attributes : ProcAttributes.t) formals matchers astate :
+    AbductiveDomain.t * taint_match list =
+  match_procedure_impl tenv PathContext.initial proc_attributes.loc proc_attributes.proc_name
+    formals None matchers astate
+
+
+let match_block tenv location ?proc_attributes procname actuals matchers astate :
+    AbductiveDomain.t * taint_match list =
   let matches =
     procedure_matches tenv matchers ?proc_attributes procname ~block_passed_to:procname actuals
   in
   if not (List.is_empty matches) then L.d_printfln "taint matches" ;
-  match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
-    actuals ~instance_reference:None (TaintItem.TaintBlockPassedTo procname)
+  match_procedure_target tenv astate matches PathContext.initial location None
+    ~has_added_return_param:false actuals ~instance_reference:None
+    (TaintItem.TaintBlockPassedTo procname)
 
 
-let match_field tenv location matchers field_name actuals astate :
+let match_field tenv location field_name actual matchers astate :
     AbductiveDomain.t * taint_match list =
   let matches = field_matches tenv location matchers field_name in
-  if not (List.is_empty matches) then L.d_printfln "taint matches" ;
-  match actuals with
-  | [actual] ->
-      (astate, match_field_target matches actual (TaintItem.TaintField field_name))
-  | _ ->
-      (astate, [])
-
-
-let get_tainted tenv path location ~procedure_matchers ~block_matchers ~field_matchers return_opt
-    ~has_added_return_param ?proc_attributes potential_taint_value actuals astate =
-  match potential_taint_value with
-  | TaintItem.TaintProcedure proc_name ->
-      match_procedure tenv path location procedure_matchers return_opt ~has_added_return_param
-        ?proc_attributes proc_name actuals astate
-  | TaintItem.TaintBlockPassedTo proc_name ->
-      match_block tenv path location block_matchers return_opt ~has_added_return_param
-        ?proc_attributes proc_name actuals astate
-  | TaintItem.TaintField field_name ->
-      match_field tenv location field_matchers field_name actuals astate
+  if not (List.is_empty matches) then (
+    L.d_printfln "taint matches" ;
+    (astate, match_field_target matches actual (TaintItem.TaintField field_name)) )
+  else (astate, [])
