@@ -408,7 +408,8 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
       || ExtendedDomain.mem (Var.of_pvar pvar) live_vars
       || Procdesc.is_captured_pvar proc_desc pvar
       || is_scope_guard typ
-      || Procdesc.has_modify_in_block_attr proc_desc pvar )
+      || Procdesc.has_modify_in_block_attr proc_desc pvar
+      || Mangled.is_underscore (Pvar.get_name pvar) )
   in
   let log_report pvar typ loc =
     let message = F.asprintf "The value written to `%a` is never used" (Pvar.pp Pp.text) pvar in

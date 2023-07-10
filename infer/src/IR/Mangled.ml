@@ -44,6 +44,8 @@ let return_param = from_string "__return_param"
 
 let is_return_param = function {plain= "__return_param"} -> true | _ -> false
 
+let is_underscore = function {plain= "_"} -> true | _ -> false
+
 module Set = PrettyPrintable.MakePPSet (struct
   type nonrec t = t [@@deriving compare]
 

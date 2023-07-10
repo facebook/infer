@@ -43,6 +43,8 @@ val return_param : t
 
 val is_return_param : t -> bool
 
+val is_underscore : t -> bool
+
 (** Set of Mangled. *)
 module Set : PrettyPrintable.PPSet with type elt = t
 

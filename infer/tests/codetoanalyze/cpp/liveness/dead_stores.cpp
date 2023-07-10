@@ -6,6 +6,7 @@
  */
 
 #include <exception>
+#include <map>
 #include <mutex>
 #include <new>
 #include <stdexcept>
@@ -720,4 +721,13 @@ void passed_by_ref_in_loop_ok(int n) {
   reads_global_state_with_total_in_it();
 }
 
+void underscore_dead_store_ok() { int _ = 1234; }
+
+void use_string(std::string);
+
+void underscore_binding_ok(std::map<std::string, int> m) {
+  for (const auto& [key, _] : m) {
+    use_string(key);
+  }
+}
 } // namespace dead_stores
