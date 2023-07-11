@@ -408,7 +408,8 @@ module PulseTransferFunctions = struct
             List.mem ~equal:Typ.Name.equal
               [ TextualSil.hack_mixed_type_name
               ; TextualSil.hack_mixed_static_companion_type_name
-              ; TextualSil.hack_builtins_type_name ]
+              ; TextualSil.hack_builtins_type_name
+              ; TextualSil.hack_root_type_name ]
               class_name )
       in
       let method_exists proc_name methods = List.mem ~equal methods proc_name in
@@ -423,7 +424,8 @@ module PulseTransferFunctions = struct
     |> Option.value_map
          ~default:(Some (Tenv.MethodInfo.mk_class callee_pname))
          ~f:(fun static_class_name ->
-           L.d_printfln "hack static dispatch from %a" Procname.pp callee_pname ;
+           L.d_printfln "hack static dispatch from %a in class name %a" Procname.pp callee_pname
+             Typ.Name.pp static_class_name ;
            resolve_method tenv static_class_name callee_pname )
 
 

@@ -155,6 +155,19 @@ module Vec = struct
     astate |> Basic.ok_continue
 
 
+  let vec_from_async _dummy ((vaddr, _vhist) as v) : model =
+   fun {path; location; ret= ret_id, _} astate ->
+    (* let event = Hist.call_event path location "Vec\from_async" in *)
+    L.d_printfln "Called vec from async" ;
+    let<*> astate, _, (fst_val, _) = load_field path fst_field location v astate in
+    let<*> astate, _, (snd_val, _) = load_field path snd_field location v astate in
+    let astate = await_hack_value fst_val astate in
+    let astate = await_hack_value snd_val astate in
+    let astate = PulseOperations.allocate Attribute.HackAsync location vaddr astate in
+    let astate = PulseOperations.write_id ret_id v astate in
+    astate |> Basic.ok_continue
+
+
   let get_vec argv index : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "vec index" in
@@ -344,4 +357,6 @@ let matchers : matcher list =
     (* not clear why HackC generate this builtin call *)
   ; -"$builtins" &:: "hhbc_class_get_c" <>$ capt_arg_payload $--> get_static_class
     (* we should be able to model that directly in Textual once specialization will be stronger *)
-  ; -"$builtins" &:: "hack_get_static_class" <>$ capt_arg_payload $--> get_static_class ]
+  ; -"$builtins" &:: "hack_get_static_class" <>$ capt_arg_payload $--> get_static_class
+  ; -"$root" &:: "FlibSL::Vec::from_async" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> Vec.vec_from_async ]

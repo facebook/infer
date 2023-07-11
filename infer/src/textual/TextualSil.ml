@@ -111,6 +111,9 @@ let hack_mixed_static_companion_type_name = SilTyp.Name.Hack.static_companion ha
 
 let hack_builtins_type_name = SilTyp.HackClass (HackClassName.make "$builtins")
 
+(* pseudo-class for top-level functions *)
+let hack_root_type_name = SilTyp.HackClass (HackClassName.make "$root")
+
 let python_mixed_type_name = SilTyp.PythonClass (PythonClassName.make "PyObject")
 
 let mangle_java_procname jpname =

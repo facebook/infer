@@ -27,4 +27,6 @@ val hack_mixed_static_companion_type_name : Typ.name
 
 val hack_builtins_type_name : Typ.name
 
+val hack_root_type_name : Typ.name
+
 val wildcard_sil_fieldname : Textual.Lang.t -> string -> Fieldname.t
