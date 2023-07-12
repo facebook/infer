@@ -114,7 +114,7 @@ let file_capture () =
       @ files_with_arg
     in
     let buck2_build_cmd =
-      ["bxl"; bxl_target] @ Config.buck2_build_args_no_inline
+      ["bxl"; bxl_target] @ Config.buck2_build_args @ Config.buck2_build_args_no_inline
       @ Buck.store_args_in_file ~identifier:"clang_buck2_bxl_file" args_to_store
     in
     run_capture buck2_build_cmd
