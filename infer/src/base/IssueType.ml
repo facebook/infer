@@ -1035,7 +1035,7 @@ let unnecessary_copy_assignment_movable_pulse =
 
 
 let unnecessary_copy_intermediate_pulse =
-  register ~enabled:false ~id:"PULSE_UNNECESSARY_COPY_INTERMEDIATE" Error Pulse
+  register ~id:"PULSE_UNNECESSARY_COPY_INTERMEDIATE" Error Pulse
     ~hum:"Unnecessary Copy Intermediate"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNNECESSARY_COPY_INTERMEDIATE.md"]
 

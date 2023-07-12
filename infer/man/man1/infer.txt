@@ -639,7 +639,7 @@ OPTIONS
              PULSE_UNNECESSARY_COPY_ASSIGNMENT (enabled by default),
              PULSE_UNNECESSARY_COPY_ASSIGNMENT_CONST (disabled by default),
              PULSE_UNNECESSARY_COPY_ASSIGNMENT_MOVABLE (enabled by default),
-             PULSE_UNNECESSARY_COPY_INTERMEDIATE (disabled by default),
+             PULSE_UNNECESSARY_COPY_INTERMEDIATE (enabled by default),
              PULSE_UNNECESSARY_COPY_INTERMEDIATE_CONST (disabled by
            default),
              PULSE_UNNECESSARY_COPY_MOVABLE (enabled by default),
