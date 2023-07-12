@@ -257,6 +257,7 @@ features_lambdas:test_scopes3_Bad/0: badmatch
 features_lambdas:test_scopes4_Ok/0: ok
 
 ----- features_lc -----
+features_lc:fn_test_simple4_Bad/0: function_clause
 features_lc:test_empty_Bad/0: function_clause
 features_lc:test_empty_Ok/0: ok
 features_lc:test_filtered1_Bad/0: function_clause
@@ -270,6 +271,7 @@ features_lc:test_simple2_Bad/0: function_clause
 features_lc:test_simple2_Ok/0: ok
 features_lc:test_simple3_Bad/0: function_clause
 features_lc:test_simple3_Ok/0: ok
+features_lc:test_simple4_Ok/0: ok
 features_lc:test_two_filters_Bad/0: function_clause
 features_lc:test_two_filters_Ok/0: ok
 features_lc:test_two_gen1_Bad/0: function_clause

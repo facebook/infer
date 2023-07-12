@@ -15,6 +15,8 @@
     test_simple2_Bad/0,
     test_simple3_Ok/0,
     test_simple3_Bad/0,
+    test_simple4_Ok/0,
+    fn_test_simple4_Bad/0,
     test_filtered1_Ok/0,
     test_filtered1_Bad/0,
     test_filtered2_Ok/0,
@@ -89,6 +91,21 @@ test_simple3_Bad() ->
     L = [X + 1 || X <- [1, 2, 3]],
     case L of
         [2, 3, 4] -> warn(1);
+        _ -> ok
+    end.
+
+test_simple4_Ok() ->
+    L = [X + 1 || X <- [1, 2, 3, 4]],
+    case L of
+        [2, 3, 4, 5] -> ok;
+        _ -> warn(1)
+    end.
+
+% Known FN due to loop unrolling limit
+fn_test_simple4_Bad() ->
+    L = [X + 1 || X <- [1, 2, 3, 4]],
+    case L of
+        [2, 3, 4, 5] -> warn(1);
         _ -> ok
     end.
 
