@@ -169,6 +169,7 @@ ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 ifneq ($(ERLC),no)
 ifneq ($(ESCRIPT),no)
 DIRECT_TESTS += \
+  erlang_flowquery \
   erlang_pulse \
   erlang_pulse-otp \
   erlang_pulse-taint \
