@@ -474,21 +474,15 @@ module PulseTransferFunctions = struct
   (* When Hack traits are involved, we need to compute and pass an additional argument that is a
      token to find the right class name for [self].
 
-     [hackc] adds these two arguments at the end of the signature. *)
-  let update_func_args method_info func_args =
-    let open IOption.Let_syntax in
-    let* method_info in
-    let* hack_kind = Tenv.MethodInfo.get_hack_kind method_info in
-    match (hack_kind : Tenv.MethodInfo.Hack.kind) with
-    | IsClass ->
-        Some func_args
-    | IsTrait {used} ->
+     [hackc] adds [self] argument at the end of the signature. *)
+  let add_self_for_hack_traits method_info func_args =
+    let hack_kind = Option.bind method_info ~f:Tenv.MethodInfo.get_hack_kind in
+    match hack_kind with
+    | Some (IsTrait {used}) ->
         let self = Typ.Name.to_string used |> string_to_arg in
-        Some (func_args @ [self])
-
-
-  let update_func_args method_info func_args =
-    update_func_args method_info func_args |> Option.value ~default:func_args
+        func_args @ [self]
+    | Some IsClass | None ->
+        func_args
 
 
   let rec dispatch_call_eval_args
@@ -518,7 +512,7 @@ module PulseTransferFunctions = struct
       else (default_info, astate)
     in
     let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in
-    let func_args = update_func_args method_info func_args in
+    let func_args = add_self_for_hack_traits method_info func_args in
     let astate =
       match (callee_pname, func_args) with
       | Some callee_pname, [{ProcnameDispatcher.Call.FuncArg.arg_payload= arg, _}]
