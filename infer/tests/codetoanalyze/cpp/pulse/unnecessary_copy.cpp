@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include "header.h"
+#include <assert.h>
 
 struct Arr {
   int arr[2];
@@ -810,3 +811,33 @@ std::string unknown_modification_twice_ok(std::string p) {
   std::replace(path.begin(), path.end(), '\\', '/');
   return path;
 }
+
+void assert_false(
+    const std::string& s) { // summary for this results in 0 disjuncts
+  assert(false);
+};
+
+struct NonDisjJoin_ok {
+
+  NonDisjJoin_ok(std::string myStr, int k) : NonDisjJoin_ok(myStr) {
+    if (k > 0) {
+      assert_false(myStr);
+    } // here we were joining 0 disjuncts (with NonDisj.bottom) with Foo(myStr)
+    // which resulted in ignoring the read of myStr in the conditional. Fixed
+    // now.
+  }
+
+  NonDisjJoin_ok(std::string s) {}
+};
+
+struct NonDisjJoinLoop_ok_FP {
+
+  NonDisjJoinLoop_ok_FP(std::string myStr, int k)
+      : NonDisjJoinLoop_ok_FP(myStr) {
+    for (int i = 0; i < k; i++) {
+      assert_false(myStr);
+    } // still doesn't work. TODO
+  }
+
+  NonDisjJoinLoop_ok_FP(std::string s) {}
+};

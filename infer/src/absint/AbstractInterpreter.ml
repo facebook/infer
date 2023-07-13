@@ -313,7 +313,8 @@ struct
 
   let filter_disjuncts ~f ((l, nd) : Domain.t) =
     let filtered = List.filter l ~f in
-    if List.is_empty filtered then ([], T.NonDisjDomain.bottom) else (filtered, nd)
+    if List.is_empty filtered && not (List.is_empty l) then ([], T.NonDisjDomain.bottom)
+    else (filtered, nd)
 
 
   let filter_normal x = filter_disjuncts x ~f:T.DisjDomain.is_normal
@@ -351,7 +352,9 @@ struct
                 let post_disj', n = Domain.join_up_to ~limit ~into:post disjuncts' in
                 ((post_disj', non_disj' :: non_disj_astates), n) ) )
     in
-    (disjuncts, List.fold ~init:T.NonDisjDomain.bottom ~f:T.NonDisjDomain.join non_disj_astates)
+    ( disjuncts
+    , if List.is_empty disjuncts then non_disj
+      else List.fold ~init:T.NonDisjDomain.bottom ~f:T.NonDisjDomain.join non_disj_astates )
 
 
   let exec_node_instrs old_state_opt ~exec_instr (pre, pre_non_disj) instrs =
@@ -390,7 +393,10 @@ struct
             (post_astate, n_disjuncts) ) )
     in
     let non_disjunct =
-      if Config.pulse_prevent_non_disj_top || List.exists disjuncts ~f:T.DisjDomain.is_executable
+      if
+        Config.pulse_prevent_non_disj_top
+        || List.exists disjuncts ~f:T.DisjDomain.is_executable
+        || List.is_empty disjuncts
       then non_disj_astates
       else T.NonDisjDomain.top
     in
