@@ -341,7 +341,7 @@ module Liveness = struct
             (active_defs, to_nullify)
         | Store {e1= Exp.Lvar lhs_pvar} ->
             (VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify)
-        | Metadata (VariableLifetimeBegins (pvar, _, _)) ->
+        | Metadata (VariableLifetimeBegins {pvar}) ->
             (VarDomain.add (Var.of_pvar pvar) active_defs, to_nullify)
         | Store _
         | Prune _

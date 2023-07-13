@@ -47,7 +47,8 @@ type instr_metadata =
   | Skip  (** no-op *)
   | TryEntry of {try_id: int; loc: Location.t}  (** entry of C++ try block *)
   | TryExit of {try_id: int; loc: Location.t}  (** exit of C++ try block *)
-  | VariableLifetimeBegins of Pvar.t * Typ.t * Location.t  (** stack variable declared *)
+  | VariableLifetimeBegins of {pvar: Pvar.t; typ: Typ.t; loc: Location.t}
+      (** stack variable declared *)
 [@@deriving compare]
 
 (** An instruction. Syntactic invariants of instructions per-front end are documented in

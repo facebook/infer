@@ -58,7 +58,7 @@ type instr_metadata =
   | Skip
   | TryEntry of {try_id: int; loc: Location.t}
   | TryExit of {try_id: int; loc: Location.t}
-  | VariableLifetimeBegins of Pvar.t * Typ.t * Location.t
+  | VariableLifetimeBegins of {pvar: Pvar.t; typ: Typ.t; loc: Location.t}
 [@@deriving compare, equal]
 
 type instr =
@@ -91,7 +91,7 @@ let location_of_instr_metadata = function
   | Nullify (_, loc)
   | TryEntry {loc}
   | TryExit {loc}
-  | VariableLifetimeBegins (_, _, loc) ->
+  | VariableLifetimeBegins {loc} ->
       loc
   | EndBranches | Skip ->
       Location.dummy
@@ -113,7 +113,7 @@ let exps_of_instr_metadata = function
       [Exp.Lvar pvar]
   | Skip | TryEntry _ | TryExit _ ->
       []
-  | VariableLifetimeBegins (pvar, _, _) ->
+  | VariableLifetimeBegins {pvar} ->
       [Exp.Lvar pvar]
 
 
@@ -148,7 +148,7 @@ let pp_instr_metadata pe f = function
       F.fprintf f "TRY_ENTRY; [%a]" Location.pp loc
   | TryExit {loc} ->
       F.fprintf f "TRY_EXIT; [%a]" Location.pp loc
-  | VariableLifetimeBegins (pvar, typ, loc) ->
+  | VariableLifetimeBegins {pvar; typ; loc} ->
       F.fprintf f "VARIABLE_DECLARED(%a:%a); [%a]" Pvar.pp_value pvar (Typ.pp_full pe) typ
         Location.pp loc
 
@@ -259,7 +259,8 @@ let equal_structural_instr instr instr' exp_map =
       (true, exp_map)
   | Metadata (ExitScope (temps, _)), Metadata (ExitScope (temps', _)) ->
       var_list_equal_structural temps temps' exp_map
-  | Metadata (VariableLifetimeBegins (pv, t, _)), Metadata (VariableLifetimeBegins (pv', t', _)) ->
+  | ( Metadata (VariableLifetimeBegins {pvar= pv; typ= t})
+    , Metadata (VariableLifetimeBegins {pvar= pv'; typ= t'}) ) ->
       exp_equal_structural (Lvar pv) (Lvar pv') exp_map &&+ Typ.equal t t'
   | Metadata (CatchEntry _), Metadata (CatchEntry _)
   | Metadata (TryEntry _), Metadata (TryEntry _)

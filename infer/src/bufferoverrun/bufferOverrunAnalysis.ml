@@ -479,12 +479,11 @@ module TransferFunctions = struct
           | Empty | Singleton (Path _) ->
               L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;
               unknown_call location ret mem )
-      | Metadata (VariableLifetimeBegins (pvar, typ, location)) when Pvar.is_global pvar ->
+      | Metadata (VariableLifetimeBegins {pvar; typ; loc}) when Pvar.is_global pvar ->
           let model_env =
             let pname = Procdesc.get_proc_name proc_desc in
             let node_hash = CFG.Node.hash node in
-            BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
-              get_summary
+            BoUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv integer_type_widths get_summary
           in
           let mem, _ = BoUtils.Exec.decl_local model_env (mem, 1) (Loc.of_pvar pvar, typ) in
           mem

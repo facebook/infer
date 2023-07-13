@@ -3128,7 +3128,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 Some
                   (mk_trans_result var_exp_typ
                      { empty_control with
-                       instrs= [Sil.Metadata (VariableLifetimeBegins (pvar, var_typ, sil_loc))] } )
+                       instrs=
+                         [Sil.Metadata (VariableLifetimeBegins {pvar; typ= var_typ; loc= sil_loc})]
+                     } )
             | _ ->
                 None )
           ~mk_second:(fun trans_state stmt_info ->
@@ -4630,7 +4632,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           | None ->
               instrs
           | Some (marker_pvar, _if_kind) ->
-              Sil.Metadata (VariableLifetimeBegins (marker_pvar, StdTyp.boolean, loc))
+              Sil.Metadata (VariableLifetimeBegins {pvar= marker_pvar; typ= StdTyp.boolean; loc})
               :: Sil.Store {e1= Lvar marker_pvar; e2= Exp.zero; typ= StdTyp.boolean; loc}
               :: instrs )
     in

@@ -1111,9 +1111,8 @@ module PulseTransferFunctions = struct
           ([ContinueProgram astate], path, astate_n)
       | Metadata (ExitScope (vars, location)) ->
           exit_scope vars location path astate astate_n analysis_data
-      | Metadata (VariableLifetimeBegins (pvar, typ, location)) when not (Pvar.is_global pvar) ->
-          ( [ PulseOperations.realloc_pvar tenv path pvar typ location astate
-              |> ExecutionDomain.continue ]
+      | Metadata (VariableLifetimeBegins {pvar; typ; loc}) when not (Pvar.is_global pvar) ->
+          ( [PulseOperations.realloc_pvar tenv path pvar typ loc astate |> ExecutionDomain.continue]
           , path
           , astate_n )
       | Metadata
