@@ -10,13 +10,29 @@ Put the test in the folder based on the analyzer that is being tested:
 
 ## Naming
 
-Test functions should be named `(fp_|fn_)?test_.*_(Ok|Latent|Bad)`, where
+Test functions should be named `(fp_|fpl_|fn_|fnl_)?test_.*_(Ok|Latent|Bad)`, where the suffix (`_Ok`, `_Bad`, `_Latent`) indicates the expected outcome:
 - `_Ok` means that no issue is expected,
-- `_Bad` means that an issue is expected,
-- `_Latent` means that a latent issue is expected (e.g. because the function has arguments),
-- `fp_` can be added to `_Ok` tests if currently Infer reports an issue,
-- `fn_` can be added to `_Bad` or `_Latent` tests if currently Infer does not report an issue.
-- Furthermore, test functions should be exported.
+- `_Bad` means that a (manifest) issue is expected,
+- `_Latent` means that a [latent issue](https://fbinfer.com/docs/next/checker-pulse/#latent-issues) is expected (e.g. because the function has arguments).
+
+The prefixes (`fp_`, `fpl_`, `fn_`, `fnl_`) correspond to deviations with the reported output:
+- `fp_` means a false positive: no issue, or a latent issue was expected, but Infer reports a manifest issue.
+- `fpl_` is false positive latent, meaning that no issue was expected but a latent one is reported.
+- `fn_` means a false negative: manifest or latent issue is expected, but no issue is reported.
+- `fnl_` is false negative latent: a manifest issue is expected, but only latent is reported.
+
+For example, for a function `test_f`:
+
+|          |          |                    | Reported         |                    |
+|----------|----------|--------------------|------------------|--------------------|
+|          |          | Ok                 | Latent           | Manifest           |
+|          | Ok       | `test_f_Ok`        | `fpl_test_f_Ok`  | `fp_test_f_Ok`     |
+| Expected | Latent   | `fn_test_f_Latent` | `test_f_Latent`  | `fp_test_f_Latent` |
+|          | Manifest | `fn_test_f_Bad`    | `fnl_test_f_Bad` | `test_f_Bad`       |
+
+
+
+Furthermore, test functions should be exported.
 
 ## Test structure
 
