@@ -190,10 +190,12 @@ let cc1_capture clang_cmd =
 
 
 let capture clang_cmd =
-  if ClangCommand.can_attach_ast_exporter clang_cmd then
+  if ClangCommand.can_attach_ast_exporter clang_cmd then (
     (* this command compiles some code; replace the invocation of clang with our own clang and
        plugin *)
-    cc1_capture clang_cmd
+    cc1_capture clang_cmd ; (* to create AST *)
+    run_clang clang_cmd Utils.echo_in ; (* to run clang with original optimizer  *)
+    () )
   else if Option.exists Config.buck_mode ~f:BuckMode.is_clang_compilation_db then
     (* when running with buck's compilation-database, skip commands where frontend cannot be
        attached, as they may cause unnecessary compilation errors *)
