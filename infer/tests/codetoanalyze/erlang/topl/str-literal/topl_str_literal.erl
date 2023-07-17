@@ -4,7 +4,7 @@
 % LICENSE file in the root directory of this source tree.
 -module(topl_str_literal).
 -export([
-    test_1_Ok/0,
+    fp_test_1_Ok/0,
     test_2_Ok/0,
     test_3_Bad/0
 ]).
@@ -16,7 +16,7 @@ source() -> "secret".
 sink("not_okay", "secret") -> erlang:error(taint_error);
 sink(_, _) -> ok.
 
-test_1_Ok() ->
+fp_test_1_Ok() ->
     sink("okay", source()).
 
 test_2_Ok() ->

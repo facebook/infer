@@ -1,1 +1,2 @@
+codetoanalyze/erlang/topl/str-literal/topl_str_literal.erl, fp_test_1_Ok/0, 0, TOPL_ERROR_LATENT, no_bucket, ERROR, [call to source/0,call to sink/2]
 codetoanalyze/erlang/topl/str-literal/topl_str_literal.erl, test_3_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to source/0,call to sink/2]
