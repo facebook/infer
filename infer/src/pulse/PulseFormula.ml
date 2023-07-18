@@ -1440,22 +1440,25 @@ module Atom = struct
 
 
   let eval_const_shallow atom =
-    let on_const f =
-      match get_terms atom with
-      | Const c1, Const c2 ->
-          f c1 c2 |> eval_result_of_bool
-      | _ ->
-          Atom atom
-    in
     match atom with
-    | Equal _ ->
-        on_const Q.equal
-    | NotEqual _ ->
-        on_const Q.not_equal
-    | LessEqual _ ->
-        on_const Q.leq
-    | LessThan _ ->
-        on_const Q.lt
+    | LessEqual (Const c1, Const c2) ->
+        Q.leq c1 c2 |> eval_result_of_bool
+    | LessThan (Const c1, Const c2) ->
+        Q.lt c1 c2 |> eval_result_of_bool
+    | Equal (Const c1, Const c2) ->
+        Q.equal c1 c2 |> eval_result_of_bool
+    | NotEqual (Const c1, Const c2) ->
+        Q.not_equal c1 c2 |> eval_result_of_bool
+    | LessEqual (String s1, String s2) ->
+        String.compare s1 s2 <= 0 |> eval_result_of_bool
+    | LessThan (String s1, String s2) ->
+        String.compare s1 s2 < 0 |> eval_result_of_bool
+    | Equal (String s1, String s2) ->
+        String.equal s1 s2 |> eval_result_of_bool
+    | NotEqual (String s1, String s2) ->
+        (not (String.equal s1 s2)) |> eval_result_of_bool
+    | _ ->
+        Atom atom
 
 
   let get_as_linear atom =

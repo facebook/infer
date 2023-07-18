@@ -757,7 +757,7 @@ topl_process:test_2_Bad/0: expected_crash
 topl_process:test_3_Ok/0: ok
 
 ----- topl_str_literal -----
-topl_str_literal:fp_test_1_Ok/0: ok
+topl_str_literal:test_1_Ok/0: ok
 topl_str_literal:test_2_Ok/0: ok
 topl_str_literal:test_3_Bad/0: taint_error
 
