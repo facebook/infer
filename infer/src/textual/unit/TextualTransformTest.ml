@@ -123,6 +123,18 @@ let%test_module "remove_if_terminator transformation" =
               ret 2
           #lab5:
               ret 3
+        }
+
+        define g(b1: int, b2: int, b3: int) : int {
+          #entry:
+              n1 : int = load &b1
+              n2 : int = load &b2
+              n3 : int = load &b3
+              if (n1 || n2) && n3 then lab1 else if2
+          #lab1:
+              ret 1
+          #if2: // we test the situation where the generated label may already exists
+              ret 2
         }|}
 
 
@@ -223,6 +235,40 @@ let%test_module "remove_if_terminator transformation" =
 
             #lab5:
                 ret 3
+
+          }
+
+          define g(b1: int, b2: int, b3: int) : int {
+            #entry:
+                n1:int = load &b1
+                n2:int = load &b2
+                n3:int = load &b3
+                jmp if0, if1, if3, if4
+
+            #if0:
+                prune n1
+                prune n3
+                jmp lab1
+
+            #if1:
+                prune n2
+                prune n3
+                jmp lab1
+
+            #if3:
+                prune __sil_lnot(n1)
+                prune __sil_lnot(n2)
+                jmp if2
+
+            #if4:
+                prune __sil_lnot(n3)
+                jmp if2
+
+            #lab1:
+                ret 1
+
+            #if2:
+                ret 2
 
           } |}]
   end )

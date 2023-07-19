@@ -258,13 +258,18 @@ let remove_if_terminator module_ =
     dnf bexp
   in
   let transform pdesc =
+    let labels : NodeName.Set.t =
+      List.fold pdesc.ProcDesc.nodes ~init:NodeName.Set.empty ~f:(fun set (node : Node.t) ->
+          NodeName.Set.add node.label set )
+    in
     let fresh_label =
       let counter = ref 0 in
-      fun () ->
+      let rec fresh_label () =
         let name : NodeName.t = {value= Printf.sprintf "if%d" !counter; loc= Location.Unknown} in
         incr counter ;
-        (* TODO (next diffs): check if the generated label is really fresh *)
-        name
+        if NodeName.Set.mem name labels then fresh_label () else name
+      in
+      fresh_label
     in
     let rec collect_conjuncts bexp conjuncts =
       (* should be called after disjunctive_normal_form and negative_normal_form *)
