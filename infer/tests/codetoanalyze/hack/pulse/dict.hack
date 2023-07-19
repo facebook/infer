@@ -55,7 +55,7 @@ class Main {
     }
   }
 
-  public function FN_multidim_copy_on_write_bad(int $u1, int $v1, int $u2, int $v2, int $w) {
+  public function multidim_copy_on_write_bad(int $u1, int $v1, int $u2, int $v2, int $w) {
     $tainted = \Level1\taintSource();
 
     $t1 = dict[

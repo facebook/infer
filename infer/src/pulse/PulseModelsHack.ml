@@ -159,7 +159,7 @@ module Vec = struct
     let open DSL.Syntax in
     start_model
     @@ let* vec = new_vec_dsl values in
-       return_value vec
+       assign_ret vec
 
 
   let vec_from_async _dummy ((vaddr, _vhist) as v) : model =
@@ -203,7 +203,7 @@ module Vec = struct
       let* () =
         prune_binop ~negated:false Eq (aval_operand new_last_read_val) (aval_operand last_read_val)
       in
-      return_value ret_val
+      assign_ret ret_val
     in
     let case2 : unit DSL.model_monad =
       (* case 2: given element is equal to fst_field *)
@@ -215,7 +215,7 @@ module Vec = struct
         prune_binop ~negated:false Eq (aval_operand new_last_read_val)
           (ConstOperand (Cint IntLit.one))
       in
-      return_value ret_val
+      assign_ret ret_val
     in
     let case3 : unit DSL.model_monad =
       (* case 3: given element is equal to snd_field *)
@@ -227,7 +227,7 @@ module Vec = struct
         prune_binop ~negated:false Eq (aval_operand new_last_read_val)
           (ConstOperand (Cint IntLit.two))
       in
-      return_value ret_val
+      assign_ret ret_val
     in
     disjuncts [case1; case2; case3]
 
@@ -259,7 +259,7 @@ module Vec = struct
         let* size = eval_deref_access Read vec (FieldAccess size_field) in
         let* () = write_deref_field ~ref:new_vec size_field ~obj:size in
         (* overwrite default size of 2 *)
-        return_value new_vec
+        assign_ret new_vec
     | _ ->
         L.d_printfln "Vec.hack_array_cow_set expects 1 key and 1 value arguments" ;
         unreachable
@@ -343,19 +343,28 @@ module Dict = struct
        let* () =
          list_iter bindings ~f:(fun (field, value) -> write_deref_field ~ref:dict field ~obj:value)
        in
-       return_value dict
+       assign_ret dict
 
 
   (* TODO: handle the situation where we have mix of dict and vec *)
   let hack_array_cow_set_dsl dict args : unit DSL.model_monad =
     let open DSL.Syntax in
     (* args = [key1; key2; ...; key; value] *)
-    match args with
-    | [key; value] ->
+    let len_args = List.length args in
+    match List.split_n args (len_args - 2) with
+    | keys, [key; value] ->
         let* copy = deep_copy ~depth_max:1 dict in
+        let* inner_dict =
+          list_fold keys ~init:copy ~f:(fun dict key ->
+              let* field = field_of_string_value key in
+              let* inner_dict = eval_deref_access Read dict (FieldAccess field) in
+              let* copied_inned_dict = deep_copy ~depth_max:1 inner_dict in
+              let* () = write_deref_field ~ref:dict field ~obj:copied_inned_dict in
+              ret copied_inned_dict )
+        in
         let* field = field_of_string_value key in
-        let* () = write_deref_field ~ref:copy field ~obj:value in
-        return_value copy
+        let* () = write_deref_field ~ref:inner_dict field ~obj:value in
+        assign_ret copy
     | _ when List.length args > 2 ->
         L.d_printfln "multidimensional copy on write not implemented yet" ;
         unreachable
@@ -363,20 +372,15 @@ module Dict = struct
         L.die InternalError "should not happen"
 
 
-  let hack_dim_array_get dict args : unit DSL.model_monad =
+  let hack_dim_array_get dict keys : unit DSL.model_monad =
     let open DSL.Syntax in
     (* TODO: a key for a non-vec could be also a int *)
-    match args with
-    | [key] ->
-        let* field = field_of_string_value key in
-        let* value = eval_deref_access Read dict (FieldAccess field) in
-        return_value value
-        (* TODO: invalidate the access if the string key is unknown (raise an exception in Hack)*)
-    | _ when List.length args > 1 ->
-        L.d_printfln "multidimensional dictionnary lookup not implemented yet" ;
-        unreachable
-    | _ ->
-        L.die InternalError "should not happen"
+    let* value =
+      list_fold keys ~init:dict ~f:(fun dict key ->
+          let* field = field_of_string_value key in
+          eval_deref_access Read dict (FieldAccess field) )
+    in
+    assign_ret value
 end
 
 let hack_array_cow_set this args : model =

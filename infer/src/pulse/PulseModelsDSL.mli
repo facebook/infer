@@ -25,13 +25,15 @@ module Syntax : sig
 
   val unreachable : 'a model_monad
 
+  val list_fold :
+    'a list -> init:'accum -> f:('accum -> 'a -> 'accum model_monad) -> 'accum model_monad
+
   val list_iter : 'a list -> f:('a -> unit model_monad) -> unit model_monad
 
   val list_filter_map : 'a list -> f:('a -> 'b option model_monad) -> 'b list model_monad
 
-  val return_value : aval -> unit model_monad
-  (** you can end a model with [ret ()] or the following function. The latter will properly assign
-      [data.ret] *)
+  val assign_ret : aval -> unit model_monad
+  (** assign the value to the return variable of the current function *)
 
   val dynamic_dispatch : cases:(Typ.name * 'a model_monad) list -> aval -> 'a model_monad
 

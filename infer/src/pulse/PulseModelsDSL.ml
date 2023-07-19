@@ -101,7 +101,7 @@ module Syntax = struct
    fun data astate -> ret (f astate) data astate
 
 
-  let return_value aval : unit model_monad =
+  let assign_ret aval : unit model_monad =
     let* {ret= ret_id, _} = get_data in
     PulseOperations.write_id ret_id aval |> exec_command
 
