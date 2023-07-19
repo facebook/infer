@@ -102,11 +102,14 @@ let verify_decl ~env errors (decl : Module.decl) =
           String.Set.add set node.Node.label.value )
     in
     let verify_label errors = verify_label errors declared_labels procdecl.qualified_name in
+    let verify_node_call errors {Terminator.label} = verify_label errors label in
     let verify_terminator loc errors (t : Terminator.t) =
       match t with
+      | If {then_node; else_node} ->
+          let errors = verify_node_call errors then_node in
+          verify_node_call errors else_node
       | Jump l ->
-          let f errors {Terminator.label} = verify_label errors label in
-          List.fold ~init:errors ~f l
+          List.fold ~init:errors ~f:verify_node_call l
       | Ret e | Throw e ->
           verify_exp loc errors e
       | Unreachable ->

@@ -786,6 +786,8 @@ module TerminatorBridge = struct
 
   let to_sil lang decls_env procname pdesc loc (t : t) : Sil.instr option =
     match t with
+    | If _ ->
+        L.die InternalError "to_sil should not be called on If terminator"
     | Ret exp ->
         let ret_var = SilPvar.get_ret_pvar (ProcDeclBridge.to_sil lang procname) in
         let ret_type = SilProcdesc.get_ret_type pdesc in
@@ -938,6 +940,8 @@ module ProcDescBridge = struct
         L.die InternalError "start node %a npt found" NodeName.pp start ) ;
     (* TODO: register this exit node *)
     let normal_succ : Terminator.t -> P.Node.t list = function
+      | If _ ->
+          L.die InternalError "to_sil should not be called on If terminator"
       | Ret _ ->
           [exit_node]
       | Jump l ->
@@ -1047,7 +1051,8 @@ module ModuleBridge = struct
         in
         let module_ =
           let open TextualTransform in
-          module_ |> remove_internal_calls |> let_propagation |> out_of_ssa
+          (* note: because && and || operators are lazy we must remove them before moving calls *)
+          module_ |> remove_if_terminator |> remove_internal_calls |> let_propagation |> out_of_ssa
         in
         let all_proc_entries, types_used_as_enclosing_but_not_defined =
           TextualDecls.get_proc_entries_by_enclosing_class decls_env

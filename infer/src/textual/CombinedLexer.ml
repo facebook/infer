@@ -29,10 +29,12 @@ let textual_keywords =
   CombinedMenhir.
     [ ("declare", DECLARE)
     ; ("define", DEFINE)
+    ; ("else", ELSE)
     ; ("extends", EXTENDS)
     ; ("false", FALSE)
     ; ("float", FLOAT)
     ; ("global", GLOBAL)
+    ; ("if", IF)
     ; ("int", INT)
     ; ("jmp", JMP)
     ; ("load", LOAD)
@@ -41,6 +43,7 @@ let textual_keywords =
     ; ("prune", PRUNE)
     ; ("ret", RET)
     ; ("store", STORE)
+    ; ("then", THEN)
     ; ("throw", THROW)
     ; ("true", TRUE)
     ; ("type", TYPE)
@@ -126,6 +129,8 @@ let build_mainlex keywords =
         comment lexbuf
     | "&" ->
         AMPERSAND
+    | "&&" ->
+        AND
     | "<-" ->
         ASSIGN
     | ":" ->
@@ -148,6 +153,8 @@ let build_mainlex keywords =
         LSBRACKET
     | "!" ->
         NOT
+    | "||" ->
+        OR
     | ">" ->
         RABRACKET
     | "}" ->

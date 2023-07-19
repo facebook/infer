@@ -13,11 +13,11 @@ in Java match
 body {
     #entry:
     n0: int = load &i
-    jmp then, else
-  #then:
+    jmp then_node, else_node
+  #then_node:
     prune __sil_lt(n0, 0)
     ret null
-  #else:
+  #else_node:
     prune ! __sil_lt(n0, 0)
     n2 = n1
     unreachable
@@ -38,11 +38,11 @@ match // a one-line comment here
 body {
    #entry:
     n0: int = load &i
-    jmp then, else
-  #then:
+    jmp then_node, else_node
+  #then_node:
     prune __sil_lt(n0, 0)
     ret null
-  #else:
+  #else_node:
     prune ! __sil_lt(n0, 0)
     n2 = n1
     unreachable

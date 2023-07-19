@@ -17,11 +17,11 @@ in Java match {
 } body {
   #entry:
     n2 = __sil_eq(3, 2)
-    jmp then, else
-  #then:
+    jmp then_node, else_node
+  #then_node:
     prune n2
     ret 45
-  #else:
+  #else_node:
     prune ! n2
     ret 55
  }

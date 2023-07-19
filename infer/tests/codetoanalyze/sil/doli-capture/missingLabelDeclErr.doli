@@ -9,9 +9,9 @@ in Java match {
 } body {
   #entry:
     n2 = __sil_eq(3, 2)
-    jmp then, else   // ERROR: the else target is unknown
-                     // infer --capture-doli does not find that error
-  #then:
+    jmp then_node, else_node   // ERROR: the else target is unknown
+                              // infer --capture-doli does not find that error
+  #then_node:
     prune n2
     ret 444
   #elseMissSpelt:

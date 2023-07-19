@@ -18,6 +18,7 @@
       Location.known ~line ~col
 %}
 
+%token AND
 %token AMPERSAND
 %token ASSIGN
 %token COLON
@@ -26,6 +27,7 @@
 %token DEFINE
 %token DOT
 %token ELLIPSIS
+%token ELSE
 %token EOF
 %token EQ
 %token EXTENDS
@@ -33,6 +35,7 @@
 %token FLOAT
 %token GLOBAL
 %token HANDLERS
+%token IF
 %token INT
 %token JMP
 %token LABRACKET
@@ -43,6 +46,7 @@
 %token LSBRACKET
 %token NULL
 %token NOT
+%token OR
 %token PRUNE
 %token RABRACKET
 %token RBRACKET
@@ -52,6 +56,7 @@
 %token SEMICOLON
 %token STAR
 %token STORE
+%token THEN
 %token THROW
 %token TRUE
 %token TYPE
@@ -95,6 +100,8 @@
 (* placeholders for the bodies- will be removed in future work *)
 %token OBJCSIGNSTUB
 
+%right OR
+%right AND
 
 %start <Textual.SourceFile.t -> Textual.Module.t> main
 %start <Doli.doliProgram> doliProgram
@@ -118,6 +125,7 @@
 %type <Instr.t> instruction
 %type <Terminator.t> terminator
 %type <Exp.t> expression
+%type <BoolExp.t> bool_expression
 %type <Const.t> const
 %type <NodeName.t list> opt_handlers
 %type <Node.t> block
@@ -351,7 +359,19 @@ instruction:
   | id=LOCAL EQ exp=expression
     { Instr.Let { id= Ident.of_int id; exp; loc=location_of_pos $startpos } }
 
+bool_expression:
+  | exp=expression
+    { BoolExp.Exp exp }
+  | bexp1=bool_expression AND bexp2=bool_expression
+    { BoolExp.And (bexp1, bexp2) }
+  | bexp1=bool_expression OR bexp2=bool_expression
+    { BoolExp.Or (bexp1, bexp2) }
+  | LPAREN bexp=bool_expression RPAREN
+    { bexp }
+
 terminator:
+  | IF bexp=bool_expression THEN then_node=node_call ELSE else_node=node_call
+    { Terminator.If {bexp; then_node; else_node} }
   | RET e=expression
     { Terminator.Ret e }
   | JMP l=separated_list(COMMA, node_call)

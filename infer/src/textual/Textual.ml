@@ -631,6 +631,31 @@ module Exp = struct
     aux Ident.Set.empty exp
 end
 
+module BoolExp = struct
+  type t = Exp of Exp.t | Not of t | And of t * t | Or of t * t
+
+  let rec pp fmt bexp =
+    match bexp with
+    | Exp exp ->
+        Exp.pp fmt exp
+    | Not bexp ->
+        F.fprintf fmt "!(%a)" pp bexp
+    | And (bexp1, bexp2) ->
+        F.fprintf fmt "(%a) && (%a)" pp bexp1 pp bexp2
+    | Or (bexp1, bexp2) ->
+        F.fprintf fmt "(%a) || (%a)" pp bexp1 pp bexp2
+
+
+  let rec do_not_contain_regular_call bexp =
+    match bexp with
+    | Exp exp ->
+        Exp.do_not_contain_regular_call exp
+    | Not bexp ->
+        do_not_contain_regular_call bexp
+    | Or (bexp1, bexp2) | And (bexp1, bexp2) ->
+        do_not_contain_regular_call bexp1 && do_not_contain_regular_call bexp2
+end
+
 module Instr = struct
   type t =
     | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t; loc: Location.t}
@@ -674,19 +699,28 @@ end
 module Terminator = struct
   type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
-  type t = Ret of Exp.t | Jump of node_call list | Throw of Exp.t | Unreachable
+  type t =
+    | If of {bexp: BoolExp.t; then_node: node_call; else_node: node_call}
+    | Ret of Exp.t
+    | Jump of node_call list
+    | Throw of Exp.t
+    | Unreachable
+
+  let pp_block_call fmt {label; ssa_args} =
+    match ssa_args with
+    | [] ->
+        NodeName.pp fmt label
+    | _ ->
+        F.fprintf fmt "%a(%a)" NodeName.pp label (pp_list_with_comma Exp.pp) ssa_args
+
 
   let pp fmt = function
+    | If {bexp; then_node; else_node} ->
+        F.fprintf fmt "if %a then %a else %a" BoolExp.pp bexp pp_block_call then_node pp_block_call
+          else_node
     | Ret e ->
         F.fprintf fmt "ret %a" Exp.pp e
     | Jump l ->
-        let pp_block_call fmt {label; ssa_args} =
-          match ssa_args with
-          | [] ->
-              NodeName.pp fmt label
-          | _ ->
-              F.fprintf fmt "%a(%a)" NodeName.pp label (pp_list_with_comma Exp.pp) ssa_args
-        in
         F.fprintf fmt "jmp %a" (pp_list_with_comma pp_block_call) l
     | Throw e ->
         F.fprintf fmt "throw %a" Exp.pp e
@@ -696,6 +730,8 @@ module Terminator = struct
 
   let do_not_contain_regular_call t =
     match t with
+    | If {bexp} ->
+        BoolExp.do_not_contain_regular_call bexp
     | Ret exp | Throw exp ->
         Exp.do_not_contain_regular_call exp
     | Jump _ | Unreachable ->

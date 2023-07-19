@@ -75,6 +75,8 @@ module Subst = struct
   let of_terminator t eqs =
     let open Terminator in
     match t with
+    | If _ ->
+        L.die InternalError "subst should not be called on If terminator"
     | Ret exp ->
         Ret (of_exp exp eqs)
     | Jump node_call_list ->
@@ -165,6 +167,8 @@ let remove_internal_calls _module =
   in
   let flatten_in_terminator (last : Terminator.t) state : Terminator.t * State.t =
     match last with
+    | If _ ->
+        L.die InternalError "remove_internal_calls should not be called on If terminator"
     | Ret exp ->
         let exp, state = flatten_exp exp state in
         (Ret exp, state)
@@ -200,6 +204,125 @@ let remove_internal_calls _module =
     {pdesc with nodes= List.rev rev_nodes}
   in
   module_map_procs ~f:flatten_pdesc _module
+
+
+let remove_if_terminator module_ =
+  (* first transform if conditions into disjunctions of conjunctions of possibly-negated
+     atoms (expressions) then use this form to build the CFG by jumping to each disjunct
+     non-deterministically and in each of them asserting each conjunct in sequence *)
+  let negative_normal_form bexp =
+    let rec pos (bexp : BoolExp.t) : BoolExp.t =
+      match bexp with
+      | Exp _ ->
+          bexp
+      | Not bexp ->
+          neg bexp
+      | And (bexp1, bexp2) ->
+          And (pos bexp1, pos bexp2)
+      | Or (bexp1, bexp2) ->
+          Or (pos bexp1, pos bexp2)
+    and neg (bexp : BoolExp.t) : BoolExp.t =
+      match bexp with
+      | Exp exp ->
+          Exp (Exp.not exp)
+      | Not bexp ->
+          pos bexp
+      | And (bexp1, bexp2) ->
+          Or (neg bexp1, neg bexp2)
+      | Or (bexp1, bexp2) ->
+          And (neg bexp1, neg bexp2)
+    in
+    pos bexp
+  in
+  let disjunctive_normal_form bexp =
+    let open BoolExp in
+    let rec dnf (bexp : BoolExp.t) : BoolExp.t =
+      match bexp with
+      | Exp _ ->
+          bexp
+      | Not _ ->
+          L.die InternalError "disjunctive_normal_form does not expect Not case"
+      | Or (bexp1, bexp2) ->
+          Or (dnf bexp1, dnf bexp2)
+      | And (bexp1, bexp2) -> (
+          let bexp1 = dnf bexp1 in
+          let bexp2 = dnf bexp2 in
+          match (bexp1, bexp2) with
+          | Or (case1, case2), _ ->
+              Or (dnf (And (case1, bexp2)), dnf (And (case2, bexp2)))
+          | _, Or (case1, case2) ->
+              Or (dnf (And (bexp1, case1)), dnf (And (bexp1, case2)))
+          | _, _ ->
+              And (bexp1, bexp2) )
+    in
+    dnf bexp
+  in
+  let transform pdesc =
+    let fresh_label =
+      let counter = ref 0 in
+      fun () ->
+        let name : NodeName.t = {value= Printf.sprintf "if%d" !counter; loc= Location.Unknown} in
+        incr counter ;
+        (* TODO (next diffs): check if the generated label is really fresh *)
+        name
+    in
+    let rec collect_conjuncts bexp conjuncts =
+      (* should be called after disjunctive_normal_form and negative_normal_form *)
+      match (bexp : BoolExp.t) with
+      | Exp exp ->
+          exp :: conjuncts
+      | Not _ ->
+          L.die InternalError "not expected"
+      | And (bexp1, bexp2) ->
+          collect_conjuncts bexp2 conjuncts |> collect_conjuncts bexp1
+      | Or _ ->
+          L.die InternalError "not expected"
+    in
+    let rec collect_disjuncts bexp disjuncts =
+      (* should be called after disjunctive_normal_form and negative_normal_form *)
+      match (bexp : BoolExp.t) with
+      | Or (bexp1, bexp2) ->
+          collect_disjuncts bexp2 disjuncts |> collect_disjuncts bexp1
+      | _ ->
+          collect_conjuncts bexp [] :: disjuncts
+    in
+    let mk_extra_nodes loc bexp target =
+      let bexp = bexp |> negative_normal_form |> disjunctive_normal_form in
+      let disjuncts = collect_disjuncts bexp [] in
+      List.rev_map disjuncts ~f:(fun conjuncts : Node.t ->
+          let label = fresh_label () in
+          let instrs = List.map conjuncts ~f:(fun exp -> Instr.Prune {exp; loc}) in
+          { label
+          ; ssa_parameters= []
+          ; exn_succs= []
+          ; last= Jump [target]
+          ; instrs
+          ; last_loc= loc
+          ; label_loc= loc } )
+    in
+    let remove_if loc terminator =
+      match (terminator : Terminator.t) with
+      | If {bexp; then_node; else_node} ->
+          let extra_nodes_true = mk_extra_nodes loc bexp then_node in
+          let extra_nodes_false = mk_extra_nodes loc (BoolExp.Not bexp) else_node in
+          let nodes = extra_nodes_false @ extra_nodes_true in
+          let targets : Terminator.node_call list =
+            List.rev_map nodes ~f:(fun ({label} : Node.t) -> {Terminator.label; ssa_args= []})
+          in
+          (Terminator.Jump targets, nodes)
+      | _ ->
+          (terminator, [])
+    in
+    let nodes = pdesc.ProcDesc.nodes in
+    let nodes =
+      List.fold nodes ~init:[] ~f:(fun nodes (node : Node.t) ->
+          let last, extra_nodes = remove_if node.last_loc node.last in
+          extra_nodes @ ({node with last} :: nodes) )
+      |> List.rev
+    in
+    {pdesc with ProcDesc.nodes}
+  in
+  module_map_procs ~f:transform module_
 
 
 (* TODO (T131910123): replace with STORE+LOAD transform *)
@@ -307,6 +430,8 @@ let out_of_ssa module_ =
     in
     let build_assignements (start_node : Node.t) : Instr.t list =
       match (start_node.last : Terminator.t) with
+      | If _ ->
+          L.die InternalError "out_of_ssa should not be called on If terminator"
       | Ret _ | Throw _ | Unreachable ->
           []
       | Jump node_calls ->
@@ -322,6 +447,8 @@ let out_of_ssa module_ =
         {node_call with ssa_args= []}
       in
       match terminator with
+      | If _ ->
+          L.die InternalError "out_of_ssa should not be called on If terminator"
       | Ret _ | Throw _ | Unreachable ->
           terminator
       | Jump node_calls ->

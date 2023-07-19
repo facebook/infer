@@ -17,6 +17,8 @@ val remove_internal_calls : Textual.Module.t -> Textual.Module.t
      n2 = m(n0, n3)
 *)
 
+val remove_if_terminator : Textual.Module.t -> Textual.Module.t
+
 val let_propagation : Textual.Module.t -> Textual.Module.t
 
 val out_of_ssa : Textual.Module.t -> Textual.Module.t

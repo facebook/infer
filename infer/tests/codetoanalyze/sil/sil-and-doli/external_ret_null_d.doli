@@ -9,11 +9,11 @@ in Java match {
 } body {
   #entry:
      n0: *ClassB = load &this
-     jmp then, else
-   #then:
+     jmp then_node, else_node
+   #then_node:
      // prune n0 ia  type error
      ret null
-   #else:
+   #else_node:
       // prune ! n0 ia  type error
      ret null
 }

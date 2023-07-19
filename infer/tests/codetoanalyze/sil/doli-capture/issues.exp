@@ -1,4 +1,4 @@
-missingLabelDeclErr.doli, line 12, column 14: SIL consistency error: label else is not declared in function r2
+missingLabelDeclErr.doli, line 12, column 19: SIL consistency error: label else_node is not declared in function r2
 ruleDuplicationErr.doli: SIL consistency error: function r31 is implemented twice in the same file
 textualParsingErr.doli, line 11, column 2: SIL syntax error: unexpected token #entry2
 typeErr.doli, line 11, column 4: textual type error: expression null has type null, while a subtype of int was expected

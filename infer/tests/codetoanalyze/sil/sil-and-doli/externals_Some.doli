@@ -25,11 +25,11 @@ in Java match {
 } body {
     #entry:
         n5 = __sil_eq(4, 4)
-        jmp then, else
-    #then:  //   only this branch entered
+        jmp then_node, else_node
+    #then_node:  //   only this branch entered
         prune n5
         ret 4
-    #else:   // this branch never entered
+    #else_node:   // this branch never entered
         prune ! n5
         ret 5
 }
@@ -42,11 +42,11 @@ in Java match {
     #entry:
         n0 : int = load &m
         n2 = __sil_eq(n0, 4)
-        jmp then, else
-    #then:
+        jmp then_node, else_node
+    #then_node:
         prune n2
         ret 5
-    #else:
+    #else_node:
         prune ! n2
         ret 6
 }

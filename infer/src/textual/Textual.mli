@@ -252,6 +252,12 @@ module Exp : sig
   val pp : F.formatter -> t -> unit
 end
 
+module BoolExp : sig
+  type t = Exp of Exp.t | Not of t | And of t * t | Or of t * t
+
+  val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
+end
+
 module Instr : sig
   type t =
     | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t; loc: Location.t}
@@ -273,6 +279,7 @@ module Terminator : sig
   type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
   type t =
+    | If of {bexp: BoolExp.t; then_node: node_call; else_node: node_call}
     | Ret of Exp.t
     | Jump of node_call list  (** non empty list *)
     | Throw of Exp.t

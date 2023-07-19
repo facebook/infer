@@ -230,6 +230,15 @@ let get_procdesc_referenced_types (pdesc : ProcDesc.t) =
         from_exp idx
     | Call {args} ->
         List.iter args ~f:from_exp
+  and from_bexp (bexp : BoolExp.t) =
+    match bexp with
+    | Exp exp ->
+        from_exp exp
+    | Not bexp ->
+        from_bexp bexp
+    | And (bexp1, bexp2) | Or (bexp1, bexp2) ->
+        from_bexp bexp1 ;
+        from_bexp bexp2
   in
   let from_instr (ins : Instr.t) =
     match ins with
@@ -243,13 +252,17 @@ let get_procdesc_referenced_types (pdesc : ProcDesc.t) =
     | Prune {exp} | Let {exp} ->
         from_exp exp
   in
+  let from_node_call ({ssa_args} : Terminator.node_call) = List.iter ssa_args ~f:from_exp in
   let from_terminator (t : Terminator.t) =
     match t with
+    | If {bexp; then_node; else_node} ->
+        from_bexp bexp ;
+        from_node_call then_node ;
+        from_node_call else_node
     | Ret exp | Throw exp ->
         from_exp exp
     | Jump node_call ->
-        List.iter node_call ~f:(fun ({ssa_args} : Terminator.node_call) ->
-            List.iter ssa_args ~f:from_exp )
+        List.iter node_call ~f:from_node_call
     | Unreachable ->
         ()
   in

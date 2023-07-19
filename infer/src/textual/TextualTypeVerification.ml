@@ -503,21 +503,28 @@ let typecheck_instr (instr : Instr.t) : unit monad =
       set_ident_type id typ
 
 
+let typecheck_node_call loc ({label; ssa_args} : Terminator.node_call) : unit monad =
+  let* node = get_node label in
+  iter2 ssa_args node.Node.ssa_parameters ~f:(fun exp (_, assigned) ->
+      typecheck_exp exp
+        ~check:(fun given -> compat ~assigned ~given)
+        ~expected:(SubTypeOf assigned) ~loc )
+
+
 let typecheck_terminator loc (term : Terminator.t) : unit monad =
   let* () = set_location loc in
   match term with
+  | If {bexp= _; then_node; else_node} ->
+      let* () = typecheck_node_call loc then_node in
+      let* () = typecheck_node_call loc else_node in
+      ret ()
   | Ret exp ->
       let* result_typ = get_result_type in
       typecheck_exp exp
         ~check:(fun given -> compat ~assigned:result_typ ~given)
         ~expected:(SubTypeOf result_typ) ~loc
   | Jump node_calls ->
-      iter node_calls ~f:(fun ({label; ssa_args} : Terminator.node_call) ->
-          let* node = get_node label in
-          iter2 ssa_args node.Node.ssa_parameters ~f:(fun exp (_, assigned) ->
-              typecheck_exp exp
-                ~check:(fun given -> compat ~assigned ~given)
-                ~expected:(SubTypeOf assigned) ~loc ) )
+      iter node_calls ~f:(typecheck_node_call loc)
   | Throw exp ->
       typecheck_exp exp ~check:is_ptr ~expected:Ptr ~loc
   | Unreachable ->
@@ -525,12 +532,15 @@ let typecheck_terminator loc (term : Terminator.t) : unit monad =
 
 
 let all_successors (node : Node.t) : NodeName.t list =
+  let node_call_succ ({label} : Terminator.node_call) = label in
   let normal_succs =
     match node.last with
+    | If {then_node; else_node} ->
+        [node_call_succ then_node; node_call_succ else_node]
     | Ret _ | Throw _ | Unreachable ->
         []
     | Jump node_calls ->
-        List.map ~f:(fun ({label} : Terminator.node_call) -> label) node_calls
+        List.map ~f:node_call_succ node_calls
   in
   normal_succs @ node.exn_succs
 
