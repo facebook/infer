@@ -22,7 +22,7 @@ let read_boxed_string_value address astate =
   AddressAttributes.get_const_string string_val astate
 
 
-let read_boxed_string_value_dsl aval : string DSL.monad =
+let read_boxed_string_value_dsl aval : string DSL.model_monad =
   (* we cut the current path if no constant string is found *)
   let open PulseModelsDSL.Syntax in
   let* opt_string = exec_operation (read_boxed_string_value (fst aval)) in
@@ -68,9 +68,12 @@ let hack_dim_field_get_or_null this_obj_dbl_ptr field : model =
   astate1 @ astate2
 
 
-let payloads_of_args args =
-  List.map ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= addr} -> addr) args
+let payload_of_arg arg =
+  let {ProcnameDispatcher.Call.FuncArg.arg_payload= addr} = arg in
+  addr
 
+
+let payloads_of_args args = List.map ~f:payload_of_arg args
 
 let mk_hack_field clazz field = Fieldname.make (Typ.HackClass (HackClassName.make clazz)) field
 
@@ -84,16 +87,9 @@ let load_field path field location obj astate =
   (astate, field_addr, field_val)
 
 
-let write_field path field new_val location addr astate =
-  let* astate, field_addr =
-    PulseOperations.eval_access path Write location addr (FieldAccess field) astate
-  in
-  PulseOperations.write_deref path location ~ref:field_addr ~obj:new_val astate
-
-
 let await_hack_value v astate = AddressAttributes.hack_async_await v astate
 
-let await_hack_value_dsl aval : unit DSL.monad =
+let await_hack_value_dsl aval : unit DSL.model_monad =
   fst aval |> await_hack_value |> DSL.Syntax.exec_command
 
 
@@ -123,7 +119,7 @@ module Vec = struct
 
   let last_read_field = mk_hack_field class_name "__infer_model_backing_last_read"
 
-  let new_vec_dsl args : DSL.aval DSL.monad =
+  let new_vec_dsl args : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     let actual_size = List.length args in
     let typ = Typ.mk_struct TextualSil.hack_vec_type_name in
@@ -179,75 +175,80 @@ module Vec = struct
     astate |> Basic.ok_continue
 
 
-  let get_vec argv index : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = Hist.call_event path location "vec index" in
-    let ret_val = AbstractValue.mk_fresh () in
-    let new_last_read_val = AbstractValue.mk_fresh () in
-    let<*> astate, _size_addr, (size_val, _) = load_field path size_field location argv astate in
-    let<*> astate, _, (fst_val, _) = load_field path fst_field location argv astate in
-    let<*> astate, _, (snd_val, _) = load_field path snd_field location argv astate in
-    let<*> astate, _, (last_read_val, _) = load_field path last_read_field location argv astate in
-    let astate = PulseOperations.write_id ret_id (ret_val, Hist.single_event path event) astate in
-    let<*> astate =
-      write_field path last_read_field
-        (new_last_read_val, Hist.single_event path event)
-        location argv astate
-    in
-    let<**> astate =
-      PulseArithmetic.prune_binop ~negated:false Binop.Lt (AbstractValueOperand index)
-        (AbstractValueOperand size_val) astate
-    in
-    let<**> astate =
+  let get_vec argv index : unit DSL.model_monad =
+    let open DSL.Syntax in
+    let* ret_val = mk_fresh ~model_desc:"vec index" in
+    let* new_last_read_val = mk_fresh ~model_desc:"vec index" in
+    let* size_val = eval_deref_access Read argv (FieldAccess size_field) in
+    let* fst_val = eval_deref_access Read argv (FieldAccess fst_field) in
+    let* snd_val = eval_deref_access Read argv (FieldAccess snd_field) in
+    let* last_read_val = eval_deref_access Read argv (FieldAccess last_read_field) in
+    let* () = write_deref_field ~ref:argv last_read_field ~obj:new_last_read_val in
+    let* () = prune_binop ~negated:false Binop.Lt (aval_operand index) (aval_operand size_val) in
+    let* () =
       (* Don't return dummy value *)
-      PulseArithmetic.prune_binop ~negated:true Binop.Eq (AbstractValueOperand ret_val)
+      prune_binop ~negated:true Binop.Eq (aval_operand ret_val)
         (ConstOperand (Cint (IntLit.of_int 9)))
-        astate
     in
     (* TODO: work out how to incorporate type-based, or at least nullability, assertions on ret_val *)
-    (* case 1: return is some value equal to neither field
-       In this case, we leave the last_read_val field unchanged
-       And we also, to avoid false positives, do a fake await of the fst and snd fields
-    *)
-    let astate1 =
-      let astate = await_hack_value fst_val astate in
-      let astate = await_hack_value snd_val astate in
-      PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand ret_val)
-        (AbstractValueOperand fst_val) astate
-      >>== PulseArithmetic.prune_binop ~negated:true Eq (AbstractValueOperand ret_val)
-             (AbstractValueOperand snd_val)
-      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand new_last_read_val)
-             (AbstractValueOperand last_read_val)
-      >>|| ExecutionDomain.continue
+    let case1 : unit DSL.model_monad =
+      (* case 1: return is some value equal to neither field
+          In this case, we leave the last_read_val field unchanged
+          And we also, to avoid false positives, do a fake await of the fst and snd fields
+      *)
+      let* () = await_hack_value_dsl fst_val in
+      let* () = await_hack_value_dsl snd_val in
+      let* () = prune_binop ~negated:true Eq (aval_operand ret_val) (aval_operand fst_val) in
+      let* () = prune_binop ~negated:true Eq (aval_operand ret_val) (aval_operand snd_val) in
+      let* () =
+        prune_binop ~negated:false Eq (aval_operand new_last_read_val) (aval_operand last_read_val)
+      in
+      return_value ret_val
     in
-    (* case 2: given element is equal to fst_field *)
-    let astate2 =
-      PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand last_read_val)
-        (ConstOperand (Cint IntLit.two)) astate
-      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand ret_val)
-             (AbstractValueOperand fst_val)
-      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand new_last_read_val)
-             (ConstOperand (Cint IntLit.one))
-      >>|| ExecutionDomain.continue
+    let case2 : unit DSL.model_monad =
+      (* case 2: given element is equal to fst_field *)
+      let* () =
+        prune_binop ~negated:false Eq (aval_operand last_read_val) (ConstOperand (Cint IntLit.two))
+      in
+      let* () = prune_binop ~negated:false Eq (aval_operand ret_val) (aval_operand fst_val) in
+      let* () =
+        prune_binop ~negated:false Eq (aval_operand new_last_read_val)
+          (ConstOperand (Cint IntLit.one))
+      in
+      return_value ret_val
     in
-    (* case 3: given element is equal to snd_field *)
-    let astate3 =
-      PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand last_read_val)
-        (ConstOperand (Cint IntLit.one)) astate
-      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand ret_val)
-             (AbstractValueOperand snd_val)
-      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand new_last_read_val)
-             (ConstOperand (Cint IntLit.two))
-      >>|| ExecutionDomain.continue
+    let case3 : unit DSL.model_monad =
+      (* case 3: given element is equal to snd_field *)
+      let* () =
+        prune_binop ~negated:false Eq (aval_operand last_read_val) (ConstOperand (Cint IntLit.one))
+      in
+      let* () = prune_binop ~negated:false Eq (aval_operand ret_val) (aval_operand snd_val) in
+      let* () =
+        prune_binop ~negated:false Eq (aval_operand new_last_read_val)
+          (ConstOperand (Cint IntLit.two))
+      in
+      return_value ret_val
     in
-    SatUnsat.to_list astate1 @ SatUnsat.to_list astate2 @ SatUnsat.to_list astate3
+    disjuncts [case1; case2; case3]
+
+
+  let hack_dim_array_get vec args : unit DSL.model_monad =
+    let open DSL.Syntax in
+    match args with
+    | [key] ->
+        let field = mk_hack_field "HackInt" "val" in
+        let* index = eval_deref_access Read key (FieldAccess field) in
+        get_vec vec index
+    | _ ->
+        L.d_printfln "Vec.hack_dim_array_get expects only 1 key argument" ;
+        disjuncts []
 
 
   (*
   See also $builtins.hack_array_cow_append in lib/hack/models.sil
   Model of set is very like that of append, since it ignores the index
   *)
-  let hack_array_cow_set_dsl vec args : DSL.aval DSL.monad =
+  let hack_array_cow_set_dsl vec args : unit DSL.model_monad =
     let open DSL.Syntax in
     match args with
     | [_key; value] ->
@@ -258,38 +259,11 @@ module Vec = struct
         let* size = eval_deref_access Read vec (FieldAccess size_field) in
         let* () = write_deref_field ~ref:new_vec size_field ~obj:size in
         (* overwrite default size of 2 *)
-        ret new_vec
+        return_value new_vec
     | _ ->
-        L.d_printfln "Vec.hack_array_cow_set expects 3 arguments" ;
+        L.d_printfln "Vec.hack_array_cow_set expects 1 key and 1 value arguments" ;
         unreachable
 end
-
-let hack_dim_array_get this_obj key_obj : model =
- fun ({path; location; ret} as md) astate ->
-  let this_val, this_hist = this_obj in
-  (* see if it's a vec *)
-  match AbductiveDomain.AddressAttributes.get_dynamic_type this_val astate with
-  | Some {desc= Tstruct type_name} when Typ.Name.equal type_name TextualSil.hack_vec_type_name ->
-      let hackInt = Typ.HackClass (HackClassName.make "HackInt") in
-      let field = Fieldname.make hackInt "val" in
-      let<*> astate, _, (key_val, _) = load_field path field location key_obj astate in
-      Vec.get_vec (this_val, this_hist) key_val md astate
-  | _ -> (
-      (* TODO: a key for a non-vec could be also a int *)
-      let key_string_obj, _ = key_obj in
-      match read_boxed_string_value key_string_obj astate with
-      | Some string_val ->
-          let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack string_val in
-          let<+> astate, field_val =
-            PulseOperations.eval_deref_access path Read location this_obj (FieldAccess field) astate
-          in
-          let ret_id, _ = ret in
-          PulseOperations.write_id ret_id field_val astate
-      | None ->
-          (* TODO: invalidate the access if the string key is unknown (raise an exception in Hack)*)
-          Logging.d_printfln "reading dict failed" ;
-          astate |> Basic.ok_continue )
-
 
 let get_static_companion type_name astate =
   let pvar = Pvar.mk_global (Mangled.mangled (Typ.Name.name type_name) "STATIC") in
@@ -341,13 +315,13 @@ module Dict = struct
   (* We model dict/shape keys as fields. This is a bit unorthodox in Pulse, but we need
      maximum precision on this ubiquitous Hack data structure. *)
 
-  let field_of_string_value value : Fieldname.t DSL.monad =
+  let field_of_string_value value : Fieldname.t DSL.model_monad =
     let open DSL.Syntax in
     let* string = read_boxed_string_value_dsl value in
     TextualSil.wildcard_sil_fieldname Textual.Lang.Hack string |> ret
 
 
-  let get_bindings values : (Fieldname.t * DSL.aval) list DSL.monad =
+  let get_bindings values : (Fieldname.t * DSL.aval) list DSL.model_monad =
     let open DSL.Syntax in
     let chunked = List.chunks_of ~length:2 values in
     list_filter_map chunked ~f:(function
@@ -373,7 +347,7 @@ module Dict = struct
 
 
   (* TODO: handle the situation where we have mix of dict and vec *)
-  let hack_array_cow_set_dsl dict args : DSL.aval DSL.monad =
+  let hack_array_cow_set_dsl dict args : unit DSL.model_monad =
     let open DSL.Syntax in
     (* args = [key1; key2; ...; key; value] *)
     match args with
@@ -381,30 +355,52 @@ module Dict = struct
         let* copy = deep_copy ~depth_max:1 dict in
         let* field = field_of_string_value key in
         let* () = write_deref_field ~ref:copy field ~obj:value in
-        ret copy
+        return_value copy
     | _ when List.length args > 2 ->
         L.d_printfln "multidimensional copy on write not implemented yet" ;
         unreachable
     | _ ->
         L.die InternalError "should not happen"
+
+
+  let hack_dim_array_get dict args : unit DSL.model_monad =
+    let open DSL.Syntax in
+    (* TODO: a key for a non-vec could be also a int *)
+    match args with
+    | [key] ->
+        let* field = field_of_string_value key in
+        let* value = eval_deref_access Read dict (FieldAccess field) in
+        return_value value
+        (* TODO: invalidate the access if the string key is unknown (raise an exception in Hack)*)
+    | _ when List.length args > 1 ->
+        L.d_printfln "multidimensional dictionnary lookup not implemented yet" ;
+        unreachable
+    | _ ->
+        L.die InternalError "should not happen"
 end
 
-let hack_array_cow_set args : model =
+let hack_array_cow_set this args : model =
   let open DSL.Syntax in
   start_model
   @@
-  match payloads_of_args args with
-  | [] ->
-      L.d_printfln "hack_array_cow_set expect at least 3 arguments" ;
-      unreachable
-  | this :: args ->
-      let* copy =
-        dynamic_dispatch this
-          ~cases:
-            [ (TextualSil.hack_dict_type_name, Dict.hack_array_cow_set_dsl this args)
-            ; (TextualSil.hack_vec_type_name, Vec.hack_array_cow_set_dsl this args) ]
-      in
-      return_value copy
+  let this = payload_of_arg this in
+  let args = payloads_of_args args in
+  dynamic_dispatch this
+    ~cases:
+      [ (TextualSil.hack_dict_type_name, Dict.hack_array_cow_set_dsl this args)
+      ; (TextualSil.hack_vec_type_name, Vec.hack_array_cow_set_dsl this args) ]
+
+
+let hack_dim_array_get this args : model =
+  let open DSL.Syntax in
+  start_model
+  @@
+  let this = payload_of_arg this in
+  let args = payloads_of_args args in
+  dynamic_dispatch this
+    ~cases:
+      [ (TextualSil.hack_dict_type_name, Dict.hack_dim_array_get this args)
+      ; (TextualSil.hack_vec_type_name, Vec.hack_dim_array_get this args) ]
 
 
 let matchers : matcher list =
@@ -416,11 +412,9 @@ let matchers : matcher list =
     $--> hack_dim_field_get
   ; -"$builtins" &:: "hack_dim_field_get_or_null" <>$ capt_arg_payload $+ capt_arg_payload
     $--> hack_dim_field_get_or_null
-  ; -"$builtins" &:: "hack_dim_array_get" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> hack_dim_array_get
-  ; -"$builtins" &:: "hack_array_get" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> hack_dim_array_get
-  ; -"$builtins" &:: "hack_array_cow_set" &::.*++> hack_array_cow_set
+  ; -"$builtins" &:: "hack_dim_array_get" <>$ capt_arg $++$--> hack_dim_array_get
+  ; -"$builtins" &:: "hack_array_get" <>$ capt_arg $++$--> hack_dim_array_get
+  ; -"$builtins" &:: "hack_array_cow_set" <>$ capt_arg $++$--> hack_array_cow_set
   ; -"$builtins" &:: "hack_new_dict" &::.*++> Dict.new_dict
   ; -"$builtins" &:: "hhbc_new_vec" &::.*++> Vec.new_vec
   ; -"$builtins" &:: "hack_get_class" <>$ capt_arg_payload

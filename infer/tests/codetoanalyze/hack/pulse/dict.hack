@@ -48,14 +48,13 @@ class Main {
 
     $t2 = $t1;
 
-    $t2['a'] = $w; //currant HackC translation makes copy-on-write hard to track
+    $t2['a'] = $w;
 
     if ($t1['a'] != $u || $t2['a'] != $w || $t1['b'] != $v || $t2['b'] != $v) {
       \Level1\taintSink($tainted);
     }
   }
 
-  // FN because we do not handle yet multi dimensions in hack_array_get model (TODO for dpichardie)
   public function FN_multidim_copy_on_write_bad(int $u1, int $v1, int $u2, int $v2, int $w) {
     $tainted = \Level1\taintSource();
 
