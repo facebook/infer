@@ -249,7 +249,7 @@ let hack_dim_array_get this_obj key_obj : model =
       | Some string_val ->
           let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack string_val in
           let<+> astate, field_val =
-            PulseOperations.eval_access path Read location this_obj (FieldAccess field) astate
+            PulseOperations.eval_deref_access path Read location this_obj (FieldAccess field) astate
           in
           let ret_id, _ = ret in
           PulseOperations.write_id ret_id field_val astate
