@@ -111,27 +111,34 @@ module Env : sig
         to them. *)
     type shape
 
-    (** An environment associates shapes to variables and fields to shapes. *)
+    (** An environment associates shapes to variables and structures to shapes. *)
     type t
 
     val pp : Format.formatter -> t -> unit
 
-    val create_shape : unit -> shape
-    (** Create a fresh shape, not associated to any variable yet, and having no known field. *)
+    module Shape : sig
+      (** Shape building functions. These functions will create the appropriate structure, associate
+          it to a shape in the environment and return that shape. *)
+
+      val bottom : t -> shape
+      (** The most precise shape, used for variables that have not been assigned yet (eg.
+          arguments). *)
+
+      val vector : (Fieldname.t * shape) list -> t -> shape
+      (** A shape with a set of known fields. The list may be empty, meaning that the shape may be a
+          vector but no field have been discovered yet. *)
+
+      val scalar : t -> shape
+      (** The shape of scalar values for which we don't have more precise information (eg.
+          integers). *)
+    end
 
     val create : unit -> t
-    (** Create a fresh environment with no known variable nor shape fields. *)
+    (** Create a fresh environment with no known variable nor shape. *)
 
     val var_shape : t -> Var.t -> shape
     (** Returns the shape of a variable. If the variable is unknown in the environment, a fresh
-        shape will be created, associated to the variable, and returned.
-
-        Will always return a fresh shape for the `_` anonymous erlang variable. *)
-
-    val field_shape : t -> shape -> Fieldname.t -> shape
-    (** Given a shape, a subscripted field and an environment, returns the shape of the field
-        content. If this field is unknown for that shape in the environment, a fresh shape will be
-        created, associated to the field and returned. *)
+        *bottom* shape will be created, associated to the variable, and returned. *)
 
     val unify : t -> shape -> shape -> unit
     (** Makes two shapes identical by merging their defined fields (unifying the shapes of common
@@ -230,20 +237,38 @@ end = struct
       (** A shape is an equivalence class of shape identifiers. *)
       type shape = Shape_id.t Shape_class.t
 
-      type fields = (Fieldname.t, shape) Hashtbl.t
+      let pp_shape = Shape_class.pp Shape_id.pp
+
+      module Structure = struct
+        type t = Bottom | Vector of (Fieldname.t, shape) Hashtbl.t
+
+        let pp fmt x =
+          match x with
+          | Bottom ->
+              Fmt.pf fmt "()"
+          | Vector fields ->
+              pp_hashtbl ~bind:IFmt.colon_sp Fieldname.pp pp_shape fmt fields
+
+
+        let vector field_alist = Vector (Hashtbl.of_alist_exn (module Fieldname) field_alist)
+
+        let scalar =
+          (* Until we add a specific constructor, the best abstraction for a scalar value is an empty
+             vector. *)
+          vector []
+      end
 
       (** An environment associates to each variable its equivalence class, and to each shape
-          equivalence class representative its set of known fields. *)
-      type t = {var_shapes: (Var.t, shape) Hashtbl.t; shape_fields: (Shape_id.t, fields) Hashtbl.t}
+          equivalence class representative its structure. *)
+      type t =
+        {var_shapes: (Var.t, shape) Hashtbl.t; shape_structures: (Shape_id.t, Structure.t) Hashtbl.t}
 
-      let pp fmt {var_shapes; shape_fields} =
-        let pp_shape = Shape_class.pp Shape_id.pp in
-        Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPES@ @[%a@]@]@ @[<v4>SHAPE_FIELDS@ @[%a@]@]@]"
+      let pp fmt {var_shapes; shape_structures} =
+        Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPES@ @[%a@]@]@ @[<v4>SHAPE_STRUCTURES@ @[%a@]@]@]"
           (pp_hashtbl ~bind:pp_arrow Var.pp pp_shape)
           var_shapes
-          (pp_hashtbl ~bind:pp_arrow Shape_id.pp
-             (pp_hashtbl ~bind:IFmt.colon_sp Fieldname.pp pp_shape) )
-          shape_fields
+          (pp_hashtbl ~bind:pp_arrow Shape_id.pp Structure.pp)
+          shape_structures
     end
   end
 
@@ -262,27 +287,64 @@ end = struct
     include Types.Make (Shape_class) ()
 
     let create () =
-      {var_shapes= Hashtbl.create (module Var); shape_fields= Hashtbl.create (module Shape_id)}
+      {var_shapes= Hashtbl.create (module Var); shape_structures= Hashtbl.create (module Shape_id)}
 
 
-    let create_shape () =
-      let id = Shape_id.create () in
-      Union_find.create id
+    module Shape = struct
+      module Private = struct
+        (** Functions that should not be used outside the [Env] module *)
+
+        (** create a shape but without any structure yet. *)
+        let create () =
+          let id = Shape_id.create () in
+          Union_find.create id
 
 
-    let var_shape {var_shapes; _} var = Hashtbl.find_or_add ~default:create_shape var_shapes var
+        let create_and_store structure {shape_structures; _} =
+          let id = Shape_id.create () in
+          Hashtbl.set shape_structures ~key:id ~data:structure ;
+          Union_find.create id
+      end
 
-    let field_shape {shape_fields; _} shape fieldname =
-      (* Proceed in two steps: retrieve the field set of this shape or create it, then return the shape
-         of the asked field or create it. *)
-      let id = Union_find.get shape in
-      let field_table =
-        Hashtbl.find_or_add ~default:(fun () -> Hashtbl.create (module Fieldname)) shape_fields id
-      in
-      Hashtbl.find_or_add ~default:create_shape field_table fieldname
+      let bottom (_state : t) =
+        (* We don't actually store bottom shapes in the environment to gain some space. *)
+        Private.create ()
 
 
-    let unify_step shape_fields shape shape' todo =
+      let vector field_alist state = Private.create_and_store (Structure.vector field_alist) state
+
+      let scalar state = Private.create_and_store Structure.scalar state
+    end
+
+    let var_shape ({var_shapes; _} as state) var =
+      Hashtbl.find_or_add ~default:(fun () -> Shape.bottom state) var_shapes var
+
+
+    (** Unify two structures and return the unified result. The sub-shapes that shall be unified
+        will be put in the [todo] stack. *)
+    let unify_structures (structure : Structure.t) (structure' : Structure.t) todo : Structure.t =
+      match (structure, structure') with
+      | Bottom, _ ->
+          structure'
+      | _, Bottom ->
+          structure
+      | Vector fields, Vector fields' ->
+          (* Merge the fields of the second structure into the first one. During this merge, if we
+             encounter a field present in both shapes, we put the shapes of this field in the todo
+             stack to unify them at a later step (when the field table of the current processed
+             shapes will be completed).
+
+             Implementation note: we can arbitrarily merge (with mutation) into the first structure
+             as the old field tables will not be used anymore after this step. Merging into the
+             second one or into a new hash table would work as well.
+          *)
+          Hashtbl.merge_into ~src:fields' ~dst:fields ~f:(fun ~key:_fieldname shape' shape_opt ->
+              Option.iter ~f:(fun shape -> Stack.push todo (shape, shape')) shape_opt ;
+              Set_to shape' ) ;
+          Vector fields
+
+
+    let unify_step shape_structures shape shape' todo =
       (* Unify the shapes and put in the todo stack all the shapes of their fields that should also be unified. *)
       if Union_find.same_class shape shape' then
         (* We need to explicitly check that we are not trying to unify already unified classes to ensure
@@ -297,40 +359,40 @@ end = struct
         let id = Union_find.get shape in
         let id' = Union_find.get shape' in
         Union_find.union shape shape' ;
-        match (Hashtbl.find shape_fields id, Hashtbl.find shape_fields id') with
+        match (Hashtbl.find shape_structures id, Hashtbl.find shape_structures id') with
         | None, None ->
             (* No subfield to unify *)
             ()
         | Some _, None ->
-            (* Only one shape has fields, just use it as the new representative *)
+            (* Only one shape has a non-bottom structure, just use it as the new representative *)
             Union_find.set shape id
         | None, Some _ ->
             Union_find.set shape id'
-        | Some fields, Some fields' ->
-            (* Both shapes have fields. We arbitrarily use the first id as a representative then
-               merge the second fields into the first ones. During this merge, if we encounter
-               a field present in both shapes, we put the shapes of this field in the todo stack to
-               unify them at a later step (when the field table of the current processed shapes will
-               be completed). *)
+        | Some structure, Some structure' ->
+            (* Both shapes have a structure. We arbitrarily use the first id as a representative then
+               associate to it the unified structures. The old structure associated to the now-unused
+               second id can then be deleted. *)
             Union_find.set shape id ;
-            Hashtbl.merge_into ~src:fields' ~dst:fields ~f:(fun ~key:_fieldname shape' shape_opt ->
-                Option.iter ~f:(fun shape -> Stack.push todo (shape, shape')) shape_opt ;
-                Set_to shape' ) ;
-            Hashtbl.remove shape_fields id'
+            let unified_structure = unify_structures structure structure' todo in
+            (* Remark: we first remove then set in case id and id' are the same. This cannot happen
+               on the current state of the code due to the [same_class] test above but is likely
+               safer wrt. later potential code modifications. *)
+            Hashtbl.remove shape_structures id' ;
+            Hashtbl.set shape_structures ~key:id ~data:unified_structure
 
 
     (* Repeat the unification steps until the stack is empty. *)
-    let rec unify_stack shape_fields todo =
+    let rec unify_stack shape_structures todo =
       match Stack.pop todo with
       | None ->
           ()
       | Some (shape, shape') ->
-          unify_step shape_fields shape shape' todo ;
-          unify_stack shape_fields todo
+          unify_step shape_structures shape shape' todo ;
+          unify_stack shape_structures todo
 
 
-    let unify {shape_fields; _} shape shape' =
-      unify_stack shape_fields (Stack.singleton (shape, shape'))
+    let unify {shape_structures; _} shape shape' =
+      unify_stack shape_structures (Stack.singleton (shape, shape'))
   end
 
   module Summary = struct
@@ -357,24 +419,25 @@ end = struct
           L.die InternalError "No shape found for var %a" Var.pp var
 
 
-    let has_fields shape_fields shape =
-      match Hashtbl.find shape_fields shape with
-      | None ->
+    let has_fields shape_structures shape =
+      match (Hashtbl.find shape_structures shape : Structure.t option) with
+      | None | Some Bottom ->
           false
-      | Some field_table ->
+      | Some (Vector field_table) ->
           not (Hashtbl.is_empty field_table)
 
 
-    let find_field_table shape_fields shape =
-      match Hashtbl.find shape_fields shape with
-      | Some field_table ->
+    let find_field_table shape_structures shape =
+      match Hashtbl.find shape_structures shape with
+      | Some (Structure.Vector field_table) ->
           field_table
-      | None ->
-          L.die InternalError "No field table found for shape %a" Shape_id.pp shape
+      | other ->
+          L.die InternalError "No field table found for shape %a = %a" Shape_id.pp shape
+            (Fmt.option Structure.pp) other
 
 
-    let find_next_field_shape shape_fields shape field =
-      let field_table = find_field_table shape_fields shape in
+    let find_next_field_shape shape_structures shape field =
+      let field_table = find_field_table shape_structures shape in
       match Hashtbl.find field_table field with
       | Some field_shape ->
           field_shape
@@ -385,14 +448,14 @@ end = struct
             field_table
 
 
-    let find_var_path_shape {var_shapes; shape_fields} var field_path =
+    let find_var_path_shape {var_shapes; shape_structures} var field_path =
       let var_shape = find_var_shape var_shapes var in
       List.fold
-        ~f:(fun shape field -> find_next_field_shape shape_fields shape field)
+        ~f:(fun shape field -> find_next_field_shape shape_structures shape field)
         ~init:var_shape field_path
 
 
-    let make {State.var_shapes; shape_fields} =
+    let make {State.var_shapes; shape_structures} =
       (* Making a summary from a state essentially amounts to freezing State shape classes into State
          ids and converting those State ids into Summary ids. We keep an id translation table that
          maps state ids into summary ids and generate a fresh summary id whenever we encounter a new
@@ -402,14 +465,20 @@ end = struct
         Hashtbl.find_or_add id_translation_tbl ~default:Shape_id.create state_shape_id
       in
       let translate_shape state_shape = translate_shape_id (Union_find.get state_shape) in
-      let translate_fields fields = Hashtbl.map ~f:translate_shape fields in
+      let translate_structure : State.Structure.t -> Structure.t = function
+        | Bottom ->
+            Bottom
+        | Vector fields ->
+            Vector (Hashtbl.map ~f:translate_shape fields)
+      in
       let var_shapes = Hashtbl.map ~f:translate_shape var_shapes in
-      let shape_fields =
-        iter_hashtbl shape_fields
-        |> Iter.map2 (fun shape fields -> (translate_shape_id shape, translate_fields fields))
+      let shape_structures =
+        iter_hashtbl shape_structures
+        |> Iter.map2 (fun shape structure ->
+               (translate_shape_id shape, translate_structure structure) )
         |> hashtbl_of_iter_exn (module Shape_id)
       in
-      {var_shapes; shape_fields}
+      {var_shapes; shape_structures}
 
 
     (* Introducing a (callee) summary is not as simple as freezing an environment into a summary,
@@ -417,7 +486,7 @@ end = struct
        we do not want to put into the caller environment. Therefore we proceed by only introducing
        the shapes of some explicit variables (that will be the formals and return of the callee), and
        recursively discovering and introducing their fields. *)
-    let rec introduce_shape id_translation_tbl shape_id shape_fields state_shape_fields =
+    let rec introduce_shape id_translation_tbl shape_id shape_structures state_shape_structures =
       (* Translate and introduce a shape from the summary into the environment shapes *)
       match Hashtbl.find id_translation_tbl shape_id with
       | Some state_shape ->
@@ -427,29 +496,31 @@ end = struct
       | None ->
           (* This is a new shape to translate. Create a fresh environment shape and populate it by
              recursively introducing its fields. *)
-          let state_shape = State.create_shape () in
+          let state_shape = State.Shape.Private.create () in
           Hashtbl.set id_translation_tbl ~key:shape_id ~data:state_shape ;
-          ( match Hashtbl.find shape_fields shape_id with
-          | None ->
+          ( match (Hashtbl.find shape_structures shape_id : Structure.t option) with
+          | None | Some Bottom ->
               ()
-          | Some fields ->
-              Hashtbl.set state_shape_fields ~key:(Union_find.get state_shape)
-                ~data:(introduce_fields id_translation_tbl fields shape_fields state_shape_fields)
-          ) ;
+          | Some (Vector fields) ->
+              Hashtbl.set state_shape_structures ~key:(Union_find.get state_shape)
+                ~data:
+                  (State.Structure.Vector
+                     (introduce_fields id_translation_tbl fields shape_structures
+                        state_shape_structures ) ) ) ;
           state_shape
 
 
-    and introduce_fields id_translation_tbl fields shape_fields state_shape_fields =
+    and introduce_fields id_translation_tbl fields shape_structures state_shape_structures =
       Hashtbl.map
         ~f:(fun shape_id ->
-          introduce_shape id_translation_tbl shape_id shape_fields state_shape_fields )
+          introduce_shape id_translation_tbl shape_id shape_structures state_shape_structures )
         fields
 
 
-    let introduce_var ~var id_translation_tbl {var_shapes; shape_fields}
-        {State.shape_fields= state_shape_fields; _} =
-      introduce_shape id_translation_tbl (Hashtbl.find_exn var_shapes var) shape_fields
-        state_shape_fields
+    let introduce_var ~var id_translation_tbl {var_shapes; shape_structures}
+        {State.shape_structures= state_shape_structures; _} =
+      introduce_shape id_translation_tbl (Hashtbl.find_exn var_shapes var) shape_structures
+        state_shape_structures
 
 
     let introduce ~formals ~return summary state =
@@ -467,10 +538,6 @@ end = struct
       (args_state_shapes, return_state_shape)
 
 
-    let pp_field_table field_table =
-      pp_hashtbl ~sep:Fmt.comma ~bind:IFmt.colon_sp Fieldname.pp Shape_id.pp field_table
-
-
     (** Boxing fields are fields that are internally generated by the frontend to box scalar values,
         such as integer or atoms. They should not be considered as actual fields by the Lineage
         analysis. *)
@@ -482,7 +549,7 @@ end = struct
         fieldname
 
 
-    let finalise {var_shapes; shape_fields} var field_path =
+    let finalise {var_shapes; shape_structures} var field_path =
       let rec aux remaining_depth traversed_shape_set shape field_path : FieldPath.t * bool =
         match field_path with
         (* Walk through the fields and ensure that we do not:
@@ -497,13 +564,13 @@ end = struct
            one of the aforementioned limits.
         *)
         | [] ->
-            ([], has_fields shape_fields shape)
+            ([], has_fields shape_structures shape)
         | [field] when is_boxing_field field ->
             ([], false)
         | field :: _ when is_boxing_field field ->
             L.die InternalError "LineageShape: unexpected boxing field in non tail position."
         | field :: fields ->
-            let field_table = find_field_table shape_fields shape in
+            let field_table = find_field_table shape_structures shape in
             if
               Int.(remaining_depth <= 0)
               || Hashtbl.length field_table > LineageConfig.field_width
@@ -550,15 +617,16 @@ end = struct
         allows implementing {!fold_cell_pairs} by first getting the candidate terminal fields from a
         common shape of two different origin paths, then finalising separately wrt. these two paths
         (which could have different depths to begin with). *)
-    let fold_terminal_fields_of_shape shape_fields shape ~search_depth ~init ~f =
+    let fold_terminal_fields_of_shape shape_structures shape ~search_depth ~init ~f =
       let rec aux shape depth traversed field_path_acc ~init =
         if Int.(depth >= search_depth) || (LineageConfig.prevent_cycles && Set.mem traversed shape)
         then f init (List.rev field_path_acc)
         else
-          match Hashtbl.find shape_fields shape with
-          | None ->
+          match (Hashtbl.find shape_structures shape : Structure.t option) with
+          | None | Some Bottom ->
+              (* No more fields. *)
               f init (List.rev field_path_acc)
-          | Some fields ->
+          | Some (Vector fields) ->
               let len = Hashtbl.length fields in
               if Int.(len = 0 || len > LineageConfig.field_width) then
                 f init (List.rev field_path_acc)
@@ -572,36 +640,40 @@ end = struct
       aux shape 0 (Set.empty (module Shape_id)) [] ~init
 
 
-    let fold_cells {var_shapes; shape_fields} (var, field_path) ~init ~f =
-      let var_path_shape = find_var_path_shape {var_shapes; shape_fields} var field_path in
+    let fold_cells {var_shapes; shape_structures} (var, field_path) ~init ~f =
+      let var_path_shape = find_var_path_shape {var_shapes; shape_structures} var field_path in
       let search_depth = LineageConfig.field_depth - List.length field_path in
-      fold_terminal_fields_of_shape shape_fields var_path_shape ~search_depth ~init
+      fold_terminal_fields_of_shape shape_structures var_path_shape ~search_depth ~init
         ~f:(fun acc sub_path ->
-          f acc (finalise {var_shapes; shape_fields} var (field_path @ sub_path)) )
+          f acc (finalise {var_shapes; shape_structures} var (field_path @ sub_path)) )
 
 
-    let fold_cell_pairs {var_shapes; shape_fields} (var_1, field_path_1) (var_2, field_path_2) ~init
-        ~f =
-      let var_path_shape_1 = find_var_path_shape {var_shapes; shape_fields} var_1 field_path_1 in
-      let var_path_shape_2 = find_var_path_shape {var_shapes; shape_fields} var_2 field_path_2 in
+    let fold_cell_pairs {var_shapes; shape_structures} (var_1, field_path_1) (var_2, field_path_2)
+        ~init ~f =
+      let var_path_shape_1 =
+        find_var_path_shape {var_shapes; shape_structures} var_1 field_path_1
+      in
+      let var_path_shape_2 =
+        find_var_path_shape {var_shapes; shape_structures} var_2 field_path_2
+      in
       if not ([%equal: Shape_id.t] var_path_shape_1 var_path_shape_2) then
         L.die InternalError
           "@[Attempting to get related fields of differently shaped fields: @[%a={%a}@]@ vs@ \
            @[%a={%a}@]@]"
-          Shape_id.pp var_path_shape_1 (Fmt.option pp_field_table)
-          (Hashtbl.find shape_fields var_path_shape_1)
-          Shape_id.pp var_path_shape_2 (Fmt.option pp_field_table)
-          (Hashtbl.find shape_fields var_path_shape_2)
+          Shape_id.pp var_path_shape_1 (Fmt.option Structure.pp)
+          (Hashtbl.find shape_structures var_path_shape_1)
+          Shape_id.pp var_path_shape_2 (Fmt.option Structure.pp)
+          (Hashtbl.find shape_structures var_path_shape_2)
       else
         let search_depth =
           (* Use the shallowest argument to determine the search depth. *)
           LineageConfig.field_depth - Int.min (List.length field_path_1) (List.length field_path_2)
         in
-        fold_terminal_fields_of_shape shape_fields var_path_shape_1 ~search_depth ~init
+        fold_terminal_fields_of_shape shape_structures var_path_shape_1 ~search_depth ~init
           ~f:(fun acc sub_path ->
             f acc
-              (finalise {var_shapes; shape_fields} var_1 (field_path_1 @ sub_path))
-              (finalise {var_shapes; shape_fields} var_2 (field_path_2 @ sub_path)) )
+              (finalise {var_shapes; shape_structures} var_1 (field_path_1 @ sub_path))
+              (finalise {var_shapes; shape_structures} var_2 (field_path_2 @ sub_path)) )
   end
 end
 
@@ -654,37 +726,48 @@ struct
   let rec shape_expr (e : Exp.t) =
     match e with
     | Const _ | Closure _ ->
-        (* We use fresh ids to represent shapes that do not hold fields. *)
-        Env.State.create_shape ()
+        Env.State.Shape.scalar state
     | Var id ->
         Env.State.var_shape state (Var.of_id id)
     | Lvar pvar ->
         Env.State.var_shape state (Var.of_pvar pvar)
     | Lfield (e, fieldname, _) ->
+        (* 1. Create the S = {fieldname -> bottom} shape
+           2. Unify this shape with the current known shape S_e of e (that will add the fieldname if
+              it was unknown yet)
+           3. Get the final shape of [S_e U S].fieldname
+        *)
         let shape_e = shape_expr e in
-        Env.State.field_shape state shape_e fieldname
+        let shape_field = Env.State.Shape.bottom state in
+        let shape_vector = Env.State.Shape.vector [(fieldname, shape_field)] state in
+        Env.State.unify state shape_e shape_vector ;
+        shape_field
     | Sizeof {dynamic_length= None} ->
-        Env.State.create_shape ()
+        Env.State.Shape.scalar state
     | UnOp (_, e, _) | Exn e | Cast (_, e) | Sizeof {dynamic_length= Some e} ->
         (* We first shape [e] to possibly discover some fields (eg. on [not (x.f)]), then return
-           a fresh id as unary operators only return scalar value. *)
+           a scalar shape as unary operators only return scalar value. *)
         ignore (shape_expr e : Env.State.shape) ;
-        Env.State.create_shape ()
+        Env.State.Shape.scalar state
     | BinOp (_, e1, e2) | Lindex (e1, e2) ->
         (* Similar to the UnOp case *)
         ignore (shape_expr e1 : Env.State.shape) ;
         ignore (shape_expr e2 : Env.State.shape) ;
-        Env.State.create_shape ()
+        Env.State.Shape.scalar state
 
 
   module CallModel = struct
     let make_tuple ret_id args =
-      (* Unify the shapes of the fields of the return with the shapes of the arguments *)
-      let ret_shape = Env.State.var_shape state ret_id in
+      (* Unify the shape of the return with a Vector made from the arguments *)
+      let ret_id_shape = Env.State.var_shape state ret_id in
       let tuple_type : Typ.name = ErlangType (Tuple (List.length args)) in
       let fieldname i = Fieldname.make tuple_type (ErlangTypeName.tuple_elem (i + 1)) in
-      let ret_field_shape i = Env.State.field_shape state ret_shape (fieldname i) in
-      List.iteri ~f:(fun i arg -> Env.State.unify state (shape_expr arg) (ret_field_shape i)) args
+      let arg_vector_shape =
+        Env.State.Shape.vector
+          (List.mapi ~f:(fun i arg -> (fieldname i, shape_expr arg)) args)
+          state
+      in
+      Env.State.unify state ret_id_shape arg_vector_shape
 
 
     let get_custom_model procname =
@@ -692,17 +775,27 @@ struct
       List.Assoc.find ~equal:Procname.equal models procname
 
 
-    let ignore_shape_ret_and_args ret_var args =
-      ignore (Env.State.var_shape state ret_var : Env.State.shape) ;
+    let unknown_model ~pp_callee ~callee ret_var args =
+      L.debug Analysis Verbose "@[<v2> LineageShape: no model found for procname `%a`@]@," pp_callee
+        callee ;
+      (* Shape the return as a vector with no known field => most general shape *)
+      let ret_shape = Env.State.var_shape state ret_var in
+      Env.State.unify state (Env.State.Shape.vector [] state) ret_shape ;
+      (* Shape the arguments to make sure the analysis is aware of them *)
       ignore (List.map ~f:shape_expr args : Env.State.shape list) ;
       ()
 
 
-    let unknown_model procname ret_var args =
-      L.debug Analysis Verbose "@[<v2> LineageShape: no model found for expression `%a`@]@,"
-        Procname.pp procname ;
-      ignore_shape_ret_and_args ret_var args ;
-      ()
+    let unknown_exp exp ret_var args =
+      unknown_model
+        ~pp_callee:Fmt.(any "expression " ++ quote ~mark:"`" Exp.pp)
+        ~callee:exp ret_var args
+
+
+    let unknown_procname procname ret_var args =
+      unknown_model
+        ~pp_callee:Fmt.(any "procname" ++ quote ~mark:"`" Procname.pp)
+        ~callee:procname ret_var args
 
 
     let standard_model procname summary ret_var args =
@@ -735,7 +828,7 @@ struct
         | Some summary ->
             standard_model procname summary ret_var args
         | None ->
-            unknown_model procname ret_var args )
+            unknown_procname procname ret_var args )
   end
 
   let exec_assignment var rhs_exp =
@@ -763,9 +856,7 @@ struct
         let args = List.map ~f:fst args (* forget SIL types *) in
         match procname_of_exp fun_exp with
         | None ->
-            CallModel.ignore_shape_ret_and_args ret_var args ;
-            L.debug Analysis Verbose "@[<v>LineageShape: call of unsupported expression `%a`.@]@,"
-              Exp.pp fun_exp
+            CallModel.unknown_exp fun_exp ret_var args
         | Some procname ->
             CallModel.exec analyze_dependency procname ret_var args )
     | Prune (e, _, _, _) ->
