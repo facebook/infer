@@ -207,7 +207,7 @@ end = struct
       (** Shape classes are equivalence classes of shape identifiers, that is, sets of shape
           identifiers that share a common set of fields. *)
 
-      type 'id t [@@deriving sexp_of]
+      type 'id t
 
       val pp : 'id Fmt.t -> 'id t Fmt.t
     end
@@ -228,9 +228,9 @@ end = struct
       Id ()
 
       (** A shape is an equivalence class of shape identifiers. *)
-      type shape = Shape_id.t Shape_class.t [@@deriving sexp_of]
+      type shape = Shape_id.t Shape_class.t
 
-      type fields = (Fieldname.t, shape) Hashtbl.t [@@deriving sexp_of]
+      type fields = (Fieldname.t, shape) Hashtbl.t
 
       (** An environment associates to each variable its equivalence class, and to each shape
           equivalence class representative its set of known fields. *)
@@ -257,8 +257,6 @@ end = struct
       type 'id t = 'id Union_find.t
 
       let pp pp_id = Fmt.using Union_find.get pp_id
-
-      let sexp_of_t sexp_of_id x = sexp_of_id (Union_find.get x)
     end
 
     include Types.Make (Shape_class) ()
@@ -344,7 +342,7 @@ end = struct
           summary classes are simply shape ids, which trades off the now-uneeded mergeability for
           marshallability. *)
 
-      type 'id t = 'id [@@deriving sexp]
+      type 'id t = 'id
 
       let pp pp_id = pp_id
     end
