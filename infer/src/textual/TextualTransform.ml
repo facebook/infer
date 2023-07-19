@@ -262,6 +262,26 @@ let remove_if_terminator module_ =
       List.fold pdesc.ProcDesc.nodes ~init:NodeName.Set.empty ~f:(fun set (node : Node.t) ->
           NodeName.Set.add node.label set )
     in
+    let predecessors_count : NodeName.t -> int =
+      (* we count how many predecessors a node has *)
+      let get label map = NodeName.Map.find_opt label map |> Option.value ~default:0 in
+      let map =
+        List.fold pdesc.ProcDesc.nodes ~init:NodeName.Map.empty ~f:(fun map (node : Node.t) ->
+            let succs =
+              match node.Node.last with
+              | If {then_node; else_node} ->
+                  [then_node; else_node]
+              | Ret _ | Throw _ | Unreachable ->
+                  []
+              | Jump l ->
+                  l
+            in
+            List.fold succs ~init:map ~f:(fun map ({label} : Terminator.node_call) ->
+                let count = get label map in
+                NodeName.Map.add label (count + 1) map ) )
+      in
+      fun label -> get label map
+    in
     let fresh_label =
       let counter = ref 0 in
       let rec fresh_label () =
@@ -291,39 +311,64 @@ let remove_if_terminator module_ =
       | _ ->
           collect_conjuncts bexp [] :: disjuncts
     in
-    let mk_extra_nodes loc bexp target =
+    let mk_extra_nodes loc bexp target patch =
+      (* the patch map records if a node (with a single predecessor) needs to
+         receive a preambule of prune instructions *)
+      let label = target.Terminator.label in
       let bexp = bexp |> negative_normal_form |> disjunctive_normal_form in
       let disjuncts = collect_disjuncts bexp [] in
-      List.rev_map disjuncts ~f:(fun conjuncts : Node.t ->
-          let label = fresh_label () in
+      match disjuncts with
+      | [] ->
+          L.die InternalError "0 disjuncts is not possible"
+      | [conjuncts] when Int.equal (predecessors_count label) 1 ->
+          (* we can directly add the prune instructions in the target *)
           let instrs = List.map conjuncts ~f:(fun exp -> Instr.Prune {exp; loc}) in
-          { label
-          ; ssa_parameters= []
-          ; exn_succs= []
-          ; last= Jump [target]
-          ; instrs
-          ; last_loc= loc
-          ; label_loc= loc } )
+          ([], [label], NodeName.Map.add label instrs patch)
+      | _ ->
+          let extra_nodes =
+            List.rev_map disjuncts ~f:(fun conjuncts : Node.t ->
+                let label = fresh_label () in
+                let instrs = List.map conjuncts ~f:(fun exp -> Instr.Prune {exp; loc}) in
+                { label
+                ; ssa_parameters= []
+                ; exn_succs= []
+                ; last= Jump [target]
+                ; instrs
+                ; last_loc= loc
+                ; label_loc= loc } )
+          in
+          let targets = List.map extra_nodes ~f:(fun (node : Node.t) -> node.label) in
+          (extra_nodes, targets, patch)
     in
-    let remove_if loc terminator =
+    let remove_if loc terminator patch =
       match (terminator : Terminator.t) with
       | If {bexp; then_node; else_node} ->
-          let extra_nodes_true = mk_extra_nodes loc bexp then_node in
-          let extra_nodes_false = mk_extra_nodes loc (BoolExp.Not bexp) else_node in
+          let extra_nodes_true, target_true, patch = mk_extra_nodes loc bexp then_node patch in
+          let extra_nodes_false, target_false, patch =
+            mk_extra_nodes loc (BoolExp.Not bexp) else_node patch
+          in
           let nodes = extra_nodes_false @ extra_nodes_true in
           let targets : Terminator.node_call list =
-            List.rev_map nodes ~f:(fun ({label} : Node.t) -> {Terminator.label; ssa_args= []})
+            List.rev_map (target_false @ target_true) ~f:(fun label ->
+                {Terminator.label; ssa_args= []} )
           in
-          (Terminator.Jump targets, nodes)
+          (Terminator.Jump targets, nodes, patch)
       | _ ->
-          (terminator, [])
+          (terminator, [], patch)
     in
     let nodes = pdesc.ProcDesc.nodes in
+    let rev_nodes, patch =
+      List.fold nodes ~init:([], NodeName.Map.empty) ~f:(fun (nodes, patch) (node : Node.t) ->
+          let last, extra_nodes, patch = remove_if node.last_loc node.last patch in
+          (extra_nodes @ ({node with last} :: nodes), patch) )
+    in
     let nodes =
-      List.fold nodes ~init:[] ~f:(fun nodes (node : Node.t) ->
-          let last, extra_nodes = remove_if node.last_loc node.last in
-          extra_nodes @ ({node with last} :: nodes) )
-      |> List.rev
+      List.fold rev_nodes ~init:[] ~f:(fun nodes (node : Node.t) ->
+          let label = node.label in
+          if NodeName.Map.mem label patch then
+            let prelude = NodeName.Map.find label patch in
+            {node with instrs= prelude @ node.instrs} :: nodes
+          else node :: nodes )
     in
     {pdesc with ProcDesc.nodes}
   in

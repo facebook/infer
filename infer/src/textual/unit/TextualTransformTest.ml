@@ -150,81 +150,78 @@ let%test_module "remove_if_terminator transformation" =
                 n3:int = load &b3
                 n4:int = load &b4
                 n5:int = load &b5
-                jmp if0, if1, if2, if3
+                jmp lab1, if0, if1, if2
 
             #if0:
-                prune n1
-                prune n2
-                prune n3
-                jmp lab1
-
-            #if1:
                 prune __sil_lnot(n1)
                 jmp lab2
 
-            #if2:
+            #if1:
                 prune __sil_lnot(n2)
                 jmp lab2
 
-            #if3:
+            #if2:
                 prune __sil_lnot(n3)
                 jmp lab2
 
             #lab1:
+                prune n1
+                prune n2
+                prune n3
                 ret 1
 
             #lab2:
-                jmp if4, if5, if6, if7
+                jmp if3, if4, if5, if6
 
-            #if4:
+            #if3:
                 prune n2
                 jmp lab3
 
-            #if5:
+            #if4:
                 prune n1
                 prune n3
                 jmp lab3
 
-            #if6:
+            #if5:
                 prune __sil_lnot(n2)
                 prune __sil_lnot(n1)
                 jmp lab4
 
-            #if7:
+            #if6:
                 prune __sil_lnot(n2)
                 prune __sil_lnot(n3)
                 jmp lab4
 
             #lab3:
-                jmp if8, if9, if10, if11, if12, if13
+                jmp if7, if8, if9, if10, if11, if12
 
-            #if8:
+            #if7:
                 prune n1
                 prune n2
                 jmp lab4
 
-            #if9:
+            #if8:
                 prune n1
                 prune n3
                 prune n4
                 jmp lab4
 
-            #if10:
+            #if9:
                 prune n1
                 prune n3
                 prune n5
                 jmp lab4
 
-            #if11:
+            #if10:
                 prune __sil_lnot(n1)
                 jmp lab5
 
-            #if12:
+            #if11:
                 prune __sil_lnot(n2)
                 prune __sil_lnot(n3)
                 jmp lab5
 
-            #if13:
+            #if12:
                 prune __sil_lnot(n2)
                 prune __sil_lnot(n4)
                 prune __sil_lnot(n5)
