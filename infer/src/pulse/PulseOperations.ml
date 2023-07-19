@@ -326,6 +326,28 @@ let havoc_deref_field path location addr_trace field trace_obj astate =
     astate
 
 
+let hack_propagates_type_on_load tenv path loc rhs_exp addr astate =
+  ( if Language.curr_language_is Hack then
+      (* The Hack frontend does not propagate types from declarations to usage,
+         so we redo part of the work ourself *)
+      let open IOption.Let_syntax in
+      match rhs_exp with
+      | Exp.Lfield (recv, field_name, _) ->
+          let* _, (base_addr, _) =
+            eval path NoAccess loc recv astate |> PulseOperationResult.sat_ok
+          in
+          let* typ_name = AbductiveDomain.AddressAttributes.get_static_type base_addr astate in
+          let* {Struct.typ= field_typ} = Tenv.resolve_fieldname tenv typ_name field_name in
+          let+ field_typ_name =
+            if Typ.is_pointer field_typ then Typ.name (Typ.strip_ptr field_typ) else None
+          in
+          AbductiveDomain.AddressAttributes.add_static_type tenv field_typ_name addr astate
+      | _ ->
+          None
+    else None )
+  |> Option.value ~default:astate
+
+
 let always_reachable address astate = AddressAttributes.always_reachable address astate
 
 let allocate allocator location addr astate =

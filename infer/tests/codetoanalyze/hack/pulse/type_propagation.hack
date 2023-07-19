@@ -38,7 +38,7 @@ class Main {
     \Level1\taintSink($a->getUntainted());
   }
 
-  public static function FN_fromPropertyThroughParamBad(C $c) {
+  public static function fromPropertyThroughParamBad(C $c) {
     \Level1\taintSink($c->a->getTainted());
   }
 
@@ -46,7 +46,7 @@ class Main {
     \Level1\taintSink($c->a->getUntainted());
   }
 
-  public static function FN_fromPropertyThroughNewBad() {
+  public static function fromPropertyThroughNewBad() {
     $c = new C();
     \Level1\taintSink($c->a->getTainted());
   }
@@ -55,6 +55,7 @@ class Main {
     $c = new C();
     \Level1\taintSink($c->a->getUntainted());
   }
+
   public static function FN_fromGlobalBad(C $c) {
     \Level1\taintSink(C::$global->getTainted());
   }

@@ -735,6 +735,15 @@ module Internal = struct
     let exists_edge v astate ~f = Container.exists ~iter:(iter_edges v) astate ~f
   end
 
+  let add_static_type tenv typ_name addr astate =
+    let is_final =
+      Tenv.lookup tenv typ_name
+      |> Option.value_map ~default:false ~f:(fun {Struct.annots} -> Annot.Item.is_final annots)
+    in
+    if is_final then SafeAttributes.add_dynamic_type (Typ.mk_struct typ_name) addr astate
+    else SafeAttributes.add_static_type typ_name addr astate
+
+
   let add_static_types tenv astate formals_and_captured =
     let record_static_type astate (_var, typ, (src_addr, _)) =
       match typ with
@@ -756,13 +765,7 @@ module Internal = struct
               pre= PreDomain.update ~heap:pre_heap astate.pre
             ; post= PostDomain.update ~heap:post_heap astate.post }
           in
-          let is_final =
-            Tenv.lookup tenv typ_name
-            |> Option.value_map ~default:false ~f:(fun {Struct.annots} ->
-                   Annot.Item.is_final annots )
-          in
-          if is_final then SafeAttributes.add_dynamic_type (Typ.mk_struct typ_name) addr astate
-          else SafeAttributes.add_static_type typ_name addr astate
+          add_static_type tenv typ_name addr astate
       | _ ->
           astate
     in
@@ -2021,6 +2024,10 @@ module AddressAttributes = struct
 
 
   let add_ref_counted v astate = SafeAttributes.add_ref_counted (CanonValue.canon' astate v) astate
+
+  let add_static_type tenv typ v astate =
+    add_static_type tenv typ (CanonValue.canon' astate v) astate
+
 
   let is_ref_counted v astate = SafeAttributes.is_ref_counted (CanonValue.canon' astate v) astate
 

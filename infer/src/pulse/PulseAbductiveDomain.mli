@@ -196,6 +196,8 @@ module AddressAttributes : sig
 
   val add_ref_counted : AbstractValue.t -> t -> t
 
+  val add_static_type : Tenv.t -> Typ.name -> AbstractValue.t -> t -> t
+
   val is_ref_counted : AbstractValue.t -> t -> bool
 
   val remove_allocation_attr : AbstractValue.t -> t -> t

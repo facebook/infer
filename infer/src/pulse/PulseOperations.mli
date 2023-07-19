@@ -108,6 +108,9 @@ val eval_deref_access :
 val eval_proc_name :
   PathContext.t -> Location.t -> Exp.t -> t -> (t * Procname.t option) AccessResult.t SatUnsat.t
 
+val hack_propagates_type_on_load :
+  Tenv.t -> PathContext.t -> Location.t -> Exp.t -> AbstractValue.t -> t -> t
+
 val havoc_id : Ident.t -> ValueHistory.t -> t -> t
 
 val havoc_deref_field :
