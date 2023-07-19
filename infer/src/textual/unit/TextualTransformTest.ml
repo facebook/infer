@@ -112,13 +112,14 @@ let%test_module "remove_if_terminator transformation" =
               n3 : int = load &b3
               n4 : int = load &b4
               n5 : int = load &b5
-              if n1 && n2 && n3 then lab1 else lab2
+              if n1 && n2 && n3 then jmp lab1 else jmp lab2
           #lab1:
               ret 1
           #lab2:
-              if n2 || n1 && n3 then lab3 else lab4
+              if n2 || n1 && n3 then jmp lab3
+              else jmp lab4
           #lab3:
-              if n1 && (n2 || (n3 && (n4 || n5))) then lab4 else lab5
+              if n1 && (n2 || (n3 && (n4 || n5))) then jmp lab4 else jmp lab5
           #lab4:
               ret 2
           #lab5:
@@ -130,11 +131,21 @@ let%test_module "remove_if_terminator transformation" =
               n1 : int = load &b1
               n2 : int = load &b2
               n3 : int = load &b3
-              if (n1 || n2) && n3 then lab1 else if2
+              if (n1 || n2) && n3 then jmp lab1 else jmp if2
           #lab1:
               ret 1
           #if2: // we test the situation where the generated label may already exists
               ret 2
+        }
+
+        define h(b1: int, b2: int, b3: int) : int {
+          #entry:
+              n1 : int = load &b1
+              n2 : int = load &b2
+              n3 : int = load &b3
+              if n1 && n2 && n3 then ret 1
+              else if n2 || n1 && n3 then ret 2
+              else ret 3
         }|}
 
 
@@ -171,57 +182,57 @@ let%test_module "remove_if_terminator transformation" =
                 ret 1
 
             #lab2:
-                jmp if3, if4, if5, if6
+                jmp if5, if6, if3, if4
 
-            #if3:
+            #if5:
                 prune n2
                 jmp lab3
 
-            #if4:
+            #if6:
                 prune n1
                 prune n3
                 jmp lab3
 
-            #if5:
+            #if3:
                 prune __sil_lnot(n2)
                 prune __sil_lnot(n1)
                 jmp lab4
 
-            #if6:
+            #if4:
                 prune __sil_lnot(n2)
                 prune __sil_lnot(n3)
                 jmp lab4
 
             #lab3:
-                jmp if7, if8, if9, if10, if11, if12
+                jmp if10, if11, if12, if7, if8, if9
 
-            #if7:
+            #if10:
                 prune n1
                 prune n2
                 jmp lab4
 
-            #if8:
+            #if11:
                 prune n1
                 prune n3
                 prune n4
                 jmp lab4
 
-            #if9:
+            #if12:
                 prune n1
                 prune n3
                 prune n5
                 jmp lab4
 
-            #if10:
+            #if7:
                 prune __sil_lnot(n1)
                 jmp lab5
 
-            #if11:
+            #if8:
                 prune __sil_lnot(n2)
                 prune __sil_lnot(n3)
                 jmp lab5
 
-            #if12:
+            #if9:
                 prune __sil_lnot(n2)
                 prune __sil_lnot(n4)
                 prune __sil_lnot(n5)
@@ -240,24 +251,24 @@ let%test_module "remove_if_terminator transformation" =
                 n1:int = load &b1
                 n2:int = load &b2
                 n3:int = load &b3
-                jmp if0, if1, if3, if4
+                jmp if3, if4, if0, if1
 
-            #if0:
+            #if3:
                 prune n1
                 prune n3
                 jmp lab1
 
-            #if1:
+            #if4:
                 prune n2
                 prune n3
                 jmp lab1
 
-            #if3:
+            #if0:
                 prune __sil_lnot(n1)
                 prune __sil_lnot(n2)
                 jmp if2
 
-            #if4:
+            #if1:
                 prune __sil_lnot(n3)
                 jmp if2
 
@@ -266,6 +277,52 @@ let%test_module "remove_if_terminator transformation" =
 
             #if2:
                 ret 2
+
+          }
+
+          define h(b1: int, b2: int, b3: int) : int {
+            #entry:
+                n1:int = load &b1
+                n2:int = load &b2
+                n3:int = load &b3
+                jmp if7, if4, if5, if6
+
+            #if7:
+                prune n1
+                prune n2
+                prune n3
+                ret 1
+
+            #if4:
+                prune __sil_lnot(n1)
+                jmp if2, if3, if0, if1
+
+            #if5:
+                prune __sil_lnot(n2)
+                jmp if2, if3, if0, if1
+
+            #if6:
+                prune __sil_lnot(n3)
+                jmp if2, if3, if0, if1
+
+            #if2:
+                prune n2
+                ret 2
+
+            #if3:
+                prune n1
+                prune n3
+                ret 2
+
+            #if0:
+                prune __sil_lnot(n2)
+                prune __sil_lnot(n1)
+                ret 3
+
+            #if1:
+                prune __sil_lnot(n2)
+                prune __sil_lnot(n3)
+                ret 3
 
           } |}]
   end )

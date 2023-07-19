@@ -253,12 +253,12 @@ let get_procdesc_referenced_types (pdesc : ProcDesc.t) =
         from_exp exp
   in
   let from_node_call ({ssa_args} : Terminator.node_call) = List.iter ssa_args ~f:from_exp in
-  let from_terminator (t : Terminator.t) =
+  let rec from_terminator (t : Terminator.t) =
     match t with
-    | If {bexp; then_node; else_node} ->
+    | If {bexp; then_; else_} ->
         from_bexp bexp ;
-        from_node_call then_node ;
-        from_node_call else_node
+        from_terminator then_ ;
+        from_terminator else_
     | Ret exp | Throw exp ->
         from_exp exp
     | Jump node_call ->

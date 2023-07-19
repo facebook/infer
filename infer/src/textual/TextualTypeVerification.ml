@@ -511,12 +511,12 @@ let typecheck_node_call loc ({label; ssa_args} : Terminator.node_call) : unit mo
         ~expected:(SubTypeOf assigned) ~loc )
 
 
-let typecheck_terminator loc (term : Terminator.t) : unit monad =
+let rec typecheck_terminator loc (term : Terminator.t) : unit monad =
   let* () = set_location loc in
   match term with
-  | If {bexp= _; then_node; else_node} ->
-      let* () = typecheck_node_call loc then_node in
-      let* () = typecheck_node_call loc else_node in
+  | If {bexp= _; then_; else_} ->
+      let* () = typecheck_terminator loc then_ in
+      let* () = typecheck_terminator loc else_ in
       ret ()
   | Ret exp ->
       let* result_typ = get_result_type in
@@ -533,16 +533,16 @@ let typecheck_terminator loc (term : Terminator.t) : unit monad =
 
 let all_successors (node : Node.t) : NodeName.t list =
   let node_call_succ ({label} : Terminator.node_call) = label in
-  let normal_succs =
-    match node.last with
-    | If {then_node; else_node} ->
-        [node_call_succ then_node; node_call_succ else_node]
+  let rec normal_succs (terminator : Terminator.t) =
+    match terminator with
+    | If {then_; else_} ->
+        normal_succs then_ @ normal_succs else_
     | Ret _ | Throw _ | Unreachable ->
         []
     | Jump node_calls ->
         List.map ~f:node_call_succ node_calls
   in
-  normal_succs @ node.exn_succs
+  normal_succs node.last @ node.exn_succs
 
 
 (** nodes are typechecked in dfs order to make sure every idents that are read in a node, have been

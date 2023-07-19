@@ -370,8 +370,8 @@ bool_expression:
     { bexp }
 
 terminator:
-  | IF bexp=bool_expression THEN then_node=node_call ELSE else_node=node_call
-    { Terminator.If {bexp; then_node; else_node} }
+  | IF bexp=bool_expression THEN then_=terminator ELSE else_=terminator
+    { Terminator.If {bexp; then_; else_} }
   | RET e=expression
     { Terminator.Ret e }
   | JMP l=separated_list(COMMA, node_call)

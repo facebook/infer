@@ -103,11 +103,11 @@ let verify_decl ~env errors (decl : Module.decl) =
     in
     let verify_label errors = verify_label errors declared_labels procdecl.qualified_name in
     let verify_node_call errors {Terminator.label} = verify_label errors label in
-    let verify_terminator loc errors (t : Terminator.t) =
+    let rec verify_terminator loc errors (t : Terminator.t) =
       match t with
-      | If {then_node; else_node} ->
-          let errors = verify_node_call errors then_node in
-          verify_node_call errors else_node
+      | If {then_; else_} ->
+          let errors = verify_terminator loc errors then_ in
+          verify_terminator loc errors else_
       | Jump l ->
           List.fold ~init:errors ~f:verify_node_call l
       | Ret e | Throw e ->

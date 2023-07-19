@@ -279,7 +279,7 @@ module Terminator : sig
   type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
   type t =
-    | If of {bexp: BoolExp.t; then_node: node_call; else_node: node_call}
+    | If of {bexp: BoolExp.t; then_: t; else_: t}
     | Ret of Exp.t
     | Jump of node_call list  (** non empty list *)
     | Throw of Exp.t

@@ -700,7 +700,7 @@ module Terminator = struct
   type node_call = {label: NodeName.t; ssa_args: Exp.t list}
 
   type t =
-    | If of {bexp: BoolExp.t; then_node: node_call; else_node: node_call}
+    | If of {bexp: BoolExp.t; then_: t; else_: t}
     | Ret of Exp.t
     | Jump of node_call list
     | Throw of Exp.t
@@ -714,10 +714,9 @@ module Terminator = struct
         F.fprintf fmt "%a(%a)" NodeName.pp label (pp_list_with_comma Exp.pp) ssa_args
 
 
-  let pp fmt = function
-    | If {bexp; then_node; else_node} ->
-        F.fprintf fmt "if %a then %a else %a" BoolExp.pp bexp pp_block_call then_node pp_block_call
-          else_node
+  let rec pp fmt = function
+    | If {bexp; then_; else_} ->
+        F.fprintf fmt "if %a then %a else %a" BoolExp.pp bexp pp then_ pp else_
     | Ret e ->
         F.fprintf fmt "ret %a" Exp.pp e
     | Jump l ->
@@ -728,10 +727,11 @@ module Terminator = struct
         F.pp_print_string fmt "unreachable"
 
 
-  let do_not_contain_regular_call t =
+  let rec do_not_contain_regular_call t =
     match t with
-    | If {bexp} ->
+    | If {bexp; then_; else_} ->
         BoolExp.do_not_contain_regular_call bexp
+        && do_not_contain_regular_call then_ && do_not_contain_regular_call else_
     | Ret exp | Throw exp ->
         Exp.do_not_contain_regular_call exp
     | Jump _ | Unreachable ->
