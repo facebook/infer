@@ -22,6 +22,13 @@ let read_boxed_string_value address astate =
   AddressAttributes.get_const_string string_val astate
 
 
+let read_boxed_string_value_dsl aval : string DSL.monad =
+  (* we cut the current path if no constant string is found *)
+  let open PulseModelsDSL.Syntax in
+  let* opt_string = exec_operation (read_boxed_string_value (fst aval)) in
+  Option.value_map opt_string ~default:unreachable ~f:ret
+
+
 let hack_dim_field_get this_obj_dbl_ptr (field_string_obj, _) : model =
  fun {path; location; ret} astate ->
   match read_boxed_string_value field_string_obj astate with
@@ -61,6 +68,10 @@ let hack_dim_field_get_or_null this_obj_dbl_ptr field : model =
   astate1 @ astate2
 
 
+let payloads_of_args args =
+  List.map ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= addr} -> addr) args
+
+
 let mk_hack_field clazz field = Fieldname.make (Typ.HackClass (HackClassName.make clazz)) field
 
 let load_field path field location obj astate =
@@ -83,7 +94,7 @@ let write_field path field new_val location addr astate =
 let await_hack_value v astate = AddressAttributes.hack_async_await v astate
 
 let await_hack_value_dsl aval : unit DSL.monad =
-  fst aval |> await_hack_value |> PulseModelsDSL.Syntax.exec_command
+  fst aval |> await_hack_value |> DSL.Syntax.exec_command
 
 
 let hack_await (argv, hist) : model =
@@ -113,7 +124,7 @@ module Vec = struct
   let last_read_field = mk_hack_field class_name "__infer_model_backing_last_read"
 
   let new_vec_dsl args : DSL.aval DSL.monad =
-    let open PulseModelsDSL.Syntax in
+    let open DSL.Syntax in
     let actual_size = List.length args in
     let typ = Typ.mk_struct TextualSil.hack_vec_type_name in
     let* vec = mk_fresh ~model_desc:"new_vec" in
@@ -148,10 +159,8 @@ module Vec = struct
 
 
   let new_vec args : model =
-    let values =
-      List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= aval} -> aval)
-    in
-    let open PulseModelsDSL.Syntax in
+    let values = payloads_of_args args in
+    let open DSL.Syntax in
     start_model
     @@ let* vec = new_vec_dsl values in
        return_value vec
@@ -238,17 +247,21 @@ module Vec = struct
   See also $builtins.hack_array_cow_append in lib/hack/models.sil
   Model of set is very like that of append, since it ignores the index
   *)
-  let hack_array_cow_set vec _key value : model =
-    let open PulseModelsDSL.Syntax in
-    start_model
-    @@ let* v_fst = eval_deref_access Read vec (FieldAccess fst_field) in
-       let* v_snd = eval_deref_access Read vec (FieldAccess snd_field) in
-       let* () = await_hack_value_dsl v_fst in
-       let* new_vec = new_vec_dsl [v_snd; value] in
-       let* size = eval_deref_access Read vec (FieldAccess size_field) in
-       let* () = write_deref_field ~ref:new_vec size_field ~obj:size in
-       (* overwrite default size of 2 *)
-       return_value new_vec
+  let hack_array_cow_set_dsl vec args : DSL.aval DSL.monad =
+    let open DSL.Syntax in
+    match args with
+    | [_key; value] ->
+        let* v_fst = eval_deref_access Read vec (FieldAccess fst_field) in
+        let* v_snd = eval_deref_access Read vec (FieldAccess snd_field) in
+        let* () = await_hack_value_dsl v_fst in
+        let* new_vec = new_vec_dsl [v_snd; value] in
+        let* size = eval_deref_access Read vec (FieldAccess size_field) in
+        let* () = write_deref_field ~ref:new_vec size_field ~obj:size in
+        (* overwrite default size of 2 *)
+        ret new_vec
+    | _ ->
+        L.d_printfln "Vec.hack_array_cow_set expects 3 arguments" ;
+        unreachable
 end
 
 let hack_dim_array_get this_obj key_obj : model =
@@ -324,36 +337,74 @@ let get_static_class (addr, _) : model =
       AbductiveDomain.add_need_dynamic_type_specialization addr astate |> Basic.ok_continue
 
 
-(* We model dict/shape keys as fields. This is a bit unorthodox in Pulse, but we need
-   maximum precision on this ubiquitous Hack data structure. *)
-let new_dict args : model =
- fun {path; location; ret= ret_id, _} astate ->
-  let open IOption.Let_syntax in
-  let bindings =
-    args
-    |> List.map ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= addr, _} -> addr)
-    |> List.chunks_of ~length:2
-    |> List.filter_map ~f:(function
-         | [string_addr; val_addr] ->
-             let+ string_val = read_boxed_string_value string_addr astate in
-             (string_val, val_addr)
-         | _ ->
-             None )
-  in
-  let addr = AbstractValue.mk_fresh () in
-  let typ = Typ.mk_struct TextualSil.hack_dict_type_name in
-  let astate = PulseOperations.add_dynamic_type typ addr astate in
-  let hist = Hist.single_call path location "new_dict" in
-  let ref = (addr, hist) in
-  let open PulseResult.Let_syntax in
-  let<+> astate =
-    List.fold bindings ~init:(Ok astate) ~f:(fun acc (key, addr_val) ->
-        let* astate = acc in
-        let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack key in
-        let obj = (addr_val, hist) in
-        PulseOperations.write_deref_field path location ~ref ~obj field astate )
-  in
-  PulseOperations.write_id ret_id ref astate
+module Dict = struct
+  (* We model dict/shape keys as fields. This is a bit unorthodox in Pulse, but we need
+     maximum precision on this ubiquitous Hack data structure. *)
+
+  let field_of_string_value value : Fieldname.t DSL.monad =
+    let open DSL.Syntax in
+    let* string = read_boxed_string_value_dsl value in
+    TextualSil.wildcard_sil_fieldname Textual.Lang.Hack string |> ret
+
+
+  let get_bindings values : (Fieldname.t * DSL.aval) list DSL.monad =
+    let open DSL.Syntax in
+    let chunked = List.chunks_of ~length:2 values in
+    list_filter_map chunked ~f:(function
+      | [string; value] ->
+          let* field = field_of_string_value string in
+          ret (Some (field, value))
+      | _ ->
+          ret None )
+
+
+  (* TODO: handle integers keys *)
+  let new_dict args : model =
+    let open DSL.Syntax in
+    start_model
+    @@ let* bindings = payloads_of_args args |> get_bindings in
+       let* dict = mk_fresh ~model_desc:"new_dict" in
+       let typ = Typ.mk_struct TextualSil.hack_dict_type_name in
+       let* () = add_dynamic_type typ dict in
+       let* () =
+         list_iter bindings ~f:(fun (field, value) -> write_deref_field ~ref:dict field ~obj:value)
+       in
+       return_value dict
+
+
+  (* TODO: handle the situation where we have mix of dict and vec *)
+  let hack_array_cow_set_dsl dict args : DSL.aval DSL.monad =
+    let open DSL.Syntax in
+    (* args = [key1; key2; ...; key; value] *)
+    match args with
+    | [key; value] ->
+        let* copy = deep_copy ~depth_max:1 dict in
+        let* field = field_of_string_value key in
+        let* () = write_deref_field ~ref:copy field ~obj:value in
+        ret copy
+    | _ when List.length args > 2 ->
+        L.d_printfln "multidimensional copy on write not implemented yet" ;
+        unreachable
+    | _ ->
+        L.die InternalError "should not happen"
+end
+
+let hack_array_cow_set args : model =
+  let open DSL.Syntax in
+  start_model
+  @@
+  match payloads_of_args args with
+  | [] ->
+      L.d_printfln "hack_array_cow_set expect at least 3 arguments" ;
+      unreachable
+  | this :: args ->
+      let* copy =
+        dynamic_dispatch this
+          ~cases:
+            [ (TextualSil.hack_dict_type_name, Dict.hack_array_cow_set_dsl this args)
+            ; (TextualSil.hack_vec_type_name, Vec.hack_array_cow_set_dsl this args) ]
+      in
+      return_value copy
 
 
 let matchers : matcher list =
@@ -369,9 +420,8 @@ let matchers : matcher list =
     $--> hack_dim_array_get
   ; -"$builtins" &:: "hack_array_get" <>$ capt_arg_payload $+ capt_arg_payload
     $--> hack_dim_array_get
-  ; -"$builtins" &:: "hack_array_cow_set" <>$ capt_arg_payload $+ capt_arg_payload
-    $+ capt_arg_payload $--> Vec.hack_array_cow_set
-  ; -"$builtins" &:: "hack_new_dict" &::.*++> new_dict
+  ; -"$builtins" &:: "hack_array_cow_set" &::.*++> hack_array_cow_set
+  ; -"$builtins" &:: "hack_new_dict" &::.*++> Dict.new_dict
   ; -"$builtins" &:: "hhbc_new_vec" &::.*++> Vec.new_vec
   ; -"$builtins" &:: "hack_get_class" <>$ capt_arg_payload
     $--> Basic.id_first_arg ~desc:"hack_get_class"
