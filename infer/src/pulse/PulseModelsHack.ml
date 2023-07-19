@@ -11,6 +11,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
+module DSL = PulseModelsDSL
 
 let read_boxed_string_value address astate =
   let open IOption.Let_syntax in
@@ -81,6 +82,10 @@ let write_field path field new_val location addr astate =
 
 let await_hack_value v astate = AddressAttributes.hack_async_await v astate
 
+let await_hack_value_dsl aval : unit DSL.monad =
+  fst aval |> await_hack_value |> PulseModelsDSL.Syntax.exec_command
+
+
 let hack_await (argv, hist) : model =
  fun {ret= ret_id, _} astate ->
   let astate = await_hack_value argv astate in
@@ -107,52 +112,49 @@ module Vec = struct
 
   let last_read_field = mk_hack_field class_name "__infer_model_backing_last_read"
 
-  let new_vec args : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let arg_val_addrs =
-      List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= addr, _} -> addr)
-    in
+  let new_vec_dsl args : DSL.aval DSL.monad =
+    let open PulseModelsDSL.Syntax in
     let actual_size = List.length args in
-    let addr = AbstractValue.mk_fresh () in
     let typ = Typ.mk_struct TextualSil.hack_vec_type_name in
-    let astate = PulseOperations.add_dynamic_type typ addr astate in
-    let hist = Hist.single_call path location "new_vec" in
-    let size_value = AbstractValue.mk_fresh () in
-    let last_read_value = AbstractValue.mk_fresh () in
-    let dummy_value = AbstractValue.mk_fresh () in
-    let<*> astate = write_field path size_field (size_value, hist) location (addr, hist) astate in
-    let<*> astate =
-      write_field path last_read_field (last_read_value, hist) location (addr, hist) astate
-    in
-    let<*> astate =
-      match arg_val_addrs with
+    let* vec = mk_fresh ~model_desc:"new_vec" in
+    let* () = add_dynamic_type typ vec in
+    let* size = mk_fresh ~model_desc:"new_vec.size" in
+    let* last_read = mk_fresh ~model_desc:"new_vec.last_read" in
+    let* dummy = mk_fresh ~model_desc:"new_vec.dummy" in
+    let* () = write_deref_field ~ref:vec size_field ~obj:size in
+    let* () = write_deref_field ~ref:vec last_read_field ~obj:last_read in
+    let* () =
+      match args with
       | [] ->
-          let* astate =
-            write_field path fst_field (dummy_value, hist) location (addr, hist) astate
-          in
-          write_field path snd_field (dummy_value, hist) location (addr, hist) astate
+          let* () = write_deref_field ~ref:vec fst_field ~obj:dummy in
+          write_deref_field ~ref:vec snd_field ~obj:dummy
       | arg1 :: rest -> (
-          let* astate = write_field path fst_field (arg1, hist) location (addr, hist) astate in
+          let* () = write_deref_field ~ref:vec fst_field ~obj:arg1 in
           match rest with
           | [] ->
-              write_field path snd_field (dummy_value, hist) location (addr, hist) astate
+              write_deref_field ~ref:vec snd_field ~obj:dummy
           | arg2 :: rest -> (
-              let* astate = write_field path snd_field (arg2, hist) location (addr, hist) astate in
+              let* () = write_deref_field ~ref:vec snd_field ~obj:arg2 in
               match rest with
               | [] ->
-                  Ok astate
+                  ret ()
                   (* Do "fake" await on the values we drop on the floor. TODO: mark reachable too? *)
               | rest ->
-                  Ok (List.fold rest ~init:astate ~f:(fun astate v -> await_hack_value v astate)) )
-          )
+                  list_iter rest ~f:await_hack_value_dsl ) )
     in
-    let<**> astate =
-      Ok (PulseOperations.write_id ret_id (addr, hist) astate)
-      >>>= PulseArithmetic.and_eq_int size_value (IntLit.of_int actual_size)
-      (* Making the dummy value something concrete (that can't be a Hack value) so we can avoid returning it, as that leads to FPs too *)
-      >>== PulseArithmetic.and_eq_int dummy_value (IntLit.of_int 9)
+    let* () = and_eq_int size (IntLit.of_int actual_size) in
+    let* () = and_eq_int dummy (IntLit.of_int 9) in
+    ret vec
+
+
+  let new_vec args : model =
+    let values =
+      List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= aval} -> aval)
     in
-    astate |> Basic.ok_continue
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* vec = new_vec_dsl values in
+       return_value vec
 
 
   let vec_from_async _dummy ((vaddr, _vhist) as v) : model =
@@ -230,6 +232,23 @@ module Vec = struct
       >>|| ExecutionDomain.continue
     in
     SatUnsat.to_list astate1 @ SatUnsat.to_list astate2 @ SatUnsat.to_list astate3
+
+
+  (*
+  See also $builtins.hack_array_cow_append in lib/hack/models.sil
+  Model of set is very like that of append, since it ignores the index
+  *)
+  let hack_array_cow_set vec _key value : model =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* v_fst = eval_deref_access Read vec (FieldAccess fst_field) in
+       let* v_snd = eval_deref_access Read vec (FieldAccess snd_field) in
+       let* () = await_hack_value_dsl v_fst in
+       let* new_vec = new_vec_dsl [v_snd; value] in
+       let* size = eval_deref_access Read vec (FieldAccess size_field) in
+       let* () = write_deref_field ~ref:new_vec size_field ~obj:size in
+       (* overwrite default size of 2 *)
+       return_value new_vec
 end
 
 let hack_dim_array_get this_obj key_obj : model =
@@ -325,16 +344,16 @@ let new_dict args : model =
   let typ = Typ.mk_struct TextualSil.hack_dict_type_name in
   let astate = PulseOperations.add_dynamic_type typ addr astate in
   let hist = Hist.single_call path location "new_dict" in
+  let ref = (addr, hist) in
   let open PulseResult.Let_syntax in
   let<+> astate =
     List.fold bindings ~init:(Ok astate) ~f:(fun acc (key, addr_val) ->
         let* astate = acc in
         let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack key in
-        let ref = (addr, hist) in
         let obj = (addr_val, hist) in
         PulseOperations.write_deref_field path location ~ref ~obj field astate )
   in
-  PulseOperations.write_id ret_id (addr, hist) astate
+  PulseOperations.write_id ret_id ref astate
 
 
 let matchers : matcher list =
@@ -350,6 +369,8 @@ let matchers : matcher list =
     $--> hack_dim_array_get
   ; -"$builtins" &:: "hack_array_get" <>$ capt_arg_payload $+ capt_arg_payload
     $--> hack_dim_array_get
+  ; -"$builtins" &:: "hack_array_cow_set" <>$ capt_arg_payload $+ capt_arg_payload
+    $+ capt_arg_payload $--> Vec.hack_array_cow_set
   ; -"$builtins" &:: "hack_new_dict" &::.*++> new_dict
   ; -"$builtins" &:: "hhbc_new_vec" &::.*++> Vec.new_vec
   ; -"$builtins" &:: "hack_get_class" <>$ capt_arg_payload

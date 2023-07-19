@@ -234,22 +234,6 @@ define $builtins.hack_array_cow_append(v: *HackMixed, o: *HackMixed): *HackMixed
     ret n5
 }
 
-// model of set is very like that of append, since it ignores the index
-// TODO: add in-bounds assertion like that of hack_array_get
-define $builtins.hack_array_cow_set(v: *HackMixed, i: *HackMixed, o: *HackMixed) : *HackMixed {
-  #entry:
-    n0: *HackMixed = load &v
-    n1: *HackMixed = load n0.HackVec.__infer_model_backing_vec_fst
-    n2: *HackMixed = load n0.HackVec.__infer_model_backing_vec_snd
-    // fake await of v.fst to avoid FPs
-    n3 = $builtins.hhbc_await(n1)
-    n4: *HackMixed = load &o
-    n5 = $builtins.hhbc_new_vec(n2, n4)
-    n6: int = load n0.HackVec.__infer_model_backing_vec_size
-    store n5.HackVec.__infer_model_backing_vec_size <- n6 : int // overwrite default size of 2
-    ret n5
-}
-
 define HackMixed._86reifiedinit(o: *HackMixed): *HackMixed {
   #entry:
     ret null
