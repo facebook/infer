@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../../..
 
-INFER_OPTIONS = --topl-only --topl-properties property.topl --erlang-check-return --project-root $(TESTS_DIR)
+INFER_OPTIONS = --topl-only --topl-properties property.topl --erlang-check-return --enable-issue-type TOPL_ERROR_LATENTß --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.erl)

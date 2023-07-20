@@ -5,5 +5,7 @@ codetoanalyze/erlang/topl/reach-simple/reach.erl, test_d_Bad/0, 0, TOPL_ERROR, n
 codetoanalyze/erlang/topl/reach-simple/reach.erl, test_e_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to source/0,call to sink/1]
 codetoanalyze/erlang/topl/reach-simple/reach.erl, test_f_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to source/0,call to indirect_sink/1,call to sink/1]
 codetoanalyze/erlang/topl/reach-simple/reach.erl, test_g_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to source/0,call to indirect_sink/1,call to sink/1]
+codetoanalyze/erlang/topl/reach-simple/reach.erl, fn_test_h_Bad/0, 0, TOPL_ERROR_LATENT, no_bucket, ERROR, [call to source/0,call to indirect_wrapping_sink/1,call to sink/1]
+codetoanalyze/erlang/topl/reach-simple/reach.erl, fn_test_i_Bad/0, 0, TOPL_ERROR_LATENT, no_bucket, ERROR, [call to source/0,call to indirect_wrapping_sink/1,call to sink/1]
 codetoanalyze/erlang/topl/reach-simple/reach.erl, test_j_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to getD/0,call to source/0,call to go/1,call to gogo/1,call to sink/1]
 codetoanalyze/erlang/topl/reach-simple/reach.erl, test_k_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to source/0,call to sink/1]

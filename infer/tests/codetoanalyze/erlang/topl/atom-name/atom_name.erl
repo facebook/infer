@@ -26,6 +26,7 @@ test_3_Ok() ->
     sink(not_ok, secret).
 
 test_4_Ok() ->
+    % Ok because first argument is different from atom `not_ok`
     sink(its_ok, source()).
 
 test_1_Bad() ->

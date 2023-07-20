@@ -7,7 +7,7 @@
     test_a_Ok/0,
     test_b_Ok/0,
     test_c_Bad/0,
-    test_d_Ok/0,
+    fp_test_d_Ok/0,
     test_e_Ok/0,
     fn_test_e_Bad/0,
     fn_test_f_Bad/0,
@@ -29,7 +29,10 @@ test_c_Bad() ->
     Y = source(),
     sink([X, Y]).
 
-test_d_Ok() ->
+% Test below is fp due to being reported as latent
+% Result from second call to source() is ignored so
+% there should be no error reported.
+fp_test_d_Ok() ->
     X = source(),
     _ = source(),
     sink([X, X]).
@@ -38,8 +41,8 @@ test_e_Ok() ->
     X = source(),
     sink(get_map(X, X)).
 
-% fn_test_e_Bad and fn_test_f_Bad are false negatives but
-% this is expected given that TOPL currently
+% fn_test_e_Bad and fn_test_f_Bad are false negatives (despite being reported as LATENT)
+% but this is expected given that TOPL currently
 % partially supports maps by keeping track of a single kv pair.
 fn_test_e_Bad() ->
     X = source(),

@@ -39,10 +39,12 @@ test_g_Bad() ->
     indirect_sink({source()}).
 
 % T142413251
+% Issue reported as LATENT
 fn_test_h_Bad() ->
     indirect_wrapping_sink(source()).
 
 % T142413251
+% Issue reported as LATENT
 fn_test_i_Bad() ->
     indirect_wrapping_sink({source()}).
 
