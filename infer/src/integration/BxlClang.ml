@@ -7,25 +7,30 @@
 open! IStd
 module L = Logging
 module F = Format
+module Visited = HashSet.Make (String)
 
-let rec traverse ~root acc target_path =
+let rec traverse ~root visited acc target_path =
   if String.is_empty target_path then acc
   else
     let target_path =
       if Filename.is_absolute target_path then target_path else root ^/ target_path
     in
-    match Sys.is_directory target_path with
-    | `Yes when ISys.file_exists (ResultsDirEntryName.get_path ~results_dir:target_path CaptureDB)
-      ->
-        (* we found a capture DB so add this as a target line *)
-        Printf.sprintf "dummy\t-\t%s" target_path :: acc
-    | `Yes ->
-        (* recurse into non-infer-out directory *)
-        Sys.readdir target_path
-        |> Array.fold ~init:acc ~f:(fun acc entry ->
-               traverse ~root acc (Filename.concat target_path entry) )
-    | _ ->
-        acc
+    let real_path = Utils.realpath target_path in
+    if Visited.mem visited real_path then acc
+    else (
+      Visited.add real_path visited ;
+      match Sys.is_directory target_path with
+      | `Yes when ISys.file_exists (ResultsDirEntryName.get_path ~results_dir:target_path CaptureDB)
+        ->
+          (* we found a capture DB so add this as a target line *)
+          Printf.sprintf "dummy\t-\t%s" target_path :: acc
+      | `Yes ->
+          (* recurse into non-infer-out directory *)
+          Sys.readdir target_path
+          |> Array.fold ~init:acc ~f:(fun acc entry ->
+                 traverse ~root visited acc (Filename.concat target_path entry) )
+      | _ ->
+          acc )
 
 
 let run_capture buck2_build_cmd =
@@ -33,7 +38,7 @@ let run_capture buck2_build_cmd =
     buck2_build_cmd ;
   let infer_deps_lines =
     Buck.wrap_buck_call ~extend_env:[] V2 ~label:"build" ("buck2" :: buck2_build_cmd)
-    |> List.fold ~init:[] ~f:(traverse ~root:Config.buck2_root)
+    |> List.fold ~init:[] ~f:(traverse ~root:Config.buck2_root (Visited.create 11))
     |> List.dedup_and_sort ~compare:String.compare
   in
   let infer_deps = ResultsDir.get_path CaptureDependencies in
