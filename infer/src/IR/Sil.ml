@@ -58,7 +58,8 @@ type instr_metadata =
   | Skip
   | TryEntry of {try_id: int; loc: Location.t}
   | TryExit of {try_id: int; loc: Location.t}
-  | VariableLifetimeBegins of {pvar: Pvar.t; typ: Typ.t; loc: Location.t}
+  | VariableLifetimeBegins of
+      {pvar: Pvar.t; typ: Typ.t; loc: Location.t; is_cpp_structured_binding: bool}
 [@@deriving compare, equal]
 
 type instr =
@@ -148,8 +149,9 @@ let pp_instr_metadata pe f = function
       F.fprintf f "TRY_ENTRY; [%a]" Location.pp loc
   | TryExit {loc} ->
       F.fprintf f "TRY_EXIT; [%a]" Location.pp loc
-  | VariableLifetimeBegins {pvar; typ; loc} ->
-      F.fprintf f "VARIABLE_DECLARED(%a:%a); [%a]" Pvar.pp_value pvar (Typ.pp_full pe) typ
+  | VariableLifetimeBegins {pvar; typ; loc; is_cpp_structured_binding} ->
+      F.fprintf f "VARIABLE_DECLARED(%a:%a%t); [%a]" Pvar.pp_value pvar (Typ.pp_full pe) typ
+        (fun f -> if is_cpp_structured_binding then F.pp_print_string f ", cpp_structured_binding")
         Location.pp loc
 
 

@@ -3021,7 +3021,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     |> mk_trans_result ret_exp_typ
 
 
-  and init_expr_trans_aux trans_state var_exp_typ var_stmt_info init_expr =
+  and init_expr_trans_aux ~is_structured_binding trans_state var_exp_typ var_stmt_info init_expr =
     (* For init expr, translate how to compute it and assign to the var *)
     let var_exp, var_typ = var_exp_typ in
     let cstruct_name_opt =
@@ -3067,16 +3067,24 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               Procdesc.node_set_succs context.procdesc node ~normal:trans_state.succ_nodes ~exn:[] ) ;
         None )
       else
-        let sil_e1', ie_typ = res_trans_ie.return in
+        let ((sil_e1', ie_typ) as sil_e1'_typ) = res_trans_ie.return in
         L.debug Capture Verbose "Sub-expr did not initialize %a, initializing with %a@\n" Exp.pp
           var_exp Exp.pp sil_e1' ;
         let instrs =
-          match cstruct_name_opt with
-          | Some struct_name ->
-              CStructUtils.struct_copy context.CContext.tenv sil_loc var_exp sil_e1' ~typ:var_typ
-                ~struct_name
-          | None ->
-              [Sil.Store {e1= var_exp; typ= ie_typ; e2= sil_e1'; loc= sil_loc}]
+          if is_structured_binding then
+            [ Sil.Call
+                ( mk_fresh_void_id_typ ()
+                , Const (Cfun BuiltinDecl.__infer_structured_binding)
+                , [var_exp_typ; sil_e1'_typ]
+                , sil_loc
+                , CallFlags.default ) ]
+          else
+            match cstruct_name_opt with
+            | Some struct_name ->
+                CStructUtils.struct_copy context.CContext.tenv sil_loc var_exp sil_e1' ~typ:var_typ
+                  ~struct_name
+            | None ->
+                [Sil.Store {e1= var_exp; typ= ie_typ; e2= sil_e1'; loc= sil_loc}]
         in
         Some {empty_control with instrs}
     in
@@ -3089,8 +3097,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     mk_trans_result var_exp_typ control
 
 
-  and init_expr_trans ?(is_initListExpr_builtin = false) trans_state var_exp_typ ?qual_type
-      var_stmt_info init_expr_opt =
+  and init_expr_trans ?(is_initListExpr_builtin = false) ?(is_structured_binding = false)
+      trans_state var_exp_typ ?qual_type var_stmt_info init_expr_opt =
     L.debug Capture Verbose "init_expr_trans %b %a %a <?qual_type> <stmt_info> %a@\n"
       is_initListExpr_builtin pp_trans_state trans_state
       (Pp.pair ~fst:Exp.pp ~snd:(Typ.pp Pp.text_break))
@@ -3129,12 +3137,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                   (mk_trans_result var_exp_typ
                      { empty_control with
                        instrs=
-                         [Sil.Metadata (VariableLifetimeBegins {pvar; typ= var_typ; loc= sil_loc})]
-                     } )
+                         [ Sil.Metadata
+                             (VariableLifetimeBegins
+                                { pvar
+                                ; typ= var_typ
+                                ; loc= sil_loc
+                                ; is_cpp_structured_binding= is_structured_binding } ) ] } )
             | _ ->
                 None )
           ~mk_second:(fun trans_state stmt_info ->
-            init_expr_trans_aux trans_state var_exp_typ stmt_info init_expr )
+            init_expr_trans_aux ~is_structured_binding trans_state var_exp_typ stmt_info init_expr
+            )
           ~mk_return:(fun ~fst:_ ~snd -> snd.return)
 
 
@@ -3149,7 +3162,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CVar_decl.add_var_to_locals procdesc var_decl typ pvar ;
       let trans_state = {trans_state with succ_nodes= next_node} in
       let var_exp_typ = (Exp.Lvar pvar, typ) in
-      init_expr_trans trans_state var_exp_typ ~qual_type stmt_info vdi.Clang_ast_t.vdi_init_expr
+      let is_structured_binding = match var_decl with BindingDecl _ -> true | _ -> false in
+      init_expr_trans ~is_structured_binding trans_state var_exp_typ ~qual_type stmt_info
+        vdi.Clang_ast_t.vdi_init_expr
     in
     let aux_var res_trans_tl var_decl qt vdi =
       (* Var are defined when procdesc is created, here we only take care of initialization *)
@@ -4632,7 +4647,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           | None ->
               instrs
           | Some (marker_pvar, _if_kind) ->
-              Sil.Metadata (VariableLifetimeBegins {pvar= marker_pvar; typ= StdTyp.boolean; loc})
+              Sil.Metadata
+                (VariableLifetimeBegins
+                   {pvar= marker_pvar; typ= StdTyp.boolean; loc; is_cpp_structured_binding= false}
+                )
               :: Sil.Store {e1= Lvar marker_pvar; e2= Exp.zero; typ= StdTyp.boolean; loc}
               :: instrs )
     in

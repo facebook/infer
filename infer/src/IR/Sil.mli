@@ -47,7 +47,8 @@ type instr_metadata =
   | Skip  (** no-op *)
   | TryEntry of {try_id: int; loc: Location.t}  (** entry of C++ try block *)
   | TryExit of {try_id: int; loc: Location.t}  (** exit of C++ try block *)
-  | VariableLifetimeBegins of {pvar: Pvar.t; typ: Typ.t; loc: Location.t}
+  | VariableLifetimeBegins of
+      {pvar: Pvar.t; typ: Typ.t; loc: Location.t; is_cpp_structured_binding: bool}
       (** stack variable declared *)
 [@@deriving compare]
 

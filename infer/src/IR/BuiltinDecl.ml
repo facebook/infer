@@ -162,6 +162,8 @@ let __infer_skip_function = Procname.from_string_c_fun "__infer_skip_function"
 
 let __infer_skip_gcc_asm_stmt = Procname.from_string_c_fun "__infer_skip_gcc_asm_stmt"
 
+let __infer_structured_binding = create_procname "__infer_structured_binding"
+
 let __instanceof = create_procname "__instanceof"
 
 let __java_throw = create_procname "__java_throw"

@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
@@ -87,6 +88,20 @@ let placement_new =
     | _ ->
         PulseOperations.havoc_id ret_id (Hist.single_event path event) astate )
     |> Basic.ok_continue
+
+
+let infer_structured_binding var {ProcnameDispatcher.Call.FuncArg.exp= arg; arg_payload} _ astate =
+  let astate =
+    match (var, arg) with
+    | Exp.Lvar pvar, Var arg ->
+        AbductiveDomain.Stack.remove_vars [Var.of_id arg] astate
+        |> AbductiveDomain.Stack.add (Var.of_pvar pvar) arg_payload
+    | _ ->
+        L.internal_error "Unexpected arguments for c17_structured_binding: %a, %a" Exp.pp var Exp.pp
+          arg ;
+        astate
+  in
+  Basic.ok_continue astate
 
 
 module AtomicInteger = struct
@@ -673,6 +688,8 @@ let matchers : matcher list =
   ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
   ; +BuiltinDecl.(match_builtin __delete_array) <>$ capt_arg $--> delete_array
   ; +BuiltinDecl.(match_builtin __infer_skip) &--> Basic.skip
+  ; +BuiltinDecl.(match_builtin __infer_structured_binding)
+    <>$ capt_exp $+ capt_arg $--> infer_structured_binding
   ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
   ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array
   ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new

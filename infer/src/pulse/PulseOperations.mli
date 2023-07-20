@@ -123,7 +123,8 @@ val havoc_deref_field :
   -> t AccessResult.t
 (** Havoc dereferenced field address. *)
 
-val realloc_pvar : Tenv.t -> PathContext.t -> Pvar.t -> Typ.t -> Location.t -> t -> t
+val realloc_pvar :
+  Tenv.t -> PathContext.t -> set_uninitialized:bool -> Pvar.t -> Typ.t -> Location.t -> t -> t
 
 val write_id : Ident.t -> AbstractValue.t * ValueHistory.t -> t -> t
 

@@ -223,9 +223,9 @@ let exec_metadata pname metadata =
   | Nullify (pvar, loc) ->
       try_keep_original ~default:metadata pvar (exec_pvar pname pvar) ~f:(fun pvar' ->
           Nullify (pvar', loc) )
-  | VariableLifetimeBegins {pvar; typ; loc} ->
+  | VariableLifetimeBegins {pvar; typ; loc; is_cpp_structured_binding} ->
       try_keep_original ~default:metadata pvar (exec_pvar pname pvar) ~f:(fun pvar' ->
-          VariableLifetimeBegins {pvar= pvar'; typ; loc} )
+          VariableLifetimeBegins {pvar= pvar'; typ; loc; is_cpp_structured_binding} )
 
 
 let exec_args proc_name closure_maps loc args load_instrs =
