@@ -16,7 +16,7 @@
     test_userdefined3_Bad/0,
     test_userdefined4_Bad/0,
     test_userdefined5_Ok/1,
-    test_userdefined6_Bad/1
+    fnl_test_userdefined6_Bad/1
 ]).
 
 -type my_atom_type() :: atom().
@@ -53,5 +53,5 @@ test_userdefined4_Bad() -> 1.
 -spec test_userdefined5_Ok(atom()) -> my_union_type().
 test_userdefined5_Ok(X) -> X.
 
--spec test_userdefined6_Bad(integer()) -> my_union_type().
-test_userdefined6_Bad(X) -> X.
+-spec fnl_test_userdefined6_Bad(integer()) -> my_union_type().
+fnl_test_userdefined6_Bad(X) -> X.

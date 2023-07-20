@@ -44,7 +44,7 @@
     test_accepts_integer_nomodule2_Bad/0,
     test_incompatible1_Ok/1,
     test_incompatible1_Latent/1,
-    fp_test_incompatible2_Ok/1,
+    fpl_test_incompatible2_Ok/1,
     test_incompatible2_Latent/1
 ]).
 
@@ -151,7 +151,7 @@ test_incompatible1_Latent(X) ->
     ?CRASH_IF_EQUAL(false, is_map(X) and not is_map(X)).
 
 % FP: T128591527
-fp_test_incompatible2_Ok(X) ->
+fpl_test_incompatible2_Ok(X) ->
     ?ASSERT_EQUAL(false, is_map(X) and is_atom(X)).
 
 test_incompatible2_Latent(X) ->

@@ -11,8 +11,8 @@
     test_e_Bad/0,
     test_f_Bad/0,
     test_g_Bad/0,
-    fn_test_h_Bad/0,
-    fn_test_i_Bad/0,
+    fnl_test_h_Bad/0,
+    fnl_test_i_Bad/0,
     test_j_Bad/0,
     test_k_Bad/0
 ]).
@@ -39,13 +39,11 @@ test_g_Bad() ->
     indirect_sink({source()}).
 
 % T142413251
-% Issue reported as LATENT
-fn_test_h_Bad() ->
+fnl_test_h_Bad() ->
     indirect_wrapping_sink(source()).
 
 % T142413251
-% Issue reported as LATENT
-fn_test_i_Bad() ->
+fnl_test_i_Bad() ->
     indirect_wrapping_sink({source()}).
 
 test_j_Bad() ->

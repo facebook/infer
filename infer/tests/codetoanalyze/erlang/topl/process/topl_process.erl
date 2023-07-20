@@ -8,7 +8,7 @@
 -export([
     test_1_Ok/0,
     test_2_Bad/0,
-    fp_test_3_Ok/0
+    fpl_test_3_Ok/0
 ]).
 
 f() -> ok.
@@ -30,7 +30,7 @@ test_2_Bad() ->
     erlang:error(expected_crash).
 
 % Test below is fp (reported as LATENT error)
-fp_test_3_Ok() ->
+fpl_test_3_Ok() ->
     P1 = spawn(),
     P2 = spawn(),
     message(P1),

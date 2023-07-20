@@ -1,2 +1,2 @@
 codetoanalyze/erlang/topl/process/topl_process.erl, test_2_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to kill/1,call to exit/2,call to message/1,call to send/2]
-codetoanalyze/erlang/topl/process/topl_process.erl, fp_test_3_Ok/0, 0, TOPL_ERROR_LATENT, no_bucket, ERROR, [call to kill/1,call to exit/2,call to message/1,call to send/2]
+codetoanalyze/erlang/topl/process/topl_process.erl, fpl_test_3_Ok/0, 0, TOPL_ERROR_LATENT, no_bucket, ERROR, [call to kill/1,call to exit/2,call to message/1,call to send/2]
