@@ -11,3 +11,6 @@ open! IStd
 open PulseModelsImport
 
 val matchers : matcher list
+
+val get_static_companion :
+  Typ.name -> PulseAbductiveDomain.t -> PulseAbstractValue.t * PulseAbductiveDomain.t

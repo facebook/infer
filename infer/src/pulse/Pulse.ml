@@ -396,8 +396,12 @@ module PulseTransferFunctions = struct
             (Tenv.MethodInfo.mk_class proc_name, `ApproxDevirtualization) )
 
 
+  let need_dynamic_type_specialization astate receiver_addr =
+    AbductiveDomain.add_need_dynamic_type_specialization receiver_addr astate
+
+
   (* Hack static methods can be overriden so we need class hierarchy walkup *)
-  let resolve_hack_static_method tenv opt_callee_pname =
+  let resolve_hack_static_method path loc astate tenv proc_name opt_callee_pname =
     let resolve_method tenv type_name proc_name =
       let equal pname1 pname2 =
         String.equal (Procname.get_method pname1) (Procname.get_method pname2)
@@ -418,19 +422,42 @@ module PulseTransferFunctions = struct
         Some (Tenv.MethodInfo.mk_class proc_name) )
       else Tenv.resolve_method ~method_exists tenv type_name proc_name
     in
-    let open IOption.Let_syntax in
-    let* callee_pname = opt_callee_pname in
-    Procname.get_class_type_name callee_pname
-    |> Option.value_map
-         ~default:(Some (Tenv.MethodInfo.mk_class callee_pname))
-         ~f:(fun static_class_name ->
-           L.d_printfln "hack static dispatch from %a in class name %a" Procname.pp callee_pname
-             Typ.Name.pp static_class_name ;
-           resolve_method tenv static_class_name callee_pname )
-
-
-  let need_dynamic_type_specialization astate receiver_addr =
-    AbductiveDomain.add_need_dynamic_type_specialization receiver_addr astate
+    (* In a Hack trait, try to replace `__self__$static` with the static class name where the
+       `use` of the trait was located. This information is stored in the additional `self`
+       argument hackc added to the trait. *)
+    let resolve_self_in_trait astate static_class_name =
+      let maybe_origin = Typ.Name.Hack.static_companion_origin static_class_name in
+      if String.equal "__self__" (Typ.Name.name maybe_origin) then
+        let mangled = Mangled.from_string "self" in
+        (* pvar is &self, we need to dereference it to access its dynamic type *)
+        let pvar = Pvar.mk mangled proc_name in
+        let astate, value = PulseOperations.eval_var path loc pvar astate in
+        match
+          PulseOperations.eval_access path Read loc value Dereference astate |> PulseResult.ok
+        with
+        | None ->
+            (Some static_class_name, astate)
+        | Some (astate, (value, _)) -> (
+          match AbductiveDomain.AddressAttributes.get_dynamic_type value astate with
+          | None ->
+              (* No information is available from the `self` argument at this time, we need to
+                 wait for specialization *)
+              (None, need_dynamic_type_specialization astate value)
+          | Some typ ->
+              (Typ.name typ, astate) )
+      else (Some static_class_name, astate)
+    in
+    (* Similar to IOption.Let_syntax but threading `astate` along the way *)
+    let ( let* ) (opt, env) f = match opt with None -> (None, env) | Some v -> f (v, env) in
+    let* callee_pname, astate = (opt_callee_pname, astate) in
+    match Procname.get_class_type_name callee_pname with
+    | None ->
+        (Some (Tenv.MethodInfo.mk_class callee_pname), astate)
+    | Some static_class_name ->
+        let* static_class_name, astate = resolve_self_in_trait astate static_class_name in
+        L.d_printfln "hack static dispatch from %a in class name %a" Procname.pp callee_pname
+          Typ.Name.pp static_class_name ;
+        (resolve_method tenv static_class_name callee_pname, astate)
 
 
   let improve_receiver_static_type astate receiver proc_name_opt =
@@ -453,36 +480,27 @@ module PulseTransferFunctions = struct
     | OcamlModel of (PulseModelsImport.model * Procname.t)
     | NoModel
 
-  (* TODO(vsiles)
-     This is a temporary solution until we decide what kind of data we want to pass to Hack
-     traits. Right now we pass primitive strings. *)
-  let string_to_arg name =
-    (* TODO(vsiles) Is this important? I need [Typ.t] but there's nothing for primitive strings. *)
-    let typ =
-      let quals = Typ.mk_type_quals () in
-      {Typ.desc= Tvoid; quals}
-    in
-    let cname = Const.Cstr name in
-    let exp = Exp.Const cname in
-    (* TODO(vsiles) Not sure about these. ValueHistory ? Restricted AV ? *)
-    let av = AbstractValue.mk_fresh () in
-    let vh = ValueHistory.epoch in
-    let arg_payload = (av, vh) in
-    {PulseAliasSpecialization.FuncArg.exp; typ; arg_payload}
-
-
   (* When Hack traits are involved, we need to compute and pass an additional argument that is a
      token to find the right class name for [self].
 
      [hackc] adds [self] argument at the end of the signature. *)
-  let add_self_for_hack_traits method_info func_args =
+  let add_self_for_hack_traits astate method_info func_args =
     let hack_kind = Option.bind method_info ~f:Tenv.MethodInfo.get_hack_kind in
     match hack_kind with
     | Some (IsTrait {used}) ->
-        let self = Typ.Name.to_string used |> string_to_arg in
-        func_args @ [self]
+        let exp, arg_payload, astate =
+          let value, astate = PulseModelsHack.get_static_companion used astate in
+          let self_id = Ident.create_fresh Ident.kprimed in
+          let arg_payload = (value, ValueHistory.epoch) in
+          let astate = PulseOperations.write_id self_id arg_payload astate in
+          (Exp.Var self_id, arg_payload, astate)
+        in
+        let static_used = Typ.Name.Hack.static_companion used in
+        let typ = Typ.mk_struct static_used |> Typ.mk_ptr in
+        let self = {PulseAliasSpecialization.FuncArg.exp; typ; arg_payload} in
+        (astate, func_args @ [self])
     | Some IsClass | None ->
-        func_args
+        (astate, func_args)
 
 
   let rec dispatch_call_eval_args
@@ -508,11 +526,12 @@ module PulseTransferFunctions = struct
               (None, astate) )
       else if Language.curr_language_is Hack then
         (* In Hack, a static method can be inherited *)
-        (resolve_hack_static_method tenv callee_pname, astate)
+        let proc_name = Procdesc.get_proc_name proc_desc in
+        resolve_hack_static_method path call_loc astate tenv proc_name callee_pname
       else (default_info, astate)
     in
     let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in
-    let func_args = add_self_for_hack_traits method_info func_args in
+    let astate, func_args = add_self_for_hack_traits astate method_info func_args in
     let astate =
       match (callee_pname, func_args) with
       | Some callee_pname, [{ProcnameDispatcher.Call.FuncArg.arg_payload= arg, _}]

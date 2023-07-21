@@ -35,9 +35,12 @@ let static_suffix = "$static"
 
 let len_static_suffix = String.length static_suffix
 
-let static_companion {namespace; classname} = {namespace; classname= classname ^ static_suffix}
-
 let is_static {classname} = StringLabels.ends_with ~suffix:static_suffix classname
+
+let static_companion ({namespace; classname} as typ) =
+  let classname = if is_static typ then classname else classname ^ static_suffix in
+  {namespace; classname}
+
 
 let static_companion_origin ({namespace; classname} as name) =
   let len_classname = String.length classname in
