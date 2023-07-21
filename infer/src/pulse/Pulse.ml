@@ -422,39 +422,51 @@ module PulseTransferFunctions = struct
         Some (Tenv.MethodInfo.mk_class proc_name) )
       else Tenv.resolve_method ~method_exists tenv type_name proc_name
     in
-    (* In a Hack trait, try to replace `__self__$static` with the static class name where the
-       `use` of the trait was located. This information is stored in the additional `self`
+    (* In a Hack trait, try to replace [__self__$static] with the static class name where the
+       [use] of the trait was located. This information is stored in the additional [self]
        argument hackc added to the trait. *)
     let resolve_self_in_trait astate static_class_name =
-      let maybe_origin = Typ.Name.Hack.static_companion_origin static_class_name in
-      if String.equal "__self__" (Typ.Name.name maybe_origin) then
-        let mangled = Mangled.from_string "self" in
-        (* pvar is &self, we need to dereference it to access its dynamic type *)
-        let pvar = Pvar.mk mangled proc_name in
-        let astate, value = PulseOperations.eval_var path loc pvar astate in
-        match
-          PulseOperations.eval_access path Read loc value Dereference astate |> PulseResult.ok
-        with
+      let mangled = Mangled.from_string "self" in
+      (* pvar is &self, we need to dereference it to access its dynamic type *)
+      let pvar = Pvar.mk mangled proc_name in
+      let astate, value = PulseOperations.eval_var path loc pvar astate in
+      match
+        PulseOperations.eval_access path Read loc value Dereference astate |> PulseResult.ok
+      with
+      | None ->
+          (Some static_class_name, astate)
+      | Some (astate, (value, _)) -> (
+        match AbductiveDomain.AddressAttributes.get_dynamic_type value astate with
         | None ->
-            (Some static_class_name, astate)
-        | Some (astate, (value, _)) -> (
-          match AbductiveDomain.AddressAttributes.get_dynamic_type value astate with
-          | None ->
-              (* No information is available from the `self` argument at this time, we need to
-                 wait for specialization *)
-              (None, need_dynamic_type_specialization astate value)
-          | Some typ ->
-              (Typ.name typ, astate) )
+            (* No information is available from the [self] argument at this time, we need to
+               wait for specialization *)
+            (None, need_dynamic_type_specialization astate value)
+        | Some typ ->
+            (Typ.name typ, astate) )
+    in
+    (* If we spot a call on [__parent__$static], we push further and get the parent of
+       [__self__$static] *)
+    let resolve_parent_in_trait astate static_class_name =
+      let self_ty_name, astate = resolve_self_in_trait astate static_class_name in
+      (* Now that we have the [self] type, locate its parent *)
+      let parent = Option.bind self_ty_name ~f:(Tenv.get_parent tenv) in
+      (parent, astate)
+    in
+    let trait_resolution astate static_class_name =
+      let maybe_origin = Typ.Name.Hack.static_companion_origin static_class_name |> Typ.Name.name in
+      if String.equal "__self__" maybe_origin then resolve_self_in_trait astate static_class_name
+      else if String.equal "__parent__" maybe_origin then
+        resolve_parent_in_trait astate static_class_name
       else (Some static_class_name, astate)
     in
-    (* Similar to IOption.Let_syntax but threading `astate` along the way *)
+    (* Similar to IOption.Let_syntax but threading [astate] along the way *)
     let ( let* ) (opt, env) f = match opt with None -> (None, env) | Some v -> f (v, env) in
     let* callee_pname, astate = (opt_callee_pname, astate) in
     match Procname.get_class_type_name callee_pname with
     | None ->
         (Some (Tenv.MethodInfo.mk_class callee_pname), astate)
     | Some static_class_name ->
-        let* static_class_name, astate = resolve_self_in_trait astate static_class_name in
+        let* static_class_name, astate = trait_resolution astate static_class_name in
         L.d_printfln "hack static dispatch from %a in class name %a" Procname.pp callee_pname
           Typ.Name.pp static_class_name ;
         (resolve_method tenv static_class_name callee_pname, astate)

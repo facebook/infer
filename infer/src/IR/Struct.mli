@@ -93,4 +93,8 @@ val is_not_java_interface : t -> bool
 
 val get_source_file : t -> SourceFile.t option
 
+val is_hack_class : t -> bool
+
+val is_hack_trait : t -> bool [@@warning "-unused-value-declaration"]
+
 module Normalizer : HashNormalizer.S with type t = t

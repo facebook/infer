@@ -113,6 +113,16 @@ let mem_supers tenv name ~f =
   |> Option.is_some
 
 
+let get_parent tenv name =
+  (* We have to be careful since a class name is present in its [supers] list, and this list mixed
+     traits and class *)
+  let f parent struct_opt =
+    if Typ.Name.equal name parent then None
+    else Option.bind struct_opt ~f:(fun info -> Option.some_if (Struct.is_hack_class info) parent)
+  in
+  find_map_supers tenv ~f name
+
+
 let implements_remodel_class tenv name =
   Option.exists Typ.Name.Objc.remodel_class ~f:(fun remodel_class ->
       mem_supers tenv name ~f:(fun name _ -> Typ.Name.equal name remodel_class) )

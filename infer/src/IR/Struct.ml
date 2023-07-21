@@ -409,6 +409,16 @@ let is_not_java_interface = function
       true
 
 
+let is_hack_class {hack_class_info} =
+  Option.value_map hack_class_info ~default:false ~f:(fun {Hack.kind} ->
+      match kind with Class -> true | Trait -> false )
+
+
+let is_hack_trait {hack_class_info} =
+  Option.value_map hack_class_info ~default:false ~f:(fun {Hack.kind} ->
+      match kind with Hack.Class -> false | Hack.Trait -> true )
+
+
 module FieldNormalizer = HashNormalizer.Make (struct
   type t = field [@@deriving equal, hash]
 
