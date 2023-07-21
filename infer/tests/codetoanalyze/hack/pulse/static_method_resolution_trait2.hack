@@ -3,21 +3,14 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-namespace SMRT1;
+namespace SMRT2;
 
-// testing trait + self (fn is in the trait)
+// testing trait + self (fn is in the class)
 
 trait T {
-  public static function f(): int {
-    return \Level1\taintSource();
-  }
-
+  require class C0;
   public static function f_self(): int {
     return self::f();
-  }
-
-  public static function g(): int {
-    return 42;
   }
 
   public static function g_self() : int {
@@ -25,8 +18,17 @@ trait T {
   }
 }
 
-class C0 {
+final class C0 {
   use T;
+  
+  public static function f(): int {
+    return \Level1\taintSource();
+  }
+
+  public static function g(): int {
+    return 42;
+  }
+
 }
 
 function Bad0(): void {
