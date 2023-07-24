@@ -102,6 +102,16 @@ val eval_access :
 (** Like [eval] but starts from an address instead of an expression, checks that it is valid, and if
     so dereferences it according to the access. *)
 
+val eval_access_to_value_path :
+     PathContext.t
+  -> ?must_be_valid_reason:Invalidation.must_be_valid_reason
+  -> access_mode
+  -> Location.t
+  -> AbstractValue.t * ValueHistory.t
+  -> Access.t
+  -> t
+  -> (t * ValuePath.t) AccessResult.t
+
 val eval_deref_access :
      PathContext.t
   -> ?must_be_valid_reason:Invalidation.must_be_valid_reason

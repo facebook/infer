@@ -1051,15 +1051,16 @@ module PulseTransferFunctions = struct
                    NonDisjDomain.set_store loc timestamp pvar astate_n )
           in
           let result =
-            let** astate, ((rhs_addr, rhs_history) as rhs_addr_hist) =
-              PulseOperations.eval path NoAccess loc rhs_exp astate
+            let** astate, rhs_value_path =
+              PulseOperations.eval_to_value_path path NoAccess loc rhs_exp astate
             in
+            let rhs_addr, rhs_history = ValuePath.addr_hist rhs_value_path in
             let** astate, lhs_addr_hist = PulseOperations.eval path Write loc lhs_exp astate in
             let hist = ValueHistory.sequence ~context:path.conditions event rhs_history in
             let** astate = and_is_int_if_integer_type typ rhs_addr astate in
             let=* astate =
               PulseTaintOperations.store tenv path loc ~lhs:lhs_exp
-                ~rhs:(rhs_exp, rhs_addr_hist, typ) astate
+                ~rhs:(rhs_exp, rhs_value_path, typ) astate
             in
             let=+ astate =
               PulseOperations.write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, hist) astate

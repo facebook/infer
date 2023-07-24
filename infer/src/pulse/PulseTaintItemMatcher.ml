@@ -11,8 +11,7 @@ module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 
-type taint_match =
-  {taint: TaintItem.t; addr_hist: AbstractValue.t * ValueHistory.t; typ: Typ.t; exp: Exp.t option}
+type taint_match = {taint: TaintItem.t; value_path: ValuePath.t; typ: Typ.t; exp: Exp.t option}
 
 let type_matches tenv actual_typ types =
   (* TODO: [Typ.Name.name] may not be the most intuitive representation of types here, also
@@ -185,13 +184,13 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
 
 let match_field_target matches actual potential_taint_value : taint_match list =
   let open TaintConfig.Target in
-  let {ProcnameDispatcher.Call.FuncArg.arg_payload= addr_hist; typ; exp} = actual in
+  let {ProcnameDispatcher.Call.FuncArg.arg_payload= value_path; typ; exp} = actual in
   let match_target acc (matcher : TaintConfig.Unit.field_unit) =
     let origin : TaintItem.origin =
       match matcher.field_target with GetField -> GetField | SetField -> SetField
     in
     let taint = {TaintItem.value= potential_taint_value; origin; kinds= matcher.kinds} in
-    {taint; addr_hist; typ; exp= Some exp} :: acc
+    {taint; value_path; typ; exp= Some exp} :: acc
   in
   List.fold matches ~init:[] ~f:(fun acc (matcher : TaintConfig.Unit.field_unit) ->
       match_target acc matcher )
@@ -235,6 +234,69 @@ let field_matches tenv loc matchers field_name =
             else None )
 
 
+let move_taint_to_field tenv path location potential_taint_value taint_match fieldname astate =
+  let type_check astate value_path typ fieldname =
+    (* Dereference the value as much as possible and verify the result is of structure type
+       holding the expected fieldname.
+
+       TODO(arr): Do we really want to do it? This won't work for semi-statically or dynamically
+       typed languages like Hack or Python.*)
+    let open IOption.Let_syntax in
+    let rec get_val_and_typ_name astate value_path typ =
+      match typ.Typ.desc with
+      | Tstruct typ_name | Tptr ({desc= Tstruct typ_name}, _) ->
+          Some (astate, value_path, typ_name)
+      | Tptr (typ', _) ->
+          let* astate, value_path =
+            PulseOperations.eval_access_to_value_path path Read location
+              (ValuePath.addr_hist value_path) Dereference astate
+            |> PulseResult.ok
+          in
+          get_val_and_typ_name astate value_path typ'
+      | _ ->
+          None
+    in
+    let* astate, value_path, typ_name = get_val_and_typ_name astate value_path typ in
+    let+ field_typ =
+      let* {Struct.fields} = Tenv.lookup tenv typ_name in
+      List.find_map fields ~f:(fun (field, typ, _) ->
+          if String.equal fieldname (Fieldname.get_field_name field) then Some typ else None )
+    in
+    (astate, value_path, typ_name, field_typ)
+  in
+  (* Move the taint from [addr_hist] to [addr_hist]'s field [fieldname] *)
+  match type_check astate taint_match.value_path taint_match.typ fieldname with
+  | None ->
+      (* The value cannot hold the expected field.
+         This is a type mismatch and we need to inform the user. *)
+      L.die UserError
+        "Type error in taint configuration: Model for `%a`:Type `%a` does not have a field `%s`"
+        TaintItem.pp_value potential_taint_value (Typ.pp_full Pp.text) taint_match.typ fieldname
+  | Some (astate, value_path, typ_name, field_typ) ->
+      let result =
+        let open PulseResult.Let_syntax in
+        let addr_hist = ValuePath.addr_hist value_path in
+        let* astate, ret_value =
+          PulseOperations.eval_access path Read location addr_hist
+            (FieldAccess (Fieldname.make typ_name fieldname))
+            astate
+        in
+        let+ astate, ret_value =
+          PulseOperations.eval_access_to_value_path path Read location ret_value Dereference astate
+        in
+        L.d_printfln "match! tainting field %s with type %a" fieldname (Typ.pp_full Pp.text)
+          field_typ ;
+        let taint =
+          TaintItem.
+            { taint_match.taint with
+              origin= FieldOfValue {name= fieldname; origin= taint_match.taint.origin} }
+        in
+        ( astate (* TODO(arr): replace with a proper value path *)
+        , Some {taint; value_path= ret_value; typ= field_typ; exp= None} )
+      in
+      PulseResult.ok result |> Option.value ~default:(astate, None)
+
+
 let match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
     actuals ~instance_reference potential_taint_value : AbductiveDomain.t * taint_match list =
   let open TaintConfig.Target in
@@ -257,8 +319,8 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
             | Some actual ->
                 let astate, acc = acc in
                 let taint = {TaintItem.value= potential_taint_value; origin= ReturnValue; kinds} in
-                let addr_hist, typ, exp = actual in
-                (astate, {taint; addr_hist; typ; exp} :: acc)
+                let value_path, typ, exp = actual in
+                (astate, {taint; value_path; typ; exp} :: acc)
             | None ->
                 let return = Var.of_id return in
                 let astate =
@@ -272,14 +334,13 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
                        let taint =
                          {TaintItem.value= potential_taint_value; origin= ReturnValue; kinds}
                        in
-                       ( astate
-                       , {taint; addr_hist= return_value; typ= return_typ; exp= None} :: tainted ) )
-            ) )
+                       let value_path = ValuePath.OnStack {var= return; addr_hist= return_value} in
+                       (astate, {taint; value_path; typ= return_typ; exp= None} :: tainted) ) ) )
     | (AllArguments | ArgumentPositions _ | AllArgumentsButPositions _ | ArgumentsMatchingTypes _)
       as taint_target ->
         L.d_printf "matching actuals... " ;
         List.foldi actuals ~init:acc
-          ~f:(fun i ((astate, tainted) as acc) (actual_addr_hist, actual_typ, exp) ->
+          ~f:(fun i ((astate, tainted) as acc) (actual_value_path, actual_typ, exp) ->
             let is_const_exp = match exp with Some exp -> Exp.is_const exp | None -> false in
             if taint_procedure_target_matches tenv taint_target i actual_typ && not is_const_exp
             then (
@@ -288,7 +349,7 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
               let taint =
                 {TaintItem.value= potential_taint_value; origin= Argument {index= i}; kinds}
               in
-              (astate, {taint; addr_hist= actual_addr_hist; typ= actual_typ; exp} :: tainted) )
+              (astate, {taint; value_path= actual_value_path; typ= actual_typ; exp} :: tainted) )
             else (
               L.d_printfln_escaped "no match for #%d with type %a" i (Typ.pp_full Pp.text)
                 actual_typ ;
@@ -297,88 +358,34 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
         L.d_printf "matching this/self... " ;
         match instance_reference with
         | Some instance_reference ->
-            let {ProcnameDispatcher.Call.FuncArg.arg_payload= addr_hist; typ; exp} =
+            let {ProcnameDispatcher.Call.FuncArg.arg_payload= value_path; typ; exp} =
               instance_reference
             in
             let taint =
               {TaintItem.value= potential_taint_value; origin= InstanceReference; kinds}
             in
             let astate, tainted = acc in
-            (astate, {taint; addr_hist; typ; exp= Some exp} :: tainted)
+            (astate, {taint; value_path; typ; exp= Some exp} :: tainted)
         | None ->
             L.die UserError "Error in taint configuration: `%a` is not an instance method"
               TaintItem.pp_value potential_taint_value )
     | FieldsOfValue fields ->
-        let type_check astate value typ fieldname =
-          (* Dereference the value as much as possible and verify the result is of structure type
-             holding the expected fieldname.
-
-             TODO(arr): Do we really want to do it? This won't work for semi-statically or dynamically
-             typed languages like Hack or Python.*)
-          let open IOption.Let_syntax in
-          let rec get_val_and_typ_name astate value typ =
-            match typ.Typ.desc with
-            | Tstruct typ_name | Tptr ({desc= Tstruct typ_name}, _) ->
-                Some (astate, value, typ_name)
-            | Tptr (typ', _) ->
-                let* astate, value =
-                  PulseOperations.eval_access path Read location value Dereference astate
-                  |> PulseResult.ok
-                in
-                get_val_and_typ_name astate value typ'
-            | _ ->
-                None
-          in
-          let* astate, value, typ_name = get_val_and_typ_name astate value typ in
-          let+ field_typ =
-            let* {Struct.fields} = Tenv.lookup tenv typ_name in
-            List.find_map fields ~f:(fun (field, typ, _) ->
-                if String.equal fieldname (Fieldname.get_field_name field) then Some typ else None )
-          in
-          (astate, value, typ_name, field_typ)
-        in
-        let move_taint_to_field ((astate, taint_matches) as acc) taint_match fieldname =
-          (* Move the taint from [addr_hist] to [addr_hist]'s field [fieldname] *)
-          match type_check astate taint_match.addr_hist taint_match.typ fieldname with
-          | None ->
-              (* The value cannot hold the expected field.
-                 This is a type mismatch and we need to inform the user. *)
-              L.die UserError
-                "Type error in taint configuration: Model for `%a`:Type `%a` does not have a field \
-                 `%s`"
-                TaintItem.pp_value potential_taint_value (Typ.pp_full Pp.text) taint_match.typ
-                fieldname
-          | Some (astate, addr_hist, typ_name, field_typ) ->
-              Option.value ~default:acc
-                (PulseResult.ok
-                   (let open PulseResult.Let_syntax in
-                    let* astate, ret_value =
-                      PulseOperations.eval_access path Read location addr_hist
-                        (FieldAccess (Fieldname.make typ_name fieldname))
-                        astate
-                    in
-                    let+ astate, ret_value =
-                      PulseOperations.eval_access path Read location ret_value Dereference astate
-                    in
-                    L.d_printfln "match! tainting field %s with type %a" fieldname
-                      (Typ.pp_full Pp.text) field_typ ;
-                    let taint =
-                      TaintItem.
-                        { taint_match.taint with
-                          origin= FieldOfValue {name= fieldname; origin= taint_match.taint.origin}
-                        }
-                    in
-                    ( astate
-                    , {taint; addr_hist= ret_value; typ= field_typ; exp= None} :: taint_matches ) ) )
-        in
         List.fold fields ~init:acc ~f:(fun ((astate, tainted) as acc) (fieldname, origin) ->
             let astate', tainted' = match_target kinds acc origin in
             let new_taints, _ =
               List.split_n tainted' (List.length tainted' - List.length tainted)
             in
             let acc = if phys_equal astate' astate then acc else (astate', tainted) in
-            List.fold new_taints ~init:acc ~f:(fun acc taint ->
-                move_taint_to_field acc taint fieldname ) )
+            List.fold new_taints ~init:acc ~f:(fun (astate, taint_items) taint ->
+                let astate, taint_item_opt =
+                  move_taint_to_field tenv path location potential_taint_value taint fieldname
+                    astate
+                in
+                match taint_item_opt with
+                | Some taint_item ->
+                    (astate, taint_item :: taint_items)
+                | None ->
+                    (astate, taint_items) ) )
   in
   List.fold matches ~init:(astate, []) ~f:(fun acc (matcher : TaintConfig.Unit.procedure_unit) ->
       match_target matcher.kinds acc matcher.procedure_target )

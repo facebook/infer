@@ -26,7 +26,7 @@ val store :
   -> PathContext.t
   -> Location.t
   -> lhs:Exp.t
-  -> rhs:Exp.t * (AbstractValue.t * ValueHistory.t) * Typ.t
+  -> rhs:Exp.t * ValuePath.t * Typ.t
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t
 
