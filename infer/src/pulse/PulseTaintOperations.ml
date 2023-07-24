@@ -212,6 +212,20 @@ let log_taint_config () =
 
 (** {2 Methods for applying taint to relevant values} *)
 
+let taint_value_path (path : PathContext.t) location taint_item value_path astate =
+  match value_path with
+  | ValuePath.InMemory {src; access; dest= dest_addr, dest_hist} ->
+      let taint_event = ValueHistory.TaintSource (taint_item, location, path.timestamp) in
+      let dest_hist = ValueHistory.sequence taint_event dest_hist ~context:path.conditions in
+      Memory.add_edge path src access (dest_addr, dest_hist) location astate
+  | ValuePath.OnStack {var; addr_hist= addr, hist} ->
+      let taint_event = ValueHistory.TaintSource (taint_item, location, path.timestamp) in
+      let hist = ValueHistory.sequence taint_event hist ~context:path.conditions in
+      Stack.add var (addr, hist) astate
+  | ValuePath.Unknown _ ->
+      astate
+
+
 let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator (v, _) astate =
   (* Micro-optimisation: do not convert types to strings unless necessary *)
   if List.is_empty allocation_sources then astate
@@ -294,15 +308,16 @@ let taint_sources path location ~intra_procedural_only tainted astate =
         in
         fold_reachable_values value_path astate ~f:(fun value_path astate ->
             let path_condition = astate.AbductiveDomain.path_condition in
-            let v = ValuePath.value value_path in
-            if not (PulseFormula.is_known_zero path_condition v) then
-              AbductiveDomain.AddressAttributes.add_one v
+            let addr = ValuePath.value value_path in
+            if not (PulseFormula.is_known_zero path_condition addr) then
+              AbductiveDomain.AddressAttributes.add_one addr
                 (Tainted (Attribute.TaintedSet.singleton tainted))
                 astate
+              |> taint_value_path path location source value_path
             else (
               L.d_printfln
                 "Not adding Tainted attribute to the value %a because it is known to be zero"
-                AbstractValue.pp v ;
+                AbstractValue.pp addr ;
               astate ) ) )
   in
   L.d_with_indent "taint_sources" ~f:aux
@@ -388,7 +403,7 @@ let check_policies ~sink ~source ~source_times ~sanitizers ~location =
 
 module TaintDependencies = struct
   module G = Graph.Imperative.Digraph.Concrete (struct
-    type t = AbstractValue.t [@@deriving compare, equal, hash]
+    type t = AbstractValue.t * (ValueHistory.t[@hash.ignore]) [@@deriving compare, equal, hash]
   end)
 
   type t = {root: G.vertex; graph: G.t}
@@ -404,10 +419,10 @@ module TaintDependencies = struct
   (* This iterates vertices with DFS order, but with additional stack'ed accumulation. *)
   let fold {root; graph} ~init ~stack_init ~f =
     let visited = ref AbstractValue.Set.empty in
-    let rec visit acc stack v =
-      if AbstractValue.Set.mem v !visited then Ok acc
+    let rec visit acc stack ((addr, _) as v) =
+      if AbstractValue.Set.mem addr !visited then Ok acc
       else (
-        visited := AbstractValue.Set.add v !visited ;
+        visited := AbstractValue.Set.add addr !visited ;
         let* acc, stack = f acc stack v in
         PulseResult.list_fold (G.succ graph v) ~init:acc ~f:(fun acc v -> visit acc stack v) )
     in
@@ -415,8 +430,8 @@ module TaintDependencies = struct
 end
 
 (** Preorder traversal of the tree formed by taint dependencies of [v] in [astate] *)
-let gather_taint_dependencies v astate =
-  let taint_dependencies = TaintDependencies.create v in
+let gather_taint_dependencies addr_hist0 astate =
+  let taint_dependencies = TaintDependencies.create addr_hist0 in
   let visited = ref AbstractValue.Set.empty in
   let should_follow_access (access : Access.t) =
     (* NOTE: if the value is an array we propagate the check to the array elements. Similarly for
@@ -435,28 +450,48 @@ let gather_taint_dependencies v astate =
     | TakeAddress | Dereference ->
         false
   in
-  let rec gather_taint_dependencies_aux v =
-    if not (AbstractValue.Set.mem v !visited) then (
-      visited := AbstractValue.Set.add v !visited ;
-      Option.iter (AbductiveDomain.AddressAttributes.get_propagate_taint_from v astate)
+  let rec gather_taint_dependencies_aux ((from_addr, _) as from_addr_hist) =
+    if not (AbstractValue.Set.mem from_addr !visited) then (
+      visited := AbstractValue.Set.add from_addr !visited ;
+      (* Collect propagated taint from attributes *)
+      Option.iter (AbductiveDomain.AddressAttributes.get_propagate_taint_from from_addr astate)
         ~f:(fun taints_in ->
-          List.iter taints_in ~f:(fun {Attribute.v= v'} ->
-              TaintDependencies.add_edge taint_dependencies v v' ;
-              gather_taint_dependencies_aux v' ) ) ;
-      AbductiveDomain.Memory.fold_edges v astate ~init:() ~f:(fun () (access, (dest, _hist)) ->
+          List.iter taints_in ~f:(fun Attribute.{v= to_v; history= to_h} ->
+              TaintDependencies.add_edge taint_dependencies from_addr_hist (to_v, to_h) ;
+              gather_taint_dependencies_aux (to_v, to_h) ) ) ;
+      (* Collect taint from memory [from_addr_hist] points to *)
+      AbductiveDomain.Memory.fold_edges from_addr astate ~init:()
+        ~f:(fun () (access, (dest_addr, _)) ->
           if should_follow_access access then
-            Option.iter (AbductiveDomain.Memory.find_edge_opt dest Dereference astate)
-              ~f:(fun (dest_value, _) ->
-                TaintDependencies.add_edge taint_dependencies v dest_value ;
-                gather_taint_dependencies_aux dest_value )
+            Option.iter (AbductiveDomain.Memory.find_edge_opt dest_addr Dereference astate)
+              ~f:(fun deref_dest ->
+                TaintDependencies.add_edge taint_dependencies from_addr_hist deref_dest ;
+                gather_taint_dependencies_aux deref_dest )
           else () ) )
   in
-  gather_taint_dependencies_aux v ;
+  gather_taint_dependencies_aux addr_hist0 ;
   taint_dependencies
 
 
+(* TODO(arr): this is a temporary simplified check used to filter out tainting cases where the taint
+   attribute got attached to an untainted value due to this value being unified with some other
+   tainted value.
+
+   This needs to be improved in the following way:
+   1. More taint info needs to be shifted from attributes to value histories. In particular,
+   sanitization events should be introduced and added to the history.
+   2. This check should take into account the sequence of tainting and sanitization in the history
+   and also the kinds of taint. *)
+let has_taint_in_history hist =
+  if Config.pulse_taint_check_history then
+    let check = function ValueHistory.TaintSource _ -> true | _ -> false in
+    ValueHistory.exists_main hist ~f:check
+  else true
+
+
 let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path location
-    ~sink:(sink_value, sink_hist) ~source:(source_value, _source_hist) astate =
+    ~sink:(sink_item, sink_trace) ~source astate =
+  let source_value, _ = source in
   let source_expr = Decompiler.find source_value astate in
   let mk_reportable_error diagnostic = [ReportableError {astate; diagnostic}] in
   let check_tainted_flows policy_violations_reported sanitizers v astate =
@@ -470,7 +505,7 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
         let* policy_violations_reported = policy_violations_reported_result in
         L.d_printfln_escaped ~color:Red "Found source %a, checking policy..." TaintItem.pp source ;
         let potential_policy_violations =
-          check_policies ~sink:sink_value ~source ~source_times ~sanitizers ~location
+          check_policies ~sink:sink_item ~source ~source_times ~sanitizers ~location
         in
         let report_policy_violation reported_so_far
             (source_kind, sink_kind, policy_description, violated_policy_id, policy_privacy_effect)
@@ -489,7 +524,7 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
                      { expr= source_expr
                      ; location
                      ; source= ({source with kinds= [source_kind]}, source_hist)
-                     ; sink= ({sink_value with kinds= [sink_kind]}, sink_hist)
+                     ; sink= ({sink_item with kinds= [sink_kind]}, sink_trace)
                      ; flow_kind
                      ; policy_description
                      ; policy_privacy_effect } ) )
@@ -499,17 +534,24 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
       sources (Ok policy_violations_reported)
     |> PulseResult.map ~f:(fun res -> (res, sanitizers))
   in
-  L.d_with_indent "check flows wrt sink from %a" AbstractValue.pp source_value ~collapsible:true
-    ~f:(fun () ->
-      let taint_dependencies = gather_taint_dependencies source_value astate in
+  let check_tainted_flows policy_violations_reported sanitizers (v, hist) astate =
+    if not (has_taint_in_history hist) then (
+      L.d_printfln ~color:Red "Skipping taint check because value history has no taint events: %a"
+        ValueHistory.pp hist ;
+      Ok (IntSet.empty, Attribute.TaintSanitizedSet.empty) )
+    else check_tainted_flows policy_violations_reported sanitizers v astate
+  in
+  L.d_with_indent "check flows wrt sink from %a (%a)" AbstractValue.pp source_value
+    DecompilerExpr.pp_with_abstract_value source_expr ~collapsible:true ~f:(fun () ->
+      let taint_dependencies = gather_taint_dependencies source astate in
       TaintDependencies.fold taint_dependencies ~init:(policy_violations_reported, astate)
         ~stack_init:Attribute.TaintSanitizedSet.empty
-        ~f:(fun (policy_violations_reported, astate) sanitizers v ->
+        ~f:(fun (policy_violations_reported, astate) sanitizers ((addr, _) as addr_hist) ->
           let astate =
-            AbductiveDomain.AddressAttributes.add_taint_sink path sink_value sink_hist v astate
+            AbductiveDomain.AddressAttributes.add_taint_sink path sink_item sink_trace addr astate
           in
           let+ policy_violations_reported, sanitizers =
-            check_tainted_flows policy_violations_reported sanitizers v astate
+            check_tainted_flows policy_violations_reported sanitizers addr_hist astate
           in
           ((policy_violations_reported, astate), sanitizers) ) )
 
@@ -572,8 +614,8 @@ let propagate_to path location value_path values call astate =
         AbductiveDomain.AddressAttributes.add_one v
           (PropagateTaintFrom
              (List.map values ~f:(fun {FuncArg.arg_payload= value_path} ->
-                  let v = ValuePath.value value_path in
-                  {Attribute.v} ) ) )
+                  let v, history = ValuePath.addr_hist value_path in
+                  Attribute.{v; history} ) ) )
           astate
       else astate
     in
@@ -893,14 +935,11 @@ let taint_initial tenv (proc_attrs : ProcAttributes.t) astate0 =
         ~init:(Sat (Ok (astate0, [])))
         ~f:(fun result (pvar, typ) ->
           let** astate, rev_actuals = result in
-          let++ astate, actual_addr_hist =
-            PulseOperations.eval_deref PathContext.initial proc_attrs.loc (Lvar pvar) astate
+          let++ astate, actual_value_path =
+            PulseOperations.eval_deref_with_path PathContext.initial proc_attrs.loc (Lvar pvar)
+              astate
           in
-          let actual =
-            { FuncArg.exp= Lvar pvar
-            ; typ
-            ; arg_payload= ValuePath.OnStack {var= Var.of_pvar pvar; addr_hist= actual_addr_hist} }
-          in
+          let actual = {FuncArg.exp= Lvar pvar; typ; arg_payload= actual_value_path} in
           (astate, actual :: rev_actuals) )
     in
     let actuals = List.rev rev_actuals in

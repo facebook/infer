@@ -91,3 +91,5 @@ val timestamp_of_event : event -> Timestamp.t [@@warning "-unused-value-declarat
 val add_to_errlog : nesting:int -> t -> Errlog.loc_trace_elem list -> Errlog.loc_trace_elem list
 
 val get_first_main_event : t -> event option
+
+val exists_main : t -> f:(event -> bool) -> bool

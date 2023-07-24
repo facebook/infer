@@ -54,9 +54,15 @@ module Attribute = struct
         F.fprintf fmt "hack async"
 
 
-  type taint_in = {v: AbstractValue.t} [@@deriving compare, equal]
+  type taint_in = {v: AbstractValue.t; history: (ValueHistory.t[@compare.ignore] [@equal.ignore])}
+  [@@deriving compare, equal]
 
-  let pp_taint_in fmt {v} = F.fprintf fmt "{@[v= %a@]}" AbstractValue.pp v
+  let pp_taint_in fmt {v; history} =
+    let pp_history fmt =
+      if Config.debug_level_analysis >= 3 then F.fprintf fmt "; history= %a" ValueHistory.pp history
+    in
+    F.fprintf fmt "{@[v= %a%t@]}" AbstractValue.pp v pp_history
+
 
   module Tainted = struct
     type t =
@@ -482,7 +488,9 @@ module Attribute = struct
         in
         MustNotBeTainted (TaintSinkSet.map add_call_to_sink sinks)
     | PropagateTaintFrom taints_in ->
-        PropagateTaintFrom (List.map taints_in ~f:(fun {v} -> {v= subst v}))
+        PropagateTaintFrom
+          (List.map taints_in ~f:(fun {v; history} ->
+               {v= subst v; history= add_call_to_history history} ) )
     | ReturnedFromUnknown values ->
         ReturnedFromUnknown (List.map values ~f:subst)
     | Tainted tainted ->
@@ -549,27 +557,35 @@ module Attribute = struct
 
 
   let filter_unreachable subst f_keep attr =
-    let filter_aux values ~f_in ~f_out =
-      let values' =
-        List.fold values ~init:AbstractValue.Set.empty ~f:(fun acc v ->
-            let v = f_in v in
-            if f_keep v then AbstractValue.Set.add v acc
-            else
-              AbstractValue.Set.union
-                (Option.value ~default:AbstractValue.Set.empty (AbstractValue.Map.find_opt v subst))
-                acc )
+    let filter_aux things ~get_addr ~set_addr =
+      let module Hashtbl = Stdlib.Hashtbl in
+      let to_keep = Hashtbl.create 17 in
+      let filter_thing thing =
+        let addr = get_addr thing in
+        if f_keep addr then Hashtbl.replace to_keep thing ()
+        else
+          match AbstractValue.Map.find_opt addr subst with
+          | Some subst_addrs ->
+              AbstractValue.Set.iter
+                (fun subst_addr ->
+                  let thing' = set_addr subst_addr thing in
+                  Hashtbl.replace to_keep thing' () )
+                subst_addrs
+          | None ->
+              ()
       in
-      if AbstractValue.Set.is_empty values' then None
-      else AbstractValue.Set.fold (fun v list -> f_out v :: list) values' [] |> Option.some
+      List.iter things ~f:filter_thing ;
+      if Hashtbl.length to_keep |> Int.equal 0 then None
+      else Some (Hashtbl.to_seq_keys to_keep |> Stdlib.List.of_seq)
     in
     match attr with
     | ConfigUsage (StringParam {v= source}) | CopiedReturn {source} ->
         Option.some_if (f_keep source) attr
     | PropagateTaintFrom taints_in ->
-        filter_aux taints_in ~f_in:(fun {v} -> v) ~f_out:(fun v -> {v})
+        filter_aux taints_in ~get_addr:(fun {v} -> v) ~set_addr:(fun v thing -> {thing with v})
         |> Option.map ~f:(fun taints_in -> PropagateTaintFrom taints_in)
     | ReturnedFromUnknown values ->
-        filter_aux values ~f_in:Fn.id ~f_out:Fn.id
+        filter_aux values ~get_addr:Fn.id ~set_addr:(fun v _ -> v)
         |> Option.map ~f:(fun values -> ReturnedFromUnknown values)
     | MustNotBeTainted sinks when TaintSinkSet.is_empty sinks ->
         L.die InternalError "Unexpected attribute %a." pp attr

@@ -2667,6 +2667,14 @@ and pulse_taint_config =
      follow the same convention."
 
 
+and pulse_taint_check_history =
+  CLOpt.mk_bool ~long:"pulse-taint-check-history"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Check values histories for taint events before reporting a taint issue. This is a temporary \
+     flag while the taint analysis transitions from being mainly attribute-based to being \
+     history-based."
+
+
 and pulse_widen_threshold =
   CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:3
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4318,6 +4326,8 @@ and pulse_taint_config =
       | exception Unix.Unix_error (ENOENT, _, _) ->
           taint_config )
 
+
+and pulse_taint_check_history = !pulse_taint_check_history
 
 and pulse_widen_threshold = !pulse_widen_threshold
 

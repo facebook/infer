@@ -286,10 +286,16 @@ let prune path location ~condition astate =
   prune_aux ~negated:false condition astate
 
 
-let eval_deref path ?must_be_valid_reason location exp astate =
+let eval_deref_with_path path ?must_be_valid_reason location exp astate =
   let+* astate, addr_hist = eval path Read location exp astate in
   let+ astate = check_addr_access path ?must_be_valid_reason Read location addr_hist astate in
-  Memory.eval_edge addr_hist Dereference astate
+  let astate, dest_addr_hist = Memory.eval_edge addr_hist Dereference astate in
+  (astate, ValuePath.InMemory {src= addr_hist; access= Dereference; dest= dest_addr_hist})
+
+
+let eval_deref path ?must_be_valid_reason location exp astate =
+  let++ astate, value_path = eval_deref_with_path path ?must_be_valid_reason location exp astate in
+  (astate, ValuePath.addr_hist value_path)
 
 
 let eval_proc_name path location call_exp astate =

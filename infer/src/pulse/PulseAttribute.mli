@@ -31,7 +31,10 @@ type allocator =
 
 val pp_allocator : F.formatter -> allocator -> unit
 
-type taint_in = {v: AbstractValue.t} [@@deriving compare, equal]
+(** Describes the source of taint in taint propagation.
+
+    NOTE: [history] is ignored in equality and comparison. *)
+type taint_in = {v: AbstractValue.t; history: ValueHistory.t} [@@deriving compare, equal]
 
 module Tainted : sig
   type t =

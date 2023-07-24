@@ -303,7 +303,7 @@ module BasicString = struct
     PulseOperations.write_id ret_id (string, Hist.add_event path event hist) astate
 
 
-  let iterator_common ((this, _) as this_hist) ((iter, _) as iter_hist) ~desc {path; location}
+  let iterator_common ((this, hist) as this_hist) ((iter, _) as iter_hist) ~desc {path; location}
       astate =
     let event = Hist.call_event path location desc in
     let* astate, backing_ptr =
@@ -312,7 +312,9 @@ module BasicString = struct
     in
     let+ astate, internal_string = to_internal_string path location this_hist astate in
     let astate =
-      AbductiveDomain.AddressAttributes.add_one iter (PropagateTaintFrom [{v= this}]) astate
+      AbductiveDomain.AddressAttributes.add_one iter
+        (PropagateTaintFrom [{v= this; history= hist}])
+        astate
     in
     (astate, event, backing_ptr, internal_string)
 

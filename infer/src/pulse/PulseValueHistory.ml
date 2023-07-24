@@ -314,3 +314,7 @@ let add_to_errlog ~nesting history errlog =
 let get_first_main_event hist =
   Iter.head (Iter.from_labelled_iter (iter ~main_only:true hist))
   |> Option.bind ~f:(function Event event -> Some event | _ -> None)
+
+
+let exists_main t ~f =
+  Container.exists ~iter:rev_iter_main t ~f:(function Event event -> f event | _ -> false)

@@ -665,6 +665,8 @@ type pulse_taint_config =
 
 val pulse_taint_config : pulse_taint_config
 
+val pulse_taint_check_history : bool
+
 val pulse_widen_threshold : int
 
 val pulse_nullsafe_report_npe : bool
