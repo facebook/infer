@@ -101,12 +101,12 @@ function FP_notLoggingSensitiveViaDOk(SensitiveClass $sc, mixed $carrier): void 
 }
 
 // This example shows a case where a taint is assigned to an unrelated bool because the abstract
-// values get unified (a = b = 0) and taint attributes from one affect the other
-function FP_taintOnUnrelatedBoolOk(SensitiveClass $sc, bool $flag): void {
+// values get unified (a = b = 0) and taint attributes from one affect the other. We need to check
+// value history to avoid such FPs.
+function taintOnUnrelatedBoolOk(SensitiveClass $sc, bool $flag): void {
   $tainted_flag = $sc->flag;
   $uber_flag = $flag || $tainted_flag;
   if (!$uber_flag) {
-    // This is OK but $flag is considered tainted because of the merged attributes
     \Level1\taintSink($flag);
   }
 }
