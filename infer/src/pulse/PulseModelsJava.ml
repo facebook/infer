@@ -147,7 +147,7 @@ module Resource = struct
     let astate =
       PulseTaintOperations.taint_allocation tenv path location
         ~typ_desc:(Typ.Tstruct (Typ.JavaClass class_name)) ~alloc_desc:"Java resource"
-        ~allocator:(Some allocator) this astate
+        ~allocator:(Some allocator) this_obj astate
     in
     let post = PulseOperations.allocate allocator location this astate in
     let delegated_state =
@@ -793,3 +793,4 @@ let matchers : matcher list =
     &:: "nextElement" <>$ capt_arg_payload
     $!--> fun x ->
     Cplusplus.Vector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) ) ]
+  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)

@@ -119,9 +119,17 @@ let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate)
   AbstractValue.Set.fold AddressAttributes.initialize reachable_values astate
 
 
-let eval_access path ?must_be_valid_reason mode location addr_hist access astate =
+let eval_access_to_value_path path ?must_be_valid_reason mode location addr_hist access astate =
   let+ astate = check_addr_access path ?must_be_valid_reason mode location addr_hist astate in
-  Memory.eval_edge addr_hist access astate
+  let astate, dest = Memory.eval_edge addr_hist access astate in
+  (astate, ValuePath.InMemory {src= addr_hist; access; dest})
+
+
+let eval_access path ?must_be_valid_reason mode location addr_hist access astate =
+  let+ astate, value_origin =
+    eval_access_to_value_path path ?must_be_valid_reason mode location addr_hist access astate
+  in
+  (astate, ValuePath.addr_hist value_origin)
 
 
 let eval_deref_access path ?must_be_valid_reason mode location addr_hist access astate =
@@ -129,101 +137,119 @@ let eval_deref_access path ?must_be_valid_reason mode location addr_hist access 
   eval_access path ?must_be_valid_reason mode location addr_hist Dereference astate
 
 
-let eval_var {PathContext.timestamp} location pvar astate =
-  Stack.eval
-    (ValueHistory.singleton (VariableAccessed (pvar, location, timestamp)))
-    (Var.of_pvar pvar) astate
+let eval_var_to_value_path {PathContext.timestamp} location pvar astate =
+  let var = Var.of_pvar pvar in
+  let astate, addr_hist =
+    Stack.eval (ValueHistory.singleton (VariableAccessed (pvar, location, timestamp))) var astate
+  in
+  let origin = ValuePath.OnStack {var; addr_hist} in
+  (astate, origin)
+
+
+let eval_var path location pvar astate =
+  let astate, value_origin = eval_var_to_value_path path location pvar astate in
+  (astate, ValuePath.addr_hist value_origin)
 
 
 let eval_ident id astate = Stack.eval ValueHistory.epoch (Var.of_id id) astate
 
-let eval path mode location exp0 astate =
-  let rec eval ({PathContext.timestamp} as path) mode exp astate =
-    match (exp : Exp.t) with
-    | Var id ->
-        Sat
-          (Ok
-             (Stack.eval (* error in case of missing history? *) ValueHistory.epoch (Var.of_id id)
-                astate ) )
-    | Lvar pvar ->
-        Sat (Ok (eval_var path location pvar astate))
-    | Lfield (exp', field, _) ->
-        let+* astate, addr_hist = eval path Read exp' astate in
-        eval_access path mode location addr_hist (FieldAccess field) astate
-    | Lindex (exp', exp_index) ->
-        let** astate, addr_hist_index = eval path Read exp_index astate in
-        let+* astate, addr_hist = eval path Read exp' astate in
-        eval_access path mode location addr_hist
-          (ArrayAccess (StdTyp.void, fst addr_hist_index))
+let rec eval (path : PathContext.t) mode location exp astate :
+    (t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.t =
+  let++ astate, value_origin = eval_to_value_path path mode location exp astate in
+  (astate, ValuePath.addr_hist value_origin)
+
+
+and eval_to_value_path (path : PathContext.t) mode location exp astate :
+    (t * ValuePath.t) PulseOperationResult.t =
+  match (exp : Exp.t) with
+  | Var id ->
+      let var = Var.of_id id in
+      (* error in case of missing history? *)
+      let astate, addr_hist = Stack.eval ValueHistory.epoch var astate in
+      let origin = ValuePath.OnStack {var; addr_hist} in
+      Sat (Ok (astate, origin))
+  | Lvar pvar ->
+      Sat (Ok (eval_var_to_value_path path location pvar astate))
+  | Lfield (exp', field, _) ->
+      let+* astate, addr_hist = eval path Read location exp' astate in
+      eval_access_to_value_path path mode location addr_hist (FieldAccess field) astate
+  | Lindex (exp', exp_index) ->
+      let** astate, addr_hist_index = eval path Read location exp_index astate in
+      let+* astate, addr_hist = eval path Read location exp' astate in
+      eval_access_to_value_path path mode location addr_hist
+        (ArrayAccess (StdTyp.void, fst addr_hist_index))
+        astate
+  | Closure {name; captured_vars} ->
+      let** astate, rev_captured =
+        List.fold captured_vars
+          ~init:(Sat (Ok (astate, [])))
+          ~f:(fun result (capt_exp, captured_as, typ, mode) ->
+            let** astate, rev_captured = result in
+            let++ astate, addr_trace = eval path Read location capt_exp astate in
+            (astate, (captured_as, addr_trace, typ, mode) :: rev_captured) )
+      in
+      let++ astate, v_hist = Closures.record path location name (List.rev rev_captured) astate in
+      let astate =
+        conservatively_initialize_args
+          (List.rev_map rev_captured ~f:(fun (_, (addr, _), _, _) -> addr))
           astate
-    | Closure {name; captured_vars} ->
-        let** astate, rev_captured =
-          List.fold captured_vars
-            ~init:(Sat (Ok (astate, [])))
-            ~f:(fun result (capt_exp, captured_as, typ, mode) ->
-              let** astate, rev_captured = result in
-              let++ astate, addr_trace = eval path Read capt_exp astate in
-              (astate, (captured_as, addr_trace, typ, mode) :: rev_captured) )
-        in
-        let++ astate, v_hist = Closures.record path location name (List.rev rev_captured) astate in
-        let astate =
-          conservatively_initialize_args
-            (List.rev_map rev_captured ~f:(fun (_, (addr, _), _, _) -> addr))
-            astate
-        in
-        (astate, v_hist)
-    | Const (Cfun proc_name) ->
-        (* function pointers are represented as closures with no captured variables *)
-        Closures.record path location proc_name [] astate
-    | Cast (_, exp') ->
-        eval path mode exp' astate
-    | Const (Cint i) ->
-        let v = Formula.absval_of_int astate.AbductiveDomain.path_condition i in
-        let invalidation = Invalidation.ConstantDereference i in
-        let++ astate =
-          PulseArithmetic.and_eq_int v i astate
-          >>|| AddressAttributes.invalidate
-                 (v, ValueHistory.singleton (Assignment (location, timestamp)))
-                 invalidation location
-        in
-        (astate, (v, ValueHistory.singleton (Invalidated (invalidation, location, timestamp))))
-    | Const (Cstr s) ->
-        (* TODO: record actual string value; since we are making strings be a record in memory
-           instead of pure values some care has to be added to access string values once written *)
-        let v = AbstractValue.mk_fresh () in
-        let=* astate, (len_addr, hist) =
-          eval_access path Write location
-            (v, ValueHistory.singleton (Assignment (location, timestamp)))
-            (FieldAccess ModeledField.string_length) astate
-        in
-        let len_int = IntLit.of_int (String.length s) in
-        let++ astate = PulseArithmetic.and_eq_int len_addr len_int astate in
-        let astate = AddressAttributes.add_one v (ConstString s) astate in
-        (astate, (v, hist))
-    | Const ((Cfloat _ | Cclass _) as c) ->
-        let v = AbstractValue.mk_fresh () in
-        let++ astate = PulseArithmetic.and_eq_const v c astate in
-        (astate, (v, ValueHistory.singleton (Assignment (location, timestamp))))
-    | UnOp (unop, exp, _typ) ->
-        let** astate, (addr, hist) = eval path Read exp astate in
-        let unop_addr = AbstractValue.mk_fresh () in
-        let++ astate, unop_addr = PulseArithmetic.eval_unop unop_addr unop addr astate in
-        (astate, (unop_addr, hist))
-    | BinOp (bop, e_lhs, e_rhs) ->
-        let** astate, (addr_lhs, hist_lhs) = eval path Read e_lhs astate in
-        let** astate, (addr_rhs, hist_rhs) = eval path Read e_rhs astate in
-        let binop_addr = AbstractValue.mk_fresh () in
-        let++ astate, binop_addr =
-          PulseArithmetic.eval_binop binop_addr bop (AbstractValueOperand addr_lhs)
-            (AbstractValueOperand addr_rhs) astate
-        in
-        (astate, (binop_addr, ValueHistory.binary_op bop hist_lhs hist_rhs))
-    | Exn exp ->
-        eval path Read exp astate
-    | Sizeof _ ->
-        Sat (Ok (astate, (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.epoch)))
-  in
-  eval path mode exp0 astate
+      in
+      (astate, ValuePath.Unknown v_hist)
+  | Const (Cfun proc_name) ->
+      (* function pointers are represented as closures with no captured variables *)
+      let++ astate, addr_hist = Closures.record path location proc_name [] astate in
+      (astate, ValuePath.Unknown addr_hist)
+  | Cast (_, exp') ->
+      eval_to_value_path path mode location exp' astate
+  | Const (Cint i) ->
+      let v = Formula.absval_of_int astate.AbductiveDomain.path_condition i in
+      let invalidation = Invalidation.ConstantDereference i in
+      let++ astate =
+        PulseArithmetic.and_eq_int v i astate
+        >>|| AddressAttributes.invalidate
+               (v, ValueHistory.singleton (Assignment (location, path.timestamp)))
+               invalidation location
+      in
+      let addr_hist =
+        (v, ValueHistory.singleton (Invalidated (invalidation, location, path.timestamp)))
+      in
+      (astate, ValuePath.Unknown addr_hist)
+  | Const (Cstr s) ->
+      (* TODO: record actual string value; since we are making strings be a record in memory
+         instead of pure values some care has to be added to access string values once written *)
+      let v = AbstractValue.mk_fresh () in
+      let=* astate, (len_addr, hist) =
+        eval_access path Write location
+          (v, ValueHistory.singleton (Assignment (location, path.timestamp)))
+          (FieldAccess ModeledField.string_length) astate
+      in
+      let len_int = IntLit.of_int (String.length s) in
+      let++ astate = PulseArithmetic.and_eq_int len_addr len_int astate in
+      let astate = AddressAttributes.add_one v (ConstString s) astate in
+      (astate, ValuePath.Unknown (v, hist))
+  | Const ((Cfloat _ | Cclass _) as c) ->
+      let v = AbstractValue.mk_fresh () in
+      let++ astate = PulseArithmetic.and_eq_const v c astate in
+      (astate, ValuePath.Unknown (v, ValueHistory.singleton (Assignment (location, path.timestamp))))
+  | UnOp (unop, exp, _typ) ->
+      let** astate, (addr, hist) = eval path Read location exp astate in
+      let unop_addr = AbstractValue.mk_fresh () in
+      let++ astate, unop_addr = PulseArithmetic.eval_unop unop_addr unop addr astate in
+      (astate, ValuePath.Unknown (unop_addr, hist))
+  | BinOp (bop, e_lhs, e_rhs) ->
+      let** astate, (addr_lhs, hist_lhs) = eval path Read location e_lhs astate in
+      let** astate, (addr_rhs, hist_rhs) = eval path Read location e_rhs astate in
+      let binop_addr = AbstractValue.mk_fresh () in
+      let++ astate, binop_addr =
+        PulseArithmetic.eval_binop binop_addr bop (AbstractValueOperand addr_lhs)
+          (AbstractValueOperand addr_rhs) astate
+      in
+      (astate, ValuePath.Unknown (binop_addr, ValueHistory.binary_op bop hist_lhs hist_rhs))
+  | Exn exp ->
+      eval_to_value_path path Read location exp astate
+  | Sizeof _ ->
+      let addr_hist = (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.epoch) in
+      Sat (Ok (astate, ValuePath.Unknown addr_hist))
 
 
 let eval_to_operand path location exp astate =

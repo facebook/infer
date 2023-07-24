@@ -983,7 +983,7 @@ let check_config_usage_at_call location ~pre:{BaseDomain.attrs= pre_attrs} subst
 let check_all_taint_valid path callee_proc_name call_location callee_summary astate call_state =
   let open PulseResult.Let_syntax in
   AddressMap.fold
-    (fun addr_pre (addr_caller, hist_caller) astate_result ->
+    (fun addr_pre ((_, hist_caller) as addr_hist_caller) astate_result ->
       let sinks =
         UnsafeAttributes.get_must_not_be_tainted addr_pre
           (AbductiveDomain.Summary.get_pre callee_summary).attrs
@@ -997,8 +997,8 @@ let check_all_taint_valid path callee_proc_name call_location callee_summary ast
           let* astate = astate_result in
           let sink_and_trace = (sink, trace_via_call trace) in
           let+ _, astate =
-            PulseTaintOperations.check_flows_wrt_sink path call_location sink_and_trace addr_caller
-              astate
+            PulseTaintOperations.check_flows_wrt_sink path call_location ~sink:sink_and_trace
+              ~source:addr_hist_caller astate
           in
           astate )
         sinks astate_result )

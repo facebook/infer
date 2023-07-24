@@ -677,6 +677,12 @@ module Pair = struct
 end
 
 let matchers : matcher list =
+  let open ProcnameDispatcher.Call in
+  [ +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
+  ; +BuiltinDecl.(match_builtin __delete_array) <>$ capt_arg $--> delete_array ]
+
+
+let simple_matchers =
   let char_ptr_typ = Typ.mk (Tptr (Typ.mk (Tint IChar), Pk_pointer)) in
   let open ProcnameDispatcher.Call in
   [ +BuiltinDecl.(match_builtin __builtin_add_overflow)
@@ -685,8 +691,6 @@ let matchers : matcher list =
     <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> mul_overflow
   ; +BuiltinDecl.(match_builtin __builtin_sub_overflow)
     <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> sub_overflow
-  ; +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
-  ; +BuiltinDecl.(match_builtin __delete_array) <>$ capt_arg $--> delete_array
   ; +BuiltinDecl.(match_builtin __infer_skip) &--> Basic.skip
   ; +BuiltinDecl.(match_builtin __infer_structured_binding)
     <>$ capt_exp $+ capt_arg $--> infer_structured_binding
@@ -795,3 +799,9 @@ let matchers : matcher list =
     &++> Basic.unknown_call "folly::DelayedDestruction::destroy is modelled as skip"
   ; -"folly" &:: "SocketAddress" &:: "~SocketAddress"
     &++> Basic.unknown_call "folly::SocketAddress's destructor is modelled as skip" ]
+
+
+let matchers =
+  matchers
+  @ List.map simple_matchers
+      ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)

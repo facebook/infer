@@ -275,3 +275,4 @@ let matchers : matcher list =
     $ capt_arg_payload_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
     $+ capt_arg_payload_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
     $--> Iterator.operator_compare `NotEqual ~desc:"iterator operator!=" ]
+  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)

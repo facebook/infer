@@ -1248,7 +1248,9 @@ module Custom = struct
 
   let arguments_return_model args (summaries : arguments_return list) : model =
    fun {location; path; ret= ret_id, _} astate ->
-    let get_payload (arg : 'a ProcnameDispatcher.Call.FuncArg.t) = arg.arg_payload in
+    let get_payload (arg : 'a ProcnameDispatcher.Call.FuncArg.t) =
+      arg.arg_payload |> ValuePath.addr_hist
+    in
     let actual_arguments = args |> List.map ~f:get_payload in
     let one_summary {arguments; return} =
       let one_arg astate (actual_arg, pre_arg) =
@@ -1559,52 +1561,54 @@ let matchers : matcher list =
   let arg = capt_arg_payload in
   let erlang_ns = ErlangTypeName.erlang_namespace in
   Custom.matchers ()
-  @ [ +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Errors.badkey
-    ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Errors.badmap
-    ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Errors.badmatch
-    ; +BuiltinDecl.(match_builtin __erlang_error_badrecord) <>--> Errors.badrecord
-    ; +BuiltinDecl.(match_builtin __erlang_error_badreturn) <>--> Errors.badreturn
-    ; +BuiltinDecl.(match_builtin __erlang_error_case_clause) <>--> Errors.case_clause
-    ; +BuiltinDecl.(match_builtin __erlang_error_function_clause) <>--> Errors.function_clause
-    ; +BuiltinDecl.(match_builtin __erlang_error_if_clause) <>--> Errors.if_clause
-    ; +BuiltinDecl.(match_builtin __erlang_error_try_clause) <>--> Errors.try_clause
-    ; +BuiltinDecl.(match_builtin __erlang_make_atom) <>$ arg $+ arg $--> Atoms.make
-    ; +BuiltinDecl.(match_builtin __erlang_make_integer) <>$ arg $--> Integers.make
-    ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Lists.make_nil
-    ; +BuiltinDecl.(match_builtin __erlang_make_cons) <>$ arg $+ arg $--> Lists.make_cons
-    ; +BuiltinDecl.(match_builtin __erlang_make_str_const) <>$ arg $--> Strings.make
-    ; +BuiltinDecl.(match_builtin __erlang_equal) <>$ arg $+ arg $--> Comparison.equal
-    ; +BuiltinDecl.(match_builtin __erlang_exactly_equal) <>$ arg $+ arg $--> Comparison.equal
-      (* TODO: proper modeling of equal vs exactly equal T95767672 *)
-    ; +BuiltinDecl.(match_builtin __erlang_not_equal)
-      <>$ arg $+ arg $--> Comparison.exactly_not_equal
-      (* TODO: proper modeling of equal vs exactly equal T95767672 *)
-    ; +BuiltinDecl.(match_builtin __erlang_exactly_not_equal)
-      <>$ arg $+ arg $--> Comparison.exactly_not_equal
-    ; +BuiltinDecl.(match_builtin __erlang_greater) <>$ arg $+ arg $--> Comparison.greater
-    ; +BuiltinDecl.(match_builtin __erlang_greater_or_equal)
-      <>$ arg $+ arg $--> Comparison.greater_or_equal
-    ; +BuiltinDecl.(match_builtin __erlang_lesser) <>$ arg $+ arg $--> Comparison.lesser
-    ; +BuiltinDecl.(match_builtin __erlang_lesser_or_equal)
-      <>$ arg $+ arg $--> Comparison.lesser_or_equal
-    ; -"lists" &:: "append" <>$ arg $+ arg $--> Lists.append2 ~reverse:false
-    ; -"lists" &:: "foreach" <>$ arg $+ arg $--> Lists.foreach
-    ; -"lists" &:: "reverse" <>$ arg $--> Lists.reverse
-    ; +BuiltinDecl.(match_builtin __erlang_make_map) &++> Maps.make
-    ; -"maps" &:: "is_key" <>$ arg $+ arg $--> Maps.is_key
-    ; -"maps" &:: "get" <>$ arg $+ arg $--> Maps.get
-    ; -"maps" &:: "put" <>$ arg $+ arg $+ arg $--> Maps.put
-    ; -"maps" &:: "new" <>$$--> Maps.new_
-    ; -"gen_server" &:: "start_link" <>$ arg $+ arg $+ arg $--> GenServer.start_link
-    ; -"gen_server" &:: "call" <>$ arg $+ arg $--> GenServer.call2
-    ; -"gen_server" &:: "call" <>$ arg $+ arg $+ arg $--> GenServer.call3
-    ; -"gen_server" &:: "cast" <>$ arg $+ arg $--> GenServer.cast
-    ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Tuples.make
-    ; -erlang_ns &:: "is_atom" <>$ arg $--> BIF.is_atom
-    ; -erlang_ns &:: "is_boolean" <>$ arg $--> BIF.is_boolean
-    ; -erlang_ns &:: "is_integer" <>$ arg $--> BIF.is_integer
-    ; -erlang_ns &:: "is_list" <>$ arg $--> BIF.is_list
-    ; -erlang_ns &:: "is_map" <>$ arg $--> BIF.is_map ]
+  @ List.map
+      ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
+      [ +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Errors.badkey
+      ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Errors.badmap
+      ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Errors.badmatch
+      ; +BuiltinDecl.(match_builtin __erlang_error_badrecord) <>--> Errors.badrecord
+      ; +BuiltinDecl.(match_builtin __erlang_error_badreturn) <>--> Errors.badreturn
+      ; +BuiltinDecl.(match_builtin __erlang_error_case_clause) <>--> Errors.case_clause
+      ; +BuiltinDecl.(match_builtin __erlang_error_function_clause) <>--> Errors.function_clause
+      ; +BuiltinDecl.(match_builtin __erlang_error_if_clause) <>--> Errors.if_clause
+      ; +BuiltinDecl.(match_builtin __erlang_error_try_clause) <>--> Errors.try_clause
+      ; +BuiltinDecl.(match_builtin __erlang_make_atom) <>$ arg $+ arg $--> Atoms.make
+      ; +BuiltinDecl.(match_builtin __erlang_make_integer) <>$ arg $--> Integers.make
+      ; +BuiltinDecl.(match_builtin __erlang_make_nil) <>--> Lists.make_nil
+      ; +BuiltinDecl.(match_builtin __erlang_make_cons) <>$ arg $+ arg $--> Lists.make_cons
+      ; +BuiltinDecl.(match_builtin __erlang_make_str_const) <>$ arg $--> Strings.make
+      ; +BuiltinDecl.(match_builtin __erlang_equal) <>$ arg $+ arg $--> Comparison.equal
+      ; +BuiltinDecl.(match_builtin __erlang_exactly_equal) <>$ arg $+ arg $--> Comparison.equal
+        (* TODO: proper modeling of equal vs exactly equal T95767672 *)
+      ; +BuiltinDecl.(match_builtin __erlang_not_equal)
+        <>$ arg $+ arg $--> Comparison.exactly_not_equal
+        (* TODO: proper modeling of equal vs exactly equal T95767672 *)
+      ; +BuiltinDecl.(match_builtin __erlang_exactly_not_equal)
+        <>$ arg $+ arg $--> Comparison.exactly_not_equal
+      ; +BuiltinDecl.(match_builtin __erlang_greater) <>$ arg $+ arg $--> Comparison.greater
+      ; +BuiltinDecl.(match_builtin __erlang_greater_or_equal)
+        <>$ arg $+ arg $--> Comparison.greater_or_equal
+      ; +BuiltinDecl.(match_builtin __erlang_lesser) <>$ arg $+ arg $--> Comparison.lesser
+      ; +BuiltinDecl.(match_builtin __erlang_lesser_or_equal)
+        <>$ arg $+ arg $--> Comparison.lesser_or_equal
+      ; -"lists" &:: "append" <>$ arg $+ arg $--> Lists.append2 ~reverse:false
+      ; -"lists" &:: "foreach" <>$ arg $+ arg $--> Lists.foreach
+      ; -"lists" &:: "reverse" <>$ arg $--> Lists.reverse
+      ; +BuiltinDecl.(match_builtin __erlang_make_map) &++> Maps.make
+      ; -"maps" &:: "is_key" <>$ arg $+ arg $--> Maps.is_key
+      ; -"maps" &:: "get" <>$ arg $+ arg $--> Maps.get
+      ; -"maps" &:: "put" <>$ arg $+ arg $+ arg $--> Maps.put
+      ; -"maps" &:: "new" <>$$--> Maps.new_
+      ; -"gen_server" &:: "start_link" <>$ arg $+ arg $+ arg $--> GenServer.start_link
+      ; -"gen_server" &:: "call" <>$ arg $+ arg $--> GenServer.call2
+      ; -"gen_server" &:: "call" <>$ arg $+ arg $+ arg $--> GenServer.call3
+      ; -"gen_server" &:: "cast" <>$ arg $+ arg $--> GenServer.cast
+      ; +BuiltinDecl.(match_builtin __erlang_make_tuple) &++> Tuples.make
+      ; -erlang_ns &:: "is_atom" <>$ arg $--> BIF.is_atom
+      ; -erlang_ns &:: "is_boolean" <>$ arg $--> BIF.is_boolean
+      ; -erlang_ns &:: "is_integer" <>$ arg $--> BIF.is_integer
+      ; -erlang_ns &:: "is_list" <>$ arg $--> BIF.is_list
+      ; -erlang_ns &:: "is_map" <>$ arg $--> BIF.is_map ]
 
 
 let get_model_from_db = Custom.get_model_from_db

@@ -430,6 +430,8 @@ module Call = struct
 
     let is_var {exp} = match exp with Var _ -> true | _ -> false
 
+    let map_payload ~f ({arg_payload} as func_arg) = {func_arg with arg_payload= f arg_payload}
+
     let get_var_exn {exp; typ} =
       match exp with
       | Exp.Var v ->
@@ -478,6 +480,17 @@ module Call = struct
     ; on_java: 'context -> java -> 'arg_payload FuncArg.t list -> 'f option
     ; on_erlang: 'context -> erlang -> 'arg_payload FuncArg.t list -> 'f option
     ; on_csharp: 'context -> csharp -> 'arg_payload FuncArg.t list -> 'f option }
+
+  let contramap_arg_payload matcher ~f =
+    let map_args args = List.map ~f:(FuncArg.map_payload ~f) args in
+    let transform_for_lang lang_matcher ctx lang args = lang_matcher ctx lang (map_args args) in
+    { on_objc_cpp= transform_for_lang matcher.on_objc_cpp
+    ; on_c= transform_for_lang matcher.on_c
+    ; on_hack= transform_for_lang matcher.on_hack
+    ; on_java= transform_for_lang matcher.on_java
+    ; on_erlang= transform_for_lang matcher.on_erlang
+    ; on_csharp= transform_for_lang matcher.on_csharp }
+
 
   type ('context, 'f, 'arg_payload) pre_result =
     | DoesNotMatch

@@ -194,7 +194,9 @@ module SharedPtr = struct
     let<*> astate, (value_addr, value_hist) =
       to_internal_value_deref path Read location this astate
     in
-    let value_addr_hist = (value_addr, Hist.add_call path location desc value_hist) in
+    let value_addr_hist =
+      ValuePath.Unknown (value_addr, Hist.add_call path location desc value_hist)
+    in
     (* ref_count greater than one: decrement ref_count *)
     let ref_count_gt_one =
       PulseArithmetic.prune_gt_one (fst count) astate
@@ -446,6 +448,9 @@ module SharedPtr = struct
           {ProcnameDispatcher.Call.FuncArg.typ; exp= fake_exp; arg_payload= value_address}
           :: args_without_this
         in
+        let args =
+          List.map args ~f:(ProcnameDispatcher.Call.FuncArg.map_payload ~f:ValuePath.unknown)
+        in
         (* create the list of types of the actual arguments of the constructor
            Note that these types are the formal arguments of make_shared *)
         let actuals = typ :: actuals in
@@ -495,7 +500,9 @@ module UniquePtr = struct
     let<*> astate, (value_addr, value_hist) =
       to_internal_value_deref path Read location this astate
     in
-    let value_addr_hist = (value_addr, Hist.add_call path location desc value_hist) in
+    let value_addr_hist =
+      ValuePath.Unknown (value_addr, Hist.add_call path location desc value_hist)
+    in
     match find_element_type tenv typ with
     | Some elem_typ ->
         (* create a pointer of the template argument t*)
@@ -640,3 +647,4 @@ let matchers : matcher list =
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "operator_bool" <>$ capt_arg_payload
     $--> operator_bool ~desc:"std::shared_ptr::operator_bool()"
   ; -"std" &:: "make_shared" &++> SharedPtr.make_shared ~desc:"std::make_shared()" ]
+  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)

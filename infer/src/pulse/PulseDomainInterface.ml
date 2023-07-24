@@ -37,6 +37,7 @@ module BaseAddressAttributes = CanonValue.Attributes
 module Decompiler = PulseAbductiveDecompiler
 module NonDisjDomain = PulseNonDisjunctiveDomain
 module PathContext = PulsePathContext
+module ValuePath = PulseValuePath
 
 (** {2 Miscellaneous} *)
 

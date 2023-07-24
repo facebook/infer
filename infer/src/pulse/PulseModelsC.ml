@@ -89,14 +89,16 @@ let matchers : matcher list =
   let map_context_tenv f (x, _) = f x in
   [ +BuiltinDecl.(match_builtin free) <>$ capt_arg $--> free
   ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg $+...$--> free
-  ; +BuiltinDecl.(match_builtin malloc) <>$ capt_exp $--> malloc
-  ; +match_regexp_opt Config.pulse_model_malloc_pattern <>$ capt_exp $+...$--> custom_malloc
   ; -"realloc" <>$ capt_arg $+ capt_exp $--> realloc
   ; +match_regexp_opt Config.pulse_model_realloc_pattern
-    <>$ capt_arg $+ capt_exp $+...$--> custom_realloc
-  ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
-    &--> custom_alloc_not_null
-  ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy
-    &--> custom_alloc_not_null
-  ; +BuiltinDecl.(match_builtin malloc_no_fail) <>$ capt_exp $--> malloc_not_null
-  ; +match_regexp_opt Config.pulse_model_alloc_pattern &--> custom_alloc_not_null ]
+    <>$ capt_arg $+ capt_exp $+...$--> custom_realloc ]
+  @ List.map
+      ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
+      [ +BuiltinDecl.(match_builtin malloc) <>$ capt_exp $--> malloc
+      ; +match_regexp_opt Config.pulse_model_malloc_pattern <>$ capt_exp $+...$--> custom_malloc
+      ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
+        &--> custom_alloc_not_null
+      ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy
+        &--> custom_alloc_not_null
+      ; +BuiltinDecl.(match_builtin malloc_no_fail) <>$ capt_exp $--> malloc_not_null
+      ; +match_regexp_opt Config.pulse_model_alloc_pattern &--> custom_alloc_not_null ]

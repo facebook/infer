@@ -170,7 +170,7 @@ module PulseTransferFunctions = struct
       callee_pname call_exp func_args call_loc (flags : CallFlags.t) astate =
     let actuals =
       List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
-          (arg_payload, typ) )
+          (ValuePath.addr_hist arg_payload, typ) )
     in
     let call_kind_of call_exp =
       match call_exp with
@@ -201,7 +201,8 @@ module PulseTransferFunctions = struct
           if (not needed_closure_specialization) && need_closure_specialization res then (
             L.d_printfln "Trying to closure-specialize %a" Exp.pp call_exp ;
             match
-              PulseClosureSpecialization.make_specialized_call_exp analysis_data func_args
+              PulseClosureSpecialization.make_specialized_call_exp analysis_data
+                (ValuePath.addr_hist_args func_args)
                 callee_pname (call_kind_of call_exp) path call_loc astate
             with
             | Some (callee_pname, call_exp, astate) ->
@@ -509,7 +510,9 @@ module PulseTransferFunctions = struct
         in
         let static_used = Typ.Name.Hack.static_companion used in
         let typ = Typ.mk_struct static_used |> Typ.mk_ptr in
-        let self = {PulseAliasSpecialization.FuncArg.exp; typ; arg_payload} in
+        let self =
+          {PulseAliasSpecialization.FuncArg.exp; typ; arg_payload= ValuePath.Unknown arg_payload}
+        in
         (astate, func_args @ [self])
     | Some IsClass | None ->
         (astate, func_args)
@@ -525,15 +528,15 @@ module PulseTransferFunctions = struct
         | None ->
             L.internal_error "No receiver on virtual call" ;
             (default_info, astate)
-        | Some {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver, _} -> (
+        | Some {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver} -> (
           match
-            improve_receiver_static_type astate receiver callee_pname
-            |> resolve_virtual_call exe_env tenv astate receiver
+            improve_receiver_static_type astate (ValuePath.value receiver) callee_pname
+            |> resolve_virtual_call exe_env tenv astate (ValuePath.value receiver)
           with
           | Some (info, `ExactDevirtualization) ->
               (Some info, astate)
           | Some (info, `ApproxDevirtualization) ->
-              (Some info, need_dynamic_type_specialization astate receiver)
+              (Some info, need_dynamic_type_specialization astate (ValuePath.value receiver))
           | None ->
               (None, astate) )
       else if Language.curr_language_is Hack then
@@ -546,18 +549,18 @@ module PulseTransferFunctions = struct
     let astate, func_args = add_self_for_hack_traits astate method_info func_args in
     let astate =
       match (callee_pname, func_args) with
-      | Some callee_pname, [{ProcnameDispatcher.Call.FuncArg.arg_payload= arg, _}]
+      | Some callee_pname, [{ProcnameDispatcher.Call.FuncArg.arg_payload= arg}]
         when Procname.is_std_move callee_pname ->
-          AddressAttributes.add_one arg StdMoved astate
+          AddressAttributes.add_one (ValuePath.value arg) StdMoved astate
       | _, _ ->
           astate
     in
     let astate =
       List.fold func_args ~init:astate
-        ~f:(fun acc {ProcnameDispatcher.Call.FuncArg.arg_payload= arg, _; exp} ->
+        ~f:(fun acc {ProcnameDispatcher.Call.FuncArg.arg_payload= arg; exp} ->
           match exp with
           | Cast (typ, _) when Typ.is_rvalue_reference typ ->
-              AddressAttributes.add_one arg StdMoved acc
+              AddressAttributes.add_one (ValuePath.value arg) StdMoved acc
           | _ ->
               acc )
     in
@@ -582,8 +585,8 @@ module PulseTransferFunctions = struct
           L.d_printfln "Found ocaml model for call@\n" ;
           let astate =
             let arg_values =
-              List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= value, _} ->
-                  value )
+              List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= value} ->
+                  ValuePath.value value )
             in
             PulseOperations.conservatively_initialize_args arg_values astate
           in
@@ -663,7 +666,9 @@ module PulseTransferFunctions = struct
       if Topl.is_active () then
         match callee_pname with
         | Some callee_pname ->
-            topl_small_step call_loc callee_pname func_args ret exec_states_res
+            topl_small_step call_loc callee_pname
+              (ValuePath.addr_hist_args func_args)
+              ret exec_states_res
         | None ->
             (* skip, as above for non-topl *) exec_states_res
       else exec_states_res
@@ -704,7 +709,9 @@ module PulseTransferFunctions = struct
     let++ astate, rev_actuals =
       PulseOperationResult.list_fold actuals ~init:(astate, [])
         ~f:(fun (astate, rev_func_args) (actual_exp, actual_typ) ->
-          let++ astate, actual_evaled = PulseOperations.eval path Read call_loc actual_exp astate in
+          let++ astate, actual_evaled =
+            PulseOperations.eval_to_value_path path Read call_loc actual_exp astate
+          in
           ( astate
           , ProcnameDispatcher.Call.FuncArg.
               {exp= actual_exp; arg_payload= actual_evaled; typ= actual_typ}
@@ -1044,7 +1051,7 @@ module PulseTransferFunctions = struct
                    NonDisjDomain.set_store loc timestamp pvar astate_n )
           in
           let result =
-            let** astate, (rhs_addr, rhs_history) =
+            let** astate, ((rhs_addr, rhs_history) as rhs_addr_hist) =
               PulseOperations.eval path NoAccess loc rhs_exp astate
             in
             let** astate, lhs_addr_hist = PulseOperations.eval path Write loc lhs_exp astate in
@@ -1052,8 +1059,7 @@ module PulseTransferFunctions = struct
             let** astate = and_is_int_if_integer_type typ rhs_addr astate in
             let=* astate =
               PulseTaintOperations.store tenv path loc ~lhs:lhs_exp
-                ~rhs:(rhs_exp, (rhs_addr, hist), typ)
-                astate
+                ~rhs:(rhs_exp, rhs_addr_hist, typ) astate
             in
             let=+ astate =
               PulseOperations.write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, hist) astate

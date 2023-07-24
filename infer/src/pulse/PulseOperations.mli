@@ -54,12 +54,20 @@ val eval :
   -> Location.t
   -> Exp.t
   -> t
-  -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t SatUnsat.t
+  -> (t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.t
 (** Use the stack and heap to evaluate the given expression down to an abstract address representing
     its value.
 
     Return an error state if it traverses some known invalid address or if the end destination is
     known to be invalid. *)
+
+val eval_to_value_path :
+     PathContext.t
+  -> access_mode
+  -> Location.t
+  -> Exp.t
+  -> t
+  -> (t * ValuePath.t) PulseOperationResult.t
 
 val eval_var : PathContext.t -> Location.t -> Pvar.t -> t -> t * (AbstractValue.t * ValueHistory.t)
 (** Similar to eval but for pvar only. Always succeeds. *)

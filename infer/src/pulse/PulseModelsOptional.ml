@@ -39,6 +39,7 @@ let assign_value_fresh path location this history ~desc astate =
 
 let assign_none history this ~desc : model =
  fun {path; location} astate ->
+  let this = ValuePath.addr_hist this in
   let<*> astate, (pointer, value) = assign_value_fresh path location this history ~desc astate in
   let<++> astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
   PulseOperations.invalidate path
@@ -50,7 +51,9 @@ let assign_non_empty_value history ProcnameDispatcher.Call.FuncArg.{arg_payload=
     =
  fun {path; location} astate ->
   (* This model marks the optional object to be non-empty *)
-  let<*> astate, (_, value) = assign_value_fresh path location this history ~desc astate in
+  let<*> astate, (_, value) =
+    assign_value_fresh path location (ValuePath.addr_hist this) history ~desc astate
+  in
   let<++> astate = PulseArithmetic.and_positive (fst value) astate in
   astate
 
@@ -72,32 +75,41 @@ let assign_precise_value (ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= thi
   | Some ({desc= Tstruct class_name} as typ), Some actual ->
       (* assign the value pointer to the field of the shared_ptr *)
       let<**> astate, value_address = Basic.alloc_value_address ~desc typ model_data astate in
-      let<*> astate, _ = write_value path location this_payload ~value:value_address ~desc astate in
+      let<*> astate, _ =
+        write_value path location
+          (ValuePath.addr_hist this_payload)
+          ~value:value_address ~desc astate
+      in
       let typ = Typ.mk (Tptr (typ, Pk_pointer)) in
       (* We need an expression corresponding to the value of the argument we pass to
          the constructor. *)
       let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
-      let args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list =
-        {typ; exp= fake_exp; arg_payload= value_address} :: [other]
+      let args : ValuePath.t PulseAliasSpecialization.FuncArg.t list =
+        {typ; exp= fake_exp; arg_payload= ValuePath.Unknown value_address} :: [other]
       in
       (* create the list of types of the actual arguments of the constructor *)
       let actuals = [typ; actual] in
       Basic.call_constructor class_name actuals args fake_exp model_data astate
   | Some _, Some _ ->
       L.d_printfln "Class not found" ;
-      let<**> astate, address = Basic.deep_copy path location ~value:other_payload ~desc astate in
-      let<+> astate, _ = write_value path location this_payload ~value:address ~desc astate in
+      let<**> astate, address =
+        Basic.deep_copy path location ~value:(ValuePath.addr_hist other_payload) ~desc astate
+      in
+      let<+> astate, _ =
+        write_value path location (ValuePath.addr_hist this_payload) ~value:address ~desc astate
+      in
       astate
   | _, _ ->
       (* if the model cannot find a template argument and/or the formal parameters,
          it just marks the object non-empty *)
-      assign_non_empty_value (snd other_payload) this
+      assign_non_empty_value
+        (snd @@ ValuePath.addr_hist other_payload)
+        this
         ~desc:(desc ^ " (cannot find template argument and/or formal parameters)")
         model_data astate
 
 
-let assign_value (args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list)
-    ~desc : model =
+let assign_value args ~desc : model =
   match args with
   | [this; value] ->
       assign_precise_value this value ~desc:(desc ^ " (precise value)")
@@ -109,10 +121,10 @@ let assign_value (args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecializa
 
 
 let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this_payload} as this)
-    ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= other} ~desc : model =
+    ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= other_payload} ~desc : model =
  fun ({path; location} as model_data) astate ->
   let<*> astate, ((other_addr, other_hist) as other) =
-    to_internal_value_deref path Read location other astate
+    to_internal_value_deref path Read location (ValuePath.addr_hist other_payload) astate
   in
   match get_template_arg typ with
   | Some typ ->
@@ -123,7 +135,7 @@ let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this_payload}
       let assign_value =
         let<**> astate = PulseArithmetic.prune_positive other_addr astate in
         assign_precise_value this
-          {exp= Var (Ident.create_none ()); typ; arg_payload= other}
+          {exp= Var (Ident.create_none ()); typ; arg_payload= ValuePath.Unknown other}
           ~desc model_data astate
       in
       assign_none @ assign_value
@@ -134,12 +146,14 @@ let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this_payload}
 let emplace optional ~desc : model =
  (* TODO: destroy current object and call move constructor *)
  fun {path; location} astate ->
+  let optional = ValuePath.addr_hist optional in
   let<+> astate, _ = assign_value_fresh path location optional ValueHistory.epoch ~desc astate in
   astate
 
 
 let value optional ~desc : model =
  fun {path; location; ret= ret_id, _} astate ->
+  let optional = ValuePath.addr_hist optional in
   let<*> astate, ((value_addr, value_hist) as value) =
     to_internal_value_deref path Write location optional astate
   in
@@ -151,12 +165,14 @@ let value optional ~desc : model =
 
 let has_value this ~desc : model =
  fun {path; location; ret= ret_id, _} astate ->
+  let this = ValuePath.addr_hist this in
   let<+> astate, (value_addr, _) = to_internal_value_deref path Write location this astate in
   PulseOperations.write_id ret_id (value_addr, Hist.single_call path location desc) astate
 
 
 let get_pointer optional ~desc : model =
  fun {path; location; ret= ret_id, _} astate ->
+  let optional = ValuePath.addr_hist optional in
   let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
   let value_update_hist =
     (fst value_addr, Hist.add_call path location desc ~more:"non-empty case" (snd value_addr))
@@ -183,6 +199,8 @@ let get_pointer optional ~desc : model =
 
 let value_or optional default ~desc : model =
  fun {path; location; ret= ret_id, _} astate ->
+  let optional = ValuePath.addr_hist optional in
+  let default = ValuePath.addr_hist default in
   let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
   let astate_non_empty =
     let++ astate_non_empty, value =
@@ -210,6 +228,7 @@ let value_or optional default ~desc : model =
 
 let destruct ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : model =
  fun ({path; location} as model_data) astate ->
+  let this = ValuePath.addr_hist this in
   match get_template_arg typ with
   | Some typ ->
       (* note: We do dereference the value address with [NoAccess], to avoid a null dereference
@@ -220,7 +239,7 @@ let destruct ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : mo
       let value_hist = Hist.add_call path location desc value_hist in
       let deleted_arg =
         ProcnameDispatcher.Call.FuncArg.
-          { arg_payload= (value_addr, value_hist)
+          { arg_payload= ValuePath.Unknown (value_addr, value_hist)
           ; exp= Var (Ident.create_fresh Ident.kprimed)
           ; typ= {desc= Tptr (typ, Pk_pointer); quals= Typ.mk_type_quals ()} }
       in

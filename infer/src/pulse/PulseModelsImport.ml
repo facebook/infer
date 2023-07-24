@@ -12,7 +12,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 
-type arg_payload = AbstractValue.t * ValueHistory.t
+type arg_payload = ValuePath.t
 
 type model_data =
   { analysis_data: PulseSummary.t InterproceduralAnalysis.t
@@ -22,7 +22,7 @@ type model_data =
       -> Ident.t * Typ.t
       -> Exp.t
       -> (Exp.t * Typ.t) list
-      -> (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list
+      -> ValuePath.t PulseAliasSpecialization.FuncArg.t list
       -> Location.t
       -> CallFlags.t
       -> AbductiveDomain.t
@@ -124,18 +124,20 @@ module Basic = struct
 
   let alloc_value_address (typ : Typ.t) ~desc {analysis_data; path; location} astate =
     (* alloc an address for some object *)
-    let value_address = (AbstractValue.mk_fresh (), ValueHistory.epoch) in
+    let value, hist = (AbstractValue.mk_fresh (), ValueHistory.epoch) in
     let astate =
+      (* TODO(arr): this should return new (value, hist) pair. Otherwise, we're returning a history
+         without taint events. *)
       PulseTaintOperations.taint_allocation analysis_data.tenv path location ~typ_desc:typ.desc
-        ~alloc_desc:desc ~allocator:(Some CppNew) (fst value_address) astate
+        ~alloc_desc:desc ~allocator:(Some CppNew) (value, hist) astate
     in
     let astate =
       if Typ.is_objc_class typ then
-        PulseOperations.add_dynamic_type_source_file typ location.file (fst value_address) astate
-      else PulseOperations.add_dynamic_type typ (fst value_address) astate
+        PulseOperations.add_dynamic_type_source_file typ location.file value astate
+      else PulseOperations.add_dynamic_type typ value astate
     in
-    let++ astate = PulseArithmetic.and_positive (fst value_address) astate in
-    (astate, value_address)
+    let++ astate = PulseArithmetic.and_positive value astate in
+    (astate, (value, hist))
 
 
   let early_exit : model =
@@ -243,9 +245,8 @@ module Basic = struct
     PulseOperations.write_id ret_id ret_value astate |> ok_continue
 
 
-  let call_destructor
-      ({ProcnameDispatcher.Call.FuncArg.arg_payload= _; exp; typ} as deleted_arg :
-        (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t ) : model =
+  let call_destructor ({ProcnameDispatcher.Call.FuncArg.arg_payload= _; exp; typ} as deleted_arg) :
+      model =
    fun ({analysis_data; dispatch_call_eval_args; path; location; ret} : model_data) astate ->
     (* TODO: lookup dynamic type; currently not set in C++, should update model of [new] *)
     match typ.Typ.desc with
@@ -303,8 +304,9 @@ module Basic = struct
 
 
   let free_or_delete operation invalidation
-      ({ProcnameDispatcher.Call.FuncArg.arg_payload= deleted_access} as deleted_arg) : model =
+      ({ProcnameDispatcher.Call.FuncArg.arg_payload= deleted_access_path} as deleted_arg) : model =
    fun ({path; location} as model_data) astate ->
+    let deleted_access = ValuePath.addr_hist deleted_access_path in
     (* NOTE: freeing 0 is a no-op so we introduce a case split *)
     let astates_alloc =
       let<**> astate = PulseArithmetic.prune_positive (fst deleted_access) astate in
@@ -355,13 +357,16 @@ module Basic = struct
 
   let alloc_not_null_common ~initialize ?desc ~allocator size_exp_opt
       {analysis_data= {tenv}; location; path; callee_procname; ret= ret_id, ret_typ} astate =
-    let ret_addr = AbstractValue.mk_fresh () in
     let desc = Option.value desc ~default:(Procname.to_string callee_procname) in
-    let ret_alloc_hist = Hist.single_alloc path location desc in
+    let ret_addr, ret_alloc_hist =
+      (AbstractValue.mk_fresh (), Hist.single_alloc path location desc)
+    in
     let astate =
       let typ = if Typ.is_pointer ret_typ then Typ.strip_ptr ret_typ else ret_typ in
+      (* TODO(arr): this should return new (value, hist) pair. Otherwise, we're returning a history
+         without taint events. *)
       PulseTaintOperations.taint_allocation tenv path location ~typ_desc:typ.desc ~alloc_desc:desc
-        ~allocator ret_addr astate
+        ~allocator (ret_addr, ret_alloc_hist) astate
     in
     let astate =
       match size_exp_opt with
@@ -435,4 +440,5 @@ module Basic = struct
                  ~desc:"modelled as returning the first argument due to configuration option"
     ; +match_regexp_opt Config.pulse_model_skip_pattern
       &::.*++> unknown_call "modelled as skip due to configuration option" ]
+    |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
 end

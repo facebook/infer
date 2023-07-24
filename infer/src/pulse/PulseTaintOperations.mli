@@ -16,7 +16,7 @@ val call :
   -> Ident.t * Typ.t
   -> call_was_unknown:bool
   -> (Exp.t, Procname.t) Either.t
-  -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
+  -> ValuePath.t ProcnameDispatcher.Call.FuncArg.t list
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t
 (** add sources and sinks coming from a particular call site *)
@@ -47,7 +47,7 @@ val taint_allocation :
   -> typ_desc:Typ.desc
   -> alloc_desc:string
   -> allocator:Attribute.allocator option
-  -> AbstractValue.t
+  -> AbstractValue.t * ValueHistory.t
   -> AbductiveDomain.t
   -> AbductiveDomain.t
 
@@ -55,8 +55,8 @@ val check_flows_wrt_sink :
      ?policy_violations_reported:IntSet.t
   -> PathContext.t
   -> Location.t
-  -> TaintItem.t * Trace.t
-  -> AbstractValue.t
+  -> sink:TaintItem.t * Trace.t
+  -> source:AbstractValue.t * ValueHistory.t
   -> AbductiveDomain.t
   -> (IntSet.t * AbductiveDomain.t) AccessResult.t
 

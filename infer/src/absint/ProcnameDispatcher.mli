@@ -160,6 +160,8 @@ module Call : sig
   (** Little abstraction over arguments: currently actual args, we'll want formal args later *)
   module FuncArg : sig
     type 'arg_payload t = {exp: Exp.t; typ: Typ.t; arg_payload: 'arg_payload}
+
+    val map_payload : f:('arg_payload -> 'arg_payload') -> 'arg_payload t -> 'arg_payload' t
   end
 
   include
@@ -172,6 +174,11 @@ module Call : sig
     -> ('context, 'f, 'arg_payload) dispatcher
     -> ('context, 'f, 'arg_payload) dispatcher
   (** Merges two dispatchers into a dispatcher *)
+
+  val contramap_arg_payload :
+       ('context, 'f, 'unwrapped_payload) matcher
+    -> f:('wrapped_payload -> 'unwrapped_payload)
+    -> ('context, 'f, 'wrapped_payload) matcher
 
   type ('context, 'f_in, 'f_proc_out, 'f_out, 'arg_payload) args_matcher
 

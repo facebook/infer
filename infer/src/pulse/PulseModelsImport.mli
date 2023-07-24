@@ -10,7 +10,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 
-type arg_payload = AbstractValue.t * ValueHistory.t
+type arg_payload = ValuePath.t
 
 type model_data =
   { analysis_data: PulseSummary.t InterproceduralAnalysis.t
@@ -20,7 +20,7 @@ type model_data =
       -> Ident.t * Typ.t
       -> Exp.t
       -> (Exp.t * Typ.t) list
-      -> (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list
+      -> arg_payload PulseAliasSpecialization.FuncArg.t list
       -> Location.t
       -> CallFlags.t
       -> AbductiveDomain.t
@@ -130,10 +130,7 @@ module Basic : sig
   val id_first_arg : desc:string -> AbstractValue.t * ValueHistory.t -> model
 
   val free_or_delete :
-       [< `Delete | `Free]
-    -> Invalidation.t
-    -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t
-    -> model
+    [< `Delete | `Free] -> Invalidation.t -> ValuePath.t ProcnameDispatcher.Call.FuncArg.t -> model
 
   val alloc_not_null :
        ?desc:string
@@ -155,7 +152,7 @@ module Basic : sig
   val call_constructor :
        Typ.name
     -> Typ.t list
-    -> (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list
+    -> ValuePath.t PulseAliasSpecialization.FuncArg.t list
     -> Exp.t
     -> model_data
     -> AbductiveDomain.t

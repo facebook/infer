@@ -5,11 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
-open PulseBasicInterface
 open PulseModelsImport
 
 val dispatch :
-     Tenv.t
-  -> Procname.t
-  -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
-  -> model option
+  Tenv.t -> Procname.t -> PulseValuePath.t ProcnameDispatcher.Call.FuncArg.t list -> model option
