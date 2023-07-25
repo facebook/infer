@@ -410,12 +410,12 @@ end
 module StructBridge = struct
   open Struct
 
-  let to_hack_class_info ~experimental_self_parent_in_trait decls_env typ =
+  let to_hack_class_info decls_env typ =
     let open IOption.Let_syntax in
     let* {Textual.Struct.attributes} = TextualDecls.get_struct decls_env typ in
     let has_trait = List.find ~f:Textual.Attr.is_trait attributes |> Option.is_some in
     let kind = if has_trait then SilStruct.Hack.Trait else SilStruct.Hack.Class in
-    Some {SilStruct.Hack.kind; experimental_self_parent_in_trait}
+    Some {SilStruct.Hack.kind}
 
 
   (** For Hack, [supers] contains the optional parent class but also all used traits. During method
@@ -438,14 +438,9 @@ module StructBridge = struct
     match lang with Lang.Hack -> sort_hack_supers decls_env supers | _ -> supers
 
 
-  let to_sil ~experimental_self_parent_in_trait lang decls_env tenv proc_entries
-      {name; supers; fields; attributes} =
+  let to_sil lang decls_env tenv proc_entries {name; supers; fields; attributes} =
     let hack_class_info =
-      match lang with
-      | Textual.Lang.Hack ->
-          to_hack_class_info ~experimental_self_parent_in_trait decls_env name
-      | _ ->
-          None
+      match lang with Textual.Lang.Hack -> to_hack_class_info decls_env name | _ -> None
     in
     let name = TypeNameBridge.to_sil lang name in
     let supers = sort_supers lang decls_env supers in
@@ -1045,10 +1040,6 @@ module ModuleBridge = struct
           L.die InternalError
             "to_sil conversion should not be performed if TextualDecls verification has raised any \
              errors before." ;
-        let experimental_self_parent_in_trait =
-          let {attrs} = module_ in
-          List.exists ~f:Attr.is_experimental_self_parent_in_trait attrs
-        in
         let module_ =
           let open TextualTransform in
           (* note: because && and || operators are lazy we must remove them before moving calls *)
@@ -1063,8 +1054,7 @@ module ModuleBridge = struct
           (fun name ->
             let proc_entries = TypeName.Map.find name all_proc_entries in
             let struct_ = {Textual.Struct.name; supers= []; fields= []; attributes= []} in
-            StructBridge.to_sil ~experimental_self_parent_in_trait lang decls_env tenv proc_entries
-              struct_ )
+            StructBridge.to_sil lang decls_env tenv proc_entries struct_ )
           types_used_as_enclosing_but_not_defined ;
         List.iter module_.decls ~f:(fun decl ->
             match decl with
@@ -1074,8 +1064,7 @@ module ModuleBridge = struct
                 let proc_entries =
                   TypeName.Map.find_opt strct.name all_proc_entries |> Option.value ~default:[]
                 in
-                StructBridge.to_sil ~experimental_self_parent_in_trait lang decls_env tenv
-                  proc_entries strct
+                StructBridge.to_sil lang decls_env tenv proc_entries strct
             | Procdecl _ ->
                 ()
             | Proc pdesc ->

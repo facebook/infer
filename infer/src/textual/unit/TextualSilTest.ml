@@ -55,7 +55,7 @@ let%expect_test "undefined types are included in tenv" =
          exported_obj_methods: {}
          annots: {<>}
          java_class_info: {[None]}
-         hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = false }]}
+         hack_class_info: {[Some { kind = Class }]}
          dummy: false
          hack Quux
          fields: {}
@@ -116,7 +116,7 @@ let%expect_test "final annotation" =
       exported_obj_methods: {}
       annots: {<_final>}
       java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = false }]}
+      hack_class_info: {[Some { kind = Class }]}
       dummy: false
       hack Bar
       fields: {}
@@ -127,7 +127,7 @@ let%expect_test "final annotation" =
       exported_obj_methods: {}
       annots: {<>}
       java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = false }]}
+      hack_class_info: {[Some { kind = Class }]}
       dummy: false |}]
 
 
@@ -370,7 +370,7 @@ let%expect_test "trait vs class kind" =
       exported_obj_methods: {}
       annots: {<>}
       java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = false }]}
+      hack_class_info: {[Some { kind = Class }]}
       dummy: false
       hack T
       fields: {}
@@ -381,7 +381,7 @@ let%expect_test "trait vs class kind" =
       exported_obj_methods: {}
       annots: {<>}
       java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Trait; experimental_self_parent_in_trait = false }]}
+      hack_class_info: {[Some { kind = Trait }]}
       dummy: false |}]
 
 
@@ -409,7 +409,7 @@ let%expect_test "experimental self/parent in trait" =
       exported_obj_methods: {}
       annots: {<>}
       java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class; experimental_self_parent_in_trait = true }]}
+      hack_class_info: {[Some { kind = Class }]}
       dummy: false
       hack T
       fields: {}
@@ -420,5 +420,5 @@ let%expect_test "experimental self/parent in trait" =
       exported_obj_methods: {}
       annots: {<>}
       java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Trait; experimental_self_parent_in_trait = true }]}
+      hack_class_info: {[Some { kind = Trait }]}
       dummy: false |}]

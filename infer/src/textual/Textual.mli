@@ -94,8 +94,6 @@ module Attr : sig
 
   val is_async : t -> bool
 
-  val is_experimental_self_parent_in_trait : t -> bool
-
   val mk_trait : t
 
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]

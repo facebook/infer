@@ -27,8 +27,7 @@ let pp_java_class_info_opt fmt jopt = Pp.option pp_java_class_info fmt jopt
 module Hack = struct
   type kind = Class | Trait [@@deriving equal, hash, show {with_path= false}]
 
-  type t = {kind: kind; experimental_self_parent_in_trait: bool}
-  [@@deriving equal, hash, show {with_path= false}]
+  type t = {kind: kind} [@@deriving equal, hash, show {with_path= false}]
 
   let pp_opt fmt t = Pp.option pp fmt t
 end

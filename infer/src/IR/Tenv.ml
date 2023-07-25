@@ -311,12 +311,8 @@ module MethodInfo = struct
 
        This function computes the arity offset we must apply to make sure things are compared
        correctly. *)
-    let compute_arity_incr {Struct.Hack.kind; experimental_self_parent_in_trait} =
-      match kind with
-      | Class ->
-          (true, 0)
-      | Trait ->
-          if experimental_self_parent_in_trait then (false, 1) else (true, 0)
+    let compute_arity_incr {Struct.Hack.kind} =
+      match kind with Class -> (true, 0) | Trait -> (false, 1)
   end
 
   type t = HackInfo of Hack.t | DefaultInfo of Default.t
