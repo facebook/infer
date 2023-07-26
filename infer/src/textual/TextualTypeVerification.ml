@@ -83,6 +83,7 @@ type error =
   | IdentAssignedTwice of {id: Ident.t; typ1: Typ.t; typ2: Typ.t; loc1: Location.t; loc2: Location.t}
   | IdentReadBeforeWrite of {id: Ident.t; loc: Location.t}
   | VarTypeNotDeclared of {var: VarName.t; loc: Location.t}
+  | MissingDeclaration of {proc: qualified_procname; loc: Location.t}
 
 let error_loc = function
   | TypeMismatch {loc; _} ->
@@ -94,6 +95,8 @@ let error_loc = function
   | IdentReadBeforeWrite {loc; _} ->
       loc
   | VarTypeNotDeclared {loc; _} ->
+      loc
+  | MissingDeclaration {loc} ->
       loc
 
 
@@ -117,6 +120,8 @@ let pp_error sourcefile fmt error =
       F.fprintf fmt "ident %a is read before being written" Ident.pp id
   | VarTypeNotDeclared {var; _} ->
       F.fprintf fmt "variable %a has not been declared" VarName.pp var
+  | MissingDeclaration {proc} ->
+      F.fprintf fmt "procname %a should be user-declared or a builtin" pp_qualified_procname proc
 
 
 let rec loc_of_exp exp =
@@ -140,6 +145,12 @@ let rec loc_of_exp exp =
 let mk_type_mismatch_error expected loc exp typ : error =
   let loc = loc_of_exp exp |> Option.value ~default:loc in
   TypeMismatch {exp; typ; expected; loc}
+
+
+let mk_missing_declaration_error (proc : qualified_procname) : error =
+  let name = qualified_procname_name proc in
+  let {ProcName.loc} = name in
+  MissingDeclaration {proc; loc}
 
 
 (** state + error monad *)
@@ -302,12 +313,12 @@ let typeof_const (const : Const.t) : Typ.t =
       Float
 
 
-let typeof_reserved_proc (proc : qualified_procname) : Typ.t * Typ.t list option =
-  if ProcDecl.to_binop proc |> Option.is_some then (Int, Some [Int; Int])
-  else if ProcDecl.to_unop proc |> Option.is_some then (Int, Some [Int])
+let typeof_reserved_proc (proc : qualified_procname) : (Typ.t * Typ.t list option) monad =
+  if ProcDecl.to_binop proc |> Option.is_some then ret (Typ.Int, Some [Typ.Int; Typ.Int])
+  else if ProcDecl.to_unop proc |> Option.is_some then ret (Typ.Int, Some [Typ.Int])
   else
-    L.die InternalError "procname %a should be user-declared or a builtin" pp_qualified_procname
-      proc
+    let* () = add_error (mk_missing_declaration_error proc) in
+    abort
 
 
 (* Since procname can be both defined and declared in a file we should account for unknown formals in declarations. *)
@@ -323,7 +334,7 @@ let typeof_procname (procsig : ProcSig.t) : (Typ.t * Typ.t list option) monad =
   | None when ProcSig.to_qualified_procname procsig |> qualified_procname_contains_wildcard ->
       ret (Typ.Void, None) state
   | None ->
-      ret (typeof_reserved_proc (ProcSig.to_qualified_procname procsig)) state
+      (typeof_reserved_proc (ProcSig.to_qualified_procname procsig)) state
 
 
 let rec typecheck_exp exp ~check ~expected ~loc : unit monad =

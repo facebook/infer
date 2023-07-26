@@ -160,6 +160,8 @@ let qualified_procname_contains_wildcard {enclosing_class} =
       false
 
 
+let qualified_procname_name {name} = name
+
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
 (* field name [name] must be declared in type [enclosing_class] *)
 

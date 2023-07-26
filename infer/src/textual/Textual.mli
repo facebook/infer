@@ -66,6 +66,8 @@ type qualified_procname = {enclosing_class: enclosing_class; name: ProcName.t}
 
 val pp_qualified_procname : F.formatter -> qualified_procname -> unit
 
+val qualified_procname_name : qualified_procname -> ProcName.t
+
 val qualified_procname_contains_wildcard : qualified_procname -> bool
 
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
