@@ -84,6 +84,7 @@ type error =
   | IdentReadBeforeWrite of {id: Ident.t; loc: Location.t}
   | VarTypeNotDeclared of {var: VarName.t; loc: Location.t}
   | MissingDeclaration of {proc: qualified_procname; loc: Location.t}
+  | ArityMismatch of {length1: int; length2: int; loc: Location.t}
 
 let error_loc = function
   | TypeMismatch {loc; _} ->
@@ -97,6 +98,8 @@ let error_loc = function
   | VarTypeNotDeclared {loc; _} ->
       loc
   | MissingDeclaration {loc} ->
+      loc
+  | ArityMismatch {loc} ->
       loc
 
 
@@ -122,6 +125,9 @@ let pp_error sourcefile fmt error =
       F.fprintf fmt "variable %a has not been declared" VarName.pp var
   | MissingDeclaration {proc} ->
       F.fprintf fmt "procname %a should be user-declared or a builtin" pp_qualified_procname proc
+  | ArityMismatch {length1; length2; loc} ->
+      F.fprintf fmt "iter2 was run on lists of different lengths at %a: %d vs %d" Location.pp loc
+        length1 length2
 
 
 let rec loc_of_exp exp =
@@ -193,24 +199,6 @@ let option_value_map (o : 'a option) ~(none : 'b monad) ~(some : 'a -> 'b monad)
  fun state -> Option.value_map o ~default:(none state) ~f:(fun a -> some a state)
 
 
-let iter (l : 'a list) ~(f : 'a -> unit monad) : unit monad =
- fun state -> ret () (List.fold l ~init:state ~f:(fun state a -> snd (f a state)))
-
-
-let iter2 ?(strict = true) (l1 : 'a list) (l2 : 'b list) ~(f : 'a -> 'b -> unit monad) : unit monad
-    =
- fun state ->
-  match List.fold2 l1 l2 ~init:state ~f:(fun state a b -> snd (f a b state)) with
-  | Ok state ->
-      ret () state
-  | Unequal_lengths when not strict ->
-      ret () state
-  | Unequal_lengths ->
-      L.die InternalError
-        "Textual type verification failed because iter2 was run on lists of different lengths at %a"
-        Location.pp state.loc
-
-
 (** state accessors *)
 
 (** add an error and continue normally *)
@@ -223,6 +211,25 @@ let set_location loc : unit monad = fun state -> (Value (), {state with loc})
 let get_result_type : Typ.t monad = fun state -> (Value state.pdesc.procdecl.result_type.typ, state)
 
 let get_lang : Lang.t option monad = fun state -> (Value (TextualDecls.lang state.decls), state)
+
+let iter (l : 'a list) ~(f : 'a -> unit monad) : unit monad =
+ fun state -> ret () (List.fold l ~init:state ~f:(fun state a -> snd (f a state)))
+
+
+let iter2 ?(strict = true) loc (l1 : 'a list) (l2 : 'b list) ~(f : 'a -> 'b -> unit monad) :
+    unit monad =
+ fun state ->
+  match List.fold2 l1 l2 ~init:state ~f:(fun state a b -> snd (f a b state)) with
+  | Ok state ->
+      ret () state
+  | Unequal_lengths when not strict ->
+      ret () state
+  | Unequal_lengths ->
+      let length1 = List.length l1 in
+      let length2 = List.length l2 in
+      let err = add_error (ArityMismatch {length1; length2; loc}) in
+      bind err (fun () -> abort) state
+
 
 let typeof_ident id : (Typ.t * Location.t) monad =
  fun state ->
@@ -395,7 +402,7 @@ and typeof_exp (exp : Exp.t) : Typ.t monad =
         | None ->
             ret ()
         | Some formals_types ->
-            iter2 ~strict:true args formals_types ~f:(fun exp assigned ->
+            iter2 ~strict:true loc args formals_types ~f:(fun exp assigned ->
                 typecheck_exp exp
                   ~check:(fun given -> compat ~assigned ~given)
                   ~expected:(SubTypeOf assigned) ~loc )
@@ -516,7 +523,7 @@ let typecheck_instr (instr : Instr.t) : unit monad =
 
 let typecheck_node_call loc ({label; ssa_args} : Terminator.node_call) : unit monad =
   let* node = get_node label in
-  iter2 ssa_args node.Node.ssa_parameters ~f:(fun exp (_, assigned) ->
+  iter2 loc ssa_args node.Node.ssa_parameters ~f:(fun exp (_, assigned) ->
       typecheck_exp exp
         ~check:(fun given -> compat ~assigned ~given)
         ~expected:(SubTypeOf assigned) ~loc )
