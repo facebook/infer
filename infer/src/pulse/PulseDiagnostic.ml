@@ -366,7 +366,9 @@ let is_from_std_move (base, _) =
       false
 
 
-let get_message diagnostic =
+let no_suggestion msg = (msg, None)
+
+let get_message_and_suggestion diagnostic =
   match diagnostic with
   | AccessToInvalidAddress
       { calling_context
@@ -374,109 +376,113 @@ let get_message diagnostic =
       ; invalidation
       ; invalidation_trace
       ; access_trace
-      ; must_be_valid_reason } -> (
-      (* [invalidation_trace] comes from the [Invalid] attribute and may not be about the exact
-         thing we are looking at but about some other value that happens to be equal to it (as we'll
-         keep only one such attribute per value). [access_trace] has the most accurate info and if
-         all goes well it should itself contain a sub-trace leading to how the value became invalid
-         prior to being accessed (see also [PulseReport]. *)
-      let invalidation_trace =
-        Trace.get_trace_until access_trace ~f:(function Invalidated _ -> true | _ -> false)
-        |> Option.value ~default:invalidation_trace
-      in
-      match invalidation with
-      | ConstantDereference i when IntLit.equal i IntLit.zero ->
-          let pp_access_trace fmt (trace : Trace.t) =
-            match immediate_or_first_call calling_context trace with
-            | `Immediate ->
-                ()
-            | `Call f ->
-                F.fprintf fmt " in the call to %a" CallEvent.describe f
-          in
-          let pp_invalidation_trace line fmt (trace : Trace.t) =
-            match immediate_or_first_call calling_context trace with
-            | `Immediate ->
-                F.fprintf fmt "(null value originating from line %d)" line
-            | `Call f ->
-                F.fprintf fmt "(from the call to %a on line %d)" CallEvent.describe f line
-          in
-          let invalidation_line =
-            let {Location.line; _} = Trace.get_outer_location invalidation_trace in
-            line
-          in
-          let pp_must_be_valid_reason fmt expr =
-            let pp_prefix fmt null_nil_block =
-              if DecompilerExpr.is_unknown expr then
-                F.fprintf fmt "%s %a" null_nil_block
-                  (pp_invalidation_trace invalidation_line)
-                  invalidation_trace
-              else
-                F.fprintf fmt "`%a` could be %s %a and" DecompilerExpr.pp expr null_nil_block
-                  (pp_invalidation_trace invalidation_line)
-                  invalidation_trace
-            in
-            match must_be_valid_reason with
-            | Some (SelfOfNonPODReturnMethod non_pod_typ) ->
-                F.fprintf fmt
-                  "%a is used to call a C++ method with a non-POD return type `%a`%a; nil \
-                   messaging such methods is undefined behaviour"
-                  pp_prefix "nil" (Typ.pp_full Pp.text) non_pod_typ pp_access_trace access_trace
-            | Some (InsertionIntoCollectionKey | InsertionIntoCollectionValue) ->
-                F.fprintf fmt
-                  "%a is used as a %s when inserting into a collection%a, potentially causing a \
-                   crash"
-                  pp_prefix "nil"
-                  ( match[@warning "-partial-match"] must_be_valid_reason with
-                  | Some InsertionIntoCollectionKey ->
-                      "key"
-                  | Some InsertionIntoCollectionValue ->
-                      "value" )
-                  pp_access_trace access_trace
-            | Some BlockCall ->
-                F.fprintf fmt "%a is called%a, causing a crash" pp_prefix "nil block"
-                  pp_access_trace access_trace
-            | Some (NullArgumentWhereNonNullExpected procname) ->
-                F.fprintf fmt
-                  "%a is passed as argument to %s; this function requires a non-nil argument"
-                  pp_prefix "nil" procname
-            | None ->
-                F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
-          in
-          F.asprintf "%a%a" pp_calling_context_prefix calling_context pp_must_be_valid_reason
-            invalid_address
-      | _ ->
-          let pp_access_trace fmt (trace : Trace.t) =
-            match immediate_or_first_call calling_context trace with
-            | `Immediate ->
-                F.fprintf fmt "accessing memory that "
-            | `Call f ->
-                F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
-          in
-          let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
-            let pp_line fmt line = F.fprintf fmt " on line %d" line in
-            match immediate_or_first_call calling_context trace with
-            | `Immediate ->
-                F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
-            | `Call f ->
-                F.fprintf fmt "%a during the call to %a%a" Invalidation.describe invalidation
-                  CallEvent.describe f pp_line line
-          in
-          let invalidation_line =
-            let {Location.line; _} = Trace.get_outer_location invalidation_trace in
-            line
-          in
-          F.asprintf "%a%a%a" pp_calling_context_prefix calling_context pp_access_trace access_trace
-            (pp_invalidation_trace invalidation_line invalidation)
-            invalidation_trace )
+      ; must_be_valid_reason } ->
+      ((* [invalidation_trace] comes from the [Invalid] attribute and may not be about the exact
+          thing we are looking at but about some other value that happens to be equal to it (as we'll
+          keep only one such attribute per value). [access_trace] has the most accurate info and if
+          all goes well it should itself contain a sub-trace leading to how the value became invalid
+          prior to being accessed (see also [PulseReport]. *)
+       let invalidation_trace =
+         Trace.get_trace_until access_trace ~f:(function Invalidated _ -> true | _ -> false)
+         |> Option.value ~default:invalidation_trace
+       in
+       match invalidation with
+       | ConstantDereference i when IntLit.equal i IntLit.zero ->
+           let pp_access_trace fmt (trace : Trace.t) =
+             match immediate_or_first_call calling_context trace with
+             | `Immediate ->
+                 ()
+             | `Call f ->
+                 F.fprintf fmt " in the call to %a" CallEvent.describe f
+           in
+           let pp_invalidation_trace line fmt (trace : Trace.t) =
+             match immediate_or_first_call calling_context trace with
+             | `Immediate ->
+                 F.fprintf fmt "(null value originating from line %d)" line
+             | `Call f ->
+                 F.fprintf fmt "(from the call to %a on line %d)" CallEvent.describe f line
+           in
+           let invalidation_line =
+             let {Location.line; _} = Trace.get_outer_location invalidation_trace in
+             line
+           in
+           let pp_must_be_valid_reason fmt expr =
+             let pp_prefix fmt null_nil_block =
+               if DecompilerExpr.is_unknown expr then
+                 F.fprintf fmt "%s %a" null_nil_block
+                   (pp_invalidation_trace invalidation_line)
+                   invalidation_trace
+               else
+                 F.fprintf fmt "`%a` could be %s %a and" DecompilerExpr.pp expr null_nil_block
+                   (pp_invalidation_trace invalidation_line)
+                   invalidation_trace
+             in
+             match must_be_valid_reason with
+             | Some (SelfOfNonPODReturnMethod non_pod_typ) ->
+                 F.fprintf fmt
+                   "%a is used to call a C++ method with a non-POD return type `%a`%a; nil \
+                    messaging such methods is undefined behaviour"
+                   pp_prefix "nil" (Typ.pp_full Pp.text) non_pod_typ pp_access_trace access_trace
+             | Some (InsertionIntoCollectionKey | InsertionIntoCollectionValue) ->
+                 F.fprintf fmt
+                   "%a is used as a %s when inserting into a collection%a, potentially causing a \
+                    crash"
+                   pp_prefix "nil"
+                   ( match[@warning "-partial-match"] must_be_valid_reason with
+                   | Some InsertionIntoCollectionKey ->
+                       "key"
+                   | Some InsertionIntoCollectionValue ->
+                       "value" )
+                   pp_access_trace access_trace
+             | Some BlockCall ->
+                 F.fprintf fmt "%a is called%a, causing a crash" pp_prefix "nil block"
+                   pp_access_trace access_trace
+             | Some (NullArgumentWhereNonNullExpected procname) ->
+                 F.fprintf fmt
+                   "%a is passed as argument to %s; this function requires a non-nil argument"
+                   pp_prefix "nil" procname
+             | None ->
+                 F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
+           in
+           F.asprintf "%a%a" pp_calling_context_prefix calling_context pp_must_be_valid_reason
+             invalid_address
+       | _ ->
+           let pp_access_trace fmt (trace : Trace.t) =
+             match immediate_or_first_call calling_context trace with
+             | `Immediate ->
+                 F.fprintf fmt "accessing memory that "
+             | `Call f ->
+                 F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
+           in
+           let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
+             let pp_line fmt line = F.fprintf fmt " on line %d" line in
+             match immediate_or_first_call calling_context trace with
+             | `Immediate ->
+                 F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
+             | `Call f ->
+                 F.fprintf fmt "%a during the call to %a%a" Invalidation.describe invalidation
+                   CallEvent.describe f pp_line line
+           in
+           let invalidation_line =
+             let {Location.line; _} = Trace.get_outer_location invalidation_trace in
+             line
+           in
+           F.asprintf "%a%a%a" pp_calling_context_prefix calling_context pp_access_trace
+             access_trace
+             (pp_invalidation_trace invalidation_line invalidation)
+             invalidation_trace )
+      |> no_suggestion
   | ConfigUsage {pname; config; branch_location} ->
       F.asprintf "Function %a used config %a at %a." Procname.pp pname ConfigName.pp config
         Location.pp branch_location
+      |> no_suggestion
   | ConstRefableParameter {param; location} ->
       F.asprintf
         "Function parameter `%a` is passed by-value but not modified inside the function on %a. \
          This might result in an unnecessary copy at the callsite of this function. Consider \
          changing the type of this function parameter to `const &`."
         Var.pp param Location.pp_line location
+      |> no_suggestion
   | CSharpResourceLeak {class_name; location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let allocation_line =
@@ -494,26 +500,28 @@ let get_message diagnostic =
       in
       F.asprintf "Resource dynamically allocated %a is not closed after the last access at %a"
         pp_allocation_trace allocation_trace Location.pp location
+      |> no_suggestion
   | ErlangError (Badarg {calling_context= _; location}) ->
-      F.asprintf "bad arg at %a" Location.pp location
+      F.asprintf "bad arg at %a" Location.pp location |> no_suggestion
   | ErlangError (Badkey {calling_context= _; location}) ->
-      F.asprintf "bad key at %a" Location.pp location
+      F.asprintf "bad key at %a" Location.pp location |> no_suggestion
   | ErlangError (Badmap {calling_context= _; location}) ->
-      F.asprintf "bad map at %a" Location.pp location
+      F.asprintf "bad map at %a" Location.pp location |> no_suggestion
   | ErlangError (Badmatch {calling_context= _; location}) ->
-      F.asprintf "no match of RHS at %a" Location.pp location
+      F.asprintf "no match of RHS at %a" Location.pp location |> no_suggestion
   | ErlangError (Badrecord {calling_context= _; location}) ->
-      F.asprintf "bad record at %a" Location.pp location
+      F.asprintf "bad record at %a" Location.pp location |> no_suggestion
   | ErlangError (Badreturn {calling_context= _; location}) ->
       F.asprintf "dynamic type of returned value disagrees with spec at %a" Location.pp location
+      |> no_suggestion
   | ErlangError (Case_clause {calling_context= _; location}) ->
-      F.asprintf "no matching case clause at %a" Location.pp location
+      F.asprintf "no matching case clause at %a" Location.pp location |> no_suggestion
   | ErlangError (Function_clause {calling_context= _; location}) ->
-      F.asprintf "no matching function clause at %a" Location.pp location
+      F.asprintf "no matching function clause at %a" Location.pp location |> no_suggestion
   | ErlangError (If_clause {calling_context= _; location}) ->
-      F.asprintf "no true branch in if expression at %a" Location.pp location
+      F.asprintf "no true branch in if expression at %a" Location.pp location |> no_suggestion
   | ErlangError (Try_clause {calling_context= _; location}) ->
-      F.asprintf "no matching branch in try at %a" Location.pp location
+      F.asprintf "no matching branch in try at %a" Location.pp location |> no_suggestion
   | JavaResourceLeak {class_name; location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let allocation_line =
@@ -531,6 +539,7 @@ let get_message diagnostic =
       in
       F.asprintf "Resource dynamically allocated %a is not closed after the last access at %a"
         pp_allocation_trace allocation_trace Location.pp location
+      |> no_suggestion
   | HackUnawaitedAwaitable {location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let allocation_line =
@@ -547,6 +556,7 @@ let get_message diagnostic =
       in
       F.asprintf "Awaitable dynamically allocated %a is not awaited after the last access at %a"
         pp_allocation_trace allocation_trace Location.pp location
+      |> no_suggestion
   | MemoryLeak {allocator; location; allocation_trace} ->
       let allocation_line =
         let {Location.line; _} = Trace.get_outer_location allocation_trace in
@@ -562,6 +572,7 @@ let get_message diagnostic =
       in
       F.asprintf "Memory dynamically allocated %a is not freed after the last access at %a"
         pp_allocation_trace allocation_trace Location.pp location
+      |> no_suggestion
   | ReadonlySharedPtrParameter {param; location; used_locations} ->
       let pp_used_locations f =
         match used_locations with
@@ -581,6 +592,7 @@ let get_message diagnostic =
          sharing it. To avoid this, consider passing the raw pointer instead and changing its \
          usages if necessary%t."
         Var.pp param Location.pp_line location pp_used_locations
+      |> no_suggestion
   | ReadUninitializedValue {calling_context; trace} ->
       let root_var =
         Trace.find_map_last_main trace ~f:(function
@@ -623,32 +635,34 @@ let get_message diagnostic =
         | `Call f ->
             F.fprintf fmt " during the call to %a" CallEvent.describe f
       in
-      F.asprintf "%t is read without initialization%t" pp_access_path pp_location
+      F.asprintf "%t is read without initialization%t" pp_access_path pp_location |> no_suggestion
   | RetainCycle {location; value; path} ->
       F.asprintf
         "Memory managed via reference counting is locked in a retain cycle at %a: `%a` retains \
          itself via `%a`"
         Location.pp location DecompilerExpr.pp value DecompilerExpr.pp path
+      |> no_suggestion
   | StackVariableAddressEscape {variable; _} ->
       let pp_var f var =
         if Var.is_cpp_temporary var then F.pp_print_string f "C++ temporary"
         else F.fprintf f "stack variable `%a`" Var.pp var
       in
-      F.asprintf "Address of %a is returned by the function" pp_var variable
+      F.asprintf "Address of %a is returned by the function" pp_var variable |> no_suggestion
   | TaintFlow {expr; source= source, _; sink= sink, _; policy_description} ->
       (* TODO: say what line the source happened in the current function *)
-      if TaintItem.equal source sink then
-        F.asprintf "%s. Value is tainted by %a" policy_description TaintItem.pp source
-      else
-        let flows_to =
-          match sink.TaintItem.origin with TaintItem.SetField -> "" | _ -> " flows to"
-        in
-        if DecompilerExpr.is_unknown expr then
-          F.asprintf "%s. Value is tainted by %a and%s %a" policy_description TaintItem.pp source
-            flows_to TaintItem.pp sink
+      ( if TaintItem.equal source sink then
+          F.asprintf "%s. Value is tainted by %a" policy_description TaintItem.pp source
         else
-          F.asprintf "%s. `%a` is tainted by %a and%s %a" policy_description DecompilerExpr.pp expr
-            TaintItem.pp source flows_to TaintItem.pp sink
+          let flows_to =
+            match sink.TaintItem.origin with TaintItem.SetField -> "" | _ -> " flows to"
+          in
+          if DecompilerExpr.is_unknown expr then
+            F.asprintf "%s. Value is tainted by %a and%s %a" policy_description TaintItem.pp source
+              flows_to TaintItem.pp sink
+          else
+            F.asprintf "%s. `%a` is tainted by %a and%s %a" policy_description DecompilerExpr.pp
+              expr TaintItem.pp source flows_to TaintItem.pp sink )
+      |> no_suggestion
   | UnnecessaryCopy {copied_into; copied_location= Some (callee, {file; line})} ->
       let open PulseAttribute in
       F.asprintf
@@ -656,78 +670,79 @@ let get_message diagnostic =
          Please check if we can avoid the copy, e.g. by changing the return type of `%a` or by \
          revising the function body of it."
         CopiedInto.pp copied_into Procname.pp callee SourceFile.pp file line Procname.pp callee
-  | UnnecessaryCopy {copied_into; source_typ; source_opt; location; copied_location= None; from}
-    -> (
-      let open PulseAttribute in
-      let is_from_const = Option.exists ~f:Typ.is_const_reference source_typ in
-      let get_suggestion_msg_move = function
-        | Some source_expr when is_from_std_move source_expr ->
-            "Even though `std::move` is called, nothing is actually getting moved (e.g. the type \
-             doesn't have a move operation) so make sure the copy is expected"
-        | _ ->
-            "To avoid the copy, try moving it by calling `std::move` instead"
-      in
-      let get_suggestion_msg_move_intermediate source_opt =
-        let move_msg =
-          get_suggestion_msg_move source_opt
-          ^ " or alternatively change the callee's parameter type to `const &`"
-        in
-        if is_from_const then
-          "To avoid the copy, try 1) removing the `const &` from the source and 2) " ^ move_msg
-        else move_msg
-      in
-      let suppression_msg =
-        "If this copy was intentional, consider calling `folly::copy` to make it explicit and \
-         hence suppress the warning"
-      in
-      let get_suggestion_msg source_opt =
-        match (from, copied_into) with
-        | CopyToOptional, _ ->
-            if is_from_const then get_suggestion_msg_move source_opt
-            else get_suggestion_msg_move source_opt ^ " or changing the callee's type"
-        | CopyInGetDefault, _ ->
-            F.asprintf
-              "To avoid the copy, consider using `folly::get_ref_default` or `folly::get_ptr` \
-               instead%t" (fun f ->
-                Option.iter FbInternalLinks.bad_pattern_folly_get_default ~f:(fun link ->
-                    F.fprintf f " ([[%s | bad patterns]])" link ) )
-        | _, IntoIntermediate _ ->
-            get_suggestion_msg_move_intermediate source_opt
-        | _, IntoField _ ->
-            "Rather than copying into the field, consider moving into it instead"
-        | CopyCtor, IntoVar _ ->
-            "To avoid the copy, try using a reference `&`"
-        | CopyAssignment, IntoVar _ ->
-            get_suggestion_msg_move source_opt
-      in
-      match (copied_into, source_opt) with
-      | IntoIntermediate _, None ->
-          F.asprintf "An intermediate is %a on %a. %s." CopyOrigin.pp from Location.pp_line location
-            (get_suggestion_msg source_opt)
-      | IntoIntermediate _, Some ((PVar _, _) as source_expr) ->
-          F.asprintf "variable `%a` is %a unnecessarily into an intermediate on %a. %s."
-            DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from Location.pp_line location
-            (get_suggestion_msg source_opt)
-      | IntoIntermediate _, Some ((ReturnValue _, _) as source_expr) ->
-          F.asprintf "The return value from %a is %a unnecessarily  on %a. %s."
-            DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from Location.pp_line location
-            (get_suggestion_msg source_opt)
-      | IntoVar _, None ->
-          F.asprintf
-            "%a variable `%a` is not modified after it is copied from a source on %a. %s. %s."
-            CopyOrigin.pp from CopiedInto.pp copied_into Location.pp_line location
-            (get_suggestion_msg source_opt) suppression_msg
-      | IntoVar _, Some source_expr ->
-          F.asprintf "%a variable `%a` is not modified after it is copied from `%a` on %a. %s. %s."
-            CopyOrigin.pp from CopiedInto.pp copied_into DecompilerExpr.pp_source_expr source_expr
-            Location.pp_line location (get_suggestion_msg source_opt) suppression_msg
-      | IntoField {field}, None ->
-          F.asprintf "Field `%a` is %a into from an rvalue-ref but is not modified afterwards. %s."
-            Fieldname.pp field CopyOrigin.pp from (get_suggestion_msg source_opt)
-      | IntoField {field}, Some source_expr ->
-          F.asprintf "`%a` is %a into field `%a` but is not modified afterwards. %s."
-            DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from Fieldname.pp field
-            (get_suggestion_msg source_opt) )
+      |> no_suggestion
+  | UnnecessaryCopy {copied_into; source_typ; source_opt; location; copied_location= None; from} ->
+      (let open PulseAttribute in
+       let is_from_const = Option.exists ~f:Typ.is_const_reference source_typ in
+       let get_suggestion_msg_move = function
+         | Some source_expr when is_from_std_move source_expr ->
+             "Even though `std::move` is called, nothing is actually getting moved (e.g. the type \
+              doesn't have a move operation) so make sure the copy is expected"
+         | _ ->
+             "To avoid the copy, try moving it by calling `std::move` instead"
+       in
+       let get_suggestion_msg_move_intermediate source_opt =
+         let move_msg =
+           get_suggestion_msg_move source_opt
+           ^ " or alternatively change the callee's parameter type to `const &`"
+         in
+         if is_from_const then
+           "To avoid the copy, try 1) removing the `const &` from the source and 2) " ^ move_msg
+         else move_msg
+       in
+       let suppression_msg =
+         "If this copy was intentional, consider calling `folly::copy` to make it explicit and \
+          hence suppress the warning"
+       in
+       let get_suggestion_msg source_opt =
+         match (from, copied_into) with
+         | CopyToOptional, _ ->
+             if is_from_const then get_suggestion_msg_move source_opt
+             else get_suggestion_msg_move source_opt ^ " or changing the callee's type"
+         | CopyInGetDefault, _ ->
+             F.asprintf
+               "To avoid the copy, consider using `folly::get_ref_default` or `folly::get_ptr` \
+                instead%t" (fun f ->
+                 Option.iter FbInternalLinks.bad_pattern_folly_get_default ~f:(fun link ->
+                     F.fprintf f " ([[%s | bad patterns]])" link ) )
+         | _, IntoIntermediate _ ->
+             get_suggestion_msg_move_intermediate source_opt
+         | _, IntoField _ ->
+             "Rather than copying into the field, consider moving into it instead"
+         | CopyCtor, IntoVar _ ->
+             "To avoid the copy, try using a reference `&`"
+         | CopyAssignment, IntoVar _ ->
+             get_suggestion_msg_move source_opt
+       in
+       match (copied_into, source_opt) with
+       | IntoIntermediate _, None ->
+           F.asprintf "An intermediate is %a on %a. %s." CopyOrigin.pp from Location.pp_line
+             location (get_suggestion_msg source_opt)
+       | IntoIntermediate _, Some ((PVar _, _) as source_expr) ->
+           F.asprintf "variable `%a` is %a unnecessarily into an intermediate on %a. %s."
+             DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from Location.pp_line location
+             (get_suggestion_msg source_opt)
+       | IntoIntermediate _, Some ((ReturnValue _, _) as source_expr) ->
+           F.asprintf "The return value from %a is %a unnecessarily  on %a. %s."
+             DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from Location.pp_line location
+             (get_suggestion_msg source_opt)
+       | IntoVar _, None ->
+           F.asprintf
+             "%a variable `%a` is not modified after it is copied from a source on %a. %s. %s."
+             CopyOrigin.pp from CopiedInto.pp copied_into Location.pp_line location
+             (get_suggestion_msg source_opt) suppression_msg
+       | IntoVar _, Some source_expr ->
+           F.asprintf "%a variable `%a` is not modified after it is copied from `%a` on %a. %s. %s."
+             CopyOrigin.pp from CopiedInto.pp copied_into DecompilerExpr.pp_source_expr source_expr
+             Location.pp_line location (get_suggestion_msg source_opt) suppression_msg
+       | IntoField {field}, None ->
+           F.asprintf "Field `%a` is %a into from an rvalue-ref but is not modified afterwards. %s."
+             Fieldname.pp field CopyOrigin.pp from (get_suggestion_msg source_opt)
+       | IntoField {field}, Some source_expr ->
+           F.asprintf "`%a` is %a into field `%a` but is not modified afterwards. %s."
+             DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from Fieldname.pp field
+             (get_suggestion_msg source_opt) )
+      |> no_suggestion
 
 
 let add_errlog_header ~nesting ~title location errlog =

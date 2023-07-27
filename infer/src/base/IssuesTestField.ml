@@ -11,6 +11,7 @@ type t =
   | BugType
   | Qualifier
   | Severity
+  | Suggestion
   | Bucket
   | Line
   | Column
@@ -30,6 +31,7 @@ let all_symbols =
   [ ("bug_type", BugType)
   ; ("bucket", Bucket)
   ; ("qualifier", Qualifier)
+  ; ("suggestion", Suggestion)
   ; ("severity", Severity)
   ; ("line", Line)
   ; ("column", Column)

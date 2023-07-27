@@ -920,7 +920,7 @@ OPTIONS
     See also infer-report(1).
 
        --issues-tests-fields ,-separated sequence of { bug_type | bucket |
-       qualifier | severity | line | column | procedure |
+       qualifier | suggestion | severity | line | column | procedure |
        procedure_start_line | file | bug_trace | key | hash | line_offset |
        qualifier_contains_potential_exception_note | nullsafe_extra |
        taint_extra }

@@ -88,6 +88,8 @@ let pp_custom_of_report fmt report fields =
           F.fprintf fmt "%s%s" (comma_separator index) bucket
       | Qualifier ->
           F.fprintf fmt "%s%s" (comma_separator index) issue.qualifier
+      | Suggestion ->
+          F.fprintf fmt "%s%s" (comma_separator index) (Option.value ~default:"" issue.suggestion)
       | Severity ->
           F.fprintf fmt "%s%s" (comma_separator index) issue.severity
       | Line ->

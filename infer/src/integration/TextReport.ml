@@ -64,13 +64,17 @@ module ReportSummary = struct
     summary
 end
 
-let pp_jsonbug fmt {Jsonbug_t.file; severity; line; bug_type_hum; qualifier; _} =
-  F.fprintf fmt "%s:%d: %s: %s@\n  %s" file line (String.lowercase severity) bug_type_hum qualifier
+let pp_suggestion fmt = Option.iter ~f:(F.pp_print_string fmt)
+
+let pp_jsonbug fmt {Jsonbug_t.file; severity; line; bug_type_hum; qualifier; suggestion; _} =
+  F.fprintf fmt "%s:%d: %s: %s@\n  %s %a" file line (String.lowercase severity) bug_type_hum
+    qualifier pp_suggestion suggestion
 
 
-let pp_jsonbug_with_number fmt (i, {Jsonbug_t.file; severity; line; bug_type_hum; qualifier; _}) =
-  F.fprintf fmt "#%d@\n%s:%d: %s: %s@\n  %s" i file line (String.lowercase severity) bug_type_hum
-    qualifier
+let pp_jsonbug_with_number fmt
+    (i, {Jsonbug_t.file; severity; line; bug_type_hum; qualifier; suggestion; _}) =
+  F.fprintf fmt "#%d@\n%s:%d: %s: %s@\n  %s %a" i file line (String.lowercase severity) bug_type_hum
+    qualifier pp_suggestion suggestion
 
 
 let pp_source_context ~indent fmt

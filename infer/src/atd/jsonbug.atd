@@ -121,6 +121,7 @@ type extra = {
 type jsonbug = {
   bug_type : string;
   qualifier : string;
+  ?suggestion : string option;
   severity : string;
   line: int;
   column: int;

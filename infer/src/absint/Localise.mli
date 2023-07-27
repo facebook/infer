@@ -15,14 +15,15 @@ module Tags : sig
 end
 
 (** description field of error messages *)
-type error_desc = {descriptions: string list; tags: Tags.t; dotty: string option}
+type error_desc =
+  {descriptions: string list; suggestion: string option; tags: Tags.t; dotty: string option}
 [@@deriving compare]
 
 val no_desc : error_desc
 (** empty error description *)
 
-val verbatim_desc : string -> error_desc
-(** verbatim desc from a string, not to be used for user-visible descs *)
+val verbatim_desc : ?suggestion:string -> string -> error_desc
+(** verbatim desc from a string and suggestion, not to be used for user-visible descs *)
 
 module BucketLevel : sig
   val b1 : string
@@ -53,8 +54,11 @@ val error_desc_hash : error_desc -> int
 val error_desc_equal : error_desc -> error_desc -> bool
 (** equality for error_desc *)
 
+val pp_error_qualifier : Format.formatter -> error_desc -> unit
+(** pretty print an error qualifier *)
+
 val pp_error_desc : Format.formatter -> error_desc -> unit
-(** pretty print an error description *)
+(** pretty print a full error description with suggestion *)
 
 val error_desc_get_dotty : error_desc -> string option
 

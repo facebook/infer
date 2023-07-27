@@ -352,7 +352,7 @@ OPTIONS
            Write a list of issues in a format suitable for tests to file
 
        --issues-tests-fields ,-separated sequence of { bug_type | bucket |
-       qualifier | severity | line | column | procedure |
+       qualifier | suggestion | severity | line | column | procedure |
        procedure_start_line | file | bug_trace | key | hash | line_offset |
        qualifier_contains_potential_exception_note | nullsafe_extra |
        taint_extra }

@@ -9,15 +9,19 @@ open! IStd
 module L = Logging
 module F = Format
 
-let error_desc_to_plain_string error_desc =
-  let pp fmt = Localise.pp_error_desc fmt error_desc in
+let error_desc_to_qualifier_string error_desc =
+  let pp fmt = Localise.pp_error_qualifier fmt error_desc in
   let s = F.asprintf "%t" pp in
   let s = String.strip s in
-  let s =
-    (* end error description with a dot *)
-    if String.is_suffix ~suffix:"." s then s else s ^ "."
-  in
-  s
+  (* end error description with a dot *)
+  if String.is_suffix ~suffix:"." s then s else s ^ "."
+
+
+let error_desc_to_suggestion_string error_desc =
+  Option.map error_desc.Localise.suggestion ~f:(fun suggestion ->
+      let s = F.asprintf "%s" suggestion in
+      (* end error suggestion with a dot *)
+      if String.is_suffix ~suffix:"." s then s else s ^ "." )
 
 
 let error_desc_to_dotty_string error_desc = Localise.error_desc_get_dotty error_desc
@@ -214,7 +218,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
             None
       in
       let qualifier =
-        let base_qualifier = error_desc_to_plain_string err_key.err_desc in
+        let base_qualifier = error_desc_to_qualifier_string err_key.err_desc in
         if IssueType.(equal resource_leak) err_key.issue_type then
           match Errlog.compute_local_exception_line err_data.loc_trace with
           | None ->
@@ -227,10 +231,12 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
               Format.sprintf "%s@\n%s" base_qualifier potential_exception_message
         else base_qualifier
       in
+      let suggestion = error_desc_to_suggestion_string err_key.err_desc in
       let bug =
         { Jsonbug_j.bug_type
         ; qualifier
         ; severity
+        ; suggestion
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col
         ; procedure= procedure_id_of_procname proc_name

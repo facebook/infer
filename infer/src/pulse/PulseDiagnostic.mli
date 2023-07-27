@@ -111,7 +111,7 @@ val pp : F.formatter -> t -> unit
 val aborts_execution : t -> bool
 (** whether the presence of an error should abort the execution *)
 
-val get_message : t -> string
+val get_message_and_suggestion : t -> string * string option
 
 val get_location : t -> Location.t
 

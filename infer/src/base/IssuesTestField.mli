@@ -11,6 +11,7 @@ type t =
   | BugType
   | Qualifier
   | Severity
+  | Suggestion
   | Bucket
   | Line
   | Column

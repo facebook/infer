@@ -56,10 +56,11 @@ let dedup (issues : Jsonbug_t.jsonbug list) =
   |> snd |> sort_by_location
 
 
-let create_json_bug ~qualifier ~line ~file ~source_file ~trace ~(item : Jsoncost_t.sub_item)
-    ~(issue_type : IssueType.t) =
+let create_json_bug ~qualifier ~suggestion ~line ~file ~source_file ~trace
+    ~(item : Jsoncost_t.sub_item) ~(issue_type : IssueType.t) =
   { Jsonbug_t.bug_type= issue_type.unique_id
   ; qualifier
+  ; suggestion
   ; severity= IssueType.string_of_severity Advice
   ; line
   ; column= item.loc.cnum
@@ -319,8 +320,8 @@ module Cost = struct
         {hash; loc; procedure_name; procedure_id}
       in
       Some
-        (create_json_bug ~qualifier ~line ~file ~source_file ~trace ~item:(convert cost_info)
-           ~issue_type )
+        (create_json_bug ~qualifier ~suggestion:None ~line ~file ~source_file ~trace
+           ~item:(convert cost_info) ~issue_type )
     else None
 
 
@@ -456,7 +457,7 @@ module ConfigImpactItem = struct
             IssueType.config_impact_analysis_strict
       in
       Some
-        (create_json_bug ~qualifier ~line ~file ~source_file ~trace
+        (create_json_bug ~qualifier ~suggestion:None ~line ~file ~source_file ~trace
            ~item:(convert config_impact_item) ~issue_type )
     else None
 
