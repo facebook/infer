@@ -16,5 +16,4 @@ default: test
 $(INFER_OUT)/report.json: $(SOURCES) $(INFER_BIN) $(HACKC)
 	$(INFER_BIN) --quiet --no-progress-bar --debug-exceptions\
 		--dump-duplicate-symbols -o $(INFER_OUT) \
-                --hackc-binary $(HACKC) -- hackc compile-infer $(SOURCES) \
-		--experimental-self-parent-in-trait
+		--hackc-binary $(HACKC) -- hackc compile-infer $(SOURCES)
