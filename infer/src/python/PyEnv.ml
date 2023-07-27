@@ -229,7 +229,9 @@ and shared =
   ; signatures: Signature.t SMap.t SMap.t
         (** Map from module names to the signature of all of their functions/methods *)
   ; module_name: string
+  ; params: string list  (** Name of function / method parameters *)
   ; is_toplevel: bool
+  ; is_static: bool (* is the current method a static method or an instance method ? *)
   ; next_label: int
   ; labels: label_info Labels.t }
 
@@ -334,7 +336,9 @@ let empty =
   ; imports= ImportSet.empty
   ; signatures= SMap.empty
   ; module_name= ""
+  ; params= []
   ; is_toplevel= true
+  ; is_static= false
   ; next_label= 0
   ; labels= Labels.empty }
 
@@ -343,11 +347,13 @@ let empty = {shared= empty; node= empty_node}
 
 let stack {node= {stack}} = stack
 
-let enter_proc ~is_toplevel ~module_name {shared} =
+let enter_proc ~is_toplevel ~is_static ~module_name ~params {shared} =
   let shared =
     { shared with
       module_name
+    ; params
     ; is_toplevel
+    ; is_static
     ; idents= T.Ident.Set.empty
     ; next_label= 0
     ; locals= SMap.empty }
@@ -567,5 +573,9 @@ let get_textual_imports {shared= {imports}} =
 
 
 let is_toplevel {shared= {is_toplevel}} = is_toplevel
+
+let is_static {shared= {is_static}} = is_static
+
+let get_params {shared= {params}} = params
 
 let module_name {shared= {module_name}} = module_name

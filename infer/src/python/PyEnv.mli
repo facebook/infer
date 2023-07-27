@@ -152,7 +152,8 @@ val mk_fresh_label : t -> t * string
 val map : f:(t -> 'a -> t * 'b) -> env:t -> 'a list -> t * 'b list
 (** Similar to [List.map] but an [env] is threaded along the way *)
 
-val enter_proc : is_toplevel:bool -> module_name:string -> t -> t
+val enter_proc :
+  is_toplevel:bool -> is_static:bool -> module_name:string -> params:string list -> t -> t
 (** Set the environment when entering a new code unit (like reset the instruction buffer, or
     id/label generators. *)
 
@@ -222,6 +223,14 @@ val get_textual_imports : t -> T.Module.decl list
 
 val is_toplevel : t -> bool
 (** Are we processing top level instructions, or something in a function/class ? *)
+
+val is_static : t -> bool
+  [@@warning "-unused-value-declaration"]
+(** Are we processing instructions from a static method ? *)
+
+val get_params : t -> string list
+  [@@warning "-unused-value-declaration"]
+(** Return the name of the method/function parameters, if any *)
 
 val module_name : t -> string
 (** Returns the name of the current module *)

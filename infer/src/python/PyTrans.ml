@@ -1456,21 +1456,22 @@ let annotated_type_of_annotation env typ =
 (** Process a single code unit (toplevel code, function body, ...) *)
 let to_proc_desc env loc enclosing_class_name opt_name
     ({FFI.Code.co_argcount; co_varnames; instructions} as code) =
-  let is_toplevel, name, enclosing_class_name, annotations =
+  Debug.p "[to_proc_desc] %s %a\n" enclosing_class_name (Pp.option F.pp_print_string) opt_name ;
+  let is_toplevel, is_static, name, enclosing_class_name, annotations =
     match opt_name with
     | None ->
-        (true, PyCommon.toplevel_function, enclosing_class_name, [])
+        (true, false, PyCommon.toplevel_function, enclosing_class_name, [])
     | Some name -> (
         let annotations = Env.lookup_method env ~enclosing_class:enclosing_class_name name in
         match annotations with
         | None ->
-            (false, name, enclosing_class_name, [])
+            (false, false, name, enclosing_class_name, [])
         | Some {Env.Signature.is_static; annotations} ->
             let enclosing_class_name =
               if is_static then PyCommon.static_companion enclosing_class_name
               else enclosing_class_name
             in
-            (false, name, enclosing_class_name, annotations) )
+            (false, is_static, name, enclosing_class_name, annotations) )
   in
   let proc_name = proc_name ~loc name in
   let enclosing_class = type_name ~loc enclosing_class_name in
@@ -1478,6 +1479,7 @@ let to_proc_desc env loc enclosing_class_name opt_name
   let pyObject = T.Typ.{typ= PyCommon.pyObject; attributes= []} in
   let nr_varnames = Array.length co_varnames in
   let params = Array.sub co_varnames ~pos:0 ~len:co_argcount in
+  let params = Array.to_list params in
   (* TODO: pass the locals in Env as it affects function lookup:
      def f(x):
        print(x)
@@ -1490,9 +1492,9 @@ let to_proc_desc env loc enclosing_class_name opt_name
        f = 42
   *)
   (* Create the original environment for this code unit *)
-  let env = Env.enter_proc ~is_toplevel ~module_name:enclosing_class_name env in
+  let env = Env.enter_proc ~is_toplevel ~is_static ~module_name:enclosing_class_name ~params env in
   let locals = Array.sub co_varnames ~pos:co_argcount ~len:(nr_varnames - co_argcount) in
-  let params = Array.map ~f:(var_name ~loc) params |> Array.to_list in
+  let params = List.map ~f:(var_name ~loc) params in
   let locals = Array.map ~f:(fun name -> (var_name ~loc name, pyObject)) locals |> Array.to_list in
   let types =
     List.map
