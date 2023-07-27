@@ -22,7 +22,7 @@ let infer_profile =
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.8.0</version>
+            <version>3.11.0</version>
             <configuration>
               <compilerId>javac</compilerId>
               <forceJavacCompilerUse>true</forceJavacCompilerUse>
