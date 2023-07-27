@@ -666,8 +666,11 @@ module Pair = struct
     in
     let first = make_pair_field "first" in
     let second = make_pair_field "second" in
+    let desc = "std::make_pair()" in
     fun {path; location} astate ->
-      let hist = Hist.single_call path location "std::make_pair()" in
+      let hist = Hist.single_call path location desc in
+      let<**> astate, value1 = Basic.deep_copy path location ~value:value1 ~desc astate in
+      let<**> astate, value2 = Basic.deep_copy path location ~value:value2 ~desc astate in
       let<*> astate =
         PulseOperations.write_field path location ~ref:(return_param, hist) first ~obj:value1 astate
       in
