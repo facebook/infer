@@ -192,6 +192,10 @@ features_gen_server:test_call5_Bad/0: expected_crash
 features_gen_server:test_call_and_cast_Ok/0: ok
 features_gen_server:test_call_callee_Bad/0: expected_crash
 features_gen_server:test_cast_Bad/0: expected_crash
+features_gen_server:test_start_link1_Bad/0: badmatch
+features_gen_server:test_start_link2_Ok/0: ok
+features_gen_server:test_start_link3_Ok/0: ok
+features_gen_server:test_start_link4_Bad/0: badmatch
 
 ----- features_guard_bifs -----
 features_guard_bifs:test_accepts_atom1_Ok/0: ok

@@ -1372,11 +1372,11 @@ end
 module GenServer = struct
   type request = Call | Cast
 
-  let start_link module_atom _ _ : model =
+  let start_link module_atom args _ : model =
    (* gen_server:start_link(Module, _, _) -> {ok, Pid}
       where Pid is `GenServerPid of Module` *)
-   fun ({path; location} as data) astate ->
-    let module_name =
+   fun ({path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret} as data) astate ->
+    let module_name_opt =
       match get_erlang_type_or_any (fst module_atom) astate with
       | Atom ->
           Atoms.get_name path location module_atom astate
@@ -1386,10 +1386,86 @@ module GenServer = struct
             ErlangTypeName.pp typ ;
           None
     in
-    let rval =
-      Some (Custom.Tuple [Some (Custom.Atom (Some "ok")); Some (Custom.GenServer {module_name})])
+    let res_list =
+      match module_name_opt with
+      | None ->
+          [Ok (ContinueProgram astate)]
+      | Some module_name ->
+          let procname = Procname.make_erlang ~module_name ~function_name:"init" ~arity:1 in
+          let actuals =
+            [(args, Typ.mk_struct (ErlangType (get_erlang_type_or_any (fst args) astate)))]
+          in
+          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency
+            location procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
+          |> fst3
     in
-    Custom.return_value_model rval data astate
+    let post_process_handle_init res =
+      (*
+        Convert Module:init Result = {ok,State}
+          | {ok,State,Timeout}
+          | {ok,State,hibernate}
+          | {ok,State,{continue,Continue}}
+          | {stop,Reason}
+          | {error,Reason}
+          | ignore
+        to
+          gen_server:start_link start_ret() = {ok, Pid :: pid()}
+          | ignore
+          | {error, Reason :: term()}
+        https://www.erlang.org/doc/man/gen_server.html#Module:init-1
+        https://www.erlang.org/doc/man/gen_server.html#type-start_ret
+      *)
+      let start_ret, astate =
+        match PulseResult.ok res with
+        | None ->
+            (* Module:init crashes returns {error, _} *)
+            (Some (Custom.Tuple [Some (Custom.Atom (Some "error")); None]), astate)
+        | Some exec_state -> (
+          match exec_state with
+          | ContinueProgram astate -> (
+              let _, ret_val = PulseOperations.eval_ident (fst ret) astate in
+              match get_erlang_type_or_any (fst ret_val) astate with
+              | Tuple n when n >= 2 && n <= 3 -> (
+                  let _, _, first_element =
+                    load_field path (Tuples.field_name n 1) location ret_val astate
+                  in
+                  match get_erlang_type_or_any (fst first_element) astate with
+                  | Atom -> (
+                    match Atoms.get_name path location first_element astate with
+                    | Some "ok" ->
+                        (* the second element is the server state - not considered for now *)
+                        ( Some
+                            (Custom.Tuple
+                               [ Some (Custom.Atom (Some "ok"))
+                               ; Some (Custom.GenServer {module_name= module_name_opt}) ] )
+                        , astate )
+                    | Some "stop" | Some "error" ->
+                        (Some (Custom.Tuple [Some (Custom.Atom (Some "error")); None]), astate)
+                    | _ ->
+                        (None, astate) )
+                  | typ ->
+                      L.debug Analysis Verbose
+                        "@[<v>gen_server:init returned tuple with first element unexpected type %a@;\
+                         @]"
+                        ErlangTypeName.pp typ ;
+                      (None, astate) )
+              | Atom -> (
+                match Atoms.get_name path location ret_val astate with
+                | Some "ignore" ->
+                    (Some (Custom.Atom (Some "ignore")), astate)
+                | _ ->
+                    (None, astate) )
+              | typ ->
+                  L.debug Analysis Verbose "@[<v>gen_server:init returned unexpected type %a@;@]"
+                    ErlangTypeName.pp typ ;
+                  (None, astate) )
+          | _ ->
+              (* Module:init exceptions returns {error, _} *)
+              (Some (Custom.Tuple [Some (Custom.Atom (Some "error")); None]), astate) )
+      in
+      Custom.return_value_model start_ret data astate
+    in
+    List.concat_map res_list ~f:post_process_handle_init
 
 
   let handle_request req_type server_ref request
@@ -1553,7 +1629,7 @@ module GenServer = struct
         | _ ->
             [res] )
     in
-    List.concat (List.map res_list ~f:post_process_handle_call)
+    List.concat_map res_list ~f:post_process_handle_call
 end
 
 let matchers : matcher list =
