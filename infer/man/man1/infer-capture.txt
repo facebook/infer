@@ -218,6 +218,11 @@ BUCK OPTIONS
            Buck2 BXL script (as a buck target) to run when capturing with
            buck2/clang integration.
 
+       --no-buck2-query-deps
+           Deactivates: Query deps of given targets and run capture on the
+           result (alternatively run capture on given targets) (Conversely:
+           --buck2-query-deps)
+
        --buck2-root dir
            Specify the parent directory of buck-out (used only for buck2).
 

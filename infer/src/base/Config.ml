@@ -847,6 +847,13 @@ and buck2_use_bxl =
     "Use BXL script when capturing with buck2."
 
 
+and buck2_query_deps =
+  CLOpt.mk_bool ~long:"buck2-query-deps" ~default:true
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Query deps of given targets and run capture on the result (alternatively run capture on given \
+     targets)"
+
+
 and buck_block_list =
   CLOpt.mk_string_list
     ~deprecated:["-blacklist-regex"; "-blacklist"; "-buck-blacklist"]
@@ -3692,6 +3699,8 @@ and buck2_build_args_no_inline = RevList.to_list !buck2_build_args_no_inline_rev
 and buck2_bxl_target = !buck2_bxl_target
 
 and buck2_use_bxl = !buck2_use_bxl
+
+and buck2_query_deps = !buck2_query_deps
 
 and buck_block_list = RevList.to_list !buck_block_list
 

@@ -202,6 +202,8 @@ val buck2_bxl_target : string option
 
 val buck2_use_bxl : bool
 
+val buck2_query_deps : bool
+
 val buck_block_list : string list
 
 val buck_build_args : string list
