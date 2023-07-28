@@ -44,7 +44,7 @@ class IntraFileFlow {
     Logger::someLogMethod($sc);
   }
 
-  public static async function FP_taintSourceBuiltinSinkOk(): Awaitable<void> {
+  public static async function taintSourceBuiltinSinkOk(): Awaitable<void> {
     $x = await KnownClass::genTaintSource();
   }
 

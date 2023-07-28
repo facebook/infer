@@ -422,18 +422,20 @@ let split_args procname args =
 
 let match_procedure_impl tenv path location ?proc_attributes procname actuals return_opt matchers
     astate : AbductiveDomain.t * taint_match list =
-  let instance_reference, actuals = split_args procname actuals in
-  let matches = procedure_matches tenv matchers ?proc_attributes procname actuals in
-  if not (List.is_empty matches) then L.d_printfln "taint matches" ;
-  let has_added_return_param =
-    match proc_attributes with
-    | Some attrs when attrs.ProcAttributes.has_added_return_param ->
-        true
-    | _ ->
-        false
-  in
-  match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
-    actuals ~instance_reference (TaintItem.TaintProcedure procname)
+  if Procname.is_hack_builtins procname then (astate, [])
+  else
+    let instance_reference, actuals = split_args procname actuals in
+    let matches = procedure_matches tenv matchers ?proc_attributes procname actuals in
+    if not (List.is_empty matches) then L.d_printfln "taint matches" ;
+    let has_added_return_param =
+      match proc_attributes with
+      | Some attrs when attrs.ProcAttributes.has_added_return_param ->
+          true
+      | _ ->
+          false
+    in
+    match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
+      actuals ~instance_reference (TaintItem.TaintProcedure procname)
 
 
 let match_procedure_call tenv path location ?proc_attributes procname actuals return matchers astate
