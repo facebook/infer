@@ -8,6 +8,7 @@
 open! IStd
 module F = Format
 module L = Logging
+module MakeFunctionFlags = PyCommon.MakeFunctionFlags
 
 module Type = struct
   type t = Atom of string | List of t list | Apply of string * t
@@ -207,8 +208,6 @@ let parse_closure_prelude {FFI.Code.co_cellvars; co_freevars} instructions =
 
 (** Parses common bits of method declaration, both instance and static ones *)
 let parse_method_core ({FFI.Code.co_consts} as code) instructions =
-  (* TODO: abstract flags into their own module *)
-  let support_closure flags = flags land 8 <> 0 in
   let has_closure_prefix, instructions =
     match parse_closure_prelude code instructions with
     | None ->
@@ -229,16 +228,17 @@ let parse_method_core ({FFI.Code.co_consts} as code) instructions =
   FFI.Constant.as_name co_consts.(arg)
   >>= fun raw_qualified_name ->
   is_instruction "MAKE_FUNCTION" instructions
-  >>= fun (flags, instructions) ->
+  >>= fun (arg, instructions) ->
   let flags =
     (* TODO: the rest of the code doesn't nicely support closure, so we hide that bit, since
        method are not closures. This is an internal specificity of cpython we don't really care
        about.
        Revisit this decision once closures are well supported. *)
-    if has_closure_prefix && not (support_closure flags) then (
+    let flags = MakeFunctionFlags.mk arg in
+    if has_closure_prefix && not (MakeFunctionFlags.mem flags Closure) then (
       L.user_warning "ill-formed method declaration. Has closure prefix but invalid flags" ;
       flags )
-    else flags land 7
+    else MakeFunctionFlags.unset flags Closure
   in
   Some (method_code, raw_qualified_name, flags, instructions)
 

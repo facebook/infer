@@ -111,10 +111,6 @@ type signature = annotated_name list
 
 val pp_signature : Format.formatter -> signature -> unit
 
-(** Method declaration info (name, signature, ... *)
-type method_info =
-  {name: string; raw_qualified_name: string; code: FFI.Constant.t; signature: signature; flags: int}
-
 val toplevel_function : string
 
 val static_method : string
@@ -132,3 +128,28 @@ val return : string
 
 val entry : string
 (** Textual label name for entry points of function we synthesized (constructors, __init__, ...) *)
+
+(** Flags used by MAKE_FUNCTION *)
+module MakeFunctionFlags : sig
+  type flag = DefaultValues | DictDefaultValues | Annotations | Closure
+
+  type t
+
+  val pp : Format.formatter -> t -> unit
+
+  val mk : int -> t
+
+  val mem : t -> flag -> bool
+
+  val set : t -> flag -> t [@@warning "-unused-value-declaration"]
+
+  val unset : t -> flag -> t
+end
+
+(** Method declaration info (name, signature, ... *)
+type method_info =
+  { name: string
+  ; raw_qualified_name: string
+  ; code: FFI.Constant.t
+  ; signature: signature
+  ; flags: MakeFunctionFlags.t }

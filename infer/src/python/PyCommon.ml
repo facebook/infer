@@ -129,11 +129,6 @@ type signature = annotated_name list
 
 let pp_signature fmt signature = Pp.seq ~sep:" -> " pp_annotated_name fmt signature
 
-(* TODO: [raw_qualified_name] is not used at the moment. We might want to use it for some sanity
-   checks. *)
-type method_info =
-  {name: string; raw_qualified_name: string; code: FFI.Constant.t; signature: signature; flags: int}
-
 let toplevel_function = "$toplevel"
 
 let static_method = "staticmethod"
@@ -147,3 +142,65 @@ let new__ = "__new__"
 let return = "return"
 
 let entry = "entry"
+
+(** Flags used by MAKE_FUNCTION *)
+module MakeFunctionFlags = struct
+  (* 0x01 a tuple of default values for positional-only and
+   * positional-or-keyword parameters in positional order
+   *
+   * 0x02 a dictionary of keyword-only parameters’ default values
+   *
+   * 0x04 an annotation dictionary
+   *
+   * 0x08 a tuple containing cells for free variables, making a closure
+   *)
+  type flag = DefaultValues | DictDefaultValues | Annotations | Closure [@@deriving equal]
+
+  let to_int = function
+    | DefaultValues ->
+        0x01
+    | DictDefaultValues ->
+        0x02
+    | Annotations ->
+        0x04
+    | Closure ->
+        0x08
+
+
+  type t = int
+
+  let mk flags = flags land 0xf
+
+  let mem flags flag =
+    let v = to_int flag in
+    flags land v <> 0
+
+
+  let pp fmt flags =
+    let l = [] in
+    let l = if mem flags DefaultValues then "default" :: l else l in
+    let l = if mem flags DictDefaultValues then "dict-default" :: l else l in
+    let l = if mem flags Annotations then "annotations" :: l else l in
+    let l = if mem flags Closure then "closure" :: l else l in
+    Format.fprintf fmt "[0x%x; %a]" flags (Pp.comma_seq Format.pp_print_string) l
+
+
+  let set flags flag =
+    let v = to_int flag in
+    flags lor v
+
+
+  let unset flags flag =
+    let v = to_int flag in
+    let not_v = lnot v land 0xf in
+    flags land not_v
+end
+
+(* TODO: [raw_qualified_name] is not used at the moment. We might want to use it for some sanity
+   checks. *)
+type method_info =
+  { name: string
+  ; raw_qualified_name: string
+  ; code: FFI.Constant.t
+  ; signature: signature
+  ; flags: MakeFunctionFlags.t }

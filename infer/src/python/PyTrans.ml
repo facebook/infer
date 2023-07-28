@@ -14,6 +14,7 @@ module Env = PyEnv
 module DataStack = Env.DataStack
 module Builtin = PyBuiltin
 module Symbol = Env.Symbol
+module MakeFunctionFlags = PyCommon.MakeFunctionFlags
 
 let prefix_name ~module_name name = module_name ^ "::" ^ name
 
@@ -308,12 +309,14 @@ module LOAD = struct
   end
 end
 
-let check_flags opname flag =
-  let support_tuple_of_defaults = flag land 1 <> 0 in
-  let support_dict_of_defaults = flag land 2 <> 0 in
-  let support_closure = flag land 8 <> 0 in
-  let unsupported = support_tuple_of_defaults || support_dict_of_defaults || support_closure in
-  if unsupported then L.die InternalError "%s: support for flag 0x%x is not implemented" opname flag
+let check_flags opname flags =
+  let open MakeFunctionFlags in
+  let has_tuple_of_defaults = mem flags DefaultValues in
+  let has_dict_of_defaults = mem flags DictDefaultValues in
+  let has_closure = mem flags Closure in
+  let unsupported = has_tuple_of_defaults || has_dict_of_defaults || has_closure in
+  if unsupported then
+    L.die InternalError "%s: support for flag 0x%a is not implemented" opname pp flags
 
 
 module FUNCTION = struct
@@ -499,13 +502,14 @@ module FUNCTION = struct
         In this first version, only support for [flags = 0x00] is implemented. Also there is no
         support for closures or nested functions *)
     let run env ({FFI.Code.co_consts} as code) {FFI.Instruction.opname; arg} =
-      Debug.p "[%s] flags = 0x%x\n" opname arg ;
-      check_flags opname arg ;
+      let flags = MakeFunctionFlags.mk arg in
+      Debug.p "[%s] flags = 0x%a\n" opname MakeFunctionFlags.pp flags ;
+      check_flags opname flags ;
       let env, qual = pop_datastack opname env in
       (* don't care about the content of the code object, but check it is indeed code *)
       let env, body = pop_datastack opname env in
       let env, annotations =
-        if arg land 4 <> 0 then (
+        if MakeFunctionFlags.mem flags Annotations then (
           let env, cell = pop_datastack opname env in
           Debug.p "[%s] spotted annotations\n  %s\n" opname (DataStack.show_cell cell) ;
           let annotations = match cell with Env.DataStack.Map map -> Some map | _ -> None in
