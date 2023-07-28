@@ -95,6 +95,9 @@ val is_cpp_temporary : t -> bool
 val is_cpp_unnamed_param : t -> bool
 (** return true if this pvar represents an unnamed parameter *)
 
+val is_gmock_param : t -> bool
+(** return true if the parameter is for mock methods of GoogleTest *)
+
 val is_objc_static_local_of_proc_name : string -> t -> bool
 (** Check if a pvar is a local static in objc *)
 

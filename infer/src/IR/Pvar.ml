@@ -168,6 +168,11 @@ let is_cpp_unnamed_param pvar =
   String.is_substring ~substring:unnamed_param_prefix name
 
 
+let is_gmock_param pvar =
+  let name = to_string pvar in
+  String.is_prefix ~prefix:"gmock" name
+
+
 let pp_ ~verbose f pv =
   let name = pv.pv_name in
   match pv.pv_kind with
