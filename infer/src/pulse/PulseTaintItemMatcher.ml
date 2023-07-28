@@ -104,7 +104,13 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
             let source_file =
               Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
             in
-            check_regex name_regex (get_proc_name_s proc_name) ?source_file exclude_in
+            let proc_name_s = get_proc_name_s proc_name in
+            let proc_name_s =
+              if Procname.is_objc_method proc_name then
+                match String.split proc_name_s ~on:':' with fst :: _ -> fst | _ -> proc_name_s
+              else proc_name_s
+            in
+            check_regex name_regex proc_name_s ?source_file exclude_in
         | ClassNameRegex {name_regex; exclude_in} -> (
             let check_regex_class class_name class_struct_opt =
               let class_name_s = Typ.Name.name class_name in
