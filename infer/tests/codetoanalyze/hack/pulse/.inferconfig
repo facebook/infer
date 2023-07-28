@@ -20,7 +20,8 @@
           "SensitiveClass"
         ]
       ]
-    }
+    },
+    { "class_names": ["IntraFile::KnownClass"], "method_names": ["genTaintSource"], kinds: ["BuiltinCatchAll"]}
   ],
   "pulse-taint-sinks": [
     { "procedure": "explicitSinkAllArgs" },
@@ -31,6 +32,13 @@
     { "class_names": ["ArgIndexMatcher"],
       "method_names": ["sink1", "sink2"],
       "taint_target": ["ArgumentPositions", [1]]
+    },
+    { "procedure_regex": ".*", kinds: ["BuiltinCatchAll"]}
+  ],
+  "pulse-taint-policies": [
+    {
+      "short_description": "Taint flow where a sink is any procedure",
+      "taint_flows": [{"source_kinds": ["BuiltinCatchAll"], "sink_kinds": ["BuiltinCatchAll"]}]
     }
   ]
 }

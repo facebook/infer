@@ -44,6 +44,10 @@ class IntraFileFlow {
     Logger::someLogMethod($sc);
   }
 
+  public static async function FP_taintSourceBuiltinSinkOk(): Awaitable<void> {
+    $x = await KnownClass::genTaintSource();
+  }
+
   // Helpers
 
   private function callExplicitSinkAllArgs(int $data): void {
@@ -53,6 +57,10 @@ class IntraFileFlow {
 
 class KnownClass {
   public static function explicitSinkAllArgs(mixed $_): void {}
+
+  public static async function genTaintSource(): Awaitable<string> {
+    return "tainted";
+  }
 }
 
 class Logger {
