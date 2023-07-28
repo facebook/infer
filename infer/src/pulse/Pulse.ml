@@ -542,7 +542,12 @@ module PulseTransferFunctions = struct
       else if Language.curr_language_is Hack then
         (* In Hack, a static method can be inherited *)
         let proc_name = Procdesc.get_proc_name proc_desc in
-        resolve_hack_static_method path call_loc astate tenv proc_name callee_pname
+        let info, astate =
+          resolve_hack_static_method path call_loc astate tenv proc_name callee_pname
+        in
+        (* Don't drop the initial [callee_pname]: even though we couldn't refine it, we can still
+           use it to match against taint configs and such. *)
+        (Option.first_some info default_info, astate)
       else (default_info, astate)
     in
     let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in

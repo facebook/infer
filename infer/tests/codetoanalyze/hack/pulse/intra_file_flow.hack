@@ -6,7 +6,7 @@
 namespace IntraFile;
 
 class IntraFileFlow {
-  public static function FN_explicitSinkMethodDirectOnHackMixedSinkBad(SensitiveClass $sc): void {
+  public static function explicitSinkMethodDirectOnHackMixedSinkBad(SensitiveClass $sc): void {
     HackMixed::explicitSinkAllArgs($sc);
   }
 

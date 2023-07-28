@@ -4,7 +4,7 @@
 // LICENSE file in the root directory of this source tree.
 
 namespace Unknown {
-  function FN_basicFlowBad(SensitiveClass $sc): void {
+  function basicFlowBad(SensitiveClass $sc): void {
     // Although, we don't have the definition of this method we should still match it against taint
     // configs
     UnknownClass::explicitSinkAllArgs($sc);
