@@ -12,12 +12,12 @@ class IntraFileFlow {
 
   public static function explicitSinkMethodDirectBad(SensitiveClass $sc): void {
     // This is a base case: sensitive data flows directly into the taint sink
-    UnknownClass::explicitSinkAllArgs($sc);
+    KnownClass::explicitSinkAllArgs($sc);
   }
 
   public static function explicitSinkMethodDirectOk(int $i): void {
     // Untainted data flowing into taint sink is OK
-    UnknownClass::explicitSinkAllArgs($i);
+    KnownClass::explicitSinkAllArgs($i);
   }
 
   public static function explicitSinkMethodDerivedBad(
@@ -25,7 +25,7 @@ class IntraFileFlow {
   ): void {
     // Here we have data which is derived from taint source and flows directly into a taint sink
     $derived = $sc->getDerived();
-    UnknownClass::explicitSinkAllArgs($derived);
+    KnownClass::explicitSinkAllArgs($derived);
   }
 
   public function explicitSinkMethodDerivedDynamicBad(
@@ -47,11 +47,11 @@ class IntraFileFlow {
   // Helpers
 
   private function callExplicitSinkAllArgs(int $data): void {
-    UnknownClass::explicitSinkAllArgs($data);
+    KnownClass::explicitSinkAllArgs($data);
   }
 }
 
-class UnknownClass {
+class KnownClass {
   public static function explicitSinkAllArgs(mixed $_): void {}
 }
 
