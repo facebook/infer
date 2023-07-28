@@ -29,6 +29,7 @@ module DataStack : sig
         (** Virtual call, usually of a method of a class. Could be an access to a closure that is
             called straight away *)
     | StaticCall of T.qualified_procname  (** call to static method in class *)
+    | Super  (** special name to refer to the parent class, like in [super().__init__()] *)
   [@@deriving show]
 
   val as_code : FFI.Code.t -> cell -> FFI.Code.t option
@@ -231,7 +232,6 @@ val is_static : t -> bool
 (** Are we processing instructions from a static method ? *)
 
 val get_params : t -> string list
-  [@@warning "-unused-value-declaration"]
 (** Return the name of the method/function parameters, if any *)
 
 val module_name : t -> string

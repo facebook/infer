@@ -86,6 +86,30 @@ let rec py_to_exp env c =
       (env, exp, PyCommon.pyObject)
 
 
+(** Special case of [load_cell] that we sometime use with a name directly, rather then an index in
+    [FFI.Code.t] *)
+let load_var_name env loc name =
+  let info typ = {Env.typ; is_code= false; is_class= false} in
+  let exp = T.Exp.Lvar (var_name ~loc name) in
+  let loc = Env.loc env in
+  let opt_sym = Env.lookup_symbol ~global:false env name in
+  let typ =
+    match (opt_sym : Symbol.t option) with
+    | Some (Name {typ}) ->
+        typ
+    | Some (Class _ | Code _ | Import _ | Builtin) ->
+        (* Note: maybe PyCommon.pyObject would be better here, but I fail to catch new behavior early *)
+        L.die InternalError "[load_cell] Can't load VarName %a\n" (Pp.option Symbol.pp) opt_sym
+    | None ->
+        PyCommon.pyObject
+  in
+  let info = info typ in
+  let env, id = Env.mk_fresh_ident env info in
+  let instr = T.Instr.Load {id; exp; typ; loc} in
+  let env = Env.push_instr env instr in
+  (env, Ok (T.Exp.Var id), info)
+
+
 (** Try to load the data referenced by a [DataStack.cell], into a [Textual.Exp.t] *)
 let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
   let info typ = {Env.typ; is_code= false; is_class= false} in
@@ -138,24 +162,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
         (env, Ok (T.Exp.Var id), info)
   | VarName ndx ->
       let name = co_varnames.(ndx) in
-      let exp = T.Exp.Lvar (var_name ~loc name) in
-      let loc = Env.loc env in
-      let opt_sym = Env.lookup_symbol ~global:false env name in
-      let typ =
-        match (opt_sym : Symbol.t option) with
-        | Some (Name {typ}) ->
-            typ
-        | Some (Class _ | Code _ | Import _ | Builtin) ->
-            (* Note: maybe PyCommon.pyObject would be better here, but I fail to catch new behavior early *)
-            L.die InternalError "[load_cell] Can't load VarName %a\n" (Pp.option Symbol.pp) opt_sym
-        | None ->
-            PyCommon.pyObject
-      in
-      let info = info typ in
-      let env, id = Env.mk_fresh_ident env info in
-      let instr = T.Instr.Load {id; exp; typ; loc} in
-      let env = Env.push_instr env instr in
-      (env, Ok (T.Exp.Var id), info)
+      load_var_name env loc name
   | Temp id ->
       let info = Env.get_ident_info env id |> Option.value ~default in
       (env, Ok (T.Exp.Var id), info)
@@ -166,7 +173,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       (env, Ok exp, info)
   | Map _map ->
       (env, Error "TODO: load Map cells", default)
-  | BuiltinBuildClass | StaticCall _ | MethodCall _ | Import _ | ImportCall _ ->
+  | BuiltinBuildClass | StaticCall _ | MethodCall _ | Import _ | ImportCall _ | Super ->
       L.die InternalError "[load_cell] Can't load %a, something went wrong" DataStack.pp_cell cell
 
 
@@ -255,7 +262,15 @@ module LOAD = struct
       | NAME ->
           (env, DataStack.Name {global= Env.is_toplevel env; ndx= arg})
       | GLOBAL ->
-          (env, DataStack.Name {global= true; ndx= arg})
+          let name = co_names.(arg) in
+          if String.equal name "super" then
+            (* [super] could have been defined in the current scope, so we have to first check
+               this, to be sure the call to [super()] is to access the parent's methods, not some
+               other symbol *)
+            if Option.is_some (Env.lookup_symbol env ~global:true "super") then
+              (env, DataStack.Name {global= true; ndx= arg})
+            else (env, DataStack.Super)
+          else (env, DataStack.Name {global= true; ndx= arg})
       | ATTR -> (
           let env, cell = pop_datastack opname env in
           let fname = co_names.(arg) in
@@ -438,6 +453,9 @@ module FUNCTION = struct
       | Import _ | ImportCall _ | StaticCall _ | MethodCall _ ->
           L.die InternalError "[%s] unsupported call to %a with arg = %d" opname DataStack.pp_cell
             fname arg
+      | Super ->
+          let env = Env.push env Super in
+          (env, None)
   end
 
   module MAKE = struct
@@ -513,7 +531,8 @@ module FUNCTION = struct
         | Import _
         | ImportCall _
         | MethodCall _
-        | StaticCall _ ->
+        | StaticCall _
+        | Super ->
             L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell qual)
         | Const ndx -> (
             let const = co_consts.(ndx) in
@@ -525,7 +544,7 @@ module FUNCTION = struct
                   (FFI.Constant.show const) )
       in
       if FFI.Code.is_closure code then
-        L.user_warning "%s: support for closures is incomplete (%s)" opname code_name ;
+        L.user_warning "%s: support for closures is incomplete (%s)\n" opname code_name ;
       let loc = Env.loc env in
       let env = Env.register_function env code_name loc annotations in
       let env = Env.push env (DataStack.Code {fun_or_class= true; code_name; code}) in
@@ -547,6 +566,14 @@ module METHOD = struct
             T.TypeName.wildcard
 
 
+    let mk_method_call env tname receiver method_name =
+      let loc = Env.loc env in
+      let name = proc_name ~loc method_name in
+      let name : T.qualified_procname = {T.enclosing_class= Enclosing tname; name} in
+      let env = Env.push env (DataStack.MethodCall {receiver; name}) in
+      (env, None)
+
+
     let load env code cell method_name =
       let env, res, {Env.typ} = load_cell env code cell in
       let tname = to_typename typ in
@@ -555,11 +582,66 @@ module METHOD = struct
           L.die ExternalError "Failed to load method %s from cell %a: %s" method_name
             DataStack.pp_cell cell s
       | Ok receiver ->
-          let loc = Env.loc env in
-          let name = proc_name ~loc method_name in
-          let name : T.qualified_procname = {T.enclosing_class= Enclosing tname; name} in
-          let env = Env.push env (DataStack.MethodCall {receiver; name}) in
-          (env, None)
+          mk_method_call env tname receiver method_name
+
+
+    (* Here we translate calls like `super().f(...)` into `self.parent_type.f(...)`
+
+       TODO: pass in the current function name for better error reporting, but not urgent as all
+       these errors would make python runtime crash anyway *)
+    let load_super env method_name =
+      (* TODO: rethink the class API ? *)
+      let current_module = Env.module_name env in
+      (* current_module is a fully qualified name like foo#C, but we want to extract that C part
+         only to lookup in our set of known classes. *)
+      let class_name =
+        match Str.split (Str.regexp "::") current_module |> List.last with
+        | Some name ->
+            name
+        | None ->
+            (* TODO: support nesting *)
+            L.die InternalError "Can't extract class name from fully qualified name %s\n"
+              current_module
+      in
+      let classes = Env.get_declared_classes env in
+      let class_info = Env.SMap.find_opt class_name classes in
+      let params = Env.get_params env in
+      let is_static = Env.is_static env in
+      let parent_info =
+        match class_info with
+        | None ->
+            L.die ExternalError "Call to super() spotted in %s which not a registered class"
+              current_module
+        | Some {Env.parent} ->
+            parent
+      in
+      let parent_name =
+        match parent_info with
+        | None ->
+            L.die ExternalError
+              "Call to super() spotted in %s which doesn't have a registered parent class"
+              current_module
+        | Some parent ->
+            parent
+      in
+      let self =
+        if is_static then
+          L.die ExternalError "Call to super() spotted in a static method of %s" current_module ;
+        match List.hd params with
+        | None ->
+            L.die ExternalError "Empty parameter list makes illegal call to super() in %s"
+              current_module
+        | Some self ->
+            self
+      in
+      let super_type = Symbol.to_type_name ~is_static:false parent_name in
+      let loc = Env.loc env in
+      let env, res, _ = load_var_name env loc self in
+      match res with
+      | Ok receiver ->
+          mk_method_call env super_type receiver method_name
+      | Error s ->
+          L.die UserError "[super()] failed to load self (a.k.a %s) in %s: %s" self current_module s
 
 
     (** {v LOAD_METHOD(namei) v}
@@ -593,6 +675,8 @@ module METHOD = struct
               (env, None)
           | _ ->
               load env code cell method_name )
+      | Super ->
+          load_super env method_name
       | _ ->
           load env code cell method_name
   end
@@ -628,7 +712,15 @@ module METHOD = struct
           let env = Env.push_instr env let_instr in
           let env = Env.push env (DataStack.Temp id) in
           (env, None)
-      | Const _ | Name _ | VarName _ | Temp _ | Code _ | Map _ | BuiltinBuildClass | Import _ ->
+      | Const _
+      | Name _
+      | VarName _
+      | Temp _
+      | Code _
+      | Map _
+      | BuiltinBuildClass
+      | Import _
+      | Super ->
           L.die InternalError "[%s] failed to load method information from cell %a" opname
             DataStack.pp_cell cell_mi
   end
@@ -1535,6 +1627,7 @@ let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} 
    code above, [n0] is self.
 
    TODO: we currently do not support __new__ being overriden by the user.
+   TODO: generate an empty `__init__` in case a child class refers to it
 *)
 let constructor env full_name loc has_init has_new =
   if Option.is_some has_new then

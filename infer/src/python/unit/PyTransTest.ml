@@ -1535,6 +1535,14 @@ class C:
 class D(C):
         def __init__(self):
           super().__init__()
+
+class C0:
+          def __init__(foo, x):
+            foo.x = x
+
+class D0(C0):
+        def __init__(bar):
+          super().__init__(42)
   |}
       in
       test source ;
@@ -1546,6 +1554,8 @@ class D(C):
             #b0:
                 n0 = $builtins.python_class("dummy::C")
                 n1 = $builtins.python_class("dummy::D")
+                n2 = $builtins.python_class("dummy::C0")
+                n3 = $builtins.python_class("dummy::D0")
                 ret null
 
           }
@@ -1565,8 +1575,8 @@ class D(C):
 
           define dummy::D.__init__(self: *dummy::D) : *PyNone {
             #b0:
-                n0 = ?.super()
-                n1 = n0.?.__init__()
+                n0:*dummy::D = load &self
+                n1 = n0.dummy::C.__init__()
                 ret null
 
           }
@@ -1585,6 +1595,52 @@ class D(C):
 
           type dummy::D extends dummy::C = {}
 
+          define dummy::C0.__init__(foo: *dummy::C0, x: *PyObject) : *PyNone {
+            #b0:
+                n0:*dummy::C0 = load &foo
+                n1:*PyObject = load &x
+                store n0.?.x <- n1:*PyObject
+                ret null
+
+          }
+
+          define dummy::C0(x: *PyObject) : *dummy::C0 {
+            #entry:
+                n0 = __sil_allocate(<dummy::C0>)
+                n1:*PyObject = load &x
+                n2 = n0.dummy::C0.__init__(n1)
+                ret n0
+
+          }
+
+          global dummy::C0$static: *PyObject
+
+          type .static dummy::C0$static = {}
+
+          type dummy::C0 = {}
+
+          define dummy::D0.__init__(bar: *dummy::D0) : *PyNone {
+            #b0:
+                n0:*dummy::D0 = load &bar
+                n1 = n0.dummy::C0.__init__($builtins.python_int(42))
+                ret null
+
+          }
+
+          define dummy::D0() : *dummy::D0 {
+            #entry:
+                n0 = __sil_allocate(<dummy::D0>)
+                n1 = n0.dummy::D0.__init__()
+                ret n0
+
+          }
+
+          global dummy::D0$static: *PyObject
+
+          type .static dummy::D0$static extends dummy::C0$static = {}
+
+          type dummy::D0 extends dummy::C0 = {}
+
           declare $builtins.python_class(*String) : *PyClass
 
           declare $builtins.python_tuple(...) : *PyObject
@@ -1599,5 +1655,8 @@ class D(C):
 
           declare $builtins.python_int(int) : *PyInt
 
-          MAKE_FUNCTION: support for closures is incomplete (D) |}]
+          Errors while type checking the test:
+          dummy.py, line 7, column 0: textual type error: procname dummy::C.__init__ should be user-declared or a builtin
+          MAKE_FUNCTION: support for closures is incomplete (D)
+          MAKE_FUNCTION: support for closures is incomplete (D0) |}]
   end )

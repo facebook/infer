@@ -27,6 +27,7 @@ module DataStack = struct
     | ImportCall of T.qualified_procname
     | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
     | StaticCall of T.qualified_procname
+    | Super
   [@@deriving show]
 
   let as_code FFI.Code.{co_consts} = function
@@ -43,7 +44,8 @@ module DataStack = struct
     | Import _
     | ImportCall _
     | MethodCall _
-    | StaticCall _ ->
+    | StaticCall _
+    | Super ->
         None
 
 
@@ -62,7 +64,8 @@ module DataStack = struct
     | Import _
     | ImportCall _
     | MethodCall _
-    | StaticCall _ ->
+    | StaticCall _
+    | Super ->
         None
 
 
