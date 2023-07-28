@@ -192,24 +192,61 @@ let is_static_method co_names instructions =
   if String.equal name PyCommon.static_method then Some instructions else None
 
 
-(* Parses common bits of method declaration, both instance and static ones *)
-let parse_method_core co_consts instructions =
+(** Attempts to parse a special prelude to method declaration that can be present if __init__ is
+    declared as closure, which might be the case when class inheritance is involved. For now we just
+    record the presence of this prelude and don't use its content. *)
+let parse_closure_prelude {FFI.Code.co_cellvars; co_freevars} instructions =
+  let nr_cellvars = Array.length co_cellvars in
+  let open Option.Let_syntax in
+  is_instruction "LOAD_CLOSURE" instructions
+  >>= fun (arg, instructions) ->
+  let name = if arg < nr_cellvars then co_cellvars.(arg) else co_freevars.(arg - nr_cellvars) in
+  is_instruction "BUILD_TUPLE" instructions
+  >>= fun (arg, instructions) -> Some (name, arg, instructions)
+
+
+(** Parses common bits of method declaration, both instance and static ones *)
+let parse_method_core ({FFI.Code.co_consts} as code) instructions =
+  (* TODO: abstract flags into their own module *)
+  let support_closure flags = flags land 8 <> 0 in
+  let has_closure_prefix, instructions =
+    match parse_closure_prelude code instructions with
+    | None ->
+        (false, instructions)
+    | Some (name, tuple_size, instructions) ->
+        if not (String.equal name "__class__") then
+          L.user_warning "ill-formed method declaration. Closure mentioned cell '%s'" name ;
+        if not (Int.equal tuple_size 1) then
+          L.user_warning "ill-formed method declaration. Tuple size is %d" tuple_size ;
+        (true, instructions)
+  in
   let open Option.Let_syntax in
   is_instruction "LOAD_CONST" instructions
   >>= fun (arg, instructions) ->
-  let code = co_consts.(arg) in
+  let method_code = co_consts.(arg) in
   is_instruction "LOAD_CONST" instructions
   >>= fun (arg, instructions) ->
   FFI.Constant.as_name co_consts.(arg)
   >>= fun raw_qualified_name ->
   is_instruction "MAKE_FUNCTION" instructions
-  >>= fun (flags, instructions) -> Some (code, raw_qualified_name, flags, instructions)
+  >>= fun (flags, instructions) ->
+  let flags =
+    (* TODO: the rest of the code doesn't nicely support closure, so we hide that bit, since
+       method are not closures. This is an internal specificity of cpython we don't really care
+       about.
+       Revisit this decision once closures are well supported. *)
+    if has_closure_prefix && not (support_closure flags) then (
+      L.user_warning "ill-formed method declaration. Has closure prefix but invalid flags" ;
+      flags )
+    else flags land 7
+  in
+  Some (method_code, raw_qualified_name, flags, instructions)
 
 
 (** After the optional method signature is added on the stack, the same 4 instructions will be used
     to declare a method, giving us its short name, (Python) qualified name, actual code object and
     the method flags. *)
-let parse_method ({FFI.Code.co_consts; co_names} as code) class_name stack instructions =
+let parse_method ({FFI.Code.co_names} as code) class_name stack instructions =
   let open Option.Let_syntax in
   (* First we check if the method is static or not *)
   let is_static, instructions =
@@ -227,8 +264,19 @@ let parse_method ({FFI.Code.co_consts; co_names} as code) class_name stack instr
     | None ->
         ([], stack, instructions)
   in
-  parse_method_core co_consts instructions
-  >>= fun (code, raw_qualified_name, flags, instructions) ->
+  (* when class inheritance is in the mix, __init__ has a special closure built here.
+     Full bytecode is:
+
+     NEW       42 LOAD_CLOSURE             0 (__class__)
+     NEW       44 BUILD_TUPLE              1
+               46 LOAD_CONST               7 (<code object __init__ at 0x7fe4d7b85190, file "parent.py", line 11>)
+               48 LOAD_CONST               8 ('D.__init__')
+     CHANGED   50 MAKE_FUNCTION           12 (annotations, closure)
+               52 STORE_NAME               6 (__init__)
+     For the time being, we'll skip these as they are only used for complex meta classes.
+  *)
+  parse_method_core code instructions
+  >>= fun (method_code, raw_qualified_name, flags, instructions) ->
   (* Actual method declaration bytecode *)
   let instructions =
     (* If the method was static, there's an additional CALL_FUNCTION *)
@@ -268,7 +316,7 @@ let parse_method ({FFI.Code.co_consts; co_names} as code) class_name stack instr
           arg :: args )
     in
     let rev_formals_types =
-      Option.value_map ~default:[] ~f:mk_formals_types (FFI.Constant.as_code code)
+      Option.value_map ~default:[] ~f:mk_formals_types (FFI.Constant.as_code method_code)
     in
     List.rev
     @@
@@ -280,7 +328,11 @@ let parse_method ({FFI.Code.co_consts; co_names} as code) class_name stack instr
     | Some _ ->
         rev_formals_types
   in
-  Some (is_static, {PyCommon.name; code; signature; flags; raw_qualified_name}, stack, instructions)
+  Some
+    ( is_static
+    , {PyCommon.name; code= method_code; signature; flags; raw_qualified_name}
+    , stack
+    , instructions )
 
 
 let parse_methods code class_name instructions =
@@ -296,6 +348,17 @@ let parse_methods code class_name instructions =
         in
         aux stack method_infos static_method_infos has_init has_new instructions
     | None ->
+        (* If __init__ closure is involved, it will finish with
+                      70 LOAD_CLOSURE             0 (__class__)
+                      72 DUP_TOP
+                      74 STORE_NAME               9 (__classcell__)
+                      76 RETURN_VALUE
+
+           instead of the usual "RETURN NONE" that we already ignore
+
+            We can probably ignore it for now, mostly used by complex meta classes, but
+            we should mention it
+        *)
         (method_infos, static_method_infos, has_init, has_new, instructions)
   in
   aux [] [] [] None None instructions

@@ -1524,4 +1524,80 @@ class D(C):
           declare $builtins.python_float(float) : *PyFloat
 
           declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+class C:
+  pass
+
+class D(C):
+        def __init__(self):
+          super().__init__()
+  |}
+      in
+      test source ;
+      [%expect
+        {|
+          .source_language = "python"
+
+          define dummy.$toplevel() : *PyObject {
+            #b0:
+                n0 = $builtins.python_class("dummy::C")
+                n1 = $builtins.python_class("dummy::D")
+                ret null
+
+          }
+
+          define dummy::C() : *dummy::C {
+            #entry:
+                n0 = __sil_allocate(<dummy::C>)
+                ret n0
+
+          }
+
+          global dummy::C$static: *PyObject
+
+          type .static dummy::C$static = {}
+
+          type dummy::C = {}
+
+          define dummy::D.__init__(self: *dummy::D) : *PyNone {
+            #b0:
+                n0 = ?.super()
+                n1 = n0.?.__init__()
+                ret null
+
+          }
+
+          define dummy::D() : *dummy::D {
+            #entry:
+                n0 = __sil_allocate(<dummy::D>)
+                n1 = n0.dummy::D.__init__()
+                ret n0
+
+          }
+
+          global dummy::D$static: *PyObject
+
+          type .static dummy::D$static extends dummy::C$static = {}
+
+          type dummy::D extends dummy::C = {}
+
+          declare $builtins.python_class(*String) : *PyClass
+
+          declare $builtins.python_tuple(...) : *PyObject
+
+          declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+          declare $builtins.python_string(*String) : *PyString
+
+          declare $builtins.python_bool(int) : *PyBool
+
+          declare $builtins.python_float(float) : *PyFloat
+
+          declare $builtins.python_int(int) : *PyInt
+
+          MAKE_FUNCTION: support for closures is incomplete (D) |}]
   end )
