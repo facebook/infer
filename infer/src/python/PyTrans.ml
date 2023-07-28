@@ -311,7 +311,8 @@ module FUNCTION = struct
       let env, id = Env.mk_fresh_ident env info in
       let let_instr = T.Instr.Let {id; exp= call; loc} in
       let env = Env.push_instr env let_instr in
-      Env.push env (DataStack.Temp id)
+      let env = Env.push env (DataStack.Temp id) in
+      (env, None)
 
 
     (** {v CALL_FUNCTION(argc) v}
@@ -330,33 +331,26 @@ module FUNCTION = struct
       let loc = Env.loc env in
       (* TODO: support nesting *)
       let opt_sym = Env.lookup_symbol ~global:true env fname in
+      let mk env proc = mk env (Some fname) loc proc args in
       match (opt_sym : Symbol.t option) with
       | Some (Import _ as symbol) ->
           L.die InternalError "[static_call] Invalid Import (%s) spotted" (Symbol.to_string symbol)
       | Some Builtin ->
           let proc = PyCommon.builtin_name fname in
-          let env = mk env (Some fname) loc proc args in
-          (env, None)
+          mk env proc
       | Some (Name {is_imported} as symbol) ->
           let proc = Symbol.to_qualified_procname symbol in
           let env = if is_imported then Env.register_import env (Env.Import.Call proc) else env in
-          let env = mk env (Some fname) loc proc args in
-          (env, None)
+          mk env proc
       | Some (Code _ as symbol) ->
           let proc = Symbol.to_qualified_procname symbol in
-          let env = mk env (Some fname) loc proc args in
-          (env, None)
+          mk env proc
       | Some (Class _ as symbol) ->
-          let qname = Symbol.to_string symbol in
-          let name = T.Exp.Const (T.Const.Str qname) in
-          (* Calling a class constructor *)
-          (* FYI, Python3 constructors first call __new__ to allocate the object, and then call
-             __init__ to initialize it. Both can be overloaded in the user-declared code. *)
-          let env, id, _typ =
-            Env.mk_builtin_call env Builtin.PythonClassConstructor (name :: args)
-          in
-          let env = Env.push env (DataStack.Temp id) in
-          (env, None)
+          (* TODO: support nesting. Maybe add to_proc_name to Symbol *)
+          let name = Symbol.to_string ~code_sep:"::" symbol in
+          let name = proc_name ~loc name in
+          let proc : T.qualified_procname = {enclosing_class= TopLevel; name} in
+          mk env proc
       | None ->
           (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
              further analysis *)
@@ -364,8 +358,7 @@ module FUNCTION = struct
             let enclosing_class = T.TypeName.wildcard in
             qualified_procname ~enclosing_class @@ proc_name ~loc fname
           in
-          let env = mk env (Some fname) loc proc args in
-          (env, None)
+          mk env proc
 
 
     let dynamic_call env opname code caller_id cells =
@@ -620,12 +613,10 @@ module METHOD = struct
       | ImportCall proc ->
           let loc = Env.loc env in
           let env = Env.register_import env (Env.Import.Call proc) in
-          let env = FUNCTION.CALL.mk env None loc proc args in
-          (env, None)
+          FUNCTION.CALL.mk env None loc proc args
       | StaticCall proc ->
           let loc = Env.loc env in
-          let env = FUNCTION.CALL.mk env None loc proc args in
-          (env, None)
+          FUNCTION.CALL.mk env None loc proc args
       | MethodCall {receiver; name} ->
           let loc = Env.loc env in
           let exp = T.Exp.call_virtual name receiver args in
@@ -750,7 +741,8 @@ module STORE = struct
             let proc =
               qualified_procname ~enclosing_class @@ proc_name ~loc PyCommon.toplevel_function
             in
-            FUNCTION.CALL.mk env None loc proc []
+            let env, _ = FUNCTION.CALL.mk env None loc proc [] in
+            env
         in
         let env =
           List.fold_left ~init:env symbols ~f:(fun env symbol ->
@@ -1454,8 +1446,7 @@ let annotated_type_of_annotation env typ =
 
 
 (** Process a single code unit (toplevel code, function body, ...) *)
-let to_proc_desc env loc enclosing_class_name opt_name
-    ({FFI.Code.co_argcount; co_varnames; instructions} as code) =
+let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} as code) =
   Debug.p "[to_proc_desc] %s %a\n" enclosing_class_name (Pp.option F.pp_print_string) opt_name ;
   let is_toplevel, is_static, name, enclosing_class_name, annotations =
     match opt_name with
@@ -1477,8 +1468,7 @@ let to_proc_desc env loc enclosing_class_name opt_name
   let enclosing_class = type_name ~loc enclosing_class_name in
   let qualified_name = qualified_procname ~enclosing_class proc_name in
   let pyObject = T.Typ.{typ= PyCommon.pyObject; attributes= []} in
-  let nr_varnames = Array.length co_varnames in
-  let params = Array.sub co_varnames ~pos:0 ~len:co_argcount in
+  let params = FFI.Code.get_arguments code in
   let params = Array.to_list params in
   (* TODO: pass the locals in Env as it affects function lookup:
      def f(x):
@@ -1493,7 +1483,7 @@ let to_proc_desc env loc enclosing_class_name opt_name
   *)
   (* Create the original environment for this code unit *)
   let env = Env.enter_proc ~is_toplevel ~is_static ~module_name:enclosing_class_name ~params env in
-  let locals = Array.sub co_varnames ~pos:co_argcount ~len:(nr_varnames - co_argcount) in
+  let locals = FFI.Code.get_locals code in
   let params = List.map ~f:(var_name ~loc) params in
   let locals = Array.map ~f:(fun name -> (var_name ~loc name, pyObject)) locals |> Array.to_list in
   let types =
@@ -1515,7 +1505,7 @@ let to_proc_desc env loc enclosing_class_name opt_name
       params
   in
   let result_type =
-    List.Assoc.find types ~equal:String.equal "return" |> Option.value ~default:pyObject
+    List.Assoc.find types ~equal:String.equal PyCommon.return |> Option.value ~default:pyObject
   in
   let procdecl =
     {T.ProcDecl.qualified_name; formals_types= Some formals_types; result_type; attributes= []}
@@ -1527,6 +1517,93 @@ let to_proc_desc env loc enclosing_class_name opt_name
   (env, {Textual.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown})
 
 
+(* For each class declaration, we generate an explicit constructor. This will help to call class
+   constructors from other files, since Python doesn't have a dedicated `new` statement.
+   Something like:
+
+
+   define filename::classname(args): *classname {
+     #entry:
+       n0 = __sil_allocate(<classname>)
+       ni... = load args...
+       n0.classname.__init__(ni...)
+       ret n0
+   }
+
+   Note that the constructor doesn't require self, but it returns it. In the
+   code above, [n0] is self.
+
+   TODO: we currently do not support __new__ being overriden by the user.
+*)
+let constructor env full_name loc has_init has_new =
+  if Option.is_some has_new then
+    L.die InternalError "TODO: No support for __new__ in user declared classes" ;
+  let mk typ = annotated_type_of_annotation env typ in
+  let struct_ = T.Typ.(Struct (type_name ~loc full_name)) in
+  let sil_allocate : T.qualified_procname =
+    {enclosing_class= TopLevel; name= proc_name T.builtin_allocate}
+  in
+  let alloc = T.Exp.call_non_virtual sil_allocate [T.Exp.Typ struct_] in
+  let n0 = T.Ident.of_int 0 in
+  let instr0 = T.Instr.Let {id= n0; exp= alloc; loc} in
+  let instr_load_and_call, params, formals_types =
+    match has_init with
+    | None ->
+        ([], [], [])
+    | Some signature ->
+        let params, formals_types =
+          (* We skip self since the constructor is generating it, and in Python self is always the
+             first method argument. We also skip [return] as [__init__] should return [None] but
+             the constructor should return a valid instance of the current class *)
+          let signature = List.tl signature |> Option.value ~default:signature in
+          List.fold_right signature ~init:([], [])
+            ~f:(fun {PyCommon.name; annotation} (params, formals_types) ->
+              if String.equal PyCommon.return name then (params, formals_types)
+              else (var_name ~loc name :: params, mk annotation :: formals_types) )
+        in
+        (* [List.zip_exn] is fine as we just built them above and made sure they are of the same length. *)
+        let typed_params = List.zip_exn params formals_types in
+        let n, rev_ns, rev_loads =
+          List.fold_left typed_params
+            ~init:(T.Ident.next n0, [], [])
+            ~f:(fun (next_id, ids, instrs) (varname, {T.Typ.typ}) ->
+              let exp = T.Exp.Lvar varname in
+              let instr = T.Instr.Load {id= next_id; exp; typ; loc} in
+              (T.Ident.next next_id, T.Exp.Var next_id :: ids, instr :: instrs) )
+        in
+        let ns = List.rev rev_ns in
+        let enclosing_class = type_name ~loc full_name in
+        let init = proc_name ~loc PyCommon.init__ in
+        let init = qualified_procname ~enclosing_class init in
+        let init = T.Exp.call_virtual init (T.Exp.Var n0) ns in
+        let load = T.Instr.Let {id= n; exp= init; loc} in
+        let loads = List.rev (load :: rev_loads) in
+        (loads, params, formals_types)
+  in
+  let result_type = T.Typ.mk_without_attributes @@ PyCommon.mk_type full_name in
+  let last = T.Terminator.Ret (T.Exp.Var n0) in
+  let label = node_name ~loc PyCommon.entry in
+  let node =
+    { T.Node.label
+    ; ssa_parameters= []
+    ; exn_succs= []
+    ; last
+    ; instrs= instr0 :: instr_load_and_call
+    ; last_loc= loc
+    ; label_loc= loc }
+  in
+  let procdecl =
+    { T.ProcDecl.qualified_name= {enclosing_class= TopLevel; name= proc_name ~loc full_name}
+    ; formals_types= Some formals_types
+    ; result_type
+    ; attributes= [] }
+  in
+  let desc =
+    {T.ProcDesc.procdecl; nodes= [node]; start= label; params; locals= []; exit_loc= loc}
+  in
+  T.Module.Proc desc
+
+
 (** Process the special function generated by the Python compiler to create a class instances. This
     is where we can see some of the type annotations for fields, and method definitions. *)
 let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as code) loc parent =
@@ -1534,13 +1611,13 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
      - use annotations to declare class member types
      - pass in [env] to PyClassDecl when we'll support decorators
   *)
-  let member_infos, method_infos, static_method_infos =
-    PyClassDecl.parse_class_declaration code instructions
-  in
   let class_name = prefix_name ~module_name co_name in
   let static_class_name = prefix_name ~module_name (PyCommon.static_companion co_name) in
   let class_type_name = type_name ~loc class_name in
   let static_class_type_name = type_name ~loc static_class_name in
+  let {PyClassDecl.members; methods; static_methods; has_init; has_new} =
+    PyClassDecl.parse_class_declaration code co_name instructions
+  in
   let register_methods env codes method_infos opname ~is_static =
     List.fold_left method_infos ~init:(env, codes)
       ~f:(fun (env, codes) {PyCommon.code; signature; flags} ->
@@ -1556,12 +1633,12 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
         in
         (env, code :: codes) )
   in
-  let env, codes = register_methods env [] method_infos "<METHOD_DECLARATION>" ~is_static:false in
+  let env, codes = register_methods env [] methods "<METHOD_DECLARATION>" ~is_static:false in
   let env, codes =
-    register_methods env codes static_method_infos "<STATIC_METHOD_DECLARATION>" ~is_static:true
+    register_methods env codes static_methods "<STATIC_METHOD_DECLARATION>" ~is_static:true
   in
   let fields =
-    List.map member_infos ~f:(fun {PyCommon.name; annotation} ->
+    List.map members ~f:(fun {PyCommon.name; annotation} ->
         let name = field_name ~loc name in
         let qualified_name = {T.enclosing_class= class_type_name; name} in
         let typ = type_of_annotation env annotation in
@@ -1589,7 +1666,8 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
   let companion_const =
     T.Module.Global {name= var_name ~loc static_class_name; typ= PyCommon.pyObject; attributes= []}
   in
-  (env, t :: companion :: companion_const :: decls)
+  let constructor = constructor env class_name loc has_init has_new in
+  (env, t :: companion :: companion_const :: constructor :: decls)
 
 (* TODO: No support for nested functions/methods at the moment *)
 

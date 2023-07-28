@@ -17,6 +17,8 @@ val node_name : ?loc:Textual.Location.t -> string -> Textual.NodeName.t
 
 val field_name : ?loc:Textual.Location.t -> string -> Textual.FieldName.t
 
+val mk_type : string -> Textual.Typ.t
+
 val qualified_procname :
   enclosing_class:Textual.TypeName.t -> Textual.ProcName.t -> Textual.qualified_procname
 
@@ -102,16 +104,31 @@ val unknown_global : string -> string
 (** Encoding of some type annotation like [x: int] *)
 type annotated_name = {name: string; annotation: string}
 
+val pp_annotated_name : Format.formatter -> annotated_name -> unit
+  [@@warning "-unused-value-declaration"]
+
+type signature = annotated_name list
+
+val pp_signature : Format.formatter -> signature -> unit
+
 (** Method declaration info (name, signature, ... *)
 type method_info =
-  { name: string
-  ; raw_qualified_name: string
-  ; code: FFI.Constant.t
-  ; signature: annotated_name list
-  ; flags: int }
+  {name: string; raw_qualified_name: string; code: FFI.Constant.t; signature: signature; flags: int}
 
 val toplevel_function : string
 
 val static_method : string
 
 val static_companion : string -> string
+
+val init__ : string
+(** Name of the Python initialization method *)
+
+val new__ : string
+(** Name of the Python instantiation method *)
+
+val return : string
+(** Name of the binding name of return types of functions / methods *)
+
+val entry : string
+(** Textual label name for entry points of function we synthesized (constructors, __init__, ...) *)

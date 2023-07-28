@@ -974,8 +974,9 @@ let%test_module "simple user classes" =
       let source =
         {|
 class C:
-        def __init__(self, x):
+        def __init__(self, x, y):
             self.x = x
+            self.y = y
 
         def get(self):
             return self.x
@@ -983,7 +984,7 @@ class C:
         def set(self, x):
             self.x = x
 
-c = C()
+c = C(0, "a")
 c.x
 c.get()
 c.set(42)
@@ -992,72 +993,83 @@ c.set(42)
       test source ;
       [%expect
         {|
-          .source_language = "python"
+        .source_language = "python"
 
-          define dummy.$toplevel() : *PyObject {
-            #b0:
-                n0 = $builtins.python_class("dummy::C")
-                n1 = $builtins.python_class_constructor("dummy::C")
-                store &dummy::c <- n1:*dummy::C
-                n2:*dummy::C = load &dummy::c
-                n3:*PyObject = load n2.?.x
-                n4:*dummy::C = load &dummy::c
-                n5 = n4.dummy::C.get()
-                n6:*dummy::C = load &dummy::c
-                n7 = n6.dummy::C.set($builtins.python_int(42))
-                ret null
+        define dummy.$toplevel() : *PyObject {
+          #b0:
+              n0 = $builtins.python_class("dummy::C")
+              n1 = dummy::C($builtins.python_int(0), $builtins.python_string("a"))
+              store &dummy::c <- n1:*PyObject
+              n2:*PyObject = load &dummy::c
+              n3:*PyObject = load n2.?.x
+              n4:*PyObject = load &dummy::c
+              n5 = n4.?.get()
+              n6:*PyObject = load &dummy::c
+              n7 = n6.?.set($builtins.python_int(42))
+              ret null
 
-          }
+        }
 
-          define dummy::C.__init__(self: *PyObject, x: *PyObject) : *PyObject {
-            #b0:
-                n0:*PyObject = load &self
-                n1:*PyObject = load &x
-                store n0.?.x <- n1:*PyObject
-                ret null
+        define dummy::C.__init__(self: *dummy::C, x: *PyObject, y: *PyObject) : *PyNone {
+          #b0:
+              n0:*dummy::C = load &self
+              n1:*PyObject = load &x
+              store n0.?.x <- n1:*PyObject
+              n2:*dummy::C = load &self
+              n3:*PyObject = load &y
+              store n2.?.y <- n3:*PyObject
+              ret null
 
-          }
+        }
 
-          define dummy::C.get(self: *PyObject) : *PyObject {
-            #b0:
-                n0:*PyObject = load &self
-                n1:*PyObject = load n0.?.x
-                ret n1
+        define dummy::C.get(self: *dummy::C) : *PyObject {
+          #b0:
+              n0:*dummy::C = load &self
+              n1:*PyObject = load n0.?.x
+              ret n1
 
-          }
+        }
 
-          define dummy::C.set(self: *PyObject, x: *PyObject) : *PyObject {
-            #b0:
-                n0:*PyObject = load &self
-                n1:*PyObject = load &x
-                store n0.?.x <- n1:*PyObject
-                ret null
+        define dummy::C.set(self: *dummy::C, x: *PyObject) : *PyObject {
+          #b0:
+              n0:*dummy::C = load &self
+              n1:*PyObject = load &x
+              store n0.?.x <- n1:*PyObject
+              ret null
 
-          }
+        }
 
-          global dummy::C$static: *PyObject
+        define dummy::C(x: *PyObject, y: *PyObject) : *dummy::C {
+          #entry:
+              n0 = __sil_allocate(<dummy::C>)
+              n1:*PyObject = load &x
+              n2:*PyObject = load &y
+              n3 = n0.dummy::C.__init__(n1, n2)
+              ret n0
 
-          type .static dummy::C$static = {}
+        }
 
-          type dummy::C = {}
+        global dummy::C$static: *PyObject
 
-          global dummy::c: *PyObject
+        type .static dummy::C$static = {}
 
-          declare $builtins.python_class_constructor(...) : *PyObject
+        type dummy::C = {}
 
-          declare $builtins.python_class(*String) : *PyClass
+        global dummy::c: *PyObject
 
-          declare $builtins.python_tuple(...) : *PyObject
+        declare $builtins.python_class(*String) : *PyClass
 
-          declare $builtins.python_bytes(*Bytes) : *PyBytes
+        declare $builtins.python_tuple(...) : *PyObject
 
-          declare $builtins.python_string(*String) : *PyString
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
 
-          declare $builtins.python_bool(int) : *PyBool
+        declare $builtins.python_string(*String) : *PyString
 
-          declare $builtins.python_float(float) : *PyFloat
+        declare $builtins.python_bool(int) : *PyBool
 
-          declare $builtins.python_int(int) : *PyInt |}]
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
 
 
     let%expect_test _ =
@@ -1101,61 +1113,70 @@ print(c.z)
           #b0:
               n0 = $builtins.python_class("dummy::IntBox")
               n1 = $builtins.python_code("dummy.getX")
-              n2 = $builtins.python_class_constructor("dummy::IntBox", $builtins.python_int(10))
-              store &dummy::c <- n2:*dummy::IntBox
-              n3:*dummy::IntBox = load &dummy::c
+              n2 = dummy::IntBox($builtins.python_int(10))
+              store &dummy::c <- n2:*PyObject
+              n3:*PyObject = load &dummy::c
               n4:*PyObject = load n3.?.x
-              n5:*dummy::IntBox = load &dummy::c
+              n5:*PyObject = load &dummy::c
               store n5.?.z <- $builtins.python_int(10):*PyInt
-              n6:*dummy::IntBox = load &dummy::c
-              n7 = n6.dummy::IntBox.get()
-              n8:*dummy::IntBox = load &dummy::c
-              n9 = n8.dummy::IntBox.set($builtins.python_int(42))
-              n10:*dummy::IntBox = load &dummy::c
-              n11 = n10.dummy::IntBox.run()
-              n12:*dummy::IntBox = load &dummy::c
+              n6:*PyObject = load &dummy::c
+              n7 = n6.?.get()
+              n8:*PyObject = load &dummy::c
+              n9 = n8.?.set($builtins.python_int(42))
+              n10:*PyObject = load &dummy::c
+              n11 = n10.?.run()
+              n12:*PyObject = load &dummy::c
               n13:*PyObject = load n12.?.z
               n14 = $builtins.print(n13)
               ret null
 
         }
 
-        define dummy::IntBox.__init__(self: *PyObject, x: *PyInt) : *PyNone {
+        define dummy::IntBox.__init__(self: *dummy::IntBox, x: *PyInt) : *PyObject {
           #b0:
-              n0:*PyObject = load &self
+              n0:*dummy::IntBox = load &self
               n1:*PyInt = load &x
               store n0.?.x <- n1:*PyInt
-              n2:*PyObject = load &self
+              n2:*dummy::IntBox = load &self
               n3 = $builtins.python_code("<lambda>")
               store n2.?.f <- n3:*PyCode
               ret null
 
         }
 
-        define dummy::IntBox.get(self: *PyObject) : *PyInt {
+        define dummy::IntBox.get(self: *dummy::IntBox) : *PyObject {
           #b0:
-              n0:*PyObject = load &self
+              n0:*dummy::IntBox = load &self
               n1:*PyObject = load n0.?.x
               ret n1
 
         }
 
-        define dummy::IntBox.set(self: *PyObject, x: *PyInt) : *PyNone {
+        define dummy::IntBox.set(self: *dummy::IntBox, x: *PyInt) : *PyObject {
           #b0:
-              n0:*PyObject = load &self
+              n0:*dummy::IntBox = load &self
               n1:*PyInt = load &x
               store n0.?.x <- n1:*PyInt
               ret null
 
         }
 
-        define dummy::IntBox.run(self: *PyObject) : *PyNone {
+        define dummy::IntBox.run(self: *dummy::IntBox) : *PyObject {
           #b0:
-              n0:*PyObject = load &self
-              n1 = n0.?.f($builtins.python_int(3))
+              n0:*dummy::IntBox = load &self
+              n1 = n0.dummy::IntBox.f($builtins.python_int(3))
               n2 = $builtins.python_call(n1, $builtins.python_bool(0))
               n3 = $builtins.python_call(n2, $builtins.python_string("yolo"))
               ret null
+
+        }
+
+        define dummy::IntBox(x: *PyInt) : *dummy::IntBox {
+          #entry:
+              n0 = __sil_allocate(<dummy::IntBox>)
+              n1:*PyInt = load &x
+              n2 = n0.dummy::IntBox.__init__(n1)
+              ret n0
 
         }
 
@@ -1179,8 +1200,6 @@ print(c.z)
 
         declare $builtins.python_code(*String) : *PyCode
 
-        declare $builtins.python_class_constructor(...) : *PyObject
-
         declare $builtins.python_class(*String) : *PyClass
 
         declare $builtins.python_call(...) : *PyObject
@@ -1195,7 +1214,10 @@ print(c.z)
 
         declare $builtins.python_float(float) : *PyFloat
 
-        declare $builtins.python_int(int) : *PyInt |}]
+        declare $builtins.python_int(int) : *PyInt
+
+        Errors while type checking the test:
+        dummy.py, line 17, column 0: textual type error: procname dummy::IntBox.f should be user-declared or a builtin |}]
 
 
     let%expect_test _ =
@@ -1233,9 +1255,16 @@ class D(C):
 
         }
 
-        define dummy::C$static.typed_f(x: *PyInt) : *PyInt {
+        define dummy::C$static.typed_f(x: *PyInt) : *PyObject {
           #b0:
               n0:*PyInt = load &x
+              ret n0
+
+        }
+
+        define dummy::C() : *dummy::C {
+          #entry:
+              n0 = __sil_allocate(<dummy::C>)
               ret n0
 
         }
@@ -1245,6 +1274,13 @@ class D(C):
         type .static dummy::C$static = {}
 
         type dummy::C = {}
+
+        define dummy::D() : *dummy::D {
+          #entry:
+              n0 = __sil_allocate(<dummy::D>)
+              ret n0
+
+        }
 
         global dummy::D$static: *PyObject
 
@@ -1292,6 +1328,13 @@ C.f()
         define dummy::C$static.f() : *PyObject {
           #b0:
               ret null
+
+        }
+
+        define dummy::C() : *dummy::C {
+          #entry:
+              n0 = __sil_allocate(<dummy::C>)
+              ret n0
 
         }
 
@@ -1442,11 +1485,25 @@ class D(C):
 
           }
 
+          define dummy::C() : *dummy::C {
+            #entry:
+                n0 = __sil_allocate(<dummy::C>)
+                ret n0
+
+          }
+
           global dummy::C$static: *PyObject
 
           type .static dummy::C$static = {}
 
           type dummy::C = {}
+
+          define dummy::D() : *dummy::D {
+            #entry:
+                n0 = __sil_allocate(<dummy::D>)
+                ret n0
+
+          }
 
           global dummy::D$static: *PyObject
 

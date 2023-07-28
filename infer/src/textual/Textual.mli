@@ -49,6 +49,8 @@ module VarName : NAME (* variables names *)
 
 module FieldName : NAME (* field names, without their enclosing types *)
 
+val builtin_allocate : string
+
 module NodeName : NAME (* node names, also called labels *)
 
 module TypeName : sig
@@ -306,6 +308,8 @@ module ProcDesc : sig
     ; params: VarName.t list
     ; locals: (VarName.t * Typ.annotated) list
     ; exit_loc: Location.t }
+
+  val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 
   val formals : t -> Typ.annotated list
 

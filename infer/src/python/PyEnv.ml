@@ -81,6 +81,11 @@ module Labels = Caml.Map.Make (Int)
    qualified name structure *)
 module Signature = struct
   type t = {annotations: PyCommon.annotated_name list; is_static: bool}
+
+  let pp fmt {annotations; is_static} =
+    Format.fprintf fmt "MethodSignature%s : %a"
+      (if is_static then "(static)" else "")
+      PyCommon.pp_signature annotations
 end
 
 module SMap = Caml.Map.Make (String)
@@ -466,16 +471,7 @@ let register_builtin ({shared} as env) builtin =
 
 let mk_builtin_call env builtin args =
   let textual_builtin = Builtin.textual builtin in
-  let typ =
-    (* Special casing to make the type of new instances more precise *)
-    match (builtin, args) with
-    | Builtin.PythonClassConstructor, T.Exp.Const (T.Const.Str arg) :: _ ->
-        (* TODO: how can we track the loc ? via args ?*)
-        let type_name = type_name arg in
-        T.Typ.Ptr (T.Typ.Struct type_name)
-    | _, _ ->
-        Builtin.Set.get_type textual_builtin
-  in
+  let typ = Builtin.Set.get_type textual_builtin in
   let info = {typ; is_class= false; is_code= false} in
   let env = register_builtin env textual_builtin in
   let env, id = mk_fresh_ident env info in
@@ -505,7 +501,8 @@ let register_call env fname =
 
 
 let register_method ({shared} as env) ~enclosing_class ~method_name annotations =
-  PyDebug.p "[register_method] %s.%s" enclosing_class method_name ;
+  PyDebug.p "[register_method] %s.%s\n" enclosing_class method_name ;
+  PyDebug.p "                  %a\n" Signature.pp annotations ;
   let {signatures} = shared in
   let class_info = SMap.find_opt enclosing_class signatures |> Option.value ~default:SMap.empty in
   let class_info = SMap.add method_name annotations class_info in
@@ -515,7 +512,7 @@ let register_method ({shared} as env) ~enclosing_class ~method_name annotations 
 
 
 let register_function ({shared} as env) name loc annotations =
-  PyDebug.p "[register_function] %s" name ;
+  PyDebug.p "[register_function] %s\n" name ;
   let {module_name} = shared in
   let info = {Signature.is_static= false; annotations} in
   let env = register_method env ~enclosing_class:module_name ~method_name:name info in
@@ -530,12 +527,12 @@ let lookup_method {shared= {signatures}} ~enclosing_class name =
 
 
 let register_class ({shared} as env) class_name ({parent} as class_info) =
-  PyDebug.p "[register_class] %s" class_name ;
+  PyDebug.p "[register_class] %s\n" class_name ;
   ( match parent with
   | None ->
       PyDebug.p "\n"
   | Some parent ->
-      PyDebug.p " extending %a" Symbol.pp parent ) ;
+      PyDebug.p " extending %a\n" Symbol.pp parent ) ;
   let {classes} = shared in
   let classes = SMap.add class_name class_info classes in
   let shared = {shared with classes} in

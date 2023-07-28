@@ -78,6 +78,8 @@ end
 
 module Signature : sig
   type t = {annotations: PyCommon.annotated_name list; is_static: bool}
+
+  val pp : Format.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 end
 
 module Import : sig

@@ -17,7 +17,6 @@ module Builtin = struct
     | BinaryAdd
     | PythonCall
     | PythonClass
-    | PythonClassConstructor
     | PythonCode
     | PythonIter
     | PythonIterNext
@@ -63,8 +62,6 @@ let to_proc_name = function
             "python_call"
         | PythonClass ->
             "python_class"
-        | PythonClassConstructor ->
-            "python_class_constructor"
         | PythonCode ->
             "python_code"
         | PythonIter ->
@@ -86,9 +83,9 @@ let of_string name =
 let annot typ = T.Typ.{typ; attributes= []}
 
 module Set = struct
-  let string_ = T.Typ.(Ptr (Struct (PyCommon.type_name "String")))
+  let string_ = PyCommon.mk_type "String"
 
-  let bytes_ = T.Typ.(Ptr (Struct (PyCommon.type_name "Bytes")))
+  let bytes_ = PyCommon.mk_type "Bytes"
 
   type elt =
     { formals_types: T.Typ.annotated list option
@@ -154,11 +151,6 @@ module Set = struct
         , { formals_types= Some [annot string_]
           ; result_type= annot PyCommon.pyClass
           ; used_struct_types= [] } )
-      ; ( Builtin.PythonClassConstructor
-          (* Class constructors can be implicitly inherited, so we are never sure of their
-             arity. Also, we'll override their return type when we setup the call, to make it
-             more precise. *)
-        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
       ; ( Builtin.PythonCode
         , { formals_types= Some [annot string_]
           ; result_type= annot PyCommon.pyCode

@@ -12,7 +12,6 @@ type textual =
   | BinaryAdd
   | PythonCall
   | PythonClass
-  | PythonClassConstructor
   | PythonCode
   | PythonIter
   | PythonIterNext

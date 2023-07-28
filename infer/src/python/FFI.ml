@@ -244,6 +244,13 @@ module Code = struct
 
   let is_closure {co_freevars; co_cellvars} =
     Array.length co_freevars + Array.length co_cellvars <> 0
+
+
+  let get_arguments {co_varnames; co_argcount} = Array.sub co_varnames ~pos:0 ~len:co_argcount
+
+  let get_locals {co_varnames; co_argcount} =
+    let nr_varnames = Array.length co_varnames in
+    Array.sub co_varnames ~pos:co_argcount ~len:(nr_varnames - co_argcount)
 end
 
 module Constant = struct

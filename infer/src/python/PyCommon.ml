@@ -123,17 +123,27 @@ let unknown_global name = sprintf "$ambiguous::%s" name
 
 type annotated_name = {name: string; annotation: string}
 
+let pp_annotated_name fmt {name; annotation} = Format.fprintf fmt "(%s: %s)" name annotation
+
+type signature = annotated_name list
+
+let pp_signature fmt signature = Pp.seq ~sep:" -> " pp_annotated_name fmt signature
+
 (* TODO: [raw_qualified_name] is not used at the moment. We might want to use it for some sanity
    checks. *)
 type method_info =
-  { name: string
-  ; raw_qualified_name: string
-  ; code: FFI.Constant.t
-  ; signature: annotated_name list
-  ; flags: int }
+  {name: string; raw_qualified_name: string; code: FFI.Constant.t; signature: signature; flags: int}
 
 let toplevel_function = "$toplevel"
 
 let static_method = "staticmethod"
 
 let static_companion name = sprintf "%s$static" name
+
+let init__ = "__init__"
+
+let new__ = "__new__"
+
+let return = "return"
+
+let entry = "entry"

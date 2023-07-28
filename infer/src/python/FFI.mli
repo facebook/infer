@@ -71,6 +71,10 @@ and Code : sig
   val full_pp : Format.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 
   val is_closure : t -> bool
+
+  val get_arguments : t -> string array
+
+  val get_locals : t -> string array
 end
 
 and Instruction : sig

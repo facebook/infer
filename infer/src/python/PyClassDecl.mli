@@ -7,7 +7,11 @@
 
 open! IStd
 
-val parse_class_declaration :
-     FFI.Code.t
-  -> FFI.Instruction.t list
-  -> PyCommon.annotated_name list * PyCommon.method_info list * PyCommon.method_info list
+type t =
+  { members: PyCommon.annotated_name list
+  ; methods: PyCommon.method_info list
+  ; static_methods: PyCommon.method_info list
+  ; has_init: PyCommon.annotated_name list option
+  ; has_new: PyCommon.annotated_name list option }
+
+val parse_class_declaration : FFI.Code.t -> string -> FFI.Instruction.t list -> t

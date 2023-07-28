@@ -160,11 +160,10 @@ let parse_member_annotations code instructions =
   aux [] instructions
 
 
-(** Method signatures are similar to member annotations: multiple types are constructed on the
-    stack, until a tuple holding the name of the parameters is pushed on the stack too. At this
-    point, a map is built, which gives us the method signature. *)
-let parse_method_signature code stack instructions =
-  (* TODO: if [self] (the first parameter) doesn't have a type, we could give it the current class. *)
+(** Method type information (signature, return type) are similar to member annotations: multiple
+    types are constructed on the stack, until a tuple holding the name of the parameters is pushed
+    on the stack too. At this point, a map is built, which gives us the method signature. *)
+let parse_method_type_info code stack instructions =
   let open Option.Let_syntax in
   parse_tys stack code instructions
   >>= fun (stack, instructions) ->
@@ -210,7 +209,7 @@ let parse_method_core co_consts instructions =
 (** After the optional method signature is added on the stack, the same 4 instructions will be used
     to declare a method, giving us its short name, (Python) qualified name, actual code object and
     the method flags. *)
-let parse_method ({FFI.Code.co_consts; co_names} as code) stack instructions =
+let parse_method ({FFI.Code.co_consts; co_names} as code) class_name stack instructions =
   let open Option.Let_syntax in
   (* First we check if the method is static or not *)
   let is_static, instructions =
@@ -221,16 +220,16 @@ let parse_method ({FFI.Code.co_consts; co_names} as code) stack instructions =
         (true, instructions)
   in
   (* Then we check if there's type information or not *)
-  let signature, stack, instructions =
-    match parse_method_signature code stack instructions with
+  let type_info, stack, instructions =
+    match parse_method_type_info code stack instructions with
     | Some res ->
         res
     | None ->
         ([], stack, instructions)
   in
-  (* Actual method declaration bytecode *)
   parse_method_core co_consts instructions
   >>= fun (code, raw_qualified_name, flags, instructions) ->
+  (* Actual method declaration bytecode *)
   let instructions =
     (* If the method was static, there's an additional CALL_FUNCTION *)
     if is_static then
@@ -248,25 +247,68 @@ let parse_method ({FFI.Code.co_consts; co_names} as code) stack instructions =
   is_instruction "STORE_NAME" instructions
   >>= fun (arg, instructions) ->
   let name = co_names.(arg) in
+  let signature =
+    let f target {PyCommon.name; annotation} =
+      Option.some_if (String.equal target name) annotation
+    in
+    let mk_formals_types code =
+      let arguments = FFI.Code.get_arguments code in
+      Array.foldi arguments ~init:[] ~f:(fun ndx args argname ->
+          let typ =
+            match List.find_map type_info ~f:(f argname) with
+            | Some typ ->
+                Some typ
+            | None ->
+                (* [self] is the first argument of instance methods. If its type annotation is
+                   missing, use the current class *)
+                Option.some_if ((not is_static) && Int.equal ndx 0) class_name
+          in
+          let annotation = Option.value typ ~default:"object" in
+          let arg = {PyCommon.name= argname; annotation} in
+          arg :: args )
+    in
+    let rev_formals_types =
+      Option.value_map ~default:[] ~f:mk_formals_types (FFI.Constant.as_code code)
+    in
+    List.rev
+    @@
+    match List.find_map type_info ~f:(f PyCommon.return) with
+    | None ->
+        (* __new__ returns an instance of the current class, __init__ just modifies it *)
+        let annotation = if String.equal PyCommon.init__ name then "None" else "object" in
+        {PyCommon.name= PyCommon.return; annotation} :: rev_formals_types
+    | Some _ ->
+        rev_formals_types
+  in
   Some (is_static, {PyCommon.name; code; signature; flags; raw_qualified_name}, stack, instructions)
 
 
-let parse_methods code instructions =
-  let rec aux stack method_infos static_method_infos instructions =
-    match parse_method code stack instructions with
+let parse_methods code class_name instructions =
+  let rec aux stack method_infos static_method_infos has_init has_new instructions =
+    match parse_method code class_name stack instructions with
     | Some (is_static, method_info, stack, instructions) ->
+        let {PyCommon.name; signature} = method_info in
+        let has_init = if String.equal name PyCommon.init__ then Some signature else has_init in
+        let has_new = if String.equal name PyCommon.new__ then Some signature else has_new in
         let method_infos, static_method_infos =
           if is_static then (method_infos, method_info :: static_method_infos)
           else (method_info :: method_infos, static_method_infos)
         in
-        aux stack method_infos static_method_infos instructions
+        aux stack method_infos static_method_infos has_init has_new instructions
     | None ->
-        (method_infos, static_method_infos, instructions)
+        (method_infos, static_method_infos, has_init, has_new, instructions)
   in
-  aux [] [] [] instructions
+  aux [] [] [] None None instructions
 
 
-let parse_class_declaration code instructions =
+type t =
+  { members: PyCommon.annotated_name list
+  ; methods: PyCommon.method_info list
+  ; static_methods: PyCommon.method_info list
+  ; has_init: PyCommon.annotated_name list option
+  ; has_new: PyCommon.annotated_name list option }
+
+let parse_class_declaration code class_name instructions =
   (* strip the first 4 instructions which are always
               0 LOAD_NAME                0 (__name__)
               2 STORE_NAME               1 (__module__)
@@ -285,5 +327,5 @@ let parse_class_declaration code instructions =
   in
   (* TODO: support Python method decorators *)
   (* Now we gather method declarations *)
-  let method_infos, static_method_infos, _ = parse_methods code instructions in
-  (annotations, method_infos, static_method_infos)
+  let methods, static_methods, has_init, has_new, _ = parse_methods code class_name instructions in
+  {members= annotations; methods; static_methods; has_init; has_new}
