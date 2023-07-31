@@ -1262,6 +1262,12 @@ class D(C):
 
         }
 
+        define dummy::C.__init__(self: *dummy::C) : *PyNone {
+          #entry:
+              ret null
+
+        }
+
         define dummy::C() : *dummy::C {
           #entry:
               n0 = __sil_allocate(<dummy::C>)
@@ -1274,6 +1280,14 @@ class D(C):
         type .static dummy::C$static = {}
 
         type dummy::C = {}
+
+        define dummy::D.__init__(self: *dummy::D) : *PyNone {
+          #entry:
+              n0:*dummy::D = load &self
+              n1 = n0.dummy::C.__init__()
+              ret null
+
+        }
 
         define dummy::D() : *dummy::D {
           #entry:
@@ -1327,6 +1341,12 @@ C.f()
 
         define dummy::C$static.f() : *PyObject {
           #b0:
+              ret null
+
+        }
+
+        define dummy::C.__init__(self: *dummy::C) : *PyNone {
+          #entry:
               ret null
 
         }
@@ -1485,6 +1505,12 @@ class D(C):
 
           }
 
+          define dummy::C.__init__(self: *dummy::C) : *PyNone {
+            #entry:
+                ret null
+
+          }
+
           define dummy::C() : *dummy::C {
             #entry:
                 n0 = __sil_allocate(<dummy::C>)
@@ -1497,6 +1523,14 @@ class D(C):
           type .static dummy::C$static = {}
 
           type dummy::C = {}
+
+          define dummy::D.__init__(self: *dummy::D) : *PyNone {
+            #entry:
+                n0:*dummy::D = load &self
+                n1 = n0.dummy::C.__init__()
+                ret null
+
+          }
 
           define dummy::D() : *dummy::D {
             #entry:
@@ -1556,6 +1590,12 @@ class D0(C0):
                 n1 = $builtins.python_class("dummy::D")
                 n2 = $builtins.python_class("dummy::C0")
                 n3 = $builtins.python_class("dummy::D0")
+                ret null
+
+          }
+
+          define dummy::C.__init__(self: *dummy::C) : *PyNone {
+            #entry:
                 ret null
 
           }
@@ -1655,8 +1695,6 @@ class D0(C0):
 
           declare $builtins.python_int(int) : *PyInt
 
-          Errors while type checking the test:
-          dummy.py, line 7, column 0: textual type error: procname dummy::C.__init__ should be user-declared or a builtin
           MAKE_FUNCTION: support for closures is incomplete (D)
           MAKE_FUNCTION: support for closures is incomplete (D0) |}]
   end )

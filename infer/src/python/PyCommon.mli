@@ -129,6 +129,9 @@ val return : string
 val entry : string
 (** Textual label name for entry points of function we synthesized (constructors, __init__, ...) *)
 
+val self : string
+(** Common name of the [self] argument in Python *)
+
 (** Flags used by MAKE_FUNCTION *)
 module MakeFunctionFlags : sig
   type flag = DefaultValues | DictDefaultValues | Annotations | Closure

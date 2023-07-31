@@ -143,6 +143,8 @@ let return = "return"
 
 let entry = "entry"
 
+let self = "self"
+
 (** Flags used by MAKE_FUNCTION *)
 module MakeFunctionFlags = struct
   (* 0x01 a tuple of default values for positional-only and
