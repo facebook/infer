@@ -2051,11 +2051,11 @@ and merge_report =
      results directory."
 
 
-and merge_report_summaries =
-  CLOpt.mk_string_list ~long:"merge-report-summaries"
+and merge_summaries =
+  CLOpt.mk_string_list ~long:"merge-summaries" ~deprecated:["merge-report-summaries"]
     ~in_help:InferCommand.[(Report, manual_generic)]
-    "Specifies an Infer results directory. The report summaries in all specified results \
-     directories will be merged together and deduplicated before reporting is done."
+    "Specifies an Infer results directory. The summaries in all specified results directories will \
+     be merged together and deduplicated before reporting is done."
 
 
 and method_decls_info =
@@ -4064,7 +4064,7 @@ and merge_capture = RevList.to_list !merge_capture
 
 and merge_report = RevList.to_list !merge_report
 
-and merge_report_summaries = RevList.to_list !merge_report_summaries
+and merge_summaries = RevList.to_list !merge_summaries
 
 and method_decls_info = !method_decls_info
 

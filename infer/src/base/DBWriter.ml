@@ -87,35 +87,38 @@ module Implementation = struct
     |> SqliteUtils.exec ~stmt:"UPDATE source_files SET freshly_captured = 0" ~log:"mark_all_stale"
 
 
+  let merge_procedures_table ~db ~attached ~db_file =
+    (* Do the merge purely in SQL for great speed. The query works by doing a left join between the
+       sub-table and the main one, and applying the same "more defined" logic as in [replace_attributes] in the
+       cases where a proc_name is present in both the sub-table and the main one (main.proc_uid !=
+       NULL). All the rows that pass this filter are inserted/updated into the main table. *)
+    Database.get_database db
+    |> SqliteUtils.exec
+         ~log:(Printf.sprintf "copying procedures of database '%s'" db_file)
+         ~stmt:
+           (Printf.sprintf
+              {|
+               INSERT OR REPLACE INTO %s.procedures
+               SELECT
+               sub.proc_uid,
+               sub.proc_attributes,
+               sub.cfg,
+               sub.callees
+               FROM (
+               attached.procedures AS sub
+               LEFT OUTER JOIN %s.procedures AS main
+               ON sub.proc_uid = main.proc_uid )
+               WHERE
+               main.proc_uid IS NULL
+               OR
+               (main.cfg IS NOT NULL) < (sub.cfg IS NOT NULL)
+               OR
+               ((main.cfg IS NULL) = (sub.cfg IS NULL) AND main.proc_attributes < sub.proc_attributes)
+               |}
+              attached attached )
+
+
   let merge_captures ~root ~infer_deps_file =
-    let merge_procedures_table ~db_file =
-      (* Do the merge purely in SQL for great speed. The query works by doing a left join between the
-         sub-table and the main one, and applying the same "more defined" logic as in [replace_attributes] in the
-         cases where a proc_name is present in both the sub-table and the main one (main.proc_uid !=
-         NULL). All the rows that pass this filter are inserted/updated into the main table. *)
-      Database.get_database CaptureDatabase
-      |> SqliteUtils.exec
-           ~log:(Printf.sprintf "copying procedures of database '%s'" db_file)
-           ~stmt:
-             {|
-              INSERT OR REPLACE INTO memdb.procedures
-              SELECT
-                sub.proc_uid,
-                sub.proc_attributes,
-                sub.cfg,
-                sub.callees
-              FROM (
-                attached.procedures AS sub
-                LEFT OUTER JOIN memdb.procedures AS main
-                ON sub.proc_uid = main.proc_uid )
-              WHERE
-                main.proc_uid IS NULL
-                OR
-                (main.cfg IS NOT NULL) < (sub.cfg IS NOT NULL)
-                OR
-                ((main.cfg IS NULL) = (sub.cfg IS NULL) AND main.proc_attributes < sub.proc_attributes)
-            |}
-    in
     let merge_source_files_table ~db_file =
       Database.get_database CaptureDatabase
       |> SqliteUtils.exec
@@ -133,7 +136,7 @@ module Implementation = struct
         L.die InternalError "Tried to merge in DB at %s but path does not exist.@\n" db_file ;
       let main_db = Database.get_database CaptureDatabase in
       SqliteUtils.with_attached_db main_db ~db_file ~db_name:"attached" ~f:(fun () ->
-          merge_procedures_table ~db_file ;
+          merge_procedures_table ~db:CaptureDatabase ~attached:"memdb" ~db_file ;
           merge_source_files_table ~db_file )
     in
     let copy_to_main db =
@@ -149,33 +152,32 @@ module Implementation = struct
         copy_to_main main_db )
 
 
-  let merge_report_summaries infer_outs =
-    let merge_report_summaries_in_specs_table ~db_file =
-      (* NB [NULL] is used to skip reading/writing analysis summaries *)
+  let merge_summaries infer_outs =
+    let merge_specs_table ~db_file =
       Database.get_database AnalysisDatabase
       |> SqliteUtils.exec
            ~log:(Printf.sprintf "copying specs of database '%s'" db_file)
            ~stmt:
              (Printf.sprintf
                 {|
-              INSERT OR REPLACE INTO specs
-              SELECT
-                sub.proc_uid,
-                sub.proc_name,
-                sub.report_summary,
-                NULL,
-                %s
-              FROM (
-                attached.specs AS sub
-                LEFT OUTER JOIN specs AS main
-                ON sub.proc_uid = main.proc_uid )
-              WHERE
-                main.proc_uid IS NULL
-                OR
-                main.report_summary >= sub.report_summary
-            |}
-                ( List.length PayloadId.database_fields
-                |> List.init ~f:(fun _ -> "NULL")
+                 INSERT OR REPLACE INTO specs
+                 SELECT
+                 sub.proc_uid,
+                 sub.proc_name,
+                 sub.report_summary,
+                 sub.summary_metadata,
+                 %s
+                 FROM (
+                 attached.specs AS sub
+                 LEFT OUTER JOIN specs AS main
+                 ON sub.proc_uid = main.proc_uid )
+                 WHERE
+                 main.proc_uid IS NULL
+                 OR
+                 main.report_summary >= sub.report_summary
+                 |}
+                ( PayloadId.database_fields
+                |> List.map ~f:(fun s -> "sub." ^ s)
                 |> String.concat ~sep:", " ) )
     in
     let merge_issues_table ~db_file =
@@ -186,26 +188,27 @@ module Implementation = struct
              {|
               INSERT OR REPLACE INTO issue_logs
               SELECT
-                sub.checker,
-                sub.source_file,
-                sub.issue_log
+              sub.checker,
+              sub.source_file,
+              sub.issue_log
               FROM (
-                attached.issue_logs AS sub
-                LEFT OUTER JOIN issue_logs AS main
-                ON (sub.checker = main.checker AND sub.source_file = main.source_file) )
+              attached.issue_logs AS sub
+              LEFT OUTER JOIN issue_logs AS main
+              ON (sub.checker = main.checker AND sub.source_file = main.source_file) )
               WHERE
-                main.checker IS NULL
-                OR
-                main.source_file IS NULL
-                OR
-                main.issue_log >= sub.issue_log
-            |}
+              main.checker IS NULL
+              OR
+              main.source_file IS NULL
+              OR
+              main.issue_log >= sub.issue_log
+              |}
     in
     let main_db = Database.get_database AnalysisDatabase in
     List.iter infer_outs ~f:(fun results_dir ->
         let db_file = ResultsDirEntryName.get_path ~results_dir AnalysisDB in
         SqliteUtils.with_attached_db main_db ~db_file ~db_name:"attached" ~f:(fun () ->
-            merge_report_summaries_in_specs_table ~db_file ;
+            merge_procedures_table ~db:AnalysisDatabase ~attached:"attached" ~db_file ;
+            merge_specs_table ~db_file ;
             merge_issues_table ~db_file ) )
 
 
@@ -342,7 +345,7 @@ module Command = struct
     | Handshake
     | MarkAllSourceFilesStale
     | MergeCaptures of {root: string; infer_deps_file: string}
-    | MergeReportSummaries of {infer_outs: string list}
+    | MergeSummaries of {infer_outs: string list}
     | ShrinkAnalysisDB
     | StoreIssueLog of {checker: string; source_file: Sqlite3.Data.t; issue_log: Sqlite3.Data.t}
     | StoreSpec of
@@ -378,8 +381,8 @@ module Command = struct
         "MarkAllSourceFilesStale"
     | MergeCaptures _ ->
         "MergeCaptures"
-    | MergeReportSummaries _ ->
-        "MergeReportSummaries"
+    | MergeSummaries _ ->
+        "MergeSummaries"
     | ReplaceAttributes _ ->
         "ReplaceAttributes"
     | ShrinkAnalysisDB ->
@@ -413,8 +416,8 @@ module Command = struct
         Implementation.mark_all_source_files_stale ()
     | MergeCaptures {root; infer_deps_file} ->
         Implementation.merge_captures ~root ~infer_deps_file
-    | MergeReportSummaries {infer_outs} ->
-        Implementation.merge_report_summaries infer_outs
+    | MergeSummaries {infer_outs} ->
+        Implementation.merge_summaries infer_outs
     | ShrinkAnalysisDB ->
         Implementation.shrink_analysis_db ()
     | StoreIssueLog {checker; source_file; issue_log} ->
@@ -574,7 +577,7 @@ let mark_all_source_files_stale () = perform MarkAllSourceFilesStale
 
 let merge_captures ~root ~infer_deps_file = perform (MergeCaptures {root; infer_deps_file})
 
-let merge_report_summaries ~infer_outs = perform (MergeReportSummaries {infer_outs})
+let merge_summaries ~infer_outs = perform (MergeSummaries {infer_outs})
 
 let replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis =
   perform (ReplaceAttributes {proc_uid; proc_attributes; cfg; callees; analysis})

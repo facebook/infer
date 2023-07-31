@@ -1107,8 +1107,8 @@ OPTIONS
            and deduplicated before being stored in the main results
            directory.           See also infer-report(1).
 
-       --merge-report-summaries +string
-           Specifies an Infer results directory. The report summaries in all
+       --merge-summaries +string
+           Specifies an Infer results directory. The summaries in all
            specified results directories will be merged together and
            deduplicated before reporting is done.           See also infer-report(1).
 
@@ -2548,8 +2548,8 @@ INTERNAL OPTIONS
        --merge-report-reset
            Set --merge-report to the empty list.
 
-       --merge-report-summaries-reset
-           Set --merge-report-summaries to the empty list.
+       --merge-summaries-reset
+           Set --merge-summaries to the empty list.
 
        --method-decls-info method_decls_info.json
            Specifies the file containing the method declarations info (eg.

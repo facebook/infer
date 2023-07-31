@@ -237,12 +237,11 @@ let merge_reports () =
   ReportSet.store acc
 
 
-let merge_report_summaries () =
+let merge_summaries () =
   let (), duration =
-    Utils.timeit ~f:(fun () ->
-        DBWriter.merge_report_summaries ~infer_outs:Config.merge_report_summaries )
+    Utils.timeit ~f:(fun () -> DBWriter.merge_summaries ~infer_outs:Config.merge_summaries)
   in
-  L.debug Analysis Quiet "Merging report summaries took %a.@\n" Mtime.Span.pp duration
+  L.debug Analysis Quiet "Merging summaries took %a.@\n" Mtime.Span.pp duration
 
 
 let report () =
@@ -264,12 +263,12 @@ let report () =
     , Config.config_impact_issues_tests
     , Config.lineage_json_report
     , Config.merge_report
-    , Config.merge_report_summaries
+    , Config.merge_summaries
     , Config.pulse_report_flows_from_taint_source
     , Config.pulse_report_flows_to_taint_sink )
   with
   | None, None, None, false, [], _, None, None ->
-      if not (List.is_empty Config.merge_report_summaries) then merge_report_summaries () ;
+      if not (List.is_empty Config.merge_summaries) then merge_summaries () ;
       Driver.report ()
   | _, _, _, _, [], _, Some _, Some _ ->
       L.die UserError
@@ -294,10 +293,10 @@ let report () =
       merge_reports ()
   | _, _, _, _, _ :: _, _, _, _ | _, _, _, _, _, _ :: _, _, _ ->
       L.die UserError
-        "Options '--merge-report' or '--merge-summaries' cannot be used with '--issues-tests', \
-         '--cost-issues-tests', '--config-impact-issues-tests', '--lineage-json-report', \
-         '--pulse-report-flows-from-taint-source', '--pulse-report-flows-to-taint-sink', or each \
-         other.@\n"
+        "Options '--merge-report' or '--merge-summaries' or '--merge-report-sumamries' cannot be \
+         used with '--issues-tests', '--cost-issues-tests', '--config-impact-issues-tests', \
+         '--lineage-json-report', '--pulse-report-flows-from-taint-source', \
+         '--pulse-report-flows-to-taint-sink', or each other.@\n"
 
 
 let report_diff () =

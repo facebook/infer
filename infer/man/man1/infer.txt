@@ -1107,8 +1107,8 @@ OPTIONS
            and deduplicated before being stored in the main results
            directory.           See also infer-report(1).
 
-       --merge-report-summaries +string
-           Specifies an Infer results directory. The report summaries in all
+       --merge-summaries +string
+           Specifies an Infer results directory. The summaries in all
            specified results directories will be merged together and
            deduplicated before reporting is done.           See also infer-report(1).
 
