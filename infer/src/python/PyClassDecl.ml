@@ -325,8 +325,8 @@ let parse_method ({FFI.Code.co_names} as code) class_name stack instructions =
         (* __new__ returns an instance of the current class, __init__ just modifies it *)
         let annotation = if String.equal PyCommon.init__ name then "None" else "object" in
         {PyCommon.name= PyCommon.return; annotation} :: rev_formals_types
-    | Some _ ->
-        rev_formals_types
+    | Some annotation ->
+        {PyCommon.name= PyCommon.return; annotation} :: rev_formals_types
   in
   Some
     ( is_static

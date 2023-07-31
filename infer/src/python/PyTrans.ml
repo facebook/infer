@@ -1548,7 +1548,8 @@ let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} 
   let is_toplevel, is_static, name, enclosing_class_name, annotations =
     match opt_name with
     | None ->
-        (true, false, PyCommon.toplevel_function, enclosing_class_name, [])
+        let return_typ = {PyCommon.name= PyCommon.return; annotation= "None"} in
+        (true, false, PyCommon.toplevel_function, enclosing_class_name, [return_typ])
     | Some name -> (
         let annotations = Env.lookup_method env ~enclosing_class:enclosing_class_name name in
         match annotations with

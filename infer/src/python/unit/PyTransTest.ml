@@ -46,7 +46,7 @@ let%test_module "basic_tests" =
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               store &dummy::x <- $builtins.python_int(42):*PyInt
               ret null
@@ -78,7 +78,7 @@ print(x)
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               store &dummy::x <- $builtins.python_int(42):*PyInt
               n0:*PyInt = load &dummy::x
@@ -115,7 +115,7 @@ print(x + y)
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               store &dummy::x <- $builtins.python_int(42):*PyInt
               store &dummy::y <- $builtins.python_int(10):*PyInt
@@ -157,7 +157,7 @@ pi = 3.14
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               store &dummy::pi <- $builtins.python_float(3.14):*PyFloat
               ret null
@@ -188,7 +188,7 @@ byte_data = b'\x48\x65\x6C\x6C\x6F'  # Equivalent to b'Hello'
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               store &dummy::byte_data <- $builtins.python_bytes("Hello"):*PyBytes
               ret null
@@ -235,7 +235,7 @@ print(z)
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_code("dummy.my_fun")
               store &dummy::a <- $builtins.python_int(10):*PyInt
@@ -305,7 +305,7 @@ print(z)
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_code("dummy.update_global")
               store &dummy::z <- $builtins.python_int(0):*PyInt
@@ -367,7 +367,7 @@ def f(x, y):
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_code("dummy.coin")
               n1 = $builtins.python_code("dummy.f")
@@ -439,7 +439,7 @@ def f(x, y):
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_code("dummy.coin")
               n1 = $builtins.python_code("dummy.f")
@@ -524,7 +524,7 @@ def f(x, y):
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_code("dummy.coin")
               n1 = $builtins.python_code("dummy.f")
@@ -625,7 +625,7 @@ def f(x):
         {|
       .source_language = "python"
 
-      define dummy.$toplevel() : *PyObject {
+      define dummy.$toplevel() : *PyNone {
         #b0:
             n0 = $builtins.python_code("dummy.foo")
             n1 = $builtins.python_code("dummy.f")
@@ -692,7 +692,7 @@ for x in range(10):
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.range($builtins.python_int(10))
               n1 = $builtins.python_iter(n0)
@@ -764,7 +764,7 @@ def f(x):
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.print($builtins.python_int(42))
               n1 = $builtins.python_code("dummy.print")
@@ -824,7 +824,7 @@ def f1(x, y:str) -> bool:
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_code("dummy.f0")
               n1 = $builtins.python_code("dummy.f1")
@@ -876,7 +876,7 @@ expect_int(get())
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_code("dummy.expect_int")
               n1 = $builtins.python_code("dummy.get")
@@ -930,7 +930,7 @@ expect(get())
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_code("dummy.expect")
               n1 = $builtins.python_code("dummy.get")
@@ -995,7 +995,7 @@ c.set(42)
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_class("dummy::C")
               n1 = dummy::C($builtins.python_int(0), $builtins.python_string("a"))
@@ -1109,7 +1109,7 @@ print(c.z)
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_class("dummy::IntBox")
               n1 = $builtins.python_code("dummy.getX")
@@ -1132,7 +1132,7 @@ print(c.z)
 
         }
 
-        define dummy::IntBox.__init__(self: *dummy::IntBox, x: *PyInt) : *PyObject {
+        define dummy::IntBox.__init__(self: *dummy::IntBox, x: *PyInt) : *PyNone {
           #b0:
               n0:*dummy::IntBox = load &self
               n1:*PyInt = load &x
@@ -1144,7 +1144,7 @@ print(c.z)
 
         }
 
-        define dummy::IntBox.get(self: *dummy::IntBox) : *PyObject {
+        define dummy::IntBox.get(self: *dummy::IntBox) : *PyInt {
           #b0:
               n0:*dummy::IntBox = load &self
               n1:*PyObject = load n0.?.x
@@ -1152,7 +1152,7 @@ print(c.z)
 
         }
 
-        define dummy::IntBox.set(self: *dummy::IntBox, x: *PyInt) : *PyObject {
+        define dummy::IntBox.set(self: *dummy::IntBox, x: *PyInt) : *PyNone {
           #b0:
               n0:*dummy::IntBox = load &self
               n1:*PyInt = load &x
@@ -1161,7 +1161,7 @@ print(c.z)
 
         }
 
-        define dummy::IntBox.run(self: *dummy::IntBox) : *PyObject {
+        define dummy::IntBox.run(self: *dummy::IntBox) : *PyNone {
           #b0:
               n0:*dummy::IntBox = load &self
               n1 = n0.dummy::IntBox.f($builtins.python_int(3))
@@ -1241,7 +1241,7 @@ class D(C):
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_class("dummy::C")
               n1 = $builtins.python_class("dummy::D")
@@ -1255,7 +1255,7 @@ class D(C):
 
         }
 
-        define dummy::C$static.typed_f(x: *PyInt) : *PyObject {
+        define dummy::C$static.typed_f(x: *PyInt) : *PyInt {
           #b0:
               n0:*PyInt = load &x
               ret n0
@@ -1331,7 +1331,7 @@ C.f()
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_class("dummy::C")
               n1 = dummy::C$static.f()
@@ -1397,7 +1397,7 @@ base.f(0)
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = base.$toplevel()
               n1 = base.f($builtins.python_int(0))
@@ -1443,7 +1443,7 @@ g()
         {|
         .source_language = "python"
 
-        define dummy.$toplevel() : *PyObject {
+        define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_code("dummy.f")
               n1 = dummy.f()
@@ -1497,7 +1497,7 @@ class D(C):
         {|
           .source_language = "python"
 
-          define dummy.$toplevel() : *PyObject {
+          define dummy.$toplevel() : *PyNone {
             #b0:
                 n0 = $builtins.python_class("dummy::C")
                 n1 = $builtins.python_class("dummy::D")
@@ -1584,7 +1584,7 @@ class D0(C0):
         {|
           .source_language = "python"
 
-          define dummy.$toplevel() : *PyObject {
+          define dummy.$toplevel() : *PyNone {
             #b0:
                 n0 = $builtins.python_class("dummy::C")
                 n1 = $builtins.python_class("dummy::D")
