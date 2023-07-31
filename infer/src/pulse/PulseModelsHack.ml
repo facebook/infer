@@ -429,4 +429,4 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hack_get_static_class" <>$ capt_arg_payload $--> get_static_class
   ; -"$root" &:: "FlibSL::Vec::from_async" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Vec.vec_from_async ]
-  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
+  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

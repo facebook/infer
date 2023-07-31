@@ -119,17 +119,17 @@ let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate)
   AbstractValue.Set.fold AddressAttributes.initialize reachable_values astate
 
 
-let eval_access_to_value_path path ?must_be_valid_reason mode location addr_hist access astate =
+let eval_access_to_value_origin path ?must_be_valid_reason mode location addr_hist access astate =
   let+ astate = check_addr_access path ?must_be_valid_reason mode location addr_hist astate in
   let astate, dest = Memory.eval_edge addr_hist access astate in
-  (astate, ValuePath.InMemory {src= addr_hist; access; dest})
+  (astate, ValueOrigin.InMemory {src= addr_hist; access; dest})
 
 
 let eval_access path ?must_be_valid_reason mode location addr_hist access astate =
   let+ astate, value_origin =
-    eval_access_to_value_path path ?must_be_valid_reason mode location addr_hist access astate
+    eval_access_to_value_origin path ?must_be_valid_reason mode location addr_hist access astate
   in
-  (astate, ValuePath.addr_hist value_origin)
+  (astate, ValueOrigin.addr_hist value_origin)
 
 
 let eval_deref_access path ?must_be_valid_reason mode location addr_hist access astate =
@@ -137,46 +137,46 @@ let eval_deref_access path ?must_be_valid_reason mode location addr_hist access 
   eval_access path ?must_be_valid_reason mode location addr_hist Dereference astate
 
 
-let eval_var_to_value_path {PathContext.timestamp} location pvar astate =
+let eval_var_to_value_origin {PathContext.timestamp} location pvar astate =
   let var = Var.of_pvar pvar in
   let astate, addr_hist =
     Stack.eval (ValueHistory.singleton (VariableAccessed (pvar, location, timestamp))) var astate
   in
-  let origin = ValuePath.OnStack {var; addr_hist} in
+  let origin = ValueOrigin.OnStack {var; addr_hist} in
   (astate, origin)
 
 
 let eval_var path location pvar astate =
-  let astate, value_origin = eval_var_to_value_path path location pvar astate in
-  (astate, ValuePath.addr_hist value_origin)
+  let astate, value_origin = eval_var_to_value_origin path location pvar astate in
+  (astate, ValueOrigin.addr_hist value_origin)
 
 
 let eval_ident id astate = Stack.eval ValueHistory.epoch (Var.of_id id) astate
 
 let rec eval (path : PathContext.t) mode location exp astate :
     (t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.t =
-  let++ astate, value_origin = eval_to_value_path path mode location exp astate in
-  (astate, ValuePath.addr_hist value_origin)
+  let++ astate, value_origin = eval_to_value_origin path mode location exp astate in
+  (astate, ValueOrigin.addr_hist value_origin)
 
 
-and eval_to_value_path (path : PathContext.t) mode location exp astate :
-    (t * ValuePath.t) PulseOperationResult.t =
+and eval_to_value_origin (path : PathContext.t) mode location exp astate :
+    (t * ValueOrigin.t) PulseOperationResult.t =
   match (exp : Exp.t) with
   | Var id ->
       let var = Var.of_id id in
       (* error in case of missing history? *)
       let astate, addr_hist = Stack.eval ValueHistory.epoch var astate in
-      let origin = ValuePath.OnStack {var; addr_hist} in
+      let origin = ValueOrigin.OnStack {var; addr_hist} in
       Sat (Ok (astate, origin))
   | Lvar pvar ->
-      Sat (Ok (eval_var_to_value_path path location pvar astate))
+      Sat (Ok (eval_var_to_value_origin path location pvar astate))
   | Lfield (exp', field, _) ->
       let+* astate, addr_hist = eval path Read location exp' astate in
-      eval_access_to_value_path path mode location addr_hist (FieldAccess field) astate
+      eval_access_to_value_origin path mode location addr_hist (FieldAccess field) astate
   | Lindex (exp', exp_index) ->
       let** astate, addr_hist_index = eval path Read location exp_index astate in
       let+* astate, addr_hist = eval path Read location exp' astate in
-      eval_access_to_value_path path mode location addr_hist
+      eval_access_to_value_origin path mode location addr_hist
         (ArrayAccess (StdTyp.void, fst addr_hist_index))
         astate
   | Closure {name; captured_vars} ->
@@ -194,13 +194,13 @@ and eval_to_value_path (path : PathContext.t) mode location exp astate :
           (List.rev_map rev_captured ~f:(fun (_, (addr, _), _, _) -> addr))
           astate
       in
-      (astate, ValuePath.Unknown v_hist)
+      (astate, ValueOrigin.Unknown v_hist)
   | Const (Cfun proc_name) ->
       (* function pointers are represented as closures with no captured variables *)
       let++ astate, addr_hist = Closures.record path location proc_name [] astate in
-      (astate, ValuePath.Unknown addr_hist)
+      (astate, ValueOrigin.Unknown addr_hist)
   | Cast (_, exp') ->
-      eval_to_value_path path mode location exp' astate
+      eval_to_value_origin path mode location exp' astate
   | Const (Cint i) ->
       let v = Formula.absval_of_int astate.AbductiveDomain.path_condition i in
       let invalidation = Invalidation.ConstantDereference i in
@@ -213,7 +213,7 @@ and eval_to_value_path (path : PathContext.t) mode location exp astate :
       let addr_hist =
         (v, ValueHistory.singleton (Invalidated (invalidation, location, path.timestamp)))
       in
-      (astate, ValuePath.Unknown addr_hist)
+      (astate, ValueOrigin.Unknown addr_hist)
   | Const (Cstr s) ->
       (* TODO: record actual string value; since we are making strings be a record in memory
          instead of pure values some care has to be added to access string values once written *)
@@ -226,16 +226,17 @@ and eval_to_value_path (path : PathContext.t) mode location exp astate :
       let len_int = IntLit.of_int (String.length s) in
       let++ astate = PulseArithmetic.and_eq_int len_addr len_int astate in
       let astate = AddressAttributes.add_one v (ConstString s) astate in
-      (astate, ValuePath.Unknown (v, hist))
+      (astate, ValueOrigin.Unknown (v, hist))
   | Const ((Cfloat _ | Cclass _) as c) ->
       let v = AbstractValue.mk_fresh () in
       let++ astate = PulseArithmetic.and_eq_const v c astate in
-      (astate, ValuePath.Unknown (v, ValueHistory.singleton (Assignment (location, path.timestamp))))
+      ( astate
+      , ValueOrigin.Unknown (v, ValueHistory.singleton (Assignment (location, path.timestamp))) )
   | UnOp (unop, exp, _typ) ->
       let** astate, (addr, hist) = eval path Read location exp astate in
       let unop_addr = AbstractValue.mk_fresh () in
       let++ astate, unop_addr = PulseArithmetic.eval_unop unop_addr unop addr astate in
-      (astate, ValuePath.Unknown (unop_addr, hist))
+      (astate, ValueOrigin.Unknown (unop_addr, hist))
   | BinOp (bop, e_lhs, e_rhs) ->
       let** astate, (addr_lhs, hist_lhs) = eval path Read location e_lhs astate in
       let** astate, (addr_rhs, hist_rhs) = eval path Read location e_rhs astate in
@@ -244,12 +245,12 @@ and eval_to_value_path (path : PathContext.t) mode location exp astate :
         PulseArithmetic.eval_binop binop_addr bop (AbstractValueOperand addr_lhs)
           (AbstractValueOperand addr_rhs) astate
       in
-      (astate, ValuePath.Unknown (binop_addr, ValueHistory.binary_op bop hist_lhs hist_rhs))
+      (astate, ValueOrigin.Unknown (binop_addr, ValueHistory.binary_op bop hist_lhs hist_rhs))
   | Exn exp ->
-      eval_to_value_path path Read location exp astate
+      eval_to_value_origin path Read location exp astate
   | Sizeof _ ->
       let addr_hist = (AbstractValue.mk_fresh (), (* TODO history *) ValueHistory.epoch) in
-      Sat (Ok (astate, ValuePath.Unknown addr_hist))
+      Sat (Ok (astate, ValueOrigin.Unknown addr_hist))
 
 
 let eval_to_operand path location exp astate =
@@ -290,12 +291,14 @@ let eval_deref_with_path path ?must_be_valid_reason location exp astate =
   let+* astate, addr_hist = eval path Read location exp astate in
   let+ astate = check_addr_access path ?must_be_valid_reason Read location addr_hist astate in
   let astate, dest_addr_hist = Memory.eval_edge addr_hist Dereference astate in
-  (astate, ValuePath.InMemory {src= addr_hist; access= Dereference; dest= dest_addr_hist})
+  (astate, ValueOrigin.InMemory {src= addr_hist; access= Dereference; dest= dest_addr_hist})
 
 
 let eval_deref path ?must_be_valid_reason location exp astate =
-  let++ astate, value_path = eval_deref_with_path path ?must_be_valid_reason location exp astate in
-  (astate, ValuePath.addr_hist value_path)
+  let++ astate, value_origin =
+    eval_deref_with_path path ?must_be_valid_reason location exp astate
+  in
+  (astate, ValueOrigin.addr_hist value_origin)
 
 
 let eval_proc_name path location call_exp astate =

@@ -809,4 +809,4 @@ let simple_matchers =
 let matchers =
   matchers
   @ List.map simple_matchers
-      ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
+      ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

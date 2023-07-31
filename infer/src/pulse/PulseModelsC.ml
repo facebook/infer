@@ -93,7 +93,7 @@ let matchers : matcher list =
   ; +match_regexp_opt Config.pulse_model_realloc_pattern
     <>$ capt_arg $+ capt_exp $+...$--> custom_realloc ]
   @ List.map
-      ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
+      ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
       [ +BuiltinDecl.(match_builtin malloc) <>$ capt_exp $--> malloc
       ; +match_regexp_opt Config.pulse_model_malloc_pattern <>$ capt_exp $+...$--> custom_malloc
       ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy

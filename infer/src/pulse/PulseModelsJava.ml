@@ -793,4 +793,4 @@ let matchers : matcher list =
     &:: "nextElement" <>$ capt_arg_payload
     $!--> fun x ->
     Cplusplus.Vector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) ) ]
-  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
+  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

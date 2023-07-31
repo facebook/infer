@@ -61,13 +61,13 @@ val eval :
     Return an error state if it traverses some known invalid address or if the end destination is
     known to be invalid. *)
 
-val eval_to_value_path :
+val eval_to_value_origin :
      PathContext.t
   -> access_mode
   -> Location.t
   -> Exp.t
   -> t
-  -> (t * ValuePath.t) PulseOperationResult.t
+  -> (t * ValueOrigin.t) PulseOperationResult.t
 
 val eval_var : PathContext.t -> Location.t -> Pvar.t -> t -> t * (AbstractValue.t * ValueHistory.t)
 (** Similar to eval but for pvar only. Always succeeds. *)
@@ -96,7 +96,7 @@ val eval_deref_with_path :
   -> Location.t
   -> Exp.t
   -> t
-  -> (t * ValuePath.t) AccessResult.t SatUnsat.t
+  -> (t * ValueOrigin.t) AccessResult.t SatUnsat.t
 
 val eval_access :
      PathContext.t
@@ -110,7 +110,7 @@ val eval_access :
 (** Like [eval] but starts from an address instead of an expression, checks that it is valid, and if
     so dereferences it according to the access. *)
 
-val eval_access_to_value_path :
+val eval_access_to_value_origin :
      PathContext.t
   -> ?must_be_valid_reason:Invalidation.must_be_valid_reason
   -> access_mode
@@ -118,7 +118,7 @@ val eval_access_to_value_path :
   -> AbstractValue.t * ValueHistory.t
   -> Access.t
   -> t
-  -> (t * ValuePath.t) AccessResult.t
+  -> (t * ValueOrigin.t) AccessResult.t
 
 val eval_deref_access :
      PathContext.t

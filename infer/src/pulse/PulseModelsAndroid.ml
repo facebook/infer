@@ -50,4 +50,4 @@ let matchers : matcher list =
   [ +map_context_tenv (PatternMatch.Java.implements_android "text.TextUtils")
     &:: "isEmpty" <>$ capt_arg_payload
     $--> text_utils_is_empty ~desc:"TextUtils.isEmpty" ]
-  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
+  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

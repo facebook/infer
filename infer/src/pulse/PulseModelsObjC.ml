@@ -274,7 +274,7 @@ let transfer_ownership_matchers : matcher list =
      $+ any_arg $+ any_arg $--> init_with_bytes_free_when_done )
   :: transfer_ownership_namespace_matchers
   @ transfer_ownership_name_matchers
-  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
+  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
 
 
 let matchers : matcher list =
@@ -420,4 +420,4 @@ let matchers : matcher list =
   ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UIView")
     &:: "initWithFrame:" <>$ capt_arg_payload
     $+...$--> Basic.id_first_arg ~desc:"UIView.initWithFrame:" ]
-  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
+  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

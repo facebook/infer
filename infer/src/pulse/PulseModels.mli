@@ -8,4 +8,4 @@ open! IStd
 open PulseModelsImport
 
 val dispatch :
-  Tenv.t -> Procname.t -> PulseValuePath.t ProcnameDispatcher.Call.FuncArg.t list -> model option
+  Tenv.t -> Procname.t -> PulseValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list -> model option

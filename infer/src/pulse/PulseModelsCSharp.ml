@@ -606,4 +606,4 @@ let matchers : matcher list =
        otherwise the allocation of the IDisposable is lost at the call to the Object..ctor *)
   ; +map_context_tenv (fun _ -> String.equal "System.Object")
     &:: ".ctor" <>$ any_arg $--> Basic.skip ]
-  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
+  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

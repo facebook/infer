@@ -1249,7 +1249,7 @@ module Custom = struct
   let arguments_return_model args (summaries : arguments_return list) : model =
    fun {location; path; ret= ret_id, _} astate ->
     let get_payload (arg : 'a ProcnameDispatcher.Call.FuncArg.t) =
-      arg.arg_payload |> ValuePath.addr_hist
+      arg.arg_payload |> ValueOrigin.addr_hist
     in
     let actual_arguments = args |> List.map ~f:get_payload in
     let one_summary {arguments; return} =
@@ -1638,7 +1638,7 @@ let matchers : matcher list =
   let erlang_ns = ErlangTypeName.erlang_namespace in
   Custom.matchers ()
   @ List.map
-      ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
+      ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
       [ +BuiltinDecl.(match_builtin __erlang_error_badkey) <>--> Errors.badkey
       ; +BuiltinDecl.(match_builtin __erlang_error_badmap) <>--> Errors.badmap
       ; +BuiltinDecl.(match_builtin __erlang_error_badmatch) <>--> Errors.badmatch

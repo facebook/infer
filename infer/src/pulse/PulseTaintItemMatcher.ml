@@ -11,7 +11,7 @@ module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 
-type taint_match = {taint: TaintItem.t; value_path: ValuePath.t; typ: Typ.t; exp: Exp.t option}
+type taint_match = {taint: TaintItem.t; value_origin: ValueOrigin.t; typ: Typ.t; exp: Exp.t option}
 
 let type_matches tenv actual_typ types =
   (* TODO: [Typ.Name.name] may not be the most intuitive representation of types here, also
@@ -190,13 +190,13 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
 
 let match_field_target matches actual potential_taint_value : taint_match list =
   let open TaintConfig.Target in
-  let {ProcnameDispatcher.Call.FuncArg.arg_payload= value_path; typ; exp} = actual in
+  let {ProcnameDispatcher.Call.FuncArg.arg_payload= value_origin; typ; exp} = actual in
   let match_target acc (matcher : TaintConfig.Unit.field_unit) =
     let origin : TaintItem.origin =
       match matcher.field_target with GetField -> GetField | SetField -> SetField
     in
     let taint = {TaintItem.value= potential_taint_value; origin; kinds= matcher.kinds} in
-    {taint; value_path; typ; exp= Some exp} :: acc
+    {taint; value_origin; typ; exp= Some exp} :: acc
   in
   List.fold matches ~init:[] ~f:(fun acc (matcher : TaintConfig.Unit.field_unit) ->
       match_target acc matcher )
@@ -241,54 +241,56 @@ let field_matches tenv loc matchers field_name =
 
 
 let move_taint_to_field tenv path location potential_taint_value taint_match fieldname astate =
-  let type_check astate value_path typ fieldname =
+  let type_check astate value_origin typ fieldname =
     (* Dereference the value as much as possible and verify the result is of structure type
        holding the expected fieldname.
 
        TODO(arr): Do we really want to do it? This won't work for semi-statically or dynamically
        typed languages like Hack or Python.*)
     let open IOption.Let_syntax in
-    let rec get_val_and_typ_name astate value_path typ =
+    let rec get_val_and_typ_name astate value_origin typ =
       match typ.Typ.desc with
       | Tstruct typ_name | Tptr ({desc= Tstruct typ_name}, _) ->
-          Some (astate, value_path, typ_name)
+          Some (astate, value_origin, typ_name)
       | Tptr (typ', _) ->
-          let* astate, value_path =
-            PulseOperations.eval_access_to_value_path path Read location
-              (ValuePath.addr_hist value_path) Dereference astate
+          let* astate, value_origin =
+            PulseOperations.eval_access_to_value_origin path Read location
+              (ValueOrigin.addr_hist value_origin)
+              Dereference astate
             |> PulseResult.ok
           in
-          get_val_and_typ_name astate value_path typ'
+          get_val_and_typ_name astate value_origin typ'
       | _ ->
           None
     in
-    let* astate, value_path, typ_name = get_val_and_typ_name astate value_path typ in
+    let* astate, value_origin, typ_name = get_val_and_typ_name astate value_origin typ in
     let+ field_typ =
       let* {Struct.fields} = Tenv.lookup tenv typ_name in
       List.find_map fields ~f:(fun (field, typ, _) ->
           if String.equal fieldname (Fieldname.get_field_name field) then Some typ else None )
     in
-    (astate, value_path, typ_name, field_typ)
+    (astate, value_origin, typ_name, field_typ)
   in
   (* Move the taint from [addr_hist] to [addr_hist]'s field [fieldname] *)
-  match type_check astate taint_match.value_path taint_match.typ fieldname with
+  match type_check astate taint_match.value_origin taint_match.typ fieldname with
   | None ->
       (* The value cannot hold the expected field.
          This is a type mismatch and we need to inform the user. *)
       L.die UserError
         "Type error in taint configuration: Model for `%a`:Type `%a` does not have a field `%s`"
         TaintItem.pp_value potential_taint_value (Typ.pp_full Pp.text) taint_match.typ fieldname
-  | Some (astate, value_path, typ_name, field_typ) ->
+  | Some (astate, value_origin, typ_name, field_typ) ->
       let result =
         let open PulseResult.Let_syntax in
-        let addr_hist = ValuePath.addr_hist value_path in
+        let addr_hist = ValueOrigin.addr_hist value_origin in
         let* astate, ret_value =
           PulseOperations.eval_access path Read location addr_hist
             (FieldAccess (Fieldname.make typ_name fieldname))
             astate
         in
         let+ astate, ret_value =
-          PulseOperations.eval_access_to_value_path path Read location ret_value Dereference astate
+          PulseOperations.eval_access_to_value_origin path Read location ret_value Dereference
+            astate
         in
         L.d_printfln "match! tainting field %s with type %a" fieldname (Typ.pp_full Pp.text)
           field_typ ;
@@ -298,7 +300,7 @@ let move_taint_to_field tenv path location potential_taint_value taint_match fie
               origin= FieldOfValue {name= fieldname; origin= taint_match.taint.origin} }
         in
         ( astate (* TODO(arr): replace with a proper value path *)
-        , Some {taint; value_path= ret_value; typ= field_typ; exp= None} )
+        , Some {taint; value_origin= ret_value; typ= field_typ; exp= None} )
       in
       PulseResult.ok result |> Option.value ~default:(astate, None)
 
@@ -325,8 +327,8 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
             | Some actual ->
                 let astate, acc = acc in
                 let taint = {TaintItem.value= potential_taint_value; origin= ReturnValue; kinds} in
-                let value_path, typ, exp = actual in
-                (astate, {taint; value_path; typ; exp} :: acc)
+                let value_origin, typ, exp = actual in
+                (astate, {taint; value_origin; typ; exp} :: acc)
             | None ->
                 let return = Var.of_id return in
                 let astate =
@@ -340,13 +342,15 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
                        let taint =
                          {TaintItem.value= potential_taint_value; origin= ReturnValue; kinds}
                        in
-                       let value_path = ValuePath.OnStack {var= return; addr_hist= return_value} in
-                       (astate, {taint; value_path; typ= return_typ; exp= None} :: tainted) ) ) )
+                       let value_origin =
+                         ValueOrigin.OnStack {var= return; addr_hist= return_value}
+                       in
+                       (astate, {taint; value_origin; typ= return_typ; exp= None} :: tainted) ) ) )
     | (AllArguments | ArgumentPositions _ | AllArgumentsButPositions _ | ArgumentsMatchingTypes _)
       as taint_target ->
         L.d_printf "matching actuals... " ;
         List.foldi actuals ~init:acc
-          ~f:(fun i ((astate, tainted) as acc) (actual_value_path, actual_typ, exp) ->
+          ~f:(fun i ((astate, tainted) as acc) (actual_value_origin, actual_typ, exp) ->
             let is_const_exp = match exp with Some exp -> Exp.is_const exp | None -> false in
             if taint_procedure_target_matches tenv taint_target i actual_typ && not is_const_exp
             then (
@@ -355,7 +359,8 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
               let taint =
                 {TaintItem.value= potential_taint_value; origin= Argument {index= i}; kinds}
               in
-              (astate, {taint; value_path= actual_value_path; typ= actual_typ; exp} :: tainted) )
+              (astate, {taint; value_origin= actual_value_origin; typ= actual_typ; exp} :: tainted)
+              )
             else (
               L.d_printfln_escaped "no match for #%d with type %a" i (Typ.pp_full Pp.text)
                 actual_typ ;
@@ -364,14 +369,14 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
         L.d_printf "matching this/self... " ;
         match instance_reference with
         | Some instance_reference ->
-            let {ProcnameDispatcher.Call.FuncArg.arg_payload= value_path; typ; exp} =
+            let {ProcnameDispatcher.Call.FuncArg.arg_payload= value_origin; typ; exp} =
               instance_reference
             in
             let taint =
               {TaintItem.value= potential_taint_value; origin= InstanceReference; kinds}
             in
             let astate, tainted = acc in
-            (astate, {taint; value_path; typ; exp= Some exp} :: tainted)
+            (astate, {taint; value_origin; typ; exp= Some exp} :: tainted)
         | None ->
             L.die UserError "Error in taint configuration: `%a` is not an instance method"
               TaintItem.pp_value potential_taint_value )

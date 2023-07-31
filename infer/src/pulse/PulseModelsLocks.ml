@@ -143,4 +143,4 @@ let matchers : matcher list =
   ; -"std" &:: "shared_lock" &:: "unlock" &::.*--> Basic.skip
   ; -"std" &:: "shared_lock" &:: "owns_lock" &::.*--> Basic.skip
   ; -"std" &:: "shared_lock" &:: "operator_bool" &::.*--> Basic.skip ]
-  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
+  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

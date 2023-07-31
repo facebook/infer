@@ -11,4 +11,4 @@ open PulseModelsImport
 val matchers : matcher list
 
 val get_model_from_db :
-  Procname.t -> PulseValuePath.t ProcnameDispatcher.Call.FuncArg.t list -> model option
+  Procname.t -> PulseValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list -> model option

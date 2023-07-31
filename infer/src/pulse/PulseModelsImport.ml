@@ -12,7 +12,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 
-type arg_payload = ValuePath.t
+type arg_payload = ValueOrigin.t
 
 type model_data =
   { analysis_data: PulseSummary.t InterproceduralAnalysis.t
@@ -22,7 +22,7 @@ type model_data =
       -> Ident.t * Typ.t
       -> Exp.t
       -> (Exp.t * Typ.t) list
-      -> ValuePath.t PulseAliasSpecialization.FuncArg.t list
+      -> ValueOrigin.t PulseAliasSpecialization.FuncArg.t list
       -> Location.t
       -> CallFlags.t
       -> AbductiveDomain.t
@@ -306,7 +306,7 @@ module Basic = struct
   let free_or_delete operation invalidation
       ({ProcnameDispatcher.Call.FuncArg.arg_payload= deleted_access_path} as deleted_arg) : model =
    fun ({path; location} as model_data) astate ->
-    let deleted_access = ValuePath.addr_hist deleted_access_path in
+    let deleted_access = ValueOrigin.addr_hist deleted_access_path in
     (* NOTE: freeing 0 is a no-op so we introduce a case split *)
     let astates_alloc =
       let<**> astate = PulseArithmetic.prune_positive (fst deleted_access) astate in
@@ -440,5 +440,5 @@ module Basic = struct
                  ~desc:"modelled as returning the first argument due to configuration option"
     ; +match_regexp_opt Config.pulse_model_skip_pattern
       &::.*++> unknown_call "modelled as skip due to configuration option" ]
-    |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValuePath.addr_hist)
+    |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
 end
