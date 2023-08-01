@@ -15,7 +15,7 @@ module Cmd = InferCommandImplementation
 let run driver_mode =
   let open Driver in
   if Config.dump_textual && not (is_compatible_with_textual_generation driver_mode) then
-    L.die UserError "ERROR: Textual generation is only allowed in Java mode currently" ;
+    L.die UserError "ERROR: Textual generation is only allowed in Java and Python mode currently" ;
   run_prologue driver_mode ;
   let changed_files = SourceFile.read_config_files_to_analyze () in
   capture driver_mode ~changed_files ;

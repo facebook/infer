@@ -136,6 +136,13 @@ let normalize_path_from ~root fname =
 
 let normalize_path fname = fname |> normalize_path_from ~root:"." |> fst
 
+let flatten_path ?(sep = "-") path =
+  let normalized_path = normalize_path path in
+  let path_parts = Filename.parts normalized_path in
+  let process_part = function ".." -> ["dd"] | "." -> [] | other -> [other] in
+  List.bind path_parts ~f:process_part |> String.concat ~sep
+
+
 (** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
 let filename_to_absolute ~root fname =
   let abs_fname = if Filename.is_absolute fname then fname else root ^/ fname in

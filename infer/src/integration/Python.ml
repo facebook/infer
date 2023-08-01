@@ -15,10 +15,15 @@ let process_file ~is_binary file =
   PyTrans.to_module ~sourcefile code
 
 
-(* TODO(vsiles) dump to [infer-out/tmp] instead of where the original file is *)
-let dump_file pyc module_ =
-  let filename = SourceFile.create pyc in
-  let filename = Filename.chop_extension (SourceFile.to_abs_path filename) ^ ".sil" in
+let dump_file ~next_to_source pyc module_ =
+  let filename =
+    if next_to_source then
+      let filename = SourceFile.create pyc in
+      Filename.chop_extension (SourceFile.to_abs_path filename) ^ ".sil"
+    else
+      let textual_filename = TextualSil.to_filename pyc in
+      Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename "sil"
+  in
   TextualSil.dump_module ~filename module_
 
 
@@ -40,7 +45,7 @@ let capture_file file =
         List.iter errs ~f:(log_error sourcefile) ;
         Error ()
   in
-  if Config.debug_mode || Result.is_error trans then dump_file file module_ ;
+  if Config.debug_mode || Result.is_error trans then dump_file ~next_to_source:false file module_ ;
   res
 
 
@@ -115,7 +120,7 @@ let capture input =
   match input with
   | Bytecode pyc ->
       let module_ = process_file ~is_binary:true pyc in
-      if Config.dump_textual then dump_file pyc module_
+      if Config.dump_textual then dump_file ~next_to_source:true pyc module_
   | Files {prog; args} ->
       if not (String.equal prog "python3") then
         L.die UserError "python3 should be explicitly used instead of %s." prog ;

@@ -30,3 +30,9 @@ val hack_builtins_type_name : Typ.name
 val hack_root_type_name : Typ.name
 
 val wildcard_sil_fieldname : Textual.Lang.t -> string -> Fieldname.t
+
+val textual_ext : string
+(* Extension used by Textual files *)
+
+val to_filename : string -> string
+(* Normalize and flatten an input path into a file name *)

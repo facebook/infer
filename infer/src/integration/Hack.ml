@@ -9,8 +9,6 @@ open! IStd
 module L = Logging
 module F = Format
 
-let textual_ext = ".sil"
-
 let textual_subcommand = "compile-infer"
 
 (** Utility functions to work with hackc output. *)
@@ -153,22 +151,8 @@ end = struct
         (count_opt, Seq.of_dispenser (fun () -> extract_unit pic))
 
 
-  (** Flatten a/b/c as a-b-c. Special dirs .. and . are abbreviated. *)
-  let flatten_path path =
-    let normalized_path = Utils.normalize_path path in
-    let path_parts = Filename.parts normalized_path in
-    let process_part = function ".." -> ["dd"] | "." -> [] | other -> [other] in
-    List.bind path_parts ~f:process_part |> String.concat ~sep:"-"
-
-
-  let to_textual_filename path =
-    let flat = flatten_path path in
-    let noext, _ = Filename.split_extension flat in
-    noext ^ textual_ext
-
-
   let dump_textual_to_tmp_file source_path content =
-    let textual_filename = to_textual_filename source_path in
+    let textual_filename = TextualSil.to_filename source_path in
     try
       let out_file =
         Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename "sil"
@@ -403,7 +387,7 @@ let load_models compiler =
   let textual, hack =
     Config.hack_models
     |> List.map ~f:(Utils.filename_to_absolute ~root:Config.project_root)
-    |> List.partition_tf ~f:(String.is_suffix ~suffix:textual_ext)
+    |> List.partition_tf ~f:(String.is_suffix ~suffix:TextualSil.textual_ext)
   in
   let textual_tenv = load_textual_models (builtins :: textual) in
   let hack_tenv = load_hack_models compiler hack in

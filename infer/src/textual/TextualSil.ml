@@ -1133,3 +1133,11 @@ let dump_module ~filename module_ =
       pp_copyright fmt ;
       Module.pp fmt module_ ;
       Format.pp_print_flush fmt () )
+
+
+let textual_ext = ".sil"
+
+let to_filename path =
+  let flat = Utils.flatten_path path in
+  let noext, _ = Filename.split_extension flat in
+  noext ^ textual_ext
