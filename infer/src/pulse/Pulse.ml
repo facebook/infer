@@ -367,8 +367,8 @@ module PulseTransferFunctions = struct
         (proc_name, `ExactDevirtualization)
     | None ->
         let+ proc_name =
-          if Language.curr_language_is Hack then
-            (* contrary to the Java frontend, the Hack frontend does not perform
+          if Language.curr_language_is Hack || Language.curr_language_is Python then
+            (* contrary to the Java frontend, the Hack and Python frontends do not perform
                static resolution so we have to do it here *)
             let* type_name = Procname.get_class_type_name proc_name in
             tenv_resolve_method tenv type_name proc_name
@@ -474,7 +474,7 @@ module PulseTransferFunctions = struct
 
 
   let improve_receiver_static_type astate receiver proc_name_opt =
-    if Language.curr_language_is Hack then
+    if Language.curr_language_is Hack || Language.curr_language_is Python then
       let open IOption.Let_syntax in
       let* proc_name = proc_name_opt in
       match AbductiveDomain.AddressAttributes.get_static_type receiver astate with

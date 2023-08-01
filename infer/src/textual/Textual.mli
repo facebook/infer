@@ -158,6 +158,9 @@ module ProcSig : sig
         (** Hack doesn't support function overloading but it does support functions with default
             arguments. This means that a procedure is uniquely identified by its name and the number
             of arguments. *)
+    | Python of {qualified_name: qualified_procname; arity: int option}
+        (** Python supports function overloading and default arguments. This means that a procedure
+            is uniquely identified by its name and the number of arguments. *)
     | Other of {qualified_name: qualified_procname}
         (** Catch-all case for languages that currently lack support for function overloading at the
             Textual level.

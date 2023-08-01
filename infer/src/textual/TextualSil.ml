@@ -311,8 +311,6 @@ module ProcDeclBridge = struct
         Some (HackClassName.make name.value)
 
 
-  (* TODO: revamp this once we decide how to encode Python modules, since "toplevel" won't really
-     mean anything then *)
   let python_class_name_to_sil = function
     | TopLevel ->
         None
@@ -359,27 +357,26 @@ module ProcDeclBridge = struct
 
 
   let call_to_sil (lang : Lang.t) (callsig : ProcSig.t) t : SilProcname.t =
+    let arity = match callsig with Hack {arity} | Python {arity} -> arity | Other _ -> None in
+    (* When we translate function calls in Hack or Python, the ProcDecl we get from TextualDecls may have
+         unknown args. In such case we need to conjure up a procname with the arity matching that
+         of the call site signature. This way we'll be able to match a particular overload of the
+         procname with its definition from a different translation unit during the analysis
+         phase. *)
+    let improved_match name_to_sil make =
+      if Option.is_some t.formals_types then to_sil lang t
+      else
+        let class_name = name_to_sil t.qualified_name.enclosing_class in
+        let function_name = t.qualified_name.name.value in
+        make ~class_name ~function_name ~arity
+    in
     match lang with
-    | Java | Python ->
+    | Java ->
         to_sil lang t
     | Hack ->
-        (* When we translate function calls in Hack, the ProcDecl we get from TextualDecls may have
-           unknown args. In such case we need to conjure up a procname with the arity matching that
-           of the call site signature. This way we'll be able to match a particular overload of the
-           procname with its definition from a different translation unit during the analysis
-           phase. *)
-        if Option.is_some t.formals_types then to_sil lang t
-        else
-          let class_name = hack_class_name_to_sil t.qualified_name.enclosing_class in
-          let function_name = t.qualified_name.name.value in
-          let arity =
-            match callsig with
-            | Hack {arity} ->
-                arity
-            | Other _ ->
-                L.die InternalError "Unexpected non-Hack signature for Hack proc"
-          in
-          Procname.make_hack ~class_name ~function_name ~arity
+        improved_match hack_class_name_to_sil Procname.make_hack
+    | Python ->
+        improved_match python_class_name_to_sil Procname.make_python
 end
 
 module GlobalBridge = struct

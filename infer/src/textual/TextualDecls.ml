@@ -118,7 +118,14 @@ let rec get_procentry decls procsig =
       ProcSig.Hashtbl.find_opt decls.procs procsig
       |> IOption.if_none_evalopt ~f:(fun () ->
              get_procentry decls (ProcSig.Hack {qualified_name; arity= None}) )
-  | ProcSig.Hack {arity= None; _} | ProcSig.Other _ ->
+  | ProcSig.Python {qualified_name; arity= Some _} ->
+      (* Python translation can have some procs declared with unknown formals, while at call sites the
+         proc is called with some arguments. To accomodate this case we first look for a proc with
+         the corresponding arity and then for its 'unknown formals' variation. *)
+      ProcSig.Hashtbl.find_opt decls.procs procsig
+      |> IOption.if_none_evalopt ~f:(fun () ->
+             get_procentry decls (ProcSig.Python {qualified_name; arity= None}) )
+  | ProcSig.Hack {arity= None; _} | ProcSig.Python {arity= None; _} | ProcSig.Other _ ->
       ProcSig.Hashtbl.find_opt decls.procs procsig
 
 

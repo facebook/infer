@@ -953,8 +953,15 @@ let rec replace_class t ?(arity_incr = 0) (new_class : Typ.Name.t) =
             L.die InternalError "replace_class on ill-formed Hack type"
       in
       Hack {h with class_name= Some name; arity}
-  | Python _ ->
-      L.die InternalError "TODO: replace_class for Python type"
+  | Python p ->
+      let name =
+        match new_class with
+        | PythonClass name ->
+            name
+        | _ ->
+            L.die InternalError "replace_class on ill-formed Python type"
+      in
+      Python {p with class_name= Some name}
   | WithFunctionParameters (base, func, functions) ->
       WithFunctionParameters (replace_class base new_class, func, functions)
   | C _ | Block _ | Erlang _ | Linters_dummy_method ->

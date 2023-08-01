@@ -385,7 +385,8 @@ let resolve_method ~method_exists tenv class_name proc_name =
           | ObjcProtocol _ ->
               []
           | PythonClass _ ->
-              L.die InternalError "TODO: inheritance for Python"
+              (* We currently only support single inheritance for Python so this is straightforward *)
+              class_struct.supers
         in
         List.find_map supers_to_search ~f:resolve_name )
   and resolve_name class_name = lookup tenv class_name >>= resolve_name_struct class_name in

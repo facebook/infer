@@ -302,6 +302,7 @@ module ProcSig = struct
   module T = struct
     type t =
       | Hack of {qualified_name: qualified_procname; arity: int option}
+      | Python of {qualified_name: qualified_procname; arity: int option}
       | Other of {qualified_name: qualified_procname}
     [@@deriving equal, hash]
   end
@@ -309,7 +310,7 @@ module ProcSig = struct
   include T
 
   let to_qualified_procname = function
-    | Hack {qualified_name} | Other {qualified_name} ->
+    | Hack {qualified_name} | Python {qualified_name} | Other {qualified_name} ->
         qualified_name
 
 
@@ -332,7 +333,9 @@ module ProcDecl = struct
   let to_sig {qualified_name; formals_types} = function
     | Some Lang.Hack ->
         ProcSig.Hack {qualified_name; arity= Option.map formals_types ~f:List.length}
-    | Some Lang.Java | Some Lang.Python | None ->
+    | Some Lang.Python ->
+        ProcSig.Python {qualified_name; arity= Option.map formals_types ~f:List.length}
+    | Some Lang.Java | None ->
         ProcSig.Other {qualified_name}
 
 
@@ -564,7 +567,9 @@ module Exp = struct
   let call_sig qualified_name args = function
     | Some Lang.Hack ->
         ProcSig.Hack {qualified_name; arity= Some (List.length args)}
-    | Some Lang.Java | Some Lang.Python | None ->
+    | Some Lang.Python ->
+        ProcSig.Python {qualified_name; arity= Some (List.length args)}
+    | Some Lang.Java | None ->
         ProcSig.Other {qualified_name}
 
 
