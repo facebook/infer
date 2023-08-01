@@ -1271,6 +1271,7 @@ class D(C):
         define dummy::C() : *dummy::C {
           #entry:
               n0 = __sil_allocate(<dummy::C>)
+              n1 = n0.dummy::C.__init__()
               ret n0
 
         }
@@ -1292,6 +1293,7 @@ class D(C):
         define dummy::D() : *dummy::D {
           #entry:
               n0 = __sil_allocate(<dummy::D>)
+              n1 = n0.dummy::D.__init__()
               ret n0
 
         }
@@ -1354,6 +1356,7 @@ C.f()
         define dummy::C() : *dummy::C {
           #entry:
               n0 = __sil_allocate(<dummy::C>)
+              n1 = n0.dummy::C.__init__()
               ret n0
 
         }
@@ -1514,6 +1517,7 @@ class D(C):
           define dummy::C() : *dummy::C {
             #entry:
                 n0 = __sil_allocate(<dummy::C>)
+                n1 = n0.dummy::C.__init__()
                 ret n0
 
           }
@@ -1535,6 +1539,7 @@ class D(C):
           define dummy::D() : *dummy::D {
             #entry:
                 n0 = __sil_allocate(<dummy::D>)
+                n1 = n0.dummy::D.__init__()
                 ret n0
 
           }
@@ -1603,6 +1608,7 @@ class D0(C0):
           define dummy::C() : *dummy::C {
             #entry:
                 n0 = __sil_allocate(<dummy::C>)
+                n1 = n0.dummy::C.__init__()
                 ret n0
 
           }

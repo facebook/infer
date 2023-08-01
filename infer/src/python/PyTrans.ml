@@ -1632,7 +1632,6 @@ let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} 
    code above, [n0] is self.
 
    TODO: we currently do not support __new__ being overriden by the user.
-   TODO: generate an empty `__init__` in case a child class refers to it
 *)
 let constructor env full_name loc has_init has_new =
   if Option.is_some has_new then
@@ -1646,38 +1645,34 @@ let constructor env full_name loc has_init has_new =
   let n0 = T.Ident.of_int 0 in
   let instr0 = T.Instr.Let {id= n0; exp= alloc; loc} in
   let instr_load_and_call, params, formals_types =
-    match has_init with
-    | None ->
-        ([], [], [])
-    | Some signature ->
-        let params, formals_types =
-          (* We skip self since the constructor is generating it, and in Python self is always the
-             first method argument. We also skip [return] as [__init__] should return [None] but
-             the constructor should return a valid instance of the current class *)
-          let signature = List.tl signature |> Option.value ~default:signature in
-          List.fold_right signature ~init:([], [])
-            ~f:(fun {PyCommon.name; annotation} (params, formals_types) ->
-              if String.equal PyCommon.return name then (params, formals_types)
-              else (var_name ~loc name :: params, mk annotation :: formals_types) )
-        in
-        (* [List.zip_exn] is fine as we just built them above and made sure they are of the same length. *)
-        let typed_params = List.zip_exn params formals_types in
-        let n, rev_ns, rev_loads =
-          List.fold_left typed_params
-            ~init:(T.Ident.next n0, [], [])
-            ~f:(fun (next_id, ids, instrs) (varname, {T.Typ.typ}) ->
-              let exp = T.Exp.Lvar varname in
-              let instr = T.Instr.Load {id= next_id; exp; typ; loc} in
-              (T.Ident.next next_id, T.Exp.Var next_id :: ids, instr :: instrs) )
-        in
-        let ns = List.rev rev_ns in
-        let enclosing_class = type_name ~loc full_name in
-        let init = proc_name ~loc PyCommon.init__ in
-        let init = qualified_procname ~enclosing_class init in
-        let init = T.Exp.call_virtual init (T.Exp.Var n0) ns in
-        let load = T.Instr.Let {id= n; exp= init; loc} in
-        let loads = List.rev (load :: rev_loads) in
-        (loads, params, formals_types)
+    let params, formals_types =
+      (* We skip self since the constructor is generating it, and in Python self is always the
+         first method argument. We also skip [return] as [__init__] should return [None] but
+         the constructor should return a valid instance of the current class *)
+      let signature = List.tl has_init |> Option.value ~default:[] in
+      List.fold_right signature ~init:([], [])
+        ~f:(fun {PyCommon.name; annotation} (params, formals_types) ->
+          if String.equal PyCommon.return name then (params, formals_types)
+          else (var_name ~loc name :: params, mk annotation :: formals_types) )
+    in
+    (* [List.zip_exn] is fine as we just built them above and made sure they are of the same length. *)
+    let typed_params = List.zip_exn params formals_types in
+    let n, rev_ns, rev_loads =
+      List.fold_left typed_params
+        ~init:(T.Ident.next n0, [], [])
+        ~f:(fun (next_id, ids, instrs) (varname, {T.Typ.typ}) ->
+          let exp = T.Exp.Lvar varname in
+          let instr = T.Instr.Load {id= next_id; exp; typ; loc} in
+          (T.Ident.next next_id, T.Exp.Var next_id :: ids, instr :: instrs) )
+    in
+    let ns = List.rev rev_ns in
+    let enclosing_class = type_name ~loc full_name in
+    let init = proc_name ~loc PyCommon.init__ in
+    let init = qualified_procname ~enclosing_class init in
+    let init = T.Exp.call_virtual init (T.Exp.Var n0) ns in
+    let load = T.Instr.Let {id= n; exp= init; loc} in
+    let loads = List.rev (load :: rev_loads) in
+    (loads, params, formals_types)
   in
   let result_type = T.Typ.mk_without_attributes @@ PyCommon.mk_type full_name in
   let last = T.Terminator.Ret (T.Exp.Var n0) in
@@ -1808,13 +1803,20 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
   let companion_const =
     T.Module.Global {name= var_name ~loc static_class_name; typ= PyCommon.pyObject; attributes= []}
   in
-  let constructor = constructor env class_name loc has_init has_new in
+  (* In case [__init__] is missing, generate a default implementation ... *)
   let init =
     if Option.is_none has_init then
       let init = default_init env loc class_name parent in
       [init]
     else []
   in
+  (* ... and signature *)
+  let default_has_init =
+    [ {PyCommon.name= PyCommon.self; annotation= co_name}
+    ; {PyCommon.name= PyCommon.return; annotation= "None"} ]
+  in
+  let has_init = Option.value has_init ~default:default_has_init in
+  let constructor = constructor env class_name loc has_init has_new in
   (env, (t :: companion :: companion_const :: constructor :: init) @ decls)
 
 (* TODO: No support for nested functions/methods at the moment *)
