@@ -478,8 +478,8 @@ let get_message_and_suggestion diagnostic =
       |> no_suggestion
   | ConstRefableParameter {param; location} ->
       ( F.asprintf
-          "Function parameter `%a` is passed by-value but not modified inside the function on %a. \
-           This might result in an unnecessary copy at the callsite of this function."
+          "Function parameter `%a` is passed by-value but not modified inside the function on %a, \
+           potentially resulting in an unnecessary copy at the function's callsite."
           Var.pp param Location.pp_line location
       , Some "Change the type of the parameter to `const &`." )
   | CSharpResourceLeak {class_name; location; allocation_trace} ->
