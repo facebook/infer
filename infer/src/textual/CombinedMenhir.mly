@@ -239,6 +239,11 @@ declaration:
     { let formals_types = List.map ~f:snd params in
       let procdecl : ProcDecl.t =
         {qualified_name; formals_types= Some formals_types; result_type; attributes} in
+      let body = if ProcDecl.is_curry_invoke procdecl then Body.dummy procdecl.qualified_name.name.loc
+        (* the current HackC translation of these function raises type errors but we don't  need
+           this body anyway (we will use a model), so we drop it here. We could remove this patch
+           if HackC changes its translation in the future. *)
+        else body in
       let {locals; nodes} : Body.t = body in
       let start_node = List.hd_exn nodes in
       let params = List.map ~f:fst params in

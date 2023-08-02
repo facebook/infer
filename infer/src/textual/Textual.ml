@@ -194,6 +194,8 @@ module Attr = struct
 
   let is_async {name; values} = String.equal name "async" && List.is_empty values
 
+  let is_curry {name; values} = String.equal name "curry" && List.is_empty values
+
   let is_final {name; values} = String.equal name "final" && List.is_empty values
 
   let is_trait {name; values} = String.equal name "kind" && List.equal String.equal values ["trait"]
@@ -509,6 +511,10 @@ module ProcDecl = struct
 
   let to_binop ({enclosing_class; name} : qualified_procname) : Binop.t option =
     match enclosing_class with TopLevel -> Map.Poly.find binop_inverse_map name.value | _ -> None
+
+
+  let is_curry_invoke {qualified_name= {name}; attributes} =
+    String.equal name.value "__invoke" && List.exists attributes ~f:Attr.is_curry
 end
 
 module Global = struct
@@ -817,6 +823,18 @@ end
 
 module Body = struct
   type t = {nodes: Node.t list; locals: (VarName.t * Typ.annotated) list}
+
+  let dummy loc =
+    let node : Node.t =
+      { label= {value= "entry"; loc}
+      ; ssa_parameters= []
+      ; exn_succs= []
+      ; last= Terminator.Ret (Exp.Const Const.Null)
+      ; instrs= []
+      ; last_loc= loc
+      ; label_loc= loc }
+    in
+    {nodes= [node]; locals= []}
 end
 
 module SsaVerification = struct

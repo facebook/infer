@@ -219,6 +219,8 @@ module ProcDecl : sig
   val is_side_effect_free_sil_expr : qualified_procname -> bool
 
   val is_not_regular_proc : qualified_procname -> bool
+
+  val is_curry_invoke : t -> bool
 end
 
 module Global : sig
@@ -321,6 +323,8 @@ end
 
 module Body : sig
   type t = {nodes: Node.t list; locals: (VarName.t * Typ.annotated) list}
+
+  val dummy : Location.t -> t
 end
 
 module Struct : sig
