@@ -9,4 +9,11 @@ namespace Unknown {
     // configs
     UnknownClass::explicitSinkAllArgs($sc);
   }
+
+  function FN_basicFlowReturnBad(Unknown $sc): void {
+    // Although, we don't have the definition of myUnknownFun, return value should be tainted pessimistically
+    $tainted = \Level1\taintSource();
+    $res = $tainted->myUnknownFun();
+    UnknownClass::explicitSinkAllArgs($res);
+  }
 }
