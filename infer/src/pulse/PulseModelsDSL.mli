@@ -32,10 +32,15 @@ module Syntax : sig
 
   val list_filter_map : 'a list -> f:('a -> 'b option model_monad) -> 'b list model_monad
 
+  val option_iter : 'a option -> f:('a -> unit model_monad) -> unit model_monad
+
   val assign_ret : aval -> unit model_monad
   (** assign the value to the return variable of the current function *)
 
-  val dynamic_dispatch : cases:(Typ.name * 'a model_monad) list -> aval -> 'a model_monad
+  val dynamic_dispatch :
+    cases:(Typ.name * 'a model_monad) list -> ?default:'a model_monad -> aval -> 'a model_monad
+
+  val get_data : PulseModelsImport.model_data model_monad
 
   (* disjunctive reasonning *)
 
@@ -47,6 +52,14 @@ module Syntax : sig
   (*****************************************************************)
   (* each PulseOperations functions you need should be copied here *)
   val add_dynamic_type : Typ.t -> aval -> unit model_monad
+
+  val add_static_type : Typ.name -> aval -> unit model_monad
+
+  val get_dynamic_type : ask_specialization:bool -> aval -> Typ.t option model_monad
+
+  val get_const_string : aval -> string option model_monad
+
+  val tenv_resolve_fieldname : Typ.name -> Fieldname.t -> Struct.field_info option model_monad
 
   val and_eq_int : aval -> IntLit.t -> unit model_monad
 
@@ -70,5 +83,5 @@ module Syntax : sig
   (* if necessary you can convert an operation outside of this module with the following operators *)
   val exec_command : (astate -> astate) -> unit model_monad
 
-  val exec_operation : (astate -> 'a) -> 'a model_monad
+  val exec_operation : (astate -> 'a * astate) -> 'a model_monad
 end

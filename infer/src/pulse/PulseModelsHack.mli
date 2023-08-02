@@ -13,4 +13,9 @@ open PulseModelsImport
 val matchers : matcher list
 
 val get_static_companion :
-  Typ.name -> PulseAbductiveDomain.t -> PulseAbstractValue.t * PulseAbductiveDomain.t
+     model_desc:string
+  -> PulsePathContext.t
+  -> Location.t
+  -> Typ.name
+  -> PulseAbductiveDomain.t
+  -> PulseBaseStack.value * PulseAbductiveDomain.t

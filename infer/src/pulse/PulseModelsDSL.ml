@@ -58,6 +58,10 @@ module Syntax = struct
     List.rev rev_res |> ret
 
 
+  let option_iter (o : 'a option) ~(f : 'a -> unit model_monad) : unit model_monad =
+    Option.value_map o ~default:(ret ()) ~f
+
+
   let get_data : model_data model_monad = fun data astate -> ret data data astate
 
   let ok x = Ok x
@@ -97,8 +101,10 @@ module Syntax = struct
         [PulseResult.map res ~f:(fun (astate, a) -> (a, astate))]
 
 
-  let exec_operation (f : astate -> 'a) : 'a model_monad =
-   fun data astate -> ret (f astate) data astate
+  let exec_operation (f : astate -> 'a * astate) : 'a model_monad =
+   fun data astate ->
+    let a, astate = f astate in
+    ret a data astate
 
 
   let assign_ret aval : unit model_monad =
@@ -125,6 +131,23 @@ module Syntax = struct
       else astate
     in
     ret res data astate
+
+
+  let add_static_type typ_name (addr, _) : unit model_monad =
+   fun ({analysis_data= {tenv}} as data) astate ->
+    let astate = AbductiveDomain.AddressAttributes.add_static_type tenv typ_name addr astate in
+    ret () data astate
+
+
+  let get_const_string (addr, _) : string option model_monad =
+    let op astate = (AddressAttributes.get_const_string addr astate, astate) in
+    exec_operation op
+
+
+  let tenv_resolve_fieldname typ_name field_name : Struct.field_info option model_monad =
+   fun ({analysis_data= {tenv}} as data) astate ->
+    let info = Tenv.resolve_fieldname tenv typ_name field_name in
+    ret info data astate
 
 
   let and_eq_int (size_addr, _) i : unit model_monad =
@@ -154,17 +177,20 @@ module Syntax = struct
     PulseArithmetic.prune_binop ~negated binop operand1 operand2 |> exec_partial_command
 
 
-  let dynamic_dispatch ~(cases : (Typ.name * 'a model_monad) list) aval : 'a model_monad =
+  let dynamic_dispatch ~(cases : (Typ.name * 'a model_monad) list)
+      ?(default : 'a model_monad option) aval : 'a model_monad =
     let* opt_typ = get_dynamic_type ~ask_specialization:true aval in
     match opt_typ with
     | Some {Typ.desc= Tstruct type_name} -> (
-      match List.find cases ~f:(fun case -> fst case |> Typ.Name.equal type_name) with
-      | Some (_, case_fun) ->
+      match (List.find cases ~f:(fun case -> fst case |> Typ.Name.equal type_name), default) with
+      | Some (_, case_fun), _ ->
           case_fun
-      | None ->
+      | None, Some default ->
+          default
+      | None, None ->
           Logging.d_printfln "[ocaml model] dynamic_dispatch: no case for type %a" Typ.Name.pp
             type_name ;
           disjuncts [] )
     | _ ->
-        disjuncts []
+        Option.value_map default ~default:(disjuncts []) ~f:Fn.id
 end

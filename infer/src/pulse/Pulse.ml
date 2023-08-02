@@ -497,14 +497,16 @@ module PulseTransferFunctions = struct
      token to find the right class name for [self].
 
      [hackc] adds [self] argument at the end of the signature. *)
-  let add_self_for_hack_traits astate method_info func_args =
+  let add_self_for_hack_traits path location astate method_info func_args =
     let hack_kind = Option.bind method_info ~f:Tenv.MethodInfo.get_hack_kind in
     match hack_kind with
     | Some (IsTrait {used}) ->
         let exp, arg_payload, astate =
-          let value, astate = PulseModelsHack.get_static_companion used astate in
+          let arg_payload, astate =
+            PulseModelsHack.get_static_companion ~model_desc:"add_self_for_hack_traits" path
+              location used astate
+          in
           let self_id = Ident.create_fresh Ident.kprimed in
-          let arg_payload = (value, ValueHistory.epoch) in
           let astate = PulseOperations.write_id self_id arg_payload astate in
           (Exp.Var self_id, arg_payload, astate)
         in
@@ -551,7 +553,7 @@ module PulseTransferFunctions = struct
       else (default_info, astate)
     in
     let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in
-    let astate, func_args = add_self_for_hack_traits astate method_info func_args in
+    let astate, func_args = add_self_for_hack_traits path call_loc astate method_info func_args in
     let astate =
       match (callee_pname, func_args) with
       | Some callee_pname, [{ProcnameDispatcher.Call.FuncArg.arg_payload= arg}]

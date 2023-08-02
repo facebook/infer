@@ -15,7 +15,7 @@ module DSL = PulseModelsDSL
 
 let read_boxed_string_value address astate =
   let open IOption.Let_syntax in
-  let hackString = Typ.HackClass (HackClassName.make "HackString") in
+  let hackString = TextualSil.hack_string_type_name in
   let field = Fieldname.make hackString "val" in
   let* box_val, _ = Memory.find_edge_opt address (FieldAccess field) astate in
   let* string_val, _ = Memory.find_edge_opt box_val Dereference astate in
@@ -25,7 +25,8 @@ let read_boxed_string_value address astate =
 let read_boxed_string_value_dsl aval : string DSL.model_monad =
   (* we cut the current path if no constant string is found *)
   let open PulseModelsDSL.Syntax in
-  let* opt_string = exec_operation (read_boxed_string_value (fst aval)) in
+  let operation astate = (read_boxed_string_value (fst aval) astate, astate) in
+  let* opt_string = exec_operation operation in
   Option.value_map opt_string ~default:unreachable ~f:ret
 
 
@@ -265,7 +266,7 @@ module Vec = struct
         unreachable
 end
 
-let get_static_companion type_name astate =
+let get_static_companion ~model_desc path location type_name astate =
   let pvar = Pvar.mk_global (Mangled.mangled (Typ.Name.name type_name) "STATIC") in
   let var = Var.of_pvar pvar in
   (* we chose on purpose to not abduce [pvar] because we don't want to make a disjunctive case
@@ -274,19 +275,28 @@ let get_static_companion type_name astate =
      both in the callee and the caller. But this is fine as long as both functions perform the
      same initialization of the variable. *)
   match AbductiveDomain.Stack.find_opt var astate with
-  | Some (addr, _) ->
-      (addr, astate)
+  | Some addr_hist ->
+      (addr_hist, astate)
   | None ->
       let addr = AbstractValue.mk_fresh () in
+      let hist = Hist.single_call path location model_desc in
       let astate = AbductiveDomain.Stack.add var (addr, ValueHistory.epoch) astate in
       let static_type_name = Typ.Name.Hack.static_companion type_name in
       let typ = Typ.mk_struct static_type_name in
       let astate = PulseOperations.add_dynamic_type typ addr astate in
-      (addr, astate)
+      ((addr, hist), astate)
+
+
+let get_static_companion_dsl ~model_desc type_name : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let* {path; location} = get_data in
+  exec_operation (get_static_companion ~model_desc path location type_name)
 
 
 let lazy_class_initialize size_exp : model =
- fun {path; location; ret= ret_id, _} astate ->
+  let open DSL.Syntax in
+  start_model
+  @@
   let type_name =
     match size_exp with
     | Exp.Sizeof {typ= {desc= Typ.Tstruct type_name}} ->
@@ -295,20 +305,36 @@ let lazy_class_initialize size_exp : model =
         L.die InternalError
           "lazy_class_initialize: the Hack frontend should never generate such argument type"
   in
-  let addr, astate = get_static_companion type_name astate in
-  let hist = Hist.single_call path location "lazy_class_initialize" in
-  PulseOperations.write_id ret_id (addr, hist) astate |> Basic.ok_continue
+  let* class_object = get_static_companion_dsl ~model_desc:"lazy_class_initialize" type_name in
+  assign_ret class_object
 
 
-let get_static_class (addr, _) : model =
- fun {path; location; ret= ret_id, _} astate ->
-  match AbductiveDomain.AddressAttributes.get_dynamic_type addr astate with
+let get_static_class_dsl aval : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* (opt_typ : Typ.t option) = get_dynamic_type ~ask_specialization:true aval in
+  match opt_typ with
   | Some {desc= Tstruct type_name} ->
-      let addr, astate = get_static_companion type_name astate in
-      let hist = Hist.single_call path location "get_static_class" in
-      PulseOperations.write_id ret_id (addr, hist) astate |> Basic.ok_continue
+      let* class_object = get_static_companion_dsl ~model_desc:"get_static_class" type_name in
+      assign_ret class_object
   | _ ->
-      AbductiveDomain.add_need_dynamic_type_specialization addr astate |> Basic.ok_continue
+      ret ()
+
+
+let get_static_class aval : model = get_static_class_dsl aval |> DSL.Syntax.start_model
+
+let hhbc_class_get_c value : model =
+  let open DSL.Syntax in
+  start_model
+  @@ dynamic_dispatch value
+       ~cases:
+         [ ( TextualSil.hack_string_type_name
+           , let* string = read_boxed_string_value_dsl value in
+             (* namespace\\classname becomes namespace::classname *)
+             let string = Str.(global_replace (regexp {|\\\\|}) "::" string) in
+             let typ_name = Typ.HackClass (HackClassName.make string) in
+             let* class_object = get_static_companion_dsl ~model_desc:"hhbc_class_get_c" typ_name in
+             assign_ret class_object ) ]
+       ~default:(get_static_class_dsl value)
 
 
 module Dict = struct
@@ -407,6 +433,35 @@ let hack_dim_array_get this args : model =
       ; (TextualSil.hack_vec_type_name, Vec.hack_dim_array_get this args) ]
 
 
+let hack_field_get this field : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* opt_string_field_name = get_const_string field in
+     match opt_string_field_name with
+     | Some string_field_name -> (
+         let* opt_typ = get_dynamic_type ~ask_specialization:true this in
+         match opt_typ with
+         | Some {Typ.desc= Tstruct type_name} ->
+             let field = Fieldname.make type_name string_field_name in
+             let* aval = eval_deref_access Read this (FieldAccess field) in
+             let* struct_info = tenv_resolve_fieldname type_name field in
+             let opt_field_type_name =
+               let open IOption.Let_syntax in
+               let* {Struct.typ= field_typ} = struct_info in
+               if Typ.is_pointer field_typ then Typ.name (Typ.strip_ptr field_typ) else None
+             in
+             let* () =
+               option_iter opt_field_type_name ~f:(fun field_type_name ->
+                   add_static_type field_type_name aval )
+             in
+             assign_ret aval
+         | _ ->
+             let* fresh = mk_fresh ~model_desc:"hack_field_get" in
+             assign_ret fresh )
+     | None ->
+         L.die InternalError "hack_field_get expect a string constant as 2nd argument"
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"$builtins" &:: "nondet" <>$$--> Basic.nondet ~desc:"nondet"
@@ -424,7 +479,8 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hack_get_class" <>$ capt_arg_payload
     $--> Basic.id_first_arg ~desc:"hack_get_class"
     (* not clear why HackC generate this builtin call *)
-  ; -"$builtins" &:: "hhbc_class_get_c" <>$ capt_arg_payload $--> get_static_class
+  ; -"$builtins" &:: "hack_field_get" <>$ capt_arg_payload $+ capt_arg_payload $--> hack_field_get
+  ; -"$builtins" &:: "hhbc_class_get_c" <>$ capt_arg_payload $--> hhbc_class_get_c
     (* we should be able to model that directly in Textual once specialization will be stronger *)
   ; -"$builtins" &:: "hack_get_static_class" <>$ capt_arg_payload $--> get_static_class
   ; -"$root" &:: "FlibSL::Vec::from_async" <>$ capt_arg_payload $+ capt_arg_payload
