@@ -57,9 +57,11 @@ define $builtins.hack_make_random_bool(): *HackBool {
 define $builtins.hack_is_true(b: *HackMixed) : int {
   #entry:
     n0: *HackMixed = load &b
-    // We assume that this function is never called with null in a valid execution. Values of type
-    // ?bool should have the necessary null-checks in place
-    prune __sil_ne(n0, 0)
+    if __sil_eq(n0, 0) then ret 0
+      // this is not a boxed boolean (always non null) so the test is b!=null
+    else if __sil_instanceof(n0, <HackBool>) then jmp is_bool
+    else ret 1
+  #is_bool:
     n1: int = load n0.HackBool.val
     ret n1
 }
@@ -67,7 +69,7 @@ define $builtins.hack_is_true(b: *HackMixed) : int {
 define $builtins.hhbc_not(b: *HackBool) : *HackBool {
   #entry:
     n0: *HackBool = load &b
-    // We assume a not-null argument similar to hack_is_true
+    // We assume a not-null argument because of HackBool invariants
     prune __sil_ne(n0, 0)
     n1: int = load n0.HackBool.val
     jmp is_true, is_false

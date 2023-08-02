@@ -20,21 +20,21 @@ function testBoolGood(SensitiveClass $sc) : void {
 }
 
 
-function FN_testNullBad(SensitiveClass $sc) : void {
+function testNullBad(SensitiveClass $sc) : void {
   $a = null;
   if (!$a) {
     \Level1\taintSink($sc);
   }
 }
 
-function FP_testNullGood(SensitiveClass $sc) : void {
+function testNullGood(SensitiveClass $sc) : void {
   $a = new A();
   if (!$a) {
     \Level1\taintSink($sc);
   }
 }
 
-function FP_testNotNullGood(SensitiveClass $sc) : void {
+function testNotNullGood(SensitiveClass $sc) : void {
   $a = null;
   if ($a) {
     \Level1\taintSink($sc);
