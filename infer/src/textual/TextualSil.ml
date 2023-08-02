@@ -107,6 +107,8 @@ let hack_vec_type_name = SilTyp.HackClass (HackClassName.make "HackVec")
 
 let hack_mixed_type_name = SilTyp.HackClass (HackClassName.make "HackMixed")
 
+let mk_hack_mixed_type_textual loc = Typ.Struct TypeName.{value= "HackMixed"; loc}
+
 let hack_mixed_static_companion_type_name = SilTyp.Name.Hack.static_companion hack_mixed_type_name
 
 let hack_builtins_type_name = SilTyp.HackClass (HackClassName.make "$builtins")
@@ -115,6 +117,8 @@ let hack_builtins_type_name = SilTyp.HackClass (HackClassName.make "$builtins")
 let hack_root_type_name = SilTyp.HackClass (HackClassName.make "$root")
 
 let python_mixed_type_name = SilTyp.PythonClass (PythonClassName.make "PyObject")
+
+let mk_python_mixed_type_textual loc = Typ.Struct TypeName.{value= "PyObject"; loc}
 
 let mangle_java_procname jpname =
   let method_name =
@@ -724,9 +728,21 @@ module InstrBridge = struct
           | Some procname ->
               procname
           | None when qualified_procname_contains_wildcard proc ->
+              let textual_ret_typ =
+                (* Declarations with unknown formals are expected in Hack/Python. Assume that unknown
+                   return types are *HackMixed/*PyObject respectively. *)
+                match lang with
+                | Lang.Hack ->
+                    Typ.Ptr (mk_hack_mixed_type_textual loc)
+                | Lang.Python ->
+                    Typ.Ptr (mk_python_mixed_type_textual loc)
+                | other ->
+                    L.die InternalError "Unexpected return type outside of Hack/Python: %s"
+                      (Lang.to_string other)
+              in
               { ProcDecl.qualified_name= proc
               ; formals_types= None
-              ; result_type= Typ.mk_without_attributes Typ.Void
+              ; result_type= Typ.mk_without_attributes textual_ret_typ
               ; attributes= [] }
           | None ->
               let msg =
@@ -752,7 +768,7 @@ module InstrBridge = struct
                    formal types are *PyObject and their number matches that of the arguments. *)
                 List.map args ~f:(fun _ -> TypBridge.python_mixed)
             | other ->
-                L.die InternalError "Unexpected unknown formals outside of Hack: %s"
+                L.die InternalError "Unexpected unknown formals outside of Hack/Python: %s"
                   (Lang.to_string other) )
         in
         let args =
