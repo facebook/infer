@@ -1704,3 +1704,78 @@ class D0(C0):
           MAKE_FUNCTION: support for closures is incomplete (D)
           MAKE_FUNCTION: support for closures is incomplete (D0) |}]
   end )
+
+
+let%test_module "compare_op" =
+  ( module struct
+    let%expect_test _ =
+      let source = {|
+def f(x, y):
+  return (x == y)
+        |} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_code("dummy.f")
+              ret null
+
+        }
+
+        define dummy.f(x: *PyObject, y: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &x
+              n1:*PyObject = load &y
+              n2 = $builtins.python_eq(n0, n1)
+              ret n2
+
+        }
+
+        declare $builtins.python_eq(*PyObject, *PyObject) : *PyBool
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = "True != False" in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_neq($builtins.python_bool(1), $builtins.python_bool(0))
+              ret null
+
+        }
+
+        declare $builtins.python_neq(*PyObject, *PyObject) : *PyBool
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+  end )

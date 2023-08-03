@@ -1238,6 +1238,44 @@ module IMPORT = struct
   end
 end
 
+module COMPARE_OP = struct
+  (** {v COMPARE_OP(opname) v}
+
+      Performs a Boolean operation. The operation name can be found in [cmp_op\[opname\]].
+
+      [ dis.cmp_op = ('<', '<=', '==', '!=', '>', '>=', 'in', 'not in', 'is', 'is not', 'exception match', 'BAD') ] *)
+  let run env code {FFI.Instruction.opname; arg} =
+    let cmp_op =
+      match List.nth Builtin.Compare.all arg with
+      | Some op ->
+          op
+      | None ->
+          L.die ExternalError
+            "COMPARE_OP[%d] is not an existing cmp_op.  Please refer to `dis.cmp_op`" arg
+    in
+    Debug.p "[%s] cmp_op = %a\n" opname Builtin.Compare.pp cmp_op ;
+    let env =
+      match cmp_op with
+      | Lt | Le | Gt | Ge | In | NotIn | Is | IsNot | Exception | BAD ->
+          L.die InternalError "TODO: support for COMPARE_OP[%a] is not yet implemented"
+            Builtin.Compare.pp cmp_op
+      | Neq | Eq ->
+          let env, rhs = pop_datastack opname env in
+          let env, lhs = pop_datastack opname env in
+          let env, lhs, _ = load_cell env code lhs in
+          let lhs =
+            match lhs with Ok lhs -> lhs | Error s -> L.die InternalError "[%s] %s" opname s
+          in
+          let env, rhs, _ = load_cell env code rhs in
+          let rhs =
+            match rhs with Ok rhs -> rhs | Error s -> L.die InternalError "[%s] %s" opname s
+          in
+          let env, id, _typ = Env.mk_builtin_call env (Builtin.CompareOp cmp_op) [lhs; rhs] in
+          Env.push env (DataStack.Temp id)
+    in
+    (env, None)
+end
+
 (** Main opcode dispatch function. *)
 let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
   let env = Env.update_last_line env starts_line in
@@ -1296,6 +1334,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
         IMPORT.NAME.run env code instr
     | "IMPORT_FROM" ->
         IMPORT.FROM.run env code instr
+    | "COMPARE_OP" ->
+        COMPARE_OP.run env code instr
     | _ ->
         L.die InternalError "Unsupported opcode: %s" opname
   in

@@ -20,4 +20,4 @@
    Textuallib))
  (libraries core IStdlib IBase pyml Textuallib ppx_show.runtime)
  (preprocess
-  (pps ppx_compare ppx_show)))
+  (pps ppx_compare ppx_enumerate ppx_show)))

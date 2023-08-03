@@ -12,6 +12,40 @@ module Builtin = struct
   type primitive = PythonInt | PythonFloat | PythonBool | PythonString | PythonBytes | PythonTuple
   [@@deriving compare]
 
+  module Compare = struct
+    type t = Lt | Le | Eq | Neq | Gt | Ge | In | NotIn | Is | IsNot | Exception | BAD
+    [@@deriving compare, enumerate]
+
+    let to_string = function
+      | Lt ->
+          "lt"
+      | Le ->
+          "le"
+      | Eq ->
+          "eq"
+      | Neq ->
+          "neq"
+      | Gt ->
+          "gt"
+      | Ge ->
+          "ge"
+      | In ->
+          "in"
+      | NotIn ->
+          "not_in"
+      | Is ->
+          "is"
+      | IsNot ->
+          "is_not"
+      | Exception ->
+          "exception"
+      | BAD ->
+          "bad"
+
+
+    let pp fmt op = to_string op |> Format.pp_print_string fmt
+  end
+
   type textual =
     | IsTrue
     | BinaryAdd
@@ -20,6 +54,7 @@ module Builtin = struct
     | PythonCode
     | PythonIter
     | PythonIterNext
+    | CompareOp of Compare.t
   [@@deriving compare]
 
   type python = Print | Range [@@deriving compare]
@@ -68,6 +103,8 @@ let to_proc_name = function
             "python_iter"
         | PythonIterNext ->
             "python_iter_next"
+        | CompareOp op ->
+            sprintf "python_%s" (Compare.to_string op)
       in
       PyCommon.builtin_name str
   | Python p ->
@@ -75,12 +112,14 @@ let to_proc_name = function
       PyCommon.builtin_name str
 
 
-(** Lookup a [Python] builtin from its name *)
+(** Lookup a [Python] builtin from its name. *)
 let of_string name =
   match name with "print" -> Some (Python Print) | "range" -> Some (Python Range) | _ -> None
 
 
 let annot typ = T.Typ.{typ; attributes= []}
+
+let annotatedObject = annot PyCommon.pyObject
 
 module Set = struct
   let string_ = PyCommon.mk_type "String"
@@ -128,7 +167,7 @@ module Set = struct
           ; result_type= annot PyCommon.pyBytes
           ; used_struct_types= [] } )
       ; ( Builtin.PythonTuple
-        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} ) ]
+        , {formals_types= None; result_type= annotatedObject; used_struct_types= []} ) ]
     in
     List.fold_left
       ~f:(fun acc (builtin, elt) -> Info.add (Builtin.Primitive builtin) elt acc)
@@ -138,15 +177,15 @@ module Set = struct
   let textual_builtins =
     let builtins =
       [ ( Builtin.IsTrue
-        , { formals_types= Some [annot PyCommon.pyObject]
+        , { formals_types= Some [annotatedObject]
           ; result_type= annot T.Typ.Int
           ; used_struct_types= [] } )
       ; ( Builtin.BinaryAdd
-        , { formals_types= Some [annot PyCommon.pyObject; annot PyCommon.pyObject]
-          ; result_type= annot PyCommon.pyObject
+        , { formals_types= Some [annotatedObject; annotatedObject]
+          ; result_type= annotatedObject
           ; used_struct_types= [] } )
       ; ( Builtin.PythonCall
-        , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
+        , {formals_types= None; result_type= annotatedObject; used_struct_types= []} )
       ; ( Builtin.PythonClass
         , { formals_types= Some [annot string_]
           ; result_type= annot PyCommon.pyClass
@@ -157,13 +196,22 @@ module Set = struct
           ; used_struct_types= [] } )
         (* TODO: should we introduce a Textual type for iterators ? *)
       ; ( Builtin.PythonIter
-        , { formals_types= Some [annot PyCommon.pyObject]
-          ; result_type= annot PyCommon.pyObject
+        , { formals_types= Some [annotatedObject]
+          ; result_type= annotatedObject
           ; used_struct_types= [] } )
       ; ( Builtin.PythonIterNext
-        , { formals_types= Some [annot PyCommon.pyObject]
+        , { formals_types= Some [annotatedObject]
           ; result_type= annot PyCommon.pyIterItem
-          ; used_struct_types= [PyCommon.pyIterItemStruct] } ) ]
+          ; used_struct_types= [PyCommon.pyIterItemStruct] } )
+      ; ( Builtin.CompareOp Eq
+        , { formals_types= Some [annotatedObject; annotatedObject]
+          ; result_type= annot PyCommon.pyBool
+          ; used_struct_types= [] } )
+      ; ( Builtin.CompareOp Neq
+        , { formals_types= Some [annotatedObject; annotatedObject]
+          ; result_type= annot PyCommon.pyBool
+          ; used_struct_types= [] } )
+        (* TODO: add type signatures of other CompareOp when we support them *) ]
     in
     List.fold_left
       ~f:(fun acc (builtin, elt) -> Info.add (Builtin.Textual builtin) elt acc)
@@ -171,10 +219,8 @@ module Set = struct
 
 
   let python_builtins =
-    [ ( Builtin.Print
-      , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} )
-    ; ( Builtin.Range
-      , {formals_types= None; result_type= annot PyCommon.pyObject; used_struct_types= []} ) ]
+    [ (Builtin.Print, {formals_types= None; result_type= annotatedObject; used_struct_types= []})
+    ; (Builtin.Range, {formals_types= None; result_type= annotatedObject; used_struct_types= []}) ]
 
 
   let supported_builtins =

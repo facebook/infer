@@ -7,6 +7,13 @@
 
 open! IStd
 
+module Compare : sig
+  type t = Lt | Le | Eq | Neq | Gt | Ge | In | NotIn | Is | IsNot | Exception | BAD
+  [@@deriving compare, enumerate]
+
+  val pp : Format.formatter -> t -> unit
+end
+
 type textual =
   | IsTrue
   | BinaryAdd
@@ -15,6 +22,7 @@ type textual =
   | PythonCode
   | PythonIter
   | PythonIterNext
+  | CompareOp of Compare.t
 [@@deriving compare]
 
 type builtin
