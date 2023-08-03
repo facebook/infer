@@ -942,13 +942,13 @@ module BUILD = struct
   end
 end
 
-let mk_jump loc labels ssa_args =
+let mk_jump loc labels_and_ssa_args =
   let nodes =
     List.map
-      ~f:(fun value ->
+      ~f:(fun (value, ssa_args) ->
         let label = {T.NodeName.value; loc} in
         {T.Terminator.label; ssa_args} )
-      labels
+      labels_and_ssa_args
   in
   T.Terminator.Jump nodes
 
@@ -973,10 +973,11 @@ module JUMP = struct
     | Label of {ssa_args: T.Exp.t list; label_info: Env.Label.info}
     | Return of T.Terminator.t
     | TwoWay of
-        { ssa_args: T.Exp.t list
-        ; offset: bool * int
+        { offset: bool * int
         ; next_info: Env.Label.info
-        ; other_info: Env.Label.info }
+        ; next_ssa_args: T.Exp.t list
+        ; other_info: Env.Label.info
+        ; other_ssa_args: T.Exp.t list }
     | Relative of {ssa_args: T.Exp.t list; label_info: Env.Label.info; delta: int}
     | Absolute of {ssa_args: T.Exp.t list; label_info: Env.Label.info; target: int}
 
@@ -1008,7 +1009,14 @@ module JUMP = struct
       let other_prelude loc env = Env.push_instr env (T.Instr.Prune {exp= other_prune; loc}) in
       let next_info = Env.Label.mk ~ssa_parameters ~prelude:next_prelude next_label in
       let other_info = Env.Label.mk ~ssa_parameters ~prelude:other_prelude other_label in
-      (env, Some (TwoWay {ssa_args; offset= (true, arg); next_info; other_info}))
+      ( env
+      , Some
+          (TwoWay
+             { offset= (true, arg)
+             ; next_info
+             ; next_ssa_args= ssa_args
+             ; other_info
+             ; other_ssa_args= ssa_args } ) )
   end
 
   module FORWARD = struct
@@ -1135,7 +1143,14 @@ module ITER = struct
           let other_prelude loc env = Env.push_instr env (T.Instr.Prune {exp= condF; loc}) in
           let next_info = Env.Label.mk ~ssa_parameters ~prelude:next_prelude next_label in
           let other_info = Env.Label.mk ~ssa_parameters ~prelude:other_prelude other_label in
-          (env, Some (JUMP.TwoWay {ssa_args; offset= (false, arg); next_info; other_info}))
+          ( env
+          , Some
+              (JUMP.TwoWay
+                 { offset= (false, arg)
+                 ; next_info
+                 ; next_ssa_args= ssa_args
+                 ; other_info
+                 ; other_ssa_args= ssa_args } ) )
       | Error s ->
           L.die InternalError "[%s] %s" opname s
   end
@@ -1433,7 +1448,7 @@ let until_terminator env label_info code instructions =
   in
   let unconditional_jump env ssa_args label_info target =
     let target_label = Env.Label.name label_info in
-    let jump = mk_jump last_loc [target_label] ssa_args in
+    let jump = mk_jump last_loc [(target_label, ssa_args)] in
     let node =
       T.Node.
         { label
@@ -1455,7 +1470,7 @@ let until_terminator env label_info code instructions =
       let next_label = Env.Label.name label_info in
       (* A label was spotted without having a clear Textual terminator. Insert a jump to this
          label to create a proper node, and resume the processing. *)
-      let jump = mk_jump last_loc [next_label] ssa_args in
+      let jump = mk_jump last_loc [(next_label, ssa_args)] in
       let node =
         T.Node.
           { label
@@ -1483,7 +1498,10 @@ let until_terminator env label_info code instructions =
       in
       Debug.p "  Return\n" ;
       (env, rest, node)
-  | Some (TwoWay {ssa_args; offset= is_absolute, other_offset; next_info; other_info}) ->
+  | Some
+      (TwoWay
+        {offset= is_absolute, other_offset; next_info; next_ssa_args; other_info; other_ssa_args} )
+    ->
       (* The current node ended up with a two-way jump. Either continue to the "next"
          (fall-through) part of the code, or jump to the "other" section of the code. For this
          purpose, register a fresh label for the jump. *)
@@ -1495,7 +1513,7 @@ let until_terminator env label_info code instructions =
       Debug.p "  TwoWay: register %s at %d\n" other_label other_offset ;
       let env = Env.register_label ~offset:next_offset next_info env in
       let env = Env.register_label ~offset:other_offset other_info env in
-      let jump = mk_jump last_loc [next_label; other_label] ssa_args in
+      let jump = mk_jump last_loc [(next_label, next_ssa_args); (other_label, other_ssa_args)] in
       let node =
         T.Node.
           { label
