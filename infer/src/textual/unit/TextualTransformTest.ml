@@ -10,6 +10,37 @@ module F = Format
 open Textual
 open TextualTestHelpers
 
+(* Inspired by the following Python program:
+
+   def f(x, y, z, t):
+      return (x and y) or (z and t)
+*)
+let python_inspired_text =
+  {|
+        define f(x: int, y: int, z: int, t: int) : int {
+          #b0:
+              n0:int = load &x
+              if n0 then jmp b1 else jmp b2
+
+          #b1:
+              n2:int = load &y
+              if n2 then jmp b4(n2) else jmp b2
+
+          #b2:
+              n5:int = load &z
+              if n5 then jmp b5 else jmp b4(n5)
+
+          #b5:
+              n8:int = load &t
+              jmp b4(n8)
+
+          #b4(n9: int):
+              ret n9
+
+        }
+        |}
+
+
 let%test_module "remove_internal_calls transformation" =
   ( module struct
     let input_text =
@@ -325,6 +356,52 @@ let%test_module "remove_if_terminator transformation" =
                 ret 3
 
           } |}]
+
+
+    let%expect_test _ =
+      let module_ = parse_module python_inspired_text |> TextualTransform.remove_if_terminator in
+      F.printf "%a" Module.pp module_ ;
+      [%expect
+        {|
+          define f(x: int, y: int, z: int, t: int) : int {
+            #b0:
+                n0:int = load &x
+                jmp b1, if0
+
+            #if0:
+                prune __sil_lnot(n0)
+                jmp b2
+
+            #b1:
+                prune n0
+                n2:int = load &y
+                jmp if2, if1
+
+            #if2:
+                prune n2
+                jmp b4(n2)
+
+            #if1:
+                prune __sil_lnot(n2)
+                jmp b2
+
+            #b2:
+                n5:int = load &z
+                jmp b5, if3
+
+            #if3:
+                prune __sil_lnot(n5)
+                jmp b4(n5)
+
+            #b5:
+                prune n5
+                n8:int = load &t
+                jmp b4(n8)
+
+            #b4(n9: int):
+                ret n9
+
+          } |}]
   end )
 
 
@@ -421,6 +498,59 @@ let%test_module "out-of-ssa transformation" =
               store &__SSA4 <- n6:int
               store &__SSA5 <- n7:int
               jmp lab2
+
+        } |}]
+
+
+    let%expect_test _ =
+      let module_ =
+        parse_module python_inspired_text |> TextualTransform.remove_if_terminator
+        |> TextualTransform.out_of_ssa
+      in
+      F.printf "%a" Module.pp module_ ;
+      [%expect
+        {|
+        define f(x: int, y: int, z: int, t: int) : int {
+          #b0:
+              n0:int = load &x
+              jmp b1, if0
+
+          #if0:
+              prune __sil_lnot(n0)
+              jmp b2
+
+          #b1:
+              prune n0
+              n2:int = load &y
+              jmp if2, if1
+
+          #if2:
+              prune n2
+              store &__SSA9 <- n2:int
+              jmp b4
+
+          #if1:
+              prune __sil_lnot(n2)
+              jmp b2
+
+          #b2:
+              n5:int = load &z
+              jmp b5, if3
+
+          #if3:
+              prune __sil_lnot(n5)
+              store &__SSA9 <- n5:int
+              jmp b4
+
+          #b5:
+              prune n5
+              n8:int = load &t
+              store &__SSA9 <- n8:int
+              jmp b4
+
+          #b4:
+              n9:int = load &__SSA9
+              ret n9
 
         } |}]
   end )
