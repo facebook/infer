@@ -69,12 +69,15 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
   let is_functional = ref true in
   let should_havoc actual_typ formal_typ_opt =
     let matches_iter =
-      QualifiedCppName.Match.of_fuzzy_qual_names ["std::__wrap_iter"; "__gnu_cxx::__normal_iterator"]
+      QualifiedCppName.Match.of_fuzzy_qual_names
+        ["std::__detail::_Node_iterator"; "std::__wrap_iter"; "__gnu_cxx::__normal_iterator"]
     in
     match actual_typ.Typ.desc with
     | _ when Language.curr_language_is Erlang ->
         `DoNotHavoc
-    | Typ.Tstruct (Typ.CppClass {name})
+    | Tstruct (CppClass {name})
+    | Tptr ({desc= Tstruct (CppClass {name})}, _)
+    (* Sometimes the iterator is given to the next function as a reference. *)
       when QualifiedCppName.Match.match_qualifiers matches_iter name ->
         `ShouldHavoc
     | Tptr _ when Language.curr_language_is CIL ->
