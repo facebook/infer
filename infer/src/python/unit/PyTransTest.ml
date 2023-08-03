@@ -1764,4 +1764,65 @@ def f(x, y):
         declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+def f(x, y, z, t):
+        return (x and y) or (z and t)
+        |} in
+      test source ;
+      [%expect
+        {|
+          .source_language = "python"
+
+          define dummy.$toplevel() : *PyNone {
+            #b0:
+                n0 = $builtins.python_code("dummy.f")
+                ret null
+
+          }
+
+          define dummy.f(x: *PyObject, y: *PyObject, z: *PyObject, t: *PyObject) : *PyObject {
+            #b0:
+                n0:*PyObject = load &x
+                n1 = $builtins.python_is_true(n0)
+                if n1 then jmp b1 else jmp b2
+
+            #b1:
+                n2:*PyObject = load &y
+                n3 = $builtins.python_is_true(n2)
+                n4:*PyObject = load &y
+                if !(n3) then jmp b2 else jmp b3(n4)
+
+            #b2:
+                n5:*PyObject = load &z
+                n6 = $builtins.python_is_true(n5)
+                n7:*PyObject = load &z
+                if n6 then jmp b4 else jmp b3(n7)
+
+            #b4:
+                n8:*PyObject = load &t
+                jmp b3(n8)
+
+            #b3(n9: *PyObject):
+                ret n9
+
+          }
+
+          declare $builtins.python_code(*String) : *PyCode
+
+          declare $builtins.python_is_true(*PyObject) : int
+
+          declare $builtins.python_tuple(...) : *PyObject
+
+          declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+          declare $builtins.python_string(*String) : *PyString
+
+          declare $builtins.python_bool(int) : *PyBool
+
+          declare $builtins.python_float(float) : *PyFloat
+
+          declare $builtins.python_int(int) : *PyInt |}]
   end )

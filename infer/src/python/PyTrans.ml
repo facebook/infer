@@ -1040,6 +1040,50 @@ module JUMP = struct
              ; other_info= {label_info= other_info; offset= arg; ssa_args} } ) )
   end
 
+  module IF_OR_POP = struct
+    (** {v JUMP_IF_TRUE_OR_POP(target) v}
+
+        If top-of-stack is true, sets the bytecode counter to target and leaves the top-of-stack on
+        the stack. Otherwise (top-of-stack is false), top-of_stack is popped.
+
+        {v JUMP_IF_FALSE_OR_POP(target) v}
+
+        If top-of-stack is false, sets the bytecode counter to target and leaves top-of-stack on the
+        stack. Otherwise (top-of-stack is true), top-of-stack is popped. *)
+    let run ~jump_if env code {FFI.Instruction.opname; arg} next_offset_opt =
+      Debug.p "[%s] target = %d\n" opname arg ;
+      (* We only peek the top of stack so the logic of [stack_to_ssa] correctly captures it for
+         the branch where "it stays". It will be restored as part of the stack restore logic when
+         we process the "other" node. *)
+      let tos = peek_datastack opname env in
+      let env, cell, _ = load_cell env code tos in
+      let cond =
+        match cell with Ok cond -> cond | Error s -> L.die InternalError "[%s] %s" opname s
+      in
+      (* Suggestion from @dpichardie: I could put the [IsTrue] expression directly in [condition].
+         This would need a refactor of [mk_builtin_call] to get the full expression instead of
+         the id that binds it. *)
+      let env, id, _ = Env.mk_builtin_call env Builtin.IsTrue [cond] in
+      let condT = T.BoolExp.Exp (Var id) in
+      let condition = if jump_if then T.BoolExp.Not condT else condT in
+      let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+      let next_offset = next_offset next_offset_opt in
+      (* In the next branch, we make sure the top-of-stack is no longer in the ssa parameters
+         so it is not restored, effectively dropped as per the opcode description. *)
+      let env, next_info =
+        let ssa_parameters = List.tl ssa_parameters |> Option.value ~default:[] in
+        mk_label_info env next_offset ~ssa_parameters
+      in
+      let next_ssa_args = List.tl ssa_args |> Option.value ~default:[] in
+      let env, other_info = mk_label_info env arg ~ssa_parameters in
+      ( env
+      , Some
+          (TwoWay
+             { condition
+             ; next_info= {label_info= next_info; offset= next_offset; ssa_args= next_ssa_args}
+             ; other_info= {label_info= other_info; offset= arg; ssa_args} } ) )
+  end
+
   module FORWARD = struct
     (** {v JUMP_FORWARD(delta) v}
 
@@ -1365,6 +1409,10 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
         IMPORT.FROM.run env code instr
     | "COMPARE_OP" ->
         COMPARE_OP.run env code instr
+    | "JUMP_IF_TRUE_OR_POP" ->
+        JUMP.IF_OR_POP.run ~jump_if:true env code instr next_offset_opt
+    | "JUMP_IF_FALSE_OR_POP" ->
+        JUMP.IF_OR_POP.run ~jump_if:false env code instr next_offset_opt
     | _ ->
         L.die InternalError "Unsupported opcode: %s" opname
   in
