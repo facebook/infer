@@ -447,12 +447,20 @@ let get_message_and_suggestion diagnostic =
            F.asprintf "%a%a" pp_calling_context_prefix calling_context pp_must_be_valid_reason
              invalid_address
        | _ ->
+           let pp_invalid_address fmt =
+             match invalid_address with
+             | SourceExpr (source_expr, _) ->
+                 F.fprintf fmt "`%a`" DecompilerExpr.pp_source_expr source_expr
+             | Unknown _ ->
+                 F.pp_print_string fmt "memory"
+           in
            let pp_access_trace fmt (trace : Trace.t) =
              match immediate_or_first_call calling_context trace with
              | `Immediate ->
-                 F.fprintf fmt "accessing memory that "
+                 F.fprintf fmt "accessing %t that " pp_invalid_address
              | `Call f ->
-                 F.fprintf fmt "call to %a eventually accesses memory that " CallEvent.describe f
+                 F.fprintf fmt "call to %a eventually accesses %t that " CallEvent.describe f
+                   pp_invalid_address
            in
            let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
              let pp_line fmt line = F.fprintf fmt " on line %d" line in
