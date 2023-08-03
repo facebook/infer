@@ -11,7 +11,7 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 
-let value = Fieldname.make PulseOperations.pulse_model_type "_mutex"
+let value = Fieldname.make PulseOperations.pulse_model_type "__infer_mutex"
 
 let value_access = HilExp.Access.FieldAccess value
 

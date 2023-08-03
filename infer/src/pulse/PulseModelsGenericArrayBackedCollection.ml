@@ -11,11 +11,11 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 
-let field = Fieldname.make PulseOperations.pulse_model_type "backing_array"
+let field = Fieldname.make PulseOperations.pulse_model_type "__infer_backing_array"
 
-let last_field = Fieldname.make PulseOperations.pulse_model_type "past_the_end"
+let last_field = Fieldname.make PulseOperations.pulse_model_type "__infer_past_the_end"
 
-let size_field = Fieldname.make PulseOperations.pulse_model_type "_size"
+let size_field = Fieldname.make PulseOperations.pulse_model_type "__infer_size"
 
 let size_access = HilExp.Access.FieldAccess size_field
 
@@ -116,7 +116,7 @@ let size this ~desc : model =
 
 
 module Iterator = struct
-  let internal_pointer = Fieldname.make PulseOperations.pulse_model_type "backing_pointer"
+  let internal_pointer = Fieldname.make PulseOperations.pulse_model_type "__infer_backing_pointer"
 
   let internal_pointer_access = HilExp.Access.FieldAccess internal_pointer
 

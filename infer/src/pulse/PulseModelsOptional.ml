@@ -13,7 +13,7 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 
-let internal_value = Fieldname.make PulseOperations.pulse_model_type "backing_value"
+let internal_value = Fieldname.make PulseOperations.pulse_model_type "__infer_backing_value"
 
 let internal_value_access = HilExp.Access.FieldAccess internal_value
 
