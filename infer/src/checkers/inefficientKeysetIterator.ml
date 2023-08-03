@@ -69,15 +69,20 @@ let report_matching_get proc_desc err_log tenv pvar loop_nodes : unit =
                         let pp_m = MarkupFormatter.pp_monospaced in
                         let exp_desc =
                           F.asprintf
-                            "Accessing a value using a key that was retrieved from a %a iterator. \
-                             It is more efficient to use an iterator on the %a of the map, \
+                            "Accessing a value using a key that was retrieved from a %a iterator. "
+                            pp_m "keySet"
+                        in
+                        let suggestion =
+                          F.asprintf
+                            "It is more efficient to use an iterator on the %a of the map, \
                              avoiding the extra %a lookup."
-                            pp_m "keySet" pp_m "entrySet" pp_m "HashMap.get(key)"
+                            pp_m "entrySet" pp_m "HashMap.get(key)"
                         in
                         let loc = Procdesc.Node.get_loc node in
-                        let ltr = [Errlog.make_trace_element 0 loc exp_desc []] in
-                        Reporting.log_issue proc_desc err_log ~loc ~ltr InefficientKeysetIterator
-                          IssueType.inefficient_keyset_iterator exp_desc ) ) )
+                        let ltr = [Errlog.make_trace_element 0 loc "" []] in
+                        Reporting.log_issue ~suggestion proc_desc err_log ~loc ~ltr
+                          InefficientKeysetIterator IssueType.inefficient_keyset_iterator exp_desc ) )
+      )
     loop_nodes
 
 
