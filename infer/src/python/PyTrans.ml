@@ -942,15 +942,23 @@ module BUILD = struct
   end
 end
 
-let mk_jump loc labels_and_ssa_args =
-  let nodes =
-    List.map
-      ~f:(fun (value, ssa_args) ->
-        let label = {T.NodeName.value; loc} in
-        {T.Terminator.label; ssa_args} )
-      labels_and_ssa_args
+type jump_info = {label_name: string; ssa_args: T.Exp.t list}
+
+type jump = OneWay of jump_info | TwoWay of T.BoolExp.t * jump_info * jump_info
+
+let mk_jump loc jump_info =
+  let node_info {label_name; ssa_args} =
+    let label = {T.NodeName.value= label_name; loc} in
+    {T.Terminator.label; ssa_args}
   in
-  T.Terminator.Jump nodes
+  let jmp node = T.Terminator.Jump [node_info node] in
+  match jump_info with
+  | OneWay info ->
+      jmp info
+  | TwoWay (bexp, then_, else_) ->
+      let then_ = jmp then_ in
+      let else_ = jmp else_ in
+      T.Terminator.If {bexp; then_; else_}
 
 
 (** When reaching a jump instruction with a non empty datastack, turn it into loads/ssa variables
@@ -974,6 +982,7 @@ module JUMP = struct
     | Return of T.Terminator.t
     | TwoWay of
         { offset: bool * int
+        ; condition: T.BoolExp.t
         ; next_info: Env.Label.info
         ; next_ssa_args: T.Exp.t list
         ; other_info: Env.Label.info
@@ -1001,18 +1010,16 @@ module JUMP = struct
       let env, other_label = Env.mk_fresh_label env in
       (* Compute the relevant pruning expressions *)
       let env, id, _ = Env.mk_builtin_call env Builtin.IsTrue [cond] in
-      let condT = T.Exp.Var id in
-      let condF = T.Exp.not condT in
-      let next_prune = if next_is_true then condT else condF in
-      let other_prune = if next_is_true then condF else condT in
-      let next_prelude loc env = Env.push_instr env (T.Instr.Prune {exp= next_prune; loc}) in
-      let other_prelude loc env = Env.push_instr env (T.Instr.Prune {exp= other_prune; loc}) in
-      let next_info = Env.Label.mk ~ssa_parameters ~prelude:next_prelude next_label in
-      let other_info = Env.Label.mk ~ssa_parameters ~prelude:other_prelude other_label in
+      let condT = T.BoolExp.Exp (Var id) in
+      let condition = if next_is_true then condT else T.BoolExp.Not condT in
+      let prelude _loc env = env in
+      let next_info = Env.Label.mk ~ssa_parameters ~prelude next_label in
+      let other_info = Env.Label.mk ~ssa_parameters ~prelude other_label in
       ( env
       , Some
           (TwoWay
              { offset= (true, arg)
+             ; condition
              ; next_info
              ; next_ssa_args= ssa_args
              ; other_info
@@ -1120,14 +1127,12 @@ module ITER = struct
           let env, next_label = Env.mk_fresh_label env in
           let env, other_label = Env.mk_fresh_label env in
           (* Compute the relevant pruning expressions *)
-          let condT = cond in
-          let condF = T.Exp.not condT in
+          let condition = T.BoolExp.Exp cond in
           (* In the next branch, we know the iterator has an item available. Let's fetch it and
              push it on the stack. *)
           let next_prelude loc env =
             (* The iterator object stays on the stack while in the for loop, let's push it back *)
             let env = Env.push env iter_cell in
-            let env = Env.push_instr env (T.Instr.Prune {exp= condT; loc}) in
             let next_item =
               T.Exp.Field {exp= T.Exp.Var id; field= PyCommon.py_iter_item_next_item}
             in
@@ -1140,13 +1145,14 @@ module ITER = struct
             let env = Env.push_instr env next_item_load in
             Env.push env (DataStack.Temp next_item_id)
           in
-          let other_prelude loc env = Env.push_instr env (T.Instr.Prune {exp= condF; loc}) in
+          let other_prelude _loc env = env in
           let next_info = Env.Label.mk ~ssa_parameters ~prelude:next_prelude next_label in
           let other_info = Env.Label.mk ~ssa_parameters ~prelude:other_prelude other_label in
           ( env
           , Some
               (JUMP.TwoWay
                  { offset= (false, arg)
+                 ; condition
                  ; next_info
                  ; next_ssa_args= ssa_args
                  ; other_info
@@ -1448,7 +1454,7 @@ let until_terminator env label_info code instructions =
   in
   let unconditional_jump env ssa_args label_info target =
     let target_label = Env.Label.name label_info in
-    let jump = mk_jump last_loc [(target_label, ssa_args)] in
+    let jump = mk_jump last_loc (OneWay {label_name= target_label; ssa_args}) in
     let node =
       T.Node.
         { label
@@ -1470,7 +1476,7 @@ let until_terminator env label_info code instructions =
       let next_label = Env.Label.name label_info in
       (* A label was spotted without having a clear Textual terminator. Insert a jump to this
          label to create a proper node, and resume the processing. *)
-      let jump = mk_jump last_loc [(next_label, ssa_args)] in
+      let jump = mk_jump last_loc (OneWay {label_name= next_label; ssa_args}) in
       let node =
         T.Node.
           { label
@@ -1500,8 +1506,12 @@ let until_terminator env label_info code instructions =
       (env, rest, node)
   | Some
       (TwoWay
-        {offset= is_absolute, other_offset; next_info; next_ssa_args; other_info; other_ssa_args} )
-    ->
+        { offset= is_absolute, other_offset
+        ; condition
+        ; next_info
+        ; next_ssa_args
+        ; other_info
+        ; other_ssa_args } ) ->
       (* The current node ended up with a two-way jump. Either continue to the "next"
          (fall-through) part of the code, or jump to the "other" section of the code. For this
          purpose, register a fresh label for the jump. *)
@@ -1513,7 +1523,11 @@ let until_terminator env label_info code instructions =
       Debug.p "  TwoWay: register %s at %d\n" other_label other_offset ;
       let env = Env.register_label ~offset:next_offset next_info env in
       let env = Env.register_label ~offset:other_offset other_info env in
-      let jump = mk_jump last_loc [(next_label, next_ssa_args); (other_label, other_ssa_args)] in
+      let jump =
+        let then_ = {label_name= next_label; ssa_args= next_ssa_args} in
+        let else_ = {label_name= other_label; ssa_args= other_ssa_args} in
+        mk_jump last_loc (TwoWay (condition, then_, else_))
+      in
       let node =
         T.Node.
           { label

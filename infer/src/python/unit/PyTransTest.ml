@@ -385,15 +385,13 @@ def f(x, y):
           #b0:
               n0 = dummy.coin()
               n1 = $builtins.python_is_true(n0)
-              jmp b1, b2
+              if n1 then jmp b1 else jmp b2
 
           #b1:
-              prune n1
               n2:*PyObject = load &x
               ret n2
 
           #b2:
-              prune __sil_lnot(n1)
               n3:*PyObject = load &y
               ret n3
 
@@ -459,16 +457,14 @@ def f(x, y):
               store &z <- $builtins.python_int(0):*PyInt
               n0 = dummy.coin()
               n1 = $builtins.python_is_true(n0)
-              jmp b1, b2
+              if n1 then jmp b1 else jmp b2
 
           #b1:
-              prune n1
               n2:*PyObject = load &x
               store &z <- n2:*PyObject
               jmp b3
 
           #b2:
-              prune __sil_lnot(n1)
               n3:*PyObject = load &y
               store &z <- n3:*PyObject
               jmp b3
@@ -544,22 +540,19 @@ def f(x, y):
               store &z <- $builtins.python_int(0):*PyInt
               n0 = dummy.coin()
               n1 = $builtins.python_is_true(n0)
-              jmp b1, b2
+              if n1 then jmp b1 else jmp b2
 
           #b1:
-              prune n1
               n2 = dummy.coin()
               n3 = $builtins.python_is_true(n2)
-              jmp b3, b4
+              if n3 then jmp b3 else jmp b4
 
           #b3:
-              prune n3
               n4:*PyObject = load &x
               store &z <- n4:*PyObject
               jmp b5
 
           #b4:
-              prune __sil_lnot(n3)
               ret $builtins.python_int(1664)
 
           #b5:
@@ -569,20 +562,17 @@ def f(x, y):
               jmp b6
 
           #b2:
-              prune __sil_lnot(n1)
               n7:*PyObject = load &z
               n8 = $builtins.binary_add(n7, $builtins.python_int(1))
               store &z <- n8:*PyObject
               n9 = dummy.coin()
               n10 = $builtins.python_is_true(n9)
-              jmp b7, b8
+              if n10 then jmp b7 else jmp b8
 
           #b7:
-              prune n10
               ret $builtins.python_int(42)
 
           #b8:
-              prune __sil_lnot(n10)
               n11:*PyObject = load &y
               store &z <- n11:*PyObject
               jmp b6
@@ -644,14 +634,12 @@ def f(x):
             n0:*PyObject = load &x
             n1 = $builtins.python_code("dummy.foo")
             n2 = $builtins.python_is_true(n0)
-            jmp b1(n1), b2(n1)
+            if n2 then jmp b1(n1) else jmp b2(n1)
 
         #b1(n3: *PyCode):
-            prune n2
             jmp b3($builtins.python_int(1), n3)
 
         #b2(n4: *PyCode):
-            prune __sil_lnot(n2)
             jmp b3($builtins.python_int(0), n4)
 
         #b3(n5: *PyInt, n6: *PyCode):
@@ -701,10 +689,9 @@ for x in range(10):
           #b1(n2: *PyObject):
               n3 = $builtins.python_iter_next(n2)
               n4:int = load n3.PyIterItem.has_item
-              jmp b2, b3
+              if n4 then jmp b2 else jmp b3
 
           #b2:
-              prune n4
               n5:*PyObject = load n3.PyIterItem.next_item
               store &dummy::x <- n5:*PyObject
               n6:*PyObject = load &dummy::x
@@ -712,7 +699,6 @@ for x in range(10):
               jmp b1(n2)
 
           #b3:
-              prune __sil_lnot(n4)
               ret null
 
         }
