@@ -26,7 +26,7 @@ module DataStack = struct
       (* TODO: change import_path into a list when we supported structured path foo.bar.baz *)
     | ImportCall of T.qualified_procname
     | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
-    | StaticCall of T.qualified_procname
+    | StaticCall of {call_name: T.qualified_procname; receiver: T.Exp.t option}
     | Super
   [@@deriving show]
 
@@ -353,6 +353,7 @@ let empty = {shared= empty; node= empty_node}
 let stack {node= {stack}} = stack
 
 let enter_proc ~is_toplevel ~is_static ~module_name ~params {shared} =
+  Debug.p "[enter_proc] %s\n" module_name ;
   let shared =
     { shared with
       module_name
@@ -361,6 +362,7 @@ let enter_proc ~is_toplevel ~is_static ~module_name ~params {shared} =
     ; is_static
     ; idents= T.Ident.Set.empty
     ; next_label= 0
+    ; labels= Labels.empty
     ; locals= SMap.empty }
   in
   {shared; node= empty_node}

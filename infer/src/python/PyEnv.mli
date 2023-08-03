@@ -28,7 +28,9 @@ module DataStack : sig
     | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
         (** Virtual call, usually of a method of a class. Could be an access to a closure that is
             called straight away *)
-    | StaticCall of T.qualified_procname  (** call to static method in class *)
+    | StaticCall of {call_name: T.qualified_procname; receiver: T.Exp.t option}
+        (** call to static method in class. Because we turn some method calls into static ones, we
+            have to keep the receiver around, just in case. *)
     | Super  (** special name to refer to the parent class, like in [super().__init__()] *)
   [@@deriving show]
 

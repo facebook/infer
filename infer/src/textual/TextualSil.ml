@@ -172,10 +172,12 @@ let mangle_java_procname jpname =
 
 let wildcard_sil_fieldname lang name =
   match (lang : Lang.t) with
-  | Java | Python ->
-      L.die InternalError "a wildcard fieldname is only supported in Hack"
+  | Java ->
+      L.die InternalError "a wildcard fieldname is only supported in Hack or Python"
   | Hack ->
       SilFieldname.make (HackClass HackClassName.wildcard) name
+  | Python ->
+      SilFieldname.make (PythonClass PythonClassName.wildcard) name
 
 
 module TypBridge = struct

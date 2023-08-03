@@ -570,14 +570,6 @@ module METHOD = struct
             T.TypeName.wildcard
 
 
-    let mk_method_call env tname receiver method_name =
-      let loc = Env.loc env in
-      let name = proc_name ~loc method_name in
-      let name : T.qualified_procname = {T.enclosing_class= Enclosing tname; name} in
-      let env = Env.push env (DataStack.MethodCall {receiver; name}) in
-      (env, None)
-
-
     let load env code cell method_name =
       let env, res, {Env.typ} = load_cell env code cell in
       let tname = to_typename typ in
@@ -586,10 +578,19 @@ module METHOD = struct
           L.die ExternalError "Failed to load method %s from cell %a: %s" method_name
             DataStack.pp_cell cell s
       | Ok receiver ->
-          mk_method_call env tname receiver method_name
+          let loc = Env.loc env in
+          let name = proc_name ~loc method_name in
+          let name : T.qualified_procname = {T.enclosing_class= Enclosing tname; name} in
+          let env = Env.push env (DataStack.MethodCall {receiver; name}) in
+          (env, None)
 
 
-    (* Here we translate calls like `super().f(...)` into `self.parent_type.f(...)`
+    (* Here we translate calls like [super().f(...)] into a static call [parent_type.f(self, ...)]
+       so that method resolution can do its job. This only works because we
+       only support single inheritance for now. We need to revisit this.
+
+       Python does a virtual call here because of how the runtime deals with inheritance: it's
+       just a pointer to the parent classes. We don't encode this like that for now.
 
        TODO: pass in the current function name for better error reporting, but not urgent as all
        these errors would make python runtime crash anyway *)
@@ -643,7 +644,12 @@ module METHOD = struct
       let env, res, _ = load_var_name env loc self in
       match res with
       | Ok receiver ->
-          mk_method_call env super_type receiver method_name
+          (* We're in [LOAD_METHOD] but we fake a static call because of how method resolution works. *)
+          let loc = Env.loc env in
+          let name = proc_name ~loc method_name in
+          let call_name : T.qualified_procname = {T.enclosing_class= Enclosing super_type; name} in
+          let env = Env.push env (DataStack.StaticCall {call_name; receiver= Some receiver}) in
+          (env, None)
       | Error s ->
           L.die UserError "[super()] failed to load self (a.k.a %s) in %s: %s" self current_module s
 
@@ -674,8 +680,8 @@ module METHOD = struct
               let loc = Env.loc env in
               let class_name = Symbol.to_string ~static:true qname in
               let enclosing_class = type_name ~loc class_name in
-              let proc = qualified_procname ~enclosing_class @@ proc_name ~loc method_name in
-              let env = Env.push env (DataStack.StaticCall proc) in
+              let call_name = qualified_procname ~enclosing_class @@ proc_name ~loc method_name in
+              let env = Env.push env (DataStack.StaticCall {call_name; receiver= None}) in
               (env, None)
           | _ ->
               load env code cell method_name )
@@ -703,9 +709,10 @@ module METHOD = struct
           let loc = Env.loc env in
           let env = Env.register_import env (Env.Import.Call proc) in
           FUNCTION.CALL.mk env None loc proc args
-      | StaticCall proc ->
+      | StaticCall {call_name; receiver} ->
           let loc = Env.loc env in
-          FUNCTION.CALL.mk env None loc proc args
+          let args = Option.to_list receiver @ args in
+          FUNCTION.CALL.mk env None loc call_name args
       | MethodCall {receiver; name} ->
           let loc = Env.loc env in
           let exp = T.Exp.call_virtual name receiver args in

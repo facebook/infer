@@ -1608,7 +1608,7 @@ class D0(C0):
           define dummy::D.__init__(self: *dummy::D) : *PyNone {
             #b0:
                 n0:*dummy::D = load &self
-                n1 = n0.dummy::C.__init__()
+                n1 = dummy::C.__init__(n0)
                 ret null
 
           }
@@ -1654,7 +1654,7 @@ class D0(C0):
           define dummy::D0.__init__(bar: *dummy::D0) : *PyNone {
             #b0:
                 n0:*dummy::D0 = load &bar
-                n1 = n0.dummy::C0.__init__($builtins.python_int(42))
+                n1 = dummy::C0.__init__(n0, $builtins.python_int(42))
                 ret null
 
           }
