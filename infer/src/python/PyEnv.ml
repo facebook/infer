@@ -217,10 +217,9 @@ module ImportSet = Caml.Set.Make (Import)
 type class_info = {parent: Symbol.t option}
 
 type label_info =
-  { label_name: string
-  ; ssa_parameters: T.Typ.t list
-  ; prelude: T.Location.t -> t -> t
-  ; processed: bool }
+  {label_name: string; ssa_parameters: T.Typ.t list; prelude: prelude option; processed: bool}
+
+and prelude = T.Location.t -> t -> t
 
 (** Part of the environment shared by most structures. It gathers information like which builtin has
     been spotted, or what idents and labels have been generated so far. *)
@@ -293,8 +292,6 @@ module Label = struct
   type info = label_info
 
   let mk ?(ssa_parameters = []) ?prelude label_name =
-    let default _loc env = env in
-    let prelude = Option.value prelude ~default in
     {label_name; ssa_parameters; prelude; processed= false}
 
 
@@ -315,7 +312,7 @@ module Label = struct
           (env, (id, typ)) )
     in
     (* Install the prelude before processing the instructions *)
-    let env = prelude label_loc env in
+    let env = match prelude with Some action -> action label_loc env | None -> env in
     (* If we have ssa_parameters, we need to push them on the stack to restore its right shape.
        Doing a fold_right is important to keep the correct order. *)
     let env =
@@ -408,22 +405,38 @@ let mk_fresh_label ({shared} as env) =
   (env, fresh_label)
 
 
-let register_label ~offset label_info ({shared} as env) =
+let register_label ~offset ({label_name; ssa_parameters} as label_info) ({shared} as env) =
+  Debug.p "[register_label] %s at offset %d (arity %d)\n" label_name offset
+    (List.length ssa_parameters) ;
   let register_label offset label_info ({labels} as env) =
-    let exists = Labels.mem offset labels in
-    let exists = if exists then "existing" else "non existing" in
-    if label_info.processed then Debug.p "processing %s label at %d\n" exists offset
-    else Debug.p "registering %s label at %d\n" exists offset ;
-    let labels = Labels.add offset label_info labels in
+    let labels =
+      match Labels.find_opt offset labels with
+      | None ->
+          Labels.add offset label_info labels
+      | Some old_info ->
+          (* Sanity check: at the moment we *never* have to combine preludes, we do this using
+             the Textual [If] terminator *)
+          let {prelude= old_prelude} = old_info in
+          let {prelude= new_prelude} = label_info in
+          if Option.is_some old_prelude && Option.is_some new_prelude then
+            L.die InternalError "register_label: failure to combine preludes" ;
+          labels
+    in
     {env with labels}
   in
   let shared = register_label offset label_info shared in
   {env with shared}
 
 
-let process_label ~offset label_info env =
+let process_label ~offset ({label_name} as label_info) ({shared} as env) =
+  Debug.p "[process_label] %s at %d\n" label_name offset ;
   let label_info = {label_info with processed= true} in
-  register_label ~offset label_info env
+  let process_label ({labels} as env) =
+    let labels = Labels.add offset label_info labels in
+    {env with labels}
+  in
+  let shared = process_label shared in
+  {env with shared}
 
 
 let label_of_offset {shared} offset =

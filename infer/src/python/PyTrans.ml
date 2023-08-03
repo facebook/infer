@@ -942,12 +942,26 @@ module BUILD = struct
   end
 end
 
-type jump_info = {label_name: string; ssa_args: T.Exp.t list}
+(** Return the offset of the next opcode, if any *)
+let offset_of_code instructions =
+  match instructions with FFI.Instruction.{offset} :: _ -> Some offset | _ -> None
+
+
+let next_offset opt =
+  match opt with
+  | None ->
+      L.die InternalError "Relative jump forward at the end of code"
+  | Some offset ->
+      offset
+
+
+type jump_info = {label_info: Env.Label.info; offset: int; ssa_args: T.Exp.t list}
 
 type jump = OneWay of jump_info | TwoWay of T.BoolExp.t * jump_info * jump_info
 
 let mk_jump loc jump_info =
-  let node_info {label_name; ssa_args} =
+  let node_info {label_info; ssa_args} =
+    let label_name = Env.Label.name label_info in
     let label = {T.NodeName.value= label_name; loc} in
     {T.Terminator.label; ssa_args}
   in
@@ -976,19 +990,24 @@ let stack_to_ssa env code =
   (Env.reset_stack env, List.unzip zipped)
 
 
+(* Helper to fetch label info if there's already one registered at the specified offset, or
+   create a fresh one. *)
+let mk_label_info env ?prelude offset ~ssa_parameters =
+  match Env.label_of_offset env offset with
+  | Some label_info ->
+      (env, label_info)
+  | None ->
+      let env, label_name = Env.mk_fresh_label env in
+      let label_info = Env.Label.mk ~ssa_parameters ?prelude label_name in
+      (env, label_info)
+
+
 module JUMP = struct
   type kind =
-    | Label of {ssa_args: T.Exp.t list; label_info: Env.Label.info}
+    | Label of jump_info
     | Return of T.Terminator.t
-    | TwoWay of
-        { offset: bool * int
-        ; condition: T.BoolExp.t
-        ; next_info: Env.Label.info
-        ; next_ssa_args: T.Exp.t list
-        ; other_info: Env.Label.info
-        ; other_ssa_args: T.Exp.t list }
-    | Relative of {ssa_args: T.Exp.t list; label_info: Env.Label.info; delta: int}
-    | Absolute of {ssa_args: T.Exp.t list; label_info: Env.Label.info; target: int}
+    | TwoWay of {condition: T.BoolExp.t; next_info: jump_info; other_info: jump_info}
+    | Absolute of jump_info
 
   module POP_IF = struct
     (** {v POP_JUMP_IF_TRUE(target) v}
@@ -998,7 +1017,7 @@ module JUMP = struct
         {v POP_JUMP_IF_FALSE(target) v}
 
         If top-of-stack is false, sets the bytecode counter to target. top-of-steack is popped. *)
-    let run ~next_is_true env code {FFI.Instruction.opname; arg} =
+    let run ~next_is_true env code {FFI.Instruction.opname; arg} next_offset_opt =
       Debug.p "[%s] target = %d\n" opname arg ;
       let env, tos = pop_datastack opname env in
       let env, cell, _ = load_cell env code tos in
@@ -1006,36 +1025,34 @@ module JUMP = struct
         match cell with Ok cond -> cond | Error s -> L.die InternalError "[%s] %s" opname s
       in
       let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
-      let env, next_label = Env.mk_fresh_label env in
-      let env, other_label = Env.mk_fresh_label env in
+      let next_offset = next_offset next_offset_opt in
+      let env, next_info = mk_label_info env next_offset ~ssa_parameters in
+      let env, other_info = mk_label_info env arg ~ssa_parameters in
       (* Compute the relevant pruning expressions *)
       let env, id, _ = Env.mk_builtin_call env Builtin.IsTrue [cond] in
       let condT = T.BoolExp.Exp (Var id) in
       let condition = if next_is_true then condT else T.BoolExp.Not condT in
-      let prelude _loc env = env in
-      let next_info = Env.Label.mk ~ssa_parameters ~prelude next_label in
-      let other_info = Env.Label.mk ~ssa_parameters ~prelude other_label in
       ( env
       , Some
           (TwoWay
-             { offset= (true, arg)
-             ; condition
-             ; next_info
-             ; next_ssa_args= ssa_args
-             ; other_info
-             ; other_ssa_args= ssa_args } ) )
+             { condition
+             ; next_info= {label_info= next_info; offset= next_offset; ssa_args}
+             ; other_info= {label_info= other_info; offset= arg; ssa_args} } ) )
   end
 
   module FORWARD = struct
     (** {v JUMP_FORWARD(delta) v}
 
         Increments bytecode counter by [delta]. *)
-    let run env code {FFI.Instruction.opname; arg} =
-      Debug.p "[%s] delta = %d\n" opname arg ;
+    let run env code {FFI.Instruction.opname; arg= delta} next_offset_opt =
+      Debug.p "[%s] delta = %d\n" opname delta ;
+      (* This instruction gives us a relative delta w.r.t the next offset, so we turn it into an
+         absolute offset right away *)
+      let next_offset = next_offset next_offset_opt in
+      let offset = next_offset + delta in
       let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
-      let env, label_name = Env.mk_fresh_label env in
-      let label_info = Env.Label.mk ~ssa_parameters label_name in
-      (env, Some (Relative {ssa_args; label_info; delta= arg}))
+      let env, label_info = mk_label_info env offset ~ssa_parameters in
+      (env, Some (Absolute {ssa_args; label_info; offset}))
   end
 
   module ABSOLUTE = struct
@@ -1043,28 +1060,21 @@ module JUMP = struct
 
         Set bytecode counter to [target]. Can target a previous offset. *)
 
-    let run env code {FFI.Instruction.opname; arg; offset} =
-      Debug.p "[%s] target = %d\n" opname arg ;
+    let run env code {FFI.Instruction.opname; arg= target; offset} =
+      Debug.p "[%s] target = %d\n" opname target ;
       let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
       (* sanity check: we should already have allocated a label for this jump, if it is a backward
          edge. *)
-      let env, label_info =
-        if arg < offset then
-          let opt_info = Env.label_of_offset env arg in
-          match opt_info with
-          | Some label_info ->
-              (env, label_info)
-          | None ->
-              L.die UserError
-                "[%s] invalid input, can't find the target of a back-edge from offset %d to offset \
-                 %d"
-                opname offset arg
-        else
-          let env, label_name = Env.mk_fresh_label env in
-          let label_info = Env.Label.mk ~ssa_parameters label_name in
-          (env, label_info)
+      let () =
+        if target < offset then
+          let opt_info = Env.label_of_offset env target in
+          if Option.is_none opt_info then
+            L.die UserError
+              "[%s] invalid input, can't find the target of a back-edge from offset %d to offset %d"
+              opname offset target
       in
-      (env, Some (Absolute {ssa_args; label_info; target= arg}))
+      let env, label_info = mk_label_info env target ~ssa_parameters in
+      (env, Some (Absolute {ssa_args; label_info; offset= target}))
   end
 end
 
@@ -1109,8 +1119,8 @@ module ITER = struct
         top-of-stack is an iterator. Call its [__next__()] method. If this yields a new value, push
         it on the stack (leaving the iterator below it). If the iterator indicates it is exhausted
         top-of-stack is popped, and the byte code counter is incremented by delta. *)
-    let run env code {FFI.Instruction.opname; arg} =
-      Debug.p "[%s] delta = %d\n" opname arg ;
+    let run env code {FFI.Instruction.opname; arg= delta} next_offset_opt =
+      Debug.p "[%s] delta = %d\n" opname delta ;
       let env, iter_cell = pop_datastack opname env in
       let env, iter_exp, _ = load_cell env code iter_cell in
       match iter_exp with
@@ -1124,8 +1134,6 @@ module ITER = struct
           let env = Env.push_instr env has_item_load in
           let cond = T.Exp.Var has_item_id in
           let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
-          let env, next_label = Env.mk_fresh_label env in
-          let env, other_label = Env.mk_fresh_label env in
           (* Compute the relevant pruning expressions *)
           let condition = T.BoolExp.Exp cond in
           (* In the next branch, we know the iterator has an item available. Let's fetch it and
@@ -1145,18 +1153,18 @@ module ITER = struct
             let env = Env.push_instr env next_item_load in
             Env.push env (DataStack.Temp next_item_id)
           in
-          let other_prelude _loc env = env in
-          let next_info = Env.Label.mk ~ssa_parameters ~prelude:next_prelude next_label in
-          let other_info = Env.Label.mk ~ssa_parameters ~prelude:other_prelude other_label in
+          let next_offset = next_offset next_offset_opt in
+          let env, next_info =
+            mk_label_info env next_offset ~prelude:next_prelude ~ssa_parameters
+          in
+          let other_offset = delta + next_offset in
+          let env, other_info = mk_label_info env other_offset ~ssa_parameters in
           ( env
           , Some
               (JUMP.TwoWay
-                 { offset= (false, arg)
-                 ; condition
-                 ; next_info
-                 ; next_ssa_args= ssa_args
-                 ; other_info
-                 ; other_ssa_args= ssa_args } ) )
+                 { condition
+                 ; next_info= {label_info= next_info; offset= next_offset; ssa_args}
+                 ; other_info= {label_info= other_info; offset= other_offset; ssa_args} } ) )
       | Error s ->
           L.die InternalError "[%s] %s" opname s
   end
@@ -1298,7 +1306,7 @@ module COMPARE_OP = struct
 end
 
 (** Main opcode dispatch function. *)
-let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
+let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) next_offset_opt =
   let env = Env.update_last_line env starts_line in
   (* TODO: there are < 256 opcodes, could setup an array of callbacks instead *)
   let env, maybe_term =
@@ -1332,17 +1340,17 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) =
     | "MAKE_FUNCTION" ->
         FUNCTION.MAKE.run env code instr
     | "POP_JUMP_IF_TRUE" ->
-        JUMP.POP_IF.run ~next_is_true:false env code instr
+        JUMP.POP_IF.run ~next_is_true:false env code instr next_offset_opt
     | "POP_JUMP_IF_FALSE" ->
-        JUMP.POP_IF.run ~next_is_true:true env code instr
+        JUMP.POP_IF.run ~next_is_true:true env code instr next_offset_opt
     | "JUMP_FORWARD" ->
-        JUMP.FORWARD.run env code instr
+        JUMP.FORWARD.run env code instr next_offset_opt
     | "JUMP_ABSOLUTE" ->
         JUMP.ABSOLUTE.run env code instr
     | "GET_ITER" ->
         ITER.GET.run env code instr
     | "FOR_ITER" ->
-        ITER.FOR.run env code instr
+        ITER.FOR.run env code instr next_offset_opt
     | "BUILD_CONST_KEY_MAP" ->
         BUILD.CONST_KEY_MAP.run env code instr
     | "LOAD_BUILD_CLASS" ->
@@ -1395,7 +1403,8 @@ let rec run env code instructions =
       match maybe_label with
       | None ->
           (* Nop, just continue processing the stream of instrunctions *)
-          let env, maybe_term = run_instruction env code instr in
+          let next_offset_opt = offset_of_code rest in
+          let env, maybe_term = run_instruction env code instr next_offset_opt in
           if Option.is_some maybe_term then (env, maybe_term, rest) else run env code rest
       | Some (_offset, maybe_backedge, label_info) ->
           (* Yes, let's stop there, and don't forget to keep [instr] around *)
@@ -1404,7 +1413,9 @@ let rec run env code instructions =
             if maybe_backedge then Env.Label.update_ssa_parameters label_info ssa_parameters
             else label_info
           in
-          (env, Some (JUMP.Label {ssa_args; label_info}), instructions) )
+          let offset = offset_of_code instructions |> next_offset in
+          let info = {label_info; offset; ssa_args} in
+          (env, Some (JUMP.Label info), instructions) )
 
 
 (** Return the location of the first available instruction, if any *)
@@ -1414,11 +1425,6 @@ let first_loc_of_code instructions =
       T.Location.known ~line ~col:0
   | _ ->
       T.Location.Unknown
-
-
-(** Return the offset of the next opcode, if any *)
-let offset_of_code instructions =
-  match instructions with FFI.Instruction.{offset} :: _ -> Some offset | _ -> None
 
 
 (** Process the instructions of a code object up to the point where a terminator is reached. It will
@@ -1445,16 +1451,9 @@ let until_terminator env label_info code instructions =
   (* process instructions until the next terminator *)
   let env, maybe_term, rest = run env code instructions in
   let last_loc = Env.loc env in
-  let next_offset () =
-    match offset_of_code rest with
-    | None ->
-        L.die InternalError "Relative jump forward at the end of code"
-    | Some offset ->
-        offset
-  in
-  let unconditional_jump env ssa_args label_info target =
-    let target_label = Env.Label.name label_info in
-    let jump = mk_jump last_loc (OneWay {label_name= target_label; ssa_args}) in
+  let unconditional_jump env ssa_args label_info offset =
+    let env = Env.register_label ~offset label_info env in
+    let jump = mk_jump last_loc (OneWay {label_info; offset; ssa_args}) in
     let node =
       T.Node.
         { label
@@ -1465,18 +1464,17 @@ let until_terminator env label_info code instructions =
         ; last_loc
         ; label_loc }
     in
-    (* Now register the target label *)
-    let env = Env.register_label ~offset:target label_info env in
     (env, node)
   in
   match maybe_term with
   | None ->
       L.die InternalError "Reached the end of code without spotting a terminator"
-  | Some (Label {ssa_args; label_info}) ->
-      let next_label = Env.Label.name label_info in
+  | Some (Label info) ->
+      let {offset; label_info} = info in
+      let env = Env.register_label ~offset label_info env in
       (* A label was spotted without having a clear Textual terminator. Insert a jump to this
          label to create a proper node, and resume the processing. *)
-      let jump = mk_jump last_loc (OneWay {label_name= next_label; ssa_args}) in
+      let jump = mk_jump last_loc (OneWay info) in
       let node =
         T.Node.
           { label
@@ -1487,9 +1485,7 @@ let until_terminator env label_info code instructions =
           ; last_loc
           ; label_loc }
       in
-      Debug.p "  Label: splitting instructions alongside %s\n" next_label ;
-      let offset = next_offset () in
-      let env = Env.register_label ~offset label_info env in
+      Debug.p "  Label: splitting instructions alongside %s\n" (Env.Label.name label_info) ;
       (env, rest, node)
   | Some (Return last) ->
       let node =
@@ -1504,30 +1500,17 @@ let until_terminator env label_info code instructions =
       in
       Debug.p "  Return\n" ;
       (env, rest, node)
-  | Some
-      (TwoWay
-        { offset= is_absolute, other_offset
-        ; condition
-        ; next_info
-        ; next_ssa_args
-        ; other_info
-        ; other_ssa_args } ) ->
+  | Some (TwoWay {condition; next_info; other_info}) ->
+      let {label_info= next_label_info; offset= next_offset} = next_info in
+      let {label_info= other_label_info; offset= other_offset} = other_info in
       (* The current node ended up with a two-way jump. Either continue to the "next"
          (fall-through) part of the code, or jump to the "other" section of the code. For this
          purpose, register a fresh label for the jump. *)
-      let next_label = Env.Label.name next_info in
-      let other_label = Env.Label.name other_info in
+      let env = Env.register_label ~offset:next_offset next_label_info env in
+      let env = Env.register_label ~offset:other_offset other_label_info env in
       (* Register the jump target *)
-      let next_offset = next_offset () in
-      let other_offset = if is_absolute then other_offset else next_offset + other_offset in
-      Debug.p "  TwoWay: register %s at %d\n" other_label other_offset ;
-      let env = Env.register_label ~offset:next_offset next_info env in
-      let env = Env.register_label ~offset:other_offset other_info env in
-      let jump =
-        let then_ = {label_name= next_label; ssa_args= next_ssa_args} in
-        let else_ = {label_name= other_label; ssa_args= other_ssa_args} in
-        mk_jump last_loc (TwoWay (condition, then_, else_))
-      in
+      Debug.p "  TwoWay: register %s at %d\n" (Env.Label.name other_label_info) other_offset ;
+      let jump = mk_jump last_loc (TwoWay (condition, next_info, other_info)) in
       let node =
         T.Node.
           { label
@@ -1539,24 +1522,10 @@ let until_terminator env label_info code instructions =
           ; label_loc }
       in
       (env, rest, node)
-  | Some (Relative {ssa_args; label_info; delta}) ->
-      (* The current node ends up with a relative jump to [+delta]. The first thing to get is the
-         offset of the next instruction, which is the base of the jump. Since Python
-         bytecode is not of fixed size, the easiest way is to check the next instruction. *)
-      let offset =
-        match offset_of_code rest with
-        | None ->
-            L.die InternalError "Relative jump forward at the end of code"
-        | Some offset ->
-            offset
-      in
-      let env, node = unconditional_jump env ssa_args label_info (offset + delta) in
-      Debug.p "  Relative: register %s at %d\n" (Env.Label.name label_info) (offset + delta) ;
-      (env, rest, node)
-  | Some (Absolute {ssa_args; label_info; target}) ->
+  | Some (Absolute {ssa_args; label_info; offset}) ->
       (* The current node ends up with an absolute jump to [target]. *)
-      let env, node = unconditional_jump env ssa_args label_info target in
-      Debug.p "  Absolute: register %s at %d\n" (Env.Label.name label_info) target ;
+      let env, node = unconditional_jump env ssa_args label_info offset in
+      Debug.p "  Absolute: register %s at %d\n" (Env.Label.name label_info) offset ;
       (env, rest, node)
 
 
