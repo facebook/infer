@@ -36,8 +36,8 @@ class C1 {
     ShapeLogger::logData(shape('msg' => 'Oh-oh', 'debug_data' => $data));
   }
 
-  public function FN_shapeLookupBad(SensitiveClass $sc, TSchemaShape $shape) {
-      $_ = $shape['msg']; // we get 0 disjuncts here and miss to catch the flow below
+  public function shapeLookupBad(SensitiveClass $sc, TSchemaShape $shape) {
+      $_ = $shape['msg'];
       \Level1\taintSink($sc);
   }
 }

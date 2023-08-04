@@ -91,7 +91,7 @@ class Main {
     if ($t1['level1']['b'] != $v1) {\Level1\taintSink($tainted);}
     if ($t1['level2']['a'] != $w) {\Level1\taintSink($tainted);}
     if ($t2['a'] != $u2) {\Level1\taintSink($tainted);}
-    if (t1['level2']['b'] != $v2) {\Level1\taintSink($tainted);}
+    if ($t1['level2']['b'] != $v2) {\Level1\taintSink($tainted);}
     if ($t2['b'] != $v2) {\Level1\taintSink($tainted);}
   }
 }
