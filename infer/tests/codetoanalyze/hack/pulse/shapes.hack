@@ -7,7 +7,7 @@ namespace Shapes;
 
 class ShapeLogger {
   const type TSchemaShape = shape(
-    ?'msg' => ?string,
+    'msg' => string,
     ?'debug_data' => ?string,
   );
 
@@ -34,5 +34,10 @@ class C1 {
   public function passViaShapeAndUnknownBad(SensitiveClass $sc) {
     $data = unknown(shape("sc" => $sc));
     ShapeLogger::logData(shape('msg' => 'Oh-oh', 'debug_data' => $data));
+  }
+
+  public function FN_shapeLookupBad(SensitiveClass $sc, TSchemaShape $shape) {
+      $_ = $shape['msg']; // we get 0 disjuncts here and miss to catch the flow below
+      \Level1\taintSink($sc);
   }
 }

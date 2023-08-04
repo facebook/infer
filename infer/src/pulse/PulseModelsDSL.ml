@@ -192,5 +192,6 @@ module Syntax = struct
             type_name ;
           disjuncts [] )
     | _ ->
+        Logging.d_printfln "[ocaml model] No dynamic type found!" ;
         Option.value_map default ~default:(disjuncts []) ~f:Fn.id
 end
