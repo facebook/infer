@@ -30,45 +30,6 @@ let read_boxed_string_value_dsl aval : string DSL.model_monad =
   Option.value_map opt_string ~default:unreachable ~f:ret
 
 
-let hack_dim_field_get this_obj_dbl_ptr (field_string_obj, _) : model =
- fun {path; location; ret} astate ->
-  match read_boxed_string_value field_string_obj astate with
-  | Some string_val ->
-      (* TODO: add a move up in the class hierarchy to find the right field declaration *)
-      let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack string_val in
-      let<*> astate, this_val =
-        PulseOperations.eval_access path Read location this_obj_dbl_ptr Dereference astate
-      in
-      let<+> astate, field_val =
-        PulseOperations.eval_access path Read location this_val (FieldAccess field) astate
-      in
-      let ret_id, _ = ret in
-      PulseOperations.write_id ret_id field_val astate
-  | None ->
-      (* TODO: invalidate the access if the string field is unknown *)
-      Logging.d_printfln "reading field failed" ;
-      astate |> Basic.ok_continue
-
-
-let hack_dim_field_get_or_null this_obj_dbl_ptr field : model =
- fun ({path; location; ret= ret_id, _} as model_data) astate ->
-  let<*> astate, (this_obj, _) =
-    PulseOperations.eval_access path Read location this_obj_dbl_ptr Dereference astate
-  in
-  (* Case 1: this_obj is a null ptr *)
-  let astate1 =
-    let<++> astate = PulseArithmetic.prune_eq_zero this_obj astate in
-    let null_ret = (AbstractValue.mk_fresh (), Hist.single_call path location "null ptr case") in
-    PulseOperations.write_id ret_id null_ret astate
-  in
-  (* Case 2: this_obj is not null in which case we call the regular hack_dim_field_get *)
-  let astate2 =
-    let<**> astate = PulseArithmetic.prune_ne_zero this_obj astate in
-    hack_dim_field_get this_obj_dbl_ptr field model_data astate
-  in
-  astate1 @ astate2
-
-
 let payload_of_arg arg =
   let {ProcnameDispatcher.Call.FuncArg.arg_payload= addr} = arg in
   addr
@@ -233,7 +194,7 @@ module Vec = struct
     disjuncts [case1; case2; case3]
 
 
-  let hack_dim_array_get vec args : unit DSL.model_monad =
+  let hack_array_get vec args : unit DSL.model_monad =
     let open DSL.Syntax in
     match args with
     | [key] ->
@@ -241,7 +202,7 @@ module Vec = struct
         let* index = eval_deref_access Read key (FieldAccess field) in
         get_vec vec index
     | _ ->
-        L.d_printfln "Vec.hack_dim_array_get expects only 1 key argument" ;
+        L.d_printfln "Vec.hack_array_get expects only 1 key argument" ;
         disjuncts []
 
 
@@ -397,7 +358,7 @@ module Dict = struct
         L.die InternalError "should not happen"
 
 
-  let hack_dim_array_get dict keys : unit DSL.model_monad =
+  let hack_array_get dict keys : unit DSL.model_monad =
     let open DSL.Syntax in
     (* TODO: a key for a non-vec could be also a int *)
     let* value =
@@ -425,7 +386,7 @@ let hack_array_cow_set this args : model =
     ~default
 
 
-let hack_dim_array_get this args : model =
+let hack_array_get this args : model =
   let open DSL.Syntax in
   start_model
   @@
@@ -437,8 +398,8 @@ let hack_dim_array_get this args : model =
   in
   dynamic_dispatch this
     ~cases:
-      [ (TextualSil.hack_dict_type_name, Dict.hack_dim_array_get this args)
-      ; (TextualSil.hack_vec_type_name, Vec.hack_dim_array_get this args) ]
+      [ (TextualSil.hack_dict_type_name, Dict.hack_array_get this args)
+      ; (TextualSil.hack_vec_type_name, Vec.hack_array_get this args) ]
     ~default
 
 
@@ -476,12 +437,7 @@ let matchers : matcher list =
   [ -"$builtins" &:: "nondet" <>$$--> Basic.nondet ~desc:"nondet"
   ; +BuiltinDecl.(match_builtin __lazy_class_initialize) <>$ capt_exp $--> lazy_class_initialize
   ; -"$builtins" &:: "hhbc_await" <>$ capt_arg_payload $--> hack_await
-  ; -"$builtins" &:: "hack_dim_field_get" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> hack_dim_field_get
-  ; -"$builtins" &:: "hack_dim_field_get_or_null" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> hack_dim_field_get_or_null
-  ; -"$builtins" &:: "hack_dim_array_get" <>$ capt_arg $++$--> hack_dim_array_get
-  ; -"$builtins" &:: "hack_array_get" <>$ capt_arg $++$--> hack_dim_array_get
+  ; -"$builtins" &:: "hack_array_get" <>$ capt_arg $++$--> hack_array_get
   ; -"$builtins" &:: "hack_array_cow_set" <>$ capt_arg $++$--> hack_array_cow_set
   ; -"$builtins" &:: "hack_new_dict" &::.*++> Dict.new_dict
   ; -"$builtins" &:: "hhbc_new_vec" &::.*++> Vec.new_vec
