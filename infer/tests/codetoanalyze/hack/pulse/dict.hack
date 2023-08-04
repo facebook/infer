@@ -94,4 +94,10 @@ class Main {
     if ($t1['level2']['b'] != $v2) {\Level1\taintSink($tainted);}
     if ($t2['b'] != $v2) {\Level1\taintSink($tainted);}
   }
+
+  public function FN_copy_on_write_no_dynamic_type_bad(dict<string,int> $dict) {
+    $tainted = \Level1\taintSource();
+    $dict['a'] = 1;
+    \Level1\taintSink($tainted);
+  }
 }
