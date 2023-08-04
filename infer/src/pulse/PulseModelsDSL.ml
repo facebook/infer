@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
@@ -17,21 +18,31 @@ type 'a result = 'a AccessResult.t
 
 type aval = AbstractValue.t * ValueHistory.t
 
-(* we work on a disjunction of executions, but only in ContinueProgram mode *)
-type 'a model_monad = model_data -> astate -> ('a * astate) result list
+(* we work on a disjunction of executions *)
+type 'a model_monad = model_data -> astate -> 'a execution result list
+
+and 'a execution =
+  | ContinueProgram of 'a * astate
+  | Other of ExecutionDomain.t (* should never contain a ExecutionDomain.ContinueProgram *)
 
 module Syntax = struct
-  let ret (a : 'a) : 'a model_monad = fun _data astate -> [Ok (a, astate)]
+  let ret (a : 'a) : 'a model_monad = fun _data astate -> [Ok (ContinueProgram (a, astate))]
 
   let unreachable : 'a model_monad = fun _ _ -> []
 
   let bind (x : 'a model_monad) (f : 'a -> 'b model_monad) : 'b model_monad =
    fun data astate ->
     List.concat_map (x data astate) ~f:(function
-      | Ok (a, astate) ->
+      | Ok (ContinueProgram (a, astate)) ->
           f a data astate
-      | Recoverable ((a, astate), err) ->
+      | Recoverable (ContinueProgram (a, astate), err) ->
           f a data astate |> List.map ~f:(PulseResult.append_errors err)
+      | Ok (Other (ContinueProgram _)) | Recoverable (Other (ContinueProgram _), _) ->
+          L.die InternalError "DSL.Other should never contains ContinueProgram"
+      | Ok (Other exec) ->
+          [Ok (Other exec)]
+      | Recoverable (Other exec, err) ->
+          [Recoverable (Other exec, err)]
       | FatalError _ as err ->
           [err] )
 
@@ -72,7 +83,24 @@ module Syntax = struct
 
   let start_model (monad : unit model_monad) : model =
    fun data astate ->
-    List.map (monad data astate) ~f:(PulseResult.map ~f:(fun ((), astate) -> ContinueProgram astate))
+    List.map (monad data astate)
+      ~f:
+        (PulseResult.map ~f:(function
+          | ContinueProgram ((), astate) ->
+              ExecutionDomain.ContinueProgram astate
+          | Other exec ->
+              exec ) )
+
+
+  let lift_to_monad (model : model) : unit model_monad =
+   fun data astate ->
+    List.map (model data astate)
+      ~f:
+        (PulseResult.map ~f:(function
+          | ExecutionDomain.ContinueProgram astate ->
+              ContinueProgram ((), astate)
+          | exec ->
+              Other exec ) )
 
 
   let disjuncts (list : 'a model_monad list) : 'a model_monad =
@@ -85,11 +113,11 @@ module Syntax = struct
     | Unsat ->
         []
     | Sat res ->
-        [PulseResult.map res ~f:(fun astate -> ((), astate))]
+        [PulseResult.map res ~f:(fun astate -> ContinueProgram ((), astate))]
 
 
   let exec_command (f : astate -> astate) : unit model_monad =
-   fun _data astate -> [ok ((), f astate)]
+   fun _data astate -> [ok (ContinueProgram ((), f astate))]
 
 
   let exec_partial_operation (f : astate -> (astate * 'a) PulseOperationResult.t) : 'a model_monad =
@@ -98,7 +126,7 @@ module Syntax = struct
     | Unsat ->
         []
     | Sat res ->
-        [PulseResult.map res ~f:(fun (astate, a) -> (a, astate))]
+        [PulseResult.map res ~f:(fun (astate, a) -> ContinueProgram (a, astate))]
 
 
   let exec_operation (f : astate -> 'a * astate) : 'a model_monad =

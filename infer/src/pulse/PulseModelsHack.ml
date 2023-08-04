@@ -309,18 +309,17 @@ let lazy_class_initialize size_exp : model =
   assign_ret class_object
 
 
-let get_static_class_dsl aval : unit DSL.model_monad =
+let get_static_class aval : model =
   let open DSL.Syntax in
-  let* (opt_typ : Typ.t option) = get_dynamic_type ~ask_specialization:true aval in
-  match opt_typ with
-  | Some {desc= Tstruct type_name} ->
-      let* class_object = get_static_companion_dsl ~model_desc:"get_static_class" type_name in
-      assign_ret class_object
-  | _ ->
-      ret ()
+  start_model
+  @@ let* (opt_typ : Typ.t option) = get_dynamic_type ~ask_specialization:true aval in
+     match opt_typ with
+     | Some {desc= Tstruct type_name} ->
+         let* class_object = get_static_companion_dsl ~model_desc:"get_static_class" type_name in
+         assign_ret class_object
+     | _ ->
+         ret ()
 
-
-let get_static_class aval : model = get_static_class_dsl aval |> DSL.Syntax.start_model
 
 let hhbc_class_get_c value : model =
   let open DSL.Syntax in
@@ -334,7 +333,7 @@ let hhbc_class_get_c value : model =
              let typ_name = Typ.HackClass (HackClassName.make string) in
              let* class_object = get_static_companion_dsl ~model_desc:"hhbc_class_get_c" typ_name in
              assign_ret class_object ) ]
-       ~default:(get_static_class_dsl value)
+       ~default:(get_static_class value |> lift_to_monad)
 
 
 module Dict = struct

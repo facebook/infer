@@ -49,6 +49,12 @@ module Syntax : sig
   val start_model : unit model_monad -> PulseModelsImport.model
   (** get a model from a disjunctive model_monad *)
 
+  val lift_to_monad : PulseModelsImport.model -> unit model_monad
+  (** beware that the model may modify the [PulseModelsImport.model_data.ret] field *)
+
+  (* TODO (dpichardie) add an other function that lift the monad and return the
+     value that is associated with [ret] *)
+
   (*****************************************************************)
   (* each PulseOperations functions you need should be copied here *)
   val add_dynamic_type : Typ.t -> aval -> unit model_monad
