@@ -39,26 +39,15 @@ let payloads_of_args args = List.map ~f:payload_of_arg args
 
 let mk_hack_field clazz field = Fieldname.make (Typ.HackClass (HackClassName.make clazz)) field
 
-let load_field path field location obj astate =
-  let* astate, field_addr =
-    PulseOperations.eval_access path Read location obj (FieldAccess field) astate
-  in
-  let+ astate, field_val =
-    PulseOperations.eval_access path Read location field_addr Dereference astate
-  in
-  (astate, field_addr, field_val)
+let await_hack_value aval : unit DSL.model_monad =
+  fst aval |> AddressAttributes.hack_async_await |> DSL.Syntax.exec_command
 
 
-let await_hack_value v astate = AddressAttributes.hack_async_await v astate
-
-let await_hack_value_dsl aval : unit DSL.model_monad =
-  fst aval |> await_hack_value |> DSL.Syntax.exec_command
-
-
-let hack_await (argv, hist) : model =
- fun {ret= ret_id, _} astate ->
-  let astate = await_hack_value argv astate in
-  PulseOperations.write_id ret_id (argv, hist) astate |> Basic.ok_continue
+let hack_await arg : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* () = await_hack_value arg in
+     assign_ret arg
 
 
 (* vecs, similar treatment of Java collections, though these are value types
@@ -109,7 +98,7 @@ module Vec = struct
                   ret ()
                   (* Do "fake" await on the values we drop on the floor. TODO: mark reachable too? *)
               | rest ->
-                  list_iter rest ~f:await_hack_value_dsl ) )
+                  list_iter rest ~f:await_hack_value ) )
     in
     let* () = and_eq_int size (IntLit.of_int actual_size) in
     let* () = and_eq_int dummy (IntLit.of_int 9) in
@@ -117,24 +106,26 @@ module Vec = struct
 
 
   let new_vec args : model =
-    let values = payloads_of_args args in
     let open DSL.Syntax in
     start_model
-    @@ let* vec = new_vec_dsl values in
-       assign_ret vec
+    @@
+    let values = payloads_of_args args in
+    let* vec = new_vec_dsl values in
+    assign_ret vec
 
 
-  let vec_from_async _dummy ((vaddr, _vhist) as v) : model =
-   fun {path; location; ret= ret_id, _} astate ->
+  let vec_from_async _dummy aval : model =
+    let open DSL.Syntax in
+    start_model
+    @@
     (* let event = Hist.call_event path location "Vec\from_async" in *)
-    L.d_printfln "Called vec from async" ;
-    let<*> astate, _, (fst_val, _) = load_field path fst_field location v astate in
-    let<*> astate, _, (snd_val, _) = load_field path snd_field location v astate in
-    let astate = await_hack_value fst_val astate in
-    let astate = await_hack_value snd_val astate in
-    let astate = PulseOperations.allocate Attribute.HackAsync location vaddr astate in
-    let astate = PulseOperations.write_id ret_id v astate in
-    astate |> Basic.ok_continue
+    let () = L.d_printfln "Called vec from async" in
+    let* fst_val = eval_deref_access Read aval (FieldAccess fst_field) in
+    let* snd_val = eval_deref_access Read aval (FieldAccess snd_field) in
+    let* () = await_hack_value fst_val in
+    let* () = await_hack_value snd_val in
+    let* () = allocation Attribute.HackAsync aval in
+    assign_ret aval
 
 
   let get_vec argv index : unit DSL.model_monad =
@@ -158,8 +149,8 @@ module Vec = struct
           In this case, we leave the last_read_val field unchanged
           And we also, to avoid false positives, do a fake await of the fst and snd fields
       *)
-      let* () = await_hack_value_dsl fst_val in
-      let* () = await_hack_value_dsl snd_val in
+      let* () = await_hack_value fst_val in
+      let* () = await_hack_value snd_val in
       let* () = prune_binop ~negated:true Eq (aval_operand ret_val) (aval_operand fst_val) in
       let* () = prune_binop ~negated:true Eq (aval_operand ret_val) (aval_operand snd_val) in
       let* () =
@@ -216,7 +207,7 @@ module Vec = struct
     | [_key; value] ->
         let* v_fst = eval_deref_access Read vec (FieldAccess fst_field) in
         let* v_snd = eval_deref_access Read vec (FieldAccess snd_field) in
-        let* () = await_hack_value_dsl v_fst in
+        let* () = await_hack_value v_fst in
         let* new_vec = new_vec_dsl [v_snd; value] in
         let* size = eval_deref_access Read vec (FieldAccess size_field) in
         let* () = write_deref_field ~ref:new_vec size_field ~obj:size in

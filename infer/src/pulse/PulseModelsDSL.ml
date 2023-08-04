@@ -182,6 +182,11 @@ module Syntax = struct
     PulseArithmetic.and_eq_int size_addr i |> exec_partial_command
 
 
+  let allocation attr (addr, _) : unit model_monad =
+    let* {location} = get_data in
+    PulseOperations.allocate attr location addr |> exec_command
+
+
   let mk_fresh ~model_desc : aval model_monad =
     let* {path; location} = get_data in
     let addr = AbstractValue.mk_fresh () in
