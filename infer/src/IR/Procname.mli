@@ -494,6 +494,9 @@ val to_filename : t -> string
 val get_qualifiers : t -> QualifiedCppName.t
 (** get qualifiers of C/objc/C++ method/function *)
 
+val get_hack_arity : t -> int option
+(** get the arity of a Hack procname *)
+
 val pp_name_only : F.formatter -> t -> unit
 (** Print name of procedure with at most one-level path. For example,
 

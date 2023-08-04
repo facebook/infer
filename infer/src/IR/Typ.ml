@@ -552,12 +552,28 @@ module Name = struct
           L.die InternalError "static_companion_origin is only implemented for Hack class names"
 
 
-    let is_static typename =
+    let is_static_companion typename =
       match typename with
       | HackClass class_name ->
-          HackClassName.is_static class_name
+          HackClassName.is_static_companion class_name
       | _ ->
           L.die InternalError "is_static is only implemented for Hack class names"
+
+
+    let is_generated_curry typename =
+      match typename with
+      | HackClass class_name ->
+          HackClassName.is_generated_curry class_name
+      | _ ->
+          false
+
+
+    let extract_curry_info typename =
+      match typename with
+      | HackClass class_name ->
+          HackClassName.extract_curry_info class_name
+      | _ ->
+          None
   end
 
   module Java = struct

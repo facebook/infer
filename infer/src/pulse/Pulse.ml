@@ -356,6 +356,14 @@ module PulseTransferFunctions = struct
     in
     let open IOption.Let_syntax in
     match get_dynamic_type_name astate receiver with
+    | Some (dynamic_type_name, _) when Typ.Name.Hack.is_generated_curry dynamic_type_name ->
+        (* this is a ...$static_...$curry'.__invoke() call to a Hack function reference *)
+        let+ class_name, function_name = Typ.Name.Hack.extract_curry_info dynamic_type_name in
+        let arity = Procname.get_hack_arity proc_name in
+        let proc_name = Procname.make_hack ~class_name:(Some class_name) ~function_name ~arity in
+        L.d_printfln "function pointer on %a detected" Procname.pp proc_name ;
+        (* TODO (dpichardie): we need to modify the first argument because this is not the expected class object *)
+        (Tenv.MethodInfo.mk_class proc_name, `ExactDevirtualization)
     | Some (dynamic_type_name, source_file_opt) ->
         (* if we have a source file then do the look up in the (local) tenv
            for that source file instead of in the tenv for the current file *)
@@ -480,7 +488,7 @@ module PulseTransferFunctions = struct
       match AbductiveDomain.AddressAttributes.get_static_type receiver astate with
       | Some typ_name ->
           let improved_proc_name = Procname.replace_class proc_name typ_name in
-          L.d_printfln "Progagating declared type to improve callee name: %a replaced by %a"
+          L.d_printfln "Propagating declared type to improve callee name: %a replaced by %a"
             Procname.pp proc_name Procname.pp improved_proc_name ;
           Some improved_proc_name
       | _ ->

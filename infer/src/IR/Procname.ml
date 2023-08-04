@@ -656,6 +656,8 @@ module Hack = struct
 
   let get_class_type_name {class_name} = Option.map class_name ~f:(fun cn -> Typ.HackClass cn)
 
+  let get_arity {arity} = arity
+
   let pp verbosity fmt t =
     let pp_arity verbosity fmt =
       match verbosity with
@@ -1522,6 +1524,8 @@ let make_python ~class_name ~function_name ~arity = Python {class_name; function
 let erlang_call_unqualified ~arity = Erlang (Erlang.call_unqualified arity)
 
 let erlang_call_qualified ~arity = Erlang (Erlang.call_qualified arity)
+
+let get_hack_arity = function Hack hack_proc_name -> Hack.get_arity hack_proc_name | _ -> None
 
 module Hashable = struct
   type nonrec t = t [@@deriving compare, equal]

@@ -204,8 +204,14 @@ module Name : sig
     val static_companion_origin : t -> t
     (** See {!HackClassName.static_companion_origin} *)
 
-    val is_static : t -> bool
-    (** See {!HackClassName.is_static} *)
+    val is_static_companion : t -> bool
+    (** See {!HackClassName.is_static_companion} *)
+
+    val is_generated_curry : t -> bool
+    (** See {!HackClassName.is_generated_curry} *)
+
+    val extract_curry_info : t -> (HackClassName.t * string) option
+    (** See {!HackClassName.extract_curry_info} *)
   end
 
   module Java : sig

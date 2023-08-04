@@ -31,7 +31,7 @@ let type_matches tenv actual_typ types =
 let class_names_match tenv class_names class_name =
   Option.exists class_name ~f:(fun class_name ->
       let class_name =
-        if Language.curr_language_is Hack && Typ.Name.Hack.is_static class_name then
+        if Language.curr_language_is Hack && Typ.Name.Hack.is_static_companion class_name then
           (* in Hack, instance and static method are dispatched in the class and in its static
              companion, but they can not appear in both *)
           Typ.Name.Hack.static_companion_origin class_name

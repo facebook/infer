@@ -13,7 +13,7 @@ class Main {
 }
 
 class Test1 {
-  public static function FN_runFooBad(): void {
+  public static function runFooBad(): void {
     $f = Main::foo<>;
     \Level1\taintSink($f(true, true));
   }
@@ -29,7 +29,7 @@ class Test2 {
     return $f($x, $y);
   }
 
-  public static function FN_runFooUsingApplyBad(): void {
+  public static function runFooUsingApplyBad(): void {
     $f = Main::foo<>;
     \Level1\taintSink(self::apply($f, true, true));
   }
@@ -52,7 +52,7 @@ class Bundle {
 }
 
 class Test3 {
-  public static function FN_runFooWithBundleBad(): void {
+  public static function runFooWithBundleBad(): void {
     $f = Main::foo<>;
     \Level1\taintSink((new Bundle($f, true))->run(true));
   }
