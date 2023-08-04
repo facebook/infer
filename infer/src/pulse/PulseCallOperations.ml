@@ -70,7 +70,10 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
   let should_havoc actual_typ formal_typ_opt =
     let matches_iter =
       QualifiedCppName.Match.of_fuzzy_qual_names
-        ["std::__detail::_Node_iterator"; "std::__wrap_iter"; "__gnu_cxx::__normal_iterator"]
+        [ "std::__detail::_Node_iterator"
+        ; "std::__wrap_iter"
+        ; "std::_Rb_tree_iterator"
+        ; "__gnu_cxx::__normal_iterator" ]
     in
     match actual_typ.Typ.desc with
     | _ when Language.curr_language_is Erlang ->
