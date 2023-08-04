@@ -95,7 +95,7 @@ class Main {
     if ($t2['b'] != $v2) {\Level1\taintSink($tainted);}
   }
 
-  public function FN_copy_on_write_no_dynamic_type_bad(dict<string,int> $dict) {
+  public function copy_on_write_no_dynamic_type_bad(dict<string,int> $dict) {
     $tainted = \Level1\taintSource();
     $dict['a'] = 1;
     \Level1\taintSink($tainted);

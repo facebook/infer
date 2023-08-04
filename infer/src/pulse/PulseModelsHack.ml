@@ -415,10 +415,15 @@ let hack_array_cow_set this args : model =
   @@
   let this = payload_of_arg this in
   let args = payloads_of_args args in
+  let default =
+    let* fresh = mk_fresh ~model_desc:"hack_array_cow_set" in
+    assign_ret fresh
+  in
   dynamic_dispatch this
     ~cases:
       [ (TextualSil.hack_dict_type_name, Dict.hack_array_cow_set_dsl this args)
       ; (TextualSil.hack_vec_type_name, Vec.hack_array_cow_set_dsl this args) ]
+    ~default
 
 
 let hack_dim_array_get this args : model =
