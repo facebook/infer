@@ -363,7 +363,7 @@ module PulseTransferFunctions = struct
         let proc_name = Procname.make_hack ~class_name:(Some class_name) ~function_name ~arity in
         L.d_printfln "function pointer on %a detected" Procname.pp proc_name ;
         (* TODO (dpichardie): we need to modify the first argument because this is not the expected class object *)
-        (Tenv.MethodInfo.mk_class proc_name, `ExactDevirtualization)
+        (Tenv.MethodInfo.mk_class proc_name, `HackFunctionReference)
     | Some (dynamic_type_name, source_file_opt) ->
         (* if we have a source file then do the look up in the (local) tenv
            for that source file instead of in the tenv for the current file *)
@@ -388,6 +388,8 @@ module PulseTransferFunctions = struct
   let string_of_devirtualization_status = function
     | `ExactDevirtualization ->
         "exactly"
+    | `HackFunctionReference ->
+        "exactly (through a Hack function reference)"
     | `ApproxDevirtualization ->
         "approximately"
 
@@ -528,6 +530,26 @@ module PulseTransferFunctions = struct
         (astate, func_args)
 
 
+  let modify_receiver_if_hack_function_reference path location astate func_args =
+    let open IOption.Let_syntax in
+    ( match func_args with
+    | ({ProcnameDispatcher.Call.FuncArg.arg_payload= value} as arg) :: args ->
+        let function_addr_hist = PulseValueOrigin.addr_hist value in
+        let* dynamic_type_name, _ = function_addr_hist |> fst |> get_dynamic_type_name astate in
+        if Typ.Name.Hack.is_generated_curry dynamic_type_name then
+          let this_field = Fieldname.make dynamic_type_name "this" in
+          let+ astate, class_object =
+            PulseOperations.eval_deref_access path Read location function_addr_hist
+              (FieldAccess this_field) astate
+            |> PulseResult.ok
+          in
+          (astate, {arg with arg_payload= PulseValueOrigin.unknown class_object} :: args)
+        else None
+    | [] ->
+        None )
+    |> Option.value ~default:(astate, func_args)
+
+
   let rec dispatch_call_eval_args
       ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) path ret
       call_exp actuals func_args call_loc flags astate callee_pname =
@@ -543,6 +565,20 @@ module PulseTransferFunctions = struct
             improve_receiver_static_type astate (ValueOrigin.value receiver) callee_pname
             |> resolve_virtual_call exe_env tenv astate (ValueOrigin.value receiver)
           with
+          | Some (info, `HackFunctionReference) ->
+              let caller_proc_name = Procdesc.get_proc_name proc_desc in
+              let proc_name = Tenv.MethodInfo.get_procname info in
+              let info, astate =
+                match
+                  resolve_hack_static_method path call_loc astate tenv caller_proc_name
+                    (Some proc_name)
+                with
+                | Some info, astate ->
+                    (info, astate)
+                | None, _ ->
+                    (info, astate)
+              in
+              (Some info, astate)
           | Some (info, `ExactDevirtualization) ->
               (Some info, astate)
           | Some (info, `ApproxDevirtualization) ->
@@ -562,6 +598,9 @@ module PulseTransferFunctions = struct
     in
     let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in
     let astate, func_args = add_self_for_hack_traits path call_loc astate method_info func_args in
+    let astate, func_args =
+      modify_receiver_if_hack_function_reference path call_loc astate func_args
+    in
     let astate =
       match (callee_pname, func_args) with
       | Some callee_pname, [{ProcnameDispatcher.Call.FuncArg.arg_payload= arg}]

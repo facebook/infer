@@ -82,7 +82,7 @@ class B extends A {
 }
 
 class Test4 {
-  public static function FN_runFooWithLateBindingBad(): void {
+  public static function runFooWithLateBindingBad(): void {
     $f = B::lateBinding<>;
     \Level1\taintSink($f(true, true));
   }
