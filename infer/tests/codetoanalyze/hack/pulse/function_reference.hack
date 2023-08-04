@@ -62,3 +62,33 @@ class Test3 {
     \Level1\taintSink((new Bundle($f, true))->run(false));
   }
 }
+
+abstract class A {
+
+  public static function lateBinding(bool $x, bool $y): int {
+    return static::foo($x, $y);
+  }
+
+  public abstract static function foo(bool $x, bool $y): int;
+
+}
+
+class B extends A {
+
+  public static function foo(bool $x, bool $y): int {
+    return Main::foo($x, $y);
+  }
+
+}
+
+class Test4 {
+  public static function FN_runFooWithLateBindingBad(): void {
+    $f = B::lateBinding<>;
+    \Level1\taintSink($f(true, true));
+  }
+
+  public static function runFooWithLateBindingGood(): void {
+    $f = B::lateBinding<>;
+    \Level1\taintSink($f(true, false));
+  }
+}
