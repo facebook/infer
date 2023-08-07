@@ -216,10 +216,8 @@ struct
       join_up_to_with_leq ~limit (fun ~lhs ~rhs -> T.DisjDomain.equal_fast lhs rhs) ~into:lhs rhs
 
 
-    let join (lhs_disj, lhs_non_disj) (rhs_disj, rhs_non_disj) =
-      ( join_up_to ~limit:disjunct_limit ~into:lhs_disj rhs_disj |> fst
-      , T.NonDisjDomain.join lhs_non_disj rhs_non_disj )
-
+    (* [join_all] is used instead of [join] but the API requires this function to be present *)
+    let join _ _ = assert false
 
     (** check if elements of [disj] appear in [of_] in the same order, using pointer equality on
         abstract states to compare elements quickly *)
