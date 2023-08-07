@@ -1335,92 +1335,90 @@ let log_summary_count proc_name summary =
 
 let analyze specialization
     ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) =
-  if should_analyze proc_desc then
-    let proc_name = Procdesc.get_proc_name proc_desc in
-    let proc_attrs = Procdesc.get_attributes proc_desc in
-    let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
-    let initial =
-      with_html_debug_node (Procdesc.get_start_node proc_desc) ~desc:"initial state creation"
-        ~f:(fun () ->
-          let initial_disjuncts = initial tenv proc_attrs specialization in
-          let initial_non_disj =
-            PulseNonDisjunctiveOperations.init_const_refable_parameters proc_desc
-              integer_type_widths tenv
-              (List.map initial_disjuncts ~f:fst)
-              NonDisjDomain.bottom
-          in
-          (initial_disjuncts, initial_non_disj) )
-    in
-    let exit_summaries_opt, exn_sink_summaries_opt =
-      DisjunctiveAnalyzer.compute_post_including_exceptional analysis_data ~initial proc_desc
-    in
-    let process_postconditions node posts_opt ~convert_normal_to_exceptional =
-      match posts_opt with
-      | Some (posts, non_disj_astate) ->
-          let node_loc = Procdesc.Node.get_loc node in
-          let node_id = Procdesc.Node.get_id node in
-          let posts, non_disj_astate =
-            (* Do final cleanup at the end of procdesc
-               Forget path contexts on the way, we don't propagate them across functions *)
-            exit_function analysis_data node_loc posts non_disj_astate
-          in
-          let posts =
-            if convert_normal_to_exceptional then
-              List.map posts ~f:(fun edomain ->
-                  match edomain with ContinueProgram x -> ExceptionRaised x | _ -> edomain )
-            else posts
-          in
-          let summary = PulseSummary.of_posts tenv proc_desc err_log node_loc posts in
-          let is_exit_node =
-            Procdesc.Node.equal_id node_id (Procdesc.Node.get_id (Procdesc.get_exit_node proc_desc))
-          in
-          let summary =
-            if is_exit_node then
-              let objc_nil_summary = PulseSummary.mk_objc_nil_messaging_summary tenv proc_attrs in
-              Option.to_list objc_nil_summary @ summary
-            else summary
-          in
-          report_topl_errors proc_desc err_log summary ;
-          report_unnecessary_copies proc_desc err_log non_disj_astate ;
-          report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate ;
-          summary
-      | None ->
-          []
-    in
-    let report_on_and_return_summaries (summary : ExecutionDomain.summary list) :
-        ExecutionDomain.summary list option =
-      if Config.trace_topl then
-        L.debug Analysis Quiet "ToplTrace: dropped %d disjuncts in %a@\n"
-          (PulseTopl.Debug.get_dropped_disjuncts_count ())
-          Procname.pp_unique_id
-          (Procdesc.get_proc_name proc_desc) ;
-      let summary_count = List.length summary in
-      if Config.pulse_scuba_logging then
-        ScubaLogging.log_count ~label:"pulse_summary" ~value:summary_count ;
-      Stats.add_pulse_summaries_count summary_count ;
-      if Config.pulse_log_summary_count then log_summary_count proc_name summary ;
-      Some summary
-    in
-    let exn_sink_node_opt = Procdesc.get_exn_sink proc_desc in
-    let summaries_at_exn_sink : ExecutionDomain.summary list =
-      (* We extract postconditions from the exceptions sink. *)
-      match exn_sink_node_opt with
-      | Some esink_node ->
-          with_html_debug_node esink_node ~desc:"pulse summary creation (for exception sink node)"
-            ~f:(fun () ->
-              process_postconditions esink_node exn_sink_summaries_opt
-                ~convert_normal_to_exceptional:true )
-      | None ->
-          []
-    in
-    let exit_node = Procdesc.get_exit_node proc_desc in
-    with_html_debug_node exit_node ~desc:"pulse summary creation" ~f:(fun () ->
-        let summaries_for_exit =
-          process_postconditions exit_node exit_summaries_opt ~convert_normal_to_exceptional:false
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  let proc_attrs = Procdesc.get_attributes proc_desc in
+  let integer_type_widths = Exe_env.get_integer_type_widths exe_env proc_name in
+  let initial =
+    with_html_debug_node (Procdesc.get_start_node proc_desc) ~desc:"initial state creation"
+      ~f:(fun () ->
+        let initial_disjuncts = initial tenv proc_attrs specialization in
+        let initial_non_disj =
+          PulseNonDisjunctiveOperations.init_const_refable_parameters proc_desc integer_type_widths
+            tenv
+            (List.map initial_disjuncts ~f:fst)
+            NonDisjDomain.bottom
         in
-        let exit_esink_summaries = summaries_for_exit @ summaries_at_exn_sink in
-        report_on_and_return_summaries exit_esink_summaries )
-  else None
+        (initial_disjuncts, initial_non_disj) )
+  in
+  let exit_summaries_opt, exn_sink_summaries_opt =
+    DisjunctiveAnalyzer.compute_post_including_exceptional analysis_data ~initial proc_desc
+  in
+  let process_postconditions node posts_opt ~convert_normal_to_exceptional =
+    match posts_opt with
+    | Some (posts, non_disj_astate) ->
+        let node_loc = Procdesc.Node.get_loc node in
+        let node_id = Procdesc.Node.get_id node in
+        let posts, non_disj_astate =
+          (* Do final cleanup at the end of procdesc
+             Forget path contexts on the way, we don't propagate them across functions *)
+          exit_function analysis_data node_loc posts non_disj_astate
+        in
+        let posts =
+          if convert_normal_to_exceptional then
+            List.map posts ~f:(fun edomain ->
+                match edomain with ContinueProgram x -> ExceptionRaised x | _ -> edomain )
+          else posts
+        in
+        let summary = PulseSummary.of_posts tenv proc_desc err_log node_loc posts in
+        let is_exit_node =
+          Procdesc.Node.equal_id node_id (Procdesc.Node.get_id (Procdesc.get_exit_node proc_desc))
+        in
+        let summary =
+          if is_exit_node then
+            let objc_nil_summary = PulseSummary.mk_objc_nil_messaging_summary tenv proc_attrs in
+            Option.to_list objc_nil_summary @ summary
+          else summary
+        in
+        report_topl_errors proc_desc err_log summary ;
+        report_unnecessary_copies proc_desc err_log non_disj_astate ;
+        report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate ;
+        summary
+    | None ->
+        []
+  in
+  let report_on_and_return_summaries (summary : ExecutionDomain.summary list) :
+      ExecutionDomain.summary list option =
+    if Config.trace_topl then
+      L.debug Analysis Quiet "ToplTrace: dropped %d disjuncts in %a@\n"
+        (PulseTopl.Debug.get_dropped_disjuncts_count ())
+        Procname.pp_unique_id
+        (Procdesc.get_proc_name proc_desc) ;
+    let summary_count = List.length summary in
+    if Config.pulse_scuba_logging then
+      ScubaLogging.log_count ~label:"pulse_summary" ~value:summary_count ;
+    Stats.add_pulse_summaries_count summary_count ;
+    if Config.pulse_log_summary_count then log_summary_count proc_name summary ;
+    Some summary
+  in
+  let exn_sink_node_opt = Procdesc.get_exn_sink proc_desc in
+  let summaries_at_exn_sink : ExecutionDomain.summary list =
+    (* We extract postconditions from the exceptions sink. *)
+    match exn_sink_node_opt with
+    | Some esink_node ->
+        with_html_debug_node esink_node ~desc:"pulse summary creation (for exception sink node)"
+          ~f:(fun () ->
+            process_postconditions esink_node exn_sink_summaries_opt
+              ~convert_normal_to_exceptional:true )
+    | None ->
+        []
+  in
+  let exit_node = Procdesc.get_exit_node proc_desc in
+  with_html_debug_node exit_node ~desc:"pulse summary creation" ~f:(fun () ->
+      let summaries_for_exit =
+        process_postconditions exit_node exit_summaries_opt ~convert_normal_to_exceptional:false
+      in
+      let exit_esink_summaries = summaries_for_exit @ summaries_at_exn_sink in
+      report_on_and_return_summaries exit_esink_summaries )
 
 
 let checker ?specialization ({InterproceduralAnalysis.proc_desc} as analysis_data) =
