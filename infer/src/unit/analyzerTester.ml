@@ -355,5 +355,5 @@ end
 module Make (T : TransferFunctions.SIL with type CFG.Node.t = Procdesc.Node.t) =
   MakeTesters (AbstractInterpreter.MakeRPO (T)) (AbstractInterpreter.MakeWTO (T))
 module MakeBackwardExceptional
-    (T : AbstractInterpreter.TransferFunctionsWithExceptions with type CFG.Node.t = Procdesc.Node.t) =
+    (T : AbstractInterpreter.TransferFunctions with type CFG.Node.t = Procdesc.Node.t) =
   MakeTesters (AbstractInterpreter.MakeBackwardRPO (T)) (AbstractInterpreter.MakeBackwardWTO (T))

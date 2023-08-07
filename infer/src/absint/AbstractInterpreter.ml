@@ -84,7 +84,7 @@ end
 module type Make = functor (TransferFunctions : TransferFunctions.SIL) ->
   S with module TransferFunctions = TransferFunctions
 
-module type TransferFunctionsWithExceptions = sig
+module type TransferFunctions = sig
   include TransferFunctions.SIL
 
   val join_all : Domain.t list -> into:Domain.t option -> Domain.t option
@@ -107,7 +107,7 @@ end
 
 (** internal module that extends transfer functions *)
 module type NodeTransferFunctions = sig
-  include TransferFunctionsWithExceptions
+  include TransferFunctions
 
   val exec_node_instrs :
        Domain.t State.t option
@@ -141,7 +141,7 @@ module SimpleNodeTransferFunctions (T : TransferFunctions.SIL) = struct
     Instrs.foldi ~init:pre instrs ~f:exec_instr
 end
 
-module BackwardNodeTransferFunction (T : TransferFunctionsWithExceptions) = struct
+module BackwardNodeTransferFunction (T : TransferFunctions) = struct
   include T
 
   (*
@@ -817,10 +817,7 @@ module MakeDisjunctive
     (DConfig : TransferFunctions.DisjunctiveConfig) =
   MakeWTONode (MakeDisjunctiveTransferFunctions (T) (DConfig))
 
-module type MakeExceptional = functor (T : TransferFunctionsWithExceptions) ->
-  S with module TransferFunctions = T
+module type MakeExceptional = functor (T : TransferFunctions) -> S with module TransferFunctions = T
 
-module MakeBackwardRPO (T : TransferFunctionsWithExceptions) =
-  MakeRPONode (BackwardNodeTransferFunction (T))
-module MakeBackwardWTO (T : TransferFunctionsWithExceptions) =
-  MakeWTONode (BackwardNodeTransferFunction (T))
+module MakeBackwardRPO (T : TransferFunctions) = MakeRPONode (BackwardNodeTransferFunction (T))
+module MakeBackwardWTO (T : TransferFunctions) = MakeWTONode (BackwardNodeTransferFunction (T))

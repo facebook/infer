@@ -83,7 +83,7 @@ module MakeDisjunctive
      and module TransferFunctions.CFG = T.CFG
      and type TransferFunctions.Domain.t = T.DisjDomain.t list * T.NonDisjDomain.t
 
-module type TransferFunctionsWithExceptions = sig
+module type TransferFunctions = sig
   include TransferFunctions.SIL
 
   val join_all : Domain.t list -> into:Domain.t option -> Domain.t option
@@ -104,8 +104,7 @@ module type TransferFunctionsWithExceptions = sig
       turn an normal state into exceptional. *)
 end
 
-module type MakeExceptional = functor (T : TransferFunctionsWithExceptions) ->
-  S with module TransferFunctions = T
+module type MakeExceptional = functor (T : TransferFunctions) -> S with module TransferFunctions = T
 
 (* Create an intraprocedural backward abstract interpreter from transfer functions using the reverse
    post-order scheduler. Dispatch properly exceptional flows backward. *)

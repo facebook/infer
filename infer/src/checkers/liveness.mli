@@ -29,7 +29,7 @@ val compute : Procdesc.t -> t
 module ExtendedDomain : AbstractDomain.WithBottom
 
 module PreAnalysisTransferFunctions (CFG : ProcCfg.S) :
-  AbstractInterpreter.TransferFunctionsWithExceptions
+  AbstractInterpreter.TransferFunctions
     with module CFG = CFG
      and module Domain = ExtendedDomain
      and type analysis_data = Procdesc.t
