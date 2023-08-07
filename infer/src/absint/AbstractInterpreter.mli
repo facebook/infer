@@ -34,17 +34,6 @@ module type S = sig
   (** compute and return the postcondition for the given {!IR.Procdesc.t} starting from [initial].
       [pp_instr] is used for the debug HTML and passed as a hook to handle both SIL and HIL CFGs. *)
 
-  val compute_post_including_exceptional :
-       ?do_narrowing:bool
-    -> ?pp_instr:(TransferFunctions.Domain.t -> Sil.instr -> (Format.formatter -> unit) option)
-    -> TransferFunctions.analysis_data
-    -> initial:TransferFunctions.Domain.t
-    -> Procdesc.t
-    -> TransferFunctions.Domain.t option * TransferFunctions.Domain.t option
-  (** compute and return the postconditions of the exit node and the exceptions sink node for the
-      given {!IR.Procdesc.t} starting from [initial] [pp_instr] is used for the debug HTML and
-      passed as a hook to handle both SIL and HIL CFGs. *)
-
   val exec_cfg :
        ?do_narrowing:bool
     -> TransferFunctions.CFG.t
@@ -61,13 +50,13 @@ module type S = sig
     -> invariant_map
   (** compute and return invariant map for the given procedure starting from [initial] *)
 
-  val extract_post : InvariantMap.key -> 'a State.t InvariantMap.t -> 'a option
+  val extract_post : TransferFunctions.CFG.Node.id -> 'a State.t InvariantMap.t -> 'a option
   (** extract the postcondition for a node id from the given invariant map *)
 
-  val extract_pre : InvariantMap.key -> 'a State.t InvariantMap.t -> 'a option
+  val extract_pre : TransferFunctions.CFG.Node.id -> 'a State.t InvariantMap.t -> 'a option
   (** extract the precondition for a node id from the given invariant map *)
 
-  val extract_state : InvariantMap.key -> 'a InvariantMap.t -> 'a option
+  val extract_state : TransferFunctions.CFG.Node.id -> 'a InvariantMap.t -> 'a option
   (** extract the state for a node id from the given invariant map *)
 end
 

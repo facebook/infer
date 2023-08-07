@@ -1350,9 +1350,7 @@ let analyze specialization
         in
         (initial_disjuncts, initial_non_disj) )
   in
-  let exit_summaries_opt, exn_sink_summaries_opt =
-    DisjunctiveAnalyzer.compute_post_including_exceptional analysis_data ~initial proc_desc
-  in
+  let invariant_map = DisjunctiveAnalyzer.exec_pdesc analysis_data ~initial proc_desc in
   let process_postconditions node posts_opt ~convert_normal_to_exceptional =
     match posts_opt with
     | Some (posts, non_disj_astate) ->
@@ -1407,15 +1405,16 @@ let analyze specialization
     | Some esink_node ->
         with_html_debug_node esink_node ~desc:"pulse summary creation (for exception sink node)"
           ~f:(fun () ->
-            process_postconditions esink_node exn_sink_summaries_opt
-              ~convert_normal_to_exceptional:true )
+            process_postconditions ~convert_normal_to_exceptional:true esink_node
+              (DisjunctiveAnalyzer.extract_post (Procdesc.Node.get_id esink_node) invariant_map) )
     | None ->
         []
   in
   let exit_node = Procdesc.get_exit_node proc_desc in
   with_html_debug_node exit_node ~desc:"pulse summary creation" ~f:(fun () ->
       let summaries_for_exit =
-        process_postconditions exit_node exit_summaries_opt ~convert_normal_to_exceptional:false
+        process_postconditions ~convert_normal_to_exceptional:false exit_node
+          (DisjunctiveAnalyzer.extract_post (Procdesc.Node.get_id exit_node) invariant_map)
       in
       let exit_esink_summaries = summaries_for_exit @ summaries_at_exn_sink in
       report_on_and_return_summaries exit_esink_summaries )
