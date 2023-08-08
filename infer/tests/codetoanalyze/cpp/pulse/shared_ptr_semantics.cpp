@@ -513,4 +513,9 @@ void lock_primary_ptr_ok(PrimaryPtr<std::string> primary) {
   auto x = primary.lock();
 }
 
+int call_static_pointer_cast_ok() {
+  std::shared_ptr<X> x(new X(42));
+  int* p = &std::static_pointer_cast<X>(x)->field;
+  return *p;
+}
 } // namespace shared_ptr_semantics

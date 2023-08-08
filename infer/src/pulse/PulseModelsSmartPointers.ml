@@ -472,6 +472,9 @@ module SharedPtr = struct
             in
             let<+> astate, _ = write_value path location this ~value:address ~desc astate in
             astate )
+
+
+  let pointer_cast src tgt ~desc = copy_move_constructor tgt src ~desc
 end
 
 module UniquePtr = struct
@@ -646,5 +649,13 @@ let matchers : matcher list =
     $--> swap ~desc:"std::shared_ptr::swap(std::shared_ptr<T>)"
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "operator_bool" <>$ capt_arg_payload
     $--> operator_bool ~desc:"std::shared_ptr::operator_bool()"
-  ; -"std" &:: "make_shared" &++> SharedPtr.make_shared ~desc:"std::make_shared()" ]
+  ; -"std" &:: "make_shared" &++> SharedPtr.make_shared ~desc:"std::make_shared()"
+  ; -"std" &:: "static_pointer_cast" $ capt_arg_payload $+ capt_arg
+    $--> SharedPtr.pointer_cast ~desc:"std::static_pointer_cast"
+  ; -"std" &:: "dynamic_pointer_cast" $ capt_arg_payload $+ capt_arg
+    $--> SharedPtr.pointer_cast ~desc:"std::static_pointer_cast"
+  ; -"std" &:: "const_pointer_cast" $ capt_arg_payload $+ capt_arg
+    $--> SharedPtr.pointer_cast ~desc:"std::static_pointer_cast"
+  ; -"std" &:: "reinterpret_pointer_cast" $ capt_arg_payload $+ capt_arg
+    $--> SharedPtr.pointer_cast ~desc:"std::static_pointer_cast" ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
