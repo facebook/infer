@@ -158,3 +158,14 @@ void delete_allocated_then_error_bad(int* x) {
 void null_call_delete_allocated_then_error_bad(int* x) {
   delete_allocated_then_error_bad(nullptr);
 }
+
+struct Nested {
+  Simple s;
+};
+
+void access_field_after_delete_bad() {
+  auto x = new Nested();
+  int* p = &x->s.f;
+  delete (x);
+  *p = 42;
+}

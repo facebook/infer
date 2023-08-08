@@ -306,10 +306,22 @@ module Basic = struct
   let free_or_delete operation invalidation
       ({ProcnameDispatcher.Call.FuncArg.arg_payload= deleted_access_path} as deleted_arg) : model =
    fun ({path; location} as model_data) astate ->
-    let deleted_access = ValueOrigin.addr_hist deleted_access_path in
+    let ((deleted_addr, deleted_hist) as deleted_access) =
+      ValueOrigin.addr_hist deleted_access_path
+    in
     (* NOTE: freeing 0 is a no-op so we introduce a case split *)
     let astates_alloc =
-      let<**> astate = PulseArithmetic.prune_positive (fst deleted_access) astate in
+      let addrs_to_invalidate =
+        BaseDomain.reachable_addresses_from
+          ~edge_filter:(function
+            | FieldAccess _ | ArrayAccess _ -> true | TakeAddress | Dereference -> false )
+          (Seq.return deleted_addr)
+          (astate.AbductiveDomain.post :> BaseDomain.t)
+      in
+      let<**> astate = PulseArithmetic.prune_positive deleted_addr astate in
+      let<*> astate =
+        PulseOperations.check_addr_access path NoAccess location deleted_access astate
+      in
       let astates =
         match operation with
         | `Free ->
@@ -321,11 +333,12 @@ module Basic = struct
           let<*> exec_state = exec_state_result in
           match exec_state with
           | ContinueProgram astate ->
-              let<+> astate =
-                PulseOperations.check_and_invalidate path UntraceableAccess location invalidation
-                  deleted_access astate
-              in
-              astate
+              AbstractValue.Set.fold
+                (fun addr astate ->
+                  PulseOperations.invalidate path UntraceableAccess location invalidation
+                    (addr, deleted_hist) astate )
+                addrs_to_invalidate astate
+              |> ok_continue
           | ExceptionRaised _
           | ExitProgram _
           | AbortProgram _
@@ -334,7 +347,7 @@ module Basic = struct
               [Ok exec_state] )
     in
     let astate_zero =
-      PulseArithmetic.prune_eq_zero (fst deleted_access) astate
+      PulseArithmetic.prune_eq_zero deleted_addr astate
       >>|| ExecutionDomain.continue |> SatUnsat.to_list
     in
     astate_zero @ astates_alloc
