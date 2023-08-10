@@ -1145,7 +1145,7 @@ print(c.z)
         define dummy::IntBox.get(self: *dummy::IntBox) : *PyInt {
           #b0:
               n0:*dummy::IntBox = load &self
-              n1:*PyObject = load n0.?.x
+              n1:*PyInt = load n0.?.x
               ret n1
 
         }

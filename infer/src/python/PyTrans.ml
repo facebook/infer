@@ -87,6 +87,38 @@ let rec py_to_exp env c =
       (env, exp, PyCommon.pyObject)
 
 
+let type_of_annotation env raw_typ =
+  match raw_typ with
+  | "int" ->
+      PyCommon.pyInt
+  | "str" ->
+      PyCommon.pyString
+  | "bool" ->
+      PyCommon.pyBool
+  | "float" ->
+      PyCommon.pyFloat
+  | "None" ->
+      PyCommon.pyNone
+  | "object" ->
+      PyCommon.pyObject
+  | _ -> (
+      (* TODO: support nesting *)
+      let opt = Env.lookup_symbol env ~global:true raw_typ in
+      let typ = Option.bind ~f:Symbol.to_typ opt in
+      match typ with
+      | Some typ ->
+          typ
+      | None ->
+          Debug.p "[type_of_annotation] unsupported type: %s (%a)\n" raw_typ (Pp.option Symbol.pp)
+            opt ;
+          PyCommon.pyObject )
+
+
+let annotated_type_of_annotation env typ =
+  let typ = type_of_annotation env typ in
+  T.Typ.{typ; attributes= []}
+
+
 (** Special case of [load_cell] that we sometime use with a name directly, rather then an index in
     [FFI.Code.t] *)
 let load_var_name env loc name =
@@ -275,14 +307,21 @@ module LOAD = struct
       | ATTR -> (
           let env, cell = pop_datastack opname env in
           let fname = co_names.(arg) in
-          let env, res, _info = load_cell env code cell in
+          let env, res, {Env.typ} = load_cell env code cell in
+          let type_name = match (typ : T.Typ.t) with Ptr (Struct name) -> Some name | _ -> None in
+          let fields = Option.bind type_name ~f:(Env.lookup_fields env) in
+          let field =
+            Option.bind fields
+              ~f:
+                (List.find_map ~f:(fun {PyCommon.name; annotation} ->
+                     Option.some_if (String.equal name fname) annotation ) )
+          in
+          let typ = Option.value_map ~default:PyCommon.pyObject ~f:(type_of_annotation env) field in
           match res with
           | Error s ->
               L.die ExternalError "Failed to load attribute %s from cell %a: %s" fname
                 DataStack.pp_cell cell s
           | Ok exp ->
-              (* TODO: refine typ if possible *)
-              let typ = PyCommon.pyObject in
               let info = Env.{typ; is_class= false; is_code= false} in
               let env, id = Env.mk_fresh_ident env info in
               let loc = Env.loc env in
@@ -1609,38 +1648,6 @@ let rec nodes env label_info code instructions =
     (env, textual_node :: more_textual_nodes)
 
 
-let type_of_annotation env raw_typ =
-  match raw_typ with
-  | "int" ->
-      PyCommon.pyInt
-  | "str" ->
-      PyCommon.pyString
-  | "bool" ->
-      PyCommon.pyBool
-  | "float" ->
-      PyCommon.pyFloat
-  | "None" ->
-      PyCommon.pyNone
-  | "object" ->
-      PyCommon.pyObject
-  | _ -> (
-      (* TODO: support nesting *)
-      let opt = Env.lookup_symbol env ~global:true raw_typ in
-      let typ = Option.bind ~f:Symbol.to_typ opt in
-      match typ with
-      | Some typ ->
-          typ
-      | None ->
-          Debug.p "[type_of_annotation] unsupported type: %s (%a)\n" raw_typ (Pp.option Symbol.pp)
-            opt ;
-          PyCommon.pyObject )
-
-
-let annotated_type_of_annotation env typ =
-  let typ = type_of_annotation env typ in
-  T.Typ.{typ; attributes= []}
-
-
 (** Process a single code unit (toplevel code, function body, ...) *)
 let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} as code) =
   Debug.p "[to_proc_desc] %s %a\n" enclosing_class_name (Pp.option F.pp_print_string) opt_name ;
@@ -1857,6 +1864,7 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
     L.die InternalError "TODO: No support for __new__ in user declared classes" ;
   let env, codes = register_methods env [] methods "<METHOD_DECLARATION>" in
   let env, codes = register_methods env codes static_methods "<STATIC_METHOD_DECLARATION>" in
+  let env = Env.register_fields env class_type_name members in
   let fields =
     List.map members ~f:(fun {PyCommon.name; annotation} ->
         let name = field_name ~loc name in

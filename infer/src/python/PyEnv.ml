@@ -83,7 +83,7 @@ module Labels = Caml.Map.Make (Int)
 (* TODO(vsiles): maybe revamp Signature maps to benefits from the new
    qualified name structure *)
 module Signature = struct
-  type t = {annotations: PyCommon.annotated_name list; is_static: bool; is_abstract: bool}
+  type t = {annotations: PyCommon.signature; is_static: bool; is_abstract: bool}
 
   let pp fmt {annotations; is_static} =
     Format.fprintf fmt "MethodSignature%s : %a"
@@ -247,6 +247,8 @@ and shared =
   ; imports: ImportSet.t
   ; signatures: Signature.t SMap.t SMap.t
         (** Map from module names to the signature of all of their functions/methods *)
+  ; fields: PyCommon.signature T.TypeName.Map.t
+        (** Map from fully qualified class name to the list of known fields and their types *)
   ; module_name: string
   ; params: string list  (** Name of function / method parameters *)
   ; is_toplevel: bool
@@ -352,6 +354,7 @@ let empty =
   ; classes= SMap.empty
   ; imports= ImportSet.empty
   ; signatures= SMap.empty
+  ; fields= T.TypeName.Map.empty
   ; module_name= ""
   ; params= []
   ; is_toplevel= true
@@ -541,6 +544,28 @@ let register_method ({shared} as env) ~enclosing_class ~method_name annotations 
   {env with shared}
 
 
+(* We keep the fields sorted to be able to use List.merge *)
+let register_fields ({shared} as env) class_name class_fields =
+  (* FYI doc says:
+     If several elements compare equal, the elements of l1 will be before the elements of l2.
+
+     TODO(vsiles)
+     Right now we only register once, but we might try to capture more field
+     when an explicit [__init__] is present, and then the order will matter.
+  *)
+  let compare : PyCommon.annotated_name -> PyCommon.annotated_name -> int =
+   fun {PyCommon.name= n0} {PyCommon.name= n1} -> String.compare n0 n1
+  in
+  let {fields} = shared in
+  let old_fields = T.TypeName.Map.find_opt class_name fields |> Option.value ~default:[] in
+  let new_fields = List.sort ~compare class_fields in
+  let new_fields = List.merge ~compare old_fields new_fields in
+  let new_fields = List.dedup_and_sort ~compare new_fields in
+  let fields = T.TypeName.Map.add class_name new_fields fields in
+  let shared = {shared with fields} in
+  {env with shared}
+
+
 let register_function ({shared} as env) name loc annotations =
   PyDebug.p "[register_function] %s\n" name ;
   let {module_name} = shared in
@@ -555,6 +580,8 @@ let lookup_method {shared= {signatures}} ~enclosing_class name =
   let open Option.Let_syntax in
   SMap.find_opt enclosing_class signatures >>= SMap.find_opt name
 
+
+let lookup_fields {shared= {fields}} class_name = T.TypeName.Map.find_opt class_name fields
 
 let register_class ({shared} as env) class_name ({parent} as class_info) =
   PyDebug.p "[register_class] %s\n" class_name ;

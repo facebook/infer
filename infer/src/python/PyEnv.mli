@@ -212,8 +212,15 @@ val register_function : t -> string -> T.Location.t -> PyCommon.annotated_name l
 val register_method : t -> enclosing_class:string -> method_name:string -> Signature.t -> t
 (** Register a method declaration. We mostly keep track of their signatures *)
 
+val register_fields : t -> T.TypeName.t -> PyCommon.signature -> t
+(** Extended the set of fields of class [class_name] with [class_fields]. We might have multiple
+    calls to this function with the same class name in a best effort attempt: Python is dynamic, and
+    any [self.foo] access could give rise to such a registration *)
+
 val lookup_method : t -> enclosing_class:string -> string -> Signature.t option
 (** Lookup the information stored for a function/method in the relevant [enclosing_class] *)
+
+val lookup_fields : t -> T.TypeName.t -> PyCommon.signature option
 
 (** Lookup the signature of a function / method *)
 
