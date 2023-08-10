@@ -184,13 +184,32 @@ let parse_method_type_info code stack instructions =
       None
 
 
-(* Specialized decorator test for [@staticmethod], which is a builtin decorator *)
-let is_static_method co_names instructions =
+let load_name co_names stack instructions =
   let open Option.Let_syntax in
   is_instruction "LOAD_NAME" instructions
   >>= fun (arg, instructions) ->
   let name = co_names.(arg) in
-  if String.equal name PyCommon.static_method then Some instructions else None
+  Some (Stack.push stack (Type.Atom name), instructions)
+
+
+(* Loads as many names as we can, as [Type.Atom]. They will be used to parse produce the type
+   signature, but also the decorators of a methods *)
+let rec load_names co_names stack instructions =
+  match load_name co_names stack instructions with
+  | None ->
+      (stack, instructions)
+  | Some (stack, instructions) ->
+      load_names co_names stack instructions
+
+
+(* Specialized decorator test for [@staticmethod], which is a the only builtin decorator we
+   support at the moment *)
+let is_static_method stack =
+  match stack with
+  | [Type.Atom name] when String.equal PyCommon.static_method name ->
+      (true, [])
+  | _ ->
+      (false, stack)
 
 
 (** Attempts to parse a special prelude to method declaration that can be present if __init__ is
@@ -245,18 +264,18 @@ let parse_method_core ({FFI.Code.co_consts} as code) instructions =
 
 (** After the optional method signature is added on the stack, the same 4 instructions will be used
     to declare a method, giving us its short name, (Python) qualified name, actual code object and
-    the method flags. *)
-let parse_method ({FFI.Code.co_names} as code) class_name stack instructions =
+    the method flags.
+
+    Method declaration starts with a bunch of [LOAD_NAME] instructions for any decorator (like
+    [@staticmethod]) that might be here, and but also for any type (like [int]) that might be used
+    in the type signature. There is no clear distinction between the two sets of names, so we'll
+    load them all upfront, deal with the signature parsing, and use the left overs as source for the
+    decorator information *)
+let parse_method ({FFI.Code.co_names} as code) class_name instructions =
   let open Option.Let_syntax in
-  (* First we check if the method is static or not *)
-  let is_static, instructions =
-    match is_static_method co_names instructions with
-    | None ->
-        (false, instructions)
-    | Some instructions ->
-        (true, instructions)
-  in
-  (* Then we check if there's type information or not *)
+  (* First we parse all the names we can, to prepare for signature and decorator parsing *)
+  let stack, instructions = load_names co_names [] instructions in
+  (* Then we check if there's more structured type information or not *)
   let type_info, stack, instructions =
     match parse_method_type_info code stack instructions with
     | Some res ->
@@ -277,6 +296,9 @@ let parse_method ({FFI.Code.co_names} as code) class_name stack instructions =
   *)
   parse_method_core code instructions
   >>= fun (method_code, raw_qualified_name, flags, instructions) ->
+  (* Now that most of the method declaration is parsed, we should only have decorators left over
+     on the stack, so let's parse the decorators *)
+  let is_static, stack = is_static_method stack in
   (* Actual method declaration bytecode *)
   let instructions =
     (* If the method was static, there's an additional CALL_FUNCTION *)
@@ -328,6 +350,9 @@ let parse_method ({FFI.Code.co_names} as code) class_name stack instructions =
     | Some annotation ->
         {PyCommon.name= PyCommon.return; annotation} :: rev_formals_types
   in
+  if not (List.is_empty stack) then (
+    L.user_warning "Left-over type information for method %s in class %s\n" name class_name ;
+    List.iter ~f:(L.user_warning "- %a\n" Type.pp) stack ) ;
   Some
     ( { PyCommon.name
       ; code= method_code
@@ -336,14 +361,13 @@ let parse_method ({FFI.Code.co_names} as code) class_name stack instructions =
       ; is_abstract= false
       ; flags
       ; raw_qualified_name }
-    , stack
     , instructions )
 
 
 let parse_methods code class_name instructions =
-  let rec aux stack method_infos static_method_infos has_init has_new instructions =
-    match parse_method code class_name stack instructions with
-    | Some (({is_static} as method_info), stack, instructions) ->
+  let rec aux method_infos static_method_infos has_init has_new instructions =
+    match parse_method code class_name instructions with
+    | Some (({is_static} as method_info), instructions) ->
         let {PyCommon.name; signature} = method_info in
         let has_init = if String.equal name PyCommon.init__ then Some signature else has_init in
         let has_new = if String.equal name PyCommon.new__ then Some signature else has_new in
@@ -351,7 +375,7 @@ let parse_methods code class_name instructions =
           if is_static then (method_infos, method_info :: static_method_infos)
           else (method_info :: method_infos, static_method_infos)
         in
-        aux stack method_infos static_method_infos has_init has_new instructions
+        aux method_infos static_method_infos has_init has_new instructions
     | None ->
         (* If __init__ closure is involved, it will finish with
                       70 LOAD_CLOSURE             0 (__class__)
@@ -366,7 +390,7 @@ let parse_methods code class_name instructions =
         *)
         (method_infos, static_method_infos, has_init, has_new, instructions)
   in
-  aux [] [] [] None None instructions
+  aux [] [] None None instructions
 
 
 type t =

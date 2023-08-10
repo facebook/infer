@@ -1078,6 +1078,11 @@ class IntBox:
         def run(self) -> None:
             self.f(3)(False)("yolo")
 
+        # Stupid function to test the staticmethod decorator + type annotations
+        @staticmethod
+        def id(x: int) -> int:
+          return x
+
 def getX(box: IntBox) -> int:
           return box.get()
 
@@ -1115,6 +1120,13 @@ print(c.z)
               n13:*PyObject = load n12.?.z
               n14 = $builtins.print(n13)
               ret null
+
+        }
+
+        define dummy::IntBox$static.id(x: *PyInt) : *PyInt {
+          #b0:
+              n0:*PyInt = load &x
+              ret n0
 
         }
 
