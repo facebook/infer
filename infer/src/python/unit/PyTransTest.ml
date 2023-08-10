@@ -985,12 +985,12 @@ c.set(42)
           #b0:
               n0 = $builtins.python_class("dummy::C")
               n1 = dummy::C($builtins.python_int(0), $builtins.python_string("a"))
-              store &dummy::c <- n1:*PyObject
-              n2:*PyObject = load &dummy::c
+              store &dummy::c <- n1:*dummy::C
+              n2:*dummy::C = load &dummy::c
               n3:*PyObject = load n2.?.x
-              n4:*PyObject = load &dummy::c
+              n4:*dummy::C = load &dummy::c
               n5 = n4.?.get()
-              n6:*PyObject = load &dummy::c
+              n6:*dummy::C = load &dummy::c
               n7 = n6.?.set($builtins.python_int(42))
               ret null
 
@@ -1105,18 +1105,18 @@ print(c.z)
               n0 = $builtins.python_class("dummy::IntBox")
               n1 = $builtins.python_code("dummy.getX")
               n2 = dummy::IntBox($builtins.python_int(10))
-              store &dummy::c <- n2:*PyObject
-              n3:*PyObject = load &dummy::c
+              store &dummy::c <- n2:*dummy::IntBox
+              n3:*dummy::IntBox = load &dummy::c
               n4:*PyObject = load n3.?.x
-              n5:*PyObject = load &dummy::c
+              n5:*dummy::IntBox = load &dummy::c
               store n5.?.z <- $builtins.python_int(10):*PyInt
-              n6:*PyObject = load &dummy::c
+              n6:*dummy::IntBox = load &dummy::c
               n7 = n6.?.get()
-              n8:*PyObject = load &dummy::c
+              n8:*dummy::IntBox = load &dummy::c
               n9 = n8.?.set($builtins.python_int(42))
-              n10:*PyObject = load &dummy::c
+              n10:*dummy::IntBox = load &dummy::c
               n11 = n10.?.run()
-              n12:*PyObject = load &dummy::c
+              n12:*dummy::IntBox = load &dummy::c
               n13:*PyObject = load n12.?.z
               n14 = $builtins.print(n13)
               ret null
@@ -1162,7 +1162,7 @@ print(c.z)
         define dummy::IntBox.run(self: *dummy::IntBox) : *PyNone {
           #b0:
               n0:*dummy::IntBox = load &self
-              n1 = n0.dummy::IntBox.f($builtins.python_int(3))
+              n1 = n0.?.f($builtins.python_int(3))
               n2 = $builtins.python_call(n1, $builtins.python_bool(0))
               n3 = $builtins.python_call(n2, $builtins.python_string("yolo"))
               ret null
@@ -1187,7 +1187,7 @@ print(c.z)
         define dummy.getX(box: *dummy::IntBox) : *PyInt {
           #b0:
               n0:*dummy::IntBox = load &box
-              n1 = n0.dummy::IntBox.get()
+              n1 = n0.?.get()
               ret n1
 
         }
@@ -1212,10 +1212,7 @@ print(c.z)
 
         declare $builtins.python_float(float) : *PyFloat
 
-        declare $builtins.python_int(int) : *PyInt
-
-        Errors while type checking the test:
-        dummy.py, line 17, column 0: textual type error: procname dummy::IntBox.f should be user-declared or a builtin |}]
+        declare $builtins.python_int(int) : *PyInt |}]
 
 
     let%expect_test _ =

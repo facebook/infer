@@ -360,11 +360,10 @@ let check_flags opname flags =
 
 module FUNCTION = struct
   module CALL = struct
-    let mk env fname loc proc args =
+    let mk env fname ?(typ = PyCommon.pyObject) loc proc args =
       let env = Option.value_map ~default:env ~f:(Env.register_call env) fname in
       let call = T.Exp.call_non_virtual proc args in
-      (* TODO: read return type of proc if available *)
-      let info = {Env.typ= PyCommon.pyObject; is_code= false; is_class= false} in
+      let info = {Env.typ; is_code= false; is_class= false} in
       let env, id = Env.mk_fresh_ident env info in
       let let_instr = T.Instr.Let {id; exp= call; loc} in
       let env = Env.push_instr env let_instr in
@@ -388,26 +387,34 @@ module FUNCTION = struct
       let loc = Env.loc env in
       (* TODO: support nesting *)
       let opt_sym = Env.lookup_symbol ~global:true env fname in
-      let mk env proc = mk env (Some fname) loc proc args in
+      let mk env ?typ proc = mk env (Some fname) ?typ loc proc args in
       match (opt_sym : Symbol.t option) with
       | Some (Import _ as symbol) ->
           L.die InternalError "[static_call] Invalid Import (%s) spotted" (Symbol.to_string symbol)
       | Some Builtin ->
+          (* TODO: propagate builtin type information *)
           let proc = PyCommon.builtin_name fname in
           mk env proc
       | Some (Name {is_imported} as symbol) ->
+          (* TODO: propagate type information if available *)
           let proc = Symbol.to_qualified_procname symbol in
           let env = if is_imported then Env.register_import env (Env.Import.Call proc) else env in
           mk env proc
       | Some (Code _ as symbol) ->
+          (* TODO: propagate type information if available *)
           let proc = Symbol.to_qualified_procname symbol in
           mk env proc
       | Some (Class _ as symbol) ->
           (* TODO: support nesting. Maybe add to_proc_name to Symbol *)
           let name = Symbol.to_string ~code_sep:"::" symbol in
+          let typ =
+            let type_name = type_name ~loc name in
+            let t = T.Typ.Struct type_name in
+            T.Typ.Ptr t
+          in
           let name = proc_name ~loc name in
           let proc : T.qualified_procname = {enclosing_class= TopLevel; name} in
-          mk env proc
+          mk env ~typ proc
       | None ->
           (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
              further analysis *)
@@ -597,21 +604,8 @@ end
 
 module METHOD = struct
   module LOAD = struct
-    let rec to_typename typ =
-      if T.Typ.equal typ PyCommon.pyObject then T.TypeName.wildcard
-      else
-        match (typ : T.Typ.t) with
-        | Struct tname ->
-            tname
-        | Ptr t ->
-            to_typename t
-        | Int | Float | Null | Void | Array _ ->
-            T.TypeName.wildcard
-
-
     let load env code cell method_name =
-      let env, res, {Env.typ} = load_cell env code cell in
-      let tname = to_typename typ in
+      let env, res, _ = load_cell env code cell in
       match res with
       | Error s ->
           L.die ExternalError "Failed to load method %s from cell %a: %s" method_name
@@ -619,7 +613,9 @@ module METHOD = struct
       | Ok receiver ->
           let loc = Env.loc env in
           let name = proc_name ~loc method_name in
-          let name : T.qualified_procname = {T.enclosing_class= Enclosing tname; name} in
+          let name : T.qualified_procname =
+            {T.enclosing_class= Enclosing T.TypeName.wildcard; name}
+          in
           let env = Env.push env (DataStack.MethodCall {receiver; name}) in
           (env, None)
 
