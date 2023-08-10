@@ -17,5 +17,5 @@ class C11:
 def flow_good(c1: C10, c2: C11) -> None:
     c2.taintSink(c1.regularSource())
 
-def FN_flow_bad(c1: C10, c2: C11) -> None:
+def flow_bad(c1: C10, c2: C11) -> None:
     c2.taintSink(c1.taintSource())

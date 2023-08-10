@@ -1556,8 +1556,8 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
     ; skipped_calls= SkippedCalls.empty }
   in
   let astate =
-    if Language.curr_language_is Hack then
-      (* The Hack frontend does not propagate types from declarations to usage,
+    if Language.curr_language_is Hack || Language.curr_language_is Python then
+      (* The Hack and Python frontends do not propagate types from declarations to usage,
          so we redo part of the work ourself *)
       add_static_types tenv astate formals_and_captured
     else astate
@@ -1580,7 +1580,8 @@ let should_havoc_if_unknown () =
   match !Language.curr_language with
   | Java
     (* TODO(T138610370): temporary until we improve the way taint propagates for unknown calls *)
-  | Hack ->
+  | Hack
+  | Python ->
       `ShouldOnlyHavocResources
   | _ ->
       `ShouldHavoc

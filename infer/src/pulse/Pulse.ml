@@ -1208,7 +1208,7 @@ module PulseTransferFunctions = struct
              in
              let rhs_addr, _ = rhs_addr_hist in
              and_is_int_if_integer_type typ rhs_addr astate
-             >>|| PulseOperations.hack_propagates_type_on_load tenv path loc rhs_exp rhs_addr
+             >>|| PulseOperations.hack_python_propagates_type_on_load tenv path loc rhs_exp rhs_addr
              >>|| PulseOperations.write_id lhs_id rhs_addr_hist )
             |> SatUnsat.to_list
             |> PulseReport.report_results tenv proc_desc err_log loc

@@ -451,7 +451,7 @@ let gather_taint_dependencies addr_hist0 astate =
     | ArrayAccess _ ->
         true
     | FieldAccess _ ->
-        Language.curr_language_is Hack
+        Language.curr_language_is Hack || Language.curr_language_is Python
     | TakeAddress | Dereference ->
         false
   in
