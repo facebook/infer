@@ -83,7 +83,7 @@ module Labels = Caml.Map.Make (Int)
 (* TODO(vsiles): maybe revamp Signature maps to benefits from the new
    qualified name structure *)
 module Signature = struct
-  type t = {annotations: PyCommon.annotated_name list; is_static: bool}
+  type t = {annotations: PyCommon.annotated_name list; is_static: bool; is_abstract: bool}
 
   let pp fmt {annotations; is_static} =
     Format.fprintf fmt "MethodSignature%s : %a"
@@ -532,7 +532,7 @@ let register_method ({shared} as env) ~enclosing_class ~method_name annotations 
 let register_function ({shared} as env) name loc annotations =
   PyDebug.p "[register_function] %s\n" name ;
   let {module_name} = shared in
-  let info = {Signature.is_static= false; annotations} in
+  let info = {Signature.is_static= false; is_abstract= false; annotations} in
   let env = register_method env ~enclosing_class:module_name ~method_name:name info in
   let code_name = Symbol.Qualified.mk ~prefix:[module_name] name loc in
   let symbol_info = Symbol.Code {code_name} in

@@ -329,8 +329,13 @@ let parse_method ({FFI.Code.co_names} as code) class_name stack instructions =
         {PyCommon.name= PyCommon.return; annotation} :: rev_formals_types
   in
   Some
-    ( is_static
-    , {PyCommon.name; code= method_code; signature; flags; raw_qualified_name}
+    ( { PyCommon.name
+      ; code= method_code
+      ; signature
+      ; is_static
+      ; is_abstract= false
+      ; flags
+      ; raw_qualified_name }
     , stack
     , instructions )
 
@@ -338,7 +343,7 @@ let parse_method ({FFI.Code.co_names} as code) class_name stack instructions =
 let parse_methods code class_name instructions =
   let rec aux stack method_infos static_method_infos has_init has_new instructions =
     match parse_method code class_name stack instructions with
-    | Some (is_static, method_info, stack, instructions) ->
+    | Some (({is_static} as method_info), stack, instructions) ->
         let {PyCommon.name; signature} = method_info in
         let has_init = if String.equal name PyCommon.init__ then Some signature else has_init in
         let has_new = if String.equal name PyCommon.new__ then Some signature else has_new in

@@ -1839,7 +1839,7 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
         let env =
           match FFI.Constant.as_code code with
           | Some code ->
-              let info = {PyEnv.Signature.is_static; annotations= signature} in
+              let info = {PyEnv.Signature.is_static; is_abstract= false; annotations= signature} in
               Env.register_method env ~enclosing_class:class_name ~method_name:code.FFI.Code.co_name
                 info
           | None ->

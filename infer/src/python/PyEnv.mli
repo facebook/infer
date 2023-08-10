@@ -80,7 +80,7 @@ module Symbol : sig
 end
 
 module Signature : sig
-  type t = {annotations: PyCommon.annotated_name list; is_static: bool}
+  type t = {annotations: PyCommon.annotated_name list; is_static: bool; is_abstract: bool}
 
   val pp : Format.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 end

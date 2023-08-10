@@ -205,4 +205,6 @@ type method_info =
   ; raw_qualified_name: string
   ; code: FFI.Constant.t
   ; signature: signature
+  ; is_static: bool
+  ; is_abstract: bool
   ; flags: MakeFunctionFlags.t }
