@@ -18,10 +18,7 @@ class A:
         self._f1 = f1
 
 class B(A):
-    # TODO: remove this constructor once we update the way we deal with
-    # implicit constructors
-    def __init__(self, x):
-        super().__init__(x)
+    pass
 
 class C(B):
     _f2 : int

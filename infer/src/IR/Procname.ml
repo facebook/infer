@@ -681,10 +681,35 @@ module Hack = struct
 end
 
 module Python = struct
+  let init_name = "__init__"
+
   type t = {class_name: PythonClassName.t option; function_name: string; arity: int option}
   [@@deriving compare, equal, yojson_of, sexp, hash]
 
   let get_class_type_name {class_name} = Option.map class_name ~f:(fun cn -> Typ.PythonClass cn)
+
+  type kind = Fun of PythonClassName.t | Init of PythonClassName.t | Other
+
+  let classify {class_name; function_name} =
+    match class_name with
+    | Some class_name ->
+        if String.equal function_name init_name then Init class_name else Other
+    | None ->
+        Fun (PythonClassName.make function_name)
+
+
+  (* This function is used to transform a "constructor" call like [MyClass(x, y)] into a call to
+     the [__init__] function, like [foo.__init__(x, y)]. Therefore must increase arity by 1, to
+     account for [__init__] being a virtual call expecting a [self] argument. *)
+  let mk_init {class_name; function_name; arity} =
+    match class_name with
+    | Some _ ->
+        L.die InternalError "Procname.Python.mk_init expects a top level procname"
+    | None ->
+        let class_name = Some (PythonClassName.make function_name) in
+        let arity = Option.map ~f:(fun n -> 1 + n) arity in
+        {class_name; function_name= init_name; arity}
+
 
   let pp verbosity fmt t =
     let pp_arity verbosity fmt =
@@ -1004,6 +1029,15 @@ let get_class_name t =
       L.die InternalError "TODO: get_class_name for Python type"
   | C _ | Erlang _ | WithFunctionParameters _ | Linters_dummy_method ->
       None
+
+
+let python_classify = function Python p -> Some (Python.classify p) | _ -> None
+
+let mk_python_init = function
+  | Python p ->
+      Python (Python.mk_init p)
+  | _ ->
+      L.die InternalError "Procname.mk_python_init only supports Python names"
 
 
 let is_method_in_objc_protocol t =

@@ -1248,19 +1248,9 @@ class D(C):
 
         }
 
-        define dummy::C.__init__(self: *dummy::C) : *PyNone {
-          #entry:
-              ret null
+        declare dummy::C(...) : *dummy::C
 
-        }
-
-        define dummy::C() : *dummy::C {
-          #entry:
-              n0 = __sil_allocate(<dummy::C>)
-              n1 = n0.dummy::C.__init__()
-              ret n0
-
-        }
+        declare dummy::C.__init__(...) : *PyNone
 
         global dummy::C$static: *PyObject
 
@@ -1268,21 +1258,9 @@ class D(C):
 
         type dummy::C = {}
 
-        define dummy::D.__init__(self: *dummy::D) : *PyNone {
-          #entry:
-              n0:*dummy::D = load &self
-              n1 = n0.dummy::C.__init__()
-              ret null
+        declare dummy::D(...) : *dummy::D
 
-        }
-
-        define dummy::D() : *dummy::D {
-          #entry:
-              n0 = __sil_allocate(<dummy::D>)
-              n1 = n0.dummy::D.__init__()
-              ret n0
-
-        }
+        declare dummy::D.__init__(...) : *PyNone
 
         global dummy::D$static: *PyObject
 
@@ -1333,19 +1311,9 @@ C.f()
 
         }
 
-        define dummy::C.__init__(self: *dummy::C) : *PyNone {
-          #entry:
-              ret null
+        declare dummy::C(...) : *dummy::C
 
-        }
-
-        define dummy::C() : *dummy::C {
-          #entry:
-              n0 = __sil_allocate(<dummy::C>)
-              n1 = n0.dummy::C.__init__()
-              ret n0
-
-        }
+        declare dummy::C.__init__(...) : *PyNone
 
         global dummy::C$static: *PyObject
 
@@ -1494,19 +1462,9 @@ class D(C):
 
           }
 
-          define dummy::C.__init__(self: *dummy::C) : *PyNone {
-            #entry:
-                ret null
+          declare dummy::C(...) : *dummy::C
 
-          }
-
-          define dummy::C() : *dummy::C {
-            #entry:
-                n0 = __sil_allocate(<dummy::C>)
-                n1 = n0.dummy::C.__init__()
-                ret n0
-
-          }
+          declare dummy::C.__init__(...) : *PyNone
 
           global dummy::C$static: *PyObject
 
@@ -1514,21 +1472,9 @@ class D(C):
 
           type dummy::C = {}
 
-          define dummy::D.__init__(self: *dummy::D) : *PyNone {
-            #entry:
-                n0:*dummy::D = load &self
-                n1 = n0.dummy::C.__init__()
-                ret null
+          declare dummy::D(...) : *dummy::D
 
-          }
-
-          define dummy::D() : *dummy::D {
-            #entry:
-                n0 = __sil_allocate(<dummy::D>)
-                n1 = n0.dummy::D.__init__()
-                ret n0
-
-          }
+          declare dummy::D.__init__(...) : *PyNone
 
           global dummy::D$static: *PyObject
 
@@ -1585,19 +1531,9 @@ class D0(C0):
 
           }
 
-          define dummy::C.__init__(self: *dummy::C) : *PyNone {
-            #entry:
-                ret null
+          declare dummy::C(...) : *dummy::C
 
-          }
-
-          define dummy::C() : *dummy::C {
-            #entry:
-                n0 = __sil_allocate(<dummy::C>)
-                n1 = n0.dummy::C.__init__()
-                ret n0
-
-          }
+          declare dummy::C.__init__(...) : *PyNone
 
           global dummy::C$static: *PyObject
 
