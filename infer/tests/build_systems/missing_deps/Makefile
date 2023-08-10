@@ -12,4 +12,5 @@ include $(TESTS_DIR)/infer.make
 export INFER_BIN
 
 infer-out$(TEST_SUFFIX)/report.json: $(SOURCES) $(MAKEFILE_LIST)
+	$(MAKE) clean
 	$(QUIET)$(call silent_on_success,Testing distributed analysis in $(TEST_REL_DIR), ./dist.py)

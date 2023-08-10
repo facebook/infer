@@ -87,7 +87,7 @@ module Implementation = struct
     |> SqliteUtils.exec ~stmt:"UPDATE source_files SET freshly_captured = 0" ~log:"mark_all_stale"
 
 
-  let merge_procedures_table ~db ~attached ~db_file =
+  let merge_procedures_table ~db ~to_db ~db_file =
     (* Do the merge purely in SQL for great speed. The query works by doing a left join between the
        sub-table and the main one, and applying the same "more defined" logic as in [replace_attributes] in the
        cases where a proc_name is present in both the sub-table and the main one (main.proc_uid !=
@@ -98,24 +98,24 @@ module Implementation = struct
          ~stmt:
            (Printf.sprintf
               {|
-               INSERT OR REPLACE INTO %s.procedures
-               SELECT
-               sub.proc_uid,
-               sub.proc_attributes,
-               sub.cfg,
-               sub.callees
-               FROM (
-               attached.procedures AS sub
-               LEFT OUTER JOIN %s.procedures AS main
-               ON sub.proc_uid = main.proc_uid )
-               WHERE
-               main.proc_uid IS NULL
-               OR
-               (main.cfg IS NOT NULL) < (sub.cfg IS NOT NULL)
-               OR
-               ((main.cfg IS NULL) = (sub.cfg IS NULL) AND main.proc_attributes < sub.proc_attributes)
-               |}
-              attached attached )
+                INSERT OR REPLACE INTO %s.procedures
+                SELECT
+                  sub.proc_uid,
+                  sub.proc_attributes,
+                  sub.cfg,
+                  sub.callees
+                FROM (
+                  attached.procedures AS sub
+                  LEFT OUTER JOIN %s.procedures AS main
+                  ON sub.proc_uid = main.proc_uid )
+                WHERE
+                  main.proc_uid IS NULL
+                  OR
+                  (main.cfg IS NOT NULL) < (sub.cfg IS NOT NULL)
+                  OR
+                  ((main.cfg IS NULL) = (sub.cfg IS NULL) AND main.proc_attributes < sub.proc_attributes)
+              |}
+              to_db to_db )
 
 
   let merge_captures ~root ~infer_deps_file =
@@ -136,7 +136,7 @@ module Implementation = struct
         L.die InternalError "Tried to merge in DB at %s but path does not exist.@\n" db_file ;
       let main_db = Database.get_database CaptureDatabase in
       SqliteUtils.with_attached_db main_db ~db_file ~db_name:"attached" ~f:(fun () ->
-          merge_procedures_table ~db:CaptureDatabase ~attached:"memdb" ~db_file ;
+          merge_procedures_table ~db:CaptureDatabase ~to_db:"memdb" ~db_file ;
           merge_source_files_table ~db_file )
     in
     let copy_to_main db =
@@ -160,22 +160,22 @@ module Implementation = struct
            ~stmt:
              (Printf.sprintf
                 {|
-                 INSERT OR REPLACE INTO specs
-                 SELECT
-                 sub.proc_uid,
-                 sub.proc_name,
-                 sub.report_summary,
-                 sub.summary_metadata,
-                 %s
-                 FROM (
-                 attached.specs AS sub
-                 LEFT OUTER JOIN specs AS main
-                 ON sub.proc_uid = main.proc_uid )
-                 WHERE
-                 main.proc_uid IS NULL
-                 OR
-                 main.report_summary >= sub.report_summary
-                 |}
+                  INSERT OR REPLACE INTO specs
+                  SELECT
+                    sub.proc_uid,
+                    sub.proc_name,
+                    sub.report_summary,
+                    sub.summary_metadata,
+                    %s
+                  FROM (
+                    attached.specs AS sub
+                    LEFT OUTER JOIN specs AS main
+                    ON sub.proc_uid = main.proc_uid )
+                  WHERE
+                    main.proc_uid IS NULL
+                  OR
+                    main.report_summary >= sub.report_summary
+                |}
                 ( PayloadId.database_fields
                 |> List.map ~f:(fun s -> "sub." ^ s)
                 |> String.concat ~sep:", " ) )
@@ -186,28 +186,28 @@ module Implementation = struct
            ~log:(Printf.sprintf "copying issues of database '%s'" db_file)
            ~stmt:
              {|
-              INSERT OR REPLACE INTO issue_logs
-              SELECT
-              sub.checker,
-              sub.source_file,
-              sub.issue_log
-              FROM (
-              attached.issue_logs AS sub
-              LEFT OUTER JOIN issue_logs AS main
-              ON (sub.checker = main.checker AND sub.source_file = main.source_file) )
-              WHERE
-              main.checker IS NULL
-              OR
-              main.source_file IS NULL
-              OR
-              main.issue_log >= sub.issue_log
+                INSERT OR REPLACE INTO issue_logs
+                SELECT
+                  sub.checker,
+                  sub.source_file,
+                  sub.issue_log
+                FROM (
+                  attached.issue_logs AS sub
+                  LEFT OUTER JOIN issue_logs AS main
+                  ON (sub.checker = main.checker AND sub.source_file = main.source_file) )
+                WHERE
+                  main.checker IS NULL
+                OR
+                  main.source_file IS NULL
+                OR
+                  main.issue_log >= sub.issue_log
               |}
     in
     let main_db = Database.get_database AnalysisDatabase in
     List.iter infer_outs ~f:(fun results_dir ->
         let db_file = ResultsDirEntryName.get_path ~results_dir AnalysisDB in
         SqliteUtils.with_attached_db main_db ~db_file ~db_name:"attached" ~f:(fun () ->
-            merge_procedures_table ~db:AnalysisDatabase ~attached:"attached" ~db_file ;
+            merge_procedures_table ~db:AnalysisDatabase ~to_db:"main" ~db_file ;
             merge_specs_table ~db_file ;
             merge_issues_table ~db_file ) )
 
