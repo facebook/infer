@@ -202,15 +202,63 @@ let rec load_names co_names stack instructions =
       load_names co_names stack instructions
 
 
-(* Specialized decorator test for [@staticmethod], which is a the only builtin decorator we
-   support at the moment *)
-let is_static_method stack =
-  match stack with
-  | [Type.Atom name] when String.equal PyCommon.static_method name ->
-      (true, [])
-  | _ ->
-      (false, stack)
+module Decorators = struct
+  type t = {is_static: bool; is_abstract: bool; unsupported: string list}
 
+  let has_static decorators = {decorators with is_static= true}
+
+  let has_abstract decorators = {decorators with is_abstract= true}
+
+  let unsupported name ({unsupported} as decorators) =
+    {decorators with unsupported= name :: unsupported}
+
+
+  let warn class_name name {unsupported} =
+    if not (List.is_empty unsupported) then (
+      L.user_warning "Left-over type information for method %s in class %s\n" name class_name ;
+      List.iter ~f:(L.user_warning "- %s\n") unsupported )
+
+
+  (* Each decorator will be processed at runtime by a [CALL_FUNCTION 1] operation. Since we only
+     support builtin decorators, we can skip them for now. *)
+  let skip_calls raw_qualified_name instructions {is_static; is_abstract; unsupported} =
+    let nr_decorators = List.length unsupported in
+    let nr_decorators = if is_static then nr_decorators + 1 else nr_decorators in
+    let nr_decorators = if is_abstract then nr_decorators + 1 else nr_decorators in
+    let rec skip n instructions =
+      let open IOption.Let_syntax in
+      if n > 0 then
+        let opt =
+          is_instruction "CALL_FUNCTION" instructions
+          >>= fun (arg, instructions) ->
+          if arg <> 1 then
+            L.die ExternalError
+              "[parse_method] invalid CALL_FUNCTION for decorated method in class %s"
+              raw_qualified_name
+          else Some instructions
+        in
+        let instructions = Option.value ~default:instructions opt in
+        skip (n - 1) instructions
+      else instructions
+    in
+    skip nr_decorators instructions
+
+
+  let make stack =
+    let rec run acc = function
+      | Type.Atom name :: decorators ->
+          if String.equal PyCommon.static_method name then run (has_static acc) decorators
+          else if String.equal PyCommon.ABC.abstract_method name then
+            run (has_abstract acc) decorators
+          else run (unsupported name acc) decorators
+      | hd :: _ ->
+          L.die InternalError "Decorators.make spotted %a" Type.pp hd
+      | [] ->
+          acc
+    in
+    let decorators = {is_static= false; is_abstract= false; unsupported= []} in
+    run decorators stack
+end
 
 (** Attempts to parse a special prelude to method declaration that can be present if __init__ is
     declared as closure, which might be the case when class inheritance is involved. For now we just
@@ -298,22 +346,9 @@ let parse_method ({FFI.Code.co_names} as code) class_name instructions =
   >>= fun (method_code, raw_qualified_name, flags, instructions) ->
   (* Now that most of the method declaration is parsed, we should only have decorators left over
      on the stack, so let's parse the decorators *)
-  let is_static, stack = is_static_method stack in
+  let ({Decorators.is_static; is_abstract} as decorators) = Decorators.make stack in
   (* Actual method declaration bytecode *)
-  let instructions =
-    (* If the method was static, there's an additional CALL_FUNCTION *)
-    if is_static then
-      let opt =
-        is_instruction "CALL_FUNCTION" instructions
-        >>= fun (arg, instructions) ->
-        if arg <> 1 then
-          L.die ExternalError "[parse_method] missing CALL_FUNCTION for static method %s"
-            raw_qualified_name
-        else Some instructions
-      in
-      Option.value ~default:instructions opt
-    else instructions
-  in
+  let instructions = Decorators.skip_calls raw_qualified_name instructions decorators in
   is_instruction "STORE_NAME" instructions
   >>= fun (arg, instructions) ->
   let name = co_names.(arg) in
@@ -350,15 +385,13 @@ let parse_method ({FFI.Code.co_names} as code) class_name instructions =
     | Some annotation ->
         {PyCommon.name= PyCommon.return; annotation} :: rev_formals_types
   in
-  if not (List.is_empty stack) then (
-    L.user_warning "Left-over type information for method %s in class %s\n" name class_name ;
-    List.iter ~f:(L.user_warning "- %a\n" Type.pp) stack ) ;
+  Decorators.warn class_name name decorators ;
   Some
     ( { PyCommon.name
       ; code= method_code
       ; signature
       ; is_static
-      ; is_abstract= false
+      ; is_abstract
       ; flags
       ; raw_qualified_name }
     , instructions )

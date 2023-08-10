@@ -845,7 +845,10 @@ module STORE = struct
             let proc =
               qualified_procname ~enclosing_class @@ proc_name ~loc PyCommon.toplevel_function
             in
-            let env, _ = FUNCTION.CALL.mk env None loc proc [] in
+            let env, _is_always_none = FUNCTION.CALL.mk env None loc proc [] in
+            (* Python toplevel code can't use [return] but still we just put a useless Textual id
+               on the stack. Popping it *)
+            let env, _ = pop_datastack "STORE_IMPORTED_NAME" env in
             env
         in
         let env =
@@ -1641,22 +1644,22 @@ let annotated_type_of_annotation env typ =
 (** Process a single code unit (toplevel code, function body, ...) *)
 let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} as code) =
   Debug.p "[to_proc_desc] %s %a\n" enclosing_class_name (Pp.option F.pp_print_string) opt_name ;
-  let is_toplevel, is_static, name, enclosing_class_name, annotations =
+  let is_toplevel, is_static, is_abstract, name, enclosing_class_name, annotations =
     match opt_name with
     | None ->
         let return_typ = {PyCommon.name= PyCommon.return; annotation= "None"} in
-        (true, false, PyCommon.toplevel_function, enclosing_class_name, [return_typ])
+        (true, false, false, PyCommon.toplevel_function, enclosing_class_name, [return_typ])
     | Some name -> (
-        let annotations = Env.lookup_method env ~enclosing_class:enclosing_class_name name in
-        match annotations with
+        let signature = Env.lookup_method env ~enclosing_class:enclosing_class_name name in
+        match signature with
         | None ->
-            (false, false, name, enclosing_class_name, [])
-        | Some {Env.Signature.is_static; annotations} ->
+            (false, false, false, name, enclosing_class_name, [])
+        | Some {Env.Signature.is_static; is_abstract; annotations} ->
             let enclosing_class_name =
               if is_static then PyCommon.static_companion enclosing_class_name
               else enclosing_class_name
             in
-            (false, is_static, name, enclosing_class_name, annotations) )
+            (false, is_static, is_abstract, name, enclosing_class_name, annotations) )
   in
   let proc_name = proc_name ~loc name in
   let enclosing_class = type_name ~loc enclosing_class_name in
@@ -1704,11 +1707,14 @@ let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} 
   let procdecl =
     {T.ProcDecl.qualified_name; formals_types= Some formals_types; result_type; attributes= []}
   in
-  let env, entry_label = Env.mk_fresh_label env in
-  let label = node_name ~loc entry_label in
-  let label_info = Env.Label.mk entry_label in
-  let env, nodes = nodes env label_info code instructions in
-  (env, {Textual.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown})
+  if is_abstract then (env, T.Module.Procdecl procdecl)
+  else
+    let env, entry_label = Env.mk_fresh_label env in
+    let label = node_name ~loc entry_label in
+    let label_info = Env.Label.mk entry_label in
+    let env, nodes = nodes env label_info code instructions in
+    ( env
+    , T.Module.Proc {T.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown} )
 
 
 (* For each class declaration, we generate an explicit constructor if there
@@ -1832,14 +1838,14 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
   let {PyClassDecl.members; methods; static_methods; has_init; has_new} =
     PyClassDecl.parse_class_declaration code co_name instructions
   in
-  let register_methods env codes method_infos opname ~is_static =
+  let register_methods env codes method_infos opname =
     List.fold_left method_infos ~init:(env, codes)
-      ~f:(fun (env, codes) {PyCommon.code; signature; flags} ->
+      ~f:(fun (env, codes) {PyCommon.code; signature; flags; is_static; is_abstract} ->
         check_flags opname flags ;
         let env =
           match FFI.Constant.as_code code with
           | Some code ->
-              let info = {PyEnv.Signature.is_static; is_abstract= false; annotations= signature} in
+              let info = {PyEnv.Signature.is_static; is_abstract; annotations= signature} in
               Env.register_method env ~enclosing_class:class_name ~method_name:code.FFI.Code.co_name
                 info
           | None ->
@@ -1849,10 +1855,8 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
   in
   if Option.is_some has_new then
     L.die InternalError "TODO: No support for __new__ in user declared classes" ;
-  let env, codes = register_methods env [] methods "<METHOD_DECLARATION>" ~is_static:false in
-  let env, codes =
-    register_methods env codes static_methods "<STATIC_METHOD_DECLARATION>" ~is_static:true
-  in
+  let env, codes = register_methods env [] methods "<METHOD_DECLARATION>" in
+  let env, codes = register_methods env codes static_methods "<STATIC_METHOD_DECLARATION>" in
   let fields =
     List.map members ~f:(fun {PyCommon.name; annotation} ->
         let name = field_name ~loc name in
@@ -1863,12 +1867,15 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
   let module_name = prefix_name ~module_name co_name in
   let env, decls = to_proc_descs env module_name (Array.of_list codes) in
   let supers, static_supers =
-    Option.value_map ~default:([], [])
-      ~f:(fun parent ->
-        let supers = [Symbol.to_type_name ~is_static:false parent] in
-        let static_supers = [Symbol.to_type_name ~is_static:true parent] in
-        (supers, static_supers) )
-      parent
+    match parent with
+    | None ->
+        ([], [])
+    | Some parent ->
+        if Symbol.is_imported_ABC parent then ([], [])
+        else
+          let supers = [Symbol.to_type_name ~is_static:false parent] in
+          let static_supers = [Symbol.to_type_name ~is_static:true parent] in
+          (supers, static_supers)
   in
   let t = T.Module.Struct {name= class_type_name; supers; fields; attributes= []} in
   let companion =
@@ -1915,10 +1922,10 @@ and to_proc_descs env enclosing_class_name codes =
               (env, new_decls @ decls)
           | None ->
               let env, decl = to_proc_desc env loc enclosing_class_name (Some co_name) code in
-              (env, T.Module.Proc decl :: decls) ) )
+              (env, decl :: decls) ) )
 
 
-let python_attribute = Textual.Attr.mk_source_language Textual.Lang.Python
+let python_attribute = T.Attr.mk_source_language T.Lang.Python
 
 (** Entry point of the module: process a whole Python file / compilation unit into Textual *)
 let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructions} as code) =
@@ -1982,7 +1989,6 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
   let imports = Env.get_textual_imports env in
   (* Gather everything into a Textual module *)
   let decls =
-    ((T.Module.Proc decl :: decls) @ globals @ imports)
-    @ Builtin.Set.to_textual (Env.get_used_builtins env)
+    ((decl :: decls) @ globals @ imports) @ Builtin.Set.to_textual (Env.get_used_builtins env)
   in
   {T.Module.attrs= [python_attribute]; decls; sourcefile}

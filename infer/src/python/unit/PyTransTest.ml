@@ -1774,3 +1774,74 @@ def f(x, y, z, t):
 
           declare $builtins.python_int(int) : *PyInt |}]
   end )
+
+
+let%test_module "abc" =
+  ( module struct
+    let%expect_test _ =
+      let source =
+        {|
+from abc import ABC, abstractmethod
+
+class C(ABC):
+    @abstractmethod
+    def get(self) -> None:
+      ...
+
+    @abstractmethod
+    @staticmethod
+    def get_static0() -> None:
+      ...
+
+    @staticmethod
+    @abstractmethod
+    def get_static1() -> None:
+      ...
+|}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = abc.$toplevel()
+              n1 = abc.$toplevel()
+              n2 = $builtins.python_class("dummy::C")
+              ret null
+
+        }
+
+        declare dummy::C$static.get_static0() : *PyNone
+
+        declare dummy::C$static.get_static1() : *PyNone
+
+        declare dummy::C.get(*dummy::C) : *PyNone
+
+        declare dummy::C(...) : *dummy::C
+
+        declare dummy::C.__init__(...) : *PyNone
+
+        global dummy::C$static: *PyObject
+
+        type .static dummy::C$static = {}
+
+        type dummy::C = {}
+
+        declare abc.$toplevel() : *PyObject
+
+        declare $builtins.python_class(*String) : *PyClass
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+  end )

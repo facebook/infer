@@ -117,6 +117,14 @@ val static_method : string
 
 val static_companion : string -> string
 
+module ABC : sig
+  val abstract_method : string
+
+  val import_name : string
+
+  val base_class : string
+end
+
 val init__ : string
 (** Name of the Python initialization method *)
 

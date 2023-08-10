@@ -138,6 +138,11 @@ module Symbol = struct
     let to_typ qual : T.Typ.t =
       let typ = to_type_name ~is_static:false qual in
       T.Typ.(Ptr (Struct typ))
+
+
+    let is_imported_ABC {prefix; name} =
+      List.equal String.equal [PyCommon.ABC.import_name] prefix
+      && String.equal PyCommon.ABC.base_class name
   end
 
   type t =
@@ -146,6 +151,13 @@ module Symbol = struct
     | Code of {code_name: Qualified.t}
     | Class of {class_name: Qualified.t}
     | Import of {import_path: string}
+
+  let is_imported_ABC = function
+    | Name {symbol_name; is_imported} ->
+        if is_imported then Qualified.is_imported_ABC symbol_name else false
+    | Builtin | Code _ | Class _ | Import _ ->
+        false
+
 
   let to_string ?(code_sep = ".") ?(static = false) = function
     | Class {class_name= qname} | Name {symbol_name= qname} ->

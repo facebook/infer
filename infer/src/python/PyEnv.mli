@@ -68,6 +68,8 @@ module Symbol : sig
     | Class of {class_name: Qualified.t}
     | Import of {import_path: string}
 
+  val is_imported_ABC : t -> bool
+
   val to_string : ?code_sep:string -> ?static:bool -> t -> string
 
   val to_qualified_procname : t -> T.qualified_procname

@@ -135,6 +135,14 @@ let static_method = "staticmethod"
 
 let static_companion name = sprintf "%s$static" name
 
+module ABC = struct
+  let abstract_method = "abstractmethod"
+
+  let import_name = "abc"
+
+  let base_class = "ABC"
+end
+
 let init__ = "__init__"
 
 let new__ = "__new__"
