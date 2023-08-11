@@ -52,33 +52,35 @@ type instr_metadata =
       (** stack variable declared *)
 [@@deriving compare]
 
-(** An instruction. Syntactic invariants of instructions per-front end are documented in
-    checkers/silValidation.ml, where Clang is the most general validator (that is, it properly
-    subsumes all other validators). You can enforce those invariants by adding --sil-validation to
-    an analysis. *)
+(** An instruction. Syntactic invariants of instructions per-frontend are documented in
+    {!SilValidation}, where Clang is the most general validator (that is, it properly subsumes all
+    other validators). These invariants are enforced when --sil-validation is passed. *)
 type instr =
-  (* Note for frontend writers:
-     [x] must be used in a subsequent instruction, otherwise the entire
-     `Load` instruction may be eliminated by copy-propagation. *)
   | Load of {id: Ident.t; e: Exp.t; typ: Typ.t; loc: Location.t}
       (** Load a value from the heap into an identifier.
 
-          [id = *exp:typ] where
+          [id = *e:typ] where
 
-          - [exp] is an expression denoting a heap address
-          - [typ] is the type of [*exp] and [id]. *)
+          - [e] is an expression denoting a heap address
+          - [typ] is the type of [*e] and [id]. *)
   | Store of {e1: Exp.t; typ: Typ.t; e2: Exp.t; loc: Location.t}
       (** Store the value of an expression into the heap.
 
-          [*exp1:typ = exp2] where
+          [*e1:typ = e2] where
 
-          - [exp1] is an expression denoting a heap address
-          - [typ] is the type of [*exp1] and [exp2]. *)
+          - [e1] is an expression denoting a heap address
+          - [typ] is the type of [*e1] and [e2]. *)
   | Prune of Exp.t * Location.t * bool * if_kind
-      (** prune the state based on [exp=1], the boolean indicates whether true branch *)
+      (** The semantics of [Prune (exp, loc, is_then_branch, if_kind)] is that it prunes the state
+          (blocks, or diverges) if [exp] evaluates to [1]; the boolean [is_then_branch] is [true] if
+          this is the [then] branch of an [if] condition, [false] otherwise (it is meaningless if
+          [if_kind] is not [Ik_if], [Ik_bexp], or other [if]-like cases
+
+          This instruction, together with the CFG structure, is used to encode control-flow with
+          tests in the source program such as [if] branches and [while] loops. *)
   | Call of (Ident.t * Typ.t) * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t
       (** [Call ((ret_id, ret_typ), e_fun, arg_ts, loc, call_flags)] represents an instruction
-          [ret_id = e_fun(arg_ts);] *)
+          [ret_id = e_fun(arg_ts)] *)
   | Metadata of instr_metadata
       (** hints about the program that are not strictly needed to understand its semantics, for
           instance information about its original syntactic structure *)
