@@ -283,7 +283,11 @@
       "method_names": ["source"],
       "taint_target": ["ArgumentPositions", [0]]
     },
-    { "method_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker" }
+    { "method_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker" },
+    { "class_names": ["codetoanalyze.java.pulse.Fields"],
+      "field_names": ["sourceField"],
+      "taint_target": "GetField"
+    }
   ],
   "pulse-taint-sinks": [
     { "procedure": "inferSensitiveSink" },
@@ -425,7 +429,11 @@
     { "class_names": ["codetoanalyze.java.pulse.Logger"],
       "method_names": ["log"],
       "kinds": ["Logger"] },
-    { "method_with_annotation": "codetoanalyze.java.pulse.SensitiveSinkMarker" }
+    { "method_with_annotation": "codetoanalyze.java.pulse.SensitiveSinkMarker" },
+    { "class_names": ["codetoanalyze.java.pulse.Fields"],
+      "field_names": ["sinkField"],
+      "taint_target": "SetField"
+    }
   ],
   "pulse-taint-sanitizers": [
     { "procedure": "inferUniversalSanitizer" },
