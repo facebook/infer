@@ -738,12 +738,12 @@ let get_message_and_suggestion diagnostic =
       | IntoVar _, None ->
           ( F.asprintf "%a variable `%a` is not modified after it is copied from a source on %a."
               CopyOrigin.pp from CopiedInto.pp copied_into Location.pp_line location
-          , Some (F.asprintf " %s. %s." (get_suggestion_msg source_opt) suppression_msg) )
+          , Some (F.asprintf "%s. %s." (get_suggestion_msg source_opt) suppression_msg) )
       | IntoVar _, Some source_expr ->
           ( F.asprintf "%a variable `%a` is not modified after it is copied from `%a` on %a."
               CopyOrigin.pp from CopiedInto.pp copied_into DecompilerExpr.pp_source_expr source_expr
               Location.pp_line location
-          , Some (F.asprintf " %s. %s." (get_suggestion_msg source_opt) suppression_msg) )
+          , Some (F.asprintf "%s. %s." (get_suggestion_msg source_opt) suppression_msg) )
       | IntoField {field}, None ->
           ( F.asprintf "Field `%a` is %a into from an rvalue-ref but is not modified afterwards."
               Fieldname.pp field CopyOrigin.pp from
