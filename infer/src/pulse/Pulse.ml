@@ -1547,6 +1547,8 @@ let analyze specialization
       ScubaLogging.log_count ~label:"pulse_summary" ~value:summary_count ;
     Stats.add_pulse_summaries_count summary_count ;
     if Config.pulse_log_summary_count then log_summary_count proc_name summary ;
+    (* needed to record the stats corresponding to the metadata *)
+    DisjunctiveAnalyzer.get_cfg_metadata () |> ignore ;
     Some summary
   in
   let exn_sink_node_opt = Procdesc.get_exn_sink proc_desc in

@@ -76,6 +76,8 @@ include struct
     ; mutable pulse_aliasing_contradictions: int
     ; mutable pulse_args_length_contradictions: int
     ; mutable pulse_captured_vars_length_contradictions: int
+    ; mutable pulse_disjuncts_dropped: int
+    ; mutable pulse_interrupted_loops: int
     ; mutable pulse_summaries_count: int PulseSumCountMap.t
     ; mutable topl_reachable_calls: int
     ; mutable timeouts: int
@@ -100,6 +102,8 @@ let global_stats =
   ; pulse_aliasing_contradictions= 0
   ; pulse_args_length_contradictions= 0
   ; pulse_captured_vars_length_contradictions= 0
+  ; pulse_disjuncts_dropped= 0
+  ; pulse_interrupted_loops= 0
   ; pulse_summaries_count= PulseSumCountMap.empty
   ; topl_reachable_calls= 0
   ; timeouts= 0
@@ -114,9 +118,11 @@ let update_with field ~f =
       set global_stats (f (Field.get field global_stats))
 
 
-let incr field = update_with field ~f:(( + ) 1)
+let add field n = update_with field ~f:(( + ) n)
 
-let add field exe_duration = update_with field ~f:(ExecutionDuration.add exe_duration)
+let incr field = add field 1
+
+let add_exe_duration field exe_duration = update_with field ~f:(ExecutionDuration.add exe_duration)
 
 let incr_summary_file_try_load () = incr Fields.summary_file_try_load
 
@@ -129,19 +135,19 @@ let incr_summary_cache_misses () = incr Fields.summary_cache_misses
 let incr_ondemand_procs_analyzed () = incr Fields.ondemand_procs_analyzed
 
 let add_to_proc_locker_lock_time execution_duration =
-  add Fields.proc_locker_lock_time execution_duration
+  add_exe_duration Fields.proc_locker_lock_time execution_duration
 
 
 let add_to_proc_locker_unlock_time execution_duration =
-  add Fields.proc_locker_unlock_time execution_duration
+  add_exe_duration Fields.proc_locker_unlock_time execution_duration
 
 
 let add_to_restart_scheduler_useful_time execution_duration =
-  add Fields.restart_scheduler_useful_time execution_duration
+  add_exe_duration Fields.restart_scheduler_useful_time execution_duration
 
 
 let add_to_restart_scheduler_total_time execution_duration =
-  add Fields.restart_scheduler_total_time execution_duration
+  add_exe_duration Fields.restart_scheduler_total_time execution_duration
 
 
 let incr_pulse_aliasing_contradictions () = incr Fields.pulse_aliasing_contradictions
@@ -151,6 +157,10 @@ let incr_pulse_args_length_contradictions () = incr Fields.pulse_args_length_con
 let incr_pulse_captured_vars_length_contradictions () =
   incr Fields.pulse_captured_vars_length_contradictions
 
+
+let add_pulse_disjuncts_dropped n = add Fields.pulse_disjuncts_dropped n
+
+let add_pulse_interrupted_loops n = add Fields.pulse_interrupted_loops n
 
 let add_pulse_summaries_count n =
   update_with Fields.pulse_summaries_count ~f:(fun counters ->
@@ -187,6 +197,8 @@ let copy from ~into : unit =
        ; pulse_aliasing_contradictions
        ; pulse_args_length_contradictions
        ; pulse_captured_vars_length_contradictions
+       ; pulse_disjuncts_dropped
+       ; pulse_interrupted_loops
        ; pulse_summaries_count
        ; topl_reachable_calls
        ; timeouts
@@ -197,8 +209,8 @@ let copy from ~into : unit =
     ~summary_read_from_disk ~summary_cache_hits ~summary_cache_misses ~ondemand_procs_analyzed
     ~proc_locker_lock_time ~proc_locker_unlock_time ~restart_scheduler_useful_time
     ~restart_scheduler_total_time ~pulse_aliasing_contradictions ~pulse_args_length_contradictions
-    ~pulse_captured_vars_length_contradictions ~pulse_summaries_count ~topl_reachable_calls
-    ~timeouts ~timings
+    ~pulse_captured_vars_length_contradictions ~pulse_disjuncts_dropped ~pulse_interrupted_loops
+    ~pulse_summaries_count ~topl_reachable_calls ~timeouts ~timings
 
 
 let merge stats1 stats2 =
@@ -226,6 +238,8 @@ let merge stats1 stats2 =
   ; pulse_captured_vars_length_contradictions=
       stats1.pulse_captured_vars_length_contradictions
       + stats2.pulse_captured_vars_length_contradictions
+  ; pulse_disjuncts_dropped= stats1.pulse_disjuncts_dropped + stats2.pulse_disjuncts_dropped
+  ; pulse_interrupted_loops= stats1.pulse_interrupted_loops + stats2.pulse_interrupted_loops
   ; pulse_summaries_count=
       PulseSumCountMap.merge
         (fun _ i j -> Some (Option.value ~default:0 i + Option.value ~default:0 j))
@@ -253,6 +267,8 @@ let initial =
   ; pulse_aliasing_contradictions= 0
   ; pulse_args_length_contradictions= 0
   ; pulse_captured_vars_length_contradictions= 0
+  ; pulse_disjuncts_dropped= 0
+  ; pulse_interrupted_loops= 0
   ; pulse_summaries_count= PulseSumCountMap.empty
   ; topl_reachable_calls= 0
   ; timeouts= 0
@@ -309,6 +325,7 @@ let pp fmt stats =
       ~pulse_aliasing_contradictions:(pp_int_field fmt)
       ~pulse_args_length_contradictions:(pp_int_field fmt)
       ~pulse_captured_vars_length_contradictions:(pp_int_field fmt)
+      ~pulse_disjuncts_dropped:(pp_int_field fmt) ~pulse_interrupted_loops:(pp_int_field fmt)
       ~pulse_summaries_count:(pp_pulse_summaries_count fmt) ~timeouts:(pp_int_field fmt)
       ~topl_reachable_calls:(pp_int_field fmt)
       ~timings:(pp_serialized_field Timings.deserialize Timings.pp fmt)
@@ -351,6 +368,7 @@ let log_to_scuba stats =
       ~restart_scheduler_total_time:create_time_entry ~pulse_aliasing_contradictions:create_counter
       ~pulse_args_length_contradictions:create_counter
       ~pulse_captured_vars_length_contradictions:create_counter
+      ~pulse_disjuncts_dropped:create_counter ~pulse_interrupted_loops:create_counter
       ~pulse_summaries_count:create_pulse_summaries_count_entry ~timeouts:create_counter
       ~topl_reachable_calls:create_counter ~timings:create_timings_entry
     |> List.concat

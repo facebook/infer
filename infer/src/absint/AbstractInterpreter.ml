@@ -191,6 +191,12 @@ module DisjunctiveMetadata = struct
 
   let incr_interrupted_loops () =
     proc_metadata := {!proc_metadata with interrupted_loops= !proc_metadata.interrupted_loops + 1}
+
+
+  let record_cfg_stats {dropped_disjuncts; interrupted_loops} =
+    Stats.add_pulse_disjuncts_dropped dropped_disjuncts ;
+    Stats.add_pulse_interrupted_loops interrupted_loops ;
+    ()
 end
 
 (** build a disjunctive domain and transfer functions *)
@@ -876,7 +882,10 @@ struct
   module DisjunctiveTransferFunctions = MakeDisjunctiveTransferFunctions (T) (DConfig)
   include MakeWTONode (DisjunctiveTransferFunctions)
 
-  let get_cfg_metadata () = !DisjunctiveMetadata.proc_metadata
+  let get_cfg_metadata () =
+    let metadata = !DisjunctiveMetadata.proc_metadata in
+    DisjunctiveMetadata.record_cfg_stats metadata ;
+    metadata
 end
 
 module type MakeExceptional = functor (T : TransferFunctions) -> S with module TransferFunctions = T
