@@ -6,29 +6,39 @@ N_disjuncts = 1
 
 three_branch:
   1 disjuncts:
-  #0: 0
-  
-  Non-disj state: ⊥
+#0: 0
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 2; interrupted_loops= 0
+
 two_branch:
   1 disjuncts:
-  #0: 0
-  
-  Non-disj state: ⊥
+#0: 0
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 1; interrupted_loops= 0
+
 loop:
   1 disjuncts:
-  #0: two_branch0.0
-  
-  Non-disj state: ⊥
+#0: two_branch0.0
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 3; interrupted_loops= 0
+
 four_branch:
   1 disjuncts:
-  #0: 0
-  
-  Non-disj state: ⊥
+#0: 0
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 3; interrupted_loops= 0
+
 sequence:
   1 disjuncts:
-  #0: two_branch0.0.three_branch1.0.four_branch2.0
-  
-  Non-disj state: ⊥
+#0: two_branch0.0.three_branch1.0.four_branch2.0
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 0; interrupted_loops= 0
+
 
   No issues found  
 
@@ -37,41 +47,51 @@ N_disjuncts = 4
 
 three_branch:
   3 disjuncts:
-  #0: 0
-  #1: 2
-  #2: 1
-  
-  Non-disj state: ⊥
+#0: 0
+#1: 2
+#2: 1
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 0; interrupted_loops= 0
+
 two_branch:
   2 disjuncts:
-  #0: 0
-  #1: 1
-  
-  Non-disj state: ⊥
+#0: 0
+#1: 1
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 0; interrupted_loops= 0
+
 loop:
   4 disjuncts:
-  #0: two_branch0.0
-  #1: two_branch0.1
-  #2: two_branch0.0.two_branch1.0
-  #3: two_branch0.0.two_branch1.1
-  
-  Non-disj state: ⊥
+#0: two_branch0.0
+#1: two_branch0.1
+#2: two_branch0.0.two_branch1.0
+#3: two_branch0.0.two_branch1.1
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 13; interrupted_loops= 0
+
 four_branch:
   4 disjuncts:
-  #0: 0
-  #1: 2
-  #2: 1
-  #3: 3
-  
-  Non-disj state: ⊥
+#0: 0
+#1: 2
+#2: 1
+#3: 3
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 0; interrupted_loops= 0
+
 sequence:
   4 disjuncts:
-  #0: two_branch0.0.three_branch1.0.four_branch3.0
-  #1: two_branch0.0.three_branch1.0.four_branch3.2
-  #2: two_branch0.0.three_branch1.0.four_branch3.1
-  #3: two_branch0.0.three_branch1.0.four_branch3.3
-  
-  Non-disj state: ⊥
+#0: two_branch0.0.three_branch1.0.four_branch3.0
+#1: two_branch0.0.three_branch1.0.four_branch3.2
+#2: two_branch0.0.three_branch1.0.four_branch3.1
+#3: two_branch0.0.three_branch1.0.four_branch3.3
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 5; interrupted_loops= 0
+
 
   No issues found  
 
@@ -80,52 +100,62 @@ N_disjuncts = 10
 
 three_branch:
   3 disjuncts:
-  #0: 0
-  #1: 2
-  #2: 1
-  
-  Non-disj state: ⊥
+#0: 0
+#1: 2
+#2: 1
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 0; interrupted_loops= 0
+
 two_branch:
   2 disjuncts:
-  #0: 0
-  #1: 1
-  
-  Non-disj state: ⊥
+#0: 0
+#1: 1
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 0; interrupted_loops= 0
+
 loop:
   10 disjuncts:
-  #0: two_branch0.0
-  #1: two_branch0.1
-  #2: two_branch0.0.two_branch1.0
-  #3: two_branch0.0.two_branch1.1
-  #4: two_branch0.1.two_branch2.0
-  #5: two_branch0.1.two_branch2.1
-  #6: two_branch0.0.two_branch1.0.two_branch3.0
-  #7: two_branch0.0.two_branch1.0.two_branch3.1
-  #8: two_branch0.0.two_branch1.1.two_branch4.0
-  #9: two_branch0.0.two_branch1.1.two_branch4.1
-  
-  Non-disj state: ⊥
+#0: two_branch0.0
+#1: two_branch0.1
+#2: two_branch0.0.two_branch1.0
+#3: two_branch0.0.two_branch1.1
+#4: two_branch0.1.two_branch2.0
+#5: two_branch0.1.two_branch2.1
+#6: two_branch0.0.two_branch1.0.two_branch3.0
+#7: two_branch0.0.two_branch1.0.two_branch3.1
+#8: two_branch0.0.two_branch1.1.two_branch4.0
+#9: two_branch0.0.two_branch1.1.two_branch4.1
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 19; interrupted_loops= 1
+
 four_branch:
   4 disjuncts:
-  #0: 0
-  #1: 2
-  #2: 1
-  #3: 3
-  
-  Non-disj state: ⊥
+#0: 0
+#1: 2
+#2: 1
+#3: 3
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 0; interrupted_loops= 0
+
 sequence:
   10 disjuncts:
-  #0: two_branch0.0.three_branch1.0.four_branch3.0
-  #1: two_branch0.0.three_branch1.0.four_branch3.2
-  #2: two_branch0.0.three_branch1.0.four_branch3.1
-  #3: two_branch0.0.three_branch1.0.four_branch3.3
-  #4: two_branch0.0.three_branch1.2.four_branch4.0
-  #5: two_branch0.0.three_branch1.2.four_branch4.2
-  #6: two_branch0.0.three_branch1.2.four_branch4.1
-  #7: two_branch0.0.three_branch1.2.four_branch4.3
-  #8: two_branch0.0.three_branch1.1.four_branch5.0
-  #9: two_branch0.0.three_branch1.1.four_branch5.2
-  
-  Non-disj state: ⊥
+#0: two_branch0.0.three_branch1.0.four_branch3.0
+#1: two_branch0.0.three_branch1.0.four_branch3.2
+#2: two_branch0.0.three_branch1.0.four_branch3.1
+#3: two_branch0.0.three_branch1.0.four_branch3.3
+#4: two_branch0.0.three_branch1.2.four_branch4.0
+#5: two_branch0.0.three_branch1.2.four_branch4.2
+#6: two_branch0.0.three_branch1.2.four_branch4.1
+#7: two_branch0.0.three_branch1.2.four_branch4.3
+#8: two_branch0.0.three_branch1.1.four_branch5.0
+#9: two_branch0.0.three_branch1.1.four_branch5.2
+
+Non-disj state: ⊥
+CFG Metadata: dropped_disjuncts= 5; interrupted_loops= 0
+
 
   No issues found  

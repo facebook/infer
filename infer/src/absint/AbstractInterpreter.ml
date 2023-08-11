@@ -161,6 +161,38 @@ module BackwardNodeTransferFunction (T : TransferFunctions) = struct
     Instrs.foldi ~init:pre instrs ~f
 end
 
+module DisjunctiveMetadata = struct
+  (** information about the analysis of a single procedure with [MakeDisjunctiveTransferFunctions] *)
+  type t =
+    { dropped_disjuncts: int
+          (** how many disjuncts were discarded due to hitting the max disjuncts limit *)
+    ; interrupted_loops: int  (** how many loops hit the max unrolling limit without converging *)
+    }
+
+  let empty = {dropped_disjuncts= 0; interrupted_loops= 0}
+
+  let pp fmt ({dropped_disjuncts; interrupted_loops} [@warning "+missing-record-field-pattern"]) =
+    F.fprintf fmt "dropped_disjuncts= %d;@ interrupted_loops= %d" dropped_disjuncts
+      interrupted_loops
+
+
+  (* The metadata for a procedure is kept in a reference to make it easier to keep an accurate track
+     of metadata since otherwise we would need to carry the metadata around the analysis while being
+     careful to avoid double-counting. With a reference this is simpler to achieve as we can simply
+     update it whenever a relevant action is taken (eg dropping a disjunct). *)
+  let proc_metadata = ref empty
+
+  let () = AnalysisGlobalState.register_ref ~init:(fun () -> empty) proc_metadata
+
+  let add_dropped_disjuncts dropped_disjuncts =
+    proc_metadata :=
+      {!proc_metadata with dropped_disjuncts= !proc_metadata.dropped_disjuncts + dropped_disjuncts}
+
+
+  let incr_interrupted_loops () =
+    proc_metadata := {!proc_metadata with interrupted_loops= !proc_metadata.interrupted_loops + 1}
+end
+
 (** build a disjunctive domain and transfer functions *)
 module MakeDisjunctiveTransferFunctions
     (T : TransferFunctions.DisjReady)
@@ -180,6 +212,17 @@ struct
     (** a list [\[x1; x2; ...; xN\]] represents a disjunction [x1 ∨ x2 ∨ ... ∨ xN] *)
     type t = T.DisjDomain.t list * T.NonDisjDomain.t
 
+    (** [append_no_duplicates_up_to leq ~limit from ~into ~into_length] is a triple where
+
+        - the first element is [List.take ((rev from') @ into) limit] where [from'] is [from] minus
+          any element that is greater than an element in [into] according to [leq]
+
+        - the second element is the length of the first element
+
+        - the third element is an over-approximation of how many elements from the
+          [(rev from') @ into] were dropped to fit within [limit]; the over-approximation comes from
+          the fact that leftover elements of [from] are not checked for inclusion in [into] so it
+          could be that some of them would have been left out regardless of the limit. *)
     let append_no_duplicates_up_to leq ~limit from ~into ~into_length =
       let rec aux acc n_acc from =
         match from with
@@ -192,21 +235,23 @@ struct
               aux acc n_acc tl
             else aux (hd :: acc) (n_acc + 1) tl
         | _ ->
-            (* [from] is empty or [n_acc ≥ limit], either way we are done *) (acc, n_acc)
+            (* [from] is empty or [n_acc ≥ limit], either way we are done *)
+            (acc, n_acc, List.length from)
       in
       aux into into_length from
 
 
     let length_and_cap_to_limit n l =
       let length = List.length l in
-      (List.drop l (length - n), min length n)
+      let n_dropped = max 0 (length - n) in
+      (List.drop l n_dropped, min length n, n_dropped)
 
 
     (** Ignore states in [lhs] that are over-approximated in [rhs] according to [leq] and
         vice-versa. Favors keeping states in [lhs]. Returns no more than [limit] disjuncts. *)
     let join_up_to_with_leq ~limit leq ~into:lhs rhs =
-      let lhs, lhs_length = length_and_cap_to_limit limit lhs in
-      if phys_equal lhs rhs || lhs_length >= limit then (lhs, lhs_length)
+      let lhs, lhs_length, n_dropped = length_and_cap_to_limit limit lhs in
+      if phys_equal lhs rhs || lhs_length >= limit then (lhs, lhs_length, n_dropped)
       else
         (* this filters only in one direction for now, could be worth doing both ways *)
         append_no_duplicates_up_to leq ~limit (List.rev rhs) ~into:lhs ~into_length:lhs_length
@@ -244,15 +289,19 @@ struct
       if phys_equal prev next then prev
       else if num_iters > max_iter then (
         L.d_printfln "Iteration %d is greater than max iter %d, stopping." num_iters max_iter ;
+        DisjunctiveMetadata.incr_interrupted_loops () ;
         prev )
       else
-        let post_disj, _ =
+        let post_disj, _, n_dropped =
           join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into:(fst prev) (fst next)
         in
         let post =
           (post_disj, T.NonDisjDomain.widen ~prev:(snd prev) ~next:(snd next) ~num_iters)
         in
-        if leq ~lhs:post ~rhs:prev then prev else post
+        if leq ~lhs:post ~rhs:prev then prev
+        else (
+          DisjunctiveMetadata.add_dropped_disjuncts n_dropped ;
+          post )
 
 
     let pp f (disjuncts, non_disj) =
@@ -267,7 +316,10 @@ struct
   let join_all_disj_astates ~into astates =
     let leq ~lhs ~rhs = T.DisjDomain.equal_fast lhs rhs in
     let rec join_hd res res_n to_join =
-      if res_n >= disjunct_limit then res
+      if res_n >= disjunct_limit then (
+        Fqueue.iter to_join ~f:(fun disjuncts ->
+            DisjunctiveMetadata.add_dropped_disjuncts (List.length disjuncts) ) ;
+        res )
       else
         match Fqueue.dequeue to_join with
         | None ->
@@ -290,8 +342,8 @@ struct
     match (astates, into) with
     | [], _ ->
         into
-    | [disjuncts], None ->
-        Some disjuncts
+    | [astate], None ->
+        Some astate
     | _ :: _, _ ->
         let d_into, nd_into = Option.value into ~default:([], T.NonDisjDomain.bottom) in
         let d = join_all_disj_astates astates ~into:d_into in
@@ -327,6 +379,7 @@ struct
         ~f:(fun i (((post, non_disj_astates) as post_astate), n_disjuncts) pre_disjunct ->
           if n_disjuncts >= limit then (
             L.d_printfln "@[<v2>Reached max disjuncts limit, skipping disjunct #%d@;@]" i ;
+            DisjunctiveMetadata.add_dropped_disjuncts 1 ;
             (post_astate, n_disjuncts) )
           else
             L.d_with_indent "Executing instruction from disjunct #%d" i ~f:(fun () ->
@@ -339,7 +392,8 @@ struct
                     let n = List.length disjuncts' in
                     L.d_printfln "@[Got %d disjunct%s back@]" n (if Int.equal n 1 then "" else "s")
                 ) ;
-                let post_disj', n = Domain.join_up_to ~limit ~into:post disjuncts' in
+                let post_disj', n, dropped = Domain.join_up_to ~limit ~into:post disjuncts' in
+                DisjunctiveMetadata.add_dropped_disjuncts dropped ;
                 ((post_disj', non_disj' :: non_disj_astates), n) ) )
     in
     ( disjuncts
@@ -368,7 +422,8 @@ struct
           let limit = disjunct_limit - n_disjuncts in
           AnalysisState.set_remaining_disjuncts limit ;
           if limit <= 0 then (
-            L.d_printfln "@[Reached disjunct limit: already got %d disjuncts@]@;" limit ;
+            L.d_printfln "@[Reached disjunct limit: already got %d disjuncts@]@;" n_disjuncts ;
+            DisjunctiveMetadata.add_dropped_disjuncts 1 ;
             (post_astate, n_disjuncts) )
           else if is_new_pre pre_disjunct then (
             L.d_printfln "@[<v2>Executing node from disjunct #%d, setting limit to %d@;" i limit ;
@@ -376,7 +431,8 @@ struct
               Instrs.foldi ~init:([pre_disjunct], pre_non_disj) instrs ~f:exec_instr
             in
             L.d_printfln "@]@\n" ;
-            let disj', n = Domain.join_up_to ~limit:disjunct_limit ~into:post disjuncts' in
+            let disj', n, dropped = Domain.join_up_to ~limit:disjunct_limit ~into:post disjuncts' in
+            DisjunctiveMetadata.add_dropped_disjuncts dropped ;
             ((disj', T.NonDisjDomain.join non_disj_astate non_disj'), n) )
           else (
             L.d_printfln "@[Skipping already-visited disjunct #%d@]@;" i ;
@@ -812,10 +868,16 @@ module MakeWTONode (TransferFunctions : NodeTransferFunctions) = struct
 end
 
 module MakeWTO (T : TransferFunctions.SIL) = MakeWTONode (SimpleNodeTransferFunctions (T))
+
 module MakeDisjunctive
     (T : TransferFunctions.DisjReady)
     (DConfig : TransferFunctions.DisjunctiveConfig) =
-  MakeWTONode (MakeDisjunctiveTransferFunctions (T) (DConfig))
+struct
+  module DisjunctiveTransferFunctions = MakeDisjunctiveTransferFunctions (T) (DConfig)
+  include MakeWTONode (DisjunctiveTransferFunctions)
+
+  let get_cfg_metadata () = !DisjunctiveMetadata.proc_metadata
+end
 
 module type MakeExceptional = functor (T : TransferFunctions) -> S with module TransferFunctions = T
 

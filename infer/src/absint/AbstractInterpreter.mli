@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 module VisitCount : sig
   type t
@@ -71,17 +72,30 @@ module MakeRPO : Make
     strongly connected component weak topological order *)
 module MakeWTO : Make
 
+(** used internally to compute various metrics related to [MakeDisjunctive] analyses; this can be
+    queried with [get_cfg_metadata] below at the end of the analysis of each procedure *)
+module DisjunctiveMetadata : sig
+  type t
+
+  val pp : F.formatter -> t -> unit
+end
+
 (** In the disjunctive interpreter, the domain is a set of abstract states representing a
     disjunction between these states. The transfer functions are executed on each state in the
     disjunct independently. The join on the disjunctive state is governed by the policy described in
     [DConfig]. *)
 module MakeDisjunctive
     (T : TransferFunctions.DisjReady)
-    (DConfig : TransferFunctions.DisjunctiveConfig) :
-  S
-    with type TransferFunctions.analysis_data = T.analysis_data
-     and module TransferFunctions.CFG = T.CFG
-     and type TransferFunctions.Domain.t = T.DisjDomain.t list * T.NonDisjDomain.t
+    (DConfig : TransferFunctions.DisjunctiveConfig) : sig
+  include
+    S
+      with type TransferFunctions.analysis_data = T.analysis_data
+       and module TransferFunctions.CFG = T.CFG
+       and type TransferFunctions.Domain.t = T.DisjDomain.t list * T.NonDisjDomain.t
+
+  val get_cfg_metadata : unit -> DisjunctiveMetadata.t
+  (** return CFG-wide metadata about the analysis *)
+end
 
 module type TransferFunctions = sig
   include TransferFunctions.SIL

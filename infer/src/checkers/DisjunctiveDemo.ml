@@ -88,6 +88,9 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let result =
     DisjunctiveAnalyzer.compute_post analysis_data ~initial:([[]], NonDisjDomain.bottom) proc_desc
   in
+  L.result "%a:@\n  @[<2>" Procname.pp (Procdesc.get_proc_name proc_desc) ;
   Option.iter result ~f:(fun post ->
-      L.result "%a:@\n  @[<2>%a@]@\n" Procname.pp (Procdesc.get_proc_name proc_desc) pp_domain post ) ;
+      L.result "%a@\n" DisjunctiveAnalyzer.TransferFunctions.Domain.pp post ) ;
+  let cfg_metadata = DisjunctiveAnalyzer.get_cfg_metadata () in
+  L.result "CFG Metadata: @[<h>%a@]@\n@\n" AbstractInterpreter.DisjunctiveMetadata.pp cfg_metadata ;
   result
