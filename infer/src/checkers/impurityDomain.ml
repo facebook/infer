@@ -19,12 +19,12 @@ module PVar = struct
 end
 
 module ModifiedAccess = struct
-  type t = {ordered_access_list: unit HilExp.Access.t list; trace: trace [@compare.ignore]}
+  type t = {ordered_access_list: unit MemoryAccess.t list; trace: trace [@compare.ignore]}
   [@@deriving compare]
 
   let pp fmt {ordered_access_list} =
     let pp_sep fmt () = F.fprintf fmt "" in
-    (F.pp_print_list ~pp_sep (HilExp.Access.pp (fun _ _ -> ()))) fmt ordered_access_list
+    (F.pp_print_list ~pp_sep (MemoryAccess.pp (fun _ _ -> ()))) fmt ordered_access_list
 end
 
 module ModifiedVarMap = AbstractDomain.FiniteMultiMap (PVar) (ModifiedAccess)
@@ -62,7 +62,7 @@ let filter_modifies_immutable tenv ~f =
   ModifiedVarMap.filter (fun _pvar ModifiedAccess.{ordered_access_list} ->
       List.exists ordered_access_list ~f:(fun access ->
           match access with
-          | HilExp.Access.FieldAccess fname ->
+          | MemoryAccess.FieldAccess fname ->
               let class_name = Fieldname.get_class_name fname in
               implements_immutable_map tenv class_name
               || Tenv.lookup tenv class_name

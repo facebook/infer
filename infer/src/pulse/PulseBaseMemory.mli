@@ -16,7 +16,7 @@ module type S = sig
   type out_of_map_t
 
   module Access : sig
-    include PrettyPrintable.PrintableEquatableOrderedType with type t = key HilExp.Access.t
+    include PrettyPrintable.PrintableEquatableOrderedType with type t = key MemoryAccess.t
 
     val is_strong_access : Tenv.t -> t -> bool
 

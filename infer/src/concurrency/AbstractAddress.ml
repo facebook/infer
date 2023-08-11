@@ -9,7 +9,7 @@ module F = Format
 module L = Logging
 module MF = MarkupFormatter
 
-type access = HilExp.t option HilExp.Access.t [@@deriving compare, equal]
+type access = HilExp.t option MemoryAccess.t [@@deriving compare, equal]
 
 let get_access_typ tenv prev_typ (access : access) =
   let lookup tn = Tenv.lookup tenv tn in
@@ -92,7 +92,7 @@ let pp_with_base pp_base fmt (base, accesses) =
         F.fprintf fmt "&(%a)" pp_rev_accesses rest
     | access :: rest, Java ->
         L.internal_error "Asked to print %a in Java mode@\n"
-          (HilExp.Access.pp (fun _ _ -> ()))
+          (MemoryAccess.pp (fun _ _ -> ()))
           access ;
         pp_rev_accesses fmt rest
   in
@@ -110,9 +110,9 @@ end
 
 type raw_path = (Var.t * Typ.t) * access_list [@@deriving compare, equal]
 
-(** path-like type using [HilExp.Access] steps instead of [AccessPath.access]. It does not ignore
-    the root variable type (like the original [AccessPath.t]) but instead ignores the root variable
-    for comparisons. *)
+(** path-like type using [MemoryAccess] steps instead of [AccessPath.access]. It does not ignore the
+    root variable type (like the original [AccessPath.t]) but instead ignores the root variable for
+    comparisons. *)
 type unrooted_path = (IgnoreVar.t * Typ.t) * access_list [@@deriving compare, equal]
 
 type t =

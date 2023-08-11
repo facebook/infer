@@ -13,7 +13,7 @@ open PulseOperationResult.Import
 open PulseModelsImport
 module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
 
-let string_length_access = HilExp.Access.FieldAccess PulseOperations.ModeledField.string_length
+let string_length_access = MemoryAccess.FieldAccess PulseOperations.ModeledField.string_length
 
 (* NOTE: The semantic models do not check overflow for now. *)
 let binop_overflow_common binop (x, x_hist) (y, y_hist) res : model =
@@ -263,9 +263,7 @@ module AtomicInteger = struct
 end
 
 module BasicString = struct
-  let internal_string_access =
-    HilExp.Access.FieldAccess PulseOperations.ModeledField.internal_string
-
+  let internal_string_access = MemoryAccess.FieldAccess PulseOperations.ModeledField.internal_string
 
   let to_internal_string path location bstring astate =
     PulseOperations.eval_access path Read location bstring internal_string_access astate

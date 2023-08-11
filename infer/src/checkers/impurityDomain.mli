@@ -10,7 +10,7 @@ type trace = WrittenTo of PulseTrace.t | Invalid of (PulseInvalidation.t * Pulse
 
 module ModifiedAccess : sig
   type t =
-    { ordered_access_list: unit HilExp.Access.t list
+    { ordered_access_list: unit MemoryAccess.t list
           (** list of ordered accesses that are oblivious to modified array indices *)
     ; trace: trace }
 end

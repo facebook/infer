@@ -193,9 +193,9 @@ let should_report_guardedby_violation classname ({snapshot; tenv; procname} : re
   match
     RacerDDomain.Access.get_access_exp snapshot.elem.access
     |> AccessExpression.to_accesses
-    |> fun (base, accesses) -> (base, List.filter accesses ~f:HilExp.Access.is_field_or_array_access)
+    |> fun (base, accesses) -> (base, List.filter accesses ~f:MemoryAccess.is_field_or_array_access)
   with
-  | AccessExpression.Base (_, base_type), [HilExp.Access.FieldAccess field_name] -> (
+  | AccessExpression.Base (_, base_type), [MemoryAccess.FieldAccess field_name] -> (
     match base_type.desc with
     | Tstruct base_name | Tptr ({desc= Tstruct base_name}, _) ->
         (* is the base class a subclass of the one containing the GuardedBy annotation? *)

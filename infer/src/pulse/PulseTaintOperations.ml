@@ -593,7 +593,7 @@ let taint_sinks path location tainted astate =
               AbductiveDomain.Memory.fold_edges v astate ~init:res
                 ~f:(fun res (access, (v, hist)) ->
                   match access with
-                  | HilExp.Access.FieldAccess fieldname
+                  | MemoryAccess.FieldAccess fieldname
                     when Fieldname.equal fieldname PulseOperations.ModeledField.internal_string
                          || Fieldname.equal fieldname
                               PulseOperations.ModeledField.internal_ref_count ->

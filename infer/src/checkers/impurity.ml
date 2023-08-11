@@ -29,7 +29,7 @@ let get_matching_dest_addr_opt ~edges_pre ~edges_post : (Access.t * AbstractValu
       x
 
 
-let ignore_array_index (access : Access.t) : unit HilExp.Access.t =
+let ignore_array_index (access : Access.t) : unit MemoryAccess.t =
   match access with
   | ArrayAccess (typ, _) ->
       ArrayAccess (typ, ())
@@ -142,7 +142,7 @@ let get_modified_globals pname (summary : AbductiveDomain.Summary.t) pre_heap po
            globals. *)
         add_to_modified pname
           ~pvar:(Option.value_exn (Var.get_pvar var))
-          ~access:HilExp.Access.Dereference ~addr pre_heap post modified_globals
+          ~access:MemoryAccess.Dereference ~addr pre_heap post modified_globals
       else modified_globals )
     (summary :> AbductiveDomain.t)
     ImpurityDomain.ModifiedVarMap.bottom

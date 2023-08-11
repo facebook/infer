@@ -17,7 +17,7 @@ let last_field = Fieldname.make PulseOperations.pulse_model_type "__infer_past_t
 
 let size_field = Fieldname.make PulseOperations.pulse_model_type "__infer_size"
 
-let size_access = HilExp.Access.FieldAccess size_field
+let size_access = MemoryAccess.FieldAccess size_field
 
 let to_internal_size path mode location value astate =
   PulseOperations.eval_access path mode location value size_access astate
@@ -35,7 +35,7 @@ let assign_size_constant path location this ~constant ~desc astate =
   PulseArithmetic.and_eq_int (fst value) constant astate
 
 
-let access = HilExp.Access.FieldAccess field
+let access = MemoryAccess.FieldAccess field
 
 let eval path mode location collection astate =
   PulseOperations.eval_deref_access path mode location collection access astate
@@ -118,7 +118,7 @@ let size this ~desc : model =
 module Iterator = struct
   let internal_pointer = Fieldname.make PulseOperations.pulse_model_type "__infer_backing_pointer"
 
-  let internal_pointer_access = HilExp.Access.FieldAccess internal_pointer
+  let internal_pointer_access = MemoryAccess.FieldAccess internal_pointer
 
   let to_internal_pointer path mode location iterator astate =
     PulseOperations.eval_access path mode location iterator internal_pointer_access astate

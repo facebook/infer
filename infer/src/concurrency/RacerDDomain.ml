@@ -648,7 +648,7 @@ let add_access tenv formals loc ~is_write (astate : t) exp =
     | access :: access_list ->
         let prefix_path' = Option.value_exn (AccessExpression.add_access prefix_path access) in
         if
-          (not (HilExp.Access.is_field_or_array_access access))
+          (not (MemoryAccess.is_field_or_array_access access))
           || RacerDModels.is_safe_access access prefix_path tenv
         then add_field_accesses prefix_path' acc access_list
         else

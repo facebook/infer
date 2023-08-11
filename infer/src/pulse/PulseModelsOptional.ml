@@ -15,7 +15,7 @@ open PulseModelsImport
 
 let internal_value = Fieldname.make PulseOperations.pulse_model_type "__infer_backing_value"
 
-let internal_value_access = HilExp.Access.FieldAccess internal_value
+let internal_value_access = MemoryAccess.FieldAccess internal_value
 
 let to_internal_value path mode location optional astate =
   PulseOperations.eval_access path mode location optional internal_value_access astate

@@ -15,7 +15,7 @@ open PulseModelsImport
 
 let value = Fieldname.make PulseOperations.pulse_model_type "__infer_backing_pointer"
 
-let value_access = HilExp.Access.FieldAccess value
+let value_access = MemoryAccess.FieldAccess value
 
 let to_internal_value path mode location value astate =
   PulseOperations.eval_access path mode location value value_access astate
@@ -103,7 +103,7 @@ let find_element_type_common matchers tenv typ =
 module SharedPtr = struct
   let count = Fieldname.make PulseOperations.pulse_model_type "__infer_backing_count"
 
-  let count_access = HilExp.Access.FieldAccess count
+  let count_access = MemoryAccess.FieldAccess count
 
   let to_internal_count path mode location value astate =
     PulseOperations.eval_access path mode location value count_access astate

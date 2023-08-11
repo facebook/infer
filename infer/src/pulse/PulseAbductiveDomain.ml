@@ -449,7 +449,7 @@ module Internal = struct
                     ValueHistory.singleton (StructFieldAddressCreated (fields, location, timestamp))
                   in
                   let heap =
-                    BaseMemory.add_edge addr (HilExp.Access.FieldAccess field)
+                    BaseMemory.add_edge addr (MemoryAccess.FieldAccess field)
                       (downcast field_addr, history)
                       (acc :> base_domain).heap
                   in
@@ -846,7 +846,7 @@ module Internal = struct
                 initialize_heap_path heap_path (pre_heap, post_heap)
               in
               Option.value_map opt_addr ~default:(pre_heap, post_heap, None) ~f:(fun src_addr ->
-                  let access = HilExp.Access.FieldAccess fieldname in
+                  let access = MemoryAccess.FieldAccess fieldname in
                   let pre_heap, post_heap, addr =
                     add_edge_in_pre_and_post pre_heap post_heap src_addr access
                   in
@@ -1036,7 +1036,7 @@ module Internal = struct
                           if BaseMemory.Access.is_strong_access tenv access then
                             let assignment_traces =
                               match access with
-                              | HilExp.Access.FieldAccess _ -> (
+                              | MemoryAccess.FieldAccess _ -> (
                                 match get_assignment_trace accessed_addr with
                                 | None ->
                                     assignment_traces

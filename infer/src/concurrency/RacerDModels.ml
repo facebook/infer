@@ -449,9 +449,9 @@ let is_marked_thread_safe pname tenv =
      |> Option.is_some
 
 
-let is_safe_access (access : 'a HilExp.Access.t) prefix_exp tenv =
+let is_safe_access (access : 'a MemoryAccess.t) prefix_exp tenv =
   match (access, HilExp.AccessExpression.get_typ prefix_exp tenv) with
-  | ( HilExp.Access.FieldAccess fieldname
+  | ( MemoryAccess.FieldAccess fieldname
     , Some ({Typ.desc= Tstruct typename} | {desc= Tptr ({desc= Tstruct typename}, _)}) ) -> (
     match Tenv.lookup tenv typename with
     | Some struct_typ ->
@@ -572,17 +572,17 @@ let is_synchronized_container callee_pname (access_exp : HilExp.AccessExpression
       | None ->
           false
     in
-    let open HilExp in
+    let module AccessExpression = HilExp.AccessExpression in
     match
       AccessExpression.to_accesses access_exp
       |> snd
-      |> List.rev_filter ~f:Access.is_field_or_array_access
+      |> List.rev_filter ~f:MemoryAccess.is_field_or_array_access
     with
-    | Access.FieldAccess base_field :: Access.FieldAccess container_field :: _
-      when Procname.is_java callee_pname ->
+    | FieldAccess base_field :: FieldAccess container_field :: _ when Procname.is_java callee_pname
+      ->
         let base_typename = Fieldname.get_class_name base_field in
         is_annotated_synchronized base_typename container_field tenv
-    | [Access.FieldAccess container_field] -> (
+    | [FieldAccess container_field] -> (
       match (AccessExpression.get_base access_exp |> snd).desc with
       | Typ.Tstruct base_typename | Tptr ({Typ.desc= Tstruct base_typename}, _) ->
           is_annotated_synchronized base_typename container_field tenv

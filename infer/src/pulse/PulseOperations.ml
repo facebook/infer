@@ -48,7 +48,7 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
 
 
 module Closures = struct
-  let is_captured_by_ref_fake_access (access : _ HilExp.Access.t) =
+  let is_captured_by_ref_fake_access (access : _ MemoryAccess.t) =
     match access with
     | FieldAccess fieldname ->
         Fieldname.is_fake_capture_field_by_ref fieldname
@@ -60,7 +60,7 @@ module Closures = struct
     List.foldi captured ~init:BaseMemory.Edges.empty ~f:(fun id edges (mode, typ, addr, trace) ->
         (* it's ok to use [UnsafeMemory] here because we are building edges *)
         UnsafeMemory.Edges.add
-          (HilExp.Access.FieldAccess (Fieldname.mk_fake_capture_field ~id typ mode))
+          (FieldAccess (Fieldname.mk_fake_capture_field ~id typ mode))
           (addr, trace) edges )
 
 

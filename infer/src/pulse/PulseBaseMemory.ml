@@ -12,19 +12,19 @@ open PulseBasicInterface
 (* {3 Heap domain } *)
 
 module Access = struct
-  type t = AbstractValue.t HilExp.Access.t [@@deriving yojson_of]
+  type t = AbstractValue.t MemoryAccess.t [@@deriving yojson_of]
 
-  let compare = HilExp.Access.loose_compare AbstractValue.compare
+  let compare = MemoryAccess.loose_compare AbstractValue.compare
 
   let equal = [%compare.equal: t]
 
-  let pp = HilExp.Access.pp AbstractValue.pp
+  let pp = MemoryAccess.pp AbstractValue.pp
 
   let canonicalize ~get_var_repr (access : t) =
     match access with
     | ArrayAccess (typ, addr) ->
         let addr' = get_var_repr addr in
-        if AbstractValue.equal addr addr' then access else HilExp.Access.ArrayAccess (typ, addr')
+        if AbstractValue.equal addr addr' then access else MemoryAccess.ArrayAccess (typ, addr')
     | FieldAccess _ | TakeAddress | Dereference ->
         access
 
@@ -136,7 +136,7 @@ let find_edge_opt ?get_var_repr addr access memory =
       res
   | None -> (
     match (access, get_var_repr) with
-    | HilExp.Access.ArrayAccess _, Some get_var_repr ->
+    | MemoryAccess.ArrayAccess _, Some get_var_repr ->
         let access = Access.canonicalize ~get_var_repr access in
         let edges = Edges.canonicalize ~get_var_repr edges in
         Edges.find_opt access edges
@@ -225,7 +225,7 @@ module type S = sig
   type out_of_map_t
 
   module Access : sig
-    include PrettyPrintable.PrintableEquatableOrderedType with type t = key HilExp.Access.t
+    include PrettyPrintable.PrintableEquatableOrderedType with type t = key MemoryAccess.t
 
     val is_strong_access : Tenv.t -> t -> bool
 
