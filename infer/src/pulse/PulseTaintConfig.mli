@@ -52,6 +52,7 @@ module Unit : sig
   type field_matcher =
     | FieldRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndFieldNames of {class_names: string list; field_names: string list}
+    | FieldWithAnnotation of {annotation: string}
 
   type procedure_unit =
     { procedure_matcher: procedure_matcher

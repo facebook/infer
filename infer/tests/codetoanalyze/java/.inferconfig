@@ -284,6 +284,9 @@
       "taint_target": ["ArgumentPositions", [0]]
     },
     { "method_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker" },
+    { "field_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker",
+      "taint_target": "GetField"
+    },
     { "class_names": ["codetoanalyze.java.pulse.Fields"],
       "field_names": ["sourceField"],
       "taint_target": "GetField"
@@ -430,6 +433,9 @@
       "method_names": ["log"],
       "kinds": ["Logger"] },
     { "method_with_annotation": "codetoanalyze.java.pulse.SensitiveSinkMarker" },
+    { "field_with_annotation": "codetoanalyze.java.pulse.SensitiveSinkMarker",
+      "taint_target": "SetField"
+    },
     { "class_names": ["codetoanalyze.java.pulse.Fields"],
       "field_names": ["sinkField"],
       "taint_target": "SetField"

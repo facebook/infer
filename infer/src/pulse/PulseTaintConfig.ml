@@ -177,6 +177,7 @@ module Unit = struct
   type field_matcher =
     | FieldRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndFieldNames of {class_names: string list; field_names: string list}
+    | FieldWithAnnotation of {annotation: string}
 
   let pp_field_matcher f field_matcher =
     match field_matcher with
@@ -185,6 +186,8 @@ module Unit = struct
     | ClassAndFieldNames {class_names; field_names} ->
         F.fprintf f "class_names=%a, field_names=%a" (Pp.comma_seq String.pp) class_names
           (Pp.comma_seq String.pp) field_names
+    | FieldWithAnnotation {annotation} ->
+        F.fprintf f "field with annotation=%s" annotation
 
 
   type procedure_unit =
@@ -262,16 +265,20 @@ module Unit = struct
 
   let pp_field_matcher_error_message f (matcher : Pulse_config_t.matcher) =
     let pp_field_matcher f (matcher : Pulse_config_t.matcher) =
-      F.fprintf f "\"field_regex\": %a, \n \"class_names\": %a, \n \"field_names\": %a"
-        (Pp.option F.pp_print_string) matcher.field_regex
+      F.fprintf f
+        "\"field_regex\": %a, \n\
+        \ \"class_names\": %a, \n\
+        \ \"field_names\": %a, \n\
+        \ \"field_with_annotation\": %a" (Pp.option F.pp_print_string) matcher.field_regex
         (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
         matcher.class_names
         (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
-        matcher.field_names
+        matcher.field_names (Pp.option F.pp_print_string) matcher.field_with_annotation
     in
     F.fprintf f
       "To build a field matcher, exactly one of \n\
       \ \"field_regex\", \n\
+      \ \"field_with_annotation\", \n\
        or else \"class_names\" and \"field_names\" must be provided, \n\
        but got \n\
       \ %a" pp_field_matcher matcher
@@ -413,10 +420,21 @@ module Unit = struct
       =
     let field_matcher =
       match matcher with
-      | {field_regex= Some name_regex; class_names= None; field_names= None} ->
+      | { field_regex= Some name_regex
+        ; class_names= None
+        ; field_names= None
+        ; field_with_annotation= None } ->
           FieldRegex {name_regex= Str.regexp name_regex; exclude_in= matcher.exclude_from_regex_in}
-      | {field_regex= None; class_names= Some class_names; field_names= Some field_names} ->
+      | { field_regex= None
+        ; class_names= Some class_names
+        ; field_names= Some field_names
+        ; field_with_annotation= None } ->
           ClassAndFieldNames {class_names; field_names}
+      | { field_regex= None
+        ; class_names= None
+        ; field_names= None
+        ; field_with_annotation= Some annotation } ->
+          FieldWithAnnotation {annotation}
       | _ ->
           L.die UserError "When parsing option %s: Unexpected JSON format: %a %a" option_name
             pp_field_matcher_error_message matcher pp_procedure_matcher_error_message matcher
@@ -436,9 +454,15 @@ module Unit = struct
           Target.pp taint_target
 
 
+  let is_field_matcher (matcher : Pulse_config_t.matcher) =
+    Option.is_some matcher.field_regex
+    || Option.is_some matcher.field_names
+    || Option.is_some matcher.field_with_annotation
+
+
   let of_config ~default_taint_target ~option_name (matchers : Pulse_config_t.matcher list) =
     List.map matchers ~f:(fun (matcher : Pulse_config_t.matcher) ->
-        if Option.is_some matcher.field_regex || Option.is_some matcher.field_names then
+        if is_field_matcher matcher then
           FieldUnit (field_matcher_of_config ~default_taint_target ~option_name matcher)
         else ProcedureUnit (procedure_matcher_of_config ~default_taint_target ~option_name matcher) )
 end

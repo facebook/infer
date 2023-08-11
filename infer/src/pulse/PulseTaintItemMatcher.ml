@@ -237,7 +237,18 @@ let field_matches tenv loc matchers field_name =
               class_names_match tenv class_names (Some class_name)
               && List.mem ~equal:String.equal field_names (Fieldname.get_field_name field_name)
             then Some matcher
-            else None )
+            else None
+        | FieldWithAnnotation {annotation} -> (
+            let class_name = Fieldname.get_class_name field_name in
+            match Tenv.lookup tenv class_name with
+            | Some struct_typ ->
+                if
+                  Annotations.field_has_annot field_name struct_typ (fun annot_item ->
+                      Annotations.ia_ends_with annot_item annotation )
+                then Some matcher
+                else None
+            | None ->
+                None ) )
 
 
 let move_taint_to_field tenv path location potential_taint_value taint_match fieldname astate =
