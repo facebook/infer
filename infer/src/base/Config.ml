@@ -2618,6 +2618,10 @@ and pulse_taint_sources =
   - "overrides_of_class_with_annotation":
       match all procedures defined in classes which inherit
       from a superclass with the specified annotation
+  - "method_with_annotation":
+      match all procedures marked by specified annotation
+  - "field_with_annotation":
+      match all fields marked by specified annotation
   - "allocation": $(i,\(for taint sources only\))
       match allocations of the exact class name supplied
   - "block_passed_to": $(i,\(for taint sources only\))
