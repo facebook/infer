@@ -35,48 +35,49 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let acquires_resource tenv procname =
-    (* We assume all constructors of a subclass of Closeable acquire a resource *)
+    (* We assume all constructors of a subclass of [Closeable] acquire a resource *)
     Procname.is_constructor procname && is_closeable_procname tenv procname
 
 
   let releases_resource tenv procname =
-    (* We assume the close method of a Closeable releases all of its resources *)
+    (* We assume the [close] method of a [Closeable] releases all of its resources *)
     String.equal "close" (Procname.get_method procname) && is_closeable_procname tenv procname
 
 
   (** Take an abstract state and instruction, produce a new abstract state *)
   let exec_instr (astate : ResourceLeakDomain.t)
-      {InterproceduralAnalysis.proc_desc= _; tenv; analyze_dependency; _} _ _ (instr : HilInstr.t) =
+      {InterproceduralAnalysis.proc_desc= _; tenv; analyze_dependency; _} _ _ (instr : Sil.instr) =
     match instr with
-    | Call (_return_opt, Direct callee_procname, _actuals, _, _loc) -> (
-        if
-          (* function call [return_opt] := invoke [callee_procname]([actuals]) *)
-          acquires_resource tenv callee_procname
-        then ResourceLeakDomain.acquire_resource astate
-        else if releases_resource tenv callee_procname then
+    (* function call of the form [_return = callee_proc_name(..._actuals)] *)
+    | Call (_return, Const (Cfun callee_proc_name), _actuals, _loc, _) -> (
+        if acquires_resource tenv callee_proc_name then ResourceLeakDomain.acquire_resource astate
+        else if releases_resource tenv callee_proc_name then
           ResourceLeakDomain.release_resource astate
         else
-          match analyze_dependency callee_procname with
+          match analyze_dependency callee_proc_name with
+          (* interprocedural analysis produced a summary: use it *)
           | Some callee_summary ->
-              (* interprocedural analysis produced a summary: use it *)
               ResourceLeakDomain.apply_summary ~summary:callee_summary astate
+          (* No summary for [callee_proc_name]; it's native code or missing for some reason *)
           | None ->
-              (* No summary for [callee_procname]; it's native code or missing for some reason *)
               astate )
-    | Assign
-        (Base (ret, {Typ.desc= Typ.Tptr ({Typ.desc= Typ.Tstruct ret_typename}, _)}), _rhs_exp, _loc)
-      when Var.is_return ret && is_closeable_typename tenv ret_typename ->
-        (* return a resource *)
+    (* store into the special ret variable [*(&ret) = rhs:typ]: return a resource *)
+    | Store {e1= Lvar ret; e2= _rhs; typ= {desc= Tptr ({desc= Tstruct ret_typename}, _)}; loc= _loc}
+      when Pvar.is_return ret && is_closeable_typename tenv ret_typename ->
         ResourceLeakDomain.record_return_resource astate |> ResourceLeakDomain.release_resource
-    | Assign (_lhs_access_path, _rhs_exp, _loc) ->
-        (* an assignment [lhs_access_path] := [rhs_exp] *)
+    (* load of an address [_lhs:_lhs_typ = *_rhs] *)
+    | Load {id= _lhs; e= _rhs; typ= _lhs_typ; loc= _loc} ->
         astate
-    | Assume (_assume_exp, _, _, _loc) ->
-        (* a conditional assume([assume_exp]). blocks if [assume_exp] evaluates to false *)
+    (* store at an address [*_lhs = _rhs:_rhs_typ] *)
+    | Store {e1= _lhs; e2= _rhs; typ= _rhs_typ; loc= _loc} ->
         astate
-    | Call (_, Indirect _, _, _, _) ->
-        (* This should never happen in Java. Fail if it does. *)
-        L.(die InternalError) "Unexpected indirect call %a" HilInstr.pp instr
+    (* a conditional [assume(assume_exp)] blocks if [assume_exp] evaluates to false *)
+    | Prune (_assume_exp, _loc, _, _) ->
+        astate
+    (* Call to a function/method not statically known, eg a function pointer. This should never
+       happen in Java; fail if it does. *)
+    | Call (_return, call_exp, _actuals, loc, _) ->
+        L.die InternalError "Unexpected indirect call %a at %a" Exp.pp call_exp Location.pp loc
     | Metadata _ ->
         astate
 
@@ -84,12 +85,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let pp_session_name _node fmt = F.pp_print_string fmt "resource leaks lab"
 end
 
-(** 5(a) Type of CFG to analyze--Exceptional to follow exceptional control-flow edges, Normal to
+(** 5(a) Type of CFG to analyze: [Exceptional] to follow exceptional control-flow edges, [Normal] to
     ignore them *)
 module CFG = ProcCfg.Normal
 
 (* Create an intraprocedural abstract interpreter from the transfer functions we defined *)
-module Analyzer = LowerHil.MakeAbstractInterpreter (TransferFunctions (CFG))
+module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions (CFG))
 
 (** Report an error when we have acquired more resources than we have released *)
 let report_if_leak {InterproceduralAnalysis.proc_desc; err_log; _} post =
@@ -100,7 +101,7 @@ let report_if_leak {InterproceduralAnalysis.proc_desc; err_log; _} post =
       IssueType.lab_resource_leak message
 
 
-(** Main function into the checker--registered in RegisterCheckers *)
+(** Main function into the checker; registered in {!RegisterCheckers} *)
 let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   let result = Analyzer.compute_post analysis_data ~initial:ResourceLeakDomain.initial proc_desc in
   Option.iter result ~f:(fun post -> report_if_leak analysis_data post) ;

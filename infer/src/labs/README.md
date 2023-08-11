@@ -1,6 +1,6 @@
 # Build your own Resource Leak analysis
 
-This is a lab exercise designed to take the participant through the basics of using the Infer.AI framework for building compositional abstract interpreters. We provide the skeleton for a simple intraprocedural resource leak analysis. During this exercise, you will identify limitations in the existing approach and work on extending it to create a more powerful interprocedural analysis.
+This is a lab exercise designed to take the participant through the basics of using Infer's Abstract Interpretation (AI) framework for building compositional abstract interpreters. We provide the skeleton for a simple intraprocedural resource leak analysis. During this exercise, you will identify limitations in the existing approach and work on extending it to create a more powerful interprocedural analysis.
 
 The files to work on are [ResourceLeaks.ml](./ResourceLeaks.ml) and [ResourceLeakDomain.ml](./ResourceLeakDomain.ml), and their corresponding .mli files.
 
@@ -30,15 +30,15 @@ make -C /infer-host -j 4
 
 4. Outside Docker, you will likely need to change the permissions of `$HOME/infer-docker` to make the files editable by your user: `sudo chown $USER -R $HOME/infer-docker`.
 
-You can now edit the files *locally* in `$HOME/infer-docker` and build infer *inside Docker* in `/infer-host` using the shell prompt gotten in step 2. The quickest way is to run `make` from `/infer-host` once, then `make byte` for a quicker edit/compile cycle.
+You can now edit the files *locally* in `$HOME/infer-docker` and build infer *inside Docker* in `/infer-host` using the shell prompt gotten in step 2. The quickest way is to run `make` from `/infer-host` once, then `make -C infer/src` for a quicker edit/compile cycle.
 
 ### (a') ...or, alternatively, build Infer locally from scratch
 
-Clone the Infer repository at https://github.com/facebook/infer and read the instructions in [INSTALL.md](https://github.com/facebook/infer/blob/main/INSTALL.md) to build Infer from source. Note that you only need Infer for Java for this lab: `./build-infer.sh java`.
+Clone the Infer repository at https://github.com/facebook/infer and read the instructions in [INSTALL.md](https://github.com/facebook/infer/blob/main/INSTALL.md) to build Infer from source. Note that you only need Infer for Java for this lab: `./build-infer.sh java` (this is faster to build).
 
 ### (b) Set up your Development Environment
 
-See [CONTRIBUTING.md](https://github.com/facebook/infer/blob/main/CONTRIBUTING.md#hacking-on-the-code) to set your editor and for tips and tricks on how to hack on Infer more efficiently. One of the most useful things to install in your editor to navigate OCaml source code efficiently is [Merlin](https://github.com/ocaml/merlin/wiki).
+See [CONTRIBUTING.md](https://github.com/facebook/infer/blob/main/CONTRIBUTING.md#hacking-on-the-code) to set your editor and for tips and tricks on how to hack on Infer more efficiently. One of the most useful things to install in your editor to navigate OCaml source code efficiently is [Merlin](https://github.com/ocaml/merlin/wiki). You can format your code automatically with `make fmt`.
 
 For Java, ensure that you have the following jar files in your `$CLASSPATH`:
 
@@ -68,11 +68,11 @@ Then, open the debug HTML:
 firefox infer-out/captured/*.html
 ```
 
-This helpful artifact shows the Infer warnings alongside the code they are complaining about. It also displays the CFG node(s) associated with each line of code. Clicking a CFG node shows the Infer IR associated with the node, and the pre/post state computed while analyzing the instruction. Come back to the debug HTML early and often when you can't understand what your analysis is doing--it will help!
+This helpful artifact shows the Infer warnings alongside the code they are complaining about. It also displays the CFG node(s) associated with each line of code. Clicking a CFG node shows the Infer IR associated with the node, and the pre/post state computed while analyzing the instruction. Come back to the debug HTML early and often when you can't understand what your analysis is doing–it will help!
 
 (c) The `Logging.d_printf`/`Logging.d_printfln` functions print to the debug HTML. The logging is contextual: it will print to the log for the CFG node that's being analyzed at the time the logging statement executes. Try adding `Logging.d_printfln "Hi Infer";` inside of the case for `Call` in [ResourceLeaks.ml](./ResourceLeaks.ml), recompiling/re-running. You should see the text you printed inside the appropriate CFG node log in the debug HTML.
 
-(d) The `Logging.debug_dev` function prints to the console. This can be useful for printing information that doesn't happen in the context of a particular CFG node (e.g., performing post-processing on a summary). Try adding `Logging.debug_dev "Hi Infer;"` to the `compute_post` function, recompile/re-run and see your text printed on the command line.
+(d) The `Logging.debug_dev` function prints to the console. This can be useful for printing information that doesn't happen in the context of a particular CFG node (e.g., performing post-processing on a summary). Try adding `Logging.debug_dev "Hi Infer@\n" [@alert "-deprecated"];` to the `compute_post` function, recompile/re-run and see your text printed on the command line.
 
 Note: Using `Logging.debug_dev` generates warnings telling you that this function is deprecated. This is used to prevent developers from landing leftover debug instructions.
 
@@ -104,7 +104,7 @@ Let's stick with just an integer domain to keep things simple until (5).
 
 (a) Run your checker on [LeaksBranch.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksBranch.java). Uh oh, it crashed! Fix it by implementing `join` for your domain.
 
-(b) Now run on [LeaksLoop.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksLoop.java), and implement `widen`. Hmm... There's a termination bug in the abstract domain--do you see it?
+(b) Now run on [LeaksLoop.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksLoop.java), and implement `widen`. Hmm... There's a termination bug in the abstract domain–do you see it?
 
 (c) Time for a richer domain! A classic solution to this problem in abstract interpretation is to add a `Top` value that is larger than any integer.
 
@@ -150,13 +150,13 @@ Then `ret_var` is the return variable (if `Var.is_return ret_var` returns true),
 
 (a) Change the simple counting domain to a domain that overapproximates the set of storage locations that hold a resource. As a concrete goal, the new domain should allow you to print the name of the resource(s) that leak in the error message (rather than just the number of resources). The new domain should also allow your analysis to get the correct answer on your false negative and false positive tests from 2(d) and 2(e). Think about the following questions when designing your new domain:
 
-- How should we abstract storage locations? Is abstracting the stack program variables (`Var.t`)'s enough, or do we need an abstraction of the heap as well?
+- How should we abstract storage locations? Is abstracting the stack program variables (`Var.t`) enough, or do we need an abstraction of the heap as well?
 
-- How will we handle aliasing (storage locations that store the same address)? More precisely, how to handle assignement?
+- How will we handle aliasing (storage locations that store the same address)? More precisely, how to handle assignement? We will need to make some simplifying assumptions and cut some corners here. Developing a full memory model that accounts for aliasing perfectly is out of the scope of this lab (check out how the Pulse analysis does it!).
 
 - Will it be easy to extend the domain to incorporate information from the callee summaries/represent state that will be instantiated by callers?
 
-- Some modules that might be useful in creating your new domain (depending on what approach you choose): `AbstractDomain.FiniteSet`, `AbstractDomain.Map`, `AccessPath`, `Var`.
+- Some modules that might be useful in creating your new domain (depending on what approach you choose): `AbstractDomain.FiniteSet`, `AbstractDomain.Map`, `AccessPath`, `Var`, `FormalMap`.
 
 - It's okay for the domain to diverge in certain cases for the purpose of this lab. Can you write a method that would make your checker diverge?
 
