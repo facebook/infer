@@ -204,14 +204,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let pvar, typ =
       CVar_decl.mk_temp_sil_var_for_expr context ~name:var_name ~clang_pointer expr_info
     in
-    let var_data =
-      ProcAttributes.
-        { name= Pvar.get_name pvar
-        ; typ
-        ; modify_in_block= false
-        ; is_constexpr= false
-        ; is_declared_unused= false }
-    in
+    let var_data = ProcAttributes.default_var_data pvar typ in
     Procdesc.append_locals procdesc [var_data] ;
     (Exp.Lvar pvar, typ)
 
@@ -245,13 +238,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           | _ ->
               let procdesc = trans_state.context.CContext.procdesc in
               let pvar = CVar_decl.mk_temp_sil_var procdesc ~name:"__temp_return_" in
-              let var_data : ProcAttributes.var_data =
-                { name= Pvar.get_name pvar
-                ; typ= return_type
-                ; modify_in_block= false
-                ; is_constexpr= false
-                ; is_declared_unused= false }
-              in
+              let var_data = ProcAttributes.default_var_data pvar return_type in
               Procdesc.append_locals procdesc [var_data] ;
               Exp.Lvar pvar
         in
@@ -1457,14 +1444,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               let pvar =
                 CVar_decl.mk_temp_sil_var context.procdesc ~name:"SIL_temp_compare_exchange___"
               in
-              let var_data =
-                ProcAttributes.
-                  { name= Pvar.get_name pvar
-                  ; typ= ret_typ
-                  ; modify_in_block= false
-                  ; is_constexpr= false
-                  ; is_declared_unused= false }
-              in
+              let var_data = ProcAttributes.default_var_data pvar ret_typ in
               Procdesc.append_locals context.procdesc [var_data] ;
               `Temp pvar
         in
@@ -1703,13 +1683,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let procdesc = trans_state.context.CContext.procdesc in
           let pvar = Pvar.mk_tmp "__temp_construct_" (Procdesc.get_proc_name procdesc) in
           let class_type = CType_decl.get_type_from_expr_info ei context.CContext.tenv in
-          let var_data : ProcAttributes.var_data =
-            { name= Pvar.get_name pvar
-            ; typ= class_type
-            ; modify_in_block= false
-            ; is_constexpr= false
-            ; is_declared_unused= false }
-          in
+          let var_data = ProcAttributes.default_var_data pvar class_type in
           Procdesc.append_locals procdesc [var_data] ;
           (Exp.Lvar pvar, class_type)
     in
@@ -2117,14 +2091,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           `ParentExp var_exp_typ
       | None ->
           let pvar = CVar_decl.mk_temp_sil_var procdesc ~name:"SIL_temp_conditional___" in
-          let var_data =
-            ProcAttributes.
-              { name= Pvar.get_name pvar
-              ; typ= var_typ
-              ; modify_in_block= false
-              ; is_constexpr= false
-              ; is_declared_unused= false }
-          in
+          let var_data = ProcAttributes.default_var_data pvar var_typ in
           Procdesc.append_locals procdesc [var_data] ;
           `Temp pvar
     in
@@ -3617,12 +3584,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       in
       (Exp.Lvar temp, array_typ)
     in
-    Procdesc.append_locals procdesc
-      [ { ProcAttributes.name= Pvar.get_name temp
-        ; typ= array_typ
-        ; modify_in_block= false
-        ; is_constexpr= false
-        ; is_declared_unused= false } ] ;
+    Procdesc.append_locals procdesc [ProcAttributes.default_var_data temp array_typ] ;
     (* 2. Translate array elements *)
     let res_trans_elems =
       List.mapi
@@ -3746,12 +3708,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (Exp.Lvar temp, array_typ)
     in
     let append_var temp array_typ =
-      Procdesc.append_locals procdesc
-        [ { ProcAttributes.name= Pvar.get_name temp
-          ; typ= array_typ
-          ; modify_in_block= false
-          ; is_constexpr= false
-          ; is_declared_unused= false } ]
+      let var_data = ProcAttributes.default_var_data temp array_typ in
+      Procdesc.append_locals procdesc [var_data]
     in
     let ((temp1_var, array1_typ) as temp1_with_typ) = create_var temp1 in
     let ((temp2_var, array2_typ) as temp2_with_typ) = create_var temp2 in
@@ -4193,13 +4151,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let trans_state = {trans_state with var_exp_typ= Some var_exp_typ} in
     let res_trans = init_expr_trans trans_state var_exp_typ stmt_info (Some temp_exp) in
     let _, typ = res_trans.return in
-    let var_data =
-      { ProcAttributes.name= Pvar.get_name pvar
-      ; typ
-      ; modify_in_block= false
-      ; is_constexpr= false
-      ; is_declared_unused= false }
-    in
+    let var_data = ProcAttributes.default_var_data pvar typ in
     Procdesc.append_locals procdesc [var_data] ;
     res_trans
 
@@ -4660,12 +4612,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           | None ->
               vds
           | Some (marker_pvar, _if_kind) ->
-              { ProcAttributes.name= Pvar.get_name marker_pvar
-              ; typ= StdTyp.boolean
-              ; modify_in_block= false
-              ; is_constexpr= false
-              ; is_declared_unused= false }
-              :: vds )
+              let var_data = ProcAttributes.default_var_data marker_pvar StdTyp.boolean in
+              var_data :: vds )
     in
     Procdesc.append_locals trans_state.context.procdesc markers_var_data ;
     let init_then_sub_expr_result =

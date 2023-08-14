@@ -905,7 +905,12 @@ module ProcDescBridge = struct
 
   let build_locals lang {locals} =
     let make_var_data name typ : ProcAttributes.var_data =
-      {name; typ; modify_in_block= false; is_constexpr= false; is_declared_unused= false}
+      { name
+      ; typ
+      ; modify_in_block= false
+      ; is_constexpr= false
+      ; is_declared_unused= false
+      ; tmp_id= None }
     in
     List.map locals ~f:(fun (var, annotated_typ) ->
         let name = Mangled.from_string var.VarName.value in

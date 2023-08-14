@@ -216,8 +216,11 @@ let add_var_to_locals procdesc var_decl typ pvar =
         let is_declared_unused =
           List.exists decl_info.di_attributes ~f:(function `UnusedAttr _ -> true | _ -> false)
         in
-        let var_data : ProcAttributes.var_data =
-          {name= Pvar.get_name pvar; typ; modify_in_block; is_constexpr; is_declared_unused}
+        let var_data =
+          { (ProcAttributes.default_var_data pvar typ) with
+            modify_in_block
+          ; is_declared_unused
+          ; is_constexpr }
         in
         Procdesc.append_locals procdesc [var_data]
   | BindingDecl (_, _, _, Clang_ast_t.{hvdi_binding_var= None}) ->

@@ -24,7 +24,10 @@ type var_data =
         (** __block attribute of Objective-C variables, means that it will be modified inside a
             block *)
   ; is_constexpr: bool
-  ; is_declared_unused: bool  (** variable declared with attribute [unused] *) }
+  ; is_declared_unused: bool  (** variable declared with attribute [unused] *)
+  ; tmp_id: Ident.t option
+        (** the tmp id used to build the variable name in case of a temp variable, None otherwise. *)
+  }
 
 type specialized_with_aliasing_info =
   { orig_proc: Procname.t
@@ -104,6 +107,8 @@ type t =
 
 val default : SourceFile.t -> Procname.t -> t
 (** Create a proc_attributes with default values. *)
+
+val default_var_data : Pvar.t -> Typ.t -> var_data
 
 val pp : Format.formatter -> t -> unit
 

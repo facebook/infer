@@ -35,7 +35,7 @@ type pvar_kind =
 [@@deriving compare, equal, sexp, hash]
 
 (** Names for program variables. *)
-type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind}
+type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind; pv_tmp_id: Ident.t option}
 [@@deriving compare, equal, sexp, hash]
 
 let yojson_of_t {pv_name} = [%yojson_of: Mangled.t] pv_name
@@ -123,6 +123,9 @@ let is_return pv = Mangled.equal (get_name pv) Ident.name_return
 
 (** something that can't be part of a legal identifier in any conceivable language *)
 let tmp_prefix = "0$?%__sil_tmp"
+
+(** In case of a temporary variable, returns the id used to create it, or None otherwise. *)
+let get_tmp_id pvar = pvar.pv_tmp_id
 
 (** name given to variables representing C++ temporary objects *)
 let materialized_cpp_temporary = "SIL_materialize_temp__"
@@ -241,9 +244,11 @@ let to_callee pname pvar =
 let name_hash (name : Mangled.t) = Mangled.hash name
 
 (** [mk name proc_name] creates a program var with the given function name *)
-let mk (name : Mangled.t) (proc_name : Procname.t) : t =
-  {pv_hash= name_hash name; pv_name= name; pv_kind= Local_var proc_name}
+let mk_with_tmp_id ~tmp_id (name : Mangled.t) (proc_name : Procname.t) : t =
+  {pv_hash= name_hash name; pv_name= name; pv_kind= Local_var proc_name; pv_tmp_id= tmp_id}
 
+
+let mk (name : Mangled.t) (proc_name : Procname.t) : t = mk_with_tmp_id ~tmp_id:None name proc_name
 
 let get_ret_pvar pname = mk Ident.name_return pname
 
@@ -252,7 +257,7 @@ let get_ret_param_pvar pname = mk Mangled.return_param pname
 (** [mk_callee name proc_name] creates a program var for a callee function with the given function
     name *)
 let mk_callee (name : Mangled.t) (proc_name : Procname.t) : t =
-  {pv_hash= name_hash name; pv_name= name; pv_kind= Callee_var proc_name}
+  {pv_hash= name_hash name; pv_name= name; pv_kind= Callee_var proc_name; pv_tmp_id= None}
 
 
 (** create a global variable with the given name *)
@@ -261,6 +266,7 @@ let mk_global ?(is_constexpr = false) ?(is_ice = false) ?(is_pod = true) ?(is_st
     ?(template_args = Typ.NoTemplate) (name : Mangled.t) : t =
   { pv_hash= name_hash name
   ; pv_name= name
+  ; pv_tmp_id= None
   ; pv_kind=
       Global_var
         { translation_unit
@@ -276,20 +282,23 @@ let mk_global ?(is_constexpr = false) ?(is_ice = false) ?(is_pod = true) ?(is_st
 
 (** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! *)
 let mk_tmp name pname =
-  let id = Ident.create_fresh Ident.knormal in
-  let pvar_mangled = Mangled.from_string (tmp_prefix ^ name ^ Ident.to_string id) in
-  mk pvar_mangled pname
+  let tmp_id = Ident.create_fresh Ident.knormal in
+  let pvar_mangled = Mangled.from_string (tmp_prefix ^ name ^ Ident.to_string tmp_id) in
+  mk_with_tmp_id ~tmp_id:(Some tmp_id) pvar_mangled pname
 
 
 (** create an abduced return variable for a call to [proc_name] at [loc] *)
 let mk_abduced_ret (proc_name : Procname.t) (loc : Location.t) : t =
   let name = Mangled.from_string (F.asprintf "$RET_%a" Procname.pp_unique_id proc_name) in
-  {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_retvar (proc_name, loc)}
+  {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_retvar (proc_name, loc); pv_tmp_id= None}
 
 
 let mk_abduced_ref_param (proc_name : Procname.t) (index : int) (loc : Location.t) : t =
   let name = Mangled.from_string (F.asprintf "$REF_PARAM_VAL_%a" Procname.pp_unique_id proc_name) in
-  {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_ref_param (proc_name, index, loc)}
+  { pv_hash= name_hash name
+  ; pv_name= name
+  ; pv_kind= Abduced_ref_param (proc_name, index, loc)
+  ; pv_tmp_id= None }
 
 
 let get_translation_unit pvar =

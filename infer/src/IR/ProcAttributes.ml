@@ -44,8 +44,22 @@ let pp_objc_accessor_type fmt objc_accessor_type =
 
 
 type var_data =
-  {name: Mangled.t; typ: Typ.t; modify_in_block: bool; is_constexpr: bool; is_declared_unused: bool}
+  { name: Mangled.t
+  ; typ: Typ.t
+  ; modify_in_block: bool
+  ; is_constexpr: bool
+  ; is_declared_unused: bool
+  ; tmp_id: Ident.t option }
 [@@deriving compare]
+
+let default_var_data pvar typ =
+  { name= Pvar.get_name pvar
+  ; typ
+  ; modify_in_block= false
+  ; is_constexpr= false
+  ; is_declared_unused= false
+  ; tmp_id= Pvar.get_tmp_id pvar }
+
 
 let pp_var_data fmt {name; typ; modify_in_block; is_declared_unused} =
   F.fprintf fmt "@[<h>{ name=@ %a;@ typ=@ %a;@ modify_in_block=@ %b;@ is_declared_unused=@ %b@ }@]"

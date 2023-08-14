@@ -104,6 +104,9 @@ val is_objc_static_local_of_proc_name : string -> t -> bool
 val is_block_pvar : t -> bool
 (** Check if a pvar is a local pointing to a block in objc *)
 
+val get_tmp_id : t -> Ident.t option
+(** In case of a temporary variable, returns the id used to create it, or None otherwise. *)
+
 val mk : Mangled.t -> Procname.t -> t
 (** [mk name proc_name] creates a program var with the given function name *)
 

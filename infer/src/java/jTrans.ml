@@ -531,7 +531,12 @@ let create_cm_procdesc source_file program icfg cm proc_name =
     let locals_ = translate_locals program tenv formals bytecode jbir_code in
     let locals =
       List.map locals_ ~f:(fun (name, typ) : ProcAttributes.var_data ->
-          {name; typ; modify_in_block= false; is_constexpr= false; is_declared_unused= false} )
+          { name
+          ; typ
+          ; modify_in_block= false
+          ; is_constexpr= false
+          ; is_declared_unused= false
+          ; tmp_id= None } )
     in
     let proc_attributes =
       { (ProcAttributes.default source_file proc_name) with
