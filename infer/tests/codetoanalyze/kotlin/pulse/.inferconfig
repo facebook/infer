@@ -25,12 +25,20 @@
       "method_names": ["taintThisBad"],
       "taint_target": "InstanceReference",
       "kinds": ["Simple"]
+    },
+    { "class_names": ["codetoanalyze.kotlin.pulse.Fields"],
+      "field_names": ["sourceField"],
+      "taint_target": "GetField"
     }
   ],
   "pulse-taint-sinks": [
     { "procedure": "inferSensitiveSink" },
     { "class_name_regex": "codetoanalyze.kotlin.pulse.sinks.*"},
-    { "method_with_annotation": "codetoanalyze.kotlin.pulse.SensitiveSinkMarker" }
+    { "method_with_annotation": "codetoanalyze.kotlin.pulse.SensitiveSinkMarker" },
+    { "class_names": ["codetoanalyze.kotlin.pulse.Fields"],
+      "field_names": ["sinkField"],
+      "taint_target": "SetField"
+    }
   ],
   "pulse-taint-sanitizers": [
     { "procedure": "inferUniversalSanitizer" },
