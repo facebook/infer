@@ -6,7 +6,7 @@
  */
 package codetoanalyze.kotlin.pulse
 
-class TaintFormals {
+class TaintedFormals constructor(tainted: Any?) {
   // first parameter is tainted based on the config
   fun firstParameterTainted(tainted: Any, notTainted: Any) {
     // should be tainted
@@ -29,6 +29,21 @@ class TaintFormals {
     InferTaint.addCallback { result ->
       // result parameter is tainted based on the config
       InferTaint.inferSensitiveSink(result)
+    }
+  }
+
+  // first parameter of constructor is tainted
+  init {
+    InferTaint.inferSensitiveSink(tainted)
+  }
+
+  fun instanceFirstParameterTainted(tainted: Any?) {
+    InferTaint.inferSensitiveSink(tainted)
+  }
+
+  companion object {
+    fun staticFirstParameterTainted(tainted: Any?) {
+      InferTaint.inferSensitiveSink(tainted)
     }
   }
 }
