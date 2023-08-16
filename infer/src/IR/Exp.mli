@@ -160,6 +160,8 @@ val d_list : t list -> unit
 
 val is_objc_block_closure : t -> bool
 
+val is_cpp_closure : t -> bool
+
 val zero_of_type : Typ.t -> t option
 (** Returns the zero value of a type, for int, float and ptr types *)
 

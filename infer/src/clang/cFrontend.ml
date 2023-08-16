@@ -49,6 +49,8 @@ let do_objc_preanalyses cfg tenv =
   CViewControllerLifecycle.process cfg tenv
 
 
+let do_cpp_preanalyses cfg = CppLambdaCalls.process cfg
+
 let do_source_file (translation_unit_context : CFrontend_config.translation_unit_context) ast =
   let tenv = Tenv.create () in
   CType_decl.add_predefined_types tenv ;
@@ -63,6 +65,11 @@ let do_source_file (translation_unit_context : CFrontend_config.translation_unit
   ( match translation_unit_context.CFrontend_config.lang with
   | CFrontend_config.ObjC | CFrontend_config.ObjCPP ->
       do_objc_preanalyses cfg tenv
+  | _ ->
+      () ) ;
+  ( match translation_unit_context.CFrontend_config.lang with
+  | CFrontend_config.CPP | CFrontend_config.ObjCPP ->
+      do_cpp_preanalyses cfg
   | _ ->
       () ) ;
   L.(debug Capture Verbose) "@\n End building call/cfg graph for '%a'.@\n" SourceFile.pp source_file ;

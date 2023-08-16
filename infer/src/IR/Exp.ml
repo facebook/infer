@@ -311,6 +311,8 @@ let d_texp_full (te : t) = L.d_pp_with_pe pp_texp_full te
 
 let is_objc_block_closure = function Closure {name} -> Procname.is_objc_block name | _ -> false
 
+let is_cpp_closure = function Closure {name} -> Procname.is_cpp_lambda name | _ -> false
+
 let rec gen_free_vars =
   let open Sequence.Generator in
   function
