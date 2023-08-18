@@ -10,6 +10,7 @@ open! IStd
 (** Functions for transformations of ast nodes *)
 
 module L = Logging
+module F = Format
 
 type qual_type_to_sil_type = Tenv.t -> Clang_ast_t.qual_type -> Typ.t
 
@@ -20,10 +21,51 @@ type procname_from_decl =
   -> Clang_ast_t.decl
   -> Procname.t
 
-let sanitize_name s = Str.global_replace (Str.regexp "[/ ]") "_" s
+let sanitize_name = String.tr_multi ~target:"/ " ~replacement:"_" |> Staged.unstage
+
+(** Here we simplify the name "lambda_at_path" to keep just the file name and line and column, these
+    are sufficient as identifiers and the full path to the file causes too long names. *)
+let reduce_lambda_anon_name name =
+  let path = String.chop_prefix_if_exists ~prefix:"lambda_" name in
+  let path_items = String.split ~on:'/' path in
+  match List.hd (List.rev path_items) with
+  | Some last -> (
+    match String.split ~on:':' last with
+    | [file; line; _] ->
+        let hash = String.sub (Utils.string_crc_hex32 name) ~pos:0 ~len:8 in
+        F.asprintf "lambda_%s:%s_%s" file line hash
+    | _ ->
+        name )
+  | _ ->
+      name
+
+
+let is_lambda_qual name =
+  let is_lambda = String.is_substring name ~substring:"lambda" in
+  match String.index name ':' with
+  | Some colon_index -> (
+    match String.index name '<' with
+    | None ->
+        is_lambda
+    | Some template_index ->
+        is_lambda && template_index > colon_index
+        (* only transform lambda when it is not a template argument *) )
+  | None ->
+      false
+
 
 let get_qual_name qual_name_list =
-  List.map ~f:sanitize_name qual_name_list |> QualifiedCppName.of_rev_list
+  (* The name given to the lambda has two qualifiers, "lambda_at_path" and "method_name". The first one is enough
+     to identify the lambda, so we remove the second. *)
+  let names =
+    match qual_name_list with
+    | name :: _ when is_lambda_qual name ->
+        [reduce_lambda_anon_name name]
+    | _ ->
+        qual_name_list
+  in
+  let names = List.map ~f:sanitize_name names in
+  QualifiedCppName.of_rev_list names
 
 
 let get_qualified_name ?(linters_mode = false) name_info =
@@ -42,7 +84,7 @@ let get_unqualified_name name_info =
   let name =
     match name_info.Clang_ast_t.ni_qual_name with
     | name :: _ ->
-        name
+        if is_lambda_qual name then reduce_lambda_anon_name name else name
     | [] ->
         name_info.Clang_ast_t.ni_name
   in
