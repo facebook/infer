@@ -112,6 +112,10 @@ module.exports = {
       {
         docs: { sidebarPath: require.resolve("./sidebars.js") },
         theme: { customCss: require.resolve("./src/css/custom.css") },
+        gtag: {
+          trackingID: 'G-6T8Z3855RZ',
+          anonymizeIP: true,
+        },
       },
     ],
   ],
