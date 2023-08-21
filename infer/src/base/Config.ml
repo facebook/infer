@@ -2620,8 +2620,12 @@ and pulse_taint_sources =
       from a superclass with the specified annotation
   - "method_with_annotation":
       match all procedures marked by specified annotation
+  - "method_with_annotation" and "annotation_values":
+      match all procedures marked by specified annotation with specified values
   - "field_with_annotation":
       match all fields marked by specified annotation
+  - "field_with_annotation" and "annotation_values":
+      match all fields marked by specified annotation with specified values
   - "allocation": $(i,\(for taint sources only\))
       match allocations of the exact class name supplied
   - "block_passed_to": $(i,\(for taint sources only\))
