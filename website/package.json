@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@docusaurus/core": "^2.3.1",
+    "@docusaurus/plugin-google-gtag": "^2.4.1",
     "@docusaurus/preset-classic": "^2.3.1",
     "async": "2.6.4",
     "classnames": "2.2.6",
