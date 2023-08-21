@@ -92,6 +92,26 @@ let get_proc_name_s proc_name =
   else F.asprintf "%a" Procname.pp_verbose proc_name
 
 
+let match_annotation_with_values annot_item annotation annotation_values =
+  let annot_item_matches = Annotations.ia_ends_with annot_item annotation in
+  match (annot_item_matches, annotation_values) with
+  | false, _ ->
+      false
+  | true, None ->
+      true
+  | true, Some annot_values ->
+      Annotations.ia_has_annotation_with annot_item (fun annot ->
+          (* For now we need to support only simple parameter with default name "value" *)
+          match Annot.find_parameter annot ~name:"value" with
+          | Some annot_value ->
+              List.exists annot_values ~f:(fun value ->
+                  Annot.has_matching_str_value
+                    ~pred:(fun value_str -> String.is_suffix value_str ~suffix:value)
+                    annot_value )
+          | None ->
+              false )
+
+
 let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name actuals =
   let open TaintConfig.Unit in
   List.filter_map matchers ~f:(fun matcher ->
@@ -156,24 +176,7 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
                   procedure_class_name )
         | MethodWithAnnotation {annotation; annotation_values} ->
             Annotations.pname_has_return_annot proc_name (fun annot_item ->
-                let annot_item_matches = Annotations.ia_ends_with annot_item annotation in
-                match (annot_item_matches, annotation_values) with
-                | false, _ ->
-                    false
-                | true, None ->
-                    true
-                | true, Some annot_values ->
-                    Annotations.ia_has_annotation_with annot_item (fun annot ->
-                        (* For now we need to support only simple parameter with default name "value" *)
-                        let annot_value = Annot.find_parameter annot ~name:"value" in
-                        match annot_value with
-                        | Some annot_value ->
-                            List.exists annot_values ~f:(fun value ->
-                                Annot.has_matching_str_value
-                                  ~pred:(fun value_str -> String.is_suffix value_str ~suffix:value)
-                                  annot_value )
-                        | None ->
-                            false ) )
+                match_annotation_with_values annot_item annotation annotation_values )
         | Allocation _ | Block _ | BlockNameRegex _ ->
             false
       in
@@ -255,13 +258,13 @@ let field_matches tenv loc matchers field_name =
               && List.mem ~equal:String.equal field_names (Fieldname.get_field_name field_name)
             then Some matcher
             else None
-        | FieldWithAnnotation {annotation} -> (
+        | FieldWithAnnotation {annotation; annotation_values} -> (
             let class_name = Fieldname.get_class_name field_name in
             match Tenv.lookup tenv class_name with
             | Some struct_typ ->
                 if
                   Annotations.field_has_annot field_name struct_typ (fun annot_item ->
-                      Annotations.ia_ends_with annot_item annotation )
+                      match_annotation_with_values annot_item annotation annotation_values )
                 then Some matcher
                 else None
             | None ->

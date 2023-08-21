@@ -290,6 +290,10 @@
     { "field_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker",
       "taint_target": "GetField"
     },
+    { "field_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarkerWithValue",
+      "annotation_values": ["EMAIL", "LOCATION"],
+      "taint_target": "GetField"
+    },
     { "class_names": ["codetoanalyze.java.pulse.Fields"],
       "field_names": ["sourceField"],
       "taint_target": "GetField"

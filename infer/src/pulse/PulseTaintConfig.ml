@@ -179,7 +179,7 @@ module Unit = struct
   type field_matcher =
     | FieldRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndFieldNames of {class_names: string list; field_names: string list}
-    | FieldWithAnnotation of {annotation: string}
+    | FieldWithAnnotation of {annotation: string; annotation_values: string list option}
 
   let pp_field_matcher f field_matcher =
     match field_matcher with
@@ -188,8 +188,10 @@ module Unit = struct
     | ClassAndFieldNames {class_names; field_names} ->
         F.fprintf f "class_names=%a, field_names=%a" (Pp.comma_seq String.pp) class_names
           (Pp.comma_seq String.pp) field_names
-    | FieldWithAnnotation {annotation} ->
-        F.fprintf f "field with annotation=%s" annotation
+    | FieldWithAnnotation {annotation; annotation_values} ->
+        F.fprintf f "field with annotation=%s and annotation_values=%a" annotation
+          (Pp.option (Pp.comma_seq String.pp))
+          annotation_values
 
 
   type procedure_unit =
@@ -276,17 +278,21 @@ module Unit = struct
         "\"field_regex\": %a, \n\
         \ \"class_names\": %a, \n\
         \ \"field_names\": %a, \n\
-        \ \"field_with_annotation\": %a" (Pp.option F.pp_print_string) matcher.field_regex
+        \ \"field_with_annotation\": %a, \n\
+        \ \"annotation_values\": %a" (Pp.option F.pp_print_string) matcher.field_regex
         (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
         matcher.class_names
         (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
         matcher.field_names (Pp.option F.pp_print_string) matcher.field_with_annotation
+        (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
+        matcher.annotation_values
     in
     F.fprintf f
       "To build a field matcher, exactly one of \n\
       \ \"field_regex\", \n\
       \ \"field_with_annotation\", \n\
        or else \"class_names\" and \"field_names\" must be provided, \n\
+       or else \"field_with_annotation\" and \"annotation_values\" must be provided, \n\
        but got \n\
       \ %a" pp_field_matcher matcher
 
@@ -439,18 +445,21 @@ module Unit = struct
       | { field_regex= Some name_regex
         ; class_names= None
         ; field_names= None
-        ; field_with_annotation= None } ->
+        ; field_with_annotation= None
+        ; annotation_values= None } ->
           FieldRegex {name_regex= Str.regexp name_regex; exclude_in= matcher.exclude_from_regex_in}
       | { field_regex= None
         ; class_names= Some class_names
         ; field_names= Some field_names
-        ; field_with_annotation= None } ->
+        ; field_with_annotation= None
+        ; annotation_values= None } ->
           ClassAndFieldNames {class_names; field_names}
       | { field_regex= None
         ; class_names= None
         ; field_names= None
-        ; field_with_annotation= Some annotation } ->
-          FieldWithAnnotation {annotation}
+        ; field_with_annotation= Some annotation
+        ; annotation_values } ->
+          FieldWithAnnotation {annotation; annotation_values}
       | _ ->
           L.die UserError "When parsing option %s: Unexpected JSON format: %a %a" option_name
             pp_field_matcher_error_message matcher pp_procedure_matcher_error_message matcher

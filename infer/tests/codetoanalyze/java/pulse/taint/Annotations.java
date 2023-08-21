@@ -92,6 +92,15 @@ class Annotations {
 
     @SensitiveSinkMarker static String markedSink;
 
+    @SensitiveSourceMarkerWithValue(SensitiveSourceMarkerType.EMAIL)
+    static String email;
+
+    @SensitiveSourceMarkerWithValue(SensitiveSourceMarkerType.LOCATION)
+    static String location;
+
+    @SensitiveSourceMarkerWithValue(SensitiveSourceMarkerType.OTHER)
+    static String other;
+
     static String unmarked;
 
     void markedSourceToMarkedSinkBad() {
@@ -104,6 +113,18 @@ class Annotations {
 
     void markedSourceToUnmarkedSinkOk() {
       unmarked = markedSource;
+    }
+
+    void emailToMarkedSinkBad() {
+      markedSink = email;
+    }
+
+    void locationToMarkedSinkBad() {
+      markedSink = location;
+    }
+
+    void otherToMarkedSinkOk() {
+      markedSink = other;
     }
   }
 }
