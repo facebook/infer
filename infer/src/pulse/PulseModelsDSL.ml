@@ -178,10 +178,6 @@ module Syntax = struct
     ret info data astate
 
 
-  let and_eq_int (size_addr, _) i : unit model_monad =
-    PulseArithmetic.and_eq_int size_addr i |> exec_partial_command
-
-
   let allocation attr (addr, _) : unit model_monad =
     let* {location} = get_data in
     PulseOperations.allocate attr location addr |> exec_command
@@ -208,6 +204,34 @@ module Syntax = struct
 
   let prune_binop ~negated binop operand1 operand2 =
     PulseArithmetic.prune_binop ~negated binop operand1 operand2 |> exec_partial_command
+
+
+  let prune_eq_int arg i : unit model_monad =
+    prune_binop ~negated:false Binop.Eq (aval_operand arg) (PulseArithmetic.ConstOperand (Cint i))
+
+
+  let prune_eq_zero (addr, _) : unit model_monad =
+    PulseArithmetic.prune_eq_zero addr |> exec_partial_command
+
+
+  let prune_ne_int arg i : unit model_monad =
+    prune_binop ~negated:true Binop.Eq (aval_operand arg) (PulseArithmetic.ConstOperand (Cint i))
+
+
+  let prune_ne_zero (addr, _) : unit model_monad =
+    PulseArithmetic.prune_ne_zero addr |> exec_partial_command
+
+
+  let prune_lt arg1 arg2 : unit model_monad =
+    prune_binop ~negated:false Binop.Lt (aval_operand arg1) (aval_operand arg2)
+
+
+  let prune_eq arg1 arg2 : unit model_monad =
+    prune_binop ~negated:false Binop.Eq (aval_operand arg1) (aval_operand arg2)
+
+
+  let prune_ne arg1 arg2 : unit model_monad =
+    prune_binop ~negated:true Binop.Eq (aval_operand arg1) (aval_operand arg2)
 
 
   let dynamic_dispatch ~(cases : (Typ.name * 'a model_monad) list)

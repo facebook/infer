@@ -100,8 +100,8 @@ module Vec = struct
               | rest ->
                   list_iter rest ~f:await_hack_value ) )
     in
-    let* () = and_eq_int size (IntLit.of_int actual_size) in
-    let* () = and_eq_int dummy (IntLit.of_int 9) in
+    let* () = prune_eq_int size (IntLit.of_int actual_size) in
+    let* () = prune_eq_int dummy (IntLit.of_int 9) in
     ret vec
 
 
@@ -137,11 +137,10 @@ module Vec = struct
     let* snd_val = eval_deref_access Read argv (FieldAccess snd_field) in
     let* last_read_val = eval_deref_access Read argv (FieldAccess last_read_field) in
     let* () = write_deref_field ~ref:argv last_read_field ~obj:new_last_read_val in
-    let* () = prune_binop ~negated:false Binop.Lt (aval_operand index) (aval_operand size_val) in
+    let* () = prune_lt index size_val in
     let* () =
       (* Don't return dummy value *)
-      prune_binop ~negated:true Binop.Eq (aval_operand ret_val)
-        (ConstOperand (Cint (IntLit.of_int 9)))
+      prune_ne_int ret_val (IntLit.of_int 9)
     in
     (* TODO: work out how to incorporate type-based, or at least nullability, assertions on ret_val *)
     let case1 : unit DSL.model_monad =
@@ -151,35 +150,23 @@ module Vec = struct
       *)
       let* () = await_hack_value fst_val in
       let* () = await_hack_value snd_val in
-      let* () = prune_binop ~negated:true Eq (aval_operand ret_val) (aval_operand fst_val) in
-      let* () = prune_binop ~negated:true Eq (aval_operand ret_val) (aval_operand snd_val) in
-      let* () =
-        prune_binop ~negated:false Eq (aval_operand new_last_read_val) (aval_operand last_read_val)
-      in
+      let* () = prune_ne ret_val fst_val in
+      let* () = prune_ne ret_val snd_val in
+      let* () = prune_eq new_last_read_val last_read_val in
       assign_ret ret_val
     in
     let case2 : unit DSL.model_monad =
       (* case 2: given element is equal to fst_field *)
-      let* () =
-        prune_binop ~negated:false Eq (aval_operand last_read_val) (ConstOperand (Cint IntLit.two))
-      in
-      let* () = prune_binop ~negated:false Eq (aval_operand ret_val) (aval_operand fst_val) in
-      let* () =
-        prune_binop ~negated:false Eq (aval_operand new_last_read_val)
-          (ConstOperand (Cint IntLit.one))
-      in
+      let* () = prune_eq_int last_read_val IntLit.two in
+      let* () = prune_eq ret_val fst_val in
+      let* () = prune_eq_int new_last_read_val IntLit.one in
       assign_ret ret_val
     in
     let case3 : unit DSL.model_monad =
       (* case 3: given element is equal to snd_field *)
-      let* () =
-        prune_binop ~negated:false Eq (aval_operand last_read_val) (ConstOperand (Cint IntLit.one))
-      in
-      let* () = prune_binop ~negated:false Eq (aval_operand ret_val) (aval_operand snd_val) in
-      let* () =
-        prune_binop ~negated:false Eq (aval_operand new_last_read_val)
-          (ConstOperand (Cint IntLit.two))
-      in
+      let* () = prune_eq_int last_read_val IntLit.one in
+      let* () = prune_eq ret_val snd_val in
+      let* () = prune_eq_int new_last_read_val IntLit.two in
       assign_ret ret_val
     in
     disjuncts [case1; case2; case3]

@@ -67,26 +67,31 @@ module Syntax : sig
 
   val get_const_string : aval -> string option model_monad
 
-  val tenv_resolve_fieldname : Typ.name -> Fieldname.t -> Struct.field_info option model_monad
-
-  val and_eq_int : aval -> IntLit.t -> unit model_monad
-
   val eval_deref_access : access_mode -> aval -> Access.t -> aval model_monad
 
   val mk_fresh : model_desc:string -> aval model_monad
 
   val deep_copy : ?depth_max:int -> aval -> aval model_monad
 
-  val aval_operand : aval -> PulseArithmetic.operand
-
-  val prune_binop :
-       negated:bool
-    -> Binop.t
-    -> PulseArithmetic.operand
-    -> PulseArithmetic.operand
-    -> unit model_monad
-
   val write_deref_field : ref:aval -> obj:aval -> Fieldname.t -> unit model_monad
+
+  (* PulseFormula operations *)
+  val prune_eq : aval -> aval -> unit model_monad
+
+  val prune_eq_int : aval -> IntLit.t -> unit model_monad
+
+  val prune_eq_zero : aval -> unit model_monad [@@warning "-unused-value-declaration"]
+
+  val prune_lt : aval -> aval -> unit model_monad
+
+  val prune_ne : aval -> aval -> unit model_monad
+
+  val prune_ne_int : aval -> IntLit.t -> unit model_monad
+
+  val prune_ne_zero : aval -> unit model_monad [@@warning "-unused-value-declaration"]
+
+  (* Tenv operations *)
+  val tenv_resolve_fieldname : Typ.name -> Fieldname.t -> Struct.field_info option model_monad
 
   (* if necessary you can convert an operation outside of this module with the following operators *)
   val exec_command : (astate -> astate) -> unit model_monad
