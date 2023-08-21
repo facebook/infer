@@ -32,6 +32,9 @@
       "kinds": ["Simple"]
     },
     { "method_with_annotation": "codetoanalyze.kotlin.pulse.SensitiveSourceMarker" },
+    { "method_with_annotation": "codetoanalyze.kotlin.pulse.SensitiveSourceMarkerWithValue",
+      "annotation_values": ["EMAIL", "LOCATION"]
+    },
     { "class_names": ["codetoanalyze.kotlin.pulse.Constants"],
       "method_names": ["source"],
       "taint_target": ["ArgumentPositions", [0]]
