@@ -59,6 +59,21 @@ let new_ type_name : model =
   astate
 
 
+let constructor_dsl type_name fields : PulseModelsDSL.aval PulseModelsDSL.model_monad =
+  let open PulseModelsDSL.Syntax in
+  let exp =
+    Exp.Sizeof
+      {typ= Typ.mk_struct type_name; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+  in
+  let* new_obj = lift_to_monad_and_get_result (new_ exp) in
+  let* () =
+    list_iter fields ~f:(fun (fieldname, obj) ->
+        let field = Fieldname.make type_name fieldname in
+        write_deref_field ~ref:new_obj field ~obj )
+  in
+  ret new_obj
+
+
 (* TODO: actually allocate an array  *)
 let new_array type_name : model =
  fun model_data astate ->

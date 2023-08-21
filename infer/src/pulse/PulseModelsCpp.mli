@@ -23,3 +23,9 @@ module Vector : sig
 
   val reserve : AbstractValue.t * ValueHistory.t -> model
 end
+
+open PulseModelsDSL
+
+val constructor_dsl : Typ.Name.t -> (string * aval) list -> aval model_monad
+(** [constructor_dsl typ_name fields] builds a fresh object of type [typ_name] and initializes its
+    fields using list [fields] *)

@@ -135,9 +135,36 @@ module Syntax = struct
     ret a data astate
 
 
+  let exec_pure_operation (f : astate -> 'a) : 'a model_monad =
+   fun data astate ->
+    let a = f astate in
+    ret a data astate
+
+
   let assign_ret aval : unit model_monad =
     let* {ret= ret_id, _} = get_data in
     PulseOperations.write_id ret_id aval |> exec_command
+
+
+  let read_ret : aval option model_monad =
+    let* {ret= ret_id, _} = get_data in
+    PulseOperations.read_id ret_id |> exec_pure_operation
+
+
+  let remove_ret_binding : unit model_monad =
+    let* {ret= ret_id, _} = get_data in
+    AbductiveDomain.Stack.remove_vars [Var.of_id ret_id] |> exec_command
+
+
+  let lift_to_monad_and_get_result (model : model) : aval model_monad =
+    let* () = lift_to_monad model in
+    let* res = read_ret in
+    let* () = remove_ret_binding in
+    match res with
+    | None ->
+        L.die InternalError "call_model_and_get_result: the model did not assign ret_id"
+    | Some aval ->
+        ret aval
 
 
   let eval_deref_access access_mode aval access : aval model_monad =
@@ -168,14 +195,18 @@ module Syntax = struct
 
 
   let get_const_string (addr, _) : string option model_monad =
-    let op astate = (AddressAttributes.get_const_string addr astate, astate) in
-    exec_operation op
+    AddressAttributes.get_const_string addr |> exec_pure_operation
 
 
   let tenv_resolve_fieldname typ_name field_name : Struct.field_info option model_monad =
    fun ({analysis_data= {tenv}} as data) astate ->
     let info = Tenv.resolve_fieldname tenv typ_name field_name in
     ret info data astate
+
+
+  let eval_read exp : aval model_monad =
+    let* {path; location} = get_data in
+    PulseOperations.eval path Read location exp |> exec_partial_operation
 
 
   let allocation attr (addr, _) : unit model_monad =

@@ -21,6 +21,8 @@ val hack_dict_type_name : Typ.name
 
 val hack_vec_type_name : Typ.name
 
+val hack_bool_type_name : Typ.name
+
 val hack_string_type_name : Typ.name
 
 val hack_mixed_type_name : Typ.name

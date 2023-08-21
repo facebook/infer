@@ -52,8 +52,9 @@ module Syntax : sig
   val lift_to_monad : PulseModelsImport.model -> unit model_monad
   (** beware that the model may modify the [PulseModelsImport.model_data.ret] field *)
 
-  (* TODO (dpichardie) add an other function that lift the monad and return the
-     value that is associated with [ret] *)
+  val lift_to_monad_and_get_result : PulseModelsImport.model -> aval model_monad
+  (** apply the model and return its result. fails if the model did not assign the reserved
+      [model_data.ret] variable. *)
 
   (*****************************************************************)
   (* each PulseOperations functions you need should be copied here *)
@@ -66,6 +67,8 @@ module Syntax : sig
   val get_dynamic_type : ask_specialization:bool -> aval -> Typ.t option model_monad
 
   val get_const_string : aval -> string option model_monad
+
+  val eval_read : Exp.t -> aval model_monad
 
   val eval_deref_access : access_mode -> aval -> Access.t -> aval model_monad
 

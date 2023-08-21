@@ -410,6 +410,38 @@ let hack_field_get this field : model =
          L.die InternalError "hack_field_get expect a string constant as 2nd argument"
 
 
+let bool_val_field = Fieldname.make TextualSil.hack_bool_type_name "val"
+
+let make_hack_bool bool : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let* bool = eval_read (Const (Cint (if bool then IntLit.one else IntLit.zero))) in
+  let* boxed_bool = PulseModelsCpp.constructor_dsl TextualSil.hack_bool_type_name [("val", bool)] in
+  ret boxed_bool
+
+
+let hhbc_not_dsl arg : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  (* this operator is always run on a HackBool argument (nonnull type) *)
+  let* () = prune_ne_zero arg in
+  let* int = eval_deref_access Read arg (FieldAccess bool_val_field) in
+  let arg_is_true =
+    let* () = prune_ne_zero int in
+    make_hack_bool false
+  in
+  let arg_is_false =
+    let* () = prune_eq_zero int in
+    make_hack_bool true
+  in
+  disjuncts [arg_is_true; arg_is_false]
+
+
+let hhbc_not arg : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* res = hhbc_not_dsl arg in
+     assign_ret res
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"$builtins" &:: "nondet" <>$$--> Basic.nondet ~desc:"nondet"
@@ -419,6 +451,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hack_array_cow_set" <>$ capt_arg $++$--> hack_array_cow_set
   ; -"$builtins" &:: "hack_new_dict" &::.*++> Dict.new_dict
   ; -"$builtins" &:: "hhbc_new_vec" &::.*++> Vec.new_vec
+  ; -"$builtins" &:: "hhbc_not" <>$ capt_arg_payload $--> hhbc_not
   ; -"$builtins" &:: "hack_get_class" <>$ capt_arg_payload
     $--> Basic.id_first_arg ~desc:"hack_get_class"
     (* not clear why HackC generate this builtin call *)

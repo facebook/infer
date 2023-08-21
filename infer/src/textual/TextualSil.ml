@@ -105,6 +105,8 @@ let hack_dict_type_name = SilTyp.HackClass (HackClassName.make "HackDict")
 
 let hack_vec_type_name = SilTyp.HackClass (HackClassName.make "HackVec")
 
+let hack_bool_type_name = SilTyp.HackClass (HackClassName.make "HackBool")
+
 let hack_string_type_name = SilTyp.HackClass (HackClassName.make "HackString")
 
 let hack_mixed_type_name = SilTyp.HackClass (HackClassName.make "HackMixed")

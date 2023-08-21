@@ -7,6 +7,7 @@
 
 // These functions have OCaml models
 declare $builtins.nondet() : int
+declare $builtins.hhbc_not(*HackBool) : *HackBool
 
 type HackString = { val: *string }
 
@@ -63,22 +64,6 @@ define $builtins.hack_is_true(b: *HackMixed) : int {
   #is_bool:
     n1: int = load n0.HackBool.val
     ret n1
-}
-
-define $builtins.hhbc_not(b: *HackBool) : *HackBool {
-  #entry:
-    n0: *HackBool = load &b
-    // We assume a not-null argument because of HackBool invariants
-    prune __sil_ne(n0, 0)
-    n1: int = load n0.HackBool.val
-    jmp is_true, is_false
-  #is_true:
-    prune n1
-    ret $builtins.hack_make_false()
-  #is_false:
-    prune !n1
-    ret $builtins.hack_make_true()
-
 }
 
 define $builtins.hhbc_cmp_eq(x: *HackMixed, y: *HackMixed) : *HackBool {
