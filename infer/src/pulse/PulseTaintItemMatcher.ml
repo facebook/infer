@@ -154,9 +154,26 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
                                String.equal (Procname.get_method superclass_pname) method_name )
                              tenv proc_name ) )
                   procedure_class_name )
-        | MethodWithAnnotation {annotation} ->
+        | MethodWithAnnotation {annotation; annotation_values} ->
             Annotations.pname_has_return_annot proc_name (fun annot_item ->
-                Annotations.ia_ends_with annot_item annotation )
+                let annot_item_matches = Annotations.ia_ends_with annot_item annotation in
+                match (annot_item_matches, annotation_values) with
+                | false, _ ->
+                    false
+                | true, None ->
+                    true
+                | true, Some annot_values ->
+                    Annotations.ia_has_annotation_with annot_item (fun annot ->
+                        (* For now we need to support only simple parameter with default name "value" *)
+                        let annot_value = Annot.find_parameter annot ~name:"value" in
+                        match annot_value with
+                        | Some annot_value ->
+                            List.exists annot_values ~f:(fun value ->
+                                Annot.has_matching_str_value
+                                  ~pred:(fun value_str -> String.is_suffix value_str ~suffix:value)
+                                  annot_value )
+                        | None ->
+                            false ) )
         | Allocation _ | Block _ | BlockNameRegex _ ->
             false
       in

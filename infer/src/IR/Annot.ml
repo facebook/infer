@@ -39,6 +39,8 @@ let rec has_matching_str_value ~pred = function
       pred s
   | Array els ->
       List.exists els ~f:(has_matching_str_value ~pred)
+  | Enum {value} ->
+      pred value
   | _ ->
       false
 

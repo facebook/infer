@@ -37,6 +37,7 @@ type matcher = {
   ?overrides_of_class_with_annotation: string option;
   ?method_with_annotation: string option;
   ?field_with_annotation: string option;
+  ?annotation_values: string list option;
   ?block_passed_to: string option;
   ?block_passed_to_regex: string option;
   ?allocation: string option;

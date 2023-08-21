@@ -36,7 +36,7 @@ val final : t
 
 val has_matching_str_value : pred:(string -> bool) -> value -> bool
 (** Check if annotation parameter value contains a string satisfying a predicate. For convenience it
-    works both with raw [Str] and [Str] inside [Array]. *)
+    works both with raw [Str], [Str] inside [Array] and [Enum] values. *)
 
 val find_parameter : t -> name:string -> value option
 

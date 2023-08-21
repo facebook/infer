@@ -16,6 +16,21 @@ class Annotations {
       return "";
     }
 
+    @SensitiveSourceMarkerWithValue(SensitiveSourceMarkerType.EMAIL)
+    String email() {
+      return "";
+    }
+
+    @SensitiveSourceMarkerWithValue(SensitiveSourceMarkerType.LOCATION)
+    String location() {
+      return "";
+    }
+
+    @SensitiveSourceMarkerWithValue(SensitiveSourceMarkerType.OTHER)
+    String other() {
+      return "";
+    }
+
     @SensitiveSinkMarker
     void markedSink(String input) {}
 
@@ -56,6 +71,18 @@ class Annotations {
 
     void markedSourceToUnmarkedSinkOk() {
       unmarkedSink(markedSource());
+    }
+
+    void emailToSinkBad() {
+      markedSink(email());
+    }
+
+    void locationToSinkBad() {
+      markedSink(location());
+    }
+
+    void otherToSinkOk() {
+      markedSink(other());
     }
   }
 

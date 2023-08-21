@@ -143,7 +143,7 @@ module Unit = struct
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
     | OverridesOfClassWithAnnotation of {annotation: string}
-    | MethodWithAnnotation of {annotation: string}
+    | MethodWithAnnotation of {annotation: string; annotation_values: string list option}
     | Block of {name: string}
     | BlockNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | Allocation of {class_name: string}
@@ -164,8 +164,10 @@ module Unit = struct
           class_names (Pp.comma_seq String.pp) method_return_type_names
     | OverridesOfClassWithAnnotation {annotation} ->
         F.fprintf f "overrides of class with annotation=%s" annotation
-    | MethodWithAnnotation {annotation} ->
-        F.fprintf f "method with annotation=%s" annotation
+    | MethodWithAnnotation {annotation; annotation_values: string list option} ->
+        F.fprintf f "method with annotation=%s and annotation_values=%a" annotation
+          (Pp.option (Pp.comma_seq String.pp))
+          annotation_values
     | Block {name} ->
         F.fprintf f "Block %s" name
     | BlockNameRegex _ ->
@@ -232,6 +234,7 @@ module Unit = struct
         \ \"method_return_type_names\": %a, \n\
         \ \"overrides_of_class_with_annotation\": %a,\n\
         \ \"method_with_annotation\": %a, \n\
+        \ \"annotation_values\": %a, \n\
         \ \"block_passed_to\": %a, \n\
         \ \"block_passed_to_regex\": %a, \n\
         \ \"allocation\": %a" (Pp.option F.pp_print_string) matcher.procedure
@@ -242,7 +245,9 @@ module Unit = struct
         (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
         matcher.method_names
         (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
-        matcher.method_return_type_names (Pp.option F.pp_print_string)
+        matcher.method_return_type_names
+        (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
+        matcher.annotation_values (Pp.option F.pp_print_string)
         matcher.overrides_of_class_with_annotation (Pp.option F.pp_print_string)
         matcher.method_with_annotation (Pp.option F.pp_print_string) matcher.block_passed_to
         (Pp.option F.pp_print_string) matcher.block_passed_to_regex (Pp.option F.pp_print_string)
@@ -255,10 +260,12 @@ module Unit = struct
       \ \"class_name_regex\", \n\
       \ \"block_passed_to\", \n\
       \ \"block_passed_to_regex\", \n\
+      \ \"method_with_annotation\", \n\
       \ \"allocation\" or \n\
       \ \"overrides_of_class_with_annotation\" must be provided, \n\
        or else \"class_names\" and \"method_names\" must be provided, \n\
        or else \"class_names\" and \"method_return_type_names\" must be provided, \n\
+       or else \"method_with_annotation\" and \"annotation_values\" must be provided, \n\
        but got \n\
       \ %a." pp_procedure_matcher matcher
 
@@ -296,6 +303,7 @@ module Unit = struct
         ; method_return_type_names= None
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= None
+        ; annotation_values= None
         ; block_passed_to= None
         ; allocation= None } ->
           ProcedureName {name}
@@ -305,6 +313,7 @@ module Unit = struct
         ; class_names= None
         ; method_names= None
         ; method_return_type_names= None
+        ; annotation_values= None
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= None
         ; block_passed_to= None
@@ -318,6 +327,7 @@ module Unit = struct
         ; method_names= None
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= None
+        ; annotation_values= None
         ; block_passed_to= None
         ; allocation= None } ->
           ClassNameRegex
@@ -330,6 +340,7 @@ module Unit = struct
         ; method_return_type_names= None
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= None
+        ; annotation_values= None
         ; block_passed_to= None
         ; allocation= None } ->
           ClassAndMethodNames {class_names; method_names}
@@ -341,6 +352,7 @@ module Unit = struct
         ; method_return_type_names= Some method_return_type_names
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= None
+        ; annotation_values= None
         ; allocation= None } ->
           ClassAndMethodReturnTypeNames {class_names; method_return_type_names}
       | { procedure= None
@@ -360,9 +372,10 @@ module Unit = struct
         ; method_return_type_names= None
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= Some annotation
+        ; annotation_values
         ; block_passed_to= None
         ; allocation= None } ->
-          MethodWithAnnotation {annotation}
+          MethodWithAnnotation {annotation; annotation_values}
       | { procedure= None
         ; procedure_regex= None
         ; class_name_regex= None
@@ -371,6 +384,7 @@ module Unit = struct
         ; method_return_type_names= None
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= None
+        ; annotation_values= None
         ; block_passed_to= None
         ; allocation= Some class_name } ->
           Allocation {class_name}
@@ -381,6 +395,7 @@ module Unit = struct
         ; method_names= None
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= None
+        ; annotation_values= None
         ; block_passed_to= Some s
         ; allocation= None } ->
           Block {name= s}
@@ -391,6 +406,7 @@ module Unit = struct
         ; method_names= None
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= None
+        ; annotation_values= None
         ; block_passed_to_regex= Some name_regex
         ; allocation= None } ->
           BlockNameRegex
