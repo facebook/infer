@@ -92,6 +92,10 @@ class UnMovable {
   // by defining a destructor but no move constructor, there is no
   // auto-generated move constructor
   ~UnMovable() = default;
+
+  void unnecessary_copy_assignment_const_bad(const std::vector<int> vec) {
+    vec_ = vec;
+  }
 };
 
 void call_by_value(UnMovable arg){};
@@ -100,4 +104,8 @@ void no_move_intermediate_bad(UnMovable unmovable) {
   call_by_value(
       std::move(unmovable)); // we can't suggest moving here since UnMovable
                              // doesn't have move constructor
+}
+
+int unnecessary_copy_intermediate_const_bad(const A my_a) {
+  return get_size(my_a);
 }

@@ -683,21 +683,21 @@ let get_message_and_suggestion diagnostic =
     -> (
       let open PulseAttribute in
       let is_from_const = Option.exists ~f:Typ.is_const_reference source_typ in
+      let call_move = "call `std::move` instead" in
       let get_suggestion_msg_move = function
         | Some source_expr when is_from_std_move source_expr ->
             "Even though `std::move` is called, nothing is actually getting moved (e.g. the type \
              doesn't have a move operation) so make sure the copy is expected"
         | _ ->
-            "To avoid the copy, call `std::move` instead"
+            "To avoid the copy, " ^ call_move
       in
       let get_suggestion_msg_move_intermediate source_opt =
-        let move_msg =
-          get_suggestion_msg_move source_opt
-          ^ " or alternatively change the callee's parameter type to `const &`"
-        in
+        let const_ref_callee = "change the callee's parameter type to `const &`" in
+        let move_msg = get_suggestion_msg_move source_opt in
         if is_from_const then
-          "To avoid the copy, either 1) remove the `const &` from the source or 2) " ^ move_msg
-        else move_msg
+          "To avoid the copy, either 1) remove the `const` from the source and " ^ call_move
+          ^ " or 2) " ^ const_ref_callee
+        else move_msg ^ " or " ^ const_ref_callee
       in
       let suppression_msg =
         "If this copy was intentional, call `folly::copy` to make it explicit and hence suppress \
@@ -717,7 +717,10 @@ let get_message_and_suggestion diagnostic =
         | _, IntoIntermediate _ ->
             get_suggestion_msg_move_intermediate source_opt
         | _, IntoField _ ->
-            "Rather than copying into the field, move into it instead"
+            if is_from_const then
+              "Rather than copying into the field, first remove `const` qualifier from the source \
+               and then move into it instead"
+            else "Rather than copying into the field, move into it instead"
         | CopyCtor, IntoVar _ ->
             "To avoid the copy, use reference `&`"
         | CopyAssignment, IntoVar _ ->
