@@ -60,7 +60,7 @@ class A {
   }
 
 
-  public function FN_eqIntSimpleBad(): void {
+  public function eqIntSimpleBad(): void {
     $a = 0;
     $b = 0;
     $taint = \Level1\taintSource();
@@ -78,7 +78,7 @@ class A {
     }
   }
 
-  public function FN_neIntSimpleBad(): void {
+  public function neIntSimpleBad(): void {
     $a = 0;
     $b = 1;
     $taint = \Level1\taintSource();
@@ -96,7 +96,7 @@ class A {
     }
   }
 
-  public function FN_eqBoolSimpleBad(): void {
+  public function eqBoolSimpleBad(): void {
     $a = true;
     $b = true;
     $taint = \Level1\taintSource();
@@ -114,7 +114,7 @@ class A {
     }
   }
 
-  public function FN_neBoolSimpleBad(): void {
+  public function neBoolSimpleBad(): void {
     $a = true;
     $b = false;
     $taint = \Level1\taintSource();

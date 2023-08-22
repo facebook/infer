@@ -419,6 +419,13 @@ let make_hack_bool bool : DSL.aval DSL.model_monad =
   ret boxed_bool
 
 
+let make_hack_random_bool : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let* any = mk_fresh ~model_desc:"make_hack_random_bool" in
+  let* boxed_bool = PulseModelsCpp.constructor_dsl TextualSil.hack_bool_type_name [("val", any)] in
+  ret boxed_bool
+
+
 let hhbc_not_dsl arg : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   (* this operator is always run on a HackBool argument (nonnull type) *)
@@ -442,6 +449,64 @@ let hhbc_not arg : model =
      assign_ret res
 
 
+let int_val_field = Fieldname.make TextualSil.hack_int_type_name "val"
+
+let hhbc_cmp_same x y : model =
+  let open DSL.Syntax in
+  start_model
+  @@
+  let value_equality_test val1 val2 =
+    let true_case =
+      let* () = prune_eq val1 val2 in
+      make_hack_bool true
+    in
+    let false_case =
+      let* () = prune_ne val1 val2 in
+      make_hack_bool false
+    in
+    disjuncts [true_case; false_case]
+  in
+  let* res =
+    disjuncts
+      [ (let* () = prune_eq x y in
+         make_hack_bool true )
+      ; (let* () = prune_ne x y in
+         disjuncts
+           [ ((* either of those is null but not both *)
+              let* () = disjuncts [prune_eq_zero x; prune_eq_zero y] in
+              make_hack_bool false )
+           ; (let* () = prune_ne_zero x in
+              let* () = prune_ne_zero y in
+              let* x_typ = get_dynamic_type ~ask_specialization:true x in
+              let* y_typ = get_dynamic_type ~ask_specialization:true y in
+              match (x_typ, y_typ) with
+              | None, _ | _, None ->
+                  make_hack_random_bool
+              | Some {Typ.desc= Tstruct x_typ_name}, Some {Typ.desc= Tstruct y_typ_name}
+                when Typ.Name.equal x_typ_name y_typ_name ->
+                  if Typ.Name.equal x_typ_name TextualSil.hack_int_type_name then
+                    let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
+                    let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
+                    value_equality_test x_val y_val
+                  else if Typ.Name.equal x_typ_name TextualSil.hack_bool_type_name then
+                    let* x_val = eval_deref_access Read x (FieldAccess bool_val_field) in
+                    let* y_val = eval_deref_access Read y (FieldAccess bool_val_field) in
+                    value_equality_test x_val y_val
+                  else make_hack_random_bool
+              | _, _ ->
+                  make_hack_bool false ) ] ) ]
+  in
+  assign_ret res
+
+
+let hhbc_cmp_nsame x y : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* bool = lift_to_monad_and_get_result (hhbc_cmp_same x y) in
+     let* neg_bool = hhbc_not_dsl bool in
+     assign_ret neg_bool
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"$builtins" &:: "nondet" <>$$--> Basic.nondet ~desc:"nondet"
@@ -458,6 +523,8 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hack_field_get" <>$ capt_arg_payload $+ capt_arg_payload $--> hack_field_get
   ; -"$builtins" &:: "hhbc_class_get_c" <>$ capt_arg_payload $--> hhbc_class_get_c
     (* we should be able to model that directly in Textual once specialization will be stronger *)
+  ; -"$builtins" &:: "hhbc_cmp_same" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_same
+  ; -"$builtins" &:: "hhbc_cmp_nsame" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_nsame
   ; -"$builtins" &:: "hack_get_static_class" <>$ capt_arg_payload $--> get_static_class
   ; -"$root" &:: "FlibSL::Vec::from_async" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Vec.vec_from_async ]

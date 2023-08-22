@@ -64,17 +64,17 @@ module Syntax : sig
 
   val add_static_type : Typ.name -> aval -> unit model_monad
 
-  val get_dynamic_type : ask_specialization:bool -> aval -> Typ.t option model_monad
-
-  val get_const_string : aval -> string option model_monad
+  val deep_copy : ?depth_max:int -> aval -> aval model_monad
 
   val eval_read : Exp.t -> aval model_monad
 
   val eval_deref_access : access_mode -> aval -> Access.t -> aval model_monad
 
-  val mk_fresh : model_desc:string -> aval model_monad
+  val get_dynamic_type : ask_specialization:bool -> aval -> Typ.t option model_monad
 
-  val deep_copy : ?depth_max:int -> aval -> aval model_monad
+  val get_const_string : aval -> string option model_monad
+
+  val mk_fresh : model_desc:string -> aval model_monad
 
   val write_deref_field : ref:aval -> obj:aval -> Fieldname.t -> unit model_monad
 
@@ -83,7 +83,7 @@ module Syntax : sig
 
   val prune_eq_int : aval -> IntLit.t -> unit model_monad
 
-  val prune_eq_zero : aval -> unit model_monad [@@warning "-unused-value-declaration"]
+  val prune_eq_zero : aval -> unit model_monad
 
   val prune_lt : aval -> aval -> unit model_monad
 
@@ -91,7 +91,7 @@ module Syntax : sig
 
   val prune_ne_int : aval -> IntLit.t -> unit model_monad
 
-  val prune_ne_zero : aval -> unit model_monad [@@warning "-unused-value-declaration"]
+  val prune_ne_zero : aval -> unit model_monad
 
   (* Tenv operations *)
   val tenv_resolve_fieldname : Typ.name -> Fieldname.t -> Struct.field_info option model_monad
