@@ -303,5 +303,16 @@ class Specialization {
     return callCallBuildC(new A_Bad(), new A_Good()).f;
   }
 
+  C callBuildCWithEmptyPaths(A a, boolean b) {
+    return b ? a.buildC(): null;
+  }
+
+  C FN_buildCWithInfeasiblePathsAndDerefBad() {
+    return callBuildCWithEmptyPaths(new A_Bad(), true).f;
+  }
+
+  C buildCWithInfeasiblePathsAndDerefGood() {
+    return callBuildCWithEmptyPaths(new A_Good(), true).f;
+  }
 
 }
