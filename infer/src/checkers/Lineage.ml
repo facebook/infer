@@ -89,129 +89,130 @@ module Local = struct
 end
 
 module LineageGraph = struct
-  (** INV: Constants occur only as sources of flow. NOTE: Constants are "local" because type [data]
+  (** INV: Constants occur only as sources of edges. NOTE: Constants are "local" because type [data]
       associates them with a location, in a proc. *)
 
-  type data =
-    | Local of ((Local.t * PPNode.t)[@sexp.opaque])
-    | Argument of int * FieldPath.t
-    | ArgumentOf of int * (Procname.t[@sexp.opaque])
-    | Captured of int
-    | CapturedBy of int * (Procname.t[@sexp.opaque])
-    | Return of FieldPath.t
-    | ReturnOf of (Procname.t[@sexp.opaque])
-    | Self
-    | Function of (Procname.t[@sexp.opaque])
-  [@@deriving compare, equal, sexp]
-
-  let is_abstract_cell = function Local (Cell cell, _node) -> Cell.is_abstract cell | _ -> false
-
-  module FlowKind = struct
+  module V = struct
     module T = struct
-      (** - INV1. There is no direct flow from ReturnOf to ArgumentOf. In that case a Return flow is
-            followed by a Call flow, with a Local in the middle (which may be a temporary variable).
-          - INV2: There is no loop, because they don't mean anything. *)
       type t =
-        | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
-        | Call of FieldPath.t  (** Target is ArgumentOf, field path is injected into arg *)
-        | Return of FieldPath.t  (** Source is ReturnOf, field path is projected from return *)
-        | Capture  (** [X=1, F=fun()->X end] has Capture flow from X to F *)
-        | Builtin  (** Flow coming from a suppressed builtin call, ultimately exported as a Copy *)
-        | Summary  (** Summarizes the effect of a procedure call *)
-        | DynamicCallFunction
-        | DynamicCallModule
-      [@@deriving compare, equal, sexp, variants]
+        | Local of ((Local.t * PPNode.t)[@sexp.opaque])
+        | Argument of int * FieldPath.t
+        | ArgumentOf of int * (Procname.t[@sexp.opaque])
+        | Captured of int
+        | CapturedBy of int * (Procname.t[@sexp.opaque])
+        | Return of FieldPath.t
+        | ReturnOf of (Procname.t[@sexp.opaque])
+        | Self
+        | Function of (Procname.t[@sexp.opaque])
+      [@@deriving compare, equal, sexp]
     end
 
     include T
     include Comparable.Make (T)
+
+    let is_abstract_cell = function Local (Cell cell, _node) -> Cell.is_abstract cell | _ -> false
+
+    let pp fmt vertex =
+      match vertex with
+      | Local (local, node) ->
+          Format.fprintf fmt "%a@@%a" Local.pp local PPNode.pp node
+      | Argument (index, field_path) ->
+          Format.fprintf fmt "arg%d%a" index FieldPath.pp field_path
+      | Captured index ->
+          Format.fprintf fmt "cap%d" index
+      | Return field_path ->
+          Format.fprintf fmt "ret%a" FieldPath.pp field_path
+      | CapturedBy (index, proc_name) ->
+          Format.fprintf fmt "%a.cap%d" Procname.pp proc_name index
+      | ArgumentOf (index, proc_name) ->
+          Format.fprintf fmt "%a.arg%d" Procname.pp proc_name index
+      | ReturnOf proc_name ->
+          Format.fprintf fmt "%a.ret" Procname.pp proc_name
+      | Function proc_name ->
+          Format.fprintf fmt "%a.fun" Procname.pp proc_name
+      | Self ->
+          Format.fprintf fmt "self"
   end
 
-  type flow_kind = FlowKind.t [@@deriving compare, equal, sexp]
+  module E = struct
+    module Kind = struct
+      module T = struct
+        (** - INV1. There is no direct edge from ReturnOf to ArgumentOf. In that case a Return edge
+              is followed by a Call edge, with a Local in the middle (which may be a temporary
+              variable).
+            - INV2: There is no loop, because they don't mean anything. *)
+        type t =
+          | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
+          | Call of FieldPath.t  (** Target is ArgumentOf, field path is injected into arg *)
+          | Return of FieldPath.t  (** Source is ReturnOf, field path is projected from return *)
+          | Capture  (** [X=1, F=fun()->X end] has Capture edge from X to F *)
+          | Builtin
+              (** Edge coming from a suppressed builtin call, ultimately exported as a Copy *)
+          | Summary  (** Summarizes the effect of a procedure call *)
+          | DynamicCallFunction
+          | DynamicCallModule
+        [@@deriving compare, equal, sexp, variants]
+      end
 
-  let rank_of_flow_kind = FlowKind.Variants.to_rank
+      include T
+      include Comparable.Make (T)
 
-  type flow = {source: data; target: data; kind: flow_kind; node: (PPNode.t[@sexp.opaque])}
-  [@@deriving compare, equal, sexp]
+      let to_rank = Variants.to_rank
 
-  type t = flow list
+      let pp fmt kind =
+        match kind with
+        | Capture ->
+            Format.fprintf fmt "Capture"
+        | Direct ->
+            Format.fprintf fmt "Direct"
+        | Call field_path ->
+            Format.fprintf fmt "Call%a" FieldPath.pp field_path
+        | Return field_path ->
+            Format.fprintf fmt "Return%a" FieldPath.pp field_path
+        | Builtin ->
+            Format.fprintf fmt "Builtin"
+        | Summary ->
+            Format.fprintf fmt "Summary"
+        | DynamicCallFunction ->
+            Format.fprintf fmt "DynamicCallFunction"
+        | DynamicCallModule ->
+            Format.fprintf fmt "DynamicCallModule"
+    end
+
+    type kind = Kind.t [@@deriving compare, equal, sexp]
+
+    type t = {source: V.t; target: V.t; kind: kind; node: (PPNode.t[@sexp.opaque])}
+    [@@deriving compare, equal, sexp]
+
+    let pp fmt {source; target; kind; node} =
+      Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a@@%a)]@]@;" V.pp source V.pp target Kind.pp kind
+        PPNode.pp node
+  end
+
+  type vertex = V.t
+
+  type edge = E.t
+
+  type t = edge list
 
   let empty = []
 
   let is_empty = List.is_empty
 
-  (** Make [data] usable in Maps/Sets. *)
-  module Vertex = struct
-    module T = struct
-      type t = data [@@deriving compare, equal, sexp]
-    end
-
-    include T
-    include Comparable.Make (T)
-  end
-
-  let pp_data fmt data =
-    match data with
-    | Local (local, node) ->
-        Format.fprintf fmt "%a@@%a" Local.pp local PPNode.pp node
-    | Argument (index, field_path) ->
-        Format.fprintf fmt "arg%d%a" index FieldPath.pp field_path
-    | Captured index ->
-        Format.fprintf fmt "cap%d" index
-    | Return field_path ->
-        Format.fprintf fmt "ret%a" FieldPath.pp field_path
-    | CapturedBy (index, proc_name) ->
-        Format.fprintf fmt "%a.cap%d" Procname.pp proc_name index
-    | ArgumentOf (index, proc_name) ->
-        Format.fprintf fmt "%a.arg%d" Procname.pp proc_name index
-    | ReturnOf proc_name ->
-        Format.fprintf fmt "%a.ret" Procname.pp proc_name
-    | Function proc_name ->
-        Format.fprintf fmt "%a.fun" Procname.pp proc_name
-    | Self ->
-        Format.fprintf fmt "self"
+  let count_vertices edges =
+    let v_list = List.concat_map ~f:(function {E.source; target} -> [source; target]) edges in
+    let v_set = V.Set.of_list v_list in
+    Set.length v_set
 
 
-  let pp_flow_kind fmt kind =
-    match (kind : flow_kind) with
-    | Capture ->
-        Format.fprintf fmt "Capture"
-    | Direct ->
-        Format.fprintf fmt "Direct"
-    | Call field_path ->
-        Format.fprintf fmt "Call%a" FieldPath.pp field_path
-    | Return field_path ->
-        Format.fprintf fmt "Return%a" FieldPath.pp field_path
-    | Builtin ->
-        Format.fprintf fmt "Builtin"
-    | Summary ->
-        Format.fprintf fmt "Summary"
-    | DynamicCallFunction ->
-        Format.fprintf fmt "DynamicCallFunction"
-    | DynamicCallModule ->
-        Format.fprintf fmt "DynamicCallModule"
+  let pp fmt edges =
+    Format.fprintf fmt "@[<v 2>LineageGraph: edges %d vertices %d@;@[%a@]@]" (List.length edges)
+      (count_vertices edges) (Format.pp_print_list E.pp) edges
 
 
-  let pp_flow fmt {source; target; kind; node} =
-    Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a@@%a)]@]@;" pp_data source pp_data target pp_flow_kind
-      kind PPNode.pp node
-
-
-  let vertices flows =
-    let data = List.concat_map ~f:(function {source; target} -> [source; target]) flows in
-    Vertex.Set.of_list data
-
-
-  let count_data flows = Set.length (vertices flows)
-
-  let pp fmt flows =
-    Format.fprintf fmt "@[<v 2>LineageGraph: flows %d data %d@;@[%a@]@]" (List.length flows)
-      (count_data flows) (Format.pp_print_list pp_flow) flows
-
-
-  let add_flow ~kind ~node ~source ~target graph =
-    let added = {source; target; kind; node} :: graph in
-    match ((kind : FlowKind.t), equal_data target source, target, source) with
+  let add_edge ~kind ~node ~source ~target graph =
+    let added = {E.source; target; kind; node} :: graph in
+    match ((kind : E.kind), V.equal target source, (target : V.t), (source : V.t)) with
     | Direct, true, _, _ ->
         graph (* skip Direct loops *)
     | Builtin, true, _, _ ->
@@ -219,7 +220,7 @@ module LineageGraph = struct
     | Summary, true, _, _ ->
         graph (* skip Summary loops*)
     | _, true, _, _ ->
-        L.die InternalError "There shall be no fancy (%a) loops!" pp_flow_kind kind
+        L.die InternalError "There shall be no fancy (%a) loops!" E.Kind.pp kind
     | Call _, _, ArgumentOf _, _ ->
         added
     | Call _, _, _, _ ->
@@ -387,7 +388,7 @@ module LineageGraph = struct
 
     type state_local = Start of Location.t | Exit of Location.t | Normal of PPNode.t
 
-    (** Like [LineageGraph.data], but :
+    (** Like [LineageGraph.vertex], but :
 
         - Without the ability to refer to other procedures, which makes it "local".
         - With some information lost/summarised, such as fields of procedure arguments/return
@@ -454,7 +455,7 @@ module LineageGraph = struct
         of_list [of_string term_data; of_term_type term_type]
 
 
-      let of_kind (kind : flow_kind) : t = Z.of_int (rank_of_flow_kind kind)
+      let of_kind (kind : E.kind) : t = Z.of_int (E.Kind.to_rank kind)
 
       (** Converts the internal representation to an [int64], as used by the [Out] module. *)
       let out id : int64 =
@@ -552,7 +553,7 @@ module LineageGraph = struct
       location_id
 
 
-    let save_node proc_desc (data : data) =
+    let save_vertex proc_desc (vertex : V.t) =
       let save ?(write = true) procname state_local data_local =
         let state_id = save_state ~write procname state_local in
         let term = term_of_data data_local in
@@ -565,7 +566,7 @@ module LineageGraph = struct
       let procname = Procdesc.get_proc_name proc_desc in
       let start = Start (Procdesc.Node.get_loc (Procdesc.get_start_node proc_desc)) in
       let exit = Exit (Procdesc.Node.get_loc (Procdesc.get_exit_node proc_desc)) in
-      match data with
+      match vertex with
       | Local (var, node) ->
           save procname (Normal node) (Normal var)
       | Argument (index, _field_path) ->
@@ -590,9 +591,9 @@ module LineageGraph = struct
           save ~write:false procname (Start Location.dummy) Function
 
 
-    let save_edge proc_desc {source; target; kind; node} =
-      let source_id = save_node proc_desc source in
-      let target_id = save_node proc_desc target in
+    let save_edge proc_desc {E.source; target; kind; node} =
+      let source_id = save_vertex proc_desc source in
+      let target_id = save_vertex proc_desc target in
       let kind_id = Id.of_kind kind in
       let location_id =
         let procname = Procdesc.get_proc_name proc_desc in
@@ -656,15 +657,15 @@ module LineageGraph = struct
       edge_id
 
 
-    let report_summary flows has_unsupported_features proc_desc =
+    let report_summary edges has_unsupported_features proc_desc =
       let procname = Procdesc.get_proc_name proc_desc in
       let fun_id = Id.of_procname procname in
       write_json Function fun_id
         (Json.yojson_of_function_
            {function_= {name= Procname.hashable_name procname; has_unsupported_features}} ) ;
-      let _fun_id = save_node proc_desc Self in
-      let record_flow flow = ignore (save_edge proc_desc flow) in
-      List.iter ~f:record_flow flows ;
+      let _fun_id = save_vertex proc_desc Self in
+      let record_edge edge = ignore (save_edge proc_desc edge) in
+      List.iter ~f:record_edge edges ;
       Out_channel.flush (channel ()) ;
       Hash_set.clear write_json_cache
   end
@@ -898,18 +899,18 @@ module Summary = struct
        - Collect a set of nodes that break shape preservation, due to either being abstract cells, or
          being targets of edges that have this effect. *)
     let graph_rev, shape_mixing_nodes =
-      let add_flow g {LineageGraph.source; target; kind} =
+      let add_edge g {LineageGraph.E.source; target; kind} =
         match kind with
         | Call _ | Return _ ->
             g (* skip call/return edges *)
         | _ ->
             Map.add_multi ~key:target ~data:source g
       in
-      let add_if_shape_mixing set {LineageGraph.source= _; target; kind} =
+      let add_if_shape_mixing set {LineageGraph.E.source= _; target; kind} =
         let may_be_shape_mixing =
           match kind with
           | Direct ->
-              LineageGraph.is_abstract_cell target
+              LineageGraph.V.is_abstract_cell target
           | Builtin ->
               (* Builtins are considered as unknown functions for shape preservation purposes. *)
               true
@@ -924,10 +925,8 @@ module Summary = struct
         in
         if may_be_shape_mixing then Set.add set target else set
       in
-      let walk_edge (g, s) edge = (add_flow g edge, add_if_shape_mixing s edge) in
-      List.fold
-        ~init:(LineageGraph.Vertex.Map.empty, LineageGraph.Vertex.Set.empty)
-        ~f:walk_edge graph
+      let walk_edge (g, s) edge = (add_edge g edge, add_if_shape_mixing s edge) in
+      List.fold ~init:(LineageGraph.V.Map.empty, LineageGraph.V.Set.empty) ~f:walk_edge graph
     in
     (* Do a DFS, to see which arguments are reachable from a return field path. *)
     let rec dfs (shape_is_preserved, seen) node =
@@ -945,12 +944,12 @@ module Summary = struct
         List.fold ~init:(shape_is_preserved, seen) ~f:dfs parents
     in
     let collect_reachable return_field_path =
-      dfs (true, LineageGraph.Vertex.Set.empty) (LineageGraph.Return return_field_path)
+      dfs (true, LineageGraph.V.Set.empty) (LineageGraph.V.Return return_field_path)
     in
     (* Collect reachable arguments from a Return field path. *)
     let collect_tito tito ret_field_path =
       let shape_is_preserved, reachable = collect_reachable ret_field_path in
-      Set.fold reachable ~init:tito ~f:(fun acc (node : LineageGraph.data) ->
+      Set.fold reachable ~init:tito ~f:(fun acc (node : LineageGraph.vertex) ->
           match node with
           | Argument (arg_index, arg_field_path) ->
               Tito.add ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved acc
@@ -960,34 +959,34 @@ module Summary = struct
     List.fold return_field_paths ~init:Tito.empty ~f:collect_tito
 
 
-  (** Reduces the size of the graph by possibly some data and some flows. Consider the following
-      pattern: A -1-> B -2-> C. (Here, A, B and C are data; 1 and 2 are flows.) The basic trick is
-      to transform such patterns into A -1-> C when: (i) B is "uninteresting" and (ii) 2 is
-      "uninteresting". Data is uninteresting when it corresponds to a temporary variable introduced
-      by the frontend; Flows are uninteresting when they are of kind [Direct].
+  (** Reduces the size of the graph by possibly some vertices and some edges. Consider the following
+      pattern: A -1-> B -2-> C. (Here, A, B and C are vertices; 1 and 2 are edges.) The basic trick
+      is to transform such patterns into A -1-> C when: (i) B is "uninteresting" and (ii) 2 is
+      "uninteresting". Vertex is uninteresting when it corresponds to a temporary variable
+      introduced by the frontend; Edges are uninteresting when they are of kind [Direct].
 
-      The basic trick is slightly generalized below: B may have 1 flow on one side, but 0..oo on the
+      The basic trick is slightly generalized below: B may have 1 edge on one side, but 0..oo on the
       other side. This allows considerably more reduction in size.
 
-      Note0: Because 0 is allowed in the "general" trick, (a) it is possible that interesting data
-      is removed from the graph (but this happens only for data that is not connected in lineage to
-      other interesting data); and (b) it is possible that the number of data nodes is reduced more
-      than the number of flows (otherwise, each transform step would reduce both the number of data
-      nodes and the number of flows by exactly 1, so the reduction would be equal to the number of
-      transform steps applied).
+      Note0: Because 0 is allowed in the "general" trick, (a) it is possible that interesting vertex
+      is removed from the graph (but this happens only for vertex that is not connected in lineage
+      to other interesting vertex); and (b) it is possible that the number of vertices is reduced
+      more than the number of edges (otherwise, each transform step would reduce both the number of
+      vertices and the number of edges by exactly 1, so the reduction would be equal to the number
+      of transform steps applied).
 
       Note1: The implementation assumes no loops; otherwise, it may not terminate. (This is easy to
       change, but there should be no loops in lineage anyway.)
 
-      Note2: The algorithm guarantees that the number of flows does not increase, and that the
-      number of data nodes does not increase. *)
+      Note2: The algorithm guarantees that the number of edges does not increase, and that the
+      number of vertices does not increase. *)
   let remove_temporaries proc_desc graph =
     (* Build adjacency list representation, to make DFS easy. *)
     let parents, children =
-      let add_flow (parents, children) ({LineageGraph.source; target} as flow) =
-        (Map.add_multi ~key:target ~data:flow parents, Map.add_multi ~key:source ~data:flow children)
+      let add_edge (parents, children) ({LineageGraph.E.source; target} as edge) =
+        (Map.add_multi ~key:target ~data:edge parents, Map.add_multi ~key:source ~data:edge children)
       in
-      List.fold ~init:LineageGraph.Vertex.Map.(empty, empty) ~f:add_flow graph
+      List.fold ~init:LineageGraph.V.Map.(empty, empty) ~f:add_edge graph
     in
     (* A check for vertex interestingness, used in the graph simplification that follows. *)
     let special_variables =
@@ -995,8 +994,8 @@ module Summary = struct
       let ret_var = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
       Var.Set.of_list (ret_var :: formals)
     in
-    let is_interesting_data (data : LineageGraph.data) =
-      match data with
+    let is_interesting_vertex (vertex : LineageGraph.vertex) =
+      match vertex with
       | Local (Cell cell, _node) ->
           Cell.var_appears_in_source_code cell
           && not (Var.Set.mem (Cell.var cell) special_variables)
@@ -1007,21 +1006,21 @@ module Summary = struct
       | Function _ | Self ->
           true
     in
-    let is_interesting_flow ({LineageGraph.kind} : LineageGraph.flow) =
+    let is_interesting_edge ({LineageGraph.E.kind} : LineageGraph.edge) =
       match kind with
       | Direct ->
           false
       | Builtin ->
-          (* Suppressed builtins are considered as direct flows for being simplification
+          (* Suppressed builtins are considered as direct edges for being simplification
              candidates. *)
           false
       | Call _ | Return _ | Capture | Summary | DynamicCallFunction | DynamicCallModule ->
           true
     in
-    let merge_flows {LineageGraph.kind= kind_ab; source= source_ab; target= _; node= node_ab}
-        {LineageGraph.kind= kind_bc; source= _; target= target_bc; node= node_bc} :
-        LineageGraph.flow =
-      (* Merge both flows together, keeping source of the first one, the target of the second one,
+    let merge_edges {LineageGraph.E.kind= kind_ab; source= source_ab; target= _; node= node_ab}
+        {LineageGraph.E.kind= kind_bc; source= _; target= target_bc; node= node_bc} :
+        LineageGraph.edge =
+      (* Merge both edges together, keeping source of the first one, the target of the second one,
          and the kind of node of the most interesting one. The interesting order is Direct < Builtin
          < anything. *)
       let kind, node =
@@ -1037,9 +1036,9 @@ module Summary = struct
         | _ (* not Direct *), Builtin ->
             (kind_ab, node_ab)
         | _ ->
-            L.die InternalError "I can't merge two interesting flows together"
+            L.die InternalError "I can't merge two interesting edges together"
       in
-      {LineageGraph.kind; node; source= source_ab; target= target_bc}
+      {LineageGraph.E.kind; node; source= source_ab; target= target_bc}
     in
     (* The set [todo] contains vertices considered for removal. We initialize this set with all
      * uninteresting vertices. The main loop of the algorithm extracts a vertex from [todo] (in
@@ -1051,17 +1050,17 @@ module Summary = struct
      * is initialized, and at most m while in the main loop. And each iteration of the main loop
      * does one deletion from the set [todo].) *)
     let todo =
-      LineageGraph.Vertex.Set.of_list
-        (List.concat_map ~f:(function {LineageGraph.source; target} -> [source; target]) graph)
+      LineageGraph.V.Set.of_list
+        (List.concat_map ~f:(function {LineageGraph.E.source; target} -> [source; target]) graph)
     in
-    let todo = Set.filter ~f:(Fn.non is_interesting_data) todo in
-    let remove_flow (parents, children) ({LineageGraph.source; target} as flow) =
+    let todo = Set.filter ~f:(Fn.non is_interesting_vertex) todo in
+    let remove_edge (parents, children) ({LineageGraph.E.source; target} as edge) =
       let rm map key =
-        let flow_list = Map.find_multi map key in
-        let flow_list =
-          List.filter ~f:(fun elem -> not (LineageGraph.equal_flow elem flow)) flow_list
+        let edge_list = Map.find_multi map key in
+        let edge_list =
+          List.filter ~f:(fun elem -> not (LineageGraph.E.equal elem edge)) edge_list
         in
-        Map.set map ~key ~data:flow_list
+        Map.set map ~key ~data:edge_list
       in
       (rm parents target, rm children source)
     in
@@ -1069,40 +1068,40 @@ module Summary = struct
       match Set.choose todo with
       | None ->
           (parents, children)
-      | Some data ->
-          if is_interesting_data data then L.die InternalError "Shouldn't happen" ;
-          let todo = Set.remove todo data in
-          let before = Map.find_multi parents data in
-          let after = Map.find_multi children data in
-          let before_interesting = List.exists ~f:is_interesting_flow before in
-          let after_interesting = List.exists ~f:is_interesting_flow after in
+      | Some vertex ->
+          if is_interesting_vertex vertex then L.die InternalError "Shouldn't happen" ;
+          let todo = Set.remove todo vertex in
+          let before = Map.find_multi parents vertex in
+          let after = Map.find_multi children vertex in
+          let before_interesting = List.exists ~f:is_interesting_edge before in
+          let after_interesting = List.exists ~f:is_interesting_edge after in
           let short list = match list with [] | [_] -> true | _ -> false in
           let before_short = short before in
           let after_short = short after in
           if (before_short || after_short) && not (before_interesting && after_interesting) then
             let pairs = List.cartesian_product before after in
             (* (A) remove old edges *)
-            let parents, children = List.fold ~init:(parents, children) ~f:remove_flow before in
-            let parents, children = List.fold ~init:(parents, children) ~f:remove_flow after in
+            let parents, children = List.fold ~init:(parents, children) ~f:remove_edge before in
+            let parents, children = List.fold ~init:(parents, children) ~f:remove_edge after in
             let do_pair (todo, (parents, children))
-                ((flow_ab : LineageGraph.flow), (flow_bc : LineageGraph.flow)) =
-              let keep = merge_flows flow_ab flow_bc in
-              if LineageGraph.equal_data keep.source keep.target then
+                ((edge_ab : LineageGraph.edge), (edge_bc : LineageGraph.edge)) =
+              let keep = merge_edges edge_ab edge_bc in
+              if LineageGraph.V.equal keep.source keep.target then
                 L.die InternalError "OOPS: I don't work with loops." ;
               (* (B) add new edges *)
               let parents = Map.add_multi ~key:keep.target ~data:keep parents in
               let children = Map.add_multi ~key:keep.source ~data:keep children in
-              (* The following two lines insert at most 1 vertex into [todo] for each [flow_ab]/
-               * [flow_bc] edge that gets removed from the graph, in step (A) above. This is where
+              (* The following two lines insert at most 1 vertex into [todo] for each [edge_ab]/
+               * [edge_bc] edge that gets removed from the graph, in step (A) above. This is where
                * the earlier claim that at most m insertions happen in the main loop. However,
-               * this claim is invalidated if one of the [flow_ab]/[flow_bc] edges gets re-added
+               * this claim is invalidated if one of the [edge_ab]/[edge_bc] edges gets re-added
                * to the graph in step (B) above, which may happen if there is an (isolated) loop
                * in the graph. *)
               let todo =
-                if is_interesting_data keep.source then todo else Set.add todo keep.source
+                if is_interesting_vertex keep.source then todo else Set.add todo keep.source
               in
               let todo =
-                if is_interesting_data keep.target then todo else Set.add todo keep.target
+                if is_interesting_vertex keep.target then todo else Set.add todo keep.target
               in
               (todo, (parents, children))
             in
@@ -1166,7 +1165,7 @@ module Domain : sig
   module Src : sig
     (** Constructors for data that can be used a source node of edges in the flow graph.
 
-        Each function corresponds to a variant of the {!LineageGraph.data} type.
+        Each function corresponds to a variant of the {!LineageGraph.vertex} type.
 
         This module does not provide constructors for [Local]-typed sources (eg. variables), as
         [Domain] itself implements functions that directly take these values as sources and fetches
@@ -1186,7 +1185,7 @@ module Domain : sig
   module Dst : sig
     (** Constructors for data that can be used as destination node of edges in the flow graph.
 
-        Each function corresponds to a variant of the {!LineageGraph.data} type.
+        Each function corresponds to a variant of the {!LineageGraph.vertex} type.
 
         As for the {!Src} module, we don't provide [Local] destinations here (that is, [Cell] ones),
         as they should be processed differently. This is done by using the [add_write_...] family of
@@ -1201,7 +1200,7 @@ module Domain : sig
     val return : FieldPath.t -> t
   end
 
-  val get_lineage_partial_graph : t -> LineageGraph.flow list
+  val get_lineage_partial_graph : t -> LineageGraph.edge list
   (** Extract the edges accumulated in an abstract state. *)
 
   val clear_graph : t -> t
@@ -1216,7 +1215,7 @@ module Domain : sig
   (** If the given procedure is an unsupported Erlang feature, record that in the abstract state. *)
 
   val add_flow_from_local_set :
-    node:PPNode.t -> kind:LineageGraph.flow_kind -> src:(Local.t, _) Set.t -> dst:Dst.t -> t -> t
+    node:PPNode.t -> kind:LineageGraph.E.Kind.t -> src:(Local.t, _) Set.t -> dst:Dst.t -> t -> t
 
   (** {2 Add flow to non-variable nodes} *)
 
@@ -1227,7 +1226,7 @@ module Domain : sig
   val add_flow_from_path :
        shapes:Shapes.t
     -> node:PPNode.t
-    -> kind:LineageGraph.flow_kind
+    -> kind:LineageGraph.E.Kind.t
     -> src:VarPath.t
     -> dst:Dst.t
     -> t
@@ -1236,7 +1235,7 @@ module Domain : sig
   val add_flow_from_path_f :
        shapes:Shapes.t
     -> node:PPNode.t
-    -> kind_f:(FieldPath.t -> LineageGraph.flow_kind)
+    -> kind_f:(FieldPath.t -> LineageGraph.E.Kind.t)
     -> src:VarPath.t
     -> dst_f:(FieldPath.t -> Dst.t)
     -> t
@@ -1254,7 +1253,7 @@ module Domain : sig
   val add_write :
        shapes:Shapes.t
     -> node:PPNode.t
-    -> kind:LineageGraph.flow_kind
+    -> kind:LineageGraph.E.Kind.t
     -> src:Src.t
     -> dst:VarPath.t
     -> t
@@ -1263,7 +1262,7 @@ module Domain : sig
   val add_write_f :
        shapes:Shapes.t
     -> node:PPNode.t
-    -> kind_f:(FieldPath.t -> LineageGraph.flow_kind)
+    -> kind_f:(FieldPath.t -> LineageGraph.E.Kind.t)
     -> src_f:(FieldPath.t -> Src.t)
     -> dst:VarPath.t
     -> t
@@ -1275,7 +1274,7 @@ module Domain : sig
   val add_write_from_local :
        shapes:Shapes.t
     -> node:PPNode.t
-    -> kind:LineageGraph.flow_kind
+    -> kind:LineageGraph.E.Kind.t
     -> src:Local.t
     -> dst:VarPath.t
     -> t
@@ -1284,7 +1283,7 @@ module Domain : sig
   val add_write_from_local_set :
        shapes:Shapes.t
     -> node:PPNode.t
-    -> kind:LineageGraph.flow_kind
+    -> kind:LineageGraph.E.Kind.t
     -> src:(Local.t, _) Set.t
     -> dst:VarPath.t
     -> t
@@ -1293,7 +1292,7 @@ module Domain : sig
   val add_write_parallel :
        shapes:Shapes.t
     -> node:PPNode.t
-    -> kind:LineageGraph.flow_kind
+    -> kind:LineageGraph.E.Kind.t
     -> src:VarPath.t
     -> dst:VarPath.t
     -> t
@@ -1304,7 +1303,7 @@ module Domain : sig
   val add_write_product :
        shapes:Shapes.t
     -> node:PPNode.t
-    -> kind:LineageGraph.flow_kind
+    -> kind:LineageGraph.E.Kind.t
     -> src:VarPath.t
     -> dst:VarPath.t
     -> t
@@ -1335,7 +1334,7 @@ end = struct
 
 
   module Src = struct
-    type t = LineageGraph.data
+    type t = LineageGraph.vertex
 
     let function_ procname : t = Function procname
 
@@ -1352,17 +1351,17 @@ end = struct
       let fold_local ~f ~init node ((last_writes, _), _) (local : Local.t) =
         match local with
         | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
-            f init (LineageGraph.Local (local, node))
+            f init (LineageGraph.V.Local (local, node))
         | Cell cell ->
             let source_nodes = Real.LastWrites.get_all cell last_writes in
             List.fold
-              ~f:(fun acc node -> f acc (LineageGraph.Local (local, node)))
+              ~f:(fun acc node -> f acc (LineageGraph.V.Local (local, node)))
               ~init source_nodes
     end
   end
 
   module Dst = struct
-    type t = LineageGraph.data
+    type t = LineageGraph.vertex
 
     let captured_by i proc_name : t = CapturedBy (i, proc_name)
 
@@ -1382,14 +1381,14 @@ end = struct
     ((last_writes, has_unsupported_features), graph)
 
 
-  let add_flow ~node ~kind ~src ~dst ((last_writes, has_unsupported_features), graph) : t =
-    let graph = LineageGraph.add_flow ~node ~kind ~source:src ~target:dst graph in
+  let add_edge ~node ~kind ~src ~dst ((last_writes, has_unsupported_features), graph) : t =
+    let graph = LineageGraph.add_edge ~node ~kind ~source:src ~target:dst graph in
     ((last_writes, has_unsupported_features), graph)
 
 
   let add_flow_from_local ~node ~kind ~src ~dst astate : t =
     Src.Private.fold_local
-      ~f:(fun acc_astate one_source -> add_flow ~node ~kind ~src:one_source ~dst acc_astate)
+      ~f:(fun acc_astate one_source -> add_edge ~node ~kind ~src:one_source ~dst acc_astate)
       ~init:astate node astate src
 
 
@@ -1416,7 +1415,7 @@ end = struct
 
   let add_terminal_write ~node ~kind ~src ~dst astate =
     astate
-    |> add_flow ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
+    |> add_edge ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
     |> update_write ~node ~var_path:dst
 
 
@@ -1691,7 +1690,7 @@ module TransferFunctions = struct
 
   (* Add Summary (or Direct if this is a suppressed builtin call) edges from the concrete arguments
      to the concrete destination variable of a call, as specified by the tito_arguments summary information *)
-  let add_tito (shapes : Shapes.t) node (kind : LineageGraph.FlowKind.t) (tito : Tito.t)
+  let add_tito (shapes : Shapes.t) node (kind : LineageGraph.E.kind) (tito : Tito.t)
       (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     let add_one_tito_flow ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved astate =
       let arg_expr = List.nth_exn argument_list arg_index in
@@ -1715,7 +1714,7 @@ module TransferFunctions = struct
 
   (* Add all the possible Summary/Direct (see add_tito) call edges from arguments to destination for
      when no summary is available. *)
-  let add_tito_all (shapes : Shapes.t) node (kind : LineageGraph.FlowKind.t)
+  let add_tito_all (shapes : Shapes.t) node (kind : LineageGraph.E.kind)
       (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     let arity = List.length argument_list in
     let tito_full = Tito.full ~arity in
@@ -1724,7 +1723,7 @@ module TransferFunctions = struct
 
   (* Add the relevant Summary/Direct call edges from concrete arguments to the destination, depending
      on the presence of a summary. *)
-  let add_summary_flows shapes node (kind : LineageGraph.FlowKind.t) (callee : Summary.t option)
+  let add_summary_flows shapes node (kind : LineageGraph.E.kind) (callee : Summary.t option)
       (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     match callee with
     | None ->
@@ -1736,7 +1735,7 @@ module TransferFunctions = struct
   let generic_call_model shapes node analyze_dependency ret_id procname args astate =
     let rm_builtin = (not Config.lineage_include_builtins) && BuiltinDecl.is_declared procname in
     let if_not_builtin transform state = if rm_builtin then state else transform state in
-    let summary_type : LineageGraph.FlowKind.t = if rm_builtin then Builtin else Summary in
+    let summary_type : LineageGraph.E.kind = if rm_builtin then Builtin else Summary in
     astate |> Domain.record_supported procname
     |> if_not_builtin (add_arg_flows shapes node procname args)
     |> if_not_builtin (add_ret_flows shapes node procname ret_id)
@@ -1777,8 +1776,8 @@ module TransferFunctions = struct
         | _ ->
             L.die InternalError "Expecting first argument of 'make_atom' to be its name"
       in
-      Domain.add_write_from_local ~shapes ~node ~kind:LineageGraph.FlowKind.Direct
-        ~dst:(VarPath.ident ret_id) ~src:(ConstantAtom atom_name) astate
+      Domain.add_write_from_local ~shapes ~node ~kind:Direct ~dst:(VarPath.ident ret_id)
+        ~src:(ConstantAtom atom_name) astate
 
 
     let make_tuple shapes node _analyze_dependency ret_id _procname (args : Exp.t list) astate =
@@ -1874,7 +1873,7 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
     let start_node = CFG.start_node cfg in
     let add_arg_flow i astate arg_var =
       TransferFunctions.Domain.add_write_f ~shapes ~node:start_node
-        ~kind_f:(Fn.const LineageGraph.FlowKind.Direct)
+        ~kind_f:(Fn.const LineageGraph.E.Kind.Direct)
         ~dst:(VarPath.var arg_var) ~src_f:(Domain.Src.argument i) astate
     in
     let add_cap_flow i astate var =
@@ -1900,7 +1899,7 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
   in
   let final_astate =
     Domain.add_flow_from_path_f ~shapes ~node:exit_node
-      ~kind_f:(Fn.const LineageGraph.FlowKind.Direct)
+      ~kind_f:(Fn.const LineageGraph.E.Kind.Direct)
       ~src:ret_var_path ~dst_f:Domain.Dst.return exit_astate
   in
   (* Collect the graph from all nodes *)
