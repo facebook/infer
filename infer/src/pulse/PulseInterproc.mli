@@ -36,6 +36,11 @@ val is_aliasing_contradiction : contradiction -> bool
 val is_dynamic_type_needed_contradiction :
   contradiction -> AbstractValue.t Specialization.HeapPath.Map.t option
 
+val merge_contradictions : contradiction option -> contradiction option -> contradiction option
+(** applying a summary in the caller context may lead to a contradiction; if the summary is a
+    non-trivial list of disjuncts, we will merge all possible contradictions, in each disjunct, into
+    a single one, using this [merge_contradictions] function. *)
+
 val apply_summary :
      PathContext.t
   -> Procname.t

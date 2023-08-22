@@ -1117,3 +1117,27 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
     pp_formals formals ~f:(fun () ->
       L.d_printfln "%a" pp_summary callee_summary ;
       aux () )
+
+
+let merge_contradictions contradiction1 contradiction2 =
+  match (contradiction1, contradiction2) with
+  | None, contradiction
+  | contradiction, None
+  | (Some (Aliasing _) as contradiction), _
+  | _, (Some (Aliasing _) as contradiction) ->
+      contradiction
+  | Some (DynamicTypeNeeded heapmap1), Some (DynamicTypeNeeded heapmap2) ->
+      let heapmap =
+        Specialization.HeapPath.Map.fold
+          (fun path addr map ->
+            (* we may end up in a strange situation where [path] is bound in both
+               [heapmap1] and [heapmap2], but since [path] is a heap path in the
+               precondition space, we do not expect the binding to matter *)
+            Specialization.HeapPath.Map.add path addr map )
+          heapmap2 heapmap1
+      in
+      Some (DynamicTypeNeeded heapmap)
+  | Some (DynamicTypeNeeded heapmap), _ | _, Some (DynamicTypeNeeded heapmap) ->
+      Some (DynamicTypeNeeded heapmap)
+  | contradiction, _ ->
+      contradiction

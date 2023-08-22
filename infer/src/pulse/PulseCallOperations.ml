@@ -411,16 +411,7 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
   (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
   List.fold ~init:([], None) exec_states ~f:(fun (posts, contradiction) callee_exec_state ->
       if should_keep_at_most_one_disjunct && not (List.is_empty posts) then (posts, contradiction)
-      else
-        let merge_contradictions contradiction1 contradiction2 =
-          match (contradiction1, contradiction2) with
-          | None, contradiction
-          | contradiction, None
-          | (Some (PulseInterproc.Aliasing _) as contradiction), _
-          | _, (Some (PulseInterproc.Aliasing _) as contradiction)
-          | contradiction, _ ->
-              contradiction
-        in
+      else (
         (* apply one pre/post spec, check for timeouts in-between each pre/post spec from the callee
            *)
         Timer.check_timeout () ;
@@ -430,9 +421,9 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
         with
         | Unsat, new_contradiction ->
             (* couldn't apply pre/post pair *)
-            (posts, merge_contradictions contradiction new_contradiction)
+            (posts, PulseInterproc.merge_contradictions contradiction new_contradiction)
         | Sat post, new_contradiction ->
-            (post :: posts, merge_contradictions contradiction new_contradiction) )
+            (post :: posts, PulseInterproc.merge_contradictions contradiction new_contradiction) ) )
 
 
 let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals ~formals_opt

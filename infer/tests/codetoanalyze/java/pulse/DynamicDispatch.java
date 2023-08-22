@@ -307,7 +307,7 @@ class Specialization {
     return b ? a.buildC(): null;
   }
 
-  C FN_buildCWithInfeasiblePathsAndDerefBad() {
+  C buildCWithInfeasiblePathsAndDerefBad() {
     return callBuildCWithEmptyPaths(new A_Bad(), true).f;
   }
 
