@@ -1241,8 +1241,11 @@ module Domain : sig
     -> t
     -> t
   (** [add_flow_from_path_f] allows recording flow whose kind and destination can be different for
-      every terminal field of the source variable path. This can be used for instance to record
-      [Injection] edges where the edge holds the field information. *)
+      every cell under the source variable path. This can be used for instance to record injecting
+      [Call] edges where the edge holds the field information.
+
+      [kind_f] and [dst_f] will be passed the full field path of each relevant cell, including
+      fields already present in the [src] path. *)
 
   (** {2 Add flow to non-variable nodes} *)
 
@@ -1267,9 +1270,12 @@ module Domain : sig
     -> dst:VarPath.t
     -> t
     -> t
-  (** [add_flow_from_path_f] allows recording flow whose kind and source can be different for every
-      terminal field of the destination variable path. This can be used for instance to record
-      [Projection] edges where the edge holds the field information. *)
+  (** [add_write_f] allows recording flow whose kind and source can be different for every cell
+      under the destination variable path. This can be used for instance to record projecting
+      [Return] edges where the edge holds the field information.
+
+      [kind_f] and [src_f] will be passed the full field path of each relevant cell, including
+      fields already present in the [dst] path. *)
 
   val add_write_from_local :
        shapes:Shapes.t
@@ -1297,8 +1303,8 @@ module Domain : sig
     -> dst:VarPath.t
     -> t
     -> t
-  (** Add flow from every terminal field of the source variable path to the corresponding terminal
-      field of the destination variable path. See {!Cell.fold_terminal_pairs}. *)
+  (** Add flow from every cell under the source variable path to the cell with the same field path
+      under the destination variable path. See {!Shapes.fold_cell_pairs}. *)
 
   val add_write_product :
        shapes:Shapes.t
@@ -1308,8 +1314,8 @@ module Domain : sig
     -> dst:VarPath.t
     -> t
     -> t
-  (** Add flow from every terminal field of the source variable path to every terminal field of the
-      destination variable path. *)
+  (** Add flow from every cell under the source variable path to every cell under the destination
+      variable path. *)
 end = struct
   module Real = struct
     module LastWrites = AbstractDomain.FiniteMultiMap (Cell) (PPNode)
@@ -1413,63 +1419,62 @@ end = struct
       ~init:astate shapes src
 
 
-  let add_terminal_write ~node ~kind ~src ~dst astate =
+  let add_cell_write ~node ~kind ~src ~dst astate =
     astate
     |> add_edge ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
     |> update_write ~node ~var_path:dst
 
 
-  let add_terminal_write_from_local ~node ~kind ~src ~dst astate =
+  let add_cell_write_from_local ~node ~kind ~src ~dst astate =
     astate
     |> add_flow_from_local ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
     |> update_write ~node ~var_path:dst
 
 
-  let add_terminal_write_from_local_set ~node ~kind ~src ~dst astate =
+  let add_cell_write_from_local_set ~node ~kind ~src ~dst astate =
     astate
     |> add_flow_from_local_set ~node ~kind ~src ~dst:(Dst.Private.cell node dst)
     |> update_write ~node ~var_path:dst
 
 
-  (* Update all the terminal fields of a path, as obtained from the shapes information. *)
+  (* Update all the cells under a path, as obtained from the shapes information. *)
   let add_write ~shapes ~node ~kind ~src ~dst astate =
     Shapes.fold_cells
-      ~f:(fun acc_astate dst_terminal ->
-        add_terminal_write ~node ~kind ~src ~dst:dst_terminal acc_astate )
+      ~f:(fun acc_astate dst_cell -> add_cell_write ~node ~kind ~src ~dst:dst_cell acc_astate)
       ~init:astate shapes dst
 
 
   let add_write_f ~shapes ~node ~kind_f ~src_f ~dst astate =
     Shapes.fold_cells
-      ~f:(fun acc_astate dst_terminal ->
-        let dst_field_path = Cell.field_path dst_terminal in
-        add_terminal_write ~node ~kind:(kind_f dst_field_path) ~src:(src_f dst_field_path)
-          ~dst:dst_terminal acc_astate )
+      ~f:(fun acc_astate dst_cell ->
+        let dst_field_path = Cell.field_path dst_cell in
+        add_cell_write ~node ~kind:(kind_f dst_field_path) ~src:(src_f dst_field_path) ~dst:dst_cell
+          acc_astate )
       ~init:astate shapes dst
 
 
-  (* Update all the terminal fields of a path, as obtained from the shapes information. *)
+  (* Update all the cells under a path, as obtained from the shapes information. *)
   let add_write_from_local ~shapes ~node ~kind ~src ~dst astate =
     Shapes.fold_cells
-      ~f:(fun acc_astate dst_terminal ->
-        add_terminal_write_from_local ~node ~kind ~src ~dst:dst_terminal acc_astate )
+      ~f:(fun acc_astate dst_cell ->
+        add_cell_write_from_local ~node ~kind ~src ~dst:dst_cell acc_astate )
       ~init:astate shapes dst
 
 
-  (* Update all the terminal fields of a path, as obtained from the shapes information. *)
+  (* Update all the cells under a path, as obtained from the shapes information. *)
   let add_write_from_local_set ~shapes ~node ~kind ~src ~dst astate =
     Shapes.fold_cells
-      ~f:(fun acc_astate dst_terminal ->
-        add_terminal_write_from_local_set ~node ~kind ~src ~dst:dst_terminal acc_astate )
+      ~f:(fun acc_astate dst_cell ->
+        add_cell_write_from_local_set ~node ~kind ~src ~dst:dst_cell acc_astate )
       ~init:astate shapes dst
 
 
-  (* Update all the terminal fields of a destination path, as obtained from the shapes information,
-     as being written in parallel from the corresponding terminal fields of a source path. *)
+  (* Update all the cells under a destination path, as obtained from the shapes information, as being
+     written in parallel from the corresponding cells under a source path. *)
   let add_write_parallel ~shapes ~node ~kind ~src ~dst astate =
     Shapes.fold_cell_pairs
       ~f:(fun acc_astate src_cell dst_cell ->
-        add_terminal_write_from_local ~node ~kind ~src:(Cell src_cell) ~dst:dst_cell acc_astate )
+        add_cell_write_from_local ~node ~kind ~src:(Cell src_cell) ~dst:dst_cell acc_astate )
       ~init:astate shapes src dst
 
 
@@ -1532,7 +1537,7 @@ module TransferFunctions = struct
     Shapes.fold_cells shapes var_path ~f:Local.Set.add_cell ~init:Local.Set.empty
 
 
-  (** Return constants and free terminal indices that occur in [e]. *)
+  (** Return constants and free cells that occur in [e]. *)
   let rec free_locals_of_exp shapes (e : Exp.t) : Local.Set.t =
     match e with
     | Lvar pvar ->
@@ -1677,9 +1682,8 @@ module TransferFunctions = struct
            the corresponding fields of [dst]. *)
         Domain.add_write_parallel ~shapes ~node ~kind:Direct ~src:src_path ~dst:dst_path astate
     | None ->
-        (* Complex assignment of any other form: we copy every terminal field from the source to
-           (every terminal field of) the destination, and also process the potential captured indices
-           and lambdas. *)
+        (* Complex assignment of any other form: we copy every cell under the source to (every cell
+           under) the destination, and also process the potential captured indices and lambdas. *)
         let {free_locals; captured_locals; lambdas} = read_set_of_exp shapes src_exp in
         astate
         |> Domain.add_write_from_local_set ~shapes ~node ~kind:Direct ~dst:dst_path ~src:free_locals

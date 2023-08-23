@@ -559,7 +559,7 @@ end = struct
              ignored
            Also limit the depth by stopping the traversal once the remaining depth reaches zero.
 
-           Returns the terminal field path and a boolean indicating if the corresponding cell is
+           Returns the final field path and a boolean indicating if the corresponding cell is
            abstract; that is, it semantically has some fields but we forget about them because we hit
            one of the aforementioned limits.
         *)
@@ -577,13 +577,13 @@ end = struct
               || (LineageConfig.prevent_cycles && Set.mem traversed_shape_set shape)
             then ([], true)
             else
-              let terminal_sub_path, is_abstract =
+              let final_sub_path, is_abstract =
                 aux (remaining_depth - 1)
                   (Set.add traversed_shape_set shape)
                   (Hashtbl.find_exn field_table field)
                   fields
               in
-              (field :: terminal_sub_path, is_abstract)
+              (field :: final_sub_path, is_abstract)
       in
       let var_shape = find_var_shape var_shapes var in
       let field_path, is_abstract =
@@ -614,10 +614,10 @@ end = struct
 
         The typical use-case is to then have [f] call {!finalise}, with [X#foo] in the parameters,
         which will repeat a similar traversal to only yield [X#foo#bar] as a final field path. This
-        allows implementing {!fold_cell_pairs} by first getting the candidate terminal fields from a
+        allows implementing {!fold_cell_pairs} by first getting the candidate final fields from a
         common shape of two different origin paths, then finalising separately wrt. these two paths
         (which could have different depths to begin with). *)
-    let fold_terminal_fields_of_shape shape_structures shape ~search_depth ~init ~f =
+    let fold_final_fields_of_shape shape_structures shape ~search_depth ~init ~f =
       let rec aux shape depth traversed field_path_acc ~init =
         if Int.(depth >= search_depth) || (LineageConfig.prevent_cycles && Set.mem traversed shape)
         then f init (List.rev field_path_acc)
@@ -643,7 +643,7 @@ end = struct
     let fold_cells {var_shapes; shape_structures} (var, field_path) ~init ~f =
       let var_path_shape = find_var_path_shape {var_shapes; shape_structures} var field_path in
       let search_depth = LineageConfig.field_depth - List.length field_path in
-      fold_terminal_fields_of_shape shape_structures var_path_shape ~search_depth ~init
+      fold_final_fields_of_shape shape_structures var_path_shape ~search_depth ~init
         ~f:(fun acc sub_path ->
           f acc (finalise {var_shapes; shape_structures} var (field_path @ sub_path)) )
 
@@ -669,7 +669,7 @@ end = struct
           (* Use the shallowest argument to determine the search depth. *)
           LineageConfig.field_depth - Int.min (List.length field_path_1) (List.length field_path_2)
         in
-        fold_terminal_fields_of_shape shape_structures var_path_shape_1 ~search_depth ~init
+        fold_final_fields_of_shape shape_structures var_path_shape_1 ~search_depth ~init
           ~f:(fun acc sub_path ->
             f acc
               (finalise {var_shapes; shape_structures} var_1 (field_path_1 @ sub_path))
