@@ -25,6 +25,7 @@ type t =
   | LithoRequiredProps
   | Liveness
   | LoopHoisting
+  | NullsafeDeprecated
   | ParameterNotNullChecked
   | PrintfArgs
   | Pulse
@@ -282,6 +283,15 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [BufferOverrunAnalysis; PurityAnalysis] }
+  | NullsafeDeprecated ->
+      { id= "nullsafe"
+      ; kind= Internal
+      ; support= mk_support_func ()
+      ; short_documentation=
+          "[RESERVED] Reserved for nullsafe typechecker, use `--eradicate` for now."
+      ; cli_flags= Some {deprecated= ["-check-nullable"; "-suggest-nullable"]; show_in_help= false}
+      ; enabled_by_default= false
+      ; activates= [] }
   | ParameterNotNullChecked ->
       { id= "parameter-not-null-checked"
       ; kind=

@@ -2582,6 +2582,11 @@ INTERNAL OPTIONS
        --nullable-annotation-name-reset
            Cancel the effect of --nullable-annotation-name.
 
+       --nullsafe
+           Activates: checker nullsafe: [RESERVED] Reserved for nullsafe
+           typechecker, use `--eradicate` for now. (Conversely:
+           --no-nullsafe)
+
        --nullsafe-annotation-graph
            Activates: Nullsafe: an experimental mode for calculating the
            dependency graph between potential annotations to add in the
