@@ -37,7 +37,6 @@ type transition = {source: vindex; target: vindex; label: ToplAst.label option}
 
 (** - INV1: Array.length transitions = Array.length skips
     - INV2: each index of [transitions] occurs exactly once in one of [outgoing]'s lists
-    - INV3: max_args is the maximum length of the arguments list in a label on a transition
 
     The fields marked as redundant are computed from the others (when the automaton is built), and
     are cached for speed. *)
@@ -49,8 +48,7 @@ type t =
   ; transitions: transition array
   ; skips: bool array (* redundant *)
   ; outgoing: tindex list array
-  ; vindex: vname -> vindex (* redundant *)
-  ; max_args: int (* redundant *) }
+  ; vindex: vname -> vindex (* redundant *) }
 
 (** [index_in H a] returns a pair of functions [(opt, err)] that lookup the (last) index of an
     element in [a]. The difference is that [opt x] returns an option, while [err msg x] makes Infer
@@ -127,19 +125,12 @@ let make properties =
     Array.iteri ~f transitions ;
     a
   in
-  let max_args =
-    let llen l = Option.value_map ~default:0 ~f:List.length l.ToplAst.arguments in
-    let tlen t = Option.value_map ~default:0 ~f:llen t.label in
-    transitions |> Array.map ~f:tlen
-    |> Array.max_elt ~compare:Int.compare
-    |> Option.value ~default:0 |> succ
-  in
   let skips : bool array =
     (* TODO(rgrigore): Rename "anys"? *)
     let is_skip {label} = Option.is_none label in
     Array.map ~f:is_skip transitions
   in
-  {names; pindex; messages; states; transitions; skips; outgoing; vindex; max_args}
+  {names; pindex; messages; states; transitions; skips; outgoing; vindex}
 
 
 let vname a i = a.states.(i)
