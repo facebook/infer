@@ -85,7 +85,7 @@ module type S = sig
        and type t = PulseBaseMemory.t
        and type Edges.t = PulseBaseMemory.Edges.t
 
-  val canon_access : astate -> PulseBaseMemory.Access.t -> Memory.Access.t
+  val canon_access : astate -> PulseAccess.t -> Memory.Access.t
 
   module Attributes :
     PulseBaseAddressAttributes.S with type key := t and type t = PulseBaseAddressAttributes.t

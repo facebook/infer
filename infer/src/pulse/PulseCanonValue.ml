@@ -57,7 +57,7 @@ module type S = sig
        and type t = PulseBaseMemory.t
        and type Edges.t = PulseBaseMemory.Edges.t
 
-  val canon_access : astate -> PulseBaseMemory.Access.t -> Memory.Access.t
+  val canon_access : astate -> PulseAccess.t -> Memory.Access.t
 
   module Attributes :
     PulseBaseAddressAttributes.S with type key := t and type t = PulseBaseAddressAttributes.t
@@ -131,7 +131,7 @@ end) : S with type astate = AbductiveDomain.astate = struct
         if AbstractValue.equal v v' then tuple_opt else Some (v', snd, trd, frt)
 
 
-  let canon_access astate (access : PulseBaseMemory.Access.t) : Memory.Access.t =
+  let canon_access astate (access : PulseAccess.t) : Memory.Access.t =
     match access with
     | ArrayAccess (typ, index) ->
         ArrayAccess (typ, canon astate index)

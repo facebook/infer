@@ -8,7 +8,7 @@
 open! IStd
 module AbstractValue = PulseAbstractValue
 module ValueHistory = PulseValueHistory
-module Access = PulseBaseMemory.Access
+module Access = PulseAccess
 
 (** Describes a (value, history) pair with path/origin when available.
 

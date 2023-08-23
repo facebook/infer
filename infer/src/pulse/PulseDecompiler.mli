@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 module AbstractValue = PulseAbstractValue
-module BaseMemory = PulseBaseMemory
+module Access = PulseAccess
 module BaseAddressAttributes = PulseBaseAddressAttributes
 module CallEvent = PulseCallEvent
 module DecompilerExpr = PulseDecompilerExpr
@@ -31,6 +31,6 @@ val add_var_source : key -> Var.t -> t -> t
 val add_call_source :
   key -> CallEvent.t -> ((AbstractValue.t * ValueHistory.t) * Typ.t) list -> t -> t
 
-val add_access_source : key -> BaseMemory.Access.t -> src:key -> BaseAddressAttributes.t -> t -> t
+val add_access_source : key -> Access.t -> src:key -> BaseAddressAttributes.t -> t -> t
 
 val find : AbstractValue.t -> t -> DecompilerExpr.t

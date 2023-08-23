@@ -104,32 +104,25 @@ module Memory : sig
   val add_edge :
        PathContext.t
     -> AbstractValue.t * ValueHistory.t
-    -> PulseBaseMemory.Access.t
+    -> PulseAccess.t
     -> AbstractValue.t * ValueHistory.t
     -> Location.t
     -> t
     -> t
 
   val eval_edge :
-       AbstractValue.t * ValueHistory.t
-    -> PulseBaseMemory.Access.t
-    -> t
-    -> t * (AbstractValue.t * ValueHistory.t)
+    AbstractValue.t * ValueHistory.t -> PulseAccess.t -> t -> t * (AbstractValue.t * ValueHistory.t)
   (** [eval_edge (addr,hist) access astate] follows the edge [addr --access--> .] in memory and
       returns what it points to or creates a fresh value if that edge didn't exist. *)
 
   val fold_edges :
-       AbstractValue.t
-    -> (t, PulseBaseMemory.Access.t * (AbstractValue.t * ValueHistory.t), _) Container.fold
+    AbstractValue.t -> (t, PulseAccess.t * (AbstractValue.t * ValueHistory.t), _) Container.fold
 
   val find_edge_opt :
-    AbstractValue.t -> PulseBaseMemory.Access.t -> t -> (AbstractValue.t * ValueHistory.t) option
+    AbstractValue.t -> PulseAccess.t -> t -> (AbstractValue.t * ValueHistory.t) option
 
   val exists_edge :
-       AbstractValue.t
-    -> t
-    -> f:(PulseBaseMemory.Access.t * (AbstractValue.t * ValueHistory.t) -> bool)
-    -> bool
+    AbstractValue.t -> t -> f:(PulseAccess.t * (AbstractValue.t * ValueHistory.t) -> bool) -> bool
 end
 
 (** Safe version of {!PulseBaseAddressAttributes} *)
@@ -266,8 +259,7 @@ end
 val should_havoc_if_unknown : unit -> [> `ShouldHavoc | `ShouldOnlyHavocResources]
 
 val apply_unknown_effect :
-     ?havoc_filter:
-       (AbstractValue.t -> PulseBaseMemory.Access.t -> AbstractValue.t * ValueHistory.t -> bool)
+     ?havoc_filter:(AbstractValue.t -> PulseAccess.t -> AbstractValue.t * ValueHistory.t -> bool)
   -> ValueHistory.t
   -> AbstractValue.t
   -> t

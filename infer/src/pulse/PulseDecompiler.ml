@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 module L = Logging
 module AbstractValue = PulseAbstractValue
-module BaseMemory = PulseBaseMemory
+module Access = PulseAccess
 module BaseAddressAttributes = PulseBaseAddressAttributes
 module CallEvent = PulseCallEvent
 module DecompilerExpr = PulseDecompilerExpr
@@ -91,8 +91,7 @@ let access_of_field_access src attrs field =
   IOption.if_none_eval capture_field_access ~f:(fun () -> DecompilerExpr.FieldAccess field)
 
 
-let access_of_memory_access src attrs decompiler (access : BaseMemory.Access.t) :
-    DecompilerExpr.access =
+let access_of_memory_access src attrs decompiler (access : Access.t) : DecompilerExpr.access =
   match access with
   | ArrayAccess (_, index) ->
       let index_expr =
@@ -107,7 +106,7 @@ let access_of_memory_access src attrs decompiler (access : BaseMemory.Access.t) 
       Dereference
 
 
-let add_access_source v (access : BaseMemory.Access.t) ~src attrs decompiler =
+let add_access_source v (access : Access.t) ~src attrs decompiler =
   let+ decompiler in
   match Map.find src decompiler with
   | Unknown _ ->

@@ -8,7 +8,7 @@
 open! IStd
 module AbstractValue = PulseAbstractValue
 module ValueHistory = PulseValueHistory
-module Access = PulseBaseMemory.Access
+module Access = PulseAccess
 
 type t =
   | InMemory of

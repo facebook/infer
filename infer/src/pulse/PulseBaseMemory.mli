@@ -15,15 +15,7 @@ module type S = sig
 
   type out_of_map_t
 
-  module Access : sig
-    include PrettyPrintable.PrintableEquatableOrderedType with type t = key MemoryAccess.t
-
-    val is_strong_access : Tenv.t -> t -> bool
-
-    val canonicalize : get_var_repr:(AbstractValue.t -> AbstractValue.t) -> t -> t
-  end
-
-  module AccessSet : Caml.Set.S with type elt = Access.t
+  module Access : Access.S with type key := key
 
   module Edges : sig
     include RecencyMap.S with type key = Access.t and type value = out_of_map_t

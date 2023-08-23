@@ -1783,7 +1783,7 @@ module Summary = struct
     let addresses = summary.need_dynamic_type_specialization in
     let rec mk_heap_path var rev_accesses =
       let open IOption.Let_syntax in
-      match (rev_accesses : PulseBaseMemory.Access.t list) with
+      match (rev_accesses : PulseAccess.t list) with
       | [] ->
           let+ pvar = Var.get_pvar var in
           Specialization.HeapPath.Pvar pvar
@@ -1924,7 +1924,7 @@ module Memory = struct
         f acc
           ( access_addr_hist
             : Access.t * (CanonValue.t * ValueHistory.t)
-            :> PulseBaseMemory.Access.t * (AbstractValue.t * ValueHistory.t) ) )
+            :> PulseAccess.t * (AbstractValue.t * ValueHistory.t) ) )
 
 
   let find_edge_opt address access astate =
@@ -1940,7 +1940,7 @@ module Memory = struct
         f
           ( access_addr_hist
             : Access.t * (CanonValue.t * ValueHistory.t)
-            :> PulseBaseMemory.Access.t * (AbstractValue.t * ValueHistory.t) ) )
+            :> PulseAccess.t * (AbstractValue.t * ValueHistory.t) ) )
 end
 
 module AddressAttributes = struct

@@ -140,7 +140,7 @@ module GraphComparison = struct
     | [], [] ->
         IsomorphicUpTo mapping
     | (a_lhs, (addr_lhs, _trace_lhs)) :: edges_lhs, (a_rhs, (addr_rhs, _trace_rhs)) :: edges_rhs
-      when Memory.Access.equal a_lhs a_rhs -> (
+      when Access.equal a_lhs a_rhs -> (
       (* check isograph relation from the destination addresses *)
       match isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping with
       | IsomorphicUpTo mapping ->
@@ -188,14 +188,14 @@ let pp fmt {heap; stack; attrs} =
 module GraphVisit : sig
   val fold :
        var_filter:(Var.t -> bool)
-    -> ?edge_filter:(Memory.Access.t -> bool)
+    -> ?edge_filter:(Access.t -> bool)
     -> t
     -> init:'accum
     -> f:
          (   Var.t
           -> 'accum
           -> AbstractValue.t
-          -> Memory.Access.t list
+          -> Access.t list
           -> ('accum, 'final) Base.Continue_or_stop.t )
     -> finish:('accum -> 'final)
     -> AbstractValue.Set.t * 'final
@@ -206,16 +206,12 @@ module GraphVisit : sig
       reached and the access path from that variable to the address. *)
 
   val fold_from_addresses :
-       ?edge_filter:(Memory.Access.t -> bool)
+       ?edge_filter:(Access.t -> bool)
     -> AbstractValue.t Seq.t
     -> t
     -> init:'accum
     -> already_visited:AbstractValue.Set.t
-    -> f:
-         (   'accum
-          -> AbstractValue.t
-          -> Memory.Access.t list
-          -> ('accum, 'final) Base.Continue_or_stop.t )
+    -> f:('accum -> AbstractValue.t -> Access.t list -> ('accum, 'final) Base.Continue_or_stop.t)
     -> finish:('accum -> 'final)
     -> AbstractValue.Set.t * 'final
   (** Similar to [fold], but start from given addresses, instead of stack variables. Use
@@ -266,7 +262,7 @@ end = struct
         else Continue visited_accum )
 
 
-  and visit_access ~edge_filter ~f (access : Memory.Access.t) astate visited_accum =
+  and visit_access ~edge_filter ~f (access : Access.t) astate visited_accum =
     match access with
     | ArrayAccess (_, addr) ->
         visit_address ~edge_filter addr ~f [] astate visited_accum
