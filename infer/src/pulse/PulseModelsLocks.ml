@@ -7,7 +7,6 @@
 
 open! IStd
 open PulseBasicInterface
-open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 

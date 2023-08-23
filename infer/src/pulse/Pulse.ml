@@ -534,7 +534,7 @@ module PulseTransferFunctions = struct
     let open IOption.Let_syntax in
     ( match func_args with
     | ({ProcnameDispatcher.Call.FuncArg.arg_payload= value} as arg) :: args ->
-        let function_addr_hist = PulseValueOrigin.addr_hist value in
+        let function_addr_hist = ValueOrigin.addr_hist value in
         let* dynamic_type_name, _ = function_addr_hist |> fst |> get_dynamic_type_name astate in
         if Typ.Name.Hack.is_generated_curry dynamic_type_name then
           let this_field = Fieldname.make dynamic_type_name "this" in
@@ -543,7 +543,7 @@ module PulseTransferFunctions = struct
               (FieldAccess this_field) astate
             |> PulseResult.ok
           in
-          (astate, {arg with arg_payload= PulseValueOrigin.unknown class_object} :: args)
+          (astate, {arg with arg_payload= ValueOrigin.unknown class_object} :: args)
         else None
     | [] ->
         None )
