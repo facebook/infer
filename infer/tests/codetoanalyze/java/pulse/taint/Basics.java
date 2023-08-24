@@ -232,4 +232,13 @@ public class Basics {
     InferTaint.inferSensitiveSink(
         InferTaint.inferUniversalSanitizer(InferTaint.inferSecretSource()));
   }
+
+  Object inferUniversalSanitizer() {
+    return InferTaint.inferSecretSource();
+  }
+
+  // sanitizer should take precedence
+  void FP_returnedFromSanitizedTaintedToSinkOk() {
+    InferTaint.inferSensitiveSink(inferUniversalSanitizer());
+  }
 }
