@@ -54,10 +54,9 @@ jobs:
       matrix:
         os:
           - macOS-latest
-          - ubuntu-latest
         ocaml-compiler:
           - ocaml-variants.4.14.0+options,ocaml-option-flambda
-    runs-on: ${{ matrix.os }}
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
