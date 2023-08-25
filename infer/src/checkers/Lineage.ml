@@ -148,7 +148,7 @@ module LineageGraph = struct
           | Capture  (** [X=1, F=fun()->X end] has Capture edge from X to F *)
           | Builtin
               (** Edge coming from a suppressed builtin call, ultimately exported as a Copy *)
-          | Summary  (** Summarizes the effect of a procedure call *)
+          | Summary of {shape_is_preserved: bool}  (** Summarizes the effect of a procedure call *)
           | DynamicCallFunction
           | DynamicCallModule
         [@@deriving compare, equal, sexp, variants]
@@ -171,8 +171,9 @@ module LineageGraph = struct
             Format.fprintf fmt "Return%a" FieldPath.pp field_path
         | Builtin ->
             Format.fprintf fmt "Builtin"
-        | Summary ->
-            Format.fprintf fmt "Summary"
+        | Summary {shape_is_preserved} ->
+            Format.fprintf fmt "Summary" ;
+            if not shape_is_preserved then Format.fprintf fmt "#"
         | DynamicCallFunction ->
             Format.fprintf fmt "DynamicCallFunction"
         | DynamicCallModule ->
@@ -187,6 +188,28 @@ module LineageGraph = struct
     let pp fmt {source; target; kind; node} =
       Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a@@%a)]@]@;" V.pp source V.pp target Kind.pp kind
         PPNode.pp node
+
+
+    let preserves_shape {source; target; kind; _} =
+      match kind with
+      | Direct ->
+          Fn.non V.is_abstract_cell source && Fn.non V.is_abstract_cell target
+      | Builtin ->
+          (* Builtins are considered as unknown functions for shape preservation purposes.
+             TODO T154077173: does this introduce undesirable imprecision? *)
+          false
+      | Call _ ->
+          (* Target is ArgumentOf *)
+          Fn.non V.is_abstract_cell source
+      | Return _ ->
+          (* Source is ReturnOf *)
+          Fn.non V.is_abstract_cell target
+      | Summary {shape_is_preserved} ->
+          shape_is_preserved
+      | Capture ->
+          true (* TODO T154077173: investigate if more precision is worthwile *)
+      | DynamicCallFunction | DynamicCallModule ->
+          true (* TODO T154077173: model as a call? *)
   end
 
   type vertex = V.t
@@ -217,7 +240,7 @@ module LineageGraph = struct
         graph (* skip Direct loops *)
     | Builtin, true, _, _ ->
         graph (* skip Builtin loops *)
-    | Summary, true, _, _ ->
+    | Summary _, true, _, _ ->
         graph (* skip Summary loops*)
     | _, true, _, _ ->
         L.die InternalError "There shall be no fancy (%a) loops!" E.Kind.pp kind
@@ -610,7 +633,7 @@ module LineageGraph = struct
             Json.Copy
         | Builtin ->
             Json.Copy
-        | Summary ->
+        | Summary _ ->
             Json.Derive
         | DynamicCallFunction ->
             Json.DynamicCallFunction
@@ -621,7 +644,7 @@ module LineageGraph = struct
       in
       let edge_metadata =
         match kind with
-        | Builtin | Capture | Summary | DynamicCallFunction | DynamicCallModule ->
+        | Builtin | Capture | Summary _ | DynamicCallFunction | DynamicCallModule ->
             None
         | Call field_path ->
             Json.metadata_nonempty_inject field_path
@@ -906,24 +929,8 @@ module Summary = struct
         | _ ->
             Map.add_multi ~key:target ~data:source g
       in
-      let add_if_shape_mixing set {LineageGraph.E.source= _; target; kind} =
-        let may_be_shape_mixing =
-          match kind with
-          | Direct ->
-              LineageGraph.V.is_abstract_cell target
-          | Builtin ->
-              (* Builtins are considered as unknown functions for shape preservation purposes. *)
-              true
-          | Call _ | Return _ ->
-              false (* Skip Call/Return edges anyway *)
-          | Summary ->
-              true (* TODO T154077173: which function is called? *)
-          | Capture ->
-              true (* TODO T154077173: investigate if more precision is worthwile *)
-          | DynamicCallFunction | DynamicCallModule ->
-              true (* TODO T154077173: model as a call? *)
-        in
-        if may_be_shape_mixing then Set.add set target else set
+      let add_if_shape_mixing set ({LineageGraph.E.target; _} as edge) =
+        if LineageGraph.E.preserves_shape edge then set else Set.add set target
       in
       let walk_edge (g, s) edge = (add_edge g edge, add_if_shape_mixing s edge) in
       List.fold ~init:(LineageGraph.V.Map.empty, LineageGraph.V.Set.empty) ~f:walk_edge graph
@@ -939,7 +946,14 @@ module Summary = struct
              through shape-preserving one-source nodes. *)
           shape_is_preserved
           && (not (Set.mem shape_mixing_nodes node))
-          && match parents with [] | [_] -> true | _ -> false
+          &&
+          match parents with
+          | [] | [_] ->
+              true
+          | _ ->
+              (* TODO T154077173: `ite(true, X, Y) -> X`: X and Y are shape-preserved, but support of
+                 ite(_, {a, b}, 42) may be not trivial due to not-same-shaped parallel writes. *)
+              false
         in
         List.fold ~init:(shape_is_preserved, seen) ~f:dfs parents
     in
@@ -1014,7 +1028,7 @@ module Summary = struct
           (* Suppressed builtins are considered as direct edges for being simplification
              candidates. *)
           false
-      | Call _ | Return _ | Capture | Summary | DynamicCallFunction | DynamicCallModule ->
+      | Call _ | Return _ | Capture | Summary _ | DynamicCallFunction | DynamicCallModule ->
           true
     in
     let merge_edges {LineageGraph.E.kind= kind_ab; source= source_ab; target= _; node= node_ab}
@@ -1694,14 +1708,15 @@ module TransferFunctions = struct
 
   (* Add Summary (or Direct if this is a suppressed builtin call) edges from the concrete arguments
      to the concrete destination variable of a call, as specified by the tito_arguments summary information *)
-  let add_tito (shapes : Shapes.t) node (kind : LineageGraph.E.kind) (tito : Tito.t)
-      (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
+  let add_tito (shapes : Shapes.t) node kind_f (tito : Tito.t) (argument_list : Exp.t list)
+      (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     let add_one_tito_flow ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved astate =
       let arg_expr = List.nth_exn argument_list arg_index in
       let ret_path = VarPath.make (Var.of_id ret_id) ret_field_path in
       match exp_as_single_var_path arg_expr with
       | None ->
           warn_on_complex_arg arg_expr ;
+          let kind = kind_f ~shape_is_preserved:false in
           Domain.add_write_from_local_set ~shapes ~node ~kind ~dst:ret_path
             ~src:(free_locals_of_exp shapes arg_expr)
             astate
@@ -1709,6 +1724,7 @@ module TransferFunctions = struct
           let add_write =
             if shape_is_preserved then Domain.add_write_parallel else Domain.add_write_product
           in
+          let kind = kind_f ~shape_is_preserved in
           add_write ~shapes ~node ~kind ~dst:ret_path
             ~src:(VarPath.sub_path arg_path arg_field_path)
             astate
@@ -1718,32 +1734,34 @@ module TransferFunctions = struct
 
   (* Add all the possible Summary/Direct (see add_tito) call edges from arguments to destination for
      when no summary is available. *)
-  let add_tito_all (shapes : Shapes.t) node (kind : LineageGraph.E.kind)
-      (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
+  let add_tito_all (shapes : Shapes.t) node kind_f (argument_list : Exp.t list) (ret_id : Ident.t)
+      (astate : Domain.t) : Domain.t =
     let arity = List.length argument_list in
     let tito_full = Tito.full ~arity in
-    add_tito shapes node kind tito_full argument_list ret_id astate
+    add_tito shapes node kind_f tito_full argument_list ret_id astate
 
 
   (* Add the relevant Summary/Direct call edges from concrete arguments to the destination, depending
      on the presence of a summary. *)
-  let add_summary_flows shapes node (kind : LineageGraph.E.kind) (callee : Summary.t option)
-      (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
+  let add_summary_flows shapes node kind_f (callee : Summary.t option) (argument_list : Exp.t list)
+      (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     match callee with
     | None ->
-        add_tito_all shapes node kind argument_list ret_id astate
+        add_tito_all shapes node kind_f argument_list ret_id astate
     | Some {Summary.tito_arguments} ->
-        add_tito shapes node kind tito_arguments argument_list ret_id astate
+        add_tito shapes node kind_f tito_arguments argument_list ret_id astate
 
 
   let generic_call_model shapes node analyze_dependency ret_id procname args astate =
     let rm_builtin = (not Config.lineage_include_builtins) && BuiltinDecl.is_declared procname in
     let if_not_builtin transform state = if rm_builtin then state else transform state in
-    let summary_type : LineageGraph.E.kind = if rm_builtin then Builtin else Summary in
+    let kind_f ~shape_is_preserved : LineageGraph.E.kind =
+      if rm_builtin then Builtin else Summary {shape_is_preserved}
+    in
     astate |> Domain.record_supported procname
     |> if_not_builtin (add_arg_flows shapes node procname args)
     |> if_not_builtin (add_ret_flows shapes node procname ret_id)
-    |> add_summary_flows shapes node summary_type (analyze_dependency procname) args ret_id
+    |> add_summary_flows shapes node kind_f (analyze_dependency procname) args ret_id
 
 
   module CustomModel = struct
