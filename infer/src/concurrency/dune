@@ -34,4 +34,4 @@
   IR
   Absint)
  (preprocess
-  (pps ppx_compare ppx_show)))
+  (pps ppx_compare ppx_show inferppx)))

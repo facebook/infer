@@ -768,6 +768,7 @@ type t =
   ; var_state: VarDomain.t
   ; null_locs: NullLocs.t
   ; lazily_initalized: LazilyInitialized.t }
+[@@deriving absdom]
 
 let initial =
   { ignore_blocking_calls= false
@@ -797,20 +798,6 @@ let pp fmt astate =
     NullLocsCriticalPairs.pp astate.critical_pairs AttributeDomain.pp astate.attributes
     ThreadDomain.pp astate.thread ScheduledWorkDomain.pp astate.scheduled_work VarDomain.pp
     astate.var_state NullLocs.pp astate.null_locs LazilyInitialized.pp astate.lazily_initalized
-
-
-let join lhs rhs =
-  { ignore_blocking_calls=
-      IgnoreBlockingCalls.join lhs.ignore_blocking_calls rhs.ignore_blocking_calls
-  ; guard_map= GuardToLockMap.join lhs.guard_map rhs.guard_map
-  ; lock_state= LockState.join lhs.lock_state rhs.lock_state
-  ; critical_pairs= NullLocsCriticalPairs.join lhs.critical_pairs rhs.critical_pairs
-  ; attributes= AttributeDomain.join lhs.attributes rhs.attributes
-  ; thread= ThreadDomain.join lhs.thread rhs.thread
-  ; scheduled_work= ScheduledWorkDomain.join lhs.scheduled_work rhs.scheduled_work
-  ; var_state= VarDomain.join lhs.var_state rhs.var_state
-  ; null_locs= NullLocs.join lhs.null_locs rhs.null_locs
-  ; lazily_initalized= LazilyInitialized.join lhs.lazily_initalized rhs.lazily_initalized }
 
 
 let widen ~prev ~next ~num_iters:_ = join prev next
