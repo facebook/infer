@@ -802,19 +802,6 @@ let pp fmt astate =
 
 let widen ~prev ~next ~num_iters:_ = join prev next
 
-let leq ~lhs ~rhs =
-  IgnoreBlockingCalls.leq ~lhs:lhs.ignore_blocking_calls ~rhs:rhs.ignore_blocking_calls
-  && GuardToLockMap.leq ~lhs:lhs.guard_map ~rhs:rhs.guard_map
-  && LockState.leq ~lhs:lhs.lock_state ~rhs:rhs.lock_state
-  && NullLocsCriticalPairs.leq ~lhs:lhs.critical_pairs ~rhs:rhs.critical_pairs
-  && AttributeDomain.leq ~lhs:lhs.attributes ~rhs:rhs.attributes
-  && ThreadDomain.leq ~lhs:lhs.thread ~rhs:rhs.thread
-  && ScheduledWorkDomain.leq ~lhs:lhs.scheduled_work ~rhs:rhs.scheduled_work
-  && VarDomain.leq ~lhs:lhs.var_state ~rhs:rhs.var_state
-  && NullLocs.leq ~lhs:lhs.null_locs ~rhs:rhs.null_locs
-  && LazilyInitialized.leq ~lhs:lhs.lazily_initalized ~rhs:rhs.lazily_initalized
-
-
 let add_critical_pair ~tenv_opt lock_state null_locs event ~loc acc =
   let acquisitions = LockState.get_acquisitions lock_state in
   let critical_pair = CriticalPair.make ~loc acquisitions event in

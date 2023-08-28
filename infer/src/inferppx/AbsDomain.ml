@@ -7,20 +7,22 @@
 open! IStd
 open Ppxlib
 
-let rec join_of_longident = function
+let rec fun_of_longident fun_name lid =
+  match lid with
   | Ldot (l, "t") ->
-      Ldot (join_of_longident l, "join")
+      Ldot (fun_of_longident fun_name l, fun_name)
   | Ldot (l, s) ->
-      Ldot (join_of_longident l, s)
+      Ldot (fun_of_longident fun_name l, s)
   | Lident _ as l ->
       l
   | Lapply _ ->
       assert false
 
 
-let join_of_core_type = function
+let fun_of_core_type ~loc fun_name ct =
+  match ct with
   | Ptyp_constr (l, _) ->
-      join_of_longident l.txt
+      fun_of_longident fun_name l.txt |> Loc.make ~loc
   | Ptyp_any
   | Ptyp_var _
   | Ptyp_arrow _
@@ -35,6 +37,8 @@ let join_of_core_type = function
       assert false
 
 
+let join_of_core_type = fun_of_core_type "join"
+
 (* [var.field] *)
 let access ~loc var field_lid =
   let var_lid = Loc.make ~loc (Longident.Lident var) in
@@ -46,7 +50,7 @@ let create_initializer ~loc (ld : label_declaration) =
   let field_lid = Loc.make ~loc (Longident.Lident ld.pld_name.txt) in
   let lhs_access = access ~loc "lhs" field_lid in
   let rhs_access = access ~loc "rhs" field_lid in
-  let func_lid = Loc.make ~loc (join_of_core_type ld.pld_type.ptyp_desc) in
+  let func_lid = join_of_core_type ~loc ld.pld_type.ptyp_desc in
   let func_name =
     Ast_helper.Exp.ident
     (* ~attrs:[Ast_helper.Attr.mk {loc; txt= "ocaml.doc"} (PStr [%str [%e b]])] *)
@@ -72,13 +76,17 @@ let phys_equal_field ~loc var ld =
   [%expr phys_equal [%e field_exp] [%e access]]
 
 
-(* conjunction of [phys_equal] over all fields *)
-let phys_equal_fields ~loc var lds =
-  let phys_equal_exps = List.map lds ~f:(phys_equal_field ~loc var) in
+let conjunction ~loc exprs =
   let f acc exp =
     match acc with None -> Some exp | Some exp_acc -> Some [%expr [%e exp] && [%e exp_acc]]
   in
-  List.fold phys_equal_exps ~init:None ~f |> Option.value_exn
+  List.fold exprs ~init:None ~f |> Option.value_exn
+
+
+(* conjunction of [phys_equal] over all fields *)
+let phys_equal_fields ~loc var lds =
+  let phys_equal_exps = List.map lds ~f:(phys_equal_field ~loc var) in
+  conjunction ~loc phys_equal_exps
 
 
 (* [if (phys_equal a lhs.a && phys_equal b lhs.b && ...) then lhs else else_exp] *)
@@ -109,6 +117,26 @@ let join_impl ~loc (lds : label_declaration list) =
   Ast_helper.Str.value ~loc Nonrecursive [fn]
 
 
+let leq_of_core_type = fun_of_core_type "leq"
+
+let leq_expr ~loc ld =
+  let field_lid = Loc.make ~loc (Longident.Lident ld.pld_name.txt) in
+  let lhs_access = access ~loc "lhs" field_lid in
+  let rhs_access = access ~loc "rhs" field_lid in
+  let leq_call = Ast_helper.Exp.ident ~loc (leq_of_core_type ~loc ld.pld_type.ptyp_desc) in
+  [%expr [%e leq_call] ~lhs:[%e lhs_access] ~rhs:[%e rhs_access]]
+
+
+let leq_impl ~loc lds =
+  let leq_exprs = List.rev_map lds ~f:(leq_expr ~loc) in
+  let conj_expr = conjunction ~loc leq_exprs in
+  let final_expr = [%expr phys_equal lhs rhs || [%e conj_expr]] in
+  let body = [%expr fun ~lhs ~rhs -> [%e final_expr]] in
+  let fun_label = Loc.make ~loc "leq" in
+  let fn = Ast_helper.Vb.mk ~loc (Ast_helper.Pat.var ~loc fun_label) body in
+  Ast_helper.Str.value ~loc Nonrecursive [fn]
+
+
 let generate_impl ~ctxt (_rec_flag, type_declarations) =
   let loc = Expansion_context.Deriver.derived_item_loc ctxt in
   List.map type_declarations ~f:(fun (td : type_declaration) ->
@@ -119,7 +147,7 @@ let generate_impl ~ctxt (_rec_flag, type_declarations) =
           in
           [Ast_builder.Default.pstr_extension ~loc ext []]
       | {ptype_kind= Ptype_record fields; _} ->
-          [join_impl ~loc fields] )
+          [join_impl ~loc fields; leq_impl ~loc fields] )
   |> List.concat
 
 
