@@ -19,6 +19,12 @@ module type S = sig
 
   val normalize : t -> t
   (** return equal normalized representative *)
+
+  val normalize_opt : t option -> t option
+  (** helper for normalizing options; does not store option value in hashtable *)
+
+  val normalize_list : t list -> t list
+  (** helper for normalizing lists; does not store list (or sublists) in hashtable *)
 end
 
 module Make (T : NormalizedT) : S with type t = T.t

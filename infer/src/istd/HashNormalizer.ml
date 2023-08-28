@@ -16,6 +16,10 @@ module type S = sig
   type t
 
   val normalize : t -> t
+
+  val normalize_opt : t option -> t option
+
+  val normalize_list : t list -> t list
 end
 
 let normalizer_reset_funs : (unit -> unit) list ref = ref []
@@ -37,6 +41,16 @@ module Make (T : NormalizedT) = struct
         let normalized = T.normalize t in
         H.add table normalized normalized ;
         normalized
+
+
+  let normalize_opt = function
+    | None ->
+        None
+    | some_t ->
+        IOption.map_changed some_t ~equal:phys_equal ~f:normalize
+
+
+  let normalize_list ts = IList.map_changed ts ~equal:phys_equal ~f:normalize
 end
 
 module StringNormalizer = Make (struct

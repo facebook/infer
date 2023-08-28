@@ -165,4 +165,13 @@ module Normalizer = struct
   type nonrec t = t
 
   let normalize x = match x with Tuple size when size < tuple_cache_size -> tuple.(size) | x -> x
+
+  let normalize_opt = function
+    | None ->
+        None
+    | some_t ->
+        IOption.map_changed some_t ~equal:phys_equal ~f:normalize
+
+
+  let normalize_list ts = IList.map_changed ts ~equal:phys_equal ~f:normalize
 end
