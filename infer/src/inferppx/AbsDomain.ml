@@ -37,8 +37,6 @@ let fun_of_core_type ~loc fun_name ct =
       assert false
 
 
-let join_of_core_type = fun_of_core_type "join"
-
 (* [var.field] *)
 let access ~loc var field_lid =
   let var_lid = Loc.make ~loc (Longident.Lident var) in
@@ -46,24 +44,20 @@ let access ~loc var field_lid =
 
 
 (* [Field.join lhs.field rhs.field] *)
-let create_initializer ~loc (ld : label_declaration) =
+let create_join_initializer ~loc (ld : label_declaration) =
   let field_lid = Loc.make ~loc (Longident.Lident ld.pld_name.txt) in
   let lhs_access = access ~loc "lhs" field_lid in
   let rhs_access = access ~loc "rhs" field_lid in
-  let func_lid = join_of_core_type ~loc ld.pld_type.ptyp_desc in
-  let func_name =
-    Ast_helper.Exp.ident
-    (* ~attrs:[Ast_helper.Attr.mk {loc; txt= "ocaml.doc"} (PStr [%str [%e b]])] *)
-      ~loc func_lid
-  in
+  let func_lid = fun_of_core_type "join" ~loc ld.pld_type.ptyp_desc in
+  let func_name = Ast_helper.Exp.ident ~loc func_lid in
   [%expr [%e func_name] [%e lhs_access] [%e rhs_access]]
 
 
 (* [let field = join lhs.field rhs.field in acc] *)
-let let_field_equal_join_expr ~loc acc ld =
-  let join_call = create_initializer ~loc ld in
+let let_field_equal_rhs_expr ~loc rhs_initializer acc ld =
+  let rhs = rhs_initializer ~loc ld in
   let field_pat = Ast_helper.Pat.var ~loc ld.pld_name in
-  let vb = Ast_helper.Vb.mk ~loc field_pat join_call in
+  let vb = Ast_helper.Vb.mk ~loc field_pat rhs in
   let let_exp = Ast_helper.Exp.let_ ~loc Nonrecursive [vb] acc in
   let_exp
 
@@ -111,7 +105,9 @@ let join_impl ~loc (lds : label_declaration list) =
   let guarded =
     if_phys_equal_then_var ~loc "rhs" lds record_exp |> if_phys_equal_then_var ~loc "lhs" lds
   in
-  let final_expr = List.fold lds ~init:guarded ~f:(let_field_equal_join_expr ~loc) in
+  let final_expr =
+    List.fold lds ~init:guarded ~f:(let_field_equal_rhs_expr ~loc create_join_initializer)
+  in
   let body = [%expr fun lhs rhs -> if phys_equal lhs rhs then lhs else [%e final_expr]] in
   let fn = Ast_helper.Vb.mk ~loc (Ast_helper.Pat.var ~loc fun_label) body in
   Ast_helper.Str.value ~loc Nonrecursive [fn]
@@ -137,17 +133,43 @@ let leq_impl ~loc lds =
   Ast_helper.Str.value ~loc Nonrecursive [fn]
 
 
+(* [Field.widen ~prev:prev.field ~next:next.field ~num_iters] *)
+let create_widen_initializer ~loc (ld : label_declaration) =
+  let field_lid = Loc.make ~loc (Longident.Lident ld.pld_name.txt) in
+  let lhs_access = access ~loc "prev" field_lid in
+  let rhs_access = access ~loc "next" field_lid in
+  let func_lid = fun_of_core_type "widen" ~loc ld.pld_type.ptyp_desc in
+  let func_name = Ast_helper.Exp.ident ~loc func_lid in
+  [%expr [%e func_name] ~prev:[%e lhs_access] ~next:[%e rhs_access] ~num_iters]
+
+
+let widen_impl ~loc (lds : label_declaration list) =
+  let fun_label = Loc.make ~loc "widen" in
+  let record_exp = create_record ~loc lds in
+  let guarded =
+    if_phys_equal_then_var ~loc "prev" lds record_exp |> if_phys_equal_then_var ~loc "next" lds
+  in
+  let final_expr =
+    List.fold lds ~init:guarded ~f:(let_field_equal_rhs_expr ~loc create_widen_initializer)
+  in
+  let body =
+    [%expr fun ~prev ~next ~num_iters -> if phys_equal prev next then prev else [%e final_expr]]
+  in
+  let fn = Ast_helper.Vb.mk ~loc (Ast_helper.Pat.var ~loc fun_label) body in
+  Ast_helper.Str.value ~loc Nonrecursive [fn]
+
+
 let generate_impl ~ctxt (_rec_flag, type_declarations) =
   let loc = Expansion_context.Deriver.derived_item_loc ctxt in
   List.map type_declarations ~f:(fun (td : type_declaration) ->
       match td with
       | {ptype_kind= Ptype_abstract | Ptype_variant _ | Ptype_open; ptype_loc; _} ->
           let ext =
-            Location.error_extensionf ~loc:ptype_loc "Cannot derive join for non record types"
+            Location.error_extensionf ~loc:ptype_loc "Cannot derive functions for non record types"
           in
           [Ast_builder.Default.pstr_extension ~loc ext []]
       | {ptype_kind= Ptype_record fields; _} ->
-          [join_impl ~loc fields; leq_impl ~loc fields] )
+          [join_impl ~loc fields; leq_impl ~loc fields; widen_impl ~loc fields] )
   |> List.concat
 
 

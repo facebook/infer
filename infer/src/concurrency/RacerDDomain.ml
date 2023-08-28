@@ -514,6 +514,7 @@ type t =
   ; accesses: AccessDomain.t
   ; ownership: OwnershipDomain.t
   ; attribute_map: AttributeMapDomain.t }
+[@@deriving absdom]
 
 let initial =
   let threads = ThreadsDomain.bottom in
@@ -523,45 +524,6 @@ let initial =
   let ownership = OwnershipDomain.empty in
   let attribute_map = AttributeMapDomain.empty in
   {threads; locks; never_returns; accesses; ownership; attribute_map}
-
-
-let leq ~lhs ~rhs =
-  if phys_equal lhs rhs then true
-  else
-    ThreadsDomain.leq ~lhs:lhs.threads ~rhs:rhs.threads
-    && LockDomain.leq ~lhs:lhs.locks ~rhs:rhs.locks
-    && NeverReturns.leq ~lhs:lhs.never_returns ~rhs:rhs.never_returns
-    && AccessDomain.leq ~lhs:lhs.accesses ~rhs:rhs.accesses
-    && OwnershipDomain.leq ~lhs:lhs.ownership ~rhs:rhs.ownership
-    && AttributeMapDomain.leq ~lhs:lhs.attribute_map ~rhs:rhs.attribute_map
-
-
-let join astate1 astate2 =
-  if phys_equal astate1 astate2 then astate1
-  else
-    let threads = ThreadsDomain.join astate1.threads astate2.threads in
-    let locks = LockDomain.join astate1.locks astate2.locks in
-    let never_returns = NeverReturns.join astate1.never_returns astate2.never_returns in
-    let accesses = AccessDomain.join astate1.accesses astate2.accesses in
-    let ownership = OwnershipDomain.join astate1.ownership astate2.ownership in
-    let attribute_map = AttributeMapDomain.join astate1.attribute_map astate2.attribute_map in
-    {threads; locks; never_returns; accesses; ownership; attribute_map}
-
-
-let widen ~prev ~next ~num_iters =
-  if phys_equal prev next then prev
-  else
-    let threads = ThreadsDomain.widen ~prev:prev.threads ~next:next.threads ~num_iters in
-    let locks = LockDomain.widen ~prev:prev.locks ~next:next.locks ~num_iters in
-    let never_returns =
-      NeverReturns.widen ~prev:prev.never_returns ~next:next.never_returns ~num_iters
-    in
-    let accesses = AccessDomain.widen ~prev:prev.accesses ~next:next.accesses ~num_iters in
-    let ownership = OwnershipDomain.widen ~prev:prev.ownership ~next:next.ownership ~num_iters in
-    let attribute_map =
-      AttributeMapDomain.widen ~prev:prev.attribute_map ~next:next.attribute_map ~num_iters
-    in
-    {threads; locks; never_returns; accesses; ownership; attribute_map}
 
 
 type summary =

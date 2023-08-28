@@ -800,8 +800,6 @@ let pp fmt astate =
     astate.var_state NullLocs.pp astate.null_locs LazilyInitialized.pp astate.lazily_initalized
 
 
-let widen ~prev ~next ~num_iters:_ = join prev next
-
 let add_critical_pair ~tenv_opt lock_state null_locs event ~loc acc =
   let acquisitions = LockState.get_acquisitions lock_state in
   let critical_pair = CriticalPair.make ~loc acquisitions event in
