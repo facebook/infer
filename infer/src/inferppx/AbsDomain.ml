@@ -112,7 +112,7 @@ let join_impl ~loc (lds : label_declaration list) =
     if_phys_equal_then_var ~loc "rhs" lds record_exp |> if_phys_equal_then_var ~loc "lhs" lds
   in
   let final_expr = List.fold lds ~init:guarded ~f:(let_field_equal_join_expr ~loc) in
-  let body = [%expr fun lhs rhs -> [%e final_expr]] in
+  let body = [%expr fun lhs rhs -> if phys_equal lhs rhs then lhs else [%e final_expr]] in
   let fn = Ast_helper.Vb.mk ~loc (Ast_helper.Pat.var ~loc fun_label) body in
   Ast_helper.Str.value ~loc Nonrecursive [fn]
 
