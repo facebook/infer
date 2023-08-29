@@ -175,4 +175,4 @@ let generate_impl ~ctxt (_rec_flag, type_declarations) =
 
 let _ =
   let str_type_decl = Deriving.Generator.V2.make_noarg generate_impl in
-  Deriving.add "absdom" ~str_type_decl
+  Deriving.add "abstract_domain" ~str_type_decl

@@ -514,7 +514,7 @@ type t =
   ; accesses: AccessDomain.t
   ; ownership: OwnershipDomain.t
   ; attribute_map: AttributeMapDomain.t }
-[@@deriving absdom]
+[@@deriving abstract_domain]
 
 let initial =
   let threads = ThreadsDomain.bottom in

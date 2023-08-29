@@ -768,7 +768,7 @@ type t =
   ; var_state: VarDomain.t
   ; null_locs: NullLocs.t
   ; lazily_initalized: LazilyInitialized.t }
-[@@deriving absdom]
+[@@deriving abstract_domain]
 
 let initial =
   { ignore_blocking_calls= false
