@@ -4651,9 +4651,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and coreturnStmt_trans trans_state stmt_info operand_opt promise_call_opt =
-    let args =
-      match promise_call_opt with Some expr -> [expr] | None -> Option.to_list operand_opt
-    in
+    let args = Option.to_list operand_opt @ Option.to_list promise_call_opt in
     call_function_with_args Procdesc.Node.ReturnStmt BuiltinDecl.__builtin_cxx_co_return trans_state
       stmt_info StdTyp.void args
 
