@@ -88,7 +88,12 @@ val location_of_event : event -> Location.t
 val timestamp_of_event : event -> Timestamp.t [@@warning "-unused-value-declaration"]
 (* used in unit tests *)
 
-val add_to_errlog : nesting:int -> t -> Errlog.loc_trace_elem list -> Errlog.loc_trace_elem list
+val add_to_errlog :
+     ?include_taint_events:bool (** to avoid showing unrelated taint traces for non-taint issues *)
+  -> nesting:int
+  -> t
+  -> Errlog.loc_trace_elem list
+  -> Errlog.loc_trace_elem list
 
 val get_first_main_event : t -> event option
 

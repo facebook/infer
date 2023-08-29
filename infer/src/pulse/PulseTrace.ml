@@ -37,13 +37,16 @@ let rec pp ~pp_immediate fmt trace =
           (pp ~pp_immediate) in_call
 
 
-let rec add_to_errlog ?(include_value_history = true) ~nesting ~pp_immediate trace errlog =
+let rec add_to_errlog ?(include_value_history = true) ?(include_taint_events = false) ~nesting
+    ~pp_immediate trace errlog =
   match trace with
   | Immediate {location; history} ->
       let acc =
         Errlog.make_trace_element nesting location (F.asprintf "%t" pp_immediate) [] :: errlog
       in
-      if include_value_history then ValueHistory.add_to_errlog ~nesting history @@ acc else acc
+      if include_value_history then
+        ValueHistory.add_to_errlog ~include_taint_events ~nesting history @@ acc
+      else acc
   | ViaCall {f; location; in_call; history} ->
       let acc =
         (fun errlog ->
@@ -54,7 +57,9 @@ let rec add_to_errlog ?(include_value_history = true) ~nesting ~pp_immediate tra
         @@ add_to_errlog ~include_value_history ~nesting:(nesting + 1) ~pp_immediate in_call
         @@ errlog
       in
-      if include_value_history then ValueHistory.add_to_errlog ~nesting history @@ acc else acc
+      if include_value_history then
+        ValueHistory.add_to_errlog ~include_taint_events ~nesting history @@ acc
+      else acc
 
 
 let rec synchronous_add_to_errlog ~nesting ~pp_immediate traces errlog =

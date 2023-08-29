@@ -947,8 +947,8 @@ let get_trace = function
          code than we want if the source is a function that we analyze. Ideally we would cut just
          the overlapping histories from [sink_trace] instead of not including value histories
          altogether. *)
-      ValueHistory.add_to_errlog ~nesting:0 source_history
-      @@ Trace.add_to_errlog ~include_value_history:false ~nesting:0
+      ValueHistory.add_to_errlog ~include_taint_events:true ~nesting:0 source_history
+      @@ Trace.add_to_errlog ~include_value_history:false ~include_taint_events:true ~nesting:0
            ~pp_immediate:(fun fmt -> TaintItem.pp fmt sink)
            sink_trace
       @@ []

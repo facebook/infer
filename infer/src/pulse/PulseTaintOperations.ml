@@ -213,21 +213,17 @@ let log_taint_config () =
 (** {2 Methods for applying taint to relevant values} *)
 
 let taint_value_origin (path : PathContext.t) location taint_item value_origin astate =
-  (* TODO(arr): temp workaround to avoid taint events in nullptr dereference error traces until we
-     implement history filtering. *)
-  if Config.pulse_taint_check_history then
-    match value_origin with
-    | ValueOrigin.InMemory {src; access; dest= dest_addr, dest_hist} ->
-        let taint_event = ValueHistory.TaintSource (taint_item, location, path.timestamp) in
-        let dest_hist = ValueHistory.sequence taint_event dest_hist ~context:path.conditions in
-        Memory.add_edge path src access (dest_addr, dest_hist) location astate
-    | ValueOrigin.OnStack {var; addr_hist= addr, hist} ->
-        let taint_event = ValueHistory.TaintSource (taint_item, location, path.timestamp) in
-        let hist = ValueHistory.sequence taint_event hist ~context:path.conditions in
-        Stack.add var (addr, hist) astate
-    | ValueOrigin.Unknown _ ->
-        astate
-  else astate
+  match value_origin with
+  | ValueOrigin.InMemory {src; access; dest= dest_addr, dest_hist} ->
+      let taint_event = ValueHistory.TaintSource (taint_item, location, path.timestamp) in
+      let dest_hist = ValueHistory.sequence taint_event dest_hist ~context:path.conditions in
+      Memory.add_edge path src access (dest_addr, dest_hist) location astate
+  | ValueOrigin.OnStack {var; addr_hist= addr, hist} ->
+      let taint_event = ValueHistory.TaintSource (taint_item, location, path.timestamp) in
+      let hist = ValueHistory.sequence taint_event hist ~context:path.conditions in
+      Stack.add var (addr, hist) astate
+  | ValueOrigin.Unknown _ ->
+      astate
 
 
 let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator (v, _) astate =

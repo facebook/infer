@@ -295,12 +295,32 @@ let add_returned_from_call_to_errlog ~nesting f location errlog =
   Errlog.make_trace_element nesting location description tags :: errlog
 
 
-let add_to_errlog ~nesting history errlog =
+let is_taint_event = function
+  | Allocation _
+  | Assignment _
+  | Call _
+  | Capture _
+  | ConditionPassed _
+  | CppTemporaryCreated _
+  | FormalDeclared _
+  | Invalidated _
+  | NilMessaging _
+  | Returned _
+  | StructFieldAddressCreated _
+  | VariableAccessed _
+  | VariableDeclared _ ->
+      false
+  | TaintSource _ ->
+      true
+
+
+let add_to_errlog ?(include_taint_events = false) ~nesting history errlog =
   let nesting = ref nesting in
   let errlog = ref errlog in
   let one_iter_event = function
     | Event event ->
-        errlog := add_event_to_errlog ~nesting:!nesting event !errlog
+        if is_taint_event event && not include_taint_events then ()
+        else errlog := add_event_to_errlog ~nesting:!nesting event !errlog
     | EnterCall _ ->
         decr nesting
     | ReturnFromCall (call, location) ->

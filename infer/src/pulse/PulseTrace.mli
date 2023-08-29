@@ -29,6 +29,7 @@ val get_start_location : t -> Location.t
 
 val add_to_errlog :
      ?include_value_history:bool
+  -> ?include_taint_events:bool (** to avoid showing unrelated taint traces for non-taint issues *)
   -> nesting:int
   -> pp_immediate:(F.formatter -> unit)
   -> t
