@@ -3052,6 +3052,14 @@ and lineage_field_width =
      analysis field insensitive. If not set, field width will be unlimited."
 
 
+and lineage_variant_width =
+  CLOpt.mk_int ~long:"lineage-variant-width" ~default:20
+    ~in_help:InferCommand.[(Analyze, manual_lineage)]
+    "Maximal width of variant types for lineage analysis. A variant type is the type of a variable \
+     whose value is within a statically known atom set. The width of the type is the cardinal of \
+     that atom set."
+
+
 and lineage_max_cfg_size =
   CLOpt.mk_int_opt ~deprecated:["-simple-lineage-max-cfg-size"] ~long:"lineage-max-cfg-size"
     ~in_help:InferCommand.[(Analyze, manual_lineage)]
@@ -4447,6 +4455,8 @@ and lineage_field_depth = !lineage_field_depth
 and lineage_prevent_cycles = !lineage_prevent_cycles
 
 and lineage_field_width = !lineage_field_width
+
+and lineage_variant_width = !lineage_variant_width
 
 and lineage_max_cfg_size = !lineage_max_cfg_size
 

@@ -765,6 +765,8 @@ val lineage_prevent_cycles : bool
 
 val lineage_field_width : int option
 
+val lineage_variant_width : int
+
 val lineage_json_report : bool
 
 val lineage_keep_temporaries : bool

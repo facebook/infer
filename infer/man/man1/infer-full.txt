@@ -1010,6 +1010,12 @@ OPTIONS
            hashing. If you are unlucky and get collisions, you can try a
            different seed.           See also infer-analyze(1).
 
+       --lineage-variant-width int
+           Maximal width of variant types for lineage analysis. A variant
+           type is the type of a variable whose value is within a statically
+           known atom set. The width of the type is the cardinal of that atom
+           set.           See also infer-analyze(1).
+
        --list-checkers
            Activates: Show the list of all available checkers. (Conversely:
            --no-list-checkers)           See also infer-help(1).

@@ -14,6 +14,8 @@ module LineageConfig = struct
 
   let field_width = Option.value ~default:Int.max_value Config.lineage_field_width
 
+  let variant_width = Config.lineage_variant_width
+
   let prevent_cycles = Config.lineage_prevent_cycles
 end
 
@@ -124,9 +126,12 @@ module Env : sig
       (** The most precise shape, used for variables that have not been assigned yet (eg.
           arguments). *)
 
-      val vector : (Fieldname.t * shape) list -> t -> shape
+      val variant_of_list : string list -> t -> shape
+      (** The shape of a value equal to a string amongst a set of possible ones. *)
+
+      val vector_of_alist : (Fieldname.t * shape) list -> t -> shape
       (** A shape with a set of known fields. The list may be empty, meaning that the shape may be a
-          vector but no field have been discovered yet. *)
+          vector but no field has been discovered yet. *)
 
       val scalar : t -> shape
       (** The shape of scalar values for which we don't have more precise information (eg.
@@ -239,23 +244,65 @@ end = struct
 
       let pp_shape = Shape_class.pp Shape_id.pp
 
-      module Structure = struct
-        type t = Bottom | Vector of (Fieldname.t, shape) Hashtbl.t
+      module Structure : sig
+        (** private type: the constructor functions may do some checks before building structures,
+            but we want to allow pattern matching. *)
+        type t = private
+          | Bottom
+          | Variant of String.Set.t
+          | Vector of (Fieldname.t, shape) Hashtbl.t
+
+        val pp : t Fmt.t
+
+        val bottom : t
+
+        val variant : String.Set.t -> t
+        (** If the set is to be (see {!LineageConfig}), will build a {!scalar} structure instead. *)
+
+        val variant_of_list : string list -> t
+
+        val vector : (Fieldname.t, shape) Hashtbl.t -> t
+
+        val vector_of_alist : (Fieldname.t * shape) list -> t
+
+        val scalar : t
+        (** Scalar shape for which we don't keep a known set of possible values. *)
+      end = struct
+        type t = Bottom | Variant of String.Set.t | Vector of (Fieldname.t, shape) Hashtbl.t
 
         let pp fmt x =
           match x with
           | Bottom ->
               Fmt.pf fmt "()"
+          | Variant constructors ->
+              Fmt.pf fmt "[@[%a@]]"
+                (IFmt.Labelled.iter ~sep:(Fmt.any "@ |@ ") Set.iter Fmt.string)
+                constructors
           | Vector fields ->
               pp_hashtbl ~bind:IFmt.colon_sp Fieldname.pp pp_shape fmt fields
 
 
-        let vector field_alist = Vector (Hashtbl.of_alist_exn (module Fieldname) field_alist)
+        let bottom = Bottom
+
+        let vector field_table = Vector field_table
+
+        let vector_of_alist field_alist =
+          vector (Hashtbl.of_alist_exn (module Fieldname) field_alist)
+
 
         let scalar =
           (* Until we add a specific constructor, the best abstraction for a scalar value is an empty
              vector. *)
-          vector []
+          vector_of_alist []
+
+
+        let variant constructors =
+          if Int.O.(Set.length constructors <= LineageConfig.variant_width) then
+            Variant constructors
+          else scalar
+
+
+        let variant_of_list constructor_list = variant (String.Set.of_list constructor_list)
       end
 
       (** An environment associates to each variable its equivalence class, and to each shape
@@ -311,7 +358,13 @@ end = struct
         Private.create ()
 
 
-      let vector field_alist state = Private.create_and_store (Structure.vector field_alist) state
+      let variant_of_list constructor_list state =
+        Private.create_and_store (Structure.variant_of_list constructor_list) state
+
+
+      let vector_of_alist field_alist state =
+        Private.create_and_store (Structure.vector_of_alist field_alist) state
+
 
       let scalar state = Private.create_and_store Structure.scalar state
     end
@@ -324,10 +377,12 @@ end = struct
         will be put in the [todo] stack. *)
     let unify_structures (structure : Structure.t) (structure' : Structure.t) todo : Structure.t =
       match (structure, structure') with
-      | Bottom, _ ->
-          structure'
-      | _, Bottom ->
-          structure
+      | Bottom, other | other, Bottom ->
+          other
+      | Variant constructors, Variant constructors' ->
+          Structure.variant (Set.union constructors constructors')
+      | Variant _, other | other, Variant _ ->
+          other
       | Vector fields, Vector fields' ->
           (* Merge the fields of the second structure into the first one. During this merge, if we
              encounter a field present in both shapes, we put the shapes of this field in the todo
@@ -341,7 +396,7 @@ end = struct
           Hashtbl.merge_into ~src:fields' ~dst:fields ~f:(fun ~key:_fieldname shape' shape_opt ->
               Option.iter ~f:(fun shape -> Stack.push todo (shape, shape')) shape_opt ;
               Set_to shape' ) ;
-          Vector fields
+          Structure.vector fields
 
 
     let unify_step shape_structures shape shape' todo =
@@ -421,7 +476,7 @@ end = struct
 
     let has_fields shape_structures shape =
       match (Hashtbl.find shape_structures shape : Structure.t option) with
-      | None | Some Bottom ->
+      | None | Some Bottom | Some (Variant _) ->
           false
       | Some (Vector field_table) ->
           not (Hashtbl.is_empty field_table)
@@ -467,9 +522,11 @@ end = struct
       let translate_shape state_shape = translate_shape_id (Union_find.get state_shape) in
       let translate_structure : State.Structure.t -> Structure.t = function
         | Bottom ->
-            Bottom
+            Structure.bottom
+        | Variant constructors ->
+            Structure.variant constructors
         | Vector fields ->
-            Vector (Hashtbl.map ~f:translate_shape fields)
+            Structure.vector (Hashtbl.map ~f:translate_shape fields)
       in
       let var_shapes = Hashtbl.map ~f:translate_shape var_shapes in
       let shape_structures =
@@ -501,10 +558,13 @@ end = struct
           ( match (Hashtbl.find shape_structures shape_id : Structure.t option) with
           | None | Some Bottom ->
               ()
+          | Some (Variant constructors) ->
+              Hashtbl.set state_shape_structures ~key:(Union_find.get state_shape)
+                ~data:(State.Structure.variant constructors)
           | Some (Vector fields) ->
               Hashtbl.set state_shape_structures ~key:(Union_find.get state_shape)
                 ~data:
-                  (State.Structure.Vector
+                  (State.Structure.vector
                      (introduce_fields id_translation_tbl fields shape_structures
                         state_shape_structures ) ) ) ;
           state_shape
@@ -623,7 +683,7 @@ end = struct
         then f init (List.rev field_path_acc)
         else
           match (Hashtbl.find shape_structures shape : Structure.t option) with
-          | None | Some Bottom ->
+          | None | Some Bottom | Some (Variant _) ->
               (* No more fields. *)
               f init (List.rev field_path_acc)
           | Some (Vector fields) ->
@@ -739,7 +799,7 @@ struct
         *)
         let shape_e = shape_expr e in
         let shape_field = Env.State.Shape.bottom state in
-        let shape_vector = Env.State.Shape.vector [(fieldname, shape_field)] state in
+        let shape_vector = Env.State.Shape.vector_of_alist [(fieldname, shape_field)] state in
         Env.State.unify state shape_e shape_vector ;
         shape_field
     | Sizeof {dynamic_length= None} ->
@@ -763,15 +823,28 @@ struct
       let tuple_type : Typ.name = ErlangType (Tuple (List.length args)) in
       let fieldname i = Fieldname.make tuple_type (ErlangTypeName.tuple_elem (i + 1)) in
       let arg_vector_shape =
-        Env.State.Shape.vector
+        Env.State.Shape.vector_of_alist
           (List.mapi ~f:(fun i arg -> (fieldname i, shape_expr arg)) args)
           state
       in
       Env.State.unify state ret_id_shape arg_vector_shape
 
 
+    let make_atom ret_id args =
+      match args with
+      | [Exp.Const (Cstr name); _hash_exp] ->
+          let ret_id_shape = Env.State.var_shape state ret_id in
+          let variant_shape = Env.State.Shape.variant_of_list [name] state in
+          Env.State.unify state ret_id_shape variant_shape
+      | _ ->
+          L.die InternalError
+            "make_atom should have two arguments, the first one being a constant string."
+
+
     let get_custom_model procname =
-      let models = [(BuiltinDecl.__erlang_make_tuple, make_tuple)] in
+      let models =
+        [(BuiltinDecl.__erlang_make_tuple, make_tuple); (BuiltinDecl.__erlang_make_atom, make_atom)]
+      in
       List.Assoc.find ~equal:Procname.equal models procname
 
 
@@ -780,7 +853,7 @@ struct
         callee ;
       (* Shape the return as a vector with no known field => most general shape *)
       let ret_shape = Env.State.var_shape state ret_var in
-      Env.State.unify state (Env.State.Shape.vector [] state) ret_shape ;
+      Env.State.unify state (Env.State.Shape.vector_of_alist [] state) ret_shape ;
       (* Shape the arguments to make sure the analysis is aware of them *)
       ignore (List.map ~f:shape_expr args : Env.State.shape list) ;
       ()
