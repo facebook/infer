@@ -287,6 +287,7 @@ type elt =
   ; loads: Loads.t
   ; stores: Stores.t
   ; passed_to: PassedTo.t }
+[@@deriving abstract_domain]
 
 type t = V of elt | Top
 
@@ -302,54 +303,17 @@ let pp f = function
 
 
 let leq ~lhs ~rhs =
-  match (lhs, rhs) with
-  | _, Top ->
-      true
-  | Top, _ ->
-      false
-  | V lhs, V rhs ->
-      CopyMap.leq ~lhs:lhs.copy_map ~rhs:rhs.copy_map
-      && ParameterMap.leq ~lhs:lhs.parameter_map ~rhs:rhs.parameter_map
-      && DestructorChecked.leq ~lhs:lhs.destructor_checked ~rhs:rhs.destructor_checked
-      && Captured.leq ~lhs:lhs.captured ~rhs:rhs.captured
-      && Locked.leq ~lhs:lhs.locked ~rhs:rhs.locked
-      && Loads.leq ~lhs:lhs.loads ~rhs:rhs.loads
-      && PassedTo.leq ~lhs:lhs.passed_to ~rhs:rhs.passed_to
+  match (lhs, rhs) with _, Top -> true | Top, _ -> false | V lhs, V rhs -> leq ~lhs ~rhs
 
 
-let join x y =
-  match (x, y) with
-  | _, Top | Top, _ ->
-      Top
-  | V x, V y ->
-      V
-        { copy_map= CopyMap.join x.copy_map y.copy_map
-        ; parameter_map= ParameterMap.join x.parameter_map y.parameter_map
-        ; destructor_checked= DestructorChecked.join x.destructor_checked y.destructor_checked
-        ; captured= Captured.join x.captured y.captured
-        ; locked= Locked.join x.locked y.locked
-        ; loads= Loads.join x.loads y.loads
-        ; stores= Stores.join x.stores y.stores
-        ; passed_to= PassedTo.join x.passed_to y.passed_to }
-
+let join x y = match (x, y) with _, Top | Top, _ -> Top | V x, V y -> V (join x y)
 
 let widen ~prev ~next ~num_iters =
   match (prev, next) with
   | _, Top | Top, _ ->
       Top
   | V prev, V next ->
-      V
-        { copy_map= CopyMap.widen ~prev:prev.copy_map ~next:next.copy_map ~num_iters
-        ; parameter_map=
-            ParameterMap.widen ~prev:prev.parameter_map ~next:next.parameter_map ~num_iters
-        ; destructor_checked=
-            DestructorChecked.widen ~prev:prev.destructor_checked ~next:next.destructor_checked
-              ~num_iters
-        ; captured= Captured.widen ~prev:prev.captured ~next:next.captured ~num_iters
-        ; locked= Locked.widen ~prev:prev.locked ~next:next.locked ~num_iters
-        ; loads= Loads.widen ~prev:prev.loads ~next:next.loads ~num_iters
-        ; stores= Stores.widen ~prev:prev.stores ~next:next.stores ~num_iters
-        ; passed_to= PassedTo.widen ~prev:prev.passed_to ~next:next.passed_to ~num_iters }
+      V (widen ~prev ~next ~num_iters)
 
 
 let bottom =
