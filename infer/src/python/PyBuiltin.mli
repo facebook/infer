@@ -22,6 +22,7 @@ type textual =
   | PythonCode
   | PythonIter
   | PythonIterNext
+  | PythonBuildList
   | CompareOp of Compare.t
 [@@deriving compare]
 

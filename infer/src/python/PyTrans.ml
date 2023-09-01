@@ -985,6 +985,20 @@ module BUILD = struct
       let env = Env.push env (DataStack.Map map) in
       (env, None)
   end
+
+  module LIST = struct
+    (** {v BUILD_LIST(count) v}
+
+        Creates a list consuming count items from the stack, and pushes the resulting tuple onto the
+        stack. *)
+    let run env code {FFI.Instruction.opname; arg= count} =
+      Debug.p "[%s] count = %d\n" opname count ;
+      let env, items = pop_n_datastack opname env count [] in
+      let env, items = cells_to_textual env opname code items in
+      let env, id, _typ = Env.mk_builtin_call env Builtin.PythonBuildList items in
+      let env = Env.push env (DataStack.Temp id) in
+      (env, None)
+  end
 end
 
 (** Return the offset of the next opcode, if any *)
@@ -1458,6 +1472,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
         JUMP.IF_OR_POP.run ~jump_if:true env code instr next_offset_opt
     | "JUMP_IF_FALSE_OR_POP" ->
         JUMP.IF_OR_POP.run ~jump_if:false env code instr next_offset_opt
+    | "BUILD_LIST" ->
+        BUILD.LIST.run env code instr
     | _ ->
         L.die InternalError "Unsupported opcode: %s" opname
   in

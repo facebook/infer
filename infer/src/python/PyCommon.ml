@@ -43,6 +43,8 @@ let pyCode = mk_type "PyCode"
 
 let pyClass = mk_type "PyClass"
 
+let pyList = mk_type "PyList"
+
 let py_iter_item = type_name "PyIterItem"
 
 let pyIterItem = T.Typ.Ptr (Struct py_iter_item)

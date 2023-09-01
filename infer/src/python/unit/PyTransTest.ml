@@ -1842,3 +1842,58 @@ class C(ABC):
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
+
+
+let%test_module "collections" =
+  ( module struct
+    let%expect_test _ =
+      let source = {|
+l = [1, 2, 3]
+print(l)
+
+def build_list():
+          return [1, 2, 3]
+|} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_build_list($builtins.python_int(1), $builtins.python_int(2), $builtins.python_int(3))
+              store &dummy::l <- n0:*PyList
+              n1:*PyList = load &dummy::l
+              n2 = $builtins.print(n1)
+              n3 = $builtins.python_code("dummy.build_list")
+              ret null
+
+        }
+
+        define dummy.build_list() : *PyObject {
+          #b0:
+              n0 = $builtins.python_build_list($builtins.python_int(1), $builtins.python_int(2), $builtins.python_int(3))
+              ret n0
+
+        }
+
+        global dummy::l: *PyObject
+
+        declare $builtins.print(...) : *PyObject
+
+        declare $builtins.python_build_list(...) : *PyList
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+  end )

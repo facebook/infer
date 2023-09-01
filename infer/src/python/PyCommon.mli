@@ -83,6 +83,9 @@ val pyFloat : Textual.Typ.t
 val pyNone : Textual.Typ.t
 (** Textual encoding of the primitive Python type [None] *)
 
+val pyList : Textual.Typ.t
+(** Python's builtin [list] type *)
+
 val mk_int : int64 -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal integers. *)
 
