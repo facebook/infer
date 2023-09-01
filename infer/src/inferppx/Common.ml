@@ -70,3 +70,10 @@ let rec pp_longident fmt = function
       Format.fprintf fmt "Lident(%s)" s
   | Lapply (l, r) ->
       Format.fprintf fmt "Lapply(%a, %a)" pp_longident l pp_longident r
+
+
+(* generate a passthrough of the form [let f = f] for use within modules *)
+let generate_passthrough_function ~loc fun_of_type fun_name manifest_type =
+  let normalize_origin = fun_of_type ~loc manifest_type in
+  let body = Ast_helper.Exp.ident ~loc normalize_origin in
+  make_function ~loc fun_name body

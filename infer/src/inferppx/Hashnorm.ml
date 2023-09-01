@@ -22,7 +22,7 @@ let normalize_of_longident ?(suffix = "") lid =
 
 (* ident `A.B.C.normalize`/`A.B.C.normalize_opt` from the type `A.B.C.t`/`A.B.C.t option` *)
 let normalize_of_core_type ~loc ct =
-  match ct with
+  match ct.ptyp_desc with
   | Ptyp_constr (l, []) ->
       (* monomorphic type *)
       normalize_of_longident l.txt |> Loc.make ~loc
@@ -48,7 +48,7 @@ let normalize_of_core_type ~loc ct =
 let create_normalize_initializer ~loc (ld : label_declaration) =
   let field_lid = Common.make_longident ~loc ld.pld_name.txt in
   let lhs_access = Common.access ~loc "t" field_lid in
-  let func_lid = normalize_of_core_type ~loc ld.pld_type.ptyp_desc in
+  let func_lid = normalize_of_core_type ~loc ld.pld_type in
   let func_name = Ast_helper.Exp.ident ~loc func_lid in
   [%expr [%e func_name] [%e lhs_access]]
 
@@ -79,9 +79,7 @@ let normalize_impl ~loc (lds : label_declaration list) =
 
 
 let normalize_passthrough_impl ~loc manifest_type =
-  let normalize_origin = normalize_of_core_type ~loc manifest_type.ptyp_desc in
-  let body = Ast_helper.Exp.ident ~loc normalize_origin in
-  Common.make_function ~loc "normalize" body
+  Common.generate_passthrough_function ~loc normalize_of_core_type "normalize" manifest_type
 
 
 let normalize_type_declaration ~loc (td : type_declaration) =

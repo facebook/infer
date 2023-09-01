@@ -303,17 +303,17 @@ let pp f = function
 
 
 let leq ~lhs ~rhs =
-  match (lhs, rhs) with _, Top -> true | Top, _ -> false | V lhs, V rhs -> leq ~lhs ~rhs
+  match (lhs, rhs) with _, Top -> true | Top, _ -> false | V lhs, V rhs -> leq_elt ~lhs ~rhs
 
 
-let join x y = match (x, y) with _, Top | Top, _ -> Top | V x, V y -> V (join x y)
+let join x y = match (x, y) with _, Top | Top, _ -> Top | V x, V y -> V (join_elt x y)
 
 let widen ~prev ~next ~num_iters =
   match (prev, next) with
   | _, Top | Top, _ ->
       Top
   | V prev, V next ->
-      V (widen ~prev ~next ~num_iters)
+      V (widen_elt ~prev ~next ~num_iters)
 
 
 let bottom =
