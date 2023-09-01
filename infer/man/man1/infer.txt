@@ -626,6 +626,9 @@ OPTIONS
              NO_TRUE_BRANCH_IN_IF (enabled by default),
              NO_TRUE_BRANCH_IN_IF_LATENT (disabled by default),
              NULLPTR_DEREFERENCE (enabled by default),
+             NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS (enabled by default),
+             NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS_LATENT (disabled by
+           default),
              NULLPTR_DEREFERENCE_LATENT (disabled by default),
              NULL_ARGUMENT (enabled by default),
              NULL_ARGUMENT_LATENT (disabled by default),
@@ -1386,6 +1389,12 @@ OPTIONS
            Deactivates: Report null dereference issues on files marked
            @Nullsafe. (Conversely: --pulse-nullsafe-report-npe)       
     See also infer-analyze(1).
+
+       --pulse-nullsafe-report-npe-as-separate-issue
+           Activates: Report null dereference issues on files marked
+           @Nullsafe as a separate NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS
+           issue type. (Conversely:
+           --no-pulse-nullsafe-report-npe-as-separate-issue)           See also infer-analyze(1).
 
        --pulse-only
            Activates: Enable pulse and disable all other checkers

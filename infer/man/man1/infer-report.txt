@@ -243,6 +243,9 @@ OPTIONS
              NO_TRUE_BRANCH_IN_IF (enabled by default),
              NO_TRUE_BRANCH_IN_IF_LATENT (disabled by default),
              NULLPTR_DEREFERENCE (enabled by default),
+             NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS (enabled by default),
+             NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS_LATENT (disabled by
+           default),
              NULLPTR_DEREFERENCE_LATENT (disabled by default),
              NULL_ARGUMENT (enabled by default),
              NULL_ARGUMENT_LATENT (disabled by default),

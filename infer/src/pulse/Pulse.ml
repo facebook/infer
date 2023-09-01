@@ -61,7 +61,7 @@ let get_loc_instantiated pname =
   IRAttributes.load pname |> Option.bind ~f:ProcAttributes.get_loc_instantiated
 
 
-let report_unnecessary_copies proc_desc err_log non_disj_astate =
+let report_unnecessary_copies tenv proc_desc err_log non_disj_astate =
   let pname = Procdesc.get_proc_name proc_desc in
   if is_not_implicit_or_copy_ctor_assignment pname then
     PulseNonDisjunctiveDomain.get_copied
@@ -82,7 +82,7 @@ let report_unnecessary_copies proc_desc err_log non_disj_astate =
                ; location_instantiated
                ; from }
            in
-           PulseReport.report ~is_suppressed ~latent:false proc_desc err_log diagnostic )
+           PulseReport.report tenv ~is_suppressed ~latent:false proc_desc err_log diagnostic )
 
 
 let report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate =
@@ -101,7 +101,8 @@ let report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate =
                else Some (Diagnostic.ConstRefableParameter {param; typ; location})
              in
              Option.iter diagnostic ~f:(fun diagnostic ->
-                 PulseReport.report ~is_suppressed:false ~latent:false proc_desc err_log diagnostic ) )
+                 PulseReport.report tenv ~is_suppressed:false ~latent:false proc_desc err_log
+                   diagnostic ) )
 
 
 let heap_size () = (Gc.quick_stat ()).heap_words
@@ -1529,7 +1530,7 @@ let analyze specialization
           else summary
         in
         report_topl_errors proc_desc err_log summary ;
-        report_unnecessary_copies proc_desc err_log non_disj_astate ;
+        report_unnecessary_copies tenv proc_desc err_log non_disj_astate ;
         report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate ;
         summary
     | None ->

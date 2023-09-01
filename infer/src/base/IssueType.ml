@@ -850,6 +850,11 @@ let nullptr_dereference =
     ~user_documentation:[%blob "./documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
+let nullptr_dereference_in_nullsafe_class =
+  register_with_latent ~id:"NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS" ~hum:"Null Dereference" Error
+    Pulse ~user_documentation:[%blob "./documentation/issues/NULLPTR_DEREFERENCE.md"]
+
+
 let optional_empty_access =
   register_with_latent ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]

@@ -11,7 +11,13 @@ module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 
-let report ~is_suppressed ~latent proc_desc err_log diagnostic =
+(* Is nullptr dereference issue in Java class annotated with [@Nullsafe] *)
+let is_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference jn =
+  is_nullptr_dereference
+  && match NullsafeMode.of_java_procname tenv jn with Default -> false | Local _ | Strict -> true
+
+
+let report tenv ~is_suppressed ~latent proc_desc err_log diagnostic =
   let open Diagnostic in
   if is_suppressed && not Config.pulse_report_issues_for_tests then ()
   else
@@ -82,7 +88,21 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
         ; config_usage_extra
         ; taint_extra }
     in
-    let issue_type = get_issue_type ~latent diagnostic in
+    (* [Diagnostic.get_issue_type] wrapper to report different type of issue for
+       nullptr dereferences in Java classes annotated with @Nullsafe if requested *)
+    let get_issue_type tenv ~latent diagnostic proc_desc =
+      let original_issue_type = Diagnostic.get_issue_type diagnostic ~latent in
+      if IssueType.equal original_issue_type (IssueType.nullptr_dereference ~latent) then
+        match Procdesc.get_proc_name proc_desc with
+        | Procname.Java jn
+          when is_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference:true jn
+               && Config.pulse_nullsafe_report_npe_as_separate_issue_type ->
+            IssueType.nullptr_dereference_in_nullsafe_class ~latent
+        | _ ->
+            original_issue_type
+      else original_issue_type
+    in
+    let issue_type = get_issue_type tenv ~latent diagnostic proc_desc in
     let message, suggestion = get_message_and_suggestion diagnostic in
     L.d_printfln ~color:Red "Reporting issue: %a: %s" IssueType.pp issue_type message ;
     Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic) ?loc_instantiated
@@ -90,15 +110,9 @@ let report ~is_suppressed ~latent proc_desc err_log diagnostic =
       ~extras ?suggestion Pulse issue_type message
 
 
-let report_latent_issue proc_desc err_log latent_issue ~is_suppressed =
-  LatentIssue.to_diagnostic latent_issue |> report ~latent:true ~is_suppressed proc_desc err_log
-
-
-(* skip reporting on Java classes annotated with [@Nullsafe] if requested *)
-let is_nullsafe_error tenv ~is_nullptr_dereference jn =
-  (not Config.pulse_nullsafe_report_npe)
-  && is_nullptr_dereference
-  && match NullsafeMode.of_java_procname tenv jn with Default -> false | Local _ | Strict -> true
+let report_latent_issue tenv proc_desc err_log latent_issue ~is_suppressed =
+  LatentIssue.to_diagnostic latent_issue
+  |> report tenv ~latent:true ~is_suppressed proc_desc err_log
 
 
 (* skip reporting for constant dereference (eg null dereference) if the source of the null value is
@@ -147,6 +161,12 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
       is_constant_deref_without_invalidation invalidation access_trace
 
 
+(* Skip reporting nullptr dereferences in Java classes annotated with [@Nullsafe] if requested *)
+let should_skip_reporting_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference jn =
+  (not Config.pulse_nullsafe_report_npe)
+  && is_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference jn
+
+
 let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_without_invalidation
     summary =
   if is_constant_deref_without_invalidation then (
@@ -156,7 +176,10 @@ let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_with
   else
     match Procdesc.get_proc_name proc_desc with
     | Procname.Java jn when is_nullptr_dereference ->
-        let b = is_nullsafe_error tenv ~is_nullptr_dereference jn in
+        let b =
+          should_skip_reporting_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference
+            jn
+        in
         if b then (
           L.d_printfln ~color:Red "Dropping error: conflicting with nullsafe" ;
           b )
@@ -221,7 +244,7 @@ let report_summary_error tenv proc_desc err_log ((access_error : AccessResult.er
       in
       if is_suppressed then L.d_printfln "suppressed error" ;
       if Config.pulse_report_latent_issues then
-        report ~latent:true ~is_suppressed proc_desc err_log
+        report tenv ~latent:true ~is_suppressed proc_desc err_log
           (AccessToInvalidAddress
              { calling_context= []
              ; invalid_address= address
@@ -245,12 +268,12 @@ let report_summary_error tenv proc_desc err_log ((access_error : AccessResult.er
       match LatentIssue.should_report summary diagnostic with
       | `ReportNow ->
           if is_suppressed then L.d_printfln "ReportNow suppressed error" ;
-          report ~latent:false ~is_suppressed proc_desc err_log diagnostic ;
+          report tenv ~latent:false ~is_suppressed proc_desc err_log diagnostic ;
           if Diagnostic.aborts_execution diagnostic then Some (AbortProgram summary) else None
       | `DelayReport latent_issue ->
           if is_suppressed then L.d_printfln "DelayReport suppressed error" ;
           if Config.pulse_report_latent_issues then
-            report_latent_issue ~is_suppressed proc_desc err_log latent_issue ;
+            report_latent_issue tenv ~is_suppressed proc_desc err_log latent_issue ;
           Some (LatentAbortProgram {astate= summary; latent_issue}) )
   | WithSummary _ ->
       (* impossible thanks to prior application of [summary_error_of_error] *)

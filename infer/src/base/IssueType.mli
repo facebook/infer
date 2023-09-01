@@ -310,6 +310,8 @@ val null_dereference : t
 
 val nullptr_dereference : latent:bool -> t
 
+val nullptr_dereference_in_nullsafe_class : latent:bool -> t
+
 val optional_empty_access : latent:bool -> t
 
 val precondition_not_found : t

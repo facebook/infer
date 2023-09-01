@@ -2702,6 +2702,13 @@ and pulse_nullsafe_report_npe =
     "Report null dereference issues on files marked @Nullsafe."
 
 
+and pulse_nullsafe_report_npe_as_separate_issue_type =
+  CLOpt.mk_bool ~long:"pulse-nullsafe-report-npe-as-separate-issue" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Report null dereference issues on files marked @Nullsafe as a separate \
+     NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS issue type."
+
+
 and pulse_log_summary_count =
   CLOpt.mk_bool ~long:"pulse-log-summary-count"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4254,6 +4261,10 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
 and pulse_models_for_erlang = RevList.to_list !pulse_models_for_erlang
 
 and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
+
+and pulse_nullsafe_report_npe_as_separate_issue_type =
+  !pulse_nullsafe_report_npe_as_separate_issue_type
+
 
 and pulse_log_summary_count = !pulse_log_summary_count
 

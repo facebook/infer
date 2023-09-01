@@ -787,6 +787,12 @@ PULSE CHECKER OPTIONS
            Deactivates: Report null dereference issues on files marked
            @Nullsafe. (Conversely: --pulse-nullsafe-report-npe)
 
+       --pulse-nullsafe-report-npe-as-separate-issue
+           Activates: Report null dereference issues on files marked
+           @Nullsafe as a separate NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS
+           issue type. (Conversely:
+           --no-pulse-nullsafe-report-npe-as-separate-issue)
+
        --pulse-recency-limit int
            Maximum number of array elements and structure fields to keep
            track of for a given address.

@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 TESTS_DIR = ../../..
-INFER_OPTIONS = --pulse-only --debug-exceptions --no-pulse-nullsafe-report-npe \
+INFER_OPTIONS = --pulse-only --debug-exceptions --pulse-nullsafe-report-npe-as-separate-issue \
 --pulse-report-ignore-unknown-java-methods-patterns-reset --pulse-report-issues-for-tests \
 --report-suppress-errors SENSITIVE_DATA_FLOW --report-suppress-errors DATA_FLOW_TO_SINK
 INFERPRINT_OPTIONS = --issues-tests
