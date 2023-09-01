@@ -27,9 +27,11 @@ val mk_capture_field_in_cpp_lambda : Mangled.t -> CapturedVar.capture_mode -> t
 
 val is_fake_capture_field : t -> bool
 
+val is_capture_field_in_cpp_lambda : t -> bool
+
 val is_fake_capture_field_weak : t -> bool
 
-val is_fake_capture_field_by_ref : t -> bool
+val is_capture_field_in_cpp_lambda_by_ref : t -> bool
 
 val get_capture_field_position : t -> int option
 

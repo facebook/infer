@@ -11,6 +11,8 @@ type capture_mode = ByReference | ByValue [@@deriving compare, equal, yojson_of,
 
 val string_of_capture_mode : capture_mode -> string
 
+val is_captured_by_ref : capture_mode -> bool
+
 type t = {pvar: Pvar.t; typ: Typ.t; capture_mode: capture_mode} [@@deriving compare, equal]
 
 val pp : Format.formatter -> t -> unit

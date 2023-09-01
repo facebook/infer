@@ -48,20 +48,25 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
 
 
 module Closures = struct
-  let is_captured_by_ref_fake_access (access : _ MemoryAccess.t) =
+  let is_captured_by_ref_access (access : _ MemoryAccess.t) =
     match access with
     | FieldAccess fieldname ->
-        Fieldname.is_fake_capture_field_by_ref fieldname
+        Fieldname.is_capture_field_in_cpp_lambda_by_ref fieldname
     | _ ->
         false
 
 
-  let mk_capture_edges captured =
-    List.foldi captured ~init:BaseMemory.Edges.empty ~f:(fun id edges (mode, typ, addr, trace) ->
-        (* it's ok to use [UnsafeMemory] here because we are building edges *)
-        UnsafeMemory.Edges.add
-          (FieldAccess (Fieldname.mk_fake_capture_field ~id typ mode))
-          (addr, trace) edges )
+  let mk_capture_edges ~is_lambda captured =
+    let add_edge id edges (mode, typ, addr, trace, captured_as) =
+      (* it's ok to use [UnsafeMemory] here because we are building edges *)
+      let var_name = Pvar.get_name captured_as in
+      let field_name =
+        if not is_lambda then Fieldname.mk_fake_capture_field ~id typ mode
+        else Fieldname.mk_capture_field_in_cpp_lambda var_name mode
+      in
+      UnsafeMemory.Edges.add (FieldAccess field_name) (addr, trace) edges
+    in
+    List.foldi captured ~init:BaseMemory.Edges.empty ~f:add_edge
 
 
   let check_captured_addresses path action lambda_addr (astate : t) =
@@ -71,7 +76,7 @@ module Closures = struct
     | Some _ ->
         Memory.fold_edges lambda_addr astate ~init:(Ok astate)
           ~f:(fun astate_result (access, addr_trace) ->
-            if is_captured_by_ref_fake_access access then
+            if is_captured_by_ref_access access then
               astate_result >>= check_addr_access path Read action addr_trace
             else astate_result )
 
@@ -85,12 +90,13 @@ module Closures = struct
               (Capture {captured_as; mode; location; timestamp})
               trace_captured
           in
-          Some (mode, typ, address_captured, new_trace) )
+          Some (mode, typ, address_captured, new_trace, captured_as) )
     in
     let ((closure_addr, _) as closure_addr_hist) =
       (AbstractValue.mk_fresh (), ValueHistory.singleton (Assignment (location, timestamp)))
     in
-    let fake_capture_edges = mk_capture_edges captured_addresses in
+    let is_lambda = Procname.is_cpp_lambda pname in
+    let fake_capture_edges = mk_capture_edges ~is_lambda captured_addresses in
     let++ astate =
       AbductiveDomain.set_post_cell path closure_addr_hist
         (fake_capture_edges, Attributes.singleton (Closure pname))
@@ -765,16 +771,23 @@ let remove_vars vars location astate =
   Stack.remove_vars vars astate
 
 
-let get_var_captured_actuals path location ~captured_formals ~actual_closure astate =
+let get_var_captured_actuals path location ~is_lambda ~captured_formals ~actual_closure astate =
   let+ _, astate, captured_actuals =
     PulseResult.list_fold captured_formals ~init:(0, astate, [])
-      ~f:(fun (id, astate, captured) (_, mode, typ) ->
-        let+ astate, captured_actual =
-          eval_access path Read location actual_closure
-            (FieldAccess (Fieldname.mk_fake_capture_field ~id typ mode))
-            astate
-        in
-        (id + 1, astate, (captured_actual, typ) :: captured) )
+      ~f:(fun (id, astate, captured) (var, mode, typ) ->
+        match var with
+        | Var.ProgramVar pvar ->
+            let var_name = Pvar.get_name pvar in
+            let field_name =
+              if not is_lambda then Fieldname.mk_fake_capture_field ~id typ mode
+              else Fieldname.mk_capture_field_in_cpp_lambda var_name mode
+            in
+            let+ astate, captured_actual =
+              eval_access path Read location actual_closure (FieldAccess field_name) astate
+            in
+            (id + 1, astate, (captured_actual, typ) :: captured)
+        | Var.LogicalVar _ ->
+            L.die InternalError "program var expected but got %a" Var.pp var )
   in
   (* captured_actuals is currently in reverse order compared with the given
      captured_formals because it is built during the above fold (equivalent to a
@@ -803,6 +816,7 @@ type call_kind =
   | `ResolvedProcname ]
 
 let get_captured_actuals procname path location ~captured_formals ~call_kind ~actuals astate =
+  let is_lambda = Procname.is_cpp_lambda procname in
   if
     Procname.is_objc_block procname
     || Procname.is_specialized_with_function_parameters procname
@@ -813,7 +827,7 @@ let get_captured_actuals procname path location ~captured_formals ~call_kind ~ac
         get_closure_captured_actuals path location ~captured_actuals astate
     | `Var id ->
         let+* astate, actual_closure = eval path Read location (Exp.Var id) astate in
-        get_var_captured_actuals path location ~captured_formals ~actual_closure astate
+        get_var_captured_actuals path location ~is_lambda ~captured_formals ~actual_closure astate
     | `ResolvedProcname ->
         Sat (Ok (astate, []))
   else
@@ -824,7 +838,8 @@ let get_captured_actuals procname path location ~captured_formals ~call_kind ~ac
            let* astate, actual_closure =
              eval_access path Read location actual_closure Dereference astate
            in
-           get_var_captured_actuals path location ~captured_formals ~actual_closure astate )
+           get_var_captured_actuals path location ~is_lambda ~captured_formals ~actual_closure
+             astate )
     | _ ->
         Sat (Ok (astate, []))
 

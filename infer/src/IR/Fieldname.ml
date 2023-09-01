@@ -68,16 +68,10 @@ let is_fake_capture_field_weak {field_name} =
   String.is_prefix ~prefix:fake_capture_field_weak_prefix field_name
 
 
-let is_fake_capture_field_by_ref {field_name} =
-  let capture_by_ref_str = string_of_capture_mode ByReference in
-  let fake_capture_field_by_ref_prefix =
-    Printf.sprintf "%s%s" fake_capture_field_prefix capture_by_ref_str
-  in
-  let fake_capture_field_weak_by_ref_prefix =
-    Printf.sprintf "%s%s" fake_capture_field_weak_prefix capture_by_ref_str
-  in
-  String.is_prefix ~prefix:fake_capture_field_by_ref_prefix field_name
-  || String.is_prefix ~prefix:fake_capture_field_weak_by_ref_prefix field_name
+let is_capture_field_in_cpp_lambda {capture_mode} = Option.is_some capture_mode
+
+let is_capture_field_in_cpp_lambda_by_ref {capture_mode} =
+  Option.exists capture_mode ~f:(fun captured_mode -> CapturedVar.is_captured_by_ref captured_mode)
 
 
 let get_capture_field_position ({field_name} as field) =

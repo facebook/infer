@@ -68,3 +68,25 @@ int call_std_fun_constructor_test_good() {
     return *p;
   }
 }
+
+int call_lambda_after_copy() {
+  int c = 41;
+  int d = 1;
+  auto f = [c, &d](int a) { return a + c + d; };
+  auto g = f;
+  return g(100);
+}
+
+int call_lambda_after_copy_test_bad() {
+  if (call_lambda_after_copy() == 142) {
+    int* p = NULL;
+    return *p;
+  }
+}
+
+int call_lambda_after_copy_test_good_FP() {
+  if (call_lambda_after_copy() == 143) {
+    int* p = NULL;
+    return *p;
+  }
+}
