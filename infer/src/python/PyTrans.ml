@@ -896,6 +896,47 @@ module STORE = struct
         (env, None)
     | _ ->
         store env code opname loc arg cell name global is_attr
+
+
+  module SUBSCR = struct
+    (** {v STORE_SUBSCR v}
+
+        Implements [top-of-stack1\[top-of-stack\] = top-of-stack2] *)
+    let run env code {FFI.Instruction.opname} =
+      Debug.p "[%s]\n" opname ;
+      let env, cell_ndx = pop_datastack opname env in
+      let env, cell_lhs = pop_datastack opname env in
+      let env, cell_rhs = pop_datastack opname env in
+      let env, ndx, _ = load_cell env code cell_ndx in
+      let env, lhs, _ = load_cell env code cell_lhs in
+      let env, rhs, _ = load_cell env code cell_rhs in
+      let ndx =
+        match ndx with
+        | Ok ndx ->
+            ndx
+        | Error s ->
+            L.die InternalError "[%s] Failure to load index %a: %s" opname DataStack.pp_cell
+              cell_ndx s
+      in
+      let lhs =
+        match lhs with
+        | Ok lhs ->
+            lhs
+        | Error s ->
+            L.die InternalError "[%s] Failure to load indexable %a: %s" opname DataStack.pp_cell
+              cell_lhs s
+      in
+      let rhs =
+        match rhs with
+        | Ok rhs ->
+            rhs
+        | Error s ->
+            L.die InternalError "[%s] Failure to load value %a: %s" opname DataStack.pp_cell
+              cell_rhs s
+      in
+      let env, _id, _typ = Env.mk_builtin_call env Builtin.PythonSubscriptSet [lhs; ndx; rhs] in
+      (env, None)
+  end
 end
 
 module POP_TOP = struct
@@ -908,35 +949,72 @@ module POP_TOP = struct
     (env, None)
 end
 
-module BINARY_ADD = struct
-  (** {v BINARY_ADD v}
+module BINARY = struct
+  module ADD = struct
+    (** {v BINARY_ADD v}
 
-      Implements top-of-stack = top-of-stack1 + top-of-stack.
+        Implements top-of-stack = top-of-stack1 + top-of-stack.
 
-      Before: [ TOS (rhs) | TOS1 (lhs) | rest-of-stack ]
+        Before: [ TOS (rhs) | TOS1 (lhs) | rest-of-stack ]
 
-      After: [ TOS1 + TOS (lhs + rhs) | rest-of-stack ]
+        After: [ TOS1 + TOS (lhs + rhs) | rest-of-stack ]
 
-      Since Python is using runtime types to know which [+] to do (addition, string concatenation,
-      custom operator, ...), we'll need to write a model for this one. *)
-  let run env code {FFI.Instruction.opname} =
-    Debug.p "[%s]\n" opname ;
-    let env, tos = pop_datastack opname env in
-    let env, tos1 = pop_datastack opname env in
-    let env, lhs, _ = load_cell env code tos1 in
-    let lhs = match lhs with Ok lhs -> lhs | Error s -> L.die InternalError "[%s] %s" opname s in
-    let env, rhs, _ = load_cell env code tos in
-    let rhs = match rhs with Ok rhs -> rhs | Error s -> L.die InternalError "[%s] %s" opname s in
-    (* Even if the call can be considered as virtual because, it's logic is not symetric. Based
-       on what I gathered, like in [0], I think the best course of action is to write a model for
-       it and leave it non virtual. TODO: ask David.
+        Since Python is using runtime types to know which [+] to do (addition, string concatenation,
+        custom operator, ...), we'll need to write a model for this one. *)
+    let run env code {FFI.Instruction.opname} =
+      Debug.p "[%s]\n" opname ;
+      let env, tos = pop_datastack opname env in
+      let env, tos1 = pop_datastack opname env in
+      let env, lhs, _ = load_cell env code tos1 in
+      let lhs =
+        match lhs with Ok lhs -> lhs | Error s -> L.die InternalError "[%s] %s" opname s
+      in
+      let env, rhs, _ = load_cell env code tos in
+      let rhs =
+        match rhs with Ok rhs -> rhs | Error s -> L.die InternalError "[%s] %s" opname s
+      in
+      (* Even if the call can be considered as virtual because, it's logic is not symetric. Based
+         on what I gathered, like in [0], I think the best course of action is to write a model for
+         it and leave it non virtual. TODO: ask David.
 
-       [0]:
-       https://stackoverflow.com/questions/58828522/is-radd-called-if-add-raises-notimplementederror
-    *)
-    let env, id, _typ = Env.mk_builtin_call env Builtin.BinaryAdd [lhs; rhs] in
-    let env = Env.push env (DataStack.Temp id) in
-    (env, None)
+         [0]:
+         https://stackoverflow.com/questions/58828522/is-radd-called-if-add-raises-notimplementederror
+      *)
+      let env, id, _typ = Env.mk_builtin_call env Builtin.BinaryAdd [lhs; rhs] in
+      let env = Env.push env (DataStack.Temp id) in
+      (env, None)
+  end
+
+  module SUBSCR = struct
+    (** {v BINARY_SUBSCR v}
+
+        Implements [top-of-stack = top-of-stack1\[top-of-stack\]]. *)
+    let run env code {FFI.Instruction.opname} =
+      Debug.p "[%s]\n" opname ;
+      let env, cell_ndx = pop_datastack opname env in
+      let env, cell_lhs = pop_datastack opname env in
+      let env, ndx, _ = load_cell env code cell_ndx in
+      let env, lhs, _ = load_cell env code cell_lhs in
+      let ndx =
+        match ndx with
+        | Ok ndx ->
+            ndx
+        | Error s ->
+            L.die InternalError "[%s] Failure to load index %a: %s" opname DataStack.pp_cell
+              cell_ndx s
+      in
+      let lhs =
+        match lhs with
+        | Ok lhs ->
+            lhs
+        | Error s ->
+            L.die InternalError "[%s] Failure to load indexable %a: %s" opname DataStack.pp_cell
+              cell_lhs s
+      in
+      let env, id, _typ = Env.mk_builtin_call env Builtin.PythonSubscriptGet [lhs; ndx] in
+      let env = Env.push env (DataStack.Temp id) in
+      (env, None)
+  end
 end
 
 module BUILD = struct
@@ -1439,7 +1517,7 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
     | "CALL_FUNCTION" ->
         FUNCTION.CALL.run env code instr
     | "BINARY_ADD" ->
-        BINARY_ADD.run env code instr
+        BINARY.ADD.run env code instr
     | "MAKE_FUNCTION" ->
         FUNCTION.MAKE.run env code instr
     | "POP_JUMP_IF_TRUE" ->
@@ -1474,6 +1552,10 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
         JUMP.IF_OR_POP.run ~jump_if:false env code instr next_offset_opt
     | "BUILD_LIST" ->
         BUILD.LIST.run env code instr
+    | "STORE_SUBSCR" ->
+        STORE.SUBSCR.run env code instr
+    | "BINARY_SUBSCR" ->
+        BINARY.SUBSCR.run env code instr
     | _ ->
         L.die InternalError "Unsupported opcode: %s" opname
   in

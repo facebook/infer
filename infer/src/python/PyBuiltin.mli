@@ -23,6 +23,8 @@ type textual =
   | PythonIter
   | PythonIterNext
   | PythonBuildList
+  | PythonSubscriptGet
+  | PythonSubscriptSet
   | CompareOp of Compare.t
 [@@deriving compare]
 

@@ -55,6 +55,8 @@ module Builtin = struct
     | PythonIter
     | PythonIterNext
     | PythonBuildList
+    | PythonSubscriptGet
+    | PythonSubscriptSet
     | CompareOp of Compare.t
   [@@deriving compare]
 
@@ -106,6 +108,10 @@ let to_proc_name = function
             "python_iter_next"
         | PythonBuildList ->
             "python_build_list"
+        | PythonSubscriptGet ->
+            "python_subscript_get"
+        | PythonSubscriptSet ->
+            "python_subscript_set"
         | CompareOp op ->
             sprintf "python_%s" (Compare.to_string op)
       in
@@ -208,6 +214,14 @@ module Set = struct
           ; used_struct_types= [PyCommon.pyIterItemStruct] } )
       ; ( Builtin.PythonBuildList
         , {formals_types= None; result_type= annot PyCommon.pyList; used_struct_types= []} )
+      ; ( Builtin.PythonSubscriptGet
+        , { formals_types= Some [annotatedObject; annotatedObject]
+          ; result_type= annotatedObject
+          ; used_struct_types= [] } )
+      ; ( Builtin.PythonSubscriptSet
+        , { formals_types= Some [annotatedObject; annotatedObject; annotatedObject]
+          ; result_type= annot PyCommon.pyNone
+          ; used_struct_types= [] } )
       ; ( Builtin.CompareOp Eq
         , { formals_types= Some [annotatedObject; annotatedObject]
           ; result_type= annot PyCommon.pyBool

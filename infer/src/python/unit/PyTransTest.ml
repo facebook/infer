@@ -1841,6 +1841,92 @@ class C(ABC):
         declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+l = [1, 2, 3]
+print(l[0])
+|} in
+      test source ;
+      [%expect
+        {|
+          .source_language = "python"
+
+          define dummy.$toplevel() : *PyNone {
+            #b0:
+                n0 = $builtins.python_build_list($builtins.python_int(1), $builtins.python_int(2), $builtins.python_int(3))
+                store &dummy::l <- n0:*PyList
+                n1:*PyList = load &dummy::l
+                n2 = $builtins.python_subscript_get(n1, $builtins.python_int(0))
+                n3 = $builtins.print(n2)
+                ret null
+
+          }
+
+          global dummy::l: *PyObject
+
+          declare $builtins.print(...) : *PyObject
+
+          declare $builtins.python_subscript_get(*PyObject, *PyObject) : *PyObject
+
+          declare $builtins.python_build_list(...) : *PyList
+
+          declare $builtins.python_tuple(...) : *PyObject
+
+          declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+          declare $builtins.python_string(*String) : *PyString
+
+          declare $builtins.python_bool(int) : *PyBool
+
+          declare $builtins.python_float(float) : *PyFloat
+
+          declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+l = [1, 2, 3]
+x = 0
+l[x] = 10
+|} in
+      test source ;
+      [%expect
+        {|
+          .source_language = "python"
+
+          define dummy.$toplevel() : *PyNone {
+            #b0:
+                n0 = $builtins.python_build_list($builtins.python_int(1), $builtins.python_int(2), $builtins.python_int(3))
+                store &dummy::l <- n0:*PyList
+                store &dummy::x <- $builtins.python_int(0):*PyInt
+                n1:*PyInt = load &dummy::x
+                n2:*PyList = load &dummy::l
+                n3 = $builtins.python_subscript_set(n2, n1, $builtins.python_int(10))
+                ret null
+
+          }
+
+          global dummy::x: *PyObject
+
+          global dummy::l: *PyObject
+
+          declare $builtins.python_subscript_set(*PyObject, *PyObject, *PyObject) : *PyNone
+
+          declare $builtins.python_build_list(...) : *PyList
+
+          declare $builtins.python_tuple(...) : *PyObject
+
+          declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+          declare $builtins.python_string(*String) : *PyString
+
+          declare $builtins.python_bool(int) : *PyBool
+
+          declare $builtins.python_float(float) : *PyFloat
+
+          declare $builtins.python_int(int) : *PyInt |}]
   end )
 
 
