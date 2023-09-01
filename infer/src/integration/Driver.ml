@@ -276,6 +276,17 @@ let capture ~changed_files mode =
     MergeCapture.merge_captured_targets ~root )
 
 
+let log_db_size_mb db db_entry debug_mode label =
+  if Config.developer_mode then (
+    Database.get_database db
+    |> SqliteUtils.exec ~log:"checkpointing" ~stmt:"PRAGMA wal_checkpoint(TRUNCATE)" ;
+    let lstat = ResultsDir.get_path db_entry |> Unix.lstat in
+    let size = Int64.to_int lstat.st_size |> Option.value_exn in
+    let value = size / 1024 / 1024 in
+    L.debug debug_mode Quiet "Database size %s: %d@\n" label value ;
+    ScubaLogging.log_count ~label ~value )
+
+
 (* shadowed for tracing *)
 let capture ~changed_files mode =
   GCStats.log_f ~name:"capture" Capture
@@ -284,6 +295,7 @@ let capture ~changed_files mode =
   @@ fun () ->
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"capture" ())) ;
   capture ~changed_files mode ;
+  log_db_size_mb CaptureDatabase CaptureDB Capture "capture_db_size_mb" ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
@@ -292,6 +304,7 @@ let execute_analyze ~changed_files =
   @@ fun () ->
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"analyze" ())) ;
   InferAnalyze.main ~changed_files ;
+  log_db_size_mb AnalysisDatabase AnalysisDB Analysis "analysis_db_size_mb" ;
   PerfEvent.(log (fun logger -> log_end_event logger ()))
 
 
