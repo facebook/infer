@@ -477,13 +477,21 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let is_pointer_typ = Typ.is_pointer class_typ in
     let class_typ = match class_typ.Typ.desc with Typ.Tptr (t, _) -> t | _ -> class_typ in
     L.debug Capture Verbose "Type is  '%s' @\n" (Typ.to_string class_typ) ;
-    let class_tname =
+    let class_tname, cxx_record_decl_info =
       match CAst_utils.get_decl decl_ptr with
       | Some (FieldDecl ({di_parent_pointer}, _, _, _))
       | Some (ObjCIvarDecl ({di_parent_pointer}, _, _, _, _)) -> (
         match CAst_utils.get_decl_opt di_parent_pointer with
         | Some decl ->
-            CType_decl.get_record_typename ~tenv:context.tenv decl
+            let class_tname = CType_decl.get_record_typename ~tenv:context.tenv decl in
+            let cxx_record_decl_info =
+              match decl with
+              | CXXRecordDecl (_, _, _, _, _, _, _, cxx_record_decl_info) ->
+                  Some cxx_record_decl_info
+              | _ ->
+                  None
+            in
+            (class_tname, cxx_record_decl_info)
         | _ ->
             assert false )
       | _ as decl ->
@@ -493,7 +501,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             (Pp.option (Pp.of_string ~f:Clang_ast_j.string_of_decl))
             decl
     in
-    let field_name = CGeneral_utils.mk_class_field_name class_tname field_string in
+    let field_name =
+      CGeneral_utils.mk_class_field_name ?cxx_record_decl_info class_tname field_string
+    in
     let field_exp = Exp.Lfield (obj_sil, field_name, class_typ) in
     (* In certain cases, there is be no LValueToRValue cast, but backend needs dereference*)
     (* there either way:*)
@@ -3951,22 +3961,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let translate_captured
         {Clang_ast_t.lci_captured_var; lci_init_captured_vardecl; lci_capture_this; lci_capture_kind}
         ((trans_results_acc, captured_vars_acc) as acc) =
-      let is_by_ref =
-        (* see http://en.cppreference.com/w/cpp/language/lambda *)
-        match lci_capture_kind with
-        | `LCK_ByRef (* explicit with [&x] or implicit with [&] *)
-        | `LCK_This (* explicit with [this] or implicit with [&] *)
-        | `LCK_VLAType
-          (* capture a variable-length array by reference. we probably don't handle
-             this correctly elsewhere, but it's definitely not captured by value! *) ->
-            true
-        | `LCK_ByCopy (* explicit with [x] or implicit with [=] *) ->
-            (* [=] captures this by reference and everything else by value *)
-            lci_capture_this
-        | `LCK_StarThis (* [*this] is special syntax for capturing current object by value *) ->
-            false
-      in
-      let mode = if is_by_ref then CapturedVar.ByReference else CapturedVar.ByValue in
+      let mode = CAst_utils.get_captured_mode ~lci_capture_this ~lci_capture_kind in
       match (lci_captured_var, lci_init_captured_vardecl) with
       | Some captured_var_decl_ref, Some init_decl -> (
         (* capture and init *)

@@ -8,20 +8,11 @@
 open! IStd
 module F = Format
 
-type 'typ_name t_ = {class_name: 'typ_name; field_name: string}
+type 'typ_name t_ =
+  {class_name: 'typ_name; field_name: string; capture_mode: CapturedVar.capture_mode option}
 [@@deriving compare, equal, yojson_of, sexp, hash]
 
 type t = Typ.Name.t t_ [@@deriving compare, equal, yojson_of, sexp, hash]
-
-let pp f fld = F.pp_print_string f fld.field_name
-
-let compare_name = compare_t_ Typ.Name.compare_name
-
-let make class_name field_name = {class_name; field_name}
-
-let fake_capture_field_prefix = "__capture_"
-
-let fake_capture_field_weak_prefix = fake_capture_field_prefix ^ "weak_"
 
 let string_of_capture_mode = function
   | CapturedVar.ByReference ->
@@ -29,6 +20,22 @@ let string_of_capture_mode = function
   | CapturedVar.ByValue ->
       "by_value_"
 
+
+let pp f fld =
+  match fld.capture_mode with
+  | Some capture_mode ->
+      F.fprintf f "%s_captured_%s" fld.field_name (string_of_capture_mode capture_mode)
+  | None ->
+      F.pp_print_string f fld.field_name
+
+
+let compare_name = compare_t_ Typ.Name.compare_name
+
+let make ?capture_mode class_name field_name = {class_name; field_name; capture_mode}
+
+let fake_capture_field_prefix = "__capture_"
+
+let fake_capture_field_weak_prefix = fake_capture_field_prefix ^ "weak_"
 
 let prefix_of_typ typ =
   match typ.Typ.desc with
@@ -42,6 +49,15 @@ let mk_fake_capture_field ~id typ mode =
   make
     (Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]))
     (Printf.sprintf "%s%s%d" (prefix_of_typ typ) (string_of_capture_mode mode) id)
+
+
+let mk_capture_field_in_cpp_lambda var_name capture_mode =
+  (* We use this type as before rather than the lambda struct name because
+     when we want to create the same names in Pulse we don't have easy access
+     to that lambda struct name. The struct name as part of the field name is
+     there just to help with inheritance anyway and is not used otherwise. *)
+  let class_tname = Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]) in
+  make ~capture_mode class_tname (Mangled.to_string var_name)
 
 
 let is_fake_capture_field {field_name} =
@@ -156,5 +172,5 @@ module Normalizer = HashNormalizer.Make (struct
     let class_name = Typ.NameNormalizer.normalize t.class_name in
     let field_name = HashNormalizer.StringNormalizer.normalize t.field_name in
     if phys_equal class_name t.class_name && phys_equal field_name t.field_name then t
-    else {class_name; field_name}
+    else {class_name; field_name; capture_mode= t.capture_mode}
 end)

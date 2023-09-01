@@ -448,3 +448,22 @@ let get_method_body_opt decl =
   | _ ->
       Logging.die InternalError "Should only be called with method, but got %s"
         (Clang_ast_proj.get_decl_kind_string decl)
+
+
+let get_captured_mode ~lci_capture_this ~lci_capture_kind =
+  (* see http://en.cppreference.com/w/cpp/language/lambda *)
+  let is_by_ref =
+    match lci_capture_kind with
+    | `LCK_ByRef (* explicit with [&x] or implicit with [&] *)
+    | `LCK_This (* explicit with [this] or implicit with [&] *)
+    | `LCK_VLAType
+      (* capture a variable-length array by reference. we probably don't handle
+         this correctly elsewhere, but it's definitely not captured by value! *) ->
+        true
+    | `LCK_ByCopy (* explicit with [x] or implicit with [=] *) ->
+        (* [=] captures this by reference and everything else by value *)
+        lci_capture_this
+    | `LCK_StarThis (* [*this] is special syntax for capturing current object by value *) ->
+        false
+  in
+  if is_by_ref then CapturedVar.ByReference else CapturedVar.ByValue

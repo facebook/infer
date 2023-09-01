@@ -96,3 +96,8 @@ val is_cpp_implicit_decl : Clang_ast_t.decl -> bool
 val get_superclass_curr_class_objc_from_decl : Clang_ast_t.decl -> Clang_ast_t.decl_ref option
 
 val get_method_body_opt : Clang_ast_t.decl -> Clang_ast_t.stmt option
+
+val get_captured_mode :
+     lci_capture_this:bool
+  -> lci_capture_kind:[< `LCK_ByCopy | `LCK_ByRef | `LCK_StarThis | `LCK_This | `LCK_VLAType]
+  -> CapturedVar.capture_mode

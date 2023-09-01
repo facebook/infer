@@ -728,7 +728,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_3" -> "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_4" ;
-"lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:114_8f63c59e&& [line 114, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.__anon_field_1:SomeStruct*,(lambda_lambda1.cpp:114_8f63c59e&&)n$2.__anon_field_1:SomeStruct&) [line 114, column 12]\n " shape="box"]
+"lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:114_8f63c59e&& [line 114, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.xref_captured_by_value_:SomeStruct*,(lambda_lambda1.cpp:114_8f63c59e&&)n$2.xref_captured_by_value_:SomeStruct&) [line 114, column 12]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_4" -> "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_2" ;
@@ -736,7 +736,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_5" -> "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_6" ;
-"lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:114_8f63c59e&& [line 114, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.__anon_field_0:SomeStruct*,(lambda_lambda1.cpp:114_8f63c59e&&)n$5.__anon_field_0:SomeStruct&) [line 114, column 12]\n " shape="box"]
+"lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:114_8f63c59e&& [line 114, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.x_captured_by_value_:SomeStruct*,(lambda_lambda1.cpp:114_8f63c59e&&)n$5.x_captured_by_value_:SomeStruct&) [line 114, column 12]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_6" -> "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_3" ;
@@ -792,7 +792,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_3" -> "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_4" ;
-"lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:121_adee64af&& [line 121, column 12]\n  n$3=*(lambda_lambda1.cpp:121_adee64af&&)n$2.__anon_field_1:SomeStruct& [line 121, column 12]\n  *n$1.__anon_field_1:SomeStruct&=n$3 [line 121, column 12]\n " shape="box"]
+"lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:121_adee64af&& [line 121, column 12]\n  n$3=*(lambda_lambda1.cpp:121_adee64af&&)n$2.xref_captured_by_ref_:SomeStruct& [line 121, column 12]\n  *n$1.xref_captured_by_ref_:SomeStruct&=n$3 [line 121, column 12]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_4" -> "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_2" ;
@@ -800,7 +800,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_5" -> "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_6" ;
-"lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:121_adee64af&& [line 121, column 12]\n  n$6=*(lambda_lambda1.cpp:121_adee64af&&)n$5.__anon_field_0:SomeStruct& [line 121, column 12]\n  *n$4.__anon_field_0:SomeStruct&=n$6 [line 121, column 12]\n " shape="box"]
+"lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:121_adee64af&& [line 121, column 12]\n  n$6=*(lambda_lambda1.cpp:121_adee64af&&)n$5.x_captured_by_ref_:SomeStruct& [line 121, column 12]\n  *n$4.x_captured_by_ref_:SomeStruct&=n$6 [line 121, column 12]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_6" -> "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_3" ;
@@ -830,7 +830,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_3" -> "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_4" ;
-"lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:131_815acded&& [line 131, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.__anon_field_1:SomeStruct*,(lambda_lambda1.cpp:131_815acded&&)n$2.__anon_field_1:SomeStruct&) [line 131, column 12]\n " shape="box"]
+"lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:131_815acded&& [line 131, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.xreflambda_captured_by_value_:SomeStruct*,(lambda_lambda1.cpp:131_815acded&&)n$2.xreflambda_captured_by_value_:SomeStruct&) [line 131, column 12]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_4" -> "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_2" ;
@@ -838,7 +838,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_5" -> "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_6" ;
-"lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:131_815acded&& [line 131, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.__anon_field_0:SomeStruct*,(lambda_lambda1.cpp:131_815acded&&)n$5.__anon_field_0:SomeStruct&) [line 131, column 12]\n " shape="box"]
+"lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:131_815acded&& [line 131, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.xlambda_captured_by_value_:SomeStruct*,(lambda_lambda1.cpp:131_815acded&&)n$5.xlambda_captured_by_value_:SomeStruct&) [line 131, column 12]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_6" -> "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_3" ;
@@ -894,7 +894,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_3" -> "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_4" ;
-"lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:140_41385ab3&& [line 140, column 12]\n  n$3=*(lambda_lambda1.cpp:140_41385ab3&&)n$2.__anon_field_1:SomeStruct& [line 140, column 12]\n  *n$1.__anon_field_1:SomeStruct&=n$3 [line 140, column 12]\n " shape="box"]
+"lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:140_41385ab3&& [line 140, column 12]\n  n$3=*(lambda_lambda1.cpp:140_41385ab3&&)n$2.xreflambda_captured_by_ref_:SomeStruct& [line 140, column 12]\n  *n$1.xreflambda_captured_by_ref_:SomeStruct&=n$3 [line 140, column 12]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_4" -> "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_2" ;
@@ -902,7 +902,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_5" -> "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_6" ;
-"lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:140_41385ab3&& [line 140, column 12]\n  n$6=*(lambda_lambda1.cpp:140_41385ab3&&)n$5.__anon_field_0:SomeStruct& [line 140, column 12]\n  *n$4.__anon_field_0:SomeStruct&=n$6 [line 140, column 12]\n " shape="box"]
+"lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:140_41385ab3&& [line 140, column 12]\n  n$6=*(lambda_lambda1.cpp:140_41385ab3&&)n$5.xlambda_captured_by_ref_:SomeStruct& [line 140, column 12]\n  *n$4.xlambda_captured_by_ref_:SomeStruct&=n$6 [line 140, column 12]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_6" -> "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_3" ;
@@ -1050,7 +1050,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_3" -> "lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_4" ;
-"lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:51_dcfc757f&& [line 51, column 19]\n  n$3=*(lambda_lambda1.cpp:51_dcfc757f&&)n$2.__anon_field_0:Capture* [line 51, column 19]\n  *n$1.__anon_field_0:Capture*=n$3 [line 51, column 19]\n " shape="box"]
+"lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:51_dcfc757f&& [line 51, column 19]\n  n$3=*(lambda_lambda1.cpp:51_dcfc757f&&)n$2.__anon_field_0_captured_by_ref_:Capture* [line 51, column 19]\n  *n$1.__anon_field_0_captured_by_ref_:Capture*=n$3 [line 51, column 19]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_4" -> "lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_2" ;
@@ -1072,7 +1072,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_3" -> "lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_4" ;
-"lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:55_2d65d568&& [line 55, column 19]\n  n$3=_fun_Capture::Capture(n$1.__anon_field_0:Capture*,(lambda_lambda1.cpp:55_2d65d568&&)n$2.__anon_field_0:Capture&) [line 55, column 19]\n " shape="box"]
+"lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:55_2d65d568&& [line 55, column 19]\n  n$3=_fun_Capture::Capture(n$1.__anon_field_0_captured_by_value_:Capture*,(lambda_lambda1.cpp:55_2d65d568&&)n$2.__anon_field_0_captured_by_value_:Capture&) [line 55, column 19]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_4" -> "lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_2" ;
@@ -1102,7 +1102,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_3" -> "lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_4" ;
-"lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:61_d4c594cc&& [line 61, column 19]\n  n$3=*(lambda_lambda1.cpp:61_d4c594cc&&)n$2.__anon_field_0:Capture* [line 61, column 19]\n  *n$1.__anon_field_0:Capture*=n$3 [line 61, column 19]\n " shape="box"]
+"lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:61_d4c594cc&& [line 61, column 19]\n  n$3=*(lambda_lambda1.cpp:61_d4c594cc&&)n$2.__anon_field_0_captured_by_ref_:Capture* [line 61, column 19]\n  *n$1.__anon_field_0_captured_by_ref_:Capture*=n$3 [line 61, column 19]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_4" -> "lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_2" ;
@@ -1132,7 +1132,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_3" -> "lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_4" ;
-"lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:65_2095d5b0&& [line 65, column 19]\n  n$3=*(lambda_lambda1.cpp:65_2095d5b0&&)n$2.__anon_field_0:Capture* [line 65, column 19]\n  *n$1.__anon_field_0:Capture*=n$3 [line 65, column 19]\n " shape="box"]
+"lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:65_2095d5b0&& [line 65, column 19]\n  n$3=*(lambda_lambda1.cpp:65_2095d5b0&&)n$2.__anon_field_0_captured_by_ref_:Capture* [line 65, column 19]\n  *n$1.__anon_field_0_captured_by_ref_:Capture*=n$3 [line 65, column 19]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_4" -> "lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_2" ;
@@ -1162,7 +1162,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_3" -> "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_4" ;
-"lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:77_53b2556e&& [line 77, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.__anon_field_1:SomeStruct*,(lambda_lambda1.cpp:77_53b2556e&&)n$2.__anon_field_1:SomeStruct&) [line 77, column 12]\n " shape="box"]
+"lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:77_53b2556e&& [line 77, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.y_captured_by_value_:SomeStruct*,(lambda_lambda1.cpp:77_53b2556e&&)n$2.y_captured_by_value_:SomeStruct&) [line 77, column 12]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_4" -> "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_2" ;
@@ -1170,7 +1170,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_5" -> "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_6" ;
-"lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:77_53b2556e&& [line 77, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.__anon_field_0:SomeStruct*,(lambda_lambda1.cpp:77_53b2556e&&)n$5.__anon_field_0:SomeStruct&) [line 77, column 12]\n " shape="box"]
+"lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:77_53b2556e&& [line 77, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.x_captured_by_value_:SomeStruct*,(lambda_lambda1.cpp:77_53b2556e&&)n$5.x_captured_by_value_:SomeStruct&) [line 77, column 12]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_6" -> "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_3" ;
@@ -1222,7 +1222,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_3" -> "lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_4" ;
-"lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:84_d154032c&& [line 84, column 12]\n  n$3=*(lambda_lambda1.cpp:84_d154032c&&)n$2.__anon_field_0:int [line 84, column 12]\n  *n$1.__anon_field_0:int=n$3 [line 84, column 12]\n " shape="box"]
+"lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:84_d154032c&& [line 84, column 12]\n  n$3=*(lambda_lambda1.cpp:84_d154032c&&)n$2.xref_captured_by_value_:int [line 84, column 12]\n  *n$1.xref_captured_by_value_:int=n$3 [line 84, column 12]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_4" -> "lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_2" ;
@@ -1252,7 +1252,7 @@ digraph cfg {
 	
 
 	 "lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_3" -> "lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_4" ;
-"lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:92_377e76cc&& [line 92, column 12]\n  n$3=*(lambda_lambda1.cpp:92_377e76cc&&)n$2.__anon_field_0:int [line 92, column 12]\n  *n$1.__anon_field_0:int=n$3 [line 92, column 12]\n " shape="box"]
+"lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:92_377e76cc&& [line 92, column 12]\n  n$3=*(lambda_lambda1.cpp:92_377e76cc&&)n$2.xlambda_captured_by_value_:int [line 92, column 12]\n  *n$1.xlambda_captured_by_value_:int=n$3 [line 92, column 12]\n " shape="box"]
 	
 
 	 "lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_4" -> "lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_2" ;

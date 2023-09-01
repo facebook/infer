@@ -358,23 +358,24 @@ let rec get_mangled_method_name function_decl_info method_decl_info =
           assert false )
 
 
-let rec get_struct_fields tenv decl =
+let rec get_struct_fields tenv ?cxx_record_decl_info decl =
   let open Clang_ast_t in
   let decl_list = get_struct_decls decl in
   let class_tname = get_record_typename ~tenv decl in
   let do_one_decl decl =
     match decl with
     | FieldDecl (_, {ni_name}, qt, _) ->
-        let id = CGeneral_utils.mk_class_field_name class_tname ni_name in
         let typ = qual_type_to_sil_type tenv qt in
         let annotation_items = CAst_utils.sil_annot_of_type qt in
-        [(id, typ, annotation_items)]
+        let name = CGeneral_utils.mk_class_field_name ?cxx_record_decl_info class_tname ni_name in
+        [(name, typ, annotation_items)]
     | _ ->
         []
   in
   let base_decls = get_superclass_decls decl in
-  let base_class_fields = List.map ~f:(get_struct_fields tenv) base_decls in
-  List.concat (base_class_fields @ List.map ~f:do_one_decl decl_list)
+  let base_class_fields = List.map ~f:(get_struct_fields tenv ?cxx_record_decl_info) base_decls in
+  let fields = List.map ~f:do_one_decl decl_list in
+  List.concat (base_class_fields @ fields)
 
 
 (** For a record declaration it returns/constructs the type *)
@@ -665,56 +666,61 @@ and get_struct_methods struct_decl tenv =
           None )
 
 
+and add_record tenv decl_info definition_decl record_decl_info ?cxx_record_decl_info type_ptr =
+  let sil_typename = get_record_typename ~tenv definition_decl in
+  let sil_desc = Typ.Tstruct sil_typename in
+  match Tenv.lookup tenv sil_typename with
+  | Some _ ->
+      sil_desc (* just reuse what is already in tenv *)
+  | None ->
+      let is_translatable_definition =
+        let open Clang_ast_t in
+        record_decl_info.rdi_is_complete_definition && not record_decl_info.rdi_is_dependent_type
+      in
+      if is_translatable_definition then (
+        CAst_utils.update_sil_types_map type_ptr sil_desc ;
+        let fields = get_struct_fields tenv ?cxx_record_decl_info definition_decl in
+        (* Note: We treat static field same as global variables *)
+        let statics = [] in
+        let methods = get_struct_methods definition_decl tenv in
+        let supers =
+          get_superclass_list_cpp tenv definition_decl
+          (* Mitigation: Sometimes the list of super classes includes the root type. *)
+          |> List.filter ~f:(fun super ->
+                 let is_sil_typename = Typ.Name.equal sil_typename super in
+                 if is_sil_typename then
+                   Logging.internal_error "The type %a has a super class of itself.@\n" Typ.Name.pp
+                     sil_typename ;
+                 not is_sil_typename )
+        in
+        let annots =
+          if Typ.Name.Cpp.is_class sil_typename then Annot.Class.cpp
+          else (* No annotations for structs *) Annot.Item.empty
+        in
+        let source_file =
+          (fst decl_info.Clang_ast_t.di_source_range).sl_file
+          |> Option.map ~f:SourceFile.from_abs_path
+        in
+        Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ?source_file sil_typename
+        |> ignore ;
+        CAst_utils.update_sil_types_map type_ptr sil_desc ;
+        sil_desc )
+      else (
+        (* There is no definition for that struct in whole translation unit.
+           Put empty struct into tenv to prevent backend problems *)
+        ignore (Tenv.mk_struct tenv ~dummy:true sil_typename) ;
+        CAst_utils.update_sil_types_map type_ptr sil_desc ;
+        sil_desc )
+
+
 and get_record_struct_type tenv definition_decl : Typ.desc =
   let open Clang_ast_t in
   match definition_decl with
   | ClassTemplateSpecializationDecl (decl_info, _, type_ptr, _, _, _, record_decl_info, _, _, _, _)
-  | CXXRecordDecl (decl_info, _, type_ptr, _, _, _, record_decl_info, _)
-  | RecordDecl (decl_info, _, type_ptr, _, _, _, record_decl_info) -> (
-      let sil_typename = get_record_typename ~tenv definition_decl in
-      let sil_desc = Typ.Tstruct sil_typename in
-      match Tenv.lookup tenv sil_typename with
-      | Some _ ->
-          sil_desc (* just reuse what is already in tenv *)
-      | None ->
-          let is_translatable_definition =
-            let open Clang_ast_t in
-            record_decl_info.rdi_is_complete_definition
-            && not record_decl_info.rdi_is_dependent_type
-          in
-          if is_translatable_definition then (
-            CAst_utils.update_sil_types_map type_ptr sil_desc ;
-            let fields = get_struct_fields tenv definition_decl in
-            (* Note: We treat static field same as global variables *)
-            let statics = [] in
-            let methods = get_struct_methods definition_decl tenv in
-            let supers =
-              get_superclass_list_cpp tenv definition_decl
-              (* Mitigation: Sometimes the list of super classes includes the root type. *)
-              |> List.filter ~f:(fun super ->
-                     let is_sil_typename = Typ.Name.equal sil_typename super in
-                     if is_sil_typename then
-                       Logging.internal_error "The type %a has a super class of itself.@\n"
-                         Typ.Name.pp sil_typename ;
-                     not is_sil_typename )
-            in
-            let annots =
-              if Typ.Name.Cpp.is_class sil_typename then Annot.Class.cpp
-              else (* No annotations for structs *) Annot.Item.empty
-            in
-            let source_file =
-              (fst decl_info.di_source_range).sl_file |> Option.map ~f:SourceFile.from_abs_path
-            in
-            Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ?source_file sil_typename
-            |> ignore ;
-            CAst_utils.update_sil_types_map type_ptr sil_desc ;
-            sil_desc )
-          else (
-            (* There is no definition for that struct in whole translation unit.
-               Put empty struct into tenv to prevent backend problems *)
-            ignore (Tenv.mk_struct tenv ~dummy:true sil_typename) ;
-            CAst_utils.update_sil_types_map type_ptr sil_desc ;
-            sil_desc ) )
+  | RecordDecl (decl_info, _, type_ptr, _, _, _, record_decl_info) ->
+      add_record tenv decl_info definition_decl record_decl_info type_ptr
+  | CXXRecordDecl (decl_info, _, type_ptr, _, _, _, record_decl_info, cxx_record_decl_info) ->
+      add_record tenv decl_info definition_decl record_decl_info ~cxx_record_decl_info type_ptr
   | _ ->
       assert false
 

@@ -19,7 +19,8 @@ val swap_elements_list : 'a list -> 'a list
 
 val list_range : int -> int -> int list
 
-val mk_class_field_name : Typ.Name.t -> string -> Fieldname.t
+val mk_class_field_name :
+  ?cxx_record_decl_info:Clang_ast_t.cxx_record_decl_info -> Typ.name -> string -> Fieldname.t
 
 val get_var_name_mangled :
      Clang_ast_t.decl_info

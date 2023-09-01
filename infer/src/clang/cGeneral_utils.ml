@@ -56,7 +56,38 @@ let list_range i j =
   aux j []
 
 
-let mk_class_field_name class_tname field_name = Fieldname.make class_tname field_name
+let mk_class_field_name ?cxx_record_decl_info class_tname ni_name =
+  match cxx_record_decl_info with
+  | Some cxx_record_decl_info
+    when (not (List.is_empty cxx_record_decl_info.Clang_ast_t.xrdi_lambda_captures))
+         && String.is_prefix ~prefix:CFrontend_config.anon_field ni_name ->
+      let index = String.split ~on:'_' ni_name |> List.last_exn |> int_of_string in
+      let lambda_captured_info =
+        List.nth_exn cxx_record_decl_info.Clang_ast_t.xrdi_lambda_captures index
+      in
+      let captured_mode =
+        CAst_utils.get_captured_mode
+          ~lci_capture_this:lambda_captured_info.Clang_ast_t.lci_capture_this
+          ~lci_capture_kind:lambda_captured_info.Clang_ast_t.lci_capture_kind
+      in
+      let name =
+        match
+          CAst_utils.get_decl_opt_with_decl_ref_opt
+            lambda_captured_info.Clang_ast_t.lci_captured_var
+        with
+        | Some decl -> (
+          match Clang_ast_proj.get_named_decl_tuple decl with
+          | Some (_, named_decl_info) ->
+              named_decl_info.Clang_ast_t.ni_name
+          | None ->
+              ni_name )
+        | None ->
+            ni_name
+      in
+      Fieldname.mk_capture_field_in_cpp_lambda (Mangled.from_string name) captured_mode
+  | _ ->
+      Fieldname.make class_tname ni_name
+
 
 let is_cpp_translation translation_unit_context =
   let lang = translation_unit_context.CFrontend_config.lang in

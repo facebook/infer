@@ -14,7 +14,7 @@ type t [@@deriving compare, equal, yojson_of, sexp, hash]
 val compare_name : t -> t -> int
 (** Similar to compare, but compares only names, except template arguments. *)
 
-val make : Typ.Name.t -> string -> t
+val make : ?capture_mode:CapturedVar.capture_mode -> Typ.Name.t -> string -> t
 (** create a field of the given class and fieldname *)
 
 val get_class_name : t -> Typ.Name.t
@@ -22,6 +22,8 @@ val get_class_name : t -> Typ.Name.t
 val get_field_name : t -> string
 
 val mk_fake_capture_field : id:int -> Typ.t -> CapturedVar.capture_mode -> t
+
+val mk_capture_field_in_cpp_lambda : Mangled.t -> CapturedVar.capture_mode -> t
 
 val is_fake_capture_field : t -> bool
 
