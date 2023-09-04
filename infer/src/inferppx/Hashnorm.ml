@@ -9,6 +9,9 @@ open Ppxlib
 
 let normalize_of_longident ?(suffix = "") lid =
   match lid with
+  | Lident "string" ->
+      (* [HashNormalizer.StringNormalizer.normalize] *)
+      Ldot (Ldot (Lident "HashNormalizer", "StringNormalizer"), "normalize" ^ suffix)
   | Lident "t" ->
       (* `t` is not enclosed in a module *)
       Lident ("normalize" ^ suffix)
@@ -54,12 +57,9 @@ let create_normalize_initializer ~loc (ld : label_declaration) =
 
 
 let should_normalize_field (ld : label_declaration) =
-  let should_normalize_basic_type _ = false in
   match ld.pld_type.ptyp_desc with
-  | Ptyp_constr ({txt= Lident "option"}, [_]) ->
+  | Ptyp_constr ({txt= Lident ("option" | "string")}, _) ->
       true
-  | Ptyp_constr ({txt= Lident type_ident}, _) ->
-      should_normalize_basic_type type_ident
   | Ptyp_constr ({txt= Ldot (_, "t")}, _) ->
       true
   | _ ->
