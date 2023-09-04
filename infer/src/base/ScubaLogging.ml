@@ -71,6 +71,8 @@ let log_one entry = log_many [entry]
 
 let log_count ~label ~value = log_one (LogEntry.mk_count ~label ~value)
 
+let log_duration ~label ~duration_us = log_one (LogEntry.mk_time ~label ~duration_us)
+
 let log_message ~label ~message = log_one (LogEntry.mk_string ~label ~message)
 
 let cost_log_message ~label ~message = if Config.cost_scuba_logging then log_message ~label ~message

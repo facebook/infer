@@ -18,6 +18,9 @@ val log_many : LogEntry.t list -> unit
 val log_count : label:string -> value:int -> unit
 (** Log anything that can be counted. Events will be prefixed with ["count."] *)
 
+val log_duration : label:string -> duration_us:int -> unit
+(** Log elapsed time. Events will be prefixed with ["time."] *)
+
 val log_message : label:string -> message:string -> unit
 (** Log a [string]. Event is prefixed with ["msg."] *)
 

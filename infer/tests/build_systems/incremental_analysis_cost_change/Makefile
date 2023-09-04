@@ -48,6 +48,6 @@ $(PREVIOUS_REPORT): $(INFER_CLANG_DEPS) $(SOURCES) $(CURRENT_REPORT)
 	$(QUIET)$(COPY) -r $(CURRENT_DIR) $(PREVIOUS_DIR)
 	$(QUIET)$(REMOVE) $@
 	$(QUIET)$(INFER_BIN) -P -o $(PREVIOUS_DIR) $(INFER_OPTIONS) --cost-only --enable-issue-type INFINITE_EXECUTION_TIME -- javac  src/*.java 2>&1 \
-		| grep "Invalidated" > invalidation_stats.exp.test
+		| grep "Invalidated" | cut -f1 -d"[" > invalidation_stats.exp.test
 	$(QUIET)$(COPY) $(PREVIOUS_DIR)/analysis_dependency_invalidation_graph.dot \
 	        analysis_dependency_invalidation_graph.dot.test

@@ -83,6 +83,7 @@ let invalidate ~changed_files =
           "incremental invalidation requires specifying changed files via --changed-files-index"
   in
   L.progress "Incremental analysis: invalidating potentially-affected analysis results.@." ;
+  let time0 = Mtime_clock.counter () in
   let dependency_graph = build ~changed_files in
   let total_nodes = CallGraph.n_procs dependency_graph in
   (* Only bother with incremental invalidation and logging if there are already some analysis
@@ -106,15 +107,20 @@ let invalidate ~changed_files =
     in
     SourceFile.Set.iter IssueLog.invalidate invalidated_files ;
     let invalidated_files = SourceFile.Set.cardinal invalidated_files in
+    let elapsed_time = Mtime_clock.count time0 in
     L.progress
       "Incremental analysis: Invalidated %d of %d procedure summaries, and file-level analyses for \
-       %d distinct file%s.@."
+       %d distinct file%s [%a]@."
       invalidated_nodes total_nodes invalidated_files
-      (if Int.equal invalidated_files 1 then "" else "s") ;
+      (if Int.equal invalidated_files 1 then "" else "s")
+      Mtime.Span.pp elapsed_time ;
     ScubaLogging.log_count ~label:"incremental_analysis.total_nodes" ~value:total_nodes ;
     ScubaLogging.log_count ~label:"incremental_analysis.invalidated_nodes" ~value:invalidated_nodes ;
-    ScubaLogging.log_count ~label:"incremental_analysis.invalidated_files" ~value:invalidated_files
-    ) ;
+    ScubaLogging.log_count ~label:"incremental_analysis.invalidated_files" ~value:invalidated_files ;
+    ScubaLogging.log_duration ~label:"incremental_analysis.invalidation_time"
+      ~duration_us:
+        ( elapsed_time |> Mtime.Span.to_uint64_ns |> Int64.to_int |> Option.value ~default:0
+        |> fun d -> d / 1000 ) ) ;
   (* save some memory *)
   ResultsDir.scrub_for_incremental ()
 
