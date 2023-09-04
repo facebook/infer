@@ -95,6 +95,7 @@ type t =
       (** records the copied value for the return address *)
   | DynamicType of Typ.t * SourceFile.t option
   | EndOfCollection
+  | Initialized
   | Invalid of Invalidation.t * Trace.t
   | MustBeInitialized of Timestamp.t * Trace.t
   | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option

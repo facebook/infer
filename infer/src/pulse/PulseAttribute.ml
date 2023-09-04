@@ -161,6 +161,7 @@ module Attribute = struct
         ; copied_location: Location.t }
     | DynamicType of Typ.t * SourceFile.t option
     | EndOfCollection
+    | Initialized
     | Invalid of Invalidation.t * Trace.t
     | MustBeInitialized of Timestamp.t * Trace.t
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
@@ -214,6 +215,8 @@ module Attribute = struct
   let dynamic_type_rank = Variants.dynamictype.rank
 
   let end_of_collection_rank = Variants.endofcollection.rank
+
+  let initialized_rank = Variants.initialized.rank
 
   let invalid_rank = Variants.invalid.rank
 
@@ -287,6 +290,8 @@ module Attribute = struct
           source_file
     | EndOfCollection ->
         F.pp_print_string f "EndOfCollection"
+    | Initialized ->
+        F.pp_print_string f "Initialized"
     | Invalid (invalidation, trace) ->
         F.fprintf f "Invalid %a"
           (Trace.pp ~pp_immediate:(fun fmt -> Invalidation.pp fmt invalidation))
@@ -360,6 +365,7 @@ module Attribute = struct
     | CopiedReturn _
     | DynamicType _
     | EndOfCollection
+    | Initialized
     | JavaResourceReleased
     | CSharpResourceReleased
     | HackAsyncAwaited
@@ -394,6 +400,7 @@ module Attribute = struct
     | CopiedReturn _
     | DynamicType _
     | EndOfCollection
+    | Initialized
     | Invalid _
     | JavaResourceReleased
     | CSharpResourceReleased
@@ -440,6 +447,7 @@ module Attribute = struct
     | CopiedReturn _
     | DynamicType _
     | EndOfCollection
+    | Initialized
     | Invalid _
     | JavaResourceReleased
     | CSharpResourceReleased
@@ -533,6 +541,7 @@ module Attribute = struct
       | DynamicType _
       | EndOfCollection
       | HackAsyncAwaited
+      | Initialized
       | JavaResourceReleased
       | RefCounted
       | StaticType _
@@ -605,6 +614,7 @@ module Attribute = struct
       | DynamicType _
       | EndOfCollection
       | HackAsyncAwaited
+      | Initialized
       | Invalid _
       | JavaResourceReleased
       | MustBeInitialized _
@@ -773,6 +783,7 @@ module Attributes = struct
 
   let is_modified attrs =
     mem_by_rank Attribute.written_to_rank attrs
+    || mem_by_rank Attribute.initialized_rank attrs
     || mem_by_rank Attribute.invalid_rank attrs
     || mem_by_rank Attribute.unknown_effect_rank attrs
     || mem_by_rank Attribute.java_resource_released_rank attrs
@@ -783,7 +794,10 @@ module Attributes = struct
 
   let is_always_reachable = mem_by_rank Attribute.always_reachable_rank
 
-  let is_uninitialized = mem_by_rank Attribute.uninitialized_rank
+  let is_uninitialized attrs =
+    mem_by_rank Attribute.uninitialized_rank attrs
+    && not (mem_by_rank Attribute.initialized_rank attrs)
+
 
   let remove_uninitialized = remove_by_rank Attribute.uninitialized_rank
 

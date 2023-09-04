@@ -212,7 +212,9 @@ let make_suitable_for_pre_summary = map_attributes ~f:Attributes.make_suitable_f
 
 let make_suitable_for_post_summary = map_attributes ~f:Attributes.make_suitable_for_post_summary
 
-let initialize = remove_attribute Attributes.remove_uninitialized
+let initialize address memory =
+  add_one address Initialized memory |> remove_attribute Attributes.remove_uninitialized address
+
 
 let get_allocation = get_attribute Attributes.get_allocation
 

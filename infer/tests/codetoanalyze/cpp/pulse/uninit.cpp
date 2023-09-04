@@ -160,3 +160,11 @@ int init_by_capture_good() {
   unknown_call_lambda([&]() { x = 42; });
   return x;
 }
+
+void init_param(int* p) { p[0] = 42; }
+
+int init_in_callee_ok() {
+  int x;
+  init_param(&x);
+  return x;
+}
