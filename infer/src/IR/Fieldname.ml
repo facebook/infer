@@ -163,7 +163,7 @@ module Normalizer = HashNormalizer.Make (struct
   type nonrec t = t [@@deriving equal, hash]
 
   let normalize t =
-    let class_name = Typ.NameNormalizer.normalize t.class_name in
+    let class_name = Typ.Name.Normalizer.normalize t.class_name in
     let field_name = HashNormalizer.StringNormalizer.normalize t.field_name in
     if phys_equal class_name t.class_name && phys_equal field_name t.field_name then t
     else {class_name; field_name; capture_mode= t.capture_mode}

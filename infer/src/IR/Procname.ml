@@ -278,7 +278,7 @@ module Java = struct
       let parameters =
         IList.map_changed t.parameters ~equal:phys_equal ~f:Typ.Normalizer.normalize
       in
-      let class_name = Typ.NameNormalizer.normalize t.class_name in
+      let class_name = Typ.Name.Normalizer.normalize t.class_name in
       let return_type =
         IOption.map_changed t.return_type ~equal:phys_equal ~f:Typ.Normalizer.normalize
       in
@@ -301,7 +301,7 @@ module Parameter = struct
   module ClangParameterNormalizer = HashNormalizer.Make (struct
     type nonrec t = clang_parameter [@@deriving equal, hash]
 
-    let normalize t = IOption.map_changed t ~equal:phys_equal ~f:Typ.NameNormalizer.normalize
+    let normalize t = IOption.map_changed t ~equal:phys_equal ~f:Typ.Name.Normalizer.normalize
   end)
 
   (** Type for parameters in procnames, for java and clang. *)
@@ -441,7 +441,7 @@ module ObjC_Cpp = struct
     type nonrec t = t [@@deriving equal, hash]
 
     let normalize t =
-      let class_name = Typ.NameNormalizer.normalize t.class_name in
+      let class_name = Typ.Name.Normalizer.normalize t.class_name in
       let method_name = HashNormalizer.StringNormalizer.normalize t.method_name in
       let parameters =
         IList.map_changed ~equal:phys_equal ~f:Parameter.ClangParameterNormalizer.normalize
