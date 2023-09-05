@@ -28,6 +28,7 @@ module DecompilerExpr = PulseDecompilerExpr
       we can then use to loopkup the snapshot from the non-disjunctive domain
 
     Then we compare the snapshot heap with the current heap (see {!PulseNonDisjunctiveOperations}.) *)
+open AbstractDomain.Types
 
 module MakeDomainFromTotalOrder (M : AbstractDomain.Comparable) = struct
   type t = M.t
@@ -289,35 +290,21 @@ type elt =
   ; passed_to: PassedTo.t }
 [@@deriving abstract_domain]
 
-type t = V of elt | Top
+module Elt = struct
+  type t = elt [@@deriving abstract_domain]
 
-let pp f = function
-  | V {copy_map; parameter_map; destructor_checked; captured; locked; loads; passed_to} ->
-      F.fprintf f
-        "@[@[copy map: %a@],@ @[parameter map: %a@],@ @[destructor checked: %a@],@ @[captured: \
-         %a@],@ @[locked: %a@],@ @[loads: %a@],@ @[passed to: %a@]@]"
-        CopyMap.pp copy_map ParameterMap.pp parameter_map DestructorChecked.pp destructor_checked
-        Captured.pp captured Locked.pp locked Loads.pp loads PassedTo.pp passed_to
-  | Top ->
-      AbstractDomain.TopLiftedUtils.pp_top f
+  let pp fmt {copy_map; parameter_map; destructor_checked; captured; locked; loads; passed_to} =
+    F.fprintf fmt
+      "@[@[copy map: %a@],@ @[parameter map: %a@],@ @[destructor checked: %a@],@ @[captured: \
+       %a@],@ @[locked: %a@],@ @[loads: %a@],@ @[passed to: %a@]@]"
+      CopyMap.pp copy_map ParameterMap.pp parameter_map DestructorChecked.pp destructor_checked
+      Captured.pp captured Locked.pp locked Loads.pp loads PassedTo.pp passed_to
+end
 
-
-let leq ~lhs ~rhs =
-  match (lhs, rhs) with _, Top -> true | Top, _ -> false | V lhs, V rhs -> leq_elt ~lhs ~rhs
-
-
-let join x y = match (x, y) with _, Top | Top, _ -> Top | V x, V y -> V (join_elt x y)
-
-let widen ~prev ~next ~num_iters =
-  match (prev, next) with
-  | _, Top | Top, _ ->
-      Top
-  | V prev, V next ->
-      V (widen_elt ~prev ~next ~num_iters)
-
+include AbstractDomain.TopLifted (Elt)
 
 let bottom =
-  V
+  NonTop
     { copy_map= CopyMap.empty
     ; parameter_map= ParameterMap.empty
     ; destructor_checked= DestructorChecked.empty
@@ -331,19 +318,13 @@ let bottom =
 let is_bottom = function
   | Top ->
       false
-  | V {copy_map; parameter_map; destructor_checked; captured; locked; loads; passed_to} ->
+  | NonTop {copy_map; parameter_map; destructor_checked; captured; locked; loads; passed_to} ->
       CopyMap.is_bottom copy_map
       && ParameterMap.is_bottom parameter_map
       && DestructorChecked.is_bottom destructor_checked
       && Captured.is_bottom captured && Locked.is_bottom locked && Loads.is_bottom loads
       && PassedTo.is_bottom passed_to
 
-
-let top = Top
-
-let is_top = function Top -> true | V _ -> false
-
-let map f = function Top -> Top | V astate_n -> V (f astate_n)
 
 let mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt ({copy_map} as astate_n) =
   let copy_var = CopyVar.{copied_into; source_addr_opt} in
@@ -403,7 +384,7 @@ let is_never_used_after_copy_into_intermediate_or_field pvar (copied_timestamp :
   match astate_n with
   | Top ->
       false
-  | V {passed_to; loads; stores} ->
+  | NonTop {passed_to; loads; stores} ->
       let is_after_copy =
         TrackedLoc.exists (fun _ timestamp -> (copied_timestamp :> int) < (timestamp :> int))
       in
@@ -431,7 +412,7 @@ let get_copied ~ref_formals ~ptr_formals astate_n =
   match astate_n with
   | Top ->
       []
-  | V {copy_map; captured} ->
+  | NonTop {copy_map; captured} ->
       let modified =
         CopyMap.fold
           (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
@@ -485,7 +466,7 @@ let get_copied ~ref_formals ~ptr_formals astate_n =
 let get_const_refable_parameters = function
   | Top ->
       []
-  | V {parameter_map; captured; loads; passed_to} ->
+  | NonTop {parameter_map; captured; loads; passed_to} ->
       ParameterMap.fold
         (fun var (parameter_spec_t : ParameterSpec.t) acc ->
           if Captured.is_captured_by_ref var captured then acc
@@ -534,7 +515,7 @@ let add_parameter parameter_var res = map (add_parameter_elt parameter_var res)
 let is_checked_via_dtor var = function
   | Top ->
       true
-  | V {destructor_checked} ->
+  | NonTop {destructor_checked} ->
       DestructorChecked.mem var destructor_checked
 
 
@@ -553,7 +534,7 @@ let set_locked_elt astate_n = {astate_n with locked= true}
 
 let set_locked = map set_locked_elt
 
-let is_locked = function Top -> true | V {locked} -> locked
+let is_locked = function Top -> true | NonTop {locked} -> locked
 
 let set_load_elt loc tstamp ident var astate_n =
   {astate_n with loads= Loads.add loc tstamp ident var astate_n.loads}
@@ -572,7 +553,7 @@ let set_store loc tstamp var astate_n = map (set_store_elt loc tstamp var) astat
 let get_loaded_locations var = function
   | Top ->
       []
-  | V {loads} ->
+  | NonTop {loads} ->
       Loads.get_loaded_locations var loads |> TrackedLoc.get_all_keys
 
 
@@ -580,7 +561,7 @@ let is_captured var astate_n =
   match ((var : Var.t), astate_n) with
   | LogicalVar _, _ ->
       false
-  | ProgramVar x, V {captured} ->
+  | ProgramVar x, NonTop {captured} ->
       Captured.mem x captured
   | ProgramVar _, Top ->
       true
@@ -628,7 +609,7 @@ let set_passed_to loc timestamp call_exp actuals =
 let get_passed_to var ~f = function
   | Top ->
       `Top
-  | V {passed_to} ->
+  | NonTop {passed_to} ->
       let callees =
         PassedTo.find var passed_to |> CalleesWithLoc.filter (fun callee _ -> f callee)
       in

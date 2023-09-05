@@ -183,6 +183,8 @@ module TopLiftedUtils = struct
   let pp_top f = F.pp_print_string f SpecialChars.down_tack
 
   let pp ~pp f = function Top -> pp_top f | NonTop astate -> pp f astate
+
+  let map f = function Top -> Top | NonTop astate -> NonTop (f astate)
 end
 
 module TopLifted (Domain : S) = struct
@@ -213,6 +215,8 @@ module TopLifted (Domain : S) = struct
       | NonTop prev, NonTop next ->
           PhysEqual.optim2 ~res:(NonTop (Domain.widen ~prev ~next ~num_iters)) prev0 next0
 
+
+  let map = TopLiftedUtils.map
 
   let pp = TopLiftedUtils.pp ~pp:Domain.pp
 end

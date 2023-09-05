@@ -112,7 +112,11 @@ module BottomLiftedUtils : sig
 end
 
 (** Create a domain with Top element from a pre-domain *)
-module TopLifted (Domain : S) : WithTop with type t = Domain.t top_lifted
+module TopLifted (Domain : S) : sig
+  include WithTop with type t = Domain.t top_lifted
+
+  val map : (Domain.t -> Domain.t) -> t -> t
+end
 
 module TopLiftedUtils : sig
   val pp_top : Format.formatter -> unit
