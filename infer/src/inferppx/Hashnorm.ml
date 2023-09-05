@@ -7,17 +7,19 @@
 open! IStd
 open Ppxlib
 
+let normalize_from_typename = function "t" -> "normalize" | s -> "normalize_" ^ s
+
 let normalize_of_longident ?(suffix = "") lid =
   match lid with
   | Lident "string" ->
       (* [HashNormalizer.StringNormalizer.normalize] *)
       Ldot (Ldot (Lident "HashNormalizer", "StringNormalizer"), "normalize" ^ suffix)
-  | Lident "t" ->
-      (* `t` is not enclosed in a module *)
-      Lident ("normalize" ^ suffix)
-  | Ldot (l, "t") ->
-      (* `M.t` *)
-      Ldot (Ldot (l, "Normalizer"), "normalize" ^ suffix)
+  | Lident typename ->
+      (* [t]/[x] is not enclosed in a module *)
+      Lident (normalize_from_typename typename ^ suffix)
+  | Ldot (l, typename) ->
+      (* [M.t]/[M.x] *)
+      Ldot (Ldot (l, "Normalizer"), normalize_from_typename typename ^ suffix)
   | _ ->
       Format.eprintf "Could not parse ident: %a@\n" Common.pp_longident lid ;
       assert false
@@ -66,7 +68,8 @@ let should_normalize_field (ld : label_declaration) =
       false
 
 
-let normalize_impl ~loc (lds : label_declaration list) =
+let normalize_impl ~loc ptype_name (lds : label_declaration list) =
+  let func_name = normalize_from_typename ptype_name.txt in
   let lds = List.filter lds ~f:should_normalize_field in
   let record_exp = Common.create_record ~loc ~with_value:[%expr t] lds in
   let guarded = Common.if_phys_equal_then_var ~loc "t" lds record_exp in
@@ -75,20 +78,21 @@ let normalize_impl ~loc (lds : label_declaration list) =
       ~f:(Common.let_field_equal_rhs_expr ~loc create_normalize_initializer)
   in
   let body = [%expr fun t -> [%e final_expr]] in
-  Common.make_function ~loc "normalize" body
+  Common.make_function ~loc func_name body
 
 
-let normalize_passthrough_impl ~loc manifest_type =
-  Common.generate_passthrough_function ~loc normalize_of_core_type "normalize" manifest_type
+let normalize_passthrough_impl ~loc ptype_name manifest_type =
+  let normalize_name = normalize_from_typename ptype_name.txt in
+  Common.generate_passthrough_function ~loc normalize_of_core_type normalize_name manifest_type
 
 
 let normalize_type_declaration ~loc (td : type_declaration) =
   match td with
-  | {ptype_kind= Ptype_record fields; _} ->
-      [normalize_impl ~loc fields]
-  | {ptype_kind= Ptype_abstract; ptype_manifest= Some manifest_type} ->
+  | {ptype_kind= Ptype_record fields; ptype_name} ->
+      [normalize_impl ~loc ptype_name fields]
+  | {ptype_kind= Ptype_abstract; ptype_manifest= Some manifest_type; ptype_name} ->
       (* passthrough case like `let nonrec t = t` *)
-      [normalize_passthrough_impl ~loc manifest_type]
+      [normalize_passthrough_impl ~loc ptype_name manifest_type]
   | {ptype_kind= Ptype_abstract | Ptype_variant _ | Ptype_open; ptype_loc; _} ->
       let ext =
         Location.error_extensionf ~loc:ptype_loc "Cannot derive functions for non record types"
