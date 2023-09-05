@@ -59,6 +59,8 @@ duplicates.txt
 /infer/tests/build_systems/java_source_parser/*.test
 /infer/tests/codetoanalyze/dotnet/*/*.json
 /infer/tests/codetoanalyze/erlang/**/_build
+infer/tests/codetoanalyze/objcpp/fb-pulse/*.mm
+infer/tests/codetoanalyze/objcpp/fb-pulse/issues.exp
 /infer/src/datalog/**/_build
 /_release
 /infer-source

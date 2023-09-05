@@ -24,6 +24,13 @@ module Vector : sig
   val reserve : AbstractValue.t * ValueHistory.t -> model
 end
 
+module Function : sig
+  val operator_call :
+       (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t
+    -> (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list
+    -> model
+end
+
 open PulseModelsDSL
 
 val constructor_dsl : Typ.Name.t -> (string * aval) list -> aval model_monad

@@ -152,6 +152,7 @@ BUILD_SYSTEMS_TESTS += \
 DIRECT_TESTS += \
   objc_fb-config-impact \
   objc_fb-config-impact-strict \
+  objcpp_fb-pulse \
 
 endif
 
