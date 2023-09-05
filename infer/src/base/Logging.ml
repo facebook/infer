@@ -161,7 +161,7 @@ let close_logs () =
 
 
 let register_epilogue () =
-  Epilogues.register ~f:close_logs ~description:"flushing logs and closing log file"
+  Epilogues.register_late ~f:close_logs ~description:"flushing logs and closing log file"
 
 
 let reset_formatters () =

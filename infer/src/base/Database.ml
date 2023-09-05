@@ -282,10 +282,9 @@ end = struct
 
   let db_close_1 id =
     let descr = get_db_descr id in
-    Option.iter !descr ~f:(fun (_, db) ->
-        (* TODO(arr): Logging code here fails due to epilogue ordering *)
-        (* L.debug Capture Quiet "Closing an existing database connection %a %a@\n" pp_location loc *)
-        (*   pp_id id ; *)
+    Option.iter !descr ~f:(fun (loc, db) ->
+        L.debug Capture Quiet "Closing an existing database connection %a %a@\n" pp_location loc
+          pp_id id ;
         do_db_close db (get_close_db_callbacks id) ) ;
     descr := None
 
@@ -324,4 +323,4 @@ end
 
 include UnsafeDatabaseRef
 
-let () = Epilogues.register_late ~f:db_close ~description:"closing database connection"
+let () = Epilogues.register ~f:db_close ~description:"closing database connection"
