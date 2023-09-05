@@ -7,9 +7,6 @@
 
 open! IStd
 
-val merge : DB.filename list -> Tenv.t
-(** Merge tenvs from the given paths *)
-
 val merge_global_tenv : normalize:bool -> DB.filename list -> unit
 (** Merge tenvs from the given paths and store the result as a global tenv *)
 

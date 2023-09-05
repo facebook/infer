@@ -20,13 +20,6 @@ module TenvMerger = struct
     output
 
 
-  let merge_with_progress paths =
-    let time0 = Mtime_clock.counter () in
-    let merged_tenv = merge paths in
-    L.progress "Merging type environments took %a@." Mtime.Span.pp (Mtime_clock.count time0) ;
-    merged_tenv
-
-
   let merge_into_global ~normalize paths =
     let time0 = Mtime_clock.counter () in
     let global_tenv = merge paths in
@@ -71,8 +64,6 @@ module TenvMerger = struct
     | Ok () ->
         ()
 end
-
-let merge = TenvMerger.merge_with_progress
 
 let merge_global_tenv = TenvMerger.merge_into_global
 

@@ -8,6 +8,7 @@
 open! IStd
 module L = Logging
 module F = Format
+module Worker = ProcessPool.Worker
 
 let textual_subcommand = "compile-infer"
 
@@ -219,6 +220,75 @@ module IterSeq = struct
         0
 end
 
+(** Setup for capture workers where each worker writes into its own [capture.db] and [.global.tenv].
+    These are then merged in the main process. *)
+module CaptureWorker = struct
+  type t =
+    { action: Unit.t -> unit option
+          (** Process individual Hack compilation units. Returns None on success and Some on error
+              (due to ProcessPool contract). *)
+    ; prologue: Worker.id -> unit
+    ; epilogue: Worker.id -> string
+          (** Returns the absolute path to infer-out of a worker containing a [capture.db] and
+              [.global.tenv] *) }
+
+  let worker_out_dir_name id = F.asprintf "worker-%a-out" Worker.pp_id id
+
+  let mk_blueprint () =
+    (* Each worker accumulates its own global tenv. In epilogue the tenv is stored to disk and its
+       filepath returned to the main process. *)
+    let child_tenv = Tenv.create () in
+    let action unit =
+      let t0 = Mtime_clock.now () in
+      !ProcessPoolState.update_status t0 unit.Unit.source_path ;
+      match Unit.capture_unit unit with
+      | Ok file_tenv ->
+          Tenv.merge ~src:file_tenv ~dst:child_tenv ;
+          None
+      | Error () ->
+          Some ()
+    in
+    (* Create worker's [infer-out] and connect to a secondary capture DB inside it *)
+    let prologue id =
+      L.debug Capture Quiet "Running worker %a prologue@\n" Worker.pp_id id ;
+      let worker_out_dir_abspath = ResultsDir.get_path Temporary ^/ worker_out_dir_name id in
+      Utils.create_dir worker_out_dir_abspath ;
+      let capture_db_abspath =
+        ResultsDirEntryName.get_path ~results_dir:worker_out_dir_abspath CaptureDB
+      in
+      let capture_db = Database.Secondary capture_db_abspath in
+      DBWriter.override_use_daemon false ;
+      Database.create_db capture_db CaptureDatabase ;
+      Database.new_database_connection capture_db CaptureDatabase
+    in
+    (* Write out a [.globa.tenv] and return the path to the worker's out folder *)
+    let epilogue id =
+      let worker_out_dir_abspath = ResultsDir.get_path Temporary ^/ worker_out_dir_name id in
+      let tenv_path =
+        ResultsDirEntryName.get_path ~results_dir:worker_out_dir_abspath JavaGlobalTypeEnvironment
+      in
+      L.debug Capture Quiet "Epilogue: writing worker %a tenv to %s@\n" Worker.pp_id id tenv_path ;
+      Tenv.write child_tenv (DB.filename_from_string tenv_path) ;
+      worker_out_dir_abspath
+    in
+    {action; prologue; epilogue}
+
+
+  (** Generate [infer-deps.txt] from paths to workers' output folders *)
+  let write_infer_deps worker_outs =
+    let infer_deps_content =
+      let pp fmt =
+        Pp.seq ~sep:"\n"
+          (fun fmt (child_num, out_path) -> F.fprintf fmt "%d\t<skip>\t%s" child_num out_path)
+          fmt
+      in
+      F.asprintf "%a" pp (Array.to_list worker_outs)
+    in
+    let infer_deps_file = ResultsDir.get_path CaptureDependencies in
+    Utils.with_file_out infer_deps_file ~f:(fun oc ->
+        Out_channel.output_string oc infer_deps_content )
+end
+
 (** Process hackc output from [ic] extracting and capturing individual textual units.
 
     The structure of hackc output is as follows:
@@ -241,31 +311,7 @@ let process_output_in_parallel ic =
   (* action's output and on_finish's input are connected and consistent with
      ProcessPool.TaskGenerator's contract *)
   let unit_iter = IterSeq.create ?estimated_size:unit_count units in
-  let child_action, child_epilogue =
-    (* Each worker accumulates its own global tenv. In epilogue the tenv is stored to disk and its
-       filepath returned to the main process. *)
-    let child_tenv = Tenv.create () in
-    let child_action unit =
-      let t0 = Mtime_clock.now () in
-      !ProcessPoolState.update_status t0 unit.Unit.source_path ;
-      match Unit.capture_unit unit with
-      | Ok file_tenv ->
-          Tenv.merge ~src:file_tenv ~dst:child_tenv ;
-          None
-      | Error () ->
-          Some ()
-    in
-    let child_epilogue worker_id =
-      let tenv_path = ResultsDir.get_path Temporary ^/ "child.tenv" |> DB.filename_from_string in
-      let worker_num = ProcessPool.Worker.id_to_int worker_id in
-      let tenv_path = DB.filename_add_suffix tenv_path (Int.to_string worker_num) in
-      L.debug Capture Quiet "Epilogue: writing child %d tenv to %s@\n" worker_num
-        (DB.filename_to_string tenv_path) ;
-      Tenv.write child_tenv tenv_path ;
-      tenv_path
-    in
-    (child_action, child_epilogue)
-  in
+  let worker_blueprint = CaptureWorker.mk_blueprint () in
   let on_finish = function Some () -> incr n_error | None -> incr n_captured in
   let tasks () =
     ProcessPool.TaskGenerator.
@@ -275,7 +321,7 @@ let process_output_in_parallel ic =
       ; next= (fun () -> IterSeq.next unit_iter) }
   in
   (* Cap the number of capture workers based on the number of textual units. This will make the
-     default behavior more reasonable on a high core-count machine. *)
+       default behavior more reasonable on a high core-count machine. *)
   let jobs =
     match unit_count with
     | Some unit_count ->
@@ -286,21 +332,25 @@ let process_output_in_parallel ic =
   in
   L.debug Capture Quiet "Preparing to capture with %d workers@\n" jobs ;
   let runner =
-    Tasks.Runner.create ~jobs ~child_prologue:ignore ~f:child_action ~child_epilogue ~tasks
+    Tasks.Runner.create ~with_primary_db:false ~jobs ~child_prologue:worker_blueprint.prologue
+      ~f:worker_blueprint.action ~child_epilogue:worker_blueprint.epilogue tasks
   in
-  let child_tenv_paths = Tasks.Runner.run runner in
-  (* Merge worker tenvs into a global tenv *)
-  let child_tenv_paths =
-    Array.mapi child_tenv_paths ~f:(fun child_num tenv_path ->
-        match tenv_path with
-        | Some tenv_path ->
-            tenv_path
-        | None ->
-            L.die ExternalError "Child %d did't return a path to its tenv" child_num )
+  let worker_outs =
+    Tasks.Runner.run runner
+    |> Array.mapi ~f:(fun worker_num out_path ->
+           match out_path with
+           | Some out_path ->
+               (worker_num, out_path)
+           | None ->
+               L.die ExternalError "Worker %d did't return a path to its output folder" worker_num )
   in
-  L.progress "Merging type environments...@\n%!" ;
-  let tenv = MergeCapture.merge (Array.to_list child_tenv_paths) in
-  Array.iter child_tenv_paths ~f:(fun filename -> DB.filename_to_string filename |> Unix.unlink) ;
+  CaptureWorker.write_infer_deps worker_outs ;
+  MergeCapture.merge_captured_targets ~root:Config.results_dir ;
+  let tenv =
+    Tenv.load_global ()
+    |> Option.value_or_thunk ~default:(fun () ->
+           L.die InternalError "Global tenv not found after capture merge" )
+  in
   L.progress "Finished capture: success %d files, error %d files.@\n" !n_captured !n_error ;
   (tenv, !n_captured, !n_error)
 

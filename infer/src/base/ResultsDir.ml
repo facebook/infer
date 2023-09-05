@@ -103,9 +103,9 @@ let remove_results_dir () =
 let prepare_logging_and_db () =
   L.setup_log_file () ;
   PerfEvent.init () ;
-  if Sys.is_file (get_path AnalysisDB) <> `Yes then Database.create_db AnalysisDatabase ;
-  if Sys.is_file (get_path CaptureDB) <> `Yes then Database.create_db CaptureDatabase ;
-  Database.new_database_connection ()
+  if Sys.is_file (get_path AnalysisDB) <> `Yes then Database.create_db Primary AnalysisDatabase ;
+  if Sys.is_file (get_path CaptureDB) <> `Yes then Database.create_db Primary CaptureDatabase ;
+  Database.new_database_connections Primary
 
 
 let create_results_dir () =

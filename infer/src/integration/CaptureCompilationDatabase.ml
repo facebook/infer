@@ -61,7 +61,7 @@ let run_compilation_database compilation_database should_capture_file =
      {!Tasks.Runner.run} *)
   let runner =
     Tasks.Runner.create ~jobs:Config.jobs ~child_prologue:ignore ~f:invoke_cmd
-      ~child_epilogue:ignore ~tasks
+      ~child_epilogue:ignore tasks
   in
   Tasks.Runner.run runner |> ignore ;
   L.progress "@." ;

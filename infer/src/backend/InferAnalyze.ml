@@ -246,7 +246,7 @@ let analyze replay_call_graph source_files_to_analyze =
       in
       ScubaLogging.log_count ~label:"num_analysis_workers" ~value:Config.jobs ;
       Tasks.Runner.create ~jobs:Config.jobs ~f:analyze_target ~child_prologue ~child_epilogue
-        ~tasks:build_tasks_generator
+        build_tasks_generator
     in
     let workers_stats = Tasks.Runner.run runner in
     let collected_backend_stats, collected_gc_stats, collected_missing_deps =

@@ -26,7 +26,7 @@ test: issues.exp.test
 
 issues.exp.test: $(SOURCES) $(INFER_BIN) $(HACKC)
 	$(INFER_BIN) capture --hackc-binary $(HACKC) -- hackc compile-infer $(SOURCES) 2>&1 \
-	  | sed -e 's/[0-9\.]\+[mμ]s/X/g' > $@
+	  | sed -e 's/[0-9\.]\+[mμ]\?s/X/g' > $@
 
 .PHONY: replace
 replace: issues.exp.test

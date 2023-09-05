@@ -9,11 +9,6 @@ open! IStd
 module F = Format
 module L = Logging
 
-type id = CaptureDatabase | AnalysisDatabase
-
-(** cannot use {!ResultsDir.get_path} due to circular dependency so re-implement it *)
-let results_dir_get_path entry = ResultsDirEntryName.get_path ~results_dir:Config.results_dir entry
-
 let procedures_schema prefix =
   (* [proc_uid] is meant to only be used with [Procname.to_unique_id]
      [Marshal]ed values must never be used as keys. *)
@@ -103,6 +98,8 @@ let create_specs_tables ~prefix db =
   SqliteUtils.exec db ~log:"creating issue logs table" ~stmt:(issues_schema prefix)
 
 
+type id = CaptureDatabase | AnalysisDatabase [@@deriving show {with_path= false}]
+
 let create_tables ?(prefix = "") db = function
   | CaptureDatabase ->
       create_procedures_table ~prefix db ;
@@ -128,20 +125,35 @@ let load_model_specs db = function
       ()
 
 
-let get_dbpath = function
+let get_db_entry = function
   | AnalysisDatabase ->
       ResultsDirEntryName.AnalysisDB
   | CaptureDatabase ->
       ResultsDirEntryName.CaptureDB
 
 
-let create_db id =
-  let temp_db =
+type location = Primary | Secondary of string [@@deriving show {with_path= false}, equal]
+
+(** cannot use {!ResultsDir.get_path} due to circular dependency so re-implement it *)
+let results_dir_get_path entry = ResultsDirEntryName.get_path ~results_dir:Config.results_dir entry
+
+let get_db_path location id =
+  match location with Primary -> results_dir_get_path (get_db_entry id) | Secondary file -> file
+
+
+let create_db location id =
+  let final_db_path = get_db_path location id in
+  let pid = Unix.getpid () in
+  let temp_db_path =
     Filename.temp_file ~in_dir:(results_dir_get_path Temporary)
-      (match id with CaptureDatabase -> "capture.db" | AnalysisDatabase -> "results.db")
+      ( match id with
+      | CaptureDatabase ->
+          "capture." ^ Pid.to_string pid ^ ".db"
+      | AnalysisDatabase ->
+          "results." ^ Pid.to_string pid ^ ".db" )
       ".tmp"
   in
-  let db = Sqlite3.db_open ~mutex:`FULL temp_db in
+  let db = Sqlite3.db_open ~mutex:`FULL temp_db_path in
   SqliteUtils.exec db ~log:"sqlite page size"
     ~stmt:(Printf.sprintf "PRAGMA page_size=%d" Config.sqlite_page_size) ;
   create_tables db id ;
@@ -157,7 +169,7 @@ let create_db id =
   (* load biabduction models *)
   load_model_specs db id ;
   SqliteUtils.db_close db ;
-  try Sys.rename temp_db (results_dir_get_path (get_dbpath id))
+  try Sys.rename temp_db_path final_db_path
   with Sys_error _ -> (* lost the race, doesn't matter *) ()
 
 
@@ -241,19 +253,26 @@ module UnsafeDatabaseRef : sig
 
   val db_close : unit -> unit
 
-  val new_database_connection : unit -> unit
+  val new_database_connection : location -> id -> unit
 
-  val ensure_database_connection : id -> unit
+  val ensure_database_connection : location -> id -> unit
+
+  val new_database_connections : location -> unit
 end = struct
-  let capture_database : Sqlite3.db option ref = ref None
+  let capture_db_descr : (location * Sqlite3.db) option ref = ref None
 
-  let results_database : Sqlite3.db option ref = ref None
+  let results_db_descr : (location * Sqlite3.db) option ref = ref None
 
-  let get_db = function CaptureDatabase -> capture_database | AnalysisDatabase -> results_database
+  let get_db_descr = function
+    | CaptureDatabase ->
+        capture_db_descr
+    | AnalysisDatabase ->
+        results_db_descr
+
 
   let get_database id =
-    match !(get_db id) with
-    | Some db ->
+    match !(get_db_descr id) with
+    | Some (_, db) ->
         db
     | None ->
         L.die InternalError
@@ -261,37 +280,46 @@ end = struct
            \"\"` or `ResultsDir.create_results_dir ()`?"
 
 
-  let db_close () =
-    List.iter
-      ~f:(fun id ->
-        let db = get_db id in
-        let callbacks = get_close_db_callbacks id in
-        Option.iter !db ~f:(fun db -> do_db_close db callbacks) ;
-        db := None )
-      [CaptureDatabase; AnalysisDatabase]
+  let db_close_1 id =
+    let descr = get_db_descr id in
+    Option.iter !descr ~f:(fun (_, db) ->
+        (* TODO(arr): Logging code here fails due to epilogue ordering *)
+        (* L.debug Capture Quiet "Closing an existing database connection %a %a@\n" pp_location loc *)
+        (*   pp_id id ; *)
+        do_db_close db (get_close_db_callbacks id) ) ;
+    descr := None
 
 
-  let do_new_database id =
+  let db_close () = List.iter [CaptureDatabase; AnalysisDatabase] ~f:db_close_1
+
+  let new_database_connection location id =
+    L.debug Capture Quiet "Opening a new database connection %a %a@\n" pp_location location pp_id id ;
+    (* we always want at most one connection alive throughout the lifetime of the module *)
+    db_close_1 id ;
+    let db_path = get_db_path location id in
     let db =
       Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex:`FULL ?vfs:Config.sqlite_vfs ~uri:true
-        (results_dir_get_path (get_dbpath id))
+        db_path
     in
     Sqlite3.busy_timeout db Config.sqlite_lock_timeout ;
     SqliteUtils.exec db ~log:"synchronous=OFF" ~stmt:"PRAGMA synchronous=OFF" ;
     SqliteUtils.exec db ~log:"sqlite cache size"
       ~stmt:(Printf.sprintf "PRAGMA cache_size=%i" Config.sqlite_cache_size) ;
-    let db_ref = get_db id in
-    db_ref := Some db ;
+    let db_ref = get_db_descr id in
+    db_ref := Some (location, db) ;
     List.iter ~f:(fun callback -> callback db) !(get_new_db_callbacks id)
 
 
-  let new_database_connection () =
-    (* we always want at most one connection alive throughout the lifetime of the module *)
-    db_close () ;
-    List.iter ~f:do_new_database [CaptureDatabase; AnalysisDatabase]
+  let ensure_database_connection location id =
+    match !(get_db_descr id) with
+    | Some (actual_location, _) when equal_location actual_location location ->
+        ()
+    | _ ->
+        new_database_connection location id
 
 
-  let ensure_database_connection id = if Option.is_none !(get_db id) then do_new_database id
+  let new_database_connections location =
+    List.iter ~f:(new_database_connection location) [CaptureDatabase; AnalysisDatabase]
 end
 
 include UnsafeDatabaseRef

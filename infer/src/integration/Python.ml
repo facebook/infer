@@ -81,10 +81,9 @@ let capture_files files =
     in
     let child_epilogue worker_id =
       let tenv_path = ResultsDir.get_path Temporary ^/ "child.tenv" |> DB.filename_from_string in
-      let worker_num = ProcessPool.Worker.id_to_int worker_id in
-      let tenv_path = DB.filename_add_suffix tenv_path (Int.to_string worker_num) in
-      L.debug Capture Quiet "Epilogue: writing child %d tenv to %s@\n" worker_num
-        (DB.filename_to_string tenv_path) ;
+      let tenv_path = DB.filename_add_suffix tenv_path (ProcessPool.Worker.show_id worker_id) in
+      L.debug Capture Quiet "Epilogue: writing child %a tenv to %s@\n" ProcessPool.Worker.pp_id
+        worker_id (DB.filename_to_string tenv_path) ;
       Tenv.write child_tenv tenv_path ;
       tenv_path
     in
@@ -99,7 +98,7 @@ let capture_files files =
   in
   L.debug Capture Quiet "Preparing to capture with %d workers@\n" jobs ;
   let runner =
-    Tasks.Runner.create ~jobs ~child_prologue:ignore ~f:child_action ~child_epilogue ~tasks
+    Tasks.Runner.create ~jobs ~child_prologue:ignore ~f:child_action ~child_epilogue tasks
   in
   let child_tenv_paths = Tasks.Runner.run runner in
   (* Merge worker tenvs into a global tenv *)

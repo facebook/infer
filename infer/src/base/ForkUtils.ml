@@ -14,7 +14,7 @@ let protect ~f x =
   if Option.is_none Config.run_as_child then (
     Epilogues.reset () ;
     L.reset_formatters () ) ;
-  Database.new_database_connection () ;
+  Database.new_database_connections Primary ;
   (* get different streams of random numbers in each fork, in particular to lessen contention in
      `Filename.mk_temp` *)
   Random.self_init () ;

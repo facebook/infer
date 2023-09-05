@@ -374,7 +374,7 @@ let store_previous_schedule_if_needed () =
        databases *)
     (* because it's early in the process we don't have a db connection yet; we don't want to set up
        logging because we are possibly about to delete the current logs file *)
-    Database.ensure_database_connection AnalysisDatabase ;
+    Database.ensure_database_connection Primary AnalysisDatabase ;
     (* logging isn't set up either but at least this will print to the console *)
     L.progress "Loading previous analysis schedule from summaries@\n" ;
     store_previous_schedule () )

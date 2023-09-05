@@ -9,25 +9,29 @@ open! IStd
 
 type ('a, 'b) doer = 'a -> 'b option
 
-let with_new_db_connection ~f () =
-  Database.new_database_connection () ;
+let with_primary_db_connection ~f () =
+  Database.new_database_connections Primary ;
   f ()
 
 
 module Runner = struct
   type ('work, 'final, 'result) t = ('work, 'final, 'result) ProcessPool.t
 
-  let create ~jobs ~child_prologue ~f ~child_epilogue ~tasks =
+  let create ?(with_primary_db = true) ~jobs ~child_prologue ~f ~child_epilogue tasks =
     PerfEvent.(
       log (fun logger -> log_begin_event logger ~categories:["sys"] ~name:"fork prepare" ()) ) ;
+    (* Close database connections before forking *)
     Database.db_close () ;
+    let tasks = if with_primary_db then with_primary_db_connection ~f:tasks else tasks in
     let pool =
-      ProcessPool.create ~jobs ~f ~child_epilogue ~tasks:(with_new_db_connection ~f:tasks)
+      ProcessPool.create ~jobs ~f ~child_epilogue ~tasks
         ~child_prologue:
           ((* hack: we'll continue executing after the function passed to [protect], despite what he name might suggest *)
            ForkUtils.protect ~f:child_prologue )
     in
     PerfEvent.(log (fun logger -> log_end_event logger ())) ;
+    (* Re-open database connections after forking *)
+    Database.new_database_connections Primary ;
     pool
 
 

@@ -8,6 +8,9 @@
 
 open! IStd
 
+val override_use_daemon : bool -> unit
+(** override the default of whether the process should use DB daemon [true] or not [false] *)
+
 val add_source_file :
      source_file:Sqlite3.Data.t
   -> tenv:Sqlite3.Data.t

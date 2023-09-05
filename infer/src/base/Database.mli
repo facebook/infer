@@ -11,6 +11,10 @@ type id =
   | CaptureDatabase  (** the capture databse **)
   | AnalysisDatabase  (** the analysis/summaries database **)
 
+type location =
+  | Primary  (** primary location under [Config.results_dir] *)
+  | Secondary of string  (** secondary location in the specified path *)
+
 type analysis_table = Specs | BiabductionModelsSpecs
 
 val string_of_analysis_table : analysis_table -> string
@@ -24,18 +28,20 @@ val get_database : id -> Sqlite3.db
 (** You should always use this function to access the database, as the connection to it may change
     during the execution (see [new_database_connection]). *)
 
-val new_database_connection : unit -> unit
-(** Closes the previous connection to the database (if any), and opens a new one. Needed after calls
-    to fork(2). *)
+val create_db : location -> id -> unit
+(** create the database file and initialize all the necessary tables *)
 
-val ensure_database_connection : id -> unit
+val new_database_connection : location -> id -> unit
+
+val new_database_connections : location -> unit
+(** Closes the previous connections to the databases (if any), and opens new ones. Needed after
+    calls to fork(2). *)
+
+val ensure_database_connection : location -> id -> unit
 (** open a new connection to the specified database if there isn't one already *)
 
 val db_close : unit -> unit
 (** close the current connection to the database *)
-
-val create_db : id -> unit
-(** create the database file and initialize all the necessary tables *)
 
 type registered_stmt
 

@@ -537,7 +537,7 @@ end
 
 let remove_socket_file () = Server.remove_socket_file ()
 
-let use_daemon =
+let default_use_daemon =
   lazy
     (let is_windows =
        match Version.build_platform with Windows -> true | Linux | Darwin -> false
@@ -557,7 +557,15 @@ let use_daemon =
      else Server.socket_exists () )
 
 
-let perform cmd = if Lazy.force use_daemon then Server.send cmd else Command.execute cmd
+let override_daemon_ref = ref None
+
+let override_use_daemon should_use = override_daemon_ref := Some should_use
+
+let use_daemon () =
+  Option.value_or_thunk !override_daemon_ref ~default:(fun () -> Lazy.force default_use_daemon)
+
+
+let perform cmd = if use_daemon () then Server.send cmd else Command.execute cmd
 
 let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names =
   perform (AddSourceFile {source_file; tenv; integer_type_widths; proc_names})
@@ -592,7 +600,7 @@ let start =
   fun () ->
     if (not !already_started) && Config.is_originator then (
       remove_socket_file () ;
-      if Lazy.force use_daemon then (
+      if use_daemon () then (
         Server.start () ;
         Epilogues.register ~f:stop ~description:"Stop Sqlite write daemon" ;
         already_started := true ) )
