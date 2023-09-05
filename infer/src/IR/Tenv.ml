@@ -191,7 +191,7 @@ let tenv_serializer : t Serialization.serializer =
 
 let global_tenv : t option ref = ref None
 
-let global_tenv_path = ResultsDir.get_path JavaGlobalTypeEnvironment |> DB.filename_from_string
+let global_tenv_path = ResultsDir.get_path GlobalTypeEnvironment |> DB.filename_from_string
 
 let read path = Serialization.read_from_file tenv_serializer path
 

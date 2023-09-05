@@ -265,7 +265,7 @@ module CaptureWorker = struct
     let epilogue id =
       let worker_out_dir_abspath = ResultsDir.get_path Temporary ^/ worker_out_dir_name id in
       let tenv_path =
-        ResultsDirEntryName.get_path ~results_dir:worker_out_dir_abspath JavaGlobalTypeEnvironment
+        ResultsDirEntryName.get_path ~results_dir:worker_out_dir_abspath GlobalTypeEnvironment
       in
       L.debug Capture Quiet "Epilogue: writing worker %a tenv to %s@\n" Worker.pp_id id tenv_path ;
       Tenv.write child_tenv (DB.filename_from_string tenv_path) ;

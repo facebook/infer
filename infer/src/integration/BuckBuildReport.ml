@@ -114,7 +114,7 @@ let expand_target ~root acc (target, target_path) =
   match Sys.is_directory target_path with
   | `Yes ->
       expand_dir acc (target, target_path)
-  | _ when String.is_suffix target_path ~suffix:ResultsDirEntryName.buck_infer_deps_file_name ->
+  | _ when String.is_suffix target_path ~suffix:ResultsDirEntryName.infer_deps_file_name ->
       (* direct path of an [infer-deps.txt] file, inline *)
       inline acc target_path
   | _ -> (

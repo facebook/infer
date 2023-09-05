@@ -67,7 +67,7 @@ let load_tenv () =
       Tenv.create ()
   | Some _ when Config.biabduction_models_mode ->
       L.die InternalError "Unexpected global tenv file found in '%s' while generating the models"
-        (ResultsDir.get_path JavaGlobalTypeEnvironment)
+        (ResultsDir.get_path GlobalTypeEnvironment)
   | Some tenv ->
       tenv
 

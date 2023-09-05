@@ -31,7 +31,7 @@ module TenvMerger = struct
 
   let merge_global_tenvs ~normalize infer_deps_file =
     let dep_tenv_path infer_out_src =
-      ResultsDirEntryName.get_path ~results_dir:infer_out_src JavaGlobalTypeEnvironment
+      ResultsDirEntryName.get_path ~results_dir:infer_out_src GlobalTypeEnvironment
       |> DB.filename_from_string
     in
     let fold_dep_paths =

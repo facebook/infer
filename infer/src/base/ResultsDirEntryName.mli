@@ -31,8 +31,7 @@ type id =
   | Debug  (** directory containing debug data *)
   | Differential  (** contains the results of [infer reportdiff] *)
   | DuplicateFunctions  (** list of duplicated functions *)
-  | JavaGlobalTypeEnvironment
-      (** internal {!IR.Tenv.t} object corresponding to the whole project *)
+  | GlobalTypeEnvironment  (** internal {!IR.Tenv.t} object corresponding to the whole project *)
   | Logs  (** log file *)
   | MissingSourceFiles  (** Source files missing during analysis *)
   | MissingProcedures  (** Procedures missing during analysis *)
@@ -69,6 +68,6 @@ val to_delete_before_caching_capture : results_dir:string -> string list
 val to_keep_before_new_capture : results_dir:string -> string list
 (** utility for {!ResultsDir.remove_results_dir}, you probably want to use that instead *)
 
-val buck_infer_deps_file_name : string
+val infer_deps_file_name : string
 (** sad that we have to have this here but some code path is looking for all files with that name in
     buck-out/ *)
