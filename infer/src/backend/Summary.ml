@@ -266,12 +266,10 @@ module OnDisk = struct
     summary
 
 
-  let delete pname =
-    remove_from_cache pname ;
-    DBWriter.delete_spec ~proc_uid:(Procname.to_unique_id pname)
+  let delete_all ~procedures =
+    List.iter ~f:remove_from_cache procedures ;
+    DBWriter.delete_specs ~proc_uids:(List.map procedures ~f:Procname.to_unique_id)
 
-
-  let delete_all ~procedures = List.iter ~f:delete procedures
 
   let iter_filtered_specs ~filter ~f =
     let db = Database.get_database AnalysisDatabase in

@@ -71,15 +71,21 @@ module Implementation = struct
           SqliteUtils.result_unit ~finalize:false ~log:"delete issue_logs" db delete_stmt )
 
 
-  let delete_spec =
+  let delete_specs =
     let delete_statement =
       Database.register_statement AnalysisDatabase "DELETE FROM specs WHERE proc_uid = :k"
     in
-    fun ~proc_uid ->
+    let delete_spec ~proc_uid =
       Database.with_registered_statement delete_statement ~f:(fun db delete_stmt ->
           Sqlite3.bind delete_stmt 1 (Sqlite3.Data.TEXT proc_uid)
           |> SqliteUtils.check_result_code db ~log:"delete spec bind proc_uid" ;
           SqliteUtils.result_unit ~finalize:false ~log:"delete spec" db delete_stmt )
+    in
+    fun ~proc_uids ->
+      let db = Database.get_database AnalysisDatabase in
+      SqliteUtils.exec db ~log:"begin transaction" ~stmt:"BEGIN TRANSACTION" ;
+      List.iter proc_uids ~f:(fun proc_uid -> delete_spec ~proc_uid) ;
+      SqliteUtils.exec db ~log:"commit transaction" ~stmt:"COMMIT"
 
 
   let mark_all_source_files_stale () =
@@ -341,7 +347,7 @@ module Command = struct
     | DeleteAllSpecs
     | DeleteAttributes of {proc_uid: string}
     | DeleteIssueLogs of {source_file: Sqlite3.Data.t}
-    | DeleteSpec of {proc_uid: string}
+    | DeleteSpecs of {proc_uids: string list}
     | Handshake
     | MarkAllSourceFilesStale
     | MergeCaptures of {root: string; infer_deps_file: string}
@@ -373,8 +379,8 @@ module Command = struct
         "DeleteAttributes"
     | DeleteIssueLogs _ ->
         "DeleteIssueLogs"
-    | DeleteSpec _ ->
-        "DeleteSpec"
+    | DeleteSpecs _ ->
+        "DeleteSpecs"
     | Handshake ->
         "Handshake"
     | MarkAllSourceFilesStale ->
@@ -408,8 +414,8 @@ module Command = struct
         Implementation.delete_attributes ~proc_uid
     | DeleteIssueLogs {source_file} ->
         Implementation.delete_issue_logs ~source_file
-    | DeleteSpec {proc_uid} ->
-        Implementation.delete_spec ~proc_uid
+    | DeleteSpecs {proc_uids} ->
+        Implementation.delete_specs ~proc_uids
     | Handshake ->
         ()
     | MarkAllSourceFilesStale ->
@@ -579,7 +585,7 @@ let delete_attributes ~proc_uid = perform (DeleteAttributes {proc_uid})
 
 let delete_issue_logs ~source_file = perform (DeleteIssueLogs {source_file})
 
-let delete_spec ~proc_uid = perform (DeleteSpec {proc_uid})
+let delete_specs ~proc_uids = perform (DeleteSpecs {proc_uids})
 
 let mark_all_source_files_stale () = perform MarkAllSourceFilesStale
 

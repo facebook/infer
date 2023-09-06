@@ -83,7 +83,7 @@ let invalidate ~changed_files =
           "incremental invalidation requires specifying changed files via --changed-files-index"
   in
   L.progress "Incremental analysis: invalidating potentially-affected analysis results.@." ;
-  let time0 = Mtime_clock.counter () in
+  let traverse_timer = Mtime_clock.counter () in
   let dependency_graph = build ~changed_files in
   let total_nodes = CallGraph.n_procs dependency_graph in
   (* Only bother with incremental invalidation and logging if there are already some analysis
@@ -91,9 +91,9 @@ let invalidate ~changed_files =
   if total_nodes > 0 then (
     if Config.debug_level_analysis > 0 then
       CallGraph.to_dotty dependency_graph AnalysisDependencyInvalidationGraphDot ;
-    let invalidated_nodes, invalidated_files =
+    let invalidated_pnames, invalidated_files =
       CallGraph.fold_flagged dependency_graph
-        ~f:(fun node (acc_nodes, acc_files) ->
+        ~f:(fun node (acc_pnames, acc_files) ->
           let files =
             match Attributes.load node.pname with
             | Some {translation_unit} ->
@@ -101,26 +101,35 @@ let invalidate ~changed_files =
             | None ->
                 acc_files
           in
-          Summary.OnDisk.delete node.pname ;
-          (acc_nodes + 1, files) )
-        (0, SourceFile.Set.empty)
+          (node.pname :: acc_pnames, files) )
+        ([], SourceFile.Set.empty)
     in
+    let traverse_time = Mtime_clock.count traverse_timer in
+    let db_timer = Mtime_clock.counter () in
+    Summary.OnDisk.delete_all ~procedures:invalidated_pnames ;
+    let db_time = Mtime_clock.count db_timer in
     SourceFile.Set.iter IssueLog.invalidate invalidated_files ;
     let invalidated_files = SourceFile.Set.cardinal invalidated_files in
-    let elapsed_time = Mtime_clock.count time0 in
+    let invalidated_nodes_count = List.length invalidated_pnames in
+    let span_to_us s =
+      s |> Mtime.Span.to_uint64_ns |> Int64.to_int |> Option.value ~default:0 |> fun d -> d / 1000
+    in
     L.progress
       "Incremental analysis: Invalidated %d of %d procedure summaries, and file-level analyses for \
-       %d distinct file%s [%a]@."
-      invalidated_nodes total_nodes invalidated_files
+       %d distinct file%s [traversal %a] [db %a]@."
+      invalidated_nodes_count total_nodes invalidated_files
       (if Int.equal invalidated_files 1 then "" else "s")
-      Mtime.Span.pp elapsed_time ;
+      Mtime.Span.pp traverse_time Mtime.Span.pp db_time ;
     ScubaLogging.log_count ~label:"incremental_analysis.total_nodes" ~value:total_nodes ;
-    ScubaLogging.log_count ~label:"incremental_analysis.invalidated_nodes" ~value:invalidated_nodes ;
+    ScubaLogging.log_count ~label:"incremental_analysis.invalidated_nodes"
+      ~value:invalidated_nodes_count ;
     ScubaLogging.log_count ~label:"incremental_analysis.invalidated_files" ~value:invalidated_files ;
     ScubaLogging.log_duration ~label:"incremental_analysis.invalidation_time"
-      ~duration_us:
-        ( elapsed_time |> Mtime.Span.to_uint64_ns |> Int64.to_int |> Option.value ~default:0
-        |> fun d -> d / 1000 ) ) ;
+      ~duration_us:(span_to_us @@ Mtime.Span.add traverse_time db_time) ;
+    ScubaLogging.log_duration ~label:"incremental_analysis.invalidation_traverse_time"
+      ~duration_us:(span_to_us traverse_time) ;
+    ScubaLogging.log_duration ~label:"incremental_analysis.invalidation_db_time"
+      ~duration_us:(span_to_us db_time) ) ;
   (* save some memory *)
   ResultsDir.scrub_for_incremental ()
 
