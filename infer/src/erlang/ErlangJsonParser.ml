@@ -45,19 +45,29 @@ let default_or (to_a : 'a parser) : 'a option parser = function
       Some (Some a)
 
 
-let to_loc json : Ast.location option =
+let rec to_loc_from_anno json : Ast.location option =
+  (* erl_anno:anno() :: location() | [annotation(), ...].
+     annotation() :: {'file', filename()}
+                         | {'generated', generated()}
+                         | {'location', location()}
+                         | {'record', record()}
+                         | {'text', string()}.
+     location() :: line() | {line(), column()}.
+  *)
   match json with
+  | `List (`List [`String "location"; location] :: _) ->
+      to_loc_from_anno location
+  | `List (`List (`String "file" :: _) :: rest)
+  | `List (`List (`String "generated" :: _) :: rest)
+  | `List (`List (`String "record" :: _) :: rest)
+  | `List (`List (`String "text" :: _) :: rest) ->
+      to_loc_from_anno (`List rest)
   | `Int line ->
       Some {Ast.line; col= -1}
-  | `List [`List (`String "generated" :: _); `List [`String "location"; `Int line]] ->
-      Some {Ast.line; col= -1}
-  | `List [`List (`String "generated" :: _); `List [`String "location"; `List [`Int line; `Int col]]]
-    ->
-      Some {Ast.line; col}
   | `List [`Int line; `Int col] ->
       Some {Ast.line; col}
   | _ ->
-      unknown "line" json
+      unknown "anno" json
 
 
 let rec kill_singleton_list json =
