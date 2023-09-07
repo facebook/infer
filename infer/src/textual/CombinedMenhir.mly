@@ -36,6 +36,7 @@
 %token GLOBAL
 %token HANDLERS
 %token IF
+%token IF_AND_LPAREN
 %token INT
 %token JMP
 %token LABRACKET
@@ -68,6 +69,7 @@
 %token <Z.t> INTEGER
 %token <float> FLOATINGPOINT
 %token <string> LABEL
+%token <string option * string> PROC_AND_LPAREN
 %token <string> STRING
 
 (* Doli-specific keywords *)
@@ -107,9 +109,8 @@
 %start <Doli.doliProgram> doliProgram
 %type <Attr.t> attribute
 %type <Module.decl> declaration
-%type <qualified_procname> qualified_pname
-%type <qualified_procname> opt_qualified_pname
-%type <ProcName.t> pname
+%type <qualified_procname> qualified_pname_and_lparen
+%type <qualified_procname> opt_qualified_pname_and_lparen
 %type <FieldName.t> fname
 %type <NodeName.t> nname
 %type <TypeName.t> tname
@@ -136,13 +137,12 @@
 %type <Textual.Body.t> body
 %%
 
-ident:
+ident_except_load:
   | DECLARE { "declare" }
   | DEFINE { "define" }
   | EXTENDS { "extends" }
   | GLOBAL { "global" }
   | JMP { "jmp" }
-  | LOAD { "load" }
   | LOCALKEYWORD { "local" }
   | PRUNE { "prune" }
   | RET { "ret" }
@@ -158,14 +158,22 @@ ident:
   | IN { "in" }
   | x=IDENT { x }
 
+ident:
+  | LOAD { "load" }
+  | x=ident_except_load { x }
 
 main:
   | attrs=attribute* decls=declaration* EOF
     { (fun sourcefile -> { Module.attrs; decls; sourcefile }) }
 
-pname:
-  | id=ident
-    { { ProcName.value=id; loc=location_of_pos $startpos(id) } }
+name_and_lparen:
+  | proc_ident=opt_qualified_pname_and_lparen
+    { match (proc_ident : qualified_procname).enclosing_class with
+      | Enclosing _ ->
+         let loc = location_of_pos $startpos(proc_ident) in
+         let string = Format.asprintf "%a" pp_qualified_procname proc_ident in
+         raise (SpecialSyntaxError (loc, string))
+      | _ -> (proc_ident : qualified_procname).name.value }
 
 fname:
   | id=ident
@@ -189,17 +197,31 @@ vname:
   | id=ident
     { { VarName.value=id; loc=location_of_pos $startpos(id) } }
 
-qualified_pname:
-  | tname=tname DOT name=pname
-    { ( {enclosing_class=Enclosing tname; name} : qualified_procname) }
-  | name=pname
-    { ( {enclosing_class=TopLevel; name} : qualified_procname ) }
+vname_except_load_keyword:
+  | id=ident_except_load
+    { { VarName.value=id; loc=location_of_pos $startpos(id) } }
 
-opt_qualified_pname:
-  | tname=opt_tname DOT name=pname
-    { ( {enclosing_class=Enclosing tname; name} : qualified_procname) }
-  | name=pname
-    { ( {enclosing_class=TopLevel; name} : qualified_procname ) }
+opt_qualified_pname_and_lparen:
+  | proc_ident=PROC_AND_LPAREN
+    { let enclosing, id = proc_ident in
+      let loc = location_of_pos $startpos(proc_ident) in
+      let name : ProcName.t = { value=id; loc } in
+      let enclosing_class : enclosing_class =
+        Option.value_map enclosing
+                         ~default:TopLevel
+                         ~f:(fun value -> Enclosing {value; loc})
+      in
+      ( {enclosing_class; name} : qualified_procname)
+    }
+
+qualified_pname_and_lparen:
+  | proc_ident=opt_qualified_pname_and_lparen
+    { match (proc_ident : qualified_procname).enclosing_class with
+      | Enclosing tname when String.equal tname.TypeName.value "?" ->
+         let loc = location_of_pos $startpos(proc_ident) in
+         let string = Format.asprintf "%a" pp_qualified_procname proc_ident in
+         raise (SpecialSyntaxError (loc, string))
+      | _ -> proc_ident }
 
 attribute:
   | DOT name=ident EQ value=STRING
@@ -226,14 +248,14 @@ declaration:
                         {FieldDecl.qualified_name; typ; attributes}) in
       let supers = Option.value supers ~default:[] in
       Module.Struct {name= typ_name; supers; fields; attributes} }
-  | DECLARE attributes=annots qualified_name=qualified_pname LPAREN
+  | DECLARE attributes=annots qualified_name=qualified_pname_and_lparen
             formals_types=declaration_types
             RPAREN COLON result_type=annotated_typ
     { let procdecl : ProcDecl.t =
         {qualified_name; formals_types; result_type; attributes} in
       Module.Procdecl procdecl
     }
-  | DEFINE attributes=annots qualified_name=qualified_pname LPAREN
+  | DEFINE attributes=annots qualified_name=qualified_pname_and_lparen
            params = separated_list(COMMA, typed_var) RPAREN COLON result_type=annotated_typ
            body = body
     { let formals_types = List.map ~f:snd params in
@@ -378,8 +400,18 @@ bool_expression:
   | LPAREN bexp=bool_expression RPAREN
     { bexp }
 
+lparen_bool_expression:
+  | bexp1=lparen_bool_expression AND bexp2=bool_expression
+    { BoolExp.And (bexp1, bexp2) }
+  | bexp1=lparen_bool_expression OR bexp2=bool_expression
+    { BoolExp.Or (bexp1, bexp2) }
+  | bexp=bool_expression RPAREN
+    { bexp }
+
 terminator:
   | IF bexp=bool_expression THEN then_=terminator ELSE else_=terminator
+    { Terminator.If {bexp; then_; else_} }
+  | IF_AND_LPAREN bexp=lparen_bool_expression THEN then_=terminator ELSE else_=terminator
     { Terminator.If {bexp; then_; else_} }
   | RET e=expression
     { Terminator.Ret e }
@@ -393,8 +425,9 @@ terminator:
 node_call:
   | label=nname
     { Terminator.{label; ssa_args=[]} }
-  | label=nname LPAREN ssa_args=separated_nonempty_list(COMMA, expression) RPAREN
-    { Terminator.{label; ssa_args} }
+  | value=name_and_lparen ssa_args=separated_nonempty_list(COMMA, expression) RPAREN
+    { let label : NodeName.t = { value; loc=location_of_pos $startpos(value) } in
+      Terminator.{label; ssa_args} }
 
 opt_handlers:
   | { [] }
@@ -410,6 +443,8 @@ expression:
     { Exp.Load {exp; typ=None} }
   | AMPERSAND name=vname
     { Exp.Lvar name }
+  | vname_except_load_keyword
+    { assert false }
   | exp=expression DOT enclosing_class=opt_tname DOT name=fname
     { let field : qualified_fieldname = {enclosing_class; name} in
       Exp.Field {exp; field} }
@@ -417,13 +452,12 @@ expression:
     { Exp.Index (e1, e2) }
   | c=const
     { Exp.Const c }
-  | proc=opt_qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
+  | proc=opt_qualified_pname_and_lparen args=separated_list(COMMA, expression) RPAREN
     { Exp.Call {proc; args; kind= Exp.NonVirtual} }
-  | recv=expression DOT proc=opt_qualified_pname LPAREN args=separated_list(COMMA, expression) RPAREN
+  | recv=expression DOT proc=opt_qualified_pname_and_lparen args=separated_list(COMMA, expression) RPAREN
     { Exp.call_virtual proc recv args }
   | LABRACKET typ=typ RABRACKET
     { Exp.Typ typ }
-
 
 (*  -------------------- DOLI  ----------------------------------*)
 
@@ -455,10 +489,10 @@ extendedSignature:
   ;
 
 signature:
-  | mds=modifier*; rt=returnType; funcId=ident;
-  LPAREN formalParams=separated_list(COMMA, formalParameter) RPAREN
+  | mds=modifier*; rt=returnType; funcId=name_and_lparen;
+    formalParams=separated_list(COMMA, formalParameter) RPAREN
     option(throws)
-   { {modifiers = mds; returns = rt; identifier = funcId; formalParameters = formalParams } }
+    { {modifiers = mds; returns = rt; identifier = funcId; formalParameters = formalParams } }
   ;
 
 modifier:

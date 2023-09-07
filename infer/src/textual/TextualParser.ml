@@ -72,6 +72,8 @@ let parse_buf ~capture sourcefile filebuf =
       Error [SyntaxError {loc; msg= "unexpected token " ^ token}]
   | CombinedLexer.LexingError (loc, lexeme) ->
       Error [SyntaxError {loc; msg= "unexpected token " ^ lexeme}]
+  | Textual.SpecialSyntaxError (loc, msg) ->
+      Error [SyntaxError {loc; msg}]
 
 
 let parse_string sourcefile text =

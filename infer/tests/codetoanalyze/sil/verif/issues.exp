@@ -17,7 +17,7 @@ basic.sil, line 55, column 11: textual type error: expression &y has type *float
 basic.sil, line 75, column 4: textual type error: ident n1 is read before being written
 basic.sil, line 86, column 4: textual type error: builtin __sil_allocate is called with 2 arguments while it expects 1
 basic.sil, line 88, column 4: textual type error: expression 0 has type int, while the type of all types was expected
-basic_error_argnum.sil, line 12, column 17: SIL consistency error: function $builtins.bar which can be called with 0 arguments is not declared
+basic_error_argnum.sil, line 12, column 7: SIL consistency error: function $builtins.bar which can be called with 0 arguments is not declared
 error1.sil, line 12, column 4: SIL syntax error: unexpected token x
 error2.sil, line 19, column 9: SIL consistency error: function g which can be called with 0 arguments is not declared
 error2.sil, line 18, column 13: SIL consistency error: field cell.n is not declared
@@ -27,6 +27,9 @@ error_label.sil, line 16, column 8: SIL consistency error: label lab2 is not dec
 error_lit_float.sil, line 10, column 13: SIL syntax error: unexpected token d
 error_lit_int.sil, line 10, column 7: SIL syntax error: unexpected token 9b
 error_lit_local.sil, line 10, column 2: SIL syntax error: unexpected token n00b
+syntax_error_node_call.sil, line 10, column 15: SIL syntax error: foo.lab
+syntax_error_procname1.sil, line 8, column 8: SIL syntax error: ?.bar
+syntax_error_procname2.sil, line 8, column 7: SIL syntax error: ?.bar
 twice.sil: SIL consistency error: node entry is implemented twice in the same function f
 twice.sil: SIL consistency error: parameter x is declared twice in the same function f
 twice.sil: SIL consistency error: function f is implemented twice in the same file

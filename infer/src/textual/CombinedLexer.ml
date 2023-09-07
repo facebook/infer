@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module L = Logging
 module SedlexingEncoding = Sedlexing.Latin1
 
 exception LexingError of Textual.Location.t * string
@@ -117,6 +118,8 @@ let floating_point_literal =
   [%sedlex.regexp? Opt sign, (digits, ".", Opt digits, Opt exponent_part | digits, exponent_part)]
 
 
+let blanks = [%sedlex.regexp? Star white_space]
+
 let build_mainlex keywords =
   let rec mainlex (lexbuf : Sedlexing.lexbuf) =
     let open CombinedMenhir in
@@ -178,18 +181,34 @@ let build_mainlex keywords =
         let i = Lexbuf.lexeme lexbuf in
         match Z.of_string i with i -> INTEGER i | exception Invalid_argument _ -> lex_error lexbuf )
     | "n", integer_literal -> (
-        let lxm = Lexbuf.lexeme lexbuf in
-        let i = String.subo ~pos:1 lxm in
+        let lexeme = Lexbuf.lexeme lexbuf in
+        let i = String.subo ~pos:1 lexeme in
         match int_of_string_opt i with Some i -> LOCAL i | None -> lex_error lexbuf )
     | "#", ident ->
-        let lxm = Lexbuf.lexeme lexbuf in
-        LABEL (String.subo ~pos:1 lxm)
+        let lexeme = Lexbuf.lexeme lexbuf in
+        LABEL (String.subo ~pos:1 lexeme)
+    | ("?" | ident), blanks, ".", blanks, ident, blanks, "(" -> (
+        let lexeme = Lexbuf.lexeme lexbuf in
+        match String.split_on_chars lexeme ~on:['.'; '('] with
+        | [prefix; id; _] ->
+            PROC_AND_LPAREN (Some (String.strip prefix), String.strip id)
+        | _ ->
+            L.die InternalError "unexpected lexing error" )
+    | ident, blanks, "(" -> (
+        let lexeme = Lexbuf.lexeme lexbuf in
+        match String.split_on_chars lexeme ~on:['('] with
+        | [id; _] when String.equal (String.strip id) "if" ->
+            IF_AND_LPAREN
+        | [id; _] ->
+            PROC_AND_LPAREN (None, String.strip id)
+        | _ ->
+            L.die InternalError "unexpected lexing error" )
     | ident ->
-        let lxm = Lexbuf.lexeme lexbuf in
-        Option.value ~default:(IDENT lxm) (Map.find keywords lxm)
+        let lexeme = Lexbuf.lexeme lexbuf in
+        Option.value ~default:(IDENT lexeme) (Map.find keywords lexeme)
     | '"', Star (Compl '"'), '"' ->
-        let lxm = Lexbuf.lexeme lexbuf in
-        STRING (String.sub ~pos:1 ~len:(String.length lxm - 2) lxm)
+        let lexeme = Lexbuf.lexeme lexbuf in
+        STRING (String.sub ~pos:1 ~len:(String.length lexeme - 2) lexeme)
     | eof ->
         EOF
     | any ->

@@ -926,3 +926,5 @@ module Module = struct
     List.iter ~f:(pp_attr fmt) module_.attrs ;
     List.iter ~f:(pp_decl fmt) module_.decls
 end
+
+exception SpecialSyntaxError of Location.t * string

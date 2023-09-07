@@ -197,6 +197,23 @@ let%test_module "remove_if_terminator transformation" =
               if n1 && n2 && n3 then ret 1
               else if n2 || n1 && n3 then ret 2
               else ret 3
+        }
+
+        define if_lparen_test(b1: int, b2: int) : int {
+          #entry:
+              n1 : int = load &b1
+              n2 : int = load &b2
+              if (n1 || n2) then ret 1 else jmp lab1
+          #lab1:
+              if (n1 && n2) then ret 1 else jmp lab2
+          #lab2:
+              if (n1) && n2 then ret 1 else jmp lab3
+          #lab3:
+              if ((n1)) && n2 then ret 1 else jmp lab4
+          #lab4:
+              if ((n1 && n2)) || n1 then ret 1 else jmp lab5
+          #lab5:
+              if ((n1 || n2)) && (n1) then ret 1 else ret 2
         }|}
 
 
@@ -205,177 +222,287 @@ let%test_module "remove_if_terminator transformation" =
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|
-          define f(b1: int, b2: int, b3: int, b4: int, b5: int) : int {
-            #entry:
-                n1:int = load &b1
-                n2:int = load &b2
-                n3:int = load &b3
-                n4:int = load &b4
-                n5:int = load &b5
-                jmp lab1, if0, if1, if2
+        define f(b1: int, b2: int, b3: int, b4: int, b5: int) : int {
+          #entry:
+              n1:int = load &b1
+              n2:int = load &b2
+              n3:int = load &b3
+              n4:int = load &b4
+              n5:int = load &b5
+              jmp lab1, if0, if1, if2
 
-            #if0:
-                prune __sil_lnot(n1)
-                jmp lab2
+          #if0:
+              prune __sil_lnot(n1)
+              jmp lab2
 
-            #if1:
-                prune __sil_lnot(n2)
-                jmp lab2
+          #if1:
+              prune __sil_lnot(n2)
+              jmp lab2
 
-            #if2:
-                prune __sil_lnot(n3)
-                jmp lab2
+          #if2:
+              prune __sil_lnot(n3)
+              jmp lab2
 
-            #lab1:
-                prune n1
-                prune n2
-                prune n3
-                ret 1
+          #lab1:
+              prune n1
+              prune n2
+              prune n3
+              ret 1
 
-            #lab2:
-                jmp if5, if6, if3, if4
+          #lab2:
+              jmp if5, if6, if3, if4
 
-            #if5:
-                prune n2
-                jmp lab3
+          #if5:
+              prune n2
+              jmp lab3
 
-            #if6:
-                prune n1
-                prune n3
-                jmp lab3
+          #if6:
+              prune n1
+              prune n3
+              jmp lab3
 
-            #if3:
-                prune __sil_lnot(n2)
-                prune __sil_lnot(n1)
-                jmp lab4
+          #if3:
+              prune __sil_lnot(n2)
+              prune __sil_lnot(n1)
+              jmp lab4
 
-            #if4:
-                prune __sil_lnot(n2)
-                prune __sil_lnot(n3)
-                jmp lab4
+          #if4:
+              prune __sil_lnot(n2)
+              prune __sil_lnot(n3)
+              jmp lab4
 
-            #lab3:
-                jmp if10, if11, if12, if7, if8, if9
+          #lab3:
+              jmp if10, if11, if12, if7, if8, if9
 
-            #if10:
-                prune n1
-                prune n2
-                jmp lab4
+          #if10:
+              prune n1
+              prune n2
+              jmp lab4
 
-            #if11:
-                prune n1
-                prune n3
-                prune n4
-                jmp lab4
+          #if11:
+              prune n1
+              prune n3
+              prune n4
+              jmp lab4
 
-            #if12:
-                prune n1
-                prune n3
-                prune n5
-                jmp lab4
+          #if12:
+              prune n1
+              prune n3
+              prune n5
+              jmp lab4
 
-            #if7:
-                prune __sil_lnot(n1)
-                jmp lab5
+          #if7:
+              prune __sil_lnot(n1)
+              jmp lab5
 
-            #if8:
-                prune __sil_lnot(n2)
-                prune __sil_lnot(n3)
-                jmp lab5
+          #if8:
+              prune __sil_lnot(n2)
+              prune __sil_lnot(n3)
+              jmp lab5
 
-            #if9:
-                prune __sil_lnot(n2)
-                prune __sil_lnot(n4)
-                prune __sil_lnot(n5)
-                jmp lab5
+          #if9:
+              prune __sil_lnot(n2)
+              prune __sil_lnot(n4)
+              prune __sil_lnot(n5)
+              jmp lab5
 
-            #lab4:
-                ret 2
+          #lab4:
+              ret 2
 
-            #lab5:
-                ret 3
+          #lab5:
+              ret 3
 
-          }
+        }
 
-          define g(b1: int, b2: int, b3: int) : int {
-            #entry:
-                n1:int = load &b1
-                n2:int = load &b2
-                n3:int = load &b3
-                jmp if3, if4, if0, if1
+        define g(b1: int, b2: int, b3: int) : int {
+          #entry:
+              n1:int = load &b1
+              n2:int = load &b2
+              n3:int = load &b3
+              jmp if3, if4, if0, if1
 
-            #if3:
-                prune n1
-                prune n3
-                jmp lab1
+          #if3:
+              prune n1
+              prune n3
+              jmp lab1
 
-            #if4:
-                prune n2
-                prune n3
-                jmp lab1
+          #if4:
+              prune n2
+              prune n3
+              jmp lab1
 
-            #if0:
-                prune __sil_lnot(n1)
-                prune __sil_lnot(n2)
-                jmp if2
+          #if0:
+              prune __sil_lnot(n1)
+              prune __sil_lnot(n2)
+              jmp if2
 
-            #if1:
-                prune __sil_lnot(n3)
-                jmp if2
+          #if1:
+              prune __sil_lnot(n3)
+              jmp if2
 
-            #lab1:
-                ret 1
+          #lab1:
+              ret 1
 
-            #if2:
-                ret 2
+          #if2:
+              ret 2
 
-          }
+        }
 
-          define h(b1: int, b2: int, b3: int) : int {
-            #entry:
-                n1:int = load &b1
-                n2:int = load &b2
-                n3:int = load &b3
-                jmp if7, if4, if5, if6
+        define h(b1: int, b2: int, b3: int) : int {
+          #entry:
+              n1:int = load &b1
+              n2:int = load &b2
+              n3:int = load &b3
+              jmp if7, if4, if5, if6
 
-            #if7:
-                prune n1
-                prune n2
-                prune n3
-                ret 1
+          #if7:
+              prune n1
+              prune n2
+              prune n3
+              ret 1
 
-            #if4:
-                prune __sil_lnot(n1)
-                jmp if2, if3, if0, if1
+          #if4:
+              prune __sil_lnot(n1)
+              jmp if2, if3, if0, if1
 
-            #if5:
-                prune __sil_lnot(n2)
-                jmp if2, if3, if0, if1
+          #if5:
+              prune __sil_lnot(n2)
+              jmp if2, if3, if0, if1
 
-            #if6:
-                prune __sil_lnot(n3)
-                jmp if2, if3, if0, if1
+          #if6:
+              prune __sil_lnot(n3)
+              jmp if2, if3, if0, if1
 
-            #if2:
-                prune n2
-                ret 2
+          #if2:
+              prune n2
+              ret 2
 
-            #if3:
-                prune n1
-                prune n3
-                ret 2
+          #if3:
+              prune n1
+              prune n3
+              ret 2
 
-            #if0:
-                prune __sil_lnot(n2)
-                prune __sil_lnot(n1)
-                ret 3
+          #if0:
+              prune __sil_lnot(n2)
+              prune __sil_lnot(n1)
+              ret 3
 
-            #if1:
-                prune __sil_lnot(n2)
-                prune __sil_lnot(n3)
-                ret 3
+          #if1:
+              prune __sil_lnot(n2)
+              prune __sil_lnot(n3)
+              ret 3
 
-          } |}]
+        }
+
+        define if_lparen_test(b1: int, b2: int) : int {
+          #entry:
+              n1:int = load &b1
+              n2:int = load &b2
+              jmp if0, if1, lab1
+
+          #if0:
+              prune n1
+              ret 1
+
+          #if1:
+              prune n2
+              ret 1
+
+          #lab1:
+              prune __sil_lnot(n1)
+              prune __sil_lnot(n2)
+              jmp if4, if2, if3
+
+          #if4:
+              prune n1
+              prune n2
+              ret 1
+
+          #if2:
+              prune __sil_lnot(n1)
+              jmp lab2
+
+          #if3:
+              prune __sil_lnot(n2)
+              jmp lab2
+
+          #lab2:
+              jmp if7, if5, if6
+
+          #if7:
+              prune n1
+              prune n2
+              ret 1
+
+          #if5:
+              prune __sil_lnot(n1)
+              jmp lab3
+
+          #if6:
+              prune __sil_lnot(n2)
+              jmp lab3
+
+          #lab3:
+              jmp if10, if8, if9
+
+          #if10:
+              prune n1
+              prune n2
+              ret 1
+
+          #if8:
+              prune __sil_lnot(n1)
+              jmp lab4
+
+          #if9:
+              prune __sil_lnot(n2)
+              jmp lab4
+
+          #lab4:
+              jmp if13, if14, if11, if12
+
+          #if13:
+              prune n1
+              prune n2
+              ret 1
+
+          #if14:
+              prune n1
+              ret 1
+
+          #if11:
+              prune __sil_lnot(n1)
+              prune __sil_lnot(n1)
+              jmp lab5
+
+          #if12:
+              prune __sil_lnot(n2)
+              prune __sil_lnot(n1)
+              jmp lab5
+
+          #lab5:
+              jmp if17, if18, if15, if16
+
+          #if17:
+              prune n1
+              prune n1
+              ret 1
+
+          #if18:
+              prune n2
+              prune n1
+              ret 1
+
+          #if15:
+              prune __sil_lnot(n1)
+              prune __sil_lnot(n2)
+              ret 2
+
+          #if16:
+              prune __sil_lnot(n1)
+              ret 2
+
+        } |}]
 
 
     let%expect_test _ =

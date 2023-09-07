@@ -1,0 +1,13 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "hack"
+
+define bar(): void {
+  #entry:
+   jmp lab(0), foo.lab(1)
+  #lab(n0: int)
+    ret null
+}
