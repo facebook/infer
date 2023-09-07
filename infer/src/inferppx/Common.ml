@@ -15,6 +15,8 @@ let make_function ~loc name body =
   Ast_helper.Str.value ~loc Nonrecursive [fn]
 
 
+let make_ident_exp ~loc s = Ast_helper.Exp.ident ~loc (make_longident ~loc s)
+
 let conjunction ~loc = function
   | [] ->
       [%expr true]
@@ -55,7 +57,7 @@ let if_phys_equal_then_var ~loc var lds else_exp =
   Ast_helper.Exp.ifthenelse ~loc guard then_exp (Some else_exp)
 
 
-(* [let field = (initializer field) lhs.field rhs.field in acc] *)
+(* [let field = (initializer field) (rhs_initializer ld) in acc] *)
 let let_field_equal_rhs_expr ~loc rhs_initializer acc ld =
   let rhs = rhs_initializer ~loc ld in
   let field_pat = Ast_helper.Pat.var ~loc ld.pld_name in

@@ -49,17 +49,51 @@ let normalize_of_core_type ~loc ct =
       assert false
 
 
+(* [let name = body] where [name] = normalization function from type name *)
+let make_normalize_function ~loc typ_name body =
+  let func_name = normalize_from_typename typ_name.txt in
+  Common.make_function ~loc func_name body
+
+
+(* [let var' = (normalize_of_core_type typ) var in acc] *)
+let let_varprime_equal_f_var_expr ~loc acc var typ =
+  let lhs_pat = Ast_helper.Pat.var ~loc (Loc.make ~loc (var ^ "'")) in
+  let var_expr = Common.make_ident_exp ~loc var in
+  let f = normalize_of_core_type ~loc typ |> Ast_helper.Exp.ident ~loc in
+  [%expr
+    let [%p lhs_pat] = [%e f] [%e var_expr] in
+    [%e acc]]
+
+
+(* [phys_equal var var'] *)
+let var_phys_equal_varprime ~loc var =
+  let var_expr = Common.make_ident_exp ~loc var in
+  let varprime_expr = Common.make_ident_exp ~loc (var ^ "'") in
+  [%expr phys_equal [%e var_expr] [%e varprime_expr]]
+
+
+(* [if (phys_equal a a' && phys_equal b b' && ...) then t else else_exp] *)
+let if_phys_equal_then_t ~loc ~else_exp vars =
+  let guard = List.map vars ~f:(var_phys_equal_varprime ~loc) |> Common.conjunction ~loc in
+  [%expr if [%e guard] then t else [%e else_exp]]
+
+
+(* [M.normalize (t : core_type)] *)
+let create_normalize_initializer ~loc t_expr core_type =
+  let func_lid = normalize_of_core_type ~loc core_type in
+  let func_name = Ast_helper.Exp.ident ~loc func_lid in
+  [%expr [%e func_name] [%e t_expr]]
+
+
 (* [Field.normalize t.field] *)
-let create_normalize_initializer ~loc (ld : label_declaration) =
+let create_normalize_field_initializer ~loc (ld : label_declaration) =
   let field_lid = Common.make_longident ~loc ld.pld_name.txt in
   let lhs_access = Common.access ~loc "t" field_lid in
-  let func_lid = normalize_of_core_type ~loc ld.pld_type in
-  let func_name = Ast_helper.Exp.ident ~loc func_lid in
-  [%expr [%e func_name] [%e lhs_access]]
+  create_normalize_initializer ~loc lhs_access ld.pld_type
 
 
-let should_normalize_field (ld : label_declaration) =
-  match ld.pld_type.ptyp_desc with
+let should_normalize_type core_type =
+  match core_type.ptyp_desc with
   | Ptyp_constr ({txt= Lident ("option" | "string")}, _) ->
       true
   | Ptyp_constr ({txt= Ldot (_, "t")}, _) ->
@@ -68,17 +102,49 @@ let should_normalize_field (ld : label_declaration) =
       false
 
 
-let normalize_impl ~loc ptype_name (lds : label_declaration list) =
-  let func_name = normalize_from_typename ptype_name.txt in
-  let lds = List.filter lds ~f:should_normalize_field in
+let normalize_tuple_impl ~loc ptype_name core_types =
+  let rhs_expr =
+    if List.for_all core_types ~f:(Fn.non should_normalize_type) then (* just return [t] *)
+      [%expr t]
+    else
+      let vars = List.mapi core_types ~f:(fun i _ -> Printf.sprintf "x%d" i) in
+      let vars_pattern =
+        List.map vars ~f:(fun var -> Loc.make ~loc var |> Ast_helper.Pat.var ~loc)
+        |> Ast_helper.Pat.tuple ~loc
+      in
+      let return_tuple =
+        (* [(x0, x1', x2, ...)] where a variable is primed if it's normalizable *)
+        List.map2_exn vars core_types ~f:(fun var typ ->
+            (if should_normalize_type typ then var ^ "'" else var) |> Common.make_ident_exp ~loc )
+        |> Ast_helper.Exp.tuple ~loc
+      in
+      let normalizable_vars, normalizable_typs =
+        List.zip_exn vars core_types
+        |> List.filter ~f:(fun (_var, typ) -> should_normalize_type typ)
+        |> List.unzip
+      in
+      let physeq_guarded = if_phys_equal_then_t ~loc normalizable_vars ~else_exp:return_tuple in
+      let rhs =
+        List.fold2_exn normalizable_vars normalizable_typs ~init:physeq_guarded
+          ~f:(let_varprime_equal_f_var_expr ~loc)
+      in
+      [%expr
+        let [%p vars_pattern] = t in
+        [%e rhs]]
+  in
+  make_normalize_function ~loc ptype_name [%expr fun t -> [%e rhs_expr]]
+
+
+let normalize_record_impl ~loc ptype_name (lds : label_declaration list) =
+  let lds = List.filter lds ~f:(fun ld -> should_normalize_type ld.pld_type) in
   let record_exp = Common.create_record ~loc ~with_value:[%expr t] lds in
   let guarded = Common.if_phys_equal_then_var ~loc "t" lds record_exp in
   let final_expr =
     List.fold lds ~init:guarded
-      ~f:(Common.let_field_equal_rhs_expr ~loc create_normalize_initializer)
+      ~f:(Common.let_field_equal_rhs_expr ~loc create_normalize_field_initializer)
   in
   let body = [%expr fun t -> [%e final_expr]] in
-  Common.make_function ~loc func_name body
+  make_normalize_function ~loc ptype_name body
 
 
 let normalize_passthrough_impl ~loc ptype_name manifest_type =
@@ -89,14 +155,17 @@ let normalize_passthrough_impl ~loc ptype_name manifest_type =
 let normalize_type_declaration ~loc (td : type_declaration) =
   match td with
   | {ptype_kind= Ptype_record fields; ptype_name} ->
-      [normalize_impl ~loc ptype_name fields]
-  | {ptype_kind= Ptype_abstract; ptype_manifest= Some manifest_type; ptype_name} ->
+      [normalize_record_impl ~loc ptype_name fields]
+  | {ptype_kind= Ptype_abstract; ptype_manifest= Some {ptyp_desc= Ptyp_tuple core_types}; ptype_name}
+    ->
+      [normalize_tuple_impl ~loc ptype_name core_types]
+  | { ptype_kind= Ptype_abstract
+    ; ptype_manifest= Some ({ptyp_desc= Ptyp_constr _} as manifest_type)
+    ; ptype_name } ->
       (* passthrough case like `let nonrec t = t` *)
       [normalize_passthrough_impl ~loc ptype_name manifest_type]
-  | {ptype_kind= Ptype_abstract | Ptype_variant _ | Ptype_open; ptype_loc; _} ->
-      let ext =
-        Location.error_extensionf ~loc:ptype_loc "Cannot derive functions for non record types"
-      in
+  | {ptype_loc; _} ->
+      let ext = Location.error_extensionf ~loc:ptype_loc "Cannot derive functions for this type" in
       [Ast_builder.Default.pstr_extension ~loc ext []]
 
 
