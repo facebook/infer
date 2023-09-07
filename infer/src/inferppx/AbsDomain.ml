@@ -44,17 +44,22 @@ let join_of_core_type ~loc core_type = fun_of_core_type "join" ~loc core_type
 
 (* [Field.join lhs.field rhs.field] *)
 let create_join_initializer ~loc (ld : label_declaration) =
-  let field_lid = Common.make_longident ~loc ld.pld_name.txt in
-  let lhs_access = Common.access ~loc "lhs" field_lid in
-  let rhs_access = Common.access ~loc "rhs" field_lid in
+  let lhs_access = Common.access ~loc "lhs" ld in
+  let rhs_access = Common.access ~loc "rhs" ld in
   let func_lid = join_of_core_type ~loc ld.pld_type in
   let func_name = Ast_helper.Exp.ident ~loc func_lid in
   [%expr [%e func_name] [%e lhs_access] [%e rhs_access]]
 
 
+(* record expression [{ a=a; b=b; c=c; ...}] *)
+let create_record ~loc fields =
+  let field_exps = List.map fields ~f:(fun fld -> Common.make_ident_exp ~loc fld.pld_name.txt) in
+  Common.create_record ~loc fields field_exps
+
+
 let join_impl ~loc typ_name (lds : label_declaration list) =
   let func_name = func_name_from_type ~root:"join" typ_name in
-  let record_exp = Common.create_record ~loc lds in
+  let record_exp = create_record ~loc lds in
   let guarded =
     Common.if_phys_equal_then_var ~loc "rhs" lds record_exp
     |> Common.if_phys_equal_then_var ~loc "lhs" lds
@@ -69,9 +74,8 @@ let join_impl ~loc typ_name (lds : label_declaration list) =
 let leq_of_core_type = fun_of_core_type "leq"
 
 let leq_expr ~loc ld =
-  let field_lid = Loc.make ~loc (Longident.Lident ld.pld_name.txt) in
-  let lhs_access = Common.access ~loc "lhs" field_lid in
-  let rhs_access = Common.access ~loc "rhs" field_lid in
+  let lhs_access = Common.access ~loc "lhs" ld in
+  let rhs_access = Common.access ~loc "rhs" ld in
   let leq_call = Ast_helper.Exp.ident ~loc (leq_of_core_type ~loc ld.pld_type) in
   [%expr [%e leq_call] ~lhs:[%e lhs_access] ~rhs:[%e rhs_access]]
 
@@ -89,9 +93,8 @@ let widen_of_core_type = fun_of_core_type "widen"
 
 (* [Field.widen ~prev:prev.field ~next:next.field ~num_iters] *)
 let create_widen_initializer ~loc (ld : label_declaration) =
-  let field_lid = Loc.make ~loc (Longident.Lident ld.pld_name.txt) in
-  let lhs_access = Common.access ~loc "prev" field_lid in
-  let rhs_access = Common.access ~loc "next" field_lid in
+  let lhs_access = Common.access ~loc "prev" ld in
+  let rhs_access = Common.access ~loc "next" ld in
   let func_lid = fun_of_core_type "widen" ~loc ld.pld_type in
   let func_name = Ast_helper.Exp.ident ~loc func_lid in
   [%expr [%e func_name] ~prev:[%e lhs_access] ~next:[%e rhs_access] ~num_iters]
@@ -99,7 +102,7 @@ let create_widen_initializer ~loc (ld : label_declaration) =
 
 let widen_impl ~loc typ_name (lds : label_declaration list) =
   let func_name = func_name_from_type ~root:"widen" typ_name in
-  let record_exp = Common.create_record ~loc lds in
+  let record_exp = create_record ~loc lds in
   let guarded =
     Common.if_phys_equal_then_var ~loc "prev" lds record_exp
     |> Common.if_phys_equal_then_var ~loc "next" lds

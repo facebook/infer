@@ -24,25 +24,24 @@ let conjunction ~loc = function
       List.fold rest ~init:first ~f:(fun exp_acc exp -> [%expr [%e exp] && [%e exp_acc]])
 
 
-(* record expression [{ a=a; b=b; c=c; ...}] *)
-let create_record ~loc ?with_value lds =
-  let field_lids = List.map lds ~f:(fun ld -> make_longident ~loc ld.pld_name.txt) in
-  let field_exps = List.map field_lids ~f:(fun fld -> Ast_helper.Exp.ident ~loc fld) in
+(* record expression [{ a=exp_a; b=exp_b; c=exp_c; ...}] *)
+let create_record ~loc ?with_value fields field_exps =
+  let field_lids = List.map fields ~f:(fun ld -> make_longident ~loc ld.pld_name.txt) in
   let initializers = List.zip_exn field_lids field_exps in
   Ast_helper.Exp.record ~loc initializers with_value
 
 
 (* [var.field] *)
-let access ~loc var field_lid =
-  let var_lid = make_longident ~loc var in
-  Ast_helper.Exp.field ~loc (Ast_helper.Exp.ident ~loc var_lid) field_lid
+let access ~loc var ld =
+  let var_exp = make_ident_exp ~loc var in
+  let field_lid = make_longident ~loc ld.pld_name.txt in
+  Ast_helper.Exp.field ~loc var_exp field_lid
 
 
 (* [phys_equal field var.field] *)
 let phys_equal_field ~loc var ld =
-  let field_lid = make_longident ~loc ld.pld_name.txt in
-  let field_exp = Ast_helper.Exp.ident ~loc field_lid in
-  let access = access ~loc var field_lid in
+  let field_exp = make_ident_exp ~loc ld.pld_name.txt in
+  let access = access ~loc var ld in
   [%expr phys_equal [%e field_exp] [%e access]]
 
 

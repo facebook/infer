@@ -85,11 +85,10 @@ let create_normalize_initializer ~loc t_expr core_type =
   [%expr [%e func_name] [%e t_expr]]
 
 
-(* [Field.normalize t.field] *)
+(* [Field.normalize field] *)
 let create_normalize_field_initializer ~loc (ld : label_declaration) =
-  let field_lid = Common.make_longident ~loc ld.pld_name.txt in
-  let lhs_access = Common.access ~loc "t" field_lid in
-  create_normalize_initializer ~loc lhs_access ld.pld_type
+  let rhs_exp = Common.make_ident_exp ~loc ld.pld_name.txt in
+  create_normalize_initializer ~loc rhs_exp ld.pld_type
 
 
 let should_normalize_type core_type =
@@ -136,15 +135,36 @@ let normalize_tuple_impl ~loc ptype_name core_types =
 
 
 let normalize_record_impl ~loc ptype_name (lds : label_declaration list) =
-  let lds = List.filter lds ~f:(fun ld -> should_normalize_type ld.pld_type) in
-  let record_exp = Common.create_record ~loc ~with_value:[%expr t] lds in
-  let guarded = Common.if_phys_equal_then_var ~loc "t" lds record_exp in
-  let final_expr =
-    List.fold lds ~init:guarded
-      ~f:(Common.let_field_equal_rhs_expr ~loc create_normalize_field_initializer)
+  let normalizable_names_types =
+    List.filter_map lds ~f:(fun ld ->
+        Option.some_if (should_normalize_type ld.pld_type) (ld.pld_name.txt, ld.pld_type) )
   in
-  let body = [%expr fun t -> [%e final_expr]] in
-  make_normalize_function ~loc ptype_name body
+  let body =
+    if List.is_empty normalizable_names_types then [%expr t]
+    else
+      let rhs_exps =
+        List.map lds ~f:(fun ld ->
+            (if should_normalize_type ld.pld_type then ld.pld_name.txt ^ "'" else ld.pld_name.txt)
+            |> Common.make_ident_exp ~loc )
+      in
+      let record_exp = Common.create_record ~loc lds rhs_exps in
+      let guarded =
+        if_phys_equal_then_t ~loc (List.unzip normalizable_names_types |> fst) ~else_exp:record_exp
+      in
+      let final_expr =
+        List.fold normalizable_names_types ~init:guarded ~f:(fun acc (var, typ) ->
+            let_varprime_equal_f_var_expr ~loc acc var typ )
+      in
+      let lid_pattern_list =
+        List.map lds ~f:(fun ld ->
+            (Common.make_longident ~loc ld.pld_name.txt, Ast_helper.Pat.var ~loc ld.pld_name) )
+      in
+      let record_pattern = Ast_helper.Pat.record ~loc lid_pattern_list Closed in
+      [%expr
+        let [%p record_pattern] = t in
+        [%e final_expr]]
+  in
+  make_normalize_function ~loc ptype_name [%expr fun t -> [%e body]]
 
 
 let normalize_passthrough_impl ~loc ptype_name manifest_type =
