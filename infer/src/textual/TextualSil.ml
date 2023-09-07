@@ -552,6 +552,8 @@ module ExpBridge = struct
       match e with
       | Var id ->
           Var (IdentBridge.to_sil id)
+      | Load _ ->
+          L.die InternalError "to_sil conversion on Load expression should never happen"
       | Lvar name ->
           let pvar : SilPvar.t =
             match TextualDecls.get_global decls_env name with
@@ -1073,7 +1075,8 @@ module ModuleBridge = struct
         let module_ =
           let open TextualTransform in
           (* note: because && and || operators are lazy we must remove them before moving calls *)
-          module_ |> remove_if_terminator |> remove_internal_calls |> let_propagation |> out_of_ssa
+          module_ |> remove_if_terminator |> remove_effects_in_subexprs |> let_propagation
+          |> out_of_ssa
         in
         let all_proc_entries, types_used_as_enclosing_but_not_defined =
           TextualDecls.get_proc_entries_by_enclosing_class decls_env

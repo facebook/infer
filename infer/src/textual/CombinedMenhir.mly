@@ -404,6 +404,10 @@ opt_handlers:
 expression:
   | id=LOCAL
     { Exp.Var (Ident.of_int id) }
+  | LSBRACKET exp=expression COLON typ=typ RSBRACKET
+    { Exp.Load {exp; typ=Some typ} }
+  | LSBRACKET exp=expression RSBRACKET
+    { Exp.Load {exp; typ=None} }
   | AMPERSAND name=vname
     { Exp.Lvar name }
   | exp=expression DOT enclosing_class=opt_tname DOT name=fname

@@ -36,6 +36,8 @@ module Subst = struct
         by
     | Var _ | Lvar _ | Const _ | Typ _ ->
         exp
+    | Load l ->
+        Load {l with exp= of_exp_one l.exp ~id ~by}
     | Field f ->
         Field {f with exp= of_exp_one f.exp ~id ~by}
     | Index (exp1, exp2) ->
@@ -51,6 +53,8 @@ module Subst = struct
         Ident.Map.find_opt id eqs |> Option.value ~default:exp
     | Lvar _ | Const _ | Typ _ ->
         exp
+    | Load l ->
+        Load {l with exp= of_exp l.exp eqs}
     | Field f ->
         Field {f with exp= of_exp f.exp eqs}
     | Index (exp1, exp2) ->
@@ -109,7 +113,7 @@ module Subst = struct
     {pdesc with nodes= List.map pdesc.nodes ~f:(fun node -> of_node node eqs)}
 end
 
-let remove_internal_calls _module =
+let remove_effects_in_subexprs _module =
   let module State = struct
     type t = {instrs_rev: Instr.t list; fresh_ident: Ident.t}
 
@@ -117,71 +121,74 @@ let remove_internal_calls _module =
 
     let incr_fresh state = {state with fresh_ident= Ident.next state.fresh_ident}
   end in
-  let rec flatten_exp (exp : Exp.t) state : Exp.t * State.t =
+  let rec flatten_exp loc (exp : Exp.t) state : Exp.t * State.t =
     match exp with
     | Var _ | Lvar _ | Const _ | Typ _ ->
         (exp, state)
+    | Load {exp; typ} ->
+        let exp, state = flatten_exp loc exp state in
+        let fresh = state.State.fresh_ident in
+        let new_instr : Instr.t = Load {id= fresh; exp; typ; loc} in
+        (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
     | Field f ->
-        let exp, state = flatten_exp f.exp state in
+        let exp, state = flatten_exp loc f.exp state in
         (Field {f with exp}, state)
     | Index (exp1, exp2) ->
-        let exp1, state = flatten_exp exp1 state in
-        let exp2, state = flatten_exp exp2 state in
+        let exp1, state = flatten_exp loc exp1 state in
+        let exp2, state = flatten_exp loc exp2 state in
         (Index (exp1, exp2), state)
     | Call {proc; args; kind} ->
-        let args, state = flatten_exp_list args state in
+        let args, state = flatten_exp_list loc args state in
         if ProcDecl.is_side_effect_free_sil_expr proc then (Call {proc; args; kind}, state)
         else
           let fresh = state.State.fresh_ident in
-          let new_instr : Instr.t =
-            Let {id= fresh; exp= Call {proc; args; kind}; loc= Location.Unknown}
-          in
+          let new_instr : Instr.t = Let {id= fresh; exp= Call {proc; args; kind}; loc} in
           (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
-  and flatten_exp_list exp_list state =
+  and flatten_exp_list loc exp_list state =
     let exp_list, state =
       List.fold exp_list ~init:([], state) ~f:(fun (args, state) exp ->
-          let exp, state = flatten_exp exp state in
+          let exp, state = flatten_exp loc exp state in
           (exp :: args, state) )
     in
     (List.rev exp_list, state)
   in
   let flatten_in_instr (instr : Instr.t) state : State.t =
     match instr with
-    | Load args ->
-        let exp, state = flatten_exp args.exp state in
+    | Load ({exp; loc} as args) ->
+        let exp, state = flatten_exp loc exp state in
         State.push_instr (Load {args with exp}) state
-    | Store args ->
-        let exp1, state = flatten_exp args.exp1 state in
-        let exp2, state = flatten_exp args.exp2 state in
+    | Store ({exp1; exp2; loc} as args) ->
+        let exp1, state = flatten_exp loc exp1 state in
+        let exp2, state = flatten_exp loc exp2 state in
         State.push_instr (Store {args with exp1; exp2}) state
-    | Prune args ->
-        let exp, state = flatten_exp args.exp state in
-        State.push_instr (Prune {args with exp}) state
+    | Prune {exp; loc} ->
+        let exp, state = flatten_exp loc exp state in
+        State.push_instr (Prune {exp; loc}) state
     | Let {id; exp= Call {proc; args; kind}; loc}
       when not (ProcDecl.is_side_effect_free_sil_expr proc) ->
-        let args, state = flatten_exp_list args state in
+        let args, state = flatten_exp_list loc args state in
         State.push_instr (Let {id; exp= Call {proc; args; kind}; loc}) state
     | Let {id; exp; loc} ->
-        let exp, state = flatten_exp exp state in
+        let exp, state = flatten_exp loc exp state in
         State.push_instr (Let {id; exp; loc}) state
   in
-  let flatten_in_terminator (last : Terminator.t) state : Terminator.t * State.t =
+  let flatten_in_terminator loc (last : Terminator.t) state : Terminator.t * State.t =
     match last with
     | If _ ->
         L.die InternalError "remove_internal_calls should not be called on If terminator"
     | Ret exp ->
-        let exp, state = flatten_exp exp state in
+        let exp, state = flatten_exp loc exp state in
         (Ret exp, state)
     | Jump node_calls ->
         let node_calls_rev, state =
           List.fold node_calls ~init:([], state)
             ~f:(fun (node_calls, state) {Terminator.label; ssa_args} ->
-              let ssa_args, state = flatten_exp_list ssa_args state in
+              let ssa_args, state = flatten_exp_list loc ssa_args state in
               ({Terminator.label; ssa_args} :: node_calls, state) )
         in
         (Jump (List.rev node_calls_rev), state)
     | Throw exp ->
-        let exp, state = flatten_exp exp state in
+        let exp, state = flatten_exp loc exp state in
         (Throw exp, state)
     | Unreachable ->
         (last, state)
@@ -191,7 +198,9 @@ let remove_internal_calls _module =
       let init : State.t = {instrs_rev= []; fresh_ident} in
       List.fold node.instrs ~init ~f:(fun state instr -> flatten_in_instr instr state)
     in
-    let last, ({instrs_rev; fresh_ident} : State.t) = flatten_in_terminator node.last state in
+    let last, ({instrs_rev; fresh_ident} : State.t) =
+      flatten_in_terminator node.last_loc node.last state
+    in
     ({node with last; instrs= List.rev instrs_rev}, fresh_ident)
   in
   let flatten_pdesc (pdesc : ProcDesc.t) =

@@ -41,7 +41,7 @@ let python_inspired_text =
         |}
 
 
-let%test_module "remove_internal_calls transformation" =
+let%test_module "remove_effects_in_subexprs transformation" =
   ( module struct
     let input_text =
       {|
@@ -60,7 +60,7 @@ let%test_module "remove_internal_calls transformation" =
               n0:int = load &x
               n1:int = load &y
               n3 = __sil_mult_int(g3(n0), m(g1(n0), g2(n1)))
-              n4 = m(n0, g3(n1))
+              n4 = m([&x:int], g3([&y]))
               jmp lab1(g1(n3), g3(n0)), lab2(g2(n3), g3(n0))
           #lab1(n6: int, n7: int):
               n8 = __sil_mult_int(n6, n7)
@@ -74,11 +74,19 @@ let%test_module "remove_internal_calls transformation" =
         define empty() : void {
           #entry:
               ret null
-        }|}
+        }
+
+        type cell = { value:int; next: *cell }
+
+        define next(l: *cell) : *cell {
+          #entry:
+             ret [[&l].cell.next]
+        }
+    |}
 
 
     let%expect_test _ =
-      let module_ = parse_module input_text |> TextualTransform.remove_internal_calls in
+      let module_ = parse_module input_text |> TextualTransform.remove_effects_in_subexprs in
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|
@@ -101,32 +109,44 @@ let%test_module "remove_internal_calls transformation" =
               n14 = g2(n1)
               n15 = m(n13, n14)
               n3 = __sil_mult_int(n12, n15)
-              n16 = g3(n1)
-              n4 = m(n0, n16)
-              n17 = g1(n3)
-              n18 = g3(n0)
-              n19 = g2(n3)
+              n16:int = load &x
+              n17 = load &y
+              n18 = g3(n17)
+              n4 = m(n16, n18)
+              n19 = g1(n3)
               n20 = g3(n0)
-              jmp lab1(n17, n18), lab2(n19, n20)
+              n21 = g2(n3)
+              n22 = g3(n0)
+              jmp lab1(n19, n20), lab2(n21, n22)
 
           #lab1(n6: int, n7: int):
               n8 = __sil_mult_int(n6, n7)
               jmp lab
 
           #lab2(n10: int, n11: int):
-              n21 = m(n10, n11)
-              n22 = g3(n21)
-              ret n22
+              n23 = m(n10, n11)
+              n24 = g3(n23)
+              ret n24
 
           #lab:
-              n23 = g4(n8)
-              throw n23
+              n25 = g4(n8)
+              throw n25
 
         }
 
         define empty() : void {
           #entry:
               ret null
+
+        }
+
+        type cell = {value: int; next: *cell}
+
+        define next(l: *cell) : *cell {
+          #entry:
+              n0 = load &l
+              n1 = load n0.cell.next
+              ret n1
 
         } |}]
   end )

@@ -230,7 +230,7 @@ let get_procdesc_referenced_types (pdesc : ProcDesc.t) =
         get_typ_name typ |> Option.iter ~f:add_to_referenced
     | Var _ | Lvar _ | Const _ ->
         ()
-    | Field {exp} ->
+    | Load {exp} | Field {exp} ->
         from_exp exp
     | Index (base, idx) ->
         from_exp base ;

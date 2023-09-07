@@ -236,6 +236,7 @@ module Exp : sig
 
   type t =
     | Var of Ident.t  (** pure variable: it is not an lvalue *)
+    | Load of {exp: t; typ: Typ.t option}
     | Lvar of VarName.t  (** the address of a program variable *)
     | Field of {exp: t; field: qualified_fieldname}  (** field offset *)
     | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)

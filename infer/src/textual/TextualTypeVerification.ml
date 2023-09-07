@@ -136,7 +136,7 @@ let rec loc_of_exp exp =
       None
   | Lvar {loc} ->
       Some loc
-  | Field {exp} ->
+  | Load {exp} | Field {exp} ->
       loc_of_exp exp
   | Index (exp, _) ->
       loc_of_exp exp
@@ -371,6 +371,19 @@ and typeof_exp (exp : Exp.t) : Typ.t monad =
   | Var id ->
       let* typ, _ = typeof_ident id in
       ret typ
+  | Load {exp; typ} ->
+      let* loc = get_location in
+      option_value_map typ
+        ~some:(fun typ ->
+          let* () =
+            typecheck_exp exp
+              ~check:(fun given -> compat ~assigned:(Ptr typ) ~given)
+              ~expected:(SubTypeOf (Ptr typ)) ~loc
+          in
+          ret typ )
+        ~none:
+          (let* typ = get_typeof_ptr_content exp in
+           ret typ )
   | Lvar varname ->
       let* typ = typeof_var varname in
       Typ.Ptr typ |> ret

@@ -558,6 +558,7 @@ module Exp = struct
 
   type t =
     | Var of Ident.t
+    | Load of {exp: t; typ: Typ.t option}
     | Lvar of VarName.t
     | Field of {exp: t; field: qualified_fieldname}
     | Index of t * t
@@ -586,6 +587,10 @@ module Exp = struct
   let rec pp fmt = function
     | Var id ->
         Ident.pp fmt id
+    | Load {exp; typ= None} ->
+        F.fprintf fmt "[%a]" pp exp
+    | Load {exp; typ= Some typ} ->
+        F.fprintf fmt "[%a:%a]" pp exp Typ.pp typ
     | Lvar x ->
         F.fprintf fmt "&%a" VarName.pp x
     | Field {exp; field} ->
@@ -614,7 +619,7 @@ module Exp = struct
     match exp with
     | Var _ | Lvar _ | Const _ | Typ _ ->
         true
-    | Field {exp} ->
+    | Load {exp} | Field {exp} ->
         do_not_contain_regular_call exp
     | Index (exp1, exp2) ->
         do_not_contain_regular_call exp1 && do_not_contain_regular_call exp2
@@ -629,7 +634,7 @@ module Exp = struct
           Ident.Set.add id acc
       | Lvar _ | Const _ | Typ _ ->
           acc
-      | Field {exp} ->
+      | Load {exp} | Field {exp} ->
           aux acc exp
       | Index (exp1, exp2) ->
           aux (aux acc exp1) exp2

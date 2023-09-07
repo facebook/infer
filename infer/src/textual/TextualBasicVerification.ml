@@ -77,6 +77,8 @@ let verify_decl ~env errors (decl : Module.decl) =
     match exp with
     | Var _ | Lvar _ | Const _ | Typ _ ->
         errors
+    | Load {exp} ->
+        verify_exp loc errors exp
     | Field {exp; field} ->
         let errors = verify_field errors field in
         verify_exp loc errors exp
