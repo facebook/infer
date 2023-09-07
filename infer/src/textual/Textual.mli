@@ -267,9 +267,9 @@ end
 
 module Instr : sig
   type t =
-    | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t; loc: Location.t}
+    | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t option; loc: Location.t}
         (** id <- *exp with *exp:typ *)
-    | Store of {exp1: Exp.t; typ: Typ.t; exp2: Exp.t; loc: Location.t}
+    | Store of {exp1: Exp.t; typ: Typ.t option; exp2: Exp.t; loc: Location.t}
         (** *exp1 <- exp2 with exp2:typ *)
     | Prune of {exp: Exp.t; loc: Location.t}  (** assume exp *)
     | Let of {id: Ident.t; exp: Exp.t; loc: Location.t}  (** id = exp *)

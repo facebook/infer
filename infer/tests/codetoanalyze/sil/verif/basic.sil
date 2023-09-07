@@ -37,6 +37,32 @@ define f(x: int, y: float, n: *node, a: *int[]) : void {
     jmp
 }
 
+define without_load_store_types(x: int, y: float, n: *node, a: *int[]) : void {
+  local z: int
+  #entry:
+    n0 = load &y
+    n1 = load &x
+    n2 = load &a
+    n3 = load &n
+    n7 = f(3, 3.0, n3, n2)
+    n70 = f(3, 3.0, n2, n3)
+    jmp lab1
+  #lab1:
+    store &y <- n0
+    store &y <- n1
+    store n2[1] <- n1
+    n8 = load n2[0]
+    store &y <- n8
+    store &x <- n8
+    n4 = load &n
+    store n4.node.val <- n1
+    store n3.node.val <- n1
+    store n4.?.val <- n1
+    store n3.node.val <- n2
+    n5 = ?.cons(1, n3)
+    ret n2
+}
+
 define unreachable_example(i: int) : void {
   #entry:
     n0: int = load &i

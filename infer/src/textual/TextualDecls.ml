@@ -250,11 +250,11 @@ let get_procdesc_referenced_types (pdesc : ProcDesc.t) =
   let from_instr (ins : Instr.t) =
     match ins with
     | Load {exp; typ} ->
-        get_typ_name typ |> Option.iter ~f:add_to_referenced ;
+        Option.iter typ ~f:(fun typ -> get_typ_name typ |> Option.iter ~f:add_to_referenced) ;
         from_exp exp
     | Store {exp1; typ; exp2} ->
         from_exp exp1 ;
-        get_typ_name typ |> Option.iter ~f:add_to_referenced ;
+        Option.iter typ ~f:(fun typ -> get_typ_name typ |> Option.iter ~f:add_to_referenced) ;
         from_exp exp2
     | Prune {exp} | Let {exp} ->
         from_exp exp

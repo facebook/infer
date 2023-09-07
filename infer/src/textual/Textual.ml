@@ -666,17 +666,21 @@ end
 
 module Instr = struct
   type t =
-    | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t; loc: Location.t}
-    | Store of {exp1: Exp.t; typ: Typ.t; exp2: Exp.t; loc: Location.t}
+    | Load of {id: Ident.t; exp: Exp.t; typ: Typ.t option; loc: Location.t}
+    | Store of {exp1: Exp.t; typ: Typ.t option; exp2: Exp.t; loc: Location.t}
     | Prune of {exp: Exp.t; loc: Location.t}
     | Let of {id: Ident.t; exp: Exp.t; loc: Location.t}
 
   let loc = function Load {loc} | Store {loc} | Prune {loc} | Let {loc} -> loc
 
   let pp fmt = function
-    | Load {id; exp; typ} ->
+    | Load {id; exp; typ= None} ->
+        F.fprintf fmt "%a = load %a" Ident.pp id Exp.pp exp
+    | Load {id; exp; typ= Some typ} ->
         F.fprintf fmt "%a:%a = load %a" Ident.pp id Typ.pp typ Exp.pp exp
-    | Store {exp1; typ; exp2} ->
+    | Store {exp1; typ= None; exp2} ->
+        F.fprintf fmt "store %a <- %a" Exp.pp exp1 Exp.pp exp2
+    | Store {exp1; typ= Some typ; exp2} ->
         F.fprintf fmt "store %a <- %a:%a" Exp.pp exp1 Exp.pp exp2 Typ.pp typ
     | Prune {exp} ->
         F.fprintf fmt "prune %a" Exp.pp exp

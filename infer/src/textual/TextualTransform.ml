@@ -471,7 +471,7 @@ let out_of_ssa module_ =
       match
         List.map2 end_node.ssa_parameters node_call.ssa_args ~f:(fun (id, typ) exp2 ->
             let var_name = Ident.to_ssa_var id in
-            Instr.Store {exp1= Lvar var_name; typ; exp2; loc= Location.Unknown} )
+            Instr.Store {exp1= Lvar var_name; typ= Some typ; exp2; loc= Location.Unknown} )
       with
       | Ok equations ->
           equations
@@ -510,7 +510,7 @@ let out_of_ssa module_ =
       List.map pdesc.nodes ~f:(fun node ->
           let rev_instrs = build_assignements node in
           let load_param (id, typ) : Instr.t =
-            Load {id; exp= Lvar (Ident.to_ssa_var id); typ; loc= Location.Unknown}
+            Load {id; exp= Lvar (Ident.to_ssa_var id); typ= Some typ; loc= Location.Unknown}
           in
           let prefix = List.map node.Node.ssa_parameters ~f:load_param in
           let last = terminator_remove_args node.Node.last in

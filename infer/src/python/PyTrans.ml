@@ -138,6 +138,7 @@ let load_var_name env loc name =
   in
   let info = info typ in
   let env, id = Env.mk_fresh_ident env info in
+  let typ = Some typ in
   let instr = T.Instr.Load {id; exp; typ; loc} in
   let env = Env.push_instr env instr in
   (env, Ok (T.Exp.Var id), info)
@@ -189,7 +190,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
         let exp = T.Exp.Lvar var_name in
         let loc = Env.loc env in
         let env, id = Env.mk_fresh_ident env info in
-        let instr = T.Instr.Load {id; exp; typ; loc} in
+        let instr = T.Instr.Load {id; exp; typ= Some typ; loc} in
         let env = Env.push_instr env instr in
         (* TODO: try to trace the type of names, not only global ones ? *)
         (env, Ok (T.Exp.Var id), info)
@@ -328,7 +329,7 @@ module LOAD = struct
               let name = field_name ~loc fname in
               let field = {T.enclosing_class= T.TypeName.wildcard; name} in
               let exp = T.Exp.Field {exp; field} in
-              let instr = T.Instr.Load {id; exp; typ; loc} in
+              let instr = T.Instr.Load {id; exp; typ= Some typ; loc} in
               let env = Env.push_instr env instr in
               (env, DataStack.Temp id) )
     in
@@ -832,7 +833,7 @@ module STORE = struct
               let name = field_name ~loc fname in
               let field = {T.enclosing_class= T.TypeName.wildcard; name} in
               let exp1 = T.Exp.Field {exp; field} in
-              let instr = T.Instr.Store {exp1; typ; exp2= value; loc} in
+              let instr = T.Instr.Store {exp1; typ= Some typ; exp2= value; loc} in
               let env = Env.push_instr env instr in
               (env, None)
         else if is_class then (
@@ -847,7 +848,7 @@ module STORE = struct
           else L.die InternalError "[%s] no support for closure at the moment: %s" opname name
         else
           let _, env = Env.register_symbol ~global env name symbol_info in
-          let instr = T.Instr.Store {exp1= Lvar var_name; typ; exp2= exp; loc} in
+          let instr = T.Instr.Store {exp1= Lvar var_name; typ= Some typ; exp2= exp; loc} in
           (Env.push_instr env instr, None)
     | Error s ->
         L.die InternalError "[%s] %s" opname s
@@ -1311,7 +1312,9 @@ module ITER = struct
           let has_item = T.Exp.Field {exp= T.Exp.Var id; field= PyCommon.py_iter_item_has_item} in
           let has_item_info = Env.{typ= T.Typ.Int; is_code= false; is_class= false} in
           let env, has_item_id = Env.mk_fresh_ident env has_item_info in
-          let has_item_load = T.Instr.Load {id= has_item_id; exp= has_item; typ= T.Typ.Int; loc} in
+          let has_item_load =
+            T.Instr.Load {id= has_item_id; exp= has_item; typ= Some T.Typ.Int; loc}
+          in
           let env = Env.push_instr env has_item_load in
           let cond = T.Exp.Var has_item_id in
           let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
@@ -1329,7 +1332,7 @@ module ITER = struct
             let next_item_info = Env.{typ= PyCommon.pyObject; is_code= false; is_class= false} in
             let env, next_item_id = Env.mk_fresh_ident env next_item_info in
             let next_item_load =
-              T.Instr.Load {id= next_item_id; exp= next_item; typ= PyCommon.pyObject; loc}
+              T.Instr.Load {id= next_item_id; exp= next_item; typ= Some PyCommon.pyObject; loc}
             in
             let env = Env.push_instr env next_item_load in
             Env.push env (DataStack.Temp next_item_id)
@@ -1866,6 +1869,7 @@ let constructor env full_name loc has_init =
         ~init:(T.Ident.next n0, [], [])
         ~f:(fun (next_id, ids, instrs) (varname, {T.Typ.typ}) ->
           let exp = T.Exp.Lvar varname in
+          let typ = Some typ in
           let instr = T.Instr.Load {id= next_id; exp; typ; loc} in
           (T.Ident.next next_id, T.Exp.Var next_id :: ids, instr :: instrs) )
     in

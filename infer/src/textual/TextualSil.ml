@@ -613,12 +613,12 @@ module InstrBridge = struct
     | Load {id; e; typ} ->
         let id = IdentBridge.of_sil id in
         let exp = ExpBridge.of_sil decls tenv e in
-        let typ = TypBridge.of_sil typ in
+        let typ = Some (TypBridge.of_sil typ) in
         let loc = Location.Unknown in
         Load {id; exp; typ; loc}
     | Store {e1; typ; e2} ->
         let exp1 = ExpBridge.of_sil decls tenv e1 in
-        let typ = TypBridge.of_sil typ in
+        let typ = Some (TypBridge.of_sil typ) in
         let exp2 = ExpBridge.of_sil decls tenv e2 in
         let loc = Location.Unknown in
         Store {exp1; typ; exp2; loc}
@@ -658,13 +658,17 @@ module InstrBridge = struct
   let to_sil lang decls_env procname i : Sil.instr =
     let sourcefile = TextualDecls.source_file decls_env in
     match i with
-    | Load {id; exp; typ; loc} ->
+    | Load {typ= None} ->
+        L.die InternalError "to_sil should come after type inference"
+    | Load {id; exp; typ= Some typ; loc} ->
         let typ = TypBridge.to_sil lang typ in
         let id = IdentBridge.to_sil id in
         let e = ExpBridge.to_sil lang decls_env procname exp in
         let loc = LocationBridge.to_sil sourcefile loc in
         Load {id; e; typ; loc}
-    | Store {exp1; typ; exp2; loc} ->
+    | Store {typ= None} ->
+        L.die InternalError "to_sil should come after type inference"
+    | Store {exp1; typ= Some typ; exp2; loc} ->
         let e1 = ExpBridge.to_sil lang decls_env procname exp1 in
         let typ = TypBridge.to_sil lang typ in
         let e2 = ExpBridge.to_sil lang decls_env procname exp2 in
@@ -1004,7 +1008,7 @@ module ProcDescBridge = struct
     List.fold nodes ~init:VarName.Map.empty ~f:(fun init (node : Node.t) ->
         List.fold node.instrs ~init ~f:(fun map (instr : Instr.t) ->
             match instr with
-            | Store {exp1= Lvar var; typ} ->
+            | Store {exp1= Lvar var; typ= Some typ} ->
                 VarName.Map.add var typ map
             | Load _ | Store _ | Prune _ | Let _ ->
                 map ) )

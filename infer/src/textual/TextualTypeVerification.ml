@@ -361,6 +361,11 @@ and get_typeof_array_content exp : Typ.t monad =
       abort
 
 
+and get_typeof_ptr_content exp : Typ.t monad =
+  let* typ = typeof_exp exp in
+  match (typ : Typ.t) with Ptr typ -> ret typ | _ -> abort
+
+
 and typeof_exp (exp : Exp.t) : Typ.t monad =
   match exp with
   | Var id ->
@@ -496,22 +501,34 @@ let typecheck_instr (instr : Instr.t) : unit monad =
   match instr with
   | Load {id; exp; typ; loc} ->
       let* () = set_location loc in
-      let* () =
-        typecheck_exp exp
-          ~check:(fun given -> compat ~assigned:(Ptr typ) ~given)
-          ~expected:(SubTypeOf (Ptr typ)) ~loc
-      in
-      set_ident_type id typ
+      option_value_map typ
+        ~some:(fun typ ->
+          let* () =
+            typecheck_exp exp
+              ~check:(fun given -> compat ~assigned:(Ptr typ) ~given)
+              ~expected:(SubTypeOf (Ptr typ)) ~loc
+          in
+          set_ident_type id typ )
+        ~none:
+          (let* typ = get_typeof_ptr_content exp in
+           set_ident_type id typ )
   | Store {exp1; typ; exp2; loc} ->
       let* () = set_location loc in
-      let* () =
-        typecheck_exp exp2
-          ~check:(fun given -> compat ~assigned:typ ~given)
-          ~expected:(SubTypeOf typ) ~loc
-      in
-      typecheck_exp exp1
-        ~check:(fun assigned -> compat ~assigned ~given:(Ptr typ))
-        ~expected:(SuperTypeOf (Ptr typ)) ~loc
+      option_value_map typ
+        ~some:(fun typ ->
+          let* () =
+            typecheck_exp exp2
+              ~check:(fun given -> compat ~assigned:typ ~given)
+              ~expected:(SubTypeOf typ) ~loc
+          in
+          typecheck_exp exp1
+            ~check:(fun assigned -> compat ~assigned ~given:(Ptr typ))
+            ~expected:(SuperTypeOf (Ptr typ)) ~loc )
+        ~none:
+          (let* typ = typeof_exp exp2 in
+           typecheck_exp exp1
+             ~check:(fun assigned -> compat ~assigned ~given:(Ptr typ))
+             ~expected:(SuperTypeOf (Ptr typ)) ~loc )
   | Prune {exp; loc} ->
       let* () = set_location loc in
       typecheck_exp exp ~check:sub_int ~expected:(SubTypeOf Int) ~loc

@@ -354,9 +354,13 @@ const:
 
 instruction:
   | id=LOCAL COLON typ=typ EQ LOAD exp=expression
-    { Instr.Load {id= Ident.of_int id; exp; typ; loc=location_of_pos $startpos } }
+    { Instr.Load {id= Ident.of_int id; exp; typ=Some typ; loc=location_of_pos $startpos } }
+  | id=LOCAL EQ LOAD exp=expression
+    { Instr.Load {id= Ident.of_int id; exp; typ=None; loc=location_of_pos $startpos } }
   | STORE exp1=expression ASSIGN exp2=expression COLON typ=typ
-    { Instr.Store {exp1; exp2; typ; loc=location_of_pos $startpos } }
+    { Instr.Store {exp1; exp2; typ=Some typ; loc=location_of_pos $startpos } }
+  | STORE exp1=expression ASSIGN exp2=expression
+    { Instr.Store {exp1; exp2; typ=None; loc=location_of_pos $startpos } }
   | PRUNE exp=expression
     { Instr.Prune {exp; loc=location_of_pos $startpos} }
   | PRUNE NOT exp=expression
