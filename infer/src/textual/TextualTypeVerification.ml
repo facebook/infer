@@ -559,10 +559,22 @@ let typecheck_node_call loc ({label; ssa_args} : Terminator.node_call) : unit mo
         ~expected:(SubTypeOf assigned) ~loc )
 
 
+let rec typecheck_bool_exp loc (bexp : BoolExp.t) : unit monad =
+  match bexp with
+  | Exp exp ->
+      typecheck_exp exp ~check:sub_int ~expected:(SubTypeOf Int) ~loc
+  | Not bexp ->
+      typecheck_bool_exp loc bexp
+  | And (bexp1, bexp2) | Or (bexp1, bexp2) ->
+      let* () = typecheck_bool_exp loc bexp1 in
+      typecheck_bool_exp loc bexp2
+
+
 let rec typecheck_terminator loc (term : Terminator.t) : unit monad =
   let* () = set_location loc in
   match term with
-  | If {bexp= _; then_; else_} ->
+  | If {bexp; then_; else_} ->
+      let* () = typecheck_bool_exp loc bexp in
       let* () = typecheck_terminator loc then_ in
       let* () = typecheck_terminator loc else_ in
       ret ()

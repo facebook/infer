@@ -96,3 +96,16 @@ define call_throws() : void {
     n0 = A.throws()
     ret null
 }
+
+define if_then_else(x: int, y: float) : void {
+  #entry:
+    n0: int = load &x
+    if n0 then ret null else jmp lab1
+  #lab1:
+    n1: float = load &y
+    if n1 then ret null else jmp lab2
+  #lab2:
+    if n0 && n1 then ret null else jmp lab3
+  #lab3:
+    if [&y] then ret null else jmp lab2
+}
