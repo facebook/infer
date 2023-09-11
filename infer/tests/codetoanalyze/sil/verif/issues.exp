@@ -19,7 +19,7 @@ basic.sil, line 86, column 4: textual type error: builtin __sil_allocate is call
 basic.sil, line 88, column 4: textual type error: expression 0 has type int, while the type of all types was expected
 basic.sil, line 106, column 4: textual type error: expression n1 has type float, while a subtype of int was expected
 basic.sil, line 108, column 4: textual type error: expression n1 has type float, while a subtype of int was expected
-basic.sil, line 110, column 9: textual type error: expression [&y] has type float, while a subtype of int was expected
+basic.sil, line 110, column 9: textual type error: expression [&y:float] has type float, while a subtype of int was expected
 basic_error_argnum.sil, line 12, column 7: SIL consistency error: function $builtins.bar which can be called with 0 arguments is not declared
 error1.sil, line 12, column 4: SIL syntax error: unexpected token x
 error2.sil, line 19, column 9: SIL consistency error: function g which can be called with 0 arguments is not declared

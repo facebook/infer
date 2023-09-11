@@ -110,7 +110,7 @@ let%test_module "remove_effects_in_subexprs transformation" =
               n15 = m(n13, n14)
               n3 = __sil_mult_int(n12, n15)
               n16:int = load &x
-              n17 = load &y
+              n17:int = load &y
               n18 = g3(n17)
               n4 = m(n16, n18)
               n19 = g1(n3)
@@ -144,8 +144,8 @@ let%test_module "remove_effects_in_subexprs transformation" =
 
         define next(l: *cell) : *cell {
           #entry:
-              n0 = load &l
-              n1 = load n0.cell.next
+              n0:*cell = load &l
+              n1:*cell = load n0.cell.next
               ret n1
 
         } |}]

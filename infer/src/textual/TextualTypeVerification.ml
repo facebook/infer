@@ -169,7 +169,9 @@ type state =
             assigned *)
   ; vars: Typ.t VarName.Map.t  (** the type of each variable seen so far *)
   ; nodes_from_label: Node.t NodeName.Map.t
-  ; seen_nodes: NodeName.Set.t  (** seen set of nodes during the dfs *)
+  ; typechecked_nodes: Node.t NodeName.Map.t
+        (** to keep track of nodes that have been typecked during the typechecking dfs, together
+            with the updated node (with all type holes filled) *)
   ; dfs_stack: NodeName.t List.t
   ; errors: error list
         (** we accumulate as many type errors as possible instead of stopping at the first seen *)
@@ -189,10 +191,15 @@ let bind (x : 'a monad) (f : 'a -> 'b monad) : 'b monad =
 
 let ( let* ) a f = bind a f
 
-let catch (x : 'a monad) : unit monad =
- fun state ->
-  let _, state = x state in
-  (Value (), state)
+let map (x : 'a monad) (f : 'a -> 'b) : 'b monad =
+  let* a = x in
+  ret (f a)
+
+
+let ( let+ ) a f = map a f
+
+let catch ~(with_ : 'a) (x : 'a monad) : 'a monad =
+ fun state -> match x state with Abort, state -> (Value with_, state) | res -> res
 
 
 let option_value_map (o : 'a option) ~(none : 'b monad) ~(some : 'a -> 'b monad) : 'b monad =
@@ -212,23 +219,48 @@ let get_result_type : Typ.t monad = fun state -> (Value state.pdesc.procdecl.res
 
 let get_lang : Lang.t option monad = fun state -> (Value (TextualDecls.lang state.decls), state)
 
+let fold (l : 'a list) ~(init : 'acc monad) ~(f : 'acc -> 'a -> 'acc monad) : 'acc monad =
+  List.fold l ~init ~f:(fun monad a ->
+      let* acc = monad in
+      f acc a )
+
+
 let iter (l : 'a list) ~(f : 'a -> unit monad) : unit monad =
- fun state -> ret () (List.fold l ~init:state ~f:(fun state a -> snd (f a state)))
+  fold l ~init:(ret ()) ~f:(fun () a -> f a)
 
 
-let iter2 ?(strict = true) loc (l1 : 'a list) (l2 : 'b list) ~(f : 'a -> 'b -> unit monad) :
-    unit monad =
- fun state ->
-  match List.fold2 l1 l2 ~init:state ~f:(fun state a b -> snd (f a b state)) with
-  | Ok state ->
-      ret () state
-  | Unequal_lengths when not strict ->
-      ret () state
+let mapM (l : 'a list) ~(f : 'a -> 'b monad) : 'b list monad =
+  let+ rev_res =
+    fold l ~init:(ret []) ~f:(fun l a ->
+        let+ b = f a in
+        b :: l )
+  in
+  List.rev rev_res
+
+
+let fold2 loc (l1 : 'a list) (l2 : 'b list) ~(init : 'acc monad)
+    ~(f : 'acc -> 'a -> 'b -> 'acc monad) : 'acc monad =
+  match
+    List.fold2 l1 l2 ~init ~f:(fun monad a b ->
+        let* acc = monad in
+        f acc a b )
+  with
+  | Ok res ->
+      res
   | Unequal_lengths ->
       let length1 = List.length l1 in
       let length2 = List.length l2 in
-      let err = add_error (ArityMismatch {length1; length2; loc}) in
-      bind err (fun () -> abort) state
+      let* () = add_error (ArityMismatch {length1; length2; loc}) in
+      abort
+
+
+let mapM2 loc (l1 : 'a list) (l2 : 'b list) ~(f : 'a -> 'b -> 'c monad) : 'c list monad =
+  let+ rev_res =
+    fold2 loc l1 l2 ~init:(ret []) ~f:(fun l a b ->
+        let+ c = f a b in
+        c :: l )
+  in
+  List.rev rev_res
 
 
 let typeof_ident id : (Typ.t * Location.t) monad =
@@ -295,12 +327,14 @@ let dfs_pop : NodeName.t option monad =
       ret (Some label) {state with dfs_stack= stack}
 
 
-let mark_node_as_seen (node : Node.t) : unit monad =
- fun state -> (Value (), {state with seen_nodes= NodeName.Set.add node.label state.seen_nodes})
+let mark_node_as_typechecked (node : Node.t) : unit monad =
+ fun state ->
+  ( Value ()
+  , {state with typechecked_nodes= NodeName.Map.add node.label node state.typechecked_nodes} )
 
 
-let has_node_been_seen (node : Node.t) : bool monad =
- fun state -> (Value (NodeName.Set.mem node.label state.seen_nodes), state)
+let has_node_been_typechecked (node : Node.t) : bool monad =
+ fun state -> (Value (NodeName.Map.mem node.label state.typechecked_nodes), state)
 
 
 let get_node (label : NodeName.t) : Node.t monad =
@@ -344,62 +378,69 @@ let typeof_procname (procsig : ProcSig.t) : (Typ.t * Typ.t list option) monad =
       (typeof_reserved_proc (ProcSig.to_qualified_procname procsig)) state
 
 
-let rec typecheck_exp exp ~check ~expected ~loc : unit monad =
+(* In all the typecheck/typeof function below, when typechecking/type-computation succeeds
+   we return a copy of the argument but with all type holes filled *)
+let rec typecheck_exp exp ~check ~expected ~loc : Exp.t monad =
   catch
-    (let* typ = typeof_exp exp in
-     if check typ then ret () else add_error (mk_type_mismatch_error expected loc exp typ) )
+    (let* exp, typ = typeof_exp exp in
+     if check typ then ret exp
+     else
+       let+ () = add_error (mk_type_mismatch_error expected loc exp typ) in
+       exp )
+    ~with_:exp
 
 
-and get_typeof_array_content exp : Typ.t monad =
-  let* typ = typeof_exp exp in
+and get_typeof_array_content exp : (Exp.t * Typ.t) monad =
+  let* exp, typ = typeof_exp exp in
   match (typ : Typ.t) with
   | Ptr (Array content_typ) ->
-      Typ.Ptr content_typ |> ret
+      ret (exp, Typ.Ptr content_typ)
   | _ ->
       let* loc = get_location in
       let* () = add_error (mk_type_mismatch_error PtrArray loc exp typ) in
       abort
 
 
-and get_typeof_ptr_content exp : Typ.t monad =
-  let* typ = typeof_exp exp in
-  match (typ : Typ.t) with Ptr typ -> ret typ | _ -> abort
+and get_typeof_ptr_content exp : (Exp.t * Typ.t) monad =
+  let* exp, typ = typeof_exp exp in
+  match (typ : Typ.t) with Ptr typ -> ret (exp, typ) | _ -> abort
 
 
-and typeof_exp (exp : Exp.t) : Typ.t monad =
+and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
   match exp with
   | Var id ->
-      let* typ, _ = typeof_ident id in
-      ret typ
+      let+ typ, _ = typeof_ident id in
+      (exp, typ)
   | Load {exp; typ} ->
       let* loc = get_location in
       option_value_map typ
         ~some:(fun typ ->
-          let* () =
+          let+ exp =
             typecheck_exp exp
               ~check:(fun given -> compat ~assigned:(Ptr typ) ~given)
               ~expected:(SubTypeOf (Ptr typ)) ~loc
           in
-          ret typ )
+          (Exp.Load {exp; typ= Some typ}, typ) )
         ~none:
-          (let* typ = get_typeof_ptr_content exp in
-           ret typ )
+          (let+ exp, typ = get_typeof_ptr_content exp in
+           (Exp.Load {exp; typ= Some typ}, typ) )
   | Lvar varname ->
-      let* typ = typeof_var varname in
-      Typ.Ptr typ |> ret
+      let+ typ = typeof_var varname in
+      (exp, Typ.Ptr typ)
   | Field {exp; field} ->
       let* loc = get_location in
-      let* () = typecheck_exp exp ~check:is_ptr_struct ~expected:PtrStruct ~loc in
+      let* exp = typecheck_exp exp ~check:is_ptr_struct ~expected:PtrStruct ~loc in
       (* remark: we could check if field is declared in the type of exp, but this may be too
          strong for some weakly typed frontend langages *)
-      let* field_typ = typeof_field field in
-      Typ.Ptr field_typ |> ret
+      let+ field_typ = typeof_field field in
+      (Exp.Field {exp; field}, Typ.Ptr field_typ)
   | Index (exp1, exp2) ->
       let* loc = get_location in
-      let* () = typecheck_exp exp2 ~check:is_int ~expected:(SubTypeOf Int) ~loc in
-      get_typeof_array_content exp1
+      let* exp2 = typecheck_exp exp2 ~check:is_int ~expected:(SubTypeOf Int) ~loc in
+      let+ exp1, typ = get_typeof_array_content exp1 in
+      (Exp.Index (exp1, exp2), typ)
   | Const const ->
-      typeof_const const |> ret
+      ret (exp, typeof_const const)
   | Call {proc; args} when ProcDecl.is_allocate_object_builtin proc ->
       typeof_allocate_builtin proc args
   | Call {proc; args} when ProcDecl.is_allocate_array_builtin proc ->
@@ -410,33 +451,36 @@ and typeof_exp (exp : Exp.t) : Typ.t monad =
       typeof_instanceof_builtin proc args
   | Call {proc; args} when ProcDecl.is_lazy_class_initialize_builtin proc ->
       typeof_allocate_builtin proc args
-  | Call {proc; args} ->
+  | Call {proc; args; kind} ->
       let* lang = get_lang in
       let procsig = Exp.call_sig proc args lang in
       let* result_type, formals_types = typeof_procname procsig in
       let* loc = get_location in
-      let* () =
+      let+ args =
         match formals_types with
         | None ->
-            ret ()
+            ret args
         | Some formals_types ->
-            iter2 ~strict:true loc args formals_types ~f:(fun exp assigned ->
-                typecheck_exp exp
-                  ~check:(fun given -> compat ~assigned ~given)
-                  ~expected:(SubTypeOf assigned) ~loc )
+            mapM2 loc args formals_types ~f:(fun exp assigned ->
+                let+ exp =
+                  typecheck_exp exp
+                    ~check:(fun given -> compat ~assigned ~given)
+                    ~expected:(SubTypeOf assigned) ~loc
+                in
+                exp )
       in
-      ret result_type
+      (Exp.Call {proc; args; kind}, result_type)
   | Typ _ ->
-      ret (Typ.Struct TypeNameBridge.sil_type_of_types)
+      ret (exp, Typ.Struct TypeNameBridge.sil_type_of_types)
 
 
 and typeof_allocate_builtin (proc : qualified_procname) args =
   match args with
   | [Exp.Typ typ] ->
-      Typ.Ptr typ |> ret
+      ret (Exp.Call {proc; args; kind= Exp.NonVirtual}, Typ.Ptr typ)
   | [exp] ->
       let* loc = get_location in
-      let* typ = typeof_exp exp in
+      let* _, typ = typeof_exp exp in
       let* () = add_error (mk_type_mismatch_error Typ loc exp typ) in
       abort
   | _ ->
@@ -452,16 +496,16 @@ and typeof_allocate_array_builtin (proc : qualified_procname) args =
   match args with
   | Exp.Typ typ :: dim :: dims ->
       let* loc = get_location in
-      let* () =
-        iter (dim :: dims) ~f:(fun exp ->
+      let+ args =
+        mapM (dim :: dims) ~f:(fun exp ->
             typecheck_exp exp ~check:is_int ~expected:(SubTypeOf Int) ~loc )
       in
-      Typ.Ptr typ |> ret
+      (Exp.Call {proc; args= Exp.Typ typ :: args; kind= Exp.NonVirtual}, Typ.Ptr typ)
   | exp1 :: exp2 :: _ ->
       let* loc = get_location in
-      let* typ = typeof_exp exp1 in
+      let* _, typ = typeof_exp exp1 in
       let* () = add_error (mk_type_mismatch_error Typ loc exp1 typ) in
-      let* () = typecheck_exp exp2 ~check:is_int ~expected:(SubTypeOf Int) ~loc in
+      let* _ = typecheck_exp exp2 ~check:is_int ~expected:(SubTypeOf Int) ~loc in
       abort
   | _ ->
       let* loc = get_location in
@@ -475,11 +519,11 @@ and typeof_allocate_array_builtin (proc : qualified_procname) args =
 and typeof_cast_builtin (proc : qualified_procname) args =
   match args with
   | [Exp.Typ typ; exp] ->
-      let* _old_typ = typeof_exp exp in
-      ret typ
+      let+ exp, _old_typ = typeof_exp exp in
+      (Exp.Call {proc; args= [Exp.Typ typ; exp]; kind= Exp.NonVirtual}, typ)
   | [exp; _] ->
       let* loc = get_location in
-      let* typ = typeof_exp exp in
+      let* _, typ = typeof_exp exp in
       let* () = add_error (mk_type_mismatch_error Typ loc exp typ) in
       abort
   | _ ->
@@ -493,12 +537,12 @@ and typeof_cast_builtin (proc : qualified_procname) args =
 
 and typeof_instanceof_builtin (proc : qualified_procname) args =
   match args with
-  | [exp; Exp.Typ _] ->
-      let* _ = typeof_exp exp in
-      ret Typ.Int
+  | [exp1; (Exp.Typ _ as exp2)] ->
+      let+ exp1, _ = typeof_exp exp1 in
+      (Exp.Call {proc; args= [exp1; exp2]; kind= Exp.NonVirtual}, Typ.Int)
   | [_; exp] ->
       let* loc = get_location in
-      let* typ = typeof_exp exp in
+      let* _, typ = typeof_exp exp in
       let* () = add_error (mk_type_mismatch_error Typ loc exp typ) in
       abort
   | _ ->
@@ -510,85 +554,111 @@ and typeof_instanceof_builtin (proc : qualified_procname) args =
       abort
 
 
-let typecheck_instr (instr : Instr.t) : unit monad =
+let typecheck_instr (instr : Instr.t) : Instr.t monad =
   match instr with
   | Load {id; exp; typ; loc} ->
       let* () = set_location loc in
       option_value_map typ
         ~some:(fun typ ->
-          let* () =
+          let* exp =
             typecheck_exp exp
               ~check:(fun given -> compat ~assigned:(Ptr typ) ~given)
               ~expected:(SubTypeOf (Ptr typ)) ~loc
           in
-          set_ident_type id typ )
+          let+ () = set_ident_type id typ in
+          Instr.Load {id; exp; typ= Some typ; loc} )
         ~none:
-          (let* typ = get_typeof_ptr_content exp in
-           set_ident_type id typ )
+          (let* exp, typ = get_typeof_ptr_content exp in
+           let+ () = set_ident_type id typ in
+           Instr.Load {id; exp; typ= Some typ; loc} )
   | Store {exp1; typ; exp2; loc} ->
       let* () = set_location loc in
       option_value_map typ
         ~some:(fun typ ->
-          let* () =
+          let* exp2 =
             typecheck_exp exp2
               ~check:(fun given -> compat ~assigned:typ ~given)
               ~expected:(SubTypeOf typ) ~loc
           in
-          typecheck_exp exp1
-            ~check:(fun assigned -> compat ~assigned ~given:(Ptr typ))
-            ~expected:(SuperTypeOf (Ptr typ)) ~loc )
+          let+ exp1 =
+            typecheck_exp exp1
+              ~check:(fun assigned -> compat ~assigned ~given:(Ptr typ))
+              ~expected:(SuperTypeOf (Ptr typ)) ~loc
+          in
+          Instr.Store {exp1; typ= Some typ; exp2; loc} )
         ~none:
-          (let* typ = typeof_exp exp2 in
-           typecheck_exp exp1
-             ~check:(fun assigned -> compat ~assigned ~given:(Ptr typ))
-             ~expected:(SuperTypeOf (Ptr typ)) ~loc )
+          (let* exp2, typ = typeof_exp exp2 in
+           let+ exp1 =
+             typecheck_exp exp1
+               ~check:(fun assigned -> compat ~assigned ~given:(Ptr typ))
+               ~expected:(SuperTypeOf (Ptr typ)) ~loc
+           in
+           Instr.Store {exp1; typ= Some typ; exp2; loc} )
   | Prune {exp; loc} ->
       let* () = set_location loc in
-      typecheck_exp exp ~check:sub_int ~expected:(SubTypeOf Int) ~loc
+      let+ exp = typecheck_exp exp ~check:sub_int ~expected:(SubTypeOf Int) ~loc in
+      Instr.Prune {exp; loc}
   | Let {id; exp; loc} ->
       let* () = set_location loc in
-      let* typ = typeof_exp exp in
-      set_ident_type id typ
+      let* exp, typ = typeof_exp exp in
+      let+ () = set_ident_type id typ in
+      Instr.Let {id; exp; loc}
 
 
-let typecheck_node_call loc ({label; ssa_args} : Terminator.node_call) : unit monad =
+let typecheck_node_call loc ({label; ssa_args} : Terminator.node_call) : Terminator.node_call monad
+    =
   let* node = get_node label in
-  iter2 loc ssa_args node.Node.ssa_parameters ~f:(fun exp (_, assigned) ->
-      typecheck_exp exp
-        ~check:(fun given -> compat ~assigned ~given)
-        ~expected:(SubTypeOf assigned) ~loc )
+  let+ ssa_args =
+    mapM2 loc ssa_args node.Node.ssa_parameters ~f:(fun exp (_, assigned) ->
+        typecheck_exp exp
+          ~check:(fun given -> compat ~assigned ~given)
+          ~expected:(SubTypeOf assigned) ~loc )
+  in
+  {Terminator.label; ssa_args}
 
 
-let rec typecheck_bool_exp loc (bexp : BoolExp.t) : unit monad =
+let rec typecheck_bool_exp loc (bexp : BoolExp.t) : BoolExp.t monad =
   match bexp with
   | Exp exp ->
-      typecheck_exp exp ~check:sub_int ~expected:(SubTypeOf Int) ~loc
+      let+ exp = typecheck_exp exp ~check:sub_int ~expected:(SubTypeOf Int) ~loc in
+      BoolExp.Exp exp
   | Not bexp ->
-      typecheck_bool_exp loc bexp
-  | And (bexp1, bexp2) | Or (bexp1, bexp2) ->
-      let* () = typecheck_bool_exp loc bexp1 in
-      typecheck_bool_exp loc bexp2
+      let+ bexp = typecheck_bool_exp loc bexp in
+      BoolExp.Not bexp
+  | And (bexp1, bexp2) ->
+      let* bexp1 = typecheck_bool_exp loc bexp1 in
+      let+ bexp2 = typecheck_bool_exp loc bexp2 in
+      BoolExp.And (bexp1, bexp2)
+  | Or (bexp1, bexp2) ->
+      let* bexp1 = typecheck_bool_exp loc bexp1 in
+      let+ bexp2 = typecheck_bool_exp loc bexp2 in
+      BoolExp.Or (bexp1, bexp2)
 
 
-let rec typecheck_terminator loc (term : Terminator.t) : unit monad =
+let rec typecheck_terminator loc (term : Terminator.t) : Terminator.t monad =
   let* () = set_location loc in
   match term with
   | If {bexp; then_; else_} ->
-      let* () = typecheck_bool_exp loc bexp in
-      let* () = typecheck_terminator loc then_ in
-      let* () = typecheck_terminator loc else_ in
-      ret ()
+      let* bexp = typecheck_bool_exp loc bexp in
+      let* then_ = typecheck_terminator loc then_ in
+      let+ else_ = typecheck_terminator loc else_ in
+      Terminator.If {bexp; then_; else_}
   | Ret exp ->
       let* result_typ = get_result_type in
-      typecheck_exp exp
-        ~check:(fun given -> compat ~assigned:result_typ ~given)
-        ~expected:(SubTypeOf result_typ) ~loc
+      let+ exp =
+        typecheck_exp exp
+          ~check:(fun given -> compat ~assigned:result_typ ~given)
+          ~expected:(SubTypeOf result_typ) ~loc
+      in
+      Terminator.Ret exp
   | Jump node_calls ->
-      iter node_calls ~f:(typecheck_node_call loc)
+      let+ node_calls = mapM node_calls ~f:(typecheck_node_call loc) in
+      Terminator.Jump node_calls
   | Throw exp ->
-      typecheck_exp exp ~check:is_ptr ~expected:Ptr ~loc
+      let+ exp = typecheck_exp exp ~check:is_ptr ~expected:Ptr ~loc in
+      Terminator.Throw exp
   | Unreachable ->
-      ret ()
+      ret Terminator.Unreachable
 
 
 let all_successors (node : Node.t) : NodeName.t list =
@@ -605,16 +675,19 @@ let all_successors (node : Node.t) : NodeName.t list =
   normal_succs node.last @ node.exn_succs
 
 
+(* TODO: typecheck unreachable nodes too? *)
+
 (** nodes are typechecked in dfs order to make sure every idents that are read in a node, have been
     assigned a type in a dfs predecessor *)
 let rec typecheck_node (node : Node.t) : unit monad =
-  let* seen = has_node_been_seen node in
-  if seen then visit_next ()
+  let* already_typechecked = has_node_been_typechecked node in
+  if already_typechecked then visit_next ()
   else
-    let* () = mark_node_as_seen node in
     let* () = iter node.ssa_parameters ~f:(fun (id, typ) -> set_ident_type id typ) in
-    let* () = iter node.instrs ~f:typecheck_instr in
-    let* () = typecheck_terminator node.last_loc node.last in
+    let* instrs = mapM node.instrs ~f:(fun instr -> catch (typecheck_instr instr) ~with_:instr) in
+    let* last = typecheck_terminator node.last_loc node.last in
+    let node = {node with instrs; last} in
+    let* () = mark_node_as_typechecked node in
     let* () = all_successors node |> iter ~f:dfs_push in
     visit_next ()
 
@@ -629,7 +702,7 @@ and visit_next () : unit monad =
       typecheck_node next_node
 
 
-let typecheck_procdesc decls globals_types (pdesc : ProcDesc.t) errors : error list =
+let typecheck_procdesc decls globals_types (pdesc : ProcDesc.t) errors : ProcDesc.t * error list =
   let vars_with_params =
     match
       List.fold2 pdesc.params (ProcDesc.formals pdesc)
@@ -651,7 +724,7 @@ let typecheck_procdesc decls globals_types (pdesc : ProcDesc.t) errors : error l
     { decls
     ; pdesc
     ; loc= Location.Unknown
-    ; seen_nodes= NodeName.Set.empty
+    ; typechecked_nodes= NodeName.Map.empty
     ; nodes_from_label=
         List.fold pdesc.nodes ~init:NodeName.Map.empty ~f:(fun map (node : Node.t) ->
             NodeName.Map.add node.label node map )
@@ -660,31 +733,43 @@ let typecheck_procdesc decls globals_types (pdesc : ProcDesc.t) errors : error l
     ; dfs_stack= [pdesc.start]
     ; errors }
   in
-  let _, {errors} = visit_next () init in
-  errors
+  let _, {errors; typechecked_nodes} = visit_next () init in
+  let nodes =
+    (* note: this filter also removes nodes that are not reachable from the entry node *)
+    List.filter_map pdesc.nodes ~f:(fun node ->
+        NodeName.Map.find_opt node.Node.label typechecked_nodes )
+  in
+  let pdesc = {pdesc with nodes} in
+  (pdesc, errors)
 
 
-let run (module_ : Module.t) decls_env : error list =
+let run (module_ : Module.t) decls_env : (Module.t, error list) Result.t =
   let globals_type =
     TextualDecls.fold_globals decls_env ~init:VarName.Map.empty ~f:(fun map varname global ->
         VarName.Map.add varname global.typ map )
   in
-  let errors =
-    List.fold module_.decls ~init:[] ~f:(fun errors (decl : Module.decl) ->
+  let decls, errors =
+    List.fold module_.decls ~init:([], []) ~f:(fun (decls, errors) (decl : Module.decl) ->
         match decl with
         | Global _ | Struct _ | Procdecl _ ->
-            errors
+            (decl :: decls, errors)
         | Proc pdesc ->
-            typecheck_procdesc decls_env globals_type pdesc errors )
+            let pdesc, errors = typecheck_procdesc decls_env globals_type pdesc errors in
+            (Module.Proc pdesc :: decls, errors) )
   in
-  List.rev errors
+  if List.is_empty errors then
+    let decls = List.rev decls in
+    Ok {module_ with decls}
+  else Error (List.rev errors)
 
 
-type type_check_result = Ok | Decl_errors of TextualDecls.error list | Type_errors of error list
+type type_check_result =
+  | Ok of Module.t
+  | Decl_errors of TextualDecls.error list
+  | Type_errors of error list
 
 let type_check module_ =
   let decls_errors, decls_env = TextualDecls.make_decls module_ in
   if not (List.is_empty decls_errors) then Decl_errors decls_errors
   else
-    let errors = run module_ decls_env in
-    if List.is_empty errors then Ok else Type_errors errors
+    match run module_ decls_env with Ok module_ -> Ok module_ | Error errors -> Type_errors errors

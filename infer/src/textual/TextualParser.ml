@@ -51,19 +51,21 @@ let parse_buf ~capture sourcefile filebuf =
           in
           DoliToTextual.program_to_textual_module sourcefile doliModule
     in
-    let twice_declared_errors, decls_env = TextualDecls.make_decls parsed in
-    let twice_declared_errors = List.map twice_declared_errors ~f:(fun x -> DeclaredTwiceError x) in
-    (* even if twice_declared_errors is not empty we can continue the other verifications *)
-    let errors =
-      TextualBasicVerification.run parsed decls_env |> List.map ~f:(fun x -> BasicError x)
-    in
+    let errors, decls_env = TextualDecls.make_decls parsed in
+    let errors = List.map errors ~f:(fun x -> DeclaredTwiceError x) in
     if List.is_empty errors then
       let errors =
-        TextualTypeVerification.run parsed decls_env |> List.map ~f:(fun x -> TypeError x)
+        TextualBasicVerification.run parsed decls_env |> List.map ~f:(fun x -> BasicError x)
       in
-      let errors = twice_declared_errors @ errors in
-      if List.is_empty errors then Ok parsed else Error errors
-    else Error (twice_declared_errors @ errors)
+      if List.is_empty errors then
+        match TextualTypeVerification.run parsed decls_env with
+        | Ok module_ ->
+            Ok module_
+        | Error errors ->
+            let errors = List.map ~f:(fun x -> TypeError x) errors in
+            Error errors
+      else Error errors
+    else Error errors
   with
   | CombinedMenhir.Error ->
       let token = CombinedLexer.Lexbuf.lexeme filebuf in

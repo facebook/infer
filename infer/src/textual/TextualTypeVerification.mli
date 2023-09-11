@@ -153,9 +153,14 @@ type error
 
 val pp_error : SourceFile.t -> Format.formatter -> error -> unit
 
-val run : Module.t -> TextualDecls.t -> error list
+(* typechecks all the module and, if no errors, returns a fresh copy where
+   all load/store type annotations are filled now *)
+val run : Module.t -> TextualDecls.t -> (Module.t, error list) Result.t
 
-type type_check_result = Ok | Decl_errors of TextualDecls.error list | Type_errors of error list
+type type_check_result =
+  | Ok of Module.t
+  | Decl_errors of TextualDecls.error list
+  | Type_errors of error list
 
 (* Called from tests *)
 val type_check : Module.t -> type_check_result [@@warning "-unused-value-declaration"]

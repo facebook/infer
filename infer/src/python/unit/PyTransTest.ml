@@ -22,7 +22,7 @@ let test ?(typecheck = true) source =
   if typecheck then (
     let res = TextualTypeVerification.type_check module_ in
     match (res : TextualTypeVerification.type_check_result) with
-    | Ok ->
+    | Ok module_ ->
         F.printf "%a" Textual.Module.pp module_
     | Type_errors errors ->
         let pp_error = TextualTypeVerification.pp_error sourcefile in
@@ -394,9 +394,6 @@ def f(x, y):
           #b2:
               n3:*PyObject = load &y
               ret n3
-
-          #b3:
-              ret null
 
         }
 
