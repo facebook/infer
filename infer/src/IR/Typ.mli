@@ -339,6 +339,8 @@ val is_void : t -> bool
 
 val is_pointer_to_int : t -> bool
 
+val is_pointer_to_const : t -> bool
+
 val is_pointer_to_function : t -> bool
 
 val is_pointer : t -> bool
@@ -347,7 +349,7 @@ val is_reference : t -> bool
 
 val is_rvalue_reference : t -> bool
 
-val is_const_reference : t -> bool
+val is_const_reference_on_source : t -> bool
 
 val is_struct : t -> bool
 

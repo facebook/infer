@@ -74,6 +74,8 @@ module CopiedInto : sig
     | IntoField of {field: Fieldname.t}
   [@@deriving compare, equal]
 
+  val is_copied_into_var : t -> bool
+
   val pp : F.formatter -> t -> unit
 end
 

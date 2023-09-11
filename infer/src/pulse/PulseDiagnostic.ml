@@ -368,6 +368,8 @@ let is_from_std_move (base, _) =
 
 let no_suggestion msg = (msg, None)
 
+let is_from_const = Option.exists ~f:Typ.is_pointer_to_const
+
 let get_message_and_suggestion diagnostic =
   match diagnostic with
   | AccessToInvalidAddress
@@ -682,8 +684,8 @@ let get_message_and_suggestion diagnostic =
   | UnnecessaryCopy {copied_into; source_typ; source_opt; location; copied_location= None; from}
     -> (
       let open PulseAttribute in
-      let is_from_const = Option.exists ~f:Typ.is_const_reference source_typ in
       let call_move = "call `std::move` instead" in
+      let is_from_const = is_from_const source_typ in
       let get_suggestion_msg_move = function
         | Some source_expr when is_from_std_move source_expr ->
             "Even though `std::move` is called, nothing is actually getting moved (e.g. the type \
@@ -1029,7 +1031,7 @@ let get_issue_type ~latent issue_type =
       IssueType.unnecessary_copy_movable_pulse
   | ( UnnecessaryCopy {copied_into= IntoField _ | IntoIntermediate _; source_typ; from= CopyCtor}
     , false )
-    when Option.exists ~f:Typ.is_const_reference source_typ ->
+    when is_from_const source_typ ->
       IssueType.unnecessary_copy_intermediate_const_pulse
   | ( UnnecessaryCopy
         {copied_into= IntoField _ | IntoIntermediate _; from= CopyCtor | CopyInGetDefault}
@@ -1038,12 +1040,10 @@ let get_issue_type ~latent issue_type =
   | UnnecessaryCopy {copied_into= IntoVar _; from= CopyCtor | CopyInGetDefault}, false ->
       IssueType.unnecessary_copy_pulse
   | UnnecessaryCopy {from= CopyAssignment; source_typ}, false ->
-      if Option.exists ~f:Typ.is_const_reference source_typ then
-        IssueType.unnecessary_copy_assignment_const_pulse
+      if is_from_const source_typ then IssueType.unnecessary_copy_assignment_const_pulse
       else IssueType.unnecessary_copy_assignment_pulse
   | UnnecessaryCopy {source_typ; from= CopyToOptional}, false ->
-      if Option.exists ~f:Typ.is_const_reference source_typ then
-        IssueType.unnecessary_copy_optional_const_pulse
+      if is_from_const source_typ then IssueType.unnecessary_copy_optional_const_pulse
       else IssueType.unnecessary_copy_optional_pulse
   | ( ( ConfigUsage _
       | ConstRefableParameter _

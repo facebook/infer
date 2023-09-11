@@ -256,6 +256,8 @@ let mk_type_quals ?default ?is_const ?is_reference ?is_restrict ?is_trivially_co
 
 let is_const {is_const} = is_const
 
+let is_reference_on_source {is_reference} = is_reference
+
 let is_restrict {is_restrict} = is_restrict
 
 let is_trivially_copyable {is_trivially_copyable} = is_trivially_copyable
@@ -840,13 +842,16 @@ let is_rvalue_reference typ =
   match typ.desc with Tptr (_, Pk_rvalue_reference) -> true | _ -> false
 
 
-let is_const_reference typ =
-  match typ.desc with Tptr ({quals}, Pk_lvalue_reference) -> is_const quals | _ -> false
+let is_const_reference_on_source typ =
+  is_reference_on_source typ.quals
+  && match typ.desc with Tptr ({quals}, Pk_lvalue_reference) -> is_const quals | _ -> false
 
 
 let is_struct typ = match typ.desc with Tstruct _ -> true | _ -> false
 
 let is_pointer_to_cpp_class typ = match typ.desc with Tptr (t, _) -> is_cpp_class t | _ -> false
+
+let is_pointer_to_const typ = match typ.desc with Tptr ({quals}, _) -> is_const quals | _ -> false
 
 let is_pointer_to_objc_non_tagged_class typ =
   match typ.desc with Tptr (t, _) -> is_objc_non_tagged_class t | _ -> false

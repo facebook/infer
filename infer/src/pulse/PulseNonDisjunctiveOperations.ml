@@ -346,7 +346,8 @@ let add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths t
                 AddressAttributes.add_one source_addr (CopiedInto copy_into) astate
                 |> AddressAttributes.add_one copy_addr
                      (SourceOriginOfCopy
-                        {source= source_addr; is_const_ref= Typ.is_const_reference source_typ} ) )
+                        { source= source_addr
+                        ; is_const_ref= Typ.is_const_reference_on_source source_typ } ) )
           in
           ( NonDisjDomain.add_var copy_into
               ~source_addr_opt:(Option.map source_addr_typ_opt ~f:fst3)
@@ -370,8 +371,8 @@ let add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths t
                      ( AddressAttributes.add_one source_addr (CopiedInto (IntoField {field})) astate
                        |> AddressAttributes.add_one copy_addr
                             (SourceOriginOfCopy
-                               {source= source_addr; is_const_ref= Typ.is_const_reference source_typ}
-                            )
+                               { source= source_addr
+                               ; is_const_ref= Typ.is_const_reference_on_source source_typ } )
                      , Some source_addr
                      , match (source : DecompilerExpr.t) with
                        | SourceExpr (source_expr, _) ->
@@ -415,7 +416,7 @@ let add_copies_to_return integer_type_widths tenv proc_desc path location from a
       let+ astate, source = try_eval path location source_exp astate in
       let astate =
         AddressAttributes.add_copied_return copy_addr ~source
-          ~is_const_ref:(Typ.is_const_reference source_typ)
+          ~is_const_ref:(Typ.is_const_reference_on_source source_typ)
           from location astate
       in
       (astate_n, astate)

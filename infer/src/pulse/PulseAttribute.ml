@@ -132,6 +132,13 @@ module Attribute = struct
           F.fprintf fmt "intermediate(%a)" Var.pp copied_var
       | IntoField {field} ->
           Fieldname.pp fmt field
+
+
+    let is_copied_into_var = function
+      | IntoVar _ ->
+          true
+      | IntoIntermediate _ | IntoField _ ->
+          false
   end
 
   module ConfigUsage = struct

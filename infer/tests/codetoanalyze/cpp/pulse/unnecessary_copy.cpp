@@ -666,13 +666,13 @@ void copy_assignment_const_value_param_bad(const Arr arr) {
   my_arr = arr; // fix here is to remove const from param type
 }
 
-void copy_assignment_const_ref_param_ok_FP(const Arr& arr) {
+void copy_assignment_const_ref_param_ok(const Arr& arr) {
   Arr my_arr;
   const Arr& c = arr;
   my_arr = c;
 }
 
-int intermediate_copy_assignment_const_ref_ok_FP(const Arr& arr) {
+int intermediate_copy_assignment_const_ref_ok(const Arr& arr) {
   const auto& c = arr;
   return get_first_elem(c);
 }
@@ -685,11 +685,9 @@ struct Wrapper {
   Arr my_field;
   const Arr& get_const_ref();
 
-  void intermediate_const_ref_callee_ok_FP() {
-    get_first_elem(get_const_ref());
-  }
+  void intermediate_const_ref_callee_ok() { get_first_elem(get_const_ref()); }
 
-  void assignment_const_ref_ok_FP() { my_field = get_const_ref(); }
+  void assignment_const_ref_ok() { my_field = get_const_ref(); }
 };
 class FVector {
 

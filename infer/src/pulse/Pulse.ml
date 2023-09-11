@@ -61,6 +61,16 @@ let get_loc_instantiated pname =
   IRAttributes.load pname |> Option.bind ~f:ProcAttributes.get_loc_instantiated
 
 
+let is_copy_cted_into_var from copied_into =
+  Attribute.CopiedInto.is_copied_into_var copied_into
+  &&
+  match (from : Attribute.CopyOrigin.t) with
+  | CopyInGetDefault | CopyCtor ->
+      true
+  | CopyAssignment | CopyToOptional ->
+      false
+
+
 let report_unnecessary_copies tenv proc_desc err_log non_disj_astate =
   let pname = Procdesc.get_proc_name proc_desc in
   if is_not_implicit_or_copy_ctor_assignment pname then
@@ -82,7 +92,12 @@ let report_unnecessary_copies tenv proc_desc err_log non_disj_astate =
                ; location_instantiated
                ; from }
            in
-           PulseReport.report tenv ~is_suppressed ~latent:false proc_desc err_log diagnostic )
+           if
+             is_copy_cted_into_var from copied_into
+             || Option.value_map ~default:true
+                  ~f:(fun typ -> Typ.is_const_reference_on_source typ |> not)
+                  source_typ
+           then PulseReport.report tenv ~is_suppressed ~latent:false proc_desc err_log diagnostic )
 
 
 let report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate =
