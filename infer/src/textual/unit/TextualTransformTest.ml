@@ -80,7 +80,7 @@ let%test_module "remove_effects_in_subexprs transformation" =
 
         define next(l: *cell) : *cell {
           #entry:
-             ret [[&l].cell.next]
+             ret l->cell.next
         }
     |}
 

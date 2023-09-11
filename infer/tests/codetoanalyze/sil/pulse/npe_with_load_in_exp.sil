@@ -1,0 +1,181 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "java"
+
+type cell = { value:int; next: *cell }
+
+type list = { header: *cell }
+
+define .static load_in_exp.basic_bad(l: *list) : void {
+  #entry:
+    store &l <- null: *list
+    n1 = l->list.header
+    ret null
+}
+
+define .static load_in_exp.if_test_lt_ok(l: *list) : void {
+  #entry:
+    n4 = 2
+    n5 = __sil_lt(n4, 3)
+    jmp then_node, else_node
+  #then_node:
+    prune n5
+    ret null
+  #else_node:
+    prune ! n5
+    store &l <- null: *list
+    n1 = l->list.header
+    ret null
+}
+
+define .static load_in_exp.if_test_lt_bad(l: *list) : void {
+  #entry:
+    n4 = 2
+    n5 = __sil_lt(n4, 3)
+    jmp then_node, else_node
+  #then_node:
+    prune n5
+    store &l <- null: *list
+    n1 = l->list.header
+    ret null
+  #else_node:
+    prune ! n5
+    ret null
+}
+
+define .static load_in_exp.if_test_eq_ok(l: *list) : void {
+  #entry:
+    n4 = 2
+    n5 = __sil_eq(n4, 2)
+    jmp then_node, else_node
+  #then_node:
+    prune n5
+    ret null
+  #else_node:
+    prune ! n5
+    store &l <- null: *list
+    n1 = l->list.header
+    ret null
+}
+
+define .static load_in_exp.if_test_eq_bad(l: *list) : void {
+  #entry:
+    n4 = 2
+    n5 = __sil_eq(n4, 2)
+    jmp then_node, else_node
+  #then_node:
+    prune n5
+    store &l <- null: *list
+    n1 = l->list.header
+    ret null
+  #else_node:
+    prune ! n5
+    ret null
+}
+
+define .static load_in_exp.conditional_latent(n: int) : void {
+  local l: *list
+  #entry:
+    n4 : int = load &n
+    n5 = __sil_eq(n4, 2)
+    jmp then_node, else_node
+  #then_node:
+    prune n5
+    store &l <- null: *list
+    n1 = l->list.header
+    ret null
+  #else_node:
+    prune ! n5
+    ret null
+}
+
+define .static load_in_exp.call_ok() : void {
+  #entry:
+    n1 = load_in_exp.conditional_latent(1)
+    ret null
+}
+
+define .static load_in_exp.call_bad() : void {
+  #entry:
+    n1 = load_in_exp.conditional_latent(2)
+    ret null
+}
+
+define .static load_in_exp.store_bad(l1: *list, l2: *list) : void {
+  #entry:
+    store l1.list.header <- null: *cell
+    store l2.list.header <- l1->list.header: *cell
+    n4 = l2->list.header->cell.value
+    ret null
+}
+
+define .static load_in_exp.array_bad(a: (*cell)[]) : void {
+  #entry:
+    n0 = __sil_allocate(<cell>)
+    store &a[0] <- null: *cell
+    store &a[1] <- n0: *cell
+    n2 = [&a[0]]->cell.value
+    ret null
+}
+
+define .static load_in_exp.array_ok(a: (*cell)[]) : void {
+  #entry:
+    n0 = __sil_allocate(<cell>)
+    store &a[0] <- null: *cell
+    store &a[1] <- n0: *cell
+    n2 = [&a[1]]->cell.value
+    ret null
+}
+
+define .static load_in_exp.return_null_ok(): *cell {
+  #entry:
+    ret null
+}
+
+define .static load_in_exp.return_cell_ok(): *cell {
+  #entry:
+    n0 = __sil_allocate(<cell>)
+    ret n0
+}
+
+define .static load_in_exp.call_and_npe_bad() : void {
+  #entry:
+    n0 = load_in_exp.return_null_ok()
+    n1 = n0->cell.value
+    ret null
+}
+
+define .static load_in_exp.call_and_no_npe_ok() : void {
+  #entry:
+    n0 = load_in_exp.return_cell_ok()
+    n1 = n0->cell.value
+    ret null
+}
+
+define .static load_in_exp.load_bad() : void {
+  local locvar: *cell
+  #entry:
+    store &locvar <- null: *cell
+    n1 = locvar->cell.value
+    ret null
+}
+
+define .static load_in_exp.load_internal_bad() : void {
+  local locvar: cell
+  #entry:
+    store &locvar.cell.next <- null: *cell
+    n1 = &locvar->cell.next->cell.value
+    ret null
+}
+
+
+define .static load_in_exp.external_call_and_npe_bad() : void {
+  #entry:
+    n1 = external_return_null()->cell.value
+    ret null
+}
+
+declare .static external_return_null() : *cell

@@ -20,6 +20,7 @@
 
 %token AND
 %token AMPERSAND
+%token ARROW
 %token ASSIGN
 %token COLON
 %token COMMA
@@ -443,11 +444,14 @@ expression:
     { Exp.Load {exp; typ=None} }
   | AMPERSAND name=vname
     { Exp.Lvar name }
-  | vname_except_load_keyword
-    { assert false }
+  | vname=vname_except_load_keyword
+    { Exp.Load {exp=Exp.Lvar vname; typ=None} }
   | exp=expression DOT enclosing_class=opt_tname DOT name=fname
     { let field : qualified_fieldname = {enclosing_class; name} in
       Exp.Field {exp; field} }
+  | exp=expression ARROW enclosing_class=opt_tname DOT name=fname
+    { let field : qualified_fieldname = {enclosing_class; name} in
+      Exp.Load {exp=Exp.Field {exp; field}; typ=None} }
   | e1=expression LSBRACKET e2=expression RSBRACKET
     { Exp.Index (e1, e2) }
   | c=const

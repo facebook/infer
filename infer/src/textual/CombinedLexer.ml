@@ -134,6 +134,8 @@ let build_mainlex keywords =
         AMPERSAND
     | "&&" ->
         AND
+    | "->" ->
+        ARROW
     | "<-" ->
         ASSIGN
     | ":" ->
