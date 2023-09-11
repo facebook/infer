@@ -2906,6 +2906,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           if Int.equal (List.length field_exps) (List.length stmts) then
             (* There is no fields left to initialize. *)
             []
+          else if Option.is_none (Tenv.lookup tenv super) then
+            (* If there is no information of the super type in tenv, give up the translation. This
+               can happen when the super class is declared in a deep header chain. *)
+            []
           else
             [ init_expr_trans ~is_declare_variable:false trans_state
                 (var_exp, Typ.mk (Tstruct super))

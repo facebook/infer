@@ -11,6 +11,17 @@ digraph cfg {
 	
 
 	 "init_all#16312083996044697104.b802f2b6193bc69c_3" -> "init_all#16312083996044697104.b802f2b6193bc69c_2" ;
+"init_class_in_header#181929391833.02fc198379f1411d_1" [label="1: Start init_class_in_header\nFormals: \nLocals:  x:ClassInHeader \n  " color=yellow style=filled]
+	
+
+	 "init_class_in_header#181929391833.02fc198379f1411d_1" -> "init_class_in_header#181929391833.02fc198379f1411d_3" ;
+"init_class_in_header#181929391833.02fc198379f1411d_2" [label="2: Exit init_class_in_header \n  " color=yellow style=filled]
+	
+
+"init_class_in_header#181929391833.02fc198379f1411d_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:ClassInHeader); [line 29, column 31]\n  *&x.f:int=52 [line 29, column 46]\n " shape="box"]
+	
+
+	 "init_class_in_header#181929391833.02fc198379f1411d_3" -> "init_class_in_header#181929391833.02fc198379f1411d_2" ;
 "init_some#8538535122353085284.3304c4fd95fd5f9e_1" [label="1: Start init_some\nFormals: \nLocals:  x:CurrentClass \n  " color=yellow style=filled]
 	
 
