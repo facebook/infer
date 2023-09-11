@@ -9,5 +9,5 @@
   (:standard -open Core -open IStdlib -open IStd -open Absint))
  (libraries core IStdlib Absint ppxlib)
  (preprocess
-  (pps inferppx ppx_inline_test))
+  (pps ppx_compare ppx_hash inferppx ppx_inline_test))
  (inline_tests))
