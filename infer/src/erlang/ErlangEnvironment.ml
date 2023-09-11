@@ -51,10 +51,12 @@ type ('procdesc, 'result) t =
   ; result: ('result[@sexp.opaque]) }
 [@@deriving sexp_of]
 
+let unknown_module_name = "__INFER_UNKNOWN_MODULE"
+
 let initialize_environment module_ otp_modules =
   let init =
     { cfg= Cfg.create ()
-    ; current_module= Printf.sprintf "%s:unknown_module" __FILE__
+    ; current_module= unknown_module_name
     ; is_otp= false
     ; functions= UnqualifiedFunction.Set.empty
     ; specs= UnqualifiedFunction.Map.empty
@@ -104,6 +106,9 @@ let initialize_environment module_ otp_modules =
         | `Duplicate ->
             L.die InternalError "repeated record: %s" name )
     | Module current_module ->
+        if String.(unknown_module_name <> env.current_module) then
+          L.die InternalError "trying to set current module twice: old: %s, new: %s"
+            env.current_module current_module ;
         let is_otp = String.Set.mem otp_modules current_module in
         {env with current_module; is_otp}
     | File _ ->
