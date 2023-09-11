@@ -56,6 +56,7 @@ type type_quals [@@deriving compare, equal]
 val mk_type_quals :
      ?default:type_quals
   -> ?is_const:bool
+  -> ?is_reference:bool
   -> ?is_restrict:bool
   -> ?is_trivially_copyable:bool
   -> ?is_volatile:bool

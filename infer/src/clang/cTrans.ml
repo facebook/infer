@@ -128,17 +128,23 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   let add_reference_if_glvalue (typ : Typ.t) expr_info =
     (* glvalue definition per C++11:
        http://en.cppreference.com/w/cpp/language/value_category *)
-    let is_glvalue =
-      match expr_info.Clang_ast_t.ei_value_kind with `LValue | `XValue -> true | `RValue -> false
+    let is_xvalue =
+      match expr_info.Clang_ast_t.ei_value_kind with `XValue -> true | `LValue | `RValue -> false
     in
-    match (is_glvalue, typ.desc) with
+    let is_lvalue =
+      match expr_info.Clang_ast_t.ei_value_kind with `LValue -> true | `RValue | `XValue -> false
+    in
+    match (is_xvalue || is_lvalue, typ.desc) with
     | true, Tptr (_, (Pk_lvalue_reference | Pk_rvalue_reference)) ->
         (* reference of reference is not allowed in C++ - it's most likely frontend *)
         (* trying to add same reference to same type twice*)
         (* this is hacky and should be fixed (t9838691) *)
         typ
     | true, _ ->
-        Typ.mk (Tptr (typ, Pk_lvalue_reference))
+        if is_lvalue then
+          let quals = Typ.mk_type_quals ~is_reference:true () in
+          Typ.mk ~quals (Tptr (typ, Pk_lvalue_reference))
+        else Typ.mk (Tptr (typ, Pk_lvalue_reference))
     | _ ->
         typ
 
