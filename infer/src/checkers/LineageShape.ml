@@ -125,8 +125,6 @@ module Env : sig
     (** An environment associates shapes to variables and structures to shapes. *)
     type t
 
-    val pp : Format.formatter -> t -> unit
-
     module Shape : sig
       (** Shape building functions. These functions will create the appropriate structure, associate
           it to a shape in the environment and return that shape. *)
@@ -168,7 +166,9 @@ module Env : sig
         using its results later on subsequent analysis (in particular Lineage). *)
     type t
 
-    val pp : Format.formatter -> t -> unit
+    val pp : t Fmt.t
+    (** Puts some effort into printing easier-to-understand summaries. Does not try to be
+        performance efficient. *)
 
     val make : State.t -> t
     (** Makes a summary from a state environment. Further updates to the state will have no effect
@@ -219,6 +219,13 @@ end = struct
     Format.fprintf fmt "@[(%a)@]"
       (IFmt.Labelled.iter_bindings ~sep Hashtbl.iteri pp_binding)
       hashtbl
+
+
+  let pp_hashtbl_sorted ~compare ?(sep = Fmt.semi) ~bind pp_key pp_value fmt hashtbl =
+    let pp_binding = pp_binding ~bind pp_key pp_value in
+    Format.fprintf fmt "@[(%a)@]"
+      (IFmt.Labelled.iter ~sep List.iter pp_binding)
+      (Hashtbl.to_alist hashtbl |> List.sort ~compare:(fun (k, _) (k', _) -> compare k k'))
 
 
   module Types = struct
@@ -321,9 +328,9 @@ end = struct
 
       let pp fmt {var_shapes; shape_structures} =
         Format.fprintf fmt "@[<v>@[<v4>VAR_SHAPES@ @[%a@]@]@ @[<v4>SHAPE_STRUCTURES@ @[%a@]@]@]"
-          (pp_hashtbl ~bind:pp_arrow Var.pp pp_shape)
+          (pp_hashtbl_sorted ~compare:Var.compare ~bind:pp_arrow Var.pp pp_shape)
           var_shapes
-          (pp_hashtbl ~bind:pp_arrow Shape_id.pp Structure.pp)
+          (pp_hashtbl_sorted ~compare:Shape_id.compare ~bind:pp_arrow Shape_id.pp Structure.pp)
           shape_structures
     end
   end
@@ -758,12 +765,11 @@ module Summary = Env.Summary
 module Report = struct
   (** Reporting utility module. *)
 
-  let debug proc_desc state summary =
-    (* Print a local state, a summary and the fields of the returned value in the debug logs. *)
+  let debug proc_desc summary =
+    (* Print a summary and the fields of the returned value in the debug logs. *)
     let procname = Procdesc.get_proc_name proc_desc in
     L.debug Analysis Verbose "@[<v>@ @[<v2>" ;
     L.debug Analysis Verbose "@[<v>Result for procedure : %a@]@ " Procname.pp procname ;
-    L.debug Analysis Verbose "@[<v2>LOCAL ENV:@ %a@]@ @ " Env.State.pp state ;
     L.debug Analysis Verbose "@[<v2>SUMMARY:@ %a@]@ @ " Env.Summary.pp summary ;
     L.debug Analysis Verbose "@[<v2>FIELDS OF RETURN:@ (%a)@]"
       (Fmt.iter
@@ -986,7 +992,7 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
   (* Analyze the procedure's code  *)
   let _invmap : Analyzer.invariant_map = Analyzer.exec_pdesc analysis_data ~initial:() proc_desc in
   let summary = Env.Summary.make Analyzer.State.state in
-  Report.debug proc_desc Analyzer.State.state summary ;
+  Report.debug proc_desc summary ;
   Some summary
 
 
