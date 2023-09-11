@@ -66,6 +66,7 @@ DIRECT_TESTS += \
   cpp_conflicts \
   cpp_frontend \
   cpp_frontend-17 \
+  cpp_frontend-20 \
   cpp_impurity \
   cpp_liveness \
   cpp_liveness-20 \

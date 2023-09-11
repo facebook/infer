@@ -1,21 +1,21 @@
 /* @generated */
 digraph cfg {
-"no_missing_node(class Sub)#286112.8843aaec68040db1_1" [label="1: Start no_missing_node\nFormals:  __return_param:Sub*\nLocals:  0$?%__sil_tmp__temp_construct_n$2:EnumWrapper 0$?%__sil_tmpSIL_materialize_temp__n$1:int 0$?%__sil_tmpSIL_init_list__n$4:Super \n  " color=yellow style=filled]
+"no_missing_node(class Sub)#286112.8843aaec68040db1_1" [label="1: Start no_missing_node\nFormals:  __return_param:Sub*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:int \n  " color=yellow style=filled]
 	
 
 	 "no_missing_node(class Sub)#286112.8843aaec68040db1_1" -> "no_missing_node(class Sub)#286112.8843aaec68040db1_4" ;
 "no_missing_node(class Sub)#286112.8843aaec68040db1_2" [label="2: Exit no_missing_node \n  " color=yellow style=filled]
 	
 
-"no_missing_node(class Sub)#286112.8843aaec68040db1_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:int); [line 30, column 42]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$1:int=(unsigned int)0 [line 30, column 42]\n " shape="box"]
+"no_missing_node(class Sub)#286112.8843aaec68040db1_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:int); [line 28, column 42]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$1:int=(unsigned int)0 [line 28, column 42]\n " shape="box"]
 	
 
 	 "no_missing_node(class Sub)#286112.8843aaec68040db1_3" -> "no_missing_node(class Sub)#286112.8843aaec68040db1_5" ;
-"no_missing_node(class Sub)#286112.8843aaec68040db1_4" [label="4:  Return Stmt \n   n$0=*&__return_param:Sub* [line 30, column 25]\n " shape="box"]
+"no_missing_node(class Sub)#286112.8843aaec68040db1_4" [label="4:  Return Stmt \n   n$0=*&__return_param:Sub* [line 28, column 25]\n " shape="box"]
 	
 
 	 "no_missing_node(class Sub)#286112.8843aaec68040db1_4" -> "no_missing_node(class Sub)#286112.8843aaec68040db1_3" ;
-"no_missing_node(class Sub)#286112.8843aaec68040db1_5" [label="5:  Return Stmt \n   n$3=_fun_EnumWrapper::EnumWrapper(&0$?%__sil_tmp__temp_construct_n$2:EnumWrapper*,&0$?%__sil_tmpSIL_materialize_temp__n$1:int&) [line 30, column 42]\n  *n$0.f1.v:int=0 [line 30, column 48]\n  *n$0.f2:int=0 [line 30, column 48]\n " shape="box"]
+"no_missing_node(class Sub)#286112.8843aaec68040db1_5" [label="5:  Return Stmt \n   n$2=_fun_EnumWrapper::EnumWrapper(n$0.f1:EnumWrapper*,&0$?%__sil_tmpSIL_materialize_temp__n$1:int&) [line 28, column 42]\n  *n$0.f2:int=0 [line 28, column 48]\n " shape="box"]
 	
 
 	 "no_missing_node(class Sub)#286112.8843aaec68040db1_5" -> "no_missing_node(class Sub)#286112.8843aaec68040db1_6" ;

@@ -2880,47 +2880,61 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let context = trans_state.context in
     let tenv = context.tenv in
     let tname = match var_typ.Typ.desc with Tstruct tname -> tname | _ -> assert false in
-    let field_exps =
+    let field_exps, supers =
       match Tenv.lookup tenv tname with
-      | Some {fields} ->
-          List.map fields ~f:(fun (fieldname, fieldtype, _) ->
-              (Exp.Lfield (var_exp, fieldname, var_typ), fieldtype) )
+      | Some {fields; supers} ->
+          ( List.map fields ~f:(fun (fieldname, fieldtype, _) ->
+                (Exp.Lfield (var_exp, fieldname, var_typ), fieldtype) )
+          , supers )
       | None ->
           assert false
     in
     let init_field field_exp_typ stmt =
       init_expr_trans trans_state field_exp_typ stmt_info (Some stmt)
     in
-    match List.map2 field_exps stmts ~f:init_field with
-    | Ok result ->
-        result
-    | Unequal_lengths -> (
-      match stmts with
-      | [stmt] ->
-          (* let's assume that the statement initialises the whole struct (e.g. a constructor call) *)
-          L.debug Capture Medium
-            "assuming initListExpr is initializing the whole struct %a in one go" Exp.pp var_exp ;
-          [init_expr_trans trans_state (var_exp, var_typ) stmt_info (Some stmt)]
-      | _ ->
-          (* This happens with some braced-init-list for instance; translate each sub-statement so
-             as not to lose instructions (we might even get the translation right) *)
-          L.debug Capture Medium
-            "couldn't translate initListExpr properly: list lengths do not match:@\n\
-            \  field_exps is %d: [%a]@\n\
-            \  stmts      is %d: [%a]@\n"
-            (List.length field_exps)
-            (Pp.seq ~sep:"," (Pp.pair ~fst:Exp.pp ~snd:(Typ.pp Pp.text)))
-            field_exps (List.length stmts)
-            (Pp.seq ~sep:"," (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string))
-            stmts ;
-          let control, _ = instructions Procdesc.Node.InitListExp trans_state stmts in
-          [mk_trans_result (var_exp, var_typ) control] )
+    match (supers, stmts) with
+    | [super], stmt :: stmts when List.length field_exps >= List.length stmts ->
+        (* When [var_typ] has a super class, the lengths of [field_exps] and [stmts] can be
+           different.
+
+           - [field_exps] contains all fields including that of the super class, e.g.
+             [\[SuperClass.fld1; SuperClass.fld2; CurrentClass.fld1; CurrentClass.fld2\]].
+
+           - On the other hand, [stmts] contains one [stmt] for initializing the super class
+             fields, e.g. [\[init_super_class_fields; init_fld1; init_fld2\]]. *)
+        let res_super =
+          if Int.equal (List.length field_exps) (List.length stmts) then
+            (* There is no fields left to initialize. *)
+            []
+          else
+            [ init_expr_trans ~is_declare_variable:false trans_state
+                (var_exp, Typ.mk (Tstruct super))
+                stmt_info (Some stmt) ]
+        in
+        let field_exps = List.drop field_exps (List.length field_exps - List.length stmts) in
+        res_super @ List.map2_exn field_exps stmts ~f:init_field
+    | [], stmts when Int.equal (List.length field_exps) (List.length stmts) ->
+        List.map2_exn field_exps stmts ~f:init_field
+    | _, _ ->
+        (* This happens with some braced-init-list for instance; translate each sub-statement so
+           as not to lose instructions (we might even get the translation right) *)
+        L.debug Capture Medium
+          "couldn't translate initListExpr properly: list lengths do not match:@\n\
+          \  field_exps is %d: [%a]@\n\
+          \  stmts      is %d: [%a]@\n"
+          (List.length field_exps)
+          (Pp.seq ~sep:"," (Pp.pair ~fst:Exp.pp ~snd:(Typ.pp Pp.text)))
+          field_exps (List.length stmts)
+          (Pp.seq ~sep:"," (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string))
+          stmts ;
+        let control, _ = instructions Procdesc.Node.InitListExp trans_state stmts in
+        [mk_trans_result (var_exp, var_typ) control]
 
 
   and initListExpr_builtin_trans trans_state stmt_info stmts var_exp var_typ =
     match stmts with
     | [stmt] ->
-        [ init_expr_trans ~is_initListExpr_builtin:true trans_state (var_exp, var_typ) stmt_info
+        [ init_expr_trans ~is_declare_variable:false trans_state (var_exp, var_typ) stmt_info
             (Some stmt) ]
     | _ ->
         CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
@@ -3080,10 +3094,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     mk_trans_result var_exp_typ control
 
 
-  and init_expr_trans ?(is_initListExpr_builtin = false) ?(is_structured_binding = false)
-      trans_state var_exp_typ ?qual_type var_stmt_info init_expr_opt =
+  and init_expr_trans ?(is_declare_variable = true) ?(is_structured_binding = false) trans_state
+      var_exp_typ ?qual_type var_stmt_info init_expr_opt =
     L.debug Capture Verbose "init_expr_trans %b %a %a <?qual_type> <stmt_info> %a@\n"
-      is_initListExpr_builtin pp_trans_state trans_state
+      is_declare_variable pp_trans_state trans_state
       (Pp.pair ~fst:Exp.pp ~snd:(Typ.pp Pp.text_break))
       var_exp_typ
       (Pp.option (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string))
@@ -3112,7 +3126,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         PriorityNode.force_sequential sil_loc DeclStmt trans_state var_stmt_info
           ~mk_first_opt:(fun _trans_state _stmt_info ->
             match var_exp_typ with
-            | Exp.Lvar pvar, var_typ when not is_initListExpr_builtin ->
+            | Exp.Lvar pvar, var_typ when is_declare_variable ->
                 (* Do not add duplicated variable declaration when we translate InitListExpr
                    as it will be added in the translation of DeclStmt *)
                 (* TODO: we shouldn't add that for global variables? *)

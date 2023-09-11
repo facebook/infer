@@ -25,6 +25,4 @@ struct Sub : Super {
   int f2;
 };
 
-/* NOTE: The mismatched number of fields is not handled correctly in Infer's
- * frontend. */
 Sub no_missing_node() { return Sub{.f1 = Enum::A}; }
