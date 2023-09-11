@@ -19,28 +19,37 @@ module LineageConfig = struct
   let prevent_cycles = Config.lineage_prevent_cycles
 end
 
+module FieldLabel = struct
+  type t = Fieldname of Fieldname.t [@@deriving compare, equal, sexp, hash]
+
+  let yojson_of_t t =
+    match t with
+    (* The ppx-generated [yojson_of] for Fieldname is unnecessarily complex on for our purposes (it's
+       a record that involves "class_name", which incidentally seems to always be "_".) *)
+    | Fieldname fieldname ->
+        `String (Fieldname.to_string fieldname)
+
+
+  let pp fmt t = match t with Fieldname fieldname -> Fieldname.pp fmt fieldname
+
+  let fieldname f = Fieldname f
+
+  let make_fieldname typ name = Fieldname (Fieldname.make typ name)
+end
+
 module FieldPath = struct
   (** A module to help manipulating lists of (nested) fields. *)
-
-  (** We define a type alias to be able use our own json exporting function *)
-  type fieldname = Fieldname.t [@@deriving compare, equal, sexp]
-
-  let yojson_of_fieldname fieldname =
-    (* The ppx-generated [yojson_of] is unnecessarily complex for our purposes (it's a record that
-       involves "class_name", which incidentally seems to always be "_".) *)
-    `String (Fieldname.to_string fieldname)
-
 
   module T = struct
     (* The list is to be understood in "syntactic order": [["a"; "b"]] represents the field part of
        [X#a#b].*)
-    type t = fieldname list [@@deriving compare, equal, sexp, yojson_of]
+    type t = FieldLabel.t list [@@deriving compare, equal, sexp, yojson_of]
   end
 
   include T
   include Comparable.Make (T)
 
-  let pp = Fmt.(list ~sep:nop (any "#" ++ Fieldname.pp))
+  let pp = Fmt.(list ~sep:nop (any "#" ++ FieldLabel.pp))
 end
 
 module Cell : sig
@@ -129,7 +138,7 @@ module Env : sig
       val variant_of_list : string list -> t -> shape
       (** The shape of a value equal to a string amongst a set of possible ones. *)
 
-      val vector_of_alist : (Fieldname.t * shape) list -> t -> shape
+      val vector_of_alist : (FieldLabel.t * shape) list -> t -> shape
       (** A shape with a set of known fields. The list may be empty, meaning that the shape may be a
           vector but no field has been discovered yet. *)
 
@@ -250,7 +259,7 @@ end = struct
         type t = private
           | Bottom
           | Variant of String.Set.t
-          | Vector of (Fieldname.t, shape) Hashtbl.t
+          | Vector of (FieldLabel.t, shape) Hashtbl.t
 
         val pp : t Fmt.t
 
@@ -261,14 +270,14 @@ end = struct
 
         val variant_of_list : string list -> t
 
-        val vector : (Fieldname.t, shape) Hashtbl.t -> t
+        val vector : (FieldLabel.t, shape) Hashtbl.t -> t
 
-        val vector_of_alist : (Fieldname.t * shape) list -> t
+        val vector_of_alist : (FieldLabel.t * shape) list -> t
 
         val scalar : t
         (** Scalar shape for which we don't keep a known set of possible values. *)
       end = struct
-        type t = Bottom | Variant of String.Set.t | Vector of (Fieldname.t, shape) Hashtbl.t
+        type t = Bottom | Variant of String.Set.t | Vector of (FieldLabel.t, shape) Hashtbl.t
 
         let pp fmt x =
           match x with
@@ -279,7 +288,7 @@ end = struct
                 (IFmt.Labelled.iter ~sep:(Fmt.any "@ |@ ") Set.iter Fmt.string)
                 constructors
           | Vector fields ->
-              pp_hashtbl ~bind:IFmt.colon_sp Fieldname.pp pp_shape fmt fields
+              pp_hashtbl ~bind:IFmt.colon_sp FieldLabel.pp pp_shape fmt fields
 
 
         let bottom = Bottom
@@ -287,7 +296,7 @@ end = struct
         let vector field_table = Vector field_table
 
         let vector_of_alist field_alist =
-          vector (Hashtbl.of_alist_exn (module Fieldname) field_alist)
+          vector (Hashtbl.of_alist_exn (module FieldLabel) field_alist)
 
 
         let scalar =
@@ -498,8 +507,8 @@ end = struct
           field_shape
       | None ->
           L.die InternalError "Field %a unknown for shape %a.@ Known fields are:@ @[{%a}@]"
-            Fieldname.pp field Shape_id.pp shape
-            (pp_hashtbl ~bind:IFmt.colon_sp Fieldname.pp Shape_id.pp)
+            FieldLabel.pp field Shape_id.pp shape
+            (pp_hashtbl ~bind:IFmt.colon_sp FieldLabel.pp Shape_id.pp)
             field_table
 
 
@@ -602,10 +611,10 @@ end = struct
         such as integer or atoms. They should not be considered as actual fields by the Lineage
         analysis. *)
     let is_boxing_field fieldname =
-      Array.mem ~equal:Fieldname.equal
-        [| Fieldname.make (ErlangType Atom) ErlangTypeName.atom_name
-         ; Fieldname.make (ErlangType Atom) ErlangTypeName.atom_hash
-         ; Fieldname.make (ErlangType Integer) ErlangTypeName.integer_value |]
+      Array.mem ~equal:FieldLabel.equal
+        [| FieldLabel.make_fieldname (ErlangType Atom) ErlangTypeName.atom_name
+         ; FieldLabel.make_fieldname (ErlangType Atom) ErlangTypeName.atom_hash
+         ; FieldLabel.make_fieldname (ErlangType Integer) ErlangTypeName.integer_value |]
         fieldname
 
 
@@ -799,7 +808,9 @@ struct
         *)
         let shape_e = shape_expr e in
         let shape_field = Env.State.Shape.bottom state in
-        let shape_vector = Env.State.Shape.vector_of_alist [(fieldname, shape_field)] state in
+        let shape_vector =
+          Env.State.Shape.vector_of_alist [(FieldLabel.fieldname fieldname, shape_field)] state
+        in
         Env.State.unify state shape_e shape_vector ;
         shape_field
     | Sizeof {dynamic_length= None} ->
@@ -821,7 +832,7 @@ struct
       (* Unify the shape of the return with a Vector made from the arguments *)
       let ret_id_shape = Env.State.var_shape state ret_id in
       let tuple_type : Typ.name = ErlangType (Tuple (List.length args)) in
-      let fieldname i = Fieldname.make tuple_type (ErlangTypeName.tuple_elem (i + 1)) in
+      let fieldname i = FieldLabel.make_fieldname tuple_type (ErlangTypeName.tuple_elem (i + 1)) in
       let arg_vector_shape =
         Env.State.Shape.vector_of_alist
           (List.mapi ~f:(fun i arg -> (fieldname i, shape_expr arg)) args)

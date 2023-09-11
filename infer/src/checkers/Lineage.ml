@@ -20,6 +20,7 @@ module PPNode = struct
 end
 
 module Shapes = LineageShape.Summary
+module FieldLabel = LineageShape.FieldLabel
 module FieldPath = LineageShape.FieldPath
 module Cell = LineageShape.Cell
 
@@ -1532,7 +1533,7 @@ module TransferFunctions = struct
       | Exp.Var id ->
           Some (VarPath.make (Var.of_id id) field_path_acc)
       | Exp.Lfield (e, fieldname, _) ->
-          aux (fieldname :: field_path_acc) e
+          aux (FieldLabel.fieldname fieldname :: field_path_acc) e
       | Exp.UnOp (_, _, _)
       | Exp.BinOp (_, _, _)
       | Exp.Exn _
@@ -1806,8 +1807,8 @@ module TransferFunctions = struct
       let size = List.length args in
       let tuple_type = ErlangTypeName.Tuple size in
       let field_names = ErlangTypeName.tuple_field_names size in
-      let fieldname name = Fieldname.make (ErlangType tuple_type) name in
-      let ret_path name = VarPath.make (Var.of_id ret_id) [fieldname name] in
+      let field_label name = FieldLabel.make_fieldname (ErlangType tuple_type) name in
+      let ret_path name = VarPath.make (Var.of_id ret_id) [field_label name] in
       List.fold2_exn
         ~f:(fun astate field_name arg ->
           exec_assignment shapes node (ret_path field_name) arg astate )

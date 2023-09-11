@@ -7,9 +7,17 @@
 
 open! IStd
 
+module FieldLabel : sig
+  type t [@@deriving compare, equal, sexp, yojson_of]
+
+  val fieldname : Fieldname.t -> t
+
+  val make_fieldname : Typ.name -> string -> t
+end
+
 module FieldPath : sig
   (** The fields are listed in syntactic order: [\[a; b\]] for [x#a#b]. *)
-  type t = Fieldname.t list [@@deriving compare, equal, sexp, yojson_of]
+  type t = FieldLabel.t list [@@deriving compare, equal, sexp, yojson_of]
 
   include Comparable.S with type t := t
 
