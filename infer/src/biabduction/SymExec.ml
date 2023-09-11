@@ -1179,8 +1179,9 @@ let rec sym_exec
                 proc_call resolved_pname resolved_summary
                   (call_args prop_ callee_pname norm_args ret_id_typ loc)
             | Some reason ->
-                let {ProcAttributes.ret_annots; ret_type} = Attributes.load_exn callee_pname in
-                exec_skip_call ~reason resolved_pname ret_annots ret_type ) )
+                let ret_typ = Procname.Java.get_return_typ callee_pname_java in
+                let ret_annots = load_ret_annots callee_pname in
+                exec_skip_call ~reason resolved_pname ret_annots ret_typ ) )
       | CSharp callee_pname_csharp ->
           let norm_prop, norm_args = normalize_params analysis_data prop_ actual_params in
           let url_handled_args = call_constructor_url_update_args callee_pname norm_args in
@@ -1203,8 +1204,9 @@ let rec sym_exec
                   let handled_args = call_args norm_prop pname url_handled_args ret_id_typ loc in
                   proc_call callee_pname callee_summary handled_args
               | Some reason ->
-                  let {ProcAttributes.ret_annots; ret_type} = Attributes.load_exn callee_pname in
-                  exec_skip_call ~reason ret_annots ret_type )
+                  let ret_typ = Procname.CSharp.get_return_typ callee_pname_csharp in
+                  let ret_annots = load_ret_annots callee_pname in
+                  exec_skip_call ~reason ret_annots ret_typ )
           in
           List.fold ~f:(fun acc pname -> exec_one_pname pname @ acc) ~init:[] resolved_pnames
       | _ ->
