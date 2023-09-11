@@ -59,3 +59,25 @@ let%test "tuple_test" =
   let b = (make_foo (), 5, make_foo ()) in
   let b' = TupleHashNormalizer.normalize b in
   equal_tuple a a' && phys_equal a' b' && phys_equal s1 s2
+
+
+type variant =
+  | NoArgs
+  | String of string
+  | Int of int
+  | Tuple of int * string
+  | Record of {i: int; s: string}
+  | NonInline of record
+[@@deriving equal, hash, normalize]
+
+module VariantHashNormalizer = HashNormalizer.Make (struct
+  type t = variant [@@deriving equal, hash, normalize]
+end)
+
+let%test "variant_test" =
+  HashNormalizer.reset_all_normalizers () ;
+  let a = Record {i= 4; s= make_foo ()} in
+  let a' = VariantHashNormalizer.normalize a in
+  let b = Record {i= 4; s= make_foo ()} in
+  let b' = VariantHashNormalizer.normalize b in
+  equal_variant a a' && phys_equal a' b'

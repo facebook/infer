@@ -9,20 +9,23 @@ open Ppxlib
 
 let normalize_from_typename = function "t" -> "normalize" | s -> "normalize_" ^ s
 
-let normalize_of_longident ?(suffix = "") lid =
-  match lid with
-  | Lident "string" ->
-      (* [HashNormalizer.StringNormalizer.normalize] *)
-      Ldot (Ldot (Lident "HashNormalizer", "StringNormalizer"), "normalize" ^ suffix)
-  | Lident typename ->
-      (* [t]/[x] is not enclosed in a module *)
-      Lident (normalize_from_typename typename ^ suffix)
-  | Ldot (l, typename) ->
-      (* [M.t]/[M.x] *)
-      Ldot (Ldot (l, "Normalizer"), normalize_from_typename typename ^ suffix)
-  | _ ->
-      Format.eprintf "Could not parse ident: %a@\n" Common.pp_longident lid ;
-      assert false
+let normalize_of_longident ~loc ?(suffix = "") lid =
+  let ident =
+    match lid with
+    | Lident "string" ->
+        (* [HashNormalizer.StringNormalizer.normalize] *)
+        Ldot (Ldot (Lident "HashNormalizer", "StringNormalizer"), "normalize" ^ suffix)
+    | Lident typename ->
+        (* [t]/[x] is not enclosed in a module *)
+        Lident (normalize_from_typename typename ^ suffix)
+    | Ldot (l, typename) ->
+        (* [M.t]/[M.x] *)
+        Ldot (Ldot (l, "Normalizer"), normalize_from_typename typename ^ suffix)
+    | _ ->
+        Format.eprintf "Could not parse ident: %a@\n" Common.pp_longident lid ;
+        assert false
+  in
+  Loc.make ~loc ident
 
 
 (* ident `A.B.C.normalize`/`A.B.C.normalize_opt` from the type `A.B.C.t`/`A.B.C.t option` *)
@@ -30,10 +33,13 @@ let normalize_of_core_type ~loc ct =
   match ct.ptyp_desc with
   | Ptyp_constr (l, []) ->
       (* monomorphic type *)
-      normalize_of_longident l.txt |> Loc.make ~loc
+      normalize_of_longident ~loc l.txt
   | Ptyp_constr ({txt= Lident "option"}, [{ptyp_desc= Ptyp_constr (l, [])}]) ->
       (* option type *)
-      normalize_of_longident ~suffix:"_opt" l.txt |> Loc.make ~loc
+      normalize_of_longident ~loc ~suffix:"_opt" l.txt
+  | Ptyp_constr ({txt= Lident "list"}, [{ptyp_desc= Ptyp_constr (l, [])}]) ->
+      (* option type *)
+      normalize_of_longident ~loc ~suffix:"_list" l.txt
   | Ptyp_constr _
   | Ptyp_any
   | Ptyp_var _
@@ -93,76 +99,91 @@ let create_normalize_field_initializer ~loc (ld : label_declaration) =
 
 let should_normalize_type core_type =
   match core_type.ptyp_desc with
-  | Ptyp_constr ({txt= Lident ("option" | "string")}, _) ->
-      true
-  | Ptyp_constr ({txt= Ldot (_, "t")}, _) ->
-      true
-  | _ ->
+  | Ptyp_constr ({txt= Lident ("bool" | "char" | "float" | "int" | "unit")}, _) ->
       false
+  | _ ->
+      true
+
+
+let tuple_pattern_and_body ~loc ~constructor core_types =
+  if List.is_empty core_types then (Ast_helper.Pat.any ~loc (), [%expr t])
+  else if List.for_all core_types ~f:(Fn.non should_normalize_type) then
+    (* just return [t] *)
+    (Ast_helper.Pat.any ~loc (), [%expr t])
+  else
+    let vars = List.mapi core_types ~f:(fun i _ -> Printf.sprintf "x%d" i) in
+    let vars_patterns =
+      List.map vars ~f:(fun var -> Loc.make ~loc var |> Ast_helper.Pat.var ~loc)
+    in
+    let vars_pattern =
+      match vars_patterns with [pattern] -> pattern | _ -> Ast_helper.Pat.tuple ~loc vars_patterns
+    in
+    let return_result =
+      (* [(x0, x1', x2, ...)] where a variable is primed if it's normalizable *)
+      List.map2_exn vars core_types ~f:(fun var typ ->
+          (if should_normalize_type typ then var ^ "'" else var) |> Common.make_ident_exp ~loc )
+    in
+    let return_tuple =
+      (match return_result with [exp] -> exp | _ -> Ast_helper.Exp.tuple ~loc return_result)
+      |> constructor
+    in
+    let normalizable_vars, normalizable_typs =
+      List.zip_exn vars core_types
+      |> List.filter ~f:(fun (_var, typ) -> should_normalize_type typ)
+      |> List.unzip
+    in
+    let physeq_guarded = if_phys_equal_then_t ~loc normalizable_vars ~else_exp:return_tuple in
+    let rhs =
+      List.fold2_exn normalizable_vars normalizable_typs ~init:physeq_guarded
+        ~f:(let_varprime_equal_f_var_expr ~loc)
+    in
+    (vars_pattern, rhs)
 
 
 let normalize_tuple_impl ~loc ptype_name core_types =
+  let vars_pattern, rhs = tuple_pattern_and_body ~loc ~constructor:Fn.id core_types in
   let rhs_expr =
-    if List.for_all core_types ~f:(Fn.non should_normalize_type) then (* just return [t] *)
-      [%expr t]
-    else
-      let vars = List.mapi core_types ~f:(fun i _ -> Printf.sprintf "x%d" i) in
-      let vars_pattern =
-        List.map vars ~f:(fun var -> Loc.make ~loc var |> Ast_helper.Pat.var ~loc)
-        |> Ast_helper.Pat.tuple ~loc
-      in
-      let return_tuple =
-        (* [(x0, x1', x2, ...)] where a variable is primed if it's normalizable *)
-        List.map2_exn vars core_types ~f:(fun var typ ->
-            (if should_normalize_type typ then var ^ "'" else var) |> Common.make_ident_exp ~loc )
-        |> Ast_helper.Exp.tuple ~loc
-      in
-      let normalizable_vars, normalizable_typs =
-        List.zip_exn vars core_types
-        |> List.filter ~f:(fun (_var, typ) -> should_normalize_type typ)
-        |> List.unzip
-      in
-      let physeq_guarded = if_phys_equal_then_t ~loc normalizable_vars ~else_exp:return_tuple in
-      let rhs =
-        List.fold2_exn normalizable_vars normalizable_typs ~init:physeq_guarded
-          ~f:(let_varprime_equal_f_var_expr ~loc)
-      in
-      [%expr
-        let [%p vars_pattern] = t in
-        [%e rhs]]
+    [%expr
+      let [%p vars_pattern] = t in
+      [%e rhs]]
   in
   make_normalize_function ~loc ptype_name [%expr fun t -> [%e rhs_expr]]
 
 
-let normalize_record_impl ~loc ptype_name (lds : label_declaration list) =
+let record_pattern_and_body ~loc ~constructor (lds : label_declaration list) =
   let normalizable_names_types =
     List.filter_map lds ~f:(fun ld ->
         Option.some_if (should_normalize_type ld.pld_type) (ld.pld_name.txt, ld.pld_type) )
   in
+  if List.is_empty normalizable_names_types then (Ast_helper.Pat.any ~loc (), [%expr t])
+  else
+    let rhs_exps =
+      List.map lds ~f:(fun ld ->
+          (if should_normalize_type ld.pld_type then ld.pld_name.txt ^ "'" else ld.pld_name.txt)
+          |> Common.make_ident_exp ~loc )
+    in
+    let record_exp = Common.create_record ~loc lds rhs_exps |> constructor in
+    let guarded =
+      if_phys_equal_then_t ~loc (List.unzip normalizable_names_types |> fst) ~else_exp:record_exp
+    in
+    let final_expr =
+      List.fold normalizable_names_types ~init:guarded ~f:(fun acc (var, typ) ->
+          let_varprime_equal_f_var_expr ~loc acc var typ )
+    in
+    let lid_pattern_list =
+      List.map lds ~f:(fun ld ->
+          (Common.make_longident ~loc ld.pld_name.txt, Ast_helper.Pat.var ~loc ld.pld_name) )
+    in
+    let record_pattern = Ast_helper.Pat.record ~loc lid_pattern_list Closed in
+    (record_pattern, final_expr)
+
+
+let normalize_record_impl ~loc ptype_name (lds : label_declaration list) =
+  let pattern, final_expr = record_pattern_and_body ~loc ~constructor:Fn.id lds in
   let body =
-    if List.is_empty normalizable_names_types then [%expr t]
-    else
-      let rhs_exps =
-        List.map lds ~f:(fun ld ->
-            (if should_normalize_type ld.pld_type then ld.pld_name.txt ^ "'" else ld.pld_name.txt)
-            |> Common.make_ident_exp ~loc )
-      in
-      let record_exp = Common.create_record ~loc lds rhs_exps in
-      let guarded =
-        if_phys_equal_then_t ~loc (List.unzip normalizable_names_types |> fst) ~else_exp:record_exp
-      in
-      let final_expr =
-        List.fold normalizable_names_types ~init:guarded ~f:(fun acc (var, typ) ->
-            let_varprime_equal_f_var_expr ~loc acc var typ )
-      in
-      let lid_pattern_list =
-        List.map lds ~f:(fun ld ->
-            (Common.make_longident ~loc ld.pld_name.txt, Ast_helper.Pat.var ~loc ld.pld_name) )
-      in
-      let record_pattern = Ast_helper.Pat.record ~loc lid_pattern_list Closed in
-      [%expr
-        let [%p record_pattern] = t in
-        [%e final_expr]]
+    [%expr
+      let [%p pattern] = t in
+      [%e final_expr]]
   in
   make_normalize_function ~loc ptype_name [%expr fun t -> [%e body]]
 
@@ -172,6 +193,32 @@ let normalize_passthrough_impl ~loc ptype_name manifest_type =
   Common.generate_passthrough_function ~loc normalize_of_core_type normalize_name manifest_type
 
 
+let make_variant_case ~loc (constructor_declaration : constructor_declaration) : case =
+  let constructor_ident = Common.make_longident ~loc constructor_declaration.pcd_name.txt in
+  let constructor expr = Ast_helper.Exp.construct ~loc constructor_ident (Some expr) in
+  let pattern, rhs =
+    match constructor_declaration.pcd_args with
+    | Pcstr_tuple [] ->
+        (None, [%expr t])
+    | Pcstr_tuple core_types ->
+        let pattern, rhs = tuple_pattern_and_body ~loc ~constructor core_types in
+        (Some pattern, rhs)
+    | Pcstr_record label_declarations ->
+        let pattern, rhs = record_pattern_and_body ~loc ~constructor label_declarations in
+        (Some pattern, rhs)
+  in
+  let case_pattern = Ast_helper.Pat.construct ~loc constructor_ident pattern in
+  Ast_helper.Exp.case case_pattern rhs
+
+
+let normalize_variant_impl ~loc ptype_name (constructor_declarations : constructor_declaration list)
+    =
+  let case_list = List.map constructor_declarations ~f:(make_variant_case ~loc) in
+  let match_expr = Ast_helper.Exp.match_ ~loc [%expr t] case_list in
+  let body = [%expr fun t -> [%e match_expr]] in
+  make_normalize_function ~loc ptype_name body
+
+
 let normalize_type_declaration ~loc (td : type_declaration) =
   match td with
   | {ptype_kind= Ptype_record fields; ptype_name} ->
@@ -179,6 +226,8 @@ let normalize_type_declaration ~loc (td : type_declaration) =
   | {ptype_kind= Ptype_abstract; ptype_manifest= Some {ptyp_desc= Ptyp_tuple core_types}; ptype_name}
     ->
       [normalize_tuple_impl ~loc ptype_name core_types]
+  | {ptype_kind= Ptype_variant constructor_declarations; ptype_name} ->
+      [normalize_variant_impl ~loc ptype_name constructor_declarations]
   | { ptype_kind= Ptype_abstract
     ; ptype_manifest= Some ({ptyp_desc= Ptyp_constr _} as manifest_type)
     ; ptype_name } ->
