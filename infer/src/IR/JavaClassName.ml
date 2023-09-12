@@ -12,7 +12,7 @@ module L = Logging
 (** invariant: if [package = Some str] then [not (String.equal str "")]. [classname] appears first
     so that the comparator fails earlier *)
 type t = {classname: string; package: string option}
-[@@deriving compare, equal, yojson_of, sexp, hash]
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 module Map = Caml.Map.Make (struct
   type nonrec t = t [@@deriving compare]
@@ -114,11 +114,5 @@ let pp_with_verbosity ~verbose fmt t =
 module Normalizer = HashNormalizer.Make (struct
   type nonrec t = t [@@deriving equal, hash]
 
-  let normalize t =
-    let classname = HashNormalizer.StringNormalizer.normalize t.classname in
-    let package =
-      IOption.map_changed t.package ~equal:phys_equal ~f:HashNormalizer.StringNormalizer.normalize
-    in
-    if phys_equal classname t.classname && phys_equal package t.package then t
-    else {classname; package}
+  let normalize = normalize
 end)

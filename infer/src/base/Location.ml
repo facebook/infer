@@ -15,7 +15,7 @@ type t =
   ; macro_file_opt: SourceFile.t option
         (** If the location is coming from macro expansion, the name of the file macro is defined in *)
   ; macro_line: int  (** If the location is coming from macro expansion, the line number *) }
-[@@deriving compare, equal, sexp, hash]
+[@@deriving compare, equal, sexp, hash, normalize]
 
 let get_macro_file_line_opt {macro_file_opt; macro_line} =
   Option.map macro_file_opt ~f:(fun file -> (file, macro_line))
@@ -61,7 +61,5 @@ end)
 module Normalizer = HashNormalizer.Make (struct
   type nonrec t = t [@@deriving equal, hash]
 
-  let normalize t =
-    let file = SourceFile.Normalizer.normalize t.file in
-    if phys_equal file t.file then t else {t with file}
+  let normalize = normalize
 end)

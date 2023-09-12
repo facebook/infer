@@ -20,7 +20,7 @@ type t =
             (** path relative to the workspace of the project root with respect to which the source
                 file was captured *)
       ; rel_path: string  (** path of the source file relative to the project root *) }
-[@@deriving compare, equal, sexp, hash]
+[@@deriving compare, equal, sexp, hash, normalize]
 
 module T = struct
   type nonrec t = t [@@deriving compare, equal, hash, sexp]
@@ -394,28 +394,5 @@ end
 module Normalizer = HashNormalizer.Make (struct
   type nonrec t = t [@@deriving equal, hash]
 
-  let normalize fname =
-    let string_normalize = HashNormalizer.StringNormalizer.normalize in
-    match fname with
-    | Invalid {ml_source_file} ->
-        let ml_source_file' = string_normalize ml_source_file in
-        if phys_equal ml_source_file ml_source_file' then fname
-        else Invalid {ml_source_file= ml_source_file'}
-    | RelativeProjectRootAndWorkspace {workspace_rel_root; rel_path} ->
-        let workspace_rel_root' = string_normalize workspace_rel_root in
-        let rel_path' = string_normalize rel_path in
-        if phys_equal workspace_rel_root workspace_rel_root' && phys_equal rel_path rel_path' then
-          fname
-        else
-          RelativeProjectRootAndWorkspace
-            {workspace_rel_root= workspace_rel_root'; rel_path= rel_path'}
-    | RelativeProjectRoot rel_path ->
-        let rel_path' = string_normalize rel_path in
-        if phys_equal rel_path rel_path' then fname else RelativeProjectRoot rel_path'
-    | Absolute path ->
-        let path' = string_normalize path in
-        if phys_equal path path' then fname else Absolute path'
-    | HashedBuckOut path ->
-        let path' = string_normalize path in
-        if phys_equal path path' then fname else HashedBuckOut path'
+  let normalize = normalize
 end)
