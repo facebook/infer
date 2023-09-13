@@ -54,8 +54,7 @@ let%expect_test "undefined types are included in tenv" =
                    }
          exported_obj_methods: {}
          annots: {<>}
-         java_class_info: {[None]}
-         hack_class_info: {[Some { kind = Class }]}
+         class_info: {HackClassInfo (Class)}
          dummy: false
          hack Quux
          fields: {}
@@ -65,8 +64,7 @@ let%expect_test "undefined types are included in tenv" =
          methods: {}
          exported_obj_methods: {}
          annots: {<>}
-         java_class_info: {[None]}
-         hack_class_info: {[None]}
+         class_info: {NoInfo}
          dummy: true
          hack Baz
          fields: {}
@@ -76,8 +74,7 @@ let%expect_test "undefined types are included in tenv" =
          methods: {}
          exported_obj_methods: {}
          annots: {<>}
-         java_class_info: {[None]}
-         hack_class_info: {[None]}
+         class_info: {NoInfo}
          dummy: true
          hack Bar
          fields: {}
@@ -89,8 +86,7 @@ let%expect_test "undefined types are included in tenv" =
                    }
          exported_obj_methods: {}
          annots: {<>}
-         java_class_info: {[None]}
-         hack_class_info: {[None]}
+         class_info: {NoInfo}
          dummy: false |}]
 
 
@@ -115,8 +111,7 @@ let%expect_test "final annotation" =
       methods: {}
       exported_obj_methods: {}
       annots: {<_final>}
-      java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class }]}
+      class_info: {HackClassInfo (Class)}
       dummy: false
       hack Bar
       fields: {}
@@ -126,8 +121,7 @@ let%expect_test "final annotation" =
       methods: {}
       exported_obj_methods: {}
       annots: {<>}
-      java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class }]}
+      class_info: {HackClassInfo (Class)}
       dummy: false |}]
 
 
@@ -225,8 +219,7 @@ let%expect_test "overloads in tenv" =
               }
     exported_obj_methods: {}
     annots: {<>}
-    java_class_info: {[None]}
-    hack_class_info: {[None]}
+    class_info: {NoInfo}
     dummy: false
     hack bool
     fields: {}
@@ -236,8 +229,7 @@ let%expect_test "overloads in tenv" =
     methods: {}
     exported_obj_methods: {}
     annots: {<>}
-    java_class_info: {[None]}
-    hack_class_info: {[None]}
+    class_info: {NoInfo}
     dummy: true |}]
 
 
@@ -294,8 +286,7 @@ let%expect_test "undefined + overloads in merged tenv" =
               }
     exported_obj_methods: {}
     annots: {<>}
-    java_class_info: {[None]}
-    hack_class_info: {[None]}
+    class_info: {NoInfo}
     dummy: false |}]
 
 
@@ -369,8 +360,7 @@ let%expect_test "trait vs class kind" =
       methods: {}
       exported_obj_methods: {}
       annots: {<>}
-      java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Class }]}
+      class_info: {HackClassInfo (Class)}
       dummy: false
       hack T
       fields: {}
@@ -380,6 +370,5 @@ let%expect_test "trait vs class kind" =
       methods: {}
       exported_obj_methods: {}
       annots: {<>}
-      java_class_info: {[None]}
-      hack_class_info: {[Some { kind = Trait }]}
+      class_info: {HackClassInfo (Trait)}
       dummy: false |}]

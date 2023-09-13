@@ -420,11 +420,11 @@ module StructBridge = struct
   open Struct
 
   let to_hack_class_info decls_env typ =
-    let open IOption.Let_syntax in
-    let* {Textual.Struct.attributes} = TextualDecls.get_struct decls_env typ in
-    let has_trait = List.find ~f:Textual.Attr.is_trait attributes |> Option.is_some in
-    let kind = if has_trait then SilStruct.Hack.Trait else SilStruct.Hack.Class in
-    Some {SilStruct.Hack.kind}
+    TextualDecls.get_struct decls_env typ
+    |> Option.value_map ~default:SilStruct.ClassInfo.NoInfo ~f:(fun {Textual.Struct.attributes} ->
+           let has_trait = List.find ~f:Textual.Attr.is_trait attributes |> Option.is_some in
+           let kind = if has_trait then SilStruct.Trait else SilStruct.Class in
+           SilStruct.ClassInfo.HackClassInfo kind )
 
 
   (** For Hack, [supers] contains the optional parent class but also all used traits. During method
@@ -448,8 +448,8 @@ module StructBridge = struct
 
 
   let to_sil lang decls_env tenv proc_entries {name; supers; fields; attributes} =
-    let hack_class_info =
-      match lang with Textual.Lang.Hack -> to_hack_class_info decls_env name | _ -> None
+    let class_info =
+      match lang with Textual.Lang.Hack -> Some (to_hack_class_info decls_env name) | _ -> None
     in
     let name = TypeNameBridge.to_sil lang name in
     let supers = sort_supers lang decls_env supers in
@@ -472,11 +472,15 @@ module StructBridge = struct
           if Attr.is_final attr then Some Annot.final else None )
     in
     (* FIXME: generate static fields *)
-    Tenv.mk_struct tenv ~fields ~annots ~supers ~methods ?hack_class_info name |> ignore
+    Tenv.mk_struct tenv ~fields ~annots ~supers ~methods ?class_info name |> ignore
 
 
-  let of_hack_class_info {SilStruct.Hack.kind} =
-    match kind with SilStruct.Hack.Class -> None | Trait -> Some Textual.Attr.mk_trait
+  let of_hack_class_info class_info =
+    match (class_info : SilStruct.ClassInfo.t) with
+    | HackClassInfo Trait ->
+        Some Textual.Attr.mk_trait
+    | _ ->
+        None
 
 
   let of_sil name (sil_struct : SilStruct.t) =
@@ -487,9 +491,7 @@ module StructBridge = struct
     let supers = sil_struct.supers |> List.map ~f:TypeNameBridge.of_sil in
     let fields = SilStruct.(sil_struct.fields @ sil_struct.statics) in
     let fields = List.map ~f:of_sil_field fields in
-    let attributes =
-      sil_struct.hack_class_info |> Option.bind ~f:of_hack_class_info |> Option.to_list
-    in
+    let attributes = of_hack_class_info sil_struct.class_info |> Option.to_list in
     {name; supers; fields; attributes}
 end
 

@@ -158,16 +158,16 @@ let make_meta_issue modes_and_issues top_level_class_mode top_level_class_name =
   {issue_type; description; severity; meta_issue_info}
 
 
-let get_class_loc source_file Struct.{java_class_info} =
+let get_class_loc source_file Struct.{class_info} =
   let default =
     {Location.file= source_file; line= 1; col= 0; macro_file_opt= None; macro_line= -1}
   in
-  match java_class_info with
-  | Some {loc} ->
+  match class_info with
+  | JavaClassInfo {loc} ->
       (* In rare cases location is not present, fall back to the first line of the file *)
       Option.value loc ~default
-  | None ->
-      L.internal_error "java_class_info should be present for Java classes" ;
+  | _ ->
+      L.internal_error "class_info should be present for Java classes and be of JavaClassInfo type" ;
       default
 
 

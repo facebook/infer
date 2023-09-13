@@ -15,16 +15,18 @@ type fields = field list
 
 type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal]
 
-type java_class_info =
-  { kind: java_class_kind  (** class kind in Java *)
-  ; loc: Location.t option
-        (** None should correspond to rare cases when it was impossible to fetch the location in
-            source file *) }
+type hack_class_kind = Class | Trait
 
-module Hack : sig
-  type kind = Class | Trait
-
-  type t = {kind: kind}
+module ClassInfo : sig
+  type t =
+    | NoInfo
+    | JavaClassInfo of
+        { kind: java_class_kind  (** class kind in Java *)
+        ; loc: Location.t option
+              (** None should correspond to rare cases when it was impossible to fetch the location
+                  in source file *) }
+    | HackClassInfo of hack_class_kind
+  [@@deriving equal, hash, show]
 end
 
 (** Type for a structured value. *)
@@ -36,10 +38,9 @@ type t = private
   ; methods: Procname.t list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
-  ; java_class_info: java_class_info option  (** present if and only if the class is Java *)
+  ; class_info: ClassInfo.t  (** present if and only if the class is Java or Hack *)
   ; dummy: bool  (** dummy struct for class including static method *)
-  ; source_file: SourceFile.t option  (** source file containing this struct's declaration *)
-  ; hack_class_info: Hack.t option  (** present if and only if the class is Hack *) }
+  ; source_file: SourceFile.t option  (** source file containing this struct's declaration *) }
 
 type lookup = Typ.Name.t -> t option
 
@@ -57,8 +58,7 @@ val internal_mk_struct :
   -> ?supers:Typ.Name.t list
   -> ?objc_protocols:Typ.Name.t list
   -> ?annots:Annot.Item.t
-  -> ?java_class_info:java_class_info
-  -> ?hack_class_info:Hack.t
+  -> ?class_info:ClassInfo.t
   -> ?dummy:bool
   -> ?source_file:SourceFile.t
   -> Typ.name

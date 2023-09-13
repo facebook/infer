@@ -15,21 +15,32 @@ type fields = field list [@@deriving equal, hash]
 type java_class_kind = Interface | AbstractClass | NormalClass
 [@@deriving equal, compare, hash, show {with_path= false}]
 
-type java_class_info =
-  { kind: java_class_kind  (** class kind in Java *)
-  ; loc: Location.t option
-        (** None should correspond to rare cases when it was impossible to fetch the location in
-            source file *) }
-[@@deriving equal, hash, show {with_path= false}]
+type hack_class_kind = Class | Trait [@@deriving equal, hash, show {with_path= false}]
 
-let pp_java_class_info_opt fmt jopt = Pp.option pp_java_class_info fmt jopt
+module ClassInfo = struct
+  type t =
+    | NoInfo
+    | JavaClassInfo of
+        { kind: java_class_kind  (** class kind in Java *)
+        ; loc: Location.t option
+              (** None should correspond to rare cases when it was impossible to fetch the location
+                  in source file *) }
+    | HackClassInfo of hack_class_kind
+  [@@deriving equal, hash, show {with_path= false}]
 
-module Hack = struct
-  type kind = Class | Trait [@@deriving equal, hash, show {with_path= false}]
+  module Normalizer = HashNormalizer.Make (struct
+    type nonrec t = t [@@deriving equal, hash]
 
-  type t = {kind: kind} [@@deriving equal, hash, show {with_path= false}]
-
-  let pp_opt fmt t = Pp.option pp fmt t
+    let normalize t =
+      match t with
+      | NoInfo ->
+          t
+      | HackClassInfo _ ->
+          t
+      | JavaClassInfo {kind; loc} ->
+          let loc' = Location.Normalizer.normalize_opt loc in
+          if phys_equal loc' loc then t else JavaClassInfo {kind; loc= loc'}
+  end)
 end
 
 (** Type for a structured value. *)
@@ -41,10 +52,9 @@ type t =
   ; methods: Procname.t list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
-  ; java_class_info: java_class_info option  (** present if and only if the class is Java *)
+  ; class_info: ClassInfo.t  (** present if and only if the class is Java or Hack *)
   ; dummy: bool  (** dummy struct for class including static method *)
-  ; source_file: SourceFile.t option  (** source file containing this struct's declaration *)
-  ; hack_class_info: Hack.t option  (** Hack classish information *) }
+  ; source_file: SourceFile.t option  (** source file containing this struct's declaration *) }
 [@@deriving equal, hash]
 
 type lookup = Typ.Name.t -> t option
@@ -61,8 +71,7 @@ let pp pe name f
      ; methods
      ; exported_objc_methods
      ; annots
-     ; java_class_info
-     ; hack_class_info
+     ; class_info
      ; dummy
      ; source_file } [@warning "+missing-record-field-pattern"] ) =
   let pp_field pe f (field_name, typ, ann) =
@@ -84,8 +93,7 @@ let pp pe name f
      methods: {@[<v>%a@]}@,\
      exported_obj_methods: {@[<v>%a@]}@,\
      annots: {@[<v>%a@]}@,\
-     java_class_info: {@[<v>%a@]}@,\
-     hack_class_info: {@[<v>%a@]}@,\
+     class_info: {@[<v>%a@]}@,\
      dummy: %b@,\
      %a@]"
     Typ.Name.pp name
@@ -100,15 +108,14 @@ let pp pe name f
     (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp_verbose m))
     methods
     (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp_verbose m))
-    exported_objc_methods Annot.Item.pp annots pp_java_class_info_opt java_class_info Hack.pp_opt
-    hack_class_info dummy
+    exported_objc_methods Annot.Item.pp annots ClassInfo.pp class_info dummy
     (fun fs -> Option.iter ~f:(Format.fprintf fs "source_file: %a@," SourceFile.pp))
     source_file
 
 
 let compare_custom_field (fld, _, _) (fld', _, _) = Fieldname.compare fld fld'
 
-let make_java_struct fields' statics' methods' supers' annots' java_class_info ?source_file dummy =
+let make_java_struct fields' statics' methods' supers' annots' class_info ?source_file dummy =
   let fields = List.dedup_and_sort ~compare:compare_custom_field fields' in
   let statics = List.dedup_and_sort ~compare:compare_custom_field statics' in
   let methods = List.dedup_and_sort ~compare:Procname.compare methods' in
@@ -121,14 +128,13 @@ let make_java_struct fields' statics' methods' supers' annots' java_class_info ?
   ; supers
   ; objc_protocols= []
   ; annots
-  ; java_class_info
-  ; hack_class_info= None
+  ; class_info
   ; dummy
   ; source_file }
 
 
 let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
-    ?objc_protocols ?annots ?java_class_info ?hack_class_info ?dummy ?source_file typename =
+    ?objc_protocols ?annots ?class_info ?dummy ?source_file typename =
   let default_ =
     { fields= []
     ; statics= []
@@ -137,8 +143,7 @@ let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods
     ; supers= []
     ; objc_protocols= []
     ; annots= Annot.Item.empty
-    ; java_class_info= None
-    ; hack_class_info= None
+    ; class_info= NoInfo
     ; dummy= false
     ; source_file= None }
   in
@@ -146,9 +151,10 @@ let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods
       ?(methods = default.methods) ?(exported_objc_methods = default.exported_objc_methods)
       ?(supers = default.supers) ?(objc_protocols = default.objc_protocols)
       ?(annots = default.annots) ?(dummy = default.dummy) ?source_file typename =
+    let class_info = Option.value class_info ~default:ClassInfo.NoInfo in
     match typename with
     | Typ.JavaClass _jclass ->
-        make_java_struct fields statics methods supers annots java_class_info ?source_file dummy
+        make_java_struct fields statics methods supers annots class_info ?source_file dummy
     | _ ->
         { fields
         ; statics
@@ -157,8 +163,7 @@ let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods
         ; supers
         ; objc_protocols
         ; annots
-        ; java_class_info
-        ; hack_class_info
+        ; class_info
         ; dummy
         ; source_file }
   in
@@ -327,13 +332,27 @@ let merge_loc ~newer ~current =
 let merge_loc_opt ~newer ~current = merge_opt ~merge:merge_loc ~newer ~current
 
 let merge_java_class_info ~newer ~current =
-  let kind = merge_kind ~newer:newer.kind ~current:current.kind in
-  let loc = merge_loc_opt ~newer:newer.loc ~current:current.loc in
-  if phys_equal kind current.kind && phys_equal loc current.loc then current else {kind; loc}
+  match ((newer : ClassInfo.t), (current : ClassInfo.t)) with
+  | ( JavaClassInfo {kind= newer_kind; loc= newer_loc}
+    , JavaClassInfo {kind= current_kind; loc= current_loc} ) ->
+      let kind = merge_kind ~newer:newer_kind ~current:current_kind in
+      let loc = merge_loc_opt ~newer:newer_loc ~current:current_loc in
+      if phys_equal kind current_kind && phys_equal loc current_loc then current
+      else ClassInfo.JavaClassInfo {kind; loc}
+  | _, _ ->
+      assert false
 
 
-let merge_java_class_info_opt ~newer ~current =
-  merge_opt ~merge:merge_java_class_info ~newer ~current
+let merge_class_info ~newer ~current =
+  match ((newer : ClassInfo.t), (current : ClassInfo.t)) with
+  | NoInfo, c | c, NoInfo ->
+      c
+  | JavaClassInfo _, JavaClassInfo _ ->
+      merge_java_class_info ~newer ~current
+  | HackClassInfo _, HackClassInfo _ ->
+      (* no merge currently for Hack *) current
+  | _, _ ->
+      Logging.die InternalError "Tried to merge a JavaClassInfo with a HackClassInfo value.@\n"
 
 
 let full_merge ~newer ~current =
@@ -344,18 +363,16 @@ let full_merge ~newer ~current =
   (* we are merging only Java and Hack classes, so [exported_obj_methods] should be empty, so no
      merge *)
   let annots = merge_annots ~newer:newer.annots ~current:current.annots in
-  let java_class_info =
-    merge_java_class_info_opt ~newer:newer.java_class_info ~current:current.java_class_info
-  in
+  let class_info = merge_class_info ~newer:newer.class_info ~current:current.class_info in
   if
     phys_equal fields current.fields
     && phys_equal statics current.statics
     && phys_equal supers current.supers
     && phys_equal methods current.methods
     && phys_equal annots current.annots
-    && phys_equal java_class_info current.java_class_info
+    && phys_equal class_info current.class_info
   then current
-  else {current with fields; statics; supers; methods; annots; java_class_info}
+  else {current with fields; statics; supers; methods; annots; class_info}
 
 
 let merge typename ~newer ~current =
@@ -402,20 +419,18 @@ let merge typename ~newer ~current =
 
 
 let is_not_java_interface = function
-  | {java_class_info= Some {kind= Interface}} ->
+  | {class_info= JavaClassInfo {kind= Interface}} ->
       false
   | _ ->
       true
 
 
-let is_hack_class {hack_class_info} =
-  Option.value_map hack_class_info ~default:false ~f:(fun {Hack.kind} ->
-      match kind with Class -> true | Trait -> false )
+let is_hack_class {class_info} =
+  match (class_info : ClassInfo.t) with HackClassInfo Class -> true | _ -> false
 
 
-let is_hack_trait {hack_class_info} =
-  Option.value_map hack_class_info ~default:false ~f:(fun {Hack.kind} ->
-      match kind with Hack.Class -> false | Hack.Trait -> true )
+let is_hack_trait {class_info} =
+  match (class_info : ClassInfo.t) with HackClassInfo Trait -> true | _ -> false
 
 
 module FieldNormalizer = HashNormalizer.Make (struct
@@ -428,31 +443,6 @@ module FieldNormalizer = HashNormalizer.Make (struct
     let annot' = Annot.Item.Normalizer.normalize annot in
     if phys_equal field_name field_name' && phys_equal typ typ' && phys_equal annot annot' then f
     else (field_name', typ', annot')
-end)
-
-module JavaClassInfoOptNormalizer = HashNormalizer.Make (struct
-  type t = java_class_info option [@@deriving equal, hash]
-
-  let normalize_location_opt loc_opt =
-    IOption.map_changed loc_opt ~equal:phys_equal ~f:Location.Normalizer.normalize
-
-
-  let normalize_java_class_info java_class_info =
-    let loc = normalize_location_opt java_class_info.loc in
-    if phys_equal loc java_class_info.loc then java_class_info else {java_class_info with loc}
-
-
-  let normalize java_class_info_opt =
-    IOption.map_changed java_class_info_opt ~equal:phys_equal ~f:normalize_java_class_info
-end)
-
-module HackClassInfoOptNormalizer = HashNormalizer.Make (struct
-  type t = Hack.t option [@@deriving equal, hash]
-
-  let normalize_hack_class_info info = info
-
-  let normalize hack_class_info_opt : Hack.t option =
-    IOption.map_changed hack_class_info_opt ~equal:phys_equal ~f:normalize_hack_class_info
 end)
 
 module Normalizer = HashNormalizer.Make (struct
@@ -470,8 +460,7 @@ module Normalizer = HashNormalizer.Make (struct
       IList.map_changed ~equal:phys_equal ~f:Procname.Normalizer.normalize t.exported_objc_methods
     in
     let annots = Annot.Item.Normalizer.normalize t.annots in
-    let java_class_info = JavaClassInfoOptNormalizer.normalize t.java_class_info in
-    let hack_class_info = HackClassInfoOptNormalizer.normalize t.hack_class_info in
+    let class_info = ClassInfo.Normalizer.normalize t.class_info in
     let source_file =
       IOption.map_changed ~equal:phys_equal ~f:SourceFile.Normalizer.normalize t.source_file
     in
@@ -481,8 +470,7 @@ module Normalizer = HashNormalizer.Make (struct
       && phys_equal methods t.methods
       && phys_equal exported_objc_methods t.exported_objc_methods
       && phys_equal annots t.annots
-      && phys_equal java_class_info t.java_class_info
-      && phys_equal hack_class_info t.hack_class_info
+      && phys_equal class_info t.class_info
       && phys_equal source_file t.source_file
     then t
     else
@@ -493,8 +481,7 @@ module Normalizer = HashNormalizer.Make (struct
       ; methods
       ; exported_objc_methods
       ; annots
-      ; java_class_info
-      ; hack_class_info
+      ; class_info
       ; dummy= t.dummy
       ; source_file }
 end)

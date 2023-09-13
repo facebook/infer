@@ -235,8 +235,8 @@ let config =
 
 
 (** Retrieves the optional location from a struct corresponding to a Java type. *)
-let get_struct_loc {Struct.java_class_info} =
-  Option.bind java_class_info ~f:(fun {Struct.loc} -> loc)
+let get_struct_loc {Struct.class_info} =
+  match (class_info : Struct.ClassInfo.t) with JavaClassInfo {loc} -> loc | _ -> None
 
 
 (* A module for representing declarations of scopes. *)

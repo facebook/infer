@@ -25,10 +25,10 @@ let create () = TypenameHash.create 1000
 
 (** Construct a struct type in a type environment *)
 let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?objc_protocols
-    ?annots ?java_class_info ?hack_class_info ?dummy ?source_file name =
+    ?annots ?class_info ?dummy ?source_file name =
   let struct_typ =
     Struct.internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
-      ?objc_protocols ?annots ?java_class_info ?hack_class_info ?dummy ?source_file name
+      ?objc_protocols ?annots ?class_info ?dummy ?source_file name
   in
   TypenameHash.replace tenv name struct_typ ;
   struct_typ
@@ -311,7 +311,7 @@ module MethodInfo = struct
 
        This function computes the arity offset we must apply to make sure things are compared
        correctly. *)
-    let compute_arity_incr {Struct.Hack.kind} =
+    let compute_arity_incr (kind : Struct.hack_class_kind) =
       match kind with Class -> (true, 0) | Trait -> (false, 1)
   end
 
@@ -335,8 +335,12 @@ module MethodInfo = struct
 
   let mk_class proc_name = return ~is_class:true ~last_class_visited:None proc_name
 
-  let compute_arity_incr {Struct.hack_class_info} =
-    hack_class_info |> Option.map ~f:Hack.compute_arity_incr |> Option.value ~default:(true, 0)
+  let compute_arity_incr {Struct.class_info} =
+    match (class_info : Struct.ClassInfo.t) with
+    | HackClassInfo kind ->
+        Hack.compute_arity_incr kind
+    | _ ->
+        (true, 0)
 
 
   let get_procname = function HackInfo {proc_name} | DefaultInfo {proc_name} -> proc_name
