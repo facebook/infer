@@ -42,10 +42,15 @@ module DataStack : sig
 end
 
 (** Type information about various entities (toplevel declarations, temporaries, ...). *)
-type info =
-  { is_code: bool  (** is the entity a function / method ? *)
-  ; is_class: bool  (** is the entity a class ? *)
-  ; typ: T.Typ.t  (** Type annotation, if any (otherwise, [object] is used) *) }
+module Info : sig
+  type kind = Code | Class | Other
+
+  type t = {kind: kind; typ: T.Typ.t}
+
+  val default : T.Typ.t -> t
+
+  val is_code : kind -> bool
+end
 
 module SMap : Caml.Map.S with type key = string
 
@@ -147,10 +152,10 @@ val label_of_offset : t -> int -> Label.info option
 (** Check if the instruction is a possible jump location, and return the label information found
     there, if any. *)
 
-val mk_fresh_ident : t -> info -> t * T.Ident.t
+val mk_fresh_ident : t -> Info.t -> t * T.Ident.t
 (** Generate a fresh temporary name *)
 
-val get_ident_info : t -> T.Ident.t -> info option
+val get_ident_info : t -> T.Ident.t -> Info.t option
 (** Get back the information of a temporary *)
 
 val mk_fresh_label : t -> t * string

@@ -122,7 +122,7 @@ let annotated_type_of_annotation env typ =
 (** Special case of [load_cell] that we sometime use with a name directly, rather then an index in
     [FFI.Code.t] *)
 let load_var_name env loc name =
-  let info typ = {Env.typ; is_code= false; is_class= false} in
+  let info typ = Env.Info.default typ in
   let exp = T.Exp.Lvar (var_name ~loc name) in
   let loc = Env.loc env in
   let opt_sym = Env.lookup_symbol ~global:false env name in
@@ -146,8 +146,8 @@ let load_var_name env loc name =
 
 (** Try to load the data referenced by a [DataStack.cell], into a [Textual.Exp.t] *)
 let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
-  let info typ = {Env.typ; is_code= false; is_class= false} in
-  let default = info PyCommon.pyObject in
+  let default_info typ = Env.Info.default typ in
+  let default = default_info PyCommon.pyObject in
   (* Python only stores references to objects on the data stack, so when data needs to be really
      accessed, [load_cell] is used to get information from the code information ([co_consts], ...).
      These data are mapped to Textual.Exp.t values as much as possible. But it's not always
@@ -157,23 +157,22 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
   | Const ndx ->
       let const = co_consts.(ndx) in
       let env, exp, ty = py_to_exp env const in
-      let info = info ty in
+      let info = default_info ty in
       (env, Ok exp, info)
   | Name {global; ndx} ->
       let name = co_names.(ndx) in
-      let ({Env.typ; is_code} as info), qualified_name =
+      let ({Env.Info.typ; kind} as info), qualified_name =
         let opt_sym = Env.lookup_symbol ~global env name in
         match (opt_sym : Symbol.t option) with
         | Some (Name {typ} as symbol_info) ->
             let qname = Symbol.to_string symbol_info in
-            ({Env.is_code= false; is_class= false; typ}, qname)
+            (default_info typ, qname)
         | Some (Class _ as class_info) ->
             L.die InternalError "[load_cell] with class: should never happen ?  %s"
               (Symbol.to_string class_info)
-            (* ({Env.is_code= false; is_class= true; typ= PyCommon.pyObject}, qname) *)
         | Some (Code _ as code_info) ->
             let qname = Symbol.to_string code_info in
-            ({Env.is_code= true; is_class= false; typ= PyCommon.pyCode}, qname)
+            ({Env.Info.kind= Code; typ= PyCommon.pyCode}, qname)
         | Some (Import _ as symbol) ->
             let qname = Symbol.to_string symbol in
             L.die InternalError "[load_cell] called with %s (import)" qname
@@ -182,9 +181,9 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       in
       let var_name = var_name ~loc qualified_name in
       (* If we are trying to load some code, use the dedicated builtin *)
-      if is_code then
+      if Env.Info.is_code kind then
         let env, exp, typ = code_to_exp ~fun_or_class:true env qualified_name in
-        let info = {info with Env.typ} in
+        let info = {info with Env.Info.typ} in
         (env, Ok exp, info)
       else
         let exp = T.Exp.Lvar var_name in
@@ -202,8 +201,8 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       (env, Ok (T.Exp.Var id), info)
   | Code {fun_or_class; code} ->
       let env, exp, typ = code_to_exp env ~fun_or_class code.FFI.Code.co_name in
-      let is_code, is_class = if fun_or_class then (true, false) else (false, true) in
-      let info = {Env.typ; is_code; is_class} in
+      let kind = if fun_or_class then Env.Info.Code else Env.Info.Class in
+      let info = {Env.Info.typ; kind} in
       (env, Ok exp, info)
   | Map _map ->
       (env, Error "TODO: load Map cells", default)
@@ -308,7 +307,7 @@ module LOAD = struct
       | ATTR -> (
           let env, cell = pop_datastack opname env in
           let fname = co_names.(arg) in
-          let env, res, {Env.typ} = load_cell env code cell in
+          let env, res, {Env.Info.typ} = load_cell env code cell in
           let type_name = match (typ : T.Typ.t) with Ptr (Struct name) -> Some name | _ -> None in
           let fields = Option.bind type_name ~f:(Env.lookup_fields env) in
           let field =
@@ -323,7 +322,7 @@ module LOAD = struct
               L.die ExternalError "Failed to load attribute %s from cell %a: %s" fname
                 DataStack.pp_cell cell s
           | Ok exp ->
-              let info = Env.{typ; is_class= false; is_code= false} in
+              let info = Env.Info.default typ in
               let env, id = Env.mk_fresh_ident env info in
               let loc = Env.loc env in
               let name = field_name ~loc fname in
@@ -364,7 +363,7 @@ module FUNCTION = struct
     let mk env fname ?(typ = PyCommon.pyObject) loc proc args =
       let env = Option.value_map ~default:env ~f:(Env.register_call env) fname in
       let call = T.Exp.call_non_virtual proc args in
-      let info = {Env.typ; is_code= false; is_class= false} in
+      let info = Env.Info.default typ in
       let env, id = Env.mk_fresh_ident env info in
       let let_instr = T.Instr.Let {id; exp= call; loc} in
       let env = Env.push_instr env let_instr in
@@ -753,7 +752,7 @@ module METHOD = struct
           let loc = Env.loc env in
           let exp = T.Exp.call_virtual name receiver args in
           (* TODO: read return type of proc if available *)
-          let info = {Env.typ= PyCommon.pyObject; is_code= false; is_class= false} in
+          let info = Env.Info.default PyCommon.pyObject in
           let env, id = Env.mk_fresh_ident env info in
           let let_instr = T.Instr.Let {id; exp; loc} in
           let env = Env.push_instr env let_instr in
@@ -806,23 +805,26 @@ module STORE = struct
   let store env ({FFI.Code.co_names} as code) opname loc arg cell name global is_attr =
     let env, exp, info = load_cell env code cell in
     match exp with
-    | Ok exp ->
-        let {Env.typ; is_code; is_class} = info in
+    | Ok exp -> (
+        let {Env.Info.typ; kind} = info in
         let module_name = Env.module_name env in
         let qname = Symbol.Qualified.mk ~prefix:[module_name] name loc in
         let symbol_info =
-          if is_code then Symbol.Code {code_name= qname}
-          else if is_class then Symbol.Class {class_name= qname}
-          else
-            let prefix = if global then [module_name] else [] in
-            let qname = Symbol.Qualified.mk ~prefix name loc in
-            Symbol.Name {symbol_name= qname; is_imported= false; typ}
+          match (kind : Env.Info.kind) with
+          | Code ->
+              Symbol.Code {code_name= qname}
+          | Class ->
+              Symbol.Class {class_name= qname}
+          | Other ->
+              let prefix = if global then [module_name] else [] in
+              let qname = Symbol.Qualified.mk ~prefix name loc in
+              Symbol.Name {symbol_name= qname; is_imported= false; typ}
         in
         let gname = Symbol.to_string symbol_info in
         let var_name = var_name ~loc gname in
         if is_attr then
           let env, cell = pop_datastack opname env in
-          let env, value, {Env.typ} = load_cell env code cell in
+          let env, value, {Env.Info.typ} = load_cell env code cell in
           match value with
           | Error s ->
               L.die InternalError "[%s] %s" opname s
@@ -836,20 +838,22 @@ module STORE = struct
               let instr = T.Instr.Store {exp1; typ= Some typ; exp2= value; loc} in
               let env = Env.push_instr env instr in
               (env, None)
-        else if is_class then (
-          Debug.p "  top-level class declaration initialized\n" ;
-          let _, env = Env.register_symbol ~global env name symbol_info in
-          (env, None) )
-        else if is_code then
-          let _, env = Env.register_symbol ~global env name symbol_info in
-          if global then (
-            Debug.p "  top-level function defined\n" ;
-            (env, None) )
-          else L.die InternalError "[%s] no support for closure at the moment: %s" opname name
         else
-          let _, env = Env.register_symbol ~global env name symbol_info in
-          let instr = T.Instr.Store {exp1= Lvar var_name; typ= Some typ; exp2= exp; loc} in
-          (Env.push_instr env instr, None)
+          match (kind : Env.Info.kind) with
+          | Class ->
+              Debug.p "  top-level class declaration initialized\n" ;
+              let _, env = Env.register_symbol ~global env name symbol_info in
+              (env, None)
+          | Code ->
+              let _, env = Env.register_symbol ~global env name symbol_info in
+              if global then (
+                Debug.p "  top-level function defined\n" ;
+                (env, None) )
+              else L.die InternalError "[%s] no support for closure at the moment: %s" opname name
+          | Other ->
+              let _, env = Env.register_symbol ~global env name symbol_info in
+              let instr = T.Instr.Store {exp1= Lvar var_name; typ= Some typ; exp2= exp; loc} in
+              (Env.push_instr env instr, None) )
     | Error s ->
         L.die InternalError "[%s] %s" opname s
 
@@ -1118,7 +1122,7 @@ let mk_jump loc jump_info =
 let stack_to_ssa env code =
   let env, zipped =
     Env.map ~env (Env.stack env) ~f:(fun env cell ->
-        let env, exp, {Env.typ} = load_cell env code cell in
+        let env, exp, {Env.Info.typ} = load_cell env code cell in
         match exp with
         | Ok exp ->
             (env, (exp, typ))
@@ -1310,7 +1314,7 @@ module ITER = struct
           let loc = Env.loc env in
           let env, id, _ = Env.mk_builtin_call env Builtin.PythonIterNext [iter] in
           let has_item = T.Exp.Field {exp= T.Exp.Var id; field= PyCommon.py_iter_item_has_item} in
-          let has_item_info = Env.{typ= T.Typ.Int; is_code= false; is_class= false} in
+          let has_item_info = Env.Info.default T.Typ.Int in
           let env, has_item_id = Env.mk_fresh_ident env has_item_info in
           let has_item_load =
             T.Instr.Load {id= has_item_id; exp= has_item; typ= Some T.Typ.Int; loc}
@@ -1329,7 +1333,7 @@ module ITER = struct
               T.Exp.Field {exp= T.Exp.Var id; field= PyCommon.py_iter_item_next_item}
             in
             (* TODO: try to track iterator types *)
-            let next_item_info = Env.{typ= PyCommon.pyObject; is_code= false; is_class= false} in
+            let next_item_info = Env.Info.default PyCommon.pyObject in
             let env, next_item_id = Env.mk_fresh_ident env next_item_info in
             let next_item_load =
               T.Instr.Load {id= next_item_id; exp= next_item; typ= Some PyCommon.pyObject; loc}

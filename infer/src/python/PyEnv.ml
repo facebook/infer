@@ -93,7 +93,15 @@ end
 
 module SMap = Caml.Map.Make (String)
 
-type info = {is_code: bool; is_class: bool; typ: T.Typ.t}
+module Info = struct
+  type kind = Code | Class | Other
+
+  type t = {kind: kind; typ: T.Typ.t}
+
+  let default typ = {kind= Other; typ}
+
+  let is_code = function Code -> true | Class | Other -> false
+end
 
 module Symbol = struct
   module Qualified = struct
@@ -237,7 +245,7 @@ and prelude = T.Location.t -> t -> t
     been spotted, or what idents and labels have been generated so far. *)
 and shared =
   { idents: T.Ident.Set.t
-  ; idents_info: info T.Ident.Map.t
+  ; idents_info: Info.t T.Ident.Map.t
   ; globals: Symbol.t SMap.t
   ; locals: Symbol.t SMap.t
   ; builtins: Builtin.Set.t
@@ -320,7 +328,7 @@ module Label = struct
       map ~env ssa_parameters ~f:(fun env typ ->
           let info =
             (* TODO: track code/class for SSA parameters *)
-            {typ; is_code= false; is_class= false}
+            {Info.kind= Other; typ}
           in
           let env, id = mk_fresh_ident env info in
           (env, (id, typ)) )
@@ -505,7 +513,7 @@ let register_builtin ({shared} as env) builtin =
 let mk_builtin_call env builtin args =
   let textual_builtin = Builtin.textual builtin in
   let typ = Builtin.Set.get_type textual_builtin in
-  let info = {typ; is_class= false; is_code= false} in
+  let info = {Info.kind= Other; typ} in
   let env = register_builtin env textual_builtin in
   let env, id = mk_fresh_ident env info in
   let proc = Builtin.to_proc_name textual_builtin in
