@@ -8,39 +8,6 @@
 open! IStd
 module T = Textual
 
-(** In Python, everything is an object, and the interpreter maintains a stack of references to such
-    objects. Pushing and popping on the stack are always references to objets that leave in a heap.
-    There is no need to model this heap, but the data stack is quite important. *)
-module DataStack : sig
-  type cell =
-    | Const of int  (** index in [co_consts] *)
-    | Name of {global: bool; ndx: int}  (** reference to a name, stored in [co_names]. *)
-    | VarName of int  (** reference to a local name, stored in [co_varnames] *)
-    | Temp of T.Ident.t  (** SSA variable *)
-    | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
-        (** [code] Python object with its name. It can be a function, class, closure, ... *)
-    | Map of (string * cell) list
-        (** Light encoding of raw Python tuples/dicts. Only used for type annotations at the moment. *)
-    | BuiltinBuildClass  (** see Python's [LOAD_BUILD_CLASS] *)
-    | Import of {import_path: string; symbols: string list}
-        (** imported module path, with optional name of symbols *)
-    | ImportCall of T.qualified_procname  (** Static call to export definition *)
-    | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
-        (** Virtual call, usually of a method of a class. Could be an access to a closure that is
-            called straight away *)
-    | StaticCall of {call_name: T.qualified_procname; receiver: T.Exp.t option}
-        (** call to static method in class. Because we turn some method calls into static ones, we
-            have to keep the receiver around, just in case. *)
-    | Super  (** special name to refer to the parent class, like in [super().__init__()] *)
-  [@@deriving show]
-
-  val as_code : FFI.Code.t -> cell -> FFI.Code.t option
-
-  val as_name : FFI.Code.t -> cell -> string option
-
-  type t = cell list
-end
-
 (** Type information about various entities (toplevel declarations, temporaries, ...). *)
 module Info : sig
   type kind = Code | Class | Other
@@ -99,6 +66,39 @@ end
 
 (** Information about class declaration. Right now, we only support single inheritance. *)
 type class_info = {parent: Symbol.t option}
+
+(** In Python, everything is an object, and the interpreter maintains a stack of references to such
+    objects. Pushing and popping on the stack are always references to objets that leave in a heap.
+    There is no need to model this heap, but the data stack is quite important. *)
+module DataStack : sig
+  type cell =
+    | Const of int  (** index in [co_consts] *)
+    | Name of {global: bool; ndx: int}  (** reference to a name, stored in [co_names]. *)
+    | VarName of int  (** reference to a local name, stored in [co_varnames] *)
+    | Temp of T.Ident.t  (** SSA variable *)
+    | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
+        (** [code] Python object with its name. It can be a function, class, closure, ... *)
+    | Map of (string * cell) list
+        (** Light encoding of raw Python tuples/dicts. Only used for type annotations at the moment. *)
+    | BuiltinBuildClass  (** see Python's [LOAD_BUILD_CLASS] *)
+    | Import of {import_path: string; symbols: string list}
+        (** imported module path, with optional name of symbols *)
+    | ImportCall of T.qualified_procname  (** Static call to export definition *)
+    | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
+        (** Virtual call, usually of a method of a class. Could be an access to a closure that is
+            called straight away *)
+    | StaticCall of {call_name: T.qualified_procname; receiver: T.Exp.t option}
+        (** call to static method in class. Because we turn some method calls into static ones, we
+            have to keep the receiver around, just in case. *)
+    | Super  (** special name to refer to the parent class, like in [super().__init__()] *)
+  [@@deriving show]
+
+  val as_code : FFI.Code.t -> cell -> FFI.Code.t option
+
+  val as_name : FFI.Code.t -> cell -> string option
+
+  type t = cell list
+end
 
 (** Global environment used during bytecode processing. Stores common global information like the
     toplevel symbols processed so far, or more local ones like the set of labels or variable ids

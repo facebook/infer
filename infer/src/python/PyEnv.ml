@@ -13,71 +13,6 @@ module Builtin = PyBuiltin
 
 let type_name = PyCommon.type_name
 
-module DataStack = struct
-  type cell =
-    | Const of int
-    | Name of {global: bool; ndx: int}
-    | VarName of int
-    | Temp of T.Ident.t
-    | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
-    | Map of (string * cell) list
-    | BuiltinBuildClass
-    | Import of {import_path: string; symbols: string list}
-      (* TODO: change import_path into a list when we supported structured path foo.bar.baz *)
-    | ImportCall of T.qualified_procname
-    | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
-    | StaticCall of {call_name: T.qualified_procname; receiver: T.Exp.t option}
-    | Super
-  [@@deriving show]
-
-  let as_code FFI.Code.{co_consts} = function
-    | Const n ->
-        let code = co_consts.(n) in
-        FFI.Constant.as_code code
-    | Code {code} ->
-        Some code
-    | Name _
-    | Temp _
-    | VarName _
-    | Map _
-    | BuiltinBuildClass
-    | Import _
-    | ImportCall _
-    | MethodCall _
-    | StaticCall _
-    | Super ->
-        None
-
-
-  let as_name FFI.Code.{co_varnames; co_names; co_consts} = function
-    | Const ndx ->
-        let cst = co_consts.(ndx) in
-        FFI.Constant.as_name cst
-    | Name {ndx} ->
-        Some co_names.(ndx)
-    | VarName ndx ->
-        Some co_varnames.(ndx)
-    | Code _
-    | Temp _
-    | Map _
-    | BuiltinBuildClass
-    | Import _
-    | ImportCall _
-    | MethodCall _
-    | StaticCall _
-    | Super ->
-        None
-
-
-  type t = cell list
-
-  let push stack cell = cell :: stack
-
-  let pop = function [] -> None | hd :: stack -> Some (stack, hd)
-
-  let peek = function [] -> None | hd :: _ -> Some hd
-end
-
 module Labels = Caml.Map.Make (Int)
 
 (* TODO(vsiles): maybe revamp Signature maps to benefits from the new
@@ -235,6 +170,71 @@ end
 module ImportSet = Caml.Set.Make (Import)
 
 type class_info = {parent: Symbol.t option}
+
+module DataStack = struct
+  type cell =
+    | Const of int
+    | Name of {global: bool; ndx: int}
+    | VarName of int
+    | Temp of T.Ident.t
+    | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
+    | Map of (string * cell) list
+    | BuiltinBuildClass
+    | Import of {import_path: string; symbols: string list}
+      (* TODO: change import_path into a list when we supported structured path foo.bar.baz *)
+    | ImportCall of T.qualified_procname
+    | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
+    | StaticCall of {call_name: T.qualified_procname; receiver: T.Exp.t option}
+    | Super
+  [@@deriving show]
+
+  let as_code FFI.Code.{co_consts} = function
+    | Const n ->
+        let code = co_consts.(n) in
+        FFI.Constant.as_code code
+    | Code {code} ->
+        Some code
+    | Name _
+    | Temp _
+    | VarName _
+    | Map _
+    | BuiltinBuildClass
+    | Import _
+    | ImportCall _
+    | MethodCall _
+    | StaticCall _
+    | Super ->
+        None
+
+
+  let as_name FFI.Code.{co_varnames; co_names; co_consts} = function
+    | Const ndx ->
+        let cst = co_consts.(ndx) in
+        FFI.Constant.as_name cst
+    | Name {ndx} ->
+        Some co_names.(ndx)
+    | VarName ndx ->
+        Some co_varnames.(ndx)
+    | Code _
+    | Temp _
+    | Map _
+    | BuiltinBuildClass
+    | Import _
+    | ImportCall _
+    | MethodCall _
+    | StaticCall _
+    | Super ->
+        None
+
+
+  type t = cell list
+
+  let push stack cell = cell :: stack
+
+  let pop = function [] -> None | hd :: stack -> Some (stack, hd)
+
+  let peek = function [] -> None | hd :: _ -> Some hd
+end
 
 type label_info =
   {label_name: string; ssa_parameters: T.Typ.t list; prelude: prelude option; processed: bool}
