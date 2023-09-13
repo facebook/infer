@@ -11,7 +11,7 @@ digraph cfg {
 	
 
 	 "union_initialize_FIXME.324b85335f5d2e41_3" -> "union_initialize_FIXME.324b85335f5d2e41_2" ;
-"union_initialize_FIXME.324b85335f5d2e41_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(set_f2:U); [line 14, column 3]\n " shape="box"]
+"union_initialize_FIXME.324b85335f5d2e41_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(set_f2:U); [line 14, column 3]\n  *&set_f2[0]:int=1 [line 14, column 27]\n  *&set_f2[1]:int=2 [line 14, column 27]\n  *&set_f2[2]:int=3 [line 14, column 27]\n " shape="box"]
 	
 
 	 "union_initialize_FIXME.324b85335f5d2e41_4" -> "union_initialize_FIXME.324b85335f5d2e41_3" ;

@@ -2876,15 +2876,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     List.mapi ~f:init_field stmts
 
 
-  and initListExpr_struct_trans trans_state stmt_info stmts var_exp var_typ =
+  and initListExpr_struct_trans trans_state stmt_info stmts init_expr_typ var_exp var_typ =
     let context = trans_state.context in
     let tenv = context.tenv in
-    let tname = match var_typ.Typ.desc with Tstruct tname -> tname | _ -> assert false in
+    let tname = match init_expr_typ.Typ.desc with Tstruct tname -> tname | _ -> assert false in
     let field_exps, supers =
       match Tenv.lookup tenv tname with
       | Some {fields; supers} ->
           ( List.map fields ~f:(fun (fieldname, fieldtype, _) ->
-                (Exp.Lfield (var_exp, fieldname, var_typ), fieldtype) )
+                (Exp.Lfield (var_exp, fieldname, init_expr_typ), fieldtype) )
           , supers )
       | None ->
           assert false
@@ -2954,7 +2954,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       - perform zero initalization -
         {:http://en.cppreference.com/w/cpp/language/zero_initialization} Decision which case happens
         is based on the type of the InitListExpr *)
-  and initListExpr_trans trans_state stmt_info expr_info stmts =
+  and initListExpr_trans ({context= {tenv}} as trans_state) stmt_info
+      ({Clang_ast_t.ei_qual_type} as expr_info) stmts =
     let var_exp, var_typ =
       match trans_state.var_exp_typ with
       | Some var_exp_typ ->
@@ -2979,11 +2980,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
       in
       let all_res_trans =
-        match var_typ.Typ.desc with
+        let init_expr_typ = CType_decl.qual_type_to_sil_type tenv ei_qual_type in
+        match init_expr_typ.Typ.desc with
         | Tarray {elt} ->
             initListExpr_array_trans trans_state_pri init_stmt_info stmts var_exp elt
         | Tstruct _ ->
-            initListExpr_struct_trans trans_state_pri init_stmt_info stmts var_exp var_typ
+            initListExpr_struct_trans trans_state_pri init_stmt_info stmts init_expr_typ var_exp
+              var_typ
         | Tint _ | Tfloat _ | Tptr _ ->
             initListExpr_builtin_trans trans_state_pri init_stmt_info stmts var_exp var_typ
         | _ ->

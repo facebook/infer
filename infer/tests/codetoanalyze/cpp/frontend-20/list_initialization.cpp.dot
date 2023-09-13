@@ -44,4 +44,19 @@ digraph cfg {
 	
 
 	 "init_with_field_name#773079224408.5cfe20dbecd3fd22_3" -> "init_with_field_name#773079224408.5cfe20dbecd3fd22_2" ;
+"CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_1" [label="1: Start CurrentClass2::CurrentClass2\nFormals:  this:CurrentClass2*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_1" -> "CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_3" ;
+"CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_2" [label="2: Exit CurrentClass2::CurrentClass2 \n  " color=yellow style=filled]
+	
+
+"CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_3" [label="3:  Constructor Init \n   n$1=*&this:CurrentClass2* [line 35, column 34]\n " shape="box"]
+	
+
+	 "CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_3" -> "CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_4" ;
+"CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_4" [label="4:  Constructor Init \n   *n$1.super_f1:int=42 [line 35, column 44]\n  *n$1.super_f2:int=52 [line 35, column 44]\n " shape="box"]
+	
+
+	 "CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_4" -> "CurrentClass2#CurrentClass2#{8385.0f3d4fade6e39824_2" ;
 }
