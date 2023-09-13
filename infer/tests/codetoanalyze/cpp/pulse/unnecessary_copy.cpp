@@ -869,3 +869,40 @@ struct NonDisjJoinLoop_ok_FP {
 
   NonDisjJoinLoop_ok_FP(std::string s) {}
 };
+
+class UnownedTest {
+  Arr field;
+  std::vector<int> vec_field;
+
+  void copy_assignment_points_to_global_ok_FP() {
+    auto& ref = global;
+    field = ref; // we can't suggest moving here
+  }
+
+  Arr* get_global_ptr() { return &global; }
+
+  void copy_assignment_via_callee_points_to_global_ok_FP() {
+    auto& ref = get_global_ptr()->vec;
+    vec_field = ref; // we can't suggest moving here
+  }
+
+  void copy_assignment_points_to_ref_param_ok_FP(Arr& param) {
+    auto& ref = param;
+    field = ref; // we can't suggest moving here
+  }
+
+  void intermediate_copy_points_to_global_ok_FP() {
+    auto& ref = global;
+    get_first_elem(ref);
+  }
+
+  void intermediate_copy_via_callee_points_to_global_ok_FP() {
+    auto& ref = get_global_ptr()->vec;
+    modify_arg(ref); // we can't suggest moving here
+  }
+
+  void intermediate_copy_points_to_ref_param_ok_FP(Arr& param) {
+    auto& ref = param;
+    get_first_elem(ref);
+  }
+};
