@@ -92,6 +92,7 @@ and simple_expression =
   | ListComprehension of {expression: expression; qualifiers: qualifier list}
   | Literal of literal
   | Map of {map: expression option; updates: association list}
+  | MapComprehension of {expression: association; qualifiers: qualifier list}
   | Match of {pattern: expression; body: (* body is a pattern within patterns *) expression}
   | Nil
   | Receive of {cases: case_clause list; timeout: timeout option}
@@ -109,6 +110,7 @@ and qualifier =
   | BitsGenerator of {pattern: expression; expression: expression}
   | Filter of expression
   | Generator of {pattern: expression; expression: expression}
+  | MapGenerator of {pattern: association; expression: expression}
 
 and timeout = {time: expression; handler: body}
 
