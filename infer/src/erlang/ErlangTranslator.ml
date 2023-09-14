@@ -1009,7 +1009,16 @@ and translate_expression_listcomprehension (env : (_, _) Env.t) ret_var expressi
   let loop_body_with_filters = List.fold_right filters ~f:apply_one_filter ~init:loop_body in
   (* Translate generators *)
   let extract_generator (qual : Ast.qualifier) =
-    match qual with Generator {pattern; expression} -> Some (pattern, expression) | _ -> None
+    match qual with
+    | Generator {pattern; expression} ->
+        Some (pattern, expression)
+    | MapGenerator _ ->
+        (* TODO: add support for map generators: T163176600 *)
+        L.debug Capture Verbose
+          "@[todo ErlangTranslator.translate_expression map generator instance(s)." ;
+        None
+    | _ ->
+        None
   in
   let generators = List.filter_map ~f:extract_generator qualifiers in
   (* Wrap filtered expression with loops for generators*)

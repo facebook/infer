@@ -317,6 +317,11 @@ let rec to_expression (gen_uniq : unit -> int) json : Ast.expression option =
       let* pattern = to_expression gen_uniq pattern in
       let* body = to_expression gen_uniq body in
       expr loc (Match {pattern; body})
+  | `List [`String "mc"; anno; association; qualifiers] ->
+      let* loc = to_loc anno in
+      let* expression = to_association gen_uniq association in
+      let* qualifiers = to_list ~f:(to_qualifier gen_uniq) qualifiers in
+      expr loc (MapComprehension {expression; qualifiers})
   | `List [`String "named_fun"; anno; `String name; cases] ->
       let* loc = to_loc_from_anno anno in
       let* cases = to_list ~f:(to_case_clause gen_uniq) cases in
@@ -491,6 +496,10 @@ and to_qualifier gen_uniq json : Ast.qualifier option =
       let* pattern = to_expression gen_uniq pattern in
       let* expression = to_expression gen_uniq expression in
       Some (Ast.Generator {pattern; expression})
+  | `List [`String "m_generate"; _anno; pattern; expression] ->
+      let* pattern = to_association gen_uniq pattern in
+      let* expression = to_expression gen_uniq expression in
+      Some (Ast.MapGenerator {pattern; expression})
   | filter ->
       let* filter = to_expression gen_uniq filter in
       Some (Ast.Filter filter)
