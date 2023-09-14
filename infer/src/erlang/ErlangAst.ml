@@ -177,10 +177,17 @@ type spec = spec_disjunct list [@@deriving sexp_of]
 (* TODO: Add types, and specs. *)
 type record_field = {field_name: string; initializer_: expression option} [@@deriving sexp_of]
 
+type attribute_record = {tag: string; value: string} [@@deriving sexp_of]
+
+(* for now we only keep string-like attributes: those attributes which value is
+   translated to a json string: erlang atoms and strings *)
+type attribute = StringAttribute of attribute_record [@@deriving sexp_of]
+
 type simple_form =
   | Export of function_ list
   | Import of {module_name: string; functions: function_ list}
   | Module of string
+  | Attribute of attribute
   | File of {path: string}
   | Function of {function_: function_; clauses: case_clause list}
   | Record of {name: string; fields: record_field list}

@@ -35,6 +35,8 @@ type record_info = {field_names: string list; field_info: record_field_info Stri
     when translating individual functions of the module. *)
 type ('procdesc, 'result) t =
   { cfg: (Cfg.t[@sexp.opaque])
+  ; module_info: (Annot.t String.Map.t[@sexp.opaque])
+        (** used to store data for Module:module_info *)
   ; current_module: module_name  (** used to qualify function names *)
   ; is_otp: bool  (** does this module come from the OTP library *)
   ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)

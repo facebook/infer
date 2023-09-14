@@ -17,6 +17,7 @@ type t =
   | Tuple of int
   | Map
   | GenServerPid of {module_name: string option}
+  | ModuleInfo
 [@@deriving compare, equal, yojson_of, sexp, hash]
 
 let pp f = function
@@ -36,6 +37,8 @@ let pp f = function
       Format.fprintf f "ErlangMap"
   | GenServerPid {module_name} ->
       Format.fprintf f "ErlangGenServerPid_%s" (Option.value module_name ~default:"")
+  | ModuleInfo ->
+      Format.fprintf f "ErlangModuleInfo"
 
 
 let to_string name = Format.asprintf "%a" pp name
@@ -57,6 +60,8 @@ let from_string s =
       Some Map
   | "ErlangNil" | "Nil" ->
       Some Nil
+  | "ErlangModuleInfo" | "ModuleInfo" ->
+      Some ModuleInfo
   | _ ->
       let mk_tuple i = Tuple i in
       let mk_genserverpid m =
@@ -81,6 +86,10 @@ let atom_hash = "hash"
 let atom_true = "true"
 
 let atom_false = "false"
+
+let module_info_field_name = "module_info"
+
+let module_info_attributes_class_name = "attributes"
 
 let calculate_hash atom =
   (* DISCLAIMER: there is currently no guarantee that this remains stable in the future and no

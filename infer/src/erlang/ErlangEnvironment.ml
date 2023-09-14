@@ -38,6 +38,8 @@ type record_info = {field_names: string list; field_info: record_field_info Stri
 
 type ('procdesc, 'result) t =
   { cfg: (Cfg.t[@sexp.opaque])
+  ; module_info: (Annot.t String.Map.t[@sexp.opaque])
+        (** used to store data for Module:module_info *)
   ; current_module: module_name  (** used to qualify function names *)
   ; is_otp: bool  (** does this module come from the OTP library *)
   ; functions: UnqualifiedFunction.Set.t  (** used to resolve function names *)
@@ -56,6 +58,7 @@ let unknown_module_name = "__INFER_UNKNOWN_MODULE"
 let initialize_environment module_ otp_modules =
   let init =
     { cfg= Cfg.create ()
+    ; module_info= String.Map.empty
     ; current_module= unknown_module_name
     ; is_otp= false
     ; functions= UnqualifiedFunction.Set.empty
@@ -129,6 +132,18 @@ let initialize_environment module_ otp_modules =
           {env with types}
       | `Duplicate ->
           L.die InternalError "repeated type '%s'" name )
+    | Attribute (StringAttribute {tag; value}) ->
+        let module_info =
+          let parameter = {Annot.name= Some tag; value= Str value} in
+          let class_name = ErlangTypeName.module_info_attributes_class_name in
+          Map.update env.module_info class_name ~f:(function
+            | None ->
+                {Annot.class_name; parameters= [parameter]}
+            | Some annot ->
+                let {Annot.parameters} = annot in
+                {annot with Annot.parameters= parameter :: parameters} )
+        in
+        {env with module_info}
   in
   List.fold ~init ~f module_
 

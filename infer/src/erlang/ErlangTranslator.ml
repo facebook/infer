@@ -1537,6 +1537,17 @@ let translate_one_spec (env : (_, _) Env.t) function_ spec =
     body.exit_failure |~~> [Procdesc.get_exit_node procdesc]
 
 
+let add_module_info_field (env : (_, _) Env.t) tenv =
+  let typ = Typ.ErlangType ModuleInfo in
+  Tenv.mk_struct tenv typ |> ignore ;
+  let field =
+    ( Fieldname.make typ ErlangTypeName.module_info_field_name
+    , Typ.mk_struct typ
+    , Map.data env.module_info )
+  in
+  Tenv.add_field tenv typ field
+
+
 (** Translate forms of a module. *)
 let translate_module (env : (_, _) Env.t) module_ base_dir =
   let f env {Ast.location; simple_form} =
@@ -1560,5 +1571,6 @@ let translate_module (env : (_, _) Env.t) module_ base_dir =
   (* Processing in order due to [file] attributes updating the path. *)
   let env = List.fold_left module_ ~f ~init:env in
   DB.Results_dir.init env.location.file ;
-  let tenv = Tenv.FileLocal (Tenv.create ()) in
-  SourceFiles.add env.location.file env.cfg tenv None
+  let tenv = Tenv.create () in
+  add_module_info_field env tenv ;
+  SourceFiles.add env.location.file env.cfg (Tenv.FileLocal tenv) None

@@ -729,6 +729,9 @@ let to_loc_form json : Ast.form option =
       let* loc = to_loc_from_anno anno in
       let* func_list = to_list ~f:(to_function ~check_no_module:true) function_ in
       form loc (Export func_list)
+  | `List [`String "attribute"; anno; `String tag; `String value] ->
+      let* loc = to_loc_from_anno anno in
+      form loc (Attribute (StringAttribute {tag; value}))
   | `List [`String "function"; anno; `String function_; `Int arity; case_clause] ->
       let* loc = to_loc_from_anno anno in
       let gen_uniq = make_fresh_id_generator () in
