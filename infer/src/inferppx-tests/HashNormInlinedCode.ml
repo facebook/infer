@@ -16,14 +16,6 @@ include struct
 
   let _ = fun (_ : record) -> ()
 
-  let normalize_record t =
-    let {s; i} = t in
-    let s' = HashNormalizer.StringNormalizer.normalize s in
-    if phys_equal s s' then t else {s= s'; i}
-
-
-  let _ = normalize_record
-
   let hash_normalize_record =
     let module T = struct
       type nonrec t = record
@@ -39,12 +31,17 @@ include struct
     let module H = Caml.Hashtbl.Make (T) in
     let table : T.t H.t = H.create 11 in
     let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+    let normalize t =
+      let {s; i} = t in
+      let s' = HashNormalizer.StringNormalizer.normalize s in
+      if phys_equal s s' then t else {s= s'; i}
+    in
     fun t ->
       match H.find_opt table t with
       | Some t' ->
           t'
       | None ->
-          let normalized = normalize_record t in
+          let normalized = normalize t in
           H.add table normalized normalized ;
           normalized
 
@@ -61,7 +58,7 @@ include struct
   let _ = hash_normalize_record_opt
 
   let hash_normalize_record_list ts =
-    IList.map_changed ts ~equal:phys_equal ~f:hash_normalize_record
+    IList.map_changed ~equal:phys_equal ~f:hash_normalize_record ts
 
 
   let _ = hash_normalize_record_list
@@ -75,15 +72,6 @@ include struct
   [@@@ocaml.warning "-60"]
 
   let _ = fun (_ : tuple) -> ()
-
-  let normalize_tuple t =
-    let x0, x1, x2 = t in
-    let x2' = HashNormalizer.StringNormalizer.normalize x2 in
-    let x0' = HashNormalizer.StringNormalizer.normalize x0 in
-    if phys_equal x2 x2' && phys_equal x0 x0' then t else (x0', x1, x2')
-
-
-  let _ = normalize_tuple
 
   let hash_normalize_tuple =
     let module T = struct
@@ -100,12 +88,18 @@ include struct
     let module H = Caml.Hashtbl.Make (T) in
     let table : T.t H.t = H.create 11 in
     let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+    let normalize t =
+      let x0, x1, x2 = t in
+      let x2' = HashNormalizer.StringNormalizer.normalize x2 in
+      let x0' = HashNormalizer.StringNormalizer.normalize x0 in
+      if phys_equal x2 x2' && phys_equal x0 x0' then t else (x0', x1, x2')
+    in
     fun t ->
       match H.find_opt table t with
       | Some t' ->
           t'
       | None ->
-          let normalized = normalize_tuple t in
+          let normalized = normalize t in
           H.add table normalized normalized ;
           normalized
 
@@ -121,7 +115,7 @@ include struct
 
   let _ = hash_normalize_tuple_opt
 
-  let hash_normalize_tuple_list ts = IList.map_changed ts ~equal:phys_equal ~f:hash_normalize_tuple
+  let hash_normalize_tuple_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize_tuple ts
 
   let _ = hash_normalize_tuple_list
 end [@@ocaml.doc "@inline"]
@@ -142,28 +136,6 @@ include struct
 
   let _ = fun (_ : variant) -> ()
 
-  let normalize_variant t =
-    match t with
-    | NoArgs ->
-        t
-    | String x0 ->
-        let x0' = HashNormalizer.StringNormalizer.normalize x0 in
-        if phys_equal x0 x0' then t else String x0'
-    | Int _ ->
-        t
-    | Tuple (x0, x1) ->
-        let x1' = HashNormalizer.StringNormalizer.normalize x1 in
-        if phys_equal x1 x1' then t else Tuple (x0, x1')
-    | Record {i; s} ->
-        let s' = HashNormalizer.StringNormalizer.normalize s in
-        if phys_equal s s' then t else Record {i; s= s'}
-    | NonInline x0 ->
-        let x0' = normalize_record x0 in
-        if phys_equal x0 x0' then t else NonInline x0'
-
-
-  let _ = normalize_variant
-
   let hash_normalize_variant =
     let module T = struct
       type nonrec t = variant
@@ -179,12 +151,31 @@ include struct
     let module H = Caml.Hashtbl.Make (T) in
     let table : T.t H.t = H.create 11 in
     let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+    let normalize t =
+      match t with
+      | NoArgs ->
+          t
+      | String x0 ->
+          let x0' = HashNormalizer.StringNormalizer.normalize x0 in
+          if phys_equal x0 x0' then t else String x0'
+      | Int _ ->
+          t
+      | Tuple (x0, x1) ->
+          let x1' = HashNormalizer.StringNormalizer.normalize x1 in
+          if phys_equal x1 x1' then t else Tuple (x0, x1')
+      | Record {i; s} ->
+          let s' = HashNormalizer.StringNormalizer.normalize s in
+          if phys_equal s s' then t else Record {i; s= s'}
+      | NonInline x0 ->
+          let x0' = hash_normalize_record x0 in
+          if phys_equal x0 x0' then t else NonInline x0'
+    in
     fun t ->
       match H.find_opt table t with
       | Some t' ->
           t'
       | None ->
-          let normalized = normalize_variant t in
+          let normalized = normalize t in
           H.add table normalized normalized ;
           normalized
 
@@ -201,7 +192,7 @@ include struct
   let _ = hash_normalize_variant_opt
 
   let hash_normalize_variant_list ts =
-    IList.map_changed ts ~equal:phys_equal ~f:hash_normalize_variant
+    IList.map_changed ~equal:phys_equal ~f:hash_normalize_variant ts
 
 
   let _ = hash_normalize_variant_list
@@ -229,33 +220,6 @@ module SourceFile = struct
 
     let _ = fun (_ : t) -> ()
 
-    let normalize t =
-      match t with
-      | HashedBuckOut x0 ->
-          let x0' = HashNormalizer.StringNormalizer.normalize x0 in
-          if phys_equal x0 x0' then t else HashedBuckOut x0'
-      | Invalid {ml_source_file} ->
-          let ml_source_file' = HashNormalizer.StringNormalizer.normalize ml_source_file in
-          if phys_equal ml_source_file ml_source_file' then t
-          else Invalid {ml_source_file= ml_source_file'}
-      | Absolute x0 ->
-          let x0' = HashNormalizer.StringNormalizer.normalize x0 in
-          if phys_equal x0 x0' then t else Absolute x0'
-      | RelativeProjectRoot x0 ->
-          let x0' = HashNormalizer.StringNormalizer.normalize x0 in
-          if phys_equal x0 x0' then t else RelativeProjectRoot x0'
-      | RelativeProjectRootAndWorkspace {workspace_rel_root; rel_path} ->
-          let rel_path' = HashNormalizer.StringNormalizer.normalize rel_path in
-          let workspace_rel_root' = HashNormalizer.StringNormalizer.normalize workspace_rel_root in
-          if phys_equal rel_path rel_path' && phys_equal workspace_rel_root workspace_rel_root' then
-            t
-          else
-            RelativeProjectRootAndWorkspace
-              {workspace_rel_root= workspace_rel_root'; rel_path= rel_path'}
-
-
-    let _ = normalize
-
     let hash_normalize =
       let module T = struct
         type nonrec t = t
@@ -271,6 +235,32 @@ module SourceFile = struct
       let module H = Caml.Hashtbl.Make (T) in
       let table : T.t H.t = H.create 11 in
       let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+      let normalize t =
+        match t with
+        | HashedBuckOut x0 ->
+            let x0' = HashNormalizer.StringNormalizer.normalize x0 in
+            if phys_equal x0 x0' then t else HashedBuckOut x0'
+        | Invalid {ml_source_file} ->
+            let ml_source_file' = HashNormalizer.StringNormalizer.normalize ml_source_file in
+            if phys_equal ml_source_file ml_source_file' then t
+            else Invalid {ml_source_file= ml_source_file'}
+        | Absolute x0 ->
+            let x0' = HashNormalizer.StringNormalizer.normalize x0 in
+            if phys_equal x0 x0' then t else Absolute x0'
+        | RelativeProjectRoot x0 ->
+            let x0' = HashNormalizer.StringNormalizer.normalize x0 in
+            if phys_equal x0 x0' then t else RelativeProjectRoot x0'
+        | RelativeProjectRootAndWorkspace {workspace_rel_root; rel_path} ->
+            let rel_path' = HashNormalizer.StringNormalizer.normalize rel_path in
+            let workspace_rel_root' =
+              HashNormalizer.StringNormalizer.normalize workspace_rel_root
+            in
+            if phys_equal rel_path rel_path' && phys_equal workspace_rel_root workspace_rel_root'
+            then t
+            else
+              RelativeProjectRootAndWorkspace
+                {workspace_rel_root= workspace_rel_root'; rel_path= rel_path'}
+      in
       fun t ->
         match H.find_opt table t with
         | Some t' ->
@@ -292,7 +282,7 @@ module SourceFile = struct
 
     let _ = hash_normalize_opt
 
-    let hash_normalize_list ts = IList.map_changed ts ~equal:phys_equal ~f:hash_normalize
+    let hash_normalize_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize ts
 
     let _ = hash_normalize_list
   end [@@ocaml.doc "@inline"]
@@ -326,16 +316,6 @@ module Location = struct
 
     let _ = fun (_ : t) -> ()
 
-    let normalize t =
-      let {file; line; col; macro_file_opt; macro_line} = t in
-      let macro_file_opt' = SourceFile.Normalizer.normalize_opt macro_file_opt in
-      let file' = SourceFile.Normalizer.normalize file in
-      if phys_equal macro_file_opt macro_file_opt' && phys_equal file file' then t
-      else {file= file'; line; col; macro_file_opt= macro_file_opt'; macro_line}
-
-
-    let _ = normalize
-
     let hash_normalize =
       let module T = struct
         type nonrec t = t
@@ -351,6 +331,13 @@ module Location = struct
       let module H = Caml.Hashtbl.Make (T) in
       let table : T.t H.t = H.create 11 in
       let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+      let normalize t =
+        let {file; line; col; macro_file_opt; macro_line} = t in
+        let macro_file_opt' = SourceFile.hash_normalize_opt macro_file_opt in
+        let file' = SourceFile.hash_normalize file in
+        if phys_equal macro_file_opt macro_file_opt' && phys_equal file file' then t
+        else {file= file'; line; col; macro_file_opt= macro_file_opt'; macro_line}
+      in
       fun t ->
         match H.find_opt table t with
         | Some t' ->
@@ -372,7 +359,7 @@ module Location = struct
 
     let _ = hash_normalize_opt
 
-    let hash_normalize_list ts = IList.map_changed ts ~equal:phys_equal ~f:hash_normalize
+    let hash_normalize_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize ts
 
     let _ = hash_normalize_list
   end [@@ocaml.doc "@inline"]
@@ -399,16 +386,6 @@ module CSharpClassName = struct
 
     let _ = fun (_ : t) -> ()
 
-    let normalize t =
-      let {classname; namespace} = t in
-      let namespace' = HashNormalizer.StringNormalizer.normalize_opt namespace in
-      let classname' = HashNormalizer.StringNormalizer.normalize classname in
-      if phys_equal namespace namespace' && phys_equal classname classname' then t
-      else {classname= classname'; namespace= namespace'}
-
-
-    let _ = normalize
-
     let hash_normalize =
       let module T = struct
         type nonrec t = t
@@ -424,6 +401,13 @@ module CSharpClassName = struct
       let module H = Caml.Hashtbl.Make (T) in
       let table : T.t H.t = H.create 11 in
       let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+      let normalize t =
+        let {classname; namespace} = t in
+        let namespace' = HashNormalizer.StringNormalizer.normalize_opt namespace in
+        let classname' = HashNormalizer.StringNormalizer.normalize classname in
+        if phys_equal namespace namespace' && phys_equal classname classname' then t
+        else {classname= classname'; namespace= namespace'}
+      in
       fun t ->
         match H.find_opt table t with
         | Some t' ->
@@ -445,7 +429,7 @@ module CSharpClassName = struct
 
     let _ = hash_normalize_opt
 
-    let hash_normalize_list ts = IList.map_changed ts ~equal:phys_equal ~f:hash_normalize
+    let hash_normalize_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize ts
 
     let _ = hash_normalize_list
   end [@@ocaml.doc "@inline"]
@@ -472,16 +456,6 @@ module JavaClassName = struct
 
     let _ = fun (_ : t) -> ()
 
-    let normalize t =
-      let {classname; namespace} = t in
-      let namespace' = HashNormalizer.StringNormalizer.normalize_opt namespace in
-      let classname' = HashNormalizer.StringNormalizer.normalize classname in
-      if phys_equal namespace namespace' && phys_equal classname classname' then t
-      else {classname= classname'; namespace= namespace'}
-
-
-    let _ = normalize
-
     let hash_normalize =
       let module T = struct
         type nonrec t = t
@@ -497,6 +471,13 @@ module JavaClassName = struct
       let module H = Caml.Hashtbl.Make (T) in
       let table : T.t H.t = H.create 11 in
       let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+      let normalize t =
+        let {classname; namespace} = t in
+        let namespace' = HashNormalizer.StringNormalizer.normalize_opt namespace in
+        let classname' = HashNormalizer.StringNormalizer.normalize classname in
+        if phys_equal namespace namespace' && phys_equal classname classname' then t
+        else {classname= classname'; namespace= namespace'}
+      in
       fun t ->
         match H.find_opt table t with
         | Some t' ->
@@ -518,7 +499,7 @@ module JavaClassName = struct
 
     let _ = hash_normalize_opt
 
-    let hash_normalize_list ts = IList.map_changed ts ~equal:phys_equal ~f:hash_normalize
+    let hash_normalize_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize ts
 
     let _ = hash_normalize_list
   end [@@ocaml.doc "@inline"]

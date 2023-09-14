@@ -7,7 +7,7 @@
 
 open! IStd
 
-type t [@@deriving compare, sexp, hash]
+type t [@@deriving compare, sexp, hash, normalize]
 
 (** Maps from source_file *)
 module Map : Caml.Map.S with type key = t
