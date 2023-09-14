@@ -20,21 +20,40 @@ module LineageConfig = struct
 end
 
 module FieldLabel = struct
-  type t = Fieldname of Fieldname.t [@@deriving compare, equal, sexp, hash]
+  module T = struct
+    type t =
+      | Fieldname of Fieldname.t
+      | MapKey of string  (** Statically known map keys, ie. currently constant atoms. *)
+    [@@deriving compare, equal, sexp, hash]
+  end
+
+  include T
+  include Comparable.Make (T)
+
+  let pp fmt t =
+    (* Invariant: distinct labels should always be distinctly printed (eg. differentiate between
+       a field and a map key with the same name). *)
+    match t with
+    | Fieldname fieldname ->
+        Fieldname.pp fmt fieldname
+    | MapKey key ->
+        Fmt.pf fmt "'%s'" key
+
 
   let yojson_of_t t =
-    match t with
     (* The ppx-generated [yojson_of] for Fieldname is unnecessarily complex on for our purposes (it's
-       a record that involves "class_name", which incidentally seems to always be "_".) *)
-    | Fieldname fieldname ->
-        `String (Fieldname.to_string fieldname)
+       a record that involves "class_name", which incidentally seems to always be "_".)
 
+       Therefore we simply use the pretty printed output to generate prettier and simpler json
+       export. *)
+    `String (Fmt.to_to_string pp t)
 
-  let pp fmt t = match t with Fieldname fieldname -> Fieldname.pp fmt fieldname
 
   let fieldname f = Fieldname f
 
   let make_fieldname typ name = Fieldname (Fieldname.make typ name)
+
+  let map_key k = MapKey k
 end
 
 module FieldPath = struct
@@ -126,8 +145,8 @@ module Env : sig
     type t
 
     module Shape : sig
-      (** Shape building functions. These functions will create the appropriate structure, associate
-          it to a shape in the environment and return that shape. *)
+      (** {1} Shape building functions. These functions will create the appropriate structure,
+          associate it to a shape in the environment and return that shape. *)
 
       val bottom : t -> shape
       (** The most precise shape, used for variables that have not been assigned yet (eg.
@@ -140,9 +159,17 @@ module Env : sig
       (** A shape with a set of known fields. The list may be empty, meaning that the shape may be a
           vector but no field has been discovered yet. *)
 
+      val complex_map : map_value:shape -> t -> shape
+      (** Shape of a map with no known key and a unique value shape. *)
+
       val scalar : t -> shape
       (** The shape of scalar values for which we don't have more precise information (eg.
           integers). *)
+
+      (** {1} Functions to destruct shapes and extract their components. *)
+
+      val as_variant : t -> shape -> string list option
+      (** Returns the list of constructors of the shape if it is a variant. *)
     end
 
     val create : unit -> t
@@ -157,6 +184,9 @@ module Env : sig
         fields if needed) and making it so that they will both share the same identical set of
         fields in the future (one can now indifferently refer to any of the shapes as an alias of
         the result). *)
+
+    val unify_with_vector : t -> shape -> unit
+    (** Unify a shape with a vector with no known field. *)
   end
 
   module Summary : sig
@@ -261,30 +291,55 @@ end = struct
       let pp_shape = Shape_class.pp Shape_id.pp
 
       module Structure : sig
-        (** private type: the constructor functions may do some checks before building structures,
+        (** Private type: the constructor functions may do some checks before building structures,
             but we want to allow pattern matching. *)
         type t = private
           | Bottom
           | Variant of String.Set.t
-          | Vector of (FieldLabel.t, shape) Hashtbl.t
+          | Vector of
+              { map_value: shape option
+                    (** We maintain the following invariant: if fields contains [MapKey x : S] and
+                        [map_value] is [Some S'], then S = S'. Also [map_value] is [None] iff all
+                        seen map accesses use known atoms as keys.
+
+                        Explanation follows.
+
+                        If a vector semantically has at last one key which cannot be statically
+                        determined as a constant atom, then we assume that accessing key may access
+                        all map-keys of that vector.
+
+                        In that case all the map keys of the vector must have the same shape, that
+                        is, all the atom-map-keys that we keep track of. We thus set [map_value] to
+                        that unified shape, and all further map-value shapes will be unified to it.
+
+                        That doesn't concern fieldname keys: if a vector-shaped variable can be
+                        either a map or a record, then even if the map has complex keys, accessing
+                        them won't be related to the fieldnames of the record case. *)
+              ; fields: (FieldLabel.t, shape) Hashtbl.t }
 
         val pp : t Fmt.t
 
         val bottom : t
 
         val variant : String.Set.t -> t
-        (** If the set is to be (see {!LineageConfig}), will build a {!scalar} structure instead. *)
+        (** If the set is too big (see {!LineageConfig}), will build a {!scalar} structure instead. *)
 
         val variant_of_list : string list -> t
 
-        val vector : (FieldLabel.t, shape) Hashtbl.t -> t
+        val vector : ?map_value:shape -> (FieldLabel.t, shape) Hashtbl.t -> t
 
         val vector_of_alist : (FieldLabel.t * shape) list -> t
+
+        val complex_map : map_value:shape -> t
+        (** Shape of a map with no known key and a unique value shape. *)
 
         val scalar : t
         (** Scalar shape for which we don't keep a known set of possible values. *)
       end = struct
-        type t = Bottom | Variant of String.Set.t | Vector of (FieldLabel.t, shape) Hashtbl.t
+        type t =
+          | Bottom
+          | Variant of String.Set.t
+          | Vector of {map_value: shape option; fields: (FieldLabel.t, shape) Hashtbl.t}
 
         let pp fmt x =
           match x with
@@ -294,17 +349,19 @@ end = struct
               Fmt.pf fmt "[@[%a@]]"
                 (IFmt.Labelled.iter ~sep:(Fmt.any "@ |@ ") Set.iter Fmt.string)
                 constructors
-          | Vector fields ->
+          | Vector {fields; _} ->
               pp_hashtbl ~bind:IFmt.colon_sp FieldLabel.pp pp_shape fmt fields
 
 
         let bottom = Bottom
 
-        let vector field_table = Vector field_table
+        let vector ?map_value fields = Vector {map_value; fields}
 
         let vector_of_alist field_alist =
           vector (Hashtbl.of_alist_exn (module FieldLabel) field_alist)
 
+
+        let complex_map ~map_value = vector ~map_value (Hashtbl.create (module FieldLabel))
 
         let scalar =
           (* Until we add a specific constructor, the best abstraction for a scalar value is an empty
@@ -382,7 +439,19 @@ end = struct
         Private.create_and_store (Structure.vector_of_alist field_alist) state
 
 
+      let complex_map ~map_value state =
+        Private.create_and_store (Structure.complex_map ~map_value) state
+
+
       let scalar state = Private.create_and_store Structure.scalar state
+
+      let as_variant {shape_structures; _} shape =
+        let id = Union_find.get shape in
+        match Hashtbl.find shape_structures id with
+        | Some (Variant constructors) ->
+            Some (String.Set.to_list constructors)
+        | _ ->
+            None
     end
 
     let var_shape ({var_shapes; _} as state) var =
@@ -392,6 +461,7 @@ end = struct
     (** Unify two structures and return the unified result. The sub-shapes that shall be unified
         will be put in the [todo] stack. *)
     let unify_structures (structure : Structure.t) (structure' : Structure.t) todo : Structure.t =
+      let todo_unify shape shape' = Stack.push todo (shape, shape') in
       match (structure, structure') with
       | Bottom, other | other, Bottom ->
           other
@@ -399,7 +469,7 @@ end = struct
           Structure.variant (Set.union constructors constructors')
       | Variant _, other | other, Variant _ ->
           other
-      | Vector fields, Vector fields' ->
+      | Vector {map_value; fields}, Vector {map_value= map_value'; fields= fields'} ->
           (* Merge the fields of the second structure into the first one. During this merge, if we
              encounter a field present in both shapes, we put the shapes of this field in the todo
              stack to unify them at a later step (when the field table of the current processed
@@ -410,9 +480,31 @@ end = struct
              second one or into a new hash table would work as well.
           *)
           Hashtbl.merge_into ~src:fields' ~dst:fields ~f:(fun ~key:_fieldname shape' shape_opt ->
-              Option.iter ~f:(fun shape -> Stack.push todo (shape, shape')) shape_opt ;
+              Option.iter ~f:(fun shape -> todo_unify shape shape') shape_opt ;
               Set_to shape' ) ;
-          Structure.vector fields
+          (* Compute map_value *)
+          let map_value =
+            match (map_value, map_value') with
+            | None, other | other, None ->
+                other
+            | Some map_value_shape, Some map_value_shape' ->
+                todo_unify map_value_shape map_value_shape' ;
+                Some map_value_shape
+          in
+          (* Unify map fields with map_value if it exists *)
+          let () =
+            match map_value with
+            | None ->
+                ()
+            | Some map_value_shape ->
+                Hashtbl.iteri
+                  ~f:(fun ~key ~data ->
+                    match key with MapKey _ -> todo_unify data map_value_shape | Fieldname _ -> ()
+                    )
+                  fields
+          in
+          (* Return the unified shape *)
+          Structure.vector ?map_value fields
 
 
     let unify_step shape_structures shape shape' todo =
@@ -464,6 +556,9 @@ end = struct
 
     let unify {shape_structures; _} shape shape' =
       unify_stack shape_structures (Stack.singleton (shape, shape'))
+
+
+    let unify_with_vector state shape = unify state shape (Shape.vector_of_alist [] state)
   end
 
   module Summary = struct
@@ -494,14 +589,16 @@ end = struct
       match (Hashtbl.find shape_structures shape : Structure.t option) with
       | None | Some Bottom | Some (Variant _) ->
           false
-      | Some (Vector field_table) ->
-          not (Hashtbl.is_empty field_table)
+      | Some (Vector {map_value= Some _; _}) ->
+          true
+      | Some (Vector {map_value= None; fields}) ->
+          not (Hashtbl.is_empty fields)
 
 
     let find_field_table shape_structures shape =
       match Hashtbl.find shape_structures shape with
-      | Some (Structure.Vector field_table) ->
-          field_table
+      | Some (Structure.Vector {fields; _}) ->
+          fields
       | other ->
           L.die InternalError "No field table found for shape %a = %a" Shape_id.pp shape
             (Fmt.option Structure.pp) other
@@ -541,8 +638,9 @@ end = struct
             Structure.bottom
         | Variant constructors ->
             Structure.variant constructors
-        | Vector fields ->
-            Structure.vector (Hashtbl.map ~f:translate_shape fields)
+        | Vector {map_value; fields} ->
+            let map_value = Option.map ~f:translate_shape map_value in
+            Structure.vector ?map_value (Hashtbl.map ~f:translate_shape fields)
       in
       let var_shapes = Hashtbl.map ~f:translate_shape var_shapes in
       let shape_structures =
@@ -577,10 +675,19 @@ end = struct
           | Some (Variant constructors) ->
               Hashtbl.set state_shape_structures ~key:(Union_find.get state_shape)
                 ~data:(State.Structure.variant constructors)
-          | Some (Vector fields) ->
+          | Some (Vector {map_value; fields}) ->
+              let map_value =
+                match map_value with
+                | None ->
+                    None
+                | Some map_value_id ->
+                    Some
+                      (introduce_shape id_translation_tbl map_value_id shape_structures
+                         state_shape_structures )
+              in
               Hashtbl.set state_shape_structures ~key:(Union_find.get state_shape)
                 ~data:
-                  (State.Structure.vector
+                  (State.Structure.vector ?map_value
                      (introduce_fields id_translation_tbl fields shape_structures
                         state_shape_structures ) ) ) ;
           state_shape
@@ -702,7 +809,7 @@ end = struct
           | None | Some Bottom | Some (Variant _) ->
               (* No more fields. *)
               f init (List.rev field_path_acc)
-          | Some (Vector fields) ->
+          | Some (Vector {fields; _}) ->
               let len = Hashtbl.length fields in
               if Int.(len = 0 || len > LineageConfig.field_width) then
                 f init (List.rev field_path_acc)
@@ -834,6 +941,17 @@ struct
 
 
   module CallModel = struct
+    let make_atom ret_id args =
+      match args with
+      | [Exp.Const (Cstr name); _hash_exp] ->
+          let ret_id_shape = Env.State.var_shape state ret_id in
+          let variant_shape = Env.State.Shape.variant_of_list [name] state in
+          Env.State.unify state ret_id_shape variant_shape
+      | _ ->
+          L.die InternalError
+            "make_atom should have two arguments, the first one being a constant string."
+
+
     let make_tuple ret_id args =
       (* Unify the shape of the return with a Vector made from the arguments *)
       let ret_id_shape = Env.State.var_shape state ret_id in
@@ -847,20 +965,92 @@ struct
       Env.State.unify state ret_id_shape arg_vector_shape
 
 
-    let make_atom ret_id args =
+    (** [shape_map_access] is not the model for an actual function, but is a generic helper used to
+        unified the shapes inferred by accessing a map key. *)
+    let shape_map_access ~map_shape ~key_shape ~value_shape =
+      (* Defensively make sure that the map is vector-shaped. *)
+      Env.State.unify_with_vector state map_shape ;
+      match Env.State.Shape.as_variant state key_shape with
+      | Some constructors ->
+          (* Key is a variant: we discover the corresponding fields of the map argument by
+             associating to each of the possible constructors the returned shape. *)
+          let vector_shape =
+            Env.State.Shape.vector_of_alist
+              (List.map
+                 ~f:(fun constructor -> (FieldLabel.map_key constructor, value_shape))
+                 constructors )
+              state
+          in
+          Env.State.unify state map_shape vector_shape
+      | None ->
+          (* Key isn't variant-shaped: we potentially access every field from the map. This is done
+             by setting the [map_value] component and rely on unification to thus affect all relevant
+             fields. *)
+          let complex_map_shape = Env.State.Shape.complex_map state ~map_value:value_shape in
+          Env.State.unify state map_shape complex_map_shape
+
+
+    let maps_put ret_id args =
+      (* Access the key and return the map. *)
       match args with
-      | [Exp.Const (Cstr name); _hash_exp] ->
+      | [key_exp; value_exp; map_exp] ->
           let ret_id_shape = Env.State.var_shape state ret_id in
-          let variant_shape = Env.State.Shape.variant_of_list [name] state in
-          Env.State.unify state ret_id_shape variant_shape
+          let key_shape = shape_expr key_exp in
+          let value_shape = shape_expr value_exp in
+          let map_shape = shape_expr map_exp in
+          shape_map_access ~map_shape ~key_shape ~value_shape ;
+          Env.State.unify state ret_id_shape map_shape
       | _ ->
-          L.die InternalError
-            "make_atom should have two arguments, the first one being a constant string."
+          L.die InternalError "`maps:put` expects three arguments"
+
+
+    let maps_get ret_id args =
+      (* Access the key and return the value. *)
+      match args with
+      | [key_exp; map_exp] ->
+          let ret_id_shape = Env.State.var_shape state ret_id in
+          let key_shape = shape_expr key_exp in
+          let map_shape = shape_expr map_exp in
+          shape_map_access ~map_shape ~key_shape ~value_shape:ret_id_shape
+      | _ ->
+          L.die InternalError "`maps:get` expects two arguments"
+
+
+    let maps_new ret_id args =
+      (* Simply return an empty vector. Having a specific model will prevent unknown-procedure warnings. *)
+      match args with
+      | [] ->
+          let ret_id_shape = Env.State.var_shape state ret_id in
+          Env.State.unify_with_vector state ret_id_shape
+      | _ ->
+          L.die InternalError "`maps:new` expects zero argument"
+
+
+    let make_map ret_id args =
+      (* Create an empty map and access all keys in the argument. Return the map. *)
+      let ret_id_shape = Env.State.var_shape state ret_id in
+      (* In case the argument list is empty, ensure the return is still vector-shaped *)
+      Env.State.unify_with_vector state ret_id_shape ;
+      let args = List.chunks_of ~length:2 args in
+      List.iter
+        ~f:(function
+          | [key_exp; value_exp] ->
+              let key_shape = shape_expr key_exp in
+              let value_shape = shape_expr value_exp in
+              shape_map_access ~map_shape:ret_id_shape ~key_shape ~value_shape
+          | _ ->
+              L.die InternalError "make_map expects an even number of arguments" )
+        args
 
 
     let get_custom_model procname =
       let models =
-        [(BuiltinDecl.__erlang_make_tuple, make_tuple); (BuiltinDecl.__erlang_make_atom, make_atom)]
+        [ (BuiltinDecl.__erlang_make_tuple, make_tuple)
+        ; (BuiltinDecl.__erlang_make_atom, make_atom)
+        ; (BuiltinDecl.__erlang_make_map, make_map)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"new" ~arity:0, maps_new)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2, maps_get)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~arity:3, maps_put) ]
       in
       List.Assoc.find ~equal:Procname.equal models procname
 
@@ -868,9 +1058,12 @@ struct
     let unknown_model ~pp_callee ~callee ret_var args =
       L.debug Analysis Verbose "@[<v2> LineageShape: no model found for procname `%a`@]@," pp_callee
         callee ;
-      (* Shape the return as a vector with no known field => most general shape *)
+      (* As a best effort, we unify the return with the general shape of a vector with no field. This
+         does not really support unknown functions that return complex maps, or stateful functions
+         (whose returned type could be unified between invocations). This might be an issue for
+         a proper type system, but it is most likely fine for the Lineage purpose. *)
       let ret_shape = Env.State.var_shape state ret_var in
-      Env.State.unify state (Env.State.Shape.vector_of_alist [] state) ret_shape ;
+      Env.State.unify_with_vector state ret_shape ;
       (* Shape the arguments to make sure the analysis is aware of them *)
       ignore (List.map ~f:shape_expr args : Env.State.shape list) ;
       ()
