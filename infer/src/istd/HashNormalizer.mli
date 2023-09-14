@@ -37,3 +37,6 @@ module StringListNormalizer : S with type t = string list
 
 val reset_all_normalizers : unit -> unit
 (** reset hashtables in all normalizers made with [Make] *)
+
+val register_reset : (unit -> unit) -> unit
+(** register a function to run when [reset_all_normalizers] is run *)

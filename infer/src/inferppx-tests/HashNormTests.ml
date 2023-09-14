@@ -8,9 +8,15 @@ open! IStd
 
 type record = {s: string; i: int} [@@deriving equal, hash, normalize]
 
-module RecordHashNormalizer = HashNormalizer.Make (struct
-  type t = record [@@deriving equal, hash, normalize]
-end)
+module RecordHashNormalizer : HashNormalizer.S with type t = record = struct
+  type t = record
+
+  let normalize = hash_normalize_record
+
+  let normalize_opt = hash_normalize_record_opt
+
+  let normalize_list = hash_normalize_record_list
+end
 
 (* always return ["foo"] (when [suffix] is not provided), but hopefully we
    fool the compiler to return something that's not physically equal *)
@@ -48,9 +54,15 @@ let%test "string_normalize" =
 
 type tuple = string * int * string [@@deriving equal, hash, normalize]
 
-module TupleHashNormalizer = HashNormalizer.Make (struct
-  type t = tuple [@@deriving equal, hash, normalize]
-end)
+module TupleHashNormalizer : HashNormalizer.S with type t = tuple = struct
+  type nonrec t = tuple
+
+  let normalize = hash_normalize_tuple
+
+  let normalize_opt = hash_normalize_tuple_opt
+
+  let normalize_list = hash_normalize_tuple_list
+end
 
 let%test "tuple_test" =
   HashNormalizer.reset_all_normalizers () ;
@@ -70,9 +82,15 @@ type variant =
   | NonInline of record
 [@@deriving equal, hash, normalize]
 
-module VariantHashNormalizer = HashNormalizer.Make (struct
-  type t = variant [@@deriving equal, hash, normalize]
-end)
+module VariantHashNormalizer = struct
+  type t = variant
+
+  let normalize = hash_normalize_variant
+
+  let normalize_opt = hash_normalize_variant_opt
+
+  let normalize_list = hash_normalize_variant_list
+end
 
 let%test "variant_test" =
   HashNormalizer.reset_all_normalizers () ;

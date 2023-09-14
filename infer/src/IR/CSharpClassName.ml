@@ -12,7 +12,7 @@ module L = Logging
 (** invariant: if [namespace = Some str] then [not (String.equal str "")]. [classname] appears first
     so that the comparator fails earlier *)
 type t = {classname: string; namespace: string option}
-[@@deriving compare, equal, yojson_of, sexp, hash]
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let make ~namespace ~classname =
   match namespace with Some "" -> {namespace= None; classname} | _ -> {namespace; classname}
@@ -48,14 +48,12 @@ let pp_with_verbosity ~verbose fmt t =
   if verbose then pp fmt t else F.pp_print_string fmt (classname t)
 
 
-module Normalizer = HashNormalizer.Make (struct
-  type nonrec t = t [@@deriving equal, hash]
+module Normalizer : HashNormalizer.S with type t = t = struct
+  type nonrec t = t
 
-  let normalize t =
-    let classname = HashNormalizer.StringNormalizer.normalize t.classname in
-    let namespace =
-      IOption.map_changed t.namespace ~equal:phys_equal ~f:HashNormalizer.StringNormalizer.normalize
-    in
-    if phys_equal classname t.classname && phys_equal namespace t.namespace then t
-    else {classname; namespace}
-end)
+  let normalize = hash_normalize
+
+  let normalize_opt = hash_normalize_opt
+
+  let normalize_list = hash_normalize_list
+end

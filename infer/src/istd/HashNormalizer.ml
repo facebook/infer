@@ -24,23 +24,23 @@ end
 
 let normalizer_reset_funs : (unit -> unit) list ref = ref []
 
+let register_reset f = normalizer_reset_funs := f :: !normalizer_reset_funs
+
 module Make (T : NormalizedT) = struct
   type t = T.t
 
-  module H = Caml.Hashtbl.Make (T)
-
-  let table : t H.t = H.create 11
-
-  let () = normalizer_reset_funs := (fun () -> H.reset table) :: !normalizer_reset_funs
-
-  let normalize t =
-    match H.find_opt table t with
-    | Some t' ->
-        t'
-    | None ->
-        let normalized = T.normalize t in
-        H.add table normalized normalized ;
-        normalized
+  let normalize =
+    let module H = Caml.Hashtbl.Make (T) in
+    let table : t H.t = H.create 11 in
+    let () = register_reset (fun () -> H.reset table) in
+    fun t ->
+      match H.find_opt table t with
+      | Some t' ->
+          t'
+      | None ->
+          let normalized = T.normalize t in
+          H.add table normalized normalized ;
+          normalized
 
 
   let normalize_opt = function

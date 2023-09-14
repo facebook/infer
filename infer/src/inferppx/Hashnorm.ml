@@ -7,7 +7,9 @@
 open! IStd
 open Ppxlib
 
-let normalize_from_typename = function "t" -> "normalize" | s -> "normalize_" ^ s
+let func_name_from_typename ~stem = function "t" -> stem | s -> stem ^ "_" ^ s
+
+let normalize_from_typename = func_name_from_typename ~stem:"normalize"
 
 let normalize_of_longident ~loc ?(suffix = "") lid =
   let ident =
@@ -219,20 +221,82 @@ let normalize_variant_impl ~loc ptype_name (constructor_declarations : construct
   make_normalize_function ~loc ptype_name body
 
 
+let hash_normalize ~loc typ_name =
+  let norm_name = normalize_from_typename typ_name.txt in
+  let norm_name_expr = Common.make_ident_exp ~loc norm_name in
+  let equal_name_expr =
+    func_name_from_typename ~stem:"equal" typ_name.txt |> Common.make_ident_exp ~loc
+  in
+  let hash_name_expr =
+    func_name_from_typename ~stem:"hash" typ_name.txt |> Common.make_ident_exp ~loc
+  in
+  let ct = Ast_helper.Typ.constr ~loc (Common.make_longident ~loc typ_name.txt) [] in
+  let body =
+    [%expr
+      let module T = struct
+        type nonrec t = [%t ct]
+
+        let equal = [%e equal_name_expr]
+
+        let hash = [%e hash_name_expr]
+      end in
+      let module H = Caml.Hashtbl.Make (T) in
+      let table : T.t H.t = H.create 11 in
+      let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+      fun t ->
+        match H.find_opt table t with
+        | Some t' ->
+            t'
+        | None ->
+            let normalized = [%e norm_name_expr] t in
+            H.add table normalized normalized ;
+            normalized]
+  in
+  let hash_norm_name = "hash_" ^ norm_name in
+  Common.make_function ~loc hash_norm_name body
+
+
+let hash_normalize_opt ~loc typ_name =
+  let hash_norm_name = "hash_" ^ normalize_from_typename typ_name.txt in
+  let hash_norm_name_expr = Common.make_ident_exp ~loc hash_norm_name in
+  let body =
+    [%expr
+      function
+      | Some _ as some_t ->
+          IOption.map_changed ~equal:phys_equal ~f:[%e hash_norm_name_expr] some_t
+      | None ->
+          None]
+  in
+  Common.make_function ~loc (hash_norm_name ^ "_opt") body
+
+
+let hash_normalize_list ~loc typ_name =
+  let hash_norm_name = "hash_" ^ normalize_from_typename typ_name.txt in
+  let hash_norm_name_expr = Common.make_ident_exp ~loc hash_norm_name in
+  let body = [%expr fun ts -> IList.map_changed ts ~equal:phys_equal ~f:[%e hash_norm_name_expr]] in
+  Common.make_function ~loc (hash_norm_name ^ "_list") body
+
+
+let hash_normalize_functions ~loc typ_name =
+  [hash_normalize ~loc typ_name; hash_normalize_opt ~loc typ_name; hash_normalize_list ~loc typ_name]
+
+
 let normalize_type_declaration ~loc (td : type_declaration) =
   match td with
   | {ptype_kind= Ptype_record fields; ptype_name} ->
-      [normalize_record_impl ~loc ptype_name fields]
+      normalize_record_impl ~loc ptype_name fields :: hash_normalize_functions ~loc ptype_name
   | {ptype_kind= Ptype_abstract; ptype_manifest= Some {ptyp_desc= Ptyp_tuple core_types}; ptype_name}
     ->
-      [normalize_tuple_impl ~loc ptype_name core_types]
+      normalize_tuple_impl ~loc ptype_name core_types :: hash_normalize_functions ~loc ptype_name
   | {ptype_kind= Ptype_variant constructor_declarations; ptype_name} ->
-      [normalize_variant_impl ~loc ptype_name constructor_declarations]
+      normalize_variant_impl ~loc ptype_name constructor_declarations
+      :: hash_normalize_functions ~loc ptype_name
   | { ptype_kind= Ptype_abstract
     ; ptype_manifest= Some ({ptyp_desc= Ptyp_constr _} as manifest_type)
     ; ptype_name } ->
       (* passthrough case like `let nonrec t = t` *)
-      [normalize_passthrough_impl ~loc ptype_name manifest_type]
+      normalize_passthrough_impl ~loc ptype_name manifest_type
+      :: hash_normalize_functions ~loc ptype_name
   | {ptype_loc; _} ->
       let ext = Location.error_extensionf ~loc:ptype_loc "Cannot derive functions for this type" in
       [Ast_builder.Default.pstr_extension ~loc ext []]
