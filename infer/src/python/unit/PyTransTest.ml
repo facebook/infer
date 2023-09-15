@@ -162,6 +162,54 @@ print(x + y)
 
     let%expect_test _ =
       let source = {|
+x = 42
+y = 10
+print(x - y)
+      |} in
+      test source ;
+      [%expect
+        {|
+          .source_language = "python"
+
+          define dummy.$toplevel() : *PyNone {
+            #b0:
+                store &dummy::x <- $builtins.python_int(42):*PyInt
+                store &dummy::y <- $builtins.python_int(10):*PyInt
+                n0:*PyInt = load &dummy::x
+                n1:*PyInt = load &dummy::y
+                n2 = $builtins.binary_subtract(n0, n1)
+                n3 = $builtins.print(n2)
+                ret null
+
+          }
+
+          global dummy::y: *PyObject
+
+          global dummy::x: *PyObject
+
+          global $python_implicit_names::__name__: *PyString
+
+          global $python_implicit_names::__file__: *PyString
+
+          declare $builtins.print(...) : *PyObject
+
+          declare $builtins.binary_subtract(*PyObject, *PyObject) : *PyObject
+
+          declare $builtins.python_tuple(...) : *PyObject
+
+          declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+          declare $builtins.python_string(*String) : *PyString
+
+          declare $builtins.python_bool(int) : *PyBool
+
+          declare $builtins.python_float(float) : *PyFloat
+
+          declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
 pi = 3.14
       |} in
       test source ;
@@ -1688,8 +1736,7 @@ def _main():
     global __file__
 
     mydir = os.path.abspath(os.path.normpath(os.path.dirname(sys.argv[0])))
-    # i = len(sys.path) - 1 # we don't support BINARY_SUBTRACT yet
-    i = len(sys.path)
+    i = len(sys.path) - 1
     # while i >= 0:
     while i == 0:
         if os.path.abspath(os.path.normpath(sys.path[i])) == mydir:
@@ -1752,27 +1799,28 @@ if __name__ == '__main__':
             store &mydir <- n7:*PyObject
             n8:*PyObject = load &sys::path
             n9 = ?.len(n8)
-            store &i <- n9:*PyObject
+            n10 = $builtins.binary_subtract(n9, $builtins.python_int(1))
+            store &i <- n10:*PyObject
             jmp b1
 
         #b1:
-            n10:*PyObject = load &i
-            n11 = $builtins.python_eq(n10, $builtins.python_int(0))
-            n12 = $builtins.python_is_true(n11)
-            if n12 then jmp b2 else jmp b3
+            n11:*PyObject = load &i
+            n12 = $builtins.python_eq(n11, $builtins.python_int(0))
+            n13 = $builtins.python_is_true(n12)
+            if n13 then jmp b2 else jmp b3
 
         #b2:
-            n13:*PyObject = load &os::path
             n14:*PyObject = load &os::path
-            n15:*PyObject = load &i
-            n16:*PyObject = load &sys::path
-            n17 = $builtins.python_subscript_get(n16, n15)
-            n18 = n14.?.normpath(n17)
-            n19 = n13.?.abspath(n18)
-            n20:*PyObject = load &mydir
-            n21 = $builtins.python_eq(n19, n20)
-            n22 = $builtins.python_is_true(n21)
-            if n22 then jmp b4 else jmp b5
+            n15:*PyObject = load &os::path
+            n16:*PyObject = load &i
+            n17:*PyObject = load &sys::path
+            n18 = $builtins.python_subscript_get(n17, n16)
+            n19 = n15.?.normpath(n18)
+            n20 = n14.?.abspath(n19)
+            n21:*PyObject = load &mydir
+            n22 = $builtins.python_eq(n20, n21)
+            n23 = $builtins.python_is_true(n22)
+            if n23 then jmp b4 else jmp b5
 
         #b4:
             jmp b1
@@ -1782,11 +1830,11 @@ if __name__ == '__main__':
             jmp b1
 
         #b3:
-            n23:*PyObject = load &os::path
-            n24:*PyString = load &$python_implicit_names::__file__
-            n25 = n23.?.abspath(n24)
-            store &dummy::__file__ <- n25:*PyObject
-            n26 = test.libregrtest.main()
+            n24:*PyObject = load &os::path
+            n25:*PyString = load &$python_implicit_names::__file__
+            n26 = n24.?.abspath(n25)
+            store &dummy::__file__ <- n26:*PyObject
+            n27 = test.libregrtest.main()
             ret null
 
       }
@@ -1810,6 +1858,8 @@ if __name__ == '__main__':
       declare $builtins.python_subscript_get(*PyObject, *PyObject) : *PyObject
 
       declare $builtins.python_code(*String) : *PyCode
+
+      declare $builtins.binary_subtract(*PyObject, *PyObject) : *PyObject
 
       declare $builtins.python_is_true(*PyObject) : int
 

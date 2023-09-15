@@ -17,6 +17,7 @@ end
 type textual =
   | IsTrue
   | BinaryAdd
+  | BinarySubtract
   | PythonCall
   | PythonClass
   | PythonCode

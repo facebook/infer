@@ -49,6 +49,7 @@ module Builtin = struct
   type textual =
     | IsTrue
     | BinaryAdd
+    | BinarySubtract
     | PythonCall
     | PythonClass
     | PythonCode
@@ -96,6 +97,8 @@ let to_proc_name = function
             "python_is_true"
         | BinaryAdd ->
             "binary_add"
+        | BinarySubtract ->
+            "binary_subtract"
         | PythonCall ->
             "python_call"
         | PythonClass ->
@@ -190,6 +193,10 @@ module Set = struct
           ; result_type= annot T.Typ.Int
           ; used_struct_types= [] } )
       ; ( Builtin.BinaryAdd
+        , { formals_types= Some [annotatedObject; annotatedObject]
+          ; result_type= annotatedObject
+          ; used_struct_types= [] } )
+      ; ( Builtin.BinarySubtract
         , { formals_types= Some [annotatedObject; annotatedObject]
           ; result_type= annotatedObject
           ; used_struct_types= [] } )
