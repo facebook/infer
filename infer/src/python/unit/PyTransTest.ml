@@ -2111,3 +2111,73 @@ def build_list():
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
+
+
+let%test_module "ad-hoc support" =
+  ( module struct
+    let%expect_test _ =
+      let source =
+        {|
+import unittest
+import signal
+
+@unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
+class Test(unittest.TestCase):
+  pass
+  |}
+      in
+      test source ;
+      [%expect
+        {|
+  .source_language = "python"
+
+  define dummy.$toplevel() : *PyNone {
+    #b0:
+        n0 = unittest.$toplevel()
+        n1 = signal.$toplevel()
+        n2 = 0
+        n3 = unittest.skipUnless(n2, $builtins.python_string("requires setitimer()"))
+        n4 = $builtins.python_class("dummy::Test")
+        n5 = $builtins.python_call(n3, n4)
+        store &dummy::Test <- n5:*PyObject
+        ret null
+
+  }
+
+  declare dummy::Test(...) : *dummy::Test
+
+  declare dummy::Test.__init__(...) : *PyNone
+
+  global dummy::Test$static: *PyObject
+
+  type .static dummy::Test$static extends unittest::TestCase$static = {
+  }
+
+  type dummy::Test extends unittest::TestCase = {}
+
+  global dummy::Test: *PyObject
+
+  declare unittest.skipUnless(...) : *PyObject
+
+  declare unittest.$toplevel() : *PyObject
+
+  declare signal.$toplevel() : *PyObject
+
+  declare $builtins.python_class(*String) : *PyClass
+
+  declare $builtins.python_call(...) : *PyObject
+
+  declare $builtins.python_tuple(...) : *PyObject
+
+  declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+  declare $builtins.python_string(*String) : *PyString
+
+  declare $builtins.python_bool(int) : *PyBool
+
+  declare $builtins.python_float(float) : *PyFloat
+
+  declare $builtins.python_int(int) : *PyInt
+
+  no support for `hasattr` at the moment.  Skipping... |}]
+  end )

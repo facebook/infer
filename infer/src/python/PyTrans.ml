@@ -151,13 +151,13 @@ let load_name env loc ~global name =
     | Some {Symbol.kind= Name {typ}; id} ->
         (default_info typ, id)
     | Some {Symbol.kind= Class; id} ->
-        L.die InternalError "[load_cell] with class: should never happen ?  %a" Ident.pp id
+        L.die InternalError "[load_name] with class: should never happen ?  %a" Ident.pp id
     | Some {Symbol.kind= Code; id} ->
         ({Env.Info.kind= Code; typ= PyCommon.pyCode}, id)
     | Some {Symbol.kind= Import _ | ImportCall; id} ->
-        L.die InternalError "[load_cell] called with %a (import)" Ident.pp id
+        L.die InternalError "[load_name] called with %a (import)" Ident.pp id
     | Some {Symbol.kind= Builtin; id} ->
-        L.die InternalError "[load_cell] called with %a (builtin)" Ident.pp id
+        L.die InternalError "[load_name] called with %a (builtin)" Ident.pp id
     | None ->
         (default, Ident.unknown_ident name)
   in
@@ -422,45 +422,59 @@ module FUNCTION = struct
         After: [ result | rest-of-the-stack ] *)
 
     let static_call env opname code fid cells =
-      let env, args = cells_to_textual env opname code cells in
-      let loc = Env.loc env in
-      (* TODO: support nesting *)
-      let key = Symbol.Global fid in
-      let mk env ?typ proc = mk env (Some fid) ?typ loc proc args in
-      match Env.lookup_symbol env key with
-      | None ->
-          (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
-             further analysis *)
-          let proc =
-            let enclosing_class = T.TypeName.wildcard in
-            qualified_procname ~enclosing_class @@ Ident.to_proc_name fid
-          in
-          mk env proc
-      | Some symbol -> (
-        match (symbol : Symbol.t) with
-        | {kind= Import _ | ImportCall; id} ->
-            L.die InternalError "[static_call] Invalid Import (%a) spotted" Ident.pp id
-        | {kind= Builtin; id} ->
-            (* TODO: propagate builtin type information *)
-            let proc = Ident.to_qualified_procname id in
+      (* TODO: we currently can't handle hasattr correctly, so let's ignore it
+               At some point, introduce a builtin to keep track of its content
+      *)
+      let s = Ident.to_string ~sep:"::" fid in
+      if String.equal "hasattr" s then (
+        L.user_warning "no support for `hasattr` at the moment.  Skipping...\n" ;
+        let info = Env.Info.default PyCommon.pyBool in
+        let loc = Env.loc env in
+        let env, id = Env.mk_fresh_ident env info in
+        let let_instr = T.Instr.Let {id; exp= T.Exp.Const (T.Const.Int Z.zero); loc} in
+        let env = Env.push_instr env let_instr in
+        let env = Env.push env (DataStack.Temp id) in
+        (env, None) )
+      else
+        let env, args = cells_to_textual env opname code cells in
+        let loc = Env.loc env in
+        (* TODO: support nesting *)
+        let key = Symbol.Global fid in
+        let mk env ?typ proc = mk env (Some fid) ?typ loc proc args in
+        match Env.lookup_symbol env key with
+        | None ->
+            (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
+               further analysis *)
+            let proc =
+              let enclosing_class = T.TypeName.wildcard in
+              qualified_procname ~enclosing_class @@ Ident.to_proc_name fid
+            in
             mk env proc
-        | {kind= Name {is_imported}; id} ->
-            (* TODO: propagate type information if available *)
-            let proc = Ident.to_qualified_procname id in
-            let key = Symbol.Global id in
-            let symbol_info = {Symbol.kind= ImportCall; id; loc} in
-            let env = if is_imported then Env.register_symbol env key symbol_info else env in
-            mk env proc
-        | {kind= Code; id} ->
-            (* TODO: propagate type information if available *)
-            let proc = Ident.to_qualified_procname id in
-            mk env proc
-        | {kind= Class; id} ->
-            (* TODO: support nesting. Maybe add to_proc_name to Symbol *)
-            let typ = Ident.to_typ id in
-            let name = Ident.to_constructor id in
-            let proc : T.qualified_procname = {enclosing_class= TopLevel; name} in
-            mk env ~typ proc )
+        | Some symbol -> (
+          match (symbol : Symbol.t) with
+          | {kind= Import _ | ImportCall; id} ->
+              L.die InternalError "[static_call] Invalid Import (%a) spotted" Ident.pp id
+          | {kind= Builtin; id} ->
+              (* TODO: propagate builtin type information *)
+              let proc = Ident.to_qualified_procname id in
+              mk env proc
+          | {kind= Name {is_imported}; id} ->
+              (* TODO: propagate type information if available *)
+              let proc = Ident.to_qualified_procname id in
+              let key = Symbol.Global id in
+              let symbol_info = {Symbol.kind= ImportCall; id; loc} in
+              let env = if is_imported then Env.register_symbol env key symbol_info else env in
+              mk env proc
+          | {kind= Code; id} ->
+              (* TODO: propagate type information if available *)
+              let proc = Ident.to_qualified_procname id in
+              mk env proc
+          | {kind= Class; id} ->
+              (* TODO: support nesting. Maybe add to_proc_name to Symbol *)
+              let typ = Ident.to_typ id in
+              let name = Ident.to_constructor id in
+              let proc : T.qualified_procname = {enclosing_class= TopLevel; name} in
+              mk env ~typ proc )
 
 
     let dynamic_call env opname code caller_id cells =
