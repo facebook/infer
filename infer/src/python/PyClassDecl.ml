@@ -9,6 +9,7 @@ open! IStd
 module F = Format
 module L = Logging
 module MakeFunctionFlags = PyCommon.MakeFunctionFlags
+module Ident = PyCommon.Ident
 
 module Type = struct
   type t = Atom of string | List of t list | Apply of string * t
@@ -50,6 +51,7 @@ let rec parse_tys stack ({FFI.Code.co_names; co_consts} as code) instructions =
       Some (stack, [])
   | hd :: tl -> (
       let {FFI.Instruction.opname; arg} = hd in
+      (* TODO: support qualified types like [foo.Bar] *)
       match opname with
       | "LOAD_NAME" ->
           let name = co_names.(arg) in
@@ -146,7 +148,7 @@ let parse_member_annotation code instructions =
   let* ty = tys_as_ty tys in
   let* name, instructions = parse_member_name code instructions in
   let+ _, instructions = is_instruction "STORE_SUBSCR" instructions in
-  let annotation = Type.show ty in
+  let annotation = Ident.mk @@ Type.show ty in
   ({PyCommon.name; annotation}, instructions)
 
 
@@ -174,8 +176,9 @@ let parse_method_type_info code stack instructions =
   >>= fun (arg, instructions) ->
   let tys, stack = List.split_n stack arg in
   let res =
-    List.map2 names (List.rev_map ~f:Type.show tys) ~f:(fun name annotation ->
-        {PyCommon.name; annotation} )
+    List.map2 names
+      (List.rev_map ~f:(fun ty -> Ident.mk @@ Type.show ty) tys)
+      ~f:(fun name annotation -> {PyCommon.name; annotation})
   in
   match res with
   | List.Or_unequal_lengths.Ok signature ->
@@ -215,7 +218,8 @@ module Decorators = struct
 
   let warn class_name name {unsupported} =
     if not (List.is_empty unsupported) then (
-      L.user_warning "Left-over type information for method %s in class %s\n" name class_name ;
+      L.user_warning "Left-over type information for method %s in class %a\n" name Ident.pp
+        class_name ;
       List.iter ~f:(L.user_warning "- %s\n") unsupported )
 
 
@@ -368,7 +372,7 @@ let parse_method ({FFI.Code.co_names} as code) class_name instructions =
                    missing, use the current class *)
                 Option.some_if ((not is_static) && Int.equal ndx 0) class_name
           in
-          let annotation = Option.value typ ~default:"object" in
+          let annotation = Option.value typ ~default:(Ident.mk "object") in
           let arg = {PyCommon.name= argname; annotation} in
           arg :: args )
     in
@@ -381,6 +385,7 @@ let parse_method ({FFI.Code.co_names} as code) class_name instructions =
     | None ->
         (* __new__ returns an instance of the current class, __init__ just modifies it *)
         let annotation = if String.equal PyCommon.init__ name then "None" else "object" in
+        let annotation = Ident.mk annotation in
         {PyCommon.name= PyCommon.return; annotation} :: rev_formals_types
     | Some annotation ->
         {PyCommon.name= PyCommon.return; annotation} :: rev_formals_types
@@ -441,6 +446,7 @@ let parse_class_declaration code class_name instructions =
               6 STORE_NAME               2 (__qualname__)
      TODO: deal with that at some point
   *)
+  let class_name = Ident.mk class_name in
   let _, instructions = List.split_n instructions 4 in
   (* Now we try to parse any member annotation *)
   let annotations, instructions =

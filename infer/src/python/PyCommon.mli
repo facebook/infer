@@ -7,7 +7,7 @@
 
 open! IStd
 
-val type_name : ?loc:Textual.Location.t -> string -> Textual.TypeName.t
+module SMap : Caml.Map.S with type key = string
 
 val proc_name : ?loc:Textual.Location.t -> string -> Textual.ProcName.t
 
@@ -101,11 +101,49 @@ val mk_bytes : bytes -> Textual.Exp.t
 val mk_bool : bool -> Textual.Exp.t
 (** Helper function to define typed Textual expression for boolean. *)
 
-val unknown_global : string -> string
-(** Wrap a variable name into a special enclosing class when a global's origin can't be found. *)
+module Ident : sig
+  (** Python uses qualified identifiers such as [sys.exit]. Locally defined names don't have any
+      prefix, but we still add some in textual to deal with ambiguity. The only identifiers without
+      any prefix are local variables. *)
+  type t [@@deriving compare]
+
+  val from_string : string -> t
+
+  val short : t -> string
+
+  val pp : Format.formatter -> t -> unit
+
+  val to_string : sep:string -> t -> string
+
+  val to_qualified_procname : ?loc:Textual.Location.t -> t -> Textual.qualified_procname
+
+  val to_type_name : ?loc:Textual.Location.t -> ?static:bool -> t -> Textual.TypeName.t
+
+  val to_proc_name : ?loc:Textual.Location.t -> t -> Textual.ProcName.t
+
+  val to_constructor : ?loc:Textual.Location.t -> t -> Textual.ProcName.t
+
+  val to_typ : ?loc:Textual.Location.t -> t -> Textual.Typ.t
+
+  val is_primitive_type : t -> bool
+
+  val to_var_name : ?loc:Textual.Location.t -> t -> Textual.VarName.t
+
+  val unknown_ident : string -> t
+  (** Wrap a variable name into a special enclosing class when a global's origin can't be found. *)
+
+  val mk : ?prefix:t -> string -> t
+
+  val mk_builtin : string -> t
+
+  val is_imported_ABC : t -> bool
+  (** Checks if an id is the standard [abc.ABC] metaclass name *)
+
+  module Map : Caml.Map.S with type key = t
+end
 
 (** Encoding of some type annotation like [x: int] *)
-type annotated_name = {name: string; annotation: string}
+type annotated_name = {name: string; annotation: Ident.t}
 
 val pp_annotated_name : Format.formatter -> annotated_name -> unit
   [@@warning "-unused-value-declaration"]
@@ -122,10 +160,6 @@ val static_companion : string -> string
 
 module ABC : sig
   val abstract_method : string
-
-  val import_name : string
-
-  val base_class : string
 end
 
 val init__ : string

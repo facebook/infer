@@ -7,6 +7,8 @@
 
 open! IStd
 module T = Textual
+module L = Logging
+module SMap = Caml.Map.Make (String)
 
 let proc_name ?(loc = T.Location.Unknown) value = {T.ProcName.value; loc}
 
@@ -66,7 +68,9 @@ let pyIterItemStruct =
   {T.Struct.name= py_iter_item; supers= []; fields; attributes= []}
 
 
-let builtin_scope = T.Enclosing T.{TypeName.value= "$builtins"; loc= Unknown}
+let builtins = "$builtins"
+
+let builtin_scope = T.Enclosing T.{TypeName.value= builtins; loc= Unknown}
 
 let builtin_name (value : string) : T.qualified_procname =
   let name = T.ProcName.{value; loc= T.Location.Unknown} in
@@ -121,11 +125,137 @@ let mk_bool (b : bool) =
   T.Exp.Call {proc; args; kind= NonVirtual}
 
 
-let unknown_global name = sprintf "$ambiguous::%s" name
+let static_companion name = sprintf "%s$static" name
 
-type annotated_name = {name: string; annotation: string}
+(** Definitions related to Python Abstract Base Classes see
+    https://docs.python.org/3/library/abc.html *)
+module ABC = struct
+  let abstract_method = "abstractmethod"
 
-let pp_annotated_name fmt {name; annotation} = Format.fprintf fmt "(%s: %s)" name annotation
+  let import_name = "abc"
+
+  let base_class = "ABC"
+end
+
+module Ident = struct
+  (** Python uses qualified identifiers such as [sys.exit]. Locally defined names don't have any
+      prefix, but we still add some in textual to deal with ambiguity. The only identifiers without
+      any prefix are local variables.
+
+      Since we mostly append to these identifiers, we store them in reverse order, and only reverse
+      them when generating textual. *)
+
+  module IDENT = struct
+    type t = {hd: string; tl: string list} [@@deriving compare]
+  end
+
+  include IDENT
+
+  let from_string s =
+    match List.rev (String.split ~on:'.' s) with
+    | [] ->
+        L.die InternalError "String '%s' is an invalid Ident" s
+    | hd :: tl ->
+        {hd; tl}
+
+
+  let short {hd} = hd
+
+  let pp_rev_list fmt l = Pp.seq ~sep:"::" Format.pp_print_string fmt (List.rev l)
+
+  let pp fmt {hd; tl} =
+    let l = hd :: tl in
+    pp_rev_list fmt l
+
+
+  let to_string ~sep {hd; tl} =
+    if List.is_empty tl then hd else Format.asprintf "%a%s%s" pp_rev_list tl sep hd
+
+
+  let to_enclosing_name l = Format.asprintf "%a" pp_rev_list l
+
+  let to_qualified_procname ?(loc = T.Location.Unknown) {hd; tl} : T.qualified_procname =
+    let enclosing_class =
+      if List.is_empty tl then T.TopLevel
+      else
+        let value = to_enclosing_name tl in
+        let type_name = type_name ~loc value in
+        T.Enclosing type_name
+    in
+    let name = {T.ProcName.value= hd; loc} in
+    {T.enclosing_class; name}
+
+
+  let to_type_name ?(loc = T.Location.Unknown) ?(static = false) {hd; tl} : T.TypeName.t =
+    let hd = if static then static_companion hd else hd in
+    let value = to_enclosing_name (hd :: tl) in
+    type_name ~loc value
+
+
+  let to_proc_name ?(loc = T.Location.Unknown) {hd; tl} : T.ProcName.t =
+    let value = to_enclosing_name tl in
+    let value = sprintf "%s.%s" value hd in
+    proc_name ~loc value
+
+
+  let to_constructor ?(loc = T.Location.Unknown) {hd; tl} : T.ProcName.t =
+    let value = to_enclosing_name (hd :: tl) in
+    proc_name ~loc value
+
+
+  let to_typ_struct loc id =
+    let typ = to_type_name ~loc id in
+    T.Typ.(Ptr (Struct typ))
+
+
+  let primitive_types =
+    let map = SMap.empty in
+    let map = SMap.add "int" pyInt map in
+    let map = SMap.add "str" pyString map in
+    let map = SMap.add "bool" pyBool map in
+    let map = SMap.add "float" pyFloat map in
+    let map = SMap.add "None" pyNone map in
+    let map = SMap.add "object" pyObject map in
+    map
+
+
+  let is_primitive_type {hd; tl} = match tl with [] -> SMap.mem hd primitive_types | _ -> false
+
+  let to_typ ?(loc = T.Location.Unknown) id =
+    let {hd; tl} = id in
+    let default = to_typ_struct loc id in
+    match tl with [] -> SMap.find_opt hd primitive_types |> Option.value ~default | _ -> default
+
+
+  let to_var_name ?(loc = T.Location.Unknown) {hd; tl} : T.VarName.t =
+    let value = String.concat ~sep:"::" @@ List.rev (hd :: tl) in
+    var_name ~loc value
+
+
+  let unknown_ident name = {hd= name; tl= ["$ambiguous"]}
+
+  let mk ?prefix name =
+    match prefix with Some {hd; tl} -> {hd= name; tl= hd :: tl} | None -> {hd= name; tl= []}
+
+
+  let mk_builtin name = {hd= name; tl= [builtins]}
+
+  let is_imported_ABC {hd; tl} =
+    match tl with
+    | [module_name] ->
+        String.equal ABC.base_class hd && String.equal ABC.import_name module_name
+    | _ ->
+        false
+
+
+  module Map = Caml.Map.Make (IDENT)
+end
+
+type annotated_name = {name: string; annotation: Ident.t}
+
+let pp_annotated_name fmt {name; annotation} =
+  Format.fprintf fmt "(%s: %a)" name Ident.pp annotation
+
 
 type signature = annotated_name list
 
@@ -134,16 +264,6 @@ let pp_signature fmt signature = Pp.seq ~sep:" -> " pp_annotated_name fmt signat
 let toplevel_function = "$toplevel"
 
 let static_method = "staticmethod"
-
-let static_companion name = sprintf "%s$static" name
-
-module ABC = struct
-  let abstract_method = "abstractmethod"
-
-  let import_name = "abc"
-
-  let base_class = "ABC"
-end
 
 let init__ = "__init__"
 

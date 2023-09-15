@@ -15,8 +15,8 @@ module DataStack = Env.DataStack
 module Builtin = PyBuiltin
 module Symbol = Env.Symbol
 module MakeFunctionFlags = PyCommon.MakeFunctionFlags
-
-let prefix_name ~module_name name = module_name ^ "::" ^ name
+module Ident = PyCommon.Ident
+module SMap = PyCommon.SMap
 
 let var_name = PyCommon.var_name
 
@@ -26,28 +26,44 @@ let proc_name = PyCommon.proc_name
 
 let field_name = PyCommon.field_name
 
-let type_name = PyCommon.type_name
-
 let qualified_procname = PyCommon.qualified_procname
+
+let mk_key global name = if global then Symbol.Global (Ident.mk name) else Symbol.Local name
+
+let lift_type_ident env type_id =
+  if Ident.is_primitive_type type_id then Some type_id
+  else
+    let key = Symbol.Global type_id in
+    match Env.lookup_symbol env key with Some {Symbol.kind= Class; id} -> Some id | _ -> None
+
+
+let lift_annotation env {PyCommon.name; annotation} =
+  Option.map ~f:(fun annotation -> {PyCommon.name; annotation}) (lift_type_ident env annotation)
+
 
 (** Turn a Python [FFI.Code.t] into a Textual [T.Exp.t], along with the required instructions to
     effectively perform the translation. *)
-let code_to_exp ~fun_or_class env name =
+let code_to_exp ~fun_or_class env key =
   let fname =
     (* TODO: support closures *)
-    let opt_sym = Env.lookup_symbol ~global:true env name in
-    match (opt_sym : Symbol.t option) with
-    | Some (Name _ as symbol) | Some (Class _ as symbol) | Some (Import _ as symbol) ->
-        L.die InternalError "[code_to_exp] Name/Class/Import %a is not a code object" Symbol.pp
-          symbol
-    | Some (Code _ as symbol) ->
-        let code_sep = if fun_or_class then "." else "::" in
-        Symbol.to_string ~code_sep symbol
-    | Some Builtin ->
-        L.die InternalError "[code_to_exp] unexpected Builtin: %s\n" name
+    match Env.lookup_symbol env key with
     | None ->
         (* Corner cases for things we don't support nicely at the moment *)
+        let id = Ident.unknown_ident "code" in
+        let name = Ident.to_string ~sep:"." id in
         name
+    | Some ({Symbol.kind; id} as symbol) -> (
+      match (kind : Symbol.kind) with
+      | Name _ | Import _ | ImportCall ->
+          L.die InternalError "[code_to_exp] Name/Class/Import %a is not a code object" Symbol.pp
+            symbol
+      | Class ->
+          Ident.to_string ~sep:"::" id
+      | Code ->
+          let sep = if fun_or_class then "." else "::" in
+          Ident.to_string ~sep id
+      | Builtin ->
+          L.die InternalError "[code_to_exp] unexpected Builtin: %a\n" Symbol.pp_key key )
   in
   let kind = if fun_or_class then Builtin.PythonCode else Builtin.PythonClass in
   let name = T.Exp.Const (Str fname) in
@@ -75,7 +91,8 @@ let rec py_to_exp env c =
   | PYCCode c ->
       (* We assume it's a function, as classes should only be seen during loading using
          [LOAD_BUILD_CLASS] *)
-      code_to_exp env ~fun_or_class:true c.FFI.Code.co_name
+      let key = Symbol.Global (Ident.mk c.FFI.Code.co_name) in
+      code_to_exp env ~fun_or_class:true key
   | PYCTuple arr ->
       let l = Array.to_list arr in
       let env, args =
@@ -87,35 +104,8 @@ let rec py_to_exp env c =
       (env, exp, PyCommon.pyObject)
 
 
-let type_of_annotation env raw_typ =
-  match raw_typ with
-  | "int" ->
-      PyCommon.pyInt
-  | "str" ->
-      PyCommon.pyString
-  | "bool" ->
-      PyCommon.pyBool
-  | "float" ->
-      PyCommon.pyFloat
-  | "None" ->
-      PyCommon.pyNone
-  | "object" ->
-      PyCommon.pyObject
-  | _ -> (
-      (* TODO: support nesting *)
-      let opt = Env.lookup_symbol env ~global:true raw_typ in
-      let typ = Option.bind ~f:Symbol.to_typ opt in
-      match typ with
-      | Some typ ->
-          typ
-      | None ->
-          Debug.p "[type_of_annotation] unsupported type: %s (%a)\n" raw_typ (Pp.option Symbol.pp)
-            opt ;
-          PyCommon.pyObject )
-
-
-let annotated_type_of_annotation env typ =
-  let typ = type_of_annotation env typ in
+let annotated_type_of_annotation typ =
+  let typ = Ident.to_typ typ in
   T.Typ.{typ; attributes= []}
 
 
@@ -125,12 +115,13 @@ let load_var_name env loc name =
   let info typ = Env.Info.default typ in
   let exp = T.Exp.Lvar (var_name ~loc name) in
   let loc = Env.loc env in
-  let opt_sym = Env.lookup_symbol ~global:false env name in
+  let key = Symbol.Local name in
+  let opt_sym = Env.lookup_symbol env key in
   let typ =
     match (opt_sym : Symbol.t option) with
-    | Some (Name {typ}) ->
+    | Some {Symbol.kind= Name {typ}} ->
         typ
-    | Some (Class _ | Code _ | Import _ | Builtin) ->
+    | Some _ ->
         (* Note: maybe PyCommon.pyObject would be better here, but I fail to catch new behavior early *)
         L.die InternalError "[load_cell] Can't load VarName %a\n" (Pp.option Symbol.pp) opt_sym
     | None ->
@@ -162,30 +153,31 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
   | Name {global; ndx} ->
       let name = co_names.(ndx) in
       let ({Env.Info.typ; kind} as info), qualified_name =
-        let opt_sym = Env.lookup_symbol ~global env name in
+        let key = mk_key global name in
+        let opt_sym = Env.lookup_symbol env key in
         match (opt_sym : Symbol.t option) with
-        | Some (Name {typ} as symbol_info) ->
-            let qname = Symbol.to_string symbol_info in
-            (default_info typ, qname)
-        | Some (Class _ as class_info) ->
-            L.die InternalError "[load_cell] with class: should never happen ?  %s"
-              (Symbol.to_string class_info)
-        | Some (Code _ as code_info) ->
-            let qname = Symbol.to_string code_info in
-            ({Env.Info.kind= Code; typ= PyCommon.pyCode}, qname)
-        | Some (Import _ as symbol) ->
-            let qname = Symbol.to_string symbol in
-            L.die InternalError "[load_cell] called with %s (import)" qname
-        | Some Builtin | None ->
-            (default, PyCommon.unknown_global name)
+        | Some {Symbol.kind= Name {typ}; id} ->
+            (default_info typ, id)
+        | Some {Symbol.kind= Class; id} ->
+            L.die InternalError "[load_cell] with class: should never happen ?  %a" Ident.pp id
+        | Some {Symbol.kind= Code; id} ->
+            ({Env.Info.kind= Code; typ= PyCommon.pyCode}, id)
+        | Some {Symbol.kind= Import _ | ImportCall; id} ->
+            L.die InternalError "[load_cell] called with %a (import)" Ident.pp id
+        | Some {Symbol.kind= Builtin; id} ->
+            L.die InternalError "[load_cell] called with %a (builtin)" Ident.pp id
+        | None ->
+            (default, Ident.unknown_ident name)
       in
-      let var_name = var_name ~loc qualified_name in
-      (* If we are trying to load some code, use the dedicated builtin *)
       if Env.Info.is_code kind then
-        let env, exp, typ = code_to_exp ~fun_or_class:true env qualified_name in
+        (* If we are trying to load some code, use the dedicated builtin *)
+        let fname = Ident.to_string ~sep:"." qualified_name in
+        let name = T.Exp.Const (Str fname) in
+        let env, id, typ = Env.mk_builtin_call env Builtin.PythonCode [name] in
         let info = {info with Env.Info.typ} in
-        (env, Ok exp, info)
+        (env, Ok (T.Exp.Var id), info)
       else
+        let var_name = Ident.to_var_name ~loc qualified_name in
         let exp = T.Exp.Lvar var_name in
         let loc = Env.loc env in
         let env, id = Env.mk_fresh_ident env info in
@@ -200,7 +192,8 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let info = Env.get_ident_info env id |> Option.value ~default in
       (env, Ok (T.Exp.Var id), info)
   | Code {fun_or_class; code} ->
-      let env, exp, typ = code_to_exp env ~fun_or_class code.FFI.Code.co_name in
+      let key = Symbol.Global (Ident.mk code.FFI.Code.co_name) in
+      let env, exp, typ = code_to_exp env ~fun_or_class key in
       let kind = if fun_or_class then Env.Info.Code else Env.Info.Class in
       let info = {Env.Info.typ; kind} in
       (env, Ok exp, info)
@@ -297,10 +290,11 @@ module LOAD = struct
       | GLOBAL ->
           let name = co_names.(arg) in
           if String.equal name "super" then
+            let key = Symbol.Global (Ident.mk "super") in
             (* [super] could have been defined in the current scope, so we have to first check
                this, to be sure the call to [super()] is to access the parent's methods, not some
                other symbol *)
-            if Option.is_some (Env.lookup_symbol env ~global:true "super") then
+            if Option.is_some (Env.lookup_symbol env key) then
               (env, DataStack.Name {global= true; ndx= arg})
             else (env, DataStack.Super)
           else (env, DataStack.Name {global= true; ndx= arg})
@@ -310,13 +304,18 @@ module LOAD = struct
           let env, res, {Env.Info.typ} = load_cell env code cell in
           let type_name = match (typ : T.Typ.t) with Ptr (Struct name) -> Some name | _ -> None in
           let fields = Option.bind type_name ~f:(Env.lookup_fields env) in
-          let field =
-            Option.bind fields
-              ~f:
-                (List.find_map ~f:(fun {PyCommon.name; annotation} ->
-                     Option.some_if (String.equal name fname) annotation ) )
+          let field_ty =
+            let open IOption.Let_syntax in
+            let* fields in
+            let* field_ty =
+              List.find_map
+                ~f:(fun {PyCommon.name; annotation} ->
+                  Option.some_if (String.equal name fname) annotation )
+                fields
+            in
+            lift_type_ident env field_ty
           in
-          let typ = Option.value_map ~default:PyCommon.pyObject ~f:(type_of_annotation env) field in
+          let typ = Option.value_map ~default:PyCommon.pyObject ~f:Ident.to_typ field_ty in
           match res with
           | Error s ->
               L.die ExternalError "Failed to load attribute %s from cell %a: %s" fname
@@ -360,8 +359,8 @@ let check_flags opname flags =
 
 module FUNCTION = struct
   module CALL = struct
-    let mk env fname ?(typ = PyCommon.pyObject) loc proc args =
-      let env = Option.value_map ~default:env ~f:(Env.register_call env) fname in
+    let mk env fid ?(typ = PyCommon.pyObject) loc proc args =
+      let env = Option.value_map ~default:env ~f:(Env.register_call env) fid in
       let call = T.Exp.call_non_virtual proc args in
       let info = Env.Info.default typ in
       let env, id = Env.mk_fresh_ident env info in
@@ -382,47 +381,46 @@ module FUNCTION = struct
 
         After: [ result | rest-of-the-stack ] *)
 
-    let static_call env opname code fname cells =
+    let static_call env opname code fid cells =
       let env, args = cells_to_textual env opname code cells in
       let loc = Env.loc env in
       (* TODO: support nesting *)
-      let opt_sym = Env.lookup_symbol ~global:true env fname in
-      let mk env ?typ proc = mk env (Some fname) ?typ loc proc args in
-      match (opt_sym : Symbol.t option) with
-      | Some (Import _ as symbol) ->
-          L.die InternalError "[static_call] Invalid Import (%s) spotted" (Symbol.to_string symbol)
-      | Some Builtin ->
-          (* TODO: propagate builtin type information *)
-          let proc = PyCommon.builtin_name fname in
-          mk env proc
-      | Some (Name {is_imported} as symbol) ->
-          (* TODO: propagate type information if available *)
-          let proc = Symbol.to_qualified_procname symbol in
-          let env = if is_imported then Env.register_import env (Env.Import.Call proc) else env in
-          mk env proc
-      | Some (Code _ as symbol) ->
-          (* TODO: propagate type information if available *)
-          let proc = Symbol.to_qualified_procname symbol in
-          mk env proc
-      | Some (Class _ as symbol) ->
-          (* TODO: support nesting. Maybe add to_proc_name to Symbol *)
-          let name = Symbol.to_string ~code_sep:"::" symbol in
-          let typ =
-            let type_name = type_name ~loc name in
-            let t = T.Typ.Struct type_name in
-            T.Typ.Ptr t
-          in
-          let name = proc_name ~loc name in
-          let proc : T.qualified_procname = {enclosing_class= TopLevel; name} in
-          mk env ~typ proc
+      let key = Symbol.Global fid in
+      let mk env ?typ proc = mk env (Some fid) ?typ loc proc args in
+      match Env.lookup_symbol env key with
       | None ->
           (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
              further analysis *)
           let proc =
             let enclosing_class = T.TypeName.wildcard in
-            qualified_procname ~enclosing_class @@ proc_name ~loc fname
+            qualified_procname ~enclosing_class @@ Ident.to_proc_name ~loc fid
           in
           mk env proc
+      | Some symbol -> (
+        match (symbol : Symbol.t) with
+        | {kind= Import _ | ImportCall; id} ->
+            L.die InternalError "[static_call] Invalid Import (%a) spotted" Ident.pp id
+        | {kind= Builtin; id} ->
+            (* TODO: propagate builtin type information *)
+            let proc = Ident.to_qualified_procname id in
+            mk env proc
+        | {kind= Name {is_imported}; id} ->
+            (* TODO: propagate type information if available *)
+            let proc = Ident.to_qualified_procname id in
+            let key = Symbol.Global id in
+            let symbol_info = {Symbol.kind= ImportCall; id; loc} in
+            let env = if is_imported then Env.register_symbol env key symbol_info else env in
+            mk env proc
+        | {kind= Code; id} ->
+            (* TODO: propagate type information if available *)
+            let proc = Ident.to_qualified_procname id in
+            mk env proc
+        | {kind= Class; id} ->
+            (* TODO: support nesting. Maybe add to_proc_name to Symbol *)
+            let typ = Ident.to_typ ~loc id in
+            let name = Ident.to_constructor ~loc id in
+            let proc : T.qualified_procname = {enclosing_class= TopLevel; name} in
+            mk env ~typ proc )
 
 
     let dynamic_call env opname code caller_id cells =
@@ -435,6 +433,7 @@ module FUNCTION = struct
 
     let builtin_build_class env code opname name_cell code_cell parent_cell =
       let as_name kind cell =
+        (* TODO: FIXME *)
         match DataStack.as_name code cell with
         | Some name ->
             name
@@ -443,21 +442,7 @@ module FUNCTION = struct
               DataStack.pp_cell name_cell
       in
       let code_name = as_name "base" name_cell in
-      let parent_name =
-        Option.map
-          ~f:(fun cell ->
-            let short_parent = as_name "parent" cell in
-            let loc = Env.loc env in
-            let default =
-              Symbol.Class
-                { class_name=
-                    Symbol.Qualified.mk ~prefix:[] (PyCommon.unknown_global short_parent) loc }
-            in
-            (* TODO: support nesting *)
-            let sym = Env.lookup_symbol env ~global:true short_parent in
-            Option.value ~default sym )
-          parent_cell
-      in
+      let parent = Option.map ~f:(fun cell -> Ident.mk @@ as_name "parent" cell) parent_cell in
       let code =
         match DataStack.as_code code code_cell with
         | Some code ->
@@ -466,7 +451,7 @@ module FUNCTION = struct
             L.die ExternalError "[%s] expected code object but got %a" opname DataStack.pp_cell
               code_cell
       in
-      let env = Env.register_class env code_name {Env.parent= parent_name} in
+      let env = Env.register_class env code_name parent in
       let env = Env.push env (DataStack.Code {fun_or_class= false; code_name; code}) in
       env
 
@@ -476,11 +461,10 @@ module FUNCTION = struct
       let env, cells = pop_n_datastack opname env arg [] in
       Debug.p "  #args = %d\n" (List.length cells) ;
       let env, fname = pop_datastack opname env in
-      Debug.p "  fname = %a\n" DataStack.pp_cell fname ;
       match (fname : DataStack.cell) with
       | Name {ndx} ->
-          let fname = co_names.(ndx) in
-          static_call env opname code fname cells
+          let fid = Ident.mk @@ co_names.(ndx) in
+          static_call env opname code fid cells
       | Temp id ->
           dynamic_call env opname code id cells
       | Code {code_name} ->
@@ -508,7 +492,7 @@ module FUNCTION = struct
   end
 
   module MAKE = struct
-    let unpack_annotations {FFI.Code.co_names; co_consts} annotations =
+    let unpack_annotations env {FFI.Code.co_names; co_consts} annotations =
       let unpack =
         List.fold_left ~init:(Some [])
           ~f:(fun acc (name, c) ->
@@ -516,12 +500,16 @@ module FUNCTION = struct
             | None, _ ->
                 None
             | Some acc, DataStack.Name {ndx} ->
-                let annotation = co_names.(ndx) in
-                Some ({PyCommon.name; annotation} :: acc)
+                let annotation = Ident.mk @@ co_names.(ndx) in
+                let typed_name = {PyCommon.name; annotation} in
+                let typed_name =
+                  Option.value ~default:typed_name (lift_annotation env typed_name)
+                in
+                Some (typed_name :: acc)
             | Some acc, DataStack.Const ndx -> (
               match co_consts.(ndx) with
               | FFI.Constant.PYCNone ->
-                  Some ({PyCommon.name; annotation= "None"} :: acc)
+                  Some ({PyCommon.name; annotation= Ident.mk "None"} :: acc)
               | _ ->
                   Some acc )
             | Some acc, c ->
@@ -562,7 +550,7 @@ module FUNCTION = struct
           (env, annotations) )
         else (env, None)
       in
-      let annotations = Option.value_map ~default:[] ~f:(unpack_annotations code) annotations in
+      let annotations = Option.value_map ~default:[] ~f:(unpack_annotations env code) annotations in
       let code =
         match DataStack.as_code code body with
         | None ->
@@ -634,48 +622,46 @@ module METHOD = struct
       let current_module = Env.module_name env in
       (* current_module is a fully qualified name like foo#C, but we want to extract that C part
          only to lookup in our set of known classes. *)
-      let class_name =
-        match Str.split (Str.regexp "::") current_module |> List.last with
-        | Some name ->
-            name
-        | None ->
-            (* TODO: support nesting *)
-            L.die InternalError "Can't extract class name from fully qualified name %s\n"
-              current_module
-      in
+      let class_name = Ident.short current_module in
       let classes = Env.get_declared_classes env in
-      let class_info = Env.SMap.find_opt class_name classes in
+      let class_info = SMap.find_opt class_name classes in
       let params = Env.get_params env in
       let is_static = Env.is_static env in
       let parent_info =
         match class_info with
         | None ->
-            L.die ExternalError "Call to super() spotted in %s which not a registered class"
-              current_module
-        | Some {Env.parent} ->
+            L.die ExternalError "Call to super() spotted in %a which is not a registered class"
+              Ident.pp current_module
+        | Some {parent} ->
             parent
       in
       let parent_name =
         match parent_info with
         | None ->
             L.die ExternalError
-              "Call to super() spotted in %s which doesn't have a registered parent class"
+              "Call to super() spotted in %a which doesn't have a registered parent class" Ident.pp
               current_module
-        | Some parent ->
-            parent
+        | Some parent -> (
+            let key = Symbol.Global parent in
+            match Env.lookup_symbol env key with
+            | None ->
+                L.die InternalError "Missing symbol for parent: %a\n" Ident.pp parent
+            | Some {Symbol.id} ->
+                id )
       in
       let self =
         if is_static then
-          L.die ExternalError "Call to super() spotted in a static method of %s" current_module ;
+          L.die ExternalError "Call to super() spotted in a static method of %a" Ident.pp
+            current_module ;
         match List.hd params with
         | None ->
-            L.die ExternalError "Empty parameter list makes illegal call to super() in %s"
+            L.die ExternalError "Empty parameter list makes illegal call to super() in %a" Ident.pp
               current_module
         | Some self ->
             self
       in
-      let super_type = Symbol.to_type_name ~is_static:false parent_name in
       let loc = Env.loc env in
+      let super_type = Ident.to_type_name ~loc parent_name in
       let env, res, _ = load_var_name env loc self in
       match res with
       | Ok receiver ->
@@ -686,7 +672,8 @@ module METHOD = struct
           let env = Env.push env (DataStack.StaticCall {call_name; receiver= Some receiver}) in
           (env, None)
       | Error s ->
-          L.die UserError "[super()] failed to load self (a.k.a %s) in %s: %s" self current_module s
+          L.die UserError "[super()] failed to load self (a.k.a %s) in %a: %s" self Ident.pp
+            current_module s
 
 
     (** {v LOAD_METHOD(namei) v}
@@ -703,18 +690,17 @@ module METHOD = struct
       match (cell : DataStack.cell) with
       | Name {global; ndx} -> (
           let name = co_names.(ndx) in
-          let opt_sym = Env.lookup_symbol env ~global name in
+          let key = mk_key global name in
+          let opt_sym = Env.lookup_symbol env key in
           match (opt_sym : Symbol.t option) with
-          | Some (Import {import_path}) ->
+          | Some {kind= Import _; id} ->
               let loc = Env.loc env in
-              let enclosing_class = type_name ~loc import_path in
-              let proc = qualified_procname ~enclosing_class @@ proc_name ~loc method_name in
-              let env = Env.push env (DataStack.ImportCall proc) in
+              let id = Ident.mk ~prefix:id method_name in
+              let env = Env.push env (DataStack.ImportCall {loc; id}) in
               (env, None)
-          | Some (Class _ as qname) ->
+          | Some {kind= Class; id} ->
               let loc = Env.loc env in
-              let class_name = Symbol.to_string ~static:true qname in
-              let enclosing_class = type_name ~loc class_name in
+              let enclosing_class = Ident.to_type_name ~loc ~static:true id in
               let call_name = qualified_procname ~enclosing_class @@ proc_name ~loc method_name in
               let env = Env.push env (DataStack.StaticCall {call_name; receiver= None}) in
               (env, None)
@@ -740,9 +726,11 @@ module METHOD = struct
       let env, args = cells_to_textual env opname code cells in
       let env, cell_mi = pop_datastack opname env in
       match (cell_mi : DataStack.cell) with
-      | ImportCall proc ->
-          let loc = Env.loc env in
-          let env = Env.register_import env (Env.Import.Call proc) in
+      | ImportCall {id; loc} ->
+          let key = Symbol.Global id in
+          let symbol_info = {Symbol.kind= ImportCall; id; loc} in
+          let env = Env.register_symbol env key symbol_info in
+          let proc = Ident.to_qualified_procname ~loc id in
           FUNCTION.CALL.mk env None loc proc args
       | StaticCall {call_name; receiver} ->
           let loc = Env.loc env in
@@ -808,20 +796,18 @@ module STORE = struct
     | Ok exp -> (
         let {Env.Info.typ; kind} = info in
         let module_name = Env.module_name env in
-        let qname = Symbol.Qualified.mk ~prefix:[module_name] name loc in
+        let id = Ident.mk ~prefix:module_name name in
         let symbol_info =
           match (kind : Env.Info.kind) with
           | Code ->
-              Symbol.Code {code_name= qname}
+              {Symbol.kind= Code; loc; id}
           | Class ->
-              Symbol.Class {class_name= qname}
+              {Symbol.kind= Class; loc; id}
           | Other ->
-              let prefix = if global then [module_name] else [] in
-              let qname = Symbol.Qualified.mk ~prefix name loc in
-              Symbol.Name {symbol_name= qname; is_imported= false; typ}
+              let id = if global then Ident.mk ~prefix:module_name name else Ident.mk name in
+              {Symbol.kind= Name {is_imported= false; typ}; loc; id}
         in
-        let gname = Symbol.to_string symbol_info in
-        let var_name = var_name ~loc gname in
+        let var_name = Ident.to_var_name ~loc symbol_info.Symbol.id in
         if is_attr then
           let env, cell = pop_datastack opname env in
           let env, value, {Env.Info.typ} = load_cell env code cell in
@@ -839,19 +825,18 @@ module STORE = struct
               let env = Env.push_instr env instr in
               (env, None)
         else
+          let key = mk_key global name in
+          let env = Env.register_symbol env key symbol_info in
           match (kind : Env.Info.kind) with
           | Class ->
               Debug.p "  top-level class declaration initialized\n" ;
-              let _, env = Env.register_symbol ~global env name symbol_info in
               (env, None)
           | Code ->
-              let _, env = Env.register_symbol ~global env name symbol_info in
               if global then (
                 Debug.p "  top-level function defined\n" ;
                 (env, None) )
               else L.die InternalError "[%s] no support for closure at the moment: %s" opname name
           | Other ->
-              let _, env = Env.register_symbol ~global env name symbol_info in
               let instr = T.Instr.Store {exp1= Lvar var_name; typ= Some typ; exp2= exp; loc} in
               (Env.push_instr env instr, None) )
     | Error s ->
@@ -875,28 +860,43 @@ module STORE = struct
     let env, cell = pop_datastack opname env in
     match (cell : DataStack.cell) with
     | Import {import_path; symbols} ->
-        let symbol_info = Symbol.Import {import_path} in
-        let already_imported, env = Env.register_symbol ~global env name symbol_info in
+        let key = Symbol.Global import_path in
+        let first_bind =
+          match Env.lookup_symbol env key with
+          | None ->
+              None
+          | Some symbol -> (
+            match symbol with
+            | {Symbol.kind= Import {more_than_once}; id; loc} when not more_than_once ->
+                Some (id, loc)
+            | _ ->
+                None )
+        in
         let env =
           (* Side effects from imports are only run once *)
-          if already_imported then env
-          else
-            let enclosing_class = type_name ~loc import_path in
-            let proc =
-              qualified_procname ~enclosing_class @@ proc_name ~loc PyCommon.toplevel_function
-            in
-            let env, _is_always_none = FUNCTION.CALL.mk env None loc proc [] in
-            (* Python toplevel code can't use [return] but still we just put a useless Textual id
-               on the stack. Popping it *)
-            let env, _ = pop_datastack "STORE_IMPORTED_NAME" env in
-            env
+          match first_bind with
+          | None ->
+              env
+          | Some (id, loc) ->
+              let symbol_info = {Symbol.kind= Import {more_than_once= true}; loc; id} in
+              let env = Env.register_symbol env key symbol_info in
+              let enclosing_class = Ident.to_type_name ~loc import_path in
+              let proc =
+                qualified_procname ~enclosing_class @@ proc_name ~loc PyCommon.toplevel_function
+              in
+              let env, _is_always_none = FUNCTION.CALL.mk env None loc proc [] in
+              (* Python toplevel code can't use [return] but still we just put a useless Textual id
+                 on the stack. Popping it *)
+              let env, _ = pop_datastack "STORE_IMPORTED_NAME" env in
+              env
         in
         let env =
           List.fold_left ~init:env symbols ~f:(fun env symbol ->
-              let symbol_name = Symbol.Qualified.mk ~prefix:[import_path] symbol loc in
+              let id = Ident.mk ~prefix:import_path symbol in
               let typ = PyCommon.pyObject in
-              let symbol_info = Symbol.Name {symbol_name; is_imported= true; typ} in
-              snd @@ Env.register_symbol ~global env symbol symbol_info )
+              let symbol_info = {Symbol.kind= Name {is_imported= true; typ}; loc; id} in
+              let key = mk_key global symbol in
+              Env.register_symbol env key symbol_info )
         in
         (env, None)
     | _ ->
@@ -1415,9 +1415,15 @@ module IMPORT = struct
             L.die InternalError "[%s] missing support from [fromlist] or [level]" opname
       | None ->
           L.die UserError "[%s] failed to load [level] from the stack" opname ) ;
-      (* TODO: split the path on '.'. For now, only support [import foo] *)
-      let import_path = co_names.(arg) in
-      let env = Env.register_import env (Env.Import.TopLevel import_path) in
+      let loc = Env.loc env in
+      let import_path = Ident.mk co_names.(arg) in
+      let key = Symbol.Global import_path in
+      let env =
+        if Option.is_none (Env.lookup_symbol env key) then
+          let symbol_info = {Symbol.kind= Import {more_than_once= false}; id= import_path; loc} in
+          Env.register_symbol env key symbol_info
+        else env
+      in
       let from_list =
         if Option.is_none from_list then
           L.debug Capture Quiet "[IMPORT_NAME] failed to process `from_list`\n" ;
@@ -1751,26 +1757,23 @@ let rec nodes env label_info code instructions =
 
 (** Process a single code unit (toplevel code, function body, ...) *)
 let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} as code) =
-  Debug.p "[to_proc_desc] %s %a\n" enclosing_class_name (Pp.option F.pp_print_string) opt_name ;
-  let is_toplevel, is_static, is_abstract, name, enclosing_class_name, annotations =
+  Debug.p "[to_proc_desc] %a %a\n" Ident.pp enclosing_class_name (Pp.option F.pp_print_string)
+    opt_name ;
+  let is_toplevel, is_static, is_abstract, name, annotations =
     match opt_name with
     | None ->
-        let return_typ = {PyCommon.name= PyCommon.return; annotation= "None"} in
-        (true, false, false, PyCommon.toplevel_function, enclosing_class_name, [return_typ])
+        let return_typ = {PyCommon.name= PyCommon.return; annotation= Ident.mk "None"} in
+        (true, false, false, PyCommon.toplevel_function, [return_typ])
     | Some name -> (
         let signature = Env.lookup_method env ~enclosing_class:enclosing_class_name name in
         match signature with
         | None ->
-            (false, false, false, name, enclosing_class_name, [])
+            (false, false, false, name, [])
         | Some {Env.Signature.is_static; is_abstract; annotations} ->
-            let enclosing_class_name =
-              if is_static then PyCommon.static_companion enclosing_class_name
-              else enclosing_class_name
-            in
-            (false, is_static, is_abstract, name, enclosing_class_name, annotations) )
+            (false, is_static, is_abstract, name, annotations) )
   in
   let proc_name = proc_name ~loc name in
-  let enclosing_class = type_name ~loc enclosing_class_name in
+  let enclosing_class = Ident.to_type_name ~loc ~static:is_static enclosing_class_name in
   let qualified_name = qualified_procname ~enclosing_class proc_name in
   let pyObject = T.Typ.{typ= PyCommon.pyObject; attributes= []} in
   let params = FFI.Code.get_arguments code in
@@ -1794,7 +1797,7 @@ let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} 
   let types =
     List.map
       ~f:(fun {PyCommon.name; annotation} ->
-        let annotation = annotated_type_of_annotation env annotation in
+        let annotation = annotated_type_of_annotation annotation in
         (name, annotation) )
       annotations
   in
@@ -1803,10 +1806,10 @@ let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} 
       ~f:(fun env {T.VarName.value; loc} ->
         let typ = List.Assoc.find types ~equal:String.equal value in
         let typ = Option.value typ ~default:pyObject in
-        let symbol_name = Symbol.Qualified.mk ~prefix:[] value loc in
-        let sym = Symbol.Name {symbol_name; is_imported= false; typ= typ.T.Typ.typ} in
-        let env = Env.register_symbol env ~global:false value sym in
-        (snd env, typ) )
+        let id = Ident.mk value in
+        let sym = {Symbol.kind= Name {is_imported= false; typ= typ.T.Typ.typ}; id; loc} in
+        let env = Env.register_symbol env (Symbol.Local value) sym in
+        (env, typ) )
       params
   in
   let result_type =
@@ -1846,9 +1849,10 @@ let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} 
 
    TODO: we currently do not support __new__ being overriden by the user.
 *)
-let constructor env full_name loc has_init =
-  let mk typ = annotated_type_of_annotation env typ in
-  let struct_ = T.Typ.(Struct (type_name ~loc full_name)) in
+let constructor full_name loc has_init =
+  let mk typ = annotated_type_of_annotation typ in
+  let full_type_name = Ident.to_type_name ~loc full_name in
+  let struct_ = T.Typ.(Struct full_type_name) in
   let sil_allocate : T.qualified_procname =
     {enclosing_class= TopLevel; name= proc_name T.builtin_allocate}
   in
@@ -1878,15 +1882,14 @@ let constructor env full_name loc has_init =
           (T.Ident.next next_id, T.Exp.Var next_id :: ids, instr :: instrs) )
     in
     let ns = List.rev rev_ns in
-    let enclosing_class = type_name ~loc full_name in
     let init = proc_name ~loc PyCommon.init__ in
-    let init = qualified_procname ~enclosing_class init in
+    let init = qualified_procname ~enclosing_class:full_type_name init in
     let init = T.Exp.call_virtual init (T.Exp.Var n0) ns in
     let load = T.Instr.Let {id= n; exp= init; loc} in
     let loads = List.rev (load :: rev_loads) in
     (loads, params, formals_types)
   in
-  let result_type = T.Typ.mk_without_attributes @@ PyCommon.mk_type full_name in
+  let result_type = T.Typ.mk_without_attributes @@ Ident.to_typ full_name in
   let last = T.Terminator.Ret (T.Exp.Var n0) in
   let label = node_name ~loc PyCommon.entry in
   let node =
@@ -1899,7 +1902,8 @@ let constructor env full_name loc has_init =
     ; label_loc= loc }
   in
   let procdecl =
-    { T.ProcDecl.qualified_name= {enclosing_class= TopLevel; name= proc_name ~loc full_name}
+    { T.ProcDecl.qualified_name=
+        {enclosing_class= TopLevel; name= Ident.to_constructor ~loc full_name}
     ; formals_types= Some formals_types
     ; result_type
     ; attributes= [] }
@@ -1917,13 +1921,13 @@ let constructor_stubs ~kind loc class_name =
     match kind with
     | `Ctor ->
         let qualified_name : T.qualified_procname =
-          {T.enclosing_class= TopLevel; name= proc_name ~loc class_name}
+          {T.enclosing_class= TopLevel; name= Ident.to_constructor ~loc class_name}
         in
-        let result_type = T.Typ.mk_without_attributes @@ PyCommon.mk_type class_name in
+        let result_type = T.Typ.mk_without_attributes @@ Ident.to_typ class_name in
         (qualified_name, result_type)
     | `Init ->
         let qualified_name : T.qualified_procname =
-          { T.enclosing_class= Enclosing (type_name ~loc class_name)
+          { T.enclosing_class= Enclosing (Ident.to_type_name ~loc class_name)
           ; name= proc_name ~loc PyCommon.init__ }
         in
         let result_type = T.Typ.mk_without_attributes @@ PyCommon.pyNone in
@@ -1935,15 +1939,15 @@ let constructor_stubs ~kind loc class_name =
 (** Process the special function generated by the Python compiler to create a class instances. This
     is where we can see some of the type annotations for fields, and method definitions. *)
 let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as code) loc parent =
-  Debug.p "[class declaration] %s (%a)\n" co_name (Pp.option Symbol.pp) parent ;
+  Debug.p "[class declaration] %s (%a)\n" co_name (Pp.option Ident.pp) parent ;
   (* TODO:
      - use annotations to declare class member types
      - pass in [env] to PyClassDecl when we'll support decorators
   *)
-  let class_name = prefix_name ~module_name co_name in
-  let static_class_name = prefix_name ~module_name (PyCommon.static_companion co_name) in
-  let class_type_name = type_name ~loc class_name in
-  let static_class_type_name = type_name ~loc static_class_name in
+  let class_name = Ident.mk ~prefix:module_name co_name in
+  let static_class_name = Ident.mk ~prefix:module_name (PyCommon.static_companion co_name) in
+  let class_type_name = Ident.to_type_name ~loc class_name in
+  let static_class_type_name = Ident.to_type_name ~loc static_class_name in
   let {PyClassDecl.members; methods; static_methods; has_init; has_new} =
     PyClassDecl.parse_class_declaration code co_name instructions
   in
@@ -1954,7 +1958,8 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
         let env =
           match FFI.Constant.as_code code with
           | Some code ->
-              let info = {PyEnv.Signature.is_static; is_abstract; annotations= signature} in
+              let annotations = List.filter_map ~f:(lift_annotation env) signature in
+              let info = {PyEnv.Signature.is_static; is_abstract; annotations} in
               Env.register_method env ~enclosing_class:class_name ~method_name:code.FFI.Code.co_name
                 info
           | None ->
@@ -1969,22 +1974,36 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
   let env = Env.register_fields env class_type_name members in
   let fields =
     List.map members ~f:(fun {PyCommon.name; annotation} ->
+        let annotation =
+          let lifted_annotation = lift_type_ident env annotation in
+          Option.value ~default:annotation lifted_annotation
+        in
         let name = field_name ~loc name in
         let qualified_name = {T.enclosing_class= class_type_name; name} in
-        let typ = type_of_annotation env annotation in
+        let typ = Ident.to_typ annotation in
         {T.FieldDecl.qualified_name; typ; attributes= []} )
   in
-  let module_name = prefix_name ~module_name co_name in
-  let env, decls = to_proc_descs env module_name (Array.of_list codes) in
+  let env, decls = to_proc_descs env class_name (Array.of_list codes) in
   let supers, static_supers =
     match parent with
     | None ->
         ([], [])
     | Some parent ->
-        if Symbol.is_imported_ABC parent then ([], [])
+        let parent_id =
+          let key = Symbol.Global parent in
+          match Env.lookup_symbol env key with Some {Symbol.id} -> Some id | _ -> None
+        in
+        let is_imported_from_ABC =
+          Option.value_map ~default:false ~f:Ident.is_imported_ABC parent_id
+        in
+        if is_imported_from_ABC then ([], [])
         else
-          let supers = [Symbol.to_type_name ~is_static:false parent] in
-          let static_supers = [Symbol.to_type_name ~is_static:true parent] in
+          let parent =
+            (* TODO: probably fix this if a parent class is imported *)
+            Option.value parent_id ~default:(Ident.unknown_ident (Ident.to_string ~sep:"::" parent))
+          in
+          let supers = [Ident.to_type_name ~static:false parent] in
+          let static_supers = [Ident.to_type_name ~static:true parent] in
           (supers, static_supers)
   in
   let t = T.Module.Struct {name= class_type_name; supers; fields; attributes= []} in
@@ -1997,7 +2016,8 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
   in
   (* TODO(vsiles) compare with Hack's get_static_companion when we'll introduce static members *)
   let companion_const =
-    T.Module.Global {name= var_name ~loc static_class_name; typ= PyCommon.pyObject; attributes= []}
+    T.Module.Global
+      {name= Ident.to_var_name ~loc static_class_name; typ= PyCommon.pyObject; attributes= []}
   in
   let ctor_and_init =
     match has_init with
@@ -2007,7 +2027,7 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
         [init; ctor]
     | Some has_init ->
         (* [__init__] is already present in the source code, only generate the constructor. *)
-        let ctor = constructor env class_name loc has_init in
+        let ctor = constructor class_name loc has_init in
         [ctor]
   in
   (env, (t :: companion :: companion_const :: ctor_and_init) @ decls)
@@ -2017,21 +2037,22 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
 
 (** Process multiple [code] objects. Usually called by the toplevel function or by a class
     definition. *)
-and to_proc_descs env enclosing_class_name codes =
-  Debug.p "[to_proc_descs] %s\n" enclosing_class_name ;
+and to_proc_descs env enclosing_class_id codes =
+  Debug.p "[to_proc_descs] %a\n" Ident.pp enclosing_class_id ;
   Array.fold codes ~init:(env, []) ~f:(fun (env, decls) const ->
       match FFI.Constant.as_code const with
       | None ->
           (env, decls)
       | Some ({FFI.Code.co_name; instructions} as code) -> (
           let loc = first_loc_of_code instructions in
+          (* TODO: supported nested classes *)
           let classes = Env.get_declared_classes env in
-          match Env.SMap.find_opt co_name classes with
-          | Some {Env.parent} ->
-              let env, new_decls = class_declaration env enclosing_class_name code loc parent in
+          match SMap.find_opt co_name classes with
+          | Some {parent} ->
+              let env, new_decls = class_declaration env enclosing_class_id code loc parent in
               (env, new_decls @ decls)
           | None ->
-              let env, decl = to_proc_desc env loc enclosing_class_name (Some co_name) code in
+              let env, decl = to_proc_desc env loc enclosing_class_id (Some co_name) code in
               (env, decl :: decls) ) )
 
 
@@ -2042,13 +2063,17 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
   Debug.p "[to_module] %a %s\n" T.SourceFile.pp sourcefile co_name ;
   if not (String.equal co_name "<module>") then
     L.die ExternalError "Toplevel modules must be named '<module>'. Got %s" co_name ;
-  let module_name = Stdlib.Filename.remove_extension co_filename in
-  let env = Env.empty in
+  let module_name = Ident.from_string @@ Stdlib.Filename.remove_extension co_filename in
+  let env = Env.empty module_name in
   (* Process top level module first, to gather all global definitions.
      This will also help us identify what is a class and what is a function,
      before processing the rest of the [co_consts]. There is no flag to
      distinguish class definitions from function definitions in the bytecode
      format.
+
+     TODO: we should process classes (at least partially) first to get their
+     method signatures and field types to get more type information while
+     parsing the toplevel blob.
 
 
      TODO: scoping might require fixing.
@@ -2077,17 +2102,16 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
   let env, decl = to_proc_desc env loc module_name None code in
   (* Translate globals to Textual *)
   let globals =
-    Env.SMap.fold
-      (fun _name sym acc ->
-        match (sym : Symbol.t) with
+    Ident.Map.fold
+      (fun _name {Symbol.kind; id; loc} acc ->
+        match (kind : Symbol.kind) with
         | Name {is_imported} ->
             if is_imported then acc
             else
-              let qname = Symbol.to_string sym in
-              let varname = var_name ~loc qname in
+              let varname = Ident.to_var_name ~loc id in
               let global = T.Global.{name= varname; typ= PyCommon.pyObject; attributes= []} in
               T.Module.Global global :: acc
-        | Builtin | Code _ | Class _ | Import _ ->
+        | Builtin | Code | Class | Import _ | ImportCall ->
             (* don't generate a global variable name, it will be declared as a toplevel decl *)
             acc )
       (Env.globals env) []

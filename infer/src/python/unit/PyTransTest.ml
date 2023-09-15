@@ -1133,7 +1133,7 @@ print(c.z)
               n1:*PyInt = load &x
               store n0.?.x <- n1:*PyInt
               n2:*dummy::IntBox = load &self
-              n3 = $builtins.python_code("<lambda>")
+              n3 = $builtins.python_code("$ambiguous.code")
               store n2.?.f <- n3:*PyCode
               ret null
 
@@ -1179,7 +1179,7 @@ print(c.z)
 
         type .static dummy::IntBox$static = {}
 
-        type dummy::IntBox = {f: *PyObject; x: *PyInt}
+        type dummy::IntBox = {f: *Callable[[int, bool, str], None]; x: *PyInt}
 
         define dummy.getX(box: *dummy::IntBox) : *PyInt {
           #b0:
@@ -1340,6 +1340,90 @@ C.f()
         declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+class A:
+    def f(self):
+        pass
+
+class C:
+    a: A
+
+def g(c: C) -> None:
+    print(c.a.f())
+
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+    .source_language = "python"
+
+    define dummy.$toplevel() : *PyNone {
+      #b0:
+          n0 = $builtins.python_class("dummy::A")
+          n1 = $builtins.python_class("dummy::C")
+          n2 = $builtins.python_code("dummy.g")
+          ret null
+
+    }
+
+    define dummy::A.f(self: *dummy::A) : *PyObject {
+      #b0:
+          ret null
+
+    }
+
+    declare dummy::A(...) : *dummy::A
+
+    declare dummy::A.__init__(...) : *PyNone
+
+    global dummy::A$static: *PyObject
+
+    type .static dummy::A$static = {}
+
+    type dummy::A = {}
+
+    declare dummy::C(...) : *dummy::C
+
+    declare dummy::C.__init__(...) : *PyNone
+
+    global dummy::C$static: *PyObject
+
+    type .static dummy::C$static = {}
+
+    type dummy::C = {a: *dummy::A}
+
+    define dummy.g(c: *dummy::C) : *PyNone {
+      #b0:
+          n0:*dummy::C = load &c
+          n1:*dummy::A = load n0.?.a
+          n2 = n1.?.f()
+          n3 = $builtins.print(n2)
+          ret null
+
+    }
+
+    declare $builtins.print(...) : *PyObject
+
+    declare $builtins.python_code(*String) : *PyCode
+
+    declare $builtins.python_class(*String) : *PyClass
+
+    declare $builtins.python_tuple(...) : *PyObject
+
+    declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+    declare $builtins.python_string(*String) : *PyString
+
+    declare $builtins.python_bool(int) : *PyBool
+
+    declare $builtins.python_float(float) : *PyFloat
+
+    declare $builtins.python_int(int) : *PyInt |}]
   end )
 
 
@@ -1801,8 +1885,7 @@ class C(ABC):
         define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = abc.$toplevel()
-              n1 = abc.$toplevel()
-              n2 = $builtins.python_class("dummy::C")
+              n1 = $builtins.python_class("dummy::C")
               ret null
 
         }
