@@ -1427,7 +1427,7 @@ def g(c: C) -> None:
   end )
 
 
-let%test_module "simple import" =
+let%test_module "import" =
   ( module struct
     let%expect_test _ =
       let source =
@@ -1574,6 +1574,171 @@ class MyTest(unittest.TestCase):
         declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    (* Extracted from Cinder's test suite. Currently amended to avoid unsupported opcodes *)
+    let%expect_test _ =
+      let source =
+        {|
+import os
+import sys
+from test.libregrtest import main
+
+
+main_in_temp_cwd = main
+
+
+def _main():
+    global __file__
+
+    mydir = os.path.abspath(os.path.normpath(os.path.dirname(sys.argv[0])))
+    # i = len(sys.path) - 1 # we don't support BINARY_SUBTRACT yet
+    i = len(sys.path)
+    # while i >= 0:
+    while i == 0:
+        if os.path.abspath(os.path.normpath(sys.path[i])) == mydir:
+            # del sys.path[i] # not supported yet
+            pass
+        else:
+            # i -= 1 # we don't support this yet
+            i = 0
+
+    __file__ = os.path.abspath(__file__)
+
+    # sanity check
+    # assert __file__ == os.path.abspath(sys.argv[0]) # not supported yet
+
+    main()
+
+
+if __name__ == '__main__':
+    _main()
+      |}
+      in
+      test source ;
+      [%expect
+        {|
+      .source_language = "python"
+
+      define dummy.$toplevel() : *PyNone {
+        #b0:
+            n0 = os.$toplevel()
+            n1 = sys.$toplevel()
+            n2 = test.libregrtest.$toplevel()
+            n3:*PyObject = load &test.libregrtest::main
+            store &dummy::main_in_temp_cwd <- n3:*PyObject
+            n4 = $builtins.python_code("dummy._main")
+            n5:*PyObject = load &$ambiguous::__name__
+            n6 = $builtins.python_eq(n5, $builtins.python_string("__main__"))
+            n7 = $builtins.python_is_true(n6)
+            if n7 then jmp b1 else jmp b2
+
+        #b1:
+            n8 = dummy._main()
+            jmp b2
+
+        #b2:
+            ret null
+
+      }
+
+      define dummy._main() : *PyObject {
+        local mydir: *PyObject, i: *PyObject
+        #b0:
+            n0:*PyObject = load &os::path
+            n1:*PyObject = load &os::path
+            n2:*PyObject = load &os::path
+            n3:*PyObject = load &sys::argv
+            n4 = $builtins.python_subscript_get(n3, $builtins.python_int(0))
+            n5 = n2.?.dirname(n4)
+            n6 = n1.?.normpath(n5)
+            n7 = n0.?.abspath(n6)
+            store &mydir <- n7:*PyObject
+            n8:*PyObject = load &sys::path
+            n9 = ?.len(n8)
+            store &i <- n9:*PyObject
+            jmp b1
+
+        #b1:
+            n10:*PyObject = load &i
+            n11 = $builtins.python_eq(n10, $builtins.python_int(0))
+            n12 = $builtins.python_is_true(n11)
+            if n12 then jmp b2 else jmp b3
+
+        #b2:
+            n13:*PyObject = load &os::path
+            n14:*PyObject = load &os::path
+            n15:*PyObject = load &i
+            n16:*PyObject = load &sys::path
+            n17 = $builtins.python_subscript_get(n16, n15)
+            n18 = n14.?.normpath(n17)
+            n19 = n13.?.abspath(n18)
+            n20:*PyObject = load &mydir
+            n21 = $builtins.python_eq(n19, n20)
+            n22 = $builtins.python_is_true(n21)
+            if n22 then jmp b4 else jmp b5
+
+        #b4:
+            jmp b1
+
+        #b5:
+            store &i <- $builtins.python_int(0):*PyInt
+            jmp b1
+
+        #b3:
+            n23:*PyObject = load &os::path
+            n24:*PyObject = load &$ambiguous::__file__
+            n25 = n23.?.abspath(n24)
+            store &dummy::__file__ <- n25:*PyObject
+            n26 = test.libregrtest.main()
+            ret null
+
+      }
+
+      global dummy::main_in_temp_cwd: *PyObject
+
+      declare test.libregrtest.main(...) : *PyObject
+
+      declare test.libregrtest.$toplevel() : *PyObject
+
+      declare sys.$toplevel() : *PyObject
+
+      declare os.$toplevel() : *PyObject
+
+      declare $builtins.python_eq(*PyObject, *PyObject) : *PyBool
+
+      declare $builtins.python_subscript_get(*PyObject, *PyObject) : *PyObject
+
+      declare $builtins.python_code(*String) : *PyCode
+
+      declare $builtins.python_is_true(*PyObject) : int
+
+      declare $builtins.python_tuple(...) : *PyObject
+
+      declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+      declare $builtins.python_string(*String) : *PyString
+
+      declare $builtins.python_bool(int) : *PyBool
+
+      declare $builtins.python_float(float) : *PyFloat
+
+      declare $builtins.python_int(int) : *PyInt
+
+      Errors while type checking the test:
+      dummy.py, line 4, column 0: textual type error: variable test.libregrtest::main has not been declared
+      dummy.py, <unknown location>: textual type error: variable $ambiguous::__name__ has not been declared
+      dummy.py, <unknown location>: textual type error: variable os::path has not been declared
+      dummy.py, <unknown location>: textual type error: variable os::path has not been declared
+      dummy.py, <unknown location>: textual type error: variable os::path has not been declared
+      dummy.py, <unknown location>: textual type error: variable sys::argv has not been declared
+      dummy.py, <unknown location>: textual type error: variable sys::path has not been declared
+      dummy.py, <unknown location>: textual type error: variable os::path has not been declared
+      dummy.py, <unknown location>: textual type error: variable $ambiguous::__file__ has not been declared
+      dummy.py, line 2, column 0: textual type error: variable dummy::__file__ has not been declared
+      dummy.py, <unknown location>: textual type error: variable os::path has not been declared
+      dummy.py, <unknown location>: textual type error: variable os::path has not been declared
+      dummy.py, <unknown location>: textual type error: variable sys::path has not been declared |}]
   end )
 
 

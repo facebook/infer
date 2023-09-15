@@ -179,6 +179,22 @@ let load_name env loc ~global name =
     (env, Ok (T.Exp.Var id), info)
 
 
+let is_imported env path =
+  let f_root env ~global ~loc name =
+    let key = mk_key global loc name in
+    let opt = Env.lookup_symbol env key in
+    match opt with
+    | None ->
+        false
+    | Some {Symbol.kind= Import _ | ImportCall} ->
+        true
+    | Some _ ->
+        false
+  in
+  let f_path _ acc = acc in
+  Ident.fold ~f_root ~f_path ~init:env path
+
+
 (** Try to load the data referenced by a [DataStack.cell], into a [Textual.Exp.t] *)
 let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
   let default_info typ = Env.Info.default typ in
@@ -213,53 +229,70 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
   | Map _map ->
       (env, Error "TODO: load Map cells", default)
   | Path id -> (
-      let f_root env ~global ~loc name =
-        Debug.p "f_root %b %s\n" global name ;
-        let env, res, info = load_name env loc ~global name in
-        let {Env.Info.typ} = info in
-        let type_name = match (typ : T.Typ.t) with Ptr (Struct name) -> Some name | _ -> None in
-        let fields = Option.bind type_name ~f:(Env.lookup_fields env) in
-        match res with Error s -> Error (env, s) | Ok exp -> Ok (env, exp, info, fields)
-      in
-      let f_path attribute acc =
-        match acc with
-        | Error err ->
-            Error err
-        | Ok (env, exp, _, fields) ->
-            let field =
-              Option.bind fields
-                ~f:
-                  (List.find_map ~f:(fun {PyCommon.name; annotation} ->
-                       Option.some_if (String.equal name attribute) annotation ) )
-            in
-            let lifted_field_typ =
-              let open IOption.Let_syntax in
-              let* field in
-              let* lifted_field_id = lift_type_ident env field in
-              let lifted_field_typ = Ident.to_typ lifted_field_id in
-              Some lifted_field_typ
-            in
-            let field_typ = Option.value ~default:PyCommon.pyObject lifted_field_typ in
-            let info = Env.Info.default field_typ in
-            let env, id = Env.mk_fresh_ident env info in
-            let loc = Env.loc env in
-            let field_name = field_name ~loc attribute in
-            let field = {T.enclosing_class= T.TypeName.wildcard; name= field_name} in
-            let exp = T.Exp.Field {exp; field} in
-            let instr = T.Instr.Load {id; exp; typ= Some field_typ; loc} in
-            let env = Env.push_instr env instr in
-            (* Now try to fetch information about the current step of the path *)
-            let type_name =
-              match (field_typ : T.Typ.t) with Ptr (Struct name) -> Some name | _ -> None
-            in
-            let new_fields = Option.bind type_name ~f:(Env.lookup_fields env) in
-            Ok (env, T.Exp.Var id, info, new_fields)
-      in
-      match Ident.fold ~init:env ~f_root ~f_path id with
-      | Error (env, s) ->
-          (env, Error s, default)
-      | Ok (env, exp, info, _) ->
-          (env, Ok exp, info) )
+      if
+        (* TODO: this is incomplete. If something is imported, we can' really know if it is a
+           value, a function, a class name... In this version, we try to load them as a value, to
+           catch the most common patterns like loading [sys.argv] as [let n = load &sys.argv].
+           If this is not enough, we'll move to something more abstract and defer to pulse like
+           with [let n0 = python_import("sys.argv")]
+        *)
+        is_imported env id
+      then
+        let typ = PyCommon.pyObject in
+        let info = Env.Info.default typ in
+        let exp = T.Exp.Lvar (Ident.to_var_name id) in
+        let env, id = Env.mk_fresh_ident env info in
+        let instr = T.Instr.Load {id; exp; typ= Some typ; loc} in
+        let env = Env.push_instr env instr in
+        (env, Ok (T.Exp.Var id), info)
+      else
+        let f_root env ~global ~loc name =
+          Debug.p "f_root %b %s\n" global name ;
+          let env, res, info = load_name env loc ~global name in
+          let {Env.Info.typ} = info in
+          let type_name = match (typ : T.Typ.t) with Ptr (Struct name) -> Some name | _ -> None in
+          let fields = Option.bind type_name ~f:(Env.lookup_fields env) in
+          match res with Error s -> Error (env, s) | Ok exp -> Ok (env, exp, info, fields)
+        in
+        let f_path attribute acc =
+          match acc with
+          | Error err ->
+              Error err
+          | Ok (env, exp, _, fields) ->
+              let field =
+                Option.bind fields
+                  ~f:
+                    (List.find_map ~f:(fun {PyCommon.name; annotation} ->
+                         Option.some_if (String.equal name attribute) annotation ) )
+              in
+              let lifted_field_typ =
+                let open IOption.Let_syntax in
+                let* field in
+                let* lifted_field_id = lift_type_ident env field in
+                let lifted_field_typ = Ident.to_typ lifted_field_id in
+                Some lifted_field_typ
+              in
+              let field_typ = Option.value ~default:PyCommon.pyObject lifted_field_typ in
+              let info = Env.Info.default field_typ in
+              let env, id = Env.mk_fresh_ident env info in
+              let loc = Env.loc env in
+              let field_name = field_name ~loc attribute in
+              let field = {T.enclosing_class= T.TypeName.wildcard; name= field_name} in
+              let exp = T.Exp.Field {exp; field} in
+              let instr = T.Instr.Load {id; exp; typ= Some field_typ; loc} in
+              let env = Env.push_instr env instr in
+              (* Now try to fetch information about the current step of the path *)
+              let type_name =
+                match (field_typ : T.Typ.t) with Ptr (Struct name) -> Some name | _ -> None
+              in
+              let new_fields = Option.bind type_name ~f:(Env.lookup_fields env) in
+              Ok (env, T.Exp.Var id, info, new_fields)
+        in
+        match Ident.fold ~init:env ~f_root ~f_path id with
+        | Error (env, s) ->
+            (env, Error s, default)
+        | Ok (env, exp, info, _) ->
+            (env, Ok exp, info) )
   | BuiltinBuildClass | StaticCall _ | MethodCall _ | Import _ | ImportCall _ | Super ->
       L.die InternalError "[load_cell] Can't load %a, something went wrong" DataStack.pp_cell cell
 
@@ -359,17 +392,31 @@ module LOAD = struct
               (env, DataStack.Name {global= true; ndx= arg})
             else (env, DataStack.Super)
           else (env, DataStack.Name {global= true; ndx= arg})
-      | ATTR -> (
+      | ATTR ->
           let env, cell = pop_datastack opname env in
           let fname = co_names.(arg) in
-          let prefix = DataStack.as_id code cell in
-          let id = Option.map ~f:(fun prefix -> Ident.extend ~prefix fname) prefix in
-          match id with
-          | None ->
-              L.die ExternalError "Failed to load attribute %s from cell %a" fname DataStack.pp_cell
-                cell
-          | Some id ->
-              (env, DataStack.Path id) )
+          let cell =
+            (* if the cell is Import related, we wont' be able to load things correctly.
+               Let's Pulse do its job later *)
+            match (cell : DataStack.cell) with
+            | ImportCall {id; loc} ->
+                let id = Ident.extend ~prefix:id fname in
+                DataStack.ImportCall {id; loc}
+            | Import {import_path} ->
+                let loc = Env.loc env in
+                let id = Ident.extend ~prefix:import_path fname in
+                DataStack.ImportCall {id; loc}
+            | _ -> (
+                let prefix = DataStack.as_id code cell in
+                let id = Option.map ~f:(fun prefix -> Ident.extend ~prefix fname) prefix in
+                match id with
+                | None ->
+                    L.die ExternalError "Failed to load attribute %s from cell %a" fname
+                      DataStack.pp_cell cell
+                | Some id ->
+                    DataStack.Path id )
+          in
+          (env, cell)
     in
     Debug.p "[%s] arg = %a\n" opname (pp code) kind ;
     (Env.push env cell, None)
@@ -539,7 +586,13 @@ module FUNCTION = struct
         )
       | Path id ->
           static_call env opname code id cells
-      | Import _ | ImportCall _ | StaticCall _ | MethodCall _ ->
+      | ImportCall {id; loc} ->
+          (* TODO: test it *)
+          Debug.todo "TEST IT !\n" ;
+          let env, args = cells_to_textual env opname code cells in
+          let proc = Ident.to_qualified_procname id in
+          mk env (Some id) loc proc args
+      | Import _ | StaticCall _ | MethodCall _ ->
           L.die InternalError "[%s] unsupported call to %a with arg = %d" opname DataStack.pp_cell
             fname arg
       | Super ->
@@ -789,6 +842,8 @@ module METHOD = struct
           let env = Env.register_symbol env key symbol_info in
           let proc = Ident.to_qualified_procname id in
           FUNCTION.CALL.mk env None loc proc args
+      | Path id ->
+          L.die InternalError "%s called with Path: %a\n" opname Ident.pp id
       | StaticCall {call_name; receiver} ->
           let loc = Env.loc env in
           let args = Option.to_list receiver @ args in
@@ -811,7 +866,6 @@ module METHOD = struct
       | Map _
       | BuiltinBuildClass
       | Import _
-      | Path _
       | Super ->
           L.die InternalError "[%s] failed to load method information from cell %a" opname
             DataStack.pp_cell cell_mi
