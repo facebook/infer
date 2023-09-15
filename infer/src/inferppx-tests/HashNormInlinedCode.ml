@@ -33,7 +33,7 @@ include struct
     let () = HashNormalizer.register_reset (fun () -> H.reset table) in
     let normalize t =
       let {s; i} = t in
-      let s' = HashNormalizer.StringNormalizer.normalize s in
+      let s' = HashNormalizer.String.hash_normalize s in
       if phys_equal s s' then t else {s= s'; i}
     in
     fun t ->
@@ -90,8 +90,8 @@ include struct
     let () = HashNormalizer.register_reset (fun () -> H.reset table) in
     let normalize t =
       let x0, x1, x2 = t in
-      let x2' = HashNormalizer.StringNormalizer.normalize x2 in
-      let x0' = HashNormalizer.StringNormalizer.normalize x0 in
+      let x2' = HashNormalizer.String.hash_normalize x2 in
+      let x0' = HashNormalizer.String.hash_normalize x0 in
       if phys_equal x2 x2' && phys_equal x0 x0' then t else (x0', x1, x2')
     in
     fun t ->
@@ -156,15 +156,15 @@ include struct
       | NoArgs ->
           t
       | String x0 ->
-          let x0' = HashNormalizer.StringNormalizer.normalize x0 in
+          let x0' = HashNormalizer.String.hash_normalize x0 in
           if phys_equal x0 x0' then t else String x0'
       | Int _ ->
           t
       | Tuple (x0, x1) ->
-          let x1' = HashNormalizer.StringNormalizer.normalize x1 in
+          let x1' = HashNormalizer.String.hash_normalize x1 in
           if phys_equal x1 x1' then t else Tuple (x0, x1')
       | Record {i; s} ->
-          let s' = HashNormalizer.StringNormalizer.normalize s in
+          let s' = HashNormalizer.String.hash_normalize s in
           if phys_equal s s' then t else Record {i; s= s'}
       | NonInline x0 ->
           let x0' = hash_normalize_record x0 in
@@ -238,23 +238,21 @@ module SourceFile = struct
       let normalize t =
         match t with
         | HashedBuckOut x0 ->
-            let x0' = HashNormalizer.StringNormalizer.normalize x0 in
+            let x0' = HashNormalizer.String.hash_normalize x0 in
             if phys_equal x0 x0' then t else HashedBuckOut x0'
         | Invalid {ml_source_file} ->
-            let ml_source_file' = HashNormalizer.StringNormalizer.normalize ml_source_file in
+            let ml_source_file' = HashNormalizer.String.hash_normalize ml_source_file in
             if phys_equal ml_source_file ml_source_file' then t
             else Invalid {ml_source_file= ml_source_file'}
         | Absolute x0 ->
-            let x0' = HashNormalizer.StringNormalizer.normalize x0 in
+            let x0' = HashNormalizer.String.hash_normalize x0 in
             if phys_equal x0 x0' then t else Absolute x0'
         | RelativeProjectRoot x0 ->
-            let x0' = HashNormalizer.StringNormalizer.normalize x0 in
+            let x0' = HashNormalizer.String.hash_normalize x0 in
             if phys_equal x0 x0' then t else RelativeProjectRoot x0'
         | RelativeProjectRootAndWorkspace {workspace_rel_root; rel_path} ->
-            let rel_path' = HashNormalizer.StringNormalizer.normalize rel_path in
-            let workspace_rel_root' =
-              HashNormalizer.StringNormalizer.normalize workspace_rel_root
-            in
+            let rel_path' = HashNormalizer.String.hash_normalize rel_path in
+            let workspace_rel_root' = HashNormalizer.String.hash_normalize workspace_rel_root in
             if phys_equal rel_path rel_path' && phys_equal workspace_rel_root workspace_rel_root'
             then t
             else
@@ -403,8 +401,8 @@ module CSharpClassName = struct
       let () = HashNormalizer.register_reset (fun () -> H.reset table) in
       let normalize t =
         let {classname; namespace} = t in
-        let namespace' = HashNormalizer.StringNormalizer.normalize_opt namespace in
-        let classname' = HashNormalizer.StringNormalizer.normalize classname in
+        let namespace' = HashNormalizer.String.hash_normalize_opt namespace in
+        let classname' = HashNormalizer.String.hash_normalize classname in
         if phys_equal namespace namespace' && phys_equal classname classname' then t
         else {classname= classname'; namespace= namespace'}
       in
@@ -473,8 +471,8 @@ module JavaClassName = struct
       let () = HashNormalizer.register_reset (fun () -> H.reset table) in
       let normalize t =
         let {classname; namespace} = t in
-        let namespace' = HashNormalizer.StringNormalizer.normalize_opt namespace in
-        let classname' = HashNormalizer.StringNormalizer.normalize classname in
+        let namespace' = HashNormalizer.String.hash_normalize_opt namespace in
+        let classname' = HashNormalizer.String.hash_normalize classname in
         if phys_equal namespace namespace' && phys_equal classname classname' then t
         else {classname= classname'; namespace= namespace'}
       in

@@ -29,11 +29,16 @@ end
 
 module Make (T : NormalizedT) : S with type t = T.t
 
-(** normalizer for strings *)
-module StringNormalizer : S with type t = string
+(** normalizer for strings, lists are recursively normalized *)
+module String : sig
+  type t = string
 
-(** recursive normalizer for string lists *)
-module StringListNormalizer : S with type t = string list
+  val hash_normalize : t -> t
+
+  val hash_normalize_opt : t option -> t option
+
+  val hash_normalize_list : t list -> t list
+end
 
 val reset_all_normalizers : unit -> unit
 (** reset hashtables in all normalizers made with [Make] *)

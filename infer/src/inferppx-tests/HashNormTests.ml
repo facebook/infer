@@ -46,8 +46,8 @@ let%test "string_normalize" =
   String.equal foo1 foo2
   && (not (phys_equal foo1 foo2))
   &&
-  let foo1' = HashNormalizer.StringNormalizer.normalize foo1 in
-  let foo2' = HashNormalizer.StringNormalizer.normalize foo2 in
+  let foo1' = HashNormalizer.String.hash_normalize foo1 in
+  let foo2' = HashNormalizer.String.hash_normalize foo2 in
   String.equal foo1 foo1' && String.equal foo2 foo2' && phys_equal foo1' foo2'
   && phys_equal foo1 foo1'
 

@@ -274,7 +274,7 @@ module Java = struct
     type nonrec t = t [@@deriving equal, hash]
 
     let normalize t =
-      let method_name = HashNormalizer.StringNormalizer.normalize t.method_name in
+      let method_name = HashNormalizer.String.hash_normalize t.method_name in
       let parameters =
         IList.map_changed t.parameters ~equal:phys_equal ~f:Typ.Normalizer.normalize
       in
@@ -442,7 +442,7 @@ module ObjC_Cpp = struct
 
     let normalize t =
       let class_name = Typ.Name.Normalizer.normalize t.class_name in
-      let method_name = HashNormalizer.StringNormalizer.normalize t.method_name in
+      let method_name = HashNormalizer.String.hash_normalize t.method_name in
       let parameters =
         IList.map_changed ~equal:phys_equal ~f:Parameter.ClangParameterNormalizer.normalize
           t.parameters

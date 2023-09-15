@@ -17,8 +17,8 @@ let hash_normalize_of_longident ~loc ?(suffix = "") lid =
   let ident =
     match lid with
     | Lident "string" ->
-        (* [HashNormalizer.StringNormalizer.normalize] *)
-        Ldot (Ldot (Lident "HashNormalizer", "StringNormalizer"), "normalize" ^ suffix)
+        (* [HashNormalizer.String.hash_normalize] *)
+        Ldot (Ldot (Lident "HashNormalizer", "String"), "hash_normalize" ^ suffix)
     | Lident typename ->
         (* [t]/[x] is not enclosed in a module *)
         Lident (hash_normalize_from_typename typename ^ suffix)
@@ -26,8 +26,10 @@ let hash_normalize_of_longident ~loc ?(suffix = "") lid =
         (* [M.t]/[M.x] *)
         Ldot (l, hash_normalize_from_typename typename ^ suffix)
     | _ ->
-        Format.eprintf "Could not parse ident: %a@\n" Common.pp_longident lid ;
-        assert false
+        raise
+          (BadType
+             (Location.error_extensionf ~loc "Could not parse ident: %a@\n" Common.pp_longident lid)
+          )
   in
   Loc.make ~loc ident
 
@@ -56,7 +58,10 @@ let hash_normalize_of_core_type ~loc ct =
   | Ptyp_poly _
   | Ptyp_package _
   | Ptyp_extension _ ->
-      assert false
+      raise
+        (BadType
+           (Location.error_extensionf ~loc "Could not get normalizer for type %s@\n"
+              (string_of_core_type ct) ) )
 
 
 (* [let var' = (hash_normalize_of_core_type typ) var in acc] *)

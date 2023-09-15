@@ -91,13 +91,13 @@ module rec ValueNormalizer : (HashNormalizer.S with type t = value) = struct
     let normalize value =
       match value with
       | Str str ->
-          let str' = HashNormalizer.StringNormalizer.normalize str in
+          let str' = HashNormalizer.String.hash_normalize str in
           if phys_equal str str' then value else Str str'
       | Bool _ ->
           value
       | Enum {class_typ; value= str_value} ->
           let class_typ' = Typ.Normalizer.normalize class_typ in
-          let str_value' = HashNormalizer.StringNormalizer.normalize str_value in
+          let str_value' = HashNormalizer.String.hash_normalize str_value in
           if phys_equal class_typ class_typ' && phys_equal str_value str_value' then value
           else Enum {class_typ= class_typ'; value= str_value'}
       | Array list ->
@@ -120,7 +120,7 @@ and ParameterNormalizer : (HashNormalizer.S with type t = parameter) = HashNorma
   type t = parameter [@@deriving equal, hash]
 
   let normalize_str_opt str_opt =
-    IOption.map_changed str_opt ~equal:phys_equal ~f:HashNormalizer.StringNormalizer.normalize
+    IOption.map_changed str_opt ~equal:phys_equal ~f:HashNormalizer.String.hash_normalize
 
 
   let normalize parameter =
@@ -134,7 +134,7 @@ and TNormalizer : (HashNormalizer.S with type t = t) = HashNormalizer.Make (stru
   type nonrec t = t [@@deriving equal, hash]
 
   let normalize t =
-    let class_name = HashNormalizer.StringNormalizer.normalize t.class_name in
+    let class_name = HashNormalizer.String.hash_normalize t.class_name in
     let parameters =
       IList.map_changed ~equal:phys_equal ~f:ParameterNormalizer.normalize t.parameters
     in

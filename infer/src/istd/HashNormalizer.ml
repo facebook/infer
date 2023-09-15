@@ -53,7 +53,7 @@ module Make (T : NormalizedT) = struct
   let normalize_list ts = IList.map_changed ts ~equal:phys_equal ~f:normalize
 end
 
-module StringNormalizer = Make (struct
+module SimpleStringNormalizer = Make (struct
   include String
 
   let normalize = Fn.id
@@ -68,8 +68,18 @@ module rec StringListNormalizer : (S with type t = string list) = Make (struct
         []
     | x :: xs ->
         let xs' = StringListNormalizer.normalize xs in
-        let x' = StringNormalizer.normalize x in
+        let x' = SimpleStringNormalizer.normalize x in
         if phys_equal x x' && phys_equal xs xs' then string_list else x' :: xs'
 end)
+
+module String = struct
+  type t = string
+
+  let hash_normalize = SimpleStringNormalizer.normalize
+
+  let hash_normalize_opt = SimpleStringNormalizer.normalize_opt
+
+  let hash_normalize_list = StringListNormalizer.normalize
+end
 
 let reset_all_normalizers () = List.iter !normalizer_reset_funs ~f:(fun f -> f ())

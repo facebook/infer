@@ -407,7 +407,7 @@ module rec DescNormalizer : (HashNormalizer.S with type t = desc) = HashNormaliz
         let name' = NameNormalizer.normalize name in
         if phys_equal name name' then t else Tstruct name'
     | TVar str_var ->
-        let str_var' = HashNormalizer.StringNormalizer.normalize str_var in
+        let str_var' = HashNormalizer.String.hash_normalize str_var in
         if phys_equal str_var str_var' then t else TVar str_var'
     | Tptr (pointed, ptr_kind) ->
         let pointed' = Normalizer.normalize pointed in
@@ -449,7 +449,7 @@ HashNormalizer.Make (struct
         t
     | Template {mangled; args} ->
         let mangled' =
-          IOption.map_changed mangled ~equal:phys_equal ~f:HashNormalizer.StringNormalizer.normalize
+          IOption.map_changed mangled ~equal:phys_equal ~f:HashNormalizer.String.hash_normalize
         in
         let args' = IList.map_changed args ~equal:phys_equal ~f:TemplateArgNormalizer.normalize in
         if phys_equal mangled mangled' && phys_equal args args' then t
