@@ -1091,6 +1091,26 @@ module POP_TOP = struct
 end
 
 module BINARY = struct
+  let binary_or_inplace env code opname builtin =
+    Debug.p "[%s]\n" opname ;
+    let env, tos = pop_datastack opname env in
+    let env, tos1 = pop_datastack opname env in
+    let env, lhs, _ = load_cell env code tos1 in
+    let lhs = match lhs with Ok lhs -> lhs | Error s -> L.die InternalError "[%s] %s" opname s in
+    let env, rhs, _ = load_cell env code tos in
+    let rhs = match rhs with Ok rhs -> rhs | Error s -> L.die InternalError "[%s] %s" opname s in
+    (* Even if the call can be considered as virtual because, it's logic is not symetric. Based
+       on what I gathered, like in [0], I think the best course of action is to write a model for
+       it and leave it non virtual. TODO: ask David.
+
+       [0]:
+       https://stackoverflow.com/questions/58828522/is-radd-called-if-add-raises-notimplementederror
+    *)
+    let env, id, _typ = Env.mk_builtin_call env builtin [lhs; rhs] in
+    let env = Env.push env (DataStack.Temp id) in
+    (env, None)
+
+
   module ADD = struct
     (** {v BINARY_ADD v}
 
@@ -1102,28 +1122,7 @@ module BINARY = struct
 
         Since Python is using runtime types to know which [+] to perform (addition, string
         concatenation, custom operator, ...), we'll need to write a model for this one. *)
-    let run env code {FFI.Instruction.opname} =
-      Debug.p "[%s]\n" opname ;
-      let env, tos = pop_datastack opname env in
-      let env, tos1 = pop_datastack opname env in
-      let env, lhs, _ = load_cell env code tos1 in
-      let lhs =
-        match lhs with Ok lhs -> lhs | Error s -> L.die InternalError "[%s] %s" opname s
-      in
-      let env, rhs, _ = load_cell env code tos in
-      let rhs =
-        match rhs with Ok rhs -> rhs | Error s -> L.die InternalError "[%s] %s" opname s
-      in
-      (* Even if the call can be considered as virtual because, it's logic is not symetric. Based
-         on what I gathered, like in [0], I think the best course of action is to write a model for
-         it and leave it non virtual. TODO: ask David.
-
-         [0]:
-         https://stackoverflow.com/questions/58828522/is-radd-called-if-add-raises-notimplementederror
-      *)
-      let env, id, _typ = Env.mk_builtin_call env Builtin.BinaryAdd [lhs; rhs] in
-      let env = Env.push env (DataStack.Temp id) in
-      (env, None)
+    let run env code {FFI.Instruction.opname} = binary_or_inplace env code opname Builtin.BinaryAdd
   end
 
   module SUBTRACT = struct
@@ -1138,27 +1137,7 @@ module BINARY = struct
         Since Python is using runtime types to know which [-] to perform, we'll need to write a
         model for this one. *)
     let run env code {FFI.Instruction.opname} =
-      Debug.p "[%s]\n" opname ;
-      let env, tos = pop_datastack opname env in
-      let env, tos1 = pop_datastack opname env in
-      let env, lhs, _ = load_cell env code tos1 in
-      let lhs =
-        match lhs with Ok lhs -> lhs | Error s -> L.die InternalError "[%s] %s" opname s
-      in
-      let env, rhs, _ = load_cell env code tos in
-      let rhs =
-        match rhs with Ok rhs -> rhs | Error s -> L.die InternalError "[%s] %s" opname s
-      in
-      (* Even if the call can be considered as virtual because, it's logic is not symetric. Based
-         on what I gathered, like in [0], I think the best course of action is to write a model for
-         it and leave it non virtual. TODO: ask David.
-
-         [0]:
-         https://stackoverflow.com/questions/58828522/is-radd-called-if-add-raises-notimplementederror
-      *)
-      let env, id, _typ = Env.mk_builtin_call env Builtin.BinarySubtract [lhs; rhs] in
-      let env = Env.push env (DataStack.Temp id) in
-      (env, None)
+      binary_or_inplace env code opname Builtin.BinarySubtract
   end
 
   module SUBSCR = struct
@@ -1252,6 +1231,38 @@ module BUILD = struct
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonBuildList items in
       let env = Env.push env (DataStack.Temp id) in
       (env, None)
+  end
+end
+
+module INPLACE = struct
+  module ADD = struct
+    (** {v INPLACE_ADD v}
+
+        Implements inplace top-of-stack = top-of-stack1 + top-of-stack.
+
+        Before: [ TOS (rhs) | TOS1 (lhs) | rest-of-stack ]
+
+        After: [ TOS1 + TOS (lhs + rhs) | rest-of-stack ]
+
+        Since Python is using runtime types to know which [+] to perform (addition, string
+        concatenation, custom operator, ...), we'll need to write a model for this one. *)
+    let run env code {FFI.Instruction.opname} =
+      BINARY.binary_or_inplace env code opname Builtin.InplaceAdd
+  end
+
+  module SUBTRACT = struct
+    (** {v INPLACESUBTRACT v}
+
+        Implements inplace top-of-stack = top-of-stack1 - top-of-stack.
+
+        Before: [ TOS (rhs) | TOS1 (lhs) | rest-of-stack ]
+
+        After: [ TOS1 - TOS (lhs - rhs) | rest-of-stack ]
+
+        Since Python is using runtime types to know which [-] to perform, we'll need to write a
+        model for this one. *)
+    let run env code {FFI.Instruction.opname} =
+      BINARY.binary_or_inplace env code opname Builtin.InplaceSubtract
   end
 end
 
@@ -1705,6 +1716,10 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
         BINARY.ADD.run env code instr
     | "BINARY_SUBTRACT" ->
         BINARY.SUBTRACT.run env code instr
+    | "INPLACE_ADD" ->
+        INPLACE.ADD.run env code instr
+    | "INPLACE_SUBTRACT" ->
+        INPLACE.SUBTRACT.run env code instr
     | "MAKE_FUNCTION" ->
         FUNCTION.MAKE.run env code instr
     | "POP_JUMP_IF_TRUE" ->

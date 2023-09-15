@@ -18,6 +18,8 @@ type textual =
   | IsTrue
   | BinaryAdd
   | BinarySubtract
+  | InplaceAdd
+  | InplaceSubtract
   | PythonCall
   | PythonClass
   | PythonCode

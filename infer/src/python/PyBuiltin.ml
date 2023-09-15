@@ -50,6 +50,8 @@ module Builtin = struct
     | IsTrue
     | BinaryAdd
     | BinarySubtract
+    | InplaceAdd
+    | InplaceSubtract
     | PythonCall
     | PythonClass
     | PythonCode
@@ -99,6 +101,10 @@ let to_proc_name = function
             "binary_add"
         | BinarySubtract ->
             "binary_subtract"
+        | InplaceAdd ->
+            "inplace_add"
+        | InplaceSubtract ->
+            "inplace_subtract"
         | PythonCall ->
             "python_call"
         | PythonClass ->
@@ -197,6 +203,14 @@ module Set = struct
           ; result_type= annotatedObject
           ; used_struct_types= [] } )
       ; ( Builtin.BinarySubtract
+        , { formals_types= Some [annotatedObject; annotatedObject]
+          ; result_type= annotatedObject
+          ; used_struct_types= [] } )
+      ; ( Builtin.InplaceAdd
+        , { formals_types= Some [annotatedObject; annotatedObject]
+          ; result_type= annotatedObject
+          ; used_struct_types= [] } )
+      ; ( Builtin.InplaceSubtract
         , { formals_types= Some [annotatedObject; annotatedObject]
           ; result_type= annotatedObject
           ; used_struct_types= [] } )

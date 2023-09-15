@@ -210,6 +210,98 @@ print(x - y)
 
     let%expect_test _ =
       let source = {|
+x = 42
+x += 10
+print(x)
+      |} in
+      test source ;
+      [%expect
+        {|
+          .source_language = "python"
+
+          define dummy.$toplevel() : *PyNone {
+            #b0:
+                store &dummy::x <- $builtins.python_int(42):*PyInt
+                n0:*PyInt = load &dummy::x
+                n1 = $builtins.inplace_add(n0, $builtins.python_int(10))
+                store &dummy::x <- n1:*PyObject
+                n2:*PyObject = load &dummy::x
+                n3 = $builtins.print(n2)
+                ret null
+
+          }
+
+          global dummy::x: *PyObject
+
+          global $python_implicit_names::__name__: *PyString
+
+          global $python_implicit_names::__file__: *PyString
+
+          declare $builtins.print(...) : *PyObject
+
+          declare $builtins.inplace_add(*PyObject, *PyObject) : *PyObject
+
+          declare $builtins.python_tuple(...) : *PyObject
+
+          declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+          declare $builtins.python_string(*String) : *PyString
+
+          declare $builtins.python_bool(int) : *PyBool
+
+          declare $builtins.python_float(float) : *PyFloat
+
+          declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+x = 42
+x -= 10
+print(x)
+      |} in
+      test source ;
+      [%expect
+        {|
+          .source_language = "python"
+
+          define dummy.$toplevel() : *PyNone {
+            #b0:
+                store &dummy::x <- $builtins.python_int(42):*PyInt
+                n0:*PyInt = load &dummy::x
+                n1 = $builtins.inplace_subtract(n0, $builtins.python_int(10))
+                store &dummy::x <- n1:*PyObject
+                n2:*PyObject = load &dummy::x
+                n3 = $builtins.print(n2)
+                ret null
+
+          }
+
+          global dummy::x: *PyObject
+
+          global $python_implicit_names::__name__: *PyString
+
+          global $python_implicit_names::__file__: *PyString
+
+          declare $builtins.print(...) : *PyObject
+
+          declare $builtins.inplace_subtract(*PyObject, *PyObject) : *PyObject
+
+          declare $builtins.python_tuple(...) : *PyObject
+
+          declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+          declare $builtins.python_string(*String) : *PyString
+
+          declare $builtins.python_bool(int) : *PyBool
+
+          declare $builtins.python_float(float) : *PyFloat
+
+          declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
 pi = 3.14
       |} in
       test source ;
@@ -1743,8 +1835,7 @@ def _main():
             # del sys.path[i] # not supported yet
             pass
         else:
-            # i -= 1 # we don't support this yet
-            i = 0
+            i -= 1
 
     __file__ = os.path.abspath(__file__)
 
@@ -1826,15 +1917,17 @@ if __name__ == '__main__':
             jmp b1
 
         #b5:
-            store &i <- $builtins.python_int(0):*PyInt
+            n24:*PyObject = load &i
+            n25 = $builtins.inplace_subtract(n24, $builtins.python_int(1))
+            store &i <- n25:*PyObject
             jmp b1
 
         #b3:
-            n24:*PyObject = load &os::path
-            n25:*PyString = load &$python_implicit_names::__file__
-            n26 = n24.?.abspath(n25)
-            store &dummy::__file__ <- n26:*PyObject
-            n27 = test.libregrtest.main()
+            n26:*PyObject = load &os::path
+            n27:*PyString = load &$python_implicit_names::__file__
+            n28 = n26.?.abspath(n27)
+            store &dummy::__file__ <- n28:*PyObject
+            n29 = test.libregrtest.main()
             ret null
 
       }
@@ -1858,6 +1951,8 @@ if __name__ == '__main__':
       declare $builtins.python_subscript_get(*PyObject, *PyObject) : *PyObject
 
       declare $builtins.python_code(*String) : *PyCode
+
+      declare $builtins.inplace_subtract(*PyObject, *PyObject) : *PyObject
 
       declare $builtins.binary_subtract(*PyObject, *PyObject) : *PyObject
 
