@@ -1640,6 +1640,9 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
         STORE.SUBSCR.run env code instr
     | "BINARY_SUBSCR" ->
         BINARY.SUBSCR.run env code instr
+    | "EXTENDED_ARG" ->
+        (* The FFI.Instruction framework already did the magic and this opcode can be ignored. *)
+        (env, None)
     | _ ->
         L.die InternalError "Unsupported opcode: %s" opname
   in
