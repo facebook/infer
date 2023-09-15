@@ -490,8 +490,8 @@ let register_function ({shared} as env) fname loc annotations =
   let {module_name} = shared in
   let info = {Signature.is_static= false; is_abstract= false; annotations} in
   let env = register_method env ~enclosing_class:module_name ~method_name:fname info in
-  let key = Ident.mk fname in
-  let id = Ident.mk ~prefix:module_name fname in
+  let key = Ident.mk ~loc fname in
+  let id = Ident.extend ~prefix:module_name fname in
   let symbol_info = {Symbol.kind= Code; id; loc} in
   register_symbol env (Symbol.Global key) symbol_info
 
@@ -523,14 +523,14 @@ let get_declared_classes {shared= {classes}} = classes
 let get_textual_imports {shared= {globals}} =
   let result_type = {T.Typ.typ= PyCommon.pyObject; attributes= []} in
   Ident.Map.fold
-    (fun _key {Symbol.id; kind; loc} acc ->
+    (fun _key {Symbol.id; kind} acc ->
       match kind with
       | Symbol.ImportCall ->
-          let qualified_name = Ident.to_qualified_procname ~loc id in
+          let qualified_name = Ident.to_qualified_procname id in
           T.Module.Procdecl {qualified_name; formals_types= None; result_type; attributes= []}
           :: acc
       | Symbol.Import _ ->
-          let enclosing_class = Ident.to_type_name ~loc id in
+          let enclosing_class = Ident.to_type_name id in
           let qualified_name =
             PyCommon.qualified_procname ~enclosing_class
             @@ PyCommon.proc_name PyCommon.toplevel_function

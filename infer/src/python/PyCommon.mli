@@ -107,32 +107,34 @@ module Ident : sig
       any prefix are local variables. *)
   type t [@@deriving compare]
 
-  val from_string : string -> t
+  val from_string : ?global:bool -> ?loc:Textual.Location.t -> string -> t
 
-  val short : t -> string
+  val last : t -> string
 
   val pp : Format.formatter -> t -> unit
 
   val to_string : sep:string -> t -> string
 
-  val to_qualified_procname : ?loc:Textual.Location.t -> t -> Textual.qualified_procname
+  val to_qualified_procname : t -> Textual.qualified_procname
 
-  val to_type_name : ?loc:Textual.Location.t -> ?static:bool -> t -> Textual.TypeName.t
+  val to_type_name : ?static:bool -> t -> Textual.TypeName.t
 
-  val to_proc_name : ?loc:Textual.Location.t -> t -> Textual.ProcName.t
+  val to_proc_name : t -> Textual.ProcName.t
 
-  val to_constructor : ?loc:Textual.Location.t -> t -> Textual.ProcName.t
+  val to_constructor : t -> Textual.ProcName.t
 
-  val to_typ : ?loc:Textual.Location.t -> t -> Textual.Typ.t
+  val to_typ : t -> Textual.Typ.t
 
   val is_primitive_type : t -> bool
 
-  val to_var_name : ?loc:Textual.Location.t -> t -> Textual.VarName.t
+  val to_var_name : t -> Textual.VarName.t
 
-  val unknown_ident : string -> t
+  val unknown_ident : ?loc:Textual.Location.t -> string -> t
   (** Wrap a variable name into a special enclosing class when a global's origin can't be found. *)
 
-  val mk : ?prefix:t -> string -> t
+  val mk : ?global:bool -> ?loc:Textual.Location.t -> string -> t
+
+  val extend : prefix:t -> string -> t
 
   val mk_builtin : string -> t
 
