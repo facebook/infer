@@ -1661,10 +1661,10 @@ module COMPARE_OP = struct
     Debug.p "[%s] cmp_op = %a\n" opname Builtin.Compare.pp cmp_op ;
     let env =
       match cmp_op with
-      | Lt | Le | Gt | Ge | In | NotIn | Is | IsNot | Exception | BAD ->
+      | In | NotIn | Is | IsNot | Exception | BAD ->
           L.die InternalError "TODO: support for COMPARE_OP[%a] is not yet implemented"
             Builtin.Compare.pp cmp_op
-      | Neq | Eq ->
+      | Lt | Le | Gt | Ge | Neq | Eq ->
           let env, rhs = pop_datastack opname env in
           let env, lhs = pop_datastack opname env in
           let env, lhs, _ = load_cell env code lhs in

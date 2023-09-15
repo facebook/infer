@@ -12,6 +12,7 @@ module Builtin = struct
   type primitive = PythonInt | PythonFloat | PythonBool | PythonString | PythonBytes | PythonTuple
   [@@deriving compare]
 
+  (* Some interesting source of information: https://docs.python.org/3/library/operator.html *)
   module Compare = struct
     type t = Lt | Le | Eq | Neq | Gt | Ge | In | NotIn | Is | IsNot | Exception | BAD
     [@@deriving compare, enumerate]
@@ -193,6 +194,12 @@ module Set = struct
 
 
   let textual_builtins =
+    let compare_op op =
+      ( Builtin.CompareOp op
+      , { formals_types= Some [annotatedObject; annotatedObject]
+        ; result_type= annot PyCommon.pyBool
+        ; used_struct_types= [] } )
+    in
     let builtins =
       [ ( Builtin.IsTrue
         , { formals_types= Some [annotatedObject]
@@ -243,15 +250,12 @@ module Set = struct
         , { formals_types= Some [annotatedObject; annotatedObject; annotatedObject]
           ; result_type= annot PyCommon.pyNone
           ; used_struct_types= [] } )
-      ; ( Builtin.CompareOp Eq
-        , { formals_types= Some [annotatedObject; annotatedObject]
-          ; result_type= annot PyCommon.pyBool
-          ; used_struct_types= [] } )
-      ; ( Builtin.CompareOp Neq
-        , { formals_types= Some [annotatedObject; annotatedObject]
-          ; result_type= annot PyCommon.pyBool
-          ; used_struct_types= [] } )
-        (* TODO: add type signatures of other CompareOp when we support them *) ]
+      ; compare_op Eq
+      ; compare_op Neq
+      ; compare_op Lt
+      ; compare_op Le
+      ; compare_op Gt
+      ; compare_op Ge (* TODO: add type signatures of other CompareOp when we support them *) ]
     in
     List.fold_left
       ~f:(fun acc (builtin, elt) -> Info.add (Builtin.Textual builtin) elt acc)

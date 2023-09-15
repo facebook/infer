@@ -1829,8 +1829,7 @@ def _main():
 
     mydir = os.path.abspath(os.path.normpath(os.path.dirname(sys.argv[0])))
     i = len(sys.path) - 1
-    # while i >= 0:
-    while i == 0:
+    while i >= 0:
         if os.path.abspath(os.path.normpath(sys.path[i])) == mydir:
             # del sys.path[i] # not supported yet
             pass
@@ -1896,7 +1895,7 @@ if __name__ == '__main__':
 
         #b1:
             n11:*PyObject = load &i
-            n12 = $builtins.python_eq(n11, $builtins.python_int(0))
+            n12 = $builtins.python_ge(n11, $builtins.python_int(0))
             n13 = $builtins.python_is_true(n12)
             if n13 then jmp b2 else jmp b3
 
@@ -1945,6 +1944,8 @@ if __name__ == '__main__':
       global $python_implicit_names::__name__: *PyString
 
       global $python_implicit_names::__file__: *PyString
+
+      declare $builtins.python_ge(*PyObject, *PyObject) : *PyBool
 
       declare $builtins.python_eq(*PyObject, *PyObject) : *PyBool
 
@@ -2315,6 +2316,100 @@ def f(x, y, z, t):
           declare $builtins.python_code(*String) : *PyCode
 
           declare $builtins.python_is_true(*PyObject) : int
+
+          declare $builtins.python_tuple(...) : *PyObject
+
+          declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+          declare $builtins.python_string(*String) : *PyString
+
+          declare $builtins.python_bool(int) : *PyBool
+
+          declare $builtins.python_float(float) : *PyFloat
+
+          declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+def f(x, y):
+  return (x > y)
+        |} in
+      test source ;
+      [%expect
+        {|
+          .source_language = "python"
+
+          define dummy.$toplevel() : *PyNone {
+            #b0:
+                n0 = $builtins.python_code("dummy.f")
+                ret null
+
+          }
+
+          define dummy.f(x: *PyObject, y: *PyObject) : *PyObject {
+            #b0:
+                n0:*PyObject = load &x
+                n1:*PyObject = load &y
+                n2 = $builtins.python_gt(n0, n1)
+                ret n2
+
+          }
+
+          global $python_implicit_names::__name__: *PyString
+
+          global $python_implicit_names::__file__: *PyString
+
+          declare $builtins.python_gt(*PyObject, *PyObject) : *PyBool
+
+          declare $builtins.python_code(*String) : *PyCode
+
+          declare $builtins.python_tuple(...) : *PyObject
+
+          declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+          declare $builtins.python_string(*String) : *PyString
+
+          declare $builtins.python_bool(int) : *PyBool
+
+          declare $builtins.python_float(float) : *PyFloat
+
+          declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+def f(x, y):
+  return (x <= y)
+        |} in
+      test source ;
+      [%expect
+        {|
+          .source_language = "python"
+
+          define dummy.$toplevel() : *PyNone {
+            #b0:
+                n0 = $builtins.python_code("dummy.f")
+                ret null
+
+          }
+
+          define dummy.f(x: *PyObject, y: *PyObject) : *PyObject {
+            #b0:
+                n0:*PyObject = load &x
+                n1:*PyObject = load &y
+                n2 = $builtins.python_le(n0, n1)
+                ret n2
+
+          }
+
+          global $python_implicit_names::__name__: *PyString
+
+          global $python_implicit_names::__file__: *PyString
+
+          declare $builtins.python_le(*PyObject, *PyObject) : *PyBool
+
+          declare $builtins.python_code(*String) : *PyCode
 
           declare $builtins.python_tuple(...) : *PyObject
 
