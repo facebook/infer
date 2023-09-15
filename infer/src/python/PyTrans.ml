@@ -120,6 +120,7 @@ let load_var_name env loc name =
   let loc = Env.loc env in
   let key = Symbol.Local name in
   let opt_sym = Env.lookup_symbol env key in
+  Debug.p "loading varname: %s -> %a\n" name (Pp.option Symbol.pp) opt_sym ;
   let typ =
     match (opt_sym : Symbol.t option) with
     | Some {Symbol.kind= Name {typ}} ->
@@ -132,10 +133,50 @@ let load_var_name env loc name =
   in
   let info = info typ in
   let env, id = Env.mk_fresh_ident env info in
+  Debug.p "%a <- %a\n" T.Ident.pp id T.Exp.pp exp ;
   let typ = Some typ in
   let instr = T.Instr.Load {id; exp; typ; loc} in
   let env = Env.push_instr env instr in
   (env, Ok (T.Exp.Var id), info)
+
+
+(** Special case of [load_name] *)
+let load_name env loc ~global name =
+  let default_info typ = Env.Info.default typ in
+  let default = default_info PyCommon.pyObject in
+  let ({Env.Info.typ; kind} as info), qualified_name =
+    let key = mk_key global loc name in
+    let opt_sym = Env.lookup_symbol env key in
+    match (opt_sym : Symbol.t option) with
+    | Some {Symbol.kind= Name {typ}; id} ->
+        (default_info typ, id)
+    | Some {Symbol.kind= Class; id} ->
+        L.die InternalError "[load_cell] with class: should never happen ?  %a" Ident.pp id
+    | Some {Symbol.kind= Code; id} ->
+        ({Env.Info.kind= Code; typ= PyCommon.pyCode}, id)
+    | Some {Symbol.kind= Import _ | ImportCall; id} ->
+        L.die InternalError "[load_cell] called with %a (import)" Ident.pp id
+    | Some {Symbol.kind= Builtin; id} ->
+        L.die InternalError "[load_cell] called with %a (builtin)" Ident.pp id
+    | None ->
+        (default, Ident.unknown_ident name)
+  in
+  if Env.Info.is_code kind then
+    (* If we are trying to load some code, use the dedicated builtin *)
+    let fname = Ident.to_string ~sep:"." qualified_name in
+    let name = T.Exp.Const (Str fname) in
+    let env, id, typ = Env.mk_builtin_call env Builtin.PythonCode [name] in
+    let info = {info with Env.Info.typ} in
+    (env, Ok (T.Exp.Var id), info)
+  else
+    let var_name = Ident.to_var_name qualified_name in
+    let exp = T.Exp.Lvar var_name in
+    let loc = Env.loc env in
+    let env, id = Env.mk_fresh_ident env info in
+    let instr = T.Instr.Load {id; exp; typ= Some typ; loc} in
+    let env = Env.push_instr env instr in
+    (* TODO: try to trace the type of names, not only global ones ? *)
+    (env, Ok (T.Exp.Var id), info)
 
 
 (** Try to load the data referenced by a [DataStack.cell], into a [Textual.Exp.t] *)
@@ -147,6 +188,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
      These data are mapped to Textual.Exp.t values as much as possible. But it's not always
      desirable (see MAKE_FUNCTION) *)
   let loc = Env.loc env in
+  Debug.p "[load_cell] %a\n" DataStack.pp_cell cell ;
   match (cell : DataStack.cell) with
   | Const ndx ->
       let const = co_consts.(ndx) in
@@ -155,39 +197,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       (env, Ok exp, info)
   | Name {global; ndx} ->
       let name = co_names.(ndx) in
-      let ({Env.Info.typ; kind} as info), qualified_name =
-        let key = mk_key global loc name in
-        let opt_sym = Env.lookup_symbol env key in
-        match (opt_sym : Symbol.t option) with
-        | Some {Symbol.kind= Name {typ}; id} ->
-            (default_info typ, id)
-        | Some {Symbol.kind= Class; id} ->
-            L.die InternalError "[load_cell] with class: should never happen ?  %a" Ident.pp id
-        | Some {Symbol.kind= Code; id} ->
-            ({Env.Info.kind= Code; typ= PyCommon.pyCode}, id)
-        | Some {Symbol.kind= Import _ | ImportCall; id} ->
-            L.die InternalError "[load_cell] called with %a (import)" Ident.pp id
-        | Some {Symbol.kind= Builtin; id} ->
-            L.die InternalError "[load_cell] called with %a (builtin)" Ident.pp id
-        | None ->
-            (default, Ident.unknown_ident name)
-      in
-      if Env.Info.is_code kind then
-        (* If we are trying to load some code, use the dedicated builtin *)
-        let fname = Ident.to_string ~sep:"." qualified_name in
-        let name = T.Exp.Const (Str fname) in
-        let env, id, typ = Env.mk_builtin_call env Builtin.PythonCode [name] in
-        let info = {info with Env.Info.typ} in
-        (env, Ok (T.Exp.Var id), info)
-      else
-        let var_name = Ident.to_var_name qualified_name in
-        let exp = T.Exp.Lvar var_name in
-        let loc = Env.loc env in
-        let env, id = Env.mk_fresh_ident env info in
-        let instr = T.Instr.Load {id; exp; typ= Some typ; loc} in
-        let env = Env.push_instr env instr in
-        (* TODO: try to trace the type of names, not only global ones ? *)
-        (env, Ok (T.Exp.Var id), info)
+      load_name env loc ~global name
   | VarName ndx ->
       let name = co_varnames.(ndx) in
       load_var_name env loc name
@@ -202,6 +212,54 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       (env, Ok exp, info)
   | Map _map ->
       (env, Error "TODO: load Map cells", default)
+  | Path id -> (
+      let f_root env ~global ~loc name =
+        Debug.p "f_root %b %s\n" global name ;
+        let env, res, info = load_name env loc ~global name in
+        let {Env.Info.typ} = info in
+        let type_name = match (typ : T.Typ.t) with Ptr (Struct name) -> Some name | _ -> None in
+        let fields = Option.bind type_name ~f:(Env.lookup_fields env) in
+        match res with Error s -> Error (env, s) | Ok exp -> Ok (env, exp, info, fields)
+      in
+      let f_path attribute acc =
+        match acc with
+        | Error err ->
+            Error err
+        | Ok (env, exp, _, fields) ->
+            let field =
+              Option.bind fields
+                ~f:
+                  (List.find_map ~f:(fun {PyCommon.name; annotation} ->
+                       Option.some_if (String.equal name attribute) annotation ) )
+            in
+            let lifted_field_typ =
+              let open IOption.Let_syntax in
+              let* field in
+              let* lifted_field_id = lift_type_ident env field in
+              let lifted_field_typ = Ident.to_typ lifted_field_id in
+              Some lifted_field_typ
+            in
+            let field_typ = Option.value ~default:PyCommon.pyObject lifted_field_typ in
+            let info = Env.Info.default field_typ in
+            let env, id = Env.mk_fresh_ident env info in
+            let loc = Env.loc env in
+            let field_name = field_name ~loc attribute in
+            let field = {T.enclosing_class= T.TypeName.wildcard; name= field_name} in
+            let exp = T.Exp.Field {exp; field} in
+            let instr = T.Instr.Load {id; exp; typ= Some field_typ; loc} in
+            let env = Env.push_instr env instr in
+            (* Now try to fetch information about the current step of the path *)
+            let type_name =
+              match (field_typ : T.Typ.t) with Ptr (Struct name) -> Some name | _ -> None
+            in
+            let new_fields = Option.bind type_name ~f:(Env.lookup_fields env) in
+            Ok (env, T.Exp.Var id, info, new_fields)
+      in
+      match Ident.fold ~init:env ~f_root ~f_path id with
+      | Error (env, s) ->
+          (env, Error s, default)
+      | Ok (env, exp, info, _) ->
+          (env, Ok exp, info) )
   | BuiltinBuildClass | StaticCall _ | MethodCall _ | Import _ | ImportCall _ | Super ->
       L.die InternalError "[load_cell] Can't load %a, something went wrong" DataStack.pp_cell cell
 
@@ -304,35 +362,14 @@ module LOAD = struct
       | ATTR -> (
           let env, cell = pop_datastack opname env in
           let fname = co_names.(arg) in
-          let env, res, {Env.Info.typ} = load_cell env code cell in
-          let type_name = match (typ : T.Typ.t) with Ptr (Struct name) -> Some name | _ -> None in
-          let fields = Option.bind type_name ~f:(Env.lookup_fields env) in
-          let field_ty =
-            let open IOption.Let_syntax in
-            let* fields in
-            let* field_ty =
-              List.find_map
-                ~f:(fun {PyCommon.name; annotation} ->
-                  Option.some_if (String.equal name fname) annotation )
-                fields
-            in
-            lift_type_ident env field_ty
-          in
-          let typ = Option.value_map ~default:PyCommon.pyObject ~f:Ident.to_typ field_ty in
-          match res with
-          | Error s ->
-              L.die ExternalError "Failed to load attribute %s from cell %a: %s" fname
-                DataStack.pp_cell cell s
-          | Ok exp ->
-              let info = Env.Info.default typ in
-              let env, id = Env.mk_fresh_ident env info in
-              let loc = Env.loc env in
-              let name = field_name ~loc fname in
-              let field = {T.enclosing_class= T.TypeName.wildcard; name} in
-              let exp = T.Exp.Field {exp; field} in
-              let instr = T.Instr.Load {id; exp; typ= Some typ; loc} in
-              let env = Env.push_instr env instr in
-              (env, DataStack.Temp id) )
+          let prefix = DataStack.as_id code cell in
+          let id = Option.map ~f:(fun prefix -> Ident.extend ~prefix fname) prefix in
+          match id with
+          | None ->
+              L.die ExternalError "Failed to load attribute %s from cell %a" fname DataStack.pp_cell
+                cell
+          | Some id ->
+              (env, DataStack.Path id) )
     in
     Debug.p "[%s] arg = %a\n" opname (pp code) kind ;
     (Env.push env cell, None)
@@ -436,7 +473,6 @@ module FUNCTION = struct
 
     let builtin_build_class env code opname name_cell code_cell parent_cell =
       let as_name kind cell =
-        (* TODO: FIXME *)
         match DataStack.as_name code cell with
         | Some name ->
             name
@@ -445,7 +481,7 @@ module FUNCTION = struct
               DataStack.pp_cell name_cell
       in
       let code_name = as_name "base" name_cell in
-      let parent = Option.map ~f:(fun cell -> Ident.mk @@ as_name "parent" cell) parent_cell in
+      let parent = Option.bind ~f:(DataStack.as_id code) parent_cell in
       let code =
         match DataStack.as_code code code_cell with
         | Some code ->
@@ -487,6 +523,8 @@ module FUNCTION = struct
         | _ ->
             L.die InternalError "[%s] unsupported call to LOAD_BUILD_CLASS with arg = %d" opname arg
         )
+      | Path id ->
+          static_call env opname code id cells
       | Import _ | ImportCall _ | StaticCall _ | MethodCall _ ->
           L.die InternalError "[%s] unsupported call to %a with arg = %d" opname DataStack.pp_cell
             fname arg
@@ -575,6 +613,7 @@ module FUNCTION = struct
         | ImportCall _
         | MethodCall _
         | StaticCall _
+        | Path _
         | Super ->
             L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell qual)
         | Const ndx -> (
@@ -758,6 +797,7 @@ module METHOD = struct
       | Map _
       | BuiltinBuildClass
       | Import _
+      | Path _
       | Super ->
           L.die InternalError "[%s] failed to load method information from cell %a" opname
             DataStack.pp_cell cell_mi
@@ -957,9 +997,16 @@ module POP_TOP = struct
   (** {v POP_TOP v}
 
       Pop the top-of-stack and discard it *)
-  let run env {FFI.Instruction.opname} =
+  let run env code {FFI.Instruction.opname} =
     Debug.p "[%s]\n" opname ;
-    let env, _cell = pop_datastack opname env in
+    let env, cell = pop_datastack opname env in
+    (* Maybe we're popping a delayed access using a [Path] so let's load it in case it had side-effects *)
+    let env =
+      if DataStack.is_path cell then
+        let env, _ (* TODO: maybe catch error here ? *), _ = load_cell env code cell in
+        env
+      else env
+    in
     (env, None)
 end
 
@@ -1510,6 +1557,7 @@ end
 
 (** Main opcode dispatch function. *)
 let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) next_offset_opt =
+  Debug.p "> %s\n" opname ;
   let env = Env.update_last_line env starts_line in
   (* TODO: there are < 256 opcodes, could setup an array of callbacks instead *)
   let env, maybe_term =
@@ -1535,7 +1583,7 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
     | "RETURN_VALUE" ->
         RETURN_VALUE.run env code instr
     | "POP_TOP" ->
-        POP_TOP.run env instr
+        POP_TOP.run env code instr
     | "CALL_FUNCTION" ->
         FUNCTION.CALL.run env code instr
     | "BINARY_ADD" ->
@@ -2007,8 +2055,9 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
         if is_imported_from_ABC then ([], [])
         else
           let parent =
-            (* TODO: probably fix this if a parent class is imported *)
-            Option.value parent_id ~default:(Ident.unknown_ident (Ident.to_string ~sep:"::" parent))
+            (* If the parent class is imported, we can't do much check, so we trust it upfront,
+               since compilation was happy *)
+            Option.value parent_id ~default:parent
           in
           let supers = [Ident.to_type_name ~static:false parent] in
           let static_supers = [Ident.to_type_name ~static:true parent] in

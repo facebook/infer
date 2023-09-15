@@ -74,11 +74,16 @@ module DataStack : sig
         (** call to static method in class. Because we turn some method calls into static ones, we
             have to keep the receiver around, just in case. *)
     | Super  (** special name to refer to the parent class, like in [super().__init__()] *)
+    | Path of Ident.t  (** Qualified path for sequence of imports, attribute accesses, ... *)
   [@@deriving show]
 
   val as_code : FFI.Code.t -> cell -> FFI.Code.t option
 
   val as_name : FFI.Code.t -> cell -> string option
+
+  val as_id : FFI.Code.t -> cell -> Ident.t option
+
+  val is_path : cell -> bool
 
   type t = cell list
 end

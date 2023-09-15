@@ -82,11 +82,11 @@ module DataStack = struct
     | Map of (string * cell) list
     | BuiltinBuildClass
     | Import of {import_path: Ident.t; symbols: string list}
-      (* TODO: change import_path into a list when we supported structured path foo.bar.baz *)
     | ImportCall of {id: Ident.t; loc: T.Location.t}
     | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
     | StaticCall of {call_name: T.qualified_procname; receiver: T.Exp.t option}
     | Super
+    | Path of Ident.t
   [@@deriving show]
 
   let as_code FFI.Code.{co_consts} = function
@@ -95,6 +95,7 @@ module DataStack = struct
         FFI.Constant.as_code code
     | Code {code} ->
         Some code
+    | Path _
     | Name _
     | Temp _
     | VarName _
@@ -116,6 +117,7 @@ module DataStack = struct
         Some co_names.(ndx)
     | VarName ndx ->
         Some co_varnames.(ndx)
+    | Path _
     | Code _
     | Temp _
     | Map _
@@ -127,6 +129,30 @@ module DataStack = struct
     | Super ->
         None
 
+
+  let as_id code cell =
+    match cell with
+    | Const _ ->
+        Option.map ~f:Ident.mk (as_name code cell)
+    | Name {global} ->
+        Option.map ~f:(Ident.mk ~global) (as_name code cell)
+    | VarName _ ->
+        Option.map ~f:(Ident.mk ~global:false) (as_name code cell)
+    | Path id ->
+        Some id
+    | Code _
+    | Temp _
+    | Map _
+    | BuiltinBuildClass
+    | Import _
+    | ImportCall _
+    | MethodCall _
+    | StaticCall _
+    | Super ->
+        None
+
+
+  let is_path = function Path _ -> true | _ -> false
 
   type t = cell list
 

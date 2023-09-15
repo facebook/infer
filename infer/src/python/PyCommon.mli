@@ -113,6 +113,13 @@ module Ident : sig
 
   val pp : Format.formatter -> t -> unit
 
+  val fold :
+       f_root:('a -> global:bool -> loc:Textual.Location.t -> string -> 'b)
+    -> f_path:(string -> 'b -> 'b)
+    -> init:'a
+    -> t
+    -> 'b
+
   val to_string : sep:string -> t -> string
 
   val to_qualified_procname : t -> Textual.qualified_procname

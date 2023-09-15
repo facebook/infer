@@ -1526,6 +1526,54 @@ g()
         declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+import unittest
+
+class MyTest(unittest.TestCase):
+        pass
+        |} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = unittest.$toplevel()
+              n1 = $builtins.python_class("dummy::MyTest")
+              ret null
+
+        }
+
+        declare dummy::MyTest(...) : *dummy::MyTest
+
+        declare dummy::MyTest.__init__(...) : *PyNone
+
+        global dummy::MyTest$static: *PyObject
+
+        type .static dummy::MyTest$static extends unittest::TestCase$static = {
+        }
+
+        type dummy::MyTest extends unittest::TestCase = {}
+
+        declare unittest.$toplevel() : *PyObject
+
+        declare $builtins.python_class(*String) : *PyClass
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )
 
 

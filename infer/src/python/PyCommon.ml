@@ -200,6 +200,16 @@ module Ident = struct
     else Format.asprintf "%s::%a%s%s" name pp_rev_list path sep last
 
 
+  let fold ~f_root ~f_path ~init {root; path} =
+    let {name; loc; global} = root in
+    let acc = f_root init ~global ~loc name in
+    match path with
+    | Empty ->
+        acc
+    | Path {last; path} ->
+        List.fold_right (last :: path) ~f:f_path ~init:acc
+
+
   let to_string ~sep {root= {name}; path} =
     match path with Empty -> name | Path {path; last} -> to_enclosing_name name path sep last
 
