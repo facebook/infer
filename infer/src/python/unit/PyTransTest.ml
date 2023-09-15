@@ -55,6 +55,10 @@ let%test_module "basic_tests" =
 
         global dummy::x: *PyObject
 
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
         declare $builtins.python_tuple(...) : *PyObject
 
         declare $builtins.python_bytes(*Bytes) : *PyBytes
@@ -88,6 +92,10 @@ print(x)
         }
 
         global dummy::x: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
 
         declare $builtins.print(...) : *PyObject
 
@@ -131,6 +139,10 @@ print(x + y)
 
         global dummy::x: *PyObject
 
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
         declare $builtins.print(...) : *PyObject
 
         declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
@@ -166,6 +178,10 @@ pi = 3.14
 
         global dummy::pi: *PyObject
 
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
         declare $builtins.python_tuple(...) : *PyObject
 
         declare $builtins.python_bytes(*Bytes) : *PyBytes
@@ -196,6 +212,10 @@ byte_data = b'\x48\x65\x6C\x6C\x6F'  # Equivalent to b'Hello'
         }
 
         global dummy::byte_data: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
 
         declare $builtins.python_tuple(...) : *PyObject
 
@@ -268,6 +288,10 @@ print(z)
 
         global dummy::a: *PyObject
 
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
         declare $builtins.print(...) : *PyObject
 
         declare $builtins.python_code(*String) : *PyCode
@@ -326,6 +350,10 @@ print(z)
         }
 
         global dummy::z: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
 
         declare $builtins.print(...) : *PyObject
 
@@ -396,6 +424,10 @@ def f(x, y):
               ret n3
 
         }
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
 
         declare $builtins.python_code(*String) : *PyCode
 
@@ -471,6 +503,10 @@ def f(x, y):
               ret n4
 
         }
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
 
         declare $builtins.python_code(*String) : *PyCode
 
@@ -580,6 +616,10 @@ def f(x, y):
 
         }
 
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
         declare $builtins.python_code(*String) : *PyCode
 
         declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
@@ -645,6 +685,10 @@ def f(x):
 
       }
 
+      global $python_implicit_names::__name__: *PyString
+
+      global $python_implicit_names::__file__: *PyString
+
       declare $builtins.python_code(*String) : *PyCode
 
       declare $builtins.python_call(...) : *PyObject
@@ -701,6 +745,10 @@ for x in range(10):
         }
 
         global dummy::x: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
 
         declare $builtins.range(...) : *PyObject
 
@@ -772,6 +820,10 @@ def f(x):
 
         }
 
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
         declare $builtins.print(...) : *PyObject
 
         declare $builtins.python_code(*String) : *PyCode
@@ -827,6 +879,10 @@ def f1(x, y:str) -> bool:
 
         }
 
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
         declare $builtins.python_code(*String) : *PyCode
 
         declare $builtins.python_tuple(...) : *PyObject
@@ -881,6 +937,10 @@ expect_int(get())
 
         }
 
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
         declare $builtins.python_code(*String) : *PyCode
 
         declare $builtins.python_tuple(...) : *PyObject
@@ -934,6 +994,10 @@ expect(get())
               ret $builtins.python_int(42)
 
         }
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
 
         declare $builtins.python_code(*String) : *PyCode
 
@@ -1039,6 +1103,10 @@ c.set(42)
         type dummy::C = {}
 
         global dummy::c: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
 
         declare $builtins.python_class(*String) : *PyClass
 
@@ -1191,6 +1259,10 @@ print(c.z)
 
         global dummy::c: *PyObject
 
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
         declare $builtins.print(...) : *PyObject
 
         declare $builtins.python_code(*String) : *PyCode
@@ -1274,6 +1346,10 @@ class D(C):
 
         type dummy::D extends dummy::C = {}
 
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
         declare $builtins.python_class(*String) : *PyClass
 
         declare $builtins.python_tuple(...) : *PyObject
@@ -1326,6 +1402,10 @@ C.f()
         type .static dummy::C$static = {}
 
         type dummy::C = {}
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
 
         declare $builtins.python_class(*String) : *PyClass
 
@@ -1407,6 +1487,10 @@ def g(c: C) -> None:
 
     }
 
+    global $python_implicit_names::__name__: *PyString
+
+    global $python_implicit_names::__file__: *PyString
+
     declare $builtins.print(...) : *PyObject
 
     declare $builtins.python_code(*String) : *PyCode
@@ -1455,6 +1539,10 @@ base.f(0)
         declare base.f(...) : *PyObject
 
         declare base.$toplevel() : *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
 
         declare $builtins.python_tuple(...) : *PyObject
 
@@ -1513,6 +1601,10 @@ g()
 
         declare base.$toplevel() : *PyObject
 
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
         declare $builtins.python_code(*String) : *PyCode
 
         declare $builtins.python_tuple(...) : *PyObject
@@ -1560,6 +1652,10 @@ class MyTest(unittest.TestCase):
         type dummy::MyTest extends unittest::TestCase = {}
 
         declare unittest.$toplevel() : *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
 
         declare $builtins.python_class(*String) : *PyClass
 
@@ -1628,7 +1724,7 @@ if __name__ == '__main__':
             n3:*PyObject = load &test.libregrtest::main
             store &dummy::main_in_temp_cwd <- n3:*PyObject
             n4 = $builtins.python_code("dummy._main")
-            n5:*PyObject = load &$ambiguous::__name__
+            n5:*PyString = load &$python_implicit_names::__name__
             n6 = $builtins.python_eq(n5, $builtins.python_string("__main__"))
             n7 = $builtins.python_is_true(n6)
             if n7 then jmp b1 else jmp b2
@@ -1687,7 +1783,7 @@ if __name__ == '__main__':
 
         #b3:
             n23:*PyObject = load &os::path
-            n24:*PyObject = load &$ambiguous::__file__
+            n24:*PyString = load &$python_implicit_names::__file__
             n25 = n23.?.abspath(n24)
             store &dummy::__file__ <- n25:*PyObject
             n26 = test.libregrtest.main()
@@ -1704,6 +1800,10 @@ if __name__ == '__main__':
       declare sys.$toplevel() : *PyObject
 
       declare os.$toplevel() : *PyObject
+
+      global $python_implicit_names::__name__: *PyString
+
+      global $python_implicit_names::__file__: *PyString
 
       declare $builtins.python_eq(*PyObject, *PyObject) : *PyBool
 
@@ -1727,14 +1827,12 @@ if __name__ == '__main__':
 
       Errors while type checking the test:
       dummy.py, line 4, column 0: textual type error: variable test.libregrtest::main has not been declared
-      dummy.py, <unknown location>: textual type error: variable $ambiguous::__name__ has not been declared
       dummy.py, <unknown location>: textual type error: variable os::path has not been declared
       dummy.py, <unknown location>: textual type error: variable os::path has not been declared
       dummy.py, <unknown location>: textual type error: variable os::path has not been declared
       dummy.py, <unknown location>: textual type error: variable sys::argv has not been declared
       dummy.py, <unknown location>: textual type error: variable sys::path has not been declared
       dummy.py, <unknown location>: textual type error: variable os::path has not been declared
-      dummy.py, <unknown location>: textual type error: variable $ambiguous::__file__ has not been declared
       dummy.py, line 2, column 0: textual type error: variable dummy::__file__ has not been declared
       dummy.py, <unknown location>: textual type error: variable os::path has not been declared
       dummy.py, <unknown location>: textual type error: variable os::path has not been declared
@@ -1784,6 +1882,10 @@ class D(C):
           type .static dummy::D$static extends dummy::C$static = {}
 
           type dummy::D extends dummy::C = {}
+
+          global $python_implicit_names::__name__: *PyString
+
+          global $python_implicit_names::__file__: *PyString
 
           declare $builtins.python_class(*String) : *PyClass
 
@@ -1912,6 +2014,10 @@ class D0(C0):
 
           type dummy::D0 extends dummy::C0 = {}
 
+          global $python_implicit_names::__name__: *PyString
+
+          global $python_implicit_names::__file__: *PyString
+
           declare $builtins.python_class(*String) : *PyClass
 
           declare $builtins.python_tuple(...) : *PyObject
@@ -1959,6 +2065,10 @@ def f(x, y):
 
         }
 
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
         declare $builtins.python_eq(*PyObject, *PyObject) : *PyBool
 
         declare $builtins.python_code(*String) : *PyCode
@@ -1989,6 +2099,10 @@ def f(x, y):
               ret null
 
         }
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
 
         declare $builtins.python_neq(*PyObject, *PyObject) : *PyBool
 
@@ -2048,6 +2162,10 @@ def f(x, y, z, t):
                 ret n9
 
           }
+
+          global $python_implicit_names::__name__: *PyString
+
+          global $python_implicit_names::__file__: *PyString
 
           declare $builtins.python_code(*String) : *PyCode
 
@@ -2121,6 +2239,10 @@ class C(ABC):
 
         declare abc.$toplevel() : *PyObject
 
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
         declare $builtins.python_class(*String) : *PyClass
 
         declare $builtins.python_tuple(...) : *PyObject
@@ -2158,6 +2280,10 @@ print(l[0])
           }
 
           global dummy::l: *PyObject
+
+          global $python_implicit_names::__name__: *PyString
+
+          global $python_implicit_names::__file__: *PyString
 
           declare $builtins.print(...) : *PyObject
 
@@ -2204,6 +2330,10 @@ l[x] = 10
           global dummy::x: *PyObject
 
           global dummy::l: *PyObject
+
+          global $python_implicit_names::__name__: *PyString
+
+          global $python_implicit_names::__file__: *PyString
 
           declare $builtins.python_subscript_set(*PyObject, *PyObject, *PyObject) : *PyNone
 
@@ -2257,6 +2387,10 @@ def build_list():
         }
 
         global dummy::l: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
 
         declare $builtins.print(...) : *PyObject
 
@@ -2327,6 +2461,10 @@ class Test(unittest.TestCase):
   declare unittest.$toplevel() : *PyObject
 
   declare signal.$toplevel() : *PyObject
+
+  global $python_implicit_names::__name__: *PyString
+
+  global $python_implicit_names::__file__: *PyString
 
   declare $builtins.python_class(*String) : *PyClass
 

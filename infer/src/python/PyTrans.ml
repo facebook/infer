@@ -140,6 +140,10 @@ let load_var_name env loc name =
   (env, Ok (T.Exp.Var id), info)
 
 
+let python_implicit_names = ["__name__"; "__file__"]
+
+let python_implicit_names_prefix = "$python_implicit_names"
+
 (** Special case of [load_name] *)
 let load_name env loc ~global name =
   let default_info typ = Env.Info.default typ in
@@ -159,7 +163,15 @@ let load_name env loc ~global name =
     | Some {Symbol.kind= Builtin; id} ->
         L.die InternalError "[load_name] called with %a (builtin)" Ident.pp id
     | None ->
-        (default, Ident.unknown_ident name)
+        (* Some default names like [__file__] and [__name__] are available implicitly in Python *)
+        if List.mem ~equal:String.equal python_implicit_names name then
+          let typ = PyCommon.pyString in
+          (* Note to self: not in builtins because I currently only have functions in there. Might
+             be worth merging in the future *)
+          let prefix = Ident.mk ~global ~loc python_implicit_names_prefix in
+          let id = Ident.extend ~prefix name in
+          (default_info typ, id)
+        else (default, Ident.unknown_ident name)
   in
   if Env.Info.is_code kind then
     (* If we are trying to load some code, use the dedicated builtin *)
@@ -2249,8 +2261,18 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
   let decls = List.rev decls in
   (* Declare all the import top level calls *)
   let imports = Env.get_textual_imports env in
+  (* Declare all the python implicits *)
+  let python_implicit_names =
+    List.map
+      ~f:(fun name ->
+        T.Module.Global
+          (let name = sprintf "%s::%s" python_implicit_names_prefix name in
+           {T.Global.name= var_name name; typ= PyCommon.pyString; attributes= []} ) )
+      python_implicit_names
+  in
   (* Gather everything into a Textual module *)
   let decls =
-    ((decl :: decls) @ globals @ imports) @ Builtin.Set.to_textual (Env.get_used_builtins env)
+    ((decl :: decls) @ globals @ imports @ python_implicit_names)
+    @ Builtin.Set.to_textual (Env.get_used_builtins env)
   in
   {T.Module.attrs= [python_attribute]; decls; sourcefile}
