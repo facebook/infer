@@ -870,39 +870,63 @@ struct NonDisjJoinLoop_ok_FP {
   NonDisjJoinLoop_ok_FP(std::string s) {}
 };
 
+struct Ptr {
+  int* ptr;
+  std::vector<int> vec;
+};
+
+Ptr global_ptr;
 class UnownedTest {
   Arr field;
+  Ptr ptr_field;
   std::vector<int> vec_field;
+  int* ptr;
 
-  void copy_assignment_points_to_global_ok_FP() {
+  void copy_assignment_points_to_global_ok() {
     auto& ref = global;
     field = ref; // we can't suggest moving here
+  }
+
+  void copy_assignment_copy_of_global_bad() {
+    auto ref = global;
+    field = ref; // moving is ok here
   }
 
   Arr* get_global_ptr() { return &global; }
 
-  void copy_assignment_via_callee_points_to_global_ok_FP() {
+  void copy_assignment_via_callee_points_to_global_ok() {
     auto& ref = get_global_ptr()->vec;
     vec_field = ref; // we can't suggest moving here
   }
 
-  void copy_assignment_points_to_ref_param_ok_FP(Arr& param) {
+  void copy_assignment_points_to_ref_param_ok(Arr& param) {
     auto& ref = param;
     field = ref; // we can't suggest moving here
   }
 
-  void intermediate_copy_points_to_global_ok_FP() {
+  void intermediate_copy_points_to_global_ok() {
     auto& ref = global;
     get_first_elem(ref);
   }
 
-  void intermediate_copy_via_callee_points_to_global_ok_FP() {
+  void intermediate_copy_copy_of_global_bad() {
+    auto ref = global;
+    get_first_elem(ref); // ok to move here
+  }
+
+  void intermediate_copy_via_callee_points_to_global_ok() {
     auto& ref = get_global_ptr()->vec;
     modify_arg(ref); // we can't suggest moving here
   }
 
-  void intermediate_copy_points_to_ref_param_ok_FP(Arr& param) {
+  void intermediate_copy_points_to_ref_param_ok(Arr& param) {
     auto& ref = param;
     get_first_elem(ref);
+  }
+
+  void copy_assignment_copy_ptr_bad() {
+    Ptr c{};
+    c.ptr = global_ptr.ptr;
+    ptr_field = c; // ok to move here
   }
 };
