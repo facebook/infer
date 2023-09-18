@@ -28,6 +28,10 @@ let field_name = PyCommon.field_name
 
 let qualified_procname = PyCommon.qualified_procname
 
+let map_error opname result =
+  Result.map_error ~f:(fun s -> L.internal_error "[%s] %s\n" opname s) result
+
+
 let mk_key global loc name =
   if global then Symbol.Global (Ident.mk ~global ~loc name) else Symbol.Local name
 
@@ -1062,6 +1066,7 @@ module STORE = struct
 
         Implements [top-of-stack1\[top-of-stack\] = top-of-stack2] *)
     let run env code {FFI.Instruction.opname} =
+      let open IResult.Let_syntax in
       Debug.p "[%s]\n" opname ;
       let env, cell_ndx = pop_datastack opname env in
       let env, cell_lhs = pop_datastack opname env in
@@ -1069,32 +1074,29 @@ module STORE = struct
       let env, ndx, _ = load_cell env code cell_ndx in
       let env, lhs, _ = load_cell env code cell_lhs in
       let env, rhs, _ = load_cell env code cell_rhs in
-      let ndx =
-        match ndx with
-        | Ok ndx ->
-            ndx
-        | Error s ->
-            L.die InternalError "[%s] Failure to load index %a: %s" opname DataStack.pp_cell
-              cell_ndx s
+      let* ndx =
+        Result.map_error
+          ~f:(fun s ->
+            L.internal_error "[%s] Failure to load index %a: %s\n" opname DataStack.pp_cell cell_ndx
+              s )
+          ndx
       in
-      let lhs =
-        match lhs with
-        | Ok lhs ->
-            lhs
-        | Error s ->
-            L.die InternalError "[%s] Failure to load indexable %a: %s" opname DataStack.pp_cell
-              cell_lhs s
+      let* lhs =
+        Result.map_error
+          ~f:(fun s ->
+            L.internal_error "[%s] Failure to load indexable %a: %s\n" opname DataStack.pp_cell
+              cell_lhs s )
+          lhs
       in
-      let rhs =
-        match rhs with
-        | Ok rhs ->
-            rhs
-        | Error s ->
-            L.die InternalError "[%s] Failure to load value %a: %s" opname DataStack.pp_cell
-              cell_rhs s
+      let* rhs =
+        Result.map_error
+          ~f:(fun s ->
+            L.internal_error "[%s] Failure to load value %a: %s\n" opname DataStack.pp_cell cell_rhs
+              s )
+          rhs
       in
       let env, _id, _typ = Env.mk_builtin_call env Builtin.PythonSubscriptSet [lhs; ndx; rhs] in
-      (env, None)
+      Ok (env, None)
   end
 end
 
@@ -1117,13 +1119,14 @@ end
 
 module BINARY = struct
   let binary_or_inplace env code opname builtin =
+    let open IResult.Let_syntax in
     Debug.p "[%s]\n" opname ;
     let env, tos = pop_datastack opname env in
     let env, tos1 = pop_datastack opname env in
     let env, lhs, _ = load_cell env code tos1 in
-    let lhs = match lhs with Ok lhs -> lhs | Error s -> L.die InternalError "[%s] %s" opname s in
+    let* lhs = map_error opname lhs in
     let env, rhs, _ = load_cell env code tos in
-    let rhs = match rhs with Ok rhs -> rhs | Error s -> L.die InternalError "[%s] %s" opname s in
+    let* rhs = map_error opname rhs in
     (* Even if the call can be considered as virtual because, it's logic is not symetric. Based
        on what I gathered, like in [0], I think the best course of action is to write a model for
        it and leave it non virtual. TODO: ask David.
@@ -1133,7 +1136,7 @@ module BINARY = struct
     *)
     let env, id, _typ = Env.mk_builtin_call env builtin [lhs; rhs] in
     let env = Env.push env (DataStack.Temp id) in
-    (env, None)
+    Ok (env, None)
 
 
   module ADD = struct
@@ -1170,30 +1173,29 @@ module BINARY = struct
 
         Implements [top-of-stack = top-of-stack1\[top-of-stack\]]. *)
     let run env code {FFI.Instruction.opname} =
+      let open IResult.Let_syntax in
       Debug.p "[%s]\n" opname ;
       let env, cell_ndx = pop_datastack opname env in
       let env, cell_lhs = pop_datastack opname env in
       let env, ndx, _ = load_cell env code cell_ndx in
       let env, lhs, _ = load_cell env code cell_lhs in
-      let ndx =
-        match ndx with
-        | Ok ndx ->
-            ndx
-        | Error s ->
-            L.die InternalError "[%s] Failure to load index %a: %s" opname DataStack.pp_cell
-              cell_ndx s
+      let* ndx =
+        Result.map_error
+          ~f:(fun s ->
+            L.internal_error "[%s] Failure to load index %a: %s\n" opname DataStack.pp_cell cell_ndx
+              s )
+          ndx
       in
-      let lhs =
-        match lhs with
-        | Ok lhs ->
-            lhs
-        | Error s ->
-            L.die InternalError "[%s] Failure to load indexable %a: %s" opname DataStack.pp_cell
-              cell_lhs s
+      let* lhs =
+        Result.map_error
+          ~f:(fun s ->
+            L.internal_error "[%s] Failure to load indexable %a: %s\n" opname DataStack.pp_cell
+              cell_lhs s )
+          lhs
       in
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonSubscriptGet [lhs; ndx] in
       let env = Env.push env (DataStack.Temp id) in
-      (env, None)
+      Ok (env, None)
   end
 end
 
@@ -1220,28 +1222,31 @@ module BUILD = struct
         which contains a tuple of keys, then starting from [top-of-stack+1], pops [count] values to
         form values in the built dictionary, which is pushed back on the stack. *)
     let run env code {FFI.Instruction.opname; arg} =
+      let open IResult.Let_syntax in
       Debug.p "[%s] count = %d\n" opname arg ;
       let env, cell = pop_datastack opname env in
-      let keys =
+      let* keys =
         match is_tuple_ids code cell with
         | Ok keys ->
-            List.rev keys
+            Ok (List.rev keys)
         | Error () ->
-            L.die UserError "[%s] expecting tuple of literal keys" opname
+            L.user_error "[%s] expecting tuple of literal keys\n" opname ;
+            Error ()
       in
       (* TODO check cells is a tuple of literal strings *)
       let env, values = pop_n_datastack opname env arg [] in
       Debug.p "  #values = %d\n" (List.length values) ;
-      let map =
+      let* map =
         match List.zip keys values with
         | List.Or_unequal_lengths.Ok map ->
-            map
+            Ok map
         | Base.List.Or_unequal_lengths.Unequal_lengths ->
-            L.die UserError "[%s] keys length (%d) doesn't match values length (%d)" opname
-              (List.length keys) (List.length values)
+            L.user_error "[%s] keys length (%d) doesn't match values length (%d)\n" opname
+              (List.length keys) (List.length values) ;
+            Error ()
       in
       let env = Env.push env (DataStack.Map map) in
-      (env, None)
+      Ok (env, None)
   end
 
   module LIST = struct
@@ -1255,7 +1260,7 @@ module BUILD = struct
       let env, items = cells_to_textual env opname code items in
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonBuildList items in
       let env = Env.push env (DataStack.Temp id) in
-      (env, None)
+      Ok (env, None)
   end
 end
 
@@ -1367,12 +1372,11 @@ module JUMP = struct
 
         If top-of-stack is false, sets the bytecode counter to target. top-of-steack is popped. *)
     let run ~next_is_true env code {FFI.Instruction.opname; arg} next_offset_opt =
+      let open IResult.Let_syntax in
       Debug.p "[%s] target = %d\n" opname arg ;
       let env, tos = pop_datastack opname env in
       let env, cell, _ = load_cell env code tos in
-      let cond =
-        match cell with Ok cond -> cond | Error s -> L.die InternalError "[%s] %s" opname s
-      in
+      let* cond = map_error opname cell in
       let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
       let next_offset = next_offset next_offset_opt in
       let env, next_info = mk_label_info env next_offset ~ssa_parameters in
@@ -1381,12 +1385,13 @@ module JUMP = struct
       let env, id, _ = Env.mk_builtin_call env Builtin.IsTrue [cond] in
       let condT = T.BoolExp.Exp (Var id) in
       let condition = if next_is_true then condT else T.BoolExp.Not condT in
-      ( env
-      , Some
-          (TwoWay
-             { condition
-             ; next_info= {label_info= next_info; offset= next_offset; ssa_args}
-             ; other_info= {label_info= other_info; offset= arg; ssa_args} } ) )
+      Ok
+        ( env
+        , Some
+            (TwoWay
+               { condition
+               ; next_info= {label_info= next_info; offset= next_offset; ssa_args}
+               ; other_info= {label_info= other_info; offset= arg; ssa_args} } ) )
   end
 
   module IF_OR_POP = struct
@@ -1400,15 +1405,14 @@ module JUMP = struct
         If top-of-stack is false, sets the bytecode counter to target and leaves top-of-stack on the
         stack. Otherwise (top-of-stack is true), top-of-stack is popped. *)
     let run ~jump_if env code {FFI.Instruction.opname; arg} next_offset_opt =
+      let open IResult.Let_syntax in
       Debug.p "[%s] target = %d\n" opname arg ;
       (* We only peek the top of stack so the logic of [stack_to_ssa] correctly captures it for
          the branch where "it stays". It will be restored as part of the stack restore logic when
          we process the "other" node. *)
       let tos = peek_datastack opname env in
       let env, cell, _ = load_cell env code tos in
-      let cond =
-        match cell with Ok cond -> cond | Error s -> L.die InternalError "[%s] %s" opname s
-      in
+      let* cond = map_error opname cell in
       (* Suggestion from @dpichardie: I could put the [IsTrue] expression directly in [condition].
          This would need a refactor of [mk_builtin_call] to get the full expression instead of
          the id that binds it. *)
@@ -1425,12 +1429,13 @@ module JUMP = struct
       in
       let next_ssa_args = List.tl ssa_args |> Option.value ~default:[] in
       let env, other_info = mk_label_info env arg ~ssa_parameters in
-      ( env
-      , Some
-          (TwoWay
-             { condition
-             ; next_info= {label_info= next_info; offset= next_offset; ssa_args= next_ssa_args}
-             ; other_info= {label_info= other_info; offset= arg; ssa_args} } ) )
+      Ok
+        ( env
+        , Some
+            (TwoWay
+               { condition
+               ; next_info= {label_info= next_info; offset= next_offset; ssa_args= next_ssa_args}
+               ; other_info= {label_info= other_info; offset= arg; ssa_args} } ) )
   end
 
   module FORWARD = struct
@@ -1445,7 +1450,7 @@ module JUMP = struct
       let offset = next_offset + delta in
       let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
       let env, label_info = mk_label_info env offset ~ssa_parameters in
-      (env, Some (Absolute {ssa_args; label_info; offset}))
+      Ok (env, Some (Absolute {ssa_args; label_info; offset}))
   end
 
   module ABSOLUTE = struct
@@ -1454,20 +1459,24 @@ module JUMP = struct
         Set bytecode counter to [target]. Can target a previous offset. *)
 
     let run env code {FFI.Instruction.opname; arg= target; offset} =
+      let open IResult.Let_syntax in
       Debug.p "[%s] target = %d\n" opname target ;
       let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
       (* sanity check: we should already have allocated a label for this jump, if it is a backward
          edge. *)
-      let () =
+      let* () =
         if target < offset then
           let opt_info = Env.label_of_offset env target in
-          if Option.is_none opt_info then
-            L.die UserError
-              "[%s] invalid input, can't find the target of a back-edge from offset %d to offset %d"
-              opname offset target
+          if Option.is_none opt_info then (
+            L.user_error
+              "[%s] invalid input, can't find the target of a back-edge from offset %d to offset %d\n"
+              opname offset target ;
+            Error () )
+          else Ok ()
+        else Ok ()
       in
       let env, label_info = mk_label_info env target ~ssa_parameters in
-      (env, Some (Absolute {ssa_args; label_info; offset= target}))
+      Ok (env, Some (Absolute {ssa_args; label_info; offset= target}))
   end
 end
 
@@ -1502,9 +1511,10 @@ module ITER = struct
       | Ok exp ->
           let env, id, _ = Env.mk_builtin_call env Builtin.PythonIter [exp] in
           let env = Env.push env (DataStack.Temp id) in
-          (env, None)
+          Ok (env, None)
       | Error s ->
-          L.die InternalError "[%s] %s" opname s
+          L.internal_error "[%s] %s\n" opname s ;
+          Error ()
   end
 
   module FOR = struct
@@ -1555,14 +1565,16 @@ module ITER = struct
           in
           let other_offset = delta + next_offset in
           let env, other_info = mk_label_info env other_offset ~ssa_parameters in
-          ( env
-          , Some
-              (JUMP.TwoWay
-                 { condition
-                 ; next_info= {label_info= next_info; offset= next_offset; ssa_args}
-                 ; other_info= {label_info= other_info; offset= other_offset; ssa_args} } ) )
+          Ok
+            ( env
+            , Some
+                (JUMP.TwoWay
+                   { condition
+                   ; next_info= {label_info= next_info; offset= next_offset; ssa_args}
+                   ; other_info= {label_info= other_info; offset= other_offset; ssa_args} } ) )
       | Error s ->
-          L.die InternalError "[%s] %s" opname s
+          L.internal_error "[%s] %s\n" opname s ;
+          Error ()
   end
 end
 
@@ -1612,17 +1624,23 @@ module IMPORT = struct
         - we don't support renamaing using [import foo as bar].
         - we don't support complex paths like [import foo.bar.baz]. *)
     let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
+      let open IResult.Let_syntax in
       Debug.p "[%s] namei = %d\n" opname arg ;
       let env, from_list = pop_datastack opname env in
       let env, level = pop_datastack opname env in
       let from_list = load_strings code from_list in
       let level = load_int code level in
-      ( match level with
-      | Some level ->
-          if not (Int64.equal level Int64.zero) then
-            L.die InternalError "[%s] missing support from [fromlist] or [level]" opname
-      | None ->
-          L.die UserError "[%s] failed to load [level] from the stack" opname ) ;
+      let* () =
+        match level with
+        | Some level ->
+            if Int64.equal level Int64.zero then Ok ()
+            else (
+              L.internal_error "[%s] missing support from [fromlist] or [level]\n" opname ;
+              Error () )
+        | None ->
+            L.user_error "[%s] failed to load [level] from the stack\n" opname ;
+            Error ()
+      in
       let loc = Env.loc env in
       let import_path = Ident.mk ~loc co_names.(arg) in
       let key = Symbol.Global import_path in
@@ -1638,7 +1656,7 @@ module IMPORT = struct
         Option.value ~default:[] from_list
       in
       let env = Env.push env (DataStack.Import {import_path; symbols= from_list}) in
-      (env, None)
+      Ok (env, None)
   end
 
   module FROM = struct
@@ -1659,13 +1677,15 @@ module IMPORT = struct
                  instead of the full list. *)
               Env.push env (DataStack.Import {import_path; symbols= [symbol_name]})
             else (
+              (* TODO: update the message and turn it into a user_warning ? *)
               L.debug Capture Quiet "[IMPORT_FROM] symbol %s is not part of the expect list [%s]\n"
                 symbol_name (String.concat ~sep:", " symbols) ;
               env )
           in
-          (env, None)
+          Ok (env, None)
       | _ ->
-          L.die UserError "[%s] invalid TOS: %a spotted" opname DataStack.pp_cell import_cell
+          L.user_error "[%s] invalid TOS: %a spotted\n" opname DataStack.pp_cell import_cell ;
+          Error ()
   end
 end
 
@@ -1676,42 +1696,41 @@ module COMPARE_OP = struct
 
       [ dis.cmp_op = ('<', '<=', '==', '!=', '>', '>=', 'in', 'not in', 'is', 'is not', 'exception match', 'BAD') ] *)
   let run env code {FFI.Instruction.opname; arg} =
-    let cmp_op =
+    let open IResult.Let_syntax in
+    let* cmp_op =
       match List.nth Builtin.Compare.all arg with
       | Some op ->
-          op
+          Ok op
       | None ->
-          L.die ExternalError
-            "COMPARE_OP[%d] is not an existing cmp_op.  Please refer to `dis.cmp_op`" arg
+          L.external_error
+            "COMPARE_OP[%d] is not an existing cmp_op.  Please refer to `dis.cmp_op`\n" arg ;
+          Error ()
     in
     Debug.p "[%s] cmp_op = %a\n" opname Builtin.Compare.pp cmp_op ;
-    let env =
-      match cmp_op with
+    let* env =
+      match (cmp_op : Builtin.Compare.t) with
       | In | NotIn | Is | IsNot | Exception | BAD ->
-          L.die InternalError "TODO: support for COMPARE_OP[%a] is not yet implemented"
-            Builtin.Compare.pp cmp_op
+          L.internal_error "TODO: support for COMPARE_OP[%a] is not yet implemented\n"
+            Builtin.Compare.pp cmp_op ;
+          Error ()
       | Lt | Le | Gt | Ge | Neq | Eq ->
           let env, rhs = pop_datastack opname env in
           let env, lhs = pop_datastack opname env in
           let env, lhs, _ = load_cell env code lhs in
-          let lhs =
-            match lhs with Ok lhs -> lhs | Error s -> L.die InternalError "[%s] %s" opname s
-          in
+          let* lhs = map_error opname lhs in
           let env, rhs, _ = load_cell env code rhs in
-          let rhs =
-            match rhs with Ok rhs -> rhs | Error s -> L.die InternalError "[%s] %s" opname s
-          in
+          let* rhs = map_error opname rhs in
           let env, id, _typ = Env.mk_builtin_call env (Builtin.CompareOp cmp_op) [lhs; rhs] in
-          Env.push env (DataStack.Temp id)
+          let env = Env.push env (DataStack.Temp id) in
+          Ok env
     in
-    (env, None)
+    Ok (env, None)
 end
 
 (** Main opcode dispatch function. *)
 let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) next_offset_opt =
   Debug.p "> %s\n" opname ;
   let env = Env.update_last_line env starts_line in
-  let ret x = Ok x in
   (* TODO: there are < 256 opcodes, could setup an array of callbacks instead *)
   match opname with
   | "LOAD_ATTR" ->
@@ -1739,29 +1758,29 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "CALL_FUNCTION" ->
       FUNCTION.CALL.run env code instr
   | "BINARY_ADD" ->
-      ret @@ BINARY.ADD.run env code instr
+      BINARY.ADD.run env code instr
   | "BINARY_SUBTRACT" ->
-      ret @@ BINARY.SUBTRACT.run env code instr
+      BINARY.SUBTRACT.run env code instr
   | "INPLACE_ADD" ->
-      ret @@ INPLACE.ADD.run env code instr
+      INPLACE.ADD.run env code instr
   | "INPLACE_SUBTRACT" ->
-      ret @@ INPLACE.SUBTRACT.run env code instr
+      INPLACE.SUBTRACT.run env code instr
   | "MAKE_FUNCTION" ->
       FUNCTION.MAKE.run env code instr
   | "POP_JUMP_IF_TRUE" ->
-      ret @@ JUMP.POP_IF.run ~next_is_true:false env code instr next_offset_opt
+      JUMP.POP_IF.run ~next_is_true:false env code instr next_offset_opt
   | "POP_JUMP_IF_FALSE" ->
-      ret @@ JUMP.POP_IF.run ~next_is_true:true env code instr next_offset_opt
+      JUMP.POP_IF.run ~next_is_true:true env code instr next_offset_opt
   | "JUMP_FORWARD" ->
-      ret @@ JUMP.FORWARD.run env code instr next_offset_opt
+      JUMP.FORWARD.run env code instr next_offset_opt
   | "JUMP_ABSOLUTE" ->
-      ret @@ JUMP.ABSOLUTE.run env code instr
+      JUMP.ABSOLUTE.run env code instr
   | "GET_ITER" ->
-      ret @@ ITER.GET.run env code instr
+      ITER.GET.run env code instr
   | "FOR_ITER" ->
-      ret @@ ITER.FOR.run env code instr next_offset_opt
+      ITER.FOR.run env code instr next_offset_opt
   | "BUILD_CONST_KEY_MAP" ->
-      ret @@ BUILD.CONST_KEY_MAP.run env code instr
+      BUILD.CONST_KEY_MAP.run env code instr
   | "LOAD_BUILD_CLASS" ->
       LOAD.BUILD_CLASS.run env instr
   | "LOAD_METHOD" ->
@@ -1769,21 +1788,21 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "CALL_METHOD" ->
       METHOD.CALL.run env code instr
   | "IMPORT_NAME" ->
-      ret @@ IMPORT.NAME.run env code instr
+      IMPORT.NAME.run env code instr
   | "IMPORT_FROM" ->
-      ret @@ IMPORT.FROM.run env code instr
+      IMPORT.FROM.run env code instr
   | "COMPARE_OP" ->
-      ret @@ COMPARE_OP.run env code instr
+      COMPARE_OP.run env code instr
   | "JUMP_IF_TRUE_OR_POP" ->
-      ret @@ JUMP.IF_OR_POP.run ~jump_if:true env code instr next_offset_opt
+      JUMP.IF_OR_POP.run ~jump_if:true env code instr next_offset_opt
   | "JUMP_IF_FALSE_OR_POP" ->
-      ret @@ JUMP.IF_OR_POP.run ~jump_if:false env code instr next_offset_opt
+      JUMP.IF_OR_POP.run ~jump_if:false env code instr next_offset_opt
   | "BUILD_LIST" ->
-      ret @@ BUILD.LIST.run env code instr
+      BUILD.LIST.run env code instr
   | "STORE_SUBSCR" ->
-      ret @@ STORE.SUBSCR.run env code instr
+      STORE.SUBSCR.run env code instr
   | "BINARY_SUBSCR" ->
-      ret @@ BINARY.SUBSCR.run env code instr
+      BINARY.SUBSCR.run env code instr
   | "EXTENDED_ARG" ->
       (* The FFI.Instruction framework already did the magic and this opcode can be ignored. *)
       Ok (env, None)
