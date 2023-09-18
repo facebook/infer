@@ -18,23 +18,26 @@ let test ?(typecheck = true) source =
   Py.finalize () ;
   (* Since Textual doesn't have a concept of toplevel code, we create a function for this code,
      with a non-denotable name, so we don't clash with existing python code *)
-  let module_ = PyTrans.to_module ~sourcefile code in
-  if typecheck then (
-    let res = TextualTypeVerification.type_check module_ in
-    match (res : TextualTypeVerification.type_check_result) with
-    | Ok module_ ->
-        F.printf "%a" Textual.Module.pp module_
-    | Type_errors errors ->
-        let pp_error = TextualTypeVerification.pp_error sourcefile in
-        F.printf "%a" Textual.Module.pp module_ ;
-        F.printf "Errors while type checking the test:\n" ;
-        List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err)
-    | Decl_errors errors ->
-        let pp_error = TextualDecls.pp_error sourcefile in
-        F.printf "%a" Textual.Module.pp module_ ;
-        F.printf "Errors while creating the decls:\n" ;
-        List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err) )
-  else F.printf "%a" Textual.Module.pp module_
+  match PyTrans.to_module ~sourcefile code with
+  | Ok module_ ->
+      if typecheck then (
+        let res = TextualTypeVerification.type_check module_ in
+        match (res : TextualTypeVerification.type_check_result) with
+        | Ok module_ ->
+            F.printf "%a" Textual.Module.pp module_
+        | Type_errors errors ->
+            let pp_error = TextualTypeVerification.pp_error sourcefile in
+            F.printf "%a" Textual.Module.pp module_ ;
+            F.printf "Errors while type checking the test:\n" ;
+            List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err)
+        | Decl_errors errors ->
+            let pp_error = TextualDecls.pp_error sourcefile in
+            F.printf "%a" Textual.Module.pp module_ ;
+            F.printf "Errors while creating the decls:\n" ;
+            List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err) )
+      else F.printf "%a" Textual.Module.pp module_
+  | Error () ->
+      ()
 
 
 let%test_module "basic_tests" =

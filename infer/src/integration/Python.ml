@@ -30,23 +30,27 @@ let dump_file ~next_to_source pyc module_ =
 let capture_file file =
   let open TextualParser in
   let sourcefile = Textual.SourceFile.create file in
-  let module_ = process_file ~is_binary:false file in
-  let trans = TextualFile.translate_module sourcefile module_ in
-  let log_error sourcefile error =
-    if Config.keep_going then L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error
-    else L.external_error "%a@\n" (pp_error sourcefile) error
-  in
-  let res =
-    match trans with
-    | Ok sil ->
-        TextualFile.capture ~use_global_tenv:true sil ;
-        Ok sil.tenv
-    | Error (sourcefile, errs) ->
-        List.iter errs ~f:(log_error sourcefile) ;
-        Error ()
-  in
-  if Config.debug_mode || Result.is_error trans then dump_file ~next_to_source:false file module_ ;
-  res
+  match process_file ~is_binary:false file with
+  | Ok module_ ->
+      let trans = TextualFile.translate_module sourcefile module_ in
+      let log_error sourcefile error =
+        if Config.keep_going then L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error
+        else L.external_error "%a@\n" (pp_error sourcefile) error
+      in
+      let res =
+        match trans with
+        | Ok sil ->
+            TextualFile.capture ~use_global_tenv:true sil ;
+            Ok sil.tenv
+        | Error (sourcefile, errs) ->
+            List.iter errs ~f:(log_error sourcefile) ;
+            Error ()
+      in
+      if Config.debug_mode || Result.is_error trans then
+        dump_file ~next_to_source:false file module_ ;
+      res
+  | Error () ->
+      Error ()
 
 
 let load_textual_model filename =
@@ -117,9 +121,12 @@ let capture_files files =
 
 let capture input =
   match input with
-  | Bytecode pyc ->
-      let module_ = process_file ~is_binary:true pyc in
-      if Config.dump_textual then dump_file ~next_to_source:true pyc module_
+  | Bytecode pyc -> (
+    match process_file ~is_binary:true pyc with
+    | Ok module_ ->
+        if Config.dump_textual then dump_file ~next_to_source:true pyc module_
+    | Error () ->
+        () )
   | Files {prog; args} ->
       if not (String.equal prog "python3") then
         L.die UserError "python3 should be explicitly used instead of %s." prog ;

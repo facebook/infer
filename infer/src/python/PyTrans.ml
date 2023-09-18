@@ -2253,78 +2253,80 @@ let python_attribute = T.Attr.mk_source_language T.Lang.Python
 (** Entry point of the module: process a whole Python file / compilation unit into Textual *)
 let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructions} as code) =
   Debug.p "[to_module] %a %s\n" T.SourceFile.pp sourcefile co_name ;
-  if not (String.equal co_name "<module>") then
-    L.die ExternalError "Toplevel modules must be named '<module>'. Got %s" co_name ;
-  let loc = first_loc_of_code instructions in
-  let module_name = Ident.from_string ~loc @@ Stdlib.Filename.remove_extension co_filename in
-  let env = Env.empty module_name in
-  (* Process top level module first, to gather all global definitions.
-     This will also help us identify what is a class and what is a function,
-     before processing the rest of the [co_consts]. There is no flag to
-     distinguish class definitions from function definitions in the bytecode
-     format.
+  if not (String.equal co_name "<module>") then (
+    L.external_error "Toplevel modules must be named '<module>'. Got %s" co_name ;
+    Error () )
+  else
+    let loc = first_loc_of_code instructions in
+    let module_name = Ident.from_string ~loc @@ Stdlib.Filename.remove_extension co_filename in
+    let env = Env.empty module_name in
+    (* Process top level module first, to gather all global definitions.
+       This will also help us identify what is a class and what is a function,
+       before processing the rest of the [co_consts]. There is no flag to
+       distinguish class definitions from function definitions in the bytecode
+       format.
 
-     TODO: we should process classes (at least partially) first to get their
-     method signatures and field types to get more type information while
-     parsing the toplevel blob.
+       TODO: we should process classes (at least partially) first to get their
+       method signatures and field types to get more type information while
+       parsing the toplevel blob.
 
 
-     TODO: scoping might require fixing.
-     Python allows multiple toplevel declaration of the same name and resolution is done
-     dynamically. E.g.
+       TODO: scoping might require fixing.
+       Python allows multiple toplevel declaration of the same name and resolution is done
+       dynamically. E.g.
 
-     ```
-     def f():
-         return 10
+       ```
+       def f():
+           return 10
 
-     def g():
-         return f()
+       def g():
+           return f()
 
-     print(g())
+       print(g())
 
-     def f():
-         return "cat"
+       def f():
+           return "cat"
 
-     print (g())
-     ```
+       print (g())
+       ```
 
-     this would print `10` and then `"cat"`.  We should investigate if suche code exists, and in
-     which quantity, to see if it is worth finding a solution for it.
-  *)
-  let env, decl = to_proc_desc env loc module_name None code in
-  (* Translate globals to Textual *)
-  let globals =
-    Ident.Map.fold
-      (fun _name {Symbol.kind; id} acc ->
-        match (kind : Symbol.kind) with
-        | Name {is_imported} ->
-            if is_imported then acc
-            else
-              let varname = Ident.to_var_name id in
-              let global = T.Global.{name= varname; typ= PyCommon.pyObject; attributes= []} in
-              T.Module.Global global :: acc
-        | Builtin | Code | Class | Import _ | ImportCall ->
-            (* don't generate a global variable name, it will be declared as a toplevel decl *)
-            acc )
-      (Env.globals env) []
-  in
-  (* Then, process any code body that is in code.co_consts *)
-  let env, decls = to_proc_descs env module_name co_consts in
-  let decls = List.rev decls in
-  (* Declare all the import top level calls *)
-  let imports = Env.get_textual_imports env in
-  (* Declare all the python implicits *)
-  let python_implicit_names =
-    List.map
-      ~f:(fun name ->
-        T.Module.Global
-          (let name = sprintf "%s::%s" python_implicit_names_prefix name in
-           {T.Global.name= var_name name; typ= PyCommon.pyString; attributes= []} ) )
-      python_implicit_names
-  in
-  (* Gather everything into a Textual module *)
-  let decls =
-    ((decl :: decls) @ globals @ imports @ python_implicit_names)
-    @ Builtin.Set.to_textual (Env.get_used_builtins env)
-  in
-  {T.Module.attrs= [python_attribute]; decls; sourcefile}
+       this would print `10` and then `"cat"`.  We should investigate if suche code exists, and in
+       which quantity, to see if it is worth finding a solution for it.
+    *)
+    let env, decl = to_proc_desc env loc module_name None code in
+    (* Translate globals to Textual *)
+    let globals =
+      Ident.Map.fold
+        (fun _name {Symbol.kind; id} acc ->
+          match (kind : Symbol.kind) with
+          | Name {is_imported} ->
+              if is_imported then acc
+              else
+                let varname = Ident.to_var_name id in
+                let global = T.Global.{name= varname; typ= PyCommon.pyObject; attributes= []} in
+                T.Module.Global global :: acc
+          | Builtin | Code | Class | Import _ | ImportCall ->
+              (* don't generate a global variable name, it will be declared as a toplevel decl *)
+              acc )
+        (Env.globals env) []
+    in
+    (* Then, process any code body that is in code.co_consts *)
+    let env, decls = to_proc_descs env module_name co_consts in
+    let decls = List.rev decls in
+    (* Declare all the import top level calls *)
+    let imports = Env.get_textual_imports env in
+    (* Declare all the python implicits *)
+    let python_implicit_names =
+      List.map
+        ~f:(fun name ->
+          T.Module.Global
+            (let name = sprintf "%s::%s" python_implicit_names_prefix name in
+             {T.Global.name= var_name name; typ= PyCommon.pyString; attributes= []} ) )
+        python_implicit_names
+    in
+    (* Gather everything into a Textual module *)
+    let decls =
+      ((decl :: decls) @ globals @ imports @ python_implicit_names)
+      @ Builtin.Set.to_textual (Env.get_used_builtins env)
+    in
+    Ok {T.Module.attrs= [python_attribute]; decls; sourcefile}
