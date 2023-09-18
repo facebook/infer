@@ -1202,20 +1202,33 @@ let get_global_name_of_initializer t =
       None
 
 
-let rec is_lambda_or_block = function
-  | Block _ ->
-      true
+let is_lambda_name name =
+  String.is_prefix ~prefix:"lambda_" name && String.is_substring ~substring:":" name
+
+
+let rec is_lambda = function
   | ObjC_Cpp {class_name} -> (
     match QualifiedCppName.extract_last (Typ.Name.unqualified_name class_name) with
-    | Some (name, _) when String.is_prefix name ~prefix:"lambda" ->
+    | Some (name, _) when is_lambda_name name ->
         true
     | _ ->
         false )
   | WithFunctionParameters (base, _, _) ->
-      is_lambda_or_block base
+      is_lambda base
   | _ ->
       false
 
+
+let rec is_block = function
+  | Block _ ->
+      true
+  | WithFunctionParameters (base, _, _) ->
+      is_block base
+  | _ ->
+      false
+
+
+let is_lambda_or_block procname = is_lambda procname || is_block procname
 
 let pp_with_function_parameters verbose pp fmt base functions =
   pp fmt base ;

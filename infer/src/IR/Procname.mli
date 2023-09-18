@@ -518,6 +518,8 @@ val pp_name_only : F.formatter -> t -> unit
 
 val is_c : t -> bool
 
+val is_lambda_name : string -> bool
+
 val is_lambda_or_block : t -> bool
 
 val patterns_match : Re.Str.regexp list -> t -> bool
