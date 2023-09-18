@@ -394,7 +394,7 @@ let register_label ~offset ({label_name; ssa_parameters} as label_info) ({shared
           let {prelude= old_prelude} = old_info in
           let {prelude= new_prelude} = label_info in
           if Option.is_some old_prelude && Option.is_some new_prelude then
-            L.die InternalError "register_label: failure to combine preludes" ;
+            L.die InternalError "register_label: failure to combine preludes@\n" ;
           labels
     in
     {env with labels}

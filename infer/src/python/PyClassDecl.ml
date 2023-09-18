@@ -220,9 +220,9 @@ module Decorators = struct
 
   let warn class_name name {unsupported} =
     if not (List.is_empty unsupported) then (
-      L.user_warning "Left-over type information for method %s in class %a\n" name Ident.pp
+      L.user_warning "Left-over type information for method %s in class %a@\n" name Ident.pp
         class_name ;
-      List.iter ~f:(L.user_warning "- %s\n") unsupported )
+      List.iter ~f:(L.user_warning "- %s@\n") unsupported )
 
 
   (* Each decorator will be processed at runtime by a [CALL_FUNCTION 1] operation. Since we only
@@ -259,7 +259,7 @@ module Decorators = struct
             run (has_abstract acc) decorators
           else run (unsupported name acc) decorators
       | hd :: _ ->
-          L.internal_error "Decorators.make spotted %a\n" Type.pp hd ;
+          L.internal_error "Decorators.make spotted %a@\n" Type.pp hd ;
           raise Failure
       | [] ->
           acc
@@ -289,9 +289,9 @@ let parse_method_core ({FFI.Code.co_consts} as code) instructions =
         (false, instructions)
     | Some (name, tuple_size, instructions) ->
         if not (String.equal name "__class__") then
-          L.user_warning "ill-formed method declaration. Closure mentioned cell '%s'" name ;
+          L.user_warning "ill-formed method declaration. Closure mentioned cell '%s'@\n" name ;
         if not (Int.equal tuple_size 1) then
-          L.user_warning "ill-formed method declaration. Tuple size is %d" tuple_size ;
+          L.user_warning "ill-formed method declaration. Tuple size is %d@\n" tuple_size ;
         (true, instructions)
   in
   let open Option.Let_syntax in
@@ -311,7 +311,7 @@ let parse_method_core ({FFI.Code.co_consts} as code) instructions =
        Revisit this decision once closures are well supported. *)
     let flags = MakeFunctionFlags.mk arg in
     if has_closure_prefix && not (MakeFunctionFlags.mem flags Closure) then (
-      L.user_warning "ill-formed method declaration. Has closure prefix but invalid flags" ;
+      L.user_warning "ill-formed method declaration. Has closure prefix but invalid flags@\n" ;
       flags )
     else MakeFunctionFlags.unset flags Closure
   in

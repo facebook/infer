@@ -55,14 +55,14 @@ and pyInstruction =
 [@@deriving show, compare]
 
 let die_invalid_field ~kind f obj =
-  L.external_error "Field %s in object %s is not a valid %s\n" f (Py.Object.to_string obj) kind ;
+  L.external_error "Field %s in object %s is not a valid %s@\n" f (Py.Object.to_string obj) kind ;
   Error ()
 
 
 let read_field obj action f =
   match Py.Object.find_attr_string_opt obj f with
   | None ->
-      L.external_error "No field %s in object %s\n" f (Py.Object.to_string obj) ;
+      L.external_error "No field %s in object %s@\n" f (Py.Object.to_string obj) ;
       Error ()
   | Some obj ->
       action f obj
@@ -141,7 +141,7 @@ let rec new_py_constant obj =
       let f = Py.Float.to_float obj in
       Ok (PYCFloat f)
   | Callable | Capsule | Closure | Dict | List | Module | Type | Iter | Set ->
-      L.internal_error "[new_py_constant] unknown bytecode constant: %s\n" (Py.Type.name ty) ;
+      L.internal_error "[new_py_constant] unknown bytecode constant: %s@\n" (Py.Type.name ty) ;
       Error ()
 
 
@@ -334,10 +334,10 @@ let from_python_object obj =
     | PYCCode code ->
         Ok code
     | _ ->
-        L.internal_error "[load_code] must always return a code object\n" ;
+        L.internal_error "[load_code] must always return a code object@\n" ;
         Error ()
   with Py.E _ as e ->
-    L.external_error "[load_code] pyml exception: %s\n" (Exn.to_string e) ;
+    L.external_error "[load_code] pyml exception: %s@\n" (Exn.to_string e) ;
     Error ()
 
 
@@ -357,7 +357,7 @@ let from_bytecode filename =
   let fp = Core.In_channel.create ~binary:true filename in
   let size = Int64.to_int_exn @@ Core.In_channel.length fp in
   if size <= 4 then (
-    L.user_error "[from_bytecode] Not enough data in file %s\n" filename ;
+    L.user_error "[from_bytecode] Not enough data in file %s@\n" filename ;
     Error () )
   else
     let magic = Base.Bytes.create 4 in
@@ -374,7 +374,7 @@ let from_bytecode filename =
     in
     let* () =
       if read_magic <> 4 || not (Base.Bytes.equal magic mref) then (
-        L.user_error "Invalid magic number for Python 3.8. Expected %s but got %s\n"
+        L.user_error "Invalid magic number for Python 3.8. Expected %s but got %s@\n"
           (show_array mref) (show_array magic) ;
         Error () )
       else Ok ()
