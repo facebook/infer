@@ -314,43 +314,47 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
 
 
 let cells_to_textual env opname code cells =
-  Env.map ~env cells ~f:(fun env cell ->
+  Env.map_result ~env cells ~f:(fun env cell ->
       let env, exp, _ = load_cell env code cell in
       match exp with
       | Ok exp ->
-          (env, exp)
+          Ok (env, exp)
       | Error s ->
-          L.die UserError "[%s] failed to fetch from the stack: %s" opname s )
+          L.user_error "[%s] failed to fetch from the stack: %s\n" opname s ;
+          Error () )
 
 
 (** Pop the top of the datastack. Fails with an [InternalError] if the stack is empty. *)
 let pop_datastack opname env =
   match Env.pop env with
   | None ->
-      L.die ExternalError "[%s] can't pop, stack is empty" opname
+      L.external_error "[%s] can't pop, stack is empty\n" opname ;
+      Error ()
   | Some (env, cell) ->
-      (env, cell)
+      Ok (env, cell)
 
 
 (** Peek the top of the datastack. Fails with an [InternalError] if the stack is empty. *)
 let peek_datastack opname env =
   match Env.peek env with
   | None ->
-      L.die ExternalError "[%s] can't peek, stack is empty" opname
+      L.external_error "[%s] can't peek, stack is empty\n" opname ;
+      Error ()
   | Some cell ->
-      cell
+      Ok cell
 
 
-let pop_n_datastack opname =
+let pop_n_datastack opname env n =
+  let open IResult.Let_syntax in
   let rec pop env n acc =
     if n > 0 then (
-      let env, cell = pop_datastack opname env in
+      let* env, cell = pop_datastack opname env in
       Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
       pop env (n - 1) (cell :: acc) )
-    else (env, acc)
+    else Ok (env, acc)
   in
   Debug.p "[pop_n_datastack]\n" ;
-  pop
+  pop env n []
 
 
 (* Python opcodes support. Most of the documentation directly comes from the official python
@@ -410,7 +414,7 @@ module LOAD = struct
             else Ok (env, DataStack.Super)
           else Ok (env, DataStack.Name {global= true; ndx= arg})
       | ATTR ->
-          let env, cell = pop_datastack opname env in
+          let* env, cell = pop_datastack opname env in
           let fname = co_names.(arg) in
           let* cell =
             (* if the cell is Import related, we wont' be able to load things correctly.
@@ -458,8 +462,10 @@ let check_flags opname flags =
   let has_dict_of_defaults = mem flags DictDefaultValues in
   let has_closure = mem flags Closure in
   let unsupported = has_tuple_of_defaults || has_dict_of_defaults || has_closure in
-  if unsupported then
-    L.die InternalError "%s: support for flag 0x%a is not implemented" opname pp flags
+  if unsupported then (
+    L.internal_error "%s: support for flag 0x%a is not implemented\n" opname pp flags ;
+    Error () )
+  else Ok ()
 
 
 module FUNCTION = struct
@@ -487,6 +493,7 @@ module FUNCTION = struct
         After: [ result | rest-of-the-stack ] *)
 
     let static_call env opname code fid cells =
+      let open IResult.Let_syntax in
       (* TODO: we currently can't handle hasattr correctly, so let's ignore it
                At some point, introduce a builtin to keep track of its content
       *)
@@ -501,7 +508,7 @@ module FUNCTION = struct
         let env = Env.push env (DataStack.Temp id) in
         Ok (env, None) )
       else
-        let env, args = cells_to_textual env opname code cells in
+        let* env, args = cells_to_textual env opname code cells in
         let loc = Env.loc env in
         (* TODO: support nesting *)
         let key = Symbol.Global fid in
@@ -544,7 +551,8 @@ module FUNCTION = struct
 
 
     let dynamic_call env opname code caller_id cells =
-      let env, args = cells_to_textual env opname code cells in
+      let open IResult.Let_syntax in
+      let* env, args = cells_to_textual env opname code cells in
       let args = T.Exp.Var caller_id :: args in
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonCall args in
       let env = Env.push env (DataStack.Temp id) in
@@ -552,34 +560,38 @@ module FUNCTION = struct
 
 
     let builtin_build_class env code opname name_cell code_cell parent_cell =
+      let open IResult.Let_syntax in
       let as_name kind cell =
         match DataStack.as_name code cell with
         | Some name ->
-            name
+            Ok name
         | None ->
-            L.die ExternalError "[%s] expected literal (%s) class name but got %a" kind opname
-              DataStack.pp_cell name_cell
+            L.external_error "[%s] expected literal (%s) class name but got %a\n" kind opname
+              DataStack.pp_cell name_cell ;
+            Error ()
       in
-      let code_name = as_name "base" name_cell in
+      let* code_name = as_name "base" name_cell in
       let parent = Option.bind ~f:(DataStack.as_id code) parent_cell in
-      let code =
+      let* code =
         match DataStack.as_code code code_cell with
         | Some code ->
-            code
+            Ok code
         | None ->
-            L.die ExternalError "[%s] expected code object but got %a" opname DataStack.pp_cell
-              code_cell
+            L.external_error "[%s] expected code object but got %a" opname DataStack.pp_cell
+              code_cell ;
+            Error ()
       in
       let env = Env.register_class env code_name parent in
       let env = Env.push env (DataStack.Code {fun_or_class= false; code_name; code}) in
-      env
+      Ok env
 
 
     let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
+      let open IResult.Let_syntax in
       Debug.p "[%s] argc = %d\n" opname arg ;
-      let env, cells = pop_n_datastack opname env arg [] in
+      let* env, cells = pop_n_datastack opname env arg in
       Debug.p "  #args = %d\n" (List.length cells) ;
-      let env, fname = pop_datastack opname env in
+      let* env, fname = pop_datastack opname env in
       let loc = Env.loc env in
       match (fname : DataStack.cell) with
       | Name {ndx} ->
@@ -596,10 +608,10 @@ module FUNCTION = struct
       | BuiltinBuildClass -> (
         match cells with
         | [code_cell; name_cell] ->
-            let env = builtin_build_class env code opname name_cell code_cell None in
+            let* env = builtin_build_class env code opname name_cell code_cell None in
             Ok (env, None)
         | [code_cell; name_cell; parent_cell] ->
-            let env = builtin_build_class env code opname name_cell code_cell (Some parent_cell) in
+            let* env = builtin_build_class env code opname name_cell code_cell (Some parent_cell) in
             Ok (env, None)
         | _ ->
             L.internal_error "[%s] unsupported call to LOAD_BUILD_CLASS with arg = %d\n" opname arg ;
@@ -609,7 +621,7 @@ module FUNCTION = struct
       | ImportCall {id; loc} ->
           (* TODO: test it *)
           Debug.todo "TEST IT !\n" ;
-          let env, args = cells_to_textual env opname code cells in
+          let* env, args = cells_to_textual env opname code cells in
           let proc = Ident.to_qualified_procname id in
           mk env (Some id) loc proc args
       | Import _ | StaticCall _ | MethodCall _ ->
@@ -670,17 +682,17 @@ module FUNCTION = struct
       let open IResult.Let_syntax in
       let flags = MakeFunctionFlags.mk arg in
       Debug.p "[%s] flags = 0x%a\n" opname MakeFunctionFlags.pp flags ;
-      check_flags opname flags ;
-      let env, qual = pop_datastack opname env in
+      let* () = check_flags opname flags in
+      let* env, qual = pop_datastack opname env in
       (* don't care about the content of the code object, but check it is indeed code *)
-      let env, body = pop_datastack opname env in
-      let env, annotations =
+      let* env, body = pop_datastack opname env in
+      let* env, annotations =
         if MakeFunctionFlags.mem flags Annotations then (
-          let env, cell = pop_datastack opname env in
+          let* env, cell = pop_datastack opname env in
           Debug.p "[%s] spotted annotations\n  %s\n" opname (DataStack.show_cell cell) ;
           let annotations = match cell with Env.DataStack.Map map -> Some map | _ -> None in
-          (env, annotations) )
-        else (env, None)
+          Ok (env, annotations) )
+        else Ok (env, None)
       in
       let annotations = Option.value_map ~default:[] ~f:(unpack_annotations env code) annotations in
       let* code =
@@ -829,9 +841,10 @@ module METHOD = struct
         the first argument ([self]) by [CALL_METHOD] when calling the unbound method. Otherwise,
         [NULL] and the object return by the attribute lookup are pushed. *)
     let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
+      let open IResult.Let_syntax in
       let method_name = co_names.(arg) in
       Debug.p "[%s] namei = %s\n" opname method_name ;
-      let env, cell = pop_datastack opname env in
+      let* env, cell = pop_datastack opname env in
       match (cell : DataStack.cell) with
       | Name {global; ndx} -> (
           let name = co_names.(ndx) in
@@ -865,10 +878,11 @@ module METHOD = struct
         (either [self] and an unbound method object or [NULL] and an arbitrary callable). All of
         them are popped and the return value is pushed. *)
     let run env code {FFI.Instruction.opname; arg} =
+      let open IResult.Let_syntax in
       Debug.p "[%s] argc = %d\n" opname arg ;
-      let env, cells = pop_n_datastack opname env arg [] in
-      let env, args = cells_to_textual env opname code cells in
-      let env, cell_mi = pop_datastack opname env in
+      let* env, cells = pop_n_datastack opname env arg in
+      let* env, args = cells_to_textual env opname code cells in
+      let* env, cell_mi = pop_datastack opname env in
       match (cell_mi : DataStack.cell) with
       | ImportCall {id; loc} ->
           let key = Symbol.Global id in
@@ -939,6 +953,7 @@ module STORE = struct
             [STORE_NAME], but only called from within a function/method. *)
 
   let store env ({FFI.Code.co_names} as code) opname loc arg cell name global is_attr =
+    let open IResult.Let_syntax in
     Debug.p "[store] cell= %a name= %s global= %b is_attr= %b\n" DataStack.pp_cell cell name global
       is_attr ;
     let env, exp, info = load_cell env code cell in
@@ -962,7 +977,7 @@ module STORE = struct
         in
         let var_name = Ident.to_var_name symbol_info.Symbol.id in
         if is_attr then
-          let env, cell = pop_datastack opname env in
+          let* env, cell = pop_datastack opname env in
           let env, value, {Env.Info.typ} = load_cell env code cell in
           match value with
           | Error s ->
@@ -1015,7 +1030,7 @@ module STORE = struct
     in
     Debug.p "[%s] namei=%d (global=%b, name=%s)\n" opname arg global name ;
     let loc = Env.loc env in
-    let env, cell = pop_datastack opname env in
+    let* env, cell = pop_datastack opname env in
     match (cell : DataStack.cell) with
     | Import {import_path; symbols} ->
         let key = Symbol.Global import_path in
@@ -1045,7 +1060,7 @@ module STORE = struct
               let* env, _is_always_none = FUNCTION.CALL.mk env None loc proc [] in
               (* Python toplevel code can't use [return] but still we just put a useless Textual id
                  on the stack. Popping it *)
-              let env, _ = pop_datastack "STORE_IMPORTED_NAME" env in
+              let* env, _ = pop_datastack "STORE_IMPORTED_NAME" env in
               Ok env
         in
         let env =
@@ -1068,9 +1083,9 @@ module STORE = struct
     let run env code {FFI.Instruction.opname} =
       let open IResult.Let_syntax in
       Debug.p "[%s]\n" opname ;
-      let env, cell_ndx = pop_datastack opname env in
-      let env, cell_lhs = pop_datastack opname env in
-      let env, cell_rhs = pop_datastack opname env in
+      let* env, cell_ndx = pop_datastack opname env in
+      let* env, cell_lhs = pop_datastack opname env in
+      let* env, cell_rhs = pop_datastack opname env in
       let env, ndx, _ = load_cell env code cell_ndx in
       let env, lhs, _ = load_cell env code cell_lhs in
       let env, rhs, _ = load_cell env code cell_rhs in
@@ -1105,8 +1120,9 @@ module POP_TOP = struct
 
       Pop the top-of-stack and discard it *)
   let run env code {FFI.Instruction.opname} =
+    let open IResult.Let_syntax in
     Debug.p "[%s]\n" opname ;
-    let env, cell = pop_datastack opname env in
+    let* env, cell = pop_datastack opname env in
     (* Maybe we're popping a delayed access using a [Path] so let's load it in case it had side-effects *)
     let env =
       if DataStack.is_path cell then
@@ -1121,8 +1137,8 @@ module BINARY = struct
   let binary_or_inplace env code opname builtin =
     let open IResult.Let_syntax in
     Debug.p "[%s]\n" opname ;
-    let env, tos = pop_datastack opname env in
-    let env, tos1 = pop_datastack opname env in
+    let* env, tos = pop_datastack opname env in
+    let* env, tos1 = pop_datastack opname env in
     let env, lhs, _ = load_cell env code tos1 in
     let* lhs = map_error opname lhs in
     let env, rhs, _ = load_cell env code tos in
@@ -1175,8 +1191,8 @@ module BINARY = struct
     let run env code {FFI.Instruction.opname} =
       let open IResult.Let_syntax in
       Debug.p "[%s]\n" opname ;
-      let env, cell_ndx = pop_datastack opname env in
-      let env, cell_lhs = pop_datastack opname env in
+      let* env, cell_ndx = pop_datastack opname env in
+      let* env, cell_lhs = pop_datastack opname env in
       let env, ndx, _ = load_cell env code cell_ndx in
       let env, lhs, _ = load_cell env code cell_lhs in
       let* ndx =
@@ -1224,7 +1240,7 @@ module BUILD = struct
     let run env code {FFI.Instruction.opname; arg} =
       let open IResult.Let_syntax in
       Debug.p "[%s] count = %d\n" opname arg ;
-      let env, cell = pop_datastack opname env in
+      let* env, cell = pop_datastack opname env in
       let* keys =
         match is_tuple_ids code cell with
         | Ok keys ->
@@ -1234,7 +1250,7 @@ module BUILD = struct
             Error ()
       in
       (* TODO check cells is a tuple of literal strings *)
-      let env, values = pop_n_datastack opname env arg [] in
+      let* env, values = pop_n_datastack opname env arg in
       Debug.p "  #values = %d\n" (List.length values) ;
       let* map =
         match List.zip keys values with
@@ -1255,9 +1271,10 @@ module BUILD = struct
         Creates a list consuming count items from the stack, and pushes the resulting tuple onto the
         stack. *)
     let run env code {FFI.Instruction.opname; arg= count} =
+      let open IResult.Let_syntax in
       Debug.p "[%s] count = %d\n" opname count ;
-      let env, items = pop_n_datastack opname env count [] in
-      let env, items = cells_to_textual env opname code items in
+      let* env, items = pop_n_datastack opname env count in
+      let* env, items = cells_to_textual env opname code items in
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonBuildList items in
       let env = Env.push env (DataStack.Temp id) in
       Ok (env, None)
@@ -1304,9 +1321,10 @@ let offset_of_code instructions =
 let next_offset opt =
   match opt with
   | None ->
-      L.die InternalError "Relative jump forward at the end of code"
+      L.internal_error "Relative jump forward at the end of code\n" ;
+      Error ()
   | Some offset ->
-      offset
+      Ok offset
 
 
 type jump_info = {label_info: Env.Label.info; offset: int; ssa_args: T.Exp.t list}
@@ -1332,16 +1350,18 @@ let mk_jump loc jump_info =
 (** When reaching a jump instruction with a non empty datastack, turn it into loads/ssa variables
     and properly set the jump/label ssa_args and ssa_parameters *)
 let stack_to_ssa env code =
-  let env, zipped =
-    Env.map ~env (Env.stack env) ~f:(fun env cell ->
+  let open IResult.Let_syntax in
+  let* env, zipped =
+    Env.map_result ~env (Env.stack env) ~f:(fun env cell ->
         let env, exp, {Env.Info.typ} = load_cell env code cell in
         match exp with
         | Ok exp ->
-            (env, (exp, typ))
+            Ok (env, (exp, typ))
         | Error s ->
-            L.die InternalError "[stack_to_ssa] %s" s )
+            L.internal_error "[stack_to_ssa] %s\n" s ;
+            Error () )
   in
-  (Env.reset_stack env, List.unzip zipped)
+  Ok (Env.reset_stack env, List.unzip zipped)
 
 
 (* Helper to fetch label info if there's already one registered at the specified offset, or
@@ -1374,11 +1394,11 @@ module JUMP = struct
     let run ~next_is_true env code {FFI.Instruction.opname; arg} next_offset_opt =
       let open IResult.Let_syntax in
       Debug.p "[%s] target = %d\n" opname arg ;
-      let env, tos = pop_datastack opname env in
+      let* env, tos = pop_datastack opname env in
       let env, cell, _ = load_cell env code tos in
       let* cond = map_error opname cell in
-      let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
-      let next_offset = next_offset next_offset_opt in
+      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+      let* next_offset = next_offset next_offset_opt in
       let env, next_info = mk_label_info env next_offset ~ssa_parameters in
       let env, other_info = mk_label_info env arg ~ssa_parameters in
       (* Compute the relevant pruning expressions *)
@@ -1410,7 +1430,7 @@ module JUMP = struct
       (* We only peek the top of stack so the logic of [stack_to_ssa] correctly captures it for
          the branch where "it stays". It will be restored as part of the stack restore logic when
          we process the "other" node. *)
-      let tos = peek_datastack opname env in
+      let* tos = peek_datastack opname env in
       let env, cell, _ = load_cell env code tos in
       let* cond = map_error opname cell in
       (* Suggestion from @dpichardie: I could put the [IsTrue] expression directly in [condition].
@@ -1419,8 +1439,8 @@ module JUMP = struct
       let env, id, _ = Env.mk_builtin_call env Builtin.IsTrue [cond] in
       let condT = T.BoolExp.Exp (Var id) in
       let condition = if jump_if then T.BoolExp.Not condT else condT in
-      let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
-      let next_offset = next_offset next_offset_opt in
+      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+      let* next_offset = next_offset next_offset_opt in
       (* In the next branch, we make sure the top-of-stack is no longer in the ssa parameters
          so it is not restored, effectively dropped as per the opcode description. *)
       let env, next_info =
@@ -1443,12 +1463,13 @@ module JUMP = struct
 
         Increments bytecode counter by [delta]. *)
     let run env code {FFI.Instruction.opname; arg= delta} next_offset_opt =
+      let open IResult.Let_syntax in
       Debug.p "[%s] delta = %d\n" opname delta ;
       (* This instruction gives us a relative delta w.r.t the next offset, so we turn it into an
          absolute offset right away *)
-      let next_offset = next_offset next_offset_opt in
+      let* next_offset = next_offset next_offset_opt in
       let offset = next_offset + delta in
-      let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
       let env, label_info = mk_label_info env offset ~ssa_parameters in
       Ok (env, Some (Absolute {ssa_args; label_info; offset}))
   end
@@ -1461,7 +1482,7 @@ module JUMP = struct
     let run env code {FFI.Instruction.opname; arg= target; offset} =
       let open IResult.Let_syntax in
       Debug.p "[%s] target = %d\n" opname target ;
-      let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
       (* sanity check: we should already have allocated a label for this jump, if it is a backward
          edge. *)
       let* () =
@@ -1485,8 +1506,9 @@ module RETURN_VALUE = struct
 
       Returns the top-of-stack *)
   let run env code {FFI.Instruction.opname} =
+    let open IResult.Let_syntax in
     Debug.p "[%s]\n" opname ;
-    let env, cell = pop_datastack opname env in
+    let* env, cell = pop_datastack opname env in
     let env, exp, _ = load_cell env code cell in
     match exp with
     | Ok exp ->
@@ -1504,8 +1526,9 @@ module ITER = struct
         Implements top-of-stack = iter(top-of-stack). Most of the type calls the [__iter__()] method
         on the top of the stack. Might be C code for builtin types, so we'll model it as a builtin *)
     let run env code {FFI.Instruction.opname} =
+      let open IResult.Let_syntax in
       Debug.p "[%s]\n" opname ;
-      let env, cell = pop_datastack opname env in
+      let* env, cell = pop_datastack opname env in
       let env, exp, _ = load_cell env code cell in
       match exp with
       | Ok exp ->
@@ -1524,8 +1547,9 @@ module ITER = struct
         it on the stack (leaving the iterator below it). If the iterator indicates it is exhausted
         top-of-stack is popped, and the byte code counter is incremented by delta. *)
     let run env code {FFI.Instruction.opname; arg= delta} next_offset_opt =
+      let open IResult.Let_syntax in
       Debug.p "[%s] delta = %d\n" opname delta ;
-      let env, iter_cell = pop_datastack opname env in
+      let* env, iter_cell = pop_datastack opname env in
       let env, iter_exp, _ = load_cell env code iter_cell in
       match iter_exp with
       | Ok iter ->
@@ -1539,7 +1563,7 @@ module ITER = struct
           in
           let env = Env.push_instr env has_item_load in
           let cond = T.Exp.Var has_item_id in
-          let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+          let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
           (* Compute the relevant pruning expressions *)
           let condition = T.BoolExp.Exp cond in
           (* In the next branch, we know the iterator has an item available. Let's fetch it and
@@ -1559,7 +1583,7 @@ module ITER = struct
             let env = Env.push_instr env next_item_load in
             Env.push env (DataStack.Temp next_item_id)
           in
-          let next_offset = next_offset next_offset_opt in
+          let* next_offset = next_offset next_offset_opt in
           let env, next_info =
             mk_label_info env next_offset ~prelude:next_prelude ~ssa_parameters
           in
@@ -1626,8 +1650,8 @@ module IMPORT = struct
     let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
       let open IResult.Let_syntax in
       Debug.p "[%s] namei = %d\n" opname arg ;
-      let env, from_list = pop_datastack opname env in
-      let env, level = pop_datastack opname env in
+      let* env, from_list = pop_datastack opname env in
+      let* env, level = pop_datastack opname env in
       let from_list = load_strings code from_list in
       let level = load_int code level in
       let* () =
@@ -1666,9 +1690,10 @@ module IMPORT = struct
         resulting object is pushed onto the stack, to be subsequently stored by a [STORE_FAST]
         instruction. *)
     let run env {FFI.Code.co_names} {FFI.Instruction.opname; arg} =
+      let open IResult.Let_syntax in
       Debug.p "[%s] namei = %d\n" opname arg ;
       let symbol_name = co_names.(arg) in
-      let import_cell = peek_datastack opname env in
+      let* import_cell = peek_datastack opname env in
       match (import_cell : DataStack.cell) with
       | Import {import_path; symbols} ->
           let env =
@@ -1714,8 +1739,8 @@ module COMPARE_OP = struct
             Builtin.Compare.pp cmp_op ;
           Error ()
       | Lt | Le | Gt | Ge | Neq | Eq ->
-          let env, rhs = pop_datastack opname env in
-          let env, lhs = pop_datastack opname env in
+          let* env, rhs = pop_datastack opname env in
+          let* env, lhs = pop_datastack opname env in
           let env, lhs, _ = load_cell env code lhs in
           let* lhs = map_error opname lhs in
           let env, rhs, _ = load_cell env code rhs in
@@ -1849,12 +1874,12 @@ let rec run env code instructions =
           if Option.is_some maybe_term then Ok (env, maybe_term, rest) else run env code rest
       | Some (_offset, maybe_backedge, label_info) ->
           (* Yes, let's stop there, and don't forget to keep [instr] around *)
-          let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+          let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
           let label_info =
             if maybe_backedge then Env.Label.update_ssa_parameters label_info ssa_parameters
             else label_info
           in
-          let offset = offset_of_code instructions |> next_offset in
+          let* offset = offset_of_code instructions |> next_offset in
           let info = {label_info; offset; ssa_args} in
           Ok (env, Some (JUMP.Label info), instructions) )
 
@@ -2195,9 +2220,11 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
     PyClassDecl.parse_class_declaration code co_name instructions
   in
   let register_methods env codes method_infos opname =
-    List.fold_left method_infos ~init:(env, codes)
-      ~f:(fun (env, codes) {PyCommon.code; signature; flags; is_static; is_abstract} ->
-        check_flags opname flags ;
+    List.fold_left method_infos
+      ~init:(Ok (env, codes))
+      ~f:(fun acc {PyCommon.code; signature; flags; is_static; is_abstract} ->
+        let* env, codes = acc in
+        let* () = check_flags opname flags in
         let env =
           match FFI.Constant.as_code code with
           | Some code ->
@@ -2208,14 +2235,14 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
           | None ->
               env
         in
-        (env, code :: codes) )
+        Ok (env, code :: codes) )
   in
   if Option.is_some has_new then (
     L.internal_error "TODO: No support for __new__ in user declared classes\n" ;
     Error () )
   else
-    let env, codes = register_methods env [] methods "<METHOD_DECLARATION>" in
-    let env, codes = register_methods env codes static_methods "<STATIC_METHOD_DECLARATION>" in
+    let* env, codes = register_methods env [] methods "<METHOD_DECLARATION>" in
+    let* env, codes = register_methods env codes static_methods "<STATIC_METHOD_DECLARATION>" in
     let env = Env.register_fields env class_type_name members in
     let fields =
       List.map members ~f:(fun {PyCommon.name; annotation} ->

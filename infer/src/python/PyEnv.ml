@@ -211,6 +211,22 @@ let rec map ~f ~(env : t) = function
       (env, hd :: tl)
 
 
+let map_result ~f ~(env : t) l =
+  let open IResult.Let_syntax in
+  let rec aux acc l =
+    match (acc, l) with
+    | Error s, _ ->
+        Error s
+    | Ok env, [] ->
+        Ok (env, [])
+    | Ok env, hd :: tl ->
+        let* env, hd = f env hd in
+        let* env, tl = aux (Ok env) tl in
+        Ok (env, hd :: tl)
+  in
+  aux (Ok env) l
+
+
 let mk_fresh_ident ({shared} as env) info =
   let mk_fresh_ident ({local_idents; local_idents_info} as env) =
     let fresh = T.Ident.fresh local_idents in

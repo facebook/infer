@@ -156,6 +156,9 @@ val mk_fresh_label : t -> t * string
 val map : f:(t -> 'a -> t * 'b) -> env:t -> 'a list -> t * 'b list
 (** Similar to [List.map] but an [env] is threaded along the way *)
 
+val map_result : f:(t -> 'a -> (t * 'b, 'c) result) -> env:t -> 'a list -> (t * 'b list, 'c) result
+(** Similar to [map] but supports functions that return [Result.t] *)
+
 val enter_proc :
   is_toplevel:bool -> is_static:bool -> module_name:Ident.t -> params:string list -> t -> t
 (** Set the environment when entering a new code unit (like reset the instruction buffer, or
