@@ -206,6 +206,8 @@ let rec load_names co_names stack instructions =
 
 
 module Decorators = struct
+  exception Failure
+
   type t = {is_static: bool; is_abstract: bool; unsupported: string list}
 
   let has_static decorators = {decorators with is_static= true}
@@ -235,10 +237,10 @@ module Decorators = struct
         let opt =
           is_instruction "CALL_FUNCTION" instructions
           >>= fun (arg, instructions) ->
-          if arg <> 1 then
-            L.die ExternalError
-              "[parse_method] invalid CALL_FUNCTION for decorated method in class %s"
-              raw_qualified_name
+          if arg <> 1 then (
+            L.external_error "[parse_method] invalid CALL_FUNCTION for decorated method in class %s"
+              raw_qualified_name ;
+            raise Failure )
           else Some instructions
         in
         let instructions = Option.value ~default:instructions opt in
@@ -256,7 +258,8 @@ module Decorators = struct
             run (has_abstract acc) decorators
           else run (unsupported name acc) decorators
       | hd :: _ ->
-          L.die InternalError "Decorators.make spotted %a" Type.pp hd
+          L.internal_error "Decorators.make spotted %a" Type.pp hd ;
+          raise Failure
       | [] ->
           acc
     in
@@ -458,5 +461,9 @@ let parse_class_declaration code class_name instructions =
   in
   (* TODO: support Python method decorators *)
   (* Now we gather method declarations *)
-  let methods, static_methods, has_init, has_new, _ = parse_methods code class_name instructions in
-  {members= annotations; methods; static_methods; has_init; has_new}
+  try
+    let methods, static_methods, has_init, has_new, _ =
+      parse_methods code class_name instructions
+    in
+    Ok {members= annotations; methods; static_methods; has_init; has_new}
+  with Decorators.Failure -> Error ()
