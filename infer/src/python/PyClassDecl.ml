@@ -238,7 +238,8 @@ module Decorators = struct
           is_instruction "CALL_FUNCTION" instructions
           >>= fun (arg, instructions) ->
           if arg <> 1 then (
-            L.external_error "[parse_method] invalid CALL_FUNCTION for decorated method in class %s"
+            L.external_error
+              "[parse_method] invalid CALL_FUNCTION for decorated method in class %s@\n"
               raw_qualified_name ;
             raise Failure )
           else Some instructions
@@ -258,7 +259,7 @@ module Decorators = struct
             run (has_abstract acc) decorators
           else run (unsupported name acc) decorators
       | hd :: _ ->
-          L.internal_error "Decorators.make spotted %a" Type.pp hd ;
+          L.internal_error "Decorators.make spotted %a\n" Type.pp hd ;
           raise Failure
       | [] ->
           acc

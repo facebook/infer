@@ -377,6 +377,7 @@ module LOAD = struct
             Pushes the value associated with [co_names\[namei\]] onto the stack. *)
 
   let run kind env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
+    let open IResult.Let_syntax in
     let pp {FFI.Code.co_names; co_varnames; co_consts} fmt = function
       | CONST ->
           FFI.Constant.pp fmt co_consts.(arg)
@@ -385,14 +386,14 @@ module LOAD = struct
       | ATTR | NAME | GLOBAL ->
           F.fprintf fmt "%s" co_names.(arg)
     in
-    let env, cell =
+    let* env, cell =
       match kind with
       | CONST ->
-          (env, DataStack.Const arg)
+          Ok (env, DataStack.Const arg)
       | FAST ->
-          (env, DataStack.VarName arg)
+          Ok (env, DataStack.VarName arg)
       | NAME ->
-          (env, DataStack.Name {global= Env.is_toplevel env; ndx= arg})
+          Ok (env, DataStack.Name {global= Env.is_toplevel env; ndx= arg})
       | GLOBAL ->
           let name = co_names.(arg) in
           if String.equal name "super" then
@@ -401,37 +402,38 @@ module LOAD = struct
                this, to be sure the call to [super()] is to access the parent's methods, not some
                other symbol *)
             if Option.is_some (Env.lookup_symbol env key) then
-              (env, DataStack.Name {global= true; ndx= arg})
-            else (env, DataStack.Super)
-          else (env, DataStack.Name {global= true; ndx= arg})
+              Ok (env, DataStack.Name {global= true; ndx= arg})
+            else Ok (env, DataStack.Super)
+          else Ok (env, DataStack.Name {global= true; ndx= arg})
       | ATTR ->
           let env, cell = pop_datastack opname env in
           let fname = co_names.(arg) in
-          let cell =
+          let* cell =
             (* if the cell is Import related, we wont' be able to load things correctly.
                Let's Pulse do its job later *)
             match (cell : DataStack.cell) with
             | ImportCall {id; loc} ->
                 let id = Ident.extend ~prefix:id fname in
-                DataStack.ImportCall {id; loc}
+                Ok (DataStack.ImportCall {id; loc})
             | Import {import_path} ->
                 let loc = Env.loc env in
                 let id = Ident.extend ~prefix:import_path fname in
-                DataStack.ImportCall {id; loc}
+                Ok (DataStack.ImportCall {id; loc})
             | _ -> (
                 let prefix = DataStack.as_id code cell in
                 let id = Option.map ~f:(fun prefix -> Ident.extend ~prefix fname) prefix in
                 match id with
                 | None ->
-                    L.die ExternalError "Failed to load attribute %s from cell %a" fname
-                      DataStack.pp_cell cell
+                    L.external_error "Failed to load attribute %s from cell %a\n" fname
+                      DataStack.pp_cell cell ;
+                    Error ()
                 | Some id ->
-                    DataStack.Path id )
+                    Ok (DataStack.Path id) )
           in
-          (env, cell)
+          Ok (env, cell)
     in
     Debug.p "[%s] arg = %a\n" opname (pp code) kind ;
-    (Env.push env cell, None)
+    Ok (Env.push env cell, None)
 
 
   module BUILD_CLASS = struct
@@ -942,7 +944,8 @@ module STORE = struct
           let env, value, {Env.Info.typ} = load_cell env code cell in
           match value with
           | Error s ->
-              L.die InternalError "[%s] %s" opname s
+              L.internal_error "[%s] %s\n" opname s ;
+              Error ()
           | Ok value ->
               let fname = co_names.(arg) in
               (* TODO: refine typ if possible *)
@@ -952,24 +955,27 @@ module STORE = struct
               let exp1 = T.Exp.Field {exp; field} in
               let instr = T.Instr.Store {exp1; typ= Some typ; exp2= value; loc} in
               let env = Env.push_instr env instr in
-              (env, None)
+              Ok (env, None)
         else
           let key = mk_key global loc name in
           let env = Env.register_symbol env key symbol_info in
           match (kind : Env.Info.kind) with
           | Class ->
               Debug.p "  top-level class declaration initialized\n" ;
-              (env, None)
+              Ok (env, None)
           | Code ->
               if global then (
                 Debug.p "  top-level function defined\n" ;
-                (env, None) )
-              else L.die InternalError "[%s] no support for closure at the moment: %s" opname name
+                Ok (env, None) )
+              else (
+                L.internal_error "[%s] no support for closure at the moment: %s\n" opname name ;
+                Error () )
           | Other ->
               let instr = T.Instr.Store {exp1= Lvar var_name; typ= Some typ; exp2= exp; loc} in
-              (Env.push_instr env instr, None) )
+              Ok (Env.push_instr env instr, None) )
     | Error s ->
-        L.die InternalError "[%s] %s" opname s
+        L.internal_error "[%s] %s\n" opname s ;
+        Error ()
 
 
   let run kind env ({FFI.Code.co_names; co_varnames} as code) {FFI.Instruction.opname; arg} =
@@ -1027,7 +1033,7 @@ module STORE = struct
               let key = mk_key global loc symbol in
               Env.register_symbol env key symbol_info )
         in
-        (env, None)
+        Ok (env, None)
     | _ ->
         store env code opname loc arg cell name global is_attr
 
@@ -1087,7 +1093,7 @@ module POP_TOP = struct
         env
       else env
     in
-    (env, None)
+    Ok (env, None)
 end
 
 module BINARY = struct
@@ -1457,9 +1463,10 @@ module RETURN_VALUE = struct
     match exp with
     | Ok exp ->
         let term = T.Terminator.Ret exp in
-        (env, Some (JUMP.Return term))
+        Ok (env, Some (JUMP.Return term))
     | Error s ->
-        L.die InternalError "[%s] %s" opname s
+        L.internal_error "[%s] %s\n" opname s ;
+        Error ()
 end
 
 module ITER = struct
@@ -1685,86 +1692,85 @@ end
 let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) next_offset_opt =
   Debug.p "> %s\n" opname ;
   let env = Env.update_last_line env starts_line in
+  let ret x = Ok x in
   (* TODO: there are < 256 opcodes, could setup an array of callbacks instead *)
-  let env, maybe_term =
-    match opname with
-    | "LOAD_ATTR" ->
-        LOAD.run ATTR env code instr
-    | "LOAD_CONST" ->
-        LOAD.run CONST env code instr
-    | "LOAD_FAST" ->
-        LOAD.run FAST env code instr
-    | "LOAD_GLOBAL" ->
-        LOAD.run GLOBAL env code instr
-    | "LOAD_NAME" ->
-        LOAD.run NAME env code instr
-    | "STORE_ATTR" ->
-        STORE.run ATTR env code instr
-    | "STORE_FAST" ->
-        STORE.run FAST env code instr
-    | "STORE_GLOBAL" ->
-        STORE.run GLOBAL env code instr
-    | "STORE_NAME" ->
-        STORE.run NAME env code instr
-    | "RETURN_VALUE" ->
-        RETURN_VALUE.run env code instr
-    | "POP_TOP" ->
-        POP_TOP.run env code instr
-    | "CALL_FUNCTION" ->
-        FUNCTION.CALL.run env code instr
-    | "BINARY_ADD" ->
-        BINARY.ADD.run env code instr
-    | "BINARY_SUBTRACT" ->
-        BINARY.SUBTRACT.run env code instr
-    | "INPLACE_ADD" ->
-        INPLACE.ADD.run env code instr
-    | "INPLACE_SUBTRACT" ->
-        INPLACE.SUBTRACT.run env code instr
-    | "MAKE_FUNCTION" ->
-        FUNCTION.MAKE.run env code instr
-    | "POP_JUMP_IF_TRUE" ->
-        JUMP.POP_IF.run ~next_is_true:false env code instr next_offset_opt
-    | "POP_JUMP_IF_FALSE" ->
-        JUMP.POP_IF.run ~next_is_true:true env code instr next_offset_opt
-    | "JUMP_FORWARD" ->
-        JUMP.FORWARD.run env code instr next_offset_opt
-    | "JUMP_ABSOLUTE" ->
-        JUMP.ABSOLUTE.run env code instr
-    | "GET_ITER" ->
-        ITER.GET.run env code instr
-    | "FOR_ITER" ->
-        ITER.FOR.run env code instr next_offset_opt
-    | "BUILD_CONST_KEY_MAP" ->
-        BUILD.CONST_KEY_MAP.run env code instr
-    | "LOAD_BUILD_CLASS" ->
-        LOAD.BUILD_CLASS.run env instr
-    | "LOAD_METHOD" ->
-        METHOD.LOAD.run env code instr
-    | "CALL_METHOD" ->
-        METHOD.CALL.run env code instr
-    | "IMPORT_NAME" ->
-        IMPORT.NAME.run env code instr
-    | "IMPORT_FROM" ->
-        IMPORT.FROM.run env code instr
-    | "COMPARE_OP" ->
-        COMPARE_OP.run env code instr
-    | "JUMP_IF_TRUE_OR_POP" ->
-        JUMP.IF_OR_POP.run ~jump_if:true env code instr next_offset_opt
-    | "JUMP_IF_FALSE_OR_POP" ->
-        JUMP.IF_OR_POP.run ~jump_if:false env code instr next_offset_opt
-    | "BUILD_LIST" ->
-        BUILD.LIST.run env code instr
-    | "STORE_SUBSCR" ->
-        STORE.SUBSCR.run env code instr
-    | "BINARY_SUBSCR" ->
-        BINARY.SUBSCR.run env code instr
-    | "EXTENDED_ARG" ->
-        (* The FFI.Instruction framework already did the magic and this opcode can be ignored. *)
-        (env, None)
-    | _ ->
-        L.die InternalError "Unsupported opcode: %s" opname
-  in
-  (env, maybe_term)
+  match opname with
+  | "LOAD_ATTR" ->
+      LOAD.run ATTR env code instr
+  | "LOAD_CONST" ->
+      LOAD.run CONST env code instr
+  | "LOAD_FAST" ->
+      LOAD.run FAST env code instr
+  | "LOAD_GLOBAL" ->
+      LOAD.run GLOBAL env code instr
+  | "LOAD_NAME" ->
+      LOAD.run NAME env code instr
+  | "STORE_ATTR" ->
+      STORE.run ATTR env code instr
+  | "STORE_FAST" ->
+      STORE.run FAST env code instr
+  | "STORE_GLOBAL" ->
+      STORE.run GLOBAL env code instr
+  | "STORE_NAME" ->
+      STORE.run NAME env code instr
+  | "RETURN_VALUE" ->
+      RETURN_VALUE.run env code instr
+  | "POP_TOP" ->
+      POP_TOP.run env code instr
+  | "CALL_FUNCTION" ->
+      ret @@ FUNCTION.CALL.run env code instr
+  | "BINARY_ADD" ->
+      ret @@ BINARY.ADD.run env code instr
+  | "BINARY_SUBTRACT" ->
+      ret @@ BINARY.SUBTRACT.run env code instr
+  | "INPLACE_ADD" ->
+      ret @@ INPLACE.ADD.run env code instr
+  | "INPLACE_SUBTRACT" ->
+      ret @@ INPLACE.SUBTRACT.run env code instr
+  | "MAKE_FUNCTION" ->
+      ret @@ FUNCTION.MAKE.run env code instr
+  | "POP_JUMP_IF_TRUE" ->
+      ret @@ JUMP.POP_IF.run ~next_is_true:false env code instr next_offset_opt
+  | "POP_JUMP_IF_FALSE" ->
+      ret @@ JUMP.POP_IF.run ~next_is_true:true env code instr next_offset_opt
+  | "JUMP_FORWARD" ->
+      ret @@ JUMP.FORWARD.run env code instr next_offset_opt
+  | "JUMP_ABSOLUTE" ->
+      ret @@ JUMP.ABSOLUTE.run env code instr
+  | "GET_ITER" ->
+      ret @@ ITER.GET.run env code instr
+  | "FOR_ITER" ->
+      ret @@ ITER.FOR.run env code instr next_offset_opt
+  | "BUILD_CONST_KEY_MAP" ->
+      ret @@ BUILD.CONST_KEY_MAP.run env code instr
+  | "LOAD_BUILD_CLASS" ->
+      ret @@ LOAD.BUILD_CLASS.run env instr
+  | "LOAD_METHOD" ->
+      ret @@ METHOD.LOAD.run env code instr
+  | "CALL_METHOD" ->
+      ret @@ METHOD.CALL.run env code instr
+  | "IMPORT_NAME" ->
+      ret @@ IMPORT.NAME.run env code instr
+  | "IMPORT_FROM" ->
+      ret @@ IMPORT.FROM.run env code instr
+  | "COMPARE_OP" ->
+      ret @@ COMPARE_OP.run env code instr
+  | "JUMP_IF_TRUE_OR_POP" ->
+      ret @@ JUMP.IF_OR_POP.run ~jump_if:true env code instr next_offset_opt
+  | "JUMP_IF_FALSE_OR_POP" ->
+      ret @@ JUMP.IF_OR_POP.run ~jump_if:false env code instr next_offset_opt
+  | "BUILD_LIST" ->
+      ret @@ BUILD.LIST.run env code instr
+  | "STORE_SUBSCR" ->
+      ret @@ STORE.SUBSCR.run env code instr
+  | "BINARY_SUBSCR" ->
+      ret @@ BINARY.SUBSCR.run env code instr
+  | "EXTENDED_ARG" ->
+      (* The FFI.Instruction framework already did the magic and this opcode can be ignored. *)
+      Ok (env, None)
+  | _ ->
+      L.internal_error "Unsupported opcode: %s\n" opname ;
+      Error ()
 
 
 (** Helper function to check if the next instructions has a label attached to it *)
@@ -1789,9 +1795,10 @@ let has_jump_target env instructions =
 (** Iterator on [run_instruction]: this function will interpret instructions as long as terminator
     is not reached. *)
 let rec run env code instructions =
+  let open IResult.Let_syntax in
   match instructions with
   | [] ->
-      (env, None, [])
+      Ok (env, None, [])
   | instr :: rest -> (
       (* If the current instruction a jump target (either because we already registered a label
          there, or because of the info from Python instructions), we stop and close the node *)
@@ -1800,8 +1807,8 @@ let rec run env code instructions =
       | None ->
           (* Nop, just continue processing the stream of instrunctions *)
           let next_offset_opt = offset_of_code rest in
-          let env, maybe_term = run_instruction env code instr next_offset_opt in
-          if Option.is_some maybe_term then (env, maybe_term, rest) else run env code rest
+          let* env, maybe_term = run_instruction env code instr next_offset_opt in
+          if Option.is_some maybe_term then Ok (env, maybe_term, rest) else run env code rest
       | Some (_offset, maybe_backedge, label_info) ->
           (* Yes, let's stop there, and don't forget to keep [instr] around *)
           let env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
@@ -1811,7 +1818,7 @@ let rec run env code instructions =
           in
           let offset = offset_of_code instructions |> next_offset in
           let info = {label_info; offset; ssa_args} in
-          (env, Some (JUMP.Label info), instructions) )
+          Ok (env, Some (JUMP.Label info), instructions) )
 
 
 (** Return the location of the first available instruction, if any *)
@@ -1841,11 +1848,12 @@ let first_loc_of_code instructions =
     If the terminator is [Relative], an unconditional jump forward is performed, based on the offset
     of the next instruction. *)
 let until_terminator env label_info code instructions =
+  let open IResult.Let_syntax in
   let label_loc = first_loc_of_code instructions in
   let env, label_name, ssa_parameters = Env.Label.to_textual env label_loc label_info in
   let label = {T.NodeName.value= label_name; loc= label_loc} in
   (* process instructions until the next terminator *)
-  let env, maybe_term, rest = run env code instructions in
+  let* env, maybe_term, rest = run env code instructions in
   let last_loc = Env.loc env in
   let unconditional_jump env ssa_args label_info offset =
     let env = Env.register_label ~offset label_info env in
@@ -1862,9 +1870,10 @@ let until_terminator env label_info code instructions =
     in
     (env, node)
   in
-  match maybe_term with
+  match (maybe_term : JUMP.kind option) with
   | None ->
-      L.die InternalError "Reached the end of code without spotting a terminator"
+      L.internal_error "Reached the end of code without spotting a terminator\n" ;
+      Error ()
   | Some (Label info) ->
       let {offset; label_info} = info in
       let env = Env.register_label ~offset label_info env in
@@ -1882,7 +1891,7 @@ let until_terminator env label_info code instructions =
           ; label_loc }
       in
       Debug.p "  Label: splitting instructions alongside %s\n" (Env.Label.name label_info) ;
-      (env, rest, node)
+      Ok (env, rest, node)
   | Some (Return last) ->
       let node =
         T.Node.
@@ -1895,7 +1904,7 @@ let until_terminator env label_info code instructions =
           ; label_loc }
       in
       Debug.p "  Return\n" ;
-      (env, rest, node)
+      Ok (env, rest, node)
   | Some (TwoWay {condition; next_info; other_info}) ->
       let {label_info= next_label_info; offset= next_offset} = next_info in
       let {label_info= other_label_info; offset= other_offset} = other_info in
@@ -1917,19 +1926,20 @@ let until_terminator env label_info code instructions =
           ; last_loc
           ; label_loc }
       in
-      (env, rest, node)
+      Ok (env, rest, node)
   | Some (Absolute {ssa_args; label_info; offset}) ->
       (* The current node ends up with an absolute jump to [target]. *)
       let env, node = unconditional_jump env ssa_args label_info offset in
       Debug.p "  Absolute: register %s at %d\n" (Env.Label.name label_info) offset ;
-      (env, rest, node)
+      Ok (env, rest, node)
 
 
 (** Process a sequence of instructions until there is no more left to process. *)
 let rec nodes env label_info code instructions =
+  let open IResult.Let_syntax in
   let env = Env.enter_node env in
-  let env, instructions, textual_node = until_terminator env label_info code instructions in
-  if List.is_empty instructions then (env, [textual_node])
+  let* env, instructions, textual_node = until_terminator env label_info code instructions in
+  if List.is_empty instructions then Ok (env, [textual_node])
   else
     let env, label_info =
       (* If the next instruction has a label, use it, otherwise pick a fresh one. *)
@@ -1943,12 +1953,13 @@ let rec nodes env label_info code instructions =
           let env, label_name = Env.mk_fresh_label env in
           (env, Env.Label.mk label_name)
     in
-    let env, more_textual_nodes = nodes env label_info code instructions in
-    (env, textual_node :: more_textual_nodes)
+    let* env, more_textual_nodes = nodes env label_info code instructions in
+    Ok (env, textual_node :: more_textual_nodes)
 
 
 (** Process a single code unit (toplevel code, function body, ...) *)
 let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} as code) =
+  let open IResult.Let_syntax in
   Debug.p "[to_proc_desc] %a %a\n" Ident.pp enclosing_class_name (Pp.option F.pp_print_string)
     opt_name ;
   let is_toplevel, is_static, is_abstract, name, annotations =
@@ -2015,7 +2026,7 @@ let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} 
     let env, entry_label = Env.mk_fresh_label env in
     let label = node_name ~loc entry_label in
     let label_info = Env.Label.mk entry_label in
-    let env, nodes = nodes env label_info code instructions in
+    let* env, nodes = nodes env label_info code instructions in
     Ok
       ( env
       , T.Module.Proc {T.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown}
@@ -2162,7 +2173,7 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
         (env, code :: codes) )
   in
   if Option.is_some has_new then (
-    L.internal_error "TODO: No support for __new__ in user declared classes" ;
+    L.internal_error "TODO: No support for __new__ in user declared classes\n" ;
     Error () )
   else
     let env, codes = register_methods env [] methods "<METHOD_DECLARATION>" in
@@ -2264,7 +2275,7 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
   let open IResult.Let_syntax in
   Debug.p "[to_module] %a %s\n" T.SourceFile.pp sourcefile co_name ;
   if not (String.equal co_name "<module>") then (
-    L.external_error "Toplevel modules must be named '<module>'. Got %s" co_name ;
+    L.external_error "Toplevel modules must be named '<module>'. Got %s\n" co_name ;
     Error () )
   else
     let loc = first_loc_of_code instructions in
