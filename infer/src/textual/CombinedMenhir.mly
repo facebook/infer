@@ -138,7 +138,14 @@
 %type <Textual.Body.t> body
 %%
 
-ident_except_load:
+doli_ident_modifier:
+  | PUBLIC { "public" }
+  | FINAL { "final" }
+  | PROTECTED { "protected" }
+  | PRIVATE { "private" }
+  | STATIC { "static" }
+
+basic_ident:
   | DECLARE { "declare" }
   | DEFINE { "define" }
   | EXTENDS { "extends" }
@@ -151,17 +158,21 @@ ident_except_load:
   | THROW { "throw" }
   | TYPE { "type" }
   | UNREACHABLE { "unreachable" }
-  | PUBLIC { "public" }
-  | FINAL { "final" }
-  | PROTECTED { "protected" }
-  | PRIVATE { "private" }
-  | STATIC { "static" }
   | IN { "in" }
+
+ident_except_load:
+  | x=basic_ident { x }
+  | x=doli_ident_modifier { x }
   | x=IDENT { x }
 
 ident:
   | LOAD { "load" }
   | x=ident_except_load { x }
+
+doli_classname_ident:
+  | LOAD { "load" }
+  | x=basic_ident { x }
+  | x=IDENT { x }
 
 main:
   | attrs=attribute* decls=declaration* EOF
@@ -519,8 +530,8 @@ referenceType:
    ;
 
 classType:
-  | cId=ident { CT (cId, []) }
-  | cId=ident LABRACKET tArgs=separated_list(COMMA, typeArgument)  RABRACKET { CT (cId,tArgs) }
+  | cId=doli_classname_ident { CT (cId, []) }
+  | cId=doli_classname_ident LABRACKET tArgs=separated_list(COMMA, typeArgument)  RABRACKET { CT (cId,tArgs) }
   ;
 
 
