@@ -444,7 +444,7 @@ module LOAD = struct
     let run env {FFI.Instruction.opname} =
       Debug.p "[%s]\n" opname ;
       let env = Env.push env DataStack.BuiltinBuildClass in
-      (env, None)
+      Ok (env, None)
   end
 end
 
@@ -468,7 +468,7 @@ module FUNCTION = struct
       let let_instr = T.Instr.Let {id; exp= call; loc} in
       let env = Env.push_instr env let_instr in
       let env = Env.push env (DataStack.Temp id) in
-      (env, None)
+      Ok (env, None)
 
 
     (** {v CALL_FUNCTION(argc) v}
@@ -495,7 +495,7 @@ module FUNCTION = struct
         let let_instr = T.Instr.Let {id; exp= T.Exp.Const (T.Const.Int Z.zero); loc} in
         let env = Env.push_instr env let_instr in
         let env = Env.push env (DataStack.Temp id) in
-        (env, None) )
+        Ok (env, None) )
       else
         let env, args = cells_to_textual env opname code cells in
         let loc = Env.loc env in
@@ -514,7 +514,8 @@ module FUNCTION = struct
         | Some symbol -> (
           match (symbol : Symbol.t) with
           | {kind= Import _ | ImportCall; id} ->
-              L.die InternalError "[static_call] Invalid Import (%a) spotted" Ident.pp id
+              L.internal_error "[static_call] Invalid Import (%a) spotted\n" Ident.pp id ;
+              Error ()
           | {kind= Builtin; id} ->
               (* TODO: propagate builtin type information *)
               let proc = Ident.to_qualified_procname id in
@@ -543,7 +544,7 @@ module FUNCTION = struct
       let args = T.Exp.Var caller_id :: args in
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonCall args in
       let env = Env.push env (DataStack.Temp id) in
-      (env, None)
+      Ok (env, None)
 
 
     let builtin_build_class env code opname name_cell code_cell parent_cell =
@@ -583,21 +584,22 @@ module FUNCTION = struct
       | Temp id ->
           dynamic_call env opname code id cells
       | Code {code_name} ->
-          L.die UserError "[%s] no support for calling raw class/code : %s" opname code_name
+          L.user_error "[%s] no support for calling raw class/code : %s\n" opname code_name ;
+          Error ()
       | VarName _ | Const _ | Map _ ->
-          L.die UserError "[%s] invalid function on the stack: %s" opname
-            (DataStack.show_cell fname)
+          L.user_error "[%s] invalid function on the stack: %s\n" opname (DataStack.show_cell fname) ;
+          Error ()
       | BuiltinBuildClass -> (
         match cells with
         | [code_cell; name_cell] ->
             let env = builtin_build_class env code opname name_cell code_cell None in
-            (env, None)
+            Ok (env, None)
         | [code_cell; name_cell; parent_cell] ->
             let env = builtin_build_class env code opname name_cell code_cell (Some parent_cell) in
-            (env, None)
+            Ok (env, None)
         | _ ->
-            L.die InternalError "[%s] unsupported call to LOAD_BUILD_CLASS with arg = %d" opname arg
-        )
+            L.internal_error "[%s] unsupported call to LOAD_BUILD_CLASS with arg = %d\n" opname arg ;
+            Error () )
       | Path id ->
           static_call env opname code id cells
       | ImportCall {id; loc} ->
@@ -607,11 +609,12 @@ module FUNCTION = struct
           let proc = Ident.to_qualified_procname id in
           mk env (Some id) loc proc args
       | Import _ | StaticCall _ | MethodCall _ ->
-          L.die InternalError "[%s] unsupported call to %a with arg = %d" opname DataStack.pp_cell
-            fname arg
+          L.internal_error "[%s] unsupported call to %a with arg = %d\n" opname DataStack.pp_cell
+            fname arg ;
+          Error ()
       | Super ->
           let env = Env.push env Super in
-          (env, None)
+          Ok (env, None)
   end
 
   module MAKE = struct
@@ -660,6 +663,7 @@ module FUNCTION = struct
         In this first version, only support for [flags = 0x00] is implemented. Also there is no
         support for closures or nested functions *)
     let run env ({FFI.Code.co_consts} as code) {FFI.Instruction.opname; arg} =
+      let open IResult.Let_syntax in
       let flags = MakeFunctionFlags.mk arg in
       Debug.p "[%s] flags = 0x%a\n" opname MakeFunctionFlags.pp flags ;
       check_flags opname flags ;
@@ -675,14 +679,15 @@ module FUNCTION = struct
         else (env, None)
       in
       let annotations = Option.value_map ~default:[] ~f:(unpack_annotations env code) annotations in
-      let code =
+      let* code =
         match DataStack.as_code code body with
         | None ->
-            L.die InternalError "%s: payload is not code: %s" opname (DataStack.show_cell body)
+            L.internal_error "%s: payload is not code: %s\n" opname (DataStack.show_cell body) ;
+            Error ()
         | Some body ->
-            body
+            Ok body
       in
-      let code_name =
+      let* code_name =
         match (qual : DataStack.cell) with
         | VarName _
         | Name _
@@ -696,22 +701,24 @@ module FUNCTION = struct
         | StaticCall _
         | Path _
         | Super ->
-            L.die InternalError "%s: invalid function name: %s" opname (DataStack.show_cell qual)
+            L.internal_error "%s: invalid function name: %s\n" opname (DataStack.show_cell qual) ;
+            Error ()
         | Const ndx -> (
             let const = co_consts.(ndx) in
             match FFI.Constant.as_name const with
             | Some name ->
-                name
+                Ok name
             | None ->
-                L.die InternalError "%s: can't read qualified name from stack: %s" opname
-                  (FFI.Constant.show const) )
+                L.internal_error "%s: can't read qualified name from stack: %s\n" opname
+                  (FFI.Constant.show const) ;
+                Error () )
       in
       if FFI.Code.is_closure code then
         L.user_warning "%s: support for closures is incomplete (%s)\n" opname code_name ;
       let loc = Env.loc env in
       let env = Env.register_function env code_name loc annotations in
       let env = Env.push env (DataStack.Code {fun_or_class= true; code_name; code}) in
-      (env, None)
+      Ok (env, None)
   end
 end
 
@@ -721,8 +728,9 @@ module METHOD = struct
       let env, res, _ = load_cell env code cell in
       match res with
       | Error s ->
-          L.die ExternalError "Failed to load method %s from cell %a: %s" method_name
-            DataStack.pp_cell cell s
+          L.external_error "Failed to load method %s from cell %a: %s\n" method_name
+            DataStack.pp_cell cell s ;
+          Error ()
       | Ok receiver ->
           let loc = Env.loc env in
           let name = proc_name ~loc method_name in
@@ -730,7 +738,7 @@ module METHOD = struct
             {T.enclosing_class= Enclosing T.TypeName.wildcard; name}
           in
           let env = Env.push env (DataStack.MethodCall {receiver; name}) in
-          (env, None)
+          Ok (env, None)
 
 
     (* Here we translate calls like [super().f(...)] into a static call [parent_type.f(self, ...)]
@@ -743,6 +751,7 @@ module METHOD = struct
        TODO: pass in the current function name for better error reporting, but not urgent as all
        these errors would make python runtime crash anyway *)
     let load_super env method_name =
+      let open IResult.Let_syntax in
       (* TODO: rethink the class API ? *)
       let current_module = Env.module_name env in
       (* current_module is a fully qualified name like foo#C, but we want to extract that C part
@@ -752,38 +761,44 @@ module METHOD = struct
       let class_info = SMap.find_opt class_name classes in
       let params = Env.get_params env in
       let is_static = Env.is_static env in
-      let parent_info =
+      let* parent_info =
         match class_info with
         | None ->
-            L.die ExternalError "Call to super() spotted in %a which is not a registered class"
-              Ident.pp current_module
+            L.external_error "Call to super() spotted in %a which is not a registered class\n"
+              Ident.pp current_module ;
+            Error ()
         | Some {parent} ->
-            parent
+            Ok parent
       in
-      let parent_name =
+      let* parent_name =
         match parent_info with
         | None ->
-            L.die ExternalError
-              "Call to super() spotted in %a which doesn't have a registered parent class" Ident.pp
-              current_module
+            L.external_error
+              "Call to super() spotted in %a which doesn't have a registered parent class\n"
+              Ident.pp current_module ;
+            Error ()
         | Some parent -> (
             let key = Symbol.Global parent in
             match Env.lookup_symbol env key with
             | None ->
-                L.die InternalError "Missing symbol for parent: %a\n" Ident.pp parent
+                L.internal_error "Missing symbol for parent: %a\n" Ident.pp parent ;
+                Error ()
             | Some {Symbol.id} ->
-                id )
+                Ok id )
       in
-      let self =
-        if is_static then
-          L.die ExternalError "Call to super() spotted in a static method of %a" Ident.pp
+      let* self =
+        if is_static then (
+          L.external_error "Call to super() spotted in a static method of %a\n" Ident.pp
             current_module ;
-        match List.hd params with
-        | None ->
-            L.die ExternalError "Empty parameter list makes illegal call to super() in %a" Ident.pp
-              current_module
-        | Some self ->
-            self
+          Error () )
+        else
+          match List.hd params with
+          | None ->
+              L.external_error "Empty parameter list makes illegal call to super() in %a\n" Ident.pp
+                current_module ;
+              Error ()
+          | Some self ->
+              Ok self
       in
       let loc = Env.loc env in
       let super_type = Ident.to_type_name parent_name in
@@ -795,10 +810,11 @@ module METHOD = struct
           let name = proc_name ~loc method_name in
           let call_name : T.qualified_procname = {T.enclosing_class= Enclosing super_type; name} in
           let env = Env.push env (DataStack.StaticCall {call_name; receiver= Some receiver}) in
-          (env, None)
+          Ok (env, None)
       | Error s ->
-          L.die UserError "[super()] failed to load self (a.k.a %s) in %a: %s" self Ident.pp
-            current_module s
+          L.user_error "[super()] failed to load self (a.k.a %s) in %a: %s\n" self Ident.pp
+            current_module s ;
+          Error ()
 
 
     (** {v LOAD_METHOD(namei) v}
@@ -822,12 +838,12 @@ module METHOD = struct
           | Some {kind= Import _; id} ->
               let id = Ident.extend ~prefix:id method_name in
               let env = Env.push env (DataStack.ImportCall {loc; id}) in
-              (env, None)
+              Ok (env, None)
           | Some {kind= Class; id} ->
               let enclosing_class = Ident.to_type_name ~static:true id in
               let call_name = qualified_procname ~enclosing_class @@ proc_name ~loc method_name in
               let env = Env.push env (DataStack.StaticCall {call_name; receiver= None}) in
-              (env, None)
+              Ok (env, None)
           | _ ->
               load env code cell method_name )
       | Super ->
@@ -857,7 +873,8 @@ module METHOD = struct
           let proc = Ident.to_qualified_procname id in
           FUNCTION.CALL.mk env None loc proc args
       | Path id ->
-          L.die InternalError "%s called with Path: %a\n" opname Ident.pp id
+          L.internal_error "%s called with Path: %a\n" opname Ident.pp id ;
+          Error ()
       | StaticCall {call_name; receiver} ->
           let loc = Env.loc env in
           let args = Option.to_list receiver @ args in
@@ -871,7 +888,7 @@ module METHOD = struct
           let let_instr = T.Instr.Let {id; exp; loc} in
           let env = Env.push_instr env let_instr in
           let env = Env.push env (DataStack.Temp id) in
-          (env, None)
+          Ok (env, None)
       | Const _
       | Name _
       | VarName _
@@ -881,8 +898,9 @@ module METHOD = struct
       | BuiltinBuildClass
       | Import _
       | Super ->
-          L.die InternalError "[%s] failed to load method information from cell %a" opname
-            DataStack.pp_cell cell_mi
+          L.internal_error "[%s] failed to load method information from cell %a\n" opname
+            DataStack.pp_cell cell_mi ;
+          Error ()
   end
 end
 
@@ -979,6 +997,7 @@ module STORE = struct
 
 
   let run kind env ({FFI.Code.co_names; co_varnames} as code) {FFI.Instruction.opname; arg} =
+    let open IResult.Let_syntax in
     let name, global, is_attr =
       match kind with
       | FAST ->
@@ -1007,11 +1026,11 @@ module STORE = struct
             | _ ->
                 None )
         in
-        let env =
+        let* env =
           (* Side effects from imports are only run once *)
           match first_bind with
           | None ->
-              env
+              Ok env
           | Some (id, loc) ->
               let symbol_info = {Symbol.kind= Import {more_than_once= true}; loc; id} in
               let env = Env.register_symbol env key symbol_info in
@@ -1019,11 +1038,11 @@ module STORE = struct
               let proc =
                 qualified_procname ~enclosing_class @@ proc_name ~loc PyCommon.toplevel_function
               in
-              let env, _is_always_none = FUNCTION.CALL.mk env None loc proc [] in
+              let* env, _is_always_none = FUNCTION.CALL.mk env None loc proc [] in
               (* Python toplevel code can't use [return] but still we just put a useless Textual id
                  on the stack. Popping it *)
               let env, _ = pop_datastack "STORE_IMPORTED_NAME" env in
-              env
+              Ok env
         in
         let env =
           List.fold_left ~init:env symbols ~f:(fun env symbol ->
@@ -1718,7 +1737,7 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "POP_TOP" ->
       POP_TOP.run env code instr
   | "CALL_FUNCTION" ->
-      ret @@ FUNCTION.CALL.run env code instr
+      FUNCTION.CALL.run env code instr
   | "BINARY_ADD" ->
       ret @@ BINARY.ADD.run env code instr
   | "BINARY_SUBTRACT" ->
@@ -1728,7 +1747,7 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "INPLACE_SUBTRACT" ->
       ret @@ INPLACE.SUBTRACT.run env code instr
   | "MAKE_FUNCTION" ->
-      ret @@ FUNCTION.MAKE.run env code instr
+      FUNCTION.MAKE.run env code instr
   | "POP_JUMP_IF_TRUE" ->
       ret @@ JUMP.POP_IF.run ~next_is_true:false env code instr next_offset_opt
   | "POP_JUMP_IF_FALSE" ->
@@ -1744,11 +1763,11 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "BUILD_CONST_KEY_MAP" ->
       ret @@ BUILD.CONST_KEY_MAP.run env code instr
   | "LOAD_BUILD_CLASS" ->
-      ret @@ LOAD.BUILD_CLASS.run env instr
+      LOAD.BUILD_CLASS.run env instr
   | "LOAD_METHOD" ->
-      ret @@ METHOD.LOAD.run env code instr
+      METHOD.LOAD.run env code instr
   | "CALL_METHOD" ->
-      ret @@ METHOD.CALL.run env code instr
+      METHOD.CALL.run env code instr
   | "IMPORT_NAME" ->
       ret @@ IMPORT.NAME.run env code instr
   | "IMPORT_FROM" ->
