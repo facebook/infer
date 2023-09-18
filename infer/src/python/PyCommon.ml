@@ -7,7 +7,6 @@
 
 open! IStd
 module T = Textual
-module L = Logging
 module SMap = Caml.Map.Make (String)
 
 let proc_name ?(loc = T.Location.Unknown) value = {T.ProcName.value; loc}
@@ -173,13 +172,13 @@ module Ident = struct
     let items = String.split ~on:'.' s in
     match items with
     | [] ->
-        L.die InternalError "String '%s' is an invalid Ident" s
+        None
     | name :: attrs -> (
       match List.rev attrs with
       | [] ->
-          {root= {name; loc; global}; path= Empty}
+          Some {root= {name; loc; global}; path= Empty}
       | last :: path ->
-          {root= {name; loc; global}; path= Path {last; path}} )
+          Some {root= {name; loc; global}; path= Path {last; path}} )
 
 
   let last {root= {name}; path} = match path with Empty -> name | Path {last} -> last

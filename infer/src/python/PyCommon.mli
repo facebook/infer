@@ -107,7 +107,7 @@ module Ident : sig
       any prefix are local variables. *)
   type t [@@deriving compare]
 
-  val from_string : ?global:bool -> ?loc:Textual.Location.t -> string -> t
+  val from_string : ?global:bool -> ?loc:Textual.Location.t -> string -> t option
 
   val last : t -> string
 

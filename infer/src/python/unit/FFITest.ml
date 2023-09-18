@@ -14,11 +14,14 @@ let%test_module "load_code" =
 
     let%expect_test _ =
       Py.initialize ~interpreter:Version.python_exe () ;
-      let res = FFI.from_string ~source ~filename:"dummy" in
-      Py.finalize () ;
-      F.printf "%s" (FFI.Code.full_show res) ;
-      [%expect
-        {|
+      match FFI.from_string ~source ~filename:"dummy" with
+      | Error () ->
+          ()
+      | Ok res ->
+          Py.finalize () ;
+          F.printf "%s" (FFI.Code.full_show res) ;
+          [%expect
+            {|
         { co_name = "<module>"; co_filename = "dummy"; co_flags = 64;
           co_cellvars = [||]; co_freevars = [||]; co_names = [|"x"|];
           co_varnames = [||]; co_nlocals = 0; co_argcount = 0; co_firstlineno = 1;

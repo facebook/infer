@@ -2268,7 +2268,15 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
     Error () )
   else
     let loc = first_loc_of_code instructions in
-    let module_name = Ident.from_string ~loc @@ Stdlib.Filename.remove_extension co_filename in
+    let* module_name =
+      let filename = Stdlib.Filename.remove_extension co_filename in
+      match Ident.from_string ~loc filename with
+      | None ->
+          L.external_error "Invalid module path '%s'\n" filename ;
+          Error ()
+      | Some module_name ->
+          Ok module_name
+    in
     let env = Env.empty module_name in
     (* Process top level module first, to gather all global definitions.
        This will also help us identify what is a class and what is a function,

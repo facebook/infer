@@ -90,11 +90,11 @@ and Instruction : sig
   [@@deriving show, compare]
 end
 
-val from_string : source:string -> filename:string -> Code.t
+val from_string : source:string -> filename:string -> (Code.t, unit) result
   [@@warning "-unused-value-declaration"]
 (** Compiles the python program describes by [source] into a [Code.t] object *)
 
-val from_file : is_binary:bool -> string -> Code.t
+val from_file : is_binary:bool -> string -> (Code.t, unit) result
   [@@warning "-unused-value-declaration"]
 (** Generates a [Code.t] object from a file. If the file is a source file, the builtin [compile]
     from Python is called to generate the bytecode. If the file is already a bytecode file, it is
