@@ -28,10 +28,6 @@ let field_name = PyCommon.field_name
 
 let qualified_procname = PyCommon.qualified_procname
 
-let map_error opname result =
-  Result.map_error ~f:(fun s -> L.internal_error "[%s] %s\n" opname s) result
-
-
 let mk_key global loc name =
   if global then Symbol.Global (Ident.mk ~global ~loc name) else Symbol.Local name
 
@@ -50,31 +46,34 @@ let lift_annotation env {PyCommon.name; annotation} =
 (** Turn a Python [FFI.Code.t] into a Textual [T.Exp.t], along with the required instructions to
     effectively perform the translation. *)
 let code_to_exp ~fun_or_class env key =
-  let fname =
+  let open IResult.Let_syntax in
+  let* fname =
     (* TODO: support closures *)
     match Env.lookup_symbol env key with
     | None ->
         (* Corner cases for things we don't support nicely at the moment *)
         let id = Ident.unknown_ident "code" in
         let name = Ident.to_string ~sep:"." id in
-        name
+        Ok name
     | Some ({Symbol.kind; id} as symbol) -> (
       match (kind : Symbol.kind) with
       | Name _ | Import _ | ImportCall ->
-          L.die InternalError "[code_to_exp] Name/Class/Import %a is not a code object" Symbol.pp
-            symbol
+          L.internal_error "[code_to_exp] Name/Class/Import %a is not a code object\n" Symbol.pp
+            symbol ;
+          Error ()
       | Class ->
-          Ident.to_string ~sep:"::" id
+          Ok (Ident.to_string ~sep:"::" id)
       | Code ->
           let sep = if fun_or_class then "." else "::" in
-          Ident.to_string ~sep id
+          Ok (Ident.to_string ~sep id)
       | Builtin ->
-          L.die InternalError "[code_to_exp] unexpected Builtin: %a\n" Symbol.pp_key key )
+          L.internal_error "[code_to_exp] unexpected Builtin: %a\n" Symbol.pp_key key ;
+          Error () )
   in
   let kind = if fun_or_class then Builtin.PythonCode else Builtin.PythonClass in
   let name = T.Exp.Const (Str fname) in
   let env, id, typ = Env.mk_builtin_call env kind [name] in
-  (env, T.Exp.Var id, typ)
+  Ok (env, T.Exp.Var id, typ)
 
 
 (** Turn a Python [FFI.Constant.t] into a Textual [T.Exp.t], along with the required instructions to
@@ -82,18 +81,18 @@ let code_to_exp ~fun_or_class env key =
 let rec py_to_exp env c =
   match (c : FFI.Constant.t) with
   | PYCBool b ->
-      (env, PyCommon.mk_bool b, PyCommon.pyBool)
+      Ok (env, PyCommon.mk_bool b, PyCommon.pyBool)
   | PYCInt i ->
-      (env, PyCommon.mk_int i, PyCommon.pyInt)
+      Ok (env, PyCommon.mk_int i, PyCommon.pyInt)
   | PYCFloat f ->
-      (env, PyCommon.mk_float f, PyCommon.pyFloat)
+      Ok (env, PyCommon.mk_float f, PyCommon.pyFloat)
   | PYCString s ->
-      (env, PyCommon.mk_string s, PyCommon.pyString)
+      Ok (env, PyCommon.mk_string s, PyCommon.pyString)
   | PYCBytes s ->
-      (env, PyCommon.mk_bytes s, PyCommon.pyBytes)
+      Ok (env, PyCommon.mk_bytes s, PyCommon.pyBytes)
   | PYCNone ->
       let exp = T.(Exp.Const Const.Null) in
-      (env, exp, T.Typ.Null)
+      Ok (env, exp, T.Typ.Null)
   | PYCCode c ->
       (* We assume it's a function, as classes should only be seen during loading using
          [LOAD_BUILD_CLASS] *)
@@ -101,14 +100,15 @@ let rec py_to_exp env c =
       let key = Symbol.Global (Ident.mk ~loc c.FFI.Code.co_name) in
       code_to_exp env ~fun_or_class:true key
   | PYCTuple arr ->
+      let open IResult.Let_syntax in
       let l = Array.to_list arr in
-      let env, args =
-        Env.map ~env l ~f:(fun env c ->
-            let env, e, _ = py_to_exp env c in
-            (env, e) )
+      let* env, args =
+        Env.map_result ~env l ~f:(fun env c ->
+            let* env, e, _ = py_to_exp env c in
+            Ok (env, e) )
       in
       let exp = T.Exp.call_non_virtual PyCommon.python_tuple args in
-      (env, exp, PyCommon.pyObject)
+      Ok (env, exp, PyCommon.pyObject)
 
 
 let annotated_type_of_annotation typ =
@@ -119,21 +119,23 @@ let annotated_type_of_annotation typ =
 (** Special case of [load_cell] that we sometime use with a name directly, rather then an index in
     [FFI.Code.t] *)
 let load_var_name env loc name =
+  let open IResult.Let_syntax in
   let info typ = Env.Info.default typ in
   let exp = T.Exp.Lvar (var_name ~loc name) in
   let loc = Env.loc env in
   let key = Symbol.Local name in
   let opt_sym = Env.lookup_symbol env key in
   Debug.p "loading varname: %s -> %a\n" name (Pp.option Symbol.pp) opt_sym ;
-  let typ =
+  let* typ =
     match (opt_sym : Symbol.t option) with
     | Some {Symbol.kind= Name {typ}} ->
-        typ
+        Ok typ
     | Some _ ->
         (* Note: maybe PyCommon.pyObject would be better here, but I fail to catch new behavior early *)
-        L.die InternalError "[load_cell] Can't load VarName %a\n" (Pp.option Symbol.pp) opt_sym
+        L.internal_error "[load_cell] Can't load VarName %a\n" (Pp.option Symbol.pp) opt_sym ;
+        Error ()
     | None ->
-        PyCommon.pyObject
+        Ok PyCommon.pyObject
   in
   let info = info typ in
   let env, id = Env.mk_fresh_ident env info in
@@ -141,7 +143,7 @@ let load_var_name env loc name =
   let typ = Some typ in
   let instr = T.Instr.Load {id; exp; typ; loc} in
   let env = Env.push_instr env instr in
-  (env, Ok (T.Exp.Var id), info)
+  Ok (env, T.Exp.Var id, info)
 
 
 let python_implicit_names = ["__name__"; "__file__"]
@@ -150,22 +152,26 @@ let python_implicit_names_prefix = "$python_implicit_names"
 
 (** Special case of [load_name] *)
 let load_name env loc ~global name =
+  let open IResult.Let_syntax in
   let default_info typ = Env.Info.default typ in
   let default = default_info PyCommon.pyObject in
-  let ({Env.Info.typ; kind} as info), qualified_name =
+  let* ({Env.Info.typ; kind} as info), qualified_name =
     let key = mk_key global loc name in
     let opt_sym = Env.lookup_symbol env key in
     match (opt_sym : Symbol.t option) with
     | Some {Symbol.kind= Name {typ}; id} ->
-        (default_info typ, id)
+        Ok (default_info typ, id)
     | Some {Symbol.kind= Class; id} ->
-        L.die InternalError "[load_name] with class: should never happen ?  %a" Ident.pp id
+        L.internal_error "[load_name] with class: should never happen ?  %a\n" Ident.pp id ;
+        Error ()
     | Some {Symbol.kind= Code; id} ->
-        ({Env.Info.kind= Code; typ= PyCommon.pyCode}, id)
+        Ok ({Env.Info.kind= Code; typ= PyCommon.pyCode}, id)
     | Some {Symbol.kind= Import _ | ImportCall; id} ->
-        L.die InternalError "[load_name] called with %a (import)" Ident.pp id
+        L.internal_error "[load_name] called with %a (import)\n" Ident.pp id ;
+        Error ()
     | Some {Symbol.kind= Builtin; id} ->
-        L.die InternalError "[load_name] called with %a (builtin)" Ident.pp id
+        L.internal_error "[load_name] called with %a (builtin)\n" Ident.pp id ;
+        Error ()
     | None ->
         (* Some default names like [__file__] and [__name__] are available implicitly in Python *)
         if List.mem ~equal:String.equal python_implicit_names name then
@@ -174,8 +180,8 @@ let load_name env loc ~global name =
              be worth merging in the future *)
           let prefix = Ident.mk ~global ~loc python_implicit_names_prefix in
           let id = Ident.extend ~prefix name in
-          (default_info typ, id)
-        else (default, Ident.unknown_ident name)
+          Ok (default_info typ, id)
+        else Ok (default, Ident.unknown_ident name)
   in
   if Env.Info.is_code kind then
     (* If we are trying to load some code, use the dedicated builtin *)
@@ -183,7 +189,7 @@ let load_name env loc ~global name =
     let name = T.Exp.Const (Str fname) in
     let env, id, typ = Env.mk_builtin_call env Builtin.PythonCode [name] in
     let info = {info with Env.Info.typ} in
-    (env, Ok (T.Exp.Var id), info)
+    Ok (env, T.Exp.Var id, info)
   else
     let var_name = Ident.to_var_name qualified_name in
     let exp = T.Exp.Lvar var_name in
@@ -192,7 +198,7 @@ let load_name env loc ~global name =
     let instr = T.Instr.Load {id; exp; typ= Some typ; loc} in
     let env = Env.push_instr env instr in
     (* TODO: try to trace the type of names, not only global ones ? *)
-    (env, Ok (T.Exp.Var id), info)
+    Ok (env, T.Exp.Var id, info)
 
 
 let is_imported env path =
@@ -213,6 +219,7 @@ let is_imported env path =
 
 (** Try to load the data referenced by a [DataStack.cell], into a [Textual.Exp.t] *)
 let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
+  let open IResult.Let_syntax in
   let default_info typ = Env.Info.default typ in
   let default = default_info PyCommon.pyObject in
   (* Python only stores references to objects on the data stack, so when data needs to be really
@@ -224,9 +231,9 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
   match (cell : DataStack.cell) with
   | Const ndx ->
       let const = co_consts.(ndx) in
-      let env, exp, ty = py_to_exp env const in
+      let* env, exp, ty = py_to_exp env const in
       let info = default_info ty in
-      (env, Ok exp, info)
+      Ok (env, exp, info)
   | Name {global; ndx} ->
       let name = co_names.(ndx) in
       load_name env loc ~global name
@@ -235,16 +242,17 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       load_var_name env loc name
   | Temp id ->
       let info = Env.get_ident_info env id |> Option.value ~default in
-      (env, Ok (T.Exp.Var id), info)
+      Ok (env, T.Exp.Var id, info)
   | Code {fun_or_class; code} ->
       let key = Symbol.Global (Ident.mk ~loc code.FFI.Code.co_name) in
-      let env, exp, typ = code_to_exp env ~fun_or_class key in
+      let* env, exp, typ = code_to_exp env ~fun_or_class key in
       let kind = if fun_or_class then Env.Info.Code else Env.Info.Class in
       let info = {Env.Info.typ; kind} in
-      (env, Ok exp, info)
+      Ok (env, exp, info)
   | Map _map ->
-      (env, Error "TODO: load Map cells", default)
-  | Path id -> (
+      L.internal_error "TODO: load Map cells\n" ;
+      Error ()
+  | Path id ->
       if
         (* TODO: this is incomplete. If something is imported, we can' really know if it is a
            value, a function, a class name... In this version, we try to load them as a value, to
@@ -260,15 +268,15 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
         let env, id = Env.mk_fresh_ident env info in
         let instr = T.Instr.Load {id; exp; typ= Some typ; loc} in
         let env = Env.push_instr env instr in
-        (env, Ok (T.Exp.Var id), info)
+        Ok (env, T.Exp.Var id, info)
       else
         let f_root env ~global ~loc name =
           Debug.p "f_root %b %s\n" global name ;
-          let env, res, info = load_name env loc ~global name in
+          let* env, exp, info = load_name env loc ~global name in
           let {Env.Info.typ} = info in
           let type_name = match (typ : T.Typ.t) with Ptr (Struct name) -> Some name | _ -> None in
           let fields = Option.bind type_name ~f:(Env.lookup_fields env) in
-          match res with Error s -> Error (env, s) | Ok exp -> Ok (env, exp, info, fields)
+          Ok (env, exp, info, fields)
         in
         let f_path attribute acc =
           match acc with
@@ -304,24 +312,18 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
               let new_fields = Option.bind type_name ~f:(Env.lookup_fields env) in
               Ok (env, T.Exp.Var id, info, new_fields)
         in
-        match Ident.fold ~init:env ~f_root ~f_path id with
-        | Error (env, s) ->
-            (env, Error s, default)
-        | Ok (env, exp, info, _) ->
-            (env, Ok exp, info) )
+        let res = Ident.fold ~init:env ~f_root ~f_path id in
+        Result.map ~f:(fun (env, exp, info, _fields) -> (env, exp, info)) res
   | BuiltinBuildClass | StaticCall _ | MethodCall _ | Import _ | ImportCall _ | Super ->
-      L.die InternalError "[load_cell] Can't load %a, something went wrong" DataStack.pp_cell cell
+      L.internal_error "[load_cell] Can't load %a, something went wrong\n" DataStack.pp_cell cell ;
+      Error ()
 
 
-let cells_to_textual env opname code cells =
+let cells_to_textual env code cells =
+  let open IResult.Let_syntax in
   Env.map_result ~env cells ~f:(fun env cell ->
-      let env, exp, _ = load_cell env code cell in
-      match exp with
-      | Ok exp ->
-          Ok (env, exp)
-      | Error s ->
-          L.user_error "[%s] failed to fetch from the stack: %s\n" opname s ;
-          Error () )
+      let* env, exp, _ = load_cell env code cell in
+      Ok (env, exp) )
 
 
 (** Pop the top of the datastack. Fails with an [InternalError] if the stack is empty. *)
@@ -492,7 +494,7 @@ module FUNCTION = struct
 
         After: [ result | rest-of-the-stack ] *)
 
-    let static_call env opname code fid cells =
+    let static_call env code fid cells =
       let open IResult.Let_syntax in
       (* TODO: we currently can't handle hasattr correctly, so let's ignore it
                At some point, introduce a builtin to keep track of its content
@@ -508,7 +510,7 @@ module FUNCTION = struct
         let env = Env.push env (DataStack.Temp id) in
         Ok (env, None) )
       else
-        let* env, args = cells_to_textual env opname code cells in
+        let* env, args = cells_to_textual env code cells in
         let loc = Env.loc env in
         (* TODO: support nesting *)
         let key = Symbol.Global fid in
@@ -550,9 +552,9 @@ module FUNCTION = struct
               mk env ~typ proc )
 
 
-    let dynamic_call env opname code caller_id cells =
+    let dynamic_call env code caller_id cells =
       let open IResult.Let_syntax in
-      let* env, args = cells_to_textual env opname code cells in
+      let* env, args = cells_to_textual env code cells in
       let args = T.Exp.Var caller_id :: args in
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonCall args in
       let env = Env.push env (DataStack.Temp id) in
@@ -596,9 +598,9 @@ module FUNCTION = struct
       match (fname : DataStack.cell) with
       | Name {ndx} ->
           let fid = Ident.mk ~loc @@ co_names.(ndx) in
-          static_call env opname code fid cells
+          static_call env code fid cells
       | Temp id ->
-          dynamic_call env opname code id cells
+          dynamic_call env code id cells
       | Code {code_name} ->
           L.user_error "[%s] no support for calling raw class/code : %s\n" opname code_name ;
           Error ()
@@ -617,11 +619,11 @@ module FUNCTION = struct
             L.internal_error "[%s] unsupported call to LOAD_BUILD_CLASS with arg = %d\n" opname arg ;
             Error () )
       | Path id ->
-          static_call env opname code id cells
+          static_call env code id cells
       | ImportCall {id; loc} ->
           (* TODO: test it *)
           Debug.todo "TEST IT !\n" ;
-          let* env, args = cells_to_textual env opname code cells in
+          let* env, args = cells_to_textual env code cells in
           let proc = Ident.to_qualified_procname id in
           mk env (Some id) loc proc args
       | Import _ | StaticCall _ | MethodCall _ ->
@@ -741,13 +743,12 @@ end
 module METHOD = struct
   module LOAD = struct
     let load env code cell method_name =
-      let env, res, _ = load_cell env code cell in
-      match res with
-      | Error s ->
-          L.external_error "Failed to load method %s from cell %a: %s\n" method_name
-            DataStack.pp_cell cell s ;
+      match load_cell env code cell with
+      | Error () ->
+          L.external_error "Failed to load method %s from cell %a\n" method_name DataStack.pp_cell
+            cell ;
           Error ()
-      | Ok receiver ->
+      | Ok (env, receiver, _) ->
           let loc = Env.loc env in
           let name = proc_name ~loc method_name in
           let name : T.qualified_procname =
@@ -818,18 +819,17 @@ module METHOD = struct
       in
       let loc = Env.loc env in
       let super_type = Ident.to_type_name parent_name in
-      let env, res, _ = load_var_name env loc self in
-      match res with
-      | Ok receiver ->
+      match load_var_name env loc self with
+      | Ok (env, receiver, _) ->
           (* We're in [LOAD_METHOD] but we fake a static call because of how method resolution works. *)
           let loc = Env.loc env in
           let name = proc_name ~loc method_name in
           let call_name : T.qualified_procname = {T.enclosing_class= Enclosing super_type; name} in
           let env = Env.push env (DataStack.StaticCall {call_name; receiver= Some receiver}) in
           Ok (env, None)
-      | Error s ->
-          L.user_error "[super()] failed to load self (a.k.a %s) in %a: %s\n" self Ident.pp
-            current_module s ;
+      | Error () ->
+          L.user_error "[super()] failed to load self (a.k.a %s) in %a\n" self Ident.pp
+            current_module ;
           Error ()
 
 
@@ -881,7 +881,7 @@ module METHOD = struct
       let open IResult.Let_syntax in
       Debug.p "[%s] argc = %d\n" opname arg ;
       let* env, cells = pop_n_datastack opname env arg in
-      let* env, args = cells_to_textual env opname code cells in
+      let* env, args = cells_to_textual env code cells in
       let* env, cell_mi = pop_datastack opname env in
       match (cell_mi : DataStack.cell) with
       | ImportCall {id; loc} ->
@@ -956,63 +956,53 @@ module STORE = struct
     let open IResult.Let_syntax in
     Debug.p "[store] cell= %a name= %s global= %b is_attr= %b\n" DataStack.pp_cell cell name global
       is_attr ;
-    let env, exp, info = load_cell env code cell in
-    match exp with
-    | Ok exp -> (
-        let {Env.Info.typ; kind} = info in
-        let module_name = Env.module_name env in
-        let id = Ident.extend ~prefix:module_name name in
-        let symbol_info =
-          match (kind : Env.Info.kind) with
-          | Code ->
-              {Symbol.kind= Code; loc; id}
-          | Class ->
-              {Symbol.kind= Class; loc; id}
-          | Other ->
-              let id =
-                if global then Ident.extend ~prefix:module_name name
-                else Ident.mk ~global:false ~loc name
-              in
-              {Symbol.kind= Name {is_imported= false; typ}; loc; id}
-        in
-        let var_name = Ident.to_var_name symbol_info.Symbol.id in
-        if is_attr then
-          let* env, cell = pop_datastack opname env in
-          let env, value, {Env.Info.typ} = load_cell env code cell in
-          match value with
-          | Error s ->
-              L.internal_error "[%s] %s\n" opname s ;
-              Error ()
-          | Ok value ->
-              let fname = co_names.(arg) in
-              (* TODO: refine typ if possible *)
-              let loc = Env.loc env in
-              let name = field_name ~loc fname in
-              let field = {T.enclosing_class= T.TypeName.wildcard; name} in
-              let exp1 = T.Exp.Field {exp; field} in
-              let instr = T.Instr.Store {exp1; typ= Some typ; exp2= value; loc} in
-              let env = Env.push_instr env instr in
-              Ok (env, None)
-        else
-          let key = mk_key global loc name in
-          let env = Env.register_symbol env key symbol_info in
-          match (kind : Env.Info.kind) with
-          | Class ->
-              Debug.p "  top-level class declaration initialized\n" ;
-              Ok (env, None)
-          | Code ->
-              if global then (
-                Debug.p "  top-level function defined\n" ;
-                Ok (env, None) )
-              else (
-                L.internal_error "[%s] no support for closure at the moment: %s\n" opname name ;
-                Error () )
-          | Other ->
-              let instr = T.Instr.Store {exp1= Lvar var_name; typ= Some typ; exp2= exp; loc} in
-              Ok (Env.push_instr env instr, None) )
-    | Error s ->
-        L.internal_error "[%s] %s\n" opname s ;
-        Error ()
+    let* env, exp, info = load_cell env code cell in
+    let {Env.Info.typ; kind} = info in
+    let module_name = Env.module_name env in
+    let id = Ident.extend ~prefix:module_name name in
+    let symbol_info =
+      match (kind : Env.Info.kind) with
+      | Code ->
+          {Symbol.kind= Code; loc; id}
+      | Class ->
+          {Symbol.kind= Class; loc; id}
+      | Other ->
+          let id =
+            if global then Ident.extend ~prefix:module_name name
+            else Ident.mk ~global:false ~loc name
+          in
+          {Symbol.kind= Name {is_imported= false; typ}; loc; id}
+    in
+    let var_name = Ident.to_var_name symbol_info.Symbol.id in
+    if is_attr then
+      let* env, cell = pop_datastack opname env in
+      let* env, value, {Env.Info.typ} = load_cell env code cell in
+      let fname = co_names.(arg) in
+      (* TODO: refine typ if possible *)
+      let loc = Env.loc env in
+      let name = field_name ~loc fname in
+      let field = {T.enclosing_class= T.TypeName.wildcard; name} in
+      let exp1 = T.Exp.Field {exp; field} in
+      let instr = T.Instr.Store {exp1; typ= Some typ; exp2= value; loc} in
+      let env = Env.push_instr env instr in
+      Ok (env, None)
+    else
+      let key = mk_key global loc name in
+      let env = Env.register_symbol env key symbol_info in
+      match (kind : Env.Info.kind) with
+      | Class ->
+          Debug.p "  top-level class declaration initialized\n" ;
+          Ok (env, None)
+      | Code ->
+          if global then (
+            Debug.p "  top-level function defined\n" ;
+            Ok (env, None) )
+          else (
+            L.internal_error "[%s] no support for closure at the moment: %s\n" opname name ;
+            Error () )
+      | Other ->
+          let instr = T.Instr.Store {exp1= Lvar var_name; typ= Some typ; exp2= exp; loc} in
+          Ok (Env.push_instr env instr, None)
 
 
   let run kind env ({FFI.Code.co_names; co_varnames} as code) {FFI.Instruction.opname; arg} =
@@ -1086,30 +1076,9 @@ module STORE = struct
       let* env, cell_ndx = pop_datastack opname env in
       let* env, cell_lhs = pop_datastack opname env in
       let* env, cell_rhs = pop_datastack opname env in
-      let env, ndx, _ = load_cell env code cell_ndx in
-      let env, lhs, _ = load_cell env code cell_lhs in
-      let env, rhs, _ = load_cell env code cell_rhs in
-      let* ndx =
-        Result.map_error
-          ~f:(fun s ->
-            L.internal_error "[%s] Failure to load index %a: %s\n" opname DataStack.pp_cell cell_ndx
-              s )
-          ndx
-      in
-      let* lhs =
-        Result.map_error
-          ~f:(fun s ->
-            L.internal_error "[%s] Failure to load indexable %a: %s\n" opname DataStack.pp_cell
-              cell_lhs s )
-          lhs
-      in
-      let* rhs =
-        Result.map_error
-          ~f:(fun s ->
-            L.internal_error "[%s] Failure to load value %a: %s\n" opname DataStack.pp_cell cell_rhs
-              s )
-          rhs
-      in
+      let* env, ndx, _ = load_cell env code cell_ndx in
+      let* env, lhs, _ = load_cell env code cell_lhs in
+      let* env, rhs, _ = load_cell env code cell_rhs in
       let env, _id, _typ = Env.mk_builtin_call env Builtin.PythonSubscriptSet [lhs; ndx; rhs] in
       Ok (env, None)
   end
@@ -1124,11 +1093,12 @@ module POP_TOP = struct
     Debug.p "[%s]\n" opname ;
     let* env, cell = pop_datastack opname env in
     (* Maybe we're popping a delayed access using a [Path] so let's load it in case it had side-effects *)
-    let env =
+    let* env =
       if DataStack.is_path cell then
-        let env, _ (* TODO: maybe catch error here ? *), _ = load_cell env code cell in
-        env
-      else env
+        (* TODO: maybe better error here ? *)
+        let* env, _, _ = load_cell env code cell in
+        Ok env
+      else Ok env
     in
     Ok (env, None)
 end
@@ -1139,10 +1109,8 @@ module BINARY = struct
     Debug.p "[%s]\n" opname ;
     let* env, tos = pop_datastack opname env in
     let* env, tos1 = pop_datastack opname env in
-    let env, lhs, _ = load_cell env code tos1 in
-    let* lhs = map_error opname lhs in
-    let env, rhs, _ = load_cell env code tos in
-    let* rhs = map_error opname rhs in
+    let* env, lhs, _ = load_cell env code tos1 in
+    let* env, rhs, _ = load_cell env code tos in
     (* Even if the call can be considered as virtual because, it's logic is not symetric. Based
        on what I gathered, like in [0], I think the best course of action is to write a model for
        it and leave it non virtual. TODO: ask David.
@@ -1193,22 +1161,8 @@ module BINARY = struct
       Debug.p "[%s]\n" opname ;
       let* env, cell_ndx = pop_datastack opname env in
       let* env, cell_lhs = pop_datastack opname env in
-      let env, ndx, _ = load_cell env code cell_ndx in
-      let env, lhs, _ = load_cell env code cell_lhs in
-      let* ndx =
-        Result.map_error
-          ~f:(fun s ->
-            L.internal_error "[%s] Failure to load index %a: %s\n" opname DataStack.pp_cell cell_ndx
-              s )
-          ndx
-      in
-      let* lhs =
-        Result.map_error
-          ~f:(fun s ->
-            L.internal_error "[%s] Failure to load indexable %a: %s\n" opname DataStack.pp_cell
-              cell_lhs s )
-          lhs
-      in
+      let* env, ndx, _ = load_cell env code cell_ndx in
+      let* env, lhs, _ = load_cell env code cell_lhs in
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonSubscriptGet [lhs; ndx] in
       let env = Env.push env (DataStack.Temp id) in
       Ok (env, None)
@@ -1274,7 +1228,7 @@ module BUILD = struct
       let open IResult.Let_syntax in
       Debug.p "[%s] count = %d\n" opname count ;
       let* env, items = pop_n_datastack opname env count in
-      let* env, items = cells_to_textual env opname code items in
+      let* env, items = cells_to_textual env code items in
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonBuildList items in
       let env = Env.push env (DataStack.Temp id) in
       Ok (env, None)
@@ -1353,13 +1307,8 @@ let stack_to_ssa env code =
   let open IResult.Let_syntax in
   let* env, zipped =
     Env.map_result ~env (Env.stack env) ~f:(fun env cell ->
-        let env, exp, {Env.Info.typ} = load_cell env code cell in
-        match exp with
-        | Ok exp ->
-            Ok (env, (exp, typ))
-        | Error s ->
-            L.internal_error "[stack_to_ssa] %s\n" s ;
-            Error () )
+        let* env, exp, {Env.Info.typ} = load_cell env code cell in
+        Ok (env, (exp, typ)) )
   in
   Ok (Env.reset_stack env, List.unzip zipped)
 
@@ -1395,8 +1344,7 @@ module JUMP = struct
       let open IResult.Let_syntax in
       Debug.p "[%s] target = %d\n" opname arg ;
       let* env, tos = pop_datastack opname env in
-      let env, cell, _ = load_cell env code tos in
-      let* cond = map_error opname cell in
+      let* env, cond, _ = load_cell env code tos in
       let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
       let* next_offset = next_offset next_offset_opt in
       let env, next_info = mk_label_info env next_offset ~ssa_parameters in
@@ -1431,8 +1379,7 @@ module JUMP = struct
          the branch where "it stays". It will be restored as part of the stack restore logic when
          we process the "other" node. *)
       let* tos = peek_datastack opname env in
-      let env, cell, _ = load_cell env code tos in
-      let* cond = map_error opname cell in
+      let* env, cond, _ = load_cell env code tos in
       (* Suggestion from @dpichardie: I could put the [IsTrue] expression directly in [condition].
          This would need a refactor of [mk_builtin_call] to get the full expression instead of
          the id that binds it. *)
@@ -1509,14 +1456,9 @@ module RETURN_VALUE = struct
     let open IResult.Let_syntax in
     Debug.p "[%s]\n" opname ;
     let* env, cell = pop_datastack opname env in
-    let env, exp, _ = load_cell env code cell in
-    match exp with
-    | Ok exp ->
-        let term = T.Terminator.Ret exp in
-        Ok (env, Some (JUMP.Return term))
-    | Error s ->
-        L.internal_error "[%s] %s\n" opname s ;
-        Error ()
+    let* env, exp, _ = load_cell env code cell in
+    let term = T.Terminator.Ret exp in
+    Ok (env, Some (JUMP.Return term))
 end
 
 module ITER = struct
@@ -1529,15 +1471,10 @@ module ITER = struct
       let open IResult.Let_syntax in
       Debug.p "[%s]\n" opname ;
       let* env, cell = pop_datastack opname env in
-      let env, exp, _ = load_cell env code cell in
-      match exp with
-      | Ok exp ->
-          let env, id, _ = Env.mk_builtin_call env Builtin.PythonIter [exp] in
-          let env = Env.push env (DataStack.Temp id) in
-          Ok (env, None)
-      | Error s ->
-          L.internal_error "[%s] %s\n" opname s ;
-          Error ()
+      let* env, exp, _ = load_cell env code cell in
+      let env, id, _ = Env.mk_builtin_call env Builtin.PythonIter [exp] in
+      let env = Env.push env (DataStack.Temp id) in
+      Ok (env, None)
   end
 
   module FOR = struct
@@ -1550,55 +1487,44 @@ module ITER = struct
       let open IResult.Let_syntax in
       Debug.p "[%s] delta = %d\n" opname delta ;
       let* env, iter_cell = pop_datastack opname env in
-      let env, iter_exp, _ = load_cell env code iter_cell in
-      match iter_exp with
-      | Ok iter ->
-          let loc = Env.loc env in
-          let env, id, _ = Env.mk_builtin_call env Builtin.PythonIterNext [iter] in
-          let has_item = T.Exp.Field {exp= T.Exp.Var id; field= PyCommon.py_iter_item_has_item} in
-          let has_item_info = Env.Info.default T.Typ.Int in
-          let env, has_item_id = Env.mk_fresh_ident env has_item_info in
-          let has_item_load =
-            T.Instr.Load {id= has_item_id; exp= has_item; typ= Some T.Typ.Int; loc}
-          in
-          let env = Env.push_instr env has_item_load in
-          let cond = T.Exp.Var has_item_id in
-          let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
-          (* Compute the relevant pruning expressions *)
-          let condition = T.BoolExp.Exp cond in
-          (* In the next branch, we know the iterator has an item available. Let's fetch it and
-             push it on the stack. *)
-          let next_prelude loc env =
-            (* The iterator object stays on the stack while in the for loop, let's push it back *)
-            let env = Env.push env iter_cell in
-            let next_item =
-              T.Exp.Field {exp= T.Exp.Var id; field= PyCommon.py_iter_item_next_item}
-            in
-            (* TODO: try to track iterator types *)
-            let next_item_info = Env.Info.default PyCommon.pyObject in
-            let env, next_item_id = Env.mk_fresh_ident env next_item_info in
-            let next_item_load =
-              T.Instr.Load {id= next_item_id; exp= next_item; typ= Some PyCommon.pyObject; loc}
-            in
-            let env = Env.push_instr env next_item_load in
-            Env.push env (DataStack.Temp next_item_id)
-          in
-          let* next_offset = next_offset next_offset_opt in
-          let env, next_info =
-            mk_label_info env next_offset ~prelude:next_prelude ~ssa_parameters
-          in
-          let other_offset = delta + next_offset in
-          let env, other_info = mk_label_info env other_offset ~ssa_parameters in
-          Ok
-            ( env
-            , Some
-                (JUMP.TwoWay
-                   { condition
-                   ; next_info= {label_info= next_info; offset= next_offset; ssa_args}
-                   ; other_info= {label_info= other_info; offset= other_offset; ssa_args} } ) )
-      | Error s ->
-          L.internal_error "[%s] %s\n" opname s ;
-          Error ()
+      let* env, iter, _ = load_cell env code iter_cell in
+      let loc = Env.loc env in
+      let env, id, _ = Env.mk_builtin_call env Builtin.PythonIterNext [iter] in
+      let has_item = T.Exp.Field {exp= T.Exp.Var id; field= PyCommon.py_iter_item_has_item} in
+      let has_item_info = Env.Info.default T.Typ.Int in
+      let env, has_item_id = Env.mk_fresh_ident env has_item_info in
+      let has_item_load = T.Instr.Load {id= has_item_id; exp= has_item; typ= Some T.Typ.Int; loc} in
+      let env = Env.push_instr env has_item_load in
+      let cond = T.Exp.Var has_item_id in
+      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+      (* Compute the relevant pruning expressions *)
+      let condition = T.BoolExp.Exp cond in
+      (* In the next branch, we know the iterator has an item available. Let's fetch it and
+         push it on the stack. *)
+      let next_prelude loc env =
+        (* The iterator object stays on the stack while in the for loop, let's push it back *)
+        let env = Env.push env iter_cell in
+        let next_item = T.Exp.Field {exp= T.Exp.Var id; field= PyCommon.py_iter_item_next_item} in
+        (* TODO: try to track iterator types *)
+        let next_item_info = Env.Info.default PyCommon.pyObject in
+        let env, next_item_id = Env.mk_fresh_ident env next_item_info in
+        let next_item_load =
+          T.Instr.Load {id= next_item_id; exp= next_item; typ= Some PyCommon.pyObject; loc}
+        in
+        let env = Env.push_instr env next_item_load in
+        Env.push env (DataStack.Temp next_item_id)
+      in
+      let* next_offset = next_offset next_offset_opt in
+      let env, next_info = mk_label_info env next_offset ~prelude:next_prelude ~ssa_parameters in
+      let other_offset = delta + next_offset in
+      let env, other_info = mk_label_info env other_offset ~ssa_parameters in
+      Ok
+        ( env
+        , Some
+            (JUMP.TwoWay
+               { condition
+               ; next_info= {label_info= next_info; offset= next_offset; ssa_args}
+               ; other_info= {label_info= other_info; offset= other_offset; ssa_args} } ) )
   end
 end
 
@@ -1741,10 +1667,8 @@ module COMPARE_OP = struct
       | Lt | Le | Gt | Ge | Neq | Eq ->
           let* env, rhs = pop_datastack opname env in
           let* env, lhs = pop_datastack opname env in
-          let env, lhs, _ = load_cell env code lhs in
-          let* lhs = map_error opname lhs in
-          let env, rhs, _ = load_cell env code rhs in
-          let* rhs = map_error opname rhs in
+          let* env, lhs, _ = load_cell env code lhs in
+          let* env, rhs, _ = load_cell env code rhs in
           let env, id, _typ = Env.mk_builtin_call env (Builtin.CompareOp cmp_op) [lhs; rhs] in
           let env = Env.push env (DataStack.Temp id) in
           Ok env
