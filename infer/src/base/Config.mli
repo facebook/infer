@@ -679,7 +679,7 @@ val pulse_log_summary_count : bool
 
 val pure_by_default : bool
 
-val pyc_file : string option
+val pyc_file : string list
 
 val python_builtin_models : string
 

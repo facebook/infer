@@ -2801,11 +2801,11 @@ INTERNAL OPTIONS
            Activates: [Purity]Consider unknown functions to be pure by
            default (Conversely: --no-pure-by-default)
 
-       --pyc-file path
-           Location of a file that contains a compiled Python module
+       --pyc-file +path
+           Collection of compiled Python files (byte-code)
 
        --pyc-file-reset
-           Cancel the effect of --pyc-file.
+           Set --pyc-file to the empty list.
 
        --python-builtin-models string
            Specify .sil file to use as Python builtin models (uses bundled

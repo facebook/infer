@@ -2720,9 +2720,7 @@ and pure_by_default =
     "[Purity]Consider unknown functions to be pure by default"
 
 
-and pyc_file =
-  CLOpt.mk_path_opt ~long:"pyc-file" "Location of a file that contains a compiled Python module"
-
+and pyc_file = CLOpt.mk_path_list ~long:"pyc-file" "Collection of compiled Python files (byte-code)"
 
 and python_builtin_models =
   CLOpt.mk_string ~long:"python-builtin-models" ~default:default_python_builtin_models
@@ -4369,7 +4367,7 @@ and pulse_widen_threshold = !pulse_widen_threshold
 
 and pure_by_default = !pure_by_default
 
-and pyc_file = !pyc_file
+and pyc_file = RevList.to_list !pyc_file
 
 and python_builtin_models = !python_builtin_models
 

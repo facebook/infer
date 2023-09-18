@@ -7,7 +7,7 @@
 open! IStd
 module L = Logging
 
-type kind = Bytecode of string | Files of {prog: string; args: string list}
+type kind = Bytecode of {files: string list} | Files of {prog: string; args: string list}
 
 let process_file ~is_binary file =
   let open IResult.Let_syntax in
@@ -28,11 +28,12 @@ let dump_file ~next_to_source pyc module_ =
   TextualSil.dump_module ~filename module_
 
 
-let capture_file file =
+let capture_file ~is_binary file =
   let open TextualParser in
   let open IResult.Let_syntax in
   let sourcefile = Textual.SourceFile.create file in
-  let* module_ = process_file ~is_binary:false file in
+  let* module_ = process_file ~is_binary file in
+  if Config.dump_textual then dump_file ~next_to_source:true file module_ ;
   let trans = TextualFile.translate_module sourcefile module_ in
   let log_error sourcefile error =
     if Config.keep_going then L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error
@@ -63,7 +64,7 @@ let load_textual_model filename =
   acc_tenv
 
 
-let capture_files files =
+let capture_files ~is_binary files =
   let builtins = Config.python_builtin_models in
   let n_files = List.length files in
   let child_action, child_prologue, child_epilogue =
@@ -74,7 +75,7 @@ let capture_files files =
     let child_action file =
       let t0 = Mtime_clock.now () in
       !ProcessPoolState.update_status t0 file ;
-      match capture_file file with
+      match capture_file ~is_binary file with
       | Ok file_tenv ->
           Tenv.merge ~src:file_tenv ~dst:child_tenv ;
           None
@@ -119,16 +120,11 @@ let capture_files files =
 
 let capture input =
   match input with
-  | Bytecode pyc ->
-      Py.initialize ~interpreter:Version.python_exe () ;
-      ( match process_file ~is_binary:true pyc with
-      | Ok module_ ->
-          if Config.dump_textual then dump_file ~next_to_source:true pyc module_
-      | Error () ->
-          L.exit 1 ) ;
-      Py.finalize ()
+  | Bytecode {files} ->
+      capture_files ~is_binary:true files ;
+      L.progress "Finished capture.@\n"
   | Files {prog; args} ->
       if not (String.equal prog "python3") then
         L.die UserError "python3 should be explicitly used instead of %s." prog ;
-      capture_files args ;
+      capture_files ~is_binary:false args ;
       L.progress "Finished capture.@\n"

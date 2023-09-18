@@ -33,7 +33,7 @@ type mode =
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
   | Python of {prog: string; args: string list}
-  | PythonBytecode of {pyc: string}
+  | PythonBytecode of {files: string list}
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
   | Hackc of {prog: string; args: string list}
@@ -92,8 +92,8 @@ let pp_mode fmt = function
       F.fprintf fmt "NdkBuild driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | Python {prog; args} ->
       F.fprintf fmt "Python driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
-  | PythonBytecode {pyc} ->
-      F.fprintf fmt "Python driver mode:@\npyc = '%s'" pyc
+  | PythonBytecode {files} ->
+      F.fprintf fmt "Python driver mode:@\nfiles = '%a'" Pp.cli_args files
   | Rebar3 {args} ->
       F.fprintf fmt "Rebar3 driver mode:@\nargs = %a" Pp.cli_args args
   | Erlc {args} ->
@@ -224,9 +224,9 @@ let capture ~changed_files mode =
       | Python {prog; args} ->
           L.progress "Capturing in python mode...@." ;
           Python.capture (Python.Files {prog; args})
-      | PythonBytecode {pyc} ->
-          L.progress "Capturing python byte-code from %s...@." pyc ;
-          Python.capture (Python.Bytecode pyc)
+      | PythonBytecode {files} ->
+          L.progress "Capturing in python byte-code mode...@." ;
+          Python.capture (Python.Bytecode {files})
       | Rebar3 {args} ->
           L.progress "Capturing in rebar3 mode...@." ;
           Erlang.capture ~command:"rebar3" ~args
@@ -497,9 +497,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   match build_cmd with
   | [] when Config.bxl_file_capture ->
       BxlClangFile
-  | [] when Option.is_some Config.pyc_file ->
-      let pyc = Option.value_exn Config.pyc_file in
-      PythonBytecode {pyc}
+  | [] when not (List.is_empty Config.pyc_file) ->
+      PythonBytecode {files= Config.pyc_file}
   | [] -> (
       let textualfiles = Config.capture_textual in
       match (Config.clang_compilation_dbs, textualfiles) with

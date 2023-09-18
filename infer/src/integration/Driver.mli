@@ -32,7 +32,7 @@ type mode =
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
   | Python of {prog: string; args: string list}
-  | PythonBytecode of {pyc: string}
+  | PythonBytecode of {files: string list}
   | Rebar3 of {args: string list}
   | Erlc of {args: string list}
   | Hackc of {prog: string; args: string list}
