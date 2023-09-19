@@ -140,7 +140,7 @@ let config =
     List.fold ["clang"; "install"; "bin"; "clang"] ~init:Config.fcp_dir ~f:Filename.concat
   in
   let get_java_flavor_config () =
-    if Config.buck_java_flavor_suppress_config then []
+    if Config.buck_java_suppress_config then []
     else ["infer.version=" ^ Version.versionString; "infer.binary=" ^ Config.infer_binary]
   in
   let get_clang_flavor_config () =

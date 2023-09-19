@@ -190,19 +190,17 @@ BUCK OPTIONS
            Activates: Buck integration for Erlang. (Conversely:
            --no-buck-erlang)
 
-       --buck-java-flavor
-           Activates: Buck integration for Java which uses the buck flavor
-           #infer-java-capture instead of genrules like buck-java.
-           (Conversely: --no-buck-java-flavor)
-
-       --buck-java-flavor-suppress-config
-           Activates: Suppress setting buck config values for the infer
-           binary and its version in the buck-java-flavor integration.
-           (Conversely: --no-buck-java-flavor-suppress-config)
+       --buck-java
+           Activates: Buck integration for Java. (Conversely: --no-buck-java)
 
        --buck-java-heap-size-gb int
            Explicitly set the size of the Java heap of Buck processes, in
            gigabytes.
+
+       --buck-java-suppress-config
+           Activates: Suppress setting buck config values for the infer
+           binary and its version in the buck-java integration. (Conversely:
+           --no-buck-java-suppress-config)
 
        --buck-merge-all-deps
            Activates: Find and merge all infer dependencies produced by buck.

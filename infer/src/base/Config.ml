@@ -908,11 +908,13 @@ and buck_java_heap_size_gb =
     "Explicitly set the size of the Java heap of Buck processes, in gigabytes." ~meta:"int"
 
 
-and buck_java_flavor_suppress_config =
-  CLOpt.mk_bool ~long:"buck-java-flavor-suppress-config" ~default:false
+and buck_java_suppress_config =
+  CLOpt.mk_bool ~long:"buck-java-suppress-config"
+    ~deprecated:["-buck-java-flavor-suppress-config"]
+    ~default:false
     ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Suppress setting buck config values for the infer binary and its version in the \
-     buck-java-flavor integration."
+    "Suppress setting buck config values for the infer binary and its version in the buck-java \
+     integration."
 
 
 and buck_merge_all_deps =
@@ -946,11 +948,9 @@ and buck_mode =
     ~in_help:InferCommand.[(Capture, manual_buck)]
     ~f:(set_mode `Erlang) "Buck integration for Erlang."
   |> ignore ;
-  CLOpt.mk_bool ~long:"buck-java-flavor"
+  CLOpt.mk_bool ~long:"buck-java" ~deprecated:["-buck-java-flavor"]
     ~in_help:InferCommand.[(Capture, manual_buck)]
-    ~f:(set_mode `Java)
-    "Buck integration for Java which uses the buck flavor #infer-java-capture instead of genrules \
-     like buck-java."
+    ~f:(set_mode `Java) "Buck integration for Java."
   |> ignore ;
   buck_mode
 
@@ -3737,7 +3737,7 @@ and buck_dependency_depth = !buck_dependency_depth
 
 and buck_java_heap_size_gb = !buck_java_heap_size_gb
 
-and buck_java_flavor_suppress_config = !buck_java_flavor_suppress_config
+and buck_java_suppress_config = !buck_java_suppress_config
 
 and buck_merge_all_deps = !buck_merge_all_deps
 
