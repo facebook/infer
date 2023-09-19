@@ -684,22 +684,36 @@ let get_message_and_suggestion diagnostic =
   | UnnecessaryCopy {copied_into; source_typ; source_opt; location; copied_location= None; from}
     -> (
       let open PulseAttribute in
-      let call_move = "call `std::move` instead" in
       let is_from_const = is_from_const source_typ in
-      let get_suggestion_msg_move = function
-        | Some source_expr when is_from_std_move source_expr ->
-            "Even though `std::move` is called, nothing is actually getting moved (e.g. the type \
-             doesn't have a move operation) so make sure the copy is expected"
-        | _ ->
-            "To avoid the copy, " ^ call_move
-      in
-      let get_suggestion_msg_move_intermediate source_opt =
-        let const_ref_callee = "change the callee's parameter type to `const &`" in
-        let move_msg = get_suggestion_msg_move source_opt in
-        if is_from_const then
-          "To avoid the copy, either 1) remove the `const` from the source and " ^ call_move
-          ^ " or 2) " ^ const_ref_callee
-        else move_msg ^ " or " ^ const_ref_callee
+      let get_suggestion_msg_move copied_into source_opt =
+        let call_move = "call `std::move` instead" in
+        let is_move_called = Option.exists ~f:is_from_std_move source_opt in
+        let move_suggestion = "To avoid the copy, " ^ call_move in
+        if is_move_called then
+          let reason =
+            if is_from_const then
+              "it is being called on a `const` which resolves to the copy operation"
+            else "the type doesn't have a move operation"
+          in
+          F.asprintf
+            "Even though `std::move` is called, nothing is actually getting moved (e.g. %s) so \
+             make sure the copy is expected"
+            reason
+        else
+          match (copied_into : PulseAttribute.CopiedInto.t) with
+          | IntoIntermediate _ ->
+              let const_ref_callee = "change the callee's parameter type to `const &`" in
+              if is_from_const then
+                "To avoid the copy, either 1) remove the `const` from the source and " ^ call_move
+                ^ " or 2) " ^ const_ref_callee
+              else move_suggestion ^ " or " ^ const_ref_callee
+          | IntoField _ ->
+              if is_from_const then
+                "Rather than copying into the field, first remove `const` qualifier from the \
+                 source and then move into it instead"
+              else "Rather than copying into the field, move into it instead"
+          | IntoVar _ ->
+              move_suggestion
       in
       let suppression_msg =
         "If this copy was intentional, call `folly::copy` to make it explicit and hence suppress \
@@ -707,26 +721,16 @@ let get_message_and_suggestion diagnostic =
       in
       let get_suggestion_msg source_opt =
         match (from, copied_into) with
-        | CopyToOptional, _ ->
-            if is_from_const then get_suggestion_msg_move source_opt
-            else get_suggestion_msg_move source_opt ^ " or changing the callee's type"
         | CopyInGetDefault, _ ->
             F.asprintf
               "To avoid the copy, use either `folly::get_ref_default` or `folly::get_ptr` instead%t"
               (fun f ->
                 Option.iter FbInternalLinks.bad_pattern_folly_get_default ~f:(fun link ->
                     F.fprintf f " ([[%s | bad patterns]])" link ) )
-        | _, IntoIntermediate _ ->
-            get_suggestion_msg_move_intermediate source_opt
-        | _, IntoField _ ->
-            if is_from_const then
-              "Rather than copying into the field, first remove `const` qualifier from the source \
-               and then move into it instead"
-            else "Rather than copying into the field, move into it instead"
         | CopyCtor, IntoVar _ ->
             "To avoid the copy, use reference `&`"
-        | CopyAssignment, IntoVar _ ->
-            get_suggestion_msg_move source_opt
+        | _, _ ->
+            get_suggestion_msg_move copied_into source_opt
       in
       match (copied_into, source_opt) with
       | IntoIntermediate _, None ->

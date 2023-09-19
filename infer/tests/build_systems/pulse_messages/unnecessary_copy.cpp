@@ -106,6 +106,18 @@ void no_move_intermediate_bad(UnMovable unmovable) {
                              // doesn't have move constructor
 }
 
-int unnecessary_copy_intermediate_const_bad(const A my_a) {
-  return get_size(my_a);
-}
+class ConstTest {
+  A test_field;
+
+  int unnecessary_copy_intermediate_const_bad(const A my_a) {
+    return get_size(my_a);
+  }
+
+  int unnecessary_copy_intermediate_const_move_bad(const A my_a) {
+    return get_size(std::move(my_a));
+  }
+
+  void unnecessary_copy_assignment_const_move_bad(const A my_a) {
+    test_field = std::move(my_a);
+  }
+};
