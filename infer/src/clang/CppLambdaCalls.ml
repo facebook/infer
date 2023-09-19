@@ -13,7 +13,16 @@ let is_std_function_function procname =
   String.is_prefix name ~prefix:"std::function::function"
 
 
-let create_temp_store_instr ~callee_procname ~proc_name proc_desc loc (exp, typ) (acc1, acc2) =
+let is_lambda_copy_ctor cfg callee_procname =
+  match Procname.Hash.find_opt cfg callee_procname with
+  | Some procdesc ->
+      let callee_attributes = Procdesc.get_attributes procdesc in
+      Procname.is_lambda callee_procname && callee_attributes.ProcAttributes.is_cpp_copy_ctor
+  | None ->
+      false
+
+
+let process_instr cfg ~callee_procname ~proc_name proc_desc loc (exp, typ) (acc1, acc2) =
   if Exp.is_cpp_closure exp then (
     let new_var = Pvar.mk_tmp Pvar.materialized_cpp_temporary proc_name in
     let new_var_data : ProcAttributes.var_data = ProcAttributes.default_var_data new_var typ in
@@ -25,6 +34,10 @@ let create_temp_store_instr ~callee_procname ~proc_name proc_desc loc (exp, typ)
       let load_var_instr = Sil.Load {id= new_id; e= Lvar new_var; typ; loc} in
       ((Exp.Var new_id, typ) :: acc1, store_instr :: load_var_instr :: acc2)
     else ((new_var_exp, typ) :: acc1, store_instr :: acc2) )
+  else if is_lambda_copy_ctor cfg callee_procname then
+    let new_id = Ident.create_fresh Ident.knormal in
+    let load_var_instr = Sil.Load {id= new_id; e= exp; typ; loc} in
+    ((Exp.Var new_id, typ) :: acc1, load_var_instr :: acc2)
   else ((exp, typ) :: acc1, acc2)
 
 
@@ -39,14 +52,14 @@ let create_temp_store_instr ~callee_procname ~proc_name proc_desc loc (exp, typ)
     The first transformation will improve the analysis: f(closure) was not working properly The
     second transformation will improve readability of the translation. Better to evaluate the
     closure first before passing it to a function. *)
-let replace_lambda_as_arg_calls proc_name proc_desc =
+let replace_lambda_as_arg_calls cfg proc_name proc_desc =
   let add_calls _node _ instr =
     let instrs =
       match (instr : Sil.instr) with
       | Sil.Call (ret_id_typ, Const (Cfun callee_procname), args, loc, flags) ->
           let new_args, new_instrs =
             List.fold_right ~init:([], [])
-              ~f:(create_temp_store_instr ~callee_procname ~proc_name proc_desc loc)
+              ~f:(process_instr cfg ~callee_procname ~proc_name proc_desc loc)
               args
           in
           List.append new_instrs
@@ -73,4 +86,4 @@ let replace_lambda_as_arg_calls proc_name proc_desc =
 
 let process cfg =
   Ident.NameGenerator.reset () ;
-  Procname.Hash.iter replace_lambda_as_arg_calls cfg
+  Procname.Hash.iter (replace_lambda_as_arg_calls cfg) cfg
