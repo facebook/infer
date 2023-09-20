@@ -110,7 +110,7 @@ module Builtin = struct
     | CompareOp of Compare.t
   [@@deriving compare]
 
-  type python = Print | Range [@@deriving compare]
+  type python = Print | Range | Open [@@deriving compare]
 
   type t = Primitive of primitive | Textual of textual | Python of python [@@deriving compare]
 end
@@ -122,7 +122,7 @@ type builtin = t = Primitive of primitive | Textual of textual | Python of pytho
 
 let textual t = Textual t
 
-let python_to_string = function Print -> "print" | Range -> "range"
+let python_to_string = function Print -> "print" | Range -> "range" | Open -> "open"
 
 let to_proc_name = function
   | Primitive primitive -> (
@@ -179,7 +179,15 @@ let to_proc_name = function
 
 (** Lookup a [Python] builtin from its name. *)
 let of_string name =
-  match name with "print" -> Some (Python Print) | "range" -> Some (Python Range) | _ -> None
+  match name with
+  | "print" ->
+      Some (Python Print)
+  | "range" ->
+      Some (Python Range)
+  | "open" ->
+      Some (Python Open)
+  | _ ->
+      None
 
 
 let annot typ = T.Typ.{typ; attributes= []}
@@ -330,6 +338,7 @@ module Set = struct
 
   let python_builtins =
     [ (Builtin.Print, {formals_types= None; result_type= annotatedObject; used_struct_types= []})
+    ; (Builtin.Open, {formals_types= None; result_type= annotatedObject; used_struct_types= []})
     ; (Builtin.Range, {formals_types= None; result_type= annotatedObject; used_struct_types= []}) ]
 
 

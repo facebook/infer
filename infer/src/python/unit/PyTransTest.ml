@@ -2866,3 +2866,48 @@ class Test(unittest.TestCase):
 
   no support for `hasattr` at the moment.  Skipping... |}]
   end )
+
+
+let%test_module "with" =
+  ( module struct
+    let%expect_test _ =
+      (* No with for this one it's a baseline to support [open] *)
+      let source = {|
+fp = open("foo.txt", "wt")
+fp.write("yolo")
+          |} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.open($builtins.python_string("foo.txt"), $builtins.python_string("wt"))
+              store &dummy::fp <- n0:*PyObject
+              n1:*PyObject = load &dummy::fp
+              n2 = n1.?.write($builtins.python_string("yolo"))
+              ret null
+
+        }
+
+        global dummy::fp: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.open(...) : *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+  end )
