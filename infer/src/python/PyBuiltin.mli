@@ -40,6 +40,8 @@ type textual =
   | PythonIter
   | PythonIterNext
   | PythonBuildList
+  | PythonBuildSet
+  | PythonBuildTuple
   | PythonSubscriptGet
   | PythonSubscriptSet
   | CompareOp of Compare.t

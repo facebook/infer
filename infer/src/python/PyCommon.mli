@@ -86,6 +86,12 @@ val pyNone : Textual.Typ.t
 val pyList : Textual.Typ.t
 (** Python's builtin [list] type *)
 
+val pySet : Textual.Typ.t
+(** Python's builtin [set] type *)
+
+val pyTuple : Textual.Typ.t
+(** Python's builtin [tuple] type *)
+
 val mk_int : int64 -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal integers. *)
 

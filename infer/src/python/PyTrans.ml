@@ -108,7 +108,7 @@ let rec py_to_exp env c =
             Ok (env, e) )
       in
       let exp = T.Exp.call_non_virtual PyCommon.python_tuple args in
-      Ok (env, exp, PyCommon.pyObject)
+      Ok (env, exp, PyCommon.pyTuple)
 
 
 let annotated_type_of_annotation typ =
@@ -1201,7 +1201,7 @@ module BUILD = struct
   module LIST = struct
     (** {v BUILD_LIST(count) v}
 
-        Creates a list consuming count items from the stack, and pushes the resulting tuple onto the
+        Creates a list consuming count items from the stack, and pushes the resulting list onto the
         stack. *)
     let run env code {FFI.Instruction.opname; arg= count} =
       let open IResult.Let_syntax in
@@ -1209,6 +1209,36 @@ module BUILD = struct
       let* env, items = pop_n_datastack opname env count in
       let* env, items = cells_to_textual env code items in
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonBuildList items in
+      let env = Env.push env (DataStack.Temp id) in
+      Ok (env, None)
+  end
+
+  module SET = struct
+    (** {v BUILD_SET(count) v}
+
+        Creates a set consuming count items from the stack, and pushes the resulting set onto the
+        stack. *)
+    let run env code {FFI.Instruction.opname; arg= count} =
+      let open IResult.Let_syntax in
+      Debug.p "[%s] count = %d\n" opname count ;
+      let* env, items = pop_n_datastack opname env count in
+      let* env, items = cells_to_textual env code items in
+      let env, id, _typ = Env.mk_builtin_call env Builtin.PythonBuildSet items in
+      let env = Env.push env (DataStack.Temp id) in
+      Ok (env, None)
+  end
+
+  module TUPLE = struct
+    (** {v BUILD_TUPLE(count) v}
+
+        Creates a tuple consuming count items from the stack, and pushes the resulting tuple onto
+        the stack. *)
+    let run env code {FFI.Instruction.opname; arg= count} =
+      let open IResult.Let_syntax in
+      Debug.p "[%s] count = %d\n" opname count ;
+      let* env, items = pop_n_datastack opname env count in
+      let* env, items = cells_to_textual env code items in
+      let env, id, _typ = Env.mk_builtin_call env Builtin.PythonBuildTuple items in
       let env = Env.push env (DataStack.Temp id) in
       Ok (env, None)
   end
@@ -1768,6 +1798,10 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
       JUMP.IF_OR_POP.run ~jump_if:false env code instr next_offset_opt
   | "BUILD_LIST" ->
       BUILD.LIST.run env code instr
+  | "BUILD_SET" ->
+      BUILD.SET.run env code instr
+  | "BUILD_TUPLE" ->
+      BUILD.TUPLE.run env code instr
   | "STORE_SUBSCR" ->
       STORE.SUBSCR.run env code instr
   | "BINARY_SUBSCR" ->

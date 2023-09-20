@@ -103,6 +103,8 @@ module Builtin = struct
     | PythonIter
     | PythonIterNext
     | PythonBuildList
+    | PythonBuildSet
+    | PythonBuildTuple
     | PythonSubscriptGet
     | PythonSubscriptSet
     | CompareOp of Compare.t
@@ -158,6 +160,10 @@ let to_proc_name = function
             "python_iter_next"
         | PythonBuildList ->
             "python_build_list"
+        | PythonBuildSet ->
+            "python_build_set"
+        | PythonBuildTuple ->
+            "python_build_tuple"
         | PythonSubscriptGet ->
             "python_subscript_get"
         | PythonSubscriptSet ->
@@ -298,6 +304,10 @@ module Set = struct
           ; used_struct_types= [PyCommon.pyIterItemStruct] } )
       ; ( Builtin.PythonBuildList
         , {formals_types= None; result_type= annot PyCommon.pyList; used_struct_types= []} )
+      ; ( Builtin.PythonBuildSet
+        , {formals_types= None; result_type= annot PyCommon.pySet; used_struct_types= []} )
+      ; ( Builtin.PythonBuildTuple
+        , {formals_types= None; result_type= annot PyCommon.pyTuple; used_struct_types= []} )
       ; ( Builtin.PythonSubscriptGet
         , { formals_types= Some [annotatedObject; annotatedObject]
           ; result_type= annotatedObject

@@ -2640,6 +2640,98 @@ l[x] = 10
           declare $builtins.python_float(float) : *PyFloat
 
           declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+t = (1, 2, 3) # will be a constant, not a BUILD_TUPLE
+def f(x, y, z):
+        return (x, y, z) # should be BUILD_TUPLE
+|}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              store &dummy::t <- $builtins.python_tuple($builtins.python_int(1), $builtins.python_int(2), $builtins.python_int(3)):*PyTuple
+              n0 = $builtins.python_code("dummy.f")
+              ret null
+
+        }
+
+        define dummy.f(x: *PyObject, y: *PyObject, z: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &x
+              n1:*PyObject = load &y
+              n2:*PyObject = load &z
+              n3 = $builtins.python_build_tuple(n0, n1, n2)
+              ret n3
+
+        }
+
+        global dummy::t: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_build_tuple(...) : *PyTuple
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+s = {1, 2, 3}
+|} in
+      test source ;
+      [%expect
+        {|
+          .source_language = "python"
+
+          define dummy.$toplevel() : *PyNone {
+            #b0:
+                n0 = $builtins.python_build_set($builtins.python_int(1), $builtins.python_int(2), $builtins.python_int(3))
+                store &dummy::s <- n0:*PySet
+                ret null
+
+          }
+
+          global dummy::s: *PyObject
+
+          global $python_implicit_names::__name__: *PyString
+
+          global $python_implicit_names::__file__: *PyString
+
+          declare $builtins.python_build_set(...) : *PySet
+
+          declare $builtins.python_tuple(...) : *PyObject
+
+          declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+          declare $builtins.python_string(*String) : *PyString
+
+          declare $builtins.python_bool(int) : *PyBool
+
+          declare $builtins.python_float(float) : *PyFloat
+
+          declare $builtins.python_int(int) : *PyInt |}]
   end )
 
 
