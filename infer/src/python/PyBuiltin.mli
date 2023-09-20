@@ -14,12 +14,26 @@ module Compare : sig
   val pp : Format.formatter -> t -> unit
 end
 
+type binary_op =
+  | Add
+  | And
+  | FloorDivide
+  | LShift
+  | MatrixMultiply
+  | Modulo
+  | Multiply
+  | Or
+  | Power
+  | RShift
+  | Subtract
+  | TrueDivide
+  | Xor
+[@@deriving compare]
+
 type textual =
   | IsTrue
-  | BinaryAdd
-  | BinarySubtract
-  | InplaceAdd
-  | InplaceSubtract
+  | Binary of binary_op
+  | Inplace of binary_op
   | PythonCall
   | PythonClass
   | PythonCode

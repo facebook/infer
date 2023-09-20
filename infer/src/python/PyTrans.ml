@@ -1105,7 +1105,14 @@ module POP_TOP = struct
 end
 
 module BINARY = struct
-  let binary_or_inplace env code opname builtin =
+  (** Binary operations remove the top of the stack and the second top-most stack item from the
+      stack. They perform the operation, and put the result back on the stack.
+
+      In-place operations are like binary operations, in that they remove top-of-stack and
+      top-of-stack1, and push the result back on the stack, but the operation is done in-place when
+      top-of-stack1 supports it, and the resulting top-of-stack may be (but does not have to be) the
+      original top-of-stack1. *)
+  let run env code {FFI.Instruction.opname} builtin =
     let open IResult.Let_syntax in
     Debug.p "[%s]\n" opname ;
     let* env, tos = pop_datastack opname env in
@@ -1123,35 +1130,6 @@ module BINARY = struct
     let env = Env.push env (DataStack.Temp id) in
     Ok (env, None)
 
-
-  module ADD = struct
-    (** {v BINARY_ADD v}
-
-        Implements top-of-stack = top-of-stack1 + top-of-stack.
-
-        Before: [ TOS (rhs) | TOS1 (lhs) | rest-of-stack ]
-
-        After: [ TOS1 + TOS (lhs + rhs) | rest-of-stack ]
-
-        Since Python is using runtime types to know which [+] to perform (addition, string
-        concatenation, custom operator, ...), we'll need to write a model for this one. *)
-    let run env code {FFI.Instruction.opname} = binary_or_inplace env code opname Builtin.BinaryAdd
-  end
-
-  module SUBTRACT = struct
-    (** {v BINARY_SUBTRACT v}
-
-        Implements top-of-stack = top-of-stack1 - top-of-stack.
-
-        Before: [ TOS (rhs) | TOS1 (lhs) | rest-of-stack ]
-
-        After: [ TOS1 - TOS (lhs - rhs) | rest-of-stack ]
-
-        Since Python is using runtime types to know which [-] to perform, we'll need to write a
-        model for this one. *)
-    let run env code {FFI.Instruction.opname} =
-      binary_or_inplace env code opname Builtin.BinarySubtract
-  end
 
   module SUBSCR = struct
     (** {v BINARY_SUBSCR v}
@@ -1233,38 +1211,6 @@ module BUILD = struct
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonBuildList items in
       let env = Env.push env (DataStack.Temp id) in
       Ok (env, None)
-  end
-end
-
-module INPLACE = struct
-  module ADD = struct
-    (** {v INPLACE_ADD v}
-
-        Implements inplace top-of-stack = top-of-stack1 + top-of-stack.
-
-        Before: [ TOS (rhs) | TOS1 (lhs) | rest-of-stack ]
-
-        After: [ TOS1 + TOS (lhs + rhs) | rest-of-stack ]
-
-        Since Python is using runtime types to know which [+] to perform (addition, string
-        concatenation, custom operator, ...), we'll need to write a model for this one. *)
-    let run env code {FFI.Instruction.opname} =
-      BINARY.binary_or_inplace env code opname Builtin.InplaceAdd
-  end
-
-  module SUBTRACT = struct
-    (** {v INPLACESUBTRACT v}
-
-        Implements inplace top-of-stack = top-of-stack1 - top-of-stack.
-
-        Before: [ TOS (rhs) | TOS1 (lhs) | rest-of-stack ]
-
-        After: [ TOS1 - TOS (lhs - rhs) | rest-of-stack ]
-
-        Since Python is using runtime types to know which [-] to perform, we'll need to write a
-        model for this one. *)
-    let run env code {FFI.Instruction.opname} =
-      BINARY.binary_or_inplace env code opname Builtin.InplaceSubtract
   end
 end
 
@@ -1708,13 +1654,57 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "CALL_FUNCTION" ->
       FUNCTION.CALL.run env code instr
   | "BINARY_ADD" ->
-      BINARY.ADD.run env code instr
+      BINARY.run env code instr (Builtin.Binary Add)
   | "BINARY_SUBTRACT" ->
-      BINARY.SUBTRACT.run env code instr
+      BINARY.run env code instr (Builtin.Binary Subtract)
+  | "BINARY_AND" ->
+      BINARY.run env code instr (Builtin.Binary And)
+  | "BINARY_FLOOR_DIVIDE" ->
+      BINARY.run env code instr (Builtin.Binary FloorDivide)
+  | "BINARY_LSHIFT" ->
+      BINARY.run env code instr (Builtin.Binary LShift)
+  | "BINARY_MATRIX_MULTIPLY" ->
+      BINARY.run env code instr (Builtin.Binary MatrixMultiply)
+  | "BINARY_MODULO" ->
+      BINARY.run env code instr (Builtin.Binary Modulo)
+  | "BINARY_MULTIPLY" ->
+      BINARY.run env code instr (Builtin.Binary Multiply)
+  | "BINARY_OR" ->
+      BINARY.run env code instr (Builtin.Binary Or)
+  | "BINARY_POWER" ->
+      BINARY.run env code instr (Builtin.Binary Power)
+  | "BINARY_RSHIFT" ->
+      BINARY.run env code instr (Builtin.Binary RShift)
+  | "BINARY_TRUE_DIVIDE" ->
+      BINARY.run env code instr (Builtin.Binary TrueDivide)
+  | "BINARY_XOR" ->
+      BINARY.run env code instr (Builtin.Binary Xor)
   | "INPLACE_ADD" ->
-      INPLACE.ADD.run env code instr
+      BINARY.run env code instr (Builtin.Inplace Add)
   | "INPLACE_SUBTRACT" ->
-      INPLACE.SUBTRACT.run env code instr
+      BINARY.run env code instr (Builtin.Inplace Subtract)
+  | "INPLACE_AND" ->
+      BINARY.run env code instr (Builtin.Inplace And)
+  | "INPLACE_FLOOR_DIVIDE" ->
+      BINARY.run env code instr (Builtin.Inplace FloorDivide)
+  | "INPLACE_LSHIFT" ->
+      BINARY.run env code instr (Builtin.Inplace LShift)
+  | "INPLACE_MATRIX_MULTIPLY" ->
+      BINARY.run env code instr (Builtin.Inplace MatrixMultiply)
+  | "INPLACE_MODULO" ->
+      BINARY.run env code instr (Builtin.Inplace Modulo)
+  | "INPLACE_MULTIPLY" ->
+      BINARY.run env code instr (Builtin.Inplace Multiply)
+  | "INPLACE_OR" ->
+      BINARY.run env code instr (Builtin.Inplace Or)
+  | "INPLACE_POWER" ->
+      BINARY.run env code instr (Builtin.Inplace Power)
+  | "INPLACE_RSHIFT" ->
+      BINARY.run env code instr (Builtin.Inplace RShift)
+  | "INPLACE_TRUE_DIVIDE" ->
+      BINARY.run env code instr (Builtin.Inplace TrueDivide)
+  | "INPLACE_XOR" ->
+      BINARY.run env code instr (Builtin.Inplace Xor)
   | "MAKE_FUNCTION" ->
       FUNCTION.MAKE.run env code instr
   | "POP_JUMP_IF_TRUE" ->

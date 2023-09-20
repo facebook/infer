@@ -47,12 +47,56 @@ module Builtin = struct
     let pp fmt op = to_string op |> Format.pp_print_string fmt
   end
 
+  type binary_op =
+    | Add
+    | And
+    | FloorDivide
+    | LShift
+    | MatrixMultiply
+    | Modulo
+    | Multiply
+    | Or
+    | Power
+    | RShift
+    | Subtract
+    | TrueDivide
+    | Xor
+  [@@deriving compare]
+
+  let binary_op_to_string = function
+    | Add ->
+        "add"
+    | And ->
+        "and"
+    | FloorDivide ->
+        "floor_divide"
+    | LShift ->
+        "lshift"
+    | MatrixMultiply ->
+        "matrix_multiply"
+    | Modulo ->
+        "modulo"
+    | Multiply ->
+        "multiply"
+    | Or ->
+        "or"
+    | Power ->
+        "power"
+    | RShift ->
+        "rshift"
+    | Subtract ->
+        "subtract"
+    | TrueDivide ->
+        "true_divide"
+    | Xor ->
+        "xor"
+
+
   type textual =
     | IsTrue
-    | BinaryAdd
-    | BinarySubtract
-    | InplaceAdd
-    | InplaceSubtract
+    | Binary of binary_op
+    (* BINARY_SUBSCR is more complex and is done in PyTrans *)
+    | Inplace of binary_op
     | PythonCall
     | PythonClass
     | PythonCode
@@ -98,14 +142,10 @@ let to_proc_name = function
         match textual with
         | IsTrue ->
             "python_is_true"
-        | BinaryAdd ->
-            "binary_add"
-        | BinarySubtract ->
-            "binary_subtract"
-        | InplaceAdd ->
-            "inplace_add"
-        | InplaceSubtract ->
-            "inplace_subtract"
+        | Binary op ->
+            sprintf "binary_%s" (binary_op_to_string op)
+        | Inplace op ->
+            sprintf "inplace_%s" (binary_op_to_string op)
         | PythonCall ->
             "python_call"
         | PythonClass ->
@@ -200,27 +240,43 @@ module Set = struct
         ; result_type= annot PyCommon.pyBool
         ; used_struct_types= [] } )
     in
+    let binary_op op =
+      ( op
+      , { formals_types= Some [annotatedObject; annotatedObject]
+        ; result_type= annotatedObject
+        ; used_struct_types= [] } )
+    in
     let builtins =
       [ ( Builtin.IsTrue
         , { formals_types= Some [annotatedObject]
           ; result_type= annot T.Typ.Int
           ; used_struct_types= [] } )
-      ; ( Builtin.BinaryAdd
-        , { formals_types= Some [annotatedObject; annotatedObject]
-          ; result_type= annotatedObject
-          ; used_struct_types= [] } )
-      ; ( Builtin.BinarySubtract
-        , { formals_types= Some [annotatedObject; annotatedObject]
-          ; result_type= annotatedObject
-          ; used_struct_types= [] } )
-      ; ( Builtin.InplaceAdd
-        , { formals_types= Some [annotatedObject; annotatedObject]
-          ; result_type= annotatedObject
-          ; used_struct_types= [] } )
-      ; ( Builtin.InplaceSubtract
-        , { formals_types= Some [annotatedObject; annotatedObject]
-          ; result_type= annotatedObject
-          ; used_struct_types= [] } )
+      ; binary_op (Builtin.Binary Add)
+      ; binary_op (Builtin.Binary And)
+      ; binary_op (Builtin.Binary FloorDivide)
+      ; binary_op (Builtin.Binary LShift)
+      ; binary_op (Builtin.Binary MatrixMultiply)
+      ; binary_op (Builtin.Binary Modulo)
+      ; binary_op (Builtin.Binary Multiply)
+      ; binary_op (Builtin.Binary Or)
+      ; binary_op (Builtin.Binary Power)
+      ; binary_op (Builtin.Binary RShift)
+      ; binary_op (Builtin.Binary Subtract)
+      ; binary_op (Builtin.Binary TrueDivide)
+      ; binary_op (Builtin.Binary Xor)
+      ; binary_op (Builtin.Inplace Add)
+      ; binary_op (Builtin.Inplace And)
+      ; binary_op (Builtin.Inplace FloorDivide)
+      ; binary_op (Builtin.Inplace LShift)
+      ; binary_op (Builtin.Inplace MatrixMultiply)
+      ; binary_op (Builtin.Inplace Modulo)
+      ; binary_op (Builtin.Inplace Multiply)
+      ; binary_op (Builtin.Inplace Or)
+      ; binary_op (Builtin.Inplace Power)
+      ; binary_op (Builtin.Inplace RShift)
+      ; binary_op (Builtin.Inplace Subtract)
+      ; binary_op (Builtin.Inplace TrueDivide)
+      ; binary_op (Builtin.Inplace Xor)
       ; ( Builtin.PythonCall
         , {formals_types= None; result_type= annotatedObject; used_struct_types= []} )
       ; ( Builtin.PythonClass
