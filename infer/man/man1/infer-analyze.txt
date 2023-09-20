@@ -797,13 +797,6 @@ PULSE CHECKER OPTIONS
            Maximum number of array elements and structure fields to keep
            track of for a given address.
 
-       --pulse-report-ignore-unknown-java-methods-patterns +string
-           On Java, do not report issues that are found on program paths that
-           contain calls to unknown methods (those without implementation)
-           unless a) this option isn't passed at all (the default, or with
-           --pulse-report-ignore-unknown-java-methods-patterns-reset), or b)
-           all the unknown method names match one of the provided patterns.
-
        --pulse-skip-procedures regex
            Regex of procedures that should not be analyzed by Pulse.
 

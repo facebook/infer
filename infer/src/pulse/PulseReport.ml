@@ -167,8 +167,7 @@ let should_skip_reporting_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr
   && is_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference jn
 
 
-let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_without_invalidation
-    summary =
+let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_without_invalidation =
   if is_constant_deref_without_invalidation then (
     L.d_printfln ~color:Red
       "Dropping error: constant dereference with no invalidation in the access trace" ;
@@ -176,19 +175,7 @@ let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_with
   else
     match Procdesc.get_proc_name proc_desc with
     | Procname.Java jn when is_nullptr_dereference ->
-        let b =
-          should_skip_reporting_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference
-            jn
-        in
-        if b then (
-          L.d_printfln ~color:Red "Dropping error: conflicting with nullsafe" ;
-          b )
-        else
-          let b = not (AbductiveDomain.Summary.skipped_calls_match_pattern summary) in
-          if b then
-            L.d_printfln ~color:Red
-              "Dropping error: skipped an unknown function not in the allow list" ;
-          b
+        should_skip_reporting_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference jn
     | _ ->
         false
 
@@ -240,7 +227,7 @@ let report_summary_error tenv proc_desc err_log ((access_error : AccessResult.er
       in
       let is_suppressed =
         is_suppressed tenv proc_desc ~is_nullptr_dereference:true
-          ~is_constant_deref_without_invalidation summary
+          ~is_constant_deref_without_invalidation
       in
       if is_suppressed then L.d_printfln "suppressed error" ;
       if Config.pulse_report_latent_issues then
@@ -263,7 +250,6 @@ let report_summary_error tenv proc_desc err_log ((access_error : AccessResult.er
       in
       let is_suppressed =
         is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_without_invalidation
-          summary
       in
       match LatentIssue.should_report summary diagnostic with
       | `ReportNow ->

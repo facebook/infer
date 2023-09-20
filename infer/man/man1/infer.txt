@@ -1410,14 +1410,6 @@ OPTIONS
            Report data flows which pass through taint sink procname       
     See also infer-report(1).
 
-       --pulse-report-ignore-unknown-java-methods-patterns +string
-           On Java, do not report issues that are found on program paths that
-           contain calls to unknown methods (those without implementation)
-           unless a) this option isn't passed at all (the default, or with
-           --pulse-report-ignore-unknown-java-methods-patterns-reset), or b)
-           all the unknown method names match one of the provided patterns.       
-    See also infer-analyze(1).
-
        --pulse-skip-procedures regex
            Regex of procedures that should not be analyzed by Pulse.       
     See also infer-analyze(1).

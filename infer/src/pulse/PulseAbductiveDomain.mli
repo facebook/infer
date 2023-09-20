@@ -319,8 +319,6 @@ module Summary : sig
       not called twice *)
   type summary = private t [@@deriving compare, equal, yojson_of]
 
-  val skipped_calls_match_pattern : summary -> bool
-
   val with_need_closure_specialization : summary -> summary
 
   val add_need_dynamic_type_specialization : AbstractValue.t -> summary -> summary

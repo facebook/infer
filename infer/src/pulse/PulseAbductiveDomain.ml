@@ -1765,16 +1765,6 @@ module Summary = struct
             )
 
 
-  let skipped_calls_match_pattern astate =
-    (* For every skipped function, there needs to be at least one regexp given in --pulse_report_ignore_java_methods_patterns
-       that matches it *)
-    Option.value_map Config.pulse_report_ignore_unknown_java_methods_patterns ~default:true
-      ~f:(fun patt ->
-        SkippedCalls.for_all
-          (fun skipped_proc _ -> Str.string_match patt (Procname.to_string skipped_proc) 0)
-          astate.skipped_calls )
-
-
   let with_need_closure_specialization summary = {summary with need_closure_specialization= true}
 
   let add_need_dynamic_type_specialization = add_need_dynamic_type_specialization

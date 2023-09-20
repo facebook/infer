@@ -2506,15 +2506,6 @@ and pulse_recency_limit =
     "Maximum number of array elements and structure fields to keep track of for a given address."
 
 
-and pulse_report_ignore_unknown_java_methods_patterns =
-  CLOpt.mk_string_list ~default:[] ~long:"pulse-report-ignore-unknown-java-methods-patterns"
-    ~in_help:InferCommand.[(Analyze, manual_pulse)]
-    "On Java, do not report issues that are found on program paths that contain calls to unknown \
-     methods (those without implementation) $(b,unless) a) this option isn't passed at all (the \
-     default, or with $(b,--pulse-report-ignore-unknown-java-methods-patterns-reset)), or b) all \
-     the unknown method names match one of the provided patterns."
-
-
 and pulse_report_flows_from_taint_source =
   CLOpt.mk_string_opt ~long:"pulse-report-flows-from-taint-source"
     ~in_help:InferCommand.[(Report, manual_pulse)]
@@ -4271,14 +4262,6 @@ and pulse_force_continue = !pulse_force_continue
 and pulse_prevent_non_disj_top = !pulse_prevent_non_disj_top
 
 and pulse_recency_limit = !pulse_recency_limit
-
-and pulse_report_ignore_unknown_java_methods_patterns =
-  match RevList.to_list !pulse_report_ignore_unknown_java_methods_patterns with
-  | [] ->
-      None
-  | patts ->
-      Some (Str.regexp (String.concat ~sep:"\\|" patts))
-
 
 and pulse_report_flows_from_taint_source = !pulse_report_flows_from_taint_source
 

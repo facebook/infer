@@ -631,8 +631,6 @@ val pulse_models_for_erlang : string list
 
 val pulse_prevent_non_disj_top : bool
 
-val pulse_report_ignore_unknown_java_methods_patterns : Str.regexp option
-
 val pulse_report_flows_from_taint_source : string option
 
 val pulse_report_flows_to_taint_sink : string option
