@@ -8,12 +8,11 @@
 open! IStd
 module F = Format
 
-let filename = "dummy.py"
+let dummy = "dummy.py"
 
-let sourcefile = Textual.SourceFile.create filename
-
-let test ?(typecheck = true) source =
+let test ?(typecheck = true) ?(filename = dummy) source =
   let open IResult.Let_syntax in
+  let sourcefile = Textual.SourceFile.create filename in
   Py.initialize ~interpreter:Version.python_exe () ;
   let* code = FFI.from_string ~source ~filename in
   Py.finalize () ;
@@ -43,7 +42,7 @@ let test ?(typecheck = true) source =
     Ok () )
 
 
-let test ?(typecheck = true) source = ignore (test ~typecheck source)
+let test ?(typecheck = true) ?(filename = dummy) source = ignore (test ~typecheck ~filename source)
 
 let%test_module "basic_tests" =
   ( module struct
@@ -1991,6 +1990,49 @@ if __name__ == '__main__':
       dummy.py, <unknown location>: textual type error: variable os::path has not been declared
       dummy.py, <unknown location>: textual type error: variable os::path has not been declared
       dummy.py, <unknown location>: textual type error: variable sys::path has not been declared |}]
+
+
+    let%expect_test _ =
+      let source = {|
+from A import X
+from .B import X
+from ..C import X
+      |} in
+      test ~filename:"some/long/path/dummy.py" source ;
+      [%expect
+        {|
+      .source_language = "python"
+
+      define some::long::path::dummy.$toplevel() : *PyNone {
+        #b0:
+            n0 = A.$toplevel()
+            n1 = some::long::path::B.$toplevel()
+            n2 = some::long::C.$toplevel()
+            ret null
+
+      }
+
+      declare some::long::path::B.$toplevel() : *PyObject
+
+      declare some::long::C.$toplevel() : *PyObject
+
+      declare A.$toplevel() : *PyObject
+
+      global $python_implicit_names::__name__: *PyString
+
+      global $python_implicit_names::__file__: *PyString
+
+      declare $builtins.python_tuple(...) : *PyObject
+
+      declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+      declare $builtins.python_string(*String) : *PyString
+
+      declare $builtins.python_bool(int) : *PyBool
+
+      declare $builtins.python_float(float) : *PyFloat
+
+      declare $builtins.python_int(int) : *PyInt |}]
   end )
 
 

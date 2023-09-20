@@ -143,6 +143,8 @@ module Ident : sig
 
   val extend : prefix:t -> string -> t
 
+  val pop : t -> t option
+
   val mk_builtin : string -> t
 
   val is_imported_ABC : t -> bool

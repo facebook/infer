@@ -1515,11 +1515,12 @@ module IMPORT = struct
         pushed onto the stack. The current namespace is not affected: for a proper import statement,
         a subsequent STORE_FAST instruction modifies the namespace.
 
-        For now:
+        Also the doc says: [level] specifies whether to use absolute or relative imports. 0 (the
+        default) means only perform absolute imports. Positive values for [level] indicate the
+        number of parent directories to search relative to the directory of the module calling
+        [__import__()]
 
-        - we only support [level = 0].
-        - we don't support renamaing using [import foo as bar].
-        - we don't support complex paths like [import foo.bar.baz]. *)
+        TODO: we don't support renamaing using [import foo as bar]. *)
     let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
       let open IResult.Let_syntax in
       Debug.p "[%s] namei = %d\n" opname arg ;
@@ -1527,19 +1528,47 @@ module IMPORT = struct
       let* env, level = pop_datastack opname env in
       let from_list = load_strings code from_list in
       let level = load_int code level in
-      let* () =
+      let* level =
         match level with
-        | Some level ->
-            if Int64.equal level Int64.zero then Ok ()
-            else (
-              L.internal_error "[%s] missing support from [fromlist] or [level]@\n" opname ;
-              Error () )
         | None ->
             L.user_error "[%s] failed to load [level] from the stack@\n" opname ;
             Error ()
+        | Some level -> (
+          match Int64.to_int level with
+          | Some level ->
+              Ok level
+          | None ->
+              L.external_error "import path depth doesn't fit in an int: %Ld@\n" level ;
+              Error () )
       in
       let loc = Env.loc env in
-      let import_path = Ident.mk ~loc co_names.(arg) in
+      let* import_path =
+        match level with
+        | 0 ->
+            (* Absolute path *)
+            Ok (Ident.mk ~loc co_names.(arg))
+        | _ -> (
+            (* Relative path *)
+            let module_ = Env.module_name env in
+            let rec pop_levels n id =
+              match (n, id) with
+              | 0, id ->
+                  id
+              | _, None ->
+                  None
+              | _, Some id ->
+                  pop_levels (n - 1) (Ident.pop id)
+            in
+            let prefix = pop_levels level (Some module_) in
+            match prefix with
+            | Some prefix ->
+                Ok (Ident.extend ~prefix co_names.(arg))
+            | None ->
+                L.external_error
+                  "current module path '%a' is not deep enough for import with level %d\n" Ident.pp
+                  module_ level ;
+                Error () )
+      in
       let key = Symbol.Global import_path in
       let env =
         if Option.is_none (Env.lookup_symbol env key) then

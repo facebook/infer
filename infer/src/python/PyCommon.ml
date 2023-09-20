@@ -169,7 +169,7 @@ module Ident = struct
   include IDENT
 
   let from_string ?(global = true) ?(loc = T.Location.Unknown) s =
-    let items = String.split ~on:'.' s in
+    let items = String.split ~on:'/' s in
     match items with
     | [] ->
         None
@@ -306,6 +306,16 @@ module Ident = struct
         {root; path= Path {last= name; path= []}}
     | Path {last; path} ->
         {root; path= Path {last= name; path= last :: path}}
+
+
+  let pop {root; path} =
+    match path with
+    | Empty ->
+        None
+    | Path {path= []} ->
+        Some {root; path= Empty}
+    | Path {path= hd :: tl} ->
+        Some {root; path= Path {last= hd; path= tl}}
 
 
   let mk_builtin last =
