@@ -208,7 +208,9 @@ struct
 
   type analysis_data = T.analysis_data
 
-  let (`UnderApproximateAfter disjunct_limit) = DConfig.join_policy
+  let disjunct_limit =
+    match DConfig.join_policy with UnderApproximateAfter max_states -> max_states
+
 
   let has_geq_disj ~leq ~than:disj disjs =
     List.exists disjs ~f:(fun disj' -> leq ~lhs:disj ~rhs:disj')
@@ -291,7 +293,9 @@ struct
 
 
     let widen ~prev ~next ~num_iters =
-      let (`UnderApproximateAfterNumIterations max_iter) = DConfig.widen_policy in
+      let max_iter =
+        match DConfig.widen_policy with UnderApproximateAfterNumIterations max_iter -> max_iter
+      in
       if phys_equal prev next then prev
       else if num_iters > max_iter then (
         L.d_printfln "Iteration %d is greater than max iter %d, stopping." num_iters max_iter ;

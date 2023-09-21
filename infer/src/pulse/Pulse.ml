@@ -1431,9 +1431,10 @@ module DisjunctiveAnalyzer =
   AbstractInterpreter.MakeDisjunctive
     (PulseTransferFunctions)
     (struct
-      let join_policy = `UnderApproximateAfter Config.pulse_max_disjuncts
+      let join_policy = TransferFunctions.UnderApproximateAfter Config.pulse_max_disjuncts
 
-      let widen_policy = `UnderApproximateAfterNumIterations Config.pulse_widen_threshold
+      let widen_policy =
+        TransferFunctions.UnderApproximateAfterNumIterations Config.pulse_widen_threshold
     end)
 
 let with_html_debug_node node ~desc ~f =

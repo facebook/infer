@@ -37,7 +37,7 @@ end
 
 module NonDisjDomain = AbstractDomain.BottomTopLifted (AbstractDomain.Empty)
 
-module TransferFunctions = struct
+module DisjunctiveAnalyzerTransferFunctions = struct
   module CFG = ProcCfg.Normal
   module DisjDomain = DisjDomain
   module NonDisjDomain = NonDisjDomain
@@ -71,13 +71,13 @@ end
 
 module DisjunctiveAnalyzer =
   AbstractInterpreter.MakeDisjunctive
-    (TransferFunctions)
+    (DisjunctiveAnalyzerTransferFunctions)
     (struct
       (* re-use pulse options to avoid complicating the command-line interface just for testing *)
-      let join_policy = `UnderApproximateAfter Config.pulse_max_disjuncts
+      let join_policy = TransferFunctions.UnderApproximateAfter Config.pulse_max_disjuncts
 
       (* just 2 for now, we may want to parameterize this in the future *)
-      let widen_policy = `UnderApproximateAfterNumIterations 2
+      let widen_policy = TransferFunctions.UnderApproximateAfterNumIterations 2
     end)
 
 type domain = DisjunctiveAnalyzer.TransferFunctions.Domain.t

@@ -42,14 +42,16 @@ module type HIL = sig
   include S with type instr := HilInstr.t
 end
 
-module type DisjunctiveConfig = sig
-  val join_policy :
-    [ `UnderApproximateAfter of int
-      (** When the set of disjuncts gets bigger than [n] then just stop adding new states to it,
-          drop any further states on the floor. This corresponds to an under-approximation/bounded
-          approach. *) ]
+(** When the set of disjuncts gets bigger than [n] then just stop adding new states to it, drop any
+    further states on the floor. This corresponds to an under-approximation/bounded approach. *)
+type join_policy_t = UnderApproximateAfter of int
 
-  val widen_policy : [`UnderApproximateAfterNumIterations of int]
+type widen_policy_t = UnderApproximateAfterNumIterations of int
+
+module type DisjunctiveConfig = sig
+  val join_policy : join_policy_t
+
+  val widen_policy : widen_policy_t
 end
 
 module type DisjReady = sig
