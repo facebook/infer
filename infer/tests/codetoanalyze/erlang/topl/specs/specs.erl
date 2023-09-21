@@ -10,8 +10,11 @@
     test_ret1_Bad/0,
     test_ret2_Bad/0,
     test_ret3_Ok/0,
-    test_ret4_Ok/0
+    test_ret4_Ok/0,
+    source/0
 ]).
+
+-export_type([dirty/0]).
 
 -type dirty() :: atom().
 
@@ -44,6 +47,7 @@ sinksink(X) ->
 
 -spec source() -> dirty().
 source() -> dirty.
+
 sink(_) -> ok.
 
 nonsource() -> clean.

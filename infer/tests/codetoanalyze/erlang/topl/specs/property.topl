@@ -1,4 +1,4 @@
 property SourceIsSpec
   start -> start: *
-  start -> track: ".*:__infer_assume_type_dirty/1"(Arg, Ret) when Ret != 0 => dirty := Arg
+  start -> track: "specs:__infer_assume_type_dirty/1"(Arg, Ret) when Ret != 0 => dirty := Arg
   track -> error: ".*:sink/1"(Arg, Ret) when Arg == dirty
