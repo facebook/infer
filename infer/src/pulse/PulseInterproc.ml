@@ -606,7 +606,7 @@ let apply_post_for_parameters path callee_proc_name call_location callee_summary
   with
   | Unequal_lengths ->
       (* should have been checked before by [materialize_pre] *)
-      L.(die InternalError) "formals and actuals have different lenghts"
+      L.(die InternalError) "formals and actuals have different lengths"
   | Ok call_state ->
       call_state
 
@@ -621,7 +621,7 @@ let apply_post_for_captured_vars path callee_proc_name call_location callee_summ
   with
   | Unequal_lengths ->
       (* should have been checked before by [materialize_pre] *)
-      L.(die InternalError) "captured formals and captured actuals have different lenghts"
+      L.(die InternalError) "captured formals and captured actuals have different lengths"
   | Ok result ->
       result
 
