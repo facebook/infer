@@ -84,7 +84,7 @@ int call_lambda_after_copy_test_bad() {
   }
 }
 
-int call_lambda_after_copy_test_good_FP() {
+int call_lambda_after_copy_test_good() {
   if (call_lambda_after_copy() == 143) {
     int* p = NULL;
     return *p;

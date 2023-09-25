@@ -159,10 +159,44 @@ let eval_var path location pvar astate =
 
 let eval_ident id astate = Stack.eval ValueHistory.epoch (Var.of_id id) astate
 
+let write_access path location addr_trace_ref access addr_trace_obj astate =
+  check_addr_access path Write location addr_trace_ref astate
+  >>| Memory.add_edge path addr_trace_ref access addr_trace_obj location
+
+
+let write_deref path location ~ref:addr_trace_ref ~obj:addr_trace_obj astate =
+  write_access path location addr_trace_ref Dereference addr_trace_obj astate
+
+
 let rec eval (path : PathContext.t) mode location exp astate :
     (t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.t =
   let++ astate, value_origin = eval_to_value_origin path mode location exp astate in
   (astate, ValueOrigin.addr_hist value_origin)
+
+
+and record_closure_cpp_lambda astate (path : PathContext.t) loc procname
+    (captured_vars : (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list) =
+  let assign_event = ValueHistory.Assignment (loc, path.timestamp) in
+  let closure_addr_hist = (AbstractValue.mk_fresh (), ValueHistory.singleton assign_event) in
+  let astate =
+    AddressAttributes.add_one (fst closure_addr_hist) (Attribute.Closure procname) astate
+  in
+  let** astate = PulseArithmetic.and_positive (fst closure_addr_hist) astate in
+  let store_captured_var result (exp, var, _typ, mode) =
+    let field_name = Fieldname.mk_capture_field_in_cpp_lambda (Pvar.get_name var) mode in
+    let** astate = result in
+    let** astate, rhs_value_origin = eval_to_value_origin path NoAccess loc exp astate in
+    let rhs_addr, rhs_history = ValueOrigin.addr_hist rhs_value_origin in
+    let astate = conservatively_initialize_args [rhs_addr] astate in
+    L.d_printfln "Storing %a.%a = %a" AbstractValue.pp (fst closure_addr_hist) Fieldname.pp
+      field_name AbstractValue.pp rhs_addr ;
+    let=+ astate, lhs_addr_hist =
+      eval_access path Read loc closure_addr_hist (FieldAccess field_name) astate
+    in
+    write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, rhs_history) astate
+  in
+  let++ astate = List.fold captured_vars ~init:(Sat (Ok astate)) ~f:store_captured_var in
+  (astate, ValueOrigin.Unknown closure_addr_hist)
 
 
 and eval_to_value_origin (path : PathContext.t) mode location exp astate :
@@ -186,21 +220,25 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
         (ArrayAccess (StdTyp.void, fst addr_hist_index))
         astate
   | Closure {name; captured_vars} ->
-      let** astate, rev_captured =
-        List.fold captured_vars
-          ~init:(Sat (Ok (astate, [])))
-          ~f:(fun result (capt_exp, captured_as, typ, mode) ->
-            let** astate, rev_captured = result in
-            let++ astate, addr_trace = eval path Read location capt_exp astate in
-            (astate, (captured_as, addr_trace, typ, mode) :: rev_captured) )
-      in
-      let++ astate, v_hist = Closures.record path location name (List.rev rev_captured) astate in
-      let astate =
-        conservatively_initialize_args
-          (List.rev_map rev_captured ~f:(fun (_, (addr, _), _, _) -> addr))
-          astate
-      in
-      (astate, ValueOrigin.Unknown v_hist)
+      if Procname.is_cpp_lambda name then
+        let++ astate, v_hist = record_closure_cpp_lambda astate path location name captured_vars in
+        (astate, v_hist)
+      else
+        let** astate, rev_captured =
+          List.fold captured_vars
+            ~init:(Sat (Ok (astate, [])))
+            ~f:(fun result (capt_exp, captured_as, typ, mode) ->
+              let** astate, rev_captured = result in
+              let++ astate, addr_trace = eval path Read location capt_exp astate in
+              (astate, (captured_as, addr_trace, typ, mode) :: rev_captured) )
+        in
+        let++ astate, v_hist = Closures.record path location name (List.rev rev_captured) astate in
+        let astate =
+          conservatively_initialize_args
+            (List.rev_map rev_captured ~f:(fun (_, (addr, _), _, _) -> addr))
+            astate
+        in
+        (astate, ValueOrigin.Unknown v_hist)
   | Const (Cfun proc_name) ->
       (* function pointers are represented as closures with no captured variables *)
       let++ astate, addr_hist = Closures.record path location proc_name [] astate in
@@ -338,15 +376,6 @@ let havoc_id id loc_opt astate =
   if Topl.is_active () || Stack.mem (Var.of_id id) astate then
     write_id id (AbstractValue.mk_fresh (), loc_opt) astate
   else astate
-
-
-let write_access path location addr_trace_ref access addr_trace_obj astate =
-  check_addr_access path Write location addr_trace_ref astate
-  >>| Memory.add_edge path addr_trace_ref access addr_trace_obj location
-
-
-let write_deref path location ~ref:addr_trace_ref ~obj:addr_trace_obj astate =
-  write_access path location addr_trace_ref Dereference addr_trace_obj astate
 
 
 let write_field path location ~ref:addr_trace_ref field ~obj:addr_trace_obj astate =
@@ -783,7 +812,9 @@ let get_var_captured_actuals path location ~is_lambda ~captured_formals ~actual_
               else Fieldname.mk_capture_field_in_cpp_lambda var_name mode
             in
             let+ astate, captured_actual =
-              eval_access path Read location actual_closure (FieldAccess field_name) astate
+              if is_lambda then
+                eval_deref_access path Read location actual_closure (FieldAccess field_name) astate
+              else eval_access path Read location actual_closure (FieldAccess field_name) astate
             in
             (id + 1, astate, (captured_actual, typ) :: captured)
         | Var.LogicalVar _ ->
