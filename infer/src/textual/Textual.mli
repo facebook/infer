@@ -214,6 +214,8 @@ module ProcDecl : sig
 
   val is_allocate_array_builtin : qualified_procname -> bool
 
+  val is_get_lazy_class_builtin : qualified_procname -> bool
+
   val is_lazy_class_initialize_builtin : qualified_procname -> bool
 
   val is_side_effect_free_sil_expr : qualified_procname -> bool

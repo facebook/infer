@@ -121,6 +121,8 @@ let builtin_allocate_array = "__sil_allocate_array"
 
 let builtin_lazy_class_initialize = "__sil_lazy_class_initialize"
 
+let builtin_get_lazy_class = "__sil_get_lazy_class"
+
 let builtin_cast = "__sil_cast"
 
 let builtin_instanceof = "__sil_instanceof"
@@ -366,6 +368,8 @@ module ProcDecl = struct
 
   let lazy_class_initialize_name = make_toplevel_name builtin_lazy_class_initialize Location.Unknown
 
+  let get_lazy_class_name = make_toplevel_name builtin_get_lazy_class Location.Unknown
+
   let cast_name = make_toplevel_name builtin_cast Location.Unknown
 
   let instanceof_name = make_toplevel_name builtin_instanceof Location.Unknown
@@ -483,6 +487,10 @@ module ProcDecl = struct
     equal_qualified_procname lazy_class_initialize_name qualified_name
 
 
+  let is_get_lazy_class_builtin qualified_name =
+    equal_qualified_procname get_lazy_class_name qualified_name
+
+
   let is_cast_builtin = equal_qualified_procname cast_name
 
   let is_instanceof_builtin = equal_qualified_procname instanceof_name
@@ -490,6 +498,7 @@ module ProcDecl = struct
   let is_type_builtin qualified_name =
     is_allocate_object_builtin qualified_name
     || is_allocate_array_builtin qualified_name
+    || is_get_lazy_class_builtin qualified_name
     || is_lazy_class_initialize_builtin qualified_name
     || is_instanceof_builtin qualified_name
 

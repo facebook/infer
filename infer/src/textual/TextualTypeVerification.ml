@@ -441,7 +441,10 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
       (Exp.Index (exp1, exp2), typ)
   | Const const ->
       ret (exp, typeof_const const)
-  | Call {proc; args} when ProcDecl.is_allocate_object_builtin proc ->
+  | Call {proc; args}
+    when ProcDecl.is_allocate_object_builtin proc
+         || ProcDecl.is_lazy_class_initialize_builtin proc
+         || ProcDecl.is_get_lazy_class_builtin proc ->
       typeof_allocate_builtin proc args
   | Call {proc; args} when ProcDecl.is_allocate_array_builtin proc ->
       typeof_allocate_array_builtin proc args
@@ -449,8 +452,6 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
       typeof_cast_builtin proc args
   | Call {proc; args} when ProcDecl.is_instanceof_builtin proc ->
       typeof_instanceof_builtin proc args
-  | Call {proc; args} when ProcDecl.is_lazy_class_initialize_builtin proc ->
-      typeof_allocate_builtin proc args
   | Call {proc; args; kind} ->
       let* lang = get_lang in
       let procsig = Exp.call_sig proc args lang in

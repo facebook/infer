@@ -168,6 +168,8 @@ let __instanceof = create_procname "__instanceof"
 
 let __java_throw = create_procname "__java_throw"
 
+let __get_lazy_class = create_procname "__get_lazy_class"
+
 let __lazy_class_initialize = create_procname "__lazy_class_initialize"
 
 let __method_set_ignore_attribute = create_procname "__method_set_ignore_attribute"
