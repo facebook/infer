@@ -1497,37 +1497,7 @@ module Alias = struct
               locations reachable from these addresses need to be kept in the abstract state. *)
     ; cpp_iterator_cmp: CppIteratorCmp.t
     ; cpp_iter_begin_or_end: CppIterBeginOrEnd.t }
-
-  let leq ~lhs ~rhs =
-    if phys_equal lhs rhs then true
-    else
-      AliasMap.leq ~lhs:lhs.map ~rhs:rhs.map
-      && AliasRet.leq ~lhs:lhs.ret ~rhs:rhs.ret
-      && CppIteratorCmp.leq ~lhs:lhs.cpp_iterator_cmp ~rhs:rhs.cpp_iterator_cmp
-      && CppIterBeginOrEnd.leq ~lhs:lhs.cpp_iter_begin_or_end ~rhs:rhs.cpp_iter_begin_or_end
-
-
-  let join x y =
-    if phys_equal x y then x
-    else
-      { map= AliasMap.join x.map y.map
-      ; ret= AliasRet.join x.ret y.ret
-      ; cpp_iterator_cmp= CppIteratorCmp.join x.cpp_iterator_cmp y.cpp_iterator_cmp
-      ; cpp_iter_begin_or_end=
-          CppIterBeginOrEnd.join x.cpp_iter_begin_or_end y.cpp_iter_begin_or_end }
-
-
-  let widen ~prev ~next ~num_iters =
-    if phys_equal prev next then prev
-    else
-      { map= AliasMap.widen ~prev:prev.map ~next:next.map ~num_iters
-      ; ret= AliasRet.widen ~prev:prev.ret ~next:next.ret ~num_iters
-      ; cpp_iterator_cmp=
-          CppIteratorCmp.widen ~prev:prev.cpp_iterator_cmp ~next:next.cpp_iterator_cmp ~num_iters
-      ; cpp_iter_begin_or_end=
-          CppIterBeginOrEnd.widen ~prev:prev.cpp_iter_begin_or_end ~next:next.cpp_iter_begin_or_end
-            ~num_iters }
-
+  [@@deriving abstract_domain]
 
   let pp fmt x =
     F.fprintf fmt "@[<hov 2>{ %a%s%a, %a, %a }@]" AliasMap.pp x.map
