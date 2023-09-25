@@ -514,10 +514,7 @@ module PulseTransferFunctions = struct
     else proc_name_opt
 
 
-  type model_search_result =
-    | DoliModel of Procname.t
-    | OcamlModel of (PulseModelsImport.model * Procname.t)
-    | NoModel
+  type model_search_result = OcamlModel of (PulseModelsImport.model * Procname.t) | NoModel
 
   (* When Hack traits are involved, we need to compute and pass an additional argument that is a
      token to find the right class name for [self].
@@ -787,14 +784,9 @@ module PulseTransferFunctions = struct
     in
     let model =
       match callee_pname with
-      | Some callee_pname -> (
-        match DoliToTextual.matcher callee_pname with
-        | Some procname ->
-            DoliModel procname
-        | None ->
-            PulseModels.dispatch tenv callee_pname func_args
-            |> Option.value_map ~default:NoModel ~f:(fun model -> OcamlModel (model, callee_pname))
-        )
+      | Some callee_pname ->
+          PulseModels.dispatch tenv callee_pname func_args
+          |> Option.value_map ~default:NoModel ~f:(fun model -> OcamlModel (model, callee_pname))
       | None ->
           (* unresolved function pointer, etc.: skip *)
           NoModel
@@ -820,15 +812,6 @@ module PulseTransferFunctions = struct
               ; ret }
               astate
           , `KnownCall )
-      | DoliModel callee_pname ->
-          L.d_printfln "Found doli model %a for call@\n" Procname.pp callee_pname ;
-          PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
-          let r =
-            interprocedural_call analysis_data path ret (Some callee_pname) call_exp func_args
-              call_loc flags astate
-          in
-          PerfEvent.(log (fun logger -> log_end_event logger ())) ;
-          r
       | NoModel ->
           PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse interproc call" ())) ;
           let r =

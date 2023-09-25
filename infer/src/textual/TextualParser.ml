@@ -16,8 +16,6 @@ type error =
   | TransformError of Textual.transform_error list
   | DeclaredTwiceError of TextualDecls.error
 
-type whichCapture = DoliCapture | TextualCapture
-
 let pp_error sourcefile fmt = function
   | SyntaxError {loc; msg} ->
       F.fprintf fmt "%a, %a: SIL syntax error: %s" Textual.SourceFile.pp sourcefile
@@ -32,24 +30,11 @@ let pp_error sourcefile fmt = function
       TextualDecls.pp_error sourcefile fmt err
 
 
-let parse_buf ~capture sourcefile filebuf =
+let parse_buf sourcefile filebuf =
   try
-    let lexer =
-      match capture with
-      | TextualCapture ->
-          CombinedLexer.Lexbuf.with_tokenizer CombinedLexer.textual_mainlex filebuf
-      | DoliCapture ->
-          CombinedLexer.Lexbuf.with_tokenizer CombinedLexer.doli_mainlex filebuf
-    in
+    let lexer = TextualLexer.Lexbuf.with_tokenizer TextualLexer.textual_mainlex filebuf in
     let parsed =
-      match capture with
-      | TextualCapture ->
-          MenhirLib.Convert.Simplified.traditional2revised CombinedMenhir.main lexer sourcefile
-      | DoliCapture ->
-          let doliModule =
-            MenhirLib.Convert.Simplified.traditional2revised CombinedMenhir.doliProgram lexer
-          in
-          DoliToTextual.program_to_textual_module sourcefile doliModule
+      MenhirLib.Convert.Simplified.traditional2revised TextualMenhir.main lexer sourcefile
     in
     let errors, decls_env = TextualDecls.make_decls parsed in
     let errors = List.map errors ~f:(fun x -> DeclaredTwiceError x) in
@@ -67,25 +52,25 @@ let parse_buf ~capture sourcefile filebuf =
       else Error errors
     else Error errors
   with
-  | CombinedMenhir.Error ->
-      let token = CombinedLexer.Lexbuf.lexeme filebuf in
-      let Lexing.{pos_lnum; pos_cnum; pos_bol}, _ = CombinedLexer.Lexbuf.lexing_positions filebuf in
+  | TextualMenhir.Error ->
+      let token = TextualLexer.Lexbuf.lexeme filebuf in
+      let Lexing.{pos_lnum; pos_cnum; pos_bol}, _ = TextualLexer.Lexbuf.lexing_positions filebuf in
       let loc = Textual.Location.known ~line:pos_lnum ~col:(pos_cnum - pos_bol) in
       Error [SyntaxError {loc; msg= "unexpected token " ^ token}]
-  | CombinedLexer.LexingError (loc, lexeme) ->
+  | TextualLexer.LexingError (loc, lexeme) ->
       Error [SyntaxError {loc; msg= "unexpected token " ^ lexeme}]
   | Textual.SpecialSyntaxError (loc, msg) ->
       Error [SyntaxError {loc; msg}]
 
 
 let parse_string sourcefile text =
-  let filebuf = CombinedLexer.Lexbuf.from_gen (Gen.of_string text) in
-  parse_buf ~capture:TextualCapture sourcefile filebuf
+  let filebuf = TextualLexer.Lexbuf.from_gen (Gen.of_string text) in
+  parse_buf sourcefile filebuf
 
 
-let parse_chan ~capture sourcefile ic =
-  let filebuf = CombinedLexer.Lexbuf.from_channel ic in
-  parse_buf ~capture sourcefile filebuf
+let parse_chan sourcefile ic =
+  let filebuf = TextualLexer.Lexbuf.from_channel ic in
+  parse_buf sourcefile filebuf
 
 
 module TextualFile = struct
@@ -113,13 +98,13 @@ module TextualFile = struct
     with Textual.TextualTransformError errors -> Error (sourcefile, [TransformError errors])
 
 
-  let translate_textual_or_doli ~capture file =
+  let translate file =
     let sourcefile, parsed =
       match file with
       | StandaloneFile path ->
           Utils.with_file_in path ~f:(fun cin ->
               let sourcefile = Textual.SourceFile.create (source_path file) in
-              let result = parse_chan ~capture sourcefile cin in
+              let result = parse_chan sourcefile cin in
               (sourcefile, result) )
       | TranslatedFile {content; line_map} ->
           let sourcefile = Textual.SourceFile.create ~line_map (source_path file) in
@@ -131,8 +116,6 @@ module TextualFile = struct
     | Error errs ->
         Error (sourcefile, errs)
 
-
-  let translate file = translate_textual_or_doli ~capture:TextualCapture file
 
   let capture ~use_global_tenv {sourcefile; cfg; tenv} =
     let sourcefile = Textual.SourceFile.file sourcefile in
@@ -149,10 +132,10 @@ end
 
 (* This code is used only by the --capture-textual integration, which turn textual files into
    a SIL-Java program. The Hack driver doesn't use this function. *)
-let capture ~capture files =
+let capture files =
   let global_tenv = Tenv.create () in
   let capture_one file =
-    match TextualFile.translate_textual_or_doli ~capture file with
+    match TextualFile.translate file with
     | Error (sourcefile, errs) ->
         List.iter errs ~f:(fun error -> L.external_error "%a@\n" (pp_error sourcefile) error)
     | Ok sil ->

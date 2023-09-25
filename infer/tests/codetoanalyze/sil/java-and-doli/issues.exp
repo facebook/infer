@@ -1,4 +1,0 @@
-CheckDoliImports.java, codetoanalyze.java.infer.CheckDoliImports.m1_bad():int, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
-CheckDoliImports.java, codetoanalyze.java.infer.CheckDoliImports.m2_bad():int, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
-CheckDoliImports.java, codetoanalyze.java.infer.CheckDoliImports.m3_bad():int, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
-CheckDoliImports.java, codetoanalyze.java.infer.CheckDoliImports.m4_bad():int, 5, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]

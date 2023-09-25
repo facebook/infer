@@ -2107,13 +2107,6 @@ INTERNAL OPTIONS
            Deactivates: capture and translate source files into infer's
            intermediate language for analysis (Conversely: --capture)
 
-       --capture-doli +path
-           Generate a SIL program from doli representations given in .doli
-           files.
-
-       --capture-doli-reset
-           Set --capture-doli to the empty list.
-
        --capture-textual +path
            Generate a SIL program from a textual representation given in .sil
            files.
@@ -2639,13 +2632,6 @@ INTERNAL OPTIONS
 
        --oom-threshold-reset
            Cancel the effect of --oom-threshold.
-
-       --parse-doli path
-           Perform parsing on given a .doli file -- no checks on textual, no
-           capture.
-
-       --parse-doli-reset
-           Cancel the effect of --parse-doli.
 
        --print-buckets
            Activates: Show the internal bucket of Infer reports in their

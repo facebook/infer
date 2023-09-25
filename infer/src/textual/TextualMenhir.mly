@@ -8,9 +8,6 @@
 
     open! IStd
     open Textual
-    open Doli
-    open Doli.Java
-    open Doli.ObjC
 
     let location_of_pos pos : Location.t =
       let line = pos.Lexing.pos_lnum in
@@ -50,6 +47,7 @@
 %token NOT
 %token OR
 %token PRUNE
+%token QUESTION
 %token RABRACKET
 %token RBRACKET
 %token RET
@@ -73,41 +71,10 @@
 %token <string option * string> PROC_AND_LPAREN
 %token <string> STRING
 
-(* Doli-specific keywords *)
-%token RULE
-%token IN
-%token JAVA
-%token OBJC
-%token MATCH
-%token BODYKW
-%token UNDER
-(* generics *)
-%token QUESTION
-%token SUPER
-(* modifiers and throws *)
-%token PUBLIC
-%token PROTECTED
-%token PRIVATE
-%token STATIC
-%token ABSTRACT
-%token FINAL
-%token NATIVE
-%token THROWS
-(* basic types *)
-%token BYTE
-%token SHORT
-%token CHAR
-%token LONG
-%token DOUBLE
-%token BOOLEAN
-(* placeholders for the bodies- will be removed in future work *)
-%token OBJCSIGNSTUB
-
 %right OR
 %right AND
 
 %start <Textual.SourceFile.t -> Textual.Module.t> main
-%start <Doli.doliProgram> doliProgram
 %type <Attr.t> attribute
 %type <Module.decl> declaration
 %type <qualified_procname> qualified_pname_and_lparen
@@ -138,13 +105,6 @@
 %type <Textual.Body.t> body
 %%
 
-doli_ident_modifier:
-  | PUBLIC { "public" }
-  | FINAL { "final" }
-  | PROTECTED { "protected" }
-  | PRIVATE { "private" }
-  | STATIC { "static" }
-
 basic_ident:
   | DECLARE { "declare" }
   | DEFINE { "define" }
@@ -158,21 +118,14 @@ basic_ident:
   | THROW { "throw" }
   | TYPE { "type" }
   | UNREACHABLE { "unreachable" }
-  | IN { "in" }
 
 ident_except_load:
   | x=basic_ident { x }
-  | x=doli_ident_modifier { x }
   | x=IDENT { x }
 
 ident:
   | LOAD { "load" }
   | x=ident_except_load { x }
-
-doli_classname_ident:
-  | LOAD { "load" }
-  | x=basic_ident { x }
-  | x=IDENT { x }
 
 main:
   | attrs=attribute* decls=declaration* EOF
@@ -473,106 +426,3 @@ expression:
     { Exp.call_virtual proc recv args }
   | LABRACKET typ=typ RABRACKET
     { Exp.Typ typ }
-
-(*  -------------------- DOLI  ----------------------------------*)
-
-doliProgram:
- | doliRules = doliRule* EOF { DoliProgram doliRules }
- ;
-
- doliRule:
-  | RULE ruleId = ident IN JAVA jm = javaMatch bd= doliBody
-  { { ruleName = ruleId;  match_ = jm; body = bd }  }
-  | RULE ruleId = ident  IN OBJC ocm = objCMatch bd= doliBody
-  { { ruleName = ruleId; match_ = ocm; body = bd }  }
-  ;
-
-doliBody:
-  | BODYKW; bd = body
-     { bd }
-     ;
-
-javaMatch: MATCH;
-  LBRACKET; ess=list(extendedSignature); RBRACKET;
-    { JavaMatching ess}
-  ;
-
-extendedSignature:
-  | sigs=separated_nonempty_list(SEMICOLON,signature); UNDER; rt=referenceType
-    (* the SEMICOLON separator is needed in order to avoid shift-reduce conflicts *)
-    { {signs=sigs; under=rt}  }
-  ;
-
-signature:
-  | mds=modifier*; rt=returnType; funcId=name_and_lparen;
-    formalParams=separated_list(COMMA, formalParameter) RPAREN
-    option(throws)
-    { {modifiers = mds; returns = rt; identifier = funcId; formalParameters = formalParams } }
-  ;
-
-modifier:
-  | PUBLIC { Public }
-  | PROTECTED { Protected }
-  | PRIVATE { Private }
-  | STATIC { Static }
-  | FINAL { Final }
-  | ABSTRACT { Abstract }
-  | NATIVE { Native }
-  ;
-
-returnType:
-  | VOID { VoidType }
-  | nvt=nonVoidType { NonVoid nvt }
-  ;
-
-referenceType:
-  | cts=separated_nonempty_list(DOT, classType) { RT cts }
-   ;
-
-classType:
-  | cId=doli_classname_ident { CT (cId, []) }
-  | cId=doli_classname_ident LABRACKET tArgs=separated_list(COMMA, typeArgument)  RABRACKET { CT (cId,tArgs) }
-  ;
-
-
-nonVoidType:
-(* QUESTION: Do we want to "flatten" tree in the future?,
-   ie avoid having one constructor appied to an other*)
-  | BYTE { BasicType ByteType }
-  | INT { BasicType IntType }
-  | BOOLEAN { BasicType BoolType }
-  | CHAR { BasicType CharType }
-  | DOUBLE { BasicType DoubleType }
-  | FLOAT { BasicType FloatType }
-  | LONG { BasicType LongType }
-  | SHORT { BasicType ShortType }
-  | rt=referenceType { RefType rt }
-  | nvt=nonVoidType; LSBRACKET RSBRACKET { Array nvt }
-  ;
-
-formalParameter:
-   | nvt=nonVoidType; id=ident { {  typ=nvt; ident = id } }
-   ;
-
-
-typeArgument:
-  | rt=referenceType { PLAIN rt }
-  | QUESTION SUPER; rt=referenceType { SUPER rt }
-  | QUESTION EXTENDS rt=referenceType { EXTENDS rt }
-  ;
-
-
-throws:
-  | THROWS  separated_nonempty_list(COMMA, referenceType){ }
-  ;
-
-
-(* ObjC matching *)
-
-objCMatch:
-    MATCH; LBRACKET; ess=extendedSignatureList; RBRACKET;
-      { ObjCMatching(ess) }
-;
-
-extendedSignatureList:
-  |  OBJCSIGNSTUB;  {  [ { stub = 33 } ] }

@@ -995,11 +995,6 @@ and capture_block_list =
        analyzed either. Clang and Java only." )
 
 
-and capture_doli =
-  CLOpt.mk_path_list ~long:"capture-doli" ~meta:"path"
-    "Generate a SIL program from doli representations given in .doli files."
-
-
 and capture_textual =
   CLOpt.mk_path_list ~long:"capture-textual" ~meta:"path"
     "Generate a SIL program from a textual representation given in .sil files."
@@ -2146,11 +2141,6 @@ and oom_threshold =
   CLOpt.mk_int_opt ~long:"oom-threshold"
     "Available memory threshold (in MB) below which multi-worker scheduling throttles back work. \
      Only for use on Linux."
-
-
-and parse_doli =
-  CLOpt.mk_path_opt ~long:"parse-doli" ~meta:"path"
-    "Perform parsing on given a .doli file -- no checks on textual, no capture."
 
 
 and pmd_xml =
@@ -3760,8 +3750,6 @@ and capture = !capture
 
 and capture_block_list = match capture_block_list with k, r -> (k, !r)
 
-and capture_doli = RevList.to_list !capture_doli
-
 and capture_textual = RevList.to_list !capture_textual
 
 and censor_report =
@@ -4113,8 +4101,6 @@ and no_translate_libs = not !headers
 and oom_threshold = !oom_threshold
 
 and only_cheap_debug = !only_cheap_debug
-
-and parse_doli = !parse_doli
 
 and pmd_xml = !pmd_xml
 

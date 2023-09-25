@@ -152,15 +152,6 @@ let capture ~changed_files mode =
       |> Out_channel.write_lines infer_deps_file ;
       () )
     else
-      let dolifiles = Config.capture_doli in
-      ( match dolifiles with
-      | [] ->
-          ()
-      | _ :: _ ->
-          let dfiles =
-            List.map dolifiles ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x)
-          in
-          TextualParser.capture ~capture:DoliCapture dfiles ) ;
       match mode with
       | Analyze ->
           ()
@@ -237,10 +228,8 @@ let capture ~changed_files mode =
           L.progress "Capturing in hackc mode...@." ;
           Hack.capture ~prog ~args
       | Textual {textualfiles} ->
-          let tfiles =
-            List.map textualfiles ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x)
-          in
-          TextualParser.capture ~capture:TextualCapture tfiles
+          List.map textualfiles ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x)
+          |> TextualParser.capture
       | XcodeBuild {prog; args} ->
           L.progress "Capturing in xcodebuild mode...@." ;
           XcodeBuild.capture ~prog ~args

@@ -27,7 +27,7 @@ let lex_error (lexbuf : Sedlexing.lexbuf) =
 
 
 let textual_keywords =
-  CombinedMenhir.
+  TextualMenhir.
     [ ("declare", DECLARE)
     ; ("define", DEFINE)
     ; ("else", ELSE)
@@ -50,35 +50,6 @@ let textual_keywords =
     ; ("type", TYPE)
     ; ("unreachable", UNREACHABLE)
     ; ("void", VOID) ]
-
-
-let doli_keywords =
-  textual_keywords
-  @ CombinedMenhir.
-      [ ("under", UNDER) (* the below are Doli-specific keywords *)
-      ; ("rule", RULE)
-      ; ("in", IN)
-      ; ("match", MATCH)
-      ; ("body", BODYKW)
-      ; ("Java", JAVA)
-      ; ("ObjectiveC", OBJC)
-      ; ("byte", BYTE) (* the below are Doli basic types *)
-      ; ("short", SHORT)
-      ; ("char", CHAR)
-      ; ("long", LONG)
-      ; ("double", DOUBLE)
-      ; ("boolean", BOOLEAN)
-      ; ("public", PUBLIC) (* this and the below are Doli Java modifiers and throws *)
-      ; ("protected", PROTECTED)
-      ; ("private", PRIVATE)
-      ; ("static", STATIC)
-      ; ("abstract", ABSTRACT)
-      ; ("final", FINAL)
-      ; ("native", NATIVE)
-      ; ("throws", THROWS)
-      ; ("super", SUPER) (* this is for Doli generics *)
-      ; ("objCSignStub", OBJCSIGNSTUB)
-        (* above is a Doli singature stub -- eventually will be replaced and removed *) ]
 
 
 let keywords_of_list l = Map.of_alist_exn (module String) l
@@ -122,7 +93,7 @@ let blanks = [%sedlex.regexp? Star white_space]
 
 let build_mainlex keywords =
   let rec mainlex (lexbuf : Sedlexing.lexbuf) =
-    let open CombinedMenhir in
+    let open TextualMenhir in
     match%sedlex lexbuf with
     | Plus white_space ->
         mainlex lexbuf
@@ -232,5 +203,3 @@ let build_mainlex keywords =
 
 
 let textual_mainlex = build_mainlex @@ keywords_of_list textual_keywords
-
-let doli_mainlex = build_mainlex @@ keywords_of_list doli_keywords

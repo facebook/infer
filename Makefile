@@ -247,10 +247,6 @@ DIRECT_TESTS += \
   java_starvation-dedup \
   java_starvation-whole-program \
   java_topl \
-  sil_doli-capture  \
-  sil_doli-parsing \
-  sil_java-and-doli \
-  sil_sil-and-doli \
   sil_pulse \
   sil_verif \
 

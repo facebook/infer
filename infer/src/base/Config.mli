@@ -238,8 +238,6 @@ val capture : bool
 
 val capture_block_list : string * Yojson.Basic.t
 
-val capture_doli : string list
-
 val capture_textual : string list
 
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
@@ -538,8 +536,6 @@ val nullsafe_strict_containers : bool
 val oom_threshold : int option
 
 val only_cheap_debug : bool
-
-val parse_doli : string option
 
 val pmd_xml : bool
 
