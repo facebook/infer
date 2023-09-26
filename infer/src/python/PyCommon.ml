@@ -46,6 +46,8 @@ let pyClass = mk_type "PyClass"
 
 let pyList = mk_type "PyList"
 
+let pyMap = mk_type "PyMap"
+
 let pySet = mk_type "PySet"
 
 let pyTuple = mk_type "PyTuple"
@@ -112,6 +114,14 @@ let mk_string (s : string) =
   let proc = python_string in
   let args = [T.Exp.Const (Str s)] in
   T.Exp.Call {proc; args; kind= NonVirtual}
+
+
+let get_string = function
+  | T.Exp.Call {proc; args= [arg]; kind= NonVirtual}
+    when T.equal_qualified_procname proc python_string -> (
+    match arg with Const (Str s) -> Some s | _ -> None )
+  | _ ->
+      None
 
 
 let mk_bytes (s : bytes) =

@@ -86,6 +86,9 @@ val pyNone : Textual.Typ.t
 val pyList : Textual.Typ.t
 (** Python's builtin [list] type *)
 
+val pyMap : Textual.Typ.t
+(** Python's builtin [map] type *)
+
 val pySet : Textual.Typ.t
 (** Python's builtin [set] type *)
 
@@ -100,6 +103,9 @@ val mk_float : float -> Textual.Exp.t
 
 val mk_string : string -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal strings. *)
+
+val get_string : Textual.Exp.t -> string option
+(** Helper to get back a string built with [mk_string] *)
 
 val mk_bytes : bytes -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal bytes. *)

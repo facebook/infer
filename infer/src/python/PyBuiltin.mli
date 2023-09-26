@@ -30,6 +30,8 @@ type binary_op =
   | Xor
 [@@deriving compare]
 
+type collection = List | Set | Tuple | Map [@@deriving compare]
+
 type textual =
   | IsTrue
   | Binary of binary_op
@@ -41,9 +43,7 @@ type textual =
   | PythonCode
   | PythonIter
   | PythonIterNext
-  | PythonBuildList
-  | PythonBuildSet
-  | PythonBuildTuple
+  | PythonBuild of collection
   | PythonIndex
   | PythonSubscriptGet
   | PythonSubscriptSet

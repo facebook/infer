@@ -2883,6 +2883,65 @@ def build_list():
         declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+x = "1"
+s = {x : 1, "2": 2}
+print(s)
+
+s = {"a": 42, "b": 1664}
+print(s["1"])
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              store &dummy::x <- $builtins.python_string("1"):*PyString
+              n0 = $builtins.python_build_map(n0, $builtins.python_int(1), $builtins.python_string("2"), $builtins.python_int(2))
+              store &dummy::s <- n0:*PyMap
+              n1:*PyMap = load &dummy::s
+              n2 = $builtins.print(n1)
+              n3 = $builtins.python_build_map($builtins.python_string("a"), $builtins.python_int(42), $builtins.python_string("b"), $builtins.python_int(1664))
+              store &dummy::s <- n3:*PyMap
+              n4:*PyMap = load &dummy::s
+              n5 = $builtins.python_subscript_get(n4, $builtins.python_string("1"))
+              n6 = $builtins.print(n5)
+              ret null
+
+        }
+
+        global dummy::x: *PyObject
+
+        global dummy::s: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.print(...) : *PyObject
+
+        declare $builtins.python_subscript_get(*PyObject, *PyObject) : *PyObject
+
+        declare $builtins.python_build_map(...) : *PyMap
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )
 
 

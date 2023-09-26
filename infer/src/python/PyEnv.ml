@@ -81,7 +81,7 @@ module DataStack = struct
     | VarName of int
     | Temp of T.Ident.t
     | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
-    | Map of (string * cell) list
+    | Map of (T.Exp.t * cell) list
     | BuiltinBuildClass
     | Import of {import_path: Ident.t; symbols: string list}
     | ImportCall of {id: Ident.t; loc: T.Location.t}

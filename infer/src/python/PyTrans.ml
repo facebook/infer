@@ -21,7 +21,6 @@ module SMap = PyCommon.SMap
 module Error = struct
   type todo =
     | UnsupportedOpcode of string
-    | LoadMapCells
     | FunctionFlags of string * MakeFunctionFlags.t
     | StaticCallImport of Ident.t
     | SuperNotInFile of Ident.t * Ident.t
@@ -36,12 +35,11 @@ module Error = struct
     | CallKwInvalidFunction of DataStack.cell
     | RaiseException of int
     | RaiseExceptionSource of DataStack.cell
+    | MakeFunctionSignature of DataStack.cell
 
   let pp_todo fmt = function
     | UnsupportedOpcode opname ->
         F.fprintf fmt "Unsupported opcode: %s" opname
-    | LoadMapCells ->
-        F.pp_print_string fmt "load DataStack.Map"
     | FunctionFlags (opname, flags) ->
         F.fprintf fmt "[%s] support for flags %a is not implemented" opname MakeFunctionFlags.pp
           flags
@@ -75,6 +73,8 @@ module Error = struct
         F.fprintf fmt "Unsupported RAISE_VARARGS mode %d" n
     | RaiseExceptionSource cell ->
         F.fprintf fmt "Unsupported source of exception: %a" DataStack.pp_cell cell
+    | MakeFunctionSignature cell ->
+        F.fprintf fmt "Unsupported type annotation: %a" DataStack.pp_cell cell
 
 
   type kind =
@@ -98,6 +98,7 @@ module Error = struct
     | MakeFunctionInvalidCode of DataStack.cell
     | MakeFunctionInvalidName of DataStack.cell
     | MakeFunctionInvalidQname of FFI.Constant.t
+    | MakeFunctionInvalidAnnotations of T.Exp.t
     | SuperNotInClass of Ident.t
     | SuperNoParent of Ident.t
     | SuperInStatic of Ident.t
@@ -167,6 +168,8 @@ module Error = struct
         F.fprintf fmt "invalid function name: %a" DataStack.pp_cell cell
     | MakeFunctionInvalidQname const ->
         F.fprintf fmt "invalid function qualified name: %a" FFI.Constant.pp const
+    | MakeFunctionInvalidAnnotations exp ->
+        F.fprintf fmt "invalid annotation. Expecting literal string but got %a" T.Exp.pp exp
     | SuperNotInClass id ->
         F.fprintf fmt "Call to super() in %a which is not a class" Ident.pp id
     | SuperNoParent id ->
@@ -417,7 +420,7 @@ let is_imported env path =
 
 
 (** Try to load the data referenced by a [DataStack.cell], into a [Textual.Exp.t] *)
-let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
+let rec load_cell env ({FFI.Code.co_consts; co_names; co_varnames} as code) cell =
   let open IResult.Let_syntax in
   let default_info typ = Env.Info.default typ in
   let default = default_info PyCommon.pyObject in
@@ -448,8 +451,15 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let kind = if fun_or_class then Env.Info.Code else Env.Info.Class in
       let info = {Env.Info.typ; kind} in
       Ok (env, exp, info)
-  | Map _map ->
-      Error (L.InternalError, Error.TODO LoadMapCells)
+  | Map map ->
+      let* env, items =
+        List.fold_result ~init:(env, []) (List.rev map) ~f:(fun (env, acc) (key, value) ->
+            let* env, value, _typ = load_cell env code value in
+            Ok (env, key :: value :: acc) )
+      in
+      let env, id, typ = Env.mk_builtin_call env (Builtin.PythonBuild Map) items in
+      let env = Env.push env (DataStack.Temp id) in
+      Ok (env, T.Exp.Var id, default_info typ)
   | Path id ->
       if
         (* TODO: this is incomplete. If something is imported, we can' really know if it is a
@@ -840,32 +850,32 @@ module FUNCTION = struct
 
   module MAKE = struct
     let unpack_annotations env {FFI.Code.co_names; co_consts} annotations =
-      let unpack =
-        let loc = Env.loc env in
-        List.fold_left ~init:(Some [])
-          ~f:(fun acc (name, c) ->
-            match (acc, c) with
-            | None, _ ->
-                None
-            | Some acc, DataStack.Name {ndx} ->
-                let annotation = Ident.mk ~loc @@ co_names.(ndx) in
-                let typed_name = {PyCommon.name; annotation} in
-                let typed_name =
-                  Option.value ~default:typed_name (lift_annotation env typed_name)
-                in
-                Some (typed_name :: acc)
-            | Some acc, DataStack.Const ndx -> (
-              match co_consts.(ndx) with
-              | FFI.Constant.PYCNone ->
-                  Some ({PyCommon.name; annotation= Ident.mk "None"} :: acc)
-              | _ ->
-                  Some acc )
-            | Some acc, c ->
-                Debug.p "[unpack_annotations] unsupported cell %a\n" DataStack.pp_cell c ;
-                Some acc )
-          annotations
-      in
-      Option.value unpack ~default:[]
+      let open IResult.Let_syntax in
+      let loc = Env.loc env in
+      List.fold_result ~init:[]
+        ~f:(fun acc (name, c) ->
+          let* name =
+            match PyCommon.get_string name with
+            | Some name ->
+                Ok name
+            | _ ->
+                Error (L.ExternalError, Error.MakeFunctionInvalidAnnotations name)
+          in
+          match c with
+          | DataStack.Name {ndx} ->
+              let annotation = Ident.mk ~loc @@ co_names.(ndx) in
+              let typed_name = {PyCommon.name; annotation} in
+              let typed_name = Option.value ~default:typed_name (lift_annotation env typed_name) in
+              Ok (typed_name :: acc)
+          | DataStack.Const ndx -> (
+            match co_consts.(ndx) with
+            | FFI.Constant.PYCNone ->
+                Ok ({PyCommon.name; annotation= Ident.mk "None"} :: acc)
+            | _ ->
+                Ok acc )
+          | _ ->
+              Error (L.InternalError, Error.TODO (MakeFunctionSignature c)) )
+        annotations
 
 
     (** {v MAKE_FUNCTION(flags) v}
@@ -899,7 +909,9 @@ module FUNCTION = struct
           Ok (env, annotations) )
         else Ok (env, None)
       in
-      let annotations = Option.value_map ~default:[] ~f:(unpack_annotations env code) annotations in
+      let* annotations =
+        Option.value_map ~default:(Ok []) ~f:(unpack_annotations env code) annotations
+      in
       let* code =
         match DataStack.as_code code body with
         | None ->
@@ -1470,7 +1482,12 @@ module BUILD = struct
           match c with
           | FFI.Constant.PYCTuple keys ->
               Array.fold_result keys ~init:[] ~f:(fun keys c ->
-                  match as_key c with Some key -> Ok (key :: keys) | None -> Error () )
+                  match as_key c with
+                  | Some key ->
+                      let key = PyCommon.mk_string key in
+                      Ok (key :: keys)
+                  | None ->
+                      Error () )
           | _ ->
               Error () )
       | _ ->
@@ -1482,9 +1499,9 @@ module BUILD = struct
         The version of [BUILD_MAP] specialized for constant keys. Pops the top element on the stack
         which contains a tuple of keys, then starting from [top-of-stack+1], pops [count] values to
         form values in the built dictionary, which is pushed back on the stack. *)
-    let run env code {FFI.Instruction.opname; arg} =
+    let run env code {FFI.Instruction.opname; arg= count} =
       let open IResult.Let_syntax in
-      Debug.p "[%s] count = %d\n" opname arg ;
+      Debug.p "[%s] count = %d\n" opname count ;
       let* env, cell = pop_datastack opname env in
       let* keys =
         match is_tuple_ids code cell with
@@ -1494,7 +1511,7 @@ module BUILD = struct
             Error (L.UserError, Error.LiteralTuple opname)
       in
       (* TODO check cells is a tuple of literal strings *)
-      let* env, values = pop_n_datastack opname env arg in
+      let* env, values = pop_n_datastack opname env count in
       Debug.p "  #values = %d\n" (List.length values) ;
       let* map =
         match List.zip keys values with
@@ -1507,47 +1524,49 @@ module BUILD = struct
       Ok (env, None)
   end
 
-  module LIST = struct
+  module MAP = struct
+    let build_map env code cells =
+      let open IResult.Let_syntax in
+      let rec aux env = function
+        | [] ->
+            Ok []
+        | key :: value :: rest ->
+            let* env, key, _typ = load_cell env code key in
+            let* tl = aux env rest in
+            Ok ((key, value) :: tl)
+        | _ ->
+            (* We popped 2 * count number of cells, this should be unreachable *)
+            L.die InternalError "BUILD_MAP wrong number of cells"
+      in
+      aux env cells
+
+
+    (** {v BUILD_MAP(count) v}
+
+        Pushes a new dictionary object onto the stack. Pops [2 * count] items so that the dictionary
+        holds count entries: [{..., TOS3: TOS2, TOS1: TOS}] *)
+    let run env code {FFI.Instruction.opname; arg= count} =
+      let open IResult.Let_syntax in
+      Debug.p "[%s] count = %d\n" opname count ;
+      let* env, items = pop_n_datastack opname env (2 * count) in
+      let* map = build_map env code items in
+      let env = Env.push env (DataStack.Map map) in
+      Ok (env, None)
+  end
+
+  module COLLECTION = struct
     (** {v BUILD_LIST(count) v}
+        {v BUILD_SET(count) v}
+        {v BUILD_TUPLE(count) v}
 
-        Creates a list consuming count items from the stack, and pushes the resulting list onto the
-        stack. *)
-    let run env code {FFI.Instruction.opname; arg= count} =
+        Creates a collection consuming count items from the stack, and pushes the resulting
+        collection onto the stack. *)
+    let run env code {FFI.Instruction.opname; arg= count} collection =
       let open IResult.Let_syntax in
       Debug.p "[%s] count = %d\n" opname count ;
       let* env, items = pop_n_datastack opname env count in
       let* env, items = cells_to_textual env code items in
-      let env, id, _typ = Env.mk_builtin_call env Builtin.PythonBuildList items in
-      let env = Env.push env (DataStack.Temp id) in
-      Ok (env, None)
-  end
-
-  module SET = struct
-    (** {v BUILD_SET(count) v}
-
-        Creates a set consuming count items from the stack, and pushes the resulting set onto the
-        stack. *)
-    let run env code {FFI.Instruction.opname; arg= count} =
-      let open IResult.Let_syntax in
-      Debug.p "[%s] count = %d\n" opname count ;
-      let* env, items = pop_n_datastack opname env count in
-      let* env, items = cells_to_textual env code items in
-      let env, id, _typ = Env.mk_builtin_call env Builtin.PythonBuildSet items in
-      let env = Env.push env (DataStack.Temp id) in
-      Ok (env, None)
-  end
-
-  module TUPLE = struct
-    (** {v BUILD_TUPLE(count) v}
-
-        Creates a tuple consuming count items from the stack, and pushes the resulting tuple onto
-        the stack. *)
-    let run env code {FFI.Instruction.opname; arg= count} =
-      let open IResult.Let_syntax in
-      Debug.p "[%s] count = %d\n" opname count ;
-      let* env, items = pop_n_datastack opname env count in
-      let* env, items = cells_to_textual env code items in
-      let env, id, _typ = Env.mk_builtin_call env Builtin.PythonBuildTuple items in
+      let env, id, _typ = Env.mk_builtin_call env (Builtin.PythonBuild collection) items in
       let env = Env.push env (DataStack.Temp id) in
       Ok (env, None)
   end
@@ -2433,11 +2452,13 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "JUMP_IF_FALSE_OR_POP" ->
       JUMP.IF_OR_POP.run ~jump_if:false env code instr next_offset_opt
   | "BUILD_LIST" ->
-      BUILD.LIST.run env code instr
+      BUILD.COLLECTION.run env code instr Builtin.List
+  | "BUILD_MAP" ->
+      BUILD.MAP.run env code instr
   | "BUILD_SET" ->
-      BUILD.SET.run env code instr
+      BUILD.COLLECTION.run env code instr Builtin.Set
   | "BUILD_TUPLE" ->
-      BUILD.TUPLE.run env code instr
+      BUILD.COLLECTION.run env code instr Builtin.Tuple
   | "STORE_SUBSCR" ->
       STORE.SUBSCR.run env code instr
   | "BINARY_SUBSCR" ->

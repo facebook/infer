@@ -92,6 +92,19 @@ module Builtin = struct
         "xor"
 
 
+  type collection = List | Set | Tuple | Map [@@deriving compare]
+
+  let collection_to_string = function
+    | List ->
+        "list"
+    | Set ->
+        "set"
+    | Tuple ->
+        "tuple"
+    | Map ->
+        "map"
+
+
   type textual =
     | IsTrue
     | Binary of binary_op
@@ -104,9 +117,7 @@ module Builtin = struct
     | PythonCode
     | PythonIter
     | PythonIterNext
-    | PythonBuildList
-    | PythonBuildSet
-    | PythonBuildTuple
+    | PythonBuild of collection
     | PythonIndex
     | PythonSubscriptGet
     | PythonSubscriptSet
@@ -165,12 +176,8 @@ let to_proc_name = function
             "python_iter"
         | PythonIterNext ->
             "python_iter_next"
-        | PythonBuildList ->
-            "python_build_list"
-        | PythonBuildSet ->
-            "python_build_set"
-        | PythonBuildTuple ->
-            "python_build_tuple"
+        | PythonBuild builder ->
+            sprintf "python_build_%s" (collection_to_string builder)
         | PythonIndex ->
             "python_index"
         | PythonSubscriptGet ->
@@ -269,6 +276,9 @@ module Set = struct
         ; result_type= annotatedObject
         ; used_struct_types= [] } )
     in
+    let no_formal ?(result_type = annotatedObject) op =
+      (op, {formals_types= None; result_type; used_struct_types= []})
+    in
     let builtins =
       [ ( Builtin.IsTrue
         , { formals_types= Some [annotatedObject]
@@ -300,10 +310,8 @@ module Set = struct
       ; binary_op (Builtin.Inplace Subtract)
       ; binary_op (Builtin.Inplace TrueDivide)
       ; binary_op (Builtin.Inplace Xor)
-      ; ( Builtin.PythonCall
-        , {formals_types= None; result_type= annotatedObject; used_struct_types= []} )
-      ; ( Builtin.PythonCallKW
-        , {formals_types= None; result_type= annotatedObject; used_struct_types= []} )
+      ; no_formal Builtin.PythonCall
+      ; no_formal Builtin.PythonCallKW
       ; ( Builtin.PythonKWArg
         , { formals_types= Some [annot string_; annotatedObject]
           ; result_type= annotatedObject
@@ -325,12 +333,10 @@ module Set = struct
         , { formals_types= Some [annotatedObject]
           ; result_type= annot PyCommon.pyIterItem
           ; used_struct_types= [PyCommon.pyIterItemStruct] } )
-      ; ( Builtin.PythonBuildList
-        , {formals_types= None; result_type= annot PyCommon.pyList; used_struct_types= []} )
-      ; ( Builtin.PythonBuildSet
-        , {formals_types= None; result_type= annot PyCommon.pySet; used_struct_types= []} )
-      ; ( Builtin.PythonBuildTuple
-        , {formals_types= None; result_type= annot PyCommon.pyTuple; used_struct_types= []} )
+      ; no_formal (Builtin.PythonBuild List) ~result_type:(annot PyCommon.pyList)
+      ; no_formal (Builtin.PythonBuild Set) ~result_type:(annot PyCommon.pySet)
+      ; no_formal (Builtin.PythonBuild Tuple) ~result_type:(annot PyCommon.pyTuple)
+      ; no_formal (Builtin.PythonBuild Map) ~result_type:(annot PyCommon.pyMap)
       ; ( Builtin.PythonIndex
         , { formals_types= Some [annot PyCommon.pyObject; annot T.Typ.Int]
           ; result_type= annot PyCommon.pyObject
