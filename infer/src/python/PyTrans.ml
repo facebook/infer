@@ -24,8 +24,8 @@ module Error = struct
     | LoadMapCells
     | FunctionFlags of string * MakeFunctionFlags.t
     | StaticCallImport of Ident.t
-    | LoadMultipleClasses of int
     | SuperNotInFile of Ident.t * Ident.t
+    | SuperMultipleInheritance of Ident.t
     | Closure of string
     | CompareOp of Builtin.Compare.t
     | Exception of string * DataStack.cell
@@ -42,12 +42,12 @@ module Error = struct
           flags
     | StaticCallImport id ->
         F.fprintf fmt "Unsupported Import %a in static call" Ident.pp id
-    | LoadMultipleClasses n ->
-        F.fprintf fmt "Unsupported LOAD_BUILD_CLASS with arg = %d" n
     | SuperNotInFile (id, parent) ->
         F.fprintf fmt
           "Unsupported `super` in class %a because its parent %a is not in the same file" Ident.pp
           id Ident.pp parent
+    | SuperMultipleInheritance id ->
+        F.fprintf fmt "Unsupported call to `super` with multiple inheritance in %a" Ident.pp id
     | Closure opname ->
         F.fprintf fmt "[%s] Unsupported statement with closure" opname
     | CompareOp op ->
@@ -76,6 +76,8 @@ module Error = struct
     | EmptyStack of string * string
     | BuiltinClassName of string * string * DataStack.cell
     | BuiltinClassBody of string * DataStack.cell
+    | BuiltinClassInvalidParents of string
+    | BuiltinClassInvalid
     | CallInvalid of string * DataStack.cell
     | MakeFunctionInvalidCode of DataStack.cell
     | MakeFunctionInvalidName of DataStack.cell
@@ -132,6 +134,10 @@ module Error = struct
           DataStack.pp_cell cell
     | BuiltinClassBody (opname, cell) ->
         F.fprintf fmt "[%s] Expected code object but got %a" opname DataStack.pp_cell cell
+    | BuiltinClassInvalidParents name ->
+        F.fprintf fmt "Failure to load parent classes of '%s" name
+    | BuiltinClassInvalid ->
+        F.pp_print_string fmt "Failure to load class: not enough information can be found"
     | CallInvalid (opname, cell) ->
         F.fprintf fmt "[%s] invalid object to call: %a" opname DataStack.pp_cell cell
     | MakeFunctionInvalidCode cell ->
@@ -723,7 +729,7 @@ module FUNCTION = struct
       Ok (env, None)
 
 
-    let builtin_build_class env code opname name_cell code_cell parent_cell =
+    let builtin_build_class env code opname name_cell code_cell parent_cells =
       let open IResult.Let_syntax in
       let as_name kind cell =
         match DataStack.as_name code cell with
@@ -733,7 +739,11 @@ module FUNCTION = struct
             Error (L.ExternalError, Error.BuiltinClassName (opname, kind, cell))
       in
       let* code_name = as_name "base" name_cell in
-      let parent = Option.bind ~f:(DataStack.as_id code) parent_cell in
+      let* parents =
+        let ids = List.map ~f:(DataStack.as_id code) parent_cells in
+        let ids = Option.all ids in
+        Result.of_option ids ~error:(L.InternalError, Error.BuiltinClassInvalidParents code_name)
+      in
       let* code =
         match DataStack.as_code code code_cell with
         | Some code ->
@@ -741,7 +751,7 @@ module FUNCTION = struct
         | None ->
             Error (L.ExternalError, Error.BuiltinClassBody (opname, code_cell))
       in
-      let env = Env.register_class env code_name parent in
+      let env = Env.register_class env code_name parents in
       let env = Env.push env (DataStack.Code {fun_or_class= false; code_name; code}) in
       Ok env
 
@@ -774,13 +784,13 @@ module FUNCTION = struct
       | BuiltinBuildClass -> (
         match cells with
         | [code_cell; name_cell] ->
-            let* env = builtin_build_class env code opname name_cell code_cell None in
+            let* env = builtin_build_class env code opname name_cell code_cell [] in
             Ok (env, None)
-        | [code_cell; name_cell; parent_cell] ->
-            let* env = builtin_build_class env code opname name_cell code_cell (Some parent_cell) in
+        | code_cell :: name_cell :: parent_cells ->
+            let* env = builtin_build_class env code opname name_cell code_cell parent_cells in
             Ok (env, None)
         | _ ->
-            Error (L.InternalError, Error.TODO (LoadMultipleClasses arg)) )
+            Error (L.InternalError, Error.BuiltinClassInvalid) )
       | Path id ->
           static_call env code id cells
       | ImportCall {id; loc} ->
@@ -929,24 +939,26 @@ module METHOD = struct
       let class_info = SMap.find_opt class_name classes in
       let params = Env.get_params env in
       let is_static = Env.is_static env in
-      let* parent_info =
+      let* parent =
         match class_info with
         | None ->
             Error (L.ExternalError, Error.SuperNotInClass current_module)
-        | Some {parent} ->
-            Ok parent
+        | Some {parents} -> (
+          match parents with
+          | [] ->
+              Error (L.ExternalError, Error.SuperNoParent current_module)
+          | [parent] ->
+              Ok parent
+          | _ ->
+              Error (L.InternalError, Error.TODO (SuperMultipleInheritance current_module)) )
       in
       let* parent_name =
-        match parent_info with
+        let key = Symbol.Global parent in
+        match Env.lookup_symbol env key with
         | None ->
-            Error (L.ExternalError, Error.SuperNoParent current_module)
-        | Some parent -> (
-            let key = Symbol.Global parent in
-            match Env.lookup_symbol env key with
-            | None ->
-                Error (L.InternalError, Error.TODO (SuperNotInFile (current_module, parent)))
-            | Some {Symbol.id} ->
-                Ok id )
+            Error (L.InternalError, Error.TODO (SuperNotInFile (current_module, parent)))
+        | Some {Symbol.id} ->
+            Ok id
       in
       let* self =
         if is_static then Error (L.ExternalError, Error.SuperInStatic current_module)
@@ -2630,9 +2642,9 @@ let constructor_stubs ~kind loc class_name =
 
 (** Process the special function generated by the Python compiler to create a class instances. This
     is where we can see some of the type annotations for fields, and method definitions. *)
-let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as code) loc parent =
+let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as code) loc parents =
   let open IResult.Let_syntax in
-  Debug.p "[class declaration] %s (%a)\n" co_name (Pp.option Ident.pp) parent ;
+  Debug.p "[class declaration] %s (%a)\n" co_name (Pp.seq ~sep:", " Ident.pp) parents ;
   (* TODO:
      - use annotations to declare class member types
      - pass in [env] to PyClassDecl when we'll support decorators
@@ -2681,10 +2693,8 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
     in
     let* env, decls = to_proc_descs env class_name (Array.of_list codes) in
     let supers, static_supers =
-      match parent with
-      | None ->
-          ([], [])
-      | Some parent ->
+      (* TODO: check if/how ordering of parent class matters. Atm I keep the same order. *)
+      List.fold_right ~init:([], []) parents ~f:(fun parent (supers, static_supers) ->
           let parent_id =
             let key = Symbol.Global parent in
             match Env.lookup_symbol env key with Some {Symbol.id} -> Some id | _ -> None
@@ -2699,9 +2709,9 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
                  since compilation was happy *)
               Option.value parent_id ~default:parent
             in
-            let supers = [Ident.to_type_name ~static:false parent] in
-            let static_supers = [Ident.to_type_name ~static:true parent] in
-            (supers, static_supers)
+            let supers = Ident.to_type_name ~static:false parent :: supers in
+            let static_supers = Ident.to_type_name ~static:true parent :: static_supers in
+            (supers, static_supers) )
     in
     let t = T.Module.Struct {name= class_type_name; supers; fields; attributes= []} in
     let companion =
@@ -2749,8 +2759,8 @@ and to_proc_descs env enclosing_class_id codes =
           (* TODO: supported nested classes *)
           let classes = Env.get_declared_classes env in
           match SMap.find_opt co_name classes with
-          | Some {parent} ->
-              let* env, new_decls = class_declaration env enclosing_class_id code loc parent in
+          | Some {parents} ->
+              let* env, new_decls = class_declaration env enclosing_class_id code loc parents in
               Ok (env, new_decls @ decls)
           | None ->
               let* env, decl = to_proc_desc env loc enclosing_class_id (Some co_name) code in

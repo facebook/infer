@@ -216,7 +216,7 @@ end
 (* TODO: try to merge this in a [globals]/[Symbol]. However be careful not to override the
    original parent info since it might not be locally available when we executer [register_symbol]
    after [register_class] *)
-type class_info = {parent: Ident.t option}
+type class_info = {parents: Ident.t list}
 
 type label_info =
   {label_name: string; ssa_parameters: T.Typ.t list; prelude: prelude option; processed: bool}
@@ -613,15 +613,15 @@ let lookup_method {shared= {signatures}} ~enclosing_class name =
 
 let lookup_fields {shared= {fields}} class_name = T.TypeName.Map.find_opt class_name fields
 
-let register_class ({shared} as env) class_name parent =
+let register_class ({shared} as env) class_name parents =
   PyDebug.p "[register_class] %s\n" class_name ;
-  ( match parent with
-  | None ->
+  ( match parents with
+  | [] ->
       PyDebug.p "\n"
-  | Some parent ->
-      PyDebug.p " extending %a\n" Ident.pp parent ) ;
+  | _ :: _ ->
+      PyDebug.p " extending %a\n" (Pp.seq ~sep:", " Ident.pp) parents ) ;
   let {classes} = shared in
-  let classes = SMap.add class_name {parent} classes in
+  let classes = SMap.add class_name {parents} classes in
   let shared = {shared with classes} in
   {env with shared}
 

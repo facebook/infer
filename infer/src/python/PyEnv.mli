@@ -127,9 +127,10 @@ module Label : sig
   (** Process a label [info] and turn it into Textual information *)
 end
 
-(** Class Level info. For now, only the parent info (if present) is tracked. We may track more
-    information, like being an abstract class, a dataclass, ... *)
-type class_info = {parent: Ident.t option}
+(** Class Level info. For now, only the parent info (if present) is tracked, supporting multiple
+    inheritance. We may track more information in the future, like being an abstract class, a
+    dataclass, ... *)
+type class_info = {parents: Ident.t list}
 
 val empty : Ident.t -> t
 
@@ -238,7 +239,7 @@ val lookup_fields : t -> T.TypeName.t -> PyCommon.signature option
 
 (** Lookup the signature of a function / method *)
 
-val register_class : t -> string -> Ident.t option -> t
+val register_class : t -> string -> Ident.t list -> t
 (** Register a class declaration (based on [LOAD_BUILD_CLASS]) *)
 
 val get_declared_classes : t -> class_info PyCommon.SMap.t
