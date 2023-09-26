@@ -13,7 +13,7 @@ let%test_module "load_code" =
     let source = "x = 42"
 
     let%expect_test _ =
-      Py.initialize ~interpreter:Version.python_exe () ;
+      if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () ;
       match FFI.from_string ~source ~filename:"dummy" with
       | Error (err, kind) ->
           Logging.die err "%a@\n" FFI.Error.pp_kind kind

@@ -7,42 +7,60 @@
 
 open! IStd
 module F = Format
+module L = Logging
 
 let dummy = "dummy.py"
 
 let test ?(typecheck = true) ?(filename = dummy) source =
   let open IResult.Let_syntax in
   let sourcefile = Textual.SourceFile.create filename in
-  Py.initialize ~interpreter:Version.python_exe () ;
+  if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () ;
   let* code = Result.map_error ~f:PyTrans.Error.ffi @@ FFI.from_string ~source ~filename in
   Py.finalize () ;
   (* Since Textual doesn't have a concept of toplevel code, we create a function for this code,
      with a non-denotable name, so we don't clash with existing python code *)
-  let* module_ = PyTrans.to_module ~sourcefile code in
-  if typecheck then (
-    let res = TextualTypeVerification.type_check module_ in
-    match (res : TextualTypeVerification.type_check_result) with
-    | Ok module_ ->
+  let module_ = PyTrans.to_module ~sourcefile code in
+  match module_ with
+  | Ok module_ ->
+      if typecheck then (
+        let res = TextualTypeVerification.type_check module_ in
+        match (res : TextualTypeVerification.type_check_result) with
+        | Ok module_ ->
+            F.printf "%a" Textual.Module.pp module_ ;
+            Ok ()
+        | Type_errors errors ->
+            let pp_error = TextualTypeVerification.pp_error sourcefile in
+            F.printf "%a" Textual.Module.pp module_ ;
+            F.printf "Errors while type checking the test:\n" ;
+            List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err) ;
+            Ok ()
+        | Decl_errors errors ->
+            let pp_error = TextualDecls.pp_error sourcefile in
+            F.printf "%a" Textual.Module.pp module_ ;
+            F.printf "Errors while creating the decls:\n" ;
+            List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err) ;
+            Ok () )
+      else (
         F.printf "%a" Textual.Module.pp module_ ;
-        Ok ()
-    | Type_errors errors ->
-        let pp_error = TextualTypeVerification.pp_error sourcefile in
-        F.printf "%a" Textual.Module.pp module_ ;
-        F.printf "Errors while type checking the test:\n" ;
-        List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err) ;
-        Ok ()
-    | Decl_errors errors ->
-        let pp_error = TextualDecls.pp_error sourcefile in
-        F.printf "%a" Textual.Module.pp module_ ;
-        F.printf "Errors while creating the decls:\n" ;
-        List.iter errors ~f:(fun err -> F.printf "%a\n" pp_error err) ;
         Ok () )
-  else (
-    F.printf "%a" Textual.Module.pp module_ ;
-    Ok () )
+  | Error (level, err) ->
+      let log =
+        match level with
+        | InternalError ->
+            L.internal_error
+        | ExternalError ->
+            L.external_error
+        | UserError ->
+            L.user_error
+      in
+      log "%a@\n" PyTrans.Error.pp_kind err ;
+      Ok ()
 
 
-let test ?(typecheck = true) ?(filename = dummy) source = ignore (test ~typecheck ~filename source)
+let test ?(typecheck = true) ?(filename = dummy) source =
+  try ignore (test ~typecheck ~filename source)
+  with Py.E _ as e -> L.die ExternalError "Pyml exception: %s@\n" (Exn.to_string e)
+
 
 let%test_module "basic_tests" =
   ( module struct
