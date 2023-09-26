@@ -803,6 +803,7 @@ let simple_matchers =
     $+...$--> Vector.pop_back ~desc:"std::vector::pop_back()"
   ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload
     $--> GenericArrayBackedCollection.empty ~desc:"std::vector::is_empty()"
+  ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> Vector.reserve
   ; -"std" &:: "vector" &:: "size" $ capt_arg_payload
     $--> GenericArrayBackedCollection.size ~desc:"std::vector::size()"
   ; -"std" &:: "distance" &--> Basic.nondet ~desc:"std::distance"

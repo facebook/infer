@@ -20,8 +20,6 @@ module Vector : sig
     Invalidation.std_vector_function -> AbstractValue.t * ValueHistory.t -> model
 
   val push_back : AbstractValue.t * ValueHistory.t -> desc:string -> model
-
-  val reserve : AbstractValue.t * ValueHistory.t -> model
 end
 
 module Function : sig

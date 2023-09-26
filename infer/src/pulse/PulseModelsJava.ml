@@ -766,8 +766,6 @@ let matchers : matcher list =
     &:: "remove" <>$ capt_arg_payload $+...$--> Iterator.remove ~desc:"remove"
   ; +map_context_tenv PatternMatch.Java.implements_map
     &:: "putAll" <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc
-  ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> Cplusplus.Vector.reserve
-  ; -"std" &:: "vector" &:: "size" &--> Basic.nondet ~desc:"std::vector::size"
   ; +map_context_tenv PatternMatch.Java.implements_collection
     &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Cplusplus.Vector.at ~desc:"Collection.get()"
