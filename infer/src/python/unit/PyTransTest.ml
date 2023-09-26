@@ -3265,3 +3265,54 @@ f(0, y=2, x=1)
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
+
+
+let%test_module "exception" =
+  ( module struct
+    let%expect_test _ =
+      let source = {|
+class C(Exception):
+          pass
+
+raise C
+          |} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_class("dummy::C")
+              throw "dummy::C"
+
+        }
+
+        declare dummy::C(...) : *dummy::C
+
+        declare dummy::C.__init__(...) : *PyNone
+
+        global dummy::C$static: *PyObject
+
+        type .static dummy::C$static extends Exception$static = {}
+
+        type dummy::C extends Exception = {}
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_class(*String) : *PyClass
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+  end )

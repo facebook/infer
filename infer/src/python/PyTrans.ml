@@ -34,6 +34,8 @@ module Error = struct
     | CallKwMissing of string
     | CallKwMissingId of Ident.t
     | CallKwInvalidFunction of DataStack.cell
+    | RaiseException of int
+    | RaiseExceptionSource of DataStack.cell
 
   let pp_todo fmt = function
     | UnsupportedOpcode opname ->
@@ -69,6 +71,10 @@ module Error = struct
           Ident.pp id
     | CallKwInvalidFunction cell ->
         F.fprintf fmt "Unsupported CALL_FUNCTION_KW with %a" DataStack.pp_cell cell
+    | RaiseException n ->
+        F.fprintf fmt "Unsupported RAISE_VARARGS mode %d" n
+    | RaiseExceptionSource cell ->
+        F.fprintf fmt "Unsupported source of exception: %a" DataStack.pp_cell cell
 
 
   type kind =
@@ -113,6 +119,8 @@ module Error = struct
     | CallKeywordNotString0 of FFI.Constant.t
     | CallKeywordNotString1 of DataStack.cell
     | CallKeywordBuildClass
+    | RaiseExceptionInvalid of int
+    | RaiseExceptionUnknown of DataStack.cell
 
   type t = L.error * kind
 
@@ -205,6 +213,10 @@ module Error = struct
         F.fprintf fmt "CALL_FUNCTION_KW: keyword is not a string: %a" DataStack.pp_cell cell
     | CallKeywordBuildClass ->
         F.pp_print_string fmt "CALL_FUNCTION_KW cannot be used with LOAD_BUILD_CLASS"
+    | RaiseExceptionInvalid n ->
+        F.fprintf fmt "RAISE_VARARGS invalid mode %d" n
+    | RaiseExceptionUnknown cell ->
+        F.fprintf fmt "RAISE_VARARGS unknown construct %a" DataStack.pp_cell cell
 
 
   let class_decl (err, kind) = (err, ClassDecl kind)
@@ -1600,6 +1612,7 @@ module JUMP = struct
     | Return of T.Terminator.t
     | TwoWay of {condition: T.BoolExp.t; next_info: jump_info; other_info: jump_info}
     | Absolute of jump_info
+    | Throw of T.Exp.t
 
   module POP_IF = struct
     (** {v POP_JUMP_IF_TRUE(target) v}
@@ -2254,6 +2267,52 @@ module UNPACK = struct
   end
 end
 
+module RAISE_VARARGS = struct
+  (** RAISE_VARARGS(argc)
+
+      Raises an exception using one of the 3 forms of the raise statement, depending on the value of
+      [argc]:
+
+      0: raise (re-raise previous exception)
+
+      1: raise top-of-stack (raise exception instance or type at TOS)
+
+      2: raise top-of-stack1 from top-of-stack (raise exception instance or type at top-of-stack1
+      with [__cause__] set to top-of-stack) *)
+  let run env {FFI.Code.co_names} {FFI.Instruction.opname; arg= argc} =
+    let open IResult.Let_syntax in
+    Debug.p "[%s] argc= %d\n" opname argc ;
+    let* () =
+      match argc with
+      | 1 ->
+          Ok ()
+      | 0 | 2 ->
+          Error (L.InternalError, Error.TODO (RaiseException argc))
+      | _ ->
+          Error (L.ExternalError, Error.RaiseExceptionInvalid argc)
+    in
+    let loc = Env.loc env in
+    let* env, tos = pop_datastack opname env in
+    match (tos : DataStack.cell) with
+    | Name {global; ndx} -> (
+        let name = co_names.(ndx) in
+        let key = mk_key global loc name in
+        let opt_sym = Env.lookup_symbol env key in
+        match opt_sym with
+        | Some {Symbol.kind= Class; id} ->
+            (* TODO: check this heuristic. Not sure what can be raised yet *)
+            let s = Ident.to_string ~sep:"::" id in
+            let exp = T.Exp.Const (Str s) in
+            let throw = JUMP.Throw exp in
+            Ok (env, Some throw)
+        | Some {Symbol.kind; id} ->
+            Error (L.InternalError, Error.LoadInvalid (kind, id))
+        | None ->
+            Error (L.InternalError, Error.RaiseExceptionUnknown tos) )
+    | _ ->
+        Error (L.InternalError, Error.TODO (RaiseExceptionSource tos))
+end
+
 (** Main opcode dispatch function. *)
 let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) next_offset_opt =
   Debug.p "Dump Stack:\n%a\n" (Pp.seq ~sep:"\n" DataStack.pp_cell) (Env.stack env) ;
@@ -2410,6 +2469,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
       ROT.FOUR.run env instr
   | "UNPACK_SEQUENCE" ->
       UNPACK.SEQUENCE.run env code instr
+  | "RAISE_VARARGS" ->
+      RAISE_VARARGS.run env code instr
   | _ ->
       Error (L.InternalError, Error.TODO (UnsupportedOpcode opname))
 
@@ -2574,6 +2635,19 @@ let until_terminator env label_info code instructions =
       (* The current node ends up with an absolute jump to [target]. *)
       let env, node = unconditional_jump env ssa_args label_info offset in
       Debug.p "  Absolute: register %s at %d\n" (Env.Label.name label_info) offset ;
+      Ok (env, rest, node)
+  | Some (Throw exp) ->
+      Debug.p "  Throwing exception %a\n" T.Exp.pp exp ;
+      let node =
+        T.Node.
+          { label
+          ; ssa_parameters
+          ; exn_succs= [] (* TODO ? *)
+          ; last= Throw exp
+          ; instrs= Env.instructions env
+          ; last_loc
+          ; label_loc }
+      in
       Ok (env, rest, node)
 
 
