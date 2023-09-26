@@ -28,6 +28,10 @@ let field_name = PyCommon.field_name
 
 let qualified_procname = PyCommon.qualified_procname
 
+let python_implicit_names = ["__name__"; "__file__"]
+
+let python_implicit_names_prefix = "$python_implicit_names"
+
 let mk_key global loc name =
   if global then Symbol.Global (Ident.mk ~global ~loc name) else Symbol.Local name
 
@@ -146,10 +150,6 @@ let load_var_name env loc name =
   Ok (env, T.Exp.Var id, info)
 
 
-let python_implicit_names = ["__name__"; "__file__"]
-
-let python_implicit_names_prefix = "$python_implicit_names"
-
 (** Special case of [load_name] *)
 let load_name env loc ~global name =
   let open IResult.Let_syntax in
@@ -262,6 +262,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
         *)
         is_imported env id
       then
+        let env = Env.register_imported_value env id in
         let typ = PyCommon.pyObject in
         let info = Env.Info.default typ in
         let exp = T.Exp.Lvar (Ident.to_var_name id) in
@@ -972,7 +973,12 @@ module STORE = struct
     let* env, exp, info = load_cell env code cell in
     let {Env.Info.typ; kind} = info in
     let module_name = Env.module_name env in
-    let id = Ident.extend ~prefix:module_name name in
+    let prefix =
+      if global && List.mem ~equal:String.equal python_implicit_names name then
+        Ident.mk python_implicit_names_prefix
+      else module_name
+    in
+    let id = Ident.extend ~prefix name in
     let symbol_info =
       match (kind : Env.Info.kind) with
       | Code ->
@@ -980,10 +986,7 @@ module STORE = struct
       | Class ->
           {Symbol.kind= Class; loc; id}
       | Other ->
-          let id =
-            if global then Ident.extend ~prefix:module_name name
-            else Ident.mk ~global:false ~loc name
-          in
+          let id = if global then id else Ident.mk ~global:false ~loc name in
           {Symbol.kind= Name {is_imported= false; typ}; loc; id}
     in
     let var_name = Ident.to_var_name symbol_info.Symbol.id in
@@ -1600,7 +1603,7 @@ module IMPORT = struct
         match level with
         | 0 ->
             (* Absolute path *)
-            Ok (Ident.mk ~loc co_names.(arg))
+            Result.of_option ~error:() (Ident.from_string ~loc co_names.(arg))
         | _ -> (
             (* Relative path *)
             let module_ = Env.module_name env in

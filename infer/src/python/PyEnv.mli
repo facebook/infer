@@ -243,6 +243,9 @@ val register_class : t -> string -> Ident.t option -> t
 val get_declared_classes : t -> class_info PyCommon.SMap.t
 (** Return information of classes defined in the current module *)
 
+val register_imported_value : t -> Ident.t -> t
+(** register global names imported from other modules *)
+
 val get_textual_imports : t -> T.Module.decl list
 (** Get back the list of registered imports *)
 

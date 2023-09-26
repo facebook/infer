@@ -337,6 +337,7 @@ module Ident = struct
 
 
   module Map = Caml.Map.Make (IDENT)
+  module Set = Caml.Set.Make (IDENT)
 end
 
 type annotated_name = {name: string; annotation: Ident.t}

@@ -197,6 +197,7 @@ and shared =
   ; builtins: Builtin.Set.t
         (** All the builtins that have been called, so we only export them in textual to avoid too
             much noise *)
+  ; imported_values: Ident.Set.t
   ; signatures: Signature.t SMap.t Ident.Map.t
         (** Map from module names to the signature of all of their functions/methods *)
   ; fields: PyCommon.signature T.TypeName.Map.t
@@ -324,6 +325,7 @@ let empty module_name =
   ; locals= SMap.empty
   ; classes= SMap.empty
   ; builtins= Builtin.Set.empty
+  ; imported_values= Ident.Set.empty
   ; signatures= Ident.Map.empty
   ; fields= T.TypeName.Map.empty
   ; module_name
@@ -588,28 +590,47 @@ let register_class ({shared} as env) class_name parent =
 
 let get_declared_classes {shared= {classes}} = classes
 
+let register_imported_value ({shared} as env) value =
+  let {imported_values} = shared in
+  let imported_values = Ident.Set.add value imported_values in
+  let shared = {shared with imported_values} in
+  {env with shared}
+
+
 (* TODO: rethink that when adding more support for imports, probably changing it into a
    "lookup_import" version *)
-let get_textual_imports {shared= {globals}} =
+let get_textual_imports {shared= {globals; imported_values}} =
   let result_type = {T.Typ.typ= PyCommon.pyObject; attributes= []} in
-  Ident.Map.fold
-    (fun _key {Symbol.id; kind} acc ->
-      match kind with
-      | Symbol.ImportCall ->
-          let qualified_name = Ident.to_qualified_procname id in
-          T.Module.Procdecl {qualified_name; formals_types= None; result_type; attributes= []}
-          :: acc
-      | Symbol.Import _ ->
-          let enclosing_class = Ident.to_type_name id in
-          let qualified_name =
-            PyCommon.qualified_procname ~enclosing_class
-            @@ PyCommon.proc_name PyCommon.toplevel_function
-          in
-          T.Module.Procdecl {qualified_name; formals_types= Some []; result_type; attributes= []}
-          :: acc
-      | _ ->
-          acc )
-    globals []
+  let calls =
+    Ident.Map.fold
+      (fun _key {Symbol.id; kind} acc ->
+        match kind with
+        | Symbol.ImportCall ->
+            let qualified_name = Ident.to_qualified_procname id in
+            let procdecl =
+              {T.ProcDecl.qualified_name; formals_types= None; result_type; attributes= []}
+            in
+            T.Module.Procdecl procdecl :: acc
+        | Symbol.Import _ ->
+            let enclosing_class = Ident.to_type_name id in
+            let qualified_name =
+              PyCommon.qualified_procname ~enclosing_class
+              @@ PyCommon.proc_name PyCommon.toplevel_function
+            in
+            let procdecl =
+              {T.ProcDecl.qualified_name; formals_types= Some []; result_type; attributes= []}
+            in
+            T.Module.Procdecl procdecl :: acc
+        | _ ->
+            acc )
+      globals []
+  in
+  Ident.Set.fold
+    (fun id acc ->
+      let var_name = Ident.to_var_name id in
+      let global_var = {T.Global.name= var_name; typ= PyCommon.pyObject; attributes= []} in
+      T.Module.Global global_var :: acc )
+    imported_values calls
 
 
 let is_toplevel {shared= {is_toplevel}} = is_toplevel

@@ -1932,13 +1932,19 @@ if __name__ == '__main__':
             n26:*PyObject = load &os::path
             n27:*PyString = load &$python_implicit_names::__file__
             n28 = n26.?.abspath(n27)
-            store &dummy::__file__ <- n28:*PyObject
+            store &$python_implicit_names::__file__ <- n28:*PyObject
             n29 = test.libregrtest.main()
             ret null
 
       }
 
       global dummy::main_in_temp_cwd: *PyObject
+
+      global sys::path: *PyObject
+
+      global sys::argv: *PyObject
+
+      global os::path: *PyObject
 
       declare test.libregrtest.main(...) : *PyObject
 
@@ -1980,16 +1986,7 @@ if __name__ == '__main__':
 
       Errors while type checking the test:
       dummy.py, line 4, column 0: textual type error: variable test.libregrtest::main has not been declared
-      dummy.py, <unknown location>: textual type error: variable os::path has not been declared
-      dummy.py, <unknown location>: textual type error: variable os::path has not been declared
-      dummy.py, <unknown location>: textual type error: variable os::path has not been declared
-      dummy.py, <unknown location>: textual type error: variable sys::argv has not been declared
-      dummy.py, <unknown location>: textual type error: variable sys::path has not been declared
-      dummy.py, <unknown location>: textual type error: variable os::path has not been declared
-      dummy.py, line 2, column 0: textual type error: variable dummy::__file__ has not been declared
-      dummy.py, <unknown location>: textual type error: variable os::path has not been declared
-      dummy.py, <unknown location>: textual type error: variable os::path has not been declared
-      dummy.py, <unknown location>: textual type error: variable sys::path has not been declared |}]
+          |}]
 
 
     let%expect_test _ =

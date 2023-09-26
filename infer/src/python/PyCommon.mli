@@ -157,6 +157,8 @@ module Ident : sig
   (** Checks if an id is the standard [abc.ABC] metaclass name *)
 
   module Map : Caml.Map.S with type key = t
+
+  module Set : Caml.Set.S with type elt = t
 end
 
 (** Encoding of some type annotation like [x: int] *)
