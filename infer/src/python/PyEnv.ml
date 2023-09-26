@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 module T = Textual
 module Debug = PyDebug
@@ -91,7 +92,44 @@ module DataStack = struct
     | WithContext of
         T.Ident.t (* see https://docs.python.org/3.8/reference/compound_stmts.html#with *)
     | NoException
-  [@@deriving show]
+
+  let pp_cell fmt = function
+    | Const n ->
+        F.fprintf fmt "Const(%d)" n
+    | Name {global; ndx} ->
+        F.fprintf fmt "Name(%s, %d)" (if global then "global" else "local") ndx
+    | VarName n ->
+        F.fprintf fmt "VarName(%d)" n
+    | Temp id ->
+        F.fprintf fmt "Temp(%a)" T.Ident.pp id
+    | Code {fun_or_class; code_name} ->
+        F.fprintf fmt "Code(%s, %s)" (if fun_or_class then "fun" else "class") code_name
+    | Map _ ->
+        F.pp_print_string fmt "Map"
+    | BuiltinBuildClass ->
+        F.pp_print_string fmt "LOAD_BUILD_CLASS"
+    | Import {import_path; symbols= []} ->
+        F.fprintf fmt "Import(%a)" Ident.pp import_path
+    | Import {import_path; symbols} ->
+        F.fprintf fmt "ImportFrom(%a, %a)" Ident.pp import_path
+          (Pp.seq ~sep:" " F.pp_print_string)
+          symbols
+    | ImportCall {id} ->
+        F.fprintf fmt "ImportCall(%a)" Ident.pp id
+    | MethodCall {receiver; name} ->
+        F.fprintf fmt "MethodCall(%a, %a)" T.Exp.pp receiver T.pp_qualified_procname name
+    | StaticCall {call_name; receiver} ->
+        F.fprintf fmt "StaticCall(%a, %a)" T.pp_qualified_procname call_name (Pp.option T.Exp.pp)
+          receiver
+    | Super ->
+        F.pp_print_string fmt "Super"
+    | Path id ->
+        F.fprintf fmt "Path(%a)" Ident.pp id
+    | WithContext id ->
+        F.fprintf fmt "WithContext(%a)" T.Ident.pp id
+    | NoException ->
+        F.pp_print_string fmt "NoExpception"
+
 
   let as_code FFI.Code.{co_consts} = function
     | Const n ->

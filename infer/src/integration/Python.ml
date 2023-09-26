@@ -12,7 +12,7 @@ type kind = Bytecode of {files: string list} | Files of {prog: string; args: str
 let process_file ~is_binary file =
   let open IResult.Let_syntax in
   let sourcefile = Textual.SourceFile.create file in
-  let* code = FFI.from_file ~is_binary file in
+  let* code = Result.map_error ~f:PyTrans.Error.ffi @@ FFI.from_file ~is_binary file in
   PyTrans.to_module ~sourcefile code
 
 
@@ -46,7 +46,7 @@ let capture_file ~is_binary file =
         Ok sil.tenv
     | Error (sourcefile, errs) ->
         List.iter errs ~f:(log_error sourcefile) ;
-        Error ()
+        Error (PyTrans.Error.textual_parser sourcefile)
   in
   if Config.debug_mode || Result.is_error trans then dump_file ~next_to_source:false file module_ ;
   res
@@ -79,7 +79,17 @@ let capture_files ~is_binary files =
       | Ok file_tenv ->
           Tenv.merge ~src:file_tenv ~dst:child_tenv ;
           None
-      | Error () ->
+      | Error (level, err) ->
+          let log =
+            match level with
+            | InternalError ->
+                L.internal_error
+            | ExternalError ->
+                L.external_error
+            | UserError ->
+                L.user_error
+          in
+          log "[python:%s] %a@\n" file PyTrans.Error.pp_kind err ;
           Some ()
     in
     let child_prologue _ = Py.initialize ~interpreter:Version.python_exe () in

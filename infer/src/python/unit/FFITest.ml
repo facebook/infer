@@ -15,8 +15,8 @@ let%test_module "load_code" =
     let%expect_test _ =
       Py.initialize ~interpreter:Version.python_exe () ;
       match FFI.from_string ~source ~filename:"dummy" with
-      | Error () ->
-          ()
+      | Error (err, kind) ->
+          Logging.die err "%a@\n" FFI.Error.pp_kind kind
       | Ok res ->
           Py.finalize () ;
           F.printf "%s" (FFI.Code.full_show res) ;

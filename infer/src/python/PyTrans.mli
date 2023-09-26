@@ -7,5 +7,17 @@
 
 open! IStd
 
-val to_module : sourcefile:Textual.SourceFile.t -> FFI.Code.t -> (Textual.Module.t, unit) result
+module Error : sig
+  type kind
+
+  type t = Logging.error * kind
+
+  val ffi : FFI.Error.t -> t
+
+  val textual_parser : Textual.SourceFile.t -> t
+
+  val pp_kind : Format.formatter -> kind -> unit
+end
+
+val to_module : sourcefile:Textual.SourceFile.t -> FFI.Code.t -> (Textual.Module.t, Error.t) result
 (** Translate a Python code object into its Textual counter part *)

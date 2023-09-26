@@ -33,7 +33,7 @@ module Symbol : sig
             a function *)
     | Import of {more_than_once: bool}  (** The identifier is the name of an imported module *)
 
-  val pp_kind : Format.formatter -> kind -> unit [@@warning "-unused-value-declaration"]
+  val pp_kind : Format.formatter -> kind -> unit
 
   type t = {id: Ident.t; kind: kind; loc: T.Location.t}
 
@@ -80,7 +80,8 @@ module DataStack : sig
     | NoException
         (** Special NONE symbol pushed by the exception infra to express that no exception has been
             raised *)
-  [@@deriving show]
+
+  val pp_cell : Format.formatter -> cell -> unit
 
   val as_code : FFI.Code.t -> cell -> FFI.Code.t option
 

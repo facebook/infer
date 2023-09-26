@@ -12,6 +12,39 @@ let pp_array pp_item fmt arr =
   F.fprintf fmt "[|@[%a@]|]" (Pp.collection ~fold:Array.fold ~sep:"; " ~pp_item) arr
 
 
+module Error = struct
+  type kind =
+    | MissingField of (string * Pytypes.pyobject)
+    | InvalidField of (string * Pytypes.pyobject * string)
+    | UnknownByteCodeConstant of Py.Type.t
+    | InvalidCodeObject of Pytypes.pyobject
+    | PymlExn of Pytypes.pyobject * Pytypes.pyobject
+    | InvalidMagicNumber of bytes * bytes
+    | ShortFile
+
+  type t = L.error * kind
+
+  let pp_kind fmt = function
+    | MissingField (f, obj) ->
+        F.fprintf fmt "No field %s in object %s" f (Py.Object.to_string obj)
+    | InvalidField (f, obj, kind) ->
+        F.fprintf fmt "Field %s in object %s is not a valid %s" f (Py.Object.to_string obj) kind
+    | UnknownByteCodeConstant ty ->
+        F.fprintf fmt "Unknown bytecode constant: %s" (Py.Type.name ty)
+    | InvalidCodeObject obj ->
+        F.fprintf fmt "Failed to load code from object %s" (Py.Object.to_string obj)
+    | PymlExn (errtype, errvalue) ->
+        F.fprintf fmt "pyml exception: %s %s" (Py.Object.to_string errtype)
+          (Py.Object.to_string errvalue)
+    | InvalidMagicNumber (expected, actual) ->
+        let expected = Base.Bytes.to_array expected in
+        let actual = Base.Bytes.to_array actual in
+        F.fprintf fmt "Invalid magic number for Python 3.8. Expected %a but got %a"
+          (pp_array Char.pp) expected (pp_array Char.pp) actual
+    | ShortFile ->
+        F.pp_print_string fmt "Input file is too small"
+end
+
 type pyConstant =
   | PYCBool of bool
   | PYCInt of int64
@@ -54,16 +87,12 @@ and pyInstruction =
   ; is_jump_target: bool }
 [@@deriving show, compare]
 
-let die_invalid_field ~kind f obj =
-  L.external_error "Field %s in object %s is not a valid %s@\n" f (Py.Object.to_string obj) kind ;
-  Error ()
-
+let die_invalid_field ~kind f obj = Error (L.ExternalError, Error.InvalidField (f, obj, kind))
 
 let read_field obj action f =
   match Py.Object.find_attr_string_opt obj f with
   | None ->
-      L.external_error "No field %s in object %s@\n" f (Py.Object.to_string obj) ;
-      Error ()
+      Error (L.ExternalError, Error.MissingField (f, obj))
   | Some obj ->
       action f obj
 
@@ -89,11 +118,11 @@ let read_bool f obj =
 
 
 let array_all arr =
-  let exception LocalFailure in
+  let exception LocalFailure of Error.t in
   try
-    let arr = Array.map ~f:(function Ok elt -> elt | Error () -> raise LocalFailure) arr in
+    let arr = Array.map ~f:(function Ok elt -> elt | Error err -> raise (LocalFailure err)) arr in
     Ok arr
-  with LocalFailure -> Error ()
+  with LocalFailure err -> Error err
 
 
 let read_symbol_array f obj =
@@ -141,8 +170,7 @@ let rec new_py_constant obj =
       let f = Py.Float.to_float obj in
       Ok (PYCFloat f)
   | Callable | Capsule | Closure | Dict | List | Module | Type | Iter | Set ->
-      L.internal_error "[new_py_constant] unknown bytecode constant: %s@\n" (Py.Type.name ty) ;
-      Error ()
+      Error (L.InternalError, Error.UnknownByteCodeConstant ty)
 
 
 and new_py_code obj =
@@ -263,8 +291,6 @@ module Code = struct
 
   let full_show = show
 
-  let full_pp = pp
-
   let show code = code.co_name
 
   let pp fmt code = F.pp_print_string fmt code.co_name
@@ -334,11 +360,8 @@ let from_python_object obj =
     | PYCCode code ->
         Ok code
     | _ ->
-        L.internal_error "[load_code] must always return a code object@\n" ;
-        Error ()
-  with Py.E _ as e ->
-    L.external_error "[load_code] pyml exception: %s@\n" (Exn.to_string e) ;
-    Error ()
+        Error (L.InternalError, Error.InvalidCodeObject obj)
+  with Py.E (errty, errvalue) -> Error (L.ExternalError, Error.PymlExn (errty, errvalue))
 
 
 let from_string ~source ~filename =
@@ -356,9 +379,7 @@ let from_bytecode filename =
   (* see https://peps.python.org/pep-0552/ *)
   let fp = Core.In_channel.create ~binary:true filename in
   let size = Int64.to_int_exn @@ Core.In_channel.length fp in
-  if size <= 4 then (
-    L.user_error "[from_bytecode] Not enough data in file %s@\n" filename ;
-    Error () )
+  if size <= 4 then Error (L.UserError, Error.ShortFile)
   else
     let magic = Base.Bytes.create 4 in
     let read_magic = Core.In_channel.input fp ~buf:magic ~pos:0 ~len:4 in
@@ -368,15 +389,9 @@ let from_bytecode filename =
     Base.Bytes.set mref 1 (Char.of_int_exn 13) ;
     Base.Bytes.set mref 2 (Char.of_int_exn 13) ;
     Base.Bytes.set mref 3 (Char.of_int_exn 10) ;
-    let show_array bytes =
-      let arr = Base.Bytes.to_array bytes in
-      Format.asprintf "%a" (pp_array Char.pp) arr
-    in
     let* () =
-      if read_magic <> 4 || not (Base.Bytes.equal magic mref) then (
-        L.user_error "Invalid magic number for Python 3.8. Expected %s but got %s@\n"
-          (show_array mref) (show_array magic) ;
-        Error () )
+      if read_magic <> 4 || not (Base.Bytes.equal magic mref) then
+        Error (L.UserError, Error.InvalidMagicNumber (mref, magic))
       else Ok ()
     in
     (* skipping 4 words = 16 bytes from the beginning, the rest is just marshalled data *)

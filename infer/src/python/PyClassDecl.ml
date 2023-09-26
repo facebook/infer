@@ -26,6 +26,19 @@ module Type = struct
   let show ty : string = F.asprintf "%a" pp ty
 end
 
+module Error = struct
+  type kind = InvalidCallWithDecorators of string | InvalidDecorator of Type.t
+
+  type t = L.error * kind
+
+  let pp_kind fmt = function
+    | InvalidCallWithDecorators cls ->
+        F.fprintf fmt "[FFI/parse_method] invalid CALL_FUNCTION for decorated method in class %s"
+          cls
+    | InvalidDecorator typ ->
+        F.fprintf fmt "[FFI/parse_method] unsupported decorator %a" Type.pp typ
+end
+
 module Stack = struct
   let push stack ty = ty :: stack
 
@@ -206,7 +219,7 @@ let rec load_names co_names stack instructions =
 
 
 module Decorators = struct
-  exception Failure
+  exception Failure of Error.t
 
   type t = {is_static: bool; is_abstract: bool; unsupported: string list}
 
@@ -237,11 +250,8 @@ module Decorators = struct
         let opt =
           is_instruction "CALL_FUNCTION" instructions
           >>= fun (arg, instructions) ->
-          if arg <> 1 then (
-            L.external_error
-              "[parse_method] invalid CALL_FUNCTION for decorated method in class %s@\n"
-              raw_qualified_name ;
-            raise Failure )
+          if arg <> 1 then
+            raise (Failure (ExternalError, InvalidCallWithDecorators raw_qualified_name))
           else Some instructions
         in
         let instructions = Option.value ~default:instructions opt in
@@ -259,8 +269,7 @@ module Decorators = struct
             run (has_abstract acc) decorators
           else run (unsupported name acc) decorators
       | hd :: _ ->
-          L.internal_error "Decorators.make spotted %a@\n" Type.pp hd ;
-          raise Failure
+          raise (Failure (InternalError, InvalidDecorator hd))
       | [] ->
           acc
     in
@@ -467,4 +476,4 @@ let parse_class_declaration code class_name instructions =
       parse_methods code class_name instructions
     in
     Ok {members= annotations; methods; static_methods; has_init; has_new}
-  with Decorators.Failure -> Error ()
+  with Decorators.Failure err -> Error err

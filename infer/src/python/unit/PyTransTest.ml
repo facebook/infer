@@ -14,7 +14,7 @@ let test ?(typecheck = true) ?(filename = dummy) source =
   let open IResult.Let_syntax in
   let sourcefile = Textual.SourceFile.create filename in
   Py.initialize ~interpreter:Version.python_exe () ;
-  let* code = FFI.from_string ~source ~filename in
+  let* code = Result.map_error ~f:PyTrans.Error.ffi @@ FFI.from_string ~source ~filename in
   Py.finalize () ;
   (* Since Textual doesn't have a concept of toplevel code, we create a function for this code,
      with a non-denotable name, so we don't clash with existing python code *)

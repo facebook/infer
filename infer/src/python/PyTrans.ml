@@ -18,6 +18,177 @@ module MakeFunctionFlags = PyCommon.MakeFunctionFlags
 module Ident = PyCommon.Ident
 module SMap = PyCommon.SMap
 
+module Error = struct
+  type todo =
+    | UnsupportedOpcode of string
+    | LoadMapCells
+    | FunctionFlags of string * MakeFunctionFlags.t
+    | StaticCallImport of Ident.t
+    | LoadMultipleClasses of int
+    | SuperNotInFile of Ident.t * Ident.t
+    | Closure of string
+    | CompareOp of Builtin.Compare.t
+    | Exception of string * DataStack.cell
+    | SetupWith of DataStack.cell
+    | New of Ident.t
+
+  let pp_todo fmt = function
+    | UnsupportedOpcode opname ->
+        F.fprintf fmt "Unsupported opcode: %s" opname
+    | LoadMapCells ->
+        F.pp_print_string fmt "load DataStack.Map"
+    | FunctionFlags (opname, flags) ->
+        F.fprintf fmt "[%s] support for flags %a is not implemented" opname MakeFunctionFlags.pp
+          flags
+    | StaticCallImport id ->
+        F.fprintf fmt "Unsupported Import %a in static call" Ident.pp id
+    | LoadMultipleClasses n ->
+        F.fprintf fmt "Unsupported LOAD_BUILD_CLASS with arg = %d" n
+    | SuperNotInFile (id, parent) ->
+        F.fprintf fmt
+          "Unsupported `super` in class %a because its parent %a is not in the same file" Ident.pp
+          id Ident.pp parent
+    | Closure opname ->
+        F.fprintf fmt "[%s] Unsupported statement with closure" opname
+    | CompareOp op ->
+        F.fprintf fmt "Unsupported compare operation: %a" Builtin.Compare.pp op
+    | Exception (opname, cell) ->
+        F.fprintf fmt "[%s] support for %a is not implemented at the moment" opname
+          DataStack.pp_cell cell
+    | SetupWith cell ->
+        F.fprintf fmt "Unsupported context manager: %a" DataStack.pp_cell cell
+    | New id ->
+        F.fprintf fmt "Unsupported '__new__' user declaration in %a" Ident.pp id
+
+
+  type kind =
+    | ClassDecl of PyClassDecl.Error.kind
+    | SuperLoadSelf of (string * Ident.t * kind)
+    | LiteralTuple of string
+    | FFI of FFI.Error.kind
+    | TextualParser of Textual.SourceFile.t
+    | NotCodeObject of Symbol.kind * Symbol.t
+    | UnexpectedBuiltin of Symbol.key
+    | LoadFailure of string * Symbol.t option
+    | LoadInvalid of Symbol.kind * Ident.t
+    | LoadAttribute of DataStack.cell * string
+    | TODO of todo
+    | EmptyStack of string * string
+    | BuiltinClassName of string * string * DataStack.cell
+    | BuiltinClassBody of string * DataStack.cell
+    | CallInvalid of string * DataStack.cell
+    | MakeFunctionInvalidCode of DataStack.cell
+    | MakeFunctionInvalidName of DataStack.cell
+    | MakeFunctionInvalidQname of FFI.Constant.t
+    | SuperNotInClass of Ident.t
+    | SuperNoParent of Ident.t
+    | SuperInStatic of Ident.t
+    | SuperNoParameters of Ident.t
+    | BuildConstKeyMap of int * int
+    | RelativeJumpEOF
+    | MissingBackEdge of int * int
+    | ImportInvalidLevel
+    | ImportLevelTooBig of Int64.t
+    | ImportInvalidName of string
+    | ImportInvalidDepth of Ident.t * int
+    | ImportInvalidRoot of DataStack.cell
+    | CompareOp of int
+    | WithCleanup of DataStack.cell
+    | UnpackSequence of int
+    | EOF
+    | TopLevelName of string
+    | TopLevelInvalid of string
+
+  type t = L.error * kind
+
+  let rec pp_kind fmt = function
+    | ClassDecl err ->
+        PyClassDecl.Error.pp_kind fmt err
+    | SuperLoadSelf (self, current_module, err) ->
+        F.fprintf fmt "`super()` failed to load `self` (a.k.a %s) in %a: %a" self Ident.pp
+          current_module pp_kind err
+    | LiteralTuple opname ->
+        F.fprintf fmt "[%s] expecting tuple of literal keys" opname
+    | FFI kind ->
+        F.fprintf fmt "%a" FFI.Error.pp_kind kind
+    | TextualParser file ->
+        F.fprintf fmt "TextualParser: error while translating module %a" Textual.SourceFile.pp file
+    | TODO todo ->
+        F.fprintf fmt "[TODO] %a" pp_todo todo
+    | NotCodeObject (kind, sym) ->
+        F.fprintf fmt "%a %a is not a code object" Symbol.pp_kind kind Symbol.pp sym
+    | UnexpectedBuiltin key ->
+        F.fprintf fmt "Unexpected builtin %a" Symbol.pp_key key
+    | LoadFailure (kind, opt_sym) ->
+        F.fprintf fmt "Failure to load %a (%s)" (Pp.option Symbol.pp) opt_sym kind
+    | LoadInvalid (kind, id) ->
+        F.fprintf fmt "Invalid load of %a (%a)" Ident.pp id Symbol.pp_kind kind
+    | LoadAttribute (cell, name) ->
+        F.fprintf fmt "Failure to load attribute %s from %a" name DataStack.pp_cell cell
+    | EmptyStack (opname, action) ->
+        F.fprintf fmt "[%s] can't %s, stack is empty" opname action
+    | BuiltinClassName (opname, kind, cell) ->
+        F.fprintf fmt "[%s] expected literal (%s) class name but got %a" opname kind
+          DataStack.pp_cell cell
+    | BuiltinClassBody (opname, cell) ->
+        F.fprintf fmt "[%s] Expected code object but got %a" opname DataStack.pp_cell cell
+    | CallInvalid (opname, cell) ->
+        F.fprintf fmt "[%s] invalid object to call: %a" opname DataStack.pp_cell cell
+    | MakeFunctionInvalidCode cell ->
+        F.fprintf fmt "function body is not a code object: %a" DataStack.pp_cell cell
+    | MakeFunctionInvalidName cell ->
+        F.fprintf fmt "invalid function name: %a" DataStack.pp_cell cell
+    | MakeFunctionInvalidQname const ->
+        F.fprintf fmt "invalid function qualified name: %a" FFI.Constant.pp const
+    | SuperNotInClass id ->
+        F.fprintf fmt "Call to super() in %a which is not a class" Ident.pp id
+    | SuperNoParent id ->
+        F.fprintf fmt "Call to super() in %a which doesn't have a parent class" Ident.pp id
+    | SuperInStatic id ->
+        F.fprintf fmt "Call to super() in a static method of class %a" Ident.pp id
+    | SuperNoParameters id ->
+        F.fprintf fmt "Call to super() in %a with an empty list of parameters" Ident.pp id
+    | BuildConstKeyMap (key_length, value_length) ->
+        F.fprintf fmt "BUILD_CONST_KEY_MAP: keys length %d does not match values length %d"
+          key_length value_length
+    | RelativeJumpEOF ->
+        F.pp_print_string fmt "Relative jump forward at the end of code"
+    | MissingBackEdge (from, to_) ->
+        F.fprintf fmt "Invalid absolute jump: missing target of back-edge from %d to %d" from to_
+    | ImportInvalidLevel ->
+        F.pp_print_string fmt "Failure to load the `level` of import statement"
+    | ImportLevelTooBig n ->
+        F.fprintf fmt "The import `level` %Ld is too big" n
+    | ImportInvalidName name ->
+        F.fprintf fmt "Absolute path '%s' for import statement cannot be parsed correctly" name
+    | ImportInvalidDepth (id, level) ->
+        F.fprintf fmt "Current module path '%a' is not deep enough for import with level %d"
+          Ident.pp id level
+    | ImportInvalidRoot cell ->
+        F.fprintf fmt "Invalid root %a for 'from ... import ...' statement" DataStack.pp_cell cell
+    | CompareOp n ->
+        F.fprintf fmt "Invalid compare operation %d. Please refer to the definition of `dis.cmp_op`"
+          n
+    | WithCleanup cell ->
+        F.fprintf fmt "SETUP_WITH: expected a 'with' context manager, but got %a" DataStack.pp_cell
+          cell
+    | UnpackSequence n ->
+        F.fprintf fmt "UNPACK_SEQUENCE with count = %d" n
+    | EOF ->
+        F.pp_print_string fmt "Capture reached the end of code without a terminator statement"
+    | TopLevelName name ->
+        F.fprintf fmt "Toplevel modules must be named '<module>', but got %s" name
+    | TopLevelInvalid filename ->
+        F.fprintf fmt "Invalid module path '%s'" filename
+
+
+  let class_decl (err, kind) = (err, ClassDecl kind)
+
+  let ffi (err, kind) = (err, FFI kind)
+
+  let textual_parser file = (L.InternalError, TextualParser file)
+end
+
 let var_name = PyCommon.var_name
 
 let node_name = PyCommon.node_name
@@ -62,17 +233,14 @@ let code_to_exp ~fun_or_class env key =
     | Some ({Symbol.kind; id} as symbol) -> (
       match (kind : Symbol.kind) with
       | Name _ | Import _ | ImportCall ->
-          L.internal_error "[code_to_exp] Name/Class/Import %a is not a code object@\n" Symbol.pp
-            symbol ;
-          Error ()
+          Error (L.InternalError, Error.NotCodeObject (kind, symbol))
       | Class ->
           Ok (Ident.to_string ~sep:"::" id)
       | Code ->
           let sep = if fun_or_class then "." else "::" in
           Ok (Ident.to_string ~sep id)
       | Builtin ->
-          L.internal_error "[code_to_exp] unexpected Builtin: %a@\n" Symbol.pp_key key ;
-          Error () )
+          Error (L.InternalError, Error.UnexpectedBuiltin key) )
   in
   let kind = if fun_or_class then Builtin.PythonCode else Builtin.PythonClass in
   let name = T.Exp.Const (Str fname) in
@@ -136,8 +304,7 @@ let load_var_name env loc name =
         Ok typ
     | Some _ ->
         (* Note: maybe PyCommon.pyObject would be better here, but I fail to catch new behavior early *)
-        L.internal_error "[load_cell] Can't load VarName %a@\n" (Pp.option Symbol.pp) opt_sym ;
-        Error ()
+        Error (L.InternalError, Error.LoadFailure ("VarName", opt_sym))
     | None ->
         Ok PyCommon.pyObject
   in
@@ -159,19 +326,14 @@ let load_name env loc ~global name =
     let key = mk_key global loc name in
     let opt_sym = Env.lookup_symbol env key in
     match (opt_sym : Symbol.t option) with
-    | Some {Symbol.kind= Name {typ}; id} ->
-        Ok (default_info typ, id)
-    | Some {Symbol.kind= Class; id} ->
-        L.internal_error "[load_name] with class: should never happen ?  %a@\n" Ident.pp id ;
-        Error ()
-    | Some {Symbol.kind= Code; id} ->
-        Ok ({Env.Info.kind= Code; typ= PyCommon.pyCode}, id)
-    | Some {Symbol.kind= Import _ | ImportCall; id} ->
-        L.internal_error "[load_name] called with %a (import)@\n" Ident.pp id ;
-        Error ()
-    | Some {Symbol.kind= Builtin; id} ->
-        L.internal_error "[load_name] called with %a (builtin)@\n" Ident.pp id ;
-        Error ()
+    | Some {Symbol.kind; id} -> (
+      match (kind : Symbol.kind) with
+      | Name {typ} ->
+          Ok (default_info typ, id)
+      | Import _ | ImportCall | Builtin | Class ->
+          Error (L.InternalError, Error.LoadInvalid (kind, id))
+      | Code ->
+          Ok ({Env.Info.kind= Code; typ= PyCommon.pyCode}, id) )
     | None ->
         (* Some default names like [__file__] and [__name__] are available implicitly in Python *)
         if List.mem ~equal:String.equal python_implicit_names name then
@@ -250,8 +412,7 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
       let info = {Env.Info.typ; kind} in
       Ok (env, exp, info)
   | Map _map ->
-      L.internal_error "TODO: load Map cells@\n" ;
-      Error ()
+      Error (L.InternalError, Error.TODO LoadMapCells)
   | Path id ->
       if
         (* TODO: this is incomplete. If something is imported, we can' really know if it is a
@@ -339,8 +500,7 @@ let cells_to_textual env code cells =
 let pop_datastack opname env =
   match Env.pop env with
   | None ->
-      L.external_error "[%s] can't pop, stack is empty@\n" opname ;
-      Error ()
+      Error (L.ExternalError, Error.EmptyStack (opname, "pop"))
   | Some (env, cell) ->
       Ok (env, cell)
 
@@ -349,8 +509,7 @@ let pop_datastack opname env =
 let peek_datastack opname env =
   match Env.peek env with
   | None ->
-      L.external_error "[%s] can't peek, stack is empty@\n" opname ;
-      Error ()
+      Error (L.ExternalError, Error.EmptyStack (opname, "peek"))
   | Some cell ->
       Ok cell
 
@@ -360,7 +519,7 @@ let pop_n_datastack opname env n =
   let rec pop env n acc =
     if n > 0 then (
       let* env, cell = pop_datastack opname env in
-      Debug.p "  popped %s\n" (DataStack.show_cell cell) ;
+      Debug.p "  popped %a\n" DataStack.pp_cell cell ;
       pop env (n - 1) (cell :: acc) )
     else Ok (env, acc)
   in
@@ -443,9 +602,7 @@ module LOAD = struct
                 let id = Option.map ~f:(fun prefix -> Ident.extend ~prefix fname) prefix in
                 match id with
                 | None ->
-                    L.external_error "Failed to load attribute %s from cell %a@\n" fname
-                      DataStack.pp_cell cell ;
-                    Error ()
+                    Error (L.InternalError, Error.LoadAttribute (cell, fname))
                 | Some id ->
                     Ok (DataStack.Path id) )
           in
@@ -473,10 +630,7 @@ let check_flags opname flags =
   let has_dict_of_defaults = mem flags DictDefaultValues in
   let has_closure = mem flags Closure in
   let unsupported = has_tuple_of_defaults || has_dict_of_defaults || has_closure in
-  if unsupported then (
-    L.internal_error "%s: support for flag 0x%a is not implemented@\n" opname pp flags ;
-    Error () )
-  else Ok ()
+  if unsupported then Error (L.InternalError, Error.TODO (FunctionFlags (opname, flags))) else Ok ()
 
 
 module FUNCTION = struct
@@ -536,8 +690,7 @@ module FUNCTION = struct
         | Some symbol -> (
           match (symbol : Symbol.t) with
           | {kind= Import _ | ImportCall; id} ->
-              L.internal_error "[static_call] Invalid Import (%a) spotted@\n" Ident.pp id ;
-              Error ()
+              Error (L.InternalError, Error.TODO (StaticCallImport id))
           | {kind= Builtin; id} ->
               (* TODO: propagate builtin type information *)
               let proc = Ident.to_qualified_procname id in
@@ -577,9 +730,7 @@ module FUNCTION = struct
         | Some name ->
             Ok name
         | None ->
-            L.external_error "[%s] expected literal (%s) class name but got %a@\n" kind opname
-              DataStack.pp_cell name_cell ;
-            Error ()
+            Error (L.ExternalError, Error.BuiltinClassName (opname, kind, cell))
       in
       let* code_name = as_name "base" name_cell in
       let parent = Option.bind ~f:(DataStack.as_id code) parent_cell in
@@ -588,9 +739,7 @@ module FUNCTION = struct
         | Some code ->
             Ok code
         | None ->
-            L.external_error "[%s] expected code object but got %a@\n" opname DataStack.pp_cell
-              code_cell ;
-            Error ()
+            Error (L.ExternalError, Error.BuiltinClassBody (opname, code_cell))
       in
       let env = Env.register_class env code_name parent in
       let env = Env.push env (DataStack.Code {fun_or_class= false; code_name; code}) in
@@ -610,13 +759,18 @@ module FUNCTION = struct
           static_call env code fid cells
       | Temp id ->
           dynamic_call env code id cells
-      | Code {code_name} ->
-          L.user_error "[%s] no support for calling raw class/code : %s@\n" opname code_name ;
-          Error ()
-      | VarName _ | Const _ | Map _ ->
-          L.user_error "[%s] invalid function on the stack: %s@\n" opname
-            (DataStack.show_cell fname) ;
-          Error ()
+      | Code _
+      | Import _
+      | StaticCall _
+      | MethodCall _
+      | NoException
+      | WithContext _
+      | VarName _
+      | Const _
+      | Map _ ->
+          (* TODO: should be user error, but for now we might trigger it because we don't cover
+             enough constructions of the language, so it's an internal error for now *)
+          Error (L.InternalError, Error.CallInvalid (opname, fname))
       | BuiltinBuildClass -> (
         match cells with
         | [code_cell; name_cell] ->
@@ -626,8 +780,7 @@ module FUNCTION = struct
             let* env = builtin_build_class env code opname name_cell code_cell (Some parent_cell) in
             Ok (env, None)
         | _ ->
-            L.internal_error "[%s] unsupported call to LOAD_BUILD_CLASS with arg = %d@\n" opname arg ;
-            Error () )
+            Error (L.InternalError, Error.TODO (LoadMultipleClasses arg)) )
       | Path id ->
           static_call env code id cells
       | ImportCall {id; loc} ->
@@ -636,10 +789,6 @@ module FUNCTION = struct
           let* env, args = cells_to_textual env code cells in
           let proc = Ident.to_qualified_procname id in
           mk env (Some id) loc proc args
-      | Import _ | StaticCall _ | MethodCall _ | NoException | WithContext _ ->
-          L.internal_error "[%s] unsupported call to %a with arg = %d@\n" opname DataStack.pp_cell
-            fname arg ;
-          Error ()
       | Super ->
           let env = Env.push env Super in
           Ok (env, None)
@@ -701,7 +850,7 @@ module FUNCTION = struct
       let* env, annotations =
         if MakeFunctionFlags.mem flags Annotations then (
           let* env, cell = pop_datastack opname env in
-          Debug.p "[%s] spotted annotations\n  %s\n" opname (DataStack.show_cell cell) ;
+          Debug.p "[%s] spotted annotations\n  %a\n" opname DataStack.pp_cell cell ;
           let annotations = match cell with Env.DataStack.Map map -> Some map | _ -> None in
           Ok (env, annotations) )
         else Ok (env, None)
@@ -710,8 +859,7 @@ module FUNCTION = struct
       let* code =
         match DataStack.as_code code body with
         | None ->
-            L.internal_error "%s: payload is not code: %s@\n" opname (DataStack.show_cell body) ;
-            Error ()
+            Error (L.InternalError, Error.MakeFunctionInvalidCode body)
         | Some body ->
             Ok body
       in
@@ -731,17 +879,14 @@ module FUNCTION = struct
         | NoException
         | WithContext _
         | Super ->
-            L.internal_error "%s: invalid function name: %s@\n" opname (DataStack.show_cell qual) ;
-            Error ()
+            Error (L.InternalError, Error.MakeFunctionInvalidName qual)
         | Const ndx -> (
             let const = co_consts.(ndx) in
             match FFI.Constant.as_name const with
             | Some name ->
                 Ok name
             | None ->
-                L.internal_error "%s: can't read qualified name from stack: %s@\n" opname
-                  (FFI.Constant.show const) ;
-                Error () )
+                Error (L.InternalError, Error.MakeFunctionInvalidQname const) )
       in
       if FFI.Code.is_closure code then
         L.user_warning "%s: support for closures is incomplete (%s)@\n" opname code_name ;
@@ -755,19 +900,13 @@ end
 module METHOD = struct
   module LOAD = struct
     let load env code cell method_name =
-      match load_cell env code cell with
-      | Error () ->
-          L.external_error "Failed to load method %s from cell %a@\n" method_name DataStack.pp_cell
-            cell ;
-          Error ()
-      | Ok (env, receiver, _) ->
-          let loc = Env.loc env in
-          let name = proc_name ~loc method_name in
-          let name : T.qualified_procname =
-            {T.enclosing_class= Enclosing T.TypeName.wildcard; name}
-          in
-          let env = Env.push env (DataStack.MethodCall {receiver; name}) in
-          Ok (env, None)
+      let open IResult.Let_syntax in
+      let* env, receiver, _ = load_cell env code cell in
+      let loc = Env.loc env in
+      let name = proc_name ~loc method_name in
+      let name : T.qualified_procname = {T.enclosing_class= Enclosing T.TypeName.wildcard; name} in
+      let env = Env.push env (DataStack.MethodCall {receiver; name}) in
+      Ok (env, None)
 
 
     (* Here we translate calls like [super().f(...)] into a static call [parent_type.f(self, ...)]
@@ -793,39 +932,28 @@ module METHOD = struct
       let* parent_info =
         match class_info with
         | None ->
-            L.external_error "Call to super() spotted in %a which is not a registered class@\n"
-              Ident.pp current_module ;
-            Error ()
+            Error (L.ExternalError, Error.SuperNotInClass current_module)
         | Some {parent} ->
             Ok parent
       in
       let* parent_name =
         match parent_info with
         | None ->
-            L.external_error
-              "Call to super() spotted in %a which doesn't have a registered parent class@\n"
-              Ident.pp current_module ;
-            Error ()
+            Error (L.ExternalError, Error.SuperNoParent current_module)
         | Some parent -> (
             let key = Symbol.Global parent in
             match Env.lookup_symbol env key with
             | None ->
-                L.internal_error "Missing symbol for parent: %a@\n" Ident.pp parent ;
-                Error ()
+                Error (L.InternalError, Error.TODO (SuperNotInFile (current_module, parent)))
             | Some {Symbol.id} ->
                 Ok id )
       in
       let* self =
-        if is_static then (
-          L.external_error "Call to super() spotted in a static method of %a@\n" Ident.pp
-            current_module ;
-          Error () )
+        if is_static then Error (L.ExternalError, Error.SuperInStatic current_module)
         else
           match List.hd params with
           | None ->
-              L.external_error "Empty parameter list makes illegal call to super() in %a@\n"
-                Ident.pp current_module ;
-              Error ()
+              Error (L.ExternalError, Error.SuperNoParameters current_module)
           | Some self ->
               Ok self
       in
@@ -839,10 +967,8 @@ module METHOD = struct
           let call_name : T.qualified_procname = {T.enclosing_class= Enclosing super_type; name} in
           let env = Env.push env (DataStack.StaticCall {call_name; receiver= Some receiver}) in
           Ok (env, None)
-      | Error () ->
-          L.user_error "[super()] failed to load self (a.k.a %s) in %a@\n" self Ident.pp
-            current_module ;
-          Error ()
+      | Error (_, err) ->
+          Error (L.UserError, Error.SuperLoadSelf (self, current_module, err))
 
 
     (** {v LOAD_METHOD(namei) v}
@@ -902,9 +1028,6 @@ module METHOD = struct
           let env = Env.register_symbol env key symbol_info in
           let proc = Ident.to_qualified_procname id in
           FUNCTION.CALL.mk env None loc proc args
-      | Path id ->
-          L.internal_error "%s called with Path: %a@\n" opname Ident.pp id ;
-          Error ()
       | StaticCall {call_name; receiver} ->
           let loc = Env.loc env in
           let args = Option.to_list receiver @ args in
@@ -919,6 +1042,7 @@ module METHOD = struct
           let env = Env.push_instr env let_instr in
           let env = Env.push env (DataStack.Temp id) in
           Ok (env, None)
+      | Path _
       | Const _
       | Name _
       | VarName _
@@ -930,9 +1054,7 @@ module METHOD = struct
       | NoException
       | WithContext _
       | Super ->
-          L.internal_error "[%s] failed to load method information from cell %a@\n" opname
-            DataStack.pp_cell cell_mi ;
-          Error ()
+          Error (L.InternalError, Error.CallInvalid (opname, cell_mi))
   end
 end
 
@@ -1013,9 +1135,7 @@ module STORE = struct
           if global then (
             Debug.p "  top-level function defined\n" ;
             Ok (env, None) )
-          else (
-            L.internal_error "[%s] no support for closure at the moment: %s@\n" opname name ;
-            Error () )
+          else Error (L.InternalError, Error.TODO (Closure opname))
       | Other ->
           let instr = T.Instr.Store {exp1= Lvar var_name; typ= Some typ; exp2= exp; loc} in
           Ok (Env.push_instr env instr, None)
@@ -1206,8 +1326,7 @@ module BUILD = struct
         | Ok keys ->
             Ok (List.rev keys)
         | Error () ->
-            L.user_error "[%s] expecting tuple of literal keys@\n" opname ;
-            Error ()
+            Error (L.UserError, Error.LiteralTuple opname)
       in
       (* TODO check cells is a tuple of literal strings *)
       let* env, values = pop_n_datastack opname env arg in
@@ -1217,9 +1336,7 @@ module BUILD = struct
         | List.Or_unequal_lengths.Ok map ->
             Ok map
         | Base.List.Or_unequal_lengths.Unequal_lengths ->
-            L.user_error "[%s] keys length (%d) doesn't match values length (%d)@\n" opname
-              (List.length keys) (List.length values) ;
-            Error ()
+            Error (L.UserError, Error.BuildConstKeyMap (List.length keys, List.length values))
       in
       let env = Env.push env (DataStack.Map map) in
       Ok (env, None)
@@ -1277,12 +1394,7 @@ let offset_of_code instructions =
 
 
 let next_offset opt =
-  match opt with
-  | None ->
-      L.internal_error "Relative jump forward at the end of code@\n" ;
-      Error ()
-  | Some offset ->
-      Ok offset
+  match opt with None -> Error (L.InternalError, Error.RelativeJumpEOF) | Some offset -> Ok offset
 
 
 type jump_info = {label_info: Env.Label.info; offset: int; ssa_args: T.Exp.t list}
@@ -1439,11 +1551,7 @@ module JUMP = struct
       let* () =
         if target < offset then
           let opt_info = Env.label_of_offset env target in
-          if Option.is_none opt_info then (
-            L.user_error
-              "[%s] invalid input, can't find the target of a back-edge from offset %d to offset %d@\n"
-              opname offset target ;
-            Error () )
+          if Option.is_none opt_info then Error (L.UserError, Error.MissingBackEdge (offset, target))
           else Ok ()
         else Ok ()
       in
@@ -1588,22 +1696,23 @@ module IMPORT = struct
       let* level =
         match level with
         | None ->
-            L.user_error "[%s] failed to load [level] from the stack@\n" opname ;
-            Error ()
+            Error (L.UserError, Error.ImportInvalidLevel)
         | Some level -> (
           match Int64.to_int level with
           | Some level ->
               Ok level
           | None ->
-              L.external_error "import path depth doesn't fit in an int: %Ld@\n" level ;
-              Error () )
+              Error (L.ExternalError, Error.ImportLevelTooBig level) )
       in
       let loc = Env.loc env in
       let* import_path =
         match level with
         | 0 ->
             (* Absolute path *)
-            Result.of_option ~error:() (Ident.from_string ~loc co_names.(arg))
+            let name = co_names.(arg) in
+            Result.of_option
+              ~error:(L.InternalError, Error.ImportInvalidName name)
+              (Ident.from_string ~loc name)
         | _ -> (
             (* Relative path *)
             let module_ = Env.module_name env in
@@ -1621,10 +1730,7 @@ module IMPORT = struct
             | Some prefix ->
                 Ok (Ident.extend ~prefix co_names.(arg))
             | None ->
-                L.external_error
-                  "current module path '%a' is not deep enough for import with level %d\n" Ident.pp
-                  module_ level ;
-                Error () )
+                Error (L.ExternalError, Error.ImportInvalidDepth (module_, level)) )
       in
       let key = Symbol.Global import_path in
       let env =
@@ -1634,6 +1740,7 @@ module IMPORT = struct
         else env
       in
       let from_list =
+        (* TODO: turn into `Error` ? *)
         if Option.is_none from_list then
           L.debug Capture Quiet "[IMPORT_NAME] failed to process `from_list`@\n" ;
         Option.value ~default:[] from_list
@@ -1668,8 +1775,7 @@ module IMPORT = struct
           in
           Ok (env, None)
       | _ ->
-          L.user_error "[%s] invalid TOS: %a spotted@\n" opname DataStack.pp_cell import_cell ;
-          Error ()
+          Error (L.UserError, Error.ImportInvalidRoot import_cell)
   end
 end
 
@@ -1686,17 +1792,13 @@ module COMPARE_OP = struct
       | Some op ->
           Ok op
       | None ->
-          L.external_error
-            "COMPARE_OP[%d] is not an existing cmp_op.  Please refer to `dis.cmp_op`@\n" arg ;
-          Error ()
+          Error (L.ExternalError, Error.CompareOp arg)
     in
     Debug.p "[%s] cmp_op = %a\n" opname Builtin.Compare.pp cmp_op ;
     let* env =
       match (cmp_op : Builtin.Compare.t) with
       | In | NotIn | Is | IsNot | Exception | BAD ->
-          L.internal_error "TODO: support for COMPARE_OP[%a] is not yet implemented@\n"
-            Builtin.Compare.pp cmp_op ;
-          Error ()
+          Error (L.InternalError, Error.TODO (CompareOp cmp_op))
       | Lt | Le | Gt | Ge | Neq | Eq ->
           let* env, rhs = pop_datastack opname env in
           let* env, lhs = pop_datastack opname env in
@@ -1747,10 +1849,7 @@ module FINALLY = struct
       let* env, tos = pop_datastack opname env in
       let* env =
         if DataStack.is_no_exception tos then Ok env
-        else (
-          L.internal_error "[%s] support for %a is not implemented at the moment@\n" opname
-            DataStack.pp_cell tos ;
-          Error () )
+        else Error (L.InternalError, Error.TODO (Exception (opname, tos)))
       in
       Ok (env, None)
   end
@@ -1797,10 +1896,7 @@ module WITH = struct
       let* env, tos = pop_datastack opname env in
       let* () =
         if DataStack.is_no_exception tos then Ok ()
-        else (
-          L.internal_error "[%s] no support for exceptions at the moment. Got %a@\n" opname
-            DataStack.pp_cell tos ;
-          Error () )
+        else Error (L.InternalError, Error.TODO (Exception (opname, tos)))
       in
       let* env, context_manager = pop_datastack opname env in
       let* exp =
@@ -1808,9 +1904,7 @@ module WITH = struct
         | DataStack.WithContext exp ->
             Ok exp
         | _ ->
-            L.external_error "[%s] expected a 'with' context manager, got %a@\n" opname
-              DataStack.pp_cell context_manager ;
-            Error ()
+            Error (L.ExternalError, Error.WithCleanup context_manager)
       in
       let proc =
         let enclosing_class = T.TypeName.wildcard in
@@ -1847,10 +1941,7 @@ module WITH = struct
       let* env, tos = pop_datastack opname env in
       let* () =
         if DataStack.is_no_exception tos then Ok ()
-        else (
-          L.internal_error "[%s] no support for exceptions at the moment. Got %a@\n" opname
-            DataStack.pp_cell tos ;
-          Error () )
+        else Error (L.InternalError, Error.TODO (Exception (opname, tos)))
       in
       (* TODO: check exit_res to deal with exception unwinding *)
       let env = Env.push env DataStack.NoException in
@@ -1880,9 +1971,7 @@ module WITH = struct
         | Temp id ->
             Ok id
         | _ ->
-            L.internal_error "%s only supports Textual.Ident.t as context manager. Got %a@\n" opname
-              DataStack.pp_cell cell ;
-            Error ()
+            Error (L.InternalError, Error.TODO (SetupWith cell))
       in
       let env = Env.push env (DataStack.WithContext id) in
       let proc =
@@ -2006,12 +2095,7 @@ module UNPACK = struct
       let* env, cell = pop_datastack opname env in
       (* TODO: try to keep tuple type information around *)
       let* env, tuple, _info = load_cell env code cell in
-      let* () =
-        if count <= 0 then (
-          L.external_error "UNPACK_SEQUENCE with count = %d\n" count ;
-          Error () )
-        else Ok ()
-      in
+      let* () = if count <= 0 then Error (L.ExternalError, Error.UnpackSequence count) else Ok () in
       let env = unpack env tuple (count - 1) in
       Ok (env, None)
   end
@@ -2172,8 +2256,7 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "UNPACK_SEQUENCE" ->
       UNPACK.SEQUENCE.run env code instr
   | _ ->
-      L.internal_error "Unsupported opcode: %s@\n" opname ;
-      Error ()
+      Error (L.InternalError, Error.TODO (UnsupportedOpcode opname))
 
 
 (** Helper function to check if the next instructions has a label attached to it *)
@@ -2278,8 +2361,7 @@ let until_terminator env label_info code instructions =
   in
   match (maybe_term : JUMP.kind option) with
   | None ->
-      L.internal_error "Reached the end of code without spotting a terminator@\n" ;
-      Error ()
+      Error (L.InternalError, Error.EOF)
   | Some (Label info) ->
       let {offset; label_info} = info in
       let env = Env.register_label ~offset label_info env in
@@ -2560,7 +2642,8 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
   let class_type_name = Ident.to_type_name class_name in
   let static_class_type_name = Ident.to_type_name static_class_name in
   let* {PyClassDecl.members; methods; static_methods; has_init; has_new} =
-    PyClassDecl.parse_class_declaration code co_name instructions
+    Result.map_error ~f:Error.class_decl
+    @@ PyClassDecl.parse_class_declaration code co_name instructions
   in
   let register_methods env codes method_infos opname =
     List.fold_left method_infos
@@ -2580,9 +2663,7 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
         in
         Ok (env, code :: codes) )
   in
-  if Option.is_some has_new then (
-    L.internal_error "TODO: No support for __new__ in user declared classes@\n" ;
-    Error () )
+  if Option.is_some has_new then Error (L.InternalError, Error.TODO (New class_name))
   else
     let* env, codes = register_methods env [] methods "<METHOD_DECLARATION>" in
     let* env, codes = register_methods env codes static_methods "<STATIC_METHOD_DECLARATION>" in
@@ -2682,17 +2763,14 @@ let python_attribute = T.Attr.mk_source_language T.Lang.Python
 let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructions} as code) =
   let open IResult.Let_syntax in
   Debug.p "[to_module] %a %s\n" T.SourceFile.pp sourcefile co_name ;
-  if not (String.equal co_name "<module>") then (
-    L.external_error "Toplevel modules must be named '<module>'. Got %s@\n" co_name ;
-    Error () )
+  if not (String.equal co_name "<module>") then Error (L.ExternalError, Error.TopLevelName co_name)
   else
     let loc = first_loc_of_code instructions in
     let* module_name =
       let filename = Stdlib.Filename.remove_extension co_filename in
       match Ident.from_string ~loc filename with
       | None ->
-          L.external_error "Invalid module path '%s'@\n" filename ;
-          Error ()
+          Error (L.ExternalError, Error.TopLevelInvalid filename)
       | Some module_name ->
           Ok module_name
     in
