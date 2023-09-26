@@ -31,6 +31,9 @@ module Error = struct
     | Exception of string * DataStack.cell
     | SetupWith of DataStack.cell
     | New of Ident.t
+    | CallKwMissing of string
+    | CallKwMissingId of Ident.t
+    | CallKwInvalidFunction of DataStack.cell
 
   let pp_todo fmt = function
     | UnsupportedOpcode opname ->
@@ -59,6 +62,13 @@ module Error = struct
         F.fprintf fmt "Unsupported context manager: %a" DataStack.pp_cell cell
     | New id ->
         F.fprintf fmt "Unsupported '__new__' user declaration in %a" Ident.pp id
+    | CallKwMissing name ->
+        F.fprintf fmt "Unsupported CALL_FUNCTION_KW because %s is not defined in the same file" name
+    | CallKwMissingId id ->
+        F.fprintf fmt "Unsupported CALL_FUNCTION_KW because %a is not defined in the same file"
+          Ident.pp id
+    | CallKwInvalidFunction cell ->
+        F.fprintf fmt "Unsupported CALL_FUNCTION_KW with %a" DataStack.pp_cell cell
 
 
   type kind =
@@ -100,6 +110,9 @@ module Error = struct
     | EOF
     | TopLevelName of string
     | TopLevelInvalid of string
+    | CallKeywordNotString0 of FFI.Constant.t
+    | CallKeywordNotString1 of DataStack.cell
+    | CallKeywordBuildClass
 
   type t = L.error * kind
 
@@ -186,6 +199,12 @@ module Error = struct
         F.fprintf fmt "Toplevel modules must be named '<module>', but got %s" name
     | TopLevelInvalid filename ->
         F.fprintf fmt "Invalid module path '%s'" filename
+    | CallKeywordNotString0 cst ->
+        F.fprintf fmt "CALL_FUNCTION_KW: keyword is not a string: %a" FFI.Constant.pp cst
+    | CallKeywordNotString1 cell ->
+        F.fprintf fmt "CALL_FUNCTION_KW: keyword is not a string: %a" DataStack.pp_cell cell
+    | CallKeywordBuildClass ->
+        F.pp_print_string fmt "CALL_FUNCTION_KW cannot be used with LOAD_BUILD_CLASS"
 
 
   let class_decl (err, kind) = (err, ClassDecl kind)
@@ -663,6 +682,47 @@ module FUNCTION = struct
 
         After: [ result | rest-of-the-stack ] *)
 
+    let static_call_with_args env fid args =
+      let loc = Env.loc env in
+      (* TODO: support nesting *)
+      let key = Symbol.Global fid in
+      let mk env ?typ proc = mk env (Some fid) ?typ loc proc args in
+      match Env.lookup_symbol env key with
+      | None ->
+          (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
+             further analysis *)
+          let proc =
+            let enclosing_class = T.TypeName.wildcard in
+            qualified_procname ~enclosing_class @@ Ident.to_proc_name fid
+          in
+          mk env proc
+      | Some symbol -> (
+        match (symbol : Symbol.t) with
+        | {kind= Import _ | ImportCall; id} ->
+            Error (L.InternalError, Error.TODO (StaticCallImport id))
+        | {kind= Builtin; id} ->
+            (* TODO: propagate builtin type information *)
+            let proc = Ident.to_qualified_procname id in
+            mk env proc
+        | {kind= Name {is_imported}; id} ->
+            (* TODO: propagate type information if available *)
+            let proc = Ident.to_qualified_procname id in
+            let key = Symbol.Global id in
+            let symbol_info = {Symbol.kind= ImportCall; id; loc} in
+            let env = if is_imported then Env.register_symbol env key symbol_info else env in
+            mk env proc
+        | {kind= Code; id} ->
+            (* TODO: propagate type information if available *)
+            let proc = Ident.to_qualified_procname id in
+            mk env proc
+        | {kind= Class; id} ->
+            (* TODO: support nesting. Maybe add to_proc_name to Symbol *)
+            let typ = Ident.to_typ id in
+            let name = Ident.to_constructor id in
+            let proc : T.qualified_procname = {enclosing_class= TopLevel; name} in
+            mk env ~typ proc )
+
+
     let static_call env code fid cells =
       let open IResult.Let_syntax in
       (* TODO: we currently can't handle hasattr correctly, so let's ignore it
@@ -680,49 +740,10 @@ module FUNCTION = struct
         Ok (env, None) )
       else
         let* env, args = cells_to_textual env code cells in
-        let loc = Env.loc env in
-        (* TODO: support nesting *)
-        let key = Symbol.Global fid in
-        let mk env ?typ proc = mk env (Some fid) ?typ loc proc args in
-        match Env.lookup_symbol env key with
-        | None ->
-            (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
-               further analysis *)
-            let proc =
-              let enclosing_class = T.TypeName.wildcard in
-              qualified_procname ~enclosing_class @@ Ident.to_proc_name fid
-            in
-            mk env proc
-        | Some symbol -> (
-          match (symbol : Symbol.t) with
-          | {kind= Import _ | ImportCall; id} ->
-              Error (L.InternalError, Error.TODO (StaticCallImport id))
-          | {kind= Builtin; id} ->
-              (* TODO: propagate builtin type information *)
-              let proc = Ident.to_qualified_procname id in
-              mk env proc
-          | {kind= Name {is_imported}; id} ->
-              (* TODO: propagate type information if available *)
-              let proc = Ident.to_qualified_procname id in
-              let key = Symbol.Global id in
-              let symbol_info = {Symbol.kind= ImportCall; id; loc} in
-              let env = if is_imported then Env.register_symbol env key symbol_info else env in
-              mk env proc
-          | {kind= Code; id} ->
-              (* TODO: propagate type information if available *)
-              let proc = Ident.to_qualified_procname id in
-              mk env proc
-          | {kind= Class; id} ->
-              (* TODO: support nesting. Maybe add to_proc_name to Symbol *)
-              let typ = Ident.to_typ id in
-              let name = Ident.to_constructor id in
-              let proc : T.qualified_procname = {enclosing_class= TopLevel; name} in
-              mk env ~typ proc )
+        static_call_with_args env fid args
 
 
-    let dynamic_call env code caller_id cells =
-      let open IResult.Let_syntax in
-      let* env, args = cells_to_textual env code cells in
+    let dynamic_call env caller_id args =
       let args = T.Exp.Var caller_id :: args in
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonCall args in
       let env = Env.push env (DataStack.Temp id) in
@@ -768,7 +789,8 @@ module FUNCTION = struct
           let fid = Ident.mk ~loc @@ co_names.(ndx) in
           static_call env code fid cells
       | Temp id ->
-          dynamic_call env code id cells
+          let* env, args = cells_to_textual env code cells in
+          dynamic_call env id args
       | Code _
       | Import _
       | StaticCall _
@@ -904,6 +926,125 @@ module FUNCTION = struct
       let env = Env.register_function env code_name loc annotations in
       let env = Env.push env (DataStack.Code {fun_or_class= true; code_name; code}) in
       Ok (env, None)
+  end
+
+  module CALL_KW = struct
+    let extract_kw_names const =
+      let open IResult.Let_syntax in
+      let error const = (L.UserError, Error.CallKeywordNotString0 const) in
+      match (const : FFI.Constant.t) with
+      | PYCTuple tuple ->
+          Array.fold_right tuple ~init:(Ok []) ~f:(fun const acc ->
+              let* acc in
+              let* name = Result.of_option (FFI.Constant.as_name const) ~error:(error const) in
+              Ok (name :: acc) )
+      | _ ->
+          Error (error const)
+
+
+    (* there is more args than names, and nameless values must come first in the end *)
+    let partial_zip env argc args names =
+      let nr_positional = argc - List.length names in
+      let rec zip env ndx l1 l2 =
+        match (l1, l2) with
+        | [], _ ->
+            (env, [])
+        | _ :: _, [] ->
+            (env, l1)
+        | hd1 :: tl1, hd2 :: tl2 ->
+            if ndx < nr_positional then
+              let env, tl = zip env (ndx + 1) tl1 l2 in
+              (env, hd1 :: tl)
+            else
+              let name = T.Exp.Const (Str hd2) in
+              let env, id, _typ = Env.mk_builtin_call env Builtin.PythonKWArg [name; hd1] in
+              let hd = T.Exp.Var id in
+              let env, tl = zip env (ndx + 1) tl1 tl2 in
+              (env, hd :: tl)
+      in
+      zip env 0 args names
+
+
+    (** {v CALL_FUNCTION_KW(argc) v}
+
+        Calls a callable object with positional (if any) and keyword arguments. [argc] indicates the
+        total number of positional and keyword arguments. The top element on the stack contains a
+        tuple of keyword argument names. Below that are keyword arguments in the order corresponding
+        to the tuple. Below that are positional arguments, with the right-most parameter on top.
+        Below the arguments is a callable object to call. [CALL_FUNCTION_KW] pops all arguments and
+        the callable object off the stack, calls the callable object with those arguments, and
+        pushes the return value returned by the callable object. *)
+
+    let run env ({FFI.Code.co_names; co_consts} as code) {FFI.Instruction.opname; arg= argc} =
+      (* TODO:
+         - make support more complete
+         - check/deal with method calls using kw *)
+      let open IResult.Let_syntax in
+      Debug.p "[%s] argc = %d\n" opname argc ;
+      let* env, arg_names = pop_datastack opname env in
+      let* arg_names =
+        match (arg_names : DataStack.cell) with
+        | Const n ->
+            (* kw names should be constant tuple of strings, so we directly access them *)
+            let tuple = co_consts.(n) in
+            extract_kw_names tuple
+        | _ ->
+            Error (L.UserError, Error.CallKeywordNotString1 arg_names)
+      in
+      let* env, cells = pop_n_datastack opname env argc in
+      let* env, all_args = cells_to_textual env code cells in
+      let env, args = partial_zip env argc all_args arg_names in
+      let* env, fname = pop_datastack opname env in
+      let call env fname =
+        let env, id, _typ = Env.mk_builtin_call env Builtin.PythonCallKW (fname :: args) in
+        let env = Env.push env (DataStack.Temp id) in
+        Ok (env, None)
+      in
+      let loc = Env.loc env in
+      (* TODO: Fix this, should use dynamic_call with a string all the time *)
+      match (fname : DataStack.cell) with
+      | Name {global; ndx} -> (
+          let name = co_names.(ndx) in
+          let key = mk_key global loc name in
+          match Env.lookup_symbol env key with
+          | Some {Symbol.id} ->
+              let fname = Ident.to_string ~sep:"." id in
+              let fname = T.Exp.Const (Str fname) in
+              call env fname
+          | None ->
+              Error (L.ExternalError, Error.TODO (CallKwMissing name)) )
+      | Temp id ->
+          call env (T.Exp.Var id)
+      | BuiltinBuildClass ->
+          Error (L.ExternalError, Error.CallKeywordBuildClass)
+      | Path id -> (
+          let key = Symbol.Global id in
+          match Env.lookup_symbol env key with
+          | Some {Symbol.id} ->
+              let fname = Ident.to_string ~sep:"." id in
+              let fname = T.Exp.Const (Str fname) in
+              call env fname
+          | None ->
+              Error (L.InternalError, Error.TODO (CallKwMissingId id)) )
+      | ImportCall {id} ->
+          (* TODO: test it *)
+          Debug.todo "TEST IT 2!\n" ;
+          let fname = Ident.to_string ~sep:"." id in
+          let fname = T.Exp.Const (Str fname) in
+          call env fname
+      | Code _
+      | VarName _
+      | Const _
+      | Map _
+      | Import _
+      | StaticCall _
+      | MethodCall _
+      | NoException
+      | WithContext _ ->
+          Error (L.InternalError, Error.TODO (CallKwInvalidFunction fname))
+      | Super ->
+          let env = Env.push env Super in
+          Ok (env, None)
   end
 end
 
@@ -2146,6 +2287,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
       POP_TOP.run env code instr
   | "CALL_FUNCTION" ->
       FUNCTION.CALL.run env code instr
+  | "CALL_FUNCTION_KW" ->
+      FUNCTION.CALL_KW.run env code instr
   | "BINARY_ADD" ->
       BINARY.run env code instr (Builtin.Binary Add)
   | "BINARY_SUBTRACT" ->

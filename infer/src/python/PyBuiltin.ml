@@ -98,6 +98,8 @@ module Builtin = struct
     (* BINARY_SUBSCR is more complex and is done in PyTrans *)
     | Inplace of binary_op
     | PythonCall
+    | PythonCallKW
+    | PythonKWArg
     | PythonClass
     | PythonCode
     | PythonIter
@@ -151,6 +153,10 @@ let to_proc_name = function
             sprintf "inplace_%s" (binary_op_to_string op)
         | PythonCall ->
             "python_call"
+        | PythonCallKW ->
+            "python_call_kw"
+        | PythonKWArg ->
+            "python_kw_arg"
         | PythonClass ->
             "python_class"
         | PythonCode ->
@@ -296,6 +302,12 @@ module Set = struct
       ; binary_op (Builtin.Inplace Xor)
       ; ( Builtin.PythonCall
         , {formals_types= None; result_type= annotatedObject; used_struct_types= []} )
+      ; ( Builtin.PythonCallKW
+        , {formals_types= None; result_type= annotatedObject; used_struct_types= []} )
+      ; ( Builtin.PythonKWArg
+        , { formals_types= Some [annot string_; annotatedObject]
+          ; result_type= annotatedObject
+          ; used_struct_types= [] } )
       ; ( Builtin.PythonClass
         , { formals_types= Some [annot string_]
           ; result_type= annot PyCommon.pyClass

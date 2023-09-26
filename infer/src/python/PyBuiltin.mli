@@ -35,6 +35,8 @@ type textual =
   | Binary of binary_op
   | Inplace of binary_op
   | PythonCall
+  | PythonCallKW
+  | PythonKWArg
   | PythonClass
   | PythonCode
   | PythonIter

@@ -3211,3 +3211,57 @@ def f(**kwargs):
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
+
+
+let%test_module "call_kw" =
+  ( module struct
+    let%expect_test _ =
+      let source = {|
+def f(z, x, y):
+        pass
+
+f(0, y=2, x=1)
+        |} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_code("dummy.f")
+              n1 = $builtins.python_kw_arg("y", $builtins.python_int(2))
+              n2 = $builtins.python_kw_arg("x", $builtins.python_int(1))
+              n3 = $builtins.python_call_kw("dummy.f", $builtins.python_int(0), n1, n2)
+              ret null
+
+        }
+
+        define dummy.f(z: *PyObject, x: *PyObject, y: *PyObject) : *PyObject {
+          #b0:
+              ret null
+
+        }
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_kw_arg(*String, *PyObject) : *PyObject
+
+        declare $builtins.python_call_kw(...) : *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+  end )
