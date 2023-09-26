@@ -1898,6 +1898,87 @@ module WITH = struct
   end
 end
 
+module DUP = struct
+  module TOP = struct
+    (** {v DUP_TOP v}
+
+        Duplicates the reference on top of the stack. *)
+    let run env {FFI.Instruction.opname} =
+      Debug.p "[%s]\n" opname ;
+      let open IResult.Let_syntax in
+      let* env, tos = pop_datastack opname env in
+      let env = Env.push env tos in
+      let env = Env.push env tos in
+      Ok (env, None)
+  end
+
+  module TOP_TWO = struct
+    (** {v DUP_TOP_TWO v}
+
+        Duplicates the two references on top of the stack, leaving them in the same order. *)
+    let run env {FFI.Instruction.opname} =
+      Debug.p "[%s]\n" opname ;
+      let open IResult.Let_syntax in
+      let* env, tos0 = pop_datastack opname env in
+      let* env, tos1 = pop_datastack opname env in
+      let env = Env.push env tos1 in
+      let env = Env.push env tos0 in
+      let env = Env.push env tos1 in
+      let env = Env.push env tos0 in
+      Ok (env, None)
+  end
+end
+
+module ROT = struct
+  module TWO = struct
+    (** {v ROT_TWO v}
+
+        Swaps the two top-most stack items. *)
+    let run env {FFI.Instruction.opname} =
+      Debug.p "[%s]\n" opname ;
+      let open IResult.Let_syntax in
+      let* env, tos0 = pop_datastack opname env in
+      let* env, tos1 = pop_datastack opname env in
+      let env = Env.push env tos0 in
+      let env = Env.push env tos1 in
+      Ok (env, None)
+  end
+
+  module THREE = struct
+    (** {v ROT_THREE v}
+
+        Lifts second and third stack item one position up, moves top down to position three. *)
+    let run env {FFI.Instruction.opname} =
+      Debug.p "[%s]\n" opname ;
+      let open IResult.Let_syntax in
+      let* env, tos0 = pop_datastack opname env in
+      let* env, tos1 = pop_datastack opname env in
+      let* env, tos2 = pop_datastack opname env in
+      let env = Env.push env tos0 in
+      let env = Env.push env tos2 in
+      let env = Env.push env tos1 in
+      Ok (env, None)
+  end
+
+  module FOUR = struct
+    (** {v ROT_FOUR v}
+
+        Lifts second, third and fourth stack items one position up, moves top down to position four. *)
+    let run env {FFI.Instruction.opname} =
+      Debug.p "[%s]\n" opname ;
+      let open IResult.Let_syntax in
+      let* env, tos0 = pop_datastack opname env in
+      let* env, tos1 = pop_datastack opname env in
+      let* env, tos2 = pop_datastack opname env in
+      let* env, tos3 = pop_datastack opname env in
+      let env = Env.push env tos0 in
+      let env = Env.push env tos3 in
+      let env = Env.push env tos2 in
+      let env = Env.push env tos1 in
+      Ok (env, None)
+  end
+end
+
 (** Main opcode dispatch function. *)
 let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) next_offset_opt =
   Debug.p "Dump Stack:\n%a\n" (Pp.seq ~sep:"\n" DataStack.pp_cell) (Env.stack env) ;
@@ -2040,6 +2121,16 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
       WITH.CLEANUP_START.run env instr
   | "WITH_CLEANUP_FINISH" ->
       WITH.CLEANUP_FINISH.run env instr
+  | "DUP_TOP" ->
+      DUP.TOP.run env instr
+  | "DUP_TOP_TWO" ->
+      DUP.TOP_TWO.run env instr
+  | "ROT_TWO" ->
+      ROT.TWO.run env instr
+  | "ROT_THREE" ->
+      ROT.THREE.run env instr
+  | "ROT_FOUR" ->
+      ROT.FOUR.run env instr
   | _ ->
       L.internal_error "Unsupported opcode: %s@\n" opname ;
       Error ()
