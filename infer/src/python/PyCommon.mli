@@ -185,6 +185,12 @@ val init__ : string
 val new__ : string
 (** Name of the Python instantiation method *)
 
+val exit : string
+(** Name of the Python context exit method *)
+
+val enter : string
+(** Name of the Python context enter method *)
+
 val return : string
 (** Name of the binding name of return types of functions / methods *)
 

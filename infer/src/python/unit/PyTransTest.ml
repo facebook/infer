@@ -2910,4 +2910,47 @@ fp.write("yolo")
         declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+with open("foo.txt", "wt") as fp:
+    fp.write("yolo")
+          |} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.open($builtins.python_string("foo.txt"), $builtins.python_string("wt"))
+              n1 = n0.?.__enter__()
+              store &dummy::fp <- n1:*PyObject
+              n2:*PyObject = load &dummy::fp
+              n3 = n2.?.write($builtins.python_string("yolo"))
+              n4 = n0.?.__exit__(null, null, null)
+              ret null
+
+        }
+
+        global dummy::fp: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.open(...) : *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )

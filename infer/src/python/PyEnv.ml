@@ -12,6 +12,7 @@ module Debug = PyDebug
 module Builtin = PyBuiltin
 module Ident = PyCommon.Ident
 module Labels = Caml.Map.Make (Int)
+module ISet = Caml.Set.Make (Int)
 
 module Signature = struct
   type t = {annotations: PyCommon.signature; is_static: bool; is_abstract: bool}
@@ -87,6 +88,9 @@ module DataStack = struct
     | StaticCall of {call_name: T.qualified_procname; receiver: T.Exp.t option}
     | Super
     | Path of Ident.t
+    | WithContext of
+        T.Ident.t (* see https://docs.python.org/3.8/reference/compound_stmts.html#with *)
+    | NoException
   [@@deriving show]
 
   let as_code FFI.Code.{co_consts} = function
@@ -105,7 +109,9 @@ module DataStack = struct
     | ImportCall _
     | MethodCall _
     | StaticCall _
-    | Super ->
+    | Super
+    | WithContext _
+    | NoException ->
         None
 
 
@@ -126,7 +132,9 @@ module DataStack = struct
     | ImportCall _
     | MethodCall _
     | StaticCall _
-    | Super ->
+    | Super
+    | WithContext _
+    | NoException ->
         None
 
 
@@ -148,11 +156,15 @@ module DataStack = struct
     | ImportCall _
     | MethodCall _
     | StaticCall _
-    | Super ->
+    | Super
+    | WithContext _
+    | NoException ->
         None
 
 
   let is_path = function Path _ -> true | _ -> false
+
+  let is_no_exception = function NoException -> true | _ -> false
 
   type t = cell list
 
@@ -194,6 +206,7 @@ and shared =
   ; is_toplevel: bool
   ; is_static: bool (* is the current method a static method or an instance method ? *)
   ; next_label: int
+  ; with_targets: ISet.t (* targets for clean up code of [with] statements *)
   ; labels: label_info Labels.t }
 
 (** State of the capture while processing a single node: each node has a dedicated data stack, and
@@ -318,6 +331,7 @@ let empty module_name =
   ; is_toplevel= true
   ; is_static= false
   ; next_label= 0
+  ; with_targets= ISet.empty
   ; labels= Labels.empty }
 
 
@@ -401,6 +415,20 @@ let register_label ~offset ({label_name; ssa_parameters} as label_info) ({shared
   in
   let shared = register_label offset label_info shared in
   {env with shared}
+
+
+let register_with_target ~offset ({shared} as env) =
+  Debug.p "[register_with_target] at offset %d\n" offset ;
+  let {with_targets} = shared in
+  let with_targets = ISet.add offset with_targets in
+  let shared = {shared with with_targets} in
+  {env with shared}
+
+
+let is_with_target ~offset {shared} =
+  Debug.p "[is_with_target] %d ?\n" offset ;
+  let {with_targets} = shared in
+  ISet.mem offset with_targets
 
 
 let process_label ~offset ({label_name} as label_info) ({shared} as env) =

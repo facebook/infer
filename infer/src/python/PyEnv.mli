@@ -75,6 +75,11 @@ module DataStack : sig
             have to keep the receiver around, just in case. *)
     | Super  (** special name to refer to the parent class, like in [super().__init__()] *)
     | Path of Ident.t  (** Qualified path for sequence of imports, attribute accesses, ... *)
+    | WithContext of T.Ident.t
+        (** value to be used for calling __enter__ and __exit__ with the `with context` statement *)
+    | NoException
+        (** Special NONE symbol pushed by the exception infra to express that no exception has been
+            raised *)
   [@@deriving show]
 
   val as_code : FFI.Code.t -> cell -> FFI.Code.t option
@@ -84,6 +89,8 @@ module DataStack : sig
   val as_id : FFI.Code.t -> cell -> Ident.t option
 
   val is_path : cell -> bool
+
+  val is_no_exception : cell -> bool
 
   type t = cell list
 end
@@ -187,6 +194,12 @@ val push_instr : t -> T.Instr.t -> t
 
 val register_label : offset:int -> Label.info -> t -> t
 (** Register the fact that a new label [info] must be inserted before the instruction at [offset] *)
+
+val register_with_target : offset:int -> t -> t
+(** Register the location of a [with] statement clean up code *)
+
+val is_with_target : offset:int -> t -> bool
+(** Check whether a code offset is the target of a [with] statement *)
 
 val process_label : offset:int -> Label.info -> t -> t
 (** Mark the label [info] at [offset] as processed *)

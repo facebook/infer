@@ -357,6 +357,10 @@ let init__ = "__init__"
 
 let new__ = "__new__"
 
+let exit = "__exit__"
+
+let enter = "__enter__"
+
 let return = "return"
 
 let entry = "entry"

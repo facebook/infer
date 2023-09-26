@@ -314,9 +314,17 @@ let load_cell env {FFI.Code.co_consts; co_names; co_varnames} cell =
         in
         let res = Ident.fold ~init:env ~f_root ~f_path id in
         Result.map ~f:(fun (env, exp, info, _fields) -> (env, exp, info)) res
-  | BuiltinBuildClass | StaticCall _ | MethodCall _ | Import _ | ImportCall _ | Super ->
-      L.internal_error "[load_cell] Can't load %a, something went wrong@\n" DataStack.pp_cell cell ;
-      Error ()
+  | NoException ->
+      Ok (env, T.Exp.Const T.Const.Null, default_info PyCommon.pyNone)
+  | BuiltinBuildClass
+  | StaticCall _
+  | MethodCall _
+  | Import _
+  | ImportCall _
+  | Super
+  | WithContext _ ->
+      L.die InternalError "[load_cell] Can't load %a, something went wrong@\n" DataStack.pp_cell
+        cell
 
 
 let cells_to_textual env code cells =
@@ -627,7 +635,7 @@ module FUNCTION = struct
           let* env, args = cells_to_textual env code cells in
           let proc = Ident.to_qualified_procname id in
           mk env (Some id) loc proc args
-      | Import _ | StaticCall _ | MethodCall _ ->
+      | Import _ | StaticCall _ | MethodCall _ | NoException | WithContext _ ->
           L.internal_error "[%s] unsupported call to %a with arg = %d@\n" opname DataStack.pp_cell
             fname arg ;
           Error ()
@@ -719,6 +727,8 @@ module FUNCTION = struct
         | MethodCall _
         | StaticCall _
         | Path _
+        | NoException
+        | WithContext _
         | Super ->
             L.internal_error "%s: invalid function name: %s@\n" opname (DataStack.show_cell qual) ;
             Error ()
@@ -916,6 +926,8 @@ module METHOD = struct
       | Map _
       | BuiltinBuildClass
       | Import _
+      | NoException
+      | WithContext _
       | Super ->
           L.internal_error "[%s] failed to load method information from cell %a@\n" opname
             DataStack.pp_cell cell_mi ;
@@ -1101,6 +1113,18 @@ module POP_TOP = struct
         Ok env
       else Ok env
     in
+    Ok (env, None)
+end
+
+module POP_BLOCK = struct
+  (** {v POP_BLOCK v}
+
+      Removes one block from the block stack. Per frame, there is a stack of blocks, denoting try
+      statements, and such.
+
+      Note: we don't mode blocks (yet?) so this is a NOP *)
+  let run env {FFI.Instruction.opname} =
+    Debug.p "[%s]\n" opname ;
     Ok (env, None)
 end
 
@@ -1682,8 +1706,183 @@ module COMPARE_OP = struct
     Ok (env, None)
 end
 
+module FINALLY = struct
+  module BEGIN = struct
+    (** {v BEGIN_FINALLY v}
+
+        Pushes [NoException] onto the stack for using it in [END_FINALLY], [POP_FINALLY],
+        [WITH_CLEANUP_START] and [WITH_CLEANUP_FINISH]. Starts the finally block.
+
+        Note: we only provide initial support to be used with [SETUP_WITH] *)
+    let run env {FFI.Instruction.opname} =
+      Debug.p "[%s]\n" opname ;
+      let env = Env.push env DataStack.NoException in
+      Ok (env, None)
+  end
+
+  module END = struct
+    (** {v END_FINALLY v}
+
+        Terminates a finally clause. The interpreter recalls whether the exception has to be
+        re-raised or execution has to be continued depending on the value on top of the stack.
+
+        If top-of-stack is [NoException] (pushed by [BEGIN_FINALLY]) continue from the next
+        instruction. top-of-stack is popped.
+
+        If top-of-stack is an integer (pushed by [CALL_FINALLY]), sets the bytecode counter to
+        top-of-stack. top-of-stack is popped.
+
+        If top-of-stack is an exception type (pushed when an exception has been raised) 6 values are
+        popped from the stack, the first three popped values are used to re-raise the exception and
+        the last three popped values are used to restore the exception state. An exception handler
+        block is removed from the block stack.
+
+        Note: we only support [NoException] for the time being. *)
+    let run env {FFI.Instruction.opname} =
+      let open IResult.Let_syntax in
+      Debug.p "[%s]\n" opname ;
+      let* env, tos = pop_datastack opname env in
+      let* env =
+        if DataStack.is_no_exception tos then Ok env
+        else (
+          L.internal_error "[%s] support for %a is not implemented at the moment@\n" opname
+            DataStack.pp_cell tos ;
+          Error () )
+      in
+      Ok (env, None)
+  end
+end
+
+module WITH = struct
+  module CLEANUP_START = struct
+    (** {v WITH_CLEANUP_START v}
+
+        Starts cleaning up the stack when a with statement block exits. At the top of the stack are
+        either [NoException] (pushed by [BEGIN_FINALLY]) or 6 values pushed if an exception has been
+        raised in the with block. Below is the context manager’s [__exit__()] or [__aexit__()] bound
+        method.
+
+        If top-of-stack is [NoException], calls [SECOND(None, None, None)], removes the function
+        from the stack, leaving top-of-stack, and pushes [NoException] to the stack. Otherwise calls
+        [SEVENTH(TOP, SECOND, THIRD)], shifts the bottom 3 values of the stack down, replaces the
+        empty spot with [NoException] and pushes top-of-stack. Finally pushes the result of the
+        call.
+
+        Note: we only support the first case with [NoException] for the moment we only support
+        [__exit__]. TODO: learn how [__aexit__] works *)
+    let run env {FFI.Instruction.opname} =
+      Debug.p "[%s]\n" opname ;
+      let open IResult.Let_syntax in
+      let* env, tos = pop_datastack opname env in
+      let* () =
+        if DataStack.is_no_exception tos then Ok ()
+        else (
+          L.internal_error "[%s] no support for exceptions at the moment. Got %a@\n" opname
+            DataStack.pp_cell tos ;
+          Error () )
+      in
+      let* env, context_manager = pop_datastack opname env in
+      let* exp =
+        match context_manager with
+        | DataStack.WithContext exp ->
+            Ok exp
+        | _ ->
+            L.external_error "[%s] expected a 'with' context manager, got %a@\n" opname
+              DataStack.pp_cell context_manager ;
+            Error ()
+      in
+      let proc =
+        let enclosing_class = T.TypeName.wildcard in
+        qualified_procname ~enclosing_class @@ proc_name PyCommon.exit
+      in
+      let none = T.Exp.Const T.Const.Null in
+      let exit_exp = T.Exp.call_virtual proc (T.Exp.Var exp) [none; none; none] in
+      let loc = Env.loc env in
+      let info = Env.Info.default PyCommon.pyObject in
+      let env, id = Env.mk_fresh_ident env info in
+      let instr = T.Instr.Let {id; exp= exit_exp; loc} in
+      let env = Env.push_instr env instr in
+      let env = Env.push env DataStack.NoException in
+      let env = Env.push env (DataStack.Temp id) in
+      Ok (env, None)
+  end
+
+  module CLEANUP_FINISH = struct
+    (** {v WITH_CLEANUP_FINISH v}
+
+        Finishes cleaning up the stack when a with statement block exits. top-of-stack is result of
+        [__exit__()] or [__aexit__()] function call pushed by [WITH_CLEANUP_START]. [SECOND] is
+        [NoException] or an exception type (pushed when an exception has been raised).
+
+        Pops two values from the stack. If [SECOND] is not [NoException] and top-of-stack is true
+        unwinds the [EXCEPT_HANDLER] block which was created when the exception was caught and
+        pushes [NoException] to the stack.
+
+        Note: we only support the [NoException] case for the moment *)
+    let run env {FFI.Instruction.opname} =
+      Debug.p "[%s]\n" opname ;
+      let open IResult.Let_syntax in
+      let* env, _exit_res = pop_datastack opname env in
+      let* env, tos = pop_datastack opname env in
+      let* () =
+        if DataStack.is_no_exception tos then Ok ()
+        else (
+          L.internal_error "[%s] no support for exceptions at the moment. Got %a@\n" opname
+            DataStack.pp_cell tos ;
+          Error () )
+      in
+      (* TODO: check exit_res to deal with exception unwinding *)
+      let env = Env.push env DataStack.NoException in
+      Ok (env, None)
+  end
+
+  module SETUP = struct
+    (** {v SETUP_WITH(delta) v}
+
+        This opcode performs several operations before a with block starts. First, it loads
+        [__exit__()] from the context manager and pushes it onto the stack for later use by
+        [WITH_CLEANUP_START]. Then, [__enter__()] is called, and a finally block pointing to delta
+        is pushed. Finally, the result of calling the [__enter__()] method is pushed onto the stack.
+        The next opcode will either ignore it [POP_TOP], or store it in (a) variable(s)
+        [STORE_FAST], [STORE_NAME], or [UNPACK_SEQUENCE]. *)
+    let run env {FFI.Instruction.opname; arg= delta} next_offset_opt =
+      Debug.p "[%s] delta= %d\n" opname delta ;
+      let open IResult.Let_syntax in
+      (* This instruction gives us a relative delta w.r.t the next offset, so we turn it into an
+         absolute offset right away *)
+      let* next_offset = next_offset next_offset_opt in
+      let offset = next_offset + delta in
+      let env = Env.register_with_target ~offset env in
+      let* env, cell = pop_datastack opname env in
+      let* id =
+        match (cell : DataStack.cell) with
+        | Temp id ->
+            Ok id
+        | _ ->
+            L.internal_error "%s only supports Textual.Ident.t as context manager. Got %a@\n" opname
+              DataStack.pp_cell cell ;
+            Error ()
+      in
+      let env = Env.push env (DataStack.WithContext id) in
+      let proc =
+        let enclosing_class = T.TypeName.wildcard in
+        qualified_procname ~enclosing_class @@ proc_name PyCommon.enter
+      in
+      (* TODO: maybe track that the label pointed to by [delta] is a clean-up block *)
+      let enter_exp = T.Exp.call_virtual proc (T.Exp.Var id) [] in
+      let loc = Env.loc env in
+      let info = Env.Info.default PyCommon.pyObject in
+      let env, id = Env.mk_fresh_ident env info in
+      let instr = T.Instr.Let {id; exp= enter_exp; loc} in
+      let env = Env.push_instr env instr in
+      let env = Env.push env (DataStack.Temp id) in
+      Ok (env, None)
+  end
+end
+
 (** Main opcode dispatch function. *)
 let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) next_offset_opt =
+  Debug.p "Dump Stack:\n%a\n" (Pp.seq ~sep:"\n" DataStack.pp_cell) (Env.stack env) ;
   Debug.p "> %s\n" opname ;
   let env = Env.update_last_line env starts_line in
   (* TODO: there are < 256 opcodes, could setup an array of callbacks instead *)
@@ -1708,6 +1907,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
       STORE.run NAME env code instr
   | "RETURN_VALUE" ->
       RETURN_VALUE.run env code instr
+  | "POP_BLOCK" ->
+      POP_BLOCK.run env instr
   | "POP_TOP" ->
       POP_TOP.run env code instr
   | "CALL_FUNCTION" ->
@@ -1809,6 +2010,16 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "EXTENDED_ARG" ->
       (* The FFI.Instruction framework already did the magic and this opcode can be ignored. *)
       Ok (env, None)
+  | "BEGIN_FINALLY" ->
+      FINALLY.BEGIN.run env instr
+  | "END_FINALLY" ->
+      FINALLY.END.run env instr
+  | "SETUP_WITH" ->
+      WITH.SETUP.run env instr next_offset_opt
+  | "WITH_CLEANUP_START" ->
+      WITH.CLEANUP_START.run env instr
+  | "WITH_CLEANUP_FINISH" ->
+      WITH.CLEANUP_FINISH.run env instr
   | _ ->
       L.internal_error "Unsupported opcode: %s@\n" opname ;
       Error ()
@@ -1826,10 +2037,13 @@ let has_jump_target env instructions =
         else (env, Some (offset, false, label_info))
     | None ->
         if is_jump_target then
-          (* Probably the target of a back edge. Let's register and empty label info here. *)
-          let env, label_name = Env.mk_fresh_label env in
-          let label_info = Env.Label.mk label_name in
-          (env, Some (offset, true, label_info))
+          (* If it's the target of a [with] statement, ignore it *)
+          if Env.is_with_target env ~offset then (env, None)
+          else
+            (* Probably the target of a back edge. Let's register and empty label info here. *)
+            let env, label_name = Env.mk_fresh_label env in
+            let label_info = Env.Label.mk label_name in
+            (env, Some (offset, true, label_info))
         else (env, None) )
 
 
