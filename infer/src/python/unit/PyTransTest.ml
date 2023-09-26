@@ -2868,7 +2868,7 @@ class Test(unittest.TestCase):
   end )
 
 
-let%test_module "with" =
+let%test_module "with/finally" =
   ( module struct
     let%expect_test _ =
       (* No with for this one it's a baseline to support [open] *)
@@ -2953,4 +2953,45 @@ with open("foo.txt", "wt") as fp:
         declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+try:
+      print("TRY BLOCK")
+finally:
+      print("FINALLY BLOCK")
+      |}
+      in
+      test source ;
+      [%expect
+        {|
+      .source_language = "python"
+
+      define dummy.$toplevel() : *PyNone {
+        #b0:
+            n0 = $builtins.print($builtins.python_string("TRY BLOCK"))
+            n1 = $builtins.print($builtins.python_string("FINALLY BLOCK"))
+            ret null
+
+      }
+
+      global $python_implicit_names::__name__: *PyString
+
+      global $python_implicit_names::__file__: *PyString
+
+      declare $builtins.print(...) : *PyObject
+
+      declare $builtins.python_tuple(...) : *PyObject
+
+      declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+      declare $builtins.python_string(*String) : *PyString
+
+      declare $builtins.python_bool(int) : *PyBool
+
+      declare $builtins.python_float(float) : *PyFloat
+
+      declare $builtins.python_int(int) : *PyInt |}]
   end )

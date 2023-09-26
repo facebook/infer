@@ -1751,6 +1751,24 @@ module FINALLY = struct
       in
       Ok (env, None)
   end
+
+  module SETUP = struct
+    (** {v SETUP_FINALLY(delta) v}
+
+        Pushes a try block from a try-finally or try-except clause onto the block stack. [delta]
+        points to the finally block or the first except block.
+
+        Note: we don't support exception yet, so this doesn't do much at the moment *)
+    let run env {FFI.Instruction.opname; arg= delta} next_offset_opt =
+      Debug.p "[%s] delta= %d\n" opname delta ;
+      let open IResult.Let_syntax in
+      (* This instruction gives us a relative delta w.r.t the next offset, so we turn it into an
+         absolute offset right away *)
+      let* next_offset = next_offset next_offset_opt in
+      let offset = next_offset + delta in
+      let env = Env.register_with_target ~offset env in
+      Ok (env, None)
+  end
 end
 
 module WITH = struct
@@ -1841,7 +1859,7 @@ module WITH = struct
 
         This opcode performs several operations before a with block starts. First, it loads
         [__exit__()] from the context manager and pushes it onto the stack for later use by
-        [WITH_CLEANUP_START]. Then, [__enter__()] is called, and a finally block pointing to delta
+        [WITH_CLEANUP_START]. Then, [__enter__()] is called, and a finally block pointing to [delta]
         is pushed. Finally, the result of calling the [__enter__()] method is pushed onto the stack.
         The next opcode will either ignore it [POP_TOP], or store it in (a) variable(s)
         [STORE_FAST], [STORE_NAME], or [UNPACK_SEQUENCE]. *)
@@ -2014,6 +2032,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
       FINALLY.BEGIN.run env instr
   | "END_FINALLY" ->
       FINALLY.END.run env instr
+  | "SETUP_FINALLY" ->
+      FINALLY.SETUP.run env instr next_offset_opt
   | "SETUP_WITH" ->
       WITH.SETUP.run env instr next_offset_opt
   | "WITH_CLEANUP_START" ->

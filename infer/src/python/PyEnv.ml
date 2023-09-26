@@ -206,7 +206,7 @@ and shared =
   ; is_toplevel: bool
   ; is_static: bool (* is the current method a static method or an instance method ? *)
   ; next_label: int
-  ; with_targets: ISet.t (* targets for clean up code of [with] statements *)
+  ; with_targets: ISet.t (* targets for clean up code of [with] statements or [finally] blocks *)
   ; labels: label_info Labels.t }
 
 (** State of the capture while processing a single node: each node has a dedicated data stack, and
