@@ -42,6 +42,7 @@ type textual =
   | PythonBuildList
   | PythonBuildSet
   | PythonBuildTuple
+  | PythonIndex
   | PythonSubscriptGet
   | PythonSubscriptSet
   | CompareOp of Compare.t

@@ -2992,3 +2992,127 @@ finally:
 
       declare $builtins.python_int(int) : *PyInt |}]
   end )
+
+
+let%test_module "kwargs" =
+  ( module struct
+    let%expect_test _ =
+      let source = {|
+(a, b) = f()
+|} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = ?.f()
+              n1 = $builtins.python_index(n0, 1)
+              n2 = $builtins.python_index(n0, 0)
+              store &dummy::a <- n2:*PyObject
+              store &dummy::b <- n1:*PyObject
+              ret null
+
+        }
+
+        global dummy::b: *PyObject
+
+        global dummy::a: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_index(*PyObject, int) : *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+def f(**kwargs):
+        for (k, v) in kwargs.items():
+            print(k, v)
+|}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_code("dummy.f")
+              ret null
+
+        }
+
+        define dummy.f() : *PyObject {
+          local kwargs: *PyObject, k: *PyObject, v: *PyObject
+          #b0:
+              n0:*PyObject = load &kwargs
+              n1 = n0.?.items()
+              n2 = $builtins.python_iter(n1)
+              jmp b1(n2)
+
+          #b1(n3: *PyObject):
+              n4 = $builtins.python_iter_next(n3)
+              n5:int = load n4.PyIterItem.has_item
+              if n5 then jmp b2 else jmp b3
+
+          #b2:
+              n6:*PyObject = load n4.PyIterItem.next_item
+              n7 = $builtins.python_index(n6, 1)
+              n8 = $builtins.python_index(n6, 0)
+              store &k <- n8:*PyObject
+              store &v <- n7:*PyObject
+              n9:*PyObject = load &k
+              n10:*PyObject = load &v
+              n11 = $builtins.print(n9, n10)
+              jmp b1(n3)
+
+          #b3:
+              ret null
+
+        }
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.print(...) : *PyObject
+
+        declare $builtins.python_index(*PyObject, int) : *PyObject
+
+        declare $builtins.python_iter_next(*PyObject) : *PyIterItem
+
+        type PyIterItem = {has_item: int; next_item: *PyObject}
+
+        declare $builtins.python_iter(*PyObject) : *PyObject
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+  end )

@@ -1982,6 +1982,41 @@ module ROT = struct
   end
 end
 
+module UNPACK = struct
+  module SEQUENCE = struct
+    (** {v UNPACK_SEQUENCE(count) v}
+
+        Unpacks top-of-stack into [count] individual values, which are put onto the stack
+        right-to-left. *)
+    let run env code {FFI.Instruction.opname; arg= count} =
+      let open IResult.Let_syntax in
+      let build_let env exp n =
+        let env, id, _typ =
+          Env.mk_builtin_call env Builtin.PythonIndex [exp; T.Exp.Const (Int (Z.of_int n))]
+        in
+        Env.push env (DataStack.Temp id)
+      in
+      let rec unpack env exp n =
+        if Int.equal n 0 then build_let env exp 0
+        else
+          let env = build_let env exp n in
+          unpack env exp (n - 1)
+      in
+      Debug.p "[%s] count= %d\n" opname count ;
+      let* env, cell = pop_datastack opname env in
+      (* TODO: try to keep tuple type information around *)
+      let* env, tuple, _info = load_cell env code cell in
+      let* () =
+        if count <= 0 then (
+          L.external_error "UNPACK_SEQUENCE with count = %d\n" count ;
+          Error () )
+        else Ok ()
+      in
+      let env = unpack env tuple (count - 1) in
+      Ok (env, None)
+  end
+end
+
 (** Main opcode dispatch function. *)
 let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) next_offset_opt =
   Debug.p "Dump Stack:\n%a\n" (Pp.seq ~sep:"\n" DataStack.pp_cell) (Env.stack env) ;
@@ -2134,6 +2169,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
       ROT.THREE.run env instr
   | "ROT_FOUR" ->
       ROT.FOUR.run env instr
+  | "UNPACK_SEQUENCE" ->
+      UNPACK.SEQUENCE.run env code instr
   | _ ->
       L.internal_error "Unsupported opcode: %s@\n" opname ;
       Error ()

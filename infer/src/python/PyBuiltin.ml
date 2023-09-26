@@ -105,6 +105,7 @@ module Builtin = struct
     | PythonBuildList
     | PythonBuildSet
     | PythonBuildTuple
+    | PythonIndex
     | PythonSubscriptGet
     | PythonSubscriptSet
     | CompareOp of Compare.t
@@ -164,6 +165,8 @@ let to_proc_name = function
             "python_build_set"
         | PythonBuildTuple ->
             "python_build_tuple"
+        | PythonIndex ->
+            "python_index"
         | PythonSubscriptGet ->
             "python_subscript_get"
         | PythonSubscriptSet ->
@@ -316,6 +319,10 @@ module Set = struct
         , {formals_types= None; result_type= annot PyCommon.pySet; used_struct_types= []} )
       ; ( Builtin.PythonBuildTuple
         , {formals_types= None; result_type= annot PyCommon.pyTuple; used_struct_types= []} )
+      ; ( Builtin.PythonIndex
+        , { formals_types= Some [annot PyCommon.pyObject; annot T.Typ.Int]
+          ; result_type= annot PyCommon.pyObject
+          ; used_struct_types= [] } )
       ; ( Builtin.PythonSubscriptGet
         , { formals_types= Some [annotatedObject; annotatedObject]
           ; result_type= annotatedObject
