@@ -98,6 +98,51 @@ module Val = struct
     ; arrayblk: ArrayBlk.t
     ; func_ptrs: FuncPtr.Set.t
     ; traces: TraceSet.t }
+  [@@deriving abstract_domain]
+
+  (* Overwrite [widen] to use the interval threshold always. This function is originally constructed
+     by [deriving_inline]. *)
+  let widen ~prev ~next ~num_iters =
+    if phys_equal prev next then prev
+    else
+      let traces = TraceSet.widen ~prev:prev.traces ~next:next.traces ~num_iters in
+      let func_ptrs = FuncPtr.Set.widen ~prev:prev.func_ptrs ~next:next.func_ptrs ~num_iters in
+      let arrayblk = ArrayBlk.widen ~prev:prev.arrayblk ~next:next.arrayblk ~num_iters in
+      let powloc = PowLoc.widen ~prev:prev.powloc ~next:next.powloc ~num_iters in
+      let modeled_range =
+        ModeledRange.widen ~prev:prev.modeled_range ~next:next.modeled_range ~num_iters
+      in
+      let itv_updated_by =
+        ItvUpdatedBy.widen ~prev:prev.itv_updated_by ~next:next.itv_updated_by ~num_iters
+      in
+      let itv_thresholds =
+        ItvThresholds.widen ~prev:prev.itv_thresholds ~next:next.itv_thresholds ~num_iters
+      in
+      let itv =
+        Itv.widen_thresholds
+          ~thresholds:(ItvThresholds.elements itv_thresholds)
+          ~prev:prev.itv ~next:next.itv ~num_iters
+      in
+      if
+        phys_equal traces next.traces
+        && phys_equal func_ptrs next.func_ptrs
+        && phys_equal arrayblk next.arrayblk && phys_equal powloc next.powloc
+        && phys_equal modeled_range next.modeled_range
+        && phys_equal itv_updated_by next.itv_updated_by
+        && phys_equal itv_thresholds next.itv_thresholds
+        && phys_equal itv next.itv
+      then next
+      else if
+        phys_equal traces prev.traces
+        && phys_equal func_ptrs prev.func_ptrs
+        && phys_equal arrayblk prev.arrayblk && phys_equal powloc prev.powloc
+        && phys_equal modeled_range prev.modeled_range
+        && phys_equal itv_updated_by prev.itv_updated_by
+        && phys_equal itv_thresholds prev.itv_thresholds
+        && phys_equal itv prev.itv
+      then prev
+      else {itv; itv_thresholds; itv_updated_by; modeled_range; powloc; arrayblk; func_ptrs; traces}
+
 
   let bot : t =
     { itv= Itv.bot
@@ -155,51 +200,6 @@ module Val = struct
       powloc= (if is_int then PowLoc.bot else PowLoc.unknown)
     ; arrayblk= (if is_int then ArrayBlk.bottom else ArrayBlk.unknown)
     ; traces }
-
-
-  let leq ~lhs ~rhs =
-    if phys_equal lhs rhs then true
-    else
-      Itv.leq ~lhs:lhs.itv ~rhs:rhs.itv
-      && ItvThresholds.leq ~lhs:lhs.itv_thresholds ~rhs:rhs.itv_thresholds
-      && ItvUpdatedBy.leq ~lhs:lhs.itv_updated_by ~rhs:rhs.itv_updated_by
-      && ModeledRange.leq ~lhs:lhs.modeled_range ~rhs:rhs.modeled_range
-      && PowLoc.leq ~lhs:lhs.powloc ~rhs:rhs.powloc
-      && ArrayBlk.leq ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
-      && FuncPtr.Set.leq ~lhs:lhs.func_ptrs ~rhs:rhs.func_ptrs
-
-
-  let widen ~prev ~next ~num_iters =
-    if phys_equal prev next then prev
-    else
-      let itv_thresholds = ItvThresholds.join prev.itv_thresholds next.itv_thresholds in
-      { itv=
-          Itv.widen_thresholds
-            ~thresholds:(ItvThresholds.elements itv_thresholds)
-            ~prev:prev.itv ~next:next.itv ~num_iters
-      ; itv_thresholds
-      ; itv_updated_by=
-          ItvUpdatedBy.widen ~prev:prev.itv_updated_by ~next:next.itv_updated_by ~num_iters
-      ; modeled_range=
-          ModeledRange.widen ~prev:prev.modeled_range ~next:next.modeled_range ~num_iters
-      ; powloc= PowLoc.widen ~prev:prev.powloc ~next:next.powloc ~num_iters
-      ; arrayblk= ArrayBlk.widen ~prev:prev.arrayblk ~next:next.arrayblk ~num_iters
-      ; func_ptrs= FuncPtr.Set.widen ~prev:prev.func_ptrs ~next:next.func_ptrs ~num_iters
-      ; traces= TraceSet.join prev.traces next.traces }
-
-
-  let join : t -> t -> t =
-   fun x y ->
-    if phys_equal x y then x
-    else
-      { itv= Itv.join x.itv y.itv
-      ; itv_thresholds= ItvThresholds.join x.itv_thresholds y.itv_thresholds
-      ; itv_updated_by= ItvUpdatedBy.join x.itv_updated_by y.itv_updated_by
-      ; modeled_range= ModeledRange.join x.modeled_range y.modeled_range
-      ; powloc= PowLoc.join x.powloc y.powloc
-      ; arrayblk= ArrayBlk.join x.arrayblk y.arrayblk
-      ; func_ptrs= FuncPtr.Set.join x.func_ptrs y.func_ptrs
-      ; traces= TraceSet.join x.traces y.traces }
 
 
   let get_itv : t -> Itv.t = fun x -> x.itv
