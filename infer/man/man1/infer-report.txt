@@ -257,6 +257,7 @@ OPTIONS
              PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
              PULSE_CONST_REFABLE (enabled by default),
              PULSE_READONLY_SHARED_PTR_PARAM (enabled by default),
+             PULSE_REFERENCE_STABILITY (disabled by default),
              PULSE_RESOURCE_LEAK (enabled by default),
              PULSE_UNINITIALIZED_VALUE (enabled by default),
              PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default),

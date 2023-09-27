@@ -426,6 +426,8 @@ val user_controlled_sql_risk : t
 
 val vector_invalidation : latent:bool -> t
 
+val pulse_reference_stability : t [@@warning "-unused-value-declaration"]
+
 val weak_self_in_noescape_block : t
 
 val wrong_argument_number : t

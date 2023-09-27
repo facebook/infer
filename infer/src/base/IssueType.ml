@@ -1155,6 +1155,11 @@ let vector_invalidation =
     ~user_documentation:[%blob "./documentation/issues/VECTOR_INVALIDATION.md"]
 
 
+let pulse_reference_stability =
+  register ~id:"PULSE_REFERENCE_STABILITY" ~enabled:false Error Pulse
+    ~user_documentation:[%blob "./documentation/issues/PULSE_REFERENCE_STABILITY.md"]
+
+
 let weak_self_in_noescape_block =
   register ~id:"WEAK_SELF_IN_NO_ESCAPE_BLOCK" Error SelfInBlock
     ~user_documentation:[%blob "./documentation/issues/WEAK_SELF_IN_NO_ESCAPE_BLOCK.md"]
