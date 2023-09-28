@@ -1876,7 +1876,7 @@ module TransferFunctions = struct
   let pp_session_name _node fmt = Format.pp_print_string fmt "Lineage"
 end
 
-module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctions)
+module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
 let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_opt =
   let shapes =
