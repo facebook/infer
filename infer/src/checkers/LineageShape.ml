@@ -1172,7 +1172,7 @@ module Analyzer () = struct
     let state = Env.State.create ()
   end
 
-  include AbstractInterpreter.MakeRPO (TransferFunctions (State))
+  include AbstractInterpreter.MakeWTO (TransferFunctions (State))
 end
 
 let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
