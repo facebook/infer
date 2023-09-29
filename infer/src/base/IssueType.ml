@@ -884,6 +884,11 @@ let pulse_resource_leak =
     ~user_documentation:"See [RESOURCE_LEAK](#resource_leak)"
 
 
+let pulse_uninitialized_const =
+  register ~enabled:false ~id:"PULSE_UNINITIALIZED_CONST" Error Pulse ~hum:"Uninitialized Const"
+    ~user_documentation:[%blob "./documentation/issues/PULSE_UNINITIALIZED_CONST.md"]
+
+
 let pure_function =
   register ~id:"PURE_FUNCTION" Error PurityChecker
     ~user_documentation:[%blob "./documentation/issues/PURE_FUNCTION.md"]

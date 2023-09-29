@@ -153,9 +153,13 @@ module Attribute = struct
   end
 
   module UninitializedTyp = struct
-    type t = Value [@@deriving compare, equal]
+    type t = Value | Const [@@deriving compare, equal]
 
-    let pp f = function Value -> F.pp_print_string f "value"
+    let pp f = function
+      | Value ->
+          F.pp_print_string f "value"
+      | Const ->
+          F.pp_print_string f "const"
   end
 
   type t =

@@ -84,7 +84,7 @@ module ConfigUsage : sig
 end
 
 module UninitializedTyp : sig
-  type t = Value [@@deriving compare, equal]
+  type t = Value | Const [@@deriving compare, equal]
 
   val pp : F.formatter -> t -> unit
 end

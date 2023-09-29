@@ -1016,6 +1016,8 @@ let get_issue_type ~latent issue_type =
       IssueType.readonly_shared_ptr_param
   | ReadUninitialized {typ= Value}, _ ->
       IssueType.uninitialized_value_pulse ~latent
+  | ReadUninitialized {typ= Const}, _ ->
+      IssueType.pulse_uninitialized_const
   | RetainCycle _, false ->
       IssueType.retain_cycle
   | StackVariableAddressEscape _, false ->

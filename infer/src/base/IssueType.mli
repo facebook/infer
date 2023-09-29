@@ -326,6 +326,8 @@ val pulse_memory_leak_cpp : t
 
 val pulse_resource_leak : t
 
+val pulse_uninitialized_const : t
+
 val pure_function : t
 
 val quandary_taint_error : t
