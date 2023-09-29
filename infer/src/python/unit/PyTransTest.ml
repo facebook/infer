@@ -3375,3 +3375,87 @@ raise C
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
+
+
+let%test_module "default_arguments" =
+  ( module struct
+    let%expect_test _ =
+      let source =
+        {|
+class C:
+    pass
+
+c = C()
+
+def f(x: int, y=c, z=C()):
+    pass
+
+def g(x, y=1, z=2):
+    pass
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_class("dummy::C")
+              n1 = dummy::C()
+              store &dummy::c <- n1:*dummy::C
+              n2 = dummy::C()
+              n3:*dummy::C = load &dummy::c
+              n4 = $builtins.python_code("dummy.f")
+              n5 = $builtins.python_code("dummy.g")
+              ret null
+
+        }
+
+        declare dummy::C(...) : *dummy::C
+
+        declare dummy::C.__init__(...) : *PyNone
+
+        global dummy::C$static: *PyObject
+
+        type .static dummy::C$static = {}
+
+        type dummy::C = {}
+
+        define dummy.f(x: *PyInt, y: *PyObject, z: *PyObject) : *PyObject {
+          #b0:
+              ret null
+
+        }
+
+        define dummy.g(x: *PyObject, y: *PyObject, z: *PyObject) : *PyObject {
+          #b0:
+              ret null
+
+        }
+
+        global dummy::c: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_class(*String) : *PyClass
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt
+
+        [MAKE_FUNCTION] TODO generate overriding functions with default args inlined
+        [MAKE_FUNCTION] TODO generate overriding functions with default args inlined |}]
+  end )

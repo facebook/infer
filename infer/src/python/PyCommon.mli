@@ -107,6 +107,9 @@ val mk_string : string -> Textual.Exp.t
 val get_string : Textual.Exp.t -> string option
 (** Helper to get back a string built with [mk_string] *)
 
+val get_tuple_as_list : Textual.Exp.t -> Textual.Exp.t list option
+(** Helper to get back the inner elements of a [python_tuple] *)
+
 val mk_bytes : bytes -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal bytes. *)
 

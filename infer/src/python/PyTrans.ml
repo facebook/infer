@@ -35,6 +35,7 @@ module Error = struct
     | CallKwInvalidFunction of DataStack.cell
     | RaiseException of int
     | RaiseExceptionSource of DataStack.cell
+    | MakeFunctionDefault of DataStack.cell
     | MakeFunctionSignature of DataStack.cell
 
   let pp_todo fmt = function
@@ -73,6 +74,8 @@ module Error = struct
         F.fprintf fmt "Unsupported RAISE_VARARGS mode %d" n
     | RaiseExceptionSource cell ->
         F.fprintf fmt "Unsupported source of exception: %a" DataStack.pp_cell cell
+    | MakeFunctionDefault cell ->
+        F.fprintf fmt "Unsupported function defaults: %a" DataStack.pp_cell cell
     | MakeFunctionSignature cell ->
         F.fprintf fmt "Unsupported type annotation: %a" DataStack.pp_cell cell
 
@@ -460,6 +463,10 @@ let rec load_cell env ({FFI.Code.co_consts; co_names; co_varnames} as code) cell
       let env, id, typ = Env.mk_builtin_call env (Builtin.PythonBuild Map) items in
       let env = Env.push env (DataStack.Temp id) in
       Ok (env, T.Exp.Var id, default_info typ)
+  | List (collection, items) ->
+      let env, id, typ = Env.mk_builtin_call env (Builtin.PythonBuild collection) items in
+      let env = Env.push env (DataStack.Temp id) in
+      Ok (env, T.Exp.Var id, default_info typ)
   | Path id ->
       if
         (* TODO: this is incomplete. If something is imported, we can' really know if it is a
@@ -673,10 +680,9 @@ end
 
 let check_flags opname flags =
   let open MakeFunctionFlags in
-  let has_tuple_of_defaults = mem flags DefaultValues in
   let has_dict_of_defaults = mem flags DictDefaultValues in
   let has_closure = mem flags Closure in
-  let unsupported = has_tuple_of_defaults || has_dict_of_defaults || has_closure in
+  let unsupported = has_dict_of_defaults || has_closure in
   if unsupported then Error (L.InternalError, Error.TODO (FunctionFlags (opname, flags))) else Ok ()
 
 
@@ -821,6 +827,7 @@ module FUNCTION = struct
       | WithContext _
       | VarName _
       | Const _
+      | List _
       | Map _ ->
           (* TODO: should be user error, but for now we might trigger it because we don't cover
              enough constructions of the language, so it's an internal error for now *)
@@ -878,6 +885,24 @@ module FUNCTION = struct
         annotations
 
 
+    let unpack_defaults env code defaults =
+      let open IResult.Let_syntax in
+      match (defaults : DataStack.cell) with
+      | Const _ ->
+          let* env, tuple, _typ = load_cell env code defaults in
+          let args = PyCommon.get_tuple_as_list tuple in
+          let* args =
+            Result.of_option
+              ~error:(L.InternalError, Error.TODO (MakeFunctionDefault defaults))
+              args
+          in
+          Ok (env, args)
+      | List (_, args) ->
+          Ok (env, args)
+      | _ ->
+          Error (L.InternalError, Error.TODO (MakeFunctionDefault defaults))
+
+
     (** {v MAKE_FUNCTION(flags) v}
 
         Pushes a new function object on the stack. From bottom to top, the consumed stack must
@@ -912,6 +937,15 @@ module FUNCTION = struct
       let* annotations =
         Option.value_map ~default:(Ok []) ~f:(unpack_annotations env code) annotations
       in
+      let* env =
+        if MakeFunctionFlags.mem flags DefaultValues then (
+          let* env, cell = pop_datastack opname env in
+          let* env, _defaults = unpack_defaults env code cell in
+          L.debug Capture Quiet
+            "[MAKE_FUNCTION] TODO generate overriding functions with default args inlined@\n" ;
+          Ok env )
+        else Ok env
+      in
       let* code =
         match DataStack.as_code code body with
         | None ->
@@ -925,6 +959,7 @@ module FUNCTION = struct
         | Name _
         | Temp _
         | Code _
+        | List _
         | Map _
         | BuiltinBuildClass
         | Import _
@@ -1059,6 +1094,7 @@ module FUNCTION = struct
       | Code _
       | VarName _
       | Const _
+      | List _
       | Map _
       | Import _
       | StaticCall _
@@ -1226,6 +1262,7 @@ module METHOD = struct
       | Temp _
       | Code _
       | Map _
+      | List _
       | BuiltinBuildClass
       | Import _
       | NoException
@@ -1566,8 +1603,7 @@ module BUILD = struct
       Debug.p "[%s] count = %d\n" opname count ;
       let* env, items = pop_n_datastack opname env count in
       let* env, items = cells_to_textual env code items in
-      let env, id, _typ = Env.mk_builtin_call env (Builtin.PythonBuild collection) items in
-      let env = Env.push env (DataStack.Temp id) in
+      let env = Env.push env (DataStack.List (collection, items)) in
       Ok (env, None)
   end
 end
@@ -2900,6 +2936,9 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
       ~init:(Ok (env, codes))
       ~f:(fun acc {PyCommon.code; signature; flags; is_static; is_abstract} ->
         let* env, codes = acc in
+        (* TODO: Fix class method parsing to deal with default parameters.
+                 It will require a big rewrite of the whole thing, so
+                 postponing to a later diff *)
         let* () = check_flags opname flags in
         let env =
           match FFI.Constant.as_code code with

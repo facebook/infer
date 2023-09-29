@@ -124,6 +124,13 @@ let get_string = function
       None
 
 
+let get_tuple_as_list = function
+  | T.Exp.Call {proc; args; kind= NonVirtual} when T.equal_qualified_procname proc python_tuple ->
+      Some args
+  | _ ->
+      None
+
+
 let mk_bytes (s : bytes) =
   let proc = python_bytes in
   let s = Bytes.to_string s in

@@ -81,6 +81,7 @@ module DataStack = struct
     | VarName of int
     | Temp of T.Ident.t
     | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
+    | List of (Builtin.collection * T.Exp.t list)
     | Map of (T.Exp.t * cell) list
     | BuiltinBuildClass
     | Import of {import_path: Ident.t; symbols: string list}
@@ -104,6 +105,8 @@ module DataStack = struct
         F.fprintf fmt "Temp(%a)" T.Ident.pp id
     | Code {fun_or_class; code_name} ->
         F.fprintf fmt "Code(%s, %s)" (if fun_or_class then "fun" else "class") code_name
+    | List _ ->
+        F.pp_print_string fmt "List"
     | Map _ ->
         F.pp_print_string fmt "Map"
     | BuiltinBuildClass ->
@@ -141,6 +144,7 @@ module DataStack = struct
     | Name _
     | Temp _
     | VarName _
+    | List _
     | Map _
     | BuiltinBuildClass
     | Import _
@@ -164,6 +168,7 @@ module DataStack = struct
     | Path _
     | Code _
     | Temp _
+    | List _
     | Map _
     | BuiltinBuildClass
     | Import _
@@ -188,6 +193,7 @@ module DataStack = struct
         Some id
     | Code _
     | Temp _
+    | List _
     | Map _
     | BuiltinBuildClass
     | Import _
