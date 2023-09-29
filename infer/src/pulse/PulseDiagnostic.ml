@@ -92,17 +92,18 @@ module ErlangError = struct
       Location.pp location pp_calling_context calling_context
 end
 
-type read_uninitialized_value = {calling_context: calling_context; trace: Trace.t}
-[@@deriving compare, equal]
+module ReadUninitialized = struct
+  type t = {typ: Attribute.UninitializedTyp.t; calling_context: calling_context; trace: Trace.t}
+  [@@deriving compare, equal]
 
-let yojson_of_read_uninitialized_value = [%yojson_of: _]
+  let yojson_of_t = [%yojson_of: _]
 
-let pp_read_uninitialized_value fmt
-    ({calling_context; trace} [@warning "+missing-record-field-pattern"]) =
-  F.fprintf fmt "{@[calling_context=%a;@;trace=%a@]}" pp_calling_context calling_context
-    (Trace.pp ~pp_immediate:(fun fmt -> F.pp_print_string fmt "immediate"))
-    trace
-
+  let pp fmt {typ; calling_context; trace} =
+    F.fprintf fmt "{@[typ=%a;@;calling_context=%a;@;trace=%a@]}" Attribute.UninitializedTyp.pp typ
+      pp_calling_context calling_context
+      (Trace.pp ~pp_immediate:(fun fmt -> F.pp_print_string fmt "immediate"))
+      trace
+end
 
 type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving equal]
 
@@ -135,7 +136,7 @@ type t =
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | ReadonlySharedPtrParameter of
       {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
-  | ReadUninitializedValue of read_uninitialized_value
+  | ReadUninitialized of ReadUninitialized.t
   | RetainCycle of
       { assignment_traces: Trace.t list
       ; value: DecompilerExpr.t
@@ -195,8 +196,8 @@ let pp fmt diagnostic =
         Var.pp param (Typ.pp_full Pp.text) typ Location.pp location
         (IList.pp_print_list ~max:10 ~pp_sep:(fun f () -> F.pp_print_string f ",") Location.pp)
         used_locations
-  | ReadUninitializedValue read_uninitialized_value ->
-      F.fprintf fmt "ReadUninitializedValue %a" pp_read_uninitialized_value read_uninitialized_value
+  | ReadUninitialized read_uninitialized ->
+      F.fprintf fmt "ReadUninitialized %a" ReadUninitialized.pp read_uninitialized
   | RetainCycle {assignment_traces; value; path; location} ->
       F.fprintf fmt
         "RetainCycle {@[assignment_traces=[@[<v>%a@]];@;value=%a;@;path=%a;@;location=%a@]}"
@@ -239,7 +240,7 @@ let pp fmt diagnostic =
 
 let get_location = function
   | AccessToInvalidAddress {calling_context= []; access_trace}
-  | ReadUninitializedValue {calling_context= []; trace= access_trace} ->
+  | ReadUninitialized {calling_context= []; trace= access_trace} ->
       Trace.get_outer_location access_trace
   | ErlangError (Badarg {location; calling_context= []})
   | ErlangError (Badkey {location; calling_context= []})
@@ -263,7 +264,7 @@ let get_location = function
   | ErlangError (Function_clause {calling_context= (_, location) :: _})
   | ErlangError (If_clause {calling_context= (_, location) :: _})
   | ErlangError (Try_clause {calling_context= (_, location) :: _})
-  | ReadUninitializedValue {calling_context= (_, location) :: _} ->
+  | ReadUninitialized {calling_context= (_, location) :: _} ->
       (* report at the call site that triggers the bug *) location
   | ConfigUsage {location}
   | ConstRefableParameter {location}
@@ -308,7 +309,7 @@ let aborts_execution = function
       | Function_clause _
       | If_clause _
       | Try_clause _ )
-  | ReadUninitializedValue _ ->
+  | ReadUninitialized _ ->
       (* these errors either abort the whole program or, if they are false positives, mean that
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
@@ -603,7 +604,7 @@ let get_message_and_suggestion diagnostic =
       , Some
           (F.asprintf "Pass the raw pointer instead and change its usages if necessary%t."
              pp_used_locations ) )
-  | ReadUninitializedValue {calling_context; trace} ->
+  | ReadUninitialized {calling_context; trace} ->
       let root_var =
         Trace.find_map_last_main trace ~f:(function
           | VariableDeclared (pvar, _, _) ->
@@ -930,7 +931,7 @@ let get_trace = function
       Errlog.make_trace_element nesting location (get_param_typ param typ) []
       :: List.map used_locations ~f:(fun used_location ->
              Errlog.make_trace_element nesting used_location "used" [] )
-  | ReadUninitializedValue {calling_context; trace} ->
+  | ReadUninitialized {calling_context; trace} ->
       get_trace_calling_context calling_context
       @@ Trace.add_to_errlog ~nesting:0
            ~pp_immediate:(fun fmt -> F.pp_print_string fmt "read to uninitialized value occurs here")
@@ -1013,7 +1014,7 @@ let get_issue_type ~latent issue_type =
            as allocator" )
   | ReadonlySharedPtrParameter _, false ->
       IssueType.readonly_shared_ptr_param
-  | ReadUninitializedValue _, _ ->
+  | ReadUninitialized {typ= Value}, _ ->
       IssueType.uninitialized_value_pulse ~latent
   | RetainCycle _, false ->
       IssueType.retain_cycle

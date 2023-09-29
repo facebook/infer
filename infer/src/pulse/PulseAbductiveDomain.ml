@@ -425,7 +425,7 @@ module Internal = struct
       | Tint _ | Tfloat _ | Tptr _ ->
           let {stack; attrs} = (post :> base_domain) in
           let stack, addr = add_edge_on_src timestamp src location stack in
-          let attrs = BaseAddressAttributes.add_one addr Uninitialized attrs in
+          let attrs = BaseAddressAttributes.add_one addr (Uninitialized Value) attrs in
           PostDomain.update ~stack ~attrs post
       | Tstruct typ_name when UninitBlocklist.is_blocklisted_struct typ_name ->
           post

@@ -165,10 +165,12 @@ let check_valid address attrs =
 
 let check_initialized address attrs =
   L.d_printfln "Checking if %a is initialized" AbstractValue.pp address ;
-  if Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_uninitialized then (
-    L.d_printfln ~color:Red "UNINITIALIZED" ;
-    Error () )
-  else Ok ()
+  match Graph.find_opt address attrs |> Option.bind ~f:Attributes.get_uninitialized with
+  | Some typ ->
+      L.d_printfln ~color:Red "UNINITIALIZED" ;
+      Error typ
+  | None ->
+      Ok ()
 
 
 let get_attribute getter address attrs =
@@ -383,7 +385,7 @@ module type S = sig
 
   val check_valid : key -> t -> (unit, Invalidation.t * Trace.t) result
 
-  val check_initialized : key -> t -> (unit, unit) result
+  val check_initialized : key -> t -> (unit, Attribute.UninitializedTyp.t) result
 
   val invalidate : key * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 

@@ -148,7 +148,8 @@ module AddressAttributes : sig
     -> t
     -> (t, Invalidation.t * Trace.t) result
 
-  val check_initialized : PathContext.t -> Trace.t -> AbstractValue.t -> t -> (t, unit) result
+  val check_initialized :
+    PathContext.t -> Trace.t -> AbstractValue.t -> t -> (t, Attribute.UninitializedTyp.t) result
 
   val add_taint_sink : PathContext.t -> TaintItem.t -> Trace.t -> AbstractValue.t -> t -> t
 

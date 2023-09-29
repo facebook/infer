@@ -38,7 +38,7 @@ let add_call_to_access_to_invalid_address call_subst astate invalid_access =
 type t =
   | AccessToInvalidAddress of Diagnostic.access_to_invalid_address
   | ErlangError of Diagnostic.ErlangError.t
-  | ReadUninitializedValue of Diagnostic.read_uninitialized_value
+  | ReadUninitializedValue of Diagnostic.ReadUninitialized.t
 [@@deriving compare, equal, yojson_of]
 
 let to_diagnostic = function
@@ -46,8 +46,8 @@ let to_diagnostic = function
       Diagnostic.AccessToInvalidAddress access_to_invalid_address
   | ErlangError erlang_error ->
       Diagnostic.ErlangError erlang_error
-  | ReadUninitializedValue read_uninitialized_value ->
-      Diagnostic.ReadUninitializedValue read_uninitialized_value
+  | ReadUninitializedValue read_uninitialized ->
+      Diagnostic.ReadUninitialized read_uninitialized
 
 
 let pp fmt latent_issue = Diagnostic.pp fmt (to_diagnostic latent_issue)
@@ -116,6 +116,6 @@ let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.
       else `DelayReport (AccessToInvalidAddress latent)
   | ErlangError latent ->
       if PulseArithmetic.is_manifest astate then `ReportNow else `DelayReport (ErlangError latent)
-  | ReadUninitializedValue latent ->
+  | ReadUninitialized latent ->
       if PulseArithmetic.is_manifest astate then `ReportNow
       else `DelayReport (ReadUninitializedValue latent)

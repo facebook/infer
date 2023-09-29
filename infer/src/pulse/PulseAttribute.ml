@@ -152,6 +152,12 @@ module Attribute = struct
           F.fprintf f "%s.%a" config_type AbstractValue.pp v
   end
 
+  module UninitializedTyp = struct
+    type t = Value [@@deriving compare, equal]
+
+    let pp f = function Value -> F.pp_print_string f "value"
+  end
+
   type t =
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
@@ -190,7 +196,7 @@ module Attribute = struct
     | StdVectorReserve
     | Tainted of TaintedSet.t
     | TaintSanitized of TaintSanitizedSet.t
-    | Uninitialized
+    | Uninitialized of UninitializedTyp.t
     | UnknownEffect of CallEvent.t * ValueHistory.t
     | UnreachableAt of Location.t
     | UsedAsBranchCond of Procname.t * Location.t * Trace.t
@@ -340,8 +346,8 @@ module Attribute = struct
         F.fprintf f "Tainted%a" TaintedSet.pp tainted
     | TaintSanitized taint_sanitized ->
         F.fprintf f "TaintedSanitized%a" TaintSanitizedSet.pp taint_sanitized
-    | Uninitialized ->
-        F.pp_print_string f "Uninitialized"
+    | Uninitialized typ ->
+        F.fprintf f "Uninitialized(%a)" UninitializedTyp.pp typ
     | UnknownEffect (call, hist) ->
         F.fprintf f "UnknownEffect(@[%a,@ %a)@]" CallEvent.pp call ValueHistory.pp hist
     | UnreachableAt location ->
@@ -384,7 +390,7 @@ module Attribute = struct
     | StdVectorReserve
     | Tainted _
     | TaintSanitized _
-    | Uninitialized
+    | Uninitialized _
     | UnknownEffect _
     | UnreachableAt _
     | WrittenTo _ ->
@@ -422,7 +428,7 @@ module Attribute = struct
     | StdVectorReserve
     | Tainted _
     | TaintSanitized _
-    | Uninitialized
+    | Uninitialized _
     | UnknownEffect _
     | WrittenTo _ ->
         true
@@ -469,7 +475,7 @@ module Attribute = struct
     | StdMoved
     | StdVectorReserve
     | TaintSanitized _
-    | Uninitialized
+    | Uninitialized _
     | UnknownEffect _
     | UnreachableAt _
     | UsedAsBranchCond _
@@ -554,7 +560,7 @@ module Attribute = struct
       | StaticType _
       | StdMoved
       | StdVectorReserve
-      | Uninitialized
+      | Uninitialized _
       | UnreachableAt _ ) as attr ->
         attr
 
@@ -634,7 +640,7 @@ module Attribute = struct
       | StdVectorReserve
       | Tainted _
       | TaintSanitized _
-      | Uninitialized
+      | Uninitialized _
       | UnknownEffect _
       | UnreachableAt _
       | UsedAsBranchCond _
@@ -801,9 +807,12 @@ module Attributes = struct
 
   let is_always_reachable = mem_by_rank Attribute.always_reachable_rank
 
-  let is_uninitialized attrs =
-    mem_by_rank Attribute.uninitialized_rank attrs
-    && not (mem_by_rank Attribute.initialized_rank attrs)
+  let get_uninitialized attrs =
+    if not (mem_by_rank Attribute.initialized_rank attrs) then
+      get_by_rank Attribute.uninitialized_rank
+        ~dest:(function[@warning "-partial-match"] Uninitialized typ -> typ)
+        attrs
+    else None
 
 
   let remove_uninitialized = remove_by_rank Attribute.uninitialized_rank

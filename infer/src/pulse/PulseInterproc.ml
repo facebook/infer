@@ -960,11 +960,11 @@ let check_all_valid path callee_proc_name call_location ~pre call_state =
          | `MustBeInitialized (_timestamp, callee_access_trace) ->
              let access_trace = mk_access_trace callee_access_trace in
              AddressAttributes.check_initialized path access_trace addr_caller astate
-             |> Result.map_error ~f:(fun () ->
+             |> Result.map_error ~f:(fun typ ->
                     L.d_printfln ~color:Red "ERROR: caller's %a is uninitialized!" AbstractValue.pp
                       addr_caller ;
                     AccessResult.ReportableError
-                      { diagnostic= ReadUninitializedValue {calling_context= []; trace= access_trace}
+                      { diagnostic= ReadUninitialized {typ; calling_context= []; trace= access_trace}
                       ; astate } ) )
 
 

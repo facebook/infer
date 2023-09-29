@@ -33,10 +33,10 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
   match access_mode with
   | Read ->
       AddressAttributes.check_initialized path access_trace address astate
-      |> Result.map_error ~f:(fun () ->
+      |> Result.map_error ~f:(fun typ ->
              ReportableError
                { diagnostic=
-                   Diagnostic.ReadUninitializedValue {calling_context= []; trace= access_trace}
+                   Diagnostic.ReadUninitialized {typ; calling_context= []; trace= access_trace}
                ; astate } )
       |> AccessResult.of_result_f ~f:(fun _ ->
              (* do not report further uninitialized reads errors on this value *)

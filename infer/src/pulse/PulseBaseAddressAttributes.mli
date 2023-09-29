@@ -41,7 +41,7 @@ module type S = sig
 
   val check_valid : key -> t -> (unit, Invalidation.t * Trace.t) result
 
-  val check_initialized : key -> t -> (unit, unit) result
+  val check_initialized : key -> t -> (unit, Attribute.UninitializedTyp.t) result
 
   val invalidate : key * ValueHistory.t -> Invalidation.t -> Location.t -> t -> t
 

@@ -49,14 +49,17 @@ module ErlangError : sig
   [@@deriving compare, equal, yojson_of]
 end
 
-type read_uninitialized_value =
-  { calling_context: calling_context
-        (** the list of function calls leading to the issue being realised, which is an additional
-            common prefix to the traces in the record *)
-  ; trace: Trace.t
-        (** assuming we are in the calling context, the trace leads to read of the uninitialized
-            value *) }
-[@@deriving compare, equal, yojson_of]
+module ReadUninitialized : sig
+  type t =
+    { typ: Attribute.UninitializedTyp.t
+    ; calling_context: calling_context
+          (** the list of function calls leading to the issue being realised, which is an additional
+              common prefix to the traces in the record *)
+    ; trace: Trace.t
+          (** assuming we are in the calling context, the trace leads to read of the uninitialized
+              value *) }
+  [@@deriving compare, equal, yojson_of]
+end
 
 type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving equal]
 
@@ -79,7 +82,7 @@ type t =
   | MemoryLeak of {allocator: Attribute.allocator; allocation_trace: Trace.t; location: Location.t}
   | ReadonlySharedPtrParameter of
       {param: Var.t; typ: Typ.t; location: Location.t; used_locations: Location.t list}
-  | ReadUninitializedValue of read_uninitialized_value
+  | ReadUninitialized of ReadUninitialized.t
   | RetainCycle of
       { assignment_traces: Trace.t list
       ; value: DecompilerExpr.t
