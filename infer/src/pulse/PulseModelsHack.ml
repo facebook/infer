@@ -205,8 +205,12 @@ module Vec = struct
         unreachable
 end
 
+let get_static_companion_var type_name =
+  Pvar.mk_global (Mangled.mangled (Typ.Name.name type_name) "STATIC")
+
+
 let get_static_companion ~model_desc path location type_name astate =
-  let pvar = Pvar.mk_global (Mangled.mangled (Typ.Name.name type_name) "STATIC") in
+  let pvar = get_static_companion_var type_name in
   let var = Var.of_pvar pvar in
   (* we chose on purpose to not abduce [pvar] because we don't want to make a disjunctive case
      if it is already assigned or not. This is problematic when the caller already defines the
@@ -507,6 +511,28 @@ let hhbc_cmp_nsame x y : model =
      assign_ret neg_bool
 
 
+let hhbc_cls_cns this field : model =
+  let model_desc = "hhbc_cls_cns" in
+  let open DSL.Syntax in
+  start_model
+  @@ let* typ_opt = get_dynamic_type ~ask_specialization:true this in
+     let* field_v =
+       match typ_opt with
+       | Some ({Typ.desc= Tstruct name} as typ) ->
+           let* string_field_name = read_boxed_string_value_dsl field in
+           let fld = Fieldname.make name string_field_name in
+           let class_global_var = get_static_companion_var name in
+           (* Ideally, we should not need [eval_read] here since we call [eval_deref_access] below,
+              but somehow the latter does NOT update the pre state that we need. *)
+           let* _ = eval_read (Lfield (Lvar class_global_var, fld, typ)) in
+           let* class_object = get_static_companion_dsl ~model_desc name in
+           eval_deref_access Read class_object (FieldAccess fld)
+       | _ ->
+           mk_fresh ~model_desc
+     in
+     assign_ret field_v
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"$builtins" &:: "nondet" <>$$--> Basic.nondet ~desc:"nondet"
@@ -527,6 +553,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_cmp_same" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_same
   ; -"$builtins" &:: "hhbc_cmp_nsame" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_nsame
   ; -"$builtins" &:: "hack_get_static_class" <>$ capt_arg_payload $--> get_static_class
+  ; -"$builtins" &:: "hhbc_cls_cns" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cls_cns
   ; -"$root" &:: "FlibSL::Vec::from_async" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Vec.vec_from_async ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
