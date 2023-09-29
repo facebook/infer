@@ -224,6 +224,8 @@ end
    after [register_class] *)
 type class_info = {parents: Ident.t list}
 
+type method_info = {signature: Signature.t; default_arguments: T.Exp.t list}
+
 type label_info =
   {label_name: string; ssa_parameters: T.Typ.t list; prelude: prelude option; processed: bool}
 
@@ -242,8 +244,9 @@ and shared =
         (** All the builtins that have been called, so we only export them in textual to avoid too
             much noise *)
   ; imported_values: Ident.Set.t
-  ; signatures: Signature.t SMap.t Ident.Map.t
-        (** Map from module names to the signature of all of their functions/methods *)
+  ; methods: method_info SMap.t Ident.Map.t
+        (** Map from module names to information about their methods (signatures, default arguments,
+            ... *)
   ; fields: PyCommon.signature T.TypeName.Map.t
         (** Map from fully qualified class name to the list of known fields and their types *)
   ; module_name: Ident.t
@@ -370,7 +373,7 @@ let empty module_name =
   ; classes= SMap.empty
   ; builtins= Builtin.Set.empty
   ; imported_values= Ident.Set.empty
-  ; signatures= Ident.Map.empty
+  ; methods= Ident.Map.empty
   ; fields= T.TypeName.Map.empty
   ; module_name
   ; params= []
@@ -566,16 +569,18 @@ let register_call env fid =
       env
 
 
-let register_method ({shared} as env) ~enclosing_class ~method_name annotations =
+let register_method ({shared} as env) ~enclosing_class ~method_name signature default_arguments =
   PyDebug.p "[register_method] %a.%s\n" Ident.pp enclosing_class method_name ;
-  PyDebug.p "                  %a\n" Signature.pp annotations ;
-  let {signatures} = shared in
-  let class_info =
-    Ident.Map.find_opt enclosing_class signatures |> Option.value ~default:SMap.empty
+  PyDebug.p "                  %a\n" Signature.pp signature ;
+  PyDebug.p "                  %a\n" (Pp.seq ~sep:", " T.Exp.pp) default_arguments ;
+  let {methods} = shared in
+  let method_info =
+    Ident.Map.find_opt enclosing_class methods |> Option.value ~default:SMap.empty
   in
-  let class_info = SMap.add method_name annotations class_info in
-  let signatures = Ident.Map.add enclosing_class class_info signatures in
-  let shared = {shared with signatures} in
+  let info = {signature; default_arguments} in
+  let method_info = SMap.add method_name info method_info in
+  let methods = Ident.Map.add enclosing_class method_info methods in
+  let shared = {shared with methods} in
   {env with shared}
 
 
@@ -601,20 +606,22 @@ let register_fields ({shared} as env) class_name class_fields =
   {env with shared}
 
 
-let register_function ({shared} as env) fname loc annotations =
+let register_function ({shared} as env) fname loc annotations default_arguments =
   PyDebug.p "[register_function] %s\n" fname ;
   let {module_name} = shared in
   let info = {Signature.is_static= false; is_abstract= false; annotations} in
-  let env = register_method env ~enclosing_class:module_name ~method_name:fname info in
+  let env =
+    register_method env ~enclosing_class:module_name ~method_name:fname info default_arguments
+  in
   let key = Ident.mk ~loc fname in
   let id = Ident.extend ~prefix:module_name fname in
   let symbol_info = {Symbol.kind= Code; id; loc} in
   register_symbol env (Symbol.Global key) symbol_info
 
 
-let lookup_method {shared= {signatures}} ~enclosing_class name =
+let lookup_method {shared= {methods}} ~enclosing_class name =
   let open Option.Let_syntax in
-  Ident.Map.find_opt enclosing_class signatures >>= SMap.find_opt name
+  Ident.Map.find_opt enclosing_class methods >>= SMap.find_opt name
 
 
 let lookup_fields {shared= {fields}} class_name = T.TypeName.Map.find_opt class_name fields

@@ -3385,13 +3385,15 @@ let%test_module "default_arguments" =
 class C:
     pass
 
-c = C()
-
-def f(x: int, y=c, z=C()):
+# TODO: we only support simple types as default arguments.
+# We might add support for objects/instances if need be, in the future
+def f(x, y=1, z=2, s="zuck"):
     pass
 
-def g(x, y=1, z=2):
-    pass
+f(0)
+f(10, 100)
+f(100, 1000, 0)
+f(0, 0, 0, "toto")
         |}
       in
       test source ;
@@ -3402,12 +3404,11 @@ def g(x, y=1, z=2):
         define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_class("dummy::C")
-              n1 = dummy::C()
-              store &dummy::c <- n1:*dummy::C
-              n2 = dummy::C()
-              n3:*dummy::C = load &dummy::c
-              n4 = $builtins.python_code("dummy.f")
-              n5 = $builtins.python_code("dummy.g")
+              n1 = $builtins.python_code("dummy.f")
+              n2 = dummy.f($builtins.python_int(0))
+              n3 = dummy.f($builtins.python_int(10), $builtins.python_int(100))
+              n4 = dummy.f($builtins.python_int(100), $builtins.python_int(1000), $builtins.python_int(0))
+              n5 = dummy.f($builtins.python_int(0), $builtins.python_int(0), $builtins.python_int(0), $builtins.python_string("toto"))
               ret null
 
         }
@@ -3422,19 +3423,41 @@ def g(x, y=1, z=2):
 
         type dummy::C = {}
 
-        define dummy.f(x: *PyInt, y: *PyObject, z: *PyObject) : *PyObject {
+        define dummy.f(x: *PyObject, y: *PyObject, z: *PyObject) : *PyObject {
+          local s: *PyObject
+          #b0:
+              store &s <- $builtins.python_string("zuck"):*PyObject
+              n0 = dummy.f([&x:*PyObject], [&y:*PyObject], [&z:*PyObject], [&s:*PyObject])
+              ret n0
+
+        }
+
+        define dummy.f(x: *PyObject, y: *PyObject) : *PyObject {
+          local z: *PyObject, s: *PyObject
+          #b0:
+              store &z <- $builtins.python_int(2):*PyObject
+              store &s <- $builtins.python_string("zuck"):*PyObject
+              n0 = dummy.f([&x:*PyObject], [&y:*PyObject], [&z:*PyObject], [&s:*PyObject])
+              ret n0
+
+        }
+
+        define dummy.f(x: *PyObject) : *PyObject {
+          local y: *PyObject, z: *PyObject, s: *PyObject
+          #b0:
+              store &y <- $builtins.python_int(1):*PyObject
+              store &z <- $builtins.python_int(2):*PyObject
+              store &s <- $builtins.python_string("zuck"):*PyObject
+              n0 = dummy.f([&x:*PyObject], [&y:*PyObject], [&z:*PyObject], [&s:*PyObject])
+              ret n0
+
+        }
+
+        define dummy.f(x: *PyObject, y: *PyObject, z: *PyObject, s: *PyObject) : *PyObject {
           #b0:
               ret null
 
         }
-
-        define dummy.g(x: *PyObject, y: *PyObject, z: *PyObject) : *PyObject {
-          #b0:
-              ret null
-
-        }
-
-        global dummy::c: *PyObject
 
         global $python_implicit_names::__name__: *PyString
 
@@ -3454,8 +3477,5 @@ def g(x, y=1, z=2):
 
         declare $builtins.python_float(float) : *PyFloat
 
-        declare $builtins.python_int(int) : *PyInt
-
-        [MAKE_FUNCTION] TODO generate overriding functions with default args inlined
-        [MAKE_FUNCTION] TODO generate overriding functions with default args inlined |}]
+        declare $builtins.python_int(int) : *PyInt |}]
   end )

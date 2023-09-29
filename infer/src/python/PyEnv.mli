@@ -128,10 +128,13 @@ module Label : sig
   (** Process a label [info] and turn it into Textual information *)
 end
 
-(** Class Level info. For now, only the parent info (if present) is tracked, supporting multiple
+(** Class level info. For now, only the parent info (if present) is tracked, supporting multiple
     inheritance. We may track more information in the future, like being an abstract class, a
     dataclass, ... *)
 type class_info = {parents: Ident.t list}
+
+(** Method level info. We store a method/function signature, and its default arugments *)
+type method_info = {signature: Signature.t; default_arguments: T.Exp.t list}
 
 val empty : Ident.t -> t
 
@@ -221,11 +224,12 @@ val mk_builtin_call : t -> PyBuiltin.textual -> T.Exp.t list -> t * T.Ident.t * 
 (** Wrapper to compute the Textual version of a call to a "textual" builtin * function (a builtin we
     introduced for modeling purpose) *)
 
-val register_function : t -> string -> T.Location.t -> PyCommon.signature -> t
+val register_function : t -> string -> T.Location.t -> PyCommon.signature -> T.Exp.t list -> t
 (** Register a function declaration. We keep track of them since they might shadow Python builtins
     or previous definitions *)
 
-val register_method : t -> enclosing_class:Ident.t -> method_name:string -> Signature.t -> t
+val register_method :
+  t -> enclosing_class:Ident.t -> method_name:string -> Signature.t -> T.Exp.t list -> t
 (** Register a method declaration. We mostly keep track of their signatures *)
 
 val register_fields : t -> T.TypeName.t -> PyCommon.signature -> t
@@ -233,7 +237,7 @@ val register_fields : t -> T.TypeName.t -> PyCommon.signature -> t
     calls to this function with the same class name in a best effort attempt: Python is dynamic, and
     any [self.foo] access could give rise to such a registration *)
 
-val lookup_method : t -> enclosing_class:Ident.t -> string -> Signature.t option
+val lookup_method : t -> enclosing_class:Ident.t -> string -> method_info option
 (** Lookup the information stored for a function/method in the relevant [enclosing_class] *)
 
 val lookup_fields : t -> T.TypeName.t -> PyCommon.signature option

@@ -125,6 +125,7 @@ module Error = struct
     | CallKeywordBuildClass
     | RaiseExceptionInvalid of int
     | RaiseExceptionUnknown of DataStack.cell
+    | DefaultArgSpecialization of T.qualified_procname * int * int
 
   type t = L.error * kind
 
@@ -223,6 +224,9 @@ module Error = struct
         F.fprintf fmt "RAISE_VARARGS invalid mode %d" n
     | RaiseExceptionUnknown cell ->
         F.fprintf fmt "RAISE_VARARGS unknown construct %a" DataStack.pp_cell cell
+    | DefaultArgSpecialization (name, param_size, default_size) ->
+        F.fprintf fmt "%a has more default arguments (%d) then actual arguments (%d)"
+          T.pp_qualified_procname name default_size param_size
 
 
   let class_decl (err, kind) = (err, ClassDecl kind)
@@ -885,6 +889,10 @@ module FUNCTION = struct
         annotations
 
 
+    (* TODO: we don't support correctly keeping track of non constant default arugments.
+       For example if the value is a global constant, we'll store
+       it's loaded reference `n` which won't make sense in the specialized
+       function. *)
     let unpack_defaults env code defaults =
       let open IResult.Let_syntax in
       match (defaults : DataStack.cell) with
@@ -937,14 +945,12 @@ module FUNCTION = struct
       let* annotations =
         Option.value_map ~default:(Ok []) ~f:(unpack_annotations env code) annotations
       in
-      let* env =
-        if MakeFunctionFlags.mem flags DefaultValues then (
+      let* env, default_arguments =
+        if MakeFunctionFlags.mem flags DefaultValues then
           let* env, cell = pop_datastack opname env in
-          let* env, _defaults = unpack_defaults env code cell in
-          L.debug Capture Quiet
-            "[MAKE_FUNCTION] TODO generate overriding functions with default args inlined@\n" ;
-          Ok env )
-        else Ok env
+          let* env, defaults = unpack_defaults env code cell in
+          Ok (env, defaults)
+        else Ok (env, [])
       in
       let* code =
         match DataStack.as_code code body with
@@ -982,7 +988,7 @@ module FUNCTION = struct
       if FFI.Code.is_closure code then
         L.user_warning "%s: support for closures is incomplete (%s)@\n" opname code_name ;
       let loc = Env.loc env in
-      let env = Env.register_function env code_name loc annotations in
+      let env = Env.register_function env code_name loc annotations default_arguments in
       let env = Env.push env (DataStack.Code {fun_or_class= true; code_name; code}) in
       Ok (env, None)
   end
@@ -2731,24 +2737,99 @@ let rec nodes env label_info code instructions =
     Ok (env, textual_node :: more_textual_nodes)
 
 
+(** Given a function signature and some default arguments, this function will generate a specialized
+    version with some formal arguments removed, replaced by their default value. *)
+let specialize_proc_decl qualified_name formals_types result_type attributes params
+    default_arguments =
+  let open IResult.Let_syntax in
+  let param_size = List.length params in
+  let default_size = List.length default_arguments in
+  let* () =
+    if param_size < default_size then
+      Error
+        (L.ExternalError, Error.DefaultArgSpecialization (qualified_name, default_size, param_size))
+    else Ok ()
+  in
+  let n = param_size - default_size in
+  let params, locals = List.split_n params n in
+  let formals_types, default_types = List.split_n formals_types n in
+  let typed_params = List.zip_exn params formals_types in
+  let locals = List.zip_exn locals default_types in
+  let defaults = List.zip_exn locals default_arguments in
+  let procdecl =
+    {T.ProcDecl.qualified_name; formals_types= Some formals_types; result_type; attributes}
+  in
+  let stores =
+    List.map defaults ~f:(fun ((var, {T.Typ.typ}), exp) ->
+        T.Instr.Store {exp1= T.Exp.Lvar var; typ= Some typ; exp2= exp; loc= Unknown} )
+  in
+  let id = T.Ident.of_int 0 in
+  let args =
+    List.map
+      ~f:(fun (var, {T.Typ.typ}) -> T.Exp.Load {exp= T.Exp.Lvar var; typ= Some typ})
+      typed_params
+  in
+  let local_args =
+    List.map ~f:(fun (var, {T.Typ.typ}) -> T.Exp.Load {exp= T.Exp.Lvar var; typ= Some typ}) locals
+  in
+  let exp = T.Exp.call_non_virtual qualified_name (args @ local_args) in
+  let instrs = stores @ [T.Instr.Let {id; exp; loc= Unknown}] in
+  let label = {T.NodeName.value= "b0"; loc= Unknown} in
+  let node =
+    { T.Node.label
+    ; ssa_parameters= []
+    ; exn_succs= []
+    ; last= T.Terminator.Ret (T.Exp.Var id)
+    ; instrs
+    ; last_loc= Unknown
+    ; label_loc= Unknown }
+  in
+  Ok {T.ProcDesc.procdecl; nodes= [node]; start= label; params; locals; exit_loc= Unknown}
+
+
+let generate_specialized_proc_decl qualified_name formals_types result_type attributes params
+    default_arguments =
+  let open IResult.Let_syntax in
+  if List.is_empty default_arguments then Ok []
+  else
+    let f = specialize_proc_decl qualified_name formals_types result_type attributes params in
+    let rec fold default_arguments =
+      match default_arguments with
+      | [] ->
+          Ok []
+      | _ :: tl ->
+          let* decl = f default_arguments in
+          let* decls = fold tl in
+          Ok (T.Module.Proc decl :: decls)
+    in
+    fold default_arguments
+
+
 (** Process a single code unit (toplevel code, function body, ...) *)
 let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} as code) =
   let open IResult.Let_syntax in
   Debug.p "[to_proc_desc] %a %a\n" Ident.pp enclosing_class_name (Pp.option F.pp_print_string)
     opt_name ;
-  let is_toplevel, is_static, is_abstract, name, annotations =
+  let default annotations =
+    let signature = {Env.Signature.is_static= false; is_abstract= false; annotations} in
+    {Env.signature; default_arguments= []}
+  in
+  let is_toplevel, name, method_info =
     match opt_name with
     | None ->
         let return_typ = {PyCommon.name= PyCommon.return; annotation= Ident.mk "None"} in
-        (true, false, false, PyCommon.toplevel_function, [return_typ])
+        let method_info = default [return_typ] in
+        (true, PyCommon.toplevel_function, method_info)
     | Some name -> (
-        let signature = Env.lookup_method env ~enclosing_class:enclosing_class_name name in
-        match signature with
+        let method_info = Env.lookup_method env ~enclosing_class:enclosing_class_name name in
+        match method_info with
         | None ->
-            (false, false, false, name, [])
-        | Some {Env.Signature.is_static; is_abstract; annotations} ->
-            (false, is_static, is_abstract, name, annotations) )
+            (false, name, default [])
+        | Some method_info ->
+            (false, name, method_info) )
   in
+  let {Env.signature; default_arguments} = method_info in
+  let {Env.Signature.is_static; is_abstract; annotations} = signature in
   let proc_name = proc_name ~loc name in
   let enclosing_class = Ident.to_type_name ~static:is_static enclosing_class_name in
   let qualified_name = qualified_procname ~enclosing_class proc_name in
@@ -2795,8 +2876,12 @@ let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} 
   let procdecl =
     {T.ProcDecl.qualified_name; formals_types= Some formals_types; result_type; attributes= []}
   in
-  if is_abstract then Ok (env, T.Module.Procdecl procdecl)
+  if is_abstract then Ok (env, [T.Module.Procdecl procdecl])
   else
+    let* specialized_decls =
+      generate_specialized_proc_decl qualified_name formals_types result_type [] params
+        default_arguments
+    in
     let env, entry_label = Env.mk_fresh_label env in
     let label = node_name ~loc entry_label in
     let label_info = Env.Label.mk entry_label in
@@ -2804,7 +2889,7 @@ let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} 
     Ok
       ( env
       , T.Module.Proc {T.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown}
-      )
+        :: specialized_decls )
 
 
 (* For each class declaration, we generate an explicit constructor if there
@@ -2939,6 +3024,7 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
         (* TODO: Fix class method parsing to deal with default parameters.
                  It will require a big rewrite of the whole thing, so
                  postponing to a later diff *)
+        let default_arguments = [] in
         let* () = check_flags opname flags in
         let env =
           match FFI.Constant.as_code code with
@@ -2946,7 +3032,7 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
               let annotations = List.filter_map ~f:(lift_annotation env) signature in
               let info = {PyEnv.Signature.is_static; is_abstract; annotations} in
               Env.register_method env ~enclosing_class:class_name ~method_name:code.FFI.Code.co_name
-                info
+                info default_arguments
           | None ->
               env
         in
@@ -3040,8 +3126,10 @@ and to_proc_descs env enclosing_class_id codes =
               let* env, new_decls = class_declaration env enclosing_class_id code loc parents in
               Ok (env, new_decls @ decls)
           | None ->
-              let* env, decl = to_proc_desc env loc enclosing_class_id (Some co_name) code in
-              Ok (env, decl :: decls) ) )
+              let* env, specialized_decls =
+                to_proc_desc env loc enclosing_class_id (Some co_name) code
+              in
+              Ok (env, specialized_decls @ decls) ) )
 
 
 let python_attribute = T.Attr.mk_source_language T.Lang.Python
@@ -3095,7 +3183,7 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
        this would print `10` and then `"cat"`.  We should investigate if suche code exists, and in
        which quantity, to see if it is worth finding a solution for it.
     *)
-    let* env, decl = to_proc_desc env loc module_name None code in
+    let* env, specialized_decls = to_proc_desc env loc module_name None code in
     (* Translate globals to Textual *)
     let globals =
       Ident.Map.fold
@@ -3128,7 +3216,7 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
     in
     (* Gather everything into a Textual module *)
     let decls =
-      ((decl :: decls) @ globals @ imports @ python_implicit_names)
+      ((specialized_decls @ decls) @ globals @ imports @ python_implicit_names)
       @ Builtin.Set.to_textual (Env.get_used_builtins env)
     in
     Ok {T.Module.attrs= [python_attribute]; decls; sourcefile}
