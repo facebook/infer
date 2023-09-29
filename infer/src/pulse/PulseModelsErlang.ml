@@ -11,6 +11,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
+module F = Format
 
 (** Represents the result of a transfer function that may (a) nondeterministically split the state,
     and (b) some of the nondeterministic branches may be errors. Goes well with [let>] defined later
@@ -1091,7 +1092,7 @@ module Custom = struct
   (* TODO: see T110841433 *)
 
   (** Note: [None] means unknown/nondeterministic. *)
-  type erlang_value = known_erlang_value option [@@deriving of_yojson]
+  type erlang_value = known_erlang_value option [@@deriving of_yojson, compare]
 
   and known_erlang_value =
     | Atom of string option
@@ -1107,7 +1108,7 @@ module Custom = struct
   [@@deriving of_yojson]
 
   type arguments_return = {arguments: erlang_value list; return: erlang_value}
-  [@@deriving of_yojson]
+  [@@deriving of_yojson, compare]
 
   type behavior = ReturnValue of erlang_value | ArgumentsReturnList of arguments_return list
   [@@deriving of_yojson]
@@ -1115,6 +1116,104 @@ module Custom = struct
   type rule = {selector: selector; behavior: behavior} [@@deriving of_yojson]
 
   type spec = rule list [@@deriving of_yojson]
+
+  let rec pp_erlang_value fmt ev =
+    match ev with
+    | Some kev -> (
+      match kev with
+      | Atom (Some s) ->
+          F.fprintf fmt "Atom(%s)" s
+      | Atom None ->
+          F.pp_print_string fmt "Atom(None)"
+      | IntLit s ->
+          F.fprintf fmt "IntLit(%s)" s
+      | List evl ->
+          F.fprintf fmt "List[ %a ]" pp_erlang_value_list evl
+      | Tuple evl ->
+          F.fprintf fmt "Tuple[ %a ]" pp_erlang_value_list evl
+      | GenServer {module_name= Some s} ->
+          F.fprintf fmt "GenServer( %s )" s
+      | GenServer {module_name= None} ->
+          F.pp_print_string fmt "GenServer()" )
+    | None ->
+        F.pp_print_string fmt "NoneEralngValue"
+
+
+  and pp_erlang_value_list fmt evl =
+    List.iter ~f:(fun ev -> Format.fprintf fmt " %a,  " pp_erlang_value ev) evl
+
+
+  let pp_behavior fmt b =
+    match b with
+    | ReturnValue ev ->
+        F.fprintf fmt "@\n ReturnValue ( %a )@\n@\n@\n" pp_erlang_value ev
+    | ArgumentsReturnList arl ->
+        let helpf fmt arl =
+          List.iter arl ~f:(fun {arguments= evl; return= ev} ->
+              F.fprintf fmt "Arguments: %a ; @\n Return: %a @\n@\n@\n" pp_erlang_value_list evl
+                pp_erlang_value ev )
+        in
+        F.fprintf fmt "@\n ArgumentReturnList ( %a )@\n@\n@\n" helpf arl
+
+
+  let rec abstract_erlang_value ev =
+    match ev with
+    | None ->
+        None
+    | Some ev' ->
+        let ev'' =
+          match ev' with
+          | Atom None ->
+              Atom None
+          | Atom (Some s) ->
+              let s' =
+                if
+                  List.mem
+                    ["false"; "true"; "timeout"; "return"; "error"; "exit"; "undefined"]
+                    ~equal:String.( = ) s
+                then Some s
+                else None
+              in
+              Atom s'
+          | IntLit s ->
+              (* L.log_task "\n Applying abstraction on intlit = %s\n" s ; *)
+              let s' = try if Int.of_string s > 0 then "1" else "0" with _ -> "1" in
+              IntLit s'
+          | List evs ->
+              let abs_evs = List.map evs ~f:abstract_erlang_value in
+              List abs_evs
+          | Tuple evs ->
+              let abs_evs = List.map evs ~f:abstract_erlang_value in
+              Tuple abs_evs
+          | GenServer _mn ->
+              GenServer _mn
+        in
+        Some ev''
+
+
+  let join_behaviour_arguments_list abs_arl =
+    List.dedup_and_sort abs_arl ~compare:compare_arguments_return
+
+
+  let abstract_behavior mfa behavior =
+    let do_argument_return ar =
+      let abs_arg_val = List.map ar.arguments ~f:abstract_erlang_value in
+      let abs_ret_val = abstract_erlang_value ar.return in
+      {arguments= abs_arg_val; return= abs_ret_val}
+    in
+    match behavior with
+    | ReturnValue nev ->
+        ReturnValue (abstract_erlang_value nev)
+    | ArgumentsReturnList args ->
+        let abs_arguments_return_list = List.map args ~f:do_argument_return in
+        let joined_arguments_return_list =
+          join_behaviour_arguments_list abs_arguments_return_list
+        in
+        L.log_task "\n Function '%s'   Argument-Return List size =%i, After Abs+Join size = %i\n"
+          mfa (List.length args)
+          (List.length joined_arguments_return_list) ;
+        ArgumentsReturnList joined_arguments_return_list
+
 
   let make_selector selector model =
     let l0 f = f [] in
@@ -1340,25 +1439,38 @@ module Custom = struct
         List.fold mfas ~init:map ~f:(fun map mfa -> Map.set map ~key:mfa ~data:db) )
 
 
+  module DynamicBehaviorSet = Caml.Set.Make (String)
+
+  let dynamic_behavior_models = ref DynamicBehaviorSet.empty
+
   let fetch_model db mfa =
-    let query = "SELECT behavior FROM models WHERE mfa = ? LIMIT 1" in
-    let stmt = Sqlite3.prepare db query in
-    Sqlite3.bind_text stmt 1 mfa |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
-    let model =
-      match Sqlite3.step stmt with
-      | Sqlite3.Rc.ROW -> (
-          let behavior_json = Sqlite3.column_text stmt 0 in
-          match behavior_of_yojson (Yojson.Safe.from_string behavior_json) with
-          | behavior ->
-              Some (make_model behavior)
-          | exception (Yojson.Json_error _ | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error _) ->
-              L.user_error "@[<v>Failed to parse json from db for %s .@;@]" mfa ;
-              None )
-      | _ ->
-          None
-    in
-    Sqlite3.finalize stmt |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
-    model
+    match DynamicBehaviorSet.mem mfa !dynamic_behavior_models with
+    | false ->
+        let query = "SELECT behavior FROM models WHERE mfa = ? LIMIT 1" in
+        let stmt = Sqlite3.prepare db query in
+        Sqlite3.bind_text stmt 1 mfa |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
+        let model =
+          match Sqlite3.step stmt with
+          | Sqlite3.Rc.ROW -> (
+              let behavior_json = Sqlite3.column_text stmt 0 in
+              match behavior_of_yojson (Yojson.Safe.from_string behavior_json) with
+              | behavior ->
+                  dynamic_behavior_models := DynamicBehaviorSet.add mfa !dynamic_behavior_models ;
+                  let abs_behavior = abstract_behavior mfa behavior in
+                  L.debug Analysis Quiet "Function '%s' ABS BEHAVIOR:[  %a ] @\n@\n" mfa pp_behavior
+                    abs_behavior ;
+                  Some (make_model abs_behavior)
+              | exception (Yojson.Json_error _ | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error _)
+                ->
+                  L.user_error "@[<v>Failed to parse json from db for %s .@;@]" mfa ;
+                  None )
+          | _ ->
+              None
+        in
+        Sqlite3.finalize stmt |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
+        model
+    | true ->
+        None
 
 
   let get_model_from_db proc_name args =
@@ -1473,12 +1585,12 @@ module GenServer = struct
     let astate = AbductiveDomain.add_need_dynamic_type_specialization (fst server_ref) astate in
     let module_name_opt =
       (* Cf. https://www.erlang.org/doc/man/gen_server.html#type-server_ref :
-         server_ref() =
-             pid() |
-             (LocalName :: atom()) |
-             {Name :: atom(), Node :: atom()} |
-             {global, GlobalName :: term()} |
-             {via, RegMod :: module(), ViaName :: term()}
+               server_ref() =
+                   pid() |
+                   (LocalName :: atom()) |
+                   {Name :: atom(), Node :: atom()} |
+                   {global, GlobalName :: term()} |
+         {via, RegMod :: module(), ViaName :: term()}
       *)
       match get_erlang_type_or_any (fst server_ref) astate with
       | GenServerPid {module_name= Some module_name} ->
@@ -1508,7 +1620,7 @@ module GenServer = struct
               module_name_opt )
       | Tuple 3 ->
           (* unsupported case: `server_ref() = {via, RegMod :: module(), ViaName :: term()}`.
-             Note: we don't check that the first element is the atom `via` as we don't support that case yet anyway. *)
+                                                 Note: we don't check that the first element is the atom `via` as we don't support that case yet anyway. *)
           L.debug Analysis Verbose
             "@[gen_server:call/cast called with unsupported `gen_server:server_ref()`: `{via, \
              RegMod :: module(), ViaName :: term()}`@." ;
