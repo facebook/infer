@@ -10,6 +10,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
+module DSL = PulseModelsDSL
 module Cplusplus = PulseModelsCpp
 module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
 module StringSet = Caml.Set.Make (String)
@@ -529,51 +530,33 @@ end
 module Integer = struct
   let internal_int = mk_java_field "java.lang" "Integer" "__infer_model_backing_int"
 
-  let load_backing_int path location this astate =
-    let* astate, obj = PulseOperations.eval_access path Read location this Dereference astate in
-    load_field path internal_int location obj astate
-
-
-  let construct path this_address init_value event location astate =
-    let this = (AbstractValue.mk_fresh (), Hist.single_event path event) in
-    let* astate, int_field =
-      PulseOperations.eval_access path Write location this (FieldAccess internal_int) astate
-    in
-    let* astate = PulseOperations.write_deref path location ~ref:int_field ~obj:init_value astate in
-    PulseOperations.write_deref path location ~ref:this_address ~obj:this astate
-
-
-  let init this_address init_value : model =
-   fun {path; location} astate ->
-    let event = Hist.call_event path location "Integer.init" in
-    let<+> astate = construct path this_address init_value event location astate in
-    astate
+  let init this init_value : model =
+    let open DSL.Syntax in
+    start_model @@ write_deref_field ~ref:this internal_int ~obj:init_value
 
 
   let equals this arg : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let<*> astate, _int_addr1, (int1, hist1) = load_backing_int path location this astate in
-    let<*> astate, _int_addr2, (int2, hist2) = load_backing_int path location arg astate in
-    let binop_addr = AbstractValue.mk_fresh () in
-    let<++> astate, binop_addr =
-      PulseArithmetic.eval_binop binop_addr Eq (AbstractValueOperand int1)
-        (AbstractValueOperand int2) astate
-    in
-    PulseOperations.write_id ret_id (binop_addr, Hist.binop path Eq hist1 hist2) astate
+    let open DSL.Syntax in
+    start_model
+    @@ let* this_int = eval_deref_access Read this (FieldAccess internal_int) in
+       let* arg_int = eval_deref_access Read arg (FieldAccess internal_int) in
+       let* res = eval_binop Eq this_int arg_int in
+       assign_ret res
 
 
   let int_val this : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let<*> astate, _int_addr1, (int_value, hist) = load_backing_int path location this astate in
-    PulseOperations.write_id ret_id (int_value, Hist.hist path hist) astate |> Basic.ok_continue
+    let open DSL.Syntax in
+    start_model
+    @@ let* this_int = eval_deref_access Read this (FieldAccess internal_int) in
+       assign_ret this_int
 
 
   let value_of init_value : model =
-   fun {path; location; ret= ret_id, _} astate ->
-    let event = Hist.call_event path location "Integer.valueOf" in
-    let new_alloc = (AbstractValue.mk_fresh (), Hist.single_event path event) in
-    let<+> astate = construct path new_alloc init_value event location astate in
-    PulseOperations.write_id ret_id new_alloc astate
+    let open DSL.Syntax in
+    start_model
+    @@ let* res = mk_fresh ~model_desc:"Integer.valueOf" in
+       let* () = lift_to_monad (init res init_value) in
+       assign_ret res
 end
 
 module Preconditions = struct

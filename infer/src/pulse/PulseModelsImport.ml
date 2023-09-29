@@ -73,9 +73,6 @@ module Hist = struct
 
   let binop path bop hist1 hist2 =
     ValueHistory.in_context path.PathContext.conditions (ValueHistory.binary_op bop hist1 hist2)
-
-
-  let hist path hist = ValueHistory.in_context path.PathContext.conditions hist
 end
 
 module Basic = struct

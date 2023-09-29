@@ -233,6 +233,18 @@ module Syntax = struct
 
   let aval_operand (addr, _) = PulseArithmetic.AbstractValueOperand addr
 
+  let eval_binop binop (addr1, hist1) (addr2, hist2) : aval model_monad =
+    let* {path} = get_data in
+    let addr_res = AbstractValue.mk_fresh () in
+    let hist_res = Hist.binop path binop hist1 hist2 in
+    let* addr_res =
+      PulseArithmetic.eval_binop addr_res binop (AbstractValueOperand addr1)
+        (AbstractValueOperand addr2)
+      |> exec_partial_operation
+    in
+    ret (addr_res, hist_res)
+
+
   let prune_binop ~negated binop operand1 operand2 =
     PulseArithmetic.prune_binop ~negated binop operand1 operand2 |> exec_partial_command
 

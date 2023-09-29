@@ -66,6 +66,8 @@ module Syntax : sig
 
   val deep_copy : ?depth_max:int -> aval -> aval model_monad
 
+  val eval_binop : Binop.t -> aval -> aval -> aval model_monad
+
   val eval_read : Exp.t -> aval model_monad
 
   val eval_deref_access : access_mode -> aval -> Access.t -> aval model_monad

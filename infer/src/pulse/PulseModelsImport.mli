@@ -70,8 +70,6 @@ module Hist : sig
   val single_alloc : PathContext.t -> Location.t -> ?more:string -> string -> ValueHistory.t
 
   val binop : PathContext.t -> Binop.t -> ValueHistory.t -> ValueHistory.t -> ValueHistory.t
-
-  val hist : PathContext.t -> ValueHistory.t -> ValueHistory.t
 end
 
 module Basic : sig
