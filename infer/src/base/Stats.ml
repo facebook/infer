@@ -10,13 +10,13 @@ module L = Logging
 module PulseSumCountMap = Caml.Map.Make (Int)
 
 module DurationItem = struct
-  type t = {duration_us: int; pname: string} [@@deriving equal]
+  type t = {duration_us: int; file: string; pname: string} [@@deriving equal]
 
-  let dummy = {duration_us= 0; pname= ""}
+  let dummy = {duration_us= 0; file= ""; pname= ""}
 
   let compare {duration_us= dr1} {duration_us= dr2} = Int.compare dr1 dr2
 
-  let pp f {pname; duration_us} = F.fprintf f "%5dus: %s" duration_us pname
+  let pp f {pname; file; duration_us} = F.fprintf f "%5dus: %s: %s" duration_us file pname
 end
 
 module LongestProcDurationHeap = struct
@@ -167,9 +167,9 @@ let add_pulse_summaries_count n =
       PulseSumCountMap.update n (fun i -> Some (1 + Option.value ~default:0 i)) counters )
 
 
-let add_proc_duration_us pname duration_us =
+let add_proc_duration_us file pname duration_us =
   update_with Fields.longest_proc_duration_heap ~f:(fun heap ->
-      let new_elt = DurationItem.{pname; duration_us} in
+      let new_elt = DurationItem.{pname; file; duration_us} in
       LongestProcDurationHeap.update new_elt heap ;
       heap )
 

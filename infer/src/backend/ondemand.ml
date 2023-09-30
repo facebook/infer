@@ -130,7 +130,9 @@ let run_proc_analysis exe_env tenv ?specialization ?caller_pname callee_pdesc =
     fun () ->
       let elapsed = Mtime_clock.count start_time in
       let duration_us = IMtime.span_to_us_int elapsed in
-      Stats.add_proc_duration_us (Procname.to_string callee_pname) duration_us ;
+      let file = SourceFile.to_rel_path callee_attributes.loc.file in
+      let pname = Procname.to_string callee_pname in
+      Stats.add_proc_duration_us file pname duration_us ;
       L.(debug Analysis Medium)
         "Elapsed analysis time: %a: %a@\n" Procname.pp callee_pname Mtime.Span.pp elapsed
   in
