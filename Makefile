@@ -86,8 +86,16 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 DIRECT_TESTS += \
   c_fb-pulse \
   cpp_fb-config-usage \
+
+ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
+ifneq ($(ERLC),no)
+ifneq ($(ESCRIPT),no)
+DIRECT_TESTS += \
   erlang_fb-pulse \
 
+endif
+endif
+endif
 endif
 
 ifneq ($(BUCK),no)
