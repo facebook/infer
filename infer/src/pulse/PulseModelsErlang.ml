@@ -157,6 +157,23 @@ let load_field path field location obj astate =
       result
 
 
+let get_module_attribute tenv ~tag =
+  let open IOption.Let_syntax in
+  let typ = Typ.ErlangType ModuleInfo in
+  let* field_info =
+    Tenv.resolve_fieldname tenv typ (Fieldname.make typ ErlangTypeName.module_info_field_name)
+  in
+  let* annot =
+    List.find field_info.Struct.annotations ~f:(function ({class_name} : Annot.t) ->
+        String.equal class_name ErlangTypeName.module_info_attributes_class_name )
+  in
+  match Annot.find_parameter annot ~name:tag with
+  | Some (Annot.Str module_name) ->
+      Some module_name
+  | _ ->
+      None
+
+
 module Errors = struct
   let error err astate = [FatalError (ReportableError {astate; diagnostic= ErlangError err}, [])]
 

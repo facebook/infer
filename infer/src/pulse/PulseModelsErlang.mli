@@ -7,8 +7,33 @@
 
 open! IStd
 open PulseModelsImport
+open PulseBasicInterface
+open PulseDomainInterface
 
 val matchers : matcher list
 
 val get_model_from_db :
   Procname.t -> PulseValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list -> model option
+
+val get_module_attribute : Tenv.t -> tag:string -> string option
+  [@@warning "-unused-value-declaration"]
+
+val get_erlang_type_or_any : AbstractValue.t -> AbductiveDomain.t -> ErlangTypeName.t
+  [@@warning "-unused-value-declaration"]
+
+include sig
+  [@@@warning "-unused-module"]
+
+  module Custom : sig
+    type erlang_value = known_erlang_value option
+
+    and known_erlang_value =
+      | Atom of string option
+      | IntLit of string
+      | List of erlang_value list
+      | Tuple of erlang_value list
+      | GenServer of {module_name: string option}
+
+    val return_value_model : erlang_value -> model [@@warning "-unused-value-declaration"]
+  end
+end
