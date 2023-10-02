@@ -451,8 +451,6 @@ module ConfigImpactItem = struct
         match config_impact_item.mode with
         | `Normal ->
             IssueType.config_impact_analysis
-        | `StrictBeta ->
-            IssueType.config_impact_analysis_strict_beta
         | `Strict ->
             IssueType.config_impact_analysis_strict
       in

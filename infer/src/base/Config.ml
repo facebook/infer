@@ -1224,8 +1224,10 @@ and config_impact_strict_mode_paths =
      runs as non-strict mode; otherwise, it runs as strict mode, but for all paths."
 
 
-and config_impact_strict_beta_mode_paths =
-  CLOpt.mk_string_list ~long:"config-impact-strict-beta-mode-paths" ~meta:"path_regex"
+and _config_impact_strict_beta_mode_paths =
+  CLOpt.mk_string_list
+    ~deprecated:["-config-impact-strict-beta-mode-paths"]
+    ~long:"" ~meta:"path_regex"
     "Similar to $(b,--config-impact-strict-mode-paths), but the paths are used only for beta \
      testing."
 
@@ -3838,10 +3840,6 @@ and config_impact_previous = !config_impact_previous
 and config_impact_strict_mode = !config_impact_strict_mode
 
 and config_impact_strict_mode_paths = RevList.rev_map !config_impact_strict_mode_paths ~f:Str.regexp
-
-and config_impact_strict_beta_mode_paths =
-  RevList.rev_map !config_impact_strict_beta_mode_paths ~f:Str.regexp
-
 
 and config_impact_test_paths = RevList.rev_map !config_impact_test_paths ~f:Str.regexp
 

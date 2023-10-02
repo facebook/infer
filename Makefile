@@ -273,7 +273,6 @@ DIRECT_TESTS += \
   java_fb-config-impact \
   java_fb-config-impact-paths \
   java_fb-config-impact-strict \
-  java_fb-config-impact-strict-beta-paths \
   java_fb-immutability \
   java_fb-performance
 endif

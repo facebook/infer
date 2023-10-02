@@ -377,7 +377,6 @@ let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile
     Config.is_checker_enabled Checker.ConfigImpactAnalysis
     && ( (Config.config_impact_strict_mode && List.is_empty Config.config_impact_strict_mode_paths)
        || ConfigImpactAnalysis.is_in_strict_mode_paths loc.Location.file
-       || ConfigImpactAnalysis.is_in_strict_beta_mode_paths loc.Location.file
        || ExternalConfigImpactData.is_in_config_data_file proc_name )
     && is_in_files_to_analyze loc
   then

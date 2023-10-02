@@ -298,8 +298,6 @@ val config_impact_strict_mode : bool
 
 val config_impact_strict_mode_paths : Str.regexp list
 
-val config_impact_strict_beta_mode_paths : Str.regexp list
-
 val config_impact_test_paths : Str.regexp list
 
 val continue_analysis : bool

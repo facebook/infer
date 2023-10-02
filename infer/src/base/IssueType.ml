@@ -432,11 +432,6 @@ let config_impact_analysis_strict =
     ~user_documentation:[%blob "./documentation/issues/CONFIG_IMPACT_STRICT.md"]
 
 
-let config_impact_analysis_strict_beta =
-  register ~enabled:false ~id:"CONFIG_IMPACT_STRICT_BETA" Advice ConfigImpactAnalysis
-    ~user_documentation:[%blob "./documentation/issues/CONFIG_IMPACT_STRICT_BETA.md"]
-
-
 let pulse_config_usage =
   register ~enabled:false ~id:"CONFIG_USAGE" Info Pulse
     ~user_documentation:[%blob "./documentation/issues/CONFIG_USAGE.md"]

@@ -145,8 +145,6 @@ val config_impact_analysis : t
 
 val config_impact_analysis_strict : t
 
-val config_impact_analysis_strict_beta : t
-
 val pulse_config_usage : t
 
 val pulse_const_refable : t
