@@ -868,7 +868,17 @@ module NodeBridge = struct
       let first_line = List.fold known_instr_lines ~init:label_loc.line ~f:min in
       {label_loc with line= first_line}
     in
-    let nkind = SilProcdesc.Node.Stmt_node MethodBody in
+    let nkind =
+      match
+        List.find_map ~f:(function Sil.Prune (_, _, branch, _) -> Some branch | _ -> None) instrs
+      with
+      | Some branch ->
+          (* This is incomplete as Textual cannot distinguish between if/loops as well as the branch condition for now.*)
+          let if_kind = Sil.Ik_if {terminated= false} in
+          SilProcdesc.Node.Prune_node (branch, if_kind, PruneNodeKind_MethodBody)
+      | None ->
+          SilProcdesc.Node.Stmt_node MethodBody
+    in
     SilProcdesc.create_node pdesc loc nkind instrs
 
 
