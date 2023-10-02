@@ -241,7 +241,13 @@ let store_debug_file_for_source source_file tenv =
 
 let write tenv tenv_filename =
   Serialization.write_to_file tenv_serializer tenv_filename ~data:tenv ;
-  if Config.debug_mode then store_debug_file tenv tenv_filename
+  if Config.debug_mode then store_debug_file tenv tenv_filename ;
+  let lstat = DB.filename_to_string tenv_filename |> Unix.lstat in
+  let size = Int64.to_int lstat.st_size |> Option.value_exn in
+  let value = size / 1024 / 1024 in
+  let label = "global_tenv_size_mb" in
+  L.debug Capture Quiet "Global tenv size %s: %d@\n" label value ;
+  ScubaLogging.log_count ~label:"global_tenv_size_mb" ~value
 
 
 module Normalizer = struct
