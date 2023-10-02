@@ -8,11 +8,13 @@
 #include <initializer_list>
 #include <unordered_map>
 #include <utility>
+#include <type_traits>
 
 // Keep a simplified skeleton of F14 maps for testing.
 namespace folly {
 struct F14HashToken;
 
+namespace f14::detail {
 template <typename Key, typename Mapped>
 struct F14BasicMap {
   using key_type = Key;
@@ -164,12 +166,33 @@ struct F14BasicMap {
   void reserve(std::size_t capacity);
 };
 
-template <typename K, typename V>
-using F14ValueMap = F14BasicMap<K, V>;
-template <typename K, typename V>
-using F14VectorMap = F14BasicMap<K, V>;
-template <typename K, typename V>
-using F14FastMap = F14BasicMap<K, V>;
+template <typename Key, typename Mapped>
+class F14VectorMapImpl : public F14BasicMap<Key, Mapped> {
+  using F14BasicMap<Key, Mapped>::F14BasicMap;
+};
+} // namespace f14::detail
+
+template <typename Key, typename Mapped>
+class F14ValueMap : public f14::detail::F14BasicMap<Key, Mapped> {
+  using f14::detail::F14BasicMap<Key, Mapped>::F14BasicMap;
+};
+
+template <typename Key, typename Mapped>
+class F14VectorMap : public f14::detail::F14VectorMapImpl<Key, Mapped> {
+  using f14::detail::F14VectorMapImpl<Key, Mapped>::F14VectorMapImpl;
+};
+
+template <typename Key, typename Mapped>
+class F14FastMap : public std::conditional<
+                       sizeof(std::pair<Key const, Mapped>) < 24,
+                       F14ValueMap<Key, Mapped>,
+                       f14::detail::F14VectorMapImpl<Key, Mapped>>::type {
+  using Super =
+      std::conditional<sizeof(std::pair<Key const, Mapped>) < 24,
+                       F14ValueMap<Key, Mapped>,
+                       f14::detail::F14VectorMapImpl<Key, Mapped>>::type;
+  using Super::Super;
+};
 } // namespace folly
 
 void unordered_map_ok() {
