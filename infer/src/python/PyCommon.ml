@@ -379,6 +379,10 @@ let exit = "__exit__"
 
 let enter = "__enter__"
 
+let class__ = "__class__"
+
+let classcell = "__classcell__"
+
 let return = "return"
 
 let entry = "entry"

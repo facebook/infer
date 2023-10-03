@@ -229,7 +229,7 @@ module Error = struct
           T.pp_qualified_procname name default_size param_size
 
 
-  let class_decl (err, kind) = (err, ClassDecl kind)
+  let class_decl kind = (L.InternalError, ClassDecl kind)
 
   let ffi (err, kind) = (err, FFI kind)
 
@@ -3102,7 +3102,7 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
   let static_class_name = Ident.extend ~prefix:module_name (PyCommon.static_companion co_name) in
   let class_type_name = Ident.to_type_name class_name in
   let static_class_type_name = Ident.to_type_name static_class_name in
-  let* {PyClassDecl.members; methods; static_methods; has_init; has_new} =
+  let* {PyClassDecl.State.members; methods; static_methods; has_init; has_new} =
     Result.map_error ~f:Error.class_decl
     @@ PyClassDecl.parse_class_declaration code co_name instructions
   in

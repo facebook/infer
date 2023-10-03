@@ -1354,13 +1354,6 @@ print(c.z)
 
         }
 
-        define dummy::IntBox$static.id(x: *PyInt) : *PyInt {
-          #b0:
-              n0:*PyInt = load &x
-              ret n0
-
-        }
-
         define dummy::IntBox.__init__(self: *dummy::IntBox, x: *PyInt) : *PyNone {
           #b0:
               n0:*dummy::IntBox = load &self
@@ -1390,6 +1383,13 @@ print(c.z)
         define dummy::IntBox.run(self: *dummy::IntBox) : *PyNone {
           #b0:
               ret null
+
+        }
+
+        define dummy::IntBox$static.id(x: *PyInt) : *PyInt {
+          #b0:
+              n0:*PyInt = load &x
+              ret n0
 
         }
 
@@ -2687,11 +2687,11 @@ class C(ABC):
 
         }
 
+        declare dummy::C.get(*dummy::C) : *PyNone
+
         declare dummy::C$static.get_static0() : *PyNone
 
         declare dummy::C$static.get_static1() : *PyNone
-
-        declare dummy::C.get(*dummy::C) : *PyNone
 
         declare dummy::C(...) : *dummy::C
 

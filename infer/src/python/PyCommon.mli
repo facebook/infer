@@ -205,6 +205,12 @@ val enter : string
 val return : string
 (** Name of the binding name of return types of functions / methods *)
 
+val class__ : string
+(** Special name for [__class__] *)
+
+val classcell : string
+(** Special name for [__classcell_] *)
+
 val entry : string
 (** Textual label name for entry points of function we synthesized (constructors, __init__, ...) *)
 

@@ -10,16 +10,17 @@ open! IStd
 module Error : sig
   type kind
 
-  type t = Logging.error * kind
-
   val pp_kind : Format.formatter -> kind -> unit
 end
 
-type t =
-  { members: PyCommon.annotated_name list
-  ; methods: PyCommon.method_info list
-  ; static_methods: PyCommon.method_info list
-  ; has_init: PyCommon.annotated_name list option
-  ; has_new: PyCommon.annotated_name list option }
+module State : sig
+  type t = private
+    { members: PyCommon.annotated_name list
+    ; methods: PyCommon.method_info list
+    ; static_methods: PyCommon.method_info list
+    ; has_init: PyCommon.annotated_name list option
+    ; has_new: PyCommon.annotated_name list option }
+end
 
-val parse_class_declaration : FFI.Code.t -> string -> FFI.Instruction.t list -> (t, Error.t) result
+val parse_class_declaration :
+  FFI.Code.t -> string -> FFI.Instruction.t list -> (State.t, Error.kind) result
