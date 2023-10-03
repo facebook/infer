@@ -441,14 +441,3 @@ module MakeFunctionFlags = struct
     let not_v = lnot v land 0xf in
     flags land not_v
 end
-
-(* TODO: [raw_qualified_name] is not used at the moment. We might want to use it for some sanity
-   checks. *)
-type method_info =
-  { name: string
-  ; raw_qualified_name: string
-  ; code: FFI.Constant.t
-  ; signature: signature
-  ; is_static: bool
-  ; is_abstract: bool
-  ; flags: MakeFunctionFlags.t }

@@ -3101,15 +3101,21 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
     Result.map_error ~f:Error.class_decl
     @@ PyClassDecl.parse_class_declaration code co_name instructions
   in
+  let load_defaults env defaults =
+    let* env, defaults =
+      Env.map_result ~env defaults ~f:(fun env cell ->
+          let* env, exp, _info = load_cell env cell in
+          Ok (env, exp) )
+    in
+    Ok (env, defaults)
+  in
   let register_methods env codes method_infos opname =
-    List.fold_left method_infos
-      ~init:(Ok (env, codes))
-      ~f:(fun acc {PyCommon.code; signature; flags; is_static; is_abstract} ->
-        let* env, codes = acc in
-        (* TODO: Fix class method parsing to deal with default parameters.
-                 It will require a big rewrite of the whole thing, so
-                 postponing to a later diff *)
-        let default_arguments = [] in
+    List.fold_result method_infos ~init:(env, codes)
+      ~f:(fun
+           (env, codes)
+           {PyClassDecl.State.code; signature; defaults; flags; is_static; is_abstract}
+         ->
+        let* env, default_arguments = load_defaults env defaults in
         let* () = check_flags opname flags in
         let env =
           match FFI.Constant.as_code code with

@@ -234,13 +234,3 @@ module MakeFunctionFlags : sig
 
   val unset : t -> flag -> t
 end
-
-(** Method declaration info (name, signature, ... *)
-type method_info =
-  { name: string
-  ; raw_qualified_name: string
-  ; code: FFI.Constant.t
-  ; signature: signature
-  ; is_static: bool
-  ; is_abstract: bool
-  ; flags: MakeFunctionFlags.t }

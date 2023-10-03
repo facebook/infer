@@ -14,10 +14,20 @@ module Error : sig
 end
 
 module State : sig
+  type method_info = private
+    { name: string
+    ; raw_qualified_name: string
+    ; code: FFI.Constant.t
+    ; signature: PyCommon.signature
+    ; defaults: PyEnv.DataStack.cell list
+    ; is_static: bool
+    ; is_abstract: bool
+    ; flags: PyCommon.MakeFunctionFlags.t }
+
   type t = private
     { members: PyCommon.annotated_name list
-    ; methods: PyCommon.method_info list
-    ; static_methods: PyCommon.method_info list
+    ; methods: method_info list
+    ; static_methods: method_info list
     ; has_init: PyCommon.annotated_name list option
     ; has_new: PyCommon.annotated_name list option }
 end

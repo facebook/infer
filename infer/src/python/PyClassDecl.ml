@@ -18,6 +18,7 @@ module Cell = struct
     ; code: FFI.Constant.t
     ; type_info: t SMap.t
     ; rev_signature: PyCommon.signature
+    ; defaults: t list
     ; is_static: bool
     ; is_abstract: bool
     ; flags: MakeFunctionFlags.t }
@@ -25,8 +26,8 @@ module Cell = struct
   and t =
     | Atom of string
     | Path of Ident.t
-    | Code of FFI.Constant.t
-    | List of t list
+    | Const of FFI.Constant.t
+    | List of (PyBuiltin.builder * t list)
     | Map of t SMap.t
     | Apply of string * t
     | Method of method_info
@@ -39,7 +40,7 @@ module Cell = struct
         String.equal a0 a1
     | Path p0, Path p1 ->
         Int.equal 0 (Ident.compare p0 p1)
-    | List l0, List l1 ->
+    | List (_, l0), List (_, l1) ->
         List.equal equal l0 l1
     | Apply (n0, c0), Apply (n1, c1) ->
         String.equal n0 n1 && equal c0 c1
@@ -52,14 +53,14 @@ module Cell = struct
   let rec pp fmt = function
     | Atom a ->
         F.pp_print_string fmt a
-    | List lst ->
+    | List (_, lst) ->
         F.fprintf fmt "[@[%a@]]" (Pp.collection ~fold:List.fold ~sep:", " ~pp_item:pp) lst
     | Map _map ->
         F.pp_print_string fmt "<Map>"
     | Apply (name, ty) ->
         F.fprintf fmt "%s[%a]" name pp ty
-    | Code code ->
-        F.fprintf fmt "Code(%a)" FFI.Constant.pp code
+    | Const const ->
+        F.fprintf fmt "Const(%a)" FFI.Constant.pp const
     | Path id ->
         F.fprintf fmt "Id(%a)" Ident.pp id
     | Method {raw_qualified_name; flags} ->
@@ -74,7 +75,6 @@ module Error = struct
   type kind =
     | InvalidCallWithDecorators of int * string
     | InvalidDecorator of Cell.t
-    | UnexpectedConstant of FFI.Constant.t
     | UnexpectedOpcode of string
     | UnexpectedClosureName of string
     | UnexpectedClosure of Cell.t
@@ -82,14 +82,13 @@ module Error = struct
     | As of cell_as * Cell.t
     | UnknownStorage of string
     | AnnotationMismatch
+    | ToCell of Cell.t
 
   let pp_kind fmt = function
     | InvalidCallWithDecorators (n, cls) ->
         F.fprintf fmt "invalid CALL_FUNCTION(%d) for decorated method in class %s" n cls
     | InvalidDecorator typ ->
         F.fprintf fmt "unsupported decorator %a" Cell.pp typ
-    | UnexpectedConstant const ->
-        F.fprintf fmt "unexpected constant %a during class declaration" FFI.Constant.pp const
     | UnexpectedOpcode opcode ->
         F.fprintf fmt "unexpected opcode %s during class declaration" opcode
     | EmptyStack ->
@@ -119,7 +118,26 @@ module Error = struct
         F.fprintf fmt "Unexpected closure name : %s" name
     | UnexpectedClosure cell ->
         F.fprintf fmt "Unexpected closure : %a" Cell.pp cell
+    | ToCell cell ->
+        F.fprintf fmt "Failed to generate a valid default value for %a" Cell.pp cell
 end
+
+let rec to_datastack_cell cell =
+  let open IResult.Let_syntax in
+  match (cell : Cell.t) with
+  | Atom name ->
+      Ok (PyEnv.DataStack.Name {global= false; name})
+  | Path id ->
+      Ok (PyEnv.DataStack.Path id)
+  | List (b, l) ->
+      let l = List.map l ~f:(fun c -> to_datastack_cell c) in
+      let* l = Result.all l in
+      Ok (PyEnv.DataStack.List (b, l))
+  | Const c ->
+      Ok (PyEnv.DataStack.Const c)
+  | ClassClosure | Apply _ | Method _ | Map _ ->
+      Error (Error.ToCell cell)
+
 
 module Stack = struct
   let empty = []
@@ -140,10 +158,22 @@ module Stack = struct
 end
 
 module State = struct
+  (* TODO: [raw_qualified_name] is not used at the moment. We might want to use it for some sanity
+     checks. *)
+  type method_info =
+    { name: string
+    ; raw_qualified_name: string
+    ; code: FFI.Constant.t
+    ; signature: PyCommon.signature
+    ; defaults: PyEnv.DataStack.cell list
+    ; is_static: bool
+    ; is_abstract: bool
+    ; flags: MakeFunctionFlags.t }
+
   type t =
     { members: PyCommon.annotated_name list
-    ; methods: PyCommon.method_info list
-    ; static_methods: PyCommon.method_info list
+    ; methods: method_info list
+    ; static_methods: method_info list
     ; has_init: PyCommon.annotated_name list option
     ; has_new: PyCommon.annotated_name list option }
 
@@ -151,23 +181,23 @@ module State = struct
 end
 
 let rec cell_from_constant const =
-  let open IResult.Let_syntax in
   match (const : FFI.Constant.t) with
+  | PYCBytes s ->
+      let s = Bytes.to_string s in
+      Cell.Atom s
+  | PYCString str ->
+      Cell.Atom str
   | PYCNone ->
-      Ok (Cell.Atom "None")
-  | PYCString name ->
-      Ok (Cell.Atom name)
+      Cell.Atom "None"
   | PYCTuple arr ->
-      let* cells =
-        Array.fold_result ~init:[] arr ~f:(fun cells const ->
-            let* cell = cell_from_constant const in
-            Ok (cell :: cells) )
+      let cells =
+        Array.fold ~init:[] arr ~f:(fun cells const ->
+            let cell = cell_from_constant const in
+            cell :: cells )
       in
-      Ok (Cell.List (List.rev cells))
-  | PYCCode _ ->
-      Ok (Cell.Code const)
+      Cell.List (PyBuiltin.Tuple, List.rev cells)
   | _ ->
-      Error (Error.UnexpectedConstant const)
+      Cell.Const const
 
 
 let as_atom = function Cell.Atom name -> Ok name | cell -> Error (Error.As (Atom, cell))
@@ -183,7 +213,7 @@ let as_path = function
       Error (Error.As (Path, cell))
 
 
-let as_code = function Cell.Code code -> Ok code | cell -> Error (Error.As (Code, cell))
+let as_const = function Cell.Const const -> Ok const | cell -> Error (Error.As (Code, cell))
 
 let as_method = function
   | Cell.Method method_info ->
@@ -199,14 +229,14 @@ let as_map = function Cell.Map map -> Ok map | cell -> Error (Error.As (Map, cel
 let make_function state stack flags =
   let open IResult.Let_syntax in
   let* raw_qualified_name, stack = Stack.pop stack in
-  let* code, stack = Stack.pop stack in
+  let* cell, stack = Stack.pop stack in
   let* raw_qualified_name = as_atom raw_qualified_name in
-  let* code = as_code code in
+  let* code = as_const cell in
   let flags = MakeFunctionFlags.mk flags in
   let* stack, flags =
     if MakeFunctionFlags.mem flags Closure then
       let* cell, stack = Stack.pop stack in
-      let* tuple = as_tuple cell in
+      let* _, tuple = as_tuple cell in
       if List.equal Cell.equal [Cell.ClassClosure] tuple then
         let flags = MakeFunctionFlags.unset flags Closure in
         Ok (stack, flags)
@@ -219,6 +249,13 @@ let make_function state stack flags =
       let* type_info = as_map type_info in
       Ok (type_info, stack)
     else Ok (SMap.empty, stack)
+  in
+  let* stack, defaults =
+    if MakeFunctionFlags.mem flags DefaultValues then
+      let* cell, stack = Stack.pop stack in
+      let* _, defaults = as_tuple cell in
+      Ok (stack, defaults)
+    else Ok (stack, [])
   in
   let* rev_signature, stack =
     let mk_formals_types code =
@@ -252,6 +289,7 @@ let make_function state stack flags =
       ; raw_qualified_name
       ; flags
       ; rev_signature
+      ; defaults
       ; is_static= false
       ; is_abstract= false }
   in
@@ -262,7 +300,14 @@ let make_function state stack flags =
 let store_name state stack class_name name =
   let open IResult.Let_syntax in
   let* method_info, stack = Stack.pop stack in
-  let* {Cell.raw_qualified_name; code; rev_signature; type_info; is_static; is_abstract; flags} =
+  let* { Cell.raw_qualified_name
+       ; code
+       ; rev_signature
+       ; type_info
+       ; is_static
+       ; is_abstract
+       ; flags
+       ; defaults } =
     as_method method_info
   in
   (* When __init__ calls super(), some closures are added to the fix, so we
@@ -301,8 +346,10 @@ let store_name state stack class_name name =
         Ok ({PyCommon.name= PyCommon.return; annotation= id} :: rev_signature)
   in
   let signature = List.rev rev_signature in
+  let defaults = List.map ~f:to_datastack_cell defaults in
+  let* defaults = Result.all defaults in
   let method_info =
-    {PyCommon.name; raw_qualified_name; code; signature; is_static; is_abstract; flags}
+    {State.name; raw_qualified_name; code; signature; defaults; is_static; is_abstract; flags}
   in
   let {State.methods; has_init; has_new} = state in
   let has_init = if String.equal name PyCommon.init__ then Some signature else has_init in
@@ -360,7 +407,7 @@ let run class_name state {FFI.Code.co_names; co_consts; co_cellvars; co_freevars
       Ok (state, stack)
   | "LOAD_CONST" ->
       let const = co_consts.(arg) in
-      let* cell = cell_from_constant const in
+      let cell = cell_from_constant const in
       let stack = Stack.push stack cell in
       Ok (state, stack)
   | "BINARY_SUBSCR" ->
@@ -371,9 +418,14 @@ let run class_name state {FFI.Code.co_names; co_consts; co_cellvars; co_freevars
       let stack = Stack.push stack cell in
       L.user_error "No support for generic types at the moment@\n" ;
       Ok (state, stack)
-  | "BUILD_TUPLE" | "BUILD_LIST" ->
+  | "BUILD_TUPLE" ->
       let* cells, stack = Stack.pop_n stack arg in
-      let cell = Cell.List cells in
+      let cell = Cell.List (Tuple, cells) in
+      let stack = Stack.push stack cell in
+      Ok (state, stack)
+  | "BUILD_LIST" ->
+      let* cells, stack = Stack.pop_n stack arg in
+      let cell = Cell.List (List, cells) in
       let stack = Stack.push stack cell in
       Ok (state, stack)
   | "STORE_SUBSCR" ->
@@ -392,7 +444,7 @@ let run class_name state {FFI.Code.co_names; co_consts; co_cellvars; co_freevars
       Ok (state, stack)
   | "BUILD_CONST_KEY_MAP" ->
       let* cell, stack = Stack.pop stack in
-      let* names = as_tuple cell in
+      let* _, names = as_tuple cell in
       let* cells, stack = Stack.pop_n stack arg in
       let map =
         List.fold2 names cells ~init:(Ok SMap.empty) ~f:(fun map name cell ->

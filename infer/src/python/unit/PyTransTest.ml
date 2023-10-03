@@ -3562,6 +3562,102 @@ f(0, 0, 0, "toto")
         declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+class C:
+        def f(self, x, y=1, z=10):
+          return x + y + z
+
+c = C()
+c.f(0)
+c.f(0, 1)
+c.f(0, 1, 2)
+|}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_class("dummy::C")
+              n1 = dummy::C()
+              store &dummy::c <- n1:*dummy::C
+              n2:*dummy::C = load &dummy::c
+              n3 = n2.?.f($builtins.python_int(0))
+              n4:*dummy::C = load &dummy::c
+              n5 = n4.?.f($builtins.python_int(0), $builtins.python_int(1))
+              n6:*dummy::C = load &dummy::c
+              n7 = n6.?.f($builtins.python_int(0), $builtins.python_int(1), $builtins.python_int(2))
+              ret null
+
+        }
+
+        define dummy::C.f(self: *dummy::C, x: *PyObject, y: *PyObject) : *PyObject {
+          local z: *PyObject
+          #b0:
+              store &z <- $builtins.python_int(10):*PyObject
+              n0 = dummy::C.f([&self:*dummy::C], [&x:*PyObject], [&y:*PyObject], [&z:*PyObject])
+              ret n0
+
+        }
+
+        define dummy::C.f(self: *dummy::C, x: *PyObject) : *PyObject {
+          local y: *PyObject, z: *PyObject
+          #b0:
+              store &y <- $builtins.python_int(1):*PyObject
+              store &z <- $builtins.python_int(10):*PyObject
+              n0 = dummy::C.f([&self:*dummy::C], [&x:*PyObject], [&y:*PyObject], [&z:*PyObject])
+              ret n0
+
+        }
+
+        define dummy::C.f(self: *dummy::C, x: *PyObject, y: *PyObject, z: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &x
+              n1:*PyObject = load &y
+              n2 = $builtins.binary_add(n0, n1)
+              n3:*PyObject = load &z
+              n4 = $builtins.binary_add(n2, n3)
+              ret n4
+
+        }
+
+        declare dummy::C(...) : *dummy::C
+
+        declare dummy::C.__init__(...) : *PyNone
+
+        global dummy::C$static: *PyObject
+
+        type .static dummy::C$static = {}
+
+        type dummy::C = {}
+
+        global dummy::c: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_class(*String) : *PyClass
+
+        declare $builtins.binary_add(*PyObject, *PyObject) : *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )
 
 
