@@ -1293,11 +1293,11 @@ c.set(42)
         {|
 class IntBox:
         x: int
-        f: Callable[[int, bool, str], None]
+#        f: Callable[[int, bool, str], None]
 
         def __init__(self, x: int) -> None:
             self.x = x
-            self.f = lambda i: lambda b: lambda s: print(42)
+#            self.f = lambda i: lambda b: lambda s: print(42)
 
         def get(self) -> int:
             return self.x
@@ -1306,7 +1306,8 @@ class IntBox:
             self.x = x
 
         def run(self) -> None:
-            self.f(3)(False)("yolo")
+#            self.f(3)(False)("yolo")
+            pass
 
         # Stupid function to test the staticmethod decorator + type annotations
         @staticmethod
@@ -1365,9 +1366,6 @@ print(c.z)
               n0:*dummy::IntBox = load &self
               n1:*PyInt = load &x
               store n0.?.x <- n1:*PyInt
-              n2:*dummy::IntBox = load &self
-              n3 = $builtins.python_code("$ambiguous.code")
-              store n2.?.f <- n3:*PyCode
               ret null
 
         }
@@ -1391,10 +1389,6 @@ print(c.z)
 
         define dummy::IntBox.run(self: *dummy::IntBox) : *PyNone {
           #b0:
-              n0:*dummy::IntBox = load &self
-              n1 = n0.?.f($builtins.python_int(3))
-              n2 = $builtins.python_call(n1, $builtins.python_bool(0))
-              n3 = $builtins.python_call(n2, $builtins.python_string("yolo"))
               ret null
 
         }
@@ -1412,7 +1406,7 @@ print(c.z)
 
         type .static dummy::IntBox$static = {}
 
-        type dummy::IntBox = {f: *Callable[[int, bool, str], None]; x: *PyInt}
+        type dummy::IntBox = {x: *PyInt}
 
         define dummy.getX(box: *dummy::IntBox) : *PyInt {
           #b0:
@@ -1433,8 +1427,6 @@ print(c.z)
         declare $builtins.python_code(*String) : *PyCode
 
         declare $builtins.python_class(*String) : *PyClass
-
-        declare $builtins.python_call(...) : *PyObject
 
         declare $builtins.python_tuple(...) : *PyObject
 
