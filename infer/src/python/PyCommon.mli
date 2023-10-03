@@ -20,28 +20,28 @@ val field_name : ?loc:Textual.Location.t -> string -> Textual.FieldName.t
 val mk_type : string -> Textual.Typ.t
 
 val qualified_procname :
-  enclosing_class:Textual.TypeName.t -> Textual.ProcName.t -> Textual.qualified_procname
+  enclosing_class:Textual.TypeName.t -> Textual.ProcName.t -> Textual.QualifiedProcName.t
 
-val builtin_name : string -> Textual.qualified_procname
+val builtin_name : string -> Textual.QualifiedProcName.t
 (** Helper function to encode known builtin names correctly *)
 
-val python_int : Textual.qualified_procname
+val python_int : Textual.QualifiedProcName.t
 (** Encoding of Python [int] type. Since Python integers are of arbitrary precision, they are not
     modeled directly with [int]. *)
 
-val python_float : Textual.qualified_procname
+val python_float : Textual.QualifiedProcName.t
 (** Encoding of Python [float] type. *)
 
-val python_string : Textual.qualified_procname
+val python_string : Textual.QualifiedProcName.t
 (** Encoding of Python [str] type. *)
 
-val python_bytes : Textual.qualified_procname
+val python_bytes : Textual.QualifiedProcName.t
 (** Encoding of Python [bytes] type. *)
 
-val python_bool : Textual.qualified_procname
+val python_bool : Textual.QualifiedProcName.t
 (** Encoding of Python [bool] type. *)
 
-val python_tuple : Textual.qualified_procname
+val python_tuple : Textual.QualifiedProcName.t
 (** Encoding of Python [tuple] type. It is the raw "untyped" one where every item is of type
     [object]. *)
 
@@ -137,7 +137,7 @@ module Ident : sig
 
   val to_string : sep:string -> t -> string
 
-  val to_qualified_procname : t -> Textual.qualified_procname
+  val to_qualified_procname : t -> Textual.QualifiedProcName.t
 
   val to_type_name : ?static:bool -> t -> Textual.TypeName.t
 

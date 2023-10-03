@@ -20,7 +20,7 @@ let node_name ?(loc = T.Location.Unknown) value = {T.NodeName.value; loc}
 let field_name ?(loc = T.Location.Unknown) value = {T.FieldName.value; loc}
 
 (* TODO: only deal with toplevel functions for now *)
-let qualified_procname ~enclosing_class name : T.qualified_procname =
+let qualified_procname ~enclosing_class name : T.QualifiedProcName.t =
   {enclosing_class= Enclosing enclosing_class; name}
 
 
@@ -75,9 +75,9 @@ let pyIterItemStruct =
 
 let builtins = "$builtins"
 
-let builtin_scope = T.Enclosing T.{TypeName.value= builtins; loc= Unknown}
+let builtin_scope = T.QualifiedProcName.Enclosing T.{TypeName.value= builtins; loc= Unknown}
 
-let builtin_name (value : string) : T.qualified_procname =
+let builtin_name (value : string) : T.QualifiedProcName.t =
   let name = T.ProcName.{value; loc= T.Location.Unknown} in
   {enclosing_class= builtin_scope; name}
 
@@ -118,14 +118,14 @@ let mk_string (s : string) =
 
 let get_string = function
   | T.Exp.Call {proc; args= [arg]; kind= NonVirtual}
-    when T.equal_qualified_procname proc python_string -> (
+    when T.QualifiedProcName.equal proc python_string -> (
     match arg with Const (Str s) -> Some s | _ -> None )
   | _ ->
       None
 
 
 let get_tuple_as_list = function
-  | T.Exp.Call {proc; args; kind= NonVirtual} when T.equal_qualified_procname proc python_tuple ->
+  | T.Exp.Call {proc; args; kind= NonVirtual} when T.QualifiedProcName.equal proc python_tuple ->
       Some args
   | _ ->
       None
@@ -234,20 +234,20 @@ module Ident = struct
     match path with Empty -> name | Path {path; last} -> to_enclosing_name name path sep last
 
 
-  let to_qualified_procname {root= {name; loc}; path} : T.qualified_procname =
+  let to_qualified_procname {root= {name; loc}; path} : T.QualifiedProcName.t =
     match path with
     | Empty ->
-        {T.enclosing_class= TopLevel; name= proc_name ~loc name}
+        {enclosing_class= TopLevel; name= proc_name ~loc name}
     | Path {path; last} ->
         let enclosing_class =
           let value =
             if List.is_empty path then name else Format.asprintf "%s::%a" name pp_rev_list path
           in
           let type_name = type_name ~loc value in
-          T.Enclosing type_name
+          T.QualifiedProcName.Enclosing type_name
         in
         let name = {T.ProcName.value= last; loc} in
-        {T.enclosing_class; name}
+        {enclosing_class; name}
 
 
   let to_type_name ?(static = false) {root= {name; loc}; path} : T.TypeName.t =

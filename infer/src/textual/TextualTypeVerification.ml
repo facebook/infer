@@ -75,7 +75,7 @@ let pp_expected_kind fmt expected =
 type error =
   | TypeMismatch of {exp: Exp.t; typ: Typ.t; expected: expected_kind; loc: Location.t}
   | WrongNumberBuiltinArgs of
-      { proc: qualified_procname
+      { proc: QualifiedProcName.t
       ; expected: int
       ; at_least: bool (* is the number of expected arguments a lower bound *)
       ; given: int
@@ -83,7 +83,7 @@ type error =
   | IdentAssignedTwice of {id: Ident.t; typ1: Typ.t; typ2: Typ.t; loc1: Location.t; loc2: Location.t}
   | IdentReadBeforeWrite of {id: Ident.t; loc: Location.t}
   | VarTypeNotDeclared of {var: VarName.t; loc: Location.t}
-  | MissingDeclaration of {proc: qualified_procname; loc: Location.t}
+  | MissingDeclaration of {proc: QualifiedProcName.t; loc: Location.t}
   | ArityMismatch of {length1: int; length2: int; loc: Location.t}
 
 let error_loc = function
@@ -113,7 +113,7 @@ let pp_error sourcefile fmt error =
         pp_expected_kind expected
   | WrongNumberBuiltinArgs {proc; expected; at_least; given; _} ->
       F.fprintf fmt "builtin %a is called with %d arguments while it expects %s%d"
-        pp_qualified_procname proc given
+        QualifiedProcName.pp proc given
         (if at_least then "at least " else "")
         expected
   | IdentAssignedTwice {id; typ1; typ2; loc2; _} ->
@@ -124,7 +124,7 @@ let pp_error sourcefile fmt error =
   | VarTypeNotDeclared {var; _} ->
       F.fprintf fmt "variable %a has not been declared" VarName.pp var
   | MissingDeclaration {proc} ->
-      F.fprintf fmt "procname %a should be user-declared or a builtin" pp_qualified_procname proc
+      F.fprintf fmt "procname %a should be user-declared or a builtin" QualifiedProcName.pp proc
   | ArityMismatch {length1; length2; loc} ->
       F.fprintf fmt "iter2 was run on lists of different lengths at %a: %d vs %d" Location.pp loc
         length1 length2
@@ -153,8 +153,8 @@ let mk_type_mismatch_error expected loc exp typ : error =
   TypeMismatch {exp; typ; expected; loc}
 
 
-let mk_missing_declaration_error (proc : qualified_procname) : error =
-  let name = qualified_procname_name proc in
+let mk_missing_declaration_error (proc : QualifiedProcName.t) : error =
+  let name = QualifiedProcName.name proc in
   let {ProcName.loc} = name in
   MissingDeclaration {proc; loc}
 
@@ -354,7 +354,7 @@ let typeof_const (const : Const.t) : Typ.t =
       Float
 
 
-let typeof_reserved_proc (proc : qualified_procname) : (Typ.t * Typ.t list option) monad =
+let typeof_reserved_proc (proc : QualifiedProcName.t) : (Typ.t * Typ.t list option) monad =
   if ProcDecl.to_binop proc |> Option.is_some then ret (Typ.Int, Some [Typ.Int; Typ.Int])
   else if ProcDecl.to_unop proc |> Option.is_some then ret (Typ.Int, Some [Typ.Int])
   else
@@ -372,7 +372,7 @@ let typeof_procname (procsig : ProcSig.t) : (Typ.t * Typ.t list option) monad =
         |> Option.map ~f:(fun formals_types -> List.map formals_types ~f:(fun {Typ.typ} -> typ))
       in
       ret (procdecl.result_type.typ, formals_types) state
-  | None when ProcSig.to_qualified_procname procsig |> qualified_procname_contains_wildcard ->
+  | None when ProcSig.to_qualified_procname procsig |> QualifiedProcName.contains_wildcard ->
       ret (Typ.Void, None) state
   | None ->
       (typeof_reserved_proc (ProcSig.to_qualified_procname procsig)) state
@@ -475,7 +475,7 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
       ret (exp, Typ.Struct TypeNameBridge.sil_type_of_types)
 
 
-and typeof_allocate_builtin (proc : qualified_procname) args =
+and typeof_allocate_builtin (proc : QualifiedProcName.t) args =
   match args with
   | [Exp.Typ typ] ->
       ret (Exp.Call {proc; args; kind= Exp.NonVirtual}, Typ.Ptr typ)
@@ -493,7 +493,7 @@ and typeof_allocate_builtin (proc : qualified_procname) args =
       abort
 
 
-and typeof_allocate_array_builtin (proc : qualified_procname) args =
+and typeof_allocate_array_builtin (proc : QualifiedProcName.t) args =
   match args with
   | Exp.Typ typ :: dim :: dims ->
       let* loc = get_location in
@@ -517,7 +517,7 @@ and typeof_allocate_array_builtin (proc : qualified_procname) args =
       abort
 
 
-and typeof_cast_builtin (proc : qualified_procname) args =
+and typeof_cast_builtin (proc : QualifiedProcName.t) args =
   match args with
   | [Exp.Typ typ; exp] ->
       let+ exp, _old_typ = typeof_exp exp in
@@ -536,7 +536,7 @@ and typeof_cast_builtin (proc : qualified_procname) args =
       abort
 
 
-and typeof_instanceof_builtin (proc : qualified_procname) args =
+and typeof_instanceof_builtin (proc : QualifiedProcName.t) args =
   match args with
   | [exp1; (Exp.Typ _ as exp2)] ->
       let+ exp1, _ = typeof_exp exp1 in

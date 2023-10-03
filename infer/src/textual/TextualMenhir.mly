@@ -77,8 +77,8 @@
 %start <Textual.SourceFile.t -> Textual.Module.t> main
 %type <Attr.t> attribute
 %type <Module.decl> declaration
-%type <qualified_procname> qualified_pname_and_lparen
-%type <qualified_procname> opt_qualified_pname_and_lparen
+%type <QualifiedProcName.t> qualified_pname_and_lparen
+%type <QualifiedProcName.t> opt_qualified_pname_and_lparen
 %type <FieldName.t> fname
 %type <NodeName.t> nname
 %type <TypeName.t> tname
@@ -133,12 +133,12 @@ main:
 
 name_and_lparen:
   | proc_ident=opt_qualified_pname_and_lparen
-    { match (proc_ident : qualified_procname).enclosing_class with
+    { match (proc_ident : QualifiedProcName.t).enclosing_class with
       | Enclosing _ ->
          let loc = location_of_pos $startpos(proc_ident) in
-         let string = Format.asprintf "%a" pp_qualified_procname proc_ident in
+         let string = Format.asprintf "%a" QualifiedProcName.pp proc_ident in
          raise (SpecialSyntaxError (loc, string))
-      | _ -> (proc_ident : qualified_procname).name.value }
+      | _ -> (proc_ident : QualifiedProcName.t).name.value }
 
 fname:
   | id=ident
@@ -171,20 +171,20 @@ opt_qualified_pname_and_lparen:
     { let enclosing, id = proc_ident in
       let loc = location_of_pos $startpos(proc_ident) in
       let name : ProcName.t = { value=id; loc } in
-      let enclosing_class : enclosing_class =
+      let enclosing_class =
         Option.value_map enclosing
-                         ~default:TopLevel
-                         ~f:(fun value -> Enclosing {value; loc})
+                         ~default:QualifiedProcName.TopLevel
+                         ~f:(fun value -> QualifiedProcName.Enclosing {value; loc})
       in
-      ( {enclosing_class; name} : qualified_procname)
+      ( {enclosing_class; name} : QualifiedProcName.t)
     }
 
 qualified_pname_and_lparen:
   | proc_ident=opt_qualified_pname_and_lparen
-    { match (proc_ident : qualified_procname).enclosing_class with
+    { match (proc_ident : QualifiedProcName.t).enclosing_class with
       | Enclosing tname when String.equal tname.TypeName.value "?" ->
          let loc = location_of_pos $startpos(proc_ident) in
-         let string = Format.asprintf "%a" pp_qualified_procname proc_ident in
+         let string = Format.asprintf "%a" QualifiedProcName.pp proc_ident in
          raise (SpecialSyntaxError (loc, string))
       | _ -> proc_ident }
 

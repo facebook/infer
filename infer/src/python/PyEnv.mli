@@ -67,10 +67,10 @@ module DataStack : sig
     | Import of {import_path: Ident.t; symbols: string list}
         (** imported module path, with optional name of symbols *)
     | ImportCall of {id: Ident.t; loc: T.Location.t}  (** Static call to export definition *)
-    | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
+    | MethodCall of {receiver: T.Exp.t; name: T.QualifiedProcName.t}
         (** Virtual call, usually of a method of a class. Could be an access to a closure that is
             called straight away *)
-    | StaticCall of {call_name: T.qualified_procname; receiver: T.Exp.t option}
+    | StaticCall of {call_name: T.QualifiedProcName.t; receiver: T.Exp.t option}
         (** call to static method in class. Because we turn some method calls into static ones, we
             have to keep the receiver around, just in case. *)
     | Super  (** special name to refer to the parent class, like in [super().__init__()] *)

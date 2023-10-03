@@ -39,9 +39,9 @@ let init sourcefile lang =
 type error =
   | FieldDeclaredTwice of qualified_fieldname
   | GlobalDeclaredTwice of Global.t
-  | NodeImplementedTwice of qualified_procname * NodeName.t
-  | ParameterDeclatedTwice of qualified_procname * VarName.t
-  | ProcImplementedTwice of qualified_procname
+  | NodeImplementedTwice of QualifiedProcName.t * NodeName.t
+  | ParameterDeclatedTwice of QualifiedProcName.t * VarName.t
+  | ProcImplementedTwice of QualifiedProcName.t
   | StructDeclaredTwice of TypeName.t
 
 let pp_error sourcefile fmt err =
@@ -54,12 +54,12 @@ let pp_error sourcefile fmt err =
       F.fprintf fmt "global %a is declared twice in the same file" VarName.pp global.name
   | NodeImplementedTwice (qualified_procname, label) ->
       F.fprintf fmt "node %a is implemented twice in the same function %a" NodeName.pp label
-        pp_qualified_procname qualified_procname
+        QualifiedProcName.pp qualified_procname
   | ParameterDeclatedTwice (qualified_procname, varname) ->
       F.fprintf fmt "parameter %a is declared twice in the same function %a" VarName.pp varname
-        pp_qualified_procname qualified_procname
+        QualifiedProcName.pp qualified_procname
   | ProcImplementedTwice qualified_procname ->
-      F.fprintf fmt "function %a is implemented twice in the same file" pp_qualified_procname
+      F.fprintf fmt "function %a is implemented twice in the same file" QualifiedProcName.pp
         qualified_procname
   | StructDeclaredTwice tname ->
       F.fprintf fmt "type %a is declared twice in the same file" TypeName.pp tname

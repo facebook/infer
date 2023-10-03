@@ -63,7 +63,7 @@ val textual : textual -> builtin
 
 val of_string : string -> builtin option
 
-val to_proc_name : builtin -> Textual.qualified_procname
+val to_proc_name : builtin -> Textual.QualifiedProcName.t
 
 module Set : sig
   (** This module keeps track of the builtins used by a code unit. Only the necessary Textual

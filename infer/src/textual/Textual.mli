@@ -60,17 +60,18 @@ module TypeName : sig
   val wildcard : t
 end
 
-type enclosing_class = TopLevel | Enclosing of TypeName.t
+module QualifiedProcName : sig
+  type enclosing_class = TopLevel | Enclosing of TypeName.t
 
-type qualified_procname = {enclosing_class: enclosing_class; name: ProcName.t}
-[@@deriving compare, equal, hash]
-(* procedure name [name] is attached to the name space [enclosing_class] *)
+  type t = {enclosing_class: enclosing_class; name: ProcName.t} [@@deriving compare, equal, hash]
+  (* procedure name [name] is attached to the name space [enclosing_class] *)
 
-val pp_qualified_procname : F.formatter -> qualified_procname -> unit
+  val pp : F.formatter -> t -> unit
 
-val qualified_procname_name : qualified_procname -> ProcName.t
+  val name : t -> ProcName.t
 
-val qualified_procname_contains_wildcard : qualified_procname -> bool
+  val contains_wildcard : t -> bool
+end
 
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
 (* field name [name] must be declared in type [enclosing_class] *)
@@ -154,14 +155,14 @@ end
 module ProcSig : sig
   (** Signature uniquely identifies a called procedure in a target language. *)
   type t =
-    | Hack of {qualified_name: qualified_procname; arity: int option}
+    | Hack of {qualified_name: QualifiedProcName.t; arity: int option}
         (** Hack doesn't support function overloading but it does support functions with default
             arguments. This means that a procedure is uniquely identified by its name and the number
             of arguments. *)
-    | Python of {qualified_name: qualified_procname; arity: int option}
+    | Python of {qualified_name: QualifiedProcName.t; arity: int option}
         (** Python supports function overloading and default arguments. This means that a procedure
             is uniquely identified by its name and the number of arguments. *)
-    | Other of {qualified_name: qualified_procname}
+    | Other of {qualified_name: QualifiedProcName.t}
         (** Catch-all case for languages that currently lack support for function overloading at the
             Textual level.
 
@@ -172,14 +173,14 @@ module ProcSig : sig
             add support for other languages. *)
   [@@deriving equal, hash]
 
-  val to_qualified_procname : t -> qualified_procname
+  val to_qualified_procname : t -> QualifiedProcName.t
 
   module Hashtbl : Hashtbl.S with type key = t
 end
 
 module ProcDecl : sig
   type t =
-    { qualified_name: qualified_procname
+    { qualified_name: QualifiedProcName.t
     ; formals_types: Typ.annotated list option
           (** The list of formal argument types may be unknown. Currently, it is possible only for
               external function declarations when translating from Hack and is denoted with a
@@ -194,33 +195,33 @@ module ProcDecl : sig
 
   val pp : F.formatter -> t -> unit
 
-  val of_unop : Unop.t -> qualified_procname
+  val of_unop : Unop.t -> QualifiedProcName.t
 
-  val to_unop : qualified_procname -> Unop.t option
+  val to_unop : QualifiedProcName.t -> Unop.t option
 
-  val of_binop : Binop.t -> qualified_procname
+  val of_binop : Binop.t -> QualifiedProcName.t
 
-  val to_binop : qualified_procname -> Binop.t option
+  val to_binop : QualifiedProcName.t -> Binop.t option
 
-  val is_cast_builtin : qualified_procname -> bool
+  val is_cast_builtin : QualifiedProcName.t -> bool
 
-  val is_instanceof_builtin : qualified_procname -> bool
+  val is_instanceof_builtin : QualifiedProcName.t -> bool
 
-  val allocate_object_name : qualified_procname
+  val allocate_object_name : QualifiedProcName.t
 
-  val is_allocate_object_builtin : qualified_procname -> bool
+  val is_allocate_object_builtin : QualifiedProcName.t -> bool
 
-  val allocate_array_name : qualified_procname
+  val allocate_array_name : QualifiedProcName.t
 
-  val is_allocate_array_builtin : qualified_procname -> bool
+  val is_allocate_array_builtin : QualifiedProcName.t -> bool
 
-  val is_get_lazy_class_builtin : qualified_procname -> bool
+  val is_get_lazy_class_builtin : QualifiedProcName.t -> bool
 
-  val is_lazy_class_initialize_builtin : qualified_procname -> bool
+  val is_lazy_class_initialize_builtin : QualifiedProcName.t -> bool
 
-  val is_side_effect_free_sil_expr : qualified_procname -> bool
+  val is_side_effect_free_sil_expr : QualifiedProcName.t -> bool
 
-  val is_not_regular_proc : qualified_procname -> bool
+  val is_not_regular_proc : QualifiedProcName.t -> bool
 
   val is_curry_invoke : t -> bool
 end
@@ -243,14 +244,14 @@ module Exp : sig
     | Field of {exp: t; field: qualified_fieldname}  (** field offset *)
     | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)
     | Const of Const.t
-    | Call of {proc: qualified_procname; args: t list; kind: call_kind}
+    | Call of {proc: QualifiedProcName.t; args: t list; kind: call_kind}
     | Typ of Typ.t
 
-  val call_non_virtual : qualified_procname -> t list -> t
+  val call_non_virtual : QualifiedProcName.t -> t list -> t
 
-  val call_virtual : qualified_procname -> t -> t list -> t
+  val call_virtual : QualifiedProcName.t -> t -> t list -> t
 
-  val call_sig : qualified_procname -> t list -> Lang.t option -> ProcSig.t
+  val call_sig : QualifiedProcName.t -> t list -> Lang.t option -> ProcSig.t
 
   (* logical not ! *)
   val not : t -> t

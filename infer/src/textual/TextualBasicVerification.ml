@@ -12,9 +12,9 @@ type error =
   | UnknownField of qualified_fieldname
   (* TODO(arr): This is too specific to the Hack use-case. We should really check if there are other
      overloads and provide an error message based on this. *)
-  | UnknownProc of {proc: qualified_procname; args: int}
-  | UnknownLabel of {label: NodeName.t; pname: qualified_procname}
-  | WrongArgNumber of {proc: qualified_procname; args: int; formals: int; loc: Location.t}
+  | UnknownProc of {proc: QualifiedProcName.t; args: int}
+  | UnknownLabel of {label: NodeName.t; pname: QualifiedProcName.t}
+  | WrongArgNumber of {proc: QualifiedProcName.t; args: int; formals: int; loc: Location.t}
 
 let error_loc = function
   | UnknownField {enclosing_class; _} ->
@@ -35,13 +35,13 @@ let pp_error sourcefile fmt error =
       F.fprintf fmt "field %a.%a is not declared" TypeName.pp enclosing_class FieldName.pp name
   | UnknownProc {proc; args} ->
       F.fprintf fmt "function %a which can be called with %d arguments is not declared"
-        pp_qualified_procname proc args
+        QualifiedProcName.pp proc args
   | UnknownLabel {label; pname} ->
-      F.fprintf fmt "label %a is not declared in function %a" NodeName.pp label
-        pp_qualified_procname pname
+      F.fprintf fmt "label %a is not declared in function %a" NodeName.pp label QualifiedProcName.pp
+        pname
   | WrongArgNumber {proc; args; formals} ->
       F.fprintf fmt "function %a called with %d arguments while declared with %d parameters"
-        pp_qualified_procname proc args formals
+        QualifiedProcName.pp proc args formals
 
 
 let verify_decl ~env errors (decl : Module.decl) =
@@ -61,7 +61,7 @@ let verify_decl ~env errors (decl : Module.decl) =
     else
       let procsig = Exp.call_sig proc args (TextualDecls.lang env) in
       match TextualDecls.get_procdecl env procsig with
-      | None when qualified_procname_contains_wildcard proc ->
+      | None when QualifiedProcName.contains_wildcard proc ->
           errors
       | None ->
           UnknownProc {proc; args= List.length args} :: errors

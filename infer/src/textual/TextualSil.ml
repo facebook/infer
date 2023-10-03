@@ -292,10 +292,10 @@ module ProcDeclBridge = struct
     match pname with
     | Java jpname ->
         let enclosing_class =
-          Enclosing (TypeName.of_java_name (Procname.Java.get_class_name jpname))
+          QualifiedProcName.Enclosing (TypeName.of_java_name (Procname.Java.get_class_name jpname))
         in
         let name = mangle_java_procname jpname |> ProcName.of_java_name in
-        let qualified_name : qualified_procname = {enclosing_class; name} in
+        let qualified_name : QualifiedProcName.t = {enclosing_class; name} in
         let formals_types =
           Procname.Java.get_parameters jpname |> List.map ~f:TypBridge.annotated_of_sil
         in
@@ -317,16 +317,16 @@ module ProcDeclBridge = struct
 
 
   let hack_class_name_to_sil = function
-    | TopLevel ->
+    | QualifiedProcName.TopLevel ->
         None
-    | Enclosing name ->
+    | QualifiedProcName.Enclosing name ->
         Some (HackClassName.make name.value)
 
 
   let python_class_name_to_sil = function
-    | TopLevel ->
+    | QualifiedProcName.TopLevel ->
         None
-    | Enclosing name ->
+    | QualifiedProcName.Enclosing name ->
         Some (PythonClassName.make name.value)
 
 
@@ -601,7 +601,7 @@ module ExpBridge = struct
               BinOp (binop, aux exp1, aux exp2)
           | _, _, _, _ ->
               L.die InternalError "Internal error: procname %a has an unexpected property"
-                pp_qualified_procname proc
+                QualifiedProcName.pp proc
           (* FIXME: transform instruction to put call at head of expressions *) )
       | Typ _ ->
           L.die InternalError "Internal error: type expressions should not appear outside builtins"
@@ -748,7 +748,7 @@ module InstrBridge = struct
           match TextualDecls.get_procdecl decls_env procsig with
           | Some procname ->
               procname
-          | None when qualified_procname_contains_wildcard proc ->
+          | None when QualifiedProcName.contains_wildcard proc ->
               let textual_ret_typ =
                 (* Declarations with unknown formals are expected in Hack/Python. Assume that unknown
                    return types are *HackMixed/*PyObject respectively. *)
@@ -927,7 +927,7 @@ module ProcDescBridge = struct
         l
     | Unequal_lengths ->
         L.die InternalError "procname %a has not the same number of arg names and arg types"
-          pp_qualified_procname procdecl.qualified_name
+          QualifiedProcName.pp procdecl.qualified_name
 
 
   let build_locals lang {locals} =

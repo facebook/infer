@@ -125,7 +125,7 @@ module Error = struct
     | CallKeywordBuildClass
     | RaiseExceptionInvalid of int
     | RaiseExceptionUnknown of DataStack.cell
-    | DefaultArgSpecialization of T.qualified_procname * int * int
+    | DefaultArgSpecialization of T.QualifiedProcName.t * int * int
 
   type t = L.error * kind
 
@@ -226,7 +226,7 @@ module Error = struct
         F.fprintf fmt "RAISE_VARARGS unknown construct %a" DataStack.pp_cell cell
     | DefaultArgSpecialization (name, param_size, default_size) ->
         F.fprintf fmt "%a has more default arguments (%d) then actual arguments (%d)"
-          T.pp_qualified_procname name default_size param_size
+          T.QualifiedProcName.pp name default_size param_size
 
 
   let class_decl kind = (L.InternalError, ClassDecl kind)
@@ -753,7 +753,7 @@ module FUNCTION = struct
             (* TODO: support nesting. Maybe add to_proc_name to Symbol *)
             let typ = Ident.to_typ id in
             let name = Ident.to_constructor id in
-            let proc : T.qualified_procname = {enclosing_class= TopLevel; name} in
+            let proc : T.QualifiedProcName.t = {enclosing_class= TopLevel; name} in
             mk env ~typ proc )
 
 
@@ -1121,7 +1121,7 @@ module METHOD = struct
       let* env, receiver, _ = load_cell env cell in
       let loc = Env.loc env in
       let name = proc_name ~loc method_name in
-      let name : T.qualified_procname = {T.enclosing_class= Enclosing T.TypeName.wildcard; name} in
+      let name : T.QualifiedProcName.t = {enclosing_class= Enclosing T.TypeName.wildcard; name} in
       let env = Env.push env (DataStack.MethodCall {receiver; name}) in
       Ok (env, None)
 
@@ -1183,7 +1183,7 @@ module METHOD = struct
           (* We're in [LOAD_METHOD] but we fake a static call because of how method resolution works. *)
           let loc = Env.loc env in
           let name = proc_name ~loc method_name in
-          let call_name : T.qualified_procname = {T.enclosing_class= Enclosing super_type; name} in
+          let call_name : T.QualifiedProcName.t = {enclosing_class= Enclosing super_type; name} in
           let env = Env.push env (DataStack.StaticCall {call_name; receiver= Some receiver}) in
           Ok (env, None)
       | Error (_, err) ->
@@ -3002,7 +3002,7 @@ let constructor full_name loc has_init =
   let mk typ = annotated_type_of_annotation typ in
   let full_type_name = Ident.to_type_name full_name in
   let struct_ = T.Typ.(Struct full_type_name) in
-  let sil_allocate : T.qualified_procname =
+  let sil_allocate : T.QualifiedProcName.t =
     {enclosing_class= TopLevel; name= proc_name T.builtin_allocate}
   in
   let alloc = T.Exp.call_non_virtual sil_allocate [T.Exp.Typ struct_] in
@@ -3068,14 +3068,14 @@ let constructor_stubs ~kind loc class_name =
   let qualified_name, result_type =
     match kind with
     | `Ctor ->
-        let qualified_name : T.qualified_procname =
-          {T.enclosing_class= TopLevel; name= Ident.to_constructor class_name}
+        let qualified_name : T.QualifiedProcName.t =
+          {enclosing_class= TopLevel; name= Ident.to_constructor class_name}
         in
         let result_type = T.Typ.mk_without_attributes @@ Ident.to_typ class_name in
         (qualified_name, result_type)
     | `Init ->
-        let qualified_name : T.qualified_procname =
-          { T.enclosing_class= Enclosing (Ident.to_type_name class_name)
+        let qualified_name : T.QualifiedProcName.t =
+          { enclosing_class= Enclosing (Ident.to_type_name class_name)
           ; name= proc_name ~loc PyCommon.init__ }
         in
         let result_type = T.Typ.mk_without_attributes @@ PyCommon.pyNone in

@@ -86,8 +86,8 @@ module DataStack = struct
     | BuiltinBuildClass
     | Import of {import_path: Ident.t; symbols: string list}
     | ImportCall of {id: Ident.t; loc: T.Location.t}
-    | MethodCall of {receiver: T.Exp.t; name: T.qualified_procname}
-    | StaticCall of {call_name: T.qualified_procname; receiver: T.Exp.t option}
+    | MethodCall of {receiver: T.Exp.t; name: T.QualifiedProcName.t}
+    | StaticCall of {call_name: T.QualifiedProcName.t; receiver: T.Exp.t option}
     | Super
     | Path of Ident.t
     | WithContext of
@@ -120,9 +120,9 @@ module DataStack = struct
     | ImportCall {id} ->
         F.fprintf fmt "ImportCall(%a)" Ident.pp id
     | MethodCall {receiver; name} ->
-        F.fprintf fmt "MethodCall(%a, %a)" T.Exp.pp receiver T.pp_qualified_procname name
+        F.fprintf fmt "MethodCall(%a, %a)" T.Exp.pp receiver T.QualifiedProcName.pp name
     | StaticCall {call_name; receiver} ->
-        F.fprintf fmt "StaticCall(%a, %a)" T.pp_qualified_procname call_name (Pp.option T.Exp.pp)
+        F.fprintf fmt "StaticCall(%a, %a)" T.QualifiedProcName.pp call_name (Pp.option T.Exp.pp)
           receiver
     | Super ->
         F.pp_print_string fmt "Super"
@@ -529,7 +529,7 @@ let globals {shared= {globals}} = globals
 let get_used_builtins {shared= {builtins}} = builtins
 
 let register_builtin ({shared} as env) builtin =
-  PyDebug.p "[register_builtin] %a\n" T.pp_qualified_procname (Builtin.to_proc_name builtin) ;
+  PyDebug.p "[register_builtin] %a\n" T.QualifiedProcName.pp (Builtin.to_proc_name builtin) ;
   let register_builtin ({builtins} as env) builtin =
     {env with builtins= Builtin.Set.register builtins builtin}
   in
