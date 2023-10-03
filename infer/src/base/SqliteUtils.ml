@@ -97,7 +97,7 @@ let with_attached_db ~db_file ~db_name ?(immutable = false) ~f db =
       (if immutable then "?immutable=1" else "")
       db_name
   in
-  L.debug Capture Quiet "Attach: %s@\n" attach_stmt ;
+  L.debug Capture Verbose "Attach: %s@\n" attach_stmt ;
   exec db ~stmt:attach_stmt ~log:(Printf.sprintf "attaching database '%s'" db_file) ;
   let result = f () in
   exec db ~stmt:("DETACH " ^ db_name) ~log:(Printf.sprintf "detaching database '%s'" db_file) ;
