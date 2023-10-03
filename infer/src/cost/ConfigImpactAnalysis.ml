@@ -757,6 +757,8 @@ module Dom = struct
           ; +PatternMatch.Java.implements_android "content.SharedPreferences"
             &::+ (fun _ method_name -> String.is_prefix method_name ~prefix:"get")
             &--> KnownExpensive
+          ; +PatternMatch.Java.implements_arrays &:: "sort" $ any_arg $+...$--> KnownExpensive
+          ; +PatternMatch.Java.implements_collections &:: "sort" $ any_arg $+...$--> KnownExpensive
           ; +PatternMatch.Java.implements_google "common.base.Preconditions"
             &:: "checkArgument" $ any_arg $+ any_arg $+...$--> KnownExpensive
           ; +PatternMatch.Java.implements_google "common.base.Preconditions"
@@ -769,6 +771,7 @@ module Dom = struct
             &:: "checkState" $ any_arg $+ any_arg $+...$--> KnownExpensive
           ; +PatternMatch.Java.implements_lang "String" &:: "concat" &--> KnownExpensive
           ; +PatternMatch.Java.implements_lang "StringBuilder" &:: "append" &--> KnownExpensive
+          ; +PatternMatch.Java.implements_list &:: "sort" $ any_arg $+...$--> KnownExpensive
           ; +PatternMatch.Java.implements_regex "Pattern" &:: "compile" &--> KnownExpensive
           ; +PatternMatch.Java.implements_regex "Pattern" &:: "matcher" &--> KnownExpensive
           ; +PatternMatch.Java.implements_kotlin_intrinsics &::.*--> KnownCheap
@@ -892,8 +895,7 @@ module Dom = struct
             astate )
 
 
-  let call tenv analyze_dependency ~(instantiated_cost : CostInstantiate.instantiated_cost option)
-      ret_typ ~callee formals args location
+  let call tenv analyze_dependency ret_typ ~callee formals args location
       ( { condition_checks= config_checks, latent_config_checks
         ; unchecked_callees
         ; unchecked_callees_cond } as astate ) =
@@ -935,29 +937,13 @@ module Dom = struct
     in
     let astate =
       if ConfigChecks.is_top config_checks then
-        let (callee_summary : Summary.t option) =
-          match analyze_dependency callee with
-          | None ->
-              None
-          | Some (_, analysis_data, _) ->
-              analysis_data
-        in
+        let (callee_summary : Summary.t option) = analyze_dependency callee in
         let expensiveness_model = get_expensiveness_model tenv callee args in
         let has_expensive_callee =
           Option.exists callee_summary ~f:Summary.has_known_expensive_callee
         in
-        let is_cheap_call =
-          match instantiated_cost with
-          | Some Cheap ->
-              true
-          | Some (Symbolic _) ->
-              false
-          | Some NoModel | None ->
-              (* When the cost of the callee is unknown by some reasons, we apply a heuristic to
-                 ignore Kotlin's getter as cheap. *)
-              is_kotlin_getter callee args
-        in
-        let is_unmodeled_call = match instantiated_cost with Some NoModel -> true | _ -> false in
+        (* We apply a heuristic to ignore Kotlin's getter as cheap. *)
+        let is_cheap_call = is_kotlin_getter callee args in
         match mode with
         | `Strict -> (
             let is_static = Procname.is_static callee in
@@ -987,7 +973,7 @@ module Dom = struct
                 add_callee_name ~is_known_expensive:false )
         | `Normal -> (
           match expensiveness_model with
-          | None when is_cheap_call && not has_expensive_callee ->
+          | None when not has_expensive_callee ->
               (* If callee is cheap by heuristics, ignore it. *)
               astate
           | Some KnownCheap ->
@@ -1014,8 +1000,8 @@ module Dom = struct
                 in
                 (* If callee's summary is not leaf, use it. *)
                 join_callee_summary callee_summary callee_summary_cond
-            | None when Procname.is_objc_init callee || is_unmodeled_call ->
-                (* If callee is unknown ObjC initializer or has no cost model, ignore it. *)
+            | None when Procname.is_objc_init callee ->
+                (* If callee is unknown ObjC initializer, ignore it. *)
                 astate
             | _ ->
                 (* Otherwise, add callee's name. *)
@@ -1032,11 +1018,8 @@ module Dom = struct
 end
 
 type analysis_data =
-  { interproc:
-      (BufferOverrunAnalysisSummary.t option * Summary.t option * CostDomain.summary option)
-      InterproceduralAnalysis.t
+  { interproc: Summary.t InterproceduralAnalysis.t
   ; get_formals: Procname.t -> (Pvar.t * Typ.t) list option
-  ; get_instantiated_cost: CostInstantiate.Call.t -> CostInstantiate.instantiated_cost option
   ; is_param: Pvar.t -> bool }
 
 module TransferFunctions = struct
@@ -1103,9 +1086,9 @@ module TransferFunctions = struct
 
   let add_ret analyze_dependency id callee astate =
     match analyze_dependency callee with
-    | Some (_, Some {Summary.ret= ret_val}, _) ->
+    | Some {Summary.ret= ret_val} ->
         Dom.add_mem (Loc.of_id id) ret_val astate
-    | _ ->
+    | None ->
         astate
 
 
@@ -1134,11 +1117,8 @@ module TransferFunctions = struct
       else None
 
 
-  let call
-      { interproc= {proc_desc; tenv; analyze_dependency}
-      ; get_formals
-      ; get_instantiated_cost
-      ; is_param } node idx ((ret_id, ret_typ) as ret) callee args captured_vars location astate =
+  let call {interproc= {proc_desc; tenv; analyze_dependency}; get_formals; is_param}
+      (ret_id, ret_typ) callee args location astate =
     let callee =
       get_kotlin_lazy_method ~caller:(Procdesc.get_proc_name proc_desc) ~callee
       |> Option.value_map ~default:callee ~f:(fun invoke ->
@@ -1159,24 +1139,13 @@ module TransferFunctions = struct
         Dom.add_mem (Loc.of_pvar pvar) (Val.of_config config) astate
     | None ->
         (* normal function calls *)
-        let call =
-          CostInstantiate.Call.
-            { loc= location
-            ; pname= callee
-            ; node= CFG.Node.to_instr idx node
-            ; args
-            ; captured_vars
-            ; ret }
-        in
-        let instantiated_cost = get_instantiated_cost call in
         let formals = get_formals callee in
-        Dom.call tenv analyze_dependency ~instantiated_cost ret_typ ~callee formals args location
-          astate
+        Dom.call tenv analyze_dependency ret_typ ~callee formals args location astate
         |> add_ret analyze_dependency ret_id callee
 
 
   let exec_instr ({Dom.condition_checks} as astate)
-      ({interproc= {tenv; analyze_dependency}; is_param} as analysis_data) node idx instr =
+      ({interproc= {tenv; analyze_dependency}; is_param} as analysis_data) _node _idx instr =
     match (instr : Sil.instr) with
     | Load {id; e} -> (
       match FbGKInteraction.get_config ~is_param e with
@@ -1221,11 +1190,10 @@ module TransferFunctions = struct
         , _ )
       when Procname.equal dispatch_sync BuiltinDecl.dispatch_sync ->
         let args = List.map captured_vars ~f:(fun (exp, _, typ, _) -> (exp, typ)) in
-        call analysis_data node idx ret callee args [] location astate
-    | Call (ret, Const (Cfun callee), args, location, _) ->
-        call analysis_data node idx ret callee args [] location astate
-    | Call (ret, Closure {name= callee; captured_vars}, args, location, _) ->
-        call analysis_data node idx ret callee args captured_vars location astate
+        call analysis_data ret callee args location astate
+    | Call (ret, Const (Cfun callee), args, location, _)
+    | Call (ret, Closure {name= callee}, args, location, _) ->
+        call analysis_data ret callee args location astate
     | Prune (e, _, _, _) ->
         Dom.prune e astate
     | _ ->
@@ -1257,12 +1225,11 @@ let checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
     let get_formals pname =
       Attributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
     in
-    let get_instantiated_cost = CostInstantiate.get_instantiated_cost analysis_data in
     let is_param =
       let formals = Procdesc.get_pvar_formals proc_desc in
       fun pvar -> List.exists formals ~f:(fun (formal, _) -> Pvar.equal pvar formal)
     in
-    let analysis_data = {interproc= analysis_data; get_formals; get_instantiated_cost; is_param} in
+    let analysis_data = {interproc= analysis_data; get_formals; is_param} in
     Option.map (Analyzer.compute_post analysis_data ~initial:Dom.init proc_desc) ~f:(fun astate ->
         let has_call_stmt = has_call_stmt proc_desc in
         Dom.to_summary pname ~has_call_stmt astate )

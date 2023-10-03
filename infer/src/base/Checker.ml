@@ -151,7 +151,7 @@ let config_unsafe checker =
           "[EXPERIMENTAL] Collects function that are called without config checks."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
-      ; activates= [Cost] }
+      ; activates= [] }
   | Cost ->
       { id= "cost"
       ; kind=

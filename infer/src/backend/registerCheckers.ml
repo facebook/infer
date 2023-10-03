@@ -215,10 +215,7 @@ let all_checkers =
   ; { checker= ConfigImpactAnalysis
     ; callbacks=
         (let checker =
-           interprocedural3
-             ~set_payload:(Field.fset Payloads.Fields.config_impact_analysis)
-             Payloads.Fields.buffer_overrun_analysis Payloads.Fields.config_impact_analysis
-             Payloads.Fields.cost ConfigImpactAnalysis.checker
+           interprocedural Payloads.Fields.config_impact_analysis ConfigImpactAnalysis.checker
          in
          [(checker, Clang); (checker, Java)] ) }
   ; { checker= LineageShape

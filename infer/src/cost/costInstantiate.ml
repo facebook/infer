@@ -104,9 +104,3 @@ let get_cost_if_expensive analysis_data call =
   let open IOption.Let_syntax in
   let* call_args = prepare_call_args analysis_data call in
   match get_instantiated_cost call_args with Symbolic cost -> Some cost | Cheap | NoModel -> None
-
-
-let get_instantiated_cost analysis_data call =
-  let open IOption.Let_syntax in
-  let+ call_args = prepare_call_args analysis_data call in
-  get_instantiated_cost call_args

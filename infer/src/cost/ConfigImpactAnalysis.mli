@@ -76,7 +76,4 @@ module Summary : sig
   val instantiate_unchecked_callees_cond : all_configs:LatentConfigs.t -> t -> t
 end
 
-val checker :
-     (BufferOverrunAnalysisSummary.t option * Summary.t option * CostDomain.summary option)
-     InterproceduralAnalysis.t
-  -> Summary.t option
+val checker : Summary.t InterproceduralAnalysis.t -> Summary.t option
