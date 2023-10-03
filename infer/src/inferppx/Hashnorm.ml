@@ -13,6 +13,10 @@ let func_name_from_typename ~stem = function "t" -> stem | s -> stem ^ "_" ^ s
 
 let hash_normalize_from_typename = func_name_from_typename ~stem:"hash_normalize"
 
+let hashtable_find_opt_stem = "hash_normalize_find_opt"
+
+let hashtable_add_stem = "hash_normalize_add"
+
 let hash_normalize_of_longident ~loc ?(suffix = "") lid =
   let ident =
     match lid with
@@ -218,7 +222,7 @@ let normalize ~loc (td : type_declaration) =
       raise (BadType (Location.error_extensionf ~loc "Cannot derive functions for this type"))
 
 
-let hash_normalize ~loc (td : type_declaration) =
+let hashtable_api ~loc (td : type_declaration) =
   let equal_name_expr =
     func_name_from_typename ~stem:"equal" td.ptype_name.txt |> Common.make_ident_exp ~loc
   in
@@ -226,27 +230,48 @@ let hash_normalize ~loc (td : type_declaration) =
     func_name_from_typename ~stem:"hash" td.ptype_name.txt |> Common.make_ident_exp ~loc
   in
   let ct = Ast_helper.Typ.constr ~loc (Common.make_longident ~loc td.ptype_name.txt) [] in
-  let normalize = normalize ~loc td in
   let body =
     [%expr
-      let module T = struct
+      let module H = Caml.Hashtbl.Make (struct
         type nonrec t = [%t ct]
 
         let equal = [%e equal_name_expr]
 
         let hash = [%e hash_name_expr]
-      end in
-      let module H = Caml.Hashtbl.Make (T) in
-      let table : T.t H.t = H.create 11 in
+      end) in
+      let table : [%t ct] H.t = H.create 11 in
       let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+      ((fun t -> H.find_opt table t), fun t -> H.add table t t)]
+  in
+  let make_pattern stem =
+    Ast_helper.Pat.var ~loc @@ Loc.make ~loc @@ func_name_from_typename ~stem td.ptype_name.txt
+  in
+  let make_patterns ls = List.map ~f:make_pattern ls in
+  let pattern =
+    Ast_helper.Pat.tuple ~loc (make_patterns [hashtable_find_opt_stem; hashtable_add_stem])
+  in
+  Ast_helper.Str.value ~loc Nonrecursive [Ast_helper.Vb.mk ~loc pattern body]
+
+
+let hash_normalize ~loc (td : type_declaration) =
+  let normalize = normalize ~loc td in
+  let hashtable_find_opt =
+    Common.make_ident_exp ~loc
+    @@ func_name_from_typename ~stem:hashtable_find_opt_stem td.ptype_name.txt
+  in
+  let hashtable_add =
+    Common.make_ident_exp ~loc @@ func_name_from_typename ~stem:hashtable_add_stem td.ptype_name.txt
+  in
+  let body =
+    [%expr
       let normalize = [%e normalize] in
       fun t ->
-        match H.find_opt table t with
+        match [%e hashtable_find_opt] t with
         | Some t' ->
             t'
         | None ->
             let normalized = normalize t in
-            H.add table normalized normalized ;
+            [%e hashtable_add] normalized ;
             normalized]
   in
   let hash_norm_name = hash_normalize_from_typename td.ptype_name.txt in
@@ -278,7 +303,8 @@ let generate_impl ~ctxt:_ (_rec_flag, type_declarations) =
   let process_type_declaration (td : type_declaration) =
     let loc = td.ptype_loc in
     try
-      [ hash_normalize ~loc td
+      [ hashtable_api ~loc td
+      ; hash_normalize ~loc td
       ; hash_normalize_opt ~loc td.ptype_name
       ; hash_normalize_list ~loc td.ptype_name ]
     with BadType ext -> [Ast_builder.Default.pstr_extension ~loc ext []]

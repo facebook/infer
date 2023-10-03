@@ -16,8 +16,8 @@ include struct
 
   let _ = fun (_ : record) -> ()
 
-  let hash_normalize_record =
-    let module T = struct
+  let hash_normalize_find_opt_record, hash_normalize_add_record =
+    let module H = Caml.Hashtbl.Make (struct
       type nonrec t = record
 
       let equal = equal_record
@@ -27,22 +27,29 @@ include struct
       let hash = hash_record
 
       let _ = hash
-    end in
-    let module H = Caml.Hashtbl.Make (T) in
-    let table : T.t H.t = H.create 11 in
+    end) in
+    let table : record H.t = H.create 11 in
     let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+    ((fun t -> H.find_opt table t), fun t -> H.add table t t)
+
+
+  let _ = hash_normalize_find_opt_record
+
+  and _ = hash_normalize_add_record
+
+  let hash_normalize_record =
     let normalize t =
       let {s; i} = t in
       let s' = HashNormalizer.String.hash_normalize s in
       if phys_equal s s' then t else {s= s'; i}
     in
     fun t ->
-      match H.find_opt table t with
+      match hash_normalize_find_opt_record t with
       | Some t' ->
           t'
       | None ->
           let normalized = normalize t in
-          H.add table normalized normalized ;
+          hash_normalize_add_record normalized ;
           normalized
 
 
@@ -73,8 +80,8 @@ include struct
 
   let _ = fun (_ : tuple) -> ()
 
-  let hash_normalize_tuple =
-    let module T = struct
+  let hash_normalize_find_opt_tuple, hash_normalize_add_tuple =
+    let module H = Caml.Hashtbl.Make (struct
       type nonrec t = tuple
 
       let equal = equal_tuple
@@ -84,10 +91,17 @@ include struct
       let hash = hash_tuple
 
       let _ = hash
-    end in
-    let module H = Caml.Hashtbl.Make (T) in
-    let table : T.t H.t = H.create 11 in
+    end) in
+    let table : tuple H.t = H.create 11 in
     let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+    ((fun t -> H.find_opt table t), fun t -> H.add table t t)
+
+
+  let _ = hash_normalize_find_opt_tuple
+
+  and _ = hash_normalize_add_tuple
+
+  let hash_normalize_tuple =
     let normalize t =
       let x0, x1, x2 = t in
       let x2' = HashNormalizer.String.hash_normalize x2 in
@@ -95,12 +109,12 @@ include struct
       if phys_equal x2 x2' && phys_equal x0 x0' then t else (x0', x1, x2')
     in
     fun t ->
-      match H.find_opt table t with
+      match hash_normalize_find_opt_tuple t with
       | Some t' ->
           t'
       | None ->
           let normalized = normalize t in
-          H.add table normalized normalized ;
+          hash_normalize_add_tuple normalized ;
           normalized
 
 
@@ -136,8 +150,8 @@ include struct
 
   let _ = fun (_ : variant) -> ()
 
-  let hash_normalize_variant =
-    let module T = struct
+  let hash_normalize_find_opt_variant, hash_normalize_add_variant =
+    let module H = Caml.Hashtbl.Make (struct
       type nonrec t = variant
 
       let equal = equal_variant
@@ -147,10 +161,17 @@ include struct
       let hash = hash_variant
 
       let _ = hash
-    end in
-    let module H = Caml.Hashtbl.Make (T) in
-    let table : T.t H.t = H.create 11 in
+    end) in
+    let table : variant H.t = H.create 11 in
     let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+    ((fun t -> H.find_opt table t), fun t -> H.add table t t)
+
+
+  let _ = hash_normalize_find_opt_variant
+
+  and _ = hash_normalize_add_variant
+
+  let hash_normalize_variant =
     let normalize t =
       match t with
       | NoArgs ->
@@ -171,12 +192,12 @@ include struct
           if phys_equal x0 x0' then t else NonInline x0'
     in
     fun t ->
-      match H.find_opt table t with
+      match hash_normalize_find_opt_variant t with
       | Some t' ->
           t'
       | None ->
           let normalized = normalize t in
-          H.add table normalized normalized ;
+          hash_normalize_add_variant normalized ;
           normalized
 
 
@@ -220,8 +241,8 @@ module SourceFile = struct
 
     let _ = fun (_ : t) -> ()
 
-    let hash_normalize =
-      let module T = struct
+    let hash_normalize_find_opt, hash_normalize_add =
+      let module H = Caml.Hashtbl.Make (struct
         type nonrec t = t
 
         let equal = equal
@@ -231,10 +252,17 @@ module SourceFile = struct
         let hash = hash
 
         let _ = hash
-      end in
-      let module H = Caml.Hashtbl.Make (T) in
-      let table : T.t H.t = H.create 11 in
+      end) in
+      let table : t H.t = H.create 11 in
       let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+      ((fun t -> H.find_opt table t), fun t -> H.add table t t)
+
+
+    let _ = hash_normalize_find_opt
+
+    and _ = hash_normalize_add
+
+    let hash_normalize =
       let normalize t =
         match t with
         | HashedBuckOut x0 ->
@@ -260,12 +288,12 @@ module SourceFile = struct
                 {workspace_rel_root= workspace_rel_root'; rel_path= rel_path'}
       in
       fun t ->
-        match H.find_opt table t with
+        match hash_normalize_find_opt t with
         | Some t' ->
             t'
         | None ->
             let normalized = normalize t in
-            H.add table normalized normalized ;
+            hash_normalize_add normalized ;
             normalized
 
 
@@ -314,8 +342,8 @@ module Location = struct
 
     let _ = fun (_ : t) -> ()
 
-    let hash_normalize =
-      let module T = struct
+    let hash_normalize_find_opt, hash_normalize_add =
+      let module H = Caml.Hashtbl.Make (struct
         type nonrec t = t
 
         let equal = equal
@@ -325,10 +353,17 @@ module Location = struct
         let hash = hash
 
         let _ = hash
-      end in
-      let module H = Caml.Hashtbl.Make (T) in
-      let table : T.t H.t = H.create 11 in
+      end) in
+      let table : t H.t = H.create 11 in
       let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+      ((fun t -> H.find_opt table t), fun t -> H.add table t t)
+
+
+    let _ = hash_normalize_find_opt
+
+    and _ = hash_normalize_add
+
+    let hash_normalize =
       let normalize t =
         let {file; line; col; macro_file_opt; macro_line} = t in
         let macro_file_opt' = SourceFile.hash_normalize_opt macro_file_opt in
@@ -337,12 +372,12 @@ module Location = struct
         else {file= file'; line; col; macro_file_opt= macro_file_opt'; macro_line}
       in
       fun t ->
-        match H.find_opt table t with
+        match hash_normalize_find_opt t with
         | Some t' ->
             t'
         | None ->
             let normalized = normalize t in
-            H.add table normalized normalized ;
+            hash_normalize_add normalized ;
             normalized
 
 
@@ -384,8 +419,8 @@ module CSharpClassName = struct
 
     let _ = fun (_ : t) -> ()
 
-    let hash_normalize =
-      let module T = struct
+    let hash_normalize_find_opt, hash_normalize_add =
+      let module H = Caml.Hashtbl.Make (struct
         type nonrec t = t
 
         let equal = equal
@@ -395,10 +430,17 @@ module CSharpClassName = struct
         let hash = hash
 
         let _ = hash
-      end in
-      let module H = Caml.Hashtbl.Make (T) in
-      let table : T.t H.t = H.create 11 in
+      end) in
+      let table : t H.t = H.create 11 in
       let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+      ((fun t -> H.find_opt table t), fun t -> H.add table t t)
+
+
+    let _ = hash_normalize_find_opt
+
+    and _ = hash_normalize_add
+
+    let hash_normalize =
       let normalize t =
         let {classname; namespace} = t in
         let namespace' = HashNormalizer.String.hash_normalize_opt namespace in
@@ -407,12 +449,12 @@ module CSharpClassName = struct
         else {classname= classname'; namespace= namespace'}
       in
       fun t ->
-        match H.find_opt table t with
+        match hash_normalize_find_opt t with
         | Some t' ->
             t'
         | None ->
             let normalized = normalize t in
-            H.add table normalized normalized ;
+            hash_normalize_add normalized ;
             normalized
 
 
@@ -454,8 +496,8 @@ module JavaClassName = struct
 
     let _ = fun (_ : t) -> ()
 
-    let hash_normalize =
-      let module T = struct
+    let hash_normalize_find_opt, hash_normalize_add =
+      let module H = Caml.Hashtbl.Make (struct
         type nonrec t = t
 
         let equal = equal
@@ -465,10 +507,17 @@ module JavaClassName = struct
         let hash = hash
 
         let _ = hash
-      end in
-      let module H = Caml.Hashtbl.Make (T) in
-      let table : T.t H.t = H.create 11 in
+      end) in
+      let table : t H.t = H.create 11 in
       let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+      ((fun t -> H.find_opt table t), fun t -> H.add table t t)
+
+
+    let _ = hash_normalize_find_opt
+
+    and _ = hash_normalize_add
+
+    let hash_normalize =
       let normalize t =
         let {classname; namespace} = t in
         let namespace' = HashNormalizer.String.hash_normalize_opt namespace in
@@ -477,12 +526,12 @@ module JavaClassName = struct
         else {classname= classname'; namespace= namespace'}
       in
       fun t ->
-        match H.find_opt table t with
+        match hash_normalize_find_opt t with
         | Some t' ->
             t'
         | None ->
             let normalized = normalize t in
-            H.add table normalized normalized ;
+            hash_normalize_add normalized ;
             normalized
 
 
