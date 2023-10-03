@@ -468,6 +468,7 @@ let rec load_cell env ({FFI.Code.co_consts; co_names; co_varnames} as code) cell
       let env = Env.push env (DataStack.Temp id) in
       Ok (env, T.Exp.Var id, default_info typ)
   | List (collection, items) ->
+      let* env, items = cells_to_textual env code items in
       let env, id, typ = Env.mk_builtin_call env (Builtin.PythonBuild collection) items in
       let env = Env.push env (DataStack.Temp id) in
       Ok (env, T.Exp.Var id, default_info typ)
@@ -547,7 +548,7 @@ let rec load_cell env ({FFI.Code.co_consts; co_names; co_varnames} as code) cell
         cell
 
 
-let cells_to_textual env code cells =
+and cells_to_textual env code cells =
   let open IResult.Let_syntax in
   Env.map_result ~env cells ~f:(fun env cell ->
       let* env, exp, _ = load_cell env code cell in
@@ -906,6 +907,7 @@ module FUNCTION = struct
           in
           Ok (env, args)
       | List (_, args) ->
+          let* env, args = cells_to_textual env code args in
           Ok (env, args)
       | _ ->
           Error (L.InternalError, Error.TODO (MakeFunctionDefault defaults))
@@ -1620,11 +1622,10 @@ module BUILD = struct
       collection/string onto the stack.
 
       For strings, it concatenate the inputs into the output. *)
-  let run env code {FFI.Instruction.opname; arg= count} collection =
+  let run env {FFI.Instruction.opname; arg= count} collection =
     let open IResult.Let_syntax in
     Debug.p "[%s] count = %d\n" opname count ;
     let* env, items = pop_n_datastack opname env count in
-    let* env, items = cells_to_textual env code items in
     let env = Env.push env (DataStack.List (collection, items)) in
     Ok (env, None)
 end
@@ -2579,15 +2580,15 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "JUMP_IF_FALSE_OR_POP" ->
       JUMP.IF_OR_POP.run ~jump_if:false env code instr next_offset_opt
   | "BUILD_LIST" ->
-      BUILD.run env code instr Builtin.List
+      BUILD.run env instr Builtin.List
   | "BUILD_MAP" ->
       BUILD.MAP.run env code instr
   | "BUILD_SET" ->
-      BUILD.run env code instr Builtin.Set
+      BUILD.run env instr Builtin.Set
   | "BUILD_TUPLE" ->
-      BUILD.run env code instr Builtin.Tuple
+      BUILD.run env instr Builtin.Tuple
   | "BUILD_STRING" ->
-      BUILD.run env code instr Builtin.String
+      BUILD.run env instr Builtin.String
   | "STORE_SUBSCR" ->
       STORE.SUBSCR.run env code instr
   | "BINARY_SUBSCR" ->
