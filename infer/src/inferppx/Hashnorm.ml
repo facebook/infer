@@ -23,6 +23,8 @@ let hash_normalize_of_longident ~loc ?(suffix = "") lid =
     | Lident "string" ->
         (* [HashNormalizer.String.hash_normalize] *)
         Ldot (Ldot (Lident "HashNormalizer", "String"), "hash_normalize" ^ suffix)
+    | Lident "int64" ->
+        Ldot (Ldot (Lident "HashNormalizer", "Int64"), "hash_normalize" ^ suffix)
     | Lident typename ->
         (* [t]/[x] is not enclosed in a module *)
         Lident (hash_normalize_from_typename typename ^ suffix)
@@ -222,6 +224,10 @@ let normalize ~loc (td : type_declaration) =
       raise (BadType (Location.error_extensionf ~loc "Cannot derive functions for this type"))
 
 
+let make_function_value_binding ~loc name body =
+  Ast_helper.Vb.mk ~loc (Ast_helper.Pat.var ~loc (Loc.make ~loc name)) body
+
+
 let hashtable_api ~loc (td : type_declaration) =
   let equal_name_expr =
     func_name_from_typename ~stem:"equal" td.ptype_name.txt |> Common.make_ident_exp ~loc
@@ -275,7 +281,7 @@ let hash_normalize ~loc (td : type_declaration) =
             normalized]
   in
   let hash_norm_name = hash_normalize_from_typename td.ptype_name.txt in
-  Common.make_function ~loc hash_norm_name body
+  make_function_value_binding ~loc hash_norm_name body
 
 
 let hash_normalize_opt ~loc typ_name =
@@ -289,27 +295,30 @@ let hash_normalize_opt ~loc typ_name =
       | None ->
           None]
   in
-  Common.make_function ~loc (hash_norm_name ^ "_opt") body
+  make_function_value_binding ~loc (hash_norm_name ^ "_opt") body
 
 
 let hash_normalize_list ~loc typ_name =
   let hash_norm_name = hash_normalize_from_typename typ_name.txt in
   let hash_norm_name_expr = Common.make_ident_exp ~loc hash_norm_name in
   let body = [%expr fun ts -> IList.map_changed ~equal:phys_equal ~f:[%e hash_norm_name_expr] ts] in
-  Common.make_function ~loc (hash_norm_name ^ "_list") body
+  make_function_value_binding ~loc (hash_norm_name ^ "_list") body
 
 
-let generate_impl ~ctxt:_ (_rec_flag, type_declarations) =
+let generate_impl ~ctxt (_rec_flag, type_declarations) =
+  let loc = Ppxlib.Expansion_context.Deriver.derived_item_loc ctxt in
   let process_type_declaration (td : type_declaration) =
     let loc = td.ptype_loc in
-    try
-      [ hashtable_api ~loc td
-      ; hash_normalize ~loc td
-      ; hash_normalize_opt ~loc td.ptype_name
-      ; hash_normalize_list ~loc td.ptype_name ]
-    with BadType ext -> [Ast_builder.Default.pstr_extension ~loc ext []]
+    [ hash_normalize ~loc td
+    ; hash_normalize_opt ~loc td.ptype_name
+    ; hash_normalize_list ~loc td.ptype_name ]
   in
-  List.map type_declarations ~f:process_type_declaration |> List.concat
+  try
+    List.map type_declarations ~f:(hashtable_api ~loc)
+    @ [ List.map type_declarations ~f:process_type_declaration
+        |> List.concat
+        |> Ast_helper.Str.value ~loc Recursive ]
+  with BadType ext -> [Ast_builder.Default.pstr_extension ~loc ext []]
 
 
 (* does not work for polymorphic types *)

@@ -37,7 +37,7 @@ include struct
 
   and _ = hash_normalize_add_record
 
-  let hash_normalize_record =
+  let rec hash_normalize_record =
     let normalize t =
       let {s; i} = t in
       let s' = HashNormalizer.String.hash_normalize s in
@@ -53,22 +53,22 @@ include struct
           normalized
 
 
-  let _ = hash_normalize_record
-
-  let hash_normalize_record_opt = function
+  and hash_normalize_record_opt = function
     | Some _ as some_t ->
         IOption.map_changed ~equal:phys_equal ~f:hash_normalize_record some_t
     | None ->
         None
 
 
-  let _ = hash_normalize_record_opt
-
-  let hash_normalize_record_list ts =
+  and hash_normalize_record_list ts =
     IList.map_changed ~equal:phys_equal ~f:hash_normalize_record ts
 
 
-  let _ = hash_normalize_record_list
+  let _ = hash_normalize_record
+
+  and _ = hash_normalize_record_opt
+
+  and _ = hash_normalize_record_list
 end [@@ocaml.doc "@inline"]
 
 [@@@end]
@@ -101,7 +101,7 @@ include struct
 
   and _ = hash_normalize_add_tuple
 
-  let hash_normalize_tuple =
+  let rec hash_normalize_tuple =
     let normalize t =
       let x0, x1, x2 = t in
       let x2' = HashNormalizer.String.hash_normalize x2 in
@@ -118,20 +118,20 @@ include struct
           normalized
 
 
-  let _ = hash_normalize_tuple
-
-  let hash_normalize_tuple_opt = function
+  and hash_normalize_tuple_opt = function
     | Some _ as some_t ->
         IOption.map_changed ~equal:phys_equal ~f:hash_normalize_tuple some_t
     | None ->
         None
 
 
-  let _ = hash_normalize_tuple_opt
+  and hash_normalize_tuple_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize_tuple ts
 
-  let hash_normalize_tuple_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize_tuple ts
+  let _ = hash_normalize_tuple
 
-  let _ = hash_normalize_tuple_list
+  and _ = hash_normalize_tuple_opt
+
+  and _ = hash_normalize_tuple_list
 end [@@ocaml.doc "@inline"]
 
 [@@@end]
@@ -171,7 +171,7 @@ include struct
 
   and _ = hash_normalize_add_variant
 
-  let hash_normalize_variant =
+  let rec hash_normalize_variant =
     let normalize t =
       match t with
       | NoArgs ->
@@ -201,22 +201,22 @@ include struct
           normalized
 
 
-  let _ = hash_normalize_variant
-
-  let hash_normalize_variant_opt = function
+  and hash_normalize_variant_opt = function
     | Some _ as some_t ->
         IOption.map_changed ~equal:phys_equal ~f:hash_normalize_variant some_t
     | None ->
         None
 
 
-  let _ = hash_normalize_variant_opt
-
-  let hash_normalize_variant_list ts =
+  and hash_normalize_variant_list ts =
     IList.map_changed ~equal:phys_equal ~f:hash_normalize_variant ts
 
 
-  let _ = hash_normalize_variant_list
+  let _ = hash_normalize_variant
+
+  and _ = hash_normalize_variant_opt
+
+  and _ = hash_normalize_variant_list
 end [@@ocaml.doc "@inline"]
 
 [@@@end]
@@ -262,7 +262,7 @@ module SourceFile = struct
 
     and _ = hash_normalize_add
 
-    let hash_normalize =
+    let rec hash_normalize =
       let normalize t =
         match t with
         | HashedBuckOut x0 ->
@@ -297,20 +297,20 @@ module SourceFile = struct
             normalized
 
 
-    let _ = hash_normalize
-
-    let hash_normalize_opt = function
+    and hash_normalize_opt = function
       | Some _ as some_t ->
           IOption.map_changed ~equal:phys_equal ~f:hash_normalize some_t
       | None ->
           None
 
 
-    let _ = hash_normalize_opt
+    and hash_normalize_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize ts
 
-    let hash_normalize_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize ts
+    let _ = hash_normalize
 
-    let _ = hash_normalize_list
+    and _ = hash_normalize_opt
+
+    and _ = hash_normalize_list
   end [@@ocaml.doc "@inline"]
 
   [@@@end]
@@ -363,7 +363,7 @@ module Location = struct
 
     and _ = hash_normalize_add
 
-    let hash_normalize =
+    let rec hash_normalize =
       let normalize t =
         let {file; line; col; macro_file_opt; macro_line} = t in
         let macro_file_opt' = SourceFile.hash_normalize_opt macro_file_opt in
@@ -381,20 +381,20 @@ module Location = struct
             normalized
 
 
-    let _ = hash_normalize
-
-    let hash_normalize_opt = function
+    and hash_normalize_opt = function
       | Some _ as some_t ->
           IOption.map_changed ~equal:phys_equal ~f:hash_normalize some_t
       | None ->
           None
 
 
-    let _ = hash_normalize_opt
+    and hash_normalize_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize ts
 
-    let hash_normalize_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize ts
+    let _ = hash_normalize
 
-    let _ = hash_normalize_list
+    and _ = hash_normalize_opt
+
+    and _ = hash_normalize_list
   end [@@ocaml.doc "@inline"]
 
   [@@@end]
@@ -440,7 +440,7 @@ module CSharpClassName = struct
 
     and _ = hash_normalize_add
 
-    let hash_normalize =
+    let rec hash_normalize =
       let normalize t =
         let {classname; namespace} = t in
         let namespace' = HashNormalizer.String.hash_normalize_opt namespace in
@@ -458,20 +458,20 @@ module CSharpClassName = struct
             normalized
 
 
-    let _ = hash_normalize
-
-    let hash_normalize_opt = function
+    and hash_normalize_opt = function
       | Some _ as some_t ->
           IOption.map_changed ~equal:phys_equal ~f:hash_normalize some_t
       | None ->
           None
 
 
-    let _ = hash_normalize_opt
+    and hash_normalize_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize ts
 
-    let hash_normalize_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize ts
+    let _ = hash_normalize
 
-    let _ = hash_normalize_list
+    and _ = hash_normalize_opt
+
+    and _ = hash_normalize_list
   end [@@ocaml.doc "@inline"]
 
   [@@@end]
@@ -517,7 +517,7 @@ module JavaClassName = struct
 
     and _ = hash_normalize_add
 
-    let hash_normalize =
+    let rec hash_normalize =
       let normalize t =
         let {classname; namespace} = t in
         let namespace' = HashNormalizer.String.hash_normalize_opt namespace in
@@ -535,20 +535,20 @@ module JavaClassName = struct
             normalized
 
 
-    let _ = hash_normalize
-
-    let hash_normalize_opt = function
+    and hash_normalize_opt = function
       | Some _ as some_t ->
           IOption.map_changed ~equal:phys_equal ~f:hash_normalize some_t
       | None ->
           None
 
 
-    let _ = hash_normalize_opt
+    and hash_normalize_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize ts
 
-    let hash_normalize_list ts = IList.map_changed ~equal:phys_equal ~f:hash_normalize ts
+    let _ = hash_normalize
 
-    let _ = hash_normalize_list
+    and _ = hash_normalize_opt
+
+    and _ = hash_normalize_list
   end [@@ocaml.doc "@inline"]
 
   [@@@end]
@@ -563,3 +563,129 @@ module JavaClassName = struct
     let normalize_list = hash_normalize_list
   end
 end
+
+type recursive1 = {one_a: string; one_b: recursive2} [@@deriving equal, hash]
+
+and recursive2 = {two_a: string; two_b: recursive1 option} [@@deriving_inline normalize]
+
+include struct
+  [@@@ocaml.warning "-60"]
+
+  let _ = fun (_ : recursive1) -> ()
+
+  let _ = fun (_ : recursive2) -> ()
+
+  let hash_normalize_find_opt_recursive1, hash_normalize_add_recursive1 =
+    let module H = Caml.Hashtbl.Make (struct
+      type nonrec t = recursive1
+
+      let equal = equal_recursive1
+
+      let _ = equal
+
+      let hash = hash_recursive1
+
+      let _ = hash
+    end) in
+    let table : recursive1 H.t = H.create 11 in
+    let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+    ((fun t -> H.find_opt table t), fun t -> H.add table t t)
+
+
+  let _ = hash_normalize_find_opt_recursive1
+
+  and _ = hash_normalize_add_recursive1
+
+  let hash_normalize_find_opt_recursive2, hash_normalize_add_recursive2 =
+    let module H = Caml.Hashtbl.Make (struct
+      type nonrec t = recursive2
+
+      let equal = equal_recursive2
+
+      let _ = equal
+
+      let hash = hash_recursive2
+
+      let _ = hash
+    end) in
+    let table : recursive2 H.t = H.create 11 in
+    let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+    ((fun t -> H.find_opt table t), fun t -> H.add table t t)
+
+
+  let _ = hash_normalize_find_opt_recursive2
+
+  and _ = hash_normalize_add_recursive2
+
+  let rec hash_normalize_recursive1 =
+    let normalize t =
+      let {one_a; one_b} = t in
+      let one_b' = hash_normalize_recursive2 one_b in
+      let one_a' = HashNormalizer.String.hash_normalize one_a in
+      if phys_equal one_b one_b' && phys_equal one_a one_a' then t
+      else {one_a= one_a'; one_b= one_b'}
+    in
+    fun t ->
+      match hash_normalize_find_opt_recursive1 t with
+      | Some t' ->
+          t'
+      | None ->
+          let normalized = normalize t in
+          hash_normalize_add_recursive1 normalized ;
+          normalized
+
+
+  and hash_normalize_recursive1_opt = function
+    | Some _ as some_t ->
+        IOption.map_changed ~equal:phys_equal ~f:hash_normalize_recursive1 some_t
+    | None ->
+        None
+
+
+  and hash_normalize_recursive1_list ts =
+    IList.map_changed ~equal:phys_equal ~f:hash_normalize_recursive1 ts
+
+
+  and hash_normalize_recursive2 =
+    let normalize t =
+      let {two_a; two_b} = t in
+      let two_b' = hash_normalize_recursive1_opt two_b in
+      let two_a' = HashNormalizer.String.hash_normalize two_a in
+      if phys_equal two_b two_b' && phys_equal two_a two_a' then t
+      else {two_a= two_a'; two_b= two_b'}
+    in
+    fun t ->
+      match hash_normalize_find_opt_recursive2 t with
+      | Some t' ->
+          t'
+      | None ->
+          let normalized = normalize t in
+          hash_normalize_add_recursive2 normalized ;
+          normalized
+
+
+  and hash_normalize_recursive2_opt = function
+    | Some _ as some_t ->
+        IOption.map_changed ~equal:phys_equal ~f:hash_normalize_recursive2 some_t
+    | None ->
+        None
+
+
+  and hash_normalize_recursive2_list ts =
+    IList.map_changed ~equal:phys_equal ~f:hash_normalize_recursive2 ts
+
+
+  let _ = hash_normalize_recursive1
+
+  and _ = hash_normalize_recursive1_opt
+
+  and _ = hash_normalize_recursive1_list
+
+  and _ = hash_normalize_recursive2
+
+  and _ = hash_normalize_recursive2_opt
+
+  and _ = hash_normalize_recursive2_list
+end [@@ocaml.doc "@inline"]
+
+[@@@end]
