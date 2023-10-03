@@ -2564,6 +2564,98 @@ def f(x, y):
           declare $builtins.python_float(float) : *PyFloat
 
           declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+def is_check(x):
+          return x is None
+
+def is_not_check(x):
+          return x is not None
+
+def in_check(x, l):
+          return x in l
+
+def in_not_check(x, l):
+          return not (x in l)
+          |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_code("dummy.is_check")
+              n1 = $builtins.python_code("dummy.is_not_check")
+              n2 = $builtins.python_code("dummy.in_check")
+              n3 = $builtins.python_code("dummy.in_not_check")
+              ret null
+
+        }
+
+        define dummy.is_check(x: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &x
+              n1 = $builtins.python_is(n0, null)
+              ret n1
+
+        }
+
+        define dummy.is_not_check(x: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &x
+              n1 = $builtins.python_is_not(n0, null)
+              ret n1
+
+        }
+
+        define dummy.in_check(x: *PyObject, l: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &x
+              n1:*PyObject = load &l
+              n2 = $builtins.python_in(n0, n1)
+              ret n2
+
+        }
+
+        define dummy.in_not_check(x: *PyObject, l: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &x
+              n1:*PyObject = load &l
+              n2 = $builtins.python_not_in(n0, n1)
+              ret n2
+
+        }
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_is_not(*PyObject, *PyObject) : *PyBool
+
+        declare $builtins.python_is(*PyObject, *PyObject) : *PyBool
+
+        declare $builtins.python_not_in(*PyObject, *PyObject) : *PyBool
+
+        declare $builtins.python_in(*PyObject, *PyObject) : *PyBool
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )
 
 
@@ -3531,6 +3623,99 @@ def f(name, args):
         declare $builtins.python_build_string(...) : *String
 
         declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+  end )
+
+
+let%test_module "unary ops" =
+  ( module struct
+    let%expect_test _ =
+      let source =
+        {|
+def pos(x):
+        return +x
+
+def neg(x):
+        return -x
+
+def test_not(x):
+        return not x
+
+def inv(x):
+        return ~x
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_code("dummy.pos")
+              n1 = $builtins.python_code("dummy.neg")
+              n2 = $builtins.python_code("dummy.test_not")
+              n3 = $builtins.python_code("dummy.inv")
+              ret null
+
+        }
+
+        define dummy.pos(x: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &x
+              n1 = $builtins.unary_positive(n0)
+              ret n1
+
+        }
+
+        define dummy.neg(x: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &x
+              n1 = $builtins.unary_negative(n0)
+              ret n1
+
+        }
+
+        define dummy.test_not(x: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &x
+              n1 = $builtins.unary_not(n0)
+              ret n1
+
+        }
+
+        define dummy.inv(x: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &x
+              n1 = $builtins.unary_invert(n0)
+              ret n1
+
+        }
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.unary_invert(*PyObject) : *PyObject
+
+        declare $builtins.unary_not(*PyObject) : *PyObject
+
+        declare $builtins.unary_negative(*PyObject) : *PyObject
+
+        declare $builtins.unary_positive(*PyObject) : *PyObject
 
         declare $builtins.python_tuple(...) : *PyObject
 

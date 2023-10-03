@@ -30,12 +30,15 @@ type binary_op =
   | Xor
 [@@deriving compare]
 
+type unary_op = Positive | Negative | Not | Invert [@@deriving compare]
+
 type builder = List | Set | Tuple | Map | String [@@deriving compare]
 
 type textual =
   | IsTrue
   | Binary of binary_op
   | Inplace of binary_op
+  | Unary of unary_op
   | PythonCall
   | PythonCallKW
   | PythonKWArg

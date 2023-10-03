@@ -92,6 +92,19 @@ module Builtin = struct
         "xor"
 
 
+  type unary_op = Positive | Negative | Not | Invert [@@deriving compare]
+
+  let unary_op_to_string = function
+    | Positive ->
+        "positive"
+    | Negative ->
+        "negative"
+    | Not ->
+        "not"
+    | Invert ->
+        "invert"
+
+
   type builder = List | Set | Tuple | Map | String [@@deriving compare]
 
   let builder_to_string = function
@@ -113,6 +126,7 @@ module Builtin = struct
     | Binary of binary_op
     (* BINARY_SUBSCR is more complex and is done in PyTrans *)
     | Inplace of binary_op
+    | Unary of unary_op
     | PythonCall
     | PythonCallKW
     | PythonKWArg
@@ -169,6 +183,8 @@ let to_proc_name = function
             sprintf "binary_%s" (binary_op_to_string op)
         | Inplace op ->
             sprintf "inplace_%s" (binary_op_to_string op)
+        | Unary op ->
+            sprintf "unary_%s" (unary_op_to_string op)
         | PythonCall ->
             "python_call"
         | PythonCallKW ->
@@ -291,6 +307,11 @@ module Set = struct
         ; result_type= annotatedObject
         ; used_struct_types= [] } )
     in
+    let unary_op op =
+      ( op
+      , {formals_types= Some [annotatedObject]; result_type= annotatedObject; used_struct_types= []}
+      )
+    in
     let no_formal ?(result_type = annotatedObject) op =
       (op, {formals_types= None; result_type; used_struct_types= []})
     in
@@ -325,6 +346,10 @@ module Set = struct
       ; binary_op (Builtin.Inplace Subtract)
       ; binary_op (Builtin.Inplace TrueDivide)
       ; binary_op (Builtin.Inplace Xor)
+      ; unary_op (Builtin.Unary Positive)
+      ; unary_op (Builtin.Unary Negative)
+      ; unary_op (Builtin.Unary Not)
+      ; unary_op (Builtin.Unary Invert)
       ; no_formal Builtin.PythonCall
       ; no_formal Builtin.PythonCallKW
       ; ( Builtin.PythonKWArg
@@ -386,7 +411,11 @@ module Set = struct
       ; compare_op Lt
       ; compare_op Le
       ; compare_op Gt
-      ; compare_op Ge (* TODO: add type signatures of other CompareOp when we support them *) ]
+      ; compare_op Ge
+      ; compare_op Is
+      ; compare_op IsNot
+      ; compare_op In
+      ; compare_op NotIn (* TODO: add type signatures of other CompareOp when we support them *) ]
     in
     List.fold_left
       ~f:(fun acc (builtin, elt) -> Info.add (Builtin.Textual builtin) elt acc)

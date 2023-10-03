@@ -1515,6 +1515,20 @@ module BINARY = struct
   end
 end
 
+module UNARY = struct
+  (** Unary operations take the top of the stack, apply the operation, and push the result back on
+      the stack. *)
+
+  let run env code {FFI.Instruction.opname} builtin =
+    let open IResult.Let_syntax in
+    Debug.p "[%s]\n" opname ;
+    let* env, tos = pop_datastack opname env in
+    let* env, tos, _ = load_cell env code tos in
+    let env, id, _typ = Env.mk_builtin_call env builtin [tos] in
+    let env = Env.push env (DataStack.Temp id) in
+    Ok (env, None)
+end
+
 module BUILD = struct
   module CONST_KEY_MAP = struct
     let is_tuple_ids {FFI.Code.co_consts} cell =
@@ -2025,9 +2039,9 @@ module COMPARE_OP = struct
     Debug.p "[%s] cmp_op = %a\n" opname Builtin.Compare.pp cmp_op ;
     let* env =
       match (cmp_op : Builtin.Compare.t) with
-      | In | NotIn | Is | IsNot | Exception | BAD ->
+      | Exception | BAD ->
           Error (L.InternalError, Error.TODO (CompareOp cmp_op))
-      | Lt | Le | Gt | Ge | Neq | Eq ->
+      | Lt | Le | Gt | Ge | Neq | Eq | In | Is | IsNot | NotIn ->
           let* env, rhs = pop_datastack opname env in
           let* env, lhs = pop_datastack opname env in
           let* env, lhs, _ = load_cell env code lhs in
@@ -2524,6 +2538,14 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
       BINARY.run env code instr (Builtin.Inplace TrueDivide)
   | "INPLACE_XOR" ->
       BINARY.run env code instr (Builtin.Inplace Xor)
+  | "UNARY_POSITIVE" ->
+      UNARY.run env code instr (Builtin.Unary Positive)
+  | "UNARY_NEGATIVE" ->
+      UNARY.run env code instr (Builtin.Unary Negative)
+  | "UNARY_NOT" ->
+      UNARY.run env code instr (Builtin.Unary Not)
+  | "UNARY_INVERT" ->
+      UNARY.run env code instr (Builtin.Unary Invert)
   | "MAKE_FUNCTION" ->
       FUNCTION.MAKE.run env code instr
   | "POP_JUMP_IF_TRUE" ->
