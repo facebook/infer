@@ -427,7 +427,7 @@ let is_imported env path =
 
 
 (** Try to load the data referenced by a [DataStack.cell], into a [Textual.Exp.t] *)
-let rec load_cell env ({FFI.Code.co_consts; co_names; co_varnames} as code) cell =
+let rec load_cell env cell =
   let open IResult.Let_syntax in
   let default_info typ = Env.Info.default typ in
   let default = default_info PyCommon.pyObject in
@@ -438,16 +438,13 @@ let rec load_cell env ({FFI.Code.co_consts; co_names; co_varnames} as code) cell
   let loc = Env.loc env in
   Debug.p "[load_cell] %a\n" DataStack.pp_cell cell ;
   match (cell : DataStack.cell) with
-  | Const ndx ->
-      let const = co_consts.(ndx) in
+  | Const const ->
       let* env, exp, ty = py_to_exp env const in
       let info = default_info ty in
       Ok (env, exp, info)
-  | Name {global; ndx} ->
-      let name = co_names.(ndx) in
+  | Name {global; name} ->
       load_name env loc ~global name
-  | VarName ndx ->
-      let name = co_varnames.(ndx) in
+  | VarName name ->
       load_var_name env loc name
   | Temp id ->
       let info = Env.get_ident_info env id |> Option.value ~default in
@@ -461,14 +458,14 @@ let rec load_cell env ({FFI.Code.co_consts; co_names; co_varnames} as code) cell
   | Map map ->
       let* env, items =
         List.fold_result ~init:(env, []) (List.rev map) ~f:(fun (env, acc) (key, value) ->
-            let* env, value, _typ = load_cell env code value in
+            let* env, value, _typ = load_cell env value in
             Ok (env, key :: value :: acc) )
       in
       let env, id, typ = Env.mk_builtin_call env (Builtin.PythonBuild Map) items in
       let env = Env.push env (DataStack.Temp id) in
       Ok (env, T.Exp.Var id, default_info typ)
   | List (collection, items) ->
-      let* env, items = cells_to_textual env code items in
+      let* env, items = cells_to_textual env items in
       let env, id, typ = Env.mk_builtin_call env (Builtin.PythonBuild collection) items in
       let env = Env.push env (DataStack.Temp id) in
       Ok (env, T.Exp.Var id, default_info typ)
@@ -548,10 +545,10 @@ let rec load_cell env ({FFI.Code.co_consts; co_names; co_varnames} as code) cell
         cell
 
 
-and cells_to_textual env code cells =
+and cells_to_textual env cells =
   let open IResult.Let_syntax in
   Env.map_result ~env cells ~f:(fun env cell ->
-      let* env, exp, _ = load_cell env code cell in
+      let* env, exp, _ = load_cell env cell in
       Ok (env, exp) )
 
 
@@ -613,7 +610,8 @@ module LOAD = struct
 
             Pushes the value associated with [co_names\[namei\]] onto the stack. *)
 
-  let run kind env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
+  let run kind env ({FFI.Code.co_names; co_varnames; co_consts} as code)
+      {FFI.Instruction.opname; arg} =
     let open IResult.Let_syntax in
     let pp {FFI.Code.co_names; co_varnames; co_consts} fmt = function
       | CONST ->
@@ -626,11 +624,14 @@ module LOAD = struct
     let* env, cell =
       match kind with
       | CONST ->
-          Ok (env, DataStack.Const arg)
+          let const = co_consts.(arg) in
+          Ok (env, DataStack.Const const)
       | FAST ->
-          Ok (env, DataStack.VarName arg)
+          let varname = co_varnames.(arg) in
+          Ok (env, DataStack.VarName varname)
       | NAME ->
-          Ok (env, DataStack.Name {global= Env.is_toplevel env; ndx= arg})
+          let name = co_names.(arg) in
+          Ok (env, DataStack.Name {global= Env.is_toplevel env; name})
       | GLOBAL ->
           let name = co_names.(arg) in
           if String.equal name "super" then
@@ -639,9 +640,9 @@ module LOAD = struct
                this, to be sure the call to [super()] is to access the parent's methods, not some
                other symbol *)
             if Option.is_some (Env.lookup_symbol env key) then
-              Ok (env, DataStack.Name {global= true; ndx= arg})
+              Ok (env, DataStack.Name {global= true; name})
             else Ok (env, DataStack.Super)
-          else Ok (env, DataStack.Name {global= true; ndx= arg})
+          else Ok (env, DataStack.Name {global= true; name})
       | ATTR ->
           let* env, cell = pop_datastack opname env in
           let fname = co_names.(arg) in
@@ -657,7 +658,7 @@ module LOAD = struct
                 let id = Ident.extend ~prefix:import_path fname in
                 Ok (DataStack.ImportCall {id; loc})
             | _ -> (
-                let prefix = DataStack.as_id code cell in
+                let prefix = DataStack.as_id cell in
                 let id = Option.map ~f:(fun prefix -> Ident.extend ~prefix fname) prefix in
                 match id with
                 | None ->
@@ -756,7 +757,7 @@ module FUNCTION = struct
             mk env ~typ proc )
 
 
-    let static_call env code fid cells =
+    let static_call env fid cells =
       let open IResult.Let_syntax in
       (* TODO: we currently can't handle hasattr correctly, so let's ignore it
                At some point, introduce a builtin to keep track of its content
@@ -772,7 +773,7 @@ module FUNCTION = struct
         let env = Env.push env (DataStack.Temp id) in
         Ok (env, None) )
       else
-        let* env, args = cells_to_textual env code cells in
+        let* env, args = cells_to_textual env cells in
         static_call_with_args env fid args
 
 
@@ -783,10 +784,10 @@ module FUNCTION = struct
       Ok (env, None)
 
 
-    let builtin_build_class env code opname name_cell code_cell parent_cells =
+    let builtin_build_class env opname name_cell code_cell parent_cells =
       let open IResult.Let_syntax in
       let as_name kind cell =
-        match DataStack.as_name code cell with
+        match DataStack.as_name cell with
         | Some name ->
             Ok name
         | None ->
@@ -794,12 +795,12 @@ module FUNCTION = struct
       in
       let* code_name = as_name "base" name_cell in
       let* parents =
-        let ids = List.map ~f:(DataStack.as_id code) parent_cells in
+        let ids = List.map ~f:DataStack.as_id parent_cells in
         let ids = Option.all ids in
         Result.of_option ids ~error:(L.InternalError, Error.BuiltinClassInvalidParents code_name)
       in
       let* code =
-        match DataStack.as_code code code_cell with
+        match DataStack.as_code code_cell with
         | Some code ->
             Ok code
         | None ->
@@ -810,7 +811,7 @@ module FUNCTION = struct
       Ok env
 
 
-    let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
+    let run env {FFI.Instruction.opname; arg} =
       let open IResult.Let_syntax in
       Debug.p "[%s] argc = %d\n" opname arg ;
       let* env, cells = pop_n_datastack opname env arg in
@@ -818,11 +819,11 @@ module FUNCTION = struct
       let* env, fname = pop_datastack opname env in
       let loc = Env.loc env in
       match (fname : DataStack.cell) with
-      | Name {ndx} ->
-          let fid = Ident.mk ~loc @@ co_names.(ndx) in
-          static_call env code fid cells
+      | Name {name} ->
+          let fid = Ident.mk ~loc name in
+          static_call env fid cells
       | Temp id ->
-          let* env, args = cells_to_textual env code cells in
+          let* env, args = cells_to_textual env cells in
           dynamic_call env id args
       | Code _
       | Import _
@@ -840,19 +841,19 @@ module FUNCTION = struct
       | BuiltinBuildClass -> (
         match cells with
         | [code_cell; name_cell] ->
-            let* env = builtin_build_class env code opname name_cell code_cell [] in
+            let* env = builtin_build_class env opname name_cell code_cell [] in
             Ok (env, None)
         | code_cell :: name_cell :: parent_cells ->
-            let* env = builtin_build_class env code opname name_cell code_cell parent_cells in
+            let* env = builtin_build_class env opname name_cell code_cell parent_cells in
             Ok (env, None)
         | _ ->
             Error (L.InternalError, Error.BuiltinClassInvalid) )
       | Path id ->
-          static_call env code id cells
+          static_call env id cells
       | ImportCall {id; loc} ->
           (* TODO: test it *)
           Debug.todo "TEST IT !\n" ;
-          let* env, args = cells_to_textual env code cells in
+          let* env, args = cells_to_textual env cells in
           let proc = Ident.to_qualified_procname id in
           mk env (Some id) loc proc args
       | Super ->
@@ -861,7 +862,7 @@ module FUNCTION = struct
   end
 
   module MAKE = struct
-    let unpack_annotations env {FFI.Code.co_names; co_consts} annotations =
+    let unpack_annotations env annotations =
       let open IResult.Let_syntax in
       let loc = Env.loc env in
       List.fold_result ~init:[]
@@ -874,13 +875,13 @@ module FUNCTION = struct
                 Error (L.ExternalError, Error.MakeFunctionInvalidAnnotations name)
           in
           match c with
-          | DataStack.Name {ndx} ->
-              let annotation = Ident.mk ~loc @@ co_names.(ndx) in
+          | DataStack.Name {name= annot} ->
+              let annotation = Ident.mk ~loc annot in
               let typed_name = {PyCommon.name; annotation} in
               let typed_name = Option.value ~default:typed_name (lift_annotation env typed_name) in
               Ok (typed_name :: acc)
-          | DataStack.Const ndx -> (
-            match co_consts.(ndx) with
+          | DataStack.Const const -> (
+            match const with
             | FFI.Constant.PYCNone ->
                 Ok ({PyCommon.name; annotation= Ident.mk "None"} :: acc)
             | _ ->
@@ -894,11 +895,11 @@ module FUNCTION = struct
        For example if the value is a global constant, we'll store
        it's loaded reference `n` which won't make sense in the specialized
        function. *)
-    let unpack_defaults env code defaults =
+    let unpack_defaults env defaults =
       let open IResult.Let_syntax in
       match (defaults : DataStack.cell) with
       | Const _ ->
-          let* env, tuple, _typ = load_cell env code defaults in
+          let* env, tuple, _typ = load_cell env defaults in
           let args = PyCommon.get_tuple_as_list tuple in
           let* args =
             Result.of_option
@@ -907,7 +908,7 @@ module FUNCTION = struct
           in
           Ok (env, args)
       | List (_, args) ->
-          let* env, args = cells_to_textual env code args in
+          let* env, args = cells_to_textual env args in
           Ok (env, args)
       | _ ->
           Error (L.InternalError, Error.TODO (MakeFunctionDefault defaults))
@@ -928,7 +929,7 @@ module FUNCTION = struct
 
         In this first version, only support for [flags = 0x00] is implemented. Also there is no
         support for closures or nested functions *)
-    let run env ({FFI.Code.co_consts} as code) {FFI.Instruction.opname; arg} =
+    let run env {FFI.Instruction.opname; arg} =
       let open IResult.Let_syntax in
       let flags = MakeFunctionFlags.mk arg in
       Debug.p "[%s] flags = 0x%a\n" opname MakeFunctionFlags.pp flags ;
@@ -945,17 +946,17 @@ module FUNCTION = struct
         else Ok (env, None)
       in
       let* annotations =
-        Option.value_map ~default:(Ok []) ~f:(unpack_annotations env code) annotations
+        Option.value_map ~default:(Ok []) ~f:(unpack_annotations env) annotations
       in
       let* env, default_arguments =
         if MakeFunctionFlags.mem flags DefaultValues then
           let* env, cell = pop_datastack opname env in
-          let* env, defaults = unpack_defaults env code cell in
+          let* env, defaults = unpack_defaults env cell in
           Ok (env, defaults)
         else Ok (env, [])
       in
       let* code =
-        match DataStack.as_code code body with
+        match DataStack.as_code body with
         | None ->
             Error (L.InternalError, Error.MakeFunctionInvalidCode body)
         | Some body ->
@@ -979,13 +980,12 @@ module FUNCTION = struct
         | WithContext _
         | Super ->
             Error (L.InternalError, Error.MakeFunctionInvalidName qual)
-        | Const ndx -> (
-            let const = co_consts.(ndx) in
-            match FFI.Constant.as_name const with
-            | Some name ->
-                Ok name
-            | None ->
-                Error (L.InternalError, Error.MakeFunctionInvalidQname const) )
+        | Const const -> (
+          match FFI.Constant.as_name const with
+          | Some name ->
+              Ok name
+          | None ->
+              Error (L.InternalError, Error.MakeFunctionInvalidQname const) )
       in
       if FFI.Code.is_closure code then
         L.user_warning "%s: support for closures is incomplete (%s)@\n" opname code_name ;
@@ -1042,7 +1042,7 @@ module FUNCTION = struct
         the callable object off the stack, calls the callable object with those arguments, and
         pushes the return value returned by the callable object. *)
 
-    let run env ({FFI.Code.co_names; co_consts} as code) {FFI.Instruction.opname; arg= argc} =
+    let run env {FFI.Instruction.opname; arg= argc} =
       (* TODO:
          - make support more complete
          - check/deal with method calls using kw *)
@@ -1051,15 +1051,14 @@ module FUNCTION = struct
       let* env, arg_names = pop_datastack opname env in
       let* arg_names =
         match (arg_names : DataStack.cell) with
-        | Const n ->
+        | Const tuple ->
             (* kw names should be constant tuple of strings, so we directly access them *)
-            let tuple = co_consts.(n) in
             extract_kw_names tuple
         | _ ->
             Error (L.UserError, Error.CallKeywordNotString1 arg_names)
       in
       let* env, cells = pop_n_datastack opname env argc in
-      let* env, all_args = cells_to_textual env code cells in
+      let* env, all_args = cells_to_textual env cells in
       let env, args = partial_zip env argc all_args arg_names in
       let* env, fname = pop_datastack opname env in
       let call env fname =
@@ -1070,8 +1069,7 @@ module FUNCTION = struct
       let loc = Env.loc env in
       (* TODO: Fix this, should use dynamic_call with a string all the time *)
       match (fname : DataStack.cell) with
-      | Name {global; ndx} -> (
-          let name = co_names.(ndx) in
+      | Name {global; name} -> (
           let key = mk_key global loc name in
           match Env.lookup_symbol env key with
           | Some {Symbol.id} ->
@@ -1118,9 +1116,9 @@ end
 
 module METHOD = struct
   module LOAD = struct
-    let load env code cell method_name =
+    let load env cell method_name =
       let open IResult.Let_syntax in
-      let* env, receiver, _ = load_cell env code cell in
+      let* env, receiver, _ = load_cell env cell in
       let loc = Env.loc env in
       let name = proc_name ~loc method_name in
       let name : T.qualified_procname = {T.enclosing_class= Enclosing T.TypeName.wildcard; name} in
@@ -1199,14 +1197,13 @@ module METHOD = struct
         name, the bytecode pushes the unbound method and top-of-stack. top-of-stack will be used as
         the first argument ([self]) by [CALL_METHOD] when calling the unbound method. Otherwise,
         [NULL] and the object return by the attribute lookup are pushed. *)
-    let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
+    let run env {FFI.Code.co_names} {FFI.Instruction.opname; arg} =
       let open IResult.Let_syntax in
       let method_name = co_names.(arg) in
       Debug.p "[%s] namei = %s\n" opname method_name ;
       let* env, cell = pop_datastack opname env in
       match (cell : DataStack.cell) with
-      | Name {global; ndx} -> (
-          let name = co_names.(ndx) in
+      | Name {global; name} -> (
           let loc = Env.loc env in
           let key = mk_key global loc name in
           let opt_sym = Env.lookup_symbol env key in
@@ -1221,11 +1218,11 @@ module METHOD = struct
               let env = Env.push env (DataStack.StaticCall {call_name; receiver= None}) in
               Ok (env, None)
           | _ ->
-              load env code cell method_name )
+              load env cell method_name )
       | Super ->
           load_super env method_name
       | _ ->
-          load env code cell method_name
+          load env cell method_name
   end
 
   module CALL = struct
@@ -1236,11 +1233,11 @@ module METHOD = struct
         on top of the stack. Below them, the two items described in [LOAD_METHOD] are on the stack
         (either [self] and an unbound method object or [NULL] and an arbitrary callable). All of
         them are popped and the return value is pushed. *)
-    let run env code {FFI.Instruction.opname; arg} =
+    let run env {FFI.Instruction.opname; arg} =
       let open IResult.Let_syntax in
       Debug.p "[%s] argc = %d\n" opname arg ;
       let* env, cells = pop_n_datastack opname env arg in
-      let* env, args = cells_to_textual env code cells in
+      let* env, args = cells_to_textual env cells in
       let* env, cell_mi = pop_datastack opname env in
       match (cell_mi : DataStack.cell) with
       | ImportCall {id; loc} ->
@@ -1310,11 +1307,11 @@ module STORE = struct
             Since there is a special namespace for global variables, this is in fact the same as
             [STORE_NAME], but only called from within a function/method. *)
 
-  let store env ({FFI.Code.co_names} as code) opname loc arg cell name global is_attr =
+  let store env {FFI.Code.co_names} opname loc arg cell name global is_attr =
     let open IResult.Let_syntax in
     Debug.p "[store] cell= %a name= %s global= %b is_attr= %b\n" DataStack.pp_cell cell name global
       is_attr ;
-    let* env, exp, info = load_cell env code cell in
+    let* env, exp, info = load_cell env cell in
     let {Env.Info.typ; kind} = info in
     let module_name = Env.module_name env in
     let prefix =
@@ -1336,7 +1333,7 @@ module STORE = struct
     let var_name = Ident.to_var_name symbol_info.Symbol.id in
     if is_attr then
       let* env, cell = pop_datastack opname env in
-      let* env, value, {Env.Info.typ} = load_cell env code cell in
+      let* env, value, {Env.Info.typ} = load_cell env cell in
       let fname = co_names.(arg) in
       (* TODO: refine typ if possible *)
       let loc = Env.loc env in
@@ -1428,15 +1425,15 @@ module STORE = struct
     (** {v STORE_SUBSCR v}
 
         Implements [top-of-stack1\[top-of-stack\] = top-of-stack2] *)
-    let run env code {FFI.Instruction.opname} =
+    let run env {FFI.Instruction.opname} =
       let open IResult.Let_syntax in
       Debug.p "[%s]\n" opname ;
       let* env, cell_ndx = pop_datastack opname env in
       let* env, cell_lhs = pop_datastack opname env in
       let* env, cell_rhs = pop_datastack opname env in
-      let* env, ndx, _ = load_cell env code cell_ndx in
-      let* env, lhs, _ = load_cell env code cell_lhs in
-      let* env, rhs, _ = load_cell env code cell_rhs in
+      let* env, ndx, _ = load_cell env cell_ndx in
+      let* env, lhs, _ = load_cell env cell_lhs in
+      let* env, rhs, _ = load_cell env cell_rhs in
       let env, _id, _typ = Env.mk_builtin_call env Builtin.PythonSubscriptSet [lhs; ndx; rhs] in
       Ok (env, None)
   end
@@ -1446,7 +1443,7 @@ module POP_TOP = struct
   (** {v POP_TOP v}
 
       Pop the top-of-stack and discard it *)
-  let run env code {FFI.Instruction.opname} =
+  let run env {FFI.Instruction.opname} =
     let open IResult.Let_syntax in
     Debug.p "[%s]\n" opname ;
     let* env, cell = pop_datastack opname env in
@@ -1454,7 +1451,7 @@ module POP_TOP = struct
     let* env =
       if DataStack.is_path cell then
         (* TODO: maybe better error here ? *)
-        let* env, _, _ = load_cell env code cell in
+        let* env, _, _ = load_cell env cell in
         Ok env
       else Ok env
     in
@@ -1481,13 +1478,13 @@ module BINARY = struct
       top-of-stack1, and push the result back on the stack, but the operation is done in-place when
       top-of-stack1 supports it, and the resulting top-of-stack may be (but does not have to be) the
       original top-of-stack1. *)
-  let run env code {FFI.Instruction.opname} builtin =
+  let run env {FFI.Instruction.opname} builtin =
     let open IResult.Let_syntax in
     Debug.p "[%s]\n" opname ;
     let* env, tos = pop_datastack opname env in
     let* env, tos1 = pop_datastack opname env in
-    let* env, lhs, _ = load_cell env code tos1 in
-    let* env, rhs, _ = load_cell env code tos in
+    let* env, lhs, _ = load_cell env tos1 in
+    let* env, rhs, _ = load_cell env tos in
     (* Even if the call can be considered as virtual because, it's logic is not symetric. Based
        on what I gathered, like in [0], I think the best course of action is to write a model for
        it and leave it non virtual. TODO: ask David.
@@ -1504,13 +1501,13 @@ module BINARY = struct
     (** {v BINARY_SUBSCR v}
 
         Implements [top-of-stack = top-of-stack1\[top-of-stack\]]. *)
-    let run env code {FFI.Instruction.opname} =
+    let run env {FFI.Instruction.opname} =
       let open IResult.Let_syntax in
       Debug.p "[%s]\n" opname ;
       let* env, cell_ndx = pop_datastack opname env in
       let* env, cell_lhs = pop_datastack opname env in
-      let* env, ndx, _ = load_cell env code cell_ndx in
-      let* env, lhs, _ = load_cell env code cell_lhs in
+      let* env, ndx, _ = load_cell env cell_ndx in
+      let* env, lhs, _ = load_cell env cell_lhs in
       let env, id, _typ = Env.mk_builtin_call env Builtin.PythonSubscriptGet [lhs; ndx] in
       let env = Env.push env (DataStack.Temp id) in
       Ok (env, None)
@@ -1521,11 +1518,11 @@ module UNARY = struct
   (** Unary operations take the top of the stack, apply the operation, and push the result back on
       the stack. *)
 
-  let run env code {FFI.Instruction.opname} builtin =
+  let run env {FFI.Instruction.opname} builtin =
     let open IResult.Let_syntax in
     Debug.p "[%s]\n" opname ;
     let* env, tos = pop_datastack opname env in
-    let* env, tos, _ = load_cell env code tos in
+    let* env, tos, _ = load_cell env tos in
     let env, id, _typ = Env.mk_builtin_call env builtin [tos] in
     let env = Env.push env (DataStack.Temp id) in
     Ok (env, None)
@@ -1533,22 +1530,21 @@ end
 
 module BUILD = struct
   module CONST_KEY_MAP = struct
-    let is_tuple_ids {FFI.Code.co_consts} cell =
+    let is_tuple_ids cell =
       let as_key = function FFI.Constant.PYCString s -> Some s | _ -> None in
       match cell with
-      | DataStack.Const ndx -> (
-          let c = co_consts.(ndx) in
-          match c with
-          | FFI.Constant.PYCTuple keys ->
-              Array.fold_result keys ~init:[] ~f:(fun keys c ->
-                  match as_key c with
-                  | Some key ->
-                      let key = PyCommon.mk_string key in
-                      Ok (key :: keys)
-                  | None ->
-                      Error () )
-          | _ ->
-              Error () )
+      | DataStack.Const c -> (
+        match c with
+        | FFI.Constant.PYCTuple keys ->
+            Array.fold_result keys ~init:[] ~f:(fun keys c ->
+                match as_key c with
+                | Some key ->
+                    let key = PyCommon.mk_string key in
+                    Ok (key :: keys)
+                | None ->
+                    Error () )
+        | _ ->
+            Error () )
       | _ ->
           Error ()
 
@@ -1558,12 +1554,12 @@ module BUILD = struct
         The version of [BUILD_MAP] specialized for constant keys. Pops the top element on the stack
         which contains a tuple of keys, then starting from [top-of-stack+1], pops [count] values to
         form values in the built dictionary, which is pushed back on the stack. *)
-    let run env code {FFI.Instruction.opname; arg= count} =
+    let run env {FFI.Instruction.opname; arg= count} =
       let open IResult.Let_syntax in
       Debug.p "[%s] count = %d\n" opname count ;
       let* env, cell = pop_datastack opname env in
       let* keys =
-        match is_tuple_ids code cell with
+        match is_tuple_ids cell with
         | Ok keys ->
             Ok (List.rev keys)
         | Error () ->
@@ -1584,13 +1580,13 @@ module BUILD = struct
   end
 
   module MAP = struct
-    let build_map env code cells =
+    let build_map env cells =
       let open IResult.Let_syntax in
       let rec aux env = function
         | [] ->
             Ok []
         | key :: value :: rest ->
-            let* env, key, _typ = load_cell env code key in
+            let* env, key, _typ = load_cell env key in
             let* tl = aux env rest in
             Ok ((key, value) :: tl)
         | _ ->
@@ -1604,11 +1600,11 @@ module BUILD = struct
 
         Pushes a new dictionary object onto the stack. Pops [2 * count] items so that the dictionary
         holds count entries: [{..., TOS3: TOS2, TOS1: TOS}] *)
-    let run env code {FFI.Instruction.opname; arg= count} =
+    let run env {FFI.Instruction.opname; arg= count} =
       let open IResult.Let_syntax in
       Debug.p "[%s] count = %d\n" opname count ;
       let* env, items = pop_n_datastack opname env (2 * count) in
-      let* map = build_map env code items in
+      let* map = build_map env items in
       let env = Env.push env (DataStack.Map map) in
       Ok (env, None)
   end
@@ -1661,11 +1657,11 @@ let mk_jump loc jump_info =
 
 (** When reaching a jump instruction with a non empty datastack, turn it into loads/ssa variables
     and properly set the jump/label ssa_args and ssa_parameters *)
-let stack_to_ssa env code =
+let stack_to_ssa env =
   let open IResult.Let_syntax in
   let* env, zipped =
     Env.map_result ~env (Env.stack env) ~f:(fun env cell ->
-        let* env, exp, {Env.Info.typ} = load_cell env code cell in
+        let* env, exp, {Env.Info.typ} = load_cell env cell in
         Ok (env, (exp, typ)) )
   in
   Ok (Env.reset_stack env, List.unzip zipped)
@@ -1699,12 +1695,12 @@ module JUMP = struct
         {v POP_JUMP_IF_FALSE(target) v}
 
         If top-of-stack is false, sets the bytecode counter to target. top-of-steack is popped. *)
-    let run ~next_is_true env code {FFI.Instruction.opname; arg} next_offset_opt =
+    let run ~next_is_true env {FFI.Instruction.opname; arg} next_offset_opt =
       let open IResult.Let_syntax in
       Debug.p "[%s] target = %d\n" opname arg ;
       let* env, tos = pop_datastack opname env in
-      let* env, cond, _ = load_cell env code tos in
-      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+      let* env, cond, _ = load_cell env tos in
+      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env in
       let* next_offset = next_offset next_offset_opt in
       let env, next_info = mk_label_info env next_offset ~ssa_parameters in
       let env, other_info = mk_label_info env arg ~ssa_parameters in
@@ -1731,21 +1727,21 @@ module JUMP = struct
 
         If top-of-stack is false, sets the bytecode counter to target and leaves top-of-stack on the
         stack. Otherwise (top-of-stack is true), top-of-stack is popped. *)
-    let run ~jump_if env code {FFI.Instruction.opname; arg} next_offset_opt =
+    let run ~jump_if env {FFI.Instruction.opname; arg} next_offset_opt =
       let open IResult.Let_syntax in
       Debug.p "[%s] target = %d\n" opname arg ;
       (* We only peek the top of stack so the logic of [stack_to_ssa] correctly captures it for
          the branch where "it stays". It will be restored as part of the stack restore logic when
          we process the "other" node. *)
       let* tos = peek_datastack opname env in
-      let* env, cond, _ = load_cell env code tos in
+      let* env, cond, _ = load_cell env tos in
       (* Suggestion from @dpichardie: I could put the [IsTrue] expression directly in [condition].
          This would need a refactor of [mk_builtin_call] to get the full expression instead of
          the id that binds it. *)
       let env, id, _ = Env.mk_builtin_call env Builtin.IsTrue [cond] in
       let condT = T.BoolExp.Exp (Var id) in
       let condition = if jump_if then T.BoolExp.Not condT else condT in
-      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env in
       let* next_offset = next_offset next_offset_opt in
       (* In the next branch, we make sure the top-of-stack is no longer in the ssa parameters
          so it is not restored, effectively dropped as per the opcode description. *)
@@ -1768,14 +1764,14 @@ module JUMP = struct
     (** {v JUMP_FORWARD(delta) v}
 
         Increments bytecode counter by [delta]. *)
-    let run env code {FFI.Instruction.opname; arg= delta} next_offset_opt =
+    let run env {FFI.Instruction.opname; arg= delta} next_offset_opt =
       let open IResult.Let_syntax in
       Debug.p "[%s] delta = %d\n" opname delta ;
       (* This instruction gives us a relative delta w.r.t the next offset, so we turn it into an
          absolute offset right away *)
       let* next_offset = next_offset next_offset_opt in
       let offset = next_offset + delta in
-      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env in
       let env, label_info = mk_label_info env offset ~ssa_parameters in
       Ok (env, Some (Absolute {ssa_args; label_info; offset}))
   end
@@ -1785,10 +1781,10 @@ module JUMP = struct
 
         Set bytecode counter to [target]. Can target a previous offset. *)
 
-    let run env code {FFI.Instruction.opname; arg= target; offset} =
+    let run env {FFI.Instruction.opname; arg= target; offset} =
       let open IResult.Let_syntax in
       Debug.p "[%s] target = %d\n" opname target ;
-      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env in
       (* sanity check: we should already have allocated a label for this jump, if it is a backward
          edge. *)
       let* () =
@@ -1807,11 +1803,11 @@ module RETURN_VALUE = struct
   (** {v RETURN_VALUE v}
 
       Returns the top-of-stack *)
-  let run env code {FFI.Instruction.opname} =
+  let run env {FFI.Instruction.opname} =
     let open IResult.Let_syntax in
     Debug.p "[%s]\n" opname ;
     let* env, cell = pop_datastack opname env in
-    let* env, exp, _ = load_cell env code cell in
+    let* env, exp, _ = load_cell env cell in
     let term = T.Terminator.Ret exp in
     Ok (env, Some (JUMP.Return term))
 end
@@ -1822,11 +1818,11 @@ module ITER = struct
 
         Implements top-of-stack = iter(top-of-stack). Most of the type calls the [__iter__()] method
         on the top of the stack. Might be C code for builtin types, so we'll model it as a builtin *)
-    let run env code {FFI.Instruction.opname} =
+    let run env {FFI.Instruction.opname} =
       let open IResult.Let_syntax in
       Debug.p "[%s]\n" opname ;
       let* env, cell = pop_datastack opname env in
-      let* env, exp, _ = load_cell env code cell in
+      let* env, exp, _ = load_cell env cell in
       let env, id, _ = Env.mk_builtin_call env Builtin.PythonIter [exp] in
       let env = Env.push env (DataStack.Temp id) in
       Ok (env, None)
@@ -1838,11 +1834,11 @@ module ITER = struct
         top-of-stack is an iterator. Call its [__next__()] method. If this yields a new value, push
         it on the stack (leaving the iterator below it). If the iterator indicates it is exhausted
         top-of-stack is popped, and the byte code counter is incremented by delta. *)
-    let run env code {FFI.Instruction.opname; arg= delta} next_offset_opt =
+    let run env {FFI.Instruction.opname; arg= delta} next_offset_opt =
       let open IResult.Let_syntax in
       Debug.p "[%s] delta = %d\n" opname delta ;
       let* env, iter_cell = pop_datastack opname env in
-      let* env, iter, _ = load_cell env code iter_cell in
+      let* env, iter, _ = load_cell env iter_cell in
       let loc = Env.loc env in
       let env, id, _ = Env.mk_builtin_call env Builtin.PythonIterNext [iter] in
       let has_item = T.Exp.Field {exp= T.Exp.Var id; field= PyCommon.py_iter_item_has_item} in
@@ -1851,7 +1847,7 @@ module ITER = struct
       let has_item_load = T.Instr.Load {id= has_item_id; exp= has_item; typ= Some T.Typ.Int; loc} in
       let env = Env.push_instr env has_item_load in
       let cond = T.Exp.Var has_item_id in
-      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+      let* env, (ssa_args, ssa_parameters) = stack_to_ssa env in
       (* Compute the relevant pruning expressions *)
       let condition = T.BoolExp.Exp cond in
       (* In the next branch, we know the iterator has an item available. Let's fetch it and
@@ -1907,12 +1903,12 @@ module IMPORT = struct
         None
 
 
-  let load_int {FFI.Code.co_consts} cell =
-    match (cell : DataStack.cell) with Const ndx -> py_to_int co_consts.(ndx) | _ -> None
+  let load_int cell =
+    match (cell : DataStack.cell) with Const const -> py_to_int const | _ -> None
 
 
-  let load_strings {FFI.Code.co_consts} cell =
-    match (cell : DataStack.cell) with Const ndx -> py_to_strings co_consts.(ndx) | _ -> None
+  let load_strings cell =
+    match (cell : DataStack.cell) with Const const -> py_to_strings const | _ -> None
 
 
   module NAME = struct
@@ -1929,13 +1925,13 @@ module IMPORT = struct
         [__import__()]
 
         TODO: we don't support renamaing using [import foo as bar]. *)
-    let run env ({FFI.Code.co_names} as code) {FFI.Instruction.opname; arg} =
+    let run env {FFI.Code.co_names} {FFI.Instruction.opname; arg} =
       let open IResult.Let_syntax in
       Debug.p "[%s] namei = %d\n" opname arg ;
       let* env, from_list = pop_datastack opname env in
       let* env, level = pop_datastack opname env in
-      let from_list = load_strings code from_list in
-      let level = load_int code level in
+      let from_list = load_strings from_list in
+      let level = load_int level in
       let* level =
         match level with
         | None ->
@@ -2028,7 +2024,7 @@ module COMPARE_OP = struct
       Performs a Boolean operation. The operation name can be found in [cmp_op\[opname\]].
 
       [ dis.cmp_op = ('<', '<=', '==', '!=', '>', '>=', 'in', 'not in', 'is', 'is not', 'exception match', 'BAD') ] *)
-  let run env code {FFI.Instruction.opname; arg} =
+  let run env {FFI.Instruction.opname; arg} =
     let open IResult.Let_syntax in
     let* cmp_op =
       match List.nth Builtin.Compare.all arg with
@@ -2045,8 +2041,8 @@ module COMPARE_OP = struct
       | Lt | Le | Gt | Ge | Neq | Eq | In | Is | IsNot | NotIn ->
           let* env, rhs = pop_datastack opname env in
           let* env, lhs = pop_datastack opname env in
-          let* env, lhs, _ = load_cell env code lhs in
-          let* env, rhs, _ = load_cell env code rhs in
+          let* env, lhs, _ = load_cell env lhs in
+          let* env, rhs, _ = load_cell env rhs in
           let env, id, _typ = Env.mk_builtin_call env (Builtin.CompareOp cmp_op) [lhs; rhs] in
           let env = Env.push env (DataStack.Temp id) in
           Ok env
@@ -2320,7 +2316,7 @@ module UNPACK = struct
 
         Unpacks top-of-stack into [count] individual values, which are put onto the stack
         right-to-left. *)
-    let run env code {FFI.Instruction.opname; arg= count} =
+    let run env {FFI.Instruction.opname; arg= count} =
       let open IResult.Let_syntax in
       let build_let env exp n =
         let env, id, _typ =
@@ -2337,7 +2333,7 @@ module UNPACK = struct
       Debug.p "[%s] count= %d\n" opname count ;
       let* env, cell = pop_datastack opname env in
       (* TODO: try to keep tuple type information around *)
-      let* env, tuple, _info = load_cell env code cell in
+      let* env, tuple, _info = load_cell env cell in
       let* () = if count <= 0 then Error (L.ExternalError, Error.UnpackSequence count) else Ok () in
       let env = unpack env tuple (count - 1) in
       Ok (env, None)
@@ -2356,7 +2352,7 @@ module RAISE_VARARGS = struct
 
       2: raise top-of-stack1 from top-of-stack (raise exception instance or type at top-of-stack1
       with [__cause__] set to top-of-stack) *)
-  let run env {FFI.Code.co_names} {FFI.Instruction.opname; arg= argc} =
+  let run env {FFI.Instruction.opname; arg= argc} =
     let open IResult.Let_syntax in
     Debug.p "[%s] argc= %d\n" opname argc ;
     let* () =
@@ -2371,8 +2367,7 @@ module RAISE_VARARGS = struct
     let loc = Env.loc env in
     let* env, tos = pop_datastack opname env in
     match (tos : DataStack.cell) with
-    | Name {global; ndx} -> (
-        let name = co_names.(ndx) in
+    | Name {global; name} -> (
         let key = mk_key global loc name in
         let opt_sym = Env.lookup_symbol env key in
         match opt_sym with
@@ -2425,19 +2420,19 @@ module FORMAT_VALUE = struct
 
   let has_fmt_spec flags = Int.equal (flags land 0x04) 0x04
 
-  let run env code {FFI.Instruction.opname; arg= flags} =
+  let run env {FFI.Instruction.opname; arg= flags} =
     let open IResult.Let_syntax in
     Debug.p "[%s] flags= %d@\n" opname flags ;
     let* env, fmt_spec =
       (* fmt_spec must be a string literal *)
       if has_fmt_spec flags then
         let* env, fmt_spec = pop_datastack opname env in
-        let* env, fmt_spec, _ = load_cell env code fmt_spec in
+        let* env, fmt_spec, _ = load_cell env fmt_spec in
         Ok (env, fmt_spec)
       else Ok (env, T.Exp.Const Null)
     in
     let* env, value = pop_datastack opname env in
-    let* env, value, _typ = load_cell env code value in
+    let* env, value, _typ = load_cell env value in
     let conv_fn = mk_conv flags in
     let env, value =
       match conv_fn with
@@ -2478,111 +2473,111 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "STORE_NAME" ->
       STORE.run NAME env code instr
   | "RETURN_VALUE" ->
-      RETURN_VALUE.run env code instr
+      RETURN_VALUE.run env instr
   | "POP_BLOCK" ->
       POP_BLOCK.run env instr
   | "POP_TOP" ->
-      POP_TOP.run env code instr
+      POP_TOP.run env instr
   | "CALL_FUNCTION" ->
-      FUNCTION.CALL.run env code instr
+      FUNCTION.CALL.run env instr
   | "CALL_FUNCTION_KW" ->
-      FUNCTION.CALL_KW.run env code instr
+      FUNCTION.CALL_KW.run env instr
   | "BINARY_ADD" ->
-      BINARY.run env code instr (Builtin.Binary Add)
+      BINARY.run env instr (Builtin.Binary Add)
   | "BINARY_SUBTRACT" ->
-      BINARY.run env code instr (Builtin.Binary Subtract)
+      BINARY.run env instr (Builtin.Binary Subtract)
   | "BINARY_AND" ->
-      BINARY.run env code instr (Builtin.Binary And)
+      BINARY.run env instr (Builtin.Binary And)
   | "BINARY_FLOOR_DIVIDE" ->
-      BINARY.run env code instr (Builtin.Binary FloorDivide)
+      BINARY.run env instr (Builtin.Binary FloorDivide)
   | "BINARY_LSHIFT" ->
-      BINARY.run env code instr (Builtin.Binary LShift)
+      BINARY.run env instr (Builtin.Binary LShift)
   | "BINARY_MATRIX_MULTIPLY" ->
-      BINARY.run env code instr (Builtin.Binary MatrixMultiply)
+      BINARY.run env instr (Builtin.Binary MatrixMultiply)
   | "BINARY_MODULO" ->
-      BINARY.run env code instr (Builtin.Binary Modulo)
+      BINARY.run env instr (Builtin.Binary Modulo)
   | "BINARY_MULTIPLY" ->
-      BINARY.run env code instr (Builtin.Binary Multiply)
+      BINARY.run env instr (Builtin.Binary Multiply)
   | "BINARY_OR" ->
-      BINARY.run env code instr (Builtin.Binary Or)
+      BINARY.run env instr (Builtin.Binary Or)
   | "BINARY_POWER" ->
-      BINARY.run env code instr (Builtin.Binary Power)
+      BINARY.run env instr (Builtin.Binary Power)
   | "BINARY_RSHIFT" ->
-      BINARY.run env code instr (Builtin.Binary RShift)
+      BINARY.run env instr (Builtin.Binary RShift)
   | "BINARY_TRUE_DIVIDE" ->
-      BINARY.run env code instr (Builtin.Binary TrueDivide)
+      BINARY.run env instr (Builtin.Binary TrueDivide)
   | "BINARY_XOR" ->
-      BINARY.run env code instr (Builtin.Binary Xor)
+      BINARY.run env instr (Builtin.Binary Xor)
   | "INPLACE_ADD" ->
-      BINARY.run env code instr (Builtin.Inplace Add)
+      BINARY.run env instr (Builtin.Inplace Add)
   | "INPLACE_SUBTRACT" ->
-      BINARY.run env code instr (Builtin.Inplace Subtract)
+      BINARY.run env instr (Builtin.Inplace Subtract)
   | "INPLACE_AND" ->
-      BINARY.run env code instr (Builtin.Inplace And)
+      BINARY.run env instr (Builtin.Inplace And)
   | "INPLACE_FLOOR_DIVIDE" ->
-      BINARY.run env code instr (Builtin.Inplace FloorDivide)
+      BINARY.run env instr (Builtin.Inplace FloorDivide)
   | "INPLACE_LSHIFT" ->
-      BINARY.run env code instr (Builtin.Inplace LShift)
+      BINARY.run env instr (Builtin.Inplace LShift)
   | "INPLACE_MATRIX_MULTIPLY" ->
-      BINARY.run env code instr (Builtin.Inplace MatrixMultiply)
+      BINARY.run env instr (Builtin.Inplace MatrixMultiply)
   | "INPLACE_MODULO" ->
-      BINARY.run env code instr (Builtin.Inplace Modulo)
+      BINARY.run env instr (Builtin.Inplace Modulo)
   | "INPLACE_MULTIPLY" ->
-      BINARY.run env code instr (Builtin.Inplace Multiply)
+      BINARY.run env instr (Builtin.Inplace Multiply)
   | "INPLACE_OR" ->
-      BINARY.run env code instr (Builtin.Inplace Or)
+      BINARY.run env instr (Builtin.Inplace Or)
   | "INPLACE_POWER" ->
-      BINARY.run env code instr (Builtin.Inplace Power)
+      BINARY.run env instr (Builtin.Inplace Power)
   | "INPLACE_RSHIFT" ->
-      BINARY.run env code instr (Builtin.Inplace RShift)
+      BINARY.run env instr (Builtin.Inplace RShift)
   | "INPLACE_TRUE_DIVIDE" ->
-      BINARY.run env code instr (Builtin.Inplace TrueDivide)
+      BINARY.run env instr (Builtin.Inplace TrueDivide)
   | "INPLACE_XOR" ->
-      BINARY.run env code instr (Builtin.Inplace Xor)
+      BINARY.run env instr (Builtin.Inplace Xor)
   | "UNARY_POSITIVE" ->
-      UNARY.run env code instr (Builtin.Unary Positive)
+      UNARY.run env instr (Builtin.Unary Positive)
   | "UNARY_NEGATIVE" ->
-      UNARY.run env code instr (Builtin.Unary Negative)
+      UNARY.run env instr (Builtin.Unary Negative)
   | "UNARY_NOT" ->
-      UNARY.run env code instr (Builtin.Unary Not)
+      UNARY.run env instr (Builtin.Unary Not)
   | "UNARY_INVERT" ->
-      UNARY.run env code instr (Builtin.Unary Invert)
+      UNARY.run env instr (Builtin.Unary Invert)
   | "MAKE_FUNCTION" ->
-      FUNCTION.MAKE.run env code instr
+      FUNCTION.MAKE.run env instr
   | "POP_JUMP_IF_TRUE" ->
-      JUMP.POP_IF.run ~next_is_true:false env code instr next_offset_opt
+      JUMP.POP_IF.run ~next_is_true:false env instr next_offset_opt
   | "POP_JUMP_IF_FALSE" ->
-      JUMP.POP_IF.run ~next_is_true:true env code instr next_offset_opt
+      JUMP.POP_IF.run ~next_is_true:true env instr next_offset_opt
   | "JUMP_FORWARD" ->
-      JUMP.FORWARD.run env code instr next_offset_opt
+      JUMP.FORWARD.run env instr next_offset_opt
   | "JUMP_ABSOLUTE" ->
-      JUMP.ABSOLUTE.run env code instr
+      JUMP.ABSOLUTE.run env instr
   | "GET_ITER" ->
-      ITER.GET.run env code instr
+      ITER.GET.run env instr
   | "FOR_ITER" ->
-      ITER.FOR.run env code instr next_offset_opt
+      ITER.FOR.run env instr next_offset_opt
   | "BUILD_CONST_KEY_MAP" ->
-      BUILD.CONST_KEY_MAP.run env code instr
+      BUILD.CONST_KEY_MAP.run env instr
   | "LOAD_BUILD_CLASS" ->
       LOAD.BUILD_CLASS.run env instr
   | "LOAD_METHOD" ->
       METHOD.LOAD.run env code instr
   | "CALL_METHOD" ->
-      METHOD.CALL.run env code instr
+      METHOD.CALL.run env instr
   | "IMPORT_NAME" ->
       IMPORT.NAME.run env code instr
   | "IMPORT_FROM" ->
       IMPORT.FROM.run env code instr
   | "COMPARE_OP" ->
-      COMPARE_OP.run env code instr
+      COMPARE_OP.run env instr
   | "JUMP_IF_TRUE_OR_POP" ->
-      JUMP.IF_OR_POP.run ~jump_if:true env code instr next_offset_opt
+      JUMP.IF_OR_POP.run ~jump_if:true env instr next_offset_opt
   | "JUMP_IF_FALSE_OR_POP" ->
-      JUMP.IF_OR_POP.run ~jump_if:false env code instr next_offset_opt
+      JUMP.IF_OR_POP.run ~jump_if:false env instr next_offset_opt
   | "BUILD_LIST" ->
       BUILD.run env instr Builtin.List
   | "BUILD_MAP" ->
-      BUILD.MAP.run env code instr
+      BUILD.MAP.run env instr
   | "BUILD_SET" ->
       BUILD.run env instr Builtin.Set
   | "BUILD_TUPLE" ->
@@ -2590,9 +2585,9 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "BUILD_STRING" ->
       BUILD.run env instr Builtin.String
   | "STORE_SUBSCR" ->
-      STORE.SUBSCR.run env code instr
+      STORE.SUBSCR.run env instr
   | "BINARY_SUBSCR" ->
-      BINARY.SUBSCR.run env code instr
+      BINARY.SUBSCR.run env instr
   | "EXTENDED_ARG" ->
       (* The FFI.Instruction framework already did the magic and this opcode can be ignored. *)
       Ok (env, None)
@@ -2619,11 +2614,11 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "ROT_FOUR" ->
       ROT.FOUR.run env instr
   | "UNPACK_SEQUENCE" ->
-      UNPACK.SEQUENCE.run env code instr
+      UNPACK.SEQUENCE.run env instr
   | "RAISE_VARARGS" ->
-      RAISE_VARARGS.run env code instr
+      RAISE_VARARGS.run env instr
   | "FORMAT_VALUE" ->
-      FORMAT_VALUE.run env code instr
+      FORMAT_VALUE.run env instr
   | _ ->
       Error (L.InternalError, Error.TODO (UnsupportedOpcode opname))
 
@@ -2669,7 +2664,7 @@ let rec run env code instructions =
           if Option.is_some maybe_term then Ok (env, maybe_term, rest) else run env code rest
       | Some (_offset, maybe_backedge, label_info) ->
           (* Yes, let's stop there, and don't forget to keep [instr] around *)
-          let* env, (ssa_args, ssa_parameters) = stack_to_ssa env code in
+          let* env, (ssa_args, ssa_parameters) = stack_to_ssa env in
           let label_info =
             if maybe_backedge then Env.Label.update_ssa_parameters label_info ssa_parameters
             else label_info

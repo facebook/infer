@@ -55,9 +55,9 @@ end
     There is no need to model this heap, but the data stack is quite important. *)
 module DataStack : sig
   type cell =
-    | Const of int  (** index in [co_consts] *)
-    | Name of {global: bool; ndx: int}  (** reference to a name, stored in [co_names]. *)
-    | VarName of int  (** reference to a local name, stored in [co_varnames] *)
+    | Const of FFI.Constant.t  (** constant from [co_consts] *)
+    | Name of {global: bool; name: string}  (** reference to a name, from [co_names]. *)
+    | VarName of string  (** reference to a local name, from[co_varnames] *)
     | Temp of T.Ident.t  (** SSA variable *)
     | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
         (** [code] Python object with its name. It can be a function, class, closure, ... *)
@@ -83,11 +83,11 @@ module DataStack : sig
 
   val pp_cell : Format.formatter -> cell -> unit
 
-  val as_code : FFI.Code.t -> cell -> FFI.Code.t option
+  val as_code : cell -> FFI.Code.t option
 
-  val as_name : FFI.Code.t -> cell -> string option
+  val as_name : cell -> string option
 
-  val as_id : FFI.Code.t -> cell -> Ident.t option
+  val as_id : cell -> Ident.t option
 
   val is_path : cell -> bool
 

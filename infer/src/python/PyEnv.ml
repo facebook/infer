@@ -76,9 +76,9 @@ end
 
 module DataStack = struct
   type cell =
-    | Const of int
-    | Name of {global: bool; ndx: int}
-    | VarName of int
+    | Const of FFI.Constant.t
+    | Name of {global: bool; name: string}
+    | VarName of string
     | Temp of T.Ident.t
     | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
     | List of (Builtin.builder * cell list)
@@ -95,12 +95,12 @@ module DataStack = struct
     | NoException
 
   let pp_cell fmt = function
-    | Const n ->
-        F.fprintf fmt "Const(%d)" n
-    | Name {global; ndx} ->
-        F.fprintf fmt "Name(%s, %d)" (if global then "global" else "local") ndx
-    | VarName n ->
-        F.fprintf fmt "VarName(%d)" n
+    | Const c ->
+        F.fprintf fmt "Const(%a)" FFI.Constant.pp c
+    | Name {global; name} ->
+        F.fprintf fmt "Name(%s, %s)" (if global then "global" else "local") name
+    | VarName varname ->
+        F.fprintf fmt "VarName(%s)" varname
     | Temp id ->
         F.fprintf fmt "Temp(%a)" T.Ident.pp id
     | Code {fun_or_class; code_name} ->
@@ -134,10 +134,9 @@ module DataStack = struct
         F.pp_print_string fmt "NoExpception"
 
 
-  let as_code FFI.Code.{co_consts} = function
-    | Const n ->
-        let code = co_consts.(n) in
-        FFI.Constant.as_code code
+  let as_code = function
+    | Const const ->
+        FFI.Constant.as_code const
     | Code {code} ->
         Some code
     | Path _
@@ -157,14 +156,13 @@ module DataStack = struct
         None
 
 
-  let as_name FFI.Code.{co_varnames; co_names; co_consts} = function
-    | Const ndx ->
-        let cst = co_consts.(ndx) in
+  let as_name = function
+    | Const cst ->
         FFI.Constant.as_name cst
-    | Name {ndx} ->
-        Some co_names.(ndx)
-    | VarName ndx ->
-        Some co_varnames.(ndx)
+    | Name {name} ->
+        Some name
+    | VarName varname ->
+        Some varname
     | Path _
     | Code _
     | Temp _
@@ -181,14 +179,14 @@ module DataStack = struct
         None
 
 
-  let as_id code cell =
+  let as_id cell =
     match cell with
     | Const _ ->
-        Option.map ~f:Ident.mk (as_name code cell)
+        Option.map ~f:Ident.mk (as_name cell)
     | Name {global} ->
-        Option.map ~f:(Ident.mk ~global) (as_name code cell)
+        Option.map ~f:(Ident.mk ~global) (as_name cell)
     | VarName _ ->
-        Option.map ~f:(Ident.mk ~global:false) (as_name code cell)
+        Option.map ~f:(Ident.mk ~global:false) (as_name cell)
     | Path id ->
         Some id
     | Code _
