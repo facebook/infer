@@ -18,7 +18,7 @@ type t =
   | Map
   | GenServerPid of {module_name: string option}
   | ModuleInfo
-[@@deriving compare, equal, yojson_of, sexp, hash]
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let pp f = function
   | Any ->
@@ -165,22 +165,3 @@ let erlang_namespace = "erlang"
 let unsupported = "__unsupported"
 
 let infer_erlang_namespace = "__infer__erlang"
-
-module Normalizer = struct
-  let tuple_cache_size = 256
-
-  let tuple = Array.init tuple_cache_size ~f:(fun size -> Tuple size)
-
-  type nonrec t = t
-
-  let normalize x = match x with Tuple size when size < tuple_cache_size -> tuple.(size) | x -> x
-
-  let normalize_opt = function
-    | None ->
-        None
-    | some_t ->
-        IOption.map_changed some_t ~equal:phys_equal ~f:normalize
-
-
-  let normalize_list ts = IList.map_changed ts ~equal:phys_equal ~f:normalize
-end

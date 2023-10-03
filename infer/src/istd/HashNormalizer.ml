@@ -82,4 +82,16 @@ module String = struct
   let hash_normalize_list = StringListNormalizer.normalize
 end
 
+module Int64 = struct
+  type t = int64
+
+  module T = Make (struct
+    type t = int64 [@@deriving equal, hash]
+
+    let normalize : t -> t = Fn.id
+  end)
+
+  let hash_normalize = T.normalize
+end
+
 let reset_all_normalizers () = List.iter !normalizer_reset_funs ~f:(fun f -> f ())

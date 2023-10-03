@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 type t = {namespace: string option; classname: string}
-[@@deriving compare, equal, yojson_of, sexp, hash]
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let make ?namespace classname = {namespace; classname}
 

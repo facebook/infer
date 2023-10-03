@@ -40,6 +40,12 @@ module String : sig
   val hash_normalize_list : t list -> t list
 end
 
+module Int64 : sig
+  type t = int64
+
+  val hash_normalize : t -> t
+end
+
 val reset_all_normalizers : unit -> unit
 (** reset hashtables in all normalizers made with [Make] *)
 

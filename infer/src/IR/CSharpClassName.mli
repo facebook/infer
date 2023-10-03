@@ -7,7 +7,7 @@
 
 open! IStd
 
-type t [@@deriving compare, equal, yojson_of, sexp, hash]
+type t [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 val make : namespace:string option -> classname:string -> t
 
@@ -23,5 +23,3 @@ val pp_with_verbosity : verbose:bool -> Format.formatter -> t -> unit
 (** if [verbose] then print namespace if present, otherwise only print class *)
 
 val classname : t -> string
-
-module Normalizer : HashNormalizer.S with type t = t

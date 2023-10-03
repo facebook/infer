@@ -12,7 +12,7 @@ module F = Format
    - module names
    - nested classes
 *)
-type t = {classname: string} [@@deriving compare, equal, yojson_of, sexp, hash]
+type t = {classname: string} [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let make classname = {classname}
 

@@ -109,14 +109,3 @@ let is_external_via_config t =
 
 let pp_with_verbosity ~verbose fmt t =
   if verbose then pp fmt t else F.pp_print_string fmt (classname t)
-
-
-module Normalizer : HashNormalizer.S with type t = t = struct
-  type nonrec t = t
-
-  let normalize = hash_normalize
-
-  let normalize_opt = hash_normalize_opt
-
-  let normalize_list = hash_normalize_list
-end

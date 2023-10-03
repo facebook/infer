@@ -7,7 +7,7 @@
 
 open! IStd
 
-type t [@@deriving compare, equal, yojson_of, sexp, hash]
+type t [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 module Map : Caml.Map.S with type key = t
 
@@ -52,5 +52,3 @@ val get_user_defined_class_if_anonymous_inner : t -> t option
     SomeClass$NestedClass$1$17$5. In this example, we should return SomeClass$NestedClass.
 
     If this is not an anonymous class, returns [None]. *)
-
-module Normalizer : HashNormalizer.S with type t = t

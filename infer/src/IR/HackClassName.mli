@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-type t [@@deriving compare, equal, yojson_of, sexp, hash]
+type t [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 val make : ?namespace:string -> string -> t
 
