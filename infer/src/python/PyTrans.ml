@@ -2345,7 +2345,7 @@ module UNPACK = struct
 end
 
 module RAISE_VARARGS = struct
-  (** RAISE_VARARGS(argc)
+  (** {v RAISE_VARARGS(argc) v}
 
       Raises an exception using one of the 3 forms of the raise statement, depending on the value of
       [argc]:
