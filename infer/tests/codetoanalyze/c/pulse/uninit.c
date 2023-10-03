@@ -213,3 +213,16 @@ void FP_uninit_var_not_read_interproc_ok() {
   int range_var;
   check_range_wrapper(range_var_valid, &range_var);
 }
+
+struct uninit_s global_uninit_s1;
+
+struct uninit_s global_uninit_s2;
+
+struct uninit_s init_by_conditional_exp(int b) {
+  return b ? global_uninit_s1 : global_uninit_s2;
+}
+
+int call_init_by_conditionaql_exp_ok(int b) {
+  struct uninit_s x = init_by_conditional_exp(b);
+  return x.f1;
+}

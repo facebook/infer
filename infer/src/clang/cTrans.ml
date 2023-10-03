@@ -2070,7 +2070,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                   exp
             in
             let set_temp_var =
-              [Sil.Store {e1= exp_to_init; typ= var_typ; e2= init_exp; loc= sil_loc}]
+              match var_typ with
+              | {Typ.desc= Tstruct struct_name} ->
+                  CStructUtils.struct_copy context.CContext.tenv sil_loc exp_to_init init_exp
+                    ~typ:var_typ ~struct_name
+              | _ ->
+                  [Sil.Store {e1= exp_to_init; typ= var_typ; e2= init_exp; loc= sil_loc}]
             in
             let return = (exp_to_init, var_typ) in
             let tmp_var_res_trans =
