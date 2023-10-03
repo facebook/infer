@@ -3479,3 +3479,68 @@ f(0, 0, 0, "toto")
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
+
+
+let%test_module "format_value" =
+  ( module struct
+    let%expect_test _ =
+      let source = {|
+def f(name, args):
+    return f"foo.{name!r}{name!s}{name!a}"
+          |} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_code("dummy.f")
+              ret null
+
+        }
+
+        define dummy.f(name: *PyObject, args: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &name
+              n1 = $builtins.python_format_repr(n0)
+              n2 = $builtins.python_format(n1, null)
+              n3:*PyObject = load &name
+              n4 = $builtins.python_format_str(n3)
+              n5 = $builtins.python_format(n4, null)
+              n6:*PyObject = load &name
+              n7 = $builtins.python_format_ascii(n6)
+              n8 = $builtins.python_format(n7, null)
+              n9 = $builtins.python_build_string($builtins.python_string("foo."), n2, n5, n8)
+              ret n9
+
+        }
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_format(*PyObject, *PyObject) : *PyObject
+
+        declare $builtins.python_format_ascii(*PyObject) : *PyObject
+
+        declare $builtins.python_format_str(*PyObject) : *PyObject
+
+        declare $builtins.python_format_repr(*PyObject) : *PyObject
+
+        declare $builtins.python_build_string(...) : *String
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+  end )

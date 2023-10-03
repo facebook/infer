@@ -61,8 +61,7 @@ module DataStack : sig
     | Temp of T.Ident.t  (** SSA variable *)
     | Code of {fun_or_class: bool; code_name: string; code: FFI.Code.t}
         (** [code] Python object with its name. It can be a function, class, closure, ... *)
-    | List of (PyBuiltin.collection * T.Exp.t list)
-        (** Light encoding of raw Python tuples/lists. *)
+    | List of (PyBuiltin.builder * T.Exp.t list)  (** Light encoding of raw Python tuples/lists. *)
     | Map of (T.Exp.t * cell) list  (** Light encoding of raw Python maps/dicts. *)
     | BuiltinBuildClass  (** see Python's [LOAD_BUILD_CLASS] *)
     | Import of {import_path: Ident.t; symbols: string list}

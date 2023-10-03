@@ -251,8 +251,12 @@ and new_py_instruction obj =
   let* opcode = read_int "opcode" obj in
   let* opt = read_field obj (fun _ x -> Ok x) "arg" in
   let* arg = if Py.is_none opt then Ok 0 else get_int "arg" opt in
+  (* [argval] is useful for debugging, but it is difficult to support it for
+     FORMAT_VALUE at the moment, so for this opcode, I'll skip it. It just
+     points to the function to use for formatting, so we don't need it. *)
   let* argval =
     if Py.is_none opt then Ok PYCNone
+    else if String.equal opname "FORMAT_VALUE" then Ok PYCNone
     else
       let* opt = read_field obj (fun _ x -> Ok x) "argval" in
       new_py_constant opt

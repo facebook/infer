@@ -1597,21 +1597,22 @@ module BUILD = struct
       Ok (env, None)
   end
 
-  module COLLECTION = struct
-    (** {v BUILD_LIST(count) v}
-        {v BUILD_SET(count) v}
-        {v BUILD_TUPLE(count) v}
+  (** {v BUILD_LIST(count) v}
+      {v BUILD_SET(count) v}
+      {v BUILD_TUPLE(count) v}
+      {v BUILD_STRING(count) v}
 
-        Creates a collection consuming count items from the stack, and pushes the resulting
-        collection onto the stack. *)
-    let run env code {FFI.Instruction.opname; arg= count} collection =
-      let open IResult.Let_syntax in
-      Debug.p "[%s] count = %d\n" opname count ;
-      let* env, items = pop_n_datastack opname env count in
-      let* env, items = cells_to_textual env code items in
-      let env = Env.push env (DataStack.List (collection, items)) in
-      Ok (env, None)
-  end
+      Creates a collection/string consuming [count] items from the stack, and pushes the resulting
+      collection/string onto the stack.
+
+      For strings, it concatenate the inputs into the output. *)
+  let run env code {FFI.Instruction.opname; arg= count} collection =
+    let open IResult.Let_syntax in
+    Debug.p "[%s] count = %d\n" opname count ;
+    let* env, items = pop_n_datastack opname env count in
+    let* env, items = cells_to_textual env code items in
+    let env = Env.push env (DataStack.List (collection, items)) in
+    Ok (env, None)
 end
 
 (** Return the offset of the next opcode, if any *)
@@ -2374,6 +2375,68 @@ module RAISE_VARARGS = struct
         Error (L.InternalError, Error.TODO (RaiseExceptionSource tos))
 end
 
+module FORMAT_VALUE = struct
+  (** {v FORMAT_VALUE(flags) v}
+
+      Used for implementing formatted literal strings (f-strings). Pops an optional [fmt_spec] from
+      the stack, then a required value. [flags] is interpreted as follows:
+
+      (flags & 0x03) == 0x00: value is formatted as-is.
+
+      (flags & 0x03) == 0x01: call str() on value before formatting it.
+
+      (flags & 0x03) == 0x02: call repr() on value before formatting it.
+
+      (flags & 0x03) == 0x03: call ascii() on value before formatting it.
+
+      (flags & 0x04) == 0x04: pop fmt_spec from the stack and use it, else use an empty fmt_spec.
+
+      Formatting is performed using [PyObject_Format()]. The result is pushed on the stack. *)
+
+  let mk_conv flags =
+    match flags land 0x03 with
+    | 0x00 ->
+        None
+    | 0x01 ->
+        Some Builtin.PythonFormatStr
+    | 0x02 ->
+        Some Builtin.PythonFormatRepr
+    | 0x03 ->
+        Some Builtin.PythonFormatAscii
+    | _ ->
+        (* unreachable *)
+        L.die InternalError "[FORMAT_VALUE] impossible flags 0x%x@\n" flags
+
+
+  let has_fmt_spec flags = Int.equal (flags land 0x04) 0x04
+
+  let run env code {FFI.Instruction.opname; arg= flags} =
+    let open IResult.Let_syntax in
+    Debug.p "[%s] flags= %d@\n" opname flags ;
+    let* env, fmt_spec =
+      (* fmt_spec must be a string literal *)
+      if has_fmt_spec flags then
+        let* env, fmt_spec = pop_datastack opname env in
+        let* env, fmt_spec, _ = load_cell env code fmt_spec in
+        Ok (env, fmt_spec)
+      else Ok (env, T.Exp.Const Null)
+    in
+    let* env, value = pop_datastack opname env in
+    let* env, value, _typ = load_cell env code value in
+    let conv_fn = mk_conv flags in
+    let env, value =
+      match conv_fn with
+      | None ->
+          (env, value)
+      | Some conv_fn ->
+          let env, id, _typ = Env.mk_builtin_call env conv_fn [value] in
+          (env, T.Exp.Var id)
+    in
+    let env, id, _typ = Env.mk_builtin_call env Builtin.PythonFormat [value; fmt_spec] in
+    let env = Env.push env (DataStack.Temp id) in
+    Ok (env, None)
+end
+
 (** Main opcode dispatch function. *)
 let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) next_offset_opt =
   Debug.p "Dump Stack:\n%a\n" (Pp.seq ~sep:"\n" DataStack.pp_cell) (Env.stack env) ;
@@ -2494,13 +2557,15 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
   | "JUMP_IF_FALSE_OR_POP" ->
       JUMP.IF_OR_POP.run ~jump_if:false env code instr next_offset_opt
   | "BUILD_LIST" ->
-      BUILD.COLLECTION.run env code instr Builtin.List
+      BUILD.run env code instr Builtin.List
   | "BUILD_MAP" ->
       BUILD.MAP.run env code instr
   | "BUILD_SET" ->
-      BUILD.COLLECTION.run env code instr Builtin.Set
+      BUILD.run env code instr Builtin.Set
   | "BUILD_TUPLE" ->
-      BUILD.COLLECTION.run env code instr Builtin.Tuple
+      BUILD.run env code instr Builtin.Tuple
+  | "BUILD_STRING" ->
+      BUILD.run env code instr Builtin.String
   | "STORE_SUBSCR" ->
       STORE.SUBSCR.run env code instr
   | "BINARY_SUBSCR" ->
@@ -2534,6 +2599,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
       UNPACK.SEQUENCE.run env code instr
   | "RAISE_VARARGS" ->
       RAISE_VARARGS.run env code instr
+  | "FORMAT_VALUE" ->
+      FORMAT_VALUE.run env code instr
   | _ ->
       Error (L.InternalError, Error.TODO (UnsupportedOpcode opname))
 

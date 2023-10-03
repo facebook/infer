@@ -30,7 +30,7 @@ type binary_op =
   | Xor
 [@@deriving compare]
 
-type collection = List | Set | Tuple | Map [@@deriving compare]
+type builder = List | Set | Tuple | Map | String [@@deriving compare]
 
 type textual =
   | IsTrue
@@ -43,10 +43,14 @@ type textual =
   | PythonCode
   | PythonIter
   | PythonIterNext
-  | PythonBuild of collection
+  | PythonBuild of builder
   | PythonIndex
   | PythonSubscriptGet
   | PythonSubscriptSet
+  | PythonFormatRepr
+  | PythonFormatStr
+  | PythonFormatAscii
+  | PythonFormat
   | CompareOp of Compare.t
 [@@deriving compare]
 

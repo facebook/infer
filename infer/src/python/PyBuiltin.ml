@@ -92,9 +92,9 @@ module Builtin = struct
         "xor"
 
 
-  type collection = List | Set | Tuple | Map [@@deriving compare]
+  type builder = List | Set | Tuple | Map | String [@@deriving compare]
 
-  let collection_to_string = function
+  let builder_to_string = function
     | List ->
         "list"
     | Set ->
@@ -103,8 +103,11 @@ module Builtin = struct
         "tuple"
     | Map ->
         "map"
+    | String ->
+        "string"
 
 
+  (* TODO: remove some of the redundant Python prefixes *)
   type textual =
     | IsTrue
     | Binary of binary_op
@@ -117,10 +120,14 @@ module Builtin = struct
     | PythonCode
     | PythonIter
     | PythonIterNext
-    | PythonBuild of collection
+    | PythonBuild of builder
     | PythonIndex
     | PythonSubscriptGet
     | PythonSubscriptSet
+    | PythonFormatRepr
+    | PythonFormatStr
+    | PythonFormatAscii
+    | PythonFormat
     | CompareOp of Compare.t
   [@@deriving compare]
 
@@ -177,13 +184,21 @@ let to_proc_name = function
         | PythonIterNext ->
             "python_iter_next"
         | PythonBuild builder ->
-            sprintf "python_build_%s" (collection_to_string builder)
+            sprintf "python_build_%s" (builder_to_string builder)
         | PythonIndex ->
             "python_index"
         | PythonSubscriptGet ->
             "python_subscript_get"
         | PythonSubscriptSet ->
             "python_subscript_set"
+        | PythonFormatStr ->
+            "python_format_str"
+        | PythonFormatRepr ->
+            "python_format_repr"
+        | PythonFormatAscii ->
+            "python_format_ascii"
+        | PythonFormat ->
+            "python_format"
         | CompareOp op ->
             sprintf "python_%s" (Compare.to_string op)
       in
@@ -337,6 +352,7 @@ module Set = struct
       ; no_formal (Builtin.PythonBuild Set) ~result_type:(annot PyCommon.pySet)
       ; no_formal (Builtin.PythonBuild Tuple) ~result_type:(annot PyCommon.pyTuple)
       ; no_formal (Builtin.PythonBuild Map) ~result_type:(annot PyCommon.pyMap)
+      ; no_formal (Builtin.PythonBuild String) ~result_type:(annot string_)
       ; ( Builtin.PythonIndex
         , { formals_types= Some [annot PyCommon.pyObject; annot T.Typ.Int]
           ; result_type= annot PyCommon.pyObject
@@ -348,6 +364,22 @@ module Set = struct
       ; ( Builtin.PythonSubscriptSet
         , { formals_types= Some [annotatedObject; annotatedObject; annotatedObject]
           ; result_type= annot PyCommon.pyNone
+          ; used_struct_types= [] } )
+      ; ( Builtin.PythonFormatStr
+        , { formals_types= Some [annotatedObject]
+          ; result_type= annotatedObject (* usually a string, but not always *)
+          ; used_struct_types= [] } )
+      ; ( Builtin.PythonFormatAscii
+        , { formals_types= Some [annotatedObject]
+          ; result_type= annotatedObject (* usually a string, but not always *)
+          ; used_struct_types= [] } )
+      ; ( Builtin.PythonFormatRepr
+        , { formals_types= Some [annotatedObject]
+          ; result_type= annotatedObject (* usually a string, but not always *)
+          ; used_struct_types= [] } )
+      ; ( Builtin.PythonFormat
+        , { formals_types= Some [annotatedObject; annotatedObject]
+          ; result_type= annotatedObject (* usually a string, but might be None *)
           ; used_struct_types= [] } )
       ; compare_op Eq
       ; compare_op Neq
