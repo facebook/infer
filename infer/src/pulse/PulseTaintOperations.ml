@@ -507,12 +507,10 @@ let dedup_reports results =
     | Recoverable (a, errors) ->
         let dedup_errors error (acc, taint_found) =
           match error with
-          | ReportableError {diagnostic= TaintFlow {location; policy_id} as diagnostic} ->
+          | ReportableError {diagnostic= TaintFlow {location; policy_id}} ->
               let found_duplicate =
                 LocationIntSet.exists (find_duplicate_taint location policy_id) taint_found
               in
-              L.d_printfln_escaped ~color:Red "Taint error before deduplication %a" Diagnostic.pp
-                diagnostic ;
               let taint_found = LocationIntSet.add (location, policy_id) taint_found in
               if found_duplicate then (acc, taint_found) else (error :: acc, taint_found)
           | _ ->
