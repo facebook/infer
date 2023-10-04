@@ -19,11 +19,11 @@
     test_equal_atom_Bad/0,
     test_equal_int_any_Latent/1,
     test_equal_int_any_2_Latent/1,
-    fn_test_equal_atom_any_Latent/1,
-    fp_test_equal_atom_any_2_Latent/1,
-    fn_test_equal_string_any_Latent/1,
+    test_equal_atom_any_Latent/1,
+    test_equal_atom_any_2_Latent/1,
+    fp_test_equal_string_any_Latent/1,
     fp_test_equal_string_any_2_Latent/1,
-    fn_test_equal_any_any_Latent/2,
+    fp_test_equal_any_any_Latent/2,
     fp_test_equal_any_any_2_Latent/2,
     test_neg_equal_atom_Ok/0,
     test_neg_equal_atom_Bad/0,
@@ -128,19 +128,19 @@ test_equal_int_any_Latent(X) ->
 test_equal_int_any_2_Latent(X) ->
     ?CRASH_IF_EQUAL(false, X == 42).
 
-fn_test_equal_atom_any_Latent(X) ->
+test_equal_atom_any_Latent(X) ->
     ?CRASH_IF_EQUAL(true, X == foo).
 
-fp_test_equal_atom_any_2_Latent(X) ->
+test_equal_atom_any_2_Latent(X) ->
     ?CRASH_IF_EQUAL(false, X == foo).
 
-fn_test_equal_string_any_Latent(X) ->
+fp_test_equal_string_any_Latent(X) ->
     ?CRASH_IF_EQUAL(true, X == "foo").
 
 fp_test_equal_string_any_2_Latent(X) ->
     ?CRASH_IF_EQUAL(false, X == "foo").
 
-fn_test_equal_any_any_Latent(X, Y) ->
+fp_test_equal_any_any_Latent(X, Y) ->
     ?CRASH_IF_EQUAL(true, X == Y).
 
 fp_test_equal_any_any_2_Latent(X, Y) ->

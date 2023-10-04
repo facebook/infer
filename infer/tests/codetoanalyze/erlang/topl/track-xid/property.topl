@@ -1,0 +1,4 @@
+property Xid
+  start->start: *
+  start->track: "b:src/2"(V, X, R) when X:Cons.strval == "xid" => r := V
+  track->error: "b:tgt/2"(V, X, R) when X:Cons.strval == "xid" && r == V

@@ -475,42 +475,46 @@ module Comparison = struct
 
     let le = ordering Le incompatible_lt
 
-    (** Compare two abstract values, when one of them might be an integer, by disjuncting on the
-        case whether it is (an integer) or not.
+    (** Compare two abstract values, when one of them has a known type and the other might be of the
+        same type, by disjuncting on the case whether the latter is the same type or not.
 
         Parameters (not in order):
 
-        - Two abstract values [x] and [y]. One of them is expected to ba a known integer, and the
+        - Two abstract values [x] and [y]. One of them is expected to have a known type, and the
           other one to have an undetermined dynamic type.
 
-        - The (erlang) types of [x] and [y] as determined by the caller. Corresponding to the
-          expectation mentioned above, [(ty_x, ty_y)] is expected to be either [(Integer, Any)] or
-          [(Any, Integer)] (this is not checked by the function and is the caller responsibility).
-
         - An [are_compatible] (boolean) abstract value that witnesses if the types of [x] and [y]
-          are both integers or if one of them is not (this is typically obtained by using
+          are both the same or if one of them is not (this is typically obtained by using
           {!has_erlang_type} on the Any-typed argument).
 
-        Returns: a disjunction built on top of [are_compatible], that compares [x] and [y] as
-        integers when they both are, and as incompatible values when the any-typed one is not an
-        integer. *)
-    let any_with_integer_split cmp location path ~are_compatible ty_x ty_y x y : disjunction_maker =
+        - A [cmp_compat] and a [cmp_incompat] function, each of them to be used according to the
+          corresponding value of [are_compatible]. Those are typically obtained as a monotyped
+          comparator function such as some [cmp.integer], or giving the types of [x] and [y] to some
+          [cmp.incompatible] comparator.
+
+        Returns: a disjunction built on top of [are_compatible], that compares [x] and [y] as same
+        types when they both are, and as incompatible values when the any-typed one is not same
+        typed. *)
+    let any_with_type_split cmp_compat cmp_incompat location path ~are_compatible x y :
+        disjunction_maker =
      fun astate ->
-      let int_result =
-        let** astate_int = PulseArithmetic.prune_positive are_compatible astate in
-        let++ astate_int, int_comparison = cmp.integer x y location path astate_int in
-        let int_hist = Hist.single_alloc path location "any_int_comparison" in
-        (astate_int, (int_comparison, int_hist))
+      let same_type_result =
+        let** astate_same_type = PulseArithmetic.prune_positive are_compatible astate in
+        let++ astate_same_type, same_type_comparison =
+          cmp_compat x y location path astate_same_type
+        in
+        let same_type_hist = Hist.single_alloc path location "any_same_type_comparison" in
+        (astate_same_type, (same_type_comparison, same_type_hist))
       in
       let incompatible_result =
         let** astate_incompatible = PulseArithmetic.prune_eq_zero are_compatible astate in
         let++ astate_incompatible, incompatible_comparison =
-          cmp.incompatible ty_x ty_y x y location path astate_incompatible
+          cmp_incompat x y location path astate_incompatible
         in
         let incompatible_hist = Hist.single_alloc path location "any_incompatible_comparison" in
         (astate_incompatible, (incompatible_comparison, incompatible_hist))
       in
-      SatUnsat.to_list int_result @ SatUnsat.to_list incompatible_result
+      SatUnsat.to_list same_type_result @ SatUnsat.to_list incompatible_result
   end
 
   (** Makes an abstract value holding the comparison result of two parameters. We perform a case
@@ -533,15 +537,19 @@ module Comparison = struct
 
       The final result is computed as follows:
 
-      - If the parameters are both of a supported type, integers, then we compare them accordingly
-        (eg. the [cmp.integer] function will then typically compare their value fields).
+      - If the parameters are both of a supported type, eg. integers, then we compare them
+        accordingly (eg. the [cmp.integer] function will then typically compare their value fields).
       - If the parameters have incompatible types, then we return the result of a comparison of
         incompatible types (eg. equality would be false, and inequality would be true).
       - If both parameters have the same unsupported type, then the comparison is unsupported and we
         use the [cmp.unsupported] function (that could for instance return an - overapproximating -
         unconstrained result).
-      - If at least one parameter has no known dynamic type (or, equivalently, its type is [Any]),
-        then the comparison is also unsupported.
+      - If one parameter has a supported type, say [Integer] and the other has no known dynamic type
+        (or, equivalently, its type is [Any]), then we case-split the unknown-typed value on being
+        an [Integer] or not and use the appropriate comparison on each case.
+      - If both parameters have no known dynamic type (or, equivalently, their type is [Any]), or
+        one has an unsupported type and the other one has [Any] type, then the comparison is also
+        unsupported.
 
       Note that, on supported types (eg. integers), it is important that the [cmp] functions decide
       themselves if they should compare some specific fields or not, instead of getting these fields
@@ -556,6 +564,7 @@ module Comparison = struct
     let x_typ = get_erlang_type_or_any x_val astate in
     let y_typ = get_erlang_type_or_any y_val astate in
     match (x_typ, y_typ) with
+    (* When supporting more types, this should probably be refactored to avoid N² cases. *)
     | Integer, Integer ->
         let<**> astate, result = cmp.integer x y location path astate in
         let hist = Hist.single_alloc path location "integer_comparison" in
@@ -566,11 +575,21 @@ module Comparison = struct
         [Ok (astate, (result, hist))]
     | Integer, Any ->
         let<**> astate, are_compatible = has_erlang_type y_val Integer astate in
-        Comparator.any_with_integer_split cmp location path ~are_compatible Integer Any x y astate
+        Comparator.any_with_type_split cmp.integer (cmp.incompatible Integer Any) location path
+          ~are_compatible x y astate
     | Any, Integer ->
         let<**> astate, are_compatible = has_erlang_type x_val Integer astate in
-        Comparator.any_with_integer_split cmp location path ~are_compatible Any Integer x y astate
-    | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map ->
+        Comparator.any_with_type_split cmp.integer (cmp.incompatible Any Integer) location path
+          ~are_compatible x y astate
+    | Atom, Any ->
+        let<**> astate, are_compatible = has_erlang_type y_val Atom astate in
+        Comparator.any_with_type_split cmp.atom (cmp.incompatible Atom Any) location path
+          ~are_compatible x y astate
+    | Any, Atom ->
+        let<**> astate, are_compatible = has_erlang_type x_val Atom astate in
+        Comparator.any_with_type_split cmp.atom (cmp.incompatible Any Atom) location path
+          ~are_compatible x y astate
+    | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map | Any, _ | _, Any ->
         let<**> astate, result = cmp.unsupported x y location path astate in
         let hist = Hist.single_alloc path location "unsupported_comparison" in
         [Ok (astate, (result, hist))]
