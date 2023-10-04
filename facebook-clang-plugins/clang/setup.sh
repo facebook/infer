@@ -196,6 +196,10 @@ if [[ "$PLATFORM" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
         -DLLVM_ENABLE_PROJECTS="clang;compiler-rt"
         -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi"
         -DZLIB_INCLUDE_DIR="$ZLIB/include"
+        -DLLVM_ENABLE_LIBXML2=Off
+        -DLLVM_ENABLE_TERMINFO=Off
+        -DLLVM_ENABLE_Z3_SOLVER=Off
+        -DLLVM_ENABLE_ZSTD=Off
     )
 else
     CMAKE_ARGS+=(-DLLVM_ENABLE_PROJECTS="clang;compiler-rt;openmp"
