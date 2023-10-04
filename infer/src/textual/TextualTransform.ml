@@ -28,6 +28,20 @@ let module_map_procs ~f (module_ : Module.t) =
   {module_ with decls}
 
 
+let module_fold_procs ~init ~f (module_ : Module.t) =
+  let open Module in
+  let decls, acc =
+    List.fold module_.decls ~init:([], init) ~f:(fun (decls, acc) decl ->
+        match decl with
+        | Proc pdesc ->
+            let pdesc, acc = f pdesc acc in
+            (Proc pdesc :: decls, acc)
+        | Global _ | Struct _ | Procdecl _ ->
+            (decl :: decls, acc) )
+  in
+  ({module_ with decls= List.rev decls}, acc)
+
+
 module FixClosureAppExpr = struct
   let is_ident string =
     let regexp = Str.regexp "n[0-9]+" in
@@ -239,9 +253,120 @@ module Subst = struct
     {pdesc with nodes= List.map pdesc.nodes ~f:(fun node -> of_node node eqs)}
 end
 
-let remove_effects_in_subexprs _module =
+module TransformClosures = struct
+  let typename ~(closure : ProcDesc.t) ~(enclosing : ProcDesc.t) fresh_index loc : TypeName.t =
+    (* we create a new type for this closure *)
+    let pp fmt ({enclosing_class; name} : QualifiedProcName.t) =
+      match enclosing_class with
+      | TopLevel ->
+          ProcName.pp fmt name
+      | Enclosing tname ->
+          F.fprintf fmt "%a_%a" TypeName.pp tname ProcName.pp name
+    in
+    let value =
+      F.asprintf "__Closure_%a_in_%a_%d" pp closure.procdecl.qualified_name pp
+        enclosing.procdecl.qualified_name fresh_index
+    in
+    {value; loc}
+
+
+  let mk_fielddecl (varname : VarName.t) (typ : Typ.t) : FieldDecl.t =
+    (* each captured variable will be associated to an instance field *)
+    let qualified_name : qualified_fieldname =
+      {enclosing_class= TypeName.wildcard; name= {value= varname.value; loc= varname.loc}}
+    in
+    {qualified_name; typ; attributes= []}
+
+
+  let signature_body lang proc captured params =
+    Exp.call_sig proc (List.length captured + List.length params) (Some lang)
+
+
+  let closure_building_instrs id loc typename (closure : ProcDesc.t) captured =
+    let alloc : Instr.t = Let {id; loc; exp= Exp.allocate_object typename} in
+    let formals =
+      Option.value_exn ~message:"implementation always have formals" closure.procdecl.formals_types
+    in
+    let typed_params = List.zip_exn closure.params formals in
+    let instrs, fields, _ =
+      List.fold typed_params ~init:([], [], captured)
+        ~f:(fun (instrs, fields, captured) (varname, ({typ} : Typ.annotated)) ->
+          match captured with
+          | [] ->
+              (instrs, fields, [])
+          | arg :: captured ->
+              let fielddecl = mk_fielddecl varname typ in
+              let field = fielddecl.qualified_name in
+              let instr : Instr.t =
+                Store {exp1= Field {exp= Var id; field}; typ= Some typ; exp2= arg; loc}
+              in
+              (instr :: instrs, fielddecl :: fields, captured) )
+    in
+    (alloc :: List.rev instrs, List.rev fields)
+
+
+  let type_declaration name fields : Struct.t = {name; supers= []; fields; attributes= []}
+
+  let closure_call_qualified_procname loc : QualifiedProcName.t =
+    {enclosing_class= Enclosing TypeName.wildcard; name= {value= "call"; loc}}
+
+
+  let closure_call_exp loc closure args : Exp.t =
+    Call {proc= closure_call_qualified_procname loc; args= closure :: args; kind= Virtual}
+
+
+  let closure_call_procdecl loc typename (closure : ProcDesc.t) nb_captured : ProcDecl.t =
+    let procdecl = closure.procdecl in
+    let unresolved_qualified_name = closure_call_qualified_procname loc in
+    let qualified_name = {unresolved_qualified_name with enclosing_class= Enclosing typename} in
+    let this_typ = Typ.mk_without_attributes (Ptr (Struct typename)) in
+    let formals_types =
+      Option.map procdecl.formals_types ~f:(fun formals ->
+          this_typ :: List.drop formals nb_captured )
+    in
+    let result_type = procdecl.result_type in
+    {qualified_name; formals_types; result_type; attributes= []}
+
+
+  let closure_call_procdesc loc typename (closure : ProcDesc.t) fields params : ProcDesc.t =
+    let procdecl = closure_call_procdecl loc typename closure (List.length fields) in
+    let start : NodeName.t = {value= "entry"; loc} in
+    let this_var : VarName.t = {value= "__this"; loc} in
+    let args =
+      List.append
+        (List.map fields ~f:(fun ({qualified_name= field} : FieldDecl.t) ->
+             Exp.(Load {exp= Field {exp= Load {exp= Lvar this_var; typ= None}; field}; typ= None}) )
+        )
+        (List.map params ~f:(fun vname -> Exp.Load {exp= Lvar vname; typ= None}))
+    in
+    let node : Node.t =
+      let last : Terminator.t =
+        Ret (Exp.Call {proc= closure.procdecl.qualified_name; args; kind= NonVirtual})
+      in
+      { label= start
+      ; ssa_parameters= []
+      ; exn_succs= []
+      ; last
+      ; instrs= []
+      ; last_loc= loc
+      ; label_loc= loc }
+    in
+    let params = this_var :: params in
+    {procdecl; nodes= [node]; start; params; locals= []; exit_loc= loc}
+end
+
+let remove_effects_in_subexprs lang decls_env _module =
   let module State = struct
-    type t = {instrs_rev: Instr.t list; fresh_ident: Ident.t}
+    type t =
+      { instrs_rev: Instr.t list
+      ; fresh_ident: Ident.t
+      ; pdesc: ProcDesc.t
+      ; closure_declarations: Module.decl list }
+
+    let add_closure_declaration struct_ procdecl state =
+      { state with
+        closure_declarations= Struct struct_ :: Proc procdecl :: state.closure_declarations }
+
 
     let push_instr instr state = {state with instrs_rev= instr :: state.instrs_rev}
 
@@ -270,18 +395,41 @@ let remove_effects_in_subexprs _module =
           let fresh = state.State.fresh_ident in
           let new_instr : Instr.t = Let {id= fresh; exp= Call {proc; args; kind}; loc} in
           (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
-    | Closure {proc= _; captured; params= _} ->
-        let _captured, state = flatten_exp_list loc captured state in
-        let fresh = state.State.fresh_ident in
-        let new_instr : Instr.t = Let {id= fresh; exp= Exp.Const Const.Null; loc} in
-        (* TODO (next diff): replace by closure constructor *)
-        (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
+    | Closure {proc; captured; params} ->
+        let captured, state = flatten_exp_list loc captured state in
+        let id_object = state.State.fresh_ident in
+        let state = State.incr_fresh state in
+        let signature = TransformClosures.signature_body lang proc captured params in
+        let closure =
+          match TextualDecls.get_procdesc decls_env signature with
+          | Some procdecl ->
+              procdecl
+          | None ->
+              L.die InternalError "TextualBasicVerication should make this situation impossible"
+        in
+        let typename =
+          TransformClosures.typename ~closure ~enclosing:state.State.pdesc (Ident.to_int id_object)
+            loc
+        in
+        let instrs, fields =
+          TransformClosures.closure_building_instrs id_object loc typename closure captured
+        in
+        let state =
+          List.fold instrs ~init:state ~f:(fun state instr -> State.push_instr instr state)
+        in
+        let struct_ = TransformClosures.type_declaration typename fields in
+        let call_procdecl =
+          TransformClosures.closure_call_procdesc loc typename closure fields params
+        in
+        let state = State.add_closure_declaration struct_ call_procdecl state in
+        (Var id_object, state)
     | Apply {closure; args} ->
-        let _closure, state = flatten_exp loc closure state in
-        let _args, state = flatten_exp_list loc args state in
+        let closure, state = flatten_exp loc closure state in
+        let args, state = flatten_exp_list loc args state in
         let fresh = state.State.fresh_ident in
-        let new_instr : Instr.t = Let {id= fresh; exp= Exp.Const Const.Null; loc} in
-        (* TODO (next diff): replace by closure call *)
+        let new_instr : Instr.t =
+          Let {id= fresh; exp= TransformClosures.closure_call_exp loc closure args; loc}
+        in
         (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
   and flatten_exp_list loc exp_list state =
     let exp_list, state =
@@ -332,26 +480,30 @@ let remove_effects_in_subexprs _module =
     | Unreachable ->
         (last, state)
   in
-  let flatten_node (node : Node.t) fresh_ident : Node.t * Ident.t =
+  let flatten_node (node : Node.t) pdesc fresh_ident closure_declarations =
     let state =
-      let init : State.t = {instrs_rev= []; fresh_ident} in
+      let init : State.t = {instrs_rev= []; fresh_ident; pdesc; closure_declarations} in
       List.fold node.instrs ~init ~f:(fun state instr -> flatten_in_instr instr state)
     in
     let last, ({instrs_rev; fresh_ident} : State.t) =
       flatten_in_terminator node.last_loc node.last state
     in
-    ({node with last; instrs= List.rev instrs_rev}, fresh_ident)
+    ({node with last; instrs= List.rev instrs_rev}, fresh_ident, state.closure_declarations)
   in
-  let flatten_pdesc (pdesc : ProcDesc.t) =
+  let flatten_pdesc (pdesc : ProcDesc.t) closure_declarations =
     let fresh = collect_ident_defs pdesc |> Ident.fresh in
-    let _, rev_nodes =
-      List.fold pdesc.nodes ~init:(fresh, []) ~f:(fun (fresh, instrs) node ->
-          let node, fresh = flatten_node node fresh in
-          (fresh, node :: instrs) )
+    let _, closure_declarations, rev_nodes =
+      List.fold pdesc.nodes ~init:(fresh, closure_declarations, [])
+        ~f:(fun (fresh, closure_declarations, instrs) node ->
+          let node, fresh, closure_declarations =
+            flatten_node node pdesc fresh closure_declarations
+          in
+          (fresh, closure_declarations, node :: instrs) )
     in
-    {pdesc with nodes= List.rev rev_nodes}
+    ({pdesc with nodes= List.rev rev_nodes}, closure_declarations)
   in
-  module_map_procs ~f:flatten_pdesc _module
+  let module_, closure_declarations = module_fold_procs ~init:[] ~f:flatten_pdesc _module in
+  {module_ with decls= closure_declarations @ module_.decls}
 
 
 let remove_if_terminator module_ =

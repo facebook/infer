@@ -86,7 +86,8 @@ let%test_module "remove_effects_in_subexprs transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module input_text |> TextualTransform.remove_effects_in_subexprs in
+      let lang = Lang.Hack in
+      let module_ = parse_module input_text |> remove_effects_in_subexprs lang in
       F.printf "%a" Module.pp module_ ;
       [%expect
         {|
@@ -746,11 +747,19 @@ let%expect_test "closures" =
             ret __sil_plusa(n1, n2)
 
       } |}] ;
-  let module_ = TextualTransform.remove_effects_in_subexprs module_ in
+  let module_ = remove_effects_in_subexprs Lang.Hack module_ in
   F.printf "%a" Module.pp module_ ;
   [%expect
     {|
       .source_language = "hack"
+
+      type __Closure_C_add_in_D_foo_4 = {x: int; y: int}
+
+      define __Closure_C_add_in_D_foo_4.call(__this: *__Closure_C_add_in_D_foo_4, p1: int, p2: float, p3: string) : int {
+        #entry:
+            ret C.add([__this.?.x], [__this.?.y], p1, p2, p3)
+
+      }
 
       define C.add(x: int, y: int, z: int, u: float, v: string) : int {
         #entry:
@@ -765,16 +774,20 @@ let%expect_test "closures" =
         local y: *HackMixed
         #entry:
             n3:int = load &x
-            n4 = null
+            n4 = __sil_allocate(<__Closure_C_add_in_D_foo_4>)
+            store n4.?.x <- n3:int
+            store n4.?.y <- 1:int
             n0 = n4
             store &y <- n0:*HackMixed
             n5:*HackMixed = load &y
             n6:int = load &x
-            n7 = null
+            n7 = n5.?.call(n6, 1., null)
             n1 = n7
             n8:int = load &x
-            n9 = null
+            n9 = n0.?.call(n8, 2., null)
             n2 = n9
             ret __sil_plusa(n1, n2)
 
-      } |}]
+      } |}] ;
+  type_check module_ ;
+  [%expect {| verification succeeded |}]

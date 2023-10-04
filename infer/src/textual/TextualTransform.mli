@@ -12,7 +12,8 @@ open! IStd
 *)
 val fix_closure_app : Textual.Module.t -> Textual.Module.t
 
-val remove_effects_in_subexprs : Textual.Module.t -> Textual.Module.t
+val remove_effects_in_subexprs :
+  Textual.Lang.t -> TextualDecls.t -> Textual.Module.t -> Textual.Module.t
 (* generates enough intermediate Let and Load instructions to make the procdesc free
    of side-effect sub-expressions.
    Example:

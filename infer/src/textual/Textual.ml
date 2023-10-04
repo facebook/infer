@@ -596,6 +596,10 @@ module Exp = struct
 
   let cast typ exp = call_non_virtual ProcDecl.cast_name [Typ typ; exp]
 
+  let allocate_object typename =
+    Call {proc= ProcDecl.allocate_object_name; args= [Typ (Typ.Struct typename)]; kind= NonVirtual}
+
+
   let rec pp fmt = function
     | Apply {closure; args} ->
         F.fprintf fmt "%a%a" pp closure pp_list args

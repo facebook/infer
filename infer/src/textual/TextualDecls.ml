@@ -131,6 +131,10 @@ let rec get_procentry decls procsig =
 
 let get_procdecl decls procsig = get_procentry decls procsig |> Option.map ~f:ProcEntry.decl
 
+let get_procdesc decls procsig =
+  get_procentry decls procsig |> Option.value_map ~default:None ~f:ProcEntry.desc
+
+
 let get_struct decls tname = TypeName.Hashtbl.find_opt decls.structs tname
 
 let fold_globals decls ~init ~f =

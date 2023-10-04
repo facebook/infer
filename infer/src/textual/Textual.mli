@@ -255,6 +255,8 @@ module Exp : sig
 
   val call_sig : QualifiedProcName.t -> int -> Lang.t option -> ProcSig.t
 
+  val allocate_object : TypeName.t -> t
+
   (* logical not ! *)
   val not : t -> t
 

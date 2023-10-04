@@ -9,6 +9,7 @@ open! IStd
 open Textual
 
 type error =
+  | ProcNotImplementedButInClosure of {proc: QualifiedProcName.t}
   | UnknownField of qualified_fieldname
   (* TODO(arr): This is too specific to the Hack use-case. We should really check if there are other
      overloads and provide an error message based on this. *)
@@ -19,7 +20,7 @@ type error =
 let error_loc = function
   | UnknownField {enclosing_class; _} ->
       enclosing_class.loc
-  | UnknownProc {proc} ->
+  | ProcNotImplementedButInClosure {proc} | UnknownProc {proc} ->
       proc.name.loc
   | UnknownLabel {label; _} ->
       label.loc
@@ -31,6 +32,9 @@ let pp_error sourcefile fmt error =
   let loc = error_loc error in
   F.fprintf fmt "%a, %a: SIL consistency error: " SourceFile.pp sourcefile Location.pp loc ;
   match error with
+  | ProcNotImplementedButInClosure {proc} ->
+      F.fprintf fmt "function  %a is declared but not implemented: it can not be used in a closure"
+        QualifiedProcName.pp proc
   | UnknownField {enclosing_class; name} ->
       F.fprintf fmt "field %a.%a is not declared" TypeName.pp enclosing_class FieldName.pp name
   | UnknownProc {proc; args} ->
@@ -56,7 +60,7 @@ let verify_decl ~env errors (decl : Module.decl) =
     then errors
     else UnknownField field :: errors
   in
-  let verify_call loc errors proc nb_args =
+  let verify_call loc errors ?(must_be_implemented = false) proc nb_args =
     if ProcDecl.is_not_regular_proc proc then errors
     else
       let procsig = Exp.call_sig proc nb_args (TextualDecls.lang env) in
@@ -66,6 +70,11 @@ let verify_decl ~env errors (decl : Module.decl) =
       | None ->
           UnknownProc {proc; args= nb_args} :: errors
       | Some {formals_types= Some formals_types} ->
+          let errors =
+            if must_be_implemented && TextualDecls.get_procdecl env procsig |> Option.is_none then
+              ProcNotImplementedButInClosure {proc} :: errors
+            else errors
+          in
           let formals = List.length formals_types in
           let args = nb_args in
           if not (Int.equal args formals) then WrongArgNumber {proc; args; formals; loc} :: errors
@@ -90,7 +99,8 @@ let verify_decl ~env errors (decl : Module.decl) =
         verify_call loc errors proc (List.length args)
     | Closure {proc; captured; params} ->
         let errors = List.fold ~f:(verify_exp loc) ~init:errors captured in
-        verify_call loc errors proc (List.length captured + List.length params)
+        verify_call loc errors ~must_be_implemented:true proc
+          (List.length captured + List.length params)
     | Apply {closure; args} ->
         let errors = verify_exp loc errors closure in
         List.fold ~f:(verify_exp loc) ~init:errors args

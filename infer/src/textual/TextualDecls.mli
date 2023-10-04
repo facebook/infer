@@ -33,6 +33,8 @@ val get_global : t -> Textual.VarName.t -> Textual.Global.t option
 
 val get_procdecl : t -> Textual.ProcSig.t -> Textual.ProcDecl.t option
 
+val get_procdesc : t -> Textual.ProcSig.t -> Textual.ProcDesc.t option
+
 val get_proc_entries_by_enclosing_class :
   t -> ProcEntry.t list Textual.TypeName.Map.t * Textual.TypeName.Set.t
 (** returns 1) in a map, all function implementation and declarations, indexed by the name of their
