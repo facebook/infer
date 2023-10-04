@@ -36,6 +36,9 @@ let parse_buf sourcefile filebuf =
     let parsed =
       MenhirLib.Convert.Simplified.traditional2revised TextualMenhir.main lexer sourcefile
     in
+    (* the parser needs context to understand ident(args) expression because ident may be
+       a variable or a procname *)
+    let parsed = TextualTransform.fix_closure_app parsed in
     let errors, decls_env = TextualDecls.make_decls parsed in
     let errors = List.map errors ~f:(fun x -> DeclaredTwiceError x) in
     if List.is_empty errors then

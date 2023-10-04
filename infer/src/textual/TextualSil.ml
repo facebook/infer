@@ -126,6 +126,18 @@ let python_mixed_type_name = SilTyp.PythonClass (PythonClassName.make "PyObject"
 
 let mk_python_mixed_type_textual loc = Typ.Struct TypeName.{value= "PyObject"; loc}
 
+let default_return_type (lang : Lang.t option) loc =
+  match lang with
+  | Some Hack ->
+      Typ.Ptr (mk_hack_mixed_type_textual loc)
+  | Some Python ->
+      Typ.Ptr (mk_python_mixed_type_textual loc)
+  | Some other ->
+      L.die InternalError "Unexpected return type outside of Hack/Python: %s" (Lang.to_string other)
+  | None ->
+      L.die InternalError "Unexpected return type outside of Hack/Python: None"
+
+
 let mangle_java_procname jpname =
   let method_name =
     match Procname.Java.get_method jpname with "<init>" -> "__sil_java_constructor" | s -> s
@@ -583,7 +595,7 @@ module ExpBridge = struct
       | Call {proc; args= [Typ typ; exp]} when ProcDecl.is_cast_builtin proc ->
           Cast (TypBridge.to_sil lang typ, aux exp)
       | Call {proc; args} -> (
-          let procsig = Exp.call_sig proc args (TextualDecls.lang decls_env) in
+          let procsig = Exp.call_sig proc (List.length args) (TextualDecls.lang decls_env) in
           match
             ( TextualDecls.get_procdecl decls_env procsig
             , ProcDecl.to_unop proc
@@ -605,6 +617,8 @@ module ExpBridge = struct
           (* FIXME: transform instruction to put call at head of expressions *) )
       | Typ _ ->
           L.die InternalError "Internal error: type expressions should not appear outside builtins"
+      | Closure _ | Apply _ ->
+          L.die InternalError "Internal error: closures should not appear inside sub-expressions"
     in
     aux exp
 end
@@ -743,7 +757,7 @@ module InstrBridge = struct
         Call ((ret, class_type), builtin, args, loc, CallFlags.default)
     | Let {id; exp= Call {proc; args; kind}; loc} ->
         let ret = IdentBridge.to_sil id in
-        let procsig = Exp.call_sig proc args (TextualDecls.lang decls_env) in
+        let procsig = Exp.call_sig proc (List.length args) (TextualDecls.lang decls_env) in
         let ({formals_types} as callee_procname : ProcDecl.t) =
           match TextualDecls.get_procdecl decls_env procsig with
           | Some procname ->
@@ -752,14 +766,7 @@ module InstrBridge = struct
               let textual_ret_typ =
                 (* Declarations with unknown formals are expected in Hack/Python. Assume that unknown
                    return types are *HackMixed/*PyObject respectively. *)
-                match lang with
-                | Lang.Hack ->
-                    Typ.Ptr (mk_hack_mixed_type_textual loc)
-                | Lang.Python ->
-                    Typ.Ptr (mk_python_mixed_type_textual loc)
-                | other ->
-                    L.die InternalError "Unexpected return type outside of Hack/Python: %s"
-                      (Lang.to_string other)
+                default_return_type (Some lang) loc
               in
               { ProcDecl.qualified_name= proc
               ; formals_types= None
@@ -803,6 +810,12 @@ module InstrBridge = struct
         let cf_virtual = Exp.equal_call_kind kind Virtual in
         let cflag = {CallFlags.default with cf_virtual} in
         Call ((ret, result_type), Const (Cfun pname), args, loc, cflag)
+    | Let {exp= Closure _; loc} ->
+        let msg = lazy "closure construction should have been transformed before SIL conversion" in
+        raise (TextualTransformError [{loc; msg}])
+    | Let {exp= Apply _; loc} ->
+        let msg = lazy "closure call should have been transformed before SIL conversion" in
+        raise (TextualTransformError [{loc; msg}])
     | Let {loc; _} ->
         let msg = lazy (F.asprintf "the expression in %a should start with a regular call" pp i) in
         raise (TextualTransformError [{loc; msg}])

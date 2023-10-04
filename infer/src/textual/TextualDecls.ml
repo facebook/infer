@@ -226,6 +226,8 @@ let get_procdesc_referenced_types (pdesc : ProcDesc.t) =
   (* Helpers *)
   let rec from_exp (exp : Exp.t) =
     match exp with
+    | Apply {closure; args} ->
+        List.iter (closure :: args) ~f:from_exp
     | Typ typ ->
         get_typ_name typ |> Option.iter ~f:add_to_referenced
     | Var _ | Lvar _ | Const _ ->
@@ -237,6 +239,8 @@ let get_procdesc_referenced_types (pdesc : ProcDesc.t) =
         from_exp idx
     | Call {args} ->
         List.iter args ~f:from_exp
+    | Closure {captured} ->
+        List.iter captured ~f:from_exp
   and from_bexp (bexp : BoolExp.t) =
     match bexp with
     | Exp exp ->

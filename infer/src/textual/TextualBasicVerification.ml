@@ -56,18 +56,18 @@ let verify_decl ~env errors (decl : Module.decl) =
     then errors
     else UnknownField field :: errors
   in
-  let verify_call loc errors proc args =
+  let verify_call loc errors proc nb_args =
     if ProcDecl.is_not_regular_proc proc then errors
     else
-      let procsig = Exp.call_sig proc args (TextualDecls.lang env) in
+      let procsig = Exp.call_sig proc nb_args (TextualDecls.lang env) in
       match TextualDecls.get_procdecl env procsig with
       | None when QualifiedProcName.contains_wildcard proc ->
           errors
       | None ->
-          UnknownProc {proc; args= List.length args} :: errors
+          UnknownProc {proc; args= nb_args} :: errors
       | Some {formals_types= Some formals_types} ->
           let formals = List.length formals_types in
-          let args = List.length args in
+          let args = nb_args in
           if not (Int.equal args formals) then WrongArgNumber {proc; args; formals; loc} :: errors
           else errors
       | Some {formals_types= None} ->
@@ -87,7 +87,13 @@ let verify_decl ~env errors (decl : Module.decl) =
         verify_exp loc errors e2
     | Call {proc; args} ->
         let errors = List.fold ~f:(verify_exp loc) ~init:errors args in
-        verify_call loc errors proc args
+        verify_call loc errors proc (List.length args)
+    | Closure {proc; captured; params} ->
+        let errors = List.fold ~f:(verify_exp loc) ~init:errors captured in
+        verify_call loc errors proc (List.length captured + List.length params)
+    | Apply {closure; args} ->
+        let errors = verify_exp loc errors closure in
+        List.fold ~f:(verify_exp loc) ~init:errors args
   in
   let verify_instr errors (instr : Instr.t) =
     let loc = Instr.loc instr in

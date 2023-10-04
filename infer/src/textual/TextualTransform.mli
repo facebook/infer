@@ -7,6 +7,11 @@
 
 open! IStd
 
+(* This transformation replaces a Call expression 'proc(args)' by an Apply expression 'proc(args)', if we detect that
+   proc is a well defined expression using the global/local declarations that are available in the current context.
+*)
+val fix_closure_app : Textual.Module.t -> Textual.Module.t
+
 val remove_effects_in_subexprs : Textual.Module.t -> Textual.Module.t
 (* generates enough intermediate Let and Load instructions to make the procdesc free
    of side-effect sub-expressions.

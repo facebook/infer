@@ -160,6 +160,8 @@ let build_mainlex keywords =
     | "#", ident ->
         let lexeme = Lexbuf.lexeme lexbuf in
         LABEL (String.subo ~pos:1 lexeme)
+    | "fun", blanks, "(" ->
+        FUN
     | ("?" | ident), blanks, ".", blanks, ident, blanks, "(" -> (
         let lexeme = Lexbuf.lexeme lexbuf in
         match String.split_on_chars lexeme ~on:['.'; '('] with

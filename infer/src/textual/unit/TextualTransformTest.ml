@@ -701,3 +701,80 @@ let%test_module "out-of-ssa transformation" =
 
         } |}]
   end )
+
+
+let%expect_test "closures" =
+  let source =
+    {|
+        .source_language = "hack"
+
+        define C.add(x: int, y: int, z: int, u: float, v: string) : int {
+          #entry:
+            ret __sil_plusa(x, __sil_plusa(y, z))
+        }
+
+        define D.foo(x: int) : void {
+          local y: *HackMixed
+          #entry:
+            n0 = fun (p1, p2, p3) -> C.add(x, 1, p1, p2, p3)
+            store &y <- n0: *HackMixed
+            n1 = y(x, 1.0, null)
+            n2 = n0(x, 2.0, null)
+            ret __sil_plusa(n1, n2)
+        }
+    |}
+  in
+  let module_ = parse_module source in
+  F.printf "%a" Module.pp module_ ;
+  [%expect
+    {|
+      .source_language = "hack"
+
+      define C.add(x: int, y: int, z: int, u: float, v: string) : int {
+        #entry:
+            ret __sil_plusa([&x:int], __sil_plusa([&y:int], [&z:int]))
+
+      }
+
+      define D.foo(x: int) : void {
+        local y: *HackMixed
+        #entry:
+            n0 = (p1, p2, p3) -> C.add([&x:int], 1, p1, p2, p3)
+            store &y <- n0:*HackMixed
+            n1 = [&y:*HackMixed]([&x:int], 1., null)
+            n2 = n0([&x:int], 2., null)
+            ret __sil_plusa(n1, n2)
+
+      } |}] ;
+  let module_ = TextualTransform.remove_effects_in_subexprs module_ in
+  F.printf "%a" Module.pp module_ ;
+  [%expect
+    {|
+      .source_language = "hack"
+
+      define C.add(x: int, y: int, z: int, u: float, v: string) : int {
+        #entry:
+            n0:int = load &x
+            n1:int = load &y
+            n2:int = load &z
+            ret __sil_plusa(n0, __sil_plusa(n1, n2))
+
+      }
+
+      define D.foo(x: int) : void {
+        local y: *HackMixed
+        #entry:
+            n3:int = load &x
+            n4 = null
+            n0 = n4
+            store &y <- n0:*HackMixed
+            n5:*HackMixed = load &y
+            n6:int = load &x
+            n7 = null
+            n1 = n7
+            n8:int = load &x
+            n9 = null
+            n2 = n9
+            ret __sil_plusa(n1, n2)
+
+      } |}]

@@ -28,6 +28,122 @@ let module_map_procs ~f (module_ : Module.t) =
   {module_ with decls}
 
 
+module FixClosureAppExpr = struct
+  let is_ident string =
+    let regexp = Str.regexp "n[0-9]+" in
+    Str.string_match regexp string 0
+
+
+  let of_procdesc globals pdesc =
+    let open ProcDesc in
+    let globals_and_locals =
+      List.fold pdesc.locals ~init:globals ~f:(fun set (varname, _) ->
+          String.Set.add set varname.VarName.value )
+    in
+    let is_varname ({enclosing_class; name} : QualifiedProcName.t) =
+      match enclosing_class with
+      | TopLevel when String.Set.mem globals_and_locals name.value ->
+          let varname : VarName.t = {value= name.value; loc= name.loc} in
+          Some (Exp.Load {exp= Lvar varname; typ= None})
+      | TopLevel when is_ident name.value ->
+          let ident =
+            Ident.of_int
+              (int_of_string (String.sub name.value ~pos:1 ~len:(String.length name.value - 1)))
+          in
+          Some (Exp.Var ident)
+      | _ ->
+          None
+    in
+    let rec of_exp exp =
+      let open Exp in
+      match exp with
+      | Var _ | Lvar _ | Const _ | Typ _ ->
+          exp
+      | Load l ->
+          Load {l with exp= of_exp l.exp}
+      | Field f ->
+          Field {f with exp= of_exp f.exp}
+      | Index (exp1, exp2) ->
+          Index (of_exp exp1, of_exp exp2)
+      | Call {proc; args; kind} ->
+          let args = List.map args ~f:of_exp in
+          Option.value_map (is_varname proc)
+            ~f:(fun closure -> Apply {closure; args})
+            ~default:(Call {proc; args; kind})
+      | Closure {proc; captured; params} ->
+          Closure {proc; captured= List.map captured ~f:of_exp; params}
+      | Apply {closure; args} ->
+          Apply {closure= of_exp closure; args= List.map args ~f:of_exp}
+    in
+    let of_instr instr =
+      let open Instr in
+      match instr with
+      | Load args ->
+          Load {args with exp= of_exp args.exp}
+      | Store args ->
+          Store {args with exp1= of_exp args.exp1; exp2= of_exp args.exp2}
+      | Prune args ->
+          Prune {args with exp= of_exp args.exp}
+      | Let args ->
+          Let {args with exp= of_exp args.exp}
+    in
+    let rec of_bexp bexp =
+      let open BoolExp in
+      match bexp with
+      | Exp exp ->
+          Exp (of_exp exp)
+      | Not bexp ->
+          Not (of_bexp bexp)
+      | And (bexp1, bexp2) ->
+          And (of_bexp bexp1, of_bexp bexp2)
+      | Or (bexp1, bexp2) ->
+          Or (of_bexp bexp1, of_bexp bexp2)
+    in
+    let rec of_terminator t =
+      let open Terminator in
+      match t with
+      | If {bexp; then_; else_} ->
+          If {bexp= of_bexp bexp; then_= of_terminator then_; else_= of_terminator else_}
+      | Ret exp ->
+          Ret (of_exp exp)
+      | Jump node_call_list ->
+          let f {label; ssa_args} = {label; ssa_args= List.map ssa_args ~f:of_exp} in
+          Jump (List.map node_call_list ~f)
+      | Throw exp ->
+          Throw (of_exp exp)
+      | Unreachable ->
+          t
+    in
+    let of_node node =
+      let open Node in
+      {node with last= of_terminator node.last; instrs= List.map ~f:of_instr node.instrs}
+    in
+    {pdesc with nodes= List.map pdesc.nodes ~f:of_node}
+
+
+  let transform (module_ : Module.t) =
+    let open Module in
+    let globals =
+      List.fold module_.decls ~init:String.Set.empty ~f:(fun set decl ->
+          match decl with
+          | Global {name} ->
+              String.Set.add set name.VarName.value
+          | Proc _ | Struct _ | Procdecl _ ->
+              set )
+    in
+    let decls =
+      List.map module_.decls ~f:(fun decl ->
+          match decl with
+          | Proc pdesc ->
+              Proc (of_procdesc globals pdesc)
+          | Global _ | Struct _ | Procdecl _ ->
+              decl )
+    in
+    {module_ with decls}
+end
+
+let fix_closure_app = FixClosureAppExpr.transform
+
 module Subst = struct
   let rec of_exp_one exp ~id ~by =
     let open Exp in
@@ -44,6 +160,12 @@ module Subst = struct
         Index (of_exp_one exp1 ~id ~by, of_exp_one exp2 ~id ~by)
     | Call f ->
         Call {f with args= List.map f.args ~f:(fun exp -> of_exp_one exp ~id ~by)}
+    | Closure {proc; captured; params} ->
+        Closure {proc; captured= List.map captured ~f:(fun exp -> of_exp_one exp ~id ~by); params}
+    | Apply {closure; args} ->
+        Apply
+          { closure= of_exp_one closure ~id ~by
+          ; args= List.map args ~f:(fun exp -> of_exp_one exp ~id ~by) }
 
 
   let rec of_exp exp eqs =
@@ -61,6 +183,10 @@ module Subst = struct
         Index (of_exp exp1 eqs, of_exp exp2 eqs)
     | Call f ->
         Call {f with args= List.map f.args ~f:(fun exp -> of_exp exp eqs)}
+    | Closure {proc; captured; params} ->
+        Closure {proc; captured= List.map captured ~f:(fun exp -> of_exp exp eqs); params}
+    | Apply {closure; args} ->
+        Apply {closure= of_exp closure eqs; args= List.map args ~f:(fun exp -> of_exp exp eqs)}
 
 
   let of_instr instr eqs =
@@ -144,6 +270,19 @@ let remove_effects_in_subexprs _module =
           let fresh = state.State.fresh_ident in
           let new_instr : Instr.t = Let {id= fresh; exp= Call {proc; args; kind}; loc} in
           (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
+    | Closure {proc= _; captured; params= _} ->
+        let _captured, state = flatten_exp_list loc captured state in
+        let fresh = state.State.fresh_ident in
+        let new_instr : Instr.t = Let {id= fresh; exp= Exp.Const Const.Null; loc} in
+        (* TODO (next diff): replace by closure constructor *)
+        (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
+    | Apply {closure; args} ->
+        let _closure, state = flatten_exp loc closure state in
+        let _args, state = flatten_exp_list loc args state in
+        let fresh = state.State.fresh_ident in
+        let new_instr : Instr.t = Let {id= fresh; exp= Exp.Const Const.Null; loc} in
+        (* TODO (next diff): replace by closure call *)
+        (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
   and flatten_exp_list loc exp_list state =
     let exp_list, state =
       List.fold exp_list ~init:([], state) ~f:(fun (args, state) exp ->

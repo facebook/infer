@@ -245,13 +245,15 @@ module Exp : sig
     | Index of t * t  (** an array index offset: [exp1\[exp2\]] *)
     | Const of Const.t
     | Call of {proc: QualifiedProcName.t; args: t list; kind: call_kind}
+    | Closure of {proc: QualifiedProcName.t; captured: t list; params: VarName.t list}
+    | Apply of {closure: t; args: t list}
     | Typ of Typ.t
 
   val call_non_virtual : QualifiedProcName.t -> t list -> t
 
   val call_virtual : QualifiedProcName.t -> t -> t list -> t
 
-  val call_sig : QualifiedProcName.t -> t list -> Lang.t option -> ProcSig.t
+  val call_sig : QualifiedProcName.t -> int -> Lang.t option -> ProcSig.t
 
   (* logical not ! *)
   val not : t -> t

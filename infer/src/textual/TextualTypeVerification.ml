@@ -132,6 +132,8 @@ let pp_error sourcefile fmt error =
 
 let rec loc_of_exp exp =
   match (exp : Exp.t) with
+  | Apply {closure} ->
+      loc_of_exp closure
   | Var _ ->
       None
   | Lvar {loc} ->
@@ -143,6 +145,8 @@ let rec loc_of_exp exp =
   | Const _ ->
       None
   | Call {proc} ->
+      Some proc.name.loc
+  | Closure {proc} ->
       Some proc.name.loc
   | Typ _ ->
       None
@@ -454,7 +458,7 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
       typeof_instanceof_builtin proc args
   | Call {proc; args; kind} ->
       let* lang = get_lang in
-      let procsig = Exp.call_sig proc args lang in
+      let procsig = Exp.call_sig proc (List.length args) lang in
       let* result_type, formals_types = typeof_procname procsig in
       let* loc = get_location in
       let+ args =
@@ -471,6 +475,19 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
                 exp )
       in
       (Exp.Call {proc; args; kind}, result_type)
+  | Apply {closure; args} ->
+      let* closure, _ = typeof_exp closure in
+      let* args_and_types = mapM args ~f:typeof_exp in
+      let args = List.map ~f:fst args_and_types in
+      let* loc = get_location in
+      let+ lang = get_lang in
+      (Exp.Apply {closure; args}, TextualSil.default_return_type lang loc)
+  | Closure {proc; captured; params} ->
+      let* captured_and_types = mapM captured ~f:typeof_exp in
+      let captured = List.map ~f:fst captured_and_types in
+      let* loc = get_location in
+      let+ lang = get_lang in
+      (Exp.Closure {proc; captured; params}, TextualSil.default_return_type lang loc)
   | Typ _ ->
       ret (exp, Typ.Struct TypeNameBridge.sil_type_of_types)
 

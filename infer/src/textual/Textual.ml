@@ -575,17 +575,19 @@ module Exp = struct
     (*  | Sizeof of sizeof_data *)
     | Const of Const.t
     | Call of {proc: QualifiedProcName.t; args: t list; kind: call_kind}
+    | Closure of {proc: QualifiedProcName.t; captured: t list; params: VarName.t list}
+    | Apply of {closure: t; args: t list}
     | Typ of Typ.t
 
   let call_non_virtual proc args = Call {proc; args; kind= NonVirtual}
 
   let call_virtual proc recv args = Call {proc; args= recv :: args; kind= Virtual}
 
-  let call_sig qualified_name args = function
+  let call_sig qualified_name nb_args = function
     | Some Lang.Hack ->
-        ProcSig.Hack {qualified_name; arity= Some (List.length args)}
+        ProcSig.Hack {qualified_name; arity= Some nb_args}
     | Some Lang.Python ->
-        ProcSig.Python {qualified_name; arity= Some (List.length args)}
+        ProcSig.Python {qualified_name; arity= Some nb_args}
     | Some Lang.Java | None ->
         ProcSig.Other {qualified_name}
 
@@ -595,8 +597,12 @@ module Exp = struct
   let cast typ exp = call_non_virtual ProcDecl.cast_name [Typ typ; exp]
 
   let rec pp fmt = function
+    | Apply {closure; args} ->
+        F.fprintf fmt "%a%a" pp closure pp_list args
     | Var id ->
         Ident.pp fmt id
+    | Load {exp= Lvar x; typ= None} ->
+        F.fprintf fmt "%a" VarName.pp x
     | Load {exp; typ= None} ->
         F.fprintf fmt "[%a]" pp exp
     | Load {exp; typ= Some typ} ->
@@ -619,6 +625,12 @@ module Exp = struct
             L.die InternalError "virtual call with 0 args: %a" QualifiedProcName.pp proc )
       | NonVirtual ->
           F.fprintf fmt "%a%a" QualifiedProcName.pp proc pp_list args )
+    | Closure {proc; captured; params} ->
+        let captured_and_params =
+          captured @ List.map params ~f:(fun varname -> Load {exp= Lvar varname; typ= None})
+        in
+        F.fprintf fmt "(%a) -> %a(%a)" (pp_list_with_comma VarName.pp) params QualifiedProcName.pp
+          proc (pp_list_with_comma pp) captured_and_params
     | Typ typ ->
         F.fprintf fmt "<%a>" Typ.pp typ
 
@@ -635,6 +647,10 @@ module Exp = struct
         do_not_contain_regular_call exp1 && do_not_contain_regular_call exp2
     | Call {proc; args} ->
         ProcDecl.is_not_regular_proc proc && List.for_all args ~f:do_not_contain_regular_call
+    | Apply {closure; args} ->
+        do_not_contain_regular_call closure && List.for_all args ~f:do_not_contain_regular_call
+    | Closure {captured} ->
+        List.for_all captured ~f:do_not_contain_regular_call
 
 
   let vars exp =
@@ -648,8 +664,12 @@ module Exp = struct
           aux acc exp
       | Index (exp1, exp2) ->
           aux (aux acc exp1) exp2
+      | Apply {closure; args} ->
+          List.fold args ~init:(aux acc closure) ~f:aux
       | Call {args} ->
           List.fold args ~init:acc ~f:aux
+      | Closure {captured} ->
+          List.fold captured ~init:acc ~f:aux
     in
     aux Ident.Set.empty exp
 end

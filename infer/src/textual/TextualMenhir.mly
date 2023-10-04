@@ -31,6 +31,7 @@
 %token EXTENDS
 %token FALSE
 %token FLOAT
+%token FUN
 %token GLOBAL
 %token HANDLERS
 %token IF
@@ -422,7 +423,34 @@ expression:
     { Exp.Const c }
   | proc=opt_qualified_pname_and_lparen args=separated_list(COMMA, expression) RPAREN
     { Exp.Call {proc; args; kind= Exp.NonVirtual} }
+  | closure=expression LPAREN args=separated_list(COMMA, expression) RPAREN
+    (* remark: the lexer will never generate the sequence IDENT LPAREN because PROC_AND_LPAREN
+       is more prioritary. We will fix that using TextualTransform.FixClosureAppExpr later *)
+    { Exp.Apply {closure; args} }
   | recv=expression DOT proc=opt_qualified_pname_and_lparen args=separated_list(COMMA, expression) RPAREN
     { Exp.call_virtual proc recv args }
+  | FUN params=separated_list(COMMA, vname) RPAREN ARROW
+     proc=opt_qualified_pname_and_lparen args=separated_list(COMMA, expression) RPAREN
+    {
+      let syntax_error () =
+        let loc = location_of_pos $startpos(params) in
+        let string = F.asprintf "call inside closure should end with %a"
+                                (Pp.seq ~sep:"," VarName.pp) params in
+        raise (SpecialSyntaxError (loc, string))
+      in
+      let nb_params = List.length params in
+      let nb_args = List.length args in
+      if nb_params > nb_args then syntax_error ()
+      else
+        let captured, params2 = List.split_n args (nb_args - nb_params) in
+        let match_param (e: Exp.t) (x: VarName.t) =
+          match e with
+            | Exp.Load {exp=Lvar varname; typ=None} -> VarName.equal varname x
+            | _ -> false
+        in
+        if List.for_all2_exn ~f:match_param params2 params then
+          Exp.Closure {proc; captured; params}
+        else syntax_error ()
+     }
   | LABRACKET typ=typ RABRACKET
     { Exp.Typ typ }
