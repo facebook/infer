@@ -96,6 +96,7 @@ type t =
       ; location: Location.t
       ; flow_kind: flow_kind
       ; policy_description: string
+      ; policy_id: int
       ; policy_privacy_effect: string option }
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t

@@ -490,6 +490,42 @@ let has_taint_in_history hist =
   else true
 
 
+module LocationIntSet = PrettyPrintable.MakePPSet (struct
+  type nonrec t = Location.t * int [@@deriving compare]
+
+  let pp = Pp.pair ~fst:Location.pp ~snd:Int.pp
+end)
+
+let dedup_reports results =
+  let find_duplicate_taint loc policy_id (location, taint_policy) =
+    Location.equal location loc && Int.equal policy_id taint_policy
+  in
+  let dedup_result result =
+    match result with
+    | Ok _ | FatalError _ ->
+        result
+    | Recoverable (a, errors) ->
+        let dedup_errors error (acc, taint_found) =
+          match error with
+          | ReportableError {diagnostic= TaintFlow {location; policy_id} as diagnostic} ->
+              let found_duplicate =
+                LocationIntSet.exists (find_duplicate_taint location policy_id) taint_found
+              in
+              L.d_printfln_escaped ~color:Red "Taint error before deduplication %a" Diagnostic.pp
+                diagnostic ;
+              let taint_found = LocationIntSet.add (location, policy_id) taint_found in
+              if found_duplicate then (acc, taint_found) else (error :: acc, taint_found)
+          | _ ->
+              (error :: acc, taint_found)
+        in
+        let new_errors, _ =
+          List.fold_right ~f:dedup_errors ~init:([], LocationIntSet.empty) errors
+        in
+        Recoverable (a, new_errors)
+  in
+  List.map ~f:dedup_result results
+
+
 let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path location
     ~sink:(sink_item, sink_trace) ~source astate =
   let source_value, _ = source in
@@ -528,6 +564,7 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
                      ; sink= ({sink_item with kinds= [sink_kind]}, sink_trace)
                      ; flow_kind
                      ; policy_description
+                     ; policy_id= violated_policy_id
                      ; policy_privacy_effect } ) )
         in
         PulseResult.list_fold potential_policy_violations ~init:policy_violations_reported

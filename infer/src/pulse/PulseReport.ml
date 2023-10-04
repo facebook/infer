@@ -284,6 +284,7 @@ let report_errors tenv proc_desc err_log location errors =
 
 
 let report_exec_results tenv proc_desc err_log location results =
+  let results = PulseTaintOperations.dedup_reports results in
   List.filter_map results ~f:(fun exec_result ->
       match PulseResult.to_result exec_result with
       | Ok post ->
