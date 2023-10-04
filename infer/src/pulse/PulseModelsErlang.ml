@@ -1456,13 +1456,11 @@ module Custom = struct
         List.fold mfas ~init:map ~f:(fun map mfa -> Map.set map ~key:mfa ~data:db) )
 
 
-  module DynamicBehaviorSet = Caml.Set.Make (String)
-
-  let dynamic_behavior_models = ref DynamicBehaviorSet.empty
+  let dynamic_behavior_models = Hashtbl.create (module String)
 
   let fetch_model db mfa =
-    match DynamicBehaviorSet.mem mfa !dynamic_behavior_models with
-    | false ->
+    match Hashtbl.find dynamic_behavior_models mfa with
+    | None ->
         let query = "SELECT behavior FROM models WHERE mfa = ? LIMIT 1" in
         let stmt = Sqlite3.prepare db query in
         Sqlite3.bind_text stmt 1 mfa |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
@@ -1472,11 +1470,12 @@ module Custom = struct
               let behavior_json = Sqlite3.column_text stmt 0 in
               match behavior_of_yojson (Yojson.Safe.from_string behavior_json) with
               | behavior ->
-                  dynamic_behavior_models := DynamicBehaviorSet.add mfa !dynamic_behavior_models ;
                   let abs_behavior = abstract_behavior mfa behavior in
                   L.debug Analysis Quiet "Function '%s' ABS BEHAVIOR:[  %a ] @\n@\n" mfa pp_behavior
                     abs_behavior ;
-                  Some (make_model abs_behavior)
+                  let model_abs_behavior = make_model abs_behavior in
+                  Hashtbl.add_exn dynamic_behavior_models ~key:mfa ~data:model_abs_behavior ;
+                  Some model_abs_behavior
               | exception (Yojson.Json_error _ | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error _)
                 ->
                   L.user_error "@[<v>Failed to parse json from db for %s .@;@]" mfa ;
@@ -1486,8 +1485,8 @@ module Custom = struct
         in
         Sqlite3.finalize stmt |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
         model
-    | true ->
-        None
+    | Some mfa_model ->
+        Some mfa_model
 
 
   let get_model_from_db proc_name args =
