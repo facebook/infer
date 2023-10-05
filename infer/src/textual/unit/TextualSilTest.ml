@@ -372,3 +372,42 @@ let%expect_test "trait vs class kind" =
       annots: {<>}
       class_info: {HackClassInfo (Trait)}
       dummy: false |}]
+
+
+let%expect_test "const" =
+  let source =
+    {|
+     .source_language = "hack"
+
+     type Uninit::A$static = .kind="class" .static {
+       FIELD: .public .__Infer_Constant__ *HackMixed
+     }
+     |}
+  in
+  let m = parse_module source in
+  let _, tenv = TextualSil.module_to_sil m in
+  F.printf "%a@\n" Tenv.pp tenv ;
+  [%expect
+    {|
+    hack HackMixed
+    fields: {}
+    statics: {}
+    supers: {}
+    objc_protocols: {}
+    methods: {}
+    exported_obj_methods: {}
+    annots: {<>}
+    class_info: {NoInfo}
+    dummy: true
+    hack Uninit::A$static
+    fields: {
+               HackMixed* const  FIELD <>
+             }
+    statics: {}
+    supers: {}
+    objc_protocols: {}
+    methods: {}
+    exported_obj_methods: {}
+    annots: {<>}
+    class_info: {HackClassInfo (Class)}
+    dummy: false |}]

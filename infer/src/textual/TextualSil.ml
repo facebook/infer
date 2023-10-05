@@ -199,8 +199,9 @@ let wildcard_sil_fieldname lang name =
 module TypBridge = struct
   open Typ
 
-  let rec to_sil lang (typ : t) : SilTyp.t =
-    let quals = SilTyp.mk_type_quals () in
+  let rec to_sil lang ?(attrs = []) (typ : t) : SilTyp.t =
+    let is_const = List.exists attrs ~f:Textual.Attr.is_const in
+    let quals = SilTyp.mk_type_quals ~is_const () in
     let desc : SilTyp.desc =
       match typ with
       | Int ->
@@ -477,7 +478,9 @@ module StructBridge = struct
     in
     let fields =
       List.map fields ~f:(fun (fdecl : FieldDecl.t) ->
-          (FieldDeclBridge.to_sil lang fdecl, TypBridge.to_sil lang fdecl.typ, Annot.Item.empty) )
+          ( FieldDeclBridge.to_sil lang fdecl
+          , TypBridge.to_sil lang ~attrs:fdecl.attributes fdecl.typ
+          , Annot.Item.empty ) )
     in
     let annots =
       List.filter_map attributes ~f:(fun attr ->
@@ -587,7 +590,10 @@ module ExpBridge = struct
             L.die InternalError "field %a.%a has not been declared" TypeName.pp
               field.enclosing_class FieldName.pp field.name
         | Some field ->
-            Lfield (aux exp, FieldDeclBridge.to_sil lang field, TypBridge.to_sil lang field.typ) )
+            Lfield
+              ( aux exp
+              , FieldDeclBridge.to_sil lang field
+              , TypBridge.to_sil lang ~attrs:field.attributes field.typ ) )
       | Index (exp1, exp2) ->
           Lindex (aux exp1, aux exp2)
       | Const const ->
@@ -779,7 +785,10 @@ module InstrBridge = struct
               raise (TextualTransformError [{loc; msg}])
         in
         let pname = ProcDeclBridge.call_to_sil lang procsig callee_procname in
-        let result_type = TypBridge.to_sil lang callee_procname.result_type.typ in
+        let result_type =
+          TypBridge.to_sil lang ~attrs:callee_procname.result_type.attributes
+            callee_procname.result_type.typ
+        in
         let args = List.map ~f:(ExpBridge.to_sil lang decls_env procname) args in
         let formals_types =
           match formals_types with
@@ -954,14 +963,16 @@ module ProcDescBridge = struct
     in
     List.map locals ~f:(fun (var, annotated_typ) ->
         let name = Mangled.from_string var.VarName.value in
-        let typ = TypBridge.to_sil lang annotated_typ.Typ.typ in
+        let typ = TypBridge.to_sil lang ~attrs:annotated_typ.Typ.attributes annotated_typ.Typ.typ in
         make_var_data name typ )
 
 
   let to_sil lang decls_env cfgs ({procdecl; nodes; start; exit_loc} as pdesc) =
     let sourcefile = TextualDecls.source_file decls_env in
     let sil_procname = ProcDeclBridge.to_sil lang procdecl in
-    let sil_ret_type = TypBridge.to_sil lang procdecl.result_type.typ in
+    let sil_ret_type =
+      TypBridge.to_sil lang ~attrs:procdecl.result_type.attributes procdecl.result_type.typ
+    in
     let definition_loc = LocationBridge.to_sil sourcefile procdecl.qualified_name.name.loc in
     let is_hack_async = List.exists procdecl.attributes ~f:Attr.is_async in
     let formals = build_formals lang pdesc in

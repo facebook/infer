@@ -99,6 +99,8 @@ module Attr : sig
 
   val is_async : t -> bool
 
+  val is_const : t -> bool
+
   val mk_trait : t
 
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
