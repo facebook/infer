@@ -395,11 +395,6 @@ OPTIONS
            Deactivates: Suppress printing function pointers in cost reports
            (Conversely: --cost-suppress-func-ptr)           See also infer-analyze(1).
 
-       --cost-tests-only-autoreleasepool
-           Activates: [EXPERIMENTAL] Report only autoreleasepool size results
-           in cost tests (Conversely: --no-cost-tests-only-autoreleasepool)       
-    See also infer-report(1) and infer-reportdiff(1).
-
        --costs-current path
            Costs report of the latest revision           See also infer-reportdiff(1).
 
@@ -482,10 +477,6 @@ OPTIONS
              ARRAY_OUT_OF_BOUNDS_L1 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L2 (disabled by default),
              ARRAY_OUT_OF_BOUNDS_L3 (disabled by default),
-             AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE (enabled by default),
-             AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD (enabled by
-           default),
-             AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT (disabled by default),
              Abduction_case_not_implemented (enabled by default),
              Array_of_pointsto (enabled by default),
              Assert_failure (enabled by default),
@@ -565,7 +556,6 @@ OPTIONS
              EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD (enabled by
            default),
              EXECUTION_TIME_UNREACHABLE_AT_EXIT (disabled by default),
-             EXPENSIVE_AUTORELEASEPOOL_SIZE (disabled by default),
              EXPENSIVE_EXECUTION_TIME (disabled by default),
              EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default),
              EXPOSED_INSECURE_INTENT_HANDLING (enabled by default),
@@ -578,7 +568,6 @@ OPTIONS
              INFERBO_ALLOC_IS_ZERO (enabled by default),
              INFERBO_ALLOC_MAY_BE_BIG (enabled by default),
              INFERBO_ALLOC_MAY_BE_NEGATIVE (enabled by default),
-             INFINITE_AUTORELEASEPOOL_SIZE (disabled by default),
              INFINITE_EXECUTION_TIME (disabled by default),
              INHERENTLY_DANGEROUS_FUNCTION (enabled by default),
              INSECURE_INTENT_HANDLING (enabled by default),

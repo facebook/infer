@@ -12,7 +12,7 @@ open BufferOverrunUtils.ModelEnv
 open CostUtils.CostModelEnv
 open ProcnameDispatcher.Call.FuncArg
 
-let unit_cost_model _model_env ~ret:_ _inferbo_mem = BasicCost.one ()
+let unit_cost_model _model_env ~ret:_ _inferbo_mem = BasicCost.one
 
 let cost_of_exp exp ~degree_kind ~of_function {model_env= {integer_type_widths; location}} ~ret:_
     inferbo_mem =
@@ -241,7 +241,7 @@ module NSAttributedString = struct
         | _ ->
             length )
     | _ ->
-        BasicCost.one ()
+        BasicCost.one
 end
 
 module NSCollection = struct
@@ -281,7 +281,7 @@ module NSCollection = struct
         | _ ->
             length )
     | _ ->
-        BasicCost.one ()
+        BasicCost.one
 end
 
 module ImmutableSet = struct

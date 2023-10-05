@@ -113,12 +113,6 @@ module Match = struct
     Str.string_match matcher (to_separated_string ~sep:matching_separator normalized_qualifiers) 0
 end
 
-module Set = PrettyPrintable.MakePPSet (struct
-  type nonrec t = t [@@deriving compare]
-
-  let pp = pp
-end)
-
 module Normalizer : HashNormalizer.S with type t = t = struct
   type nonrec t = t
 

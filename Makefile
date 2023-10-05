@@ -135,7 +135,6 @@ BUILD_SYSTEMS_TESTS += clang_test_determinator
 endif
 
 DIRECT_TESTS += \
-  objc_autoreleasepool \
   objc_bufferoverrun \
   objc_biabduction \
   objc_frontend \

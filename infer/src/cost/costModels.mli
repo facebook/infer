@@ -7,11 +7,6 @@
 
 open! IStd
 
-module BoundsOfNSCollection : sig
-  val linear_length : Exp.t -> of_function:string -> CostUtils.model
-  (** Return the length of [NSCollection] as a cost value *)
-end
-
 module Call : sig
   val dispatch : (Tenv.t, CostUtils.model, unit) ProcnameDispatcher.Call.dispatcher
 end

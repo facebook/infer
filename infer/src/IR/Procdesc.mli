@@ -176,9 +176,6 @@ module Node : sig
   (** Set an exit node corresponding to a start node of a code block. Using this, when there is a
       code block, frontend can keep the correspondence between start/exit nodes of a code block. *)
 
-  val get_code_block_exit : t -> t option
-  (** Get an exit node corresponding to a start node of a code block. *)
-
   val is_dangling : t -> bool
   (** Returns true if the node is dangling, i.e. no successors and predecessors *)
 
@@ -305,9 +302,6 @@ val is_java_synchronized : t -> bool
 
 val is_csharp_synchronized : t -> bool
 (** Return [true] if the procedure is synchronized via a C# lock *)
-
-val is_objc_arc_on : t -> bool
-(** Return [true] iff the ObjC procedure is compiled with ARC *)
 
 val iter_instrs : (Node.t -> Sil.instr -> unit) -> t -> unit
 (** iterate over all nodes and their instructions *)

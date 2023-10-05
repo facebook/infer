@@ -92,6 +92,4 @@ module Match : sig
   val match_qualifiers : quals_matcher -> t -> bool
 end
 
-module Set : PrettyPrintable.PPSet with type elt = t
-
 module Normalizer : HashNormalizer.S with type t = t

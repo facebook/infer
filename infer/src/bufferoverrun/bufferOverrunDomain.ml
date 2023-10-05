@@ -831,8 +831,7 @@ module MemPure = struct
                 acc )
         | None ->
             acc )
-      mem
-      (Polynomials.NonNegativePolynomial.one ())
+      mem Polynomials.NonNegativePolynomial.one
 
 
   let join oenv astate1 astate2 =

@@ -30,10 +30,6 @@ OPTIONS
        --config-impact-previous path
            Config impact report of the base revision to use for comparison
 
-       --cost-tests-only-autoreleasepool
-           Activates: [EXPERIMENTAL] Report only autoreleasepool size results
-           in cost tests (Conversely: --no-cost-tests-only-autoreleasepool)
-
        --costs-current path
            Costs report of the latest revision
 

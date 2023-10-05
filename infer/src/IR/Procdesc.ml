@@ -449,8 +449,6 @@ module Node = struct
 
   let set_code_block_exit node ~code_block_exit = node.code_block_exit <- Some code_block_exit
 
-  let get_code_block_exit node = node.code_block_exit
-
   (** simple key for a node: just look at the instructions *)
   let simple_key node =
     let add_instr instr =
@@ -590,8 +588,6 @@ let is_defined pdesc = pdesc.attributes.is_defined
 let is_java_synchronized pdesc = pdesc.attributes.is_java_synchronized_method
 
 let is_csharp_synchronized pdesc = pdesc.attributes.is_csharp_synchronized_method
-
-let is_objc_arc_on pdesc = pdesc.attributes.is_objc_arc_on
 
 let iter_nodes f pdesc = List.iter ~f (get_nodes pdesc)
 

@@ -314,8 +314,6 @@ val costs_previous : string option
 
 val cost_suppress_func_ptr : bool
 
-val cost_tests_only_autoreleasepool : bool
-
 val cxx : bool
 
 val cxx_scope_guards : Yojson.Basic.t

@@ -1278,12 +1278,6 @@ and cost_suppress_func_ptr =
     "Suppress printing function pointers in cost reports"
 
 
-and cost_tests_only_autoreleasepool =
-  CLOpt.mk_bool ~long:"cost-tests-only-autoreleasepool"
-    ~in_help:InferCommand.[(Report, manual_generic); (ReportDiff, manual_generic)]
-    "[EXPERIMENTAL] Report only autoreleasepool size results in cost tests"
-
-
 and cxx_scope_guards =
   CLOpt.mk_json ~long:"cxx-scope-guards"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
@@ -3856,8 +3850,6 @@ and cost_scuba_logging = !cost_scuba_logging
 and costs_previous = !costs_previous
 
 and cost_suppress_func_ptr = !cost_suppress_func_ptr
-
-and cost_tests_only_autoreleasepool = !cost_tests_only_autoreleasepool
 
 and cxx = !cxx
 

@@ -290,15 +290,13 @@ module JsonCostsPrinterElt = struct
               Format.asprintf "%a" (CostDomain.BasicCost.pp_degree ~only_bigO:true) degree_with_term
           }
         in
-        let cost_info ?is_autoreleasepool_trace cost =
+        let cost_info cost =
           { Jsoncost_t.polynomial_version= CostDomain.BasicCost.version
           ; polynomial= CostDomain.BasicCost.encode cost
           ; degree=
               Option.map (CostDomain.BasicCost.degree cost) ~f:Polynomials.Degree.encode_to_int
           ; hum= hum cost
-          ; trace=
-              loc_trace_to_jsonbug_record
-                (CostDomain.BasicCost.polynomial_traces ?is_autoreleasepool_trace cost) }
+          ; trace= loc_trace_to_jsonbug_record (CostDomain.BasicCost.polynomial_traces cost) }
         in
         let cost_item =
           let {NoQualifierHashProcInfo.hash; loc; procedure_name; procedure_id} =
@@ -309,10 +307,7 @@ module JsonCostsPrinterElt = struct
           ; procedure_name
           ; procedure_id
           ; is_on_ui_thread
-          ; exec_cost= cost_info (CostDomain.get_cost_kind CostKind.OperationCost post).cost
-          ; autoreleasepool_size=
-              cost_info ~is_autoreleasepool_trace:true
-                (CostDomain.get_cost_kind CostKind.AutoreleasepoolSize post).cost }
+          ; exec_cost= cost_info (CostDomain.get_cost_kind CostKind.OperationCost post).cost }
         in
         Some (Jsoncost_j.string_of_item cost_item)
     | _ ->

@@ -235,13 +235,11 @@ module Cost = struct
         (pp_degree ~only_bigO:false) curr_item
   end
 
-  let polynomial_traces issue_type = function
+  let polynomial_traces = function
     | None ->
         []
     | Some (Val (_, degree_term)) ->
-        Polynomials.NonNegativeNonTopPolynomial.polynomial_traces
-          ~is_autoreleasepool_trace:(IssueType.is_autoreleasepool_size_issue issue_type)
-          degree_term
+        Polynomials.NonNegativeNonTopPolynomial.polynomial_traces degree_term
     | Some (Below traces) ->
         [("", Polynomials.UnreachableTraces.make_err_trace traces)]
     | Some (Above traces) ->
@@ -310,10 +308,8 @@ module Cost = struct
               (Format.asprintf "%s %a" msg CostItem.pp_cost_msg cost_item)
               [] ]
         in
-        ("", marker_cost_trace "Previous" prev_item)
-        :: polynomial_traces issue_type prev_degree_with_term
-        @ ("", marker_cost_trace "Updated" curr_item)
-          :: polynomial_traces issue_type curr_degree_with_term
+        (("", marker_cost_trace "Previous" prev_item) :: polynomial_traces prev_degree_with_term)
+        @ (("", marker_cost_trace "Updated" curr_item) :: polynomial_traces curr_degree_with_term)
         |> Errlog.concat_traces
       in
       let convert Jsoncost_t.{hash; loc; procedure_name; procedure_id} : Jsoncost_t.sub_item =

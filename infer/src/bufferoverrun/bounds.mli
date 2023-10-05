@@ -149,17 +149,7 @@ module BoundTrace : sig
 
   val make_err_trace : depth:int -> t -> Errlog.loc_trace
 
-  val call : callee_pname:Procname.t -> location:Location.t -> t -> t
-
   val of_loop : Location.t -> t
-
-  val of_modeled_function : string -> Location.t -> t
-
-  val of_arc_from_non_arc : string -> Location.t -> t
-
-  val of_function_ptr : Symb.SymbolPath.partial -> Location.t -> t
-
-  val subst : get_autoreleasepool_trace:(Symb.SymbolPath.partial -> t option) -> t -> t option
 end
 
 type ('c, 's, 't) valclass = Constant of 'c | Symbolic of 's | ValTop of 't
