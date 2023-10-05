@@ -166,12 +166,12 @@ CMAKE_ARGS=(
   -DCMAKE_C_FLAGS="$CFLAGS $CMAKE_C_FLAGS"
   -DCMAKE_CXX_FLAGS="$CXXFLAGS $CPPFLAGS $CMAKE_CXX_FLAGS"
   -DCMAKE_INSTALL_PREFIX="$CLANG_PREFIX"
-  -DLLVM_BUILD_EXTERNAL_COMPILER_RT=On
   -DLLVM_BUILD_TOOLS=Off
   -DLLVM_ENABLE_ASSERTIONS=Off
   -DLLVM_ENABLE_EH=On
   -DLLVM_ENABLE_RTTI=On
-  -DLLVM_INCLUDE_DOCS=Off
+  -DLLVM_BUILD_DOCS=Off
+  -DLLVM_INCLUDE_BENCHMARKS=Off
   -DLLVM_INCLUDE_EXAMPLES=Off
   -DLLVM_INCLUDE_TESTS=Off
   -DLLVM_TARGETS_TO_BUILD="X86;AArch64;ARM;Mips"
@@ -179,7 +179,6 @@ CMAKE_ARGS=(
 
 if [ "$PLATFORM" = "Darwin" ]; then
     CMAKE_ARGS+=(
-      -DLLVM_ENABLE_LIBCXX=On
       -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS $CMAKE_SHARED_LINKER_FLAGS"
       -DLLVM_BUILD_LLVM_DYLIB=ON
     )
@@ -191,19 +190,22 @@ fi
 
 if [[ "$PLATFORM" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
     # Please note that this case only applies to infer/master platform builds
-    # Prevent CMAKE from adding -isystem /usr/include for platform builds
     CMAKE_ARGS+=(
-        -DLLVM_ENABLE_PROJECTS="clang;compiler-rt"
-        -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi"
+        -DLLVM_ENABLE_PROJECTS="clang"
+        -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi"
         -DZLIB_INCLUDE_DIR="$ZLIB/include"
+        # We disable some tools to avoid adding -isystem /usr/include in platform builds. It is good
+        # enough for now, but if we want to use them, we should give proper include directories as
+        # we did for zlib above.
         -DLLVM_ENABLE_LIBXML2=Off
         -DLLVM_ENABLE_TERMINFO=Off
         -DLLVM_ENABLE_Z3_SOLVER=Off
         -DLLVM_ENABLE_ZSTD=Off
     )
 else
-    CMAKE_ARGS+=(-DLLVM_ENABLE_PROJECTS="clang;compiler-rt;openmp"
-                 -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi"
+    CMAKE_ARGS+=(
+        -DLLVM_ENABLE_PROJECTS="clang"
+        -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;openmp"
     )
 fi
 
