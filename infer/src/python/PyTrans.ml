@@ -459,12 +459,10 @@ let rec load_cell env cell =
             Ok (env, key :: value :: acc) )
       in
       let env, id, typ = Env.mk_builtin_call env (Builtin.PythonBuild Map) items in
-      let env = Env.push env (DataStack.Temp id) in
       Ok (env, T.Exp.Var id, default_info typ)
   | List (collection, items) ->
       let* env, items = cells_to_textual env items in
       let env, id, typ = Env.mk_builtin_call env (Builtin.PythonBuild collection) items in
-      let env = Env.push env (DataStack.Temp id) in
       Ok (env, T.Exp.Var id, default_info typ)
   | Path id ->
       if
@@ -814,6 +812,7 @@ module FUNCTION = struct
       let* env, cells = pop_n_datastack opname env arg in
       Debug.p "  #args = %d\n" (List.length cells) ;
       let* env, fname = pop_datastack opname env in
+      Debug.p "fname= %a\n" DataStack.pp_cell fname ;
       let loc = Env.loc env in
       match (fname : DataStack.cell) with
       | Name {name} ->
@@ -2482,8 +2481,9 @@ end
 
 (** Main opcode dispatch function. *)
 let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) next_offset_opt =
-  Debug.p "Dump Stack:\n%a\n" (Pp.seq ~sep:"\n" DataStack.pp_cell) (Env.stack env) ;
-  Debug.p "> %s\n" opname ;
+  Debug.p "Dump Stack:@\n%a@\n" (Pp.seq ~sep:"\n" DataStack.pp_cell) (Env.stack env) ;
+  if Option.is_some starts_line then Debug.p ">@\n" ;
+  Debug.p "> %s@\n" opname ;
   let env = Env.update_last_line env starts_line in
   (* TODO: there are < 256 opcodes, could setup an array of callbacks instead *)
   match opname with

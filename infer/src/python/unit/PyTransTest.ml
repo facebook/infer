@@ -3219,6 +3219,81 @@ class C:
 
         /!\ Unsupported decorator 'foo(x, y, z)'
         /!\ Unsupported decorator 'foo::bar(x, y, z)' |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+import unittest
+
+class PwdTest(unittest.TestCase):
+
+    def test_values(self, e):
+        self.assertIn(type(e.pw_gecos), (str, type(None)))
+      |}
+      in
+      test source ;
+      [%expect
+        {|
+      .source_language = "python"
+
+      define dummy.$toplevel() : *PyNone {
+        #b0:
+            n0 = unittest.$toplevel()
+            n1 = $builtins.python_class("dummy::PwdTest")
+            ret null
+
+      }
+
+      define dummy::PwdTest.test_values(self: *dummy::PwdTest, e: *PyObject) : *PyObject {
+        #b0:
+            n0:*dummy::PwdTest = load &self
+            n1:*PyObject = load &e
+            n2:*PyObject = load n1.?.pw_gecos
+            n3 = ?.type(n2)
+            n4 = ?.type(null)
+            n5:*PyObject = load &$ambiguous::str
+            n6 = $builtins.python_build_tuple(n5, n4)
+            n7 = n0.?.assertIn(n3, n6)
+            ret null
+
+      }
+
+      declare dummy::PwdTest(...) : *dummy::PwdTest
+
+      declare dummy::PwdTest.__init__(...) : *PyNone
+
+      global dummy::PwdTest$static: *PyObject
+
+      type .static dummy::PwdTest$static extends unittest::TestCase$static = {
+      }
+
+      type dummy::PwdTest extends unittest::TestCase = {}
+
+      declare unittest.$toplevel() : *PyObject
+
+      global $python_implicit_names::__name__: *PyString
+
+      global $python_implicit_names::__file__: *PyString
+
+      declare $builtins.python_build_tuple(...) : *PyTuple
+
+      declare $builtins.python_class(*String) : *PyClass
+
+      declare $builtins.python_tuple(...) : *PyObject
+
+      declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+      declare $builtins.python_string(*String) : *PyString
+
+      declare $builtins.python_bool(int) : *PyBool
+
+      declare $builtins.python_float(float) : *PyFloat
+
+      declare $builtins.python_int(int) : *PyInt
+
+      Errors while type checking the test:
+      dummy.py, <unknown location>: textual type error: variable $ambiguous::str has not been declared |}]
   end )
 
 
