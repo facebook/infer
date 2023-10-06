@@ -1483,7 +1483,7 @@ module Custom = struct
         let query = "SELECT behavior FROM models WHERE mfa = ? LIMIT 1" in
         let stmt = Sqlite3.prepare db query in
         Sqlite3.bind_text stmt 1 mfa |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
-        let model =
+        let model_opt =
           match Sqlite3.step stmt with
           | Sqlite3.Rc.ROW -> (
               let behavior_json = Sqlite3.column_text stmt 0 in
@@ -1493,7 +1493,6 @@ module Custom = struct
                   L.debug Analysis Quiet "Function '%s' ABS BEHAVIOR:[  %a ] @\n@\n" mfa pp_behavior
                     abs_behavior ;
                   let model_abs_behavior = make_model abs_behavior in
-                  Hashtbl.add_exn dynamic_behavior_models ~key:mfa ~data:model_abs_behavior ;
                   Some model_abs_behavior
               | exception (Yojson.Json_error _ | Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error _)
                 ->
@@ -1503,9 +1502,10 @@ module Custom = struct
               None
         in
         Sqlite3.finalize stmt |> SqliteUtils.check_result_code db ~log:"Erlang models" ;
-        model
-    | Some mfa_model ->
-        Some mfa_model
+        Hashtbl.add_exn dynamic_behavior_models ~key:mfa ~data:model_opt ;
+        model_opt
+    | Some model_opt ->
+        model_opt
 
 
   let get_model_from_db proc_name args =
