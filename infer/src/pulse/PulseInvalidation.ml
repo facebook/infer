@@ -37,6 +37,54 @@ let pp_std_vector_function f = function
       F.fprintf f "std::vector::shrink_to_fit"
 
 
+type map_type = FollyF14Value | FollyF14Vector | FollyF14Fast
+[@@warning "-unused-constructor"] [@@deriving compare, equal]
+
+type map_function =
+  | Clear
+  | Rehash
+  | Reserve
+  | OperatorEqual
+  | Insert
+  | InsertOrAssign
+  | Emplace
+  | TryEmplace
+  | EmplaceHint
+  | OperatorBracket
+[@@warning "-unused-constructor"] [@@deriving compare, equal]
+
+let pp_map_type f = function
+  | FollyF14Value ->
+      F.fprintf f "folly::F14ValueMap"
+  | FollyF14Vector ->
+      F.fprintf f "folly::F14VectorMap"
+  | FollyF14Fast ->
+      F.fprintf f "folly::F14FastMap"
+
+
+let pp_map_function f = function
+  | Clear ->
+      F.fprintf f "clear"
+  | Rehash ->
+      F.fprintf f "rehash"
+  | Reserve ->
+      F.fprintf f "reserve"
+  | OperatorEqual ->
+      F.fprintf f "operator="
+  | Insert ->
+      F.fprintf f "insert"
+  | InsertOrAssign ->
+      F.fprintf f "insert_or_assign"
+  | Emplace ->
+      F.fprintf f "emplace"
+  | TryEmplace ->
+      F.fprintf f "try_emplace"
+  | EmplaceHint ->
+      F.fprintf f "emplace_hint"
+  | OperatorBracket ->
+      F.fprintf f "operator[]"
+
+
 type t =
   | CFree
   | ConstantDereference of IntLit.t
@@ -46,6 +94,7 @@ type t =
   | GoneOutOfScope of Pvar.t * Typ.t
   | OptionalEmpty
   | StdVector of std_vector_function
+  | CppMap of map_type * map_function
 [@@deriving compare, equal]
 
 type must_be_valid_reason =
@@ -99,6 +148,8 @@ let issue_type_of_cause ~latent invalidation must_be_valid_reason =
       IssueType.optional_empty_access ~latent
   | StdVector _ ->
       IssueType.vector_invalidation ~latent
+  | CppMap _ ->
+      IssueType.pulse_reference_stability
 
 
 let describe f cause =
@@ -126,6 +177,9 @@ let describe f cause =
       F.pp_print_string f "is assigned an empty value"
   | StdVector std_vector_f ->
       F.fprintf f "was potentially invalidated by `%a()`" pp_std_vector_function std_vector_f
+  | CppMap (map_t, map_f) ->
+      F.fprintf f "was potentially invalidated by `%a::%a()`" pp_map_type map_t pp_map_function
+        map_f
 
 
 let pp f invalidation =
@@ -140,3 +194,5 @@ let pp f invalidation =
       describe f invalidation
   | StdVector _ ->
       F.fprintf f "StdVector(%a)" describe invalidation
+  | CppMap _ ->
+      F.fprintf f "CppMap(%a)" describe invalidation

@@ -20,6 +20,24 @@ type std_vector_function =
 
 val pp_std_vector_function : F.formatter -> std_vector_function -> unit
 
+type map_type = FollyF14Value | FollyF14Vector | FollyF14Fast
+
+type map_function =
+  | Clear
+  | Rehash
+  | Reserve
+  | OperatorEqual
+  | Insert
+  | InsertOrAssign
+  | Emplace
+  | TryEmplace
+  | EmplaceHint
+  | OperatorBracket
+
+val pp_map_type : F.formatter -> map_type -> unit [@@warning "-unused-value-declaration"]
+
+val pp_map_function : F.formatter -> map_function -> unit [@@warning "-unused-value-declaration"]
+
 type t =
   | CFree
   | ConstantDereference of IntLit.t
@@ -29,6 +47,7 @@ type t =
   | GoneOutOfScope of Pvar.t * Typ.t
   | OptionalEmpty
   | StdVector of std_vector_function
+  | CppMap of map_type * map_function
 [@@deriving compare, equal]
 
 val pp : F.formatter -> t -> unit

@@ -802,7 +802,8 @@ let invalidation_titles (invalidation : Invalidation.t) =
   | EndIterator
   | GoneOutOfScope _
   | OptionalEmpty
-  | StdVector _ ->
+  | StdVector _
+  | CppMap _ ->
       ( "invalidation part of the trace starts here"
       , "use-after-lifetime part of the trace starts here" )
 
