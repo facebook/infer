@@ -29,6 +29,7 @@ module Cell = struct
     | Const of FFI.Constant.t
     | List of (PyBuiltin.builder * t list)
     | Map of t SMap.t
+    | Call of t * t list
     | Apply of string * t
     | Method of method_info
     | ClassClosure
@@ -57,12 +58,14 @@ module Cell = struct
         F.fprintf fmt "[@[%a@]]" (Pp.collection ~fold:List.fold ~sep:", " ~pp_item:pp) lst
     | Map _map ->
         F.pp_print_string fmt "<Map>"
+    | Call (f, args) ->
+        F.fprintf fmt "%a(%a)" pp f (Pp.seq ~sep:", " pp) args
     | Apply (name, ty) ->
         F.fprintf fmt "%s[%a]" name pp ty
     | Const const ->
         F.fprintf fmt "Const(%a)" FFI.Constant.pp const
     | Path id ->
-        F.fprintf fmt "Id(%a)" Ident.pp id
+        F.fprintf fmt "%a" Ident.pp id
     | Method {raw_qualified_name; flags} ->
         F.fprintf fmt "Method(%s, %a)" raw_qualified_name MakeFunctionFlags.pp flags
     | ClassClosure ->
@@ -73,7 +76,6 @@ module Error = struct
   type cell_as = Atom | Path | Code | Method | Tuple | Map
 
   type kind =
-    | InvalidCallWithDecorators of int * string
     | InvalidDecorator of Cell.t
     | UnexpectedOpcode of string
     | UnexpectedClosureName of string
@@ -85,8 +87,6 @@ module Error = struct
     | ToCell of Cell.t
 
   let pp_kind fmt = function
-    | InvalidCallWithDecorators (n, cls) ->
-        F.fprintf fmt "invalid CALL_FUNCTION(%d) for decorated method in class %s" n cls
     | InvalidDecorator typ ->
         F.fprintf fmt "unsupported decorator %a" Cell.pp typ
     | UnexpectedOpcode opcode ->
@@ -135,7 +135,7 @@ let rec to_datastack_cell cell =
       Ok (PyEnv.DataStack.List (b, l))
   | Const c ->
       Ok (PyEnv.DataStack.Const c)
-  | ClassClosure | Apply _ | Method _ | Map _ ->
+  | ClassClosure | Apply _ | Method _ | Map _ | Call _ ->
       Error (Error.ToCell cell)
 
 
@@ -200,7 +200,11 @@ let rec cell_from_constant const =
       Cell.Const const
 
 
-let as_atom = function Cell.Atom name -> Ok name | cell -> Error (Error.As (Atom, cell))
+let try_as_atom = function Cell.Atom name -> Some name | _ -> None
+
+let as_atom cell =
+  match try_as_atom cell with Some name -> Ok name | None -> Error (Error.As (Atom, cell))
+
 
 let as_path = function
   | Cell.Path id ->
@@ -215,10 +219,13 @@ let as_path = function
 
 let as_const = function Cell.Const const -> Ok const | cell -> Error (Error.As (Code, cell))
 
-let as_method = function
-  | Cell.Method method_info ->
+let try_as_method = function Cell.Method method_info -> Some method_info | _ -> None
+
+let as_method cell =
+  match try_as_method cell with
+  | Some method_info ->
       Ok method_info
-  | cell ->
+  | None ->
       Error (Error.As (Method, cell))
 
 
@@ -359,26 +366,48 @@ let store_name state stack class_name name =
   Ok (state, stack)
 
 
-let call_function state stack =
+(* [CALL_FUNCTION] can happen while building the arguments of a decorator, or
+   for applying a decorator itself.
+   For now, we only support [@staticmethod] and [@abstractmethod], but still
+   report this other so parsing can keep going *)
+let call_function state stack argc =
   let open IResult.Let_syntax in
-  let* info, stack = Stack.pop stack in
-  let* decorator, stack = Stack.pop stack in
-  (* TODO: support more complex decorators, with qualified path or generics *)
-  let* decorator_name = as_atom decorator in
-  let* info = as_method info in
-  (* We keep code as a Constant.t because PyTrans works with Arrays of
-     Constant.t, not Code.t.
-     We might revisit this decision if we allow building Constant.t outside of
-     FFI *)
-  let* info =
-    if String.equal PyCommon.static_method decorator_name then Ok {info with Cell.is_static= true}
-    else if String.equal PyCommon.ABC.abstract_method decorator_name then
-      Ok {info with Cell.is_abstract= true}
-    else Error (Error.InvalidDecorator decorator)
+  let* args, stack = Stack.pop_n stack argc in
+  let* callable, stack = Stack.pop stack in
+  let default () =
+    let call = Cell.Call (callable, args) in
+    let stack = Stack.push stack call in
+    Ok (state, stack)
   in
-  let cell = Cell.Method info in
-  let stack = Stack.push stack cell in
-  Ok (state, stack)
+  (* TODO: support more complex decorators, with qualified path or generics *)
+  match args with
+  | [arg] -> (
+    match try_as_method arg with
+    | Some info ->
+        (* We keep code as a Constant.t because PyTrans works with Arrays of
+           Constant.t, not Code.t.
+           We might revisit this decision if we allow building Constant.t outside of
+           FFI *)
+        let* info =
+          match try_as_atom callable with
+          | Some decorator_name ->
+              if String.equal PyCommon.static_method decorator_name then
+                Ok {info with Cell.is_static= true}
+              else if String.equal PyCommon.ABC.abstract_method decorator_name then
+                Ok {info with Cell.is_abstract= true}
+              else Error (Error.InvalidDecorator callable)
+          | None ->
+              (* TODO: keep the decorators around and maybe add them as attributes *)
+              L.user_warning "/!\\ Unsupported decorator '%a'@\n" Cell.pp callable ;
+              Ok info
+        in
+        let cell = Cell.Method info in
+        let stack = Stack.push stack cell in
+        Ok (state, stack)
+    | None ->
+        default () )
+  | _ ->
+      default ()
 
 
 (* In the same fashion as [PyTrans.run_instruction], here is a dedicated state
@@ -390,6 +419,7 @@ let call_function state stack =
 let run class_name state {FFI.Code.co_names; co_consts; co_cellvars; co_freevars} stack
     {FFI.Instruction.opname; arg} =
   let open IResult.Let_syntax in
+  PyDebug.p "[%s] arg= %d\n" opname arg ;
   match opname with
   | "SETUP_ANNOTATIONS" ->
       Ok (state, stack)
@@ -397,7 +427,7 @@ let run class_name state {FFI.Code.co_names; co_consts; co_cellvars; co_freevars
       let cell = Cell.Atom co_names.(arg) in
       let stack = Stack.push stack cell in
       Ok (state, stack)
-  | "LOAD_ATTR" ->
+  | "LOAD_METHOD" | "LOAD_ATTR" ->
       let* prefix, stack = Stack.pop stack in
       let attr = co_names.(arg) in
       let* prefix = as_path prefix in
@@ -465,9 +495,8 @@ let run class_name state {FFI.Code.co_names; co_consts; co_cellvars; co_freevars
       Ok (state, stack)
   | "MAKE_FUNCTION" ->
       make_function state stack arg
-  | "CALL_FUNCTION" ->
-      if arg <> 1 then Error (Error.InvalidCallWithDecorators (arg, class_name))
-      else call_function state stack
+  | "CALL_METHOD" | "CALL_FUNCTION" ->
+      call_function state stack arg
   | "STORE_NAME" ->
       let name = co_names.(arg) in
       (* If __init__ closure is involved, it will finish with

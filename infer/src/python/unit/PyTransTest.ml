@@ -3150,6 +3150,75 @@ class Test(unittest.TestCase):
   declare $builtins.python_int(int) : *PyInt
 
   no support for `hasattr` at the moment.  Skipping... |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+class C:
+    @foo(x, y, z)
+    def f(self):
+        pass
+
+    @foo.bar(x, y, z)
+    def g(self):
+        pass
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_class("dummy::C")
+              ret null
+
+        }
+
+        define dummy::C.f(self: *dummy::C) : *PyObject {
+          #b0:
+              ret null
+
+        }
+
+        define dummy::C.g(self: *dummy::C) : *PyObject {
+          #b0:
+              ret null
+
+        }
+
+        declare dummy::C(...) : *dummy::C
+
+        declare dummy::C.__init__(...) : *PyNone
+
+        global dummy::C$static: *PyObject
+
+        type .static dummy::C$static = {}
+
+        type dummy::C = {}
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_class(*String) : *PyClass
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt
+
+        /!\ Unsupported decorator 'foo(x, y, z)'
+        /!\ Unsupported decorator 'foo::bar(x, y, z)' |}]
   end )
 
 
