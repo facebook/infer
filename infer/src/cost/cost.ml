@@ -62,7 +62,7 @@ module InstrBasicCostWithReason = struct
         get_modeled_cost_unless_top ~default:BasicCostWithReason.one modeled_cost
     | None -> (
       match callee_cost_opt with
-      | Some callee_cost ->
+      | Some callee_cost when not (Procname.is_hack_builtins callee_pname) ->
           callee_cost
       | _ ->
           ScubaLogging.cost_log_message ~label:"unmodeled_function_operation_cost"

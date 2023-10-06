@@ -363,8 +363,12 @@ let collect_issues proc_name proc_location_opt err_log issues_acc =
 
 
 let write_costs proc_name loc cost_opt (outfile : Utils.outfile) =
-  if (not (Cost.is_report_suppressed proc_name)) && is_in_files_to_analyze loc then
-    JsonCostsPrinter.pp outfile.fmt {loc; proc_name; cost_opt}
+  if
+    (not (Cost.is_report_suppressed proc_name))
+    && is_in_files_to_analyze loc
+    && (not (Procname.is_hack_builtins proc_name))
+    && not (SourceFile.is_matching [Str.regexp ".*.sil.*"] loc.Location.file)
+  then JsonCostsPrinter.pp outfile.fmt {loc; proc_name; cost_opt}
 
 
 let write_config_impact proc_name loc config_impact_opt (outfile : Utils.outfile) =

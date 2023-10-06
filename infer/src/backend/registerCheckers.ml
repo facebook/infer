@@ -134,7 +134,7 @@ let all_checkers =
            interprocedural3 ~set_payload:(Field.fset Payloads.Fields.cost) Payloads.Fields.cost
              Payloads.Fields.buffer_overrun_analysis Payloads.Fields.purity Cost.checker
          in
-         [(checker, Clang); (checker, Java)] ) }
+         [(checker, Clang); (checker, Java); (checker, Hack)] ) }
   ; {checker= Uninit; callbacks= [(interprocedural Payloads.Fields.uninit Uninit.checker, Clang)]}
   ; {checker= SIOF; callbacks= [(interprocedural Payloads.Fields.siof Siof.checker, Clang)]}
   ; { checker= LithoRequiredProps

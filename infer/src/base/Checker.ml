@@ -158,7 +158,7 @@ let config_unsafe checker =
           UserFacing
             { title= "Cost: Complexity Analysis"
             ; markdown_body= [%blob "./documentation/checkers/Cost.md"] }
-      ; support= mk_support_func ~clang:Support ~java:Support ()
+      ; support= mk_support_func ~clang:Support ~java:Support ~hack:ExperimentalSupport ()
       ; short_documentation=
           "Computes the asymptotic complexity of functions with respect to execution cost or other \
            user defined resources. Can be used to detect changes in the complexity with `infer \
