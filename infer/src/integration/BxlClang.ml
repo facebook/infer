@@ -9,7 +9,7 @@ module L = Logging
 module F = Format
 module Visited = HashSet.Make (String)
 
-let rec traverse ~root visited acc target_path =
+let traverse ~root visited acc target_path =
   if String.is_empty target_path then acc
   else
     let target_path =
@@ -24,11 +24,6 @@ let rec traverse ~root visited acc target_path =
         ->
           (* we found a capture DB so add this as a target line *)
           Printf.sprintf "dummy\t-\t%s" target_path :: acc
-      | `Yes ->
-          (* recurse into non-infer-out directory *)
-          Sys.readdir target_path
-          |> Array.fold ~init:acc ~f:(fun acc entry ->
-                 traverse ~root visited acc (Filename.concat target_path entry) )
       | _ ->
           acc )
 
