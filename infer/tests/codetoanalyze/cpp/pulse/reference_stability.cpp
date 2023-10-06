@@ -15,14 +15,59 @@ namespace folly {
 struct F14HashToken;
 
 namespace f14::detail {
-template <typename Key, typename Mapped>
+template <typename ValuePtr>
+struct NodeContainerIterator {
+  using pointee = typename std::pointer_traits<ValuePtr>::element_type;
+  using pointer = ValuePtr;
+  using reference = pointee&;
+
+  reference operator*() const;
+  pointer operator->() const;
+  NodeContainerIterator& operator++();
+  friend bool operator==(NodeContainerIterator const& lhs,
+                         NodeContainerIterator const& rhs);
+  friend bool operator!=(NodeContainerIterator const& lhs,
+                         NodeContainerIterator const& rhs);
+};
+
+template <typename ValuePtr>
+struct ValueContainerIterator {
+  using pointee = typename std::pointer_traits<ValuePtr>::element_type;
+  using pointer = ValuePtr;
+  using reference = pointee&;
+
+  reference operator*() const;
+  pointer operator->() const;
+  ValueContainerIterator& operator++();
+  friend bool operator==(ValueContainerIterator const& lhs,
+                         ValueContainerIterator const& rhs);
+  friend bool operator!=(ValueContainerIterator const& lhs,
+                         ValueContainerIterator const& rhs);
+};
+
+template <typename ValuePtr>
+struct VectorContainerIterator {
+  using pointee = typename std::pointer_traits<ValuePtr>::element_type;
+  using pointer = ValuePtr;
+  using reference = pointee&;
+
+  reference operator*() const;
+  pointer operator->() const;
+  VectorContainerIterator& operator++();
+  friend bool operator==(VectorContainerIterator const& lhs,
+                         VectorContainerIterator const& rhs);
+  friend bool operator!=(VectorContainerIterator const& lhs,
+                         VectorContainerIterator const& rhs);
+};
+
+template <typename Key, typename Mapped, typename Iter, typename ConstIter>
 struct F14BasicMap {
   using key_type = Key;
   using mapped_type = Mapped;
   using value_type = std::pair<const Key, Mapped>;
   using size_type = std::size_t;
-  using iterator = value_type*;
-  using const_iterator = value_type const*;
+  using iterator = Iter;
+  using const_iterator = ConstIter;
 
   F14BasicMap() noexcept;
 
@@ -167,14 +212,34 @@ struct F14BasicMap {
 };
 
 template <typename Key, typename Mapped>
-class F14VectorMapImpl : public F14BasicMap<Key, Mapped> {
-  using F14BasicMap<Key, Mapped>::F14BasicMap;
+class F14VectorMapImpl
+    : public F14BasicMap<
+          Key,
+          Mapped,
+          VectorContainerIterator<std::pair<Key const, Mapped>*>,
+          VectorContainerIterator<std::pair<Key const, Mapped> const*>> {
+  using F14BasicMap<Key,
+                    Mapped,
+                    VectorContainerIterator<std::pair<Key const, Mapped>*>,
+                    VectorContainerIterator<
+                        std::pair<Key const, Mapped> const*>>::F14BasicMap;
 };
 } // namespace f14::detail
 
 template <typename Key, typename Mapped>
-class F14ValueMap : public f14::detail::F14BasicMap<Key, Mapped> {
-  using f14::detail::F14BasicMap<Key, Mapped>::F14BasicMap;
+class F14ValueMap
+    : public f14::detail::F14BasicMap<
+          Key,
+          Mapped,
+          f14::detail::VectorContainerIterator<std::pair<Key const, Mapped>*>,
+          f14::detail::VectorContainerIterator<
+              std::pair<Key const, Mapped> const*>> {
+  using f14::detail::F14BasicMap<
+      Key,
+      Mapped,
+      f14::detail::VectorContainerIterator<std::pair<Key const, Mapped>*>,
+      f14::detail::VectorContainerIterator<
+          std::pair<Key const, Mapped> const*>>::F14BasicMap;
 };
 
 template <typename Key, typename Mapped>
