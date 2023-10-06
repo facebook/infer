@@ -3532,12 +3532,18 @@ f(0, y=2, x=1)
 let%test_module "exception" =
   ( module struct
     let%expect_test _ =
-      let source = {|
+      let source =
+        {|
 class C(Exception):
           pass
 
-raise C
-          |} in
+def f():
+  raise C
+
+def g():
+  raise C()
+          |}
+      in
       test source ;
       [%expect
         {|
@@ -3546,7 +3552,9 @@ raise C
         define dummy.$toplevel() : *PyNone {
           #b0:
               n0 = $builtins.python_class("dummy::C")
-              throw "dummy::C"
+              n1 = $builtins.python_code("dummy.f")
+              n2 = $builtins.python_code("dummy.g")
+              ret null
 
         }
 
@@ -3560,11 +3568,76 @@ raise C
 
         type dummy::C extends Exception = {}
 
+        define dummy.f() : *PyObject {
+          #b0:
+              throw "dummy::C"
+
+        }
+
+        define dummy.g() : *PyObject {
+          #b0:
+              n0 = dummy::C()
+              throw n0
+
+        }
+
         global $python_implicit_names::__name__: *PyString
 
         global $python_implicit_names::__file__: *PyString
 
+        declare $builtins.python_code(*String) : *PyCode
+
         declare $builtins.python_class(*String) : *PyClass
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+import foo
+
+def f():
+          raise foo.bar(42)
+          |} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = foo.$toplevel()
+              n1 = $builtins.python_code("dummy.f")
+              ret null
+
+        }
+
+        define dummy.f() : *PyObject {
+          #b0:
+              n0 = foo.bar($builtins.python_int(42))
+              throw n0
+
+        }
+
+        declare foo.bar(...) : *PyObject
+
+        declare foo.$toplevel() : *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_code(*String) : *PyCode
 
         declare $builtins.python_tuple(...) : *PyObject
 

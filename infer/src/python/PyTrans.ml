@@ -34,7 +34,6 @@ module Error = struct
     | CallKwMissingId of Ident.t
     | CallKwInvalidFunction of DataStack.cell
     | RaiseException of int
-    | RaiseExceptionSource of DataStack.cell
     | MakeFunctionDefault of DataStack.cell
     | MakeFunctionSignature of DataStack.cell
 
@@ -72,8 +71,6 @@ module Error = struct
         F.fprintf fmt "Unsupported CALL_FUNCTION_KW with %a" DataStack.pp_cell cell
     | RaiseException n ->
         F.fprintf fmt "Unsupported RAISE_VARARGS mode %d" n
-    | RaiseExceptionSource cell ->
-        F.fprintf fmt "Unsupported source of exception: %a" DataStack.pp_cell cell
     | MakeFunctionDefault cell ->
         F.fprintf fmt "Unsupported function defaults: %a" DataStack.pp_cell cell
     | MakeFunctionSignature cell ->
@@ -124,7 +121,6 @@ module Error = struct
     | CallKeywordNotString1 of DataStack.cell
     | CallKeywordBuildClass
     | RaiseExceptionInvalid of int
-    | RaiseExceptionUnknown of DataStack.cell
     | DefaultArgSpecialization of T.QualifiedProcName.t * int * int
     | BuildSliceArity of int
 
@@ -223,8 +219,6 @@ module Error = struct
         F.pp_print_string fmt "CALL_FUNCTION_KW cannot be used with LOAD_BUILD_CLASS"
     | RaiseExceptionInvalid n ->
         F.fprintf fmt "RAISE_VARARGS invalid mode %d" n
-    | RaiseExceptionUnknown cell ->
-        F.fprintf fmt "RAISE_VARARGS unknown construct %a" DataStack.pp_cell cell
     | DefaultArgSpecialization (name, param_size, default_size) ->
         F.fprintf fmt "%a has more default arguments (%d) then actual arguments (%d)"
           T.QualifiedProcName.pp name default_size param_size
@@ -2391,23 +2385,26 @@ module RAISE_VARARGS = struct
     in
     let loc = Env.loc env in
     let* env, tos = pop_datastack opname env in
+    let default () =
+      let* env, exp, _info = load_cell env tos in
+      let throw = JUMP.Throw exp in
+      Ok (env, Some throw)
+    in
     match (tos : DataStack.cell) with
     | Name {global; name} -> (
         let key = mk_key global loc name in
         let opt_sym = Env.lookup_symbol env key in
         match opt_sym with
         | Some {Symbol.kind= Class; id} ->
-            (* TODO: check this heuristic. Not sure what can be raised yet *)
+            (* TODO: Check if we can raise a class rather than an instance of a class *)
             let s = Ident.to_string ~sep:"::" id in
             let exp = T.Exp.Const (Str s) in
             let throw = JUMP.Throw exp in
             Ok (env, Some throw)
-        | Some {Symbol.kind; id} ->
-            Error (L.InternalError, Error.LoadInvalid (kind, id))
-        | None ->
-            Error (L.InternalError, Error.RaiseExceptionUnknown tos) )
+        | _ ->
+            default () )
     | _ ->
-        Error (L.InternalError, Error.TODO (RaiseExceptionSource tos))
+        default ()
 end
 
 module FORMAT_VALUE = struct
