@@ -32,7 +32,7 @@ type binary_op =
 
 type unary_op = Positive | Negative | Not | Invert [@@deriving compare]
 
-type builder = List | Set | Tuple | Map | String [@@deriving compare]
+type builder = List | Set | Tuple | Map | String | Slice [@@deriving compare]
 
 type textual =
   | IsTrue

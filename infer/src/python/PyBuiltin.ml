@@ -105,7 +105,14 @@ module Builtin = struct
         "invert"
 
 
-  type builder = List | Set | Tuple | Map | String [@@deriving compare]
+  (* For slice, we could provide both Slice2 and Slice3 (see [0]) but having an
+     unspecified number of argument will be enough for prototyping
+
+     Also we could add a specific type for slices, but right now we don't need it
+
+     [0] https://docs.python.org/3.8/library/functions.html#slice
+  *)
+  type builder = List | Set | Tuple | Map | String | Slice [@@deriving compare]
 
   let builder_to_string = function
     | List ->
@@ -118,6 +125,8 @@ module Builtin = struct
         "map"
     | String ->
         "string"
+    | Slice ->
+        "slice"
 
 
   (* TODO: remove some of the redundant Python prefixes *)
@@ -378,6 +387,7 @@ module Set = struct
       ; no_formal (Builtin.PythonBuild Tuple) ~result_type:(annot PyCommon.pyTuple)
       ; no_formal (Builtin.PythonBuild Map) ~result_type:(annot PyCommon.pyMap)
       ; no_formal (Builtin.PythonBuild String) ~result_type:(annot string_)
+      ; no_formal (Builtin.PythonBuild Slice)
       ; ( Builtin.PythonIndex
         , { formals_types= Some [annot PyCommon.pyObject; annot T.Typ.Int]
           ; result_type= annot PyCommon.pyObject

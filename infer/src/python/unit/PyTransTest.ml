@@ -936,6 +936,56 @@ for x in range(10):
         declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source = {|
+l = [0, 1, 2, 3, 4, 5]
+l[0:2]
+l[0:2:1]
+          |} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_build_list($builtins.python_int(0), $builtins.python_int(1), $builtins.python_int(2), $builtins.python_int(3), $builtins.python_int(4), $builtins.python_int(5))
+              store &dummy::l <- n0:*PyList
+              n1 = $builtins.python_build_slice($builtins.python_int(0), $builtins.python_int(2))
+              n2:*PyList = load &dummy::l
+              n3 = $builtins.python_subscript_get(n2, n1)
+              n4 = $builtins.python_build_slice($builtins.python_int(0), $builtins.python_int(2), $builtins.python_int(1))
+              n5:*PyList = load &dummy::l
+              n6 = $builtins.python_subscript_get(n5, n4)
+              ret null
+
+        }
+
+        global dummy::l: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_subscript_get(*PyObject, *PyObject) : *PyObject
+
+        declare $builtins.python_build_slice(...) : *PyObject
+
+        declare $builtins.python_build_list(...) : *PyList
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )
 
 

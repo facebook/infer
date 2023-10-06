@@ -126,6 +126,7 @@ module Error = struct
     | RaiseExceptionInvalid of int
     | RaiseExceptionUnknown of DataStack.cell
     | DefaultArgSpecialization of T.QualifiedProcName.t * int * int
+    | BuildSliceArity of int
 
   type t = L.error * kind
 
@@ -227,6 +228,8 @@ module Error = struct
     | DefaultArgSpecialization (name, param_size, default_size) ->
         F.fprintf fmt "%a has more default arguments (%d) then actual arguments (%d)"
           T.QualifiedProcName.pp name default_size param_size
+    | BuildSliceArity n ->
+        F.fprintf fmt "Invalid BUILD_SLICE arity. Expected 2 or 3 but got %d" n
 
 
   let class_decl kind = (L.InternalError, ClassDecl kind)
@@ -1609,6 +1612,28 @@ module BUILD = struct
       Ok (env, None)
   end
 
+  module SLICE = struct
+    (** {v BUILD_SLICE(argc) v}
+
+        Pushes a slice object on the stack. [argc] must be 2 or 3. If it is 2,
+        [slice(top-of-stack1, top-of-stack)] is pushed; if it is 3,
+        [slice(top-of-stack2, top-of-stack1, top-of-stack)] is pushed.
+
+        See the [slice()] built-in function for more information.
+
+        https://docs.python.org/3.8/library/functions.html#slice *)
+    let run env {FFI.Instruction.opname; arg= argc} =
+      let open IResult.Let_syntax in
+      Debug.p "[%s] argc = %d\n" opname argc ;
+      if argc <> 2 && argc <> 3 then Error (L.ExternalError, Error.BuildSliceArity argc)
+      else
+        let* env, cells = pop_n_datastack opname env argc in
+        let* env, exps = cells_to_textual env cells in
+        let env, id, _ = Env.mk_builtin_call env (Builtin.PythonBuild Slice) exps in
+        let env = Env.push env (DataStack.Temp id) in
+        Ok (env, None)
+  end
+
   (** {v BUILD_LIST(count) v}
       {v BUILD_SET(count) v}
       {v BUILD_TUPLE(count) v}
@@ -2584,6 +2609,8 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
       BUILD.run env instr Builtin.Tuple
   | "BUILD_STRING" ->
       BUILD.run env instr Builtin.String
+  | "BUILD_SLICE" ->
+      BUILD.SLICE.run env instr
   | "STORE_SUBSCR" ->
       STORE.SUBSCR.run env instr
   | "BINARY_SUBSCR" ->
