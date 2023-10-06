@@ -154,7 +154,7 @@ module Builtin = struct
     | CompareOp of Compare.t
   [@@deriving compare]
 
-  type python = Print | Range | Open [@@deriving compare]
+  type python = Print | Range | Open | Len | Type [@@deriving compare]
 
   type t = Primitive of primitive | Textual of textual | Python of python [@@deriving compare]
 end
@@ -166,7 +166,18 @@ type builtin = t = Primitive of primitive | Textual of textual | Python of pytho
 
 let textual t = Textual t
 
-let python_to_string = function Print -> "print" | Range -> "range" | Open -> "open"
+let python_to_string = function
+  | Print ->
+      "print"
+  | Range ->
+      "range"
+  | Open ->
+      "open"
+  | Len ->
+      "len"
+  | Type ->
+      "type"
+
 
 let to_proc_name = function
   | Primitive primitive -> (
@@ -242,6 +253,10 @@ let of_string name =
       Some (Python Range)
   | "open" ->
       Some (Python Open)
+  | "len" ->
+      Some (Python Len)
+  | "type" ->
+      Some (Python Type)
   | _ ->
       None
 
@@ -435,7 +450,14 @@ module Set = struct
   let python_builtins =
     [ (Builtin.Print, {formals_types= None; result_type= annotatedObject; used_struct_types= []})
     ; (Builtin.Open, {formals_types= None; result_type= annotatedObject; used_struct_types= []})
-    ; (Builtin.Range, {formals_types= None; result_type= annotatedObject; used_struct_types= []}) ]
+    ; (Builtin.Range, {formals_types= None; result_type= annotatedObject; used_struct_types= []})
+    ; ( Builtin.Len
+      , { formals_types= Some [annotatedObject]
+        ; result_type= annot PyCommon.pyInt
+        ; used_struct_types= [] } )
+    ; ( Builtin.Type
+      , {formals_types= Some [annotatedObject]; result_type= annotatedObject; used_struct_types= []}
+      ) ]
 
 
   let supported_builtins =

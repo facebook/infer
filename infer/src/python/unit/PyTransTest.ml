@@ -2032,7 +2032,7 @@ if __name__ == '__main__':
             n7 = n0.?.abspath(n6)
             store &mydir <- n7:*PyObject
             n8:*PyObject = load &sys::path
-            n9 = $ambiguous.len(n8)
+            n9 = $builtins.len(n8)
             n10 = $builtins.binary_subtract(n9, $builtins.python_int(1))
             store &i <- n10:*PyObject
             jmp b1
@@ -2095,6 +2095,8 @@ if __name__ == '__main__':
 
       global $python_implicit_names::__file__: *PyString
 
+      declare $builtins.len(*PyObject) : *PyInt
+
       declare $builtins.python_ge(*PyObject, *PyObject) : *PyBool
 
       declare $builtins.python_eq(*PyObject, *PyObject) : *PyBool
@@ -2123,8 +2125,6 @@ if __name__ == '__main__':
 
       Errors while type checking the test:
       dummy.py, line 4, column 0: textual type error: variable test.libregrtest::main has not been declared
-      dummy.py, line 14, column 0: textual type error: procname $ambiguous.len should be user-declared or a builtin
-      dummy.py, line 14, column 0: textual type error: ident n9 is read before being written
           |}]
 
 
@@ -3252,8 +3252,8 @@ class PwdTest(unittest.TestCase):
             n0:*dummy::PwdTest = load &self
             n1:*PyObject = load &e
             n2:*PyObject = load n1.?.pw_gecos
-            n3 = $ambiguous.type(n2)
-            n4 = $ambiguous.type(null)
+            n3 = $builtins.type(n2)
+            n4 = $builtins.type(null)
             n5:*PyObject = load &$ambiguous::str
             n6 = $builtins.python_build_tuple(n5, n4)
             n7 = n0.?.assertIn(n3, n6)
@@ -3278,6 +3278,8 @@ class PwdTest(unittest.TestCase):
 
       global $python_implicit_names::__file__: *PyString
 
+      declare $builtins.type(*PyObject) : *PyObject
+
       declare $builtins.python_build_tuple(...) : *PyTuple
 
       declare $builtins.python_class(*String) : *PyClass
@@ -3295,8 +3297,6 @@ class PwdTest(unittest.TestCase):
       declare $builtins.python_int(int) : *PyInt
 
       Errors while type checking the test:
-      dummy.py, line 7, column 0: textual type error: procname $ambiguous.type should be user-declared or a builtin
-      dummy.py, line 7, column 0: textual type error: procname $ambiguous.type should be user-declared or a builtin
       dummy.py, <unknown location>: textual type error: variable $ambiguous::str has not been declared |}]
   end )
 
