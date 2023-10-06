@@ -4057,3 +4057,78 @@ def inv(x):
 
         declare $builtins.python_int(int) : *PyInt |}]
   end )
+
+
+let%test_module "user annotations" =
+  ( module struct
+    let%expect_test _ =
+      let source =
+        {|
+x : int
+x = 0
+
+y : str = "zuck"
+
+
+# we do not keep track or enforce these annotations
+import C
+z : C.T = 42 # C.T will be ignored in the Textual output
+
+def f():
+    u: int
+    u = 0
+
+    v: str = "tata"
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              store &dummy::x <- $builtins.python_int(0):*PyInt
+              store &dummy::y <- $builtins.python_string("zuck"):*PyString
+              n0 = C.$toplevel()
+              store &dummy::z <- $builtins.python_int(42):*PyInt
+              n1 = $builtins.python_code("dummy.f")
+              ret null
+
+        }
+
+        define dummy.f() : *PyObject {
+          local u: *PyObject, v: *PyObject
+          #b0:
+              store &u <- $builtins.python_int(0):*PyInt
+              store &v <- $builtins.python_string("tata"):*PyString
+              ret null
+
+        }
+
+        global dummy::z: *PyObject
+
+        global dummy::y: *PyObject
+
+        global dummy::x: *PyObject
+
+        declare C.$toplevel() : *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
+  end )

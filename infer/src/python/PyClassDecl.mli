@@ -28,6 +28,7 @@ module State : sig
     { members: PyCommon.annotated_name list
     ; methods: method_info list
     ; static_methods: method_info list
+    ; has_annotations: bool
     ; has_init: PyCommon.annotated_name list option
     ; has_new: PyCommon.annotated_name list option }
 end

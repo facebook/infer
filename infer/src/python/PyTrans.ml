@@ -1428,11 +1428,22 @@ module STORE = struct
       let* env, cell_ndx = pop_datastack opname env in
       let* env, cell_lhs = pop_datastack opname env in
       let* env, cell_rhs = pop_datastack opname env in
-      let* env, ndx, _ = load_cell env cell_ndx in
-      let* env, lhs, _ = load_cell env cell_lhs in
-      let* env, rhs, _ = load_cell env cell_rhs in
-      let env, _id, _typ = Env.mk_builtin_call env Builtin.PythonSubscriptSet [lhs; ndx; rhs] in
-      Ok (env, None)
+      let is_annotations =
+        match DataStack.as_name cell_lhs with
+        | Some name ->
+            String.equal name "__annotations__"
+        | None ->
+            false
+      in
+      if Env.has_annotations env && is_annotations then
+        (* We do not store user annotations at the moment *)
+        Ok (env, None)
+      else
+        let* env, ndx, _ = load_cell env cell_ndx in
+        let* env, lhs, _ = load_cell env cell_lhs in
+        let* env, rhs, _ = load_cell env cell_rhs in
+        let env, _id, _typ = Env.mk_builtin_call env Builtin.PythonSubscriptSet [lhs; ndx; rhs] in
+        Ok (env, None)
   end
 end
 
@@ -2643,6 +2654,9 @@ let run_instruction env code ({FFI.Instruction.opname; starts_line} as instr) ne
       RAISE_VARARGS.run env instr
   | "FORMAT_VALUE" ->
       FORMAT_VALUE.run env instr
+  | "SETUP_ANNOTATIONS" ->
+      let env = Env.set_annotations env in
+      Ok (env, None)
   | _ ->
       Error (L.InternalError, Error.TODO (UnsupportedOpcode opname))
 

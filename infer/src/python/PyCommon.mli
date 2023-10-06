@@ -209,7 +209,10 @@ val class__ : string
 (** Special name for [__class__] *)
 
 val classcell : string
-(** Special name for [__classcell_] *)
+(** Special name for [__classcell__] *)
+
+val annotations : string
+(** Special name for [__annotations__] *)
 
 val entry : string
 (** Textual label name for entry points of function we synthesized (constructors, __init__, ...) *)

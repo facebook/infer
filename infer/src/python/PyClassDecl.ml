@@ -172,10 +172,20 @@ module State = struct
     { members: PyCommon.annotated_name list
     ; methods: method_info list
     ; static_methods: method_info list
+    ; has_annotations: bool
     ; has_init: PyCommon.annotated_name list option
     ; has_new: PyCommon.annotated_name list option }
 
-  let empty = {members= []; methods= []; static_methods= []; has_init= None; has_new= None}
+  let empty =
+    { members= []
+    ; methods= []
+    ; static_methods= []
+    ; has_annotations= false
+    ; has_init= None
+    ; has_new= None }
+
+
+  let has_annotations {has_annotations} = has_annotations
 end
 
 let rec cell_from_constant const =
@@ -411,6 +421,7 @@ let run class_name state {FFI.Code.co_names; co_consts; co_cellvars; co_freevars
   PyDebug.p "[%s] arg= %d\n" opname arg ;
   match opname with
   | "SETUP_ANNOTATIONS" ->
+      let state = {state with State.has_annotations= true} in
       Ok (state, stack)
   | "LOAD_NAME" ->
       let cell = Cell.Atom co_names.(arg) in
@@ -452,14 +463,20 @@ let run class_name state {FFI.Code.co_names; co_consts; co_cellvars; co_freevars
       let* dict, stack = Stack.pop stack in
       let* value, stack = Stack.pop stack in
       let* name = as_atom ndx in
-      let* () =
-        let* atom = as_atom dict in
-        if String.equal "__annotations__" atom then Ok () else Error (Error.UnknownStorage atom)
+      let* atom = as_atom dict in
+      let* state =
+        if State.has_annotations state then
+          let* () =
+            if String.equal PyCommon.annotations atom then Ok ()
+            else Error (Error.UnknownStorage atom)
+          in
+          let* annotation = as_path value in
+          let {State.members} = state in
+          let members = {PyCommon.name; annotation} :: members in
+          let state = {state with State.members} in
+          Ok state
+        else Error (Error.UnknownStorage atom)
       in
-      let* annotation = as_path value in
-      let {State.members} = state in
-      let members = {PyCommon.name; annotation} :: members in
-      let state = {state with State.members} in
       Ok (state, stack)
   | "BUILD_CONST_KEY_MAP" ->
       let* cell, stack = Stack.pop stack in

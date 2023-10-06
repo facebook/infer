@@ -383,6 +383,8 @@ let class__ = "__class__"
 
 let classcell = "__classcell__"
 
+let annotations = "__annotations__"
+
 let return = "return"
 
 let entry = "entry"

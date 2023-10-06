@@ -253,6 +253,9 @@ and shared =
   ; is_static: bool (* is the current method a static method or an instance method ? *)
   ; next_label: int
   ; with_targets: ISet.t (* targets for clean up code of [with] statements or [finally] blocks *)
+  ; has_global_annotations: bool
+        (* True iff [SETUP_ANNOTATIONS] was used in the top level context *)
+  ; has_local_annotations: bool (* True iff [SETUP_ANNOTATIONS] was used in a local contextn *)
   ; labels: label_info Labels.t }
 
 (** State of the capture while processing a single node: each node has a dedicated data stack, and
@@ -379,6 +382,8 @@ let empty module_name =
   ; is_static= false
   ; next_label= 0
   ; with_targets= ISet.empty
+  ; has_global_annotations= false
+  ; has_local_annotations= false
   ; labels= Labels.empty }
 
 
@@ -397,9 +402,23 @@ let enter_proc ~is_toplevel ~is_static ~module_name ~params {shared} =
     ; local_idents= T.Ident.Set.empty
     ; next_label= 0
     ; labels= Labels.empty
+    ; has_local_annotations= false
     ; locals= SMap.empty }
   in
   {shared; node= empty_node}
+
+
+let set_annotations ({shared} as env) =
+  let {is_toplevel} = shared in
+  let shared =
+    if is_toplevel then {shared with has_global_annotations= true}
+    else {shared with has_local_annotations= true}
+  in
+  {env with shared}
+
+
+let has_annotations {shared= {is_toplevel; has_global_annotations; has_local_annotations}} =
+  if is_toplevel then has_global_annotations else has_local_annotations
 
 
 let enter_node ({node} as env) =

@@ -176,6 +176,14 @@ val enter_proc :
 (** Set the environment when entering a new code unit (like reset the instruction buffer, or
     id/label generators. *)
 
+val set_annotations : t -> t
+(** Configure the environment to keep track of variable annotations in the dedicated
+    [__annotations__] dictionary. Right now, we register its existence but don't store anything in
+    it *)
+
+val has_annotations : t -> bool
+(** Returns the fact that annotations are tracked or not *)
+
 val enter_node : t -> t
 (** Set the environment when entering a new node. Reset the [instructions] buffer. *)
 
