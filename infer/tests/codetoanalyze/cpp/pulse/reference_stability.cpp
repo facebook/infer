@@ -252,10 +252,10 @@ class F14FastMap : public std::conditional<
                        sizeof(std::pair<Key const, Mapped>) < 24,
                        F14ValueMap<Key, Mapped>,
                        f14::detail::F14VectorMapImpl<Key, Mapped>>::type {
-  using Super =
-      std::conditional<sizeof(std::pair<Key const, Mapped>) < 24,
-                       F14ValueMap<Key, Mapped>,
-                       f14::detail::F14VectorMapImpl<Key, Mapped>>::type;
+  using Super = typename std::conditional<
+      sizeof(std::pair<Key const, Mapped>) < 24,
+      F14ValueMap<Key, Mapped>,
+      f14::detail::F14VectorMapImpl<Key, Mapped>>::type;
   using Super::Super;
 };
 } // namespace folly
