@@ -73,7 +73,7 @@ module Cell = struct
 end
 
 module Error = struct
-  type cell_as = Atom | Path | Code | Method | Tuple | Map
+  type cell_as = Atom | Path | Code | Tuple | Map
 
   type kind =
     | InvalidDecorator of Cell.t
@@ -102,8 +102,6 @@ module Error = struct
               "a qualified name"
           | Code ->
               "a code object"
-          | Method ->
-              "some method information"
           | Tuple ->
               "a tuple"
           | Map ->
@@ -221,14 +219,6 @@ let as_const = function Cell.Const const -> Ok const | cell -> Error (Error.As (
 
 let try_as_method = function Cell.Method method_info -> Some method_info | _ -> None
 
-let as_method cell =
-  match try_as_method cell with
-  | Some method_info ->
-      Ok method_info
-  | None ->
-      Error (Error.As (Method, cell))
-
-
 let as_tuple = function Cell.List l -> Ok l | cell -> Error (Error.As (Tuple, cell))
 
 let as_map = function Cell.Map map -> Ok map | cell -> Error (Error.As (Map, cell))
@@ -304,18 +294,17 @@ let make_function state stack flags =
   Ok (state, stack)
 
 
-let store_name state stack class_name name =
+let store_name state stack class_name name method_info =
   let open IResult.Let_syntax in
-  let* method_info, stack = Stack.pop stack in
-  let* { Cell.raw_qualified_name
-       ; code
-       ; rev_signature
-       ; type_info
-       ; is_static
-       ; is_abstract
-       ; flags
-       ; defaults } =
-    as_method method_info
+  let { Cell.raw_qualified_name
+      ; code
+      ; rev_signature
+      ; type_info
+      ; is_static
+      ; is_abstract
+      ; flags
+      ; defaults } =
+    method_info
   in
   (* When __init__ calls super(), some closures are added to the fix, so we
      don't care if __init__ is marked as a closure. However for other methods,
@@ -497,7 +486,7 @@ let run class_name state {FFI.Code.co_names; co_consts; co_cellvars; co_freevars
       make_function state stack arg
   | "CALL_METHOD" | "CALL_FUNCTION" ->
       call_function state stack arg
-  | "STORE_NAME" ->
+  | "STORE_NAME" -> (
       let name = co_names.(arg) in
       (* If __init__ closure is involved, it will finish with
                     70 LOAD_CLOSURE             0 (__class__)
@@ -507,7 +496,14 @@ let run class_name state {FFI.Code.co_names; co_consts; co_cellvars; co_freevars
          So we'll just ignore these stores for now
       *)
       if String.equal PyCommon.classcell name then Ok (state, stack)
-      else store_name state stack class_name name
+      else
+        let* method_info, stack = Stack.pop stack in
+        match try_as_method method_info with
+        | Some method_info ->
+            store_name state stack class_name name method_info
+        | None ->
+            L.user_warning "Default value for class members are not yet supported@\n" ;
+            Ok (state, stack) )
   | "RETURN_VALUE" ->
       (* Often there will be useless "return None" in here so we just ignore
          return statements *)
