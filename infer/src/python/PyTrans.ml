@@ -721,7 +721,7 @@ module FUNCTION = struct
           (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
              further analysis *)
           let proc =
-            let enclosing_class = T.TypeName.wildcard in
+            let enclosing_class = {T.TypeName.value= Ident.ambiguous; loc} in
             qualified_procname ~enclosing_class @@ Ident.to_proc_name fid
           in
           mk env proc

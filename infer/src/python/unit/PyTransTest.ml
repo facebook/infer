@@ -2032,7 +2032,7 @@ if __name__ == '__main__':
             n7 = n0.?.abspath(n6)
             store &mydir <- n7:*PyObject
             n8:*PyObject = load &sys::path
-            n9 = ?.len(n8)
+            n9 = $ambiguous.len(n8)
             n10 = $builtins.binary_subtract(n9, $builtins.python_int(1))
             store &i <- n10:*PyObject
             jmp b1
@@ -2123,6 +2123,8 @@ if __name__ == '__main__':
 
       Errors while type checking the test:
       dummy.py, line 4, column 0: textual type error: variable test.libregrtest::main has not been declared
+      dummy.py, line 14, column 0: textual type error: procname $ambiguous.len should be user-declared or a builtin
+      dummy.py, line 14, column 0: textual type error: ident n9 is read before being written
           |}]
 
 
@@ -3250,8 +3252,8 @@ class PwdTest(unittest.TestCase):
             n0:*dummy::PwdTest = load &self
             n1:*PyObject = load &e
             n2:*PyObject = load n1.?.pw_gecos
-            n3 = ?.type(n2)
-            n4 = ?.type(null)
+            n3 = $ambiguous.type(n2)
+            n4 = $ambiguous.type(null)
             n5:*PyObject = load &$ambiguous::str
             n6 = $builtins.python_build_tuple(n5, n4)
             n7 = n0.?.assertIn(n3, n6)
@@ -3293,6 +3295,8 @@ class PwdTest(unittest.TestCase):
       declare $builtins.python_int(int) : *PyInt
 
       Errors while type checking the test:
+      dummy.py, line 7, column 0: textual type error: procname $ambiguous.type should be user-declared or a builtin
+      dummy.py, line 7, column 0: textual type error: procname $ambiguous.type should be user-declared or a builtin
       dummy.py, <unknown location>: textual type error: variable $ambiguous::str has not been declared |}]
   end )
 
@@ -3430,6 +3434,9 @@ let%test_module "kwargs" =
   ( module struct
     let%expect_test _ =
       let source = {|
+def f():
+        pass
+
 (a, b) = f()
 |} in
       test source ;
@@ -3439,11 +3446,18 @@ let%test_module "kwargs" =
 
         define dummy.$toplevel() : *PyNone {
           #b0:
-              n0 = ?.f()
-              n1 = $builtins.python_index(n0, 1)
-              n2 = $builtins.python_index(n0, 0)
-              store &dummy::a <- n2:*PyObject
-              store &dummy::b <- n1:*PyObject
+              n0 = $builtins.python_code("dummy.f")
+              n1 = dummy.f()
+              n2 = $builtins.python_index(n1, 1)
+              n3 = $builtins.python_index(n1, 0)
+              store &dummy::a <- n3:*PyObject
+              store &dummy::b <- n2:*PyObject
+              ret null
+
+        }
+
+        define dummy.f() : *PyObject {
+          #b0:
               ret null
 
         }
@@ -3457,6 +3471,8 @@ let%test_module "kwargs" =
         global $python_implicit_names::__file__: *PyString
 
         declare $builtins.python_index(*PyObject, int) : *PyObject
+
+        declare $builtins.python_code(*String) : *PyCode
 
         declare $builtins.python_tuple(...) : *PyObject
 

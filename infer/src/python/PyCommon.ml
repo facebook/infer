@@ -312,8 +312,10 @@ module Ident = struct
         var_name ~loc value
 
 
+  let ambiguous = "$ambiguous"
+
   let unknown_ident ?(loc = T.Location.Unknown) last =
-    let root = {name= "$ambiguous"; loc; global= true} in
+    let root = {name= ambiguous; loc; global= true} in
     let path = Path {last; path= []} in
     {root; path}
 

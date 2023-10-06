@@ -154,6 +154,8 @@ module Ident : sig
   val unknown_ident : ?loc:Textual.Location.t -> string -> t
   (** Wrap a variable name into a special enclosing class when a global's origin can't be found. *)
 
+  val ambiguous : string
+
   val mk : ?global:bool -> ?loc:Textual.Location.t -> string -> t
 
   val extend : prefix:t -> string -> t
