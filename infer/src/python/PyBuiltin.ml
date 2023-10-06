@@ -140,6 +140,7 @@ module Builtin = struct
     | PythonCallKW
     | PythonKWArg
     | PythonClass
+    | PythonClassName
     | PythonCode
     | PythonIter
     | PythonIterNext
@@ -154,7 +155,7 @@ module Builtin = struct
     | CompareOp of Compare.t
   [@@deriving compare]
 
-  type python = Print | Range | Open | Len | Type [@@deriving compare]
+  type python = Print | Range | Open | Len | Type | Str [@@deriving compare]
 
   type t = Primitive of primitive | Textual of textual | Python of python [@@deriving compare]
 end
@@ -177,6 +178,8 @@ let python_to_string = function
       "len"
   | Type ->
       "type"
+  | Str ->
+      "str"
 
 
 let to_proc_name = function
@@ -213,6 +216,8 @@ let to_proc_name = function
             "python_kw_arg"
         | PythonClass ->
             "python_class"
+        | PythonClassName ->
+            "python_class_name"
         | PythonCode ->
             "python_code"
         | PythonIter ->
@@ -257,6 +262,8 @@ let of_string name =
       Some (Python Len)
   | "type" ->
       Some (Python Type)
+  | "str" ->
+      Some (Python Str)
   | _ ->
       None
 
@@ -384,6 +391,8 @@ module Set = struct
         , { formals_types= Some [annot string_]
           ; result_type= annot PyCommon.pyClass
           ; used_struct_types= [] } )
+      ; ( Builtin.PythonClassName
+        , {formals_types= None; result_type= annot PyCommon.pyString; used_struct_types= []} )
       ; ( Builtin.PythonCode
         , { formals_types= Some [annot string_]
           ; result_type= annot PyCommon.pyCode
@@ -455,6 +464,7 @@ module Set = struct
       , { formals_types= Some [annotatedObject]
         ; result_type= annot PyCommon.pyInt
         ; used_struct_types= [] } )
+    ; (Builtin.Str, {formals_types= None; result_type= annot string_; used_struct_types= []})
     ; ( Builtin.Type
       , {formals_types= Some [annotatedObject]; result_type= annotatedObject; used_struct_types= []}
       ) ]

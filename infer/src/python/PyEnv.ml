@@ -34,6 +34,8 @@ module Info = struct
   let default typ = {kind= Other; typ}
 
   let is_code = function Code -> true | Class | Other -> false
+
+  let is_class = function Class -> true | Code | Other -> false
 end
 
 module Symbol = struct

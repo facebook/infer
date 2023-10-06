@@ -43,6 +43,7 @@ type textual =
   | PythonCallKW
   | PythonKWArg
   | PythonClass
+  | PythonClassName
   | PythonCode
   | PythonIter
   | PythonIterNext

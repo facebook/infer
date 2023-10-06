@@ -3254,7 +3254,7 @@ class PwdTest(unittest.TestCase):
             n2:*PyObject = load n1.?.pw_gecos
             n3 = $builtins.type(n2)
             n4 = $builtins.type(null)
-            n5:*PyObject = load &$ambiguous::str
+            n5 = $builtins.python_class_name(<*$builtins::str>)
             n6 = $builtins.python_build_tuple(n5, n4)
             n7 = n0.?.assertIn(n3, n6)
             ret null
@@ -3282,6 +3282,8 @@ class PwdTest(unittest.TestCase):
 
       declare $builtins.python_build_tuple(...) : *PyTuple
 
+      declare $builtins.python_class_name(...) : *PyString
+
       declare $builtins.python_class(*String) : *PyClass
 
       declare $builtins.python_tuple(...) : *PyObject
@@ -3294,10 +3296,7 @@ class PwdTest(unittest.TestCase):
 
       declare $builtins.python_float(float) : *PyFloat
 
-      declare $builtins.python_int(int) : *PyInt
-
-      Errors while type checking the test:
-      dummy.py, <unknown location>: textual type error: variable $ambiguous::str has not been declared |}]
+      declare $builtins.python_int(int) : *PyInt |}]
   end )
 
 

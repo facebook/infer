@@ -18,6 +18,8 @@ module Info : sig
   val default : T.Typ.t -> t
 
   val is_code : kind -> bool
+
+  val is_class : kind -> bool
 end
 
 module Symbol : sig

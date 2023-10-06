@@ -374,7 +374,14 @@ let load_name env loc ~global name =
       match (kind : Symbol.kind) with
       | Name {typ} ->
           Ok (default_info typ, id)
-      | Import _ | ImportCall | Builtin | Class ->
+      | Class ->
+          Ok ({Env.Info.kind= Class; typ= PyCommon.pyClass}, id)
+      | Builtin ->
+          let prim_id = Ident.mk (Ident.last id) in
+          if Ident.is_primitive_type prim_id then
+            Ok ({Env.Info.kind= Class; typ= PyCommon.pyClass}, id)
+          else Error (L.InternalError, Error.LoadInvalid (kind, id))
+      | Import _ | ImportCall ->
           Error (L.InternalError, Error.LoadInvalid (kind, id))
       | Code ->
           Ok ({Env.Info.kind= Code; typ= PyCommon.pyCode}, id) )
@@ -394,6 +401,12 @@ let load_name env loc ~global name =
     let fname = Ident.to_string ~sep:"." qualified_name in
     let name = T.Exp.Const (Str fname) in
     let env, id, typ = Env.mk_builtin_call env Builtin.PythonCode [name] in
+    let info = {info with Env.Info.typ} in
+    Ok (env, T.Exp.Var id, info)
+  else if Env.Info.is_class kind then
+    (* Class/Type as an expression, use the dedicated builtin *)
+    let tyname = T.Exp.Typ (Ident.to_typ qualified_name) in
+    let env, id, typ = Env.mk_builtin_call env Builtin.PythonClassName [tyname] in
     let info = {info with Env.Info.typ} in
     Ok (env, T.Exp.Var id, info)
   else
