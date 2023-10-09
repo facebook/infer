@@ -112,6 +112,10 @@ let pp_source_context ~indent fmt
               if line_number < end_line then Continue (line_number + 1) else Stop () ) )
 
 
+let is_user_visible (issue : Jsonbug_t.jsonbug) =
+  (not Config.filtering) || Option.is_none issue.censored_reason
+
+
 let create_from_json ~quiet ~console_limit ~report_txt ~report_json =
   (* TOOD: possible optimisation: stream reading report.json to process each issue one by one *)
   let report = Atdgen_runtime.Util.Json.from_file Jsonbug_j.read_report report_json in
@@ -144,11 +148,12 @@ let create_from_json ~quiet ~console_limit ~report_txt ~report_json =
       let report_txt_fmt = F.formatter_of_out_channel report_txt_out in
       log_issue "@\n@[" ;
       let summary =
-        List.foldi report ~init:(ReportSummary.mk_empty ()) ~f:(fun i summary jsonbug ->
-            let summary' = ReportSummary.add_issue summary jsonbug in
-            one_issue_to_report_txt report_txt_fmt (i, jsonbug) ;
-            one_issue_to_console ~console_limit i jsonbug ;
-            summary' )
+        List.filter report ~f:is_user_visible
+        |> List.foldi ~init:(ReportSummary.mk_empty ()) ~f:(fun i summary jsonbug ->
+               let summary' = ReportSummary.add_issue summary jsonbug in
+               one_issue_to_report_txt report_txt_fmt (i, jsonbug) ;
+               one_issue_to_console ~console_limit i jsonbug ;
+               summary' )
       in
       let n_issues = summary.n_issues in
       if Int.equal n_issues 0 then (
