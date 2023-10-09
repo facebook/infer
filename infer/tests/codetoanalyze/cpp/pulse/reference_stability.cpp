@@ -251,6 +251,11 @@ struct F14FastMap : public std::conditional<
 };
 } // namespace folly
 
+// sizeof(std::pair<const BigPoint, T>) >= 24.
+struct BigPoint {
+  std::uint64_t x, y, z;
+};
+
 void unordered_map_ok() {
   std::unordered_map<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
 
@@ -336,21 +341,21 @@ void folly_vectormap_bad_FN() {
   const auto valueCopy = valueRef;
 }
 
-void folly_fastmap_clear_bad_FN() {
+void folly_fastmap_clear_bad() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   const auto& valueRef = map.at(1);
   map.clear();
   const auto valueCopy = valueRef;
 }
 
-void folly_fastmap_rehash_bad_FN() {
+void folly_fastmap_rehash_bad() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   const auto& valueRef = map.at(1);
   map.rehash(13);
   const auto valueCopy = valueRef;
 }
 
-void folly_fastmap_reserve_bad_FN() {
+void folly_fastmap_reserve_bad() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   const auto& valueRef = map.at(1);
   map.reserve(13);
@@ -419,4 +424,70 @@ void folly_fastmap_swap_bad_FN() {
   const auto& valueRef = map.at(1);
   map.swap(other);
   const auto valueCopy = valueRef;
+}
+
+void folly_valuemap_find_arrow_bad_FN() {
+  folly::F14ValueMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto it = map.find(1);
+  const auto& valueRef = it->second;
+  map.clear();
+  const auto valueCopy = valueRef;
+}
+
+void folly_valuemap_find_star_bad_FN() {
+  folly::F14ValueMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto it = map.find(1);
+  const auto& keyRef = (*it).first;
+  map.clear();
+  const auto keyCopy = keyRef;
+}
+
+void folly_vectormap_find_arrow_bad_FN() {
+  folly::F14VectorMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto it = map.find(1);
+  const auto& valueRef = it->second;
+  map.clear();
+  const auto valueCopy = valueRef;
+}
+
+void folly_vectormap_find_star_bad_FN() {
+  folly::F14VectorMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto it = map.find(1);
+  const auto& keyRef = (*it).first;
+  map.clear();
+  const auto keyCopy = keyRef;
+}
+
+void folly_fastmap_find_arrow_bad_FN() {
+  // The unerlying map is an F14ValueMap.
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto it = map.find(1);
+  const auto& valueRef = it->second;
+  map.clear();
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_find_star_bad_FN() {
+  // The unerlying map is an F14ValueMap.
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto it = map.find(1);
+  const auto& keyRef = (*it).first;
+  map.clear();
+  const auto keyCopy = keyRef;
+}
+
+void folly_fastmap_big_find_arrow_bad(folly::F14FastMap<BigPoint, int>& map) {
+  // The underlying map is an F14VectorMap.
+  const auto it = map.find({0, 0, 0});
+  const auto& valueRef = it->second;
+  map.clear();
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_big_find_star_bad(folly::F14FastMap<BigPoint, int>& map) {
+  // The underlying map is an F14VectorMap.
+  const auto it = map.find({0, 0, 0});
+  const auto& keyRef = (*it).first;
+  map.clear();
+  const auto keyCopy = keyRef;
 }

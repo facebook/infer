@@ -651,6 +651,131 @@ module Vector = struct
   let push_back vector ~desc = push_back_common vector ~vector_f:None ~desc
 end
 
+module GenericMapCollection = struct
+  let pair_field = Fieldname.make PulseOperations.pulse_model_type "__infer_map_pair"
+
+  let pair_access = MemoryAccess.FieldAccess pair_field
+
+  let pair_type key_t value_t =
+    Typ.CppClass
+      { name= QualifiedCppName.of_qual_string "std::pair"
+      ; template_spec_info=
+          Template {mangled= None; args= [TType (Typ.set_to_const key_t); TType value_t]}
+      ; is_union= false }
+
+
+  let pair_first_field key_t value_t = Fieldname.make (pair_type key_t value_t) "first"
+
+  let pair_second_field key_t value_t = Fieldname.make (pair_type key_t value_t) "second"
+
+  let extract_key_and_value_types (map : 'a ProcnameDispatcher.Call.FuncArg.t) =
+    match map.typ.desc with
+    | Typ.Tptr
+        ( { desc=
+              Tstruct
+                (CppClass {template_spec_info= Template {args= TType key_t :: TType value_t :: _}})
+          }
+        , _ ) ->
+        (key_t, value_t)
+    | _ ->
+        (* This can never happen, as we already know from using capt_arg_of_typ that map
+           is of some map type, hence it should have a first and second template arguments
+           mapping to key and value types respectively. *)
+        assert false
+
+
+  let reset_backing_fields ({ProcnameDispatcher.Call.FuncArg.arg_payload} as map) path location desc
+      astate =
+    let hist = Hist.single_call path location desc in
+    let first = (AbstractValue.mk_fresh (), hist) in
+    let second = (AbstractValue.mk_fresh (), hist) in
+    let pair = (AbstractValue.mk_fresh (), hist) in
+    let key_t, value_t = extract_key_and_value_types map in
+    let<+> astate =
+      PulseOperations.write_field path location ~ref:pair (pair_first_field key_t value_t)
+        ~obj:first astate
+      >>= PulseOperations.write_field path location ~ref:pair (pair_second_field key_t value_t)
+            ~obj:second
+      >>= PulseOperations.write_field path location ~ref:arg_payload pair_field ~obj:pair
+    in
+    astate
+
+
+  let constructor map_t classname map : model =
+   fun {path; location} astate ->
+    let desc = Format.asprintf "%a::%s()" Invalidation.pp_map_type map_t classname in
+    reset_backing_fields map path location desc astate
+
+
+  let invalidate_references map_t map_f ({ProcnameDispatcher.Call.FuncArg.arg_payload} as map) :
+      model =
+   fun {path; location} astate ->
+    let key_t, value_t = extract_key_and_value_types map in
+    let desc =
+      Format.asprintf "%a::%a()" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f
+    in
+    let cause = Invalidation.CppMap (map_t, map_f) in
+    let<*> astate, pair =
+      PulseOperations.eval_access path NoAccess location arg_payload pair_access astate
+    in
+    let astate =
+      PulseOperations.invalidate_access path location cause arg_payload pair_access astate
+    in
+    let astate =
+      PulseOperations.invalidate_access path location cause pair
+        (MemoryAccess.FieldAccess (pair_first_field key_t value_t))
+        astate
+    in
+    let astate =
+      PulseOperations.invalidate_access path location cause pair
+        (MemoryAccess.FieldAccess (pair_second_field key_t value_t))
+        astate
+    in
+    reset_backing_fields map path location desc astate
+
+
+  let at map_t ({ProcnameDispatcher.Call.FuncArg.arg_payload} as map) : model =
+   fun {path; location; ret} astate ->
+    let key_t, value_t = extract_key_and_value_types map in
+    let event =
+      Hist.call_event path location (Format.asprintf "%a::at()" Invalidation.pp_map_type map_t)
+    in
+    let<*> astate, pair =
+      PulseOperations.eval_access path Read location arg_payload pair_access astate
+    in
+    let<+> astate, (addr, hist) =
+      PulseOperations.eval_access path Read location pair
+        (MemoryAccess.FieldAccess (pair_second_field key_t value_t))
+        astate
+    in
+    PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
+
+
+  let find map_t arg_payload it : model =
+   fun {path; location} astate ->
+    let event =
+      Hist.call_event path location (Format.asprintf "%a::find()" Invalidation.pp_map_type map_t)
+    in
+    let<*> astate, (addr, hist) =
+      PulseOperations.eval_access path Read location arg_payload pair_access astate
+    in
+    let<+> astate =
+      PulseOperations.write_deref path location ~ref:it
+        ~obj:(addr, Hist.add_event path event hist)
+        astate
+    in
+    astate
+
+
+  let iterator_star desc it : model =
+   fun {path; location; ret} astate ->
+    let event = Hist.call_event path location desc in
+    let<+> astate, (addr, hist) =
+      PulseOperations.eval_access path Read location it Dereference astate
+    in
+    PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
+end
+
 let get_cpp_matchers config ~model =
   let open ProcnameDispatcher.Call in
   let cpp_separator_regex = Str.regexp_string "::" in
@@ -700,124 +825,159 @@ let matchers : matcher list =
   ; +BuiltinDecl.(match_builtin __delete_array) <>$ capt_arg $--> delete_array ]
 
 
+let map_matchers =
+  let open ProcnameDispatcher.Call in
+  [ -"folly" <>:: "F14FastMap" &:: "F14FastMap"
+    <>$ capt_arg_of_typ (-"folly" <>:: "F14FastMap")
+    $+...$--> GenericMapCollection.constructor FollyF14Fast "F14FastMap"
+  ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator="
+    <>$ capt_arg_of_typ (-"folly" <>:: "F14FastMap")
+    $+...$--> GenericMapCollection.invalidate_references FollyF14Fast OperatorEqual
+  ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "clear"
+    <>$ capt_arg_of_typ (-"folly" <>:: "F14FastMap")
+    $--> GenericMapCollection.invalidate_references FollyF14Fast Clear
+  ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "rehash"
+    <>$ capt_arg_of_typ (-"folly" <>:: "F14FastMap")
+    $+...$--> GenericMapCollection.invalidate_references FollyF14Fast Rehash
+  ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "reserve"
+    <>$ capt_arg_of_typ (-"folly" <>:: "F14FastMap")
+    $+...$--> GenericMapCollection.invalidate_references FollyF14Fast Reserve
+  ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "at"
+    <>$ capt_arg_of_typ (-"folly" <>:: "F14FastMap")
+    $+...$--> GenericMapCollection.at FollyF14Fast
+  ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "find"
+    <>$ capt_arg_payload_of_typ (-"folly" <>:: "F14FastMap")
+    $+ any_arg $+ capt_arg_payload
+    $--> GenericMapCollection.find FollyF14Fast
+  ; -"folly" <>:: "f14" <>:: "detail" <>:: "VectorContainerIterator" &:: "operator->"
+    <>$ capt_arg_payload
+    $--> GenericMapCollection.iterator_star
+           "folly::f14::detail::VectorContainerIterator::operator->"
+  ; -"folly" <>:: "f14" <>:: "detail" <>:: "VectorContainerIterator" &:: "operator*"
+    <>$ capt_arg_payload
+    $--> GenericMapCollection.iterator_star "folly::f14::detail::VectorContainerIterator::operator*"
+  ]
+
+
 let simple_matchers =
   let char_ptr_typ = Typ.mk (Tptr (Typ.mk (Tint IChar), Pk_pointer)) in
   let open ProcnameDispatcher.Call in
-  [ +BuiltinDecl.(match_builtin __builtin_add_overflow)
-    <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> add_overflow
-  ; +BuiltinDecl.(match_builtin __builtin_mul_overflow)
-    <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> mul_overflow
-  ; +BuiltinDecl.(match_builtin __builtin_sub_overflow)
-    <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> sub_overflow
-  ; +BuiltinDecl.(match_builtin __infer_skip) &--> Basic.skip
-  ; +BuiltinDecl.(match_builtin __infer_structured_binding)
-    <>$ capt_exp $+ capt_arg $--> infer_structured_binding
-  ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
-  ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array
-  ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new
-  ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload
-    $+ capt_arg_payload_of_prim_typ char_ptr_typ
-    $--> BasicString.constructor_from_constant ~desc:"std::basic_string::basic_string()"
-  ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
-    $--> BasicString.constructor
-  ; -"std" &:: "basic_string" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> BasicString.begin_ ~desc:"std::basic_string::begin()"
-  ; -"std" &:: "basic_string" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> BasicString.end_ ~desc:"std::basic_string::end()"
-  ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload
-    $--> BasicString.data ~desc:"std::basic_string::data()"
-  ; -"std" &:: "basic_string" &:: "empty" <>$ capt_arg_payload $--> BasicString.empty
-  ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> BasicString.length
-  ; -"std" &:: "basic_string" &:: "substr" &--> Basic.nondet ~desc:"std::basic_string::substr"
-  ; -"std" &:: "basic_string" &:: "size" &--> Basic.nondet ~desc:"std::basic_string::size"
-  ; -"std" &:: "basic_string" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> BasicString.address ~desc:"std::basic_string::operator[]"
-  ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload $--> BasicString.destructor
-  ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
-    $+ capt_arg_payload_of_prim_typ char_ptr_typ
-    $--> BasicString.constructor_from_constant ~desc:"std::basic_string_view::basic_string_view()"
-  ; -"std" &:: "basic_string_view" &:: "data" <>$ capt_arg_payload
-    $--> BasicString.data ~desc:"std::basic_string_view::data()"
-  ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
-    $--> Function.assign ~desc:"std::function::function"
-  ; -"std" &:: "function" &:: "operator()" $ capt_arg $++$--> Function.operator_call
-  ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg
-    $--> Function.assign ~desc:"std::function::operator="
-  ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> AtomicInteger.constructor
-  ; -"std" &:: "__atomic_base" &:: "fetch_add" <>$ capt_arg_payload $+ capt_arg_payload
-    $+ capt_arg_payload $--> AtomicInteger.fetch_add
-  ; -"std" &:: "__atomic_base" &:: "fetch_sub" <>$ capt_arg_payload $+ capt_arg_payload
-    $+ capt_arg_payload $--> AtomicInteger.fetch_sub
-  ; -"std" &:: "__atomic_base" &:: "exchange" <>$ capt_arg_payload $+ capt_arg_payload
-    $+ capt_arg_payload $--> AtomicInteger.exchange
-  ; -"std" &:: "__atomic_base" &:: "load" <>$ capt_arg_payload $+? capt_arg_payload
-    $--> AtomicInteger.load
-  ; -"std" &:: "__atomic_base" &:: "store" <>$ capt_arg_payload $+ capt_arg_payload
-    $+ capt_arg_payload $--> AtomicInteger.store
-  ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload
-    $--> AtomicInteger.operator_plus_plus_pre
-  ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> AtomicInteger.operator_plus_plus_post
-  ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload
-    $--> AtomicInteger.operator_minus_minus_pre
-  ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> AtomicInteger.operator_minus_minus_post
-  ; -"std" &:: "__atomic_base"
-    &::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
-    <>$ capt_arg_payload $+? capt_arg_payload $--> AtomicInteger.operator_t
-  ; -"std" &:: "make_move_iterator" $ capt_arg_payload $+...$--> Std.make_move_iterator
-  ; -"std" &:: "make_pair" < capt_typ &+ capt_typ >$ capt_arg_payload $+ capt_arg_payload
-    $+ capt_arg_payload $--> Pair.make_pair
-  ; -"std" &:: "vector" &:: "vector" $ capt_arg_payload
-    $--> GenericArrayBackedCollection.default_constructor ~desc:"std::vector::vector()"
-  ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
-    $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
-    $+...$--> Vector.init_list_constructor ~desc:"std::vector::vector()"
-  ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
-    $+ capt_arg_payload_of_typ (-"std" &:: "vector")
-    $+...$--> Vector.init_copy_constructor ~desc:"std::vector::vector()"
-  ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
-    $+...$--> Vector.invalidate_references Assign
-  ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> Vector.at ~desc:"std::vector::at()"
-  ; -"std" &:: "vector" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> Vector.vector_begin
-  ; -"std" &:: "vector" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload $--> Vector.vector_end
-  ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload $--> Vector.invalidate_references Clear
-  ; -"std" &:: "vector" &:: "emplace" $ capt_arg_payload
-    $+...$--> Vector.invalidate_references Emplace
-  ; -"std" &:: "vector" &:: "emplace_back" $ capt_arg_payload
-    $+...$--> Vector.push_back_cpp ~vector_f:EmplaceBack ~desc:"std::vector::emplace_back()"
-  ; -"std" &:: "vector" &:: "insert" <>$ capt_arg_payload
-    $+...$--> Vector.invalidate_references Insert
-  ; -"std" &:: "vector" &:: "operator=" <>$ capt_arg_payload
-    $+...$--> Vector.invalidate_references_with_ret Assign
-  ; -"std" &:: "vector" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> Vector.at ~desc:"std::vector::at()"
-  ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
-    $--> Vector.invalidate_references ShrinkToFit
-  ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload
-    $+...$--> Vector.push_back_cpp ~vector_f:PushBack ~desc:"std::vector::push_back()"
-  ; -"std" &:: "vector" &:: "pop_back" <>$ capt_arg_payload
-    $+...$--> Vector.pop_back ~desc:"std::vector::pop_back()"
-  ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload
-    $--> GenericArrayBackedCollection.empty ~desc:"std::vector::is_empty()"
-  ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> Vector.reserve
-  ; -"std" &:: "vector" &:: "size" $ capt_arg_payload
-    $--> GenericArrayBackedCollection.size ~desc:"std::vector::size()"
-  ; -"std" &:: "distance" &--> Basic.nondet ~desc:"std::distance"
-  ; -"std" &:: "integral_constant" < any_typ &+ capt_int
-    >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
-    <>--> Basic.return_int ~desc:"std::integral_constant"
-  ; (* consider that all fbstrings are small strings to avoid false positives due to manual
-       ref-counting *)
-    -"folly" &:: "fbstring_core" &:: "category"
-    &--> Basic.return_int Int64.zero ~desc:"folly::fbstring_core::category"
-  ; -"folly" &:: "DelayedDestruction" &:: "destroy"
-    &++> Basic.unknown_call "folly::DelayedDestruction::destroy is modelled as skip"
-  ; -"folly" &:: "SocketAddress" &:: "~SocketAddress"
-    &++> Basic.unknown_call "folly::SocketAddress's destructor is modelled as skip" ]
+  map_matchers
+  @ [ +BuiltinDecl.(match_builtin __builtin_add_overflow)
+      <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> add_overflow
+    ; +BuiltinDecl.(match_builtin __builtin_mul_overflow)
+      <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> mul_overflow
+    ; +BuiltinDecl.(match_builtin __builtin_sub_overflow)
+      <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> sub_overflow
+    ; +BuiltinDecl.(match_builtin __infer_skip) &--> Basic.skip
+    ; +BuiltinDecl.(match_builtin __infer_structured_binding)
+      <>$ capt_exp $+ capt_arg $--> infer_structured_binding
+    ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
+    ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array
+    ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new
+    ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload
+      $+ capt_arg_payload_of_prim_typ char_ptr_typ
+      $--> BasicString.constructor_from_constant ~desc:"std::basic_string::basic_string()"
+    ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.constructor
+    ; -"std" &:: "basic_string" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.begin_ ~desc:"std::basic_string::begin()"
+    ; -"std" &:: "basic_string" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.end_ ~desc:"std::basic_string::end()"
+    ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload
+      $--> BasicString.data ~desc:"std::basic_string::data()"
+    ; -"std" &:: "basic_string" &:: "empty" <>$ capt_arg_payload $--> BasicString.empty
+    ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> BasicString.length
+    ; -"std" &:: "basic_string" &:: "substr" &--> Basic.nondet ~desc:"std::basic_string::substr"
+    ; -"std" &:: "basic_string" &:: "size" &--> Basic.nondet ~desc:"std::basic_string::size"
+    ; -"std" &:: "basic_string" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.address ~desc:"std::basic_string::operator[]"
+    ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload $--> BasicString.destructor
+    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
+      $+ capt_arg_payload_of_prim_typ char_ptr_typ
+      $--> BasicString.constructor_from_constant ~desc:"std::basic_string_view::basic_string_view()"
+    ; -"std" &:: "basic_string_view" &:: "data" <>$ capt_arg_payload
+      $--> BasicString.data ~desc:"std::basic_string_view::data()"
+    ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
+      $--> Function.assign ~desc:"std::function::function"
+    ; -"std" &:: "function" &:: "operator()" $ capt_arg $++$--> Function.operator_call
+    ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg
+      $--> Function.assign ~desc:"std::function::operator="
+    ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> AtomicInteger.constructor
+    ; -"std" &:: "__atomic_base" &:: "fetch_add" <>$ capt_arg_payload $+ capt_arg_payload
+      $+ capt_arg_payload $--> AtomicInteger.fetch_add
+    ; -"std" &:: "__atomic_base" &:: "fetch_sub" <>$ capt_arg_payload $+ capt_arg_payload
+      $+ capt_arg_payload $--> AtomicInteger.fetch_sub
+    ; -"std" &:: "__atomic_base" &:: "exchange" <>$ capt_arg_payload $+ capt_arg_payload
+      $+ capt_arg_payload $--> AtomicInteger.exchange
+    ; -"std" &:: "__atomic_base" &:: "load" <>$ capt_arg_payload $+? capt_arg_payload
+      $--> AtomicInteger.load
+    ; -"std" &:: "__atomic_base" &:: "store" <>$ capt_arg_payload $+ capt_arg_payload
+      $+ capt_arg_payload $--> AtomicInteger.store
+    ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload
+      $--> AtomicInteger.operator_plus_plus_pre
+    ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> AtomicInteger.operator_plus_plus_post
+    ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload
+      $--> AtomicInteger.operator_minus_minus_pre
+    ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> AtomicInteger.operator_minus_minus_post
+    ; -"std" &:: "__atomic_base"
+      &::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
+      <>$ capt_arg_payload $+? capt_arg_payload $--> AtomicInteger.operator_t
+    ; -"std" &:: "make_move_iterator" $ capt_arg_payload $+...$--> Std.make_move_iterator
+    ; -"std" &:: "make_pair" < capt_typ &+ capt_typ >$ capt_arg_payload $+ capt_arg_payload
+      $+ capt_arg_payload $--> Pair.make_pair
+    ; -"std" &:: "vector" &:: "vector" $ capt_arg_payload
+      $--> GenericArrayBackedCollection.default_constructor ~desc:"std::vector::vector()"
+    ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
+      $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
+      $+...$--> Vector.init_list_constructor ~desc:"std::vector::vector()"
+    ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
+      $+ capt_arg_payload_of_typ (-"std" &:: "vector")
+      $+...$--> Vector.init_copy_constructor ~desc:"std::vector::vector()"
+    ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
+      $+...$--> Vector.invalidate_references Assign
+    ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.at ~desc:"std::vector::at()"
+    ; -"std" &:: "vector" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.vector_begin
+    ; -"std" &:: "vector" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload $--> Vector.vector_end
+    ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload $--> Vector.invalidate_references Clear
+    ; -"std" &:: "vector" &:: "emplace" $ capt_arg_payload
+      $+...$--> Vector.invalidate_references Emplace
+    ; -"std" &:: "vector" &:: "emplace_back" $ capt_arg_payload
+      $+...$--> Vector.push_back_cpp ~vector_f:EmplaceBack ~desc:"std::vector::emplace_back()"
+    ; -"std" &:: "vector" &:: "insert" <>$ capt_arg_payload
+      $+...$--> Vector.invalidate_references Insert
+    ; -"std" &:: "vector" &:: "operator=" <>$ capt_arg_payload
+      $+...$--> Vector.invalidate_references_with_ret Assign
+    ; -"std" &:: "vector" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.at ~desc:"std::vector::at()"
+    ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
+      $--> Vector.invalidate_references ShrinkToFit
+    ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload
+      $+...$--> Vector.push_back_cpp ~vector_f:PushBack ~desc:"std::vector::push_back()"
+    ; -"std" &:: "vector" &:: "pop_back" <>$ capt_arg_payload
+      $+...$--> Vector.pop_back ~desc:"std::vector::pop_back()"
+    ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload
+      $--> GenericArrayBackedCollection.empty ~desc:"std::vector::is_empty()"
+    ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> Vector.reserve
+    ; -"std" &:: "vector" &:: "size" $ capt_arg_payload
+      $--> GenericArrayBackedCollection.size ~desc:"std::vector::size()"
+    ; -"std" &:: "distance" &--> Basic.nondet ~desc:"std::distance"
+    ; -"std" &:: "integral_constant" < any_typ &+ capt_int
+      >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
+      <>--> Basic.return_int ~desc:"std::integral_constant"
+    ; (* consider that all fbstrings are small strings to avoid false positives due to manual
+         ref-counting *)
+      -"folly" &:: "fbstring_core" &:: "category"
+      &--> Basic.return_int Int64.zero ~desc:"folly::fbstring_core::category"
+    ; -"folly" &:: "DelayedDestruction" &:: "destroy"
+      &++> Basic.unknown_call "folly::DelayedDestruction::destroy is modelled as skip"
+    ; -"folly" &:: "SocketAddress" &:: "~SocketAddress"
+      &++> Basic.unknown_call "folly::SocketAddress's destructor is modelled as skip" ]
 
 
 let matchers =

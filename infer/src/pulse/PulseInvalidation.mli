@@ -34,9 +34,9 @@ type map_function =
   | EmplaceHint
   | OperatorBracket
 
-val pp_map_type : F.formatter -> map_type -> unit [@@warning "-unused-value-declaration"]
+val pp_map_type : F.formatter -> map_type -> unit
 
-val pp_map_function : F.formatter -> map_function -> unit [@@warning "-unused-value-declaration"]
+val pp_map_function : F.formatter -> map_function -> unit
 
 type t =
   | CFree
