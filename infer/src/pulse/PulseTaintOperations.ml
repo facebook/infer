@@ -611,7 +611,9 @@ let taint_sinks path location tainted astate =
           let visited = ref AbstractValue.Set.empty in
           let open PulseResult.Let_syntax in
           let rec mark_sinked policy_violations_reported v hist astate =
-            if AbstractValue.Set.mem v !visited then Ok (policy_violations_reported, astate)
+            let is_closure = Option.is_some (AddressAttributes.get_closure_proc_name v astate) in
+            if AbstractValue.Set.mem v !visited || is_closure then
+              Ok (policy_violations_reported, astate)
             else (
               visited := AbstractValue.Set.add v !visited ;
               let astate =
