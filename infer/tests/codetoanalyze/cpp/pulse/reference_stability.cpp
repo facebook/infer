@@ -16,21 +16,6 @@ struct F14HashToken;
 
 namespace f14::detail {
 template <typename ValuePtr>
-struct NodeContainerIterator {
-  using pointee = typename std::pointer_traits<ValuePtr>::element_type;
-  using pointer = ValuePtr;
-  using reference = pointee&;
-
-  reference operator*() const;
-  pointer operator->() const;
-  NodeContainerIterator& operator++();
-  friend bool operator==(NodeContainerIterator const& lhs,
-                         NodeContainerIterator const& rhs);
-  friend bool operator!=(NodeContainerIterator const& lhs,
-                         NodeContainerIterator const& rhs);
-};
-
-template <typename ValuePtr>
 struct ValueContainerIterator {
   using pointee = typename std::pointer_traits<ValuePtr>::element_type;
   using pointer = ValuePtr;
@@ -231,14 +216,14 @@ class F14ValueMap
     : public f14::detail::F14BasicMap<
           Key,
           Mapped,
-          f14::detail::VectorContainerIterator<std::pair<Key const, Mapped>*>,
-          f14::detail::VectorContainerIterator<
+          f14::detail::ValueContainerIterator<std::pair<Key const, Mapped>*>,
+          f14::detail::ValueContainerIterator<
               std::pair<Key const, Mapped> const*>> {
   using f14::detail::F14BasicMap<
       Key,
       Mapped,
-      f14::detail::VectorContainerIterator<std::pair<Key const, Mapped>*>,
-      f14::detail::VectorContainerIterator<
+      f14::detail::ValueContainerIterator<std::pair<Key const, Mapped>*>,
+      f14::detail::ValueContainerIterator<
           std::pair<Key const, Mapped> const*>>::F14BasicMap;
 };
 
