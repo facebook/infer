@@ -212,7 +212,7 @@ class F14VectorMapImpl
 } // namespace f14::detail
 
 template <typename Key, typename Mapped>
-class F14ValueMap
+struct F14ValueMap
     : public f14::detail::F14BasicMap<
           Key,
           Mapped,
@@ -225,23 +225,29 @@ class F14ValueMap
       f14::detail::ValueContainerIterator<std::pair<Key const, Mapped>*>,
       f14::detail::ValueContainerIterator<
           std::pair<Key const, Mapped> const*>>::F14BasicMap;
+
+  void swap(F14ValueMap& rhs);
 };
 
 template <typename Key, typename Mapped>
-class F14VectorMap : public f14::detail::F14VectorMapImpl<Key, Mapped> {
+struct F14VectorMap : public f14::detail::F14VectorMapImpl<Key, Mapped> {
   using f14::detail::F14VectorMapImpl<Key, Mapped>::F14VectorMapImpl;
+
+  void swap(F14VectorMap& rhs);
 };
 
 template <typename Key, typename Mapped>
-class F14FastMap : public std::conditional<
-                       sizeof(std::pair<Key const, Mapped>) < 24,
-                       F14ValueMap<Key, Mapped>,
-                       f14::detail::F14VectorMapImpl<Key, Mapped>>::type {
+struct F14FastMap : public std::conditional<
+                        sizeof(std::pair<Key const, Mapped>) < 24,
+                        F14ValueMap<Key, Mapped>,
+                        f14::detail::F14VectorMapImpl<Key, Mapped>>::type {
   using Super = typename std::conditional<
       sizeof(std::pair<Key const, Mapped>) < 24,
       F14ValueMap<Key, Mapped>,
       f14::detail::F14VectorMapImpl<Key, Mapped>>::type;
   using Super::Super;
+
+  void swap(F14FastMap& rhs);
 };
 } // namespace folly
 
@@ -327,5 +333,90 @@ void folly_vectormap_bad_FN() {
   folly::F14VectorMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   const auto& valueRef = map.at(1);
   map.clear();
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_clear_bad_FN() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.clear();
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_rehash_bad_FN() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.rehash(13);
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_reserve_bad_FN() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.reserve(13);
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_operator_equal_bad_FN() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map = folly::F14FastMap<int, int>();
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_insert_bad_FN() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.insert({4, 16});
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_insert_or_assign_bad_FN() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.insert_or_assign(4, 16);
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_emplace_bad_FN() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.emplace(4, 16);
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_try_emplace_bad_FN() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.try_emplace(4, 16);
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_emplace_hint_bad_FN() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.emplace_hint(map.cbegin(), 4, 16);
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_operator_bracket_bad_FN() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map[4] = 16;
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_erase_bad_FN() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.erase(1);
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_swap_bad_FN() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  folly::F14FastMap<int, int> other;
+  const auto& valueRef = map.at(1);
+  map.swap(other);
   const auto valueCopy = valueRef;
 }
