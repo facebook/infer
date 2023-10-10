@@ -30,7 +30,6 @@
       "method": "findViewById"
     }
   ],
-  "pulse-taint-check-history": true,
   "pulse-taint-policies": [
     { "short_description": "Untrusted Android Intent creation",
       "taint_flows": [

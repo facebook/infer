@@ -1,6 +1,5 @@
 {
   "force-delete-results-dir": true,
-  "pulse-taint-check-history": true,
   "pulse-taint-sources": [
     { "procedure": "inferSecretSource", "kinds": ["Simple"] },
     { "class_names": ["codetoanalyze.kotlin.pulse.InferBaseSource"],

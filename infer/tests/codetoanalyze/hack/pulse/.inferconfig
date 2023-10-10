@@ -2,7 +2,6 @@
   "scheduler": "callgraph",
   "pulse-only": true,
   "pulse-force-continue": true,
-  "pulse-taint-check-history": true,
   "hack-models": [
     "models/test_models.sil",
     "models/test_models.hack"

@@ -1412,11 +1412,11 @@ OPTIONS
            Maximum number of summary specialization by procedure.       
     See also infer-analyze(1).
 
-       --pulse-taint-check-history
-           Activates: Check values histories for taint events before
+       --no-pulse-taint-check-history
+           Deactivates: Check values histories for taint events before
            reporting a taint issue. This is a temporary flag while the taint
            analysis transitions from being mainly attribute-based to being
-           history-based. (Conversely: --no-pulse-taint-check-history)       
+           history-based. (Conversely: --pulse-taint-check-history)       
     See also infer-analyze(1).
 
        --pulse-taint-config +path

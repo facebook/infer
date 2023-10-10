@@ -2660,7 +2660,7 @@ and pulse_taint_config =
 
 
 and pulse_taint_check_history =
-  CLOpt.mk_bool ~long:"pulse-taint-check-history"
+  CLOpt.mk_bool ~long:"pulse-taint-check-history" ~default:true
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Check values histories for taint events before reporting a taint issue. This is a temporary \
      flag while the taint analysis transitions from being mainly attribute-based to being \
