@@ -122,9 +122,7 @@ module Basic = struct
   let alloc_value_address (typ : Typ.t) ~desc {analysis_data; path; location} astate =
     (* alloc an address for some object *)
     let value, hist = (AbstractValue.mk_fresh (), ValueHistory.epoch) in
-    let astate =
-      (* TODO(arr): this should return new (value, hist) pair. Otherwise, we're returning a history
-         without taint events. *)
+    let astate, (value, hist) =
       PulseTaintOperations.taint_allocation analysis_data.tenv path location ~typ_desc:typ.desc
         ~alloc_desc:desc ~allocator:(Some CppNew) (value, hist) astate
     in
@@ -371,10 +369,8 @@ module Basic = struct
     let ret_addr, ret_alloc_hist =
       (AbstractValue.mk_fresh (), Hist.single_alloc path location desc)
     in
-    let astate =
+    let astate, (ret_addr, ret_alloc_hist) =
       let typ = if Typ.is_pointer ret_typ then Typ.strip_ptr ret_typ else ret_typ in
-      (* TODO(arr): this should return new (value, hist) pair. Otherwise, we're returning a history
-         without taint events. *)
       PulseTaintOperations.taint_allocation tenv path location ~typ_desc:typ.desc ~alloc_desc:desc
         ~allocator (ret_addr, ret_alloc_hist) astate
     in

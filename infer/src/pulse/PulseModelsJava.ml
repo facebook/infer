@@ -145,7 +145,7 @@ module Resource = struct
       Procname.get_class_type_name callee_procname
     in
     let allocator = Attribute.JavaResource class_name in
-    let astate =
+    let astate, this_obj =
       PulseTaintOperations.taint_allocation tenv path location
         ~typ_desc:(Typ.Tstruct (Typ.JavaClass class_name)) ~alloc_desc:"Java resource"
         ~allocator:(Some allocator) this_obj astate

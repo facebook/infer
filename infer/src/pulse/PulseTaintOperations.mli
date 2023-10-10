@@ -49,7 +49,7 @@ val taint_allocation :
   -> allocator:Attribute.allocator option
   -> AbstractValue.t * ValueHistory.t
   -> AbductiveDomain.t
-  -> AbductiveDomain.t
+  -> AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)
 
 val check_flows_wrt_sink :
      ?policy_violations_reported:IntSet.t

@@ -226,9 +226,9 @@ let taint_value_origin (path : PathContext.t) location taint_item value_origin a
       astate
 
 
-let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator (v, _) astate =
+let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator (v, hist) astate =
   (* Micro-optimisation: do not convert types to strings unless necessary *)
-  if List.is_empty allocation_sources then astate
+  if List.is_empty allocation_sources then (astate, (v, hist))
   else
     match typ_desc with
     | Typ.Tstruct class_name ->
@@ -245,8 +245,9 @@ let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator (v, _) 
               Option.value_map allocator ~default:alloc_desc
                 ~f:(Format.asprintf "%a" Attribute.pp_allocator)
             in
-            let astate =
-              List.fold matching_allocations ~init:astate ~f:(fun astate (_, kinds) ->
+            let astate, hist =
+              List.fold matching_allocations ~init:(astate, hist)
+                ~f:(fun (astate, hist) (_, kinds) ->
                   let source =
                     let proc_name = Procname.from_string_c_fun alloc_desc in
                     let value = TaintItem.TaintProcedure proc_name in
@@ -254,25 +255,30 @@ let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator (v, _) 
                     {TaintItem.kinds; value; origin}
                   in
                   let hist =
-                    ValueHistory.singleton
+                    ValueHistory.sequence
                       (TaintSource (source, location, path.PathContext.timestamp))
+                      hist
                   in
                   let tainted =
                     let time_trace = Timestamp.trace0 path.PathContext.timestamp in
                     {Attribute.Tainted.source; hist; time_trace; intra_procedural_only= false}
                   in
-                  AbductiveDomain.AddressAttributes.add_one v
-                    (Tainted (Attribute.TaintedSet.singleton tainted))
-                    astate )
+                  let astate =
+                    AbductiveDomain.AddressAttributes.add_one v
+                      (Tainted (Attribute.TaintedSet.singleton tainted))
+                      astate
+                  in
+                  (astate, hist) )
             in
-            Some astate
+            Some (astate, hist)
         in
         L.d_printfln "Checking allocation at %a for taint matching %a" Location.pp location
           Typ.Name.pp class_name ;
-        let astate_opt = PatternMatch.supertype_find_map_opt tenv check_type_name class_name in
-        Option.value astate_opt ~default:astate
+        let astate_hist_opt = PatternMatch.supertype_find_map_opt tenv check_type_name class_name in
+        let astate, hist = Option.value astate_hist_opt ~default:(astate, hist) in
+        (astate, (v, hist))
     | _ ->
-        astate
+        (astate, (v, hist))
 
 
 let fold_reachable_values ~(f : ValueOrigin.t -> AbductiveDomain.t -> AbductiveDomain.t)
@@ -680,7 +686,7 @@ let propagate_to path location value_origin values call astate =
               in
               let astate = AbductiveDomain.AddressAttributes.add_one v (Tainted tainted) astate in
               Attribute.TaintedSet.fold
-                (fun {source} astate -> taint_value_origin path location source value_origin astate)
+                (fun {source} astate -> taint_value_origin path location source vo astate)
                 sources astate
             in
             if not (Attribute.TaintSanitizedSet.is_empty sanitizers) then
