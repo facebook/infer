@@ -374,12 +374,13 @@ let exclude_in_loc source_file exclude_in =
       false
 
 
-let check_source_against_sink_policy location source source_times intra_procedural_only hist
-    sanitizers sink_kind sink_policy =
+let check_source_against_sink_policy location ~source source_times intra_procedural_only hist
+    sanitizers ~sink sink_kind sink_policy =
   let has_matching_taint_event_in_history source hist =
     if Config.pulse_taint_check_history then
       (* TODO(izorin): tainting based on value histories doesn't work for function calls arguments yet *)
       if TaintItem.is_argument_origin source && not intra_procedural_only then true
+      else if TaintItem.equal source sink then true
       else
         let check = function
           | ValueHistory.TaintSource (taint_item, _, _) ->
@@ -421,8 +422,8 @@ let check_policies ~sink ~source ~source_times ~intra_procedural_only ~hist ~san
   let check_against_sink acc sink_kind =
     let policies = Hashtbl.find_exn SinkPolicy.sink_policies sink_kind in
     let check_against_policy =
-      check_source_against_sink_policy location source source_times intra_procedural_only hist
-        sanitizers sink_kind
+      check_source_against_sink_policy location ~source source_times intra_procedural_only hist
+        sanitizers ~sink sink_kind
     in
     let rev_matching_sources = List.rev_filter_map policies ~f:check_against_policy in
     List.rev_append rev_matching_sources acc

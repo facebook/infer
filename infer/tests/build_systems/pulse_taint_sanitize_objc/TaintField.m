@@ -7,7 +7,7 @@
 #import "Account.h"
 
 // doesn't work with pulse-taint-check-history flag
-void logAccount_bad_FN() {
+void logAccount_bad() {
   Account* account = [[Account alloc] init];
   NSLog(@"%@", account->accountID);
 }
