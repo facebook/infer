@@ -163,8 +163,7 @@ module Ident = struct
       any prefix are local variables.
 
       We have to single out the "root" id, to remember if it was a local vs global name, and its
-      location. We also single out the last element to ease the transformation to a procname (like
-      [foo::bar.f]) vs a type name (like [foo::bar::T])
+      location.
 
       Since we mostly append to these identifiers, we store them in reverse order, and only reverse
       them when generating textual. *)
@@ -177,14 +176,12 @@ module Ident = struct
       }
     [@@deriving compare]
 
-    type path = Empty | Path of {path: string list; last: string} [@@deriving compare]
-
     (* We store:
         A as {root= A; path= Empty}
-        A.B as {root= A; path= Path{path= []; last= B}}
-        A.B0...Bn.B as {root= A; path= Path{path= Bn..B0; last= B}}
+        A.B as {root= A; path= [B]}
+        A.B0...Bn.B as {root= A; path= [B; Bn; ...; B0]}
     *)
-    type t = {root: root; path: path} [@@deriving compare]
+    type t = {root: root; path: string list} [@@deriving compare]
   end
 
   include IDENT
@@ -194,19 +191,12 @@ module Ident = struct
     match items with
     | [] ->
         None
-    | name :: attrs -> (
-      match List.rev attrs with
-      | [] ->
-          Some {root= {name; loc; global}; path= Empty}
-      | last :: path ->
-          Some {root= {name; loc; global}; path= Path {last; path}} )
+    | name :: attrs ->
+        let path = List.rev attrs in
+        Some {root= {name; loc; global}; path}
 
 
-  let last {root= {name}; path} = match path with Empty -> name | Path {last} -> last
-
-  let as_list {root= {name}; path} =
-    match path with Empty -> [name] | Path {path; last} -> name :: List.rev (last :: path)
-
+  let as_list {root= {name}; path} = name :: List.rev path
 
   let pp_rev_list fmt l = Pp.seq ~sep:"::" Format.pp_print_string fmt (List.rev l)
 
@@ -223,50 +213,46 @@ module Ident = struct
   let fold ~f_root ~f_path ~init {root; path} =
     let {name; loc; global} = root in
     let acc = f_root init ~global ~loc name in
-    match path with
-    | Empty ->
-        acc
-    | Path {last; path} ->
-        List.fold_right (last :: path) ~f:f_path ~init:acc
+    List.fold_right path ~f:f_path ~init:acc
 
 
   let to_string ~sep {root= {name}; path} =
-    match path with Empty -> name | Path {path; last} -> to_enclosing_name name path sep last
+    match path with [] -> name | hd :: tl -> to_enclosing_name name tl sep hd
 
 
   let to_qualified_procname {root= {name; loc}; path} : T.QualifiedProcName.t =
     match path with
-    | Empty ->
+    | [] ->
         {enclosing_class= TopLevel; name= proc_name ~loc name}
-    | Path {path; last} ->
+    | hd :: tl ->
         let enclosing_class =
           let value =
-            if List.is_empty path then name else Format.asprintf "%s::%a" name pp_rev_list path
+            if List.is_empty tl then name else Format.asprintf "%s::%a" name pp_rev_list tl
           in
           let type_name = type_name ~loc value in
           T.QualifiedProcName.Enclosing type_name
         in
-        let name = {T.ProcName.value= last; loc} in
+        let name = {T.ProcName.value= hd; loc} in
         {enclosing_class; name}
 
 
   let to_type_name ?(static = false) {root= {name; loc}; path} : T.TypeName.t =
     match path with
-    | Empty ->
+    | [] ->
         let name = if static then static_companion name else name in
         type_name ~loc name
-    | Path {path; last} ->
-        let last = if static then static_companion last else last in
-        let value = to_enclosing_name name path "::" last in
+    | hd :: tl ->
+        let last = if static then static_companion hd else hd in
+        let value = to_enclosing_name name tl "::" last in
         type_name ~loc value
 
 
   let to_proc_name_ sep {root= {name; loc}; path} : T.ProcName.t =
     match path with
-    | Empty ->
+    | [] ->
         proc_name ~loc name
-    | Path {path; last} ->
-        let value = to_enclosing_name name path sep last in
+    | hd :: tl ->
+        let value = to_enclosing_name name tl sep hd in
         proc_name ~loc value
 
 
@@ -291,65 +277,69 @@ module Ident = struct
 
 
   let is_primitive_type {root= {name}; path} =
-    match path with Empty -> SMap.mem name primitive_types | Path _ -> false
+    match path with
+    | [] ->
+        SMap.mem name primitive_types
+    | [attrname] when String.equal builtins name ->
+        SMap.mem attrname primitive_types
+    | _ ->
+        false
 
 
   let to_typ ({root= {name}; path} as t) =
     let default = to_typ_struct t in
-    match path with
-    | Empty ->
-        SMap.find_opt name primitive_types |> Option.value ~default
-    | _ ->
-        default
+    if List.is_empty path then SMap.find_opt name primitive_types |> Option.value ~default
+    else default
 
 
   let to_var_name {root= {name; loc}; path} : T.VarName.t =
     match path with
-    | Empty ->
+    | [] ->
         var_name ~loc name
-    | Path {path; last} ->
-        let value = to_enclosing_name name path "::" last in
+    | hd :: tl ->
+        let value = to_enclosing_name name tl "::" hd in
         var_name ~loc value
 
 
   let ambiguous = "$ambiguous"
 
-  let unknown_ident ?(loc = T.Location.Unknown) last =
+  let mk_unknown_ident ?(loc = T.Location.Unknown) last =
     let root = {name= ambiguous; loc; global= true} in
-    let path = Path {last; path= []} in
+    let path = [last] in
     {root; path}
 
 
-  let mk ?(global = true) ?(loc = T.Location.Unknown) name = {root= {name; global; loc}; path= Empty}
+  let extend_unknown_ident {root= {name; loc}; path} =
+    let root = {name= ambiguous; loc; global= true} in
+    let path = path @ [name] in
+    {root; path}
+
+
+  let mk ?(global = true) ?(loc = T.Location.Unknown) name = {root= {name; global; loc}; path= []}
 
   let extend ~prefix name =
     let {root; path} = prefix in
-    match path with
-    | Empty ->
-        {root; path= Path {last= name; path= []}}
-    | Path {last; path} ->
-        {root; path= Path {last= name; path= last :: path}}
+    {root; path= name :: path}
 
 
   let pop {root; path} =
     match path with
-    | Empty ->
-        None
-    | Path {path= []} ->
-        Some {root; path= Empty}
-    | Path {path= hd :: tl} ->
-        Some {root; path= Path {last= hd; path= tl}}
+    | [] ->
+        let {name} = root in
+        (name, None)
+    | hd :: tl ->
+        (hd, Some {root; path= tl})
 
 
   let mk_builtin last =
     let root = {name= builtins; loc= T.Location.Unknown; global= true} in
-    let path = Path {last; path= []} in
+    let path = [last] in
     {root; path}
 
 
   let is_imported_ABC {root= {name}; path} =
     match path with
-    | Path {path= []; last} ->
+    | [last] ->
         String.equal ABC.base_class last && String.equal ABC.import_name name
     | _ ->
         false

@@ -2237,9 +2237,9 @@ from ..C import X
 
       }
 
-      declare some::long::path::B.$toplevel() : *PyObject
-
       declare some::long::C.$toplevel() : *PyObject
+
+      declare some::long::path::B.$toplevel() : *PyObject
 
       declare A.$toplevel() : *PyObject
 
@@ -2517,6 +2517,78 @@ class D0(C0):
 
           MAKE_FUNCTION: support for closures is incomplete (D)
           MAKE_FUNCTION: support for closures is incomplete (D0) |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+import foo
+
+class C(foo.D):
+        def __init__(self, x):
+          super().__init__(x)
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = foo.$toplevel()
+              n1 = $builtins.python_class("dummy::C")
+              ret null
+
+        }
+
+        define dummy::C.__init__(self: *dummy::C, x: *PyObject) : *PyNone {
+          #b0:
+              n0:*dummy::C = load &self
+              n1:*PyObject = load &x
+              n2 = foo::D.__init__(n0, n1)
+              ret null
+
+        }
+
+        declare foo::D.__init__(...) : *PyNone
+
+        define dummy::C(x: *PyObject) : *dummy::C {
+          #entry:
+              n0 = __sil_allocate(<dummy::C>)
+              n1:*PyObject = load &x
+              n2 = n0.dummy::C.__init__(n1)
+              ret n0
+
+        }
+
+        global dummy::C$static: *PyObject
+
+        type .static dummy::C$static extends foo::D$static = {}
+
+        type dummy::C extends foo::D = {}
+
+        declare foo.$toplevel() : *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_class(*String) : *PyClass
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt
+
+        MAKE_FUNCTION: support for closures is incomplete (C) |}]
   end )
 
 

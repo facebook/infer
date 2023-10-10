@@ -23,7 +23,6 @@ module Error = struct
     | UnsupportedOpcode of string
     | FunctionFlags of string * MakeFunctionFlags.t
     | StaticCallImport of Ident.t
-    | SuperNotInFile of Ident.t * Ident.t
     | SuperMultipleInheritance of Ident.t
     | Closure of string
     | CompareOp of Builtin.Compare.t
@@ -43,10 +42,6 @@ module Error = struct
           flags
     | StaticCallImport id ->
         F.fprintf fmt "Unsupported Import %a in static call" Ident.pp id
-    | SuperNotInFile (id, parent) ->
-        F.fprintf fmt
-          "Unsupported `super` in class %a because its parent %a is not in the same file" Ident.pp
-          id Ident.pp parent
     | SuperMultipleInheritance id ->
         F.fprintf fmt "Unsupported call to `super` with multiple inheritance in %a" Ident.pp id
     | Closure opname ->
@@ -264,7 +259,7 @@ let code_to_exp ~fun_or_class env key =
     match Env.lookup_symbol env key with
     | None ->
         (* Corner cases for things we don't support nicely at the moment *)
-        let id = Ident.unknown_ident "code" in
+        let id = Ident.mk_unknown_ident "code" in
         let name = Ident.to_string ~sep:"." id in
         Ok name
     | Some ({Symbol.kind; id} as symbol) -> (
@@ -370,9 +365,7 @@ let load_name env loc ~global name =
       | Class ->
           Ok ({Env.Info.kind= Class; typ= PyCommon.pyClass}, id)
       | Builtin ->
-          let prim_id = Ident.mk (Ident.last id) in
-          if Ident.is_primitive_type prim_id then
-            Ok ({Env.Info.kind= Class; typ= PyCommon.pyClass}, id)
+          if Ident.is_primitive_type id then Ok ({Env.Info.kind= Class; typ= PyCommon.pyClass}, id)
           else Error (L.InternalError, Error.LoadInvalid (kind, id))
       | Import | ImportCall ->
           Error (L.InternalError, Error.LoadInvalid (kind, id))
@@ -387,7 +380,7 @@ let load_name env loc ~global name =
           let prefix = Ident.mk ~global ~loc python_implicit_names_prefix in
           let id = Ident.extend ~prefix name in
           Ok (default_info typ, id)
-        else Ok (default, Ident.unknown_ident name)
+        else Ok (default, Ident.mk_unknown_ident name)
   in
   if Env.Info.is_code kind then
     (* If we are trying to load some code, use the dedicated builtin *)
@@ -741,8 +734,8 @@ module FUNCTION = struct
           (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
              further analysis *)
           let proc =
-            let enclosing_class = {T.TypeName.value= Ident.ambiguous; loc} in
-            qualified_procname ~enclosing_class @@ Ident.to_proc_name fid
+            let fid = Ident.extend_unknown_ident fid in
+            Ident.to_qualified_procname fid
           in
           mk env proc
       | Some symbol -> (
@@ -1093,7 +1086,7 @@ module FUNCTION = struct
             | Some {Symbol.id} ->
                 id
             | None ->
-                Ident.unknown_ident ~loc name
+                Ident.mk_unknown_ident ~loc name
           in
           let fname = Ident.to_string ~sep:"." fid in
           let fname = T.Exp.Const (Str fname) in
@@ -1127,9 +1120,9 @@ module FUNCTION = struct
                    to encode `foo.bar(x=1)`
 
                    So we have to reverse engineer a few things here *)
-                let last = Ident.last id in
+                let last, prefix = Ident.pop id in
                 let key =
-                  match Ident.pop id with
+                  match prefix with
                   | None ->
                       (* TODO: check this global *)
                       mk_key true loc last
@@ -1141,8 +1134,9 @@ module FUNCTION = struct
                     let fname = Ident.to_string ~sep:"::" id in
                     sprintf "%s.%s" fname last
                 | None ->
+                    let id = Ident.extend_unknown_ident id in
                     let fname = Ident.to_string ~sep:"::" id in
-                    sprintf "%s::%s.%s" Ident.ambiguous fname last )
+                    sprintf "%s.%s" fname last )
           in
           let fname = T.Exp.Const (Str fname) in
           call env fname
@@ -1197,7 +1191,7 @@ module METHOD = struct
       let current_module = Env.module_name env in
       (* current_module is a fully qualified name like foo#C, but we want to extract that C part
          only to lookup in our set of known classes. *)
-      let class_name = Ident.last current_module in
+      let class_name, _ = Ident.pop current_module in
       let classes = Env.get_declared_classes env in
       let class_info = SMap.find_opt class_name classes in
       let params = Env.get_params env in
@@ -1215,13 +1209,11 @@ module METHOD = struct
           | _ ->
               Error (L.InternalError, Error.TODO (SuperMultipleInheritance current_module)) )
       in
-      let* parent_name =
+      let parent_name =
         let key = Symbol.Global parent in
-        match Env.lookup_symbol env key with
-        | None ->
-            Error (L.InternalError, Error.TODO (SuperNotInFile (current_module, parent)))
-        | Some {Symbol.id} ->
-            Ok id
+        let id = Env.lookup_symbol env key in
+        (* Parent is in a different file, we can only trust it's there *)
+        Option.value_map ~f:(fun {Symbol.id} -> id) ~default:parent id
       in
       let* self =
         if is_static then Error (L.ExternalError, Error.SuperInStatic current_module)
@@ -2026,7 +2018,8 @@ module IMPORT = struct
               | _, None ->
                   None
               | _, Some id ->
-                  pop_levels (n - 1) (Ident.pop id)
+                  let _, next_id = Ident.pop id in
+                  pop_levels (n - 1) next_id
             in
             let prefix = pop_levels level (Some module_) in
             match prefix with
@@ -3227,9 +3220,10 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
           {T.FieldDecl.qualified_name; typ; attributes= []} )
     in
     let* env, decls = to_proc_descs env class_name (Array.of_list codes) in
-    let supers, static_supers =
+    let supers, static_supers, parent_inits =
       (* TODO: check if/how ordering of parent class matters. Atm I keep the same order. *)
-      List.fold_right ~init:([], []) parents ~f:(fun parent (supers, static_supers) ->
+      List.fold_right ~init:([], [], []) parents
+        ~f:(fun parent (supers, static_supers, parent_inits) ->
           let parent_id =
             let key = Symbol.Global parent in
             match Env.lookup_symbol env key with Some {Symbol.id} -> Some id | _ -> None
@@ -3237,16 +3231,22 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
           let is_imported_from_ABC =
             Option.value_map ~default:false ~f:Ident.is_imported_ABC parent_id
           in
-          if is_imported_from_ABC then ([], [])
+          if is_imported_from_ABC then (supers, static_supers, parent_inits)
           else
-            let parent =
-              (* If the parent class is imported, we can't do much check, so we trust it upfront,
-                 since compilation was happy *)
-              Option.value parent_id ~default:parent
+            let parent, parent_inits =
+              match parent_id with
+              | None ->
+                  (* If the parent class is imported, we can't do much check, so we trust it upfront,
+                     since compilation was happy. We also have to declare its
+                     constructor in case [super().__init__] is in the source
+                     code *)
+                  (parent, parent :: parent_inits)
+              | Some parent ->
+                  (parent, parent_inits)
             in
             let supers = Ident.to_type_name ~static:false parent :: supers in
             let static_supers = Ident.to_type_name ~static:true parent :: static_supers in
-            (supers, static_supers) )
+            (supers, static_supers, parent_inits) )
     in
     let t = T.Module.Struct {name= class_type_name; supers; fields; attributes= []} in
     let companion =
@@ -3261,16 +3261,37 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
       T.Module.Global
         {name= Ident.to_var_name static_class_name; typ= PyCommon.pyObject; attributes= []}
     in
-    let ctor_and_init =
+    let env, ctor_and_init =
       match has_init with
       | None ->
           let ctor = constructor_stubs ~kind:`Ctor loc class_name in
           let init = constructor_stubs ~kind:`Init loc class_name in
-          [init; ctor]
+          (env, [init; ctor])
       | Some has_init ->
-          (* [__init__] is already present in the source code, only generate the constructor. *)
+          (* [__init__] is already present in the source code, only generate the constructor.
+             We also declare parent constructors that might be in another file *)
+          let env, parent_inits =
+            List.fold_left ~init:(env, [])
+              ~f:(fun (env, parent_inits) parent ->
+                let info =
+                  {PyEnv.Signature.is_static= false; is_abstract= false; annotations= []}
+                in
+                let env =
+                  Env.register_method env ~enclosing_class:parent ~method_name:PyCommon.init__ info
+                    []
+                in
+                let init = Ident.extend ~prefix:parent PyCommon.init__ in
+                let init = Ident.to_qualified_procname init in
+                let result_type = T.Typ.{typ= PyCommon.pyNone; attributes= []} in
+                let init =
+                  T.{ProcDecl.qualified_name= init; formals_types= None; result_type; attributes= []}
+                in
+                let parent_inits = T.Module.Procdecl init :: parent_inits in
+                (env, parent_inits) )
+              parent_inits
+          in
           let ctor = constructor class_name loc has_init in
-          [ctor]
+          (env, ctor :: parent_inits)
     in
     Ok (env, (t :: companion :: companion_const :: ctor_and_init) @ decls)
 

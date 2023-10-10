@@ -124,8 +124,6 @@ module Ident : sig
 
   val from_string : ?global:bool -> ?loc:Textual.Location.t -> string -> t option
 
-  val last : t -> string
-
   val pp : Format.formatter -> t -> unit
 
   val fold :
@@ -141,7 +139,7 @@ module Ident : sig
 
   val to_type_name : ?static:bool -> t -> Textual.TypeName.t
 
-  val to_proc_name : t -> Textual.ProcName.t
+  val to_proc_name : t -> Textual.ProcName.t [@@warning "-unused-value-declaration"]
 
   val to_constructor : t -> Textual.ProcName.t
 
@@ -151,16 +149,18 @@ module Ident : sig
 
   val to_var_name : t -> Textual.VarName.t
 
-  val unknown_ident : ?loc:Textual.Location.t -> string -> t
+  val mk_unknown_ident : ?loc:Textual.Location.t -> string -> t
   (** Wrap a variable name into a special enclosing class when a global's origin can't be found. *)
 
-  val ambiguous : string
+  val extend_unknown_ident : t -> t
+  (** Wrap an existing identifier into a special enclosing class when a global's origin can't be
+      found. *)
 
   val mk : ?global:bool -> ?loc:Textual.Location.t -> string -> t
 
   val extend : prefix:t -> string -> t
 
-  val pop : t -> t option
+  val pop : t -> string * t option
 
   val mk_builtin : string -> t
 
