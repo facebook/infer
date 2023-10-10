@@ -462,34 +462,27 @@ let split_args procname args =
       else (None, args)
 
 
-let match_procedure_impl tenv path location ?proc_attributes procname actuals return_opt matchers
-    astate : AbductiveDomain.t * taint_match list =
+let match_procedure_impl tenv path location ?proc_attributes ~has_added_return_param procname
+    actuals return_opt matchers astate : AbductiveDomain.t * taint_match list =
   if Procname.is_hack_builtins procname then (astate, [])
   else
     let instance_reference, actuals = split_args procname actuals in
     let matches = procedure_matches tenv matchers ?proc_attributes procname actuals in
     if not (List.is_empty matches) then L.d_printfln "taint matches" ;
-    let has_added_return_param =
-      match proc_attributes with
-      | Some attrs when attrs.ProcAttributes.has_added_return_param ->
-          true
-      | _ ->
-          false
-    in
     match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
       actuals ~instance_reference (TaintItem.TaintProcedure procname)
 
 
-let match_procedure_call tenv path location ?proc_attributes procname actuals return matchers astate
-    =
-  match_procedure_impl tenv path location ?proc_attributes procname actuals (Some return) matchers
-    astate
+let match_procedure_call tenv path location ?proc_attributes ~has_added_return_param procname
+    actuals return matchers astate =
+  match_procedure_impl tenv path location ?proc_attributes ~has_added_return_param procname actuals
+    (Some return) matchers astate
 
 
 let match_procedure tenv (proc_attributes : ProcAttributes.t) formals matchers astate :
     AbductiveDomain.t * taint_match list =
-  match_procedure_impl tenv PathContext.initial proc_attributes.loc proc_attributes.proc_name
-    formals None matchers astate
+  match_procedure_impl tenv PathContext.initial proc_attributes.loc ~has_added_return_param:false
+    proc_attributes.proc_name formals None matchers astate
 
 
 let match_block tenv location ?proc_attributes procname actuals matchers astate :

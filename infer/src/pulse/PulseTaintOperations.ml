@@ -882,14 +882,6 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t)
           else Ok astate
       | Second proc_name ->
           let proc_attributes = IRAttributes.load proc_name in
-          let match_call matchers astate =
-            TaintItemMatcher.match_procedure_call tenv path location ?proc_attributes proc_name
-              actuals return matchers astate
-          in
-          let call_was_unknown =
-            call_was_unknown || should_treat_as_unknown_for_taint tenv ?proc_attributes proc_name
-          in
-          L.d_printfln "call to proc [unknown=%b]" call_was_unknown ;
           let has_added_return_param =
             match proc_attributes with
             | Some attrs when attrs.ProcAttributes.has_added_return_param ->
@@ -897,6 +889,14 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t)
             | _ ->
                 false
           in
+          let match_call matchers astate =
+            TaintItemMatcher.match_procedure_call tenv path location ?proc_attributes
+              ~has_added_return_param proc_name actuals return matchers astate
+          in
+          let call_was_unknown =
+            call_was_unknown || should_treat_as_unknown_for_taint tenv ?proc_attributes proc_name
+          in
+          L.d_printfln "call to proc [unknown=%b]" call_was_unknown ;
           let astate =
             let astate, tainted = match_call sanitizer_matchers astate in
             taint_sanitizers path location tainted astate

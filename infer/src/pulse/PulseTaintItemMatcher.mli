@@ -19,6 +19,7 @@ val match_procedure_call :
   -> PathContext.t
   -> Location.t
   -> ?proc_attributes:ProcAttributes.t
+  -> has_added_return_param:bool
   -> Procname.t
   -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
   -> Ident.t * Typ.t
