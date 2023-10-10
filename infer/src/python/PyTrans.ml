@@ -2000,33 +2000,37 @@ module IMPORT = struct
               Error (L.ExternalError, Error.ImportLevelTooBig level) )
       in
       let loc = Env.loc env in
+      let module_name = Env.module_name env in
+      let name = co_names.(arg) in
       let* import_path =
         match level with
         | 0 ->
             (* Absolute path *)
-            let name = co_names.(arg) in
             Result.of_option
               ~error:(L.InternalError, Error.ImportInvalidName name)
               (Ident.from_string ~loc name)
         | _ -> (
             (* Relative path *)
-            let module_ = Env.module_name env in
             let rec pop_levels n id =
               match (n, id) with
-              | 0, id ->
-                  id
+              | 0, None ->
+                  Some `Root
+              | 0, Some id ->
+                  Some (`Path id)
               | _, None ->
                   None
               | _, Some id ->
                   let _, next_id = Ident.pop id in
                   pop_levels (n - 1) next_id
             in
-            let prefix = pop_levels level (Some module_) in
+            let prefix = pop_levels level (Some module_name) in
             match prefix with
-            | Some prefix ->
-                Ok (Ident.extend ~prefix co_names.(arg))
+            | Some `Root ->
+                Ok (Ident.mk ~loc name)
+            | Some (`Path prefix) ->
+                if String.is_empty name then Ok prefix else Ok (Ident.extend ~prefix name)
             | None ->
-                Error (L.ExternalError, Error.ImportInvalidDepth (module_, level)) )
+                Error (L.ExternalError, Error.ImportInvalidDepth (module_name, level)) )
       in
       let key = Symbol.Global import_path in
       let* env =

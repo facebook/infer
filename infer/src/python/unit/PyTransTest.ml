@@ -2218,11 +2218,20 @@ if __name__ == '__main__':
 
 
     let%expect_test _ =
-      let source = {|
+      let source =
+        {|
 from A import X
+X()
 from .B import X
+X()
 from ..C import X
-      |} in
+X()
+
+from .. import path
+# this will generate a warning, expected until modules are encoded as proper Textual types
+path.X()
+      |}
+      in
       test ~filename:"some/long/path/dummy.py" source ;
       [%expect
         {|
@@ -2231,15 +2240,29 @@ from ..C import X
       define some::long::path::dummy.$toplevel() : *PyNone {
         #b0:
             n0 = A.$toplevel()
-            n1 = some::long::path::B.$toplevel()
-            n2 = some::long::C.$toplevel()
+            n1 = A.X()
+            n2 = some::long::path::B.$toplevel()
+            n3 = some::long::path::B.X()
+            n4 = some::long::C.$toplevel()
+            n5 = some::long::C.X()
+            n6 = some::long.$toplevel()
+            n7:*PyObject = load &some::long::path
+            n8 = n7.?.X()
             ret null
 
       }
 
+      declare some::long.$toplevel() : *PyObject
+
+      declare some::long::C.X(...) : *PyObject
+
+      declare some::long::path::B.X(...) : *PyObject
+
       declare some::long::C.$toplevel() : *PyObject
 
       declare some::long::path::B.$toplevel() : *PyObject
+
+      declare A.X(...) : *PyObject
 
       declare A.$toplevel() : *PyObject
 
@@ -2257,7 +2280,10 @@ from ..C import X
 
       declare $builtins.python_float(float) : *PyFloat
 
-      declare $builtins.python_int(int) : *PyInt |}]
+      declare $builtins.python_int(int) : *PyInt
+
+      Errors while type checking the test:
+      some/long/path/dummy.py, line 2, column 0: textual type error: variable some::long::path has not been declared |}]
 
 
     let%expect_test _ =

@@ -122,7 +122,7 @@ module Ident : sig
       any prefix are local variables. *)
   type t [@@deriving compare]
 
-  val from_string : ?global:bool -> ?loc:Textual.Location.t -> string -> t option
+  val from_string : ?on:char -> ?global:bool -> ?loc:Textual.Location.t -> string -> t option
 
   val pp : Format.formatter -> t -> unit
 

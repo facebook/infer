@@ -186,8 +186,8 @@ module Ident = struct
 
   include IDENT
 
-  let from_string ?(global = true) ?(loc = T.Location.Unknown) s =
-    let items = String.split ~on:'/' s in
+  let from_string ?(on = '/') ?(global = true) ?(loc = T.Location.Unknown) s =
+    let items = String.split ~on s in
     match items with
     | [] ->
         None
