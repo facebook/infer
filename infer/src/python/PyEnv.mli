@@ -33,7 +33,7 @@ module Symbol : sig
     | ImportCall
         (** The identifier is an imported name that has been used in a call, so we can suppose it is
             a function *)
-    | Import of {more_than_once: bool}  (** The identifier is the name of an imported module *)
+    | Import  (** The identifier is the name of an imported module *)
 
   val pp_kind : Format.formatter -> kind -> unit
 
@@ -66,8 +66,10 @@ module DataStack : sig
     | List of (PyBuiltin.builder * cell list)  (** Light encoding of raw Python tuples/lists. *)
     | Map of (T.Exp.t * cell) list  (** Light encoding of raw Python maps/dicts. *)
     | BuiltinBuildClass  (** see Python's [LOAD_BUILD_CLASS] *)
-    | Import of {import_path: Ident.t; symbols: string list}
-        (** imported module path, with optional name of symbols *)
+    | Import of {import_path: Ident.t; from_list: string list}
+        (** imported module path, with optional names of symbols from that module *)
+    | ImportFrom of {import_path: Ident.t; imported_name: string}
+        (** imported symbol from a module. Must have been loaded via [Import] first *)
     | ImportCall of {id: Ident.t; loc: T.Location.t}  (** Static call to export definition *)
     | MethodCall of {receiver: T.Exp.t; name: T.QualifiedProcName.t}
         (** Virtual call, usually of a method of a class. Could be an access to a closure that is

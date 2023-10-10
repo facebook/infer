@@ -45,7 +45,7 @@ module Symbol = struct
     | Code
     | Class
     | ImportCall
-    | Import of {more_than_once: bool}
+    | Import
 
   let pp_kind fmt = function
     | Name {typ} ->
@@ -56,8 +56,8 @@ module Symbol = struct
         Format.pp_print_string fmt "Code"
     | Class ->
         Format.pp_print_string fmt "Class"
-    | Import {more_than_once} ->
-        Format.fprintf fmt "Import(%b)" more_than_once
+    | Import ->
+        Format.fprintf fmt "Import"
     | ImportCall ->
         Format.pp_print_string fmt "ImportCall"
 
@@ -86,7 +86,8 @@ module DataStack = struct
     | List of (Builtin.builder * cell list)
     | Map of (T.Exp.t * cell) list
     | BuiltinBuildClass
-    | Import of {import_path: Ident.t; symbols: string list}
+    | Import of {import_path: Ident.t; from_list: string list}
+    | ImportFrom of {import_path: Ident.t; imported_name: string}
     | ImportCall of {id: Ident.t; loc: T.Location.t}
     | MethodCall of {receiver: T.Exp.t; name: T.QualifiedProcName.t}
     | StaticCall of {call_name: T.QualifiedProcName.t; receiver: T.Exp.t option}
@@ -113,12 +114,14 @@ module DataStack = struct
         F.pp_print_string fmt "Map"
     | BuiltinBuildClass ->
         F.pp_print_string fmt "LOAD_BUILD_CLASS"
-    | Import {import_path; symbols= []} ->
+    | Import {import_path; from_list= []} ->
         F.fprintf fmt "Import(%a)" Ident.pp import_path
-    | Import {import_path; symbols} ->
-        F.fprintf fmt "ImportFrom(%a, %a)" Ident.pp import_path
+    | Import {import_path; from_list} ->
+        F.fprintf fmt "Import(%a, %a)" Ident.pp import_path
           (Pp.seq ~sep:" " F.pp_print_string)
-          symbols
+          from_list
+    | ImportFrom {import_path; imported_name} ->
+        F.fprintf fmt "ImportFrom(%a, %s)" Ident.pp import_path imported_name
     | ImportCall {id} ->
         F.fprintf fmt "ImportCall(%a)" Ident.pp id
     | MethodCall {receiver; name} ->
@@ -149,6 +152,7 @@ module DataStack = struct
     | Map _
     | BuiltinBuildClass
     | Import _
+    | ImportFrom _
     | ImportCall _
     | MethodCall _
     | StaticCall _
@@ -172,6 +176,7 @@ module DataStack = struct
     | Map _
     | BuiltinBuildClass
     | Import _
+    | ImportFrom _
     | ImportCall _
     | MethodCall _
     | StaticCall _
@@ -197,6 +202,7 @@ module DataStack = struct
     | Map _
     | BuiltinBuildClass
     | Import _
+    | ImportFrom _
     | ImportCall _
     | MethodCall _
     | StaticCall _
@@ -681,7 +687,7 @@ let get_textual_imports {shared= {globals; imported_values}} =
               {T.ProcDecl.qualified_name; formals_types= None; result_type; attributes= []}
             in
             T.Module.Procdecl procdecl :: acc
-        | Symbol.Import _ ->
+        | Symbol.Import ->
             let enclosing_class = Ident.to_type_name id in
             let qualified_name =
               PyCommon.qualified_procname ~enclosing_class

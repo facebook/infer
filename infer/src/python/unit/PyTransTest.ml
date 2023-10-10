@@ -2169,6 +2169,68 @@ from ..C import X
       declare $builtins.python_float(float) : *PyFloat
 
       declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+from x import y as z, a as b
+from x import y as z, a as b #testing the single load of x's top level
+
+z()
+b()
+
+from foo import toto, tata #testing the single load of foo's top level
+from foo import toto, tata
+toto()
+tata()
+
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = x.$toplevel()
+              n1 = x.y()
+              n2 = x.a()
+              n3 = foo.$toplevel()
+              n4 = foo.toto()
+              n5 = foo.tata()
+              ret null
+
+        }
+
+        declare x.y(...) : *PyObject
+
+        declare x.a(...) : *PyObject
+
+        declare x.$toplevel() : *PyObject
+
+        declare foo.toto(...) : *PyObject
+
+        declare foo.tata(...) : *PyObject
+
+        declare foo.$toplevel() : *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )
 
 

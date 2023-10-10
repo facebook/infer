@@ -276,7 +276,7 @@ let code_to_exp ~fun_or_class env key =
         Ok name
     | Some ({Symbol.kind; id} as symbol) -> (
       match (kind : Symbol.kind) with
-      | Name _ | Import _ | ImportCall ->
+      | Name _ | Import | ImportCall ->
           Error (L.InternalError, Error.NotCodeObject (kind, symbol))
       | Class ->
           Ok (Ident.to_string ~sep:"::" id)
@@ -381,7 +381,7 @@ let load_name env loc ~global name =
           if Ident.is_primitive_type prim_id then
             Ok ({Env.Info.kind= Class; typ= PyCommon.pyClass}, id)
           else Error (L.InternalError, Error.LoadInvalid (kind, id))
-      | Import _ | ImportCall ->
+      | Import | ImportCall ->
           Error (L.InternalError, Error.LoadInvalid (kind, id))
       | Code ->
           Ok ({Env.Info.kind= Code; typ= PyCommon.pyCode}, id) )
@@ -427,7 +427,7 @@ let is_imported env path =
     match opt with
     | None ->
         false
-    | Some {Symbol.kind= Import _ | ImportCall} ->
+    | Some {Symbol.kind= Import | ImportCall} ->
         true
     | Some _ ->
         false
@@ -546,6 +546,7 @@ let rec load_cell env cell =
   | StaticCall _
   | MethodCall _
   | Import _
+  | ImportFrom _
   | ImportCall _
   | Super
   | WithContext _ ->
@@ -740,7 +741,7 @@ module FUNCTION = struct
           mk env proc
       | Some symbol -> (
         match (symbol : Symbol.t) with
-        | {kind= Import _ | ImportCall; id} ->
+        | {kind= Import | ImportCall; id} ->
             Error (L.InternalError, Error.TODO (StaticCallImport id))
         | {kind= Builtin; id} ->
             (* TODO: propagate builtin type information *)
@@ -836,6 +837,7 @@ module FUNCTION = struct
           dynamic_call env id args
       | Code _
       | Import _
+      | ImportFrom _
       | StaticCall _
       | MethodCall _
       | NoException
@@ -981,6 +983,7 @@ module FUNCTION = struct
         | Map _
         | BuiltinBuildClass
         | Import _
+        | ImportFrom _
         | ImportCall _
         | MethodCall _
         | StaticCall _
@@ -1112,6 +1115,7 @@ module FUNCTION = struct
       | List _
       | Map _
       | Import _
+      | ImportFrom _
       | StaticCall _
       | MethodCall _
       | NoException
@@ -1217,7 +1221,7 @@ module METHOD = struct
           let key = mk_key global loc name in
           let opt_sym = Env.lookup_symbol env key in
           match (opt_sym : Symbol.t option) with
-          | Some {kind= Import _; id} ->
+          | Some {kind= Import; id} ->
               let id = Ident.extend ~prefix:id method_name in
               let env = Env.push env (DataStack.ImportCall {loc; id}) in
               Ok (env, None)
@@ -1279,6 +1283,7 @@ module METHOD = struct
       | List _
       | BuiltinBuildClass
       | Import _
+      | ImportFrom _
       | NoException
       | WithContext _
       | Super ->
@@ -1386,44 +1391,20 @@ module STORE = struct
     let loc = Env.loc env in
     let* env, cell = pop_datastack opname env in
     match (cell : DataStack.cell) with
-    | Import {import_path; symbols} ->
-        let key = Symbol.Global import_path in
-        let first_bind =
-          match Env.lookup_symbol env key with
-          | None ->
-              None
-          | Some symbol -> (
-            match symbol with
-            | {Symbol.kind= Import {more_than_once}; id; loc} when not more_than_once ->
-                Some (id, loc)
-            | _ ->
-                None )
-        in
-        let* env =
-          (* Side effects from imports are only run once *)
-          match first_bind with
-          | None ->
-              Ok env
-          | Some (id, loc) ->
-              let symbol_info = {Symbol.kind= Import {more_than_once= true}; loc; id} in
-              let env = Env.register_symbol env key symbol_info in
-              let enclosing_class = Ident.to_type_name import_path in
-              let proc =
-                qualified_procname ~enclosing_class @@ proc_name ~loc PyCommon.toplevel_function
-              in
-              let* env, _is_always_none = FUNCTION.CALL.mk env None loc proc [] in
-              (* Python toplevel code can't use [return] but still we just put a useless Textual id
-                 on the stack. Popping it *)
-              let* env, _ = pop_datastack "STORE_IMPORTED_NAME" env in
-              Ok env
-        in
+    | Import {import_path} ->
         let env =
-          List.fold_left ~init:env symbols ~f:(fun env symbol ->
-              let id = Ident.extend ~prefix:import_path symbol in
-              let typ = PyCommon.pyObject in
-              let symbol_info = {Symbol.kind= Name {is_imported= true; typ}; loc; id} in
-              let key = mk_key global loc symbol in
-              Env.register_symbol env key symbol_info )
+          let symbol_info = {Symbol.kind= Import; loc; id= import_path} in
+          let key = mk_key global loc name in
+          Env.register_symbol env key symbol_info
+        in
+        Ok (env, None)
+    | ImportFrom {import_path; imported_name} ->
+        let env =
+          let id = Ident.extend ~prefix:import_path imported_name in
+          let typ = PyCommon.pyObject in
+          let symbol_info = {Symbol.kind= Name {is_imported= true; typ}; loc; id} in
+          let key = mk_key global loc name in
+          Env.register_symbol env key symbol_info
         in
         Ok (env, None)
     | _ ->
@@ -1964,9 +1945,7 @@ module IMPORT = struct
         Also the doc says: [level] specifies whether to use absolute or relative imports. 0 (the
         default) means only perform absolute imports. Positive values for [level] indicate the
         number of parent directories to search relative to the directory of the module calling
-        [__import__()]
-
-        TODO: we don't support renamaing using [import foo as bar]. *)
+        [__import__()] *)
     let run env {FFI.Code.co_names} {FFI.Instruction.opname; arg} =
       let open IResult.Let_syntax in
       Debug.p "[%s] namei = %d\n" opname arg ;
@@ -2014,11 +1993,20 @@ module IMPORT = struct
                 Error (L.ExternalError, Error.ImportInvalidDepth (module_, level)) )
       in
       let key = Symbol.Global import_path in
-      let env =
-        if Option.is_none (Env.lookup_symbol env key) then
-          let symbol_info = {Symbol.kind= Import {more_than_once= false}; id= import_path; loc} in
-          Env.register_symbol env key symbol_info
-        else env
+      let* env =
+        if Option.is_some (Env.lookup_symbol env key) then Ok env
+        else
+          let symbol_info = {Symbol.kind= Import; id= import_path; loc} in
+          let env = Env.register_symbol env key symbol_info in
+          let enclosing_class = Ident.to_type_name import_path in
+          let proc =
+            qualified_procname ~enclosing_class @@ proc_name ~loc PyCommon.toplevel_function
+          in
+          let* env, _is_always_none = FUNCTION.CALL.mk env None loc proc [] in
+          (* Python toplevel code can't use [return] but still we just put a useless Textual id
+             on the stack. Popping it *)
+          let* env, _ = pop_datastack "STORE_IMPORTED_NAME" env in
+          Ok env
       in
       let from_list =
         (* TODO: turn into `Error` ? *)
@@ -2026,7 +2014,7 @@ module IMPORT = struct
           L.debug Capture Quiet "[IMPORT_NAME] failed to process `from_list`@\n" ;
         Option.value ~default:[] from_list
       in
-      let env = Env.push env (DataStack.Import {import_path; symbols= from_list}) in
+      let env = Env.push env (DataStack.Import {import_path; from_list}) in
       Ok (env, None)
   end
 
@@ -2042,16 +2030,15 @@ module IMPORT = struct
       let symbol_name = co_names.(arg) in
       let* import_cell = peek_datastack opname env in
       match (import_cell : DataStack.cell) with
-      | Import {import_path; symbols} ->
+      | Import {import_path; from_list} ->
           let env =
-            if List.mem ~equal:String.equal symbols symbol_name then
-              (* TODO: should we do more structure ? I just reuse `Import` with a single name
-                 instead of the full list. *)
-              Env.push env (DataStack.Import {import_path; symbols= [symbol_name]})
+            if List.mem ~equal:String.equal from_list symbol_name then
+              Env.push env (DataStack.ImportFrom {import_path; imported_name= symbol_name})
             else (
               (* TODO: update the message and turn it into a user_warning ? *)
               L.debug Capture Quiet "[IMPORT_FROM] symbol %s is not part of the expect list [%s]@\n"
-                symbol_name (String.concat ~sep:", " symbols) ;
+                symbol_name
+                (String.concat ~sep:", " from_list) ;
               env )
           in
           Ok (env, None)
@@ -3337,7 +3324,7 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
                 let varname = Ident.to_var_name id in
                 let global = T.Global.{name= varname; typ= PyCommon.pyObject; attributes= []} in
                 T.Module.Global global :: acc
-          | Builtin | Code | Class | Import _ | ImportCall ->
+          | Builtin | Code | Class | Import | ImportCall ->
               (* don't generate a global variable name, it will be declared as a toplevel decl *)
               acc )
         (Env.globals env) []
