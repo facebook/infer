@@ -1804,7 +1804,6 @@ import base
 import base # should only call base.$toplevel once
 
 base.f(0)
-
         |}
       in
       test source ;
@@ -4050,6 +4049,60 @@ class C:
         declare $builtins.python_int(int) : *PyInt
 
         Default value for class members are not yet supported |}]
+
+
+    let%expect_test _ =
+      let source = {|
+import dis
+def f(co, s):
+          dis.dis(co, file=s)
+        |} in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = dis.$toplevel()
+              n1 = $builtins.python_code("dummy.f")
+              ret null
+
+        }
+
+        define dummy.f(co: *PyObject, s: *PyObject) : *PyObject {
+          #b0:
+              n0:*PyObject = load &co
+              n1:*PyObject = load &s
+              n2 = $builtins.python_kw_arg("file", n1)
+              n3 = $builtins.python_call_kw("dis.dis", n0, n2)
+              ret null
+
+        }
+
+        declare dis.$toplevel() : *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_kw_arg(*String, *PyObject) : *PyObject
+
+        declare $builtins.python_call_kw(...) : *PyObject
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )
 
 

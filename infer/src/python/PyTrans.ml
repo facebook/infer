@@ -30,8 +30,6 @@ module Error = struct
     | Exception of string * DataStack.cell
     | SetupWith of DataStack.cell
     | New of Ident.t
-    | CallKwMissing of string
-    | CallKwMissingId of Ident.t
     | CallKwInvalidFunction of DataStack.cell
     | RaiseException of int
     | MakeFunctionDefault of DataStack.cell
@@ -62,11 +60,6 @@ module Error = struct
         F.fprintf fmt "Unsupported context manager: %a" DataStack.pp_cell cell
     | New id ->
         F.fprintf fmt "Unsupported '__new__' user declaration in %a" Ident.pp id
-    | CallKwMissing name ->
-        F.fprintf fmt "Unsupported CALL_FUNCTION_KW because %s is not defined in the same file" name
-    | CallKwMissingId id ->
-        F.fprintf fmt "Unsupported CALL_FUNCTION_KW because %a is not defined in the same file"
-          Ident.pp id
     | CallKwInvalidFunction cell ->
         F.fprintf fmt "Unsupported CALL_FUNCTION_KW with %a" DataStack.pp_cell cell
     | RaiseException n ->
@@ -1057,7 +1050,7 @@ module FUNCTION = struct
     let run env {FFI.Instruction.opname; arg= argc} =
       (* TODO:
          - make support more complete
-         - check/deal with method calls using kw *)
+      *)
       let open IResult.Let_syntax in
       Debug.p "[%s] argc = %d\n" opname argc ;
       let* env, arg_names = pop_datastack opname env in
@@ -1079,30 +1072,67 @@ module FUNCTION = struct
         Ok (env, None)
       in
       let loc = Env.loc env in
-      (* TODO: Fix this, should use dynamic_call with a string all the time *)
       match (fname : DataStack.cell) with
-      | Name {global; name} -> (
+      | Name {global; name} ->
           let key = mk_key global loc name in
-          match Env.lookup_symbol env key with
-          | Some {Symbol.id} ->
-              let fname = Ident.to_string ~sep:"." id in
-              let fname = T.Exp.Const (Str fname) in
-              call env fname
-          | None ->
-              Error (L.ExternalError, Error.TODO (CallKwMissing name)) )
+          let fid =
+            match Env.lookup_symbol env key with
+            | Some {Symbol.id} ->
+                id
+            | None ->
+                Ident.unknown_ident ~loc name
+          in
+          let fname = Ident.to_string ~sep:"." fid in
+          let fname = T.Exp.Const (Str fname) in
+          call env fname
       | Temp id ->
           call env (T.Exp.Var id)
       | BuiltinBuildClass ->
           Error (L.ExternalError, Error.CallKeywordBuildClass)
-      | Path id -> (
+      | Path id ->
           let key = Symbol.Global id in
-          match Env.lookup_symbol env key with
-          | Some {Symbol.id} ->
-              let fname = Ident.to_string ~sep:"." id in
-              let fname = T.Exp.Const (Str fname) in
-              call env fname
-          | None ->
-              Error (L.InternalError, Error.TODO (CallKwMissingId id)) )
+          let fname =
+            match Env.lookup_symbol env key with
+            | Some {Symbol.id} ->
+                Ident.to_string ~sep:"." id
+            | None -> (
+                (* A special encoding of the compiler would use
+                     LOAD_NAME                0 (foo)
+                     LOAD_METHOD              1 (bar)
+                     LOAD_CONST               0 (1)
+                     CALL_METHOD              0
+
+                   to encode `foo.bar()`
+
+                   but with named arguments, we get
+                     LOAD_NAME                0 (foo)
+                     LOAD_ATTR                1 (bar)
+                     LOAD_CONST               0 (1)
+                     LOAD_CONST               1 (('x',))
+                     CALL_FUNCTION_KW         1
+
+                   to encode `foo.bar(x=1)`
+
+                   So we have to reverse engineer a few things here *)
+                let last = Ident.last id in
+                let key =
+                  match Ident.pop id with
+                  | None ->
+                      (* TODO: check this global *)
+                      mk_key true loc last
+                  | Some id ->
+                      Symbol.Global id
+                in
+                match Env.lookup_symbol env key with
+                | Some {Symbol.id} ->
+                    let fname = Ident.to_string ~sep:"::" id in
+                    sprintf "%s.%s" fname last
+                | None ->
+                    let fname = Ident.to_string ~sep:"::" id in
+                    sprintf "%s::%s.%s" Ident.ambiguous fname last )
+          in
+          let fname = T.Exp.Const (Str fname) in
+          call env fname
       | ImportCall {id} ->
           (* TODO: test it *)
           Debug.todo "TEST IT 2!\n" ;
