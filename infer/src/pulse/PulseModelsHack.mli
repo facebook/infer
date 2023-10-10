@@ -19,3 +19,5 @@ val get_static_companion :
   -> Typ.name
   -> PulseAbductiveDomain.t
   -> PulseBaseStack.value * PulseAbductiveDomain.t
+
+val get_static_companion_var : Typ.name -> Pvar.t

@@ -34,7 +34,7 @@ let pp f pn = F.pp_print_string f (to_string pn)
 
 let this = from_string "this"
 
-let is_this = function {plain= "this"} -> true | _ -> false
+let is_this = function {plain= "this" | "$this"} -> true | _ -> false
 
 let self = from_string "self"
 

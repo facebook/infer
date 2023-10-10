@@ -1188,6 +1188,13 @@ let is_hack_builtins = function
       false
 
 
+let is_hack_sinit = function
+  | Hack {function_name} ->
+      String.equal function_name "_86sinit"
+  | _ ->
+      false
+
+
 let has_hack_classname = function Hack {class_name= Some _} -> true | _ -> false
 
 let get_global_name_of_initializer t =

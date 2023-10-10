@@ -547,6 +547,8 @@ val is_erlang_call_qualified : t -> bool
 
 val is_hack_builtins : t -> bool
 
+val is_hack_sinit : t -> bool
+
 val has_hack_classname : t -> bool
 
 module Normalizer : HashNormalizer.S with type t = t

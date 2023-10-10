@@ -1426,13 +1426,38 @@ let with_html_debug_node node ~desc ~f =
     ~f
 
 
+let set_uninitialize_prop path tenv ({ProcAttributes.loc} as proc_attrs) astate =
+  let pname = ProcAttributes.get_proc_name proc_attrs in
+  if Procname.is_hack_sinit pname then
+    let ( let* ) x f = match x with None -> astate | Some x -> f x in
+    let* name = Procname.get_class_type_name pname in
+    let* {Struct.fields} = Tenv.lookup tenv name in
+    let class_global_var = PulseModelsHack.get_static_companion_var name in
+    let typ = Typ.mk_struct name in
+    List.fold fields ~init:astate ~f:(fun astate (fld, {Typ.quals= fld_quals}, _) ->
+        (* Ideally, we would like to analyze `abstract const` fields only, but current SIL cannot
+           express the `abstract` field at the moment. *)
+        if Typ.is_const fld_quals then
+          match
+            PulseOperations.eval path NoAccess loc (Lfield (Lvar class_global_var, fld, typ)) astate
+          with
+          | Sat (Ok (astate, (fld, _))) ->
+              AbductiveDomain.AddressAttributes.add_one fld (Uninitialized Const) astate
+          | _ ->
+              astate
+        else astate )
+  else astate
+
+
 let initial tenv proc_attrs specialization =
+  let path = PathContext.initial in
   let initial_astate =
     AbductiveDomain.mk_initial tenv proc_attrs specialization
     |> PulseSummary.initial_with_positive_self proc_attrs
     |> PulseTaintOperations.taint_initial tenv proc_attrs
+    |> set_uninitialize_prop path tenv proc_attrs
   in
-  [(ContinueProgram initial_astate, PathContext.initial)]
+  [(ContinueProgram initial_astate, path)]
 
 
 let should_analyze proc_desc =
