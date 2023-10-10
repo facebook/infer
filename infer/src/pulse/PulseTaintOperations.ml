@@ -685,7 +685,10 @@ let propagate_to path location value_origin values call astate =
                     ; intra_procedural_only } )
                   sources
               in
-              AbductiveDomain.AddressAttributes.add_one v (Tainted tainted) astate
+              let astate = AbductiveDomain.AddressAttributes.add_one v (Tainted tainted) astate in
+              Attribute.TaintedSet.fold
+                (fun {source} astate -> taint_value_origin path location source value_origin astate)
+                sources astate
             in
             if not (Attribute.TaintSanitizedSet.is_empty sanitizers) then
               L.d_printfln "registering %a as sanitizer" AbstractValue.pp v ;
