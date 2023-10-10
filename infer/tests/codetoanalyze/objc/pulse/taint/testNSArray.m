@@ -971,7 +971,8 @@ void* NSArray_objectAt(NSArray* arr, int idx) {
   return (__bridge void*)obj;
 }
 
-void testNSArray_cell_ObjectAtIndex_bad(void) {
+// doesn't work with pulse-taint-check-history flag
+void testNSArray_cell_ObjectAtIndex_bad_FN(void) {
   NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
   void* value = NSArray_objectAt(mArr, 0);
   testNSArray_sink(value);
@@ -988,7 +989,8 @@ void* NSArray_objectAtIndexedSubscript(NSArray* arr, int idx) {
   return (__bridge void*)obj;
 }
 
-void testNSArray_cell_ObjectAtIndexedSubscript_bad(void) {
+// doesn't work with pulse-taint-check-history flag
+void testNSArray_cell_ObjectAtIndexedSubscript_bad_FN(void) {
   NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
   void* value = NSArray_objectAtIndexedSubscript(mArr, 0);
   testNSArray_sink(value);
@@ -1007,7 +1009,8 @@ void NSArray_replaceObjectAtIndexWithObject(NSMutableArray* mArr,
   [mArr replaceObjectAtIndex:idx withObject:obj];
 }
 
-void testNSArray_cell_ReplaceObjectAtIndexWithObject_bad(void) {
+// doesn't work with pulse-taint-check-history flag
+void testNSArray_cell_ReplaceObjectAtIndexWithObject_bad_FN(void) {
   NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
   NSArray_replaceObjectAtIndexWithObject(mArr, 1, create_tainted());
   void* value = NSArray_objectAt(mArr, 1);
@@ -1028,7 +1031,8 @@ void NSArray_setObjectAtIndexedSubscript(NSMutableArray* mArr,
   mArr[idx] = obj;
 }
 
-void testNSArray_cell_SetObjectAtIndexedSubscript_bad(void) {
+// doesn't work with pulse-taint-check-history flag
+void testNSArray_cell_SetObjectAtIndexedSubscript_bad_FN(void) {
   NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
   NSArray_setObjectAtIndexedSubscript(mArr, create_tainted(), 1);
   void* value = NSArray_objectAt(mArr, 1);
@@ -1068,7 +1072,8 @@ void sinkObjectAt1(NSMutableArray* mArr) {
   testNSArray_sink(value);
 }
 
-void testNSArray_cell_sinkInCalleeBad(void) {
+// doesn't work with pulse-taint-check-history flag
+void testNSArray_cell_sinkInCalleeBad_FN(void) {
   NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
   sinkObjectAt0(mArr);
 }

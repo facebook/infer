@@ -1,1 +1,0 @@
-build_systems/pulse_taint_sanitize_objc/TaintField.m, logAccount_bad, 2, TAINT_ERROR, no_bucket, ERROR, [source of the taint here: the field `accountID` with kind `AccountID`,the field `accountID` with kind `AccountID`], source: accountID, sink: accountID, tainted expression: account->accountID
