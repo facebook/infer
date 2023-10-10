@@ -125,7 +125,8 @@ class Exceptions {
     throw RuntimeException(param.toString())
   }
 
-  fun callSinkWithSourceInsideExceptionObjectBad() {
+  // doesn't work with pulse-taint-check-history flag
+  fun FN_callSinkWithSourceInsideExceptionObjectBad() {
     try {
       doThrow(inferSecretSource())
     } catch (e: RuntimeException) {

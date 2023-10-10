@@ -28,7 +28,8 @@ class MapExamples {
 
   external fun split2(s: Any?): Map<String, Array<String>>
 
-  fun propagateTaintOnMap2Bad() {
+  // doesn't work with pulse-taint-check-history flag
+  fun propagateTaintOnMap2Bad_FN() {
     val `object` = inferSecretSource()
     val map = split2(`object`)
     var value = ""
@@ -39,7 +40,8 @@ class MapExamples {
     inferSensitiveSink(value)
   }
 
-  fun propagateTaintOnMap3Bad() {
+  // doesn't work with pulse-taint-check-history flag
+  fun propagateTaintOnMap3Bad_FN() {
     val `object` = inferSecretSource()
     val map = split2(`object`)
     var value: String? = null
