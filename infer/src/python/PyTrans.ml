@@ -3335,7 +3335,13 @@ let to_module ~sourcefile ({FFI.Code.co_consts; co_name; co_filename; instructio
   else
     let loc = first_loc_of_code instructions in
     let* module_name =
-      let filename = Stdlib.Filename.remove_extension co_filename in
+      let filename =
+        let sz = String.length co_filename in
+        if sz >= 2 && String.equal "./" (String.sub co_filename ~pos:0 ~len:2) then
+          String.sub co_filename ~pos:2 ~len:(sz - 2)
+        else co_filename
+      in
+      let filename = Stdlib.Filename.remove_extension filename in
       match Ident.from_string ~loc filename with
       | None ->
           Error (L.ExternalError, Error.TopLevelInvalid filename)
