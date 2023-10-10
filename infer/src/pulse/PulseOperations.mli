@@ -90,7 +90,7 @@ val eval_deref :
   -> (t * (AbstractValue.t * ValueHistory.t)) AccessResult.t SatUnsat.t
 (** Like [eval] but evaluates [*exp]. *)
 
-val eval_deref_with_path :
+val eval_deref_to_value_origin :
      PathContext.t
   -> ?must_be_valid_reason:Invalidation.must_be_valid_reason
   -> Location.t

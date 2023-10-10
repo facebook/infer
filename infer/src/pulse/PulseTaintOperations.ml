@@ -333,8 +333,8 @@ let taint_sanitizers path location tainted astate =
           Attribute.TaintSanitized.
             {sanitizer; time_trace= Timestamp.trace0 path.PathContext.timestamp; trace}
         in
-        fold_reachable_values value_origin astate ~f:(fun vp astate ->
-            let v = ValueOrigin.value vp in
+        fold_reachable_values value_origin astate ~f:(fun vo astate ->
+            let v = ValueOrigin.value vo in
             AbductiveDomain.AddressAttributes.add_one v
               (TaintSanitized (Attribute.TaintSanitizedSet.singleton taint_sanitized))
               astate ) )
@@ -657,8 +657,8 @@ let propagate_to path location value_origin values call astate =
           astate
       else astate
     in
-    fold_reachable_values value_origin astate ~f:(fun vp astate ->
-        let v = ValueOrigin.value vp in
+    fold_reachable_values value_origin astate ~f:(fun vo astate ->
+        let v = ValueOrigin.value vo in
         List.fold values ~init:astate ~f:(fun astate {FuncArg.arg_payload= actual_value_origin} ->
             let actual = ValueOrigin.value actual_value_origin in
             let sources, sanitizers =
@@ -974,8 +974,8 @@ let taint_initial tenv (proc_attrs : ProcAttributes.t) astate0 =
         ~f:(fun result (pvar, typ) ->
           let** astate, rev_actuals = result in
           let++ astate, actual_value_origin =
-            PulseOperations.eval_deref_with_path PathContext.initial proc_attrs.loc (Lvar pvar)
-              astate
+            PulseOperations.eval_deref_to_value_origin PathContext.initial proc_attrs.loc
+              (Lvar pvar) astate
           in
           let actual = {FuncArg.exp= Lvar pvar; typ; arg_payload= actual_value_origin} in
           (astate, actual :: rev_actuals) )

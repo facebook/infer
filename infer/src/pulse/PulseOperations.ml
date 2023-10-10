@@ -331,7 +331,7 @@ let prune path location ~condition astate =
   prune_aux ~negated:false condition astate
 
 
-let eval_deref_with_path path ?must_be_valid_reason location exp astate =
+let eval_deref_to_value_origin path ?must_be_valid_reason location exp astate =
   let+* astate, addr_hist = eval path Read location exp astate in
   let+ astate = check_addr_access path ?must_be_valid_reason Read location addr_hist astate in
   let astate, dest_addr_hist = Memory.eval_edge addr_hist Dereference astate in
@@ -340,7 +340,7 @@ let eval_deref_with_path path ?must_be_valid_reason location exp astate =
 
 let eval_deref path ?must_be_valid_reason location exp astate =
   let++ astate, value_origin =
-    eval_deref_with_path path ?must_be_valid_reason location exp astate
+    eval_deref_to_value_origin path ?must_be_valid_reason location exp astate
   in
   (astate, ValueOrigin.addr_hist value_origin)
 
