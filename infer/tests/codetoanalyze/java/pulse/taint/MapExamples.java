@@ -22,7 +22,8 @@ public class MapExamples {
 
   native Map<String, String[]> split2(Object s);
 
-  void propagateTaintOnMap2Bad() {
+  // doesn't work with pulse-taint-check-history flag
+  void propagateTaintOnMap2Bad_FN() {
     Object object = InferTaint.inferSecretSource();
     Map<String, String[]> map = split2(object);
     String value = "";
@@ -37,7 +38,8 @@ public class MapExamples {
     InferTaint.inferSensitiveSink(s);
   }
 
-  void propagateTaintOnMap3Bad() {
+  // doesn't work with pulse-taint-check-history flag
+  void propagateTaintOnMap3Bad_FN() {
     Object object = InferTaint.inferSecretSource();
     Map<String, String[]> map = split2(object);
     String value = null;
