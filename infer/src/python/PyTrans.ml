@@ -648,17 +648,30 @@ module LOAD = struct
       | ATTR ->
           let* env, cell = pop_datastack opname env in
           let fname = co_names.(arg) in
-          let* cell =
+          let loc = Env.loc env in
+          let* env, cell =
             (* if the cell is Import related, we wont' be able to load things correctly.
                Let's Pulse do its job later *)
             match (cell : DataStack.cell) with
             | ImportCall {id; loc} ->
                 let id = Ident.extend ~prefix:id fname in
-                Ok (DataStack.ImportCall {id; loc})
+                Ok (env, DataStack.ImportCall {id; loc})
             | Import {import_path} ->
-                let loc = Env.loc env in
                 let id = Ident.extend ~prefix:import_path fname in
-                Ok (DataStack.ImportCall {id; loc})
+                Ok (env, DataStack.ImportCall {id; loc})
+            | Temp v ->
+                let exp = T.Exp.Var v in
+                let field : T.qualified_fieldname =
+                  let enclosing_class = T.TypeName.wildcard in
+                  let name = {T.FieldName.value= fname; loc} in
+                  {T.enclosing_class; name}
+                in
+                let access = T.Exp.Field {exp; field} in
+                let info = Env.Info.default PyCommon.pyObject in
+                let env, id = Env.mk_fresh_ident env info in
+                let instr = T.Instr.Load {id; exp= access; typ= Some PyCommon.pyObject; loc} in
+                let env = Env.push_instr env instr in
+                Ok (env, DataStack.Temp id)
             | _ -> (
                 let prefix = DataStack.as_id cell in
                 let id = Option.map ~f:(fun prefix -> Ident.extend ~prefix fname) prefix in
@@ -666,7 +679,7 @@ module LOAD = struct
                 | None ->
                     Error (L.InternalError, Error.LoadAttribute (cell, fname))
                 | Some id ->
-                    Ok (DataStack.Path id) )
+                    Ok (env, DataStack.Path id) )
           in
           Ok (env, cell)
     in

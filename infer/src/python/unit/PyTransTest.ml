@@ -1792,6 +1792,96 @@ class C(A, B):
         declare $builtins.python_float(float) : *PyFloat
 
         declare $builtins.python_int(int) : *PyInt |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+class C:
+          def __init__(self):
+            self.x = 0
+def build():
+          return [ C() ]
+
+cs = build()
+
+cs[0].x
+
+          |}
+      in
+      test source ;
+      [%expect
+        {|
+        .source_language = "python"
+
+        define dummy.$toplevel() : *PyNone {
+          #b0:
+              n0 = $builtins.python_class("dummy::C")
+              n1 = $builtins.python_code("dummy.build")
+              n2 = dummy.build()
+              store &dummy::cs <- n2:*PyObject
+              n3:*PyObject = load &dummy::cs
+              n4 = $builtins.python_subscript_get(n3, $builtins.python_int(0))
+              n5:*PyObject = load n4.?.x
+              ret null
+
+        }
+
+        define dummy::C.__init__(self: *dummy::C) : *PyNone {
+          #b0:
+              n0:*dummy::C = load &self
+              store n0.?.x <- $builtins.python_int(0):*PyInt
+              ret null
+
+        }
+
+        define dummy::C() : *dummy::C {
+          #entry:
+              n0 = __sil_allocate(<dummy::C>)
+              n1 = n0.dummy::C.__init__()
+              ret n0
+
+        }
+
+        global dummy::C$static: *PyObject
+
+        type .static dummy::C$static = {}
+
+        type dummy::C = {}
+
+        define dummy.build() : *PyObject {
+          #b0:
+              n0 = dummy::C()
+              n1 = $builtins.python_build_list(n0)
+              ret n1
+
+        }
+
+        global dummy::cs: *PyObject
+
+        global $python_implicit_names::__name__: *PyString
+
+        global $python_implicit_names::__file__: *PyString
+
+        declare $builtins.python_subscript_get(*PyObject, *PyObject) : *PyObject
+
+        declare $builtins.python_build_list(...) : *PyList
+
+        declare $builtins.python_code(*String) : *PyCode
+
+        declare $builtins.python_class(*String) : *PyClass
+
+        declare $builtins.python_tuple(...) : *PyObject
+
+        declare $builtins.python_bytes(*Bytes) : *PyBytes
+
+        declare $builtins.python_string(*String) : *PyString
+
+        declare $builtins.python_bool(int) : *PyBool
+
+        declare $builtins.python_float(float) : *PyFloat
+
+        declare $builtins.python_int(int) : *PyInt |}]
   end )
 
 
