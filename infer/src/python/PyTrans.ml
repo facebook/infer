@@ -2968,93 +2968,6 @@ let generate_specialized_proc_decl qualified_name formals_types result_type attr
     fold default_arguments
 
 
-(** Process a single code unit (toplevel code, function body, ...) *)
-let to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} as code) =
-  let open IResult.Let_syntax in
-  Debug.p "[to_proc_desc] %a %a\n" Ident.pp enclosing_class_name (Pp.option F.pp_print_string)
-    opt_name ;
-  let default annotations =
-    let signature = {Env.Signature.is_static= false; is_abstract= false; annotations} in
-    {Env.signature; default_arguments= []}
-  in
-  let is_toplevel, name, method_info =
-    match opt_name with
-    | None ->
-        let return_typ = {PyCommon.name= PyCommon.return; annotation= Ident.mk "None"} in
-        let method_info = default [return_typ] in
-        (true, PyCommon.toplevel_function, method_info)
-    | Some name -> (
-        let method_info = Env.lookup_method env ~enclosing_class:enclosing_class_name name in
-        match method_info with
-        | None ->
-            (false, name, default [])
-        | Some method_info ->
-            (false, name, method_info) )
-  in
-  let {Env.signature; default_arguments} = method_info in
-  let {Env.Signature.is_static; is_abstract; annotations} = signature in
-  let proc_name = proc_name ~loc name in
-  let enclosing_class = Ident.to_type_name ~static:is_static enclosing_class_name in
-  let qualified_name = qualified_procname ~enclosing_class proc_name in
-  let pyObject = T.Typ.{typ= PyCommon.pyObject; attributes= []} in
-  let params = FFI.Code.get_arguments code in
-  let params = Array.to_list params in
-  (* TODO: pass the locals in Env as it affects function lookup:
-     def f(x):
-       print(x)
-
-     def g():
-       f(10) # works
-
-     def h():
-       f(10)   # error, since f is listed as a local and seems to be used before being defined
-       f = 42
-  *)
-  (* Create the original environment for this code unit *)
-  let env = Env.enter_proc ~is_toplevel ~is_static ~module_name:enclosing_class_name ~params env in
-  let locals = FFI.Code.get_locals code in
-  let params = List.map ~f:(var_name ~loc) params in
-  let locals = Array.map ~f:(fun name -> (var_name ~loc name, pyObject)) locals |> Array.to_list in
-  let types =
-    List.map
-      ~f:(fun {PyCommon.name; annotation} ->
-        let annotation = annotated_type_of_annotation annotation in
-        (name, annotation) )
-      annotations
-  in
-  let env, formals_types =
-    Env.map ~env
-      ~f:(fun env {T.VarName.value; loc} ->
-        let typ = List.Assoc.find types ~equal:String.equal value in
-        let typ = Option.value typ ~default:pyObject in
-        let id = Ident.mk ~loc value in
-        let sym = {Symbol.kind= Name {is_imported= false; typ= typ.T.Typ.typ}; id; loc} in
-        let env = Env.register_symbol env (Symbol.Local value) sym in
-        (env, typ) )
-      params
-  in
-  let result_type =
-    List.Assoc.find types ~equal:String.equal PyCommon.return |> Option.value ~default:pyObject
-  in
-  let procdecl =
-    {T.ProcDecl.qualified_name; formals_types= Some formals_types; result_type; attributes= []}
-  in
-  if is_abstract then Ok (env, [T.Module.Procdecl procdecl])
-  else
-    let* specialized_decls =
-      generate_specialized_proc_decl qualified_name formals_types result_type [] params
-        default_arguments
-    in
-    let env, entry_label = Env.mk_fresh_label env in
-    let label = node_name ~loc entry_label in
-    let label_info = Env.Label.mk entry_label in
-    let* env, nodes = nodes env label_info code instructions in
-    Ok
-      ( env
-      , T.Module.Proc {T.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown}
-        :: specialized_decls )
-
-
 (* For each class declaration, we generate an explicit constructor if there
    was an explicit [__init__] method.
 
@@ -3299,7 +3212,92 @@ let rec class_declaration env module_name ({FFI.Code.instructions; co_name} as c
     in
     Ok (env, (t :: companion :: companion_const :: ctor_and_init) @ decls)
 
-(* TODO: No support for nested functions/methods at the moment *)
+
+(** Process a single code unit (toplevel code, function body, ...) *)
+and to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} as code) =
+  let open IResult.Let_syntax in
+  Debug.p "[to_proc_desc] %a %a\n" Ident.pp enclosing_class_name (Pp.option F.pp_print_string)
+    opt_name ;
+  let default annotations =
+    let signature = {Env.Signature.is_static= false; is_abstract= false; annotations} in
+    {Env.signature; default_arguments= []}
+  in
+  let is_toplevel, name, method_info =
+    match opt_name with
+    | None ->
+        let return_typ = {PyCommon.name= PyCommon.return; annotation= Ident.mk "None"} in
+        let method_info = default [return_typ] in
+        (true, PyCommon.toplevel_function, method_info)
+    | Some name -> (
+        let method_info = Env.lookup_method env ~enclosing_class:enclosing_class_name name in
+        match method_info with
+        | None ->
+            (false, name, default [])
+        | Some method_info ->
+            (false, name, method_info) )
+  in
+  let {Env.signature; default_arguments} = method_info in
+  let {Env.Signature.is_static; is_abstract; annotations} = signature in
+  let proc_name = proc_name ~loc name in
+  let enclosing_class = Ident.to_type_name ~static:is_static enclosing_class_name in
+  let qualified_name = qualified_procname ~enclosing_class proc_name in
+  let pyObject = T.Typ.{typ= PyCommon.pyObject; attributes= []} in
+  let params = FFI.Code.get_arguments code in
+  let params = Array.to_list params in
+  (* TODO: pass the locals in Env as it affects function lookup:
+     def f(x):
+       print(x)
+
+     def g():
+       f(10) # works
+
+     def h():
+       f(10)   # error, since f is listed as a local and seems to be used before being defined
+       f = 42
+  *)
+  (* Create the original environment for this code unit *)
+  let env = Env.enter_proc ~is_toplevel ~is_static ~module_name:enclosing_class_name ~params env in
+  let locals = FFI.Code.get_locals code in
+  let params = List.map ~f:(var_name ~loc) params in
+  let locals = Array.map ~f:(fun name -> (var_name ~loc name, pyObject)) locals |> Array.to_list in
+  let types =
+    List.map
+      ~f:(fun {PyCommon.name; annotation} ->
+        let annotation = annotated_type_of_annotation annotation in
+        (name, annotation) )
+      annotations
+  in
+  let env, formals_types =
+    Env.map ~env
+      ~f:(fun env {T.VarName.value; loc} ->
+        let typ = List.Assoc.find types ~equal:String.equal value in
+        let typ = Option.value typ ~default:pyObject in
+        let id = Ident.mk ~loc value in
+        let sym = {Symbol.kind= Name {is_imported= false; typ= typ.T.Typ.typ}; id; loc} in
+        let env = Env.register_symbol env (Symbol.Local value) sym in
+        (env, typ) )
+      params
+  in
+  let result_type =
+    List.Assoc.find types ~equal:String.equal PyCommon.return |> Option.value ~default:pyObject
+  in
+  let procdecl =
+    {T.ProcDecl.qualified_name; formals_types= Some formals_types; result_type; attributes= []}
+  in
+  if is_abstract then Ok (env, [T.Module.Procdecl procdecl])
+  else
+    let* specialized_decls =
+      generate_specialized_proc_decl qualified_name formals_types result_type [] params
+        default_arguments
+    in
+    let env, entry_label = Env.mk_fresh_label env in
+    let label = node_name ~loc entry_label in
+    let label_info = Env.Label.mk entry_label in
+    let* env, nodes = nodes env label_info code instructions in
+    Ok
+      ( env
+      , T.Module.Proc {T.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown}
+        :: specialized_decls )
 
 
 (** Process multiple [code] objects. Usually called by the toplevel function or by a class
