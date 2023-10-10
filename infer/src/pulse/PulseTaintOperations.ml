@@ -374,17 +374,20 @@ let exclude_in_loc source_file exclude_in =
       false
 
 
-let check_source_against_sink_policy location source source_times hist sanitizers sink_kind
-    sink_policy =
-  let has_matching_taint_in_history hist =
+let check_source_against_sink_policy location source source_times intra_procedural_only hist
+    sanitizers sink_kind sink_policy =
+  let has_matching_taint_event_in_history source hist =
     if Config.pulse_taint_check_history then
-      let check = function
-        | ValueHistory.TaintSource (taint_item, _, _) ->
-            List.exists taint_item.kinds ~f:(source_matches_sink_policy sink_kind sink_policy)
-        | _ ->
-            false
-      in
-      ValueHistory.exists_main hist ~f:check
+      (* TODO(izorin): tainting based on value histories doesn't work for function calls arguments yet *)
+      if TaintItem.is_argument_origin source && not intra_procedural_only then true
+      else
+        let check = function
+          | ValueHistory.TaintSource (taint_item, _, _) ->
+              List.exists taint_item.kinds ~f:(source_matches_sink_policy sink_kind sink_policy)
+          | _ ->
+              false
+        in
+        ValueHistory.exists_main hist ~f:check
     else true
   in
   let open IOption.Let_syntax in
@@ -400,9 +403,11 @@ let check_source_against_sink_policy location source source_times hist sanitizer
     L.d_printfln ~color:Green "...but location %a should be excluded from reporting" SourceFile.pp
       location.Location.file ;
     None )
-  else if not (has_matching_taint_in_history hist) then (
-    L.d_printfln ~color:Green "...but value history doesn't contain matching taint event: %a"
-      ValueHistory.pp hist ;
+  else if not (has_matching_taint_event_in_history source hist) then (
+    L.d_printfln ~color:Green
+      "...but value history doesn't contain matching taint event. Value history: %a" ValueHistory.pp
+      hist ;
+    (* No relevant taint events in value history -> skip reporting taint *)
     None )
   else if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
     Some (suspicious_source, sink_kind, description, policy_id, privacy_effect)
@@ -412,11 +417,12 @@ let check_source_against_sink_policy location source source_times hist sanitizer
     None )
 
 
-let check_policies ~sink ~source ~source_times ~hist ~sanitizers ~location =
+let check_policies ~sink ~source ~source_times ~intra_procedural_only ~hist ~sanitizers ~location =
   let check_against_sink acc sink_kind =
     let policies = Hashtbl.find_exn SinkPolicy.sink_policies sink_kind in
     let check_against_policy =
-      check_source_against_sink_policy location source source_times hist sanitizers sink_kind
+      check_source_against_sink_policy location source source_times intra_procedural_only hist
+        sanitizers sink_kind
     in
     let rev_matching_sources = List.rev_filter_map policies ~f:check_against_policy in
     List.rev_append rev_matching_sources acc
@@ -542,11 +548,13 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
     in
     let sanitizers = Attribute.TaintSanitizedSet.union sanitizers new_sanitizers in
     Attribute.TaintedSet.fold
-      (fun {source; time_trace= source_times; hist= source_hist} policy_violations_reported_result ->
+      (fun {source; time_trace= source_times; hist= source_hist; intra_procedural_only}
+           policy_violations_reported_result ->
         let* policy_violations_reported = policy_violations_reported_result in
         L.d_printfln_escaped ~color:Red "Found source %a, checking policy..." TaintItem.pp source ;
         let potential_policy_violations =
-          check_policies ~sink:sink_item ~source ~source_times ~hist ~sanitizers ~location
+          check_policies ~sink:sink_item ~source ~source_times ~intra_procedural_only ~hist
+            ~sanitizers ~location
         in
         let report_policy_violation reported_so_far
             (source_kind, sink_kind, policy_description, violated_policy_id, policy_privacy_effect)

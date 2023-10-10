@@ -69,3 +69,8 @@ let pp fmt {kinds; value; origin} =
     (match kinds with [_] -> "" | _ -> "s")
     (Pp.comma_seq TaintConfig.Kind.pp)
     kinds
+
+
+let is_argument_origin {origin} =
+  let rec aux = function Argument _ -> true | FieldOfValue {origin} -> aux origin | _ -> false in
+  aux origin

@@ -32,3 +32,5 @@ val pp_value : F.formatter -> value -> unit
 val pp_value_plain : F.formatter -> value -> unit
 
 val pp : F.formatter -> t -> unit
+
+val is_argument_origin : t -> bool
