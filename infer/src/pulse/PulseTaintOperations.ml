@@ -368,7 +368,19 @@ let exclude_in_loc source_file exclude_in =
       false
 
 
-let check_source_against_sink_policy location source source_times sanitizers sink_kind sink_policy =
+let check_source_against_sink_policy location source source_times hist sanitizers sink_kind
+    sink_policy =
+  let has_matching_taint_in_history hist =
+    if Config.pulse_taint_check_history then
+      let check = function
+        | ValueHistory.TaintSource (taint_item, _, _) ->
+            List.exists taint_item.kinds ~f:(source_matches_sink_policy sink_kind sink_policy)
+        | _ ->
+            false
+      in
+      ValueHistory.exists_main hist ~f:check
+    else true
+  in
   let open IOption.Let_syntax in
   let* suspicious_source =
     List.find source.TaintItem.kinds ~f:(source_matches_sink_policy sink_kind sink_policy)
@@ -382,6 +394,10 @@ let check_source_against_sink_policy location source source_times sanitizers sin
     L.d_printfln ~color:Green "...but location %a should be excluded from reporting" SourceFile.pp
       location.Location.file ;
     None )
+  else if not (has_matching_taint_in_history hist) then (
+    L.d_printfln ~color:Green "...but value history doesn't contain matching taint event: %a"
+      ValueHistory.pp hist ;
+    None )
   else if Attribute.TaintSanitizedSet.is_empty matching_sanitizers then
     Some (suspicious_source, sink_kind, description, policy_id, privacy_effect)
   else (
@@ -390,11 +406,11 @@ let check_source_against_sink_policy location source source_times sanitizers sin
     None )
 
 
-let check_policies ~sink ~source ~source_times ~sanitizers ~location =
+let check_policies ~sink ~source ~source_times ~hist ~sanitizers ~location =
   let check_against_sink acc sink_kind =
     let policies = Hashtbl.find_exn SinkPolicy.sink_policies sink_kind in
     let check_against_policy =
-      check_source_against_sink_policy location source source_times sanitizers sink_kind
+      check_source_against_sink_policy location source source_times hist sanitizers sink_kind
     in
     let rev_matching_sources = List.rev_filter_map policies ~f:check_against_policy in
     List.rev_append rev_matching_sources acc
@@ -474,22 +490,6 @@ let gather_taint_dependencies addr_hist0 astate =
   taint_dependencies
 
 
-(* TODO(arr): this is a temporary simplified check used to filter out tainting cases where the taint
-   attribute got attached to an untainted value due to this value being unified with some other
-   tainted value.
-
-   This needs to be improved in the following way:
-   1. More taint info needs to be shifted from attributes to value histories. In particular,
-   sanitization events should be introduced and added to the history.
-   2. This check should take into account the sequence of tainting and sanitization in the history
-   and also the kinds of taint. *)
-let has_taint_in_history hist =
-  if Config.pulse_taint_check_history then
-    let check = function ValueHistory.TaintSource _ -> true | _ -> false in
-    ValueHistory.exists_main hist ~f:check
-  else true
-
-
 module LocationIntSet = PrettyPrintable.MakePPSet (struct
   type nonrec t = Location.t * int [@@deriving compare]
 
@@ -529,7 +529,7 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
   let source_value, _ = source in
   let source_expr = Decompiler.find source_value astate in
   let mk_reportable_error diagnostic = [ReportableError {astate; diagnostic}] in
-  let check_tainted_flows policy_violations_reported sanitizers v astate =
+  let check_tainted_flows policy_violations_reported sanitizers (v, hist) astate =
     L.d_printfln "Checking that %a is not tainted" AbstractValue.pp v ;
     let sources, new_sanitizers =
       AbductiveDomain.AddressAttributes.get_taint_sources_and_sanitizers v astate
@@ -540,7 +540,7 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
         let* policy_violations_reported = policy_violations_reported_result in
         L.d_printfln_escaped ~color:Red "Found source %a, checking policy..." TaintItem.pp source ;
         let potential_policy_violations =
-          check_policies ~sink:sink_item ~source ~source_times ~sanitizers ~location
+          check_policies ~sink:sink_item ~source ~source_times ~hist ~sanitizers ~location
         in
         let report_policy_violation reported_so_far
             (source_kind, sink_kind, policy_description, violated_policy_id, policy_privacy_effect)
@@ -569,13 +569,6 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
           ~f:report_policy_violation )
       sources (Ok policy_violations_reported)
     |> PulseResult.map ~f:(fun res -> (res, sanitizers))
-  in
-  let check_tainted_flows policy_violations_reported sanitizers (v, hist) astate =
-    if not (has_taint_in_history hist) then (
-      L.d_printfln ~color:Red "Skipping taint check because value history has no taint events: %a"
-        ValueHistory.pp hist ;
-      Ok (IntSet.empty, Attribute.TaintSanitizedSet.empty) )
-    else check_tainted_flows policy_violations_reported sanitizers v astate
   in
   L.d_with_indent "check flows wrt sink from %a (%a)" AbstractValue.pp source_value
     DecompilerExpr.pp_with_abstract_value source_expr ~collapsible:true ~f:(fun () ->
