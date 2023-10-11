@@ -1830,6 +1830,10 @@ OPTIONS
            Timeout for SQLite results database operations, in milliseconds.       
     See also infer-analyze(1), infer-capture(1), and infer-run(1).
 
+       --sqlite-max-blob-size int
+           Maximum blob/string size for data written in SQLite.       
+    See also infer-analyze(1), infer-capture(1), and infer-run(1).
+
        --sqlite-page-size int
            SQLite page size in bytes, must be a power of two between 512 and
            65536.           See also infer-analyze(1), infer-capture(1), and infer-run(1).

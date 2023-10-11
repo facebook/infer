@@ -241,11 +241,11 @@ module OnDisk = struct
         ~report_summary:(ReportSummary.SQLite.serialize report_summary)
         ~summary_metadata:(SummaryMetadata.SQLite.serialize summary_metadata) ;
       summary
-    with SqliteUtils.Error msg when String.is_substring msg ~substring:"TOOBIG" ->
-      (* Sqlite failed with [TOOBIG], reset to the empty summary and write it back *)
+    with SqliteUtils.DataTooBig ->
+      (* Serialization exceeded size limits, write and return an empty summary  *)
       L.internal_error
-        "Summary for %a caused a TOOBIG Sqlite error, writing empty summary instead.@\n" Procname.pp
-        proc_name ;
+        "Summary for %a caused exceeds blob size limit, writing empty summary instead.@\n"
+        Procname.pp proc_name ;
       let payloads = Payloads.empty in
       let report_summary = ReportSummary.empty () in
       let summary_metadata = SummaryMetadata.empty proc_name in

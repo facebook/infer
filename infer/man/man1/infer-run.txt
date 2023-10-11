@@ -154,6 +154,9 @@ OPTIONS
        --sqlite-lock-timeout int
            Timeout for SQLite results database operations, in milliseconds.
 
+       --sqlite-max-blob-size int
+           Maximum blob/string size for data written in SQLite.
+
        --sqlite-page-size int
            SQLite page size in bytes, must be a power of two between 512 and
            65536.

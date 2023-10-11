@@ -3254,6 +3254,13 @@ and sqlite_lock_timeout =
     "Timeout for SQLite results database operations, in milliseconds."
 
 
+and sqlite_max_blob_size =
+  CLOpt.mk_int ~long:"sqlite-max-blob-size" ~default:500_000_000
+    ~in_help:
+      InferCommand.[(Analyze, manual_generic); (Capture, manual_generic); (Run, manual_generic)]
+    "Maximum blob/string size for data written in SQLite."
+
+
 and sqlite_vfs = CLOpt.mk_string_opt ~long:"sqlite-vfs" "VFS for SQLite"
 
 and subtype_multirange =
@@ -4483,6 +4490,8 @@ and sqlite_cache_size = !sqlite_cache_size
 and sqlite_page_size = !sqlite_page_size
 
 and sqlite_lock_timeout = !sqlite_lock_timeout
+
+and sqlite_max_blob_size = !sqlite_max_blob_size
 
 and sqlite_vfs = !sqlite_vfs
 
