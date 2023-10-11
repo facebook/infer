@@ -123,7 +123,7 @@ module Error = struct
     | LiteralTuple opname ->
         F.fprintf fmt "[%s] expecting tuple of literal keys" opname
     | FFI kind ->
-        F.fprintf fmt "%a" FFI.Error.pp_kind kind
+        FFI.Error.pp_kind fmt kind
     | TextualParser file ->
         F.fprintf fmt "TextualParser: error while translating module %a" Textual.SourceFile.pp file
     | TODO todo ->

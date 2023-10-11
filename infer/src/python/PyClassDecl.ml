@@ -65,7 +65,7 @@ module Cell = struct
     | Const const ->
         F.fprintf fmt "Const(%a)" FFI.Constant.pp const
     | Path id ->
-        F.fprintf fmt "%a" Ident.pp id
+        Ident.pp fmt id
     | Method {raw_qualified_name; flags} ->
         F.fprintf fmt "Method(%s, %a)" raw_qualified_name MakeFunctionFlags.pp flags
     | ClassClosure ->
