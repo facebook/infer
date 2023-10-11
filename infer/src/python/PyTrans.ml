@@ -1591,18 +1591,24 @@ end
 module BUILD = struct
   module CONST_KEY_MAP = struct
     let is_tuple_ids cell =
-      let as_key = function FFI.Constant.PYCString s -> Some s | _ -> None in
+      let as_key c =
+        match (c : FFI.Constant.t) with
+        | PYCString s ->
+            Some (PyCommon.mk_string s)
+        | PYCInt i ->
+            Some (PyCommon.mk_int i)
+        | PYCBytes s ->
+            let s = Bytes.to_string s in
+            Some (PyCommon.mk_string s)
+        | _ ->
+            None
+      in
       match cell with
       | DataStack.Const c -> (
         match c with
         | FFI.Constant.PYCTuple keys ->
             Array.fold_result keys ~init:[] ~f:(fun keys c ->
-                match as_key c with
-                | Some key ->
-                    let key = PyCommon.mk_string key in
-                    Ok (key :: keys)
-                | None ->
-                    Error () )
+                match as_key c with Some key -> Ok (key :: keys) | None -> Error () )
         | _ ->
             Error () )
       | _ ->

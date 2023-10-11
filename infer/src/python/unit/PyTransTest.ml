@@ -3371,6 +3371,13 @@ print(s)
 
 s = {"a": 42, "b": 1664}
 print(s["1"])
+
+# from cinder
+d = { 0x78: "abc", # 1-n decoding mapping
+      b"abc": 0x0078,# 1-n encoding mapping
+      0x01: None,   # decoding mapping to <undefined>
+      0x79: "",    # decoding mapping to <remove character>
+      }
         |}
       in
       test source ;
@@ -3390,6 +3397,8 @@ print(s["1"])
               n4:*PyMap = load &dummy::s
               n5 = $builtins.python_subscript_get(n4, $builtins.python_string("1"))
               n6 = $builtins.print(n5)
+              n7 = $builtins.python_build_map($builtins.python_int(120), $builtins.python_string("abc"), $builtins.python_string("abc"), $builtins.python_int(120), $builtins.python_int(1), null, $builtins.python_int(121), $builtins.python_string(""))
+              store &dummy::d <- n7:*PyMap
               ret null
 
         }
@@ -3397,6 +3406,8 @@ print(s["1"])
         global dummy::x: *PyObject
 
         global dummy::s: *PyObject
+
+        global dummy::d: *PyObject
 
         global $python_implicit_names::__name__: *PyString
 
