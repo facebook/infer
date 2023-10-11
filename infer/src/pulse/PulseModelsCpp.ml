@@ -703,7 +703,7 @@ module GenericMapCollection = struct
 
   let constructor map_t classname map : model =
    fun {path; location} astate ->
-    let desc = Format.asprintf "%a::%s()" Invalidation.pp_map_type map_t classname in
+    let desc = Format.asprintf "%a::%s" Invalidation.pp_map_type map_t classname in
     reset_backing_fields map path location desc astate
 
 
@@ -712,7 +712,7 @@ module GenericMapCollection = struct
    fun {path; location} astate ->
     let key_t, value_t = extract_key_and_value_types map in
     let desc =
-      Format.asprintf "%a::%a()" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f
+      Format.asprintf "%a::%a" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f
     in
     let cause = Invalidation.CppMap (map_t, map_f) in
     let<*> astate, pair =
@@ -738,7 +738,7 @@ module GenericMapCollection = struct
    fun {path; location; ret} astate ->
     let key_t, value_t = extract_key_and_value_types map in
     let event =
-      Hist.call_event path location (Format.asprintf "%a::at()" Invalidation.pp_map_type map_t)
+      Hist.call_event path location (Format.asprintf "%a::at" Invalidation.pp_map_type map_t)
     in
     let<*> astate, pair =
       PulseOperations.eval_access path Read location arg_payload pair_access astate
@@ -751,11 +751,9 @@ module GenericMapCollection = struct
     PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
 
 
-  let find map_t arg_payload it : model =
+  let find desc arg_payload it : model =
    fun {path; location} astate ->
-    let event =
-      Hist.call_event path location (Format.asprintf "%a::find()" Invalidation.pp_map_type map_t)
-    in
+    let event = Hist.call_event path location desc in
     let<*> astate, (addr, hist) =
       PulseOperations.eval_access path Read location arg_payload pair_access astate
     in
@@ -853,7 +851,16 @@ let map_matchers =
           $+...$--> GenericMapCollection.at map_t
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "find"
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
-          $+ any_arg $+ capt_arg_payload $--> GenericMapCollection.find map_t ] )
+          $+ any_arg $+ capt_arg_payload
+          $--> GenericMapCollection.find (Format.asprintf "folly::%s::find" map_s)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "begin"
+          <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $+ capt_arg_payload
+          $--> GenericMapCollection.find (Format.asprintf "folly::%s::begin" map_s)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "cbegin"
+          <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $+ capt_arg_payload
+          $--> GenericMapCollection.find (Format.asprintf "folly::%s::cbegin" map_s) ] )
   in
   let folly_iterator_matchers =
     List.concat_map ["ValueContainerIterator"; "VectorContainerIterator"] ~f:(fun it ->

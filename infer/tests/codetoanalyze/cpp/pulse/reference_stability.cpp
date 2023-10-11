@@ -491,3 +491,15 @@ void folly_fastmap_big_find_star_bad(folly::F14FastMap<BigPoint, int>& map) {
   map.clear();
   const auto keyCopy = keyRef;
 }
+
+void folly_fastmap_begin_bad(folly::F14FastMap<int, int>& map) {
+  auto it = map.begin();
+  map.clear();
+  ++it->second;
+}
+
+void folly_fastmap_cbegin_bad(folly::F14FastMap<int, int>& map) {
+  const auto it = map.cbegin();
+  map.clear();
+  const auto keyCopy = it->first;
+}
