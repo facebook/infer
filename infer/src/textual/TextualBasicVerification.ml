@@ -15,7 +15,7 @@ type error =
      overloads and provide an error message based on this. *)
   | UnknownProc of {proc: QualifiedProcName.t; args: int}
   | UnknownLabel of {label: NodeName.t; pname: QualifiedProcName.t}
-  | VariadicNotLastParam of {proc: QualifiedProcName.t}
+  | VariadicWrongParam of {proc: QualifiedProcName.t; in_a_trait: bool}
   | VariadicNotEnoughArgs of {proc: QualifiedProcName.t; nb_args: int; nb_formals: int}
   | WrongArgNumber of {proc: QualifiedProcName.t; args: int; formals: int; loc: Location.t}
 
@@ -28,7 +28,7 @@ let error_loc = function
       label.loc
   | VariadicNotEnoughArgs {proc} ->
       proc.name.loc
-  | VariadicNotLastParam {proc} ->
+  | VariadicWrongParam {proc} ->
       proc.name.loc
   | WrongArgNumber {loc; _} ->
       loc
@@ -53,7 +53,10 @@ let pp_error sourcefile fmt error =
       F.fprintf fmt
         "the variadic function %a is expecting at least %d arguments but is called with only %d"
         QualifiedProcName.pp proc (nb_formals - 1) nb_args
-  | VariadicNotLastParam {proc} ->
+  | VariadicWrongParam {proc; in_a_trait} when in_a_trait ->
+      F.fprintf fmt "variadic parameter is not in penultimate position in trait fonction %a"
+        QualifiedProcName.pp proc
+  | VariadicWrongParam {proc} ->
       F.fprintf fmt "variadic parameter is not in last position in fonction %a" QualifiedProcName.pp
         proc
   | WrongArgNumber {proc; args; formals} ->
@@ -137,22 +140,31 @@ let verify_decl ~env errors (decl : Module.decl) =
         let errors = verify_exp loc errors exp1 in
         verify_exp loc errors exp2
   in
-  let verify_variadic_position errors ({qualified_name= proc; formals_types} : ProcDecl.t) =
-    Option.value_map formals_types ~default:errors ~f:(fun formals_types ->
+  let verify_variadic_position errors (procdesc : ProcDesc.t) =
+    let contains_variadic_typ formals =
+      List.exists formals ~f:(Typ.is_annotated ~f:Attr.is_variadic)
+    in
+    Option.value_map procdesc.procdecl.formals_types ~default:errors ~f:(fun formals_types ->
+        let is_defined_in_a_trait = TextualDecls.is_defined_in_a_trait env procdesc in
         match List.rev formals_types with
         | [] ->
             errors
-        | _ :: others ->
-            if List.exists others ~f:(Typ.is_annotated ~f:Attr.is_variadic) then
-              VariadicNotLastParam {proc} :: errors
-            else errors )
+        | _ :: others when contains_variadic_typ others && not is_defined_in_a_trait ->
+            VariadicWrongParam {proc= procdesc.procdecl.qualified_name; in_a_trait= false} :: errors
+        | self :: _ :: others when contains_variadic_typ (self :: others) && is_defined_in_a_trait
+          ->
+            VariadicWrongParam {proc= procdesc.procdecl.qualified_name; in_a_trait= true} :: errors
+        | _ ->
+            errors )
   in
-  let verify_procdesc errors ({procdecl; nodes} : ProcDesc.t) =
+  let verify_procdesc errors (procdesc : ProcDesc.t) =
     let declared_labels =
-      List.fold nodes ~init:String.Set.empty ~f:(fun set node ->
+      List.fold procdesc.nodes ~init:String.Set.empty ~f:(fun set node ->
           String.Set.add set node.Node.label.value )
     in
-    let verify_label errors = verify_label errors declared_labels procdecl.qualified_name in
+    let verify_label errors =
+      verify_label errors declared_labels procdesc.procdecl.qualified_name
+    in
     let verify_node_call errors {Terminator.label} = verify_label errors label in
     let rec verify_terminator loc errors (t : Terminator.t) =
       match t with
@@ -170,8 +182,8 @@ let verify_decl ~env errors (decl : Module.decl) =
       let errors = List.fold ~f:verify_instr ~init:errors node.instrs in
       verify_terminator node.last_loc errors node.last
     in
-    let errors = verify_variadic_position errors procdecl in
-    List.fold ~f:verify_node ~init:errors nodes
+    let errors = verify_variadic_position errors procdesc in
+    List.fold ~f:verify_node ~init:errors procdesc.nodes
   in
   match decl with
   | Global _ | Struct _ | Procdecl _ ->

@@ -397,3 +397,14 @@ let make_decls ({decls; sourcefile} as module_ : Module.t) : error list * t =
   in
   let errors = List.fold decls ~init:[] ~f:register in
   (errors, decls_env)
+
+
+let is_defined_in_a_trait decls_env (procdesc : ProcDesc.t) =
+  let name = procdesc.procdecl.qualified_name in
+  match name.enclosing_class with
+  | Enclosing typename ->
+      get_struct decls_env typename
+      |> Option.value_map ~default:false ~f:(fun {Textual.Struct.attributes} ->
+             List.find ~f:Textual.Attr.is_trait attributes |> Option.is_some )
+  | TopLevel ->
+      false

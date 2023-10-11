@@ -15,3 +15,17 @@ function main1(string $format, string $x) : void {
 function main2(string $format, string $x, string $y) : void {
   variadic($format, $x, $y);
 }
+
+class C {
+  use T;
+
+  public function call_trait(int $a, int $b, int $c) : void {
+    $this->foo($a, $b, $c);
+    self::static_foo($a, $b, $c);
+  }
+}
+
+trait T {
+  public function foo(int $x, int ...$rest): void {}
+  public static function static_foo(int $x, int ...$rest): void {}
+}

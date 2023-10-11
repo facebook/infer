@@ -19,3 +19,15 @@ define f3(x: int, y: int, args: .variadic mixed, z: int) : int {
   #entry:
     ret f1(x, y, z)
 }
+
+type T = .kind="trait" {}
+
+define T.ok(x: int, args: .variadic int, self: *HackMixed) : void {
+  #entry:
+    ret null
+}
+
+define T.bad(x: int, args: .variadic int) : void {
+  #entry:
+    ret null
+}
