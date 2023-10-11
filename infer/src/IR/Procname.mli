@@ -509,6 +509,9 @@ val get_qualifiers : t -> QualifiedCppName.t
 val get_hack_arity : t -> int option
 (** get the arity of a Hack procname *)
 
+val get_hack_static_init : HackClassName.t -> t
+(** get the sinit procname in Hack *)
+
 val pp_name_only : F.formatter -> t -> unit
 (** Print name of procedure with at most one-level path. For example,
 

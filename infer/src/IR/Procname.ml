@@ -678,6 +678,10 @@ module Hack = struct
 
 
   let get_class_name_as_a_string {class_name} = Option.map class_name ~f:HackClassName.classname
+
+  let get_static_init class_name =
+    let static_class_name = HackClassName.static_companion class_name in
+    {class_name= Some static_class_name; function_name= "_86sinit"; arity= Some 1}
 end
 
 module Python = struct
@@ -1580,6 +1584,8 @@ let erlang_call_unqualified ~arity = Erlang (Erlang.call_unqualified arity)
 let erlang_call_qualified ~arity = Erlang (Erlang.call_qualified arity)
 
 let get_hack_arity = function Hack hack_proc_name -> Hack.get_arity hack_proc_name | _ -> None
+
+let get_hack_static_init class_name = Hack (Hack.get_static_init class_name)
 
 module Hashable = struct
   type nonrec t = t [@@deriving compare, equal]

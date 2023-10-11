@@ -13,7 +13,7 @@ abstract class A {
   }
 }
 
-function call_get_field_bad_FN(): string {
+function call_get_field_bad(): string {
   return A::get_field();
 }
 
@@ -21,6 +21,6 @@ class B extends A {
   const string FIELD = "defined";
 }
 
-function call_get_field_ok(): string {
+function call_get_field_ok_FP(): string {
   return B::get_field();
 }

@@ -40,6 +40,13 @@ module Syntax : sig
   val dynamic_dispatch :
     cases:(Typ.name * 'a model_monad) list -> ?default:'a model_monad -> aval -> 'a model_monad
 
+  val dispatch_call :
+       Ident.t * Typ.t
+    -> Procname.t
+    -> (Exp.t * Typ.t) list
+    -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
+    -> unit model_monad
+
   val get_data : PulseModelsImport.model_data model_monad
 
   (* disjunctive reasonning *)
@@ -69,6 +76,8 @@ module Syntax : sig
   val eval_binop : Binop.t -> aval -> aval -> aval model_monad
 
   val eval_read : Exp.t -> aval model_monad
+
+  val eval_to_value_origin : Exp.t -> ValueOrigin.t model_monad
 
   val eval_deref_access : access_mode -> aval -> Access.t -> aval model_monad
 

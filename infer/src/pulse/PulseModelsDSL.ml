@@ -209,6 +209,11 @@ module Syntax = struct
     PulseOperations.eval path Read location exp |> exec_partial_operation
 
 
+  let eval_to_value_origin exp : ValueOrigin.t model_monad =
+    let* {path; location} = get_data in
+    PulseOperations.eval_to_value_origin path Read location exp |> exec_partial_operation
+
+
   let allocation attr (addr, _) : unit model_monad =
     let* {location} = get_data in
     PulseOperations.allocate attr location addr |> exec_command
@@ -294,4 +299,11 @@ module Syntax = struct
     | _ ->
         Logging.d_printfln "[ocaml model] No dynamic type found!" ;
         Option.value_map default ~default:(disjuncts []) ~f:Fn.id
+
+
+  let dispatch_call ret pname actuals func_args : unit model_monad =
+    lift_to_monad
+    @@ fun {analysis_data; dispatch_call_eval_args; path; location} astate ->
+    dispatch_call_eval_args analysis_data path ret (Const (Cfun pname)) actuals func_args location
+      CallFlags.default astate (Some pname)
 end
