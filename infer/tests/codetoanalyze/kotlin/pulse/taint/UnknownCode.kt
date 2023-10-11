@@ -48,8 +48,7 @@ abstract class UnknownCode {
     return nativeMethod2(param, i) as String?
   }
 
-  // doesn't work with pulse-taint-check-history flag
-  fun FN_callPropagateThenPropagateFootprintBad() {
+  fun callPropagateThenPropagateFootprintBad() {
     val source = InferTaint.inferSecretSource() as String
     propagateFootprint(propagateTaint(source))
   }

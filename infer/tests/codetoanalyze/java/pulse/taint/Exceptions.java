@@ -117,8 +117,7 @@ class Exceptions {
     throw new RuntimeException(param.toString());
   }
 
-  // doesn't work with pulse-taint-check-history flag
-  public static void FN_callSinkWithSourceInsideExceptionObjectBad() {
+  public static void callSinkWithSourceInsideExceptionObjectBad() {
     try {
       doThrow(InferTaint.inferSecretSource());
     } catch (RuntimeException e) {

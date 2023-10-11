@@ -513,9 +513,14 @@ module Attribute = struct
         in
         MustNotBeTainted (TaintSinkSet.map add_call_to_sink sinks)
     | PropagateTaintFrom taints_in ->
+        let add_propagation_event_to_history hist =
+          let hist = add_call_to_history hist in
+          let propagation_event = ValueHistory.TaintPropagated (call_location, timestamp) in
+          ValueHistory.sequence propagation_event hist
+        in
         PropagateTaintFrom
           (List.map taints_in ~f:(fun {v; history} ->
-               {v= subst v; history= add_call_to_history history} ) )
+               {v= subst v; history= add_propagation_event_to_history history} ) )
     | ReturnedFromUnknown values ->
         ReturnedFromUnknown (List.map values ~f:subst)
     | Tainted tainted ->

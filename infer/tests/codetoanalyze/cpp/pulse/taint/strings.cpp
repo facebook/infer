@@ -180,14 +180,12 @@ Formatter<Args...> format3(std::string fmt, Args&&... args);
 template <class... Args>
 Formatter<Args...>* format4(std::string fmt, Args&&... args);
 
-// doesn't work with --pulse-taint-check-history on some clang versions
 void format1_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = format1("%s", source).str();
   __infer_taint_sink(laundered_source);
 }
 
-// doesn't work with --pulse-taint-check-history on some clang versions
 void format2_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = format2("%s", source)->str();

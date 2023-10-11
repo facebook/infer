@@ -76,8 +76,7 @@ public abstract class UnknownCode {
     return (String) nativeMethod2(a, i);
   }
 
-  // doesn't work with pulse-taint-check-history flag
-  void FN_callPropagateThenPropagateFootprintBad() {
+  void callPropagateThenPropagateFootprintBad() {
     String source = (String) InferTaint.inferSecretSource();
     propagateFootprint(propagateTaint(source));
   }

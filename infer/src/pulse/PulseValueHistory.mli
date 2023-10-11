@@ -28,6 +28,7 @@ type event =
   | Returned of Location.t * Timestamp.t
   | StructFieldAddressCreated of Fieldname.t RevList.t * Location.t * Timestamp.t
   | TaintSource of TaintItem.t * Location.t * Timestamp.t
+  | TaintPropagated of Location.t * Timestamp.t
   | VariableAccessed of Pvar.t * Location.t * Timestamp.t
   | VariableDeclared of Pvar.t * Location.t * Timestamp.t
 

@@ -971,8 +971,7 @@ void* NSArray_objectAt(NSArray* arr, int idx) {
   return (__bridge void*)obj;
 }
 
-// doesn't work with pulse-taint-check-history flag
-void testNSArray_cell_ObjectAtIndex_bad_FN(void) {
+void testNSArray_cell_ObjectAtIndex_bad(void) {
   NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
   void* value = NSArray_objectAt(mArr, 0);
   testNSArray_sink(value);
@@ -989,8 +988,7 @@ void* NSArray_objectAtIndexedSubscript(NSArray* arr, int idx) {
   return (__bridge void*)obj;
 }
 
-// doesn't work with pulse-taint-check-history flag
-void testNSArray_cell_ObjectAtIndexedSubscript_bad_FN(void) {
+void testNSArray_cell_ObjectAtIndexedSubscript_bad(void) {
   NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
   void* value = NSArray_objectAtIndexedSubscript(mArr, 0);
   testNSArray_sink(value);

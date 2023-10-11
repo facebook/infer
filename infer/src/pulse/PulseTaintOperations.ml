@@ -385,6 +385,8 @@ let check_source_against_sink_policy location ~source source_times intra_procedu
         let check = function
           | ValueHistory.TaintSource (taint_item, _, _) ->
               List.exists taint_item.kinds ~f:(source_matches_sink_policy sink_kind sink_policy)
+          | ValueHistory.TaintPropagated _ ->
+              true
           | _ ->
               false
         in
