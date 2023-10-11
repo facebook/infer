@@ -21,6 +21,20 @@ class B extends A {
   const string FIELD = "defined";
 }
 
-function call_get_field_ok_FP(): string {
+function call_get_field_ok(): string {
   return B::get_field();
+}
+
+abstract class RetField {
+  abstract const string ret;
+
+  public static function get_ret_field(): string {
+    return static::ret;
+  }
+}
+
+// Current frontend translates the field name of [ret] as [ret_] in the class declaration, due to
+// the reserved word in Textual.
+function call_get_ret_field_bad_FN(): string {
+  return RetField::get_ret_field();
 }

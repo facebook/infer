@@ -548,6 +548,17 @@ let hhbc_cls_cns this field : model =
      assign_ret field_v
 
 
+let hack_set_static_prop this prop obj : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* this = read_boxed_string_value_dsl this in
+     let this = String.substr_replace_all ~pattern:"\\" ~with_:":" this in
+     let* prop = read_boxed_string_value_dsl prop in
+     let name = Typ.HackClass (HackClassName.static_companion (HackClassName.make this)) in
+     let* class_object = get_static_companion_dsl ~model_desc:"hack_set_static_prop" name in
+     write_deref_field ~ref:class_object ~obj (Fieldname.make name prop)
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"$builtins" &:: "nondet" <>$$--> Basic.nondet ~desc:"nondet"
@@ -569,6 +580,8 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_cmp_nsame" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_nsame
   ; -"$builtins" &:: "hack_get_static_class" <>$ capt_arg_payload $--> get_static_class
   ; -"$builtins" &:: "hhbc_cls_cns" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cls_cns
+  ; -"$builtins" &:: "hack_set_static_prop" <>$ capt_arg_payload $+ capt_arg_payload
+    $+ capt_arg_payload $--> hack_set_static_prop
   ; -"$root" &:: "FlibSL::Vec::from_async" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Vec.vec_from_async ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
