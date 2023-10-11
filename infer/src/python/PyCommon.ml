@@ -186,6 +186,8 @@ module Ident = struct
 
   include IDENT
 
+  let root {root} = {root; path= []}
+
   let from_string ?(on = '/') ?(global = true) ?(loc = T.Location.Unknown) s =
     let items = String.split ~on s in
     match items with

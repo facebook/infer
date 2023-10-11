@@ -725,19 +725,32 @@ module FUNCTION = struct
         After: [ result | rest-of-the-stack ] *)
 
     let static_call_with_args env fid args =
+      let fid_as_id = match fid with `Path id -> id | `Name (loc, name) -> Ident.mk ~loc name in
+      let mk env loc ?typ proc = mk env (Some fid_as_id) ?typ loc proc args in
+      let symbol_opt =
+        match fid with
+        | `Path id ->
+            let key = Symbol.Global id in
+            Env.lookup_symbol env key
+        | `Name (loc, name) ->
+            (* Let's check first if the name is "local/nested" before looking in the global context *)
+            let key = mk_key false loc name in
+            let local_sym = Env.lookup_symbol env key in
+            if Option.is_some local_sym then local_sym
+            else
+              let key = mk_key true loc name in
+              Env.lookup_symbol env key
+      in
       let loc = Env.loc env in
-      (* TODO: support nesting *)
-      let key = Symbol.Global fid in
-      let mk env ?typ proc = mk env (Some fid) ?typ loc proc args in
-      match Env.lookup_symbol env key with
+      match symbol_opt with
       | None ->
           (* Unknown name, can come from a `from foo import *` so we'll try to locate it in a
              further analysis *)
           let proc =
-            let fid = Ident.extend_unknown_ident fid in
+            let fid = Ident.extend_unknown_ident fid_as_id in
             Ident.to_qualified_procname fid
           in
-          mk env proc
+          mk env loc proc
       | Some symbol -> (
         match (symbol : Symbol.t) with
         | {kind= Import | ImportCall; id} ->
@@ -745,24 +758,24 @@ module FUNCTION = struct
         | {kind= Builtin; id} ->
             (* TODO: propagate builtin type information *)
             let proc = Ident.to_qualified_procname id in
-            mk env proc
+            mk env loc proc
         | {kind= Name {is_imported}; id} ->
             (* TODO: propagate type information if available *)
             let proc = Ident.to_qualified_procname id in
             let key = Symbol.Global id in
             let symbol_info = {Symbol.kind= ImportCall; id; loc} in
             let env = if is_imported then Env.register_symbol env key symbol_info else env in
-            mk env proc
+            mk env loc proc
         | {kind= Code; id} ->
             (* TODO: propagate type information if available *)
             let proc = Ident.to_qualified_procname id in
-            mk env proc
+            mk env loc proc
         | {kind= Class; id} ->
             (* TODO: support nesting. Maybe add to_proc_name to Symbol *)
             let typ = Ident.to_typ id in
             let name = Ident.to_constructor id in
             let proc : T.QualifiedProcName.t = {enclosing_class= TopLevel; name} in
-            mk env ~typ proc )
+            mk env loc ~typ proc )
 
 
     let static_call env fid cells =
@@ -770,8 +783,10 @@ module FUNCTION = struct
       (* TODO: we currently can't handle hasattr correctly, so let's ignore it
                At some point, introduce a builtin to keep track of its content
       *)
-      let s = Ident.to_string ~sep:"::" fid in
-      if String.equal "hasattr" s then (
+      let hasattr =
+        match fid with `Name (_, name) -> String.equal "hasattr" name | `Path _ -> false
+      in
+      if hasattr then (
         L.user_warning "no support for `hasattr` at the moment.  Skipping...@\n" ;
         let info = Env.Info.default PyCommon.pyBool in
         let loc = Env.loc env in
@@ -814,7 +829,11 @@ module FUNCTION = struct
         | None ->
             Error (L.ExternalError, Error.BuiltinClassBody (opname, code_cell))
       in
-      let env = Env.register_class env code_name parents in
+      let qualified_name =
+        let module_name = Env.module_name env in
+        Ident.extend ~prefix:module_name code_name
+      in
+      let env = Env.register_class env code_name qualified_name parents in
       let env = Env.push env (DataStack.Code {fun_or_class= false; code_name; code}) in
       Ok env
 
@@ -828,9 +847,8 @@ module FUNCTION = struct
       Debug.p "fname= %a\n" DataStack.pp_cell fname ;
       let loc = Env.loc env in
       match (fname : DataStack.cell) with
-      | Name {name} ->
-          let fid = Ident.mk ~loc name in
-          static_call env fid cells
+      | VarName name | Name {name} ->
+          static_call env (`Name (loc, name)) cells
       | Temp id ->
           let* env, args = cells_to_textual env cells in
           dynamic_call env id args
@@ -841,7 +859,6 @@ module FUNCTION = struct
       | MethodCall _
       | NoException
       | WithContext _
-      | VarName _
       | Const _
       | List _
       | Map _ ->
@@ -859,7 +876,7 @@ module FUNCTION = struct
         | _ ->
             Error (L.InternalError, Error.BuiltinClassInvalid) )
       | Path id ->
-          static_call env id cells
+          static_call env (`Path id) cells
       | ImportCall {id; loc} ->
           (* TODO: test it *)
           Debug.todo "TEST IT !\n" ;
@@ -1191,7 +1208,12 @@ module METHOD = struct
       let current_module = Env.module_name env in
       (* current_module is a fully qualified name like foo#C, but we want to extract that C part
          only to lookup in our set of known classes. *)
-      let class_name, _ = Ident.pop current_module in
+      let _func_name, class_path = Ident.pop current_module in
+      (* super() must be called into a class method so if the compiler accepts the code, we have
+         at least function_name.class_name in the current_module *)
+      let class_path = Option.value_exn class_path in
+      let class_name, module_path = Ident.pop class_path in
+      let module_path = Option.value_exn module_path in
       let classes = Env.get_declared_classes env in
       let class_info = SMap.find_opt class_name classes in
       let params = Env.get_params env in
@@ -1199,15 +1221,15 @@ module METHOD = struct
       let* parent =
         match class_info with
         | None ->
-            Error (L.ExternalError, Error.SuperNotInClass current_module)
+            Error (L.ExternalError, Error.SuperNotInClass module_path)
         | Some {parents} -> (
           match parents with
           | [] ->
-              Error (L.ExternalError, Error.SuperNoParent current_module)
+              Error (L.ExternalError, Error.SuperNoParent module_path)
           | [parent] ->
               Ok parent
           | _ ->
-              Error (L.InternalError, Error.TODO (SuperMultipleInheritance current_module)) )
+              Error (L.InternalError, Error.TODO (SuperMultipleInheritance module_path)) )
       in
       let parent_name =
         let key = Symbol.Global parent in
@@ -1216,11 +1238,11 @@ module METHOD = struct
         Option.value_map ~f:(fun {Symbol.id} -> id) ~default:parent id
       in
       let* self =
-        if is_static then Error (L.ExternalError, Error.SuperInStatic current_module)
+        if is_static then Error (L.ExternalError, Error.SuperInStatic module_path)
         else
           match List.hd params with
           | None ->
-              Error (L.ExternalError, Error.SuperNoParameters current_module)
+              Error (L.ExternalError, Error.SuperNoParameters module_path)
           | Some self ->
               Ok self
       in
@@ -1235,7 +1257,7 @@ module METHOD = struct
           let env = Env.push env (DataStack.StaticCall {call_name; receiver= Some receiver}) in
           Ok (env, None)
       | Error (_, err) ->
-          Error (L.UserError, Error.SuperLoadSelf (self, current_module, err))
+          Error (L.UserError, Error.SuperLoadSelf (self, module_path, err))
 
 
     (** {v LOAD_METHOD(namei) v}
@@ -1364,8 +1386,10 @@ module STORE = struct
     let {Env.Info.typ; kind} = info in
     let module_name = Env.module_name env in
     let prefix =
-      if global && List.mem ~equal:String.equal python_implicit_names name then
-        Ident.mk python_implicit_names_prefix
+      if global then
+        if List.mem ~equal:String.equal python_implicit_names name then
+          Ident.mk python_implicit_names_prefix
+        else Ident.root module_name
       else module_name
     in
     let id = Ident.extend ~prefix name in
@@ -3222,6 +3246,7 @@ and to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} 
     let signature = {Env.Signature.is_static= false; is_abstract= false; annotations} in
     {Env.signature; default_arguments= []}
   in
+  (* TODO: nested classes mangling. Should we insert something like `$nested` or is it always unambiguous ? *)
   let is_toplevel, name, method_info =
     match opt_name with
     | None ->
@@ -3256,6 +3281,11 @@ and to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} 
        f = 42
   *)
   (* Create the original environment for this code unit *)
+  let enclosing_class_name =
+    Option.value_map ~default:enclosing_class_name
+      ~f:(fun name -> Ident.extend ~prefix:enclosing_class_name name)
+      opt_name
+  in
   let env = Env.enter_proc ~is_toplevel ~is_static ~module_name:enclosing_class_name ~params env in
   let locals = FFI.Code.get_locals code in
   let params = List.map ~f:(var_name ~loc) params in
@@ -3284,20 +3314,27 @@ and to_proc_desc env loc enclosing_class_name opt_name ({FFI.Code.instructions} 
   let procdecl =
     {T.ProcDecl.qualified_name; formals_types= Some formals_types; result_type; attributes= []}
   in
-  if is_abstract then Ok (env, [T.Module.Procdecl procdecl])
-  else
-    let* specialized_decls =
-      generate_specialized_proc_decl qualified_name formals_types result_type [] params
-        default_arguments
-    in
-    let env, entry_label = Env.mk_fresh_label env in
-    let label = node_name ~loc entry_label in
-    let label_info = Env.Label.mk entry_label in
-    let* env, nodes = nodes env label_info code instructions in
-    Ok
-      ( env
-      , T.Module.Proc {T.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown}
-        :: specialized_decls )
+  let* env, decls =
+    if is_abstract then Ok (env, [T.Module.Procdecl procdecl])
+    else
+      let* specialized_decls =
+        generate_specialized_proc_decl qualified_name formals_types result_type [] params
+          default_arguments
+      in
+      let env, entry_label = Env.mk_fresh_label env in
+      let label = node_name ~loc entry_label in
+      let label_info = Env.Label.mk entry_label in
+      let* env, nodes = nodes env label_info code instructions in
+      Ok
+        ( env
+        , T.Module.Proc {T.ProcDesc.procdecl; nodes; start= label; params; locals; exit_loc= Unknown}
+          :: specialized_decls )
+  in
+  let* env, nested_decls =
+    if Option.is_some opt_name then to_proc_descs env enclosing_class_name code.FFI.Code.co_consts
+    else Ok (env, [])
+  in
+  Ok (env, decls @ nested_decls)
 
 
 (** Process multiple [code] objects. Usually called by the toplevel function or by a class

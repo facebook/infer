@@ -228,7 +228,7 @@ end
 (* TODO: try to merge this in a [globals]/[Symbol]. However be careful not to override the
    original parent info since it might not be locally available when we executer [register_symbol]
    after [register_class] *)
-type class_info = {parents: Ident.t list}
+type class_info = {qualified_name: Ident.t; parents: Ident.t list}
 
 type method_info = {signature: Signature.t; default_arguments: T.Exp.t list}
 
@@ -651,15 +651,15 @@ let lookup_method {shared= {methods}} ~enclosing_class name =
 
 let lookup_fields {shared= {fields}} class_name = T.TypeName.Map.find_opt class_name fields
 
-let register_class ({shared} as env) class_name parents =
-  PyDebug.p "[register_class] %s\n" class_name ;
+let register_class ({shared} as env) class_name qualified_name parents =
+  PyDebug.p "[register_class] %a as %s\n" Ident.pp qualified_name class_name ;
   ( match parents with
   | [] ->
       PyDebug.p "\n"
   | _ :: _ ->
       PyDebug.p " extending %a\n" (Pp.seq ~sep:", " Ident.pp) parents ) ;
   let {classes} = shared in
-  let classes = SMap.add class_name {parents} classes in
+  let classes = SMap.add class_name {qualified_name; parents} classes in
   let shared = {shared with classes} in
   {env with shared}
 

@@ -122,6 +122,9 @@ module Ident : sig
       any prefix are local variables. *)
   type t [@@deriving compare]
 
+  val root : t -> t
+  (** Strip the whole path of an identifier, only keeping its root *)
+
   val from_string : ?on:char -> ?global:bool -> ?loc:Textual.Location.t -> string -> t option
 
   val pp : Format.formatter -> t -> unit

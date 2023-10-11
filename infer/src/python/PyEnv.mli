@@ -132,9 +132,9 @@ module Label : sig
 end
 
 (** Class level info. For now, only the parent info (if present) is tracked, supporting multiple
-    inheritance. We may track more information in the future, like being an abstract class, a
-    dataclass, ... *)
-type class_info = {parents: Ident.t list}
+    inheritance and its full qualified name (for nested classes). We may track more information in
+    the future, like being an abstract class, a dataclass, ... *)
+type class_info = {qualified_name: Ident.t; parents: Ident.t list}
 
 (** Method level info. We store a method/function signature, and its default arugments *)
 type method_info = {signature: Signature.t; default_arguments: T.Exp.t list}
@@ -255,7 +255,7 @@ val lookup_fields : t -> T.TypeName.t -> PyCommon.signature option
 
 (** Lookup the signature of a function / method *)
 
-val register_class : t -> string -> Ident.t list -> t
+val register_class : t -> string -> Ident.t -> Ident.t list -> t
 (** Register a class declaration (based on [LOAD_BUILD_CLASS]) *)
 
 val get_declared_classes : t -> class_info PyCommon.SMap.t
