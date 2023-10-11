@@ -37,8 +37,7 @@ let pp_std_vector_function f = function
       F.fprintf f "std::vector::shrink_to_fit"
 
 
-type map_type = FollyF14Value | FollyF14Vector | FollyF14Fast
-[@@warning "-unused-constructor"] [@@deriving compare, equal]
+type map_type = FollyF14Value | FollyF14Vector | FollyF14Fast [@@deriving compare, equal]
 
 type map_function =
   | Clear
@@ -51,7 +50,7 @@ type map_function =
   | TryEmplace
   | EmplaceHint
   | OperatorBracket
-[@@warning "-unused-constructor"] [@@deriving compare, equal]
+[@@deriving compare, equal]
 
 let pp_map_type f = function
   | FollyF14Value ->

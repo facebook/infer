@@ -827,36 +827,44 @@ let matchers : matcher list =
 
 let map_matchers =
   let open ProcnameDispatcher.Call in
-  [ -"folly" <>:: "F14FastMap" &:: "F14FastMap"
-    <>$ capt_arg_of_typ (-"folly" <>:: "F14FastMap")
-    $+...$--> GenericMapCollection.constructor FollyF14Fast "F14FastMap"
-  ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator="
-    <>$ capt_arg_of_typ (-"folly" <>:: "F14FastMap")
-    $+...$--> GenericMapCollection.invalidate_references FollyF14Fast OperatorEqual
-  ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "clear"
-    <>$ capt_arg_of_typ (-"folly" <>:: "F14FastMap")
-    $--> GenericMapCollection.invalidate_references FollyF14Fast Clear
-  ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "rehash"
-    <>$ capt_arg_of_typ (-"folly" <>:: "F14FastMap")
-    $+...$--> GenericMapCollection.invalidate_references FollyF14Fast Rehash
-  ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "reserve"
-    <>$ capt_arg_of_typ (-"folly" <>:: "F14FastMap")
-    $+...$--> GenericMapCollection.invalidate_references FollyF14Fast Reserve
-  ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "at"
-    <>$ capt_arg_of_typ (-"folly" <>:: "F14FastMap")
-    $+...$--> GenericMapCollection.at FollyF14Fast
-  ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "find"
-    <>$ capt_arg_payload_of_typ (-"folly" <>:: "F14FastMap")
-    $+ any_arg $+ capt_arg_payload
-    $--> GenericMapCollection.find FollyF14Fast
-  ; -"folly" <>:: "f14" <>:: "detail" <>:: "VectorContainerIterator" &:: "operator->"
-    <>$ capt_arg_payload
-    $--> GenericMapCollection.iterator_star
-           "folly::f14::detail::VectorContainerIterator::operator->"
-  ; -"folly" <>:: "f14" <>:: "detail" <>:: "VectorContainerIterator" &:: "operator*"
-    <>$ capt_arg_payload
-    $--> GenericMapCollection.iterator_star "folly::f14::detail::VectorContainerIterator::operator*"
-  ]
+  let folly_matchers =
+    List.concat_map
+      [ ("F14ValueMap", Invalidation.FollyF14Value)
+      ; ("F14VectorMap", Invalidation.FollyF14Vector)
+      ; ("F14FastMap", Invalidation.FollyF14Fast) ]
+      ~f:(fun (map_s, map_t) ->
+        [ -"folly" <>:: map_s &:: map_s
+          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+...$--> GenericMapCollection.constructor map_t map_s
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator="
+          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+...$--> GenericMapCollection.invalidate_references map_t OperatorEqual
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "clear"
+          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $--> GenericMapCollection.invalidate_references map_t Clear
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "rehash"
+          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+...$--> GenericMapCollection.invalidate_references map_t Rehash
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "reserve"
+          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+...$--> GenericMapCollection.invalidate_references map_t Reserve
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "at"
+          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+...$--> GenericMapCollection.at map_t
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "find"
+          <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $+ any_arg $+ capt_arg_payload $--> GenericMapCollection.find map_t ] )
+  in
+  let folly_iterator_matchers =
+    List.concat_map ["ValueContainerIterator"; "VectorContainerIterator"] ~f:(fun it ->
+        [ -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator->" <>$ capt_arg_payload
+          $--> GenericMapCollection.iterator_star
+                 (Format.asprintf "folly::f14::detail::%s::operator->" it)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator*" <>$ capt_arg_payload
+          $--> GenericMapCollection.iterator_star
+                 (Format.asprintf "folly::f14::detail::%s::operator*" it) ] )
+  in
+  folly_matchers @ folly_iterator_matchers
 
 
 let simple_matchers =
