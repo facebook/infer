@@ -15,6 +15,8 @@ type error =
      overloads and provide an error message based on this. *)
   | UnknownProc of {proc: QualifiedProcName.t; args: int}
   | UnknownLabel of {label: NodeName.t; pname: QualifiedProcName.t}
+  | VariadicNotLastParam of {proc: QualifiedProcName.t}
+  | VariadicNotEnoughArgs of {proc: QualifiedProcName.t; nb_args: int; nb_formals: int}
   | WrongArgNumber of {proc: QualifiedProcName.t; args: int; formals: int; loc: Location.t}
 
 let error_loc = function
@@ -24,6 +26,10 @@ let error_loc = function
       proc.name.loc
   | UnknownLabel {label; _} ->
       label.loc
+  | VariadicNotEnoughArgs {proc} ->
+      proc.name.loc
+  | VariadicNotLastParam {proc} ->
+      proc.name.loc
   | WrongArgNumber {loc; _} ->
       loc
 
@@ -43,6 +49,13 @@ let pp_error sourcefile fmt error =
   | UnknownLabel {label; pname} ->
       F.fprintf fmt "label %a is not declared in function %a" NodeName.pp label QualifiedProcName.pp
         pname
+  | VariadicNotEnoughArgs {proc; nb_args; nb_formals} ->
+      F.fprintf fmt
+        "the variadic function %a is expecting at least %d arguments but is called with only %d"
+        QualifiedProcName.pp proc (nb_formals - 1) nb_args
+  | VariadicNotLastParam {proc} ->
+      F.fprintf fmt "variadic parameter is not in last position in fonction %a" QualifiedProcName.pp
+        proc
   | WrongArgNumber {proc; args; formals} ->
       F.fprintf fmt "function %a called with %d arguments while declared with %d parameters"
         QualifiedProcName.pp proc args formals
@@ -69,7 +82,17 @@ let verify_decl ~env errors (decl : Module.decl) =
           errors
       | None ->
           UnknownProc {proc; args= nb_args} :: errors
-      | Some {formals_types= Some formals_types} ->
+      | Some (Variadic _, {formals_types= None}) ->
+          Logging.internal_error "Textual variadic status with empty list of formals" ;
+          (* unexpected situation because a procdecl will be stored as variadic only
+             if one of its parameter is annotated as being variadic *)
+          errors
+      | Some (Variadic _, {formals_types= Some formals_types}) ->
+          let nb_formals = List.length formals_types in
+          if nb_args < nb_formals - 1 then
+            VariadicNotEnoughArgs {proc; nb_args; nb_formals} :: errors
+          else errors
+      | Some (NotVariadic, {formals_types= Some formals_types}) ->
           let errors =
             if must_be_implemented && TextualDecls.get_procdecl env procsig |> Option.is_none then
               ProcNotImplementedButInClosure {proc} :: errors
@@ -79,7 +102,7 @@ let verify_decl ~env errors (decl : Module.decl) =
           let args = nb_args in
           if not (Int.equal args formals) then WrongArgNumber {proc; args; formals; loc} :: errors
           else errors
-      | Some {formals_types= None} ->
+      | Some (NotVariadic, {formals_types= None}) ->
           errors
   in
   let rec verify_exp loc errors (exp : Exp.t) =
@@ -114,6 +137,16 @@ let verify_decl ~env errors (decl : Module.decl) =
         let errors = verify_exp loc errors exp1 in
         verify_exp loc errors exp2
   in
+  let verify_variadic_position errors ({qualified_name= proc; formals_types} : ProcDecl.t) =
+    Option.value_map formals_types ~default:errors ~f:(fun formals_types ->
+        match List.rev formals_types with
+        | [] ->
+            errors
+        | _ :: others ->
+            if List.exists others ~f:(Typ.is_annotated ~f:Attr.is_variadic) then
+              VariadicNotLastParam {proc} :: errors
+            else errors )
+  in
   let verify_procdesc errors ({procdecl; nodes} : ProcDesc.t) =
     let declared_labels =
       List.fold nodes ~init:String.Set.empty ~f:(fun set node ->
@@ -137,6 +170,7 @@ let verify_decl ~env errors (decl : Module.decl) =
       let errors = List.fold ~f:verify_instr ~init:errors node.instrs in
       verify_terminator node.last_loc errors node.last
     in
+    let errors = verify_variadic_position errors procdecl in
     List.fold ~f:verify_node ~init:errors nodes
   in
   match decl with

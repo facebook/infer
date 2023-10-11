@@ -23,7 +23,7 @@ end
 type t =
   { globals: Global.t VarName.Hashtbl.t
   ; procs: ProcEntry.t ProcSig.Hashtbl.t
-        (** the boolean records whether an implementation was given *)
+  ; variadic_procs: ProcDesc.t QualifiedProcName.Hashtbl.t
   ; structs: Struct.t TypeName.Hashtbl.t
   ; sourcefile: SourceFile.t
   ; lang: Lang.t option }
@@ -31,6 +31,7 @@ type t =
 let init sourcefile lang =
   { globals= VarName.Hashtbl.create 17
   ; procs= ProcSig.Hashtbl.create 17
+  ; variadic_procs= QualifiedProcName.Hashtbl.create 17
   ; structs= TypeName.Hashtbl.create 17
   ; sourcefile
   ; lang }
@@ -77,9 +78,18 @@ let is_proc_implemented decls proc =
   |> Option.value_map ~default:false ~f:ProcEntry.is_implemented
 
 
+let declare_variadic_proc_if_necessary decls = function
+  | ProcEntry.Desc pdesc when ProcDecl.is_variadic pdesc.procdecl ->
+      (* only ProcDesc are expected to contains a variadic annotation (on their last argument) *)
+      QualifiedProcName.Hashtbl.replace decls.variadic_procs pdesc.procdecl.qualified_name pdesc
+  | _ ->
+      ()
+
+
 let declare_proc decls (proc : ProcEntry.t) =
   let procsig = ProcEntry.signature proc decls.lang in
   let existing_proc = ProcSig.Hashtbl.find_opt decls.procs procsig in
+  declare_variadic_proc_if_necessary decls proc ;
   match (existing_proc, proc) with
   | Some (Desc _), Decl _ ->
       ()
@@ -129,7 +139,24 @@ let rec get_procentry decls procsig =
       ProcSig.Hashtbl.find_opt decls.procs procsig
 
 
-let get_procdecl decls procsig = get_procentry decls procsig |> Option.map ~f:ProcEntry.decl
+let get_variadic_procdesc decls qualified_procname =
+  QualifiedProcName.Hashtbl.find_opt decls.variadic_procs qualified_procname
+
+
+type variadic_status = NotVariadic | Variadic of Typ.t
+
+let get_procdecl decls procsig =
+  let procdecl = ProcSig.to_qualified_procname procsig in
+  match get_variadic_procdesc decls procdecl with
+  | Some procdesc ->
+      let formals_type = ProcDesc.formals procdesc in
+      let variadic_type = List.last_exn formals_type in
+      (* get_variadic_procdesc will only succeed for non empty param list *)
+      Some (Variadic variadic_type.typ, procdesc.procdecl)
+  | None ->
+      get_procentry decls procsig
+      |> Option.map ~f:(fun entry -> (NotVariadic, ProcEntry.decl entry))
+
 
 let get_procdesc decls procsig =
   get_procentry decls procsig |> Option.value_map ~default:None ~f:ProcEntry.desc

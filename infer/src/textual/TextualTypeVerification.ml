@@ -358,28 +358,29 @@ let typeof_const (const : Const.t) : Typ.t =
       Float
 
 
-let typeof_reserved_proc (proc : QualifiedProcName.t) : (Typ.t * Typ.t list option) monad =
-  if ProcDecl.to_binop proc |> Option.is_some then ret (Typ.Int, Some [Typ.Int; Typ.Int])
-  else if ProcDecl.to_unop proc |> Option.is_some then ret (Typ.Int, Some [Typ.Int])
+let typeof_reserved_proc (proc : QualifiedProcName.t) =
+  if ProcDecl.to_binop proc |> Option.is_some then
+    ret (Typ.Int, Some [Typ.Int; Typ.Int], TextualDecls.NotVariadic)
+  else if ProcDecl.to_unop proc |> Option.is_some then
+    ret (Typ.Int, Some [Typ.Int], TextualDecls.NotVariadic)
   else
     let* () = add_error (mk_missing_declaration_error proc) in
     abort
 
 
 (* Since procname can be both defined and declared in a file we should account for unknown formals in declarations. *)
-let typeof_procname (procsig : ProcSig.t) : (Typ.t * Typ.t list option) monad =
- fun state ->
+let typeof_procname (procsig : ProcSig.t) state =
   match TextualDecls.get_procdecl state.decls procsig with
-  | Some (procdecl : ProcDecl.t) ->
+  | Some (variadic_status, procdecl) ->
       let formals_types =
         procdecl.formals_types
         |> Option.map ~f:(fun formals_types -> List.map formals_types ~f:(fun {Typ.typ} -> typ))
       in
-      ret (procdecl.result_type.typ, formals_types) state
+      ret (procdecl.result_type.typ, formals_types, variadic_status) state
   | None when ProcSig.to_qualified_procname procsig |> QualifiedProcName.contains_wildcard ->
-      ret (Typ.Void, None) state
+      ret (Typ.Void, None, TextualDecls.NotVariadic) state
   | None ->
-      (typeof_reserved_proc (ProcSig.to_qualified_procname procsig)) state
+      typeof_reserved_proc (ProcSig.to_qualified_procname procsig) state
 
 
 (* In all the typecheck/typeof function below, when typechecking/type-computation succeeds
@@ -459,13 +460,23 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
   | Call {proc; args; kind} ->
       let* lang = get_lang in
       let procsig = Exp.call_sig proc (List.length args) lang in
-      let* result_type, formals_types = typeof_procname procsig in
+      let* result_type, formals_types, is_variadic = typeof_procname procsig in
       let* loc = get_location in
       let+ args =
         match formals_types with
         | None ->
             ret args
         | Some formals_types ->
+            let formals_types =
+              match (is_variadic : TextualDecls.variadic_status) with
+              | NotVariadic ->
+                  formals_types
+              | Variadic variadic_typ ->
+                  (* we may have too much arguments, and we then complete formal_args *)
+                  let n = List.length formals_types - 1 in
+                  List.take formals_types n
+                  @ List.init (List.length args - n) ~f:(fun _ -> variadic_typ)
+            in
             mapM2 loc args formals_types ~f:(fun exp assigned ->
                 let+ exp =
                   typecheck_exp exp

@@ -764,30 +764,31 @@ module InstrBridge = struct
     | Let {id; exp= Call {proc; args; kind}; loc} ->
         let ret = IdentBridge.to_sil id in
         let procsig = Exp.call_sig proc (List.length args) (TextualDecls.lang decls_env) in
-        let ({formals_types} as callee_procname : ProcDecl.t) =
+        let variadic_status, ({formals_types} as callee_procdecl : ProcDecl.t) =
           match TextualDecls.get_procdecl decls_env procsig with
-          | Some procname ->
-              procname
+          | Some (variadic_flag, procdecl) ->
+              (variadic_flag, procdecl)
           | None when QualifiedProcName.contains_wildcard proc ->
               let textual_ret_typ =
                 (* Declarations with unknown formals are expected in Hack/Python. Assume that unknown
                    return types are *HackMixed/*PyObject respectively. *)
                 default_return_type (Some lang) loc
               in
-              { ProcDecl.qualified_name= proc
-              ; formals_types= None
-              ; result_type= Typ.mk_without_attributes textual_ret_typ
-              ; attributes= [] }
+              ( TextualDecls.NotVariadic
+              , { ProcDecl.qualified_name= proc
+                ; formals_types= None
+                ; result_type= Typ.mk_without_attributes textual_ret_typ
+                ; attributes= [] } )
           | None ->
               let msg =
                 lazy (F.asprintf "the expression in %a should start with a regular call" pp i)
               in
               raise (TextualTransformError [{loc; msg}])
         in
-        let pname = ProcDeclBridge.call_to_sil lang procsig callee_procname in
+        let pname = ProcDeclBridge.call_to_sil lang procsig callee_procdecl in
         let result_type =
-          TypBridge.to_sil lang ~attrs:callee_procname.result_type.attributes
-            callee_procname.result_type.typ
+          TypBridge.to_sil lang ~attrs:callee_procdecl.result_type.attributes
+            callee_procdecl.result_type.typ
         in
         let args = List.map ~f:(ExpBridge.to_sil lang decls_env procname) args in
         let formals_types =
@@ -807,6 +808,18 @@ module InstrBridge = struct
             | other ->
                 L.die InternalError "Unexpected unknown formals outside of Hack/Python: %s"
                   (Lang.to_string other) )
+        in
+        let formals_types =
+          match (variadic_status : TextualDecls.variadic_status) with
+          | NotVariadic ->
+              formals_types
+          | Variadic variadic_type ->
+              (* we may have too much arguments, and we then complete formal_args *)
+              (* formals_args = [t1; ...; tn; variadic_type ] *)
+              let n = List.length formals_types - 1 in
+              let variadic_type = TypBridge.to_sil lang variadic_type in
+              List.take formals_types n
+              @ List.init (List.length args - n) ~f:(fun _ -> variadic_type)
         in
         let args =
           match List.zip args formals_types with

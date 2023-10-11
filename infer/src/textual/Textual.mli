@@ -71,6 +71,8 @@ module QualifiedProcName : sig
   val name : t -> ProcName.t
 
   val contains_wildcard : t -> bool
+
+  module Hashtbl : Hashtbl.S with type key = t
 end
 
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
@@ -91,13 +93,15 @@ module Attr : sig
 
   val mk_final : t
 
+  val is_async : t -> bool
+
   val is_final : t -> bool
 
   val is_static : t -> bool
 
   val is_trait : t -> bool
 
-  val is_async : t -> bool
+  val is_variadic : t -> bool
 
   val is_const : t -> bool
 
@@ -122,6 +126,8 @@ module Typ : sig
   val pp : F.formatter -> t -> unit
 
   type annotated = {typ: t; attributes: Attr.t list}
+
+  val is_annotated : f:(Attr.t -> bool) -> annotated -> bool
 
   val mk_without_attributes : t -> annotated
 end
@@ -226,6 +232,8 @@ module ProcDecl : sig
   val is_not_regular_proc : QualifiedProcName.t -> bool
 
   val is_curry_invoke : t -> bool
+
+  val is_variadic : t -> bool
 end
 
 module Global : sig

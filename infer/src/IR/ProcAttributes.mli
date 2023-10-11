@@ -81,7 +81,7 @@ type t =
   ; is_objc_arc_on: bool  (** the ObjC procedure is compiled with ARC *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
-  ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
+  ; is_clang_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
   ; sentinel_attr: (int * int) option  (** __attribute__((sentinel(int, int))) *)
   ; specialized_with_aliasing_info: specialized_with_aliasing_info option
         (** the procedure is a clone specialized with captured variables and paramaters sharing

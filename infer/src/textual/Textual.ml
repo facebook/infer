@@ -163,6 +163,10 @@ module QualifiedProcName = struct
 
 
   let name {name} = name
+
+  module Hashtbl = Hashtbl.Make (struct
+    type nonrec t = t [@@deriving equal, hash]
+  end)
 end
 
 type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
@@ -207,6 +211,8 @@ module Attr = struct
 
   let is_static {name; values} = String.equal name "static" && List.is_empty values
 
+  let is_variadic {name; values} = String.equal name "variadic" && List.is_empty values
+
   let pp fmt {name; values} =
     if List.is_empty values then F.fprintf fmt ".%s" name
     else F.fprintf fmt ".%s = \"%a\"" name (Pp.comma_seq F.pp_print_string) values
@@ -240,6 +246,8 @@ module Typ = struct
 
 
   type annotated = {typ: t; attributes: Attr.t list}
+
+  let is_annotated ~f {attributes} = List.exists ~f attributes
 
   let pp_annotated fmt {typ; attributes} =
     List.iter attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
@@ -527,6 +535,11 @@ module ProcDecl = struct
 
   let is_curry_invoke {qualified_name= {name}; attributes} =
     String.equal name.value "__invoke" && List.exists attributes ~f:Attr.is_curry
+
+
+  let is_variadic {formals_types} =
+    Option.value_map formals_types ~default:false
+      ~f:(List.exists ~f:(Typ.is_annotated ~f:Attr.is_variadic))
 end
 
 module Global = struct

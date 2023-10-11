@@ -251,7 +251,7 @@ let create_attributes_helper ?loc_instantiated ?(set_objc_accessor_attr = false)
   ; block_as_arg_attributes= ms.CMethodSignature.block_as_arg_attributes
   ; is_no_return= ms.CMethodSignature.is_no_return
   ; is_objc_arc_on= trans_unit_ctx.CFrontend_config.is_objc_arc_on
-  ; is_variadic= ms.CMethodSignature.is_variadic
+  ; is_clang_variadic= ms.CMethodSignature.is_variadic
   ; sentinel_attr= find_sentinel_attribute ms.CMethodSignature.attributes
   ; loc= loc_start
   ; loc_instantiated

@@ -33,7 +33,7 @@ let add_returned_from_unknown callee_pname_opt ret_val actuals astate =
     ones in [...]) so we just drop them *)
 let trim_actuals_if_var_arg proc_name_opt ~formals ~actuals =
   let proc_attrs = Option.bind ~f:IRAttributes.load proc_name_opt in
-  if Option.exists proc_attrs ~f:(fun {ProcAttributes.is_variadic} -> is_variadic) then
+  if Option.exists proc_attrs ~f:(fun {ProcAttributes.is_clang_variadic} -> is_clang_variadic) then
     List.take actuals (List.length formals)
   else actuals
 

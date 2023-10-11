@@ -117,7 +117,7 @@ type t =
   ; is_objc_arc_on: bool  (** the ObjC procedure is compiled with ARC *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
-  ; is_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
+  ; is_clang_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
   ; sentinel_attr: (int * int) option  (** __attribute__((sentinel(int, int))) *)
   ; specialized_with_aliasing_info: specialized_with_aliasing_info option
   ; specialized_with_closures_info: specialized_with_closures_info option
@@ -205,7 +205,7 @@ let default translation_unit proc_name =
   ; specialized_with_aliasing_info= None
   ; specialized_with_closures_info= None
   ; is_synthetic_method= false
-  ; is_variadic= false
+  ; is_clang_variadic= false
   ; sentinel_attr= None
   ; clang_method_kind= ClangMethodKind.C_FUNCTION
   ; loc= Location.dummy
@@ -281,7 +281,7 @@ let pp f
      ; specialized_with_aliasing_info
      ; specialized_with_closures_info
      ; is_synthetic_method
-     ; is_variadic
+     ; is_clang_variadic
      ; sentinel_attr
      ; clang_method_kind
      ; loc
@@ -367,7 +367,7 @@ let pp f
       specialized_with_closures_info ;
   pp_bool_default ~default:default.is_synthetic_method "is_synthetic_method" is_synthetic_method f
     () ;
-  pp_bool_default ~default:default.is_variadic "is_variadic" is_variadic f () ;
+  pp_bool_default ~default:default.is_clang_variadic "is_clang_variadic" is_clang_variadic f () ;
   if not ([%equal: (int * int) option] default.sentinel_attr sentinel_attr) then
     F.fprintf f "; sentinel_attr= %a@,"
       (Pp.option (Pp.pair ~fst:F.pp_print_int ~snd:F.pp_print_int))
