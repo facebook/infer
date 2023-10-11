@@ -75,6 +75,8 @@ module Syntax : sig
 
   val eval_binop : Binop.t -> aval -> aval -> aval model_monad
 
+  val eval_binop_int : Binop.t -> aval -> IntLit.t -> aval model_monad
+
   val eval_read : Exp.t -> aval model_monad
 
   val eval_to_value_origin : Exp.t -> ValueOrigin.t model_monad
@@ -98,14 +100,32 @@ module Syntax : sig
 
   val prune_lt : aval -> aval -> unit model_monad
 
+  val prune_lt_int : aval -> IntLit.t -> unit model_monad
+
+  val prune_le : aval -> aval -> unit model_monad
+
+  val prune_gt : aval -> aval -> unit model_monad
+
+  val prune_ge : aval -> aval -> unit model_monad
+
+  val prune_ge_int : aval -> IntLit.t -> unit model_monad
+
   val prune_ne : aval -> aval -> unit model_monad
 
   val prune_ne_int : aval -> IntLit.t -> unit model_monad
 
   val prune_ne_zero : aval -> unit model_monad
 
+  val and_eq_int : aval -> IntLit.t -> unit model_monad
+
+  val and_eq : aval -> aval -> unit model_monad
+
+  val and_positive : aval -> unit model_monad
+
   (* Tenv operations *)
   val tenv_resolve_fieldname : Typ.name -> Fieldname.t -> Struct.field_info option model_monad
+
+  val write_deref : ref:aval -> obj:aval -> unit model_monad
 
   (* if necessary you can convert an operation outside of this module with the following operators *)
   val exec_command : (astate -> astate) -> unit model_monad

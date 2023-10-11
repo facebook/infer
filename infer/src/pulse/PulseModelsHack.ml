@@ -128,48 +128,46 @@ module Vec = struct
     assign_ret aval
 
 
-  let get_vec argv index : unit DSL.model_monad =
+  let get_vec_dsl argv _index : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     let* ret_val = mk_fresh ~model_desc:"vec index" in
     let* new_last_read_val = mk_fresh ~model_desc:"vec index" in
-    let* size_val = eval_deref_access Read argv (FieldAccess size_field) in
+    let* _size_val = eval_deref_access Read argv (FieldAccess size_field) in
     let* fst_val = eval_deref_access Read argv (FieldAccess fst_field) in
     let* snd_val = eval_deref_access Read argv (FieldAccess snd_field) in
     let* last_read_val = eval_deref_access Read argv (FieldAccess last_read_field) in
     let* () = write_deref_field ~ref:argv last_read_field ~obj:new_last_read_val in
-    let* () = prune_lt index size_val in
+    (* TODO: assert index < size_val ? *)
     let* () =
       (* Don't return dummy value *)
       prune_ne_int ret_val (IntLit.of_int 9)
     in
     (* TODO: work out how to incorporate type-based, or at least nullability, assertions on ret_val *)
-    let case1 : unit DSL.model_monad =
-      (* case 1: return is some value equal to neither field
-          In this case, we leave the last_read_val field unchanged
-          And we also, to avoid false positives, do a fake await of the fst and snd fields
-      *)
-      let* () = await_hack_value fst_val in
-      let* () = await_hack_value snd_val in
-      let* () = prune_ne ret_val fst_val in
-      let* () = prune_ne ret_val snd_val in
-      let* () = prune_eq new_last_read_val last_read_val in
-      assign_ret ret_val
-    in
-    let case2 : unit DSL.model_monad =
+
+    (* Temporarily removing the "or something else" case1 (which follows the Java collection models)
+       because I'm unconvinced it's a net benefit, and it leads to more disjuncts.
+       Will experiment later. *)
+    let case2 : DSL.aval DSL.model_monad =
       (* case 2: given element is equal to fst_field *)
       let* () = prune_eq_int last_read_val IntLit.two in
-      let* () = prune_eq ret_val fst_val in
-      let* () = prune_eq_int new_last_read_val IntLit.one in
-      assign_ret ret_val
+      let* () = and_eq ret_val fst_val in
+      let* () = and_eq_int new_last_read_val IntLit.one in
+      ret ret_val
     in
-    let case3 : unit DSL.model_monad =
+    let case3 : DSL.aval DSL.model_monad =
       (* case 3: given element is equal to snd_field *)
       let* () = prune_eq_int last_read_val IntLit.one in
-      let* () = prune_eq ret_val snd_val in
-      let* () = prune_eq_int new_last_read_val IntLit.two in
-      assign_ret ret_val
+      let* () = and_eq ret_val snd_val in
+      let* () = and_eq_int new_last_read_val IntLit.two in
+      ret ret_val
     in
-    disjuncts [case1; case2; case3]
+    disjuncts [(* case1; *) case2; case3]
+
+
+  let get_vec argv index : unit DSL.model_monad =
+    let open DSL.Syntax in
+    let* ret_val = get_vec_dsl argv index in
+    assign_ret ret_val
 
 
   let hack_array_get vec args : unit DSL.model_monad =
@@ -203,6 +201,141 @@ module Vec = struct
     | _ ->
         L.d_printfln "Vec.hack_array_cow_set expects 1 key and 1 value arguments" ;
         unreachable
+end
+
+(*
+let bool_to_hack_bool b : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let class_name = "HackBool" in
+  let typ = Typ.mk_struct TextualSil.hack_bool_type_name in
+  (* let typ = Typ.mk_struct (Typ.HackClass (HackClassName.make class_name)) in *)
+  let* ret_val = mk_fresh ~model_desc:"make_bool" in
+  let* () = add_dynamic_type typ ret_val in
+  let* b_val = mk_fresh ~model_desc:"make_bool" in
+  let* () = and_eq_int b_val IntLit.(if b then one else zero) in
+  (* Help Pulse out by explicitly recording that we allocated something *)
+  let* () = and_positive ret_val in
+  let field = mk_hack_field class_name "val" in
+  let* () = write_deref_field ~ref:ret_val field ~obj:b_val in
+  ret ret_val
+
+
+let make_false = bool_to_hack_bool false
+
+let make_true = bool_to_hack_bool true
+*)
+let bool_val_field = Fieldname.make TextualSil.hack_bool_type_name "val"
+
+let make_hack_bool bool : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let* bool = eval_read (Const (Cint (if bool then IntLit.one else IntLit.zero))) in
+  let* boxed_bool = PulseModelsCpp.constructor_dsl TextualSil.hack_bool_type_name [("val", bool)] in
+  ret boxed_bool
+
+
+let aval_to_hack_int n_val : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let class_name = "HackInt" in
+  let typ = Typ.mk_struct (Typ.HackClass (HackClassName.make class_name)) in
+  let* ret_val = mk_fresh ~model_desc:"make_int" in
+  let* () = add_dynamic_type typ ret_val in
+  let* () = and_positive ret_val in
+  let field = mk_hack_field class_name "val" in
+  let* () = write_deref_field ~ref:ret_val field ~obj:n_val in
+  ret ret_val
+
+
+let int_to_hack_int n : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let* n_val = mk_fresh ~model_desc:"make_int" in
+  let* () = and_eq_int n_val (IntLit.of_int n) in
+  aval_to_hack_int n_val
+
+
+let make_zero = int_to_hack_int 0
+
+module VecIter = struct
+  let class_name = "HackVecIterator"
+
+  let vec_field = mk_hack_field class_name "__infer_model_backing_veciterator_vec"
+
+  let index_field = mk_hack_field class_name "__infer_model_backing_veciterator_index"
+
+  let iter_init_vec iteraddr keyaddr eltaddr argv : unit DSL.model_monad =
+    let open DSL.Syntax in
+    let* size_val = eval_deref_access Read argv (FieldAccess Vec.size_field) in
+    let emptycase : DSL.aval DSL.model_monad =
+      let* () = prune_eq_zero size_val in
+      let* ret_val = make_hack_bool false in
+      ret ret_val
+    in
+    let nonemptycase : DSL.aval DSL.model_monad =
+      let* () = prune_ne_int size_val IntLit.zero in
+      let* iter = mk_fresh ~model_desc:"iter_init" in
+      let* zero = mk_fresh ~model_desc:"iter_init" in
+      let* () = and_eq_int zero IntLit.zero in
+      let typ = Typ.mk_struct (Typ.HackClass (HackClassName.make class_name)) in
+      let* () = add_dynamic_type typ iter in
+      let* () = and_positive iter in
+      let* () = write_deref_field ~ref:iter vec_field ~obj:argv in
+      let* () = write_deref_field ~ref:iter index_field ~obj:zero in
+      let* () = write_deref ~ref:iteraddr ~obj:iter in
+      let* hack_zero = make_zero in
+      let* elt = Vec.get_vec_dsl argv hack_zero in
+      let* () = write_deref ~ref:eltaddr ~obj:elt in
+      let* ret_val = make_hack_bool true in
+      let haskey : DSL.aval DSL.model_monad =
+        let* () = prune_ne_zero keyaddr in
+        let* () = write_deref ~ref:keyaddr ~obj:hack_zero in
+        ret ret_val
+      in
+      let nokey : DSL.aval DSL.model_monad =
+        let* () = prune_eq_zero keyaddr in
+        ret ret_val
+      in
+      disjuncts [haskey; nokey]
+    in
+    let* ret_val = disjuncts [emptycase; nonemptycase] in
+    assign_ret ret_val
+
+
+  let iter_next_vec iter keyaddr eltaddr : unit DSL.model_monad =
+    let open DSL.Syntax in
+    let* thevec = eval_deref_access Read iter (FieldAccess vec_field) in
+    let* size = eval_deref_access Read thevec (FieldAccess Vec.size_field) in
+    let* index = eval_deref_access Read iter (FieldAccess index_field) in
+    let* succindex = eval_binop_int (Binop.PlusA None) index IntLit.one in
+    (* TODO: expand DSL so can combine finshed1 and finished2 with a disjunctive formula rather than a disjunction of paths *)
+    (* true loop exit condition *)
+    let finished1 : unit DSL.model_monad =
+      let* () = prune_ge succindex size in
+      let* ret_val = make_hack_bool true in
+      assign_ret ret_val
+    in
+    (* overapproximate loop exit condition *)
+    let finished2 : unit DSL.model_monad =
+      let* () = prune_ge_int succindex IntLit.two in
+      let* ret_val = make_hack_bool true in
+      assign_ret ret_val
+    in
+    let not_finished : unit DSL.model_monad =
+      (* let* () = prune_eq_zero v3 in *)
+      let* () = prune_lt succindex size in
+      let* () = prune_lt_int succindex IntLit.two in
+      let* () = write_deref_field ~ref:iter index_field ~obj:succindex in
+      let* hack_succindex = aval_to_hack_int succindex in
+      let* elt = Vec.get_vec_dsl thevec hack_succindex in
+      let* () = write_deref ~ref:eltaddr ~obj:elt in
+      let* ret_val = make_hack_bool false in
+      let haskey : unit DSL.model_monad =
+        let* () = prune_ne_zero keyaddr in
+        write_deref ~ref:keyaddr ~obj:hack_succindex
+      in
+      let nokey : unit DSL.model_monad = prune_eq_zero keyaddr in
+      let* () = disjuncts [haskey; nokey] in
+      assign_ret ret_val
+    in
+    disjuncts [finished1; finished2; not_finished]
 end
 
 let get_static_companion_var type_name =
@@ -429,15 +562,6 @@ let hack_field_get this field : model =
          L.die InternalError "hack_field_get expect a string constant as 2nd argument"
 
 
-let bool_val_field = Fieldname.make TextualSil.hack_bool_type_name "val"
-
-let make_hack_bool bool : DSL.aval DSL.model_monad =
-  let open DSL.Syntax in
-  let* bool = eval_read (Const (Cint (if bool then IntLit.one else IntLit.zero))) in
-  let* boxed_bool = PulseModelsCpp.constructor_dsl TextualSil.hack_bool_type_name [("val", bool)] in
-  ret boxed_bool
-
-
 let make_hack_random_bool : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let* any = mk_fresh ~model_desc:"make_hack_random_bool" in
@@ -518,6 +642,37 @@ let hhbc_cmp_same x y : model =
   assign_ret res
 
 
+let hack_is_true b : model =
+  let open DSL.Syntax in
+  start_model
+  @@
+  let nullcase =
+    let* () = prune_eq_zero b in
+    let* zero = eval_read (Const (Cint IntLit.zero)) in
+    assign_ret zero
+  in
+  let nonnullcase =
+    let* () = prune_ne_zero b in
+    let* b_typ = get_dynamic_type ~ask_specialization:true b in
+    match b_typ with
+    | None ->
+        let _ = L.d_printfln "istrue None" in
+        let* zero = eval_read (Const (Cint IntLit.zero)) in
+        assign_ret zero
+    | Some {Typ.desc= Tstruct b_typ_name} ->
+        if Typ.Name.equal b_typ_name TextualSil.hack_bool_type_name then
+          let* b_val = eval_deref_access Read b (FieldAccess bool_val_field) in
+          assign_ret b_val
+        else
+          let _ = L.d_printfln "istrue got typename %a" Typ.Name.pp b_typ_name in
+          let* one = eval_read (Const (Cint IntLit.one)) in
+          assign_ret one
+    | _ ->
+        unreachable (* shouldn't happen *)
+  in
+  disjuncts [nullcase; nonnullcase]
+
+
 let hhbc_cmp_nsame x y : model =
   let open DSL.Syntax in
   start_model
@@ -559,6 +714,139 @@ let hack_set_static_prop this prop obj : model =
      write_deref_field ~ref:class_object ~obj (Fieldname.make name prop)
 
 
+let hhbc_cmp_lt x y : model =
+  let open DSL.Syntax in
+  start_model
+  @@
+  let value_lt_test val1 val2 =
+    let true_case =
+      let* () = prune_lt val1 val2 in
+      make_hack_bool true
+    in
+    let false_case =
+      let* () = prune_ge val1 val2 in
+      make_hack_bool false
+    in
+    disjuncts [true_case; false_case]
+  in
+  let* res =
+    disjuncts
+      [ (let* () = prune_eq x y in
+         make_hack_bool false )
+      ; (let* () = prune_ne x y in
+         disjuncts
+           [ ((* either of those is null but not both *)
+              let* () = disjuncts [prune_eq_zero x; prune_eq_zero y] in
+              make_hack_bool false (* should throw error/can't happen *) )
+           ; (let* () = prune_ne_zero x in
+              let* () = prune_ne_zero y in
+              let* x_typ = get_dynamic_type ~ask_specialization:true x in
+              let* y_typ = get_dynamic_type ~ask_specialization:true y in
+              match (x_typ, y_typ) with
+              | None, _ | _, None ->
+                  L.d_printfln "random nones" ;
+                  make_hack_random_bool
+              | Some {Typ.desc= Tstruct x_typ_name}, Some {Typ.desc= Tstruct y_typ_name}
+                when Typ.Name.equal x_typ_name y_typ_name ->
+                  if Typ.Name.equal x_typ_name TextualSil.hack_int_type_name then
+                    let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
+                    let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
+                    value_lt_test x_val y_val
+                  else if Typ.Name.equal x_typ_name TextualSil.hack_bool_type_name then
+                    let* x_val = eval_deref_access Read x (FieldAccess bool_val_field) in
+                    let* y_val = eval_deref_access Read y (FieldAccess bool_val_field) in
+                    value_lt_test x_val y_val
+                  else (
+                    L.d_printfln "random somes" ;
+                    make_hack_random_bool )
+              | _, _ ->
+                  make_hack_bool false ) ] ) ]
+  in
+  assign_ret res
+
+
+let hhbc_cmp_gt x y : model = hhbc_cmp_lt y x
+
+let hhbc_cmp_le x y : model =
+  let open DSL.Syntax in
+  start_model
+  @@
+  let value_le_test val1 val2 =
+    let true_case =
+      let* () = prune_le val1 val2 in
+      make_hack_bool true
+    in
+    let false_case =
+      let* () = prune_gt val1 val2 in
+      make_hack_bool false
+    in
+    disjuncts [true_case; false_case]
+  in
+  let* res =
+    disjuncts
+      [ (let* () = prune_eq x y in
+         make_hack_bool true )
+      ; (let* () = prune_ne x y in
+         disjuncts
+           [ ((* either of those is null but not both *)
+              let* () = disjuncts [prune_eq_zero x; prune_eq_zero y] in
+              make_hack_bool false (* should throw error/can't happen *) )
+           ; (let* () = prune_ne_zero x in
+              let* () = prune_ne_zero y in
+              let* x_typ = get_dynamic_type ~ask_specialization:true x in
+              let* y_typ = get_dynamic_type ~ask_specialization:true y in
+              match (x_typ, y_typ) with
+              | None, _ | _, None ->
+                  make_hack_random_bool
+              | Some {Typ.desc= Tstruct x_typ_name}, Some {Typ.desc= Tstruct y_typ_name}
+                when Typ.Name.equal x_typ_name y_typ_name ->
+                  if Typ.Name.equal x_typ_name TextualSil.hack_int_type_name then
+                    let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
+                    let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
+                    value_le_test x_val y_val
+                  else if Typ.Name.equal x_typ_name TextualSil.hack_bool_type_name then
+                    let* x_val = eval_deref_access Read x (FieldAccess bool_val_field) in
+                    let* y_val = eval_deref_access Read y (FieldAccess bool_val_field) in
+                    value_le_test x_val y_val
+                  else make_hack_random_bool
+              | _, _ ->
+                  make_hack_bool false ) ] ) ]
+  in
+  assign_ret res
+
+
+let hhbc_cmp_ge x y : model = hhbc_cmp_le y x
+
+let hhbc_add x y : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* x_typ = get_dynamic_type ~ask_specialization:true x in
+     let* y_typ = get_dynamic_type ~ask_specialization:true y in
+     match (x_typ, y_typ) with
+     | Some {Typ.desc= Tstruct x_typ_name}, Some {Typ.desc= Tstruct y_typ_name}
+       when Typ.Name.equal x_typ_name y_typ_name
+            && Typ.Name.equal x_typ_name TextualSil.hack_int_type_name ->
+         let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
+         let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
+         let* sum = eval_binop (PlusA (Some IInt)) x_val y_val in
+         let* res = aval_to_hack_int sum in
+         assign_ret res
+     | _, _ ->
+         let* sum = mk_fresh ~model_desc:"hhbc_add" in
+         assign_ret sum (* unconstrained value *)
+
+
+(* TODO: dynamic dispatch to cover iterators on dicts as well *)
+let hhbc_iter_init iteraddr keyaddr eltaddr argv : model =
+  let open DSL.Syntax in
+  start_model @@ VecIter.iter_init_vec iteraddr keyaddr eltaddr argv
+
+
+let hhbc_iter_next iteraddr keyaddr eltaddr : model =
+  let open DSL.Syntax in
+  start_model @@ VecIter.iter_next_vec iteraddr keyaddr eltaddr
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"$builtins" &:: "nondet" <>$$--> Basic.nondet ~desc:"nondet"
@@ -578,10 +866,20 @@ let matchers : matcher list =
     (* we should be able to model that directly in Textual once specialization will be stronger *)
   ; -"$builtins" &:: "hhbc_cmp_same" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_same
   ; -"$builtins" &:: "hhbc_cmp_nsame" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_nsame
+  ; -"$builtins" &:: "hhbc_cmp_lt" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_lt
+  ; -"$builtins" &:: "hhbc_cmp_gt" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_gt
+  ; -"$builtins" &:: "hhbc_cmp_ge" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_ge
+  ; -"$builtins" &:: "hhbc_cmp_le" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_le
+  ; -"$builtins" &:: "hack_is_true" <>$ capt_arg_payload $--> hack_is_true
+  ; -"$builtins" &:: "hhbc_add" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_add
   ; -"$builtins" &:: "hack_get_static_class" <>$ capt_arg_payload $--> get_static_class
   ; -"$builtins" &:: "hhbc_cls_cns" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cls_cns
   ; -"$builtins" &:: "hack_set_static_prop" <>$ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $--> hack_set_static_prop
   ; -"$root" &:: "FlibSL::Vec::from_async" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> Vec.vec_from_async ]
+    $--> Vec.vec_from_async
+  ; -"$builtins" &:: "hhbc_iter_init" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $+ capt_arg_payload $--> hhbc_iter_init
+  ; -"$builtins" &:: "hhbc_iter_next" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $--> hhbc_iter_next ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

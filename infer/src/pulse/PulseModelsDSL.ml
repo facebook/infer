@@ -188,6 +188,21 @@ module Syntax = struct
     ret res data astate
 
 
+  let and_eq_int (size_addr, _) i : unit model_monad =
+    PulseArithmetic.and_eq_int size_addr i |> exec_partial_command
+
+
+  (* and_eq v and_equal inconsistent naming *)
+  let and_eq (x, _) (y, _) : unit model_monad =
+    PulseArithmetic.and_equal (PulseArithmetic.AbstractValueOperand x)
+      (PulseArithmetic.AbstractValueOperand y)
+    |> exec_partial_command
+
+
+  let and_positive (addr, _) : unit model_monad =
+    PulseArithmetic.and_positive addr |> exec_partial_command
+
+
   let add_static_type typ_name (addr, _) : unit model_monad =
    fun ({analysis_data= {tenv}} as data) astate ->
     let astate = AbductiveDomain.AddressAttributes.add_static_type tenv typ_name addr astate in
@@ -231,6 +246,11 @@ module Syntax = struct
     PulseOperations.write_deref_field path location ~ref ~obj field >> sat |> exec_partial_command
 
 
+  let write_deref ~ref ~obj : unit model_monad =
+    let* {path; location} = get_data in
+    PulseOperations.write_deref path location ~ref ~obj >> sat |> exec_partial_command
+
+
   let deep_copy ?depth_max source : aval model_monad =
     let* {path; location} = get_data in
     PulseOperations.deep_copy ?depth_max path location source >> sat |> exec_partial_operation
@@ -248,6 +268,16 @@ module Syntax = struct
       |> exec_partial_operation
     in
     ret (addr_res, hist_res)
+
+
+  let eval_binop_int binop (arg, hist) i : aval model_monad =
+    let addr_res = AbstractValue.mk_fresh () in
+    let* addr_res =
+      PulseArithmetic.eval_binop addr_res binop (AbstractValueOperand arg)
+        (PulseArithmetic.ConstOperand (Cint i))
+      |> exec_partial_operation
+    in
+    ret (addr_res, hist)
 
 
   let prune_binop ~negated binop operand1 operand2 =
@@ -273,6 +303,22 @@ module Syntax = struct
   let prune_lt arg1 arg2 : unit model_monad =
     prune_binop ~negated:false Binop.Lt (aval_operand arg1) (aval_operand arg2)
 
+
+  let prune_lt_int arg1 i : unit model_monad =
+    prune_binop ~negated:false Binop.Lt (aval_operand arg1) (PulseArithmetic.ConstOperand (Cint i))
+
+
+  let prune_ge arg1 arg2 : unit model_monad =
+    prune_binop ~negated:true Binop.Lt (aval_operand arg1) (aval_operand arg2)
+
+
+  let prune_ge_int arg1 i : unit model_monad =
+    prune_binop ~negated:true Binop.Lt (aval_operand arg1) (PulseArithmetic.ConstOperand (Cint i))
+
+
+  let prune_gt arg1 arg2 = prune_lt arg2 arg1
+
+  let prune_le arg1 arg2 = prune_ge arg2 arg1
 
   let prune_eq arg1 arg2 : unit model_monad =
     prune_binop ~negated:false Binop.Eq (aval_operand arg1) (aval_operand arg2)

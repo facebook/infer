@@ -54,18 +54,6 @@ define $builtins.hack_make_random_bool(): *HackBool {
     ret $builtins.hack_bool($builtins.nondet())
 }
 
-define $builtins.hack_is_true(b: *HackMixed) : int {
-  #entry:
-    n0: *HackMixed = load &b
-    if __sil_eq(n0, 0) then ret 0
-      // this is not a boxed boolean (always non null) so the test is b!=null
-    else if __sil_instanceof(n0, <HackBool>) then jmp is_bool
-    else ret 1
-  #is_bool:
-    n1: int = load n0.HackBool.val
-    ret n1
-}
-
 define $builtins.hhbc_cmp_eq(x: *HackMixed, y: *HackMixed) : *HackBool {
   // TODO: we need a better model for polymorphic equality. The current one is null-safe and works
   // for ints but otherwise is questionable when applied to some random types
