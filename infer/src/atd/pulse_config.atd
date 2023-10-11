@@ -23,6 +23,7 @@ type matcher = {
   (* exactly one of field_regex or procedure or procedure_regex or class_name_regex or allocation
   or block_passed_to or block_passed_to_regex must be specified,
   or else class_names and method_names must be specified,
+  or else class_names and procedure_regex must be specified
   or else class_names and field_names must be specified,
   or else class_names and method_return_type_names must be specified,
   or else overrides_of_class_with_annotation/method_with_annotation *)

@@ -2588,6 +2588,8 @@ and pulse_taint_sources =
   - "class_name_regex": match all methods of classes whose names match the OCaml regex
   - "class_names" and "method_names":
       match exact uses of methods of particular classes
+  - "class_names" and "procedure_regex":
+      match exact uses of methods of particular classes matching specified OCaml regex
   - "class_names" and "field_names":
       match exact uses of fields of particular classes
   - "class_names" and "method_return_type_names":

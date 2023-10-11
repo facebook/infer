@@ -34,11 +34,16 @@ public class InferTaint {
 
   public static native void inferSensitiveSinkUndefined(Object iMightBeTainted);
 
-  // these are to tests that only calls of functions with the same names from InferTaintSinks are
+  // these are to test that only calls of functions with the same names from InferTaintSinks are
   // recognized as sinks based on class_name_regex config
   public static void sink1(Object iMightBeTainted) {}
 
   public static void sink2(Object iMightBeTainted) {}
 
   public static void addCallback(Callback callback) {}
+
+  // these are to test class name + method name regexes matcher combination
+  public static void regexSink(Object iMightBeTainted) {}
+
+  public static void notRegexSink(Object iMightBeTainted) {}
 }

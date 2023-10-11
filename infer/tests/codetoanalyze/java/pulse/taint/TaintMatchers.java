@@ -46,4 +46,14 @@ public class TaintMatchers {
     Object notSource = ics.inferChildNotSource();
     InferTaint.inferSensitiveSink(notSource);
   }
+
+  void taintedBasedOnClassNameAndMethodRegexBad() {
+    Object src = InferTaint.inferSecretSource();
+    InferTaint.regexSink(src);
+  }
+
+  void notTaintedBasedOnClassNameAndMethodRegexBad() {
+    Object src = InferTaint.inferSecretSource();
+    InferTaint.notRegexSink(src);
+  }
 }

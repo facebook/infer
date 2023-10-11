@@ -140,6 +140,7 @@ module Unit = struct
     | ProcedureNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndMethodNames of {class_names: string list; method_names: string list}
+    | ClassNameAndMethodRegex of {class_names: string list; method_name_regex: Str.regexp}
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
     | OverridesOfClassWithAnnotation of {annotation: string}
@@ -159,6 +160,8 @@ module Unit = struct
     | ClassAndMethodNames {class_names; method_names} ->
         F.fprintf f "class_names=%a, method_names=%a" (Pp.comma_seq String.pp) class_names
           (Pp.comma_seq String.pp) method_names
+    | ClassNameAndMethodRegex {class_names} ->
+        F.fprintf f "class_names=%a and method name regex" (Pp.comma_seq String.pp) class_names
     | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
         F.fprintf f "class_names=%a, method_return_type_names=%a" (Pp.comma_seq String.pp)
           class_names (Pp.comma_seq String.pp) method_return_type_names
@@ -266,6 +269,7 @@ module Unit = struct
       \ \"allocation\" or \n\
       \ \"overrides_of_class_with_annotation\" must be provided, \n\
        or else \"class_names\" and \"method_names\" must be provided, \n\
+       or else \"class_names\" and \"procedure_regex\" must be provided, \n\
        or else \"class_names\" and \"method_return_type_names\" must be provided, \n\
        or else \"method_with_annotation\" and \"annotation_values\" must be provided, \n\
        but got \n\
@@ -350,6 +354,18 @@ module Unit = struct
         ; block_passed_to= None
         ; allocation= None } ->
           ClassAndMethodNames {class_names; method_names}
+      | { procedure= None
+        ; procedure_regex= Some method_name_regex
+        ; class_name_regex= None
+        ; class_names= Some class_names
+        ; method_names= None
+        ; method_return_type_names= None
+        ; overrides_of_class_with_annotation= None
+        ; method_with_annotation= None
+        ; annotation_values= None
+        ; block_passed_to= None
+        ; allocation= None } ->
+          ClassNameAndMethodRegex {class_names; method_name_regex= Str.regexp method_name_regex}
       | { procedure= None
         ; procedure_regex= None
         ; class_name_regex= None
