@@ -82,7 +82,7 @@ type t =
   ; skipped_calls: SkippedCalls.t }
 [@@deriving compare, equal, yojson_of]
 
-let pp f
+let pp_ ~is_summary f
     { post
     ; pre
     ; path_condition
@@ -94,18 +94,25 @@ let pp f
   let pp_decompiler f =
     if Config.debug_level_analysis >= 3 then F.fprintf f "decompiler=%a;@;" Decompiler.pp decompiler
   in
+  (* print pre then post if it's a summary, other print the post (aka current abstract state) first
+     *)
+  let pp_pre_post f =
+    if is_summary then F.fprintf f "PRE=@[%a@]@;POST=@[%a@]" PreDomain.pp pre PostDomain.pp post
+    else F.fprintf f "%a@;PRE=[%a]" PostDomain.pp post PreDomain.pp pre
+  in
   F.fprintf f
     "@[<v>%a@;\
-     %a@;\
-     PRE=[%a]@;\
+     %t@;\
      %tneed_closure_specialization=%b@;\
      need_dynamic_type_specialization=%a@;\
      skipped_calls=%a@;\
      Topl=%a@]"
-    Formula.pp path_condition PostDomain.pp post PreDomain.pp pre pp_decompiler
-    need_closure_specialization AbstractValue.Set.pp need_dynamic_type_specialization
-    SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
+    Formula.pp path_condition pp_pre_post pp_decompiler need_closure_specialization
+    AbstractValue.Set.pp need_dynamic_type_specialization SkippedCalls.pp skipped_calls
+    PulseTopl.pp_state topl
 
+
+let pp = pp_ ~is_summary:false
 
 let leq ~lhs ~rhs =
   phys_equal lhs rhs
@@ -1660,7 +1667,7 @@ module Summary = struct
 
   type t = summary [@@deriving compare, equal, yojson_of]
 
-  let pp = pp
+  let pp = pp_ ~is_summary:true
 
   let leq = leq
 
