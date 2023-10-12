@@ -1689,7 +1689,7 @@ module Summary = struct
     SafeAttributes.get_must_be_valid (CanonValue.canon' summary addr) summary
 
 
-  let of_post tenv proc_name (proc_attrs : ProcAttributes.t) location astate0 =
+  let of_post_ tenv proc_name (proc_attrs : ProcAttributes.t) location astate0 =
     let open SatUnsat.Import in
     let astate = astate0 in
     (* NOTE: we normalize (to strengthen the equality relation used by canonicalization) then
@@ -1770,6 +1770,16 @@ module Summary = struct
           (`PotentialInvalidAccessSummary
             (astate, astate_before_filter, Decompiler.find address astate0.decompiler, must_be_valid)
             )
+
+
+  let of_post tenv proc_name proc_attrs location astate0 =
+    let summary_sat = of_post_ tenv proc_name proc_attrs location astate0 in
+    match summary_sat with
+    | Sat _ ->
+        summary_sat
+    | Unsat ->
+        Stats.incr_pulse_summaries_contradictions () ;
+        Unsat
 
 
   let with_need_closure_specialization summary = {summary with need_closure_specialization= true}

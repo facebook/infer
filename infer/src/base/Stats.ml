@@ -78,6 +78,7 @@ include struct
     ; mutable pulse_captured_vars_length_contradictions: int
     ; mutable pulse_disjuncts_dropped: int
     ; mutable pulse_interrupted_loops: int
+    ; mutable pulse_summaries_contradictions: int
     ; mutable pulse_summaries_count: int PulseSumCountMap.t
     ; mutable topl_reachable_calls: int
     ; mutable timeouts: int
@@ -104,6 +105,7 @@ let global_stats =
   ; pulse_captured_vars_length_contradictions= 0
   ; pulse_disjuncts_dropped= 0
   ; pulse_interrupted_loops= 0
+  ; pulse_summaries_contradictions= 0
   ; pulse_summaries_count= PulseSumCountMap.empty
   ; topl_reachable_calls= 0
   ; timeouts= 0
@@ -162,6 +164,8 @@ let add_pulse_disjuncts_dropped n = add Fields.pulse_disjuncts_dropped n
 
 let add_pulse_interrupted_loops n = add Fields.pulse_interrupted_loops n
 
+let incr_pulse_summaries_contradictions () = incr Fields.pulse_summaries_contradictions
+
 let add_pulse_summaries_count n =
   update_with Fields.pulse_summaries_count ~f:(fun counters ->
       PulseSumCountMap.update n (fun i -> Some (1 + Option.value ~default:0 i)) counters )
@@ -199,6 +203,7 @@ let copy from ~into : unit =
        ; pulse_captured_vars_length_contradictions
        ; pulse_disjuncts_dropped
        ; pulse_interrupted_loops
+       ; pulse_summaries_contradictions
        ; pulse_summaries_count
        ; topl_reachable_calls
        ; timeouts
@@ -210,7 +215,7 @@ let copy from ~into : unit =
     ~proc_locker_lock_time ~proc_locker_unlock_time ~restart_scheduler_useful_time
     ~restart_scheduler_total_time ~pulse_aliasing_contradictions ~pulse_args_length_contradictions
     ~pulse_captured_vars_length_contradictions ~pulse_disjuncts_dropped ~pulse_interrupted_loops
-    ~pulse_summaries_count ~topl_reachable_calls ~timeouts ~timings
+    ~pulse_summaries_contradictions ~pulse_summaries_count ~topl_reachable_calls ~timeouts ~timings
 
 
 let merge stats1 stats2 =
@@ -240,6 +245,8 @@ let merge stats1 stats2 =
       + stats2.pulse_captured_vars_length_contradictions
   ; pulse_disjuncts_dropped= stats1.pulse_disjuncts_dropped + stats2.pulse_disjuncts_dropped
   ; pulse_interrupted_loops= stats1.pulse_interrupted_loops + stats2.pulse_interrupted_loops
+  ; pulse_summaries_contradictions=
+      stats1.pulse_summaries_contradictions + stats2.pulse_summaries_contradictions
   ; pulse_summaries_count=
       PulseSumCountMap.merge
         (fun _ i j -> Some (Option.value ~default:0 i + Option.value ~default:0 j))
@@ -269,6 +276,7 @@ let initial =
   ; pulse_captured_vars_length_contradictions= 0
   ; pulse_disjuncts_dropped= 0
   ; pulse_interrupted_loops= 0
+  ; pulse_summaries_contradictions= 0
   ; pulse_summaries_count= PulseSumCountMap.empty
   ; topl_reachable_calls= 0
   ; timeouts= 0
@@ -310,7 +318,12 @@ let pp fmt stats =
     let pp_binding fmt (n, count) = Format.fprintf fmt "%d -> %d" n count in
     F.fprintf fmt "%s= [%a]@;" (Field.name field)
       (F.pp_print_list ~pp_sep:(fun fmt () -> F.fprintf fmt ", ") pp_binding)
-      (PulseSumCountMap.bindings sumcounters)
+      (PulseSumCountMap.bindings sumcounters) ;
+    let total =
+      PulseSumCountMap.bindings sumcounters
+      |> List.fold ~init:0 ~f:(fun total (n, count) -> total + (n * count))
+    in
+    F.fprintf fmt "pulse_summaries_total_disjuncts= %d@;" total
   in
   let pp_stats fmt =
     Fields.iter ~summary_file_try_load:(pp_int_field fmt)
@@ -326,6 +339,7 @@ let pp fmt stats =
       ~pulse_args_length_contradictions:(pp_int_field fmt)
       ~pulse_captured_vars_length_contradictions:(pp_int_field fmt)
       ~pulse_disjuncts_dropped:(pp_int_field fmt) ~pulse_interrupted_loops:(pp_int_field fmt)
+      ~pulse_summaries_contradictions:(pp_int_field fmt)
       ~pulse_summaries_count:(pp_pulse_summaries_count fmt) ~timeouts:(pp_int_field fmt)
       ~topl_reachable_calls:(pp_int_field fmt)
       ~timings:(pp_serialized_field Timings.deserialize Timings.pp fmt)
@@ -350,11 +364,14 @@ let log_to_scuba stats =
   in
   let create_pulse_summaries_count_entry field =
     let counters : int PulseSumCountMap.t = Field.get field stats in
-    List.map
-      ~f:(fun (n, count) ->
-        LogEntry.mk_count ~label:(F.sprintf "backend_stats.pulse_summaries_count_%d" n) ~value:count
-        )
-      (PulseSumCountMap.bindings counters)
+    let total, counts =
+      List.fold_map (PulseSumCountMap.bindings counters) ~init:0 ~f:(fun total (n, count) ->
+          ( total + (n * count)
+          , LogEntry.mk_count
+              ~label:(F.sprintf "backend_stats.pulse_summaries_count_%d" n)
+              ~value:count ) )
+    in
+    LogEntry.mk_count ~label:"backend_stats.pulse_summaries_total" ~value:total :: counts
   in
   let create_timings_entry field =
     Field.get field stats |> deserialize Timings.deserialize |> Timings.to_scuba
@@ -369,6 +386,7 @@ let log_to_scuba stats =
       ~pulse_args_length_contradictions:create_counter
       ~pulse_captured_vars_length_contradictions:create_counter
       ~pulse_disjuncts_dropped:create_counter ~pulse_interrupted_loops:create_counter
+      ~pulse_summaries_contradictions:create_counter
       ~pulse_summaries_count:create_pulse_summaries_count_entry ~timeouts:create_counter
       ~topl_reachable_calls:create_counter ~timings:create_timings_entry
     |> List.concat
