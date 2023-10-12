@@ -136,6 +136,8 @@ module SSA = struct
   type t = int
 
   let pp fmt i = F.fprintf fmt "n%d" i
+
+  let next n = 1 + n
 end
 
 module Exp = struct
@@ -298,6 +300,15 @@ module Exp = struct
   let as_short_string = function Const (String s) -> Some s | _ -> None
 end
 
+module Location = struct
+  type t = int option
+
+  let of_instruction {FFI.Instruction.starts_line} = starts_line
+
+  let of_code {FFI.Code.instructions} =
+    match instructions with [] -> None | instr :: _ -> of_instruction instr
+end
+
 module Error = struct
   type kind =
     | EmptyStack of string
@@ -315,7 +326,7 @@ module Error = struct
     | UnpackSequence of int
     | FormatValueSpec of Exp.t
 
-  type t = L.error * kind
+  type t = L.error * Location.t * kind
 
   let pp_kind fmt = function
     | EmptyStack op ->
@@ -398,8 +409,8 @@ module Object = struct
 
   type t =
     { name: Ident.t
-    ; toplevel: Stmt.t list
-    ; objects: t list (* TODO: maybe turn this into a map using classes/functions *)
+    ; toplevel: (Location.t * Stmt.t) list
+    ; objects: (Location.t * t) list (* TODO: maybe turn this into a map using classes/functions *)
     ; classes: SSet.t
     ; functions: Ident.t SMap.t }
 
@@ -407,11 +418,11 @@ module Object = struct
     F.fprintf fmt "@[<hv2>object %a:@\n" Ident.pp name ;
     if not (List.is_empty toplevel) then (
       F.fprintf fmt "@[<hv2>code:@\n" ;
-      List.iter toplevel ~f:(F.fprintf fmt "@[<hv2>%a@]@\n" Stmt.pp) ;
+      List.iter toplevel ~f:(fun (_, stmt) -> F.fprintf fmt "@[<hv2>%a@]@\n" Stmt.pp stmt) ;
       F.fprintf fmt "@]@\n" ) ;
     if not (List.is_empty objects) then (
       F.fprintf fmt "@[<hv2>objects:@\n" ;
-      List.iter objects ~f:(F.fprintf fmt "@[%a@]@\n" pp) ;
+      List.iter objects ~f:(fun (_, obj) -> F.fprintf fmt "@[%a@]@\n" pp obj) ;
       F.fprintf fmt "@]@\n" ) ;
     if not (SSet.is_empty classes) then (
       F.fprintf fmt "@[<hv2>classes:@\n" ;
@@ -435,9 +446,10 @@ module State = struct
   type t =
     { module_name: Ident.t
     ; debug: bool
+    ; loc: Location.t
     ; global_names: Ident.t SMap.t  (** Translation cache for global names *)
     ; stack: Exp.t list
-    ; stmts: Stmt.t list
+    ; stmts: (Location.t * Stmt.t) list
     ; fresh_id: SSA.t
     ; classes: SSet.t
     ; functions: Ident.t SMap.t
@@ -468,9 +480,10 @@ module State = struct
         SMap.add name (Ident.mk ~kind:Builtin name) names )
 
 
-  let empty debug module_name =
+  let empty ~debug ~loc module_name =
     { module_name
     ; debug
+    ; loc
     ; global_names= known_global_names
     ; stack= []
     ; stmts= []
@@ -483,13 +496,13 @@ module State = struct
   (** Each time a new object is discovered (they can be heavily nested), we need to clear the state
       of temporary data like the SSA counter, but keep other parts of it, like global and local
       names *)
-  let enter {debug; global_names; names} module_name =
-    let st = empty debug module_name in
+  let enter {debug; global_names; names} ~loc module_name =
+    let st = empty ~debug ~loc module_name in
     {st with global_names; names}
 
 
   let fresh_id ({fresh_id} as st) =
-    let st = {st with fresh_id= fresh_id + 1} in
+    let st = {st with fresh_id= SSA.next fresh_id} in
     (fresh_id, st)
 
 
@@ -536,17 +549,21 @@ module State = struct
 
   let push ({stack} as st) exp = {st with stack= exp :: stack}
 
-  let pop ({stack} as st) =
+  let pop ({stack; loc} as st) =
     match stack with
     | [] ->
-        Error (L.InternalError, Error.EmptyStack "pop")
+        Error (L.InternalError, loc, Error.EmptyStack "pop")
     | exp :: stack ->
         let st = {st with stack} in
         Ok (exp, st)
 
 
-  let peek {stack} =
-    match stack with [] -> Error (L.InternalError, Error.EmptyStack "peek") | exp :: _ -> Ok exp
+  let peek {stack; loc} =
+    match stack with
+    | [] ->
+        Error (L.InternalError, loc, Error.EmptyStack "peek")
+    | exp :: _ ->
+        Ok exp
 
 
   let pop_n st n =
@@ -560,12 +577,18 @@ module State = struct
     aux [] st n
 
 
-  let push_stmt ({stmts} as st) stmt = {st with stmts= stmt :: stmts}
+  let push_stmt ({stmts; loc} as st) stmt = {st with stmts= (loc, stmt) :: stmts}
 
   let register_class ({classes} as st) cls = {st with classes= SSet.add cls classes}
 
   let register_function ({functions} as st) name fn = {st with functions= SMap.add name fn functions}
 end
+
+let error kind {State.loc} err = Error (kind, loc, err)
+
+let external_error st err = error L.ExternalError st err
+
+let internal_error st err = error L.InternalError st err
 
 (** Helper to compile the binary/unary/... ops into IR *)
 let parse_op st exp n =
@@ -604,7 +627,7 @@ let make_function st flags =
         let lnames = String.split ~on:'.' s in
         Ok (Ident.append root lnames)
     | _ ->
-        Error (L.InternalError, Error.MakeFunction ("a qualified named", qualname))
+        internal_error st (Error.MakeFunction ("a qualified named", qualname))
   in
   let* codeobj, st = State.pop st in
   let* code =
@@ -612,7 +635,7 @@ let make_function st flags =
     | Const (Code c) ->
         Ok c
     | _ ->
-        Error (L.InternalError, Error.MakeFunction ("a code object", codeobj))
+        internal_error st (Error.MakeFunction ("a code object", codeobj))
   in
   let {FFI.Code.co_name= fn} = code in
   let* st =
@@ -630,7 +653,7 @@ let make_function st flags =
         | ConstMap map ->
             Ok map
         | _ ->
-            Error (L.InternalError, Error.MakeFunction ("some type annotations", annotations))
+            internal_error st (Error.MakeFunction ("some type annotations", annotations))
       in
       Ok (annotations, st)
     else Ok (ConstMap.empty, st)
@@ -683,15 +706,16 @@ let call_function st arg =
          which is the second argument (the first being the code object)
       *)
       let sz = List.length args in
-      let* () = if sz < 2 then Error (L.ExternalError, Error.LoadBuildClass args) else Ok () in
+      let* () = if sz < 2 then external_error st (Error.LoadBuildClass args) else Ok () in
       let* short_name =
         match args with
         | _code :: short_name :: _ ->
+            let {State.loc} = st in
             Result.of_option
-              ~error:(L.InternalError, Error.LoadBuildClassName short_name)
+              ~error:(L.InternalError, loc, Error.LoadBuildClassName short_name)
               (Exp.as_short_string short_name)
         | _ ->
-            Error (L.ExternalError, Error.LoadBuildClass args)
+            external_error st (Error.LoadBuildClass args)
       in
       let st = State.register_class st short_name in
       let exp = Exp.Class args in
@@ -705,10 +729,10 @@ let call_function st arg =
 
 let import_name st name =
   let open IResult.Let_syntax in
-  let {State.module_name} = st in
+  let {State.module_name; loc} = st in
   let* fromlist, st = State.pop st in
   let* fromlist =
-    let error = (L.ExternalError, Error.ImportNameFromList (name, fromlist)) in
+    let error = (L.ExternalError, loc, Error.ImportNameFromList (name, fromlist)) in
     match (fromlist : Exp.t) with
     | Const c ->
         Result.map_error ~f:(fun () -> error) (Const.as_names c)
@@ -721,7 +745,7 @@ let import_name st name =
     | Const (Int z) ->
         Ok (Int64.to_int_exn z)
     | _ ->
-        Error (L.ExternalError, Error.ImportNameLevel (name, level))
+        external_error st (Error.ImportNameLevel (name, level))
   in
   let id = Ident.from_string ~kind:Imported ~on:'.' name in
   let* import_path =
@@ -750,7 +774,7 @@ let import_name st name =
         | Some (`Path prefix) ->
             if String.is_empty name then Ok prefix else Ok (Ident.extend prefix name)
         | None ->
-            Error (L.ExternalError, Error.ImportNameDepth (module_name, level)) )
+            external_error st (Error.ImportNameDepth (module_name, level)) )
   in
   let import_name = {Exp.id= import_path; fromlist} in
   let exp = Exp.ImportName import_name in
@@ -770,7 +794,7 @@ let import_from st name =
     | ImportName from ->
         Ok from
     | _ ->
-        Error (L.ExternalError, Error.ImportFrom (name, from))
+        external_error st (Error.ImportFrom (name, from))
   in
   if not (List.mem ~equal:String.equal fromlist name) then
     L.user_warning "Import from / name mismatch: cannot find '%s'@\n" name ;
@@ -803,7 +827,7 @@ let unpack_sequence st count =
       let st = State.push st exp in
       unpack st (n - 1)
   in
-  let* () = if count <= 0 then Error (L.ExternalError, Error.UnpackSequence count) else Ok () in
+  let* () = if count <= 0 then external_error st (Error.UnpackSequence count) else Ok () in
   let st = unpack st (count - 1) in
   Ok st
 
@@ -832,7 +856,7 @@ let format_value st flags =
       | Const (String _) ->
           Ok (fmt_spec, st)
       | _ ->
-          Error (L.ExternalError, Error.FormatValueSpec fmt_spec)
+          external_error st (Error.FormatValueSpec fmt_spec)
     else Ok (Exp.Const Null, st)
   in
   let* exp, st = State.pop st in
@@ -858,8 +882,10 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
     let {State.debug} = st in
     if debug then Debug.todo else Debug.p
   in
-  if Option.is_some starts_line then debug ">@\n" ;
-  debug "> %s %d (0x%x)@\n" opname arg arg ;
+  if Option.is_some starts_line then (
+    debug "@\n" ;
+    debug ".line %d@\n" (Option.value_exn starts_line) ) ;
+  debug "%s %d (0x%x)@\n" opname arg arg ;
   match opname with
   | "LOAD_CONST" ->
       let c = co_consts.(arg) in
@@ -1028,13 +1054,13 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
         | Const (Tuple keys) ->
             Ok keys
         | _ ->
-            Error (L.InternalError, Error.BuildConstKeyMapKeys keys)
+            internal_error st (Error.BuildConstKeyMapKeys keys)
       in
       let nr_keys = List.length keys in
       let* tys, st = State.pop_n st arg in
       let* () =
         if Int.equal nr_keys arg then Ok ()
-        else Error (L.InternalError, Error.BuildConstKeyMapLength (arg, nr_keys))
+        else internal_error st (Error.BuildConstKeyMapLength (arg, nr_keys))
       in
       let map =
         List.fold2_exn ~init:ConstMap.empty ~f:(fun map key ty -> ConstMap.add key ty map) keys tys
@@ -1094,7 +1120,7 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
         | Some op ->
             Ok op
         | None ->
-            Error (L.ExternalError, Error.CompareOp arg)
+            external_error st (Error.CompareOp arg)
       in
       let* rhs, st = State.pop st in
       let* lhs, st = State.pop st in
@@ -1120,7 +1146,7 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
   | "FORMAT_VALUE" ->
       format_value st arg
   | _ ->
-      Error (L.InternalError, Error.UnsupportedOpcode opname)
+      internal_error st (Error.UnsupportedOpcode opname)
 
 
 let rec mk_stmts st code instructions =
@@ -1129,6 +1155,8 @@ let rec mk_stmts st code instructions =
   | [] ->
       Ok st
   | instr :: instructions ->
+      let loc = Location.of_instruction instr in
+      let st = if Option.is_some loc then {st with State.loc} else st in
       let* st = parse_bytecode st code instr in
       let* st = mk_stmts st code instructions in
       Ok st
@@ -1136,7 +1164,7 @@ let rec mk_stmts st code instructions =
 
 let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
   let open IResult.Let_syntax in
-  let {State.module_name} = st in
+  let {State.module_name; loc} = st in
   let* ({State.stmts; classes; functions} as st) = mk_stmts st code instructions in
   let toplevel = List.rev stmts in
   let* objects =
@@ -1145,14 +1173,15 @@ let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
         | FFI.Constant.PYCCode code ->
             let {FFI.Code.co_name} = code in
             let module_name = Ident.extend module_name co_name in
-            let st = State.enter st module_name in
+            let loc = Location.of_code code in
+            let st = State.enter st ~loc module_name in
             let* obj = mk_object st code in
             Ok (obj :: objects)
         | _ ->
             Ok objects )
   in
   let objects = List.rev objects in
-  Ok {Object.name= module_name; toplevel; objects; classes; functions}
+  Ok (loc, {Object.name= module_name; toplevel; objects; classes; functions})
 
 
 let mk ~debug ({FFI.Code.co_filename} as code) =
@@ -1165,6 +1194,7 @@ let mk ~debug ({FFI.Code.co_filename} as code) =
   in
   let file_path = Stdlib.Filename.remove_extension file_path in
   let module_name = Ident.from_string ~on:'/' file_path in
-  let empty = State.empty debug module_name in
-  let* obj = mk_object empty code in
+  let loc = Location.of_code code in
+  let empty = State.empty ~debug ~loc module_name in
+  let* _, obj = mk_object empty code in
   Ok obj

@@ -6,10 +6,14 @@
  *)
 open! IStd
 
+module Location : sig
+  type t
+end
+
 module Error : sig
   type kind
 
-  type t = Logging.error * kind
+  type t = Logging.error * Location.t * kind
 
   val pp_kind : Format.formatter -> kind -> unit [@@warning "-unused-value-declaration"]
 end

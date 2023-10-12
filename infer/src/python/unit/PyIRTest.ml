@@ -24,7 +24,7 @@ let test ~filename ~debug source =
   (* Since Textual doesn't have a concept of toplevel code, we create a function for this code,
      with a non-denotable name, so we don't clash with existing python code *)
   match PyIR.mk ~debug code with
-  | Error (kind, err) -> (
+  | Error (kind, _loc, err) -> (
     match kind with
     | L.InternalError ->
         L.internal_error "IR error: %a@\n" PyIR.Error.pp_kind err
