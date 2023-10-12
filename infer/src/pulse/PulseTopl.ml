@@ -1036,8 +1036,9 @@ let report_errors proc_desc err_log ~pulse_is_manifest state =
   let report_simple_state q =
     (* We assume simplifications happened before calling report_errors. *)
     let topl_is_manifest = Constraint.(equal true_ q.pruned) in
-    if is_issue q then
+    if is_issue q then (
       let q = first_error_ss q in
+      L.d_printfln ~color:Red "found TOPL error %a" pp_simple_state q ;
       (* Only report at the innermost level where error appears. *)
       if
         not
@@ -1060,7 +1061,7 @@ let report_errors proc_desc err_log ~pulse_is_manifest state =
         in
         if (not latent) || Config.topl_report_latent_issues then
           Reporting.log_issue proc_desc err_log ~loc ~ltr Topl (IssueType.topl_error ~latent)
-            message
+            message )
   in
   List.iter ~f:report_simple_state state
 
