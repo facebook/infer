@@ -592,15 +592,17 @@ let make_function st flags =
   let open IResult.Let_syntax in
   let* qualname, st = State.pop st in
   let* qualname =
-    (* During MAKE_FUNCTION, all names within a def/class seems to be prefixed
-       with the value that is stored in [__module__]. We'll let the next phase
-       IR -> Textual generate the right names.
-
-       TODO: try to make things clear here once and for all *)
+    (* In the toplevel, [qualname] is the short name / string from the source.
+       However in a nested context (e.g. in a class), [qualname] also prefixed
+       by the value stored in the [__qualname__] attribute.
+       We use this information along with our own [module_name] to generate a
+       non ambiguous identifier *)
     match (qualname : Exp.t) with
     | Const (String s) ->
-        let lnames = Ident.from_string ~on:'.' s in
-        Ok lnames
+        let {State.module_name} = st in
+        let root = Ident.root module_name in
+        let lnames = String.split ~on:'.' s in
+        Ok (Ident.append root lnames)
     | _ ->
         Error (L.InternalError, Error.MakeFunction ("a qualified named", qualname))
   in
