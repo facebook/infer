@@ -35,8 +35,8 @@ let report tenv ~is_suppressed ~latent proc_desc err_log diagnostic =
     let extras =
       let copy_type = get_copy_type diagnostic |> Option.map ~f:Typ.to_string in
       let taint_source, taint_sink =
-        let proc_name_of_taint TaintItem.{value} =
-          Format.asprintf "%a" TaintItem.pp_value_plain value
+        let proc_name_of_taint taint_item =
+          Format.asprintf "%a" TaintItem.pp_value_plain (TaintItem.value_of_taint taint_item)
         in
         match diagnostic with
         | TaintFlow {flow_kind= FlowFromSource; source= source, _} ->

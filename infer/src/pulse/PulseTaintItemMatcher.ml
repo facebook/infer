@@ -219,7 +219,9 @@ let match_field_target matches actual potential_taint_value : taint_match list =
     let origin : TaintItem.origin =
       match matcher.field_target with GetField -> GetField | SetField -> SetField
     in
-    let taint = {TaintItem.value= potential_taint_value; origin; kinds= matcher.kinds} in
+    let taint =
+      {TaintItem.value_tuple= Basic {value= potential_taint_value; origin}; kinds= matcher.kinds}
+    in
     {taint; value_origin; typ; exp= Some exp} :: acc
   in
   List.fold matches ~init:[] ~f:(fun acc (matcher : TaintConfig.Unit.field_unit) ->
@@ -329,11 +331,7 @@ let move_taint_to_field tenv path location potential_taint_value taint_match fie
         in
         L.d_printfln "match! tainting field %s with type %a" fieldname (Typ.pp_full Pp.text)
           field_typ ;
-        let taint =
-          TaintItem.
-            { taint_match.taint with
-              origin= FieldOfValue {name= fieldname; origin= taint_match.taint.origin} }
-        in
+        let taint = TaintItem.field_of_origin taint_match.taint fieldname in
         ( astate (* TODO(arr): replace with a proper value path *)
         , Some {taint; value_origin= ret_value; typ= field_typ; exp= None} )
       in
@@ -361,7 +359,10 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
             match return_as_actual with
             | Some actual ->
                 let astate, acc = acc in
-                let taint = {TaintItem.value= potential_taint_value; origin= ReturnValue; kinds} in
+                let taint =
+                  { TaintItem.value_tuple= Basic {value= potential_taint_value; origin= ReturnValue}
+                  ; kinds }
+                in
                 let value_origin, typ, exp = actual in
                 (astate, {taint; value_origin; typ; exp} :: acc)
             | None ->
@@ -375,7 +376,9 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
                 Stack.find_opt return astate
                 |> Option.fold ~init:acc ~f:(fun (_, tainted) return_value ->
                        let taint =
-                         {TaintItem.value= potential_taint_value; origin= ReturnValue; kinds}
+                         { TaintItem.value_tuple=
+                             Basic {value= potential_taint_value; origin= ReturnValue}
+                         ; kinds }
                        in
                        let value_origin =
                          ValueOrigin.OnStack {var= return; addr_hist= return_value}
@@ -392,7 +395,9 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
               L.d_printfln_escaped "match! tainting actual #%d with type %a" i (Typ.pp_full Pp.text)
                 actual_typ ;
               let taint =
-                {TaintItem.value= potential_taint_value; origin= Argument {index= i}; kinds}
+                { TaintItem.value_tuple=
+                    Basic {value= potential_taint_value; origin= Argument {index= i}}
+                ; kinds }
               in
               (astate, {taint; value_origin= actual_value_origin; typ= actual_typ; exp} :: tainted)
               )
@@ -408,7 +413,9 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
               instance_reference
             in
             let taint =
-              {TaintItem.value= potential_taint_value; origin= InstanceReference; kinds}
+              { TaintItem.value_tuple=
+                  Basic {value= potential_taint_value; origin= InstanceReference}
+              ; kinds }
             in
             let astate, tainted = acc in
             (astate, {taint; value_origin; typ; exp= Some exp} :: tainted)

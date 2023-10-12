@@ -665,9 +665,7 @@ let get_message_and_suggestion diagnostic =
       ( if TaintItem.equal source sink then
           F.asprintf "%s. Value is tainted by %a" policy_description TaintItem.pp source
         else
-          let flows_to =
-            match sink.TaintItem.origin with TaintItem.SetField -> "" | _ -> " flows to"
-          in
+          let flows_to = if TaintItem.is_set_field_origin sink then "" else " flows to" in
           if DecompilerExpr.is_unknown expr then
             F.asprintf "%s. Value is tainted by %a and%s %a" policy_description TaintItem.pp source
               flows_to TaintItem.pp sink

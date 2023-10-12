@@ -252,7 +252,7 @@ let taint_allocation tenv path location ~typ_desc ~alloc_desc ~allocator (v, his
                     let proc_name = Procname.from_string_c_fun alloc_desc in
                     let value = TaintItem.TaintProcedure proc_name in
                     let origin = TaintItem.Allocation {typ= type_name} in
-                    {TaintItem.kinds; value; origin}
+                    {TaintItem.kinds; value_tuple= Basic {value; origin}}
                   in
                   let hist =
                     ValueHistory.sequence
@@ -602,19 +602,21 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
           ((policy_violations_reported, astate), sanitizers) ) )
 
 
-let should_ignore_all_flows_to potential_taint_value =
+let rec should_ignore_all_flows_to (potential_taint_value : TaintItem.value_tuple) =
   match potential_taint_value with
-  | TaintItem.TaintProcedure proc_name ->
+  | Basic {value= TaintProcedure proc_name} ->
       Procname.is_objc_dealloc proc_name || BuiltinDecl.is_declared proc_name
-  | _ ->
+  | Basic _ ->
       false
+  | FieldOf {value_tuple} | PointedToBy {value_tuple} ->
+      should_ignore_all_flows_to value_tuple
 
 
 let taint_sinks path location tainted astate =
   let aux () =
     PulseResult.list_fold tainted ~init:astate
       ~f:(fun astate TaintItemMatcher.{taint= sink; value_origin} ->
-        if should_ignore_all_flows_to sink.value then Ok astate
+        if should_ignore_all_flows_to sink.value_tuple then Ok astate
         else
           let v, history = ValueOrigin.addr_hist value_origin in
           let sink_trace = Trace.Immediate {location; history} in

@@ -62,15 +62,72 @@ let pp_value_plain f value =
       F.fprintf f "%a" Fieldname.pp field_name
 
 
-type t = {kinds: TaintConfig.Kind.t list; value: value; origin: origin} [@@deriving compare, equal]
+type value_tuple =
+  | Basic of {value: value; origin: origin}
+  | FieldOf of {name: string; value_tuple: value_tuple}
+  | PointedToBy of {value_tuple: value_tuple}
+[@@deriving compare, equal]
 
-let pp fmt {kinds; value; origin} =
-  F.fprintf fmt "%a %a with kind%s %a" pp_origin origin pp_value value
+let rec pp_value_tuple fmt value_tuple =
+  match value_tuple with
+  | Basic {value; origin} ->
+      F.fprintf fmt "%a %a" pp_origin origin pp_value value
+  | FieldOf {value_tuple} | PointedToBy {value_tuple} ->
+      F.fprintf fmt "%a" pp_value_tuple value_tuple
+
+
+type t = {kinds: TaintConfig.Kind.t list; value_tuple: value_tuple} [@@deriving compare, equal]
+
+let pp fmt {value_tuple; kinds} =
+  F.fprintf fmt "%a with kind%s %a" pp_value_tuple value_tuple
     (match kinds with [_] -> "" | _ -> "s")
     (Pp.comma_seq TaintConfig.Kind.pp)
     kinds
 
 
-let is_argument_origin {origin} =
+let is_argument_origin {value_tuple} =
   let rec aux = function Argument _ -> true | FieldOfValue {origin} -> aux origin | _ -> false in
-  aux origin
+  let rec is_argument value_tuple =
+    match value_tuple with
+    | Basic {origin} ->
+        aux origin
+    | FieldOf {value_tuple} | PointedToBy {value_tuple} ->
+        is_argument value_tuple
+  in
+  is_argument value_tuple
+
+
+let is_set_field_origin {value_tuple} =
+  let rec aux = function SetField -> true | FieldOfValue {origin} -> aux origin | _ -> false in
+  let rec is_set_field value_tuple =
+    match value_tuple with
+    | Basic {origin} ->
+        aux origin
+    | FieldOf {value_tuple} | PointedToBy {value_tuple} ->
+        is_set_field value_tuple
+  in
+  is_set_field value_tuple
+
+
+let value_of_taint {value_tuple} =
+  let rec value_of value_tuple =
+    match value_tuple with
+    | Basic {value} ->
+        value
+    | FieldOf {value_tuple} | PointedToBy {value_tuple} ->
+        value_of value_tuple
+  in
+  value_of value_tuple
+
+
+let field_of_origin {value_tuple; kinds} fieldname =
+  let rec field_of_origin value_tuple =
+    match value_tuple with
+    | Basic {value; origin} ->
+        Basic {value; origin= FieldOfValue {name= fieldname; origin}}
+    | FieldOf {name; value_tuple} ->
+        FieldOf {name; value_tuple= field_of_origin value_tuple}
+    | PointedToBy {value_tuple} ->
+        PointedToBy {value_tuple= field_of_origin value_tuple}
+  in
+  {value_tuple= field_of_origin value_tuple; kinds}
