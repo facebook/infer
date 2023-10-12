@@ -339,7 +339,6 @@ def f(x, y):
               f -> dummy.f |}]
 
 
-    (*
     let%expect_test _ =
       let source =
         {|
@@ -355,8 +354,57 @@ def f(x, y):
     return z
       |}
       in
-      test ~debug:true source ;
-      [%expect {| |}]
+      test source ;
+      [%expect
+        {|
+        module
+        object dummy:
+          code:
+            #b0:
+              dummy.coin <- $FuncObj(coin, dummy.coin)
+              dummy.f <- $FuncObj(f, dummy.f)
+              return None
+
+
+
+          objects:
+            object dummy.coin:
+              code:
+                #b0:
+                  return false
+
+
+
+
+            object dummy.f:
+              code:
+                #b0:
+                  z <- 0
+                  n0 <- dummy.coin()
+                  n1 <- $IsTrue(n0)
+                  if n1 then jmp b1 else jmp b2
+
+
+                #b1:
+                  z <- x
+                  jmp b3
+
+
+                #b2:
+                  z <- y
+                  jmp b3
+
+
+                #b3:
+                  return z
+
+
+
+
+
+            functions:
+              coin -> dummy.coin
+              f -> dummy.f |}]
 
 
     let%expect_test _ =
@@ -382,8 +430,86 @@ def f(x, y):
     return z
       |}
       in
-      test ~debug:true source ;
-      [%expect {| |}]
+      test source ;
+      [%expect
+        {|
+        module
+        object dummy:
+          code:
+            #b0:
+              dummy.coin <- $FuncObj(coin, dummy.coin)
+              dummy.f <- $FuncObj(f, dummy.f)
+              return None
+
+
+
+          objects:
+            object dummy.coin:
+              code:
+                #b0:
+                  return false
+
+
+
+
+            object dummy.f:
+              code:
+                #b0:
+                  z <- 0
+                  n0 <- dummy.coin()
+                  n1 <- $IsTrue(n0)
+                  if n1 then jmp b1 else jmp b2
+
+
+                #b1:
+                  n2 <- dummy.coin()
+                  n3 <- $IsTrue(n2)
+                  if n3 then jmp b3 else jmp b4
+
+
+                #b3:
+                  z <- x
+                  jmp b5
+
+
+                #b4:
+                  return 1664
+
+
+                #b5:
+                  n4 <- $Binary.Add(z, 1)
+                  z <- n4
+                  jmp b6
+
+
+                #b2:
+                  n5 <- $Binary.Add(z, 1)
+                  z <- n5
+                  n6 <- dummy.coin()
+                  n7 <- $IsTrue(n6)
+                  if n7 then jmp b7
+                  else jmp b8
+
+
+                #b7:
+                  return 42
+
+
+                #b8:
+                  z <- y
+                  jmp b6
+
+
+                #b6:
+                  return z
+
+
+
+
+
+            functions:
+              coin -> dummy.coin
+              f -> dummy.f |}]
 
 
     let%expect_test _ =
@@ -394,10 +520,57 @@ def foo(x):
 def f(x):
     foo(1 if x else 0)
       |} in
-      test ~debug:true source ;
-      [%expect {| |}]
+      test source ;
+      [%expect
+        {|
+        module
+        object dummy:
+          code:
+            #b0:
+              dummy.foo <- $FuncObj(foo, dummy.foo)
+              dummy.f <- $FuncObj(f, dummy.f)
+              return None
 
 
+
+          objects:
+            object dummy.foo:
+              code:
+                #b0:
+                  return None
+
+
+
+
+            object dummy.f:
+              code:
+                #b0:
+                  n2 <- $IsTrue(x)
+                  if n2 then jmp b1(dummy.foo) else jmp b2(dummy.foo)
+
+
+                #b1(n0):
+                  jmp b3(1, n0)
+
+
+                #b2(n1):
+                  jmp b3(0, n1)
+
+
+                #b3(n4, n3):
+                  n5 <- n3(n4)
+                  return None
+
+
+
+
+
+            functions:
+              f -> dummy.f
+              foo -> dummy.foo |}]
+
+
+    (*
     let%expect_test _ =
       let source = {|
 for x in range(10):

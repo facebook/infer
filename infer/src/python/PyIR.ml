@@ -428,15 +428,19 @@ module Label = struct
 
   let pp_name fmt name = F.pp_print_string fmt name
 
-  type t = {name: name; arity: int; processed: bool}
+  type t = {name: name; ssa_parameters: SSA.t list; processed: bool}
 
-  let pp fmt {name; arity} = F.fprintf fmt "%s..%d" name arity
+  let pp fmt {name; ssa_parameters} =
+    F.fprintf fmt "#%s" name ;
+    if not (List.is_empty ssa_parameters) then
+      F.fprintf fmt "(%a)" (Pp.seq ~sep:", " SSA.pp) ssa_parameters
 
-  let mk name arity = {name; arity; processed= false}
+
+  let mk name ssa_parameters = {name; ssa_parameters; processed= false}
 
   let is_processed {processed} = processed
 
-  let process {name; arity} = {name; arity; processed= true}
+  let process {name; ssa_parameters} = {name; ssa_parameters; processed= true}
 end
 
 module Jump = struct
@@ -447,17 +451,20 @@ module Jump = struct
 
 
   type t =
+    | Absolute of info
     | Label of info
-    | TwoWay of {condition: Exp.t; next_info: info; other_info: info}
     | Return of Exp.t
+    | TwoWay of {condition: Exp.t; next_info: info; other_info: info}
 
   let pp fmt = function
+    | Absolute info ->
+        F.fprintf fmt "Absolute(%a)" pp_info info
     | Label info ->
         F.fprintf fmt "Label(%a)" pp_info info
-    | TwoWay {condition; next_info; other_info} ->
-        F.fprintf fmt "TwoWay(%a, %a, %a)" Exp.pp condition pp_info next_info pp_info other_info
     | Return ret ->
         F.fprintf fmt "Return(%a)" Exp.pp ret
+    | TwoWay {condition; next_info; other_info} ->
+        F.fprintf fmt "TwoWay(%a, %a, %a)" Exp.pp condition pp_info next_info pp_info other_info
 end
 
 module Terminator = struct
@@ -522,14 +529,13 @@ module CFG = struct
 
   (** Helper to fetch label info if there's already one registered at the specified [offset], or
       create a fresh one. *)
-  let get_label cfg offset ~ssa_args =
+  let get_label cfg offset ~ssa_parameters =
     match lookup_label cfg offset with
     | Some label ->
         (label, cfg)
     | None ->
         let name, cfg = fresh_label cfg in
-        let arity = List.length ssa_args in
-        let label = Label.mk name arity in
+        let label = Label.mk name ssa_parameters in
         (label, cfg)
 
 
@@ -549,13 +555,7 @@ module Node = struct
     ; last: Terminator.t }
 
   let pp fmt {label; stmts; last} =
-    let {Label.name; arity} = label in
-    F.fprintf fmt "@[<hv2>#%s" name ;
-    ( if arity > 0 then
-        let ids = List.init arity ~f:(fun i -> sprintf "n%d" i) in
-        let s = String.concat ~sep:", " ids in
-        F.fprintf fmt "(%s)" s ) ;
-    F.fprintf fmt ":@\n" ;
+    F.fprintf fmt "@[<hv2>%a:@\n" Label.pp label ;
     List.iter stmts ~f:(fun (_, stmt) -> F.fprintf fmt "@[<hv2>%a@]@\n" Stmt.pp stmt) ;
     F.fprintf fmt "%a@\n" Terminator.pp last ;
     F.fprintf fmt "@]@\n"
@@ -653,6 +653,8 @@ module State = struct
     ; names= known_local_names }
 
 
+  let debug {debug} = if debug then Debug.todo else Debug.p
+
   (** Each time a new object is discovered (they can be heavily nested), we need to clear the state
       of temporary data like the SSA counter, but keep other parts of it, like global and local
       names *)
@@ -675,8 +677,6 @@ module State = struct
     | None ->
         SMap.find_opt name global_names
 
-
-  let debug {debug} = if debug then Debug.todo else Debug.p
 
   (** Python can look up names in the current namespace, or directly in the global namespace, which
       is why we keep them separated *)
@@ -749,6 +749,16 @@ module State = struct
     (stack, st)
 
 
+  let mk_ssa_parameters st arity =
+    let rec mk st acc n =
+      if n > 0 then
+        let i, st = fresh_id st in
+        mk st (i :: acc) (n - 1)
+      else (acc, st)
+    in
+    mk st [] arity
+
+
   let register_label ({cfg} as st) ~offset label =
     debug st "register_label %d %a@\n" offset Label.pp label ;
     let cfg = CFG.register_label cfg ~offset label in
@@ -768,8 +778,8 @@ module State = struct
 
   let lookup_label {cfg} offset = CFG.lookup_label cfg offset
 
-  let get_label ({cfg} as st) offset ~ssa_args =
-    let label, cfg = CFG.get_label cfg offset ~ssa_args in
+  let get_label ({cfg} as st) offset ~ssa_parameters =
+    let label, cfg = CFG.get_label cfg offset ~ssa_parameters in
     let st = {st with cfg} in
     (label, st)
 
@@ -790,15 +800,8 @@ module State = struct
     (fresh_label, st)
 
 
-  let enter_node st {Label.arity} =
-    let rec mk st n =
-      if n > 0 then
-        let i, st = fresh_id st in
-        let st = push st (Exp.Temp i) in
-        mk st (n - 1)
-      else st
-    in
-    let st = mk st arity in
+  let enter_node st {Label.ssa_parameters} =
+    let st = List.fold_right ssa_parameters ~init:st ~f:(fun ssa st -> push st (Exp.Temp ssa)) in
     {st with stmts= []}
 
 
@@ -1104,9 +1107,12 @@ let pop_jump_if ~next_is st target next_offset_opt =
   let* condition, st = State.pop st in
   (* Turn the stack into SSA parameters *)
   let ssa_args, st = State.to_ssa st in
+  let arity = List.length ssa_args in
+  let next_ssa, st = State.mk_ssa_parameters st arity in
+  let other_ssa, st = State.mk_ssa_parameters st arity in
   let* next_offset = Offset.get ~loc next_offset_opt in
-  let next_label, st = State.get_label st next_offset ~ssa_args in
-  let other_label, st = State.get_label st target ~ssa_args in
+  let next_label, st = State.get_label st next_offset ~ssa_parameters:next_ssa in
+  let other_label, st = State.get_label st target ~ssa_parameters:other_ssa in
   (* Compute the relevant pruning expressions *)
   let* id, st = call_function_with_unnamed_args st Exp.IsTrue [condition] in
   let condT = Exp.Temp id in
@@ -1392,6 +1398,17 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       pop_jump_if ~next_is:false st arg next_offset_opt
   | "POP_JUMP_IF_FALSE" ->
       pop_jump_if ~next_is:true st arg next_offset_opt
+  | "JUMP_FORWARD" ->
+      let {State.loc} = st in
+      (* This instruction gives us a relative delta w.r.t the next offset, so we turn it into an
+         absolute offset right away *)
+      let* next_offset = Offset.get ~loc next_offset_opt in
+      let offset = next_offset + arg in
+      let ssa_args, st = State.to_ssa st in
+      let ssa_parameters, st = State.mk_ssa_parameters st (List.length ssa_args) in
+      let label, st = State.get_label st offset ~ssa_parameters in
+      let jump = Jump.Absolute {ssa_args; label; offset} in
+      Ok (st, Some jump)
   | _ ->
       internal_error st (Error.UnsupportedOpcode opname)
 
@@ -1434,8 +1451,13 @@ let mk_node st label code instructions =
     | Some jump_op ->
         jump_op
   in
-  State.debug st "Terminator: %a\n" Jump.pp jump_op ;
+  State.debug st "Jump: %a\n" Jump.pp jump_op ;
   match (jump_op : Jump.t) with
+  | Absolute ({label= next_label; offset} as info) ->
+      let st = State.register_label st ~offset next_label in
+      let last = Terminator.of_jump (`OneTarget info) in
+      let node = {Node.label; last; stmts; last_loc; label_loc} in
+      Ok (st, instructions, node)
   | Return ret ->
       let last = Terminator.Return ret in
       let node = {Node.label; last; stmts; last_loc; label_loc} in
@@ -1477,7 +1499,7 @@ let rec mk_nodes st label code instructions =
           (label, st)
       | None ->
           let label_name, st = State.fresh_label st in
-          (Label.mk label_name 0, st)
+          (Label.mk label_name [], st)
     in
     let* st, nodes = mk_nodes st label code instructions in
     Ok (st, node :: nodes)
@@ -1487,7 +1509,7 @@ let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
   let open IResult.Let_syntax in
   let {State.module_name; loc} = st in
   let fresh_label, st = State.fresh_label st in
-  let label = Label.mk fresh_label 0 in
+  let label = Label.mk fresh_label [] in
   let st = State.register_label st ~offset:0 label in
   let st = State.process_label st 0 in
   let* ({State.classes; functions} as st), nodes = mk_nodes st label code instructions in
