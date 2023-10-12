@@ -487,8 +487,7 @@ def f(x, y):
                   z <- n5
                   n6 <- dummy.coin()
                   n7 <- $IsTrue(n6)
-                  if n7 then jmp b7
-                  else jmp b8
+                  if n7 then jmp b7 else jmp b8
 
 
                 #b7:
@@ -570,15 +569,39 @@ def f(x):
               foo -> dummy.foo |}]
 
 
-    (*
     let%expect_test _ =
       let source = {|
 for x in range(10):
     print(x)
       |} in
-      test ~debug:true source ;
-      [%expect {| |}]
-       *)
+      test source ;
+      [%expect
+        {|
+        module
+        object dummy:
+          code:
+            #b0:
+              n0 <- range(10)
+              n1 <- $GetIter(n0)
+              jmp b1(n1)
+
+
+            #b1(n2):
+              n3 <- $NextIter(n2)
+              n4 <- $HasNextIter(n3)
+              if n4 then jmp b2 else jmp b3
+
+
+            #b2:
+              n5 <- $IterData(n3)
+              dummy.x <- n5
+              n6 <- print(dummy.x)
+              jmp b1(n2)
+
+
+            #b3:
+              return None |}]
+
 
     let%expect_test _ =
       let source = {|
@@ -1609,7 +1632,6 @@ object dummy:
       MyTest -> dummy.MyTest |}]
 
 
-    (*
     (* Extracted from Cinder's test suite. Currently amended to avoid unsupported opcodes *)
     let%expect_test _ =
       let source =
@@ -1646,9 +1668,87 @@ if __name__ == '__main__':
     _main()
       |}
       in
-      test ~debug:true source ;
-      [%expect {| |}]
-*)
+      test source ;
+      [%expect
+        {|
+        module
+        object dummy:
+          code:
+            #b0:
+              $ImportName(os, from_list=[])
+              dummy.os <- $ImportName(os, from_list= [])
+              $ImportName(sys, from_list=[])
+              dummy.sys <- $ImportName(sys, from_list= [])
+              $ImportName(test.libregrtest, from_list=[main])
+              dummy.main <- $ImportFrom($ImportName(test.libregrtest, from_list=[main]), name= main)
+              dummy.main_in_temp_cwd <- test.libregrtest.main
+              dummy._main <- $FuncObj(_main, dummy._main)
+              n0 <- $Compare.eq(__name__, "__main__")
+              n1 <- $IsTrue(n0)
+              if n1 then jmp b1 else jmp b2
+
+
+            #b1:
+              n2 <- dummy._main()
+              jmp b2
+
+
+            #b2:
+              return None
+
+
+
+          objects:
+            object dummy._main:
+              code:
+                #b0:
+                  n0 <- $CallMethod($LoadMethod(os.path, dirname), sys.argv[0])
+                  n1 <- $CallMethod($LoadMethod(os.path, normpath), n0)
+                  n2 <- $CallMethod($LoadMethod(os.path, abspath), n1)
+                  mydir <- n2
+                  n3 <- len(sys.path)
+                  n4 <- $Binary.Subtract(n3, 1)
+                  i <- n4
+                  jmp b1
+
+
+                #b1:
+                  n5 <- $Compare.ge(i, 0)
+                  n6 <- $IsTrue(n5)
+                  if n6 then jmp b2 else jmp b3
+
+
+                #b2:
+                  n7 <- $CallMethod($LoadMethod(os.path, normpath), sys.path[i])
+                  n8 <- $CallMethod($LoadMethod(os.path, abspath), n7)
+                  n9 <- $Compare.eq(n8, mydir)
+                  n10 <- $IsTrue(n9)
+                  if n10 then jmp b4 else jmp b5
+
+
+                #b4:
+                  jmp b1
+
+
+                #b5:
+                  n11 <- $Inplace.Subtract(i, 1)
+                  i <- n11
+                  jmp b1
+
+
+                #b3:
+                  n12 <- $CallMethod($LoadMethod(os.path, abspath), __file__)
+                  dummy.__file__ <- n12
+                  n13 <- test.libregrtest.main()
+                  return None
+
+
+
+
+
+            functions:
+              _main -> dummy._main |}]
+
 
     let%expect_test _ =
       let source =

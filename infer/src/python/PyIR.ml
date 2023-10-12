@@ -197,6 +197,10 @@ module BuiltinCaller = struct
     | Binary of Builtin.binary_op
     | Unary of Builtin.unary_op
     | Compare of Builtin.Compare.t
+    | GetIter  (** [GET_ITER] *)
+    | NextIter  (** [FOR_ITER] *)
+    | HasNextIter  (** [FOR_ITER] *)
+    | IterData  (** [FOR_ITER] *)
 
   let pp fmt = function
     | BuildClass ->
@@ -218,6 +222,14 @@ module BuiltinCaller = struct
         F.fprintf fmt "$Unary.%s" op
     | Compare op ->
         F.fprintf fmt "$Compare.%a" Builtin.Compare.pp op
+    | GetIter ->
+        F.pp_print_string fmt "$GetIter"
+    | NextIter ->
+        F.pp_print_string fmt "$NextIter"
+    | HasNextIter ->
+        F.pp_print_string fmt "$HasNextIter"
+    | IterData ->
+        F.pp_print_string fmt "$IterData"
 end
 
 module Exp = struct
@@ -343,6 +355,8 @@ module Error = struct
     | UnpackSequence of int
     | FormatValueSpec of Exp.t
     | NextOffsetMissing
+    | MissingBackEdge of int * int
+    | InvalidBackEdge of (string * int * int)
 
   type t = L.error * Location.t * kind
 
@@ -380,6 +394,11 @@ module Error = struct
         F.fprintf fmt "FORMAT_VALUE: expected string literal, got %a" Exp.pp exp
     | NextOffsetMissing ->
         F.fprintf fmt "Jump to next instruction detected, but next instruction is missing"
+    | MissingBackEdge (from, to_) ->
+        F.fprintf fmt "Invalid absolute jump: missing target of back-edge from %d to %d" from to_
+    | InvalidBackEdge (name, expect, actual) ->
+        F.fprintf fmt "Invalid backedge to #%s with arity mismatch (expecting %d but got %d)" name
+          expect actual
 end
 
 module Stmt = struct
@@ -441,7 +460,21 @@ module Label = struct
 
   let pp_name fmt name = F.pp_print_string fmt name
 
-  type t = {name: name; ssa_parameters: SSA.t list; processed: bool}
+  (** A label is a position in the bytecode where the control-flow can jump. Think "if/then/else",
+      loops, ... Some Python opcode are quite involved in how the stack might be modified during
+      jumps. For example, [FOR_ITER] might leave a value on the stack at all time, popping it only
+      on exit.
+
+      To account for such complex scenario, each label has a [prelude] to modify the stack and the
+      state in non-trivial ways. To avoid a full-recursive type definition between [State] and
+      [Label], we generalize [prelude] to be ['a -> 'a] and we'll instantiate it with [State.t]
+      later on *)
+  type 'a t =
+    { name: name
+    ; ssa_parameters: SSA.t list
+    ; processed: bool
+    ; backedge: bool
+    ; prelude: ('a -> 'a) option }
 
   let pp fmt {name; ssa_parameters} =
     F.fprintf fmt "#%s" name ;
@@ -449,25 +482,27 @@ module Label = struct
       F.fprintf fmt "(%a)" (Pp.seq ~sep:", " SSA.pp) ssa_parameters
 
 
-  let mk name ssa_parameters = {name; ssa_parameters; processed= false}
+  let mk ?(backedge = false) ?prelude name ssa_parameters =
+    {name; ssa_parameters; processed= false; backedge; prelude}
+
 
   let is_processed {processed} = processed
 
-  let process {name; ssa_parameters} = {name; ssa_parameters; processed= true}
+  let process label = {label with processed= true}
 end
 
 module Jump = struct
-  type info = {label: Label.t; offset: Offset.t; ssa_args: Exp.t list}
+  type 'a info = {label: 'a Label.t; offset: Offset.t; ssa_args: Exp.t list}
 
   let pp_info fmt {label; offset; ssa_args} =
     F.fprintf fmt "JumpInfo(%a, %a, %d)" Label.pp label Offset.pp offset (List.length ssa_args)
 
 
-  type t =
-    | Absolute of info
-    | Label of info
+  type 'a t =
+    | Absolute of 'a info
+    | Label of 'a info
     | Return of Exp.t
-    | TwoWay of {condition: Exp.t; next_info: info; other_info: info}
+    | TwoWay of {condition: Exp.t; next_info: 'a info; other_info: 'a info}
 
   let pp fmt = function
     | Absolute info ->
@@ -478,6 +513,7 @@ module Jump = struct
         F.fprintf fmt "Return(%a)" Exp.pp ret
     | TwoWay {condition; next_info; other_info} ->
         F.fprintf fmt "TwoWay(%a, %a, %a)" Exp.pp condition pp_info next_info pp_info other_info
+    [@@warning "-unused-value-declaration"]
 end
 
 module Terminator = struct
@@ -499,7 +535,7 @@ module Terminator = struct
     | Jump lst ->
         F.fprintf fmt "jmp %a" (Pp.seq ~sep:", " pp_node_call) lst
     | If {exp; then_; else_} ->
-        F.fprintf fmt "if %a then @[%a@]@ else @[%a@]" Exp.pp exp pp then_ pp else_
+        F.fprintf fmt "if %a then @[%a@] else @[%a@]" Exp.pp exp pp then_ pp else_
 
 
   let of_jump jump_info =
@@ -518,7 +554,7 @@ module Terminator = struct
 end
 
 module CFG = struct
-  type t = {labels: Label.t IMap.t; fresh_label: int}
+  type 'a t = {labels: 'a Label.t IMap.t; fresh_label: int}
 
   let empty = {labels= IMap.empty; fresh_label= 0}
 
@@ -533,22 +569,22 @@ module CFG = struct
   let process_label ({labels} as cfg) offset =
     match IMap.find_opt offset labels with
     | None ->
-        (None, cfg)
+        cfg
     | Some label ->
         let label = Label.process label in
         let labels = IMap.add offset label labels in
-        (Some label, {cfg with labels})
+        {cfg with labels}
 
 
   (** Helper to fetch label info if there's already one registered at the specified [offset], or
       create a fresh one. *)
-  let get_label cfg offset ~ssa_parameters =
+  let get_label cfg ?prelude offset ~ssa_parameters =
     match lookup_label cfg offset with
     | Some label ->
         (label, cfg)
     | None ->
         let name, cfg = fresh_label cfg in
-        let label = Label.mk name ssa_parameters in
+        let label = Label.mk name ?prelude ssa_parameters in
         (label, cfg)
 
 
@@ -560,8 +596,8 @@ end
 module Node = struct
   (** Linear block of code, without any jump. Starts with a label definition and ends with a
       terminator (jump, return, ...) *)
-  type t =
-    { label: Label.t
+  type 'a t =
+    { label: 'a Label.t
     ; label_loc: Location.t
     ; last_loc: Location.t
     ; stmts: (Location.t * Stmt.t) list
@@ -574,51 +610,13 @@ module Node = struct
     F.fprintf fmt "@]@\n"
 end
 
-module Object = struct
-  (** Everything in Python is an [Object]. A function is an [Object], a class is an [Object]. We
-      will refine these into functions, classes and closures during the translation to Textual. *)
-
-  type t =
-    { name: Ident.t
-    ; toplevel: Node.t list
-    ; objects: (Location.t * t) list (* TODO: maybe turn this into a map using classes/functions *)
-    ; classes: SSet.t
-    ; functions: Ident.t SMap.t }
-
-  let rec pp fmt {name; toplevel; objects; classes; functions} =
-    F.fprintf fmt "@[<hv2>object %a:@\n" Ident.pp name ;
-    if not (List.is_empty toplevel) then (
-      F.fprintf fmt "@[<hv2>code:@\n" ;
-      List.iter toplevel ~f:(F.fprintf fmt "@[<hv2>%a@]@\n" Node.pp) ;
-      F.fprintf fmt "@]@\n" ) ;
-    if not (List.is_empty objects) then (
-      F.fprintf fmt "@[<hv2>objects:@\n" ;
-      List.iter objects ~f:(fun (_, obj) -> F.fprintf fmt "@[%a@]@\n" pp obj) ;
-      F.fprintf fmt "@]@\n" ) ;
-    if not (SSet.is_empty classes) then (
-      F.fprintf fmt "@[<hv2>classes:@\n" ;
-      SSet.iter (F.fprintf fmt "@[%a@]@\n" F.pp_print_string) classes ;
-      F.fprintf fmt "@]@\n" ) ;
-    if not (SMap.is_empty functions) then (
-      F.fprintf fmt "@[<hv2>functions:@\n" ;
-      SMap.iter (fun short long -> F.fprintf fmt "@[%s -> %a@]@\n" short Ident.pp long) functions ;
-      F.fprintf fmt "@]" )
-end
-
-module Module = struct
-  (** A module is just the "main" [Object] of a Python file, often called toplevel too *)
-  type t = Object.t
-
-  let pp fmt obj = F.fprintf fmt "module@\n%a@\n@\n" Object.pp obj
-end
-
 module State = struct
   (** Internal state of the Bytecode -> IR compiler *)
   type t =
     { module_name: Ident.t
     ; debug: bool
     ; loc: Location.t
-    ; cfg: CFG.t
+    ; cfg: t CFG.t
     ; global_names: Ident.t SMap.t  (** Translation cache for global names *)
     ; stack: Exp.t list
     ; stmts: (Location.t * Stmt.t) list
@@ -640,7 +638,9 @@ module State = struct
       ; "bool"
       ; "object"
       ; "super"
-      ; "hasattr" ]
+      ; "hasattr"
+      ; "__name__"
+      ; "__file__" ]
     in
     List.fold builtins ~init:SMap.empty ~f:(fun names name ->
         SMap.add name (Ident.mk ~kind:Builtin name) names )
@@ -756,6 +756,8 @@ module State = struct
 
   let register_function ({functions} as st) name fn = {st with functions= SMap.add name fn functions}
 
+  let size {stack} = List.length stack
+
   (** When reaching a jump instruction, turn the stack into ssa variables *)
   let to_ssa ({stack} as st) =
     let st = {st with stack= []} in
@@ -778,32 +780,16 @@ module State = struct
     {st with cfg}
 
 
-  let starts_with_jump_target {cfg} = function
-    | [] ->
-        None
-    | {FFI.Instruction.offset; is_jump_target} :: _ -> (
-      match CFG.lookup_label cfg offset with
-      | Some label ->
-          if Label.is_processed label then None else Some (offset, label)
-      | None ->
-          if is_jump_target then L.die InternalError "TODO: support back-edges" else None )
-
-
   let lookup_label {cfg} offset = CFG.lookup_label cfg offset
 
-  let get_label ({cfg} as st) offset ~ssa_parameters =
-    let label, cfg = CFG.get_label cfg offset ~ssa_parameters in
+  let get_label ({cfg} as st) ?prelude offset ~ssa_parameters =
+    let label, cfg = CFG.get_label cfg ?prelude offset ~ssa_parameters in
     let st = {st with cfg} in
     (label, st)
 
 
   let process_label ({cfg} as st) offset =
-    let opt, cfg = CFG.process_label cfg offset in
-    ( match opt with
-    | None ->
-        debug st "process_label at %a: no label found\n" Offset.pp offset
-    | Some label ->
-        debug st "process_label %a at %a\n" Label.pp label Offset.pp offset ) ;
+    let cfg = CFG.process_label cfg offset in
     {st with cfg}
 
 
@@ -813,9 +799,36 @@ module State = struct
     (fresh_label, st)
 
 
-  let enter_node st {Label.ssa_parameters} =
+  let starts_with_jump_target ({cfg} as st) = function
+    | [] ->
+        (None, st)
+    | {FFI.Instruction.offset; is_jump_target} :: _ -> (
+      match CFG.lookup_label cfg offset with
+      | Some label ->
+          let info = if Label.is_processed label then None else Some (offset, label) in
+          (info, st)
+      | None ->
+          if is_jump_target then
+            (* Probably the target of a back edge. Let's register a target with the current stack
+               information. When we'll detect the jump to here, we'll make sure things are
+               compatible *)
+            let arity = size st in
+            let ssa_parameters, st = mk_ssa_parameters st arity in
+            let name, st = fresh_label st in
+            let label = Label.mk ~backedge:true name ssa_parameters in
+            let st = register_label st ~offset label in
+            (Some (offset, label), st)
+          else (None, st) )
+
+
+  let enter_node st {Label.ssa_parameters; prelude} =
+    let st = {st with stmts= []} in
+    (* Install the prelude before processing the instructions *)
+    let st = Option.value_map ~default:st ~f:(fun f -> f st) prelude in
+    (* If we have ssa_parameters, we need to push them on the stack to restore its right shape.
+       Doing a fold_right is important to keep the correct order. *)
     let st = List.fold_right ssa_parameters ~init:st ~f:(fun ssa st -> push st (Exp.Temp ssa)) in
-    {st with stmts= []}
+    st
 
 
   let drain_stmts ({stmts} as st) =
@@ -1126,8 +1139,8 @@ let pop_jump_if ~next_is st target next_offset_opt =
   let {State.loc} = st in
   let* condition, st = State.pop st in
   (* Turn the stack into SSA parameters *)
+  let arity = State.size st in
   let ssa_args, st = State.to_ssa st in
-  let arity = List.length ssa_args in
   let next_ssa, st = State.mk_ssa_parameters st arity in
   let other_ssa, st = State.mk_ssa_parameters st arity in
   let* next_offset = Offset.get ~loc next_offset_opt in
@@ -1146,8 +1159,44 @@ let pop_jump_if ~next_is st target next_offset_opt =
            ; other_info= {label= other_label; offset= target; ssa_args} } ) )
 
 
+(* TODO: maybe add pruning here ? *)
+let for_iter st delta next_offset_opt =
+  let open IResult.Let_syntax in
+  let {State.loc} = st in
+  let* iter, st = State.pop st in
+  let id, st = call_builtin_function st NextIter [iter] in
+  let has_item, st = call_builtin_function st HasNextIter [Exp.Temp id] in
+  let condition = Exp.Temp has_item in
+  let arity = State.size st in
+  let ssa_args, st = State.to_ssa st in
+  let next_ssa, st = State.mk_ssa_parameters st arity in
+  let other_ssa, st = State.mk_ssa_parameters st arity in
+  (* In the next branch, we know the iterator has an item available. Let's fetch it and
+     push it on the stack. *)
+  let next_prelude st =
+    (* The iterator object stays on the stack while in the for loop, let's push it back *)
+    let st = State.push st iter in
+    (* The result of calling [__next__] is also pushed on the stack *)
+    let next, st = call_builtin_function st IterData [Exp.Temp id] in
+    State.push st (Exp.Temp next)
+  in
+  let* next_offset = Offset.get ~loc next_offset_opt in
+  let next_label, st =
+    State.get_label st next_offset ~ssa_parameters:next_ssa ~prelude:next_prelude
+  in
+  let other_offset = delta + next_offset in
+  let other_label, st = State.get_label st other_offset ~ssa_parameters:other_ssa in
+  Ok
+    ( st
+    , Some
+        (Jump.TwoWay
+           { condition
+           ; next_info= {label= next_label; offset= next_offset; ssa_args}
+           ; other_info= {label= other_label; offset= other_offset; ssa_args} } ) )
+
+
 let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; co_freevars}
-    {FFI.Instruction.opname; starts_line; arg} next_offset_opt =
+    {FFI.Instruction.opname; starts_line; arg; offset= instr_offset} next_offset_opt =
   let open IResult.Let_syntax in
   let st =
     if Option.is_some starts_line then (
@@ -1423,18 +1472,50 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
          absolute offset right away *)
       let* next_offset = Offset.get ~loc next_offset_opt in
       let offset = next_offset + arg in
+      let arity = State.size st in
       let ssa_args, st = State.to_ssa st in
-      let ssa_parameters, st = State.mk_ssa_parameters st (List.length ssa_args) in
+      let ssa_parameters, st = State.mk_ssa_parameters st arity in
       let label, st = State.get_label st offset ~ssa_parameters in
       let jump = Jump.Absolute {ssa_args; label; offset} in
       Ok (st, Some jump)
+  | "JUMP_ABSOLUTE" ->
+      let arity = State.size st in
+      let ssa_args, st = State.to_ssa st in
+      let ssa_parameters, st = State.mk_ssa_parameters st arity in
+      (* sanity check: we should already have allocated a label for this jump, if it is a backward
+         edge. *)
+      let* () =
+        if arg < instr_offset then (
+          match State.lookup_label st arg with
+          | None ->
+              external_error st (Error.MissingBackEdge (instr_offset, arg))
+          | Some ({Label.name; backedge; ssa_parameters} as label) ->
+              if not backedge then
+                L.die InternalError "JUMP_ABSOLUTE: target %a at %d should be a back-edge" Label.pp
+                  label arg ;
+              let sz = List.length ssa_parameters in
+              if sz <> arity then internal_error st (Error.InvalidBackEdge (name, arity, sz))
+              else Ok () )
+        else Ok ()
+      in
+      let label, st = State.get_label st arg ~ssa_parameters in
+      let jump = Jump.Absolute {ssa_args; label; offset= arg} in
+      Ok (st, Some jump)
+  | "GET_ITER" ->
+      let* tos, st = State.pop st in
+      let id, st = call_builtin_function st GetIter [tos] in
+      let exp = Exp.Temp id in
+      let st = State.push st exp in
+      Ok (st, None)
+  | "FOR_ITER" ->
+      for_iter st arg next_offset_opt
   | _ ->
       internal_error st (Error.UnsupportedOpcode opname)
 
 
 let rec parse_bytecode_until_terminator ({State.loc} as st) code instructions =
   let open IResult.Let_syntax in
-  let label_info = State.starts_with_jump_target st instructions in
+  let label_info, st = State.starts_with_jump_target st instructions in
   match label_info with
   | Some (_offset, label) ->
       (* If the analysis reached a known jump target, stop processing the node. *)
@@ -1470,8 +1551,7 @@ let mk_node st label code instructions =
     | Some jump_op ->
         jump_op
   in
-  State.debug st "Jump: %a\n" Jump.pp jump_op ;
-  match (jump_op : Jump.t) with
+  match (jump_op : _ Jump.t) with
   | Absolute ({label= next_label; offset} as info) ->
       let st = State.register_label st ~offset next_label in
       let last = Terminator.of_jump (`OneTarget info) in
@@ -1484,7 +1564,7 @@ let mk_node st label code instructions =
   | Label ({offset} as info) ->
       (* Current invariant, might/will change with the introduction of * back-edges *)
       let opt = State.lookup_label st offset in
-      assert (Option.is_some opt) ;
+      if Option.is_none opt then L.die InternalError "stumbled upon unregistered label" ;
       (* A label was spotted after a non Terminator instruction. Insert a jump to this label to
          create a proper node, and resume the processing. *)
       let last = Terminator.of_jump (`OneTarget info) in
@@ -1511,7 +1591,7 @@ let rec mk_nodes st label code instructions =
   else
     let label, st =
       (* If the next instruction has a label, use it, otherwise pick a fresh one. *)
-      let label_info = State.starts_with_jump_target st instructions in
+      let label_info, st = State.starts_with_jump_target st instructions in
       match label_info with
       | Some (offset, label) ->
           let st = State.process_label st offset in
@@ -1523,6 +1603,46 @@ let rec mk_nodes st label code instructions =
     let* st, nodes = mk_nodes st label code instructions in
     Ok (st, node :: nodes)
 
+
+module Object = struct
+  (** Everything in Python is an [Object]. A function is an [Object], a class is an [Object]. We
+      will refine these into functions, classes and closures during the translation to Textual. *)
+
+  type node = State.t Node.t
+
+  type t =
+    { name: Ident.t
+    ; toplevel: node list
+    ; objects: (Location.t * t) list (* TODO: maybe turn this into a map using classes/functions *)
+    ; classes: SSet.t
+    ; functions: Ident.t SMap.t }
+
+  let rec pp fmt {name; toplevel; objects; classes; functions} =
+    F.fprintf fmt "@[<hv2>object %a:@\n" Ident.pp name ;
+    if not (List.is_empty toplevel) then (
+      F.fprintf fmt "@[<hv2>code:@\n" ;
+      List.iter toplevel ~f:(F.fprintf fmt "@[<hv2>%a@]@\n" Node.pp) ;
+      F.fprintf fmt "@]@\n" ) ;
+    if not (List.is_empty objects) then (
+      F.fprintf fmt "@[<hv2>objects:@\n" ;
+      List.iter objects ~f:(fun (_, obj) -> F.fprintf fmt "@[%a@]@\n" pp obj) ;
+      F.fprintf fmt "@]@\n" ) ;
+    if not (SSet.is_empty classes) then (
+      F.fprintf fmt "@[<hv2>classes:@\n" ;
+      SSet.iter (F.fprintf fmt "@[%a@]@\n" F.pp_print_string) classes ;
+      F.fprintf fmt "@]@\n" ) ;
+    if not (SMap.is_empty functions) then (
+      F.fprintf fmt "@[<hv2>functions:@\n" ;
+      SMap.iter (fun short long -> F.fprintf fmt "@[%s -> %a@]@\n" short Ident.pp long) functions ;
+      F.fprintf fmt "@]" )
+end
+
+module Module = struct
+  (** A module is just the "main" [Object] of a Python file, often called toplevel too *)
+  type t = Object.t
+
+  let pp fmt obj = F.fprintf fmt "module@\n%a@\n@\n" Object.pp obj
+end
 
 let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
   let open IResult.Let_syntax in
