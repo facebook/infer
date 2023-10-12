@@ -277,20 +277,20 @@ module Code = struct
   type t = pyCode =
     { co_name: string
     ; co_filename: string
-    ; co_flags: int
-    ; co_cellvars: string array
-    ; co_freevars: string array
-    ; co_names: string array
-    ; co_varnames: string array
-    ; co_nlocals: int
-    ; co_argcount: int
-    ; co_firstlineno: int
-    ; co_posonlyargcount: int
-    ; co_stacksize: int
-    ; co_kwonlyargcount: int
-    ; co_lnotab: char array
-    ; co_consts: pyConstant array
-    ; instructions: pyInstruction list }
+    ; co_flags: int [@compare.ignore]
+    ; co_cellvars: string array [@compare.ignore]
+    ; co_freevars: string array [@compare.ignore]
+    ; co_names: string array [@compare.ignore]
+    ; co_varnames: string array [@compare.ignore]
+    ; co_nlocals: int [@compare.ignore]
+    ; co_argcount: int [@compare.ignore]
+    ; co_firstlineno: int [@compare.ignore]
+    ; co_posonlyargcount: int [@compare.ignore]
+    ; co_stacksize: int [@compare.ignore]
+    ; co_kwonlyargcount: int [@compare.ignore]
+    ; co_lnotab: char array [@compare.ignore]
+    ; co_consts: pyConstant array [@compare.ignore]
+    ; instructions: pyInstruction list [@compare.ignore] }
   [@@deriving show, compare]
 
   let full_show = show

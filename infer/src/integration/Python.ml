@@ -13,6 +13,10 @@ let process_file ~is_binary file =
   let open IResult.Let_syntax in
   let sourcefile = Textual.SourceFile.create file in
   let* code = Result.map_error ~f:PyTrans.Error.ffi @@ FFI.from_file ~is_binary file in
+  let _ =
+    (* called to make deadcode happy. Not really plugged in yet *)
+    PyIR.mk ~debug:false code
+  in
   PyTrans.to_module ~sourcefile code
 
 

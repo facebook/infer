@@ -8,6 +8,7 @@
 open! IStd
 module T = Textual
 module SMap = Caml.Map.Make (String)
+module SSet = Caml.Set.Make (String)
 
 let proc_name ?(loc = T.Location.Unknown) value = {T.ProcName.value; loc}
 
