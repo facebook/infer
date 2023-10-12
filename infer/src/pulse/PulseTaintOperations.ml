@@ -622,18 +622,30 @@ let taint_sinks path location tainted astate =
           let sink_trace = Trace.Immediate {location; history} in
           let visited = ref AbstractValue.Set.empty in
           let open PulseResult.Let_syntax in
-          let rec mark_sinked policy_violations_reported v hist astate =
+          let rec mark_sinked policy_violations_reported ?access ~(sink : TaintItem.t) v hist astate
+              =
             let is_closure = Option.is_some (AddressAttributes.get_closure_proc_name v astate) in
             if AbstractValue.Set.mem v !visited || is_closure then
               Ok (policy_violations_reported, astate)
             else (
               visited := AbstractValue.Set.add v !visited ;
+              let sink_value_tuple =
+                match access with
+                | Some (MemoryAccess.FieldAccess fieldname) ->
+                    TaintItem.FieldOf
+                      {name= Fieldname.get_field_name fieldname; value_tuple= sink.value_tuple}
+                | Some MemoryAccess.Dereference ->
+                    TaintItem.PointedToBy {value_tuple= sink.value_tuple}
+                | _ ->
+                    sink.value_tuple
+              in
+              let new_sink = {sink with value_tuple= sink_value_tuple} in
               let astate =
-                AbductiveDomain.AddressAttributes.add_taint_sink path sink sink_trace v astate
+                AbductiveDomain.AddressAttributes.add_taint_sink path new_sink sink_trace v astate
               in
               let res =
                 check_flows_wrt_sink ~policy_violations_reported path location
-                  ~sink:(sink, sink_trace) ~source:(v, hist) astate
+                  ~sink:(new_sink, sink_trace) ~source:(v, hist) astate
               in
               AbductiveDomain.Memory.fold_edges v astate ~init:res
                 ~f:(fun res (access, (v, hist)) ->
@@ -645,9 +657,10 @@ let taint_sinks path location tainted astate =
                       res
                   | _ ->
                       let* policy_violations_reported, astate = res in
-                      mark_sinked policy_violations_reported v hist astate ) )
+                      mark_sinked policy_violations_reported ~access ~sink:new_sink v hist astate )
+              )
           in
-          let+ _, astate = mark_sinked IntSet.empty v history astate in
+          let+ _, astate = mark_sinked IntSet.empty ~sink v history astate in
           astate )
   in
   L.d_with_indent "taint_sinks" ~f:aux
