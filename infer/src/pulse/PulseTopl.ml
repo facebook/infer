@@ -503,8 +503,10 @@ let pp_simple_state f {pre; post; pruned} =
 
 
 let pp_state f state =
-  F.fprintf f "@[<v2>{len=%d;content=@;@[<2>[ %a ]@]}@]" (List.length state)
-    (pp_comma_seq pp_simple_state) state
+  if List.is_empty state then F.pp_print_string f "{empty}"
+  else
+    F.fprintf f "@[<v2>{len=%d;content=@;@[<2>[ %a ]@]}@]" (List.length state)
+      (pp_comma_seq pp_simple_state) state
 
 
 let start () =
