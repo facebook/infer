@@ -141,8 +141,10 @@ module SSA = struct
   let next n = 1 + n
 end
 
-module Exp = struct
-  type collection = List | Set | Tuple | Slice | Map | String
+module BuiltinCaller = struct
+  type format_function = Str | Repr | Ascii
+
+  let show_format_function = function Str -> "str" | Repr -> "repr" | Ascii -> "ascii"
 
   let show_binary op =
     match (op : Builtin.binary_op) with
@@ -186,6 +188,41 @@ module Exp = struct
         "Invert"
 
 
+  type t =
+    | BuildClass  (** [LOAD_BUILD_CLASS] *)
+    | Format
+    | FormatFn of format_function
+    | IsTrue
+    | Inplace of Builtin.binary_op
+    | Binary of Builtin.binary_op
+    | Unary of Builtin.unary_op
+    | Compare of Builtin.Compare.t
+
+  let pp fmt = function
+    | BuildClass ->
+        F.pp_print_string fmt "$BuildClass"
+    | Format ->
+        F.pp_print_string fmt "$Format"
+    | FormatFn fn ->
+        F.fprintf fmt "$FormatFn.%s" (show_format_function fn)
+    | IsTrue ->
+        F.pp_print_string fmt "$IsTrue"
+    | Binary op ->
+        let op = show_binary op in
+        F.fprintf fmt "$Binary.%s" op
+    | Inplace op ->
+        let op = show_binary op in
+        F.fprintf fmt "$Inplace.%s" op
+    | Unary op ->
+        let op = show_unary op in
+        F.fprintf fmt "$Unary.%s" op
+    | Compare op ->
+        F.fprintf fmt "$Compare.%a" Builtin.Compare.pp op
+end
+
+module Exp = struct
+  type collection = List | Set | Tuple | Slice | Map | String
+
   type import_name = {id: Ident.t; fromlist: string list}
 
   let pp_import_name fmt {id; fromlist} =
@@ -193,10 +230,6 @@ module Exp = struct
       (Pp.seq ~sep:", " F.pp_print_string)
       fromlist
 
-
-  type format_function = Str | Repr | Ascii
-
-  let show_format_function = function Str -> "str" | Repr -> "repr" | Ascii -> "ascii"
 
   (** An expression is an abstraction of the state of Python bytecode interpreter, waiting to be
       turned into Textual. During the translation from bytecode to expressions, we introduce SSA
@@ -214,14 +247,9 @@ module Exp = struct
     | Collection of {kind: collection; values: t list}
         (** Helper for [BUILD_LIST] and other builder opcodes *)
     | ConstMap of t ConstMap.t
-    | Inplace of Builtin.binary_op
-    | Binary of Builtin.binary_op
-    | Unary of Builtin.unary_op
-    | Compare of Builtin.Compare.t
     | Function of
         {qualname: Ident.t; code: FFI.Code.t; annotations: t ConstMap.t (* TODO: default values *)}
         (** Result of the [MAKE_FUNCTION] opcode *)
-    | BuildClass  (** [LOAD_BUILD_CLASS] *)
     | Class of t list
         (** Result of calling [LOAD_BUILD_CLASS] to create a class. Not much is processed of its
             content for now *)
@@ -230,10 +258,8 @@ module Exp = struct
     | ImportName of import_name  (** [IMPORT_NAME] *)
     | ImportFrom of {from: import_name; name: string}  (** [IMPORT_FROM] *)
     | LoadClosure of string  (** [LOAD_CLOSURE] *)
-    | Format
-    | FormatFn of format_function
-    | IsTrue
     | Not of t
+    | BuiltinCaller of BuiltinCaller.t
 
   let rec pp fmt = function
     | Const c ->
@@ -264,22 +290,9 @@ module Exp = struct
         F.fprintf fmt "{@[" ;
         ConstMap.iter (fun key exp -> F.fprintf fmt "%a: %a, " Const.pp key pp exp) map ;
         F.fprintf fmt "@]}"
-    | Binary op ->
-        let op = show_binary op in
-        F.fprintf fmt "$Binary.%s" op
-    | Inplace op ->
-        let op = show_binary op in
-        F.fprintf fmt "$Inplace.%s" op
-    | Unary op ->
-        let op = show_unary op in
-        F.fprintf fmt "$Unary.%s" op
-    | Compare op ->
-        F.fprintf fmt "$Compare.%a" Builtin.Compare.pp op
     | Function {qualname; code} ->
         let {FFI.Code.co_name} = code in
         F.fprintf fmt "$FuncObj(%s, %a)" co_name Ident.pp qualname
-    | BuildClass ->
-        F.pp_print_string fmt "LOAD_BUILD_CLASS"
     | Class cls ->
         F.fprintf fmt "$ClassObj(%a)" (Pp.seq ~sep:", " pp) cls
     | GetAttr (t, name) ->
@@ -294,14 +307,10 @@ module Exp = struct
         F.fprintf fmt "$ImportFrom(%a,@ name= %s)" pp_import_name from name
     | LoadClosure s ->
         F.fprintf fmt "$LoadClosure(%s)" s
-    | Format ->
-        F.pp_print_string fmt "$Format"
-    | FormatFn fn ->
-        F.fprintf fmt "$FormatFn.%s" (show_format_function fn)
-    | IsTrue ->
-        F.pp_print_string fmt "$IsTrue"
     | Not exp ->
         F.fprintf fmt "$Not(%a)" pp exp
+    | BuiltinCaller bc ->
+        BuiltinCaller.pp fmt bc
 
 
   let as_short_string = function Const (String s) -> Some s | _ -> None
@@ -395,6 +404,7 @@ module Stmt = struct
     | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list}
     | CallMethod of {lhs: SSA.t; call: Exp.t; args: Exp.t list}
     | ImportName of Exp.import_name
+    | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: Exp.t list}
     | SetupAnnotations
 
   let pp fmt = function
@@ -407,6 +417,9 @@ module Stmt = struct
           (Pp.seq ~sep:", " Exp.pp) args
     | ImportName import_name ->
         Exp.pp_import_name fmt import_name
+    | BuiltinCall {lhs; call; args} ->
+        F.fprintf fmt "%a <- %a(@[%a@])" SSA.pp lhs BuiltinCaller.pp call (Pp.seq ~sep:", " Exp.pp)
+          args
     | SetupAnnotations ->
         F.pp_print_string fmt "$SETUP_ANNOTATIONS"
 end
@@ -816,14 +829,26 @@ let external_error st err = error L.ExternalError st err
 
 let internal_error st err = error L.InternalError st err
 
-(** Helper to compile the binary/unary/... ops into IR *)
-let parse_op st exp n =
-  let open IResult.Let_syntax in
-  let* args, st = State.pop_n st n in
+let call_function_with_unnamed_args st exp args =
   let args = Stmt.unnamed_call_args args in
   let lhs, st = State.fresh_id st in
   let stmt = Stmt.Call {lhs; exp; args} in
   let st = State.push_stmt st stmt in
+  (lhs, st)
+
+
+let call_builtin_function st call args =
+  let lhs, st = State.fresh_id st in
+  let stmt = Stmt.BuiltinCall {lhs; call; args} in
+  let st = State.push_stmt st stmt in
+  (lhs, st)
+
+
+(** Helper to compile the binary/unary/... ops into IR *)
+let parse_op st call n =
+  let open IResult.Let_syntax in
+  let* args, st = State.pop_n st n in
+  let lhs, st = call_builtin_function st call args in
   let st = State.push st (Exp.Temp lhs) in
   Ok (st, None)
 
@@ -904,20 +929,12 @@ let make_function st flags =
   Ok (st, None)
 
 
-let call_function_with_unnamed_args st exp args =
-  let args = Stmt.unnamed_call_args args in
-  let lhs, st = State.fresh_id st in
-  let stmt = Stmt.Call {lhs; exp; args} in
-  let st = State.push_stmt st stmt in
-  Ok (lhs, st)
-
-
 let call_function st arg =
   let open IResult.Let_syntax in
   let* args, st = State.pop_n st arg in
   let* fun_exp, st = State.pop st in
   match (fun_exp : Exp.t) with
-  | BuildClass ->
+  | BuiltinCaller BuildClass ->
       (* Building a class looks like
           LOAD_BUILD_CLASS
           LOAD_CONST               CODE_OBJ
@@ -947,8 +964,12 @@ let call_function st arg =
       let exp = Exp.Class args in
       let st = State.push st exp in
       Ok (st, None)
+  | BuiltinCaller call ->
+      let id, st = call_builtin_function st call args in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
   | _ ->
-      let* id, st = call_function_with_unnamed_args st fun_exp args in
+      let id, st = call_function_with_unnamed_args st fun_exp args in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
 
@@ -1066,11 +1087,11 @@ let format_value st flags =
     | 0x00 ->
         None
     | 0x01 ->
-        Some Exp.Str
+        Some BuiltinCaller.Str
     | 0x02 ->
-        Some Exp.Repr
+        Some BuiltinCaller.Repr
     | 0x03 ->
-        Some Exp.Ascii
+        Some BuiltinCaller.Ascii
     | _ ->
         L.die InternalError "FORMAT_VALUE: unreachable"
   in
@@ -1087,16 +1108,15 @@ let format_value st flags =
   in
   let* exp, st = State.pop st in
   let conv_fn = mk_conv flags in
-  let* exp, st =
+  let exp, st =
     match conv_fn with
     | None ->
-        Ok (exp, st)
+        (exp, st)
     | Some conv_fn ->
-        let fn = Exp.FormatFn conv_fn in
-        let* id, st = call_function_with_unnamed_args st fn [exp] in
-        Ok (Exp.Temp id, st)
+        let id, st = call_builtin_function st (FormatFn conv_fn) [exp] in
+        (Exp.Temp id, st)
   in
-  let* id, st = call_function_with_unnamed_args st Exp.Format [exp; fmt_spec] in
+  let id, st = call_builtin_function st Format [exp; fmt_spec] in
   let st = State.push st (Exp.Temp id) in
   Ok (st, None)
 
@@ -1114,7 +1134,7 @@ let pop_jump_if ~next_is st target next_offset_opt =
   let next_label, st = State.get_label st next_offset ~ssa_parameters:next_ssa in
   let other_label, st = State.get_label st target ~ssa_parameters:other_ssa in
   (* Compute the relevant pruning expressions *)
-  let* id, st = call_function_with_unnamed_args st Exp.IsTrue [condition] in
+  let id, st = call_builtin_function st IsTrue [condition] in
   let condT = Exp.Temp id in
   let condition = if next_is then condT else Exp.Not condT in
   Ok
@@ -1235,65 +1255,65 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
           let st = State.push_stmt st stmt in
           Ok (st, None) )
   | "BINARY_ADD" ->
-      parse_op st (Exp.Binary Add) 2
+      parse_op st (Binary Add) 2
   | "BINARY_SUBTRACT" ->
-      parse_op st (Exp.Binary Subtract) 2
+      parse_op st (Binary Subtract) 2
   | "BINARY_AND" ->
-      parse_op st (Exp.Binary And) 2
+      parse_op st (Binary And) 2
   | "BINARY_FLOOR_DIVIDE" ->
-      parse_op st (Exp.Binary FloorDivide) 2
+      parse_op st (Binary FloorDivide) 2
   | "BINARY_LSHIFT" ->
-      parse_op st (Exp.Binary LShift) 2
+      parse_op st (Binary LShift) 2
   | "BINARY_MATRIX_MULTIPLY" ->
-      parse_op st (Exp.Binary MatrixMultiply) 2
+      parse_op st (Binary MatrixMultiply) 2
   | "BINARY_MODULO" ->
-      parse_op st (Exp.Binary Modulo) 2
+      parse_op st (Binary Modulo) 2
   | "BINARY_MULTIPLY" ->
-      parse_op st (Exp.Binary Multiply) 2
+      parse_op st (Binary Multiply) 2
   | "BINARY_OR" ->
-      parse_op st (Exp.Binary Or) 2
+      parse_op st (Binary Or) 2
   | "BINARY_POWER" ->
-      parse_op st (Exp.Binary Power) 2
+      parse_op st (Binary Power) 2
   | "BINARY_RSHIFT" ->
-      parse_op st (Exp.Binary RShift) 2
+      parse_op st (Binary RShift) 2
   | "BINARY_TRUE_DIVIDE" ->
-      parse_op st (Exp.Binary TrueDivide) 2
+      parse_op st (Binary TrueDivide) 2
   | "BINARY_XOR" ->
-      parse_op st (Exp.Binary Xor) 2
+      parse_op st (Binary Xor) 2
   | "INPLACE_ADD" ->
-      parse_op st (Exp.Inplace Add) 2
+      parse_op st (Inplace Add) 2
   | "INPLACE_SUBTRACT" ->
-      parse_op st (Exp.Inplace Subtract) 2
+      parse_op st (Inplace Subtract) 2
   | "INPLACE_AND" ->
-      parse_op st (Exp.Inplace And) 2
+      parse_op st (Inplace And) 2
   | "INPLACE_FLOOR_DIVIDE" ->
-      parse_op st (Exp.Inplace FloorDivide) 2
+      parse_op st (Inplace FloorDivide) 2
   | "INPLACE_LSHIFT" ->
-      parse_op st (Exp.Inplace LShift) 2
+      parse_op st (Inplace LShift) 2
   | "INPLACE_MATRIX_MULTIPLY" ->
-      parse_op st (Exp.Inplace MatrixMultiply) 2
+      parse_op st (Inplace MatrixMultiply) 2
   | "INPLACE_MODULO" ->
-      parse_op st (Exp.Inplace Modulo) 2
+      parse_op st (Inplace Modulo) 2
   | "INPLACE_MULTIPLY" ->
-      parse_op st (Exp.Inplace Multiply) 2
+      parse_op st (Inplace Multiply) 2
   | "INPLACE_OR" ->
-      parse_op st (Exp.Inplace Or) 2
+      parse_op st (Inplace Or) 2
   | "INPLACE_POWER" ->
-      parse_op st (Exp.Inplace Power) 2
+      parse_op st (Inplace Power) 2
   | "INPLACE_RSHIFT" ->
-      parse_op st (Exp.Inplace RShift) 2
+      parse_op st (Inplace RShift) 2
   | "INPLACE_TRUE_DIVIDE" ->
-      parse_op st (Exp.Inplace TrueDivide) 2
+      parse_op st (Inplace TrueDivide) 2
   | "INPLACE_XOR" ->
-      parse_op st (Exp.Inplace Xor) 2
+      parse_op st (Inplace Xor) 2
   | "UNARY_POSITIVE" ->
-      parse_op st (Exp.Unary Positive) 1
+      parse_op st (Unary Positive) 1
   | "UNARY_NEGATIVE" ->
-      parse_op st (Exp.Unary Negative) 1
+      parse_op st (Unary Negative) 1
   | "UNARY_NOT" ->
-      parse_op st (Exp.Unary Not) 1
+      parse_op st (Unary Not) 1
   | "UNARY_INVERT" ->
-      parse_op st (Exp.Unary Invert) 1
+      parse_op st (Unary Invert) 1
   | "MAKE_FUNCTION" ->
       make_function st arg
   | "BUILD_CONST_KEY_MAP" ->
@@ -1335,7 +1355,7 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let st = State.push st exp in
       Ok (st, None)
   | "LOAD_BUILD_CLASS" ->
-      let st = State.push st BuildClass in
+      let st = State.push st (BuiltinCaller BuildClass) in
       Ok (st, None)
   | "LOAD_METHOD" ->
       let name = co_names.(arg) in
@@ -1373,8 +1393,7 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       in
       let* rhs, st = State.pop st in
       let* lhs, st = State.pop st in
-      let exp = Exp.Compare cmp_op in
-      let* id, st = call_function_with_unnamed_args st exp [lhs; rhs] in
+      let id, st = call_builtin_function st (Compare cmp_op) [lhs; rhs] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "LOAD_CLOSURE" ->
