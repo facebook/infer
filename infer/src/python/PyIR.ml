@@ -11,6 +11,7 @@ module Debug = PyDebug
 module Builtin = PyBuiltin
 module SMap = PyCommon.SMap
 module SSet = PyCommon.SSet
+module IMap = PyCommon.IMap
 
 module Const = struct
   (** This module is a small layer above [FFI.Constant]. It turns all "byte" strings into strings,
@@ -231,6 +232,8 @@ module Exp = struct
     | LoadClosure of string  (** [LOAD_CLOSURE] *)
     | Format
     | FormatFn of format_function
+    | IsTrue
+    | Not of t
 
   let rec pp fmt = function
     | Const c ->
@@ -295,6 +298,10 @@ module Exp = struct
         F.pp_print_string fmt "$Format"
     | FormatFn fn ->
         F.fprintf fmt "$FormatFn.%s" (show_format_function fn)
+    | IsTrue ->
+        F.pp_print_string fmt "$IsTrue"
+    | Not exp ->
+        F.fprintf fmt "$Not(%a)" pp exp
 
 
   let as_short_string = function Const (String s) -> Some s | _ -> None
@@ -305,8 +312,9 @@ module Location = struct
 
   let of_instruction {FFI.Instruction.starts_line} = starts_line
 
-  let of_code {FFI.Code.instructions} =
-    match instructions with [] -> None | instr :: _ -> of_instruction instr
+  let of_instructions = function instr :: _ -> of_instruction instr | [] -> None
+
+  let of_code {FFI.Code.instructions} = of_instructions instructions
 end
 
 module Error = struct
@@ -325,6 +333,7 @@ module Error = struct
     | CompareOp of int
     | UnpackSequence of int
     | FormatValueSpec of Exp.t
+    | NextOffsetMissing
 
   type t = L.error * Location.t * kind
 
@@ -360,6 +369,8 @@ module Error = struct
         F.fprintf fmt "UNPACK_SEQUENCE: invalid count %d" n
     | FormatValueSpec exp ->
         F.fprintf fmt "FORMAT_VALUE: expected string literal, got %a" Exp.pp exp
+    | NextOffsetMissing ->
+        F.fprintf fmt "Jump to next instruction detected, but next instruction is missing"
 end
 
 module Stmt = struct
@@ -380,7 +391,6 @@ module Stmt = struct
   let unnamed_call_args args = List.map ~f:unnamed_call_arg args
 
   type t =
-    | Return of Exp.t
     | Assign of {lhs: Exp.t; rhs: Exp.t}
     | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list}
     | CallMethod of {lhs: SSA.t; call: Exp.t; args: Exp.t list}
@@ -388,8 +398,6 @@ module Stmt = struct
     | SetupAnnotations
 
   let pp fmt = function
-    | Return exp ->
-        F.fprintf fmt "return %a" Exp.pp exp
     | Assign {lhs; rhs} ->
         F.fprintf fmt "%a <- %a" Exp.pp lhs Exp.pp rhs
     | Call {lhs; exp; args} ->
@@ -403,13 +411,163 @@ module Stmt = struct
         F.pp_print_string fmt "$SETUP_ANNOTATIONS"
 end
 
+module Offset = struct
+  type t = int
+
+  let pp fmt n = F.pp_print_int fmt n
+
+  let of_code instructions =
+    match instructions with FFI.Instruction.{offset} :: _ -> Some offset | _ -> None
+
+
+  let get ~loc opt = Result.of_option ~error:(L.InternalError, loc, Error.NextOffsetMissing) opt
+end
+
+module Label = struct
+  type name = string
+
+  let pp_name fmt name = F.pp_print_string fmt name
+
+  type t = {name: name; arity: int; processed: bool}
+
+  let pp fmt {name; arity} = F.fprintf fmt "%s..%d" name arity
+
+  let mk name arity = {name; arity; processed= false}
+
+  let is_processed {processed} = processed
+
+  let process {name; arity} = {name; arity; processed= true}
+end
+
+module Jump = struct
+  type info = {label: Label.t; offset: Offset.t; ssa_args: Exp.t list}
+
+  let pp_info fmt {label; offset; ssa_args} =
+    F.fprintf fmt "JumpInfo(%a, %a, %d)" Label.pp label Offset.pp offset (List.length ssa_args)
+
+
+  type t =
+    | Label of info
+    | TwoWay of {condition: Exp.t; next_info: info; other_info: info}
+    | Return of Exp.t
+
+  let pp fmt = function
+    | Label info ->
+        F.fprintf fmt "Label(%a)" pp_info info
+    | TwoWay {condition; next_info; other_info} ->
+        F.fprintf fmt "TwoWay(%a, %a, %a)" Exp.pp condition pp_info next_info pp_info other_info
+    | Return ret ->
+        F.fprintf fmt "Return(%a)" Exp.pp ret
+end
+
+module Terminator = struct
+  type node_call = {label: Label.name; ssa_args: Exp.t list}
+
+  let pp_node_call fmt {label; ssa_args} =
+    Label.pp_name fmt label ;
+    if not (List.is_empty ssa_args) then F.fprintf fmt "(@[%a@])" (Pp.seq ~sep:", " Exp.pp) ssa_args
+
+
+  type t =
+    | Return of Exp.t
+    | Jump of node_call list  (** non empty list *)
+    | If of {exp: Exp.t; then_: t; else_: t}
+
+  let rec pp fmt = function
+    | Return exp ->
+        F.fprintf fmt "return %a" Exp.pp exp
+    | Jump lst ->
+        F.fprintf fmt "jmp %a" (Pp.seq ~sep:", " pp_node_call) lst
+    | If {exp; then_; else_} ->
+        F.fprintf fmt "if %a then @[%a@]@ else @[%a@]" Exp.pp exp pp then_ pp else_
+
+
+  let of_jump jump_info =
+    let node_info {Jump.label; ssa_args} =
+      let {Label.name} = label in
+      {label= name; ssa_args}
+    in
+    let jmp node = Jump [node_info node] in
+    match jump_info with
+    | `OneTarget info ->
+        jmp info
+    | `TwoTargets (exp, then_, else_) ->
+        let then_ = jmp then_ in
+        let else_ = jmp else_ in
+        If {exp; then_; else_}
+end
+
+module CFG = struct
+  type t = {labels: Label.t IMap.t; fresh_label: int}
+
+  let empty = {labels= IMap.empty; fresh_label= 0}
+
+  let fresh_label ({fresh_label} as cfg) =
+    let fresh = sprintf "b%d" fresh_label in
+    let cfg = {cfg with fresh_label= fresh_label + 1} in
+    (fresh, cfg)
+
+
+  let lookup_label {labels} offset = IMap.find_opt offset labels
+
+  let process_label ({labels} as cfg) offset =
+    match IMap.find_opt offset labels with
+    | None ->
+        (None, cfg)
+    | Some label ->
+        let label = Label.process label in
+        let labels = IMap.add offset label labels in
+        (Some label, {cfg with labels})
+
+
+  (** Helper to fetch label info if there's already one registered at the specified [offset], or
+      create a fresh one. *)
+  let get_label cfg offset ~ssa_args =
+    match lookup_label cfg offset with
+    | Some label ->
+        (label, cfg)
+    | None ->
+        let name, cfg = fresh_label cfg in
+        let arity = List.length ssa_args in
+        let label = Label.mk name arity in
+        (label, cfg)
+
+
+  let register_label ({labels} as cfg) ~offset label =
+    let labels = IMap.add offset label labels in
+    {cfg with labels}
+end
+
+module Node = struct
+  (** Linear block of code, without any jump. Starts with a label definition and ends with a
+      terminator (jump, return, ...) *)
+  type t =
+    { label: Label.t
+    ; label_loc: Location.t
+    ; last_loc: Location.t
+    ; stmts: (Location.t * Stmt.t) list
+    ; last: Terminator.t }
+
+  let pp fmt {label; stmts; last} =
+    let {Label.name; arity} = label in
+    F.fprintf fmt "@[<hv2>#%s" name ;
+    ( if arity > 0 then
+        let ids = List.init arity ~f:(fun i -> sprintf "n%d" i) in
+        let s = String.concat ~sep:", " ids in
+        F.fprintf fmt "(%s)" s ) ;
+    F.fprintf fmt ":@\n" ;
+    List.iter stmts ~f:(fun (_, stmt) -> F.fprintf fmt "@[<hv2>%a@]@\n" Stmt.pp stmt) ;
+    F.fprintf fmt "%a@\n" Terminator.pp last ;
+    F.fprintf fmt "@]@\n"
+end
+
 module Object = struct
   (** Everything in Python is an [Object]. A function is an [Object], a class is an [Object]. We
       will refine these into functions, classes and closures during the translation to Textual. *)
 
   type t =
     { name: Ident.t
-    ; toplevel: (Location.t * Stmt.t) list
+    ; toplevel: Node.t list
     ; objects: (Location.t * t) list (* TODO: maybe turn this into a map using classes/functions *)
     ; classes: SSet.t
     ; functions: Ident.t SMap.t }
@@ -418,7 +576,7 @@ module Object = struct
     F.fprintf fmt "@[<hv2>object %a:@\n" Ident.pp name ;
     if not (List.is_empty toplevel) then (
       F.fprintf fmt "@[<hv2>code:@\n" ;
-      List.iter toplevel ~f:(fun (_, stmt) -> F.fprintf fmt "@[<hv2>%a@]@\n" Stmt.pp stmt) ;
+      List.iter toplevel ~f:(F.fprintf fmt "@[<hv2>%a@]@\n" Node.pp) ;
       F.fprintf fmt "@]@\n" ) ;
     if not (List.is_empty objects) then (
       F.fprintf fmt "@[<hv2>objects:@\n" ;
@@ -431,7 +589,7 @@ module Object = struct
     if not (SMap.is_empty functions) then (
       F.fprintf fmt "@[<hv2>functions:@\n" ;
       SMap.iter (fun short long -> F.fprintf fmt "@[%s -> %a@]@\n" short Ident.pp long) functions ;
-      F.fprintf fmt "@]@\n" )
+      F.fprintf fmt "@]" )
 end
 
 module Module = struct
@@ -447,6 +605,7 @@ module State = struct
     { module_name: Ident.t
     ; debug: bool
     ; loc: Location.t
+    ; cfg: CFG.t
     ; global_names: Ident.t SMap.t  (** Translation cache for global names *)
     ; stack: Exp.t list
     ; stmts: (Location.t * Stmt.t) list
@@ -484,6 +643,7 @@ module State = struct
     { module_name
     ; debug
     ; loc
+    ; cfg= CFG.empty
     ; global_names= known_global_names
     ; stack= []
     ; stmts= []
@@ -516,29 +676,29 @@ module State = struct
         SMap.find_opt name global_names
 
 
+  let debug {debug} = if debug then Debug.todo else Debug.p
+
   (** Python can look up names in the current namespace, or directly in the global namespace, which
       is why we keep them separated *)
-  let resolve_name ~global ({debug; names; global_names} as st) name =
+  let resolve_name ~global ({names; global_names} as st) name =
     let global = global || is_toplevel st in
-    let debug = if debug then Debug.todo else Debug.p in
-    debug "resolve_name global= %b name= %s" global name ;
+    debug st "resolve_name global= %b name= %s" global name ;
     let res =
       if global then SMap.find_opt name global_names else resolve_local_name names global_names name
     in
     match res with
     | Some id ->
-        debug " -> %a@\n" Ident.pp id ;
+        debug st " -> %a@\n" Ident.pp id ;
         id
     | None ->
-        debug " -> Not found@\n" ;
+        debug st " -> Not found@\n" ;
         let prefix = Ident.mk "$unknown" in
         Ident.extend prefix name
 
 
-  let register_name ~global ({debug; names; global_names} as st) name id =
+  let register_name ~global ({names; global_names} as st) name id =
     let global = global || is_toplevel st in
-    let debug = if debug then Debug.todo else Debug.p in
-    debug "register_name global= %b name= %s id= %a@\n" global name Ident.pp id ;
+    debug st "register_name global= %b name= %s id= %a@\n" global name Ident.pp id ;
     if global then
       let global_names = SMap.add name id global_names in
       {st with global_names}
@@ -582,6 +742,69 @@ module State = struct
   let register_class ({classes} as st) cls = {st with classes= SSet.add cls classes}
 
   let register_function ({functions} as st) name fn = {st with functions= SMap.add name fn functions}
+
+  (** When reaching a jump instruction, turn the stack into ssa variables *)
+  let to_ssa ({stack} as st) =
+    let st = {st with stack= []} in
+    (stack, st)
+
+
+  let register_label ({cfg} as st) ~offset label =
+    debug st "register_label %d %a@\n" offset Label.pp label ;
+    let cfg = CFG.register_label cfg ~offset label in
+    {st with cfg}
+
+
+  let starts_with_jump_target {cfg} = function
+    | [] ->
+        None
+    | {FFI.Instruction.offset; is_jump_target} :: _ -> (
+      match CFG.lookup_label cfg offset with
+      | Some label ->
+          if Label.is_processed label then None else Some (offset, label)
+      | None ->
+          if is_jump_target then L.die InternalError "TODO: support back-edges" else None )
+
+
+  let lookup_label {cfg} offset = CFG.lookup_label cfg offset
+
+  let get_label ({cfg} as st) offset ~ssa_args =
+    let label, cfg = CFG.get_label cfg offset ~ssa_args in
+    let st = {st with cfg} in
+    (label, st)
+
+
+  let process_label ({cfg} as st) offset =
+    let opt, cfg = CFG.process_label cfg offset in
+    ( match opt with
+    | None ->
+        debug st "process_label at %a: no label found\n" Offset.pp offset
+    | Some label ->
+        debug st "process_label %a at %a\n" Label.pp label Offset.pp offset ) ;
+    {st with cfg}
+
+
+  let fresh_label ({cfg} as st) =
+    let fresh_label, cfg = CFG.fresh_label cfg in
+    let st = {st with cfg} in
+    (fresh_label, st)
+
+
+  let enter_node st {Label.arity} =
+    let rec mk st n =
+      if n > 0 then
+        let i, st = fresh_id st in
+        let st = push st (Exp.Temp i) in
+        mk st (n - 1)
+      else st
+    in
+    let st = mk st arity in
+    {st with stmts= []}
+
+
+  let drain_stmts ({stmts} as st) =
+    let st = {st with stmts= []} in
+    (List.rev stmts, st)
 end
 
 let error kind {State.loc} err = Error (kind, loc, err)
@@ -599,7 +822,7 @@ let parse_op st exp n =
   let stmt = Stmt.Call {lhs; exp; args} in
   let st = State.push_stmt st stmt in
   let st = State.push st (Exp.Temp lhs) in
-  Ok st
+  Ok (st, None)
 
 
 (** Helper to compile the BUILD_ opcodes into IR *)
@@ -608,7 +831,7 @@ let build_collection st kind count =
   let* values, st = State.pop_n st count in
   let exp = Exp.Collection {kind; values} in
   let st = State.push st exp in
-  Ok st
+  Ok (st, None)
 
 
 let make_function st flags =
@@ -675,7 +898,7 @@ let make_function st flags =
   let exp = Exp.Function {annotations; qualname; code} in
   let st = State.push st exp in
   let st = State.register_function st fn qualname in
-  Ok st
+  Ok (st, None)
 
 
 let call_function_with_unnamed_args st exp args =
@@ -720,11 +943,11 @@ let call_function st arg =
       let st = State.register_class st short_name in
       let exp = Exp.Class args in
       let st = State.push st exp in
-      Ok st
+      Ok (st, None)
   | _ ->
       let* id, st = call_function_with_unnamed_args st fun_exp args in
       let st = State.push st (Exp.Temp id) in
-      Ok st
+      Ok (st, None)
 
 
 let import_name st name =
@@ -782,7 +1005,7 @@ let import_name st name =
   let stmt = Stmt.ImportName import_name in
   (* Keeping them as a statement so IR -> Textual can correctly generate the toplevel/side-effect call *)
   let st = State.push_stmt st stmt in
-  Ok st
+  Ok (st, None)
 
 
 let import_from st name =
@@ -800,7 +1023,7 @@ let import_from st name =
     L.user_warning "Import from / name mismatch: cannot find '%s'@\n" name ;
   let exp = Exp.ImportFrom {from; name} in
   let st = State.push st exp in
-  Ok st
+  Ok (st, None)
 
 
 let target_of_import ~default exp =
@@ -829,7 +1052,7 @@ let unpack_sequence st count =
   in
   let* () = if count <= 0 then external_error st (Error.UnpackSequence count) else Ok () in
   let st = unpack st (count - 1) in
-  Ok st
+  Ok (st, None)
 
 
 let format_value st flags =
@@ -872,50 +1095,72 @@ let format_value st flags =
   in
   let* id, st = call_function_with_unnamed_args st Exp.Format [exp; fmt_spec] in
   let st = State.push st (Exp.Temp id) in
-  Ok st
+  Ok (st, None)
+
+
+let pop_jump_if ~next_is st target next_offset_opt =
+  let open IResult.Let_syntax in
+  let {State.loc} = st in
+  let* condition, st = State.pop st in
+  (* Turn the stack into SSA parameters *)
+  let ssa_args, st = State.to_ssa st in
+  let* next_offset = Offset.get ~loc next_offset_opt in
+  let next_label, st = State.get_label st next_offset ~ssa_args in
+  let other_label, st = State.get_label st target ~ssa_args in
+  (* Compute the relevant pruning expressions *)
+  let* id, st = call_function_with_unnamed_args st Exp.IsTrue [condition] in
+  let condT = Exp.Temp id in
+  let condition = if next_is then condT else Exp.Not condT in
+  Ok
+    ( st
+    , Some
+        (Jump.TwoWay
+           { condition
+           ; next_info= {label= next_label; offset= next_offset; ssa_args}
+           ; other_info= {label= other_label; offset= target; ssa_args} } ) )
 
 
 let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; co_freevars}
-    {FFI.Instruction.opname; starts_line; arg} =
+    {FFI.Instruction.opname; starts_line; arg} next_offset_opt =
   let open IResult.Let_syntax in
-  let debug =
-    let {State.debug} = st in
-    if debug then Debug.todo else Debug.p
+  let st =
+    if Option.is_some starts_line then (
+      State.debug st "@\n" ;
+      State.debug st ".line %d@\n" (Option.value_exn starts_line) ;
+      {st with State.loc= starts_line} )
+    else st
   in
-  if Option.is_some starts_line then (
-    debug "@\n" ;
-    debug ".line %d@\n" (Option.value_exn starts_line) ) ;
-  debug "%s %d (0x%x)@\n" opname arg arg ;
+  State.debug st "%s %d (0x%x)@\n" opname arg arg ;
   match opname with
   | "LOAD_CONST" ->
       let c = co_consts.(arg) in
       let c = Const.from_const c in
       let exp = Exp.Const c in
       let st = State.push st exp in
-      Ok st
+      Ok (st, None)
   | "LOAD_NAME" ->
       let name = co_names.(arg) in
       let target = State.resolve_name ~global:false st name in
       let exp = Exp.Var target in
       let st = State.push st exp in
-      Ok st
+      Ok (st, None)
   | "LOAD_GLOBAL" ->
       let name = co_names.(arg) in
       let target = State.resolve_name ~global:true st name in
       let exp = Exp.Var target in
       let st = State.push st exp in
-      Ok st
+      Ok (st, None)
   | "LOAD_FAST" ->
       let name = co_varnames.(arg) in
       let exp = Exp.LocalVar name in
       let st = State.push st exp in
-      Ok st
+      Ok (st, None)
   | "LOAD_ATTR" ->
       let name = co_names.(arg) in
       let* tos, st = State.pop st in
       let exp = Exp.GetAttr (tos, name) in
       let st = State.push st exp in
-      Ok st
+      Ok (st, None)
   | "STORE_NAME" ->
       let name = co_names.(arg) in
       let {State.module_name} = st in
@@ -926,7 +1171,7 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let target = target_of_import rhs ~default:target in
       let st = State.register_name ~global:false st name target in
       let st = State.push_stmt st stmt in
-      Ok st
+      Ok (st, None)
   | "STORE_GLOBAL" ->
       let name = co_names.(arg) in
       let {State.module_name} = st in
@@ -938,14 +1183,14 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let target = target_of_import rhs ~default:target in
       let st = State.register_name ~global:true st name target in
       let st = State.push_stmt st stmt in
-      Ok st
+      Ok (st, None)
   | "STORE_FAST" ->
       let name = co_varnames.(arg) in
       let lhs = Exp.LocalVar name in
       let* rhs, st = State.pop st in
       let stmt = Stmt.Assign {lhs; rhs} in
       let st = State.push_stmt st stmt in
-      Ok st
+      Ok (st, None)
   | "STORE_ATTR" ->
       let name = co_names.(arg) in
       let* root, st = State.pop st in
@@ -953,7 +1198,7 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let lhs = Exp.GetAttr (root, name) in
       let stmt = Stmt.Assign {lhs; rhs} in
       let st = State.push_stmt st stmt in
-      Ok st
+      Ok (st, None)
   | "STORE_SUBSCR" ->
       (* Implements TOS1[TOS] = TOS2.  *)
       let* index, st = State.pop st in
@@ -962,12 +1207,10 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let lhs = Exp.Subscript {exp; index} in
       let stmt = Stmt.Assign {lhs; rhs} in
       let st = State.push_stmt st stmt in
-      Ok st
+      Ok (st, None)
   | "RETURN_VALUE" ->
       let* ret, st = State.pop st in
-      let stmt = Stmt.Return ret in
-      let st = State.push_stmt st stmt in
-      Ok st
+      Ok (st, Some (Jump.Return ret))
   | "CALL_FUNCTION" ->
       call_function st arg
   | "POP_TOP" -> (
@@ -979,12 +1222,12 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
          then popped. The translation to textual will use the statement
          version do deal with their side effect at the right location *)
       | Temp _ ->
-          Ok st
+          Ok (st, None)
       | _ ->
           let id, st = State.fresh_id st in
           let stmt = Stmt.Assign {lhs= Exp.Temp id; rhs} in
           let st = State.push_stmt st stmt in
-          Ok st )
+          Ok (st, None) )
   | "BINARY_ADD" ->
       parse_op st (Exp.Binary Add) 2
   | "BINARY_SUBTRACT" ->
@@ -1066,7 +1309,7 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
         List.fold2_exn ~init:ConstMap.empty ~f:(fun map key ty -> ConstMap.add key ty map) keys tys
       in
       let st = State.push st (Exp.ConstMap map) in
-      Ok st
+      Ok (st, None)
   | "BUILD_LIST" ->
       build_collection st List arg
   | "BUILD_SET" ->
@@ -1084,16 +1327,16 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let* exp, st = State.pop st in
       let exp = Exp.Subscript {exp; index} in
       let st = State.push st exp in
-      Ok st
+      Ok (st, None)
   | "LOAD_BUILD_CLASS" ->
       let st = State.push st BuildClass in
-      Ok st
+      Ok (st, None)
   | "LOAD_METHOD" ->
       let name = co_names.(arg) in
       let* tos, st = State.pop st in
       let exp = Exp.LoadMethod (tos, name) in
       let st = State.push st exp in
-      Ok st
+      Ok (st, None)
   | "CALL_METHOD" ->
       let* args, st = State.pop_n st arg in
       let* call, st = State.pop st in
@@ -1101,13 +1344,13 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let stmt = Stmt.CallMethod {lhs; call; args} in
       let st = State.push_stmt st stmt in
       let st = State.push st (Exp.Temp lhs) in
-      Ok st
+      Ok (st, None)
   | "SETUP_ANNOTATIONS" ->
       let {State.module_name} = st in
       let annotations = Ident.extend module_name PyCommon.annotations in
       let st = State.register_name ~global:false st PyCommon.annotations annotations in
       let st = State.push_stmt st SetupAnnotations in
-      Ok st
+      Ok (st, None)
   | "IMPORT_NAME" ->
       let name = co_names.(arg) in
       import_name st name
@@ -1127,7 +1370,7 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let exp = Exp.Compare cmp_op in
       let* id, st = call_function_with_unnamed_args st exp [lhs; rhs] in
       let st = State.push st (Exp.Temp id) in
-      Ok st
+      Ok (st, None)
   | "LOAD_CLOSURE" ->
       let cell =
         let sz = Array.length co_cellvars in
@@ -1136,37 +1379,118 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       (* We currently do nothing. It will be up to the IR -> Textual step to deal with these *)
       let exp = Exp.LoadClosure cell in
       let st = State.push st exp in
-      Ok st
+      Ok (st, None)
   | "DUP_TOP" ->
       let* tos = State.peek st in
       let st = State.push st tos in
-      Ok st
+      Ok (st, None)
   | "UNPACK_SEQUENCE" ->
       unpack_sequence st arg
   | "FORMAT_VALUE" ->
       format_value st arg
+  | "POP_JUMP_IF_TRUE" ->
+      pop_jump_if ~next_is:false st arg next_offset_opt
+  | "POP_JUMP_IF_FALSE" ->
+      pop_jump_if ~next_is:true st arg next_offset_opt
   | _ ->
       internal_error st (Error.UnsupportedOpcode opname)
 
 
-let rec mk_stmts st code instructions =
+let rec parse_bytecode_until_terminator ({State.loc} as st) code instructions =
   let open IResult.Let_syntax in
-  match instructions with
-  | [] ->
-      Ok st
-  | instr :: instructions ->
-      let loc = Location.of_instruction instr in
-      let st = if Option.is_some loc then {st with State.loc} else st in
-      let* st = parse_bytecode st code instr in
-      let* st = mk_stmts st code instructions in
-      Ok st
+  let label_info = State.starts_with_jump_target st instructions in
+  match label_info with
+  | Some (_offset, label) ->
+      (* If the analysis reached a known jump target, stop processing the node. *)
+      let ssa_args, st = State.to_ssa st in
+      let* offset = Offset.of_code instructions |> Offset.get ~loc in
+      let info = {Jump.label; offset; ssa_args} in
+      Ok (st, Some (Jump.Label info), instructions)
+  | None -> (
+    (* Otherwise, continue the analysis of the bytecode *)
+    match instructions with
+    | [] ->
+        Ok (st, None, [])
+    | instr :: remaining ->
+        let next_offset_opt = Offset.of_code remaining in
+        let* st, terminator = parse_bytecode st code instr next_offset_opt in
+        if Option.is_some terminator then Ok (st, terminator, remaining)
+        else parse_bytecode_until_terminator st code remaining )
+
+
+let mk_node st label code instructions =
+  let open IResult.Let_syntax in
+  let label_loc = Location.of_instructions instructions in
+  let st = State.enter_node st label in
+  let* st, jump_op, instructions = parse_bytecode_until_terminator st code instructions in
+  let stmts, st = State.drain_stmts st in
+  let {State.loc= last_loc} = st in
+  let jump_op =
+    match jump_op with
+    | None ->
+        (* Unreachable: Python inserts [return None] at the end of any block
+           without an explicit returns *)
+        L.die ExternalError "mk_node: reached the EOF without a terminator"
+    | Some jump_op ->
+        jump_op
+  in
+  State.debug st "Terminator: %a\n" Jump.pp jump_op ;
+  match (jump_op : Jump.t) with
+  | Return ret ->
+      let last = Terminator.Return ret in
+      let node = {Node.label; last; stmts; last_loc; label_loc} in
+      Ok (st, instructions, node)
+  | Label ({offset} as info) ->
+      (* Current invariant, might/will change with the introduction of * back-edges *)
+      let opt = State.lookup_label st offset in
+      assert (Option.is_some opt) ;
+      (* A label was spotted after a non Terminator instruction. Insert a jump to this label to
+         create a proper node, and resume the processing. *)
+      let last = Terminator.of_jump (`OneTarget info) in
+      let node = {Node.label; last; stmts; last_loc; label_loc} in
+      Ok (st, instructions, node)
+  | TwoWay {condition; next_info; other_info} ->
+      let {Jump.label= next_label; offset= next_offset} = next_info in
+      let {Jump.label= other_label; offset= other_offset} = other_info in
+      (* The current node ended up with a two-way jump. Either continue to the "next"
+         (fall-through) part of the code, or jump to the "other" section of the code. For this
+         purpose, register a fresh label for the jump. *)
+      let st = State.register_label st ~offset:next_offset next_label in
+      let st = State.register_label st ~offset:other_offset other_label in
+      (* Register the jump target *)
+      let last = Terminator.of_jump (`TwoTargets (condition, next_info, other_info)) in
+      let node = {Node.label; last; stmts; last_loc; label_loc} in
+      Ok (st, instructions, node)
+
+
+let rec mk_nodes st label code instructions =
+  let open IResult.Let_syntax in
+  let* st, instructions, node = mk_node st label code instructions in
+  if List.is_empty instructions then Ok (st, [node])
+  else
+    let label, st =
+      (* If the next instruction has a label, use it, otherwise pick a fresh one. *)
+      let label_info = State.starts_with_jump_target st instructions in
+      match label_info with
+      | Some (offset, label) ->
+          let st = State.process_label st offset in
+          (label, st)
+      | None ->
+          let label_name, st = State.fresh_label st in
+          (Label.mk label_name 0, st)
+    in
+    let* st, nodes = mk_nodes st label code instructions in
+    Ok (st, node :: nodes)
 
 
 let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
   let open IResult.Let_syntax in
   let {State.module_name; loc} = st in
-  let* ({State.stmts; classes; functions} as st) = mk_stmts st code instructions in
-  let toplevel = List.rev stmts in
+  let fresh_label, st = State.fresh_label st in
+  let label = Label.mk fresh_label 0 in
+  let st = State.register_label st ~offset:0 label in
+  let st = State.process_label st 0 in
+  let* ({State.classes; functions} as st), nodes = mk_nodes st label code instructions in
   let* objects =
     Array.fold_result co_consts ~init:[] ~f:(fun objects constant ->
         match constant with
@@ -1181,7 +1505,7 @@ let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
             Ok objects )
   in
   let objects = List.rev objects in
-  Ok (loc, {Object.name= module_name; toplevel; objects; classes; functions})
+  Ok (loc, {Object.name= module_name; toplevel= nodes; objects; classes; functions})
 
 
 let mk ~debug ({FFI.Code.co_filename} as code) =
