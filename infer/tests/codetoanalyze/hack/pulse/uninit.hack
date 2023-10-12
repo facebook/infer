@@ -38,3 +38,23 @@ abstract class RetField {
 function call_get_ret_field_bad_FN(): string {
   return RetField::get_ret_field();
 }
+
+trait MyTrait {
+  require extends A;
+
+  public static function get_field_from_trait(): string {
+    return static::FIELD;
+  }
+}
+
+abstract class AbstractUseTrait extends A {
+  use MyTrait;
+
+  public static function self_get_field(): string {
+    return self::get_field_from_trait();
+  }
+}
+
+function call_self_get_field_Bad_FN(): string {
+  return AbstractUseTrait::self_get_field();
+}
