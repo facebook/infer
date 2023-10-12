@@ -192,7 +192,6 @@ module BuiltinCaller = struct
     | BuildClass  (** [LOAD_BUILD_CLASS] *)
     | Format
     | FormatFn of format_function
-    | IsTrue
     | Inplace of Builtin.binary_op
     | Binary of Builtin.binary_op
     | Unary of Builtin.unary_op
@@ -209,8 +208,6 @@ module BuiltinCaller = struct
         F.pp_print_string fmt "$Format"
     | FormatFn fn ->
         F.fprintf fmt "$FormatFn.%s" (show_format_function fn)
-    | IsTrue ->
-        F.pp_print_string fmt "$IsTrue"
     | Binary op ->
         let op = show_binary op in
         F.fprintf fmt "$Binary.%s" op
@@ -1147,15 +1144,43 @@ let pop_jump_if ~next_is st target next_offset_opt =
   let next_label, st = State.get_label st next_offset ~ssa_parameters:next_ssa in
   let other_label, st = State.get_label st target ~ssa_parameters:other_ssa in
   (* Compute the relevant pruning expressions *)
-  let id, st = call_builtin_function st IsTrue [condition] in
-  let condT = Exp.Temp id in
-  let condition = if next_is then condT else Exp.Not condT in
+  let condition = if next_is then condition else Exp.Not condition in
   Ok
     ( st
     , Some
         (Jump.TwoWay
            { condition
            ; next_info= {label= next_label; offset= next_offset; ssa_args}
+           ; other_info= {label= other_label; offset= target; ssa_args} } ) )
+
+
+let jump_if_or_pop st ~jump_if target next_offset_opt =
+  let open IResult.Let_syntax in
+  let {State.loc} = st in
+  (* We only peek the top of stack so the logic of [to_ssa] correctly captures it for
+     the branch where "it stays". It will be restored as part of the stack restore logic when
+     we process the "other" node. *)
+  let* condition = State.peek st in
+  let condition = if jump_if then Exp.Not condition else condition in
+  let arity = State.size st in
+  let ssa_args, st = State.to_ssa st in
+  let next_ssa, st = State.mk_ssa_parameters st arity in
+  let other_ssa, st = State.mk_ssa_parameters st arity in
+  let* next_offset = Offset.get ~loc next_offset_opt in
+  (* In the next branch, we make sure the top-of-stack is no longer in the ssa parameters
+     so it is not restored, effectively dropped as per the opcode description. *)
+  let next_label, st =
+    let ssa_parameters = List.tl next_ssa |> Option.value ~default:[] in
+    State.get_label st next_offset ~ssa_parameters
+  in
+  let next_ssa_args = List.tl ssa_args |> Option.value ~default:[] in
+  let other_label, st = State.get_label st target ~ssa_parameters:other_ssa in
+  Ok
+    ( st
+    , Some
+        (Jump.TwoWay
+           { condition
+           ; next_info= {label= next_label; offset= next_offset; ssa_args= next_ssa_args}
            ; other_info= {label= other_label; offset= target; ssa_args} } ) )
 
 
@@ -1509,6 +1534,10 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       Ok (st, None)
   | "FOR_ITER" ->
       for_iter st arg next_offset_opt
+  | "JUMP_IF_TRUE_OR_POP" ->
+      jump_if_or_pop ~jump_if:true st arg next_offset_opt
+  | "JUMP_IF_FALSE_OR_POP" ->
+      jump_if_or_pop ~jump_if:false st arg next_offset_opt
   | _ ->
       internal_error st (Error.UnsupportedOpcode opname)
 
