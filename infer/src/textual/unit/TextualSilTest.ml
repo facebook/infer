@@ -380,7 +380,7 @@ let%expect_test "const" =
      .source_language = "hack"
 
      type Uninit::A$static = .kind="class" .static {
-       FIELD: .public .__Infer_Constant__ *HackMixed
+       FIELD: .public .constant *HackMixed
      }
      |}
   in

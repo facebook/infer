@@ -201,7 +201,7 @@ module Attr = struct
 
   let is_async {name; values} = String.equal name "async" && List.is_empty values
 
-  let is_const {name; values} = String.equal name "__Infer_Constant__" && List.is_empty values
+  let is_const {name; values} = String.equal name "constant" && List.is_empty values
 
   let is_curry {name; values} = String.equal name "curry" && List.is_empty values
 
