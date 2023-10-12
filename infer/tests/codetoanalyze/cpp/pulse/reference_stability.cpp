@@ -503,3 +503,11 @@ void folly_fastmap_cbegin_bad(folly::F14FastMap<int, int>& map) {
   map.clear();
   const auto keyCopy = it->first;
 }
+
+void folly_fastmap_iterator_increment_bad(folly::F14FastMap<int, int>& map) {
+  auto it = map.begin();
+  ++it;
+  const auto& valueRef = it->second;
+  map.clear();
+  const auto valueCopy = valueRef;
+}

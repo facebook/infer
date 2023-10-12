@@ -869,7 +869,9 @@ let map_matchers =
                  (Format.asprintf "folly::f14::detail::%s::operator->" it)
         ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator*" <>$ capt_arg_payload
           $--> GenericMapCollection.iterator_star
-                 (Format.asprintf "folly::f14::detail::%s::operator*" it) ] )
+                 (Format.asprintf "folly::f14::detail::%s::operator*" it)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator++" <>$ any_arg
+          $+...$--> Basic.skip ] )
   in
   folly_matchers @ folly_iterator_matchers
 
