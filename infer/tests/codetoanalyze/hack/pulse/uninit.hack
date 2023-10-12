@@ -13,7 +13,7 @@ abstract class A {
   }
 }
 
-function call_get_field_bad(): string {
+function call_get_field_bad_FN(): string {
   return A::get_field();
 }
 

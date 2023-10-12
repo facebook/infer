@@ -21,7 +21,7 @@ class Variadic {
     self::variadicArgInSink(0, ...$args);
   }
 
-  public static function FN_callVariadicWith2ArgsBad(int $i) : void {
+  public static function callVariadicWith2ArgsBad(int $i) : void {
     self::variadicArgInSink(0, \Level1\taintSource());
   }
 
