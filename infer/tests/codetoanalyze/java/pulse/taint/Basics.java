@@ -241,4 +241,12 @@ public class Basics {
   void FP_returnedFromSanitizedTaintedToSinkOk() {
     InferTaint.inferSensitiveSink(inferUniversalSanitizer());
   }
+
+  void taintOnUnrelatedBoolOk(boolean notTaintedFlag) {
+    boolean taintedFlag = (boolean) InferTaint.inferSecretSource();
+    boolean uberFlag = notTaintedFlag || taintedFlag;
+    if (!uberFlag) {
+      InferTaint.inferSensitiveSink(notTaintedFlag);
+    }
+  }
 }
