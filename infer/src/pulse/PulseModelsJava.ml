@@ -559,6 +559,38 @@ module Integer = struct
        assign_ret res
 end
 
+module Boolean = struct
+  let internal_boolean = mk_java_field "java.lang" "Boolean" "__infer_model_backing_boolean"
+
+  let init this init_value : model =
+    let open DSL.Syntax in
+    start_model @@ write_deref_field ~ref:this internal_boolean ~obj:init_value
+
+
+  let equals this arg : model =
+    let open DSL.Syntax in
+    start_model
+    @@ let* this_boolean = eval_deref_access Read this (FieldAccess internal_boolean) in
+       let* arg_boolean = eval_deref_access Read arg (FieldAccess internal_boolean) in
+       let* res = eval_binop Eq this_boolean arg_boolean in
+       assign_ret res
+
+
+  let boolean_val this : model =
+    let open DSL.Syntax in
+    start_model
+    @@ let* this_bool = eval_deref_access Read this (FieldAccess internal_boolean) in
+       assign_ret this_bool
+
+
+  let value_of init_value : model =
+    let open DSL.Syntax in
+    start_model
+    @@ let* res = mk_fresh ~model_desc:"Boolean.valueOf" in
+       let* () = lift_to_monad (init res init_value) in
+       assign_ret res
+end
+
 module Preconditions = struct
   let check_not_null (address, hist) : model =
    fun {location; path; ret= ret_id, _} astate ->
@@ -739,6 +771,14 @@ let matchers : matcher list =
     &:: "intValue" <>$ capt_arg_payload $--> Integer.int_val
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Integer")
     &:: "valueOf" <>$ capt_arg_payload $--> Integer.value_of
+  ; +map_context_tenv (PatternMatch.Java.implements_lang "Boolean")
+    &:: "<init>" $ capt_arg_payload $+ capt_arg_payload $--> Boolean.init
+  ; +map_context_tenv (PatternMatch.Java.implements_lang "Boolean")
+    &:: "equals" $ capt_arg_payload $+ capt_arg_payload $--> Boolean.equals
+  ; +map_context_tenv (PatternMatch.Java.implements_lang "Boolean")
+    &:: "booleanValue" <>$ capt_arg_payload $--> Boolean.boolean_val
+  ; +map_context_tenv (PatternMatch.Java.implements_lang "Boolean")
+    &:: "valueOf" <>$ capt_arg_payload $--> Boolean.value_of
   ; +map_context_tenv (PatternMatch.Java.implements_google "common.base.Preconditions")
     &:: "checkNotNull" $ capt_arg_payload $+...$--> Preconditions.check_not_null
   ; +map_context_tenv (PatternMatch.Java.implements_google "common.base.Preconditions")
