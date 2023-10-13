@@ -53,7 +53,9 @@ let build ~changed_files =
           | Some deps ->
               Procname.HashSet.add proc_name deps
           | None ->
-              Procname.HashSet.singleton proc_name |> SourceFile.Hash.add tenv_deps src_file ) ) ;
+              Procname.HashSet.singleton proc_name |> SourceFile.Hash.add tenv_deps src_file ) ;
+      (* Ensure proc_name is part of the graph if it has not been referenced yet *)
+      if not (CallGraph.mem_procname graph proc_name) then CallGraph.create_node graph proc_name [] ) ;
   (* Then, flag in [graph] any procedure with a summary depending (transitively) on either (1) a
      deleted procedure, (2) the tenv of a changed file or (3) the summary of a changed procedure. *)
   List.iter !deleted_procs ~f:(CallGraph.flag_reachable graph) ;
