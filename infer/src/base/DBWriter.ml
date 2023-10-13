@@ -141,7 +141,8 @@ module Implementation = struct
       if not (ISys.file_exists db_file) then
         L.die InternalError "Tried to merge in DB at %s but path does not exist.@\n" db_file ;
       let main_db = Database.get_database CaptureDatabase in
-      SqliteUtils.with_attached_db main_db ~db_file ~db_name:"attached" ~f:(fun () ->
+      SqliteUtils.with_attached_db main_db ~db_file ~db_name:"attached" ~immutable:true
+        ~f:(fun () ->
           merge_procedures_table ~db:CaptureDatabase ~to_db:"memdb" ~db_file ;
           merge_source_files_table ~db_file )
     in
