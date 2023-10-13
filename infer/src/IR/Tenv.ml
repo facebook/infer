@@ -128,6 +128,22 @@ let implements_remodel_class tenv name =
       mem_supers tenv name ~f:(fun name _ -> Typ.Name.equal name remodel_class) )
 
 
+let get_fields_trans =
+  let module Fields = Caml.Set.Make (struct
+    type t = Struct.field
+
+    let compare (x, _, _) (y, _, _) =
+      String.compare (Fieldname.get_field_name x) (Fieldname.get_field_name y)
+  end) in
+  fun tenv name ->
+    fold_supers tenv name ~init:Fields.empty ~f:(fun _ struct_opt acc ->
+        Option.fold struct_opt ~init:acc ~f:(fun acc {Struct.fields} ->
+            List.fold fields ~init:acc ~f:(fun acc (fieldname, typ, annot) ->
+                let fieldname = Fieldname.make name (Fieldname.get_field_name fieldname) in
+                Fields.add (fieldname, typ, annot) acc ) ) )
+    |> Fields.elements
+
+
 type per_file = Global | FileLocal of t
 
 let pp_per_file fmt = function

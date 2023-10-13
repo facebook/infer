@@ -55,6 +55,6 @@ abstract class AbstractUseTrait extends A {
   }
 }
 
-function call_self_get_field_Bad_FN(): string {
+function call_self_get_field_Bad(): string {
   return AbstractUseTrait::self_get_field();
 }

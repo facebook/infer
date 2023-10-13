@@ -1431,7 +1431,7 @@ let set_uninitialize_prop path tenv ({ProcAttributes.loc} as proc_attrs) astate 
   if Procname.is_hack_sinit pname then
     let ( let* ) x f = match x with None -> astate | Some x -> f x in
     let* name = Procname.get_class_type_name pname in
-    let* {Struct.fields} = Tenv.lookup tenv name in
+    let fields = Tenv.get_fields_trans tenv name in
     let class_global_var = PulseModelsHack.get_static_companion_var name in
     let typ = Typ.mk_struct name in
     List.fold fields ~init:astate ~f:(fun astate (fld, {Typ.quals= fld_quals}, _) ->

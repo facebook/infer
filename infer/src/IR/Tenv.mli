@@ -70,6 +70,9 @@ val find_map_supers : t -> Typ.Name.t -> f:(Typ.Name.t -> Struct.t option -> 'a 
 val implements_remodel_class : t -> Typ.Name.t -> bool
 (** Check if a class implements the Remodel class *)
 
+val get_fields_trans : t -> Typ.Name.t -> Struct.fields
+(** Get all fields from the super classes transitively *)
+
 type per_file = Global | FileLocal of t
 
 val pp_per_file : Format.formatter -> per_file -> unit
