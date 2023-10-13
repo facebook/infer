@@ -175,10 +175,9 @@ let describe f cause =
   | OptionalEmpty ->
       F.pp_print_string f "is assigned an empty value"
   | StdVector std_vector_f ->
-      F.fprintf f "was potentially invalidated by `%a()`" pp_std_vector_function std_vector_f
+      F.fprintf f "was potentially invalidated by `%a`" pp_std_vector_function std_vector_f
   | CppMap (map_t, map_f) ->
-      F.fprintf f "was potentially invalidated by `%a::%a()`" pp_map_type map_t pp_map_function
-        map_f
+      F.fprintf f "was potentially invalidated by `%a::%a`" pp_map_type map_t pp_map_function map_f
 
 
 let pp f invalidation =
