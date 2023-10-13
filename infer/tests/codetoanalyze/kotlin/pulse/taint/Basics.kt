@@ -209,4 +209,12 @@ class Basics {
     InferTaint.inferSensitiveSink(
         InferTaint.inferUniversalSanitizer(InferTaint.inferSecretSource()))
   }
+
+  fun taintOnUnrelatedBooleanOk(notTaintedFlag: Boolean) {
+    val taintedFlag = InferTaint.inferSecretSource() as Boolean
+    val uberFlag = notTaintedFlag || taintedFlag
+    if (!uberFlag) {
+      InferTaint.inferSensitiveSink(notTaintedFlag)
+    }
+  }
 }
