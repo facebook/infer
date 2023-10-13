@@ -345,22 +345,12 @@ let get_static_companion_var type_name =
 let get_static_companion ~model_desc path location type_name astate =
   let pvar = get_static_companion_var type_name in
   let var = Var.of_pvar pvar in
-  (* we chose on purpose to not abduce [pvar] because we don't want to make a disjunctive case
-     if it is already assigned or not. This is problematic when the caller already defines the
-     variable because the Pulse summary application will not detect that the variable is set
-     both in the callee and the caller. But this is fine as long as both functions perform the
-     same initialization of the variable. *)
-  match AbductiveDomain.Stack.find_opt var astate with
-  | Some addr_hist ->
-      (addr_hist, astate)
-  | None ->
-      let addr = AbstractValue.mk_fresh () in
-      let hist = Hist.single_call path location model_desc in
-      let astate = AbductiveDomain.Stack.add var (addr, ValueHistory.epoch) astate in
-      let static_type_name = Typ.Name.Hack.static_companion type_name in
-      let typ = Typ.mk_struct static_type_name in
-      let astate = PulseOperations.add_dynamic_type typ addr astate in
-      ((addr, hist), astate)
+  let hist = Hist.single_call path location model_desc in
+  let astate, ((addr, _) as addr_hist) = AbductiveDomain.Stack.eval hist var astate in
+  let static_type_name = Typ.Name.Hack.static_companion type_name in
+  let typ = Typ.mk_struct static_type_name in
+  let astate = PulseOperations.add_dynamic_type typ addr astate in
+  (addr_hist, astate)
 
 
 let get_static_companion_dsl ~model_desc type_name : DSL.aval DSL.model_monad =
@@ -688,13 +678,9 @@ let hhbc_cls_cns this field : model =
   @@ let* typ_opt = get_dynamic_type ~ask_specialization:true this in
      let* field_v =
        match typ_opt with
-       | Some ({Typ.desc= Tstruct name} as typ) ->
+       | Some {Typ.desc= Tstruct name} ->
            let* string_field_name = read_boxed_string_value_dsl field in
            let fld = Fieldname.make name string_field_name in
-           let class_global_var = get_static_companion_var name in
-           (* Ideally, we should not need [eval_read] here since we call [eval_deref_access] below,
-              but somehow the latter does NOT update the pre state that we need. *)
-           let* _ = eval_read (Lfield (Lvar class_global_var, fld, typ)) in
            let* class_object = get_static_companion_dsl ~model_desc name in
            eval_deref_access Read class_object (FieldAccess fld)
        | _ ->
