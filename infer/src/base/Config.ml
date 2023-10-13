@@ -595,7 +595,12 @@ let () =
   ()
 
 
-let analysis_schedule_file =
+let abstract_pulse_models_for_erlang =
+  CLOpt.mk_bool ~long:"abstract-pulse-models-for-erlang"
+    "Applies abstraction of the pulse models passed by --pulse-models-for-erlang" ~default:true
+
+
+and analysis_schedule_file =
   CLOpt.mk_path_opt ~long:"analysis-schedule-file"
     ~in_help:InferCommand.[(Analyze, manual_scheduler)]
     ( "The file where an analysis schedule is stored. The default is "
@@ -3631,6 +3636,8 @@ let command =
 
 let rest = !rest
 
+and dynamic_dispatch_json_file_path = !dynamic_dispatch_json_file_path
+
 and analysis_schedule_file = !analysis_schedule_file
 
 and biabduction_abs_struct = !biabduction_abs_struct
@@ -3894,7 +3901,7 @@ and dump_duplicate_symbols = !dump_duplicate_symbols
 
 and dump_textual = !dump_textual
 
-and dynamic_dispatch_json_file_path = !dynamic_dispatch_json_file_path
+and abstract_pulse_models_for_erlang = !abstract_pulse_models_for_erlang
 
 and eradicate_condition_redundant = !eradicate_condition_redundant
 
@@ -4075,6 +4082,8 @@ and never_returning_null = match never_returning_null with k, r -> (k, !r)
 
 and no_censor_report = RevList.rev_map !no_censor_report ~f:Str.regexp
 
+and no_translate_libs = not !headers
+
 and nullable_annotation = !nullable_annotation
 
 and nullsafe_annotation_graph = !nullsafe_annotation_graph
@@ -4094,8 +4103,6 @@ and nullsafe_third_party_location_for_messaging_only =
 
 
 and nullsafe_strict_containers = !nullsafe_strict_containers
-
-and no_translate_libs = not !headers
 
 and oom_threshold = !oom_threshold
 

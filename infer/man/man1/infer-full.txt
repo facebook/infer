@@ -1966,6 +1966,11 @@ OPTIONS
 INTERNAL OPTIONS
        Use at your own risk.
 
+       --no-abstract-pulse-models-for-erlang
+           Deactivates: Applies abstraction of the pulse models passed by
+           --pulse-models-for-erlang (Conversely:
+           --abstract-pulse-models-for-erlang)
+
        --analysis-schedule-file-reset
            Cancel the effect of --analysis-schedule-file.
 

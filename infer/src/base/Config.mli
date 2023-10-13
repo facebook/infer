@@ -123,6 +123,8 @@ val wrappers_dir : string
 
 (** {2 Configuration values specified by command-line options} *)
 
+val abstract_pulse_models_for_erlang : bool
+
 val analysis_schedule_file : string option
 
 val annotation_reachability_cxx : Yojson.Basic.t

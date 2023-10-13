@@ -1489,7 +1489,10 @@ module Custom = struct
               let behavior_json = Sqlite3.column_text stmt 0 in
               match behavior_of_yojson (Yojson.Safe.from_string behavior_json) with
               | behavior ->
-                  let abs_behavior = abstract_behavior mfa behavior in
+                  let abs_behavior =
+                    if Config.abstract_pulse_models_for_erlang then abstract_behavior mfa behavior
+                    else behavior
+                  in
                   L.debug Analysis Quiet "Function '%s' ABS BEHAVIOR:[  %a ] @\n@\n" mfa pp_behavior
                     abs_behavior ;
                   let model_abs_behavior = make_model abs_behavior in
