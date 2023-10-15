@@ -2,15 +2,7 @@ name: website
 
 on:
   push:
-    branches:
-      - "main"
-    paths:
-      - "website/**"
-      - ".github/workflows/deploy.yml"
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    branches:ebjhbfehsbdjhedbchjsbchjzsdbvfk
 
     if: github.repository == 'facebook/infer'
 
