@@ -143,6 +143,7 @@ module Unit = struct
     | ClassNameAndMethodRegex of {class_names: string list; method_name_regex: Str.regexp}
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
+    | ClassWithAnnotation of {annotation: string; annotation_values: string list option}
     | OverridesOfClassWithAnnotation of {annotation: string}
     | MethodWithAnnotation of {annotation: string; annotation_values: string list option}
     | Block of {name: string}
@@ -165,6 +166,10 @@ module Unit = struct
     | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
         F.fprintf f "class_names=%a, method_return_type_names=%a" (Pp.comma_seq String.pp)
           class_names (Pp.comma_seq String.pp) method_return_type_names
+    | ClassWithAnnotation {annotation; annotation_values: string list option} ->
+        F.fprintf f "class with annotation=%s and annotation_values=%a" annotation
+          (Pp.option (Pp.comma_seq String.pp))
+          annotation_values
     | OverridesOfClassWithAnnotation {annotation} ->
         F.fprintf f "overrides of class with annotation=%s" annotation
     | MethodWithAnnotation {annotation; annotation_values: string list option} ->
@@ -235,6 +240,7 @@ module Unit = struct
         \ \"procedure_regex\": %a, \n\
         \ \"class_name_regex\": %a, \n\
         \ \"class_names\": %a, \n\
+        \ \"class_with_annotation\": %a, \n\
         \ \"method_names\": %a, \n\
         \ \"method_return_type_names\": %a, \n\
         \ \"overrides_of_class_with_annotation\": %a,\n\
@@ -246,7 +252,7 @@ module Unit = struct
         (Pp.option F.pp_print_string) matcher.procedure_regex (Pp.option F.pp_print_string)
         matcher.class_name_regex
         (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
-        matcher.class_names
+        matcher.class_names (Pp.option F.pp_print_string) matcher.class_with_annotation
         (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
         matcher.method_names
         (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
@@ -263,6 +269,7 @@ module Unit = struct
       \ \"procedure\", \n\
       \ \"procedure_regex\", \n\
       \ \"class_name_regex\", \n\
+      \ \"class_with_annotation\", \n\
       \ \"block_passed_to\", \n\
       \ \"block_passed_to_regex\", \n\
       \ \"method_with_annotation\", \n\
@@ -309,6 +316,7 @@ module Unit = struct
         ; procedure_regex= None
         ; class_name_regex= None
         ; class_names= None
+        ; class_with_annotation= None
         ; method_names= None
         ; method_return_type_names= None
         ; overrides_of_class_with_annotation= None
@@ -321,6 +329,7 @@ module Unit = struct
         ; procedure_regex= Some name_regex
         ; class_name_regex= None
         ; class_names= None
+        ; class_with_annotation= None
         ; method_names= None
         ; method_return_type_names= None
         ; annotation_values= None
@@ -334,6 +343,7 @@ module Unit = struct
         ; procedure_regex= None
         ; class_name_regex= Some name_regex
         ; class_names= None
+        ; class_with_annotation= None
         ; method_names= None
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= None
@@ -358,6 +368,7 @@ module Unit = struct
         ; procedure_regex= Some method_name_regex
         ; class_name_regex= None
         ; class_names= Some class_names
+        ; class_with_annotation= None
         ; method_names= None
         ; method_return_type_names= None
         ; overrides_of_class_with_annotation= None
@@ -370,6 +381,7 @@ module Unit = struct
         ; procedure_regex= None
         ; class_name_regex= None
         ; class_names= Some class_names
+        ; class_with_annotation= None
         ; method_names= None
         ; method_return_type_names= Some method_return_type_names
         ; overrides_of_class_with_annotation= None
@@ -377,6 +389,19 @@ module Unit = struct
         ; annotation_values= None
         ; allocation= None } ->
           ClassAndMethodReturnTypeNames {class_names; method_return_type_names}
+      | { procedure= None
+        ; procedure_regex= None
+        ; class_name_regex= None
+        ; class_names= None
+        ; class_with_annotation= Some annotation
+        ; method_names= None
+        ; method_return_type_names= None
+        ; overrides_of_class_with_annotation= None
+        ; method_with_annotation= None
+        ; annotation_values
+        ; block_passed_to= None
+        ; allocation= None } ->
+          ClassWithAnnotation {annotation; annotation_values}
       | { procedure= None
         ; procedure_regex= None
         ; class_names= None
@@ -390,6 +415,7 @@ module Unit = struct
         ; procedure_regex= None
         ; class_name_regex= None
         ; class_names= None
+        ; class_with_annotation= None
         ; method_names= None
         ; method_return_type_names= None
         ; overrides_of_class_with_annotation= None
@@ -402,6 +428,7 @@ module Unit = struct
         ; procedure_regex= None
         ; class_name_regex= None
         ; class_names= None
+        ; class_with_annotation= None
         ; method_names= None
         ; method_return_type_names= None
         ; overrides_of_class_with_annotation= None
@@ -414,6 +441,7 @@ module Unit = struct
         ; procedure_regex= None
         ; class_name_regex= None
         ; class_names= None
+        ; class_with_annotation= None
         ; method_names= None
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= None
@@ -425,6 +453,7 @@ module Unit = struct
         ; procedure_regex= None
         ; class_name_regex= None
         ; class_names= None
+        ; class_with_annotation= None
         ; method_names= None
         ; overrides_of_class_with_annotation= None
         ; method_with_annotation= None

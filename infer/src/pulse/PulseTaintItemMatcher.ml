@@ -165,6 +165,16 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
             in
             class_names_match tenv class_names class_name
             && procedure_return_type_match method_return_type_names
+        | ClassWithAnnotation {annotation; annotation_values} ->
+            let res =
+              let open IOption.Let_syntax in
+              let* name = class_name in
+              let* struct_typ = Tenv.lookup tenv name in
+              Annotations.struct_typ_has_annot struct_typ (fun annot_item ->
+                  match_annotation_with_values annot_item annotation annotation_values )
+              |> Option.some
+            in
+            Option.value res ~default:false
         | OverridesOfClassWithAnnotation {annotation} ->
             Option.exists (Procname.get_class_type_name proc_name) ~f:(fun procedure_class_name ->
                 let method_name = Procname.get_method proc_name in

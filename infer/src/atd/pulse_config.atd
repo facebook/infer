@@ -32,6 +32,7 @@ type matcher = {
   ?procedure_regex: string option;
   ?class_name_regex: string option;
   ?class_names: string list option;
+  ?class_with_annotation: string option;
   ?field_names: string list option;
   ?method_names: string list option;
   ?method_return_type_names: string list option;

@@ -56,4 +56,19 @@ public class TaintMatchers {
     Object src = InferTaint.inferSecretSource();
     InferTaint.notRegexSink(src);
   }
+
+  void taintedBasedOnClassAnnotationBad1() {
+    Object src = InferTaintSources.Sources.source1();
+    InferTaint.inferSensitiveSink(src);
+  }
+
+  void taintedBasedOnClassAnnotationBad2() {
+    Object src = InferTaintSources.Sources.source2();
+    InferTaint.inferSensitiveSink(src);
+  }
+
+  void notTaintedBasedOnClassAnnotationGood() {
+    Object src = InferTaintSources.NotSources.notSource();
+    InferTaint.inferSensitiveSink(src);
+  }
 }

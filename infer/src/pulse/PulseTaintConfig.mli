@@ -44,6 +44,7 @@ module Unit : sig
     | ClassNameAndMethodRegex of {class_names: string list; method_name_regex: Str.regexp}
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
+    | ClassWithAnnotation of {annotation: string; annotation_values: string list option}
     | OverridesOfClassWithAnnotation of {annotation: string}
     | MethodWithAnnotation of {annotation: string; annotation_values: string list option}
     | Block of {name: string}
