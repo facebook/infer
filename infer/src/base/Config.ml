@@ -3013,6 +3013,12 @@ and shrink_analysis_db =
      database."
 
 
+and specialized_proc_depth =
+  CLOpt.mk_int ~long:"specialized-proc-depth" ~default:2
+    ~in_help:InferCommand.[(Analyze, manual_lineage)]
+    "Maximal depth for the specialized procedures created."
+
+
 and lineage_include_builtins =
   CLOpt.mk_bool
     ~deprecated:["-simple-lineage-include-builtins"]
@@ -4439,6 +4445,8 @@ and select =
 and show_buckets = !print_buckets
 
 and shrink_analysis_db = !shrink_analysis_db
+
+and specialized_proc_depth = !specialized_proc_depth
 
 and lineage_include_builtins = !lineage_include_builtins
 

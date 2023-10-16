@@ -214,7 +214,11 @@ module PulseTransferFunctions = struct
            (if it was) in the end by [reset_need_closure_specialization] *)
         let astate = AbductiveDomain.unset_need_closure_specialization astate in
         let maybe_call_specialization callee_pname call_exp ((res, _, _) as call_res) =
-          if (not needed_closure_specialization) && need_closure_specialization res then (
+          if
+            (not needed_closure_specialization)
+            && need_closure_specialization res
+            && Procname.should_create_specialized_proc callee_pname
+          then (
             L.d_printfln "Trying to closure-specialize %a" Exp.pp call_exp ;
             match
               PulseClosureSpecialization.make_specialized_call_exp analysis_data

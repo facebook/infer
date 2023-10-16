@@ -34,21 +34,24 @@ let replace_with_specialize_methods instr =
 
 
 let process proc_desc =
-  (* For each procdesc:
-     1. If we are a specialized procdesc:
-      1.1. Copy original procdesc
-      1.2. Update closures' uses
-     2. Update calls' closure arguments
-     3. Update calls with closures as arguments to specialized calls:
-      3.1. Create procdescs for specialized callees if they don't already exist
-     4. Update closure calls
-  *)
-  (* 1.
-      1.1. Create a specialized copy of [proc_desc]'s [orig_pdesc] (if it exists).
-      1.2. Specialize at instruction level: [foo(f)] when [f = closure] replaces every
-           use of [f] (calls and as argument) with the corresponding [closure] and its
-           captured variables. *)
-  ClosureSubstSpecializedMethod.process proc_desc ;
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  if not (Procname.should_create_specialized_proc proc_name) then ()
+  else
+    (* For each procdesc:
+       1. If we are a specialized procdesc:
+        1.1. Copy original procdesc
+        1.2. Update closures' uses
+       2. Update calls' closure arguments
+       3. Update calls with closures as arguments to specialized calls:
+        3.1. Create procdescs for specialized callees if they don't already exist
+       4. Update closure calls
+    *)
+    (* 1.
+        1.1. Create a specialized copy of [proc_desc]'s [orig_pdesc] (if it exists).
+        1.2. Specialize at instruction level: [foo(f)] when [f = closure] replaces every
+             use of [f] (calls and as argument) with the corresponding [closure] and its
+             captured variables. *)
+    ClosureSubstSpecializedMethod.process proc_desc ;
   (* 2.
       Replace each indirect use of closure (as argument) with a direct use of closure.
      e.g.

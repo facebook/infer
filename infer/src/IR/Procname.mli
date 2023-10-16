@@ -554,4 +554,6 @@ val is_hack_sinit : t -> bool
 
 val has_hack_classname : t -> bool
 
+val should_create_specialized_proc : t -> bool
+
 module Normalizer : HashNormalizer.S with type t = t

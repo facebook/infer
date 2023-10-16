@@ -665,6 +665,9 @@ LINEAGE OPTIONS
            type is the type of a variable whose value is within a statically
            known atom set. The width of the type is the cardinal of that atom
            set.
+
+       --specialized-proc-depth int
+           Maximal depth for the specialized procedures created.
 PULSE CHECKER OPTIONS
        --pulse-cut-to-one-path-procedures-pattern string
            Regex of methods for which pulse will only explore one path. Can

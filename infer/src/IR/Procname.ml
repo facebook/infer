@@ -1644,6 +1644,17 @@ let to_short_unique_name pname =
   DB.append_crc_cutoff proc_id
 
 
+let should_create_specialized_proc proc_name =
+  let rec should_create_specialized_proc i proc_name =
+    match proc_name with
+    | WithFunctionParameters (procname, _, _) ->
+        should_create_specialized_proc (i + 1) procname
+    | _ ->
+        i < Config.specialized_proc_depth
+  in
+  should_create_specialized_proc 0 proc_name
+
+
 let to_filename pname = to_short_unique_name pname |> Escape.escape_filename
 
 module SQLite = SqliteUtils.MarshalledDataNOTForComparison (struct
