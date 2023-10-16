@@ -984,6 +984,12 @@ and bxl_file_capture =
      dependencies using the BXL script specified by $(b, --buck2_bxl_target)."
 
 
+and bxl_isolation_dir =
+  CLOpt.mk_string_opt ~long:"bxl-isolation-dir"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Run buck bxl capture with the given isolation directory as parameter."
+
+
 and capture =
   CLOpt.mk_bool ~long:"capture" ~default:true
     "capture and translate source files into infer's intermediate language for analysis"
@@ -3757,6 +3763,8 @@ and buck2_root = match !buck2_root with Some root -> root | None -> !project_roo
 and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 
 and bxl_file_capture = !bxl_file_capture
+
+and bxl_isolation_dir = !bxl_isolation_dir
 
 and capture = !capture
 

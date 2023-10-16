@@ -218,6 +218,8 @@ val buck_clang_use_toolchain_config : bool
 
 val buck_dependency_depth : int option
 
+val bxl_isolation_dir : string option
+
 val buck_java_suppress_config : bool
 
 val buck_java_heap_size_gb : int option
