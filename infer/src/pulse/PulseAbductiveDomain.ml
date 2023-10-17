@@ -671,19 +671,23 @@ module Internal = struct
             (astate, addr_hist_dst)
         | None ->
             let addr_dst = CanonValue.mk_fresh () in
-            let addr_hist_dst = (addr_dst, hist_src) in
+            let pre_heap, post_hist =
+              if BaseMemory.mem addr_src (astate.pre :> base_domain).heap then
+                let cell_id = ValueHistory.CellId.next () in
+                (* HACK: do not record the history of values in the pre as they are unused, except
+                   for their cell id to be able to track where the pre values end up in the post
+                   condition. *)
+                ( BaseMemory.add_edge addr_src access
+                    (downcast addr_dst, ValueHistory.from_cell_id cell_id ValueHistory.epoch)
+                    (astate.pre :> base_domain).heap
+                  |> BaseMemory.register_address addr_dst
+                , ValueHistory.from_cell_id cell_id hist_src )
+              else ((astate.pre :> base_domain).heap, hist_src)
+            in
+            let addr_hist_dst = (addr_dst, post_hist) in
             let post_heap =
               BaseMemory.add_edge addr_src access (downcast_fst addr_hist_dst)
                 (astate.post :> base_domain).heap
-            in
-            let foot_heap =
-              if BaseMemory.mem addr_src (astate.pre :> base_domain).heap then
-                (* HACK: do not record the history of values in the pre as they are unused *)
-                BaseMemory.add_edge addr_src access
-                  (downcast addr_dst, ValueHistory.epoch)
-                  (astate.pre :> base_domain).heap
-                |> BaseMemory.register_address addr_dst
-              else (astate.pre :> base_domain).heap
             in
             let astate =
               (* This is the first time we are accessing addr_dst. Because it is accessed
@@ -706,7 +710,7 @@ module Internal = struct
             in
             ( { astate with
                 post= PostDomain.update astate.post ~heap:post_heap
-              ; pre= PreDomain.update astate.pre ~heap:foot_heap }
+              ; pre= PreDomain.update astate.pre ~heap:pre_heap }
             , addr_hist_dst )
       in
       let astate =

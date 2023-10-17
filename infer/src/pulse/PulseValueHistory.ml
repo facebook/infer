@@ -12,6 +12,24 @@ module Invalidation = PulseInvalidation
 module TaintItem = PulseTaintItem
 module Timestamp = PulseTimestamp
 
+module CellId = struct
+  type t = int [@@deriving compare, equal, yojson_of]
+
+  let pp = Int.pp
+
+  let next_id = ref 0
+
+  let () = AnalysisGlobalState.register_ref ~init:(fun () -> 0) next_id
+
+  let next () =
+    let id = !next_id in
+    incr next_id ;
+    id
+
+
+  module Map = Int.Map
+end
+
 type event =
   | Allocation of {f: CallEvent.t; location: Location.t; timestamp: Timestamp.t}
   | Assignment of Location.t * Timestamp.t
@@ -39,6 +57,7 @@ and t =
   | Sequence of event * t
   | InContext of {main: t; context: t list}
   | BinaryOp of Binop.t * t * t
+  | FromCellId of CellId.t * t
 [@@deriving compare, equal]
 
 let epoch = Epoch
@@ -51,17 +70,39 @@ let in_context_f from new_context_opt ~f =
     match from with
     | InContext {main; context} when phys_equal context new_context ->
         InContext {main= f main; context}
-    | Epoch | Sequence _ | BinaryOp _ | InContext _ ->
+    | Epoch | Sequence _ | BinaryOp _ | InContext _ | FromCellId _ ->
         InContext {main= f from; context= new_context} )
 
 
-let sequence ?context event hist = in_context_f hist context ~f:(fun hist -> Sequence (event, hist))
+let cell_id_first = function
+  | (Epoch | InContext _ | BinaryOp _) as hist ->
+      hist
+  | Sequence (event, FromCellId (id, hist)) ->
+      FromCellId (id, Sequence (event, hist))
+  | FromCellId (id, FromCellId (_old_id, hist')) ->
+      FromCellId (id, hist')
+  | (Sequence _ | FromCellId _) as hist ->
+      hist
+
+
+let sequence ?context event hist =
+  in_context_f hist context ~f:(fun hist -> Sequence (event, hist) |> cell_id_first)
+
 
 let in_context context hist = in_context_f hist (Some context) ~f:Fn.id
 
 let binary_op bop hist1 hist2 = BinaryOp (bop, hist1, hist2)
 
+let from_cell_id id hist = FromCellId (id, hist) |> cell_id_first
+
 let singleton event = Sequence (event, Epoch)
+
+let get_cell_id = function
+  | FromCellId (id, _) | InContext {main= FromCellId (id, _)} ->
+      Some id
+  | _ ->
+      None
+
 
 let location_of_event = function
   | Allocation {location}
@@ -109,6 +150,8 @@ let pop_least_timestamp ~main_only hists0 =
         (latest_events, curr_ts_hists_prefix)
     | _, Epoch :: hists ->
         aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t hists
+    | _, FromCellId (_, hist) :: hists ->
+        aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (hist :: hists)
     | _, InContext {main} :: hists when main_only ->
         aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (main :: hists)
     | _, InContext {main; context} :: hists ->
@@ -150,7 +193,12 @@ let rec rev_iter_branches ~main_only hists ~f =
 
 
 and rev_iter_simultaneous_events ~main_only events ~f =
-  let is_nonempty = function Epoch -> false | Sequence _ | InContext _ | BinaryOp _ -> true in
+  let is_nonempty = function
+    | Epoch | FromCellId (_, Epoch) ->
+        false
+    | Sequence _ | InContext _ | BinaryOp _ | FromCellId _ ->
+        true
+  in
   let in_call = function Call {in_call} when is_nonempty in_call -> Some in_call | _ -> None in
   match events with
   | [] ->
@@ -176,6 +224,8 @@ and rev_iter ~main_only (history : t) ~f =
   | Sequence (event, rest) ->
       rev_iter_simultaneous_events ~main_only [event] ~f ;
       rev_iter ~main_only rest ~f
+  | FromCellId (_, hist) ->
+      rev_iter ~main_only hist ~f
   | InContext {main} when main_only ->
       rev_iter ~main_only main ~f
   | InContext {main; context} ->
@@ -272,6 +322,9 @@ let pp fmt history =
   let rec pp_aux fmt = function
     | Epoch ->
         ()
+    | FromCellId (id, hist) ->
+        F.fprintf fmt "from_cell_id-%d;" id ;
+        pp_aux fmt hist
     | Sequence ((Call {in_call} as event), tail) ->
         F.fprintf fmt "%a@;" pp_event event ;
         F.fprintf fmt "[@[%a@]]@;" pp_aux in_call ;

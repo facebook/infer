@@ -28,6 +28,7 @@ type call_state =
         (** translation from callee addresses to caller addresses and their caller histories *)
   ; rev_subst: AbstractValue.t AddressMap.t
         (** the inverse translation from [subst] from caller addresses to callee addresses *)
+  ; hist_map: ValueHistory.t CellId.Map.t
   ; visited: AddressSet.t
         (** set of callee addresses that have been visited already
 
@@ -35,17 +36,24 @@ type call_state =
             visit each subgraph from each formal independently so we reset [visited] between the
             visit of each formal *) }
 
-let pp_call_state fmt {astate; subst; rev_subst; visited} =
+let pp_hist_map fmt hist_map =
+  CellId.Map.iteri hist_map ~f:(fun ~key ~data ->
+      F.fprintf fmt "%a: %a," CellId.pp key ValueHistory.pp data )
+
+
+let pp_call_state fmt
+    ({astate; subst; rev_subst; hist_map; visited} [@warning "+missing-record-field-pattern"]) =
   F.fprintf fmt
     "@[<v>{ astate=@[<hv2>%a@];@,\
     \ subst=@[<hv2>%a@];@,\
     \ rev_subst=@[<hv2>%a@];@,\
+    \ hist_map=@[<hv2>%a@];@,\
     \ visited=@[<hv2>%a@]@,\
     \ }@]" AbductiveDomain.pp astate
     (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
     subst
     (AddressMap.pp ~pp_value:AbstractValue.pp)
-    rev_subst AddressSet.pp visited
+    rev_subst pp_hist_map hist_map AddressSet.pp visited
 
 
 let pp_call_state = Pp.html_collapsible_block ~name:"Show/hide the call state" pp_call_state
@@ -161,7 +169,7 @@ let and_aliasing_arith ~addr_callee ~addr_caller0 call_state =
       Ok call_state
 
 
-let visit call_state ~pre ~addr_callee ~addr_hist_caller =
+let visit call_state ~pre ~addr_callee cell_id ~addr_hist_caller =
   let addr_caller = fst addr_hist_caller in
   let* call_state =
     match AddressMap.find_opt addr_caller call_state.rev_subst with
@@ -188,7 +196,10 @@ let visit call_state ~pre ~addr_callee ~addr_hist_caller =
     , { call_state with
         visited= AddressSet.add addr_callee call_state.visited
       ; subst= AddressMap.add addr_callee addr_hist_caller call_state.subst
-      ; rev_subst= AddressMap.add addr_caller addr_callee call_state.rev_subst } )
+      ; rev_subst= AddressMap.add addr_caller addr_callee call_state.rev_subst
+      ; hist_map=
+          Option.fold cell_id ~init:call_state.hist_map ~f:(fun hist_map cell_id ->
+              CellId.Map.add_exn hist_map ~key:cell_id ~data:(snd addr_hist_caller) ) } )
 
 
 (** HACK: we don't need to update the [rev_subst] of a call state when generating a fresh value for
@@ -225,8 +236,10 @@ let translate_access_to_caller subst (access_callee : Access.t) : _ * Access.t =
 (** Materialize the (abstract memory) subgraph of [pre] reachable from [addr_pre] in
     [call_state.astate] starting from address [addr_caller]. Report an error if some invalid
     addresses are traversed in the process. *)
-let rec materialize_pre_from_address ~pre ~addr_pre ~addr_hist_caller call_state =
-  let* visited_status, call_state = visit call_state ~pre ~addr_callee:addr_pre ~addr_hist_caller in
+let rec materialize_pre_from_address ~pre ~addr_pre cell_id ~addr_hist_caller call_state =
+  let* visited_status, call_state =
+    visit call_state ~pre ~addr_callee:addr_pre cell_id ~addr_hist_caller
+  in
   match visited_status with
   | `AlreadyVisited ->
       Ok call_state
@@ -238,7 +251,7 @@ let rec materialize_pre_from_address ~pre ~addr_pre ~addr_hist_caller call_state
           Ok call_state
       | Some edges_pre ->
           PulseResult.container_fold ~fold:UnsafeMemory.Edges.fold ~init:call_state edges_pre
-            ~f:(fun call_state (access_callee, (addr_pre_dest, _)) ->
+            ~f:(fun call_state (access_callee, (addr_pre_dest, pre_hist)) ->
               (* HACK: we should probably visit the value in the (array) access too, but since it's
                  a value normally it shouldn't appear in the heap anyway so there should be nothing
                  to visit. *)
@@ -250,15 +263,17 @@ let rec materialize_pre_from_address ~pre ~addr_pre ~addr_hist_caller call_state
               in
               let call_state = {call_state with astate; subst} in
               materialize_pre_from_address ~pre ~addr_pre:addr_pre_dest
+                (ValueHistory.get_cell_id pre_hist)
                 ~addr_hist_caller:addr_hist_dest_caller call_state ) )
 
 
 let callee_deref_non_c_struct addr typ astate =
   match typ.Typ.desc with
   | Tstruct _ ->
-      Some addr
+      Some (addr, None)
   | _ ->
-      UnsafeMemory.find_edge_opt addr Dereference astate |> Option.map ~f:fst
+      UnsafeMemory.find_edge_opt addr Dereference astate
+      |> Option.map ~f:(fun (value, hist) -> (value, ValueHistory.get_cell_id hist))
 
 
 (** materialize subgraph of [pre] rooted at the address represented by a [formal] parameter that has
@@ -267,8 +282,9 @@ let materialize_pre_from_actual ~pre ~formal:(formal, typ) ~actual:(actual, _) c
   L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractValue.pp (fst actual) ;
   (let open IOption.Let_syntax in
    let* addr_formal_pre, _ = UnsafeStack.find_opt formal pre.BaseDomain.stack in
-   let+ formal_pre = callee_deref_non_c_struct addr_formal_pre typ pre.BaseDomain.heap in
-   materialize_pre_from_address ~pre ~addr_pre:formal_pre ~addr_hist_caller:actual call_state )
+   let+ formal_pre, cell_id = callee_deref_non_c_struct addr_formal_pre typ pre.BaseDomain.heap in
+   materialize_pre_from_address ~pre ~addr_pre:formal_pre cell_id ~addr_hist_caller:actual
+     call_state )
   |> function Some result -> result | None -> Ok call_state
 
 
@@ -304,8 +320,10 @@ let materialize_pre_for_parameters ~pre ~formals ~actuals call_state =
 
 let materialize_pre_for_globals path call_location ~pre call_state =
   fold_globals_of_callee_stack path call_location pre.BaseDomain.stack call_state
-    ~f:(fun _var ~stack_value:(addr_pre, _) ~addr_hist_caller call_state ->
-      materialize_pre_from_address ~pre ~addr_pre ~addr_hist_caller call_state )
+    ~f:(fun _var ~stack_value:(addr_pre, pre_hist) ~addr_hist_caller call_state ->
+      materialize_pre_from_address ~pre ~addr_pre
+        (ValueHistory.get_cell_id pre_hist)
+        ~addr_hist_caller call_state )
 
 
 let conjoin_callee_arith pre_or_post callee_path_condition call_state =
@@ -454,13 +472,19 @@ let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc
         let subst, (addr_curr, hist_curr) =
           subst_find_or_new subst addr_callee ~default_hist_caller:hist_caller
         in
+        let hist_caller =
+          let open Option.Monad_infix in
+          ValueHistory.get_cell_id trace_post
+          >>= CellId.Map.find call_state.hist_map
+          |> Option.value ~default:hist_curr
+        in
         let subst, access = translate_access_to_caller subst access_callee in
         let translated_edges =
           UnsafeMemory.Edges.add access
             ( addr_curr
             , ValueHistory.sequence ~context:path.conditions
                 (Call {f= Call callee_proc_name; location= call_loc; in_call= trace_post; timestamp})
-                hist_curr )
+                hist_caller )
             translated_edges
         in
         (subst, translated_edges) )
@@ -484,7 +508,7 @@ let rec record_post_for_address path callee_proc_name call_loc callee_summary ~a
   let* visited_status, call_state =
     visit call_state
       ~pre:(AbductiveDomain.Summary.get_pre callee_summary)
-      ~addr_callee ~addr_hist_caller
+      ~addr_callee None ~addr_hist_caller
   in
   match visited_status with
   | `AlreadyVisited ->
@@ -528,7 +552,7 @@ let record_post_for_actual path callee_proc_name call_loc callee_summary ~formal
     let* addr_formal_pre, _ =
       UnsafeStack.find_opt formal (AbductiveDomain.Summary.get_pre callee_summary).BaseDomain.stack
     in
-    let+ formal_pre =
+    let+ formal_pre, _cell_id =
       callee_deref_non_c_struct addr_formal_pre typ
         (AbductiveDomain.Summary.get_pre callee_summary).BaseDomain.heap
     in
@@ -1014,7 +1038,11 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
     ~captured_actuals ~formals ~actuals astate =
   let aux () =
     let empty_call_state =
-      {astate; subst= AddressMap.empty; rev_subst= AddressMap.empty; visited= AddressSet.empty}
+      { astate
+      ; subst= AddressMap.empty
+      ; rev_subst= AddressMap.empty
+      ; hist_map= CellId.Map.empty
+      ; visited= AddressSet.empty }
     in
     (* read the precondition *)
     match
@@ -1071,7 +1099,7 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
             check_all_taint_valid path callee_proc_name call_location callee_summary astate
               call_state
           in
-          (astate, return_caller, call_state.subst)
+          (astate, return_caller, call_state.subst, call_state.hist_map)
         in
         let contradiciton =
           let callee_heap_paths =

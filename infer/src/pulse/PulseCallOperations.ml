@@ -238,7 +238,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
         astate
     in
     let sat_unsat =
-      let** post, return_val_opt, subst = sat_unsat in
+      let** post, return_val_opt, subst, hist_map = sat_unsat in
       let post =
         match return_val_opt with
         | Some return_val_hist ->
@@ -253,7 +253,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                     ; timestamp } ) )
               post
       in
-      f return_val_opt subst post
+      f return_val_opt (subst, hist_map) post
     in
     (sat_unsat, contradiction)
   in
@@ -271,7 +271,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
   | ExitProgram astate
   | LatentAbortProgram {astate}
   | LatentInvalidAccess {astate} ->
-      map_call_result astate ~f:(fun _return_val_opt subst astate_post_call ->
+      map_call_result astate ~f:(fun _return_val_opt (subst, hist_map) astate_post_call ->
           let** astate_summary =
             let open SatUnsat.Import in
             AbductiveDomain.Summary.of_post tenv
@@ -292,8 +292,8 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
           | LatentAbortProgram {latent_issue} -> (
               let open SatUnsat.Import in
               let latent_issue =
-                LatentIssue.add_call (Call callee_pname, call_loc) subst astate_post_call
-                  latent_issue
+                LatentIssue.add_call (Call callee_pname, call_loc) (subst, hist_map)
+                  astate_post_call latent_issue
               in
               let diagnostic = LatentIssue.to_diagnostic latent_issue in
               match LatentIssue.should_report astate_summary diagnostic with
@@ -325,13 +325,10 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
                   "%a seems no longer reachable, dropping the latent invalid access altogether"
                   DecompilerExpr.pp address_callee ;
                 Unsat
-            | Some (invalid_address, caller_history) -> (
+            | Some (invalid_address, default_caller_history) -> (
                 let access_trace =
-                  Trace.ViaCall
-                    { in_call= callee_access_trace
-                    ; f= Call callee_pname
-                    ; location= call_loc
-                    ; history= caller_history }
+                  Trace.add_call (Call callee_pname) call_loc hist_map ~default_caller_history
+                    callee_access_trace
                 in
                 let calling_context = (CallEvent.Call callee_pname, call_loc) :: calling_context in
                 match

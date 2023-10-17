@@ -29,7 +29,7 @@ val should_report : AbductiveDomain.Summary.t -> Diagnostic.t -> [> `DelayReport
 
 val add_call :
      CallEvent.t * Location.t
-  -> (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
+  -> (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t * ValueHistory.t CellId.Map.t
   -> AbductiveDomain.t
   -> t
   -> t

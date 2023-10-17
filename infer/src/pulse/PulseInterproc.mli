@@ -53,7 +53,8 @@ val apply_summary :
   -> AbductiveDomain.t
   -> ( AbductiveDomain.t
      * (AbstractValue.t * ValueHistory.t) option
-     * (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t )
+     * (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t
+     * ValueHistory.t CellId.Map.t )
      AccessResult.t
      SatUnsat.t
      * contradiction option

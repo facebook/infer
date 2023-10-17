@@ -8,6 +8,7 @@ open! IStd
 module F = Format
 module CallEvent = PulseCallEvent
 module ValueHistory = PulseValueHistory
+module CellId = PulseValueHistory.CellId
 
 type t =
   | Immediate of {location: Location.t; history: ValueHistory.t}
@@ -26,6 +27,14 @@ val get_outer_location : t -> Location.t
 
 val get_start_location : t -> Location.t
 (** initial step in the history if not empty, or else same as {!get_outer_location} *)
+
+val add_call :
+     CallEvent.t
+  -> Location.t
+  -> ValueHistory.t CellId.Map.t
+  -> default_caller_history:ValueHistory.t
+  -> t
+  -> t
 
 val add_to_errlog :
      ?include_value_history:bool

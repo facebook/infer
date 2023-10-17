@@ -10,6 +10,16 @@ module CallEvent = PulseCallEvent
 module TaintItem = PulseTaintItem
 module Timestamp = PulseTimestamp
 
+module CellId : sig
+  type t = private int [@@deriving compare, equal, yojson_of]
+
+  val pp : F.formatter -> t -> unit
+
+  val next : unit -> t
+
+  module Map : Map.S with type Key.t = t
+end
+
 type event =
   | Allocation of {f: CallEvent.t; location: Location.t; timestamp: Timestamp.t}
   | Assignment of Location.t * Timestamp.t
@@ -42,6 +52,7 @@ and t = private
       { main: t  (** trace of the "main" value being traced *)
       ; context: t list  (** contextual traces, eg conditionals that the path is under *) }
   | BinaryOp of Binop.t * t * t  (** branch history due to a binop *)
+  | FromCellId of CellId.t * t
 [@@deriving compare, equal, yojson_of]
 
 val epoch : t
@@ -52,11 +63,15 @@ val in_context : t list -> t -> t
 
 val binary_op : Binop.t -> t -> t -> t
 
+val from_cell_id : CellId.t -> t -> t
+
 val pp : F.formatter -> t -> unit
 
 val pp_fields : F.formatter -> Fieldname.t RevList.t -> unit
 
 val singleton : event -> t
+
+val get_cell_id : t -> CellId.t option
 
 type iter_event =
   | EnterCall of CallEvent.t * Location.t

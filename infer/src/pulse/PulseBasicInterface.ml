@@ -24,6 +24,7 @@ module TaintItem = PulseTaintItem
 module Timestamp = PulseTimestamp
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
+module CellId = ValueHistory.CellId
 module ValueOrigin = PulseValueOrigin
 include SatUnsat.Types
 

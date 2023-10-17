@@ -841,13 +841,11 @@ let get_trace = function
       let should_print_invalidation_trace =
         not (Trace.exists_main access_trace ~f:(function Invalidated _ -> true | _ -> false))
       in
-      get_trace_calling_context calling_context
-      @@ ( if should_print_invalidation_trace then
-             add_invalidation_trace ~nesting:in_context_nesting invalidation invalidation_trace
-           else Fn.id )
-      @@ add_access_trace
-           ~include_title:(should_print_invalidation_trace || not (List.is_empty calling_context))
-           ~nesting:in_context_nesting invalidation access_trace
+      ( if should_print_invalidation_trace then
+          add_invalidation_trace ~nesting:in_context_nesting invalidation invalidation_trace
+        else Fn.id )
+      @@ add_access_trace ~include_title:should_print_invalidation_trace ~nesting:in_context_nesting
+           invalidation access_trace
       @@ []
   | ConfigUsage {config; trace} ->
       Trace.add_to_errlog ~nesting:0
