@@ -491,7 +491,7 @@ let rec record_post_for_address path callee_proc_name call_loc callee_summary ~a
       Ok call_state
   | `NotAlreadyVisited -> (
     match
-      BaseDomain.find_cell_opt addr_callee (AbductiveDomain.Summary.get_post callee_summary)
+      AbductiveDomain.find_cell_opt addr_callee (AbductiveDomain.Summary.get_post callee_summary)
     with
     | None ->
         Ok call_state
@@ -582,7 +582,7 @@ let record_post_for_return ({PathContext.timestamp} as path) callee_proc_name ca
 let apply_post_for_remaining_pre path callee_proc_name call_location callee_summary call_state =
   (* Applies post to the rest of the values recorded in pre state. *)
   let pre = AbductiveDomain.Summary.get_pre callee_summary in
-  let addresses = BaseDomain.reachable_addresses pre in
+  let addresses = AbductiveDomain.reachable_addresses pre in
   AbstractValue.Set.fold
     (fun addr_callee call_state ->
       let* call_state in

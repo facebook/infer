@@ -76,7 +76,7 @@ let add_to_modified pname ~pvar ~access ~addr pre_heap post modified_vars =
           aux (access_list, modified_vars) ~addr_to_explore ~visited
         else
           let edges_pre_opt = UnsafeMemory.find_opt addr pre_heap in
-          let cell_post_opt = BaseDomain.find_cell_opt addr post in
+          let cell_post_opt = AbductiveDomain.find_cell_opt addr post in
           let visited = AbstractValue.Set.add addr visited in
           match (edges_pre_opt, cell_post_opt) with
           | None, None ->

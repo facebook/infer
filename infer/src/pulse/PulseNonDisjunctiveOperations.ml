@@ -236,7 +236,7 @@ let is_address_reachable_from_unowned source_addr ~astates_before proc_lvalue_re
     =
   List.exists astates_before ~f:(fun astate_before ->
       let reachable_addresses_from_source =
-        BaseDomain.reachable_addresses_from (Caml.List.to_seq [source_addr])
+        AbductiveDomain.reachable_addresses_from (Caml.Seq.return source_addr)
           ~edge_filter:(function Dereference -> false | _ -> true)
           (astate_before.AbductiveDomain.post :> BaseDomain.t)
       in
@@ -247,7 +247,7 @@ let is_address_reachable_from_unowned source_addr ~astates_before proc_lvalue_re
                  Var.equal (Var.of_pvar pvar) var ) )
           &&
           let reachable_addresses_from_unowned =
-            BaseDomain.reachable_addresses_from (Caml.List.to_seq [this_addr])
+            AbductiveDomain.reachable_addresses_from (Caml.Seq.return this_addr)
               (astate_before.AbductiveDomain.post :> BaseDomain.t)
           in
           AbstractValue.Set.disjoint reachable_addresses_from_source
@@ -612,7 +612,7 @@ let is_modified origin ~source_addr_opt address astate copy_heap copy_timestamp 
   let current_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in
   if Config.debug_mode then (
     let reachable_addresses_from_copy =
-      BaseDomain.reachable_addresses_from (Caml.List.to_seq [address])
+      AbductiveDomain.reachable_addresses_from (Seq.return address)
         (astate.AbductiveDomain.post :> BaseDomain.t)
     in
     let reachable_from heap =

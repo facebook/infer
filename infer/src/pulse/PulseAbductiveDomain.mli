@@ -271,10 +271,32 @@ val apply_unknown_effect :
 
 val is_local : Var.t -> t -> bool
 
+val find_cell_opt : AbstractValue.t -> BaseDomain.t -> BaseDomain.cell option
+
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
+
+val reachable_addresses :
+     ?var_filter:(Var.t -> bool)
+  -> ?edge_filter:(Access.t -> bool)
+  -> BaseDomain.t
+  -> AbstractValue.Set.t
+(** compute the set of abstract addresses that are "used" in the abstract state, i.e. reachable from
+    the stack variables *)
+
+val reachable_addresses_from :
+     ?already_visited:AbstractValue.Set.t
+  -> ?edge_filter:(Access.t -> bool)
+  -> AbstractValue.t Seq.t
+  -> BaseDomain.t
+  -> AbstractValue.Set.t
+(** Compute the set of abstract addresses that are reachable from given abstract addresses. Use
+    already_visited as initial set of visited values (empty by default). *)
 
 val get_unreachable_attributes : t -> AbstractValue.t list
 (** collect the addresses that have attributes but are unreachable in the current post-condition *)
+
+val filter_live_addresses :
+  is_dead_root:(Var.t -> bool) -> AbstractValue.Set.t -> t -> AbstractValue.Set.t option
 
 val add_skipped_call : Procname.t -> Trace.t -> t -> t
 

@@ -307,7 +307,7 @@ module Basic = struct
     (* NOTE: freeing 0 is a no-op so we introduce a case split *)
     let astates_alloc =
       let addrs_to_invalidate =
-        BaseDomain.reachable_addresses_from
+        AbductiveDomain.reachable_addresses_from
           ~edge_filter:(function
             | FieldAccess _ | ArrayAccess _ -> true | TakeAddress | Dereference -> false )
           (Seq.return deleted_addr)

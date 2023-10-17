@@ -93,7 +93,7 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
   let havoc_actual_if_ptr ((actual, _), actual_typ) formal_opt astate =
     let fold_on_reachable_from_arg astate f =
       let reachable_from_arg =
-        BaseDomain.reachable_addresses_from (Caml.List.to_seq [actual]) (post :> BaseDomain.t)
+        AbductiveDomain.reachable_addresses_from (Caml.List.to_seq [actual]) (post :> BaseDomain.t)
       in
       AbstractValue.Set.fold f reachable_from_arg astate
     in
