@@ -819,6 +819,8 @@ val sqlite_lock_timeout : int
 
 val sqlite_max_blob_size : int
 
+val sqlite_mmap_size : int
+
 val sqlite_vfs : string option
 
 val starvation_skip_analysis : Yojson.Basic.t

@@ -409,6 +409,10 @@ OPTIONS
        --sqlite-max-blob-size int
            Maximum blob/string size for data written in SQLite.
 
+       --sqlite-mmap-size int
+           Size of memory map for mmaped SQLite databases, zero value
+           disables memory mapping.
+
        --sqlite-page-size int
            SQLite page size in bytes, must be a power of two between 512 and
            65536.

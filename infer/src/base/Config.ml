@@ -3280,6 +3280,20 @@ and sqlite_max_blob_size =
     "Maximum blob/string size for data written in SQLite."
 
 
+and sqlite_mmap_size =
+  let default =
+    match Version.build_platform with
+    | Windows ->
+        0 (* disable as untested *)
+    | Linux | Darwin ->
+        256 * 1024 * 1024 (* 256 Mb, see https://www.sqlite.org/mmap.html *)
+  in
+  CLOpt.mk_int ~long:"sqlite-mmap-size" ~default
+    ~in_help:
+      InferCommand.[(Analyze, manual_generic); (Capture, manual_generic); (Run, manual_generic)]
+    "Size of memory map for mmaped SQLite databases, zero value disables memory mapping."
+
+
 and sqlite_vfs = CLOpt.mk_string_opt ~long:"sqlite-vfs" "VFS for SQLite"
 
 and subtype_multirange =
@@ -4517,6 +4531,8 @@ and sqlite_page_size = !sqlite_page_size
 and sqlite_lock_timeout = !sqlite_lock_timeout
 
 and sqlite_max_blob_size = !sqlite_max_blob_size
+
+and sqlite_mmap_size = !sqlite_mmap_size
 
 and sqlite_vfs = !sqlite_vfs
 

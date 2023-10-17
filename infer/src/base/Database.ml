@@ -301,6 +301,8 @@ end = struct
         db_path
     in
     Sqlite3.busy_timeout db Config.sqlite_lock_timeout ;
+    SqliteUtils.exec db ~log:"mmap"
+      ~stmt:(Printf.sprintf "PRAGMA mmap_size=%d" Config.sqlite_mmap_size) ;
     SqliteUtils.exec db ~log:"synchronous=OFF" ~stmt:"PRAGMA synchronous=OFF" ;
     SqliteUtils.exec db ~log:"sqlite cache size"
       ~stmt:(Printf.sprintf "PRAGMA cache_size=%i" Config.sqlite_cache_size) ;
