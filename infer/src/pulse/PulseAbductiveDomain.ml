@@ -2265,11 +2265,6 @@ let incorporate_new_eqs_on_val new_eqs v =
 
 let downcast_filter f canon_access = f (downcast_access canon_access)
 
-let reachable_addresses ?var_filter ?edge_filter astate pre_or_post =
-  let edge_filter = Option.map edge_filter ~f:downcast_filter in
-  reachable_addresses ?var_filter ?edge_filter astate pre_or_post |> CanonValue.downcast_set
-
-
 let reachable_addresses_from ?edge_filter addresses astate pre_or_post =
   let edge_filter = Option.map edge_filter ~f:downcast_filter in
   reachable_addresses_from ?edge_filter

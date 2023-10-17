@@ -270,15 +270,6 @@ val is_local : Var.t -> t -> bool
 
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
 
-val reachable_addresses :
-     ?var_filter:(Var.t -> bool)
-  -> ?edge_filter:(Access.t -> bool)
-  -> t
-  -> [`Pre | `Post]
-  -> AbstractValue.Set.t
-(** compute the set of abstract addresses that are "used" in the abstract state, i.e. reachable from
-    the stack variables in either the pre or the post depending on [`Pre] or [`Post] *)
-
 val reachable_addresses_from :
      ?edge_filter:(Access.t -> bool)
   -> AbstractValue.t Seq.t
