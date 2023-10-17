@@ -729,18 +729,17 @@ let apply_post path callee_proc_name call_location callee_summary call_state =
     {call_state with subst; rev_subst}
   in
   let r =
+    call_state
+    |> conjoin_callee_arith `Post (AbductiveDomain.Summary.get_path_condition callee_summary)
     (* subst was suitable for pre but post may know more equalities, take them into account now *)
-    normalize_subst_for_post call_state
-    |> apply_unknown_effects callee_summary
-    |> apply_post_from_callee_pre path callee_proc_name call_location callee_summary
+    >>| normalize_subst_for_post
+    >>| apply_unknown_effects callee_summary
+    >>= apply_post_from_callee_pre path callee_proc_name call_location callee_summary
     >>= apply_post_from_callee_post path callee_proc_name call_location callee_summary
     >>| add_attributes `Post path callee_proc_name call_location
           (AbductiveDomain.Summary.get_post callee_summary).attrs
     >>| record_skipped_calls callee_proc_name call_location callee_summary
     >>| record_need_closure_specialization callee_summary
-    >>= conjoin_callee_arith `Post (AbductiveDomain.Summary.get_path_condition callee_summary)
-    (* normalize subst again now that we know more arithmetic facts *)
-    >>| normalize_subst_for_post
     >>| read_return_value path callee_proc_name call_location callee_summary
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
