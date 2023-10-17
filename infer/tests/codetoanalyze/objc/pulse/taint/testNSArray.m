@@ -1007,8 +1007,7 @@ void NSArray_replaceObjectAtIndexWithObject(NSMutableArray* mArr,
   [mArr replaceObjectAtIndex:idx withObject:obj];
 }
 
-// doesn't work with pulse-taint-check-history flag
-void testNSArray_cell_ReplaceObjectAtIndexWithObject_bad_FN(void) {
+void testNSArray_cell_ReplaceObjectAtIndexWithObject_bad(void) {
   NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
   NSArray_replaceObjectAtIndexWithObject(mArr, 1, create_tainted());
   void* value = NSArray_objectAt(mArr, 1);
@@ -1029,8 +1028,7 @@ void NSArray_setObjectAtIndexedSubscript(NSMutableArray* mArr,
   mArr[idx] = obj;
 }
 
-// doesn't work with pulse-taint-check-history flag
-void testNSArray_cell_SetObjectAtIndexedSubscript_bad_FN(void) {
+void testNSArray_cell_SetObjectAtIndexedSubscript_bad(void) {
   NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
   NSArray_setObjectAtIndexedSubscript(mArr, create_tainted(), 1);
   void* value = NSArray_objectAt(mArr, 1);
@@ -1070,8 +1068,7 @@ void sinkObjectAt1(NSMutableArray* mArr) {
   testNSArray_sink(value);
 }
 
-// doesn't work with pulse-taint-check-history flag
-void testNSArray_cell_sinkInCalleeBad_FN(void) {
+void testNSArray_cell_sinkInCalleeBad(void) {
   NSMutableArray* mArr = init_NSMutableArray_with_tainted_and_untainted();
   sinkObjectAt0(mArr);
 }

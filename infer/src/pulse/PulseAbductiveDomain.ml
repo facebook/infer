@@ -1991,10 +1991,6 @@ let add_need_dynamic_type_specialization receiver_addr astate =
   {astate with need_dynamic_type_specialization}
 
 
-let remove_from_post addr astate =
-  SafeMemory.map_post_heap astate ~f:(BaseMemory.remove (CanonValue.canon' astate addr))
-
-
 let set_post_edges addr edges astate =
   if RawMemory.Edges.is_empty edges then astate
   else SafeMemory.map_post_heap astate ~f:(BaseMemory.add (CanonValue.canon' astate addr) edges)

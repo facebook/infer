@@ -252,8 +252,7 @@ public class NullPointerExceptions {
     return null;
   }
 
-  // weakness in canonicalization across inter-procedural calls
-  void FN_nullPointerExceptionCallArrayReadMethod() {
+  void nullPointerExceptionCallArrayReadMethod() {
     arr[0] = new Object();
     arrayReadShouldNotCauseSymexMemoryError(0).toString();
   }

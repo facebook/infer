@@ -49,7 +49,7 @@ void modify_ptr_impure(Foo array[10], Foo foo) {
   tmp->x = foo.x;
 }
 
-void call_impure_with_fresh_pure_FP() {
+void call_impure_with_fresh_pure() {
   struct Foo f1 = {1};
   struct Foo f2 = {2};
   struct Foo f3 = {3};

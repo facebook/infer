@@ -41,8 +41,7 @@ void taint_cell(int* arr, int idx) { arr[idx] = int_source(); }
 
 void sink_cell(int* arr, int idx) { sink_int(arr[idx]); }
 
-// doesn't work with pulse-taint-check-history flag
-void test_inter_proc_bad_FN(void) {
+void test_inter_proc_bad(void) {
   int arr[2];
   taint_cell(arr, 0);
   sink_cell(arr, 0);
@@ -82,8 +81,7 @@ void sink_NSMutableArray_cell(NSMutableArray* mArr, int idx) {
   sink_number(obj);
 }
 
-// doesn't work with pulse-taint-check-history flag
-void test_inter_NSMutableArray_bad_FN(void) {
+void test_inter_NSMutableArray_bad(void) {
   NSMutableArray* mArr = [NSMutableArray new];
   taint_NSMutableArray_cell(mArr, 0);
   [mArr insertObject:@42 atIndex:1];

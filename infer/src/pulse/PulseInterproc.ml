@@ -21,6 +21,12 @@ open PulseResult.Let_syntax
 module AddressSet = AbstractValue.Set
 module AddressMap = AbstractValue.Map
 
+type callee_index_to_visit =
+  { addr_pre_dest: AbstractValue.t
+  ; pre_hist: ValueHistory.t
+  ; access_callee: Access.t
+  ; addr_hist_caller: AbstractValue.t * ValueHistory.t }
+
 (** stuff we carry around when computing the result of applying one pre/post pair *)
 type call_state =
   { astate: AbductiveDomain.t  (** caller's abstract state computed so far *)
@@ -34,7 +40,8 @@ type call_state =
 
             NOTE: this is not always equal to the domain of [rev_subst]: when applying the post we
             visit each subgraph from each formal independently so we reset [visited] between the
-            visit of each formal *) }
+            visit of each formal *)
+  ; array_indices_to_visit: callee_index_to_visit list  (** delayed visit for array indices *) }
 
 let pp_hist_map fmt hist_map =
   CellId.Map.iteri hist_map ~f:(fun ~key ~data ->
@@ -42,18 +49,22 @@ let pp_hist_map fmt hist_map =
 
 
 let pp_call_state fmt
-    ({astate; subst; rev_subst; hist_map; visited} [@warning "+missing-record-field-pattern"]) =
+    ({astate; subst; rev_subst; hist_map; visited; array_indices_to_visit}
+      [@warning "+missing-record-field-pattern"] ) =
   F.fprintf fmt
     "@[<v>{ astate=@[<hv2>%a@];@,\
     \ subst=@[<hv2>%a@];@,\
     \ rev_subst=@[<hv2>%a@];@,\
     \ hist_map=@[<hv2>%a@];@,\
     \ visited=@[<hv2>%a@]@,\
+    \ array_indices_to_visit=@[<hv2>%a@]@,\
     \ }@]" AbductiveDomain.pp astate
     (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
     subst
     (AddressMap.pp ~pp_value:AbstractValue.pp)
     rev_subst pp_hist_map hist_map AddressSet.pp visited
+    (Pp.seq (fun _ _ -> ()))
+    array_indices_to_visit
 
 
 let pp_call_state = Pp.html_collapsible_block ~name:"Show/hide the call state" pp_call_state
@@ -260,19 +271,46 @@ let rec materialize_pre_from_address ~pre ~addr_pre cell_id ~addr_hist_caller ca
       | Some edges_pre ->
           PulseResult.container_fold ~fold:UnsafeMemory.Edges.fold ~init:call_state edges_pre
             ~f:(fun call_state (access_callee, (addr_pre_dest, pre_hist)) ->
-              (* HACK: we should probably visit the value in the (array) access too, but since it's
-                 a value normally it shouldn't appear in the heap anyway so there should be nothing
-                 to visit. *)
-              let subst, access_caller =
-                translate_access_to_caller call_state.subst access_callee
-              in
-              let astate, addr_hist_dest_caller =
-                Memory.eval_edge addr_hist_caller access_caller call_state.astate
-              in
-              let call_state = {call_state with astate; subst} in
-              materialize_pre_from_address ~pre ~addr_pre:addr_pre_dest
-                (ValueHistory.get_cell_id pre_hist)
-                ~addr_hist_caller:addr_hist_dest_caller call_state ) )
+              match (access_callee : Access.t) with
+              | ArrayAccess _ ->
+                  Ok
+                    { call_state with
+                      array_indices_to_visit=
+                        {addr_pre_dest; pre_hist; access_callee; addr_hist_caller}
+                        :: call_state.array_indices_to_visit }
+              | FieldAccess _ | TakeAddress | Dereference ->
+                  (* only array accessess depend on abstract values and need translation *)
+                  let access_caller = access_callee in
+                  let astate, addr_hist_dest_caller =
+                    Memory.eval_edge addr_hist_caller access_caller call_state.astate
+                  in
+                  let call_state = {call_state with astate} in
+                  materialize_pre_from_address ~pre ~addr_pre:addr_pre_dest
+                    (ValueHistory.get_cell_id pre_hist)
+                    ~addr_hist_caller:addr_hist_dest_caller call_state ) )
+
+
+let materialize_pre_from_array_index ~pre {addr_pre_dest; pre_hist; access_callee; addr_hist_caller}
+    call_state =
+  let subst, access_caller = translate_access_to_caller call_state.subst access_callee in
+  let astate, addr_hist_dest_caller =
+    Memory.eval_edge addr_hist_caller access_caller call_state.astate
+  in
+  let call_state = {call_state with astate; subst} in
+  (* HACK: we should probably visit the value in the (array) access too, but since it's a value
+     normally it shouldn't appear in the heap anyway so there should be nothing to visit. *)
+  materialize_pre_from_address ~pre ~addr_pre:addr_pre_dest
+    (ValueHistory.get_cell_id pre_hist)
+    ~addr_hist_caller:addr_hist_dest_caller call_state
+
+
+let materialize_pre_from_array_indices ~pre call_state =
+  let+ call_state =
+    PulseResult.list_fold call_state.array_indices_to_visit ~init:call_state
+      ~f:(fun call_state array_index_to_translate ->
+        materialize_pre_from_array_index ~pre array_index_to_translate call_state )
+  in
+  {call_state with array_indices_to_visit= []}
 
 
 let callee_deref_non_c_struct addr typ astate =
@@ -419,6 +457,7 @@ let materialize_pre path callee_proc_name call_location callee_summary ~captured
     >>= (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
     conjoin_callee_arith `Pre (AbductiveDomain.Summary.get_path_condition callee_summary)
+    >>= materialize_pre_from_array_indices ~pre:callee_precondition
     >>| add_attributes `Pre path callee_proc_name call_location callee_precondition.attrs
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
@@ -631,124 +670,6 @@ let apply_unknown_effects callee_summary call_state =
   {call_state with astate}
 
 
-(* All substitutions from callee to caller should use the canonical representation
-   of values and edges to ensure information is well connected between the two.
-   This is necessary for arrays because they can have different accesses with
-   different indices which are actually equal.
-   To do so, we add equalities in the state's formula for eveything we know should
-   be considered equal and get rid of the "non-canonical" representation of values
-   to avoid future conflicts with the canonical values.
-
-   e.g.
-    We can have { v1 -> { [v2] -> v3; [v4] -> v5 }} with v2 = v4. In that case, we
-    want to ensure that we always use v2 and v3 in the substitution rather than
-    v4 and v5. Therefore, we need to add the v3 = v5 equality in the formula and
-    ensure v5 will not conflict with v3 in the future.
-
-   These cases appear because when we link the arguments in the caller with the
-   parameters in the callee, we don't look into the array accesses to match the
-   indices with known values and also because some equalities may not be known at
-   the time we process an argument.
-   e.g.
-    when calling f(array, 0), we will only see that the second parameter is equal
-    to 0 after we already processed the first one so if one of the indices in the
-    given array is 0 and one in the parameter is equal to the second argument, we
-    would only know it after processing all the arguments and therefore after
-    having created values to represent the "new" index and value in the given array
-*)
-let canonicalize ~actuals call_state =
-  let incorporate_eqs_on_array_cells actuals astate =
-    let rec aux visited addrs astate replaced =
-      (* We keep track of the values from the callee that we replaced with values
-         from the caller to later remove their edges from the memory to avoid
-         getting an [Unsat] in [PulseUnsafeMemory.subst_var] which happens when we
-         [AbductiveDomain.incorporate_new_eqs] during the application of the post *)
-      let post_heap = (astate.AbductiveDomain.post :> BaseDomain.t).heap in
-      match addrs with
-      | [] ->
-          (astate, replaced)
-      | addr :: addrs when AddressSet.mem addr visited ->
-          aux visited addrs astate replaced
-      | addr :: addrs ->
-          let visited = AddressSet.add addr visited in
-          let merge_edges ~get_var_repr accessed accessed' astate =
-            (* Given 2 addresses [accessed] and [accessed'], merge their canonicalized
-               edges and update the edges of accessed' with the result. In case an
-               edge belongs to both addresses, the one from [accessed'] is kept. *)
-            match UnsafeMemory.find_opt accessed post_heap with
-            | None ->
-                astate
-            | Some edges ->
-                (* the callee value may know some edges that the caller is
-                   not aware of. We want to add them *)
-                let edges' =
-                  match UnsafeMemory.find_opt accessed' post_heap with
-                  | None ->
-                      UnsafeMemory.Edges.empty
-                  | Some edges' ->
-                      UnsafeMemory.Edges.canonicalize ~get_var_repr edges'
-                in
-                let edges = UnsafeMemory.Edges.canonicalize ~get_var_repr edges in
-                let merged_edges = UnsafeMemory.Edges.union_left_biased edges' edges in
-                AbductiveDomain.set_post_edges accessed' merged_edges astate
-          in
-          let add_new_eq_aux accessed accessed' (replaced, astate) =
-            (* Set the [accessed'] as equal to [accessed] in [astate.path_condition]
-               and set its edges to their merged canonicalized edges *)
-            match
-              Formula.and_equal (AbstractValueOperand accessed) (AbstractValueOperand accessed')
-                astate.AbductiveDomain.path_condition
-            with
-            | Unsat ->
-                (replaced, astate)
-            | Sat (formula, _new_eqs) ->
-                let get_var_repr v = Formula.get_var_repr formula v in
-                let astate' = merge_edges ~get_var_repr accessed accessed' astate in
-                let replaced =
-                  if phys_equal astate astate' then replaced else accessed :: replaced
-                in
-                let astate' = AbductiveDomain.set_path_condition formula astate' in
-                (replaced, astate')
-          in
-          let add_new_eq accessed addr' access' ((_, astate) as acc) =
-            (* Set the value accesssible from [addr'] and [access'] as equal to
-               [accessed] in [astate.path_condition] and merge their edges *)
-            let formula = astate.AbductiveDomain.path_condition in
-            let get_var_repr v = Formula.get_var_repr formula v in
-            match UnsafeMemory.find_edge_opt ~get_var_repr addr' access' post_heap with
-            | None ->
-                acc
-            | Some (accessed', _)
-              when AbstractValue.equal (get_var_repr accessed') (get_var_repr accessed) ->
-                acc
-            | Some (accessed', _) ->
-                add_new_eq_aux accessed accessed' acc
-          in
-          let replaced, astate, addrs =
-            Memory.fold_edges addr astate ~init:(replaced, astate, addrs)
-              ~f:(fun (replaced, astate, addrs) (access, (accessed, _)) ->
-                let formula = astate.AbductiveDomain.path_condition in
-                let get_var_repr v = Formula.get_var_repr formula v in
-                let addr' = get_var_repr addr in
-                let access' = Access.canonicalize ~get_var_repr access in
-                let replaced, astate =
-                  add_new_eq accessed addr' access (replaced, astate)
-                  |> add_new_eq accessed addr access'
-                in
-                (replaced, astate, accessed :: addrs) )
-          in
-          aux visited addrs astate replaced
-    in
-    let astate, replaced =
-      aux AddressSet.empty (List.map actuals ~f:(fun ((addr, _), _) -> addr)) astate []
-    in
-    List.fold replaced ~init:astate ~f:(fun astate addr ->
-        AbductiveDomain.remove_from_post addr astate )
-  in
-  let astate = incorporate_eqs_on_array_cells actuals call_state.astate in
-  if phys_equal call_state.astate astate then call_state else {call_state with astate}
-
-
 let read_return_value {PathContext.conditions; timestamp} callee_proc_name call_loc
     (callee_summary : AbductiveDomain.Summary.t) call_state =
   let return_var = Var.of_pvar (Pvar.get_ret_pvar callee_proc_name) in
@@ -785,15 +706,9 @@ let read_return_value {PathContext.conditions; timestamp} callee_proc_name call_
         ) )
 
 
-let apply_post path callee_proc_name call_location callee_summary ~captured_actuals ~actuals
-    call_state =
+let apply_post path callee_proc_name call_location callee_summary call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
   let normalize_subst_for_post call_state =
-    (* Exploit known equalities to deduce new ones by relying on the canonical representation
-       of values and edge. This is necessary for arrays because they rely on values in their
-       index access representation *)
-    let call_state = canonicalize ~actuals call_state in
-    let call_state = canonicalize ~actuals:captured_actuals call_state in
     (* Now that all equalities are deduced and set, we can exploit them to use the canonical
        representation of values in the subst and rev_subst maps *)
     let get_var_repr v = Formula.get_var_repr call_state.astate.AbductiveDomain.path_condition v in
@@ -945,7 +860,8 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
       ; subst= AddressMap.empty
       ; rev_subst= AddressMap.empty
       ; hist_map= CellId.Map.empty
-      ; visited= AddressSet.empty }
+      ; visited= AddressSet.empty
+      ; array_indices_to_visit= [] }
     in
     (* read the precondition *)
     match
@@ -979,8 +895,7 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
           let call_state = {call_state with astate; visited= AddressSet.empty} in
           (* apply the postcondition *)
           let* call_state, return_caller =
-            apply_post path callee_proc_name call_location callee_summary ~captured_actuals ~actuals
-              call_state
+            apply_post path callee_proc_name call_location callee_summary call_state
           in
           let astate =
             if Topl.is_active () then
