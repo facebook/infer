@@ -130,8 +130,8 @@ module AddressAttributes : sig
   val abduce_attribute : AbstractValue.t -> Attribute.t -> t -> t
   (** add the attribute to the pre, if the address is in pre *)
 
-  val abduce_and_add : AbstractValue.t -> Attributes.t -> t -> t
-  (** add the attributes to both the current state and, if meaningful, the pre *)
+  val abduce_attrs : AbstractValue.t -> Attributes.t -> t -> t
+  (** [abduce_attribute] on each attribute in the set *)
 
   val add_one : AbstractValue.t -> Attribute.t -> t -> t
   (** add the attribute only to the post *)

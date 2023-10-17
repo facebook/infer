@@ -137,10 +137,6 @@ type t =
 
 val pp : F.formatter -> t -> unit
 
-val is_suitable_for_pre : t -> bool
-
-val is_suitable_for_post : t -> bool
-
 val filter_unreachable :
   AbstractValue.Set.t AbstractValue.Map.t -> (AbstractValue.t -> bool) -> t -> t option
 (** update an attribute to get rid of abstract values that do not satisfy the given predicate; the

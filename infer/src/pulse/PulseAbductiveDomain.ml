@@ -323,6 +323,10 @@ module Internal = struct
       if phys_equal new_pre astate.pre then astate else {astate with pre= new_pre}
 
 
+    let abduce_attrs value attrs astate =
+      Attributes.fold attrs ~init:astate ~f:(fun astate attr -> abduce_attribute value attr astate)
+
+
     (** [astate] with [astate.post.attrs = f astate.post.attrs] *)
     let map_post_attrs ~f astate =
       let new_post = PostDomain.update astate.post ~attrs:(f (astate.post :> base_domain).attrs) in
@@ -333,32 +337,8 @@ module Internal = struct
       map_post_attrs astate ~f:(fun attrs -> BaseAddressAttributes.initialize address attrs)
 
 
-    let add_one address attributes astate =
-      map_post_attrs astate ~f:(BaseAddressAttributes.add_one address attributes)
-
-
-    let abduce_and_add value attrs astate =
-      Attributes.fold attrs ~init:astate ~f:(fun astate attr ->
-          let astate =
-            if Attribute.is_suitable_for_pre attr then abduce_attribute value attr astate
-            else astate
-          in
-          let astate =
-            if Attribute.is_suitable_for_post attr then add_one value attr astate else astate
-          in
-          match attr with Attribute.WrittenTo _ -> initialize value astate | _ -> astate )
-
-
     let find_opt address astate =
       BaseAddressAttributes.find_opt address (astate.post :> base_domain).attrs
-
-
-    let check_valid path ?must_be_valid_reason access_trace addr astate =
-      let+ () = BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs in
-      (* if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
-      abduce_attribute addr
-        (MustBeValid (path.PathContext.timestamp, access_trace, must_be_valid_reason))
-        astate
 
 
     let check_initialized path access_trace addr astate =
@@ -393,12 +373,6 @@ module Internal = struct
       let open IOption.Let_syntax in
       let* addr_attrs = BaseAddressAttributes.find_opt addr attrs in
       Attribute.Attributes.get_propagate_taint_from addr_attrs
-
-
-    (** [astate] with [astate.pre.attrs = f astate.pre.attrs] *)
-    let map_pre_attrs ~f astate =
-      let new_pre = PreDomain.update astate.pre ~attrs:(f (astate.pre :> base_domain).attrs) in
-      if phys_equal new_pre astate.pre then astate else {astate with pre= new_pre}
 
 
     let add_edge_on_src timestamp src location stack =
@@ -547,14 +521,6 @@ module Internal = struct
       map_post_attrs astate ~f:(BaseAddressAttributes.remove_taint_attrs address)
 
 
-    let add_one address attributes astate =
-      map_post_attrs astate ~f:(BaseAddressAttributes.add_one address attributes)
-
-
-    let remove_must_be_valid_attr address astate =
-      map_pre_attrs astate ~f:(BaseAddressAttributes.remove_must_be_valid_attr address)
-
-
     let get_closure_proc_name addr astate =
       BaseAddressAttributes.get_closure_proc_name addr (astate.post :> base_domain).attrs
 
@@ -600,19 +566,6 @@ module Internal = struct
       BaseAddressAttributes.get_const_string addr (astate.post :> base_domain).attrs
 
 
-    let add_attrs value attrs astate =
-      let astate =
-        match Attributes.get_invalid attrs with
-        | Some _ ->
-            remove_must_be_valid_attr value astate |> remove_allocation_attr value
-        | None ->
-            astate
-      in
-      Attributes.fold attrs ~init:astate ~f:(fun astate attr ->
-          let astate = add_one value attr astate in
-          match attr with Attribute.WrittenTo _ -> initialize value astate | _ -> astate )
-
-
     let get_valid_returned_from_unknown addr astate =
       let open IOption.Let_syntax in
       let+ returned_from =
@@ -639,6 +592,23 @@ module Internal = struct
 
     let get_address_of_stack_variable addr astate =
       BaseAddressAttributes.get_address_of_stack_variable addr (astate.post :> base_domain).attrs
+
+
+    let add_one value (attribute : Attribute.t) astate =
+      let astate = match attribute with WrittenTo _ -> initialize value astate | _ -> astate in
+      map_post_attrs astate ~f:(BaseAddressAttributes.add_one value attribute)
+
+
+    let add_attrs value attrs astate =
+      Attributes.fold attrs ~init:astate ~f:(fun astate attr -> add_one value attr astate)
+
+
+    let check_valid path ?must_be_valid_reason access_trace addr astate =
+      let+ () = BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs in
+      (* if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
+      abduce_attribute addr
+        (MustBeValid (path.PathContext.timestamp, access_trace, must_be_valid_reason))
+        astate
   end
 
   module SafeMemory = struct
@@ -2372,8 +2342,8 @@ module AddressAttributes = struct
     SafeAttributes.abduce_attribute (CanonValue.canon' astate v) attr astate
 
 
-  let abduce_and_add v attr astate =
-    SafeAttributes.abduce_and_add (CanonValue.canon' astate v) attr astate
+  let abduce_attrs v attrs astate =
+    SafeAttributes.abduce_attrs (CanonValue.canon' astate v) attrs astate
 
 
   let add_one v attr astate = SafeAttributes.add_one (CanonValue.canon' astate v) attr astate

@@ -220,6 +220,14 @@ let subst_find_or_new subst addr_callee ~default_hist_caller =
       (subst, addr_hist_caller)
 
 
+let call_state_subst_find_or_new call_state addr_callee ~default_hist_caller =
+  let new_subst, addr_hist_caller =
+    subst_find_or_new call_state.subst addr_callee ~default_hist_caller
+  in
+  if phys_equal new_subst call_state.subst then (call_state, addr_hist_caller)
+  else ({call_state with subst= new_subst}, addr_hist_caller)
+
+
 let translate_access_to_caller subst (access_callee : Access.t) : _ * Access.t =
   match access_callee with
   | ArrayAccess (typ, val_callee) ->
@@ -366,31 +374,40 @@ let caller_attrs_of_callee_attrs timestamp callee_proc_name call_location caller
   ({call_state with subst= !subst_ref}, attrs)
 
 
-let apply_arithmetic_constraints pre_or_post {PathContext.timestamp} callee_proc_name call_location
-    callee_summary call_state =
-  let one_address_sat callee_attrs (addr_caller, caller_history) call_state =
+let add_attributes pre_or_post {PathContext.timestamp} callee_proc_name call_location
+    callee_attributes call_state =
+  let add_for_address callee_attrs (addr_caller, caller_history) call_state =
     let call_state, attrs_caller =
       caller_attrs_of_callee_attrs timestamp callee_proc_name call_location caller_history
         call_state callee_attrs
     in
-    let astate = AddressAttributes.abduce_and_add addr_caller attrs_caller call_state.astate in
+    let astate = call_state.astate in
+    let astate =
+      match pre_or_post with
+      | `Post when Attributes.is_java_resource_released attrs_caller ->
+          PulseOperations.java_resource_release ~recursive:true addr_caller astate
+      | `Post when Attributes.is_csharp_resource_released attrs_caller ->
+          PulseOperations.csharp_resource_release ~recursive:true addr_caller astate
+      | _ ->
+          astate
+    in
+    let abduce_or_add =
+      match pre_or_post with
+      | `Pre ->
+          AddressAttributes.abduce_attrs
+      | `Post ->
+          AddressAttributes.add_attrs
+    in
+    let astate = abduce_or_add addr_caller attrs_caller astate in
     if phys_equal astate call_state.astate then call_state else {call_state with astate}
   in
-  let+ call_state =
-    conjoin_callee_arith pre_or_post
-      (AbductiveDomain.Summary.get_path_condition callee_summary)
-      call_state
-  in
-  AddressMap.fold
-    (fun addr_callee addr_hist_caller call_state ->
-      match
-        UnsafeAttributes.find_opt addr_callee (AbductiveDomain.Summary.get_pre callee_summary).attrs
-      with
-      | None ->
-          call_state
-      | Some callee_attrs ->
-          one_address_sat callee_attrs addr_hist_caller call_state )
-    call_state.subst call_state
+  UnsafeAttributes.fold
+    (fun addr_callee callee_attrs call_state ->
+      let call_state, addr_hist_caller =
+        call_state_subst_find_or_new call_state addr_callee ~default_hist_caller:ValueHistory.epoch
+      in
+      add_for_address callee_attrs addr_hist_caller call_state )
+    callee_attributes call_state
 
 
 let materialize_pre path callee_proc_name call_location callee_summary ~captured_formals
@@ -405,21 +422,14 @@ let materialize_pre path callee_proc_name call_location callee_summary ~captured
     >>= materialize_pre_for_globals path call_location ~pre:callee_precondition
     >>= (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
-    apply_arithmetic_constraints `Pre path callee_proc_name call_location callee_summary
+    conjoin_callee_arith `Pre (AbductiveDomain.Summary.get_path_condition callee_summary)
+    >>| add_attributes `Pre path callee_proc_name call_location callee_precondition.attrs
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;
   r
 
 
 (* {3 applying the post to the current state} *)
-
-let call_state_subst_find_or_new call_state addr_callee ~default_hist_caller =
-  let new_subst, addr_hist_caller =
-    subst_find_or_new call_state.subst addr_callee ~default_hist_caller
-  in
-  if phys_equal new_subst call_state.subst then (call_state, addr_hist_caller)
-  else ({call_state with subst= new_subst}, addr_hist_caller)
-
 
 let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state =
   match
@@ -450,22 +460,7 @@ let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state
 
 
 let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc ~edges_pre_opt
-    ~cell_callee_post:(edges_callee_post, attrs_callee_post) (addr_caller, hist_caller) call_state =
-  let call_state =
-    let call_state, attrs_post_caller =
-      caller_attrs_of_callee_attrs timestamp callee_proc_name call_loc hist_caller call_state
-        attrs_callee_post
-    in
-    let astate =
-      if Attributes.is_java_resource_released attrs_post_caller then
-        PulseOperations.java_resource_release ~recursive:true addr_caller call_state.astate
-      else if Attributes.is_csharp_resource_released attrs_post_caller then
-        PulseOperations.csharp_resource_release ~recursive:true addr_caller call_state.astate
-      else call_state.astate
-    in
-    let astate = AddressAttributes.abduce_and_add addr_caller attrs_post_caller astate in
-    {call_state with astate}
-  in
+    ~edges_callee_post (addr_caller, hist_caller) call_state =
   let subst, translated_post_edges =
     UnsafeMemory.Edges.fold ~init:(call_state.subst, BaseMemory.Edges.empty) edges_callee_post
       ~f:(fun (subst, translated_edges) (access_callee, (addr_callee, trace_post)) ->
@@ -520,7 +515,7 @@ let rec record_post_for_address path callee_proc_name call_loc callee_summary ~a
     with
     | None ->
         Ok call_state
-    | Some ((edges_post, attrs_post) as cell_callee_post) ->
+    | Some ((edges_callee_post, _) as cell_callee_post) ->
         let edges_pre_opt =
           UnsafeMemory.find_opt addr_callee
             (AbductiveDomain.Summary.get_pre callee_summary).BaseDomain.heap
@@ -531,9 +526,9 @@ let rec record_post_for_address path callee_proc_name call_loc callee_summary ~a
             call_state )
           else
             record_post_cell path callee_proc_name call_loc ~edges_pre_opt addr_hist_caller
-              ~cell_callee_post:(edges_post, attrs_post) call_state
+              ~edges_callee_post call_state
         in
-        UnsafeMemory.Edges.fold ~init:(Ok call_state_after_post) edges_post
+        UnsafeMemory.Edges.fold ~init:(Ok call_state_after_post) edges_callee_post
           ~f:(fun call_state (_access, (addr_callee_dest, _)) ->
             let* call_state in
             let call_state, addr_hist_curr_dest =
@@ -663,27 +658,6 @@ let apply_post_for_globals path callee_proc_name call_location callee_summary ca
       record_post_for_address path callee_proc_name call_location callee_summary ~addr_callee
         ~addr_hist_caller call_state )
   |> (* always return [Ok _] above *) PulseResult.ok_exn
-
-
-let record_post_remaining_attributes {PathContext.timestamp} callee_proc_name call_loc
-    callee_summary call_state =
-  BaseAddressAttributes.fold
-    (fun addr_callee attrs call_state ->
-      if AddressSet.mem (CanonValue.downcast addr_callee) call_state.visited then
-        (* already recorded the attributes when we were walking the edges map *)
-        call_state
-      else
-        match AddressMap.find_opt (CanonValue.downcast addr_callee) call_state.subst with
-        | None ->
-            (* callee address has no meaning for the caller *) call_state
-        | Some (addr_caller, history) ->
-            let call_state, attrs' =
-              caller_attrs_of_callee_attrs timestamp callee_proc_name call_loc history call_state
-                attrs
-            in
-            let astate = AddressAttributes.abduce_and_add addr_caller attrs' call_state.astate in
-            {call_state with astate} )
-    (AbductiveDomain.Summary.get_post callee_summary).attrs call_state
 
 
 let record_skipped_calls callee_proc_name call_loc callee_summary call_state =
@@ -911,7 +885,8 @@ let apply_post path callee_proc_name call_location callee_summary ~captured_form
       >>= record_post_for_return path callee_proc_name call_location callee_summary
     in
     let+ call_state =
-      record_post_remaining_attributes path callee_proc_name call_location callee_summary call_state
+      add_attributes `Post path callee_proc_name call_location
+        (AbductiveDomain.Summary.get_post callee_summary).attrs call_state
       |> record_skipped_calls callee_proc_name call_location callee_summary
       |> record_need_closure_specialization callee_summary
       |> conjoin_callee_arith `Post (AbductiveDomain.Summary.get_path_condition callee_summary)
