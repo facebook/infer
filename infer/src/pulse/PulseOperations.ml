@@ -118,9 +118,9 @@ module ModeledField = struct
   let delegated_release = Fieldname.make pulse_model_type "__infer_model_delegated_release"
 end
 
-let conservatively_initialize_args arg_values ({AbductiveDomain.post} as astate) =
+let conservatively_initialize_args arg_values astate =
   let reachable_values =
-    AbductiveDomain.reachable_addresses_from (Caml.List.to_seq arg_values) (post :> BaseDomain.t)
+    AbductiveDomain.reachable_addresses_from (Caml.List.to_seq arg_values) astate `Post
   in
   AbstractValue.Set.fold AddressAttributes.initialize reachable_values astate
 
@@ -700,31 +700,9 @@ let get_dynamic_type_unreachable_values vars astate =
   List.map ~f:(fun (var, _, typ) -> (var, typ)) res
 
 
-let mark_potential_leaks location ~dead_roots astate =
-  let is_dead_root var = List.mem ~equal:Var.equal dead_roots var in
-  (* only consider locations that could actually cause a leak if unreachable *)
-  let allocated_reachable_from_dead_root =
-    AbductiveDomain.reachable_addresses ~var_filter:is_dead_root
-      (astate.AbductiveDomain.post :> BaseDomain.t)
-    |> AbstractValue.Set.filter (fun addr ->
-           AddressAttributes.get_allocation addr astate |> Option.is_some )
-  in
-  match
-    AbductiveDomain.filter_live_addresses ~is_dead_root allocated_reachable_from_dead_root astate
-  with
-  | None ->
-      astate
-  | Some potential_leaks ->
-      (* delay reporting leak as to avoid false positives we need to massage the state some more;
-         TODO: this can make use miss reporting memory leaks if another error is found *)
-      AbstractValue.Set.fold
-        (fun addr astate -> AddressAttributes.add_unreachable_at addr location astate)
-        potential_leaks astate
-
-
 let remove_vars vars location astate =
   let open SatUnsat.Import in
-  let astate = mark_potential_leaks location ~dead_roots:vars astate in
+  let astate = AbductiveDomain.mark_potential_leaks location ~dead_roots:vars astate in
   (* remember addresses that will marked invalid later *)
   let+ astate =
     SatUnsat.list_fold vars ~init:astate ~f:(fun astate var ->

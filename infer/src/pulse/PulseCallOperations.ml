@@ -54,14 +54,14 @@ let is_const_version_available tenv pname =
 
 
 let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t)
-    callee_pname_opt ~ret ~actuals ~formals_opt ({AbductiveDomain.post; path_condition} as astate) =
+    callee_pname_opt ~ret ~actuals ~formals_opt astate0 =
   let hist =
     ValueHistory.singleton
       (Call {f= reason; location= call_loc; in_call= ValueHistory.epoch; timestamp})
   in
   let ret_val = AbstractValue.mk_fresh () in
   (* record the [ReturnedFromUnknown] attribute from ret_v -> actuals for checking for modifications to copies *)
-  let astate = add_returned_from_unknown callee_pname_opt ret_val actuals astate in
+  let astate = add_returned_from_unknown callee_pname_opt ret_val actuals astate0 in
   let astate = PulseOperations.write_id (fst ret) (ret_val, hist) astate in
   let astate = Decompiler.add_call_source ret_val reason actuals astate in
   (* set to [false] if we think the procedure called does not behave "functionally", i.e. return the
@@ -93,7 +93,7 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
   let havoc_actual_if_ptr ((actual, _), actual_typ) formal_opt astate =
     let fold_on_reachable_from_arg astate f =
       let reachable_from_arg =
-        AbductiveDomain.reachable_addresses_from (Caml.List.to_seq [actual]) (post :> BaseDomain.t)
+        AbductiveDomain.reachable_addresses_from (Seq.return actual) astate0 `Post
       in
       AbstractValue.Set.fold f reachable_from_arg astate
     in
@@ -130,7 +130,10 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
             let call_trace = Trace.Immediate {location= call_loc; history= hist} in
             let written_attrs = Attributes.singleton (WrittenTo (timestamp, call_trace)) in
             fold_on_reachable_from_arg astate (fun reachable_actual acc ->
-                if Formula.is_known_non_pointer path_condition reachable_actual then
+                if
+                  Formula.is_known_non_pointer astate.AbductiveDomain.path_condition
+                    reachable_actual
+                then
                   (* not add [WrittenTo] for the non-pointer value, because primitive constant value
                      is immutable, i.e. cannot be modified. *)
                   acc

@@ -247,10 +247,18 @@ module Internal = struct
       BaseStack.fold (fun v _ acc -> f v acc) (astate.post :> base_domain).stack accum
 
 
-    let fold f astate accum =
+    let fold pre_or_post f astate accum =
+      let stack =
+        ( match pre_or_post with
+        | `Pre ->
+            (astate.pre :> base_domain)
+        | `Post ->
+            (astate.post :> base_domain) )
+          .stack
+      in
       BaseStack.fold
         (fun var addr_hist acc -> f var (CanonValue.canon_fst astate addr_hist) acc)
-        (astate.post :> base_domain).stack accum
+        stack accum
 
 
     let find_opt var astate =
@@ -731,20 +739,20 @@ module Internal = struct
 
   let find_cell_opt addr domain =
     match
-      (RawMemory.find_opt addr domain.heap, PulseBaseAddressAttributes.find_opt addr domain.attrs)
+      (BaseMemory.find_opt addr domain.heap, BaseAddressAttributes.find_opt addr domain.attrs)
     with
     | None, None ->
         None
     (* the following two cases can happen because of [register_address] or because we don't always
        take care to delete empty edges when removing edges (same for attributes) *)
-    | Some edges, None when RawMemory.Edges.is_empty edges ->
+    | Some edges, None when BaseMemory.Edges.is_empty edges ->
         None
     | None, Some attrs when Attributes.is_empty attrs ->
         None
     | edges_opt, attrs_opt ->
         (* at least one of these is not None and not empty *)
         Some
-          ( Option.value edges_opt ~default:RawMemory.Edges.empty
+          ( Option.value edges_opt ~default:BaseMemory.Edges.empty
           , Option.value attrs_opt ~default:Attributes.empty )
 
 
@@ -1005,7 +1013,7 @@ module Internal = struct
 
   let get_stack_allocated astate =
     (* OPTIM: the post stack contains at least the pre stack so no need to check both *)
-    SafeStack.fold
+    SafeStack.fold `Post
       (fun var (address, _) allocated ->
         if Var.is_pvar var then AbstractValue.Set.add (downcast address) allocated else allocated )
       astate AbstractValue.Set.empty
@@ -1164,20 +1172,20 @@ module Internal = struct
       [lhs_to_rhs(reachable(lhs)) = reachable(rhs)] (where addresses are reachable if they are
       reachable from stack variables). *)
   module GraphComparison = struct
-    module AddressMap = PrettyPrintable.MakePPMap (AbstractValue)
+    module AddressMap = PrettyPrintable.MakePPMap (CanonValue)
 
     (** translation between the abstract values on the LHS and the ones on the RHS *)
     type mapping =
-      { rhs_to_lhs: AbstractValue.t AddressMap.t  (** map from RHS values to LHS *)
-      ; lhs_to_rhs: AbstractValue.t AddressMap.t  (** inverse map from [rhs_to_lhs] *) }
+      { rhs_to_lhs: CanonValue.t AddressMap.t  (** map from RHS values to LHS *)
+      ; lhs_to_rhs: CanonValue.t AddressMap.t  (** inverse map from [rhs_to_lhs] *) }
 
     let empty_mapping = {rhs_to_lhs= AddressMap.empty; lhs_to_rhs= AddressMap.empty}
 
     let pp_mapping fmt {rhs_to_lhs; lhs_to_rhs} =
       F.fprintf fmt "@[<v>{ rhs_to_lhs=@[<hv2>%a@];@,lhs_to_rhs=@[<hv2>%a@];@,}@]"
-        (AddressMap.pp ~pp_value:AbstractValue.pp)
+        (AddressMap.pp ~pp_value:CanonValue.pp)
         rhs_to_lhs
-        (AddressMap.pp ~pp_value:AbstractValue.pp)
+        (AddressMap.pp ~pp_value:CanonValue.pp)
         lhs_to_rhs
 
 
@@ -1185,13 +1193,12 @@ module Internal = struct
     let record_equal ~addr_lhs ~addr_rhs mapping =
       (* have we seen [addr_lhs] before?.. *)
       match AddressMap.find_opt addr_lhs mapping.lhs_to_rhs with
-      | Some addr_rhs' when not (AbstractValue.equal addr_rhs addr_rhs') ->
+      | Some addr_rhs' when not (CanonValue.equal addr_rhs addr_rhs') ->
           (* ...yes, but it was bound to another address *)
           L.d_printfln
             "Aliasing in LHS not in RHS: LHS address %a in current already bound to %a, not %a@\n\
              State=%a"
-            AbstractValue.pp addr_lhs AbstractValue.pp addr_rhs' AbstractValue.pp addr_rhs
-            pp_mapping mapping ;
+            CanonValue.pp addr_lhs CanonValue.pp addr_rhs' CanonValue.pp addr_rhs pp_mapping mapping ;
           `AliasingLHS
       | Some _addr_rhs (* [_addr_rhs = addr_rhs] *) ->
           `AlreadyVisited
@@ -1204,8 +1211,8 @@ module Internal = struct
             L.d_printfln
               "Aliasing in RHS not in LHS: RHS address %a in current already bound to %a, not %a@\n\
                State=%a"
-              AbstractValue.pp addr_rhs AbstractValue.pp addr_lhs' AbstractValue.pp addr_lhs
-              pp_mapping mapping ;
+              CanonValue.pp addr_rhs CanonValue.pp addr_lhs' CanonValue.pp addr_lhs pp_mapping
+              mapping ;
             `AliasingRHS
         | None ->
             (* [addr_rhs] and [addr_lhs] are both new, record that they correspond to each other *)
@@ -1222,8 +1229,9 @@ module Internal = struct
 
     (** can we extend [mapping] so that the subgraph of [lhs] rooted at [addr_lhs] is isomorphic to
         the subgraph of [rhs] rooted at [addr_rhs]? *)
-    let rec isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping =
-      L.d_printfln "%a<->%a@\n" AbstractValue.pp addr_lhs AbstractValue.pp addr_rhs ;
+    let rec isograph_map_from_address ~astate_lhs ~lhs ~addr_lhs ~astate_rhs ~rhs ~addr_rhs mapping
+        =
+      L.d_printfln "%a<->%a@\n" CanonValue.pp addr_lhs CanonValue.pp addr_rhs ;
       match record_equal mapping ~addr_lhs ~addr_rhs with
       | `AlreadyVisited ->
           IsomorphicUpTo mapping
@@ -1233,7 +1241,7 @@ module Internal = struct
           let get_non_empty_cell addr astate =
             find_cell_opt addr astate
             |> Option.filter ~f:(fun (edges, attrs) ->
-                   not (RawMemory.Edges.is_empty edges && Attributes.is_empty attrs)
+                   not (BaseMemory.Edges.is_empty edges && Attributes.is_empty attrs)
                    (* this can happen because of [register_address] or because we don't care to delete empty
                       edges when removing edges *) )
           in
@@ -1249,71 +1257,92 @@ module Internal = struct
               if Attributes.equal attrs_rhs attrs_lhs then
                 let bindings_lhs = RawMemory.Edges.bindings edges_lhs in
                 let bindings_rhs = RawMemory.Edges.bindings edges_rhs in
-                isograph_map_edges ~lhs ~edges_lhs:bindings_lhs ~rhs ~edges_rhs:bindings_rhs mapping
+                isograph_map_edges ~astate_lhs ~lhs ~edges_lhs:bindings_lhs ~astate_rhs ~rhs
+                  ~edges_rhs:bindings_rhs mapping
               else NotIsomorphic )
 
 
     (** check that the isograph relation can be extended for all edges *)
-    and isograph_map_edges ~lhs ~edges_lhs ~rhs ~edges_rhs mapping =
+    and isograph_map_edges ~astate_lhs ~lhs ~edges_lhs ~astate_rhs ~rhs ~edges_rhs mapping =
       match (edges_lhs, edges_rhs) with
       | [], [] ->
           IsomorphicUpTo mapping
       | (a_lhs, (addr_lhs, _trace_lhs)) :: edges_lhs, (a_rhs, (addr_rhs, _trace_rhs)) :: edges_rhs
-        when Access.equal a_lhs a_rhs -> (
-        (* check isograph relation from the destination addresses *)
-        match isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping with
-        | IsomorphicUpTo mapping ->
-            (* ok: continue with the other edges *)
-            isograph_map_edges ~lhs ~edges_lhs ~rhs ~edges_rhs mapping
-        | NotIsomorphic ->
-            NotIsomorphic )
-      | _ :: _, _ :: _ | [], _ :: _ | _ :: _, [] ->
+        ->
+          let access_lhs = CanonValue.canon_access astate_lhs a_lhs in
+          let access_rhs = CanonValue.canon_access astate_rhs a_rhs in
+          if SafeMemory.Access.equal access_lhs access_rhs then
+            (* check isograph relation from the destination addresses *)
+            let addr_lhs = CanonValue.canon' astate_lhs addr_lhs in
+            let addr_rhs = CanonValue.canon' astate_rhs addr_rhs in
+            match
+              isograph_map_from_address ~astate_lhs ~lhs ~addr_lhs ~astate_rhs ~rhs ~addr_rhs
+                mapping
+            with
+            | IsomorphicUpTo mapping ->
+                (* ok: continue with the other edges *)
+                isograph_map_edges ~astate_lhs ~lhs ~edges_lhs ~astate_rhs ~rhs ~edges_rhs mapping
+            | NotIsomorphic ->
+                NotIsomorphic
+          else NotIsomorphic
+      | [], _ :: _ | _ :: _, [] ->
           NotIsomorphic
 
 
     (** check that the memory graph induced by the addresses in [lhs] reachable from the variables
         in [stack_lhs] is a isograph of the same graph in [rhs] starting from [stack_rhs], up to
         some [mapping] *)
-    let rec isograph_map_from_stack ~lhs ~stack_lhs ~rhs ~stack_rhs mapping =
+    let rec isograph_map_from_stack ~astate_lhs ~lhs ~stack_lhs ~astate_rhs ~rhs ~stack_rhs mapping
+        =
       match (stack_lhs, stack_rhs) with
       | [], [] ->
           IsomorphicUpTo mapping
       | ( (var_lhs, (addr_lhs, _trace_lhs)) :: stack_lhs
         , (var_rhs, (addr_rhs, _trace_rhs)) :: stack_rhs )
         when Var.equal var_lhs var_rhs -> (
-        match isograph_map_from_address ~lhs ~addr_lhs ~rhs ~addr_rhs mapping with
-        | IsomorphicUpTo mapping ->
-            isograph_map_from_stack ~lhs ~stack_lhs ~rhs ~stack_rhs mapping
-        | NotIsomorphic ->
-            NotIsomorphic )
+          let addr_lhs = CanonValue.canon' astate_lhs addr_lhs in
+          let addr_rhs = CanonValue.canon' astate_rhs addr_rhs in
+          match
+            isograph_map_from_address ~astate_lhs ~lhs ~addr_lhs ~astate_rhs ~rhs ~addr_rhs mapping
+          with
+          | IsomorphicUpTo mapping ->
+              isograph_map_from_stack ~astate_lhs ~lhs ~stack_lhs ~astate_rhs ~rhs ~stack_rhs
+                mapping
+          | NotIsomorphic ->
+              NotIsomorphic )
       | _ :: _, _ :: _ | [], _ :: _ | _ :: _, [] ->
           NotIsomorphic
 
 
-    let isograph_map ~lhs ~rhs mapping =
+    let isograph_map ~astate_lhs ~lhs ~astate_rhs ~rhs mapping =
       let stack_lhs = RawStack.bindings lhs.stack in
       let stack_rhs = RawStack.bindings rhs.stack in
-      isograph_map_from_stack ~lhs ~rhs ~stack_lhs ~stack_rhs mapping
+      isograph_map_from_stack ~astate_lhs ~astate_rhs ~lhs ~rhs ~stack_lhs ~stack_rhs mapping
 
 
-    let is_isograph ~lhs ~rhs mapping =
-      match isograph_map ~lhs ~rhs mapping with IsomorphicUpTo _ -> true | NotIsomorphic -> false
+    let is_isograph ~astate_lhs ~lhs ~astate_rhs ~rhs mapping =
+      match isograph_map ~astate_lhs ~lhs ~astate_rhs ~rhs mapping with
+      | IsomorphicUpTo _ ->
+          true
+      | NotIsomorphic ->
+          false
   end
 
   module GraphVisit : sig
     val fold :
          var_filter:(Var.t -> bool)
-      -> ?edge_filter:(Access.t -> bool)
-      -> BaseDomain.t
+      -> ?edge_filter:(SafeMemory.Access.t -> bool)
+      -> t
+      -> [`Pre | `Post]
       -> init:'accum
       -> f:
            (   Var.t
             -> 'accum
-            -> AbstractValue.t
-            -> Access.t list
-            -> ('accum, 'final) Base.Continue_or_stop.t )
+            -> CanonValue.t
+            -> RawMemory.Access.t list
+            -> ('accum, 'final) Continue_or_stop.t )
       -> finish:('accum -> 'final)
-      -> AbstractValue.Set.t * 'final
+      -> CanonValue.Set.t * 'final
     (** Generic graph traversal of the memory starting from each variable in the stack that pass
         [var_filter], in order. Returns the result of folding over every address in the graph and
         the set of addresses that have been visited before [f] returned [Stop] or all reachable
@@ -1321,109 +1350,116 @@ module Internal = struct
         address was reached and the access path from that variable to the address. *)
 
     val fold_from_addresses :
-         ?edge_filter:(Access.t -> bool)
-      -> AbstractValue.t Seq.t
-      -> BaseDomain.t
+         ?edge_filter:(SafeMemory.Access.t -> bool)
+      -> CanonValue.t Seq.t
+      -> t
+      -> [`Pre | `Post]
+      -> already_visited:CanonValue.Set.t
       -> init:'accum
-      -> already_visited:AbstractValue.Set.t
-      -> f:('accum -> AbstractValue.t -> Access.t list -> ('accum, 'final) Base.Continue_or_stop.t)
+      -> f:('accum -> CanonValue.t -> RawMemory.Access.t list -> ('accum, 'final) Continue_or_stop.t)
       -> finish:('accum -> 'final)
-      -> AbstractValue.Set.t * 'final
+      -> CanonValue.Set.t * 'final
     (** Similar to [fold], but start from given addresses, instead of stack variables. Use
         already_visited as initial set of visited values. *)
   end = struct
-    open Base.Continue_or_stop
+    open Continue_or_stop
 
     let visit address visited =
-      if AbstractValue.Set.mem address visited then `AlreadyVisited
+      if CanonValue.Set.mem address visited then `AlreadyVisited
       else
-        let visited = AbstractValue.Set.add address visited in
+        let visited = CanonValue.Set.add address visited in
         `NotAlreadyVisited visited
 
 
-    let rec visit_address ~edge_filter address ~f rev_accesses astate
+    let rec visit_address ~edge_filter address ~f rev_accesses astate heap
         ((visited, accum) as visited_accum) =
       match visit address visited with
       | `AlreadyVisited ->
           Continue visited_accum
       | `NotAlreadyVisited visited -> (
-        match f accum address rev_accesses with
-        | Continue accum -> (
-          match RawMemory.find_opt address astate.heap with
-          | None ->
-              Continue (visited, accum)
-          | Some edges ->
-              visit_edges ~edge_filter edges ~f rev_accesses astate (visited, accum) )
+        match
+          f accum address (rev_accesses : BaseMemory.Access.t list :> RawMemory.Access.t list)
+        with
+        | Continue accum ->
+            let visited_accum = (visited, accum) in
+            let finish visited_accum = Continue visited_accum in
+            Container.fold_until ~fold:(SafeBaseMemory.fold_edges astate address)
+              heap ~init:visited_accum ~finish ~f:(fun visited_accum (access, (address, _trace)) ->
+                if edge_filter access then
+                  match visit_access ~edge_filter ~f access astate heap visited_accum with
+                  | Stop fin ->
+                      Stop (Stop fin)
+                  | Continue visited_accum -> (
+                    match
+                      visit_address ~edge_filter address ~f (access :: rev_accesses) astate heap
+                        visited_accum
+                    with
+                    | Continue _ as cont ->
+                        cont
+                    | Stop fin ->
+                        Stop (Stop fin) )
+                else Continue visited_accum )
         | Stop fin ->
             Stop (visited, fin) )
 
 
-    and visit_edges ~edge_filter edges ~f rev_accesses astate visited_accum =
-      let finish visited_accum = Continue visited_accum in
-      Container.fold_until edges ~fold:RawMemory.Edges.fold ~finish ~init:visited_accum
-        ~f:(fun visited_accum (access, (address, _trace)) ->
-          if edge_filter access then
-            match visit_access ~edge_filter ~f access astate visited_accum with
-            | Stop fin ->
-                Stop (Stop fin)
-            | Continue visited_accum -> (
-              match
-                visit_address ~edge_filter address ~f (access :: rev_accesses) astate visited_accum
-              with
-              | Continue _ as cont ->
-                  cont
-              | Stop fin ->
-                  Stop (Stop fin) )
-          else Continue visited_accum )
-
-
-    and visit_access ~edge_filter ~f (access : Access.t) astate visited_accum =
+    and visit_access ~edge_filter ~f (access : SafeMemory.Access.t) astate heap visited_accum =
       match access with
       | ArrayAccess (_, addr) ->
-          visit_address ~edge_filter addr ~f [] astate visited_accum
+          visit_address ~edge_filter addr ~f [] astate heap visited_accum
       | FieldAccess _ | TakeAddress | Dereference ->
           Continue visited_accum
 
 
-    let visit_address_from_var ~edge_filter (orig_var, (address, _loc)) ~f rev_accesses astate
+    let visit_address_from_var ~edge_filter (orig_var, (address, _loc)) ~f rev_accesses astate heap
         visited_accum =
-      visit_address ~edge_filter address ~f:(f orig_var) rev_accesses astate visited_accum
+      visit_address ~edge_filter address ~f:(f orig_var) rev_accesses astate heap visited_accum
 
 
-    let fold_common x astate ~fold ~filter ~visit ~init ~already_visited ~f ~finish =
+    let fold_common x astate heap ~fold ~filter ~visit ~init ~already_visited ~f ~finish =
       let finish (visited, accum) = (visited, finish accum) in
       let init = (already_visited, init) in
       Container.fold_until x ~fold ~init ~finish ~f:(fun visited_accum elem ->
-          if filter elem then visit elem ~f [] astate visited_accum else Continue visited_accum )
+          if filter elem then visit elem ~f [] astate heap visited_accum else Continue visited_accum )
 
 
-    let fold ~var_filter ?(edge_filter = fun _ -> true) astate =
-      fold_common astate.stack astate
-        ~fold:(IContainer.fold_of_pervasives_map_fold RawStack.fold)
+    let pre_or_post_heap astate pre_or_post =
+      match pre_or_post with
+      | `Pre ->
+          (astate.pre :> base_domain).heap
+      | `Post ->
+          (astate.post :> base_domain).heap
+
+
+    let fold ~var_filter ?(edge_filter = fun _ -> true) astate pre_or_post ~init ~f ~finish =
+      fold_common astate astate
+        (pre_or_post_heap astate pre_or_post)
+        ~fold:(IContainer.fold_of_pervasives_map_fold (SafeStack.fold pre_or_post))
         ~filter:(fun (var, _) -> var_filter var)
         ~visit:(visit_address_from_var ~edge_filter)
-        ~already_visited:AbstractValue.Set.empty
+        ~already_visited:CanonValue.Set.empty ~init ~f ~finish
 
 
-    let fold_from_addresses ?(edge_filter = fun _ -> true) from astate =
+    let fold_from_addresses ?(edge_filter = fun _ -> true) from astate pre_or_post ~already_visited
+        ~init ~f ~finish =
       let seq_fold seq ~init ~f = Seq.fold_left f init seq in
-      fold_common from astate ~fold:seq_fold
+      fold_common from astate
+        (pre_or_post_heap astate pre_or_post)
+        ~fold:seq_fold
         ~filter:(fun _ -> true)
-        ~visit:(visit_address ~edge_filter)
+        ~visit:(visit_address ~edge_filter) ~already_visited ~init ~f ~finish
   end
 
-  include GraphComparison
-
-  let reachable_addresses ?(var_filter = fun _ -> true) ?edge_filter astate =
-    GraphVisit.fold astate ~var_filter ?edge_filter ~init:() ~finish:Fn.id ~f:(fun _ () _ _ ->
-        Continue () )
+  let reachable_addresses ?(var_filter = fun _ -> true) ?edge_filter astate pre_or_post =
+    GraphVisit.fold astate pre_or_post ~var_filter ?edge_filter ~init:() ~finish:Fn.id
+      ~f:(fun _ () _ _ -> Continue ())
     |> fst
 
 
-  let reachable_addresses_from ?(already_visited = AbstractValue.Set.empty) ?edge_filter addresses
-      astate =
-    GraphVisit.fold_from_addresses ?edge_filter addresses astate ~init:() ~already_visited
-      ~finish:Fn.id ~f:(fun () _ _ -> Continue ())
+  let reachable_addresses_from ?(already_visited = CanonValue.Set.empty) ?edge_filter addresses
+      astate pre_or_post =
+    GraphVisit.fold_from_addresses ?edge_filter addresses astate pre_or_post ~init:()
+      ~already_visited ~finish:Fn.id ~f:(fun () _ _ -> Continue ())
     |> fst
 end
 
@@ -1519,106 +1555,129 @@ let leq ~lhs ~rhs =
      && Formula.equal lhs.path_condition rhs.path_condition
      &&
      match
-       isograph_map empty_mapping ~lhs:(lhs.pre :> BaseDomain.t) ~rhs:(rhs.pre :> BaseDomain.t)
+       GraphComparison.isograph_map GraphComparison.empty_mapping ~astate_lhs:lhs
+         ~lhs:(lhs.pre :> BaseDomain.t)
+         ~astate_rhs:rhs
+         ~rhs:(rhs.pre :> BaseDomain.t)
      with
      | NotIsomorphic ->
          false
      | IsomorphicUpTo foot_mapping ->
-         is_isograph foot_mapping ~lhs:(lhs.post :> BaseDomain.t) ~rhs:(rhs.post :> BaseDomain.t)
+         GraphComparison.is_isograph foot_mapping ~astate_lhs:lhs
+           ~lhs:(lhs.post :> BaseDomain.t)
+           ~astate_rhs:rhs
+           ~rhs:(rhs.post :> BaseDomain.t)
 
 
-let get_unreachable_attributes {post} =
-  let post_addresses = reachable_addresses (post :> BaseDomain.t) in
+let get_unreachable_attributes astate =
+  let post_addresses = reachable_addresses astate `Post in
   ( BaseAddressAttributes.fold
       (fun address _ dead_addresses ->
-        if AbstractValue.Set.mem (downcast address) post_addresses then dead_addresses
+        if CanonValue.Set.mem address post_addresses then dead_addresses
         else address :: dead_addresses )
-      (post :> BaseDomain.t).attrs []
+      (astate.post :> base_domain).attrs []
     : CanonValue.t list
     :> AbstractValue.t list )
 
 
+exception NoLeak
+
 let filter_live_addresses ~is_dead_root potential_leak_addrs astate =
   (* stop as soon as we find out that all locations that could potentially cause a leak are still
      live *)
-  let exception NoLeak in
-  let filter_live_addresses_ () =
-    if AbstractValue.Set.is_empty potential_leak_addrs then raise_notrace NoLeak ;
-    let potential_leaks = ref potential_leak_addrs in
-    let mark_reachable addr =
-      potential_leaks := AbstractValue.Set.remove addr !potential_leaks ;
-      if AbstractValue.Set.is_empty !potential_leaks then raise_notrace NoLeak
-    in
-    let pre = (astate.pre :> BaseDomain.t) in
-    let post = (astate.post :> BaseDomain.t) in
-    (* filter out addresses live in the post *)
-    ignore
-      (GraphVisit.fold
-         ~var_filter:(fun var -> not (is_dead_root var))
-         post ~init:()
-         ~f:(fun _ () addr _ ->
-           mark_reachable addr ;
-           Continue () )
-         ~finish:(fun () -> ()) ) ;
-    let collect_reachable_from addrs base_state =
-      GraphVisit.fold_from_addresses addrs base_state ~init:()
-        ~already_visited:AbstractValue.Set.empty
-        ~f:(fun () addr _ ->
-          mark_reachable addr ;
-          Continue () )
-        ~finish:(fun () -> ())
-      |> fst
-    in
-    (* any address reachable in the pre-condition is not dead as callers can still be holding on to
-       them; so any address reachable from anything reachable from the precondition is live *)
-    let reachable_in_pre =
-      (* start from the *values* of variables, not their addresses; addresses of formals are
-         meaningless for callers so are not reachable outside the current function *)
-      let formal_values =
-        RawStack.to_seq pre.stack
-        |> Seq.flat_map (fun (_, (formal_addr, _)) ->
-               match RawMemory.find_opt formal_addr pre.heap with
-               | None ->
-                   Seq.empty
-               | Some edges ->
-                   RawMemory.Edges.to_seq edges
-                   |> Seq.map (fun (_access, (value, _)) ->
-                          mark_reachable value ;
-                          value ) )
-      in
-      collect_reachable_from formal_values pre
-    in
-    let reachable_from_reachable_in_pre =
-      collect_reachable_from (AbstractValue.Set.to_seq reachable_in_pre) post
-    in
-    ignore reachable_from_reachable_in_pre ;
-    !potential_leaks
+  if CanonValue.Set.is_empty potential_leak_addrs then raise_notrace NoLeak ;
+  let potential_leaks = ref potential_leak_addrs in
+  let mark_reachable addr =
+    potential_leaks := CanonValue.Set.remove addr !potential_leaks ;
+    if CanonValue.Set.is_empty !potential_leaks then raise_notrace NoLeak
   in
-  try Some (filter_live_addresses_ ()) with NoLeak -> None
+  let pre = (astate.pre :> BaseDomain.t) in
+  (* filter out addresses live in the post *)
+  ignore
+    (GraphVisit.fold
+       ~var_filter:(fun var -> not (is_dead_root var))
+       astate `Post ~init:()
+       ~f:(fun _ () addr _ ->
+         mark_reachable addr ;
+         Continue () )
+       ~finish:(fun () -> ()) ) ;
+  let collect_reachable_from addrs pre_or_post =
+    GraphVisit.fold_from_addresses addrs astate pre_or_post ~init:()
+      ~already_visited:CanonValue.Set.empty
+      ~f:(fun () addr _ ->
+        mark_reachable addr ;
+        Continue () )
+      ~finish:(fun () -> ())
+    |> fst
+  in
+  (* any address reachable in the pre-condition is not dead as callers can still be holding on to
+     them; so any address reachable from anything reachable from the precondition is live *)
+  let reachable_in_pre =
+    (* start from the *values* of variables, not their addresses; addresses of formals are
+       meaningless for callers so are not reachable outside the current function *)
+    let formal_values =
+      BaseStack.to_seq pre.stack
+      |> Seq.flat_map (fun (_, (formal_addr, _)) ->
+             match BaseMemory.find_opt (CanonValue.canon astate formal_addr) pre.heap with
+             | None ->
+                 Seq.empty
+             | Some edges ->
+                 BaseMemory.Edges.to_seq edges
+                 |> Seq.map (fun (_access, (value, _)) ->
+                        let value = CanonValue.canon astate value in
+                        mark_reachable value ;
+                        value ) )
+    in
+    collect_reachable_from formal_values `Pre
+  in
+  let reachable_from_reachable_in_pre =
+    collect_reachable_from (CanonValue.Set.to_seq reachable_in_pre) `Post
+  in
+  ignore reachable_from_reachable_in_pre ;
+  !potential_leaks
+
+
+let mark_potential_leaks location ~dead_roots astate =
+  let is_dead_root var = List.mem ~equal:Var.equal dead_roots var in
+  (* only consider locations that could actually cause a leak if unreachable *)
+  let allocated_reachable_from_dead_root =
+    reachable_addresses ~var_filter:is_dead_root astate `Post
+    |> CanonValue.Set.filter (fun addr ->
+           SafeAttributes.get_allocation addr astate |> Option.is_some )
+  in
+  match filter_live_addresses ~is_dead_root allocated_reachable_from_dead_root astate with
+  | exception NoLeak ->
+      astate
+  | potential_leaks ->
+      (* delay reporting leak as to avoid false positives we need to massage the state some more;
+         TODO: this can make use miss reporting memory leaks if another error is found *)
+      CanonValue.Set.fold
+        (fun addr astate -> SafeAttributes.add_unreachable_at addr location astate)
+        potential_leaks astate
 
 
 let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
   let reaches_into addr addrs astate =
-    AbstractValue.Set.mem addr addrs
-    || GraphVisit.fold_from_addresses (Seq.return addr) astate ~init:()
-         ~already_visited:AbstractValue.Set.empty
+    CanonValue.Set.mem addr addrs
+    || GraphVisit.fold_from_addresses (Seq.return addr) astate `Post ~init:()
+         ~already_visited:CanonValue.Set.empty
          ~finish:(fun () -> (* didn't find any reachable address in [addrs] *) false)
          ~f:(fun () addr' rev_accesses ->
            (* We want to know if [addr] is still reachable from the value [addr'] by pointer
-              arithmetic, hence detect if [addr'] is an offset away from [addr]. In particular, if
-              we go through a [Dereference] then we have lost the connexion to the original
-              address value.
+                arithmetic, hence detect if [addr'] is an offset away from [addr]. In particular,
+                if we go through a [Dereference] then we have lost the connexion to the original
+                address value.
 
               TODO: this should be part of [live_addresses] since all these addresses are actually
-              live. *)
+                live. *)
            let can_recover_root_from_accesses =
              List.for_all rev_accesses ~f:(fun (access : Access.t) ->
                  match access with FieldAccess _ | ArrayAccess _ -> true | _ -> false )
            in
            if can_recover_root_from_accesses then
-             if AbstractValue.Set.mem addr' addrs then (
-               L.d_printfln ~color:Orange "Live address %a is reachable from %a" AbstractValue.pp
-                 addr' AbstractValue.pp addr ;
+             if CanonValue.Set.mem addr' addrs then (
+               L.d_printfln ~color:Orange "Live address %a is reachable from %a" CanonValue.pp addr'
+                 CanonValue.pp addr ;
                Stop true )
              else Continue ()
            else Stop false )
@@ -1633,27 +1692,18 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
         (* allocated but not freed => leak *)
         L.d_printfln ~color:Red "LEAK: unreachable address %a was allocated by %a" CanonValue.pp
           addr Attribute.pp_allocator allocator ;
-        (* last-chance checks: it could be that the value (or its canonical equal) is reachable via
-           pointer arithmetic from live values. This is common in libraries that do their own memory
-           management, e.g. they return a field of the malloc()'d pointer, and the latter is a fat
-           pointer with, say, a reference count. For example in C:
+        (* last-chance checks: it could be that the value (or its canonical equal) is reachable
+           via pointer arithmetic from live values. This is common in libraries that do their own
+           memory management, e.g. they return a field of the malloc()'d pointer, and the latter
+           is a fat pointer with, say, a reference count. For example in C:
 
-           {[
-            struct fat_int {
-              size_t count;
-              int data;
-            };
+           {[ struct fat_int { size_t count; int data; };
 
-            int *alloc_int() {
-              fat_int *p = malloc(...);
-              p->count = 1;
-              return &(p->data);
-            }
-           ]}
+            int *alloc_int() { fat_int *p = malloc(...); p->count = 1; return &(p->data); } ]}
 
-           We don't have a precise enough memory model to understand everything that
-           goes on here but we should at least not report a leak. *)
-        if reaches_into (downcast addr) live_addresses (astate.post :> BaseDomain.t) then (
+           We don't have a precise enough memory model to understand everything that goes on here
+           but we should at least not report a leak. *)
+        if reaches_into addr live_addresses astate then (
           L.d_printfln ~color:Orange
             "False alarm: address is still reachable via other means; forgetting about its \
              allocation site to prevent leak false positives." ;
@@ -1804,78 +1854,57 @@ let filter_pre_addr ~f (foot : PreDomain.t) =
 
 
 let filter_post_addr_with_discarded_addrs ~heap_only ~f (foot : PostDomain.t) =
-  let heap' = PulseBaseMemory.filter (fun address _ -> f address) (foot :> BaseDomain.t).heap in
+  let heap' = BaseMemory.filter (fun address _ -> f address) (foot :> BaseDomain.t).heap in
   let attrs', discarded_addresses =
     if heap_only then ((foot :> BaseDomain.t).attrs, [])
-    else PulseBaseAddressAttributes.filter_with_discarded_addrs f (foot :> BaseDomain.t).attrs
+    else BaseAddressAttributes.filter_with_discarded_addrs f (foot :> BaseDomain.t).attrs
   in
   (PostDomain.update ~heap:heap' ~attrs:attrs' foot, discarded_addresses)
 
 
-let get_reachable ({pre; post} as astate) =
-  let pre_addresses = reachable_addresses (pre :> BaseDomain.t) in
-  let post_addresses = reachable_addresses (post :> BaseDomain.t) in
+let get_reachable astate =
+  let pre_addresses = reachable_addresses astate `Pre in
+  let post_addresses = reachable_addresses astate `Post in
   let post_addresses =
     (* Also include post addresses reachable from pre addresses *)
     reachable_addresses_from
-      (AbstractValue.Set.to_seq pre_addresses)
-      (post :> BaseDomain.t)
-      ~already_visited:post_addresses
+      (CanonValue.Set.to_seq pre_addresses)
+      astate `Post ~already_visited:post_addresses
   in
-  let always_reachable_addresses =
-    (get_all_addrs_marked_as_always_reachable astate : CanonValue.t Seq.t :> AbstractValue.t Seq.t)
-  in
+  let always_reachable_addresses = get_all_addrs_marked_as_always_reachable astate in
   let always_reachable_trans_closure =
-    reachable_addresses_from always_reachable_addresses
-      (post :> BaseDomain.t)
-      ~already_visited:post_addresses
+    reachable_addresses_from always_reachable_addresses astate `Post ~already_visited:post_addresses
   in
-  let canon_addresses =
-    AbstractValue.Set.map (Formula.get_var_repr astate.path_condition) pre_addresses
-    |> AbstractValue.Set.fold
-         (fun addr acc ->
-           AbstractValue.Set.add (Formula.get_var_repr astate.path_condition addr) acc )
-         post_addresses
-  in
-  (pre_addresses, post_addresses, always_reachable_trans_closure, canon_addresses)
+  (pre_addresses, post_addresses, always_reachable_trans_closure)
 
 
 let topl_view ({pre; post; path_condition} as astate) =
   let pulse_pre = (pre :> BaseDomain.t) in
   let pulse_post = (post :> BaseDomain.t) in
   let get_reachable () =
-    let pre_addresses, post_addresses, always_reachable_trans_closure, canon_addresses =
-      get_reachable astate
-    in
-    let path_condition =
+    let pre_addresses, post_addresses, always_reachable_trans_closure = get_reachable astate in
+    let in_path_condition =
       Formula.fold_variables path_condition ~init:AbstractValue.Set.empty ~f:(fun vars v ->
           AbstractValue.Set.add v vars )
     in
-    let ( ++ ) = AbstractValue.Set.union in
-    pre_addresses ++ post_addresses ++ always_reachable_trans_closure ++ canon_addresses
-    ++ path_condition
+    let ( ++ ) = CanonValue.Set.union in
+    AbstractValue.Set.union in_path_condition
+      (pre_addresses ++ post_addresses ++ always_reachable_trans_closure |> CanonValue.downcast_set)
   in
   {PulseTopl.pulse_pre; pulse_post; path_condition; get_reachable}
 
 
 let discard_unreachable_ ~for_summary ({pre; post} as astate) =
-  let pre_addresses, post_addresses, always_reachable_trans_closure, canon_addresses =
-    get_reachable astate
-  in
-  let is_live address =
-    AbstractValue.Set.mem address pre_addresses
-    || AbstractValue.Set.mem address post_addresses
-    || AbstractValue.Set.mem address always_reachable_trans_closure
-    ||
-    let canon_addr = Formula.get_var_repr astate.path_condition address in
-    AbstractValue.Set.mem canon_addr canon_addresses
-  in
-  let pre_new =
-    filter_pre_addr ~f:(fun address -> AbstractValue.Set.mem (downcast address) pre_addresses) pre
-  in
+  let pre_addresses, post_addresses, always_reachable_trans_closure = get_reachable astate in
+  let pre_new = filter_pre_addr ~f:(fun address -> CanonValue.Set.mem address pre_addresses) pre in
   let post_new, dead_addresses =
     (* keep attributes of dead addresses unless we are creating a summary *)
-    filter_post_addr_with_discarded_addrs ~heap_only:(not for_summary) ~f:is_live post
+    filter_post_addr_with_discarded_addrs ~heap_only:(not for_summary)
+      ~f:(fun address ->
+        CanonValue.Set.mem address pre_addresses
+        || CanonValue.Set.mem address post_addresses
+        || CanonValue.Set.mem address always_reachable_trans_closure )
+      post
   in
   (* note: we don't call {!Formula.simplify} *)
   let astate =
@@ -1896,6 +1925,7 @@ let filter_for_summary tenv proc_name location astate0 =
      to restore their initial values at the end of the function. Removing them altogether achieves
      this. *)
   let astate = restore_formals_for_summary proc_name location astate_before_filter in
+  (* NOTE: the [topl_view] needs to be on the state *before* discarding unreachable addresses *)
   let astate = {astate with topl= PulseTopl.simplify (topl_view astate) astate.topl} in
   let astate, pre_live_addresses, post_live_addresses, dead_addresses =
     discard_unreachable_ ~for_summary:true astate
@@ -1904,9 +1934,11 @@ let filter_for_summary tenv proc_name location astate0 =
     if PatternMatch.is_entry_point proc_name then
       (* report all latent issues at entry points *)
       AbstractValue.Set.empty
-    else pre_live_addresses
+    else CanonValue.downcast_set pre_live_addresses
   in
-  let live_addresses = AbstractValue.Set.union pre_live_addresses post_live_addresses in
+  let live_addresses =
+    CanonValue.Set.union pre_live_addresses post_live_addresses |> CanonValue.downcast_set
+  in
   (* [unsafe_cast] is safe because the state has been normalized so all values are already
      canonical ones *)
   let get_dynamic_type v =
@@ -1917,7 +1949,12 @@ let filter_for_summary tenv proc_name location astate0 =
     Formula.simplify tenv ~get_dynamic_type ~precondition_vocabulary ~keep:live_addresses
       astate.path_condition
   in
-  let live_addresses = AbstractValue.Set.union live_addresses live_via_arithmetic in
+  (* [unsafe_cast_set] is safe because a) all the values are actually canon_values in disguise,
+     and b) we have canonicalised all the values in the state already so all we have left are
+     canonical values *)
+  let[@alert "-deprecated"] live_addresses =
+    AbstractValue.Set.union live_addresses live_via_arithmetic |> CanonValue.unsafe_cast_set
+  in
   ( {astate with path_condition; topl= PulseTopl.filter_for_summary (topl_view astate) astate.topl}
   , live_addresses
   , (* we could filter out the [live_addresses] if needed; right now they might overlap *)
@@ -1937,7 +1974,7 @@ let should_havoc_if_unknown () =
 
 
 let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =
-  let x = (CanonValue.canon' astate x :> AbstractValue.t) in
+  let x = CanonValue.canon' astate x in
   let havoc_accesses hist addr heap =
     match BaseMemory.find_opt addr heap with
     | None ->
@@ -1954,10 +1991,9 @@ let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =
   in
   let post = (astate.post :> BaseDomain.t) in
   let heap, attrs =
-    GraphVisit.fold_from_addresses (Seq.return x) post ~init:(post.heap, post.attrs)
-      ~already_visited:AbstractValue.Set.empty
+    GraphVisit.fold_from_addresses (Seq.return x) astate `Post ~init:(post.heap, post.attrs)
+      ~already_visited:CanonValue.Set.empty
       ~f:(fun (heap, attrs) addr _edges ->
-        let addr = CanonValue.canon' astate addr in
         match should_havoc_if_unknown () with
         | `ShouldHavoc ->
             let attrs =
@@ -1991,7 +2027,9 @@ let set_post_edges addr edges astate =
   else SafeMemory.map_post_heap astate ~f:(BaseMemory.add (CanonValue.canon' astate addr) edges)
 
 
-let find_post_cell_opt addr {post} = find_cell_opt addr (post :> BaseDomain.t)
+let find_post_cell_opt addr astate =
+  find_cell_opt (CanonValue.canon' astate addr) (astate.post :> BaseDomain.t)
+
 
 let set_post_cell {PathContext.timestamp} (addr, history) (edges, attr_set) location astate =
   let astate = set_post_edges addr edges astate in
@@ -2128,8 +2166,6 @@ module Summary = struct
   let add_need_dynamic_type_specialization = add_need_dynamic_type_specialization
 
   let heap_paths_that_need_dynamic_type_specialization summary =
-    let pre = (summary.pre :> BaseDomain.t) in
-    let addresses = summary.need_dynamic_type_specialization in
     let rec mk_heap_path var rev_accesses =
       let open IOption.Let_syntax in
       match (rev_accesses : PulseAccess.t list) with
@@ -2145,18 +2181,21 @@ module Summary = struct
       | (TakeAddress | ArrayAccess _) :: _ ->
           None
     in
-    GraphVisit.fold pre
+    (* safe because this is a summary so these addresses are actually canon values *)
+    let[@alert "-deprecated"] addresses =
+      CanonValue.unsafe_cast_set summary.need_dynamic_type_specialization
+    in
+    GraphVisit.fold summary `Pre
       ~var_filter:(fun _ -> true)
-      ~init:(Specialization.HeapPath.Map.empty, AbstractValue.Set.empty)
+      ~init:(Specialization.HeapPath.Map.empty, CanonValue.Set.empty)
       ~finish:(fun heap_paths -> heap_paths)
       ~f:(fun var (heap_paths, already_found) addr rev_accesses ->
         Continue
-          ( if AbstractValue.Set.mem addr addresses && not (AbstractValue.Set.mem addr already_found)
-            then
+          ( if CanonValue.Set.mem addr addresses && not (CanonValue.Set.mem addr already_found) then
               mk_heap_path var rev_accesses
               |> Option.value_map ~default:(heap_paths, already_found) ~f:(fun heap_path ->
-                     ( Specialization.HeapPath.Map.add heap_path addr heap_paths
-                     , AbstractValue.Set.add addr already_found ) )
+                     ( Specialization.HeapPath.Map.add heap_path (downcast addr) heap_paths
+                     , CanonValue.Set.add addr already_found ) )
             else (heap_paths, already_found) ) )
     |> snd |> fst
 
@@ -2211,6 +2250,8 @@ let add_skipped_calls new_skipped_calls astate =
   if phys_equal skipped_calls astate.skipped_calls then astate else {astate with skipped_calls}
 
 
+let is_local = is_local
+
 let is_allocated_this_pointer proc_attrs astate address =
   let open IOption.Let_syntax in
   let address = CanonValue.canon' astate address in
@@ -2249,11 +2290,26 @@ let incorporate_new_eqs_on_val new_eqs v =
   subst (RevList.to_list new_eqs) v
 
 
+let downcast_filter f canon_access = f (downcast_access canon_access)
+
+let reachable_addresses ?var_filter ?edge_filter astate pre_or_post =
+  let edge_filter = Option.map edge_filter ~f:downcast_filter in
+  reachable_addresses ?var_filter ?edge_filter astate pre_or_post |> CanonValue.downcast_set
+
+
+let reachable_addresses_from ?edge_filter addresses astate pre_or_post =
+  let edge_filter = Option.map edge_filter ~f:downcast_filter in
+  reachable_addresses_from ?edge_filter
+    (Seq.map (CanonValue.canon' astate) addresses)
+    astate pre_or_post
+  |> CanonValue.downcast_set
+
+
 module Stack = struct
   include SafeStack
 
   let fold f astate init =
-    SafeStack.fold (fun var addr_hist acc -> f var (downcast_fst addr_hist) acc) astate init
+    SafeStack.fold `Post (fun var addr_hist acc -> f var (downcast_fst addr_hist) acc) astate init
 
 
   let find_opt var astate = SafeStack.find_opt var astate |> Option.map ~f:downcast_fst
@@ -2414,8 +2470,6 @@ module AddressAttributes = struct
 
   let get_static_type v astate = SafeAttributes.get_static_type (CanonValue.canon' astate v) astate
 
-  let get_allocation v astate = SafeAttributes.get_allocation (CanonValue.canon' astate v) astate
-
   let get_closure_proc_name v astate =
     SafeAttributes.get_closure_proc_name (CanonValue.canon' astate v) astate
 
@@ -2464,10 +2518,6 @@ module AddressAttributes = struct
     SafeAttributes.std_vector_reserve (CanonValue.canon' astate v) astate
 
 
-  let add_unreachable_at v location astate =
-    SafeAttributes.add_unreachable_at (CanonValue.canon' astate v) location astate
-
-
   let add_copied_return v ~source ~is_const_ref copy_origin location astate =
     SafeAttributes.add_copied_return (CanonValue.canon' astate v)
       ~source:(CanonValue.canon' astate source) ~is_const_ref copy_origin location astate
@@ -2496,16 +2546,6 @@ module AddressAttributes = struct
   let get_address_of_stack_variable v astate =
     SafeAttributes.get_address_of_stack_variable (CanonValue.canon' astate v) astate
 end
-
-(* re-exported for .mli *)
-
-let find_cell_opt = find_cell_opt
-
-let is_local = is_local
-
-let reachable_addresses = reachable_addresses
-
-let reachable_addresses_from = reachable_addresses_from
 
 module CanonValue = struct
   include CanonValue

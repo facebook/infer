@@ -204,8 +204,6 @@ module AddressAttributes : sig
 
   val get_static_type : AbstractValue.t -> t -> Typ.Name.t option
 
-  val get_allocation : AbstractValue.t -> t -> (Attribute.allocator * Trace.t) option
-
   val get_closure_proc_name : AbstractValue.t -> t -> Procname.t option
 
   val get_copied_into : AbstractValue.t -> t -> Attribute.CopiedInto.t option
@@ -229,8 +227,6 @@ module AddressAttributes : sig
   val is_std_vector_reserved : AbstractValue.t -> t -> bool
 
   val std_vector_reserve : AbstractValue.t -> t -> t
-
-  val add_unreachable_at : AbstractValue.t -> Location.t -> t -> t
 
   val add_copied_return :
        AbstractValue.t
@@ -271,32 +267,29 @@ val apply_unknown_effect :
 
 val is_local : Var.t -> t -> bool
 
-val find_cell_opt : AbstractValue.t -> BaseDomain.t -> BaseDomain.cell option
-
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
 
 val reachable_addresses :
      ?var_filter:(Var.t -> bool)
   -> ?edge_filter:(Access.t -> bool)
-  -> BaseDomain.t
+  -> t
+  -> [`Pre | `Post]
   -> AbstractValue.Set.t
 (** compute the set of abstract addresses that are "used" in the abstract state, i.e. reachable from
-    the stack variables *)
+    the stack variables in either the pre or the post depending on [`Pre] or [`Post] *)
 
 val reachable_addresses_from :
-     ?already_visited:AbstractValue.Set.t
-  -> ?edge_filter:(Access.t -> bool)
+     ?edge_filter:(Access.t -> bool)
   -> AbstractValue.t Seq.t
-  -> BaseDomain.t
+  -> t
+  -> [`Pre | `Post]
   -> AbstractValue.Set.t
-(** Compute the set of abstract addresses that are reachable from given abstract addresses. Use
-    already_visited as initial set of visited values (empty by default). *)
+(** Compute the set of abstract addresses that are reachable from given abstract addresses. *)
 
 val get_unreachable_attributes : t -> AbstractValue.t list
 (** collect the addresses that have attributes but are unreachable in the current post-condition *)
 
-val filter_live_addresses :
-  is_dead_root:(Var.t -> bool) -> AbstractValue.Set.t -> t -> AbstractValue.Set.t option
+val mark_potential_leaks : Location.t -> dead_roots:Var.t list -> t -> t
 
 val add_skipped_call : Procname.t -> Trace.t -> t -> t
 

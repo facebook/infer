@@ -310,8 +310,7 @@ module Basic = struct
         AbductiveDomain.reachable_addresses_from
           ~edge_filter:(function
             | FieldAccess _ | ArrayAccess _ -> true | TakeAddress | Dereference -> false )
-          (Seq.return deleted_addr)
-          (astate.AbductiveDomain.post :> BaseDomain.t)
+          (Seq.return deleted_addr) astate `Post
       in
       let<**> astate = PulseArithmetic.prune_positive deleted_addr astate in
       let<*> astate =

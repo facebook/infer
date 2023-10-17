@@ -18,6 +18,10 @@ module type S = sig
 
   module Set : PrettyPrintable.PPSet with type elt = t
 
+  val downcast_set : Set.t -> AbstractValue.Set.t [@@inline always]
+
+  val unsafe_cast_set : AbstractValue.Set.t -> Set.t [@@deprecated ""] [@@inline always]
+
   type needs_canon
 
   val canon : astate -> needs_canon -> t
@@ -41,8 +45,7 @@ module type S = sig
 
   val mk_fresh : unit -> t
 
-  val unsafe_cast : AbstractValue.t -> t [@@deprecated ""]
-  (* ocaml insists that [\[@@deprecated\]] appear here too since it's in the .mli *)
+  val unsafe_cast : AbstractValue.t -> t [@@deprecated ""] [@@inline always]
 
   module Stack : sig
     include
@@ -77,6 +80,10 @@ end) : S with type astate = AbductiveDomain.astate = struct
   let pp = AbstractValue.pp
 
   module Set = AbstractValue.Set
+
+  let downcast_set = Fn.id
+
+  let unsafe_cast_set = Fn.id
 
   type needs_canon = AbstractValue.t
 
