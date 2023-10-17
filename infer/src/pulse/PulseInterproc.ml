@@ -764,79 +764,75 @@ let canonicalize ~actuals call_state =
           (astate, replaced)
       | addr :: addrs when AddressSet.mem addr visited ->
           aux visited addrs astate replaced
-      | addr :: addrs -> (
+      | addr :: addrs ->
           let visited = AddressSet.add addr visited in
-          match UnsafeMemory.find_opt addr post_heap with
-          | None ->
-              aux visited addrs astate replaced
-          | Some edges ->
-              let merge_edges ~get_var_repr accessed accessed' astate =
-                (* Given 2 addresses [accessed] and [accessed'], merge their canonicalized
-                   edges and update the edges of accessed' with the result. In case an
-                   edge belongs to both addresses, the one from [accessed'] is kept. *)
-                match UnsafeMemory.find_opt accessed post_heap with
-                | None ->
-                    astate
-                | Some edges ->
-                    (* the callee value may know some edges that the caller is
-                       not aware of. We want to add them *)
-                    let edges' =
-                      match UnsafeMemory.find_opt accessed' post_heap with
-                      | None ->
-                          UnsafeMemory.Edges.empty
-                      | Some edges' ->
-                          UnsafeMemory.Edges.canonicalize ~get_var_repr edges'
-                    in
-                    let edges = UnsafeMemory.Edges.canonicalize ~get_var_repr edges in
-                    let merged_edges = UnsafeMemory.Edges.union_left_biased edges' edges in
-                    AbductiveDomain.set_post_edges accessed' merged_edges astate
-              in
-              let add_new_eq_aux accessed accessed' (replaced, astate) =
-                (* Set the [accessed'] as equal to [accessed] in [astate.path_condition]
-                   and set its edges to their merged canonicalized edges *)
-                match
-                  Formula.and_equal (AbstractValueOperand accessed) (AbstractValueOperand accessed')
-                    astate.AbductiveDomain.path_condition
-                with
-                | Unsat ->
-                    (replaced, astate)
-                | Sat (formula, _new_eqs) ->
-                    let get_var_repr v = Formula.get_var_repr formula v in
-                    let astate' = merge_edges ~get_var_repr accessed accessed' astate in
-                    let replaced =
-                      if phys_equal astate astate' then replaced else accessed :: replaced
-                    in
-                    let astate' = AbductiveDomain.set_path_condition formula astate' in
-                    (replaced, astate')
-              in
-              let add_new_eq accessed addr' access' ((_, astate) as acc) =
-                (* Set the value accesssible from [addr'] and [access'] as equal to
-                   [accessed] in [astate.path_condition] and merge their edges *)
+          let merge_edges ~get_var_repr accessed accessed' astate =
+            (* Given 2 addresses [accessed] and [accessed'], merge their canonicalized
+               edges and update the edges of accessed' with the result. In case an
+               edge belongs to both addresses, the one from [accessed'] is kept. *)
+            match UnsafeMemory.find_opt accessed post_heap with
+            | None ->
+                astate
+            | Some edges ->
+                (* the callee value may know some edges that the caller is
+                   not aware of. We want to add them *)
+                let edges' =
+                  match UnsafeMemory.find_opt accessed' post_heap with
+                  | None ->
+                      UnsafeMemory.Edges.empty
+                  | Some edges' ->
+                      UnsafeMemory.Edges.canonicalize ~get_var_repr edges'
+                in
+                let edges = UnsafeMemory.Edges.canonicalize ~get_var_repr edges in
+                let merged_edges = UnsafeMemory.Edges.union_left_biased edges' edges in
+                AbductiveDomain.set_post_edges accessed' merged_edges astate
+          in
+          let add_new_eq_aux accessed accessed' (replaced, astate) =
+            (* Set the [accessed'] as equal to [accessed] in [astate.path_condition]
+               and set its edges to their merged canonicalized edges *)
+            match
+              Formula.and_equal (AbstractValueOperand accessed) (AbstractValueOperand accessed')
+                astate.AbductiveDomain.path_condition
+            with
+            | Unsat ->
+                (replaced, astate)
+            | Sat (formula, _new_eqs) ->
+                let get_var_repr v = Formula.get_var_repr formula v in
+                let astate' = merge_edges ~get_var_repr accessed accessed' astate in
+                let replaced =
+                  if phys_equal astate astate' then replaced else accessed :: replaced
+                in
+                let astate' = AbductiveDomain.set_path_condition formula astate' in
+                (replaced, astate')
+          in
+          let add_new_eq accessed addr' access' ((_, astate) as acc) =
+            (* Set the value accesssible from [addr'] and [access'] as equal to
+               [accessed] in [astate.path_condition] and merge their edges *)
+            let formula = astate.AbductiveDomain.path_condition in
+            let get_var_repr v = Formula.get_var_repr formula v in
+            match UnsafeMemory.find_edge_opt ~get_var_repr addr' access' post_heap with
+            | None ->
+                acc
+            | Some (accessed', _)
+              when AbstractValue.equal (get_var_repr accessed') (get_var_repr accessed) ->
+                acc
+            | Some (accessed', _) ->
+                add_new_eq_aux accessed accessed' acc
+          in
+          let replaced, astate, addrs =
+            Memory.fold_edges addr astate ~init:(replaced, astate, addrs)
+              ~f:(fun (replaced, astate, addrs) (access, (accessed, _)) ->
                 let formula = astate.AbductiveDomain.path_condition in
                 let get_var_repr v = Formula.get_var_repr formula v in
-                match UnsafeMemory.find_edge_opt ~get_var_repr addr' access' post_heap with
-                | None ->
-                    acc
-                | Some (accessed', _)
-                  when AbstractValue.equal (get_var_repr accessed') (get_var_repr accessed) ->
-                    acc
-                | Some (accessed', _) ->
-                    add_new_eq_aux accessed accessed' acc
-              in
-              let replaced, astate, addrs =
-                UnsafeMemory.Edges.fold edges ~init:(replaced, astate, addrs)
-                  ~f:(fun (replaced, astate, addrs) (access, (accessed, _)) ->
-                    let formula = astate.AbductiveDomain.path_condition in
-                    let get_var_repr v = Formula.get_var_repr formula v in
-                    let addr' = get_var_repr addr in
-                    let access' = Access.canonicalize ~get_var_repr access in
-                    let replaced, astate =
-                      add_new_eq accessed addr' access (replaced, astate)
-                      |> add_new_eq accessed addr access'
-                    in
-                    (replaced, astate, accessed :: addrs) )
-              in
-              aux visited addrs astate replaced )
+                let addr' = get_var_repr addr in
+                let access' = Access.canonicalize ~get_var_repr access in
+                let replaced, astate =
+                  add_new_eq accessed addr' access (replaced, astate)
+                  |> add_new_eq accessed addr access'
+                in
+                (replaced, astate, accessed :: addrs) )
+          in
+          aux visited addrs astate replaced
     in
     let astate, replaced =
       aux AddressSet.empty (List.map actuals ~f:(fun ((addr, _), _) -> addr)) astate []
