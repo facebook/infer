@@ -366,9 +366,8 @@ module Internal = struct
     let check_valid path ?must_be_valid_reason access_trace addr astate =
       let+ () = BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs in
       (* if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
-      abduce_and_add addr
-        (Attributes.singleton
-           (MustBeValid (path.PathContext.timestamp, access_trace, must_be_valid_reason)) )
+      abduce_attribute addr
+        (MustBeValid (path.PathContext.timestamp, access_trace, must_be_valid_reason))
         astate
 
 
@@ -522,11 +521,7 @@ module Internal = struct
 
 
     let get_must_be_valid addr astate =
-      match BaseAddressAttributes.get_must_be_valid addr (astate.pre :> base_domain).attrs with
-      | Some _ as must_be_valid ->
-          must_be_valid
-      | None ->
-          BaseAddressAttributes.get_must_be_valid addr (astate.post :> base_domain).attrs
+      BaseAddressAttributes.get_must_be_valid addr (astate.pre :> base_domain).attrs
 
 
     let get_source_origin_of_copy addr astate =

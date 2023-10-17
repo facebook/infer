@@ -325,10 +325,6 @@ let merge attrs attrs' =
 
 
 let canonicalize_post ~get_var_repr attrs_map =
-  (* TODO: merging attributes together can produce contradictory attributes, eg [MustBeValid] +
-     [Invalid]. We could detect these and abort execution. This is not really restricted to merging
-     as it might be possible to get a contradiction by accident too so maybe here is not the best
-     place to detect these. *)
   Graph.fold
     (fun addr attrs g ->
       if Attributes.is_empty attrs then g

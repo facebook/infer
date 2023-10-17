@@ -404,7 +404,11 @@ module Attribute = struct
   let is_suitable_for_pre_summary = is_suitable_for_pre
 
   let is_suitable_for_post = function
-    | MustBeInitialized _ | MustNotBeTainted _ | UnreachableAt _ | UsedAsBranchCond _ ->
+    | MustBeInitialized _
+    | MustNotBeTainted _
+    | MustBeValid _
+    | UnreachableAt _
+    | UsedAsBranchCond _ ->
         false
     | AddressOfCppTemporary _
     | AddressOfStackVariable _
@@ -422,7 +426,6 @@ module Attribute = struct
     | JavaResourceReleased
     | CSharpResourceReleased
     | HackAsyncAwaited
-    | MustBeValid _
     | PropagateTaintFrom _
     | RefCounted
     | ReturnedFromUnknown _
@@ -438,12 +441,7 @@ module Attribute = struct
         true
 
 
-  let is_suitable_for_post_summary = function
-    | MustBeValid _ ->
-        false
-    | attr ->
-        is_suitable_for_post attr
-
+  let is_suitable_for_post_summary attr = is_suitable_for_post attr
 
   let make_suitable_for_summary attr =
     match attr with
