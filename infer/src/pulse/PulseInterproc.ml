@@ -296,10 +296,6 @@ let materialize_pre_from_actual ~pre ~formal:(formal, typ) ~actual:(actual, _) c
   |> function Some result -> result | None -> Ok call_state
 
 
-let is_cell_read_only ~edges_pre_opt ~cell_post:(_, attrs_post) =
-  match edges_pre_opt with None -> false | Some _ -> not (Attributes.is_modified attrs_post)
-
-
 let materialize_pre_for_captured_vars ~pre ~captured_formals ~captured_actuals call_state =
   match
     PulseResult.list_fold2 captured_formals captured_actuals ~init:call_state
@@ -431,6 +427,15 @@ let materialize_pre path callee_proc_name call_location callee_summary ~captured
 
 (* {3 applying the post to the current state} *)
 
+(* Don't use visit when applying the post, it's too heavy due to the careful handling of values it
+   does when exploring the pre. Instead use [subst_find_or_new] or
+   [call_state_subst_find_or_new]. *)
+let visit () = `UseSubstFindOrNewInsteadForThePost [@@warning "-unused-value-declaration"]
+
+let is_cell_read_only ~edges_pre_opt ~cell_post:(_, attrs_post) =
+  match edges_pre_opt with None -> false | Some _ -> not (Attributes.is_modified attrs_post)
+
+
 let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state =
   match
     UnsafeMemory.find_opt addr_caller (call_state.astate.AbductiveDomain.post :> BaseDomain.t).heap
@@ -500,15 +505,9 @@ let rec record_post_for_address path callee_proc_name call_loc callee_summary ~a
     ~addr_hist_caller call_state =
   L.d_printf "visiting %a<->%a.. " AbstractValue.pp addr_callee AbstractValue.pp
     (fst addr_hist_caller) ;
-  let* visited_status, call_state =
-    visit call_state
-      ~pre:(AbductiveDomain.Summary.get_pre callee_summary)
-      ~addr_callee None ~addr_hist_caller
-  in
-  match visited_status with
-  | `AlreadyVisited ->
-      Ok call_state
-  | `NotAlreadyVisited -> (
+  if AddressSet.mem addr_callee call_state.visited then Ok call_state
+  else
+    let call_state = {call_state with visited= AddressSet.add addr_callee call_state.visited} in
     match
       AbductiveDomain.find_post_cell_opt addr_callee
         (callee_summary : AbductiveDomain.Summary.t :> AbductiveDomain.t)
@@ -536,7 +535,7 @@ let rec record_post_for_address path callee_proc_name call_loc callee_summary ~a
                 ~default_hist_caller:(snd addr_hist_caller)
             in
             record_post_for_address path callee_proc_name call_loc callee_summary
-              ~addr_callee:addr_callee_dest ~addr_hist_caller:addr_hist_curr_dest call_state ) )
+              ~addr_callee:addr_callee_dest ~addr_hist_caller:addr_hist_curr_dest call_state )
 
 
 let apply_post_from_callee_pre path callee_proc_name call_location callee_summary call_state =
