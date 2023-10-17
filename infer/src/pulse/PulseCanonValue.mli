@@ -19,6 +19,8 @@ module type S = sig
 
   val pp : F.formatter -> t -> unit
 
+  module Set : PrettyPrintable.PPSet with type elt = t
+
   (** an abstract value that needs to be normalized; just [AbstractValue.t] under the hood too *)
   type needs_canon
 

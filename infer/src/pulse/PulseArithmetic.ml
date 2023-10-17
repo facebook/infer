@@ -112,6 +112,7 @@ let is_manifest summary =
   Formula.is_manifest (AbductiveDomain.Summary.get_path_condition summary) ~is_allocated:(fun v ->
       AbductiveDomain.Summary.is_heap_allocated summary v
       || AbductiveDomain.Summary.get_must_be_valid v summary |> Option.is_some )
+  && not (AbductiveDomain.Summary.pre_heap_has_sharing summary)
 
 
 let and_is_int v astate = map_path_condition astate ~f:(fun phi -> Formula.and_is_int v phi)

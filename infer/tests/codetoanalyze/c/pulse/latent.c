@@ -44,3 +44,12 @@ int main(int argc, char** argv) {
     latent_use_after_free(argc, x);
   }
 }
+
+// *not* latent because callers have no way to influence &x inside of the
+// function
+void equal_to_stack_address_test_then_crash_bad(int x, int* y) {
+  if (y == &x) {
+    int* p = NULL;
+    *p = 42;
+  }
+}

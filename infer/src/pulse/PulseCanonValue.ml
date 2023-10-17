@@ -16,6 +16,8 @@ module type S = sig
 
   val pp : F.formatter -> t -> unit
 
+  module Set : PrettyPrintable.PPSet with type elt = t
+
   type needs_canon
 
   val canon : astate -> needs_canon -> t
@@ -73,6 +75,8 @@ end) : S with type astate = AbductiveDomain.astate = struct
   type t = AbstractValue.t [@@deriving compare, equal]
 
   let pp = AbstractValue.pp
+
+  module Set = AbstractValue.Set
 
   type needs_canon = AbstractValue.t
 

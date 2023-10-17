@@ -1269,10 +1269,12 @@ module Internal = struct
     AbstractValue.Set.mem v (Lazy.force stack_allocations)
 
 
-  let subst_var_in_post subst astate =
+  let subst_var subst astate =
     let open SatUnsat.Import in
-    let+ post = PostDomain.subst_var ~for_summary:false subst astate.post in
-    if phys_equal astate.post post then astate else {astate with post}
+    let* post = PostDomain.subst_var ~for_summary:false subst astate.post in
+    let+ pre = PreDomain.subst_var ~for_summary:false subst astate.pre in
+    if phys_equal astate.post post && phys_equal astate.pre pre then astate
+    else {astate with pre; post}
 
 
   let get_stack_allocated astate =
@@ -1352,7 +1354,7 @@ module Internal = struct
         | Equal (v1, v2) when AbstractValue.equal v1 v2 ->
             Continue (astate, error)
         | Equal (v1, v2) -> (
-          match subst_var_in_post (v1, v2) astate with
+          match subst_var (v1, v2) astate with
           | Unsat ->
               Stop Unsat
           | Sat astate' ->
@@ -1404,18 +1406,18 @@ module Internal = struct
   (** it's a good idea to normalize the path condition before calling this function *)
   let canonicalize astate =
     let open SatUnsat.Import in
+    let get_var_repr v = Formula.get_var_repr astate.path_condition v in
     let canonicalize_pre (pre : PreDomain.t) =
       (* (ab)use canonicalization to filter out empty edges in the heap and detect aliasing
          contradictions *)
-      let* stack' = RawStack.canonicalize ~get_var_repr:Fn.id (pre :> BaseDomain.t).stack in
-      let+ heap' = RawMemory.canonicalize ~get_var_repr:Fn.id (pre :> BaseDomain.t).heap in
+      let* stack' = RawStack.canonicalize ~get_var_repr (pre :> BaseDomain.t).stack in
+      let+ heap' = RawMemory.canonicalize ~get_var_repr (pre :> BaseDomain.t).heap in
       let attrs' =
         PulseBaseAddressAttributes.make_suitable_for_pre_summary (pre :> BaseDomain.t).attrs
       in
       PreDomain.update ~stack:stack' ~heap:heap' ~attrs:attrs' pre
     in
     let canonicalize_post (post : PostDomain.t) =
-      let get_var_repr v = Formula.get_var_repr astate.path_condition v in
       let* stack' = RawStack.canonicalize ~get_var_repr (post :> BaseDomain.t).stack in
       (* note: this step also de-registers addresses pointing to empty edges *)
       let+ heap' = RawMemory.canonicalize ~get_var_repr (post :> BaseDomain.t).heap in
@@ -1818,6 +1820,23 @@ module Summary = struct
                      , AbstractValue.Set.add addr already_found ) )
             else (heap_paths, already_found) ) )
     |> snd |> fst
+
+
+  let pre_heap_has_sharing astate =
+    let exception SharingDetected in
+    (* since we operate on a summary all the values are normalized already so we can use [RawMemory]
+       and pretend everything is an [AbstractValue] (instead of [CanonValue]) *)
+    let visit_addr seen addr =
+      if AbstractValue.Set.mem addr seen then raise_notrace SharingDetected
+      else AbstractValue.Set.add addr seen
+    in
+    let visit_edge seen (_access, (addr, _history)) = visit_addr seen addr in
+    let visit_binding _addr edges seen = RawMemory.Edges.fold edges ~init:seen ~f:visit_edge in
+    try
+      RawMemory.fold visit_binding (astate.pre :> BaseDomain.t).heap AbstractValue.Set.empty
+      |> ignore ;
+      false
+    with SharingDetected -> true
 end
 
 module Topl = struct

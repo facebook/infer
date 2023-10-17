@@ -208,7 +208,7 @@ void check_range_wrapper(int range_var_valid, int* range_var) {
   check_range(range_var_valid, range_var);
 }
 
-void FP_uninit_var_not_read_interproc_ok() {
+void uninit_var_not_read_interproc_ok() {
   int range_var_valid = 0;
   int range_var;
   check_range_wrapper(range_var_valid, &range_var);

@@ -101,7 +101,10 @@ val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool
     that require a pointer to be invalid or null in the precondition; we do not want to report such
     errors until we see that there exists a calling context in which the pointer is indeed invalid
     or null! But, to reiterate, we do want to report errors that only have valid pointers in their
-    precondition. *)
+    precondition.
+
+    Some equalities might be represented implicitly in the precondition, see the documentation of
+    {!PulseArithmetic.is_manifest}. *)
 
 val get_var_repr : t -> Var.t -> Var.t
 (** get the canonical representative for the variable according to the equality relation *)

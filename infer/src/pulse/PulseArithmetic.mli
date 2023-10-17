@@ -91,6 +91,12 @@ val prune_eq_one :
 val is_known_zero : AbductiveDomain.t -> AbstractValue.t -> bool
 
 val is_manifest : AbductiveDomain.Summary.t -> bool
+(* whether the state is *manifest* according to {!PulseFormula.is_manifest}, with an additional
+   condition that some equalities path conditions may be represented implicitly by having several
+   edges pointing to the same value in the precondition; if the pre exhibits sharing that means some
+   access paths in the precondition are equal, which means that equality on these access paths has
+   been assumed at some point in the function so the set of assumptions is not empty (see also the
+   documentation of {!PulseFormula.is_manifest}) *)
 
 val and_is_int : AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t SatUnsat.t
 

@@ -372,6 +372,9 @@ module Summary : sig
     -> summary
     -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
+  val pre_heap_has_sharing : summary -> bool
+  (** whether the pre heap exhibits sharing, i.e. is not tree shaped *)
+
   type t = summary [@@deriving compare, equal, yojson_of]
 end
 
