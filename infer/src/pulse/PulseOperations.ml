@@ -597,7 +597,7 @@ let rec deep_copy ?depth_max ({PathContext.timestamp} as path) location addr_his
       let astate =
         AddressAttributes.find_opt (fst addr_hist_src) astate
         |> Option.value_map ~default:astate ~f:(fun src_attrs ->
-               AddressAttributes.add_attrs (fst copy) src_attrs astate )
+               AddressAttributes.add_all (fst copy) src_attrs astate )
       in
       (astate, copy)
 
@@ -808,7 +808,7 @@ let check_used_as_branch_cond (addr, hist) ~pname_using_config ~branch_location 
   match AddressAttributes.get_config_usage addr astate with
   | None ->
       Ok
-        (AddressAttributes.abduce_attribute addr
+        (AddressAttributes.abduce_one addr
            (UsedAsBranchCond (pname_using_config, branch_location, trace))
            astate )
   | Some (ConfigName config) ->

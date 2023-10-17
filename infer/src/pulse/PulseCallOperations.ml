@@ -107,8 +107,7 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
           AbductiveDomain.apply_unknown_effect hist actual astate
           (* record the [UnknownEffect] attribute so callers of the current procedure can apply the
              above effects too in calling contexts where more is reachable from [actual] than here *)
-          |> AddressAttributes.add_attrs actual
-               (Attributes.singleton (UnknownEffect (reason, hist)))
+          |> AddressAttributes.add_all actual (Attributes.singleton (UnknownEffect (reason, hist)))
         in
         if
           Option.exists callee_pname_opt ~f:(fun p ->
@@ -137,12 +136,12 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
                   (* not add [WrittenTo] for the non-pointer value, because primitive constant value
                      is immutable, i.e. cannot be modified. *)
                   acc
-                else AddressAttributes.add_attrs reachable_actual written_attrs acc )
+                else AddressAttributes.add_all reachable_actual written_attrs acc )
     | `DoNotHavoc ->
         astate
     | `ShouldOnlyHavocResources ->
         let astate =
-          AddressAttributes.add_attrs actual
+          AddressAttributes.add_all actual
             (Attributes.singleton (UnknownEffect (reason, hist)))
             astate
         in

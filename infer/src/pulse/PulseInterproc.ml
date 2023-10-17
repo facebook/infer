@@ -394,9 +394,9 @@ let add_attributes pre_or_post {PathContext.timestamp} callee_proc_name call_loc
     let abduce_or_add =
       match pre_or_post with
       | `Pre ->
-          AddressAttributes.abduce_attrs
+          AddressAttributes.abduce_all
       | `Post ->
-          AddressAttributes.add_attrs
+          AddressAttributes.add_all
     in
     let astate = abduce_or_add addr_caller attrs_caller astate in
     if phys_equal astate call_state.astate then call_state else {call_state with astate}
