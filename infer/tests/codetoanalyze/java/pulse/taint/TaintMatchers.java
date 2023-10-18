@@ -91,4 +91,29 @@ public class TaintMatchers {
     Object src = InferTaintSources.NotSources.sourceButNotReally();
     InferTaint.inferSensitiveSink(src);
   }
+
+  void taintedBasedOnClassAnnotationAndClassAndProcedureRegexBad1() {
+    Object src = InferTaintSources.RegexAndAnnotationSources.source1();
+    InferTaint.inferSensitiveSink(src);
+  }
+
+  void taintedBasedOnClassAnnotationAndClassAndProcedureRegexBad2() {
+    Object src = InferTaintSources.RegexAndAnnotationSources.source2();
+    InferTaint.inferSensitiveSink(src);
+  }
+
+  void notTaintedBasedOnClassAnnotationAndClassAndProcedureRegexGood1() {
+    Object src = InferTaintSources.RegexAndAnnotationSources.notSource();
+    InferTaint.inferSensitiveSink(src);
+  }
+
+  void notTaintedBasedOnClassAnnotationAndClassAndProcedureRegexGood2() {
+    Object src = InferTaintSources.RegexAndAnnotationNotSources.notSource();
+    InferTaint.inferSensitiveSink(src);
+  }
+
+  void notTaintedBasedOnClassAnnotationAndClassAndProcedureRegexGood3() {
+    Object src = InferTaintSources.RegexAndAnnotationNotSources.sourceButNotReally();
+    InferTaint.inferSensitiveSink(src);
+  }
 }

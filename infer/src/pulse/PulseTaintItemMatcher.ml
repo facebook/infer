@@ -133,6 +133,18 @@ let check_regex_class tenv class_name_opt name_regex exclude_in proc_attributes 
       false
 
 
+let check_class_annotation tenv class_name_opt annotation annotation_values =
+  let res =
+    let open IOption.Let_syntax in
+    let* name = class_name_opt in
+    let* struct_typ = Tenv.lookup tenv name in
+    Annotations.struct_typ_has_annot struct_typ (fun annot_item ->
+        match_annotation_with_values annot_item annotation annotation_values )
+    |> Option.some
+  in
+  Option.value res ~default:false
+
+
 let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name actuals =
   let open TaintConfig.Unit in
   List.filter_map matchers ~f:(fun matcher ->
@@ -171,15 +183,12 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
             class_names_match tenv class_names class_name
             && procedure_return_type_match method_return_type_names
         | ClassWithAnnotation {annotation; annotation_values} ->
-            let res =
-              let open IOption.Let_syntax in
-              let* name = class_name in
-              let* struct_typ = Tenv.lookup tenv name in
-              Annotations.struct_typ_has_annot struct_typ (fun annot_item ->
-                  match_annotation_with_values annot_item annotation annotation_values )
-              |> Option.some
-            in
-            Option.value res ~default:false
+            check_class_annotation tenv class_name annotation annotation_values
+        | ClassWithAnnotationAndRegexAndMethodRegex
+            {annotation; annotation_values; class_name_regex; method_name_regex; exclude_in} ->
+            check_class_annotation tenv class_name annotation annotation_values
+            && check_regex_class tenv class_name class_name_regex exclude_in proc_attributes
+            && check_regex method_name_regex proc_name_s exclude_in
         | OverridesOfClassWithAnnotation {annotation} ->
             Option.exists (Procname.get_class_type_name proc_name) ~f:(fun procedure_class_name ->
                 let method_name = Procname.get_method proc_name in

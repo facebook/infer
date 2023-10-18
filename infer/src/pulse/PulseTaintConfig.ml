@@ -147,6 +147,12 @@ module Unit = struct
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
     | ClassWithAnnotation of {annotation: string; annotation_values: string list option}
+    | ClassWithAnnotationAndRegexAndMethodRegex of
+        { annotation: string
+        ; annotation_values: string list option
+        ; class_name_regex: Str.regexp
+        ; method_name_regex: Str.regexp
+        ; exclude_in: string list option }
     | OverridesOfClassWithAnnotation of {annotation: string}
     | MethodWithAnnotation of {annotation: string; annotation_values: string list option}
     | Block of {name: string}
@@ -173,6 +179,13 @@ module Unit = struct
           class_names (Pp.comma_seq String.pp) method_return_type_names
     | ClassWithAnnotation {annotation; annotation_values: string list option} ->
         F.fprintf f "class with annotation=%s and annotation_values=%a" annotation
+          (Pp.option (Pp.comma_seq String.pp))
+          annotation_values
+    | ClassWithAnnotationAndRegexAndMethodRegex {annotation; annotation_values: string list option}
+      ->
+        F.fprintf f
+          "class with annotation=%s, annotation_values=%a, class name and procedure regex "
+          annotation
           (Pp.option (Pp.comma_seq String.pp))
           annotation_values
     | OverridesOfClassWithAnnotation {annotation} ->
@@ -285,6 +298,8 @@ module Unit = struct
        or else \"class_name_regex\" and \"procedure_regex\" must be provided, \n\
        or else \"class_names\" and \"method_return_type_names\" must be provided, \n\
        or else \"method_with_annotation\" and \"annotation_values\" must be provided, \n\
+       or else \"class_with_annotation\", \"class_name_regex\" and \"procedure_regex\" must be \
+       provided, \n\
        but got \n\
       \ %a." pp_procedure_matcher matcher
 
@@ -427,6 +442,24 @@ module Unit = struct
         ; block_passed_to= None
         ; allocation= None } ->
           ClassWithAnnotation {annotation; annotation_values}
+      | { procedure= None
+        ; procedure_regex= Some method_name_regex
+        ; class_name_regex= Some class_name_regex
+        ; class_names= None
+        ; class_with_annotation= Some annotation
+        ; method_names= None
+        ; method_return_type_names= None
+        ; overrides_of_class_with_annotation= None
+        ; method_with_annotation= None
+        ; annotation_values
+        ; block_passed_to= None
+        ; allocation= None } ->
+          ClassWithAnnotationAndRegexAndMethodRegex
+            { annotation
+            ; annotation_values
+            ; class_name_regex= Str.regexp class_name_regex
+            ; method_name_regex= Str.regexp method_name_regex
+            ; exclude_in= matcher.exclude_from_regex_in }
       | { procedure= None
         ; procedure_regex= None
         ; class_names= None

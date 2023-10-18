@@ -2616,6 +2616,9 @@ and pulse_taint_sources =
       match all procedures marked by specified annotation
   - "method_with_annotation" and "annotation_values":
       match all procedures marked by specified annotation with specified values
+  - "class_with_annotation", "class_name_regex" and "procedure_regex":
+      match procedures based on specified class annotation and
+      separate OCaml regexes for both classes and procedure names
   - "field_with_annotation":
       match all fields marked by specified annotation
   - "field_with_annotation" and "annotation_values":

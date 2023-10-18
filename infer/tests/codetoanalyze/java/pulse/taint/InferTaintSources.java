@@ -50,4 +50,31 @@ public class InferTaintSources {
       return new Object();
     }
   }
+
+  @SensitiveSourceMarker2
+  static class RegexAndAnnotationSources {
+
+    static Object source1() {
+      return new Object();
+    }
+
+    static Object source2() {
+      return new Object();
+    }
+
+    static Object notSource() {
+      return new Object();
+    }
+  }
+
+  static class RegexAndAnnotationNotSources {
+
+    static Object sourceButNotReally() {
+      return new Object();
+    }
+
+    static Object notSource() {
+      return new Object();
+    }
+  }
 }
