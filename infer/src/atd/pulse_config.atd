@@ -26,6 +26,7 @@ type matcher = {
   or else class_names and procedure_regex must be specified
   or else class_names and field_names must be specified,
   or else class_names and method_return_type_names must be specified,
+  or else class_name_regex and procedure_regex must be specified
   or else overrides_of_class_with_annotation/method_with_annotation *)
   ?field_regex: string option;
   ?procedure: string option;

@@ -298,7 +298,10 @@
       "field_names": ["sourceField"],
       "taint_target": "GetField"
     },
-    { "class_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker" }
+    { "class_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker" },
+    { "class_name_regex": ".*RegexSources",
+      "procedure_regex": "source.*"
+    }
   ],
   "pulse-taint-sinks": [
     { "procedure": "inferSensitiveSink" },

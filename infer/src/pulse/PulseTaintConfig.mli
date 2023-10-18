@@ -43,6 +43,8 @@ module Unit : sig
     | ClassAndMethodNames of {class_names: string list; method_names: string list}
     | ClassNameAndMethodRegex of
         {class_names: string list; method_name_regex: Str.regexp; exclude_in: string list option}
+    | ClassRegexAndMethodRegex of
+        {class_name_regex: Str.regexp; method_name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
     | ClassWithAnnotation of {annotation: string; annotation_values: string list option}

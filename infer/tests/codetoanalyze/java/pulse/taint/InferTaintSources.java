@@ -30,5 +30,24 @@ public class InferTaintSources {
     static Object notSource() {
       return new Object();
     }
+
+    static Object sourceButNotReally() {
+      return new Object();
+    }
+  }
+
+  static class RegexSources {
+
+    static Object source1() {
+      return new Object();
+    }
+
+    static Object source2() {
+      return new Object();
+    }
+
+    static Object notSource() {
+      return new Object();
+    }
   }
 }

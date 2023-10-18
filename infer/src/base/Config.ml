@@ -2605,6 +2605,8 @@ and pulse_taint_sources =
       match exact uses of fields of particular classes
   - "class_names" and "method_return_type_names":
       match exact uses of methods with particular return types of particular classes
+  - "class_name_regex" and "procedure_regex":
+      match methods based on separate OCaml regexes for both classes and procedure names
   - "overrides_of_class_with_annotation":
       match all procedures defined in classes which inherit
       from a superclass with the specified annotation

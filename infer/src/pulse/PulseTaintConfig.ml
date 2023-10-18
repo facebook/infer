@@ -142,6 +142,8 @@ module Unit = struct
     | ClassAndMethodNames of {class_names: string list; method_names: string list}
     | ClassNameAndMethodRegex of
         {class_names: string list; method_name_regex: Str.regexp; exclude_in: string list option}
+    | ClassRegexAndMethodRegex of
+        {class_name_regex: Str.regexp; method_name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
     | ClassWithAnnotation of {annotation: string; annotation_values: string list option}
@@ -164,6 +166,8 @@ module Unit = struct
           (Pp.comma_seq String.pp) method_names
     | ClassNameAndMethodRegex {class_names} ->
         F.fprintf f "class_names=%a and method name regex" (Pp.comma_seq String.pp) class_names
+    | ClassRegexAndMethodRegex _ ->
+        F.pp_print_string f "Class name regex and method name regex"
     | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
         F.fprintf f "class_names=%a, method_return_type_names=%a" (Pp.comma_seq String.pp)
           class_names (Pp.comma_seq String.pp) method_return_type_names
@@ -278,6 +282,7 @@ module Unit = struct
       \ \"overrides_of_class_with_annotation\" must be provided, \n\
        or else \"class_names\" and \"method_names\" must be provided, \n\
        or else \"class_names\" and \"procedure_regex\" must be provided, \n\
+       or else \"class_name_regex\" and \"procedure_regex\" must be provided, \n\
        or else \"class_names\" and \"method_return_type_names\" must be provided, \n\
        or else \"method_with_annotation\" and \"annotation_values\" must be provided, \n\
        but got \n\
@@ -379,6 +384,22 @@ module Unit = struct
         ; allocation= None } ->
           ClassNameAndMethodRegex
             { class_names
+            ; method_name_regex= Str.regexp method_name_regex
+            ; exclude_in= matcher.exclude_from_regex_in }
+      | { procedure= None
+        ; procedure_regex= Some method_name_regex
+        ; class_name_regex= Some class_name_regex
+        ; class_names= None
+        ; class_with_annotation= None
+        ; method_names= None
+        ; method_return_type_names= None
+        ; overrides_of_class_with_annotation= None
+        ; method_with_annotation= None
+        ; annotation_values= None
+        ; block_passed_to= None
+        ; allocation= None } ->
+          ClassRegexAndMethodRegex
+            { class_name_regex= Str.regexp class_name_regex
             ; method_name_regex= Str.regexp method_name_regex
             ; exclude_in= matcher.exclude_from_regex_in }
       | { procedure= None
