@@ -145,7 +145,7 @@ let build_mainlex keywords =
         STAR
     | "?" ->
         QUESTION
-    | ".handlers" ->
+    | ".handlers " ->
         HANDLERS
     | floating_point_literal -> (
         let f = Lexbuf.lexeme lexbuf in

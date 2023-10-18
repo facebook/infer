@@ -7,7 +7,7 @@
 
 type T = { handlers_: *HackMixed }
 
-define FP_parsing_ok($this: *T) : void {
+define parsing_ok($this: *T) : void {
   #entry:
     n0 : *T = load &$this
     n1 : *HackMixed = load n0.T.handlers_
