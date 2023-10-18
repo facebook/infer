@@ -33,6 +33,7 @@ error_lit_local.sil, line 10, column 2: SIL syntax error: unexpected token n00b
 syntax_error_closure1.sil, line 15, column 13: SIL syntax error: call inside closure should end with y,z
 syntax_error_closure2.sil, line 15, column 13: SIL syntax error: call inside closure should end with y,z
 syntax_error_closure3.sil, line 15, column 13: SIL syntax error: call inside closure should end with y,z
+syntax_error_keywords.sil, line 13, column 31: SIL syntax error: unexpected token .handlers
 syntax_error_node_call.sil, line 10, column 15: SIL syntax error: foo.lab
 syntax_error_procname1.sil, line 8, column 8: SIL syntax error: ?.bar
 syntax_error_procname2.sil, line 8, column 7: SIL syntax error: ?.bar
