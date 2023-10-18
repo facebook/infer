@@ -194,6 +194,8 @@ struct F14BasicMap {
   void rehash(std::size_t bucketCapacity);
 
   void reserve(std::size_t capacity);
+
+  std::size_t size() const;
 };
 
 template <typename Key, typename Mapped>
@@ -316,7 +318,7 @@ void long_lived_but_unused_ref_ok() {
 }
 
 // We know there is no growth, so iterators/references wouldn't be invalidated.
-void no_growth_ok() {
+void no_growth_ok_FP() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
 
   const auto& keyRef = map.at(1);
@@ -404,7 +406,7 @@ void folly_fastmap_emplace_hint_bad_FN() {
   const auto valueCopy = valueRef;
 }
 
-void folly_fastmap_operator_bracket_bad_FN() {
+void folly_fastmap_operator_bracket_bad() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   const auto& valueRef = map.at(1);
   map[4] = 16;
@@ -510,4 +512,18 @@ void folly_fastmap_iterator_increment_bad(folly::F14FastMap<int, int>& map) {
   const auto& valueRef = it->second;
   map.clear();
   const auto valueCopy = valueRef;
+}
+
+void weird_operator_bracket_bad_FN(folly::F14FastMap<int, int>& map) {
+  // This is not valid, as the map may resize for the insert call prior to
+  // accessing map[71] and constructing the pair.
+  map.insert(13, map[71]);
+}
+
+// https://github.com/facebook/folly/blob/1cf9ac0/folly/container/F14.md?plain=1#L293-L296
+void reserve_operator_bracket_ok_FP(folly::F14FastMap<int, int>& map) {
+  map.reserve(map.size() + 2);
+  const auto& r1 = map[13];
+  const auto& r2 = map[71];
+  const auto r1Copy = r1;
 }

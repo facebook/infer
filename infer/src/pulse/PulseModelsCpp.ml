@@ -691,31 +691,28 @@ module GenericMapCollection = struct
     let second = (AbstractValue.mk_fresh (), hist) in
     let pair = (AbstractValue.mk_fresh (), hist) in
     let key_t, value_t = extract_key_and_value_types map in
-    let<+> astate =
-      PulseOperations.write_field path location ~ref:pair (pair_first_field key_t value_t)
-        ~obj:first astate
-      >>= PulseOperations.write_field path location ~ref:pair (pair_second_field key_t value_t)
-            ~obj:second
-      >>= PulseOperations.write_field path location ~ref:arg_payload pair_field ~obj:pair
-    in
-    astate
+    PulseOperations.write_field path location ~ref:pair (pair_first_field key_t value_t) ~obj:first
+      astate
+    >>= PulseOperations.write_field path location ~ref:pair (pair_second_field key_t value_t)
+          ~obj:second
+    >>= PulseOperations.write_field path location ~ref:arg_payload pair_field ~obj:pair
 
 
   let constructor map_t classname map : model =
    fun {path; location} astate ->
     let desc = Format.asprintf "%a::%s" Invalidation.pp_map_type map_t classname in
-    reset_backing_fields map path location desc astate
+    let<+> astate = reset_backing_fields map path location desc astate in
+    astate
 
 
-  let invalidate_references map_t map_f ({ProcnameDispatcher.Call.FuncArg.arg_payload} as map) :
-      model =
-   fun {path; location} astate ->
+  let invalidate_references map_t map_f ({ProcnameDispatcher.Call.FuncArg.arg_payload} as map)
+      {path; location} astate =
     let key_t, value_t = extract_key_and_value_types map in
     let desc =
       Format.asprintf "%a::%a" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f
     in
     let cause = Invalidation.CppMap (map_t, map_f) in
-    let<*> astate, pair =
+    let* astate, pair =
       PulseOperations.eval_access path NoAccess location arg_payload pair_access astate
     in
     let astate =
@@ -734,21 +731,27 @@ module GenericMapCollection = struct
     reset_backing_fields map path location desc astate
 
 
+  let only_invalidate_references map_t map_f map : model =
+   fun data astate ->
+    let<+> astate = invalidate_references map_t map_f map data astate in
+    astate
+
+
   let at map_t ({ProcnameDispatcher.Call.FuncArg.arg_payload} as map) : model =
-   fun {path; location; ret} astate ->
     let key_t, value_t = extract_key_and_value_types map in
-    let event =
-      Hist.call_event path location (Format.asprintf "%a::at" Invalidation.pp_map_type map_t)
-    in
-    let<*> astate, pair =
-      PulseOperations.eval_access path Read location arg_payload pair_access astate
-    in
-    let<+> astate, (addr, hist) =
-      PulseOperations.eval_access path Read location pair
-        (MemoryAccess.FieldAccess (pair_second_field key_t value_t))
-        astate
-    in
-    PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
+    fun {path; location; ret} astate ->
+      let event =
+        Hist.call_event path location (Format.asprintf "%a::at" Invalidation.pp_map_type map_t)
+      in
+      let<*> astate, pair =
+        PulseOperations.eval_access path Read location arg_payload pair_access astate
+      in
+      let<+> astate, (addr, hist) =
+        PulseOperations.eval_access path Read location pair
+          (MemoryAccess.FieldAccess (pair_second_field key_t value_t))
+          astate
+      in
+      PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
 
 
   let find desc arg_payload it : model =
@@ -763,6 +766,12 @@ module GenericMapCollection = struct
         astate
     in
     astate
+
+
+  let operator_bracket map_t map : model =
+   fun data astate ->
+    let<*> astate = invalidate_references map_t OperatorBracket map data astate in
+    at map_t map data astate
 
 
   let iterator_star desc it : model =
@@ -836,19 +845,22 @@ let map_matchers =
           $+...$--> GenericMapCollection.constructor map_t map_s
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator="
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+...$--> GenericMapCollection.invalidate_references map_t OperatorEqual
+          $+...$--> GenericMapCollection.only_invalidate_references map_t OperatorEqual
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "clear"
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
-          $--> GenericMapCollection.invalidate_references map_t Clear
+          $--> GenericMapCollection.only_invalidate_references map_t Clear
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "rehash"
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+...$--> GenericMapCollection.invalidate_references map_t Rehash
+          $+...$--> GenericMapCollection.only_invalidate_references map_t Rehash
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "reserve"
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+...$--> GenericMapCollection.invalidate_references map_t Reserve
+          $+...$--> GenericMapCollection.only_invalidate_references map_t Reserve
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "at"
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
           $+...$--> GenericMapCollection.at map_t
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator[]"
+          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+...$--> GenericMapCollection.operator_bracket map_t
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "find"
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
           $+ any_arg $+ capt_arg_payload
