@@ -154,10 +154,10 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
         | ClassAndMethodNames {class_names; method_names} ->
             class_names_match tenv class_names class_name
             && List.mem ~equal:String.equal method_names (Procname.get_method proc_name)
-        | ClassNameAndMethodRegex {class_names; method_name_regex} ->
+        | ClassNameAndMethodRegex {class_names; method_name_regex; exclude_in} ->
             let proc_name_s = get_proc_name_s proc_name in
             class_names_match tenv class_names class_name
-            && check_regex method_name_regex proc_name_s None
+            && check_regex method_name_regex proc_name_s exclude_in
         | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
             let procedure_return_type_match method_return_type_names =
               Option.exists proc_attributes ~f:(fun attrs ->

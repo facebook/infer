@@ -140,7 +140,8 @@ module Unit = struct
     | ProcedureNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndMethodNames of {class_names: string list; method_names: string list}
-    | ClassNameAndMethodRegex of {class_names: string list; method_name_regex: Str.regexp}
+    | ClassNameAndMethodRegex of
+        {class_names: string list; method_name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
     | ClassWithAnnotation of {annotation: string; annotation_values: string list option}
@@ -376,7 +377,10 @@ module Unit = struct
         ; annotation_values= None
         ; block_passed_to= None
         ; allocation= None } ->
-          ClassNameAndMethodRegex {class_names; method_name_regex= Str.regexp method_name_regex}
+          ClassNameAndMethodRegex
+            { class_names
+            ; method_name_regex= Str.regexp method_name_regex
+            ; exclude_in= matcher.exclude_from_regex_in }
       | { procedure= None
         ; procedure_regex= None
         ; class_name_regex= None

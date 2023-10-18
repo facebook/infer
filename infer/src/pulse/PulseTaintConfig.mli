@@ -41,7 +41,8 @@ module Unit : sig
     | ProcedureNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndMethodNames of {class_names: string list; method_names: string list}
-    | ClassNameAndMethodRegex of {class_names: string list; method_name_regex: Str.regexp}
+    | ClassNameAndMethodRegex of
+        {class_names: string list; method_name_regex: Str.regexp; exclude_in: string list option}
     | ClassAndMethodReturnTypeNames of
         {class_names: string list; method_return_type_names: string list}
     | ClassWithAnnotation of {annotation: string; annotation_values: string list option}
