@@ -9,10 +9,10 @@ class C {
   public mixed $data;
 }
 
-function returnNullC() : ?C {
+function returnNullC(): ?C {
   return null;
 }
 
-function returnNotnullC() : ?C {
+function returnNotnullC(): ?C {
   return new C();
 }

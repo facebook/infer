@@ -21,13 +21,13 @@ class DaoBase {
     $this->context = $ctx;
   }
 
-  public function getContext() : Context {
+  public function getContext(): Context {
     return $this->context;
   }
 }
 
 abstract class DaoQueries {
-  public final static function queryA(Context $ctx) : string {
+  public final static function queryA(Context $ctx): string {
     return static::query($ctx, "A");
   }
 
@@ -35,26 +35,26 @@ abstract class DaoQueries {
     return static::query($ctx, "B");
   }
 
-  protected abstract static function query(Context $ctx, string $query) : string;
+  protected abstract static function query(Context $ctx, string $query): string;
 }
 
 class Level5DaoQueries extends DaoQueries {
   <<__Override>>
-  protected static function query(Context $ctx, string $query) : string {
+  protected static function query(Context $ctx, string $query): string {
     return "level5";
   }
 }
 
 class Dao extends DaoBase {
-  public function useContext() : string {
+  public function useContext(): string {
     $a = Level5DaoQueries::queryA($this->getContext());
     $b = Level5DaoQueries::queryB($this->getContext());
-    return $a . $b;
+    return $a.$b;
   }
 }
 
 class Level5Base {
-  protected static function getSuperContext(string $caller) : Context {
+  protected static function getSuperContext(string $caller): Context {
     return new SuperContext();
   }
 
@@ -65,19 +65,19 @@ class Level5Base {
 
 final class Level5 extends Level5Base {
   /** Internall will use the Context attached to `$dao. */
-  private static  function useDaoContext(Dao $dao): void {
-     $dao->useContext();
+  private static function useDaoContext(Dao $dao): void {
+    $dao->useContext();
   }
 
   /** Return a Dao which has an attached SuperContext. */
   private static function loadUsingSuperContext(): Dao {
-    $ctx =  self::getSuperContext(__METHOD__);
+    $ctx = self::getSuperContext(__METHOD__);
     return new Dao($ctx);
   }
 
   /** Return a Dao which has an attached SuperContext. */
   private static function loadUsingRegularContext(): Dao {
-    $ctx =  self::getRegularContext(__METHOD__);
+    $ctx = self::getRegularContext(__METHOD__);
     return new Dao($ctx);
   }
 

@@ -25,7 +25,11 @@ class Test1 {
 }
 
 class Test2 {
-  public static function apply((function(bool, bool): int) $f, bool $x, bool $y): int {
+  public static function apply(
+    (function(bool, bool): int) $f,
+    bool $x,
+    bool $y,
+  ): int {
     return $f($x, $y);
   }
 
@@ -43,7 +47,7 @@ class Test2 {
 class Bundle {
   public function __construct(
     private (function(bool, bool): int) $fun,
-    private bool $x
+    private bool $x,
   ) {}
 
   public function run(bool $y): int {

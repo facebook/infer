@@ -23,7 +23,7 @@ trait T {
     return self::f();
   }
 
-  public static function g_self() : int {
+  public static function g_self(): int {
     return self::g();
   }
 }

@@ -6,7 +6,9 @@
 namespace IntraFile;
 
 class IntraFileFlow {
-  public static function explicitSinkMethodDirectOnHackMixedSinkBad(SensitiveClass $sc): void {
+  public static function explicitSinkMethodDirectOnHackMixedSinkBad(
+    SensitiveClass $sc,
+  ): void {
     HackMixed::explicitSinkAllArgs($sc);
   }
 
@@ -38,9 +40,7 @@ class IntraFileFlow {
     $this->callExplicitSinkAllArgs($derived);
   }
 
-  public static function explicitSinkClassDirectBad(
-    SensitiveClass $sc,
-  ): void {
+  public static function explicitSinkClassDirectBad(SensitiveClass $sc): void {
     Logger::someLogMethod($sc);
   }
 

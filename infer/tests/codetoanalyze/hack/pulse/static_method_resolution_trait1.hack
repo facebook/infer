@@ -20,7 +20,7 @@ trait T {
     return 42;
   }
 
-  public static function g_self() : int {
+  public static function g_self(): int {
     return self::g();
   }
 }

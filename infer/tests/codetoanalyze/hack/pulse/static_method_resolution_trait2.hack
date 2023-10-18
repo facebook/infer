@@ -13,14 +13,14 @@ trait T {
     return self::f();
   }
 
-  public static function g_self() : int {
+  public static function g_self(): int {
     return self::g();
   }
 }
 
 final class C0 {
   use T;
-  
+
   public static function f(): int {
     return \Level1\taintSource();
   }

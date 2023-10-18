@@ -18,7 +18,9 @@ class ShapeLogger {
 
 class C1 {
   public function passViaShapeBad(SensitiveClass $sc) {
-    ShapeLogger::logData(shape('msg' => 'Oh-oh', 'debug_data' => $sc->sensitiveField));
+    ShapeLogger::logData(
+      shape('msg' => 'Oh-oh', 'debug_data' => $sc->sensitiveField),
+    );
   }
 
   public function passViaShapeGetBad(SensitiveClass $sc) {
@@ -37,7 +39,7 @@ class C1 {
   }
 
   public function shapeLookupBad(SensitiveClass $sc, TSchemaShape $shape) {
-      $_ = $shape['msg'];
-      \Level1\taintSink($sc);
+    $_ = $shape['msg'];
+    \Level1\taintSink($sc);
   }
 }

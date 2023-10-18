@@ -5,20 +5,20 @@
 
 namespace Primitives;
 
-function condLog(mixed $data, bool $should_log = false) : void {
+function condLog(mixed $data, bool $should_log = false): void {
   if ($should_log) {
     \Level1\taintSink($data);
   }
 }
 
-function logEnabledExplicitBad(SensitiveClass $sc) : void {
+function logEnabledExplicitBad(SensitiveClass $sc): void {
   condLog($sc, true);
 }
 
-function logDisabledExplicitOk(SensitiveClass $sc) : void {
+function logDisabledExplicitOk(SensitiveClass $sc): void {
   condLog($sc, false);
 }
 
-function logDisabledImplicitOk(SensitiveClass $sc) : void {
+function logDisabledImplicitOk(SensitiveClass $sc): void {
   condLog($sc);
 }

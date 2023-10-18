@@ -8,6 +8,6 @@ function return_constant(): int {
 }
 
 function cond_constant(int $x): void {
-  if ($x > 0){
+  if ($x > 0) {
   }
 }

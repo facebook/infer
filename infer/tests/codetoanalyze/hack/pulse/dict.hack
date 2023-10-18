@@ -55,47 +55,75 @@ class Main {
     }
   }
 
-  public function multidim_copy_on_write_bad(int $u1, int $v1, int $u2, int $v2, int $w) {
+  public function multidim_copy_on_write_bad(
+    int $u1,
+    int $v1,
+    int $u2,
+    int $v2,
+    int $w,
+  ) {
     $tainted = \Level1\taintSource();
 
     $t1 = dict[
       'level1' => dict['a' => $u1, 'b' => $v1],
-      'level2' => dict['a' => $u2, 'b' => $v2]
-      ];
+      'level2' => dict['a' => $u2, 'b' => $v2],
+    ];
 
     $t2 = $t1['level2'];
 
     $t1['level2']['a'] = $w;
 
-    if ($t1['level1']['a'] == $u1 &&
-        $t1['level1']['b'] == $v1 &&
-        $t1['level2']['a'] == $w && $t2['a'] == $u2 &&
-        $t1['level2']['b'] == $v2 && $t2['b'] == $v2) {
+    if (
+      $t1['level1']['a'] == $u1 &&
+      $t1['level1']['b'] == $v1 &&
+      $t1['level2']['a'] == $w &&
+      $t2['a'] == $u2 &&
+      $t1['level2']['b'] == $v2 &&
+      $t2['b'] == $v2
+    ) {
       \Level1\taintSink($tainted);
     }
   }
 
-  public function multidim_copy_on_write_good(int $u1, int $v1, int $u2, int $v2, int $w) {
+  public function multidim_copy_on_write_good(
+    int $u1,
+    int $v1,
+    int $u2,
+    int $v2,
+    int $w,
+  ) {
     $tainted = \Level1\taintSource();
 
     $t1 = dict[
       'level1' => dict['a' => $u1, 'b' => $v1],
-      'level2' => dict['a' => $u2, 'b' => $v2]
-      ];
+      'level2' => dict['a' => $u2, 'b' => $v2],
+    ];
 
     $t2 = $t1['level2'];
 
     $t1['level2']['a'] = $w;
 
-    if ($t1['level1']['a'] != $u1 ) {\Level1\taintSink($tainted);}
-    if ($t1['level1']['b'] != $v1) {\Level1\taintSink($tainted);}
-    if ($t1['level2']['a'] != $w) {\Level1\taintSink($tainted);}
-    if ($t2['a'] != $u2) {\Level1\taintSink($tainted);}
-    if ($t1['level2']['b'] != $v2) {\Level1\taintSink($tainted);}
-    if ($t2['b'] != $v2) {\Level1\taintSink($tainted);}
+    if ($t1['level1']['a'] != $u1) {
+      \Level1\taintSink($tainted);
+    }
+    if ($t1['level1']['b'] != $v1) {
+      \Level1\taintSink($tainted);
+    }
+    if ($t1['level2']['a'] != $w) {
+      \Level1\taintSink($tainted);
+    }
+    if ($t2['a'] != $u2) {
+      \Level1\taintSink($tainted);
+    }
+    if ($t1['level2']['b'] != $v2) {
+      \Level1\taintSink($tainted);
+    }
+    if ($t2['b'] != $v2) {
+      \Level1\taintSink($tainted);
+    }
   }
 
-  public function copy_on_write_no_dynamic_type_bad(dict<string,int> $dict) {
+  public function copy_on_write_no_dynamic_type_bad(dict<string, int> $dict) {
     $tainted = \Level1\taintSource();
     $dict['a'] = 1;
     \Level1\taintSink($tainted);

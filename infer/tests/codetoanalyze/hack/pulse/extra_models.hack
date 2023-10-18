@@ -5,14 +5,14 @@
 
 namespace ExtraModels;
 
-function derefNullFromHackModelBad() : mixed {
+function derefNullFromHackModelBad(): mixed {
   return \TestModels\returnNullC()->data;
 }
 
-function derefNonnullFromHackModelOk() : mixed {
+function derefNonnullFromHackModelOk(): mixed {
   return \TestModels\returnNonnullC()->data;
 }
 
-function derefNullFromSilModelBad() : mixed {
+function derefNullFromSilModelBad(): mixed {
   return \TestModels\getNullCFromSil()->data;
 }

@@ -6,13 +6,13 @@
 namespace Closures;
 
 class Delayed {
-  public function startAndWait((function(): Awaitable<void>) $action) : void {
+  public function startAndWait((function(): Awaitable<void>) $action): void {
     \HH\Asio\join($action());
   }
 }
 
 class Utils {
-  public function logDelayed(mixed $data) : void {
+  public function logDelayed(mixed $data): void {
     new Delayed()->startAndWait(async () ==> {
       \Level1\taintSink($data);
     });
@@ -20,13 +20,13 @@ class Utils {
 }
 
 class C1 {
-  public function f1Bad(SensitiveClass $sc) : void {
+  public function f1Bad(SensitiveClass $sc): void {
     new Utils()->logDelayed($sc);
   }
 }
 
 class A {
-  public static function id_fst(int $x, int $y) : int {
+  public static function id_fst(int $x, int $y): int {
     $y = 0;
     return $x;
   }

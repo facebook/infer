@@ -50,5 +50,4 @@ class Main {
     \Level1\taintSink(Singleton::get()->getUntainted());
   }
 
-
 }

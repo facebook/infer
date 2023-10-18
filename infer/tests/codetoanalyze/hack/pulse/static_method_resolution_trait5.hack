@@ -27,7 +27,7 @@ trait T {
     return parent::f();
   }
 
-  public static function g_self() : int {
+  public static function g_self(): int {
     return parent::g();
   }
 }

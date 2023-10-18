@@ -7,7 +7,7 @@ namespace TypePropagation;
 
 class A {
 
-  public function getTainted() : int {
+  public function getTainted(): int {
     return \Level1\taintSource();
   }
 
@@ -23,10 +23,9 @@ abstract class C {
 
   public static A $globalvar;
 
-  abstract public function get() : A;
+  abstract public function get(): A;
 
 }
-
 
 class Main {
 

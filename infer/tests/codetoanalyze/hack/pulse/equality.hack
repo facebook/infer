@@ -42,7 +42,6 @@ class CmpSame {
     }
   }
 
-
   public function cmpSameIntSimpleBad(): void {
     $a = 0;
     $b = 0;
@@ -52,7 +51,7 @@ class CmpSame {
     }
   }
 
- public function cmpSameIntSimpleGood(): void {
+  public function cmpSameIntSimpleGood(): void {
     $a = 0;
     $b = 1;
     $taint = \Level1\taintSource();
@@ -70,7 +69,7 @@ class CmpSame {
     }
   }
 
- public function cmpSameBoolSimpleGood(): void {
+  public function cmpSameBoolSimpleGood(): void {
     $a = true;
     $b = false;
     $taint = \Level1\taintSource();
@@ -79,41 +78,41 @@ class CmpSame {
     }
   }
 
- public function cmpSameObjectSimpleBad(): void {
+  public function cmpSameObjectSimpleBad(): void {
     $a = new A();
     $b = $a;
     $taint = \Level1\taintSource();
     if ($a === $b) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function FP_cmpSameObjectSimpleGood(): void {
+  public function FP_cmpSameObjectSimpleGood(): void {
     $a = new A();
     $taint = \Level1\taintSource();
     if ($a === new A()) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function neObjectSimpleBad(): void {
+  public function neObjectSimpleBad(): void {
     $a = new A();
     $taint = \Level1\taintSource();
     if ($a !== new A()) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function neObjectSimpleGood(): void {
+  public function neObjectSimpleGood(): void {
     $a = new A();
     $b = $a;
     $taint = \Level1\taintSource();
     if ($a !== $b) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function cmpSameDictSimpleBad(): void {
+  public function cmpSameDictSimpleBad(): void {
     $a = dict['a' => 1, 'b' => 3];
     // just writing $b = dict['a' => 1, 'b' => 3] because the compiler
     // reuses the same pointer.
@@ -123,18 +122,18 @@ class CmpSame {
     if ($a === $b) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function FP_cmpSameDictSimpleGood(): void {
+  public function FP_cmpSameDictSimpleGood(): void {
     $a = dict['a' => 1, 'b' => 3];
     $b = dict['a' => 1, 'b' => 4];
     $taint = \Level1\taintSource();
     if ($a === $b) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function cmpSameDictNestedBad(): void {
+  public function cmpSameDictNestedBad(): void {
     $a = dict['a' => 1, 'b' => 2];
     $b = $a;
     $a['a'] = $a;
@@ -143,9 +142,9 @@ class CmpSame {
     if ($a === $b) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function FP_cmpSameDictNestedGood(): void {
+  public function FP_cmpSameDictNestedGood(): void {
     $a = dict['a' => 1, 'b' => 2];
     $a['a'] = $a;
     $b = $a;
@@ -154,7 +153,7 @@ class CmpSame {
     if ($a === $b) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
 }
 
@@ -204,7 +203,7 @@ class CmpNsame {
     }
   }
 
- public function neBoolSimpleGood(): void {
+  public function neBoolSimpleGood(): void {
     $a = true;
     $b = true;
     $taint = \Level1\taintSource();
@@ -212,8 +211,6 @@ class CmpNsame {
       \Level1\taintSink($taint);
     }
   }
-
-
 
 }
 
@@ -271,7 +268,6 @@ class CmpEq {
     }
   }
 
-
   public function cmpEqIntSimpleBad(): void {
     $a = 0;
     $b = 0;
@@ -281,7 +277,7 @@ class CmpEq {
     }
   }
 
- public function cmpEqIntSimpleGood(): void {
+  public function cmpEqIntSimpleGood(): void {
     $a = 0;
     $b = 1;
     $taint = \Level1\taintSource();
@@ -299,7 +295,7 @@ class CmpEq {
     }
   }
 
- public function neIntSimpleGood(): void {
+  public function neIntSimpleGood(): void {
     $a = 0;
     $b = 0;
     $taint = \Level1\taintSource();
@@ -317,7 +313,7 @@ class CmpEq {
     }
   }
 
- public function FP_cmpEqBoolSimpleGood(): void {
+  public function FP_cmpEqBoolSimpleGood(): void {
     $a = true;
     $b = false;
     $taint = \Level1\taintSource();
@@ -335,7 +331,7 @@ class CmpEq {
     }
   }
 
- public function FP_neBoolSimpleGood(): void {
+  public function FP_neBoolSimpleGood(): void {
     $a = true;
     $b = true;
     $taint = \Level1\taintSource();
@@ -344,41 +340,41 @@ class CmpEq {
     }
   }
 
- public function cmpEqObjectSimpleBad(): void {
+  public function cmpEqObjectSimpleBad(): void {
     $a = new A();
     $b = $a;
     $taint = \Level1\taintSource();
     if ($a == $b) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function FP_cmpEqObjectSimpleGood(): void {
+  public function FP_cmpEqObjectSimpleGood(): void {
     $a = new A();
     $taint = \Level1\taintSource();
     if ($a == new A()) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function neObjectSimpleBad(): void {
+  public function neObjectSimpleBad(): void {
     $a = new A();
     $taint = \Level1\taintSource();
     if ($a != new A()) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function neObjectSimpleGood(): void {
+  public function neObjectSimpleGood(): void {
     $a = new A();
     $b = $a;
     $taint = \Level1\taintSource();
     if ($a != $b) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function cmpEqDictSimpleBad(): void {
+  public function cmpEqDictSimpleBad(): void {
     $a = dict['a' => 1, 'b' => 3];
     // just writing $b = dict['a' => 1, 'b' => 3] because the compiler
     // reuses the same pointer.
@@ -388,18 +384,18 @@ class CmpEq {
     if ($a == $b) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function FP_cmpEqDictSimpleGood(): void {
+  public function FP_cmpEqDictSimpleGood(): void {
     $a = dict['a' => 1, 'b' => 3];
     $b = dict['a' => 1, 'b' => 4];
     $taint = \Level1\taintSource();
     if ($a == $b) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function cmpEqDictNestedBad(): void {
+  public function cmpEqDictNestedBad(): void {
     $a = dict['a' => 1, 'b' => 2];
     $b = $a;
     $a['a'] = $a;
@@ -408,9 +404,9 @@ class CmpEq {
     if ($a == $b) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
- public function FP_cmpEqDictNestedGood(): void {
+  public function FP_cmpEqDictNestedGood(): void {
     $a = dict['a' => 1, 'b' => 2];
     $a['a'] = $a;
     $b = $a;
@@ -419,6 +415,6 @@ class CmpEq {
     if ($a == $b) {
       \Level1\taintSink($taint);
     }
- }
+  }
 
 }
