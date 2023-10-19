@@ -474,47 +474,6 @@ module Comparison = struct
     let lt = ordering Lt incompatible_lt
 
     let le = ordering Le incompatible_lt
-
-    (** Compare two abstract values, when one of them has a known type and the other might be of the
-        same type, by disjuncting on the case whether the latter is the same type or not.
-
-        Parameters (not in order):
-
-        - Two abstract values [x] and [y]. One of them is expected to have a known type, and the
-          other one to have an undetermined dynamic type.
-
-        - An [are_compatible] (boolean) abstract value that witnesses if the types of [x] and [y]
-          are both the same or if one of them is not (this is typically obtained by using
-          {!has_erlang_type} on the Any-typed argument).
-
-        - A [cmp_compat] and a [cmp_incompat] function, each of them to be used according to the
-          corresponding value of [are_compatible]. Those are typically obtained as a monotyped
-          comparator function such as some [cmp.integer], or giving the types of [x] and [y] to some
-          [cmp.incompatible] comparator.
-
-        Returns: a disjunction built on top of [are_compatible], that compares [x] and [y] as same
-        types when they both are, and as incompatible values when the any-typed one is not same
-        typed. *)
-    let any_with_type_split cmp_compat cmp_incompat location path ~are_compatible x y :
-        disjunction_maker =
-     fun astate ->
-      let same_type_result =
-        let** astate_same_type = PulseArithmetic.prune_positive are_compatible astate in
-        let++ astate_same_type, same_type_comparison =
-          cmp_compat x y location path astate_same_type
-        in
-        let same_type_hist = Hist.single_alloc path location "any_same_type_comparison" in
-        (astate_same_type, (same_type_comparison, same_type_hist))
-      in
-      let incompatible_result =
-        let** astate_incompatible = PulseArithmetic.prune_eq_zero are_compatible astate in
-        let++ astate_incompatible, incompatible_comparison =
-          cmp_incompat x y location path astate_incompatible
-        in
-        let incompatible_hist = Hist.single_alloc path location "any_incompatible_comparison" in
-        (astate_incompatible, (incompatible_comparison, incompatible_hist))
-      in
-      SatUnsat.to_list same_type_result @ SatUnsat.to_list incompatible_result
   end
 
   (** Makes an abstract value holding the comparison result of two parameters. We perform a case
@@ -545,8 +504,10 @@ module Comparison = struct
         use the [cmp.unsupported] function (that could for instance return an - overapproximating -
         unconstrained result).
       - If one parameter has a supported type, say [Integer] and the other has no known dynamic type
-        (or, equivalently, its type is [Any]), then we case-split the unknown-typed value on being
-        an [Integer] or not and use the appropriate comparison on each case.
+        (or, equivalently, its type is [Any]), then we will assume that the unknown-typed value is
+        an [Integer] and use the appropriate comparison. Note: this is strictly under-approximating
+        in some cases, but seems to be the better alternative (for instance, case-splitting on the
+        [Any] type yields too many disjunctions).
       - If both parameters have no known dynamic type (or, equivalently, their type is [Any]), or
         one has an unsupported type and the other one has [Any] type, then the comparison is also
         unsupported.
@@ -567,28 +528,32 @@ module Comparison = struct
     (* When supporting more types, this should probably be refactored to avoid N² cases. *)
     | Integer, Integer ->
         let<**> astate, result = cmp.integer x y location path astate in
-        let hist = Hist.single_alloc path location "integer_comparison" in
+        let hist = Hist.single_call path location "integer_comparison" in
         [Ok (astate, (result, hist))]
     | Atom, Atom ->
         let<**> astate, result = cmp.atom x y location path astate in
-        let hist = Hist.single_alloc path location "atom_comparison" in
+        let hist = Hist.single_call path location "atom_comparison" in
         [Ok (astate, (result, hist))]
     | Integer, Any ->
-        let<**> astate, are_compatible = has_erlang_type y_val Integer astate in
-        Comparator.any_with_type_split cmp.integer (cmp.incompatible Integer Any) location path
-          ~are_compatible x y astate
+        let> astate = prune_type path location y Integer astate in
+        let<**> astate, result = cmp.integer x y location path astate in
+        let hist = Hist.single_call path location "integer_any_comparison" in
+        [Ok (astate, (result, hist))]
     | Any, Integer ->
-        let<**> astate, are_compatible = has_erlang_type x_val Integer astate in
-        Comparator.any_with_type_split cmp.integer (cmp.incompatible Any Integer) location path
-          ~are_compatible x y astate
+        let> astate = prune_type path location x Integer astate in
+        let<**> astate, result = cmp.integer x y location path astate in
+        let hist = Hist.single_call path location "any_integer_comparison" in
+        [Ok (astate, (result, hist))]
     | Atom, Any ->
-        let<**> astate, are_compatible = has_erlang_type y_val Atom astate in
-        Comparator.any_with_type_split cmp.atom (cmp.incompatible Atom Any) location path
-          ~are_compatible x y astate
+        let> astate = prune_type path location y Atom astate in
+        let<**> astate, result = cmp.atom x y location path astate in
+        let hist = Hist.single_call path location "atom_any_comparison" in
+        [Ok (astate, (result, hist))]
     | Any, Atom ->
-        let<**> astate, are_compatible = has_erlang_type x_val Atom astate in
-        Comparator.any_with_type_split cmp.atom (cmp.incompatible Any Atom) location path
-          ~are_compatible x y astate
+        let> astate = prune_type path location x Atom astate in
+        let<**> astate, result = cmp.atom x y location path astate in
+        let hist = Hist.single_call path location "any_atom_comparison" in
+        [Ok (astate, (result, hist))]
     | Nil, Nil | Cons, Cons | Tuple _, Tuple _ | Map, Map | Any, _ | _, Any ->
         let<**> astate, result = cmp.unsupported x y location path astate in
         let hist = Hist.single_alloc path location "unsupported_comparison" in
