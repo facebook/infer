@@ -145,15 +145,38 @@ let get_variadic_procdesc decls qualified_procname =
 
 type variadic_status = NotVariadic | Variadic of Typ.t
 
+let get_struct decls tname = TypeName.Hashtbl.find_opt decls.structs tname
+
+let is_defined_in_a_trait decls_env {Textual.QualifiedProcName.enclosing_class} =
+  match enclosing_class with
+  | Enclosing typename ->
+      get_struct decls_env typename
+      |> Option.value_map ~default:false ~f:(fun {Textual.Struct.attributes} ->
+             List.find ~f:Textual.Attr.is_trait attributes |> Option.is_some )
+  | TopLevel ->
+      false
+
+
+let is_trait_method decls_env procsig =
+  is_defined_in_a_trait decls_env (Textual.ProcSig.to_qualified_procname procsig)
+  && (* The hack init methods does not have the [self] argument, unlike the other trait methods. So,
+        we address them differenctly in the validtion. *)
+  not (Textual.ProcSig.is_hack_init procsig)
+
+
 let get_procdecl decls procsig =
-  let procdecl = ProcSig.to_qualified_procname procsig in
-  match get_variadic_procdesc decls procdecl with
+  let procname = ProcSig.to_qualified_procname procsig in
+  match get_variadic_procdesc decls procname with
   | Some procdesc ->
       let formals_type = ProcDesc.formals procdesc in
       let variadic_type = List.last_exn formals_type in
       (* get_variadic_procdesc will only succeed for non empty param list *)
       Some (Variadic variadic_type.typ, procdesc.procdecl)
   | None ->
+      (* The trait methods has an additional parameter added by [hackc]. *)
+      let procsig =
+        if is_trait_method decls procsig then Textual.ProcSig.incr_arity procsig else procsig
+      in
       get_procentry decls procsig
       |> Option.map ~f:(fun entry -> (NotVariadic, ProcEntry.decl entry))
 
@@ -161,8 +184,6 @@ let get_procdecl decls procsig =
 let get_procdesc decls procsig =
   get_procentry decls procsig |> Option.value_map ~default:None ~f:ProcEntry.desc
 
-
-let get_struct decls tname = TypeName.Hashtbl.find_opt decls.structs tname
 
 let fold_globals decls ~init ~f =
   VarName.Hashtbl.fold (fun key data x -> f x key data) decls.globals init
@@ -397,14 +418,3 @@ let make_decls ({decls; sourcefile} as module_ : Module.t) : error list * t =
   in
   let errors = List.fold decls ~init:[] ~f:register in
   (errors, decls_env)
-
-
-let is_defined_in_a_trait decls_env (procdesc : ProcDesc.t) =
-  let name = procdesc.procdecl.qualified_name in
-  match name.enclosing_class with
-  | Enclosing typename ->
-      get_struct decls_env typename
-      |> Option.value_map ~default:false ~f:(fun {Textual.Struct.attributes} ->
-             List.find ~f:Textual.Attr.is_trait attributes |> Option.is_some )
-  | TopLevel ->
-      false

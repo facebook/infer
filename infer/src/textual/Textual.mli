@@ -34,6 +34,8 @@ module type NAME = sig
 
   val pp : F.formatter -> t -> unit
 
+  val is_hack_init : t -> bool
+
   module Hashtbl : Hashtbl.S with type key = t
 
   module HashSet : HashSet.S with type elt = t
@@ -182,6 +184,10 @@ module ProcSig : sig
   [@@deriving equal, hash]
 
   val to_qualified_procname : t -> QualifiedProcName.t
+
+  val incr_arity : t -> t
+
+  val is_hack_init : t -> bool
 
   module Hashtbl : Hashtbl.S with type key = t
 end

@@ -48,7 +48,9 @@ val get_struct : t -> Textual.TypeName.t -> Textual.Struct.t option
 
 val is_field_declared : t -> Textual.qualified_fieldname -> bool
 
-val is_defined_in_a_trait : t -> Textual.ProcDesc.t -> bool
+val is_defined_in_a_trait : t -> Textual.QualifiedProcName.t -> bool
+
+val is_trait_method : t -> Textual.ProcSig.t -> bool
 
 val source_file : t -> Textual.SourceFile.t
 

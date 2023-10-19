@@ -82,6 +82,8 @@ module type NAME = sig
 
   val pp : F.formatter -> t -> unit
 
+  val is_hack_init : t -> bool
+
   module Hashtbl : Hashtbl.S with type key = t
 
   module HashSet : HashSet.S with type elt = t
@@ -104,6 +106,8 @@ module Name : NAME = struct
   let of_java_name str = {value= replace_dot_with_2colons str; loc= Location.Unknown}
 
   let pp fmt name = F.pp_print_string fmt name.value
+
+  let is_hack_init {value} = String.equal value "_86pinit" || String.equal value "_86sinit"
 
   module Hashtbl = Hashtbl.Make (T)
   module HashSet = HashSet.Make (T)
@@ -163,6 +167,8 @@ module QualifiedProcName = struct
 
 
   let name {name} = name
+
+  let is_hack_init {name} = ProcName.is_hack_init name
 
   module Hashtbl = Hashtbl.Make (struct
     type nonrec t = t [@@deriving equal, hash]
@@ -327,6 +333,23 @@ module ProcSig = struct
   let to_qualified_procname = function
     | Hack {qualified_name} | Python {qualified_name} | Other {qualified_name} ->
         qualified_name
+
+
+  let incr_arity procsig =
+    match procsig with
+    | Hack {qualified_name; arity= Some arity} ->
+        Hack {qualified_name; arity= Some (arity + 1)}
+    | Python {qualified_name; arity= Some arity} ->
+        Python {qualified_name; arity= Some (arity + 1)}
+    | Hack {arity= None} | Python {arity= None} | Other _ ->
+        procsig
+
+
+  let is_hack_init = function
+    | Hack {qualified_name} ->
+        QualifiedProcName.is_hack_init qualified_name
+    | Python _ | Other _ ->
+        false
 
 
   module Hashtbl = Hashtbl.Make (T)

@@ -215,6 +215,8 @@ let option_value_map (o : 'a option) ~(none : 'b monad) ~(some : 'a -> 'b monad)
 (** add an error and continue normally *)
 let add_error e : unit monad = fun state -> (Value (), {state with errors= e :: state.errors})
 
+let get_decls : TextualDecls.t monad = fun state -> (Value state.decls, state)
+
 let get_location : Location.t monad = fun state -> (Value state.loc, state)
 
 let set_location loc : unit monad = fun state -> (Value (), {state with loc})
@@ -467,10 +469,13 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
         | None ->
             ret args
         | Some formals_types ->
+            let* decls = get_decls in
             let formals_types =
               match (is_variadic : TextualDecls.variadic_status) with
               | NotVariadic ->
-                  formals_types
+                  if TextualDecls.is_trait_method decls procsig then
+                    List.drop_last_exn formals_types
+                  else formals_types
               | Variadic variadic_typ ->
                   (* we may have too much arguments, and we then complete formal_args *)
                   let n = List.length formals_types - 1 in

@@ -102,7 +102,7 @@ let verify_decl ~env errors (decl : Module.decl) =
             else errors
           in
           let formals = List.length formals_types in
-          let args = nb_args in
+          let args = nb_args + if TextualDecls.is_trait_method env procsig then 1 else 0 in
           if not (Int.equal args formals) then WrongArgNumber {proc; args; formals; loc} :: errors
           else errors
       | Some (NotVariadic, {formals_types= None}) ->
@@ -140,20 +140,20 @@ let verify_decl ~env errors (decl : Module.decl) =
         let errors = verify_exp loc errors exp1 in
         verify_exp loc errors exp2
   in
-  let verify_variadic_position errors (procdesc : ProcDesc.t) =
+  let verify_variadic_position errors {ProcDesc.procdecl= {qualified_name; formals_types}} =
     let contains_variadic_typ formals =
       List.exists formals ~f:(Typ.is_annotated ~f:Attr.is_variadic)
     in
-    Option.value_map procdesc.procdecl.formals_types ~default:errors ~f:(fun formals_types ->
-        let is_defined_in_a_trait = TextualDecls.is_defined_in_a_trait env procdesc in
+    Option.value_map formals_types ~default:errors ~f:(fun formals_types ->
+        let is_defined_in_a_trait = TextualDecls.is_defined_in_a_trait env qualified_name in
         match List.rev formals_types with
         | [] ->
             errors
         | _ :: others when contains_variadic_typ others && not is_defined_in_a_trait ->
-            VariadicWrongParam {proc= procdesc.procdecl.qualified_name; in_a_trait= false} :: errors
+            VariadicWrongParam {proc= qualified_name; in_a_trait= false} :: errors
         | self :: _ :: others when contains_variadic_typ (self :: others) && is_defined_in_a_trait
           ->
-            VariadicWrongParam {proc= procdesc.procdecl.qualified_name; in_a_trait= true} :: errors
+            VariadicWrongParam {proc= qualified_name; in_a_trait= true} :: errors
         | _ ->
             errors )
   in

@@ -812,7 +812,9 @@ module InstrBridge = struct
         let formals_types =
           match (variadic_status : TextualDecls.variadic_status) with
           | NotVariadic ->
-              formals_types
+              if TextualDecls.is_trait_method decls_env procsig then
+                List.drop_last_exn formals_types
+              else formals_types
           | Variadic variadic_type ->
               (* we may have too much arguments, and we then complete formal_args *)
               (* formals_args = [t1; ...; tn; variadic_type ] *)
