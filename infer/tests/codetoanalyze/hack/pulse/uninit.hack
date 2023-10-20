@@ -53,8 +53,28 @@ abstract class AbstractUseTrait extends A {
   public static function self_get_field(): string {
     return self::get_field_from_trait();
   }
+
+  public static function call_my_trait_get_field_Bad(): string {
+    return MyTrait::get_field_from_trait();
+  }
 }
 
 function call_self_get_field_Bad(): string {
   return AbstractUseTrait::self_get_field();
+}
+
+function call_my_trait_get_field_Bad(): string {
+  return MyTrait::get_field_from_trait();
+}
+
+trait MyTraitConst {
+  const string TRAIT_CONST_INIT = "defined";
+
+  public static function get_self_const_init(): string {
+    return self::TRAIT_CONST_INIT;
+  }
+}
+
+function call_get_self_const_init_Ok(): string {
+  return MyTraitConst::get_self_const_init();
 }

@@ -87,7 +87,11 @@ val merge_per_file : src:per_file -> dst:per_file -> per_file
 
 module MethodInfo : sig
   module Hack : sig
-    type kind = private IsClass | IsTrait of {used: Typ.Name.t}
+    type kind = private
+      | IsClass  (** Normal method call *)
+      | IsTrait of {used: Typ.Name.t; is_direct: bool}
+          (** Trait method call: [used] is the name of the class uses the trait. If it is a direct
+              trait method call, e.g. [Trait::foo], [used] is the name of the trait. *)
   end
 
   type t

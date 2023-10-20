@@ -1192,12 +1192,21 @@ let is_hack_builtins = function
       false
 
 
+let is_hack_pinit = function
+  | Hack {function_name} ->
+      String.equal function_name "_86pinit"
+  | _ ->
+      false
+
+
 let is_hack_sinit = function
   | Hack {function_name} ->
       String.equal function_name "_86sinit"
   | _ ->
       false
 
+
+let is_hack_init pname = is_hack_sinit pname || is_hack_pinit pname
 
 let has_hack_classname = function Hack {class_name= Some _} -> true | _ -> false
 

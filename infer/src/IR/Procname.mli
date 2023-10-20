@@ -552,6 +552,8 @@ val is_hack_builtins : t -> bool
 
 val is_hack_sinit : t -> bool
 
+val is_hack_init : t -> bool
+
 val has_hack_classname : t -> bool
 
 val should_create_specialized_proc : t -> bool

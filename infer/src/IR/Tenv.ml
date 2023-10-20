@@ -312,18 +312,13 @@ module MethodInfo = struct
   end
 
   module Hack = struct
-    type kind = IsClass | IsTrait of {used: Typ.Name.t}
+    type kind = IsClass | IsTrait of {used: Typ.Name.t; is_direct: bool}
 
     type t = {proc_name: Procname.t; kind: kind}
 
-    let mk_class ~is_class ~last_class_visited proc_name =
-      let kind =
-        match (is_class, last_class_visited) with
-        | false, Some used ->
-            IsTrait {used}
-        | _, _ ->
-            IsClass
-      in
+    let mk_class ~kind proc_name =
+      (* The Hack's init methods are addressed as normal class methods. *)
+      let kind = if Procname.is_hack_init proc_name then IsClass else kind in
       {proc_name; kind}
 
 
@@ -331,18 +326,25 @@ module MethodInfo = struct
        Because of this, the arity of the procname called might not match the arity of the procname in
        the trait declaration.
 
-       This function computes the arity offset we must apply to make sure things are compared
-       correctly. *)
-    let compute_arity_incr (kind : Struct.hack_class_kind) =
-      match kind with Class -> (true, 0) | Trait -> (false, 1)
+       This function is to compute the correct arity offset we should apply. *)
+    let get_kind ~last_class_visited class_name (kind : Struct.hack_class_kind) =
+      match kind with
+      | Class ->
+          IsClass
+      | Trait -> (
+        match last_class_visited with
+        | Some used ->
+            IsTrait {used; is_direct= false}
+        | None ->
+            IsTrait {used= class_name; is_direct= true} )
   end
 
   type t = HackInfo of Hack.t | DefaultInfo of Default.t
 
-  let return ~is_class ~last_class_visited proc_name =
+  let return ~kind proc_name =
     match proc_name with
     | Procname.Hack _ ->
-        HackInfo (Hack.mk_class ~is_class ~last_class_visited proc_name)
+        HackInfo (Hack.mk_class ~kind proc_name)
     | Procname.Block _
     | Procname.C _
     | Procname.CSharp _
@@ -355,14 +357,14 @@ module MethodInfo = struct
         DefaultInfo (Default.mk_class proc_name)
 
 
-  let mk_class proc_name = return ~is_class:true ~last_class_visited:None proc_name
+  let mk_class proc_name = return ~kind:IsClass proc_name
 
-  let compute_arity_incr {Struct.class_info} =
-    match (class_info : Struct.ClassInfo.t) with
+  let get_kind_from_struct ~last_class_visited class_name {Struct.class_info} =
+    match class_info with
     | HackClassInfo kind ->
-        Hack.compute_arity_incr kind
-    | _ ->
-        (true, 0)
+        Hack.get_kind ~last_class_visited class_name kind
+    | NoInfo | JavaClassInfo _ ->
+        Hack.IsClass
 
 
   let get_procname = function HackInfo {proc_name} | DefaultInfo {proc_name} -> proc_name
@@ -376,7 +378,6 @@ let resolve_method ~method_exists tenv class_name proc_name =
      we will only visit traits from now on *)
   let last_class_visited = ref None in
   let rec resolve_name_struct (class_name : Typ.Name.t) (class_struct : Struct.t) =
-    let is_class, arity_incr = MethodInfo.compute_arity_incr class_struct in
     if
       (not (Typ.Name.is_class class_name))
       || (not (Struct.is_not_java_interface class_struct))
@@ -384,10 +385,25 @@ let resolve_method ~method_exists tenv class_name proc_name =
     then None
     else (
       visited := Typ.Name.Set.add class_name !visited ;
-      if is_class then last_class_visited := Some class_name ;
+      let kind =
+        MethodInfo.get_kind_from_struct ~last_class_visited:!last_class_visited class_name
+          class_struct
+      in
+      let arity_incr =
+        match kind with
+        | IsClass ->
+            last_class_visited := Some class_name ;
+            0
+        | IsTrait {is_direct= false} ->
+            1
+        | IsTrait {is_direct= true} ->
+            (* We do not need to increase the arity when the trait method is called directly, i.e.
+               [T::foo], since the [proc_name] has the increased arity already. *)
+            0
+      in
       let right_proc_name = Procname.replace_class ~arity_incr proc_name class_name in
       if method_exists right_proc_name class_struct.methods then
-        Some (MethodInfo.return ~is_class ~last_class_visited:!last_class_visited right_proc_name)
+        Some (MethodInfo.return ~kind right_proc_name)
       else
         let supers_to_search =
           match (class_name : Typ.Name.t) with
