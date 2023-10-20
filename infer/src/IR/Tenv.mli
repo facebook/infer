@@ -94,7 +94,7 @@ module MethodInfo : sig
               trait method call, e.g. [Trait::foo], [used] is the name of the trait. *)
   end
 
-  type t
+  type t [@@deriving show]
 
   val mk_class : Procname.t -> t
 

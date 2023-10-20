@@ -306,15 +306,16 @@ let normalize = function
 
 module MethodInfo = struct
   module Default = struct
-    type t = {proc_name: Procname.t}
+    type t = {proc_name: Procname.t} [@@deriving show {with_path= false}]
 
     let mk_class proc_name = {proc_name}
   end
 
   module Hack = struct
     type kind = IsClass | IsTrait of {used: Typ.Name.t; is_direct: bool}
+    [@@deriving show {with_path= false}]
 
-    type t = {proc_name: Procname.t; kind: kind}
+    type t = {proc_name: Procname.t; kind: kind} [@@deriving show {with_path= false}]
 
     let mk_class ~kind proc_name =
       (* The Hack's init methods are addressed as normal class methods. *)
@@ -339,7 +340,7 @@ module MethodInfo = struct
             IsTrait {used= class_name; is_direct= true} )
   end
 
-  type t = HackInfo of Hack.t | DefaultInfo of Default.t
+  type t = HackInfo of Hack.t | DefaultInfo of Default.t [@@deriving show {with_path= false}]
 
   let return ~kind proc_name =
     match proc_name with

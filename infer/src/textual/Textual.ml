@@ -325,7 +325,7 @@ module ProcSig = struct
       | Hack of {qualified_name: QualifiedProcName.t; arity: int option}
       | Python of {qualified_name: QualifiedProcName.t; arity: int option}
       | Other of {qualified_name: QualifiedProcName.t}
-    [@@deriving equal, hash]
+    [@@deriving equal, hash, show {with_path= false}]
   end
 
   include T

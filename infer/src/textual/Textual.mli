@@ -181,7 +181,7 @@ module ProcSig : sig
             formals and inferring them from the types of arguments would be brittle. We should
             extend the syntax of Textual to allow unambiguous call target resolution when we need to
             add support for other languages. *)
-  [@@deriving equal, hash]
+  [@@deriving equal, hash, show]
 
   val to_qualified_procname : t -> QualifiedProcName.t
 
