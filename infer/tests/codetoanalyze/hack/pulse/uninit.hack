@@ -17,6 +17,13 @@ function call_get_field_bad(): string {
   return A::get_field();
 }
 
+function call_get_field_after_cond_bad(shape('cond' => bool) $x): string {
+  if (!$x['cond']) {
+    return "abc";
+  }
+  return A::get_field();
+}
+
 class B extends A {
   const string FIELD = "defined";
 }

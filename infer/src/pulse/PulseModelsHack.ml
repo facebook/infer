@@ -647,8 +647,8 @@ let hack_is_true b : model =
     match b_typ with
     | None ->
         let _ = L.d_printfln "istrue None" in
-        let* zero = eval_read (Const (Cint IntLit.zero)) in
-        assign_ret zero
+        let* ret = make_hack_random_bool in
+        assign_ret ret
     | Some {Typ.desc= Tstruct b_typ_name} ->
         if Typ.Name.equal b_typ_name TextualSil.hack_bool_type_name then
           let* b_val = eval_deref_access Read b (FieldAccess bool_val_field) in
