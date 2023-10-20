@@ -800,9 +800,6 @@ let matchers : matcher list =
   ; +map_context_tenv PatternMatch.Java.implements_enumeration
     &:: "hasMoreElements"
     &--> Basic.nondet ~desc:"Enumeration.hasMoreElements()"
-  ; +map_context_tenv (PatternMatch.Java.implements_lang "Object")
-    &:: "equals"
-    &--> Basic.nondet ~desc:"Object.equals"
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Iterable")
     &:: "iterator" <>$ capt_arg_payload
     $+...$--> Iterator.constructor ~desc:"Iterable.iterator"
@@ -813,5 +810,9 @@ let matchers : matcher list =
   ; ( +map_context_tenv PatternMatch.Java.implements_enumeration
     &:: "nextElement" <>$ capt_arg_payload
     $!--> fun x ->
-    Cplusplus.Vector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) ) ]
+    Cplusplus.Vector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) )
+  ; -"java.lang.Object" &:: "<init>" &--> Basic.skip
+  ; +map_context_tenv (PatternMatch.Java.implements_lang "Object")
+    &:: "equals"
+    &--> Basic.nondet ~desc:"Object.equals" ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
