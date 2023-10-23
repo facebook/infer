@@ -3323,6 +3323,69 @@ object dummy:
     let%expect_test _ =
       let source =
         {|
+# from Cinder
+import decimal
+
+def assertEqual(x):
+  pass
+
+def test_format_specifier_expressions(self):
+  width = 10
+  precision = 4
+  value = decimal.Decimal('12.34567')
+  assertEqual(f'result: {value:{width}.{precision}}')
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0:
+      $ImportName(decimal, from_list= [])
+      dummy.decimal <- $ImportName(decimal, from_list= [])
+      dummy.assertEqual <- $FuncObj(assertEqual, dummy.assertEqual, {})
+      dummy.test_format_specifier_expressions <- $FuncObj(test_format_specifier_expressions, dummy.test_format_specifier_expressions, {})
+      return None
+
+
+
+  objects:
+    object dummy.assertEqual:
+      code:
+        #b0:
+          return None
+
+
+
+
+    object dummy.test_format_specifier_expressions:
+      code:
+        #b0:
+          width <- 10
+          precision <- 4
+          n0 <- $CallMethod($LoadMethod(decimal, Decimal), "12.34567")
+          value <- n0
+          n1 <- $Format(width, None)
+          n2 <- $Format(precision, None)
+          n3 <- $Format(value, $Concat(n1, ".", n2))
+          n4 <- dummy.assertEqual($Concat("result: ", n3))
+          return None
+
+
+
+
+
+    functions:
+      assertEqual -> dummy.assertEqual
+      test_format_specifier_expressions -> dummy.test_format_specifier_expressions
+          |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
 def pos(x):
         return +x
 

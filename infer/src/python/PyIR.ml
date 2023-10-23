@@ -1254,11 +1254,13 @@ let format_value st flags =
         L.die InternalError "FORMAT_VALUE: unreachable"
   in
   let* fmt_spec, st =
-    (* fmt_spec must be a string literal *)
+    (* fmt_spec must be a concatenation of string literals *)
     if has_fmt_spec flags then
       let* fmt_spec, st = State.pop st in
       match (fmt_spec : Exp.t) with
       | Const (String _) ->
+          Ok (fmt_spec, st)
+      | Collection {kind= String; values= _} ->
           Ok (fmt_spec, st)
       | _ ->
           external_error st (Error.FormatValueSpec fmt_spec)
