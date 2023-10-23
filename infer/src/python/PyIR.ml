@@ -1538,7 +1538,55 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       jump_if_or_pop ~jump_if:true st arg next_offset_opt
   | "JUMP_IF_FALSE_OR_POP" ->
       jump_if_or_pop ~jump_if:false st arg next_offset_opt
+  | "DUP_TOP_TWO" ->
+      let* tos0, st = State.pop st in
+      let* tos1, st = State.pop st in
+      let st = State.push st tos1 in
+      let st = State.push st tos0 in
+      let st = State.push st tos1 in
+      let st = State.push st tos0 in
+      Ok (st, None)
+  | "EXTENDED_ARG" ->
+      (* The FFI.Instruction framework already did the magic and this opcode can be ignored. *)
+      Ok (st, None)
+  | "POP_BLOCK" ->
+      (* We don't need to model blocks yet, so this is a NOP for now *)
+      Ok (st, None)
+  | "ROT_TWO" ->
+      let* tos0, st = State.pop st in
+      let* tos1, st = State.pop st in
+      let st = State.push st tos0 in
+      let st = State.push st tos1 in
+      Ok (st, None)
+  | "ROT_THREE" ->
+      let* tos0, st = State.pop st in
+      let* tos1, st = State.pop st in
+      let* tos2, st = State.pop st in
+      let st = State.push st tos0 in
+      let st = State.push st tos2 in
+      let st = State.push st tos1 in
+      Ok (st, None)
+  | "ROT_FOUR" ->
+      let* tos0, st = State.pop st in
+      let* tos1, st = State.pop st in
+      let* tos2, st = State.pop st in
+      let* tos3, st = State.pop st in
+      let st = State.push st tos0 in
+      let st = State.push st tos3 in
+      let st = State.push st tos2 in
+      let st = State.push st tos1 in
+      Ok (st, None)
   | _ ->
+      (* TODO: supported by PyTrans:
+         "BEGIN_FINALLY"
+         "CALL_FUNCTION_KW"
+         "END_FINALLY"
+         "RAISE_VARARGS"
+         "SETUP_FINALLY"
+         "SETUP_WITH"
+         "WITH_CLEANUP_FINISH"
+         "WITH_CLEANUP_START"
+      *)
       internal_error st (Error.UnsupportedOpcode opname)
 
 
