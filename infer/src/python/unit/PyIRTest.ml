@@ -1941,8 +1941,8 @@ object dummy:
           dummy.D.__module__ <- __name__
           dummy.D.__qualname__ <- "D"
           dummy.D.__init__ <- $FuncObj(__init__, dummy.D.__init__, {})
-          dummy.D.__classcell__ <- $LoadClosure(__class__)
-          return $LoadClosure(__class__)
+          dummy.D.__classcell__ <- $Ref(__class__)
+          return $Ref(__class__)
 
 
 
@@ -1991,8 +1991,8 @@ object dummy:
               dummy.D0.__module__ <- __name__
               dummy.D0.__qualname__ <- "D0"
               dummy.D0.__init__ <- $FuncObj(__init__, dummy.D0.__init__, {})
-              dummy.D0.__classcell__ <- $LoadClosure(__class__)
-              return $LoadClosure(__class__)
+              dummy.D0.__classcell__ <- $Ref(__class__)
+              return $Ref(__class__)
 
 
 
@@ -2056,8 +2056,8 @@ object dummy:
           dummy.C.__module__ <- __name__
           dummy.C.__qualname__ <- "C"
           dummy.C.__init__ <- $FuncObj(__init__, dummy.C.__init__, {})
-          dummy.C.__classcell__ <- $LoadClosure(__class__)
-          return $LoadClosure(__class__)
+          dummy.C.__classcell__ <- $Ref(__class__)
+          return $Ref(__class__)
 
 
 
@@ -4166,5 +4166,85 @@ object dummy:
 
     functions:
       defaultdict -> dummy.defaultdict
+          |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+gx = 100
+def f(ax):
+    lx = 1000
+
+    def inner():
+        ix = 20
+        global gx
+        nonlocal lx
+        print(gx) # prints 100
+        print(ax) # prints 42
+        print(lx) # prints 1664
+        print(ix) # 20
+        gx = 10
+        lx = 2
+        return lx
+
+    lx = 1664
+    return inner
+
+g = f(42)
+print(g()) # prints 2
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.gx <- 100
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      n0 <- dummy.f(42)
+      dummy.g <- n0
+      n1 <- dummy.g()
+      n2 <- print(n1)
+      return None
+
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0 .label:
+          $Deref(lx) <- 1000
+          inner <- $FuncObj(inner, dummy.f.<locals>.inner, {})
+          $Deref(lx) <- 1664
+          return inner
+
+
+
+      objects:
+        object dummy.f.inner:
+          code:
+            #b0 .label:
+              ix <- 20
+              n0 <- print(dummy.gx)
+              n1 <- print($Deref(ax))
+              n2 <- print($Deref(lx))
+              n3 <- print(ix)
+              dummy.gx <- 10
+              $Deref(lx) <- 2
+              return $Deref(lx)
+
+
+
+
+
+        functions:
+          inner -> dummy.f.<locals>.inner
+
+
+    functions:
+      f -> dummy.f
           |}]
   end )

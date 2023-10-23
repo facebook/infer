@@ -267,7 +267,8 @@ module Exp = struct
     | LoadMethod of (t * string)  (** [LOAD_METHOD] *)
     | ImportName of import_name  (** [IMPORT_NAME] *)
     | ImportFrom of {from: import_name; names: Ident.t}  (** [IMPORT_FROM] *)
-    | LoadClosure of string  (** [LOAD_CLOSURE] *)
+    | Ref of string  (** [LOAD_CLOSURE] *)
+    | Deref of Ident.t  (** [LOAD_DEREF] [STORE_DEREF] *)
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
     | ContextManagerExit of t
@@ -316,8 +317,10 @@ module Exp = struct
         pp_import_name fmt import_name
     | ImportFrom {from; names} ->
         F.fprintf fmt "$ImportFrom(%a,@ name= %a)" pp_import_name from Ident.pp names
-    | LoadClosure s ->
-        F.fprintf fmt "$LoadClosure(%s)" s
+    | Ref s ->
+        F.fprintf fmt "$Ref(%s)" s
+    | Deref id ->
+        F.fprintf fmt "$Deref(%a)" Ident.pp id
     | Not exp ->
         F.fprintf fmt "$Not(%a)" pp exp
     | BuiltinCaller bc ->
@@ -743,7 +746,7 @@ module State = struct
 
 
   let known_local_names =
-    let locals = ["__name__"; "staticmethod"] in
+    let locals = ["__name__"; "staticmethod"; "classmethod"] in
     List.fold locals ~init:SMap.empty ~f:(fun names name ->
         SMap.add name (Ident.mk ~kind:Builtin name) names )
 
@@ -1566,7 +1569,12 @@ let raise_varargs st argc =
   Ok (st, Some throw)
 
 
-let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; co_freevars}
+let get_cell_name {FFI.Code.co_cellvars; co_freevars} arg =
+  let sz = Array.length co_cellvars in
+  if arg < sz then co_cellvars.(arg) else co_freevars.(arg - sz)
+
+
+let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
     {FFI.Instruction.opname; starts_line; arg; offset= instr_offset} next_offset_opt =
   let open IResult.Let_syntax in
   let st =
@@ -1605,6 +1613,12 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let name = co_names.(arg) in
       let* tos, st = State.pop st in
       let exp = Exp.GetAttr (tos, name) in
+      let st = State.push st exp in
+      Ok (st, None)
+  | "LOAD_DEREF" ->
+      let cell = get_cell_name code arg in
+      let target = Ident.mk cell in
+      let exp = Exp.Deref target in
       let st = State.push st exp in
       Ok (st, None)
   | "STORE_NAME" ->
@@ -1651,6 +1665,14 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let* exp, st = State.pop st in
       let* rhs, st = State.pop st in
       let lhs = Exp.Subscript {exp; index} in
+      let stmt = Stmt.Assign {lhs; rhs} in
+      let st = State.push_stmt st stmt in
+      Ok (st, None)
+  | "STORE_DEREF" ->
+      let cell = get_cell_name code arg in
+      let target = Ident.mk cell in
+      let lhs = Exp.Deref target in
+      let* rhs, st = State.pop st in
       let stmt = Stmt.Assign {lhs; rhs} in
       let st = State.push_stmt st stmt in
       Ok (st, None)
@@ -1820,12 +1842,9 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "LOAD_CLOSURE" ->
-      let cell =
-        let sz = Array.length co_cellvars in
-        if arg < sz then co_cellvars.(arg) else co_freevars.(arg - sz)
-      in
+      let cell = get_cell_name code arg in
       (* We currently do nothing. It will be up to the IR -> Textual step to deal with these *)
-      let exp = Exp.LoadClosure cell in
+      let exp = Exp.Ref cell in
       let st = State.push st exp in
       Ok (st, None)
   | "DUP_TOP" ->
