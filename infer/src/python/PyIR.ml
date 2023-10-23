@@ -220,6 +220,7 @@ module BuiltinCaller = struct
     | IterData  (** [FOR_ITER] *)
     | GetYieldFromIter  (** [GET_YIELD_FROM_ITER] *)
     | ListAppend  (** [LIST_APPEND] *)
+    | Delete  (** [DELETE_FAST] & cie *)
 
   let show = function
     | BuildClass ->
@@ -251,6 +252,8 @@ module BuiltinCaller = struct
         "$GetYieldFromIter"
     | ListAppend ->
         "$ListAppend"
+    | Delete ->
+        "$Delete"
 end
 
 module Exp = struct
@@ -1718,6 +1721,12 @@ let get_cell_name {FFI.Code.co_cellvars; co_freevars} arg =
   if arg < sz then co_cellvars.(arg) else co_freevars.(arg - sz)
 
 
+let deref code arg =
+  let cell = get_cell_name code arg in
+  let target = Ident.mk cell in
+  Exp.Deref target
+
+
 let build_collection_unpack st count ?(with_call = false) collection =
   let open IResult.Let_syntax in
   let* values, st = State.pop_n st count in
@@ -1731,6 +1740,17 @@ let build_collection_unpack st count ?(with_call = false) collection =
     else Ok (exp, st)
   in
   let st = State.push st exp in
+  Ok (st, None)
+
+
+let get_name st co_names arg ~global =
+  let name = co_names.(arg) in
+  let target = State.resolve_name ~global st name in
+  Exp.Var target
+
+
+let delete st exp =
+  let _id, st = call_builtin_function st Delete [exp] in
   Ok (st, None)
 
 
@@ -1753,15 +1773,11 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st exp in
       Ok (st, None)
   | "LOAD_NAME" ->
-      let name = co_names.(arg) in
-      let target = State.resolve_name ~global:false st name in
-      let exp = Exp.Var target in
+      let exp = get_name st co_names arg ~global:false in
       let st = State.push st exp in
       Ok (st, None)
   | "LOAD_GLOBAL" ->
-      let name = co_names.(arg) in
-      let target = State.resolve_name ~global:true st name in
-      let exp = Exp.Var target in
+      let exp = get_name st co_names arg ~global:true in
       let st = State.push st exp in
       Ok (st, None)
   | "LOAD_FAST" ->
@@ -1776,9 +1792,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st exp in
       Ok (st, None)
   | "LOAD_DEREF" ->
-      let cell = get_cell_name code arg in
-      let target = Ident.mk cell in
-      let exp = Exp.Deref target in
+      let exp = deref code arg in
       let st = State.push st exp in
       Ok (st, None)
   | "STORE_NAME" ->
@@ -1829,9 +1843,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push_stmt st stmt in
       Ok (st, None)
   | "STORE_DEREF" ->
-      let cell = get_cell_name code arg in
-      let target = Ident.mk cell in
-      let lhs = Exp.Deref target in
+      let lhs = deref code arg in
       let* rhs, st = State.pop st in
       let stmt = Stmt.Assign {lhs; rhs} in
       let st = State.push_stmt st stmt in
@@ -2296,6 +2308,28 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let* tos1 = State.peek st ~depth:(arg - 1) in
       let _id, st = call_builtin_function st ListAppend [tos1; tos] in
       Ok (st, None)
+  | "DELETE_NAME" ->
+      let exp = get_name st co_names arg ~global:false in
+      delete st exp
+  | "DELETE_GLOBAL" ->
+      let exp = get_name st co_names arg ~global:true in
+      delete st exp
+  | "DELETE_FAST" ->
+      let name = co_varnames.(arg) in
+      delete st (Exp.LocalVar name)
+  | "DELETE_ATTR" ->
+      let name = co_names.(arg) in
+      let* tos, st = State.pop st in
+      let exp = Exp.GetAttr (tos, name) in
+      delete st exp
+  | "DELETE_DEREF" ->
+      let exp = deref code arg in
+      delete st exp
+  | "DELETE_SUBSCR" ->
+      let* index, st = State.pop st in
+      let* exp, st = State.pop st in
+      let exp = Exp.Subscript {exp; index} in
+      delete st exp
   | _ ->
       internal_error st (Error.UnsupportedOpcode opname)
 

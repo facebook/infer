@@ -4672,4 +4672,107 @@ object dummy:
         <listcomp-3> -> dummy.<listcomp-3>
         f -> dummy.f
           |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+class C:
+        pass
+
+c = C()
+del c
+
+c0 = C()
+
+del c0.foo
+
+def f(x):
+        global c0
+        del c0
+        del x
+
+        z = 0
+        def inner():
+          nonlocal z
+          del z
+
+def g(a, b):
+        del a[b]
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
+      n0 <- dummy.C()
+      dummy.c <- n0
+      n1 <- $Delete(dummy.c)
+      n2 <- dummy.C()
+      dummy.c0 <- n2
+      n3 <- $Delete(dummy.c0.foo)
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      dummy.g <- $FuncObj(g, dummy.g, {})
+      return None
+
+
+
+  objects:
+    object dummy.C:
+      code:
+        #b0 .label:
+          dummy.C.__module__ <- __name__
+          dummy.C.__qualname__ <- "C"
+          return None
+
+
+
+
+    object dummy.f:
+      code:
+        #b0 .label:
+          n0 <- $Delete(dummy.c0)
+          n1 <- $Delete(x)
+          $Deref(z) <- 0
+          inner <- $FuncObj(inner, dummy.f.<locals>.inner, {})
+          return None
+
+
+
+      objects:
+        object dummy.f.inner:
+          code:
+            #b0 .label:
+              n0 <- $Delete($Deref(z))
+              return None
+
+
+
+
+
+        functions:
+          inner -> dummy.f.<locals>.inner
+
+      object dummy.g:
+        code:
+          #b0 .label:
+            n0 <- $Delete(a[b])
+            return None
+
+
+
+
+
+      classes:
+        C
+
+      functions:
+        C -> dummy.C
+        f -> dummy.f
+        g -> dummy.g
+          |}]
   end )
