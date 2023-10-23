@@ -20,28 +20,34 @@ module Const = struct
       TODO: Maybe merge it with FFI.Constant.t *)
 
   type t =
-    | Int of int64
+    | Int of Z.t
     | Bool of bool
     | Float of float
+    | Complex of {real: float; imag: float}
     | String of string
     | Tuple of t list
+    | FrozenSet of t list
     | Code of FFI.Code.t
     | Null
   [@@deriving compare]
 
   let rec pp fmt = function
-    | Int i ->
-        Int64.pp fmt i
+    | Int z ->
+        F.pp_print_string fmt (Z.to_string z)
     | Bool b ->
         Bool.pp fmt b
     | Float f ->
         Float.pp fmt f
+    | Complex {real; imag} ->
+        F.fprintf fmt "(%f + %fj)" real imag
     | String s ->
         String.pp fmt s
     | Null ->
         F.pp_print_string fmt "None"
     | Tuple tuple ->
         F.fprintf fmt "(@[%a@])" (Pp.seq ~sep:", " pp) tuple
+    | FrozenSet set ->
+        F.fprintf fmt "$frozenset({@[%a@]})" (Pp.seq ~sep:", " pp) set
     | Code {FFI.Code.co_name; co_freevars; co_cellvars} ->
         let sz = Array.length co_freevars + Array.length co_cellvars in
         let maybe_closure = sz <> 0 in
@@ -56,6 +62,8 @@ module Const = struct
         Int i
     | PYCFloat f ->
         Float f
+    | PYCComplex {real; imag} ->
+        Complex {real; imag}
     | PYCString s ->
         String s
     | PYCBytes b ->
@@ -72,6 +80,9 @@ module Const = struct
             tuple
         in
         Tuple (List.rev rev_values)
+    | PYCFrozenSet lst ->
+        let lst = List.map ~f:from_const lst in
+        FrozenSet lst
     | PYCCode code ->
         Code code
 
@@ -426,6 +437,7 @@ module Error = struct
     | LoadBuildClassName of Exp.t
     | ImportNameFromList of (string * Exp.t)
     | ImportNameLevel of (string * Exp.t)
+    | ImportNameLevelOverflow of (string * Z.t)
     | ImportNameDepth of (Ident.t * int)
     | ImportFrom of (string * Exp.t)
     | CompareOp of int
@@ -462,7 +474,9 @@ module Error = struct
     | ImportNameFromList (name, args) ->
         F.fprintf fmt "IMPORT_NAME(%s): expected constant fromlist but got %a" name Exp.pp args
     | ImportNameLevel (name, arg) ->
-        F.fprintf fmt "IMPORT_NAME(%s); expected int but got %a" name Exp.pp arg
+        F.fprintf fmt "IMPORT_NAME(%s): expected int but got %a" name Exp.pp arg
+    | ImportNameLevelOverflow (name, level) ->
+        F.fprintf fmt "IMPORT_NAME(%s): level is too big: %s" name (Z.to_string level)
     | ImportNameDepth (module_name, depth) ->
         F.fprintf fmt
           "IMPORT_NAME: module path %a is not deep enough for relative import with level %d"
@@ -1362,8 +1376,9 @@ let import_name st name =
   let* level, st = State.pop st in
   let* level =
     match (level : Exp.t) with
-    | Const (Int z) ->
-        Ok (Int64.to_int_exn z)
+    | Const (Int z) -> (
+      try Ok (Z.to_int z)
+      with Z.Overflow -> external_error st (Error.ImportNameLevelOverflow (name, z)) )
     | _ ->
         external_error st (Error.ImportNameLevel (name, level))
   in
@@ -1446,7 +1461,7 @@ let unpack_sequence st count =
   let rec unpack st n =
     if n < 0 then Ok st
     else
-      let index = Exp.Const (Int (Int64.of_int n)) in
+      let index = Exp.Const (Int (Z.of_int n)) in
       let exp = Exp.Subscript {exp= tos; index} in
       let st = State.push st exp in
       unpack st (n - 1)

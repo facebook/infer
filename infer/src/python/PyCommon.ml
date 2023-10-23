@@ -99,9 +99,8 @@ let python_bytes = builtin_name "python_bytes"
 
 let python_tuple = builtin_name "python_tuple"
 
-let mk_int (i : int64) =
+let mk_int (z : Z.t) =
   let proc = python_int in
-  let z = Z.of_int64 i in
   let args = [T.Exp.Const (Int z)] in
   T.Exp.Call {proc; args; kind= NonVirtual}
 

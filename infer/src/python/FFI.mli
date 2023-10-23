@@ -24,11 +24,13 @@ end
 module rec Constant : sig
   type t = private
     | PYCBool of bool
-    | PYCInt of int64
+    | PYCInt of Z.t
     | PYCFloat of float
+    | PYCComplex of {real: float; imag: float}
     | PYCString of string
     | PYCBytes of bytes
     | PYCTuple of t array
+    | PYCFrozenSet of t list
     | PYCCode of Code.t
     | PYCNone
   [@@deriving compare]

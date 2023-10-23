@@ -99,7 +99,7 @@ val pySet : Textual.Typ.t
 val pyTuple : Textual.Typ.t
 (** Python's builtin [tuple] type *)
 
-val mk_int : int64 -> Textual.Exp.t
+val mk_int : Z.t -> Textual.Exp.t
 (** Helper function to define typed Textual expression for literal integers. *)
 
 val mk_float : float -> Textual.Exp.t

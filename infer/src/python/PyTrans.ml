@@ -95,7 +95,7 @@ module Error = struct
     | RelativeJumpEOF
     | MissingBackEdge of int * int
     | ImportInvalidLevel
-    | ImportLevelTooBig of Int64.t
+    | ImportLevelTooBig of Z.t
     | ImportInvalidName of string
     | ImportInvalidDepth of Ident.t * int
     | ImportInvalidRoot of DataStack.cell
@@ -176,8 +176,8 @@ module Error = struct
         F.fprintf fmt "Invalid absolute jump: missing target of back-edge from %d to %d" from to_
     | ImportInvalidLevel ->
         F.pp_print_string fmt "Failure to load the `level` of import statement"
-    | ImportLevelTooBig n ->
-        F.fprintf fmt "The import `level` %Ld is too big" n
+    | ImportLevelTooBig z ->
+        F.fprintf fmt "The import `level` %s is too big" (Z.to_string z)
     | ImportInvalidName name ->
         F.fprintf fmt "Absolute path '%s' for import statement cannot be parsed correctly" name
     | ImportInvalidDepth (id, level) ->
@@ -286,10 +286,12 @@ let rec py_to_exp env c =
   match (c : FFI.Constant.t) with
   | PYCBool b ->
       Ok (env, PyCommon.mk_bool b, PyCommon.pyBool)
-  | PYCInt i ->
-      Ok (env, PyCommon.mk_int i, PyCommon.pyInt)
+  | PYCInt z ->
+      Ok (env, PyCommon.mk_int z, PyCommon.pyInt)
   | PYCFloat f ->
       Ok (env, PyCommon.mk_float f, PyCommon.pyFloat)
+  | PYCComplex _ ->
+      L.die InternalError "TODO: complex"
   | PYCString s ->
       Ok (env, PyCommon.mk_string s, PyCommon.pyString)
   | PYCBytes s ->
@@ -313,6 +315,8 @@ let rec py_to_exp env c =
       in
       let exp = T.Exp.call_non_virtual PyCommon.python_tuple args in
       Ok (env, exp, PyCommon.pyTuple)
+  | PYCFrozenSet _ ->
+      L.die InternalError "TODO: frozenset"
 
 
 let annotated_type_of_annotation typ =
@@ -1595,8 +1599,8 @@ module BUILD = struct
         match (c : FFI.Constant.t) with
         | PYCString s ->
             Some (PyCommon.mk_string s)
-        | PYCInt i ->
-            Some (PyCommon.mk_int i)
+        | PYCInt z ->
+            Some (PyCommon.mk_int z)
         | PYCBytes s ->
             let s = Bytes.to_string s in
             Some (PyCommon.mk_string s)
@@ -2023,11 +2027,8 @@ module IMPORT = struct
         | None ->
             Error (L.UserError, Error.ImportInvalidLevel)
         | Some level -> (
-          match Int64.to_int level with
-          | Some level ->
-              Ok level
-          | None ->
-              Error (L.ExternalError, Error.ImportLevelTooBig level) )
+          try Ok (Z.to_int level)
+          with Z.Overflow -> Error (L.ExternalError, Error.ImportLevelTooBig level) )
       in
       let loc = Env.loc env in
       let module_name = Env.module_name env in

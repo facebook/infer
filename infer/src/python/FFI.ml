@@ -45,13 +45,21 @@ module Error = struct
         F.pp_print_string fmt "Input file is too small"
 end
 
+module Z = struct
+  include Z
+
+  let pp fmt z = F.pp_print_string fmt (Z.to_string z)
+end
+
 type pyConstant =
   | PYCBool of bool
-  | PYCInt of int64
+  | PYCInt of Z.t
   | PYCFloat of float
+  | PYCComplex of {real: float; imag: float}
   | PYCString of string
   | PYCBytes of bytes
   | PYCTuple of pyConstant array
+  | PYCFrozenSet of pyConstant list
   | PYCCode of pyCode
   | PYCNone
 
@@ -110,6 +118,12 @@ let get_int f obj =
 
 let read_int f obj = read_field obj get_int f
 
+let get_float f obj =
+  if Py.Float.check obj then Ok (Py.Float.to_float obj) else die_invalid_field ~kind:"float" f obj
+
+
+let read_float f obj = read_field obj get_float f
+
 let read_bool f obj =
   let action f obj =
     if Py.Bool.check obj then Ok (Py.Bool.to_bool obj) else die_invalid_field ~kind:"bool" f obj
@@ -145,13 +159,16 @@ let read_char_array f obj =
 
 
 let rec new_py_constant obj =
+  let open IResult.Let_syntax in
   let ty = Py.Type.get obj in
   match ty with
   | Py.Type.Bool ->
       Ok (PYCBool (Py.Bool.to_bool obj))
   | Int | Long ->
-      (* TODO: deal with big ints since python has arbitrary precision *)
-      Ok (PYCInt (Py.Int.to_int64 obj))
+      (* Probably not the most efficient, but Python has integers with arbitrary size *)
+      let s = Py.Int.to_string obj in
+      let z = Z.of_string s in
+      Ok (PYCInt z)
   | None | Null ->
       Ok PYCNone
   | Tuple ->
@@ -162,7 +179,20 @@ let rec new_py_constant obj =
       let s = Py.String.to_string obj in
       Ok (PYCString s)
   | Unknown ->
-      Result.map ~f:(fun code -> PYCCode code) (new_py_code obj)
+      let ty = Py.Object.get_type obj in
+      let* class_name = read_string "__name__" ty in
+      if String.equal "complex" class_name then
+        let* real = read_float "real" obj in
+        let* imag = read_float "imag" obj in
+        Ok (PYCComplex {real; imag})
+      else if String.equal "ellipsis" class_name then Ok PYCNone
+      else if String.equal "frozenset" class_name then
+        let lst = Py.Set.to_list_map new_py_constant obj in
+        let* lst = Result.all lst in
+        (* During testing the order sometimes changed, so let's make it determinist *)
+        let lst = List.sort ~compare:compare_pyConstant lst in
+        Ok (PYCFrozenSet lst)
+      else Result.map ~f:(fun code -> PYCCode code) (new_py_code obj)
   | Bytes ->
       let s = Py.Bytes.to_bytes obj in
       Ok (PYCBytes s)
@@ -315,11 +345,13 @@ module Constant = struct
 
   type t = pyConstant =
     | PYCBool of bool
-    | PYCInt of int64
+    | PYCInt of Z.t
     | PYCFloat of float
+    | PYCComplex of {real: float; imag: float}
     | PYCString of string
     | PYCBytes of bytes
     | PYCTuple of t array
+    | PYCFrozenSet of t list
     | PYCCode of Code.t
     | PYCNone
   [@@deriving show, compare]
@@ -329,7 +361,15 @@ module Constant = struct
   let as_code = function
     | PYCCode c ->
         Some c
-    | PYCBool _ | PYCInt _ | PYCString _ | PYCTuple _ | PYCNone | PYCFloat _ | PYCBytes _ ->
+    | PYCBool _
+    | PYCInt _
+    | PYCString _
+    | PYCTuple _
+    | PYCFrozenSet _
+    | PYCNone
+    | PYCFloat _
+    | PYCComplex _
+    | PYCBytes _ ->
         None
 
 
@@ -339,7 +379,14 @@ module Constant = struct
     (* TODO: not sure if we should do that. Experience will tell *)
     | PYCBytes bs ->
         Some (Bytes.to_string bs)
-    | PYCBool _ | PYCInt _ | PYCCode _ | PYCTuple _ | PYCNone | PYCFloat _ ->
+    | PYCBool _
+    | PYCInt _
+    | PYCCode _
+    | PYCTuple _
+    | PYCFrozenSet _
+    | PYCNone
+    | PYCFloat _
+    | PYCComplex _ ->
         None
 end
 
