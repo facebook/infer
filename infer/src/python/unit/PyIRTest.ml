@@ -4434,4 +4434,73 @@ object dummy:
     functions:
       f -> dummy.f
           |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+def f():
+        yield 42
+
+class AsyncYieldFrom:
+    def __await__(self):
+        yield from self.obj
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      dummy.AsyncYieldFrom <- $ClassObj($FuncObj(AsyncYieldFrom, dummy.AsyncYieldFrom, {}), "AsyncYieldFrom")
+      return None
+
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0 .label:
+          n0 <- $Yield(42)
+          return None
+
+
+
+
+    object dummy.AsyncYieldFrom:
+      code:
+        #b0 .label:
+          dummy.AsyncYieldFrom.__module__ <- __name__
+          dummy.AsyncYieldFrom.__qualname__ <- "AsyncYieldFrom"
+          dummy.AsyncYieldFrom.__await__ <- $FuncObj(__await__, dummy.AsyncYieldFrom.__await__, {})
+          return None
+
+
+
+      objects:
+        object dummy.AsyncYieldFrom.__await__:
+          code:
+            #b0 .label:
+              n0 <- $GetYieldFromIter(self.obj)
+              n1 <- $YieldFrom(n0, None)
+              return None
+
+
+
+
+
+        functions:
+          __await__ -> dummy.AsyncYieldFrom.__await__
+
+
+    classes:
+      AsyncYieldFrom
+
+    functions:
+      AsyncYieldFrom -> dummy.AsyncYieldFrom
+      f -> dummy.f
+             |}]
   end )

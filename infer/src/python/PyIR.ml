@@ -218,33 +218,36 @@ module BuiltinCaller = struct
     | NextIter  (** [FOR_ITER] *)
     | HasNextIter  (** [FOR_ITER] *)
     | IterData  (** [FOR_ITER] *)
+    | GetYieldFromIter  (** [GET_YIELD_FROM_ITER] *)
 
-  let pp fmt = function
+  let show = function
     | BuildClass ->
-        F.pp_print_string fmt "$BuildClass"
+        "$BuildClass"
     | Format ->
-        F.pp_print_string fmt "$Format"
+        "$Format"
     | FormatFn fn ->
-        F.fprintf fmt "$FormatFn.%s" (show_format_function fn)
+        sprintf "$FormatFn.%s" (show_format_function fn)
     | Binary op ->
         let op = show_binary op in
-        F.fprintf fmt "$Binary.%s" op
+        sprintf "$Binary.%s" op
     | Inplace op ->
         let op = show_binary op in
-        F.fprintf fmt "$Inplace.%s" op
+        sprintf "$Inplace.%s" op
     | Unary op ->
         let op = show_unary op in
-        F.fprintf fmt "$Unary.%s" op
+        sprintf "$Unary.%s" op
     | Compare op ->
-        F.fprintf fmt "$Compare.%a" Builtin.Compare.pp op
+        sprintf "$Compare.%s" (Builtin.Compare.to_string op)
     | GetIter ->
-        F.pp_print_string fmt "$GetIter"
+        "$GetIter"
     | NextIter ->
-        F.pp_print_string fmt "$NextIter"
+        "$NextIter"
     | HasNextIter ->
-        F.pp_print_string fmt "$HasNextIter"
+        "$HasNextIter"
     | IterData ->
-        F.pp_print_string fmt "$IterData"
+        "$IterData"
+    | GetYieldFromIter ->
+        "$GetYieldFromIter"
 end
 
 module Exp = struct
@@ -307,6 +310,8 @@ module Exp = struct
     | ContextManagerExit of t
     | Packed of {exp: t; is_map: bool}
     | PartialFunc of {call: t; args: t list}
+    | Yield of t
+    | YieldFrom of {receiver: t; exp: t}
 
   let show = function
     | Const _ ->
@@ -349,6 +354,10 @@ module Exp = struct
         "PartialFunc"
     | Packed _ ->
         "Packed"
+    | Yield _ ->
+        "Yield"
+    | YieldFrom _ ->
+        "YieldFrom"
     [@@warning "-unused-value-declaration"]
 
 
@@ -404,13 +413,17 @@ module Exp = struct
     | Not exp ->
         F.fprintf fmt "$Not(%a)" pp exp
     | BuiltinCaller bc ->
-        BuiltinCaller.pp fmt bc
+        F.pp_print_string fmt (BuiltinCaller.show bc)
     | ContextManagerExit exp ->
         F.fprintf fmt "CM(%a).__exit__" pp exp
     | PartialFunc {call; args} ->
         F.fprintf fmt "$PartialFunc(%a, [@[%a@]])" pp call (Pp.seq ~sep:", " pp) args
     | Packed {exp; is_map} ->
         F.fprintf fmt "$Packed%s(%a)" (if is_map then "Map" else "") pp exp
+    | Yield exp ->
+        F.fprintf fmt "$Yield(%a)" pp exp
+    | YieldFrom {receiver; exp} ->
+        F.fprintf fmt "$YieldFrom(%a, %a)" pp receiver pp exp
 
 
   let as_short_string = function Const (String s) -> Some s | _ -> None
@@ -552,8 +565,8 @@ module Stmt = struct
     | ImportName import_name ->
         Exp.pp_import_name fmt import_name
     | BuiltinCall {lhs; call; args} ->
-        F.fprintf fmt "%a <- %a(@[%a@])" SSA.pp lhs BuiltinCaller.pp call (Pp.seq ~sep:", " Exp.pp)
-          args
+        F.fprintf fmt "%a <- %s(@[%a@])" SSA.pp lhs (BuiltinCaller.show call)
+          (Pp.seq ~sep:", " Exp.pp) args
     | SetupAnnotations ->
         F.pp_print_string fmt "$SETUP_ANNOTATIONS"
 end
@@ -2221,6 +2234,34 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       build_collection_unpack st arg Set
   | "BUILD_TUPLE_UNPACK_WITH_CALL" ->
       build_collection_unpack st arg Tuple ~with_call:true
+  | "YIELD_VALUE" ->
+      (* TODO: it is quite uncertain how we'll deal with these in textual.
+         At the moment this seems to correctly model the stack life-cycle, so
+         I'm happy. We might change/improve things in the future *)
+      let* tos, st = State.pop st in
+      let st = State.push st (Exp.Yield tos) in
+      Ok (st, None)
+  | "YIELD_FROM" ->
+      (* TODO: it is quite uncertain how we'll deal with these in textual.
+         At the moment this seems to correctly model the stack life-cycle, so
+         I'm happy. We might change/improve things in the future *)
+      let* exp, st = State.pop st in
+      (* TODO: learn more about this construct. My understanding is that the
+               receiver stays on the stack if there's a value to yield.
+               we probably should do some encoding like GET_ITER/FOR_ITER.
+
+               For now, we leave it as is until it becomes a problem :D *)
+      let* receiver = State.peek st in
+      let st = State.push st (Exp.YieldFrom {receiver; exp}) in
+      Ok (st, None)
+  | "GET_YIELD_FROM_ITER" ->
+      (* TODO: it is quite uncertain how we'll deal with these in textual.
+         At the moment this seems to correctly model the stack life-cycle, so
+         I'm happy. We might change/improve things in the future *)
+      let* tos, st = State.pop st in
+      let id, st = call_builtin_function st GetYieldFromIter [tos] in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
   | _ ->
       internal_error st (Error.UnsupportedOpcode opname)
 
