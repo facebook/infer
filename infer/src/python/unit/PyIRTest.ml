@@ -2776,10 +2776,14 @@ object dummy:
   code:
     #b0:
       n0 <- open("foo.txt", "wt")
-      n1 <- $LoadMethod(n0, __enter__)()
-      dummy.fp <- n1
-      n2 <- $CallMethod($LoadMethod(dummy.fp, write), "yolo")
-      n3 <- CM(n0).__exit__(None, None, None)
+      n2 <- $LoadMethod(n0, __enter__)()
+      dummy.fp <- n2
+      n3 <- $CallMethod($LoadMethod(dummy.fp, write), "yolo")
+      jmp b1(CM(n0).__exit__)
+
+
+    #b1(n1):
+      n4 <- n1(None, None, None)
       return None |}]
 
 
@@ -2800,8 +2804,58 @@ object dummy:
   code:
     #b0:
       n0 <- print("TRY BLOCK")
+      jmp b1
+
+
+    #b1:
       n1 <- print("FINALLY BLOCK")
       return None |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+try:
+      print("TRY BLOCK")
+finally:
+      if foo:
+          print("X")
+      else:
+          print("Y")
+      print("FINALLY BLOCK")
+print("END")
+          |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0:
+      n0 <- print("TRY BLOCK")
+      jmp b1
+
+
+    #b1:
+      if $unknown.foo then jmp b2 else jmp b3
+
+
+    #b2:
+      n1 <- print("X")
+      jmp b4
+
+
+    #b3:
+      n2 <- print("Y")
+      jmp b4
+
+
+    #b4:
+      n3 <- print("FINALLY BLOCK")
+      n4 <- print("END")
+      return None
+          |}]
 
 
     let%expect_test _ =
@@ -3635,4 +3689,47 @@ object dummy:
     functions:
       f -> dummy.f
           |}]
+
+    (*
+    let%expect_test _ =
+      let source =
+        {|
+import os
+
+
+try:
+    page_size = os.sysconf('SC_PAGESIZE')
+except (ValueError, AttributeError):
+    page_size = 4096
+          |} in
+      test ~debug:true source ;
+      [%expect
+        {|
+module
+          |}]
+       *)
+
+    (*
+    let%expect_test _ =
+      let source =
+        {|
+import os
+import sys
+import time
+
+
+try:
+    page_size = os.sysconf('SC_PAGESIZE')
+except (ValueError, AttributeError):
+    try:
+        page_size = os.sysconf('SC_PAGE_SIZE')
+    except (ValueError, AttributeError):
+        page_size = 4096
+          |} in
+      test ~debug:true source ;
+      [%expect
+        {|
+module
+          |}]
+       *)
   end )

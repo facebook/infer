@@ -369,11 +369,10 @@ module Error = struct
     | CallKeywordNotString0 of Const.t
     | CallKeywordNotString1 of Exp.t
     | MakeFunctionInvalidDefaults of Exp.t
-    | EndFinally of Exp.t
-    | WithCleanupStart of Exp.t
     | WithCleanupFinish of Exp.t
     | RaiseException of int
     | RaiseExceptionInvalid of int
+    | BeginFinally of int
 
   type t = L.error * Location.t * kind
 
@@ -422,16 +421,14 @@ module Error = struct
         F.fprintf fmt "CALL_FUNCTION_KW: keyword is not a tuple of strings: %a" Exp.pp exp
     | MakeFunctionInvalidDefaults exp ->
         F.fprintf fmt "MAKE_FUNCTION: expecting tuple of default values but got %a" Exp.pp exp
-    | EndFinally exp ->
-        F.fprintf fmt "END_FINALLY/TODO: unsupported scenario with %a" Exp.pp exp
-    | WithCleanupStart exp ->
-        F.fprintf fmt "WITH_CLEANUP_START/TODO: unsupported scenario with %a" Exp.pp exp
     | WithCleanupFinish exp ->
         F.fprintf fmt "WITH_CLEANUP_FINISH/TODO: unsupported scenario with %a" Exp.pp exp
     | RaiseException n ->
         F.fprintf fmt "RAISE_VARARGS/TODO: Unsupported argc = %d" n
     | RaiseExceptionInvalid n ->
         F.fprintf fmt "RAISE_VARARGS: Invalid mode %d" n
+    | BeginFinally offset ->
+        F.fprintf fmt "BEGIN_FINALLY: no label at next offset (%d)" offset
 end
 
 module Stmt = struct
@@ -507,7 +504,7 @@ module Label = struct
     ; ssa_parameters: SSA.t list
     ; processed: bool
     ; backedge: bool
-    ; with_target: bool
+    ; exn_handler: bool
     ; prelude: ('a -> 'a) option }
 
   let pp fmt {name; ssa_parameters} =
@@ -516,8 +513,8 @@ module Label = struct
       F.fprintf fmt "(%a)" (Pp.seq ~sep:", " SSA.pp) ssa_parameters
 
 
-  let mk ?(backedge = false) ?(with_target = false) ?prelude name ssa_parameters =
-    {name; ssa_parameters; processed= false; backedge; with_target; prelude}
+  let mk ?(backedge = false) ?(exn_handler = false) ?prelude name ssa_parameters =
+    {name; ssa_parameters; processed= false; backedge; exn_handler; prelude}
 
 
   let is_processed {processed} = processed
@@ -651,12 +648,16 @@ module Node = struct
 end
 
 module State = struct
+  (** Bytecode offset of except/finally handlers *)
+  type exn_handler = {offset: int}
+
   (** Internal state of the Bytecode -> IR compiler *)
   type t =
     { module_name: Ident.t
     ; debug: bool
     ; loc: Location.t
     ; cfg: t CFG.t
+    ; exn_handlers: exn_handler list  (** Stack of except/finally handlers info *)
     ; global_names: Ident.t SMap.t  (** Translation cache for global names *)
     ; stack: Exp.t list
     ; stmts: (Location.t * Stmt.t) list
@@ -682,7 +683,9 @@ module State = struct
       ; "__name__"
       ; "__file__"
       ; "AssertionError"
-      ; "RuntimeError" ]
+      ; "AttributeError"
+      ; "RuntimeError"
+      ; "ValueError" ]
     in
     List.fold builtins ~init:SMap.empty ~f:(fun names name ->
         SMap.add name (Ident.mk ~kind:Builtin name) names )
@@ -699,6 +702,7 @@ module State = struct
     ; debug
     ; loc
     ; cfg= CFG.empty
+    ; exn_handlers= []
     ; global_names= known_global_names
     ; stack= []
     ; stmts= []
@@ -792,6 +796,7 @@ module State = struct
     aux [] st n
 
 
+  (* TODO: use the [exn_handlers] info to mark statement that can possibly raise * something *)
   let push_stmt ({stmts; loc} as st) stmt = {st with stmts= (loc, stmt) :: stmts}
 
   let register_class ({classes} as st) cls = {st with classes= SSet.add cls classes}
@@ -865,6 +870,22 @@ module State = struct
         (None, st)
     | instr :: _ ->
         instr_is_jump_target st instr
+
+
+  let push_exn_handler ({exn_handlers} as st) ~offset =
+    let exn_handlers = {offset} :: exn_handlers in
+    {st with exn_handlers}
+
+
+  let pop_exn_handler ({exn_handlers} as st) =
+    let exn_handlers =
+      match exn_handlers with
+      | [] ->
+          L.die InternalError "State.pop_exn_handler: empty stack"
+      | _ :: exn_handlers ->
+          exn_handlers
+    in
+    {st with exn_handlers}
 
 
   let enter_node st {Label.ssa_parameters; prelude} =
@@ -1392,23 +1413,18 @@ let for_iter st delta next_offset_opt =
       https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3300
     - we only support the first case with [NULL]
     - we only support [__exit__].
-    - TODO: learn how [__aexit__] works *)
+    - TODO: learn how [__aexit__] works
+    - TODO: duplicate the handler to deal with the 6 values case *)
 let with_cleanup_start st =
   let open IResult.Let_syntax in
-  let* tos = State.peek st in
-  match (tos : Exp.t) with
-  | NoException ->
-      let* _, st = State.pop st in
-      let* context_manager_exit, st = State.pop st in
-      let st = State.push st NoException in
-      let lhs, st =
-        call_function_with_unnamed_args st context_manager_exit [Const Null; Const Null; Const Null]
-      in
-      let st = State.push st (Const Null) in
-      let st = State.push st (Exp.Temp lhs) in
-      Ok (st, None)
-  | _ ->
-      internal_error st (Error.WithCleanupStart tos)
+  let* context_manager_exit, st = State.pop st in
+  let st = State.push st NoException in
+  let lhs, st =
+    call_function_with_unnamed_args st context_manager_exit [Const Null; Const Null; Const Null]
+  in
+  let st = State.push st (Const Null) in
+  let st = State.push st (Exp.Temp lhs) in
+  Ok (st, None)
 
 
 (** Extract from Python3.8 specification:
@@ -1422,8 +1438,9 @@ let with_cleanup_start st =
     [NULL] to the stack.
 
     Note: we only support the [None] case for the moment. See
-    https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3373 *)
+    https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3373.
 
+    TODO: duplicate the node and deal with the EXCEPT_HANDLER case *)
 let with_cleanup_finish st =
   let open IResult.Let_syntax in
   let* _exit_res, st = State.pop st in
@@ -1784,7 +1801,7 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       (* The FFI.Instruction framework already did the magic and this opcode can be ignored. *)
       Ok (st, None)
   | "POP_BLOCK" ->
-      (* We don't need to model blocks yet, so this is a NOP for now *)
+      let st = State.pop_exn_handler st in
       Ok (st, None)
   | "ROT_TWO" ->
       let* tos0, st = State.pop st in
@@ -1818,13 +1835,13 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
          absolute offset right away *)
       let* next_offset = Offset.get ~loc next_offset_opt in
       let offset = next_offset + arg in
+      let st = State.push_exn_handler st ~offset in
       let label_name, st = State.fresh_label st in
-      let label = Label.mk ~with_target:true label_name [] in
+      let ssa, st = State.fresh_id st in
+      (* The "finally" block will have WITH_CLEANUP_START/FINISH that expect the Context Manager
+         to be on the stack *)
+      let label = Label.mk ~exn_handler:true label_name [ssa] in
       let st = State.register_label st ~offset label in
-      (* We can't predict yet the size of the stack at the end of the with block, so we can't
-         setup properly the label above. For now, we'll mark it as processed so the execution
-         continues normally at the end of the block *)
-      let st = State.process_label st offset in
       let* context_manager, st = State.pop st in
       let st = State.push st (ContextManagerExit context_manager) in
       let exp = Exp.LoadMethod (context_manager, PyCommon.enter) in
@@ -1832,31 +1849,44 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let st = State.push st (Exp.Temp lhs) in
       Ok (st, None)
   | "BEGIN_FINALLY" ->
-      let st = State.push st NoException in
-      Ok (st, None)
+      let {State.loc} = st in
+      (* Begin finally is always followed by the "finally" handler of a [try/finally] block so we
+         jump to the next instruction. We don't push anything on the stack as this path is not
+         any expecting information *)
+      let* offset = Offset.get ~loc next_offset_opt in
+      let* label =
+        match State.lookup_label st offset with
+        | Some label ->
+            Ok label
+        | None ->
+            external_error st (Error.BeginFinally offset)
+      in
+      let ssa_args, st = State.to_ssa st in
+      let info = {Jump.label; offset; ssa_args} in
+      Ok (st, Some (Jump.Label info))
   | "SETUP_FINALLY" ->
-      (* TODO: not much support for exception at the time *)
+      (* TODO: Partial support for except/finally handlers *)
       let {State.loc} = st in
       (* This instruction gives us a relative delta w.r.t the next offset, so we turn it into an
          absolute offset right away *)
       let* next_offset = Offset.get ~loc next_offset_opt in
       let offset = next_offset + arg in
+      let st = State.push_exn_handler st ~offset in
       let label_name, st = State.fresh_label st in
-      let label = Label.mk ~with_target:true label_name [] in
+      (* There's two possible targets during this block:
+         - the [finally] block which expects a [NULL] on the stack
+         - the [except] block which expects 6 values on the stack
+         We only support the finally block for now, so we register a single target with arity 0,
+         since we don't need the NULL on the stack to do the detection.
+         TODO: register the exn target with arity 6 *)
+      let label = Label.mk ~exn_handler:true label_name [] in
       let st = State.register_label st ~offset label in
-      (* We can't predict yet the size of the stack at the end of the with block, so we can't
-         setup properly the label above. For now, we'll mark it as processed so the execution
-         continues normally at the end of the block *)
-      let st = State.process_label st offset in
       Ok (st, None)
-  | "END_FINALLY" -> (
-      (* TODO: See doc for [END_FINALLY] for the three possible cases. We only support the first one for now *)
-      let* tos, st = State.pop st in
-      match (tos : Exp.t) with
-      | NoException ->
-          Ok (st, None)
-      | _ ->
-          internal_error st (Error.EndFinally tos) )
+  | "END_FINALLY" ->
+      (* TODO: See doc for [END_FINALLY].
+         We only support the "NULL" case where we come from BEGIN_FINALLY
+         so we don't even look at the stack *)
+      Ok (st, None)
   | "WITH_CLEANUP_START" ->
       with_cleanup_start st
   | "WITH_CLEANUP_FINISH" ->
