@@ -4677,6 +4677,122 @@ object dummy:
     let%expect_test _ =
       let source =
         {|
+def f(l):
+  r = {x + 1 for x in l }
+  return r
+
+
+def g(l):
+  squared_dict = {num: num ** 2 for num in l}
+  return r
+          |}
+      in
+      test source ;
+      [%expect
+        {xxx|
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      dummy.g <- $FuncObj(g, dummy.g, {})
+      return None
+
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0 .label:
+          n0 <- $GetIter(l)
+          n1 <- $FuncObj(<setcomp-3>, dummy.f.<locals>.<setcomp-3>, {})(n0)
+          r <- n1
+          return r
+
+
+
+      objects:
+        object dummy.f.<locals>.<setcomp-3>:
+          code:
+            #b0 .label:
+              jmp b1(.0, {})
+
+
+            #b1(n1, n0) .label:
+              n2 <- $NextIter(n1)
+              n3 <- $HasNextIter(n2)
+              if n3 then jmp b2(n0) else jmp b3(n0)
+
+
+            #b2(n4) .label:
+              n6 <- $IterData(n2)
+              x <- n6
+              n7 <- $Binary.Add(x, 1)
+              n8 <- $SetAdd(n4, n7)
+              jmp b1(n1, n4)
+
+
+            #b3(n5) .label:
+              return n5
+
+
+
+
+
+        functions:
+          <setcomp-3> -> dummy.f.<locals>.<setcomp-3>
+
+      object dummy.g:
+        code:
+          #b0 .label:
+            n0 <- $GetIter(l)
+            n1 <- $FuncObj(<dictcomp-8>, dummy.g.<locals>.<dictcomp-8>, {})(n0)
+            squared_dict <- n1
+            return $unknown.r
+
+
+
+        objects:
+          object dummy.g.<locals>.<dictcomp-8>:
+            code:
+              #b0 .label:
+                jmp b1(.0, {||})
+
+
+              #b1(n1, n0) .label:
+                n2 <- $NextIter(n1)
+                n3 <- $HasNextIter(n2)
+                if n3 then jmp b2(n0) else jmp b3(n0)
+
+
+              #b2(n4) .label:
+                n6 <- $IterData(n2)
+                num <- n6
+                n7 <- $Binary.Power(num, 2)
+                n8 <- $DictSetItem(n4, num, n7)
+                jmp b1(n1, n4)
+
+
+              #b3(n5) .label:
+                return n5
+
+
+
+
+
+          functions:
+            <dictcomp-8> -> dummy.g.<locals>.<dictcomp-8>
+
+
+      functions:
+        f -> dummy.f
+        g -> dummy.g
+          |xxx}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
 class C:
         pass
 

@@ -220,6 +220,8 @@ module BuiltinCaller = struct
     | IterData  (** [FOR_ITER] *)
     | GetYieldFromIter  (** [GET_YIELD_FROM_ITER] *)
     | ListAppend  (** [LIST_APPEND] *)
+    | SetAdd  (** [SET_ADD] *)
+    | DictSetItem  (** [MAP_ADD] *)
     | Delete  (** [DELETE_FAST] & cie *)
 
   let show = function
@@ -252,6 +254,10 @@ module BuiltinCaller = struct
         "$GetYieldFromIter"
     | ListAppend ->
         "$ListAppend"
+    | SetAdd ->
+        "$SetAdd"
+    | DictSetItem ->
+        "$DictSetItem"
     | Delete ->
         "$Delete"
 end
@@ -1187,14 +1193,20 @@ let named_argument_zip opname argc ~f ~init data tags =
   zip 0 data tags
 
 
-(** Patch the name of a list comprehension object.
+(** Patch the name of a list/set/dict comprehension objects.
 
     List comprehensions generate code blocks all named `<listcomp>`, so we need to tell them apart.
-    We use their location to distinguish them. *)
-let patch_listcomp_name {FFI.Code.co_name; co_firstlineno} id =
+    We use their location to distinguish them. Same thing happens for `<setcomp>` and `<dictcomp>` *)
+let patch_comp_name {FFI.Code.co_name; co_firstlineno} id =
   if String.equal "<listcomp>" co_name then
-    let listcomp = sprintf "<listcomp-%d>" co_firstlineno in
-    match Ident.pop id with None -> (co_name, id) | Some id -> (listcomp, Ident.extend id listcomp)
+    let name = sprintf "<listcomp-%d>" co_firstlineno in
+    match Ident.pop id with None -> (co_name, id) | Some id -> (name, Ident.extend id name)
+  else if String.equal "<setcomp>" co_name then
+    let name = sprintf "<setcomp-%d>" co_firstlineno in
+    match Ident.pop id with None -> (co_name, id) | Some id -> (name, Ident.extend id name)
+  else if String.equal "<dictcomp>" co_name then
+    let name = sprintf "<dictcomp-%d>" co_firstlineno in
+    match Ident.pop id with None -> (co_name, id) | Some id -> (name, Ident.extend id name)
   else (co_name, id)
 
 
@@ -1224,7 +1236,7 @@ let make_function st flags =
     | _ ->
         internal_error st (Error.MakeFunction ("a code object", codeobj))
   in
-  let short_name, qualname = patch_listcomp_name code qualname in
+  let short_name, qualname = patch_comp_name code qualname in
   let* st =
     if flags land 0x08 <> 0 then
       (* TODO: closure *)
@@ -1751,6 +1763,34 @@ let get_name st co_names arg ~global =
 
 let delete st exp =
   let _id, st = call_builtin_function st Delete [exp] in
+  Ok (st, None)
+
+
+let collection_add st opname arg ?(map = false) builtin =
+  (* LIST_APPEND(i) | SET_ADD(i) | MAP_ADD(i)
+
+     Calls list.append(TOS1[-i], TOS).
+     Calls set.add(TOS1[-i], TOS).
+     Calls dict.__setitem__(TOS1[-i], TOS1, TOS).
+
+     Used to implement list/set/dict comprehensions.
+
+     For all of the [SET_ADD], [LIST_APPEND] and [MAP_ADD] instructions, while the added value or
+     key/value pair is popped off, the container object remains on the stack so that it is
+     available for further iterations of the loop. *)
+  let open IResult.Let_syntax in
+  if arg < 1 then L.die ExternalError "%s with %d" opname arg ;
+  let* args, st =
+    if map then
+      let* value, st = State.pop st in
+      let* key, st = State.pop st in
+      Ok ([key; value], st)
+    else
+      let* elt, st = State.pop st in
+      Ok ([elt], st)
+  in
+  let* tos1 = State.peek st ~depth:(arg - 1) in
+  let _id, st = call_builtin_function st builtin (tos1 :: args) in
   Ok (st, None)
 
 
@@ -2295,19 +2335,11 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
   | "LIST_APPEND" ->
-      (* LIST_APPEND(i)
-         Calls list.append(TOS1[-i], TOS). Used to implement list
-         comprehensions.
-
-         For all of the [SET_ADD], [LIST_APPEND] and [MAP_ADD] instructions, while
-         the added value or key/value pair is popped off, the container object
-         remains on the stack so that it is available for further iterations
-         of the loop. *)
-      if arg < 1 then L.die ExternalError "LIST_APPEND with %d" arg ;
-      let* tos, st = State.pop st in
-      let* tos1 = State.peek st ~depth:(arg - 1) in
-      let _id, st = call_builtin_function st ListAppend [tos1; tos] in
-      Ok (st, None)
+      collection_add st opname arg ListAppend
+  | "SET_ADD" ->
+      collection_add st opname arg SetAdd
+  | "MAP_ADD" ->
+      collection_add st opname arg ~map:true DictSetItem
   | "DELETE_NAME" ->
       let exp = get_name st co_names arg ~global:false in
       delete st exp
@@ -2512,14 +2544,20 @@ module Module = struct
   let pp fmt obj = F.fprintf fmt "module@\n%a@\n@\n" Object.pp obj
 end
 
-(** Patch the name of a list comprehension object.
+(** Patch the name of a list/set/dict comprehension objects.
 
     List comprehensions generate code blocks all named `<listcomp>`, so we need to tell them apart.
     We use their location to distinguish them. Also, their [code] object might not have the
-    `<local>` prefix we see during the process of [MAKE_FUNCTION]. *)
-let patch_listcomp_object_name st {FFI.Code.co_name; co_firstlineno} =
+    `<local>` prefix we see during the process of [MAKE_FUNCTION].
+
+    Same things happen for `<setcomp>` and `<dictcomp>` *)
+let patch_comp_object_name st {FFI.Code.co_name; co_firstlineno} =
   if String.equal "<listcomp>" co_name then
     sprintf "%s<listcomp-%d>" (if State.is_toplevel st then "" else "<locals>.") co_firstlineno
+  else if String.equal "<setcomp>" co_name then
+    sprintf "%s<setcomp-%d>" (if State.is_toplevel st then "" else "<locals>.") co_firstlineno
+  else if String.equal "<dictcomp>" co_name then
+    sprintf "%s<dictcomp-%d>" (if State.is_toplevel st then "" else "<locals>.") co_firstlineno
   else co_name
 
 
@@ -2533,7 +2571,7 @@ let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
     Array.fold_result co_consts ~init:[] ~f:(fun objects constant ->
         match constant with
         | FFI.Constant.PYCCode code ->
-            let name = patch_listcomp_object_name st code in
+            let name = patch_comp_object_name st code in
             let module_name = Ident.extend module_name name in
             let loc = Location.of_code code in
             let st = State.enter st ~loc module_name in
