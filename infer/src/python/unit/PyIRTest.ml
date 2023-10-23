@@ -326,10 +326,6 @@ object dummy:
           return y
 
 
-        #b3:
-          return None
-
-
 
 
 
@@ -2750,14 +2746,24 @@ object dummy:
       return None |}]
 
 
-    (*
     let%expect_test _ =
       let source = {|
 with open("foo.txt", "wt") as fp:
     fp.write("yolo")
           |} in
-      test ~debug:true source ;
-      [%expect {| |}]
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0:
+      n0 <- open("foo.txt", "wt")
+      n1 <- $LoadMethod(n0, __enter__)()
+      dummy.fp <- n1
+      n2 <- $CallMethod($LoadMethod(dummy.fp, write), "yolo")
+      n3 <- CM(n0).__exit__(None, None, None)
+      return None |}]
 
 
     let%expect_test _ =
@@ -2769,9 +2775,17 @@ finally:
       print("FINALLY BLOCK")
       |}
       in
-      test ~debug:true source ;
-      [%expect {| |}]
-*)
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0:
+      n0 <- print("TRY BLOCK")
+      n1 <- print("FINALLY BLOCK")
+      return None |}]
+
 
     let%expect_test _ =
       let source = {|
@@ -2897,8 +2911,6 @@ object dummy:
       f -> dummy.f |}]
 
 
-    (*
-
     let%expect_test _ =
       let source =
         {|
@@ -2912,8 +2924,56 @@ def g():
   raise C()
           |}
       in
-      test ~debug:true source ;
-      [%expect {| |}]
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0:
+      dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C", $unknown.Exception)
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      dummy.g <- $FuncObj(g, dummy.g, {})
+      return None
+
+
+
+  objects:
+    object dummy.C:
+      code:
+        #b0:
+          dummy.C.__module__ <- __name__
+          dummy.C.__qualname__ <- "C"
+          return None
+
+
+
+
+    object dummy.f:
+      code:
+        #b0:
+          throw dummy.C
+
+
+
+
+    object dummy.g:
+      code:
+        #b0:
+          n0 <- dummy.C()
+          throw n0
+
+
+
+
+
+    classes:
+      C
+
+    functions:
+      C -> dummy.C
+      f -> dummy.f
+      g -> dummy.g |}]
 
 
     let%expect_test _ =
@@ -2923,10 +2983,34 @@ import foo
 def f():
           raise foo.bar(42)
           |} in
-      test ~debug:true source ;
-      [%expect {| |}]
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0:
+      $ImportName(foo, from_list=[])
+      dummy.foo <- $ImportName(foo, from_list= [])
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      return None
 
-*)
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0:
+          n0 <- $CallMethod($LoadMethod(foo, bar), 42)
+          throw n0
+
+
+
+
+
+    functions:
+      f -> dummy.f |}]
+
 
     let%expect_test _ =
       let source =
@@ -3350,4 +3434,125 @@ object dummy:
 
     functions:
       f -> dummy.f |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+def f(match, it, n):
+    for item in match:
+        if not it[n]==item: raise AssertionError
+        n+=1
+          |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0:
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      return None
+
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0:
+          n0 <- $GetIter(match)
+          jmp b1(n0)
+
+
+        #b1(n1):
+          n2 <- $NextIter(n1)
+          n3 <- $HasNextIter(n2)
+          if n3 then jmp b2 else jmp b3
+
+
+        #b2:
+          n4 <- $IterData(n2)
+          item <- n4
+          n5 <- $Compare.eq(it[n], item)
+          if $Not(n5) then jmp b4(n1) else jmp b5(n1)
+
+
+        #b4(n6):
+          throw AssertionError
+
+
+        #b5(n7):
+          n8 <- $Inplace.Add(n, 1)
+          n <- n8
+          jmp b1(n7)
+
+
+        #b3:
+          return None
+
+
+
+
+
+    functions:
+      f -> dummy.f
+          |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+def f(foo):
+    for path in foo:
+        if path:
+                return
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0:
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      return None
+
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0:
+          n0 <- $GetIter(foo)
+          jmp b1(n0)
+
+
+        #b1(n1):
+          n2 <- $NextIter(n1)
+          n3 <- $HasNextIter(n2)
+          if n3 then jmp b2 else jmp b3
+
+
+        #b2:
+          n4 <- $IterData(n2)
+          path <- n4
+          if path then jmp b4(n1) else jmp b1(n1)
+
+
+        #b4(n5):
+          return None
+
+
+        #b3:
+          return None
+
+
+
+
+
+    functions:
+      f -> dummy.f
+          |}]
   end )

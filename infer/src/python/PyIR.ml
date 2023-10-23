@@ -268,6 +268,8 @@ module Exp = struct
     | LoadClosure of string  (** [LOAD_CLOSURE] *)
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
+    | NoException
+    | ContextManagerExit of t
 
   let rec pp fmt = function
     | Const c ->
@@ -321,6 +323,10 @@ module Exp = struct
         F.fprintf fmt "$Not(%a)" pp exp
     | BuiltinCaller bc ->
         BuiltinCaller.pp fmt bc
+    | NoException ->
+        F.pp_print_string fmt "NoException"
+    | ContextManagerExit exp ->
+        F.fprintf fmt "CM(%a).__exit__" pp exp
 
 
   let as_short_string = function Const (String s) -> Some s | _ -> None
@@ -358,6 +364,11 @@ module Error = struct
     | CallKeywordNotString0 of Const.t
     | CallKeywordNotString1 of Exp.t
     | MakeFunctionInvalidDefaults of Exp.t
+    | EndFinally of Exp.t
+    | WithCleanupStart of Exp.t
+    | WithCleanupFinish of Exp.t
+    | RaiseException of int
+    | RaiseExceptionInvalid of int
 
   type t = L.error * Location.t * kind
 
@@ -406,6 +417,16 @@ module Error = struct
         F.fprintf fmt "CALL_FUNCTION_KW: keyword is not a tuple of strings: %a" Exp.pp exp
     | MakeFunctionInvalidDefaults exp ->
         F.fprintf fmt "MAKE_FUNCTION: expecting tuple of default values but got %a" Exp.pp exp
+    | EndFinally exp ->
+        F.fprintf fmt "END_FINALLY/TODO: unsupported scenario with %a" Exp.pp exp
+    | WithCleanupStart exp ->
+        F.fprintf fmt "WITH_CLEANUP_START/TODO: unsupported scenario with %a" Exp.pp exp
+    | WithCleanupFinish exp ->
+        F.fprintf fmt "WITH_CLEANUP_FINISH/TODO: unsupported scenario with %a" Exp.pp exp
+    | RaiseException n ->
+        F.fprintf fmt "RAISE_VARARGS/TODO: Unsupported argc = %d" n
+    | RaiseExceptionInvalid n ->
+        F.fprintf fmt "RAISE_VARARGS: Invalid mode %d" n
 end
 
 module Stmt = struct
@@ -481,6 +502,7 @@ module Label = struct
     ; ssa_parameters: SSA.t list
     ; processed: bool
     ; backedge: bool
+    ; with_target: bool
     ; prelude: ('a -> 'a) option }
 
   let pp fmt {name; ssa_parameters} =
@@ -489,8 +511,8 @@ module Label = struct
       F.fprintf fmt "(%a)" (Pp.seq ~sep:", " SSA.pp) ssa_parameters
 
 
-  let mk ?(backedge = false) ?prelude name ssa_parameters =
-    {name; ssa_parameters; processed= false; backedge; prelude}
+  let mk ?(backedge = false) ?(with_target = false) ?prelude name ssa_parameters =
+    {name; ssa_parameters; processed= false; backedge; with_target; prelude}
 
 
   let is_processed {processed} = processed
@@ -510,6 +532,7 @@ module Jump = struct
     | Label of 'a info
     | Return of Exp.t
     | TwoWay of {condition: Exp.t; next_info: 'a info; other_info: 'a info}
+    | Throw of Exp.t
 
   let pp fmt = function
     | Absolute info ->
@@ -520,6 +543,8 @@ module Jump = struct
         F.fprintf fmt "Return(%a)" Exp.pp ret
     | TwoWay {condition; next_info; other_info} ->
         F.fprintf fmt "TwoWay(%a, %a, %a)" Exp.pp condition pp_info next_info pp_info other_info
+    | Throw exp ->
+        F.fprintf fmt "Throw(%a)" Exp.pp exp
     [@@warning "-unused-value-declaration"]
 end
 
@@ -535,6 +560,7 @@ module Terminator = struct
     | Return of Exp.t
     | Jump of node_call list  (** non empty list *)
     | If of {exp: Exp.t; then_: t; else_: t}
+    | Throw of Exp.t
 
   let rec pp fmt = function
     | Return exp ->
@@ -543,6 +569,8 @@ module Terminator = struct
         F.fprintf fmt "jmp %a" (Pp.seq ~sep:", " pp_node_call) lst
     | If {exp; then_; else_} ->
         F.fprintf fmt "if %a then @[%a@] else @[%a@]" Exp.pp exp pp then_ pp else_
+    | Throw exp ->
+        F.fprintf fmt "throw %a" Exp.pp exp
 
 
   let of_jump jump_info =
@@ -648,6 +676,7 @@ module State = struct
       ; "hasattr"
       ; "__name__"
       ; "__file__"
+      ; "AssertionError"
       ; "RuntimeError" ]
     in
     List.fold builtins ~init:SMap.empty ~f:(fun names name ->
@@ -807,26 +836,30 @@ module State = struct
     (fresh_label, st)
 
 
-  let starts_with_jump_target ({cfg} as st) = function
+  let instr_is_jump_target ({cfg} as st) {FFI.Instruction.offset; is_jump_target} =
+    match CFG.lookup_label cfg offset with
+    | Some label ->
+        let info = if Label.is_processed label then None else Some (offset, label) in
+        (info, st)
+    | None ->
+        if is_jump_target then
+          (* Probably the target of a back edge. Let's register a target with the current stack
+             information. When we'll detect the jump to here, we'll make sure things are
+             compatible *)
+          let arity = size st in
+          let ssa_parameters, st = mk_ssa_parameters st arity in
+          let name, st = fresh_label st in
+          let label = Label.mk ~backedge:true name ssa_parameters in
+          let st = register_label st ~offset label in
+          (Some (offset, label), st)
+        else (None, st)
+
+
+  let starts_with_jump_target st = function
     | [] ->
         (None, st)
-    | {FFI.Instruction.offset; is_jump_target} :: _ -> (
-      match CFG.lookup_label cfg offset with
-      | Some label ->
-          let info = if Label.is_processed label then None else Some (offset, label) in
-          (info, st)
-      | None ->
-          if is_jump_target then
-            (* Probably the target of a back edge. Let's register a target with the current stack
-               information. When we'll detect the jump to here, we'll make sure things are
-               compatible *)
-            let arity = size st in
-            let ssa_parameters, st = mk_ssa_parameters st arity in
-            let name, st = fresh_label st in
-            let label = Label.mk ~backedge:true name ssa_parameters in
-            let st = register_label st ~offset label in
-            (Some (offset, label), st)
-          else (None, st) )
+    | instr :: _ ->
+        instr_is_jump_target st instr
 
 
   let enter_node st {Label.ssa_parameters; prelude} =
@@ -1331,6 +1364,82 @@ let for_iter st delta next_offset_opt =
            ; other_info= {label= other_label; offset= other_offset; ssa_args} } ) )
 
 
+(** Extract from Python3.8 specification:
+
+    Starts cleaning up the stack when a with statement block exits. At the top of the stack are
+    either [NULL] (pushed by [BEGIN_FINALLY]) or 6 values pushed if an exception has been raised in
+    the with block. Below is the context manager’s [__exit__()] or [__aexit__()] bound method.
+
+    If top-of-stack is [NULL], calls [SECOND(None, None, None)], removes the function from the
+    stack, leaving top-of-stack, and pushes [NoException] to the stack. Otherwise calls
+    [SEVENTH(TOP, SECOND, THIRD)], shifts the bottom 3 values of the stack down, replaces the empty
+    spot with [NoException] and pushes top-of-stack. Finally pushes the result of the call.
+
+    vsiles notes:
+
+    - the doc is quite confusing. Here is my source of truth
+      https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3300
+    - we only support the first case with [NULL]
+    - we only support [__exit__].
+    - TODO: learn how [__aexit__] works *)
+let with_cleanup_start st =
+  let open IResult.Let_syntax in
+  let* tos = State.peek st in
+  match (tos : Exp.t) with
+  | NoException ->
+      let* _, st = State.pop st in
+      let* context_manager_exit, st = State.pop st in
+      let st = State.push st NoException in
+      let lhs, st =
+        call_function_with_unnamed_args st context_manager_exit [Const Null; Const Null; Const Null]
+      in
+      let st = State.push st (Const Null) in
+      let st = State.push st (Exp.Temp lhs) in
+      Ok (st, None)
+  | _ ->
+      internal_error st (Error.WithCleanupStart tos)
+
+
+(** Extract from Python3.8 specification:
+
+    Finishes cleaning up the stack when a with statement block exits. top-of-stack is result of
+    [__exit__()] or [__aexit__()] function call pushed by [WITH_CLEANUP_START]. [SECOND] is [None]
+    or an exception type (pushed when an exception has been raised).
+
+    Pops two values from the stack. If [SECOND] is not [NoException] and top-of-stack is true
+    unwinds the [EXCEPT_HANDLER] block which was created when the exception was caught and pushes
+    [NULL] to the stack.
+
+    Note: we only support the [None] case for the moment. See
+    https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3373 *)
+
+let with_cleanup_finish st =
+  let open IResult.Let_syntax in
+  let* _exit_res, st = State.pop st in
+  let* tos, st = State.pop st in
+  match (tos : Exp.t) with
+  | Const Null ->
+      Ok (st, None)
+  | _ ->
+      internal_error st (Error.WithCleanupFinish tos)
+
+
+let raise_varargs st argc =
+  let open IResult.Let_syntax in
+  let* () =
+    match argc with
+    | 1 ->
+        Ok ()
+    | 0 | 2 ->
+        internal_error st (Error.RaiseException argc)
+    | _ ->
+        external_error st (Error.RaiseExceptionInvalid argc)
+  in
+  let* tos, st = State.pop st in
+  let throw = Jump.Throw tos in
+  Ok (st, Some throw)
+
+
 let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; co_freevars}
     {FFI.Instruction.opname; starts_line; arg; offset= instr_offset} next_offset_opt =
   let open IResult.Let_syntax in
@@ -1341,7 +1450,7 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       {st with State.loc= starts_line} )
     else st
   in
-  State.debug st "%s %d (0x%x)@\n" opname arg arg ;
+  State.debug st "%s %d (0x%x) - STACK_SIZE %d@\n" opname arg arg (State.size st) ;
   match opname with
   | "LOAD_CONST" ->
       let c = co_consts.(arg) in
@@ -1689,16 +1798,58 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       Ok (st, None)
   | "CALL_FUNCTION_KW" ->
       call_function_kw st arg
+  | "SETUP_WITH" ->
+      let {State.loc} = st in
+      (* This instruction gives us a relative delta w.r.t the next offset, so we turn it into an
+         absolute offset right away *)
+      let* next_offset = Offset.get ~loc next_offset_opt in
+      let offset = next_offset + arg in
+      let label_name, st = State.fresh_label st in
+      let label = Label.mk ~with_target:true label_name [] in
+      let st = State.register_label st ~offset label in
+      (* We can't predict yet the size of the stack at the end of the with block, so we can't
+         setup properly the label above. For now, we'll mark it as processed so the execution
+         continues normally at the end of the block *)
+      let st = State.process_label st offset in
+      let* context_manager, st = State.pop st in
+      let st = State.push st (ContextManagerExit context_manager) in
+      let exp = Exp.LoadMethod (context_manager, PyCommon.enter) in
+      let lhs, st = call_function_with_unnamed_args st exp [] in
+      let st = State.push st (Exp.Temp lhs) in
+      Ok (st, None)
+  | "BEGIN_FINALLY" ->
+      let st = State.push st NoException in
+      Ok (st, None)
+  | "SETUP_FINALLY" ->
+      (* TODO: not much support for exception at the time *)
+      let {State.loc} = st in
+      (* This instruction gives us a relative delta w.r.t the next offset, so we turn it into an
+         absolute offset right away *)
+      let* next_offset = Offset.get ~loc next_offset_opt in
+      let offset = next_offset + arg in
+      let label_name, st = State.fresh_label st in
+      let label = Label.mk ~with_target:true label_name [] in
+      let st = State.register_label st ~offset label in
+      (* We can't predict yet the size of the stack at the end of the with block, so we can't
+         setup properly the label above. For now, we'll mark it as processed so the execution
+         continues normally at the end of the block *)
+      let st = State.process_label st offset in
+      Ok (st, None)
+  | "END_FINALLY" -> (
+      (* TODO: See doc for [END_FINALLY] for the three possible cases. We only support the first one for now *)
+      let* tos, st = State.pop st in
+      match (tos : Exp.t) with
+      | NoException ->
+          Ok (st, None)
+      | _ ->
+          internal_error st (Error.EndFinally tos) )
+  | "WITH_CLEANUP_START" ->
+      with_cleanup_start st
+  | "WITH_CLEANUP_FINISH" ->
+      with_cleanup_finish st
+  | "RAISE_VARARGS" ->
+      raise_varargs st arg
   | _ ->
-      (* TODO: supported by PyTrans:
-         "BEGIN_FINALLY"
-         "END_FINALLY"
-         "RAISE_VARARGS"
-         "SETUP_FINALLY"
-         "SETUP_WITH"
-         "WITH_CLEANUP_FINISH"
-         "WITH_CLEANUP_START"
-      *)
       internal_error st (Error.UnsupportedOpcode opname)
 
 
@@ -1706,7 +1857,8 @@ let rec parse_bytecode_until_terminator ({State.loc} as st) code instructions =
   let open IResult.Let_syntax in
   let label_info, st = State.starts_with_jump_target st instructions in
   match label_info with
-  | Some (_offset, label) ->
+  | Some (offset, label) ->
+      State.debug st "At offset %d, label spotted: %a@\n" offset Label.pp label ;
       (* If the analysis reached a known jump target, stop processing the node. *)
       let ssa_args, st = State.to_ssa st in
       let* offset = Offset.of_code instructions |> Offset.get ~loc in
@@ -1729,6 +1881,7 @@ let mk_node st label code instructions =
   let label_loc = Location.of_instructions instructions in
   let st = State.enter_node st label in
   let* st, jump_op, instructions = parse_bytecode_until_terminator st code instructions in
+  (* Collect all the statements to be added to the node *)
   let stmts, st = State.drain_stmts st in
   let {State.loc= last_loc} = st in
   let jump_op =
@@ -1771,26 +1924,59 @@ let mk_node st label code instructions =
       let last = Terminator.of_jump (`TwoTargets (condition, next_info, other_info)) in
       let node = {Node.label; last; stmts; last_loc; label_loc} in
       Ok (st, instructions, node)
+  | Throw exp ->
+      (* TODO: Track exceptions *)
+      let node = {Node.label; last= Throw exp; stmts; last_loc; label_loc} in
+      Ok (st, instructions, node)
 
 
 let rec mk_nodes st label code instructions =
   let open IResult.Let_syntax in
   let* st, instructions, node = mk_node st label code instructions in
-  if List.is_empty instructions then Ok (st, [node])
-  else
-    let label, st =
-      (* If the next instruction has a label, use it, otherwise pick a fresh one. *)
-      let label_info, st = State.starts_with_jump_target st instructions in
-      match label_info with
-      | Some (offset, label) ->
-          let st = State.process_label st offset in
-          (label, st)
-      | None ->
-          let label_name, st = State.fresh_label st in
-          (Label.mk label_name [], st)
-    in
-    let* st, nodes = mk_nodes st label code instructions in
-    Ok (st, node :: nodes)
+  (* Python bytecode has deadcode. From what we can see for now:
+     - the compiler inserts `return None` at the end of every function, even if all execution path
+       have returned. For example in
+       ```
+       if foo:
+         return X
+       else:
+         return Y
+       ```
+       the compiler will insert an addition `return None` after everything.
+       This one is not a real problem.
+
+     - return/throw in loops are followed by a `jump back to the start of the loop`.
+       This is more problematic because this jump doesn't have a stack compatible with the one at
+       the start of the loop: it is often empty (especially after a return) when the start of the
+       loop usually have at least the iterator stacked.
+
+     For these reason, we are also draining the stack here, and skipping all opcodes until we
+     reach a label where to resume processing. *)
+  let rec find_next_label st = function
+    | [] ->
+        (None, st)
+    | instr :: remaining_instructions as instructions -> (
+        (* If the next instruction has a label, use it, otherwise pick a fresh one. *)
+        let label_info, st = State.instr_is_jump_target st instr in
+        match label_info with
+        | Some (offset, label) ->
+            State.debug st "mk_nodes: spotted label %a at offset %a@\n" Label.pp label Offset.pp
+              offset ;
+            (* Drain the stack before starting a new node *)
+            let st = {st with State.stack= []} in
+            let st = State.process_label st offset in
+            (* Don't forget to keep [instr] here *)
+            (Some (label, instructions), st)
+        | None ->
+            State.debug st "mk_nodes: skipping dead instruction %a@\n" FFI.Instruction.pp instr ;
+            find_next_label st remaining_instructions )
+  in
+  match find_next_label st instructions with
+  | None, st ->
+      Ok (st, [node])
+  | Some (label, instructions), st ->
+      let* st, nodes = mk_nodes st label code instructions in
+      Ok (st, node :: nodes)
 
 
 module Object = struct
