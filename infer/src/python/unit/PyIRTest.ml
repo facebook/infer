@@ -4278,4 +4278,160 @@ object dummy:
       n1 <- print(dummy.result)
       return None
           |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+def f(dummy, dummy2, dummy3, dummy4, **dummyA):
+    print("dummy = ", dummy)
+    print("dummy2= ", dummy2)
+    print("dummy3= ", dummy3)
+    print("dummy4= ", dummy4)
+    for (k, v) in dummyA.items():
+        print("{} = {}".format(k, v))
+
+def g(dummy, dummy2, dummy3, dummy4):
+    print("dummy = ", dummy)
+    print("dummy2= ", dummy2)
+    print("dummy3= ", dummy3)
+    print("dummy4= ", dummy4)
+
+def start():
+    x = (3, 4)
+    f(*(1, 2), *x, **{"test": 42})
+    f(*(1, 2), 'a', 'b', **{"test": 42})
+    g(*(1, 2), *x)
+
+start()
+        |}
+      in
+      test source ;
+      [%expect
+        {xxx|
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      dummy.g <- $FuncObj(g, dummy.g, {})
+      dummy.start <- $FuncObj(start, dummy.start, {})
+      n0 <- dummy.start()
+      return None
+
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0 .label:
+          n0 <- print("dummy = ", dummy)
+          n1 <- print("dummy2= ", dummy2)
+          n2 <- print("dummy3= ", dummy3)
+          n3 <- print("dummy4= ", dummy4)
+          n4 <- $CallMethod($LoadMethod(dummyA, items), )
+          n5 <- $GetIter(n4)
+          jmp b1(n5)
+
+
+        #b1(n6) .label:
+          n7 <- $NextIter(n6)
+          n8 <- $HasNextIter(n7)
+          if n8 then jmp b2 else jmp b3
+
+
+        #b2 .label:
+          n9 <- $IterData(n7)
+          k <- n9[0]
+          v <- n9[1]
+          n10 <- $CallMethod($LoadMethod("{} = {}", format), k, v)
+          n11 <- print(n10)
+          jmp b1(n6)
+
+
+        #b3 .label:
+          return None
+
+
+
+
+    object dummy.g:
+      code:
+        #b0 .label:
+          n0 <- print("dummy = ", dummy)
+          n1 <- print("dummy2= ", dummy2)
+          n2 <- print("dummy3= ", dummy3)
+          n3 <- print("dummy4= ", dummy4)
+          return None
+
+
+
+
+    object dummy.start:
+      code:
+        #b0 .label:
+          x <- (3, 4)
+          n0 <- dummy.f($Packed((1, 2)), $Packed(x), $PackedMap({|"test", 42|})) !packed
+          n1 <- dummy.f($Packed((1, 2)), $Packed(("a", "b")), $PackedMap({|"test", 42|})) !packed
+          n2 <- dummy.g($Packed((1, 2)), $Packed(x)) !packed
+          return None
+
+
+
+
+
+    functions:
+      f -> dummy.f
+      g -> dummy.g
+      start -> dummy.start
+          |xxx}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+def f(foo, a, b, c):
+    foo.f(a)
+
+    foo.f(*b)
+    foo.f(a, *b)
+
+    foo.f(**c)
+    foo.f(*b, **c)
+    foo.f(a, **c)
+    foo.f(a, *b, **c)
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      return None
+
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0 .label:
+          n0 <- $CallMethod($LoadMethod(foo, f), a)
+          n1 <- foo.f($Packed(b)) !packed
+          n2 <- foo.f($Packed((a)), $Packed(b)) !packed
+          n3 <- foo.f($Packed(()), $PackedMap(c)) !packed
+          n4 <- foo.f($Packed(b), $PackedMap(c)) !packed
+          n5 <- foo.f($Packed((a)), $PackedMap(c)) !packed
+          n6 <- foo.f($Packed((a)), $Packed(b), $PackedMap(c)) !packed
+          return None
+
+
+
+
+
+    functions:
+      f -> dummy.f
+          |}]
   end )

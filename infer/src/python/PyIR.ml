@@ -289,8 +289,52 @@ module Exp = struct
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
     | ContextManagerExit of t
-    | Packed of {exp: t}
+    | Packed of {exp: t; is_map: bool}
     | PartialFunc of {call: t; args: t list}
+
+  let show = function
+    | Const _ ->
+        "Const"
+    | Var _ ->
+        "Var"
+    | LocalVar _ ->
+        "LocalVar"
+    | Temp _ ->
+        "Temp"
+    | Subscript _ ->
+        "Subscript"
+    | Collection _ ->
+        "Collection"
+    | ConstMap _ ->
+        "ConstMap"
+    | Function _ ->
+        "Function"
+    | Class _ ->
+        "Class"
+    | GetAttr _ ->
+        "GetAttr"
+    | LoadMethod _ ->
+        "LoadMethod"
+    | ImportName _ ->
+        "ImportName"
+    | ImportFrom _ ->
+        "ImportFrom"
+    | Ref _ ->
+        "Ref"
+    | Deref _ ->
+        "Deref"
+    | Not _ ->
+        "Not"
+    | BuiltinCaller _ ->
+        "BuiltinCaller"
+    | ContextManagerExit _ ->
+        "ContextManagerExit"
+    | PartialFunc _ ->
+        "PartialFunc"
+    | Packed _ ->
+        "Packed"
+    [@@warning "-unused-value-declaration"]
+
 
   let rec pp fmt = function
     | Const c ->
@@ -349,8 +393,8 @@ module Exp = struct
         F.fprintf fmt "CM(%a).__exit__" pp exp
     | PartialFunc {call; args} ->
         F.fprintf fmt "$PartialFunc(%a, [@[%a@]])" pp call (Pp.seq ~sep:", " pp) args
-    | Packed {exp} ->
-        F.fprintf fmt "$Packed(%a)" pp exp
+    | Packed {exp; is_map} ->
+        F.fprintf fmt "$Packed%s(%a)" (if is_map then "Map" else "") pp exp
 
 
   let as_short_string = function Const (String s) -> Some s | _ -> None
@@ -471,7 +515,7 @@ module Stmt = struct
 
   type t =
     | Assign of {lhs: Exp.t; rhs: Exp.t}
-    | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list}
+    | Call of {lhs: SSA.t; exp: Exp.t; args: call_arg list; packed: bool}
     | CallMethod of {lhs: SSA.t; call: Exp.t; args: Exp.t list}
     | ImportName of Exp.import_name
     | BuiltinCall of {lhs: SSA.t; call: BuiltinCaller.t; args: Exp.t list}
@@ -480,8 +524,9 @@ module Stmt = struct
   let pp fmt = function
     | Assign {lhs; rhs} ->
         F.fprintf fmt "%a <- %a" Exp.pp lhs Exp.pp rhs
-    | Call {lhs; exp; args} ->
-        F.fprintf fmt "%a <- %a(@[%a@])" SSA.pp lhs Exp.pp exp (Pp.seq ~sep:", " pp_call_arg) args
+    | Call {lhs; exp; args; packed} ->
+        F.fprintf fmt "%a <- %a(@[%a@])%s" SSA.pp lhs Exp.pp exp (Pp.seq ~sep:", " pp_call_arg) args
+          (if packed then " !packed" else "")
     | CallMethod {lhs; call; args} ->
         F.fprintf fmt "%a <- $CallMethod(%a, @[%a@])" SSA.pp lhs Exp.pp call
           (Pp.seq ~sep:", " Exp.pp) args
@@ -1034,10 +1079,10 @@ let external_error st err = error L.ExternalError st err
 
 let internal_error st err = error L.InternalError st err
 
-let call_function_with_unnamed_args st exp args =
+let call_function_with_unnamed_args st ?(packed = false) exp args =
   let args = Stmt.unnamed_call_args args in
   let lhs, st = State.fresh_id st in
-  let stmt = Stmt.Call {lhs; exp; args} in
+  let stmt = Stmt.Call {lhs; exp; args; packed} in
   let st = State.push_stmt st stmt in
   (lhs, st)
 
@@ -1273,9 +1318,32 @@ let call_function_kw st argc =
   let args = partial_zip args arg_names in
   let* exp, st = State.pop st in
   let lhs, st = State.fresh_id st in
-  let stmt = Stmt.Call {lhs; exp; args} in
+  let stmt = Stmt.Call {lhs; exp; args; packed= false} in
   let st = State.push_stmt st stmt in
   let st = State.push st (Exp.Temp lhs) in
+  Ok (st, None)
+
+
+let call_function_ex st flags =
+  let open IResult.Let_syntax in
+  let* opt_args, st =
+    if flags land 1 <> 0 then
+      let* exp, st = State.pop st in
+      Ok ([Exp.Packed {exp; is_map= true}], st)
+    else Ok ([], st)
+  in
+  let* tos, st = State.pop st in
+  let* call, args, st =
+    match (tos : Exp.t) with
+    | PartialFunc {call; args} ->
+        Ok (call, args, st)
+    | exp ->
+        let tuple = Exp.Packed {is_map= false; exp} in
+        let* call, st = State.pop st in
+        Ok (call, [tuple], st)
+  in
+  let id, st = call_function_with_unnamed_args st call ~packed:true (args @ opt_args) in
+  let st = State.push st (Exp.Temp id) in
   Ok (st, None)
 
 
@@ -1600,7 +1668,7 @@ let get_cell_name {FFI.Code.co_cellvars; co_freevars} arg =
 let build_collection_unpack st count ?(with_call = false) collection =
   let open IResult.Let_syntax in
   let* values, st = State.pop_n st count in
-  let values = List.map ~f:(fun exp -> Exp.Packed {exp}) values in
+  let values = List.map ~f:(fun exp -> Exp.Packed {exp; is_map= false}) values in
   let exp = Exp.Collection {kind= collection; values; packed= true} in
   let* exp, st =
     if with_call then
@@ -1720,6 +1788,10 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       Ok (st, Some (Jump.Return ret))
   | "CALL_FUNCTION" ->
       call_function st arg
+  | "CALL_FUNCTION_KW" ->
+      call_function_kw st arg
+  | "CALL_FUNCTION_EX" ->
+      call_function_ex st arg
   | "POP_TOP" -> (
       (* TODO: rethink this in the future.
          Keep the popped values around in case their construction involves side effects *)
@@ -1984,8 +2056,6 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let st = State.push st tos2 in
       let st = State.push st tos1 in
       Ok (st, None)
-  | "CALL_FUNCTION_KW" ->
-      call_function_kw st arg
   | "SETUP_WITH" ->
       (* TODO: share code with SETUP_FINALLY ? *)
       let {State.loc} = st in
