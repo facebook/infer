@@ -244,9 +244,8 @@ module Exp = struct
       turned into Textual. During the translation from bytecode to expressions, we introduce SSA
       identifiers for "yet to be named" expressions.
 
-      In this IR, name resolution is done so naming is (mostly, cf comment on [MAKE_FUNCTION]) not
-      ambiguous. Also, we have reconstructed the CFG of the program, lost during Python compilation
-      (TODO) *)
+      In this IR, name resolution is done so naming is not ambiguous. Also, we have reconstructed
+      the CFG of the program, lost during Python compilation *)
   type t =
     | Const of Const.t
     | Var of Ident.t  (** Non ambiguous name for variables, imports, functions, classes, ... *)
@@ -257,7 +256,7 @@ module Exp = struct
         (** Helper for [BUILD_LIST] and other builder opcodes *)
     | ConstMap of t ConstMap.t
     | Function of
-        {qualname: Ident.t; code: FFI.Code.t; annotations: t ConstMap.t (* TODO: default values *)}
+        {qualname: Ident.t; code: FFI.Code.t; default_values: t SMap.t; annotations: t ConstMap.t}
         (** Result of the [MAKE_FUNCTION] opcode *)
     | Class of t list
         (** Result of calling [LOAD_BUILD_CLASS] to create a class. Not much is processed of its
@@ -299,9 +298,11 @@ module Exp = struct
         F.fprintf fmt "{@[" ;
         ConstMap.iter (fun key exp -> F.fprintf fmt "%a: %a, " Const.pp key pp exp) map ;
         F.fprintf fmt "@]}"
-    | Function {qualname; code} ->
+    | Function {qualname; code; default_values} ->
         let {FFI.Code.co_name} = code in
-        F.fprintf fmt "$FuncObj(%s, %a)" co_name Ident.pp qualname
+        F.fprintf fmt "$FuncObj(%s, %a, {" co_name Ident.pp qualname ;
+        SMap.iter (fun key value -> F.fprintf fmt "(%s, %a); " key pp value) default_values ;
+        F.pp_print_string fmt "})"
     | Class cls ->
         F.fprintf fmt "$ClassObj(%a)" (Pp.seq ~sep:", " pp) cls
     | GetAttr (t, name) ->
@@ -356,6 +357,7 @@ module Error = struct
     | InvalidBackEdge of (string * int * int)
     | CallKeywordNotString0 of Const.t
     | CallKeywordNotString1 of Exp.t
+    | MakeFunctionInvalidDefaults of Exp.t
 
   type t = L.error * Location.t * kind
 
@@ -402,6 +404,8 @@ module Error = struct
         F.fprintf fmt "CALL_FUNCTION_KW: keyword is not a string: %a" Const.pp cst
     | CallKeywordNotString1 exp ->
         F.fprintf fmt "CALL_FUNCTION_KW: keyword is not a tuple of strings: %a" Exp.pp exp
+    | MakeFunctionInvalidDefaults exp ->
+        F.fprintf fmt "MAKE_FUNCTION: expecting tuple of default values but got %a" Exp.pp exp
 end
 
 module Stmt = struct
@@ -643,7 +647,8 @@ module State = struct
       ; "super"
       ; "hasattr"
       ; "__name__"
-      ; "__file__" ]
+      ; "__file__"
+      ; "RuntimeError" ]
     in
     List.fold builtins ~init:SMap.empty ~f:(fun names name ->
         SMap.add name (Ident.mk ~kind:Builtin name) names )
@@ -878,6 +883,37 @@ let build_collection st kind count =
   Ok (st, None)
 
 
+(** In Python, named arguments are always "at the end":
+
+    - when a function call has named arguments, any positional argument must come first
+    - when a function definition has a default value for any argument, then all arguments on its
+      right must have a default value too. For this purpose, we implement a special "zip" function
+      that takes data and tags, and will correctly zip them depending on their "positional" vs
+      "named" status.
+
+    [argc] is the _total_ number of arguments (both positional and named). [f] is a function to
+    build the resulting type from the positional or named data. *)
+let named_argument_zip opname argc ~f ~init data tags =
+  let nr_positional = argc - List.length tags in
+  let rec zip pos data tags =
+    match (data, tags) with
+    | [], [] ->
+        init
+    | [], _ :: _ ->
+        L.die InternalError "%s: less data than tags" opname
+    | _ :: _, [] ->
+        L.die InternalError "%s: not enough tags" opname
+    | data :: remaining_data, tag :: remaining_tags ->
+        if pos < nr_positional then
+          let tl = zip (1 + pos) remaining_data tags in
+          f (`Positional data) tl
+        else
+          let tl = zip (1 + pos) remaining_data remaining_tags in
+          f (`Named (data, tag)) tl
+  in
+  zip 0 data tags
+
+
 let make_function st flags =
   let open IResult.Let_syntax in
   let* qualname, st = State.pop st in
@@ -932,14 +968,43 @@ let make_function st flags =
       Ok st
     else Ok st
   in
-  (* TODO defaults *)
-  let* _defaults, st =
+  let* default_values, st =
     if flags land 0x01 <> 0 then
       let* defaults, st = State.pop st in
-      Ok (Some defaults, st)
-    else Ok (None, st)
+      match (defaults : Exp.t) with
+      | Const (Tuple defaults) ->
+          let fn_args = FFI.Code.get_arguments code |> Array.to_list in
+          let argc = List.length fn_args in
+          let defaults =
+            named_argument_zip "MAKE_FUNCTION" argc ~init:SMap.empty
+              ~f:(fun hd tl ->
+                match hd with
+                | `Positional _ ->
+                    tl
+                | `Named (argname, const) ->
+                    SMap.add argname (Exp.Const const) tl )
+              fn_args defaults
+          in
+          Ok (defaults, st)
+      | Collection {kind= Tuple; values} ->
+          let fn_args = FFI.Code.get_arguments code |> Array.to_list in
+          let argc = List.length fn_args in
+          let defaults =
+            named_argument_zip "MAKE_FUNCTION" argc ~init:SMap.empty
+              ~f:(fun hd tl ->
+                match hd with
+                | `Positional _ ->
+                    tl
+                | `Named (argname, const) ->
+                    SMap.add argname const tl )
+              fn_args values
+          in
+          Ok (defaults, st)
+      | _ ->
+          external_error st (Error.MakeFunctionInvalidDefaults defaults)
+    else Ok (SMap.empty, st)
   in
-  let exp = Exp.Function {annotations; qualname; code} in
+  let exp = Exp.Function {annotations; default_values; qualname; code} in
   let st = State.push st exp in
   let st = State.register_function st fn qualname in
   Ok (st, None)
@@ -1006,28 +1071,17 @@ let call_function_kw st argc =
     | _ ->
         external_error st (Error.CallKeywordNotString1 arg_names)
   in
-  (* there is more args than names, and nameless values must come first in the end *)
   let partial_zip args kwnames =
-    let nr_positional = argc - List.length kwnames in
-    let rec zip pos args kwnames =
-      match (args, kwnames) with
-      | [], [] ->
-          []
-      | [], _ :: _ ->
-          L.die InternalError "CALL_FUNCTION_KW: less values than names"
-      | _ :: _, [] ->
-          L.die InternalError "CALL_FUNCTION_KW: not enough names"
-      | value :: args, name :: names ->
-          if pos < nr_positional then
+    named_argument_zip "CALL_FUNCTION_KW" argc ~init:[]
+      ~f:(fun hd tl ->
+        match hd with
+        | `Positional value ->
             let hd = Stmt.unnamed_call_arg value in
-            let tl = zip (1 + pos) args kwnames in
             hd :: tl
-          else
+        | `Named (value, name) ->
             let hd = {Stmt.name= Some name; value} in
-            let tl = zip (1 + pos) args names in
-            hd :: tl
-    in
-    zip 0 args kwnames
+            hd :: tl )
+      args kwnames
   in
   let* arg_names, st = State.pop st in
   let* arg_names = extract_kw_names st arg_names in
