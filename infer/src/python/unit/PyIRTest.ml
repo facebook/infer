@@ -4371,9 +4371,10 @@ object dummy:
       code:
         #b0 .label:
           x <- (3, 4)
-          n0 <- dummy.f($Packed((1, 2)), $Packed(x), $PackedMap({|"test", 42|})) !packed
-          n1 <- dummy.f($Packed((1, 2)), $Packed(("a", "b")), $PackedMap({|"test", 42|})) !packed
-          n2 <- dummy.g($Packed((1, 2)), $Packed(x)) !packed
+          n0 <- dummy.f($Packed((packed)($Packed((1, 2)), $Packed(x))), $PackedMap({|"test", 42|})) !packed
+          n1 <- dummy.f($Packed((packed)($Packed((1, 2)), $Packed(("a", "b")))), $PackedMap({|
+                        "test", 42|})) !packed
+          n2 <- dummy.g($Packed((packed)($Packed((1, 2)), $Packed(x)))) !packed
           return None
 
 
@@ -4420,11 +4421,11 @@ object dummy:
         #b0 .label:
           n0 <- $CallMethod($LoadMethod(foo, f), a)
           n1 <- foo.f($Packed(b)) !packed
-          n2 <- foo.f($Packed((a)), $Packed(b)) !packed
+          n2 <- foo.f($Packed((packed)($Packed((a)), $Packed(b)))) !packed
           n3 <- foo.f($Packed(()), $PackedMap(c)) !packed
           n4 <- foo.f($Packed(b), $PackedMap(c)) !packed
           n5 <- foo.f($Packed((a)), $PackedMap(c)) !packed
-          n6 <- foo.f($Packed((a)), $Packed(b), $PackedMap(c)) !packed
+          n6 <- foo.f($Packed((packed)($Packed((a)), $Packed(b))), $PackedMap(c)) !packed
           return None
 
 
@@ -4434,6 +4435,76 @@ object dummy:
     functions:
       f -> dummy.f
           |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+d0 = {0: 0, 1:1}
+d1 = {'a': 0, 'b': 1}
+x = {**d0, **d1}
+print(x)
+
+def f(x, **kwargs):
+    print(x)
+    for (k, v) in kwargs.items():
+        print(k, v)
+
+d1 = {'a': 0, 'b': 1}
+f(**d1, x=42)
+          |}
+      in
+      test source ;
+      [%expect
+        {xxx|
+        module
+        object dummy:
+          code:
+            #b0 .label:
+              dummy.d0 <- {0: 0, 1: 1, }
+              dummy.d1 <- {"a": 0, "b": 1, }
+              dummy.x <- (packed){|$Packed(dummy.d0), $Packed(dummy.d1)|}
+              n0 <- print(dummy.x)
+              dummy.f <- $FuncObj(f, dummy.f, {})
+              dummy.d1 <- {"a": 0, "b": 1, }
+              n1 <- dummy.f($Packed(()), $PackedMap((packed){|$Packed(dummy.d1), $Packed({|"x", 42|})|})) !packed
+              return None
+
+
+
+          objects:
+            object dummy.f:
+              code:
+                #b0 .label:
+                  n0 <- print(x)
+                  n1 <- $CallMethod($LoadMethod(kwargs, items), )
+                  n2 <- $GetIter(n1)
+                  jmp b1(n2)
+
+
+                #b1(n3) .label:
+                  n4 <- $NextIter(n3)
+                  n5 <- $HasNextIter(n4)
+                  if n5 then jmp b2 else jmp b3
+
+
+                #b2 .label:
+                  n6 <- $IterData(n4)
+                  k <- n6[0]
+                  v <- n6[1]
+                  n7 <- print(k, v)
+                  jmp b1(n3)
+
+
+                #b3 .label:
+                  return None
+
+
+
+
+
+            functions:
+              f -> dummy.f |xxx}]
 
 
     let%expect_test _ =

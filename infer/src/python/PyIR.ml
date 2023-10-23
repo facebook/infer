@@ -323,8 +323,9 @@ module Exp = struct
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
     | ContextManagerExit of t
+    (* TODO: maybe this one is not useful, but at least it is not harmful :)
+       Maybe consider removing it *)
     | Packed of {exp: t; is_map: bool}
-    | PartialFunc of {call: t; args: t list}
     | Yield of t
     | YieldFrom of {receiver: t; exp: t}
 
@@ -365,8 +366,6 @@ module Exp = struct
         "BuiltinCaller"
     | ContextManagerExit _ ->
         "ContextManagerExit"
-    | PartialFunc _ ->
-        "PartialFunc"
     | Packed _ ->
         "Packed"
     | Yield _ ->
@@ -430,8 +429,6 @@ module Exp = struct
         F.pp_print_string fmt (BuiltinCaller.show bc)
     | ContextManagerExit exp ->
         F.fprintf fmt "CM(%a).__exit__" pp exp
-    | PartialFunc {call; args} ->
-        F.fprintf fmt "$PartialFunc(%a, [@[%a@]])" pp call (Pp.seq ~sep:", " pp) args
     | Packed {exp; is_map} ->
         F.fprintf fmt "$Packed%s(%a)" (if is_map then "Map" else "") pp exp
     | Yield exp ->
@@ -1399,17 +1396,12 @@ let call_function_ex st flags =
       Ok ([Exp.Packed {exp; is_map= true}], st)
     else Ok ([], st)
   in
-  let* tos, st = State.pop st in
-  let* call, args, st =
-    match (tos : Exp.t) with
-    | PartialFunc {call; args} ->
-        Ok (call, args, st)
-    | exp ->
-        let tuple = Exp.Packed {is_map= false; exp} in
-        let* call, st = State.pop st in
-        Ok (call, [tuple], st)
+  let* packed_arg, st = State.pop st in
+  let packed_arg =
+    match (packed_arg : Exp.t) with Packed _ -> packed_arg | exp -> Exp.Packed {is_map= false; exp}
   in
-  let id, st = call_function_with_unnamed_args st call ~packed:true (args @ opt_args) in
+  let* call, st = State.pop st in
+  let id, st = call_function_with_unnamed_args st call ~packed:true (packed_arg :: opt_args) in
   let st = State.push st (Exp.Temp id) in
   Ok (st, None)
 
@@ -1739,18 +1731,11 @@ let deref code arg =
   Exp.Deref target
 
 
-let build_collection_unpack st count ?(with_call = false) collection =
+let build_collection_unpack st count collection =
   let open IResult.Let_syntax in
   let* values, st = State.pop_n st count in
   let values = List.map ~f:(fun exp -> Exp.Packed {exp; is_map= false}) values in
   let exp = Exp.Collection {kind= collection; values; packed= true} in
-  let* exp, st =
-    if with_call then
-      let* call, st = State.pop st in
-      let exp = Exp.PartialFunc {call; args= values} in
-      Ok (exp, st)
-    else Ok (exp, st)
-  in
   let st = State.push st exp in
   Ok (st, None)
 
@@ -2298,14 +2283,19 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let label, st = State.get_label st offset ~ssa_parameters in
       let jump = Jump.Absolute {ssa_args; label; offset} in
       Ok (st, Some jump)
+  | "BUILD_TUPLE_UNPACK_WITH_CALL"
+    (* No real difference betwen the two but in case of an error, which shouldn't happen since
+       the code is known to compile *)
   | "BUILD_TUPLE_UNPACK" ->
       build_collection_unpack st arg Tuple
   | "BUILD_LIST_UNPACK" ->
       build_collection_unpack st arg List
   | "BUILD_SET_UNPACK" ->
       build_collection_unpack st arg Set
-  | "BUILD_TUPLE_UNPACK_WITH_CALL" ->
-      build_collection_unpack st arg Tuple ~with_call:true
+  | "BUILD_MAP_UNPACK_WITH_CALL" | "BUILD_MAP_UNPACK" ->
+      (* No real difference betwen the two but in case of an error, which shouldn't happen since
+         the code is known to compile *)
+      build_collection_unpack st arg Map
   | "YIELD_VALUE" ->
       (* TODO: it is quite uncertain how we'll deal with these in textual.
          At the moment this seems to correctly model the stack life-cycle, so
