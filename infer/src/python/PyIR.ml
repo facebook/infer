@@ -335,6 +335,11 @@ end
 module Location = struct
   type t = int option
 
+  let pp fmt loc =
+    let loc = Option.value ~default:(-1) loc in
+    F.pp_print_int fmt loc
+
+
   let of_instruction {FFI.Instruction.starts_line} = starts_line
 
   let of_instructions = function instr :: _ -> of_instruction instr | [] -> None

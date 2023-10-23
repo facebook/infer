@@ -12,11 +12,11 @@ module Error : sig
 
   type t = Logging.error * kind
 
-  val ffi : FFI.Error.t -> t
+  val ffi : FFI.Error.t -> t [@@warning "-unused-value-declaration"]
 
-  val textual_parser : Textual.SourceFile.t -> t
+  val textual_parser : Textual.SourceFile.t -> t [@@warning "-unused-value-declaration"]
 
-  val pp_kind : Format.formatter -> kind -> unit
+  val pp_kind : Format.formatter -> kind -> unit [@@warning "-unused-value-declaration"]
 end
 
 val to_module : sourcefile:Textual.SourceFile.t -> FFI.Code.t -> (Textual.Module.t, Error.t) result

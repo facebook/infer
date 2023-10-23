@@ -9,18 +9,42 @@ module L = Logging
 
 type kind = Bytecode of {files: string list} | Files of {prog: string; args: string list}
 
+module Error = struct
+  type t = FFI of FFI.Error.t | IR of PyIR.Error.t
+
+  let format_error file error =
+    let log level =
+      match (level : L.error) with
+      | InternalError ->
+          L.internal_error
+      | ExternalError ->
+          L.external_error
+      | UserError ->
+          L.user_error
+    in
+    match error with
+    | FFI (level, err) ->
+        log level "[python:%s][-1] %a@\n" file FFI.Error.pp_kind err
+    | IR (level, loc, err) ->
+        log level "[python:%s][%a] %a@\n" file PyIR.Location.pp loc PyIR.Error.pp_kind err
+
+
+  let ffi x = FFI x
+
+  let ir x = IR x
+end
+
 let process_file ~is_binary file =
   let open IResult.Let_syntax in
-  let sourcefile = Textual.SourceFile.create file in
-  let* code = Result.map_error ~f:PyTrans.Error.ffi @@ FFI.from_file ~is_binary file in
-  let _ =
-    (* called to make deadcode happy. Not really plugged in yet *)
-    PyIR.mk ~debug:false code
-  in
-  PyTrans.to_module ~sourcefile code
+  let _sourcefile = Textual.SourceFile.create file in
+  let* code = Result.map_error ~f:Error.ffi @@ FFI.from_file ~is_binary file in
+  let* _ir = Result.map_error ~f:Error.ir @@ PyIR.mk ~debug:false code in
+  let _ = PyTrans.to_module in
+  (* let module = PyTrans.to_module ~sourcefile code *)
+  Ok ()
 
 
-let dump_file ~next_to_source pyc module_ =
+let _dump_file ~next_to_source pyc module_ =
   let filename =
     if next_to_source then
       let filename = SourceFile.create pyc in
@@ -35,25 +59,28 @@ let dump_file ~next_to_source pyc module_ =
 let capture_file ~is_binary file =
   let open TextualParser in
   let open IResult.Let_syntax in
-  let sourcefile = Textual.SourceFile.create file in
-  let* module_ = process_file ~is_binary file in
-  if Config.dump_textual then dump_file ~next_to_source:true file module_ ;
-  let trans = TextualFile.translate_module sourcefile module_ in
-  let log_error sourcefile error =
-    if Config.keep_going then L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error
-    else L.external_error "%a@\n" (pp_error sourcefile) error
-  in
-  let res =
-    match trans with
-    | Ok sil ->
-        TextualFile.capture ~use_global_tenv:true sil ;
-        Ok sil.tenv
-    | Error (sourcefile, errs) ->
-        List.iter errs ~f:(log_error sourcefile) ;
-        Error (PyTrans.Error.textual_parser sourcefile)
-  in
-  if Config.debug_mode || Result.is_error trans then dump_file ~next_to_source:false file module_ ;
-  res
+  let _sourcefile = Textual.SourceFile.create file in
+  (* let* module_ = process_file ~is_binary file in *)
+  let* () = process_file ~is_binary file in
+  (* if Config.dump_textual then dump_file ~next_to_source:true file module_ ; *)
+  (* let trans = TextualFile.translate_module sourcefile module_ in *)
+  let _ = TextualFile.translate_module in
+  (* let log_error sourcefile error = *)
+  (*   if Config.keep_going then L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error *)
+  (*   else L.external_error "%a@\n" (pp_error sourcefile) error *)
+  (* in *)
+  (* let res = *)
+  (*   match trans with *)
+  (*   | Ok sil -> *)
+  (*       TextualFile.capture ~use_global_tenv:true sil ; *)
+  (*       Ok sil.tenv *)
+  (*   | Error (sourcefile, errs) -> *)
+  (*       List.iter errs ~f:(log_error sourcefile) ; *)
+  (*       Error (PyTrans.Error.textual_parser sourcefile) *)
+  (* in *)
+  (* if Config.debug_mode || Result.is_error trans then dump_file ~next_to_source:false file module_ ; *)
+  (* res *)
+  Ok ()
 
 
 let load_textual_model filename =
@@ -80,20 +107,12 @@ let capture_files ~is_binary files =
       let t0 = Mtime_clock.now () in
       !ProcessPoolState.update_status t0 file ;
       match capture_file ~is_binary file with
-      | Ok file_tenv ->
-          Tenv.merge ~src:file_tenv ~dst:child_tenv ;
+      | Ok () ->
+          (* | Ok file_tenv -> *)
+          (*     Tenv.merge ~src:file_tenv ~dst:child_tenv ; *)
           None
-      | Error (level, err) ->
-          let log =
-            match level with
-            | InternalError ->
-                L.internal_error
-            | ExternalError ->
-                L.external_error
-            | UserError ->
-                L.user_error
-          in
-          log "[python:%s] %a@\n" file PyTrans.Error.pp_kind err ;
+      | Error err ->
+          Error.format_error file err ;
           Some ()
     in
     let child_prologue _ = Py.initialize ~interpreter:Version.python_exe () in
