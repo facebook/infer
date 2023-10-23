@@ -57,6 +57,7 @@ type pyConstant =
   | PYCFloat of float
   | PYCComplex of {real: float; imag: float}
   | PYCString of string
+  | PYCInvalidUnicode of int array
   | PYCBytes of bytes
   | PYCTuple of pyConstant array
   | PYCFrozenSet of pyConstant list
@@ -175,9 +176,13 @@ let rec new_py_constant obj =
       let arr = Py.Tuple.to_array_map new_py_constant obj in
       let arr = array_all arr in
       Result.map ~f:(fun arr -> PYCTuple arr) arr
-  | Unicode ->
+  | Unicode -> (
+    try
       let s = Py.String.to_string obj in
       Ok (PYCString s)
+    with Py.E _ ->
+      let arr = Py.String.to_unicode obj in
+      Ok (PYCInvalidUnicode arr) )
   | Unknown ->
       let ty = Py.Object.get_type obj in
       let* class_name = read_string "__name__" ty in
@@ -349,6 +354,7 @@ module Constant = struct
     | PYCFloat of float
     | PYCComplex of {real: float; imag: float}
     | PYCString of string
+    | PYCInvalidUnicode of int array
     | PYCBytes of bytes
     | PYCTuple of t array
     | PYCFrozenSet of t list
@@ -364,6 +370,7 @@ module Constant = struct
     | PYCBool _
     | PYCInt _
     | PYCString _
+    | PYCInvalidUnicode _
     | PYCTuple _
     | PYCFrozenSet _
     | PYCNone
@@ -379,6 +386,7 @@ module Constant = struct
     (* TODO: not sure if we should do that. Experience will tell *)
     | PYCBytes bs ->
         Some (Bytes.to_string bs)
+    | PYCInvalidUnicode _
     | PYCBool _
     | PYCInt _
     | PYCCode _

@@ -171,4 +171,40 @@ let%test_module "load_code" =
              FFI.argval = FFI.PYCNone; FFI.offset = 10; FFI.starts_line = None;
              FFI.is_jump_target = false }]
           } |}]
+
+
+    let%expect_test _ =
+      let source = {|
+normal = 'yolo'
+badx = '\uD800'|} in
+      test source ;
+      [%expect
+        {|
+        { co_name = "<module>"; co_filename = "dummy.py"; co_flags = 64;
+          co_cellvars = [||]; co_freevars = [||]; co_names = [|"normal"; "badx"|];
+          co_varnames = [||]; co_nlocals = 0; co_argcount = 0; co_firstlineno = 2;
+          co_posonlyargcount = 0; co_stacksize = 1; co_kwonlyargcount = 0;
+          co_lnotab = [|; |];
+          co_consts =
+          [|FFI.PYCString ("yolo"); FFI.PYCInvalidUnicode ([|27648|]); FFI.PYCNone|];
+          instructions =
+          [{ FFI.opname = "LOAD_CONST"; FFI.opcode = 100; FFI.arg = 0;
+             FFI.argval = FFI.PYCString ("yolo"); FFI.offset = 0;
+             FFI.starts_line = Some (2); FFI.is_jump_target = false };
+           { FFI.opname = "STORE_NAME"; FFI.opcode = 90; FFI.arg = 0;
+             FFI.argval = FFI.PYCString ("normal"); FFI.offset = 2;
+             FFI.starts_line = None; FFI.is_jump_target = false };
+           { FFI.opname = "LOAD_CONST"; FFI.opcode = 100; FFI.arg = 1;
+             FFI.argval = FFI.PYCInvalidUnicode ([|27648|]); FFI.offset = 4;
+             FFI.starts_line = Some (3); FFI.is_jump_target = false };
+           { FFI.opname = "STORE_NAME"; FFI.opcode = 90; FFI.arg = 1;
+             FFI.argval = FFI.PYCString ("badx"); FFI.offset = 6;
+             FFI.starts_line = None; FFI.is_jump_target = false };
+           { FFI.opname = "LOAD_CONST"; FFI.opcode = 100; FFI.arg = 2;
+             FFI.argval = FFI.PYCNone; FFI.offset = 8; FFI.starts_line = None;
+             FFI.is_jump_target = false };
+           { FFI.opname = "RETURN_VALUE"; FFI.opcode = 83; FFI.arg = 0;
+             FFI.argval = FFI.PYCNone; FFI.offset = 10; FFI.starts_line = None;
+             FFI.is_jump_target = false }]
+          } |}]
   end )

@@ -25,6 +25,7 @@ module Const = struct
     | Float of float
     | Complex of {real: float; imag: float}
     | String of string
+    | InvalidUnicode of int array
     | Tuple of t list
     | FrozenSet of t list
     | Code of FFI.Code.t
@@ -42,6 +43,8 @@ module Const = struct
         F.fprintf fmt "(%f + %fj)" real imag
     | String s ->
         String.pp fmt s
+    | InvalidUnicode b ->
+        F.fprintf fmt "$InvalidUnicode[%a]" (Pp.seq ~sep:" " F.pp_print_int) (Array.to_list b)
     | Null ->
         F.pp_print_string fmt "None"
     | Tuple tuple ->
@@ -66,6 +69,8 @@ module Const = struct
         Complex {real; imag}
     | PYCString s ->
         String s
+    | PYCInvalidUnicode b ->
+        InvalidUnicode b
     | PYCBytes b ->
         let s = Bytes.to_string b in
         String s

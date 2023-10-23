@@ -294,6 +294,8 @@ let rec py_to_exp env c =
       L.die InternalError "TODO: complex"
   | PYCString s ->
       Ok (env, PyCommon.mk_string s, PyCommon.pyString)
+  | PYCInvalidUnicode _ ->
+      L.die InternalError "TODO: invalid unicode"
   | PYCBytes s ->
       Ok (env, PyCommon.mk_bytes s, PyCommon.pyBytes)
   | PYCNone ->
