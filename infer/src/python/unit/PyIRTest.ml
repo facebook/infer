@@ -1523,9 +1523,9 @@ module
 object dummy:
   code:
     #b0:
-      $ImportName(base, from_list=[])
+      $ImportName(base, from_list= [])
       dummy.base <- $ImportName(base, from_list= [])
-      $ImportName(base, from_list=[])
+      $ImportName(base, from_list= [])
       dummy.base <- $ImportName(base, from_list= [])
       n0 <- $CallMethod($LoadMethod(base, f), 0)
       return None |}]
@@ -1556,13 +1556,13 @@ object dummy:
     #b0:
       dummy.f <- $FuncObj(f, dummy.f, {})
       n0 <- dummy.f()
-      $ImportName(base, from_list=[f, g])
-      dummy.f <- $ImportFrom($ImportName(base, from_list=[f, g]), name= f)
-      dummy.g <- $ImportFrom($ImportName(base, from_list=[f, g]), name= g)
+      $ImportName(base, from_list= [f, g])
+      dummy.f <- $ImportFrom($ImportName(base, from_list= [f, g]), name= f)
+      dummy.g <- $ImportFrom($ImportName(base, from_list= [f, g]), name= g)
       n1 <- base.f()
-      $ImportName(base, from_list=[f, g])
-      dummy.f <- $ImportFrom($ImportName(base, from_list=[f, g]), name= f)
-      dummy.g <- $ImportFrom($ImportName(base, from_list=[f, g]), name= g)
+      $ImportName(base, from_list= [f, g])
+      dummy.f <- $ImportFrom($ImportName(base, from_list= [f, g]), name= f)
+      dummy.g <- $ImportFrom($ImportName(base, from_list= [f, g]), name= g)
       n2 <- base.g()
       return None
 
@@ -1596,7 +1596,7 @@ module
 object dummy:
   code:
     #b0:
-      $ImportName(unittest, from_list=[])
+      $ImportName(unittest, from_list= [])
       dummy.unittest <- $ImportName(unittest, from_list= [])
       dummy.MyTest <- $ClassObj($FuncObj(MyTest, dummy.MyTest, {}), "MyTest", unittest.TestCase)
       return None
@@ -1665,12 +1665,12 @@ module
 object dummy:
   code:
     #b0:
-      $ImportName(os, from_list=[])
+      $ImportName(os, from_list= [])
       dummy.os <- $ImportName(os, from_list= [])
-      $ImportName(sys, from_list=[])
+      $ImportName(sys, from_list= [])
       dummy.sys <- $ImportName(sys, from_list= [])
-      $ImportName(test.libregrtest, from_list=[main])
-      dummy.main <- $ImportFrom($ImportName(test.libregrtest, from_list=[main]), name= main)
+      $ImportName(test.libregrtest, from_list= [main])
+      dummy.main <- $ImportFrom($ImportName(test.libregrtest, from_list= [main]), name= main)
       dummy.main_in_temp_cwd <- test.libregrtest.main
       dummy._main <- $FuncObj(_main, dummy._main, {})
       n0 <- $Compare.eq(__name__, "__main__")
@@ -1759,18 +1759,17 @@ module
 object some.long.path.dummy:
   code:
     #b0:
-      $ImportName(A, from_list=[X])
-      some.long.path.dummy.X <- $ImportFrom($ImportName(A, from_list=[X]), name= X)
+      $ImportName(A, from_list= [X])
+      some.long.path.dummy.X <- $ImportFrom($ImportName(A, from_list= [X]), name= X)
       n0 <- A.X()
-      $ImportName(some.long.path.B, from_list=[X])
-      some.long.path.dummy.X <- $ImportFrom($ImportName(some.long.path.B, from_list=[X]), name= X)
+      $ImportName(some.long.path.B, from_list= [X])
+      some.long.path.dummy.X <- $ImportFrom($ImportName(some.long.path.B, from_list= [X]), name= X)
       n1 <- some.long.path.B.X()
-      $ImportName(some.long.C, from_list=[X])
-      some.long.path.dummy.X <- $ImportFrom($ImportName(some.long.C, from_list=[X]), name= X)
+      $ImportName(some.long.C, from_list= [X])
+      some.long.path.dummy.X <- $ImportFrom($ImportName(some.long.C, from_list= [X]), name= X)
       n2 <- some.long.C.X()
-      $ImportName(some.long, from_list=[path])
-      some.long.path.dummy.path <- $ImportFrom($ImportName(some.long,
-        from_list=[path]),
+      $ImportName(some.long, from_list= [path])
+      some.long.path.dummy.path <- $ImportFrom($ImportName(some.long, from_list= [path]),
         name= path)
       n3 <- $CallMethod($LoadMethod(some.long.path, X), )
       return None |}]
@@ -1799,23 +1798,42 @@ module
 object dummy:
   code:
     #b0:
-      $ImportName(x, from_list=[y, a])
-      dummy.z <- $ImportFrom($ImportName(x, from_list=[y, a]), name= y)
-      dummy.b <- $ImportFrom($ImportName(x, from_list=[y, a]), name= a)
-      $ImportName(x, from_list=[y, a])
-      dummy.z <- $ImportFrom($ImportName(x, from_list=[y, a]), name= y)
-      dummy.b <- $ImportFrom($ImportName(x, from_list=[y, a]), name= a)
+      $ImportName(x, from_list= [y, a])
+      dummy.z <- $ImportFrom($ImportName(x, from_list= [y, a]), name= y)
+      dummy.b <- $ImportFrom($ImportName(x, from_list= [y, a]), name= a)
+      $ImportName(x, from_list= [y, a])
+      dummy.z <- $ImportFrom($ImportName(x, from_list= [y, a]), name= y)
+      dummy.b <- $ImportFrom($ImportName(x, from_list= [y, a]), name= a)
       n0 <- x.y()
       n1 <- x.a()
-      $ImportName(foo, from_list=[toto, tata])
-      dummy.toto <- $ImportFrom($ImportName(foo, from_list=[toto, tata]), name= toto)
-      dummy.tata <- $ImportFrom($ImportName(foo, from_list=[toto, tata]), name= tata)
-      $ImportName(foo, from_list=[toto, tata])
-      dummy.toto <- $ImportFrom($ImportName(foo, from_list=[toto, tata]), name= toto)
-      dummy.tata <- $ImportFrom($ImportName(foo, from_list=[toto, tata]), name= tata)
+      $ImportName(foo, from_list= [toto, tata])
+      dummy.toto <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= toto)
+      dummy.tata <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= tata)
+      $ImportName(foo, from_list= [toto, tata])
+      dummy.toto <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= toto)
+      dummy.tata <- $ImportFrom($ImportName(foo, from_list= [toto, tata]), name= tata)
       n2 <- foo.toto()
       n3 <- foo.tata()
       return None |}]
+
+
+    let%expect_test _ =
+      let source = {|
+# From Cinder
+import xml.etree.ElementTree as ET
+          |} in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0:
+      $ImportName(xml.etree.ElementTree, from_list= [])
+      dummy.ET <- $ImportFrom($ImportName(xml.etree.ElementTree, from_list= []),
+        name= etree.ElementTree)
+      return None
+          |}]
 
 
     let%expect_test _ =
@@ -2022,7 +2040,7 @@ module
 object dummy:
   code:
     #b0:
-      $ImportName(foo, from_list=[])
+      $ImportName(foo, from_list= [])
       dummy.foo <- $ImportName(foo, from_list= [])
       dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C", foo.D)
       return None
@@ -2324,10 +2342,9 @@ module
 object dummy:
   code:
     #b0:
-      $ImportName(abc, from_list=[ABC, abstractmethod])
-      dummy.ABC <- $ImportFrom($ImportName(abc, from_list=[ABC, abstractmethod]), name= ABC)
-      dummy.abstractmethod <- $ImportFrom($ImportName(abc,
-        from_list=[ABC, abstractmethod]),
+      $ImportName(abc, from_list= [ABC, abstractmethod])
+      dummy.ABC <- $ImportFrom($ImportName(abc, from_list= [ABC, abstractmethod]), name= ABC)
+      dummy.abstractmethod <- $ImportFrom($ImportName(abc, from_list= [ABC, abstractmethod]),
         name= abstractmethod)
       dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C", abc.ABC)
       return None
@@ -2565,9 +2582,9 @@ module
 object dummy:
   code:
     #b0:
-      $ImportName(unittest, from_list=[])
+      $ImportName(unittest, from_list= [])
       dummy.unittest <- $ImportName(unittest, from_list= [])
-      $ImportName(signal, from_list=[])
+      $ImportName(signal, from_list= [])
       dummy.signal <- $ImportName(signal, from_list= [])
       n0 <- hasattr(signal, "setitimer")
       n1 <- $CallMethod($LoadMethod(unittest, skipUnless), n0, "requires setitimer()")
@@ -2686,7 +2703,7 @@ module
 object dummy:
   code:
     #b0:
-      $ImportName(unittest, from_list=[])
+      $ImportName(unittest, from_list= [])
       dummy.unittest <- $ImportName(unittest, from_list= [])
       dummy.PwdTest <- $ClassObj($FuncObj(PwdTest, dummy.PwdTest, {}), "PwdTest", unittest.TestCase)
       return None
@@ -2990,7 +3007,7 @@ module
 object dummy:
   code:
     #b0:
-      $ImportName(foo, from_list=[])
+      $ImportName(foo, from_list= [])
       dummy.foo <- $ImportName(foo, from_list= [])
       dummy.f <- $FuncObj(f, dummy.f, {})
       return None
@@ -3244,7 +3261,7 @@ module
 object dummy:
   code:
     #b0:
-      $ImportName(dis, from_list=[])
+      $ImportName(dis, from_list= [])
       dummy.dis <- $ImportName(dis, from_list= [])
       dummy.f <- $FuncObj(f, dummy.f, {})
       return None
@@ -3411,7 +3428,7 @@ object dummy:
       dummy.x <- 0
       dummy.y <- "zuck"
       dummy.__annotations__["y"] <- str
-      $ImportName(C, from_list=[])
+      $ImportName(C, from_list= [])
       dummy.C <- $ImportName(C, from_list= [])
       dummy.z <- 42
       dummy.__annotations__["z"] <- C.T

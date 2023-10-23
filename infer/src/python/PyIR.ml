@@ -123,7 +123,9 @@ module Ident = struct
   let extend {root; path; kind} attr = {root; path= attr :: path; kind}
 
   let append {root; path; kind} attrs = {root; path= List.rev_append attrs path; kind}
-    [@@warning "-unused-value-declaration"]
+
+  let concat {root; path; kind} {root= root2; path= path2} =
+    {root; path= path2 @ (root2 :: path); kind}
 
 
   let pop {root; path; kind} = match path with [] -> None | _ :: path -> Some {root; path; kind}
@@ -235,7 +237,7 @@ module Exp = struct
   type import_name = {id: Ident.t; fromlist: string list}
 
   let pp_import_name fmt {id; fromlist} =
-    F.fprintf fmt "$ImportName(%a,@ from_list=[@[%a@]])" Ident.pp id
+    F.fprintf fmt "$ImportName(%a, from_list= [%a])" Ident.pp id
       (Pp.seq ~sep:", " F.pp_print_string)
       fromlist
 
@@ -264,7 +266,7 @@ module Exp = struct
     | GetAttr of (t * string) (* foo.bar *)
     | LoadMethod of (t * string)  (** [LOAD_METHOD] *)
     | ImportName of import_name  (** [IMPORT_NAME] *)
-    | ImportFrom of {from: import_name; name: string}  (** [IMPORT_FROM] *)
+    | ImportFrom of {from: import_name; names: Ident.t}  (** [IMPORT_FROM] *)
     | LoadClosure of string  (** [LOAD_CLOSURE] *)
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
@@ -311,12 +313,10 @@ module Exp = struct
         F.fprintf fmt "%a.%s" pp t name
     | LoadMethod (self, meth) ->
         F.fprintf fmt "$LoadMethod(%a, %s)" pp self meth
-    | ImportName {id; fromlist} ->
-        F.fprintf fmt "$ImportName(%a,@ from_list= [@[%a@]])" Ident.pp id
-          (Pp.seq ~sep:", " F.pp_print_string)
-          fromlist
-    | ImportFrom {from; name} ->
-        F.fprintf fmt "$ImportFrom(%a,@ name= %s)" pp_import_name from name
+    | ImportName import_name ->
+        pp_import_name fmt import_name
+    | ImportFrom {from; names} ->
+        F.fprintf fmt "$ImportFrom(%a,@ name= %a)" pp_import_name from Ident.pp names
     | LoadClosure s ->
         F.fprintf fmt "$LoadClosure(%s)" s
     | Not exp ->
@@ -1190,16 +1190,20 @@ let import_from st name =
   let open IResult.Let_syntax in
   (* Does not pop the top of stack, which should be the result of an IMPORT_NAME *)
   let* from = State.peek st in
-  let* ({Exp.fromlist} as from) =
+  State.debug st "import_from(%s): %a@\n" name Exp.pp from ;
+  let* from, names =
     match (from : Exp.t) with
     | ImportName from ->
-        Ok from
+        Ok (from, None)
+    | ImportFrom {from; names} ->
+        Ok (from, Some names)
     | _ ->
         external_error st (Error.ImportFrom (name, from))
   in
-  if not (List.mem ~equal:String.equal fromlist name) then
-    L.user_warning "Import from / name mismatch: cannot find '%s'@\n" name ;
-  let exp = Exp.ImportFrom {from; name} in
+  let names =
+    match names with None -> Ident.mk ~kind:Imported name | Some id -> Ident.extend id name
+  in
+  let exp = Exp.ImportFrom {from; names} in
   let st = State.push st exp in
   Ok (st, None)
 
@@ -1209,8 +1213,8 @@ let target_of_import ~default exp =
     match (exp : Exp.t) with
     | ImportName {id} ->
         Some id
-    | ImportFrom {from= {id}; name} ->
-        Some (Ident.extend id name)
+    | ImportFrom {from= {id}; names} ->
+        Some (Ident.concat id names)
     | _ ->
         None
   in
@@ -1534,11 +1538,14 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
   | "CALL_FUNCTION" ->
       call_function st arg
   | "POP_TOP" -> (
-      (* keep the popped values around in case their construction involves side effects *)
+      (* TODO: rethink this in the future.
+         Keep the popped values around in case their construction involves side effects *)
       let* rhs, st = State.pop st in
+      State.debug st "popping %a@\n" Exp.pp rhs ;
       match (rhs : Exp.t) with
       | ImportName _
-      (* IMPORT_NAME are kept around for multiple 'from' statement and
+      | ImportFrom _
+      (* IMPORT_NAME/IMPORT_FROM are kept around for multiple 'from' statement and
          then popped. The translation to textual will use the statement
          version do deal with their side effect at the right location *)
       | Temp _ ->
