@@ -219,6 +219,7 @@ module BuiltinCaller = struct
     | HasNextIter  (** [FOR_ITER] *)
     | IterData  (** [FOR_ITER] *)
     | GetYieldFromIter  (** [GET_YIELD_FROM_ITER] *)
+    | ListAppend  (** [LIST_APPEND] *)
 
   let show = function
     | BuildClass ->
@@ -248,6 +249,8 @@ module BuiltinCaller = struct
         "$IterData"
     | GetYieldFromIter ->
         "$GetYieldFromIter"
+    | ListAppend ->
+        "$ListAppend"
 end
 
 module Exp = struct
@@ -294,8 +297,11 @@ module Exp = struct
     (* [packed] is tracking the [BUILD_*_UNPACK] that should be flatten in Pulse *)
     | ConstMap of t ConstMap.t
     | Function of
-        {qualname: Ident.t; code: FFI.Code.t; default_values: t SMap.t; annotations: t ConstMap.t}
-        (** Result of the [MAKE_FUNCTION] opcode *)
+        { qualname: Ident.t
+        ; short_name: string
+        ; code: FFI.Code.t
+        ; default_values: t SMap.t
+        ; annotations: t ConstMap.t }  (** Result of the [MAKE_FUNCTION] opcode *)
     | Class of t list
         (** Result of calling [LOAD_BUILD_CLASS] to create a class. Not much is processed of its
             content for now *)
@@ -391,9 +397,8 @@ module Exp = struct
         F.fprintf fmt "{@[" ;
         ConstMap.iter (fun key exp -> F.fprintf fmt "%a: %a, " Const.pp key pp exp) map ;
         F.fprintf fmt "@]}"
-    | Function {qualname; code; default_values} ->
-        let {FFI.Code.co_name} = code in
-        F.fprintf fmt "$FuncObj(%s, %a, {" co_name Ident.pp qualname ;
+    | Function {qualname; short_name; default_values} ->
+        F.fprintf fmt "$FuncObj(%s, %a, {" short_name Ident.pp qualname ;
         SMap.iter (fun key value -> F.fprintf fmt "(%s, %a); " key pp value) default_values ;
         F.pp_print_string fmt "})"
     | Class cls ->
@@ -606,7 +611,11 @@ module Stack = struct
 
   let pop = function [] -> None | elt :: stack -> Some (elt, stack)
 
-  let peek = function [] -> None | elt :: _ -> Some elt
+  let rec peek n = function
+    | [] ->
+        None
+    | elt :: rest ->
+        if Int.equal 0 n then Some elt else peek (n - 1) rest
 end
 
 module Label = struct
@@ -952,8 +961,8 @@ module State = struct
         Ok (block, st)
 
 
-  let peek {stack; loc} =
-    match Stack.peek stack with
+  let peek ?(depth = 0) {stack; loc} =
+    match Stack.peek depth stack with
     | None ->
         Error (L.InternalError, loc, Error.EmptyStack "peek (block)")
     | Some exp ->
@@ -962,7 +971,7 @@ module State = struct
 
   (* We don't fail hard here because the block stack might be empty in
      "normal" code, while pop should always be after a push *)
-  let peek_block {block_stack} = Stack.peek block_stack
+  let peek_block {block_stack} = Stack.peek 0 block_stack
 
   let pop_n st n =
     let rec aux acc st n =
@@ -1175,6 +1184,17 @@ let named_argument_zip opname argc ~f ~init data tags =
   zip 0 data tags
 
 
+(** Patch the name of a list comprehension object.
+
+    List comprehensions generate code blocks all named `<listcomp>`, so we need to tell them apart.
+    We use their location to distinguish them. *)
+let patch_listcomp_name {FFI.Code.co_name; co_firstlineno} id =
+  if String.equal "<listcomp>" co_name then
+    let listcomp = sprintf "<listcomp-%d>" co_firstlineno in
+    match Ident.pop id with None -> (co_name, id) | Some id -> (listcomp, Ident.extend id listcomp)
+  else (co_name, id)
+
+
 let make_function st flags =
   let open IResult.Let_syntax in
   let* qualname, st = State.pop st in
@@ -1201,7 +1221,7 @@ let make_function st flags =
     | _ ->
         internal_error st (Error.MakeFunction ("a code object", codeobj))
   in
-  let {FFI.Code.co_name= fn} = code in
+  let short_name, qualname = patch_listcomp_name code qualname in
   let* st =
     if flags land 0x08 <> 0 then
       (* TODO: closure *)
@@ -1265,9 +1285,9 @@ let make_function st flags =
           external_error st (Error.MakeFunctionInvalidDefaults defaults)
     else Ok (SMap.empty, st)
   in
-  let exp = Exp.Function {annotations; default_values; qualname; code} in
+  let exp = Exp.Function {annotations; short_name; default_values; qualname; code} in
   let st = State.push st exp in
-  let st = State.register_function st fn qualname in
+  let st = State.register_function st short_name qualname in
   Ok (st, None)
 
 
@@ -2262,6 +2282,20 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let id, st = call_builtin_function st GetYieldFromIter [tos] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
+  | "LIST_APPEND" ->
+      (* LIST_APPEND(i)
+         Calls list.append(TOS1[-i], TOS). Used to implement list
+         comprehensions.
+
+         For all of the [SET_ADD], [LIST_APPEND] and [MAP_ADD] instructions, while
+         the added value or key/value pair is popped off, the container object
+         remains on the stack so that it is available for further iterations
+         of the loop. *)
+      if arg < 1 then L.die ExternalError "LIST_APPEND with %d" arg ;
+      let* tos, st = State.pop st in
+      let* tos1 = State.peek st ~depth:(arg - 1) in
+      let _id, st = call_builtin_function st ListAppend [tos1; tos] in
+      Ok (st, None)
   | _ ->
       internal_error st (Error.UnsupportedOpcode opname)
 
@@ -2444,6 +2478,17 @@ module Module = struct
   let pp fmt obj = F.fprintf fmt "module@\n%a@\n@\n" Object.pp obj
 end
 
+(** Patch the name of a list comprehension object.
+
+    List comprehensions generate code blocks all named `<listcomp>`, so we need to tell them apart.
+    We use their location to distinguish them. Also, their [code] object might not have the
+    `<local>` prefix we see during the process of [MAKE_FUNCTION]. *)
+let patch_listcomp_object_name st {FFI.Code.co_name; co_firstlineno} =
+  if String.equal "<listcomp>" co_name then
+    sprintf "%s<listcomp-%d>" (if State.is_toplevel st then "" else "<locals>.") co_firstlineno
+  else co_name
+
+
 let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
   let open IResult.Let_syntax in
   let {State.module_name; loc} = st in
@@ -2454,8 +2499,8 @@ let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
     Array.fold_result co_consts ~init:[] ~f:(fun objects constant ->
         match constant with
         | FFI.Constant.PYCCode code ->
-            let {FFI.Code.co_name} = code in
-            let module_name = Ident.extend module_name co_name in
+            let name = patch_listcomp_object_name st code in
+            let module_name = Ident.extend module_name name in
             let loc = Location.of_code code in
             let st = State.enter st ~loc module_name in
             let* obj = mk_object st code in

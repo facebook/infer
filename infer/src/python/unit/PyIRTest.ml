@@ -4503,4 +4503,173 @@ object dummy:
       AsyncYieldFrom -> dummy.AsyncYieldFrom
       f -> dummy.f
              |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+g = [x + 1 for x in l]
+g0 = [x + 2 for x in l]
+print(g)
+print(g0)
+
+def f(l):
+   r = [x + 1 for x in l]
+   r0 = [x + 2 for x in l]
+   print(r)
+   print(r0)
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0 .label:
+      n0 <- $GetIter($unknown.l)
+      n1 <- $FuncObj(<listcomp-2>, dummy.<listcomp-2>, {})(n0)
+      dummy.g <- n1
+      n2 <- $GetIter($unknown.l)
+      n3 <- $FuncObj(<listcomp-3>, dummy.<listcomp-3>, {})(n2)
+      dummy.g0 <- n3
+      n4 <- print(dummy.g)
+      n5 <- print(dummy.g0)
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      return None
+
+
+
+  objects:
+    object dummy.<listcomp-2>:
+      code:
+        #b0 .label:
+          jmp b1(.0, [])
+
+
+        #b1(n1, n0) .label:
+          n2 <- $NextIter(n1)
+          n3 <- $HasNextIter(n2)
+          if n3 then jmp b2(n0) else jmp b3(n0)
+
+
+        #b2(n4) .label:
+          n6 <- $IterData(n2)
+          x <- n6
+          n7 <- $Binary.Add(x, 1)
+          n8 <- $ListAppend(n4, n7)
+          jmp b1(n1, n4)
+
+
+        #b3(n5) .label:
+          return n5
+
+
+
+
+    object dummy.<listcomp-3>:
+      code:
+        #b0 .label:
+          jmp b1(.0, [])
+
+
+        #b1(n1, n0) .label:
+          n2 <- $NextIter(n1)
+          n3 <- $HasNextIter(n2)
+          if n3 then jmp b2(n0) else jmp b3(n0)
+
+
+        #b2(n4) .label:
+          n6 <- $IterData(n2)
+          x <- n6
+          n7 <- $Binary.Add(x, 2)
+          n8 <- $ListAppend(n4, n7)
+          jmp b1(n1, n4)
+
+
+        #b3(n5) .label:
+          return n5
+
+
+
+
+    object dummy.f:
+      code:
+        #b0 .label:
+          n0 <- $GetIter(l)
+          n1 <- $FuncObj(<listcomp-8>, dummy.f.<locals>.<listcomp-8>, {})(n0)
+          r <- n1
+          n2 <- $GetIter(l)
+          n3 <- $FuncObj(<listcomp-9>, dummy.f.<locals>.<listcomp-9>, {})(n2)
+          r0 <- n3
+          n4 <- print(r)
+          n5 <- print(r0)
+          return None
+
+
+
+      objects:
+        object dummy.f.<locals>.<listcomp-8>:
+          code:
+            #b0 .label:
+              jmp b1(.0, [])
+
+
+            #b1(n1, n0) .label:
+              n2 <- $NextIter(n1)
+              n3 <- $HasNextIter(n2)
+              if n3 then jmp b2(n0) else jmp b3(n0)
+
+
+            #b2(n4) .label:
+              n6 <- $IterData(n2)
+              x <- n6
+              n7 <- $Binary.Add(x, 1)
+              n8 <- $ListAppend(n4, n7)
+              jmp b1(n1, n4)
+
+
+            #b3(n5) .label:
+              return n5
+
+
+
+
+        object dummy.f.<locals>.<listcomp-9>:
+          code:
+            #b0 .label:
+              jmp b1(.0, [])
+
+
+            #b1(n1, n0) .label:
+              n2 <- $NextIter(n1)
+              n3 <- $HasNextIter(n2)
+              if n3 then jmp b2(n0) else jmp b3(n0)
+
+
+            #b2(n4) .label:
+              n6 <- $IterData(n2)
+              x <- n6
+              n7 <- $Binary.Add(x, 2)
+              n8 <- $ListAppend(n4, n7)
+              jmp b1(n1, n4)
+
+
+            #b3(n5) .label:
+              return n5
+
+
+
+
+
+        functions:
+          <listcomp-8> -> dummy.f.<locals>.<listcomp-8>
+          <listcomp-9> -> dummy.f.<locals>.<listcomp-9>
+
+
+      functions:
+        <listcomp-2> -> dummy.<listcomp-2>
+        <listcomp-3> -> dummy.<listcomp-3>
+        f -> dummy.f
+          |}]
   end )
