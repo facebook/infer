@@ -4247,4 +4247,35 @@ object dummy:
     functions:
       f -> dummy.f
           |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+values = [1, 2, [3, 4] , 5]
+values2 = ('a', 'b')
+
+result = (*[10, 100], *values, *values2)
+
+print(result) # (10, 100, 1, 2, [3, 4], 5, 'a', 'b')
+
+result = [*values, *values2] # [10, 100, 1, 2, [3, 4], 5, 'a', 'b']
+print(result)
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.values <- [1, 2, [3, 4], 5]
+      dummy.values2 <- ("a", "b")
+      dummy.result <- (packed)($Packed([10, 100]), $Packed(dummy.values), $Packed(dummy.values2))
+      n0 <- print(dummy.result)
+      dummy.result <- (packed)[$Packed(dummy.values), $Packed(dummy.values2)]
+      n1 <- print(dummy.result)
+      return None
+          |}]
   end )

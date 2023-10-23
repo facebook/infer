@@ -234,6 +234,22 @@ end
 module Exp = struct
   type collection = List | Set | Tuple | Slice | Map | String
 
+  let show_collection = function
+    | List ->
+        "list"
+    | Set ->
+        "set"
+    | Tuple ->
+        "tuple"
+    | Slice ->
+        "slice"
+    | Map ->
+        "map"
+    | String ->
+        "string"
+    [@@warning "-unused-value-declaration"]
+
+
   type import_name = {id: Ident.t; fromlist: string list}
 
   let pp_import_name fmt {id; fromlist} =
@@ -254,8 +270,9 @@ module Exp = struct
     | LocalVar of string
     | Temp of SSA.t
     | Subscript of {exp: t; index: t}  (** foo[bar] *)
-    | Collection of {kind: collection; values: t list}
+    | Collection of {kind: collection; values: t list; packed: bool}
         (** Helper for [BUILD_LIST] and other builder opcodes *)
+    (* [packed] is tracking the [BUILD_*_UNPACK] that should be flatten in Pulse *)
     | ConstMap of t ConstMap.t
     | Function of
         {qualname: Ident.t; code: FFI.Code.t; default_values: t SMap.t; annotations: t ConstMap.t}
@@ -272,6 +289,8 @@ module Exp = struct
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
     | ContextManagerExit of t
+    | Packed of {exp: t}
+    | PartialFunc of {call: t; args: t list}
 
   let rec pp fmt = function
     | Const c ->
@@ -284,20 +303,21 @@ module Exp = struct
         SSA.pp fmt i
     | Subscript {exp; index} ->
         F.fprintf fmt "%a[@[%a@]]" pp exp pp index
-    | Collection {kind; values} -> (
-      match kind with
-      | List ->
-          F.fprintf fmt "[@[%a@]]" (Pp.seq ~sep:", " pp) values
-      | Set ->
-          F.fprintf fmt "{@[%a@]}" (Pp.seq ~sep:", " pp) values
-      | Map ->
-          F.fprintf fmt "{|@[%a@]|}" (Pp.seq ~sep:", " pp) values
-      | Tuple ->
-          F.fprintf fmt "(@[%a@])" (Pp.seq ~sep:", " pp) values
-      | String ->
-          F.fprintf fmt "$Concat(%a)" (Pp.seq ~sep:", " pp) values
-      | Slice ->
-          F.fprintf fmt "[@[%a@]]" (Pp.seq ~sep:":" pp) values )
+    | Collection {kind; values; packed} -> (
+        let packed = if packed then "(packed)" else "" in
+        match kind with
+        | List ->
+            F.fprintf fmt "%s[@[%a@]]" packed (Pp.seq ~sep:", " pp) values
+        | Set ->
+            F.fprintf fmt "%s{@[%a@]}" packed (Pp.seq ~sep:", " pp) values
+        | Map ->
+            F.fprintf fmt "%s{|@[%a@]|}" packed (Pp.seq ~sep:", " pp) values
+        | Tuple ->
+            F.fprintf fmt "%s(@[%a@])" packed (Pp.seq ~sep:", " pp) values
+        | String ->
+            F.fprintf fmt "$Concat%s(%a)" packed (Pp.seq ~sep:", " pp) values
+        | Slice ->
+            F.fprintf fmt "%s[@[%a@]]" packed (Pp.seq ~sep:":" pp) values )
     | ConstMap map ->
         F.fprintf fmt "{@[" ;
         ConstMap.iter (fun key exp -> F.fprintf fmt "%a: %a, " Const.pp key pp exp) map ;
@@ -327,6 +347,10 @@ module Exp = struct
         BuiltinCaller.pp fmt bc
     | ContextManagerExit exp ->
         F.fprintf fmt "CM(%a).__exit__" pp exp
+    | PartialFunc {call; args} ->
+        F.fprintf fmt "$PartialFunc(%a, [@[%a@]])" pp call (Pp.seq ~sep:", " pp) args
+    | Packed {exp} ->
+        F.fprintf fmt "$Packed(%a)" pp exp
 
 
   let as_short_string = function Const (String s) -> Some s | _ -> None
@@ -980,7 +1004,6 @@ module State = struct
     debug st "stack size upon entry: %d\n" (size st) ;
     (* Drain statements, stack and the current block *)
     let st = {st with stmts= []; block_stack} in
-    (* XXXX *)
     let st =
       if Label.is_except label then
         let () = debug st "> is .except hander@\n" in
@@ -1039,7 +1062,7 @@ let parse_op st call n =
 let build_collection st kind count =
   let open IResult.Let_syntax in
   let* values, st = State.pop_n st count in
-  let exp = Exp.Collection {kind; values} in
+  let exp = Exp.Collection {kind; values; packed= false} in
   let st = State.push st exp in
   Ok (st, None)
 
@@ -1574,6 +1597,22 @@ let get_cell_name {FFI.Code.co_cellvars; co_freevars} arg =
   if arg < sz then co_cellvars.(arg) else co_freevars.(arg - sz)
 
 
+let build_collection_unpack st count ?(with_call = false) collection =
+  let open IResult.Let_syntax in
+  let* values, st = State.pop_n st count in
+  let values = List.map ~f:(fun exp -> Exp.Packed {exp}) values in
+  let exp = Exp.Collection {kind= collection; values; packed= true} in
+  let* exp, st =
+    if with_call then
+      let* call, st = State.pop st in
+      let exp = Exp.PartialFunc {call; args= values} in
+      Ok (exp, st)
+    else Ok (exp, st)
+  in
+  let st = State.push st exp in
+  Ok (st, None)
+
+
 let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
     {FFI.Instruction.opname; starts_line; arg; offset= instr_offset} next_offset_opt =
   let open IResult.Let_syntax in
@@ -2084,6 +2123,14 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let label, st = State.get_label st offset ~ssa_parameters in
       let jump = Jump.Absolute {ssa_args; label; offset} in
       Ok (st, Some jump)
+  | "BUILD_TUPLE_UNPACK" ->
+      build_collection_unpack st arg Tuple
+  | "BUILD_LIST_UNPACK" ->
+      build_collection_unpack st arg List
+  | "BUILD_SET_UNPACK" ->
+      build_collection_unpack st arg Set
+  | "BUILD_TUPLE_UNPACK_WITH_CALL" ->
+      build_collection_unpack st arg Tuple ~with_call:true
   | _ ->
       internal_error st (Error.UnsupportedOpcode opname)
 
