@@ -270,7 +270,6 @@ module Exp = struct
     | LoadClosure of string  (** [LOAD_CLOSURE] *)
     | Not of t
     | BuiltinCaller of BuiltinCaller.t
-    | NoException
     | ContextManagerExit of t
 
   let rec pp fmt = function
@@ -323,8 +322,6 @@ module Exp = struct
         F.fprintf fmt "$Not(%a)" pp exp
     | BuiltinCaller bc ->
         BuiltinCaller.pp fmt bc
-    | NoException ->
-        F.pp_print_string fmt "NoException"
     | ContextManagerExit exp ->
         F.fprintf fmt "CM(%a).__exit__" pp exp
 
@@ -372,7 +369,6 @@ module Error = struct
     | WithCleanupFinish of Exp.t
     | RaiseException of int
     | RaiseExceptionInvalid of int
-    | BeginFinally of int
 
   type t = L.error * Location.t * kind
 
@@ -427,8 +423,6 @@ module Error = struct
         F.fprintf fmt "RAISE_VARARGS/TODO: Unsupported argc = %d" n
     | RaiseExceptionInvalid n ->
         F.fprintf fmt "RAISE_VARARGS: Invalid mode %d" n
-    | BeginFinally offset ->
-        F.fprintf fmt "BEGIN_FINALLY: no label at next offset (%d)" offset
 end
 
 module Stmt = struct
@@ -485,10 +479,47 @@ module Offset = struct
   let get ~loc opt = Result.of_option ~error:(L.InternalError, loc, Error.NextOffsetMissing) opt
 end
 
+module Block = struct
+  (** The Python interpreter keeps a stack of "blocks" to store information about finally and except
+      handlers *)
+  type block_type = Except | Finally
+
+  type t = {block_type: block_type}
+
+  let mk block_type = {block_type}
+
+  let is_except {block_type} = match block_type with Except -> true | Finally -> false
+end
+
+module Stack = struct
+  type 'a t = 'a list
+
+  let empty = []
+
+  let size stack = List.length stack
+
+  let push stack exp = exp :: stack
+
+  let pop = function [] -> None | elt :: stack -> Some (elt, stack)
+
+  let peek = function [] -> None | elt :: _ -> Some elt
+end
+
 module Label = struct
   type name = string
 
   let pp_name fmt name = F.pp_print_string fmt name
+
+  type handler_type = Label | Finally | Except
+
+  let pp_handler_type fmt = function
+    | Label ->
+        F.pp_print_string fmt ".label"
+    | Finally ->
+        F.pp_print_string fmt ".finally"
+    | Except ->
+        F.pp_print_string fmt ".except"
+
 
   (** A label is a position in the bytecode where the control-flow can jump. Think "if/then/else",
       loops, ... Some Python opcode are quite involved in how the stack might be modified during
@@ -504,22 +535,28 @@ module Label = struct
     ; ssa_parameters: SSA.t list
     ; processed: bool
     ; backedge: bool
-    ; exn_handler: bool
-    ; prelude: ('a -> 'a) option }
+    ; handler_type: handler_type
+    ; block_stack: Block.t Stack.t
+    ; prelude: ('a t -> 'a -> 'a) option }
 
-  let pp fmt {name; ssa_parameters} =
+  let pp fmt {name; ssa_parameters; handler_type} =
     F.fprintf fmt "#%s" name ;
     if not (List.is_empty ssa_parameters) then
-      F.fprintf fmt "(%a)" (Pp.seq ~sep:", " SSA.pp) ssa_parameters
+      F.fprintf fmt "(%a)" (Pp.seq ~sep:", " SSA.pp) ssa_parameters ;
+    F.fprintf fmt " %a" pp_handler_type handler_type
 
 
-  let mk ?(backedge = false) ?(exn_handler = false) ?prelude name ssa_parameters =
-    {name; ssa_parameters; processed= false; backedge; exn_handler; prelude}
+  let mk ?(backedge = false) ?(handler_type = Label) ?prelude name ssa_parameters block_stack =
+    {name; ssa_parameters; processed= false; backedge; handler_type; prelude; block_stack}
 
 
   let is_processed {processed} = processed
 
-  let process label = {label with processed= true}
+  let is_except {handler_type} = match handler_type with Except -> true | _ -> false
+
+  let process label ssa_parameters = {label with processed= true; ssa_parameters}
+
+  let set_handler_type label handler_type = {label with handler_type}
 end
 
 module Jump = struct
@@ -603,26 +640,36 @@ module CFG = struct
 
   let lookup_label {labels} offset = IMap.find_opt offset labels
 
-  let process_label ({labels} as cfg) offset =
+  let process_label ({labels} as cfg) offset ssa_parameters =
     match IMap.find_opt offset labels with
     | None ->
         cfg
     | Some label ->
-        let label = Label.process label in
+        let label = Label.process label ssa_parameters in
+        let labels = IMap.add offset label labels in
+        {cfg with labels}
+
+
+  let set_handler_type ({labels} as cfg) offset handler_type =
+    match IMap.find_opt offset labels with
+    | None ->
+        cfg
+    | Some label ->
+        let label = Label.set_handler_type label handler_type in
         let labels = IMap.add offset label labels in
         {cfg with labels}
 
 
   (** Helper to fetch label info if there's already one registered at the specified [offset], or
       create a fresh one. *)
-  let get_label cfg ?prelude offset ~ssa_parameters =
+  let get_label cfg ?prelude ?handler_type offset ~ssa_parameters block_stack =
     match lookup_label cfg offset with
     | Some label ->
-        (label, cfg)
+        (false, label, cfg)
     | None ->
         let name, cfg = fresh_label cfg in
-        let label = Label.mk name ?prelude ssa_parameters in
-        (label, cfg)
+        let label = Label.mk name ?prelude ?handler_type ssa_parameters block_stack in
+        (true, label, cfg)
 
 
   let register_label ({labels} as cfg) ~offset label =
@@ -657,9 +704,12 @@ module State = struct
     ; debug: bool
     ; loc: Location.t
     ; cfg: t CFG.t
-    ; exn_handlers: exn_handler list  (** Stack of except/finally handlers info *)
+    ; exn_handlers: exn_handler list
+          (** Stack of except/finally handlers info. The data we store here will be used (TODO) to
+              inform Textual about statements that can raise exceptions. *)
     ; global_names: Ident.t SMap.t  (** Translation cache for global names *)
-    ; stack: Exp.t list
+    ; stack: Exp.t Stack.t
+    ; block_stack: Block.t Stack.t
     ; stmts: (Location.t * Stmt.t) list
     ; fresh_id: SSA.t
     ; classes: SSet.t
@@ -684,6 +734,7 @@ module State = struct
       ; "__file__"
       ; "AssertionError"
       ; "AttributeError"
+      ; "KeyError"
       ; "RuntimeError"
       ; "ValueError" ]
     in
@@ -698,13 +749,16 @@ module State = struct
 
 
   let empty ~debug ~loc module_name =
+    let p = if debug then Debug.todo else Debug.p in
+    p "State.empty@\n" ;
     { module_name
     ; debug
     ; loc
     ; cfg= CFG.empty
     ; exn_handlers= []
     ; global_names= known_global_names
-    ; stack= []
+    ; stack= Stack.empty
+    ; block_stack= Stack.empty
     ; stmts= []
     ; fresh_id= 0
     ; classes= SSet.empty
@@ -766,24 +820,45 @@ module State = struct
       {st with names}
 
 
-  let push ({stack} as st) exp = {st with stack= exp :: stack}
+  let push ({stack} as st) exp =
+    let stack = Stack.push stack exp in
+    {st with stack}
+
+
+  let push_block ({block_stack} as st) exp =
+    let block_stack = Stack.push block_stack exp in
+    {st with block_stack}
+
 
   let pop ({stack; loc} as st) =
-    match stack with
-    | [] ->
+    match Stack.pop stack with
+    | None ->
         Error (L.InternalError, loc, Error.EmptyStack "pop")
-    | exp :: stack ->
+    | Some (exp, stack) ->
         let st = {st with stack} in
         Ok (exp, st)
 
 
+  let pop_block ({block_stack; loc} as st) =
+    match Stack.pop block_stack with
+    | None ->
+        Error (L.InternalError, loc, Error.EmptyStack "pop (block)")
+    | Some (block, block_stack) ->
+        let st = {st with block_stack} in
+        Ok (block, st)
+
+
   let peek {stack; loc} =
-    match stack with
-    | [] ->
-        Error (L.InternalError, loc, Error.EmptyStack "peek")
-    | exp :: _ ->
+    match Stack.peek stack with
+    | None ->
+        Error (L.InternalError, loc, Error.EmptyStack "peek (block)")
+    | Some exp ->
         Ok exp
 
+
+  (* We don't fail hard here because the block stack might be empty in
+     "normal" code, while pop should always be after a push *)
+  let peek_block {block_stack} = Stack.peek block_stack
 
   let pop_n st n =
     let rec aux acc st n =
@@ -803,12 +878,13 @@ module State = struct
 
   let register_function ({functions} as st) name fn = {st with functions= SMap.add name fn functions}
 
-  let size {stack} = List.length stack
+  let size {stack} = Stack.size stack
 
-  (** When reaching a jump instruction, turn the stack into ssa variables *)
+  (** When reaching a jump instruction, turn the stack into ssa variables. We only turn the last
+      block into variables, as the current code shouldn't jump outside of its "block" *)
   let to_ssa ({stack} as st) =
-    let st = {st with stack= []} in
-    (stack, st)
+    let st = {st with stack= Stack.empty} in
+    Ok (stack, st)
 
 
   let mk_ssa_parameters st arity =
@@ -829,14 +905,22 @@ module State = struct
 
   let lookup_label {cfg} offset = CFG.lookup_label cfg offset
 
-  let get_label ({cfg} as st) ?prelude offset ~ssa_parameters =
-    let label, cfg = CFG.get_label cfg ?prelude offset ~ssa_parameters in
+  let get_label ({cfg; block_stack} as st) ?prelude ?handler_type offset ~ssa_parameters =
+    let new_label, label, cfg =
+      CFG.get_label cfg ?prelude ?handler_type offset ~ssa_parameters block_stack
+    in
     let st = {st with cfg} in
+    let st = if new_label then register_label st ~offset label else st in
     (label, st)
 
 
-  let process_label ({cfg} as st) offset =
-    let cfg = CFG.process_label cfg offset in
+  let process_label ({cfg} as st) offset ssa_parameters =
+    let cfg = CFG.process_label cfg offset ssa_parameters in
+    {st with cfg}
+
+
+  let set_handler_type ({cfg} as st) offset handler_type =
+    let cfg = CFG.set_handler_type cfg offset handler_type in
     {st with cfg}
 
 
@@ -846,7 +930,7 @@ module State = struct
     (fresh_label, st)
 
 
-  let instr_is_jump_target ({cfg} as st) {FFI.Instruction.offset; is_jump_target} =
+  let instr_is_jump_target ({cfg; block_stack} as st) {FFI.Instruction.offset; is_jump_target} =
     match CFG.lookup_label cfg offset with
     | Some label ->
         let info = if Label.is_processed label then None else Some (offset, label) in
@@ -859,7 +943,7 @@ module State = struct
           let arity = size st in
           let ssa_parameters, st = mk_ssa_parameters st arity in
           let name, st = fresh_label st in
-          let label = Label.mk ~backedge:true name ssa_parameters in
+          let label = Label.mk ~backedge:true name ssa_parameters block_stack in
           let st = register_label st ~offset label in
           (Some (offset, label), st)
         else (None, st)
@@ -888,13 +972,28 @@ module State = struct
     {st with exn_handlers}
 
 
-  let enter_node st {Label.ssa_parameters; prelude} =
-    let st = {st with stmts= []} in
-    (* Install the prelude before processing the instructions *)
-    let st = Option.value_map ~default:st ~f:(fun f -> f st) prelude in
+  let enter_node st ({Label.ssa_parameters; prelude; block_stack} as label) =
+    debug st "enter-node: Label %a@\n" Label.pp label ;
+    debug st "stack size upon entry: %d\n" (size st) ;
+    (* Drain statements, stack and the current block *)
+    let st = {st with stmts= []; block_stack} in
+    (* XXXX *)
+    let st =
+      if Label.is_except label then
+        let () = debug st "> is .except hander@\n" in
+        let block = Block.mk Except in
+        push_block st block
+      else
+        let () = debug st "> is not .except hander@\n" in
+        let st = {st with stack= []} in
+        st
+    in
     (* If we have ssa_parameters, we need to push them on the stack to restore its right shape.
        Doing a fold_right is important to keep the correct order. *)
     let st = List.fold_right ssa_parameters ~init:st ~f:(fun ssa st -> push st (Exp.Temp ssa)) in
+    (* Install the prelude before processing the instructions *)
+    let st = match prelude with None -> st | Some f -> f label st in
+    debug st "> current stack size: %d\n" (size st) ;
     st
 
 
@@ -1251,7 +1350,7 @@ let unpack_sequence st count =
   let open IResult.Let_syntax in
   let* tos, st = State.pop st in
   let rec unpack st n =
-    if n < 0 then st
+    if n < 0 then Ok st
     else
       let index = Exp.Const (Int (Int64.of_int n)) in
       let exp = Exp.Subscript {exp= tos; index} in
@@ -1259,7 +1358,7 @@ let unpack_sequence st count =
       unpack st (n - 1)
   in
   let* () = if count <= 0 then external_error st (Error.UnpackSequence count) else Ok () in
-  let st = unpack st (count - 1) in
+  let* st = unpack st (count - 1) in
   Ok (st, None)
 
 
@@ -1313,7 +1412,7 @@ let pop_jump_if ~next_is st target next_offset_opt =
   let* condition, st = State.pop st in
   (* Turn the stack into SSA parameters *)
   let arity = State.size st in
-  let ssa_args, st = State.to_ssa st in
+  let* ssa_args, st = State.to_ssa st in
   let next_ssa, st = State.mk_ssa_parameters st arity in
   let other_ssa, st = State.mk_ssa_parameters st arity in
   let* next_offset = Offset.get ~loc next_offset_opt in
@@ -1339,7 +1438,7 @@ let jump_if_or_pop st ~jump_if target next_offset_opt =
   let* condition = State.peek st in
   let condition = if jump_if then Exp.Not condition else condition in
   let arity = State.size st in
-  let ssa_args, st = State.to_ssa st in
+  let* ssa_args, st = State.to_ssa st in
   let next_ssa, st = State.mk_ssa_parameters st arity in
   let other_ssa, st = State.mk_ssa_parameters st arity in
   let* next_offset = Offset.get ~loc next_offset_opt in
@@ -1369,12 +1468,12 @@ let for_iter st delta next_offset_opt =
   let has_item, st = call_builtin_function st HasNextIter [Exp.Temp id] in
   let condition = Exp.Temp has_item in
   let arity = State.size st in
-  let ssa_args, st = State.to_ssa st in
+  let* ssa_args, st = State.to_ssa st in
   let next_ssa, st = State.mk_ssa_parameters st arity in
   let other_ssa, st = State.mk_ssa_parameters st arity in
   (* In the next branch, we know the iterator has an item available. Let's fetch it and
      push it on the stack. *)
-  let next_prelude st =
+  let next_prelude _ st =
     (* The iterator object stays on the stack while in the for loop, let's push it back *)
     let st = State.push st iter in
     (* The result of calling [__next__] is also pushed on the stack *)
@@ -1403,9 +1502,9 @@ let for_iter st delta next_offset_opt =
     the with block. Below is the context manager’s [__exit__()] or [__aexit__()] bound method.
 
     If top-of-stack is [NULL], calls [SECOND(None, None, None)], removes the function from the
-    stack, leaving top-of-stack, and pushes [NoException] to the stack. Otherwise calls
+    stack, leaving top-of-stack, and pushes [NULL] to the stack. Otherwise calls
     [SEVENTH(TOP, SECOND, THIRD)], shifts the bottom 3 values of the stack down, replaces the empty
-    spot with [NoException] and pushes top-of-stack. Finally pushes the result of the call.
+    spot with [NULL] and pushes top-of-stack. Finally pushes the result of the call.
 
     vsiles notes:
 
@@ -1414,11 +1513,10 @@ let for_iter st delta next_offset_opt =
     - we only support the first case with [NULL]
     - we only support [__exit__].
     - TODO: learn how [__aexit__] works
-    - TODO: duplicate the handler to deal with the 6 values case *)
+    - TODO: duplicate the handler to deal with the except case *)
 let with_cleanup_start st =
   let open IResult.Let_syntax in
   let* context_manager_exit, st = State.pop st in
-  let st = State.push st NoException in
   let lhs, st =
     call_function_with_unnamed_args st context_manager_exit [Const Null; Const Null; Const Null]
   in
@@ -1433,9 +1531,9 @@ let with_cleanup_start st =
     [__exit__()] or [__aexit__()] function call pushed by [WITH_CLEANUP_START]. [SECOND] is [None]
     or an exception type (pushed when an exception has been raised).
 
-    Pops two values from the stack. If [SECOND] is not [NoException] and top-of-stack is true
-    unwinds the [EXCEPT_HANDLER] block which was created when the exception was caught and pushes
-    [NULL] to the stack.
+    Pops two values from the stack. If [SECOND] is not [NULL] and top-of-stack is true unwinds the
+    [EXCEPT_HANDLER] block which was created when the exception was caught and pushes [NULL] to the
+    stack.
 
     Note: we only support the [None] case for the moment. See
     https://github.com/python/cpython/blob/3.8/Python/ceval.c#L3373.
@@ -1749,14 +1847,14 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let* next_offset = Offset.get ~loc next_offset_opt in
       let offset = next_offset + arg in
       let arity = State.size st in
-      let ssa_args, st = State.to_ssa st in
+      let* ssa_args, st = State.to_ssa st in
       let ssa_parameters, st = State.mk_ssa_parameters st arity in
       let label, st = State.get_label st offset ~ssa_parameters in
       let jump = Jump.Absolute {ssa_args; label; offset} in
       Ok (st, Some jump)
   | "JUMP_ABSOLUTE" ->
       let arity = State.size st in
-      let ssa_args, st = State.to_ssa st in
+      let* ssa_args, st = State.to_ssa st in
       let ssa_parameters, st = State.mk_ssa_parameters st arity in
       (* sanity check: we should already have allocated a label for this jump, if it is a backward
          edge. *)
@@ -1802,6 +1900,7 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       Ok (st, None)
   | "POP_BLOCK" ->
       let st = State.pop_exn_handler st in
+      let* _block, st = State.pop_block st in
       Ok (st, None)
   | "ROT_TWO" ->
       let* tos0, st = State.pop st in
@@ -1830,62 +1929,117 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
   | "CALL_FUNCTION_KW" ->
       call_function_kw st arg
   | "SETUP_WITH" ->
+      (* TODO: share code with SETUP_FINALLY ? *)
       let {State.loc} = st in
       (* This instruction gives us a relative delta w.r.t the next offset, so we turn it into an
          absolute offset right away *)
       let* next_offset = Offset.get ~loc next_offset_opt in
       let offset = next_offset + arg in
       let st = State.push_exn_handler st ~offset in
-      let label_name, st = State.fresh_label st in
-      let ssa, st = State.fresh_id st in
-      (* The "finally" block will have WITH_CLEANUP_START/FINISH that expect the Context Manager
-         to be on the stack *)
-      let label = Label.mk ~exn_handler:true label_name [ssa] in
-      let st = State.register_label st ~offset label in
       let* context_manager, st = State.pop st in
       let st = State.push st (ContextManagerExit context_manager) in
       let exp = Exp.LoadMethod (context_manager, PyCommon.enter) in
       let lhs, st = call_function_with_unnamed_args st exp [] in
+      State.debug st "setup-with: current block size: %d@\n" (State.size st) ;
+      let arity = State.size st in
+      let ssa_parameters, st = State.mk_ssa_parameters st arity in
+      (* The "finally" block will have WITH_CLEANUP_START/FINISH that expect the Context Manager
+         to be on the stack *)
+      let _label, st = State.get_label st ~handler_type:Finally offset ~ssa_parameters in
+      let block = Block.mk Finally in
+      let st = State.push_block st block in
       let st = State.push st (Exp.Temp lhs) in
       Ok (st, None)
   | "BEGIN_FINALLY" ->
+      (* TODO: this is not fully correct, as BEGIN_FINALLY can be inserted by
+         the compiler in exception handlers with code like
+
+         ```
+         def f():
+             ...
+
+         try:
+             f()
+         except C as c:
+             print(c)
+         ```
+
+         To solve this, we need to think of a way to encode the push/pop of
+         the NULL this instruction inserts in the stack in a more precise way.
+         Using only the kind of block is not enough *)
       let {State.loc} = st in
-      (* Begin finally is always followed by the "finally" handler of a [try/finally] block so we
-         jump to the next instruction. We don't push anything on the stack as this path is not
-         any expecting information *)
+      (* BEGIN_FINALLY is used as a terminator to detect the beginning of "finally" blocks, as
+         they are not always the target of a SETUP_WITH opcode.
+         We create a jump to the next instruction.
+         We don't push anything on the stack as this path is not any expecting information *)
       let* offset = Offset.get ~loc next_offset_opt in
-      let* label =
-        match State.lookup_label st offset with
-        | Some label ->
-            Ok label
-        | None ->
-            external_error st (Error.BeginFinally offset)
-      in
-      let ssa_args, st = State.to_ssa st in
+      let arity = State.size st in
+      let ssa_parameters, st = State.mk_ssa_parameters st arity in
+      (* Because we can't decide in SETUP_FINALLY if the block will be a finally vs except block,
+         we overwrite its type here. We also change the type of the current block to reflect this
+         decision *)
+      let label, st = State.get_label st offset ~ssa_parameters in
+      let st = State.set_handler_type st offset Finally in
+      let* ssa_args, st = State.to_ssa st in
       let info = {Jump.label; offset; ssa_args} in
       Ok (st, Some (Jump.Label info))
   | "SETUP_FINALLY" ->
-      (* TODO: Partial support for except/finally handlers *)
       let {State.loc} = st in
       (* This instruction gives us a relative delta w.r.t the next offset, so we turn it into an
          absolute offset right away *)
       let* next_offset = Offset.get ~loc next_offset_opt in
       let offset = next_offset + arg in
+      let arity = State.size st in
+      let ssa_parameters, st = State.mk_ssa_parameters st arity in
       let st = State.push_exn_handler st ~offset in
-      let label_name, st = State.fresh_label st in
+      State.debug st "setup-finally: current block size: %d@\n" (State.size st) ;
       (* There's two possible targets during this block:
          - the [finally] block which expects a [NULL] on the stack
-         - the [except] block which expects 6 values on the stack
-         We only support the finally block for now, so we register a single target with arity 0,
-         since we don't need the NULL on the stack to do the detection.
-         TODO: register the exn target with arity 6 *)
-      let label = Label.mk ~exn_handler:true label_name [] in
-      let st = State.register_label st ~offset label in
+         - the [except] block which expects 3 values on the stack
+
+         Note that we don't know yet if the handler is a finally or an except.
+         So we do two things:
+         - we use [Except] as an handler type, and replace it with [Finally] in BEGIN_FINALLY if necessary
+         - we set the stack like a [Finally] handler, and we'll throw it away if enter an [Except] block
+         We'll make this decision if we have a BEGIN_FINALLY on the path *)
+      let _label, st = State.get_label st ~handler_type:Except offset ~ssa_parameters in
+      (* Fall-through to the rest of the "normal" code *)
+      let block = Block.mk Finally in
+      let st = State.push_block st block in
       Ok (st, None)
   | "END_FINALLY" ->
-      (* TODO: See doc for [END_FINALLY].
-         We only support the "NULL" case where we come from BEGIN_FINALLY
-         so we don't even look at the stack *)
+      (* See doc for [END_FINALLY]. *)
+      let opt_block = State.peek_block st in
+      let is_except = Option.value_map ~default:false ~f:Block.is_except opt_block in
+      let* st =
+        if is_except then
+          (* TODO: handle the re-raise case *)
+          (* pop the block and 6 values from the stack *)
+          let* _, st = State.pop_block st in
+          let* st =
+            let l = List.init 6 ~f:(fun x -> x) in
+            List.fold_result l ~init:st ~f:(fun st _ ->
+                let* _, st = State.pop st in
+                Ok st )
+          in
+          Ok st
+        else Ok st
+      in
+      Ok (st, None)
+  | "POP_FINALLY" ->
+      (* TODO: like [END_FINALLY], see official doc. We only support the "no exception" case for
+         now. Supporting exceptions will require duplicating some nodes.
+         We could just do nothing, but I wanted to have the 'return' logic in place for the
+         future *)
+      let* return_value, st =
+        if arg <> 0 then
+          let* ret, st = State.pop st in
+          Ok (Some ret, st)
+        else Ok (None, st)
+      in
+      (* TODO: insert popping of tos when CALL_FINALLY is supported. Right now
+         we didn't push anything on the stack so we don't pop anything *)
+      let st = match return_value with Some ret -> State.push st ret | None -> st in
       Ok (st, None)
   | "WITH_CLEANUP_START" ->
       with_cleanup_start st
@@ -1893,6 +2047,24 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       with_cleanup_finish st
   | "RAISE_VARARGS" ->
       raise_varargs st arg
+  | "POP_EXCEPT" ->
+      let {State.loc} = st in
+      (* From the doc: "The popped block must be an exception handler block, as implicitly created
+         when entering an except handler".
+         TODO: We do not check this for the momemt *)
+      let* _block, st = State.pop_block st in
+      (* POP the 3 remaining exceptions inputs *)
+      let* _, st = State.pop st in
+      let* _, st = State.pop st in
+      let* _, st = State.pop st in
+      (* Introduce a custom jump to the next instruction to exit the "except" node *)
+      let* offset = Offset.get ~loc next_offset_opt in
+      let arity = State.size st in
+      let* ssa_args, st = State.to_ssa st in
+      let ssa_parameters, st = State.mk_ssa_parameters st arity in
+      let label, st = State.get_label st offset ~ssa_parameters in
+      let jump = Jump.Absolute {ssa_args; label; offset} in
+      Ok (st, Some jump)
   | _ ->
       internal_error st (Error.UnsupportedOpcode opname)
 
@@ -1904,7 +2076,7 @@ let rec parse_bytecode_until_terminator ({State.loc} as st) code instructions =
   | Some (offset, label) ->
       State.debug st "At offset %d, label spotted: %a@\n" offset Label.pp label ;
       (* If the analysis reached a known jump target, stop processing the node. *)
-      let ssa_args, st = State.to_ssa st in
+      let* ssa_args, st = State.to_ssa st in
       let* offset = Offset.of_code instructions |> Offset.get ~loc in
       let info = {Jump.label; offset; ssa_args} in
       Ok (st, Some (Jump.Label info), instructions)
@@ -1938,8 +2110,7 @@ let mk_node st label code instructions =
         jump_op
   in
   match (jump_op : _ Jump.t) with
-  | Absolute ({label= next_label; offset} as info) ->
-      let st = State.register_label st ~offset next_label in
+  | Absolute info ->
       let last = Terminator.of_jump (`OneTarget info) in
       let node = {Node.label; last; stmts; last_loc; label_loc} in
       Ok (st, instructions, node)
@@ -1957,13 +2128,9 @@ let mk_node st label code instructions =
       let node = {Node.label; last; stmts; last_loc; label_loc} in
       Ok (st, instructions, node)
   | TwoWay {condition; next_info; other_info} ->
-      let {Jump.label= next_label; offset= next_offset} = next_info in
-      let {Jump.label= other_label; offset= other_offset} = other_info in
       (* The current node ended up with a two-way jump. Either continue to the "next"
          (fall-through) part of the code, or jump to the "other" section of the code. For this
          purpose, register a fresh label for the jump. *)
-      let st = State.register_label st ~offset:next_offset next_label in
-      let st = State.register_label st ~offset:other_offset other_label in
       (* Register the jump target *)
       let last = Terminator.of_jump (`TwoTargets (condition, next_info, other_info)) in
       let node = {Node.label; last; stmts; last_loc; label_loc} in
@@ -1998,7 +2165,7 @@ let rec mk_nodes st label code instructions =
      reach a label where to resume processing. *)
   let rec find_next_label st = function
     | [] ->
-        (None, st)
+        Ok (None, st)
     | instr :: remaining_instructions as instructions -> (
         (* If the next instruction has a label, use it, otherwise pick a fresh one. *)
         let label_info, st = State.instr_is_jump_target st instr in
@@ -2006,19 +2173,36 @@ let rec mk_nodes st label code instructions =
         | Some (offset, label) ->
             State.debug st "mk_nodes: spotted label %a at offset %a@\n" Label.pp label Offset.pp
               offset ;
-            (* Drain the stack before starting a new node *)
-            let st = {st with State.stack= []} in
-            let st = State.process_label st offset in
+            let {Label.ssa_parameters} = label in
+            (* When an except label is created, we can't decide yet if it will
+               be an except or finally. Here, we know, so we can fix the arity
+               of the "except" entry block to match the 3 exception inputs pushed by
+               the Python runtime and pushed them on a newly added exception block *)
+            let ssa_parameters, st =
+              if Label.is_except label then
+                let l = List.init 6 ~f:(fun x -> x) in
+                let st, ssa_ids =
+                  List.fold_left ~init:(st, ssa_parameters) l ~f:(fun (st, ssa_ids) _ ->
+                      let id, st = State.fresh_id st in
+                      (st, id :: ssa_ids) )
+                in
+                (ssa_ids, st)
+              else (ssa_parameters, st)
+            in
+            let st = State.process_label st offset ssa_parameters in
+            (* TODO: Fix this API *)
+            let label = {label with Label.ssa_parameters} in
             (* Don't forget to keep [instr] here *)
-            (Some (label, instructions), st)
+            Ok (Some (label, instructions), st)
         | None ->
             State.debug st "mk_nodes: skipping dead instruction %a@\n" FFI.Instruction.pp instr ;
             find_next_label st remaining_instructions )
   in
-  match find_next_label st instructions with
-  | None, st ->
+  let* label_info, st = find_next_label st instructions in
+  match label_info with
+  | None ->
       Ok (st, [node])
-  | Some (label, instructions), st ->
+  | Some (label, instructions) ->
       let* st, nodes = mk_nodes st label code instructions in
       Ok (st, node :: nodes)
 
@@ -2066,10 +2250,8 @@ end
 let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
   let open IResult.Let_syntax in
   let {State.module_name; loc} = st in
-  let fresh_label, st = State.fresh_label st in
-  let label = Label.mk fresh_label [] in
-  let st = State.register_label st ~offset:0 label in
-  let st = State.process_label st 0 in
+  let label, st = State.get_label st 0 ~ssa_parameters:[] in
+  let st = State.process_label st 0 [] in
   let* ({State.classes; functions} as st), nodes = mk_nodes st label code instructions in
   let* objects =
     Array.fold_result co_consts ~init:[] ~f:(fun objects constant ->
