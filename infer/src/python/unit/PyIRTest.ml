@@ -2733,7 +2733,6 @@ object dummy:
 
 
     let%expect_test _ =
-      (* No with for this one it's a baseline to support [open] *)
       let source = {|
 fp = open("foo.txt", "wt")
 fp.write("yolo")
@@ -2810,7 +2809,6 @@ object dummy:
       f -> dummy.f |}]
 
 
-    (*
     let%expect_test _ =
       let source =
         {|
@@ -2819,8 +2817,50 @@ def f(**kwargs):
             print(k, v)
 |}
       in
-      test ~debug:true source ;
-      [%expect {| |}]
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0:
+      dummy.f <- $FuncObj(f, dummy.f)
+      return None
+
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0:
+          n0 <- $CallMethod($LoadMethod(kwargs, items), )
+          n1 <- $GetIter(n0)
+          jmp b1(n1)
+
+
+        #b1(n2):
+          n3 <- $NextIter(n2)
+          n4 <- $HasNextIter(n3)
+          if n4 then jmp b2 else jmp b3
+
+
+        #b2:
+          n5 <- $IterData(n3)
+          k <- n5[0]
+          v <- n5[1]
+          n6 <- print(k, v)
+          jmp b1(n2)
+
+
+        #b3:
+          return None
+
+
+
+
+
+    functions:
+      f -> dummy.f |}]
 
 
     let%expect_test _ =
@@ -2830,9 +2870,34 @@ def f(z, x, y):
 
 f(0, y=2, x=1)
         |} in
-      test ~debug:true source ;
-      [%expect {| |}]
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0:
+      dummy.f <- $FuncObj(f, dummy.f)
+      n0 <- dummy.f(0, y= 2, x= 1)
+      return None
 
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0:
+          return None
+
+
+
+
+
+    functions:
+      f -> dummy.f |}]
+
+
+    (*
 
     let%expect_test _ =
       let source =
@@ -2908,6 +2973,7 @@ class C:
       test ~debug:true source ;
       [%expect {| |}]
 
+       *)
 
     let%expect_test _ =
       let source = {|
@@ -2915,10 +2981,34 @@ import dis
 def f(co, s):
           dis.dis(co, file=s)
         |} in
-      test ~debug:true source ;
-      [%expect {| |}]
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0:
+      $ImportName(dis, from_list=[])
+      dummy.dis <- $ImportName(dis, from_list= [])
+      dummy.f <- $FuncObj(f, dummy.f)
+      return None
 
-*)
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0:
+          n0 <- dis.dis(co, file= s)
+          return None
+
+
+
+
+
+    functions:
+      f -> dummy.f |}]
+
 
     let%expect_test _ =
       let source = {|

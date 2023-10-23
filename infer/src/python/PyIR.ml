@@ -354,6 +354,8 @@ module Error = struct
     | NextOffsetMissing
     | MissingBackEdge of int * int
     | InvalidBackEdge of (string * int * int)
+    | CallKeywordNotString0 of Const.t
+    | CallKeywordNotString1 of Exp.t
 
   type t = L.error * Location.t * kind
 
@@ -396,6 +398,10 @@ module Error = struct
     | InvalidBackEdge (name, expect, actual) ->
         F.fprintf fmt "Invalid backedge to #%s with arity mismatch (expecting %d but got %d)" name
           expect actual
+    | CallKeywordNotString0 cst ->
+        F.fprintf fmt "CALL_FUNCTION_KW: keyword is not a string: %a" Const.pp cst
+    | CallKeywordNotString1 exp ->
+        F.fprintf fmt "CALL_FUNCTION_KW: keyword is not a tuple of strings: %a" Exp.pp exp
 end
 
 module Stmt = struct
@@ -982,6 +988,57 @@ let call_function st arg =
       let id, st = call_function_with_unnamed_args st fun_exp args in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
+
+
+let call_function_kw st argc =
+  let open IResult.Let_syntax in
+  let extract_kw_names st arg_names =
+    match (arg_names : Exp.t) with
+    | Const (Tuple tuple) ->
+        (* kw names should be constant tuple of strings, so we directly access them *)
+        List.fold_right tuple ~init:(Ok []) ~f:(fun const acc ->
+            let* acc in
+            match Const.as_name const with
+            | Some name ->
+                Ok (name :: acc)
+            | None ->
+                external_error st (Error.CallKeywordNotString0 const) )
+    | _ ->
+        external_error st (Error.CallKeywordNotString1 arg_names)
+  in
+  (* there is more args than names, and nameless values must come first in the end *)
+  let partial_zip args kwnames =
+    let nr_positional = argc - List.length kwnames in
+    let rec zip pos args kwnames =
+      match (args, kwnames) with
+      | [], [] ->
+          []
+      | [], _ :: _ ->
+          L.die InternalError "CALL_FUNCTION_KW: less values than names"
+      | _ :: _, [] ->
+          L.die InternalError "CALL_FUNCTION_KW: not enough names"
+      | value :: args, name :: names ->
+          if pos < nr_positional then
+            let hd = Stmt.unnamed_call_arg value in
+            let tl = zip (1 + pos) args kwnames in
+            hd :: tl
+          else
+            let hd = {Stmt.name= Some name; value} in
+            let tl = zip (1 + pos) args names in
+            hd :: tl
+    in
+    zip 0 args kwnames
+  in
+  let* arg_names, st = State.pop st in
+  let* arg_names = extract_kw_names st arg_names in
+  let* args, st = State.pop_n st argc in
+  let args = partial_zip args arg_names in
+  let* exp, st = State.pop st in
+  let lhs, st = State.fresh_id st in
+  let stmt = Stmt.Call {lhs; exp; args} in
+  let st = State.push_stmt st stmt in
+  let st = State.push st (Exp.Temp lhs) in
+  Ok (st, None)
 
 
 let import_name st name =
@@ -1576,10 +1633,11 @@ let parse_bytecode st {FFI.Code.co_consts; co_names; co_varnames; co_cellvars; c
       let st = State.push st tos2 in
       let st = State.push st tos1 in
       Ok (st, None)
+  | "CALL_FUNCTION_KW" ->
+      call_function_kw st arg
   | _ ->
       (* TODO: supported by PyTrans:
          "BEGIN_FINALLY"
-         "CALL_FUNCTION_KW"
          "END_FINALLY"
          "RAISE_VARARGS"
          "SETUP_FINALLY"
