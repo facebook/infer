@@ -12,6 +12,7 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
+module FuncArg = ProcnameDispatcher.Call.FuncArg
 
 let string_length_access = MemoryAccess.FieldAccess PulseOperations.ModeledField.string_length
 
@@ -94,7 +95,7 @@ let placement_new =
   let std_nothrow_t_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::nothrow_t"] in
   fun actuals {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "<placement new>()" in
-    ( match (List.rev actuals : _ ProcnameDispatcher.Call.FuncArg.t list) with
+    ( match (List.rev actuals : _ FuncArg.t list) with
     | {typ= {desc= Tstruct (CppClass {name})}} :: _
       when QualifiedCppName.Match.match_qualifiers std_nothrow_t_matcher name ->
         PulseOperations.havoc_id ret_id (Hist.single_event path event) astate
@@ -105,7 +106,7 @@ let placement_new =
     |> Basic.ok_continue
 
 
-let infer_structured_binding var {ProcnameDispatcher.Call.FuncArg.exp= arg; arg_payload} _ astate =
+let infer_structured_binding var {FuncArg.exp= arg; arg_payload} _ astate =
   let astate =
     match (var, arg) with
     | Exp.Lvar pvar, Var arg ->
@@ -420,8 +421,7 @@ module BasicString = struct
 end
 
 module Function = struct
-  let operator_call ProcnameDispatcher.Call.FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals :
-      model =
+  let operator_call FuncArg.{arg_payload= lambda_ptr_hist; typ} actuals : model =
    fun { path
        ; analysis_data= {analyze_dependency; tenv; proc_desc}
        ; location
@@ -438,23 +438,21 @@ module Function = struct
         let astate = PulseOperations.havoc_id ret_id hist astate in
         let astate =
           let unknown_effect = Attribute.UnknownEffect (Model desc, hist) in
-          List.fold actuals ~init:astate
-            ~f:(fun acc ProcnameDispatcher.Call.FuncArg.{arg_payload= actual, _} ->
+          List.fold actuals ~init:astate ~f:(fun acc FuncArg.{arg_payload= actual, _} ->
               AddressAttributes.add_one actual unknown_effect acc )
         in
         [Ok (ContinueProgram astate)]
     | Some callee_proc_name ->
         let actuals =
           (lambda_ptr_hist, typ)
-          :: List.map actuals ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
-                 (arg_payload, typ) )
+          :: List.map actuals ~f:(fun FuncArg.{arg_payload; typ} -> (arg_payload, typ))
         in
         PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
           callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
         |> fst3
 
 
-  let assign dest ProcnameDispatcher.Call.FuncArg.{arg_payload= src; typ= src_typ} ~desc : model =
+  let assign dest FuncArg.{arg_payload= src; typ= src_typ} ~desc : model =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
     if PulseArithmetic.is_known_zero astate (fst src) then
@@ -668,7 +666,7 @@ module GenericMapCollection = struct
 
   let pair_second_field key_t value_t = Fieldname.make (pair_type key_t value_t) "second"
 
-  let extract_key_and_value_types (map : 'a ProcnameDispatcher.Call.FuncArg.t) =
+  let extract_key_and_value_types (map : 'a FuncArg.t) =
     match map.typ.desc with
     | Typ.Tptr
         ( { desc=
@@ -684,8 +682,7 @@ module GenericMapCollection = struct
         assert false
 
 
-  let reset_backing_fields ({ProcnameDispatcher.Call.FuncArg.arg_payload} as map) path location desc
-      astate =
+  let reset_backing_fields ({FuncArg.arg_payload} as map) path location desc astate =
     let hist = Hist.single_call path location desc in
     let first = (AbstractValue.mk_fresh (), hist) in
     let second = (AbstractValue.mk_fresh (), hist) in
@@ -705,8 +702,7 @@ module GenericMapCollection = struct
     astate
 
 
-  let invalidate_references map_t map_f ({ProcnameDispatcher.Call.FuncArg.arg_payload} as map)
-      {path; location} astate =
+  let invalidate_references map_t map_f ({FuncArg.arg_payload} as map) {path; location} astate =
     let key_t, value_t = extract_key_and_value_types map in
     let desc =
       Format.asprintf "%a::%a" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f
@@ -737,7 +733,7 @@ module GenericMapCollection = struct
     astate
 
 
-  let at map_t ({ProcnameDispatcher.Call.FuncArg.arg_payload} as map) : model =
+  let at map_t ({FuncArg.arg_payload} as map) : model =
     let key_t, value_t = extract_key_and_value_types map in
     fun {path; location; ret} astate ->
       let event =
