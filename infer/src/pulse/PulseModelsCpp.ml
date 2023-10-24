@@ -770,6 +770,17 @@ module GenericMapCollection = struct
     at map_t map data astate
 
 
+  let emplace_hint map_t ({FuncArg.arg_payload} as map) args : model =
+   fun data astate ->
+    (* We expect the last argument to be the returned iterator. *)
+    (* This will only throw if SIL intermediate representation changes. *)
+    let it = (List.last_exn args).FuncArg.arg_payload in
+    let<*> astate = invalidate_references map_t EmplaceHint map data astate in
+    find
+      (Format.asprintf "%a::emplace_hint" Invalidation.pp_map_type map_t)
+      arg_payload it data astate
+
+
   let iterator_star desc it : model =
    fun {path; location; ret} astate ->
     let event = Hist.call_event path location desc in
@@ -854,6 +865,9 @@ let map_matchers =
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "at"
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
           $+...$--> GenericMapCollection.at map_t
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "emplace_hint"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $++$--> GenericMapCollection.emplace_hint map_t
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator[]"
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
           $+...$--> GenericMapCollection.operator_bracket map_t

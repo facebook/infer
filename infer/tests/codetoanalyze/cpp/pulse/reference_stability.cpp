@@ -399,7 +399,7 @@ void folly_fastmap_try_emplace_bad_FN() {
   const auto valueCopy = valueRef;
 }
 
-void folly_fastmap_emplace_hint_bad_FN() {
+void folly_fastmap_emplace_hint_bad() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   const auto& valueRef = map.at(1);
   map.emplace_hint(map.cbegin(), 4, 16);
