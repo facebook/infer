@@ -788,6 +788,20 @@ module GenericMapCollection = struct
       PulseOperations.eval_access path Read location it Dereference astate
     in
     PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
+
+
+  let iterator_copy desc it other : model =
+   fun {path; location} astate ->
+    let event = Hist.call_event path location desc in
+    let<*> astate, (addr, hist) =
+      PulseOperations.eval_access path Read location other Dereference astate
+    in
+    let<+> astate =
+      PulseOperations.write_deref path location ~ref:it
+        ~obj:(addr, Hist.add_event path event hist)
+        astate
+    in
+    astate
 end
 
 let get_cpp_matchers config ~model =
@@ -886,7 +900,14 @@ let map_matchers =
   in
   let folly_iterator_matchers =
     List.concat_map ["ValueContainerIterator"; "VectorContainerIterator"] ~f:(fun it ->
-        [ -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator->" <>$ capt_arg_payload
+        [ -"folly" <>:: "f14" <>:: "detail" <>:: it &:: it <>$ capt_arg_payload $+ capt_arg_payload
+          $--> GenericMapCollection.iterator_copy
+                 (Format.asprintf "folly::f14::detail::%s::%s" it it)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator=" <>$ capt_arg_payload
+          $+ capt_arg_payload
+          $--> GenericMapCollection.iterator_copy
+                 (Format.asprintf "folly::f14::detail::%s::operator=" it)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator->" <>$ capt_arg_payload
           $--> GenericMapCollection.iterator_star
                  (Format.asprintf "folly::f14::detail::%s::operator->" it)
         ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator*" <>$ capt_arg_payload

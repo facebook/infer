@@ -514,6 +514,21 @@ void folly_fastmap_iterator_increment_bad(folly::F14FastMap<int, int>& map) {
   const auto valueCopy = valueRef;
 }
 
+void iterator_copy_constructor_bad(folly::F14FastMap<int, int>& map) {
+  const auto it = map.begin();
+  const auto it2 = it;
+  map.clear();
+  const auto keyCopy = it2->first;
+}
+
+void iterator_copy_operator_equal_bad(folly::F14FastMap<int, int>& map) {
+  const auto it = map.begin();
+  folly::F14FastMap<int, int>::iterator it2;
+  it2 = it;
+  map.clear();
+  const auto keyCopy = it2->first;
+}
+
 void weird_operator_bracket_bad_FN(folly::F14FastMap<int, int>& map) {
   // This is not valid, as the map may resize for the insert call prior to
   // accessing map[71] and constructing the pair.
