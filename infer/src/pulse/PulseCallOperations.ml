@@ -601,13 +601,17 @@ let call tenv path ~caller_proc_desc
       let specialized_summary : PulseSummary.t =
         analyze_dependency ~specialization:(Pulse specialization) callee_pname |> Option.value_exn
       in
+      let is_limit_not_reached =
+        Specialization.Pulse.is_pulse_specialization_limit_not_reached
+          specialized_summary.specialized
+      in
       match Specialization.Pulse.Map.find_opt specialization specialized_summary.specialized with
       | None ->
           L.internal_error "ondemand engine did not return the expected specialized summary" ;
           (* we use the non-specialized summary instead *)
-          specialized_summary.main
+          (specialized_summary.main, is_limit_not_reached)
       | Some pre_posts ->
-          pre_posts
+          (pre_posts, is_limit_not_reached)
     in
     if needs_aliasing_specialization res contradiction then
       if is_pulse_specialization_limit_not_reached then (
@@ -621,18 +625,20 @@ let call tenv path ~caller_proc_desc
         | Some alias_specialization ->
             let specialization = Specialization.Pulse.Aliases alias_specialization in
             L.d_printfln "requesting alias specialization %a" Specialization.Pulse.pp specialization ;
-            let pre_posts = request_specialization specialization in
+            let pre_posts, _ = request_specialization specialization in
             let res, contradiction = call_aux pre_posts in
             (res, contradiction, `KnownCall) )
       else (res, contradiction, `UnknownCall)
-    else
+    else if is_pulse_specialization_limit_not_reached then
       L.d_with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
           match maybe_dynamic_type_specialization_is_needed specialization contradiction astate with
           | `RequestSpecializedAnalysis dyntypes_map ->
               let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
               L.d_printfln "requesting specialized analysis %a" Specialization.Pulse.pp
                 specialization ;
-              let specialized_pre_post_lists = request_specialization specialization in
+              let specialized_pre_post_lists, is_pulse_specialization_limit_not_reached =
+                request_specialization specialization
+              in
               if nth_iteration < max_iteration then
                 iter_call ~max_iteration ~nth_iteration:(nth_iteration + 1)
                   ~is_pulse_specialization_limit_not_reached ~specialization
@@ -652,13 +658,14 @@ let call tenv path ~caller_proc_desc
           | `UseCurrentSummary ->
               L.d_printfln "abort, using current summary" ;
               (res, contradiction, `KnownCall) )
+    else (res, contradiction, `KnownCall)
   in
   match (analyze_dependency callee_pname : PulseSummary.t option) with
   | Some summary ->
+      let max_iteration = Config.pulse_specialization_iteration_limit in
       let is_pulse_specialization_limit_not_reached =
         Specialization.Pulse.is_pulse_specialization_limit_not_reached summary.specialized
       in
-      let max_iteration = Config.pulse_specialization_iteration_limit in
       iter_call ~max_iteration ~nth_iteration:0 ~is_pulse_specialization_limit_not_reached
         summary.main
   | None ->
