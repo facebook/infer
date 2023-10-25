@@ -202,9 +202,13 @@ val buck2_build_args_no_inline : string list
 
 val buck2_bxl_target : string option
 
-val buck2_use_bxl : bool
+val buck2_isolation_dir : string option
 
 val buck2_query_deps : bool
+
+val buck2_root : string
+
+val buck2_use_bxl : bool
 
 val buck_block_list : string list
 
@@ -218,8 +222,6 @@ val buck_clang_use_toolchain_config : bool
 
 val buck_dependency_depth : int option
 
-val bxl_isolation_dir : string option
-
 val buck_java_suppress_config : bool
 
 val buck_java_heap_size_gb : int option
@@ -231,8 +233,6 @@ val buck_mode : BuckMode.t option
 val buck_out : string
 
 val buck_out_gen : string
-
-val buck2_root : string
 
 val buck_targets_block_list : string list
 

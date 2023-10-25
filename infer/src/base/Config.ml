@@ -846,10 +846,10 @@ and buck2_bxl_target =
     "Buck2 BXL script (as a buck target) to run when capturing with buck2/clang integration."
 
 
-and buck2_use_bxl =
-  CLOpt.mk_bool ~long:"buck2-use-bxl" ~default:false
+and buck2_isolation_dir =
+  CLOpt.mk_string_opt ~long:"buck2-isolation-dir" ~deprecated:["-bxl-isolation-dir"]
     ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Use BXL script when capturing with buck2."
+    "Run buck bxl capture with the given isolation directory as parameter."
 
 
 and buck2_query_deps =
@@ -857,6 +857,18 @@ and buck2_query_deps =
     ~in_help:InferCommand.[(Capture, manual_buck)]
     "Query deps of given targets and run capture on the result (alternatively run capture on given \
      targets)"
+
+
+and buck2_root =
+  CLOpt.mk_path_opt ~long:"buck2-root" ~meta:"dir"
+    ~in_help:InferCommand.[(Run, manual_buck); (Capture, manual_buck)]
+    "Specify the parent directory of $(b, buck-out) (used only for $(b, buck2))."
+
+
+and buck2_use_bxl =
+  CLOpt.mk_bool ~long:"buck2-use-bxl" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Use BXL script when capturing with buck2."
 
 
 and buck_block_list =
@@ -965,12 +977,6 @@ and _buck_out =
     "[DOES NOTHING] Specify the root directory of buck-out. Only valid for $(b,--buck-java)."
 
 
-and buck2_root =
-  CLOpt.mk_path_opt ~long:"buck2-root" ~meta:"dir"
-    ~in_help:InferCommand.[(Run, manual_buck); (Capture, manual_buck)]
-    "Specify the parent directory of $(b, buck-out) (used only for $(b, buck2))."
-
-
 and buck_targets_block_list =
   CLOpt.mk_string_list ~long:"buck-targets-block-list" ~deprecated:["-buck-targets-blacklist"]
     ~in_help:InferCommand.[(Run, manual_buck); (Capture, manual_buck)]
@@ -982,12 +988,6 @@ and bxl_file_capture =
     ~in_help:InferCommand.[(Capture, manual_buck)]
     "Given an $(b, --changed-file-index) file, capture the owning buck2 targets and their \
      dependencies using the BXL script specified by $(b, --buck2_bxl_target)."
-
-
-and bxl_isolation_dir =
-  CLOpt.mk_string_opt ~long:"bxl-isolation-dir"
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Run buck bxl capture with the given isolation directory as parameter."
 
 
 and capture =
@@ -3751,6 +3751,8 @@ and buck2_build_args_no_inline = RevList.to_list !buck2_build_args_no_inline_rev
 
 and buck2_bxl_target = !buck2_bxl_target
 
+and buck2_isolation_dir = !buck2_isolation_dir
+
 and buck2_use_bxl = !buck2_use_bxl
 
 and buck2_query_deps = !buck2_query_deps
@@ -3796,8 +3798,6 @@ and buck2_root = match !buck2_root with Some root -> root | None -> !project_roo
 and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 
 and bxl_file_capture = !bxl_file_capture
-
-and bxl_isolation_dir = !bxl_isolation_dir
 
 and capture = !capture
 

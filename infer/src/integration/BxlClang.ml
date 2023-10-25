@@ -63,9 +63,7 @@ let capture build_cmd =
       @ targets_with_arg
     in
     let buck2_build_cmd =
-      Option.value_map Config.bxl_isolation_dir ~default:[] ~f:(fun dir ->
-          ["--isolation-dir=" ^ dir] )
-      @ ["bxl"; bxl_target; "--console=simple"]
+      ["bxl"; bxl_target; "--console=simple"]
       @ List.rev rev_not_targets @ Config.buck2_build_args_no_inline
       @ Buck.store_args_in_file ~identifier:"clang_buck2_bxl" args_to_store
     in
@@ -117,9 +115,7 @@ let file_capture () =
       @ files_with_arg
     in
     let buck2_build_cmd =
-      Option.value_map Config.bxl_isolation_dir ~default:[] ~f:(fun dir ->
-          ["--isolation-dir=" ^ dir] )
-      @ ["bxl"; bxl_target] @ Config.buck2_build_args @ Config.buck2_build_args_no_inline
+      ["bxl"; bxl_target] @ Config.buck2_build_args @ Config.buck2_build_args_no_inline
       @ Buck.store_args_in_file ~identifier:"clang_buck2_bxl_file" args_to_store
     in
     run_capture buck2_build_cmd

@@ -50,6 +50,13 @@ let wrap_buck_call ?(extend_env = []) version ~label cmd =
     let prefix = Printf.sprintf "%s_%s" (if is_buck2 then "buck2" else "buck") label in
     Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) prefix ".stdout"
   in
+  let cmd =
+    match (cmd, Config.buck2_isolation_dir) with
+    | buck2 :: rest, Some isolation_dir when is_buck2 ->
+        buck2 :: ("--isolation-dir=" ^ isolation_dir) :: rest
+    | _ ->
+        cmd
+  in
   let command =
     let escaped_cmd = List.map ~f:Escape.escape_shell cmd |> String.concat ~sep:" " in
     let cmd_with_output = Printf.sprintf "exec %s > '%s'" escaped_cmd stdout_file in

@@ -223,6 +223,10 @@ BUCK OPTIONS
            Buck2 BXL script (as a buck target) to run when capturing with
            buck2/clang integration.
 
+       --buck2-isolation-dir string
+           Run buck bxl capture with the given isolation directory as
+           parameter.
+
        --no-buck2-query-deps
            Deactivates: Query deps of given targets and run capture on the
            result (alternatively run capture on given targets) (Conversely:
@@ -240,10 +244,6 @@ BUCK OPTIONS
            buck2 targets and their dependencies using the BXL script
            specified by --buck2_bxl_target. (Conversely:
            --no-bxl-file-capture)
-
-       --bxl-isolation-dir string
-           Run buck bxl capture with the given isolation directory as
-           parameter.
 
        --Xbuck +string
            Pass values as command-line arguments to invocations of `buck
