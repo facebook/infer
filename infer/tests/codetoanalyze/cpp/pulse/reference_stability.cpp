@@ -270,7 +270,7 @@ void unordered_map_ok() {
   const auto keyCopy = keyRef;
 }
 
-void folly_fastmap_bad_FN() {
+void folly_fastmap_bad() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
 
   // Obtain long-lived references to keys and values.
@@ -385,7 +385,7 @@ void folly_fastmap_insert_or_assign_bad_FN() {
   const auto valueCopy = valueRef;
 }
 
-void folly_fastmap_emplace_bad_FN() {
+void folly_fastmap_emplace_bad() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   const auto& valueRef = map.at(1);
   map.emplace(4, 16);
@@ -541,4 +541,12 @@ void reserve_operator_bracket_ok_FP(folly::F14FastMap<int, int>& map) {
   const auto& r1 = map[13];
   const auto& r2 = map[71];
   const auto r1Copy = r1;
+}
+
+void use_emplace_iterator_bad(folly::F14FastMap<int, int>& map) {
+  const auto [it, inserted] = map.emplace(13, 71);
+  map.clear();
+  // Copy here is fine, iterator is invalid but we are not accessing it.
+  const auto copy = it;
+  const auto value = copy->second;
 }
