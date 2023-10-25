@@ -315,4 +315,16 @@ class Specialization {
     return callBuildCWithEmptyPaths(new A_Good(), true).f;
   }
 
+  C callBuildCTwiceGood(A a1, A a2) {
+    C c = (a1 == null) ? null : a1.buildC();
+    return (a2 == null) ? null : a2.buildC();
+  }
+
+  C FN_buildCAndDerefNeedPartialSpecializationBad(A a) {
+    return callBuildCTwiceGood(a, new A_Bad()).f;
+  }
+
+  C buildCAndDerefNeedPartialSpecializationGood(A a) {
+    return callBuildCTwiceGood(a, new A_Good()).f;
+  }
 }
