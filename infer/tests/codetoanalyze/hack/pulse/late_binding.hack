@@ -31,7 +31,7 @@ class C extends B {
   }
 }
 
-final class Main {
+class Main {
 
   public function call_caller_bad(): void {
     $tainted = \Level1\taintSource();

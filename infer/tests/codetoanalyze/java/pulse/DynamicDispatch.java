@@ -320,7 +320,7 @@ class Specialization {
     return (a2 == null) ? null : a2.buildC();
   }
 
-  C FN_buildCAndDerefNeedPartialSpecializationBad(A a) {
+  C buildCAndDerefNeedPartialSpecializationBad(A a) {
     return callBuildCTwiceGood(a, new A_Bad()).f;
   }
 

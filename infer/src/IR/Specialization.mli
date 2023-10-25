@@ -28,6 +28,8 @@ module Pulse : sig
     (** binding from heap paths to their inferred dynamic type (will be used for devirtualization in
         the callee) *)
     type t = Typ.name HeapPath.Map.t [@@deriving equal, compare]
+
+    module Set : PrettyPrintable.PPSet with type elt = t
   end
 
   type t = Aliases of Aliases.t | DynamicTypes of DynamicTypes.t [@@deriving equal, compare]

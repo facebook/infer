@@ -2786,6 +2786,11 @@ INTERNAL OPTIONS
        --pulse-skip-procedures-reset
            Cancel the effect of --pulse-skip-procedures.
 
+       --pulse-specialization-partial
+           Activates: A caller does not wait to have a full set of
+           specialization information before running a specialized analysis
+           of the callee. (Conversely: --no-pulse-specialization-partial)
+
        --pulse-taint-config-reset
            Set --pulse-taint-config to the empty list.
 

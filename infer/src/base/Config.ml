@@ -2549,6 +2549,12 @@ and pulse_specialization_iteration_limit =
     "Maximum number of iterative summary specialization at each call site."
 
 
+and pulse_specialization_partial =
+  CLOpt.mk_bool ~long:"pulse-specialization-partial" ~default:false
+    "A caller does not wait to have a full set of specialization information before running a \
+     specialized analysis of the callee."
+
+
 and pulse_taint_policies =
   CLOpt.mk_json ~long:"pulse-taint-policies"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4307,6 +4313,8 @@ and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
 and pulse_specialization_limit = !pulse_specialization_limit
 
 and pulse_specialization_iteration_limit = !pulse_specialization_iteration_limit
+
+and pulse_specialization_partial = !pulse_specialization_partial
 
 and pulse_taint_config =
   (* TODO: write our own json handling using [Yojson] directly as atdgen generated parsers ignore

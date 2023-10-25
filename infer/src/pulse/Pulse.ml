@@ -365,7 +365,6 @@ module PulseTransferFunctions = struct
           AbstractValue.pp v ;
         None
     | None ->
-        L.d_printfln "no dynamic type found for %a" AbstractValue.pp v ;
         None
 
 
