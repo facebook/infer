@@ -352,9 +352,13 @@ module Internal = struct
       else abduce_one addr (MustBeInitialized (path.PathContext.timestamp, access_trace)) astate
 
 
-    let add_taint_sink path sink trace addr astate =
-      let taint_sink = Attribute.TaintSink.{time= path.PathContext.timestamp; sink; trace} in
-      abduce_one addr (MustNotBeTainted (Attribute.TaintSinkSet.singleton taint_sink)) astate
+    let add_taint_sink path (sink : TaintItem.t) trace addr astate =
+      let taint_sink =
+        Attribute.TaintSink.{time= path.PathContext.timestamp; sink= sink.value_tuple; trace}
+      in
+      let add_to_map map kind = Attribute.TaintSinkMap.add kind taint_sink map in
+      let map = List.fold sink.TaintItem.kinds ~init:Attribute.TaintSinkMap.empty ~f:add_to_map in
+      abduce_one addr (MustNotBeTainted map) astate
 
 
     let get_taint_sources_and_sanitizers addr astate =

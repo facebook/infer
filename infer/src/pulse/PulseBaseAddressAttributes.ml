@@ -242,7 +242,7 @@ let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 let get_must_not_be_tainted address memory =
   match Graph.find_opt address memory with
   | None ->
-      Attribute.TaintSinkSet.empty
+      Attribute.TaintSinkMap.empty
   | Some attrs ->
       Attributes.get_must_not_be_tainted attrs
 
@@ -403,7 +403,7 @@ module type S = sig
   val get_must_be_valid :
     key -> t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
-  val get_must_not_be_tainted : key -> t -> Attribute.TaintSinkSet.t
+  val get_must_not_be_tainted : key -> t -> Attribute.TaintSink.t Attribute.TaintSinkMap.t
 
   val get_returned_from_unknown : key -> t -> AbstractValue.t list option
 

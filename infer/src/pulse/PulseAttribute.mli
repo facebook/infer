@@ -12,6 +12,7 @@ module ConfigName = FbPulseConfigName
 module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module TaintItem = PulseTaintItem
+module TaintConfig = PulseTaintConfig
 module Timestamp = PulseTimestamp
 module Trace = PulseTrace
 module ValueHistory = PulseValueHistory
@@ -48,10 +49,11 @@ end
 module TaintedSet : PrettyPrintable.PPSet with type elt = Tainted.t
 
 module TaintSink : sig
-  type t = {sink: TaintItem.t; time: Timestamp.t; trace: Trace.t} [@@deriving compare, equal]
+  type t = {sink: TaintItem.value_tuple; time: Timestamp.t; trace: Trace.t}
+  [@@deriving compare, equal]
 end
 
-module TaintSinkSet : PrettyPrintable.PPSet with type elt = TaintSink.t
+module TaintSinkMap : PrettyPrintable.PPMap with type key = TaintConfig.Kind.t
 
 module TaintSanitized : sig
   type t = {sanitizer: TaintItem.t; time_trace: Timestamp.trace; trace: Trace.t}
@@ -107,7 +109,7 @@ type t =
   | Invalid of Invalidation.t * Trace.t
   | MustBeInitialized of Timestamp.t * Trace.t
   | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
-  | MustNotBeTainted of TaintSinkSet.t
+  | MustNotBeTainted of TaintSink.t TaintSinkMap.t
   | JavaResourceReleased
   | CSharpResourceReleased
   | HackAsyncAwaited
@@ -202,7 +204,7 @@ module Attributes : sig
 
   val remove_must_be_valid : t -> t
 
-  val get_must_not_be_tainted : t -> TaintSinkSet.t
+  val get_must_not_be_tainted : t -> TaintSink.t TaintSinkMap.t
 
   val get_written_to : t -> (Timestamp.t * Trace.t) option
 

@@ -63,7 +63,7 @@ module type S = sig
   val get_must_be_valid :
     key -> t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
-  val get_must_not_be_tainted : key -> t -> Attribute.TaintSinkSet.t
+  val get_must_not_be_tainted : key -> t -> Attribute.TaintSink.t Attribute.TaintSinkMap.t
 
   val get_returned_from_unknown : key -> t -> AbstractValue.t list option
 

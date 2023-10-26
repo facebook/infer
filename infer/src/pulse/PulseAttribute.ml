@@ -12,6 +12,7 @@ module CallEvent = PulseCallEvent
 module ConfigName = FbPulseConfigName
 module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
+module TaintConfig = PulseTaintConfig
 module TaintItem = PulseTaintItem
 module Timestamp = PulseTimestamp
 module Trace = PulseTrace
@@ -80,16 +81,17 @@ module Attribute = struct
   module TaintedSet = PrettyPrintable.MakePPSet (Tainted)
 
   module TaintSink = struct
-    type t = {sink: TaintItem.t; time: Timestamp.t; trace: Trace.t} [@@deriving compare, equal]
+    type t = {sink: TaintItem.value_tuple; time: Timestamp.t; trace: Trace.t}
+    [@@deriving compare, equal]
 
     let pp fmt {time; sink; trace} =
       F.fprintf fmt "(%a, t=%d)"
-        (Trace.pp ~pp_immediate:(fun fmt -> TaintItem.pp fmt sink))
+        (Trace.pp ~pp_immediate:(fun fmt -> TaintItem.pp_value_tuple fmt sink))
         trace
         (time :> int)
   end
 
-  module TaintSinkSet = PrettyPrintable.MakePPSet (TaintSink)
+  module TaintSinkMap = PrettyPrintable.MakePPMap (TaintConfig.Kind)
 
   module TaintSanitized = struct
     type t = {sanitizer: TaintItem.t; time_trace: Timestamp.trace; trace: Trace.t}
@@ -182,7 +184,7 @@ module Attribute = struct
     | Invalid of Invalidation.t * Trace.t
     | MustBeInitialized of Timestamp.t * Trace.t
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
-    | MustNotBeTainted of TaintSinkSet.t
+    | MustNotBeTainted of TaintSink.t TaintSinkMap.t
     | JavaResourceReleased
     | CSharpResourceReleased
     | HackAsyncAwaited
@@ -324,7 +326,7 @@ module Attribute = struct
           trace Invalidation.pp_must_be_valid_reason reason
           (timestamp :> int)
     | MustNotBeTainted sinks ->
-        F.fprintf f "MustNotBeTainted%a" TaintSinkSet.pp sinks
+        F.fprintf f "MustNotBeTainted%a" (TaintSinkMap.pp ~pp_value:TaintSink.pp) sinks
     | JavaResourceReleased ->
         F.pp_print_string f "Released"
     | CSharpResourceReleased ->
@@ -509,7 +511,7 @@ module Attribute = struct
         let add_call_to_sink taint_sink =
           TaintSink.{taint_sink with trace= add_call_to_trace taint_sink.trace}
         in
-        MustNotBeTainted (TaintSinkSet.map add_call_to_sink sinks)
+        MustNotBeTainted (TaintSinkMap.map add_call_to_sink sinks)
     | PropagateTaintFrom taints_in ->
         let add_propagation_event_to_history hist =
           let hist = add_call_to_history hist in
@@ -616,7 +618,7 @@ module Attribute = struct
     | ReturnedFromUnknown values ->
         filter_aux values ~get_addr:Fn.id ~set_addr:(fun v _ -> v)
         |> Option.map ~f:(fun values -> ReturnedFromUnknown values)
-    | MustNotBeTainted sinks when TaintSinkSet.is_empty sinks ->
+    | MustNotBeTainted sinks when TaintSinkMap.is_empty sinks ->
         L.die InternalError "Unexpected attribute %a." pp attr
     | Tainted set when TaintedSet.is_empty set ->
         L.die InternalError "Unexpected attribute %a." pp attr
@@ -684,7 +686,7 @@ module Attributes = struct
       get_by_rank Attribute.must_not_be_tainted_rank
         ~dest:(function[@warning "-partial-match"] MustNotBeTainted sinks -> sinks)
         attrs
-      |> Option.value ~default:Attribute.TaintSinkSet.empty
+      |> Option.value ~default:Attribute.TaintSinkMap.empty
 
 
     let add attrs value =
@@ -701,10 +703,16 @@ module Attributes = struct
             let existing_set = get_taint_sanitized attrs in
             update (TaintSanitized (TaintSanitizedSet.union new_set existing_set)) attrs
       | MustNotBeTainted new_sinks ->
-          if TaintSinkSet.is_empty new_sinks then attrs
+          if TaintSinkMap.is_empty new_sinks then attrs
           else
+            (* If we find the same kind twice we keep the sink for which compare_value_tuple
+               is smaller. In particular we want to keep whichever one is Basic. *)
             let sinks = get_must_not_be_tainted attrs in
-            update (MustNotBeTainted (TaintSinkSet.union new_sinks sinks)) attrs
+            let aux _kind (sink1 : TaintSink.t) (sink2 : TaintSink.t) =
+              if TaintItem.compare_value_tuple sink1.sink sink2.sink < 0 then Some sink1
+              else Some sink2
+            in
+            update (MustNotBeTainted (TaintSinkMap.union aux new_sinks sinks)) attrs
       | WrittenTo _ ->
           update value attrs
       | _ ->

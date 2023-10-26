@@ -831,10 +831,12 @@ let check_all_taint_valid path callee_proc_name call_location callee_summary ast
         Trace.ViaCall
           {in_call= trace; f= Call callee_proc_name; location= call_location; history= hist_caller}
       in
-      Attribute.TaintSinkSet.fold
-        (fun Attribute.TaintSink.{sink; trace} astate_result ->
+      Attribute.TaintSinkMap.fold
+        (fun kind Attribute.TaintSink.{sink; trace} astate_result ->
           let* astate = astate_result in
-          let sink_and_trace = (sink, trace_via_call trace) in
+          let sink_and_trace =
+            ({TaintItem.kinds= [kind]; value_tuple= sink}, trace_via_call trace)
+          in
           let+ _, astate =
             PulseTaintOperations.check_flows_wrt_sink path call_location ~sink:sink_and_trace
               ~source:addr_hist_caller astate
