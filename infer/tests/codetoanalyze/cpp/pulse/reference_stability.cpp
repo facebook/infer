@@ -256,6 +256,12 @@ struct F14FastMap : public std::conditional<
 // sizeof(std::pair<const BigPoint, T>) >= 24.
 struct BigPoint {
   std::uint64_t x, y, z;
+  friend bool operator==(const BigPoint& a, const BigPoint& b);
+};
+
+template <>
+struct std::hash<BigPoint> {
+  std::size_t operator()(const BigPoint& point) const;
 };
 
 void unordered_map_ok() {
@@ -532,7 +538,7 @@ void iterator_copy_operator_equal_bad(folly::F14FastMap<int, int>& map) {
 void weird_operator_bracket_bad_FN(folly::F14FastMap<int, int>& map) {
   // This is not valid, as the map may resize for the insert call prior to
   // accessing map[71] and constructing the pair.
-  map.insert(13, map[71]);
+  map.emplace(13, map[71]);
 }
 
 // https://github.com/facebook/folly/blob/1cf9ac0/folly/container/F14.md?plain=1#L293-L296
