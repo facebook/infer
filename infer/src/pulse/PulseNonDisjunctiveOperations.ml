@@ -255,22 +255,22 @@ let is_address_reachable_from_unowned source_addr ~astates_before proc_lvalue_re
         astate_before )
 
 
-let is_copied_from_address_reachable_from_unowned ~is_intermediate ~from source_addr_typ_opt
-    proc_lvalue_ref_parameters ~astates_before =
+let is_copied_from_address_reachable_from_unowned ~is_captured_by_ref ~is_intermediate ~from
+    source_addr_typ_opt proc_lvalue_ref_parameters ~astates_before =
   ( is_intermediate
   || Attribute.CopyOrigin.equal from CopyAssignment
   || Attribute.CopyOrigin.equal from CopyToOptional )
   && Option.exists source_addr_typ_opt ~f:(fun (source_addr, source_expr, _) ->
          ( match source_expr with
          | DecompilerExpr.SourceExpr ((PVar pvar, _), _) ->
-             Pvar.is_this pvar || Pvar.is_global pvar
+             Pvar.is_this pvar || Pvar.is_global pvar || is_captured_by_ref pvar
          | _ ->
              false )
          || is_address_reachable_from_unowned source_addr ~astates_before proc_lvalue_ref_parameters )
 
 
-let add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths tenv path location
-    from args ~astates_before (astate_n, astate) =
+let add_copies_to_pvar_or_field ~is_captured_by_ref proc_lvalue_ref_parameters integer_type_widths
+    tenv path location from args ~astates_before (astate_n, astate) =
   let open IOption.Let_syntax in
   match (args : (Exp.t * Typ.t) list) with
   | ((Lvar copy_pvar | Lindex (Lvar copy_pvar, _)), copy_type) :: rest_args
@@ -288,16 +288,18 @@ let add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths t
         | SourceExpr (source_expr, _) when is_copy_into_local copied_var ->
             (* case 1: we copy into a local variable that occurs in the code with a known source  *)
             if
-              is_copied_from_address_reachable_from_unowned ~is_intermediate:false
-                source_addr_typ_opt ~from proc_lvalue_ref_parameters ~astates_before
+              is_copied_from_address_reachable_from_unowned ~is_captured_by_ref
+                ~is_intermediate:false source_addr_typ_opt ~from proc_lvalue_ref_parameters
+                ~astates_before
             then None
             else Some (IntoVar {copied_var}, Some source_expr)
         | SourceExpr (((PVar pvar, _) as source_expr), _) ->
             (* case 2: we copy into an intermediate that is not a field member/frontend temp/global and source is known. This is the case for intermediate copies of the pass by value arguments. *)
             if
               Pvar.is_frontend_tmp pvar || Pvar.is_this pvar || Pvar.is_global pvar
-              || is_copied_from_address_reachable_from_unowned ~is_intermediate:true
-                   source_addr_typ_opt ~from proc_lvalue_ref_parameters ~astates_before
+              || is_copied_from_address_reachable_from_unowned ~is_captured_by_ref
+                   ~is_intermediate:true source_addr_typ_opt ~from proc_lvalue_ref_parameters
+                   ~astates_before
             then None
             else Some (IntoIntermediate {copied_var}, Some source_expr)
         | Unknown _ when is_copy_into_local copied_var ->
@@ -311,8 +313,9 @@ let add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths t
               (* We don't want to track copies into globals since they can be modified by any procedure as their lifetime extends till the end of the program*)
               None
             else if
-              is_copied_from_address_reachable_from_unowned ~is_intermediate:true
-                source_addr_typ_opt ~from proc_lvalue_ref_parameters ~astates_before
+              is_copied_from_address_reachable_from_unowned ~is_captured_by_ref
+                ~is_intermediate:true source_addr_typ_opt ~from proc_lvalue_ref_parameters
+                ~astates_before
             then None
             else
               (* case 5: analogous to case 2 but source is returned from a call that is known to create a copy into a non-global *)
@@ -342,8 +345,9 @@ let add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths t
                get_copied_and_source path rest_args location from astate
              in
              if
-               is_copied_from_address_reachable_from_unowned ~is_intermediate:false
-                 source_addr_typ_opt ~from proc_lvalue_ref_parameters ~astates_before
+               is_copied_from_address_reachable_from_unowned ~is_captured_by_ref
+                 ~is_intermediate:false source_addr_typ_opt ~from proc_lvalue_ref_parameters
+                 ~astates_before
              then
                (* If source is copy assigned from a member field/global, we cannot suggest move as other procedures might access it. *)
                None
@@ -415,6 +419,13 @@ let remove_optional_copies_to_return proc_desc path location pname args (astate_
 
 let add_copies integer_type_widths tenv proc_desc path location pname actuals ~astates_before
     default =
+  let is_captured_by_ref =
+    let captured_by_ref =
+      List.filter_map (Procdesc.get_captured proc_desc) ~f:(fun {CapturedVar.pvar; capture_mode} ->
+          match capture_mode with ByValue -> None | ByReference -> Some pvar )
+    in
+    fun pvar -> List.mem captured_by_ref pvar ~equal:Pvar.equal
+  in
   let aux copy_check_fn args_map_fn default =
     Option.bind (copy_check_fn pname) ~f:(fun from ->
         let ( |-> ) = IOption.continue ~default in
@@ -423,8 +434,8 @@ let add_copies integer_type_widths tenv proc_desc path location pname actuals ~a
           Procdesc.get_passed_by_ref_formals proc_desc
           |> List.filter ~f:(fun (_, typ) -> not (Typ.is_rvalue_reference typ))
         in
-        add_copies_to_pvar_or_field proc_lvalue_ref_parameters integer_type_widths tenv path
-          location from args ~astates_before default
+        add_copies_to_pvar_or_field ~is_captured_by_ref proc_lvalue_ref_parameters
+          integer_type_widths tenv path location from args ~astates_before default
         |-> add_copies_to_return integer_type_widths tenv proc_desc path location from args
         (* Ignore optional copies to return value to avoid false positives w.r.t. RVO/NRVO *)
         |-> remove_optional_copies_to_return proc_desc path location pname args )

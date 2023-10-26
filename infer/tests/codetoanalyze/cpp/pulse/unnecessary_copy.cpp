@@ -933,3 +933,17 @@ class UnownedTest {
     ptr_field = c; // ok to move here
   }
 };
+
+struct ArrWrap {
+  Arr arr;
+};
+
+void captured_by_ref_ok() {
+  Arr x;
+  auto _ = [&]() {
+    ArrWrap y;
+    y.arr = x;
+    return y;
+  };
+  x.arr[0] = 42;
+}
