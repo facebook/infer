@@ -472,7 +472,7 @@ module Error = struct
     | FormatValueSpec of Exp.t
     | NextOffsetMissing
     | MissingBackEdge of int * int
-    | InvalidBackEdge of (string * int * int)
+    | InvalidBackEdgeArity of (string * int * int)
     | CallKeywordNotString0 of Const.t
     | CallKeywordNotString1 of Exp.t
     | MakeFunctionInvalidDefaults of Exp.t
@@ -520,7 +520,7 @@ module Error = struct
         F.fprintf fmt "Jump to next instruction detected, but next instruction is missing"
     | MissingBackEdge (from, to_) ->
         F.fprintf fmt "Invalid absolute jump: missing target of back-edge from %d to %d" from to_
-    | InvalidBackEdge (name, expect, actual) ->
+    | InvalidBackEdgeArity (name, expect, actual) ->
         F.fprintf fmt "Invalid backedge to #%s with arity mismatch (expecting %d but got %d)" name
           expect actual
     | CallKeywordNotString0 cst ->
@@ -655,7 +655,6 @@ module Label = struct
     { name: name
     ; ssa_parameters: SSA.t list
     ; processed: bool
-    ; backedge: bool
     ; handler_type: handler_type
     ; block_stack: Block.t Stack.t
     ; prelude: ('a t -> 'a -> 'a) option }
@@ -667,8 +666,8 @@ module Label = struct
     F.fprintf fmt " %a" pp_handler_type handler_type
 
 
-  let mk ?(backedge = false) ?(handler_type = Label) ?prelude name ssa_parameters block_stack =
-    {name; ssa_parameters; processed= false; backedge; handler_type; prelude; block_stack}
+  let mk ?(handler_type = Label) ?prelude name ssa_parameters block_stack =
+    {name; ssa_parameters; processed= false; handler_type; prelude; block_stack}
 
 
   let is_processed {processed} = processed
@@ -803,13 +802,13 @@ module CFG = struct
 
   (** Helper to fetch label info if there's already one registered at the specified [offset], or
       create a fresh one. *)
-  let get_label cfg ?prelude ?backedge ?handler_type offset ~ssa_parameters block_stack =
+  let get_label cfg ?prelude ?handler_type offset ~ssa_parameters block_stack =
     match lookup_label cfg offset with
     | Some label ->
         (false, label, cfg)
     | None ->
         let name, cfg = fresh_label cfg in
-        let label = Label.mk name ?prelude ?backedge ?handler_type ssa_parameters block_stack in
+        let label = Label.mk name ?prelude ?handler_type ssa_parameters block_stack in
         (true, label, cfg)
 
 
@@ -1050,8 +1049,7 @@ module State = struct
 
   let lookup_label {cfg} offset = CFG.lookup_label cfg offset
 
-  let get_label ({cfg; block_stack} as st) ?prelude ?backedge ?fix_type ?handler_type offset
-      ~ssa_parameters =
+  let get_label ({cfg; block_stack} as st) ?prelude ?fix_type ?handler_type offset ~ssa_parameters =
     debug st "get_label at offset %d BLOCK_LAYOUT %s@\n" offset
       (String.concat ~sep:"" @@ List.map ~f:Block.show block_stack) ;
     let block_stack =
@@ -1064,7 +1062,7 @@ module State = struct
           Stack.push block_stack (Block.mk Finally)
     in
     let new_label, label, cfg =
-      CFG.get_label cfg ?prelude ?backedge ?handler_type offset ~ssa_parameters block_stack
+      CFG.get_label cfg ?prelude ?handler_type offset ~ssa_parameters block_stack
     in
     let label, cfg =
       match fix_type with
@@ -1109,7 +1107,7 @@ module State = struct
           let arity = size st in
           let ssa_parameters, st = mk_ssa_parameters st arity in
           let name, st = fresh_label st in
-          let label = Label.mk ~backedge:true name ssa_parameters block_stack in
+          let label = Label.mk name ssa_parameters block_stack in
           let st = register_label st ~offset label in
           (Some (offset, label), st)
         else (None, st)
@@ -2112,17 +2110,14 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       (* sanity check: we should already have allocated a label for this jump, if it is a backward
          edge. *)
       let* () =
-        if arg < instr_offset then (
+        if arg < instr_offset then
           match State.lookup_label st arg with
           | None ->
               external_error st (Error.MissingBackEdge (instr_offset, arg))
-          | Some ({Label.name; backedge; ssa_parameters} as label) ->
-              if not backedge then
-                L.die InternalError "JUMP_ABSOLUTE: target %a at %d should be a back-edge" Label.pp
-                  label arg ;
+          | Some {Label.name; ssa_parameters} ->
               let sz = List.length ssa_parameters in
-              if sz <> arity then internal_error st (Error.InvalidBackEdge (name, arity, sz))
-              else Ok () )
+              if sz <> arity then internal_error st (Error.InvalidBackEdgeArity (name, arity, sz))
+              else Ok ()
         else Ok ()
       in
       let label, st = State.get_label st arg ~ssa_parameters in
@@ -2600,10 +2595,7 @@ let patch_comp_object_name st {FFI.Code.co_name; co_firstlineno} =
 let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
   let open IResult.Let_syntax in
   let {State.module_name; loc} = st in
-  let backedge =
-    match instructions with [] -> false | {FFI.Instruction.is_jump_target} :: _ -> is_jump_target
-  in
-  let label, st = State.get_label st 0 ~backedge ~ssa_parameters:[] in
+  let label, st = State.get_label st 0 ~ssa_parameters:[] in
   let st = State.process_label st 0 [] in
   let* ({State.classes; functions} as st), nodes = mk_nodes st label code instructions in
   let* objects =

@@ -3240,6 +3240,65 @@ object dummy:
     let%expect_test _ =
       let source =
         {|
+def f(m, a, b, c):
+    while (a, b) not in m:
+        b -= 1
+    while (a, c) not in m:
+        c += 1
+  |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      return None
+
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0 .label:
+          n0 <- $Compare.not_in((a, b), m)
+          if n0 then jmp b1 else jmp b2
+
+
+        #b1 .label:
+          n1 <- $Inplace.Subtract(b, 1)
+          b <- n1
+          jmp b0
+
+
+        #b2 .label:
+          n2 <- $Compare.not_in((a, c), m)
+          if n2 then jmp b3 else jmp b4
+
+
+        #b3 .label:
+          n3 <- $Inplace.Add(c, 1)
+          c <- n3
+          jmp b2
+
+
+        #b4 .label:
+          return None
+
+
+
+
+
+    functions:
+      f -> dummy.f
+          |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
 class C:
     pass
 
@@ -4274,57 +4333,57 @@ except C as c:
       test source ;
       [%expect
         {|
-        module
-        object dummy:
-          code:
-            #b0 .label:
-              dummy.foo <- $FuncObj(foo, dummy.foo, {})
-              n0 <- dummy.foo()
-              jmp b2
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.foo <- $FuncObj(foo, dummy.foo, {})
+      n0 <- dummy.foo()
+      jmp b2
 
 
-            #b1(n6, n5, n4, n3, n2, n1) .except:
-              n7 <- $Compare.exception(n6, $unknown.C)
-              if n7 then jmp b3(n6, n5, n4, n3, n2, n1) else jmp b4(n6, n5, n4, n3, n2, n1)
+    #b1(n6, n5, n4, n3, n2, n1) .except:
+      n7 <- $Compare.exception(n6, $unknown.C)
+      if n7 then jmp b3(n6, n5, n4, n3, n2, n1) else jmp b4(n6, n5, n4, n3, n2, n1)
 
 
-            #b3(n13, n12, n11, n10, n9, n8) .label:
-              dummy.c <- n12
-              n23 <- print(dummy.c)
-              jmp b5(n10, n9, n8)
+    #b3(n13, n12, n11, n10, n9, n8) .label:
+      dummy.c <- n12
+      n23 <- print(dummy.c)
+      jmp b5(n10, n9, n8)
 
 
-            #b5(n22, n21, n20) .finally:
-              dummy.c <- None
-              n27 <- $Delete(dummy.c)
-              jmp b6
+    #b5(n22, n21, n20) .finally:
+      dummy.c <- None
+      n27 <- $Delete(dummy.c)
+      jmp b6
 
 
-            #b6 .label:
-              jmp b2
+    #b6 .label:
+      jmp b2
 
 
-            #b4(n19, n18, n17, n16, n15, n14) .label:
-              jmp b2
+    #b4(n19, n18, n17, n16, n15, n14) .label:
+      jmp b2
 
 
-            #b2 .label:
-              return None
-
-
-
-          objects:
-            object dummy.foo:
-              code:
-                #b0 .label:
-                  return None
+    #b2 .label:
+      return None
 
 
 
+  objects:
+    object dummy.foo:
+      code:
+        #b0 .label:
+          return None
 
 
-            functions:
-              foo -> dummy.foo |}]
+
+
+
+    functions:
+      foo -> dummy.foo |}]
 
 
     let%expect_test _ =
@@ -4615,54 +4674,54 @@ f(**d1, x=42)
       test source ;
       [%expect
         {xxx|
-        module
-        object dummy:
-          code:
-            #b0 .label:
-              dummy.d0 <- {0: 0, 1: 1, }
-              dummy.d1 <- {"a": 0, "b": 1, }
-              dummy.x <- (packed){|$Packed(dummy.d0), $Packed(dummy.d1)|}
-              n0 <- print(dummy.x)
-              dummy.f <- $FuncObj(f, dummy.f, {})
-              dummy.d1 <- {"a": 0, "b": 1, }
-              n1 <- dummy.f($Packed(()), $PackedMap((packed){|$Packed(dummy.d1), $Packed({|"x", 42|})|})) !packed
-              return None
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.d0 <- {0: 0, 1: 1, }
+      dummy.d1 <- {"a": 0, "b": 1, }
+      dummy.x <- (packed){|$Packed(dummy.d0), $Packed(dummy.d1)|}
+      n0 <- print(dummy.x)
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      dummy.d1 <- {"a": 0, "b": 1, }
+      n1 <- dummy.f($Packed(()), $PackedMap((packed){|$Packed(dummy.d1), $Packed({|"x", 42|})|})) !packed
+      return None
 
 
 
-          objects:
-            object dummy.f:
-              code:
-                #b0 .label:
-                  n0 <- print(x)
-                  n1 <- $CallMethod($LoadMethod(kwargs, items), )
-                  n2 <- $GetIter(n1)
-                  jmp b1(n2)
+  objects:
+    object dummy.f:
+      code:
+        #b0 .label:
+          n0 <- print(x)
+          n1 <- $CallMethod($LoadMethod(kwargs, items), )
+          n2 <- $GetIter(n1)
+          jmp b1(n2)
 
 
-                #b1(n3) .label:
-                  n4 <- $NextIter(n3)
-                  n5 <- $HasNextIter(n4)
-                  if n5 then jmp b2 else jmp b3
+        #b1(n3) .label:
+          n4 <- $NextIter(n3)
+          n5 <- $HasNextIter(n4)
+          if n5 then jmp b2 else jmp b3
 
 
-                #b2 .label:
-                  n6 <- $IterData(n4)
-                  k <- n6[0]
-                  v <- n6[1]
-                  n7 <- print(k, v)
-                  jmp b1(n3)
+        #b2 .label:
+          n6 <- $IterData(n4)
+          k <- n6[0]
+          v <- n6[1]
+          n7 <- print(k, v)
+          jmp b1(n3)
 
 
-                #b3 .label:
-                  return None
+        #b3 .label:
+          return None
 
 
 
 
 
-            functions:
-              f -> dummy.f |xxx}]
+    functions:
+      f -> dummy.f |xxx}]
 
 
     let%expect_test _ =
