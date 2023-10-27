@@ -3551,10 +3551,15 @@ object dummy:
 
 
     let%expect_test _ =
-      let source = {|
+      let source =
+        {|
 def f(name, args):
     return f"foo.{name!r}{name!s}{name!a}"
-          |} in
+
+def test_arguments(x, y, width):
+    return f'x={x*y:{width}}'
+          |}
+      in
       test source ;
       [%expect
         {|
@@ -3563,6 +3568,7 @@ object dummy:
   code:
     #b0 .label:
       dummy.f <- $FuncObj(f, dummy.f, {})
+      dummy.test_arguments <- $FuncObj(test_arguments, dummy.test_arguments, {})
       return None
 
 
@@ -3582,9 +3588,21 @@ object dummy:
 
 
 
+    object dummy.test_arguments:
+      code:
+        #b0 .label:
+          n0 <- $Binary.Multiply(x, y)
+          n1 <- $Format(width, None)
+          n2 <- $Format(n0, n1)
+          return $Concat("x=", n2)
+
+
+
+
 
     functions:
-      f -> dummy.f |}]
+      f -> dummy.f
+      test_arguments -> dummy.test_arguments |}]
 
 
     let%expect_test _ =

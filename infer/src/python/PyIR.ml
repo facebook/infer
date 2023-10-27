@@ -515,7 +515,7 @@ module Error = struct
     | UnpackSequence n ->
         F.fprintf fmt "UNPACK_SEQUENCE: invalid count %d" n
     | FormatValueSpec exp ->
-        F.fprintf fmt "FORMAT_VALUE: expected string literal, got %a" Exp.pp exp
+        F.fprintf fmt "FORMAT_VALUE: expected string literal or temporary, got %a" Exp.pp exp
     | NextOffsetMissing ->
         F.fprintf fmt "Jump to next instruction detected, but next instruction is missing"
     | MissingBackEdge (from, to_) ->
@@ -1569,6 +1569,11 @@ let format_value st flags =
       | Const (String _) ->
           Ok (fmt_spec, st)
       | Collection {kind= String; values= _} ->
+          Ok (fmt_spec, st)
+      | Temp _ ->
+          (* Usually it will be string literals, but it can also be the
+             return value of a format function, so we have to allow
+             temporaries too *)
           Ok (fmt_spec, st)
       | _ ->
           external_error st (Error.FormatValueSpec fmt_spec)
