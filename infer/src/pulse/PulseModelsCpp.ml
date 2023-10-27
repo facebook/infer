@@ -785,24 +785,30 @@ module GenericMapCollection = struct
     match typ.desc with Tptr ({desc= Tstruct pointee}, _) -> pointee | _ -> assert false
 
 
-  let emplace map_t ({FuncArg.arg_payload} as map) args : model =
-   fun ({path; location} as data) astate ->
-    let desc = Format.asprintf "%a::emplace" Invalidation.pp_map_type map_t in
-    let last_arg = List.last_exn args in
-    let return_value = last_arg.FuncArg.arg_payload in
-    let return_type = unwrap_pointer_to_struct_type last_arg.FuncArg.typ in
+  (* A number of map functions return std::pair<iterator, bool>. *)
+  (* Make an iterator the first field of a pair and return it. *)
+  let return_iterator_pair_first desc arg_payload return_arg {path; location} astate =
     let it = (AbstractValue.mk_fresh (), Hist.single_call path location desc) in
-    let<*> astate = invalidate_references map_t Emplace map data astate in
     let<*> astate, obj =
       PulseOperations.eval_access path Read location arg_payload pair_access astate
     in
     let<*> astate = PulseOperations.write_deref path location ~ref:it ~obj astate in
     let<+> astate =
-      PulseOperations.write_field path location ~ref:return_value
-        (Fieldname.make return_type "first")
+      PulseOperations.write_field path location ~ref:return_arg.FuncArg.arg_payload
+        (Fieldname.make (unwrap_pointer_to_struct_type return_arg.FuncArg.typ) "first")
         ~obj:it astate
     in
     astate
+
+
+  let emplace map_t map_f ({FuncArg.arg_payload} as map) args : model =
+   fun data astate ->
+    let desc =
+      Format.asprintf "%a::%a" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f
+    in
+    let last_arg = List.last_exn args in
+    let<*> astate = invalidate_references map_t map_f map data astate in
+    return_iterator_pair_first desc arg_payload last_arg data astate
 
 
   let iterator_star desc it : model =
@@ -908,7 +914,10 @@ let map_matchers =
           $++$--> GenericMapCollection.emplace_hint map_t
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "emplace"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
-          $++$--> GenericMapCollection.emplace map_t
+          $++$--> GenericMapCollection.emplace map_t Emplace
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "try_emplace_token"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $++$--> GenericMapCollection.emplace map_t TryEmplaceToken
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator[]"
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
           $+...$--> GenericMapCollection.operator_bracket map_t

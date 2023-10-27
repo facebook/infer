@@ -48,6 +48,7 @@ type map_function =
   | InsertOrAssign
   | Emplace
   | TryEmplace
+  | TryEmplaceToken
   | EmplaceHint
   | OperatorBracket
 [@@deriving compare, equal]
@@ -78,6 +79,8 @@ let pp_map_function f = function
       F.fprintf f "emplace"
   | TryEmplace ->
       F.fprintf f "try_emplace"
+  | TryEmplaceToken ->
+      F.fprintf f "try_emplace_token"
   | EmplaceHint ->
       F.fprintf f "emplace_hint"
   | OperatorBracket ->

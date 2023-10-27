@@ -31,6 +31,7 @@ type map_function =
   | InsertOrAssign
   | Emplace
   | TryEmplace
+  | TryEmplaceToken
   | EmplaceHint
   | OperatorBracket
 

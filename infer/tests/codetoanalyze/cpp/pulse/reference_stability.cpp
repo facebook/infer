@@ -12,7 +12,7 @@
 
 // Keep a simplified skeleton of F14 maps for testing.
 namespace folly {
-struct F14HashToken;
+struct F14HashToken {};
 
 namespace f14::detail {
 template <typename ValuePtr>
@@ -402,6 +402,13 @@ void folly_fastmap_try_emplace_bad_FN() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   const auto& valueRef = map.at(1);
   map.try_emplace(4, 16);
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_try_emplace_token_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.try_emplace_token(map.prehash(4), 4, 16);
   const auto valueCopy = valueRef;
 }
 
