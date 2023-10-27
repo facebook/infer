@@ -597,13 +597,17 @@ end
 module Block = struct
   (** The Python interpreter keeps a stack of "blocks" to store information about finally and except
       handlers *)
-  type block_type = Except | Finally
+  type block_type = Normal | Except | Finally
+
+  let show_block_type = function Normal -> "N" | Except -> "E" | Finally -> "F"
 
   type t = {block_type: block_type}
 
+  let show {block_type} = show_block_type block_type
+
   let mk block_type = {block_type}
 
-  let is_except {block_type} = match block_type with Except -> true | Finally -> false
+  let is_except {block_type} = match block_type with Except -> true | _ -> false
 end
 
 module Stack = struct
@@ -676,6 +680,16 @@ module Label = struct
   let process label ssa_parameters = {label with processed= true; ssa_parameters}
 
   let set_handler_type label handler_type = {label with handler_type}
+
+  let set_last_block_type ({block_stack} as label) handler_type =
+    let block_stack =
+      match Stack.pop block_stack with
+      | None ->
+          block_stack
+      | Some (_, block_stack) ->
+          Stack.push block_stack (Block.mk handler_type)
+    in
+    {label with block_stack}
 end
 
 module Jump = struct
@@ -779,15 +793,25 @@ module CFG = struct
         {cfg with labels}
 
 
+  let set_last_block_type ({labels} as cfg) offset handler_type =
+    match IMap.find_opt offset labels with
+    | None ->
+        (None, cfg)
+    | Some label ->
+        let label = Label.set_last_block_type label handler_type in
+        let labels = IMap.add offset label labels in
+        (Some label, {cfg with labels})
+
+
   (** Helper to fetch label info if there's already one registered at the specified [offset], or
       create a fresh one. *)
-  let get_label cfg ?prelude ?handler_type offset ~ssa_parameters block_stack =
+  let get_label cfg ?prelude ?backedge ?handler_type offset ~ssa_parameters block_stack =
     match lookup_label cfg offset with
     | Some label ->
         (false, label, cfg)
     | None ->
         let name, cfg = fresh_label cfg in
-        let label = Label.mk name ?prelude ?handler_type ssa_parameters block_stack in
+        let label = Label.mk name ?prelude ?backedge ?handler_type ssa_parameters block_stack in
         (true, label, cfg)
 
 
@@ -814,8 +838,10 @@ module Node = struct
 end
 
 module State = struct
+  (*
   (** Bytecode offset of except/finally handlers *)
   type exn_handler = {offset: int}
+     *)
 
   (** Internal state of the Bytecode -> IR compiler *)
   type t =
@@ -823,9 +849,11 @@ module State = struct
     ; debug: bool
     ; loc: Location.t
     ; cfg: t CFG.t
-    ; exn_handlers: exn_handler list
-          (** Stack of except/finally handlers info. The data we store here will be used (TODO) to
-              inform Textual about statements that can raise exceptions. *)
+          (* TODO:
+             ; exn_handlers: exn_handler list
+                   (** Stack of except/finally handlers info. The data we store here will be used (TODO) to
+                       inform Textual about statements that can raise exceptions. *)
+          *)
     ; global_names: Ident.t SMap.t  (** Translation cache for global names *)
     ; stack: Exp.t Stack.t
     ; block_stack: Block.t Stack.t
@@ -869,15 +897,15 @@ module State = struct
 
   let empty ~debug ~loc module_name =
     let p = if debug then Debug.todo else Debug.p in
+    let block_stack = Stack.push Stack.empty (Block.mk Normal) in
     p "State.empty@\n" ;
     { module_name
     ; debug
     ; loc
-    ; cfg= CFG.empty
-    ; exn_handlers= []
+    ; cfg= CFG.empty (* ; exn_handlers= [] *)
     ; global_names= known_global_names
     ; stack= Stack.empty
-    ; block_stack= Stack.empty
+    ; block_stack
     ; stmts= []
     ; fresh_id= 0
     ; classes= SSet.empty
@@ -944,8 +972,9 @@ module State = struct
     {st with stack}
 
 
-  let push_block ({block_stack} as st) exp =
-    let block_stack = Stack.push block_stack exp in
+  let push_block ({block_stack} as st) block =
+    debug st "push-block: %s@\n" (Block.show block) ;
+    let block_stack = Stack.push block_stack block in
     {st with block_stack}
 
 
@@ -963,6 +992,7 @@ module State = struct
     | None ->
         Error (L.InternalError, loc, Error.EmptyStack "pop (block)")
     | Some (block, block_stack) ->
+        debug st "pop-block: %s@\n" (Block.show block) ;
         let st = {st with block_stack} in
         Ok (block, st)
 
@@ -974,10 +1004,6 @@ module State = struct
     | Some exp ->
         Ok exp
 
-
-  (* We don't fail hard here because the block stack might be empty in
-     "normal" code, while pop should always be after a push *)
-  let peek_block {block_stack} = Stack.peek 0 block_stack
 
   let pop_n st n =
     let rec aux acc st n =
@@ -1024,9 +1050,30 @@ module State = struct
 
   let lookup_label {cfg} offset = CFG.lookup_label cfg offset
 
-  let get_label ({cfg; block_stack} as st) ?prelude ?handler_type offset ~ssa_parameters =
+  let get_label ({cfg; block_stack} as st) ?prelude ?backedge ?fix_type ?handler_type offset
+      ~ssa_parameters =
+    debug st "get_label at offset %d BLOCK_LAYOUT %s@\n" offset
+      (String.concat ~sep:"" @@ List.map ~f:Block.show block_stack) ;
+    let block_stack =
+      match (handler_type : Label.handler_type option) with
+      | None | Some Label ->
+          block_stack
+      | Some Except ->
+          Stack.push block_stack (Block.mk Except)
+      | Some Finally ->
+          Stack.push block_stack (Block.mk Finally)
+    in
     let new_label, label, cfg =
-      CFG.get_label cfg ?prelude ?handler_type offset ~ssa_parameters block_stack
+      CFG.get_label cfg ?prelude ?backedge ?handler_type offset ~ssa_parameters block_stack
+    in
+    let label, cfg =
+      match fix_type with
+      | None ->
+          (label, cfg)
+      | Some fix_type ->
+          let opt_label, cfg = CFG.set_last_block_type cfg offset fix_type in
+          let label = Option.value ~default:label opt_label in
+          (label, cfg)
     in
     let st = {st with cfg} in
     let st = if new_label then register_label st ~offset label else st in
@@ -1073,22 +1120,6 @@ module State = struct
         (None, st)
     | instr :: _ ->
         instr_is_jump_target st instr
-
-
-  let push_exn_handler ({exn_handlers} as st) ~offset =
-    let exn_handlers = {offset} :: exn_handlers in
-    {st with exn_handlers}
-
-
-  let pop_exn_handler ({exn_handlers} as st) =
-    let exn_handlers =
-      match exn_handlers with
-      | [] ->
-          L.die InternalError "State.pop_exn_handler: empty stack"
-      | _ :: exn_handlers ->
-          exn_handlers
-    in
-    {st with exn_handlers}
 
 
   let enter_node st ({Label.ssa_parameters; prelude; block_stack} as label) =
@@ -1789,7 +1820,9 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       {st with State.loc= starts_line} )
     else st
   in
-  State.debug st "%s %d (0x%x) - STACK_SIZE %d@\n" opname arg arg (State.size st) ;
+  State.debug st "%a: %s %d (0x%x) - STACK_SIZE %d - BLOCK_LAYOUT %s@\n" Offset.pp instr_offset
+    opname arg arg (State.size st)
+    (String.concat ~sep:"" @@ List.map ~f:Block.show st.State.block_stack) ;
   match opname with
   | "LOAD_CONST" ->
       let c = co_consts.(arg) in
@@ -2119,7 +2152,6 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       (* The FFI.Instruction framework already did the magic and this opcode can be ignored. *)
       Ok (st, None)
   | "POP_BLOCK" ->
-      let st = State.pop_exn_handler st in
       let* _block, st = State.pop_block st in
       Ok (st, None)
   | "ROT_TWO" ->
@@ -2153,7 +2185,6 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
          absolute offset right away *)
       let* next_offset = Offset.get ~loc next_offset_opt in
       let offset = next_offset + arg in
-      let st = State.push_exn_handler st ~offset in
       let* context_manager, st = State.pop st in
       let st = State.push st (ContextManagerExit context_manager) in
       let exp = Exp.LoadMethod (context_manager, PyCommon.enter) in
@@ -2164,7 +2195,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       (* The "finally" block will have WITH_CLEANUP_START/FINISH that expect the Context Manager
          to be on the stack *)
       let _label, st = State.get_label st ~handler_type:Finally offset ~ssa_parameters in
-      let block = Block.mk Finally in
+      let block = Block.mk Normal in
       let st = State.push_block st block in
       let st = State.push st (Exp.Temp lhs) in
       Ok (st, None)
@@ -2196,7 +2227,9 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       (* Because we can't decide in SETUP_FINALLY if the block will be a finally vs except block,
          we overwrite its type here. We also change the type of the current block to reflect this
          decision *)
-      let label, st = State.get_label st offset ~ssa_parameters in
+      let label, st =
+        State.get_label st offset ~handler_type:Finally ~fix_type:Finally ~ssa_parameters
+      in
       let st = State.set_handler_type st offset Finally in
       let* ssa_args, st = State.to_ssa st in
       let info = {Jump.label; offset; ssa_args} in
@@ -2208,8 +2241,17 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let* next_offset = Offset.get ~loc next_offset_opt in
       let offset = next_offset + arg in
       let arity = State.size st in
+      (* TODO:
+         this won't work correctly with Textual at the moment, because it will
+         create an except node with more than the (6) exception items the
+         runtime pust on the stack. We currently preserves the stack shape as
+         ssa parameters, which enable us to correctly track everything.
+
+         Once we decide to actively deal with exception in the frontend, we
+         should save the stack (internally, or as specially named variables)
+         and only leave the exception items as input argument of the except
+         node *)
       let ssa_parameters, st = State.mk_ssa_parameters st arity in
-      let st = State.push_exn_handler st ~offset in
       State.debug st "setup-finally: current block size: %d@\n" (State.size st) ;
       (* There's two possible targets during this block:
          - the [finally] block which expects a [NULL] on the stack
@@ -2222,13 +2264,13 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
          We'll make this decision if we have a BEGIN_FINALLY on the path *)
       let _label, st = State.get_label st ~handler_type:Except offset ~ssa_parameters in
       (* Fall-through to the rest of the "normal" code *)
-      let block = Block.mk Finally in
+      let block = Block.mk Normal in
       let st = State.push_block st block in
       Ok (st, None)
   | "END_FINALLY" ->
       (* See doc for [END_FINALLY]. *)
-      let opt_block = State.peek_block st in
-      let is_except = Option.value_map ~default:false ~f:Block.is_except opt_block in
+      let* block, st = State.pop_block st in
+      let is_except = Block.is_except block in
       let* st =
         if is_except then
           (* TODO: handle the re-raise case *)
@@ -2255,6 +2297,8 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
           Ok (Some ret, st)
         else Ok (None, st)
       in
+      let* _, st = State.pop_block st in
+      (* MUST BE FINALLY BLOCK *)
       (* TODO: insert popping of tos when CALL_FINALLY is supported. Right now
          we didn't push anything on the stack so we don't pop anything *)
       let st = match return_value with Some ret -> State.push st ret | None -> st in
@@ -2554,7 +2598,10 @@ let patch_comp_object_name st {FFI.Code.co_name; co_firstlineno} =
 let rec mk_object st ({FFI.Code.instructions; co_consts} as code) =
   let open IResult.Let_syntax in
   let {State.module_name; loc} = st in
-  let label, st = State.get_label st 0 ~ssa_parameters:[] in
+  let backedge =
+    match instructions with [] -> false | {FFI.Instruction.is_jump_target} :: _ -> is_jump_target
+  in
+  let label, st = State.get_label st 0 ~backedge ~ssa_parameters:[] in
   let st = State.process_label st 0 [] in
   let* ({State.classes; functions} as st), nodes = mk_nodes st label code instructions in
   let* objects =

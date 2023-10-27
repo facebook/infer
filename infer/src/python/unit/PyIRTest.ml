@@ -596,6 +596,96 @@ object dummy:
 
 
     let%expect_test _ =
+      let source =
+        {|
+def f(x, y, l, bar, toto):
+    for x in l:
+        with bar(), toto() as obj:
+            if y:
+                continue
+            print('nop')
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      return None
+
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0 .label:
+          n0 <- $GetIter(l)
+          jmp b1(n0)
+
+
+        #b1(n1) .label:
+          n2 <- $NextIter(n1)
+          n3 <- $HasNextIter(n2)
+          if n3 then jmp b2 else jmp b3
+
+
+        #b2 .label:
+          n4 <- $IterData(n2)
+          x <- n4
+          n5 <- bar()
+          n6 <- $LoadMethod(n5, __enter__)()
+          n9 <- toto()
+          n10 <- $LoadMethod(n9, __enter__)()
+          obj <- n10
+          if y then jmp b6(CM(n9).__exit__, CM(n5).__exit__, n1) else
+          jmp b7(CM(n9).__exit__, CM(n5).__exit__, n1)
+
+
+        #b6(n16, n15, n14) .label:
+          jmp b8(n16, n15, n14)
+
+
+        #b8(n22, n21, n20) .finally:
+          n23 <- n22(None, None, None)
+          jmp b9(n21, n20)
+
+
+        #b9(n25, n24) .finally:
+          n26 <- n25(None, None, None)
+          jmp b1(n24)
+
+
+        #b7(n19, n18, n17) .label:
+          n28 <- print("nop")
+          jmp b5(n19, n18, n17)
+
+
+        #b5(n13, n12, n11) .finally:
+          n32 <- n13(None, None, None)
+          jmp b4(n12, n11)
+
+
+        #b4(n8, n7) .finally:
+          n35 <- n8(None, None, None)
+          jmp b1(n7)
+
+
+        #b3 .label:
+          return None
+
+
+
+
+
+    functions:
+      f -> dummy.f
+          |}]
+
+
+    let%expect_test _ =
       let source = {|
 l = [0, 1, 2, 3, 4, 5]
 l[0:2]
@@ -4167,6 +4257,74 @@ object dummy:
     functions:
       defaultdict -> dummy.defaultdict
           |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+def foo():
+          pass
+
+try:
+          foo()
+except C as c:
+          print(c)
+          |}
+      in
+      test source ;
+      [%expect
+        {|
+        module
+        object dummy:
+          code:
+            #b0 .label:
+              dummy.foo <- $FuncObj(foo, dummy.foo, {})
+              n0 <- dummy.foo()
+              jmp b2
+
+
+            #b1(n6, n5, n4, n3, n2, n1) .except:
+              n7 <- $Compare.exception(n6, $unknown.C)
+              if n7 then jmp b3(n6, n5, n4, n3, n2, n1) else jmp b4(n6, n5, n4, n3, n2, n1)
+
+
+            #b3(n13, n12, n11, n10, n9, n8) .label:
+              dummy.c <- n12
+              n23 <- print(dummy.c)
+              jmp b5(n10, n9, n8)
+
+
+            #b5(n22, n21, n20) .finally:
+              dummy.c <- None
+              n27 <- $Delete(dummy.c)
+              jmp b6
+
+
+            #b6 .label:
+              jmp b2
+
+
+            #b4(n19, n18, n17, n16, n15, n14) .label:
+              jmp b2
+
+
+            #b2 .label:
+              return None
+
+
+
+          objects:
+            object dummy.foo:
+              code:
+                #b0 .label:
+                  return None
+
+
+
+
+
+            functions:
+              foo -> dummy.foo |}]
 
 
     let%expect_test _ =
