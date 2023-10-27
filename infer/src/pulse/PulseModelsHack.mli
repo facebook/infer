@@ -6,18 +6,24 @@
  *)
 
 open! IStd
-
-(* open PulseBasicInterface *)
+open PulseBasicInterface
+open PulseDomainInterface
 open PulseModelsImport
 
 val matchers : matcher list
 
 val get_static_companion :
      model_desc:string
-  -> PulsePathContext.t
+  -> PathContext.t
   -> Location.t
   -> Typ.name
-  -> PulseAbductiveDomain.t
-  -> PulseBaseStack.value * PulseAbductiveDomain.t
+  -> AbductiveDomain.t
+  -> (AbstractValue.t * ValueHistory.t) * AbductiveDomain.t
 
 val get_static_companion_var : Typ.name -> Pvar.t
+
+val new_vec :
+     model_data
+  -> (AbstractValue.t * ValueHistory.t) list
+  -> AbductiveDomain.t
+  -> ((AbstractValue.t * ValueHistory.t) * AbductiveDomain.t) sat_unsat_t

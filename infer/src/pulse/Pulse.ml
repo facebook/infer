@@ -736,6 +736,44 @@ module PulseTransferFunctions = struct
         return default_info astate
 
 
+  (* If the callee is declared variadic
+        foo(param_0, ..., param_(n-1), variadic param_n)
+     end call with
+        foo(exp_0, ..., exp_(n-1), exp_n, ..., exp_(n+k-1))
+     at call site we shrink [func_args] to contain only n values. The n_th value is a fresh
+     vector that contain the value corresponding to [exp_n, ..., exp_(n+k-1)] *)
+  let prepare_args_if_hack_variadic dispatch_call_eval_args analysis_data path ret func_args
+      call_loc astate callee_procname =
+    (let open IOption.Let_syntax in
+     let module FuncArg = ProcnameDispatcher.Call.FuncArg in
+     let* callee_procname in
+     let* {ProcAttributes.hack_variadic_position} = IRAttributes.load callee_procname in
+     let* n = hack_variadic_position in
+     let func_args, variadic_args = List.split_n func_args n in
+     let model_data =
+       { PulseModelsImport.analysis_data
+       ; dispatch_call_eval_args
+       ; path
+       ; callee_procname
+       ; location= call_loc
+       ; ret }
+     in
+     let args =
+       List.map variadic_args ~f:(fun {FuncArg.arg_payload} -> ValueOrigin.addr_hist arg_payload)
+     in
+     let+ vec, astate = PulseModelsHack.new_vec model_data args astate |> SatUnsat.sat in
+     let exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
+     let typ = Typ.mk_struct TextualSil.hack_vec_type_name |> Typ.mk_ptr in
+     let vec_func_arg = {FuncArg.exp; typ; arg_payload= ValueOrigin.unknown vec} in
+     let func_args = func_args @ [vec_func_arg] in
+     let pp fmt {FuncArg.arg_payload} = ValueOrigin.value arg_payload |> AbstractValue.pp fmt in
+     L.d_printfln "variadic call with %a(%a) with %a = vec[%a]" Procname.pp_unique_id
+       callee_procname (Pp.seq ~sep:"," pp) func_args pp vec_func_arg (Pp.seq ~sep:"," pp)
+       variadic_args ;
+     (astate, func_args) )
+    |> Option.value ~default:(astate, func_args)
+
+
   let rec dispatch_call_eval_args
       ({InterproceduralAnalysis.tenv; proc_desc; err_log} as analysis_data) path ret call_exp
       actuals func_args call_loc flags astate callee_pname =
@@ -765,6 +803,12 @@ module PulseTransferFunctions = struct
     in
     let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in
     let astate, func_args = add_self_for_hack_traits path call_loc astate method_info func_args in
+    let astate, func_args =
+      if Language.curr_language_is Hack then
+        prepare_args_if_hack_variadic dispatch_call_eval_args analysis_data path ret func_args
+          call_loc astate callee_pname
+      else (astate, func_args)
+    in
     let astate, func_args =
       modify_receiver_if_hack_function_reference path call_loc astate func_args
     in

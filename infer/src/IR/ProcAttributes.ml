@@ -118,6 +118,9 @@ type t =
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; is_clang_variadic: bool  (** the procedure is variadic, only supported for Clang procedures *)
+  ; hack_variadic_position: int option
+        (** the procedure is variadic and [Some n] means the variadic vector is composed of the
+            arguments n, n+1, ..., length formals -1 *)
   ; sentinel_attr: (int * int) option  (** __attribute__((sentinel(int, int))) *)
   ; specialized_with_aliasing_info: specialized_with_aliasing_info option
   ; specialized_with_closures_info: specialized_with_closures_info option
@@ -206,6 +209,7 @@ let default translation_unit proc_name =
   ; specialized_with_closures_info= None
   ; is_synthetic_method= false
   ; is_clang_variadic= false
+  ; hack_variadic_position= None
   ; sentinel_attr= None
   ; clang_method_kind= ClangMethodKind.C_FUNCTION
   ; loc= Location.dummy
@@ -282,6 +286,7 @@ let pp f
      ; specialized_with_closures_info
      ; is_synthetic_method
      ; is_clang_variadic
+     ; hack_variadic_position
      ; sentinel_attr
      ; clang_method_kind
      ; loc
@@ -368,6 +373,7 @@ let pp f
   pp_bool_default ~default:default.is_synthetic_method "is_synthetic_method" is_synthetic_method f
     () ;
   pp_bool_default ~default:default.is_clang_variadic "is_clang_variadic" is_clang_variadic f () ;
+  Option.iter hack_variadic_position ~f:(fun n -> F.fprintf f "; hack_variadic_position= %d@," n) ;
   if not ([%equal: (int * int) option] default.sentinel_attr sentinel_attr) then
     F.fprintf f "; sentinel_attr= %a@,"
       (Pp.option (Pp.pair ~fst:F.pp_print_int ~snd:F.pp_print_int))

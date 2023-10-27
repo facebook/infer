@@ -132,3 +132,8 @@ module Syntax : sig
 
   val exec_operation : (astate -> 'a * astate) -> 'a model_monad
 end
+
+(* warning: the transformation will fail if the result of the computation is not a single abstract state
+   with no error *)
+val unsafe_to_astate_transformer :
+  'a model_monad -> PulseModelsImport.model_data -> astate -> ('a * astate) sat_unsat_t

@@ -990,12 +990,18 @@ module ProcDescBridge = struct
     in
     let definition_loc = LocationBridge.to_sil sourcefile procdecl.qualified_name.name.loc in
     let is_hack_async = List.exists procdecl.attributes ~f:Attr.is_async in
+    let hack_variadic_position =
+      Option.value_map ~default:None procdecl.formals_types ~f:(fun formals_types ->
+          List.findi formals_types ~f:(fun _ typ -> Typ.is_annotated typ ~f:Attr.is_variadic)
+          |> Option.map ~f:fst )
+    in
     let formals = build_formals lang pdesc in
     let locals = build_locals lang pdesc in
     let pattributes =
       { (ProcAttributes.default (SourceFile.file sourcefile) sil_procname) with
         is_defined= true
       ; is_hack_async
+      ; hack_variadic_position
       ; formals
       ; locals
       ; ret_type= sil_ret_type

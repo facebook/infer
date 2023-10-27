@@ -203,27 +203,10 @@ module Vec = struct
         unreachable
 end
 
-(*
-let bool_to_hack_bool b : DSL.aval DSL.model_monad =
-  let open DSL.Syntax in
-  let class_name = "HackBool" in
-  let typ = Typ.mk_struct TextualSil.hack_bool_type_name in
-  (* let typ = Typ.mk_struct (Typ.HackClass (HackClassName.make class_name)) in *)
-  let* ret_val = mk_fresh ~model_desc:"make_bool" in
-  let* () = add_dynamic_type typ ret_val in
-  let* b_val = mk_fresh ~model_desc:"make_bool" in
-  let* () = and_eq_int b_val IntLit.(if b then one else zero) in
-  (* Help Pulse out by explicitly recording that we allocated something *)
-  let* () = and_positive ret_val in
-  let field = mk_hack_field class_name "val" in
-  let* () = write_deref_field ~ref:ret_val field ~obj:b_val in
-  ret ret_val
+let new_vec data args astate =
+  (Vec.new_vec_dsl args |> DSL.unsafe_to_astate_transformer) data astate
 
 
-let make_false = bool_to_hack_bool false
-
-let make_true = bool_to_hack_bool true
-*)
 let bool_val_field = Fieldname.make TextualSil.hack_bool_type_name "val"
 
 let make_hack_bool bool : DSL.aval DSL.model_monad =

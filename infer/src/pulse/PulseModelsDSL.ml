@@ -353,3 +353,19 @@ module Syntax = struct
     dispatch_call_eval_args analysis_data path ret (Const (Cfun pname)) actuals func_args location
       CallFlags.default astate (Some pname)
 end
+
+let unsafe_to_astate_transformer (monad : 'a model_monad) :
+    model_data -> astate -> ('a * astate) sat_unsat_t =
+ fun data astate ->
+  match monad data astate with
+  | [res] ->
+      PulseResult.ok res
+      |> Option.value_map ~default:Unsat ~f:(function
+           | ContinueProgram (a, astate) ->
+               Sat (a, astate)
+           | _ ->
+               Unsat )
+  | [] ->
+      Unsat
+  | _ ->
+      Unsat
