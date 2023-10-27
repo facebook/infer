@@ -62,6 +62,56 @@ class Variadic {
   }
 }
 
+class VariadicUsingSplat {
+
+  public static function variadicSink(int $taint, bool ...$args): void {
+    if ($args[0]) {
+      \Level1\taintSink($taint);
+    }
+  }
+
+  public static function callVariadicSinkBad(): void {
+    self::variadicSink(\Level1\taintSource(), ...vec[true]);
+  }
+
+  public static function FP_callVariadicSinkGood(): void {
+    self::variadicSink(\Level1\taintSource(), ...vec[false]);
+  }
+
+  public static function callVariadicWithoutSplatTrueBad(): void {
+    self::variadicSink(\Level1\taintSource(), vec[true]);
+  }
+
+  public static function callVariadicWithoutSplatFalseBad(): void {
+    self::variadicSink(\Level1\taintSource(), vec[false]);
+  }
+
+  public static function expectedBad(): void {
+    $taint = \Level1\taintSource();
+    $args = vec[true];
+    if ($args[0]) {
+      \Level1\taintSink($taint);
+    }
+  }
+
+  public static function expectedOk(): void {
+    $taint = \Level1\taintSource();
+    $args = vec[false];
+    if ($args[0]) {
+      \Level1\taintSink($taint);
+    }
+  }
+
+  public static function expectedJustNonNullTestBad(): void {
+    $taint = \Level1\taintSource();
+    $args = vec[true];
+    if ($args) {
+      \Level1\taintSink($taint);
+    }
+  }
+
+}
+
 class WithoutVariadic {
 
   public static function variadicArgInSink(int $i, vec<int> $args): void {
