@@ -74,16 +74,16 @@ class VariadicUsingSplat {
     self::variadicSink(\Level1\taintSource(), ...vec[true]);
   }
 
-  public static function FP_callVariadicSinkGood(): void {
+  public static function callVariadicSinkGood(): void {
     self::variadicSink(\Level1\taintSource(), ...vec[false]);
   }
 
   public static function callVariadicWithoutSplatTrueBad(): void {
-    self::variadicSink(\Level1\taintSource(), vec[true]);
+    self::variadicSink(\Level1\taintSource(), true);
   }
 
-  public static function callVariadicWithoutSplatFalseBad(): void {
-    self::variadicSink(\Level1\taintSource(), vec[false]);
+  public static function callVariadicWithoutSplatFalseOk(): void {
+    self::variadicSink(\Level1\taintSource(), false);
   }
 
   public static function expectedBad(): void {

@@ -203,10 +203,6 @@ module Vec = struct
         unreachable
 end
 
-let new_vec data args astate =
-  (Vec.new_vec_dsl args |> DSL.unsafe_to_astate_transformer) data astate
-
-
 let bool_val_field = Fieldname.make TextualSil.hack_bool_type_name "val"
 
 let make_hack_bool bool : DSL.aval DSL.model_monad =
@@ -816,11 +812,46 @@ let hhbc_iter_next iteraddr keyaddr eltaddr : model =
   start_model @@ VecIter.iter_next_vec iteraddr keyaddr eltaddr
 
 
+module SplatedVec = struct
+  let class_name = "HackSplatedVec"
+
+  let field_name = "content"
+
+  let field = mk_hack_field class_name field_name
+
+  let typ_name = Typ.HackClass (HackClassName.make class_name)
+
+  let make arg : model =
+    let open DSL.Syntax in
+    start_model
+    @@ let* boxed = PulseModelsCpp.constructor_dsl typ_name [(field_name, arg)] in
+       assign_ret boxed
+
+
+  let build_vec_for_variadic_callee args : DSL.aval DSL.model_monad =
+    let open DSL.Syntax in
+    match args with
+    | [arg] -> (
+        let* arg_typ = get_dynamic_type ~ask_specialization:false arg in
+        match arg_typ with
+        | Some {Typ.desc= Tstruct name} when Typ.Name.equal name typ_name ->
+            eval_deref_access Read arg (FieldAccess field)
+        | _ ->
+            Vec.new_vec_dsl args )
+    | _ ->
+        Vec.new_vec_dsl args
+end
+
+let build_vec_for_variadic_callee data args astate =
+  (SplatedVec.build_vec_for_variadic_callee args |> DSL.unsafe_to_astate_transformer) data astate
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"$builtins" &:: "nondet" <>$$--> Basic.nondet ~desc:"nondet"
   ; +BuiltinDecl.(match_builtin __lazy_class_initialize) <>$ capt_exp $--> lazy_class_initialize
   ; +BuiltinDecl.(match_builtin __get_lazy_class) <>$ capt_exp $--> lazy_class_initialize
+  ; -"$builtins" &:: "__sil_splat" <>$ capt_arg_payload $--> SplatedVec.make
   ; -"$builtins" &:: "hhbc_await" <>$ capt_arg_payload $--> hack_await
   ; -"$builtins" &:: "hack_array_get" <>$ capt_arg $++$--> hack_array_get
   ; -"$builtins" &:: "hack_array_cow_set" <>$ capt_arg $++$--> hack_array_cow_set

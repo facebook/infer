@@ -761,7 +761,9 @@ module PulseTransferFunctions = struct
      let args =
        List.map variadic_args ~f:(fun {FuncArg.arg_payload} -> ValueOrigin.addr_hist arg_payload)
      in
-     let+ vec, astate = PulseModelsHack.new_vec model_data args astate |> SatUnsat.sat in
+     let+ vec, astate =
+       PulseModelsHack.build_vec_for_variadic_callee model_data args astate |> SatUnsat.sat
+     in
      let exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
      let typ = Typ.mk_struct TextualSil.hack_vec_type_name |> Typ.mk_ptr in
      let vec_func_arg = {FuncArg.exp; typ; arg_payload= ValueOrigin.unknown vec} in

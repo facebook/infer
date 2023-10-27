@@ -22,7 +22,7 @@ val get_static_companion :
 
 val get_static_companion_var : Typ.name -> Pvar.t
 
-val new_vec :
+val build_vec_for_variadic_callee :
      model_data
   -> (AbstractValue.t * ValueHistory.t) list
   -> AbductiveDomain.t
