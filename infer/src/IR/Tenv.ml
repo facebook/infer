@@ -100,7 +100,7 @@ let find_map_supers (type f_result) tenv name ~(f : Typ.Name.t -> Struct.t optio
   with FOUND result -> result
 
 
-let resolve_fieldname tenv name fieldname =
+let resolve_field_info tenv name fieldname =
   let field_string = Fieldname.get_field_name fieldname in
   find_map_supers tenv name ~f:(fun typ_name _ ->
       let fieldname = Fieldname.make typ_name field_string in

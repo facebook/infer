@@ -513,7 +513,7 @@ let hack_field_get this field : model =
          | Some {Typ.desc= Tstruct type_name} ->
              let field = Fieldname.make type_name string_field_name in
              let* aval = eval_deref_access Read this (FieldAccess field) in
-             let* struct_info = tenv_resolve_fieldname type_name field in
+             let* struct_info = tenv_resolve_field_info type_name field in
              let opt_field_type_name =
                let open IOption.Let_syntax in
                let* {Struct.typ= field_typ} = struct_info in

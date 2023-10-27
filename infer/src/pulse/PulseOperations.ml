@@ -410,7 +410,7 @@ let hack_python_propagates_type_on_load tenv path loc rhs_exp addr astate =
             eval path NoAccess loc recv astate |> PulseOperationResult.sat_ok
           in
           let* typ_name = AbductiveDomain.AddressAttributes.get_static_type base_addr astate in
-          let* {Struct.typ= field_typ} = Tenv.resolve_fieldname tenv typ_name field_name in
+          let* {Struct.typ= field_typ} = Tenv.resolve_field_info tenv typ_name field_name in
           let+ field_typ_name =
             if Typ.is_pointer field_typ then Typ.name (Typ.strip_ptr field_typ) else None
           in

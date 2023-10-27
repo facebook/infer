@@ -213,9 +213,9 @@ module Syntax = struct
     AddressAttributes.get_const_string addr |> exec_pure_operation
 
 
-  let tenv_resolve_fieldname typ_name field_name : Struct.field_info option model_monad =
+  let tenv_resolve_field_info typ_name field_name : Struct.field_info option model_monad =
    fun ({analysis_data= {tenv}} as data) astate ->
-    let info = Tenv.resolve_fieldname tenv typ_name field_name in
+    let info = Tenv.resolve_field_info tenv typ_name field_name in
     ret info data astate
 
 

@@ -161,7 +161,7 @@ let get_module_attribute tenv ~tag =
   let open IOption.Let_syntax in
   let typ = Typ.ErlangType ModuleInfo in
   let* field_info =
-    Tenv.resolve_fieldname tenv typ (Fieldname.make typ ErlangTypeName.module_info_field_name)
+    Tenv.resolve_field_info tenv typ (Fieldname.make typ ErlangTypeName.module_info_field_name)
   in
   let* annot =
     List.find field_info.Struct.annotations ~f:(function ({class_name} : Annot.t) ->
