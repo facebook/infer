@@ -223,6 +223,7 @@ module BuiltinCaller = struct
     | SetAdd  (** [SET_ADD] *)
     | DictSetItem  (** [MAP_ADD] *)
     | Delete  (** [DELETE_FAST] & cie *)
+    | YieldFrom  (** [YIELD_FROM] *)
 
   let show = function
     | BuildClass ->
@@ -260,6 +261,8 @@ module BuiltinCaller = struct
         "$DictSetItem"
     | Delete ->
         "$Delete"
+    | YieldFrom ->
+        "$YieldFrom"
 end
 
 module Exp = struct
@@ -327,7 +330,6 @@ module Exp = struct
        Maybe consider removing it *)
     | Packed of {exp: t; is_map: bool}
     | Yield of t
-    | YieldFrom of {receiver: t; exp: t}
 
   let show = function
     | Const _ ->
@@ -370,8 +372,6 @@ module Exp = struct
         "Packed"
     | Yield _ ->
         "Yield"
-    | YieldFrom _ ->
-        "YieldFrom"
     [@@warning "-unused-value-declaration"]
 
 
@@ -433,8 +433,6 @@ module Exp = struct
         F.fprintf fmt "$Packed%s(%a)" (if is_map then "Map" else "") pp exp
     | Yield exp ->
         F.fprintf fmt "$Yield(%a)" pp exp
-    | YieldFrom {receiver; exp} ->
-        F.fprintf fmt "$YieldFrom(%a, %a)" pp receiver pp exp
 
 
   let as_short_string = function Const (String s) -> Some s | _ -> None
@@ -869,6 +867,8 @@ module State = struct
       ; "range"
       ; "open"
       ; "len"
+      ; "map"
+      ; "frozenset"
       ; "type"
       ; "str"
       ; "int"
@@ -2358,7 +2358,9 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
 
                For now, we leave it as is until it becomes a problem :D *)
       let* receiver = State.peek st in
-      let st = State.push st (Exp.YieldFrom {receiver; exp}) in
+      (* TODO: it seems that sometimes the TOS is changed from receiver to exp
+         at this point. Check C code and try to understand it better *)
+      let _, st = call_builtin_function st YieldFrom [receiver; exp] in
       Ok (st, None)
   | "GET_YIELD_FROM_ITER" ->
       (* TODO: it is quite uncertain how we'll deal with these in textual.

@@ -4668,12 +4668,19 @@ f(**d1, x=42)
     let%expect_test _ =
       let source =
         {|
+import itertools
+
 def f():
         yield 42
 
 class AsyncYieldFrom:
     def __await__(self):
         yield from self.obj
+
+def powerset(s):
+    for i in range(len(s)+1):
+        yield from map(frozenset, itertools.combinations(s, i))
+
         |}
       in
       test source ;
@@ -4683,8 +4690,11 @@ module
 object dummy:
   code:
     #b0 .label:
+      $ImportName(itertools, from_list= [])
+      dummy.itertools <- $ImportName(itertools, from_list= [])
       dummy.f <- $FuncObj(f, dummy.f, {})
       dummy.AsyncYieldFrom <- $ClassObj($FuncObj(AsyncYieldFrom, dummy.AsyncYieldFrom, {}), "AsyncYieldFrom")
+      dummy.powerset <- $FuncObj(powerset, dummy.powerset, {})
       return None
 
 
@@ -4724,13 +4734,46 @@ object dummy:
         functions:
           __await__ -> dummy.AsyncYieldFrom.__await__
 
+      object dummy.powerset:
+        code:
+          #b0 .label:
+            n0 <- len(s)
+            n1 <- $Binary.Add(n0, 1)
+            n2 <- range(n1)
+            n3 <- $GetIter(n2)
+            jmp b1(n3)
 
-    classes:
-      AsyncYieldFrom
 
-    functions:
-      AsyncYieldFrom -> dummy.AsyncYieldFrom
-      f -> dummy.f
+          #b1(n4) .label:
+            n5 <- $NextIter(n4)
+            n6 <- $HasNextIter(n5)
+            if n6 then jmp b2 else jmp b3
+
+
+          #b2 .label:
+            n7 <- $IterData(n5)
+            i <- n7
+            n8 <- $CallMethod($LoadMethod(itertools, combinations), s, i)
+            n9 <- map(frozenset, n8)
+            n10 <- $GetYieldFromIter(n9)
+            n11 <- $YieldFrom(n10, None)
+            jmp b1(n4)
+
+
+          #b3 .label:
+            return None
+
+
+
+
+
+      classes:
+        AsyncYieldFrom
+
+      functions:
+        AsyncYieldFrom -> dummy.AsyncYieldFrom
+        f -> dummy.f
+        powerset -> dummy.powerset
              |}]
 
 
