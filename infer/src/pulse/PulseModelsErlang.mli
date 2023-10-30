@@ -29,7 +29,7 @@ include sig
 
     and known_erlang_value =
       | Atom of string option
-      | IntLit of string
+      | IntLit of string option
       | List of erlang_value list
       | Tuple of erlang_value list
       | GenServer of {module_name: string option}

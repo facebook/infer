@@ -1097,7 +1097,7 @@ module Custom = struct
 
   and known_erlang_value =
     | Atom of string option
-    | IntLit of string
+    | IntLit of string option
     | List of erlang_value list
     | Tuple of erlang_value list
     | GenServer of {module_name: string option}
@@ -1126,7 +1126,9 @@ module Custom = struct
           F.fprintf fmt "Atom(%s)" s
       | Atom None ->
           F.pp_print_string fmt "Atom(None)"
-      | IntLit s ->
+      | IntLit None ->
+          F.fprintf fmt "IntLit(None)"
+      | IntLit (Some s) ->
           F.fprintf fmt "IntLit(%s)" s
       | List evl ->
           F.fprintf fmt "List[ %a ]" pp_erlang_value_list evl
@@ -1176,10 +1178,10 @@ module Custom = struct
                 else None
               in
               Atom s'
-          | IntLit s ->
-              (* L.log_task "\n Applying abstraction on intlit = %s\n" s ; *)
-              let s' = try if Int.of_string s > 0 then "1" else "0" with _ -> "1" in
-              IntLit s'
+          | (IntLit None | IntLit (Some "0") | IntLit (Some "1")) as il ->
+              il
+          | IntLit (Some _) ->
+              IntLit None
           | List evs ->
               let abs_evs = List.map evs ~f:abstract_erlang_value in
               List abs_evs
@@ -1265,8 +1267,17 @@ module Custom = struct
                    (Typ.mk_struct (ErlangType (GenServerPid {module_name})))
                    ret_addr astate
                , (ret_addr, ret_hist) ) )
-      | Some (IntLit intlit) ->
+      | Some (IntLit (Some intlit)) ->
           Sat (Integers.of_string location path intlit astate)
+      | Some (IntLit None) ->
+          let ret_addr = AbstractValue.mk_fresh () in
+          let ret_hist = Hist.single_alloc path location "nondet_abstr_intlit" in
+          Sat
+            (Ok
+               ( PulseOperations.add_dynamic_type
+                   (Typ.mk_struct (ErlangType Integer))
+                   ret_addr astate
+               , (ret_addr, ret_hist) ) )
       | Some (List elements) ->
           let mk = Lists.make_raw location path in
           many mk elements astate
@@ -1308,6 +1319,20 @@ module Custom = struct
             (ConstOperand name_hash) astate
           |> SatUnsat.to_list
     in
+    let of_intlit_like typ value_opt =
+      match value_opt with
+      | None ->
+          prune_type path location actual_arg typ astate
+      | Some intlit ->
+          let> astate = prune_type path location actual_arg typ astate in
+          let astate, _, (value, _hist) =
+            load_field path Integers.value_field location actual_arg astate
+          in
+          PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand value)
+            (Formula.ConstOperand (Cint (IntLit.of_string intlit)))
+            astate
+          |> SatUnsat.to_list
+    in
     match pre_arg with
     | None ->
         [Ok astate]
@@ -1315,15 +1340,8 @@ module Custom = struct
         of_atom_like Atom value_opt
     | Some (GenServer {module_name}) ->
         of_atom_like (GenServerPid {module_name}) module_name
-    | Some (IntLit intlit) ->
-        let> astate = prune_type path location actual_arg Integer astate in
-        let astate, _, (value, _hist) =
-          load_field path Integers.value_field location actual_arg astate
-        in
-        PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand value)
-          (ConstOperand (Cint (IntLit.of_string intlit)))
-          astate
-        |> SatUnsat.to_list
+    | Some (IntLit intlit_opt) ->
+        of_intlit_like Integer intlit_opt
     | Some (Tuple elements) ->
         let size = List.length elements in
         let> astate = prune_type path location actual_arg (Tuple size) astate in
