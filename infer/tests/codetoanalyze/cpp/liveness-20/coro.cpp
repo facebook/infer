@@ -6,7 +6,7 @@
  */
 
 // make tests compatible with clang-12 for the moment
-#include <experimental/coroutine>
+#include <coroutine>
 
 namespace coro {
 
@@ -15,12 +15,12 @@ struct Task {
   using promise_type = Task<T>;
 
   bool await_ready() noexcept;
-  std::experimental::coroutine_handle<> await_suspend(
-      std::experimental::coroutine_handle<Task<T>> coro) noexcept;
+  std::coroutine_handle<> await_suspend(
+      std::coroutine_handle<Task<T>> coro) noexcept;
   T await_resume() noexcept;
   Task<T> get_return_object();
-  std::experimental::suspend_always initial_suspend() noexcept { return {}; }
-  std::experimental::suspend_always final_suspend() noexcept { return {}; }
+  std::suspend_always initial_suspend() noexcept { return {}; }
+  std::suspend_always final_suspend() noexcept { return {}; }
   void return_void();
   void unhandled_exception() {}
 };

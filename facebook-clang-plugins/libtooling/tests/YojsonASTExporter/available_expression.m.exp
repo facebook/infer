@@ -1,10 +1,10 @@
 tests/available_expression.m:8:12: warning: class 'NSObject' defined without specifying a base class [-Wobjc-root-class]
-@interface NSObject
-           ^
+    8 | @interface NSObject
+      |            ^
 tests/available_expression.m:8:20: note: add a super class to fix this problem
-@interface NSObject
-                   ^
-                    : NSObject 
+    8 | @interface NSObject
+      |                    ^
+      |                     : NSObject 
 <"TranslationUnitDecl" : (
   {
     "pointer" : 1,

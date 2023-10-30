@@ -5898,6 +5898,12 @@
           "is_trivially_copyable" : true
         }
       ]],
+      ["RecordType" , [
+        {
+          "pointer" : 22
+        },
+        23
+      ]],
       ["FunctionProtoType" , [
         {
           "pointer" : 192
@@ -5909,12 +5915,6 @@
         },
         {
         }
-      ]],
-      ["RecordType" , [
-        {
-          "pointer" : 22
-        },
-        23
       ]],
       ["TemplateTypeParmType" , [
         {
@@ -6219,6 +6219,21 @@
           ]
         }
       ]],
+      ["RecordType" , [
+        {
+          "pointer" : 55
+        },
+        56
+      ]],
+      ["LValueReferenceType" , [
+        {
+          "pointer" : 61
+        },
+        {
+          "type_ptr" : 12,
+          "is_trivially_copyable" : true
+        }
+      ]],
       ["FunctionProtoType" , [
         {
           "pointer" : 213
@@ -6235,21 +6250,6 @@
               "is_trivially_copyable" : true
             }
           ]
-        }
-      ]],
-      ["RecordType" , [
-        {
-          "pointer" : 55
-        },
-        56
-      ]],
-      ["LValueReferenceType" , [
-        {
-          "pointer" : 61
-        },
-        {
-          "type_ptr" : 12,
-          "is_trivially_copyable" : true
         }
       ]],
       ["TemplateTypeParmType" , [

@@ -204,8 +204,8 @@ if [[ "$PLATFORM" = "Linux" ]] && [[ -n "${PLATFORM_ENV}" ]] ; then
     )
 else
     CMAKE_ARGS+=(
-        -DLLVM_ENABLE_PROJECTS="clang"
-        -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;openmp"
+        -DLLVM_ENABLE_PROJECTS="clang;openmp"
+        -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi"
     )
 fi
 

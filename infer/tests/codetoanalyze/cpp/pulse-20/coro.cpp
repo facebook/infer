@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// make tests compatible with clang-12 for the moment
-#include <experimental/coroutine>
+// The test is not compatible with clang-12.
+#include <coroutine>
 
 namespace coro {
 
@@ -22,14 +22,14 @@ struct Task {
   using promise_type = Task<T>;
 
   bool await_ready() noexcept;
-  std::experimental::coroutine_handle<> await_suspend(
-      std::experimental::coroutine_handle<Task<T>> coro) noexcept;
+  std::coroutine_handle<> await_suspend(
+      std::coroutine_handle<Task<T>> coro) noexcept;
   T await_resume() noexcept;
   Task<T> get_return_object();
-  std::experimental::suspend_always initial_suspend() noexcept { return {}; }
-  std::experimental::suspend_always final_suspend() noexcept { return {}; }
+  std::suspend_always initial_suspend() noexcept { return {}; }
+  std::suspend_always final_suspend() noexcept { return {}; }
   void return_value(T&& value);
-  std::experimental::suspend_always yield_value(T&& value);
+  std::suspend_always yield_value(T&& value);
   void unhandled_exception() {}
 };
 

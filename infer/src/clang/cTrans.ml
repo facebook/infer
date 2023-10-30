@@ -1175,6 +1175,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `AO__hip_atomic_compare_exchange_weak
     | `AO__hip_atomic_exchange
     | `AO__hip_atomic_fetch_add
+    | `AO__hip_atomic_fetch_sub
     | `AO__hip_atomic_fetch_and
     | `AO__hip_atomic_fetch_max
     | `AO__hip_atomic_fetch_min
