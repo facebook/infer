@@ -8,8 +8,14 @@ namespace Uninit;
 abstract class A {
   abstract const string FIELD;
 
+  const string INITIALIZED_FIELD = "hello";
+
   public static function get_field(): string {
     return static::FIELD;
+  }
+
+  public static function get_initialized_field(): string {
+    return static::INITIALIZED_FIELD;
   }
 }
 
@@ -30,6 +36,10 @@ class B extends A {
 
 function call_get_field_ok(): string {
   return B::get_field();
+}
+
+function call_get_initialized_field_ok(): string {
+  return B::get_initialized_field();
 }
 
 abstract class RetField {
@@ -69,7 +79,7 @@ abstract class AbstractUseTrait extends A {
     return self::get_field_from_trait2();
   }
 
-  public static function call_my_trait_get_field_Bad(): string {
+  public static function call_my_trait_get_field_Bad_FN(): string {
     return MyTrait::get_field_from_trait();
   }
 }
@@ -82,7 +92,7 @@ function call_self_get_field2_Bad(): string {
   return AbstractUseTrait::self_get_field2();
 }
 
-function call_my_trait_get_field_Bad(): string {
+function call_my_trait_get_field_Bad_FN(): string {
   return MyTrait::get_field_from_trait();
 }
 

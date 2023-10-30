@@ -219,6 +219,12 @@ module Syntax = struct
     ret info data astate
 
 
+  let tenv_resolve_fieldname typ_name name : Fieldname.t option model_monad =
+   fun ({analysis_data= {tenv}} as data) astate ->
+    let field_name = Tenv.resolve_fieldname tenv typ_name name in
+    ret field_name data astate
+
+
   let eval_read exp : aval model_monad =
     let* {path; location} = get_data in
     PulseOperations.eval path Read location exp |> exec_partial_operation

@@ -108,6 +108,14 @@ let resolve_field_info tenv name fieldname =
       Struct.get_field_info ~lookup:(lookup tenv) fieldname typ )
 
 
+let resolve_fieldname tenv name fieldname_str =
+  let is_fld (fieldname, _, _) = String.equal (Fieldname.get_field_name fieldname) fieldname_str in
+  find_map_supers tenv name ~f:(fun name str_opt ->
+      Option.bind str_opt ~f:(fun {Struct.fields} ->
+          if List.exists fields ~f:is_fld then Some name else None ) )
+  |> Option.map ~f:(fun name -> Fieldname.make name fieldname_str)
+
+
 let mem_supers tenv name ~f =
   find_map_supers tenv name ~f:(fun name struct_opt -> if f name struct_opt then Some () else None)
   |> Option.is_some

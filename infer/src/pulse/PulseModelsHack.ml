@@ -659,7 +659,16 @@ let hhbc_cls_cns this field : model =
        match typ_opt with
        | Some {Typ.desc= Tstruct name} ->
            let* string_field_name = read_boxed_string_value_dsl field in
-           let fld = Fieldname.make name string_field_name in
+           let* fld_opt = tenv_resolve_fieldname name string_field_name in
+           let name, fld =
+             match fld_opt with
+             | None ->
+                 L.d_printfln_escaped "Could not resolve the constant field %a::%s" Typ.Name.pp name
+                   string_field_name ;
+                 (name, Fieldname.make name string_field_name)
+             | Some fld ->
+                 (Fieldname.get_class_name fld, fld)
+           in
            let* class_object = get_static_companion_dsl ~model_desc name in
            eval_deref_access Read class_object (FieldAccess fld)
        | _ ->

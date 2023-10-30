@@ -125,6 +125,8 @@ module Syntax : sig
   (* Tenv operations *)
   val tenv_resolve_field_info : Typ.name -> Fieldname.t -> Struct.field_info option model_monad
 
+  val tenv_resolve_fieldname : Typ.name -> string -> Fieldname.t option model_monad
+
   val write_deref : ref:aval -> obj:aval -> unit model_monad
 
   (* if necessary you can convert an operation outside of this module with the following operators *)
