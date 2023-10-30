@@ -5240,4 +5240,71 @@ object dummy:
         f -> dummy.f
         g -> dummy.g
           |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+async def f():
+  return True
+
+async def g():
+  if await f():
+    print(0)
+  else:
+    print(1)
+          |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      dummy.g <- $FuncObj(g, dummy.g, {})
+      return None
+
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0 .label:
+          return true
+
+
+
+
+    object dummy.g:
+      code:
+        #b0 .label:
+          n0 <- dummy.f()
+          n1 <- $GetAwaitable(n0)
+          n2 <- $YieldFrom(n1, None)
+          if n1 then jmp b1 else jmp b2
+
+
+        #b1 .label:
+          n3 <- print(0)
+          jmp b3
+
+
+        #b2 .label:
+          n4 <- print(1)
+          jmp b3
+
+
+        #b3 .label:
+          return None
+
+
+
+
+
+    functions:
+      f -> dummy.f
+      g -> dummy.g
+        |}]
   end )

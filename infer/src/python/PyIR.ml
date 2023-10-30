@@ -224,6 +224,7 @@ module BuiltinCaller = struct
     | DictSetItem  (** [MAP_ADD] *)
     | Delete  (** [DELETE_FAST] & cie *)
     | YieldFrom  (** [YIELD_FROM] *)
+    | GetAwaitable  (** [GET_AWAITABLE] *)
 
   let show = function
     | BuildClass ->
@@ -263,6 +264,8 @@ module BuiltinCaller = struct
         "$Delete"
     | YieldFrom ->
         "$YieldFrom"
+    | GetAwaitable ->
+        "$GetAwaitable"
 end
 
 module Exp = struct
@@ -2398,6 +2401,11 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let* exp, st = State.pop st in
       let exp = Exp.Subscript {exp; index} in
       delete st exp
+  | "GET_AWAITABLE" ->
+      let* tos, st = State.pop st in
+      let id, st = call_builtin_function st GetAwaitable [tos] in
+      let st = State.push st (Exp.Temp id) in
+      Ok (st, None)
   | _ ->
       internal_error st (Error.UnsupportedOpcode opname)
 
