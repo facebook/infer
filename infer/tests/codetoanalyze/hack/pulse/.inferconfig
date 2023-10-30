@@ -35,6 +35,7 @@
       "taint_target": ["ArgumentPositions", [1]]
     },
     { "procedure_regex": ".*", "kinds": ["BuiltinCatchAll"]},
+    { "class_names": ["Shapes::ShapeLogger"], "method_names": ["logMixed"] },
     { "class_names": ["Sanitizers::Sink"], "procedure_regex": ".*", "kinds": ["Sanitizers"] },
     { "class_names": ["Propagators::Sink"], "procedure_regex": ".*", "kinds": ["Propagators"] }
   ],

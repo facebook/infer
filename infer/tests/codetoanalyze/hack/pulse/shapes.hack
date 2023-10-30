@@ -14,6 +14,8 @@ class ShapeLogger {
   public static function logData(this::TSchemaShape $data) {
     \Level1\taintSink($data);
   }
+
+  public static function logMixed(mixed $data) {}
 }
 
 class C1 {
@@ -41,5 +43,17 @@ class C1 {
   public function shapeLookupBad(SensitiveClass $sc, TSchemaShape $shape) {
     $_ = $shape['msg'];
     \Level1\taintSink($sc);
+  }
+
+  public static function FP_propagatedTaintUnrelated(SensitiveClass $sc) {
+    $t1 = Unknown::unknown($sc->getId());
+    if ($t1 is null) {
+      ShapeLogger::logMixed(false);
+    }
+
+    $t2 = Shapes::idx($t1, 'field');
+    if ($t2 is null) {
+      ShapeLogger::logMixed(false);
+    }
   }
 }
