@@ -846,6 +846,12 @@ and buck2_bxl_target =
     "Buck2 BXL script (as a buck target) to run when capturing with buck2/clang integration."
 
 
+and buck2_inferconfig_target =
+  CLOpt.mk_string_opt ~long:"buck2-inferconfig-target"
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "Buck2 target representing the inferconfig file; used in BXL capture."
+
+
 and buck2_isolation_dir =
   CLOpt.mk_string_opt ~long:"buck2-isolation-dir" ~deprecated:["-bxl-isolation-dir"]
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -3750,6 +3756,8 @@ and buck2_build_args = RevList.to_list !buck2_build_args
 and buck2_build_args_no_inline = RevList.to_list !buck2_build_args_no_inline_rev
 
 and buck2_bxl_target = !buck2_bxl_target
+
+and buck2_inferconfig_target = !buck2_inferconfig_target
 
 and buck2_isolation_dir = !buck2_isolation_dir
 

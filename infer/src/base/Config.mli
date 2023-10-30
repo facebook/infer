@@ -202,6 +202,8 @@ val buck2_build_args_no_inline : string list
 
 val buck2_bxl_target : string option
 
+val buck2_inferconfig_target : string option
+
 val buck2_isolation_dir : string option
 
 val buck2_query_deps : bool

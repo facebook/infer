@@ -15,7 +15,6 @@ type mode =
   | Analyze
   | Ant of {prog: string; args: string list}
   | Buck2Clang of {build_cmd: string list}
-  | Buck2Java of {build_cmd: string list}
   | BuckClangFlavor of {build_cmd: string list}
   | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
   | BuckErlang of {prog: string; args: string list}
@@ -23,6 +22,7 @@ type mode =
   | BuckJavaFlavor of {build_cmd: string list}
   | BxlClang of {build_cmd: string list}
   | BxlClangFile
+  | BxlJava of {build_cmd: string list}
   | Clang of {compiler: Clang.compiler; prog: string; args: string list}
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
   | Gradle of {prog: string; args: string list}

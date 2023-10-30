@@ -60,12 +60,14 @@ let capture build_cmd =
       ["--"]
       @ Option.value_map Config.buck_dependency_depth ~default:[] ~f:(fun depth ->
             ["--depth"; Int.to_string depth] )
+      @ Option.value_map Config.buck2_inferconfig_target ~default:[] ~f:(fun target ->
+            ["--inferconfig"; target] )
       @ targets_with_arg
     in
     let buck2_build_cmd =
       ["bxl"; bxl_target; "--console=simple"]
       @ List.rev rev_not_targets @ Config.buck2_build_args_no_inline
-      @ Buck.store_args_in_file ~identifier:"clang_buck2_bxl" args_to_store
+      @ Buck.store_args_in_file ~identifier:"buck2_bxl" args_to_store
     in
     run_capture buck2_build_cmd
 

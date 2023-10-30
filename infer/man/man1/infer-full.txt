@@ -232,6 +232,10 @@ OPTIONS
            Buck2 BXL script (as a buck target) to run when capturing with
            buck2/clang integration.           See also infer-capture(1).
 
+       --buck2-inferconfig-target string
+           Buck2 target representing the inferconfig file; used in BXL
+           capture.           See also infer-capture(1).
+
        --buck2-isolation-dir string
            Run buck bxl capture with the given isolation directory as
            parameter.           See also infer-capture(1).
@@ -2123,6 +2127,9 @@ INTERNAL OPTIONS
 
        --buck2-bxl-target-reset
            Cancel the effect of --buck2-bxl-target.
+
+       --buck2-inferconfig-target-reset
+           Cancel the effect of --buck2-inferconfig-target.
 
        --buck2-isolation-dir-reset
            Cancel the effect of --buck2-isolation-dir.

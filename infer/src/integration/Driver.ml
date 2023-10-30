@@ -16,7 +16,6 @@ type mode =
   | Analyze
   | Ant of {prog: string; args: string list}
   | Buck2Clang of {build_cmd: string list}
-  | Buck2Java of {build_cmd: string list}
   | BuckClangFlavor of {build_cmd: string list}
   | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
   | BuckErlang of {prog: string; args: string list}
@@ -24,6 +23,7 @@ type mode =
   | BuckJavaFlavor of {build_cmd: string list}
   | BxlClang of {build_cmd: string list}
   | BxlClangFile
+  | BxlJava of {build_cmd: string list}
   | Clang of {compiler: Clang.compiler; prog: string; args: string list}
   | ClangCompilationDB of {db_files: [`Escaped of string | `Raw of string] list}
   | Gradle of {prog: string; args: string list}
@@ -57,8 +57,6 @@ let pp_mode fmt = function
       F.fprintf fmt "Ant driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Buck2Clang {build_cmd} ->
       F.fprintf fmt "Buck2/Clang driver mode: build_cmd = %a" Pp.cli_args build_cmd
-  | Buck2Java {build_cmd} ->
-      F.fprintf fmt "Buck2/Java driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | BuckClangFlavor {build_cmd} ->
       F.fprintf fmt "BuckClangFlavor driver mode: build_cmd = %a" Pp.cli_args build_cmd
   | BuckCompilationDB {deps; prog; args} ->
@@ -74,6 +72,8 @@ let pp_mode fmt = function
       F.fprintf fmt "BxlClang driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | BxlClangFile ->
       F.fprintf fmt "BxlClang file driver mode"
+  | BxlJava {build_cmd} ->
+      F.fprintf fmt "BxlJava driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | Clang {prog; args} ->
       F.fprintf fmt "Clang driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | ClangCompilationDB _ ->
@@ -161,9 +161,6 @@ let capture ~changed_files mode =
       | Buck2Clang {build_cmd} ->
           L.progress "Capturing in buck2/clang mode...@." ;
           Buck2Clang.capture build_cmd
-      | Buck2Java {build_cmd} ->
-          L.progress "Capturing in buck2/java mode...@." ;
-          Buck2Java.capture build_cmd
       | BuckClangFlavor {build_cmd} ->
           L.progress "Capturing in buck mode...@." ;
           BuckFlavors.capture build_cmd
@@ -184,10 +181,13 @@ let capture ~changed_files mode =
           BuckJavaFlavor.capture build_cmd
       | BxlClang {build_cmd} ->
           L.progress "Capturing in bxl/clang mode...@." ;
-          BxlClang.capture build_cmd
+          BxlCapture.capture build_cmd
       | BxlClangFile ->
           L.progress "Capturing in bxl/clang file mode...@." ;
-          BxlClang.file_capture ()
+          BxlCapture.file_capture ()
+      | BxlJava {build_cmd} ->
+          L.progress "Capturing in bxl/java mode...@." ;
+          BxlCapture.capture build_cmd
       | Clang {compiler; prog; args} ->
           if Config.is_originator then L.progress "Capturing in make/cc mode...@." ;
           Clang.capture compiler ~prog ~args
@@ -243,11 +243,11 @@ let capture ~changed_files mode =
   let should_merge =
     match mode with
     | Buck2Clang _
-    | Buck2Java _
     | BuckClangFlavor _
     | BuckJavaFlavor _
     | BxlClang _
     | BxlClangFile
+    | BxlJava _
     | Gradle _ ->
         true
     | _ ->
@@ -257,7 +257,7 @@ let capture ~changed_files mode =
     if Config.export_changed_functions then MergeCapture.merge_changed_functions () ;
     let root =
       match mode with
-      | Buck2Clang _ | BxlClang _ | BxlClangFile ->
+      | Buck2Clang _ | BxlClang _ | BxlClangFile | BxlJava _ ->
           Config.buck2_root
       | _ ->
           Config.project_root
@@ -537,14 +537,14 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
         match buck_mode with
         | None ->
             error_no_buck_mode_specified ()
-        | Some Erlang ->
-            BuckErlang {prog; args}
         | Some Clang when Config.buck2_use_bxl ->
             BxlClang {build_cmd}
         | Some Clang ->
             Buck2Clang {build_cmd}
-        | Some Java ->
-            Buck2Java {build_cmd}
+        | Some Erlang ->
+            BuckErlang {prog; args}
+        | Some Java when Config.buck2_use_bxl ->
+            BxlJava {build_cmd}
         | Some buck_mode ->
             L.die UserError "%a is not supported with buck2.@." BuckMode.pp buck_mode )
       | BClang ->
