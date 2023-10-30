@@ -41,6 +41,9 @@
   "pulse-taint-sanitizers": [
     { "class_names": ["Sanitizers::San"], "procedure_regex": ".*", "kinds": ["Sanitizers"] }
   ],
+  "pulse-taint-propagators": [
+    { "class_names": ["Propagators::Prop"], "procedure_regex": ".*" }
+  ],
   "pulse-taint-policies": [
     {
       "short_description": "Taint flow where a sink is any procedure",

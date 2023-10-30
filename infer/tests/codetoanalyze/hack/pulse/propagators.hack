@@ -31,4 +31,27 @@ class Flows {
     $t = Source::getTainted();
     Sink::process($t);
   }
+
+  public static function onlyPropOk(): void {
+    $t = Source::getTainted();
+    $t1 = Prop::prop($t);
+  }
+
+  public static function propToSinkBad(): void {
+    $t = Source::getTainted();
+    $t1 = Prop::prop($t);
+    Sink::process($t1);
+  }
+
+  // FP in a sense that ideally we don't want to report taint in such cases
+  public static function FP_onlyPropWithSinkOk(): void {
+    $t = Source::getTainted();
+    $t1 = Prop::propWithSink($t);
+  }
+
+  public static function propWithSinkToSinkBad(): void {
+    $t = Source::getTainted();
+    $t1 = Prop::propWithSink($t);
+    Sink::process($t1);
+  }
 }

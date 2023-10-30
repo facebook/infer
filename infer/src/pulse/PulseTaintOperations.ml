@@ -942,16 +942,23 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t)
             let astate, tainted = match_call source_procedure_matchers astate in
             taint_sources path location ~intra_procedural_only:false tainted astate
           in
+          let astate, propagator_matches = match_call propagator_matchers astate in
           let+ astate =
-            let astate, tainted = match_call sink_procedure_matchers astate in
-            taint_sinks path location tainted astate
+            (* This is a bit of a hack to achieve the following: be able to specify taint policies
+               where the sink is 'any procedure except <these>'. <these> need to be marked as
+               propagators. *)
+            if List.is_empty propagator_matches then
+              let astate, tainted = match_call sink_procedure_matchers astate in
+              taint_sinks path location tainted astate
+            else Ok astate
           in
-          let astate, call_was_unknown =
-            let astate, tainted = match_call propagator_matchers astate in
-            let new_state = taint_propagators path location proc_name actuals tainted astate in
+          let astate, should_propagate_for_unknown =
+            let new_state =
+              taint_propagators path location proc_name actuals propagator_matches astate
+            in
             (new_state, call_was_unknown && phys_equal astate new_state)
           in
-          if call_was_unknown then
+          if should_propagate_for_unknown then
             propagate_taint_for_unknown_calls tenv path location return ~has_added_return_param
               (SkippedKnownCall proc_name) (Some proc_name) actuals astate
           else astate )
