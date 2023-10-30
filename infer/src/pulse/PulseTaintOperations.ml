@@ -1010,18 +1010,30 @@ let taint_initial tenv (proc_attrs : ProcAttributes.t) astate0 =
     in
     let actuals = List.rev rev_actuals in
     let location = proc_attrs.loc in
-    let astate, tainted =
-      match proc_attrs.block_as_arg_attributes with
-      | Some {passed_to} ->
-          (* process block *)
-          let passed_to_attr = IRAttributes.load passed_to in
-          TaintItemMatcher.match_block tenv location ?proc_attributes:passed_to_attr passed_to
-            actuals source_block_matchers astate
-      | None ->
-          (* process regular proc *)
-          TaintItemMatcher.match_procedure tenv proc_attrs actuals source_procedure_matchers astate
+    (* Apply taint sources *)
+    let astate =
+      let astate, tainted =
+        match proc_attrs.block_as_arg_attributes with
+        | Some {passed_to} ->
+            (* process block *)
+            let passed_to_attr = IRAttributes.load passed_to in
+            TaintItemMatcher.match_block tenv location ?proc_attributes:passed_to_attr passed_to
+              actuals source_block_matchers astate
+        | None ->
+            (* process regular proc *)
+            TaintItemMatcher.match_procedure tenv proc_attrs actuals source_procedure_matchers
+              astate
+      in
+      taint_sources PathContext.initial location ~intra_procedural_only:true tainted astate
     in
-    taint_sources PathContext.initial location ~intra_procedural_only:true tainted astate
+    (* Apply taint sanitizers *)
+    let astate =
+      let astate, sanitized =
+        TaintItemMatcher.match_procedure tenv proc_attrs actuals sanitizer_matchers astate
+      in
+      taint_sanitizers PathContext.initial location sanitized astate
+    in
+    astate
   in
   match PulseOperationResult.sat_ok result with
   | Some astate_tainted ->

@@ -22,12 +22,7 @@ class San {
 }
 
 class Flows {
-  // We should not report an error here because the tainted value is simply sanitized.
-  // The problem seems to be that:
-  // 1. the sanitizer itself has 'MustNotBeTainted' attribute in the summary,
-  // 2. sanitization happens **after** pre/post of the sanitizer is applied, thus
-  // 3. we report a taint flow originating from the sanitizer itself which is not what we want.
-  public static function FP_taintedSanitizedOk(Source $arg): void {
+  public static function taintedSanitizedOk(Source $arg): void {
     $t = $arg->getTainted();
     San::sanitize($t);
     Sink::process($t);
