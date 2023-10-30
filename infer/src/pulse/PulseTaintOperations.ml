@@ -422,13 +422,18 @@ let check_source_against_sink_policy location ~source source_times intra_procedu
 
 let check_policies ~sink ~source ~source_times ~intra_procedural_only ~hist ~sanitizers ~location =
   let check_against_sink acc sink_kind =
-    let policies = Hashtbl.find_exn SinkPolicy.sink_policies sink_kind in
-    let check_against_policy =
-      check_source_against_sink_policy location ~source source_times intra_procedural_only hist
-        sanitizers ~sink sink_kind
-    in
-    let rev_matching_sources = List.rev_filter_map policies ~f:check_against_policy in
-    List.rev_append rev_matching_sources acc
+    match Hashtbl.find SinkPolicy.sink_policies sink_kind with
+    | None ->
+        (* This can happen when there's a sink with kind S but no policy with sink kind S. We
+           should handle such cases gracefully. *)
+        acc
+    | Some policies ->
+        let check_against_policy =
+          check_source_against_sink_policy location ~source source_times intra_procedural_only hist
+            sanitizers ~sink sink_kind
+        in
+        let rev_matching_sources = List.rev_filter_map policies ~f:check_against_policy in
+        List.rev_append rev_matching_sources acc
   in
   List.fold sink.TaintItem.kinds ~init:[] ~f:check_against_sink
 

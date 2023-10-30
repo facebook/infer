@@ -21,7 +21,8 @@
       ]
     },
     { "class_names": ["IntraFile::KnownClass"], "method_names": ["genTaintSource"], "kinds": ["IntraFile"]},
-    { "class_names": ["Sanitizers::Source"], "method_names": ["getTainted"], "kinds": ["Sanitizers"]}
+    { "class_names": ["Sanitizers::Source"], "method_names": ["getTainted"], "kinds": ["Sanitizers"]},
+    { "class_names": ["Propagators::Source"], "method_names": ["getTainted"], "kinds": ["Propagators"]}
   ],
   "pulse-taint-sinks": [
     { "procedure": "explicitSinkAllArgs" },
@@ -34,7 +35,8 @@
       "taint_target": ["ArgumentPositions", [1]]
     },
     { "procedure_regex": ".*", "kinds": ["BuiltinCatchAll"]},
-    { "class_names": ["Sanitizers::Sink"], "procedure_regex": ".*", "kinds": ["Sanitizers"] }
+    { "class_names": ["Sanitizers::Sink"], "procedure_regex": ".*", "kinds": ["Sanitizers"] },
+    { "class_names": ["Propagators::Sink"], "procedure_regex": ".*", "kinds": ["Propagators"] }
   ],
   "pulse-taint-sanitizers": [
     { "class_names": ["Sanitizers::San"], "procedure_regex": ".*", "kinds": ["Sanitizers"] }
@@ -47,6 +49,10 @@
     {
       "short_description": "Taint flow with a sanitizer and specific sink",
       "taint_flows": [{"source_kinds": ["Sanitizers"], "sink_kinds": ["Sanitizers"], "sanitizer_kinds": ["Sanitizers"]}]
+    },
+    {
+      "short_description": "Taint flow with a propagator and any method sink",
+      "taint_flows": [{"source_kinds": ["Propagators"], "sink_kinds": ["BuiltinCatchAll"]}]
     }
   ]
 }
