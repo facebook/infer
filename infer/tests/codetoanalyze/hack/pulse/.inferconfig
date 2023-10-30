@@ -20,7 +20,8 @@
         ]
       ]
     },
-    { "class_names": ["IntraFile::KnownClass"], "method_names": ["genTaintSource"], kinds: ["BuiltinCatchAll"]}
+    { "class_names": ["IntraFile::KnownClass"], "method_names": ["genTaintSource"], "kinds": ["IntraFile"]},
+    { "class_names": ["Sanitizers::Source"], "method_names": ["getTainted"], "kinds": ["Sanitizers"]}
   ],
   "pulse-taint-sinks": [
     { "procedure": "explicitSinkAllArgs" },
@@ -32,12 +33,20 @@
       "method_names": ["sink1", "sink2"],
       "taint_target": ["ArgumentPositions", [1]]
     },
-    { "procedure_regex": ".*", kinds: ["BuiltinCatchAll"]}
+    { "procedure_regex": ".*", "kinds": ["BuiltinCatchAll"]},
+    { "class_names": ["Sanitizers::Sink"], "procedure_regex": ".*", "kinds": ["Sanitizers"] }
+  ],
+  "pulse-taint-sanitizers": [
+    { "class_names": ["Sanitizers::San"], "procedure_regex": ".*", "kinds": ["Sanitizers"] }
   ],
   "pulse-taint-policies": [
     {
       "short_description": "Taint flow where a sink is any procedure",
-      "taint_flows": [{"source_kinds": ["BuiltinCatchAll"], "sink_kinds": ["BuiltinCatchAll"]}]
+      "taint_flows": [{"source_kinds": ["IntraFile"], "sink_kinds": ["BuiltinCatchAll"]}]
+    },
+    {
+      "short_description": "Taint flow with a sanitizer and specific sink",
+      "taint_flows": [{"source_kinds": ["Sanitizers"], "sink_kinds": ["Sanitizers"], "sanitizer_kinds": ["Sanitizers"]}]
     }
   ]
 }
