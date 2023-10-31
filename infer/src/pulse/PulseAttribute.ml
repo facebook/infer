@@ -86,7 +86,7 @@ module Attribute = struct
 
     let pp fmt {time; sink; trace} =
       F.fprintf fmt "(%a, t=%d)"
-        (Trace.pp ~pp_immediate:(fun fmt -> TaintItem.pp_value_tuple fmt sink))
+        (Trace.pp ~pp_immediate:(fun fmt -> TaintItem.pp_value_tuple_debug fmt sink))
         trace
         (time :> int)
   end

@@ -37,7 +37,7 @@ val pp_value : F.formatter -> value -> unit
 
 val pp_value_plain : F.formatter -> value -> unit
 
-val pp_value_tuple : F.formatter -> value_tuple -> unit
+val pp_value_tuple_debug : F.formatter -> value_tuple -> unit
 
 val pp : F.formatter -> t -> unit
 

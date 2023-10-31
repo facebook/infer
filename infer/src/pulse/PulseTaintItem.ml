@@ -85,6 +85,16 @@ let pp fmt {value_tuple; kinds} =
     kinds
 
 
+let rec pp_value_tuple_debug fmt value_tuple =
+  match value_tuple with
+  | Basic {value; origin} ->
+      F.fprintf fmt "%a %a" pp_origin origin pp_value value
+  | FieldOf {name; value_tuple} ->
+      F.fprintf fmt "field %s of %a" name pp_value_tuple_debug value_tuple
+  | PointedToBy {value_tuple} ->
+      F.fprintf fmt "pointed to by %a" pp_value_tuple_debug value_tuple
+
+
 let is_argument_origin {value_tuple} =
   let rec aux = function Argument _ -> true | FieldOfValue {origin} -> aux origin | _ -> false in
   let rec is_argument value_tuple =
