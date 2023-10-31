@@ -50,13 +50,13 @@ class Ok22 extends BadP {
   use OkT;
 }
 
-function basicFlowBad22(): void {
+function FN_basicFlowBad22(): void {
   $c = new Bad22();
   $tainted = $c->runSource();
   \Level1\taintSink($tainted);
 }
 
-function basicFlowOk22(): void {
+function FP_basicFlowOk22(): void {
   $c = new Ok22();
   $untainted = $c->runSource();
   \Level1\taintSink($untainted);
