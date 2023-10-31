@@ -441,10 +441,10 @@ let get_message_and_suggestion diagnostic =
              | Some BlockCall ->
                  F.fprintf fmt "%a is called%a, causing a crash" pp_prefix "nil block"
                    pp_access_trace access_trace
-             | Some (NullArgumentWhereNonNullExpected procname) ->
+             | Some (NullArgumentWhereNonNullExpected call_event) ->
                  F.fprintf fmt
-                   "%a is passed as argument to %s; this function requires a non-nil argument"
-                   pp_prefix "nil" procname
+                   "%a is passed as argument to %a; this function requires a non-nil argument"
+                   pp_prefix "nil" CallEvent.pp call_event
              | None ->
                  F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
            in

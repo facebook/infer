@@ -1470,7 +1470,7 @@ let update_pre_for_kotlin_proc astate (proc_attrs : ProcAttributes.t) formals =
             Attribute.MustBeValid
               ( Timestamp.t0
               , Trace.Immediate {location; history}
-              , Some (NullArgumentWhereNonNullExpected (Procname.to_string proc_name)) )
+              , Some (NullArgumentWhereNonNullExpected (CallEvent.Call proc_name)) )
           in
           let new_pre =
             PreDomain.update acc.pre
