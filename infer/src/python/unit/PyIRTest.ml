@@ -4745,6 +4745,53 @@ object dummy:
     let%expect_test _ =
       let source =
         {|
+def f():
+          return range(10)
+
+(a, b, *lst, x, y, z) = f()
+print(lst) # [2, 3, 4, 5, 6]
+          |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      n0 <- dummy.f()
+      n1 <- $UnpackEx(2, 3, n0)
+      dummy.a <- n1[0]
+      dummy.b <- n1[1]
+      dummy.lst <- n1[2]
+      dummy.x <- n1[3]
+      dummy.y <- n1[4]
+      dummy.z <- n1[5]
+      n2 <- print(dummy.lst)
+      return None
+
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0 .label:
+          n0 <- range(10)
+          return n0
+
+
+
+
+
+    functions:
+      f -> dummy.f
+          |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
 import itertools
 
 def f():

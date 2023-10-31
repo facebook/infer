@@ -225,6 +225,7 @@ module BuiltinCaller = struct
     | Delete  (** [DELETE_FAST] & cie *)
     | YieldFrom  (** [YIELD_FROM] *)
     | GetAwaitable  (** [GET_AWAITABLE] *)
+    | UnpackEx  (** [UNPACK_EX] *)
 
   let show = function
     | BuildClass ->
@@ -266,6 +267,8 @@ module BuiltinCaller = struct
         "$YieldFrom"
     | GetAwaitable ->
         "$GetAwaitable"
+    | UnpackEx ->
+        "$UnpackEx"
 end
 
 module Exp = struct
@@ -1224,8 +1227,8 @@ let named_argument_zip opname argc ~f ~init data tags =
 
 (** Patch the name of a list/set/dict comprehension objects.
 
-    List comprehensions generate code blocks all named `<listcomp>`, so we need to tell them apart.
-    We use their location to distinguish them. Same thing happens for `<setcomp>` and `<dictcomp>` *)
+    List comprehensions generate code blocks all named [<listcomp>], so we need to tell them apart.
+    We use their location to distinguish them. Same thing happens for [<setcomp>] and [<dictcomp>] *)
 let patch_comp_name {FFI.Code.co_name; co_firstlineno} id =
   if String.equal "<listcomp>" co_name then
     let name = sprintf "<listcomp-%d>" co_firstlineno in
@@ -2406,6 +2409,30 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let id, st = call_builtin_function st GetAwaitable [tos] in
       let st = State.push st (Exp.Temp id) in
       Ok (st, None)
+  | "UNPACK_EX" ->
+      (* The low byte of counts is the number of values before the list value, the high byte of
+         counts the number of values after it. *)
+      let to_int i = Exp.Const (Int (Z.of_int i)) in
+      let nr_before = arg land 0xff in
+      let nr_after = (arg lsr 8) land 0xff in
+      let* tos, st = State.pop st in
+      (* [UnpackEx m n exp] should unpack the [exp] collection into
+         - [m] single values which are the first items in [exp]
+         - [n] single values which are the latest items in [exp]
+         - the rest stays into an iterable collection.
+         We'll consider it returns a tuple of the right size that we can index
+         to populate the stack *)
+      let res_id, st = call_builtin_function st UnpackEx [to_int nr_before; to_int nr_after; tos] in
+      let res = Exp.Temp res_id in
+      let rec push st nr =
+        if nr > 0 then
+          let exp = Exp.Subscript {exp= res; index= to_int (nr - 1)} in
+          let st = State.push st exp in
+          push st (nr - 1)
+        else st
+      in
+      let st = push st (nr_before + nr_after + 1) in
+      Ok (st, None)
   | _ ->
       internal_error st (Error.UnsupportedOpcode opname)
 
@@ -2486,7 +2513,7 @@ let rec mk_nodes st label code instructions =
   let open IResult.Let_syntax in
   let* st, instructions, node = mk_node st label code instructions in
   (* Python bytecode has deadcode. From what we can see for now:
-     - the compiler inserts `return None` at the end of every function, even if all execution path
+     - the compiler inserts [return None] at the end of every function, even if all execution path
        have returned. For example in
        ```
        if foo:
@@ -2494,10 +2521,10 @@ let rec mk_nodes st label code instructions =
        else:
          return Y
        ```
-       the compiler will insert an addition `return None` after everything.
+       the compiler will insert an addition [return None] after everything.
        This one is not a real problem.
 
-     - return/throw in loops are followed by a `jump back to the start of the loop`.
+     - return/throw in loops are followed by a "jump back to the start of the loop".
        This is more problematic because this jump doesn't have a stack compatible with the one at
        the start of the loop: it is often empty (especially after a return) when the start of the
        loop usually have at least the iterator stacked.
@@ -2590,11 +2617,11 @@ end
 
 (** Patch the name of a list/set/dict comprehension objects.
 
-    List comprehensions generate code blocks all named `<listcomp>`, so we need to tell them apart.
+    List comprehensions generate code blocks all named [<listcomp>], so we need to tell them apart.
     We use their location to distinguish them. Also, their [code] object might not have the
-    `<local>` prefix we see during the process of [MAKE_FUNCTION].
+    [<local>] prefix we see during the process of [MAKE_FUNCTION].
 
-    Same things happen for `<setcomp>` and `<dictcomp>` *)
+    Same things happen for [<setcomp>] and [<dictcomp>] *)
 let patch_comp_object_name st {FFI.Code.co_name; co_firstlineno} =
   if String.equal "<listcomp>" co_name then
     sprintf "%s<listcomp-%d>" (if State.is_toplevel st then "" else "<locals>.") co_firstlineno
