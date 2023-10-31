@@ -131,3 +131,16 @@ let field_of_origin {value_tuple; kinds} fieldname =
         PointedToBy {value_tuple= field_of_origin value_tuple}
   in
   {value_tuple= field_of_origin value_tuple; kinds}
+
+
+let get_rev_field_access_list vt =
+  let rec get_access vt =
+    match vt with
+    | Basic _ ->
+        []
+    | PointedToBy {value_tuple} ->
+        get_access value_tuple
+    | FieldOf {name; value_tuple} ->
+        `Field name :: get_access value_tuple
+  in
+  get_access vt

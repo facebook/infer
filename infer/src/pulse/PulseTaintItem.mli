@@ -48,3 +48,5 @@ val is_set_field_origin : t -> bool
 val value_of_taint : t -> value
 
 val field_of_origin : t -> string -> t
+
+val get_rev_field_access_list : value_tuple -> [> `Field of string | `Deref] list

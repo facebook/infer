@@ -372,6 +372,38 @@ let no_suggestion msg = (msg, None)
 
 let is_from_const = Option.exists ~f:Typ.is_pointer_to_const
 
+let flows_to_decompiled_expr (decompiler_expr : DecompilerExpr.t) ({value_tuple} : TaintItem.t) =
+  let rec compare_lists vt_access_list access_list =
+    match (vt_access_list, access_list) with
+    | `Field name :: rest1, DecompilerExpr.FieldAccess fieldname :: rest2 ->
+        let field_name = Fieldname.get_field_name fieldname in
+        let equal_fields =
+          String.equal name field_name
+          ||
+          match String.chop_prefix ~prefix:"_" name with
+          | Some similar_fieldname ->
+              String.equal similar_fieldname field_name
+          | None ->
+              false
+        in
+        if equal_fields then compare_lists rest1 rest2 else access_list
+    | _ ->
+        access_list
+  in
+  let vt_access_list = TaintItem.get_rev_field_access_list value_tuple in
+  match decompiler_expr with
+  | DecompilerExpr.SourceExpr ((base, access_list), abstract_value_opt) ->
+      let field_access_list =
+        List.filter access_list ~f:(fun access ->
+            match access with DecompilerExpr.FieldAccess _ -> true | _ -> false )
+      in
+      let modified_access_list = compare_lists vt_access_list field_access_list in
+      if Int.equal (List.length field_access_list) (List.length modified_access_list) then None
+      else Some (DecompilerExpr.SourceExpr ((base, modified_access_list), abstract_value_opt))
+  | _ ->
+      None
+
+
 let get_message_and_suggestion diagnostic =
   match diagnostic with
   | AccessToInvalidAddress
@@ -665,7 +697,15 @@ let get_message_and_suggestion diagnostic =
       ( if TaintItem.equal source sink then
           F.asprintf "%s. Value is tainted by %a" policy_description TaintItem.pp source
         else
-          let flows_to = if TaintItem.is_set_field_origin sink then "" else " flows to" in
+          let flows_to =
+            if TaintItem.is_set_field_origin sink then ""
+            else
+              match flows_to_decompiled_expr expr sink with
+              | Some flows_to_decompiled_expr ->
+                  F.asprintf " `%a` flows to" DecompilerExpr.pp flows_to_decompiled_expr
+              | None ->
+                  F.asprintf " flows to"
+          in
           if DecompilerExpr.is_unknown expr then
             F.asprintf "%s. Value is tainted by %a and%s %a" policy_description TaintItem.pp source
               flows_to TaintItem.pp sink
