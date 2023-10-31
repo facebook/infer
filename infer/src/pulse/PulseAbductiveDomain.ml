@@ -734,7 +734,7 @@ module Internal = struct
 
 
   let add_static_types tenv astate formals_and_captured =
-    let record_static_type astate (_var, typ, (src_addr, _)) =
+    let record_static_type astate (_var, typ, _, (src_addr, _)) =
       match typ with
       | {Typ.desc= Tptr ({desc= Tstruct typ_name}, _)} ->
           let pre_heap = (astate.pre :> BaseDomain.t).heap in
@@ -1448,12 +1448,44 @@ let get_pre {pre} = (pre :> BaseDomain.t)
 
 let get_post {post} = (post :> BaseDomain.t)
 
+let update_pre_for_kotlin_proc astate (proc_attrs : ProcAttributes.t) formals =
+  let proc_name = proc_attrs.proc_name in
+  let location = proc_attrs.loc in
+  (* TODO(izorin): This approach won't work for third-party code, right?  *)
+  let is_kotlin =
+    match proc_attrs with
+    | {loc= {file}} ->
+        (not (SourceFile.is_invalid file))
+        && SourceFile.has_extension ~ext:Config.kotlin_source_extension file
+  in
+  if is_kotlin then
+    List.fold formals ~init:astate ~f:(fun (acc : t) (var, _, annot_opt, (_, history)) ->
+        (* TODO(izorin): check specifically for org.jetbrains.annotations.NotNull *)
+        let is_not_nullable = Option.exists annot_opt ~f:Annotations.ia_is_nonnull in
+        if is_not_nullable then
+          let acc, (value, history) = SafeStack.eval history var acc in
+          let acc, (value, history) = SafeMemory.eval_edge (value, history) Dereference acc in
+          let attribute =
+            Attribute.MustBeValid
+              ( Timestamp.t0
+              , Trace.Immediate {location; history}
+              , Some (NullArgumentWhereNonNullExpected (Procname.to_string proc_name)) )
+          in
+          let new_pre =
+            PreDomain.update acc.pre
+              ~attrs:(BaseAddressAttributes.add_one value attribute (acc.pre :> base_domain).attrs)
+          in
+          if phys_equal new_pre acc.pre then acc else {acc with pre= new_pre}
+        else acc )
+  else astate
+
+
 let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
   let proc_name = proc_attrs.proc_name in
   (* HACK: save the formals in the stacks of the pre and the post to remember which local variables
      correspond to formals *)
-  let formals_and_captured =
-    let init_var formal_or_captured pvar typ =
+  let captured, formals =
+    let init_var formal_or_captured pvar typ annot_opt =
       let event =
         match formal_or_captured with
         | `Formal ->
@@ -1462,24 +1494,25 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
             ValueHistory.Capture
               {captured_as= pvar; mode; location= proc_attrs.loc; timestamp= Timestamp.t0}
       in
-      (Var.of_pvar pvar, typ, (AbstractValue.mk_fresh (), ValueHistory.singleton event))
+      (Var.of_pvar pvar, typ, annot_opt, (AbstractValue.mk_fresh (), ValueHistory.singleton event))
     in
     let formals =
-      List.map proc_attrs.formals ~f:(fun (mangled, typ, _) ->
-          init_var `Formal (Pvar.mk mangled proc_name) typ )
+      List.map proc_attrs.formals ~f:(fun (mangled, typ, anno) ->
+          init_var `Formal (Pvar.mk mangled proc_name) typ (Some anno) )
     in
     let captured =
       List.map proc_attrs.captured ~f:(fun {CapturedVar.pvar; typ; capture_mode} ->
-          init_var (`Captured capture_mode) pvar typ )
+          init_var (`Captured capture_mode) pvar typ None )
     in
-    captured @ formals
+    (captured, formals)
   in
+  let formals_and_captured = captured @ formals in
   let initial_stack =
     List.fold formals_and_captured ~init:(PreDomain.empty :> BaseDomain.t).stack
-      ~f:(fun stack (formal, _, addr_loc) -> BaseStack.add formal addr_loc stack)
+      ~f:(fun stack (formal, _, _, addr_loc) -> BaseStack.add formal addr_loc stack)
   in
   let initial_heap =
-    let register heap (_, _, (addr, _)) =
+    let register heap (_, _, _, (addr, _)) =
       (* safe because the state is empty, i.e. there are no equalities and each value is its own
          canonical representative *)
       let[@alert "-deprecated"] addr = CanonValue.unsafe_cast addr in
@@ -1523,6 +1556,7 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
       add_static_types tenv astate formals_and_captured
     else astate
   in
+  let astate = update_pre_for_kotlin_proc astate proc_attrs formals in
   apply_specialization proc_name specialization astate
 
 

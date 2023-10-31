@@ -43,18 +43,18 @@ public class BasicJavaKotlinBoundary {
     kotlin.doesNotAcceptNull(input);
   }
 
-  void FN_passNullWhenDisallowedBad1(Kotlin kotlin) {
+  void passNullWhenDisallowedBad1(Kotlin kotlin) {
     Object input = null;
     kotlin.doesNotAcceptNull(input);
   }
 
-  void FN_passNullWhenDisallowedBad2(Kotlin kotlin) {
+  void passNullWhenDisallowedBad2(Kotlin kotlin) {
     Object input1 = new Object();
     Object input2 = null;
     kotlin.paramsWithDifferentNullness(input1, input2);
   }
 
-  void FN_passNullWhenDisallowedBad3(Kotlin kotlin) {
+  void passNullWhenDisallowedBad3(Kotlin kotlin) {
     Object input1 = null;
     Object input2 = null;
     kotlin.paramsWithDifferentNullness(input1, input2);
@@ -87,18 +87,18 @@ public class BasicJavaKotlinBoundary {
     kotlin.doesNotAcceptNull(input);
   }
 
-  void FN_passNullWhenDisallowedInterprocBad1(Kotlin kotlin) {
+  void passNullWhenDisallowedInterprocBad1(Kotlin kotlin) {
     Object input = returnsNull();
     kotlin.doesNotAcceptNull(input);
   }
 
-  void FN_passNullWhenDisallowedInterprocBad2(Kotlin kotlin) {
+  void passNullWhenDisallowedInterprocBad2(Kotlin kotlin) {
     Object input1 = returnsNotNull();
     Object input2 = returnsNull();
     kotlin.paramsWithDifferentNullness(input1, input2);
   }
 
-  void FN_passNullWhenDisallowedInterprocBad3(Kotlin kotlin) {
+  void passNullWhenDisallowedInterprocBad3(Kotlin kotlin) {
     Object input1 = returnsNull();
     Object input2 = returnsNull();
     kotlin.paramsWithDifferentNullness(input1, input2);
