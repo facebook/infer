@@ -426,15 +426,19 @@ struct
       | Some {State.post= post_disjuncts, post_non_disjunct; _} ->
           ((post_disjuncts, post_non_disjunct), List.length post_disjuncts)
     in
-    let (disjuncts, non_disj_astates), _ =
-      List.foldi (List.rev pre) ~init:current_post_n
-        ~f:(fun i (((post, non_disj_astate) as post_astate), n_disjuncts) pre_disjunct ->
+    let ((disjuncts, non_disj_astates), _), need_join_non_disj =
+      List.foldi (List.rev pre) ~init:(current_post_n, false)
+        ~f:(fun
+             i
+             ((((post, non_disj_astate) as post_astate), n_disjuncts), need_join_non_disj)
+             pre_disjunct
+           ->
           let limit = disjunct_limit - n_disjuncts in
           AnalysisState.set_remaining_disjuncts limit ;
           if limit <= 0 then (
             L.d_printfln "@[Reached disjunct limit: already got %d disjuncts@]@;" n_disjuncts ;
             DisjunctiveMetadata.add_dropped_disjuncts 1 ;
-            (post_astate, n_disjuncts) )
+            (((post, non_disj_astate), n_disjuncts), true) )
           else if is_new_pre pre_disjunct then (
             L.d_printfln "@[<v2>Executing node from disjunct #%d, setting limit to %d@;" i limit ;
             let disjuncts', non_disj' =
@@ -443,18 +447,34 @@ struct
             L.d_printfln "@]@\n" ;
             let disj', n, dropped = Domain.join_up_to ~limit:disjunct_limit ~into:post disjuncts' in
             DisjunctiveMetadata.add_dropped_disjuncts dropped ;
-            ((disj', T.NonDisjDomain.join non_disj_astate non_disj'), n) )
+            (((disj', T.NonDisjDomain.join non_disj_astate non_disj'), n), need_join_non_disj) )
           else (
             L.d_printfln "@[Skipping already-visited disjunct #%d@]@;" i ;
-            (post_astate, n_disjuncts) ) )
+            (* HACK: [pre_non_disj] may have a new information, e.g. when the predecessor node
+               reached the disjunct limit, so join [pre_non_disj]. *)
+            ((post_astate, n_disjuncts), true) ) )
     in
     let non_disjunct =
       if
         Config.pulse_prevent_non_disj_top
         || List.exists disjuncts ~f:T.DisjDomain.is_executable
         || List.is_empty disjuncts
-      then non_disj_astates
-      else T.NonDisjDomain.top
+      then
+        if need_join_non_disj then
+          (* HACK: When we drop disjuncts due to the disjunct limit, we may lose some information on
+             the non-disjunctive abstract state, i.e. [pre_non_disj], which can result in false
+             positives.  To mitigate the issue, join [pre_non_disj] when dropping disjuncts even
+             though joining without running [exec_instr] is, strictly speaking,
+             incorrect/unsound. *)
+          T.NonDisjDomain.join non_disj_astates pre_non_disj
+        else non_disj_astates
+      else
+        (* When there is no executable disjunct, we did not actually execute the instructions.
+           Instead, we passed the non-executable disjuncts to the next node unchanged.  While this
+           is fine for disjunctive abstract states, it is not for non-disjunctive abstract state,
+           e.g. the unnecessary copy checker since it may miss some modifications of copied values.
+           To mitigate the issue, return top when all disjuncts are non-executable. *)
+        T.NonDisjDomain.top
     in
     (disjuncts, non_disjunct)
 

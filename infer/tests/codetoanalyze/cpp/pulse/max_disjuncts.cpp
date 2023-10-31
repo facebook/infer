@@ -5,6 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <vector>
+
+namespace max_disjuncts {
+
 int rand_int();
 
 // This returns the state with current maximum disjuncts (20).
@@ -102,3 +106,19 @@ void call_join_full_disjs3_bad() {
   int* p = nullptr;
   *p = 42;
 }
+
+struct Arr {
+  int arr[2];
+  std::vector<int> vec;
+};
+
+void copy_and_modify_ok(const std::vector<int>& v, const Arr& arg) {
+  int x = get_full_disjs(); // make max disjuncts
+  auto copied_arg = arg; // copy arg
+  for (const int& e : v) {
+    copied_arg.arr[0] = 42; // modify copied_arg
+    int y = arg.arr[0];
+  }
+}
+
+} // namespace max_disjuncts
