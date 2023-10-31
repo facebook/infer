@@ -181,11 +181,16 @@ let is_smaller_than_64_bits integer_type_widths tenv typ =
       false
 
 
-let is_cheap_to_copy integer_type_widths tenv typ =
+let is_cheap_to_copy_one integer_type_widths tenv typ =
   (Typ.is_pointer typ && Typ.is_trivially_copyable (Typ.strip_ptr typ).quals)
   || is_modeled_as_cheap_to_copy tenv typ
   || is_known_cheap_copy typ
   || is_smaller_than_64_bits integer_type_widths tenv typ
+
+
+let is_cheap_to_copy integer_type_widths tenv ~source ~target =
+  is_cheap_to_copy_one integer_type_widths tenv target
+  || is_cheap_to_copy_one integer_type_widths tenv source
 
 
 let has_copy_in str = String.is_substring (String.lowercase str) ~substring:"copy"
@@ -273,8 +278,8 @@ let add_copies_to_pvar_or_field ~is_captured_by_ref proc_lvalue_ref_parameters i
     tenv path location from args ~astates_before (astate_n, astate) =
   let open IOption.Let_syntax in
   match (args : (Exp.t * Typ.t) list) with
-  | ((Lvar copy_pvar | Lindex (Lvar copy_pvar, _)), copy_type) :: rest_args
-    when (not (is_cheap_to_copy integer_type_widths tenv copy_type))
+  | ((Lvar copy_pvar | Lindex (Lvar copy_pvar, _)), copy_type) :: ((_, source_typ) :: _ as rest_args)
+    when (not (is_cheap_to_copy integer_type_widths tenv ~source:source_typ ~target:copy_type))
          && not (NonDisjDomain.is_locked astate_n) ->
       let copied_var = Var.of_pvar copy_pvar in
       let get_copy_spec, astate, source_addr_typ_opt =
@@ -337,7 +342,7 @@ let add_copies_to_pvar_or_field ~is_captured_by_ref proc_lvalue_ref_parameters i
               (get_copy_spec source_opt) astate_n
           , astate' ) )
   | ((Lfield (_, field, _) as exp), copy_type) :: ((_, source_typ) :: _ as rest_args)
-    when not (is_cheap_to_copy integer_type_widths tenv copy_type) ->
+    when not (is_cheap_to_copy integer_type_widths tenv ~source:source_typ ~target:copy_type) ->
       (* NOTE: Before running get_copied_and_source, we need to evaluate exp first to update the decompiler map in the abstract state. *)
       try_eval path location exp astate
       |> Option.bind ~f:(fun (astate, copy_addr) ->
@@ -389,7 +394,7 @@ let add_copies_to_return integer_type_widths tenv proc_desc path location from a
   let open IOption.Let_syntax in
   match (args : (Exp.t * Typ.t) list) with
   | (Var copy_var, copy_type) :: (source_exp, source_typ) :: _
-    when (not (is_cheap_to_copy integer_type_widths tenv copy_type))
+    when (not (is_cheap_to_copy integer_type_widths tenv ~source:source_typ ~target:copy_type))
          && (not (Typ.is_pointer_to_smart_pointer copy_type))
          && (not (has_copy_in_name (Procdesc.get_proc_name proc_desc)))
          && (not (NonDisjDomain.is_locked astate_n))
@@ -540,7 +545,7 @@ let init_const_refable_parameters procdesc integer_type_widths tenv astates asta
             let var = Var.of_pvar pvar in
             if
               Var.appears_in_source_code var && Typ.is_reference typ
-              && (not (is_cheap_to_copy integer_type_widths tenv typ))
+              && (not (is_cheap_to_copy_one integer_type_widths tenv typ))
               && (not (Var.is_cpp_unnamed_param var))
               && (not (Pvar.is_gmock_param pvar))
               (* [unique_ptr] is ignored since it is not copied. This condition can be removed if
