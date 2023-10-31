@@ -27,4 +27,4 @@ infer-out$(TEST_SUFFIX)/report.json: $(JAVA_DEPS) $(JAVA_SOURCES) $(KOTLIN_SOURC
 	  $(INFER_BIN) capture --continue --project-root $(PROJECT_ROOT) --dump-duplicate-symbols \
 	    -o $(@D) $(INFER_OPTIONS) -- $(JAVAC) $(JAVAC_FLAGS) -cp $(CLASSPATH) $(JAVA_SOURCES) \
 	    && \
-	  $(INFER_BIN) analyze -o $(@D) $(INFER_OPTIONS))
+	  $(INFER_BIN) analyze --project-root $(PROJECT_ROOT) -o $(@D) $(INFER_OPTIONS))
