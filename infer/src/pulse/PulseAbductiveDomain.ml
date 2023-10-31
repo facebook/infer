@@ -1460,8 +1460,9 @@ let update_pre_for_kotlin_proc astate (proc_attrs : ProcAttributes.t) formals =
   in
   if is_kotlin then
     List.fold formals ~init:astate ~f:(fun (acc : t) (var, _, annot_opt, (_, history)) ->
-        (* TODO(izorin): check specifically for org.jetbrains.annotations.NotNull *)
-        let is_not_nullable = Option.exists annot_opt ~f:Annotations.ia_is_nonnull in
+        (* We're interested specifically in org.jetbrains.annotations.NotNull since this annotation
+           is emitted by kotlinc to denote non-nullable function parameters *)
+        let is_not_nullable = Option.exists annot_opt ~f:Annotations.ia_is_jetbrains_notnull in
         if is_not_nullable then
           let acc, (value, history) = SafeStack.eval history var acc in
           let acc, (value, history) = SafeMemory.eval_edge (value, history) Dereference acc in

@@ -121,6 +121,8 @@ let volatile = "volatile"
 
 let worker_thread = "WorkerThread"
 
+let jetbrains_not_null = "org.jetbrains.annotations.NotNull"
+
 let ia_has_annotation_with (ia : Annot.Item.t) (predicate : Annot.t -> bool) : bool =
   List.exists ~f:predicate ia
 
@@ -147,6 +149,10 @@ let annot_ends_with ({class_name} : Annot.t) ann_name =
 let class_name_matches s (annot : Annot.t) = String.equal s annot.class_name
 
 let ia_ends_with ia ann_name = List.exists ~f:(fun a -> annot_ends_with a ann_name) ia
+
+let ia_class_name_matches ia class_name =
+  List.exists ~f:(fun a -> class_name_matches class_name a) ia
+
 
 let find_ia_ends_with ia ann_name = List.find ~f:(fun a -> annot_ends_with a ann_name) ia
 
@@ -204,6 +210,8 @@ let ia_is_nonnull ia =
          (Actually, it might even be shown as @NonNull in IDE/source code)
       *) ]
 
+
+let ia_is_jetbrains_notnull ia = ia_class_name_matches ia jetbrains_not_null
 
 let ia_is_nullsafe_strict ia = ia_ends_with ia nullsafe_strict
 
