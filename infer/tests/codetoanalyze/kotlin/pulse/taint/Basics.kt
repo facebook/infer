@@ -217,4 +217,14 @@ class Basics {
       InferTaint.inferSensitiveSink(notTaintedFlag)
     }
   }
+
+  fun javaSourceBad() {
+    val src = InferJavaTaint.inferSecretSource()
+    InferTaint.inferSensitiveSink(src)
+  }
+
+  fun javaSinkBad() {
+    val src = InferTaint.inferSecretSource()
+    InferJavaTaint.inferSensitiveSink(src)
+  }
 }
