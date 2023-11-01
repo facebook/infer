@@ -878,6 +878,8 @@ struct Ptr {
   std::vector<int> vec;
 };
 
+Ptr* get_unknown_ptr_field();
+
 Ptr global_ptr;
 class UnownedTest {
   Arr field;
@@ -932,6 +934,8 @@ class UnownedTest {
     c.ptr = global_ptr.ptr;
     ptr_field = c; // ok to move here
   }
+
+  void copy_assign_from_unknown_ok() { ptr_field = *get_unknown_ptr_field(); }
 };
 
 struct ArrWrap {

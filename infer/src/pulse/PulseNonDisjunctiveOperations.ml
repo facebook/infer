@@ -269,8 +269,13 @@ let is_copied_from_address_reachable_from_unowned ~is_captured_by_ref ~is_interm
          ( match source_expr with
          | DecompilerExpr.SourceExpr ((PVar pvar, _), _) ->
              Pvar.is_this pvar || Pvar.is_global pvar || is_captured_by_ref pvar
+         | DecompilerExpr.SourceExpr ((ReturnValue (Call pname), _), _)
+           when Procname.is_std_move pname ->
+             (* When [std::move] is used explicitly, we can say the source is owned. *)
+             false
          | _ ->
-             false )
+             (* When the source is unclear, we conservatively conclude it is unowned. *)
+             true )
          || is_address_reachable_from_unowned source_addr ~astates_before proc_lvalue_ref_parameters )
 
 
