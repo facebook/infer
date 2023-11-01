@@ -384,11 +384,46 @@ void folly_fastmap_insert_bad_FN() {
   const auto valueCopy = valueRef;
 }
 
-void folly_fastmap_insert_or_assign_bad_FN() {
+void folly_fastmap_insert_or_assign_bad() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   const auto& valueRef = map.at(1);
   map.insert_or_assign(4, 16);
   const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_token_insert_or_assign_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.insert_or_assign(map.prehash(4), 4, 16);
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_hinted_insert_or_assign_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.insert_or_assign(map.cbegin(), 4, 16);
+  const auto valueCopy = valueRef;
+}
+
+void use_return_insert_or_assign_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto [it, inserted] = map.insert_or_assign(4, 16);
+  map.clear();
+  const auto valueCopy = it->second;
+}
+
+void use_return_token_insert_or_assign_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto [it, inserted] = map.insert_or_assign(map.prehash(4), 4, 16);
+  map.clear();
+  const auto valueCopy = it->second;
+}
+
+void use_iterator_hinted_insert_or_assign_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto it = map.insert_or_assign(map.cbegin(), 4, 16);
+  map.clear();
+  const auto valueCopy = it->second;
 }
 
 void folly_fastmap_emplace_bad() {

@@ -770,14 +770,14 @@ module GenericMapCollection = struct
     at map_t map data astate
 
 
-  let emplace_hint map_t ({FuncArg.arg_payload} as map) args : model =
+  let emplace_hint map_t map_f ({FuncArg.arg_payload} as map) args : model =
    fun data astate ->
     (* We expect the last argument to be the returned iterator. *)
     (* This will only throw if SIL intermediate representation changes. *)
     let it = (List.last_exn args).FuncArg.arg_payload in
-    let<*> astate = invalidate_references map_t EmplaceHint map data astate in
+    let<*> astate = invalidate_references map_t map_f map data astate in
     find
-      (Format.asprintf "%a::emplace_hint" Invalidation.pp_map_type map_t)
+      (Format.asprintf "%a::%a" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f)
       arg_payload it data astate
 
 
@@ -809,6 +809,13 @@ module GenericMapCollection = struct
     let last_arg = List.last_exn args in
     let<*> astate = invalidate_references map_t map_f map data astate in
     return_iterator_pair_first desc arg_payload last_arg data astate
+
+
+  let insert_or_assign ~hinted map_t map return_arg : model =
+   fun data astate ->
+    (* The hinted version returns an iterator, other overloads a pair<iterator, bool>. *)
+    if hinted then emplace_hint map_t InsertOrAssign map [return_arg] data astate
+    else emplace map_t InsertOrAssign map [return_arg] data astate
 
 
   let iterator_star desc it : model =
@@ -909,9 +916,24 @@ let map_matchers =
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "at"
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
           $+...$--> GenericMapCollection.at map_t
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg $+ any_arg $+ capt_arg
+          $--> GenericMapCollection.insert_or_assign ~hinted:false map_t
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg_of_typ (-"folly" <>:: "F14HashToken")
+          $+ any_arg $+ any_arg $+ capt_arg
+          $--> GenericMapCollection.insert_or_assign ~hinted:false map_t
+          (* Order matters here: if there are three arguments but the first isn't an F14HashToken,
+             we are in the hinted case. *)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg $+ any_arg $+ any_arg $+ capt_arg
+          $--> GenericMapCollection.insert_or_assign ~hinted:true map_t
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "emplace_hint"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
-          $++$--> GenericMapCollection.emplace_hint map_t
+          $++$--> GenericMapCollection.emplace_hint map_t EmplaceHint
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "emplace"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
           $++$--> GenericMapCollection.emplace map_t Emplace
