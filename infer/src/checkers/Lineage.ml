@@ -34,6 +34,9 @@ module VarPath : sig
 
   val var : Var.t -> t
 
+  val sub_label : t -> FieldLabel.t -> t
+  (** Subscript one sub-field from a variable path.*)
+
   val sub_path : t -> FieldPath.t -> t
   (** Subscript nested sub-fields from a variable path. *)
 
@@ -48,6 +51,8 @@ end = struct
   let var v = (v, [])
 
   let sub_path (var, field_path) subfields = (var, field_path @ subfields)
+
+  let sub_label var_path label = sub_path var_path [label]
 
   let make var field_path = (var, field_path)
 
@@ -1316,10 +1321,14 @@ module Domain : sig
     -> kind:LineageGraph.E.Kind.t
     -> src:VarPath.t
     -> dst:VarPath.t
+    -> ?exclude:(src_field_path:FieldPath.t -> dst_field_path:FieldPath.t -> bool)
     -> t
     -> t
   (** Add flow from every cell under the source variable path to the cell with the same field path
-      under the destination variable path. See {!Shapes.fold_cell_pairs}. *)
+      under the destination variable path. See {!Shapes.fold_cell_pairs}.
+
+      If the [exclude] predicate is set, flows for which the predicates holds (on the flow source
+      and destination paths) won't be added. *)
 
   val add_write_product :
        shapes:Shapes.t
@@ -1486,10 +1495,15 @@ end = struct
 
   (* Update all the cells under a destination path, as obtained from the shapes information, as being
      written in parallel from the corresponding cells under a source path. *)
-  let add_write_parallel ~shapes ~node ~kind ~src ~dst astate =
+  let add_write_parallel ~shapes ~node ~kind ~src ~dst
+      ?(exclude = fun ~src_field_path:_ ~dst_field_path:_ -> false) astate =
     Shapes.fold_cell_pairs
       ~f:(fun acc_astate src_cell dst_cell ->
-        add_cell_write_from_local ~node ~kind ~src:(Cell src_cell) ~dst:dst_cell acc_astate )
+        if
+          exclude ~src_field_path:(Cell.field_path src_cell)
+            ~dst_field_path:(Cell.field_path dst_cell)
+        then acc_astate
+        else add_cell_write_from_local ~node ~kind ~src:(Cell src_cell) ~dst:dst_cell acc_astate )
       ~init:astate shapes src dst
 
 
@@ -1506,7 +1520,7 @@ module TransferFunctions = struct
 
   type analysis_data = Shapes.t * Summary.t InterproceduralAnalysis.t
 
-  (** If an expression is made of a single variable, return it *)
+  (** If an expression is made of a single variable, return it. *)
   let exp_as_single_var (e : Exp.t) : Var.t option =
     match e with
     | Exp.Lvar pvar ->
@@ -1525,7 +1539,7 @@ module TransferFunctions = struct
         None
 
 
-  (** If an expression is made of a single variable path, return it *)
+  (** If an expression is made of a single variable path, return it. *)
   let exp_as_single_var_path (e : Exp.t) : VarPath.t option =
     let rec aux field_path_acc = function
       | Exp.Lvar pvar ->
@@ -1547,6 +1561,18 @@ module TransferFunctions = struct
     aux [] e
 
 
+  (** Assume an expression is made of a single variable path and return it. Dies if that assumption
+      does not hold. *)
+  let exp_as_single_var_path_exn exp =
+    match exp_as_single_var_path exp with
+    | Some var_path ->
+        var_path
+    | None ->
+        (* Debugging hint: if you run into this assertion, the easiest is likely to change the
+           frontend to introduce a temporary variable. *)
+        L.die InternalError "Unexpected non-variable-path expression"
+
+
   (** Return the free cells that can be derived from a variable path *)
   let free_locals_from_path shapes var_path =
     Shapes.fold_cells shapes var_path ~f:Local.Set.add_cell ~init:Local.Set.empty
@@ -1559,15 +1585,10 @@ module TransferFunctions = struct
         free_locals_from_path shapes (VarPath.pvar pvar)
     | Var id ->
         free_locals_from_path shapes (VarPath.ident id)
-    | Lfield _ -> (
-      (* We only allow (sequences of) fields to be "applied" to a single variable, yielding a single path *)
-      match exp_as_single_var_path e with
-      | None ->
-          (* Debugging hint: if you run into this assertion, the easiest is likely to change the
-             frontend to introduce a temporary variable. *)
-          L.die InternalError "I don't support field paths from non-variables expressions"
-      | Some var_path ->
-          free_locals_from_path shapes var_path )
+    | Lfield _ ->
+        (* We only allow (sequences of) fields to be "applied" to a single variable, yielding a single path *)
+        let var_path = exp_as_single_var_path_exn e in
+        free_locals_from_path shapes var_path
     | Const (Cint x) ->
         Local.Set.singleton (ConstantInt (IntLit.to_string x))
     | Const (Cstr x) ->
@@ -1722,8 +1743,9 @@ module TransferFunctions = struct
             ~src:(free_locals_of_exp shapes arg_expr)
             astate
       | Some arg_path ->
-          let add_write =
-            if shape_is_preserved then Domain.add_write_parallel else Domain.add_write_product
+          let add_write eta_args =
+            if shape_is_preserved then Domain.add_write_parallel eta_args
+            else Domain.add_write_product eta_args
           in
           let kind = kind_f ~shape_is_preserved in
           add_write ~shapes ~node ~kind ~dst:ret_path
@@ -1815,6 +1837,93 @@ module TransferFunctions = struct
         ~init:astate field_names args
 
 
+    let maps_get shapes node _analyze_dependency ret_id _procname args astate =
+      match args with
+      | [key_exp; map_exp] ->
+          (* Erlang frontend currently always puts arguments in variables. We could fall back to
+             generic calls otherwise but that would introduce undesirable imprecision. We thus keep
+             the failure for now and let precise support be done if the need arises. *)
+          let ret_path = VarPath.ident ret_id in
+          let key_path = exp_as_single_var_path_exn key_exp in
+          let map_path = exp_as_single_var_path_exn map_exp in
+          Shapes.fold_field_labels
+            ~f:(fun astate_acc field_label ->
+              Domain.add_write_parallel ~shapes ~node ~kind:Direct
+                ~src:(VarPath.sub_label map_path field_label)
+                ~dst:ret_path astate_acc )
+            ~fallback:
+              (Domain.add_write_product ~shapes ~node ~kind:Direct ~src:map_path ~dst:ret_path)
+            ~init:astate shapes key_path
+      | _ ->
+          L.die InternalError "`maps:get` expects two arguments"
+
+
+    let maps_new =
+      (* The generic call model with zero parameter will simply add a flow from maps:new$ret to
+         ret_id. We could also consider doing nothing and simply return the abstract state, which
+         would amount to considering maps:new as a zero-argument builtin and would generate no flow
+         at all. *)
+      generic_call_model
+
+
+    let maps_put shapes node _analyze_dependency ret_id _procname args astate =
+      match args with
+      | [key_exp; value_exp; map_exp] ->
+          (* The Erlang frontend currently always puts arguments in variables. We could fall back to
+             generic calls otherwise but that would introduce undesirable imprecision. We thus keep
+             this assumption explicit for now and let precise support be implemented later if the
+             need arises. *)
+          let ret_path = VarPath.ident ret_id in
+          let key_path = exp_as_single_var_path_exn key_exp in
+          let value_path = exp_as_single_var_path_exn value_exp in
+          let map_path = exp_as_single_var_path_exn map_exp in
+          (* First copy the argument map into the returned map, except the new key. *)
+          let exclude_new_key ~src_field_path ~dst_field_path =
+            Shapes.fold_field_labels
+              ~f:(fun acc field_label ->
+                (* Since abstraction may truncate either the copied path or the returned one, we
+                   check that both are separate from the newly put key. *)
+                acc
+                || [%equal: FieldLabel.t option] (List.hd src_field_path) (Some field_label)
+                || [%equal: FieldLabel.t option] (List.hd dst_field_path) (Some field_label) )
+              ~fallback:(Fn.const false) ~init:false shapes key_path
+          in
+          let astate =
+            Domain.add_write_parallel ~shapes ~node ~kind:Direct ~src:map_path ~dst:ret_path
+              ~exclude:exclude_new_key astate
+          in
+          (* Then have the put value flow into the put-key-indexed cells. *)
+          Shapes.fold_field_labels
+            ~f:(fun astate_acc field_label ->
+              Domain.add_write_parallel ~shapes ~node ~kind:Direct ~src:value_path
+                ~dst:(VarPath.sub_label ret_path field_label)
+                astate_acc )
+            ~fallback:
+              (Domain.add_write_product ~shapes ~node ~kind:Direct ~src:value_path ~dst:ret_path)
+            ~init:astate shapes key_path
+      | _ ->
+          L.die InternalError "`maps:put` expects three arguments"
+
+
+    let make_map shapes node _analyze_dependency ret_id _procname args astate =
+      let ret_path = VarPath.ident ret_id in
+      let args = List.chunks_of ~length:2 args in
+      List.fold
+        ~f:(fun acc_astate key_and_value ->
+          let [key_exp; value_exp] = key_and_value [@@warning "-partial-match"] in
+          let key_path = exp_as_single_var_path_exn key_exp in
+          let value_path = exp_as_single_var_path_exn value_exp in
+          Shapes.fold_field_labels
+            ~f:(fun astate_acc field_label ->
+              Domain.add_write_parallel ~shapes ~node ~kind:Direct ~src:value_path
+                ~dst:(VarPath.sub_label ret_path field_label)
+                astate_acc )
+            ~fallback:
+              (Domain.add_write_product ~shapes ~node ~kind:Direct ~src:value_path ~dst:ret_path)
+            ~init:acc_astate shapes key_path )
+        ~init:astate args
+
+
     let custom_call_models =
       let apply arity =
         Procname.make_erlang ~module_name:ErlangTypeName.erlang_namespace ~function_name:"apply"
@@ -1823,6 +1932,10 @@ module TransferFunctions = struct
       let pairs =
         [ (BuiltinDecl.__erlang_make_atom, make_atom)
         ; (BuiltinDecl.__erlang_make_tuple, make_tuple)
+        ; (BuiltinDecl.__erlang_make_map, make_map)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"new" ~arity:0, maps_new)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2, maps_get)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~arity:3, maps_put)
         ; (apply 2, call_unqualified)
         ; (apply 3, call_qualified) ]
       in

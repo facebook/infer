@@ -68,6 +68,18 @@ module Summary : sig
 
   val pp : Format.formatter -> t -> unit
 
+  val fold_field_labels :
+       t
+    -> Var.t * FieldPath.t
+    -> init:'accum
+    -> f:('accum -> FieldLabel.t -> 'accum)
+    -> fallback:('accum -> 'accum)
+    -> 'accum
+  (** If a variable path has a shape that corresponds to a statically known set of field labels,
+      folds over those field labels.
+
+      Otherwise, calls the [fallback] function on [init]. *)
+
   val fold_cells :
     t -> Var.t * FieldPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
   (** Folds over all cells under a variable and field path. A field path is "terminal" if its length

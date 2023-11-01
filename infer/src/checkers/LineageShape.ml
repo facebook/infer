@@ -217,6 +217,15 @@ module Env : sig
     (** Makes a summary from a state environment. Further updates to the state will have no effect
         on the summary. *)
 
+    val fold_field_labels :
+         t
+      -> Var.t * FieldPath.t
+      -> init:'accum
+      -> f:('accum -> FieldLabel.t -> 'accum)
+      -> fallback:('accum -> 'accum)
+      -> 'accum
+    (* Doc in .mli *)
+
     val fold_cells :
       t -> Var.t * FieldPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
     (* Doc in .mli *)
@@ -858,6 +867,15 @@ end = struct
         ~init:var_shape field_path
 
 
+    let find_var_path_structure {var_shapes; shape_structures} var field_path =
+      let shape_id = find_var_path_shape {var_shapes; shape_structures} var field_path in
+      match Hashtbl.find shape_structures shape_id with
+      | None ->
+          Structure.bottom
+      | Some structure ->
+          structure
+
+
     let make {State.var_shapes; shape_structures} =
       (* Making a summary from a state essentially amounts to freezing State shape classes into State
          ids and converting those State ids into Summary ids. We keep an id translation table that
@@ -1100,6 +1118,16 @@ end = struct
             f acc
               (finalise {var_shapes; shape_structures} var_1 (field_path_1 @ sub_path))
               (finalise {var_shapes; shape_structures} var_2 (field_path_2 @ sub_path)) )
+
+
+    let fold_field_labels summary (var, field_path) ~init ~f ~fallback =
+      match find_var_path_structure summary var field_path with
+      | Variant set ->
+          String.Set.fold ~init
+            ~f:(fun acc constructor -> f acc (FieldLabel.map_key constructor))
+            set
+      | _ ->
+          fallback init
   end
 end
 
