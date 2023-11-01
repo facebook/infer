@@ -234,19 +234,26 @@ module CaptureWorker = struct
 
   let worker_out_dir_name id = F.asprintf "worker-%a-out" Worker.pp_id id
 
+  let is_file_block_listed file =
+    Option.exists ~f:(fun re -> Str.string_match re file 0) Config.skip_analysis_in_path
+    || Inferconfig.capture_block_list_file_matcher (SourceFile.create file)
+
+
   let mk_blueprint () =
     (* Each worker accumulates its own global tenv. In epilogue the tenv is stored to disk and its
        filepath returned to the main process. *)
     let child_tenv = Tenv.create () in
-    let action unit =
+    let action (unit : Unit.t) =
       let t0 = Mtime_clock.now () in
-      !ProcessPoolState.update_status t0 unit.Unit.source_path ;
-      match Unit.capture_unit unit with
-      | Ok file_tenv ->
-          Tenv.merge ~src:file_tenv ~dst:child_tenv ;
-          None
-      | Error () ->
-          Some ()
+      if is_file_block_listed unit.source_path then None
+      else (
+        !ProcessPoolState.update_status t0 unit.Unit.source_path ;
+        match Unit.capture_unit unit with
+        | Ok file_tenv ->
+            Tenv.merge ~src:file_tenv ~dst:child_tenv ;
+            None
+        | Error () ->
+            Some () )
     in
     (* Create worker's [infer-out] and connect to a secondary capture DB inside it *)
     let prologue id =

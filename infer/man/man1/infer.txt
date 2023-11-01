@@ -270,7 +270,7 @@ OPTIONS
 
        --capture-block-list json
            Matcher or list of matchers for names of files that should not be
-           captured, hence not analyzed either. Clang and Java only.       
+           captured, hence not analyzed either. Clang, Java, and Hack only.       
     See also infer-capture(1) and infer-run(1).
 
        --no-censor-report +issue_type_regex

@@ -1009,7 +1009,7 @@ and capture_block_list =
       ~long
       ~in_help:InferCommand.[(Capture, manual_generic); (Run, manual_generic)]
       "Matcher or list of matchers for names of files that should not be captured, hence not \
-       analyzed either. Clang and Java only." )
+       analyzed either. Clang, Java, and Hack only." )
 
 
 and capture_textual =
