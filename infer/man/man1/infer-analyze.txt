@@ -844,8 +844,8 @@ PULSE CHECKER OPTIONS
            this JSON format:             { "short_description": "<a short description of the issue>",
                "taint_flows": [{ "source_kinds": [<kinds>],
                                  "sink_kinds": [<kinds>],
-                                 "sanitizer_kinds": [<kinds>],
-                                 "exclude_in": [<paths>] }]
+                                 "sanitizer_kinds": [<kinds>] }],
+               "exclude_in": [<paths>]
              }
            where <kinds> are specified in taint source/sanitizer/sink
            matchers (see --pulse-taint-sources). The fields "sanitizer_kinds"

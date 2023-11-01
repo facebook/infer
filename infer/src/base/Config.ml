@@ -2568,8 +2568,8 @@ and pulse_taint_policies =
   { "short_description": "<a short description of the issue>",
     "taint_flows": [{ "source_kinds": [<kinds>],
                       "sink_kinds": [<kinds>],
-                      "sanitizer_kinds": [<kinds>],
-                      "exclude_in": [<paths>] }]
+                      "sanitizer_kinds": [<kinds>] }],
+    "exclude_in": [<paths>]
   }
 where <kinds> are specified in taint source/sanitizer/sink matchers (see $(b,--pulse-taint-sources)). The fields "sanitizer_kinds" and "exclude_in" are optional (assumed to be empty), and a single policy can specify several taint flows using a list. The following policy is always enabled:
 { "short_description": "...",

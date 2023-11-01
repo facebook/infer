@@ -22,7 +22,8 @@
     },
     { "class_names": ["IntraFile::KnownClass"], "method_names": ["genTaintSource"], "kinds": ["IntraFile"]},
     { "class_names": ["Sanitizers::Source"], "method_names": ["getTainted"], "kinds": ["Sanitizers"]},
-    { "class_names": ["Propagators::Source"], "method_names": ["getTainted"], "kinds": ["Propagators"]}
+    { "class_names": ["Propagators::Source"], "method_names": ["getTainted"], "kinds": ["Propagators"]},
+    { "class_names": ["Exclusions::Source"], "method_names": ["get"], "kinds": ["Exclusions"]}
   ],
   "pulse-taint-sinks": [
     { "procedure": "explicitSinkAllArgs" },
@@ -37,7 +38,8 @@
     { "procedure_regex": ".*", "kinds": ["BuiltinCatchAll"]},
     { "class_names": ["Shapes::ShapeLogger"], "method_names": ["logMixed"] },
     { "class_names": ["Sanitizers::Sink"], "procedure_regex": ".*", "kinds": ["Sanitizers"] },
-    { "class_names": ["Propagators::Sink"], "procedure_regex": ".*", "kinds": ["Propagators"] }
+    { "class_names": ["Propagators::Sink"], "procedure_regex": ".*", "kinds": ["Propagators"] },
+    { "class_names": ["Exclusions::Sink"], "procedure_regex": ".*", "kinds": ["Exclusions"] }
   ],
   "pulse-taint-sanitizers": [
     { "class_names": ["Sanitizers::San"], "procedure_regex": ".*", "kinds": ["Sanitizers"] }
@@ -57,6 +59,13 @@
     {
       "short_description": "Taint flow with a propagator and any method sink",
       "taint_flows": [{"source_kinds": ["Propagators"], "sink_kinds": ["BuiltinCatchAll"]}]
+    },
+    {
+      "short_description": "Check that exclude_in works",
+      "taint_flows": [
+        { "source_kinds": ["Exclusions"], "sink_kinds": ["Exclusions"] }
+      ],
+      "exclude_in": ["exclusions"]
     }
   ]
 }
