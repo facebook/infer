@@ -1451,14 +1451,8 @@ let get_post {post} = (post :> BaseDomain.t)
 let update_pre_for_kotlin_proc astate (proc_attrs : ProcAttributes.t) formals =
   let proc_name = proc_attrs.proc_name in
   let location = proc_attrs.loc in
-  (* TODO(izorin): This approach won't work for third-party code, right?  *)
-  let is_kotlin =
-    match proc_attrs with
-    | {loc= {file}} ->
-        (not (SourceFile.is_invalid file))
-        && SourceFile.has_extension ~ext:Config.kotlin_source_extension file
-  in
-  if is_kotlin then
+  (* Kotlin procs are Java procs under the hood *)
+  if Procname.is_java proc_name then
     List.fold formals ~init:astate ~f:(fun (acc : t) (var, _, annot_opt, (_, history)) ->
         (* We're interested specifically in org.jetbrains.annotations.NotNull since this annotation
            is emitted by kotlinc to denote non-nullable function parameters *)

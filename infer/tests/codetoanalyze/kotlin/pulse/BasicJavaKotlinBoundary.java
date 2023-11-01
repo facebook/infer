@@ -8,6 +8,10 @@ package codetoanalyze.kotlin.pulse;
 
 public class BasicJavaKotlinBoundary {
 
+  public static String returnsNullString() {
+    return null;
+  }
+
   Object returnsNull() {
     return null;
   }
