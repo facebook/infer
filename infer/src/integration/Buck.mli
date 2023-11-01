@@ -23,7 +23,12 @@ module Target : sig
 end
 
 val wrap_buck_call :
-  ?extend_env:(string * string) list -> version -> label:string -> string list -> string list
+     ?extend_env:(string * string) list
+  -> ?kill_infer_env_vars:bool
+  -> version
+  -> label:string
+  -> string list
+  -> string list
 (** Wrap a call to buck while (i) logging standard error to our standard error in real time; (ii)
     redirecting standard out to a file, the contents of which are returned; (iii) protect the child
     process from [SIGQUIT].
@@ -32,7 +37,8 @@ val wrap_buck_call :
     [(variable, value)] that will extend the environment of the subprocess; [label] is appended to
     [buck_] to make the prefix of the temporary file storing the standard output of the command, for
     quick identification; [cmd] is a list of strings making up the shell command to execute; the
-    return value is the standard output of the command split on newlines. *)
+    return value is the standard output of the command split on newlines. If [kill_infer_env_vars]
+    is true then all Infer environment variables will be unset in the child process.Absint *)
 
 val config : BuckMode.t -> version -> string list
 (** return list of string parameters of the form

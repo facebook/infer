@@ -35,6 +35,10 @@ let store_args_in_file ~identifier args =
   else args
 
 
+let infer_vars_to_kill =
+  CommandLineOption.[infer_cwd_env_var; args_env_var; strict_mode_env_var; inferconfig_path_arg]
+
+
 (** Wrap a call to buck while (i) logging standard error to our standard error in real time; (ii)
     redirecting standard out to a file, the contents of which are returned; (iii) protect the child
     process from [SIGQUIT].
@@ -44,7 +48,7 @@ let store_args_in_file ~identifier args =
     To achieve this we need to do two things: (i) tell the JVM not to use signals, meaning it leaves
     the default handler for [SIGQUIT] in place; (ii) uninstall the default handler for [SIGQUIT]
     because now that the JVM doesn't touch it, it will lead to process death. *)
-let wrap_buck_call ?(extend_env = []) version ~label cmd =
+let wrap_buck_call ?(extend_env = []) ?(kill_infer_env_vars = false) version ~label cmd =
   let is_buck2 = match (version : version) with V1 -> false | V2 -> true in
   let stdout_file =
     let prefix = Printf.sprintf "%s_%s" (if is_buck2 then "buck2" else "buck") label in
@@ -65,8 +69,8 @@ let wrap_buck_call ?(extend_env = []) version ~label cmd =
       (* Uninstall the default handler for [SIGQUIT]. *)
       Printf.sprintf "trap '' SIGQUIT ; %s" cmd_with_output
   in
-  let env =
-    if is_buck2 then `Extend []
+  let env_vars =
+    if is_buck2 then []
     else
       let explicit_buck_java_heap_size =
         Option.map Config.buck_java_heap_size_gb ~f:(fun size -> Printf.sprintf "-Xmx%dG" size)
@@ -82,7 +86,14 @@ let wrap_buck_call ?(extend_env = []) version ~label cmd =
       in
       L.environment_info "Buck: setting %s to '%s'@\n" buck_extra_java_args_env_var
         new_buck_extra_java_args ;
-      `Extend ((buck_extra_java_args_env_var, new_buck_extra_java_args) :: extend_env)
+      (buck_extra_java_args_env_var, new_buck_extra_java_args) :: extend_env
+  in
+  let env =
+    if kill_infer_env_vars then
+      `Override
+        ( List.map infer_vars_to_kill ~f:(fun var -> (var, None))
+        @ List.map env_vars ~f:(fun (lhs, rhs) -> (lhs, Some rhs)) )
+    else `Extend env_vars
   in
   L.debug Capture Quiet "Running buck command '%s'@." command ;
   let Unix.Process_info.{stdin; stdout; stderr; pid} =

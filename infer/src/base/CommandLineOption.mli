@@ -214,6 +214,9 @@ val mk_subcommand :
     (otherwise the command is considered internal). [on_unknown_arg] is the action taken on unknown
     anonymous arguments; it is `Reject by default. *)
 
+val infer_cwd_env_var : string
+(** environment variable pointing to the originator's process results directory *)
+
 val args_env_var : string
 (** environment variable use to pass arguments from parent to child processes *)
 

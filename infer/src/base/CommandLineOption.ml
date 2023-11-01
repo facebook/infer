@@ -19,15 +19,17 @@ let manpage_s_notes = "NOTES"
 
 let is_env_var_set v = Option.value (Option.map (Sys.getenv v) ~f:(String.equal "1")) ~default:false
 
+let infer_cwd_env_var = "INFER_CWD"
+
 (** The working directory of the initial invocation of infer, to which paths passed as command line
     options are relative. *)
 let init_work_dir, is_originator =
-  match Sys.getenv "INFER_CWD" with
+  match Sys.getenv infer_cwd_env_var with
   | Some dir ->
       (dir, false)
   | None ->
       let real_cwd = Utils.realpath (Sys.getcwd ()) in
-      Unix.putenv ~key:"INFER_CWD" ~data:real_cwd ;
+      Unix.putenv ~key:infer_cwd_env_var ~data:real_cwd ;
       (real_cwd, true)
 
 

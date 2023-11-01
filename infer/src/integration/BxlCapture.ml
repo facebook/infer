@@ -32,7 +32,8 @@ let run_capture buck2_build_cmd =
   L.debug Capture Quiet "Processed buck2 bxl command '%a'@\n" (Pp.seq F.pp_print_string)
     buck2_build_cmd ;
   let infer_deps_lines =
-    Buck.wrap_buck_call ~extend_env:[] V2 ~label:"build" ("buck2" :: buck2_build_cmd)
+    Buck.wrap_buck_call ~extend_env:[] ~kill_infer_env_vars:true V2 ~label:"build"
+      ("buck2" :: buck2_build_cmd)
     |> List.fold ~init:[] ~f:(traverse ~root:Config.buck2_root (Visited.create 11))
     |> List.dedup_and_sort ~compare:String.compare
   in
