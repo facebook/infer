@@ -60,7 +60,7 @@ type must_be_valid_reason =
   | InsertionIntoCollectionKey
   | InsertionIntoCollectionValue
   | SelfOfNonPODReturnMethod of Typ.t
-  | NullArgumentWhereNonNullExpected of PulseCallEvent.t
+  | NullArgumentWhereNonNullExpected of PulseCallEvent.t * int option
 [@@deriving compare, equal]
 
 val pp_must_be_valid_reason : F.formatter -> must_be_valid_reason option -> unit

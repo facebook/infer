@@ -473,7 +473,7 @@ let get_message_and_suggestion diagnostic =
              | Some BlockCall ->
                  F.fprintf fmt "%a is called%a, causing a crash" pp_prefix "nil block"
                    pp_access_trace access_trace
-             | Some (NullArgumentWhereNonNullExpected call_event) ->
+             | Some (NullArgumentWhereNonNullExpected (call_event, index)) ->
                  let {Location.file} = Trace.get_outer_location invalidation_trace in
                  let null =
                    match call_event with
@@ -488,7 +488,8 @@ let get_message_and_suggestion diagnostic =
                  in
                  F.fprintf fmt
                    "%a is passed as argument to %a; this function requires a non-%s argument"
-                   pp_prefix null CallEvent.pp call_event null
+                   pp_prefix null CallEvent.pp call_event null ;
+                 Option.iter index ~f:(fun index -> F.fprintf fmt " at position #%i" index)
              | None ->
                  F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
            in

@@ -1451,9 +1451,18 @@ let get_post {post} = (post :> BaseDomain.t)
 let update_pre_for_kotlin_proc astate (proc_attrs : ProcAttributes.t) formals =
   let proc_name = proc_attrs.proc_name in
   let location = proc_attrs.loc in
+  (* Drop this reference to make sure that formals' indices are always zero based
+     for consistent error reporting *)
+  let formals =
+    match formals with
+    | _ :: tail ->
+        if Procname.is_java_instance_method proc_name then tail else formals
+    | [] ->
+        []
+  in
   (* Kotlin procs are Java procs under the hood *)
   if Procname.is_java proc_name then
-    List.fold formals ~init:astate ~f:(fun (acc : t) (var, _, annot_opt, (_, history)) ->
+    List.foldi formals ~init:astate ~f:(fun index (acc : t) (var, _, annot_opt, (_, history)) ->
         (* We're interested specifically in org.jetbrains.annotations.NotNull since this annotation
            is emitted by kotlinc to denote non-nullable function parameters *)
         let is_not_nullable = Option.exists annot_opt ~f:Annotations.ia_is_jetbrains_notnull in
@@ -1464,7 +1473,7 @@ let update_pre_for_kotlin_proc astate (proc_attrs : ProcAttributes.t) formals =
             Attribute.MustBeValid
               ( Timestamp.t0
               , Trace.Immediate {location; history}
-              , Some (NullArgumentWhereNonNullExpected (CallEvent.Call proc_name)) )
+              , Some (NullArgumentWhereNonNullExpected (CallEvent.Call proc_name, Some index)) )
           in
           let new_pre =
             PreDomain.update acc.pre
