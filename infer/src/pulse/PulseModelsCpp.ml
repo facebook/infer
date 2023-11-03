@@ -974,7 +974,14 @@ let map_matchers =
         ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator++" <>$ any_arg
           $+...$--> Basic.skip ] )
   in
-  folly_matchers @ folly_iterator_matchers
+  let folly_concurrent_hash_map_matchers =
+    (* We ignore all [folly::ConcurrentHashMap] methods as of now, because the summaries from the
+       actual source code are too imprecise. *)
+    [ -"folly" <>:: "ConcurrentHashMap"
+      &::+ (fun _ _ -> true)
+      &++> Basic.unknown_call "folly::ConcurrentHashMap" ]
+  in
+  folly_matchers @ folly_iterator_matchers @ folly_concurrent_hash_map_matchers
 
 
 let simple_matchers =
