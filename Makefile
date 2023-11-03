@@ -266,6 +266,8 @@ DIRECT_TESTS += \
   kotlin_resources \
   kotlin_scopeleakage \
 
+BUILD_SYSTEMS_TESTS += pulse_messages_kotlin \
+
 ifeq ($(IS_FACEBOOK_TREE),yes)
 DIRECT_TESTS += \
   kotlin_fb-config-impact-strict \
