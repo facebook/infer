@@ -121,4 +121,20 @@ void copy_and_modify_ok(const std::vector<int>& v, const Arr& arg) {
   }
 }
 
+void full_disjs_call_after_branch_bad_FN() {
+  bool b = unknown_bool() ? 1 : 0;
+  // two disjuncts
+  // #0: {b=1}
+  // #1: {b=0}
+
+  get_full_disjs();
+  // 20 disjuncts only with #0, i.e. in all disjuncts b=1.
+
+  if (!b) {
+    // 0 disjunct here!
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
 } // namespace max_disjuncts
