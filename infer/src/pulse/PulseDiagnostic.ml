@@ -474,9 +474,21 @@ let get_message_and_suggestion diagnostic =
                  F.fprintf fmt "%a is called%a, causing a crash" pp_prefix "nil block"
                    pp_access_trace access_trace
              | Some (NullArgumentWhereNonNullExpected call_event) ->
+                 let {Location.file} = Trace.get_outer_location invalidation_trace in
+                 let null =
+                   match call_event with
+                   | Call proc_name | SkippedKnownCall proc_name ->
+                       if Procname.is_objc_method proc_name then "nil" else "null"
+                   | Model _ | SkippedUnknownCall _ ->
+                       if
+                         SourceFile.has_extension file ~ext:".m"
+                         || SourceFile.has_extension file ~ext:".mm"
+                       then "nil"
+                       else "null"
+                 in
                  F.fprintf fmt
-                   "%a is passed as argument to %a; this function requires a non-nil argument"
-                   pp_prefix "nil" CallEvent.pp call_event
+                   "%a is passed as argument to %a; this function requires a non-%s argument"
+                   pp_prefix null CallEvent.pp call_event null
              | None ->
                  F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
            in
