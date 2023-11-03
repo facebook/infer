@@ -14,6 +14,22 @@ class Kotlin {
 
   fun paramsWithDifferentNullness(input1: Any?, input2: Any) = Unit
 
+  fun passNullFromJavaWhenAllowedOk() {
+    val input = BasicJavaKotlinBoundary.returnsNull()
+    acceptsNull(input)
+  }
+
+  fun passNotNullFromJavaOk() {
+    val input = BasicJavaKotlinBoundary.returnsNotNull()
+    acceptsNull(input)
+    doesNotAcceptNull(input)
+  }
+
+  fun passNullFromJavaWhenDisallowedBad() {
+    val input = BasicJavaKotlinBoundary.returnsNull()
+    doesNotAcceptNull(input)
+  }
+
   fun passNullWhenDisallowedThirdPartyBad_FN() {
     val str = BasicJavaKotlinBoundary.returnsNullString()
     val regex = Regex(".*")

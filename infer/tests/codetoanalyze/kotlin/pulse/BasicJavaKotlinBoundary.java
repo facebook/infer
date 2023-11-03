@@ -12,11 +12,11 @@ public class BasicJavaKotlinBoundary {
     return null;
   }
 
-  Object returnsNull() {
+  public static Object returnsNull() {
     return null;
   }
 
-  Object returnsNotNull() {
+  public static Object returnsNotNull() {
     return new Object();
   }
 
