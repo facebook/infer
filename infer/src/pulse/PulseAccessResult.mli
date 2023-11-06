@@ -23,6 +23,8 @@ type error =
           times. For convenience this is part of the [error] datatype but the invariant that an
           [error] within a [WithSummary (error, summary)] cannot itself be a [WithSummary _]. *)
 
+val astate_of_error : error -> AbductiveDomain.t
+
 type 'a t = ('a, error) PulseResult.t
 
 val with_summary : ('a, error * AbductiveDomain.Summary.t) PulseResult.t -> 'a t

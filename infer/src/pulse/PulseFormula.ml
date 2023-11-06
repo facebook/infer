@@ -3963,13 +3963,15 @@ let subst_find_or_new subst addr_callee =
       (subst, fst addr_hist_caller)
 
 
-let and_callee_pre subst formula ~callee:formula_callee =
-  and_conditions_fold_subst_variables formula ~up_to_f:formula_callee ~f:subst_find_or_new
-    ~init:subst
-
-
-let and_callee_post subst formula_caller ~callee:formula_callee =
-  and_fold_subst_variables formula_caller ~up_to_f:formula_callee ~f:subst_find_or_new ~init:subst
+let and_callee_formula subst formula ~callee:formula_callee =
+  let* subst, formula, new_eqs =
+    and_conditions_fold_subst_variables formula ~up_to_f:formula_callee ~f:subst_find_or_new
+      ~init:subst
+  in
+  let+ subst, formula, new_eqs' =
+    and_fold_subst_variables ~up_to_f:formula_callee ~f:subst_find_or_new ~init:subst formula
+  in
+  (subst, formula, RevList.append new_eqs' new_eqs)
 
 
 let fold_variables {conditions; phi} ~init ~f =

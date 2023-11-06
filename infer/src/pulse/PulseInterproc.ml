@@ -16,7 +16,8 @@ open PulseResult.Let_syntax
     to the current state}
 
     *Unsafe* Stack, etc. modules used here are safe when used on the callee's summary (because
-    values in summaries are all canonical) *)
+    values in summaries are all canonical) but not for their corresponding caller values because
+    equalities can be added as we explore the summary. *)
 
 module AddressSet = AbstractValue.Set
 module AddressMap = AbstractValue.Map
@@ -27,30 +28,183 @@ type callee_index_to_visit =
   ; access_callee: Access.t
   ; addr_hist_caller: AbstractValue.t * ValueHistory.t }
 
-(** stuff we carry around when computing the result of applying one pre/post pair *)
-type call_state =
-  { astate: AbductiveDomain.t  (** caller's abstract state computed so far *)
-  ; subst: (AbstractValue.t * ValueHistory.t) AddressMap.t
-        (** translation from callee addresses to caller addresses and their caller histories *)
-  ; rev_subst: AbstractValue.t AddressMap.t
-        (** the inverse translation from [subst] from caller addresses to callee addresses *)
-  ; hist_map: ValueHistory.t CellId.Map.t
-  ; visited: AddressSet.t
-        (** set of callee addresses that have been visited already
+module Unsafe : sig
+  (** Opaque because we need to deal with on-the-fly normalization of caller values; secretely a
+      [(AbstractValue.t * ValueHistory.t) AddressMap.t]: a map from callee addresses to caller
+      addresses and a candidate history (see [hist_map] below: this history may not be accurate in
+      general). The caller values stored in the map may need additional normalization as we explore
+      more of the summary hence why the type is kept abstract. *)
+  type to_caller_subst
 
-            NOTE: this is not always equal to the domain of [rev_subst]: when applying the post we
-            visit each subgraph from each formal independently so we reset [visited] between the
-            visit of each formal *)
-  ; array_indices_to_visit: callee_index_to_visit list  (** delayed visit for array indices *)
-  ; first_error: AbstractValue.t option
-        (** during summary application, more precisely when we "materialize" the precondition of the
-            summary, we may notice that we cannot follow some memory edges from an address because
-            it is invalid in the current state. Then we know the summary isn't going to make sense
-            for the caller, or lead to an error. In that case we stop exploring the precondition
-            from that particular address. If all goes well we should pick up an error (or a
-            contradiction) at the end of applying the precondition. We set this field to make sure
-            we actually do, so in case something goes wrong we don't just continue with a broken
-            (partial) summary application. *) }
+  val pp_to_caller_subst : F.formatter -> to_caller_subst -> unit
+
+  val empty_to_caller_subst : to_caller_subst
+
+  val add_to_caller_subst :
+    AbstractValue.t -> AbstractValue.t * ValueHistory.t -> to_caller_subst -> to_caller_subst
+
+  val to_caller_subst_fold_constant_astate :
+       AbductiveDomain.t
+    -> (AbstractValue.t -> AbstractValue.t * ValueHistory.t -> 'a -> 'a)
+    -> to_caller_subst
+    -> 'a
+    -> 'a
+  (** [AddressMap.fold] when the abstract state remains constant over the fold; the abstract state
+      is used to normalize caller values *)
+
+  val to_caller_subst_fold_astate_result :
+       (   AbstractValue.t
+        -> AbstractValue.t * ValueHistory.t
+        -> AbductiveDomain.t
+        -> AbductiveDomain.t AccessResult.t )
+    -> to_caller_subst
+    -> AbductiveDomain.t
+    -> AbductiveDomain.t AccessResult.t
+  (** specific but common fold operation where the accumulator is a
+      [AbductiveDomain.t AccessResult.t] that we can use for normalizing caller values *)
+
+  val normalize_to_caller_subst :
+    AbductiveDomain.t -> to_caller_subst -> (AbstractValue.t * ValueHistory.t) AddressMap.t
+  (** eagerly normalize the substitution; returns a normalized map *)
+
+  val raw_map_of_to_caller_subst :
+    to_caller_subst -> (AbstractValue.t * ValueHistory.t) AddressMap.t
+  (** escape hatch for APIs that want a map but don't need normalization *)
+
+  val to_caller_subst_of_raw_map :
+    (AbstractValue.t * ValueHistory.t) AddressMap.t -> to_caller_subst
+
+  (** stuff we carry around when computing the result of applying one pre/post pair *)
+  type call_state =
+    { astate: AbductiveDomain.t  (** caller's abstract state computed so far *)
+    ; subst: to_caller_subst
+          (** translation from callee addresses to caller addresses and their caller histories *)
+    ; rev_subst: AbstractValue.t AddressMap.t
+          (** the inverse translation from [subst] from caller addresses to callee addresses *)
+    ; hist_map: ValueHistory.t CellId.Map.t
+          (** The caller history that corresponds to a specific memory cell in the callee. The
+              histories in [subst] are unreliable because the same value can appear several times in
+              the pre of the summary and correspond to different histories in the caller. However,
+              [subst] only remembers one caller history per callee value. The correct thing to do
+              instead is this mapping. *)
+    ; visited: AddressSet.t
+          (** set of callee addresses that have been visited already
+
+              NOTE: this is not always equal to the domain of [rev_subst]: when applying the post we
+              visit each subgraph from each formal independently so we reset [visited] between the
+              visit of each formal *)
+    ; array_indices_to_visit: callee_index_to_visit list  (** delayed visit for array indices *)
+    ; first_error: AbstractValue.t option
+          (** during summary application, more precisely when we "materialize" the precondition of
+              the summary, we may notice that we cannot follow some memory edges from an address
+              because it is invalid in the current state. Then we know the summary isn't going to
+              make sense for the caller, or lead to an error. In that case we stop exploring the
+              precondition from that particular address. If all goes well we should pick up an error
+              (or a contradiction) at the end of applying the precondition. We set this field to
+              make sure we actually do, so in case something goes wrong we don't just continue with
+              a broken (partial) summary application. *) }
+
+  val to_caller_value_ :
+       AbductiveDomain.t
+    -> to_caller_subst
+    -> AbstractValue.t
+    -> (AbstractValue.t * ValueHistory.t) option
+  (** query the [to_caller_subst] map and normalizes the caller value *)
+
+  val to_caller_value : call_state -> AbstractValue.t -> (AbstractValue.t * ValueHistory.t) option
+  (** apply [to_caller_value_] with the abstract state and substitution found inside the
+      [call_state] *)
+
+  val incorporate_new_eqs : Formula.new_eqs -> call_state -> call_state AccessResult.t SatUnsat.t
+  (** update the internal abstract state and the maps with new equality information *)
+end = struct
+  let canon_fst astate pair =
+    ( AbductiveDomain.CanonValue.canon_fst' astate pair
+      : AbductiveDomain.CanonValue.t * _
+      :> AbstractValue.t * _ )
+
+
+  type to_caller_subst = (AbstractValue.t * ValueHistory.t) AddressMap.t
+
+  let pp_to_caller_subst fmt subst =
+    AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr) fmt subst
+
+
+  let empty_to_caller_subst = AddressMap.empty
+
+  let add_to_caller_subst = AddressMap.add
+
+  let to_caller_subst_fold_astate_result f subst astate =
+    AddressMap.fold
+      (fun addr_callee addr_hist_caller astate_result ->
+        let* astate = astate_result in
+        f addr_callee (canon_fst astate addr_hist_caller) astate )
+      subst (Ok astate)
+
+
+  let to_caller_subst_fold_constant_astate astate f subst init =
+    AddressMap.fold
+      (fun addr_callee addr_hist_caller acc -> f addr_callee (canon_fst astate addr_hist_caller) acc)
+      subst init
+
+
+  let to_caller_value_ astate subst x =
+    AddressMap.find_opt x subst |> Option.map ~f:(fun y -> canon_fst astate y)
+
+
+  let normalize_to_caller_subst astate subst =
+    AddressMap.map (fun addr_hist_caller -> canon_fst astate addr_hist_caller) subst
+
+
+  let raw_map_of_to_caller_subst = Fn.id
+
+  let to_caller_subst_of_raw_map = Fn.id
+
+  type call_state =
+    { astate: AbductiveDomain.t
+    ; subst: to_caller_subst
+    ; rev_subst: AbstractValue.t AddressMap.t
+    ; hist_map: ValueHistory.t CellId.Map.t
+    ; visited: AddressSet.t
+    ; array_indices_to_visit: callee_index_to_visit list
+    ; first_error: AbstractValue.t option }
+
+  let to_caller_value call_state x = to_caller_value_ call_state.astate call_state.subst x
+
+  let incorporate_new_eqs new_eqs call_state =
+    let open PulseOperationResult.Import in
+    let++ astate =
+      let open SatUnsat.Import in
+      AbductiveDomain.incorporate_new_eqs new_eqs call_state.astate
+      >>| AccessResult.of_abductive_result
+    in
+    (* we need to update [call_state.rev_subst] so it always has canonical values in its domain
+
+       no need to update the *range* of [call_state.susbt] (which are also caller values) similarly
+       because values get normalized on the fly when we read from the map, eg in [to_caller_value]
+
+       no need to update the range of [call_state.rev_subst] or the domain of [call_state.subst]
+       because we never learn new equalities about callee variables (which have been normalized
+       during summary creation) *)
+    RevList.to_list new_eqs
+    |> List.fold ~init:{call_state with astate} ~f:(fun call_state new_eq ->
+           match (new_eq : Formula.new_eq) with
+           | EqZero _ ->
+               call_state
+           | Equal (v_old, v_new) -> (
+             match AddressMap.find_opt v_old call_state.rev_subst with
+             | None ->
+                 call_state
+             | Some v_callee_old ->
+                 (* TODO: there could already be a binding for [v_new], we should do something
+                    similar to [visit] if so *)
+                 let rev_subst =
+                   AddressMap.remove v_old call_state.rev_subst |> AddressMap.add v_new v_callee_old
+                 in
+                 {call_state with rev_subst} ) )
+end
+
+include Unsafe
 
 let pp_hist_map fmt hist_map =
   CellId.Map.iteri hist_map ~f:(fun ~key ~data ->
@@ -67,9 +221,7 @@ let pp_call_state fmt
     \ hist_map=@[<hv2>%a@];@,\
     \ visited=@[<hv2>%a@]@,\
     \ array_indices_to_visit=@[<hv2>%a@]@,\
-     %t }@]" AbductiveDomain.pp astate
-    (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
-    subst
+     %t }@]" AbductiveDomain.pp astate pp_to_caller_subst subst
     (AddressMap.pp ~pp_value:AbstractValue.pp)
     rev_subst pp_hist_map hist_map AddressSet.pp visited
     (Pp.seq (fun _ _ -> ()))
@@ -84,6 +236,8 @@ let pp_call_state fmt
 
 
 let pp_call_state = Pp.html_collapsible_block ~name:"Show/hide the call state" pp_call_state
+
+let to_callee_addr call_state x = AddressMap.find_opt x call_state.rev_subst
 
 type contradiction =
   | Aliasing of
@@ -180,18 +334,15 @@ let fold_globals_of_callee_stack {PathContext.timestamp} call_loc stack call_sta
 
 
 let and_aliasing_arith ~addr_callee ~addr_caller0 call_state =
-  match AddressMap.find_opt addr_callee call_state.subst with
+  match to_caller_value call_state addr_callee with
   | Some (addr_caller', _) when not (AbstractValue.equal addr_caller' addr_caller0) ->
       let path_condition, new_eqs =
         Formula.and_equal_vars addr_caller0 addr_caller'
           call_state.astate.AbductiveDomain.path_condition
         |> raise_if_unsat PathCondition
       in
-      let+ astate =
-        AbductiveDomain.incorporate_new_eqs new_eqs call_state.astate
-        |> raise_if_unsat PathCondition |> AccessResult.of_abductive_result
-      in
-      {call_state with astate= AbductiveDomain.set_path_condition path_condition astate}
+      let+ call_state = incorporate_new_eqs new_eqs call_state |> raise_if_unsat PathCondition in
+      {call_state with astate= AbductiveDomain.set_path_condition path_condition call_state.astate}
   | _ ->
       Ok call_state
 
@@ -211,7 +362,7 @@ let and_restricted_arith ~addr_callee ~addr_caller call_state =
 let visit call_state ~pre ~addr_callee cell_id ~addr_hist_caller =
   let addr_caller = fst addr_hist_caller in
   let* call_state =
-    match AddressMap.find_opt addr_caller call_state.rev_subst with
+    match to_callee_addr call_state addr_caller with
     | Some addr_callee' when not (AbstractValue.equal addr_callee addr_callee') ->
         if
           (* [addr_caller] corresponds to several values in the callee, see if that's a problem for
@@ -235,7 +386,7 @@ let visit call_state ~pre ~addr_callee cell_id ~addr_hist_caller =
     ( `NotAlreadyVisited
     , { call_state with
         visited= AddressSet.add addr_callee call_state.visited
-      ; subst= AddressMap.add addr_callee addr_hist_caller call_state.subst
+      ; subst= add_to_caller_subst addr_callee addr_hist_caller call_state.subst
       ; rev_subst= AddressMap.add addr_caller addr_callee call_state.rev_subst
       ; hist_map=
           Option.fold cell_id ~init:call_state.hist_map ~f:(fun hist_map cell_id ->
@@ -247,32 +398,32 @@ let visit call_state ~pre ~addr_callee cell_id ~addr_hist_caller =
     we cannot possibly get clashes about that caller value, which is the only thing [rev_subst] is
     used for. This is why this function is allowed to take only [subst] as argument and not a full
     call state. *)
-let subst_find_or_new subst addr_callee ~default_hist_caller =
-  match AddressMap.find_opt addr_callee subst with
+let subst_find_or_new astate subst addr_callee ~default_hist_caller =
+  match to_caller_value_ astate subst addr_callee with
   | None ->
       (* map restricted (≥0) values to restricted values to preserve their semantics *)
       let addr_caller = AbstractValue.mk_fresh_same_kind addr_callee in
       L.d_printfln "new subst %a <-> %a (fresh)" AbstractValue.pp addr_callee AbstractValue.pp
         addr_caller ;
       let addr_hist_fresh = (addr_caller, default_hist_caller) in
-      (AddressMap.add addr_callee addr_hist_fresh subst, addr_hist_fresh)
+      (add_to_caller_subst addr_callee addr_hist_fresh subst, addr_hist_fresh)
   | Some addr_hist_caller ->
       (subst, addr_hist_caller)
 
 
 let call_state_subst_find_or_new call_state addr_callee ~default_hist_caller =
   let new_subst, addr_hist_caller =
-    subst_find_or_new call_state.subst addr_callee ~default_hist_caller
+    subst_find_or_new call_state.astate call_state.subst addr_callee ~default_hist_caller
   in
   if phys_equal new_subst call_state.subst then (call_state, addr_hist_caller)
   else ({call_state with subst= new_subst}, addr_hist_caller)
 
 
-let translate_access_to_caller subst (access_callee : Access.t) : _ * Access.t =
+let translate_access_to_caller astate subst (access_callee : Access.t) : _ * Access.t =
   match access_callee with
   | ArrayAccess (typ, val_callee) ->
       let subst, (val_caller, _) =
-        subst_find_or_new subst val_callee ~default_hist_caller:ValueHistory.epoch
+        subst_find_or_new astate subst val_callee ~default_hist_caller:ValueHistory.epoch
       in
       (subst, ArrayAccess (typ, val_caller))
   | FieldAccess _ | TakeAddress | Dereference ->
@@ -347,7 +498,9 @@ let rec materialize_pre_from_address ~pre ~addr_pre cell_id ~addr_hist_caller ca
 
 let materialize_pre_from_array_index ~pre {addr_pre_dest; pre_hist; access_callee; addr_hist_caller}
     call_state =
-  let subst, access_caller = translate_access_to_caller call_state.subst access_callee in
+  let subst, access_caller =
+    translate_access_to_caller call_state.astate call_state.subst access_callee
+  in
   let astate, addr_hist_dest_caller =
     Memory.eval_edge addr_hist_caller access_caller call_state.astate
   in
@@ -423,27 +576,18 @@ let materialize_pre_for_globals path call_location ~pre call_state =
         ~addr_hist_caller call_state )
 
 
-let conjoin_callee_arith pre_or_post callee_path_condition call_state =
+let conjoin_callee_arith callee_path_condition call_state =
   L.d_printfln "applying callee path condition: (%a)[%a]" Formula.pp callee_path_condition
-    (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
-    call_state.subst ;
+    pp_to_caller_subst call_state.subst ;
   let subst, path_condition, new_eqs =
-    match pre_or_post with
-    | `Pre ->
-        Formula.and_callee_pre call_state.subst call_state.astate.path_condition
-          ~callee:callee_path_condition
-        |> raise_if_unsat PathCondition
-    | `Post ->
-        Formula.and_callee_post call_state.subst call_state.astate.path_condition
-          ~callee:callee_path_condition
-        |> raise_if_unsat PathCondition
+    Formula.and_callee_formula
+      (raw_map_of_to_caller_subst call_state.subst)
+      call_state.astate.path_condition ~callee:callee_path_condition
+    |> raise_if_unsat PathCondition
   in
   let astate = AbductiveDomain.set_path_condition path_condition call_state.astate in
-  let+ astate =
-    AbductiveDomain.incorporate_new_eqs new_eqs astate
-    |> raise_if_unsat PathCondition |> AccessResult.of_abductive_result
-  in
-  {call_state with astate; subst}
+  let call_state = {call_state with astate; subst= to_caller_subst_of_raw_map subst} in
+  incorporate_new_eqs new_eqs call_state |> raise_if_unsat PathCondition
 
 
 let caller_attrs_of_callee_attrs timestamp callee_proc_name call_location caller_history call_state
@@ -451,7 +595,7 @@ let caller_attrs_of_callee_attrs timestamp callee_proc_name call_location caller
   let subst_ref = ref call_state.subst in
   let f_subst v =
     let subst, (v', _hist) =
-      subst_find_or_new !subst_ref v ~default_hist_caller:ValueHistory.epoch
+      subst_find_or_new call_state.astate !subst_ref v ~default_hist_caller:ValueHistory.epoch
     in
     subst_ref := subst ;
     v'
@@ -511,7 +655,7 @@ let materialize_pre path callee_proc_name call_location callee_summary ~captured
     >>= materialize_pre_for_globals path call_location ~pre:callee_precondition
     >>= (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
-    conjoin_callee_arith `Pre (AbductiveDomain.Summary.get_path_condition callee_summary)
+    conjoin_callee_arith (AbductiveDomain.Summary.get_path_condition callee_summary)
     >>= materialize_pre_from_array_indices ~pre:callee_precondition
     >>| add_attributes `Pre path callee_proc_name call_location callee_precondition.attrs
   in
@@ -544,7 +688,9 @@ let delete_edges_in_callee_pre_from_caller ~edges_pre_opt addr_caller call_state
         let subst, translated_accesses_pre =
           UnsafeMemory.Edges.fold ~init:(call_state.subst, AccessSet.empty) edges_pre
             ~f:(fun (subst, accesses) (access_callee, _) ->
-              let subst, access = translate_access_to_caller subst access_callee in
+              let subst, access =
+                translate_access_to_caller call_state.astate subst access_callee
+              in
               (subst, AccessSet.add access accesses) )
         in
         let post_edges =
@@ -564,7 +710,7 @@ let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc
     UnsafeMemory.Edges.fold ~init:(call_state.subst, BaseMemory.Edges.empty) edges_callee_post
       ~f:(fun (subst, translated_edges) (access_callee, (addr_callee, trace_post)) ->
         let subst, (addr_curr, hist_curr) =
-          subst_find_or_new subst addr_callee ~default_hist_caller:hist_caller
+          subst_find_or_new call_state.astate subst addr_callee ~default_hist_caller:hist_caller
         in
         let hist_caller =
           let open Option.Monad_infix in
@@ -572,7 +718,7 @@ let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc
           >>= CellId.Map.find call_state.hist_map
           |> Option.value ~default:hist_curr
         in
-        let subst, access = translate_access_to_caller subst access_callee in
+        let subst, access = translate_access_to_caller call_state.astate subst access_callee in
         let translated_edges =
           UnsafeMemory.Edges.add access
             ( addr_curr
@@ -636,7 +782,7 @@ let apply_post_from_callee_pre path callee_proc_name call_location callee_summar
   UnsafeMemory.fold
     (fun addr_callee _edges_callee_pre call_state ->
       let* call_state in
-      match AddressMap.find_opt addr_callee call_state.subst with
+      match to_caller_value call_state addr_callee with
       | Some addr_hist_caller ->
           record_post_for_address path callee_proc_name call_location callee_summary ~addr_callee
             ~addr_hist_caller call_state
@@ -683,7 +829,7 @@ let apply_unknown_effects callee_summary call_state =
   let open IOption.Let_syntax in
   L.d_printfln "Applying unknown effects, call_state before = %a" pp_call_state call_state ;
   let is_modified_by_call addr_caller access =
-    match AddressMap.find_opt addr_caller call_state.rev_subst with
+    match to_callee_addr call_state addr_caller with
     | None ->
         false
     | Some addr_callee ->
@@ -704,9 +850,7 @@ let apply_unknown_effects callee_summary call_state =
     BaseAddressAttributes.fold
       (fun addr_callee attrs astate ->
         (let* _, havoc_hist = Attributes.get_unknown_effect attrs in
-         let+ addr_caller, _ =
-           AddressMap.find_opt (CanonValue.downcast addr_callee) call_state.subst
-         in
+         let+ addr_caller, _ = to_caller_value call_state (CanonValue.downcast addr_callee) in
          (* NOTE: could be optimized to remember the addresses already visited in case many
             addresses have the [UnknownEffect] attribute and share important parts of the memory
             graph (unlikely) *)
@@ -740,7 +884,7 @@ let read_return_value {PathContext.conditions; timestamp} callee_proc_name call_
         (call_state, None)
     | Some (return_callee, return_callee_hist) ->
         let return_caller, return_caller_hist =
-          match AddressMap.find_opt return_callee call_state.subst with
+          match to_caller_value call_state return_callee with
           | Some return_caller_hist ->
               return_caller_hist
           | None ->
@@ -763,33 +907,10 @@ let read_return_value {PathContext.conditions; timestamp} callee_proc_name call_
 
 let apply_post path callee_proc_name call_location callee_summary call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
-  let normalize_subst_for_post call_state =
-    (* Now that all equalities are deduced and set, we can exploit them to use the canonical
-       representation of values in the subst and rev_subst maps *)
-    let get_var_repr v = Formula.get_var_repr call_state.astate.AbductiveDomain.path_condition v in
-    let subst =
-      AddressMap.map
-        (fun (v_caller, hist) ->
-          let v_caller_canon = get_var_repr v_caller in
-          (v_caller_canon, hist) )
-        call_state.subst
-    in
-    let rev_subst =
-      AddressMap.fold
-        (fun v_caller v_callee rev_subst ->
-          let v_caller_canon = get_var_repr v_caller in
-          AddressMap.add v_caller_canon v_callee rev_subst )
-        call_state.rev_subst AddressMap.empty
-    in
-    {call_state with subst; rev_subst}
-  in
   let r =
     call_state
-    |> conjoin_callee_arith `Post (AbductiveDomain.Summary.get_path_condition callee_summary)
-    (* subst was suitable for pre but post may know more equalities, take them into account now *)
-    >>| normalize_subst_for_post
-    >>| apply_unknown_effects callee_summary
-    >>= apply_post_from_callee_pre path callee_proc_name call_location callee_summary
+    |> apply_unknown_effects callee_summary
+    |> apply_post_from_callee_pre path callee_proc_name call_location callee_summary
     >>= apply_post_from_callee_post path callee_proc_name call_location callee_summary
     >>| add_attributes `Post path callee_proc_name call_location
           (AbductiveDomain.Summary.get_post callee_summary).attrs
@@ -805,7 +926,7 @@ let check_all_valid path callee_proc_name call_location ~pre call_state =
   (* collect all the checks to perform then do each check in timestamp order to make sure we report
      the first issue if any *)
   let addresses_to_check =
-    AddressMap.fold
+    to_caller_subst_fold_constant_astate call_state.astate
       (fun addr_pre addr_hist_caller to_check ->
         let to_check =
           match UnsafeAttributes.get_must_be_valid addr_pre pre.BaseDomain.attrs with
@@ -865,19 +986,18 @@ let check_all_valid path callee_proc_name call_location ~pre call_state =
 
 
 let check_config_usage_at_call location ~pre:{BaseDomain.attrs= pre_attrs} subst astate =
-  AddressMap.fold
-    (fun addr_pre addr_hist acc ->
-      Option.value_map (UnsafeAttributes.get_used_as_branch_cond addr_pre pre_attrs) ~default:acc
-        ~f:(fun (pname_using_config, branch_location, trace) ->
-          let* acc in
+  to_caller_subst_fold_astate_result
+    (fun addr_pre addr_hist astate ->
+      Option.value_map (UnsafeAttributes.get_used_as_branch_cond addr_pre pre_attrs)
+        ~default:(Ok astate) ~f:(fun (pname_using_config, branch_location, trace) ->
           PulseOperations.check_used_as_branch_cond addr_hist ~pname_using_config ~branch_location
-            ~location trace acc ) )
-    subst (Ok astate)
+            ~location trace astate ) )
+    subst astate
 
 
 let check_all_taint_valid path callee_proc_name call_location callee_summary astate call_state =
-  AddressMap.fold
-    (fun addr_pre ((_, hist_caller) as addr_hist_caller) astate_result ->
+  to_caller_subst_fold_astate_result
+    (fun addr_pre ((_, hist_caller) as addr_hist_caller) astate ->
       let sinks =
         UnsafeAttributes.get_must_not_be_tainted addr_pre
           (AbductiveDomain.Summary.get_pre callee_summary).attrs
@@ -897,8 +1017,8 @@ let check_all_taint_valid path callee_proc_name call_location callee_summary ast
               ~source:addr_hist_caller astate
           in
           astate )
-        sinks astate_result )
-    call_state.subst (Ok astate)
+        sinks (Ok astate) )
+    call_state.subst astate
 
 
 (* - read all the pre, assert validity of addresses and materializes *everything* (to throw stuff
@@ -913,7 +1033,7 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
   let aux () =
     let empty_call_state =
       { astate
-      ; subst= AddressMap.empty
+      ; subst= empty_to_caller_subst
       ; rev_subst= AddressMap.empty
       ; hist_map= CellId.Map.empty
       ; visited= AddressSet.empty
@@ -933,11 +1053,12 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
         (Unsat, Some reason)
     | result -> (
       try
-        let pre_subst =
-          (let open IOption.Let_syntax in
-           let+ call_state = PulseResult.ok result in
-           call_state.subst )
-          |> Option.value ~default:AbstractValue.Map.empty
+        let pre_astate, pre_subst =
+          match result with
+          | Ok call_state | Recoverable (call_state, _) ->
+              (call_state.astate, call_state.subst)
+          | FatalError (error, _) ->
+              (AccessResult.astate_of_error error, empty_to_caller_subst)
         in
         let res =
           let* call_state = result in
@@ -968,9 +1089,11 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
           in
           let astate =
             if Topl.is_active () then
+              (* normalize the substitution so TOPL has accurate information; we could also modify
+                 TOPL to keep the normalization lazy/on-the-fly instead *)
+              let substitution = normalize_to_caller_subst call_state.astate call_state.subst in
               let callee_is_manifest = PulseArithmetic.is_manifest callee_summary in
-              AbductiveDomain.Topl.large_step ~call_location ~callee_proc_name
-                ~substitution:call_state.subst
+              AbductiveDomain.Topl.large_step ~call_location ~callee_proc_name ~substitution
                 ~callee_summary:(AbductiveDomain.Summary.get_topl callee_summary)
                 ~callee_is_manifest call_state.astate
             else call_state.astate
@@ -986,7 +1109,7 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
             check_all_taint_valid path callee_proc_name call_location callee_summary astate
               call_state
           in
-          (astate, return_caller, call_state.subst, call_state.hist_map)
+          (astate, return_caller, raw_map_of_to_caller_subst call_state.subst, call_state.hist_map)
         in
         let contradiciton =
           let callee_heap_paths =
@@ -997,7 +1120,7 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
             let caller_heap_paths =
               Specialization.HeapPath.Map.fold
                 (fun heap_path addr map ->
-                  match AbstractValue.Map.find_opt addr pre_subst with
+                  match to_caller_value_ pre_astate pre_subst addr with
                   | Some (addr_in_caller, _) ->
                       L.d_printfln
                         "dynamic type is required for address %a reachable from heap path %a in \

@@ -227,7 +227,7 @@ void free_all_in_array(int* array[]) {
   }
 }
 
-void FP_alloc_then_free_all_in_array_ok() {
+void alloc_then_free_all_in_array_ok() {
   int* array[2];
   allocate_all_in_array(array);
   free_all_in_array(array);
@@ -241,7 +241,7 @@ void free_42_in_array(int* array[]) {
   free(array[42]);
 }
 
-void FP_alloc_then_free_42_in_array_ok() {
+void alloc_then_free_42_in_array_ok() {
   int* array[64];
   allocate_42_in_array(array);
   free_42_in_array(array);

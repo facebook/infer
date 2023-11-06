@@ -117,13 +117,7 @@ val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool
 val get_var_repr : t -> Var.t -> Var.t
 (** get the canonical representative for the variable according to the equality relation *)
 
-val and_callee_pre :
-     (Var.t * ValueHistory.t) Var.Map.t
-  -> t
-  -> callee:t
-  -> ((Var.t * ValueHistory.t) Var.Map.t * t * new_eqs) SatUnsat.t
-
-val and_callee_post :
+val and_callee_formula :
      (Var.t * ValueHistory.t) Var.Map.t
   -> t
   -> callee:t
