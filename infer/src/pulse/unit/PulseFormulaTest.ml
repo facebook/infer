@@ -681,19 +681,10 @@ let%test_module "conjunctive normal form" =
     (* same as above with <> 0 instead of = 1 *)
     let%expect_test _ =
       normalize (and_ (ge x (i 0)) (lt x (i 0)) <> i 0) ;
-      [%expect
-        {|
+      [%expect {|
         Formula:
-          conditions: (empty)
-          phi: term_eqs: ([x]<0)=v7∧(0≤[x])=v6∧(([v6]=1)∧([v7]=1))=v8
-               && intervals: v8≠0
-               && atoms: {[v8] ≠ 0}
-               && term_eqs_occurrences: x->d([x]<0),d(0≤[x]) ∧ v6->r(0≤[x]),d(([v6]=1)∧([v7]=1))
-                                         ∧ v7->r([x]<0),d(([v6]=1)∧([v7]=1))
-                                         ∧ v8->r(([v6]=1)∧([v7]=1))
-               && atoms_occurrences: v8->{[v8] ≠ 0}
-        Result: changed
-          unsat|}]
+          unsat
+        Result: same|}]
 
 
     let%expect_test "¬ (x ≠ 0 ∨ x > 0 ∨ x < 0) <=> x = 0" =
@@ -716,16 +707,10 @@ let%test_module "conjunctive normal form" =
 
     let%expect_test "UNSAT: ¬ (x = 0 ∨ x > 0 ∨ x < 0)" =
       normalize (or_ (eq x (i 0)) (or_ (gt x (i 0)) (lt x (i 0))) = i 0) ;
-      [%expect
-        {|
+      [%expect {|
         Formula:
-          conditions: (empty)
-          phi: var_eqs: a6=a5=a4=x=v6=v7=v8=v9=v10
-               && linear_eqs: a6 = 0 ∧ a5 = 0
-               && term_eqs: 0=a6∧1=a6
-               && intervals: a6=0 ∧ a5=0
-        Result: changed
-          unsat|}]
+          unsat
+        Result: same|}]
 
 
     let%expect_test _ =
@@ -734,20 +719,12 @@ let%test_module "conjunctive normal form" =
         {|
           Formula:
             conditions: (empty)
-            phi: term_eqs: (0<[x])=v7∧(0≤[x])=v6∧(([v6]=1)∧([v7]=1))=v8
-                 && intervals: v8≠0
-                 && atoms: {[v8] ≠ 0}
-                 && term_eqs_occurrences: x->d(0<[x]),d(0≤[x]) ∧ v6->r(0≤[x]),d(([v6]=1)∧([v7]=1))
-                                           ∧ v7->r(0<[x]),d(([v6]=1)∧([v7]=1))
-                                           ∧ v8->r(([v6]=1)∧([v7]=1))
-                 && atoms_occurrences: v8->{[v8] ≠ 0}
-          Result: changed
-            conditions: (empty)
             phi: var_eqs: a3=a1 ∧ a2=x ∧ v6=v7
                  && linear_eqs: a2 = a3 +1 ∧ v6 = 1
                  && term_eqs: 1=v6∧[a3 +1]=a2
                  && intervals: v8≠0
-                 && atoms: {[v8] ≠ 0}
+                 && atoms: {v8 ≠ 0}
                  && linear_eqs_occurrences: a3->a2
-                 && atoms_occurrences: v8->{[v8] ≠ 0}|}]
+                 && atoms_occurrences: v8->{v8 ≠ 0}
+          Result: same|}]
   end )

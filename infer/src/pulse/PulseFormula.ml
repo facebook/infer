@@ -1741,17 +1741,23 @@ module Atom = struct
 
 
   (* assumes the atom is normalized *)
-  let get_as_var_ne_or_gt_zero = function
+  let get_as_var_neq_zero = function
     | NotEqual (Const _, Const _) | LessThan (Const _, Const _) ->
         (* to make sure the side condition below is unambiguous *)
         None
-    | (NotEqual (t, Const q) | NotEqual (Const q, t) | LessThan (Const q, t)) when Q.(equal q zero)
-      ->
+    | (NotEqual (t, Const q) | NotEqual (Const q, t) | LessThan (Const q, t) | LessThan (t, Const q))
+      when Q.(equal q zero) ->
         (* match [x≠0] or [x>0]. Note that [0] is represented as a [Const _] when normalized but
            variables will usually (always?) be represented by [LinArith _] in normalized formulas *)
         Term.get_as_var t
     | _ ->
         None
+
+
+  let simplify_linear atom =
+    map_terms atom ~f:(fun t ->
+        let t = Term.simplify_linear t in
+        match Term.get_as_var t with Some v -> Term.Var v | None -> t )
 
 
   module Set = struct
@@ -2893,13 +2899,13 @@ module Formula = struct
                                 match get_term_eq phi t' with
                                 | None -> (
                                     Debug.p "New term_eq %a -> %a@\n" (Term.pp Var.pp) t' Var.pp y ;
-                                    match t' with
-                                    | Term.Linear l' ->
+                                    match Term.get_as_linear t' with
+                                    | Some l' ->
                                         Debug.p "delegating to [solve_normalized_lin_eq]@\n" ;
                                         solve_normalized_lin_eq ~fuel new_eqs
                                           (LinArith.of_var y |> normalize_linear phi)
                                           l' phi
-                                    | _ ->
+                                    | None ->
                                         add_term_eq_and_solve_new_eq_opt ~fuel new_eqs t' y phi )
                                 | Some y' ->
                                     Debug.p "Existing term_eq %a -> %a, merging %a=%a@\n"
@@ -2944,6 +2950,37 @@ module Formula = struct
 
     and propagate_linear_eq ~fuel x lx phi_new_eqs =
       propagate_in_linear_eqs ~fuel x lx phi_new_eqs >>= propagate_term_eq ~fuel (Term.Linear lx) x
+
+
+    and propagate_atom atom phi_new_eqs =
+      match Atom.get_as_var_neq_zero atom with
+      | None ->
+          Sat phi_new_eqs
+      | Some v -> (
+        match Var.Map.find_opt v (fst phi_new_eqs).term_eqs_occurrences with
+        | None ->
+            Sat phi_new_eqs
+        | Some in_term_eqs ->
+            TermDomainOrRange.Set.fold
+              (fun (t, domain_or_range) phi_new_eqs_sat ->
+                match domain_or_range with
+                | Domain ->
+                    phi_new_eqs_sat
+                | Range | DomainAndRange -> (
+                    let* phi, new_eqs = phi_new_eqs_sat in
+                    let* atoms_opt =
+                      Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
+                        (Equal (t, Var v))
+                    in
+                    match atoms_opt with
+                    | None ->
+                        phi_new_eqs_sat
+                    | Some atoms ->
+                        Debug.p "Found new atoms thanks to %a≠0: [%a]@\n" Var.pp v
+                          (Pp.seq ~sep:"," (Atom.pp_with_pp_var Var.pp))
+                          atoms ;
+                        and_normalized_atoms (phi, new_eqs) atoms >>| snd ) )
+              in_term_eqs (Sat phi_new_eqs) )
 
 
     (* Assumes [w] is restricted, [l] is normalized. This is called [addlineq] in \[2\]. *)
@@ -3034,7 +3071,11 @@ module Formula = struct
           let+ phi', new_eqs = solve_lin_ineq new_eqs (LinArith.of_q (Q.add c Q.one)) l phi in
           (true, (phi', new_eqs))
       | atom' ->
-          Sat (false, (add_atom atom' phi, new_eqs))
+          (* the previous normalization has "simplified" [Var] and [Const] terms into [Linear]
+             ones, revert this *)
+          let atom = Atom.simplify_linear atom' in
+          let+ phi_new_eqs = (add_atom atom phi, new_eqs) |> propagate_atom atom in
+          (false, phi_new_eqs)
 
 
     and and_normalized_atoms phi_new_eqs atoms =
@@ -3826,7 +3867,7 @@ let is_manifest ~is_allocated formula =
       (* ignore [x≠0] when [x] is known to be allocated: pointers being allocated doesn't make an
          issue latent and we still need to remember that [x≠0] was tested by the program explicitly
       *)
-      match Atom.get_as_var_ne_or_gt_zero atom with None -> false | Some x -> is_allocated x )
+      match Atom.get_as_var_neq_zero atom with None -> false | Some x -> is_allocated x )
     formula.conditions
 
 
