@@ -1460,6 +1460,23 @@ module Atom = struct
     match atom with
     | LessEqual (Const c1, Const c2) ->
         Q.leq c1 c2 |> eval_result_of_bool
+    (* [A+c' ≥ c] with [A ≥ 0] (as happens if [l] is restricted and minimized) is always true if [c'
+       ≥ c] *)
+    | LessEqual (Const c, Linear l)
+      when LinArith.is_restricted l && LinArith.is_minimized l
+           && Q.geq (LinArith.get_constant_part l) c ->
+        True
+    (* [A+c' > c] with [A ≥ 0] is always true if [c' > c] *)
+    | LessThan (Const c, Linear l)
+      when LinArith.is_restricted l && LinArith.is_minimized l
+           && Q.gt (LinArith.get_constant_part l) c ->
+        True
+    (* NOTE: the corresponding contradiction cases, eg [A+c' ≤ c], [A ≥ 0], and [c' > c], as well as
+       other more substle reasoning, are handled by the tableau and need not be duplicated here. The
+       [True] cases above are included to avoid cluttering the formula with tautologies as these
+       (in)equalities are added in other parts of the formula than the tableau too otherwise (in
+       particular [linear_eqs] and [term_eqs]), which are not equipped to discover they are
+       trivial. *)
     | LessThan (Const c1, Const c2) ->
         Q.lt c1 c2 |> eval_result_of_bool
     | Equal (Const c1, Const c2) ->

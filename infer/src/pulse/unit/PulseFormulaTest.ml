@@ -780,11 +780,9 @@ let%test_module "conjunctive normal form" =
                  && atoms: {[v8] ≠ 0}
           Result: changed
             conditions: (empty)
-            phi: var_eqs: a20=a18=a16=a14=a12=a10=a8=a6=a4=a2=x ∧ a19=a17=a15=a13=a11=a9=a7=a5=a3=a1
-                           ∧ v6=v7=v8
-                 && linear_eqs: a19 = a20 -1 ∧ v6 = 1
-                 && term_eqs: 1=v6∧[a18 -1]=a17∧[a20 -1]=a19∧[a19 +1]=a18
-                              ∧(0<[a18])=v6∧(0≤[a18])=v6
+            phi: var_eqs: a11=a10=a9=a8=a7=a6=a5=a4=a3=a1 ∧ a2=x ∧ v6=v7=v8
+                 && linear_eqs: a2 = a11 +1 ∧ v6 = 1
+                 && term_eqs: 1=v6∧[a10 +1]=a2∧[a11 +1]=a2∧(0<[a2])=v6
                  && intervals: v6≠0
-                 && linear_eqs_occurrences: a20->a19|}]
+                 && linear_eqs_occurrences: a11->a2|}]
   end )
