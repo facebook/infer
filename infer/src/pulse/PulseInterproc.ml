@@ -41,7 +41,16 @@ type call_state =
             NOTE: this is not always equal to the domain of [rev_subst]: when applying the post we
             visit each subgraph from each formal independently so we reset [visited] between the
             visit of each formal *)
-  ; array_indices_to_visit: callee_index_to_visit list  (** delayed visit for array indices *) }
+  ; array_indices_to_visit: callee_index_to_visit list  (** delayed visit for array indices *)
+  ; first_error: AbstractValue.t option
+        (** during summary application, more precisely when we "materialize" the precondition of the
+            summary, we may notice that we cannot follow some memory edges from an address because
+            it is invalid in the current state. Then we know the summary isn't going to make sense
+            for the caller, or lead to an error. In that case we stop exploring the precondition
+            from that particular address. If all goes well we should pick up an error (or a
+            contradiction) at the end of applying the precondition. We set this field to make sure
+            we actually do, so in case something goes wrong we don't just continue with a broken
+            (partial) summary application. *) }
 
 let pp_hist_map fmt hist_map =
   CellId.Map.iteri hist_map ~f:(fun ~key ~data ->
@@ -49,7 +58,7 @@ let pp_hist_map fmt hist_map =
 
 
 let pp_call_state fmt
-    ({astate; subst; rev_subst; hist_map; visited; array_indices_to_visit}
+    ({astate; subst; rev_subst; hist_map; visited; array_indices_to_visit; first_error}
       [@warning "+missing-record-field-pattern"] ) =
   F.fprintf fmt
     "@[<v>{ astate=@[<hv2>%a@];@,\
@@ -58,13 +67,20 @@ let pp_call_state fmt
     \ hist_map=@[<hv2>%a@];@,\
     \ visited=@[<hv2>%a@]@,\
     \ array_indices_to_visit=@[<hv2>%a@]@,\
-    \ }@]" AbductiveDomain.pp astate
+     %t }@]" AbductiveDomain.pp astate
     (AddressMap.pp ~pp_value:(fun fmt (addr, _) -> AbstractValue.pp fmt addr))
     subst
     (AddressMap.pp ~pp_value:AbstractValue.pp)
     rev_subst pp_hist_map hist_map AddressSet.pp visited
     (Pp.seq (fun _ _ -> ()))
     array_indices_to_visit
+    (* only print [first_error] if there is an error *)
+      (fun fmt ->
+      match first_error with
+      | None ->
+          ()
+      | Some v ->
+          F.fprintf fmt " first_error= ERROR ON %a@," AbstractValue.pp v )
 
 
 let pp_call_state = Pp.html_collapsible_block ~name:"Show/hide the call state" pp_call_state
@@ -281,26 +297,52 @@ let rec materialize_pre_from_address ~pre ~addr_pre cell_id ~addr_hist_caller ca
       match UnsafeMemory.find_opt addr_pre pre.BaseDomain.heap with
       | None ->
           Ok call_state
-      | Some edges_pre ->
-          PulseResult.container_fold ~fold:UnsafeMemory.Edges.fold ~init:call_state edges_pre
-            ~f:(fun call_state (access_callee, (addr_pre_dest, pre_hist)) ->
-              match (access_callee : Access.t) with
-              | ArrayAccess _ ->
-                  Ok
-                    { call_state with
-                      array_indices_to_visit=
-                        {addr_pre_dest; pre_hist; access_callee; addr_hist_caller}
-                        :: call_state.array_indices_to_visit }
-              | FieldAccess _ | TakeAddress | Dereference ->
-                  (* only array accessess depend on abstract values and need translation *)
-                  let access_caller = access_callee in
-                  let astate, addr_hist_dest_caller =
-                    Memory.eval_edge addr_hist_caller access_caller call_state.astate
-                  in
-                  let call_state = {call_state with astate} in
-                  materialize_pre_from_address ~pre ~addr_pre:addr_pre_dest
-                    (ValueHistory.get_cell_id pre_hist)
-                    ~addr_hist_caller:addr_hist_dest_caller call_state ) )
+      | Some edges_pre -> (
+        match
+          BaseAddressAttributes.check_valid
+            (AbductiveDomain.CanonValue.canon' call_state.astate (fst addr_hist_caller))
+            (call_state.astate.post :> BaseDomain.t).attrs
+        with
+        | Error _ ->
+            (* The address is invalid in the current state but the summary has edges starting from
+               that address in memory. Don't "dereference" invalid addresses by accessing their
+               edges. Instead, stop the exploration of the precondition from that address and carry
+               on with the rest of the precondition. We need to explore as much of the precondition
+               as we can to discover potential contradictions from the calle's path condition
+               (mapped to the caller, and exploring more of the state will make the mapping more
+               complete). But, we don't want to explore from the current address because that will
+               materialize edges from that address that a) don't make sense because the address is
+               invalid, and b) can confuse the solver into thinking the path is infeasible, for
+               example if the address is null in the caller (if it is null *and* has edges coming
+               out of it then it is a contradiction). We'll report the error later in
+               [check_all_valid] after we have made sure that the path is satisfiable. Also there
+               could be several addresses in that situation and [check_all_valid] will take care of
+               reporting on the first one accessed by the callee (another reason why we don't want
+               to report the error straight away). *)
+            Ok
+              { call_state with
+                first_error= Option.first_some call_state.first_error (Some (fst addr_hist_caller))
+              }
+        | Ok () ->
+            PulseResult.container_fold ~fold:UnsafeMemory.Edges.fold ~init:call_state edges_pre
+              ~f:(fun call_state (access_callee, (addr_pre_dest, pre_hist)) ->
+                match (access_callee : Access.t) with
+                | ArrayAccess _ ->
+                    Ok
+                      { call_state with
+                        array_indices_to_visit=
+                          {addr_pre_dest; pre_hist; access_callee; addr_hist_caller}
+                          :: call_state.array_indices_to_visit }
+                | FieldAccess _ | TakeAddress | Dereference ->
+                    (* only array accessess depend on abstract values and need translation *)
+                    let access_caller = access_callee in
+                    let astate, addr_hist_dest_caller =
+                      Memory.eval_edge addr_hist_caller access_caller call_state.astate
+                    in
+                    let call_state = {call_state with astate} in
+                    materialize_pre_from_address ~pre ~addr_pre:addr_pre_dest
+                      (ValueHistory.get_cell_id pre_hist)
+                      ~addr_hist_caller:addr_hist_dest_caller call_state ) ) )
 
 
 let materialize_pre_from_array_index ~pre {addr_pre_dest; pre_hist; access_callee; addr_hist_caller}
@@ -875,7 +917,8 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
       ; rev_subst= AddressMap.empty
       ; hist_map= CellId.Map.empty
       ; visited= AddressSet.empty
-      ; array_indices_to_visit= [] }
+      ; array_indices_to_visit= []
+      ; first_error= None }
     in
     (* read the precondition *)
     match
@@ -890,7 +933,7 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
         (Unsat, Some reason)
     | result -> (
       try
-        let subst =
+        let pre_subst =
           (let open IOption.Let_syntax in
            let+ call_state = PulseResult.ok result in
            call_state.subst )
@@ -904,6 +947,18 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
             check_all_valid path callee_proc_name call_location ~pre call_state
             |> AccessResult.of_result
           in
+          (* if at that stage [call_state.first_error] is set but we haven't error'd then there is
+             a problem; give up because something is wrong *)
+          ( match call_state.first_error with
+          | None ->
+              ()
+          | Some v ->
+              L.internal_error
+                "huho, we found an error on accessing invalid address %a when applying the \
+                 precondition but did not actually report an error. Abort!"
+                AbstractValue.pp v ;
+              (* HACK: abuse [PathCondition], sorry *)
+              raise (Contradiction PathCondition) ) ;
           let* astate = check_config_usage_at_call call_location ~pre call_state.subst astate in
           (* reset [visited] *)
           let call_state = {call_state with astate; visited= AddressSet.empty} in
@@ -942,7 +997,7 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
             let caller_heap_paths =
               Specialization.HeapPath.Map.fold
                 (fun heap_path addr map ->
-                  match AbstractValue.Map.find_opt addr subst with
+                  match AbstractValue.Map.find_opt addr pre_subst with
                   | Some (addr_in_caller, _) ->
                       L.d_printfln
                         "dynamic type is required for address %a reachable from heap path %a in \
