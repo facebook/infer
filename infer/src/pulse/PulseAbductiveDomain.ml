@@ -2211,12 +2211,20 @@ module Summary = struct
     |> snd |> fst
 
 
-  let pre_heap_has_sharing astate =
-    let exception SharingDetected in
+  let pre_heap_has_assumptions astate =
+    let exception AssumptionDetected in
     (* since we operate on a summary all the values are normalized already so we can use [RawMemory]
        and pretend everything is an [AbstractValue] (instead of [CanonValue]) *)
     let visit_addr seen addr =
-      if AbstractValue.Set.mem addr seen then raise_notrace SharingDetected
+      if AbstractValue.is_restricted addr then (
+        L.d_printfln_escaped "assumption detected: %a is in the pre heap and is restricted (>= 0)"
+          AbstractValue.pp addr ;
+        raise_notrace AssumptionDetected )
+      else if AbstractValue.Set.mem addr seen then (
+        L.d_printfln_escaped
+          "assumption detected: %a is reachable in the pre heap from at least two different paths"
+          AbstractValue.pp addr ;
+        raise_notrace AssumptionDetected )
       else AbstractValue.Set.add addr seen
     in
     let visit_edge seen (_access, (addr, _history)) = visit_addr seen addr in
@@ -2225,7 +2233,7 @@ module Summary = struct
       RawMemory.fold visit_binding (astate.pre :> BaseDomain.t).heap AbstractValue.Set.empty
       |> ignore ;
       false
-    with SharingDetected -> true
+    with AssumptionDetected -> true
 end
 
 module Topl = struct

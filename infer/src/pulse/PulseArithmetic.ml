@@ -94,6 +94,10 @@ let prune_ne_zero v astate =
   prune_binop ~negated:false Ne (AbstractValueOperand v) literal_zero astate
 
 
+let prune_nonnegative v astate =
+  prune_binop ~negated:false Ge (AbstractValueOperand v) literal_zero astate
+
+
 let prune_positive v astate =
   prune_binop ~negated:false Gt (AbstractValueOperand v) literal_zero astate
 
@@ -112,7 +116,7 @@ let is_manifest summary =
   Formula.is_manifest (AbductiveDomain.Summary.get_path_condition summary) ~is_allocated:(fun v ->
       AbductiveDomain.Summary.is_heap_allocated summary v
       || AbductiveDomain.Summary.get_must_be_valid v summary |> Option.is_some )
-  && not (AbductiveDomain.Summary.pre_heap_has_sharing summary)
+  && not (AbductiveDomain.Summary.pre_heap_has_assumptions summary)
 
 
 let and_is_int v astate = map_path_condition astate ~f:(fun phi -> Formula.and_is_int v phi)

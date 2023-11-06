@@ -180,6 +180,18 @@ let and_aliasing_arith ~addr_callee ~addr_caller0 call_state =
       Ok call_state
 
 
+let and_restricted_arith ~addr_callee ~addr_caller call_state =
+  if AbstractValue.is_restricted addr_callee && AbstractValue.is_unrestricted addr_caller then
+    (* [addr_callee] is implicitly [≥0] but [addr_caller] isn't, we need to propagate that fact to
+       the caller address (no need to do anything in all other cases) *)
+    let+ astate =
+      PulseArithmetic.prune_nonnegative addr_caller call_state.astate
+      |> raise_if_unsat PathCondition
+    in
+    {call_state with astate}
+  else Ok call_state
+
+
 let visit call_state ~pre ~addr_callee cell_id ~addr_hist_caller =
   let addr_caller = fst addr_hist_caller in
   let* call_state =
@@ -200,7 +212,8 @@ let visit call_state ~pre ~addr_callee cell_id ~addr_hist_caller =
     | _ ->
         Ok call_state
   in
-  let+ call_state = and_aliasing_arith ~addr_callee ~addr_caller0:addr_caller call_state in
+  let* call_state = and_aliasing_arith ~addr_callee ~addr_caller0:addr_caller call_state in
+  let+ call_state = and_restricted_arith ~addr_callee ~addr_caller call_state in
   if AddressSet.mem addr_callee call_state.visited then (`AlreadyVisited, call_state)
   else
     ( `NotAlreadyVisited
