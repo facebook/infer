@@ -3801,30 +3801,55 @@ module DeadVariables = struct
       variables in [keep], or variables appearing in atoms together with variables in these sets,
       and so on. In other words, the variables to keep are all the ones transitively reachable from
       variables in [keep] in the graph connecting two variables whenever they appear together in a
-      same atom of the phi. *)
+      same atom of the formula.
+
+      HACK: since this only used for summary creation we take the opportunity to also get rid of
+      redundant facts in the formula. *)
   let eliminate ~precondition_vocabulary ~keep formula =
     let var_graph = build_var_graph formula.phi in
+    (* INVARIANT: [vars_to_keep] contains a var in an atom of the formula (a linear eq or term eq
+       or actual atom) iff it contains all vars in that atom *)
     let vars_to_keep = get_reachable_from var_graph keep in
     L.d_printfln "Reachable vars: %a" Var.Set.pp vars_to_keep ;
     let simplify_phi phi =
       let var_eqs = VarUF.filter ~f:(fun x -> Var.Set.mem x vars_to_keep) phi.Formula.var_eqs in
-      let linear_eqs =
-        Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.linear_eqs
+      (* all linear equalities have a counterpart in [term_eqs] so it's safe to drop them here to
+         save space in summaries *)
+      let linear_eqs = Var.Map.empty in
+      let tableau =
+        Var.Map.filter
+          (fun v _ ->
+            (* by INVARIANT it's enough to check membership of only one variable, eg [v] which is
+               readily available *)
+            Var.Set.mem v vars_to_keep )
+          phi.Formula.tableau
       in
-      let tableau = Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.tableau in
-      let term_eqs =
-        Formula.term_eqs_filter
-          (fun t v -> Var.Set.mem v vars_to_keep && not (Term.has_var_notin vars_to_keep t))
-          phi
-      in
+      let term_eqs = Formula.term_eqs_filter (fun _ v -> Var.Set.mem v vars_to_keep) phi in
       (* discard atoms which have variables *not* in [vars_to_keep], which in particular is enough
          to guarantee that *none* of their variables are in [vars_to_keep] thanks to transitive
          closure on the graph above *)
       let atoms =
-        Atom.Set.filter (fun atom -> not (Atom.has_var_notin vars_to_keep atom)) phi.Formula.atoms
+        Atom.Set.filter
+          (fun atom ->
+            (* by INVARIANT it's enough to check membership of only one variable, pick whatever
+               first one we come across in [Atom.fold_variables] *)
+            let exception FirstVar of Var.t in
+            match Atom.fold_variables atom ~init:() ~f:(fun () v -> raise (FirstVar v)) with
+            | () ->
+                (* only constants, should never get there but let's not crash in case something
+                   else went wrong *)
+                false
+            | exception FirstVar v ->
+                Var.Set.mem v vars_to_keep )
+          phi.Formula.atoms
       in
       let intervals =
-        Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.intervals
+        Var.Map.filter
+          (fun v interval ->
+            (* some intervals will have been propagated to the rest of the formula and we don't
+               need to keep them around *)
+            CItv.requires_integer_reasoning interval && Var.Set.mem v vars_to_keep )
+          phi.Formula.intervals
       in
       Formula.unsafe_mk ~var_eqs ~linear_eqs ~term_eqs ~tableau ~intervals
         ~atoms

@@ -483,3 +483,15 @@ let binop (bop : Binop.t) a_lhs a_rhs =
 
 
 let unop (unop : Unop.t) a = match unop with Neg -> minus a | BNot | LNot -> None
+
+let requires_integer_reasoning = function
+  | Between (MinusInfinity, _) | Between (_, PlusInfinity) ->
+      false
+  | Between (Int i1, Int i2) | Outside (i1, i2) ->
+      (* [x=i] and [x≠i] are faithfully represented in the rationals too but, eg [x∈\[0,2\]] isn't
+         (or at least isn't faithfully represented in the rest of [PulseFormula] since we won't
+         break it down into [x=0∨x=1∨x=2]) *)
+      not (IntLit.equal i1 i2)
+  | Between (PlusInfinity, (MinusInfinity | Int _)) | Between (Int _, MinusInfinity) ->
+      (* these values cannot be created thanks to [Unsafe] *)
+      assert false

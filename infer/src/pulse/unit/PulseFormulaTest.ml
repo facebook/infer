@@ -419,7 +419,7 @@ let%test_module "variable elimination" =
                && term_eqs: 0=x∧1=y∧2=z∧3=w
                && intervals: x=0 ∧ y=1 ∧ z=2 ∧ w=3
         Result: changed
-          conditions: (empty) phi: linear_eqs: x = 0 && term_eqs: 0=x && intervals: x=0|}]
+          conditions: (empty) phi: term_eqs: 0=x|}]
 
 
     let%expect_test _ =
@@ -430,7 +430,7 @@ let%test_module "variable elimination" =
           conditions: (empty)
           phi: var_eqs: x=v6 && linear_eqs: x = 0 ∧ y = -1 && term_eqs: (-1)=y∧0=x && intervals: x=0
         Result: changed
-          conditions: (empty) phi: linear_eqs: x = 0 && term_eqs: 0=x && intervals: x=0|}]
+          conditions: (empty) phi: term_eqs: 0=x|}]
 
 
     let%expect_test _ =
@@ -441,7 +441,7 @@ let%test_module "variable elimination" =
           conditions: (empty)
           phi: var_eqs: x=v6 && linear_eqs: x = 0 ∧ y = -1 && term_eqs: (-1)=y∧0=x && intervals: x=0
         Result: changed
-          conditions: (empty) phi: linear_eqs: y = -1 && term_eqs: (-1)=y|}]
+          conditions: (empty) phi: term_eqs: (-1)=y|}]
 
 
     (* should keep most of this or realize that [w = z] hence this boils down to [z+1 = 0] *)
@@ -456,7 +456,7 @@ let%test_module "variable elimination" =
                  && term_eqs: (-1)=z∧0=v∧[y -1]=x
                  && intervals: v=0
           Result: changed
-            conditions: (empty) phi: linear_eqs: x = y -1 ∧ z = -1 && term_eqs: (-1)=z∧[y -1]=x|}]
+            conditions: (empty) phi: term_eqs: (-1)=z∧[y -1]=x|}]
 
 
     let%expect_test _ =
@@ -470,9 +470,7 @@ let%test_module "variable elimination" =
                  && term_eqs: 0=v8∧[v -1]=w∧[-v7]=y∧[-v +v7 +1]=x∧[-v +2·v7 +1]=z
                  && intervals: v8=0
           Result: changed
-            conditions: (empty)
-            phi: linear_eqs: x = -v +v7 +1 ∧ y = -v7 ∧ z = -v +2·v7 +1 ∧ w = v -1
-                 && term_eqs: [v -1]=w∧[-v7]=y∧[-v +v7 +1]=x∧[-v +2·v7 +1]=z|}]
+            conditions: (empty) phi: term_eqs: [v -1]=w∧[-v7]=y∧[-v +v7 +1]=x∧[-v +2·v7 +1]=z|}]
 
 
     let%expect_test _ =
@@ -482,7 +480,7 @@ let%test_module "variable elimination" =
         Formula:
           conditions: (empty) phi: var_eqs: x=w=v6 ∧ y=z && linear_eqs: x = y +4 && term_eqs: [y +4]=x
         Result: changed
-          conditions: (empty) phi: linear_eqs: x = y +4 && term_eqs: [y +4]=x|}]
+          conditions: (empty) phi: term_eqs: [y +4]=x|}]
   end )
 
 
@@ -499,7 +497,7 @@ let%test_module "non-linear simplifications" =
                && term_eqs: 0=w∧([x]×[z])=v6
                && intervals: w=0
         Result: changed
-          conditions: (empty) phi: linear_eqs: w = 0 && term_eqs: 0=w && intervals: w=0|}]
+          conditions: (empty) phi: term_eqs: 0=w|}]
 
 
     let%expect_test "constant propagation: bitshift" =
@@ -509,7 +507,7 @@ let%test_module "non-linear simplifications" =
         Formula:
           conditions: (empty) phi: var_eqs: x=v7 && linear_eqs: x = 4 ∧ v6 = 1 && term_eqs: 1=v6∧4=x
         Result: changed
-          conditions: (empty) phi: linear_eqs: x = 4 && term_eqs: 4=x|}]
+          conditions: (empty) phi: term_eqs: 4=x|}]
 
 
     let%expect_test "non-linear becomes linear" =
@@ -618,7 +616,7 @@ let%test_module "intervals" =
                && term_eqs: 0=a2∧2=a1
                && intervals: a2=0 ∧ a1=2
         Result: changed
-          conditions: (empty) phi: linear_eqs: x = 2 && term_eqs: 2=x && intervals: x=2|}]
+          conditions: (empty) phi: term_eqs: 2=x|}]
 
 
     let%expect_test "interval intersection" =
