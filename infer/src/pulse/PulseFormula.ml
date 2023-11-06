@@ -1831,25 +1831,65 @@ module Formula = struct
     val term_eqs_is_empty : term_eqs -> bool
 
     type t = private
-      { var_eqs: var_eqs  (** equality relation between variables *)
+      { var_eqs: var_eqs
+            (** Equality relation between variables. We want to only use canonical representatives
+                from this equality relation in the rest of the formula and more generally in all of
+                the abstract state. See also {!AbductiveDomain}. *)
       ; linear_eqs: linear_eqs
-            (** equalities of the form [x = l] where [l] is from linear arithmetic
+            (** Equalities of the form [x = l] where [l] is from linear arithmetic. These are
+                interpreted over the *rationals*, not integers (or floats), so this will be
+                incomplete. There are mitigations to recover a little of that lost completeness:
 
-                INVARIANT: the domain and the range of [phi.linear_eqs] mention distinct variables.
-                In particular this speeds up normalization steps as we can normalize in one step (in
-                [normalize_linear_eqs]). *)
+                - [atoms] have [is_int()] terms that will detect when we get (constant) rationals
+                  where we expected integers eg [is_int(1.5)] becomes [false].
+
+                - [intervals] are over integers
+
+                INVARIANT:
+
+                1. the domain and the range of [phi.linear_eqs] mention distinct variables:
+                [domain(linear_eqs) ∩ range(linear_eqs) = ∅], when seeing [linear_eqs] as a map
+                [x->l]
+
+                2. for all [x=l ∊ linear_eqs], [x < min({x'|x'∊l})] according to [is_simpler_than]
+                (in other words: [x] is the simplest variable in [x=l]). *)
       ; term_eqs: term_eqs
-            (** equalities of the form [t = x], used to detect when two abstract values are equal to
-                the same term (hence equal). Under the hood this is a map [t -> x] that may contain
-                un-normalized [x]s in its co-domain; these are normalized on the fly when reading
-                from the map *)
+            (** Equalities of the form [t = x], used to detect when two abstract values are equal to
+                the same term (hence equal). Together with [var_eqs] and [linear_eqs] this gives a
+                congruence closure capability to the domain over uninterpreted parts of the domain
+                (meaning the atoms and term equalities that are not just linear arithmetic and
+                handled in a complete-ish fashion by [linear_eqs], [var_eqs], [tableau]). Even on
+                interpreted domains like linear arithmetic [term_eqs] is needed to provide
+                on-the-fly normalisation by detecting when two variables are equal to the same term,
+                which [linear_eqs] will do nothing about (eg [x=0∧y=0] doesn't trigger [x=y] in
+                [linear_eqs] but [term_eqs] is in charge of detecting it).
+
+                Under the hood this is a map [t -> x] that may contain un-normalized [x]s in its
+                co-domain; these are normalized on the fly when reading from the map
+
+                INVARIANT: each term in [term_eqs] is *shallow*, meaning it is either a constant or
+                a term of the form [f(x1, ..., xN)] with [x1], ..., [xN] either variables or
+                constants themselves. *)
       ; tableau: Tableau.t
             (** linear equalities similar to [linear_eqs] but involving only "restricted" (aka
-                "slack") variables; this is used for reasoning about inequalities, see \[2\] *)
+                "slack") variables; this is used for reasoning about inequalities, see \[2\]
+
+                INVARIANT: see {!Tableau} *)
       ; intervals: (intervals[@yojson.opaque])
+            (** A simple, non-relational domain of concrete integer intervals of the form
+                [x∈\[i,j\]] or [x∉\[i,j\]].
+
+                This is used to recover a little bit of completeness on integer reasoning at no
+                great cost. *)
       ; atoms: Atom.Set.t
             (** "everything else": atoms that cannot be expressed in a form suitable for one of the
-                other domains *)
+                other domains, in particular disequalities.
+
+                INVARIANT: Contrarily to [term_eqs] atoms are *maximally expanded* meaning if a
+                variable [x] is equal to a term [t] then [x] shouldn't appear in [atoms] and should
+                be substituted by [t] instead. This is looser than other invariants since a given
+                variable can be equal to several syntactically-distinct terms so "maximally
+                expanded" doesn't really make sense in general and there is incompleteness there. *)
       ; linear_eqs_occurrences: VarMapOccurrences.t
             (** occurrences of variables in [linear_eqs]: a binding [x -> y] means that [x] appears
                 in [linear_eqs(y)] and will be used to propagate new (linear) equalities about [x]
