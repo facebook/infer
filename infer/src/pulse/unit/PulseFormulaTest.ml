@@ -205,8 +205,6 @@ let%test_module "normalization" =
           phi: linear_eqs: z = 0
                && term_eqs: 0=z∧(x instanceof ErlangNil)=z∧(y instanceof ErlangNil)=w
                && intervals: z=0
-               && term_eqs_occurrences: x->d(x instanceof ErlangNil) ∧ y->d(y instanceof ErlangNil)
-                                         ∧ z->r(x instanceof ErlangNil) ∧ w->r(y instanceof ErlangNil)
         Result: changed
           unsat|}]
 
@@ -221,8 +219,6 @@ let%test_module "normalization" =
           phi: linear_eqs: w = 0
                && term_eqs: 0=w∧(x instanceof ErlangNil)=z∧(y instanceof ErlangNil)=w
                && intervals: w=0
-               && term_eqs_occurrences: x->d(x instanceof ErlangNil) ∧ y->d(y instanceof ErlangNil)
-                                         ∧ z->r(x instanceof ErlangNil) ∧ w->r(y instanceof ErlangNil)
         Result: changed
           unsat|}]
 
@@ -233,10 +229,7 @@ let%test_module "normalization" =
       [%expect
         {|
         Formula:
-          conditions: (empty)
-          phi: term_eqs: (x instanceof ErlangCons)=y∧(x instanceof ErlangNil)=y
-               && term_eqs_occurrences: x->d(x instanceof ErlangCons),d(x instanceof ErlangNil)
-                                         ∧ y->r(x instanceof ErlangCons),r(x instanceof ErlangNil)
+          conditions: (empty) phi: term_eqs: (x instanceof ErlangCons)=y∧(x instanceof ErlangNil)=y
         Result: changed
           unsat|}]
 
@@ -246,8 +239,7 @@ let%test_module "normalization" =
       [%expect
         {|
         Formula:
-          conditions: (empty)
-          phi: linear_eqs: x = y -a1 -1 && term_eqs: [y -a1 -1]=x && linear_eqs_occurrences: a1->x ∧ y->x
+          conditions: (empty) phi: linear_eqs: x = y -a1 -1 && term_eqs: [y -a1 -1]=x
         Result: same|}]
 
 
@@ -348,11 +340,6 @@ let%test_module "normalization" =
                && term_eqs: 0=v10∧[-v6 +v8 -1]=x∧[v8 -1]=v7∧([z]×[v8])=v9
                             ∧([v]×[y])=v6∧([v9]÷[w])=v10
                && intervals: v10=0
-               && linear_eqs_occurrences: v6->x ∧ v8->x,v7
-               && term_eqs_occurrences: y->d([v]×[y]) ∧ z->d([z]×[v8]) ∧ w->d([v9]÷[w])
-                                         ∧ v->d([v]×[y]) ∧ v6->r([v]×[y])
-                                         ∧ v8->d([z]×[v8]) ∧ v9->r([z]×[v8]),d([v9]÷[w])
-                                         ∧ v10->r([v9]÷[w])
         Result: same|}]
 
 
@@ -367,7 +354,6 @@ let%test_module "normalization" =
                && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
                && term_eqs: (-1)=v7∧0=v8∧[-v6 -1]=x∧[1/3·v6]=y
                && intervals: v8=0
-               && linear_eqs_occurrences: v6->x,y
         Result: same|}]
 
 
@@ -383,7 +369,6 @@ let%test_module "normalization" =
                                ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
                && term_eqs: (-1)=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
                && intervals: z=12 ∧ w=1 ∧ v=3 ∧ v8=0
-               && linear_eqs_occurrences: v6->x,y
         Result: same|}]
 
 
@@ -400,8 +385,6 @@ let%test_module "normalization" =
                && term_eqs: (-42)=y∧2=x∧4=v6∧[w +2]=z
                && intervals: y=-42 ∧ v6=4
                && atoms: {is_int([w +2]) = 1}
-               && linear_eqs_occurrences: w->z
-               && atoms_occurrences: w->{is_int([w +2]) = 1}
         Result: same
 |}]
 
@@ -472,7 +455,6 @@ let%test_module "variable elimination" =
                  && linear_eqs: x = y -1 ∧ z = -1 ∧ v = 0
                  && term_eqs: (-1)=z∧0=v∧[y -1]=x
                  && intervals: v=0
-                 && linear_eqs_occurrences: y->x
           Result: changed
             conditions: (empty) phi: linear_eqs: x = y -1 ∧ z = -1 && term_eqs: (-1)=z∧[y -1]=x|}]
 
@@ -487,7 +469,6 @@ let%test_module "variable elimination" =
                  && linear_eqs: x = -v +v7 +1 ∧ y = -v7 ∧ z = -v +2·v7 +1 ∧ w = v -1 ∧ v8 = 0
                  && term_eqs: 0=v8∧[v -1]=w∧[-v7]=y∧[-v +v7 +1]=x∧[-v +2·v7 +1]=z
                  && intervals: v8=0
-                 && linear_eqs_occurrences: v->x,z,w ∧ v7->x,y,z
           Result: changed
             conditions: (empty)
             phi: linear_eqs: x = -v +v7 +1 ∧ y = -v7 ∧ z = -v +2·v7 +1 ∧ w = v -1
@@ -499,11 +480,7 @@ let%test_module "variable elimination" =
       [%expect
         {|
         Formula:
-          conditions: (empty)
-          phi: var_eqs: x=w=v6 ∧ y=z
-               && linear_eqs: x = y +4
-               && term_eqs: [y +4]=x
-               && linear_eqs_occurrences: y->x
+          conditions: (empty) phi: var_eqs: x=w=v6 ∧ y=z && linear_eqs: x = y +4 && term_eqs: [y +4]=x
         Result: changed
           conditions: (empty) phi: linear_eqs: x = y +4 && term_eqs: [y +4]=x|}]
   end )
@@ -521,7 +498,6 @@ let%test_module "non-linear simplifications" =
                && linear_eqs: w = 0
                && term_eqs: 0=w∧([x]×[z])=v6
                && intervals: w=0
-               && term_eqs_occurrences: x->d([x]×[z]) ∧ z->d([x]×[z]) ∧ v6->r([x]×[z])
         Result: changed
           conditions: (empty) phi: linear_eqs: w = 0 && term_eqs: 0=w && intervals: w=0|}]
 
@@ -546,7 +522,6 @@ let%test_module "non-linear simplifications" =
                  && linear_eqs: x = 1/4·v6 ∧ y = 2 ∧ z = 1/2·v6 ∧ w = v6 -3
                  && term_eqs: 2=y∧[v6 -3]=w∧[1/4·v6]=x∧[1/2·v6]=z
                  && intervals: y=2
-                 && linear_eqs_occurrences: v6->x,z,w
           Result: same|}]
   end )
 
@@ -579,7 +554,6 @@ let%test_module "inequalities" =
                && linear_eqs: a2 = a3 +a5 +3 ∧ a1 = -a3 +a4 -a5 -1 ∧ v6 = a4 +2 ∧ v7 = -a5 -3
                && term_eqs: [-a5 -3]=v7∧[-a3 +a4 -a5 -1]=a1∧[a4 +2]=v6∧[a3 +a5 +3]=a2
                && intervals: a3≥0 ∧ a2≥0 ∧ a1≥0 ∧ v6≥2 ∧ v7≤-3
-               && linear_eqs_occurrences: a5->a2,a1,v7 ∧ a4->a1,v6 ∧ a3->a2,a1
         Result: same |}]
 
 
@@ -717,7 +691,5 @@ let%test_module "conjunctive normal form" =
                  && term_eqs: 1=v6∧[a3 +1]=a2
                  && intervals: v8≠0
                  && atoms: {v8 ≠ 0}
-                 && linear_eqs_occurrences: a3->a2
-                 && atoms_occurrences: v8->{v8 ≠ 0}
           Result: same|}]
   end )

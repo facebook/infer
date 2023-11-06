@@ -2193,22 +2193,23 @@ module Formula = struct
       (pp_if (not (Var.Map.is_empty intervals)) "intervals" (pp_var_map ~arrow:"" CItv.pp pp_var))
         fmt intervals ;
       (pp_if (not (Atom.Set.is_empty atoms)) "atoms" (Atom.Set.pp_with_pp_var pp_var)) fmt atoms ;
-      (pp_if
-         (not (Var.Map.is_empty linear_eqs_occurrences))
-         "linear_eqs_occurrences" (VarMapOccurrences.pp pp_var) )
-        fmt linear_eqs_occurrences ;
-      (pp_if
-         (not (Var.Map.is_empty tableau_occurrences))
-         "tableau_occurrences" (VarMapOccurrences.pp pp_var) )
-        fmt tableau_occurrences ;
-      (pp_if
-         (not (Var.Map.is_empty term_eqs_occurrences))
-         "term_eqs_occurrences" (TermMapOccurrences.pp pp_var) )
-        fmt term_eqs_occurrences ;
-      (pp_if
-         (not (Var.Map.is_empty atoms_occurrences))
-         "atoms_occurrences" (AtomMapOccurrences.pp pp_var) )
-        fmt atoms_occurrences ;
+      if Config.debug_level_analysis >= 3 then (
+        (pp_if
+           (not (Var.Map.is_empty linear_eqs_occurrences))
+           "linear_eqs_occurrences" (VarMapOccurrences.pp pp_var) )
+          fmt linear_eqs_occurrences ;
+        (pp_if
+           (not (Var.Map.is_empty tableau_occurrences))
+           "tableau_occurrences" (VarMapOccurrences.pp pp_var) )
+          fmt tableau_occurrences ;
+        (pp_if
+           (not (Var.Map.is_empty term_eqs_occurrences))
+           "term_eqs_occurrences" (TermMapOccurrences.pp pp_var) )
+          fmt term_eqs_occurrences ;
+        (pp_if
+           (not (Var.Map.is_empty atoms_occurrences))
+           "atoms_occurrences" (AtomMapOccurrences.pp pp_var) )
+          fmt atoms_occurrences ) ;
       F.pp_close_box fmt ()
 
 
