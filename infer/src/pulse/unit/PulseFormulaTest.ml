@@ -642,7 +642,6 @@ let%test_module "intervals" =
           phi: var_eqs: a1=x
                && linear_eqs: a2 = 0 ∧ a1 = 2
                && term_eqs: 0=a2∧2=a1
-               && tableau: a2 = -a1 +2
                && intervals: a2=0 ∧ a1=2
         Result: changed
           conditions: (empty) phi: linear_eqs: x = 2 && term_eqs: 2=x && intervals: x=2|}]
@@ -657,7 +656,6 @@ let%test_module "intervals" =
           phi: var_eqs: a3=a2 ∧ a1=x=y
                && linear_eqs: a4 = 7 ∧ a3 = 0 ∧ a1 = 2
                && term_eqs: 0=a3∧2=a1∧7=a4
-               && tableau: a4 = -a3 +7 ∧ a2 = -a1 +2
                && intervals: a3=0 ∧ a1=2
         Result: changed
           conditions: (empty)
