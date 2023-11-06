@@ -11,7 +11,13 @@ module L = Logging
 module CItv = PulseCItv
 module SatUnsat = PulseSatUnsat
 module ValueHistory = PulseValueHistory
-module Var = PulseAbstractValue
+
+module Var = struct
+  include PulseAbstractValue
+
+  let is_simpler_than v1 v2 = PulseAbstractValue.compare v1 v2 < 0
+end
+
 module Q = QSafeCapped
 module Z = ZSafe
 open SatUnsat.Import
@@ -1610,15 +1616,7 @@ module Atom = struct
   end
 end
 
-module VarUF =
-  UnionFind.Make
-    (struct
-      type t = Var.t [@@deriving compare, equal]
-
-      let is_simpler_than v1 v2 = Var.compare v1 v2 < 0
-    end)
-    (Var.Set)
-    (Var.Map)
+module VarUF = UnionFind.Make (Var) (Var.Set) (Var.Map)
 
 type new_eq = EqZero of Var.t | Equal of Var.t * Var.t
 
