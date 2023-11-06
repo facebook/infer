@@ -44,7 +44,9 @@ val pp_operand : F.formatter -> operand -> unit
 
 (** some operations will return a set of new facts discovered that are relevant to communicate to
     the memory domain *)
-type new_eq = EqZero of Var.t | Equal of Var.t * Var.t
+type new_eq =
+  | EqZero of Var.t  (** [v=0] *)
+  | Equal of Var.t * Var.t  (** [v_old = v_new]: [v_old] is to be replaced with [v_new] *)
 
 val pp_new_eq : F.formatter -> new_eq -> unit
 

@@ -47,10 +47,10 @@ module type S = sig
       operate on [AbstractValue.t] instead of [needs_canon] ones. *)
 
   val canon : astate -> needs_canon -> t
-  (** fetch the canonical representative of the given [AbstractValue.t] *)
+  (** fetch the canonical representative of the given [needs_canon] *)
 
   val canon' : astate -> AbstractValue.t -> t
-  (** fetch the canonical representative of the given [needs_canon] *)
+  (** fetch the canonical representative of the given [AbstractValue.t] *)
 
   val canon_fst : astate -> needs_canon * 'a -> t * 'a
 
