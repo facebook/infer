@@ -205,7 +205,8 @@ let%test_module "normalization" =
           phi: linear_eqs: z = 0
                && term_eqs: 0=z∧(x instanceof ErlangNil)=z∧(y instanceof ErlangNil)=w
                && intervals: z=0
-               && term_eqs_occurrences: x->(x instanceof ErlangNil) ∧ y->(y instanceof ErlangNil)
+               && term_eqs_occurrences: x->d(x instanceof ErlangNil) ∧ y->d(y instanceof ErlangNil)
+                                         ∧ z->r(x instanceof ErlangNil) ∧ w->r(y instanceof ErlangNil)
         Result: changed
           unsat|}]
 
@@ -220,7 +221,8 @@ let%test_module "normalization" =
           phi: linear_eqs: w = 0
                && term_eqs: 0=w∧(x instanceof ErlangNil)=z∧(y instanceof ErlangNil)=w
                && intervals: w=0
-               && term_eqs_occurrences: x->(x instanceof ErlangNil) ∧ y->(y instanceof ErlangNil)
+               && term_eqs_occurrences: x->d(x instanceof ErlangNil) ∧ y->d(y instanceof ErlangNil)
+                                         ∧ z->r(x instanceof ErlangNil) ∧ w->r(y instanceof ErlangNil)
         Result: changed
           unsat|}]
 
@@ -233,7 +235,8 @@ let%test_module "normalization" =
         Formula:
           conditions: (empty)
           phi: term_eqs: (x instanceof ErlangCons)=y∧(x instanceof ErlangNil)=y
-               && term_eqs_occurrences: x->(x instanceof ErlangCons),(x instanceof ErlangNil)
+               && term_eqs_occurrences: x->d(x instanceof ErlangCons),d(x instanceof ErlangNil)
+                                         ∧ y->r(x instanceof ErlangCons),r(x instanceof ErlangNil)
         Result: changed
           unsat|}]
 
@@ -346,9 +349,10 @@ let%test_module "normalization" =
                             ∧([v]×[y])=v6∧([v9]÷[w])=v10
                && intervals: v10=0
                && linear_eqs_occurrences: v6->x ∧ v8->x,v7
-               && term_eqs_occurrences: y->([v]×[y]) ∧ z->([z]×[v8]) ∧ w->([v9]÷[w])
-                                         ∧ v->([v]×[y]) ∧ v8->([z]×[v8])
-                                         ∧ v9->([v9]÷[w])
+               && term_eqs_occurrences: y->d([v]×[y]) ∧ z->d([z]×[v8]) ∧ w->d([v9]÷[w])
+                                         ∧ v->d([v]×[y]) ∧ v6->r([v]×[y])
+                                         ∧ v8->d([z]×[v8]) ∧ v9->r([z]×[v8]),d([v9]÷[w])
+                                         ∧ v10->r([v9]÷[w])
         Result: same|}]
 
 
@@ -517,7 +521,7 @@ let%test_module "non-linear simplifications" =
                && linear_eqs: w = 0
                && term_eqs: 0=w∧([x]×[z])=v6
                && intervals: w=0
-               && term_eqs_occurrences: x->([x]×[z]) ∧ z->([x]×[z])
+               && term_eqs_occurrences: x->d([x]×[z]) ∧ z->d([x]×[z]) ∧ v6->r([x]×[z])
         Result: changed
           conditions: (empty) phi: linear_eqs: w = 0 && term_eqs: 0=w && intervals: w=0|}]
 
@@ -668,17 +672,10 @@ let%test_module "conjunctive normal form" =
   ( module struct
     let%expect_test _ =
       normalize (and_ (ge x (i 0)) (lt x (i 0)) = i 1) ;
-      [%expect
-        {|
+      [%expect {|
         Formula:
-          conditions: (empty)
-          phi: linear_eqs: v8 = 1
-               && term_eqs: 1=v8∧([x]<0)=v7∧(0≤[x])=v6∧(([v6]=1)∧([v7]=1))=v8
-               && intervals: v8=1
-               && term_eqs_occurrences: x->([x]<0),(0≤[x]) ∧ v6->(([v6]=1)∧([v7]=1))
-                                         ∧ v7->(([v6]=1)∧([v7]=1))
-        Result: changed
-          unsat|}]
+          unsat
+        Result: same|}]
 
 
     (* same as above with <> 0 instead of = 1 *)
@@ -691,8 +688,9 @@ let%test_module "conjunctive normal form" =
           phi: term_eqs: ([x]<0)=v7∧(0≤[x])=v6∧(([v6]=1)∧([v7]=1))=v8
                && intervals: v8≠0
                && atoms: {[v8] ≠ 0}
-               && term_eqs_occurrences: x->([x]<0),(0≤[x]) ∧ v6->(([v6]=1)∧([v7]=1))
-                                         ∧ v7->(([v6]=1)∧([v7]=1))
+               && term_eqs_occurrences: x->d([x]<0),d(0≤[x]) ∧ v6->r(0≤[x]),d(([v6]=1)∧([v7]=1))
+                                         ∧ v7->r([x]<0),d(([v6]=1)∧([v7]=1))
+                                         ∧ v8->r(([v6]=1)∧([v7]=1))
                && atoms_occurrences: v8->{[v8] ≠ 0}
         Result: changed
           unsat|}]
@@ -704,19 +702,16 @@ let%test_module "conjunctive normal form" =
         {|
           Formula:
             conditions: (empty)
-            phi: linear_eqs: v10 = 0
-                 && term_eqs: 0=v10∧(0<[x])=v7∧([x]<0)=v8∧([x]≠0)=v6∧([v6]∨[v9])=v10
-                              ∧([v7]∨[v8])=v9
-                 && intervals: v10=0
-                 && term_eqs_occurrences: x->(0<[x]),([x]<0),([x]≠0) ∧ v6->([v6]∨[v9])
-                                           ∧ v7->([v7]∨[v8]) ∧ v8->([v7]∨[v8])
-                                           ∧ v9->([v6]∨[v9])
+            phi: var_eqs: a7=a6=a5=x=v6=v7=v8=v9=v10
+                 && linear_eqs: a7 = 0 ∧ a6 = 0
+                 && term_eqs: 0=a7
+                 && intervals: a7=0 ∧ a6=0
           Result: changed
             conditions: (empty)
-            phi: var_eqs: a3=a2=a1=x=v6=v7=v8=v9=v10
-                 && linear_eqs: a3 = 0
-                 && term_eqs: 0=a3
-                 && intervals: a3=0 |}]
+            phi: var_eqs: a7=a6=a5=x=v6=v7=v8=v9=v10
+                 && linear_eqs: a7 = 0
+                 && term_eqs: 0=a7
+                 && intervals: a7=0 |}]
 
 
     let%expect_test "UNSAT: ¬ (x = 0 ∨ x > 0 ∨ x < 0)" =
@@ -725,13 +720,10 @@ let%test_module "conjunctive normal form" =
         {|
         Formula:
           conditions: (empty)
-          phi: linear_eqs: v10 = 0
-               && term_eqs: 0=v10∧(0<[x])=v7∧([x]<0)=v8∧([x]=0)=v6∧([v6]∨[v9])=v10
-                            ∧([v7]∨[v8])=v9
-               && intervals: v10=0
-               && term_eqs_occurrences: x->(0<[x]),([x]<0),([x]=0) ∧ v6->([v6]∨[v9])
-                                         ∧ v7->([v7]∨[v8]) ∧ v8->([v7]∨[v8])
-                                         ∧ v9->([v6]∨[v9])
+          phi: var_eqs: a6=a5=a4=x=v6=v7=v8=v9=v10
+               && linear_eqs: a6 = 0 ∧ a5 = 0
+               && term_eqs: 0=a6∧1=a6
+               && intervals: a6=0 ∧ a5=0
         Result: changed
           unsat|}]
 
@@ -745,15 +737,17 @@ let%test_module "conjunctive normal form" =
             phi: term_eqs: (0<[x])=v7∧(0≤[x])=v6∧(([v6]=1)∧([v7]=1))=v8
                  && intervals: v8≠0
                  && atoms: {[v8] ≠ 0}
-                 && term_eqs_occurrences: x->(0<[x]),(0≤[x]) ∧ v6->(([v6]=1)∧([v7]=1))
-                                           ∧ v7->(([v6]=1)∧([v7]=1))
+                 && term_eqs_occurrences: x->d(0<[x]),d(0≤[x]) ∧ v6->r(0≤[x]),d(([v6]=1)∧([v7]=1))
+                                           ∧ v7->r(0<[x]),d(([v6]=1)∧([v7]=1))
+                                           ∧ v8->r(([v6]=1)∧([v7]=1))
                  && atoms_occurrences: v8->{[v8] ≠ 0}
           Result: changed
             conditions: (empty)
-            phi: var_eqs: a12=a11=a10=a9=a8=a7=a6=a5=a4=a3=a1 ∧ a2=x ∧ v6=v7=v8
-                 && linear_eqs: a2 = a12 +1 ∧ v6 = 1
-                 && term_eqs: 1=v6∧[a12 +1]=a2∧(0<[a2])=v6
-                 && intervals: v6≠0
-                 && linear_eqs_occurrences: a12->a2
-                 && term_eqs_occurrences: a2->(0<[a2])|}]
+            phi: var_eqs: a3=a1 ∧ a2=x ∧ v6=v7
+                 && linear_eqs: a2 = a3 +1 ∧ v6 = 1
+                 && term_eqs: 1=v6∧[a3 +1]=a2
+                 && intervals: v8≠0
+                 && atoms: {[v8] ≠ 0}
+                 && linear_eqs_occurrences: a3->a2
+                 && atoms_occurrences: v8->{[v8] ≠ 0}|}]
   end )
