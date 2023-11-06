@@ -214,3 +214,60 @@ void interproc_mutual_recusion_leak(NODE* x) {
   }
   mutual_recursion(x);
 }
+
+void allocate_all_in_array(int* array[]) {
+  for (int i = 0; i < 2; i++) {
+    array[i] = malloc(sizeof(int));
+  }
+}
+
+void free_all_in_array(int* array[]) {
+  for (int i = 0; i < 2; i++) {
+    free(array[i]);
+  }
+}
+
+void FP_alloc_then_free_all_in_array_ok() {
+  int* array[2];
+  allocate_all_in_array(array);
+  free_all_in_array(array);
+}
+
+void allocate_42_in_array(int* array[]) {
+  array[42] = malloc(sizeof(int));
+}
+
+void free_42_in_array(int* array[]) {
+  free(array[42]);
+}
+
+void FP_alloc_then_free_42_in_array_ok() {
+  int* array[64];
+  allocate_42_in_array(array);
+  free_42_in_array(array);
+}
+
+void allocate_in_array(int* array[], int i) {
+  array[i] = malloc(sizeof(int));
+}
+
+void free_in_array(int* array[], int i) {
+  free(array[i]);
+}
+
+void alloc_then_free_fixed_index_ok() {
+  int* array[64];
+  allocate_in_array(array, 42);
+  free_in_array(array, 42);
+}
+
+void alloc_then_free_parameter_array_ok(int* array[], int i) {
+  allocate_in_array(array, i);
+  free_in_array(array, i);
+}
+
+void alloc_then_free_at_index_ok(int i) {
+  int* array[64];
+  allocate_in_array(array, i);
+  free_in_array(array, i);
+}
