@@ -67,7 +67,13 @@ module LinArith : sig
   (** linear combination of variables, eg [2·x + 3/4·y + 12] *)
   type t [@@deriving compare, yojson_of, equal]
 
-  type subst_target = QSubst of Q.t | VarSubst of Var.t | LinSubst of t
+  (* ['term_t] is meant to be [Term.t] but we cannot mention [Term] yet as it depends on [LinArith];
+     we resolve the circular dependency further down this file *)
+  type 'term_t subst_target =
+    | QSubst of Q.t
+    | VarSubst of Var.t
+    | LinSubst of t
+    | NonLinearTermSubst of 'term_t
 
   val pp : (F.formatter -> Var.t -> unit) -> F.formatter -> t -> unit
 
@@ -102,13 +108,13 @@ module LinArith : sig
 
   val get_variables : t -> Var.t Seq.t
 
-  val fold_subst_variables : t -> init:'a -> f:('a -> Var.t -> 'a * subst_target) -> 'a * t
+  val fold_subst_variables : t -> init:'a -> f:('a -> Var.t -> 'a * _ subst_target) -> 'a * t
 
   val fold : t -> init:'a -> f:('a -> Var.t * Q.t -> 'a) -> 'a
 
-  val subst_variables : t -> f:(Var.t -> subst_target) -> t
+  val subst_variables : t -> f:(Var.t -> _ subst_target) -> t
 
-  val subst_variable : Var.t -> subst_target -> t -> t
+  val subst_variable : Var.t -> _ subst_target -> t -> t
   (** same as above for a single variable to substitute (more optimized) *)
 
   val get_simplest : t -> Var.t option
@@ -166,7 +172,11 @@ end = struct
 
   let fold (_, vs) ~init ~f = IContainer.fold_of_pervasives_map_fold VarMap.fold vs ~init ~f
 
-  type subst_target = QSubst of Q.t | VarSubst of Var.t | LinSubst of t
+  type 'term_t subst_target =
+    | QSubst of Q.t
+    | VarSubst of Var.t
+    | LinSubst of t
+    | NonLinearTermSubst of 'term_t
 
   let pp pp_var fmt (c, vs) =
     if VarMap.is_empty vs then Q.pp_print fmt c
@@ -262,7 +272,16 @@ end = struct
 
   let get_coefficient v (_, vs) = VarMap.find_opt v vs
 
-  let of_subst_target = function QSubst q -> of_q q | VarSubst v -> of_var v | LinSubst l -> l
+  let of_subst_target v0 = function
+    | QSubst q ->
+        of_q q
+    | VarSubst v ->
+        of_var v
+    | LinSubst l ->
+        l
+    | NonLinearTermSubst _ ->
+        of_var v0
+
 
   let fold_subst_variables ((c, vs_foreign) as l0) ~init ~f =
     let changed = ref false in
@@ -270,8 +289,14 @@ end = struct
       VarMap.fold
         (fun v_foreign q0 (acc_f, l) ->
           let acc_f, op = f acc_f v_foreign in
-          (match op with VarSubst v when Var.equal v v_foreign -> () | _ -> changed := true) ;
-          (acc_f, add (mult q0 (of_subst_target op)) l) )
+          ( match op with
+          | NonLinearTermSubst _ ->
+              ()
+          | VarSubst v when Var.equal v v_foreign ->
+              ()
+          | _ ->
+              changed := true ) ;
+          (acc_f, add (mult q0 (of_subst_target v_foreign op)) l) )
         vs_foreign
         (init, (c, VarMap.empty))
     in
@@ -288,7 +313,7 @@ end = struct
         l0
     | Some q ->
         let vs' = VarMap.remove x vs in
-        add (mult q (of_subst_target subst_target)) (c, vs')
+        add (mult q (of_subst_target x subst_target)) (c, vs')
 
 
   let get_variables (_, vs) = VarMap.to_seq vs |> Seq.map fst
@@ -446,10 +471,11 @@ module Tableau = struct
            do_pivot u' l_u' v' (Var.Map.remove u' t) )
 end
 
-type subst_target = LinArith.subst_target =
+type 'term_t subst_target = 'term_t LinArith.subst_target =
   | QSubst of Q.t
   | VarSubst of Var.t
   | LinSubst of LinArith.t
+  | NonLinearTermSubst of 'term_t
 
 let subst_f subst x = match Var.Map.find_opt x subst with Some y -> y | None -> x
 
@@ -628,7 +654,16 @@ module Term = struct
         FunctionApplication {f; actuals= List.map actuals ~f:(fun v -> Var v)}
 
 
-  let of_subst_target = function QSubst q -> of_q q | VarSubst v -> Var v | LinSubst l -> Linear l
+  let of_subst_target = function
+    | QSubst q ->
+        of_q q
+    | VarSubst v ->
+        Var v
+    | LinSubst l ->
+        Linear l
+    | NonLinearTermSubst t ->
+        t
+
 
   let one = of_q Q.one
 
@@ -852,7 +887,7 @@ module Term = struct
               IsInstanceOf (v', typ)
           | QSubst q when Q.is_zero q ->
               zero
-          | QSubst _ | VarSubst _ | LinSubst _ ->
+          | QSubst _ | VarSubst _ | LinSubst _ | NonLinearTermSubst _ ->
               t
         in
         f_post ~prev:t acc t'
@@ -1270,13 +1305,13 @@ module Term = struct
   let to_subst_target t =
     match get_as_const t with
     | Some q ->
-        Some (QSubst q)
+        QSubst q
     | None -> (
       match get_as_var t with
       | Some v ->
-          Some (VarSubst v)
+          VarSubst v
       | None -> (
-        match t with Linear l -> Some (LinSubst l) | _ -> None ) )
+        match t with Linear l -> LinSubst l | _ -> NonLinearTermSubst t ) )
 
 
   module Set = struct
@@ -2556,9 +2591,9 @@ module Formula = struct
 
     and propagate_in_term_eqs ~fuel (tx : Term.t) x ((phi, new_eqs) as phi_new_eqs) =
       match Term.to_subst_target tx with
-      | None | Some (LinSubst _) ->
+      | LinSubst _ | NonLinearTermSubst _ ->
           Sat phi_new_eqs
-      | Some ((VarSubst _ | QSubst _) as subst_target_x) -> (
+      | (VarSubst _ | QSubst _) as subst_target_x -> (
         match Var.Map.find_opt x phi.term_eqs_occurrences with
         | None ->
             Sat phi_new_eqs
