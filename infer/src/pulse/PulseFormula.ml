@@ -1896,7 +1896,10 @@ module Formula = struct
 
     val add_tableau_eq : Var.t -> LinArith.t -> t -> t
 
-    val add_interval : Var.t -> CItv.t -> t -> t
+    val add_interval : Var.t -> CItv.t -> t -> t SatUnsat.t
+
+    val add_interval_ : Var.t -> CItv.t -> intervals -> intervals SatUnsat.t
+    (** same as [add_interval] but operates on the inner [intervals] datatype *)
 
     val add_atom : Atom.t -> t -> t
 
@@ -2080,7 +2083,21 @@ module Formula = struct
 
     let add_tableau_eq v l phi = {phi with tableau= Var.Map.add v l phi.tableau}
 
-    let add_interval v intv phi = {phi with intervals= Var.Map.add v intv phi.intervals}
+    let add_interval_ v intv intervals =
+      let+ possibly_better_intv =
+        match Var.Map.find_opt v intervals with
+        | None ->
+            Sat intv
+        | Some intv' ->
+            CItv.intersection intv intv' |> SatUnsat.of_option
+      in
+      Var.Map.add v possibly_better_intv intervals
+
+
+    let add_interval v intv phi =
+      let+ intervals = add_interval_ v intv phi.intervals in
+      {phi with intervals}
+
 
     let add_atom atom phi =
       let atoms_occurrences =
@@ -3042,14 +3059,14 @@ module Intervals = struct
           Option.both v_opt i_better_opt
           |> Option.fold ~init:(Sat formula_new_eqs) ~f:(fun formula_new_eqs (v, i_better) ->
                  let* formula, new_eqs = formula_new_eqs in
-                 let+ phi, new_eqs =
+                 let* phi, new_eqs =
                    match CItv.to_singleton i_better with
                    | None ->
                        Sat (formula.phi, new_eqs)
                    | Some i ->
                        Formula.Normalizer.and_var_term v (Term.of_intlit i) (formula.phi, new_eqs)
                  in
-                 let phi = Formula.add_interval v i_better phi in
+                 let+ phi = Formula.add_interval v i_better phi in
                  ({formula with phi}, new_eqs) )
         in
         refine v1_opt i1_better_opt (formula, new_eqs) >>= refine v2_opt i2_better_opt
@@ -3062,19 +3079,21 @@ module Intervals = struct
       |> Option.bind ~f:(fun (lhs, rhs) -> CItv.binop bop lhs rhs)
     with
     | None ->
-        formula
+        Sat formula
     | Some binop_itv ->
-        Var.Map.add v binop_itv intervals |> update_formula formula
+        Formula.add_interval_ v binop_itv intervals >>| update_formula formula
 
 
   let unop v op x formula =
-    let open Option.Monad_infix in
     let intervals = formula.phi.intervals in
-    match interval_of_operand intervals x >>= CItv.unop op with
+    match
+      let open Option.Monad_infix in
+      interval_of_operand intervals x >>= CItv.unop op
+    with
     | None ->
-        formula
+        Sat formula
     | Some unop_itv ->
-        Var.Map.add v unop_itv intervals |> update_formula formula
+        Formula.add_interval_ v unop_itv intervals >>| update_formula formula
 
 
   let and_callee_interval v citv_callee (phi, new_eqs) =
@@ -3083,7 +3102,8 @@ module Intervals = struct
     | Unsatisfiable ->
         Unsat
     | Satisfiable (Some abduce_caller, _abduce_callee) ->
-        Sat (Formula.add_interval v abduce_caller phi, new_eqs)
+        let+ phi = Formula.add_interval v abduce_caller phi in
+        (phi, new_eqs)
     | Satisfiable (None, _) ->
         Sat (phi, new_eqs)
 end
@@ -3120,12 +3140,12 @@ let and_less_equal = and_mk_atom Le
 let and_less_than = and_mk_atom Lt
 
 let and_equal_unop v (op : Unop.t) x formula =
-  let formula = Intervals.unop v op x formula in
+  let* formula = Intervals.unop v op x formula in
   and_atom (Equal (Var v, Term.of_unop op (Term.of_operand x))) formula
 
 
 let and_equal_binop v (bop : Binop.t) x y formula =
-  let formula = Intervals.binop v bop x y formula in
+  let* formula = Intervals.binop v bop x y formula in
   and_atom (Equal (Var v, Term.of_binop bop (Term.of_operand x) (Term.of_operand y))) formula
 
 

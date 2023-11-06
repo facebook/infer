@@ -178,22 +178,6 @@ let is_not_equal_to_zero = function
 
 let is_non_pointer = function Between (Int _, Int _) -> true | _ -> false
 
-let intersection a1 a2 =
-  match (a1, a2) with
-  | Outside (lower1, upper1), Outside (lower2, upper2) ->
-      Some (outside (IntLit.min lower1 lower2) (IntLit.max upper1 upper2))
-  | Between (lower1, upper1), Between (lower2, upper2) ->
-      let lower = Bound.max lower1 lower2 in
-      let upper = Bound.min upper1 upper2 in
-      if Bound.lt upper lower then None else Some (between lower upper)
-  | Between (lower1, upper1), Outside (l2, u2) | Outside (l2, u2), Between (lower1, upper1) ->
-      let lower = if Bound.le lower1 (Int l2) then lower1 else Bound.max lower1 (Int u2) in
-      let upper = if Bound.ge upper1 (Int u2) then upper1 else Bound.min (Int l2) upper1 in
-      if Bound.lt upper lower then None else Some (between lower upper)
-
-
-let has_empty_intersection a1 a2 = Option.is_none (intersection a1 a2)
-
 let add_int a i =
   match a with
   | Between (lower, upper) ->
@@ -328,6 +312,16 @@ let rec abduce_eq (a1 : t) (a2 : t) =
         let tighter = Some (between lower upper) in
         Satisfiable (tighter, tighter)
 
+
+let intersection a1 a2 =
+  match abduce_eq a1 a2 with
+  | Unsatisfiable ->
+      None
+  | Satisfiable (inter1_opt, inter2_opt) ->
+      Option.first_some inter1_opt inter2_opt |> Option.value ~default:a1 |> Option.some
+
+
+let has_empty_intersection a1 a2 = Option.is_none (intersection a1 a2)
 
 let abduce_ne (a1 : t) (a2 : t) =
   if has_empty_intersection a1 a2 then Satisfiable (None, None)
