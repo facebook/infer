@@ -294,7 +294,7 @@ let%test_module "normalization" =
           conditions: (empty)
           phi: var_eqs: x=v6
                && linear_eqs: x = 0 ∧ y = 1
-               && term_eqs: 0=v6∧1=y∧([x -y]≠0)=v6
+               && term_eqs: 0=x∧1=y∧([x -y]≠0)=x
                && intervals: x=0 ∧ y=1 ∧ v6=0
         Result: changed
           unsat|}]
@@ -308,7 +308,7 @@ let%test_module "normalization" =
           conditions: (empty)
           phi: var_eqs: x=v6
                && linear_eqs: x = 0 ∧ y = 1
-               && term_eqs: 0=v6∧1=y∧([x -y]=0)=v6
+               && term_eqs: 0=x∧1=y∧([x -y]=0)=x
                && intervals: x=0 ∧ y=1 ∧ v6=0
         Result: changed
           conditions: (empty)
@@ -545,7 +545,7 @@ let%test_module "non-linear simplifications" =
         {|
         Formula:
           conditions: (empty)
-          phi: var_eqs: w=v7=v8=v9=v10 && linear_eqs: w = 0 && term_eqs: 0=v7∧([x]×[z])=v6
+          phi: var_eqs: w=v7=v8=v9=v10 && linear_eqs: w = 0 && term_eqs: 0=w∧([x]×[z])=v6
         Result: changed
           conditions: (empty) phi: linear_eqs: w = 0 && term_eqs: 0=w|}]
 
@@ -555,7 +555,7 @@ let%test_module "non-linear simplifications" =
       [%expect
         {|
         Formula:
-          conditions: (empty) phi: var_eqs: x=v7 && linear_eqs: x = 4 ∧ v6 = 1 && term_eqs: 1=v6∧4=v7
+          conditions: (empty) phi: var_eqs: x=v7 && linear_eqs: x = 4 ∧ v6 = 1 && term_eqs: 1=v6∧4=x
         Result: changed
           conditions: (empty) phi: linear_eqs: x = 4 && term_eqs: 4=x|}]
 
@@ -568,7 +568,7 @@ let%test_module "non-linear simplifications" =
             conditions: (empty)
             phi: var_eqs: z=v8 ∧ w=v7
                  && linear_eqs: y = 2 ∧ z = 1/2·v6 ∧ w = v6 -3
-                 && term_eqs: 2=y∧[v6 -3]=w∧[1/2·v6]=z∧[2·v8]=v6∧[v7 +3]=v6∧([x]×[y])=v8
+                 && term_eqs: 2=y∧[v6 -3]=w∧[1/2·v6]=z∧[2·v8]=v6∧[v7 +3]=v6∧([x]×[y])=z
                  && intervals: y=2
                  && linear_eqs_occurrences: v6->z,w
           Result: changed
@@ -698,7 +698,7 @@ let%test_module "intervals" =
           conditions: (empty)
           phi: var_eqs: a1=x=y
                && linear_eqs: a4 = 7 ∧ a3 = 0 ∧ a2 = 0 ∧ a1 = 2
-               && term_eqs: 0=a2∧2=a1∧7=a4∧[-a2 +2]=a1∧[a3 +2]=y∧[-a4 +7]=a3∧[-a4 +9]=y
+               && term_eqs: 0=a2∧2=a1∧7=a4∧[-a2 +2]=a1∧[a3 +2]=a1∧[-a4 +7]=a3∧[-a4 +9]=a1
                && tableau: a4 = -a3 +7 ∧ a2 = -a1 +2
                && intervals: x=2 ∧ y=2
                && atoms: {[a1] ≠ 0}
