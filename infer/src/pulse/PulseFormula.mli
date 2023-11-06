@@ -101,11 +101,13 @@ val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool
     is either a) empty or b) comprised only of facts of the form [p>0] or [p≠0] where [p] is known
     to be allocated. The latter condition captures the idea that addresses being valid pointers in
     memory should not deter us from reporting any error that we find on that program path as it is
-    somewhat the happy/expected case. The unhappy/unexpected case here would be to report errors
-    that require a pointer to be invalid or null in the precondition; we do not want to report such
-    errors until we see that there exists a calling context in which the pointer is indeed invalid
-    or null! But, to reiterate, we do want to report errors that only have valid pointers in their
-    precondition.
+    somewhat the happy/expected case (also, the fact [p] is allocated already implies [p≠0]). The
+    unhappy/unexpected case here would be to report errors that require a pointer to be invalid or
+    null in the precondition; we do not want to report such errors until we see that there exists a
+    calling context in which the pointer is indeed invalid or null! But, to reiterate, we do want to
+    report errors that only have valid pointers in their precondition. Similarly, ignore conditions
+    of the form [x≠y] where [x] and [y] are already different according to the heap (because they
+    are separate memory allocations).
 
     Some equalities might be represented implicitly in the precondition, see the documentation of
     {!PulseArithmetic.is_manifest}. *)

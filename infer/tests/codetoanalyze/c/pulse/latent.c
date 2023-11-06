@@ -53,3 +53,43 @@ void equal_to_stack_address_test_then_crash_bad(int x, int* y) {
     *p = 42;
   }
 }
+
+void crash_if_different_addresses(int* x, int* y) {
+  *x = 42;
+  *y = 52;
+  if (x != y) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+struct node {
+  int data;
+  struct node *next;
+};
+
+void traverse_and_crash_if_equal_to_root(struct node *p) {
+  struct node* old_p = p;
+  while(p != NULL) {
+    p = p->next;
+    if (old_p == p) {
+      int* crash = NULL;
+      *crash = 42;
+    }
+  }
+}
+
+void crash_after_one_node_bad(struct node *q) {
+  q->next = q;
+  traverse_and_crash_if_equal_to_root(q);
+}
+
+void crash_after_two_nodes_bad(struct node *q) {
+  q->next->next = q;
+  traverse_and_crash_if_equal_to_root(q);
+}
+
+void FN_crash_after_six_nodes_bad(struct node *q) {
+  q->next->next->next->next->next->next = q;
+  traverse_and_crash_if_equal_to_root(q);
+}

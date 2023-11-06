@@ -101,6 +101,9 @@ module LinArith : sig
   val get_as_var : t -> Var.t option
   (** [get_as_var l] is [Some x] if [l=x], else [None] *)
 
+  val get_as_variable_difference : t -> (Var.t * Var.t) option
+  (** [get_as_variable_difference l] is [Some (x,y)] if [l=(x-y)] or [l=(y-x)], else [None] *)
+
   val get_constant_part : t -> Q.t
   (** [get_as_const (c + l)] is [c] *)
 
@@ -265,6 +268,21 @@ end = struct
           Some x
       | _ ->
           None
+    else None
+
+
+  let get_as_variable_difference (c, vs) =
+    if Q.is_zero c then
+      (* the coefficient has to be 0 *)
+      let vs_seq = VarMap.to_seq vs in
+      let open IOption.Let_syntax in
+      (* check that the expression consists of exactly two variables with coeffs 1 and -1 *)
+      let* (x, cx), vs_seq = Seq.uncons vs_seq in
+      let* (y, cy), vs_seq = Seq.uncons vs_seq in
+      Option.some_if
+        ( Seq.is_empty vs_seq
+        && ((Q.is_one cx && Q.is_minus_one cy) || (Q.is_one cy && Q.is_minus_one cx)) )
+        (x, y)
     else None
 
 
@@ -1750,6 +1768,24 @@ module Atom = struct
         (* match [x≠0] or [x>0]. Note that [0] is represented as a [Const _] when normalized but
            variables will usually (always?) be represented by [LinArith _] in normalized formulas *)
         Term.get_as_var t
+    | _ ->
+        None
+
+
+  (* assumes the atom is normalized *)
+  let get_as_disequal_vars = function
+    | NotEqual (t1, t2) -> (
+      match Option.both (Term.get_as_var t1) (Term.get_as_var t2) with
+      | Some _ as vars ->
+          (* detects [x≠y] *)
+          vars
+      | None -> (
+        match (t1, Term.get_as_const t2) with
+        | Linear l, Some q when Q.(q = zero) ->
+            (* detects [x-y≠0] *)
+            LinArith.get_as_variable_difference l
+        | _ ->
+            None ) )
     | _ ->
         None
 
@@ -3894,10 +3930,20 @@ let is_known_non_pointer formula v = Formula.is_non_pointer formula.phi v
 let is_manifest ~is_allocated formula =
   Atom.Set.for_all
     (fun atom ->
-      (* ignore [x≠0] when [x] is known to be allocated: pointers being allocated doesn't make an
-         issue latent and we still need to remember that [x≠0] was tested by the program explicitly
-      *)
-      match Atom.get_as_var_neq_zero atom with None -> false | Some x -> is_allocated x )
+      match Atom.get_as_var_neq_zero atom with
+      | Some x ->
+          (* ignore [x≠0] when [x] is known to be allocated: pointers being allocated doesn't make
+             an issue latent and we still need to remember that [x≠0] was tested by the program
+             explicitly *)
+          is_allocated x
+      | None -> (
+        match Atom.get_as_disequal_vars atom with
+        | Some (x, y) ->
+            (* ignore [x≠y] when [x] and [y] are both known to be allocated since it already
+               implies they are different (the heap uses separation logic implicitly) *)
+            is_allocated x && is_allocated y
+        | None ->
+            false ) )
     formula.conditions
 
 
