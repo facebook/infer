@@ -764,10 +764,8 @@ topl_str_literal:test_2_Ok/0: ok
 topl_str_literal:test_3_Bad/0: taint_error
 
 ----- topl_taint -----
-topl_taint:fnl_test_send2_Bad/0: taint_error
-topl_taint:fnl_test_send6_Bad/0: taint_error
-topl_taint:fpl_test_send4_Ok/0: ok
-topl_taint:fpl_test_send8_Ok/0: ok
+topl_taint:fn_test_send2_Bad/0: taint_error
+topl_taint:fn_test_send6_Bad/0: taint_error
 topl_taint:test_a_Bad/0: taint_error
 topl_taint:test_b_Ok/0: ok
 topl_taint:test_c2_Ok/0: ok
@@ -781,8 +779,10 @@ topl_taint:test_i_Ok/0: ok
 topl_taint:test_j_Bad/0: case_clause
 topl_taint:test_send1_Ok/0: ok
 topl_taint:test_send3_Ok/0: ok
+topl_taint:test_send4_Ok/0: ok
 topl_taint:test_send5_Ok/0: ok
 topl_taint:test_send7_Ok/0: ok
+topl_taint:test_send8_Ok/0: ok
 
 ----- topl_taint_genserver -----
 topl_taint_genserver:fn_test_genserver1_Bad/0: taint_error

@@ -20,13 +20,13 @@
     tito_process/0,
     sanitizer_process/0,
     test_send1_Ok/0,
-    fnl_test_send2_Bad/0,
+    fn_test_send2_Bad/0,
     test_send3_Ok/0,
-    fpl_test_send4_Ok/0,
+    test_send4_Ok/0,
     test_send5_Ok/0,
-    fnl_test_send6_Bad/0,
+    fn_test_send6_Bad/0,
     test_send7_Ok/0,
-    fpl_test_send8_Ok/0
+    test_send8_Ok/0
 ]).
 
 test_a_Bad() ->
@@ -99,7 +99,7 @@ test_send1_Ok() ->
         X -> sink(X)
     end.
 
-fnl_test_send2_Bad() ->
+fn_test_send2_Bad() ->
     Pid = spawn(topl_taint, tito_process, []),
     Pid ! {self(), source()},
     receive
@@ -113,9 +113,7 @@ test_send3_Ok() ->
         X -> sink(X)
     end.
 
-% The issue below is fpl due to being reported as latent but this should
-% not happen as the second argument of sanitizer_process is ignored
-fpl_test_send4_Ok() ->
+test_send4_Ok() ->
     Pid = spawn(topl_taint, sanitizer_process, []),
     Pid ! {self(), source()},
     receive
@@ -129,8 +127,8 @@ test_send5_Ok() ->
         X -> sink(X)
     end.
 
-% The violation from the test below is reported as latent only
-fnl_test_send6_Bad() ->
+% The violation from the test below is not reported
+fn_test_send6_Bad() ->
     Pid = spawn(fun() -> tito_process() end),
     Pid ! {self(), source()},
     receive
@@ -144,9 +142,7 @@ test_send7_Ok() ->
         X -> sink(X)
     end.
 
-% The issue below is fpl due to being reported as latent but this should
-% not happen as the second argument of sanitizer_process is ignored
-fpl_test_send8_Ok() ->
+test_send8_Ok() ->
     Pid = spawn(fun() -> sanitizer_process() end),
     Pid ! {self(), source()},
     receive
