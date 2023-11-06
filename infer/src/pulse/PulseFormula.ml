@@ -1658,38 +1658,46 @@ module Atom = struct
   let rec eval_with_normalized_terms ~is_neq_zero (atom : t) =
     match eval_const_shallow atom with
     | True ->
-        Sat []
+        Sat (Some [])
     | False ->
         L.d_printfln "UNSAT atom according to eval_const_shallow: %a" (pp_with_pp_var Var.pp) atom ;
         Unsat
     | Atom atom -> (
       match get_as_linear atom with
       | Some atom' ->
-          eval_with_normalized_terms ~is_neq_zero atom'
+          let+ atoms' = eval_with_normalized_terms ~is_neq_zero atom' in
+          Some (Option.value atoms' ~default:[atom'])
       | None -> (
         match get_as_embedded_atoms ~is_neq_zero atom with
         | None -> (
           match eval_syntactically_equal_terms atom with
           | True ->
-              Sat []
+              Sat (Some [])
           | False ->
               L.d_printfln "UNSAT atom according to eval_syntactically_equal_terms: %a"
                 (pp_with_pp_var Var.pp) atom ;
               Unsat
-          | Atom atom ->
-              Sat [atom] )
+          | Atom _atom ->
+              (* HACK: [eval_syntactically_equal_terms] return [Atom _] only when it didn't manage
+                 to normalize anything *)
+              Sat None )
         | Some atoms ->
             Debug.p "Found that %a is equivalent to embedded atoms %a@\n" (pp_with_pp_var Var.pp)
               atom
               (Pp.seq ~sep:"," (pp_with_pp_var Var.pp))
               atoms ;
-            eval_atoms_with_normalized_terms ~is_neq_zero atoms ) )
+            let+ atoms' = eval_atoms_with_normalized_terms ~is_neq_zero atoms in
+            Some atoms' ) )
 
 
   and eval_atoms_with_normalized_terms ~is_neq_zero atoms =
     SatUnsat.list_fold ~init:[] atoms ~f:(fun atoms atom' ->
-        let+ atoms' = eval_with_normalized_terms ~is_neq_zero atom' in
-        List.rev_append atoms' atoms )
+        let+ normalized_atoms_opt = eval_with_normalized_terms ~is_neq_zero atom' in
+        match normalized_atoms_opt with
+        | None ->
+            (* did not normalize further *) atom' :: atoms
+        | Some atoms' ->
+            List.rev_append atoms' atoms )
 
 
   let rec eval_term ~is_neq_zero t =
@@ -1719,12 +1727,20 @@ module Atom = struct
 
   let eval ~is_neq_zero atom =
     Debug.p "Atom.eval %a@\n" (pp_with_pp_var Var.pp) atom ;
-    let exception FoundUnsat in
-    try
-      map_terms atom ~f:(fun t ->
-          match eval_term ~is_neq_zero t with Sat t' -> t' | Unsat -> raise_notrace FoundUnsat )
-      |> eval_with_normalized_terms ~is_neq_zero
-    with FoundUnsat -> Unsat
+    let* atom =
+      let exception FoundUnsat in
+      try
+        Sat
+          (map_terms atom ~f:(fun t ->
+               match eval_term ~is_neq_zero t with
+               | Sat t' ->
+                   t'
+               | Unsat ->
+                   raise_notrace FoundUnsat ) )
+      with FoundUnsat -> Unsat
+    in
+    let+ atoms_opt = eval_with_normalized_terms ~is_neq_zero atom in
+    Option.value atoms_opt ~default:[atom]
 
 
   let fold_subst_variables ~init ~f_subst ?f_post a =
@@ -2784,13 +2800,6 @@ module Formula = struct
                                  ((), sub_t') ) )
                         with Unsat -> Unsat
                       in
-                      (* TODO: this could surface new atoms if the term contains logical operations
-                         (=, ∧, ...) *)
-                      let* _atoms =
-                        let ty = normalize_var_const phi (Var y) in
-                        Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
-                          (Equal (t', ty))
-                      in
                       let phi = remove_term_eq t phi in
                       match Term.get_as_var t' with
                       | Some y' when Var.equal y y' ->
@@ -2799,21 +2808,34 @@ module Formula = struct
                       | Some y' ->
                           merge_vars ~fuel new_eqs y y' phi
                       | None -> (
-                        match get_term_eq phi t' with
-                        | None -> (
-                            Debug.p "New term_eq %a -> %a@\n" (Term.pp Var.pp) t' Var.pp y ;
-                            match t' with
-                            | Term.Linear l' ->
-                                Debug.p "delegating to [solve_normalized_lin_eq]@\n" ;
-                                solve_normalized_lin_eq ~fuel new_eqs
-                                  (LinArith.of_var y |> normalize_linear phi)
-                                  l' phi
-                            | _ ->
-                                add_term_eq_and_solve_new_eq_opt ~fuel new_eqs t' y phi )
-                        | Some y' ->
-                            Debug.p "Existing term_eq %a -> %a, merging %a=%a@\n" (Term.pp Var.pp)
-                              t' Var.pp y' Var.pp y Var.pp y' ;
-                            merge_vars ~fuel new_eqs y y' phi ) ) )
+                          (* detect when the term is some atoms in disguise *)
+                          let* phi, new_eqs =
+                            let ty = normalize_var_const phi (Var y) in
+                            let* atoms_opt =
+                              Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
+                                (Equal (t', ty))
+                            in
+                            match atoms_opt with
+                            | None ->
+                                Sat (phi, new_eqs)
+                            | Some atoms ->
+                                and_normalized_atoms (phi, new_eqs) atoms >>| snd
+                          in
+                          match get_term_eq phi t' with
+                          | None -> (
+                              Debug.p "New term_eq %a -> %a@\n" (Term.pp Var.pp) t' Var.pp y ;
+                              match t' with
+                              | Term.Linear l' ->
+                                  Debug.p "delegating to [solve_normalized_lin_eq]@\n" ;
+                                  solve_normalized_lin_eq ~fuel new_eqs
+                                    (LinArith.of_var y |> normalize_linear phi)
+                                    l' phi
+                              | _ ->
+                                  add_term_eq_and_solve_new_eq_opt ~fuel new_eqs t' y phi )
+                          | Some y' ->
+                              Debug.p "Existing term_eq %a -> %a, merging %a=%a@\n" (Term.pp Var.pp)
+                                t' Var.pp y' Var.pp y Var.pp y' ;
+                              merge_vars ~fuel new_eqs y y' phi ) ) )
               in_term_eqs
               (Sat (phi, new_eqs)) )
 
@@ -2977,9 +2999,14 @@ module Formula = struct
         normalize_var_const phi (Term.Var v') |> Atom.eval_term ~is_neq_zero:(is_neq_zero phi)
       in
       let* phi, new_eqs =
-        Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi) (Equal (t', t_v))
-        >>= and_normalized_atoms (phi, new_eqs)
-        >>| snd
+        let* atoms_opt =
+          Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi) (Equal (t', t_v))
+        in
+        match atoms_opt with
+        | None ->
+            Sat (phi, new_eqs)
+        | Some atoms ->
+            and_normalized_atoms (phi, new_eqs) atoms >>| snd
       in
       solve_normalized_term_eq ~fuel new_eqs t' v' phi
 

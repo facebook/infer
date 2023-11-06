@@ -349,18 +349,7 @@ let%test_module "normalization" =
                && term_eqs_occurrences: y->([v]×[y]) ∧ z->([z]×[v8]) ∧ w->([v9]÷[w])
                                          ∧ v->([v]×[y]) ∧ v8->([z]×[v8])
                                          ∧ v9->([v9]÷[w])
-        Result: changed
-          conditions: (empty)
-          phi: linear_eqs: x = -v6 +v8 -1 ∧ v7 = v8 -1 ∧ v10 = 0
-               && term_eqs: 0=v10∧[-v6 +v8 -1]=x∧[v8 -1]=v7∧([z]×[v8])=v9
-                            ∧([v]×[y])=v6∧([v9]÷[w])=v10
-               && intervals: v10=0
-               && atoms: {[v9]÷[w] = 0}
-               && linear_eqs_occurrences: v6->x ∧ v8->x,v7
-               && term_eqs_occurrences: y->([v]×[y]) ∧ z->([z]×[v8]) ∧ w->([v9]÷[w])
-                                         ∧ v->([v]×[y]) ∧ v8->([z]×[v8])
-                                         ∧ v9->([v9]÷[w])
-               && atoms_occurrences: w->{[v9]÷[w] = 0} ∧ v9->{[v9]÷[w] = 0} |}]
+        Result: same|}]
 
 
     (* check that this becomes all linear equalities *)
@@ -724,7 +713,10 @@ let%test_module "conjunctive normal form" =
                                            ∧ v9->([v6]∨[v9])
           Result: changed
             conditions: (empty)
-            phi: var_eqs: a2=a1=x=v6=v7=v8=v9=v10 && linear_eqs: a2 = 0 && term_eqs: 0=a2 && intervals: a2=0 |}]
+            phi: var_eqs: a3=a2=a1=x=v6=v7=v8=v9=v10
+                 && linear_eqs: a3 = 0
+                 && term_eqs: 0=a3
+                 && intervals: a3=0 |}]
 
 
     let%expect_test "UNSAT: ¬ (x = 0 ∨ x > 0 ∨ x < 0)" =
@@ -758,10 +750,10 @@ let%test_module "conjunctive normal form" =
                  && atoms_occurrences: v8->{[v8] ≠ 0}
           Result: changed
             conditions: (empty)
-            phi: var_eqs: a11=a10=a9=a8=a7=a6=a5=a4=a3=a1 ∧ a2=x ∧ v6=v7=v8
-                 && linear_eqs: a2 = a11 +1 ∧ v6 = 1
-                 && term_eqs: 1=v6∧[a11 +1]=a2∧(0<[a2])=v6
+            phi: var_eqs: a12=a11=a10=a9=a8=a7=a6=a5=a4=a3=a1 ∧ a2=x ∧ v6=v7=v8
+                 && linear_eqs: a2 = a12 +1 ∧ v6 = 1
+                 && term_eqs: 1=v6∧[a12 +1]=a2∧(0<[a2])=v6
                  && intervals: v6≠0
-                 && linear_eqs_occurrences: a11->a2
+                 && linear_eqs_occurrences: a12->a2
                  && term_eqs_occurrences: a2->(0<[a2])|}]
   end )
