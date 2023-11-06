@@ -870,6 +870,10 @@ PULSE CHECKER OPTIONS
            Quick way to specify simple sinks as a JSON objects. See
            --pulse-taint-sources for the fields format documentation.
 
+       --pulse-taint-skip-sources
+           Activates: Skip the analysis of methods declared as sources in the
+           taint. (Conversely: --no-pulse-taint-skip-sources)
+
        --pulse-taint-sources json
            Together with --pulse-taint-sanitizers, --pulse-taint-sinks,
            --pulse-taint-policies, and --pulse-taint-data-flow-kinds, specify

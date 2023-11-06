@@ -11,6 +11,15 @@ open PulseDomainInterface
 
 type taint_match = {taint: TaintItem.t; value_origin: ValueOrigin.t; typ: Typ.t; exp: Exp.t option}
 
+val procedure_matches :
+     Tenv.t
+  -> TaintConfig.Unit.procedure_unit list
+  -> ?block_passed_to:Procname.t
+  -> ?proc_attributes:ProcAttributes.t
+  -> Procname.t
+  -> 'a ProcnameDispatcher.Call.FuncArg.t list
+  -> TaintConfig.Unit.procedure_unit list
+
 val procedure_matches_any :
   Tenv.t -> Procname.t -> ProcAttributes.t option -> TaintConfig.Unit.procedure_unit list -> bool
 

@@ -1056,3 +1056,8 @@ let taint_initial tenv (proc_attrs : ProcAttributes.t) astate0 =
          from %a"
         Procname.pp proc_attrs.proc_name AbductiveDomain.pp astate0 ;
       astate0
+
+
+let procedure_matches_source tenv procname =
+  TaintItemMatcher.procedure_matches tenv source_procedure_matchers procname []
+  |> List.is_empty |> not

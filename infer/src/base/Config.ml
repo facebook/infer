@@ -2699,6 +2699,12 @@ and pulse_taint_check_history =
      history-based."
 
 
+and pulse_taint_skip_sources =
+  CLOpt.mk_bool ~long:"pulse-taint-skip-sources" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Skip the analysis of methods declared as sources in the taint."
+
+
 and pulse_widen_threshold =
   CLOpt.mk_int ~long:"pulse-widen-threshold" ~default:3
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4388,6 +4394,8 @@ and pulse_taint_config =
 
 
 and pulse_taint_check_history = !pulse_taint_check_history
+
+and pulse_taint_skip_sources = !pulse_taint_skip_sources
 
 and pulse_widen_threshold = !pulse_widen_threshold
 

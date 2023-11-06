@@ -39,7 +39,10 @@
 
 void my_log(NSObject* obj) {}
 
-void my_source(NSObject* name) {}
+void my_source(NSObject* name) {
+  int* p = NULL;
+  *p = 42;
+}
 
 void test_derived_taint_bad1() {
   University* u = [[University alloc] initWithName:@"LMU"];

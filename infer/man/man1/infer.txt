@@ -1480,6 +1480,10 @@ OPTIONS
            --pulse-taint-sources for the fields format documentation.       
     See also infer-analyze(1).
 
+       --pulse-taint-skip-sources
+           Activates: Skip the analysis of methods declared as sources in the
+           taint. (Conversely: --no-pulse-taint-skip-sources)           See also infer-analyze(1).
+
        --pulse-taint-sources json
            Together with --pulse-taint-sanitizers, --pulse-taint-sinks,
            --pulse-taint-policies, and --pulse-taint-data-flow-kinds, specify

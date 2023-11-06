@@ -425,6 +425,9 @@ module Basic = struct
           let s = Procname.to_string proc_name in
           Str.string_match r s 0 )
     in
+    let match_taint_source flag (tenv, proc_name) _ =
+      if flag then PulseTaintOperations.procedure_matches_source tenv proc_name else false
+    in
     [ -"random" <>$$--> nondet ~desc:"random"
     ; -"assert" <>$ capt_arg $--> assert_
     ; +BuiltinDecl.(match_builtin objc_cpp_throw) <>--> early_exit
@@ -444,6 +447,8 @@ module Basic = struct
       &::.*++> id_first_arg_from_list
                  ~desc:"modelled as returning the first argument due to configuration option"
     ; +match_regexp_opt Config.pulse_model_skip_pattern
+      &::.*++> unknown_call "modelled as skip due to configuration option"
+    ; +match_taint_source Config.pulse_taint_skip_sources
       &::.*++> unknown_call "modelled as skip due to configuration option" ]
     |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
 end

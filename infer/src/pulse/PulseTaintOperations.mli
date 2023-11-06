@@ -67,3 +67,5 @@ val log_taint_config : unit -> unit [@@warning "-unused-value-declaration"]
 val dedup_reports :
      ('a ExecutionDomain.base_t, AccessResult.error) pulse_result list
   -> ('a ExecutionDomain.base_t, AccessResult.error) pulse_result list
+
+val procedure_matches_source : Tenv.t -> Procname.t -> bool
