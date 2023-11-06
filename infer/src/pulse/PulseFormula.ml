@@ -2039,8 +2039,6 @@ module Formula = struct
 
     val set_intervals : intervals -> t -> t
 
-    val reset_linear : t -> t
-
     val reset_atoms : t -> t
 
     val reset_term_eqs : t -> t
@@ -2389,13 +2387,6 @@ module Formula = struct
 
     let set_intervals intervals phi = {phi with intervals}
 
-    let reset_linear phi =
-      { phi with
-        linear_eqs= Var.Map.empty
-      ; tableau= Var.Map.empty
-      ; linear_eqs_occurrences= Var.Map.empty }
-
-
     let reset_atoms phi = {phi with atoms= Atom.Set.empty; atoms_occurrences= Var.Map.empty}
 
     let reset_term_eqs phi =
@@ -2479,8 +2470,6 @@ module Formula = struct
     val and_atom : Atom.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
     (** [and_atom atom (phi, new_eqs)] is
         [SatUnsat.(normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs))] *)
-
-    val normalize : t * new_eqs -> (t * new_eqs) SatUnsat.t
   end = struct
     (* Use the monadic notations when normalizing formulas. *)
     open SatUnsat.Import
@@ -3131,26 +3120,6 @@ module Formula = struct
 
     and and_var_linarith v l (phi, new_eqs) = solve_lin_eq new_eqs l (LinArith.of_var v) phi
 
-    and normalize_linear_eqs (phi0, new_eqs) =
-      let one_linear_relation ~normalize linear_eqs changed_phi_new_eqs =
-        Var.Map.fold
-          (fun v l acc ->
-            let* changed, ((_, new_eqs) as phi_new_eqs) = acc in
-            let l' = normalize phi0 l in
-            let+ phi', new_eqs' = and_var_linarith v l' phi_new_eqs in
-            let changed', new_eqs' =
-              if phys_equal l l' then (changed, new_eqs) else (true, new_eqs')
-            in
-            (changed', (phi', new_eqs')) )
-          linear_eqs changed_phi_new_eqs
-      in
-      one_linear_relation ~normalize:normalize_linear phi0.linear_eqs
-        (Sat (false, (reset_linear phi0, new_eqs)))
-      |> one_linear_relation
-           ~normalize:(fun phi l -> normalize_linear phi l |> normalize_restricted phi)
-           phi0.tableau
-
-
     (* TODO: should we check if [φ ⊢ atom] (i.e. whether [φ ∧ ¬atom] is unsat) in [normalize_atom],
        or is [normalize_atom] already just as strong? *)
     and normalize_atom phi (atom : Atom.t) =
@@ -3205,15 +3174,6 @@ module Formula = struct
       normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs)
 
 
-    let normalize_atoms (phi, new_eqs) =
-      let atoms0 = phi.atoms in
-      let init = Sat (false, (reset_atoms phi, new_eqs)) in
-      IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms0 ~init ~f:(fun acc atom ->
-          let* changed, phi_new_eqs = acc in
-          let+ changed', phi_new_eqs = and_atom atom phi_new_eqs in
-          (changed || changed', phi_new_eqs) )
-
-
     let and_var_term ~fuel v t (phi, new_eqs) =
       Debug.p "and_var_term: %a=%a in %a,@;new_eqs=%a@\n" Var.pp v (Term.pp Var.pp) t
         (pp_with_pp_var Var.pp) phi pp_new_eqs new_eqs ;
@@ -3237,76 +3197,7 @@ module Formula = struct
       solve_normalized_term_eq ~fuel new_eqs t' v' phi
 
 
-    let normalize_term_eqs ~fuel (phi0, new_eqs0) =
-      term_eqs_fold
-        (fun t v acc_sat_unsat ->
-          let* new_lin, ((_phi, new_eqs) as phi_new_eqs) = acc_sat_unsat in
-          let+ phi', new_eqs' = and_var_term ~fuel v t phi_new_eqs in
-          let new_lin, new_eqs' =
-            if phys_equal phi'.linear_eqs phi0.linear_eqs then (new_lin, new_eqs)
-            else (true, new_eqs')
-          in
-          (new_lin, (phi', new_eqs')) )
-        phi0
-        (Sat (false, (reset_term_eqs phi0, new_eqs0)))
-
-
-    let normalize_intervals phi =
-      let exception FoundUnsat in
-      try
-        let intervals =
-          Var.Map.fold
-            (fun v interval intervals' ->
-              let v' = (get_repr phi v :> Var.t) in
-              let interval' =
-                match Var.Map.find_opt v' intervals' with
-                | None ->
-                    interval
-                | Some interval' -> (
-                  (* already had another interval from another representative of the same
-                     equivalence class of [v], the value is in the intersection *)
-                  match CItv.intersection interval interval' with
-                  | None ->
-                      (* empty intersection *)
-                      raise_notrace FoundUnsat
-                  | Some interval'' ->
-                      interval'' )
-              in
-              Var.Map.add v' interval' intervals' )
-            phi.intervals Var.Map.empty
-        in
-        Sat (set_intervals intervals phi)
-      with FoundUnsat -> Unsat
-
-
-    let rec normalize_with_fuel ~fuel phi_new_eqs0 =
-      if fuel < 0 then (
-        L.d_printfln "ran out of fuel when normalizing" ;
-        Sat phi_new_eqs0 )
-      else
-        let* new_linear_eqs, phi_new_eqs' =
-          let* new_linear_eqs_from_linear, phi_new_eqs = normalize_linear_eqs phi_new_eqs0 in
-          if new_linear_eqs_from_linear && fuel > 0 then
-            (* do another round of linear normalization early if we will renormalize again anyway;
-               no need to first normalize term_eqs and atoms w.r.t. a linear relation that's going
-               to change and trigger a recompute of these anyway *)
-            Sat (true, phi_new_eqs)
-          else
-            let* new_linear_eqs_from_terms, phi_new_eqs = normalize_term_eqs ~fuel phi_new_eqs in
-            let* new_linear_eqs_from_atoms, (phi, new_eqs) = normalize_atoms phi_new_eqs in
-            let+ phi = normalize_intervals phi in
-            ( new_linear_eqs_from_linear || new_linear_eqs_from_terms || new_linear_eqs_from_atoms
-            , (phi, new_eqs) )
-        in
-        if new_linear_eqs then (
-          L.d_printfln "new linear equalities, consuming fuel (from %d)" fuel ;
-          normalize_with_fuel ~fuel:(fuel - 1) phi_new_eqs' )
-        else Sat phi_new_eqs'
-
-
     (* interface *)
-
-    let normalize phi_new_eqs = normalize_with_fuel ~fuel:base_fuel phi_new_eqs
 
     let and_atom atom phi_new_eqs =
       Debug.p "BEGIN and_atom %a@\n" (Atom.pp_with_pp_var Var.pp) atom ;
@@ -3609,11 +3500,9 @@ module DynamicTypes = struct
 end
 
 let normalize tenv ~get_dynamic_type formula =
-  Debug.p "normalizing now@\n" ;
-  let open SatUnsat.Import in
-  let* formula, new_eqs = DynamicTypes.simplify tenv ~get_dynamic_type formula in
-  let+ phi, new_eqs = Formula.Normalizer.normalize (formula.phi, new_eqs) in
-  ({formula with phi}, new_eqs)
+  Debug.p "@\n@\n***NORMALIZING NOW***@\n@\n" ;
+  (* normalization happens incrementally except for dynamic types (TODO) *)
+  DynamicTypes.simplify tenv ~get_dynamic_type formula
 
 
 (** translate each variable in [formula_foreign] according to [f] then incorporate each fact into

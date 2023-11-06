@@ -631,12 +631,7 @@ let%test_module "intervals" =
                && linear_eqs: a4 = 7 ∧ a3 = 0 ∧ a1 = 2
                && term_eqs: 0=a3∧2=a1∧7=a4
                && intervals: a3=0 ∧ a1=2
-        Result: changed
-          conditions: (empty)
-          phi: var_eqs: a3=a2 ∧ a1=x=y
-               && linear_eqs: a4 = 7 ∧ a3 = 0 ∧ a1 = 2
-               && term_eqs: 0=a3∧2=a1∧7=a4
-               && intervals: a3=0 ∧ a1=2 |}]
+        Result: same |}]
   end )
 
 
