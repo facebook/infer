@@ -1657,35 +1657,46 @@ let pp_new_eq fmt = function
 
 type new_eqs = new_eq RevList.t
 
-module VarMapOccurrences = struct
-  type t = Var.Set.t Var.Map.t [@@deriving compare, equal]
+module MakeOccurrences (In : sig
+  type t
 
-  let pp pp_var fmt occurrences =
-    (pp_var_map ~arrow:"->" (pp_var_set pp_var) pp_var) fmt occurrences
+  module Set : Caml.Set.S with type elt = t
 
+  val pp_set : (F.formatter -> Var.t -> unit) -> F.formatter -> Set.t -> unit
+end) =
+struct
+  type t = In.Set.t Var.Map.t [@@deriving compare, equal]
+
+  let pp pp_var fmt occurrences = (pp_var_map ~arrow:"->" (In.pp_set pp_var) pp_var) fmt occurrences
 
   let yojson_of_t = [%yojson_of: _]
 
-  (** add [v'] to [occurrences(v)] *)
-  let add v ~occurs_in:v' occurrences =
+  (** add [in_] to [occurrences(v)] *)
+  let add v ~occurs_in:in_ occurrences =
     Var.Map.update v
       (fun in_vs_opt ->
-        let in_vs = Option.value ~default:Var.Set.empty in_vs_opt in
-        Some (Var.Set.add v' in_vs) )
+        let in_vs = Option.value ~default:In.Set.empty in_vs_opt in
+        Some (In.Set.add in_ in_vs) )
       occurrences
 
 
-  (** remove [v'] from [occurrences(v)] *)
-  let remove v ~occurred_in:v' occurrences =
+  (** remove [in_] from [occurrences(v)] *)
+  let remove v ~occurred_in:in_ occurrences =
     Var.Map.update v
       (function
         | None ->
             None
         | Some in_vs ->
-            let in_vs' = Var.Set.remove v' in_vs in
-            if Var.Set.is_empty in_vs' then None else Some in_vs' )
+            let in_vs' = In.Set.remove in_ in_vs in
+            if In.Set.is_empty in_vs' then None else Some in_vs' )
       occurrences
 end
+
+module VarMapOccurrences = MakeOccurrences (struct
+  include Var
+
+  let pp_set = pp_var_set
+end)
 
 module Formula = struct
   (* redefined for yojson output *)
