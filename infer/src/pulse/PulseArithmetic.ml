@@ -123,3 +123,9 @@ let and_is_int v astate = map_path_condition astate ~f:(fun phi -> Formula.and_i
 
 let and_equal_instanceof v1 v2 t astate =
   map_path_condition astate ~f:(fun phi -> Formula.and_equal_instanceof v1 v2 t phi)
+
+
+let absval_of_int astate i =
+  let phi, v = Formula.absval_of_int astate.AbductiveDomain.path_condition i in
+  let astate = AbductiveDomain.set_path_condition phi astate in
+  (astate, v)

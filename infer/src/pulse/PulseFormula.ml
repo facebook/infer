@@ -3982,23 +3982,14 @@ let fold_variables {conditions; phi} ~init ~f =
   Formula.fold_variables phi ~init ~f
 
 
-module Constants = struct
-  module M = Caml.Map.Make (IntLit)
-
-  let initial_cache = M.empty
-
-  let cache = ref initial_cache
-
-  let get_int formula i =
-    match M.find_opt i !cache with
-    | Some v ->
-        get_var_repr formula v
-    | None ->
-        let v = Var.mk_fresh () in
-        cache := M.add i v !cache ;
-        v
-end
-
-let () = AnalysisGlobalState.register_ref Constants.cache ~init:(fun () -> Constants.initial_cache)
-
-let absval_of_int formula i = Constants.get_int formula i
+let absval_of_int formula i =
+  match Formula.get_term_eq formula.phi (Term.of_intlit i) with
+  | Some v ->
+      (formula, v)
+  | None ->
+      let assert_sat = function Sat x -> x | Unsat -> assert false in
+      let v = Var.mk_fresh () in
+      let formula =
+        and_equal (AbstractValueOperand v) (ConstOperand (Cint i)) formula |> assert_sat |> fst
+      in
+      (formula, v)

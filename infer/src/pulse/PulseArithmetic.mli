@@ -111,3 +111,5 @@ val and_equal_instanceof :
   -> Typ.t
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t SatUnsat.t
+
+val absval_of_int : AbductiveDomain.t -> IntLit.t -> AbductiveDomain.t * AbstractValue.t

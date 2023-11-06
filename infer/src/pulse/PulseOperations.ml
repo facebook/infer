@@ -246,18 +246,17 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
   | Cast (_, exp') ->
       eval_to_value_origin path mode location exp' astate
   | Const (Cint i) ->
-      let v = Formula.absval_of_int astate.AbductiveDomain.path_condition i in
+      let astate, v = PulseArithmetic.absval_of_int astate i in
       let invalidation = Invalidation.ConstantDereference i in
-      let++ astate =
-        PulseArithmetic.and_eq_int v i astate
-        >>|| AddressAttributes.invalidate
-               (v, ValueHistory.singleton (Assignment (location, path.timestamp)))
-               invalidation location
+      let astate =
+        AddressAttributes.invalidate
+          (v, ValueHistory.singleton (Assignment (location, path.timestamp)))
+          invalidation location astate
       in
       let addr_hist =
         (v, ValueHistory.singleton (Invalidated (invalidation, location, path.timestamp)))
       in
-      (astate, ValueOrigin.Unknown addr_hist)
+      Sat (Ok (astate, ValueOrigin.Unknown addr_hist))
   | Const (Cstr s) ->
       (* TODO: record actual string value; since we are making strings be a record in memory
          instead of pure values some care has to be added to access string values once written *)

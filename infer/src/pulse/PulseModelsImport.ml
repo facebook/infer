@@ -159,9 +159,9 @@ module Basic = struct
   let return_int ~desc : Int64.t -> model =
    fun i64 {path; location; ret= ret_id, _} astate ->
     let i = IntLit.of_int64 i64 in
-    let ret_addr = Formula.absval_of_int astate.AbductiveDomain.path_condition i in
-    let<++> astate = PulseArithmetic.and_eq_int ret_addr i astate in
+    let astate, ret_addr = PulseArithmetic.absval_of_int astate i in
     PulseOperations.write_id ret_id (ret_addr, Hist.single_call path location desc) astate
+    |> ok_continue
 
 
   let return_positive ~desc : model =
