@@ -688,7 +688,7 @@ let%test_module "intervals" =
                && linear_eqs: a4 = 7 ∧ a3 = 0 ∧ a2 = 0 ∧ a1 = 2
                && term_eqs: 0=a2∧2=a1∧7=a4∧[-a2 +2]=a1∧[a3 +2]=y∧[-a4 +7]=a3
                && tableau: a4 = -a3 +7 ∧ a2 = -a1 +2
-               && intervals: x∈[1,2] ∧ y=2
+               && intervals: x=2 ∧ y=2
                && atoms: {[a1] ≠ 0}
         Result: changed
           conditions: (empty)

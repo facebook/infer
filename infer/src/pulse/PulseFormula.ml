@@ -1649,29 +1649,105 @@ module Formula = struct
 
   type intervals = CItv.t Var.Map.t [@@deriving compare, equal]
 
-  type t =
-    { var_eqs: var_eqs  (** equality relation between variables *)
-    ; linear_eqs: linear_eqs
-          (** equalities of the form [x = l] where [l] is from linear arithmetic *)
-    ; term_eqs: Term.VarMap.t_
-          (** equalities of the form [t = x], used to detect when two abstract values are equal to
-              the same term (hence equal) *)
-    ; tableau: Tableau.t
-          (** linear equalities similar to [linear_eqs] but involving only "restricted" (aka
-              "slack") variables; this is used for reasoning about inequalities, see \[2\] *)
-    ; intervals: (intervals[@yojson.opaque])
-    ; atoms: Atom.Set.t  (** "everything else"; not always normalized w.r.t. the components above *)
-    }
-  [@@deriving compare, equal, yojson_of]
+  module Unsafe : sig
+    type t = private
+      { var_eqs: var_eqs  (** equality relation between variables *)
+      ; linear_eqs: linear_eqs
+            (** equalities of the form [x = l] where [l] is from linear arithmetic *)
+      ; term_eqs: Term.VarMap.t_
+            (** equalities of the form [t = x], used to detect when two abstract values are equal to
+                the same term (hence equal) *)
+      ; tableau: Tableau.t
+            (** linear equalities similar to [linear_eqs] but involving only "restricted" (aka
+                "slack") variables; this is used for reasoning about inequalities, see \[2\] *)
+      ; intervals: (intervals[@yojson.opaque])
+      ; atoms: Atom.Set.t
+            (** "everything else"; not always normalized w.r.t. the components above *) }
+    [@@deriving compare, equal, yojson_of]
 
-  let ttrue =
-    { var_eqs= VarUF.empty
-    ; linear_eqs= Var.Map.empty
-    ; term_eqs= Term.VarMap.empty
-    ; tableau= Tableau.empty
-    ; intervals= Var.Map.empty
-    ; atoms= Atom.Set.empty }
+    val ttrue : t
 
+    val add_linear_eq : Var.t -> LinArith.t -> t -> t
+
+    val remove_linear_eq : Var.t -> t -> t
+
+    val add_term_eq : Term.t -> Var.t -> t -> t
+
+    val add_tableau_eq : Var.t -> LinArith.t -> t -> t
+
+    val add_interval : Var.t -> CItv.t -> t -> t
+
+    val add_atom : Atom.t -> t -> t
+
+    val set_var_eqs : var_eqs -> t -> t
+
+    val set_tableau : Tableau.t -> t -> t
+
+    val set_intervals : intervals -> t -> t
+
+    val reset_linear : t -> t
+
+    val reset_atoms : t -> t
+
+    val reset_term_eqs : t -> t
+
+    val unsafe_mk :
+         var_eqs:var_eqs
+      -> linear_eqs:linear_eqs
+      -> term_eqs:Term.VarMap.t_
+      -> tableau:Tableau.t
+      -> intervals:intervals
+      -> atoms:Atom.Set.t
+      -> t
+    (** escape hatch *)
+  end = struct
+    type t =
+      { var_eqs: var_eqs
+      ; linear_eqs: linear_eqs
+      ; term_eqs: Term.VarMap.t_
+      ; tableau: Tableau.t
+      ; intervals: (intervals[@yojson.opaque])
+      ; atoms: Atom.Set.t }
+    [@@deriving compare, equal, yojson_of]
+
+    let ttrue =
+      { var_eqs= VarUF.empty
+      ; linear_eqs= Var.Map.empty
+      ; term_eqs= Term.VarMap.empty
+      ; tableau= Tableau.empty
+      ; intervals= Var.Map.empty
+      ; atoms= Atom.Set.empty }
+
+
+    let add_linear_eq v l phi = {phi with linear_eqs= Var.Map.add v l phi.linear_eqs}
+
+    let remove_linear_eq v phi = {phi with linear_eqs= Var.Map.remove v phi.linear_eqs}
+
+    let add_term_eq t v phi = {phi with term_eqs= Term.VarMap.add t v phi.term_eqs}
+
+    let add_tableau_eq v l phi = {phi with tableau= Var.Map.add v l phi.tableau}
+
+    let add_interval v intv phi = {phi with intervals= Var.Map.add v intv phi.intervals}
+
+    let add_atom atom phi = {phi with atoms= Atom.Set.add atom phi.atoms}
+
+    let set_var_eqs var_eqs phi = {phi with var_eqs}
+
+    let set_tableau tableau phi = {phi with tableau}
+
+    let set_intervals intervals phi = {phi with intervals}
+
+    let reset_linear phi = {phi with linear_eqs= Var.Map.empty; tableau= Var.Map.empty}
+
+    let reset_atoms phi = {phi with atoms= Atom.Set.empty}
+
+    let reset_term_eqs phi = {phi with term_eqs= Term.VarMap.empty}
+
+    let unsafe_mk ~var_eqs ~linear_eqs ~term_eqs ~tableau ~intervals ~atoms =
+      {var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms}
+  end
+
+  include Unsafe
 
   let is_empty
       ({var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms}
@@ -1868,19 +1944,16 @@ module Formula = struct
                 let new_eqs = add_lin_eq_to_new_eqs v l new_eqs in
                 (* this can break the (as a result non-)invariant that variables in the domain of
                    [linear_eqs] do not appear in the range of [linear_eqs] *)
-                ({phi with linear_eqs= Var.Map.add v l phi.linear_eqs}, new_eqs)
+                (add_linear_eq v l phi, new_eqs)
             | Some l' ->
                 (* This is the only step that consumes fuel: discovering an equality [l = l']: because we
                    do not record these anywhere (except when their consequence can be recorded as [y =
-                   l''] or [y = y'], we could potentially discover the same equality over and over and
+                   l''] or [y = y']), we could potentially discover the same equality over and over and
                    diverge otherwise. Or could we?) *)
                 (* [l'] is possibly not normalized w.r.t. the current [phi] so take this opportunity to
                    normalize it, and replace [v]'s current binding *)
                 let l'' = normalize_linear phi l' in
-                let phi =
-                  if phys_equal l' l'' then phi
-                  else {phi with linear_eqs= Var.Map.add v l'' phi.linear_eqs}
-                in
+                let phi = if phys_equal l' l'' then phi else add_linear_eq v l'' phi in
                 if fuel > 0 then (
                   L.d_printfln "Consuming fuel solving linear equality (from %d)" fuel ;
                   solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs l l'' phi )
@@ -1896,7 +1969,7 @@ module Formula = struct
       match Term.VarMap.find_opt t phi.term_eqs with
       | None ->
           (* [t] isn't known already: add it *)
-          Sat ({phi with term_eqs= Term.VarMap.add t v phi.term_eqs}, new_eqs)
+          Sat (add_term_eq t v phi, new_eqs)
       | Some v' when Var.equal v v' ->
           Sat (phi, new_eqs)
       | Some v' ->
@@ -1931,9 +2004,9 @@ module Formula = struct
       | (`Positive | `Zero), (`Maximized | `Neither) ->
           (* [w = l] is feasible and not a tautologie (and [l] is restricted), add to the
              tableau *)
-          let tableau = Var.Map.add w l phi.tableau in
+          let phi = add_tableau_eq w l phi in
           Debug.p "Add to tableau@\n" ;
-          Sat ({phi with tableau}, new_eqs)
+          Sat (phi, new_eqs)
       | `Negative, (`Maximized | `Constant) ->
           (* [l_c < 0], [w = l_c + k1·v1 + ... + kn·vn], all coeffs [ki] are ≤0 so [l] denotes
              only negative values, hence cannot be ≥0: contradiction *)
@@ -1944,7 +2017,7 @@ module Formula = struct
            to pivot in \[2\] *)
         match Tableau.pivot_unbounded_with_positive_coeff phi.tableau w l with
         | Some tableau ->
-            Sat ({phi with tableau}, new_eqs)
+            Sat (set_tableau tableau phi, new_eqs)
         | None ->
             if fuel > 0 then (
               Debug.p "PIVOT %d in %a@\n" fuel (Tableau.pp Var.pp) phi.tableau ;
@@ -1961,7 +2034,7 @@ module Formula = struct
                   solve_normalized_lin_eq ~fuel ~force_no_tableau:true new_eqs (LinArith.of_var w)
                     (normalize_restricted phi l) phi
               | Some tableau ->
-                  let phi = {phi with tableau} in
+                  let phi = set_tableau tableau phi in
                   Debug.p "pivoted tableau: %a@\n" (Tableau.pp Var.pp) phi.tableau ;
                   solve_tableau_restricted_eq ~fuel:(fuel - 1) new_eqs w
                     (normalize_restricted phi l) phi )
@@ -2030,7 +2103,7 @@ module Formula = struct
     and merge_vars ~fuel new_eqs v1 v2 phi =
       Debug.p "merge_vars: %a=%a@\n" Var.pp v1 Var.pp v2 ;
       let var_eqs, subst_opt = VarUF.union phi.var_eqs v1 v2 in
-      let phi = {phi with var_eqs} in
+      let phi = set_var_eqs var_eqs phi in
       match subst_opt with
       | None ->
           (* we already knew the equality *)
@@ -2054,8 +2127,7 @@ module Formula = struct
             | Some l ->
                 if LinArith.has_var v_old l then
                   let l_new = LinArith.subst v_old v_new l in
-                  let linear_eqs = Var.Map.add v_new l_new phi.linear_eqs in
-                  ({phi with linear_eqs}, Some l_new)
+                  (add_linear_eq v_new l_new phi, Some l_new)
                 else (phi, Some l)
           in
           let phi, l_old =
@@ -2066,7 +2138,7 @@ module Formula = struct
                 (* [l_old] has no [v_old] or [v_new] by invariant so no need to subst, unlike for
                    [l_new] above: variables in [l_old] are strictly greater than [v_old], and [v_new]
                    is smaller than [v_old] *)
-                ({phi with linear_eqs= Var.Map.remove v_old phi.linear_eqs}, Some l_old)
+                (remove_linear_eq v_old phi, Some l_old)
           in
           (* NOTE: we don't propagate new variable equalities to the tableau eagerly at the moment *)
           match (l_old, l_new) with
@@ -2077,7 +2149,7 @@ module Formula = struct
               Sat (phi, new_eqs)
           | Some l, None ->
               let new_eqs = add_lin_eq_to_new_eqs v_new l new_eqs in
-              Sat ({phi with linear_eqs= Var.Map.add v_new l phi.linear_eqs}, new_eqs)
+              Sat (add_linear_eq v_new l phi, new_eqs)
           | Some l1, Some l2 ->
               let new_eqs = add_lin_eq_to_new_eqs v_new l1 new_eqs in
               let new_eqs = add_lin_eq_to_new_eqs v_new l2 new_eqs in
@@ -2136,7 +2208,7 @@ module Formula = struct
           linear_eqs changed_phi_new_eqs
       in
       one_linear_relation ~normalize:normalize_linear phi0.linear_eqs
-        (Sat (false, ({phi0 with linear_eqs= Var.Map.empty; tableau= Var.Map.empty}, new_eqs)))
+        (Sat (false, (reset_linear phi0, new_eqs)))
       |> one_linear_relation
            ~normalize:(fun phi l -> normalize_linear phi l |> normalize_restricted phi)
            phi0.tableau
@@ -2178,7 +2250,7 @@ module Formula = struct
           let+ phi', new_eqs = solve_lin_ineq new_eqs (LinArith.of_q (Q.add c Q.one)) l phi in
           (true, (phi', new_eqs))
       | atom' ->
-          Sat (false, ({phi with atoms= Atom.Set.add atom' phi.atoms}, new_eqs))
+          Sat (false, (add_atom atom' phi, new_eqs))
 
 
     let and_normalized_atoms phi_new_eqs atoms =
@@ -2194,7 +2266,7 @@ module Formula = struct
 
     let normalize_atoms (phi, new_eqs) =
       let atoms0 = phi.atoms in
-      let init = Sat (false, ({phi with atoms= Atom.Set.empty}, new_eqs)) in
+      let init = Sat (false, (reset_atoms phi, new_eqs)) in
       IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms0 ~init ~f:(fun acc atom ->
           let* changed, phi_new_eqs = acc in
           let+ changed', phi_new_eqs = and_atom atom phi_new_eqs in
@@ -2229,7 +2301,7 @@ module Formula = struct
           in
           (new_lin, (phi', new_eqs')) )
         phi0.term_eqs
-        (Sat (false, ({phi0 with term_eqs= Term.VarMap.empty}, new_eqs0)))
+        (Sat (false, (reset_term_eqs phi0, new_eqs0)))
 
 
     let normalize_intervals phi =
@@ -2256,7 +2328,7 @@ module Formula = struct
               Var.Map.add v' interval' intervals' )
             phi.intervals Var.Map.empty
         in
-        Sat {phi with intervals}
+        Sat (set_intervals intervals phi)
       with FoundUnsat -> Unsat
 
 
@@ -2366,7 +2438,9 @@ module Intervals = struct
 
   let interval_of_operand intervals operand = interval_and_var_of_operand intervals operand |> snd
 
-  let update_formula formula intervals = {formula with phi= {formula.phi with intervals}}
+  let update_formula formula intervals =
+    {formula with phi= Formula.set_intervals intervals formula.phi}
+
 
   let and_binop ~negated binop op1 op2 (formula, new_eqs) =
     let intervals = formula.phi.intervals in
@@ -2387,8 +2461,8 @@ module Intervals = struct
                    | Some i ->
                        Formula.Normalizer.and_var_term v (Term.of_intlit i) (formula.phi, new_eqs)
                  in
-                 let intervals = Var.Map.add v i_better intervals in
-                 ({formula with phi= {phi with intervals}}, new_eqs) )
+                 let phi = Formula.add_interval v i_better phi in
+                 ({formula with phi}, new_eqs) )
         in
         refine v1_opt i1_better_opt (formula, new_eqs) >>= refine v2_opt i2_better_opt
 
@@ -2421,8 +2495,7 @@ module Intervals = struct
     | Unsatisfiable ->
         Unsat
     | Satisfiable (Some abduce_caller, _abduce_callee) ->
-        Sat
-          ({phi with Formula.intervals= Var.Map.add v abduce_caller phi.Formula.intervals}, new_eqs)
+        Sat (Formula.add_interval v abduce_caller phi, new_eqs)
     | Satisfiable (None, _) ->
         Sat (phi, new_eqs)
 end
@@ -2529,7 +2602,7 @@ module DynamicTypes = struct
     let open SatUnsat.Import in
     let old_term_eqs = formula.phi.term_eqs in
     let old_atoms = formula.phi.atoms in
-    let phi = {formula.phi with term_eqs= Term.VarMap.empty; atoms= Atom.Set.empty} in
+    let phi = Formula.reset_term_eqs formula.phi |> Formula.reset_atoms in
     let* phi, new_eqs =
       let f t v acc_phi =
         let* acc_phi in
@@ -2725,12 +2798,12 @@ end = struct
 
 
   let subst_var_phi subst {Formula.var_eqs; linear_eqs; tableau; term_eqs; intervals; atoms} =
-    { Formula.var_eqs= VarUF.apply_subst subst var_eqs
-    ; linear_eqs= subst_var_linear_eqs subst linear_eqs
-    ; term_eqs= Term.VarMap.apply_var_subst subst term_eqs
-    ; tableau= subst_var_linear_eqs subst tableau
-    ; intervals= subst_var_intervals subst intervals
-    ; atoms= subst_var_atoms subst atoms }
+    Formula.unsafe_mk ~var_eqs:(VarUF.apply_subst subst var_eqs)
+      ~linear_eqs:(subst_var_linear_eqs subst linear_eqs)
+      ~term_eqs:(Term.VarMap.apply_var_subst subst term_eqs)
+      ~tableau:(subst_var_linear_eqs subst tableau)
+      ~intervals:(subst_var_intervals subst intervals)
+      ~atoms:(subst_var_atoms subst atoms)
 
 
   let extend_with_restricted_reps_of keep formula =
@@ -2887,7 +2960,7 @@ module DeadVariables = struct
       let intervals =
         Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.intervals
       in
-      {Formula.var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms}
+      Formula.unsafe_mk ~var_eqs ~linear_eqs ~term_eqs ~tableau ~intervals ~atoms
     in
     let phi = simplify_phi formula.phi in
     let conditions =
