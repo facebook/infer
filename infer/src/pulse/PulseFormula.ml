@@ -1302,6 +1302,40 @@ module Term = struct
         None
 
 
+  let get_as_linear = function
+    | Linear l ->
+        Some l
+    | Const q ->
+        Some (LinArith.of_q q)
+    | Var x ->
+        Some (LinArith.of_var x)
+    | String _
+    | Procname _
+    | FunctionApplication _
+    | Add _
+    | Minus _
+    | LessThan _
+    | LessEqual _
+    | Equal _
+    | NotEqual _
+    | Mult _
+    | DivI _
+    | DivF _
+    | And _
+    | Or _
+    | Not _
+    | Mod _
+    | BitAnd _
+    | BitOr _
+    | BitNot _
+    | BitShiftLeft _
+    | BitShiftRight _
+    | BitXor _
+    | IsInstanceOf _
+    | IsInt _ ->
+        None
+
+
   let to_subst_target t =
     match get_as_const t with
     | Some q ->
@@ -2071,8 +2105,12 @@ module Formula = struct
     let remove_term_eq t phi =
       Debug.p "remove_term_eq %a@\n" (Term.pp Var.pp) t ;
       let term_eqs_occurrences =
-        Term.fold_variables t ~init:phi.term_eqs_occurrences ~f:(fun occurrences v' ->
-            TermMapOccurrences.remove v' ~occurred_in:t occurrences )
+        match Term.get_as_linear t with
+        | Some _ ->
+            phi.term_eqs_occurrences
+        | None ->
+            Term.fold_variables t ~init:phi.term_eqs_occurrences ~f:(fun occurrences v' ->
+                TermMapOccurrences.remove v' ~occurred_in:t occurrences )
       in
       {phi with term_eqs= Term.VarMap.remove t phi.term_eqs; term_eqs_occurrences}
 
@@ -2084,8 +2122,12 @@ module Formula = struct
           (phi, None)
       | (Some _ | None) as new_eq ->
           let term_eqs_occurrences =
-            Term.fold_variables t ~init:phi.term_eqs_occurrences ~f:(fun occurrences v' ->
-                TermMapOccurrences.add v' ~occurs_in:t occurrences )
+            match Term.get_as_linear t with
+            | Some _ ->
+                phi.term_eqs_occurrences
+            | None ->
+                Term.fold_variables t ~init:phi.term_eqs_occurrences ~f:(fun occurrences v' ->
+                    TermMapOccurrences.add v' ~occurs_in:t occurrences )
           in
           ({phi with term_eqs= Term.VarMap.add t v phi.term_eqs; term_eqs_occurrences}, new_eq)
 
