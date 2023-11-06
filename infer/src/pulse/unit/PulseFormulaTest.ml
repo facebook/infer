@@ -369,7 +369,8 @@ let%test_module "normalization" =
                && term_eqs_occurrences: y->([v]×[y]) ∧ z->([z]×[v8]) ∧ w->([v9]÷[w])
                                          ∧ v->([v]×[y]) ∧ v6->[-v6 +v8 -1]
                                          ∧ v8->[-v6 +v8 -1],[v8 -1],([z]×[v8])
-                                         ∧ v9->([v9]÷[w]) |}]
+                                         ∧ v9->([v9]÷[w])
+               && atoms_occurrences: w->{[v9]÷[w] = 0} ∧ v9->{[v9]÷[w] = 0} |}]
 
 
     (* check that this becomes all linear equalities *)
@@ -432,32 +433,20 @@ let%test_module "normalization" =
                && linear_eqs: x = 2 ∧ y = -42 ∧ z = w +2 ∧ v6 = 4
                && term_eqs: (-42)=y∧2=x∧4=v6∧[w +2]=z
                && intervals: y=-42 ∧ v6=4
-               && atoms: {is_int([x]) = 1}∧{is_int([y]) = 1}∧{is_int([z]) = 1}
+               && atoms: {is_int([w +2]) = 1}
                && linear_eqs_occurrences: w->z
                && term_eqs_occurrences: w->[w +2]
-        Result: changed
-          conditions: (empty)
-          phi: var_eqs: z=v7
-               && linear_eqs: x = 2 ∧ y = -42 ∧ z = w +2 ∧ v6 = 4
-               && term_eqs: (-42)=y∧2=x∧4=v6∧[w +2]=z
-               && intervals: y=-42 ∧ v6=4
-               && atoms: {is_int([z]) = 1}
-               && linear_eqs_occurrences: w->z
-               && term_eqs_occurrences: w->[w +2]|}]
+               && atoms_occurrences: w->{is_int([w +2]) = 1}
+        Result: same
+|}]
 
 
     let%expect_test _ =
       normalize (is_int x_var && x + x = i 5) ;
-      [%expect
-        {|
+      [%expect {|
         Formula:
-          conditions: (empty)
-          phi: linear_eqs: x = 5/2 ∧ v6 = 5
-               && term_eqs: (5/2)=x∧5=v6
-               && intervals: v6=5
-               && atoms: {is_int([x]) = 1}
-        Result: changed
-          unsat|}]
+          unsat
+        Result: same|}]
   end )
 
 
@@ -707,7 +696,6 @@ let%test_module "intervals" =
                && term_eqs: 0=a2∧2=a1
                && tableau: a2 = -a1 +2
                && intervals: x=2
-               && atoms: {[a1] ≠ 0}
         Result: changed
           conditions: (empty) phi: linear_eqs: x = 2 && term_eqs: 2=x && intervals: x=2|}]
 
@@ -723,7 +711,6 @@ let%test_module "intervals" =
                && term_eqs: 0=a3∧2=a1∧7=a4
                && tableau: a4 = -a3 +7 ∧ a2 = -a1 +2
                && intervals: x=2 ∧ y=2
-               && atoms: {[a1] ≠ 0}
         Result: changed
           conditions: (empty)
           phi: var_eqs: a3=a2 ∧ a1=x=y
@@ -762,6 +749,7 @@ let%test_module "conjunctive normal form" =
                && atoms: {[v8] ≠ 0}
                && term_eqs_occurrences: x->([x]<0),(0≤[x]) ∧ v6->(([v6]=1)∧([v7]=1))
                                          ∧ v7->(([v6]=1)∧([v7]=1))
+               && atoms_occurrences: v8->{[v8] ≠ 0}
         Result: changed
           unsat|}]
 
@@ -812,6 +800,7 @@ let%test_module "conjunctive normal form" =
                  && atoms: {[v8] ≠ 0}
                  && term_eqs_occurrences: x->(0<[x]),(0≤[x]) ∧ v6->(([v6]=1)∧([v7]=1))
                                            ∧ v7->(([v6]=1)∧([v7]=1))
+                 && atoms_occurrences: v8->{[v8] ≠ 0}
           Result: changed
             conditions: (empty)
             phi: var_eqs: a11=a10=a9=a8=a7=a6=a5=a4=a3=a1 ∧ a2=x ∧ v6=v7=v8

@@ -1796,6 +1796,12 @@ module TermMapOccurrences = MakeOccurrences (struct
   let pp_set = Term.Set.pp_with_pp_var
 end)
 
+module AtomMapOccurrences = MakeOccurrences (struct
+  include Atom
+
+  let pp_set = Atom.Set.pp_with_pp_var
+end)
+
 module Formula = struct
   (* redefined for yojson output *)
   type var_eqs = VarUF.t [@@deriving compare, equal]
@@ -1838,7 +1844,8 @@ module Formula = struct
                 "slack") variables; this is used for reasoning about inequalities, see \[2\] *)
       ; intervals: (intervals[@yojson.opaque])
       ; atoms: Atom.Set.t
-            (** "everything else"; not always normalized w.r.t. the components above *)
+            (** "everything else": atoms that cannot be expressed in a form suitable for one of the
+                other domains *)
       ; linear_eqs_occurrences: VarMapOccurrences.t
             (** occurrences of variables in [linear_eqs]: a binding [x -> y] means that [x] appears
                 in [linear_eqs(y)] and will be used to propagate new (linear) equalities about [x]
@@ -1846,7 +1853,8 @@ module Formula = struct
                 [linear_eqs] *)
       ; term_eqs_occurrences: TermMapOccurrences.t
             (** like [linear_eqs_occurrences] but for [term_eqs] so bindings are from variables to
-                sets of terms *) }
+                sets of terms *)
+      ; atoms_occurrences: AtomMapOccurrences.t  (** likewise for [atoms] *) }
     [@@deriving compare, equal, yojson_of]
 
     val get_repr : t -> Var.t -> VarUF.repr
@@ -1884,6 +1892,8 @@ module Formula = struct
 
     val remove_term_eq : Term.t -> t -> t
 
+    val remove_atom : Atom.t -> t -> t
+
     val add_tableau_eq : Var.t -> LinArith.t -> t -> t
 
     val add_interval : Var.t -> CItv.t -> t -> t
@@ -1893,6 +1903,8 @@ module Formula = struct
     val remove_from_linear_eqs_occurrences : Var.t -> t -> t
 
     val remove_from_term_eqs_occurrences : Var.t -> t -> t
+
+    val remove_from_atoms_occurrences : Var.t -> t -> t
 
     val set_var_eqs : var_eqs -> t -> t
 
@@ -1915,6 +1927,7 @@ module Formula = struct
       -> atoms:Atom.Set.t
       -> linear_eqs_occurrences:VarMapOccurrences.t
       -> term_eqs_occurrences:TermMapOccurrences.t
+      -> atoms_occurrences:AtomMapOccurrences.t
       -> t
     (** escape hatch *)
   end = struct
@@ -1930,7 +1943,8 @@ module Formula = struct
       ; intervals: (intervals[@yojson.opaque])
       ; atoms: Atom.Set.t
       ; linear_eqs_occurrences: VarMapOccurrences.t
-      ; term_eqs_occurrences: TermMapOccurrences.t }
+      ; term_eqs_occurrences: TermMapOccurrences.t
+      ; atoms_occurrences: AtomMapOccurrences.t }
     [@@deriving compare, equal, yojson_of]
 
     let ttrue =
@@ -1941,7 +1955,8 @@ module Formula = struct
       ; intervals= Var.Map.empty
       ; atoms= Atom.Set.empty
       ; linear_eqs_occurrences= Var.Map.empty
-      ; term_eqs_occurrences= Var.Map.empty }
+      ; term_eqs_occurrences= Var.Map.empty
+      ; atoms_occurrences= Var.Map.empty }
 
 
     let get_repr phi x = VarUF.find phi.var_eqs x
@@ -2067,7 +2082,21 @@ module Formula = struct
 
     let add_interval v intv phi = {phi with intervals= Var.Map.add v intv phi.intervals}
 
-    let add_atom atom phi = {phi with atoms= Atom.Set.add atom phi.atoms}
+    let add_atom atom phi =
+      let atoms_occurrences =
+        Atom.fold_variables atom ~init:phi.atoms_occurrences ~f:(fun occurrences v' ->
+            AtomMapOccurrences.add v' ~occurs_in:atom occurrences )
+      in
+      {phi with atoms= Atom.Set.add atom phi.atoms; atoms_occurrences}
+
+
+    let remove_atom atom phi =
+      let atoms_occurrences =
+        Atom.fold_variables atom ~init:phi.atoms_occurrences ~f:(fun occurrences v' ->
+            AtomMapOccurrences.remove v' ~occurred_in:atom occurrences )
+      in
+      {phi with atoms= Atom.Set.remove atom phi.atoms; atoms_occurrences}
+
 
     let remove_from_linear_eqs_occurrences v phi =
       {phi with linear_eqs_occurrences= Var.Map.remove v phi.linear_eqs_occurrences}
@@ -2075,6 +2104,10 @@ module Formula = struct
 
     let remove_from_term_eqs_occurrences v phi =
       {phi with term_eqs_occurrences= Var.Map.remove v phi.term_eqs_occurrences}
+
+
+    let remove_from_atoms_occurrences v phi =
+      {phi with atoms_occurrences= Var.Map.remove v phi.atoms_occurrences}
 
 
     let set_var_eqs var_eqs phi = if phys_equal phi.var_eqs var_eqs then phi else {phi with var_eqs}
@@ -2090,14 +2123,14 @@ module Formula = struct
       ; linear_eqs_occurrences= Var.Map.empty }
 
 
-    let reset_atoms phi = {phi with atoms= Atom.Set.empty}
+    let reset_atoms phi = {phi with atoms= Atom.Set.empty; atoms_occurrences= Var.Map.empty}
 
     let reset_term_eqs phi =
       {phi with term_eqs= Term.VarMap.empty; term_eqs_occurrences= Var.Map.empty}
 
 
     let unsafe_mk ~var_eqs ~linear_eqs ~term_eqs ~tableau ~intervals ~atoms ~linear_eqs_occurrences
-        ~term_eqs_occurrences =
+        ~term_eqs_occurrences ~atoms_occurrences =
       { var_eqs
       ; linear_eqs
       ; term_eqs
@@ -2105,7 +2138,8 @@ module Formula = struct
       ; intervals
       ; atoms
       ; linear_eqs_occurrences
-      ; term_eqs_occurrences }
+      ; term_eqs_occurrences
+      ; atoms_occurrences }
   end
 
   include Unsafe
@@ -2118,7 +2152,8 @@ module Formula = struct
        ; intervals
        ; atoms
        ; linear_eqs_occurrences= _
-       ; term_eqs_occurrences= _ } [@warning "+missing-record-field-pattern"] ) =
+       ; term_eqs_occurrences= _
+       ; atoms_occurrences= _ } [@warning "+missing-record-field-pattern"] ) =
     VarUF.is_empty var_eqs && Var.Map.is_empty linear_eqs && term_eqs_is_empty term_eqs
     && Var.Map.is_empty tableau && Var.Map.is_empty intervals && Atom.Set.is_empty atoms
 
@@ -2141,8 +2176,8 @@ module Formula = struct
          ; intervals
          ; atoms
          ; linear_eqs_occurrences= _
-         ; term_eqs_occurrences= _ } [@warning "+missing-record-field-pattern"] ) as phi ) ~init ~f
-      =
+         ; term_eqs_occurrences= _
+         ; atoms_occurrences= _ } [@warning "+missing-record-field-pattern"] ) as phi ) ~init ~f =
     let init = VarUF.fold_elements var_eqs ~init ~f in
     let init = fold_linear_eqs_vars linear_eqs ~init ~f in
     let init = fold_term_eqs_vars phi ~init ~f in
@@ -2159,7 +2194,8 @@ module Formula = struct
          ; intervals
          ; atoms
          ; linear_eqs_occurrences
-         ; term_eqs_occurrences } [@warning "+missing-record-field-pattern"] ) as phi ) =
+         ; term_eqs_occurrences
+         ; atoms_occurrences } [@warning "+missing-record-field-pattern"] ) as phi ) =
     let is_first = ref true in
     let pp_if condition header pp fmt x =
       let pp_and fmt = if not !is_first then F.fprintf fmt "@;&& " else is_first := false in
@@ -2186,6 +2222,10 @@ module Formula = struct
        (not (Var.Map.is_empty term_eqs_occurrences))
        "term_eqs_occurrences" (TermMapOccurrences.pp pp_var) )
       fmt term_eqs_occurrences ;
+    (pp_if
+       (not (Var.Map.is_empty atoms_occurrences))
+       "atoms_occurrences" (AtomMapOccurrences.pp pp_var) )
+      fmt atoms_occurrences ;
     F.pp_close_box fmt ()
 
 
@@ -2235,6 +2275,9 @@ module Formula = struct
         [fuel] argument of some of the functions of this module). saturating the consequences of
         what we know implies keeping track of *all* the consequences (to avoid diverging by
         re-discovering the same facts over and over), which would be expensive. *)
+
+    (** an arbitrary value *)
+    let base_fuel = 10
 
     let normalize_linear_ phi linear_eqs l =
       LinArith.subst_variables l ~f:(fun v ->
@@ -2468,7 +2511,7 @@ module Formula = struct
           let* phi, new_eqs = add_term_eq_and_solve_new_eq_opt ~fuel new_eqs t v phi in
           solve_normalized_lin_eq ~fuel new_eqs (LinArith.of_q c) (LinArith.of_var v) phi
       | _ ->
-          solve_normalized_term_eq_no_lin ~fuel new_eqs t v phi >>= propagate_in_term_eqs ~fuel t v
+          solve_normalized_term_eq_no_lin ~fuel new_eqs t v phi >>= propagate_term_eq ~fuel t v
 
 
     and merge_vars ~fuel new_eqs v1 v2 phi =
@@ -2670,13 +2713,45 @@ module Formula = struct
               (Sat (phi, new_eqs)) )
 
 
+    and propagate_in_atoms ~fuel:_ tx x ((phi, new_eqs) as phi_new_eqs) =
+      match Var.Map.find_opt x phi.atoms_occurrences with
+      | None ->
+          Sat phi_new_eqs
+      | Some in_atoms ->
+          (* [tx=x] has been added to the term equalities so by the invariant (that we are about
+             to restore) there are no further occurrences of [x] in [phi.atoms] as we are going to
+             substitute them with [tx] to get maximally-expanded atoms *)
+          Debug.p "propagating %a = %a in atoms@\n" (Term.pp Var.pp) tx Var.pp x ;
+          let phi = remove_from_atoms_occurrences x phi in
+          let subst_target_x = Term.to_subst_target tx in
+          (* TODO: could be more efficient to Atom.Set.map + linearly follow along in in_atoms,
+             raising Unsat as needed and accumulating in a ref (no fold_map...) *)
+          Atom.Set.fold
+            (fun atom phi_new_eqs_sat ->
+              let* phi, new_eqs = phi_new_eqs_sat in
+              if Atom.Set.mem atom phi.atoms then
+                let phi = remove_atom atom phi in
+                and_atom
+                  (Atom.subst_variables
+                     ~f:(fun x' -> if Var.equal x' x then subst_target_x else VarSubst x')
+                     atom )
+                  (phi, new_eqs)
+                >>| snd
+              else phi_new_eqs_sat )
+            in_atoms
+            (Sat (phi, new_eqs))
+
+
+    and propagate_term_eq ~fuel tx x phi_new_eqs =
+      propagate_in_term_eqs ~fuel tx x phi_new_eqs >>= propagate_in_atoms ~fuel tx x
+
+
     and propagate_linear_eq ~fuel x lx phi_new_eqs =
-      propagate_in_linear_eqs ~fuel x lx phi_new_eqs
-      >>= propagate_in_term_eqs ~fuel (Term.Linear lx) x
+      propagate_in_linear_eqs ~fuel x lx phi_new_eqs >>= propagate_term_eq ~fuel (Term.Linear lx) x
 
 
     (* Assumes [w] is restricted, [l] is normalized. This is called [addlineq] in \[2\]. *)
-    let solve_tableau_eq ~fuel new_eqs w l phi =
+    and solve_tableau_eq ~fuel new_eqs w l phi =
       Debug.p "Solving %a = %a@\n" Var.pp w (LinArith.pp Var.pp) l ;
       match LinArith.solve_for_unrestricted w l with
       | Some (v, l_v) ->
@@ -2693,24 +2768,21 @@ module Formula = struct
           solve_tableau_restricted_eq ~fuel new_eqs w l phi
 
 
-    (** an arbitrary value *)
-    let base_fuel = 10
-
-    let solve_lin_ineq new_eqs l1 l2 phi =
+    and solve_lin_ineq new_eqs l1 l2 phi =
       (* [l1 ≤ l2] becomes [(l2-l1) ≥ 0], encoded as [l = w] with [w] a fresh restricted variable *)
       let l = LinArith.subtract l2 l1 |> normalize_linear phi |> normalize_restricted phi in
       let w = Var.mk_fresh_restricted () in
       solve_tableau_eq ~fuel:base_fuel new_eqs w l phi
 
 
-    let solve_lin_eq new_eqs t1 t2 phi =
+    and solve_lin_eq new_eqs t1 t2 phi =
       solve_normalized_lin_eq ~fuel:base_fuel new_eqs (normalize_linear phi t1)
         (normalize_linear phi t2) phi
 
 
-    let and_var_linarith v l (phi, new_eqs) = solve_lin_eq new_eqs l (LinArith.of_var v) phi
+    and and_var_linarith v l (phi, new_eqs) = solve_lin_eq new_eqs l (LinArith.of_var v) phi
 
-    let normalize_linear_eqs (phi0, new_eqs) =
+    and normalize_linear_eqs (phi0, new_eqs) =
       let one_linear_relation ~normalize linear_eqs changed_phi_new_eqs =
         Var.Map.fold
           (fun v l acc ->
@@ -2732,14 +2804,14 @@ module Formula = struct
 
     (* TODO: should we check if [φ ⊢ atom] (i.e. whether [φ ∧ ¬atom] is unsat) in [normalize_atom],
        or is [normalize_atom] already just as strong? *)
-    let normalize_atom phi (atom : Atom.t) =
+    and normalize_atom phi (atom : Atom.t) =
       let atom' = Atom.map_terms atom ~f:(fun t -> normalize_var_const phi t) in
       Atom.eval ~is_neq_zero:(is_neq_zero phi) atom'
 
 
     (** return [(new_linear_equalities, phi ∧ atom)], where [new_linear_equalities] is [true] if
         [phi.linear_eqs] was changed as a result *)
-    let and_normalized_atom (phi, new_eqs) = function
+    and and_normalized_atom (phi, new_eqs) = function
       | Atom.Equal (Linear _, Linear _) ->
           assert false
       | Atom.Equal (Linear l, Const c) | Atom.Equal (Const c, Linear l) ->
@@ -2769,14 +2841,14 @@ module Formula = struct
           Sat (false, (add_atom atom' phi, new_eqs))
 
 
-    let and_normalized_atoms phi_new_eqs atoms =
+    and and_normalized_atoms phi_new_eqs atoms =
       SatUnsat.list_fold atoms ~init:(false, phi_new_eqs)
         ~f:(fun (linear_changed, phi_new_eqs) atom ->
           let+ changed', phi_new_eqs = and_normalized_atom phi_new_eqs atom in
           (linear_changed || changed', phi_new_eqs) )
 
 
-    let and_atom atom (phi, new_eqs) =
+    and and_atom atom (phi, new_eqs) =
       normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs)
 
 
@@ -3323,6 +3395,7 @@ end = struct
         (* this is only ever called during summary creation, it's safe to ditch the occurrence maps
            at this point since they will be reconstructed by callers *)
       ~linear_eqs_occurrences:Var.Map.empty ~term_eqs_occurrences:Var.Map.empty
+      ~atoms_occurrences:Var.Map.empty
 
 
   let extend_with_restricted_reps_of keep formula =
@@ -3482,6 +3555,7 @@ module DeadVariables = struct
           (* we simplify for summaries creation, it's safe to ditch the occurrence maps at this
              point since they will be reconstructed by callers *)
         ~linear_eqs_occurrences:Var.Map.empty ~term_eqs_occurrences:Var.Map.empty
+        ~atoms_occurrences:Var.Map.empty
     in
     let phi = simplify_phi formula.phi in
     let conditions =
