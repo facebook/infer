@@ -838,14 +838,14 @@ module Term = struct
 
   let map_subterms t ~f = fold_map_subterms t ~init:() ~f:(fun () t' -> ((), f t')) |> snd
 
-  let rec fold_subst_variables t ~init ~f =
+  let rec fold_subst_variables ~init ~f_subst ?(f_post = fun ~prev:_ acc t -> (acc, t)) t =
     match t with
     | Var v ->
-        let acc, op = f init v in
+        let acc, op = f_subst init v in
         let t' = match op with VarSubst v' when Var.equal v v' -> t | _ -> of_subst_target op in
-        (acc, t')
+        f_post ~prev:t acc t'
     | IsInstanceOf (v, typ) ->
-        let acc, op = f init v in
+        let acc, op = f_subst init v in
         let t' =
           match op with
           | VarSubst v' when not (Var.equal v v') ->
@@ -855,11 +855,11 @@ module Term = struct
           | QSubst _ | VarSubst _ | LinSubst _ ->
               t
         in
-        (acc, t')
+        f_post ~prev:t acc t'
     | Linear l ->
-        let acc, l' = LinArith.fold_subst_variables l ~init ~f in
+        let acc, l' = LinArith.fold_subst_variables l ~init ~f:f_subst in
         let t' = if phys_equal l l' then t else Linear l' in
-        (acc, t')
+        f_post ~prev:t acc t'
     | Const _
     | String _
     | Procname _
@@ -884,16 +884,22 @@ module Term = struct
     | BitShiftRight _
     | BitXor _
     | IsInt _ ->
-        fold_map_direct_subterms t ~init ~f:(fun acc t' -> fold_subst_variables t' ~init:acc ~f)
+        let acc, t' =
+          fold_map_direct_subterms t ~init ~f:(fun acc t' ->
+              fold_subst_variables t' ~init:acc ~f_subst ~f_post )
+        in
+        f_post ~prev:t acc t'
 
 
-  let fold_variables t ~init ~f =
-    fold_subst_variables t ~init ~f:(fun acc v -> (f acc v, VarSubst v)) |> fst
+  let fold_variables ~init ~f ?f_post t =
+    fold_subst_variables t ~init ~f_subst:(fun acc v -> (f acc v, VarSubst v)) ?f_post |> fst
 
 
   let iter_variables t ~f = fold_variables t ~init:() ~f:(fun () v -> f v)
 
-  let subst_variables t ~f = fold_subst_variables t ~init:() ~f:(fun () v -> ((), f v)) |> snd
+  let subst_variables ~f ?f_post t =
+    fold_subst_variables t ~init:() ~f_subst:(fun () v -> ((), f v)) ?f_post |> snd
+
 
   let has_var_notin vars t =
     Container.exists t ~iter:iter_variables ~f:(fun v -> not (Var.Set.mem v vars))
@@ -1593,11 +1599,11 @@ module Atom = struct
     with FoundUnsat -> Unsat
 
 
-  let fold_subst_variables a ~init ~f =
-    fold_map_terms a ~init ~f:(fun acc t -> Term.fold_subst_variables t ~init:acc ~f)
+  let fold_subst_variables ~init ~f_subst ?f_post a =
+    fold_map_terms a ~init ~f:(fun acc t -> Term.fold_subst_variables t ~init:acc ~f_subst ?f_post)
 
 
-  let subst_variables l ~f = fold_subst_variables l ~init:() ~f:(fun () v -> ((), f v)) |> snd
+  let subst_variables l ~f = fold_subst_variables l ~init:() ~f_subst:(fun () v -> ((), f v)) |> snd
 
   let has_var_notin vars atom =
     let t1, t2 = get_terms atom in
@@ -2914,7 +2920,7 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
   let and_term_eqs phi_foreign acc_phi_new_eqs =
     IContainer.fold_of_pervasives_map_fold Formula.term_eqs_fold phi_foreign ~init:acc_phi_new_eqs
       ~f:(fun (acc_f, phi_new_eqs) (t_foreign, v_foreign) ->
-        let acc_f, t = Term.fold_subst_variables t_foreign ~init:acc_f ~f:f_subst in
+        let acc_f, t = Term.fold_subst_variables t_foreign ~init:acc_f ~f_subst in
         let acc_f, v = f_var acc_f v_foreign in
         let phi_new_eqs = Formula.Normalizer.and_var_term v t phi_new_eqs |> sat_value_exn in
         (acc_f, phi_new_eqs) )
@@ -2931,7 +2937,7 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
   let and_atoms atoms_foreign acc_phi_new_eqs =
     IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms_foreign ~init:acc_phi_new_eqs
       ~f:(fun (acc_f, phi_new_eqs) atom_foreign ->
-        let acc_f, atom = Atom.fold_subst_variables atom_foreign ~init:acc_f ~f:f_subst in
+        let acc_f, atom = Atom.fold_subst_variables atom_foreign ~init:acc_f ~f_subst in
         let phi_new_eqs = Formula.Normalizer.and_atom atom phi_new_eqs |> sat_value_exn in
         (acc_f, phi_new_eqs) )
   in
@@ -2963,7 +2969,7 @@ let and_conditions_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var
   let add_conditions conditions_foreign init =
     IContainer.fold_of_pervasives_set_fold Atom.Set.fold conditions_foreign ~init
       ~f:(fun (acc_f, phi_new_eqs) atom_foreign ->
-        let acc_f, atom = Atom.fold_subst_variables atom_foreign ~init:acc_f ~f:f_subst in
+        let acc_f, atom = Atom.fold_subst_variables atom_foreign ~init:acc_f ~f_subst in
         let phi_new_eqs = prune_atom atom phi_new_eqs |> sat_value_exn in
         (acc_f, phi_new_eqs) )
   in
@@ -3016,7 +3022,7 @@ end = struct
     Atom.Set.fold
       (fun atom atoms' ->
         let changed, atom' =
-          Atom.fold_subst_variables atom ~init:false ~f:(fun changed v ->
+          Atom.fold_subst_variables atom ~init:false ~f_subst:(fun changed v ->
               if Var.Set.mem v precondition_vocabulary then (changed, VarSubst v)
               else
                 (* [v] is not mentioned in the precondition but maybe call sites can still affect its
