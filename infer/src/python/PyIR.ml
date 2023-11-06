@@ -1867,7 +1867,11 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames} as code)
       let exp = Exp.GetAttr (tos, name) in
       let st = State.push st exp in
       Ok (st, None)
-  | "LOAD_DEREF" ->
+  | "LOAD_CLASSDEREF" | "LOAD_DEREF" ->
+      (* It is unclear if extra information needs to be stored for * [LOAD_CLASSDEREF] vs
+         [LOAD_DEREF]. Our tests so far suggests our name lookup strategy is compatible with both.
+         I'm leaving this comment in case some ["$unknwon"] strings start to appear in Textual
+         code *)
       let exp = deref code arg in
       let st = State.push st exp in
       Ok (st, None)

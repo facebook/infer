@@ -5427,4 +5427,94 @@ object dummy:
       f -> dummy.f
       g -> dummy.g
         |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
+class C:
+    def f(self):
+        import binascii
+
+        class D:
+            def g(self, unhexlify=binascii.unhexlify):
+                pass
+        |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0 .label:
+      dummy.C <- $ClassObj($FuncObj(C, dummy.C, {}), "C")
+      return None
+
+
+
+  objects:
+    object dummy.C:
+      code:
+        #b0 .label:
+          dummy.C.__module__ <- __name__
+          dummy.C.__qualname__ <- "C"
+          dummy.C.f <- $FuncObj(f, dummy.C.f, {})
+          return None
+
+
+
+      objects:
+        object dummy.C.f:
+          code:
+            #b0 .label:
+              $ImportName(binascii, from_list= [])
+              $Deref(binascii) <- $ImportName(binascii, from_list= [])
+              D <- $ClassObj($FuncObj(D, dummy.D, {}), "D")
+              return None
+
+
+
+          objects:
+            object dummy.C.f.D:
+              code:
+                #b0 .label:
+                  dummy.C.f.D.__module__ <- __name__
+                  dummy.C.f.D.__qualname__ <- "C.f.<locals>.D"
+                  dummy.C.f.D.g <- $FuncObj(g, dummy.C.f.<locals>.D.g, {(unhexlify, $Deref(binascii).unhexlify); })
+                  return None
+
+
+
+              objects:
+                object dummy.C.f.D.g:
+                  code:
+                    #b0 .label:
+                      return None
+
+
+
+
+
+                functions:
+                  g -> dummy.C.f.<locals>.D.g
+
+
+            classes:
+              D
+
+            functions:
+              D -> dummy.D
+
+
+          functions:
+            f -> dummy.C.f
+
+
+        classes:
+          C
+
+        functions:
+          C -> dummy.C
+          |}]
   end )
