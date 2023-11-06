@@ -16,6 +16,8 @@ module Var = struct
   include PulseAbstractValue
 
   let is_simpler_than v1 v2 = PulseAbstractValue.compare v1 v2 < 0
+
+  let is_simpler_or_equal v1 v2 = PulseAbstractValue.compare v1 v2 <= 0
 end
 
 module Q = QSafeCapped
@@ -93,14 +95,10 @@ module LinArith : sig
   val get_as_var : t -> Var.t option
   (** [get_as_var l] is [Some x] if [l=x], else [None] *)
 
-  val has_var : Var.t -> t -> bool
-
   val get_constant_part : t -> Q.t
   (** [get_as_const (c + l)] is [c] *)
 
   val get_coefficient : Var.t -> t -> Q.t option
-
-  val subst : Var.t -> Var.t -> t -> t
 
   val get_variables : t -> Var.t Seq.t
 
@@ -109,6 +107,12 @@ module LinArith : sig
   val fold : t -> init:'a -> f:('a -> Var.t * Q.t -> 'a) -> 'a
 
   val subst_variables : t -> f:(Var.t -> subst_target) -> t
+
+  val subst_variable : Var.t -> subst_target -> t -> t
+  (** same as above for a single variable to substitute (more optimized) *)
+
+  val get_simplest : t -> Var.t option
+  (** the smallest [v∊l] according to [Var.is_simpler_than] *)
 
   (** {2 Tableau-Specific Operations} *)
 
@@ -254,20 +258,9 @@ end = struct
     else None
 
 
-  let has_var x (_, vs) = VarMap.mem x vs
-
   let get_constant_part (c, _) = c
 
   let get_coefficient v (_, vs) = VarMap.find_opt v vs
-
-  let subst x y ((c, vs) as l) =
-    match VarMap.find_opt x vs with
-    | None ->
-        l
-    | Some cx ->
-        let vs' = VarMap.remove x vs |> VarMap.add y cx in
-        (c, vs')
-
 
   let of_subst_target = function QSubst q -> of_q q | VarSubst v -> of_var v | LinSubst l -> l
 
@@ -288,14 +281,26 @@ end = struct
 
   let subst_variables l ~f = fold_subst_variables l ~init:() ~f:(fun () v -> ((), f v)) |> snd
 
+  (* OPTIM: for a single variable we can avoid iterating over the coefficient map *)
+  let subst_variable x subst_target ((c, vs) as l0) =
+    match VarMap.find_opt x vs with
+    | None ->
+        l0
+    | Some q ->
+        let vs' = VarMap.remove x vs in
+        add (mult q (of_subst_target subst_target)) (c, vs')
+
+
   let get_variables (_, vs) = VarMap.to_seq vs |> Seq.map fst
+
+  let get_simplest l = VarMap.min_binding_opt (snd l) |> Option.map ~f:fst
 
   (** {2 Tableau-Specific Operations} *)
 
   let is_restricted l =
     (* HACK: unrestricted variables come first so we first test if there exists any unrestricted
        variable in the map by checking its min element *)
-    not (VarMap.min_binding_opt (snd l) |> Option.exists ~f:(fun (v, _) -> Var.is_unrestricted v))
+    not (get_simplest l |> Option.exists ~f:Var.is_unrestricted)
 
 
   let solve_for_unrestricted w l =
@@ -335,11 +340,17 @@ end = struct
         false
 end
 
-let pp_var_map ~arrow pp_val pp_var fmt m =
+let pp_var_set pp_var fmt var_set =
+  Pp.collection ~sep:","
+    ~fold:(IContainer.fold_of_pervasives_set_fold Var.Set.fold)
+    ~pp_item:pp_var fmt var_set
+
+
+let pp_var_map ~arrow pp_val pp_var fmt var_map =
   Pp.collection ~sep:" ∧ "
     ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
     ~pp_item:(fun fmt (v, value) -> F.fprintf fmt "%a%s%a" pp_var v arrow pp_val value)
-    fmt m
+    fmt var_map
 
 
 (** An implementation of \[2\] "Solving Linear Arithmetic Constraints" by Harald Rueß and Natarajan
@@ -1629,6 +1640,36 @@ let pp_new_eq fmt = function
 
 type new_eqs = new_eq RevList.t
 
+module VarMapOccurrences = struct
+  type t = Var.Set.t Var.Map.t [@@deriving compare, equal]
+
+  let pp pp_var fmt occurrences =
+    (pp_var_map ~arrow:"->" (pp_var_set pp_var) pp_var) fmt occurrences
+
+
+  let yojson_of_t = [%yojson_of: _]
+
+  (** add [v'] to [occurrences(v)] *)
+  let add v ~occurs_in:v' occurrences =
+    Var.Map.update v
+      (fun in_vs_opt ->
+        let in_vs = Option.value ~default:Var.Set.empty in_vs_opt in
+        Some (Var.Set.add v' in_vs) )
+      occurrences
+
+
+  (** remove [v'] from [occurrences(v)] *)
+  let remove v ~occurred_in:v' occurrences =
+    Var.Map.update v
+      (function
+        | None ->
+            None
+        | Some in_vs ->
+            let in_vs' = Var.Set.remove v' in_vs in
+            if Var.Set.is_empty in_vs' then None else Some in_vs' )
+      occurrences
+end
+
 module Formula = struct
   (* redefined for yojson output *)
   type var_eqs = VarUF.t [@@deriving compare, equal]
@@ -1651,7 +1692,11 @@ module Formula = struct
     type t = private
       { var_eqs: var_eqs  (** equality relation between variables *)
       ; linear_eqs: linear_eqs
-            (** equalities of the form [x = l] where [l] is from linear arithmetic *)
+            (** equalities of the form [x = l] where [l] is from linear arithmetic
+
+                INVARIANT: the domain and the range of [phi.linear_eqs] mention distinct variables.
+                In particular this speeds up normalization steps as we can normalize in one step (in
+                [normalize_linear_eqs]). *)
       ; term_eqs: Term.VarMap.t_
             (** equalities of the form [t = x], used to detect when two abstract values are equal to
                 the same term (hence equal) *)
@@ -1660,14 +1705,20 @@ module Formula = struct
                 "slack") variables; this is used for reasoning about inequalities, see \[2\] *)
       ; intervals: (intervals[@yojson.opaque])
       ; atoms: Atom.Set.t
-            (** "everything else"; not always normalized w.r.t. the components above *) }
+            (** "everything else"; not always normalized w.r.t. the components above *)
+      ; linear_eqs_occurrences: VarMapOccurrences.t
+            (** occurrences of variables in [linear_eqs]: a binding [x -> y] means that [x] appears
+                in [linear_eqs(y)] and will be used to propagate new (linear) equalities about [x]
+                to maintain the [linear_eqs] invariant without having to do a linear scan of
+                [linear_eqs] *) }
     [@@deriving compare, equal, yojson_of]
 
     val ttrue : t
 
     val add_linear_eq : Var.t -> LinArith.t -> t -> t
+    (** don't forget to call [propagate_linear_eq] after this *)
 
-    val remove_linear_eq : Var.t -> t -> t
+    val remove_linear_eq : Var.t -> LinArith.t -> t -> t
 
     val add_term_eq : Term.t -> Var.t -> t -> t
 
@@ -1676,6 +1727,8 @@ module Formula = struct
     val add_interval : Var.t -> CItv.t -> t -> t
 
     val add_atom : Atom.t -> t -> t
+
+    val remove_from_linear_eqs_occurrences : Var.t -> t -> t
 
     val set_var_eqs : var_eqs -> t -> t
 
@@ -1696,6 +1749,7 @@ module Formula = struct
       -> tableau:Tableau.t
       -> intervals:intervals
       -> atoms:Atom.Set.t
+      -> linear_eqs_occurrences:VarMapOccurrences.t
       -> t
     (** escape hatch *)
   end = struct
@@ -1705,7 +1759,8 @@ module Formula = struct
       ; term_eqs: Term.VarMap.t_
       ; tableau: Tableau.t
       ; intervals: (intervals[@yojson.opaque])
-      ; atoms: Atom.Set.t }
+      ; atoms: Atom.Set.t
+      ; linear_eqs_occurrences: VarMapOccurrences.t }
     [@@deriving compare, equal, yojson_of]
 
     let ttrue =
@@ -1714,12 +1769,40 @@ module Formula = struct
       ; term_eqs= Term.VarMap.empty
       ; tableau= Tableau.empty
       ; intervals= Var.Map.empty
-      ; atoms= Atom.Set.empty }
+      ; atoms= Atom.Set.empty
+      ; linear_eqs_occurrences= Var.Map.empty }
 
 
-    let add_linear_eq v l phi = {phi with linear_eqs= Var.Map.add v l phi.linear_eqs}
+    let remove_linear_eq v l phi =
+      Debug.p "remove_linear_eq %a=%a@\n" Var.pp v (LinArith.pp Var.pp) l ;
+      let linear_eqs_occurrences =
+        LinArith.get_variables l
+        |> Seq.fold_left
+             (fun occurrences v' -> VarMapOccurrences.remove v' ~occurred_in:v occurrences)
+             phi.linear_eqs_occurrences
+      in
+      {phi with linear_eqs= Var.Map.remove v phi.linear_eqs; linear_eqs_occurrences}
 
-    let remove_linear_eq v phi = {phi with linear_eqs= Var.Map.remove v phi.linear_eqs}
+
+    let add_linear_eq v l phi =
+      Debug.p "add_linear_eq %a=%a@\n" Var.pp v (LinArith.pp Var.pp) l ;
+      let phi =
+        match Var.Map.find_opt v phi.linear_eqs with
+        | Some l_old ->
+            (* get rid of soon-to-be-junk occurrences and [term_eqs] associated with the previous
+               binding *)
+            remove_linear_eq v l_old phi
+        | None ->
+            phi
+      in
+      let linear_eqs_occurrences =
+        LinArith.get_variables l
+        |> Seq.fold_left
+             (fun occurrences v' -> VarMapOccurrences.add v' ~occurs_in:v occurrences)
+             phi.linear_eqs_occurrences
+      in
+      {phi with linear_eqs= Var.Map.add v l phi.linear_eqs; linear_eqs_occurrences}
+
 
     let add_term_eq t v phi = {phi with term_eqs= Term.VarMap.add t v phi.term_eqs}
 
@@ -1729,26 +1812,36 @@ module Formula = struct
 
     let add_atom atom phi = {phi with atoms= Atom.Set.add atom phi.atoms}
 
+    let remove_from_linear_eqs_occurrences v phi =
+      {phi with linear_eqs_occurrences= Var.Map.remove v phi.linear_eqs_occurrences}
+
+
     let set_var_eqs var_eqs phi = {phi with var_eqs}
 
     let set_tableau tableau phi = {phi with tableau}
 
     let set_intervals intervals phi = {phi with intervals}
 
-    let reset_linear phi = {phi with linear_eqs= Var.Map.empty; tableau= Var.Map.empty}
+    let reset_linear phi =
+      { phi with
+        linear_eqs= Var.Map.empty
+      ; tableau= Var.Map.empty
+      ; linear_eqs_occurrences= Var.Map.empty }
+
 
     let reset_atoms phi = {phi with atoms= Atom.Set.empty}
 
     let reset_term_eqs phi = {phi with term_eqs= Term.VarMap.empty}
 
-    let unsafe_mk ~var_eqs ~linear_eqs ~term_eqs ~tableau ~intervals ~atoms =
-      {var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms}
+    let unsafe_mk ~var_eqs ~linear_eqs ~term_eqs ~tableau ~intervals ~atoms ~linear_eqs_occurrences
+        =
+      {var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms; linear_eqs_occurrences}
   end
 
   include Unsafe
 
   let is_empty
-      ({var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms}
+      ({var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms; linear_eqs_occurrences= _}
         [@warning "+missing-record-field-pattern"] ) =
     VarUF.is_empty var_eqs && Var.Map.is_empty linear_eqs && Term.VarMap.is_empty term_eqs
     && Var.Map.is_empty tableau && Var.Map.is_empty intervals && Atom.Set.is_empty atoms
@@ -1779,7 +1872,7 @@ module Formula = struct
 
 
   let pp_with_pp_var pp_var fmt
-      ( ({var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms}
+      ( ({var_eqs; linear_eqs; term_eqs; tableau; intervals; atoms; linear_eqs_occurrences}
       [@warning "+missing-record-field-pattern"] ) as phi ) =
     let is_first = ref true in
     let pp_if condition header pp fmt x =
@@ -1800,6 +1893,10 @@ module Formula = struct
     (pp_if (not (Var.Map.is_empty intervals)) "intervals" (pp_var_map ~arrow:"" CItv.pp pp_var))
       fmt intervals ;
     (pp_if (not (Atom.Set.is_empty atoms)) "atoms" (Atom.Set.pp_with_pp_var pp_var)) fmt atoms ;
+    (pp_if
+       (not (Var.Map.is_empty linear_eqs_occurrences))
+       "linear_eqs_occurrences" (VarMapOccurrences.pp pp_var) )
+      fmt linear_eqs_occurrences ;
     F.pp_close_box fmt ()
 
 
@@ -1843,29 +1940,14 @@ module Formula = struct
     (* Use the monadic notations when normalizing formulas. *)
     open SatUnsat.Import
 
-    (** OVERVIEW: the best way to think about this is as a half-assed Shostak technique.
+    (** OVERVIEW: the best way to think about this is as a (somewhat half-assed) Shostak technique.
 
         The [var_eqs] and [linear_eqs] parts of a formula are kept in a normal form of sorts. We
         apply some deduction every time a new equality is discovered. Where this is incomplete is
-        that 1) we don't insist on normalizing the linear part of the relation always, and 2) we
-        stop discovering new consequences of facts after some fixed number of steps (the [fuel]
-        argument of some of the functions of this module).
-
-        Normalizing more than 1) happens on [normalize], where we rebuild the linear equality
-        relation (the equalities between variables are always "normalized" thanks to the union-find
-        data structure).
-
-        For 2), there is no mitigation as saturating the consequences of what we know implies
-        keeping track of *all* the consequences (to avoid diverging by re-discovering the same facts
-        over and over), which would be expensive.
-
-        There is also an interaction between equality classes and linear equalities [x = l], as each
-        such key [x] in the [linear_eqs] map is (or was at some point) the representative of its
-        class. Unlike (non-diverging...) Shostak techniques, we do not try very hard to normalize
-        the [l] in the linear equalities.
-
-        Disclaimer: It could be that this half-assedness is premature optimisation and that we could
-        afford much more completeness. *)
+        that we stop discovering new consequences of facts after some fixed number of steps (the
+        [fuel] argument of some of the functions of this module). saturating the consequences of
+        what we know implies keeping track of *all* the consequences (to avoid diverging by
+        re-discovering the same facts over and over), which would be expensive. *)
 
     (** the canonical representative of a given variable *)
     let get_repr phi x = VarUF.find phi.var_eqs x
@@ -1934,27 +2016,24 @@ module Formula = struct
             match Var.Map.find_opt v phi.linear_eqs with
             | None ->
                 (* add to the [term_eqs] relation only when we also add to [linear_eqs] *)
-                let+ phi, new_eqs =
+                let* phi, new_eqs =
                   solve_normalized_term_eq_no_lin ~fuel new_eqs (Term.Linear l) v phi
                 in
                 (* the rep might be changed by [solve_normalized_term_eq_no_lin] *)
                 let v = (get_repr phi v :> Var.t) in
                 let new_eqs = add_lin_eq_to_new_eqs v l new_eqs in
-                (* this can break the (as a result non-)invariant that variables in the domain of
-                   [linear_eqs] do not appear in the range of [linear_eqs] *)
-                (add_linear_eq v l phi, new_eqs)
+                (* this can break the invariant that variables in the domain of [linear_eqs] do not
+                   appear in the range of [linear_eqs], restore it *)
+                (add_linear_eq v l phi, new_eqs) |> propagate_linear_eq ~fuel v l
             | Some l' ->
                 (* This is the only step that consumes fuel: discovering an equality [l = l']: because we
                    do not record these anywhere (except when their consequence can be recorded as [y =
                    l''] or [y = y']), we could potentially discover the same equality over and over and
                    diverge otherwise. Or could we?) *)
-                (* [l'] is possibly not normalized w.r.t. the current [phi] so take this opportunity to
-                   normalize it, and replace [v]'s current binding *)
-                let l'' = normalize_linear phi l' in
-                let phi = if phys_equal l' l'' then phi else add_linear_eq v l'' phi in
+                let* phi, new_eqs = propagate_linear_eq ~fuel v l' (phi, new_eqs) in
                 if fuel > 0 then (
                   L.d_printfln "Consuming fuel solving linear equality (from %d)" fuel ;
-                  solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs l l'' phi )
+                  solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs l l' phi )
                 else (
                   (* [fuel = 0]: give up simplifying further for fear of diverging *)
                   L.d_printfln "Ran out of fuel solving linear equality" ;
@@ -2107,36 +2186,24 @@ module Formula = struct
           (* we already knew the equality *)
           Sat (phi, new_eqs)
       | Some (v_old, v_new) -> (
-          (* new equality [v_old = v_new]: we need to update a potential [v_old = l] to be [v_new =
-             l], and if [v_new = l'] was known we need to also explore the consequences of [l = l'] *)
-          (* NOTE: we try to maintain the invariant that for all [x=l] in [phi.linear_eqs], [x ∉
-             vars(l)]. We also try to stay as close as possible (without going back and re-normalizing
-             every linear equality every time we learn new equalities) to the invariant that the
-             domain and the range of [phi.linear_eqs] mention distinct variables. This is to speed up
-             normalization steps: when the stronger invariant holds we can normalize in one step (in
-             [normalize_linear_eqs]). *)
+          (* new equality [v_old = v_new]: we need to propagate this fact to the various domains,
+             especially [linear_eqs]: we update a potential [v_old = l_old] to be [v_new = l_old],
+             and if [v_new = l_new] was known we add [l_old = l_new] *)
           let v_new = (v_new :> Var.t) in
           L.d_printfln "new eq: %a = %a" Var.pp v_old Var.pp v_new ;
           let new_eqs = RevList.cons (Equal (v_old, v_new)) new_eqs in
-          let phi, l_new =
-            match Var.Map.find_opt v_new phi.linear_eqs with
-            | None ->
-                (phi, None)
-            | Some l ->
-                if LinArith.has_var v_old l then
-                  let l_new = LinArith.subst v_old v_new l in
-                  (add_linear_eq v_new l_new phi, Some l_new)
-                else (phi, Some l)
+          (* substitute [v_old -> v_new] in [phi.linear_eqs] while maintaining the [linear_eqs]
+             invariant *)
+          let* phi, new_eqs =
+            propagate_linear_eq ~fuel v_old (LinArith.of_var v_new) (phi, new_eqs)
           in
+          let l_new = Var.Map.find_opt v_new phi.linear_eqs in
           let phi, l_old =
             match Var.Map.find_opt v_old phi.linear_eqs with
             | None ->
                 (phi, None)
             | Some l_old ->
-                (* [l_old] has no [v_old] or [v_new] by invariant so no need to subst, unlike for
-                   [l_new] above: variables in [l_old] are strictly greater than [v_old], and [v_new]
-                   is smaller than [v_old] *)
-                (remove_linear_eq v_old phi, Some l_old)
+                (remove_linear_eq v_old l_old phi, Some l_old)
           in
           (* NOTE: we don't propagate new variable equalities to the tableau eagerly at the moment *)
           match (l_old, l_new) with
@@ -2147,7 +2214,7 @@ module Formula = struct
               Sat (phi, new_eqs)
           | Some l, None ->
               let new_eqs = add_lin_eq_to_new_eqs v_new l new_eqs in
-              Sat (add_linear_eq v_new l phi, new_eqs)
+              (add_linear_eq v_new l phi, new_eqs) |> propagate_linear_eq ~fuel v_new l
           | Some l1, Some l2 ->
               let new_eqs = add_lin_eq_to_new_eqs v_new l1 new_eqs in
               let new_eqs = add_lin_eq_to_new_eqs v_new l2 new_eqs in
@@ -2155,6 +2222,74 @@ module Formula = struct
                  times because there are finitely many variables in a given formula *)
               (* TODO: we may want to keep the "simpler" representative for [v_new] between [l1] and [l2] *)
               solve_normalized_lin_eq ~fuel new_eqs l1 l2 phi )
+
+
+    and propagate_linear_eq ~fuel x lx ((phi, new_eqs) as phi_new_eqs) =
+      Debug.p "[propagate_in_linear_eqs] %a=%a@\n  @[" Var.pp x (LinArith.pp Var.pp) lx ;
+      let r =
+        match Var.Map.find_opt x phi.linear_eqs_occurrences with
+        | None ->
+            Sat phi_new_eqs
+        | Some in_linear_eqs ->
+            (* [x=l] has been added to the linear equalities so by the invariant (that we are about to
+               restore) there are no further occurrences of [x] in [phi.linear_eqs] *)
+            let phi = remove_from_linear_eqs_occurrences x phi in
+            Var.Set.fold
+              (fun v phi_new_eqs_sat ->
+                let* phi, new_eqs = phi_new_eqs_sat in
+                match Var.Map.find_opt v phi.linear_eqs with
+                | None ->
+                    Debug.p "huh? no %a in linear eqs but %a claimed it was in a linear eq for %a"
+                      Var.pp v Var.pp x Var.pp v ;
+                    phi_new_eqs_sat
+                | Some lv ->
+                    (* renormalize [lx] in case we have discovered new equalities since the beginning
+                       of the fold(!!) *)
+                    let lx = normalize_linear phi lx in
+                    Debug.p "substituting %a->%a in %a->%a@\n" Var.pp x (LinArith.pp Var.pp) lx
+                      Var.pp v (LinArith.pp Var.pp) lv ;
+                    let r =
+                      let lv' = LinArith.subst_variable x (LinSubst lx) lv in
+                      (* check the invariant that [v] is (strictly) simpler than any variable in
+                         [lv']; because the invariant was true before it's enough to check that it's
+                         simpler than any variable in [lx] *)
+                      let needs_pivot =
+                        match LinArith.get_simplest lx with
+                        | None ->
+                            false
+                        | Some min ->
+                            Var.is_simpler_or_equal min v
+                      in
+                      Debug.p "needs_pivot= %b@\n" needs_pivot ;
+                      if needs_pivot then
+                        (* need to pivot the equality [v = lv'] to restore the above invariant since
+                           it's not in the right form *)
+                        let phi = remove_linear_eq v lv phi in
+                        solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs
+                          (LinArith.of_var v |> normalize_linear phi)
+                          lv' phi
+                      else
+                        (* To restore the linarith invariants just subst [x->lx] in [lv],
+                           i.e. [lv']. Detect if this is a variable equality and propagate it as such
+                           if so instead of adding it to [linear_eqs] (which aren't supposed to
+                           contain plain variable equalities). *)
+                        match LinArith.get_as_var lv' with
+                        | Some v' ->
+                            let phi = remove_linear_eq v lv phi in
+                            merge_vars ~fuel new_eqs v v' phi
+                        | _ ->
+                            Sat (add_linear_eq v lv' phi, new_eqs)
+                    in
+                    Debug.p "@\nResult of %a->%a in %a->%a=@\n  @[%a@]@\n" Var.pp x
+                      (LinArith.pp Var.pp) lx Var.pp v (LinArith.pp Var.pp) lv
+                      (SatUnsat.pp (fun fmt (phi, _) -> pp_with_pp_var Var.pp fmt phi))
+                      r ;
+                    r )
+              in_linear_eqs
+              (Sat (phi, new_eqs))
+      in
+      Debug.p "@]@\n" ;
+      r
 
 
     (* Assumes [w] is restricted, [l] is normalized. This is called [addlineq] in \[2\]. *)
@@ -2795,13 +2930,18 @@ end = struct
       atoms Atom.Set.empty
 
 
-  let subst_var_phi subst {Formula.var_eqs; linear_eqs; tableau; term_eqs; intervals; atoms} =
+  let subst_var_phi subst
+      {Formula.var_eqs; linear_eqs; tableau; term_eqs; intervals; atoms; linear_eqs_occurrences= _}
+      =
     Formula.unsafe_mk ~var_eqs:(VarUF.apply_subst subst var_eqs)
       ~linear_eqs:(subst_var_linear_eqs subst linear_eqs)
       ~term_eqs:(Term.VarMap.apply_var_subst subst term_eqs)
       ~tableau:(subst_var_linear_eqs subst tableau)
       ~intervals:(subst_var_intervals subst intervals)
       ~atoms:(subst_var_atoms subst atoms)
+        (* this is only ever called during summary creation, it's safe to ditch the occurrence maps
+           at this point since they will be reconstructed by callers *)
+      ~linear_eqs_occurrences:Var.Map.empty
 
 
   let extend_with_restricted_reps_of keep formula =
@@ -2958,7 +3098,11 @@ module DeadVariables = struct
       let intervals =
         Var.Map.filter (fun v _ -> Var.Set.mem v vars_to_keep) phi.Formula.intervals
       in
-      Formula.unsafe_mk ~var_eqs ~linear_eqs ~term_eqs ~tableau ~intervals ~atoms
+      Formula.unsafe_mk ~var_eqs ~linear_eqs ~term_eqs ~tableau ~intervals
+        ~atoms
+          (* we simplify for summaries creation, it's safe to ditch the occurrence maps at this
+             point since they will be reconstructed by callers *)
+        ~linear_eqs_occurrences:Var.Map.empty
     in
     let phi = simplify_phi formula.phi in
     let conditions =
