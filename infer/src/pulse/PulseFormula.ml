@@ -171,14 +171,19 @@ end = struct
           let plusminus, c_pos = if Q.geq c Q.zero then ('+', c) else ('-', Q.neg c) in
           F.fprintf fmt " %c%a" plusminus Q.pp_print c_pos
       in
+      let is_first = ref true in
       let pp_coeff fmt q =
-        if not (Q.is_one q) then
-          if Q.is_minus_one q then F.pp_print_string fmt "-" else F.fprintf fmt "%a·" Q.pp_print q
+        if Q.(q < zero) then F.pp_print_char fmt '-'
+        else if Q.(q >= zero) && not !is_first then F.pp_print_char fmt '+' ;
+        let abs_q = Q.abs q in
+        if not (Q.is_one abs_q) then F.fprintf fmt "%a·" Q.pp_print abs_q
       in
       let pp_vs fmt vs =
-        Pp.collection ~sep:" + "
+        Pp.collection ~sep:" "
           ~fold:(IContainer.fold_of_pervasives_map_fold VarMap.fold)
-          ~pp_item:(fun fmt (v, q) -> F.fprintf fmt "%a%a" pp_coeff q pp_var v)
+          ~pp_item:(fun fmt (v, q) ->
+            F.fprintf fmt "%a%a" pp_coeff q pp_var v ;
+            is_first := false )
           fmt vs
       in
       F.fprintf fmt "@[<h>%a%a@]" pp_vs vs pp_c c
@@ -576,7 +581,7 @@ module Term = struct
     | NotEqual (t1, t2) ->
         F.fprintf fmt "%a≠%a" (pp_paren pp_var ~needs_paren) t1 (pp_paren pp_var ~needs_paren) t2
     | IsInstanceOf (v, t) ->
-        F.fprintf fmt "(%a instanceof %a)" pp_var v (Typ.pp Pp.text) t
+        F.fprintf fmt "%a instanceof %a" pp_var v (Typ.pp_full Pp.text) t
     | IsInt t ->
         F.fprintf fmt "is_int(%a)" (pp_no_paren pp_var) t
 
