@@ -79,6 +79,9 @@ val idempotent_getters : bool
 
 val initial_analysis_time : float
 
+val is_running_unit_test : bool
+(** whether the infer executable looks like we are just running infer unit tests *)
+
 val ivar_attributes : string
 
 val java_lambda_marker_infix_generated_by_javalib : string

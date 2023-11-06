@@ -25,12 +25,7 @@ module Debug = struct
   let dummy_formatter = F.make_formatter (fun _ _ _ -> ()) (fun () -> ())
 
   let p fmt =
-    if debug then
-      F.kasprintf
-        (fun s ->
-          L.d_str s ;
-          F.printf "%s" s )
-        fmt
+    if debug then if Config.is_running_unit_test then F.printf fmt else L.d_printf fmt
     else F.ifprintf dummy_formatter fmt
 end
 
