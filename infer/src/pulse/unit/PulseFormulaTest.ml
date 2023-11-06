@@ -318,13 +318,8 @@ let%test_module "normalization" =
           phi: var_eqs: x=v6
                && linear_eqs: x = 0 ∧ y = 1
                && term_eqs: 0=x∧1=y
-               && intervals: x=0 ∧ y=1 ∧ v6=0
-        Result: changed
-          conditions: (empty)
-          phi: var_eqs: x=v6
-               && linear_eqs: x = 0 ∧ y = 1
-               && term_eqs: 0=x∧1=y
-               && intervals: x=0 ∧ y=1|}]
+               && intervals: x=0 ∧ y=1
+        Result: same|}]
 
 
     let%expect_test _ =
@@ -383,17 +378,10 @@ let%test_module "normalization" =
           phi: var_eqs: v8=v9=v10
                && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
                && term_eqs: (-1)=v7∧0=v8∧[-v6 -1]=x∧[1/3·v6]=y
-               && intervals: v10=0
-               && linear_eqs_occurrences: v6->x,y
-               && term_eqs_occurrences: v6->[-v6 -1],[1/3·v6]
-        Result: changed
-          conditions: (empty)
-          phi: var_eqs: v8=v9=v10
-               && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
-               && term_eqs: (-1)=v7∧0=v8∧[-v6 -1]=x∧[1/3·v6]=y
                && intervals: v8=0
                && linear_eqs_occurrences: v6->x,y
-               && term_eqs_occurrences: v6->[-v6 -1],[1/3·v6]|}]
+               && term_eqs_occurrences: v6->[-v6 -1],[1/3·v6]
+        Result: same|}]
 
 
     (* check that this becomes all linear equalities thanks to constant propagation *)
@@ -407,18 +395,10 @@ let%test_module "normalization" =
                && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1
                                ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
                && term_eqs: (-1)=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
-               && intervals: z=12 ∧ w=1 ∧ v=3 ∧ v10=0
-               && linear_eqs_occurrences: v6->x,y
-               && term_eqs_occurrences: v6->[-v6 -1],[1/3·v6]
-        Result: changed
-          conditions: (empty)
-          phi: var_eqs: v8=v9=v10
-               && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1
-                               ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
-               && term_eqs: (-1)=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
                && intervals: z=12 ∧ w=1 ∧ v=3 ∧ v8=0
                && linear_eqs_occurrences: v6->x,y
-               && term_eqs_occurrences: v6->[-v6 -1],[1/3·v6]|}]
+               && term_eqs_occurrences: v6->[-v6 -1],[1/3·v6]
+        Result: same|}]
 
 
     (* expected: [is_int(x)] and [is_int(y)] get simplified away, [is_int(z)] is kept around *)
@@ -560,9 +540,10 @@ let%test_module "non-linear simplifications" =
           phi: var_eqs: w=v7=v8=v9=v10
                && linear_eqs: w = 0
                && term_eqs: 0=w∧([x]×[z])=v6
+               && intervals: w=0
                && term_eqs_occurrences: x->([x]×[z]) ∧ z->([x]×[z])
         Result: changed
-          conditions: (empty) phi: linear_eqs: w = 0 && term_eqs: 0=w|}]
+          conditions: (empty) phi: linear_eqs: w = 0 && term_eqs: 0=w && intervals: w=0|}]
 
 
     let%expect_test "constant propagation: bitshift" =
@@ -618,21 +599,12 @@ let%test_module "inequalities" =
           phi: var_eqs: a3=z ∧ a2=y ∧ a1=x
                && linear_eqs: a2 = a3 +a5 +3 ∧ a1 = -a3 +a4 -a5 -1 ∧ v6 = a4 +2 ∧ v7 = -a5 -3
                && term_eqs: [-a5 -3]=v7∧[-a3 +a4 -a5 -1]=a1∧[a4 +2]=v6∧[a3 +a5 +3]=a2
-               && intervals: x≥0 ∧ y≥0 ∧ z≥0 ∧ v6≥2 ∧ v7≤-3
-               && linear_eqs_occurrences: a5->a2,a1,v7 ∧ a4->a1,v6 ∧ a3->a2,a1
-               && term_eqs_occurrences: a5->[-a5 -3],[-a3 +a4 -a5 -1],[a3 +a5 +3]
-                                         ∧ a4->[-a3 +a4 -a5 -1],[a4 +2] ∧ a3->[-a3 +a4 -a5 -1]
-                                                                            ,[a3 +a5 +3]
-        Result: changed
-          conditions: (empty)
-          phi: var_eqs: a3=z ∧ a2=y ∧ a1=x
-               && linear_eqs: a2 = a3 +a5 +3 ∧ a1 = -a3 +a4 -a5 -1 ∧ v6 = a4 +2 ∧ v7 = -a5 -3
-               && term_eqs: [-a5 -3]=v7∧[-a3 +a4 -a5 -1]=a1∧[a4 +2]=v6∧[a3 +a5 +3]=a2
                && intervals: a3≥0 ∧ a2≥0 ∧ a1≥0 ∧ v6≥2 ∧ v7≤-3
                && linear_eqs_occurrences: a5->a2,a1,v7 ∧ a4->a1,v6 ∧ a3->a2,a1
                && term_eqs_occurrences: a5->[-a5 -3],[-a3 +a4 -a5 -1],[a3 +a5 +3]
                                          ∧ a4->[-a3 +a4 -a5 -1],[a4 +2] ∧ a3->[-a3 +a4 -a5 -1]
-                                                                            ,[a3 +a5 +3] |}]
+                                                                            ,[a3 +a5 +3]
+        Result: same |}]
 
 
     let%expect_test "add to tableau with pivot then unsat" =
@@ -668,7 +640,7 @@ let%test_module "inequalities" =
           phi: var_eqs: y=v6
                && linear_eqs: a2 = 0 ∧ a1 = 1 ∧ x = 32 ∧ y = 64
                && term_eqs: 0=a2∧1=a1∧32=x∧64=y
-               && intervals: x=32 ∧ y=64
+               && intervals: a2=0 ∧ x=32 ∧ y=64
         Result: same|}]
   end )
 
@@ -695,7 +667,7 @@ let%test_module "intervals" =
                && linear_eqs: a2 = 0 ∧ a1 = 2
                && term_eqs: 0=a2∧2=a1
                && tableau: a2 = -a1 +2
-               && intervals: x=2
+               && intervals: a2=0 ∧ a1=2
         Result: changed
           conditions: (empty) phi: linear_eqs: x = 2 && term_eqs: 2=x && intervals: x=2|}]
 
@@ -710,13 +682,13 @@ let%test_module "intervals" =
                && linear_eqs: a4 = 7 ∧ a3 = 0 ∧ a1 = 2
                && term_eqs: 0=a3∧2=a1∧7=a4
                && tableau: a4 = -a3 +7 ∧ a2 = -a1 +2
-               && intervals: x=2 ∧ y=2
+               && intervals: a3=0 ∧ a1=2
         Result: changed
           conditions: (empty)
           phi: var_eqs: a3=a2 ∧ a1=x=y
                && linear_eqs: a4 = 7 ∧ a3 = 0 ∧ a1 = 2
                && term_eqs: 0=a3∧2=a1∧7=a4
-               && intervals: a1=2 |}]
+               && intervals: a3=0 ∧ a1=2 |}]
   end )
 
 

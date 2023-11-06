@@ -1749,6 +1749,10 @@ let pp_new_eq fmt = function
 
 type new_eqs = new_eq RevList.t
 
+let pp_new_eqs fmt new_eqs =
+  F.fprintf fmt "[@[%a@]]" (Pp.seq ~sep:"," pp_new_eq) (RevList.to_list new_eqs)
+
+
 module MakeOccurrences (In : sig
   type t
 
@@ -2089,8 +2093,10 @@ module Formula = struct
         | None ->
             Sat intv
         | Some intv' ->
+            Debug.p "intersection %a*%a@\n" CItv.pp intv CItv.pp intv' ;
             CItv.intersection intv intv' |> SatUnsat.of_option
       in
+      Debug.p "adding %a%a@\n" Var.pp v CItv.pp possibly_better_intv ;
       Var.Map.add v possibly_better_intv intervals
 
 
@@ -2498,8 +2504,8 @@ module Formula = struct
 
     (** same as {!solve_normalized_eq_no_lin} but also adds linear to [phi.linear_eqs] *)
     and solve_normalized_term_eq ~fuel new_eqs (t : Term.t) v phi =
-      Debug.p "solve_normalized_term_eq: %a=%a in %a@\n" (Term.pp Var.pp) t Var.pp v
-        (pp_with_pp_var Var.pp) phi ;
+      Debug.p "solve_normalized_term_eq: %a=%a in %a, new_eqs=%a@\n" (Term.pp Var.pp) t Var.pp v
+        (pp_with_pp_var Var.pp) phi pp_new_eqs new_eqs ;
       match t with
       | Linear l when LinArith.get_as_var l |> Option.is_some ->
           let v' = Option.value_exn (LinArith.get_as_var l) in
@@ -2879,7 +2885,8 @@ module Formula = struct
 
 
     let and_var_term ~fuel v t (phi, new_eqs) =
-      Debug.p "and_var_term: %a=%a in %a@\n" Var.pp v (Term.pp Var.pp) t (pp_with_pp_var Var.pp) phi ;
+      Debug.p "and_var_term: %a=%a in %a,@;new_eqs=%a@\n" Var.pp v (Term.pp Var.pp) t
+        (pp_with_pp_var Var.pp) phi pp_new_eqs new_eqs ;
       let* (t' : Term.t) =
         normalize_var_const phi t |> Atom.eval_term ~is_neq_zero:(is_neq_zero phi)
       in
@@ -2967,10 +2974,11 @@ module Formula = struct
     let normalize phi_new_eqs = normalize_with_fuel ~fuel:base_fuel phi_new_eqs
 
     let and_atom atom phi_new_eqs =
+      Debug.p "BEGIN and_atom %a@\n" (Atom.pp_with_pp_var Var.pp) atom ;
       let phi_new_eqs' = and_atom atom phi_new_eqs >>| snd in
-      Debug.p "and_atom %a -> %a@\n" (Atom.pp_with_pp_var Var.pp) atom
-        (SatUnsat.pp (pp_with_pp_var Var.pp))
-        (SatUnsat.map fst phi_new_eqs') ;
+      Debug.p "END and_atom %a -> %a@\n" (Atom.pp_with_pp_var Var.pp) atom
+        (SatUnsat.pp (Pp.pair ~fst:(pp_with_pp_var Var.pp) ~snd:pp_new_eqs))
+        phi_new_eqs' ;
       phi_new_eqs'
 
 
@@ -3009,10 +3017,112 @@ let pp_with_pp_var pp_var fmt {conditions; phi} =
 
 let pp = pp_with_pp_var Var.pp
 
+module Intervals = struct
+  let interval_and_var_of_operand phi = function
+    | AbstractValueOperand v ->
+        (Some (Formula.get_repr phi v :> Var.t), Var.Map.find_opt v phi.Formula.intervals)
+    | ConstOperand (Cint i) ->
+        (None, Some (CItv.equal_to i))
+    | ConstOperand (Cfun _ | Cstr _ | Cfloat _ | Cclass _) ->
+        (None, None)
+    | FunctionApplicationOperand _ ->
+        (None, None)
+
+
+  let interval_of_operand phi operand = interval_and_var_of_operand phi operand |> snd
+
+  let update_formula formula intervals =
+    {formula with phi= Formula.set_intervals intervals formula.phi}
+
+
+  let incorporate_new_eqs new_eqs formula =
+    Debug.p "Intervals.incorporate_new_eqs %a@\n" pp_new_eqs new_eqs ;
+    RevList.to_list new_eqs
+    |> SatUnsat.list_fold ~init:formula.phi.intervals ~f:(fun intervals new_eq ->
+           Debug.p "intervals incorporating %a@\n" pp_new_eq new_eq ;
+           match new_eq with
+           | EqZero v ->
+               Formula.add_interval_ v (CItv.equal_to IntLit.zero) intervals
+           | Equal (v_old, v_new) -> (
+             match Var.Map.find_opt v_old intervals with
+             | None ->
+                 Sat intervals
+             | Some intv_old ->
+                 Debug.p "found old interval for %a: %a@\n" Var.pp v_old CItv.pp intv_old ;
+                 Var.Map.remove v_old intervals
+                 (* this will take care of taking the intersection of the intervals if [v_new]
+                    already had an interval associated to it too *)
+                 |> Formula.add_interval_ v_new intv_old ) )
+    >>| update_formula formula
+
+
+  let and_binop ~negated binop op1 op2 (formula, new_eqs) =
+    Debug.p "Intervals.and_binop ~negated:%b %a %a %a@\n" negated Binop.pp binop pp_operand op1
+      pp_operand op2 ;
+    let v1_opt, i1_opt = interval_and_var_of_operand formula.phi op1 in
+    let v2_opt, i2_opt = interval_and_var_of_operand formula.phi op2 in
+    match CItv.abduce_binop_is_true ~negated binop i1_opt i2_opt with
+    | Unsatisfiable ->
+        Unsat
+    | Satisfiable (i1_better_opt, i2_better_opt) ->
+        let refine v_opt i_better_opt formula_new_eqs =
+          Option.both v_opt i_better_opt
+          |> Option.fold ~init:(Sat formula_new_eqs) ~f:(fun formula_new_eqs (v, i_better) ->
+                 Debug.p "Refining interval for %a to %a@\n" Var.pp v CItv.pp i_better ;
+                 let* formula, new_eqs = formula_new_eqs in
+                 let* phi = Formula.add_interval v i_better formula.phi in
+                 let* phi, new_eqs =
+                   match Var.Map.find v phi.Formula.intervals |> CItv.to_singleton with
+                   | None ->
+                       Sat (phi, new_eqs)
+                   | Some i ->
+                       Formula.Normalizer.and_var_term v (Term.of_intlit i) (phi, new_eqs)
+                 in
+                 let+ formula = incorporate_new_eqs new_eqs {formula with phi} in
+                 (formula, new_eqs) )
+        in
+        refine v1_opt i1_better_opt (formula, new_eqs) >>= refine v2_opt i2_better_opt
+
+
+  let binop v bop op_lhs op_rhs formula =
+    match
+      Option.both (interval_of_operand formula.phi op_lhs) (interval_of_operand formula.phi op_rhs)
+      |> Option.bind ~f:(fun (lhs, rhs) -> CItv.binop bop lhs rhs)
+    with
+    | None ->
+        Sat formula
+    | Some binop_itv ->
+        Formula.add_interval_ v binop_itv formula.phi.intervals >>| update_formula formula
+
+
+  let unop v op x formula =
+    match
+      let open Option.Monad_infix in
+      interval_of_operand formula.phi x >>= CItv.unop op
+    with
+    | None ->
+        Sat formula
+    | Some unop_itv ->
+        Formula.add_interval_ v unop_itv formula.phi.intervals >>| update_formula formula
+
+
+  let and_callee_interval v citv_callee (phi, new_eqs) =
+    let citv_caller_opt = Var.Map.find_opt v phi.Formula.intervals in
+    match CItv.abduce_binop_is_true ~negated:false Eq citv_caller_opt (Some citv_callee) with
+    | Unsatisfiable ->
+        Unsat
+    | Satisfiable (Some abduce_caller, _abduce_callee) ->
+        let+ phi = Formula.add_interval v abduce_caller phi in
+        (phi, new_eqs)
+    | Satisfiable (None, _) ->
+        Sat (phi, new_eqs)
+end
+
 let and_atom atom formula =
   let open SatUnsat.Import in
-  let+ phi, new_eqs = Formula.Normalizer.and_atom atom (formula.phi, RevList.empty) in
-  ({formula with phi}, new_eqs)
+  let* phi, new_eqs = Formula.Normalizer.and_atom atom (formula.phi, RevList.empty) in
+  let+ formula = Intervals.incorporate_new_eqs new_eqs {formula with phi} in
+  (formula, new_eqs)
 
 
 let mk_atom_of_binop (binop : Binop.t) =
@@ -3028,85 +3138,6 @@ let mk_atom_of_binop (binop : Binop.t) =
   | _ ->
       L.die InternalError "wrong argument to [mk_atom_of_binop]: %a" Binop.pp binop
 
-
-module Intervals = struct
-  let interval_and_var_of_operand intervals = function
-    | AbstractValueOperand v ->
-        (Some v, Var.Map.find_opt v intervals)
-    | ConstOperand (Cint i) ->
-        (None, Some (CItv.equal_to i))
-    | ConstOperand (Cfun _ | Cstr _ | Cfloat _ | Cclass _) ->
-        (None, None)
-    | FunctionApplicationOperand _ ->
-        (None, None)
-
-
-  let interval_of_operand intervals operand = interval_and_var_of_operand intervals operand |> snd
-
-  let update_formula formula intervals =
-    {formula with phi= Formula.set_intervals intervals formula.phi}
-
-
-  let and_binop ~negated binop op1 op2 (formula, new_eqs) =
-    let intervals = formula.phi.intervals in
-    let v1_opt, i1_opt = interval_and_var_of_operand intervals op1 in
-    let v2_opt, i2_opt = interval_and_var_of_operand intervals op2 in
-    match CItv.abduce_binop_is_true ~negated binop i1_opt i2_opt with
-    | Unsatisfiable ->
-        Unsat
-    | Satisfiable (i1_better_opt, i2_better_opt) ->
-        let refine v_opt i_better_opt formula_new_eqs =
-          Option.both v_opt i_better_opt
-          |> Option.fold ~init:(Sat formula_new_eqs) ~f:(fun formula_new_eqs (v, i_better) ->
-                 let* formula, new_eqs = formula_new_eqs in
-                 let* phi, new_eqs =
-                   match CItv.to_singleton i_better with
-                   | None ->
-                       Sat (formula.phi, new_eqs)
-                   | Some i ->
-                       Formula.Normalizer.and_var_term v (Term.of_intlit i) (formula.phi, new_eqs)
-                 in
-                 let+ phi = Formula.add_interval v i_better phi in
-                 ({formula with phi}, new_eqs) )
-        in
-        refine v1_opt i1_better_opt (formula, new_eqs) >>= refine v2_opt i2_better_opt
-
-
-  let binop v bop op_lhs op_rhs formula =
-    let intervals = formula.phi.intervals in
-    match
-      Option.both (interval_of_operand intervals op_lhs) (interval_of_operand intervals op_rhs)
-      |> Option.bind ~f:(fun (lhs, rhs) -> CItv.binop bop lhs rhs)
-    with
-    | None ->
-        Sat formula
-    | Some binop_itv ->
-        Formula.add_interval_ v binop_itv intervals >>| update_formula formula
-
-
-  let unop v op x formula =
-    let intervals = formula.phi.intervals in
-    match
-      let open Option.Monad_infix in
-      interval_of_operand intervals x >>= CItv.unop op
-    with
-    | None ->
-        Sat formula
-    | Some unop_itv ->
-        Formula.add_interval_ v unop_itv intervals >>| update_formula formula
-
-
-  let and_callee_interval v citv_callee (phi, new_eqs) =
-    let citv_caller_opt = Var.Map.find_opt v phi.Formula.intervals in
-    match CItv.abduce_binop_is_true ~negated:false Eq citv_caller_opt (Some citv_callee) with
-    | Unsatisfiable ->
-        Unsat
-    | Satisfiable (Some abduce_caller, _abduce_callee) ->
-        let+ phi = Formula.add_interval v abduce_caller phi in
-        (phi, new_eqs)
-    | Satisfiable (None, _) ->
-        Sat (phi, new_eqs)
-end
 
 let and_mk_atom binop op1 op2 formula =
   let* formula, new_eqs =
@@ -3152,14 +3183,15 @@ let and_equal_binop v (bop : Binop.t) x y formula =
 let prune_atom atom (formula, new_eqs) =
   (* Use [phi] to normalize [atom] here to take previous [prune]s into account. *)
   let* normalized_atoms = Formula.Normalizer.normalize_atom formula.phi atom in
-  let+ phi, new_eqs =
+  let* phi, new_eqs =
     Formula.Normalizer.and_normalized_atoms (formula.phi, new_eqs) normalized_atoms
   in
   let conditions =
     List.fold normalized_atoms ~init:formula.conditions ~f:(fun conditions atom ->
         Atom.Set.add atom conditions )
   in
-  ({phi; conditions}, new_eqs)
+  let+ formula = Intervals.incorporate_new_eqs new_eqs {phi; conditions} in
+  (formula, new_eqs)
 
 
 let prune_atoms atoms formula_new_eqs =
