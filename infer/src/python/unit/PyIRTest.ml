@@ -3240,6 +3240,79 @@ object dummy:
     let%expect_test _ =
       let source =
         {|
+import foo
+
+def f(ok):
+    try:
+          foo.bar()
+    except OverflowError:
+        if not ok:
+            raise
+          |}
+      in
+      test source ;
+      [%expect
+        {|
+module
+object dummy:
+  code:
+    #b0 .label:
+      $ImportName(foo, from_list= [])
+      dummy.foo <- $ImportName(foo, from_list= [])
+      dummy.f <- $FuncObj(f, dummy.f, {})
+      return None
+
+
+
+  objects:
+    object dummy.f:
+      code:
+        #b0 .label:
+          n0 <- $CallMethod($LoadMethod(foo, bar), )
+          jmp b2
+
+
+        #b1(n6, n5, n4, n3, n2, n1) .except:
+          n7 <- $Compare.exception(n6, OverflowError)
+          if n7 then jmp b3(n6, n5, n4, n3, n2, n1) else jmp b4(n6, n5, n4, n3, n2, n1)
+
+
+        #b3(n13, n12, n11, n10, n9, n8) .label:
+          if $Not(ok) then jmp b5(n10, n9, n8) else jmp b6(n10, n9, n8)
+
+
+        #b5(n22, n21, n20) .label:
+          n26 <- GetPreviousException()
+          throw n26
+
+
+        #b6(n25, n24, n23) .label:
+          jmp b7
+
+
+        #b7 .label:
+          jmp b2
+
+
+        #b4(n19, n18, n17, n16, n15, n14) .label:
+          jmp b2
+
+
+        #b2 .label:
+          return None
+
+
+
+
+
+    functions:
+      f -> dummy.f
+          |}]
+
+
+    let%expect_test _ =
+      let source =
+        {|
 def f(m, a, b, c):
     while (a, b) not in m:
         b -= 1

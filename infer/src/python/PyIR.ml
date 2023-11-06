@@ -226,6 +226,7 @@ module BuiltinCaller = struct
     | YieldFrom  (** [YIELD_FROM] *)
     | GetAwaitable  (** [GET_AWAITABLE] *)
     | UnpackEx  (** [UNPACK_EX] *)
+    | GetPreviousException  (** [RAISE_VARARGS] *)
 
   let show = function
     | BuildClass ->
@@ -269,6 +270,8 @@ module BuiltinCaller = struct
         "$GetAwaitable"
     | UnpackEx ->
         "$UnpackEx"
+    | GetPreviousException ->
+        "GetPreviousException"
 end
 
 module Exp = struct
@@ -887,6 +890,7 @@ module State = struct
       ; "AssertionError"
       ; "AttributeError"
       ; "KeyError"
+      ; "OverflowError"
       ; "RuntimeError"
       ; "ValueError" ]
     in
@@ -1546,7 +1550,7 @@ let unpack_sequence st count =
       let st = State.push st exp in
       unpack st (n - 1)
   in
-  let* () = if count <= 0 then external_error st (Error.UnpackSequence count) else Ok () in
+  let* () = if count < 0 then external_error st (Error.UnpackSequence count) else Ok () in
   let* st = unpack st (count - 1) in
   Ok (st, None)
 
@@ -1746,18 +1750,23 @@ let with_cleanup_finish st =
 
 let raise_varargs st argc =
   let open IResult.Let_syntax in
-  let* () =
-    match argc with
-    | 1 ->
-        Ok ()
-    | 0 | 2 ->
-        internal_error st (Error.RaiseException argc)
-    | _ ->
-        external_error st (Error.RaiseExceptionInvalid argc)
-  in
-  let* tos, st = State.pop st in
-  let throw = Jump.Throw tos in
-  Ok (st, Some throw)
+  match argc with
+  | 0 ->
+      (* There should be something like 3 values left on the stack at this
+         point, leftovers from the 6 values pushed on the exception entry
+         point. We should use them to compute the right "previous" exception,
+         but this logic is left TODO *)
+      let id, st = call_builtin_function st GetPreviousException [] in
+      let throw = Jump.Throw (Exp.Temp id) in
+      Ok (st, Some throw)
+  | 1 ->
+      let* tos, st = State.pop st in
+      let throw = Jump.Throw tos in
+      Ok (st, Some throw)
+  | 2 ->
+      internal_error st (Error.RaiseException argc)
+  | _ ->
+      external_error st (Error.RaiseExceptionInvalid argc)
 
 
 let get_cell_name {FFI.Code.co_cellvars; co_freevars} arg =
