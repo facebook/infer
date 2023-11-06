@@ -693,16 +693,11 @@ let%test_module "conjunctive normal form" =
         {|
           Formula:
             conditions: (empty)
-            phi: var_eqs: a7=a6=a5=x=v6=v7=v8=v9=v10
-                 && linear_eqs: a7 = 0 ∧ a6 = 0
-                 && term_eqs: 0=a7
-                 && intervals: a7=0 ∧ a6=0
-          Result: changed
-            conditions: (empty)
-            phi: var_eqs: a7=a6=a5=x=v6=v7=v8=v9=v10
-                 && linear_eqs: a7 = 0
-                 && term_eqs: 0=a7
-                 && intervals: a7=0 |}]
+            phi: var_eqs: a4=a3=a2=x=v6=v7=v8=v9=v10
+                 && linear_eqs: a4 = 0
+                 && term_eqs: 0=a4
+                 && intervals: a4=0
+          Result: same |}]
 
 
     let%expect_test "UNSAT: ¬ (x = 0 ∨ x > 0 ∨ x < 0)" =

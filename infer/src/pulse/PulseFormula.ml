@@ -2691,7 +2691,7 @@ module Formula = struct
           (* we already knew the equality *)
           Debug.p "we already knew %a=%a@\n" Var.pp v1 Var.pp v2 ;
           Sat (phi, new_eqs)
-      | Some (v_old, v_new) -> (
+      | Some (v_old, v_new) ->
           (* new equality [v_old = v_new]: we need to propagate this fact to the various domains,
              especially [linear_eqs]: we update a potential [v_old = l_old] to be [v_new = l_old],
              and if [v_new = l_new] was known we add [l_old = l_new] *)
@@ -2701,9 +2701,15 @@ module Formula = struct
           let new_eqs = RevList.cons (Equal (v_old, v_new)) new_eqs in
           (* substitute [v_old -> v_new] in [phi.linear_eqs] while maintaining the [linear_eqs]
              invariant *)
-          let* phi, new_eqs =
-            propagate_linear_eq ~fuel v_old (LinArith.of_var v_new) (phi, new_eqs)
-          in
+          propagate_linear_eq ~fuel v_old (LinArith.of_var v_new) (phi, new_eqs)
+
+
+    and propagate_in_linear_eqs_domain ~fuel v_old l (phi, new_eqs) =
+      match LinArith.get_as_var l with
+      | None ->
+          Sat (phi, new_eqs)
+      | Some v_new -> (
+          Debug.p "[propagate_in_linear_eqs_domain] %a->%a@\n" Var.pp v_old Var.pp v_new ;
           let l_new = Var.Map.find_opt v_new phi.linear_eqs in
           let phi, l_old =
             match Var.Map.find_opt v_old phi.linear_eqs with
@@ -2732,12 +2738,12 @@ module Formula = struct
               solve_normalized_lin_eq ~fuel new_eqs l1 l2 phi )
 
 
-    and propagate_in_linear_eqs ~fuel x lx ((phi, new_eqs) as phi_new_eqs) =
-      Debug.p "[propagate_in_linear_eqs] %a=%a@\n  @[" Var.pp x (LinArith.pp Var.pp) lx ;
+    and propagate_in_linear_eqs_range ~fuel x lx (phi, new_eqs) =
+      Debug.p "[propagate_in_linear_eqs_range] %a=%a@\n  @[" Var.pp x (LinArith.pp Var.pp) lx ;
       let r =
         match Var.Map.find_opt x phi.linear_eqs_occurrences with
         | None ->
-            Sat phi_new_eqs
+            Sat (phi, new_eqs)
         | Some in_linear_eqs ->
             (* [x=l] has been added to the linear equalities so by the invariant (that we are about to
                restore) there are no further occurrences of [x] in [phi.linear_eqs] *)
@@ -2796,7 +2802,7 @@ module Formula = struct
               in_linear_eqs
               (Sat (phi, new_eqs))
       in
-      Debug.p "@]@\n" ;
+      Debug.p "@]end [propagate_in_linear_eqs_range] %a=%a@\n" Var.pp x (LinArith.pp Var.pp) lx ;
       r
 
 
@@ -2949,7 +2955,9 @@ module Formula = struct
 
 
     and propagate_linear_eq ~fuel x lx phi_new_eqs =
-      propagate_in_linear_eqs ~fuel x lx phi_new_eqs >>= propagate_term_eq ~fuel (Term.Linear lx) x
+      propagate_in_linear_eqs_range ~fuel x lx phi_new_eqs
+      >>= propagate_in_linear_eqs_domain ~fuel x lx
+      >>= propagate_term_eq ~fuel (Term.Linear lx) x
 
 
     and propagate_atom atom phi_new_eqs =
