@@ -772,6 +772,16 @@ module Call = struct
     {match_arg}
 
 
+  (** Matches the type matched by any of the given path_matchers *)
+  let match_typ_exists :
+         ('context, _, _, non_empty, 'arg_payload) path_matcher list
+      -> ('context, 'arg_payload) one_arg_matcher =
+   fun matchers ->
+    let matchers = List.map matchers ~f:(fun m -> (match_typ m).match_arg) in
+    let match_arg context arg = List.exists matchers ~f:(fun matcher -> matcher context arg) in
+    {match_arg}
+
+
   (** Matches the type matched by the given typ_matcher *)
   let match_prim_typ : typ_matcher -> _ one_arg_matcher =
    fun on_typ ->
@@ -881,13 +891,31 @@ module Call = struct
 
   let any_arg_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= no_capture}
 
+  let any_arg_of_typ_exists m =
+    {one_arg_matcher= match_typ_exists (List.map m ~f:(fun m -> m <...>! ())); capture= no_capture}
+
+
   let capt_arg_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg}
+
+  let capt_arg_of_typ_exists m =
+    {one_arg_matcher= match_typ_exists (List.map m ~f:(fun m -> m <...>! ())); capture= capture_arg}
+
 
   let capt_arg_payload_of_typ m =
     {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg_val}
 
 
+  let capt_arg_payload_of_typ_exists m =
+    { one_arg_matcher= match_typ_exists (List.map m ~f:(fun m -> m <...>! ()))
+    ; capture= capture_arg_val }
+
+
   let capt_exp_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg_exp}
+
+  let capt_exp_of_typ_exists m =
+    { one_arg_matcher= match_typ_exists (List.map m ~f:(fun m -> m <...>! ()))
+    ; capture= capture_arg_exp }
+
 
   let one_arg_matcher_of_prim_typ typ =
     let on_typ typ' = Typ.equal_ignore_quals typ typ' in

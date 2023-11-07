@@ -205,6 +205,11 @@ module Call : sig
     -> ('context, unit, _, 'f, 'f, 'arg_payload) one_arg
   (** Eats one arg of the given type *)
 
+  val any_arg_of_typ_exists :
+       ('context, unit, _, 'arg_payload) name_matcher list
+    -> ('context, unit, _, 'f, 'f, 'arg_payload) one_arg
+  (** Eats one arg of any of the given types *)
+
   val capt_arg_of_typ :
        ('context, unit, _, 'arg_payload) name_matcher
     -> ( 'context
@@ -216,15 +221,36 @@ module Call : sig
        one_arg
   (** Captures one arg of the given type *)
 
+  val capt_arg_of_typ_exists :
+       ('context, unit, _, 'arg_payload) name_matcher list
+    -> ( 'context
+       , 'arg_payload FuncArg.t
+       , 'wrapped_arg
+       , 'wrapped_arg -> 'f
+       , 'f
+       , 'arg_payload )
+       one_arg
+  (** Captures one arg of any of the given types *)
+
   val capt_arg_payload_of_typ :
        ('context, unit, _, 'arg_payload) name_matcher
     -> ('context, 'arg_payload, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg
   (** Captures the payload of one arg of the given type *)
 
+  val capt_arg_payload_of_typ_exists :
+       ('context, unit, _, 'arg_payload) name_matcher list
+    -> ('context, 'arg_payload, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg
+  (** Captures the payload of one arg of any of the given types *)
+
   val capt_exp_of_typ :
        ('context, unit, _, 'arg_payload) name_matcher
     -> ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg
   (** Captures one arg expression of the given type *)
+
+  val capt_exp_of_typ_exists :
+       ('context, unit, _, 'arg_payload) name_matcher list
+    -> ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg
+  (** Captures one arg expression of any of the given types *)
 
   val any_arg_of_prim_typ : Typ.t -> ('context, unit, _, 'f, 'f, 'arg_payload) one_arg
   (** Eats one arg of the given primitive type *)
