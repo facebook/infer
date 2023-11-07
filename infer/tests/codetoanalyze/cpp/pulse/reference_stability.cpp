@@ -454,9 +454,23 @@ void folly_fastmap_emplace_hint_bad() {
   const auto valueCopy = valueRef;
 }
 
+void use_iterator_emplace_hint_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto it = map.emplace_hint(map.cbegin(), 4, 16);
+  map.clear();
+  const auto valueCopy = it->second;
+}
+
 void folly_fastmap_operator_bracket_bad() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   const auto& valueRef = map.at(1);
+  map[4] = 16;
+  const auto valueCopy = valueRef;
+}
+
+void use_reference_operator_bracket_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map[1];
   map[4] = 16;
   const auto valueCopy = valueRef;
 }

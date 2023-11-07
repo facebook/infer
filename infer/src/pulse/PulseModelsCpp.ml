@@ -682,6 +682,53 @@ module GenericMapCollection = struct
         assert false
 
 
+  let unwrap_pointer_to_struct_type (typ : Typ.t) =
+    match typ.desc with Tptr ({desc= Tstruct pointee}, _) -> pointee | _ -> assert false
+
+
+  let return_value_reference ?desc ({FuncArg.arg_payload} as map) {path; location; ret} astate =
+    let key_t, value_t = extract_key_and_value_types map in
+    let<*> astate, pair =
+      PulseOperations.eval_access path Read location arg_payload pair_access astate
+    in
+    let<+> astate, (addr, hist) =
+      PulseOperations.eval_access path Read location pair
+        (MemoryAccess.FieldAccess (pair_second_field key_t value_t))
+        astate
+    in
+    let hist =
+      match desc with Some desc -> Hist.add_call path location desc hist | None -> hist
+    in
+    PulseOperations.write_id (fst ret) (addr, hist) astate
+
+
+  let return_it ?desc arg_payload it {path; location} astate =
+    let<*> astate, (addr, hist) =
+      PulseOperations.eval_access path Read location arg_payload pair_access astate
+    in
+    let hist =
+      match desc with Some desc -> Hist.add_call path location desc hist | None -> hist
+    in
+    let<+> astate = PulseOperations.write_deref path location ~ref:it ~obj:(addr, hist) astate in
+    astate
+
+
+  (* A number of map functions return pair<iterator, bool>. *)
+  (* Make an iterator the first field of a pair and return it. *)
+  let return_it_pair_first desc arg_payload return_arg {path; location} astate =
+    let it = (AbstractValue.mk_fresh (), Hist.single_call path location desc) in
+    let<*> astate, obj =
+      PulseOperations.eval_access path Read location arg_payload pair_access astate
+    in
+    let<*> astate = PulseOperations.write_deref path location ~ref:it ~obj astate in
+    let<+> astate =
+      PulseOperations.write_field path location ~ref:return_arg.FuncArg.arg_payload
+        (Fieldname.make (unwrap_pointer_to_struct_type return_arg.FuncArg.typ) "first")
+        ~obj:it astate
+    in
+    astate
+
+
   let reset_backing_fields ({FuncArg.arg_payload} as map) path location desc astate =
     let hist = Hist.single_call path location desc in
     let first = (AbstractValue.mk_fresh (), hist) in
@@ -733,41 +780,10 @@ module GenericMapCollection = struct
     astate
 
 
-  let at map_t ({FuncArg.arg_payload} as map) : model =
-   fun {path; location; ret} astate ->
-    let key_t, value_t = extract_key_and_value_types map in
-    let event =
-      Hist.call_event path location (Format.asprintf "%a::at" Invalidation.pp_map_type map_t)
-    in
-    let<*> astate, pair =
-      PulseOperations.eval_access path Read location arg_payload pair_access astate
-    in
-    let<+> astate, (addr, hist) =
-      PulseOperations.eval_access path Read location pair
-        (MemoryAccess.FieldAccess (pair_second_field key_t value_t))
-        astate
-    in
-    PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
-
-
-  let find desc arg_payload it : model =
-   fun {path; location} astate ->
-    let event = Hist.call_event path location desc in
-    let<*> astate, (addr, hist) =
-      PulseOperations.eval_access path Read location arg_payload pair_access astate
-    in
-    let<+> astate =
-      PulseOperations.write_deref path location ~ref:it
-        ~obj:(addr, Hist.add_event path event hist)
-        astate
-    in
-    astate
-
-
   let operator_bracket map_t map : model =
    fun data astate ->
     let<*> astate = invalidate_references map_t OperatorBracket map data astate in
-    at map_t map data astate
+    return_value_reference map data astate
 
 
   let emplace_hint map_t map_f ({FuncArg.arg_payload} as map) args : model =
@@ -776,29 +792,7 @@ module GenericMapCollection = struct
     (* This will only throw if SIL intermediate representation changes. *)
     let it = (List.last_exn args).FuncArg.arg_payload in
     let<*> astate = invalidate_references map_t map_f map data astate in
-    find
-      (Format.asprintf "%a::%a" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f)
-      arg_payload it data astate
-
-
-  let unwrap_pointer_to_struct_type (typ : Typ.t) =
-    match typ.desc with Tptr ({desc= Tstruct pointee}, _) -> pointee | _ -> assert false
-
-
-  (* A number of map functions return std::pair<iterator, bool>. *)
-  (* Make an iterator the first field of a pair and return it. *)
-  let return_iterator_pair_first desc arg_payload return_arg {path; location} astate =
-    let it = (AbstractValue.mk_fresh (), Hist.single_call path location desc) in
-    let<*> astate, obj =
-      PulseOperations.eval_access path Read location arg_payload pair_access astate
-    in
-    let<*> astate = PulseOperations.write_deref path location ~ref:it ~obj astate in
-    let<+> astate =
-      PulseOperations.write_field path location ~ref:return_arg.FuncArg.arg_payload
-        (Fieldname.make (unwrap_pointer_to_struct_type return_arg.FuncArg.typ) "first")
-        ~obj:it astate
-    in
-    astate
+    return_it arg_payload it data astate
 
 
   let emplace map_t map_f ({FuncArg.arg_payload} as map) args : model =
@@ -808,7 +802,7 @@ module GenericMapCollection = struct
     in
     let last_arg = List.last_exn args in
     let<*> astate = invalidate_references map_t map_f map data astate in
-    return_iterator_pair_first desc arg_payload last_arg data astate
+    return_it_pair_first desc arg_payload last_arg data astate
 
 
   let insert_or_assign ~hinted map_t map return_arg : model =
@@ -915,7 +909,8 @@ let map_matchers =
           $+...$--> GenericMapCollection.only_invalidate_references map_t Reserve
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "at"
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+...$--> GenericMapCollection.at map_t
+          $+...$--> GenericMapCollection.return_value_reference
+                      ~desc:(Format.asprintf "folly::%s::at" map_s)
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
           $+ any_arg $+ any_arg $+ capt_arg
@@ -946,15 +941,15 @@ let map_matchers =
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "find"
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
           $+ any_arg $+ capt_arg_payload
-          $--> GenericMapCollection.find (Format.asprintf "folly::%s::find" map_s)
+          $--> GenericMapCollection.return_it ~desc:(Format.asprintf "folly::%s::find" map_s)
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "begin"
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
           $+ capt_arg_payload
-          $--> GenericMapCollection.find (Format.asprintf "folly::%s::begin" map_s)
+          $--> GenericMapCollection.return_it ~desc:(Format.asprintf "folly::%s::begin" map_s)
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "cbegin"
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
           $+ capt_arg_payload
-          $--> GenericMapCollection.find (Format.asprintf "folly::%s::cbegin" map_s) ] )
+          $--> GenericMapCollection.return_it ~desc:(Format.asprintf "folly::%s::cbegin" map_s) ] )
   in
   let folly_iterator_matchers =
     List.concat_map ["ValueContainerIterator"; "VectorContainerIterator"] ~f:(fun it ->
