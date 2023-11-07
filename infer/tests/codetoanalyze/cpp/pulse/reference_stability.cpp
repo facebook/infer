@@ -433,11 +433,32 @@ void folly_fastmap_emplace_bad() {
   const auto valueCopy = valueRef;
 }
 
-void folly_fastmap_try_emplace_bad_FN() {
+void folly_fastmap_try_emplace_bad() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   const auto& valueRef = map.at(1);
   map.try_emplace(4, 16);
   const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_hinted_try_emplace_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.try_emplace(map.cbegin(), 4, 16);
+  const auto valueCopy = valueRef;
+}
+
+void use_try_emplace_return_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto [it, inserted] = map.try_emplace(4, 16);
+  map.clear();
+  const auto valueCopy = it->second;
+}
+
+void use_hinted_try_emplace_iterator_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto it = map.try_emplace(map.cbegin(), 4, 16);
+  map.clear();
+  const auto valueCopy = it->second;
 }
 
 void folly_fastmap_try_emplace_token_bad() {
