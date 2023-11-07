@@ -785,7 +785,7 @@ OPTIONS
 
        --force-integration command
            Proceed as if the first argument after -- was command. Possible
-           values: ant, buck, buck1, buck2, gradle, gradlew, java, javac,
+           values: ant, buck1, buck, buck2, gradle, gradlew, java, javac,
            kotlinc, cc, clang, gcc, clang++, c++, g++, hackc, make,
            configure, cmake, waf, mvn, mvnw, ndk-build, python3, rebar3,
            erlc, xcodebuild.           See also infer-capture(1) and infer-run(1).

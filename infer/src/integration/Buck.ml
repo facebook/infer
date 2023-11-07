@@ -11,7 +11,7 @@ module L = Logging
 
 type version = V1 | V2
 
-let binary_of_version = function V1 -> "buck" | V2 -> "buck2"
+let binary_of_version = function V1 -> "buck1" | V2 -> "buck2"
 
 let max_command_line_length = 50
 
@@ -51,7 +51,7 @@ let infer_vars_to_kill =
 let wrap_buck_call ?(extend_env = []) ?(kill_infer_env_vars = false) version ~label cmd =
   let is_buck2 = match (version : version) with V1 -> false | V2 -> true in
   let stdout_file =
-    let prefix = Printf.sprintf "%s_%s" (if is_buck2 then "buck2" else "buck") label in
+    let prefix = Printf.sprintf "%s_%s" (binary_of_version version) label in
     Filename.temp_file ~in_dir:(ResultsDir.get_path Temporary) prefix ".stdout"
   in
   let cmd =
