@@ -2554,7 +2554,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     Procdesc.node_set_succs context.procdesc switch_node ~normal:cases_root_nodes ~exn:[] ;
     let top_nodes = variable_result.control.root_nodes in
     mk_trans_result (mk_fresh_void_exp_typ ())
-      {empty_control with root_nodes= top_nodes; leaf_nodes= trans_state.succ_nodes}
+      {empty_control with root_nodes= top_nodes; leaf_nodes= []}
 
 
   and stmtExpr_trans trans_state source_range stmt_list =
@@ -2582,20 +2582,21 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let try_loc =
           CLocation.location_of_source_range ~pick_location:`Start source_file si_source_range
         in
+        let try_exit_node =
+          Procdesc.create_node procdesc try_loc (Stmt_node CXXTry)
+            [Metadata (TryExit {try_id; loc= try_loc})]
+        in
         let try_trans_result =
           PriorityNode.force_sequential try_loc CXXTry trans_state stmt_info
             ~mk_first_opt:(fun _ _ ->
               Some
                 (mk_trans_result (mk_fresh_void_exp_typ ())
                    {empty_control with instrs= [Metadata (TryEntry {try_id; loc= try_loc})]} ) )
-            ~mk_second:(fun _ _ -> instruction trans_state try_body_stmt)
+            ~mk_second:(fun _ _ ->
+              instruction {trans_state with succ_nodes= [try_exit_node]} try_body_stmt )
             ~mk_return:(fun ~fst:_ ~snd -> snd.return)
         in
         let catch_start_nodes = List.fold catch_stmts ~f:translate_catch ~init:[] in
-        let try_exit_node =
-          Procdesc.create_node procdesc try_loc (Stmt_node CXXTry)
-            [Metadata (TryExit {try_id; loc= try_loc})]
-        in
         let catch_entry_node =
           Procdesc.create_node procdesc try_loc (Stmt_node CXXTry)
             [Metadata (CatchEntry {try_id; loc= try_loc})]
@@ -2608,21 +2609,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (* TODO (T28898377): instead, we should extend trans_state with a list of maybe-throwing
            blocks, and add transitions from those to the catch block instead *)
         let try_control = try_trans_result.control in
-        let try_ends =
-          if List.is_empty try_control.leaf_nodes then
-            (* try ends in return; transition from beginning instead *)
-            try_control.root_nodes
-          else try_control.leaf_nodes
-        in
-        (* do not add exceptional successors to return nodes *)
-        List.iter
-          ~f:(fun try_end ->
-            match Procdesc.Node.get_kind try_end with
-            | Stmt_node ReturnStmt ->
-                ()
-            | _ ->
-                Procdesc.set_succs try_end ~normal:(Some [try_exit_node]) ~exn:None )
-          try_ends ;
         {try_trans_result with control= {try_control with leaf_nodes= [try_exit_node]}}
     | _ ->
         (* try should always have a catch statement *)

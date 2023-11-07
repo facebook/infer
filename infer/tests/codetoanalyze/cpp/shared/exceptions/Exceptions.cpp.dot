@@ -3,7 +3,7 @@ digraph cfg {
 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_1" [label="1: Start FN_deref_null_after_catch_bad\nFormals:  i:int*\nLocals:  0$?%__sil_tmp__temp_construct_n$4:std::runtime_error 0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const  \n  " color=yellow style=filled]
 	
 
-	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_1" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_8" ;
+	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_1" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_9" ;
 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_2" [label="2: Exit FN_deref_null_after_catch_bad \n  " color=yellow style=filled]
 	
 
@@ -15,35 +15,35 @@ digraph cfg {
 	
 
 	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_4" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_2" ;
-"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const ); [line 48, column 11]\n  n$5=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const *,\"error\":char const *) [line 48, column 11]\n " shape="box"]
+"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_5" [label="5:  CXXTry \n   TRY_EXIT; [line 46, column 3]\n " shape="box"]
 	
 
-	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_5" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_6" ;
-"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_6" [label="6:  Destruction(temporaries cleanup) \n   n$6=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmp__temp_construct_n$4:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const &) [line 48, column 11]\n  n$7=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$4:std::runtime_error) [line 48, column 5]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const  [line 48, column 37]\n  n$9=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const *) injected virtual [line 48, column 37]\n " shape="box"]
+	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_5" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_3" ;
+	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_5" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_11" [color="red" ];
+"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const ); [line 48, column 11]\n  n$5=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const *,\"error\":char const *) [line 48, column 11]\n " shape="box"]
 	
 
-	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_6" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_10" ;
-"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_7" [label="7:  BinaryOperatorStmt: Assign \n   n$10=*&i:int* [line 47, column 6]\n  *n$10:int=2 [line 47, column 5]\n " shape="box"]
+	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_6" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_7" ;
+"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_7" [label="7:  Destruction(temporaries cleanup) \n   n$6=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmp__temp_construct_n$4:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const &) [line 48, column 11]\n  n$7=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$4:std::runtime_error) [line 48, column 5]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const  [line 48, column 37]\n  n$9=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const *) injected virtual [line 48, column 37]\n " shape="box"]
 	
 
 	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_7" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_5" ;
-"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_8" [label="8:  CXXTry \n   TRY_ENTRY; [line 46, column 3]\n " shape="box"]
+"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_8" [label="8:  BinaryOperatorStmt: Assign \n   n$10=*&i:int* [line 47, column 6]\n  *n$10:int=2 [line 47, column 5]\n " shape="box"]
 	
 
-	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_8" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_7" ;
-"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_9" [label="9:  BinaryOperatorStmt: Assign \n   *&i:int*=null [line 50, column 5]\n " shape="box"]
+	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_8" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_6" ;
+"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_9" [label="9:  CXXTry \n   TRY_ENTRY; [line 46, column 3]\n " shape="box"]
 	
 
-	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_9" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_3" ;
-"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_10" [label="10:  CXXTry \n   TRY_EXIT; [line 46, column 3]\n " shape="box"]
+	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_9" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_8" ;
+"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_10" [label="10:  BinaryOperatorStmt: Assign \n   *&i:int*=null [line 50, column 5]\n " shape="box"]
 	
 
 	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_10" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_3" ;
-	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_10" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_11" [color="red" ];
 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_11" [label="11:  CXXTry \n   CATCH_ENTRY; [line 46, column 3]\n " shape="box"]
 	
 
-	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_11" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_9" ;
+	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_11" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_10" ;
 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_1" [label="1: Start FN_deref_null_in_catch_bad\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$2:std::runtime_error 0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const  i:int* \n  " color=yellow style=filled]
 	
 
@@ -55,39 +55,39 @@ digraph cfg {
 	
 
 	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_3" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_2" ;
-"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const ); [line 38, column 11]\n  n$3=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const *,\"error\":char const *) [line 38, column 11]\n " shape="box"]
+"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_4" [label="4:  CXXTry \n   TRY_EXIT; [line 37, column 3]\n " shape="box"]
 	
 
-	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_4" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_5" ;
-"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_5" [label="5:  Destruction(temporaries cleanup) \n   n$4=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmp__temp_construct_n$2:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const &) [line 38, column 11]\n  n$5=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$2:std::runtime_error) [line 38, column 5]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const  [line 38, column 37]\n  n$7=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const *) injected virtual [line 38, column 37]\n " shape="box"]
+	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_4" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_3" ;
+	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_4" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_10" [color="red" ];
+"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const ); [line 38, column 11]\n  n$3=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const *,\"error\":char const *) [line 38, column 11]\n " shape="box"]
 	
 
-	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_5" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_9" ;
-"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_6" [label="6:  CXXTry \n   TRY_ENTRY; [line 37, column 3]\n " shape="box"]
+	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_5" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_6" ;
+"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_6" [label="6:  Destruction(temporaries cleanup) \n   n$4=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmp__temp_construct_n$2:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const &) [line 38, column 11]\n  n$5=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$2:std::runtime_error) [line 38, column 5]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const  [line 38, column 37]\n  n$7=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const *) injected virtual [line 38, column 37]\n " shape="box"]
 	
 
 	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_6" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_4" ;
-"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_7" [label="7:  Return Stmt \n   n$9=*&i:int* [line 40, column 13]\n  n$10=*n$9:int [line 40, column 12]\n " shape="box"]
+"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_7" [label="7:  CXXTry \n   TRY_ENTRY; [line 37, column 3]\n " shape="box"]
 	
 
-	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_7" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_8" ;
-"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_8" [label="8:  Return Stmt \n   *&return:int=n$10 [line 40, column 5]\n " shape="box"]
+	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_7" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_5" ;
+"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_8" [label="8:  Return Stmt \n   n$9=*&i:int* [line 40, column 13]\n  n$10=*n$9:int [line 40, column 12]\n " shape="box"]
 	
 
-	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_8" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_2" ;
-"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_9" [label="9:  CXXTry \n   TRY_EXIT; [line 37, column 3]\n " shape="box"]
+	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_8" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_9" ;
+"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_9" [label="9:  Return Stmt \n   *&return:int=n$10 [line 40, column 5]\n " shape="box"]
 	
 
-	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_9" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_3" ;
-	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_9" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_10" [color="red" ];
+	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_9" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_2" ;
 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_10" [label="10:  CXXTry \n   CATCH_ENTRY; [line 37, column 3]\n " shape="box"]
 	
 
-	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_10" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_7" ;
+	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_10" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_8" ;
 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(i:int*); [line 36, column 3]\n  *&i:int*=null [line 36, column 3]\n " shape="box"]
 	
 
-	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_11" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_6" ;
+	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_11" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_7" ;
 "FN_multiple_catches_bad#459518252.680a793e449c2d74_1" [label="1: Start FN_multiple_catches_bad\nFormals:  b:_Bool\nLocals:  0$?%__sil_tmp__temp_construct_n$3:std::length_error 0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const  0$?%__sil_tmp__temp_construct_n$11:std::range_error 0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const  j:int* i:int* \n  " color=yellow style=filled]
 	
 
@@ -99,69 +99,69 @@ digraph cfg {
 	
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_3" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_2" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_4" [label="4: + \n   END_BRANCHES\n " ]
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_4" [label="4:  CXXTry \n   TRY_EXIT; [line 58, column 3]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_4" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_16" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_5" [label="5: Prune (true branch, if (terminated)) \n   n$0=*&b:_Bool [line 59, column 9]\n  PRUNE(n$0, true); [line 59, column 9]\n " shape="invhouse"]
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_4" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_3" ;
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_4" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_17" [color="red" ];
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_5" [label="5: + \n   END_BRANCHES\n " ]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_5" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_7" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_6" [label="6: Prune (false branch, if (terminated)) \n   n$0=*&b:_Bool [line 59, column 9]\n  PRUNE(!n$0, false); [line 59, column 9]\n " shape="invhouse"]
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_5" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_4" ;
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_6" [label="6: Prune (true branch, if (terminated)) \n   n$0=*&b:_Bool [line 59, column 9]\n  PRUNE(n$0, true); [line 59, column 9]\n " shape="invhouse"]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_6" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_9" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const ); [line 60, column 13]\n  n$4=_fun_std::length_error::length_error(&0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const *,\"error\":char const *) [line 60, column 13]\n " shape="box"]
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_6" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_8" ;
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_7" [label="7: Prune (false branch, if (terminated)) \n   n$0=*&b:_Bool [line 59, column 9]\n  PRUNE(!n$0, false); [line 59, column 9]\n " shape="invhouse"]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_7" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_8" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_8" [label="8:  Destruction(temporaries cleanup) \n   n$5=_fun_std::length_error::length_error(&0$?%__sil_tmp__temp_construct_n$3:std::length_error*,&0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const &) [line 60, column 13]\n  n$6=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$3:std::length_error) [line 60, column 7]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const  [line 60, column 38]\n  n$8=_fun_std::length_error::~length_error(&0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const *) injected virtual [line 60, column 38]\n " shape="box"]
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_7" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_10" ;
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const ); [line 60, column 13]\n  n$4=_fun_std::length_error::length_error(&0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const *,\"error\":char const *) [line 60, column 13]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_8" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_4" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const ); [line 62, column 13]\n  n$12=_fun_std::range_error::range_error(&0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const *,\"error\":char const *) [line 62, column 13]\n " shape="box"]
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_8" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_9" ;
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_9" [label="9:  Destruction(temporaries cleanup) \n   n$5=_fun_std::length_error::length_error(&0$?%__sil_tmp__temp_construct_n$3:std::length_error*,&0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const &) [line 60, column 13]\n  n$6=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$3:std::length_error) [line 60, column 7]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const  [line 60, column 38]\n  n$8=_fun_std::length_error::~length_error(&0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const *) injected virtual [line 60, column 38]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_9" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_10" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_10" [label="10:  Destruction(temporaries cleanup) \n   n$13=_fun_std::range_error::range_error(&0$?%__sil_tmp__temp_construct_n$11:std::range_error*,&0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const &) [line 62, column 13]\n  n$14=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$11:std::range_error) [line 62, column 7]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const  [line 62, column 37]\n  n$16=_fun_std::range_error::~range_error(&0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const *) injected virtual [line 62, column 37]\n " shape="box"]
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_9" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_5" ;
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const ); [line 62, column 13]\n  n$12=_fun_std::range_error::range_error(&0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const *,\"error\":char const *) [line 62, column 13]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_10" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_4" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_11" [label="11:  CXXTry \n   TRY_ENTRY; [line 58, column 3]\n " shape="box"]
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_10" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_11" ;
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_11" [label="11:  Destruction(temporaries cleanup) \n   n$13=_fun_std::range_error::range_error(&0$?%__sil_tmp__temp_construct_n$11:std::range_error*,&0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const &) [line 62, column 13]\n  n$14=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$11:std::range_error) [line 62, column 7]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const  [line 62, column 37]\n  n$16=_fun_std::range_error::~range_error(&0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const *) injected virtual [line 62, column 37]\n " shape="box"]
 	
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_11" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_5" ;
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_11" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_6" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_12" [label="12:  Return Stmt \n   n$19=*&i:int* [line 65, column 13]\n  n$20=*n$19:int [line 65, column 12]\n " shape="box"]
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_12" [label="12:  CXXTry \n   TRY_ENTRY; [line 58, column 3]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_12" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_13" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_13" [label="13:  Return Stmt \n   *&return:int=n$20 [line 65, column 5]\n " shape="box"]
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_12" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_6" ;
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_12" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_7" ;
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_13" [label="13:  Return Stmt \n   n$19=*&i:int* [line 65, column 13]\n  n$20=*n$19:int [line 65, column 12]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_13" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_2" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_14" [label="14:  Return Stmt \n   n$21=*&j:int* [line 67, column 13]\n  n$22=*n$21:int [line 67, column 12]\n " shape="box"]
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_13" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_14" ;
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_14" [label="14:  Return Stmt \n   *&return:int=n$20 [line 65, column 5]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_14" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_15" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_15" [label="15:  Return Stmt \n   *&return:int=n$22 [line 67, column 5]\n " shape="box"]
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_14" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_2" ;
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_15" [label="15:  Return Stmt \n   n$21=*&j:int* [line 67, column 13]\n  n$22=*n$21:int [line 67, column 12]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_15" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_2" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_16" [label="16:  CXXTry \n   TRY_EXIT; [line 58, column 3]\n " shape="box"]
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_15" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_16" ;
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_16" [label="16:  Return Stmt \n   *&return:int=n$22 [line 67, column 5]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_16" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_3" ;
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_16" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_17" [color="red" ];
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_16" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_2" ;
 "FN_multiple_catches_bad#459518252.680a793e449c2d74_17" [label="17:  CXXTry \n   CATCH_ENTRY; [line 58, column 3]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_17" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_14" ;
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_17" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_12" ;
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_17" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_15" ;
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_17" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_13" ;
 "FN_multiple_catches_bad#459518252.680a793e449c2d74_18" [label="18:  DeclStmt \n   VARIABLE_DECLARED(j:int*); [line 57, column 3]\n  *&j:int*=null [line 57, column 3]\n " shape="box"]
 	
 
-	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_18" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_11" ;
+	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_18" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_12" ;
 "FN_multiple_catches_bad#459518252.680a793e449c2d74_19" [label="19:  DeclStmt \n   VARIABLE_DECLARED(i:int*); [line 56, column 3]\n  *&i:int*=null [line 56, column 3]\n " shape="box"]
 	
 
@@ -258,27 +258,27 @@ digraph cfg {
 "deref_null#11536394632240553702.ea4eed042da22ab7_1" [label="1: Start deref_null\nFormals:  p:int*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "deref_null#11536394632240553702.ea4eed042da22ab7_1" -> "deref_null#11536394632240553702.ea4eed042da22ab7_5" ;
+	 "deref_null#11536394632240553702.ea4eed042da22ab7_1" -> "deref_null#11536394632240553702.ea4eed042da22ab7_6" ;
 "deref_null#11536394632240553702.ea4eed042da22ab7_2" [label="2: Exit deref_null \n  " color=yellow style=filled]
 	
 
-"deref_null#11536394632240553702.ea4eed042da22ab7_3" [label="3:  Return Stmt \n   n$0=*&p:int* [line 20, column 13]\n  n$1=*n$0:int [line 20, column 12]\n " shape="box"]
+"deref_null#11536394632240553702.ea4eed042da22ab7_3" [label="3:  CXXTry \n   TRY_EXIT; [line 19, column 3]\n " shape="box"]
 	
 
-	 "deref_null#11536394632240553702.ea4eed042da22ab7_3" -> "deref_null#11536394632240553702.ea4eed042da22ab7_4" ;
-"deref_null#11536394632240553702.ea4eed042da22ab7_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 20, column 5]\n " shape="box"]
+	 "deref_null#11536394632240553702.ea4eed042da22ab7_3" -> "deref_null#11536394632240553702.ea4eed042da22ab7_2" ;
+	 "deref_null#11536394632240553702.ea4eed042da22ab7_3" -> "deref_null#11536394632240553702.ea4eed042da22ab7_7" [color="red" ];
+"deref_null#11536394632240553702.ea4eed042da22ab7_4" [label="4:  Return Stmt \n   n$0=*&p:int* [line 20, column 13]\n  n$1=*n$0:int [line 20, column 12]\n " shape="box"]
 	
 
-	 "deref_null#11536394632240553702.ea4eed042da22ab7_4" -> "deref_null#11536394632240553702.ea4eed042da22ab7_2" ;
-"deref_null#11536394632240553702.ea4eed042da22ab7_5" [label="5:  CXXTry \n   TRY_ENTRY; [line 19, column 3]\n " shape="box"]
+	 "deref_null#11536394632240553702.ea4eed042da22ab7_4" -> "deref_null#11536394632240553702.ea4eed042da22ab7_5" ;
+"deref_null#11536394632240553702.ea4eed042da22ab7_5" [label="5:  Return Stmt \n   *&return:int=n$1 [line 20, column 5]\n " shape="box"]
 	
 
-	 "deref_null#11536394632240553702.ea4eed042da22ab7_5" -> "deref_null#11536394632240553702.ea4eed042da22ab7_3" ;
-"deref_null#11536394632240553702.ea4eed042da22ab7_6" [label="6:  CXXTry \n   TRY_EXIT; [line 19, column 3]\n " shape="box"]
+	 "deref_null#11536394632240553702.ea4eed042da22ab7_5" -> "deref_null#11536394632240553702.ea4eed042da22ab7_2" ;
+"deref_null#11536394632240553702.ea4eed042da22ab7_6" [label="6:  CXXTry \n   TRY_ENTRY; [line 19, column 3]\n " shape="box"]
 	
 
-	 "deref_null#11536394632240553702.ea4eed042da22ab7_6" -> "deref_null#11536394632240553702.ea4eed042da22ab7_2" ;
-	 "deref_null#11536394632240553702.ea4eed042da22ab7_6" -> "deref_null#11536394632240553702.ea4eed042da22ab7_7" [color="red" ];
+	 "deref_null#11536394632240553702.ea4eed042da22ab7_6" -> "deref_null#11536394632240553702.ea4eed042da22ab7_4" ;
 "deref_null#11536394632240553702.ea4eed042da22ab7_7" [label="7:  CXXTry \n   CATCH_ENTRY; [line 19, column 3]\n " shape="box"]
 	
 
@@ -286,33 +286,33 @@ digraph cfg {
 "main.fad58de7366495db_1" [label="1: Start main\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "main.fad58de7366495db_1" -> "main.fad58de7366495db_5" ;
+	 "main.fad58de7366495db_1" -> "main.fad58de7366495db_6" ;
 "main.fad58de7366495db_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db_3" [label="3:  Return Stmt \n   n$0=_fun_deref(null:int*) [line 74, column 12]\n " shape="box"]
+"main.fad58de7366495db_3" [label="3:  CXXTry \n   TRY_EXIT; [line 73, column 3]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db_3" -> "main.fad58de7366495db_4" ;
-"main.fad58de7366495db_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 74, column 5]\n " shape="box"]
+	 "main.fad58de7366495db_3" -> "main.fad58de7366495db_2" ;
+	 "main.fad58de7366495db_3" -> "main.fad58de7366495db_8" [color="red" ];
+"main.fad58de7366495db_4" [label="4:  Return Stmt \n   n$0=_fun_deref(null:int*) [line 74, column 12]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db_4" -> "main.fad58de7366495db_2" ;
-"main.fad58de7366495db_5" [label="5:  CXXTry \n   TRY_ENTRY; [line 73, column 3]\n " shape="box"]
+	 "main.fad58de7366495db_4" -> "main.fad58de7366495db_5" ;
+"main.fad58de7366495db_5" [label="5:  Return Stmt \n   *&return:int=n$0 [line 74, column 5]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db_5" -> "main.fad58de7366495db_3" ;
-"main.fad58de7366495db_6" [label="6:  Return Stmt \n   *&return:int=-1 [line 76, column 5]\n " shape="box"]
+	 "main.fad58de7366495db_5" -> "main.fad58de7366495db_2" ;
+"main.fad58de7366495db_6" [label="6:  CXXTry \n   TRY_ENTRY; [line 73, column 3]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db_6" -> "main.fad58de7366495db_2" ;
-"main.fad58de7366495db_7" [label="7:  CXXTry \n   TRY_EXIT; [line 73, column 3]\n " shape="box"]
+	 "main.fad58de7366495db_6" -> "main.fad58de7366495db_4" ;
+"main.fad58de7366495db_7" [label="7:  Return Stmt \n   *&return:int=-1 [line 76, column 5]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db_7" -> "main.fad58de7366495db_2" ;
-	 "main.fad58de7366495db_7" -> "main.fad58de7366495db_8" [color="red" ];
 "main.fad58de7366495db_8" [label="8:  CXXTry \n   CATCH_ENTRY; [line 73, column 3]\n " shape="box"]
 	
 
-	 "main.fad58de7366495db_8" -> "main.fad58de7366495db_6" ;
+	 "main.fad58de7366495db_8" -> "main.fad58de7366495db_7" ;
 }

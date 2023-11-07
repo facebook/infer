@@ -730,4 +730,32 @@ void underscore_binding_ok(std::map<std::string, int> m) {
     use_string(key);
   }
 }
+
+void read(int);
+
+void swich_in_try_ok(int a) {
+  int x = 42;
+  try {
+    switch (a) {
+      case 42: {
+        return;
+      }
+      default:
+    }
+  } catch (int) {
+  }
+  read(x);
+}
+
+void unknown();
+
+void unknown_call_in_try_ok_FP() {
+  int x = 42;
+  try {
+    unknown();
+    return;
+  } catch (int) {
+  }
+  read(x);
+}
 } // namespace dead_stores
