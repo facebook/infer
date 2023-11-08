@@ -19,6 +19,7 @@ module Config : sig
 end = struct
   type procname_to_monitor =
     | ClassAndMethodNames of {class_names: string list; method_names: string list}
+    | ClassNameRegex of {class_name_regex: Str.regexp}
 
   type t =
     { fieldnames_to_monitor: string list
@@ -36,6 +37,7 @@ end = struct
     let initial_caller_class_does_not_extend_name = "initial_caller_class_does_not_extend"
 
     let parse json =
+      let mem field assoc = List.exists assoc ~f:(fun (key, _) -> String.equal field key) in
       let lookup field assoc =
         match List.find assoc ~f:(fun (key, _) -> String.equal field key) with
         | None ->
@@ -65,9 +67,12 @@ end = struct
       let lookup_string_list field assoc = lookup field assoc |> to_list |> List.map ~f:to_string in
       let to_procnames_to_monitor = function
         | `Assoc assoc ->
-            ClassAndMethodNames
-              { class_names= lookup_string_list "class_names" assoc
-              ; method_names= lookup_string_list "method_names" assoc }
+            if mem "class_names" assoc then
+              ClassAndMethodNames
+                { class_names= lookup_string_list "class_names" assoc
+                ; method_names= lookup_string_list "method_names" assoc }
+            else
+              ClassNameRegex {class_name_regex= Str.regexp (lookup_string "class_name_regex" assoc)}
         | value ->
             L.die UserError
               "parsing error on transitive-access config file. The value %a should be a record { \
@@ -114,13 +119,24 @@ end = struct
               )
             class_name )
     in
+    let regexp_match regexp name =
+      match Str.search_forward regexp name 0 with _ -> true | exception Caml.Not_found -> false
+    in
+    let match_class_name_regex regexp =
+      Option.exists class_name ~f:(fun class_name ->
+          PatternMatch.supertype_exists tenv
+            (fun class_name _ -> regexp_match regexp (Typ.Name.name class_name))
+            class_name )
+    in
     match get () with
     | None ->
         false
     | Some {procnames_to_monitor} ->
         List.exists procnames_to_monitor ~f:(function
-            | ClassAndMethodNames {class_names; method_names} ->
-            match_class_name class_names && List.mem ~equal:String.equal method_names method_name )
+          | ClassAndMethodNames {class_names; method_names} ->
+              match_class_name class_names && List.mem ~equal:String.equal method_names method_name
+          | ClassNameRegex {class_name_regex} ->
+              match_class_name_regex class_name_regex )
 
 
   let is_initial_caller tenv procname =

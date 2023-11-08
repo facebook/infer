@@ -52,6 +52,10 @@ class GlobalAccess extends Parent1 {
   public function call5_is_entry_ok(Unsafe $a): int {
     return $a->fine();
   }
+
+  public function call6_is_entry_bad(ContainsABadPatternInside $a): int {
+    return $a->foo();
+  }
 }
 
 class EventNotHandler {}
