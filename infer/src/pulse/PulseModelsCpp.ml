@@ -891,21 +891,6 @@ let map_matchers =
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
           $+...$--> GenericMapCollection.return_value_reference
                       ~desc:(Format.asprintf "folly::%s::at" map_s)
-        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
-          $ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+ any_arg $+ any_arg $+ capt_arg
-          $--> GenericMapCollection.insert_or_assign ~hinted:false map_t
-        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
-          $ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+ any_arg_of_typ (-"folly" <>:: "F14HashToken")
-          $+ any_arg $+ any_arg $+ capt_arg
-          $--> GenericMapCollection.insert_or_assign ~hinted:false map_t
-          (* Order matters here: if there are three arguments but the first isn't an F14HashToken,
-             we are in the hinted case. *)
-        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
-          $ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+ any_arg $+ any_arg $+ any_arg $+ capt_arg
-          $--> GenericMapCollection.insert_or_assign ~hinted:true map_t
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "emplace_hint"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
           $++$--> GenericMapCollection.emplace_hint map_t EmplaceHint
@@ -915,14 +900,6 @@ let map_matchers =
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "try_emplace_token"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
           $++$--> GenericMapCollection.emplace map_t TryEmplaceToken
-        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "try_emplace"
-          $ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+ any_arg_of_typ_exists it_matchers
-          $++$--> GenericMapCollection.try_emplace ~hinted:true map_t TryEmplace
-          (* Order matters here: we first match an iterator to check for the hinted case. *)
-        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "try_emplace"
-          $ capt_arg_of_typ (-"folly" <>:: map_s)
-          $++$--> GenericMapCollection.try_emplace ~hinted:false map_t TryEmplace
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator[]"
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
           $+...$--> GenericMapCollection.operator_bracket map_t
@@ -937,7 +914,37 @@ let map_matchers =
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "cbegin"
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
           $+ capt_arg_payload
-          $--> GenericMapCollection.return_it ~desc:(Format.asprintf "folly::%s::cbegin" map_s) ] )
+          $--> GenericMapCollection.return_it ~desc:(Format.asprintf "folly::%s::cbegin" map_s)
+          (* Order matters for the next matchers in this list. *)
+          (* insert_or_assign:
+              1. Two arguments only: non-hinted case.
+              2. Three arguments with the first being a token: non-hinted case.
+              3. Else: hinted case.
+          *)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg $+ any_arg $+ capt_arg
+          $--> GenericMapCollection.insert_or_assign ~hinted:false map_t
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg_of_typ (-"folly" <>:: "F14HashToken")
+          $+ any_arg $+ any_arg $+ capt_arg
+          $--> GenericMapCollection.insert_or_assign ~hinted:false map_t
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg $+ any_arg $+ any_arg $+ capt_arg
+          $--> GenericMapCollection.insert_or_assign ~hinted:true map_t
+          (* try_emplace:
+              1. First argument is an iterator: hinted case.
+              2. Else: non-hinted case.
+          *)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "try_emplace"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg_of_typ_exists it_matchers
+          $++$--> GenericMapCollection.try_emplace ~hinted:true map_t TryEmplace
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "try_emplace"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $++$--> GenericMapCollection.try_emplace ~hinted:false map_t TryEmplace ] )
   in
   let folly_iterator_matchers =
     List.concat_map ["ValueContainerIterator"; "VectorContainerIterator"] ~f:(fun it ->
