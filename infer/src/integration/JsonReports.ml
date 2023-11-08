@@ -32,9 +32,28 @@ let compute_key (bug_type : string) (proc_name : Procname.t) (filename : string)
   String.concat ~sep:"|" [base_filename; simple_procedure_name; bug_type]
 
 
+let sanitize_qualifier qualifier =
+  (* Removing the line,column, line and column in lambda's name
+     (e.g. test::lambda.cpp:10:15::operator()),
+     and infer temporary variable (e.g., n$67) information from the
+     error message as well as the index of the annonymmous class to make the hash invariant
+     when moving the source code in the file *)
+  let qualifier_regexp =
+    Re.(
+      seq
+        [ alt (["line"; "column"; "parameter"; "argument"; "$"; ":"] |> List.map ~f:str)
+        ; str " " |> rep
+        ; opt @@ char '`'
+        ; opt @@ char '#'
+        ; rep1 digit
+        ; opt @@ char '`' ]
+      |> no_case |> compile )
+  in
+  Re.replace_string qualifier_regexp ~by:"$_" qualifier
+
+
 let compute_hash =
   let num_regexp = Re.Str.regexp "\\(:\\)[0-9]+" in
-  let qualifier_regexp = Re.Str.regexp "\\(line \\|column \\|:\\|parameter \\|\\$\\)[0-9]+" in
   fun ~(severity : string) ~(bug_type : string) ~(proc_name : Procname.t) ~(file : string)
       ~(qualifier : string) ->
     let base_filename = Filename.basename file in
@@ -42,14 +61,7 @@ let compute_hash =
     let location_independent_proc_name =
       Re.Str.global_replace num_regexp "$_" hashable_procedure_name
     in
-    let location_independent_qualifier =
-      (* Removing the line,column, line and column in lambda's name
-         (e.g. test::lambda.cpp:10:15::operator()),
-         and infer temporary variable (e.g., n$67) information from the
-         error message as well as the index of the annonymmous class to make the hash invariant
-         when moving the source code in the file *)
-      Re.Str.global_replace qualifier_regexp "$_" qualifier
-    in
+    let location_independent_qualifier = sanitize_qualifier qualifier in
     Utils.better_hash
       ( severity
       , bug_type
