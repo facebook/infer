@@ -69,6 +69,7 @@ type t = private
   ; need_dynamic_type_specialization: AbstractValue.Set.t
         (** a set of abstract values that are used as receiver of method calls in the instructions
             reached so far *)
+  ; transitive_accesses: Trace.t list  (** record specific acceses inter-procedurally *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 [@@deriving equal]
@@ -293,6 +294,8 @@ val set_need_closure_specialization : t -> t
 
 val unset_need_closure_specialization : t -> t
 
+val record_transitive_access : Location.t -> t -> t
+
 val add_need_dynamic_type_specialization : AbstractValue.t -> t -> t
 
 val map_decompiler : t -> f:(Decompiler.t -> Decompiler.t) -> t
@@ -327,6 +330,10 @@ module Summary : sig
   val with_need_closure_specialization : summary -> summary
 
   val add_need_dynamic_type_specialization : AbstractValue.t -> summary -> summary
+
+  val get_transitive_accesses : summary -> Trace.t list
+
+  val transfer_accesses_to_caller : t -> Procname.t -> Location.t -> summary -> t
 
   val of_post :
        Tenv.t

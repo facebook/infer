@@ -248,6 +248,7 @@ OPTIONS
              PULSE_READONLY_SHARED_PTR_PARAM (enabled by default),
              PULSE_REFERENCE_STABILITY (disabled by default),
              PULSE_RESOURCE_LEAK (enabled by default),
+             PULSE_TRANSITIVE_ACCESS (enabled by default),
              PULSE_UNINITIALIZED_CONST (disabled by default),
              PULSE_UNINITIALIZED_VALUE (enabled by default),
              PULSE_UNINITIALIZED_VALUE_LATENT (disabled by default),

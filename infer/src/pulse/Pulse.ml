@@ -1288,6 +1288,11 @@ module PulseTransferFunctions = struct
                 | _ ->
                     [astate] )
           in
+          let astates =
+            if Language.curr_language_is Hack then
+              PulseTransitiveAccessChecker.record_load rhs_exp loc astates
+            else astates
+          in
           (astates, path, non_disj)
       | Store {e1= lhs_exp; e2= rhs_exp; loc; typ} ->
           (* [*lhs_exp := rhs_exp] *)
@@ -1602,6 +1607,7 @@ let analyze specialization
             Option.to_list objc_nil_summary @ summary
           else summary
         in
+        PulseTransitiveAccessChecker.report_errors tenv proc_desc err_log summary ;
         report_topl_errors proc_desc err_log summary ;
         report_unnecessary_copies tenv proc_desc err_log non_disj_astate ;
         report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate ;

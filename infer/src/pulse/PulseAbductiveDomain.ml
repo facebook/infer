@@ -79,6 +79,7 @@ type t =
   ; topl: (PulseTopl.state[@yojson.opaque])
   ; need_closure_specialization: bool
   ; need_dynamic_type_specialization: (AbstractValue.Set.t[@yojson.opaque])
+  ; transitive_accesses: (Trace.t list[@yojson.opaque])
   ; skipped_calls: SkippedCalls.t }
 [@@deriving compare, equal, yojson_of]
 
@@ -119,6 +120,11 @@ let set_path_condition path_condition astate = {astate with path_condition}
 let set_need_closure_specialization astate = {astate with need_closure_specialization= true}
 
 let unset_need_closure_specialization astate = {astate with need_closure_specialization= false}
+
+let record_transitive_access location astate =
+  let trace = Trace.Immediate {location; history= ValueHistory.epoch} in
+  {astate with transitive_accesses= trace :: astate.transitive_accesses}
+
 
 let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}
 
@@ -1551,6 +1557,7 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
     ; need_closure_specialization= false
     ; need_dynamic_type_specialization= AbstractValue.Set.empty
     ; topl= PulseTopl.start ()
+    ; transitive_accesses= []
     ; skipped_calls= SkippedCalls.empty }
   in
   let astate =
@@ -2175,6 +2182,19 @@ module Summary = struct
   let with_need_closure_specialization summary = {summary with need_closure_specialization= true}
 
   let add_need_dynamic_type_specialization = add_need_dynamic_type_specialization
+
+  let transfer_accesses_to_caller astate callee_proc_name call_loc summary =
+    let update_trace trace =
+      Trace.ViaCall
+        {f= Call callee_proc_name; location= call_loc; history= ValueHistory.epoch; in_call= trace}
+    in
+    { astate with
+      transitive_accesses=
+        List.fold summary.transitive_accesses ~init:astate.transitive_accesses
+          ~f:(fun accesses trace -> update_trace trace :: accesses) }
+
+
+  let get_transitive_accesses summary = summary.transitive_accesses
 
   let heap_paths_that_need_dynamic_type_specialization summary =
     let rec mk_heap_path var rev_accesses =

@@ -318,6 +318,8 @@ val precondition_not_met : t
 
 val premature_nil_termination : t
 
+val pulse_transitive_access : t
+
 val pulse_memory_leak_c : t
 
 val pulse_memory_leak_cpp : t

@@ -129,6 +129,7 @@ type t =
   | CSharpResourceLeak of
       {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
   | ErlangError of ErlangError.t
+  | TransitiveAccess of {call_trace: Trace.t}
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
     (* TODO: add more data to HackUnawaitedAwaitable tracking the parameter type *)
@@ -184,6 +185,8 @@ let pp fmt diagnostic =
   | JavaResourceLeak {class_name; allocation_trace; location} ->
       F.fprintf fmt "ResourceLeak {@[class_name=%a;@;allocation_trace:%a;@;location:%a@]}"
         JavaClassName.pp class_name (Trace.pp ~pp_immediate) allocation_trace Location.pp location
+  | TransitiveAccess {call_trace} ->
+      F.fprintf fmt "TransitiveAccess {@[call_trace:%a@]}" (Trace.pp ~pp_immediate) call_trace
   | HackUnawaitedAwaitable {allocation_trace; location} ->
       F.fprintf fmt "UnawaitedAwaitable {@[allocation_trace:%a;@;location:%a@]}"
         (Trace.pp ~pp_immediate) allocation_trace Location.pp location
@@ -241,7 +244,8 @@ let pp fmt diagnostic =
 
 let get_location = function
   | AccessToInvalidAddress {calling_context= []; access_trace}
-  | ReadUninitialized {calling_context= []; trace= access_trace} ->
+  | ReadUninitialized {calling_context= []; trace= access_trace}
+  | TransitiveAccess {call_trace= access_trace} ->
       Trace.get_outer_location access_trace
   | ErlangError (Badarg {location; calling_context= []})
   | ErlangError (Badkey {location; calling_context= []})
@@ -319,6 +323,7 @@ let aborts_execution = function
   | ConstRefableParameter _
   | CSharpResourceLeak _
   | JavaResourceLeak _
+  | TransitiveAccess _
   | HackUnawaitedAwaitable _
   | MemoryLeak _
   | ReadonlySharedPtrParameter _
@@ -596,6 +601,16 @@ let get_message_and_suggestion diagnostic =
       F.asprintf "Resource dynamically allocated %a is not closed after the last access at %a"
         pp_allocation_trace allocation_trace Location.pp location
       |> no_suggestion
+  | TransitiveAccess {call_trace} ->
+      let pp fmt (trace : Trace.t) =
+        match trace with
+        | Immediate {location} ->
+            F.fprintf fmt "on line %a" Location.pp_line location
+        | ViaCall {f; location; _} ->
+            F.fprintf fmt "indirectly via call to %a on line %a" CallEvent.describe f
+              Location.pp_line location
+      in
+      F.asprintf "Spurious transitive access %a" pp call_trace |> no_suggestion
   | HackUnawaitedAwaitable {location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let allocation_line =
@@ -959,6 +974,10 @@ let get_trace = function
              F.fprintf fmt "allocated by constructor %a() here" JavaClassName.pp class_name )
            allocation_trace
       @@ [Errlog.make_trace_element 0 location "memory becomes unreachable here" []]
+  | TransitiveAccess {call_trace} ->
+      Trace.add_to_errlog ~nesting:1
+        ~pp_immediate:(fun fmt -> F.fprintf fmt "access occurs here")
+        call_trace []
   | HackUnawaitedAwaitable {location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let access_start_location = Trace.get_start_location allocation_trace in
@@ -1053,6 +1072,8 @@ let get_issue_type ~latent issue_type =
       IssueType.no_true_branch_in_if ~latent
   | ErlangError (Try_clause _), _ ->
       IssueType.no_matching_branch_in_try ~latent
+  | TransitiveAccess _, false ->
+      IssueType.pulse_transitive_access
   | MemoryLeak {allocator}, false -> (
     match allocator with
     | CMalloc | CustomMalloc _ | CRealloc | CustomRealloc _ ->
@@ -1107,6 +1128,7 @@ let get_issue_type ~latent issue_type =
       | ConstRefableParameter _
       | CSharpResourceLeak _
       | JavaResourceLeak _
+      | TransitiveAccess _
       | HackUnawaitedAwaitable _
       | MemoryLeak _
       | ReadonlySharedPtrParameter _

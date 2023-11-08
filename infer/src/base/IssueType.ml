@@ -852,6 +852,11 @@ let premature_nil_termination =
     ~user_documentation:[%blob "./documentation/issues/PREMATURE_NIL_TERMINATION_ARGUMENT.md"]
 
 
+let pulse_transitive_access =
+  register ~enabled:true ~id:"PULSE_TRANSITIVE_ACCESS" Error Pulse
+    ~user_documentation:[%blob "./documentation/issues/PULSE_TRANSITIVE_ACCESS.md"]
+
+
 let pulse_memory_leak_c =
   register ~id:"MEMORY_LEAK_C" ~hum:"Memory Leak" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/MEMORY_LEAK_C.md"]
