@@ -740,7 +740,7 @@ void swich_in_try_ok(int a) {
       case 42: {
         return;
       }
-      default:
+      default:;
     }
   } catch (int) {
   }
