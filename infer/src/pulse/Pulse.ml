@@ -804,6 +804,11 @@ module PulseTransferFunctions = struct
       else (default_info, ret, actuals, func_args, astate)
     in
     let callee_pname = Option.map ~f:Tenv.MethodInfo.get_procname method_info in
+    let astate =
+      if Language.curr_language_is Hack then
+        PulseTransitiveAccessChecker.record_call tenv callee_pname call_loc astate
+      else astate
+    in
     let astate, func_args = add_self_for_hack_traits path call_loc astate method_info func_args in
     let astate, func_args =
       if Language.curr_language_is Hack then

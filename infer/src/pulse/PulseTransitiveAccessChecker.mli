@@ -9,6 +9,9 @@ open! IStd
 
 val record_load : Exp.t -> Location.t -> PulseExecutionDomain.t list -> PulseExecutionDomain.t list
 
+val record_call :
+  Tenv.t -> Procname.t option -> Location.t -> PulseAbductiveDomain.t -> PulseAbductiveDomain.t
+
 val report_errors :
      Tenv.t
   -> Procdesc.t

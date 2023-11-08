@@ -11,17 +11,25 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 
 module Config : sig
-  val must_be_monitored : Fieldname.t -> bool
+  val fieldname_must_be_monitored : Fieldname.t -> bool
+
+  val procname_must_be_monitored : Tenv.t -> Procname.t -> bool
 
   val is_initial_caller : Tenv.t -> Procname.t -> bool
 end = struct
+  type procname_to_monitor =
+    | ClassAndMethodNames of {class_names: string list; method_names: string list}
+
   type t =
     { fieldnames_to_monitor: string list
+    ; procnames_to_monitor: procname_to_monitor list
     ; initial_caller_class_extends: string
     ; initial_caller_class_does_not_extend: string list }
 
   module Json = struct
     let fieldnames_to_monitor_name = "fieldnames_to_monitor"
+
+    let procnames_to_monitor_name = "procnames_to_monitor"
 
     let initial_caller_class_extends_name = "initial_caller_class_extends"
 
@@ -55,9 +63,24 @@ end = struct
       in
       let lookup_string field assoc = lookup field assoc |> to_string in
       let lookup_string_list field assoc = lookup field assoc |> to_list |> List.map ~f:to_string in
+      let to_procnames_to_monitor = function
+        | `Assoc assoc ->
+            ClassAndMethodNames
+              { class_names= lookup_string_list "class_names" assoc
+              ; method_names= lookup_string_list "method_names" assoc }
+        | value ->
+            L.die UserError
+              "parsing error on transitive-access config file. The value %a should be a record { \
+               class_names:[...], method_names=[...] }: %a@\n"
+              Yojson.Basic.pp value Yojson.Basic.pp json
+      in
       match json with
       | `Assoc assoc ->
           { fieldnames_to_monitor= lookup_string_list fieldnames_to_monitor_name assoc
+          ; procnames_to_monitor=
+              lookup procnames_to_monitor_name assoc
+              |> to_list
+              |> List.map ~f:to_procnames_to_monitor
           ; initial_caller_class_extends= lookup_string initial_caller_class_extends_name assoc
           ; initial_caller_class_does_not_extend=
               lookup_string_list initial_caller_class_does_not_extend_name assoc }
@@ -71,12 +94,33 @@ end = struct
     ((fun () -> !current), fun config -> current := Some config)
 
 
-  let must_be_monitored fieldname =
+  let fieldname_must_be_monitored fieldname =
     match get () with
     | None ->
         false
     | Some {fieldnames_to_monitor} ->
         List.exists fieldnames_to_monitor ~f:(String.equal (Fieldname.get_field_name fieldname))
+
+
+  let procname_must_be_monitored tenv procname =
+    let class_name = Procname.get_class_type_name procname in
+    let method_name = Procname.get_method procname in
+    let match_class_name names =
+      Option.exists class_name ~f:(fun class_name ->
+          PatternMatch.supertype_exists tenv
+            (fun class_name _ ->
+              let class_name_string = Typ.Name.name class_name in
+              List.exists names ~f:(fun typ -> String.is_substring ~substring:typ class_name_string)
+              )
+            class_name )
+    in
+    match get () with
+    | None ->
+        false
+    | Some {procnames_to_monitor} ->
+        List.exists procnames_to_monitor ~f:(function
+            | ClassAndMethodNames {class_names; method_names} ->
+            match_class_name class_names && List.mem ~equal:String.equal method_names method_name )
 
 
   let is_initial_caller tenv procname =
@@ -115,7 +159,7 @@ end
 
 let record_load rhs_exp location astates =
   match rhs_exp with
-  | Exp.Lfield (_, fieldname, _) when Config.must_be_monitored fieldname ->
+  | Exp.Lfield (_, fieldname, _) when Config.fieldname_must_be_monitored fieldname ->
       List.map astates ~f:(function
         | ContinueProgram astate ->
             ContinueProgram (AbductiveDomain.record_transitive_access location astate)
@@ -123,6 +167,12 @@ let record_load rhs_exp location astates =
             execstate )
   | _ ->
       astates
+
+
+let record_call tenv procname location astate =
+  if Option.exists procname ~f:(Config.procname_must_be_monitored tenv) then
+    AbductiveDomain.record_transitive_access location astate
+  else astate
 
 
 let report_errors tenv proc_desc err_log summary =

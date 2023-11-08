@@ -17,6 +17,8 @@ class EventHandler {}
 class Parent2 extends EventHandler {}
 class Parent1 extends Parent2 {}
 
+class ExtendsVeryUnsafe extends VeryUnsafe {}
+
 class GlobalAccess extends Parent1 {
 
   public function basic_is_entry_bad(A $a): int {
@@ -29,6 +31,26 @@ class GlobalAccess extends Parent1 {
 
   public function indirect_other_is_entry_bad(A $a): int {
     return $a->get();
+  }
+
+  public function call1_is_entry_bad(Unsafe $a): int {
+    return $a->dangerous();
+  }
+
+  public function call2_is_entry_bad(Unsafe $a): int {
+    return $a->suspicious();
+  }
+
+  public function call3_is_entry_bad(ExtendsVeryUnsafe $a): int {
+    return $a->suspicious();
+  }
+
+  public function call4_is_entry_ok(Fine $a): int {
+    return $a->suspicious();
+  }
+
+  public function call5_is_entry_ok(Unsafe $a): int {
+    return $a->fine();
   }
 }
 

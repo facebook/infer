@@ -6,6 +6,12 @@
  */
 {
     "fieldnames_to_monitor": ["GlobalVARIABLES"],
+    "procnames_to_monitor": [
+        {
+            "class_names": ["GlobalAccess::Unsafe", "GlobalAccess::VeryUnsafe"],
+            "method_names": ["dangerous", "suspicious"]
+        }
+    ],
     "initial_caller_class_extends": "hack GlobalAccess::EventHandler",
     "initial_caller_class_does_not_extend": ["hack GlobalAccess::Unsafe"]
 }
