@@ -141,6 +141,20 @@ module Syntax = struct
     ret a data astate
 
 
+  let get_known_constant_opt (v, _) : Q.t option model_monad =
+   fun data astate ->
+    let phi = astate.path_condition in
+    ret (Formula.get_known_constant_opt phi v) data astate
+
+
+  let get_known_fields (v, _) =
+    exec_pure_operation (fun astate ->
+        let res =
+          AbductiveDomain.Memory.fold_edges v astate ~init:[] ~f:(fun l (access, _) -> access :: l)
+        in
+        res )
+
+
   let assign_ret aval : unit model_monad =
     let* {ret= ret_id, _} = get_data in
     PulseOperations.write_id ret_id aval |> exec_command
@@ -257,6 +271,43 @@ module Syntax = struct
     PulseOperations.write_deref path location ~ref ~obj >> sat |> exec_partial_command
 
 
+  (* slightly clumsy refactoring here: we unwrap a model to get a nice monadic type in the interface of this module
+     but wrap that back up as a model in PulseModelsCpp *)
+  let internal_new_ type_name : model =
+   fun model_data astate ->
+    let<++> astate =
+      (* Java, Hack and C++ [new] share the same builtin (note that ObjC gets its own [objc_alloc_no_fail]
+         builtin for [\[Class new\]]) *)
+      let proc_name = Procdesc.get_proc_name model_data.analysis_data.proc_desc in
+      if
+        Procname.is_java proc_name || Procname.is_csharp proc_name || Procname.is_hack proc_name
+        || Procname.is_python proc_name
+      then
+        Basic.alloc_no_leak_not_null ~initialize:true (Some type_name) ~desc:"new" model_data astate
+      else
+        (* C++ *)
+        Basic.alloc_not_null ~initialize:true ~desc:"new" CppNew (Some type_name) model_data astate
+    in
+    astate
+
+
+  let new_ type_name = lift_to_monad_and_get_result (internal_new_ type_name)
+
+  let constructor type_name fields : aval model_monad =
+    (* let open PulseModelsDSL.Syntax in *)
+    let exp =
+      Exp.Sizeof
+        {typ= Typ.mk_struct type_name; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+    in
+    let* new_obj = new_ exp in
+    let* () =
+      list_iter fields ~f:(fun (fieldname, obj) ->
+          let field = Fieldname.make type_name fieldname in
+          write_deref_field ~ref:new_obj field ~obj )
+    in
+    ret new_obj
+
+
   let deep_copy ?depth_max source : aval model_monad =
     let* {path; location} = get_data in
     PulseOperations.deep_copy ?depth_max path location source >> sat |> exec_partial_operation
@@ -296,6 +347,10 @@ module Syntax = struct
 
   let prune_eq_zero (addr, _) : unit model_monad =
     PulseArithmetic.prune_eq_zero addr |> exec_partial_command
+
+
+  let prune_positive (addr, _) : unit model_monad =
+    PulseArithmetic.prune_positive addr |> exec_partial_command
 
 
   let prune_ne_int arg i : unit model_monad =
@@ -341,16 +396,39 @@ module Syntax = struct
     | Some {Typ.desc= Tstruct type_name} -> (
       match (List.find cases ~f:(fun case -> fst case |> Typ.Name.equal type_name), default) with
       | Some (_, case_fun), _ ->
+          Logging.d_printfln "[ocaml model] dynamic_dispatch: executing case for type %a"
+            Typ.Name.pp type_name ;
           case_fun
       | None, Some default ->
           default
       | None, None ->
           Logging.d_printfln "[ocaml model] dynamic_dispatch: no case for type %a" Typ.Name.pp
             type_name ;
-          disjuncts [] )
+          unreachable )
     | _ ->
         Logging.d_printfln "[ocaml model] No dynamic type found!" ;
         Option.value_map default ~default:(disjuncts []) ~f:Fn.id
+
+
+  let lazy_dynamic_dispatch ~(cases : (Typ.name * (unit -> 'a model_monad)) list)
+      ?(default : (unit -> 'a model_monad) option) aval : 'a model_monad =
+    let* opt_typ = get_dynamic_type ~ask_specialization:true aval in
+    match opt_typ with
+    | Some {Typ.desc= Tstruct type_name} -> (
+      match (List.find cases ~f:(fun case -> fst case |> Typ.Name.equal type_name), default) with
+      | Some (_, case_fun), _ ->
+          Logging.d_printfln "[ocaml model] dynamic_dispatch: executing case for type %a"
+            Typ.Name.pp type_name ;
+          case_fun ()
+      | None, Some default ->
+          default ()
+      | None, None ->
+          Logging.d_printfln "[ocaml model] dynamic_dispatch: no case for type %a" Typ.Name.pp
+            type_name ;
+          unreachable )
+    | _ ->
+        Logging.d_printfln "[ocaml model] No dynamic type found!" ;
+        Option.value_map default ~default:unreachable ~f:(fun f -> f ())
 
 
   let dispatch_call ret pname actuals func_args : unit model_monad =

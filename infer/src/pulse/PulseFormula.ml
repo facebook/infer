@@ -3949,6 +3949,11 @@ let is_manifest ~is_allocated formula =
 
 let get_var_repr formula v = (Formula.get_repr formula.phi v :> Var.t)
 
+let get_known_constant_opt formula v =
+  Var.Map.find_opt (get_var_repr formula v) formula.phi.linear_eqs
+  |> Option.bind ~f:LinArith.get_as_const
+
+
 (** for use in applying callee path conditions: we need to translate callee variables to make sense
     for the caller, thereby possibly extending the current substitution *)
 let subst_find_or_new subst addr_callee =

@@ -103,7 +103,11 @@ end
 
 let hack_dict_type_name = SilTyp.HackClass (HackClassName.make "HackDict")
 
+let hack_dict_iter_type_name = SilTyp.HackClass (HackClassName.make "HackDictIterator")
+
 let hack_vec_type_name = SilTyp.HackClass (HackClassName.make "HackVec")
+
+let hack_vec_iter_type_name = SilTyp.HackClass (HackClassName.make "HackVecIterator")
 
 let hack_bool_type_name = SilTyp.HackClass (HackClassName.make "HackBool")
 

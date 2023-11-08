@@ -91,6 +91,8 @@ val simplify :
 
 val is_known_zero : t -> Var.t -> bool
 
+val get_known_constant_opt : t -> Var.t -> Q.t option
+
 val is_known_non_pointer : t -> Var.t -> bool
 
 val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool

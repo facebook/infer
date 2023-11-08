@@ -22,7 +22,11 @@ val default_return_type : Textual.Lang.t option -> Textual.Location.t -> Textual
 
 val hack_dict_type_name : Typ.name
 
+val hack_dict_iter_type_name : Typ.name
+
 val hack_vec_type_name : Typ.name
+
+val hack_vec_iter_type_name : Typ.name
 
 val hack_bool_type_name : Typ.name
 

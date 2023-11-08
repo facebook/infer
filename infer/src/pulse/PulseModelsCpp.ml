@@ -42,37 +42,11 @@ let delete_array deleted_arg : model =
  fun model_data astate -> Basic.free_or_delete `Delete CppDeleteArray deleted_arg model_data astate
 
 
-let new_ type_name : model =
- fun model_data astate ->
-  let<++> astate =
-    (* Java, Hack and C++ [new] share the same builtin (note that ObjC gets its own [objc_alloc_no_fail]
-       builtin for [\[Class new\]]) *)
-    let proc_name = Procdesc.get_proc_name model_data.analysis_data.proc_desc in
-    if
-      Procname.is_java proc_name || Procname.is_csharp proc_name || Procname.is_hack proc_name
-      || Procname.is_python proc_name
-    then
-      Basic.alloc_no_leak_not_null ~initialize:true (Some type_name) ~desc:"new" model_data astate
-    else
-      (* C++ *)
-      Basic.alloc_not_null ~initialize:true ~desc:"new" CppNew (Some type_name) model_data astate
-  in
-  astate
-
-
-let constructor_dsl type_name fields : PulseModelsDSL.aval PulseModelsDSL.model_monad =
+let new_ type_name =
   let open PulseModelsDSL.Syntax in
-  let exp =
-    Exp.Sizeof
-      {typ= Typ.mk_struct type_name; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
-  in
-  let* new_obj = lift_to_monad_and_get_result (new_ exp) in
-  let* () =
-    list_iter fields ~f:(fun (fieldname, obj) ->
-        let field = Fieldname.make type_name fieldname in
-        write_deref_field ~ref:new_obj field ~obj )
-  in
-  ret new_obj
+  start_model
+  @@ let* ret_val = new_ type_name in
+     assign_ret ret_val
 
 
 (* TODO: actually allocate an array  *)

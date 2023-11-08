@@ -40,6 +40,12 @@ module Syntax : sig
   val dynamic_dispatch :
     cases:(Typ.name * 'a model_monad) list -> ?default:'a model_monad -> aval -> 'a model_monad
 
+  val lazy_dynamic_dispatch :
+       cases:(Typ.name * (unit -> 'a model_monad)) list
+    -> ?default:(unit -> 'a model_monad)
+    -> aval
+    -> 'a model_monad
+
   val dispatch_call :
        Ident.t * Typ.t
     -> Procname.t
@@ -85,11 +91,20 @@ module Syntax : sig
 
   val get_dynamic_type : ask_specialization:bool -> aval -> Typ.t option model_monad
 
+  val new_ : Exp.t -> aval model_monad
+
+  val constructor : Typ.Name.t -> (string * aval) list -> aval model_monad
+  (** [constructor_dsl typ_name fields] builds a fresh object of type [typ_name] and initializes its
+      fields using list [fields] *)
+
   val get_const_string : aval -> string option model_monad
 
   val mk_fresh : model_desc:string -> aval model_monad
 
   val write_deref_field : ref:aval -> obj:aval -> Fieldname.t -> unit model_monad
+
+  (* Return the fields we know about. There may be more, so use with caution *)
+  val get_known_fields : aval -> Access.t list model_monad
 
   (* PulseFormula operations *)
   val prune_eq : aval -> aval -> unit model_monad
@@ -97,6 +112,8 @@ module Syntax : sig
   val prune_eq_int : aval -> IntLit.t -> unit model_monad
 
   val prune_eq_zero : aval -> unit model_monad
+
+  val prune_positive : aval -> unit model_monad
 
   val prune_lt : aval -> aval -> unit model_monad
 
@@ -121,6 +138,8 @@ module Syntax : sig
   val and_eq : aval -> aval -> unit model_monad
 
   val and_positive : aval -> unit model_monad
+
+  val get_known_constant_opt : aval -> Q.t option model_monad
 
   (* Tenv operations *)
   val tenv_resolve_field_info : Typ.name -> Fieldname.t -> Struct.field_info option model_monad

@@ -96,7 +96,7 @@ module Vec = struct
               match rest with
               | [] ->
                   ret ()
-                  (* Do "fake" await on the values we drop on the floor. TODO: mark reachable too? *)
+              (* Do "fake" await on the values we drop on the floor. TODO: mark reachable too? *)
               | rest ->
                   list_iter rest ~f:await_hack_value ) )
     in
@@ -117,15 +117,12 @@ module Vec = struct
   let vec_from_async _dummy aval : model =
     let open DSL.Syntax in
     start_model
-    @@
-    (* let event = Hist.call_event path location "Vec\from_async" in *)
-    let () = L.d_printfln "Called vec from async" in
-    let* fst_val = eval_deref_access Read aval (FieldAccess fst_field) in
-    let* snd_val = eval_deref_access Read aval (FieldAccess snd_field) in
-    let* () = await_hack_value fst_val in
-    let* () = await_hack_value snd_val in
-    let* () = allocation Attribute.HackAsync aval in
-    assign_ret aval
+    @@ let* fst_val = eval_deref_access Read aval (FieldAccess fst_field) in
+       let* snd_val = eval_deref_access Read aval (FieldAccess snd_field) in
+       let* () = await_hack_value fst_val in
+       let* () = await_hack_value snd_val in
+       let* () = allocation Attribute.HackAsync aval in
+       assign_ret aval
 
 
   let get_vec_dsl argv _index : DSL.aval DSL.model_monad =
@@ -178,8 +175,9 @@ module Vec = struct
         let* index = eval_deref_access Read key (FieldAccess field) in
         get_vec vec index
     | _ ->
-        L.d_printfln "Vec.hack_array_get expects only 1 key argument" ;
-        disjuncts []
+        L.d_printfln "vec hack array get argument error" ;
+        L.internal_error "Vec.hack_array_get expects only 1 key argument" ;
+        unreachable
 
 
   (*
@@ -199,7 +197,8 @@ module Vec = struct
         (* overwrite default size of 2 *)
         assign_ret new_vec
     | _ ->
-        L.d_printfln "Vec.hack_array_cow_set expects 1 key and 1 value arguments" ;
+        L.d_printfln "vec hack array cow set argument error" ;
+        L.internal_error "Vec.hack_array_cow_set expects 1 key and 1 value arguments" ;
         unreachable
 end
 
@@ -208,7 +207,7 @@ let bool_val_field = Fieldname.make TextualSil.hack_bool_type_name "val"
 let make_hack_bool bool : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let* bool = eval_read (Const (Cint (if bool then IntLit.one else IntLit.zero))) in
-  let* boxed_bool = PulseModelsCpp.constructor_dsl TextualSil.hack_bool_type_name [("val", bool)] in
+  let* boxed_bool = constructor TextualSil.hack_bool_type_name [("val", bool)] in
   ret boxed_bool
 
 
@@ -233,6 +232,14 @@ let int_to_hack_int n : DSL.aval DSL.model_monad =
 
 let make_zero = int_to_hack_int 0
 
+let make_hack_string (s : string) : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let str_exp = Exp.Const (Const.Cstr s) in
+  let* str_val = eval_read str_exp in
+  let* ret_val = constructor TextualSil.hack_string_type_name [("val", str_val)] in
+  ret ret_val
+
+
 module VecIter = struct
   let class_name = "HackVecIterator"
 
@@ -249,7 +256,7 @@ module VecIter = struct
       ret ret_val
     in
     let nonemptycase : DSL.aval DSL.model_monad =
-      let* () = prune_ne_int size_val IntLit.zero in
+      let* () = prune_positive size_val in
       let* iter = mk_fresh ~model_desc:"iter_init" in
       let* zero = mk_fresh ~model_desc:"iter_init" in
       let* () = and_eq_int zero IntLit.zero in
@@ -284,7 +291,6 @@ module VecIter = struct
     let* size = eval_deref_access Read thevec (FieldAccess Vec.size_field) in
     let* index = eval_deref_access Read iter (FieldAccess index_field) in
     let* succindex = eval_binop_int (Binop.PlusA None) index IntLit.one in
-    (* TODO: expand DSL so can combine finshed1 and finished2 with a disjunctive formula rather than a disjunction of paths *)
     (* true loop exit condition *)
     let finished1 : unit DSL.model_monad =
       let* () = prune_ge succindex size in
@@ -298,7 +304,6 @@ module VecIter = struct
       assign_ret ret_val
     in
     let not_finished : unit DSL.model_monad =
-      (* let* () = prune_eq_zero v3 in *)
       let* () = prune_lt succindex size in
       let* () = prune_lt_int succindex IntLit.two in
       let* () = write_deref_field ~ref:iter index_field ~obj:succindex in
@@ -307,7 +312,7 @@ module VecIter = struct
       let* () = write_deref ~ref:eltaddr ~obj:elt in
       let* ret_val = make_hack_bool false in
       let haskey : unit DSL.model_monad =
-        let* () = prune_ne_zero keyaddr in
+        let* () = prune_positive keyaddr in
         write_deref ~ref:keyaddr ~obj:hack_succindex
       in
       let nokey : unit DSL.model_monad = prune_eq_zero keyaddr in
@@ -468,20 +473,146 @@ module Dict = struct
     assign_ret value
 end
 
+module DictIter = struct
+  let class_name = "HackDictIterator"
+
+  let dict_field = mk_hack_field class_name "__infer_model_backing_dictiterator_dict"
+
+  let index_field = mk_hack_field class_name "__infer_model_backing_dictiterator_index"
+
+  let iter_init_dict iteraddr keyaddr eltaddr argd : unit DSL.model_monad =
+    let open DSL.Syntax in
+    let* fields = get_known_fields argd in
+    let* size_val = mk_fresh ~model_desc:"dict_iter_init" in
+    let* () = and_eq_int size_val (IntLit.of_int (List.length fields)) in
+    let emptycase : DSL.aval DSL.model_monad =
+      let* () = prune_eq_zero size_val in
+      let* ret_val = make_hack_bool false in
+      ret ret_val
+    in
+    let nonemptycase : DSL.aval DSL.model_monad =
+      let* () = prune_positive size_val in
+      let* iter = mk_fresh ~model_desc:"dict_iter_init" in
+      let* zero = mk_fresh ~model_desc:"dict_iter_init" in
+      let* () = and_eq_int zero IntLit.zero in
+      let typ = Typ.mk_struct (Typ.HackClass (HackClassName.make class_name)) in
+      let* () = add_dynamic_type typ iter in
+      let* () = and_positive iter in
+      let* () = write_deref_field ~ref:iter dict_field ~obj:argd in
+      let* () = write_deref_field ~ref:iter index_field ~obj:zero in
+      let* () = write_deref ~ref:iteraddr ~obj:iter in
+      let* field =
+        match List.hd fields with
+        | None ->
+            L.internal_error "iter init empty list of fields" ;
+            unreachable
+        | Some f ->
+            ret f
+      in
+      let* elt = eval_deref_access Read argd field in
+      let* n =
+        match (field : Access.t) with
+        | FieldAccess fn ->
+            ret (Fieldname.get_field_name fn)
+        | _ ->
+            L.internal_error "dictionary non FieldAccess" ;
+            unreachable
+      in
+      let* hack_str = make_hack_string n in
+      let* () = write_deref ~ref:eltaddr ~obj:elt in
+      let* ret_val = make_hack_bool true in
+      let haskey : DSL.aval DSL.model_monad =
+        let* () = prune_positive keyaddr in
+        let* () = write_deref ~ref:keyaddr ~obj:hack_str in
+        ret ret_val
+      in
+      let nokey : DSL.aval DSL.model_monad =
+        let* () = prune_eq_zero keyaddr in
+        ret ret_val
+      in
+      disjuncts [haskey; nokey]
+    in
+    let* ret_val = disjuncts [emptycase; nonemptycase] in
+    assign_ret ret_val
+
+
+  let iter_next_dict iter keyaddr eltaddr : unit DSL.model_monad =
+    let open DSL.Syntax in
+    let* thedict = eval_deref_access Read iter (FieldAccess dict_field) in
+    let* fields = get_known_fields thedict in
+    let* size_val = mk_fresh ~model_desc:"dict_iter_init" in
+    let* () = and_eq_int size_val (IntLit.of_int (List.length fields)) in
+    let* index = eval_deref_access Read iter (FieldAccess index_field) in
+    let* succindex = eval_binop_int (Binop.PlusA None) index IntLit.one in
+    (* In contrast to vecs, we don't have an overapproximate exit condition here *)
+    let finished : unit DSL.model_monad =
+      let* () = prune_ge succindex size_val in
+      let* ret_val = make_hack_bool true in
+      assign_ret ret_val
+    in
+    let not_finished : unit DSL.model_monad =
+      let* () = prune_lt succindex size_val in
+      let* () = write_deref_field ~ref:iter index_field ~obj:succindex in
+      let* index_q_opt = get_known_constant_opt succindex in
+      let* key_value, elt_value =
+        match index_q_opt with
+        | None ->
+            let* key_value = mk_fresh ~model_desc:"dict_iter_next" in
+            let* elt_value = mk_fresh ~model_desc:"dict_iter_next" in
+            ret (key_value, elt_value)
+        | Some q -> (
+            let* index_int =
+              match QSafeCapped.to_int q with
+              | None ->
+                  L.internal_error "bad index in iter_next_dict" ;
+                  unreachable
+              | Some i ->
+                  ret i
+            in
+            let* index_acc =
+              match List.nth fields index_int with
+              | None ->
+                  L.internal_error "iter next out of bounds" ;
+                  unreachable
+              | Some ia ->
+                  ret ia
+            in
+            match (index_acc : Access.t) with
+            | FieldAccess fn ->
+                let* key_value = make_hack_string (Fieldname.to_string fn) in
+                let* elt_value = eval_deref_access Read thedict index_acc in
+                ret (key_value, elt_value)
+            | _ ->
+                L.internal_error "iter next dict non field access" ;
+                unreachable )
+      in
+      let* () = write_deref ~ref:eltaddr ~obj:elt_value in
+      let* ret_val = make_hack_bool false in
+      let haskey : unit DSL.model_monad =
+        let* () = prune_positive keyaddr in
+        write_deref ~ref:keyaddr ~obj:key_value
+      in
+      let nokey : unit DSL.model_monad = prune_eq_zero keyaddr in
+      let* () = disjuncts [haskey; nokey] in
+      assign_ret ret_val
+    in
+    disjuncts [finished; not_finished]
+end
+
 let hack_array_cow_set this args : model =
   let open DSL.Syntax in
   start_model
   @@
   let this = payload_of_arg this in
   let args = payloads_of_args args in
-  let default =
+  let default () =
     let* fresh = mk_fresh ~model_desc:"hack_array_cow_set" in
     assign_ret fresh
   in
-  dynamic_dispatch this
+  lazy_dynamic_dispatch this
     ~cases:
-      [ (TextualSil.hack_dict_type_name, Dict.hack_array_cow_set_dsl this args)
-      ; (TextualSil.hack_vec_type_name, Vec.hack_array_cow_set_dsl this args) ]
+      [ (TextualSil.hack_dict_type_name, fun () -> Dict.hack_array_cow_set_dsl this args)
+      ; (TextualSil.hack_vec_type_name, fun () -> Vec.hack_array_cow_set_dsl this args) ]
     ~default
 
 
@@ -491,14 +622,14 @@ let hack_array_get this args : model =
   @@
   let this = payload_of_arg this in
   let args = payloads_of_args args in
-  let default =
+  let default () =
     let* fresh = mk_fresh ~model_desc:"hack_array_get" in
     assign_ret fresh
   in
-  dynamic_dispatch this
+  lazy_dynamic_dispatch this
     ~cases:
-      [ (TextualSil.hack_dict_type_name, Dict.hack_array_get this args)
-      ; (TextualSil.hack_vec_type_name, Vec.hack_array_get this args) ]
+      [ (TextualSil.hack_dict_type_name, fun () -> Dict.hack_array_get this args)
+      ; (TextualSil.hack_vec_type_name, fun () -> Vec.hack_array_get this args) ]
     ~default
 
 
@@ -534,7 +665,7 @@ let hack_field_get this field : model =
 let make_hack_random_bool : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let* any = mk_fresh ~model_desc:"make_hack_random_bool" in
-  let* boxed_bool = PulseModelsCpp.constructor_dsl TextualSil.hack_bool_type_name [("val", any)] in
+  let* boxed_bool = constructor TextualSil.hack_bool_type_name [("val", any)] in
   ret boxed_bool
 
 
@@ -625,17 +756,16 @@ let hack_is_true b : model =
     let* b_typ = get_dynamic_type ~ask_specialization:true b in
     match b_typ with
     | None ->
-        let _ = L.d_printfln "istrue None" in
         let* ret = make_hack_random_bool in
         assign_ret ret
     | Some {Typ.desc= Tstruct b_typ_name} ->
         if Typ.Name.equal b_typ_name TextualSil.hack_bool_type_name then
           let* b_val = eval_deref_access Read b (FieldAccess bool_val_field) in
           assign_ret b_val
-        else
-          let _ = L.d_printfln "istrue got typename %a" Typ.Name.pp b_typ_name in
+        else (
+          L.d_printfln "istrue got typename %a" Typ.Name.pp b_typ_name ;
           let* one = eval_read (Const (Cint IntLit.one)) in
-          assign_ret one
+          assign_ret one )
     | _ ->
         unreachable (* shouldn't happen *)
   in
@@ -810,15 +940,26 @@ let hhbc_add x y : model =
          assign_ret sum (* unconstrained value *)
 
 
-(* TODO: dynamic dispatch to cover iterators on dicts as well *)
-let hhbc_iter_init iteraddr keyaddr eltaddr argv : model =
+let hhbc_iter_init iteraddr keyaddr eltaddr arg : model =
   let open DSL.Syntax in
-  start_model @@ VecIter.iter_init_vec iteraddr keyaddr eltaddr argv
+  start_model
+  @@ dynamic_dispatch arg
+       ~cases:
+         [ (TextualSil.hack_dict_type_name, DictIter.iter_init_dict iteraddr keyaddr eltaddr arg)
+         ; (TextualSil.hack_vec_type_name, VecIter.iter_init_vec iteraddr keyaddr eltaddr arg) ]
+         (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
+       ~default:(VecIter.iter_init_vec iteraddr keyaddr eltaddr arg)
 
 
-let hhbc_iter_next iteraddr keyaddr eltaddr : model =
+let hhbc_iter_next iter keyaddr eltaddr : model =
   let open DSL.Syntax in
-  start_model @@ VecIter.iter_next_vec iteraddr keyaddr eltaddr
+  start_model
+  @@ dynamic_dispatch iter
+       ~cases:
+         [ (TextualSil.hack_vec_iter_type_name, VecIter.iter_next_vec iter keyaddr eltaddr)
+         ; (TextualSil.hack_dict_iter_type_name, DictIter.iter_next_dict iter keyaddr eltaddr) ]
+         (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
+       ~default:(VecIter.iter_next_vec iter keyaddr eltaddr)
 
 
 module SplatedVec = struct
@@ -833,7 +974,7 @@ module SplatedVec = struct
   let make arg : model =
     let open DSL.Syntax in
     start_model
-    @@ let* boxed = PulseModelsCpp.constructor_dsl typ_name [(field_name, arg)] in
+    @@ let* boxed = constructor typ_name [(field_name, arg)] in
        assign_ret boxed
 
 
