@@ -2806,6 +2806,20 @@ INTERNAL OPTIONS
        --pulse-taint-config-reset
            Set --pulse-taint-config to the empty list.
 
+       --pulse-transitive-access-config +path
+           Specifies the accesses that must be tracked and the entry methods.       
+        Here is an example of the intended JSON syntax:
+           {
+               "fieldnames_to_monitor": ["GlobalVARIABLES"],
+               "initial_caller_class_extends": "hack
+           GlobalAccess::EventHandler",
+               "initial_caller_class_does_not_extend": ["hack
+           GlobalAccess::Unsafe"]
+           } 
+
+       --pulse-transitive-access-config-reset
+           Set --pulse-transitive-access-config to the empty list.
+
        --pure-by-default
            Activates: [Purity]Consider unknown functions to be pure by
            default (Conversely: --no-pure-by-default)
