@@ -38,9 +38,6 @@ module Syntax : sig
   (** assign the value to the return variable of the current function *)
 
   val dynamic_dispatch :
-    cases:(Typ.name * 'a model_monad) list -> ?default:'a model_monad -> aval -> 'a model_monad
-
-  val lazy_dynamic_dispatch :
        cases:(Typ.name * (unit -> 'a model_monad)) list
     -> ?default:(unit -> 'a model_monad)
     -> aval

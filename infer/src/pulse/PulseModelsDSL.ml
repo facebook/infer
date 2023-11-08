@@ -389,28 +389,7 @@ module Syntax = struct
     prune_binop ~negated:true Binop.Eq (aval_operand arg1) (aval_operand arg2)
 
 
-  let dynamic_dispatch ~(cases : (Typ.name * 'a model_monad) list)
-      ?(default : 'a model_monad option) aval : 'a model_monad =
-    let* opt_typ = get_dynamic_type ~ask_specialization:true aval in
-    match opt_typ with
-    | Some {Typ.desc= Tstruct type_name} -> (
-      match (List.find cases ~f:(fun case -> fst case |> Typ.Name.equal type_name), default) with
-      | Some (_, case_fun), _ ->
-          Logging.d_printfln "[ocaml model] dynamic_dispatch: executing case for type %a"
-            Typ.Name.pp type_name ;
-          case_fun
-      | None, Some default ->
-          default
-      | None, None ->
-          Logging.d_printfln "[ocaml model] dynamic_dispatch: no case for type %a" Typ.Name.pp
-            type_name ;
-          unreachable )
-    | _ ->
-        Logging.d_printfln "[ocaml model] No dynamic type found!" ;
-        Option.value_map default ~default:(disjuncts []) ~f:Fn.id
-
-
-  let lazy_dynamic_dispatch ~(cases : (Typ.name * (unit -> 'a model_monad)) list)
+  let dynamic_dispatch ~(cases : (Typ.name * (unit -> 'a model_monad)) list)
       ?(default : (unit -> 'a model_monad) option) aval : 'a model_monad =
     let* opt_typ = get_dynamic_type ~ask_specialization:true aval in
     match opt_typ with

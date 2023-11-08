@@ -392,13 +392,16 @@ let hhbc_class_get_c value : model =
   @@ dynamic_dispatch value
        ~cases:
          [ ( TextualSil.hack_string_type_name
-           , let* string = read_boxed_string_value_dsl value in
-             (* namespace\\classname becomes namespace::classname *)
-             let string = Str.(global_replace (regexp {|\\\\|}) "::" string) in
-             let typ_name = Typ.HackClass (HackClassName.make string) in
-             let* class_object = get_static_companion_dsl ~model_desc:"hhbc_class_get_c" typ_name in
-             assign_ret class_object ) ]
-       ~default:(get_static_class value |> lift_to_monad)
+           , fun () ->
+               let* string = read_boxed_string_value_dsl value in
+               (* namespace\\classname becomes namespace::classname *)
+               let string = Str.(global_replace (regexp {|\\\\|}) "::" string) in
+               let typ_name = Typ.HackClass (HackClassName.make string) in
+               let* class_object =
+                 get_static_companion_dsl ~model_desc:"hhbc_class_get_c" typ_name
+               in
+               assign_ret class_object ) ]
+       ~default:(fun () -> get_static_class value |> lift_to_monad)
 
 
 module Dict = struct
@@ -609,7 +612,7 @@ let hack_array_cow_set this args : model =
     let* fresh = mk_fresh ~model_desc:"hack_array_cow_set" in
     assign_ret fresh
   in
-  lazy_dynamic_dispatch this
+  dynamic_dispatch this
     ~cases:
       [ (TextualSil.hack_dict_type_name, fun () -> Dict.hack_array_cow_set_dsl this args)
       ; (TextualSil.hack_vec_type_name, fun () -> Vec.hack_array_cow_set_dsl this args) ]
@@ -626,7 +629,7 @@ let hack_array_get this args : model =
     let* fresh = mk_fresh ~model_desc:"hack_array_get" in
     assign_ret fresh
   in
-  lazy_dynamic_dispatch this
+  dynamic_dispatch this
     ~cases:
       [ (TextualSil.hack_dict_type_name, fun () -> Dict.hack_array_get this args)
       ; (TextualSil.hack_vec_type_name, fun () -> Vec.hack_array_get this args) ]
@@ -945,10 +948,12 @@ let hhbc_iter_init iteraddr keyaddr eltaddr arg : model =
   start_model
   @@ dynamic_dispatch arg
        ~cases:
-         [ (TextualSil.hack_dict_type_name, DictIter.iter_init_dict iteraddr keyaddr eltaddr arg)
-         ; (TextualSil.hack_vec_type_name, VecIter.iter_init_vec iteraddr keyaddr eltaddr arg) ]
+         [ ( TextualSil.hack_dict_type_name
+           , fun () -> DictIter.iter_init_dict iteraddr keyaddr eltaddr arg )
+         ; ( TextualSil.hack_vec_type_name
+           , fun () -> VecIter.iter_init_vec iteraddr keyaddr eltaddr arg ) ]
          (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
-       ~default:(VecIter.iter_init_vec iteraddr keyaddr eltaddr arg)
+       ~default:(fun () -> VecIter.iter_init_vec iteraddr keyaddr eltaddr arg)
 
 
 let hhbc_iter_next iter keyaddr eltaddr : model =
@@ -956,10 +961,11 @@ let hhbc_iter_next iter keyaddr eltaddr : model =
   start_model
   @@ dynamic_dispatch iter
        ~cases:
-         [ (TextualSil.hack_vec_iter_type_name, VecIter.iter_next_vec iter keyaddr eltaddr)
-         ; (TextualSil.hack_dict_iter_type_name, DictIter.iter_next_dict iter keyaddr eltaddr) ]
+         [ (TextualSil.hack_vec_iter_type_name, fun () -> VecIter.iter_next_vec iter keyaddr eltaddr)
+         ; ( TextualSil.hack_dict_iter_type_name
+           , fun () -> DictIter.iter_next_dict iter keyaddr eltaddr ) ]
          (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
-       ~default:(VecIter.iter_next_vec iter keyaddr eltaddr)
+       ~default:(fun () -> VecIter.iter_next_vec iter keyaddr eltaddr)
 
 
 module SplatedVec = struct
