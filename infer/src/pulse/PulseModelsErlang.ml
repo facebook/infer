@@ -1118,6 +1118,13 @@ module Custom = struct
 
   type spec = rule list [@@deriving of_yojson]
 
+  let max_nesting_level_bastraction = 3
+
+  let max_concrete_list_lenght = 3
+
+  (* Used as non deterministic erlang value in abstraction *)
+  let non_det_erlang_value = Some (List [None])
+
   let rec pp_erlang_value fmt ev =
     match ev with
     | Some kev -> (
@@ -1130,6 +1137,9 @@ module Custom = struct
           F.fprintf fmt "IntLit(None)"
       | IntLit (Some s) ->
           F.fprintf fmt "IntLit(%s)" s
+      | List [None] ->
+          (* corresponds to non_det_erlang_value *)
+          F.pp_print_string fmt "NonDetErlangValue"
       | List evl ->
           F.fprintf fmt "List[ %a ]" pp_erlang_value_list evl
       | Tuple evl ->
@@ -1139,7 +1149,7 @@ module Custom = struct
       | GenServer {module_name= None} ->
           F.pp_print_string fmt "GenServer()" )
     | None ->
-        F.pp_print_string fmt "NoneEralngValue"
+        F.pp_print_string fmt "NoneErlangValue"
 
 
   and pp_erlang_value_list fmt evl =
@@ -1159,7 +1169,12 @@ module Custom = struct
         F.fprintf fmt "@\n ArgumentReturnList ( %a )@\n@\n@\n" helpf arl
 
 
-  let rec abstract_erlang_value ev =
+  let rec abstract_erlang_value nesting_level ev =
+    let abs_max_nesting evl =
+      if nesting_level <= max_nesting_level_bastraction then
+        List.map evl ~f:(abstract_erlang_value (nesting_level + 1))
+      else []
+    in
     match ev with
     | None ->
         None
@@ -1183,10 +1198,13 @@ module Custom = struct
           | IntLit (Some _) ->
               IntLit None
           | List evs ->
-              let abs_evs = List.map evs ~f:abstract_erlang_value in
+              let abs_evs = abs_max_nesting evs in
+              let abs_evs = fst (List.split_n abs_evs max_concrete_list_lenght) in
+              let abs_evs = List.append abs_evs [non_det_erlang_value] in
               List abs_evs
           | Tuple evs ->
-              let abs_evs = List.map evs ~f:abstract_erlang_value in
+              let abs_evs = abs_max_nesting evs in
+              let abs_evs = List.append abs_evs [non_det_erlang_value] in
               Tuple abs_evs
           | GenServer _mn ->
               GenServer _mn
@@ -1200,13 +1218,13 @@ module Custom = struct
 
   let abstract_behavior mfa behavior =
     let do_argument_return ar =
-      let abs_arg_val = List.map ar.arguments ~f:abstract_erlang_value in
-      let abs_ret_val = abstract_erlang_value ar.return in
+      let abs_arg_val = List.map ar.arguments ~f:(abstract_erlang_value 0) in
+      let abs_ret_val = abstract_erlang_value 0 ar.return in
       {arguments= abs_arg_val; return= abs_ret_val}
     in
     match behavior with
     | ReturnValue nev ->
-        ReturnValue (abstract_erlang_value nev)
+        ReturnValue (abstract_erlang_value 0 nev)
     | ArgumentsReturnList args ->
         let abs_arguments_return_list = List.map args ~f:do_argument_return in
         let joined_arguments_return_list =
