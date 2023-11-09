@@ -17,6 +17,26 @@ abstract class A {
   public static function get_initialized_field(): string {
     return static::INITIALIZED_FIELD;
   }
+
+  protected function __construct() {
+    $_ = self::get_field();
+  }
+
+  public static function nop(): void {}
+
+  public static function call_new_static_ok(): void {
+    call_nop(); // for __lazy_class_initialize(A)
+    $_ = new static();
+  }
+
+  public static function call_new_self_bad(): void {
+    call_nop(); // for __lazy_class_initialize(A)
+    $_ = new self();
+  }
+}
+
+function call_nop(): void {
+  A::nop();
 }
 
 function call_get_field_bad(): string {

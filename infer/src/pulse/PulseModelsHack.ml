@@ -810,6 +810,16 @@ let hhbc_cls_cns this field : model =
      assign_ret field_v
 
 
+let hack_get_class this : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* typ_opt = get_dynamic_type ~ask_specialization:true this in
+     let* field_v =
+       match typ_opt with Some _ -> ret this | None -> mk_fresh ~model_desc:"hack_get_class"
+     in
+     assign_ret field_v
+
+
 let hack_set_static_prop this prop obj : model =
   let open DSL.Syntax in
   start_model
@@ -1014,9 +1024,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hack_new_dict" &::.*++> Dict.new_dict
   ; -"$builtins" &:: "hhbc_new_vec" &::.*++> Vec.new_vec
   ; -"$builtins" &:: "hhbc_not" <>$ capt_arg_payload $--> hhbc_not
-  ; -"$builtins" &:: "hack_get_class" <>$ capt_arg_payload
-    $--> Basic.id_first_arg ~desc:"hack_get_class"
-    (* not clear why HackC generate this builtin call *)
+  ; -"$builtins" &:: "hack_get_class" <>$ capt_arg_payload $--> hack_get_class
   ; -"$builtins" &:: "hack_field_get" <>$ capt_arg_payload $+ capt_arg_payload $--> hack_field_get
   ; -"$builtins" &:: "hhbc_class_get_c" <>$ capt_arg_payload $--> hhbc_class_get_c
     (* we should be able to model that directly in Textual once specialization will be stronger *)
