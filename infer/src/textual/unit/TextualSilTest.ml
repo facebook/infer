@@ -172,7 +172,7 @@ let%expect_test "hack extends is ordered" =
   let source =
     {|
       .source_language = "hack"
-      type A extends P0, P1, T1, P2, T0, T2, P3, T3 = .kind="class" { }
+      type A extends P0, P1, P2, P3, T0, T1, T2, T3 = .kind="class" { }
 
       type T3 = .kind="trait" {}
       type T0 = .kind="trait" {}
@@ -192,7 +192,7 @@ let%expect_test "hack extends is ordered" =
   let supers = Tenv.fold_supers tenv name ~init:[] ~f:(fun name _ acc -> name :: acc) in
   F.printf "%a@\n" (Fmt.list ~sep:(Fmt.any " ") IR.Typ.Name.pp) (List.rev supers) ;
   [%expect {|
-    hack A hack T1 hack T0 hack T2 hack T3 hack P0 hack P1 hack P2 hack P3 |}]
+    hack A hack T3 hack T2 hack T1 hack T0 hack P3 hack P2 hack P1 hack P0 |}]
 
 
 let%expect_test "overloads in tenv" =

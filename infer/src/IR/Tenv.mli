@@ -59,13 +59,24 @@ val add_field : t -> Typ.Name.t -> Struct.field -> unit
 val pp : Format.formatter -> t -> unit
 (** print a type environment *)
 
-val fold_supers : t -> Typ.Name.t -> init:'a -> f:(Typ.Name.t -> Struct.t option -> 'a -> 'a) -> 'a
+val fold_supers :
+     ?ignore_require_extends:bool
+  -> t
+  -> Typ.Name.t
+  -> init:'a
+  -> f:(Typ.Name.t -> Struct.t option -> 'a -> 'a)
+  -> 'a
 
 val mem_supers : t -> Typ.Name.t -> f:(Typ.Name.t -> Struct.t option -> bool) -> bool
 
 val get_parent : t -> Typ.Name.t -> Typ.Name.t option
 
-val find_map_supers : t -> Typ.Name.t -> f:(Typ.Name.t -> Struct.t option -> 'a option) -> 'a option
+val find_map_supers :
+     ?ignore_require_extends:bool
+  -> t
+  -> Typ.Name.t
+  -> f:(Typ.Name.t -> Struct.t option -> 'a option)
+  -> 'a option
 
 val implements_remodel_class : t -> Typ.Name.t -> bool
 (** Check if a class implements the Remodel class *)

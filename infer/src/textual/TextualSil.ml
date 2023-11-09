@@ -445,31 +445,16 @@ module StructBridge = struct
 
 
   (** For Hack, [supers] contains the optional parent class but also all used traits. During method
-      resolution, we have to look up in a certain order, and traits always come before the parent
-      class. Therefore we keep [supers] sorted to perform an efficient lookup. *)
-  let sort_hack_supers decls_env supers =
-    let open IOption.Let_syntax in
-    let is_trait typname =
-      let maybe_trait =
-        let* {attributes} = TextualDecls.get_struct decls_env typname in
-        List.find ~f:Attr.is_trait attributes
-      in
-      Option.is_some maybe_trait
-    in
-    let traits, others = List.partition_tf supers ~f:is_trait in
-    traits @ others
-
-
-  let sort_supers lang decls_env supers =
-    match lang with Lang.Hack -> sort_hack_supers decls_env supers | _ -> supers
-
+      resolution, we have to look up in a reverse order, and traits always come before the parent
+      class. Therefore we keep [supers] as reverse to perform an efficient lookup. *)
+  let rev_hack_supers lang supers = match lang with Lang.Hack -> List.rev supers | _ -> supers
 
   let to_sil lang decls_env tenv proc_entries {name; supers; fields; attributes} =
     let class_info =
       match lang with Textual.Lang.Hack -> Some (to_hack_class_info decls_env name) | _ -> None
     in
     let name = TypeNameBridge.to_sil lang name in
-    let supers = sort_supers lang decls_env supers in
+    let supers = rev_hack_supers lang supers in
     let supers = List.map supers ~f:(TypeNameBridge.to_sil lang) in
     let methods =
       List.filter_map proc_entries ~f:(fun proc_entry ->

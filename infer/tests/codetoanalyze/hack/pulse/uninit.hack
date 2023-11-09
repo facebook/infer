@@ -79,7 +79,7 @@ abstract class AbstractUseTrait extends A {
     return self::get_field_from_trait2();
   }
 
-  public static function call_my_trait_get_field_Bad_FN(): string {
+  public static function call_my_trait_get_field_Bad(): string {
     return MyTrait::get_field_from_trait();
   }
 }
@@ -92,7 +92,7 @@ function call_self_get_field2_Bad(): string {
   return AbstractUseTrait::self_get_field2();
 }
 
-function call_my_trait_get_field_Bad_FN(): string {
+function call_my_trait_get_field_Bad(): string {
   return MyTrait::get_field_from_trait();
 }
 
@@ -106,4 +106,28 @@ trait MyTraitConst {
 
 function call_get_self_const_init_Ok(): string {
   return MyTraitConst::get_self_const_init();
+}
+
+trait InitFieldTrait1 {
+  require extends A;
+}
+
+trait InitFieldTrait2 {
+  require extends A;
+
+  const string FIELD = "hi";
+}
+
+trait InitFieldTrait3 {
+  require extends A;
+}
+
+class InitFieldByTrait extends A {
+  use InitFieldTrait1;
+  use InitFieldTrait2;
+  use InitFieldTrait3;
+}
+
+function init_field_by_trait_get_field_ok(): string {
+  return InitFieldByTrait::get_field();
 }

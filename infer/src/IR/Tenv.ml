@@ -69,7 +69,7 @@ let add_field tenv class_tn_name field =
       ()
 
 
-let fold_supers tenv name ~init ~f =
+let fold_supers ?(ignore_require_extends = false) tenv name ~init ~f =
   let rec aux worklist visited result =
     match worklist with
     | [] ->
@@ -83,18 +83,24 @@ let fold_supers tenv name ~init ~f =
         match struct_opt with
         | None ->
             aux worklist visited result
-        | Some {supers} ->
+        | Some ({supers} as str) ->
+            let supers =
+              if ignore_require_extends && Struct.is_hack_trait str then
+                List.filter supers ~f:(fun super ->
+                    Option.exists (lookup tenv super) ~f:Struct.is_hack_trait )
+              else supers
+            in
             let visited, result = aux supers visited result in
             aux worklist visited result )
   in
   aux [name] Typ.Name.Set.empty init |> snd
 
 
-let find_map_supers (type f_result) tenv name ~(f : Typ.Name.t -> Struct.t option -> f_result option)
-    =
+let find_map_supers (type f_result) ?ignore_require_extends tenv name
+    ~(f : Typ.Name.t -> Struct.t option -> f_result option) =
   let exception FOUND of f_result option in
   try
-    fold_supers tenv name ~init:() ~f:(fun name struct_opt () ->
+    fold_supers ?ignore_require_extends tenv name ~init:() ~f:(fun name struct_opt () ->
         match f name struct_opt with None -> () | Some _ as result -> raise (FOUND result) ) ;
     None
   with FOUND result -> result
@@ -110,7 +116,7 @@ let resolve_field_info tenv name fieldname =
 
 let resolve_fieldname tenv name fieldname_str =
   let is_fld (fieldname, _, _) = String.equal (Fieldname.get_field_name fieldname) fieldname_str in
-  find_map_supers tenv name ~f:(fun name str_opt ->
+  find_map_supers ~ignore_require_extends:true tenv name ~f:(fun name str_opt ->
       Option.bind str_opt ~f:(fun {Struct.fields} ->
           if List.exists fields ~f:is_fld then Some name else None ) )
   |> Option.map ~f:(fun name -> Fieldname.make name fieldname_str)
