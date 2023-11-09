@@ -83,6 +83,8 @@ codetoanalyze/erlang/pulse/features/features_gen_server.erl, anon_fun_0_of_test_
 codetoanalyze/erlang/pulse/features/features_gen_server.erl, anon_fun_0_of_test_call5_Bad#0/0, 3, NO_MATCH_OF_RHS, no_bucket, ERROR, [calling context starts here,in call to `handle_call/3`,no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_gen_server.erl, anon_fun_0_of_test_cast_Bad#0/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [calling context starts here,in call to `handle_cast/2`,no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_gen_server.erl, anon_fun_0_of_test_call_callee_Bad#0/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [calling context starts here,in call to `call/2`,in call to `handle_call/3`,no match of RHS here]
+codetoanalyze/erlang/pulse/features/features_gen_server.erl, test_start_link1_Bad/0, 1, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
+codetoanalyze/erlang/pulse/features/features_gen_server.erl, test_start_link4_Bad/0, 1, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_gen_server.erl, init/1, 0, NO_MATCHING_FUNCTION_CLAUSE_LATENT, no_bucket, ERROR, [no matching function clause here]
 codetoanalyze/erlang/pulse/features/features_gen_server.erl, init/1, 3, NO_MATCH_OF_RHS_LATENT, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_gen_server.erl, handle_call/3, 1, NO_MATCHING_CASE_CLAUSE_LATENT, no_bucket, ERROR, [no matching case clause here]

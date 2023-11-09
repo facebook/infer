@@ -15,9 +15,11 @@
     test_call5_Bad/0,
     test_cast_Bad/0,
     test_call_callee_Bad/0,
+%% Not exported due to sporadic timeout in direct_erlang_compiler_test T169335380
 %    test_start_link1_Bad/0,
     test_start_link2_Ok/0,
     test_start_link3_Ok/0
+%% Not exported due to sporadic timeout in direct_erlang_compiler_test T169335380
 %    test_start_link4_Bad/0
 ]).
 
@@ -112,9 +114,8 @@ test_call_callee_Bad() ->
     end,
     run_test(Test).
 
-%% disabled due to sporadic timeout in direct_erlang_compiler_test
-%test_start_link1_Bad() ->
-%    {ok, _} = gen_server:start_link(?MODULE, do_crash, []).
+test_start_link1_Bad() ->
+    {ok, _} = gen_server:start_link(?MODULE, do_crash, []).
 
 test_start_link2_Ok() ->
     ignore = gen_server:start_link(?MODULE, do_ignore, []).
@@ -122,9 +123,8 @@ test_start_link2_Ok() ->
 test_start_link3_Ok() ->
     {error, _} = gen_server:start_link(?MODULE, do_error, []).
 
-%% disabled due to sporadic timeout in direct_erlang_compiler_test
-%test_start_link4_Bad() ->
-%    {ok, _} = gen_server:start_link(?MODULE, oops, []).
+test_start_link4_Bad() ->
+    {ok, _} = gen_server:start_link(?MODULE, oops, []).
 
 % server
 
