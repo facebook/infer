@@ -665,30 +665,30 @@ let get_message_and_suggestion diagnostic =
       , Some
           (F.asprintf "Pass the raw pointer instead and change its usages if necessary%t."
              pp_used_locations ) )
-  | ReadUninitialized {calling_context; trace} ->
-      let root_var =
-        Trace.find_map_last_main trace ~f:(function
-          | VariableDeclared (pvar, _, _) ->
-              Some pvar
-          | _ ->
-              None )
-        |> IOption.if_none_evalopt ~f:(fun () ->
-               Trace.find_map_last_main trace ~f:(function
-                 | FormalDeclared (pvar, _, _) ->
-                     Some pvar
-                 | _ ->
-                     None ) )
-        |> Option.map ~f:(F.asprintf "%a" Pvar.pp_value_non_verbose)
-      in
-      let declared_fields =
-        Trace.find_map_last_main trace ~f:(function
-          | StructFieldAddressCreated (fields, _, _) ->
-              Some fields
-          | _ ->
-              None )
-        |> Option.map ~f:(F.asprintf "%a" ValueHistory.pp_fields)
-      in
-      let access_path =
+  | ReadUninitialized {typ; calling_context; trace} ->
+      let get_access_path_from_trace () =
+        let root_var =
+          Trace.find_map_last_main trace ~f:(function
+            | VariableDeclared (pvar, _, _) ->
+                Some pvar
+            | _ ->
+                None )
+          |> IOption.if_none_evalopt ~f:(fun () ->
+                 Trace.find_map_last_main trace ~f:(function
+                   | FormalDeclared (pvar, _, _) ->
+                       Some pvar
+                   | _ ->
+                       None ) )
+          |> Option.map ~f:(F.asprintf "%a" Pvar.pp_value_non_verbose)
+        in
+        let declared_fields =
+          Trace.find_map_last_main trace ~f:(function
+            | StructFieldAddressCreated (fields, _, _) ->
+                Some fields
+            | _ ->
+                None )
+          |> Option.map ~f:(F.asprintf "%a" ValueHistory.pp_fields)
+        in
         match (root_var, declared_fields) with
         | None, None ->
             None
@@ -699,7 +699,17 @@ let get_message_and_suggestion diagnostic =
         | Some root_var, Some declared_fields ->
             Some (F.sprintf "%s.%s" root_var declared_fields)
       in
-      let pp_access_path fmt = Option.iter access_path ~f:(F.fprintf fmt " `%s`") in
+      let pp_access_path fmt =
+        match typ with
+        | Value -> (
+          match get_access_path_from_trace () with
+          | Some access_path ->
+              F.fprintf fmt "`%s`" access_path
+          | None ->
+              F.fprintf fmt "a value" )
+        | Const fld ->
+            F.fprintf fmt "`%s`" (Fieldname.to_full_string fld)
+      in
       let pp_location fmt =
         match immediate_or_first_call calling_context trace with
         | `Immediate ->
@@ -1088,7 +1098,7 @@ let get_issue_type ~latent issue_type =
       IssueType.readonly_shared_ptr_param
   | ReadUninitialized {typ= Value}, _ ->
       IssueType.uninitialized_value_pulse ~latent
-  | ReadUninitialized {typ= Const}, _ ->
+  | ReadUninitialized {typ= Const _}, _ ->
       IssueType.pulse_uninitialized_const
   | RetainCycle _, false ->
       IssueType.retain_cycle

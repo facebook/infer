@@ -1500,8 +1500,8 @@ let set_uninitialize_prop path tenv ({ProcAttributes.loc} as proc_attrs) astate 
           match
             PulseOperations.eval path NoAccess loc (Lfield (Lvar class_global_var, fld, typ)) astate
           with
-          | Sat (Ok (astate, (fld, _))) ->
-              AbductiveDomain.AddressAttributes.add_one fld (Uninitialized Const) astate
+          | Sat (Ok (astate, (v, _))) ->
+              AbductiveDomain.AddressAttributes.add_one v (Uninitialized (Const fld)) astate
           | _ ->
               astate
         else astate )

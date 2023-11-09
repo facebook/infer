@@ -155,13 +155,13 @@ module Attribute = struct
   end
 
   module UninitializedTyp = struct
-    type t = Value | Const [@@deriving compare, equal]
+    type t = Value | Const of Fieldname.t [@@deriving compare, equal]
 
     let pp f = function
       | Value ->
           F.pp_print_string f "value"
-      | Const ->
-          F.pp_print_string f "const"
+      | Const fld ->
+          F.fprintf f "const(%a)" Fieldname.pp fld
   end
 
   type t =
