@@ -15,7 +15,7 @@ type fields = field list [@@deriving equal, hash]
 type java_class_kind = Interface | AbstractClass | NormalClass
 [@@deriving equal, compare, hash, show {with_path= false}]
 
-type hack_class_kind = Class | Trait [@@deriving equal, hash, show {with_path= false}]
+type hack_class_kind = Class | Interface | Trait [@@deriving equal, hash, show {with_path= false}]
 
 module ClassInfo = struct
   type t =
@@ -427,6 +427,10 @@ let is_not_java_interface = function
 
 let is_hack_class {class_info} =
   match (class_info : ClassInfo.t) with HackClassInfo Class -> true | _ -> false
+
+
+let is_hack_interface {class_info} =
+  match (class_info : ClassInfo.t) with HackClassInfo Interface -> true | _ -> false
 
 
 let is_hack_trait {class_info} =

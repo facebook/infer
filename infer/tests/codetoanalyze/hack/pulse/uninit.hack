@@ -151,3 +151,21 @@ class InitFieldByTrait extends A {
 function init_field_by_trait_get_field_ok(): string {
   return InitFieldByTrait::get_field();
 }
+
+interface InitFieldInterface {
+  const string FIELD = "abc";
+}
+
+trait TInitFieldInterface implements InitFieldInterface {
+  public static function get_field(): string {
+    return self::FIELD;
+  }
+}
+
+abstract class CInitFieldInterface {
+  use TInitFieldInterface;
+}
+
+function init_field_in_interface_ok(): string {
+  return CInitFieldInterface::get_field();
+}

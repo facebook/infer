@@ -15,7 +15,7 @@ type fields = field list
 
 type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal]
 
-type hack_class_kind = Class | Trait
+type hack_class_kind = Class | Interface | Trait
 
 module ClassInfo : sig
   type t =
@@ -95,6 +95,8 @@ val get_source_file : t -> SourceFile.t option
 
 val is_hack_class : t -> bool
 
-val is_hack_trait : t -> bool [@@warning "-unused-value-declaration"]
+val is_hack_interface : t -> bool
+
+val is_hack_trait : t -> bool
 
 module Normalizer : HashNormalizer.S with type t = t

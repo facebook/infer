@@ -439,8 +439,12 @@ module StructBridge = struct
   let to_hack_class_info decls_env typ =
     TextualDecls.get_struct decls_env typ
     |> Option.value_map ~default:SilStruct.ClassInfo.NoInfo ~f:(fun {Textual.Struct.attributes} ->
-           let has_trait = List.find ~f:Textual.Attr.is_trait attributes |> Option.is_some in
-           let kind = if has_trait then SilStruct.Trait else SilStruct.Class in
+           let has ~f = List.find ~f attributes |> Option.is_some in
+           let kind =
+             if has ~f:Textual.Attr.is_interface then SilStruct.Interface
+             else if has ~f:Textual.Attr.is_trait then SilStruct.Trait
+             else SilStruct.Class
+           in
            SilStruct.ClassInfo.HackClassInfo kind )
 
 

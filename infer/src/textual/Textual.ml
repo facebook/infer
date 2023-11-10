@@ -213,6 +213,10 @@ module Attr = struct
 
   let is_final {name; values} = String.equal name "final" && List.is_empty values
 
+  let is_interface {name; values} =
+    String.equal name "kind" && List.equal String.equal values ["interface"]
+
+
   let is_trait {name; values} = String.equal name "kind" && List.equal String.equal values ["trait"]
 
   let is_static {name; values} = String.equal name "static" && List.is_empty values

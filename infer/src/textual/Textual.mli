@@ -101,6 +101,8 @@ module Attr : sig
 
   val is_static : t -> bool
 
+  val is_interface : t -> bool
+
   val is_trait : t -> bool
 
   val is_variadic : t -> bool

@@ -87,7 +87,8 @@ let fold_supers ?(ignore_require_extends = false) tenv name ~init ~f =
             let supers =
               if ignore_require_extends && Struct.is_hack_trait str then
                 List.filter supers ~f:(fun super ->
-                    Option.exists (lookup tenv super) ~f:Struct.is_hack_trait )
+                    Option.exists (lookup tenv super) ~f:(fun str ->
+                        Struct.is_hack_interface str || Struct.is_hack_trait str ) )
               else supers
             in
             let visited, result = aux supers visited result in
@@ -344,7 +345,7 @@ module MethodInfo = struct
        This function is to compute the correct arity offset we should apply. *)
     let get_kind ~last_class_visited class_name (kind : Struct.hack_class_kind) =
       match kind with
-      | Class ->
+      | Class | Interface ->
           IsClass
       | Trait -> (
         match last_class_visited with
