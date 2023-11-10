@@ -2706,7 +2706,7 @@ and pulse_taint_skip_sources =
 
 
 and pulse_transitive_access_config =
-  CLOpt.mk_path_list ~long:"pulse-transitive-access-config"
+  CLOpt.mk_path_opt ~long:"pulse-transitive-access-config"
     {|Specifies the accesses that must be tracked and the entry methods.
     Here is an example of the intended JSON syntax:
 {
@@ -4408,7 +4408,7 @@ and pulse_taint_check_history = !pulse_taint_check_history
 
 and pulse_taint_skip_sources = !pulse_taint_skip_sources
 
-and pulse_transitive_access_config = RevList.to_list !pulse_transitive_access_config
+and pulse_transitive_access_config = !pulse_transitive_access_config
 
 and pulse_widen_threshold = !pulse_widen_threshold
 

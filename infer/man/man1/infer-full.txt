@@ -2806,7 +2806,7 @@ INTERNAL OPTIONS
        --pulse-taint-config-reset
            Set --pulse-taint-config to the empty list.
 
-       --pulse-transitive-access-config +path
+       --pulse-transitive-access-config path
            Specifies the accesses that must be tracked and the entry methods.       
         Here is an example of the intended JSON syntax:
            {
@@ -2818,7 +2818,7 @@ INTERNAL OPTIONS
            } 
 
        --pulse-transitive-access-config-reset
-           Set --pulse-transitive-access-config to the empty list.
+           Cancel the effect of --pulse-transitive-access-config.
 
        --pure-by-default
            Activates: [Purity]Consider unknown functions to be pure by

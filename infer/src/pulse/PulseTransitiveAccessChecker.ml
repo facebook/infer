@@ -106,9 +106,9 @@ end = struct
 
   let () =
     match Config.pulse_transitive_access_config with
-    | [] ->
+    | None ->
         ()
-    | [filepath] when Filename.check_suffix filepath "json" -> (
+    | Some filepath -> (
       match Utils.read_safe_json_file filepath with
       | Ok (`List []) ->
           L.die ExternalError "The content of transitive-access JSON config is empty@."
@@ -117,11 +117,6 @@ end = struct
       | Error msg ->
           L.die ExternalError "Could not read or parse transitive-access JSON config in %s:@\n%s@."
             filepath msg )
-    | [filepath] ->
-        L.die UserError "%s is not a valid path to .json file" filepath
-    | l ->
-        L.die UserError "%d transitive-access files where give while at most 1 is expected"
-          (List.length l)
 end
 
 let record_load rhs_exp location astates =
