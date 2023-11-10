@@ -873,7 +873,7 @@ let map_matchers =
       ; ("F14FastMap", Invalidation.FollyF14Fast, [value_it_matcher; vector_it_matcher]) ]
       ~f:(fun (map_s, map_t, it_matchers) ->
         [ -"folly" <>:: map_s &:: map_s
-          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
           $+...$--> GenericMapCollection.constructor map_t map_s
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator="
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
@@ -888,7 +888,7 @@ let map_matchers =
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
           $+...$--> GenericMapCollection.only_invalidate_references map_t Reserve
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "at"
-          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
           $+...$--> GenericMapCollection.return_value_reference
                       ~desc:(Format.asprintf "folly::%s::at" map_s)
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "emplace_hint"
@@ -901,10 +901,10 @@ let map_matchers =
           $ capt_arg_of_typ (-"folly" <>:: map_s)
           $++$--> GenericMapCollection.emplace map_t TryEmplaceToken
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator[]"
-          <>$ capt_arg_of_typ (-"folly" <>:: map_s)
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
           $+...$--> GenericMapCollection.operator_bracket map_t
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "find"
-          <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $ capt_arg_payload_of_typ (-"folly" <>:: map_s)
           $+ any_arg $+ capt_arg_payload
           $--> GenericMapCollection.return_it ~desc:(Format.asprintf "folly::%s::find" map_s)
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "begin"
