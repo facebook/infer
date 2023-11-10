@@ -377,10 +377,45 @@ void folly_fastmap_operator_equal_bad() {
   const auto valueCopy = valueRef;
 }
 
-void folly_fastmap_insert_bad_FN() {
+void folly_fastmap_insert_bad() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   const auto& valueRef = map.at(1);
   map.insert({4, 16});
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_hinted_insert_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.insert(map.cbegin(), {4, 16});
+  const auto valueCopy = valueRef;
+}
+
+void use_return_insert_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto [it, inserted] = map.insert({4, 16});
+  map.clear();
+  const auto valueCopy = it->second;
+}
+
+void use_iterator_hinted_insert_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto it = map.insert(map.cbegin(), {4, 16});
+  map.clear();
+  const auto valueCopy = it->second;
+}
+
+void insert_initializer_list_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.insert({{4, 16}, {5, 25}});
+  const auto valueCopy = valueRef;
+}
+
+void insert_range_bad(const std::initializer_list<std::pair<int, int>>& list) {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.insert(list.begin(), list.end());
   const auto valueCopy = valueRef;
 }
 

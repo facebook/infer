@@ -786,8 +786,8 @@ module GenericMapCollection = struct
     else emplace map_t map_f map args data astate
 
 
-  let insert_or_assign ~hinted map_t map return_arg : model =
-    try_emplace ~hinted map_t InsertOrAssign map [return_arg]
+  let insert ~hinted map_t map_f map return_arg : model =
+    try_emplace ~hinted map_t map_f map [return_arg]
 
 
   let iterator_star desc it : model =
@@ -924,16 +924,16 @@ let map_matchers =
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
           $+ any_arg $+ any_arg $+ capt_arg
-          $--> GenericMapCollection.insert_or_assign ~hinted:false map_t
+          $--> GenericMapCollection.insert ~hinted:false map_t InsertOrAssign
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
           $+ any_arg_of_typ (-"folly" <>:: "F14HashToken")
           $+ any_arg $+ any_arg $+ capt_arg
-          $--> GenericMapCollection.insert_or_assign ~hinted:false map_t
+          $--> GenericMapCollection.insert ~hinted:false map_t InsertOrAssign
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert_or_assign"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
           $+ any_arg $+ any_arg $+ any_arg $+ capt_arg
-          $--> GenericMapCollection.insert_or_assign ~hinted:true map_t
+          $--> GenericMapCollection.insert ~hinted:true map_t InsertOrAssign
           (* try_emplace:
               1. First argument is an iterator: hinted case.
               2. Else: non-hinted case.
@@ -944,7 +944,29 @@ let map_matchers =
           $++$--> GenericMapCollection.try_emplace ~hinted:true map_t TryEmplace
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "try_emplace"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
-          $++$--> GenericMapCollection.try_emplace ~hinted:false map_t TryEmplace ] )
+          $++$--> GenericMapCollection.try_emplace ~hinted:false map_t TryEmplace
+          (* insert:
+              1. One argument and it's std::initializer_list: return void.
+              2. Else if one argument: return pair<iterator, bool>.
+              3. Two arguments and they are both iterators: return void.
+              4. Else if two arguments: return iterator.
+          *)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg_of_typ (-"std" &:: "initializer_list")
+          $--> GenericMapCollection.only_invalidate_references map_t Insert
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg $+ capt_arg
+          $--> GenericMapCollection.insert ~hinted:false map_t Insert
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg_of_typ_exists it_matchers $+ any_arg_of_typ_exists it_matchers
+          $--> GenericMapCollection.only_invalidate_references map_t Insert
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg $+ any_arg $+ capt_arg
+          $--> GenericMapCollection.insert ~hinted:true map_t Insert ] )
   in
   let folly_iterator_matchers =
     List.concat_map ["ValueContainerIterator"; "VectorContainerIterator"] ~f:(fun it ->
