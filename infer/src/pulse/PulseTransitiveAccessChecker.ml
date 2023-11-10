@@ -17,82 +17,33 @@ module Config : sig
 
   val is_initial_caller : Tenv.t -> Procname.t -> bool
 end = struct
+  type procname_to_monitor_spec =
+    { class_names: string list option [@yojson.option]
+    ; method_names: string list option [@yojson.option]
+    ; class_name_regex: string option [@yojson.option] }
+  [@@deriving of_yojson]
+
   type procname_to_monitor =
     | ClassAndMethodNames of {class_names: string list; method_names: string list}
     | ClassNameRegex of {class_name_regex: Str.regexp}
+
+  let procname_to_monitor_of_yojson json =
+    match procname_to_monitor_spec_of_yojson json with
+    | {class_names= Some class_names; method_names= Some method_names} ->
+        ClassAndMethodNames {class_names; method_names}
+    | {class_name_regex= Some class_name_regex} ->
+        let class_name_regex = Str.regexp class_name_regex in
+        ClassNameRegex {class_name_regex}
+    | _ ->
+        L.die UserError "parsing of transitive-access config has failed:@\n %a" Yojson.Safe.pp json
+
 
   type t =
     { fieldnames_to_monitor: string list
     ; procnames_to_monitor: procname_to_monitor list
     ; initial_caller_class_extends: string
     ; initial_caller_class_does_not_extend: string list }
-
-  module Json = struct
-    let fieldnames_to_monitor_name = "fieldnames_to_monitor"
-
-    let procnames_to_monitor_name = "procnames_to_monitor"
-
-    let initial_caller_class_extends_name = "initial_caller_class_extends"
-
-    let initial_caller_class_does_not_extend_name = "initial_caller_class_does_not_extend"
-
-    let parse json =
-      let mem field assoc = List.exists assoc ~f:(fun (key, _) -> String.equal field key) in
-      let lookup field assoc =
-        match List.find assoc ~f:(fun (key, _) -> String.equal field key) with
-        | None ->
-            L.die UserError
-              "parsing error on transitive-access config file. The field %s is missing: %a@\n" field
-              Yojson.Basic.pp json
-        | Some (_, value) ->
-            value
-      in
-      let to_string = function
-        | `String s ->
-            s
-        | value ->
-            L.die UserError
-              "parsing error on transitive-access config file. The value %a should be a string: %a@\n"
-              Yojson.Basic.pp value Yojson.Basic.pp json
-      in
-      let to_list = function
-        | `List l ->
-            l
-        | value ->
-            L.die UserError
-              "parsing error on transitive-access config file. The value %a should be a list: %a@\n"
-              Yojson.Basic.pp value Yojson.Basic.pp json
-      in
-      let lookup_string field assoc = lookup field assoc |> to_string in
-      let lookup_string_list field assoc = lookup field assoc |> to_list |> List.map ~f:to_string in
-      let to_procnames_to_monitor = function
-        | `Assoc assoc ->
-            if mem "class_names" assoc then
-              ClassAndMethodNames
-                { class_names= lookup_string_list "class_names" assoc
-                ; method_names= lookup_string_list "method_names" assoc }
-            else
-              ClassNameRegex {class_name_regex= Str.regexp (lookup_string "class_name_regex" assoc)}
-        | value ->
-            L.die UserError
-              "parsing error on transitive-access config file. The value %a should be a record { \
-               class_names:[...], method_names=[...] }: %a@\n"
-              Yojson.Basic.pp value Yojson.Basic.pp json
-      in
-      match json with
-      | `Assoc assoc ->
-          { fieldnames_to_monitor= lookup_string_list fieldnames_to_monitor_name assoc
-          ; procnames_to_monitor=
-              lookup procnames_to_monitor_name assoc
-              |> to_list
-              |> List.map ~f:to_procnames_to_monitor
-          ; initial_caller_class_extends= lookup_string initial_caller_class_extends_name assoc
-          ; initial_caller_class_does_not_extend=
-              lookup_string_list initial_caller_class_does_not_extend_name assoc }
-      | _ ->
-          L.die UserError "parsing error on transitive-access config file: %a@\n" Yojson.Basic.pp
-            json
-  end
+  [@@deriving of_yojson]
 
   let get, set =
     let current = ref (None : t option) in
@@ -158,11 +109,11 @@ end = struct
     | [] ->
         ()
     | [filepath] when Filename.check_suffix filepath "json" -> (
-      match Utils.read_json_file filepath with
+      match Utils.read_safe_json_file filepath with
       | Ok (`List []) ->
           L.die ExternalError "The content of transitive-access JSON config is empty@."
       | Ok json ->
-          Json.parse json |> set
+          t_of_yojson json |> set
       | Error msg ->
           L.die ExternalError "Could not read or parse transitive-access JSON config in %s:@\n%s@."
             filepath msg )
