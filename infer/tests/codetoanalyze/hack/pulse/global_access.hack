@@ -81,3 +81,9 @@ class ImplementUnsafeByTransitivity extends Parent1 implements I {
   }
 
 }
+
+class EventHandler2 {
+  public function indirect_empty_does_not_extend_bad(A $a): int {
+    return $a->get();
+  }
+}

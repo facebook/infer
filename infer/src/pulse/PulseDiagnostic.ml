@@ -129,7 +129,7 @@ type t =
   | CSharpResourceLeak of
       {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
   | ErlangError of ErlangError.t
-  | TransitiveAccess of {call_trace: Trace.t}
+  | TransitiveAccess of {tag: string; description: string; call_trace: Trace.t}
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
     (* TODO: add more data to HackUnawaitedAwaitable tracking the parameter type *)
@@ -185,8 +185,9 @@ let pp fmt diagnostic =
   | JavaResourceLeak {class_name; allocation_trace; location} ->
       F.fprintf fmt "ResourceLeak {@[class_name=%a;@;allocation_trace:%a;@;location:%a@]}"
         JavaClassName.pp class_name (Trace.pp ~pp_immediate) allocation_trace Location.pp location
-  | TransitiveAccess {call_trace} ->
-      F.fprintf fmt "TransitiveAccess {@[call_trace:%a@]}" (Trace.pp ~pp_immediate) call_trace
+  | TransitiveAccess {tag; description; call_trace} ->
+      F.fprintf fmt "TransitiveAccess {@[tag=%s;description=%s;call_trace:%a@]}" tag description
+        (Trace.pp ~pp_immediate) call_trace
   | HackUnawaitedAwaitable {allocation_trace; location} ->
       F.fprintf fmt "UnawaitedAwaitable {@[allocation_trace:%a;@;location:%a@]}"
         (Trace.pp ~pp_immediate) allocation_trace Location.pp location
@@ -601,7 +602,7 @@ let get_message_and_suggestion diagnostic =
       F.asprintf "Resource dynamically allocated %a is not closed after the last access at %a"
         pp_allocation_trace allocation_trace Location.pp location
       |> no_suggestion
-  | TransitiveAccess {call_trace} ->
+  | TransitiveAccess {tag; description; call_trace} ->
       let pp fmt (trace : Trace.t) =
         match trace with
         | Immediate {location} ->
@@ -610,7 +611,7 @@ let get_message_and_suggestion diagnostic =
             F.fprintf fmt "indirectly via call to %a on line %a" CallEvent.describe f
               Location.pp_line location
       in
-      F.asprintf "Spurious transitive access %a" pp call_trace |> no_suggestion
+      F.asprintf "%s. Transitive access %a. %s" tag pp call_trace description |> no_suggestion
   | HackUnawaitedAwaitable {location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let allocation_line =

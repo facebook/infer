@@ -15,7 +15,13 @@ module Config : sig
 
   val procname_must_be_monitored : Tenv.t -> Procname.t -> bool
 
-  val is_initial_caller : Tenv.t -> Procname.t -> bool
+  type context =
+    { initial_caller_class_extends: string list
+    ; initial_caller_class_does_not_extend: string list
+    ; description: string
+    ; tag: string }
+
+  val find_matching_context : Tenv.t -> Procname.t -> context option
 end = struct
   type procname_to_monitor_spec =
     { class_names: string list option [@yojson.option]
@@ -38,11 +44,17 @@ end = struct
         L.die UserError "parsing of transitive-access config has failed:@\n %a" Yojson.Safe.pp json
 
 
+  type context =
+    { initial_caller_class_extends: string list
+    ; initial_caller_class_does_not_extend: string list
+    ; description: string
+    ; tag: string }
+  [@@deriving of_yojson]
+
   type t =
     { fieldnames_to_monitor: string list
     ; procnames_to_monitor: procname_to_monitor list
-    ; initial_caller_class_extends: string
-    ; initial_caller_class_does_not_extend: string list }
+    ; contexts: context list }
   [@@deriving of_yojson]
 
   let get, set =
@@ -90,18 +102,25 @@ end = struct
               match_class_name_regex class_name_regex )
 
 
-  let is_initial_caller tenv procname =
-    (let open IOption.Let_syntax in
-     let* {initial_caller_class_extends; initial_caller_class_does_not_extend} = get () in
-     let+ type_name = Procname.get_class_type_name procname in
-     let parents =
-       Tenv.fold_supers tenv type_name ~init:String.Set.empty ~f:(fun name _ set ->
-           String.Set.add set (Typ.Name.to_string name) )
-     in
-     String.Set.mem parents initial_caller_class_extends
-     && List.for_all initial_caller_class_does_not_extend ~f:(fun str ->
-            not (String.Set.mem parents str) ) )
-    |> Option.value ~default:false
+  let is_matching_context tenv procname
+      {initial_caller_class_extends; initial_caller_class_does_not_extend} =
+    match Procname.get_class_type_name procname with
+    | Some type_name ->
+        let parents =
+          Tenv.fold_supers tenv type_name ~init:String.Set.empty ~f:(fun parent _ acc ->
+              String.Set.add acc (Typ.Name.to_string parent) )
+        in
+        List.exists initial_caller_class_extends ~f:(String.Set.mem parents)
+        && List.for_all initial_caller_class_does_not_extend ~f:(fun type_str ->
+               not (String.Set.mem parents type_str) )
+    | None ->
+        false
+
+
+  let find_matching_context tenv procname =
+    let open IOption.Let_syntax in
+    let* {contexts} = get () in
+    List.find contexts ~f:(is_matching_context tenv procname)
 
 
   let () =
@@ -112,8 +131,11 @@ end = struct
       match Utils.read_safe_json_file filepath with
       | Ok (`List []) ->
           L.die ExternalError "The content of transitive-access JSON config is empty@."
-      | Ok json ->
-          t_of_yojson json |> set
+      | Ok json -> (
+        try t_of_yojson json |> set
+        with _ ->
+          L.die ExternalError "Could not read or parse transitive-access JSON config in %s@."
+            filepath )
       | Error msg ->
           L.die ExternalError "Could not read or parse transitive-access JSON config in %s:@\n%s@."
             filepath msg )
@@ -139,12 +161,15 @@ let record_call tenv procname location astate =
 
 let report_errors tenv proc_desc err_log summary =
   let procname = Procdesc.get_proc_name proc_desc in
-  if Config.is_initial_caller tenv procname then
-    List.iter summary ~f:(function
-      | ContinueProgram astate ->
-          AbductiveDomain.Summary.get_transitive_accesses astate
-          |> List.iter ~f:(fun call_trace ->
-                 PulseReport.report ~is_suppressed:false ~latent:false tenv proc_desc err_log
-                   (Diagnostic.TransitiveAccess {call_trace}) )
-      | _ ->
-          () )
+  match Config.find_matching_context tenv procname with
+  | Some {tag; description} ->
+      List.iter summary ~f:(function
+        | ContinueProgram astate ->
+            AbductiveDomain.Summary.get_transitive_accesses astate
+            |> List.iter ~f:(fun call_trace ->
+                   PulseReport.report ~is_suppressed:false ~latent:false tenv proc_desc err_log
+                     (Diagnostic.TransitiveAccess {tag; description; call_trace}) )
+        | _ ->
+            () )
+  | None ->
+      ()

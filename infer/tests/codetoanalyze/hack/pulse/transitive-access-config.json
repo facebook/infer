@@ -5,14 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  */
 {
-    "fieldnames_to_monitor": ["GlobalVARIABLES"],
-    "procnames_to_monitor": [
-        {
-            "class_names": ["GlobalAccess::Unsafe", "GlobalAccess::VeryUnsafe"],
-            "method_names": ["dangerous", "suspicious"]
-        },
-        { "class_name_regex": "BadPattern" }
-    ],
-    "initial_caller_class_extends": "hack GlobalAccess::EventHandler",
-    "initial_caller_class_does_not_extend": ["hack GlobalAccess::Unsafe"]
+  "fieldnames_to_monitor": ["GlobalVARIABLES"],
+  "procnames_to_monitor": [
+    {
+      "class_names": ["GlobalAccess::Unsafe", "GlobalAccess::VeryUnsafe"],
+      "method_names": ["dangerous", "suspicious"]
+    },
+    { "class_name_regex": "BadPattern" }
+  ],
+  "contexts": [
+    {
+      "initial_caller_class_extends": ["hack GlobalAccess::EventHandler"],
+      "initial_caller_class_does_not_extend": ["hack GlobalAccess::Unsafe"],
+      "tag": "Unsafe Globals",
+      "description": "The value is accessed in an unsafe context"
+    },
+    {
+      "initial_caller_class_extends": ["hack GlobalAccess::EventHandler2"],
+      "initial_caller_class_does_not_extend": [],
+      "tag": "Low Pri Unsafe Globals",
+      "description": "Another description of unsafe context"
+    }
+  ]
 }
