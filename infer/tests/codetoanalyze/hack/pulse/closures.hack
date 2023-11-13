@@ -56,3 +56,74 @@ class Main {
     }
   }
 }
+
+class ClosuresAndDict {
+
+  public static function main_bad(): void {
+    $user = new User();
+    $value = self::run(
+      function($input) {
+        return $input['arg']->getSource();
+      },
+      shape('arg' => $user->getUnsafe()),
+    );
+    \Level1\taintSink($value);
+  }
+
+  public static function main_ok(): void {
+    $user = new User();
+    $value = self::run(
+      function($input) {
+        return $input['arg']->getSource();
+      },
+      shape('arg' => $user->getSafe()),
+    );
+    \Level1\taintSink($value);
+  }
+
+  public static function run<TInput, TOutput>(
+    (function(TInput): TOutput) $fun,
+    TInput $input,
+  ): TOutput {
+    return $fun($input);
+  }
+
+}
+
+class User {
+
+  public Unsafe $unsafe;
+  public Safe $safe;
+
+  public function __construct() {
+    $this->unsafe = new Unsafe();
+    $this->safe = new Safe();
+  }
+
+  public function getSafe(): Safe {
+    return $this->safe;
+  }
+
+  public function getUnsafe(): Unsafe {
+    return $this->unsafe;
+  }
+
+}
+
+interface I {
+  public function getSource(): int;
+}
+
+class Safe implements I {
+
+  public function getSource(): int {
+    return 42;
+  }
+}
+
+class Unsafe implements I {
+
+  public function getSource(): int {
+    return \Level1\taintSource();
+  }
+}
