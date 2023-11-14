@@ -1026,10 +1026,15 @@ module Summary = struct
       | Function _ | Self ->
           true
     in
-    let is_interesting_edge ({LineageGraph.E.kind} : LineageGraph.edge) =
+    let is_interesting_edge ({kind; source; target} : LineageGraph.edge) =
       match kind with
-      | Direct ->
-          false
+      | Direct -> (
+        match (source, target) with
+        | Argument (_, _ :: _), _ | _, Return (_ :: _) ->
+            (* The edge will have non-empty injection/projection metadata. *)
+            true
+        | _ ->
+            false )
       | Builtin ->
           (* Suppressed builtins are considered as direct edges for being simplification
              candidates. *)
