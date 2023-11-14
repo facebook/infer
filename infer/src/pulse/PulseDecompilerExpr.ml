@@ -52,10 +52,10 @@ let rec pp_access_expr fmt access_expr =
   | ProgramVar pvar ->
       Pvar.pp_value fmt pvar
   | Call call ->
-      let java_or_objc_getter =
+      let java_or_objc =
         match call with
         | Call procname | SkippedKnownCall procname -> (
-            Procname.is_java procname
+            Procname.is_java procname || Procname.is_objc_method procname
             ||
             match Attributes.load procname with
             | Some {objc_accessor= Some (Objc_getter _)} ->
@@ -65,7 +65,7 @@ let rec pp_access_expr fmt access_expr =
         | Model _ | SkippedUnknownCall _ ->
             false
       in
-      if java_or_objc_getter then CallEvent.pp_name_only fmt call
+      if java_or_objc then CallEvent.pp_name_only fmt call
       else F.fprintf fmt "%a()" CallEvent.pp_name_only call
   | Capture (access_expr, captured_var) ->
       F.fprintf fmt "%a capturing %a" pp_access_expr access_expr Pvar.pp_value
