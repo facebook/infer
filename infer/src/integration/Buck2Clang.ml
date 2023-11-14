@@ -37,7 +37,8 @@ let capture build_cmd =
     in
     let buck2_build_args = buck2_build_cmd @ capture_buck2_args build_report_file in
     L.debug Capture Verbose "%s %s@." prog (List.to_string ~f:Fn.id buck2_build_args) ;
-    Buck.wrap_buck_call ~extend_env:[] V2 ~label:"build" (prog :: buck2_build_args) |> ignore ;
+    Buck.wrap_buck_call ~kill_infer_env_vars:true V2 ~label:"build" (prog :: buck2_build_args)
+    |> ignore ;
     let infer_deps_lines =
       BuckBuildReport.parse_infer_deps ~root:Config.buck2_root ~build_report_file
     in
