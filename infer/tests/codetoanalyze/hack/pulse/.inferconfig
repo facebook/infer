@@ -23,7 +23,8 @@
     { "class_names": ["IntraFile::KnownClass"], "method_names": ["genTaintSource"], "kinds": ["IntraFile"]},
     { "class_names": ["Sanitizers::Source"], "method_names": ["getTainted"], "kinds": ["Sanitizers"]},
     { "class_names": ["Propagators::Source"], "method_names": ["getTainted"], "kinds": ["Propagators"]},
-    { "class_names": ["Exclusions::Source"], "method_names": ["get"], "kinds": ["Exclusions"]}
+    { "class_names": ["Exclusions::Source"], "method_names": ["get"], "kinds": ["Exclusions"]},
+    { "class_names": ["Traces::Source"], "method_names": ["get"], "kinds": ["Traces"]}
   ],
   "pulse-taint-sinks": [
     { "procedure": "explicitSinkAllArgs" },
@@ -66,6 +67,10 @@
         { "source_kinds": ["Exclusions"], "sink_kinds": ["Exclusions"] }
       ],
       "exclude_in": ["exclusions"]
+    },
+    {
+      "short_description": "Flow with catch-all sink and multiple traces",
+      "taint_flows": [{"source_kinds": ["Traces"], "sink_kinds": ["BuiltinCatchAll"]}]
     }
   ]
 }
