@@ -1476,6 +1476,13 @@ OPTIONS
            --pulse-taint-sources for the fields format documentation.       
     See also infer-analyze(1).
 
+       --pulse-taint-short-traces
+           Activates: Cut off taint traces as soon as a tainted value flows
+           into a sink. This matters when the sink itself calls other sinks
+           of the same kind and as long as the value flows from call to call,
+           without this flag the trace would include the whole chain of
+           calls. (Conversely: --no-pulse-taint-short-traces)           See also infer-analyze(1).
+
        --pulse-taint-sinks json
            Quick way to specify simple sinks as a JSON objects. See
            --pulse-taint-sources for the fields format documentation.       

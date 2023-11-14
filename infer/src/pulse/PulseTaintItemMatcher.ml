@@ -466,6 +466,13 @@ let procedure_matches_any tenv procname proc_attributes procedure_matchers =
   procedure_matches tenv procedure_matchers ?proc_attributes procname [] |> List.is_empty |> not
 
 
+let procedure_matching_kinds tenv procname proc_attributes procedure_matchers =
+  let matching_units = procedure_matches tenv procedure_matchers ?proc_attributes procname [] in
+  List.fold matching_units ~init:TaintConfig.Kind.Set.empty
+    ~f:(fun kind_set (unit : TaintConfig.Unit.procedure_unit) ->
+      TaintConfig.Kind.Set.add_seq (Stdlib.List.to_seq unit.kinds) kind_set )
+
+
 (** Returns a pair of (instance_reference, args) depending on the type of the proc *)
 let split_args procname args =
   let get_this_from_actuals = function

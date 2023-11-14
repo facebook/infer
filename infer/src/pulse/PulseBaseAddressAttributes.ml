@@ -197,6 +197,8 @@ let remove_taint_sanitizer = remove_attribute Attributes.remove_taint_sanitized
 
 let remove_propagate_taint_from = remove_attribute Attributes.remove_propagate_taint_from
 
+let remove_all_must_not_be_tainted ?kinds = Graph.map (Attributes.remove_must_not_be_tainted ?kinds)
+
 let remove_taint_attrs address memory =
   remove_tainted address memory |> remove_taint_sanitizer address
   |> remove_propagate_taint_from address
@@ -455,6 +457,8 @@ module type S = sig
   val remove_allocation_attr : key -> t -> t
 
   val remove_taint_attrs : key -> t -> t
+
+  val remove_all_must_not_be_tainted : ?kinds:TaintConfig.Kind.Set.t -> t -> t
 
   val remove_must_be_valid_attr : key -> t -> t
 

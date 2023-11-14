@@ -11,6 +11,8 @@ module F = Format
 module Kind : sig
   type t = private string [@@deriving compare, equal]
 
+  module Set : PrettyPrintable.PPSet with type elt = t
+
   val pp : F.formatter -> t -> unit
 
   val is_data_flow_only : t -> bool

@@ -2699,6 +2699,14 @@ and pulse_taint_check_history =
      history-based."
 
 
+and pulse_taint_short_traces =
+  CLOpt.mk_bool ~long:"pulse-taint-short-traces" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Cut off taint traces as soon as a tainted value flows into a sink. This matters when the sink \
+     itself calls other sinks of the same kind and as long as the value flows from call to call, \
+     without this flag the trace would include the whole chain of calls."
+
+
 and pulse_taint_skip_sources =
   CLOpt.mk_bool ~long:"pulse-taint-skip-sources" ~default:false
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4405,6 +4413,8 @@ and pulse_taint_config =
 
 
 and pulse_taint_check_history = !pulse_taint_check_history
+
+and pulse_taint_short_traces = !pulse_taint_short_traces
 
 and pulse_taint_skip_sources = !pulse_taint_skip_sources
 

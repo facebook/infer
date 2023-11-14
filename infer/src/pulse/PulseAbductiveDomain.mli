@@ -383,6 +383,8 @@ module Summary : sig
     -> summary
     -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
+  val remove_all_must_not_be_tainted : ?kinds:TaintConfig.Kind.Set.t -> summary -> summary
+
   val pre_heap_has_assumptions : summary -> bool
   (** whether the pre heap encodes some assumptions about values: either a value is restricted (>=
       0) or there is sharing in the heap. Both represent implicit assumptions that the program must

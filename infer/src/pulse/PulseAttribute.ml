@@ -717,6 +717,28 @@ module Attributes = struct
           update value attrs
       | _ ->
           add attrs value
+
+
+    let remove_must_not_be_tainted ?kinds attrs =
+      let open Attribute in
+      match kinds with
+      | None ->
+          remove_by_rank Attribute.must_not_be_tainted_rank attrs
+      | Some kinds_to_remove -> (
+          let taint_map =
+            get_by_rank Attribute.must_not_be_tainted_rank attrs
+                ~dest:(function [@warning "-partial-match"] MustNotBeTainted map -> map)
+          in
+          match taint_map with
+          | None ->
+              attrs
+          | Some taint_map ->
+              let filtered_map =
+                TaintSinkMap.filter
+                  (fun kind _ -> TaintConfig.Kind.Set.mem kind kinds_to_remove |> not)
+                  taint_map
+              in
+              update (MustNotBeTainted filtered_map) attrs )
   end
 
   let get_by_rank = Set.get_by_rank

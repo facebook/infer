@@ -15,6 +15,7 @@ module Kind = struct
   end
 
   include T
+  module Set = PrettyPrintable.MakePPSet (T)
 
   type kind_info = {name: string; is_data_flow_only: bool}
 

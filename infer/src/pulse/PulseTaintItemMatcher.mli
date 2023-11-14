@@ -23,6 +23,13 @@ val procedure_matches :
 val procedure_matches_any :
   Tenv.t -> Procname.t -> ProcAttributes.t option -> TaintConfig.Unit.procedure_unit list -> bool
 
+val procedure_matching_kinds :
+     Tenv.t
+  -> Procname.t
+  -> ProcAttributes.t option
+  -> TaintConfig.Unit.procedure_unit list
+  -> TaintConfig.Kind.Set.t
+
 val match_procedure_call :
      Tenv.t
   -> PathContext.t

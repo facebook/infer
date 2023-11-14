@@ -189,6 +189,8 @@ module Attributes : sig
 
   val remove_tainted : t -> t
 
+  val remove_must_not_be_tainted : ?kinds:TaintConfig.Kind.Set.t -> t -> t
+
   val get_propagate_taint_from : t -> taint_in list option
 
   val remove_propagate_taint_from : t -> t

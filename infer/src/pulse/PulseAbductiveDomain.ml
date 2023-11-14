@@ -339,6 +339,12 @@ module Internal = struct
       if phys_equal new_post astate.post then astate else {astate with post= new_post}
 
 
+    (** [astate] with [astate.pre.attrs = f astate.pre.attrs] *)
+    let map_pre_attrs ~f astate =
+      let new_pre = PreDomain.update astate.pre ~attrs:(f (astate.pre :> base_domain).attrs) in
+      if phys_equal new_pre astate.pre then astate else {astate with pre= new_pre}
+
+
     let initialize address astate =
       map_post_attrs astate ~f:(fun attrs -> BaseAddressAttributes.initialize address attrs)
 
@@ -528,6 +534,13 @@ module Internal = struct
 
     let remove_taint_attrs address astate =
       map_post_attrs astate ~f:(BaseAddressAttributes.remove_taint_attrs address)
+
+
+    let remove_all_must_not_be_tainted ?kinds astate =
+      let astate =
+        map_post_attrs astate ~f:(BaseAddressAttributes.remove_all_must_not_be_tainted ?kinds)
+      in
+      map_pre_attrs astate ~f:(BaseAddressAttributes.remove_all_must_not_be_tainted ?kinds)
 
 
     let get_closure_proc_name addr astate =
@@ -2085,6 +2098,8 @@ module Summary = struct
   let get_must_be_valid addr summary =
     SafeAttributes.get_must_be_valid (CanonValue.canon' summary addr) summary
 
+
+  let remove_all_must_not_be_tainted = SafeAttributes.remove_all_must_not_be_tainted
 
   let of_post_ tenv proc_name (proc_attrs : ProcAttributes.t) location astate0 =
     let open SatUnsat.Import in

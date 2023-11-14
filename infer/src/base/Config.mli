@@ -670,6 +670,8 @@ val pulse_taint_config : pulse_taint_config
 
 val pulse_taint_check_history : bool
 
+val pulse_taint_short_traces : bool
+
 val pulse_taint_skip_sources : bool
 
 val pulse_transitive_access_config : string option

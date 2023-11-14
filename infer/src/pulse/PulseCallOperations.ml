@@ -230,6 +230,27 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
         Ok (ExceptionRaised astate)
   in
   let map_call_result callee_summary ~f =
+    (* Clean up the summary before application to improve taint traces. When the calee is a taint
+         sink itself with kinds K, we remove all MustNotBeTainted attributes matching K. The reason is
+         if the callee itself calls other functions that are taint sinks with kind in K, the trace
+         will keep going from callee to callee as long as the tainted value flows through the call
+         chain. This leads to very long and confusing traces.
+
+       TODO(arr): ideally, we'd scrub the summary of the callee once when we create a summary in
+       AbductiveDomain rather than on every application. Unfortunately, as is this creates a
+       dependency cycle between modules and should be dealt with separately. *)
+    let callee_summary =
+      if Config.pulse_taint_short_traces then
+        let kinds =
+          PulseTaintItemMatcher.procedure_matching_kinds tenv callee_pname None
+            TaintConfig.sink_procedure_matchers
+        in
+        let calee_summary =
+          AbductiveDomain.Summary.remove_all_must_not_be_tainted ~kinds callee_summary
+        in
+        calee_summary
+      else callee_summary
+    in
     let sat_unsat, contradiction =
       PulseInterproc.apply_summary path callee_pname call_loc ~callee_summary ~captured_formals
         ~captured_actuals ~formals
