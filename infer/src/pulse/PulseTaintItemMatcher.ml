@@ -58,12 +58,9 @@ let taint_procedure_target_matches tenv taint_target actual_index actual_typ =
 
 
 let check_regex name_regex elem ?source_file exclude_in =
-  L.d_printfln "Matching regex wrt %s" elem ;
   let should_exclude_location =
     match (source_file, exclude_in) with
     | Some source_file, Some exclude_in ->
-        L.d_printfln "Checking exclude_in list with location of elem = %a and exclude_in = %a"
-          SourceFile.pp source_file (Pp.comma_seq String.pp) exclude_in ;
         List.exists exclude_in ~f:(fun exclude ->
             (* This is needed because in clang languages the location of the elem can be either in the header
                or in the source file, depending whether the source file is available in the analysis or not.
@@ -74,16 +71,13 @@ let check_regex name_regex elem ?source_file exclude_in =
     | _ ->
         false
   in
-  if should_exclude_location then (
-    L.d_printfln "No match because of exclude_in" ;
-    false )
+  if should_exclude_location then false
   else
     match Str.search_forward name_regex elem 0 with
     | _ ->
-        L.d_printfln "Found match" ;
+        L.d_printfln " Matching regex wrt %s, found match!" elem ;
         true
     | exception Caml.Not_found ->
-        L.d_printfln "No match" ;
         false
 
 
