@@ -10,7 +10,11 @@ module F = Format
 module L = Logging
 
 module Kind = struct
-  type t = string [@@deriving compare, equal, hash]
+  module T = struct
+    type t = string [@@deriving compare, equal, hash, show]
+  end
+
+  include T
 
   type kind_info = {name: string; is_data_flow_only: bool}
 
@@ -629,3 +633,193 @@ module SinkPolicy = struct
     Hashtbl.iteri sink_policies ~f:(fun ~key:kind ~data:policies_by_kind ->
         F.fprintf f "%a -> %a@\n" Kind.pp kind (Pp.comma_seq pp) policies_by_kind )
 end
+
+(** {2 Sources, sinks, and sanitizers} *)
+
+let fill_data_flow_kinds_from_config () =
+  Config.pulse_taint_config.data_flow_kinds
+  |> List.iter ~f:(fun kind -> Kind.of_string kind |> Kind.mark_data_flow_only)
+
+
+let fill_policies_from_config () =
+  Config.pulse_taint_config.policies
+  |> List.iter
+       ~f:(fun
+            {Pulse_config_t.short_description= description; taint_flows; privacy_effect; exclude_in}
+          ->
+         let policy_id = SinkPolicy.next_policy_id () in
+         List.iter taint_flows ~f:(fun {Pulse_config_t.source_kinds; sanitizer_kinds; sink_kinds} ->
+             let source_kinds = List.map source_kinds ~f:Kind.of_string in
+             let sanitizer_kinds = List.map sanitizer_kinds ~f:Kind.of_string in
+             List.iter sink_kinds ~f:(fun sink_kind_s ->
+                 let sink_kind = Kind.of_string sink_kind_s in
+                 let flow =
+                   { SinkPolicy.source_kinds
+                   ; sanitizer_kinds
+                   ; description
+                   ; policy_id
+                   ; privacy_effect
+                   ; exclude_in }
+                 in
+                 Hashtbl.update SinkPolicy.sink_policies sink_kind ~f:(function
+                   | None ->
+                       [flow]
+                   | Some flows ->
+                       flow :: flows ) ) ) )
+
+
+let () =
+  Hashtbl.add SinkPolicy.sink_policies ~key:Kind.simple_kind
+    ~data:
+      [ { SinkPolicy.description=
+            "Built-in Simple taint kind, matching any Simple source with any Simple sink except if \
+             any Simple sanitizer is in the way"
+        ; source_kinds= [Kind.simple_kind]
+        ; sanitizer_kinds= [Kind.simple_kind]
+        ; policy_id= SinkPolicy.next_policy_id ()
+        ; privacy_effect= None
+        ; exclude_in= None } ]
+  |> ignore ;
+  fill_data_flow_kinds_from_config () ;
+  fill_policies_from_config ()
+
+
+let get_procedure_field_matchers matchers ~field_matchers_allowed ~block_matchers_allowed
+    ~option_name =
+  let procedure_matchers, field_matchers =
+    List.partition_map matchers ~f:(fun matcher ->
+        match matcher with
+        | Unit.ProcedureUnit procedure_matcher ->
+            Either.First procedure_matcher
+        | Unit.FieldUnit field_unit ->
+            Either.Second field_unit )
+  in
+  let field_getters_matchers, field_setters_matchers =
+    List.partition_map field_matchers ~f:(fun (field_unit : Unit.field_unit) ->
+        match field_unit.field_target with
+        | GetField ->
+            Either.First field_unit
+        | SetField ->
+            Either.Second field_unit )
+  in
+  let block_matchers, procedure_matchers =
+    List.partition_map procedure_matchers ~f:(fun (matcher : Unit.procedure_unit) ->
+        match matcher.procedure_matcher with
+        | Unit.Block _ | Unit.BlockNameRegex _ ->
+            Either.First matcher
+        | _ ->
+            Either.Second matcher )
+  in
+  if (not field_matchers_allowed) && List.length field_matchers > 0 then
+    L.die UserError
+      "field_matchers are not allowed in the option %s but got the following\n   field matchers: %a"
+      option_name (Pp.comma_seq Unit.pp_field_unit) field_matchers ;
+  if (not block_matchers_allowed) && List.length block_matchers > 0 then
+    L.die UserError
+      "block_matchers are not allowed in the option %s but got the following\n   block matchers: %a"
+      option_name
+      (Pp.comma_seq Unit.pp_procedure_unit)
+      block_matchers ;
+  (procedure_matchers, block_matchers, field_getters_matchers, field_setters_matchers)
+
+
+let ( allocation_sources
+    , source_procedure_matchers
+    , source_block_matchers
+    , source_field_getters_matchers
+    , source_field_setters_matchers ) =
+  let option_name = "--pulse-taint-sources" in
+  let all_source_matchers =
+    Unit.of_config ~default_taint_target:`ReturnValue ~option_name Config.pulse_taint_config.sources
+  in
+  let allocation_sources, source_matchers =
+    List.partition_map all_source_matchers ~f:(fun matcher ->
+        match matcher with
+        | Unit.ProcedureUnit {Unit.procedure_matcher; kinds} -> (
+          match procedure_matcher with
+          | Allocation {class_name} ->
+              Either.First (class_name, kinds)
+          | _ ->
+              Either.Second matcher )
+        | _ ->
+            Either.Second matcher )
+  in
+  let procedure_matchers, block_matchers, field_getters_matchers, field_setters_matchers =
+    get_procedure_field_matchers source_matchers ~field_matchers_allowed:true
+      ~block_matchers_allowed:true ~option_name
+  in
+  ( allocation_sources
+  , procedure_matchers
+  , block_matchers
+  , field_getters_matchers
+  , field_setters_matchers )
+
+
+let sink_procedure_matchers, sink_field_getters_matchers, sink_field_setters_matchers =
+  let option_name = "--pulse-taint-sinks" in
+  let sink_matchers =
+    Unit.of_config ~default_taint_target:`AllArguments ~option_name Config.pulse_taint_config.sinks
+  in
+  let procedure_matchers, _, field_getters_matchers, field_setters_matchers =
+    get_procedure_field_matchers sink_matchers ~field_matchers_allowed:true
+      ~block_matchers_allowed:false ~option_name
+  in
+  (procedure_matchers, field_getters_matchers, field_setters_matchers)
+
+
+let sanitizer_matchers =
+  let option_name = "--pulse-taint-sanitizer" in
+  let sink_matchers =
+    Unit.of_config ~default_taint_target:`AllArguments ~option_name
+      Config.pulse_taint_config.sanitizers
+  in
+  let procedure_matchers, _, _, _ =
+    get_procedure_field_matchers sink_matchers ~field_matchers_allowed:false
+      ~block_matchers_allowed:false ~option_name
+  in
+  procedure_matchers
+
+
+let propagator_matchers =
+  let option_name = "--pulse-taint-propagators" in
+  let propagator_matchers =
+    Unit.of_config ~default_taint_target:`ReturnValue ~option_name
+      Config.pulse_taint_config.propagators
+  in
+  let procedure_matchers, _, _, _ =
+    get_procedure_field_matchers propagator_matchers ~field_matchers_allowed:false
+      ~block_matchers_allowed:false ~option_name
+  in
+  procedure_matchers
+
+
+let log_taint_config () =
+  L.debug Analysis Verbose "@\nSink policies:@\n%a@." SinkPolicy.pp_sink_policies
+    SinkPolicy.sink_policies ;
+  L.debug Analysis Verbose "Procedure source matchers:@\n%a@\n@."
+    (Pp.seq ~sep:"\n" Unit.pp_procedure_unit)
+    source_procedure_matchers ;
+  L.debug Analysis Verbose "Block source matchers:@\n%a@\n@."
+    (Pp.seq ~sep:"\n" Unit.pp_procedure_unit)
+    source_block_matchers ;
+  L.debug Analysis Verbose "Field getters source matchers:@\n%a@\n@."
+    (Pp.seq ~sep:"\n" Unit.pp_field_unit)
+    source_field_getters_matchers ;
+  L.debug Analysis Verbose "Field setters source matchers:@\n%a@\n@."
+    (Pp.seq ~sep:"\n" Unit.pp_field_unit)
+    source_field_setters_matchers ;
+  L.debug Analysis Verbose "Procedure sink matchers:@\n %a@\n@."
+    (Pp.seq ~sep:"\n" Unit.pp_procedure_unit)
+    sink_procedure_matchers ;
+  L.debug Analysis Verbose "Field getters sink matchers:@\n %a@\n@."
+    (Pp.seq ~sep:"\n" Unit.pp_field_unit)
+    sink_field_getters_matchers ;
+  L.debug Analysis Verbose "Field setters sink matchers:@\n %a@\n@."
+    (Pp.seq ~sep:"\n" Unit.pp_field_unit)
+    sink_field_setters_matchers ;
+  L.debug Analysis Verbose "Sanitizer matchers:@\n%a@\n@."
+    (Pp.seq ~sep:"\n" Unit.pp_procedure_unit)
+    sanitizer_matchers ;
+  L.debug Analysis Verbose "Propagator matchers:@\n%a@\n@."
+    (Pp.seq ~sep:"\n" Unit.pp_procedure_unit)
+    propagator_matchers

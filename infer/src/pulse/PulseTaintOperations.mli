@@ -62,8 +62,6 @@ val check_flows_wrt_sink :
 
 val taint_initial : Tenv.t -> ProcAttributes.t -> AbductiveDomain.t -> AbductiveDomain.t
 
-val log_taint_config : unit -> unit [@@warning "-unused-value-declaration"]
-
 val dedup_reports :
      ('a ExecutionDomain.base_t, AccessResult.error) pulse_result list
   -> ('a ExecutionDomain.base_t, AccessResult.error) pulse_result list
