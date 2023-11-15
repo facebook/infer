@@ -419,6 +419,13 @@ void insert_range_bad(const std::initializer_list<std::pair<int, int>>& list) {
   const auto valueCopy = valueRef;
 }
 
+void insert_range_from_map_bad(const folly::F14FastMap<int, int>& other) {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.insert(other.begin(), other.end());
+  const auto valueCopy = valueRef;
+}
+
 void folly_fastmap_insert_or_assign_bad() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   const auto& valueRef = map.at(1);

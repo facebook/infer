@@ -947,9 +947,10 @@ let map_matchers =
           $++$--> GenericMapCollection.try_emplace ~hinted:false map_t TryEmplace
           (* insert:
               1. One argument and it's std::initializer_list: return void.
-              2. Else if one argument: return pair<iterator, bool>.
-              3. Two arguments and they are both iterators: return void.
-              4. Else if two arguments: return iterator.
+              2. Three arguments (including SIL return): return iterator.
+              3. Two arguments (including SIL return matching std::pair type):
+                   return pair<iterator, bool>.
+              4. Else if two arguments: return void.
           *)
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
@@ -957,16 +958,17 @@ let map_matchers =
           $--> GenericMapCollection.only_invalidate_references map_t Insert
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+ any_arg $+ capt_arg
+          $+ any_arg $+ any_arg $+ capt_arg
+          $--> GenericMapCollection.insert ~hinted:true map_t Insert
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
+          $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ any_arg
+          $+ capt_arg_of_typ (-"std" &:: "pair")
           $--> GenericMapCollection.insert ~hinted:false map_t Insert
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+ any_arg_of_typ_exists it_matchers $+ any_arg_of_typ_exists it_matchers
-          $--> GenericMapCollection.only_invalidate_references map_t Insert
-        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
-          $ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+ any_arg $+ any_arg $+ capt_arg
-          $--> GenericMapCollection.insert ~hinted:true map_t Insert ] )
+          $+ any_arg $+ any_arg
+          $--> GenericMapCollection.only_invalidate_references map_t Insert ] )
   in
   let folly_iterator_matchers =
     List.concat_map ["ValueContainerIterator"; "VectorContainerIterator"] ~f:(fun it ->
