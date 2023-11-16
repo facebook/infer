@@ -444,7 +444,7 @@ module FieldNormalizer = HashNormalizer.Make (struct
     let field_name, typ, annot = f in
     let field_name' = Fieldname.Normalizer.normalize field_name in
     let typ' = Typ.Normalizer.normalize typ in
-    let annot' = Annot.Item.Normalizer.normalize annot in
+    let annot' = Annot.hash_normalize_list annot in
     if phys_equal field_name field_name' && phys_equal typ typ' && phys_equal annot annot' then f
     else (field_name', typ', annot')
 end)
@@ -463,7 +463,7 @@ module Normalizer = HashNormalizer.Make (struct
     let exported_objc_methods =
       IList.map_changed ~equal:phys_equal ~f:Procname.Normalizer.normalize t.exported_objc_methods
     in
-    let annots = Annot.Item.Normalizer.normalize t.annots in
+    let annots = Annot.hash_normalize_list t.annots in
     let class_info = ClassInfo.Normalizer.normalize t.class_info in
     let source_file =
       IOption.map_changed ~equal:phys_equal ~f:SourceFile.Normalizer.normalize t.source_file

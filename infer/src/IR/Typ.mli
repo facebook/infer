@@ -72,7 +72,8 @@ val is_trivially_copyable : type_quals -> bool
 val is_volatile : type_quals -> bool
 
 (** types for sil (structured) expressions *)
-type t = {desc: desc; quals: type_quals} [@@deriving compare, equal, yojson_of, sexp, hash]
+type t = {desc: desc; quals: type_quals}
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 and desc =
   | Tint of ikind  (** integer type *)
@@ -145,7 +146,7 @@ val is_strong_pointer : t -> bool
 
 module Name : sig
   (** Named types. *)
-  type t = name [@@deriving compare, yojson_of, sexp, hash]
+  type t = name [@@deriving compare, yojson_of, sexp, hash, normalize]
 
   val compare_name : t -> t -> int
   (** Similar to compare, but compares only names, except template arguments. *)

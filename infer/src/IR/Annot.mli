@@ -14,7 +14,7 @@ module F = Format
 (** Type to represent an [@Annotation] with potentially complex parameter values such as arrays or
     other annotations. *)
 type t = {class_name: string  (** name of the annotation *); parameters: parameter list}
-[@@deriving compare, equal]
+[@@deriving compare, equal, normalize]
 
 and parameter = {name: string option; value: value} [@@deriving compare]
 
@@ -57,8 +57,6 @@ module Item : sig
 
   val is_final : t -> bool
   (** Check if final annotation is included in. *)
-
-  module Normalizer : HashNormalizer.S with type t = t
 end
 
 module Class : sig

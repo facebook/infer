@@ -23,7 +23,7 @@ let remove_templates name =
 
 
 module CSharp = struct
-  type kind = Non_Static | Static [@@deriving compare, equal, yojson_of, sexp, hash]
+  type kind = Non_Static | Static [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   type t =
     { method_name: string
@@ -31,7 +31,7 @@ module CSharp = struct
     ; class_name: Typ.Name.t
     ; return_type: Typ.t option (* option because constructors have no return type *)
     ; kind: kind }
-  [@@deriving compare, equal, yojson_of, sexp, hash]
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   let ensure_csharp_type t =
     if not (Typ.is_csharp_type t) then
@@ -114,7 +114,7 @@ module Java = struct
     | Non_Static
         (** in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
     | Static  (** in Java, procedures called with invokestatic *)
-  [@@deriving compare, equal, yojson_of, sexp, hash]
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   (** Type of java procedure names. *)
   type t =
@@ -123,7 +123,7 @@ module Java = struct
     ; class_name: Typ.Name.t
     ; return_type: Typ.t option (* option because constructors have no return type *)
     ; kind: kind }
-  [@@deriving compare, equal, yojson_of, sexp, hash]
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   let ensure_java_type t =
     if not (Typ.is_java_type t) then
@@ -268,41 +268,14 @@ module Java = struct
   let is_external java_pname =
     let package = get_package java_pname in
     Option.exists ~f:Config.java_package_is_external package
-
-
-  module Normalizer = HashNormalizer.Make (struct
-    type nonrec t = t [@@deriving equal, hash]
-
-    let normalize t =
-      let method_name = HashNormalizer.String.hash_normalize t.method_name in
-      let parameters =
-        IList.map_changed t.parameters ~equal:phys_equal ~f:Typ.Normalizer.normalize
-      in
-      let class_name = Typ.Name.Normalizer.normalize t.class_name in
-      let return_type =
-        IOption.map_changed t.return_type ~equal:phys_equal ~f:Typ.Normalizer.normalize
-      in
-      if
-        phys_equal method_name t.method_name
-        && phys_equal parameters t.parameters
-        && phys_equal class_name t.class_name
-        && phys_equal return_type t.return_type
-      then t
-      else {method_name; parameters; class_name; return_type; kind= t.kind}
-  end)
 end
 
 module Parameter = struct
   (** Type for parameters in clang procnames, [Some name] means the parameter is of type pointer to
       struct, with [name] being the name of the struct, [None] means the parameter is of some other
       type. *)
-  type clang_parameter = Typ.Name.t option [@@deriving compare, equal, yojson_of, sexp, hash]
-
-  module ClangParameterNormalizer = HashNormalizer.Make (struct
-    type nonrec t = clang_parameter [@@deriving equal, hash]
-
-    let normalize t = IOption.map_changed t ~equal:phys_equal ~f:Typ.Name.Normalizer.normalize
-  end)
+  type clang_parameter = Typ.Name.t option
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   (** Type for parameters in procnames, for java and clang. *)
   type t =
@@ -310,7 +283,7 @@ module Parameter = struct
     | ClangParameter of clang_parameter
     | CSharpParameter of Typ.t
     | ErlangParameter
-  [@@deriving compare, equal]
+  [@@deriving compare, equal, hash, normalize]
 
   let of_typ typ =
     match typ.Typ.desc with Typ.Tptr ({desc= Tstruct name}, Pk_pointer) -> Some name | _ -> None
@@ -341,7 +314,7 @@ module Parameter = struct
 end
 
 module ObjC_Cpp = struct
-  type mangled = string option [@@deriving compare, equal, yojson_of, sexp, hash]
+  type mangled = string option [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   type kind =
     | CPPMethod of mangled
@@ -349,7 +322,7 @@ module ObjC_Cpp = struct
     | CPPDestructor of mangled
     | ObjCClassMethod
     | ObjCInstanceMethod
-  [@@deriving compare, equal, yojson_of, sexp, hash]
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   type t =
     { class_name: Typ.Name.t
@@ -357,7 +330,7 @@ module ObjC_Cpp = struct
     ; method_name: string
     ; parameters: Parameter.clang_parameter list
     ; template_args: Typ.template_spec_info }
-  [@@deriving compare, equal, yojson_of, sexp, hash]
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   let make class_name method_name kind template_args parameters =
     {class_name; method_name; kind; template_args; parameters}
@@ -436,24 +409,6 @@ module ObjC_Cpp = struct
   let get_parameters osig = osig.parameters
 
   let replace_parameters new_parameters osig = {osig with parameters= new_parameters}
-
-  module Normalizer = HashNormalizer.Make (struct
-    type nonrec t = t [@@deriving equal, hash]
-
-    let normalize t =
-      let class_name = Typ.Name.Normalizer.normalize t.class_name in
-      let method_name = HashNormalizer.String.hash_normalize t.method_name in
-      let parameters =
-        IList.map_changed ~equal:phys_equal ~f:Parameter.ClangParameterNormalizer.normalize
-          t.parameters
-      in
-      if
-        phys_equal class_name t.class_name
-        && phys_equal method_name t.method_name
-        && phys_equal parameters t.parameters
-      then t
-      else {class_name; kind= t.kind; method_name; parameters; template_args= t.template_args}
-  end)
 end
 
 module C = struct
@@ -463,7 +418,7 @@ module C = struct
     ; mangled: string option
     ; parameters: Parameter.clang_parameter list
     ; template_args: Typ.template_spec_info }
-  [@@deriving compare, equal, yojson_of, sexp, hash]
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   let c name ?mangled parameters template_args = {name; mangled; parameters; template_args}
 
@@ -507,24 +462,11 @@ module C = struct
   let is_make_shared c = is_std_function ~prefix:"make_shared" c
 
   let is_std_move c = is_std_function ~prefix:"move" c
-
-  module Normalizer = HashNormalizer.Make (struct
-    type nonrec t = t [@@deriving equal, hash]
-
-    let normalize t =
-      let name = QualifiedCppName.Normalizer.normalize t.name in
-      let parameters =
-        IList.map_changed ~equal:phys_equal ~f:Parameter.ClangParameterNormalizer.normalize
-          t.parameters
-      in
-      if phys_equal name t.name && phys_equal parameters t.parameters then t
-      else {name; mangled= t.mangled; parameters; template_args= t.template_args}
-  end)
 end
 
 module Erlang = struct
   type t = {module_name: string; function_name: string; arity: int}
-  [@@deriving compare, equal, yojson_of, sexp, hash]
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   let pp_general arity_sep verbosity fmt {module_name; function_name; arity} =
     match verbosity with
@@ -584,10 +526,10 @@ module Block = struct
   type block_type =
     | InOuterScope of {outer_scope: block_type; block_index: int}
     | SurroundingProc of {class_name: Typ.name option; name: string}
-  [@@deriving compare, equal, yojson_of, sexp, hash]
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   type t = {block_type: block_type; parameters: Parameter.clang_parameter list}
-  [@@deriving compare, equal, yojson_of, sexp, hash]
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   let make_surrounding class_name name parameters =
     {block_type= SurroundingProc {class_name; name}; parameters}
@@ -641,7 +583,8 @@ module Block = struct
 end
 
 module FunctionParameters = struct
-  type t = FunPtr of C.t | Block of Block.t [@@deriving compare, equal, yojson_of, sexp, hash]
+  type t = FunPtr of C.t | Block of Block.t
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   let pp verbose f = function
     | FunPtr c ->
@@ -652,7 +595,7 @@ end
 
 module Hack = struct
   type t = {class_name: HackClassName.t option; function_name: string; arity: int option}
-  [@@deriving compare, equal, yojson_of, sexp, hash]
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   let get_class_type_name {class_name} = Option.map class_name ~f:(fun cn -> Typ.HackClass cn)
 
@@ -688,7 +631,7 @@ module Python = struct
   let init_name = "__init__"
 
   type t = {class_name: PythonClassName.t option; function_name: string; arity: int option}
-  [@@deriving compare, equal, yojson_of, sexp, hash]
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   let get_class_type_name {class_name} = Option.map class_name ~f:(fun cn -> Typ.PythonClass cn)
 
@@ -746,7 +689,7 @@ type t =
   | ObjC_Cpp of ObjC_Cpp.t
   | Python of Python.t
   | WithFunctionParameters of t * FunctionParameters.t * FunctionParameters.t list
-[@@deriving compare, equal, yojson_of, sexp, hash]
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let rec is_c = function
   | C _ ->
@@ -1684,26 +1627,12 @@ module UnitCache = struct
     (cache_get, cache_set)
 end
 
-module Normalizer = HashNormalizer.Make (struct
-  type nonrec t = t [@@deriving equal]
+module Normalizer = struct
+  type nonrec t = t
 
-  let hash = hash
+  let normalize = hash_normalize
 
-  let normalize t =
-    match t with
-    | Java java_pname ->
-        let java_pname' = Java.Normalizer.normalize java_pname in
-        if phys_equal java_pname java_pname' then t else Java java_pname'
-    | C c ->
-        let c' = C.Normalizer.normalize c in
-        if phys_equal c c' then t else C c'
-    | ObjC_Cpp objc_cpp ->
-        let objc_cpp' = ObjC_Cpp.Normalizer.normalize objc_cpp in
-        if phys_equal objc_cpp objc_cpp' then t else ObjC_Cpp objc_cpp'
-    | Linters_dummy_method | WithFunctionParameters _ ->
-        (* these kinds should not appear inside a type environment *)
-        t
-    | Block _ | CSharp _ | Erlang _ | Hack _ | Python _ ->
-        (* TODO *)
-        t
-end)
+  let normalize_opt = hash_normalize_opt
+
+  let normalize_list = hash_normalize_list
+end

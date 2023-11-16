@@ -112,13 +112,3 @@ module Match = struct
     let normalized_qualifiers = strip_template_args quals in
     Str.string_match matcher (to_separated_string ~sep:matching_separator normalized_qualifiers) 0
 end
-
-module Normalizer : HashNormalizer.S with type t = t = struct
-  type nonrec t = t
-
-  let normalize = hash_normalize
-
-  let normalize_opt = hash_normalize_opt
-
-  let normalize_list = hash_normalize_list
-end

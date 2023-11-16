@@ -391,7 +391,7 @@ let is_template_spec_info_empty = function
 
 
 module Name = struct
-  type t = name [@@deriving compare, equal, yojson_of, sexp, hash]
+  type t = name [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
   let compare_name x y =
     match (x, y) with
