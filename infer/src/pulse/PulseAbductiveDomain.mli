@@ -228,6 +228,8 @@ module AddressAttributes : sig
 
   val is_std_vector_reserved : AbstractValue.t -> t -> bool
 
+  val get_last_lookup : AbstractValue.t -> t -> AbstractValue.t option
+
   val std_vector_reserve : AbstractValue.t -> t -> t
 
   val add_copied_return :

@@ -182,6 +182,7 @@ module Attribute = struct
     | EndOfCollection
     | Initialized
     | Invalid of Invalidation.t * Trace.t
+    | LastLookup of AbstractValue.t
     | MustBeInitialized of Timestamp.t * Trace.t
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
     | MustNotBeTainted of TaintSink.t TaintSinkMap.t
@@ -240,6 +241,8 @@ module Attribute = struct
   let invalid_rank = Variants.invalid.rank
 
   let java_resource_released_rank = Variants.javaresourcereleased.rank
+
+  let last_lookup_rank = Variants.lastlookup.rank
 
   let hack_async_awaited_rank = Variants.hackasyncawaited.rank
 
@@ -315,6 +318,8 @@ module Attribute = struct
         F.fprintf f "Invalid %a"
           (Trace.pp ~pp_immediate:(fun fmt -> Invalidation.pp fmt invalidation))
           trace
+    | LastLookup value ->
+        F.fprintf f "LastLookup(%a)" AbstractValue.pp value
     | MustBeInitialized (timestamp, trace) ->
         F.fprintf f "MustBeInitialized(%a, t=%d)"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "read"))
@@ -386,6 +391,7 @@ module Attribute = struct
     | EndOfCollection
     | Initialized
     | JavaResourceReleased
+    | LastLookup _
     | CSharpResourceReleased
     | HackAsyncAwaited
     | PropagateTaintFrom _
@@ -426,6 +432,7 @@ module Attribute = struct
     | Initialized
     | Invalid _
     | JavaResourceReleased
+    | LastLookup _
     | CSharpResourceReleased
     | HackAsyncAwaited
     | PropagateTaintFrom _
@@ -467,6 +474,7 @@ module Attribute = struct
     | Initialized
     | Invalid _
     | JavaResourceReleased
+    | LastLookup _
     | CSharpResourceReleased
     | HackAsyncAwaited
     | MustBeInitialized _
@@ -565,6 +573,7 @@ module Attribute = struct
       | HackAsyncAwaited
       | Initialized
       | JavaResourceReleased
+      | LastLookup _
       | RefCounted
       | StaticType _
       | StdMoved
@@ -639,6 +648,7 @@ module Attribute = struct
       | Initialized
       | Invalid _
       | JavaResourceReleased
+      | LastLookup _
       | MustBeInitialized _
       | MustBeValid _
       | MustNotBeTainted _
@@ -830,6 +840,11 @@ module Attributes = struct
   let is_std_moved = mem_by_rank Attribute.std_moved_rank
 
   let is_std_vector_reserved = mem_by_rank Attribute.std_vector_reserve_rank
+
+  let get_last_lookup =
+    get_by_rank Attribute.last_lookup_rank ~dest:(function [@warning "-partial-match"]
+        | LastLookup value -> value )
+
 
   let is_modified attrs =
     mem_by_rank Attribute.written_to_rank attrs

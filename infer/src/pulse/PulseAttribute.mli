@@ -107,6 +107,7 @@ type t =
   | EndOfCollection
   | Initialized
   | Invalid of Invalidation.t * Trace.t
+  | LastLookup of AbstractValue.t
   | MustBeInitialized of Timestamp.t * Trace.t
   | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
   | MustNotBeTainted of TaintSink.t TaintSinkMap.t
@@ -217,6 +218,8 @@ module Attributes : sig
   val is_std_moved : t -> bool
 
   val is_std_vector_reserved : t -> bool
+
+  val get_last_lookup : t -> AbstractValue.t option
 
   val get_uninitialized : t -> UninitializedTyp.t option
 

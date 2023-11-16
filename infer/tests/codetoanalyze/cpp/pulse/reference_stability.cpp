@@ -679,7 +679,7 @@ void use_emplace_iterator_bad(folly::F14FastMap<int, int>& map) {
   const auto value = copy->second;
 }
 
-void multiple_lookups_existing_key_ok_FP(folly::F14FastMap<int, int>& map) {
+void multiple_lookups_existing_key_ok(folly::F14FastMap<int, int>& map) {
   const auto& valueRef = map.at(71);
   const auto key = 13;
   if (map.contains(key)) {
@@ -690,7 +690,7 @@ void multiple_lookups_existing_key_ok_FP(folly::F14FastMap<int, int>& map) {
   const auto valueCopy = valueRef;
 }
 
-void known_existing_map_key_count_ok_FP(folly::F14FastMap<int, int>& map) {
+void known_existing_map_key_count_ok(folly::F14FastMap<int, int>& map) {
   const auto& valueRef = map.at(71);
   const auto key = 13;
   if (map.count(key) != 0) {
@@ -699,7 +699,7 @@ void known_existing_map_key_count_ok_FP(folly::F14FastMap<int, int>& map) {
   const auto valueCopy = valueRef;
 }
 
-void known_existing_map_key_contains_ok_FP(folly::F14FastMap<int, int>& map) {
+void known_existing_map_key_contains_ok(folly::F14FastMap<int, int>& map) {
   const auto& valueRef = map.at(71);
   const auto key = 13;
   if (map.contains(key)) {
@@ -708,11 +708,20 @@ void known_existing_map_key_contains_ok_FP(folly::F14FastMap<int, int>& map) {
   const auto valueCopy = valueRef;
 }
 
-void known_existing_map_key_find_ok_FP(folly::F14FastMap<int, int>& map) {
+void known_existing_map_key_find_ok(folly::F14FastMap<int, int>& map) {
   const auto& valueRef = map.at(71);
   const auto key = 13;
   if (map.find(key) != map.end()) {
     map[key] = std::max(map[key], 17);
+  }
+  const auto valueCopy = valueRef;
+}
+
+void double_lookup_not_found_bad_FN(folly::F14FastMap<int, int>& map) {
+  const auto& valueRef = map.at(71);
+  const auto key = 13;
+  if (!map.contains(key)) {
+    map[key] = 17;
   }
   const auto valueCopy = valueRef;
 }

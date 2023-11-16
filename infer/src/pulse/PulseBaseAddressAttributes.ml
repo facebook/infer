@@ -315,6 +315,8 @@ let is_std_vector_reserved address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_std_vector_reserved
 
 
+let get_last_lookup address attrs = get_attribute Attributes.get_last_lookup address attrs
+
 let get_address_of_stack_variable address attrs =
   get_attribute Attributes.get_address_of_stack_variable address attrs
 
@@ -438,6 +440,8 @@ module type S = sig
   val is_std_moved : key -> t -> bool
 
   val is_std_vector_reserved : key -> t -> bool
+
+  val get_last_lookup : key -> t -> AbstractValue.t option
 
   val mark_as_end_of_collection : key -> t -> t
 

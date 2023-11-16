@@ -97,6 +97,8 @@ module type S = sig
 
   val is_std_vector_reserved : key -> t -> bool
 
+  val get_last_lookup : key -> t -> AbstractValue.t option
+
   val mark_as_end_of_collection : key -> t -> t
 
   val is_end_of_collection : key -> t -> bool

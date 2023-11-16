@@ -716,6 +716,26 @@ module GenericMapCollection = struct
     >>= PulseOperations.write_field path location ~ref:arg_payload pair_field ~obj:pair
 
 
+  let check_and_update_last arg_payload key_payload astate =
+    let double_lookup =
+      match AddressAttributes.get_last_lookup (fst arg_payload) astate with
+      | Some last ->
+          AbstractValue.equal last (fst key_payload)
+      | None ->
+          false
+    in
+    let astate =
+      AddressAttributes.add_one (fst arg_payload) (LastLookup (fst key_payload)) astate
+    in
+    (double_lookup, astate)
+
+
+  let only_check_and_update_last arg_payload key_payload : model =
+   fun data astate ->
+    let _, astate = check_and_update_last arg_payload key_payload astate in
+    Basic.skip data astate
+
+
   let constructor map_t classname map : model =
    fun {path; location} astate ->
     let desc = Format.asprintf "%a::%s" Invalidation.pp_map_type map_t classname in
@@ -754,10 +774,13 @@ module GenericMapCollection = struct
     astate
 
 
-  let operator_bracket map_t map : model =
+  let operator_bracket map_t ({FuncArg.arg_payload} as map) key_payload : model =
    fun data astate ->
-    let<*> astate = invalidate_references map_t OperatorBracket map data astate in
-    return_value_reference map data astate
+    let double_lookup, astate = check_and_update_last arg_payload key_payload astate in
+    if not double_lookup then
+      let<*> astate = invalidate_references map_t OperatorBracket map data astate in
+      return_value_reference map data astate
+    else return_value_reference map data astate
 
 
   let emplace_hint map_t map_f ({FuncArg.arg_payload} as map) args : model =
@@ -788,6 +811,13 @@ module GenericMapCollection = struct
 
   let insert ~hinted map_t map_f map return_arg : model =
     try_emplace ~hinted map_t map_f map [return_arg]
+
+
+  let find map_t arg_payload key_payload it : model =
+   fun data astate ->
+    let _, astate = check_and_update_last arg_payload key_payload astate in
+    let desc = Format.asprintf "%a::find" Invalidation.pp_map_type map_t in
+    return_it ~desc arg_payload it data astate
 
 
   let iterator_star desc it : model =
@@ -902,11 +932,11 @@ let map_matchers =
           $++$--> GenericMapCollection.emplace map_t TryEmplaceToken
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator[]"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
+          $+ capt_arg_payload
           $+...$--> GenericMapCollection.operator_bracket map_t
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "find"
           $ capt_arg_payload_of_typ (-"folly" <>:: map_s)
-          $+ any_arg $+ capt_arg_payload
-          $--> GenericMapCollection.return_it ~desc:(Format.asprintf "folly::%s::find" map_s)
+          $+ capt_arg_payload $+ capt_arg_payload $--> GenericMapCollection.find map_t
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "begin"
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
           $+ capt_arg_payload
@@ -915,6 +945,12 @@ let map_matchers =
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
           $+ capt_arg_payload
           $--> GenericMapCollection.return_it ~desc:(Format.asprintf "folly::%s::cbegin" map_s)
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "contains"
+          <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $+ capt_arg_payload $--> GenericMapCollection.only_check_and_update_last
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "count"
+          <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $+ capt_arg_payload $--> GenericMapCollection.only_check_and_update_last
           (* Order matters for the next matchers in this list. *)
           (* insert_or_assign:
               1. Two arguments only: non-hinted case.

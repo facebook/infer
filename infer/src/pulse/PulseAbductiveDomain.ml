@@ -563,6 +563,10 @@ module Internal = struct
       BaseAddressAttributes.is_std_vector_reserved addr (astate.post :> base_domain).attrs
 
 
+    let get_last_lookup addr astate =
+      BaseAddressAttributes.get_last_lookup addr (astate.post :> base_domain).attrs
+
+
     let mark_as_end_of_collection addr astate =
       map_post_attrs astate ~f:(BaseAddressAttributes.mark_as_end_of_collection addr)
 
@@ -2553,6 +2557,8 @@ module AddressAttributes = struct
   let is_std_vector_reserved v astate =
     SafeAttributes.is_std_vector_reserved (CanonValue.canon' astate v) astate
 
+
+  let get_last_lookup v astate = SafeAttributes.get_last_lookup (CanonValue.canon' astate v) astate
 
   let std_vector_reserve v astate =
     SafeAttributes.std_vector_reserve (CanonValue.canon' astate v) astate
