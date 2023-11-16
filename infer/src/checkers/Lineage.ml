@@ -1929,6 +1929,20 @@ module TransferFunctions = struct
         ~init:astate args
 
 
+    let make_cons shapes node _analyze_dependency ret_id _procname (args : Exp.t list) astate =
+      let cons_type = Typ.ErlangType Cons in
+      let head_field = FieldLabel.make_fieldname cons_type ErlangTypeName.cons_head in
+      let tail_field = FieldLabel.make_fieldname cons_type ErlangTypeName.cons_tail in
+      let ret_path field = VarPath.make (Var.of_id ret_id) [field] in
+      match args with
+      | [head_exp; tail_exp] ->
+          astate
+          |> exec_assignment shapes node (ret_path head_field) head_exp
+          |> exec_assignment shapes node (ret_path tail_field) tail_exp
+      | _ ->
+          assert false
+
+
     let custom_call_models =
       let apply arity =
         Procname.make_erlang ~module_name:ErlangTypeName.erlang_namespace ~function_name:"apply"
@@ -1941,6 +1955,7 @@ module TransferFunctions = struct
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"new" ~arity:0, maps_new)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2, maps_get)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~arity:3, maps_put)
+        ; (BuiltinDecl.__erlang_make_cons, make_cons)
         ; (apply 2, call_unqualified)
         ; (apply 3, call_qualified) ]
       in

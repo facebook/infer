@@ -1212,6 +1212,23 @@ struct
             "make_atom should have two arguments, the first one being a constant string."
 
 
+    let make_cons ret_id args =
+      match args with
+      | [head_exp; tail_exp] ->
+          let cons_type : Typ.name = ErlangType Cons in
+          let head_shape = shape_expr head_exp in
+          let tail_shape = shape_expr tail_exp in
+          let cons_shape =
+            Env.State.Shape.vector_of_alist
+              [ (FieldLabel.make_fieldname cons_type ErlangTypeName.cons_head, head_shape)
+              ; (FieldLabel.make_fieldname cons_type ErlangTypeName.cons_tail, tail_shape) ]
+              state
+          in
+          Env.State.unify_var state ret_id cons_shape
+      | _ ->
+          L.die InternalError "make_cons should have two arguments."
+
+
     let make_tuple ret_id args =
       (* Unify the shape of the return with a Vector made from the arguments *)
       let tuple_type : Typ.name = ErlangType (Tuple (List.length args)) in
@@ -1280,6 +1297,7 @@ struct
         [ (BuiltinDecl.__erlang_make_tuple, make_tuple)
         ; (BuiltinDecl.__erlang_make_atom, make_atom)
         ; (BuiltinDecl.__erlang_make_map, make_map)
+        ; (BuiltinDecl.__erlang_make_cons, make_cons)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"new" ~arity:0, maps_new)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2, maps_get)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~arity:3, maps_put) ]
