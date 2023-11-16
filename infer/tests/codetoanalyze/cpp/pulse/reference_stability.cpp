@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <algorithm>
 #include <initializer_list>
 #include <unordered_map>
 #include <utility>
@@ -176,15 +177,17 @@ struct F14BasicMap {
 
   mapped_type& operator[](key_type&& key);
 
+  size_type count(key_type const& key) const;
+
   F14HashToken prehash(key_type const& key) const;
 
   iterator find(key_type const& key);
-
   const_iterator find(key_type const& key) const;
-
   iterator find(F14HashToken const& token, key_type const& key);
-
   const_iterator find(F14HashToken const& token, key_type const& key) const;
+
+  bool contains(key_type const& key) const;
+  bool contains(F14HashToken const& token, key_type const& key) const;
 
   std::pair<iterator, iterator> equal_range(key_type const& key);
 
@@ -674,4 +677,54 @@ void use_emplace_iterator_bad(folly::F14FastMap<int, int>& map) {
   // Copy here is fine, iterator is invalid but we are not accessing it.
   const auto copy = it;
   const auto value = copy->second;
+}
+
+void multiple_lookups_existing_key_ok_FP(folly::F14FastMap<int, int>& map) {
+  const auto& valueRef = map.at(71);
+  const auto key = 13;
+  if (map.contains(key)) {
+    map[key] = 17;
+    map[key] = 31;
+    map[key] = 71;
+  }
+  const auto valueCopy = valueRef;
+}
+
+void known_existing_map_key_count_ok_FP(folly::F14FastMap<int, int>& map) {
+  const auto& valueRef = map.at(71);
+  const auto key = 13;
+  if (map.count(key) != 0) {
+    map[key] = std::max(map[key], 17);
+  }
+  const auto valueCopy = valueRef;
+}
+
+void known_existing_map_key_contains_ok_FP(folly::F14FastMap<int, int>& map) {
+  const auto& valueRef = map.at(71);
+  const auto key = 13;
+  if (map.contains(key)) {
+    map[key] = std::max(map[key], 17);
+  }
+  const auto valueCopy = valueRef;
+}
+
+void known_existing_map_key_find_ok_FP(folly::F14FastMap<int, int>& map) {
+  const auto& valueRef = map.at(71);
+  const auto key = 13;
+  if (map.find(key) != map.end()) {
+    map[key] = std::max(map[key], 17);
+  }
+  const auto valueCopy = valueRef;
+}
+
+void known_existing_map_key_literal_ok_FP(folly::F14FastMap<int, int>& map) {
+  const auto& valueRef = map.at(71);
+  if (map.contains(13)) {
+    map[13] = std::max(map[13], 17);
+  }
+  const auto valueCopy = valueRef;
+}
+
+void both_sides_assign_ok_FP(folly::F14FastMap<int, int>& map) {
+  map[13] = map[17];
 }
