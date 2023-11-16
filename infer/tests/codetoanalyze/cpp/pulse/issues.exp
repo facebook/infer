@@ -128,6 +128,7 @@ codetoanalyze/cpp/pulse/leaks.cpp, leaks::unknown_wrapper_alloc_then_leak_bad, 3
 codetoanalyze/cpp/pulse/max_disjuncts.cpp, max_disjuncts::call_join_full_disjs1_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse/max_disjuncts.cpp, max_disjuncts::call_join_full_disjs2_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse/max_disjuncts.cpp, max_disjuncts::call_join_full_disjs3_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+codetoanalyze/cpp/pulse/max_disjuncts.cpp, max_disjuncts::FullDisjsInLoop::full_disjs_in_loop_ok2_FP, 5, PULSE_UNNECESSARY_COPY_ASSIGNMENT, no_bucket, ERROR, [copy assigned here (with type `max_disjuncts::Arr&`)]
 codetoanalyze/cpp/pulse/nullptr.cpp, A::this_notnull_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [parameter `this` of A::this_notnull_bad,taking "then" branch,is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse/nullptr.cpp, A::call_null_arg_bad, 0, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,when calling `A::expect_notnull_ok` here,parameter `a` of A::expect_notnull_ok,invalid access occurs here]
 codetoanalyze/cpp/pulse/nullptr.cpp, deref_nullptr_bad, 2, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]

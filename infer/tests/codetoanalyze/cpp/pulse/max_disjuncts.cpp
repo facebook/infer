@@ -137,4 +137,24 @@ void full_disjs_call_after_branch_bad_FN() {
   }
 }
 
+class FullDisjsInLoop {
+  Arr arr;
+
+  void full_disjs_in_loop_ok1(int k) {
+    Arr x;
+    for (int i = 0; i < k; i++) {
+      arr = x;
+    }
+  }
+
+  void full_disjs_in_loop_ok2_FP(int k) {
+    Arr x;
+    get_full_disjs();
+    for (int i = 0; i < k; i++) {
+      // Pulse does not know `x` is copied multiple times here.
+      arr = x;
+    }
+  }
+};
+
 } // namespace max_disjuncts
