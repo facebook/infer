@@ -1842,23 +1842,27 @@ module TransferFunctions = struct
         ~init:astate field_names args
 
 
+    (** Helper to read a map element into a destination path *)
+    let maps_get shapes node dst_path ~key_exp ~map_exp astate =
+      (* Erlang frontend currently always puts arguments in variables. We could fall back to
+         generic calls otherwise but that would introduce undesirable imprecision. We thus keep
+         the failure for now and let precise support be done if the need arises. *)
+      let key_path = exp_as_single_var_path_exn key_exp in
+      let map_path = exp_as_single_var_path_exn map_exp in
+      Shapes.fold_field_labels
+        ~f:(fun astate_acc field_label ->
+          Domain.add_write_parallel ~shapes ~node ~kind:Direct
+            ~src:(VarPath.sub_label map_path field_label)
+            ~dst:dst_path astate_acc )
+        ~fallback:(Domain.add_write_product ~shapes ~node ~kind:Direct ~src:map_path ~dst:dst_path)
+        ~init:astate shapes key_path
+
+
     let maps_get_2 shapes node _analyze_dependency ret_id _procname args astate =
       match args with
       | [key_exp; map_exp] ->
-          (* Erlang frontend currently always puts arguments in variables. We could fall back to
-             generic calls otherwise but that would introduce undesirable imprecision. We thus keep
-             the failure for now and let precise support be done if the need arises. *)
-          let ret_path = VarPath.ident ret_id in
-          let key_path = exp_as_single_var_path_exn key_exp in
-          let map_path = exp_as_single_var_path_exn map_exp in
-          Shapes.fold_field_labels
-            ~f:(fun astate_acc field_label ->
-              Domain.add_write_parallel ~shapes ~node ~kind:Direct
-                ~src:(VarPath.sub_label map_path field_label)
-                ~dst:ret_path astate_acc )
-            ~fallback:
-              (Domain.add_write_product ~shapes ~node ~kind:Direct ~src:map_path ~dst:ret_path)
-            ~init:astate shapes key_path
+          let dst_path = VarPath.ident ret_id in
+          maps_get shapes node dst_path ~key_exp ~map_exp astate
       | _ ->
           L.die InternalError "`maps:get/2` expects two arguments"
 
@@ -1870,7 +1874,7 @@ module TransferFunctions = struct
           |> maps_get_2 shapes node analyze_dependency ret_id procname [key_exp; map_exp]
           |> exec_assignment shapes node (VarPath.ident ret_id) default_exp
       | _ ->
-          L.die InternalError "`maps:get/3`expects three arguments"
+          L.die InternalError "`maps:get/3` expects three arguments"
 
 
     let maps_new =

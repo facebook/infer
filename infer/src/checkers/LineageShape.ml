@@ -53,6 +53,12 @@ module FieldLabel = struct
 
   let make_fieldname typ name = Fieldname (Fieldname.make typ name)
 
+  let tuple_elem_zero_based ~size ~index =
+    (* [index] is expected to be zero-indexed. Erlang tuple indices are one-indexed. *)
+    let tuple_type : Typ.name = ErlangType (Tuple size) in
+    make_fieldname tuple_type (ErlangTypeName.tuple_elem (index + 1))
+
+
   let map_key k = MapKey k
 end
 
@@ -165,6 +171,10 @@ module Env : sig
       val vector_of_alist : (FieldLabel.t * shape) list -> t -> shape
       (** A shape with a set of known fields. The list may be empty, meaning that the shape may be a
           vector but no field has been discovered yet. *)
+
+      val tuple : shape list -> t -> shape
+      (** The shape that represents Erlang tuples. This will be a record with field names generated
+          with the sized Tuple type. *)
 
       val scalar : t -> shape
       (** The shape of scalar values for which we don't have more precise information (eg.
@@ -537,6 +547,15 @@ end = struct
 
       let vector_fully_abstract state =
         Private.create_and_store Structure.vector_fully_abstract state
+
+
+      let tuple field_shapes state =
+        let size = List.length field_shapes in
+        vector_of_alist
+          (List.mapi
+             ~f:(fun index shape -> (FieldLabel.tuple_elem_zero_based ~size ~index, shape))
+             field_shapes )
+          state
 
 
       let complex_map ~all_map_value state =
@@ -1231,14 +1250,9 @@ struct
 
     let make_tuple ret_id args =
       (* Unify the shape of the return with a Vector made from the arguments *)
-      let tuple_type : Typ.name = ErlangType (Tuple (List.length args)) in
-      let fieldname i = FieldLabel.make_fieldname tuple_type (ErlangTypeName.tuple_elem (i + 1)) in
-      let arg_vector_shape =
-        Env.State.Shape.vector_of_alist
-          (List.mapi ~f:(fun i arg -> (fieldname i, shape_expr arg)) args)
-          state
-      in
-      Env.State.unify_var state ret_id arg_vector_shape
+      let arg_shapes = List.map ~f:shape_expr args in
+      let tuple_shape = Env.State.Shape.tuple arg_shapes state in
+      Env.State.unify_var state ret_id tuple_shape
 
 
     let maps_put ret_id args =
