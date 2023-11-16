@@ -3111,6 +3111,12 @@ and lineage_max_cfg_size =
     "If set, larger CFGs are skipped."
 
 
+and lineage_field_max_cfg_size =
+  CLOpt.mk_int_opt ~long:"lineage-field-max-cfg-size" ~default:15000
+    ~in_help:InferCommand.[(Analyze, manual_lineage)]
+    "If set, field sensitivity is disabled on larger CFGs."
+
+
 and lineage_json_report =
   CLOpt.mk_bool ~deprecated:["-simple-lineage-json-report"] ~long:"lineage-json-report"
     ~in_help:InferCommand.[(Analyze, manual_lineage)]
@@ -4525,6 +4531,8 @@ and lineage_prevent_cycles = !lineage_prevent_cycles
 and lineage_field_width = !lineage_field_width
 
 and lineage_variant_width = !lineage_variant_width
+
+and lineage_field_max_cfg_size = !lineage_field_max_cfg_size
 
 and lineage_max_cfg_size = !lineage_max_cfg_size
 

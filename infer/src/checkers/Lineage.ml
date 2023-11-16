@@ -1264,7 +1264,7 @@ module Domain : sig
       corresponding [add_write_...] function instead. *)
 
   val add_flow_from_path :
-       shapes:Shapes.t
+       shapes:Shapes.t option
     -> node:PPNode.t
     -> kind:LineageGraph.E.Kind.t
     -> src:VarPath.t
@@ -1273,7 +1273,7 @@ module Domain : sig
     -> t
 
   val add_flow_from_path_f :
-       shapes:Shapes.t
+       shapes:Shapes.t option
     -> node:PPNode.t
     -> kind_f:(FieldPath.t -> LineageGraph.E.Kind.t)
     -> src:VarPath.t
@@ -1294,7 +1294,7 @@ module Domain : sig
       corresponding [add_flow_...] function instead. *)
 
   val add_write :
-       shapes:Shapes.t
+       shapes:Shapes.t option
     -> node:PPNode.t
     -> kind:LineageGraph.E.Kind.t
     -> src:Src.t
@@ -1303,7 +1303,7 @@ module Domain : sig
     -> t
 
   val add_write_f :
-       shapes:Shapes.t
+       shapes:Shapes.t option
     -> node:PPNode.t
     -> kind_f:(FieldPath.t -> LineageGraph.E.Kind.t)
     -> src_f:(FieldPath.t -> Src.t)
@@ -1318,7 +1318,7 @@ module Domain : sig
       fields already present in the [dst] path. *)
 
   val add_write_from_local :
-       shapes:Shapes.t
+       shapes:Shapes.t option
     -> node:PPNode.t
     -> kind:LineageGraph.E.Kind.t
     -> src:Local.t
@@ -1327,7 +1327,7 @@ module Domain : sig
     -> t
 
   val add_write_from_local_set :
-       shapes:Shapes.t
+       shapes:Shapes.t option
     -> node:PPNode.t
     -> kind:LineageGraph.E.Kind.t
     -> src:(Local.t, _) Set.t
@@ -1336,7 +1336,7 @@ module Domain : sig
     -> t
 
   val add_write_parallel :
-       shapes:Shapes.t
+       shapes:Shapes.t option
     -> node:PPNode.t
     -> kind:LineageGraph.E.Kind.t
     -> src:VarPath.t
@@ -1351,7 +1351,7 @@ module Domain : sig
       and destination paths) won't be added. *)
 
   val add_write_product :
-       shapes:Shapes.t
+       shapes:Shapes.t option
     -> node:PPNode.t
     -> kind:LineageGraph.E.Kind.t
     -> src:VarPath.t
@@ -1538,7 +1538,7 @@ module TransferFunctions = struct
   module CFG = CFG
   module Domain = Domain
 
-  type analysis_data = Shapes.t * Summary.t InterproceduralAnalysis.t
+  type analysis_data = Shapes.t option * Summary.t InterproceduralAnalysis.t
 
   (** If an expression is made of a single variable, return it. *)
   let exp_as_single_var (e : Exp.t) : Var.t option =
@@ -1750,7 +1750,7 @@ module TransferFunctions = struct
 
   (* Add Summary (or Direct if this is a suppressed builtin call) edges from the concrete arguments
      to the concrete destination variable of a call, as specified by the tito_arguments summary information *)
-  let add_tito (shapes : Shapes.t) node kind_f (tito : Tito.t) (argument_list : Exp.t list)
+  let add_tito (shapes : Shapes.t option) node kind_f (tito : Tito.t) (argument_list : Exp.t list)
       (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     let add_one_tito_flow ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved astate =
       let arg_expr = List.nth_exn argument_list arg_index in
@@ -1777,8 +1777,8 @@ module TransferFunctions = struct
 
   (* Add all the possible Summary/Direct (see add_tito) call edges from arguments to destination for
      when no summary is available. *)
-  let add_tito_all (shapes : Shapes.t) node kind_f (argument_list : Exp.t list) (ret_id : Ident.t)
-      (astate : Domain.t) : Domain.t =
+  let add_tito_all (shapes : Shapes.t option) node kind_f (argument_list : Exp.t list)
+      (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
     let arity = List.length argument_list in
     let tito_full = Tito.full ~arity in
     add_tito shapes node kind_f tito_full argument_list ret_id astate
@@ -2062,15 +2062,7 @@ end
 
 module Analyzer = AbstractInterpreter.MakeWTO (TransferFunctions)
 
-let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_opt =
-  let shapes =
-    match shapes_opt with
-    | Some shapes ->
-        shapes
-    | None ->
-        L.die InternalError "Failed to compute shape information for %a" Procname.pp
-          (Procdesc.get_proc_name proc_desc)
-  in
+let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) (shapes : Shapes.t option) =
   let analysis_data = (shapes, analysis) in
   let cfg = CFG.from_pdesc proc_desc in
   (* Build the initial abstract state *)
@@ -2133,4 +2125,5 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) shapes_o
   Some summary
 
 
-let checker = LineageUtils.skip_unwanted unskipped_checker
+let checker =
+  LineageUtils.skip_unwanted "Lineage" ~max_size:Config.lineage_max_cfg_size unskipped_checker

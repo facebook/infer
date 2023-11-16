@@ -71,7 +71,7 @@ module Summary : sig
   val pp : Format.formatter -> t -> unit
 
   val fold_field_labels :
-       t
+       t option
     -> Var.t * FieldPath.t
     -> init:'accum
     -> f:('accum -> FieldLabel.t -> 'accum)
@@ -80,10 +80,12 @@ module Summary : sig
   (** If a variable path has a shape that corresponds to a statically known set of field labels,
       folds over those field labels.
 
-      Otherwise, calls the [fallback] function on [init]. *)
+      Otherwise, calls the [fallback] function on [init].
+
+      If the summary is [None], will always fallback. *)
 
   val fold_cells :
-    t -> Var.t * FieldPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
+    t option -> Var.t * FieldPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
   (** Folds over all cells under a variable and field path. A field path is "terminal" if its length
       (that includes the prefixed fields given as parameters) is equal to
       [Config.lineage_field_depth], or no more field can be subscripted from its corresponding type,
@@ -92,10 +94,12 @@ module Summary : sig
       The result will not cross any shape whose field table is wider than
       [Config.lineage_field_width], even if one of the parameter does. For instance, if some
       variable [X] has a huge number of fields, the only terminal field of [X#field1] will be [X]
-      itself. *)
+      itself.
+
+      If the summary is [None], [f] will be called once with a var-only abstract cell. *)
 
   val fold_cell_pairs :
-       t
+       t option
     -> Var.t * FieldPath.t
     -> Var.t * FieldPath.t
     -> init:'accum
@@ -117,7 +121,9 @@ module Summary : sig
       [foo], then [f] will be called on [#foo] and [#field].
 
       The same width limitation as the function {!fold_cells} is ensured for both parameters (even
-      if these parameters cross wide shapes, the result will not). *)
+      if these parameters cross wide shapes, the result will not).
+
+      If the summary is [None], [f] will be called once with a var-only abstract cells pair. *)
 end
 
 val checker : Summary.t InterproceduralAnalysis.t -> Summary.t option

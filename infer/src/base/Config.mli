@@ -782,6 +782,8 @@ val lineage_json_report : bool
 
 val lineage_keep_temporaries : bool
 
+val lineage_field_max_cfg_size : int option
+
 val lineage_max_cfg_size : int option
 
 val lineage_dedup : bool

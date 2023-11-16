@@ -626,6 +626,9 @@ LINEAGE OPTIONS
            [EXPERIMENTAL] Maximal field depth sensitivity for lineage
            analysis. 0 will make the analysis field insensitive.
 
+       --lineage-field-max-cfg-size int
+           If set, field sensitivity is disabled on larger CFGs.
+
        --lineage-field-width int
            [EXPERIMENTAL] Maximal width of structures for field sensitive
            lineage analysis. Structure that have a higher number of fields

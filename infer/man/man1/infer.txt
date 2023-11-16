@@ -967,6 +967,10 @@ OPTIONS
            analysis. 0 will make the analysis field insensitive.       
     See also infer-analyze(1).
 
+       --lineage-field-max-cfg-size int
+           If set, field sensitivity is disabled on larger CFGs.       
+    See also infer-analyze(1).
+
        --lineage-field-width int
            [EXPERIMENTAL] Maximal width of structures for field sensitive
            lineage analysis. Structure that have a higher number of fields

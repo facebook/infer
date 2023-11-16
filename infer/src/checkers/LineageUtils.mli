@@ -8,7 +8,9 @@
 open! IStd
 
 val skip_unwanted :
-     ('payload InterproceduralAnalysis.t -> 'arg -> 'summary option)
+     string (* Analysis name for logs *)
+  -> max_size:int option
+  -> ('payload InterproceduralAnalysis.t -> 'arg -> 'summary option)
   -> 'payload InterproceduralAnalysis.t
   -> 'arg
   -> 'summary option

@@ -8,11 +8,12 @@
 open! IStd
 module L = Logging
 
-let skip_big_cfg checker ({InterproceduralAnalysis.proc_desc} as analysis_data) arg =
+let skip_big_cfg analysis_name ~max_size checker
+    ({InterproceduralAnalysis.proc_desc} as analysis_data) arg =
   let proc_size = Procdesc.size proc_desc in
-  let too_big = Option.exists ~f:(fun limit -> proc_size > limit) Config.lineage_max_cfg_size in
+  let too_big = Option.exists ~f:(fun limit -> proc_size > limit) max_size in
   if too_big then (
-    L.user_warning "Skipped large (%d) procedure (%a)@." proc_size Procname.pp
+    L.user_warning "%s: skipped large (%d) procedure (%a)@." analysis_name proc_size Procname.pp
       (Procdesc.get_proc_name proc_desc) ;
     None )
   else checker analysis_data arg
@@ -26,5 +27,5 @@ let skip_synthetic checker ({InterproceduralAnalysis.proc_desc} as analysis_data
   if is_synthetic then None else checker analysis_data arg
 
 
-let skip_unwanted checker analysis_data arg =
-  (skip_synthetic @@ skip_big_cfg @@ checker) analysis_data arg
+let skip_unwanted analysis_name ~max_size checker analysis_data arg =
+  (skip_synthetic @@ skip_big_cfg analysis_name ~max_size @@ checker) analysis_data arg

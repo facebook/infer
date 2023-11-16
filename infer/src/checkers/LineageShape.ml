@@ -10,6 +10,8 @@ module L = Logging
 module CFG = ProcCfg.NormalOneInstrPerNode
 
 module LineageConfig = struct
+  let field_max_cfg_size = Config.lineage_field_max_cfg_size
+
   let field_depth = Config.lineage_field_depth
 
   let field_width = Option.value ~default:Int.max_value Config.lineage_field_width
@@ -84,6 +86,8 @@ module Cell : sig
 
   val create : var:Var.t -> field_path:FieldPath.t -> is_abstract:bool -> t
 
+  val var_abstract : Var.t -> t
+
   val pp : t Fmt.t
 
   val var : t -> Var.t
@@ -98,6 +102,8 @@ end = struct
   [@@deriving compare, equal, sexp, fields]
 
   let create = Fields.create
+
+  let var_abstract var = create ~var ~is_abstract:true ~field_path:[]
 
   let pp fmt {var; field_path; is_abstract} =
     Var.pp fmt var ;
@@ -234,7 +240,7 @@ module Env : sig
         on the summary. *)
 
     val fold_field_labels :
-         t
+         t option
       -> Var.t * FieldPath.t
       -> init:'accum
       -> f:('accum -> FieldLabel.t -> 'accum)
@@ -243,11 +249,11 @@ module Env : sig
     (* Doc in .mli *)
 
     val fold_cells :
-      t -> Var.t * FieldPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
+      t option -> Var.t * FieldPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
     (* Doc in .mli *)
 
     val fold_cell_pairs :
-         t
+         t option
       -> Var.t * FieldPath.t
       -> Var.t * FieldPath.t
       -> init:'accum
@@ -1113,7 +1119,7 @@ end = struct
       aux shape 0 (Set.empty (module Shape_id)) [] ~init
 
 
-    let fold_cells {var_shapes; shape_structures} (var, field_path) ~init ~f =
+    let fold_cells_actual {var_shapes; shape_structures} (var, field_path) ~init ~f =
       let var_path_shape = find_var_path_shape {var_shapes; shape_structures} var field_path in
       let search_depth = LineageConfig.field_depth - List.length field_path in
       fold_final_fields_of_shape shape_structures var_path_shape ~search_depth ~init
@@ -1121,8 +1127,16 @@ end = struct
           f acc (finalise {var_shapes; shape_structures} var (field_path @ sub_path)) )
 
 
-    let fold_cell_pairs {var_shapes; shape_structures} (var_1, field_path_1) (var_2, field_path_2)
-        ~init ~f =
+    let fold_cells summary_option (var, path) ~init ~f =
+      match summary_option with
+      | Some summary ->
+          fold_cells_actual summary (var, path) ~init ~f
+      | None ->
+          f init (Cell.var_abstract var)
+
+
+    let fold_cell_pairs_actual {var_shapes; shape_structures} (var_1, field_path_1)
+        (var_2, field_path_2) ~init ~f =
       let var_path_shape_1 =
         find_var_path_shape {var_shapes; shape_structures} var_1 field_path_1
       in
@@ -1149,13 +1163,29 @@ end = struct
               (finalise {var_shapes; shape_structures} var_2 (field_path_2 @ sub_path)) )
 
 
-    let fold_field_labels summary (var, field_path) ~init ~f ~fallback =
+    let fold_cell_pairs summary_option (var1, f1) (var2, f2) ~init ~f =
+      match summary_option with
+      | Some summary ->
+          fold_cell_pairs_actual summary (var1, f1) (var2, f2) ~init ~f
+      | None ->
+          f init (Cell.var_abstract var1) (Cell.var_abstract var2)
+
+
+    let fold_field_labels_actual summary (var, field_path) ~init ~f ~fallback =
       match find_var_path_structure summary var field_path with
       | Variant set ->
           String.Set.fold ~init
             ~f:(fun acc constructor -> f acc (FieldLabel.map_key constructor))
             set
       | _ ->
+          fallback init
+
+
+    let fold_field_labels summary_option (var, path) ~init ~f ~fallback =
+      match summary_option with
+      | Some summary ->
+          fold_field_labels_actual summary (var, path) ~init ~f ~fallback
+      | None ->
           fallback init
   end
 end
@@ -1186,7 +1216,7 @@ module Report = struct
              ~f:(fun () fields -> f fields)
              ~init:() )
          ~sep:Fmt.comma Cell.pp )
-      summary ;
+      (Some summary) ;
     L.debug Analysis Verbose "@]@ @]"
 end
 
@@ -1492,5 +1522,7 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis_data) =
 
 
 let checker analysis_data =
-  (* We skip the functions that would not be analysed by Lineage anyway *)
-  LineageUtils.skip_unwanted (fun data () -> unskipped_checker data) analysis_data ()
+  (* We skip the big functions and the ones that would not be analysed by Lineage anyway. *)
+  LineageUtils.skip_unwanted "LineageShape" ~max_size:LineageConfig.field_max_cfg_size
+    (fun data () -> unskipped_checker data)
+    analysis_data ()
