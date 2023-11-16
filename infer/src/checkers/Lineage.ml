@@ -486,6 +486,16 @@ module LineageGraph = struct
 
       let of_kind (kind : E.kind) : t = Z.of_int (E.Kind.to_rank kind)
 
+      let of_field_path field_path = of_string (Fmt.to_to_string FieldPath.pp field_path)
+
+      let of_edge_metadata ({inject; project} : Json.edge_metadata) =
+        of_list [of_field_path inject; of_field_path project]
+
+
+      let of_option of_elt option =
+        match option with None -> of_list [] | Some elt -> of_list [of_elt elt]
+
+
       (** Converts the internal representation to an [int64], as used by the [Out] module. *)
       let out id : int64 =
         try Z.to_int64 id with Z.Overflow -> L.die InternalError "Hash does not fit in int64"
@@ -628,7 +638,6 @@ module LineageGraph = struct
         let procname = Procdesc.get_proc_name proc_desc in
         save_location ~write:true procname (Normal node)
       in
-      let edge_id = Id.of_list [source_id; target_id; kind_id; location_id] in
       let edge_type =
         match kind with
         | Call _ ->
@@ -675,6 +684,12 @@ module LineageGraph = struct
           | _ ->
               None )
       in
+      let metadata_id =
+        (* Contrary to other ids which are computed from the source components, this one must be
+           computed on the generated metadata since it doesn't exist as-is in the source. *)
+        Id.of_option Id.of_edge_metadata edge_metadata
+      in
+      let edge_id = Id.of_list [source_id; target_id; kind_id; metadata_id; location_id] in
       write_json Edge edge_id
         (Json.yojson_of_edge
            { edge=
