@@ -1877,6 +1877,26 @@ module TransferFunctions = struct
           L.die InternalError "`maps:get/3` expects three arguments"
 
 
+    let maps_find shapes node _analyze_dependency ret_id _procname args astate =
+      match args with
+      | [key_exp; map_exp] ->
+          let atom_ok = Local.ConstantAtom "ok" in
+          let atom_error = Local.ConstantAtom "error" in
+          let dst_tuple_path index =
+            VarPath.make (Var.of_id ret_id) [FieldLabel.tuple_elem_zero_based ~size:2 ~index]
+          in
+          astate
+          (* key is present => {ok, Value} *)
+          |> Domain.add_write_from_local ~shapes ~node ~kind:Direct ~src:atom_ok
+               ~dst:(dst_tuple_path 0)
+          |> maps_get shapes node (dst_tuple_path 1) ~key_exp ~map_exp
+          (* key is absent => error *)
+          |> Domain.add_write_from_local ~shapes ~node ~kind:Direct ~src:atom_error
+               ~dst:(VarPath.ident ret_id)
+      | _ ->
+          L.die InternalError "`maps:find` expects three arguments"
+
+
     let maps_new =
       (* The generic call model with zero parameter will simply add a flow from maps:new$ret to
          ret_id. We could also consider doing nothing and simply return the abstract state, which
@@ -1969,6 +1989,7 @@ module TransferFunctions = struct
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"new" ~arity:0, maps_new)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2, maps_get_2)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:3, maps_get_3)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"find" ~arity:2, maps_find)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~arity:3, maps_put)
         ; (BuiltinDecl.__erlang_make_cons, make_cons)
         ; (apply 2, call_unqualified)

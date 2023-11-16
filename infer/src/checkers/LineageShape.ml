@@ -157,6 +157,12 @@ module Env : sig
       val variant_of_list : string list -> t -> shape
       (** The shape of a value equal to a string amongst a set of possible ones. *)
 
+      val atom_ok : t -> shape
+      (** The common shape of the singleton [ok] variant. *)
+
+      val atom_error : t -> shape
+      (** The common shape of the singleton [error] variant. *)
+
       val vector_zero : t -> shape
       (** The shape of a vector that currently has no known field. Usually fields will be discovered
           later on by unification. This can be used as a generic shape for something that might be a
@@ -536,6 +542,10 @@ end = struct
       let variant_of_list constructor_list state =
         Private.create_and_store (Structure.variant_of_list constructor_list) state
 
+
+      let atom_ok state = variant_of_list ["ok"] state
+
+      let atom_error state = variant_of_list ["error"] state
 
       let local_abstract state = Private.create_and_store Structure.local_abstract state
 
@@ -1291,6 +1301,22 @@ struct
           L.die InternalError "`maps:get/3` expects three arguments"
 
 
+    let maps_find ret_id args =
+      (* Access the key and return [{ok, Value}] or [error]. *)
+      match args with
+      | [key_exp; map_exp] ->
+          let key_shape = shape_expr key_exp in
+          let map_shape = shape_expr map_exp in
+          let value_shape = Env.State.shape_map_value state ~map_shape ~key_shape in
+          let absent_shape = Env.State.Shape.atom_error state in
+          let atom_ok = Env.State.Shape.atom_ok state in
+          let present_shape = Env.State.Shape.tuple [atom_ok; value_shape] state in
+          Env.State.unify_var state ret_id absent_shape ;
+          Env.State.unify_var state ret_id present_shape
+      | _ ->
+          L.die InternalError "`maps:get/2` expects two arguments"
+
+
     let maps_new ret_id args =
       (* Simply return an empty vector. Having a specific model will prevent unknown-procedure warnings. *)
       match args with
@@ -1326,6 +1352,7 @@ struct
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"new" ~arity:0, maps_new)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2, maps_get_2)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:3, maps_get_3)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"find" ~arity:2, maps_find)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~arity:3, maps_put) ]
       in
       List.Assoc.find ~equal:Procname.equal models procname

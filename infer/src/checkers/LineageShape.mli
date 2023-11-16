@@ -13,6 +13,8 @@ module FieldLabel : sig
   val fieldname : Fieldname.t -> t
 
   val make_fieldname : Typ.name -> string -> t
+
+  val tuple_elem_zero_based : size:int -> index:int -> t
 end
 
 module FieldPath : sig
