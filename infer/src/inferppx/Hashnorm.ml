@@ -93,10 +93,12 @@ let if_phys_equal_then_t ~loc ~else_exp vars =
   [%expr if [%e guard] then t else [%e else_exp]]
 
 
-let should_normalize_type core_type =
+let rec should_normalize_type core_type =
   match core_type.ptyp_desc with
   | Ptyp_constr ({txt= Lident ("bool" | "char" | "float" | "int" | "unit")}, _) ->
       false
+  | Ptyp_constr ({txt= Lident ("option" | "list")}, [type_param]) ->
+      should_normalize_type type_param
   | _ ->
       true
 
@@ -180,10 +182,6 @@ let normalize_record_impl ~loc (lds : label_declaration list) =
       [%e final_expr]]
 
 
-let normalize_passthrough_impl ~loc manifest_type =
-  Ast_helper.Exp.ident ~loc (hash_normalize_of_core_type ~loc manifest_type)
-
-
 let make_variant_case ~loc (constructor_declaration : constructor_declaration) : case =
   let constructor_ident = Common.make_longident ~loc constructor_declaration.pcd_name.txt in
   let constructor expr = Ast_helper.Exp.construct ~loc constructor_ident (Some expr) in
@@ -216,10 +214,6 @@ let normalize ~loc (td : type_declaration) =
       normalize_tuple_impl ~loc core_types
   | {ptype_kind= Ptype_variant constructor_declarations} ->
       normalize_variant_impl ~loc constructor_declarations
-  | {ptype_kind= Ptype_abstract; ptype_manifest= Some ({ptyp_desc= Ptyp_constr _} as manifest_type)}
-    ->
-      (* passthrough case like `let nonrec t = t` *)
-      normalize_passthrough_impl ~loc manifest_type
   | _ ->
       raise (BadType (Location.error_extensionf ~loc "Cannot derive functions for this type"))
 
@@ -228,59 +222,77 @@ let make_function_value_binding ~loc name body =
   Ast_helper.Vb.mk ~loc (Ast_helper.Pat.var ~loc (Loc.make ~loc name)) body
 
 
-let hashtable_api ~loc (td : type_declaration) =
-  let equal_name_expr =
-    func_name_from_typename ~stem:"equal" td.ptype_name.txt |> Common.make_ident_exp ~loc
-  in
-  let hash_name_expr =
-    func_name_from_typename ~stem:"hash" td.ptype_name.txt |> Common.make_ident_exp ~loc
-  in
-  let ct = Ast_helper.Typ.constr ~loc (Common.make_longident ~loc td.ptype_name.txt) [] in
-  let body =
-    [%expr
-      let module H = Caml.Hashtbl.Make (struct
-        type nonrec t = [%t ct]
+let make_passthrough ~loc (td : type_declaration) =
+  match td with
+  | {ptype_kind= Ptype_abstract; ptype_manifest= Some ({ptyp_desc= Ptyp_constr _} as manifest_type)}
+    ->
+      (* passthrough case like `let nonrec t = t` *)
+      Some (Ast_helper.Exp.ident ~loc (hash_normalize_of_core_type ~loc manifest_type))
+  | _ ->
+      None
 
-        let equal = [%e equal_name_expr]
 
-        let hash = [%e hash_name_expr]
-      end) in
-      let table : [%t ct] H.t = H.create 11 in
-      let () = HashNormalizer.register_reset (fun () -> H.reset table) in
-      ((fun t -> H.find_opt table t), fun t -> H.add table t t)]
+let maybe_make_hashtable_api ~loc td =
+  let hashtable_api ~loc (td : type_declaration) =
+    let equal_name_expr =
+      func_name_from_typename ~stem:"equal" td.ptype_name.txt |> Common.make_ident_exp ~loc
+    in
+    let hash_name_expr =
+      func_name_from_typename ~stem:"hash" td.ptype_name.txt |> Common.make_ident_exp ~loc
+    in
+    let ct = Ast_helper.Typ.constr ~loc (Common.make_longident ~loc td.ptype_name.txt) [] in
+    let body =
+      [%expr
+        let module H = Caml.Hashtbl.Make (struct
+          type nonrec t = [%t ct]
+
+          let equal = [%e equal_name_expr]
+
+          let hash = [%e hash_name_expr]
+        end) in
+        let table : [%t ct] H.t = H.create 11 in
+        let () = HashNormalizer.register_reset (fun () -> H.reset table) in
+        ((fun t -> H.find_opt table t), fun t -> H.add table t t)]
+    in
+    let make_pattern stem =
+      Ast_helper.Pat.var ~loc @@ Loc.make ~loc @@ func_name_from_typename ~stem td.ptype_name.txt
+    in
+    let make_patterns ls = List.map ~f:make_pattern ls in
+    let pattern =
+      Ast_helper.Pat.tuple ~loc (make_patterns [hashtable_find_opt_stem; hashtable_add_stem])
+    in
+    Ast_helper.Str.value ~loc Nonrecursive [Ast_helper.Vb.mk ~loc pattern body]
   in
-  let make_pattern stem =
-    Ast_helper.Pat.var ~loc @@ Loc.make ~loc @@ func_name_from_typename ~stem td.ptype_name.txt
-  in
-  let make_patterns ls = List.map ~f:make_pattern ls in
-  let pattern =
-    Ast_helper.Pat.tuple ~loc (make_patterns [hashtable_find_opt_stem; hashtable_add_stem])
-  in
-  Ast_helper.Str.value ~loc Nonrecursive [Ast_helper.Vb.mk ~loc pattern body]
+  if make_passthrough ~loc td |> Option.is_some then None else Some (hashtable_api ~loc td)
 
 
 let hash_normalize ~loc (td : type_declaration) =
-  let normalize = normalize ~loc td in
-  let hashtable_find_opt =
-    Common.make_ident_exp ~loc
-    @@ func_name_from_typename ~stem:hashtable_find_opt_stem td.ptype_name.txt
-  in
-  let hashtable_add =
-    Common.make_ident_exp ~loc @@ func_name_from_typename ~stem:hashtable_add_stem td.ptype_name.txt
-  in
-  let body =
-    [%expr
-      let normalize = [%e normalize] in
-      fun t ->
-        match [%e hashtable_find_opt] t with
-        | Some t' ->
-            t'
-        | None ->
-            let normalized = normalize t in
-            [%e hashtable_add] normalized ;
-            normalized]
-  in
   let hash_norm_name = hash_normalize_from_typename td.ptype_name.txt in
+  let body =
+    match make_passthrough ~loc td with
+    | Some e ->
+        e
+    | None ->
+        let normalize = normalize ~loc td in
+        let hashtable_find_opt =
+          Common.make_ident_exp ~loc
+          @@ func_name_from_typename ~stem:hashtable_find_opt_stem td.ptype_name.txt
+        in
+        let hashtable_add =
+          Common.make_ident_exp ~loc
+          @@ func_name_from_typename ~stem:hashtable_add_stem td.ptype_name.txt
+        in
+        [%expr
+          let normalize = [%e normalize] in
+          fun t ->
+            match [%e hashtable_find_opt] t with
+            | Some t' ->
+                t'
+            | None ->
+                let normalized = normalize t in
+                [%e hashtable_add] normalized ;
+                normalized]
+  in
   make_function_value_binding ~loc hash_norm_name body
 
 
@@ -314,7 +326,7 @@ let generate_impl ~ctxt (_rec_flag, type_declarations) =
     ; hash_normalize_list ~loc td.ptype_name ]
   in
   try
-    List.map type_declarations ~f:(hashtable_api ~loc)
+    List.filter_map type_declarations ~f:(maybe_make_hashtable_api ~loc)
     @ [ List.map type_declarations ~f:process_type_declaration
         |> List.concat
         |> Ast_helper.Str.value ~loc Recursive ]

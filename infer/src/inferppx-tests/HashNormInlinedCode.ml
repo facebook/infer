@@ -9,7 +9,8 @@ open! IStd
 (* file used only to apply the deriver through [inline] and commit the generated functions
    so as to track changes *)
 
-type record = {s: string; i: int} [@@deriving equal, hash] [@@deriving_inline normalize]
+type record = {s: string; i: int; i_opt: int option}
+[@@deriving equal, hash] [@@deriving_inline normalize]
 
 include struct
   [@@@ocaml.warning "-60"]
@@ -39,9 +40,9 @@ include struct
 
   let rec hash_normalize_record =
     let normalize t =
-      let {s; i} = t in
+      let {s; i; i_opt} = t in
       let s' = HashNormalizer.String.hash_normalize s in
-      if phys_equal s s' then t else {s= s'; i}
+      if phys_equal s s' then t else {s= s'; i; i_opt}
     in
     fun t ->
       match hash_normalize_find_opt_record t with
@@ -687,5 +688,30 @@ include struct
 
   and _ = hash_normalize_recursive2_list
 end [@@ocaml.doc "@inline"]
+
+[@@@end]
+
+type passthrough = record option [@@deriving equal, hash] [@@deriving_inline normalize]
+
+let _ = fun (_ : passthrough) -> ()
+
+let rec hash_normalize_passthrough = hash_normalize_record_opt
+
+and hash_normalize_passthrough_opt = function
+  | Some _ as some_t ->
+      IOption.map_changed ~equal:phys_equal ~f:hash_normalize_passthrough some_t
+  | None ->
+      None
+
+
+and hash_normalize_passthrough_list ts =
+  IList.map_changed ~equal:phys_equal ~f:hash_normalize_passthrough ts
+
+
+let _ = hash_normalize_passthrough
+
+and _ = hash_normalize_passthrough_opt
+
+and _ = hash_normalize_passthrough_list
 
 [@@@end]
