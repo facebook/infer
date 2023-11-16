@@ -461,6 +461,8 @@ let add_copies integer_type_widths tenv proc_desc path location pname actuals ~a
 let is_lock pname =
   let method_name = Procname.get_method pname in
   String.equal method_name "lock" || String.equal method_name "rlock"
+  || String.is_suffix method_name ~suffix:"_lock"
+  || String.is_suffix method_name ~suffix:"_trylock"
 
 
 let get_copied_into copied_var : Attribute.CopiedInto.t =
