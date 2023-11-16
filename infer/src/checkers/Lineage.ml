@@ -1842,7 +1842,7 @@ module TransferFunctions = struct
         ~init:astate field_names args
 
 
-    let maps_get shapes node _analyze_dependency ret_id _procname args astate =
+    let maps_get_2 shapes node _analyze_dependency ret_id _procname args astate =
       match args with
       | [key_exp; map_exp] ->
           (* Erlang frontend currently always puts arguments in variables. We could fall back to
@@ -1860,7 +1860,17 @@ module TransferFunctions = struct
               (Domain.add_write_product ~shapes ~node ~kind:Direct ~src:map_path ~dst:ret_path)
             ~init:astate shapes key_path
       | _ ->
-          L.die InternalError "`maps:get` expects two arguments"
+          L.die InternalError "`maps:get/2` expects two arguments"
+
+
+    let maps_get_3 shapes node analyze_dependency ret_id procname args astate =
+      match args with
+      | [key_exp; map_exp; default_exp] ->
+          astate
+          |> maps_get_2 shapes node analyze_dependency ret_id procname [key_exp; map_exp]
+          |> exec_assignment shapes node (VarPath.ident ret_id) default_exp
+      | _ ->
+          L.die InternalError "`maps:get/3`expects three arguments"
 
 
     let maps_new =
@@ -1953,7 +1963,8 @@ module TransferFunctions = struct
         ; (BuiltinDecl.__erlang_make_tuple, make_tuple)
         ; (BuiltinDecl.__erlang_make_map, make_map)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"new" ~arity:0, maps_new)
-        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2, maps_get)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2, maps_get_2)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:3, maps_get_3)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~arity:3, maps_put)
         ; (BuiltinDecl.__erlang_make_cons, make_cons)
         ; (apply 2, call_unqualified)

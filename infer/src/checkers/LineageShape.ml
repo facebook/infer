@@ -1254,7 +1254,7 @@ struct
           L.die InternalError "`maps:put` expects three arguments"
 
 
-    let maps_get ret_id args =
+    let maps_get_2 ret_id args =
       (* Access the key and return the value. *)
       match args with
       | [key_exp; map_exp] ->
@@ -1263,7 +1263,18 @@ struct
           let value_shape = Env.State.shape_map_value state ~map_shape ~key_shape in
           Env.State.unify_var state ret_id value_shape
       | _ ->
-          L.die InternalError "`maps:get` expects two arguments"
+          L.die InternalError "`maps:get/2` expects two arguments"
+
+
+    let maps_get_3 ret_id args =
+      (* Get with a default value *)
+      match args with
+      | [key_exp; map_exp; default_exp] ->
+          let default_shape = shape_expr default_exp in
+          maps_get_2 ret_id [key_exp; map_exp] ;
+          Env.State.unify_var state ret_id default_shape
+      | _ ->
+          L.die InternalError "`maps:get/3` expects three arguments"
 
 
     let maps_new ret_id args =
@@ -1299,7 +1310,8 @@ struct
         ; (BuiltinDecl.__erlang_make_map, make_map)
         ; (BuiltinDecl.__erlang_make_cons, make_cons)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"new" ~arity:0, maps_new)
-        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2, maps_get)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:2, maps_get_2)
+        ; (Procname.make_erlang ~module_name:"maps" ~function_name:"get" ~arity:3, maps_get_3)
         ; (Procname.make_erlang ~module_name:"maps" ~function_name:"put" ~arity:3, maps_put) ]
       in
       List.Assoc.find ~equal:Procname.equal models procname
