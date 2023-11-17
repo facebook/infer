@@ -33,14 +33,15 @@ module Cell : sig
 
       A field path of a cell:
 
-      - Cannot have a length greater than {!Config.lineage_field_depth}. For instance, if that limit
-        is [2], the only cell under both [X#foo#bar#baz] and [X#foo#bar#ham] will be [X#foo#bar].
+      - Cannot have a length greater than {!IBase.Config.lineage_field_depth}. For instance, if that
+        limit is [2], the only cell under both [X#foo#bar#baz] and [X#foo#bar#ham] will be
+        [X#foo#bar].
 
-      - Cannot cross a field whose field table is wider than {!Config.lineage_field_width}. For
-        instance, of the variable [X] has a huge number of fields, the only cell under [X#field1]
-        will be [X] itself.
+      - Cannot cross a field whose field table is wider than {!IBase.Config.lineage_field_width}.
+        For instance, of the variable [X] has a huge number of fields, the only cell under
+        [X#field1] will be [X] itself.
 
-      - Cannot go twice on same-typed fields if {!Config.lineage_prevent_cycles} is set. For
+      - Cannot go twice on same-typed fields if {!IBase.Config.lineage_prevent_cycles} is set. For
         instance, if [X] has fields [X#head] and [X#tail], and [X#tail] has the same shape as [X],
         then the cells under [X] will be [X#head] and [X#tail].
 
@@ -88,11 +89,12 @@ module Summary : sig
     t option -> Var.t * FieldPath.t -> init:'accum -> f:('accum -> Cell.t -> 'accum) -> 'accum
   (** Folds over all cells under a variable and field path. A field path is "terminal" if its length
       (that includes the prefixed fields given as parameters) is equal to
-      [Config.lineage_field_depth], or no more field can be subscripted from its corresponding type,
-      or it has strictly more than [Config.lineage_field_width] immediate subfields.
+      {!IBase.Config.lineage_field_depth}, or no more field can be subscripted from its
+      corresponding type, or it has strictly more than {!IBase.Config.lineage_field_width} immediate
+      subfields.
 
       The result will not cross any shape whose field table is wider than
-      [Config.lineage_field_width], even if one of the parameter does. For instance, if some
+      {!IBase.Config.lineage_field_width}, even if one of the parameter does. For instance, if some
       variable [X] has a huge number of fields, the only terminal field of [X#field1] will be [X]
       itself.
 
@@ -106,7 +108,7 @@ module Summary : sig
     -> f:('accum -> Cell.t -> Cell.t -> 'accum)
     -> 'accum
   (** Folds over all corresponding cell pairs of two same-shape variable and field paths. See
-      {!fold_terminal_fields}.
+      {!fold_cells}.
 
       Dies if the parameters do not have the same shape.
 

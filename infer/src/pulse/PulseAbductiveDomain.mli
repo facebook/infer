@@ -13,7 +13,7 @@ module Decompiler = PulseDecompiler
 module DecompilerExpr = PulseDecompilerExpr
 module PathContext = PulsePathContext
 
-(** {2 Abductive, value-normalizing layer on top of {!BaseDomain}}
+(** {2 Abductive, value-normalizing layer on top of [BaseDomain]}
 
     The operations in this module take care of two things that are important for the safety of
     domain operations:
