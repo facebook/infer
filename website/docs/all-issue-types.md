@@ -34,35 +34,6 @@ Example:
   }
 ```
 
-## AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE
-
-Reported as "Autoreleasepool Size Complexity Increase" by [cost](/docs/next/checker-cost).
-
-\[EXPERIMENTAL\] Infer reports this issue when the ObjC autoreleasepool's size complexity of a
-program increases in degree: e.g. from constant to linear or from logarithmic to quadratic. This
-issue type is only reported in differential mode: i.e when we are comparing the analysis results of
-two runs of infer on a file.
-
-## AUTORELEASEPOOL_SIZE_COMPLEXITY_INCREASE_UI_THREAD
-
-Reported as "Autoreleasepool Size Complexity Increase Ui Thread" by [cost](/docs/next/checker-cost).
-
-\[EXPERIMENTAL\] Infer reports this issue when the ObjC autoreleasepool's complexity of the
-procedure increases in degree **and** the procedure runs on the UI (main) thread.
-
-Infer considers a method as running on the UI thread whenever:
-
-- The method, one of its overrides, its class, or an ancestral class, is annotated with `@UiThread`.
-- The method, or one of its overrides is annotated with `@OnEvent`, `@OnClick`, etc.
-- The method or its callees call a `Litho.ThreadUtils` method such as `assertMainThread`.
-
-## AUTORELEASEPOOL_SIZE_UNREACHABLE_AT_EXIT
-
-Reported as "Autoreleasepool Size Unreachable At Exit" by [cost](/docs/next/checker-cost).
-
-\[EXPERIMENTAL\] This issue type indicates that the program's execution doesn't reach the exit
-node. Hence, we cannot compute a static bound of ObjC autoreleasepool's size for the procedure.
-
 ## BAD_ARG
 
 Reported as "Bad Arg" by [pulse](/docs/next/checker-pulse).
@@ -468,8 +439,8 @@ Reported as "Config Impact" by [config-impact-analysis](/docs/next/checker-confi
 Infer reports this issue when an *expensive* function is called without a *config check*.  The
 *config* is usually a boolean value that enables experimental new features and it is defined per
 application/codebase, e.g. gatekeepers.  To determine whether a function is expensive or not, the
-checker relies on [Cost analysis](/docs/next/checker-cost) results and modeled functions that are
-assumed to be expensive, e.g. string operations, regular expression match, or DB accesses.
+checker relies on modeled functions that are assumed to be expensive, e.g. string operations,
+regular expression match, or DB accesses.
 
 Similar to [Cost analysis](/docs/next/checker-cost), this issue type is reported only in
 differential mode, i.e. when there are original code and modified one and we can compare Infer's
@@ -525,13 +496,6 @@ Reported as "Config Impact Strict" by [config-impact-analysis](/docs/next/checke
 
 This is similar to [`CONFIG_IMPACT` issue](#config_impact) but the analysis reports **all** ungated
 codes irrespective of whether they are expensive or not.
-
-## CONFIG_IMPACT_STRICT_BETA
-
-Reported as "Config Impact Strict Beta" by [config-impact-analysis](/docs/next/checker-config-impact-analysis).
-
-This is similar to [`CONFIG_IMPACT_STRICT` issue](#config_impact_strict) but it is only used for
-beta testing that fine-tunes the checker to analysis targets.
 
 ## CONFIG_USAGE
 
@@ -1031,13 +995,6 @@ void infeasible_path_unreachable() {
 }
 ```
 
-## EXPENSIVE_AUTORELEASEPOOL_SIZE
-
-Reported as "Expensive Autoreleasepool Size" by [cost](/docs/next/checker-cost).
-
-\[EXPERIMENTAL\] This warning indicates that non-constant and non-top ObjC autoreleasepool's size in
-the procedure.  By default, this issue type is disabled.
-
 ## EXPENSIVE_EXECUTION_TIME
 
 Reported as "Expensive Execution Time" by [cost](/docs/next/checker-cost).
@@ -1191,16 +1148,6 @@ Reported as "Inferbo Alloc May Be Negative" by [bufferoverrun](/docs/next/checke
 `malloc` *may* be called with a negative value. For example, `int n = b ? 3 : -5; malloc(n);` generates `INFERBO_ALLOC_MAY_BE_NEGATIVE` on `malloc(n)`.
 
 Action: Fix the size argument or add a bound checking, e.g. `if (n > 0) { malloc(n); }`.
-## INFINITE_AUTORELEASEPOOL_SIZE
-
-Reported as "Infinite Autoreleasepool Size" by [cost](/docs/next/checker-cost).
-
-\[EXPERIMENTAL\] This warning indicates that Infer was not able to determine a static upper bound on
-the Objective-C's autoreleasepool size in the procedure. This issuee type is similar to [INFINITE_EXECUTION_COST](#infinite_execution_time), with the difference that rather than the execution cost, we account for the size of the Objective-C autoreleasepool size.
-
-By default, this issue type is disabled.
-
-
 ## INFINITE_EXECUTION_TIME
 
 Reported as "Infinite Execution Time" by [cost](/docs/next/checker-cost).
@@ -1889,6 +1836,112 @@ Moreover, inserting `nil` into a collection will cause a crash as well. We
 also have a dedicated issue type for this case:
 [Nil Insertion Into Collection](/docs/next/all-issue-types#nil_insertion_into_collection).
 
+## NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS
+
+Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
+
+Infer reports null dereference bugs in Java, C, C++, and Objective-C
+when it is possible that the null pointer is dereferenced, leading to
+a crash.
+
+### Null dereference in Java
+
+Many of Infer's reports of potential Null Pointer Exceptions (NPE) come from code of the form
+
+```java
+  p = foo(); // foo() might return null
+  stuff();
+  p.goo();   // dereferencing p, potential NPE
+```
+
+If you see code of this form, then you have several options.
+
+**If you are unsure whether or not `foo()` will return null**, you should
+ideally either
+
+1. Change the code to ensure that `foo()` can not return null, or
+
+2. Add a check that `p` is not `null` before dereferencing `p`.
+
+Sometimes, in case (2) it is not obvious what you should do when `p`
+is `null`. One possibility is to throw an exception, failing early but
+explicitly. This can be done using `checkNotNull` as in the following
+code:
+
+```java
+// code idiom for failing early
+import static com.google.common.base.Preconditions.checkNotNull;
+
+  //... intervening code
+
+  p = checkNotNull(foo()); // foo() might return null
+  stuff();
+  p.goo(); // p cannot be null here
+```
+
+The call `checkNotNull(foo())` will never return `null`: if `foo()`
+returns `null` then it fails early by throwing a Null Pointer
+Exception.
+
+Facebook NOTE: **If you are absolutely sure that foo() will not be
+null**, then if you land your diff this case will no longer be
+reported after your diff makes it to trunk.
+
+### Null dereference in C
+
+Here is an example of an inter-procedural null dereference bug in C:
+
+```c
+struct Person {
+  int age;
+  int height;
+  int weight;
+};
+int get_age(struct Person *who) {
+  return who->age;
+}
+int null_pointer_interproc() {
+  struct Person *joe = 0;
+  return get_age(joe);
+}
+```
+
+### Null dereference in Objective-C
+
+In Objective-C, null dereferences are less common than in Java, but they still
+happen and their cause can be hidden. In general, passing a message to nil does
+not cause a crash and returns `nil`, but dereferencing a pointer directly does
+cause a crash.
+
+Example:
+
+```objectivec
+(int) foo:(C*) param {  // passing nil
+  D* d = [param bar];   // nil message passing
+  return d->fld;        // crash
+}
+(void) callFoo {
+  C* c = [self bar];    // returns nil
+  [foo:c];              // crash reported here
+}
+```
+
+**Action**:
+Adding a `nil` check either for `param` above or for `d`, or making sure that `foo:` will never
+be called with `nil`.
+
+Calling a `nil` block will also cause a crash.
+We have a dedicated issue type for this case: [Nil Block Call](/docs/next/all-issue-types#nil_block_call).
+
+Moreover, inserting `nil` into a collection will cause a crash as well. We
+also have a dedicated issue type for this case:
+[Nil Insertion Into Collection](/docs/next/all-issue-types#nil_insertion_into_collection).
+
+## NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS_LATENT
+
+Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
+
+A latent [NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS](#nullptr_dereference_in_nullsafe_class). See the [documentation on Pulse latent issues](/docs/next/checker-pulse#latent-issues).
 ## NULLPTR_DEREFERENCE_LATENT
 
 Reported as "Null Dereference" by [pulse](/docs/next/checker-pulse).
@@ -2052,11 +2105,79 @@ void caller() {
 }
 ```
 
+## PULSE_REFERENCE_STABILITY
+
+Reported as "Pulse Reference Stability" by [pulse](/docs/next/checker-pulse).
+
+The family of maps `folly::F14ValueMap`, `folly::F14VectorMap`, and by extension
+`folly::F14FastMap` differs slightly from `std::unordered_map` as it does not
+provide reference stability. Hence, when the map resizes such as when `reserve`
+is called or new elements are added, all existing references become stale and
+should not be used.
+
+For example:
+
+```cpp
+#include <folly/container/F14Map.h>
+
+void use_reference_after_growth_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.emplace(4, 16);
+  const auto valueCopy = valueRef;
+}
+```
+
 ## PULSE_RESOURCE_LEAK
 
 Reported as "Pulse Resource Leak" by [pulse](/docs/next/checker-pulse).
 
 See [RESOURCE_LEAK](#resource_leak)
+## PULSE_TRANSITIVE_ACCESS
+
+Reported as "Pulse Transitive Access" by [pulse](/docs/next/checker-pulse).
+
+This issue tracks spurious accesses that are reachable from specific entry functions.
+
+Spurious accesses are specified as specific load/calls.
+
+Entry functions are specified through their enclosing class that must extend a specific 
+class and should not extend a list of specific classes.
+
+
+## PULSE_UNINITIALIZED_CONST
+
+Reported as "Uninitialized Const" by [pulse](/docs/next/checker-pulse).
+
+This issue is similar to [`UNINITIALIZED_VALUE` issue](#uninitialized_value), but it is to detect the uninitialized abstract const value in Hack.
+
+For example, in the following code, the `FIELD` can be read by the static method `get_field`.
+
+* It is problematic invoking `static::FIELD`, since it may be resolved to a `A::FIELD` access, if called from `A::get_field()`. Because `FIELD` is abstract in `A`, it is never assigned a value and the vm will crash. Unfortunately, Hack's type system cannot catch this.
+* In the `B` class, `FIELD` is initialized, thus invoking `B::get_field` is safe.
+
+```hack
+abstract class A {
+  abstract const string FIELD;
+  
+  public static function get_field(): string {
+    return static::FIELD;
+  }
+}
+
+function call_get_field_bad(): string {
+  return A::get_field();
+}
+
+class B extends A {
+  const string FIELD = "defined";
+}
+
+function call_get_field_ok(): string {
+  return B::get_field();
+}
+```
+
 ## PULSE_UNINITIALIZED_VALUE
 
 Reported as "Uninitialized Value" by [pulse](/docs/next/checker-pulse).
