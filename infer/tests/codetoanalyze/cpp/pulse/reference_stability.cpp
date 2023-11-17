@@ -548,11 +548,20 @@ void folly_fastmap_erase_bad_FN() {
   const auto valueCopy = valueRef;
 }
 
-void folly_fastmap_swap_bad_FN() {
+void folly_fastmap_swap_ok() {
   folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
   folly::F14FastMap<int, int> other;
   const auto& valueRef = map.at(1);
-  map.swap(other);
+  map.swap(other); // valueRef now valid in other.
+  const auto valueCopy = valueRef;
+}
+
+void folly_fastmap_swap_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  folly::F14FastMap<int, int> other;
+  const auto& valueRef = map.at(1);
+  map.swap(other); // valueRef now valid in other.
+  other.clear(); // valueRef now invalid.
   const auto valueCopy = valueRef;
 }
 

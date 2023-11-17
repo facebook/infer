@@ -820,6 +820,28 @@ module GenericMapCollection = struct
     return_it ~desc arg_payload it data astate
 
 
+  let swap map_t arg_payload other_payload : model =
+   fun {path; location} astate ->
+    let desc = Format.asprintf "%a::swap" Invalidation.pp_map_type map_t in
+    let<*> astate, (arg_addr, arg_hist) =
+      PulseOperations.eval_access path Read location arg_payload pair_access astate
+    in
+    let<*> astate, (other_addr, other_hist) =
+      PulseOperations.eval_access path Read location other_payload pair_access astate
+    in
+    let<*> astate =
+      PulseOperations.write_field path location ~ref:arg_payload pair_field
+        ~obj:(other_addr, Hist.add_call path location desc other_hist)
+        astate
+    in
+    let<+> astate =
+      PulseOperations.write_field path location ~ref:other_payload pair_field
+        ~obj:(arg_addr, Hist.add_call path location desc arg_hist)
+        astate
+    in
+    astate
+
+
   let iterator_star desc it : model =
    fun {path; location; ret} astate ->
     let event = Hist.call_event path location desc in
@@ -951,6 +973,10 @@ let map_matchers =
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "count"
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
           $+ capt_arg_payload $--> GenericMapCollection.only_check_and_update_last
+        ; -"folly" <>:: map_s &:: "swap"
+          <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $+ capt_arg_payload_of_typ (-"folly" <>:: map_s)
+          $--> GenericMapCollection.swap map_t
           (* Order matters for the next matchers in this list. *)
           (* insert_or_assign:
               1. Two arguments only: non-hinted case.
