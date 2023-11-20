@@ -271,9 +271,9 @@ module BasicString = struct
     astate
 
 
-  let constructor (this, hist) init_hist : model =
+  let constructor ~desc (this, hist) init_hist : model =
    fun {path; location} astate ->
-    let event = Hist.call_event path location "std::basic_string::basic_string()" in
+    let event = Hist.call_event path location desc in
     let<*> astate, init_data = to_internal_string path location init_hist astate in
     let<*> astate, copied_data = PulseOperations.shallow_copy path location init_data astate in
     let<+> astate =
@@ -283,6 +283,8 @@ module BasicString = struct
     in
     astate
 
+
+  let constructor_rev ~desc init this : model = constructor ~desc this init
 
   let data this_hist ~desc : model =
    fun {path; location; ret= ret_id, _} astate ->
@@ -1080,7 +1082,10 @@ let simple_matchers =
       $+ capt_arg_payload_of_prim_typ char_ptr_typ
       $--> BasicString.constructor_from_constant ~desc:"std::basic_string::basic_string()"
     ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
-      $--> BasicString.constructor
+      $--> BasicString.constructor ~desc:"std::basic_string::basic_string()"
+    ; -"std" &:: "basic_string" &:: "operator_basic_string_view" $ capt_arg_payload
+      $+ capt_arg_payload
+      $--> BasicString.constructor_rev ~desc:"std::basic_string::operator_basic_string_view()"
     ; -"std" &:: "basic_string" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
       $--> BasicString.begin_ ~desc:"std::basic_string::begin()"
     ; -"std" &:: "basic_string" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
@@ -1097,6 +1102,8 @@ let simple_matchers =
     ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
       $+ capt_arg_payload_of_prim_typ char_ptr_typ
       $--> BasicString.constructor_from_constant ~desc:"std::basic_string_view::basic_string_view()"
+    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload $+ capt_arg_payload
+      $--> BasicString.constructor ~desc:"std::basic_string_view::basic_string_view()"
     ; -"std" &:: "basic_string_view" &:: "data" <>$ capt_arg_payload
       $--> BasicString.data ~desc:"std::basic_string_view::data()"
     ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
