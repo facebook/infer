@@ -598,10 +598,7 @@ let call tenv path ~caller_proc_desc
     (* When a function call does not have a post of type ContinueProgram, we may want to treat
        the call as unknown to make the analysis continue. This may introduce false positives but
        could uncover additional true positives too. *)
-    let should_try_as_unknown =
-      Config.pulse_force_continue && Option.is_none contradiction
-      && not (has_continue_program results)
-    in
+    let should_try_as_unknown = Config.pulse_force_continue && not (has_continue_program results) in
     if should_try_as_unknown then (
       L.d_printfln_escaped ~color:Orange
         "No disjuncts of type ContinueProgram, treating the call to %a as unknown" Procname.pp
