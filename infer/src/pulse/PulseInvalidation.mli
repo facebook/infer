@@ -55,6 +55,8 @@ val pp : F.formatter -> t -> unit
 
 val describe : F.formatter -> t -> unit
 
+val suggest : t -> string option
+
 type must_be_valid_reason =
   | BlockCall
   | InsertionIntoCollectionKey

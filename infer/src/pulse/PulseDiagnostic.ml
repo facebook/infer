@@ -418,19 +418,19 @@ let get_message_and_suggestion diagnostic =
       ; invalidation
       ; invalidation_trace
       ; access_trace
-      ; must_be_valid_reason } ->
-      ((* [invalidation_trace] comes from the [Invalid] attribute and may not be about the exact
-          thing we are looking at but about some other value that happens to be equal to it (as we'll
-          keep only one such attribute per value). [access_trace] has the most accurate info and if
-          all goes well it should itself contain a sub-trace leading to how the value became invalid
-          prior to being accessed (see also [PulseReport]. *)
-       let invalidation_trace =
-         Trace.get_trace_until access_trace ~f:(function Invalidated _ -> true | _ -> false)
-         |> Option.value ~default:invalidation_trace
-       in
-       match invalidation with
-       | ConstantDereference i when IntLit.equal i IntLit.zero ->
-           let pp_access_trace fmt (trace : Trace.t) =
+      ; must_be_valid_reason } -> (
+      (* [invalidation_trace] comes from the [Invalid] attribute and may not be about the exact
+         thing we are looking at but about some other value that happens to be equal to it (as we'll
+         keep only one such attribute per value). [access_trace] has the most accurate info and if
+         all goes well it should itself contain a sub-trace leading to how the value became invalid
+         prior to being accessed (see also [PulseReport]. *)
+      let invalidation_trace =
+        Trace.get_trace_until access_trace ~f:(function Invalidated _ -> true | _ -> false)
+        |> Option.value ~default:invalidation_trace
+      in
+      match invalidation with
+      | ConstantDereference i when IntLit.equal i IntLit.zero ->
+          (let pp_access_trace fmt (trace : Trace.t) =
              match immediate_or_first_call calling_context trace with
              | `Immediate ->
                  ()
@@ -500,41 +500,45 @@ let get_message_and_suggestion diagnostic =
                  F.fprintf fmt "%a is dereferenced%a" pp_prefix "null" pp_access_trace access_trace
            in
            F.asprintf "%a%a" pp_calling_context_prefix calling_context pp_must_be_valid_reason
-             invalid_address
-       | _ ->
-           let pp_invalid_address fmt =
-             match invalid_address with
-             | SourceExpr (source_expr, _) ->
-                 F.fprintf fmt "`%a`" DecompilerExpr.pp_source_expr source_expr
-             | Unknown _ ->
-                 F.pp_print_string fmt "memory"
-           in
-           let pp_access_trace fmt (trace : Trace.t) =
-             match immediate_or_first_call calling_context trace with
-             | `Immediate ->
-                 F.fprintf fmt "accessing %t that " pp_invalid_address
-             | `Call f ->
-                 F.fprintf fmt "call to %a eventually accesses %t that " CallEvent.describe f
-                   pp_invalid_address
-           in
-           let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
-             let pp_line fmt line = F.fprintf fmt " on line %d" line in
-             match immediate_or_first_call calling_context trace with
-             | `Immediate ->
-                 F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
-             | `Call f ->
-                 F.fprintf fmt "%a during the call to %a%a" Invalidation.describe invalidation
-                   CallEvent.describe f pp_line line
-           in
-           let invalidation_line =
-             let {Location.line; _} = Trace.get_outer_location invalidation_trace in
-             line
-           in
-           F.asprintf "%a%a%a" pp_calling_context_prefix calling_context pp_access_trace
-             access_trace
-             (pp_invalidation_trace invalidation_line invalidation)
-             invalidation_trace )
-      |> no_suggestion
+             invalid_address )
+          |> no_suggestion
+      | _ ->
+          let pp_invalid_address fmt =
+            match invalid_address with
+            | SourceExpr (source_expr, _) ->
+                F.fprintf fmt "`%a`" DecompilerExpr.pp_source_expr source_expr
+            | Unknown _ ->
+                F.pp_print_string fmt "memory"
+          in
+          let pp_access_trace fmt (trace : Trace.t) =
+            match immediate_or_first_call calling_context trace with
+            | `Immediate ->
+                F.fprintf fmt "accessing %t that " pp_invalid_address
+            | `Call f ->
+                F.fprintf fmt "call to %a eventually accesses %t that " CallEvent.describe f
+                  pp_invalid_address
+          in
+          let pp_invalidation_trace line invalidation fmt (trace : Trace.t) =
+            let pp_line fmt line = F.fprintf fmt " on line %d" line in
+            match immediate_or_first_call calling_context trace with
+            | `Immediate ->
+                F.fprintf fmt "%a%a" Invalidation.describe invalidation pp_line line
+            | `Call f ->
+                F.fprintf fmt "%a during the call to %a%a" Invalidation.describe invalidation
+                  CallEvent.describe f pp_line line
+          in
+          let invalidation_line =
+            let {Location.line; _} = Trace.get_outer_location invalidation_trace in
+            line
+          in
+          let message =
+            F.asprintf "%a%a%a." pp_calling_context_prefix calling_context pp_access_trace
+              access_trace
+              (pp_invalidation_trace invalidation_line invalidation)
+              invalidation_trace
+          in
+          let suggestion = Invalidation.suggest invalidation in
+          (message, suggestion) )
   | ConfigUsage {pname; config; branch_location} ->
       F.asprintf "Function %a used config %a at %a." Procname.pp pname ConfigName.pp config
         Location.pp branch_location
