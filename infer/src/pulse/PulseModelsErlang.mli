@@ -35,5 +35,7 @@ include sig
       | GenServer of {module_name: string option}
 
     val return_value_model : erlang_value -> model [@@warning "-unused-value-declaration"]
+
+    val exists_db_model : Procname.t -> bool
   end
 end

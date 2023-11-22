@@ -1561,6 +1561,13 @@ let log_summary_count proc_name summary =
       List.fold summary_kinds ~init:String.Map.empty ~f:update
     in
     let alist = List.map ~f:(fun (s, i) -> (s, `Int i)) (String.Map.to_alist map) in
+    let alist =
+      match PulseModelsErlang.Custom.exists_db_model proc_name with
+      | true ->
+          ("ErlangDBModel", `Int 1) :: alist
+      | false ->
+          alist
+    in
     let pname = F.asprintf "%a" Procname.pp_verbose proc_name in
     `Assoc (("procname", `String pname) :: alist)
   in

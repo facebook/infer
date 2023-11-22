@@ -1518,6 +1518,11 @@ module Custom = struct
     let* db = Map.find mfa_to_db_map mfa in
     let+ m = fetch_model db mfa in
     m args
+
+
+  let exists_db_model proc_name =
+    let mfa = Fmt.to_to_string Procname.pp_verbose proc_name in
+    match Map.find mfa_to_db_map mfa with None -> false | Some _ -> true
 end
 
 module GenServer = struct
