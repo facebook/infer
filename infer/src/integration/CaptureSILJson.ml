@@ -400,7 +400,13 @@ let parse_proc_attributes_locals (json : Safe.t) : ProcAttributes.var_data =
   let n, t, _ = parse_proc_attributes_var json in
   let mib = to_bool (member "modify_in_block" json) in
   let ice = to_bool (member "is_const_expr" json) in
-  {name= n; typ= t; modify_in_block= mib; is_constexpr= ice; is_declared_unused= false; tmp_id= None}
+  { name= n
+  ; typ= t
+  ; modify_in_block= mib
+  ; is_constexpr= ice
+  ; is_declared_unused= false
+  ; has_cleanup_attribute= false
+  ; tmp_id= None }
 
 
 let parse_proc_attributes (json : Safe.t) =

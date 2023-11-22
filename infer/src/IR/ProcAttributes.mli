@@ -25,6 +25,8 @@ type var_data =
             block *)
   ; is_constexpr: bool
   ; is_declared_unused: bool  (** variable declared with attribute [unused] *)
+  ; has_cleanup_attribute: bool
+        (** variable declared with attribute [cleanup], only set in clang frontend *)
   ; tmp_id: Ident.t option
         (** the tmp id used to build the variable name in case of a temp variable, None otherwise. *)
   }
