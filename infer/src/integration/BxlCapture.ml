@@ -60,7 +60,7 @@ let capture build_cmd =
     let args_to_store =
       ["--"]
       @ Option.value_map Config.buck_dependency_depth ~default:[] ~f:(fun depth ->
-            ["--depth"; Int.to_string depth] )
+            [Printf.sprintf "--depth=%i" depth] )
       @ Option.value_map Config.buck2_inferconfig_target ~default:[] ~f:(fun target ->
             ["--inferconfig"; target] )
       @ targets_with_arg
@@ -114,7 +114,7 @@ let file_capture () =
     let args_to_store =
       ["--"]
       @ Option.value_map Config.buck_dependency_depth ~default:[] ~f:(fun depth ->
-            ["--depth"; Int.to_string depth] )
+            [Printf.sprintf "--depth=%i" depth] )
       @ files_with_arg
     in
     let buck2_build_cmd =
