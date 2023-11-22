@@ -818,3 +818,24 @@ let check_used_as_branch_cond (addr, hist) ~pname_using_config ~branch_location 
         Ok astate
     | Some s ->
         report_config_usage (FbPulseConfigName.of_string ~config_type s) )
+
+
+let cleanup_attribute_store proc_desc path loc (astate : AbductiveDomain.t) ~lhs_exp ~rhs_exp :
+    'a AccessResult.t sat_unsat_t =
+  match lhs_exp with
+  | Exp.Lvar var ->
+      let proc_attributes = Procdesc.get_attributes proc_desc in
+      let has_cleanup_attribute var =
+        List.exists
+          ~f:(fun var_data ->
+            Mangled.equal var_data.ProcAttributes.name (Pvar.get_name var)
+            && var_data.ProcAttributes.has_cleanup_attribute )
+          proc_attributes.ProcAttributes.locals
+      in
+      if has_cleanup_attribute var then
+        let** astate, (rhs_addr, _) = eval_deref path loc rhs_exp astate in
+        let astate = AbductiveDomain.AddressAttributes.remove_allocation_attr rhs_addr astate in
+        Sat (Ok astate)
+      else Sat (Ok astate)
+  | _ ->
+      Sat (Ok astate)

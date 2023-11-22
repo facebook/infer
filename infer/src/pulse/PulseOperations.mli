@@ -329,3 +329,15 @@ val check_used_as_branch_cond :
   -> AbductiveDomain.t AccessResult.t
 (** Check and report config usage issue on the abstract value that is used as branch condition. If
     it is not certain that tha abstract value is a config, it adds [UsedAsBranchCond] attribute. *)
+
+val cleanup_attribute_store :
+     Procdesc.t
+  -> PathContext.t
+  -> Location.t
+  -> t
+  -> lhs_exp:Exp.t
+  -> rhs_exp:Exp.t
+  -> t AccessResult.t sat_unsat_t
+(** When we find the store defer_ref = ref, where defer_ref has the cleanup attribute, we remove the
+    allocation attribute from ref. This is because the cleanup attribute is often used to defer
+    freeing variables, so we avoid false positives. *)

@@ -1321,6 +1321,9 @@ module PulseTransferFunctions = struct
             let** astate, lhs_addr_hist = PulseOperations.eval path Write loc lhs_exp astate in
             let hist = ValueHistory.sequence ~context:path.conditions event rhs_history in
             let** astate = and_is_int_if_integer_type typ rhs_addr astate in
+            let** astate =
+              PulseOperations.cleanup_attribute_store proc_desc path loc astate ~lhs_exp ~rhs_exp
+            in
             let=* astate =
               PulseTaintOperations.store tenv path loc ~lhs:lhs_exp
                 ~rhs:(rhs_exp, rhs_value_origin, typ) astate
