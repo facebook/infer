@@ -25,6 +25,7 @@ type var_data =
             block *)
   ; is_constexpr: bool
   ; is_declared_unused: bool  (** variable declared with attribute [unused] *)
+  ; is_structured_binding: bool  (** variable declared by structured binding *)
   ; has_cleanup_attribute: bool
         (** variable declared with attribute [cleanup], only set in clang frontend *)
   ; tmp_id: Ident.t option

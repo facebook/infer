@@ -216,6 +216,7 @@ let add_var_to_locals procdesc var_decl typ pvar =
         let is_declared_unused =
           List.exists decl_info.di_attributes ~f:(function `UnusedAttr _ -> true | _ -> false)
         in
+        let is_structured_binding = match var_decl with BindingDecl _ -> true | _ -> false in
         let has_cleanup_attribute =
           List.exists decl_info.di_attributes ~f:(function `CleanupAttr _ -> true | _ -> false)
         in
@@ -224,6 +225,7 @@ let add_var_to_locals procdesc var_decl typ pvar =
             modify_in_block
           ; is_declared_unused
           ; is_constexpr
+          ; is_structured_binding
           ; has_cleanup_attribute }
         in
         Procdesc.append_locals procdesc [var_data]

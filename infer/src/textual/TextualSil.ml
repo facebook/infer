@@ -967,6 +967,7 @@ module ProcDescBridge = struct
       ; modify_in_block= false
       ; is_constexpr= false
       ; is_declared_unused= false
+      ; is_structured_binding= false
       ; has_cleanup_attribute= false
       ; tmp_id= None }
     in

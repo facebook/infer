@@ -49,6 +49,7 @@ type var_data =
   ; modify_in_block: bool
   ; is_constexpr: bool
   ; is_declared_unused: bool
+  ; is_structured_binding: bool
   ; has_cleanup_attribute: bool
   ; tmp_id: Ident.t option }
 [@@deriving compare]
@@ -59,16 +60,18 @@ let default_var_data pvar typ =
   ; modify_in_block= false
   ; is_constexpr= false
   ; is_declared_unused= false
+  ; is_structured_binding= false
   ; has_cleanup_attribute= false
   ; tmp_id= Pvar.get_tmp_id pvar }
 
 
-let pp_var_data fmt {name; typ; modify_in_block; is_declared_unused; has_cleanup_attribute} =
+let pp_var_data fmt
+    {name; typ; modify_in_block; is_declared_unused; is_structured_binding; has_cleanup_attribute} =
   F.fprintf fmt
     "@[<h>{ name=@ %a;@ typ=@ %a;@ modify_in_block=@ %b;@ is_declared_unused=@ %b;@ \
-     has_cleanup_attribute=@ %b@ }@]"
+     is_structured_binding=@ %b;@ has_cleanup_attribute=@ %b@ }@]"
     Mangled.pp name (Typ.pp_full Pp.text) typ modify_in_block is_declared_unused
-    has_cleanup_attribute
+    is_structured_binding has_cleanup_attribute
 
 
 type specialized_with_aliasing_info = {orig_proc: Procname.t; aliases: Pvar.t list list}

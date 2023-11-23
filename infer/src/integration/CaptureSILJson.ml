@@ -405,6 +405,7 @@ let parse_proc_attributes_locals (json : Safe.t) : ProcAttributes.var_data =
   ; modify_in_block= mib
   ; is_constexpr= ice
   ; is_declared_unused= false
+  ; is_structured_binding= false
   ; has_cleanup_attribute= false
   ; tmp_id= None }
 
