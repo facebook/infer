@@ -736,6 +736,22 @@ module PulseTransferFunctions = struct
         return default_info astate
 
 
+  let rec load_is_hack_variadic_attribute callee_procname =
+    let open IOption.Let_syntax in
+    match IRAttributes.load callee_procname with
+    | Some {ProcAttributes.hack_variadic_position} ->
+        let+ n = hack_variadic_position in
+        (n, callee_procname)
+    | None ->
+        let* arity = Procname.get_hack_arity callee_procname in
+        if arity <= 0 then (
+          L.d_printfln "no attribute found for %a" Procname.pp callee_procname ;
+          None )
+        else
+          let* callee_procname = Procname.decr_hack_arity callee_procname in
+          load_is_hack_variadic_attribute callee_procname
+
+
   (* If the callee is declared variadic
         foo(param_0, ..., param_(n-1), variadic param_n)
      end call with
@@ -747,8 +763,7 @@ module PulseTransferFunctions = struct
     (let open IOption.Let_syntax in
      let module FuncArg = ProcnameDispatcher.Call.FuncArg in
      let* callee_procname in
-     let* {ProcAttributes.hack_variadic_position} = IRAttributes.load callee_procname in
-     let* n = hack_variadic_position in
+     let* n, callee_procname = load_is_hack_variadic_attribute callee_procname in
      let func_args, variadic_args = List.split_n func_args n in
      let model_data =
        { PulseModelsImport.analysis_data
@@ -772,8 +787,8 @@ module PulseTransferFunctions = struct
      L.d_printfln "variadic call with %a(%a) with %a = vec[%a]" Procname.pp_unique_id
        callee_procname (Pp.seq ~sep:"," pp) func_args pp vec_func_arg (Pp.seq ~sep:"," pp)
        variadic_args ;
-     (astate, func_args) )
-    |> Option.value ~default:(astate, func_args)
+     (astate, Some callee_procname, func_args) )
+    |> Option.value ~default:(astate, callee_procname, func_args)
 
 
   let rec dispatch_call_eval_args
@@ -810,11 +825,11 @@ module PulseTransferFunctions = struct
       else astate
     in
     let astate, func_args = add_self_for_hack_traits path call_loc astate method_info func_args in
-    let astate, func_args =
+    let astate, callee_pname, func_args =
       if Language.curr_language_is Hack then
         prepare_args_if_hack_variadic dispatch_call_eval_args analysis_data path ret func_args
           call_loc astate callee_pname
-      else (astate, func_args)
+      else (astate, callee_pname, func_args)
     in
     let astate, func_args =
       modify_receiver_if_hack_function_reference path call_loc astate func_args

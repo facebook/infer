@@ -19,11 +19,11 @@ class CallVariadic {
     \Variadic\Variadic::variadicArgInSink(\Level1\taintSource(), 0);
   }
 
-  public static function FN_callVariadicWith3ArgsBad(): void {
+  public static function callVariadicWith3ArgsBad(): void {
     \Variadic\Variadic::variadicArgInSink(0, 0, \Level1\taintSource());
   }
 
-  public static function FN_callVariadicWith3ArgsBisBad(): void {
+  public static function callVariadicWith3ArgsBisBad(): void {
     \Variadic\Variadic::variadicArgInSink(0, \Level1\taintSource(), 0);
   }
 
@@ -31,11 +31,11 @@ class CallVariadic {
     \Variadic\Variadic::callVariadic(\Level1\taintSource());
   }
 
-  public static function FN_transitiveCallVariadicWith3ArgsBad(): void {
+  public static function transitiveCallVariadicWith3ArgsBad(): void {
     \Variadic\Variadic::callVariadic(0, \Level1\taintSource());
   }
 
-  public static function FN_transitiveCallVariadicWith3ArgsBisBad(): void {
+  public static function transitiveCallVariadicWith3ArgsBisBad(): void {
     \Variadic\Variadic::callVariadic(\Level1\taintSource(), 0);
   }
 

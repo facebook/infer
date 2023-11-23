@@ -506,6 +506,9 @@ val to_filename : t -> string
 val get_qualifiers : t -> QualifiedCppName.t
 (** get qualifiers of C/objc/C++ method/function *)
 
+val decr_hack_arity : t -> t option
+(** return a Hack procname with decremented arity. Return None if input has no arity or 0 arity *)
+
 val get_hack_arity : t -> int option
 (** get the arity of a Hack procname *)
 
