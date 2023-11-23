@@ -10,37 +10,41 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
+module DSL = PulseModelsDSL
 
 let free deleted_access : model = Basic.free_or_delete `Free CFree deleted_access
 
+let invalidate path access_path location cause addr_trace : unit DSL.model_monad =
+  let open DSL.Syntax in
+  PulseOperations.invalidate path access_path location cause addr_trace |> exec_command
+
+
 let alloc_common allocator ~size_exp_opt : model =
- fun ({path; callee_procname; location; ret= ret_id, _} as model_data) astate ->
-  let ret_addr = AbstractValue.mk_fresh () in
-  let astate_alloc =
-    Basic.alloc_not_null allocator ~initialize:false size_exp_opt model_data astate
-    >>|| ExecutionDomain.continue |> SatUnsat.to_list
-  in
-  let result_null =
-    let ret_null_hist =
-      Hist.single_call path location (Procname.to_string callee_procname) ~more:"(null case)"
-    in
-    let ret_null_value = (ret_addr, ret_null_hist) in
-    PulseOperations.write_id ret_id ret_null_value astate
-    |> PulseArithmetic.and_eq_int ret_addr IntLit.zero
-    >>|| PulseOperations.invalidate path
-           (StackAddress (Var.of_id ret_id, ret_null_hist))
-           location (ConstantDereference IntLit.zero) ret_null_value
-    >>|| ExecutionDomain.continue |> SatUnsat.to_list
-  in
-  astate_alloc @ result_null
+  let open DSL.Syntax in
+  start_model
+  @@ let* {callee_procname; path; location; ret= ret_id, _} = get_data in
+     let astate_alloc = Basic.alloc_not_null allocator ~initialize:false size_exp_opt in
+     let result_null =
+       let* ret_addr =
+         mk_fresh ~model_desc:(Procname.to_string callee_procname) ~more:"(null case)" ()
+       in
+       let* () = assign_ret ret_addr in
+       let* () = and_eq_int ret_addr IntLit.zero in
+       invalidate path
+         (StackAddress (Var.of_id ret_id, snd ret_addr))
+         location (ConstantDereference IntLit.zero) ret_addr
+     in
+     disjuncts [astate_alloc; result_null]
+
+
+let alloc_not_null_common_dsl allocator ~size_exp_opt : unit DSL.model_monad =
+  let open DSL.Syntax in
+  Basic.alloc_not_null ~initialize:false allocator size_exp_opt
 
 
 let alloc_not_null_common allocator ~size_exp_opt : model =
- fun model_data astate ->
-  let<++> astate =
-    Basic.alloc_not_null ~initialize:false allocator size_exp_opt model_data astate
-  in
-  astate
+  let open DSL.Syntax in
+  start_model @@ alloc_not_null_common_dsl allocator ~size_exp_opt
 
 
 let malloc size_exp = alloc_common CMalloc ~size_exp_opt:(Some size_exp)

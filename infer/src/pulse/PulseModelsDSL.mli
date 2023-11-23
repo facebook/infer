@@ -96,7 +96,7 @@ module Syntax : sig
 
   val get_const_string : aval -> string option model_monad
 
-  val mk_fresh : model_desc:string -> aval model_monad
+  val mk_fresh : model_desc:string -> ?more:string -> unit -> aval model_monad
 
   val write_deref_field : ref:aval -> obj:aval -> Fieldname.t -> unit model_monad
 
@@ -149,6 +149,11 @@ module Syntax : sig
   val exec_command : (astate -> astate) -> unit model_monad
 
   val exec_operation : (astate -> 'a * astate) -> 'a model_monad
+
+  module Basic : sig
+    val alloc_not_null :
+      ?desc:string -> Attribute.allocator -> Exp.t option -> initialize:bool -> unit model_monad
+  end
 end
 
 (* warning: the transformation will fail if the result of the computation is not a single abstract state

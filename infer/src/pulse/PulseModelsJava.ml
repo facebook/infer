@@ -560,7 +560,7 @@ module Integer = struct
   let value_of init_value : model =
     let open DSL.Syntax in
     start_model
-    @@ let* res = mk_fresh ~model_desc:"Integer.valueOf" in
+    @@ let* res = mk_fresh ~model_desc:"Integer.valueOf" () in
        let* () = lift_to_monad (init res init_value) in
        assign_ret res
 end
@@ -592,7 +592,7 @@ module Boolean = struct
   let value_of init_value : model =
     let open DSL.Syntax in
     start_model
-    @@ let* res = mk_fresh ~model_desc:"Boolean.valueOf" in
+    @@ let* res = mk_fresh ~model_desc:"Boolean.valueOf" () in
        let* () = lift_to_monad (init res init_value) in
        assign_ret res
 end

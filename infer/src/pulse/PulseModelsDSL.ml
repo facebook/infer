@@ -254,10 +254,10 @@ module Syntax = struct
     PulseOperations.allocate attr location addr |> exec_command
 
 
-  let mk_fresh ~model_desc : aval model_monad =
+  let mk_fresh ~model_desc ?more () : aval model_monad =
     let* {path; location} = get_data in
     let addr = AbstractValue.mk_fresh () in
-    let hist = Hist.single_call path location model_desc in
+    let hist = Hist.single_call path location model_desc ?more in
     ret (addr, hist)
 
 
@@ -415,6 +415,17 @@ module Syntax = struct
     @@ fun {analysis_data; dispatch_call_eval_args; path; location} astate ->
     dispatch_call_eval_args analysis_data path ret (Const (Cfun pname)) actuals func_args location
       CallFlags.default astate (Some pname)
+
+
+  module Basic = struct
+    (* See internal_new_. We do some crafty unboxing to make the external API nicer *)
+    let alloc_not_null ?desc allocator size ~initialize : unit model_monad =
+      let model_ model_data astate =
+        let<++> astate = Basic.alloc_not_null ?desc allocator size ~initialize model_data astate in
+        astate
+      in
+      lift_to_monad model_
+  end
 end
 
 let unsafe_to_astate_transformer (monad : 'a model_monad) :
