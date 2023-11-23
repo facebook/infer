@@ -552,8 +552,15 @@ let get_loc pdesc = pdesc.attributes.loc
 let get_locals pdesc = pdesc.attributes.locals
 
 let is_local pdesc pvar =
-  List.exists (get_locals pdesc) ~f:(fun {ProcAttributes.name} ->
-      Mangled.equal name (Pvar.get_name pvar) )
+  let mangled = Pvar.get_name pvar in
+  List.exists (get_locals pdesc) ~f:(fun {ProcAttributes.name} -> Mangled.equal name mangled)
+
+
+let is_non_structured_binding_local_or_formal pdesc pvar =
+  let mangled = Pvar.get_name pvar in
+  List.exists (get_locals pdesc) ~f:(fun {ProcAttributes.name; is_structured_binding} ->
+      (not is_structured_binding) && Mangled.equal name mangled )
+  || List.exists (get_formals pdesc) ~f:(fun (formal, _, _) -> Mangled.equal mangled formal)
 
 
 (** Return name and type of captured variables *)

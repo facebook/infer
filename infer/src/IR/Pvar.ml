@@ -386,6 +386,3 @@ module Map = PrettyPrintable.MakePPMap (struct
 
   let pp = pp Pp.text
 end)
-
-let is_local_to_procedure proc_name pvar =
-  get_declaring_function pvar |> Option.exists ~f:(Procname.equal proc_name)

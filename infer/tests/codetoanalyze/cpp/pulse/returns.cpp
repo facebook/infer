@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <map>
 #include <string>
 
 namespace returns {
@@ -152,4 +153,11 @@ int try_catch_return_ok() {
   }
 }
 
+std::map<int, std::string> global_map;
+
+const int& return_structured_variable_ok() {
+  for (const auto& [key, _] : global_map) {
+    return key;
+  }
+}
 } // namespace returns

@@ -630,13 +630,13 @@ let check_address_escape escape_location proc_desc address history astate =
                    Ok () ) )
   in
   let check_address_of_stack_variable () =
-    let proc_name = Procdesc.get_proc_name proc_desc in
     IContainer.iter_result ~fold:(IContainer.fold_of_pervasives_map_fold Stack.fold) astate
       ~f:(fun (variable, (var_address, _)) ->
         if
           AbstractValue.equal var_address address
           && ( Var.is_cpp_temporary variable
-             || Var.is_local_to_procedure proc_name variable
+             || Option.exists (Var.get_pvar variable) ~f:(fun pvar ->
+                    Procdesc.is_non_structured_binding_local_or_formal proc_desc pvar )
                 && not (Procdesc.is_captured_var proc_desc variable) )
         then (
           L.d_printfln_escaped "Stack variable address &%a detected at address %a" Var.pp variable

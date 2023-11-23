@@ -49,10 +49,6 @@ let is_none = function LogicalVar id -> Ident.is_none id | _ -> false
 
 let is_this = function ProgramVar pv -> Pvar.is_this pv | LogicalVar _ -> false
 
-let is_local_to_procedure proc_name var =
-  get_pvar var |> Option.exists ~f:(fun pvar -> Pvar.is_local_to_procedure proc_name pvar)
-
-
 let get_all_vars_in_exp e =
   let acc = Exp.free_vars e |> Sequence.map ~f:of_id in
   Exp.program_vars e |> Sequence.map ~f:of_pvar |> Sequence.append acc

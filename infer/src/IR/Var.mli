@@ -36,8 +36,6 @@ val is_pvar : t -> bool
 
 val is_global : t -> bool
 
-val is_local_to_procedure : Procname.t -> t -> bool
-
 val is_return : t -> bool
 
 val is_footprint : t -> bool

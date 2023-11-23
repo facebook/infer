@@ -174,8 +174,6 @@ val is_pod : t -> bool
 (** Is the variable's type a "Plain Old Data" type (C++)? Always (potentially incorrectly) returns
     [true] for non-globals. *)
 
-val is_local_to_procedure : Procname.t -> t -> bool
-
 val get_initializer_pname : t -> Procname.t option
 (** Get the procname of the initializer function for the given global variable *)
 

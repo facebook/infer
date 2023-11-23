@@ -276,6 +276,10 @@ val is_local : t -> Pvar.t -> bool
 (** [is_local pdesc pvar] is [true] iff [pvar] is a local variable of [pdesc]. This function
     performs a linear search on the local variables of [pdesc]. *)
 
+val is_non_structured_binding_local_or_formal : t -> Pvar.t -> bool
+(** Similar to [is_local], but returns [true] when [pvar] is a non-structured-binding local variable
+    or a formal variable of [pdesc]. *)
+
 val get_nodes : t -> Node.t list
 (** Return the nodes, excluding the start node and the exit node. *)
 

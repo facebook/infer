@@ -394,20 +394,14 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
         false
   in
   let locals = Procdesc.get_locals proc_desc in
-  let formals = Procdesc.get_formals proc_desc in
   let is_constexpr_or_unused pvar =
     List.find locals ~f:(fun local_data ->
         Mangled.equal (Pvar.get_name pvar) local_data.ProcAttributes.name )
     |> Option.exists ~f:(fun local ->
            local.ProcAttributes.is_constexpr || local.ProcAttributes.is_declared_unused )
   in
-  let is_local_or_formal pvar =
-    let mangled = Pvar.get_name pvar in
-    List.exists locals ~f:(fun {ProcAttributes.name} -> Mangled.equal mangled name)
-    || List.exists formals ~f:(fun (formal, _, _) -> Mangled.equal mangled formal)
-  in
   let should_report pvar typ live_vars passed_by_ref_vars =
-    is_local_or_formal pvar
+    Procdesc.is_non_structured_binding_local_or_formal proc_desc pvar
     && not
          ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
          || is_constexpr_or_unused pvar
