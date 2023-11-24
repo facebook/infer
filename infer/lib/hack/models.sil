@@ -9,6 +9,8 @@
 declare $builtins.nondet() : int
 declare $builtins.hhbc_not(*HackBool) : *HackBool
 
+type HackDict .final {}
+
 type HackString = { val: *string }
 
 define $builtins.hack_string(str: *string): *HackMixed {
@@ -149,7 +151,7 @@ define $builtins.hhbc_check_this(o: *HackMixed): *HackMixed {
     ret null
 }
 
-type HackVec = {
+type HackVec = .final {
   __infer_model_backing_vec_fst: *HackMixed;
   __infer_model_backing_vec_snd: *HackMixed;
   __infer_model_backing_vec_size: int;
@@ -164,7 +166,7 @@ declare $builtins.hhbc_await(*HackMixed): *HackMixed
 // new snd is appended value
 // size is incremented
 // old fst is fake awaited
-define $builtins.hack_array_cow_append(v: *HackMixed, o: *HackMixed): *HackMixed {
+define $builtins.hack_array_cow_append(v: *HackVec, o: *HackMixed): *HackMixed {
   #entry:
     n0: *HackMixed = load &v
     n1: *HackMixed = load n0.HackVec.__infer_model_backing_vec_fst

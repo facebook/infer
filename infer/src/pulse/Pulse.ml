@@ -30,6 +30,7 @@ let report_topl_errors proc_desc err_log summary =
 
 let is_hack_async pname =
   Option.exists (IRAttributes.load pname) ~f:(fun attrs -> attrs.ProcAttributes.is_hack_async)
+  || Procname.is_hack_async_name pname
 
 
 let is_not_implicit_or_copy_ctor_assignment pname =
@@ -824,6 +825,18 @@ module PulseTransferFunctions = struct
         PulseTransitiveAccessChecker.record_call tenv callee_pname call_loc astate
       else astate
     in
+    let ret, ret_and_name_saved_for_hack_async =
+      match callee_pname with
+      | Some proc_name when is_hack_async proc_name ->
+          L.d_printfln "about to make asynchronous call of %a, ret=%a" Procname.pp proc_name
+            Ident.pp (fst ret) ;
+          ((Ident.create_fresh Ident.kprimed, snd ret), Some (ret, proc_name))
+      | _ ->
+          (ret, None)
+    in
+    (* if it's an async call, we're going to wrap the result in an Awaitable, so we need to create a fresh Ident.t
+       for the call to return to *)
+    L.d_printfln "return id passed to call is %a" Ident.pp (fst ret) ;
     let astate, func_args = add_self_for_hack_traits path call_loc astate method_info func_args in
     let astate, callee_pname, func_args =
       if Language.curr_language_is Hack then
@@ -907,18 +920,36 @@ module PulseTransferFunctions = struct
             in
             let+ astate =
               let astate_after_call =
-                (* TODO: move to PulseModelsHack *)
-                match callee_pname with
-                | Some proc_name when is_hack_async proc_name -> (
-                    L.d_printfln "did return from asynccall of %a, ret=%a" Procname.pp proc_name
-                      Ident.pp (fst ret) ;
+                match ret_and_name_saved_for_hack_async with
+                | Some (saved_ret, saved_name) -> (
+                    L.d_printfln "returned from asynchronous call" ;
                     match PulseOperations.read_id (fst ret) astate with
                     | None ->
                         L.d_printfln "couldn't find ret in state" ;
                         astate
-                    | Some (rv, _) ->
-                        L.d_printfln "return value %a" AbstractValue.pp rv ;
-                        PulseOperations.allocate Attribute.HackAsync call_loc rv astate )
+                    | Some (rv, vh) ->
+                        L.d_printfln "async return value %a" AbstractValue.pp rv ;
+                        let (md : PulseModelsImport.model_data) =
+                          { PulseModelsImport.analysis_data
+                          ; dispatch_call_eval_args
+                          ; path
+                          ; callee_procname= saved_name
+                          ; location= call_loc
+                          ; ret }
+                        in
+                        let awaitable_val, astate =
+                          Option.value
+                            ( (* This is a bit ugly because we're out of the DSL monad here,
+                                 but it seems better not to keep writing new lower-level stuff *)
+                              PulseModelsDSL.unsafe_to_astate_transformer
+                                (PulseModelsHack.make_new_awaitable (rv, vh))
+                                md astate
+                            |> SatUnsat.sat )
+                            ~default:((rv, vh), astate)
+                        in
+                        PulseOperations.write_id (fst saved_ret) awaitable_val astate
+                    (* Note that it's now the Awaitable object itself that's marked as HackAsync *)
+                    )
                 | _ ->
                     astate
               in

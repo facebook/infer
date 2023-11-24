@@ -294,7 +294,6 @@ module Syntax = struct
   let new_ type_name = lift_to_monad_and_get_result (internal_new_ type_name)
 
   let constructor type_name fields : aval model_monad =
-    (* let open PulseModelsDSL.Syntax in *)
     let exp =
       Exp.Sizeof
         {typ= Typ.mk_struct type_name; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
@@ -396,8 +395,9 @@ module Syntax = struct
     | Some {Typ.desc= Tstruct type_name} -> (
       match (List.find cases ~f:(fun case -> fst case |> Typ.Name.equal type_name), default) with
       | Some (_, case_fun), _ ->
-          Logging.d_printfln "[ocaml model] dynamic_dispatch: executing case for type %a"
-            Typ.Name.pp type_name ;
+          Logging.d_printfln
+            "[ocaml model] dynamic_dispatch: executing case for type %a on value %a" Typ.Name.pp
+            type_name AbstractValue.pp (fst aval) ;
           case_fun ()
       | None, Some default ->
           default ()
@@ -406,7 +406,8 @@ module Syntax = struct
             type_name ;
           unreachable )
     | _ ->
-        Logging.d_printfln "[ocaml model] No dynamic type found!" ;
+        Logging.d_printfln "[ocaml model] No dynamic type found for value %a!" AbstractValue.pp
+          (fst aval) ;
         Option.value_map default ~default:unreachable ~f:(fun f -> f ())
 
 

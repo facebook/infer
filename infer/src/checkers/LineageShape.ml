@@ -157,8 +157,8 @@ module Env : sig
     type t
 
     module Shape : sig
-      (** {1} Shape building functions. These functions will create the appropriate structure,
-          associate it to a shape in the environment and return that shape. *)
+      (** Shape building functions. These functions will create the appropriate structure, associate
+          it to a shape in the environment and return that shape. *)
 
       val variant_of_list : string list -> t -> shape
       (** The shape of a value equal to a string amongst a set of possible ones. *)

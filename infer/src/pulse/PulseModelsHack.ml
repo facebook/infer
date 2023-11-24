@@ -39,15 +39,31 @@ let payloads_of_args args = List.map ~f:payload_of_arg args
 
 let mk_hack_field clazz field = Fieldname.make (Typ.HackClass (HackClassName.make clazz)) field
 
-let await_hack_value aval : unit DSL.model_monad =
-  fst aval |> AddressAttributes.hack_async_await |> DSL.Syntax.exec_command
+let await_hack_value aval : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let class_name = "HackAwaitable" in
+  let val_field = mk_hack_field class_name "val" in
+  dynamic_dispatch aval
+    ~cases:
+      [ ( TextualSil.hack_awaitable_type_name
+        , fun () ->
+            let* () = fst aval |> AddressAttributes.hack_async_await |> DSL.Syntax.exec_command in
+            eval_deref_access Read aval (FieldAccess val_field) ) ]
+    ~default:(fun () -> ret aval)
 
 
 let hack_await arg : model =
   let open DSL.Syntax in
   start_model
-  @@ let* () = await_hack_value arg in
-     assign_ret arg
+  @@ let* rv = await_hack_value arg in
+     assign_ret rv
+
+
+let make_new_awaitable av =
+  let open DSL.Syntax in
+  let* av = constructor TextualSil.hack_awaitable_type_name [("val", av)] in
+  let* () = allocation Attribute.HackAsync av in
+  ret av
 
 
 (* vecs, similar treatment of Java collections, though these are value types
@@ -98,7 +114,9 @@ module Vec = struct
                   ret ()
               (* Do "fake" await on the values we drop on the floor. TODO: mark reachable too? *)
               | rest ->
-                  list_iter rest ~f:await_hack_value ) )
+                  list_iter rest ~f:(fun awaitable ->
+                      let* _v = await_hack_value awaitable in
+                      ret () ) ) )
     in
     let* () = prune_eq_int size (IntLit.of_int actual_size) in
     let* () = prune_eq_int dummy (IntLit.of_int 9) in
@@ -114,15 +132,17 @@ module Vec = struct
     assign_ret vec
 
 
+  (* TODO: this isn't *quite* right with respect to dummy values, but I think it's OK *)
   let vec_from_async _dummy aval : model =
     let open DSL.Syntax in
     start_model
     @@ let* fst_val = eval_deref_access Read aval (FieldAccess fst_field) in
        let* snd_val = eval_deref_access Read aval (FieldAccess snd_field) in
-       let* () = await_hack_value fst_val in
-       let* () = await_hack_value snd_val in
-       let* () = allocation Attribute.HackAsync aval in
-       assign_ret aval
+       let* awaited_fst_val = await_hack_value fst_val in
+       let* awaited_snd_val = await_hack_value snd_val in
+       let* fresh_vec = new_vec_dsl [awaited_fst_val; awaited_snd_val] in
+       let* wrapped_fresh_vec = make_new_awaitable fresh_vec in
+       assign_ret wrapped_fresh_vec
 
 
   let get_vec_dsl argv _index : DSL.aval DSL.model_monad =
@@ -190,7 +210,7 @@ module Vec = struct
     | [_key; value] ->
         let* v_fst = eval_deref_access Read vec (FieldAccess fst_field) in
         let* v_snd = eval_deref_access Read vec (FieldAccess snd_field) in
-        let* () = await_hack_value v_fst in
+        let* _v = await_hack_value v_fst in
         let* new_vec = new_vec_dsl [v_snd; value] in
         let* size = eval_deref_access Read vec (FieldAccess size_field) in
         let* () = write_deref_field ~ref:new_vec size_field ~obj:size in

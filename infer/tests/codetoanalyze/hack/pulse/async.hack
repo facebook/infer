@@ -12,9 +12,21 @@ async function an_async_not_starting_with_gen(): Awaitable<int> {
   return 42;
 }
 
-// this is not async even though the name starts with "gen"
-function generate_a_boolean(): bool {
-  return true;
+// tests for ugly naming rules, deliberately reference unknown functions
+async function testnamingOK(): Awaitable<void> {
+  generate_a_boolean(); // should not error
+}
+
+async function testnamingBad(): Awaitable<void> {
+  genFoo(); // should error
+}
+
+async function testnamingBad2(): Awaitable<void> {
+  gena(); // should error
+}
+
+async function testnamingBad3(): Awaitable<void> {
+  an_async_not_starting_with_gen(); // should error because we know decl
 }
 
 async function genOk(): Awaitable<void> {
@@ -57,12 +69,12 @@ async function genDontAwaitParam(Awaitable<int> $a): Awaitable<void> {
 
 async function genAndAwaitOk(): Awaitable<void> {
   $x = genInt();
-  genAwaitParam($x);
+  await genAwaitParam($x);
   return;
 }
 
 async function genAndAwaitBad(): Awaitable<void> {
   $x = genInt();
-  genDontAwaitParam($x);
+  await genDontAwaitParam($x);
   return;
 }

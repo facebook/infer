@@ -559,6 +559,9 @@ val is_hack_init : t -> bool
 
 val has_hack_classname : t -> bool
 
+val is_hack_async_name : t -> bool
+(* Checks if the function name starts with "gen", which is a (lint-checked) convention for it being async at Meta *)
+
 val should_create_specialized_proc : t -> bool
 
 module Normalizer : HashNormalizer.S with type t = t

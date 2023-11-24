@@ -601,6 +601,17 @@ module Hack = struct
 
   let get_arity {arity} = arity
 
+  (* TODO: replace this with a richer regexp *)
+  let is_named_genx {function_name} =
+    match String.chop_prefix function_name ~prefix:"gen" with
+    | None ->
+        false
+    | Some suffix ->
+        String.is_empty suffix
+        || String.unsafe_get suffix 0 |> Char.is_uppercase
+        || String.equal suffix "a"
+
+
   let pp verbosity fmt t =
     let pp_arity verbosity fmt =
       match verbosity with
@@ -706,6 +717,10 @@ let is_erlang_unsupported name =
       String.equal module_name ErlangTypeName.unsupported
   | _ ->
       false
+
+
+let is_hack_async_name name =
+  match name with Hack hack_name -> Hack.is_named_genx hack_name | _ -> false
 
 
 let is_erlang_call_unqualified name =

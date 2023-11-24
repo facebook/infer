@@ -22,6 +22,8 @@ val get_static_companion :
 
 val get_static_companion_var : Typ.name -> Pvar.t
 
+val make_new_awaitable : PulseModelsDSL.aval -> PulseModelsDSL.aval PulseModelsDSL.model_monad
+
 val build_vec_for_variadic_callee :
      model_data
   -> (AbstractValue.t * ValueHistory.t) list
