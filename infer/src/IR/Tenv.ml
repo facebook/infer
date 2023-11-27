@@ -299,8 +299,6 @@ let store_global ~normalize tenv =
   if Config.debug_level_capture > 0 then
     L.debug Capture Quiet "Tenv.store: global tenv has size %d bytes.@."
       (Obj.(reachable_words (repr tenv)) * (Sys.word_size_in_bits / 8)) ;
-  (* TODO(arr): normalization sometimes doesn't terminate for Hack. This needs to be investigated
-     and fixed. For now we explicitly disable normalization in Hack capture. *)
   let tenv = if normalize then Normalizer.normalize tenv else tenv in
   HashNormalizer.reset_all_normalizers () ;
   if Config.debug_level_capture > 0 then

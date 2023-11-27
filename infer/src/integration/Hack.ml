@@ -460,6 +460,7 @@ let capture ~prog ~args =
     let textual_model_tenv, hack_model_tenv = load_models compiler in
     Tenv.merge ~src:hack_model_tenv ~dst:captured_tenv ;
     Tenv.merge ~src:textual_model_tenv ~dst:captured_tenv ;
+    (* normalization already happened in the compile call through merging, no point repeating it *)
     Tenv.store_global ~normalize:false captured_tenv )
   else L.die UserError "hackc command line is missing %s subcommand" textual_subcommand
 
