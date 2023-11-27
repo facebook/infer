@@ -746,3 +746,10 @@ void known_existing_map_key_literal_ok_FP(folly::F14FastMap<int, int>& map) {
 void both_sides_assign_ok_FP(folly::F14FastMap<int, int>& map) {
   map[13] = map[17];
 }
+
+// False positive for USE_AFTER_DELETE.
+void delete_in_loop_ok_FP(folly::F14FastMap<int, int*>& map) {
+  for (auto& it : map) {
+    delete it.second;
+  }
+}
