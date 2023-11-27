@@ -201,6 +201,9 @@ DIRECT_TESTS += \
   hack_pulse \
   hack_performance \
 
+BUILD_SYSTEMS_TESTS += \
+  pulse_messages_hack \
+
 endif
 endif # BUILD_PLATFORM+BUILD_HACK_ANALYZERS
 

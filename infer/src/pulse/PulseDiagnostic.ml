@@ -722,7 +722,13 @@ let get_message_and_suggestion diagnostic =
         | `Call f ->
             F.fprintf fmt " during the call to %a" CallEvent.describe f
       in
-      F.asprintf "%t is read without initialization%t" pp_access_path pp_location |> no_suggestion
+      ( match typ with
+      | Value ->
+          F.asprintf "%t is read without initialization%t" pp_access_path pp_location
+      | Const _ ->
+          F.asprintf "%t doesn't seem to be initialized. This will cause a runtime error%t"
+            pp_access_path pp_location )
+      |> no_suggestion
   | RetainCycle {location; value; path} ->
       F.asprintf
         "Memory managed via reference counting is locked in a retain cycle at %a: `%a` retains \
