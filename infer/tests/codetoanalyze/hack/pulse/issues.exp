@@ -3,6 +3,7 @@ arg_index_matcher.hack, Main.instanceSink, 3, TAINT_ERROR, no_bucket, ERROR, [in
 async.hack, $root.testnamingBad, 2, PULSE_RESOURCE_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,allocated here,awaitable becomes unreachable here]
 async.hack, $root.testnamingBad2, 2, PULSE_RESOURCE_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,allocated here,awaitable becomes unreachable here]
 async.hack, $root.testnamingBad3, 2, PULSE_RESOURCE_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,allocated here,awaitable becomes unreachable here]
+async.hack, $root.testnamingBad4, 2, PULSE_RESOURCE_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,allocated here,awaitable becomes unreachable here]
 async.hack, $root.genBad, 2, PULSE_RESOURCE_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,allocated here,awaitable becomes unreachable here]
 async.hack, $root.genBad2, 2, PULSE_RESOURCE_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,allocated here,awaitable becomes unreachable here]
 async.hack, $root.genBadIndirect, 2, PULSE_RESOURCE_LEAK, no_bucket, ERROR, [allocation part of the trace starts here,when calling `$root.produce_awaitable_int` here,allocated here,awaitable becomes unreachable here]

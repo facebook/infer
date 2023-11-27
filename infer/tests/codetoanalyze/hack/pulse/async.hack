@@ -29,6 +29,10 @@ async function testnamingBad3(): Awaitable<void> {
   an_async_not_starting_with_gen(); // should error because we know decl
 }
 
+async function testnamingBad4(): Awaitable<void> {
+  genvxHH45(); // should error
+}
+
 async function genOk(): Awaitable<void> {
   await genInt();
 }

@@ -601,16 +601,15 @@ module Hack = struct
 
   let get_arity {arity} = arity
 
-  (* TODO: replace this with a richer regexp *)
-  let is_named_genx {function_name} =
-    match String.chop_prefix function_name ~prefix:"gen" with
-    | None ->
-        false
-    | Some suffix ->
-        String.is_empty suffix
-        || String.unsafe_get suffix 0 |> Char.is_uppercase
-        || String.equal suffix "a"
+  let r = Str.regexp {|gen\(\(a\|m\|v\)\(k\|w\|kw\)?\|x\|vx\)?\([A-Z]\([0-9a-zA-Z]*\)\)?$|}
 
+  let is_named_genx {function_name} = Str.string_match r function_name 0
+  (* recognizes "gen", optionally followed by one of the following, optionally followed by an identifier that starts with a capital letter
+     a, ak, aw, akw,
+     v, vk, vw, vkw,
+     m, mk, mw, mkw,
+     x, vx,
+  *)
 
   let pp verbosity fmt t =
     let pp_arity verbosity fmt =
