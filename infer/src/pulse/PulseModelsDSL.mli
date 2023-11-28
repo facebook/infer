@@ -86,7 +86,8 @@ module Syntax : sig
 
   val eval_deref_access : access_mode -> aval -> Access.t -> aval model_monad
 
-  val get_dynamic_type : ask_specialization:bool -> aval -> Typ.t option model_monad
+  val get_dynamic_type :
+    ask_specialization:bool -> aval -> Attribute.dynamic_type_data option model_monad
 
   val new_ : Exp.t -> aval model_monad
 

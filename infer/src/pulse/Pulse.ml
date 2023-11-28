@@ -358,11 +358,11 @@ module PulseTransferFunctions = struct
 
 
   let get_dynamic_type_name astate v =
-    match AbductiveDomain.AddressAttributes.get_dynamic_type_source_file v astate with
-    | Some ({desc= Tstruct name}, source_file_opt) ->
-        Some (name, source_file_opt)
-    | Some (t, _) ->
-        L.d_printfln "dynamic type %a of %a is not a Tstruct" (Typ.pp_full Pp.text) t
+    match AbductiveDomain.AddressAttributes.get_dynamic_type v astate with
+    | Some {typ= {desc= Tstruct name}; source_file} ->
+        Some (name, source_file)
+    | Some {typ} ->
+        L.d_printfln "dynamic type %a of %a is not a Tstruct" (Typ.pp_full Pp.text) typ
           AbstractValue.pp v ;
         None
     | None ->
@@ -472,8 +472,8 @@ module PulseTransferFunctions = struct
             (* No information is available from the [self] argument at this time, we need to
                wait for specialization *)
             (None, need_dynamic_type_specialization astate value)
-        | Some typ ->
-            (Typ.name typ, astate) )
+        | Some dynamic_type_data ->
+            (Typ.name dynamic_type_data.Attribute.typ, astate) )
     in
     (* If we spot a call on [__parent__$static], we push further and get the parent of
        [__self__$static] *)
@@ -1081,9 +1081,9 @@ module PulseTransferFunctions = struct
                   let astates : ExecutionDomain.t list option =
                     let open IOption.Let_syntax in
                     let* self_var = find_var_opt astate addr in
-                    let+ self_typ, _ =
+                    let+ {Attribute.typ} =
                       let* attrs = AbductiveDomain.AddressAttributes.find_opt addr astate in
-                      Attributes.get_dynamic_type_source_file attrs
+                      Attributes.get_dynamic_type attrs
                     in
                     let ret_id = Ident.create_fresh Ident.knormal in
                     ret_vars := Var.of_id ret_id :: !ret_vars ;
@@ -1091,7 +1091,7 @@ module PulseTransferFunctions = struct
                     let call_flags = CallFlags.default in
                     let call_exp = Exp.Const (Cfun BuiltinDecl.__objc_set_ref_count) in
                     let actuals =
-                      [ (Var.to_exp self_var, self_typ)
+                      [ (Var.to_exp self_var, typ)
                       ; (Exp.Const (Cint (IntLit.of_int count)), StdTyp.uint) ]
                     in
                     let call_instr = Sil.Call (ret, call_exp, actuals, location, call_flags) in

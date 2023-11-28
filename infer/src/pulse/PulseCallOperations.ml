@@ -537,8 +537,8 @@ let maybe_dynamic_type_specialization_is_needed specialization contradiction ast
           Option.value_map opt ~f
             ~default:(dyntypes_map, AbstractValue.Set.add addr need_specialization_from_caller)
         in
-        let** dynamic_type = AbductiveDomain.AddressAttributes.get_dynamic_type addr astate in
-        let** dynamic_type_name = Typ.name dynamic_type in
+        let** dynamic_type_data = AbductiveDomain.AddressAttributes.get_dynamic_type addr astate in
+        let** dynamic_type_name = Typ.name dynamic_type_data.Attribute.typ in
         let dyntypes_map =
           if Specialization.HeapPath.Map.mem heap_path already_specialized then dyntypes_map
           else Specialization.HeapPath.Map.add heap_path dynamic_type_name dyntypes_map

@@ -475,10 +475,6 @@ module Internal = struct
       BaseAddressAttributes.get_dynamic_type (astate.post :> base_domain).attrs addr
 
 
-    let get_dynamic_type_source_file addr astate =
-      BaseAddressAttributes.get_dynamic_type_source_file (astate.post :> base_domain).attrs addr
-
-
     let get_static_type addr astate =
       BaseAddressAttributes.get_static_type (astate.post :> base_domain).attrs addr
 
@@ -507,13 +503,9 @@ module Internal = struct
       BaseAddressAttributes.get_source_origin_of_copy addr (astate.post :> base_domain).attrs
 
 
-    let add_dynamic_type typ address astate =
-      map_post_attrs astate ~f:(BaseAddressAttributes.add_dynamic_type typ address)
-
-
-    let add_dynamic_type_source_file typ source_file address astate =
+    let add_dynamic_type {Attribute.typ; source_file} address astate =
       map_post_attrs astate
-        ~f:(BaseAddressAttributes.add_dynamic_type_source_file typ source_file address)
+        ~f:(BaseAddressAttributes.add_dynamic_type {Attribute.typ; source_file} address)
 
 
     let add_static_type typ address astate =
@@ -733,7 +725,8 @@ module Internal = struct
       Tenv.lookup tenv typ_name
       |> Option.value_map ~default:false ~f:(fun {Struct.annots} -> Annot.Item.is_final annots)
     in
-    if is_final then SafeAttributes.add_dynamic_type (Typ.mk_struct typ_name) addr astate
+    if is_final then
+      SafeAttributes.add_dynamic_type {typ= Typ.mk_struct typ_name; source_file= None} addr astate
     else SafeAttributes.add_static_type typ_name addr astate
 
 
@@ -882,7 +875,7 @@ module Internal = struct
               let attrs =
                 Option.value_map opt_addr ~default:attrs ~f:(fun addr ->
                     let typ = Typ.mk_struct typename in
-                    BaseAddressAttributes.add_dynamic_type typ addr attrs )
+                    BaseAddressAttributes.add_dynamic_type {typ; source_file= None} addr attrs )
               in
               (pre_heap, post_heap, attrs) )
             dtypes (pre.heap, post.heap, post.attrs)
@@ -1976,6 +1969,7 @@ let filter_for_summary tenv proc_name astate0 =
   let get_dynamic_type v =
     BaseAddressAttributes.get_dynamic_type (astate_before_filter.post :> BaseDomain.t).attrs
       (CanonValue.unsafe_cast v [@alert "-deprecated"])
+    |> Option.map ~f:(fun dynamic_type_data -> dynamic_type_data.Attribute.typ)
   in
   let+ path_condition, live_via_arithmetic, new_eqs =
     Formula.simplify tenv ~get_dynamic_type ~precondition_vocabulary ~keep:live_addresses
@@ -2109,7 +2103,8 @@ module Summary = struct
         ~get_dynamic_type:(fun v ->
           (* [unsafe_cast] is safe because the formula will only query canonical values *)
           BaseAddressAttributes.get_dynamic_type (astate.post :> BaseDomain.t).attrs
-            (CanonValue.unsafe_cast v [@alert "-deprecated"]) )
+            (CanonValue.unsafe_cast v [@alert "-deprecated"])
+          |> Option.map ~f:(fun dynamic_type_data -> dynamic_type_data.Attribute.typ) )
         astate.path_condition
     in
     let astate = {astate with path_condition} in
@@ -2480,12 +2475,8 @@ module AddressAttributes = struct
     SafeAttributes.is_csharp_resource_released (CanonValue.canon' astate v) astate
 
 
-  let add_dynamic_type typ v astate =
-    SafeAttributes.add_dynamic_type typ (CanonValue.canon' astate v) astate
-
-
-  let add_dynamic_type_source_file typ source_file v astate =
-    SafeAttributes.add_dynamic_type_source_file typ source_file (CanonValue.canon' astate v) astate
+  let add_dynamic_type dynamic_type_data v astate =
+    SafeAttributes.add_dynamic_type dynamic_type_data (CanonValue.canon' astate v) astate
 
 
   let add_ref_counted v astate = SafeAttributes.add_ref_counted (CanonValue.canon' astate v) astate
@@ -2508,15 +2499,11 @@ module AddressAttributes = struct
     SafeAttributes.get_dynamic_type (CanonValue.canon' astate v) astate
 
 
-  let get_dynamic_type_source_file v astate =
-    SafeAttributes.get_dynamic_type_source_file (CanonValue.canon' astate v) astate
-
-
-  let get_static_type v astate = SafeAttributes.get_static_type (CanonValue.canon' astate v) astate
-
   let get_closure_proc_name v astate =
     SafeAttributes.get_closure_proc_name (CanonValue.canon' astate v) astate
 
+
+  let get_static_type v astate = SafeAttributes.get_static_type (CanonValue.canon' astate v) astate
 
   let get_copied_into v astate = SafeAttributes.get_copied_into (CanonValue.canon' astate v) astate
 

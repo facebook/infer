@@ -91,6 +91,8 @@ module UninitializedTyp : sig
   val pp : F.formatter -> t -> unit
 end
 
+type dynamic_type_data = {typ: Typ.t; source_file: SourceFile.t option} [@@deriving compare, equal]
+
 type t =
   | AddressOfCppTemporary of Var.t * ValueHistory.t
   | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
@@ -103,7 +105,7 @@ type t =
   | CopiedReturn of
       {source: AbstractValue.t; is_const_ref: bool; from: CopyOrigin.t; copied_location: Location.t}
       (** records the copied value for the return address *)
-  | DynamicType of Typ.t * SourceFile.t option
+  | DynamicType of dynamic_type_data
   | EndOfCollection
   | Initialized
   | Invalid of Invalidation.t * Trace.t
@@ -174,7 +176,7 @@ module Attributes : sig
 
   val get_unknown_effect : t -> (CallEvent.t * ValueHistory.t) option
 
-  val get_dynamic_type_source_file : t -> (Typ.t * SourceFile.t option) option
+  val get_dynamic_type : t -> dynamic_type_data option
 
   val get_static_type : t -> Typ.Name.t option
 

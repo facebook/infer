@@ -68,7 +68,10 @@ type pulse_state =
   ; path_condition: Formula.t
   ; get_reachable: unit -> AbstractValue.Set.t }
 
-let get_dynamic_type {pulse_post} = BaseAddressAttributes.get_dynamic_type pulse_post.attrs
+let get_dynamic_type {pulse_post} value =
+  BaseAddressAttributes.get_dynamic_type pulse_post.attrs value
+  |> Option.map ~f:(fun dynamic_type_data -> dynamic_type_data.Attribute.typ)
+
 
 module Constraint : sig
   type predicate

@@ -69,13 +69,9 @@ module type S = sig
 
   val get_must_be_initialized : key -> t -> (Timestamp.t * Trace.t) option
 
-  val add_dynamic_type : Typ.t -> key -> t -> t
+  val add_dynamic_type : Attribute.dynamic_type_data -> key -> t -> t
 
-  val add_dynamic_type_source_file : Typ.t -> SourceFile.t -> key -> t -> t
-
-  val get_dynamic_type : t -> key -> Typ.t option
-
-  val get_dynamic_type_source_file : t -> key -> (Typ.t * SourceFile.t option) option
+  val get_dynamic_type : t -> key -> Attribute.dynamic_type_data option
 
   val add_static_type : Typ.Name.t -> key -> t -> t
 

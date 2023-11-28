@@ -52,8 +52,8 @@ let write_field_and_deref path location ~struct_addr ~field_addr ~field_val fiel
 let get_erlang_type_or_any val_ astate =
   let open IOption.Let_syntax in
   let typename =
-    let* typ_ = AbductiveDomain.AddressAttributes.get_dynamic_type val_ astate in
-    Typ.name typ_
+    let* {Attribute.typ} = AbductiveDomain.AddressAttributes.get_dynamic_type val_ astate in
+    Typ.name typ
   in
   match typename with Some (Typ.ErlangType erlang_type) -> erlang_type | _ -> ErlangTypeName.Any
 

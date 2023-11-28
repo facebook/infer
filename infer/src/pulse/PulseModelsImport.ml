@@ -128,7 +128,7 @@ module Basic = struct
     in
     let astate =
       if Typ.is_objc_class typ then
-        PulseOperations.add_dynamic_type_source_file typ location.file value astate
+        PulseOperations.add_dynamic_type typ ~source_file:location.file value astate
       else PulseOperations.add_dynamic_type typ value astate
     in
     let++ astate = PulseArithmetic.and_positive value astate in
@@ -377,7 +377,7 @@ module Basic = struct
       match size_exp_opt with
       | Some (Exp.Sizeof {typ}) ->
           if Typ.is_objc_class typ then
-            PulseOperations.add_dynamic_type_source_file typ location.file ret_addr astate
+            PulseOperations.add_dynamic_type typ ~source_file:location.file ret_addr astate
           else PulseOperations.add_dynamic_type typ ret_addr astate
       | _ ->
           (* The type expr is sometimes a Var expr in Java but this is not expected.

@@ -164,6 +164,9 @@ module Attribute = struct
           F.fprintf f "const(%a)" Fieldname.pp fld
   end
 
+  type dynamic_type_data = {typ: Typ.t; source_file: SourceFile.t option}
+  [@@deriving compare, equal]
+
   type t =
     | AddressOfCppTemporary of Var.t * ValueHistory.t
     | AddressOfStackVariable of Var.t * Location.t * ValueHistory.t
@@ -178,7 +181,7 @@ module Attribute = struct
         ; is_const_ref: bool
         ; from: CopyOrigin.t
         ; copied_location: Location.t }
-    | DynamicType of Typ.t * SourceFile.t option
+    | DynamicType of dynamic_type_data
     | EndOfCollection
     | Initialized
     | Invalid of Invalidation.t * Trace.t
@@ -307,7 +310,7 @@ module Attribute = struct
         F.fprintf f "CopiedReturn (%a%t by %a at %a)" AbstractValue.pp source
           (fun f -> if is_const_ref then F.pp_print_string f ":const&")
           CopyOrigin.pp from Location.pp copied_location
-    | DynamicType (typ, source_file) ->
+    | DynamicType {typ; source_file} ->
         F.fprintf f "DynamicType %a, SourceFile %a" (Typ.pp Pp.text) typ (Pp.option SourceFile.pp)
           source_file
     | EndOfCollection ->
@@ -883,9 +886,9 @@ module Attributes = struct
         | UnknownEffect (call, hist) -> (call, hist) )
 
 
-  let get_dynamic_type_source_file =
+  let get_dynamic_type =
     get_by_rank Attribute.dynamic_type_rank ~dest:(function [@warning "-partial-match"]
-        | DynamicType (typ, source_file_opt) -> (typ, source_file_opt) )
+        | DynamicType dynamic_type_data -> dynamic_type_data )
 
 
   let get_must_be_initialized =
