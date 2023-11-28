@@ -94,7 +94,7 @@ module Local = struct
   end
 end
 
-module LineageGraph = struct
+module G = struct
   (** INV: Constants occur only as sources of edges. NOTE: Constants are "local" because type [data]
       associates them with a location, in a proc. *)
 
@@ -417,7 +417,7 @@ module LineageGraph = struct
 
     type state_local = Start of Location.t | Exit of Location.t | Normal of PPNode.t
 
-    (** Like [LineageGraph.vertex], but :
+    (** Like [G.vertex], but :
 
         - Without the ability to refer to other procedures, which makes it "local".
         - With some information lost/summarised, such as fields of procedure arguments/return
@@ -927,15 +927,15 @@ end
 module Summary = struct
   type tito_arguments = Tito.t
 
-  type t = {graph: LineageGraph.t; tito_arguments: tito_arguments; has_unsupported_features: bool}
+  type t = {graph: G.t; tito_arguments: tito_arguments; has_unsupported_features: bool}
 
   let pp_tito_arguments fmt arguments =
     Format.fprintf fmt "@[@[<2>TitoArguments:@ {@;@[%a@]@]@,}@]" Tito.pp arguments
 
 
   let pp fmt {graph; tito_arguments} =
-    Format.fprintf fmt "@;@[<v2>LineageSummary.@;%a@;%a@]" pp_tito_arguments tito_arguments
-      LineageGraph.pp graph
+    Format.fprintf fmt "@;@[<v2>LineageSummary.@;%a@;%a@]" pp_tito_arguments tito_arguments G.pp
+      graph
 
 
   let tito_arguments_of_graph graph return_field_paths =
@@ -943,18 +943,18 @@ module Summary = struct
        - Collect a set of nodes that break shape preservation, due to either being abstract cells, or
          being targets of edges that have this effect. *)
     let graph_rev, shape_mixing_nodes =
-      let add_edge g {LineageGraph.E.source; target; kind} =
+      let add_edge g {G.E.source; target; kind} =
         match kind with
         | Call _ | Return _ ->
             g (* skip call/return edges *)
         | _ ->
             Map.add_multi ~key:target ~data:source g
       in
-      let add_if_shape_mixing set ({LineageGraph.E.target; _} as edge) =
-        if LineageGraph.E.preserves_shape edge then set else Set.add set target
+      let add_if_shape_mixing set ({G.E.target; _} as edge) =
+        if G.E.preserves_shape edge then set else Set.add set target
       in
       let walk_edge (g, s) edge = (add_edge g edge, add_if_shape_mixing s edge) in
-      List.fold ~init:(LineageGraph.V.Map.empty, LineageGraph.V.Set.empty) ~f:walk_edge graph
+      List.fold ~init:(G.V.Map.empty, G.V.Set.empty) ~f:walk_edge graph
     in
     (* Do a DFS, to see which arguments are reachable from a return field path. *)
     let rec dfs (shape_is_preserved, seen) node =
@@ -979,12 +979,12 @@ module Summary = struct
         List.fold ~init:(shape_is_preserved, seen) ~f:dfs parents
     in
     let collect_reachable return_field_path =
-      dfs (true, LineageGraph.V.Set.empty) (LineageGraph.V.Return return_field_path)
+      dfs (true, G.V.Set.empty) (G.V.Return return_field_path)
     in
     (* Collect reachable arguments from a Return field path. *)
     let collect_tito tito ret_field_path =
       let shape_is_preserved, reachable = collect_reachable ret_field_path in
-      Set.fold reachable ~init:tito ~f:(fun acc (node : LineageGraph.vertex) ->
+      Set.fold reachable ~init:tito ~f:(fun acc (node : G.vertex) ->
           match node with
           | Argument (arg_index, arg_field_path) ->
               Tito.add ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved acc
@@ -1018,10 +1018,10 @@ module Summary = struct
   let remove_temporaries proc_desc graph =
     (* Build adjacency list representation, to make DFS easy. *)
     let parents, children =
-      let add_edge (parents, children) ({LineageGraph.E.source; target} as edge) =
+      let add_edge (parents, children) ({G.E.source; target} as edge) =
         (Map.add_multi ~key:target ~data:edge parents, Map.add_multi ~key:source ~data:edge children)
       in
-      List.fold ~init:LineageGraph.V.Map.(empty, empty) ~f:add_edge graph
+      List.fold ~init:G.V.Map.(empty, empty) ~f:add_edge graph
     in
     (* A check for vertex interestingness, used in the graph simplification that follows. *)
     let special_variables =
@@ -1029,7 +1029,7 @@ module Summary = struct
       let ret_var = Var.of_pvar (Procdesc.get_ret_var proc_desc) in
       Var.Set.of_list (ret_var :: formals)
     in
-    let is_interesting_vertex (vertex : LineageGraph.vertex) =
+    let is_interesting_vertex (vertex : G.vertex) =
       match vertex with
       | Local (Cell cell, _node) ->
           Cell.var_appears_in_source_code cell
@@ -1041,7 +1041,7 @@ module Summary = struct
       | Function _ | Self ->
           true
     in
-    let is_interesting_edge ({kind; source; target} : LineageGraph.edge) =
+    let is_interesting_edge ({kind; source; target} : G.edge) =
       match kind with
       | Direct -> (
         match (source, target) with
@@ -1057,9 +1057,8 @@ module Summary = struct
       | Call _ | Return _ | Capture | Summary _ | DynamicCallFunction | DynamicCallModule ->
           true
     in
-    let merge_edges {LineageGraph.E.kind= kind_ab; source= source_ab; target= _; node= node_ab}
-        {LineageGraph.E.kind= kind_bc; source= _; target= target_bc; node= node_bc} :
-        LineageGraph.edge =
+    let merge_edges {G.E.kind= kind_ab; source= source_ab; target= _; node= node_ab}
+        {G.E.kind= kind_bc; source= _; target= target_bc; node= node_bc} : G.edge =
       (* Merge both edges together, keeping source of the first one, the target of the second one,
          and the kind of node of the most interesting one. The interesting order is Direct < Builtin
          < anything. *)
@@ -1078,7 +1077,7 @@ module Summary = struct
         | _ ->
             L.die InternalError "I can't merge two interesting edges together"
       in
-      {LineageGraph.E.kind; node; source= source_ab; target= target_bc}
+      {G.E.kind; node; source= source_ab; target= target_bc}
     in
     (* The set [todo] contains vertices considered for removal. We initialize this set with all
      * uninteresting vertices. The main loop of the algorithm extracts a vertex from [todo] (in
@@ -1090,16 +1089,14 @@ module Summary = struct
      * is initialized, and at most m while in the main loop. And each iteration of the main loop
      * does one deletion from the set [todo].) *)
     let todo =
-      LineageGraph.V.Set.of_list
-        (List.concat_map ~f:(function {LineageGraph.E.source; target} -> [source; target]) graph)
+      G.V.Set.of_list
+        (List.concat_map ~f:(function {G.E.source; target} -> [source; target]) graph)
     in
     let todo = Set.filter ~f:(Fn.non is_interesting_vertex) todo in
-    let remove_edge (parents, children) ({LineageGraph.E.source; target} as edge) =
+    let remove_edge (parents, children) ({G.E.source; target} as edge) =
       let rm map key =
         let edge_list = Map.find_multi map key in
-        let edge_list =
-          List.filter ~f:(fun elem -> not (LineageGraph.E.equal elem edge)) edge_list
-        in
+        let edge_list = List.filter ~f:(fun elem -> not (G.E.equal elem edge)) edge_list in
         Map.set map ~key ~data:edge_list
       in
       (rm parents target, rm children source)
@@ -1123,10 +1120,9 @@ module Summary = struct
             (* (A) remove old edges *)
             let parents, children = List.fold ~init:(parents, children) ~f:remove_edge before in
             let parents, children = List.fold ~init:(parents, children) ~f:remove_edge after in
-            let do_pair (todo, (parents, children))
-                ((edge_ab : LineageGraph.edge), (edge_bc : LineageGraph.edge)) =
+            let do_pair (todo, (parents, children)) ((edge_ab : G.edge), (edge_bc : G.edge)) =
               let keep = merge_edges edge_ab edge_bc in
-              if LineageGraph.V.equal keep.source keep.target then
+              if G.V.equal keep.source keep.target then
                 L.die InternalError "OOPS: I don't work with loops." ;
               (* (B) add new edges *)
               let parents = Map.add_multi ~key:keep.target ~data:keep parents in
@@ -1168,7 +1164,7 @@ module Summary = struct
 
 
   let report {graph; has_unsupported_features} proc_desc =
-    LineageGraph.report graph has_unsupported_features proc_desc
+    G.report graph has_unsupported_features proc_desc
 end
 
 (** A summary is computed by taking the union of all partial summaries present in the final
@@ -1176,13 +1172,13 @@ end
     But, they do not influence how abstract states are joined, widened, etc, which explains why
     below all functions having to do with the abstract domain are dummies. *)
 module PartialSummary = struct
-  type t = LineageGraph.t
+  type t = G.t
 
-  let pp = LineageGraph.pp
+  let pp = G.pp
 
-  let bottom = LineageGraph.empty
+  let bottom = G.empty
 
-  let is_bottom = LineageGraph.is_empty
+  let is_bottom = G.is_empty
 
   let leq ~lhs:_ ~rhs:_ = true
 
@@ -1205,7 +1201,7 @@ module Domain : sig
   module Src : sig
     (** Constructors for data that can be used a source node of edges in the flow graph.
 
-        Each function corresponds to a variant of the {!LineageGraph.vertex} type.
+        Each function corresponds to a variant of the {!G.vertex} type.
 
         This module does not provide constructors for [Local]-typed sources (eg. variables), as
         [Domain] itself implements functions that directly take these values as sources and fetches
@@ -1225,7 +1221,7 @@ module Domain : sig
   module Dst : sig
     (** Constructors for data that can be used as destination node of edges in the flow graph.
 
-        Each function corresponds to a variant of the {!LineageGraph.vertex} type.
+        Each function corresponds to a variant of the {!G.vertex} type.
 
         As for the {!Src} module, we don't provide [Local] destinations here (that is, [Cell] ones),
         as they should be processed differently. This is done by using the [add_write_...] family of
@@ -1240,7 +1236,7 @@ module Domain : sig
     val return : FieldPath.t -> t
   end
 
-  val get_lineage_partial_graph : t -> LineageGraph.edge list
+  val get_lineage_partial_graph : t -> G.edge list
   (** Extract the edges accumulated in an abstract state. *)
 
   val clear_graph : t -> t
@@ -1255,7 +1251,7 @@ module Domain : sig
   (** If the given procedure is an unsupported Erlang feature, record that in the abstract state. *)
 
   val add_flow_from_local_set :
-    node:PPNode.t -> kind:LineageGraph.E.Kind.t -> src:(Local.t, _) Set.t -> dst:Dst.t -> t -> t
+    node:PPNode.t -> kind:G.E.Kind.t -> src:(Local.t, _) Set.t -> dst:Dst.t -> t -> t
 
   (** {2 Add flow to non-variable nodes} *)
 
@@ -1266,7 +1262,7 @@ module Domain : sig
   val add_flow_from_path :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind:LineageGraph.E.Kind.t
+    -> kind:G.E.Kind.t
     -> src:VarPath.t
     -> dst:Dst.t
     -> t
@@ -1275,7 +1271,7 @@ module Domain : sig
   val add_flow_from_path_f :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind_f:(FieldPath.t -> LineageGraph.E.Kind.t)
+    -> kind_f:(FieldPath.t -> G.E.Kind.t)
     -> src:VarPath.t
     -> dst_f:(FieldPath.t -> Dst.t)
     -> t
@@ -1296,7 +1292,7 @@ module Domain : sig
   val add_write :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind:LineageGraph.E.Kind.t
+    -> kind:G.E.Kind.t
     -> src:Src.t
     -> dst:VarPath.t
     -> t
@@ -1305,7 +1301,7 @@ module Domain : sig
   val add_write_f :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind_f:(FieldPath.t -> LineageGraph.E.Kind.t)
+    -> kind_f:(FieldPath.t -> G.E.Kind.t)
     -> src_f:(FieldPath.t -> Src.t)
     -> dst:VarPath.t
     -> t
@@ -1320,7 +1316,7 @@ module Domain : sig
   val add_write_from_local :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind:LineageGraph.E.Kind.t
+    -> kind:G.E.Kind.t
     -> src:Local.t
     -> dst:VarPath.t
     -> t
@@ -1329,7 +1325,7 @@ module Domain : sig
   val add_write_from_local_set :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind:LineageGraph.E.Kind.t
+    -> kind:G.E.Kind.t
     -> src:(Local.t, _) Set.t
     -> dst:VarPath.t
     -> t
@@ -1338,7 +1334,7 @@ module Domain : sig
   val add_write_parallel :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind:LineageGraph.E.Kind.t
+    -> kind:G.E.Kind.t
     -> src:VarPath.t
     -> dst:VarPath.t
     -> ?exclude:(src_field_path:FieldPath.t -> dst_field_path:FieldPath.t -> bool)
@@ -1353,7 +1349,7 @@ module Domain : sig
   val add_write_product :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind:LineageGraph.E.Kind.t
+    -> kind:G.E.Kind.t
     -> src:VarPath.t
     -> dst:VarPath.t
     -> t
@@ -1384,7 +1380,7 @@ end = struct
 
 
   module Src = struct
-    type t = LineageGraph.vertex
+    type t = G.vertex
 
     let function_ procname : t = Function procname
 
@@ -1401,17 +1397,15 @@ end = struct
       let fold_local ~f ~init node ((last_writes, _), _) (local : Local.t) =
         match local with
         | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
-            f init (LineageGraph.V.Local (local, node))
+            f init (G.V.Local (local, node))
         | Cell cell ->
             let source_nodes = Real.LastWrites.get_all cell last_writes in
-            List.fold
-              ~f:(fun acc node -> f acc (LineageGraph.V.Local (local, node)))
-              ~init source_nodes
+            List.fold ~f:(fun acc node -> f acc (G.V.Local (local, node))) ~init source_nodes
     end
   end
 
   module Dst = struct
-    type t = LineageGraph.vertex
+    type t = G.vertex
 
     let captured_by i proc_name : t = CapturedBy (i, proc_name)
 
@@ -1432,7 +1426,7 @@ end = struct
 
 
   let add_edge ~node ~kind ~src ~dst ((last_writes, has_unsupported_features), graph) : t =
-    let graph = LineageGraph.add_edge ~node ~kind ~source:src ~target:dst graph in
+    let graph = G.add_edge ~node ~kind ~source:src ~target:dst graph in
     ((last_writes, has_unsupported_features), graph)
 
 
@@ -1798,7 +1792,7 @@ module TransferFunctions = struct
   let generic_call_model shapes node analyze_dependency ret_id procname args astate =
     let rm_builtin = (not Config.lineage_include_builtins) && BuiltinDecl.is_declared procname in
     let if_not_builtin transform state = if rm_builtin then state else transform state in
-    let kind_f ~shape_is_preserved : LineageGraph.E.kind =
+    let kind_f ~shape_is_preserved : G.E.kind =
       if rm_builtin then Builtin else Summary {shape_is_preserved}
     in
     astate |> Domain.record_supported procname
@@ -2072,8 +2066,8 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) (shapes 
     let start_node = CFG.start_node cfg in
     let add_arg_flow i astate arg_var =
       TransferFunctions.Domain.add_write_f ~shapes ~node:start_node
-        ~kind_f:(Fn.const LineageGraph.E.Kind.Direct)
-        ~dst:(VarPath.var arg_var) ~src_f:(Domain.Src.argument i) astate
+        ~kind_f:(Fn.const G.E.Kind.Direct) ~dst:(VarPath.var arg_var) ~src_f:(Domain.Src.argument i)
+        astate
     in
     let add_cap_flow i astate var =
       TransferFunctions.Domain.add_write ~shapes ~node:start_node ~kind:Direct
@@ -2097,8 +2091,7 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) (shapes 
         post
   in
   let final_astate =
-    Domain.add_flow_from_path_f ~shapes ~node:exit_node
-      ~kind_f:(Fn.const LineageGraph.E.Kind.Direct)
+    Domain.add_flow_from_path_f ~shapes ~node:exit_node ~kind_f:(Fn.const G.E.Kind.Direct)
       ~src:ret_var_path ~dst_f:Domain.Dst.return exit_astate
   in
   (* Collect the graph from all nodes *)
