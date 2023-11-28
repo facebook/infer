@@ -9,8 +9,7 @@
   {registered, []},
   {applications,
    [kernel,
-    stdlib,
-    jsone
+    stdlib
    ]},
   {env,[]}
  ]}.
