@@ -166,6 +166,8 @@ module Node = struct
 
   let hash node = hash_id node.id
 
+  let hash_fold_t state node = hash_fold_id state node.id
+
   let equal = [%compare.equal: t]
 
   (** Get the unique id of the node *)

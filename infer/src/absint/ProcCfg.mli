@@ -12,15 +12,13 @@ open! IStd
     backward one, or view a cfg as having a single instruction per block *)
 
 module type NodeCommonS = sig
-  type t
+  type t [@@deriving hash]
 
   type id [@@deriving compare, equal]
 
   val kind : t -> Procdesc.Node.nodekind
 
   val id : t -> id
-
-  val hash : t -> int
 
   val loc : t -> Location.t
 

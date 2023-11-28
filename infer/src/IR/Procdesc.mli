@@ -19,7 +19,7 @@ end
 (** node of the control flow graph *)
 module Node : sig
   (** type of nodes *)
-  type t [@@deriving compare]
+  type t [@@deriving compare, hash]
 
   (** node id *)
   type id = private int [@@deriving compare, equal, hash]
@@ -178,9 +178,6 @@ module Node : sig
 
   val is_dangling : t -> bool
   (** Returns true if the node is dangling, i.e. no successors and predecessors *)
-
-  val hash : t -> int
-  (** Hash function for nodes *)
 
   val pp : Format.formatter -> t -> unit
   (** Pretty print the node *)
