@@ -639,7 +639,6 @@ void ASTExporter<ATDWriter>::dumpSourceRange(SourceRange R) {
 //@atd   type_ptr : type_ptr;
 //@atd   ~is_const : bool;
 //@atd   ~is_restrict : bool;
-//@atd   ~is_trivially_copyable : bool;
 //@atd   ~is_volatile : bool;
 //@atd } <ocaml field_prefix="qt_">
 template <class ATDWriter>
@@ -648,16 +647,12 @@ void ASTExporter<ATDWriter>::dumpQualType(const QualType &qt) {
       qt.isNull() ? clang::Qualifiers() : qt.getQualifiers();
   bool isConst = Quals.hasConst();
   bool isRestrict = Quals.hasRestrict();
-  bool isTriviallyCopyable =
-      qt.isNull() ? false : qt.isTriviallyCopyableType(Context);
   bool isVolatile = Quals.hasVolatile();
-  ObjectScope oScope(
-      OF, 1 + isConst + isRestrict + isTriviallyCopyable + isVolatile);
+  ObjectScope oScope(OF, 1 + isConst + isRestrict + isVolatile);
   OF.emitTag("type_ptr");
   dumpQualTypeNoQuals(qt);
   OF.emitFlag("is_const", isConst);
   OF.emitFlag("is_restrict", isRestrict);
-  OF.emitFlag("is_trivially_copyable", isTriviallyCopyable);
   OF.emitFlag("is_volatile", isVolatile);
 }
 
@@ -1898,6 +1893,7 @@ int ASTExporter<ATDWriter>::CXXRecordDeclTupleSize() {
 //@atd   ~vbases : type_ptr list;
 //@atd   ~transitive_vbases : type_ptr list;
 //@atd   ~is_pod : bool;
+//@atd   ~is_trivially_copyable : bool;
 //@atd   ?destructor : decl_ref option;
 //@atd   ?lambda_call_operator : decl_ref option;
 //@atd   ~lambda_captures : lambda_capture_info list;
@@ -1931,14 +1927,15 @@ void ASTExporter<ATDWriter>::VisitCXXRecordDecl(const CXXRecordDecl *D) {
   unsigned numTransitiveVBases = D->getNumVBases();
   bool HasTransitiveVBases = numTransitiveVBases > 0;
   bool IsPOD = D->isPOD();
+  bool IsTriviallyCopyable = D->isTriviallyCopyable();
   const CXXDestructorDecl *DestructorDecl = D->getDestructor();
   const CXXMethodDecl *LambdaCallOperator = D->getLambdaCallOperator();
 
   auto I = D->captures_begin(), E = D->captures_end();
   ObjectScope Scope(OF,
                     0 + HasNonVBases + HasVBases + HasTransitiveVBases + IsPOD +
-                        (bool)DestructorDecl + (bool)LambdaCallOperator +
-                        (I != E));
+                        IsTriviallyCopyable + (bool)DestructorDecl +
+                        (bool)LambdaCallOperator + (I != E));
 
   if (HasNonVBases) {
     OF.emitTag("bases");
@@ -1962,6 +1959,7 @@ void ASTExporter<ATDWriter>::VisitCXXRecordDecl(const CXXRecordDecl *D) {
     }
   }
   OF.emitFlag("is_pod", IsPOD);
+  OF.emitFlag("is_trivially_copyable", IsTriviallyCopyable);
 
   if (DestructorDecl) {
     OF.emitTag("destructor");

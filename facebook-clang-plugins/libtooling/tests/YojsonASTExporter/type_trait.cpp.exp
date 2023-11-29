@@ -492,8 +492,7 @@
                         ],
                         {
                           "qual_type" : {
-                            "type_ptr" : 29,
-                            "is_trivially_copyable" : true
+                            "type_ptr" : 29
                           }
                         },
                         {
@@ -508,8 +507,7 @@
                 "template_decl" : 23,
                 "specialization_args" : [
                   <"Type" : {
-                    "type_ptr" : 30,
-                    "is_trivially_copyable" : true
+                    "type_ptr" : 30
                   }>
                 ]
               },
@@ -593,8 +591,7 @@
                         ],
                         {
                           "qual_type" : {
-                            "type_ptr" : 29,
-                            "is_trivially_copyable" : true
+                            "type_ptr" : 29
                           }
                         },
                         {
@@ -641,8 +638,7 @@
         ]
       },
       {
-        "type_ptr" : 29,
-        "is_trivially_copyable" : true
+        "type_ptr" : 29
       },
       {
         "is_global" : true,
@@ -721,8 +717,7 @@
               ],
               {
                 "qual_type" : {
-                  "type_ptr" : 39,
-                  "is_trivially_copyable" : true
+                  "type_ptr" : 39
                 }
               },
               {
@@ -735,8 +730,7 @@
           ],
           {
             "qual_type" : {
-              "type_ptr" : 29,
-              "is_trivially_copyable" : true
+              "type_ptr" : 29
             }
           }
         )>
@@ -762,8 +756,7 @@
         ]
       },
       {
-        "type_ptr" : 29,
-        "is_trivially_copyable" : true
+        "type_ptr" : 29
       },
       {
         "is_global" : true,
@@ -842,8 +835,7 @@
               ],
               {
                 "qual_type" : {
-                  "type_ptr" : 39,
-                  "is_trivially_copyable" : true
+                  "type_ptr" : 39
                 }
               },
               {
@@ -856,8 +848,7 @@
           ],
           {
             "qual_type" : {
-              "type_ptr" : 29,
-              "is_trivially_copyable" : true
+              "type_ptr" : 29
             }
           }
         )>
@@ -1290,8 +1281,7 @@
         },
         {
           "type_ptr" : 30,
-          "is_const" : true,
-          "is_trivially_copyable" : true
+          "is_const" : true
         }
       )>,
       <"PointerType" : (
@@ -1300,8 +1290,7 @@
         },
         {
           "type_ptr" : 47,
-          "is_const" : true,
-          "is_trivially_copyable" : true
+          "is_const" : true
         }
       )>,
       <"PointerType" : (
@@ -1309,8 +1298,7 @@
           "pointer" : 111
         },
         {
-          "type_ptr" : 47,
-          "is_trivially_copyable" : true
+          "type_ptr" : 47
         }
       )>,
       <"RecordType" : (
@@ -1325,8 +1313,7 @@
         },
         {
           "element_type" : {
-            "type_ptr" : 112,
-            "is_trivially_copyable" : true
+            "type_ptr" : 112
           },
           "stride" : 24
         },
@@ -1510,8 +1497,7 @@
         },
         {
           "return_type" : {
-            "type_ptr" : 29,
-            "is_trivially_copyable" : true
+            "type_ptr" : 29
           }
         },
         {
@@ -1560,8 +1546,7 @@
         },
         {
           "child_type" : {
-            "type_ptr" : 128,
-            "is_trivially_copyable" : true
+            "type_ptr" : 128
           },
           "decl_ptr" : 130
         }
@@ -1573,8 +1558,7 @@
         },
         {
           "child_type" : {
-            "type_ptr" : 129,
-            "is_trivially_copyable" : true
+            "type_ptr" : 129
           },
           "decl_ptr" : 44
         }

@@ -136,6 +136,8 @@ val find_cpp_destructor : t -> Typ.Name.t -> Procname.t option
 
 val find_cpp_constructor : t -> Typ.Name.t -> Procname.t list
 
+val is_trivially_copyable : t -> Typ.t -> bool
+
 module SQLite : SqliteUtils.Data with type t = per_file
 
 val normalize : per_file -> per_file

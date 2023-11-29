@@ -20,6 +20,7 @@ type hack_class_kind = Class | Interface | Trait
 module ClassInfo : sig
   type t =
     | NoInfo
+    | CppClassInfo of {is_trivially_copyable: bool}  (** class kind in C++ *)
     | JavaClassInfo of
         { kind: java_class_kind  (** class kind in Java *)
         ; loc: Location.t option

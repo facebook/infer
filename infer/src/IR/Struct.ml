@@ -20,6 +20,7 @@ type hack_class_kind = Class | Interface | Trait [@@deriving equal, hash, show {
 module ClassInfo = struct
   type t =
     | NoInfo
+    | CppClassInfo of {is_trivially_copyable: bool}
     | JavaClassInfo of
         { kind: java_class_kind  (** class kind in Java *)
         ; loc: Location.t option
@@ -33,9 +34,7 @@ module ClassInfo = struct
 
     let normalize t =
       match t with
-      | NoInfo ->
-          t
-      | HackClassInfo _ ->
+      | NoInfo | CppClassInfo _ | HackClassInfo _ ->
           t
       | JavaClassInfo {kind; loc} ->
           let loc' = Location.Normalizer.normalize_opt loc in
@@ -52,7 +51,7 @@ type t =
   ; methods: Procname.t list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
-  ; class_info: ClassInfo.t  (** present if and only if the class is Java or Hack *)
+  ; class_info: ClassInfo.t  (** present if and only if the class is C++, Java or Hack *)
   ; dummy: bool  (** dummy struct for class including static method *)
   ; source_file: SourceFile.t option  (** source file containing this struct's declaration *) }
 [@@deriving equal, hash]

@@ -279,8 +279,5 @@ and type_ptr_to_type_desc translate_decl tenv type_ptr : Typ.desc =
 and qual_type_to_sil_type translate_decl tenv qual_type =
   let desc = type_ptr_to_type_desc translate_decl tenv qual_type.Clang_ast_t.qt_type_ptr in
   let is_reference = CType.is_reference_type qual_type in
-  let quals =
-    Typ.mk_type_quals ~is_reference ~is_const:qual_type.Clang_ast_t.qt_is_const
-      ~is_trivially_copyable:qual_type.Clang_ast_t.qt_is_trivially_copyable ()
-  in
+  let quals = Typ.mk_type_quals ~is_reference ~is_const:qual_type.Clang_ast_t.qt_is_const () in
   Typ.mk ~quals desc

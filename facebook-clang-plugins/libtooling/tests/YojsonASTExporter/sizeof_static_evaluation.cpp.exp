@@ -221,8 +221,7 @@
             ]
           },
           {
-            "type_ptr" : 12,
-            "is_trivially_copyable" : true
+            "type_ptr" : 12
           },
           {
             "init_expr" : <"ImplicitCastExpr" : (
@@ -254,8 +253,7 @@
                   ],
                   {
                     "qual_type" : {
-                      "type_ptr" : 15,
-                      "is_trivially_copyable" : true
+                      "type_ptr" : 15
                     }
                   },
                   {
@@ -268,8 +266,7 @@
               ],
               {
                 "qual_type" : {
-                  "type_ptr" : 12,
-                  "is_trivially_copyable" : true
+                  "type_ptr" : 12
                 }
               },
               {
@@ -354,6 +351,7 @@
         "is_dependent_type" : true
       },
       {
+        "is_trivially_copyable" : true
       },
       "",
       {
@@ -388,8 +386,7 @@
         ]
       },
       {
-        "type_ptr" : 12,
-        "is_trivially_copyable" : true
+        "type_ptr" : 12
       },
       {
         "is_global" : true,
@@ -423,23 +420,20 @@
               ],
               {
                 "qual_type" : {
-                  "type_ptr" : 15,
-                  "is_trivially_copyable" : true
+                  "type_ptr" : 15
                 }
               },
               {
                 "kind" : <"SizeOfWithSize" : 1>,
                 "qual_type" : {
-                  "type_ptr" : 25,
-                  "is_trivially_copyable" : true
+                  "type_ptr" : 25
                 }
               }
             )>
           ],
           {
             "qual_type" : {
-              "type_ptr" : 12,
-              "is_trivially_copyable" : true
+              "type_ptr" : 12
             }
           },
           {
@@ -878,8 +872,7 @@
         },
         {
           "type_ptr" : 12,
-          "is_const" : true,
-          "is_trivially_copyable" : true
+          "is_const" : true
         }
       )>,
       <"PointerType" : (
@@ -888,8 +881,7 @@
         },
         {
           "type_ptr" : 25,
-          "is_const" : true,
-          "is_trivially_copyable" : true
+          "is_const" : true
         }
       )>,
       <"PointerType" : (
@@ -897,8 +889,7 @@
           "pointer" : 92
         },
         {
-          "type_ptr" : 25,
-          "is_trivially_copyable" : true
+          "type_ptr" : 25
         }
       )>,
       <"RecordType" : (
@@ -913,8 +904,7 @@
         },
         {
           "element_type" : {
-            "type_ptr" : 93,
-            "is_trivially_copyable" : true
+            "type_ptr" : 93
           },
           "stride" : 24
         },
@@ -1013,8 +1003,7 @@
         },
         {
           "child_type" : {
-            "type_ptr" : 105,
-            "is_trivially_copyable" : true
+            "type_ptr" : 105
           },
           "decl_ptr" : 107
         }
@@ -1026,8 +1015,7 @@
         },
         {
           "child_type" : {
-            "type_ptr" : 106,
-            "is_trivially_copyable" : true
+            "type_ptr" : 106
           },
           "decl_ptr" : 26
         }

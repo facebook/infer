@@ -13,7 +13,6 @@ let create_qual_type ?(quals = Typ.mk_type_quals ()) qt_type_ptr =
   { Clang_ast_t.qt_type_ptr
   ; qt_is_const= Typ.is_const quals
   ; qt_is_volatile= Typ.is_volatile quals
-  ; qt_is_trivially_copyable= Typ.is_trivially_copyable quals
   ; qt_is_restrict= Typ.is_restrict quals }
 
 

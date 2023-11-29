@@ -42,11 +42,7 @@ let append_name_info info suffix =
 
 
 let qual_type ptr =
-  { qt_type_ptr= ptr
-  ; qt_is_const= false
-  ; qt_is_restrict= false
-  ; qt_is_trivially_copyable= false
-  ; qt_is_volatile= false }
+  {qt_type_ptr= ptr; qt_is_const= false; qt_is_restrict= false; qt_is_volatile= false}
 
 
 let var_decl_info ~is_global =

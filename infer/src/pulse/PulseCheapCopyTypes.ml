@@ -7,18 +7,19 @@
 
 open! IStd
 
-let is_small_type typ = Typ.is_trivially_copyable typ.Typ.quals
+let is_small_type typ tenv = Tenv.is_trivially_copyable tenv typ
 
-let is_pair_small_type typ1 typ2 = is_small_type typ1 && is_small_type typ2
+let is_pair_small_type typ1 typ2 tenv = is_small_type typ1 tenv && is_small_type typ2 tenv
 
-let dispatch : (unit, bool, unit) ProcnameDispatcher.TypName.dispatcher =
+let dispatch : (unit, Tenv.t -> bool, unit) ProcnameDispatcher.TypName.dispatcher =
   let open ProcnameDispatcher.TypName in
   make_dispatcher
     [ -"folly" &:: "Optional" < capt_typ >--> is_small_type
-    ; -"std" &:: "filesystem" &:: "directory_iterator" <>--> true
-    ; -"std" &:: "filesystem" &:: "recursive_directory_iterator" <>--> true
+    ; (-"std" &:: "filesystem" &:: "directory_iterator" <>--> fun _ -> true)
+    ; (-"std" &:: "filesystem" &:: "recursive_directory_iterator" <>--> fun _ -> true)
     ; -"std" &:: "optional" < capt_typ >--> is_small_type
     ; -"std" &:: "pair" < capt_typ &+ capt_typ >--> is_pair_small_type ]
 
 
-let is_known_cheap_copy typ_name = dispatch () typ_name |> Option.value ~default:false
+let is_known_cheap_copy tenv typ_name =
+  Option.value_map (dispatch () typ_name) ~default:false ~f:(fun f -> f tenv)

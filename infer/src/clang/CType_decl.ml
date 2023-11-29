@@ -697,11 +697,19 @@ and add_record tenv decl_info definition_decl record_decl_info ?cxx_record_decl_
           if Typ.Name.Cpp.is_class sil_typename then Annot.Class.cpp
           else (* No annotations for structs *) Annot.Item.empty
         in
+        let class_info =
+          let is_trivially_copyable =
+            Option.exists cxx_record_decl_info ~f:(fun {Clang_ast_t.xrdi_is_trivially_copyable} ->
+                xrdi_is_trivially_copyable )
+          in
+          Struct.ClassInfo.CppClassInfo {is_trivially_copyable}
+        in
         let source_file =
           (fst decl_info.Clang_ast_t.di_source_range).sl_file
           |> Option.map ~f:SourceFile.from_abs_path
         in
-        Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ?source_file sil_typename
+        Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ~class_info ?source_file
+          sil_typename
         |> ignore ;
         CAst_utils.update_sil_types_map type_ptr sil_desc ;
         sil_desc )
@@ -716,10 +724,11 @@ and add_record tenv decl_info definition_decl record_decl_info ?cxx_record_decl_
 and get_record_struct_type tenv definition_decl : Typ.desc =
   let open Clang_ast_t in
   match definition_decl with
-  | ClassTemplateSpecializationDecl (decl_info, _, type_ptr, _, _, _, record_decl_info, _, _, _, _)
   | RecordDecl (decl_info, _, type_ptr, _, _, _, record_decl_info) ->
       add_record tenv decl_info definition_decl record_decl_info type_ptr
-  | CXXRecordDecl (decl_info, _, type_ptr, _, _, _, record_decl_info, cxx_record_decl_info) ->
+  | CXXRecordDecl (decl_info, _, type_ptr, _, _, _, record_decl_info, cxx_record_decl_info)
+  | ClassTemplateSpecializationDecl
+      (decl_info, _, type_ptr, _, _, _, record_decl_info, cxx_record_decl_info, _, _, _) ->
       add_record tenv decl_info definition_decl record_decl_info ~cxx_record_decl_info type_ptr
   | _ ->
       assert false

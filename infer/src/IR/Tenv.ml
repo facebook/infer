@@ -377,7 +377,7 @@ module MethodInfo = struct
     match class_info with
     | HackClassInfo kind ->
         Hack.get_kind ~last_class_visited class_name kind
-    | NoInfo | JavaClassInfo _ ->
+    | NoInfo | CppClassInfo _ | JavaClassInfo _ ->
         Hack.IsClass
 
 
@@ -469,3 +469,12 @@ let find_cpp_constructor tenv class_name =
             false )
   | None ->
       []
+
+
+let is_trivially_copyable tenv typ =
+  Option.exists (Typ.name typ) ~f:(fun name ->
+      match lookup tenv name with
+      | Some {class_info= CppClassInfo {is_trivially_copyable}} ->
+          is_trivially_copyable
+      | _ ->
+          false )

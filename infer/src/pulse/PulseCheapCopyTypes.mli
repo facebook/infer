@@ -7,5 +7,5 @@
 
 open! IStd
 
-val is_known_cheap_copy : Typ.name -> bool
+val is_known_cheap_copy : Tenv.t -> Typ.name -> bool
 (** Check if a struct name is known to be a cheap copy for unnecessary copy checker. *)

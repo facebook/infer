@@ -141,10 +141,10 @@ let is_modeled_as_cheap_to_copy tenv actual_typ =
       false
 
 
-let is_known_cheap_copy typ =
+let is_known_cheap_copy tenv typ =
   match typ.Typ.desc with
   | Tptr ({desc= Tstruct typename}, _) ->
-      CheapCopyTypes.is_known_cheap_copy typename
+      CheapCopyTypes.is_known_cheap_copy tenv typename
   | _ ->
       false
 
@@ -182,9 +182,9 @@ let is_smaller_than_64_bits integer_type_widths tenv typ =
 
 
 let is_cheap_to_copy_one integer_type_widths tenv typ =
-  (Typ.is_pointer typ && Typ.is_trivially_copyable (Typ.strip_ptr typ).quals)
+  (Typ.is_pointer typ && Tenv.is_trivially_copyable tenv (Typ.strip_ptr typ))
   || is_modeled_as_cheap_to_copy tenv typ
-  || is_known_cheap_copy typ
+  || is_known_cheap_copy tenv typ
   || is_smaller_than_64_bits integer_type_widths tenv typ
 
 
