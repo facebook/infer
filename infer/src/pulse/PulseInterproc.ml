@@ -892,7 +892,7 @@ let read_return_value {PathContext.conditions; timestamp} callee_proc_name call_
     | None ->
         (call_state, None)
     | Some (return_callee, return_callee_hist) ->
-        let return_caller, return_caller_hist =
+        let return_caller, default_return_caller_hist =
           match to_caller_value call_state return_callee with
           | Some return_caller_hist ->
               return_caller_hist
@@ -906,7 +906,10 @@ let read_return_value {PathContext.conditions; timestamp} callee_proc_name call_
             (Call
                {f= Call callee_proc_name; location= call_loc; in_call= return_callee_hist; timestamp}
             )
-            return_caller_hist
+            (let open Option.Monad_infix in
+             ValueHistory.get_cell_ids return_callee_hist
+             >>= ValueHistory.of_cell_ids_in_map call_state.hist_map
+             |> Option.value ~default:default_return_caller_hist )
         in
         ( call_state
         , Some
