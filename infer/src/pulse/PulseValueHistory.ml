@@ -62,6 +62,7 @@ and t =
   | BinaryOp of Binop.t * t * t
   | FromCellIds of CellId.Set.t * t
   | Multiplex of t list
+  | UnknownCall of {f: CallEvent.t; actuals: t list; location: Location.t; timestamp: Timestamp.t}
 [@@deriving compare, equal]
 
 let get_cell_ids = function
@@ -86,6 +87,15 @@ let pop_cell_ids = function
       None
 
 
+let pop_all_cell_ids hists =
+  List.fold_map hists ~init:CellId.Set.empty ~f:(fun ids hist' ->
+      match pop_cell_ids hist' with
+      | None ->
+          (ids, hist')
+      | Some (ids', hist'') ->
+          (CellId.Set.union ids ids', hist'') )
+
+
 let epoch = Epoch
 
 let in_context_f from new_context_opt ~f =
@@ -96,7 +106,7 @@ let in_context_f from new_context_opt ~f =
     match from with
     | InContext {main; context} when phys_equal context new_context ->
         InContext {main= f main; context}
-    | Epoch | Sequence _ | BinaryOp _ | InContext _ | FromCellIds _ | Multiplex _ ->
+    | Epoch | Sequence _ | BinaryOp _ | InContext _ | FromCellIds _ | Multiplex _ | UnknownCall _ ->
         InContext {main= f from; context= new_context} )
 
 
@@ -124,15 +134,12 @@ let cell_ids_first = function
     | Some (ids1, hist1'), Some (ids2, hist2') ->
         FromCellIds (CellId.Set.union ids1 ids2, BinaryOp (bop, hist1', hist2')) )
   | Multiplex hists as hist ->
-      let ids, hists' =
-        List.fold_map hists ~init:CellId.Set.empty ~f:(fun ids hist' ->
-            match pop_cell_ids hist' with
-            | None ->
-                (ids, hist')
-            | Some (ids', hist'') ->
-                (CellId.Set.union ids ids', hist'') )
-      in
+      let ids, hists' = pop_all_cell_ids hists in
       if CellId.Set.is_empty ids then hist else FromCellIds (ids, Multiplex hists')
+  | UnknownCall {f; actuals= hists; location; timestamp} as hist ->
+      let ids, hists' = pop_all_cell_ids hists in
+      if CellId.Set.is_empty ids then hist
+      else FromCellIds (ids, UnknownCall {f; actuals= hists'; location; timestamp})
 
 
 let sequence ?context event hist =
@@ -146,6 +153,10 @@ let binary_op bop hist1 hist2 = BinaryOp (bop, hist1, hist2) |> cell_ids_first
 let from_cell_id id hist = FromCellIds (CellId.Set.singleton id, hist) |> cell_ids_first
 
 let multiplex hists = Multiplex hists |> cell_ids_first
+
+let unknown_call f actuals location timestamp =
+  UnknownCall {f; actuals; location; timestamp} |> cell_ids_first
+
 
 let singleton event = Sequence (event, Epoch)
 
@@ -215,6 +226,10 @@ let pop_least_timestamp ~main_only hists0 =
         aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (hist1 :: hist2 :: hists)
     | _, Multiplex hists' :: hists ->
         aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (hists' @ hists)
+    | _, UnknownCall {f; location; timestamp} :: hists ->
+        (* cheat a bit: transform an [UnknownCall] history into a singleton [Call] history *)
+        aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t
+          (Sequence (Call {f; location; timestamp; in_call= Epoch}, Epoch) :: hists)
     | None, (Sequence (event, hist') as hist) :: hists ->
         aux (hist :: orig_hists_prefix) (hist' :: orig_hists_prefix) [event]
           (Some (timestamp_of_event event))
@@ -252,7 +267,7 @@ and rev_iter_simultaneous_events ~main_only events ~f =
   let is_nonempty = function
     | Epoch | FromCellIds (_, Epoch) ->
         false
-    | Sequence _ | InContext _ | BinaryOp _ | FromCellIds _ | Multiplex _ ->
+    | Sequence _ | InContext _ | BinaryOp _ | FromCellIds _ | Multiplex _ | UnknownCall _ ->
         true
   in
   let in_call = function Call {in_call} when is_nonempty in_call -> Some in_call | _ -> None in
@@ -291,6 +306,8 @@ and rev_iter ~main_only (history : t) ~f =
       rev_iter_branches ~main_only [hist1; hist2] ~f
   | Multiplex hists ->
       rev_iter_branches ~main_only hists ~f
+  | UnknownCall {f= f_; location; timestamp} ->
+      rev_iter_simultaneous_events ~main_only [Call {f= f_; location; timestamp; in_call= Epoch}] ~f
 
 
 let rev_iter_main = rev_iter ~main_only:true
@@ -396,6 +413,8 @@ let pp fmt history =
         F.fprintf fmt "[@[%a@]] %a [@[%a@]]" pp_aux hist1 Binop.pp bop pp_aux hist2
     | Multiplex hists ->
         F.fprintf fmt "{@[%a@]}" (Pp.seq ~sep:"; " pp_aux) hists
+    | UnknownCall {f} ->
+        F.fprintf fmt "in unknown call to %a" CallEvent.pp f
   in
   F.fprintf fmt "@[%a@]" pp_aux history
 

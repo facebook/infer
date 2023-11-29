@@ -56,8 +56,8 @@ let is_const_version_available tenv pname =
 let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallEvent.t)
     callee_pname_opt ~ret ~actuals ~formals_opt astate0 =
   let hist =
-    ValueHistory.singleton
-      (Call {f= reason; location= call_loc; in_call= ValueHistory.epoch; timestamp})
+    let actuals_hists = List.map actuals ~f:(fun ((_, hist), _) -> hist) in
+    ValueHistory.unknown_call reason actuals_hists call_loc timestamp
   in
   let ret_val = AbstractValue.mk_fresh () in
   (* record the [ReturnedFromUnknown] attribute from ret_v -> actuals for checking for modifications to copies *)

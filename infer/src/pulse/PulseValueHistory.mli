@@ -61,6 +61,7 @@ and t = private
           application to know which caller value histories should be pre-pended to a callee value
           history *)
   | Multiplex of t list  (** interlace multiple histories together *)
+  | UnknownCall of {f: CallEvent.t; actuals: t list; location: Location.t; timestamp: Timestamp.t}
 [@@deriving compare, equal, yojson_of]
 
 val epoch : t
@@ -72,6 +73,8 @@ val in_context : t list -> t -> t
 val binary_op : Binop.t -> t -> t -> t
 
 val from_cell_id : CellId.t -> t -> t
+
+val unknown_call : CallEvent.t -> t list -> Location.t -> Timestamp.t -> t
 
 val pp : F.formatter -> t -> unit
 
