@@ -27,7 +27,8 @@ module CellId = struct
     id
 
 
-  module Map = Int.Map
+  module Map = IntMap
+  module Set = IntSet
 end
 
 type event =
@@ -52,13 +53,38 @@ type event =
   | VariableAccessed of Pvar.t * Location.t * Timestamp.t
   | VariableDeclared of Pvar.t * Location.t * Timestamp.t
 
+(** INVARIANT: [InContext] always comes first in a given history, if any, then [FromCellIds], if
+    any. This is for efficient querying of context and cell ids. *)
 and t =
   | Epoch
   | Sequence of event * t
   | InContext of {main: t; context: t list}
   | BinaryOp of Binop.t * t * t
-  | FromCellId of CellId.t * t
+  | FromCellIds of CellId.Set.t * t
+  | Multiplex of t list
 [@@deriving compare, equal]
+
+let get_cell_ids = function
+  (* thanks to INVARIANT these are the only cases we need to check *)
+  | FromCellIds (ids, _) | InContext {main= FromCellIds (ids, _)} ->
+      Some ids
+  | _ ->
+      None
+
+
+let get_cell_id_exn hist =
+  let open Option.Monad_infix in
+  get_cell_ids hist >>| CellId.Set.min_elt
+
+
+let pop_cell_ids = function
+  | FromCellIds (ids, hist) ->
+      Some (ids, hist)
+  | InContext {main= FromCellIds (ids, main); context} ->
+      Some (ids, InContext {main; context})
+  | _ ->
+      None
+
 
 let epoch = Epoch
 
@@ -70,38 +96,66 @@ let in_context_f from new_context_opt ~f =
     match from with
     | InContext {main; context} when phys_equal context new_context ->
         InContext {main= f main; context}
-    | Epoch | Sequence _ | BinaryOp _ | InContext _ | FromCellId _ ->
+    | Epoch | Sequence _ | BinaryOp _ | InContext _ | FromCellIds _ | Multiplex _ ->
         InContext {main= f from; context= new_context} )
 
 
-let cell_id_first = function
-  | (Epoch | InContext _ | BinaryOp _) as hist ->
+(** assumes the given history has [FromCellIds] at the front in the *inner* (sub-)history or
+    sub-histories (i.e. INVARIANT holds of the immediate sub-history) and restores INVARIANT by
+    putting [FromCellIds] back at the front of the entire history (or just under [InContext]); used
+    for constructors of most of the variants of [t] *)
+let cell_ids_first = function
+  | (Epoch | InContext _) as hist ->
       hist
-  | Sequence (event, FromCellId (id, hist)) ->
-      FromCellId (id, Sequence (event, hist))
-  | FromCellId (id, FromCellId (_old_id, hist')) ->
-      FromCellId (id, hist')
-  | (Sequence _ | FromCellId _) as hist ->
+  | Sequence (event, FromCellIds (ids, hist)) ->
+      FromCellIds (ids, Sequence (event, hist))
+  | FromCellIds (ids, FromCellIds (ids', hist')) ->
+      FromCellIds (CellId.Set.union ids ids', hist')
+  | (Sequence _ | FromCellIds _) as hist ->
       hist
+  | BinaryOp (bop, hist1, hist2) as hist -> (
+    match (pop_cell_ids hist1, pop_cell_ids hist2) with
+    | None, None ->
+        hist
+    | Some (ids, hist1'), None ->
+        FromCellIds (ids, BinaryOp (bop, hist1', hist2))
+    | None, Some (ids, hist2') ->
+        FromCellIds (ids, BinaryOp (bop, hist1, hist2'))
+    | Some (ids1, hist1'), Some (ids2, hist2') ->
+        FromCellIds (CellId.Set.union ids1 ids2, BinaryOp (bop, hist1', hist2')) )
+  | Multiplex hists as hist ->
+      let ids, hists' =
+        List.fold_map hists ~init:CellId.Set.empty ~f:(fun ids hist' ->
+            match pop_cell_ids hist' with
+            | None ->
+                (ids, hist')
+            | Some (ids', hist'') ->
+                (CellId.Set.union ids ids', hist'') )
+      in
+      if CellId.Set.is_empty ids then hist else FromCellIds (ids, Multiplex hists')
 
 
 let sequence ?context event hist =
-  in_context_f hist context ~f:(fun hist -> Sequence (event, hist) |> cell_id_first)
+  in_context_f hist context ~f:(fun hist -> Sequence (event, hist) |> cell_ids_first)
 
 
 let in_context context hist = in_context_f hist (Some context) ~f:Fn.id
 
-let binary_op bop hist1 hist2 = BinaryOp (bop, hist1, hist2)
+let binary_op bop hist1 hist2 = BinaryOp (bop, hist1, hist2) |> cell_ids_first
 
-let from_cell_id id hist = FromCellId (id, hist) |> cell_id_first
+let from_cell_id id hist = FromCellIds (CellId.Set.singleton id, hist) |> cell_ids_first
+
+let multiplex hists = Multiplex hists |> cell_ids_first
 
 let singleton event = Sequence (event, Epoch)
 
-let get_cell_id = function
-  | FromCellId (id, _) | InContext {main= FromCellId (id, _)} ->
-      Some id
-  | _ ->
-      None
+let of_cell_ids_in_map hist_map ids =
+  let hists =
+    CellId.Set.fold
+      (fun id hists -> (CellId.Map.find_opt id hist_map |> Option.to_list) @ hists)
+      ids []
+  in
+  match hists with [] -> None | [hist] -> Some hist | _ :: _ :: _ -> Some (multiplex hists)
 
 
 let location_of_event = function
@@ -150,7 +204,7 @@ let pop_least_timestamp ~main_only hists0 =
         (latest_events, curr_ts_hists_prefix)
     | _, Epoch :: hists ->
         aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t hists
-    | _, FromCellId (_, hist) :: hists ->
+    | _, FromCellIds (_, hist) :: hists ->
         aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (hist :: hists)
     | _, InContext {main} :: hists when main_only ->
         aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (main :: hists)
@@ -159,6 +213,8 @@ let pop_least_timestamp ~main_only hists0 =
           (main :: List.rev_append context hists)
     | _, BinaryOp (_, hist1, hist2) :: hists ->
         aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (hist1 :: hist2 :: hists)
+    | _, Multiplex hists' :: hists ->
+        aux orig_hists_prefix curr_ts_hists_prefix latest_events highest_t (hists' @ hists)
     | None, (Sequence (event, hist') as hist) :: hists ->
         aux (hist :: orig_hists_prefix) (hist' :: orig_hists_prefix) [event]
           (Some (timestamp_of_event event))
@@ -194,9 +250,9 @@ let rec rev_iter_branches ~main_only hists ~f =
 
 and rev_iter_simultaneous_events ~main_only events ~f =
   let is_nonempty = function
-    | Epoch | FromCellId (_, Epoch) ->
+    | Epoch | FromCellIds (_, Epoch) ->
         false
-    | Sequence _ | InContext _ | BinaryOp _ | FromCellId _ ->
+    | Sequence _ | InContext _ | BinaryOp _ | FromCellIds _ | Multiplex _ ->
         true
   in
   let in_call = function Call {in_call} when is_nonempty in_call -> Some in_call | _ -> None in
@@ -224,7 +280,7 @@ and rev_iter ~main_only (history : t) ~f =
   | Sequence (event, rest) ->
       rev_iter_simultaneous_events ~main_only [event] ~f ;
       rev_iter ~main_only rest ~f
-  | FromCellId (_, hist) ->
+  | FromCellIds (_, hist) ->
       rev_iter ~main_only hist ~f
   | InContext {main} when main_only ->
       rev_iter ~main_only main ~f
@@ -233,6 +289,8 @@ and rev_iter ~main_only (history : t) ~f =
       rev_iter_branches ~main_only (main :: context) ~f
   | BinaryOp (_, hist1, hist2) ->
       rev_iter_branches ~main_only [hist1; hist2] ~f
+  | Multiplex hists ->
+      rev_iter_branches ~main_only hists ~f
 
 
 let rev_iter_main = rev_iter ~main_only:true
@@ -322,8 +380,8 @@ let pp fmt history =
   let rec pp_aux fmt = function
     | Epoch ->
         ()
-    | FromCellId (id, hist) ->
-        F.fprintf fmt "from_cell_id-%d;" id ;
+    | FromCellIds (ids, hist) ->
+        F.fprintf fmt "from_cell_ids%a;" CellId.Set.pp ids ;
         pp_aux fmt hist
     | Sequence ((Call {in_call} as event), tail) ->
         F.fprintf fmt "%a@;" pp_event event ;
@@ -336,6 +394,8 @@ let pp fmt history =
         F.fprintf fmt "(@[%a@]){@[%a@]}" (Pp.seq ~sep:"; " pp_aux) context pp_aux main
     | BinaryOp (bop, hist1, hist2) ->
         F.fprintf fmt "[@[%a@]] %a [@[%a@]]" pp_aux hist1 Binop.pp bop pp_aux hist2
+    | Multiplex hists ->
+        F.fprintf fmt "{@[%a@]}" (Pp.seq ~sep:"; " pp_aux) hists
   in
   F.fprintf fmt "@[%a@]" pp_aux history
 

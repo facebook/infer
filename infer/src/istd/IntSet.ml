@@ -6,4 +6,17 @@
  *)
 
 open! Core
+module F = Format
 include Caml.Set.Make (Int)
+
+let pp fmt set =
+  let is_first = ref true in
+  F.fprintf fmt "{@[<h>%a@]}"
+    (fun fmt set ->
+      iter
+        (fun elt ->
+          if not !is_first then F.pp_print_char fmt ',' ;
+          is_first := false ;
+          F.pp_print_int fmt elt )
+        set )
+    set

@@ -207,8 +207,9 @@ end
 include Unsafe
 
 let pp_hist_map fmt hist_map =
-  CellId.Map.iteri hist_map ~f:(fun ~key ~data ->
-      F.fprintf fmt "%a: %a," CellId.pp key ValueHistory.pp data )
+  CellId.Map.iter
+    (fun id hist -> F.fprintf fmt "%a: %a," CellId.pp id ValueHistory.pp hist)
+    hist_map
 
 
 let pp_call_state fmt
@@ -390,7 +391,7 @@ let visit call_state ~pre ~addr_callee cell_id ~addr_hist_caller =
       ; rev_subst= AddressMap.add addr_caller addr_callee call_state.rev_subst
       ; hist_map=
           Option.fold cell_id ~init:call_state.hist_map ~f:(fun hist_map cell_id ->
-              CellId.Map.add_exn hist_map ~key:cell_id ~data:(snd addr_hist_caller) ) } )
+              CellId.Map.add cell_id (snd addr_hist_caller) hist_map ) } )
 
 
 (** HACK: we don't need to update the [rev_subst] of a call state when generating a fresh value for
@@ -492,7 +493,7 @@ let rec materialize_pre_from_address ~pre ~addr_pre cell_id ~addr_hist_caller ca
                     in
                     let call_state = {call_state with astate} in
                     materialize_pre_from_address ~pre ~addr_pre:addr_pre_dest
-                      (ValueHistory.get_cell_id pre_hist)
+                      (ValueHistory.get_cell_id_exn pre_hist)
                       ~addr_hist_caller:addr_hist_dest_caller call_state ) ) )
 
 
@@ -508,7 +509,7 @@ let materialize_pre_from_array_index ~pre {addr_pre_dest; pre_hist; access_calle
   (* HACK: we should probably visit the value in the (array) access too, but since it's a value
      normally it shouldn't appear in the heap anyway so there should be nothing to visit. *)
   materialize_pre_from_address ~pre ~addr_pre:addr_pre_dest
-    (ValueHistory.get_cell_id pre_hist)
+    (ValueHistory.get_cell_id_exn pre_hist)
     ~addr_hist_caller:addr_hist_dest_caller call_state
 
 
@@ -527,7 +528,7 @@ let callee_deref_non_c_struct addr typ astate =
       Some (addr, None)
   | _ ->
       UnsafeMemory.find_edge_opt addr Dereference astate
-      |> Option.map ~f:(fun (value, hist) -> (value, ValueHistory.get_cell_id hist))
+      |> Option.map ~f:(fun (value, hist) -> (value, ValueHistory.get_cell_id_exn hist))
 
 
 (** materialize subgraph of [pre] rooted at the address represented by a [formal] parameter that has
@@ -572,7 +573,7 @@ let materialize_pre_for_globals path call_location ~pre call_state =
   fold_globals_of_callee_stack path call_location pre.BaseDomain.stack call_state
     ~f:(fun _var ~stack_value:(addr_pre, pre_hist) ~addr_hist_caller call_state ->
       materialize_pre_from_address ~pre ~addr_pre
-        (ValueHistory.get_cell_id pre_hist)
+        (ValueHistory.get_cell_id_exn pre_hist)
         ~addr_hist_caller call_state )
 
 
@@ -708,14 +709,14 @@ let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc
     ~edges_callee_post (addr_caller, hist_caller) call_state =
   let subst, translated_post_edges =
     UnsafeMemory.Edges.fold ~init:(call_state.subst, BaseMemory.Edges.empty) edges_callee_post
-      ~f:(fun (subst, translated_edges) (access_callee, (addr_callee, trace_post)) ->
+      ~f:(fun (subst, translated_edges) (access_callee, (addr_callee, hist_post)) ->
         let subst, (addr_curr, hist_curr) =
           subst_find_or_new call_state.astate subst addr_callee ~default_hist_caller:hist_caller
         in
         let hist_caller =
           let open Option.Monad_infix in
-          ValueHistory.get_cell_id trace_post
-          >>= CellId.Map.find call_state.hist_map
+          ValueHistory.get_cell_ids hist_post
+          >>= ValueHistory.of_cell_ids_in_map call_state.hist_map
           |> Option.value ~default:hist_curr
         in
         let subst, access = translate_access_to_caller call_state.astate subst access_callee in
@@ -723,7 +724,7 @@ let record_post_cell ({PathContext.timestamp} as path) callee_proc_name call_loc
           UnsafeMemory.Edges.add access
             ( addr_curr
             , ValueHistory.sequence ~context:path.conditions
-                (Call {f= Call callee_proc_name; location= call_loc; in_call= trace_post; timestamp})
+                (Call {f= Call callee_proc_name; location= call_loc; in_call= hist_post; timestamp})
                 hist_caller )
             translated_edges
         in

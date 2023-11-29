@@ -10,6 +10,8 @@ module CallEvent = PulseCallEvent
 module TaintItem = PulseTaintItem
 module Timestamp = PulseTimestamp
 
+(** Used to identify which cells (places in the memory) in the current precondition are mentioned in
+    a value history in the current abstract state, i.e. were used to compute that value. *)
 module CellId : sig
   type t = private int [@@deriving compare, equal, yojson_of]
 
@@ -17,7 +19,9 @@ module CellId : sig
 
   val next : unit -> t
 
-  module Map : Map.S with type Key.t = t
+  module Map : Caml.Map.S with type key = t
+
+  module Set : Caml.Set.S with type elt = t
 end
 
 type event =
@@ -52,7 +56,11 @@ and t = private
       { main: t  (** trace of the "main" value being traced *)
       ; context: t list  (** contextual traces, eg conditionals that the path is under *) }
   | BinaryOp of Binop.t * t * t  (** branch history due to a binop *)
-  | FromCellId of CellId.t * t
+  | FromCellIds of CellId.Set.t * t
+      (** the set of cells that this were used in this history; used in particular in summary
+          application to know which caller value histories should be pre-pended to a callee value
+          history *)
+  | Multiplex of t list  (** interlace multiple histories together *)
 [@@deriving compare, equal, yojson_of]
 
 val epoch : t
@@ -71,7 +79,14 @@ val pp_fields : F.formatter -> Fieldname.t RevList.t -> unit
 
 val singleton : event -> t
 
-val get_cell_id : t -> CellId.t option
+val get_cell_ids : t -> CellId.Set.t option
+
+val get_cell_id_exn : t -> CellId.t option
+(** same as [get_cell_ids] but assumes the resulting set is a singleton *)
+
+val of_cell_ids_in_map : t CellId.Map.t -> CellId.Set.t -> t option
+(** multiplex of the histories corresponding to the given cell ids according to the cell id map
+    provided; [None] if there are no such histories to multiplex together *)
 
 type iter_event =
   | EnterCall of CallEvent.t * Location.t

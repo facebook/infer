@@ -19,10 +19,7 @@ let get_outer_location = function Immediate {location; _} | ViaCall {location; _
 
 let get_outer_history = function Immediate {history; _} | ViaCall {history; _} -> history
 
-(* NOTE: Does not currently try to find multiple cell ids in case of, eg, a binary operation forking
-   the history into two. Maybe histories should collect the set of cell ids that they depend on
-   instead of a single one. *)
-let get_cell_id trace = ValueHistory.get_cell_id (get_outer_history trace)
+let get_cell_ids trace = ValueHistory.get_cell_ids (get_outer_history trace)
 
 let get_start_location trace =
   match ValueHistory.get_first_main_event (get_outer_history trace) with
@@ -49,7 +46,8 @@ let add_call call_event location hist_map ~default_caller_history callee_trace =
      refine this first guess using the cell id. *)
   let caller_history =
     let open Option.Monad_infix in
-    get_cell_id callee_trace >>= CellId.Map.find hist_map
+    get_cell_ids callee_trace
+    >>= ValueHistory.of_cell_ids_in_map hist_map
     |> Option.value ~default:default_caller_history
   in
   ViaCall {in_call= callee_trace; f= call_event; location; history= caller_history}

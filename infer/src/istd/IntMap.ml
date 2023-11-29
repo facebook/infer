@@ -5,8 +5,5 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module F = Format
-
-include Caml.Set.S with type elt = int
-
-val pp : F.formatter -> t -> unit
+open! Core
+include Caml.Map.Make (Int)
