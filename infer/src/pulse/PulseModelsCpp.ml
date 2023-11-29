@@ -640,7 +640,11 @@ module GenericMapCollection = struct
 
   let pair_first_field key_t value_t = Fieldname.make (pair_type key_t value_t) "first"
 
+  let pair_first_access key_t value_t = MemoryAccess.FieldAccess (pair_first_field key_t value_t)
+
   let pair_second_field key_t value_t = Fieldname.make (pair_type key_t value_t) "second"
+
+  let pair_second_access key_t value_t = MemoryAccess.FieldAccess (pair_second_field key_t value_t)
 
   let extract_key_and_value_types (map : 'a FuncArg.t) =
     match map.typ.desc with
@@ -662,209 +666,171 @@ module GenericMapCollection = struct
     match typ.desc with Tptr ({desc= Tstruct pointee}, _) -> pointee | _ -> assert false
 
 
-  let return_value_reference ?desc ({FuncArg.arg_payload} as map) {path; location; ret} astate =
+  let return_value_reference_dsl ?desc ({FuncArg.arg_payload} as map) :
+      unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
     let key_t, value_t = extract_key_and_value_types map in
-    let<*> astate, pair =
-      PulseOperations.eval_access path Read location arg_payload pair_access astate
-    in
-    let<+> astate, (addr, hist) =
-      PulseOperations.eval_access path Read location pair
-        (MemoryAccess.FieldAccess (pair_second_field key_t value_t))
-        astate
-    in
-    let hist =
-      match desc with Some desc -> Hist.add_call path location desc hist | None -> hist
-    in
-    PulseOperations.write_id (fst ret) (addr, hist) astate
+    let* pair = eval_access Read arg_payload pair_access in
+    let* value_ref = eval_access ?desc Read pair (pair_second_access key_t value_t) in
+    assign_ret value_ref
 
 
-  let return_it ?desc arg_payload it {path; location} astate =
-    let<*> astate, (addr, hist) =
-      PulseOperations.eval_access path Read location arg_payload pair_access astate
-    in
-    let hist =
-      match desc with Some desc -> Hist.add_call path location desc hist | None -> hist
-    in
-    let<+> astate = PulseOperations.write_deref path location ~ref:it ~obj:(addr, hist) astate in
-    astate
+  let return_value_reference desc map =
+    let open PulseModelsDSL.Syntax in
+    start_model @@ return_value_reference_dsl ~desc map
+
+
+  let return_it_dsl ?desc arg_payload it : unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    let* pair = eval_access ?desc Read arg_payload pair_access in
+    write_deref ~ref:it ~obj:pair
+
+
+  let return_it desc arg_payload it =
+    let open PulseModelsDSL.Syntax in
+    start_model @@ return_it_dsl ~desc arg_payload it
 
 
   (* A number of map functions return pair<iterator, bool>. *)
   (* Make an iterator the first field of a pair and return it. *)
-  let return_it_pair_first desc arg_payload return_arg {path; location} astate =
-    let it = (AbstractValue.mk_fresh (), Hist.single_call path location desc) in
-    let<*> astate, obj =
-      PulseOperations.eval_access path Read location arg_payload pair_access astate
-    in
-    let<*> astate = PulseOperations.write_deref path location ~ref:it ~obj astate in
-    let<+> astate =
-      PulseOperations.write_field path location ~ref:return_arg.FuncArg.arg_payload
-        (Fieldname.make (unwrap_pointer_to_struct_type return_arg.FuncArg.typ) "first")
-        ~obj:it astate
-    in
-    astate
+  let return_it_pair_first_dsl desc map_payload FuncArg.{arg_payload; typ} :
+      unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    let* it = mk_fresh ~model_desc:desc () in
+    let* pair = eval_access Read map_payload pair_access in
+    let* () = write_deref ~ref:it ~obj:pair in
+    write_field ~ref:arg_payload ~obj:it
+      (Fieldname.make (unwrap_pointer_to_struct_type typ) "first")
 
 
-  let reset_backing_fields ({FuncArg.arg_payload} as map) path location desc astate =
-    let hist = Hist.single_call path location desc in
-    let first = (AbstractValue.mk_fresh (), hist) in
-    let second = (AbstractValue.mk_fresh (), hist) in
-    let pair = (AbstractValue.mk_fresh (), hist) in
+  let reset_backing_fields_dsl ({FuncArg.arg_payload} as map) desc : unit PulseModelsDSL.model_monad
+      =
+    let open PulseModelsDSL.Syntax in
     let key_t, value_t = extract_key_and_value_types map in
-    PulseOperations.write_field path location ~ref:pair (pair_first_field key_t value_t) ~obj:first
-      astate
-    >>= PulseOperations.write_field path location ~ref:pair (pair_second_field key_t value_t)
-          ~obj:second
-    >>= PulseOperations.write_field path location ~ref:arg_payload pair_field ~obj:pair
+    let* first = mk_fresh ~model_desc:desc () in
+    let* second = mk_fresh ~model_desc:desc () in
+    let* pair = mk_fresh ~model_desc:desc () in
+    let* () = write_field ~ref:pair ~obj:first (pair_first_field key_t value_t) in
+    let* () = write_field ~ref:pair ~obj:second (pair_second_field key_t value_t) in
+    write_field ~ref:arg_payload ~obj:pair pair_field
 
 
-  let check_and_update_last arg_payload key_payload astate =
-    let double_lookup =
-      match AddressAttributes.get_last_lookup (fst arg_payload) astate with
-      | Some last ->
-          AbstractValue.equal last (fst key_payload)
-      | None ->
-          false
-    in
-    let astate =
-      AddressAttributes.add_one (fst arg_payload) (LastLookup (fst key_payload)) astate
-    in
-    (double_lookup, astate)
+  let update_last_dsl arg_payload key_payload : unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    AddressAttributes.add_one (fst arg_payload) (LastLookup (fst key_payload)) |> exec_command
 
 
-  let only_check_and_update_last arg_payload key_payload : model =
-   fun data astate ->
-    let _, astate = check_and_update_last arg_payload key_payload astate in
-    Basic.skip data astate
+  let update_last arg_payload key_payload =
+    let open PulseModelsDSL.Syntax in
+    start_model @@ update_last_dsl arg_payload key_payload
 
 
-  let constructor map_t classname map : model =
-   fun {path; location} astate ->
-    let desc = Format.asprintf "%a::%s" Invalidation.pp_map_type map_t classname in
-    let<+> astate = reset_backing_fields map path location desc astate in
-    astate
+  let check_and_update_last_dsl arg_payload key_payload : bool PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    let* last_lookup = AddressAttributes.get_last_lookup (fst arg_payload) |> exec_pure_operation in
+    let* () = update_last_dsl arg_payload key_payload in
+    ret (Option.value_map last_lookup ~default:false ~f:(AbstractValue.equal (fst key_payload)))
 
 
-  let invalidate_references map_t map_f ({FuncArg.arg_payload} as map) {path; location} astate =
+  let constructor map_t classname map =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ reset_backing_fields_dsl map
+         (Format.asprintf "%a::%s" Invalidation.pp_map_type map_t classname)
+
+
+  let invalidate_references_dsl map_t map_f ({FuncArg.arg_payload} as map) :
+      unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
     let key_t, value_t = extract_key_and_value_types map in
     let desc =
       Format.asprintf "%a::%a" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f
     in
     let cause = Invalidation.CppMap (map_t, map_f) in
-    let* astate, pair =
-      PulseOperations.eval_access path NoAccess location arg_payload pair_access astate
-    in
-    let astate =
-      PulseOperations.invalidate_access path location cause arg_payload pair_access astate
-    in
-    let astate =
-      PulseOperations.invalidate_access path location cause pair
-        (MemoryAccess.FieldAccess (pair_first_field key_t value_t))
-        astate
-    in
-    let astate =
-      PulseOperations.invalidate_access path location cause pair
-        (MemoryAccess.FieldAccess (pair_second_field key_t value_t))
-        astate
-    in
-    reset_backing_fields map path location desc astate
+    let* pair = eval_access NoAccess arg_payload pair_access in
+    let* () = invalidate_access cause arg_payload pair_access in
+    let* () = invalidate_access cause pair (pair_first_access key_t value_t) in
+    let* () = invalidate_access cause pair (pair_second_access key_t value_t) in
+    reset_backing_fields_dsl map desc
 
 
-  let only_invalidate_references map_t map_f map : model =
-   fun data astate ->
-    let<+> astate = invalidate_references map_t map_f map data astate in
-    astate
+  let invalidate_references map_t map_f map =
+    let open PulseModelsDSL.Syntax in
+    start_model @@ invalidate_references_dsl map_t map_f map
 
 
-  let operator_bracket map_t ({FuncArg.arg_payload} as map) key_payload : model =
-   fun data astate ->
-    let double_lookup, astate = check_and_update_last arg_payload key_payload astate in
-    if not double_lookup then
-      let<*> astate = invalidate_references map_t OperatorBracket map data astate in
-      return_value_reference map data astate
-    else return_value_reference map data astate
+  let operator_bracket map_t ({FuncArg.arg_payload} as map) key_payload =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* double_lookup = check_and_update_last_dsl arg_payload key_payload in
+       let* () =
+         if double_lookup then ret () else invalidate_references_dsl map_t OperatorBracket map
+       in
+       return_value_reference_dsl map
 
 
-  let emplace_hint map_t map_f ({FuncArg.arg_payload} as map) args : model =
-   fun data astate ->
+  let emplace_hint map_t map_f ({FuncArg.arg_payload} as map) args =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@
     (* We expect the last argument to be the returned iterator. *)
     (* This will only throw if SIL intermediate representation changes. *)
     let it = (List.last_exn args).FuncArg.arg_payload in
-    let<*> astate = invalidate_references map_t map_f map data astate in
-    return_it arg_payload it data astate
+    let* () = invalidate_references_dsl map_t map_f map in
+    return_it_dsl arg_payload it
 
 
-  let emplace map_t map_f ({FuncArg.arg_payload} as map) args : model =
-   fun data astate ->
+  let emplace map_t map_f ({FuncArg.arg_payload} as map) args =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@
     let desc =
       Format.asprintf "%a::%a" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f
     in
     let last_arg = List.last_exn args in
-    let<*> astate = invalidate_references map_t map_f map data astate in
-    return_it_pair_first desc arg_payload last_arg data astate
+    let* () = invalidate_references_dsl map_t map_f map in
+    return_it_pair_first_dsl desc arg_payload last_arg
 
 
-  let try_emplace ~hinted map_t map_f map args : model =
-   fun data astate ->
+  let try_emplace ~hinted map_t map_f map args =
     (* The hinted version returns an iterator, other overloads a pair<iterator, bool>. *)
-    if hinted then emplace_hint map_t map_f map args data astate
-    else emplace map_t map_f map args data astate
+    if hinted then emplace_hint map_t map_f map args else emplace map_t map_f map args
 
 
-  let insert ~hinted map_t map_f map return_arg : model =
-    try_emplace ~hinted map_t map_f map [return_arg]
+  let insert ~hinted map_t map_f map return_arg = try_emplace ~hinted map_t map_f map [return_arg]
+
+  let find map_t arg_payload key_payload it =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* () = update_last_dsl arg_payload key_payload in
+       return_it_dsl
+         ~desc:(Format.asprintf "%a::find" Invalidation.pp_map_type map_t)
+         arg_payload it
 
 
-  let find map_t arg_payload key_payload it : model =
-   fun data astate ->
-    let _, astate = check_and_update_last arg_payload key_payload astate in
-    let desc = Format.asprintf "%a::find" Invalidation.pp_map_type map_t in
-    return_it ~desc arg_payload it data astate
-
-
-  let swap map_t arg_payload other_payload : model =
-   fun {path; location} astate ->
+  let swap map_t arg_payload other_payload =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@
     let desc = Format.asprintf "%a::swap" Invalidation.pp_map_type map_t in
-    let<*> astate, (arg_addr, arg_hist) =
-      PulseOperations.eval_access path Read location arg_payload pair_access astate
-    in
-    let<*> astate, (other_addr, other_hist) =
-      PulseOperations.eval_access path Read location other_payload pair_access astate
-    in
-    let<*> astate =
-      PulseOperations.write_field path location ~ref:arg_payload pair_field
-        ~obj:(other_addr, Hist.add_call path location desc other_hist)
-        astate
-    in
-    let<+> astate =
-      PulseOperations.write_field path location ~ref:other_payload pair_field
-        ~obj:(arg_addr, Hist.add_call path location desc arg_hist)
-        astate
-    in
-    astate
+    let* arg_pair = eval_access ~desc Read arg_payload pair_access in
+    let* other_pair = eval_access ~desc Read other_payload pair_access in
+    let* () = write_field ~ref:arg_payload ~obj:other_pair pair_field in
+    write_field ~ref:other_payload ~obj:arg_pair pair_field
 
 
-  let iterator_star desc it : model =
-   fun {path; location; ret} astate ->
-    let event = Hist.call_event path location desc in
-    let<+> astate, (addr, hist) =
-      PulseOperations.eval_access path Read location it Dereference astate
-    in
-    PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
+  let iterator_star desc it =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* pair = eval_access ~desc Read it Dereference in
+       assign_ret pair
 
 
-  let iterator_copy desc it other : model =
-   fun {path; location} astate ->
-    let event = Hist.call_event path location desc in
-    let<*> astate, (addr, hist) =
-      PulseOperations.eval_access path Read location other Dereference astate
-    in
-    let<+> astate =
-      PulseOperations.write_deref path location ~ref:it
-        ~obj:(addr, Hist.add_event path event hist)
-        astate
-    in
-    astate
+  let iterator_copy desc it other =
+    let open PulseModelsDSL.Syntax in
+    start_model
+    @@ let* pair = eval_access ~desc Read other Dereference in
+       write_deref ~ref:it ~obj:pair
 end
 
 let get_cpp_matchers config ~model =
@@ -931,20 +897,20 @@ let map_matchers =
           $+...$--> GenericMapCollection.constructor map_t map_s
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "operator="
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+...$--> GenericMapCollection.only_invalidate_references map_t OperatorEqual
+          $+...$--> GenericMapCollection.invalidate_references map_t OperatorEqual
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "clear"
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
-          $--> GenericMapCollection.only_invalidate_references map_t Clear
+          $--> GenericMapCollection.invalidate_references map_t Clear
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "rehash"
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+...$--> GenericMapCollection.only_invalidate_references map_t Rehash
+          $+...$--> GenericMapCollection.invalidate_references map_t Rehash
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "reserve"
           <>$ capt_arg_of_typ (-"folly" <>:: map_s)
-          $+...$--> GenericMapCollection.only_invalidate_references map_t Reserve
+          $+...$--> GenericMapCollection.invalidate_references map_t Reserve
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "at"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
           $+...$--> GenericMapCollection.return_value_reference
-                      ~desc:(Format.asprintf "folly::%s::at" map_s)
+                      (Format.asprintf "folly::%s::at" map_s)
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "emplace_hint"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
           $++$--> GenericMapCollection.emplace_hint map_t EmplaceHint
@@ -964,17 +930,17 @@ let map_matchers =
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "begin"
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
           $+ capt_arg_payload
-          $--> GenericMapCollection.return_it ~desc:(Format.asprintf "folly::%s::begin" map_s)
+          $--> GenericMapCollection.return_it (Format.asprintf "folly::%s::begin" map_s)
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "cbegin"
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
           $+ capt_arg_payload
-          $--> GenericMapCollection.return_it ~desc:(Format.asprintf "folly::%s::cbegin" map_s)
+          $--> GenericMapCollection.return_it (Format.asprintf "folly::%s::cbegin" map_s)
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "contains"
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
-          $+ capt_arg_payload $--> GenericMapCollection.only_check_and_update_last
+          $+ capt_arg_payload $--> GenericMapCollection.update_last
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "count"
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
-          $+ capt_arg_payload $--> GenericMapCollection.only_check_and_update_last
+          $+ capt_arg_payload $--> GenericMapCollection.update_last
         ; -"folly" <>:: map_s &:: "swap"
           <>$ capt_arg_payload_of_typ (-"folly" <>:: map_s)
           $+ capt_arg_payload_of_typ (-"folly" <>:: map_s)
@@ -1019,7 +985,7 @@ let map_matchers =
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
           $+ any_arg_of_typ (-"std" &:: "initializer_list")
-          $--> GenericMapCollection.only_invalidate_references map_t Insert
+          $--> GenericMapCollection.invalidate_references map_t Insert
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
           $+ any_arg $+ any_arg $+ capt_arg
@@ -1032,7 +998,7 @@ let map_matchers =
         ; -"folly" <>:: "f14" <>:: "detail" <>:: "F14BasicMap" &:: "insert"
           $ capt_arg_of_typ (-"folly" <>:: map_s)
           $+ any_arg $+ any_arg
-          $--> GenericMapCollection.only_invalidate_references map_t Insert ] )
+          $--> GenericMapCollection.invalidate_references map_t Insert ] )
   in
   let folly_iterator_matchers =
     List.concat_map ["ValueContainerIterator"; "VectorContainerIterator"] ~f:(fun it ->

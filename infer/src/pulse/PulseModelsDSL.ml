@@ -181,6 +181,18 @@ module Syntax = struct
         ret aval
 
 
+  let eval_access ?desc access_mode aval access : aval model_monad =
+    let* {path; location} = get_data in
+    let* addr, hist =
+      PulseOperations.eval_access path access_mode location aval access
+      >> sat |> exec_partial_operation
+    in
+    let hist =
+      Option.value_map desc ~default:hist ~f:(fun desc -> Hist.add_call path location desc hist)
+    in
+    ret (addr, hist)
+
+
   let eval_deref_access access_mode aval access : aval model_monad =
     let* {path; location} = get_data in
     PulseOperations.eval_deref_access path access_mode location aval access
@@ -260,6 +272,11 @@ module Syntax = struct
     let addr = AbstractValue.mk_fresh () in
     let hist = Hist.single_call path location model_desc ?more in
     ret (addr, hist)
+
+
+  let write_field ~ref ~obj field : unit model_monad =
+    let* {path; location} = get_data in
+    PulseOperations.write_field path location ~ref ~obj field >> sat |> exec_partial_command
 
 
   let write_deref_field ~ref ~obj field : unit model_monad =
@@ -387,6 +404,12 @@ module Syntax = struct
 
   let prune_ne arg1 arg2 : unit model_monad =
     prune_binop ~negated:true Binop.Eq (aval_operand arg1) (aval_operand arg2)
+
+
+  let invalidate_access cause ref_addr_hist access : unit model_monad =
+    let* {path; location} = get_data in
+    PulseOperations.invalidate_access path location cause ref_addr_hist access
+    >> ok >> sat |> exec_partial_command
 
 
   let dynamic_dispatch ~(cases : (Typ.name * (unit -> 'a model_monad)) list)

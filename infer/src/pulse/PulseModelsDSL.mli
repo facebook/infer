@@ -84,6 +84,8 @@ module Syntax : sig
 
   val eval_to_value_origin : Exp.t -> ValueOrigin.t model_monad
 
+  val eval_access : ?desc:string -> access_mode -> aval -> Access.t -> aval model_monad
+
   val eval_deref_access : access_mode -> aval -> Access.t -> aval model_monad
 
   val get_dynamic_type :
@@ -98,6 +100,8 @@ module Syntax : sig
   val get_const_string : aval -> string option model_monad
 
   val mk_fresh : model_desc:string -> ?more:string -> unit -> aval model_monad
+
+  val write_field : ref:aval -> obj:aval -> Fieldname.t -> unit model_monad
 
   val write_deref_field : ref:aval -> obj:aval -> Fieldname.t -> unit model_monad
 
@@ -146,10 +150,15 @@ module Syntax : sig
 
   val write_deref : ref:aval -> obj:aval -> unit model_monad
 
+  (* Invalidation operations. *)
+  val invalidate_access : Invalidation.t -> aval -> Access.t -> unit model_monad
+
   (* if necessary you can convert an operation outside of this module with the following operators *)
   val exec_command : (astate -> astate) -> unit model_monad
 
   val exec_operation : (astate -> 'a * astate) -> 'a model_monad
+
+  val exec_pure_operation : (astate -> 'a) -> 'a model_monad
 
   module Basic : sig
     val alloc_not_null :
