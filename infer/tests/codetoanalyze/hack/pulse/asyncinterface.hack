@@ -5,15 +5,15 @@
 
 namespace AsyncInterface;
 
-interface  IAsync {
-  public function genFoo() : Awaitable<int>;
+interface IAsync {
+  public function genFoo(): Awaitable<int>;
 }
 
- async function  callinterfaceOK(IAsync $a) : Awaitable<int>{
+async function callinterfaceOK(IAsync $a): Awaitable<int> {
   return await $a->genFoo();
 }
 
- async function  callinterfaceBad(IAsync $a) : Awaitable<int>{
+async function callinterfaceBad(IAsync $a): Awaitable<int> {
   $x = $a->genFoo();
   return 42;
 }
