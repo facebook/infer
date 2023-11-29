@@ -305,6 +305,15 @@
     { "class_with_annotation": "codetoanalyze.java.pulse.SensitiveSourceMarker2",
       "class_name_regex": "RegexAndAnnotation.*",
       "procedure_regex": "source.*"
+    },
+    {
+      "procedure_regex": ".*",
+      "taint_target": [
+        "ArgumentsMatchingTypes",
+        [
+          "SensitiveClass"
+        ]
+      ]
     }
   ],
   "pulse-taint-sinks": [

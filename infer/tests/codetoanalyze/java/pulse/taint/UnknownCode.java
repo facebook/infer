@@ -10,12 +10,18 @@ package codetoanalyze.java.pulse;
 import android.content.Intent;
 import android.os.Parcel;
 
+class SensitiveClass {
+  native Object getId();
+}
+
 /** testing how the analysis handles missing/unknown code */
 public abstract class UnknownCode {
 
   static native Object nativeMethod(Object o);
 
   abstract Object abstractMethod(Object o);
+
+  static void inferSensitiveSink(Object o) {}
 
   static interface Interface {
     Object interfaceMethod(Object o);
@@ -97,5 +103,13 @@ public abstract class UnknownCode {
     Object source = InferTaint.inferSecretSource();
     Object launderedSource = nativeMethod(source);
     InferTaint.inferSensitiveSink(launderedSource);
+  }
+
+  static void FP_propagatedTaintUnrelated(SensitiveClass sc) {
+    Object t1 = nativeMethod(sc.getId());
+    Object t2 = nativeMethod(null);
+    if (t1 == t2) {
+      InferTaint.inferSensitiveSink(t2);
+    }
   }
 }
