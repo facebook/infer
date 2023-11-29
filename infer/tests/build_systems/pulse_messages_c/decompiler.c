@@ -69,7 +69,7 @@ void trace_outer_name_return_complex() {
   free(x);
 }
 
-void deref(int* x, int* y) {
+void deref_both(int* x, int* y) {
   *x = 42;
   *y = 52;
 }
@@ -84,7 +84,7 @@ void trace_outer_alias_return_indirect_deref_complex() {
     x->ptr = y;
     int z;
     int* p = &z;
-    deref((p+0), x->ptr);
+    deref_both((p + 0), x->ptr);
     y = y;
   }
   free(x);
@@ -107,5 +107,5 @@ void array_deref_of_address() {
 
 void pass_null_to_deref() {
   int z = 11;
-  deref(NULL, &z);
+  deref_both(NULL, &z);
 }

@@ -34,7 +34,8 @@ BUILD_SYSTEMS_TESTS += \
   j1 \
   missing_deps \
   project_root_rel \
-  pulse_messages \
+  pulse_messages_c \
+  pulse_messages_cpp \
   reactive \
   replay_scheduler \
   results_xml \

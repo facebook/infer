@@ -1,0 +1,28 @@
+{
+  "pulse-taint-sources": [
+      {"procedure": "int_source", "kinds": ["Simple"]},
+      {"procedure": "float_source", "kinds": ["Simple"]},
+      { "procedure": "taint_structure",
+        "kinds": ["Simple"],
+        "taint_target": ["ArgumentPositions", [0]]},
+      { "procedure": "taint_manipulated",
+        "kinds": ["Simple"],
+        "taint_target": ["FieldsOfValue", [["manipulated", ["ArgumentPositions", [0]]]]]}
+  ],
+  "pulse-taint-sinks": [
+      {"procedure": "sink_int", "kinds": ["Simple"]},
+      {"procedure": "printf", "kinds": ["Simple"]},
+      { "procedure": "sink_manipulated",
+        "kinds": ["Simple"],
+        "taint_target": ["FieldsOfValue", [["manipulated", ["ArgumentPositions", [0]]]]]}
+  ],
+  "pulse-taint-sanitizers": [
+      { "procedure": "sanitize_manipulated",
+        "kinds": ["Simple"],
+        "taint_target": ["FieldsOfValue", [["manipulated", ["ArgumentPositions", [0]]]]]}
+  ],
+  "pulse-taint-propagators": [
+      { "procedure": "propagate_to_manipulated",
+        "taint_target": ["FieldsOfValue", [["manipulated", ["ArgumentPositions", [0]]]]]}
+  ]
+}
