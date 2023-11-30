@@ -7,7 +7,8 @@
 
 open! IStd
 
-type capture_mode = ByReference | ByValue [@@deriving compare, equal, yojson_of, sexp, hash]
+type capture_mode = ByReference | ByValue
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 val string_of_capture_mode : capture_mode -> string
 

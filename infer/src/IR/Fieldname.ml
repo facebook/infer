@@ -8,11 +8,8 @@
 open! IStd
 module F = Format
 
-type 'typ_name t_ =
-  {class_name: 'typ_name; field_name: string; capture_mode: CapturedVar.capture_mode option}
-[@@deriving compare, equal, yojson_of, sexp, hash]
-
-type t = Typ.Name.t t_ [@@deriving compare, equal, yojson_of, sexp, hash]
+type t = {class_name: Typ.Name.t; field_name: string; capture_mode: CapturedVar.capture_mode option}
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let string_of_capture_mode = function
   | CapturedVar.ByReference ->
@@ -29,7 +26,15 @@ let pp f fld =
       F.pp_print_string f fld.field_name
 
 
-let compare_name = compare_t_ Typ.Name.compare_name
+type name_ = Typ.name
+
+let compare_name_ = Typ.Name.compare_name
+
+let compare_name f f' =
+  [%compare: name_ * string * CapturedVar.capture_mode option]
+    (f.class_name, f.field_name, f.capture_mode)
+    (f'.class_name, f'.field_name, f'.capture_mode)
+
 
 let make ?capture_mode class_name field_name = {class_name; field_name; capture_mode}
 
@@ -157,14 +162,3 @@ let is_java_outer_instance ({field_name} as field) =
   let last_char = field_name.[String.length field_name - 1] in
   Char.(last_char >= '0' && last_char <= '9')
   && String.is_suffix field_name ~suffix:(this ^ String.of_char last_char)
-
-
-module Normalizer = HashNormalizer.Make (struct
-  type nonrec t = t [@@deriving equal, hash]
-
-  let normalize t =
-    let class_name = Typ.Name.Normalizer.normalize t.class_name in
-    let field_name = HashNormalizer.String.hash_normalize t.field_name in
-    if phys_equal class_name t.class_name && phys_equal field_name t.field_name then t
-    else {class_name; field_name; capture_mode= t.capture_mode}
-end)

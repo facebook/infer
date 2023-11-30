@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 (** Names for fields of class/struct/union *)
-type t [@@deriving compare, equal, yojson_of, sexp, hash]
+type t [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 val compare_name : t -> t -> int
 (** Similar to compare, but compares only names, except template arguments. *)
@@ -71,5 +71,3 @@ val patterns_match : Re.Str.regexp list -> t -> bool
 
 val pp : F.formatter -> t -> unit
 (** Pretty print a field name. *)
-
-module Normalizer : HashNormalizer.S with type t = t

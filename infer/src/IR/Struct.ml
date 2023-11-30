@@ -441,7 +441,7 @@ module FieldNormalizer = HashNormalizer.Make (struct
 
   let normalize f =
     let field_name, typ, annot = f in
-    let field_name' = Fieldname.Normalizer.normalize field_name in
+    let field_name' = Fieldname.hash_normalize field_name in
     let typ' = Typ.Normalizer.normalize typ in
     let annot' = Annot.hash_normalize_list annot in
     if phys_equal field_name field_name' && phys_equal typ typ' && phys_equal annot annot' then f

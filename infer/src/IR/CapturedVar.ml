@@ -8,7 +8,8 @@
 open! IStd
 module F = Format
 
-type capture_mode = ByReference | ByValue [@@deriving compare, equal, yojson_of, sexp, hash]
+type capture_mode = ByReference | ByValue
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let string_of_capture_mode = function ByReference -> "by ref" | ByValue -> "by value"
 
