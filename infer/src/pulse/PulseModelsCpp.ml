@@ -406,18 +406,18 @@ module Function = struct
       PulseOperations.eval_access path Read location lambda_ptr_hist Dereference astate
     in
     let<*> astate = PulseOperations.Closures.check_captured_addresses path location lambda astate in
-    match AddressAttributes.get_closure_proc_name lambda astate with
-    | None ->
-        (* we don't know what proc name this lambda resolves to *)
-        let desc = "std::function::operator()" in
-        let hist = Hist.single_event path (Hist.call_event path location desc) in
-        let astate = PulseOperations.havoc_id ret_id hist astate in
-        let astate =
-          let unknown_effect = Attribute.UnknownEffect (Model desc, hist) in
-          List.fold actuals ~init:astate ~f:(fun acc FuncArg.{arg_payload= actual, _} ->
-              AddressAttributes.add_one actual unknown_effect acc )
-        in
-        [Ok (ContinueProgram astate)]
+    let callee_proc_name_opt =
+      match AddressAttributes.get_dynamic_type lambda astate with
+      | Some {typ= {desc= Typ.Tstruct name}} -> (
+        match Tenv.lookup tenv name with
+        | Some tstruct ->
+            List.find ~f:(fun m -> Procname.is_cpp_lambda m) tstruct.Struct.methods
+        | None ->
+            None )
+      | _ ->
+          None
+    in
+    match callee_proc_name_opt with
     | Some callee_proc_name ->
         let actuals =
           (lambda_ptr_hist, typ)
@@ -426,6 +426,18 @@ module Function = struct
         PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
           callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
         |> fst3
+    | _ ->
+        (* we don't know what proc name this lambda resolves to *)
+        let desc = "std::function::operator()" in
+        let hist = Hist.single_event path (Hist.call_event path location desc) in
+        let astate = PulseOperations.havoc_id ret_id hist astate in
+        let astate = AbductiveDomain.add_need_dynamic_type_specialization lambda astate in
+        let astate =
+          let unknown_effect = Attribute.UnknownEffect (Model desc, hist) in
+          List.fold actuals ~init:astate ~f:(fun acc FuncArg.{arg_payload= actual, _} ->
+              AddressAttributes.add_one actual unknown_effect acc )
+        in
+        [Ok (ContinueProgram astate)]
 
 
   let assign dest FuncArg.{arg_payload= src; typ= src_typ} ~desc : model =

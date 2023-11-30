@@ -91,3 +91,26 @@ int call_lambda_after_copy_test_good() {
     return *p;
   }
 }
+
+int closure_as_arg(std::function<int()> closure) { return closure(); }
+
+int closure_call() {
+  int x = 5;
+  return closure_as_arg([x]() { return x + 27; });
+}
+
+int closure_call_bad() {
+  if (closure_call() == 32) {
+    int* ptr = NULL;
+    return *ptr;
+  } else
+    return 0;
+}
+
+int closure_call_good() {
+  if (closure_call() == 30) {
+    int* ptr = NULL;
+    return *ptr;
+  } else
+    return 0;
+}

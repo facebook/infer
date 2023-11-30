@@ -179,7 +179,14 @@ and record_closure_cpp_lambda astate (path : PathContext.t) loc procname
   let assign_event = ValueHistory.Assignment (loc, path.timestamp) in
   let closure_addr_hist = (AbstractValue.mk_fresh (), ValueHistory.singleton assign_event) in
   let astate =
-    AddressAttributes.add_one (fst closure_addr_hist) (Attribute.Closure procname) astate
+    match Procname.get_class_type_name procname with
+    | Some typ_name ->
+        let typ = Typ.mk (Typ.Tstruct typ_name) in
+        AddressAttributes.add_one (fst closure_addr_hist)
+          (Attribute.DynamicType {typ; source_file= None})
+          astate
+    | None ->
+        astate
   in
   let** astate = PulseArithmetic.and_positive (fst closure_addr_hist) astate in
   let store_captured_var result (exp, var, _typ, mode) =
