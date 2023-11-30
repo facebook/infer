@@ -7,7 +7,7 @@ namespace DictTests;
 
 class Main {
 
-  public function init_and_load_bad(int $u, int $v, int $w) {
+  public function init_and_load_bad(int $u, int $v, int $w): void {
     $tainted = \Level1\taintSource();
 
     $t1 = dict['a' => $u, 'b' => $v];
@@ -17,7 +17,7 @@ class Main {
     }
   }
 
-  public function init_and_load_good(int $u, int $v, int $w) {
+  public function init_and_load_good(int $u, int $v, int $w): void {
     $tainted = \Level1\taintSource();
 
     $t1 = dict['a' => $u, 'b' => $v];
@@ -27,7 +27,7 @@ class Main {
     }
   }
 
-  public function copy_on_write_bad(int $u, int $v, int $w) {
+  public function copy_on_write_bad(int $u, int $v, int $w): void {
     $tainted = \Level1\taintSource();
 
     $t1 = dict['a' => $u, 'b' => $v];
@@ -41,7 +41,7 @@ class Main {
     }
   }
 
-  public function copy_on_write_good(int $u, int $v, int $w) {
+  public function copy_on_write_good(int $u, int $v, int $w): void {
     $tainted = \Level1\taintSource();
 
     $t1 = dict['a' => $u, 'b' => $v];
@@ -61,7 +61,7 @@ class Main {
     int $u2,
     int $v2,
     int $w,
-  ) {
+  ): void {
     $tainted = \Level1\taintSource();
 
     $t1 = dict[
@@ -91,7 +91,7 @@ class Main {
     int $u2,
     int $v2,
     int $w,
-  ) {
+  ): void {
     $tainted = \Level1\taintSource();
 
     $t1 = dict[
@@ -123,9 +123,71 @@ class Main {
     }
   }
 
-  public function copy_on_write_no_dynamic_type_bad(dict<string, int> $dict) {
+  public function copy_on_write_no_dynamic_type_bad(
+    dict<string, int> $dict,
+  ): void {
     $tainted = \Level1\taintSource();
     $dict['a'] = 1;
     \Level1\taintSink($tainted);
   }
+
+  public static function init_with_call(int $u, int $v): dict<string, int> {
+    return dict['a' => $u, 'b' => $v];
+  }
+
+  public function init_with_call_and_load_bad(int $u, int $v, int $w): void {
+    $tainted = \Level1\taintSource();
+
+    $t1 = self::init_with_call($u, $v);
+
+    if ($t1['a'] == $u && $t1['b'] == $v) {
+      \Level1\taintSink($tainted);
+    }
+  }
+
+  public function init_with_call_and_load_good(int $u, int $v, int $w): void {
+    $tainted = \Level1\taintSource();
+
+    $t1 = self::init_with_call($u, $v);
+
+    if ($t1['a'] != $u || $t1['b'] != $v) {
+      \Level1\taintSink($tainted);
+    }
+  }
+
+  public static async function gen_async_init_with_call(
+    int $u,
+    int $v,
+  ): Awaitable<dict<string, int>> {
+    return dict['a' => $u, 'b' => $v];
+  }
+
+  public async function init_with_async_call_and_load_bad(
+    int $u,
+    int $v,
+    int $w,
+  ): Awaitable<void> {
+    $tainted = \Level1\taintSource();
+
+    $t1 = await self::gen_async_init_with_call($u, $v);
+
+    if ($t1['a'] == $u && $t1['b'] == $v) {
+      \Level1\taintSink($tainted);
+    }
+  }
+
+  public async function init_with_async_call_and_load_good(
+    int $u,
+    int $v,
+    int $w,
+  ): Awaitable<void> {
+    $tainted = \Level1\taintSource();
+
+    $t1 = await self::gen_async_init_with_call($u, $v);
+
+    if ($t1['a'] != $u || $t1['b'] != $v) {
+      \Level1\taintSink($tainted);
+    }
+  }
+
 }
