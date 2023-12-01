@@ -34,7 +34,7 @@ end
 type event =
   | Allocation of {f: CallEvent.t; location: Location.t; timestamp: Timestamp.t}
   | Assignment of Location.t * Timestamp.t
-  | Call of {f: CallEvent.t; location: Location.t; in_call: t; timestamp: Timestamp.t}
+  | Call of {f: CallEvent.t; location: Location.t; in_call: t [@ignore]; timestamp: Timestamp.t}
   | Capture of
       { captured_as: Pvar.t
       ; mode: CapturedVar.capture_mode
@@ -64,6 +64,10 @@ and t =
   | Multiplex of t list
   | UnknownCall of {f: CallEvent.t; actuals: t list; location: Location.t; timestamp: Timestamp.t}
 [@@deriving compare, equal]
+
+module EventSet = Caml.Set.Make (struct
+  type t = event [@@deriving compare]
+end)
 
 let get_cell_ids = function
   (* thanks to INVARIANT these are the only cases we need to check *)
@@ -270,22 +274,37 @@ and rev_iter_simultaneous_events ~main_only events ~f =
     | Sequence _ | InContext _ | BinaryOp _ | FromCellIds _ | Multiplex _ | UnknownCall _ ->
         true
   in
-  let in_call = function Call {in_call} when is_nonempty in_call -> Some in_call | _ -> None in
-  match events with
-  | [] ->
+  let in_calls =
+    let in_call = function Call {in_call} when is_nonempty in_call -> Some in_call | _ -> None in
+    List.filter_map events ~f:in_call
+  in
+  (* is there any call event in the list? *)
+  ( match
+      List.find_map events ~f:(function
+        | Call {f= callee; location; in_call} when is_nonempty in_call ->
+            Some (callee, location)
+        | _ ->
+            None )
+    with
+  | Some (callee, location) ->
+      (* if there are call events in the list, iterate on their inner histories first; we stored
+         those in [in_calls] just above and it will be non-empty in this match branch by
+         construction *)
+      f (ReturnFromCall (callee, location)) ;
+      rev_iter_branches ~main_only in_calls ~f ;
+      f (EnterCall (callee, location)) ;
       ()
-  | event :: _ ->
-      (* operate on just one representative, they should all be the same given they have the same
-         timestamp inside the same path of the same procedure call *)
-      ( match event with
-      | Call {f= callee; location; in_call= in_call'} when is_nonempty in_call' ->
-          f (ReturnFromCall (callee, location)) ;
-          rev_iter_branches ~main_only (List.filter_map events ~f:in_call) ~f ;
-          f (EnterCall (callee, location)) ;
-          ()
-      | _ ->
-          () ) ;
-      f (Event event)
+  | _ ->
+      () ) ;
+  (* iterate over each unique event; events have been "reversed" (i.e. put in the correct order,
+     which is the wrong one here since we do a [rev_iter_...]) so reverse them once more using
+     [fold_left] *)
+  List.fold_left events ~init:EventSet.empty ~f:(fun seen event ->
+      if EventSet.mem event seen then seen
+      else (
+        f (Event event) ;
+        EventSet.add event seen ) )
+  |> ignore
 
 
 and rev_iter ~main_only (history : t) ~f =
@@ -456,8 +475,8 @@ let add_to_errlog ?(include_taint_events = false) ~nesting history errlog =
   let errlog = ref errlog in
   let one_iter_event = function
     | Event event ->
-        if is_taint_event event && not include_taint_events then ()
-        else errlog := add_event_to_errlog ~nesting:!nesting event !errlog
+        if include_taint_events || not (is_taint_event event) then
+          errlog := add_event_to_errlog ~nesting:!nesting event !errlog
     | EnterCall _ ->
         decr nesting
     | ReturnFromCall (call, location) ->

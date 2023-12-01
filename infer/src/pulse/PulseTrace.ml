@@ -70,7 +70,8 @@ let rec add_to_errlog ?(include_value_history = true) ?(include_taint_events = f
             (F.asprintf "when calling %a here" CallEvent.pp f)
             []
           :: errlog )
-        @@ add_to_errlog ~include_value_history ~nesting:(nesting + 1) ~pp_immediate in_call
+        @@ add_to_errlog ~include_value_history ~include_taint_events ~nesting:(nesting + 1)
+             ~pp_immediate in_call
         @@ errlog
       in
       if include_value_history then
