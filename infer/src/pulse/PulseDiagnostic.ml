@@ -1047,7 +1047,7 @@ let get_trace = function
          altogether. *)
       ValueHistory.add_to_errlog ~include_taint_events:true ~nesting:0 source_history
       @@ Trace.add_to_errlog ~include_value_history:false ~include_taint_events:true ~nesting:0
-           ~pp_immediate:(fun fmt -> TaintItem.pp fmt sink)
+           ~pp_immediate:(fun fmt -> F.fprintf fmt "flows to this sink: %a" TaintItem.pp sink)
            sink_trace
       @@ []
   | UnnecessaryCopy {location; source_typ; copied_location= None; from} ->
