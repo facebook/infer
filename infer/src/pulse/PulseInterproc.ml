@@ -208,7 +208,7 @@ include Unsafe
 
 let pp_hist_map fmt hist_map =
   CellId.Map.iter
-    (fun id hist -> F.fprintf fmt "%a: %a," CellId.pp id ValueHistory.pp hist)
+    (fun id hist -> F.fprintf fmt "@[%a: %a@,@]" CellId.pp id ValueHistory.pp hist)
     hist_map
 
 
@@ -382,16 +382,18 @@ let visit call_state ~pre ~addr_callee cell_id ~addr_hist_caller =
   in
   let* call_state = and_aliasing_arith ~addr_callee ~addr_caller0:addr_caller call_state in
   let+ call_state = and_restricted_arith ~addr_callee ~addr_caller call_state in
-  if AddressSet.mem addr_callee call_state.visited then (`AlreadyVisited, call_state)
+  let hist_map =
+    Option.fold cell_id ~init:call_state.hist_map ~f:(fun hist_map cell_id ->
+        CellId.Map.add cell_id (snd addr_hist_caller) hist_map )
+  in
+  if AddressSet.mem addr_callee call_state.visited then (`AlreadyVisited, {call_state with hist_map})
   else
     ( `NotAlreadyVisited
     , { call_state with
         visited= AddressSet.add addr_callee call_state.visited
       ; subst= add_to_caller_subst addr_callee addr_hist_caller call_state.subst
       ; rev_subst= AddressMap.add addr_caller addr_callee call_state.rev_subst
-      ; hist_map=
-          Option.fold cell_id ~init:call_state.hist_map ~f:(fun hist_map cell_id ->
-              CellId.Map.add cell_id (snd addr_hist_caller) hist_map ) } )
+      ; hist_map } )
 
 
 (** HACK: we don't need to update the [rev_subst] of a call state when generating a fresh value for
