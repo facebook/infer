@@ -800,19 +800,20 @@ module Internal = struct
                 List.fold alias ~init:(pre_heap, post_heap, None)
                   ~f:(fun ((pre_heap, post_heap, addr) as acc) pvar ->
                     SafeStack.map_var_address_pre proc_name astate pvar ~default:acc
-                      ~f:(fun (src_addr, addr_hist) ->
+                      ~f:(fun (src_addr, src_hist) ->
                         let addr =
                           match addr with None -> CanonValue.mk_fresh () | Some addr -> addr
                         in
+                        let cell_id = ValueHistory.CellId.next () in
                         let pre_heap =
                           BaseMemory.add_edge src_addr Dereference
-                            (downcast addr, ValueHistory.epoch)
+                            (downcast addr, ValueHistory.from_cell_id cell_id ValueHistory.epoch)
                             pre_heap
                           |> BaseMemory.register_address addr
                         in
                         let post_heap =
                           BaseMemory.add_edge src_addr Dereference
-                            (downcast addr, addr_hist)
+                            (downcast addr, ValueHistory.from_cell_id cell_id src_hist)
                             post_heap
                         in
                         (pre_heap, post_heap, Some addr) ) )
