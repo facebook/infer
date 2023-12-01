@@ -413,29 +413,42 @@ let pp_event fmt event =
 
 
 let pp fmt history =
-  let rec pp_aux fmt = function
+  let rec pp_aux ~is_first fmt hist =
+    (match hist with Epoch -> () | _ when not is_first -> F.fprintf fmt "@,::" | _ -> ()) ;
+    match hist with
     | Epoch ->
         ()
     | FromCellIds (ids, hist) ->
-        F.fprintf fmt "from_cell_ids%a;" CellId.Set.pp ids ;
-        pp_aux fmt hist
-    | Sequence ((Call {in_call} as event), tail) ->
-        F.fprintf fmt "%a@;" pp_event event ;
-        F.fprintf fmt "[@[%a@]]@;" pp_aux in_call ;
-        pp_aux fmt tail
+        F.fprintf fmt "@[<h>from_cell_ids%a@]" CellId.Set.pp ids ;
+        pp_aux ~is_first:false fmt hist
+    | Sequence ((Call {in_call= sub_hist} as event), tail) ->
+        F.pp_open_box fmt 0 ;
+        pp_event fmt event ;
+        ( match sub_hist with
+        | Epoch ->
+            F.pp_print_string fmt "[]"
+        | _ ->
+            F.fprintf fmt "[@\n  @[%a@]@\n]" (pp_aux ~is_first:true) sub_hist ) ;
+        F.pp_close_box fmt () ;
+        pp_aux ~is_first:false fmt tail
     | Sequence (event, tail) ->
-        F.fprintf fmt "%a@;" pp_event event ;
-        pp_aux fmt tail
+        pp_event fmt event ;
+        pp_aux ~is_first:false fmt tail
     | InContext {main; context} ->
-        F.fprintf fmt "(@[%a@]){@[%a@]}" (Pp.seq ~sep:"; " pp_aux) context pp_aux main
+        F.fprintf fmt "(@[%a@]){@[%a@]}"
+          (Pp.seq ~sep:"; " (pp_aux ~is_first:true))
+          context (pp_aux ~is_first:true) main
     | BinaryOp (bop, hist1, hist2) ->
-        F.fprintf fmt "[@[%a@]] %a [@[%a@]]" pp_aux hist1 Binop.pp bop pp_aux hist2
+        F.fprintf fmt "[@[%a@]] %a [@[%a@]]" (pp_aux ~is_first:true) hist1 Binop.pp bop
+          (pp_aux ~is_first:true) hist2
     | Multiplex hists ->
-        F.fprintf fmt "{@[%a@]}" (Pp.seq ~sep:"; " pp_aux) hists
+        F.fprintf fmt "{@[<v>%a@]}" (Pp.seq ~sep:"||" (pp_aux ~is_first:true)) hists
     | UnknownCall {f} ->
         F.fprintf fmt "in unknown call to %a" CallEvent.pp f
   in
-  F.fprintf fmt "@[%a@]" pp_aux history
+  F.pp_open_box fmt 0 ;
+  pp_aux ~is_first:true fmt history ;
+  F.pp_close_box fmt ()
 
 
 let add_event_to_errlog ~nesting event errlog =

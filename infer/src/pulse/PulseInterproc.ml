@@ -207,8 +207,12 @@ end
 include Unsafe
 
 let pp_hist_map fmt hist_map =
+  let is_first = ref false in
   CellId.Map.iter
-    (fun id hist -> F.fprintf fmt "@[%a: %a@,@]" CellId.pp id ValueHistory.pp hist)
+    (fun id hist ->
+      if not !is_first then F.pp_print_cut fmt () ;
+      is_first := false ;
+      F.fprintf fmt "%a: @[%a@]" CellId.pp id ValueHistory.pp hist )
     hist_map
 
 
@@ -216,12 +220,12 @@ let pp_call_state fmt
     ({astate; subst; rev_subst; hist_map; visited; array_indices_to_visit; first_error}
       [@warning "+missing-record-field-pattern"] ) =
   F.fprintf fmt
-    "@[<v>{ astate=@[<hv2>%a@];@,\
-    \ subst=@[<hv2>%a@];@,\
-    \ rev_subst=@[<hv2>%a@];@,\
-    \ hist_map=@[<hv2>%a@];@,\
-    \ visited=@[<hv2>%a@]@,\
-    \ array_indices_to_visit=@[<hv2>%a@]@,\
+    "@[<v>{ astate=@[%a@];@,\
+    \ subst=@[%a@];@,\
+    \ rev_subst=@[%a@];@,\
+    \ hist_map=@[%a@];@,\
+    \ visited=@[%a@]@,\
+    \ array_indices_to_visit=@[%a@]@,\
      %t }@]" AbductiveDomain.pp astate pp_to_caller_subst subst
     (AddressMap.pp ~pp_value:AbstractValue.pp)
     rev_subst pp_hist_map hist_map AddressSet.pp visited

@@ -324,12 +324,12 @@ module Attribute = struct
     | LastLookup value ->
         F.fprintf f "LastLookup(%a)" AbstractValue.pp value
     | MustBeInitialized (timestamp, trace) ->
-        F.fprintf f "MustBeInitialized(%a, t=%d)"
+        F.fprintf f "MustBeInitialized(@[@[%a@],@;t=%d@])"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "read"))
           trace
           (timestamp :> int)
     | MustBeValid (timestamp, trace, reason) ->
-        F.fprintf f "MustBeValid(%a, %a, t=%d)"
+        F.fprintf f "MustBeValid(@[@[%a@],@;@[%a@],@;t=%d@])"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "access"))
           trace Invalidation.pp_must_be_valid_reason reason
           (timestamp :> int)

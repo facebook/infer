@@ -11,7 +11,7 @@ include Caml.Set.Make (Int)
 
 let pp fmt set =
   let is_first = ref true in
-  F.fprintf fmt "{@[<h>%a@]}"
+  F.fprintf fmt "@[<h>{%a}@]"
     (fun fmt set ->
       iter
         (fun elt ->

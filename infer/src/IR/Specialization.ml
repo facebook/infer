@@ -35,8 +35,8 @@ module Pulse = struct
     type t = Pvar.t list list [@@deriving equal, compare]
 
     let pp fmt aliases =
-      let pp_alias fmt alias = Pp.seq ~sep:"=" (Pvar.pp Pp.text) fmt alias in
-      Pp.seq ~sep:"^" pp_alias fmt aliases
+      let pp_alias fmt alias = Pp.seq ~sep:" = " Pvar.pp_value fmt alias in
+      Pp.seq ~sep:"@,&& " pp_alias fmt aliases
   end
 
   module DynamicTypes = struct
