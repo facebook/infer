@@ -743,13 +743,21 @@ void known_existing_map_key_literal_ok_FP(folly::F14FastMap<int, int>& map) {
   const auto valueCopy = valueRef;
 }
 
-void both_sides_assign_ok_FP(folly::F14FastMap<int, int>& map) {
-  map[13] = map[17];
-}
-
 // False positive for USE_AFTER_DELETE.
 void delete_in_loop_ok_FP(folly::F14FastMap<int, int*>& map) {
   for (auto& it : map) {
     delete it.second;
   }
+}
+
+void right_sequenced_before_left_ok_FP(folly::F14FastMap<int, int>& map) {
+  // > The assignment operator (=) and the compound assignment operators all
+  // > group right-to-left. The right operand is sequenced before the left
+  // > operand.
+  // -- https://wg21.link/N4950, section 7.6.19 [expr.ass].
+  map[13] = map[71] / 31;
+}
+
+void right_before_left_compound_ok_FP(folly::F14FastMap<int, int>& map) {
+  map[13] += map[71] / 31;
 }
