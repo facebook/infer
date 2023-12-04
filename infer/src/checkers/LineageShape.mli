@@ -19,7 +19,7 @@ end
 
 module FieldPath : sig
   (** The fields are listed in syntactic order: [\[a; b\]] for [x#a#b]. *)
-  type t = FieldLabel.t list [@@deriving compare, equal, sexp, yojson_of]
+  type t = FieldLabel.t list [@@deriving compare, equal, sexp, hash, yojson_of]
 
   include Comparable.S with type t := t
 
@@ -53,7 +53,7 @@ module Cell : sig
 
       The lineage graph is built on cells. *)
 
-  type t [@@deriving compare, equal, sexp, yojson_of]
+  type t [@@deriving compare, equal, sexp, yojson_of, hash]
 
   val pp : t Fmt.t
 
