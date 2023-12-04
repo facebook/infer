@@ -825,9 +825,10 @@ module PulseTransferFunctions = struct
         PulseTransitiveAccessChecker.record_call tenv callee_pname call_loc astate
       else astate
     in
+    let caller_is_hack_wrapper = (Procdesc.get_attributes proc_desc).is_hack_wrapper in
     let ret, ret_and_name_saved_for_hack_async =
       match callee_pname with
-      | Some proc_name when is_hack_async proc_name ->
+      | Some proc_name when is_hack_async proc_name && not caller_is_hack_wrapper ->
           L.d_printfln "about to make asynchronous call of %a, ret=%a" Procname.pp proc_name
             Ident.pp (fst ret) ;
           ((Ident.create_fresh Ident.kprimed, snd ret), Some (ret, proc_name))
