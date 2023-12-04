@@ -205,10 +205,6 @@ module G = struct
 
   type t = edge list
 
-  let empty = []
-
-  let is_empty = List.is_empty
-
   let count_vertices edges =
     let v_list = List.concat_map ~f:(function src, _, dst -> [src; dst]) edges in
     let v_set = V.Set.of_list v_list in
@@ -218,29 +214,6 @@ module G = struct
   let pp fmt edges =
     Format.fprintf fmt "@[<v 2>LineageGraph: edges %d vertices %d@;@[%a@]@]" (List.length edges)
       (count_vertices edges) (Format.pp_print_list Edge.pp_e) edges
-
-
-  let add_edge ~kind ~node ~src ~dst graph =
-    let added = (src, {Edge.kind; node}, dst) :: graph in
-    match ((kind : Edge.kind), V.equal dst src, (dst : V.t), (src : V.t)) with
-    | Direct, true, _, _ ->
-        graph (* skip Direct loops *)
-    | Builtin, true, _, _ ->
-        graph (* skip Builtin loops *)
-    | Summary _, true, _, _ ->
-        graph (* skip Summary loops*)
-    | _, true, _, _ ->
-        L.die InternalError "There shall be no fancy (%a) loops!" Edge.Kind.pp kind
-    | Call _, _, ArgumentOf _, _ ->
-        added
-    | Call _, _, _, _ ->
-        L.die InternalError "Call edges shall return ArgumentOf!"
-    | Return _, _, _, ReturnOf _ ->
-        added
-    | Return _, _, _, _ ->
-        L.die InternalError "Return edges shall come form ReturnOf!"
-    | _ ->
-        added
 
 
   let preserves_shape ((src, {kind; _}, dst) : E.t) =
@@ -704,7 +677,7 @@ module G = struct
       edge_id
 
 
-    let report_summary edges has_unsupported_features proc_desc =
+    let report_summary graph has_unsupported_features proc_desc =
       let procname = Procdesc.get_proc_name proc_desc in
       let fun_id = Id.of_procname procname in
       write_json Function fun_id
@@ -712,7 +685,7 @@ module G = struct
            {function_= {name= Procname.hashable_name procname; has_unsupported_features}} ) ;
       let _fun_id = save_vertex proc_desc Self in
       let record_edge edge = ignore (save_edge proc_desc edge) in
-      List.iter ~f:record_edge edges ;
+      List.iter ~f:record_edge graph ;
       Out_channel.flush (channel ()) ;
       Hash_set.clear write_json_cache
   end
@@ -1165,24 +1138,59 @@ module Summary = struct
     G.report graph has_unsupported_features proc_desc
 end
 
-(** A summary is computed by taking the union of all partial summaries present in the final
-    invariant map. Partial summaries are stored in abstract states only because it is convenient.
-    But, they do not influence how abstract states are joined, widened, etc, which explains why
-    below all functions having to do with the abstract domain are dummies. *)
-module PartialSummary = struct
-  type t = G.t
+(** A summary is computed by taking the union of all partial graphs present in the final invariant
+    map. Partial graphs are stored in abstract states only because it is convenient. But, they do
+    not influence how abstract states are joined, widened, etc, which explains why below all
+    functions having to do with the abstract domain are dummies. *)
+module PartialGraph : sig
+  type t
 
-  let pp = G.pp
+  include AbstractDomain.WithBottom with type t := t
 
-  let bottom = G.empty
+  val pp : t Fmt.t
 
-  let is_bottom = G.is_empty
+  val add_edge : node:PPNode.t -> kind:Edge.kind -> src:Vertex.t -> dst:Vertex.t -> t -> t
+
+  val aggregate : t list -> G.t
+end = struct
+  type t = G.edge list
+
+  let pp = Fmt.box @@ Fmt.list Edge.pp_e
+
+  let bottom = []
+
+  let is_bottom = List.is_empty
 
   let leq ~lhs:_ ~rhs:_ = true
 
   let join _ _ = bottom
 
   let widen ~prev:_ ~next ~num_iters:_ = next
+
+  let add_edge ~node ~kind ~src ~dst partial_graph =
+    let added = (src, {Edge.kind; node}, dst) :: partial_graph in
+    match ((kind : Edge.kind), Vertex.equal dst src, (dst : Vertex.t), (src : Vertex.t)) with
+    | Direct, true, _, _ ->
+        partial_graph (* skip Direct loops *)
+    | Builtin, true, _, _ ->
+        partial_graph (* skip Builtin loops *)
+    | Summary _, true, _, _ ->
+        partial_graph (* skip Summary loops*)
+    | _, true, _, _ ->
+        L.die InternalError "There shall be no fancy (%a) loops!" Edge.Kind.pp kind
+    | Call _, _, ArgumentOf _, _ ->
+        added
+    | Call _, _, _, _ ->
+        L.die InternalError "Call edges shall return ArgumentOf!"
+    | Return _, _, _, ReturnOf _ ->
+        added
+    | Return _, _, _, _ ->
+        L.die InternalError "Return edges shall come form ReturnOf!"
+    | _ ->
+        added
+
+
+  let aggregate partial_graph_list : G.t = List.concat partial_graph_list
 end
 
 module Domain : sig
@@ -1234,10 +1242,10 @@ module Domain : sig
     val return : FieldPath.t -> t
   end
 
-  val get_lineage_partial_graph : t -> G.edge list
+  val get_partial_graph : t -> PartialGraph.t
   (** Extract the edges accumulated in an abstract state. *)
 
-  val clear_graph : t -> t
+  val clear_partial_graph : t -> t
   (** Forget the collected edges. One can use this when going to analyse another instruction as the
       finalisation of the procedure analysis will go through all nodes to collect the complete edges
       set. *)
@@ -1361,20 +1369,20 @@ end = struct
     include AbstractDomain.PairWithBottom (LastWrites) (UnsupportedFeatures)
   end
 
-  module Unit = PartialSummary
+  module Unit = PartialGraph
   include AbstractDomain.PairWithBottom (Real) (Unit)
 
-  let get_lineage_partial_graph (_, graph) = graph
+  let get_partial_graph (_, partial_graph) = partial_graph
 
-  let clear_graph (real, _graph) = (real, [])
+  let clear_partial_graph (real, _partial_graph) = (real, PartialGraph.bottom)
 
   let has_unsupported_features ((_, has_unsupported_features), _) = has_unsupported_features
 
-  let record_supported name (((last_writes, has_unsupported_features), local_graph) : t) : t =
+  let record_supported name (((last_writes, has_unsupported_features), partial_graph) : t) : t =
     let has_unsupported_features =
       has_unsupported_features || Procname.is_erlang_unsupported name
     in
-    ((last_writes, has_unsupported_features), local_graph)
+    ((last_writes, has_unsupported_features), partial_graph)
 
 
   module Src = struct
@@ -1418,14 +1426,14 @@ end = struct
     end
   end
 
-  let update_write ~node ~var_path ((last_writes, has_unsupported_features), graph) =
+  let update_write ~node ~var_path ((last_writes, has_unsupported_features), partial_graph) =
     let last_writes = Real.LastWrites.set_to_single_value var_path node last_writes in
-    ((last_writes, has_unsupported_features), graph)
+    ((last_writes, has_unsupported_features), partial_graph)
 
 
-  let add_edge ~node ~kind ~src ~dst ((last_writes, has_unsupported_features), graph) : t =
-    let graph = G.add_edge ~node ~kind ~src ~dst graph in
-    ((last_writes, has_unsupported_features), graph)
+  let add_edge ~node ~kind ~src ~dst ((last_writes, has_unsupported_features), partial_graph) : t =
+    let partial_graph = PartialGraph.add_edge ~node ~kind ~src ~dst partial_graph in
+    ((last_writes, has_unsupported_features), partial_graph)
 
 
   let add_flow_from_local ~node ~kind ~src ~dst astate : t =
@@ -2033,7 +2041,7 @@ module TransferFunctions = struct
       (instr : Sil.instr) =
     if not (Int.equal instr_index 0) then
       L.die InternalError "Lineage: INV broken: CFGs should be single instruction@\n" ;
-    let astate = Domain.clear_graph astate (* Don't repeat edges *) in
+    let astate = Domain.clear_partial_graph astate (* Don't repeat edges *) in
     let astate = add_cap_flows shapes node instr astate in
     match instr with
     | Load {id; e; _} ->
@@ -2094,14 +2102,13 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) (shapes 
   in
   (* Collect the graph from all nodes *)
   let graph =
-    let collect _nodeid {AbstractInterpreter.State.post} edges =
-      let post_edges = Domain.get_lineage_partial_graph post in
-      post_edges :: edges
+    let collect _nodeid {AbstractInterpreter.State.post} acc_partial_graphs =
+      let post_partial_graph = Domain.get_partial_graph post in
+      post_partial_graph :: acc_partial_graphs
     in
     Analyzer.InvariantMap.fold collect invmap
-      [ Domain.get_lineage_partial_graph initial_astate
-      ; Domain.get_lineage_partial_graph final_astate ]
-    |> List.concat
+      [Domain.get_partial_graph initial_astate; Domain.get_partial_graph final_astate]
+    |> PartialGraph.aggregate
   in
   (* Collect the return fields to finish the summary *)
   let known_ret_field_paths =
