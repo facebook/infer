@@ -260,9 +260,9 @@ module G = struct
     | Summary {shape_is_preserved} ->
         shape_is_preserved
     | Capture ->
-        true (* TODO T154077173: investigate if more precision is worthwile *)
+        false (* TODO T154077173: investigate if more precision is worthwile *)
     | DynamicCallFunction | DynamicCallModule ->
-        true (* TODO T154077173: model as a call? *)
+        false (* TODO T154077173: model as a call? *)
 
 
   module Out = struct
