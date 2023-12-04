@@ -750,7 +750,7 @@ void delete_in_loop_ok_FP(folly::F14FastMap<int, int*>& map) {
   }
 }
 
-void right_sequenced_before_left_ok_FP(folly::F14FastMap<int, int>& map) {
+void right_sequenced_before_left_ok(folly::F14FastMap<int, int>& map) {
   // > The assignment operator (=) and the compound assignment operators all
   // > group right-to-left. The right operand is sequenced before the left
   // > operand.
@@ -758,6 +758,6 @@ void right_sequenced_before_left_ok_FP(folly::F14FastMap<int, int>& map) {
   map[13] = map[71] / 31;
 }
 
-void right_before_left_compound_ok_FP(folly::F14FastMap<int, int>& map) {
+void right_before_left_compound_ok(folly::F14FastMap<int, int>& map) {
   map[13] += map[71] / 31;
 }

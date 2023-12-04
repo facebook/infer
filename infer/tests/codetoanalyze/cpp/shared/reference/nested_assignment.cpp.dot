@@ -7,7 +7,7 @@ digraph cfg {
 "crazy_nested#10001276026471322284.a3162fff8adcb89d_2" [label="2: Exit crazy_nested \n  " color=yellow style=filled]
 	
 
-"crazy_nested#10001276026471322284.a3162fff8adcb89d_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(ref_from_ref:int&); [line 27, column 3]\n  n$0=*&ref_from_val:int& [line 27, column 23]\n  *&b:int=5 [line 27, column 38]\n  n$1=*&b:int [line 27, column 38]\n  *n$0:int=n$1 [line 27, column 23]\n  *&ref_from_ref:int&=n$0 [line 27, column 3]\n " shape="box"]
+"crazy_nested#10001276026471322284.a3162fff8adcb89d_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(ref_from_ref:int&); [line 27, column 3]\n  *&b:int=5 [line 27, column 38]\n  n$1=*&b:int [line 27, column 38]\n  n$0=*&ref_from_val:int& [line 27, column 23]\n  *n$0:int=n$1 [line 27, column 23]\n  *&ref_from_ref:int&=n$0 [line 27, column 3]\n " shape="box"]
 	
 
 	 "crazy_nested#10001276026471322284.a3162fff8adcb89d_3" -> "crazy_nested#10001276026471322284.a3162fff8adcb89d_2" ;

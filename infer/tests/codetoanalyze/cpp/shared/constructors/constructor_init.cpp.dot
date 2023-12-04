@@ -156,7 +156,7 @@ digraph cfg {
 "B#B#{15830384730391463473}.fd43b18ba9d4b8a7_2" [label="2: Exit B::B \n  " color=yellow style=filled]
 	
 
-"B#B#{15830384730391463473}.fd43b18ba9d4b8a7_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:B* [line 22, column 32]\n  n$1=*&b:int [line 22, column 37]\n  *n$0.f2:int=n$1 [line 22, column 32]\n " shape="box"]
+"B#B#{15830384730391463473}.fd43b18ba9d4b8a7_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&b:int [line 22, column 37]\n  n$0=*&this:B* [line 22, column 32]\n  *n$0.f2:int=n$1 [line 22, column 32]\n " shape="box"]
 	
 
 	 "B#B#{15830384730391463473}.fd43b18ba9d4b8a7_3" -> "B#B#{15830384730391463473}.fd43b18ba9d4b8a7_2" ;

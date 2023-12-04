@@ -29,7 +29,7 @@ digraph cfg {
 "objc_block_A.bar:_1(class A).08ec268b0c783346_2" [label="2: Exit objc_block_A.bar:_1 \n  " color=yellow style=filled]
 	
 
-"objc_block_A.bar:_1(class A).08ec268b0c783346_3" [label="3:  BinaryOperatorStmt: Assign \n   n$5=*&self:A* [line 28, column 9]\n  n$6=*&x:int [line 28, column 19]\n  *n$5.x:int=n$6 [line 28, column 9]\n " shape="box"]
+"objc_block_A.bar:_1(class A).08ec268b0c783346_3" [label="3:  BinaryOperatorStmt: Assign \n   n$6=*&x:int [line 28, column 19]\n  n$5=*&self:A* [line 28, column 9]\n  *n$5.x:int=n$6 [line 28, column 9]\n " shape="box"]
 	
 
 	 "objc_block_A.bar:_1(class A).08ec268b0c783346_3" -> "objc_block_A.bar:_1(class A).08ec268b0c783346_2" ;
@@ -40,7 +40,7 @@ digraph cfg {
 "objc_block_A.bar:_2(class A).20dc072df19c24c2_2" [label="2: Exit objc_block_A.bar:_2 \n  " color=yellow style=filled]
 	
 
-"objc_block_A.bar:_2(class A).20dc072df19c24c2_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&self:A* [line 31, column 9]\n  n$9=*&i:int [line 31, column 19]\n  *n$8.x:int=n$9 [line 31, column 9]\n " shape="box"]
+"objc_block_A.bar:_2(class A).20dc072df19c24c2_3" [label="3:  BinaryOperatorStmt: Assign \n   n$9=*&i:int [line 31, column 19]\n  n$8=*&self:A* [line 31, column 9]\n  *n$8.x:int=n$9 [line 31, column 9]\n " shape="box"]
 	
 
 	 "objc_block_A.bar:_2(class A).20dc072df19c24c2_3" -> "objc_block_A.bar:_2(class A).20dc072df19c24c2_2" ;

@@ -81,10 +81,10 @@ digraph cfg {
 	
 
 	 "arithmetic.26e816805c2eb540_20" -> "arithmetic.26e816805c2eb540_19" ;
-"load_store_exchange.3da178fb2a20c1b2_1" [label="1: Start load_store_exchange\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_compare_exchange___n$9:_Bool 0$?%__sil_tmpSIL_temp_compare_exchange___n$23:_Bool 0$?%__sil_tmpSIL_temp_conditional___n$30:void* 0$?%__sil_tmpSIL_temp_conditional___n$34:void* a2:void a:void _a:int p:int** b:_Bool \n  " color=yellow style=filled]
+"load_store_exchange.3da178fb2a20c1b2_1" [label="1: Start load_store_exchange\nFormals: \nLocals:  0$?%__sil_tmpSIL_temp_compare_exchange___n$9:_Bool 0$?%__sil_tmpSIL_temp_compare_exchange___n$23:_Bool 0$?%__sil_tmpSIL_temp_conditional___n$30:void* 0$?%__sil_tmpSIL_temp_conditional___n$34:void* 0$?%__sil_tmpSIL_temp_conditional___n$38:int a2:void a:void _a:int p:int** b:_Bool \n  " color=yellow style=filled]
 	
 
-	 "load_store_exchange.3da178fb2a20c1b2_1" -> "load_store_exchange.3da178fb2a20c1b2_38" ;
+	 "load_store_exchange.3da178fb2a20c1b2_1" -> "load_store_exchange.3da178fb2a20c1b2_39" ;
 "load_store_exchange.3da178fb2a20c1b2_2" [label="2: Exit load_store_exchange \n  " color=yellow style=filled]
 	
 
@@ -210,31 +210,35 @@ digraph cfg {
 "load_store_exchange.3da178fb2a20c1b2_32" [label="32: + \n   END_BRANCHES\n " ]
 	
 
-	 "load_store_exchange.3da178fb2a20c1b2_32" -> "load_store_exchange.3da178fb2a20c1b2_27" ;
-	 "load_store_exchange.3da178fb2a20c1b2_32" -> "load_store_exchange.3da178fb2a20c1b2_28" ;
-"load_store_exchange.3da178fb2a20c1b2_33" [label="33:  AtomicExpr \n   n$38=*&a:int [line 41, column 9]\n " shape="box"]
+	 "load_store_exchange.3da178fb2a20c1b2_32" -> "load_store_exchange.3da178fb2a20c1b2_38" ;
+"load_store_exchange.3da178fb2a20c1b2_33" [label="33:  AtomicExpr \n   n$39=*&a:int [line 41, column 9]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_33" -> "load_store_exchange.3da178fb2a20c1b2_34" ;
 	 "load_store_exchange.3da178fb2a20c1b2_33" -> "load_store_exchange.3da178fb2a20c1b2_35" ;
-"load_store_exchange.3da178fb2a20c1b2_34" [label="34: Prune (true branch, boolean exp (terminated)) \n   PRUNE(n$38, true); [line 41, column 9]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b2_34" [label="34: Prune (true branch, boolean exp (terminated)) \n   PRUNE(n$39, true); [line 41, column 9]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_34" -> "load_store_exchange.3da178fb2a20c1b2_36" ;
-"load_store_exchange.3da178fb2a20c1b2_35" [label="35: Prune (false branch, boolean exp (terminated)) \n   PRUNE(!n$38, false); [line 41, column 9]\n " shape="invhouse"]
+"load_store_exchange.3da178fb2a20c1b2_35" [label="35: Prune (false branch, boolean exp (terminated)) \n   PRUNE(!n$39, false); [line 41, column 9]\n " shape="invhouse"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_35" -> "load_store_exchange.3da178fb2a20c1b2_37" ;
-"load_store_exchange.3da178fb2a20c1b2_36" [label="36:  ConditionalStmt Branch \n   *&_a:int=5 [line 41, column 9]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b2_36" [label="36:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$38:int=5 [line 41, column 9]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_36" -> "load_store_exchange.3da178fb2a20c1b2_32" ;
-"load_store_exchange.3da178fb2a20c1b2_37" [label="37:  ConditionalStmt Branch \n   *&_a:int=2 [line 41, column 9]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b2_37" [label="37:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$38:int=2 [line 41, column 9]\n " shape="box"]
 	
 
 	 "load_store_exchange.3da178fb2a20c1b2_37" -> "load_store_exchange.3da178fb2a20c1b2_32" ;
-"load_store_exchange.3da178fb2a20c1b2_38" [label="38:  AtomicExpr \n   n$39=*&_a:int [line 40, column 23]\n  *&a:int=(1 + n$39) [line 40, column 3]\n " shape="box"]
+"load_store_exchange.3da178fb2a20c1b2_38" [label="38:  BinaryOperatorStmt: Assign \n   n$40=*&0$?%__sil_tmpSIL_temp_conditional___n$38:int [line 41, column 9]\n  *&_a:int=n$40 [line 41, column 3]\n " shape="box"]
 	
 
-	 "load_store_exchange.3da178fb2a20c1b2_38" -> "load_store_exchange.3da178fb2a20c1b2_33" ;
+	 "load_store_exchange.3da178fb2a20c1b2_38" -> "load_store_exchange.3da178fb2a20c1b2_27" ;
+	 "load_store_exchange.3da178fb2a20c1b2_38" -> "load_store_exchange.3da178fb2a20c1b2_28" ;
+"load_store_exchange.3da178fb2a20c1b2_39" [label="39:  AtomicExpr \n   n$41=*&_a:int [line 40, column 23]\n  *&a:int=(1 + n$41) [line 40, column 3]\n " shape="box"]
+	
+
+	 "load_store_exchange.3da178fb2a20c1b2_39" -> "load_store_exchange.3da178fb2a20c1b2_33" ;
 }

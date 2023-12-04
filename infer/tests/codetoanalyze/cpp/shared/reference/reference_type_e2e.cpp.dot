@@ -173,7 +173,7 @@ digraph cfg {
 	
 
 	 "ref_div0_nested_assignment#171269.bd6abb3056f6689f_5" -> "ref_div0_nested_assignment#171269.bd6abb3056f6689f_3" ;
-"ref_div0_nested_assignment#171269.bd6abb3056f6689f_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(r2:int&); [line 55, column 3]\n  n$2=*&r1:int& [line 55, column 13]\n  *&b:int=1 [line 55, column 18]\n  n$3=*&b:int [line 55, column 18]\n  *n$2:int=n$3 [line 55, column 13]\n  *&r2:int&=n$2 [line 55, column 3]\n " shape="box"]
+"ref_div0_nested_assignment#171269.bd6abb3056f6689f_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(r2:int&); [line 55, column 3]\n  *&b:int=1 [line 55, column 18]\n  n$3=*&b:int [line 55, column 18]\n  n$2=*&r1:int& [line 55, column 13]\n  *n$2:int=n$3 [line 55, column 13]\n  *&r2:int&=n$2 [line 55, column 3]\n " shape="box"]
 	
 
 	 "ref_div0_nested_assignment#171269.bd6abb3056f6689f_6" -> "ref_div0_nested_assignment#171269.bd6abb3056f6689f_5" ;
@@ -208,7 +208,7 @@ digraph cfg {
 	
 
 	 "ref_div1_nested_assignment#512157.a9f8511d9ff791c4_5" -> "ref_div1_nested_assignment#512157.a9f8511d9ff791c4_3" ;
-"ref_div1_nested_assignment#512157.a9f8511d9ff791c4_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(r2:int&); [line 64, column 3]\n  n$2=*&r1:int& [line 64, column 13]\n  *&b:int=1 [line 64, column 18]\n  n$3=*&b:int [line 64, column 18]\n  *n$2:int=n$3 [line 64, column 13]\n  *&r2:int&=n$2 [line 64, column 3]\n " shape="box"]
+"ref_div1_nested_assignment#512157.a9f8511d9ff791c4_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(r2:int&); [line 64, column 3]\n  *&b:int=1 [line 64, column 18]\n  n$3=*&b:int [line 64, column 18]\n  n$2=*&r1:int& [line 64, column 13]\n  *n$2:int=n$3 [line 64, column 13]\n  *&r2:int&=n$2 [line 64, column 3]\n " shape="box"]
 	
 
 	 "ref_div1_nested_assignment#512157.a9f8511d9ff791c4_6" -> "ref_div1_nested_assignment#512157.a9f8511d9ff791c4_5" ;

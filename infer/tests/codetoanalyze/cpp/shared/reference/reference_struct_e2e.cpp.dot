@@ -434,7 +434,7 @@ digraph cfg {
 "set_field_ptr(class X)#1026280186.624982a2696b528e_2" [label="2: Exit set_field_ptr \n  " color=yellow style=filled]
 	
 
-"set_field_ptr(class X)#1026280186.624982a2696b528e_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&x:X* [line 19, column 37]\n  n$1=*&val:int [line 19, column 44]\n  *n$0.f:int=n$1 [line 19, column 37]\n " shape="box"]
+"set_field_ptr(class X)#1026280186.624982a2696b528e_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&val:int [line 19, column 44]\n  n$0=*&x:X* [line 19, column 37]\n  *n$0.f:int=n$1 [line 19, column 37]\n " shape="box"]
 	
 
 	 "set_field_ptr(class X)#1026280186.624982a2696b528e_3" -> "set_field_ptr(class X)#1026280186.624982a2696b528e_2" ;
@@ -445,7 +445,7 @@ digraph cfg {
 "set_field_ref#1517749754776198249.aa4620ee8933c900_2" [label="2: Exit set_field_ref \n  " color=yellow style=filled]
 	
 
-"set_field_ref#1517749754776198249.aa4620ee8933c900_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&x:X& [line 25, column 37]\n  n$1=*&val:int [line 25, column 43]\n  *n$0.f:int=n$1 [line 25, column 37]\n " shape="box"]
+"set_field_ref#1517749754776198249.aa4620ee8933c900_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&val:int [line 25, column 43]\n  n$0=*&x:X& [line 25, column 37]\n  *n$0.f:int=n$1 [line 25, column 37]\n " shape="box"]
 	
 
 	 "set_field_ref#1517749754776198249.aa4620ee8933c900_3" -> "set_field_ref#1517749754776198249.aa4620ee8933c900_2" ;

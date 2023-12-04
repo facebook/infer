@@ -295,8 +295,6 @@ codetoanalyze/c/bufferoverrun/sizeof.c, static_stride_bad, 5, CONDITION_ALWAYS_T
 codetoanalyze/c/bufferoverrun/sizeof.c, static_stride_bad, 7, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 1 Size: 0]
 codetoanalyze/c/bufferoverrun/struct_copy.c, struct_copy_Bad, 6, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,Assignment,<Length trace>,Array declaration,Array access: Offset: 5 Size: 3]
 codetoanalyze/c/bufferoverrun/struct_copy.c, nested_struct_copy_Bad, 7, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,Assignment,<Length trace>,Array declaration,Array access: Offset: 5 Size: 3]
-codetoanalyze/c/bufferoverrun/struct_copy.c, struct_copy_from_function_call_Bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Call,Assignment,Assignment,<Length trace>,Array declaration,Array access: Offset: 5 Size: 3]
-codetoanalyze/c/bufferoverrun/struct_copy.c, struct_copy_from_wrapper_call_Bad, 4, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Call,Call,Assignment,Assignment,<Length trace>,Array declaration,Array access: Offset: 5 Size: 3]
 codetoanalyze/c/bufferoverrun/struct_copy.c, struct_copy_decl_Bad, 6, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,Assignment,<Length trace>,Array declaration,Array access: Offset: 5 Size: 3]
 codetoanalyze/c/bufferoverrun/struct_copy.c, struct_copy_decl_by_function_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Call,Assignment,Assignment,<Length trace>,Array declaration,Array access: Offset: 5 Size: 3]
 codetoanalyze/c/bufferoverrun/trivial.c, trivial_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 10 Size: 10]

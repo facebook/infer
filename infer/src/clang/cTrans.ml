@@ -1054,86 +1054,52 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         |> PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
         |> mk_trans_result res_trans_e1.return
     | [s1; s2], _, _ ->
-        (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
-        (* NOTE: we create a node only if required. In that case this node *)
-        (* becomes the successor of the nodes that may be created when     *)
-        (* translating the operands.                                       *)
-        let res_trans_e1 = instruction trans_state' s1 in
-        let ((exp1, typ1) as exp_typ1) = res_trans_e1.return in
-        let var_exp_typ =
-          match binary_operator_info.Clang_ast_t.boi_kind with
-          | `Assign ->
-              Some exp_typ1
-          | _ ->
-              None
-        in
-        let trans_state'' = {trans_state' with var_exp_typ} in
-        let res_trans_e2 =
+        let {control= control1; return= (exp1, typ1) as exp_typ1} = instruction trans_state' s1 in
+        let {control= control2; return= exp_typ2} =
           (* translation of s2 is done taking care of block special case *)
-          exec_with_block_priority_exception instruction trans_state'' s2 stmt_info
+          exec_with_block_priority_exception instruction trans_state' s2 stmt_info
         in
-        let exp_typ2 = res_trans_e2.return in
         let binop_control, return =
-          if List.exists ~f:(Exp.equal exp1) res_trans_e2.control.initd_exps then ([], exp_typ1)
-          else
-            let exp_op, instr_bin =
-              CArithmetic_trans.binary_operation_instruction stmt_info.Clang_ast_t.si_source_range
-                binary_operator_info exp_typ1 res_typ exp_typ2 sil_loc
-            in
-            (* Create a node if the priority if free and there are instructions *)
-            let creating_node =
-              PriorityNode.own_priority_node trans_state_pri.priority stmt_info
-              && not (List.is_empty instr_bin)
-            in
-            let extra_instrs, exp_to_parent =
-              if
-                is_binary_assign_op binary_operator_info
-                (* assignment operator result is lvalue in CPP, rvalue in C, *)
-                (* hence the difference *)
-                && (not (CGeneral_utils.is_cpp_translation context.translation_unit_context))
-                && ((not creating_node) || is_return_temp trans_state.continuation)
-              then
-                (* We are in this case when an assignment is inside        *)
-                (* another operator that creates a node. Eg. another       *)
-                (* assignment.  *)
-                (* As no node is created here ids are passed to the parent *)
-                let id = Ident.create_fresh Ident.knormal in
-                let res_instr = Sil.Load {id; e= exp1; typ= typ1; loc= sil_loc} in
-                ([res_instr], Exp.Var id)
-              else ([], exp_op)
-            in
-            let return = (exp_to_parent, typ1) in
-            let binop_control = {empty_control with instrs= instr_bin @ extra_instrs} in
-            ([binop_control], return)
+          let exp_op, instr_bin =
+            CArithmetic_trans.binary_operation_instruction stmt_info.Clang_ast_t.si_source_range
+              binary_operator_info exp_typ1 res_typ exp_typ2 sil_loc
+          in
+          (* Create a node if the priority if free and there are instructions *)
+          let creating_node =
+            PriorityNode.own_priority_node trans_state_pri.priority stmt_info
+            && not (List.is_empty instr_bin)
+          in
+          let extra_instrs, exp_to_parent =
+            if
+              is_binary_assign_op binary_operator_info
+              (* assignment operator result is lvalue in CPP, rvalue in C, *)
+              (* hence the difference *)
+              && (not (CGeneral_utils.is_cpp_translation context.translation_unit_context))
+              && ((not creating_node) || is_return_temp trans_state.continuation)
+            then
+              (* We are in this case when an assignment is inside        *)
+              (* another operator that creates a node. Eg. another       *)
+              (* assignment.  *)
+              (* As no node is created here ids are passed to the parent *)
+              let id = Ident.create_fresh Ident.knormal in
+              let res_instr = Sil.Load {id; e= exp1; typ= typ1; loc= sil_loc} in
+              ([res_instr], Exp.Var id)
+            else ([], exp_op)
+          in
+          let return = (exp_to_parent, typ1) in
+          let binop_control = {empty_control with instrs= instr_bin @ extra_instrs} in
+          ([binop_control], return)
         in
-        (* In the translation of [LHS=RHS;], if [RHS] is a complicated expression that introduced
-           new nodes, eg a conditional expression, it forces to introduce nodes for [LHS], in order
-           to avoid an incorrect statement order. *)
-        let rec is_complex_rhs stmt =
-          match (stmt : Clang_ast_t.stmt) with
-          | ConditionalOperator _
-          | UnaryOperator (_, _, _, {uoi_kind= `LNot})
-          | BinaryOperator
-              (_, _, _, {boi_kind= `Cmp | `LT | `GT | `LE | `GE | `EQ | `NE | `LAnd | `LOr}) ->
-              true
-          | UnaryOperator (_, stmts, _, _)
-          | BinaryOperator (_, stmts, _, _)
-          | ImplicitCastExpr (_, stmts, _, _, _)
-          | ParenExpr (_, stmts, _) ->
-              List.exists stmts ~f:is_complex_rhs
-          | _ ->
-              false
+        let all_res_trans =
+          (* Evaluate e2 first when assignment.
+
+             > The assignment operator (=) and the compound assignment operators all group
+             right-to-left. [...] The right operand is sequenced before the left operand.  (Section
+             7.6.19 [expr.ass] in the C++23 standard.) *)
+          ( if is_binary_assign_op binary_operator_info then [control2; control1]
+            else [control1; control2] )
+          @ binop_control
         in
-        let e1_control =
-          match binary_operator_info.Clang_ast_t.boi_kind with
-          | `Assign when is_complex_rhs s2 ->
-              let trans_state' = PriorityNode.try_claim_priority_node trans_state' stmt_info in
-              PriorityNode.compute_controls_to_parent trans_state' sil_loc node_name stmt_info
-                [res_trans_e1.control]
-          | _ ->
-              res_trans_e1.control
-        in
-        let all_res_trans = [e1_control; res_trans_e2.control] @ binop_control in
         PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
           all_res_trans
         |> mk_trans_result return

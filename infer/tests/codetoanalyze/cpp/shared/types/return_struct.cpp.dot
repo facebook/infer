@@ -187,7 +187,7 @@ digraph cfg {
 "X#X#return_struct#{11996548542918.5f283169cbccf622_2" [label="2: Exit return_struct::X::X \n  " color=yellow style=filled]
 	
 
-"X#X#return_struct#{11996548542918.5f283169cbccf622_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:return_struct::X* [line 13, column 19]\n  n$1=*&x:return_struct::X const & [line 13, column 23]\n  n$2=*n$1.f:int [line 13, column 23]\n  *n$0.f:int=n$2 [line 13, column 19]\n " shape="box"]
+"X#X#return_struct#{11996548542918.5f283169cbccf622_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&x:return_struct::X const & [line 13, column 23]\n  n$2=*n$1.f:int [line 13, column 23]\n  n$0=*&this:return_struct::X* [line 13, column 19]\n  *n$0.f:int=n$2 [line 13, column 19]\n " shape="box"]
 	
 
 	 "X#X#return_struct#{11996548542918.5f283169cbccf622_3" -> "X#X#return_struct#{11996548542918.5f283169cbccf622_2" ;

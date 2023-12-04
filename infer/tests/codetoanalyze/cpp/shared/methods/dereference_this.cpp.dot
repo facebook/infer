@@ -18,7 +18,7 @@ digraph cfg {
 "init#A#(11888841587519675340).79bf6a1702f6a907_2" [label="2: Exit A::init \n  " color=yellow style=filled]
 	
 
-"init#A#(11888841587519675340).79bf6a1702f6a907_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:A* [line 12, column 24]\n  n$1=*&val:int [line 12, column 32]\n  *n$0.field:int=n$1 [line 12, column 24]\n " shape="box"]
+"init#A#(11888841587519675340).79bf6a1702f6a907_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&val:int [line 12, column 32]\n  n$0=*&this:A* [line 12, column 24]\n  *n$0.field:int=n$1 [line 12, column 24]\n " shape="box"]
 	
 
 	 "init#A#(11888841587519675340).79bf6a1702f6a907_3" -> "init#A#(11888841587519675340).79bf6a1702f6a907_2" ;
