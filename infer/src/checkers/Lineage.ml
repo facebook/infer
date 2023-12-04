@@ -94,128 +94,109 @@ module Local = struct
   end
 end
 
-module G = struct
-  (** INV: Constants occur only as sources of edges. NOTE: Constants are "local" because type [data]
-      associates them with a location, in a proc. *)
+module Vertex = struct
+  module T = struct
+    type t =
+      | Local of ((Local.t * PPNode.t)[@sexp.opaque])
+      | Argument of int * FieldPath.t
+      | ArgumentOf of int * (Procname.t[@sexp.opaque])
+      | Captured of int
+      | CapturedBy of int * (Procname.t[@sexp.opaque])
+      | Return of FieldPath.t
+      | ReturnOf of (Procname.t[@sexp.opaque])
+      | Self
+      | Function of (Procname.t[@sexp.opaque])
+    [@@deriving compare, equal, sexp]
+  end
 
-  module V = struct
+  include T
+  include Comparable.Make (T)
+
+  let is_abstract_cell = function Local (Cell cell, _node) -> Cell.is_abstract cell | _ -> false
+
+  let pp fmt vertex =
+    match vertex with
+    | Local (local, node) ->
+        Format.fprintf fmt "%a@@%a" Local.pp local PPNode.pp node
+    | Argument (index, field_path) ->
+        Format.fprintf fmt "arg%d%a" index FieldPath.pp field_path
+    | Captured index ->
+        Format.fprintf fmt "cap%d" index
+    | Return field_path ->
+        Format.fprintf fmt "ret%a" FieldPath.pp field_path
+    | CapturedBy (index, proc_name) ->
+        Format.fprintf fmt "%a.cap%d" Procname.pp proc_name index
+    | ArgumentOf (index, proc_name) ->
+        Format.fprintf fmt "%a.arg%d" Procname.pp proc_name index
+    | ReturnOf proc_name ->
+        Format.fprintf fmt "%a.ret" Procname.pp proc_name
+    | Function proc_name ->
+        Format.fprintf fmt "%a.fun" Procname.pp proc_name
+    | Self ->
+        Format.fprintf fmt "self"
+end
+
+module Edge = struct
+  module Kind = struct
     module T = struct
+      (** - INV1. There is no direct edge from ReturnOf to ArgumentOf. In that case a Return edge is
+            followed by a Call edge, with a Local in the middle (which may be a temporary variable).
+          - INV2: There is no loop, because they don't mean anything. *)
       type t =
-        | Local of ((Local.t * PPNode.t)[@sexp.opaque])
-        | Argument of int * FieldPath.t
-        | ArgumentOf of int * (Procname.t[@sexp.opaque])
-        | Captured of int
-        | CapturedBy of int * (Procname.t[@sexp.opaque])
-        | Return of FieldPath.t
-        | ReturnOf of (Procname.t[@sexp.opaque])
-        | Self
-        | Function of (Procname.t[@sexp.opaque])
-      [@@deriving compare, equal, sexp]
+        | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
+        | Call of FieldPath.t  (** Target is ArgumentOf, field path is injected into arg *)
+        | Return of FieldPath.t  (** Source is ReturnOf, field path is projected from return *)
+        | Capture  (** [X=1, F=fun()->X end] has Capture edge from X to F *)
+        | Builtin  (** Edge coming from a suppressed builtin call, ultimately exported as a Copy *)
+        | Summary of {shape_is_preserved: bool}  (** Summarizes the effect of a procedure call *)
+        | DynamicCallFunction
+        | DynamicCallModule
+      [@@deriving compare, equal, sexp, variants]
     end
 
     include T
     include Comparable.Make (T)
 
-    let is_abstract_cell = function Local (Cell cell, _node) -> Cell.is_abstract cell | _ -> false
+    let to_rank = Variants.to_rank
 
-    let pp fmt vertex =
-      match vertex with
-      | Local (local, node) ->
-          Format.fprintf fmt "%a@@%a" Local.pp local PPNode.pp node
-      | Argument (index, field_path) ->
-          Format.fprintf fmt "arg%d%a" index FieldPath.pp field_path
-      | Captured index ->
-          Format.fprintf fmt "cap%d" index
+    let pp fmt kind =
+      match kind with
+      | Capture ->
+          Format.fprintf fmt "Capture"
+      | Direct ->
+          Format.fprintf fmt "Direct"
+      | Call field_path ->
+          Format.fprintf fmt "Call%a" FieldPath.pp field_path
       | Return field_path ->
-          Format.fprintf fmt "ret%a" FieldPath.pp field_path
-      | CapturedBy (index, proc_name) ->
-          Format.fprintf fmt "%a.cap%d" Procname.pp proc_name index
-      | ArgumentOf (index, proc_name) ->
-          Format.fprintf fmt "%a.arg%d" Procname.pp proc_name index
-      | ReturnOf proc_name ->
-          Format.fprintf fmt "%a.ret" Procname.pp proc_name
-      | Function proc_name ->
-          Format.fprintf fmt "%a.fun" Procname.pp proc_name
-      | Self ->
-          Format.fprintf fmt "self"
+          Format.fprintf fmt "Return%a" FieldPath.pp field_path
+      | Builtin ->
+          Format.fprintf fmt "Builtin"
+      | Summary {shape_is_preserved} ->
+          Format.fprintf fmt "Summary" ;
+          if not shape_is_preserved then Format.fprintf fmt "#"
+      | DynamicCallFunction ->
+          Format.fprintf fmt "DynamicCallFunction"
+      | DynamicCallModule ->
+          Format.fprintf fmt "DynamicCallModule"
   end
 
+  type kind = Kind.t [@@deriving compare, equal, sexp]
+
+  type t = {kind: kind; node: (PPNode.t[@sexp.opaque])} [@@deriving compare, equal, sexp]
+
+  let pp_e fmt (src, {kind; node}, dst) =
+    Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a@@%a)]@]@;" Vertex.pp src Vertex.pp dst Kind.pp kind
+      PPNode.pp node
+end
+
+module G = struct
+  (** INV: Constants occur only as sources of edges. NOTE: Constants are "local" because type [data]
+      associates them with a location, in a proc. *)
+
+  module V = Vertex
+
   module E = struct
-    module Kind = struct
-      module T = struct
-        (** - INV1. There is no direct edge from ReturnOf to ArgumentOf. In that case a Return edge
-              is followed by a Call edge, with a Local in the middle (which may be a temporary
-              variable).
-            - INV2: There is no loop, because they don't mean anything. *)
-        type t =
-          | Direct  (** Immediate copy; e.g., assigment or passing an argument *)
-          | Call of FieldPath.t  (** Target is ArgumentOf, field path is injected into arg *)
-          | Return of FieldPath.t  (** Source is ReturnOf, field path is projected from return *)
-          | Capture  (** [X=1, F=fun()->X end] has Capture edge from X to F *)
-          | Builtin
-              (** Edge coming from a suppressed builtin call, ultimately exported as a Copy *)
-          | Summary of {shape_is_preserved: bool}  (** Summarizes the effect of a procedure call *)
-          | DynamicCallFunction
-          | DynamicCallModule
-        [@@deriving compare, equal, sexp, variants]
-      end
-
-      include T
-      include Comparable.Make (T)
-
-      let to_rank = Variants.to_rank
-
-      let pp fmt kind =
-        match kind with
-        | Capture ->
-            Format.fprintf fmt "Capture"
-        | Direct ->
-            Format.fprintf fmt "Direct"
-        | Call field_path ->
-            Format.fprintf fmt "Call%a" FieldPath.pp field_path
-        | Return field_path ->
-            Format.fprintf fmt "Return%a" FieldPath.pp field_path
-        | Builtin ->
-            Format.fprintf fmt "Builtin"
-        | Summary {shape_is_preserved} ->
-            Format.fprintf fmt "Summary" ;
-            if not shape_is_preserved then Format.fprintf fmt "#"
-        | DynamicCallFunction ->
-            Format.fprintf fmt "DynamicCallFunction"
-        | DynamicCallModule ->
-            Format.fprintf fmt "DynamicCallModule"
-    end
-
-    type kind = Kind.t [@@deriving compare, equal, sexp]
-
-    type t = {source: V.t; target: V.t; kind: kind; node: (PPNode.t[@sexp.opaque])}
-    [@@deriving compare, equal, sexp]
-
-    let pp fmt {source; target; kind; node} =
-      Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a@@%a)]@]@;" V.pp source V.pp target Kind.pp kind
-        PPNode.pp node
-
-
-    let preserves_shape {source; target; kind; _} =
-      match kind with
-      | Direct ->
-          Fn.non V.is_abstract_cell source && Fn.non V.is_abstract_cell target
-      | Builtin ->
-          (* Builtins are considered as unknown functions for shape preservation purposes.
-             TODO T154077173: does this introduce undesirable imprecision? *)
-          false
-      | Call _ ->
-          (* Target is ArgumentOf *)
-          Fn.non V.is_abstract_cell source
-      | Return _ ->
-          (* Source is ReturnOf *)
-          Fn.non V.is_abstract_cell target
-      | Summary {shape_is_preserved} ->
-          shape_is_preserved
-      | Capture ->
-          true (* TODO T154077173: investigate if more precision is worthwile *)
-      | DynamicCallFunction | DynamicCallModule ->
-          true (* TODO T154077173: model as a call? *)
+    type t = V.t * Edge.t * V.t [@@deriving compare, equal, sexp]
   end
 
   type vertex = V.t
@@ -229,19 +210,19 @@ module G = struct
   let is_empty = List.is_empty
 
   let count_vertices edges =
-    let v_list = List.concat_map ~f:(function {E.source; target} -> [source; target]) edges in
+    let v_list = List.concat_map ~f:(function src, _, dst -> [src; dst]) edges in
     let v_set = V.Set.of_list v_list in
     Set.length v_set
 
 
   let pp fmt edges =
     Format.fprintf fmt "@[<v 2>LineageGraph: edges %d vertices %d@;@[%a@]@]" (List.length edges)
-      (count_vertices edges) (Format.pp_print_list E.pp) edges
+      (count_vertices edges) (Format.pp_print_list Edge.pp_e) edges
 
 
-  let add_edge ~kind ~node ~source ~target graph =
-    let added = {E.source; target; kind; node} :: graph in
-    match ((kind : E.kind), V.equal target source, (target : V.t), (source : V.t)) with
+  let add_edge ~kind ~node ~src ~dst graph =
+    let added = (src, {Edge.kind; node}, dst) :: graph in
+    match ((kind : Edge.kind), V.equal dst src, (dst : V.t), (src : V.t)) with
     | Direct, true, _, _ ->
         graph (* skip Direct loops *)
     | Builtin, true, _, _ ->
@@ -249,7 +230,7 @@ module G = struct
     | Summary _, true, _, _ ->
         graph (* skip Summary loops*)
     | _, true, _, _ ->
-        L.die InternalError "There shall be no fancy (%a) loops!" E.Kind.pp kind
+        L.die InternalError "There shall be no fancy (%a) loops!" Edge.Kind.pp kind
     | Call _, _, ArgumentOf _, _ ->
         added
     | Call _, _, _, _ ->
@@ -260,6 +241,28 @@ module G = struct
         L.die InternalError "Return edges shall come form ReturnOf!"
     | _ ->
         added
+
+
+  let preserves_shape ((src, {kind; _}, dst) : E.t) =
+    match kind with
+    | Direct ->
+        Fn.non Vertex.is_abstract_cell src && Fn.non Vertex.is_abstract_cell dst
+    | Builtin ->
+        (* Builtins are considered as unknown functions for shape preservation purposes.
+           TODO T154077173: does this introduce undesirable imprecision? *)
+        false
+    | Call _ ->
+        (* Target is ArgumentOf *)
+        Fn.non Vertex.is_abstract_cell src
+    | Return _ ->
+        (* Source is ReturnOf *)
+        Fn.non Vertex.is_abstract_cell dst
+    | Summary {shape_is_preserved} ->
+        shape_is_preserved
+    | Capture ->
+        true (* TODO T154077173: investigate if more precision is worthwile *)
+    | DynamicCallFunction | DynamicCallModule ->
+        true (* TODO T154077173: model as a call? *)
 
 
   module Out = struct
@@ -484,7 +487,7 @@ module G = struct
         of_list [of_string term_data; of_term_type term_type]
 
 
-      let of_kind (kind : E.kind) : t = Z.of_int (E.Kind.to_rank kind)
+      let of_kind (kind : Edge.kind) : t = Z.of_int (Edge.Kind.to_rank kind)
 
       let of_field_path field_path = of_string (Fmt.to_to_string FieldPath.pp field_path)
 
@@ -630,9 +633,9 @@ module G = struct
           save ~write:false procname (Start Location.dummy) Function
 
 
-    let save_edge proc_desc {E.source; target; kind; node} =
-      let source_id = save_vertex proc_desc source in
-      let target_id = save_vertex proc_desc target in
+    let save_edge proc_desc ((src, {kind; node}, dst) : edge) =
+      let src_id = save_vertex proc_desc src in
+      let dst_id = save_vertex proc_desc dst in
       let kind_id = Id.of_kind kind in
       let location_id =
         let procname = Procdesc.get_proc_name proc_desc in
@@ -672,7 +675,7 @@ module G = struct
 
              We similarly generate projection metadata from [Argument (index, path)] nodes, that will
              be merged into a summarising [Argument index] one. *)
-          match (source, target) with
+          match (src, dst) with
           | Argument (_index, arg_path), Return ret_path ->
               (* $arg -> $ret edges may happen in infer-generated procedures (that only get
                  non-source-occurring variables by definition) *)
@@ -689,12 +692,12 @@ module G = struct
            computed on the generated metadata since it doesn't exist as-is in the source. *)
         Id.of_option Id.of_edge_metadata edge_metadata
       in
-      let edge_id = Id.of_list [source_id; target_id; kind_id; metadata_id; location_id] in
+      let edge_id = Id.of_list [src_id; dst_id; kind_id; metadata_id; location_id] in
       write_json Edge edge_id
         (Json.yojson_of_edge
            { edge=
-               { source= Id.out source_id
-               ; target= Id.out target_id
+               { source= Id.out src_id
+               ; target= Id.out dst_id
                ; edge_type
                ; edge_metadata
                ; location= Id.out location_id } } ) ;
@@ -943,18 +946,18 @@ module Summary = struct
        - Collect a set of nodes that break shape preservation, due to either being abstract cells, or
          being targets of edges that have this effect. *)
     let graph_rev, shape_mixing_nodes =
-      let add_edge g {G.E.source; target; kind} =
+      let add_edge g ((src, {kind; _}, dst) : G.edge) =
         match kind with
         | Call _ | Return _ ->
             g (* skip call/return edges *)
         | _ ->
-            Map.add_multi ~key:target ~data:source g
+            Map.add_multi ~key:dst ~data:src g
       in
-      let add_if_shape_mixing set ({G.E.target; _} as edge) =
-        if G.E.preserves_shape edge then set else Set.add set target
+      let add_if_shape_mixing set ((_, _, dst) as edge) =
+        if G.preserves_shape edge then set else Set.add set dst
       in
       let walk_edge (g, s) edge = (add_edge g edge, add_if_shape_mixing s edge) in
-      List.fold ~init:(G.V.Map.empty, G.V.Set.empty) ~f:walk_edge graph
+      List.fold ~init:(Vertex.Map.empty, Vertex.Set.empty) ~f:walk_edge graph
     in
     (* Do a DFS, to see which arguments are reachable from a return field path. *)
     let rec dfs (shape_is_preserved, seen) node =
@@ -979,7 +982,7 @@ module Summary = struct
         List.fold ~init:(shape_is_preserved, seen) ~f:dfs parents
     in
     let collect_reachable return_field_path =
-      dfs (true, G.V.Set.empty) (G.V.Return return_field_path)
+      dfs (true, Vertex.Set.empty) (Vertex.Return return_field_path)
     in
     (* Collect reachable arguments from a Return field path. *)
     let collect_tito tito ret_field_path =
@@ -1018,10 +1021,10 @@ module Summary = struct
   let remove_temporaries proc_desc graph =
     (* Build adjacency list representation, to make DFS easy. *)
     let parents, children =
-      let add_edge (parents, children) ({G.E.source; target} as edge) =
-        (Map.add_multi ~key:target ~data:edge parents, Map.add_multi ~key:source ~data:edge children)
+      let add_edge (parents, children) ((src, _, dst) as edge) =
+        (Map.add_multi ~key:dst ~data:edge parents, Map.add_multi ~key:src ~data:edge children)
       in
-      List.fold ~init:G.V.Map.(empty, empty) ~f:add_edge graph
+      List.fold ~init:Vertex.Map.(empty, empty) ~f:add_edge graph
     in
     (* A check for vertex interestingness, used in the graph simplification that follows. *)
     let special_variables =
@@ -1041,10 +1044,10 @@ module Summary = struct
       | Function _ | Self ->
           true
     in
-    let is_interesting_edge ({kind; source; target} : G.edge) =
+    let is_interesting_edge ((src, {kind; _}, dst) : G.edge) =
       match kind with
       | Direct -> (
-        match (source, target) with
+        match (src, dst) with
         | Argument (_, _ :: _), _ | _, Return (_ :: _) ->
             (* The edge will have non-empty injection/projection metadata. *)
             true
@@ -1057,8 +1060,8 @@ module Summary = struct
       | Call _ | Return _ | Capture | Summary _ | DynamicCallFunction | DynamicCallModule ->
           true
     in
-    let merge_edges {G.E.kind= kind_ab; source= source_ab; target= _; node= node_ab}
-        {G.E.kind= kind_bc; source= _; target= target_bc; node= node_bc} : G.edge =
+    let merge_edges (src_ab, {Edge.kind= kind_ab; node= node_ab}, _)
+        (_, {Edge.kind= kind_bc; node= node_bc}, dst_bc) : G.edge =
       (* Merge both edges together, keeping source of the first one, the target of the second one,
          and the kind of node of the most interesting one. The interesting order is Direct < Builtin
          < anything. *)
@@ -1077,7 +1080,7 @@ module Summary = struct
         | _ ->
             L.die InternalError "I can't merge two interesting edges together"
       in
-      {G.E.kind; node; source= source_ab; target= target_bc}
+      (src_ab, {Edge.kind; node}, dst_bc)
     in
     (* The set [todo] contains vertices considered for removal. We initialize this set with all
      * uninteresting vertices. The main loop of the algorithm extracts a vertex from [todo] (in
@@ -1089,17 +1092,16 @@ module Summary = struct
      * is initialized, and at most m while in the main loop. And each iteration of the main loop
      * does one deletion from the set [todo].) *)
     let todo =
-      G.V.Set.of_list
-        (List.concat_map ~f:(function {G.E.source; target} -> [source; target]) graph)
+      Vertex.Set.of_list (List.concat_map ~f:(function src, _, dst -> [src; dst]) graph)
     in
     let todo = Set.filter ~f:(Fn.non is_interesting_vertex) todo in
-    let remove_edge (parents, children) ({G.E.source; target} as edge) =
+    let remove_edge (parents, children) ((src, _, dst) as edge) =
       let rm map key =
         let edge_list = Map.find_multi map key in
         let edge_list = List.filter ~f:(fun elem -> not (G.E.equal elem edge)) edge_list in
         Map.set map ~key ~data:edge_list
       in
-      (rm parents target, rm children source)
+      (rm parents dst, rm children src)
     in
     let rec simplify todo parents children =
       match Set.choose todo with
@@ -1121,24 +1123,20 @@ module Summary = struct
             let parents, children = List.fold ~init:(parents, children) ~f:remove_edge before in
             let parents, children = List.fold ~init:(parents, children) ~f:remove_edge after in
             let do_pair (todo, (parents, children)) ((edge_ab : G.edge), (edge_bc : G.edge)) =
-              let keep = merge_edges edge_ab edge_bc in
-              if G.V.equal keep.source keep.target then
+              let ((keep_src, _, keep_dst) as keep) = merge_edges edge_ab edge_bc in
+              if Vertex.equal keep_src keep_dst then
                 L.die InternalError "OOPS: I don't work with loops." ;
               (* (B) add new edges *)
-              let parents = Map.add_multi ~key:keep.target ~data:keep parents in
-              let children = Map.add_multi ~key:keep.source ~data:keep children in
+              let parents = Map.add_multi ~key:keep_dst ~data:keep parents in
+              let children = Map.add_multi ~key:keep_src ~data:keep children in
               (* The following two lines insert at most 1 vertex into [todo] for each [edge_ab]/
                * [edge_bc] edge that gets removed from the graph, in step (A) above. This is where
                * the earlier claim that at most m insertions happen in the main loop. However,
                * this claim is invalidated if one of the [edge_ab]/[edge_bc] edges gets re-added
                * to the graph in step (B) above, which may happen if there is an (isolated) loop
                * in the graph. *)
-              let todo =
-                if is_interesting_vertex keep.source then todo else Set.add todo keep.source
-              in
-              let todo =
-                if is_interesting_vertex keep.target then todo else Set.add todo keep.target
-              in
+              let todo = if is_interesting_vertex keep_src then todo else Set.add todo keep_src in
+              let todo = if is_interesting_vertex keep_dst then todo else Set.add todo keep_dst in
               (todo, (parents, children))
             in
             let todo, (parents, children) =
@@ -1251,7 +1249,7 @@ module Domain : sig
   (** If the given procedure is an unsupported Erlang feature, record that in the abstract state. *)
 
   val add_flow_from_local_set :
-    node:PPNode.t -> kind:G.E.Kind.t -> src:(Local.t, _) Set.t -> dst:Dst.t -> t -> t
+    node:PPNode.t -> kind:Edge.kind -> src:Local.Set.t -> dst:Dst.t -> t -> t
 
   (** {2 Add flow to non-variable nodes} *)
 
@@ -1262,7 +1260,7 @@ module Domain : sig
   val add_flow_from_path :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind:G.E.Kind.t
+    -> kind:Edge.kind
     -> src:VarPath.t
     -> dst:Dst.t
     -> t
@@ -1271,7 +1269,7 @@ module Domain : sig
   val add_flow_from_path_f :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind_f:(FieldPath.t -> G.E.Kind.t)
+    -> kind_f:(FieldPath.t -> Edge.kind)
     -> src:VarPath.t
     -> dst_f:(FieldPath.t -> Dst.t)
     -> t
@@ -1292,7 +1290,7 @@ module Domain : sig
   val add_write :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind:G.E.Kind.t
+    -> kind:Edge.kind
     -> src:Src.t
     -> dst:VarPath.t
     -> t
@@ -1301,7 +1299,7 @@ module Domain : sig
   val add_write_f :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind_f:(FieldPath.t -> G.E.Kind.t)
+    -> kind_f:(FieldPath.t -> Edge.kind)
     -> src_f:(FieldPath.t -> Src.t)
     -> dst:VarPath.t
     -> t
@@ -1316,7 +1314,7 @@ module Domain : sig
   val add_write_from_local :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind:G.E.Kind.t
+    -> kind:Edge.kind
     -> src:Local.t
     -> dst:VarPath.t
     -> t
@@ -1325,8 +1323,8 @@ module Domain : sig
   val add_write_from_local_set :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind:G.E.Kind.t
-    -> src:(Local.t, _) Set.t
+    -> kind:Edge.kind
+    -> src:Local.Set.t
     -> dst:VarPath.t
     -> t
     -> t
@@ -1334,7 +1332,7 @@ module Domain : sig
   val add_write_parallel :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind:G.E.Kind.t
+    -> kind:Edge.kind
     -> src:VarPath.t
     -> dst:VarPath.t
     -> ?exclude:(src_field_path:FieldPath.t -> dst_field_path:FieldPath.t -> bool)
@@ -1349,7 +1347,7 @@ module Domain : sig
   val add_write_product :
        shapes:Shapes.t option
     -> node:PPNode.t
-    -> kind:G.E.Kind.t
+    -> kind:Edge.kind
     -> src:VarPath.t
     -> dst:VarPath.t
     -> t
@@ -1397,10 +1395,10 @@ end = struct
       let fold_local ~f ~init node ((last_writes, _), _) (local : Local.t) =
         match local with
         | ConstantAtom _ | ConstantInt _ | ConstantString _ ->
-            f init (G.V.Local (local, node))
+            f init (Vertex.Local (local, node))
         | Cell cell ->
             let source_nodes = Real.LastWrites.get_all cell last_writes in
-            List.fold ~f:(fun acc node -> f acc (G.V.Local (local, node))) ~init source_nodes
+            List.fold ~f:(fun acc node -> f acc (Vertex.Local (local, node))) ~init source_nodes
     end
   end
 
@@ -1426,7 +1424,7 @@ end = struct
 
 
   let add_edge ~node ~kind ~src ~dst ((last_writes, has_unsupported_features), graph) : t =
-    let graph = G.add_edge ~node ~kind ~source:src ~target:dst graph in
+    let graph = G.add_edge ~node ~kind ~src ~dst graph in
     ((last_writes, has_unsupported_features), graph)
 
 
@@ -1792,7 +1790,7 @@ module TransferFunctions = struct
   let generic_call_model shapes node analyze_dependency ret_id procname args astate =
     let rm_builtin = (not Config.lineage_include_builtins) && BuiltinDecl.is_declared procname in
     let if_not_builtin transform state = if rm_builtin then state else transform state in
-    let kind_f ~shape_is_preserved : G.E.kind =
+    let kind_f ~shape_is_preserved : Edge.kind =
       if rm_builtin then Builtin else Summary {shape_is_preserved}
     in
     astate |> Domain.record_supported procname
@@ -2066,8 +2064,8 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) (shapes 
     let start_node = CFG.start_node cfg in
     let add_arg_flow i astate arg_var =
       TransferFunctions.Domain.add_write_f ~shapes ~node:start_node
-        ~kind_f:(Fn.const G.E.Kind.Direct) ~dst:(VarPath.var arg_var) ~src_f:(Domain.Src.argument i)
-        astate
+        ~kind_f:(Fn.const Edge.Kind.Direct) ~dst:(VarPath.var arg_var)
+        ~src_f:(Domain.Src.argument i) astate
     in
     let add_cap_flow i astate var =
       TransferFunctions.Domain.add_write ~shapes ~node:start_node ~kind:Direct
@@ -2091,7 +2089,7 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) (shapes 
         post
   in
   let final_astate =
-    Domain.add_flow_from_path_f ~shapes ~node:exit_node ~kind_f:(Fn.const G.E.Kind.Direct)
+    Domain.add_flow_from_path_f ~shapes ~node:exit_node ~kind_f:(Fn.const Edge.Kind.Direct)
       ~src:ret_var_path ~dst_f:Domain.Dst.return exit_astate
   in
   (* Collect the graph from all nodes *)
