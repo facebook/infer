@@ -8,14 +8,13 @@
 open! IStd
 module F = Format
 
-type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare, equal, hash]
-
-type fields = field list [@@deriving equal, hash]
+type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare, equal, hash, normalize]
 
 type java_class_kind = Interface | AbstractClass | NormalClass
-[@@deriving equal, compare, hash, show {with_path= false}]
+[@@deriving equal, compare, hash, show {with_path= false}, normalize]
 
-type hack_class_kind = Class | Interface | Trait [@@deriving equal, hash, show {with_path= false}]
+type hack_class_kind = Class | Interface | Trait
+[@@deriving equal, hash, show {with_path= false}, normalize]
 
 module ClassInfo = struct
   type t =
@@ -27,25 +26,13 @@ module ClassInfo = struct
               (** None should correspond to rare cases when it was impossible to fetch the location
                   in source file *) }
     | HackClassInfo of hack_class_kind
-  [@@deriving equal, hash, show {with_path= false}]
-
-  module Normalizer = HashNormalizer.Make (struct
-    type nonrec t = t [@@deriving equal, hash]
-
-    let normalize t =
-      match t with
-      | NoInfo | CppClassInfo _ | HackClassInfo _ ->
-          t
-      | JavaClassInfo {kind; loc} ->
-          let loc' = Location.Normalizer.normalize_opt loc in
-          if phys_equal loc' loc then t else JavaClassInfo {kind; loc= loc'}
-  end)
+  [@@deriving equal, hash, show {with_path= false}, normalize]
 end
 
 (** Type for a structured value. *)
 type t =
-  { fields: fields  (** non-static fields *)
-  ; statics: fields  (** static fields *)
+  { fields: field list  (** non-static fields *)
+  ; statics: field list  (** static fields *)
   ; supers: Typ.Name.t list  (** superclasses *)
   ; objc_protocols: Typ.Name.t list  (** ObjC protocols *)
   ; methods: Procname.t list  (** methods defined *)
@@ -54,7 +41,7 @@ type t =
   ; class_info: ClassInfo.t  (** present if and only if the class is C++, Java or Hack *)
   ; dummy: bool  (** dummy struct for class including static method *)
   ; source_file: SourceFile.t option  (** source file containing this struct's declaration *) }
-[@@deriving equal, hash]
+[@@deriving equal, hash, normalize]
 
 type lookup = Typ.Name.t -> t option
 
@@ -434,57 +421,3 @@ let is_hack_interface {class_info} =
 
 let is_hack_trait {class_info} =
   match (class_info : ClassInfo.t) with HackClassInfo Trait -> true | _ -> false
-
-
-module FieldNormalizer = HashNormalizer.Make (struct
-  type t = field [@@deriving equal, hash]
-
-  let normalize f =
-    let field_name, typ, annot = f in
-    let field_name' = Fieldname.hash_normalize field_name in
-    let typ' = Typ.Normalizer.normalize typ in
-    let annot' = Annot.hash_normalize_list annot in
-    if phys_equal field_name field_name' && phys_equal typ typ' && phys_equal annot annot' then f
-    else (field_name', typ', annot')
-end)
-
-module Normalizer = HashNormalizer.Make (struct
-  type nonrec t = t [@@deriving equal, hash]
-
-  let normalize t =
-    let fields = IList.map_changed ~equal:phys_equal ~f:FieldNormalizer.normalize t.fields in
-    let statics = IList.map_changed ~equal:phys_equal ~f:FieldNormalizer.normalize t.statics in
-    let supers = IList.map_changed ~equal:phys_equal ~f:Typ.Name.Normalizer.normalize t.supers in
-    let objc_protocols =
-      IList.map_changed ~equal:phys_equal ~f:Typ.Name.Normalizer.normalize t.objc_protocols
-    in
-    let methods = IList.map_changed ~equal:phys_equal ~f:Procname.Normalizer.normalize t.methods in
-    let exported_objc_methods =
-      IList.map_changed ~equal:phys_equal ~f:Procname.Normalizer.normalize t.exported_objc_methods
-    in
-    let annots = Annot.hash_normalize_list t.annots in
-    let class_info = ClassInfo.Normalizer.normalize t.class_info in
-    let source_file =
-      IOption.map_changed ~equal:phys_equal ~f:SourceFile.Normalizer.normalize t.source_file
-    in
-    if
-      phys_equal fields t.fields && phys_equal statics t.statics && phys_equal supers t.supers
-      && phys_equal objc_protocols t.objc_protocols
-      && phys_equal methods t.methods
-      && phys_equal exported_objc_methods t.exported_objc_methods
-      && phys_equal annots t.annots
-      && phys_equal class_info t.class_info
-      && phys_equal source_file t.source_file
-    then t
-    else
-      { fields
-      ; statics
-      ; supers
-      ; objc_protocols
-      ; methods
-      ; exported_objc_methods
-      ; annots
-      ; class_info
-      ; dummy= t.dummy
-      ; source_file }
-end)

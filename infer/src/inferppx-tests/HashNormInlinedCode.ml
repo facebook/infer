@@ -315,16 +315,6 @@ module SourceFile = struct
   end [@@ocaml.doc "@inline"]
 
   [@@@end]
-
-  module Normalizer : HashNormalizer.S with type t = t = struct
-    type nonrec t = t
-
-    let normalize = hash_normalize
-
-    let normalize_opt = hash_normalize_opt
-
-    let normalize_list = hash_normalize_list
-  end
 end
 
 module Location = struct
@@ -399,16 +389,6 @@ module Location = struct
   end [@@ocaml.doc "@inline"]
 
   [@@@end]
-
-  module Normalizer : HashNormalizer.S with type t = t = struct
-    type nonrec t = t
-
-    let normalize = hash_normalize
-
-    let normalize_opt = hash_normalize_opt
-
-    let normalize_list = hash_normalize_list
-  end
 end
 
 module CSharpClassName = struct
@@ -476,16 +456,6 @@ module CSharpClassName = struct
   end [@@ocaml.doc "@inline"]
 
   [@@@end]
-
-  module Normalizer : HashNormalizer.S with type t = t = struct
-    type nonrec t = t
-
-    let normalize = hash_normalize
-
-    let normalize_opt = hash_normalize_opt
-
-    let normalize_list = hash_normalize_list
-  end
 end
 
 module JavaClassName = struct
@@ -553,16 +523,6 @@ module JavaClassName = struct
   end [@@ocaml.doc "@inline"]
 
   [@@@end]
-
-  module Normalizer : HashNormalizer.S with type t = t = struct
-    type nonrec t = t
-
-    let normalize = hash_normalize
-
-    let normalize_opt = hash_normalize_opt
-
-    let normalize_list = hash_normalize_list
-  end
 end
 
 type recursive1 = {one_a: string; one_b: recursive2} [@@deriving equal, hash]

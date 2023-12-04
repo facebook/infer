@@ -264,7 +264,7 @@ type t =
   | ObjC_Cpp of ObjC_Cpp.t
   | Python of Python.t
   | WithFunctionParameters of t * FunctionParameters.t * FunctionParameters.t list
-[@@deriving compare, yojson_of, sexp, hash]
+[@@deriving compare, yojson_of, sexp, hash, normalize]
 
 val base_of : t -> t
 (** if a procedure has been specialised, return the original one, otherwise itself *)
@@ -563,5 +563,3 @@ val is_hack_async_name : t -> bool
 (* Checks if the function name starts with "gen", which is a (lint-checked) convention for it being async at Meta *)
 
 val should_create_specialized_proc : t -> bool
-
-module Normalizer : HashNormalizer.S with type t = t

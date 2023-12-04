@@ -11,8 +11,6 @@ module F = Format
 
 type field = Fieldname.t * Typ.t * Annot.Item.t [@@deriving compare, equal]
 
-type fields = field list
-
 type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal]
 
 type hack_class_kind = Class | Interface | Trait
@@ -32,8 +30,8 @@ end
 
 (** Type for a structured value. *)
 type t = private
-  { fields: fields  (** non-static fields *)
-  ; statics: fields  (** static fields *)
+  { fields: field list  (** non-static fields *)
+  ; statics: field list  (** static fields *)
   ; supers: Typ.Name.t list  (** superclasses *)
   ; objc_protocols: Typ.Name.t list  (** ObjC protocols *)
   ; methods: Procname.t list  (** methods defined *)
@@ -42,6 +40,7 @@ type t = private
   ; class_info: ClassInfo.t  (** present if and only if the class is Java or Hack *)
   ; dummy: bool  (** dummy struct for class including static method *)
   ; source_file: SourceFile.t option  (** source file containing this struct's declaration *) }
+[@@deriving normalize]
 
 type lookup = Typ.Name.t -> t option
 
@@ -52,8 +51,8 @@ val pp : Pp.env -> Typ.Name.t -> F.formatter -> t -> unit
 
 val internal_mk_struct :
      ?default:t
-  -> ?fields:fields
-  -> ?statics:fields
+  -> ?fields:field list
+  -> ?statics:field list
   -> ?methods:Procname.t list
   -> ?exported_objc_methods:Procname.t list
   -> ?supers:Typ.Name.t list
@@ -99,5 +98,3 @@ val is_hack_class : t -> bool
 val is_hack_interface : t -> bool
 
 val is_hack_trait : t -> bool
-
-module Normalizer : HashNormalizer.S with type t = t

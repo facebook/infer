@@ -1648,13 +1648,3 @@ module UnitCache = struct
     let cache_set pname value = cache := Some (pname, value) in
     (cache_get, cache_set)
 end
-
-module Normalizer = struct
-  type nonrec t = t
-
-  let normalize = hash_normalize
-
-  let normalize_opt = hash_normalize_opt
-
-  let normalize_list = hash_normalize_list
-end

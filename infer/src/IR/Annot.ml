@@ -85,8 +85,11 @@ and pp fmt annotation =
 
 
 module Item = struct
+  (* type alias needed to workaround [t] being used in RHS non-recursively for normalization *)
+  type t_ = t [@@deriving compare, equal, hash, normalize]
+
   (** Annotation for one item: a list of annotations with visibility. *)
-  type nonrec t = t list [@@deriving compare, equal, hash]
+  type t = t_ list [@@deriving compare, equal, hash, normalize]
 
   (** Pretty print an item annotation. *)
   let pp fmt ann = F.fprintf fmt "<%a>" (Pp.seq pp) ann

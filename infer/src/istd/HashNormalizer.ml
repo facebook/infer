@@ -15,11 +15,11 @@ end
 module type S = sig
   type t
 
-  val normalize : t -> t
+  val hash_normalize : t -> t
 
-  val normalize_opt : t option -> t option
+  val hash_normalize_opt : t option -> t option
 
-  val normalize_list : t list -> t list
+  val hash_normalize_list : t list -> t list
 end
 
 let normalizer_reset_funs : (unit -> unit) list ref = ref []
@@ -29,7 +29,7 @@ let register_reset f = normalizer_reset_funs := f :: !normalizer_reset_funs
 module Make (T : NormalizedT) = struct
   type t = T.t
 
-  let normalize =
+  let hash_normalize =
     let module H = Caml.Hashtbl.Make (T) in
     let table : t H.t = H.create 11 in
     let () = register_reset (fun () -> H.reset table) in
@@ -43,14 +43,14 @@ module Make (T : NormalizedT) = struct
           normalized
 
 
-  let normalize_opt = function
+  let hash_normalize_opt = function
     | None ->
         None
     | some_t ->
-        IOption.map_changed some_t ~equal:phys_equal ~f:normalize
+        IOption.map_changed some_t ~equal:phys_equal ~f:hash_normalize
 
 
-  let normalize_list ts = IList.map_changed ts ~equal:phys_equal ~f:normalize
+  let hash_normalize_list ts = IList.map_changed ts ~equal:phys_equal ~f:hash_normalize
 end
 
 module SimpleStringNormalizer = Make (struct
@@ -67,31 +67,25 @@ module rec StringListNormalizer : (S with type t = string list) = Make (struct
     | [] ->
         []
     | x :: xs ->
-        let xs' = StringListNormalizer.normalize xs in
-        let x' = SimpleStringNormalizer.normalize x in
+        let xs' = StringListNormalizer.hash_normalize xs in
+        let x' = SimpleStringNormalizer.hash_normalize x in
         if phys_equal x x' && phys_equal xs xs' then string_list else x' :: xs'
 end)
 
 module String = struct
   type t = string
 
-  let hash_normalize = SimpleStringNormalizer.normalize
+  let hash_normalize = SimpleStringNormalizer.hash_normalize
 
-  let hash_normalize_opt = SimpleStringNormalizer.normalize_opt
+  let hash_normalize_opt = SimpleStringNormalizer.hash_normalize_opt
 
-  let hash_normalize_list = StringListNormalizer.normalize
+  let hash_normalize_list = StringListNormalizer.hash_normalize
 end
 
-module Int64 = struct
-  type t = int64
+module Int64 = Make (struct
+  type t = int64 [@@deriving equal, hash]
 
-  module T = Make (struct
-    type t = int64 [@@deriving equal, hash]
-
-    let normalize : t -> t = Fn.id
-  end)
-
-  let hash_normalize = T.normalize
-end
+  let normalize = Fn.id
+end)
 
 let reset_all_normalizers () = List.iter !normalizer_reset_funs ~f:(fun f -> f ())

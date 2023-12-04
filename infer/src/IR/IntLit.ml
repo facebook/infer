@@ -32,13 +32,11 @@ module Z = struct
 
   let hash_fold_t hash_state t = [%hash_fold: int] hash_state (Z.hash t)
 
-  module Normalizer = HashNormalizer.Make (struct
+  include HashNormalizer.Make (struct
     type nonrec t = t [@@deriving equal, hash]
 
     let normalize = Fn.id
   end)
-
-  let hash_normalize = Normalizer.normalize
 end
 
 (** signed and unsigned integer literals *)

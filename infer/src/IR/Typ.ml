@@ -647,16 +647,6 @@ module Name = struct
 
     let hash = hash
   end)
-
-  module Normalizer = struct
-    type t = name
-
-    let normalize = hash_normalize_name
-
-    let normalize_opt = hash_normalize_name_opt
-
-    let normalize_list = hash_normalize_name_list
-  end
 end
 
 (** dump a type with all the details. *)
@@ -904,14 +894,3 @@ let rec is_java_type t =
       is_java_type elt
   | _ ->
       false
-
-
-module Normalizer = struct
-  type nonrec t = t
-
-  let normalize = hash_normalize
-
-  let normalize_opt = hash_normalize_opt
-
-  let normalize_list = hash_normalize_list
-end

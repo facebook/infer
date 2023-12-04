@@ -75,5 +75,3 @@ val is_matching : Str.regexp list -> t -> bool
 (** Check if the source file path is matching with a regexp of the given regexp list. *)
 
 module SQLite : SqliteUtils.Data with type t = t
-
-module Normalizer : HashNormalizer.S with type t = t

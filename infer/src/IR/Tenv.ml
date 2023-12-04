@@ -285,8 +285,8 @@ module Normalizer = struct
   let normalize tenv =
     let new_tenv = TypenameHash.create (TypenameHash.length tenv) in
     let normalize_mapping name tstruct =
-      let name = Typ.Name.Normalizer.normalize name in
-      let tstruct = Struct.Normalizer.normalize tstruct in
+      let name = Typ.Name.hash_normalize name in
+      let tstruct = Struct.hash_normalize tstruct in
       TypenameHash.add new_tenv name tstruct
     in
     TypenameHash.iter normalize_mapping tenv ;

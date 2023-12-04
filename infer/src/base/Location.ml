@@ -57,13 +57,3 @@ module Map = PrettyPrintable.MakePPMap (struct
 
   let pp = pp
 end)
-
-module Normalizer : HashNormalizer.S with type t = t = struct
-  type nonrec t = t
-
-  let normalize = hash_normalize
-
-  let normalize_opt = hash_normalize_opt
-
-  let normalize_list = hash_normalize_list
-end

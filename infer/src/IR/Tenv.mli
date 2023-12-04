@@ -39,8 +39,8 @@ val lookup : t -> Typ.Name.t -> Struct.t option
 val mk_struct :
      t
   -> ?default:Struct.t
-  -> ?fields:Struct.fields
-  -> ?statics:Struct.fields
+  -> ?fields:Struct.field list
+  -> ?statics:Struct.field list
   -> ?methods:Procname.t list
   -> ?exported_objc_methods:Procname.t list
   -> ?supers:Typ.Name.t list
@@ -81,7 +81,7 @@ val find_map_supers :
 val implements_remodel_class : t -> Typ.Name.t -> bool
 (** Check if a class implements the Remodel class *)
 
-val get_fields_trans : t -> Typ.Name.t -> Struct.fields
+val get_fields_trans : t -> Typ.Name.t -> Struct.field list
 (** Get all fields from the super classes transitively *)
 
 type per_file = Global | FileLocal of t

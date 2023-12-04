@@ -17,34 +17,22 @@ module type S = sig
   (** type the normalizer works on *)
   type t
 
-  val normalize : t -> t
+  val hash_normalize : t -> t
   (** return equal normalized representative *)
 
-  val normalize_opt : t option -> t option
+  val hash_normalize_opt : t option -> t option
   (** helper for normalizing options; does not store option value in hashtable *)
 
-  val normalize_list : t list -> t list
+  val hash_normalize_list : t list -> t list
   (** helper for normalizing lists; does not store list (or sublists) in hashtable *)
 end
 
 module Make (T : NormalizedT) : S with type t = T.t
 
 (** normalizer for strings, lists are recursively normalized *)
-module String : sig
-  type t = string
+module String : S with type t = string
 
-  val hash_normalize : t -> t
-
-  val hash_normalize_opt : t option -> t option
-
-  val hash_normalize_list : t list -> t list
-end
-
-module Int64 : sig
-  type t = int64
-
-  val hash_normalize : t -> t
-end
+module Int64 : S with type t = int64
 
 val reset_all_normalizers : unit -> unit
 (** reset hashtables in all normalizers made with [Make] *)

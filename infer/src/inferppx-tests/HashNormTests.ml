@@ -8,16 +8,6 @@ open! IStd
 
 type record = {s: string; i: int} [@@deriving equal, hash, normalize]
 
-module RecordHashNormalizer : HashNormalizer.S with type t = record = struct
-  type t = record
-
-  let normalize = hash_normalize_record
-
-  let normalize_opt = hash_normalize_record_opt
-
-  let normalize_list = hash_normalize_record_list
-end
-
 (* always return ["foo"] (when [suffix] is not provided), but hopefully we
    fool the compiler to return something that's not physically equal *)
 let make_foo ?(suffix = "") () = "foo" ^ suffix
@@ -25,16 +15,16 @@ let make_foo ?(suffix = "") () = "foo" ^ suffix
 let%test "first_normalize_phys_equal" =
   HashNormalizer.reset_all_normalizers () ;
   let a = {s= make_foo (); i= 5} in
-  let a' = RecordHashNormalizer.normalize a in
+  let a' = hash_normalize_record a in
   phys_equal a a'
 
 
 let%test "second_normalize_not_phys_equal" =
   HashNormalizer.reset_all_normalizers () ;
   let a = {s= make_foo (); i= 5} in
-  let _ = RecordHashNormalizer.normalize a in
+  let _ = hash_normalize_record a in
   let b = {s= make_foo (); i= 5} in
-  let b' = RecordHashNormalizer.normalize b in
+  let b' = hash_normalize_record b in
   equal_record b b' && not (phys_equal b b')
 
 
@@ -54,22 +44,12 @@ let%test "string_normalize" =
 
 type tuple = string * int * string [@@deriving equal, hash, normalize]
 
-module TupleHashNormalizer : HashNormalizer.S with type t = tuple = struct
-  type nonrec t = tuple
-
-  let normalize = hash_normalize_tuple
-
-  let normalize_opt = hash_normalize_tuple_opt
-
-  let normalize_list = hash_normalize_tuple_list
-end
-
 let%test "tuple_test" =
   HashNormalizer.reset_all_normalizers () ;
   let a = (make_foo (), 5, make_foo ()) in
-  let ((s1, _, s2) as a') = TupleHashNormalizer.normalize a in
+  let ((s1, _, s2) as a') = hash_normalize_tuple a in
   let b = (make_foo (), 5, make_foo ()) in
-  let b' = TupleHashNormalizer.normalize b in
+  let b' = hash_normalize_tuple b in
   equal_tuple a a' && phys_equal a' b' && phys_equal s1 s2
 
 
