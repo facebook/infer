@@ -24,16 +24,29 @@ type model_data =
       -> Location.t
       -> CallFlags.t
       -> AbductiveDomain.t
+      -> NonDisjDomain.t
       -> Procname.t option
-      -> ExecutionDomain.t AccessResult.t list
+      -> ExecutionDomain.t AccessResult.t list * NonDisjDomain.t
   ; path: PathContext.t
   ; callee_procname: Procname.t
   ; location: Location.t
   ; ret: Ident.t * Typ.t }
 
-type model = model_data -> AbductiveDomain.t -> ExecutionDomain.t AccessResult.t list
+type model_no_non_disj = model_data -> AbductiveDomain.t -> ExecutionDomain.t AccessResult.t list
+
+type model =
+     model_data
+  -> AbductiveDomain.t
+  -> NonDisjDomain.t
+  -> ExecutionDomain.t AccessResult.t list * NonDisjDomain.t
+
+val lift_model : model_no_non_disj -> model
 
 type matcher = (Tenv.t * Procname.t, model, arg_payload) ProcnameDispatcher.Call.matcher
+
+val with_non_disj :
+     ('a, model_no_non_disj, 'b) ProcnameDispatcher.Call.matcher
+  -> ('a, model, 'b) ProcnameDispatcher.Call.matcher
 
 module Hist : sig
   val alloc_event : PathContext.t -> Location.t -> ?more:string -> string -> ValueHistory.event
@@ -100,7 +113,10 @@ module Basic : sig
     -> AbductiveDomain.t execution_domain_base_t AccessResult.t list
 
   val shallow_copy_model :
-    string -> AbstractValue.t * ValueHistory.t -> AbstractValue.t * ValueHistory.t -> model
+       string
+    -> AbstractValue.t * ValueHistory.t
+    -> AbstractValue.t * ValueHistory.t
+    -> model_no_non_disj
 
   val deep_copy :
        PathContext.t
@@ -117,15 +133,15 @@ module Basic : sig
     -> AbductiveDomain.t
     -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) PulseOperationResult.t
 
-  val early_exit : model
+  val early_exit : model_no_non_disj
 
-  val return_int : desc:string -> int64 -> model
+  val return_int : desc:string -> int64 -> model_no_non_disj
 
-  val nondet : desc:string -> model
+  val nondet : desc:string -> model_no_non_disj
 
-  val skip : model
+  val skip : model_no_non_disj
 
-  val id_first_arg : desc:string -> AbstractValue.t * ValueHistory.t -> model
+  val id_first_arg : desc:string -> AbstractValue.t * ValueHistory.t -> model_no_non_disj
 
   val free_or_delete :
        [< `Delete | `Free]
@@ -157,12 +173,16 @@ module Basic : sig
     -> Exp.t
     -> model_data
     -> AbductiveDomain.t
-    -> ExecutionDomain.t AccessResult.t list
+    -> NonDisjDomain.t
+    -> ExecutionDomain.t AccessResult.t list * NonDisjDomain.t
 
-  val assert_ : (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t -> model
+  val assert_ :
+    (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t -> model_no_non_disj
 
   val unknown_call :
-    string -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list -> model
+       string
+    -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
+    -> model_no_non_disj
 
   val matchers : matcher list
 end

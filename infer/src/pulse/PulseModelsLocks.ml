@@ -42,7 +42,7 @@ let assign_value_nullptr path location this ~desc astate =
     location (ConstantDereference IntLit.zero) value astate
 
 
-let mutex this ~desc : model =
+let mutex this ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let<+> astate, (value_addr, value_hist) =
     to_internal_value_deref path Read location this astate
@@ -50,7 +50,7 @@ let mutex this ~desc : model =
   PulseOperations.write_id ret_id (value_addr, Hist.add_call path location desc value_hist) astate
 
 
-let swap this other ~desc : model =
+let swap this other ~desc : model_no_non_disj =
  fun {path; location} astate ->
   let<*> astate, this_value = to_internal_value_deref path Read location this astate in
   let<*> astate, other_value = to_internal_value_deref path Read location other astate in
@@ -59,19 +59,19 @@ let swap this other ~desc : model =
   astate
 
 
-let default_constructor this ~desc : model =
+let default_constructor this ~desc : model_no_non_disj =
  fun {path; location} astate ->
   let<++> astate = assign_value_nullptr path location this ~desc astate in
   astate
 
 
-let assign_mutex this value ~desc : model =
+let assign_mutex this value ~desc : model_no_non_disj =
  fun {path; location} astate ->
   let<+> astate, _ = write_value path location this ~value ~desc astate in
   astate
 
 
-let release this ~desc : model =
+let release this ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let<*> astate, (old_value_addr, old_value_hist) =
     to_internal_value_deref path Read location this astate
@@ -82,7 +82,7 @@ let release this ~desc : model =
     astate
 
 
-let move_assignment this other ~desc : model =
+let move_assignment this other ~desc : model_no_non_disj =
  fun {path; location} astate ->
   let<*> astate, value = to_internal_value_deref path Read location other astate in
   let<**> astate = assign_value_nullptr path location other ~desc astate in
@@ -142,4 +142,7 @@ let matchers : matcher list =
   ; -"std" &:: "shared_lock" &:: "unlock" &::.*--> Basic.skip
   ; -"std" &:: "shared_lock" &:: "owns_lock" &::.*--> Basic.skip
   ; -"std" &:: "shared_lock" &:: "operator_bool" &::.*--> Basic.skip ]
-  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
+  |> List.map ~f:(fun matcher ->
+         matcher
+         |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
+         |> ProcnameDispatcher.Call.map_matcher ~f:lift_model )

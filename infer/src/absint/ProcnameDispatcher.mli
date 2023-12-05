@@ -44,6 +44,9 @@ module type Common = sig
     ('context, 'f, 'arg_payload) matcher list -> ('context, 'f, 'arg_payload) dispatcher
   (** Combines matchers to create a dispatcher *)
 
+  val map_matcher :
+    ('context, 'f1, 'arg_payload) matcher -> f:('f1 -> 'f2) -> ('context, 'f2, 'arg_payload) matcher
+
   (* Template arguments *)
 
   val any_typ : ('f, 'f, accept_more) template_arg

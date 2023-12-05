@@ -68,6 +68,9 @@ module Import : sig
 
   val ( let<**> ) : 'a t -> ('a -> 'b AccessResult.t list) -> 'b AccessResult.t list
 
+  val bind_sat_result :
+    'c -> 'a t -> ('a -> 'b AccessResult.t list * 'c) -> 'b AccessResult.t list * 'c
+
   val ( let<+> ) :
     'a AccessResult.t -> ('a -> AbductiveDomain.t) -> ExecutionDomain.t AccessResult.t list
   (** monadic "map" but even less really that turns a [AccessResult.t] into an analysis result *)

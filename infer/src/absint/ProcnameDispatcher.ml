@@ -266,6 +266,9 @@ module type Common = sig
   val make_dispatcher :
     ('context, 'f, 'arg_payload) matcher list -> ('context, 'f, 'arg_payload) dispatcher
 
+  val map_matcher :
+    ('context, 'f1, 'arg_payload) matcher -> f:('f1 -> 'f2) -> ('context, 'f2, 'arg_payload) matcher
+
   (* Template arguments *)
 
   val any_typ : ('f, 'f, accept_more) template_arg
@@ -480,6 +483,21 @@ module Call = struct
     ; on_java: 'context -> java -> 'arg_payload FuncArg.t list -> 'f option
     ; on_erlang: 'context -> erlang -> 'arg_payload FuncArg.t list -> 'f option
     ; on_csharp: 'context -> csharp -> 'arg_payload FuncArg.t list -> 'f option }
+
+  let map_matcher matcher ~f : (_, _, _) matcher =
+    let transform_for_lang lang_matcher ctx lang args =
+      lang_matcher ctx lang args |> Option.map ~f
+    in
+    let ({on_objc_cpp; on_c; on_hack; on_java; on_erlang; on_csharp} : (_, _, _) matcher) =
+      matcher
+    in
+    { on_objc_cpp= transform_for_lang on_objc_cpp
+    ; on_c= transform_for_lang on_c
+    ; on_hack= transform_for_lang on_hack
+    ; on_java= transform_for_lang on_java
+    ; on_erlang= transform_for_lang on_erlang
+    ; on_csharp= transform_for_lang on_csharp }
+
 
   let contramap_arg_payload matcher ~f =
     let map_args args = List.map ~f:(FuncArg.map_payload ~f) args in
@@ -1089,6 +1107,13 @@ module NameCommon = struct
     let on_templated_name context templated_name = templated_name |> on_templated_name context f in
     let on_objc_cpp context objc_cpp = objc_cpp |> on_objc_cpp context f in
     {on_templated_name; on_objc_cpp}
+
+
+  let map_matcher matcher ~f : (_, _, _) matcher =
+    let transform_for_lang lang_matcher ctx lang = lang_matcher ctx lang |> Option.map ~f in
+    let ({on_objc_cpp; on_templated_name} : (_, _, _) matcher) = matcher in
+    { on_objc_cpp= transform_for_lang on_objc_cpp
+    ; on_templated_name= transform_for_lang on_templated_name }
 
 
   let ( &-->! ) path_matcher f = make_matcher path_matcher f

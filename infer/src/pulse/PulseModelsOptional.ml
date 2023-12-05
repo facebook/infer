@@ -37,7 +37,7 @@ let assign_value_fresh path location this history ~desc astate =
   write_value path location this ~value:(AbstractValue.mk_fresh (), history) ~desc astate
 
 
-let assign_none history this ~desc : model =
+let assign_none history this ~desc : model_no_non_disj =
  fun {path; location} astate ->
   let this = ValueOrigin.addr_hist this in
   let<*> astate, (pointer, value) = assign_value_fresh path location this history ~desc astate in
@@ -47,8 +47,8 @@ let assign_none history this ~desc : model =
     location OptionalEmpty value astate
 
 
-let assign_non_empty_value history ProcnameDispatcher.Call.FuncArg.{arg_payload= this} ~desc : model
-    =
+let assign_non_empty_value history ProcnameDispatcher.Call.FuncArg.{arg_payload= this} ~desc :
+    model_no_non_disj =
  fun {path; location} astate ->
   (* This model marks the optional object to be non-empty *)
   let<*> astate, (_, value) =
@@ -70,7 +70,9 @@ let get_template_arg typ =
 let assign_precise_value (ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= this_payload} as this)
     (ProcnameDispatcher.Call.FuncArg.{arg_payload= other_payload} as other) ~desc : model =
  (* This model marks the optional object to be non-empty by storing value. *)
- fun ({callee_procname; path; location} as model_data) astate ->
+ fun ({callee_procname; path; location} as model_data) astate non_disj ->
+  let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
+  let ( let<**> ) x f = bind_sat_result non_disj x f in
   match (get_template_arg typ, IRAttributes.load_formal_types callee_procname |> List.last) with
   | Some ({desc= Tstruct class_name} as typ), Some actual ->
       (* assign the value pointer to the field of the shared_ptr *)
@@ -89,24 +91,25 @@ let assign_precise_value (ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= thi
       in
       (* create the list of types of the actual arguments of the constructor *)
       let actuals = [typ; actual] in
-      Basic.call_constructor class_name actuals args fake_exp model_data astate
+      Basic.call_constructor class_name actuals args fake_exp model_data astate non_disj
   | Some _, Some _ ->
       L.d_printfln "Class not found" ;
       let<**> astate, address =
         Basic.deep_copy path location ~value:(ValueOrigin.addr_hist other_payload) ~desc astate
       in
-      let<+> astate, _ =
+      let<*> astate, _ =
         write_value path location (ValueOrigin.addr_hist this_payload) ~value:address ~desc astate
       in
-      astate
+      (Basic.ok_continue astate, non_disj)
   | _, _ ->
       (* if the model cannot find a template argument and/or the formal parameters,
          it just marks the object non-empty *)
-      assign_non_empty_value
-        (snd @@ ValueOrigin.addr_hist other_payload)
-        this
-        ~desc:(desc ^ " (cannot find template argument and/or formal parameters)")
-        model_data astate
+      ( assign_non_empty_value
+          (snd @@ ValueOrigin.addr_hist other_payload)
+          this
+          ~desc:(desc ^ " (cannot find template argument and/or formal parameters)")
+          model_data astate
+      , non_disj )
 
 
 let assign_value args ~desc : model =
@@ -115,35 +118,38 @@ let assign_value args ~desc : model =
       assign_precise_value this value ~desc:(desc ^ " (precise value)")
   | this :: _ ->
       assign_non_empty_value ValueHistory.epoch this ~desc:(desc ^ " (non-empty value)")
+      |> lift_model
   | _ ->
       L.internal_error "Not enough arguments to call the constructor for Optional" ;
-      Basic.skip
+      Basic.skip |> lift_model
 
 
 let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this_payload} as this)
     ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= other_payload} ~desc : model =
- fun ({path; location} as model_data) astate ->
+ fun ({path; location} as model_data) astate non_disj ->
+  let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
+  let ( let<**> ) x f = bind_sat_result non_disj x f in
   let<*> astate, ((other_addr, other_hist) as other) =
     to_internal_value_deref path Read location (ValueOrigin.addr_hist other_payload) astate
   in
   match get_template_arg typ with
   | Some typ ->
-      let assign_none =
+      let assign_none, non_disj =
         let<**> astate = PulseArithmetic.prune_eq_zero other_addr astate in
-        assign_none other_hist this_payload ~desc model_data astate
+        (assign_none other_hist this_payload ~desc model_data astate, non_disj)
       in
-      let assign_value =
+      let assign_value, non_disj =
         let<**> astate = PulseArithmetic.prune_positive other_addr astate in
         assign_precise_value this
           {exp= Var (Ident.create_none ()); typ; arg_payload= ValueOrigin.Unknown other}
-          ~desc model_data astate
+          ~desc model_data astate non_disj
       in
-      assign_none @ assign_value
+      (assign_none @ assign_value, non_disj)
   | None ->
-      Basic.ok_continue astate
+      (Basic.ok_continue astate, non_disj)
 
 
-let emplace optional ~desc : model =
+let emplace optional ~desc : model_no_non_disj =
  (* TODO: destroy current object and call move constructor *)
  fun {path; location} astate ->
   let optional = ValueOrigin.addr_hist optional in
@@ -151,7 +157,7 @@ let emplace optional ~desc : model =
   astate
 
 
-let value optional ~desc : model =
+let value optional ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let optional = ValueOrigin.addr_hist optional in
   let<*> astate, ((value_addr, value_hist) as value) =
@@ -163,14 +169,14 @@ let value optional ~desc : model =
   |> Basic.ok_continue
 
 
-let has_value this ~desc : model =
+let has_value this ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let this = ValueOrigin.addr_hist this in
   let<+> astate, (value_addr, _) = to_internal_value_deref path Write location this astate in
   PulseOperations.write_id ret_id (value_addr, Hist.single_call path location desc) astate
 
 
-let get_pointer optional ~desc : model =
+let get_pointer optional ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let optional = ValueOrigin.addr_hist optional in
   let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
@@ -197,7 +203,7 @@ let get_pointer optional ~desc : model =
   SatUnsat.to_list astate_value_addr @ SatUnsat.to_list astate_null
 
 
-let value_or optional default ~desc : model =
+let value_or optional default ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let optional = ValueOrigin.addr_hist optional in
   let default = ValueOrigin.addr_hist default in
@@ -227,12 +233,13 @@ let value_or optional default ~desc : model =
 
 
 let destruct ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : model =
- fun ({path; location} as model_data) astate ->
+ fun ({path; location} as model_data) astate non_disj ->
   let this = ValueOrigin.addr_hist this in
   match get_template_arg typ with
   | Some typ ->
       (* note: We do dereference the value address with [NoAccess], to avoid a null dereference
          issue reported when [None] is given as an optional value. *)
+      let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
       let<*> astate, (value_addr, value_hist) =
         to_internal_value_deref path NoAccess location this astate
       in
@@ -243,9 +250,9 @@ let destruct ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : mo
           ; exp= Var (Ident.create_fresh Ident.kprimed)
           ; typ= {desc= Tptr (typ, Pk_pointer); quals= Typ.mk_type_quals ()} }
       in
-      Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate
+      Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate non_disj
   | None ->
-      Basic.ok_continue astate
+      (Basic.ok_continue astate, non_disj)
 
 
 let matchers : matcher list =
@@ -253,8 +260,10 @@ let matchers : matcher list =
   [ -"boost" &:: "optional" &:: "optional" <>$ capt_arg_payload
     $+ any_arg_of_typ (-"boost" &:: "none_t")
     $--> assign_none ValueHistory.epoch ~desc:"boost::optional::optional(=none_t)"
+    |> with_non_disj
   ; -"boost" &:: "optional" &:: "optional" <>$ capt_arg_payload
     $--> assign_none ValueHistory.epoch ~desc:"boost::optional::optional()"
+    |> with_non_disj
   ; -"boost" &:: "optional" &:: "optional" <>$ capt_arg
     $+ capt_arg_of_typ (-"boost" &:: "optional")
     $--> copy_assignment ~desc:"boost::optional::optional(boost::optional<Value> arg)"
@@ -263,6 +272,7 @@ let matchers : matcher list =
   ; -"boost" &:: "optional" &:: "operator=" $ capt_arg_payload
     $+ any_arg_of_typ (-"boost" &:: "none_t")
     $--> assign_none ValueHistory.epoch ~desc:"boost::optional::operator=(none_t)"
+    |> with_non_disj
   ; -"boost" &:: "optional" &:: "operator=" $ capt_arg
     $+ capt_arg_of_typ (-"boost" &:: "optional")
     $--> copy_assignment ~desc:"boost::optional::operator=(boost::optional<Value> arg)"
@@ -270,28 +280,38 @@ let matchers : matcher list =
     &++> assign_value ~desc:"boost::optional::operator=(Value arg)"
   ; -"boost" &:: "optional" &:: "is_initialized" <>$ capt_arg_payload
     $+...$--> has_value ~desc:"boost::optional::is_initialized()"
+    |> with_non_disj
   ; -"boost" &:: "optional" &:: "operator_bool" <>$ capt_arg_payload
     $+...$--> has_value ~desc:"boost::optional::operator_bool()"
+    |> with_non_disj
   ; -"boost" &:: "optional" &:: "reset" <>$ capt_arg_payload
     $--> assign_none ValueHistory.epoch ~desc:"boost::optional::reset()"
+    |> with_non_disj
   ; -"boost" &:: "optional" &:: "reset" &++> assign_value ~desc:"boost::optional::reset(Value arg)"
   ; -"boost" &:: "optional" &:: "get" <>$ capt_arg_payload
     $+...$--> value ~desc:"boost::optional::get()"
+    |> with_non_disj
   ; -"boost" &:: "optional" &:: "operator*" <>$ capt_arg_payload
     $+...$--> value ~desc:"boost::optional::operator*()"
+    |> with_non_disj
   ; -"boost" &:: "optional" &:: "operator->" <>$ capt_arg_payload
     $+...$--> value ~desc:"boost::optional::operator->()"
+    |> with_non_disj
   ; -"boost" &:: "optional" &:: "get_ptr" $ capt_arg_payload
     $+...$--> get_pointer ~desc:"boost::optional::get_ptr()"
+    |> with_non_disj
   ; -"boost" &:: "optional" &:: "get_value_or" $ capt_arg_payload $+ capt_arg_payload
     $+...$--> value_or ~desc:"boost::optional::get_value_or()"
+    |> with_non_disj
   ; -"boost" &:: "optional" &:: "~optional" $ capt_arg
     $--> destruct ~desc:"boost::optional::~optional()"
   ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
     $+ any_arg_of_typ (-"folly" &:: "None")
     $--> assign_none ValueHistory.epoch ~desc:"folly::Optional::Optional(=None)"
+    |> with_non_disj
   ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg_payload
     $--> assign_none ValueHistory.epoch ~desc:"folly::Optional::Optional()"
+    |> with_non_disj
   ; -"folly" &:: "Optional" &:: "Optional" <>$ capt_arg
     $+ capt_arg_of_typ (-"folly" &:: "Optional")
     $--> copy_assignment ~desc:"folly::Optional::Optional(folly::Optional<Value> arg)"
@@ -300,6 +320,7 @@ let matchers : matcher list =
   ; -"folly" &:: "Optional" &:: "assign" <>$ capt_arg_payload
     $+ any_arg_of_typ (-"folly" &:: "None")
     $--> assign_none ValueHistory.epoch ~desc:"folly::Optional::assign(=None)"
+    |> with_non_disj
   ; -"folly" &:: "Optional" &:: "assign" <>$ capt_arg
     $+ capt_arg_of_typ (-"folly" &:: "Optional")
     $--> copy_assignment ~desc:"folly::Optional::assign(folly::Optional<Value> arg)"
@@ -307,29 +328,40 @@ let matchers : matcher list =
     &++> assign_value ~desc:"folly::Optional::assign(Value arg)"
   ; -"folly" &:: "Optional" &:: "emplace<>" $ capt_arg_payload
     $+...$--> emplace ~desc:"folly::Optional::emplace()"
+    |> with_non_disj
   ; -"folly" &:: "Optional" &:: "emplace" $ capt_arg_payload
     $+...$--> emplace ~desc:"folly::Optional::emplace()"
+    |> with_non_disj
   ; -"folly" &:: "Optional" &:: "has_value" <>$ capt_arg_payload
     $+...$--> has_value ~desc:"folly::Optional::has_value()"
+    |> with_non_disj
   ; -"folly" &:: "Optional" &:: "reset" <>$ capt_arg_payload
     $+...$--> assign_none ValueHistory.epoch ~desc:"folly::Optional::reset()"
+    |> with_non_disj
   ; -"folly" &:: "Optional" &:: "value" <>$ capt_arg_payload
     $+...$--> value ~desc:"folly::Optional::value()"
+    |> with_non_disj
   ; -"folly" &:: "Optional" &:: "operator*" <>$ capt_arg_payload
     $+...$--> value ~desc:"folly::Optional::operator*()"
+    |> with_non_disj
   ; -"folly" &:: "Optional" &:: "operator->" <>$ capt_arg_payload
     $+...$--> value ~desc:"folly::Optional::operator->()"
+    |> with_non_disj
   ; -"folly" &:: "Optional" &:: "get_pointer" $ capt_arg_payload
     $+...$--> get_pointer ~desc:"folly::Optional::get_pointer()"
+    |> with_non_disj
   ; -"folly" &:: "Optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
     $+...$--> value_or ~desc:"folly::Optional::value_or()"
+    |> with_non_disj
   ; -"folly" &:: "Optional" &:: "~Optional" $ capt_arg
     $--> destruct ~desc:"folly::Optional::~Optional()"
   ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
     $+ any_arg_of_typ (-"std" &:: "nullopt_t")
     $--> assign_none ValueHistory.epoch ~desc:"std::optional::optional(=nullopt)"
+    |> with_non_disj
   ; -"std" &:: "optional" &:: "optional" $ capt_arg_payload
     $--> assign_none ValueHistory.epoch ~desc:"std::optional::optional()"
+    |> with_non_disj
   ; -"std" &:: "optional" &:: "optional" $ capt_arg
     $+ capt_arg_of_typ (-"std" &:: "optional")
     $--> copy_assignment ~desc:"std::optional::optional(std::optional<Value> arg)"
@@ -338,6 +370,7 @@ let matchers : matcher list =
   ; -"std" &:: "optional" &:: "operator=" $ capt_arg_payload
     $+ any_arg_of_typ (-"std" &:: "nullopt_t")
     $--> assign_none ValueHistory.epoch ~desc:"std::optional::operator=(nullopt_t)"
+    |> with_non_disj
   ; -"std" &:: "optional" &:: "operator=" $ capt_arg
     $+ capt_arg_of_typ (-"std" &:: "optional")
     $--> copy_assignment ~desc:"std::optional::operator=(std::optional<Value> arg)"
@@ -345,23 +378,33 @@ let matchers : matcher list =
     &++> assign_value ~desc:"std::optional::operator=(Value arg)"
   ; -"std" &:: "optional" &:: "emplace<>" $ capt_arg_payload
     $+...$--> emplace ~desc:"std::optional::emplace()"
+    |> with_non_disj
   ; -"std" &:: "optional" &:: "emplace" $ capt_arg_payload
     $+...$--> emplace ~desc:"std::optional::emplace()"
+    |> with_non_disj
   ; -"std" &:: "optional" &:: "has_value" <>$ capt_arg_payload
     $+...$--> has_value ~desc:"std::optional::has_value()"
+    |> with_non_disj
   ; -"std" &:: "__optional_storage_base" &:: "has_value" $ capt_arg_payload
     $+...$--> has_value ~desc:"std::optional::has_value()"
+    |> with_non_disj
   ; -"std" &:: "optional" &:: "operator_bool" <>$ capt_arg_payload
     $+...$--> has_value ~desc:"std::optional::operator_bool()"
+    |> with_non_disj
   ; -"std" &:: "optional" &:: "reset" <>$ capt_arg_payload
     $+...$--> assign_none ValueHistory.epoch ~desc:"std::optional::reset()"
+    |> with_non_disj
   ; -"std" &:: "optional" &:: "value" <>$ capt_arg_payload
     $+...$--> value ~desc:"std::optional::value()"
+    |> with_non_disj
   ; -"std" &:: "optional" &:: "operator*" <>$ capt_arg_payload
     $+...$--> value ~desc:"std::optional::operator*()"
+    |> with_non_disj
   ; -"std" &:: "optional" &:: "operator->" <>$ capt_arg_payload
     $+...$--> value ~desc:"std::optional::operator->()"
+    |> with_non_disj
   ; -"std" &:: "optional" &:: "value_or" $ capt_arg_payload $+ capt_arg_payload
     $+...$--> value_or ~desc:"std::optional::value_or()"
+    |> with_non_disj
   ; -"std" &:: "optional" &:: "~optional" $ capt_arg
     $--> destruct ~desc:"std::optional::~optional()" ]

@@ -330,6 +330,10 @@ let is_bottom = function
       && PassedTo.is_bottom passed_to
 
 
+let join lhs rhs =
+  if phys_equal lhs bottom then rhs else if phys_equal rhs bottom then lhs else join lhs rhs
+
+
 let mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt ({copy_map} as astate_n) =
   let copy_var = CopyVar.{copied_into; source_addr_opt} in
   let copy_map =
@@ -634,6 +638,13 @@ let is_lifetime_extended var astate_n =
       true
   | `PassedTo callees ->
       not (CalleesWithLoc.is_empty callees)
+
+
+let bind (execs, non_disj) ~f =
+  List.rev execs
+  |> List.fold ~init:([], bottom) ~f:(fun (acc, joined_non_disj) elt ->
+         let l, new_non_disj = f elt non_disj in
+         (l @ acc, join joined_non_disj new_non_disj) )
 
 
 let remember_dropped_transitive_accesses accesses (non_disj : t) =

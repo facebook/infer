@@ -35,7 +35,7 @@ let load_field path field location obj astate =
   (astate, field_addr, field_val)
 
 
-let call_may_throw_exception (exn : CSharpClassName.t) : model =
+let call_may_throw_exception (exn : CSharpClassName.t) : model_no_non_disj =
  fun {location; path; analysis_data} astate ->
   let ret_addr = AbstractValue.mk_fresh () in
   let exn_name = CSharpClassName.to_string exn in
@@ -65,7 +65,7 @@ module Collection = struct
     mk_csharp_field namespace_name class_name "__infer_model_backing_collection_empty"
 
 
-  let init ~desc this : model =
+  let init ~desc this : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location desc in
     let fresh_val = (AbstractValue.mk_fresh (), Hist.single_event path event) in
@@ -96,7 +96,7 @@ module Collection = struct
     astate |> Basic.ok_continue
 
 
-  let add_common ~desc coll new_elem ?new_val : model =
+  let add_common ~desc coll new_elem ?new_val : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
     let ret_value = AbstractValue.mk_fresh () in
@@ -139,9 +139,9 @@ module Collection = struct
       astate |> Basic.ok_continue
 
 
-  let add ~desc coll new_elem : model = add_common ~desc coll new_elem
+  let add ~desc coll new_elem : model_no_non_disj = add_common ~desc coll new_elem
 
-  let put ~desc coll new_elem new_val : model = add_common ~desc coll new_elem ~new_val
+  let put ~desc coll new_elem new_val : model_no_non_disj = add_common ~desc coll new_elem ~new_val
 
   let update path coll new_val new_val_hist event location ret_id astate =
     (* case0: element not present in collection *)
@@ -175,7 +175,7 @@ module Collection = struct
     [Ok (Basic.continue astate); astate1; astate2]
 
 
-  let _set coll (new_val, new_val_hist) : model =
+  let _set coll (new_val, new_val_hist) : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "Collection.set()" in
     update path coll new_val new_val_hist event location ret_id astate
@@ -245,7 +245,7 @@ module Collection = struct
     SatUnsat.to_list astate1 @ SatUnsat.to_list astate2 @ SatUnsat.to_list astate3
 
 
-  let remove ~desc args : model =
+  let remove ~desc args : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     match args with
     | [ {ProcnameDispatcher.Call.FuncArg.arg_payload= coll_arg}
@@ -261,7 +261,7 @@ module Collection = struct
         astate |> Basic.ok_continue
 
 
-  let is_empty ~desc coll : model =
+  let is_empty ~desc coll : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
     let<*> astate, coll_val =
@@ -274,7 +274,7 @@ module Collection = struct
     |> Basic.ok_continue
 
 
-  let clear ~desc coll : model =
+  let clear ~desc coll : model_no_non_disj =
    fun {path; location} astate ->
     let hist = Hist.single_call path location desc in
     let null_val = AbstractValue.mk_fresh () in
@@ -340,7 +340,7 @@ module Collection = struct
     SatUnsat.to_list astate1 @ SatUnsat.to_list astate2 @ SatUnsat.to_list astate3
 
 
-  let get ~desc coll (elem, _) : model =
+  let get ~desc coll (elem, _) : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
     let<*> astate, coll_val =
@@ -379,7 +379,7 @@ module Resource = struct
     post
 
 
-  let allocate_aux ~exn_class_name this_obj delegation_opt : model =
+  let allocate_aux ~exn_class_name this_obj delegation_opt : model_no_non_disj =
    fun ({location; path} as model_data) astate ->
     let post = allocate_state this_obj model_data astate in
     let delegated_state =
@@ -397,9 +397,11 @@ module Resource = struct
     delegated_state @ exn_state
 
 
-  let _allocate ~exn_class_name this_arg : model = allocate_aux ~exn_class_name this_arg None
+  let _allocate ~exn_class_name this_arg : model_no_non_disj =
+    allocate_aux ~exn_class_name this_arg None
 
-  let allocate_with_delegation ~exn_class_name () this_arg delegation : model =
+
+  let allocate_with_delegation ~exn_class_name () this_arg delegation : model_no_non_disj =
     allocate_aux ~exn_class_name this_arg (Some delegation)
 
 
@@ -418,43 +420,43 @@ module Resource = struct
 
   let model_with_analysis args
       {analysis_data= {analyze_dependency; tenv; proc_desc}; path; callee_procname; location; ret}
-      astate =
+      astate non_disj =
     let actuals =
       List.map args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
           (arg_payload, typ) )
     in
-    let res, _, is_known_call =
+    let res, non_disj, _, is_known_call =
       PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
-        callee_procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
+        callee_procname ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate non_disj
     in
     match is_known_call with
     | `KnownCall ->
         (* if we have what we need for a callee match, use it *)
-        res
+        (res, non_disj)
     | `UnknownCall ->
-        Basic.ok_continue astate (* is this too generic? *)
+        (Basic.ok_continue astate, non_disj (* is this too generic? *))
 
 
   let allocate_with_analysis
       (ProcnameDispatcher.Call.FuncArg.{arg_payload= this_arg_payload} as this_arg) arguments :
       model =
-   fun model_data astate ->
+   fun model_data astate non_disj ->
     (* this (probably) marks the this_arg as allocated, and is passed to the calls *)
     let allocated_astate = allocate_state this_arg_payload model_data astate in
-    model_with_analysis (this_arg :: arguments) model_data allocated_astate
+    model_with_analysis (this_arg :: arguments) model_data allocated_astate non_disj
 
 
   (* Doesn't use allocate_aux, but given the parameters allocate_aux would have been given,
      it reduces to the same thing. *)
 
   (* this doesn't even check if the resource is allocated!? *)
-  let use ~exn_class_name : model =
+  let use ~exn_class_name : model_no_non_disj =
     let exn = CSharpClassName.from_string exn_class_name in
     fun model_data astate ->
       Ok (ContinueProgram astate) :: call_may_throw_exception exn model_data astate
 
 
-  let _release ~exn_class_name this : model =
+  let _release ~exn_class_name this : model_no_non_disj =
    fun model_data astate ->
     let ok_state =
       PulseOperations.csharp_resource_release ~recursive:true (fst this) astate |> Basic.ok_continue
@@ -468,21 +470,21 @@ module Resource = struct
 
   let release_with_analysis
       (ProcnameDispatcher.Call.FuncArg.{arg_payload= this_arg_payload} as this_arg) : model =
-   fun model_data astate ->
+   fun model_data astate non_disj ->
     let released_astate =
       PulseOperations.csharp_resource_release ~recursive:true (fst this_arg_payload) astate
     in
-    model_with_analysis [this_arg] model_data released_astate
+    model_with_analysis [this_arg] model_data released_astate non_disj
 
 
-  let _release_this_only this : model =
+  let _release_this_only this : model_no_non_disj =
    fun _ astate ->
     PulseOperations.csharp_resource_release ~recursive:false (fst this) astate |> Basic.ok_continue
 end
 
 let string_length_access = MemoryAccess.FieldAccess PulseOperations.ModeledField.string_length
 
-let string_is_null_or_whitespace ~desc ((addr, hist) as addr_hist) : model =
+let string_is_null_or_whitespace ~desc ((addr, hist) as addr_hist) : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let event = Hist.call_event path location desc in
   let ret_val = AbstractValue.mk_fresh () in
@@ -540,11 +542,13 @@ let matchers : matcher list =
   [ +map_context_tenv (PatternMatch.CSharp.implements "System.String")
     &:: "IsNullOrWhiteSpace" <>$ capt_arg_payload
     $--> string_is_null_or_whitespace ~desc:"String.IsNullOrWhiteSpace"
+    |> with_non_disj
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.String")
     &:: "IsNullOrEmpty" <>$ capt_arg_payload
     $--> string_is_null_or_whitespace ~desc:"String.IsNullOrEmpty"
+    |> with_non_disj
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.Diagnostics.Debug")
-    &:: "Assert" <>$ capt_arg $--> Basic.assert_
+    &:: "Assert" <>$ capt_arg $--> Basic.assert_ |> with_non_disj
     (* IDisposables that take care of passed resource (stream) *)
   ; +map_context_tenv
        (PatternMatch.CSharp.implements_one_of
@@ -555,18 +559,21 @@ let matchers : matcher list =
           ; "System.Net.Http.HttpClient" ] )
     &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
     $+...$--> Resource.allocate_with_delegation ~exn_class_name:None ()
+    |> with_non_disj
     (* Things that may throw an exception *)
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.Net.Sockets.NetworkStream")
     &:: ".ctor" <>$ capt_arg_payload $+ capt_arg_payload
     $+...$--> Resource.allocate_with_delegation ~exn_class_name:(Some "System.IO.IOException") ()
+    |> with_non_disj
     (* If a stream function is used, like Read, model the possibility for an exception *)
   ; +map_context_tenv (PatternMatch.CSharp.implements "System.IO.Stream")
     &::+ (fun _ function_name -> StringSet.mem function_name input_resource_usage_modeled)
     <>$ any_arg
     $+...$--> Resource.use ~exn_class_name:"System.IO.IOException"
+    |> with_non_disj
     (* Some IDisposables that don't _need_ to be disposed, so we treat them as nops *)
   ; +map_context_tenv (PatternMatch.CSharp.implements_one_of iDisposablesIgnore)
-    &:: ".ctor" <>$ any_arg $+...$--> Basic.skip
+    &:: ".ctor" <>$ any_arg $+...$--> Basic.skip |> with_non_disj
     (* Base case for IDisposables:
         model the allocation and deallocation and if code exists analyze it.
         we don't model enumerators, as they are an exception to the general IDisposable rule,
@@ -583,27 +590,34 @@ let matchers : matcher list =
   ; +map_context_tenv implements_collection
     &:: ".ctor" $ capt_arg_payload
     $--> Collection.init ~desc:"Collection..ctor()"
+    |> with_non_disj
   ; +map_context_tenv implements_dictionary
     &:: "Add" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $--> Collection.put ~desc:"Dictionary.Add()"
+    |> with_non_disj
   ; +map_context_tenv implements_dictionary
     &:: "get_Item" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Collection.get ~desc:"Dictionary.[]"
+    |> with_non_disj
   ; +map_context_tenv implements_collection
     &:: "Add" $ capt_arg_payload $+ capt_arg_payload
     $--> Collection.add ~desc:"Collection.Add"
+    |> with_non_disj
   ; +map_context_tenv implements_collection
     &:: "Remove"
     &++> Collection.remove ~desc:"Collection.Remove"
+    |> with_non_disj
   ; +map_context_tenv implements_collection
     &:: "IsEmpty" <>$ capt_arg_payload
     $--> Collection.is_empty ~desc:"Collection.IsEmpty()"
+    |> with_non_disj
   ; +map_context_tenv implements_collection
     &:: "Clear" $ capt_arg_payload
     $--> Collection.clear ~desc:"Collection.Clear()"
+    |> with_non_disj
     (* This is needed for constructors that call out to the base constructor for objects. *)
     (* In particular, it was added for analyzing the constructors of IDisposables,
        otherwise the allocation of the IDisposable is lost at the call to the Object..ctor *)
   ; +map_context_tenv (fun _ -> String.equal "System.Object")
-    &:: ".ctor" <>$ any_arg $--> Basic.skip ]
+    &:: ".ctor" <>$ any_arg $--> Basic.skip |> with_non_disj ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

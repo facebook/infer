@@ -26,16 +26,27 @@ type model_data =
       -> Location.t
       -> CallFlags.t
       -> AbductiveDomain.t
+      -> NonDisjDomain.t
       -> Procname.t option
-      -> ExecutionDomain.t AccessResult.t list
+      -> ExecutionDomain.t AccessResult.t list * NonDisjDomain.t
   ; path: PathContext.t
   ; callee_procname: Procname.t
   ; location: Location.t
   ; ret: Ident.t * Typ.t }
 
-type model = model_data -> AbductiveDomain.t -> ExecutionDomain.t AccessResult.t list
+type model_no_non_disj = model_data -> AbductiveDomain.t -> ExecutionDomain.t AccessResult.t list
+
+type model =
+     model_data
+  -> AbductiveDomain.t
+  -> NonDisjDomain.t
+  -> ExecutionDomain.t AccessResult.t list * NonDisjDomain.t
 
 type matcher = (Tenv.t * Procname.t, model, arg_payload) ProcnameDispatcher.Call.matcher
+
+let lift_model model data astate non_disj = (model data astate, non_disj)
+
+let with_non_disj model = ProcnameDispatcher.Call.map_matcher ~f:lift_model model
 
 module Hist = struct
   let mk_desc ?more desc =
@@ -103,7 +114,7 @@ module Basic = struct
     shallow_copy_value path location event ret_id dest_pointer_hist obj astate
 
 
-  let shallow_copy_model model_desc dest_pointer_hist src_pointer_hist : model =
+  let shallow_copy_model model_desc dest_pointer_hist src_pointer_hist : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location model_desc in
     shallow_copy path location event ret_id dest_pointer_hist src_pointer_hist astate
@@ -135,7 +146,7 @@ module Basic = struct
     (astate, (value, hist))
 
 
-  let early_exit : model =
+  let early_exit : model_no_non_disj =
    fun {analysis_data= {tenv; proc_desc}; location} astate ->
     let open SatUnsat.Import in
     match
@@ -156,7 +167,7 @@ module Basic = struct
         [err]
 
 
-  let return_int ~desc : Int64.t -> model =
+  let return_int ~desc : Int64.t -> model_no_non_disj =
    fun i64 {path; location; ret= ret_id, _} astate ->
     let i = IntLit.of_int64 i64 in
     let astate, ret_addr = PulseArithmetic.absval_of_int astate i in
@@ -164,7 +175,7 @@ module Basic = struct
     |> ok_continue
 
 
-  let return_positive ~desc : model =
+  let return_positive ~desc : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let ret_value = (ret_addr, Hist.single_call path location desc) in
@@ -172,7 +183,7 @@ module Basic = struct
     PulseOperations.write_id ret_id ret_value astate
 
 
-  let return_unknown_size ~desc : model =
+  let return_unknown_size ~desc : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let ret_addr = AbstractValue.mk_fresh () in
     let<++> astate = PulseArithmetic.and_nonnegative ret_addr astate in
@@ -182,7 +193,7 @@ module Basic = struct
   (** Pretend the function call is a call to an "unknown" function, i.e. a function for which we
       don't have the implementation. This triggers a bunch of heuristics, e.g. to havoc arguments we
       suspect are passed by reference. *)
-  let unknown_call skip_reason args : model =
+  let unknown_call skip_reason args : model_no_non_disj =
    fun {path; callee_procname; analysis_data= {tenv}; location; ret} astate ->
     let actuals =
       List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
@@ -198,7 +209,7 @@ module Basic = struct
     astate
 
 
-  let id_first_arg_from_list ~desc args : model =
+  let id_first_arg_from_list ~desc args : model_no_non_disj =
    fun {path; callee_procname; location; ret= ret_id, _} astate ->
     match args with
     | _ :: arg :: _
@@ -215,7 +226,7 @@ module Basic = struct
         ok_continue astate
 
 
-  let return_this ~desc args : model =
+  let return_this ~desc args : model_no_non_disj =
    fun {path; callee_procname; location; ret= ret_id, _} astate ->
     match args with
     | arg :: _
@@ -227,14 +238,14 @@ module Basic = struct
         ok_continue astate
 
 
-  let nondet ~desc : model =
+  let nondet ~desc : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     PulseOperations.havoc_id ret_id (Hist.single_call path location desc) astate |> ok_continue
 
 
-  let skip : model = fun _ astate -> ok_continue astate
+  let skip : model_no_non_disj = fun _ astate -> ok_continue astate
 
-  let id_first_arg ~desc (arg_value, arg_history) : model =
+  let id_first_arg ~desc (arg_value, arg_history) : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let ret_value = (arg_value, Hist.add_call path location desc arg_history) in
     PulseOperations.write_id ret_id ret_value astate |> ok_continue
@@ -242,14 +253,14 @@ module Basic = struct
 
   let call_destructor ({ProcnameDispatcher.Call.FuncArg.arg_payload= _; exp; typ} as deleted_arg) :
       model =
-   fun ({analysis_data; dispatch_call_eval_args; path; location; ret} : model_data) astate ->
+   fun ({analysis_data; dispatch_call_eval_args; path; location; ret} : model_data) astate non_disj ->
     (* TODO: lookup dynamic type; currently not set in C++, should update model of [new] *)
     match typ.Typ.desc with
     | Typ.Tptr ({desc= Tstruct class_name}, _) -> (
       match Tenv.find_cpp_destructor analysis_data.tenv class_name with
       | None ->
           Logging.d_printfln "No destructor found for class %a@\n" Typ.Name.pp class_name ;
-          ok_continue astate
+          (ok_continue astate, non_disj)
       | Some destructor ->
           let callflags : CallFlags.t =
             { cf_assign_last_arg= false
@@ -260,12 +271,12 @@ module Basic = struct
           in
           dispatch_call_eval_args analysis_data path ret exp
             [(exp, typ)]
-            [deleted_arg] location callflags astate (Some destructor) )
+            [deleted_arg] location callflags astate non_disj (Some destructor) )
     | _ ->
         Logging.d_printfln "Object being deleted is not a pointer to a class, got '%a' instead@\n"
           (Typ.pp_desc (Pp.html Black))
           typ.Typ.desc ;
-        ok_continue astate
+        (ok_continue astate, non_disj)
 
 
   let match_args_of_single_proc comparator actuals (proc : Procname.t) : bool =
@@ -283,7 +294,7 @@ module Basic = struct
 
 
   let call_constructor class_name actuals args exp
-      {analysis_data; dispatch_call_eval_args; path; location; ret} astate =
+      {analysis_data; dispatch_call_eval_args; path; location; ret} astate non_disj =
     let candidates = Tenv.find_cpp_constructor analysis_data.tenv class_name in
     match match_args_of_procedures Typ.overloading_resolution actuals candidates with
     | Some constructor ->
@@ -291,60 +302,62 @@ module Basic = struct
         dispatch_call_eval_args analysis_data path ret exp
           (List.map args ~f:(fun x ->
                (x.PulseAliasSpecialization.FuncArg.exp, x.PulseAliasSpecialization.FuncArg.typ) ) )
-          args location CallFlags.default astate (Some constructor)
+          args location CallFlags.default astate non_disj (Some constructor)
     | None ->
         (* A constructor can be not found if it is not in captured data, e.g. standard library. *)
         L.d_printfln "Constructor not found" ;
-        astate |> ok_continue
+        (astate |> ok_continue, non_disj)
 
 
   let free_or_delete operation invalidation
       ({ProcnameDispatcher.Call.FuncArg.arg_payload= deleted_access_path} as deleted_arg) : model =
-   fun ({path; location} as model_data) astate ->
+   fun ({path; location} as model_data) astate non_disj ->
     let ((deleted_addr, deleted_hist) as deleted_access) =
       ValueOrigin.addr_hist deleted_access_path
     in
     (* NOTE: freeing 0 is a no-op so we introduce a case split *)
-    let astates_alloc =
+    let astates_alloc, non_disj =
       let addrs_to_invalidate =
         AbductiveDomain.reachable_addresses_from
           ~edge_filter:(function
             | FieldAccess _ | ArrayAccess _ -> true | TakeAddress | Dereference -> false )
           (Seq.return deleted_addr) astate `Post
       in
+      let ( let<**> ) x f = bind_sat_result non_disj x f in
       let<**> astate = PulseArithmetic.prune_positive deleted_addr astate in
-      let<*> astate =
-        PulseOperations.check_addr_access path NoAccess location deleted_access astate
+      let<**> astate =
+        Sat (PulseOperations.check_addr_access path NoAccess location deleted_access astate)
       in
-      let astates =
+      let astates, non_disj =
         match operation with
         | `Free ->
-            ok_continue astate
+            (ok_continue astate, non_disj)
         | `Delete ->
-            call_destructor deleted_arg model_data astate
+            call_destructor deleted_arg model_data astate non_disj
       in
-      List.concat_map astates ~f:(fun exec_state_result ->
-          let<*> exec_state = exec_state_result in
-          match exec_state with
-          | ContinueProgram astate ->
-              AbstractValue.Set.fold
-                (fun addr astate ->
-                  PulseOperations.invalidate path UntraceableAccess location invalidation
-                    (addr, deleted_hist) astate )
-                addrs_to_invalidate astate
-              |> ok_continue
-          | ExceptionRaised _
-          | ExitProgram _
-          | AbortProgram _
-          | LatentAbortProgram _
-          | LatentInvalidAccess _ ->
-              [Ok exec_state] )
+      ( List.concat_map astates ~f:(fun exec_state_result ->
+            let<*> exec_state = exec_state_result in
+            match exec_state with
+            | ContinueProgram astate ->
+                AbstractValue.Set.fold
+                  (fun addr astate ->
+                    PulseOperations.invalidate path UntraceableAccess location invalidation
+                      (addr, deleted_hist) astate )
+                  addrs_to_invalidate astate
+                |> ok_continue
+            | ExceptionRaised _
+            | ExitProgram _
+            | AbortProgram _
+            | LatentAbortProgram _
+            | LatentInvalidAccess _ ->
+                [Ok exec_state] )
+      , non_disj )
     in
     let astate_zero =
       PulseArithmetic.prune_eq_zero deleted_addr astate
       >>|| ExecutionDomain.continue |> SatUnsat.to_list
     in
-    astate_zero @ astates_alloc
+    (astate_zero @ astates_alloc, non_disj)
 
 
   let get_malloced_object_type (exp : Exp.t) =
@@ -412,7 +425,7 @@ module Basic = struct
       {PulseOperations.prune} that works better if we know the SIL expression. This just means we're
       discarding some abstract values that were potentially created to evaluate [exp] when the model
       was called. *)
-  let assert_ {ProcnameDispatcher.Call.FuncArg.exp= condition} : model =
+  let assert_ {ProcnameDispatcher.Call.FuncArg.exp= condition} : model_no_non_disj =
    fun {path; location} astate ->
     let<++> astate, _ = PulseOperations.prune path location ~condition astate in
     astate
@@ -450,5 +463,8 @@ module Basic = struct
       &::.*++> unknown_call "modelled as skip due to configuration option"
     ; +match_taint_source Config.pulse_taint_skip_sources
       &::.*++> unknown_call "modelled as skip due to configuration option" ]
-    |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
+    |> List.map ~f:(fun matcher ->
+           matcher
+           |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
+           |> with_non_disj )
 end

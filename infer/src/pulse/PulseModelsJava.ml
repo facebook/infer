@@ -36,7 +36,7 @@ let write_field path field new_val location addr astate =
   PulseOperations.write_deref path location ~ref:field_addr ~obj:new_val astate
 
 
-let instance_of (argv, hist) typeexpr : model =
+let instance_of (argv, hist) typeexpr : model_no_non_disj =
  fun {location; path; ret= ret_id, _} astate ->
   if Language.curr_language_is Hack then
     let event = Hist.call_event path location "Hack.instanceof" in
@@ -56,7 +56,7 @@ let instance_of (argv, hist) typeexpr : model =
         astate |> Basic.ok_continue
 
 
-let call_may_throw_exception (exn : JavaClassName.t) : model =
+let call_may_throw_exception (exn : JavaClassName.t) : model_no_non_disj =
  fun {location; path; analysis_data} astate ->
   let ret_addr = AbstractValue.mk_fresh () in
   let exn_name = JavaClassName.to_string exn in
@@ -71,13 +71,13 @@ let call_may_throw_exception (exn : JavaClassName.t) : model =
   [Ok (ExceptionRaised astate)]
 
 
-let throw : model = fun _ astate -> [Ok (ExceptionRaised astate)]
+let throw : model_no_non_disj = fun _ astate -> [Ok (ExceptionRaised astate)]
 (* Note that the Java frontend should have inserted an assignment of the
    thrown object to the `ret` variable just before this instruction. *)
 
 module Object = struct
   (* naively modeled as shallow copy. *)
-  let clone src_pointer_hist : model =
+  let clone src_pointer_hist : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "Object.clone" in
     let<*> astate, obj =
@@ -88,7 +88,7 @@ module Object = struct
 end
 
 module Iterator = struct
-  let constructor ~desc init : model =
+  let constructor ~desc init : model_no_non_disj =
    fun {path; location; ret} astate ->
     let event = Hist.call_event path location desc in
     let ref = (AbstractValue.mk_fresh (), Hist.single_event path event) in
@@ -99,7 +99,7 @@ module Iterator = struct
 
 
   (* {curr -> v_c} is modified to {curr -> v_fresh} and returns array[v_c] *)
-  let next ~desc iter : model =
+  let next ~desc iter : model_no_non_disj =
    fun {path; location; ret} astate ->
     let event = Hist.call_event path location desc in
     let new_index = AbstractValue.mk_fresh () in
@@ -121,7 +121,7 @@ module Iterator = struct
 
 
   (* {curr -> v_c } is modified to {curr -> v_fresh} and writes to array[v_c] *)
-  let remove ~desc iter : model =
+  let remove ~desc iter : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location desc in
     let new_index = AbstractValue.mk_fresh () in
@@ -145,7 +145,7 @@ module Iterator = struct
 end
 
 module Resource = struct
-  let allocate_aux ~exn_class_name ((this, _) as this_obj) delegation_opt : model =
+  let allocate_aux ~exn_class_name ((this, _) as this_obj) delegation_opt : model_no_non_disj =
    fun ({location; callee_procname; path; analysis_data= {tenv}} as model_data) astate ->
     let[@warning "-partial-match"] (Some (Typ.JavaClass class_name)) =
       Procname.get_class_type_name callee_procname
@@ -172,9 +172,11 @@ module Resource = struct
     delegated_state @ exn_state
 
 
-  let allocate ?exn_class_name this_arg : model = allocate_aux ~exn_class_name this_arg None
+  let allocate ?exn_class_name this_arg : model_no_non_disj =
+    allocate_aux ~exn_class_name this_arg None
 
-  let allocate_with_delegation ?exn_class_name () this_arg delegation : model =
+
+  let allocate_with_delegation ?exn_class_name () this_arg delegation : model_no_non_disj =
     allocate_aux ~exn_class_name this_arg (Some delegation)
 
 
@@ -192,13 +194,13 @@ module Resource = struct
 
   let writer_resource_usage_modeled = StringSet.of_list ["flush"; "write"]
 
-  let use ~exn_class_name : model =
+  let use ~exn_class_name : model_no_non_disj =
     let exn = JavaClassName.from_string exn_class_name in
     fun model_data astate ->
       Ok (ContinueProgram astate) :: call_may_throw_exception exn model_data astate
 
 
-  let writer_append this : model =
+  let writer_append this : model_no_non_disj =
     let exn = JavaClassName.from_string "java.IO.IOException" in
     fun model_data astate ->
       let return_this_state =
@@ -208,12 +210,12 @@ module Resource = struct
       return_this_state @ throw_IOException_state
 
 
-  let release this : model =
+  let release this : model_no_non_disj =
    fun _ astate ->
     PulseOperations.java_resource_release ~recursive:true (fst this) astate |> Basic.ok_continue
 
 
-  let release_this_only this : model =
+  let release_this_only this : model_no_non_disj =
    fun _ astate ->
     PulseOperations.java_resource_release ~recursive:false (fst this) astate |> Basic.ok_continue
 end
@@ -229,7 +231,7 @@ module Collection = struct
 
   let is_empty_field = mk_java_field pkg_name class_name "__infer_model_backing_collection_empty"
 
-  let init ~desc this : model =
+  let init ~desc this : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location desc in
     let fresh_val = (AbstractValue.mk_fresh (), Hist.single_event path event) in
@@ -260,7 +262,7 @@ module Collection = struct
     astate |> Basic.ok_continue
 
 
-  let add_common ~desc coll new_elem ?new_val : model =
+  let add_common ~desc coll new_elem ?new_val : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
     let ret_value = AbstractValue.mk_fresh () in
@@ -303,9 +305,9 @@ module Collection = struct
       astate |> Basic.ok_continue
 
 
-  let add ~desc coll new_elem : model = add_common ~desc coll new_elem
+  let add ~desc coll new_elem : model_no_non_disj = add_common ~desc coll new_elem
 
-  let put ~desc coll new_elem new_val : model = add_common ~desc coll new_elem ~new_val
+  let put ~desc coll new_elem new_val : model_no_non_disj = add_common ~desc coll new_elem ~new_val
 
   let update path coll new_val new_val_hist event location ret_id astate =
     (* case0: element not present in collection *)
@@ -339,7 +341,7 @@ module Collection = struct
     [Ok (Basic.continue astate); astate1; astate2]
 
 
-  let set coll (new_val, new_val_hist) : model =
+  let set coll (new_val, new_val_hist) : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "Collection.set()" in
     update path coll new_val new_val_hist event location ret_id astate
@@ -409,7 +411,7 @@ module Collection = struct
     SatUnsat.to_list astate1 @ SatUnsat.to_list astate2 @ SatUnsat.to_list astate3
 
 
-  let remove ~desc args : model =
+  let remove ~desc args : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     match args with
     | [ {ProcnameDispatcher.Call.FuncArg.arg_payload= coll_arg}
@@ -425,7 +427,7 @@ module Collection = struct
         astate |> Basic.ok_continue
 
 
-  let is_empty ~desc coll : model =
+  let is_empty ~desc coll : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
     let<*> astate, coll_val =
@@ -438,7 +440,7 @@ module Collection = struct
     |> Basic.ok_continue
 
 
-  let clear ~desc coll : model =
+  let clear ~desc coll : model_no_non_disj =
    fun {path; location} astate ->
     let hist = Hist.single_call path location desc in
     let null_val = AbstractValue.mk_fresh () in
@@ -504,7 +506,7 @@ module Collection = struct
     SatUnsat.to_list astate1 @ SatUnsat.to_list astate2 @ SatUnsat.to_list astate3
 
 
-  let get ~desc coll (elem, _) : model =
+  let get ~desc coll (elem, _) : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
     let<*> astate, coll_val =
@@ -598,14 +600,14 @@ module Boolean = struct
 end
 
 module Preconditions = struct
-  let check_not_null (address, hist) : model =
+  let check_not_null (address, hist) : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "Preconditions.checkNotNull" in
     let<++> astate = PulseArithmetic.prune_positive address astate in
     PulseOperations.write_id ret_id (address, Hist.add_event path event hist) astate
 
 
-  let check_state_argument (address, _) : model =
+  let check_state_argument (address, _) : model_no_non_disj =
    fun _ astate ->
     let<++> astate = PulseArithmetic.prune_positive address astate in
     astate
@@ -621,22 +623,24 @@ let matchers : matcher list =
     StringSet.of_list
       ["add"; "addAll"; "append"; "delete"; "remove"; "replace"; "poll"; "put"; "putAll"]
   in
-  let cpp_push_back_without_desc vector : model =
+  let cpp_push_back_without_desc vector : model_no_non_disj =
    fun ({callee_procname} as model_data) astate ->
     Cplusplus.Vector.push_back vector ~desc:(Procname.to_string callee_procname) model_data astate
   in
   let map_context_tenv f (x, _) = f x in
-  [ +BuiltinDecl.(match_builtin __java_throw) <>--> throw
+  [ +BuiltinDecl.(match_builtin __java_throw) <>--> throw |> with_non_disj
   ; +BuiltinDecl.(match_builtin __unwrap_exception)
     <>$ capt_arg_payload
     $--> Basic.id_first_arg ~desc:"unwrap_exception"
-  ; +BuiltinDecl.(match_builtin __set_file_attribute) <>$ any_arg $--> Basic.skip
-  ; +BuiltinDecl.(match_builtin __set_mem_attribute) <>$ any_arg $--> Basic.skip
+    |> with_non_disj
+  ; +BuiltinDecl.(match_builtin __set_file_attribute) <>$ any_arg $--> Basic.skip |> with_non_disj
+  ; +BuiltinDecl.(match_builtin __set_mem_attribute) <>$ any_arg $--> Basic.skip |> with_non_disj
   ; +map_context_tenv
        (PatternMatch.Java.implements_one_of
           ["java.io.FileInputStream"; "java.io.FileOutputStream"] )
     &:: "<init>" <>$ capt_arg_payload
     $+...$--> Resource.allocate ~exn_class_name:"java.io.FileNotFoundException"
+    |> with_non_disj
   ; +map_context_tenv
        (PatternMatch.Java.implements_one_of
           [ "java.io.ObjectInputStream"
@@ -647,6 +651,7 @@ let matchers : matcher list =
           ; "java.util.zip.GZIPOutputStream" ] )
     &:: "<init>" <>$ capt_arg_payload $+ capt_arg_payload
     $+...$--> Resource.allocate_with_delegation ~exn_class_name:"java.io.IOException" ()
+    |> with_non_disj
   ; +map_context_tenv (* <init> that does not throw exceptions *)
        (PatternMatch.Java.implements_one_of
           [ "java.io.BufferedInputStream"
@@ -671,104 +676,125 @@ let matchers : matcher list =
           ; "javax.crypto.CipherOutputStream" ] )
     &:: "<init>" <>$ capt_arg_payload $+ capt_arg_payload
     $+...$--> Resource.allocate_with_delegation ()
+    |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.OutputStream")
     &::+ non_static_method "write" <>$ any_arg
     $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
+    |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.OutputStream")
     &:: "flush" <>$ any_arg
     $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
+    |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.InputStream")
     &::+ (fun _ proc_name_str ->
            StringSet.mem proc_name_str
              Resource.inputstream_resource_usage_modeled_throws_IOException )
     <>$ any_arg
     $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
+    |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.InputStream")
     &::+ (fun _ proc_name_str ->
            StringSet.mem proc_name_str Resource.inputstream_resource_usage_modeled_do_not_throws )
-    <>$ any_arg $+...$--> Basic.skip
+    <>$ any_arg $+...$--> Basic.skip |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.Reader")
     &::+ (fun _ proc_name_str ->
            StringSet.mem proc_name_str Resource.reader_resource_usage_modeled_throws_IOException )
     <>$ any_arg
     $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
+    |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.Reader")
     &::+ (fun _ proc_name_str ->
            StringSet.mem proc_name_str Resource.reader_resource_usage_modeled_do_not_throws )
-    <>$ any_arg $+...$--> Basic.skip
+    <>$ any_arg $+...$--> Basic.skip |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.Writer")
     &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str Resource.writer_resource_usage_modeled)
     <>$ any_arg
     $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
+    |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.Writer")
-    &:: "append" <>$ capt_arg_payload $+...$--> Resource.writer_append
+    &:: "append" <>$ capt_arg_payload $+...$--> Resource.writer_append |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.Closeable")
-    &:: "close" <>$ capt_arg_payload $--> Resource.release
+    &:: "close" <>$ capt_arg_payload $--> Resource.release |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "com.google.common.io.Closeables")
-    &:: "close" <>$ capt_arg_payload $+...$--> Resource.release
+    &:: "close" <>$ capt_arg_payload $+...$--> Resource.release |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "com.google.common.io.Closeables")
-    &:: "closeQuietly" <>$ capt_arg_payload $+...$--> Resource.release
+    &:: "closeQuietly" <>$ capt_arg_payload $+...$--> Resource.release |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.util.zip.DeflaterOutputStream")
-    &:: "finish" <>$ capt_arg_payload $+...$--> Resource.release_this_only
+    &:: "finish" <>$ capt_arg_payload $+...$--> Resource.release_this_only |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Object")
-    &:: "clone" $ capt_arg_payload $--> Object.clone
-  ; ( +map_context_tenv (PatternMatch.Java.implements_lang "System")
+    &:: "clone" $ capt_arg_payload $--> Object.clone |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements_lang "System")
     &:: "arraycopy" $ capt_arg_payload $+ any_arg $+ capt_arg_payload
-    $+...$--> fun src dest -> Basic.shallow_copy_model "System.arraycopy" dest src )
-  ; +map_context_tenv (PatternMatch.Java.implements_lang "System") &:: "exit" <>--> Basic.early_exit
+    $+...$--> (fun src dest -> Basic.shallow_copy_model "System.arraycopy" dest src)
+    |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements_lang "System")
+    &:: "exit" <>--> Basic.early_exit |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_collection
     &:: "<init>" <>$ capt_arg_payload
     $--> Collection.init ~desc:"Collection.init()"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_collection
     &:: "add" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Collection.add ~desc:"Collection.add"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_list
     &:: "add" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload
     $--> Collection.add ~desc:"Collection.add()"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_collection
     &:: "remove"
     &++> Collection.remove ~desc:"Collection.remove"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_collection
     &:: "isEmpty" <>$ capt_arg_payload
     $--> Collection.is_empty ~desc:"Collection.isEmpty()"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_collection
     &:: "clear" <>$ capt_arg_payload
     $--> Collection.clear ~desc:"Collection.clear()"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_collection
     &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str pushback_modeled)
-    <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc
+    <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_map
     &:: "<init>" <>$ capt_arg_payload
     $--> Collection.init ~desc:"Map.init()"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_map
     &:: "put" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
-    $--> Collection.put ~desc:"Map.put()"
+    $--> Collection.put ~desc:"Map.put()" |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_map
     &:: "remove"
     &++> Collection.remove ~desc:"Map.remove()"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_map
     &:: "get" <>$ capt_arg_payload $+ capt_arg_payload $--> Collection.get ~desc:"Map.get()"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_map
     &:: "containsKey" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Collection.get ~desc:"Map.containsKey()"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_map
     &:: "isEmpty" <>$ capt_arg_payload
     $--> Collection.is_empty ~desc:"Map.isEmpty()"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_map
     &:: "clear" <>$ capt_arg_payload
     $--> Collection.clear ~desc:"Map.clear()"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_queue
     &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str pushback_modeled)
-    <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc
+    <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements_lang "StringBuilder")
     &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str pushback_modeled)
-    <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc
+    <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements_lang "StringBuilder")
     &:: "setLength" <>$ capt_arg_payload
     $+...$--> Cplusplus.Vector.invalidate_references ShrinkToFit
+    |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements_lang "String")
     &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str pushback_modeled)
-    <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc
+    <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Integer")
     &:: "<init>" $ capt_arg_payload $+ capt_arg_payload $--> Integer.init
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Integer")
@@ -786,39 +812,50 @@ let matchers : matcher list =
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Boolean")
     &:: "valueOf" <>$ capt_arg_payload $--> Boolean.value_of
   ; +map_context_tenv (PatternMatch.Java.implements_google "common.base.Preconditions")
-    &:: "checkNotNull" $ capt_arg_payload $+...$--> Preconditions.check_not_null
+    &:: "checkNotNull" $ capt_arg_payload $+...$--> Preconditions.check_not_null |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements_google "common.base.Preconditions")
     &:: "checkState" $ capt_arg_payload $+...$--> Preconditions.check_state_argument
+    |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements_google "common.base.Preconditions")
     &:: "checkArgument" $ capt_arg_payload $+...$--> Preconditions.check_state_argument
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_iterator
-    &:: "remove" <>$ capt_arg_payload $+...$--> Iterator.remove ~desc:"remove"
+    &:: "remove" <>$ capt_arg_payload $+...$--> Iterator.remove ~desc:"remove" |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_map
-    &:: "putAll" <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc
+    &:: "putAll" <>$ capt_arg_payload $+...$--> cpp_push_back_without_desc |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_collection
     &:: "get" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Cplusplus.Vector.at ~desc:"Collection.get()"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_list
     &:: "set" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $--> Collection.set
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_iterator
     &:: "hasNext"
     &--> Basic.nondet ~desc:"Iterator.hasNext()"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_enumeration
     &:: "hasMoreElements"
     &--> Basic.nondet ~desc:"Enumeration.hasMoreElements()"
+    |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Iterable")
     &:: "iterator" <>$ capt_arg_payload
     $+...$--> Iterator.constructor ~desc:"Iterable.iterator"
+    |> with_non_disj
   ; +map_context_tenv PatternMatch.Java.implements_iterator
     &:: "next" <>$ capt_arg_payload
     $!--> Iterator.next ~desc:"Iterator.next()"
-  ; +BuiltinDecl.(match_builtin __instanceof) <>$ capt_arg_payload $+ capt_exp $--> instance_of
-  ; ( +map_context_tenv PatternMatch.Java.implements_enumeration
+    |> with_non_disj
+  ; +BuiltinDecl.(match_builtin __instanceof)
+    <>$ capt_arg_payload $+ capt_exp $--> instance_of |> with_non_disj
+  ; +map_context_tenv PatternMatch.Java.implements_enumeration
     &:: "nextElement" <>$ capt_arg_payload
-    $!--> fun x ->
-    Cplusplus.Vector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) )
-  ; -"java.lang.Object" &:: "<init>" &--> Basic.skip
+    $!--> (fun x ->
+            Cplusplus.Vector.at ~desc:"Enumeration.nextElement" x (AbstractValue.mk_fresh (), []) )
+    |> with_non_disj
+  ; -"java.lang.Object" &:: "<init>" &--> Basic.skip |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Object")
     &:: "equals"
-    &--> Basic.nondet ~desc:"Object.equals" ]
+    &--> Basic.nondet ~desc:"Object.equals"
+    |> with_non_disj ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

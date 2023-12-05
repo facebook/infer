@@ -1040,7 +1040,7 @@ let build_vec_for_variadic_callee data args astate =
 
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
-  [ -"$builtins" &:: "nondet" <>$$--> Basic.nondet ~desc:"nondet"
+  [ -"$builtins" &:: "nondet" <>$$--> lift_model @@ Basic.nondet ~desc:"nondet"
   ; +BuiltinDecl.(match_builtin __lazy_class_initialize) <>$ capt_exp $--> lazy_class_initialize
   ; +BuiltinDecl.(match_builtin __get_lazy_class) <>$ capt_exp $--> lazy_class_initialize
   ; -"$builtins" &:: "__sil_splat" <>$ capt_arg_payload $--> SplatedVec.make

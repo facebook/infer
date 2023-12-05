@@ -13,7 +13,7 @@ open PulseModelsImport
 
 let string_length_access = MemoryAccess.FieldAccess PulseOperations.ModeledField.string_length
 
-let text_utils_is_empty ~desc ((addr, hist) as addr_hist) : model =
+let text_utils_is_empty ~desc ((addr, hist) as addr_hist) : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let event = Hist.call_event path location desc in
   let ret_val = AbstractValue.mk_fresh () in
@@ -50,4 +50,7 @@ let matchers : matcher list =
   [ +map_context_tenv (PatternMatch.Java.implements_android "text.TextUtils")
     &:: "isEmpty" <>$ capt_arg_payload
     $--> text_utils_is_empty ~desc:"TextUtils.isEmpty" ]
-  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
+  |> List.map ~f:(fun matcher ->
+         matcher
+         |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
+         |> ProcnameDispatcher.Call.map_matcher ~f:lift_model )

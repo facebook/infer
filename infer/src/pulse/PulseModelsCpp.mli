@@ -14,12 +14,13 @@ val abort_matchers : matcher list
 val matchers : matcher list
 
 module Vector : sig
-  val at : desc:string -> AbstractValue.t * ValueHistory.t -> AbstractValue.t * 'a -> model
+  val at :
+    desc:string -> AbstractValue.t * ValueHistory.t -> AbstractValue.t * 'a -> model_no_non_disj
 
   val invalidate_references :
-    Invalidation.std_vector_function -> AbstractValue.t * ValueHistory.t -> model
+    Invalidation.std_vector_function -> AbstractValue.t * ValueHistory.t -> model_no_non_disj
 
-  val push_back : AbstractValue.t * ValueHistory.t -> desc:string -> model
+  val push_back : AbstractValue.t * ValueHistory.t -> desc:string -> model_no_non_disj
 end
 
 module Function : sig

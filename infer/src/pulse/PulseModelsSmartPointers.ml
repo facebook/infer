@@ -45,7 +45,7 @@ let assign_value_nullptr path location this ~desc astate =
     location (ConstantDereference IntLit.zero) value astate
 
 
-let dereference this ~desc : model =
+let dereference this ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let<*> astate, ((value_addr, value_hist) as value) =
     to_internal_value_deref path Write location this astate
@@ -55,7 +55,7 @@ let dereference this ~desc : model =
   PulseOperations.write_id ret_id (value_addr, Hist.add_call path location desc value_hist) astate
 
 
-let get this ~desc : model =
+let get this ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let<+> astate, (value_addr, value_hist) =
     to_internal_value_deref path Read location this astate
@@ -63,7 +63,7 @@ let get this ~desc : model =
   PulseOperations.write_id ret_id (value_addr, Hist.add_call path location desc value_hist) astate
 
 
-let at this index ~desc : model =
+let at this index ~desc : model_no_non_disj =
  fun {path; location; ret} astate ->
   let event = Hist.call_event path location desc in
   let<*> astate, internal_array =
@@ -77,7 +77,7 @@ let at this index ~desc : model =
   PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
 
 
-let swap this other ~desc : model =
+let swap this other ~desc : model_no_non_disj =
  fun {path; location} astate ->
   let<*> astate, this_value = to_internal_value_deref path Read location this astate in
   let<*> astate, other_value = to_internal_value_deref path Read location other astate in
@@ -86,7 +86,7 @@ let swap this other ~desc : model =
   astate
 
 
-let operator_bool this ~desc : model =
+let operator_bool this ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let<+> astate, (value_addr, _) = to_internal_value_deref path Write location this astate in
   PulseOperations.write_id ret_id (value_addr, Hist.single_call path location desc) astate
@@ -165,7 +165,7 @@ module SharedPtr = struct
       astate
 
 
-  let default_constructor this ~desc : model =
+  let default_constructor this ~desc : model_no_non_disj =
    fun {path; location} astate ->
     let<**> astate = assign_value_nullptr path location this ~desc astate in
     let<++> astate = assign_count path location this ~constant:IntLit.zero ~desc astate in
@@ -186,12 +186,13 @@ module SharedPtr = struct
 
 
   let destructor ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : model =
-   fun ({analysis_data= {tenv}; path; location} as model_data) astate ->
-    let<*> astate, pointer = to_internal_count_deref path Read location this astate in
-    let<*> astate, count =
+   fun ({analysis_data= {tenv}; path; location} as model_data) astate non_disj ->
+    let ( let<*!> ) x f = bind_sat_result non_disj (Sat x) f in
+    let<*!> astate, pointer = to_internal_count_deref path Read location this astate in
+    let<*!> astate, count =
       PulseOperations.eval_access path Read location pointer Dereference astate
     in
-    let<*> astate, (value_addr, value_hist) =
+    let<*!> astate, (value_addr, value_hist) =
       to_internal_value_deref path Read location this astate
     in
     let value_addr_hist =
@@ -210,7 +211,7 @@ module SharedPtr = struct
       >>|| ExecutionDomain.continue
     in
     (* ref_count is one: deallocate the backing_pointer and the ref_count *)
-    let ref_count_one =
+    let ref_count_one, non_disj =
       match find_element_type tenv typ with
       | Some elem_typ ->
           let typ = {Typ.desc= Typ.Tptr (elem_typ, Typ.Pk_pointer); quals= Typ.mk_type_quals ()} in
@@ -220,7 +221,7 @@ module SharedPtr = struct
           let deleted_arg =
             ProcnameDispatcher.Call.FuncArg.{arg_payload= value_addr_hist; exp= fake_exp; typ}
           in
-          Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate
+          Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate non_disj
       | None ->
           L.die InternalError "Cannot find template arguments"
     in
@@ -235,10 +236,10 @@ module SharedPtr = struct
           | _ ->
               [Ok exec_state] )
     in
-    SatUnsat.to_list ref_count_gt_one @ SatUnsat.to_list ref_count_zero @ ref_count_one
+    (SatUnsat.to_list ref_count_gt_one @ SatUnsat.to_list ref_count_zero @ ref_count_one, non_disj)
 
 
-  let assign_pointer this value ~desc : model =
+  let assign_pointer this value ~desc : model_no_non_disj =
    fun {path; location} astate ->
     let<*> astate, _ = write_value path location this ~value ~desc astate in
     (* set ref_count to *)
@@ -255,7 +256,8 @@ module SharedPtr = struct
     SatUnsat.to_list astate_not_nullptr @ SatUnsat.to_list astate_nullptr
 
 
-  let copy_constructor ProcnameDispatcher.Call.FuncArg.{arg_payload= this} other ~desc : model =
+  let copy_constructor ProcnameDispatcher.Call.FuncArg.{arg_payload= this} other ~desc :
+      model_no_non_disj =
    fun {path; location} astate ->
     (* copy value pointer*)
     let<*> astate, value = to_internal_value_deref path Read location other astate in
@@ -301,13 +303,14 @@ module SharedPtr = struct
 
   let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc :
       model =
-   fun model_data astate ->
+   fun model_data astate non_disj ->
+    let ( let<**> ) x f = bind_sat_result non_disj x f in
     let op1 = Formula.AbstractValueOperand (fst this) in
     let op2 = Formula.AbstractValueOperand (fst other) in
     (* self-assignment *)
     let astate_equals = PulseArithmetic.and_equal op1 op2 astate >>|| ExecutionDomain.continue in
     let<**> astate_not_equals = PulseArithmetic.and_not_equal op1 op2 astate in
-    let astate_not_equals = destructor arg ~desc model_data astate_not_equals in
+    let astate_not_equals, non_disj = destructor arg ~desc model_data astate_not_equals non_disj in
     let astate_not_equals =
       List.concat_map astate_not_equals ~f:(fun exec_state_result ->
           let<*> exec_state = exec_state_result in
@@ -317,10 +320,10 @@ module SharedPtr = struct
           | _ ->
               [Ok exec_state] )
     in
-    SatUnsat.to_list astate_equals @ astate_not_equals
+    (SatUnsat.to_list astate_equals @ astate_not_equals, non_disj)
 
 
-  let move_assignment this other ~desc : model =
+  let move_assignment this other ~desc : model_no_non_disj =
    fun {path; location} astate ->
     let<*> astate, value = to_internal_value_deref path Read location other astate in
     let<*> astate, count = to_internal_count_deref path Read location other astate in
@@ -332,17 +335,20 @@ module SharedPtr = struct
 
 
   let reset (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) value ~desc : model =
-   fun ({path; location} as model_data) astate ->
-    let astates = destructor arg ~desc model_data astate in
-    List.concat_map astates ~f:(fun exec_state_result ->
-        let<*> exec_state = exec_state_result in
-        match exec_state with
-        | ContinueProgram astate ->
-            let<*> astate, _ = write_value path location this ~value ~desc astate in
-            let<++> astate = assign_count path location this ~constant:IntLit.one ~desc astate in
-            astate
-        | _ ->
-            [Ok exec_state] )
+   fun ({path; location} as model_data) astate non_disj ->
+    let astates, non_disj = destructor arg ~desc model_data astate non_disj in
+    let astates =
+      List.concat_map astates ~f:(fun exec_state_result ->
+          let<*> exec_state = exec_state_result in
+          match exec_state with
+          | ContinueProgram astate ->
+              let<*> astate, _ = write_value path location this ~value ~desc astate in
+              let<++> astate = assign_count path location this ~constant:IntLit.one ~desc astate in
+              astate
+          | _ ->
+              [Ok exec_state] )
+    in
+    (astates, non_disj)
 
 
   let is_rvalue callee_procname arg_index =
@@ -353,21 +359,21 @@ module SharedPtr = struct
 
   let copy_move_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc
       : model =
-   fun ({callee_procname} as model_data) ->
+   fun ({callee_procname} as model_data) astate non_disj ->
     if is_rvalue callee_procname 1 then
-      move_assignment this other ~desc:(desc ^ " (move)") model_data
-    else copy_assignment arg other ~desc:(desc ^ " (copy)") model_data
+      (move_assignment this other ~desc:(desc ^ " (move)") model_data astate, non_disj)
+    else copy_assignment arg other ~desc:(desc ^ " (copy)") model_data astate non_disj
 
 
   let copy_move_constructor (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc
-      : model =
+      : model_no_non_disj =
    fun ({callee_procname} as model_data) ->
     if is_rvalue callee_procname 1 then
       move_assignment this other ~desc:(desc ^ " (move)") model_data
     else copy_constructor arg other ~desc:(desc ^ " (copy)") model_data
 
 
-  let use_count this ~desc : model =
+  let use_count this ~desc : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let<*> astate, pointer = to_internal_count_deref path Read location this astate in
     let<+> astate, (value_addr, value_hist) =
@@ -377,23 +383,28 @@ module SharedPtr = struct
 
 
   let default_reset (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) ~desc : model =
-   fun ({path; location} as model_data) astate ->
-    let astates = destructor arg ~desc model_data astate in
-    List.concat_map astates ~f:(fun exec_state_result ->
-        let<*> exec_state = exec_state_result in
-        match exec_state with
-        | ContinueProgram astate ->
-            let<**> astate = assign_value_nullptr path location this ~desc astate in
-            let<++> astate = assign_count path location this ~constant:IntLit.zero ~desc astate in
-            astate
-        | _ ->
-            [Ok exec_state] )
+   fun ({path; location} as model_data) astate non_disj ->
+    let astates, non_disj = destructor arg ~desc model_data astate non_disj in
+    let astates =
+      List.concat_map astates ~f:(fun exec_state_result ->
+          let<*> exec_state = exec_state_result in
+          match exec_state with
+          | ContinueProgram astate ->
+              let<**> astate = assign_value_nullptr path location this ~desc astate in
+              let<++> astate = assign_count path location this ~constant:IntLit.zero ~desc astate in
+              astate
+          | _ ->
+              [Ok exec_state] )
+    in
+    (astates, non_disj)
 
 
   let make_shared
       (args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list) ~desc :
       model =
-   fun ({callee_procname; path; location} as model_data) astate ->
+   fun ({callee_procname; path; location} as model_data) astate non_disj ->
+    let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
+    let ( let<**> ) x f = bind_sat_result non_disj x f in
     let this, args_without_this, actuals =
       match
         ( args |> List.last
@@ -454,7 +465,7 @@ module SharedPtr = struct
         (* create the list of types of the actual arguments of the constructor
            Note that these types are the formal arguments of make_shared *)
         let actuals = typ :: actuals in
-        Basic.call_constructor class_name actuals args fake_exp model_data astate
+        Basic.call_constructor class_name actuals args fake_exp model_data astate non_disj
     | _ -> (
         L.d_printfln "std::make_shared called on non-class type, assuming primitive type" ;
         match args_without_this with
@@ -462,29 +473,29 @@ module SharedPtr = struct
             (* assign the value pointer to the field of the shared_ptr *)
             let<**> astate, value_address = Basic.alloc_value_address ~desc typ model_data astate in
             let<*> astate, _ = write_value path location this ~value:value_address ~desc astate in
-            let<++> astate =
+            let<**> astate =
               assign_constant path location ~ref:value_address ~constant:IntLit.zero ~desc astate
             in
-            astate
+            (Basic.ok_continue astate, non_disj)
         | first_arg :: _ ->
             let<**> astate, address =
               Basic.deep_copy path location ~value:first_arg.arg_payload ~desc astate
             in
-            let<+> astate, _ = write_value path location this ~value:address ~desc astate in
-            astate )
+            let<*> astate, _ = write_value path location this ~value:address ~desc astate in
+            (Basic.ok_continue astate, non_disj) )
 
 
   let pointer_cast src tgt ~desc = copy_move_constructor tgt src ~desc
 end
 
 module UniquePtr = struct
-  let default_constructor this ~desc : model =
+  let default_constructor this ~desc : model_no_non_disj =
    fun {path; location} astate ->
     let<++> astate = assign_value_nullptr path location this ~desc astate in
     astate
 
 
-  let assign_pointer this value ~desc : model =
+  let assign_pointer this value ~desc : model_no_non_disj =
    fun {path; location} astate ->
     let<+> astate, _ = write_value path location this ~value ~desc astate in
     astate
@@ -499,7 +510,8 @@ module UniquePtr = struct
 
 
   let destructor ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : model =
-   fun ({analysis_data= {tenv}; path; location} as model_data) astate ->
+   fun ({analysis_data= {tenv}; path; location} as model_data) astate non_disj ->
+    let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
     let<*> astate, (value_addr, value_hist) =
       to_internal_value_deref path Read location this astate
     in
@@ -521,39 +533,41 @@ module UniquePtr = struct
         let deleted_arg =
           ProcnameDispatcher.Call.FuncArg.{arg_payload= value_addr_hist; exp= fake_exp; typ}
         in
-        Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate
+        Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate non_disj
     | None ->
         L.internal_error "Cannot find template arguments@." ;
-        Basic.ok_continue astate
+        (Basic.ok_continue astate, non_disj)
 
 
   let default_reset (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) ~desc : model =
-   fun ({path; location} as model_data) astate ->
-    let astates = destructor arg ~desc model_data astate in
-    List.concat_map astates ~f:(fun exec_state_result ->
-        let<*> exec_state = exec_state_result in
-        match exec_state with
-        | ContinueProgram astate ->
-            let<++> astate = assign_value_nullptr path location this ~desc astate in
-            astate
-        | _ ->
-            [Ok exec_state] )
+   fun ({path; location} as model_data) astate non_disj ->
+    let astates, non_disj = destructor arg ~desc model_data astate non_disj in
+    ( List.concat_map astates ~f:(fun exec_state_result ->
+          let<*> exec_state = exec_state_result in
+          match exec_state with
+          | ContinueProgram astate ->
+              let<++> astate = assign_value_nullptr path location this ~desc astate in
+              astate
+          | _ ->
+              [Ok exec_state] )
+    , non_disj )
 
 
   let reset (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) value ~desc : model =
-   fun ({path; location} as model_data) astate ->
-    let astates = destructor arg ~desc model_data astate in
-    List.concat_map astates ~f:(fun exec_state_result ->
-        let<*> exec_state = exec_state_result in
-        match exec_state with
-        | ContinueProgram astate ->
-            let<+> astate, _ = write_value path location this ~value ~desc astate in
-            astate
-        | _ ->
-            [Ok exec_state] )
+   fun ({path; location} as model_data) astate non_disj ->
+    let astates, non_disj = destructor arg ~desc model_data astate non_disj in
+    ( List.concat_map astates ~f:(fun exec_state_result ->
+          let<*> exec_state = exec_state_result in
+          match exec_state with
+          | ContinueProgram astate ->
+              let<+> astate, _ = write_value path location this ~value ~desc astate in
+              astate
+          | _ ->
+              [Ok exec_state] )
+    , non_disj )
 
 
-  let release this ~desc : model =
+  let release this ~desc : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let<*> astate, (old_value_addr, old_value_hist) =
       to_internal_value_deref path Read location this astate
@@ -564,7 +578,7 @@ module UniquePtr = struct
       astate
 
 
-  let move_assignment this other ~desc : model =
+  let move_assignment this other ~desc : model_no_non_disj =
    fun {path; location} astate ->
     let<*> astate, value = to_internal_value_deref path Read location other astate in
     let<**> astate = assign_value_nullptr path location other ~desc astate in
@@ -577,14 +591,18 @@ let matchers : matcher list =
   [ (* matchers for unique_ptr *)
     -"std" &:: "unique_ptr" &:: "unique_ptr" $ capt_arg_payload
     $--> UniquePtr.default_constructor ~desc:"std::unique_ptr::unique_ptr()"
+    |> with_non_disj
   ; -"std" &:: "unique_ptr" &:: "unique_ptr" $ capt_arg_payload
     $+ capt_arg_payload_of_typ (-"std" &:: "unique_ptr")
     $--> UniquePtr.move_assignment ~desc:"std::unique_ptr::unique_ptr(std::unique_ptr<T>)"
+    |> with_non_disj
   ; -"std" &:: "unique_ptr" &:: "operator=" $ capt_arg_payload
     $+ capt_arg_payload_of_typ (-"std" &:: "unique_ptr")
     $--> UniquePtr.move_assignment ~desc:"std::unique_ptr::operator=(std::unique_ptr<T>)"
+    |> with_non_disj
   ; -"std" &:: "unique_ptr" &:: "unique_ptr" $ capt_arg_payload $+ capt_arg_payload
     $--> UniquePtr.assign_pointer ~desc:"std::unique_ptr::unique_ptr(T*)"
+    |> with_non_disj
   ; -"std" &:: "unique_ptr" &:: "~unique_ptr" $ capt_arg
     $--> UniquePtr.destructor ~desc:"std::unique_ptr::~unique_ptr()"
   ; -"std" &:: "unique_ptr" &:: "reset" $ capt_arg
@@ -593,30 +611,42 @@ let matchers : matcher list =
     $--> UniquePtr.reset ~desc:"std::unique_ptr::reset(T*)"
   ; -"std" &:: "unique_ptr" &:: "release" $ capt_arg_payload
     $--> UniquePtr.release ~desc:"std::unique_ptr::release()"
+    |> with_non_disj
   ; -"std" &:: "unique_ptr" &:: "operator[]" $ capt_arg_payload $+ capt_arg_payload
     $--> at ~desc:"std::unique_ptr::operator[]()"
-  ; -"std" &:: "unique_ptr" &:: "get" $ capt_arg_payload $--> get ~desc:"std::unique_ptr::get()"
+    |> with_non_disj
+  ; -"std" &:: "unique_ptr" &:: "get" $ capt_arg_payload
+    $--> get ~desc:"std::unique_ptr::get()"
+    |> with_non_disj
   ; -"std" &:: "unique_ptr" &:: "operator*" $ capt_arg_payload
     $--> dereference ~desc:"std::unique_ptr::operator*()"
+    |> with_non_disj
   ; -"std" &:: "unique_ptr" &:: "operator->" <>$ capt_arg_payload
     $--> dereference ~desc:"std::unique_ptr::operator->()"
+    |> with_non_disj
   ; -"std" &:: "unique_ptr" &:: "swap" $ capt_arg_payload $+ capt_arg_payload
     $--> swap ~desc:"std::unique_ptr::swap(std::unique_ptr<T>)"
+    |> with_non_disj
   ; -"std" &:: "unique_ptr" &:: "operator_bool" <>$ capt_arg_payload
     $--> operator_bool ~desc:"std::unique_ptr::operator_bool()"
+    |> with_non_disj
     (* matchers for shared_ptr *)
   ; -"std" &:: "__shared_ptr" &:: "__shared_ptr" $ capt_arg_payload
     $--> SharedPtr.default_constructor ~desc:"std::shared_ptr::shared_ptr()"
+    |> with_non_disj
   ; -"std" &:: "shared_ptr" &:: "shared_ptr" $ capt_arg_payload
     $--> SharedPtr.default_constructor ~desc:"std::shared_ptr::shared_ptr()"
+    |> with_non_disj
   ; -"std" &:: "__shared_ptr" &:: "__shared_ptr" $ capt_arg
     $+ capt_arg_payload_of_typ (-"std" &:: "__shared_ptr")
     $+...$--> SharedPtr.copy_move_constructor
                 ~desc:"std::shared_ptr::shared_ptr(std::shared_ptr<T>)"
+    |> with_non_disj
   ; -"std" &:: "shared_ptr" &:: "shared_ptr" $ capt_arg
     $+ capt_arg_payload_of_typ (-"std" &:: "shared_ptr")
     $+...$--> SharedPtr.copy_move_constructor
                 ~desc:"std::shared_ptr::shared_ptr(std::shared_ptr<T>)"
+    |> with_non_disj
   ; -"std" &:: "__shared_ptr" &:: "operator=" $ capt_arg
     $+ capt_arg_payload_of_typ (-"std" &:: "__shared_ptr")
     $--> SharedPtr.copy_move_assignment ~desc:"std::shared_ptr::operator=(std::shared_ptr<T>)"
@@ -625,37 +655,50 @@ let matchers : matcher list =
     $--> SharedPtr.copy_move_assignment ~desc:"std::shared_ptr::operator=(std::shared_ptr<T>)"
   ; -"std" &:: "__shared_ptr" &:: "__shared_ptr" $ capt_arg_payload $+ capt_arg_payload
     $+...$--> SharedPtr.assign_pointer ~desc:"std::shared_ptr::shared_ptr(T*)"
+    |> with_non_disj
   ; -"std" &:: "shared_ptr" &:: "shared_ptr" $ capt_arg_payload $+ capt_arg_payload
     $+...$--> SharedPtr.assign_pointer ~desc:"std::shared_ptr::shared_ptr(T*)"
+    |> with_non_disj
   ; -"std" &:: "__shared_ptr" &:: "~__shared_ptr" $ capt_arg
     $--> SharedPtr.destructor ~desc:"std::shared_ptr::~shared_ptr()"
   ; -"std" &:: "shared_ptr" &:: "~shared_ptr" $ capt_arg
     $--> SharedPtr.destructor ~desc:"std::shared_ptr::~shared_ptr()"
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "use_count" $ capt_arg_payload
     $--> SharedPtr.use_count ~desc:"std::shared_ptr::use_count()"
+    |> with_non_disj
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "reset" $ capt_arg $+ capt_arg_payload
     $--> SharedPtr.reset ~desc:"std::shared_ptr::reset(T*)"
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "reset" $ capt_arg
     $--> SharedPtr.default_reset ~desc:"std::shared_ptr::reset()"
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "operator[]" $ capt_arg_payload $+ capt_arg_payload
     $--> at ~desc:"std::shared_ptr::operator[]()"
+    |> with_non_disj
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "get" $ capt_arg_payload
     $--> get ~desc:"std::shared_ptr::get()"
+    |> with_non_disj
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "operator*" $ capt_arg_payload
     $--> dereference ~desc:"std::shared_ptr::operator*()"
+    |> with_non_disj
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "operator->" <>$ capt_arg_payload
     $--> dereference ~desc:"std::shared_ptr::operator->()"
+    |> with_non_disj
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "swap" $ capt_arg_payload $+ capt_arg_payload
     $--> swap ~desc:"std::shared_ptr::swap(std::shared_ptr<T>)"
+    |> with_non_disj
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "operator_bool" <>$ capt_arg_payload
     $--> operator_bool ~desc:"std::shared_ptr::operator_bool()"
+    |> with_non_disj
   ; -"std" &:: "make_shared" &++> SharedPtr.make_shared ~desc:"std::make_shared()"
   ; -"std" &:: "static_pointer_cast" $ capt_arg_payload $+ capt_arg
     $--> SharedPtr.pointer_cast ~desc:"std::static_pointer_cast"
+    |> with_non_disj
   ; -"std" &:: "dynamic_pointer_cast" $ capt_arg_payload $+ capt_arg
     $--> SharedPtr.pointer_cast ~desc:"std::static_pointer_cast"
+    |> with_non_disj
   ; -"std" &:: "const_pointer_cast" $ capt_arg_payload $+ capt_arg
     $--> SharedPtr.pointer_cast ~desc:"std::static_pointer_cast"
+    |> with_non_disj
   ; -"std" &:: "reinterpret_pointer_cast" $ capt_arg_payload $+ capt_arg
-    $--> SharedPtr.pointer_cast ~desc:"std::static_pointer_cast" ]
+    $--> SharedPtr.pointer_cast ~desc:"std::static_pointer_cast"
+    |> with_non_disj ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

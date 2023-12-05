@@ -17,7 +17,7 @@ module FuncArg = ProcnameDispatcher.Call.FuncArg
 let string_length_access = MemoryAccess.FieldAccess PulseOperations.ModeledField.string_length
 
 (* NOTE: The semantic models do not check overflow for now. *)
-let binop_overflow_common binop (x, x_hist) (y, y_hist) res : model =
+let binop_overflow_common binop (x, x_hist) (y, y_hist) res : model_no_non_disj =
  fun {path; location} astate ->
   let bop_addr = AbstractValue.mk_fresh () in
   let<**> astate, bop_addr = PulseArithmetic.eval_binop_absval bop_addr binop x y astate in
@@ -50,7 +50,7 @@ let new_ type_name =
 
 
 (* TODO: actually allocate an array  *)
-let new_array type_name : model =
+let new_array type_name : model_no_non_disj =
  fun model_data astate ->
   let<++> astate =
     (* Java, Hack and C++ [new\[\]] share the same builtin *)
@@ -112,7 +112,7 @@ module AtomicInteger = struct
     (astate, int_addr, int_val)
 
 
-  let constructor this_address init_value : model =
+  let constructor this_address init_value : model_no_non_disj =
    fun {path; location} astate ->
     let this =
       (AbstractValue.mk_fresh (), Hist.single_call path location "std::atomic::atomic()")
@@ -141,7 +141,7 @@ module AtomicInteger = struct
     PulseOperations.write_id ret_id (ret_int, hist) astate
 
 
-  let fetch_add this (increment, _) _memory_ordering : model =
+  let fetch_add this (increment, _) _memory_ordering : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::fetch_add()" in
     let<++> astate =
@@ -151,7 +151,7 @@ module AtomicInteger = struct
     astate
 
 
-  let fetch_sub this (increment, _) _memory_ordering : model =
+  let fetch_sub this (increment, _) _memory_ordering : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::fetch_sub()" in
     let<++> astate =
@@ -161,7 +161,7 @@ module AtomicInteger = struct
     astate
 
 
-  let operator_plus_plus_pre this : model =
+  let operator_plus_plus_pre this : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::operator++()" in
     let<++> astate =
@@ -171,7 +171,7 @@ module AtomicInteger = struct
     astate
 
 
-  let operator_plus_plus_post this _int : model =
+  let operator_plus_plus_post this _int : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic<T>::operator++(T)" in
     let<++> astate =
@@ -181,7 +181,7 @@ module AtomicInteger = struct
     astate
 
 
-  let operator_minus_minus_pre this : model =
+  let operator_minus_minus_pre this : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::operator--()" in
     let<++> astate =
@@ -191,7 +191,7 @@ module AtomicInteger = struct
     astate
 
 
-  let operator_minus_minus_post this _int : model =
+  let operator_minus_minus_post this _int : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic<T>::operator--(T)" in
     let<++> astate =
@@ -201,7 +201,7 @@ module AtomicInteger = struct
     astate
 
 
-  let load_instr model_desc this _memory_ordering_opt : model =
+  let load_instr model_desc this _memory_ordering_opt : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let<+> astate, _int_addr, (int, hist) = load_backing_int path location this astate in
     PulseOperations.write_id ret_id (int, Hist.add_call path location model_desc hist) astate
@@ -228,7 +228,7 @@ module AtomicInteger = struct
     PulseOperations.write_deref path location ~ref:int_field ~obj:new_value astate
 
 
-  let store this_address (new_value, new_hist) _memory_ordering : model =
+  let store this_address (new_value, new_hist) _memory_ordering : model_no_non_disj =
    fun {path; location} astate ->
     let<+> astate =
       store_backing_int path location this_address
@@ -238,7 +238,7 @@ module AtomicInteger = struct
     astate
 
 
-  let exchange this_address (new_value, new_hist) _memory_ordering : model =
+  let exchange this_address (new_value, new_hist) _memory_ordering : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::atomic::exchange()" in
     let<*> astate, _int_addr, (old_int, old_hist) =
@@ -260,7 +260,7 @@ module BasicString = struct
 
 
   (* constructor from constant string *)
-  let constructor_from_constant ~desc (this, hist) init_hist : model =
+  let constructor_from_constant ~desc (this, hist) init_hist : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location desc in
     let<+> astate =
@@ -271,7 +271,7 @@ module BasicString = struct
     astate
 
 
-  let constructor ~desc (this, hist) init_hist : model =
+  let constructor ~desc (this, hist) init_hist : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location desc in
     let<*> astate, init_data = to_internal_string path location init_hist astate in
@@ -284,9 +284,9 @@ module BasicString = struct
     astate
 
 
-  let constructor_rev ~desc init this : model = constructor ~desc this init
+  let constructor_rev ~desc init this : model_no_non_disj = constructor ~desc this init
 
-  let data this_hist ~desc : model =
+  let data this_hist ~desc : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
     let<+> astate, (string, hist) = to_internal_string path location this_hist astate in
@@ -309,7 +309,7 @@ module BasicString = struct
     (astate, event, backing_ptr, internal_string)
 
 
-  let begin_ this_hist iter_hist ~desc : model =
+  let begin_ this_hist iter_hist ~desc : model_no_non_disj =
    fun ({path; location} as model_data) astate ->
     let<*> astate, event, backing_ptr, (string, hist) =
       iterator_common this_hist iter_hist ~desc model_data astate
@@ -322,7 +322,7 @@ module BasicString = struct
     astate
 
 
-  let end_ this_hist iter_hist ~desc : model =
+  let end_ this_hist iter_hist ~desc : model_no_non_disj =
    fun ({path; location} as model_data) astate ->
     let<*> astate, event, backing_ptr, string_hist =
       iterator_common this_hist iter_hist ~desc model_data astate
@@ -338,7 +338,7 @@ module BasicString = struct
     astate
 
 
-  let destructor this_hist : model =
+  let destructor this_hist : model_no_non_disj =
    fun {path; location} astate ->
     let call_event = Hist.call_event path location "std::basic_string::~basic_string()" in
     let<*> astate, (string_addr, string_hist) = to_internal_string path location this_hist astate in
@@ -352,7 +352,7 @@ module BasicString = struct
     astate
 
 
-  let empty this_hist : model =
+  let empty this_hist : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::basic_string::empty()" in
     let<*> astate, internal_string = to_internal_string path location this_hist astate in
@@ -373,7 +373,7 @@ module BasicString = struct
     SatUnsat.to_list astate_empty @ SatUnsat.to_list astate_non_empty
 
 
-  let length this_hist : model =
+  let length this_hist : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "std::basic_string::length()" in
     let<*> astate, internal_string = to_internal_string path location this_hist astate in
@@ -383,7 +383,7 @@ module BasicString = struct
     PulseOperations.write_id ret_id (length, Hist.add_event path event hist) astate
 
 
-  let address ~desc ptr_hist (idx, _) : model =
+  let address ~desc ptr_hist (idx, _) : model_no_non_disj =
    fun ({ret= ret_id, _} as model_env) astate ->
     let astate_zero_idx =
       let++ astate = PulseArithmetic.prune_eq_zero idx astate in
@@ -401,7 +401,8 @@ module Function = struct
    fun { path
        ; analysis_data= {analyze_dependency; tenv; proc_desc}
        ; location
-       ; ret= (ret_id, _) as ret } astate ->
+       ; ret= (ret_id, _) as ret } astate non_disj ->
+    let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
     let<*> astate, (lambda, _) =
       PulseOperations.eval_access path Read location lambda_ptr_hist Dereference astate
     in
@@ -423,9 +424,12 @@ module Function = struct
           (lambda_ptr_hist, typ)
           :: List.map actuals ~f:(fun FuncArg.{arg_payload; typ} -> (arg_payload, typ))
         in
-        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
-          callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
-        |> fst3
+        let astate, non_disj, _, _ =
+          PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency
+            location callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname
+            astate non_disj
+        in
+        (astate, non_disj)
     | _ ->
         (* we don't know what proc name this lambda resolves to *)
         let desc = "std::function::operator()" in
@@ -437,10 +441,10 @@ module Function = struct
           List.fold actuals ~init:astate ~f:(fun acc FuncArg.{arg_payload= actual, _} ->
               AddressAttributes.add_one actual unknown_effect acc )
         in
-        [Ok (ContinueProgram astate)]
+        ([Ok (ContinueProgram astate)], non_disj)
 
 
-  let assign dest FuncArg.{arg_payload= src; typ= src_typ} ~desc : model =
+  let assign dest FuncArg.{arg_payload= src; typ= src_typ} ~desc : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
     if PulseArithmetic.is_known_zero astate (fst src) then
@@ -460,7 +464,7 @@ module Function = struct
 end
 
 module Std = struct
-  let make_move_iterator vector : model =
+  let make_move_iterator vector : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let<+> astate, (backing_array, _) =
       PulseOperations.eval_deref_access path NoAccess location vector
@@ -493,7 +497,7 @@ module Vector = struct
       astate
 
 
-  let init_list_constructor this init_list ~desc : model =
+  let init_list_constructor this init_list ~desc : model_no_non_disj =
    fun {path; location} astate ->
     (* missing a more precise model for std::initializer_list *)
     let<**> astate =
@@ -504,7 +508,7 @@ module Vector = struct
     astate
 
 
-  let init_copy_constructor this init_vector ~desc : model =
+  let init_copy_constructor this init_vector ~desc : model_no_non_disj =
    fun {path; location} astate ->
     let<*> astate, init_list =
       PulseOperations.eval_deref_access path Read location init_vector
@@ -521,7 +525,7 @@ module Vector = struct
     astate
 
 
-  let invalidate_references vector_f vector : model =
+  let invalidate_references vector_f vector : model_no_non_disj =
    fun {path; location} astate ->
     let event =
       Hist.call_event path location
@@ -533,13 +537,13 @@ module Vector = struct
     astate
 
 
-  let invalidate_references_with_ret vector_f vector : model =
+  let invalidate_references_with_ret vector_f vector : model_no_non_disj =
    fun ({ret= ret_id, _} as model_data) astate ->
     PulseOperations.write_id ret_id vector astate
     |> invalidate_references vector_f vector model_data
 
 
-  let at ~desc vector index : model =
+  let at ~desc vector index : model_no_non_disj =
    fun {path; location; ret} astate ->
     let event = Hist.call_event path location desc in
     let<+> astate, (addr, hist) =
@@ -548,7 +552,7 @@ module Vector = struct
     PulseOperations.write_id (fst ret) (addr, Hist.add_event path event hist) astate
 
 
-  let vector_begin vector iter : model =
+  let vector_begin vector iter : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location "std::vector::begin()" in
     let pointer_hist = Hist.add_event path event (snd iter) in
@@ -572,7 +576,7 @@ module Vector = struct
     astate
 
 
-  let vector_end vector iter : model =
+  let vector_end vector iter : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location "std::vector::end()" in
     let<*> astate, (arr_addr, _) =
@@ -594,7 +598,7 @@ module Vector = struct
     astate
 
 
-  let reserve vector : model =
+  let reserve vector : model_no_non_disj =
    fun {path; location} astate ->
     let hist = Hist.single_call path location "std::vector::reserve()" in
     let<+> astate =
@@ -604,13 +608,13 @@ module Vector = struct
     astate
 
 
-  let pop_back vector ~desc : model =
+  let pop_back vector ~desc : model_no_non_disj =
    fun {path; location} astate ->
     let<++> astate = GenericArrayBackedCollection.decrease_size path location vector ~desc astate in
     astate
 
 
-  let push_back_common vector ~vector_f ~desc : model =
+  let push_back_common vector ~vector_f ~desc : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let<**> astate = GenericArrayBackedCollection.increase_size path location vector ~desc astate in
     let<+> astate =
@@ -860,10 +864,11 @@ let get_cpp_matchers config ~model =
 
 let abort_matchers : matcher list =
   get_cpp_matchers ~model:(fun _ -> Basic.early_exit) Config.pulse_model_abort
+  |> List.map ~f:(ProcnameDispatcher.Call.map_matcher ~f:lift_model)
 
 
 module Pair = struct
-  let make_pair type1 type2 value1 value2 (return_param, _) : model =
+  let make_pair type1 type2 value1 value2 (return_param, _) : model_no_non_disj =
     let make_pair_field =
       Fieldname.make
         (Typ.CppClass
@@ -1028,7 +1033,7 @@ let map_matchers =
           $--> GenericMapCollection.iterator_star
                  (Format.asprintf "folly::f14::detail::%s::operator*" it)
         ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator++" <>$ any_arg
-          $+...$--> Basic.skip ] )
+          $+...$--> Basic.skip |> with_non_disj ] )
   in
   let folly_concurrent_hash_map_matchers =
     (* We ignore all [folly::ConcurrentHashMap] methods as of now, because the summaries from the
@@ -1036,6 +1041,7 @@ let map_matchers =
     [ -"folly" <>:: "ConcurrentHashMap"
       &::+ (fun _ _ -> true)
       &++> Basic.unknown_call "folly::ConcurrentHashMap" ]
+    |> List.map ~f:with_non_disj
   in
   folly_matchers @ folly_iterator_matchers @ folly_concurrent_hash_map_matchers
 
@@ -1046,124 +1052,170 @@ let simple_matchers =
   map_matchers
   @ [ +BuiltinDecl.(match_builtin __builtin_add_overflow)
       <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> add_overflow
+      |> with_non_disj
     ; +BuiltinDecl.(match_builtin __builtin_mul_overflow)
       <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> mul_overflow
+      |> with_non_disj
     ; +BuiltinDecl.(match_builtin __builtin_sub_overflow)
       <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> sub_overflow
-    ; +BuiltinDecl.(match_builtin __infer_skip) &--> Basic.skip
+      |> with_non_disj
+    ; +BuiltinDecl.(match_builtin __infer_skip) &--> Basic.skip |> with_non_disj
     ; +BuiltinDecl.(match_builtin __infer_structured_binding)
-      <>$ capt_exp $+ capt_arg $--> infer_structured_binding
+      <>$ capt_exp $+ capt_arg $--> infer_structured_binding |> with_non_disj
     ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
-    ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array
-    ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new
+    ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array |> with_non_disj
+    ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new |> with_non_disj
     ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload
       $+ capt_arg_payload_of_prim_typ char_ptr_typ
       $--> BasicString.constructor_from_constant ~desc:"std::basic_string::basic_string()"
+      |> with_non_disj
     ; -"std" &:: "basic_string" &:: "basic_string" $ capt_arg_payload $+ capt_arg_payload
       $--> BasicString.constructor ~desc:"std::basic_string::basic_string()"
+      |> with_non_disj
     ; -"std" &:: "basic_string" &:: "operator_basic_string_view" $ capt_arg_payload
       $+ capt_arg_payload
       $--> BasicString.constructor_rev ~desc:"std::basic_string::operator_basic_string_view()"
+      |> with_non_disj
     ; -"std" &:: "basic_string" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
       $--> BasicString.begin_ ~desc:"std::basic_string::begin()"
+      |> with_non_disj
     ; -"std" &:: "basic_string" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
       $--> BasicString.end_ ~desc:"std::basic_string::end()"
+      |> with_non_disj
     ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload
       $--> BasicString.data ~desc:"std::basic_string::data()"
+      |> with_non_disj
     ; -"std" &:: "basic_string" &:: "empty" <>$ capt_arg_payload $--> BasicString.empty
+      |> with_non_disj
     ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> BasicString.length
-    ; -"std" &:: "basic_string" &:: "substr" &--> Basic.nondet ~desc:"std::basic_string::substr"
-    ; -"std" &:: "basic_string" &:: "size" &--> Basic.nondet ~desc:"std::basic_string::size"
+      |> with_non_disj
+    ; -"std" &:: "basic_string" &:: "substr"
+      &--> Basic.nondet ~desc:"std::basic_string::substr"
+      |> with_non_disj
+    ; -"std" &:: "basic_string" &:: "size"
+      &--> Basic.nondet ~desc:"std::basic_string::size"
+      |> with_non_disj
     ; -"std" &:: "basic_string" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
       $--> BasicString.address ~desc:"std::basic_string::operator[]"
+      |> with_non_disj
     ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload $--> BasicString.destructor
+      |> with_non_disj
     ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
       $+ capt_arg_payload_of_prim_typ char_ptr_typ
       $--> BasicString.constructor_from_constant ~desc:"std::basic_string_view::basic_string_view()"
+      |> with_non_disj
     ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload $+ capt_arg_payload
       $--> BasicString.constructor ~desc:"std::basic_string_view::basic_string_view()"
+      |> with_non_disj
     ; -"std" &:: "basic_string_view" &:: "data" <>$ capt_arg_payload
       $--> BasicString.data ~desc:"std::basic_string_view::data()"
+      |> with_non_disj
     ; -"std" &:: "function" &:: "function" $ capt_arg_payload $+ capt_arg
       $--> Function.assign ~desc:"std::function::function"
+      |> with_non_disj
     ; -"std" &:: "function" &:: "operator()" $ capt_arg $++$--> Function.operator_call
     ; -"std" &:: "function" &:: "operator=" $ capt_arg_payload $+ capt_arg
       $--> Function.assign ~desc:"std::function::operator="
+      |> with_non_disj
     ; -"std" &:: "atomic" &:: "atomic" <>$ capt_arg_payload $+ capt_arg_payload
-      $--> AtomicInteger.constructor
+      $--> AtomicInteger.constructor |> with_non_disj
     ; -"std" &:: "__atomic_base" &:: "fetch_add" <>$ capt_arg_payload $+ capt_arg_payload
-      $+ capt_arg_payload $--> AtomicInteger.fetch_add
+      $+ capt_arg_payload $--> AtomicInteger.fetch_add |> with_non_disj
     ; -"std" &:: "__atomic_base" &:: "fetch_sub" <>$ capt_arg_payload $+ capt_arg_payload
-      $+ capt_arg_payload $--> AtomicInteger.fetch_sub
+      $+ capt_arg_payload $--> AtomicInteger.fetch_sub |> with_non_disj
     ; -"std" &:: "__atomic_base" &:: "exchange" <>$ capt_arg_payload $+ capt_arg_payload
-      $+ capt_arg_payload $--> AtomicInteger.exchange
+      $+ capt_arg_payload $--> AtomicInteger.exchange |> with_non_disj
     ; -"std" &:: "__atomic_base" &:: "load" <>$ capt_arg_payload $+? capt_arg_payload
-      $--> AtomicInteger.load
+      $--> AtomicInteger.load |> with_non_disj
     ; -"std" &:: "__atomic_base" &:: "store" <>$ capt_arg_payload $+ capt_arg_payload
-      $+ capt_arg_payload $--> AtomicInteger.store
+      $+ capt_arg_payload $--> AtomicInteger.store |> with_non_disj
     ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload
-      $--> AtomicInteger.operator_plus_plus_pre
+      $--> AtomicInteger.operator_plus_plus_pre |> with_non_disj
     ; -"std" &:: "__atomic_base" &:: "operator++" <>$ capt_arg_payload $+ capt_arg_payload
-      $--> AtomicInteger.operator_plus_plus_post
+      $--> AtomicInteger.operator_plus_plus_post |> with_non_disj
     ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload
-      $--> AtomicInteger.operator_minus_minus_pre
+      $--> AtomicInteger.operator_minus_minus_pre |> with_non_disj
     ; -"std" &:: "__atomic_base" &:: "operator--" <>$ capt_arg_payload $+ capt_arg_payload
-      $--> AtomicInteger.operator_minus_minus_post
+      $--> AtomicInteger.operator_minus_minus_post |> with_non_disj
     ; -"std" &:: "__atomic_base"
       &::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
-      <>$ capt_arg_payload $+? capt_arg_payload $--> AtomicInteger.operator_t
+      <>$ capt_arg_payload $+? capt_arg_payload $--> AtomicInteger.operator_t |> with_non_disj
     ; -"std" &:: "make_move_iterator" $ capt_arg_payload $+...$--> Std.make_move_iterator
+      |> with_non_disj
     ; -"std" &:: "make_pair" < capt_typ &+ capt_typ >$ capt_arg_payload $+ capt_arg_payload
-      $+ capt_arg_payload $--> Pair.make_pair
+      $+ capt_arg_payload $--> Pair.make_pair |> with_non_disj
     ; -"std" &:: "vector" &:: "vector" $ capt_arg_payload
       $--> GenericArrayBackedCollection.default_constructor ~desc:"std::vector::vector()"
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
       $+ capt_arg_payload_of_typ (-"std" &:: "initializer_list")
       $+...$--> Vector.init_list_constructor ~desc:"std::vector::vector()"
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "vector" <>$ capt_arg_payload
       $+ capt_arg_payload_of_typ (-"std" &:: "vector")
       $+...$--> Vector.init_copy_constructor ~desc:"std::vector::vector()"
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
       $+...$--> Vector.invalidate_references Assign
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
       $--> Vector.at ~desc:"std::vector::at()"
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
-      $--> Vector.vector_begin
+      $--> Vector.vector_begin |> with_non_disj
     ; -"std" &:: "vector" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload $--> Vector.vector_end
-    ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload $--> Vector.invalidate_references Clear
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload
+      $--> Vector.invalidate_references Clear
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "emplace" $ capt_arg_payload
       $+...$--> Vector.invalidate_references Emplace
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "emplace_back" $ capt_arg_payload
       $+...$--> Vector.push_back_cpp ~vector_f:EmplaceBack ~desc:"std::vector::emplace_back()"
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "insert" <>$ capt_arg_payload
       $+...$--> Vector.invalidate_references Insert
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "operator=" <>$ capt_arg_payload
       $+...$--> Vector.invalidate_references_with_ret Assign
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "operator[]" <>$ capt_arg_payload $+ capt_arg_payload
       $--> Vector.at ~desc:"std::vector::at()"
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "shrink_to_fit" <>$ capt_arg_payload
       $--> Vector.invalidate_references ShrinkToFit
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "push_back" <>$ capt_arg_payload
       $+...$--> Vector.push_back_cpp ~vector_f:PushBack ~desc:"std::vector::push_back()"
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "pop_back" <>$ capt_arg_payload
       $+...$--> Vector.pop_back ~desc:"std::vector::pop_back()"
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "empty" <>$ capt_arg_payload
       $--> GenericArrayBackedCollection.empty ~desc:"std::vector::is_empty()"
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> Vector.reserve
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "size" $ capt_arg_payload
       $--> GenericArrayBackedCollection.size ~desc:"std::vector::size()"
-    ; -"std" &:: "distance" &--> Basic.nondet ~desc:"std::distance"
+      |> with_non_disj
+    ; -"std" &:: "distance" &--> Basic.nondet ~desc:"std::distance" |> with_non_disj
     ; -"std" &:: "integral_constant" < any_typ &+ capt_int
       >::+ (fun _ name -> String.is_prefix ~prefix:"operator_" name)
       <>--> Basic.return_int ~desc:"std::integral_constant"
+      |> with_non_disj
     ; (* consider that all fbstrings are small strings to avoid false positives due to manual
          ref-counting *)
       -"folly" &:: "fbstring_core" &:: "category"
       &--> Basic.return_int Int64.zero ~desc:"folly::fbstring_core::category"
+      |> with_non_disj
     ; -"folly" &:: "DelayedDestruction" &:: "destroy"
       &++> Basic.unknown_call "folly::DelayedDestruction::destroy is modelled as skip"
+      |> with_non_disj
     ; -"folly" &:: "SocketAddress" &:: "~SocketAddress"
-      &++> Basic.unknown_call "folly::SocketAddress's destructor is modelled as skip" ]
+      &++> Basic.unknown_call "folly::SocketAddress's destructor is modelled as skip"
+      |> with_non_disj ]
 
 
 let matchers =

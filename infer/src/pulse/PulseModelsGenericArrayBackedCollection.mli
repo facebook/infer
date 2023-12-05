@@ -50,7 +50,7 @@ val eval_pointer_to_last_element :
   -> AbductiveDomain.t
   -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 
-val size : AbstractValue.t * ValueHistory.t -> desc:string -> model
+val size : AbstractValue.t * ValueHistory.t -> desc:string -> model_no_non_disj
 
 val increase_size :
      PathContext.t
@@ -68,9 +68,9 @@ val decrease_size :
   -> AbductiveDomain.t
   -> AbductiveDomain.t PulseOperationResult.t
 
-val empty : AbstractValue.t * ValueHistory.t -> desc:string -> model
+val empty : AbstractValue.t * ValueHistory.t -> desc:string -> model_no_non_disj
 
-val default_constructor : AbstractValue.t * ValueHistory.t -> desc:string -> model
+val default_constructor : AbstractValue.t * ValueHistory.t -> desc:string -> model_no_non_disj
 
 val to_internal_size_deref :
      PathContext.t

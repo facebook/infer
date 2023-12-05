@@ -62,19 +62,20 @@ let custom_alloc_not_null model_data astate =
 
 
 let realloc_common allocator pointer size : model =
- fun data astate ->
-  free pointer data astate
-  |> List.concat_map ~f:(fun result ->
+ fun data astate non_disj ->
+  free pointer data astate non_disj
+  |> NonDisjDomain.bind ~f:(fun result non_disj ->
+         let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
          let<*> exec_state = result in
          match (exec_state : ExecutionDomain.t) with
          | ContinueProgram astate ->
-             alloc_common allocator ~size_exp_opt:(Some size) data astate
+             alloc_common allocator ~size_exp_opt:(Some size) data astate non_disj
          | ExceptionRaised _
          | ExitProgram _
          | AbortProgram _
          | LatentAbortProgram _
          | LatentInvalidAccess _ ->
-             [Ok exec_state] )
+             ([Ok exec_state], non_disj) )
 
 
 let realloc = realloc_common CRealloc
@@ -96,9 +97,7 @@ let matchers : matcher list =
   ; -"realloc" <>$ capt_arg $+ capt_exp $--> realloc
   ; +match_regexp_opt Config.pulse_model_realloc_pattern
     <>$ capt_arg $+ capt_exp $+...$--> custom_realloc ]
-  @ List.map
-      ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
-      [ +BuiltinDecl.(match_builtin malloc) <>$ capt_exp $--> malloc
+  @ ( [ +BuiltinDecl.(match_builtin malloc) <>$ capt_exp $--> malloc
       ; +match_regexp_opt Config.pulse_model_malloc_pattern <>$ capt_exp $+...$--> custom_malloc
       ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
         &--> custom_alloc_not_null
@@ -106,3 +105,4 @@ let matchers : matcher list =
         &--> custom_alloc_not_null
       ; +BuiltinDecl.(match_builtin malloc_no_fail) <>$ capt_exp $--> malloc_not_null
       ; +match_regexp_opt Config.pulse_model_alloc_pattern &--> custom_alloc_not_null ]
+    |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist) )

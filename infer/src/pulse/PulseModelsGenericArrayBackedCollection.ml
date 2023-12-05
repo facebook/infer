@@ -82,13 +82,13 @@ let decrease_size path location this ~desc astate =
   binop_size path location this ~desc (MinusA None) astate
 
 
-let default_constructor this ~desc : model =
+let default_constructor this ~desc : model_no_non_disj =
  fun {path; location} astate ->
   let<++> astate = assign_size_constant path location this ~constant:IntLit.zero ~desc astate in
   astate
 
 
-let empty this ~desc : model =
+let empty this ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let ret_addr = AbstractValue.mk_fresh () in
   let<*> astate, (value_addr, _) = to_internal_size_deref path Read location this astate in
@@ -109,7 +109,7 @@ let empty this ~desc : model =
   SatUnsat.to_list result_non_empty @ SatUnsat.to_list result_empty
 
 
-let size this ~desc : model =
+let size this ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let<+> astate, (value_addr, value_hist) = to_internal_size_deref path Read location this astate in
   PulseOperations.write_id ret_id (value_addr, Hist.add_call path location desc value_hist) astate
@@ -176,14 +176,14 @@ module Iterator = struct
       astate
 
 
-  let constructor ~desc this init : model =
+  let constructor ~desc this init : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location desc in
     let<+> astate = construct path location event ~init ~ref:this astate in
     astate
 
 
-  let operator_compare comparison ~desc iter_lhs iter_rhs : model =
+  let operator_compare comparison ~desc iter_lhs iter_rhs : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
     let<*> astate, _, (index_lhs, _) =
@@ -216,7 +216,7 @@ module Iterator = struct
     SatUnsat.to_list astate_equal @ SatUnsat.to_list astate_notequal
 
 
-  let operator_star ~desc iter : model =
+  let operator_star ~desc iter : model_no_non_disj =
    fun {path; location; ret} astate ->
     let event = Hist.call_event path location desc in
     let<+> astate, pointer, (elem, _) =
@@ -225,7 +225,7 @@ module Iterator = struct
     PulseOperations.write_id (fst ret) (elem, Hist.add_event path event (snd pointer)) astate
 
 
-  let operator_step step ~desc iter : model =
+  let operator_step step ~desc iter : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location desc in
     let index_new = AbstractValue.mk_fresh () in
@@ -276,3 +276,4 @@ let matchers : matcher list =
     $+ capt_arg_payload_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
     $--> Iterator.operator_compare `NotEqual ~desc:"iterator operator!=" ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
+  |> List.map ~f:(ProcnameDispatcher.Call.map_matcher ~f:lift_model)

@@ -100,3 +100,14 @@ val remember_dropped_transitive_accesses : Trace.Set.t -> t -> t
 
 val add_transitive_accesses_from_callee : Procname.t -> Location.t -> t -> summary -> t
   [@@warning "-unused-value-declaration"]
+
+val bind : 'a list * t -> f:('a -> t -> 'b list * t) -> 'b list * t
+(** {[
+      bind ([astate1; astate2; ...; astateN], non_disj) f =
+          (astates1 \@ astate2 \@ ... \@ astatesN, non_disj1 U non_disj2 U ... U non_disjN)
+      with
+        (astates1, non_disj1) = f astate1 non_disj
+        (astates2, non_disj2) = f astate2 non_disj
+        ...
+        (astatesN, non_disjN) = f astateN non_disj
+    ]} *)
