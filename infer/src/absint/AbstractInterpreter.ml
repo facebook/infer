@@ -238,7 +238,7 @@ struct
             (* check with respect to the original [into] and not [acc] as we assume lists of
                disjuncts are already deduplicated *)
             if has_geq_disj ~leq ~than:hd into then
-              (* [hd] is already implied by one of the states in [into]; skip it
+              (* [hd] implies one of the states in [into]; skip it
                  ([(a=>b) => (a\/b <=> b)]) *)
               aux acc n_acc tl
             else aux (hd :: acc) (n_acc + 1) tl
