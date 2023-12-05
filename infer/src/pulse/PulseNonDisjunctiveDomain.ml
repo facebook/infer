@@ -630,3 +630,24 @@ let is_lifetime_extended var astate_n =
       true
   | `PassedTo callees ->
       not (CalleesWithLoc.is_empty callees)
+
+
+type summary = NonDisj
+
+let make_summary _ = NonDisj
+
+module Summary = struct
+  module M = struct
+    type t = summary
+
+    let pp _fmt _ = ()
+
+    let leq ~lhs:_ ~rhs:_ = true
+  end
+
+  include MakeDomainFromTotalOrder (M)
+
+  let bottom = NonDisj
+
+  let is_bottom _ = true
+end

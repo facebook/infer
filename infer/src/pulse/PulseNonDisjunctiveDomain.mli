@@ -35,6 +35,14 @@ type parameter_spec_t =
 
 include AbstractDomain.WithBottomTop
 
+type summary
+
+val make_summary : t -> summary
+
+module Summary : sig
+  include AbstractDomain.WithBottom with type t = summary
+end
+
 val add_var :
   Attribute.CopiedInto.t -> source_addr_opt:AbstractValue.t option -> copy_spec_t -> t -> t
 

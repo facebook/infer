@@ -14,9 +14,8 @@ open PulseOperationResult.Import
 
 type pre_post_list = ExecutionDomain.summary list [@@deriving yojson_of]
 
-type non_disj = NonDisj [@@deriving yojson_of] [@@warning "-unused-constructor"]
-
-type summary = {pre_post_list: pre_post_list; non_disj: non_disj} [@@deriving yojson_of]
+type summary = {pre_post_list: pre_post_list; non_disj: (NonDisjDomain.Summary.t[@yojson.opaque])}
+[@@deriving yojson_of]
 
 type t = {main: summary; specialized: (summary Specialization.Pulse.Map.t[@yojson.opaque])}
 [@@deriving yojson_of]
@@ -55,12 +54,12 @@ let add_disjunctive_pre_post pre_post {pre_post_list; non_disj} =
   {pre_post_list= pre_post :: pre_post_list; non_disj}
 
 
-let empty = {pre_post_list= []; non_disj= NonDisj}
+let empty = {pre_post_list= []; non_disj= NonDisjDomain.Summary.bottom}
 
 let join summary1 summary2 =
   let pre_post_list = summary1.pre_post_list @ summary2.pre_post_list in
-  (* TODO: will be more involved once we have a non trivial non_disj *)
-  {summary1 with pre_post_list}
+  let non_disj = NonDisjDomain.Summary.join summary1.non_disj summary2.non_disj in
+  {pre_post_list; non_disj}
 
 
 let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_desc err_log location
@@ -156,7 +155,7 @@ let force_exit_program tenv proc_desc err_log post =
     ~exception_raised:(fun astate -> ExitProgram astate)
 
 
-let of_posts tenv proc_desc err_log location posts _ =
+let of_posts tenv proc_desc err_log location posts non_disj =
   let pre_post_list =
     List.filter_mapi posts ~f:(fun i exec_state ->
         L.d_printfln "Creating spec out of state #%d:@\n%a" i ExecutionDomain.pp exec_state ;
@@ -165,7 +164,7 @@ let of_posts tenv proc_desc err_log location posts _ =
           ~exception_raised:(fun astate -> ExceptionRaised astate)
         |> SatUnsat.sat )
   in
-  {pre_post_list; non_disj= NonDisj}
+  {pre_post_list; non_disj= NonDisjDomain.make_summary non_disj}
 
 
 let mk_objc_self_pvar proc_name = Pvar.mk Mangled.self proc_name

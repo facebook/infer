@@ -11,9 +11,8 @@ open PulseDomainInterface
 
 type pre_post_list = ExecutionDomain.summary list [@@deriving yojson_of]
 
-type non_disj [@@deriving yojson_of]
-
-type summary = {pre_post_list: pre_post_list; non_disj: non_disj} [@@deriving yojson_of]
+type summary = {pre_post_list: pre_post_list; non_disj: NonDisjDomain.Summary.t}
+[@@deriving yojson_of]
 
 type t = {main: summary; specialized: summary Specialization.Pulse.Map.t} [@@deriving yojson_of]
 
