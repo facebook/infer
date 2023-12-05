@@ -18,9 +18,7 @@ type t =
   | Cstr of string  (** string constants *)
   | Cfloat of float  (** float constants *)
   | Cclass of Ident.name  (** class constant *)
-[@@deriving compare, hash]
-
-val equal : t -> t -> bool
+[@@deriving compare, hash, equal, normalize]
 
 val kind_equal : t -> t -> bool
 (** Return true if the constants have the same kind (both integers, ...) *)

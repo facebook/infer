@@ -18,7 +18,7 @@ type t =
   ; cf_interface: bool
   ; cf_is_objc_block: bool
   ; cf_virtual: bool }
-[@@deriving compare, equal]
+[@@deriving compare, equal, hash, normalize]
 
 let pp f
     ({cf_assign_last_arg; cf_injected_destructor; cf_interface; cf_is_objc_block; cf_virtual}

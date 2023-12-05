@@ -34,7 +34,7 @@ type t =
   | BOr  (** inclusive-or *)
   | LAnd  (** logical and. Does not always evaluate both operands. *)
   | LOr  (** logical or. Does not always evaluate both operands. *)
-[@@deriving compare, equal, hash]
+[@@deriving compare, equal, hash, normalize]
 
 (** This function returns true if the operation is injective wrt. each argument: op(e,-) and op(-,
     e) is injective for all e. The return value false means "don't know". *)

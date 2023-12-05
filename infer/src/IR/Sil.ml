@@ -19,7 +19,7 @@ type if_kind =
   | Ik_land_lor
   | Ik_while
   | Ik_switch
-[@@deriving compare, equal]
+[@@deriving compare, equal, hash, normalize]
 
 let pp_if_kind fmt = function
   | Ik_bexp {terminated} ->
@@ -60,15 +60,19 @@ type instr_metadata =
   | TryExit of {try_id: int; loc: Location.t}
   | VariableLifetimeBegins of
       {pvar: Pvar.t; typ: Typ.t; loc: Location.t; is_cpp_structured_binding: bool}
-[@@deriving compare, equal]
+[@@deriving compare, equal, hash, normalize]
+
+type ret_var = Ident.t * Typ.t [@@deriving compare, equal, hash, normalize]
+
+type param = Exp.t * Typ.t [@@deriving compare, equal, hash, normalize]
 
 type instr =
   | Load of {id: Ident.t; e: Exp.t; typ: Typ.t; loc: Location.t}
   | Store of {e1: Exp.t; typ: Typ.t; e2: Exp.t; loc: Location.t}
   | Prune of Exp.t * Location.t * bool * if_kind
-  | Call of (Ident.t * Typ.t) * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t
+  | Call of ret_var * Exp.t * param list * Location.t * CallFlags.t
   | Metadata of instr_metadata
-[@@deriving compare, equal]
+[@@deriving compare, equal, hash, normalize]
 
 let skip_instr = Metadata Skip
 

@@ -19,7 +19,7 @@ type t =
   ; cf_interface: bool
   ; cf_is_objc_block: bool
   ; cf_virtual: bool }
-[@@deriving compare, equal]
+[@@deriving compare, equal, hash, normalize]
 
 val pp : F.formatter -> t -> unit
 

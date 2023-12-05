@@ -15,9 +15,7 @@ type t =
   | Neg  (** Unary minus *)
   | BNot  (** Bitwise complement (~) *)
   | LNot  (** Logical Not (!) *)
-[@@deriving compare, hash]
-
-val equal : t -> t -> bool
+[@@deriving compare, hash, equal, normalize]
 
 val to_string : t -> string
 (** String representation of a unary operator. *)

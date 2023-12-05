@@ -17,7 +17,8 @@ let is_captured_by_ref captured_mode =
   match captured_mode with ByReference -> true | ByValue -> false
 
 
-type t = {pvar: Pvar.t; typ: Typ.t; capture_mode: capture_mode} [@@deriving compare, equal]
+type t = {pvar: Pvar.t; typ: Typ.t; capture_mode: capture_mode}
+[@@deriving compare, equal, hash, normalize]
 
 let pp fmt {pvar; typ; capture_mode} =
   F.fprintf fmt "(%a,@,%a,@,%s)" (Pvar.pp Pp.text) pvar (Typ.pp_full Pp.text) typ

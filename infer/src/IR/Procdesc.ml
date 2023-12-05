@@ -972,9 +972,19 @@ let is_too_big checker ~max_cfg_size pdesc =
   else false
 
 
-module SQLite = SqliteUtils.MarshalledNullableDataNOTForComparison (struct
-  type nonrec t = t
-end)
+module SQLite = struct
+  include SqliteUtils.MarshalledNullableDataNOTForComparison (struct
+    type nonrec t = t
+  end)
+
+  let serialize t_opt =
+    Option.iter t_opt ~f:(fun t ->
+        let _changed = replace_instrs t ~f:(fun _node instr -> Sil.hash_normalize_instr instr) in
+        (* cfg is now normalized and significant repetition of instructions across cfgs is
+           unlikely, so clear hashtables to avoid memory leaks *)
+        HashNormalizer.reset_all_normalizers () ) ;
+    serialize t_opt
+end
 
 let load_uid_ =
   let load_statement db =

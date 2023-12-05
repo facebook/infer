@@ -146,16 +146,23 @@ let normalize_tuple_impl ~loc core_types =
       [%e rhs]]
 
 
+let ignore_attribute =
+  Attribute.declare "ignore" Attribute.Context.label_declaration Ast_pattern.(pstr nil) ()
+
+
 let record_pattern_and_body ~loc ~constructor (lds : label_declaration list) =
+  let should_normalize ld =
+    Option.is_none (Attribute.get ignore_attribute ld) && should_normalize_type ld.pld_type
+  in
   let normalizable_names_types =
     List.filter_map lds ~f:(fun ld ->
-        Option.some_if (should_normalize_type ld.pld_type) (ld.pld_name.txt, ld.pld_type) )
+        Option.some_if (should_normalize ld) (ld.pld_name.txt, ld.pld_type) )
   in
   if List.is_empty normalizable_names_types then (Ast_helper.Pat.any ~loc (), [%expr t])
   else
     let rhs_exps =
       List.map lds ~f:(fun ld ->
-          (if should_normalize_type ld.pld_type then ld.pld_name.txt ^ "'" else ld.pld_name.txt)
+          (if should_normalize ld then ld.pld_name.txt ^ "'" else ld.pld_name.txt)
           |> Common.make_ident_exp ~loc )
     in
     let record_exp = Common.create_record ~loc lds rhs_exps |> constructor in

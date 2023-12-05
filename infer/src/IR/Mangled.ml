@@ -11,7 +11,8 @@
 open! IStd
 module F = Format
 
-type t = {plain: string; mangled: string option} [@@deriving compare, yojson_of, equal, sexp, hash]
+type t = {plain: string; mangled: string option}
+[@@deriving compare, yojson_of, equal, sexp, hash, normalize]
 
 (** Convert a string to a mangled name *)
 let from_string (s : string) = {plain= s; mangled= None}

@@ -62,20 +62,38 @@ type variant =
   | NonInline of record
 [@@deriving equal, hash, normalize]
 
-module VariantHashNormalizer = struct
-  type t = variant
-
-  let normalize = hash_normalize_variant
-
-  let normalize_opt = hash_normalize_variant_opt
-
-  let normalize_list = hash_normalize_variant_list
-end
-
 let%test "variant_test" =
   HashNormalizer.reset_all_normalizers () ;
   let a = Record {i= 4; s= make_foo ()} in
-  let a' = VariantHashNormalizer.normalize a in
+  let a' = hash_normalize_variant a in
   let b = Record {i= 4; s= make_foo ()} in
-  let b' = VariantHashNormalizer.normalize b in
+  let b' = hash_normalize_variant b in
   equal_variant a a' && phys_equal a' b'
+
+
+type record_with_ignore = {x: string; y: int [@ignore]} [@@deriving equal, hash, normalize]
+
+let%test "record_with_ignore_test" =
+  HashNormalizer.reset_all_normalizers () ;
+  let a = {x= make_foo (); y= 0} in
+  let a' = hash_normalize_record_with_ignore a in
+  let b = {x= make_foo (); y= 1} in
+  let b' = hash_normalize_record_with_ignore b in
+  equal_record_with_ignore a a'
+  && phys_equal a' b' (* normalization still happens *)
+  && phys_equal a a' (* but ignores completely the [y] field *)
+
+
+type ignored_string = (string[@ignore]) [@@deriving equal, hash, normalize]
+
+let%test "ignored_string_test" =
+  HashNormalizer.reset_all_normalizers () ;
+  let a = "xxx" in
+  let a' = hash_normalize_ignored_string a in
+  let b = "yyy" in
+  let b' = hash_normalize_ignored_string b in
+  (* equality ignores value *)
+  equal_ignored_string a b
+  (* possible bug in ppx_hash: hashing does not ignores value *)
+  (* [Int.equal (hash_ignored_string a) (hash_ignored_string b)] this is false *)
+  && (* normalization does not happen *) not (phys_equal a' b')

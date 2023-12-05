@@ -27,7 +27,7 @@ type ikind =
   | IULongLong  (** [unsigned long long] (or [unsigned _int64] on Microsoft Visual C) *)
   | I128  (** [__int128_t] *)
   | IU128  (** [__uint128_t] *)
-[@@deriving compare, equal, hash]
+[@@deriving compare, equal, hash, normalize]
 
 val ikind_is_char : ikind -> bool
 (** Check whether the integer kind is a char *)

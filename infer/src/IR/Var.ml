@@ -11,9 +11,7 @@ module F = Format
 (** Single abstraction for all the kinds of variables in SIL *)
 
 type t = LogicalVar of Ident.t | ProgramVar of Pvar.t
-[@@deriving compare, equal, yojson_of, sexp, hash]
-
-let equal = [%compare.equal: t]
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let compare_modulo_this x y =
   if phys_equal x y then 0

@@ -12,7 +12,7 @@ open! IStd
 module L = Logging
 module F = Format
 
-type translation_unit = SourceFile.t option [@@deriving compare, equal, sexp, hash]
+type translation_unit = SourceFile.t option [@@deriving compare, equal, sexp, hash, normalize]
 
 (** Kind of global variables *)
 type pvar_kind =
@@ -32,11 +32,11 @@ type pvar_kind =
       ; is_constant_array: bool
       ; is_const: bool }  (** global variable *)
   | Seed_var  (** variable used to store the initial value of formal parameters *)
-[@@deriving compare, equal, sexp, hash]
+[@@deriving compare, equal, sexp, hash, normalize]
 
 (** Names for program variables. *)
 type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind; pv_tmp_id: Ident.t option}
-[@@deriving compare, equal, sexp, hash]
+[@@deriving compare, equal, sexp, hash, normalize]
 
 let yojson_of_t {pv_name} = [%yojson_of: Mangled.t] pv_name
 

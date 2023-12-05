@@ -11,7 +11,7 @@ open! IStd
 (** Module for Mangled Names *)
 
 (** Type of mangled names *)
-type t [@@deriving compare, yojson_of, sexp, hash]
+type t [@@deriving compare, yojson_of, sexp, hash, normalize]
 
 val equal : t -> t -> bool
 (** Equality for mangled names *)

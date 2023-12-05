@@ -84,9 +84,7 @@ type instr =
   | Metadata of instr_metadata
       (** hints about the program that are not strictly needed to understand its semantics, for
           instance information about its original syntactic structure *)
-[@@deriving compare]
-
-val equal_instr : instr -> instr -> bool
+[@@deriving compare, equal, normalize]
 
 val equal_structural_instr : instr -> instr -> Exp.t Exp.Map.t -> bool * Exp.t Exp.Map.t
 (** Compare instructions from different procedures without considering [loc]s, [ident]s, [pvar]s, or
