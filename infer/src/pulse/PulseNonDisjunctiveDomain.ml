@@ -279,13 +279,7 @@ module PassedTo = struct
   let is_moved var x = find_opt var x |> Option.exists ~f:CalleesWithLoc.is_moved
 end
 
-module DroppedTransitiveAccesses = AbstractDomain.FiniteSet (struct
-  type t = Trace.t
-
-  let compare = Trace.compare
-
-  let pp = Trace.pp ~pp_immediate:(fun fmt -> F.fprintf fmt "access occurs here")
-end)
+module DroppedTransitiveAccesses = AbstractDomain.FiniteSetOfPPSet (Trace.Set)
 
 type elt =
   { copy_map: CopyMap.t
@@ -648,7 +642,7 @@ let remember_dropped_transitive_accesses accesses (non_disj : t) =
       Top
   | NonTop ({dropped_transitive_accesses} as non_disj) ->
       let dropped_transitive_accesses =
-        Trace.Set.fold DroppedTransitiveAccesses.add accesses dropped_transitive_accesses
+        DroppedTransitiveAccesses.union accesses dropped_transitive_accesses
       in
       NonTop {non_disj with dropped_transitive_accesses}
 
@@ -661,6 +655,18 @@ let make_summary (non_disj : t) =
       Top
   | NonTop {dropped_transitive_accesses} ->
       NonTop dropped_transitive_accesses
+
+
+let add_transitive_accesses_from_callee procname call_loc (non_disj : t) (summary : summary) =
+  match (non_disj, summary) with
+  | Top, _ | _, Top ->
+      Top
+  | NonTop ({dropped_transitive_accesses} as non_dis), NonTop summary ->
+      let dropped_transitive_accesses =
+        Trace.Set.map_callee (CallEvent.Call procname) call_loc summary
+        |> Trace.Set.union dropped_transitive_accesses
+      in
+      NonTop {non_dis with dropped_transitive_accesses}
 
 
 module Summary = struct

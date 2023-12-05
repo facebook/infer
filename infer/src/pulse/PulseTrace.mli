@@ -20,7 +20,7 @@ type t =
 [@@deriving compare, equal]
 
 module Set : sig
-  include Caml.Set.S with type elt = t
+  include PrettyPrintable.PPSet with type elt = t
 
   val map_callee : CallEvent.t -> Location.t -> t -> t
 end

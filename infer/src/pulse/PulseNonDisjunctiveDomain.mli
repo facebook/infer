@@ -97,3 +97,6 @@ val set_passed_to : Location.t -> Timestamp.t -> Exp.t -> (Exp.t * Typ.t) list -
 val is_lifetime_extended : Var.t -> t -> bool
 
 val remember_dropped_transitive_accesses : Trace.Set.t -> t -> t
+
+val add_transitive_accesses_from_callee : Procname.t -> Location.t -> t -> summary -> t
+  [@@warning "-unused-value-declaration"]
