@@ -95,3 +95,5 @@ val get_loaded_locations : Var.t -> t -> Location.t list
 val set_passed_to : Location.t -> Timestamp.t -> Exp.t -> (Exp.t * Typ.t) list -> t -> t
 
 val is_lifetime_extended : Var.t -> t -> bool
+
+val remember_dropped_transitive_accesses : Trace.Set.t -> t -> t

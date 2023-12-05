@@ -1508,7 +1508,14 @@ module PulseTransferFunctions = struct
     , astate_n )
 
 
-  let remember_dropped_disjuncts _ non_disj = non_disj
+  let remember_dropped_disjuncts disjuncts non_disj =
+    List.fold disjuncts ~init:non_disj ~f:(fun non_disj (exec, _) ->
+        match exec with
+        | ContinueProgram {AbductiveDomain.transitive_accesses} ->
+            NonDisjDomain.remember_dropped_transitive_accesses transitive_accesses non_disj
+        | _ ->
+            non_disj )
+
 
   let pp_session_name _node fmt = F.pp_print_string fmt "Pulse"
 end

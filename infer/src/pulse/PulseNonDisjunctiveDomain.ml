@@ -279,10 +279,19 @@ module PassedTo = struct
   let is_moved var x = find_opt var x |> Option.exists ~f:CalleesWithLoc.is_moved
 end
 
+module DroppedTransitiveAccesses = AbstractDomain.FiniteSet (struct
+  type t = Trace.t
+
+  let compare = Trace.compare
+
+  let pp = Trace.pp ~pp_immediate:(fun fmt -> F.fprintf fmt "access occurs here")
+end)
+
 type elt =
   { copy_map: CopyMap.t
   ; parameter_map: ParameterMap.t
   ; destructor_checked: DestructorChecked.t
+  ; dropped_transitive_accesses: DroppedTransitiveAccesses.t
   ; captured: Captured.t
   ; locked: Locked.t
   ; loads: Loads.t
@@ -308,6 +317,7 @@ let bottom =
     { copy_map= CopyMap.empty
     ; parameter_map= ParameterMap.empty
     ; destructor_checked= DestructorChecked.empty
+    ; dropped_transitive_accesses= DroppedTransitiveAccesses.empty
     ; captured= Captured.bottom
     ; locked= Locked.bottom
     ; loads= Loads.bottom
@@ -632,22 +642,32 @@ let is_lifetime_extended var astate_n =
       not (CalleesWithLoc.is_empty callees)
 
 
-type summary = NonDisj
+let remember_dropped_transitive_accesses accesses (non_disj : t) =
+  match non_disj with
+  | Top ->
+      Top
+  | NonTop ({dropped_transitive_accesses} as non_disj) ->
+      let dropped_transitive_accesses =
+        Trace.Set.fold DroppedTransitiveAccesses.add accesses dropped_transitive_accesses
+      in
+      NonTop {non_disj with dropped_transitive_accesses}
 
-let make_summary _ = NonDisj
+
+type summary = DroppedTransitiveAccesses.t top_lifted
+
+let make_summary (non_disj : t) =
+  match non_disj with
+  | Top ->
+      Top
+  | NonTop {dropped_transitive_accesses} ->
+      NonTop dropped_transitive_accesses
+
 
 module Summary = struct
-  module M = struct
-    type t = summary
+  include AbstractDomain.TopLifted (DroppedTransitiveAccesses)
 
-    let pp _fmt _ = ()
+  let bottom = NonTop DroppedTransitiveAccesses.empty
 
-    let leq ~lhs:_ ~rhs:_ = true
-  end
-
-  include MakeDomainFromTotalOrder (M)
-
-  let bottom = NonDisj
-
-  let is_bottom _ = true
+  let is_bottom (x : t) =
+    match x with Top -> false | NonTop set -> DroppedTransitiveAccesses.is_empty set
 end

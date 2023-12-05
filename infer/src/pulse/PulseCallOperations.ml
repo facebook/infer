@@ -407,7 +407,7 @@ let ( let<**> ) x f =
 
 
 let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-    (callee_proc_attrs : ProcAttributes.t) exec_states (astate : AbductiveDomain.t) =
+    (callee_proc_attrs : ProcAttributes.t) exec_states_callee (astate_caller : AbductiveDomain.t) =
   let formals =
     List.map callee_proc_attrs.formals ~f:(fun (mangled, typ, _) ->
         (Pvar.mk mangled callee_pname |> Var.of_pvar, typ) )
@@ -418,7 +418,7 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
   in
   let<**> astate, captured_actuals =
     PulseOperations.get_captured_actuals callee_pname path call_loc ~captured_formals ~call_kind
-      ~actuals astate
+      ~actuals astate_caller
   in
   let captured_formals = List.map captured_formals ~f:(fun (var, _, typ) -> (var, typ)) in
   let should_keep_at_most_one_disjunct =
@@ -429,7 +429,7 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
     L.d_printfln "Will keep at most one disjunct because %a is in block list" Procname.pp
       callee_pname ;
   (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
-  List.fold ~init:([], None) exec_states ~f:(fun (posts, contradiction) callee_exec_state ->
+  List.fold ~init:([], None) exec_states_callee ~f:(fun (posts, contradiction) callee_exec_state ->
       if should_keep_at_most_one_disjunct && not (List.is_empty posts) then (posts, contradiction)
       else (
         (* apply one pre/post spec, check for timeouts in-between each pre/post spec from the callee
@@ -589,7 +589,7 @@ let call tenv path ~caller_proc_desc
       [] )
     else results
   in
-  let call_aux {PulseSummary.pre_post_list= exec_states} =
+  let call_aux {PulseSummary.pre_post_list= exec_states; non_disj= _} =
     let results, contradiction =
       call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
         (IRAttributes.load_exn callee_pname)
