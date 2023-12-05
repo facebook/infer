@@ -1406,19 +1406,15 @@ module PulseTransferFunctions = struct
             let astates_before = ref [] in
             let res =
               List.concat_map astates ~f:(fun astate ->
-                  let results_and_before_state =
-                    let++ astate, call_exp, callee_pname, func_args =
-                      eval_function_call_args path call_exp actuals loc astate
-                    in
-                    (* stash the intermediate "before" [astate] here because the result monad does
+                  let<**> astate, call_exp, callee_pname, func_args =
+                    eval_function_call_args path call_exp actuals loc astate
+                  in
+                  (* stash the intermediate "before" [astate] here because the result monad does
                        not accept more complicated types than lists of states (we need a pair of the
                        before astate and the list of results) *)
-                    astates_before := astate :: !astates_before ;
-                    dispatch_call_eval_args analysis_data path ret call_exp actuals func_args loc
-                      call_flags astate callee_pname
-                  in
-                  let<**> r = results_and_before_state in
-                  r )
+                  astates_before := astate :: !astates_before ;
+                  dispatch_call_eval_args analysis_data path ret call_exp actuals func_args loc
+                    call_flags astate callee_pname )
             in
             let astates_before = !astates_before in
             (PulseReport.report_exec_results tenv proc_desc err_log loc res, astates_before)
