@@ -87,3 +87,51 @@ class EventHandler2 {
     return $a->get();
   }
 }
+
+class Helper {
+  public function bomb(
+    bool $choice0,
+    bool $choice1,
+    bool $choice2,
+    bool $activate,
+    A $a,
+  ): void {
+    if ($choice0) {
+    }
+    if ($choice1) {
+    }
+    if ($choice2) {
+      if ($activate && $choice0 && $choice1 && $choice2) {
+        $_ = $a->get();
+      }
+      ;
+    }
+  }
+}
+
+class TooMuchDisjuncts extends EventHandler {
+
+  public function FN_bad(
+    Helper $o,
+    bool $choice0,
+    bool $choice1,
+    bool $choice2,
+    bool $choice3,
+    A $a,
+  ): void {
+    $activate = $choice3 ? true : false;
+    $o->bomb($choice0, $choice1, $choice2, $activate, $a);
+  }
+
+  public function bad_flipped(
+    Helper $o,
+    bool $choice0,
+    bool $choice1,
+    bool $choice2,
+    bool $choice3,
+    A $a,
+  ): void {
+    $activate = $choice3 ? true : false;
+    $o->bomb($choice0, $choice1, $choice2, !$activate, $a);
+  }
+}

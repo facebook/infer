@@ -6,6 +6,7 @@
 TESTS_DIR = ../../..
 
 INFER_OPTIONS = --pulse-only --debug-exceptions --pulse-specialization-partial \
+  --pulse-max-disjuncts 8 \
   --pulse-transitive-access-config transitive-access-config.json
 INFERPRINT_OPTIONS = --issues-tests
 
