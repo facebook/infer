@@ -589,7 +589,7 @@ let call tenv path ~caller_proc_desc
       [] )
     else results
   in
-  let call_aux exec_states =
+  let call_aux {PulseSummary.pre_post_list= exec_states} =
     let results, contradiction =
       call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
         (IRAttributes.load_exn callee_pname)

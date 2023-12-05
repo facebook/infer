@@ -14,8 +14,11 @@ open PulseOperationResult.Import
 
 type pre_post_list = ExecutionDomain.summary list [@@deriving yojson_of]
 
-type t =
-  {main: pre_post_list; specialized: (pre_post_list Specialization.Pulse.Map.t[@yojson.opaque])}
+type non_disj = NonDisj [@@deriving yojson_of] [@@warning "-unused-constructor"]
+
+type summary = {pre_post_list: pre_post_list; non_disj: non_disj} [@@deriving yojson_of]
+
+type t = {main: summary; specialized: (summary Specialization.Pulse.Map.t[@yojson.opaque])}
 [@@deriving yojson_of]
 
 let pp_pre_post_list fmt ~pp_kind pre_posts =
@@ -26,22 +29,38 @@ let pp_pre_post_list fmt ~pp_kind pre_posts =
   F.close_box ()
 
 
+let pp_summary fmt ~pp_kind {pre_post_list; non_disj= _} =
+  pp_pre_post_list fmt ~pp_kind pre_post_list
+
+
 let pp fmt {main; specialized} =
   if Specialization.Pulse.Map.is_empty specialized then
-    pp_pre_post_list fmt ~pp_kind:(fun _fmt -> ()) main
+    pp_summary fmt ~pp_kind:(fun _fmt -> ()) main
   else
     let pp_kind fmt = F.pp_print_string fmt " main" in
     F.open_hvbox 0 ;
-    pp_pre_post_list fmt ~pp_kind main ;
+    pp_summary fmt ~pp_kind main ;
     Specialization.Pulse.Map.iter
       (fun specialization pre_posts ->
         F.fprintf fmt "@\n" ;
         let pp_kind fmt =
           F.fprintf fmt " specialized with %a" Specialization.Pulse.pp specialization
         in
-        pp_pre_post_list fmt ~pp_kind pre_posts )
+        pp_summary fmt ~pp_kind pre_posts )
       specialized ;
     F.close_box ()
+
+
+let add_disjunctive_pre_post pre_post {pre_post_list; non_disj} =
+  {pre_post_list= pre_post :: pre_post_list; non_disj}
+
+
+let empty = {pre_post_list= []; non_disj= NonDisj}
+
+let join summary1 summary2 =
+  let pre_post_list = summary1.pre_post_list @ summary2.pre_post_list in
+  (* TODO: will be more involved once we have a non trivial non_disj *)
+  {summary1 with pre_post_list}
 
 
 let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_desc err_log location
@@ -137,13 +156,16 @@ let force_exit_program tenv proc_desc err_log post =
     ~exception_raised:(fun astate -> ExitProgram astate)
 
 
-let of_posts tenv proc_desc err_log location posts =
-  List.filter_mapi posts ~f:(fun i exec_state ->
-      L.d_printfln "Creating spec out of state #%d:@\n%a" i ExecutionDomain.pp exec_state ;
-      exec_summary_of_post_common tenv proc_desc err_log location exec_state
-        ~continue_program:(fun astate -> ContinueProgram astate)
-        ~exception_raised:(fun astate -> ExceptionRaised astate)
-      |> SatUnsat.sat )
+let of_posts tenv proc_desc err_log location posts _ =
+  let pre_post_list =
+    List.filter_mapi posts ~f:(fun i exec_state ->
+        L.d_printfln "Creating spec out of state #%d:@\n%a" i ExecutionDomain.pp exec_state ;
+        exec_summary_of_post_common tenv proc_desc err_log location exec_state
+          ~continue_program:(fun astate -> ContinueProgram astate)
+          ~exception_raised:(fun astate -> ExceptionRaised astate)
+        |> SatUnsat.sat )
+  in
+  {pre_post_list; non_disj= NonDisj}
 
 
 let mk_objc_self_pvar proc_name = Pvar.mk Mangled.self proc_name

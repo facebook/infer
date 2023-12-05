@@ -11,11 +11,26 @@ open PulseDomainInterface
 
 type pre_post_list = ExecutionDomain.summary list [@@deriving yojson_of]
 
-type t = {main: pre_post_list; specialized: pre_post_list Specialization.Pulse.Map.t}
-[@@deriving yojson_of]
+type non_disj [@@deriving yojson_of]
+
+type summary = {pre_post_list: pre_post_list; non_disj: non_disj} [@@deriving yojson_of]
+
+type t = {main: summary; specialized: summary Specialization.Pulse.Map.t} [@@deriving yojson_of]
 
 val of_posts :
-  Tenv.t -> Procdesc.t -> Errlog.t -> Location.t -> ExecutionDomain.t list -> pre_post_list
+     Tenv.t
+  -> Procdesc.t
+  -> Errlog.t
+  -> Location.t
+  -> ExecutionDomain.t list
+  -> NonDisjDomain.t
+  -> summary
+
+val add_disjunctive_pre_post : ExecutionDomain.summary -> summary -> summary
+
+val empty : summary
+
+val join : summary -> summary -> summary
 
 val force_exit_program :
      Tenv.t

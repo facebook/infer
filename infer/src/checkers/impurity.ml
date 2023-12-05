@@ -241,13 +241,13 @@ let checker {IntraproceduralAnalysis.proc_desc; tenv; err_log}
   match pulse_summary_opt with
   | None ->
       report_impure_pulse proc_desc err_log ~desc:"no"
-  | Some {main= []} ->
+  | Some {main= {pre_post_list= []}} ->
       report_impure_pulse proc_desc err_log ~desc:"empty"
-  | Some {main= pre_posts} ->
+  | Some {main= {pre_post_list}} ->
       let formals = Procdesc.get_formals proc_desc in
       let proc_name = Procdesc.get_proc_name proc_desc in
       let impurity_astate =
-        List.fold pre_posts ~init:ImpurityDomain.pure ~f:(fun acc exec_state ->
+        List.fold pre_post_list ~init:ImpurityDomain.pure ~f:(fun acc exec_state ->
             let impurity_astate = extract_impurity tenv proc_name formals exec_state in
             ImpurityDomain.join acc impurity_astate )
       in

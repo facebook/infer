@@ -1662,42 +1662,43 @@ let analyze specialization
                 match edomain with ContinueProgram x -> ExceptionRaised x | _ -> edomain )
           else posts
         in
-        let summary = PulseSummary.of_posts tenv proc_desc err_log node_loc posts in
+        let summary = PulseSummary.of_posts tenv proc_desc err_log node_loc posts non_disj_astate in
         let is_exit_node =
           Procdesc.Node.equal_id node_id (Procdesc.Node.get_id (Procdesc.get_exit_node proc_desc))
         in
         let summary =
           if is_exit_node then
             let objc_nil_summary = PulseSummary.mk_objc_nil_messaging_summary tenv proc_attrs in
-            Option.to_list objc_nil_summary @ summary
+            Option.value_map objc_nil_summary ~default:summary ~f:(fun objc_nil_summary ->
+                PulseSummary.add_disjunctive_pre_post objc_nil_summary summary )
           else summary
         in
         PulseTransitiveAccessChecker.report_errors tenv proc_desc err_log summary ;
-        report_topl_errors proc_desc err_log summary ;
+        report_topl_errors proc_desc err_log summary.pre_post_list ;
         report_unnecessary_copies tenv proc_desc err_log non_disj_astate ;
         report_unnecessary_parameter_copies tenv proc_desc err_log non_disj_astate ;
         summary
     | None ->
-        []
+        PulseSummary.empty
   in
-  let report_on_and_return_summaries (summary : ExecutionDomain.summary list) :
-      ExecutionDomain.summary list option =
+  let report_on_and_return_summaries summary =
     if Config.trace_topl then
       L.debug Analysis Quiet "ToplTrace: dropped %d disjuncts in %a@\n"
         (PulseTopl.Debug.get_dropped_disjuncts_count ())
         Procname.pp_unique_id
         (Procdesc.get_proc_name proc_desc) ;
-    let summary_count = List.length summary in
+    let summary_count = List.length summary.PulseSummary.pre_post_list in
     if Config.pulse_scuba_logging then
       ScubaLogging.log_count ~label:"pulse_summary" ~value:summary_count ;
     Stats.add_pulse_summaries_count summary_count ;
-    if Config.pulse_log_summary_count then log_summary_count proc_name summary ;
+    if Config.pulse_log_summary_count then
+      log_summary_count proc_name summary.PulseSummary.pre_post_list ;
     (* needed to record the stats corresponding to the metadata *)
     DisjunctiveAnalyzer.get_cfg_metadata () |> ignore ;
     Some summary
   in
   let exn_sink_node_opt = Procdesc.get_exn_sink proc_desc in
-  let summaries_at_exn_sink : ExecutionDomain.summary list =
+  let summaries_at_exn_sink =
     (* We extract postconditions from the exceptions sink. *)
     match exn_sink_node_opt with
     | Some esink_node ->
@@ -1706,7 +1707,7 @@ let analyze specialization
             process_postconditions ~convert_normal_to_exceptional:true esink_node
               (DisjunctiveAnalyzer.extract_post (Procdesc.Node.get_id esink_node) invariant_map) )
     | None ->
-        []
+        PulseSummary.empty
   in
   let exit_node = Procdesc.get_exit_node proc_desc in
   with_html_debug_node exit_node ~desc:"pulse summary creation" ~f:(fun () ->
@@ -1714,7 +1715,7 @@ let analyze specialization
         process_postconditions ~convert_normal_to_exceptional:false exit_node
           (DisjunctiveAnalyzer.extract_post (Procdesc.Node.get_id exit_node) invariant_map)
       in
-      let exit_esink_summaries = summaries_for_exit @ summaries_at_exn_sink in
+      let exit_esink_summaries = PulseSummary.join summaries_for_exit summaries_at_exn_sink in
       report_on_and_return_summaries exit_esink_summaries )
 
 

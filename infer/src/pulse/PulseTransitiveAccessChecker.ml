@@ -163,7 +163,7 @@ let report_errors tenv proc_desc err_log summary =
   let procname = Procdesc.get_proc_name proc_desc in
   match Config.find_matching_context tenv procname with
   | Some {tag; description} ->
-      List.iter summary ~f:(function
+      List.iter summary.PulseSummary.pre_post_list ~f:(function
         | ContinueProgram astate ->
             AbductiveDomain.Summary.get_transitive_accesses astate
             |> List.iter ~f:(fun call_trace ->
