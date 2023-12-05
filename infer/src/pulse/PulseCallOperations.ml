@@ -391,7 +391,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
 
 
 let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-    (callee_proc_attrs : ProcAttributes.t) exec_states_callee _non_disj_callee
+    (callee_proc_attrs : ProcAttributes.t) exec_states_callee non_disj_callee
     (astate_caller : AbductiveDomain.t) non_disj_caller =
   let formals =
     List.map callee_proc_attrs.formals ~f:(fun (mangled, typ, _) ->
@@ -414,8 +414,11 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
   if should_keep_at_most_one_disjunct then
     L.d_printfln "Will keep at most one disjunct because %a is in block list" Procname.pp
       callee_pname ;
-  (* TODO: propagate transitive accesses from callee to caller *)
-  let non_disj = non_disj_caller in
+  (* we propagate transitive accesses from callee to caller using *)
+  let non_disj =
+    NonDisjDomain.add_transitive_accesses_from_callee callee_pname call_loc non_disj_caller
+      non_disj_callee
+  in
   (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
   let posts, contradiction =
     List.fold ~init:([], None) exec_states_callee
