@@ -872,6 +872,11 @@ let pulse_resource_leak =
     ~user_documentation:"See [RESOURCE_LEAK](#resource_leak)"
 
 
+let pulse_unawaited_awaitable =
+  register ~enabled:true ~id:"PULSE_UNAWAITED_AWAITABLE" Error Pulse ~hum:"Unawaited Awaitable"
+    ~user_documentation:[%blob "./documentation/issues/PULSE_UNAWAITED_AWAITABLE.md"]
+
+
 let pulse_uninitialized_const =
   register ~enabled:false ~id:"PULSE_UNINITIALIZED_CONST" Error Pulse ~hum:"Uninitialized Const"
     ~user_documentation:[%blob "./documentation/issues/PULSE_UNINITIALIZED_CONST.md"]

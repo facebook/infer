@@ -826,6 +826,9 @@ module PulseTransferFunctions = struct
       else astate
     in
     let caller_is_hack_wrapper = (Procdesc.get_attributes proc_desc).is_hack_wrapper in
+    if caller_is_hack_wrapper then
+      L.d_printfln "caller %a IS a hack wrapper" Procdesc.pp_signature proc_desc
+    else L.d_printfln "caller %a is not a wrapper" Procdesc.pp_signature proc_desc ;
     let ret, ret_and_name_saved_for_hack_async =
       match callee_pname with
       | Some proc_name when is_hack_async proc_name && not caller_is_hack_wrapper ->

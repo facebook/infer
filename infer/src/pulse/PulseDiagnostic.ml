@@ -1071,8 +1071,10 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_config_usage
   | ConstRefableParameter _, false ->
       IssueType.pulse_const_refable
-  | CSharpResourceLeak _, false | JavaResourceLeak _, false | HackUnawaitedAwaitable _, false ->
+  | CSharpResourceLeak _, false | JavaResourceLeak _, false ->
       IssueType.pulse_resource_leak
+  | HackUnawaitedAwaitable _, false ->
+      IssueType.pulse_unawaited_awaitable
   | ErlangError (Badarg _), _ ->
       IssueType.bad_arg ~latent
   | ErlangError (Badkey _), _ ->
