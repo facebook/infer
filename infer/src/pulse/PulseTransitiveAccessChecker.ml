@@ -165,10 +165,11 @@ let report_errors tenv proc_desc err_log summary =
   | Some {tag; description} ->
       List.iter summary.PulseSummary.pre_post_list ~f:(function
         | ContinueProgram astate ->
-            AbductiveDomain.Summary.get_transitive_accesses astate
-            |> List.iter ~f:(fun call_trace ->
-                   PulseReport.report ~is_suppressed:false ~latent:false tenv proc_desc err_log
-                     (Diagnostic.TransitiveAccess {tag; description; call_trace}) )
+            PulseTrace.Set.iter
+              (fun call_trace ->
+                PulseReport.report ~is_suppressed:false ~latent:false tenv proc_desc err_log
+                  (Diagnostic.TransitiveAccess {tag; description; call_trace}) )
+              (AbductiveDomain.Summary.get_transitive_accesses astate)
         | _ ->
             () )
   | None ->

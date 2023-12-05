@@ -69,7 +69,7 @@ type t = private
   ; need_dynamic_type_specialization: AbstractValue.Set.t
         (** a set of abstract values that are used as receiver of method calls in the instructions
             reached so far *)
-  ; transitive_accesses: Trace.t list  (** record specific acceses inter-procedurally *)
+  ; transitive_accesses: Trace.Set.t  (** record specific acceses inter-procedurally *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 [@@deriving equal]
@@ -329,7 +329,7 @@ module Summary : sig
 
   val add_need_dynamic_type_specialization : AbstractValue.t -> summary -> summary
 
-  val get_transitive_accesses : summary -> Trace.t list
+  val get_transitive_accesses : summary -> Trace.Set.t
 
   val transfer_accesses_to_caller : t -> Procname.t -> Location.t -> summary -> t
 

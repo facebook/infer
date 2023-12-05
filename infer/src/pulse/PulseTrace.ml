@@ -15,6 +15,22 @@ type t =
   | ViaCall of {f: CallEvent.t; location: Location.t; history: ValueHistory.t; in_call: t}
 [@@deriving compare, equal]
 
+module Set = struct
+  module T = struct
+    type nonrec t = t
+
+    let compare = compare
+  end
+
+  include Caml.Set.Make (T)
+
+  let map_callee call_event call_loc set =
+    map
+      (fun trace ->
+        ViaCall {f= call_event; location= call_loc; history= ValueHistory.epoch; in_call= trace} )
+      set
+end
+
 let get_outer_location = function Immediate {location; _} | ViaCall {location; _} -> location
 
 let get_outer_history = function Immediate {history; _} | ViaCall {history; _} -> history

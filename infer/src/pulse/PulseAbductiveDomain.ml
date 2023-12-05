@@ -79,7 +79,7 @@ type t =
   ; topl: (PulseTopl.state[@yojson.opaque])
   ; need_closure_specialization: bool
   ; need_dynamic_type_specialization: (AbstractValue.Set.t[@yojson.opaque])
-  ; transitive_accesses: (Trace.t list[@yojson.opaque])
+  ; transitive_accesses: (Trace.Set.t[@yojson.opaque])
   ; skipped_calls: SkippedCalls.t }
 [@@deriving compare, equal, yojson_of]
 
@@ -123,7 +123,7 @@ let unset_need_closure_specialization astate = {astate with need_closure_special
 
 let record_transitive_access location astate =
   let trace = Trace.Immediate {location; history= ValueHistory.epoch} in
-  {astate with transitive_accesses= trace :: astate.transitive_accesses}
+  {astate with transitive_accesses= Trace.Set.add trace astate.transitive_accesses}
 
 
 let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}
@@ -1561,7 +1561,7 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
     ; need_closure_specialization= false
     ; need_dynamic_type_specialization= AbstractValue.Set.empty
     ; topl= PulseTopl.start ()
-    ; transitive_accesses= []
+    ; transitive_accesses= Trace.Set.empty
     ; skipped_calls= SkippedCalls.empty }
   in
   let astate =
@@ -2192,14 +2192,11 @@ module Summary = struct
   let add_need_dynamic_type_specialization = add_need_dynamic_type_specialization
 
   let transfer_accesses_to_caller astate callee_proc_name call_loc summary =
-    let update_trace trace =
-      Trace.ViaCall
-        {f= Call callee_proc_name; location= call_loc; history= ValueHistory.epoch; in_call= trace}
+    let transitive_accesses =
+      Trace.Set.map_callee (Call callee_proc_name) call_loc summary.transitive_accesses
+      |> Trace.Set.union astate.transitive_accesses
     in
-    { astate with
-      transitive_accesses=
-        List.fold summary.transitive_accesses ~init:astate.transitive_accesses
-          ~f:(fun accesses trace -> update_trace trace :: accesses) }
+    {astate with transitive_accesses}
 
 
   let get_transitive_accesses summary = summary.transitive_accesses
