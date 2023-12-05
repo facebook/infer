@@ -96,3 +96,152 @@ class Test4 {
     \Level1\taintSink($f(true, false));
   }
 }
+
+// function references & variadics args
+
+abstract final class LogicalOps {
+
+  public static function orVariadic(
+    (function(): bool) $first_predicate,
+    (function(): bool) $second_predicate,
+    (function(): bool) ...$rest_predicates
+  ): bool {
+    if ($first_predicate()) {
+      return true;
+    }
+    if ($second_predicate()) {
+      return true;
+    }
+    foreach ($rest_predicates as $predicate) {
+      if ($predicate()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+}
+
+abstract class Predicates {
+
+  public static function alwaysTrue(): bool {
+    return true;
+  }
+
+  public static function alwaysFalse(): bool {
+    return false;
+  }
+
+}
+
+class TestVariadicAndFunctionReferences {
+
+  public static function noVariadicBad(): void {
+    $tainted = \Level1\taintSource();
+    if (
+      LogicalOps::orVariadic(
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysTrue<>,
+      )
+    ) {
+      \Level1\taintSink($tainted);
+    }
+  }
+
+  public static function noVariadicGood(): void {
+    $tainted = \Level1\taintSource();
+    if (
+      LogicalOps::orVariadic(
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+      )
+    ) {
+      \Level1\taintSink($tainted);
+    }
+  }
+
+  public static function oneVariadicBad(): void {
+    $tainted = \Level1\taintSource();
+    if (
+      LogicalOps::orVariadic(
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysTrue<>,
+      )
+    ) {
+      \Level1\taintSink($tainted);
+    }
+  }
+
+  public static function oneVariadicGood(): void {
+    $tainted = \Level1\taintSource();
+    if (
+      LogicalOps::orVariadic(
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+      )
+    ) {
+      \Level1\taintSink($tainted);
+    }
+  }
+
+  public static function twoVariadicBad(): void {
+    $tainted = \Level1\taintSource();
+    if (
+      LogicalOps::orVariadic(
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysTrue<>,
+      )
+    ) {
+      \Level1\taintSink($tainted);
+    }
+  }
+
+  public static function twoVariadicGood(): void {
+    $tainted = \Level1\taintSource();
+    if (
+      LogicalOps::orVariadic(
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+      )
+    ) {
+      \Level1\taintSink($tainted);
+    }
+  }
+
+  public static function FN_threeVariadicBad(): void {
+    $tainted = \Level1\taintSource();
+    if (
+      LogicalOps::orVariadic(
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysTrue<>,
+      )
+    ) {
+      \Level1\taintSink($tainted);
+    }
+  }
+
+  public static function threeVariadicGood(): void {
+    $tainted = \Level1\taintSource();
+    if (
+      LogicalOps::orVariadic(
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+        Predicates::alwaysFalse<>,
+      )
+    ) {
+      \Level1\taintSink($tainted);
+    }
+  }
+
+}
