@@ -25,8 +25,8 @@ let combine_bool ~op ~default exprs =
   match List.reduce exprs ~f with Some expr -> expr | None -> default
 
 
-let rec type_condition (env : (_, _) Env.t) constraints ((ident, type_) : Ident.t * Ast.type_) :
-    Block.t * Exp.t =
+let rec type_condition_real (env : (_, _) Env.t) constraints ((ident, type_) : Ident.t * Ast.type_)
+    : Block.t * Exp.t =
   let simple_condition typ id =
     let is_typ = mk_fresh_id () in
     let start = Node.make_stmt env [Env.has_type_instr env ~result:is_typ ~value:(Var id) typ] in
@@ -105,14 +105,14 @@ let rec type_condition (env : (_, _) Env.t) constraints ((ident, type_) : Ident.
         let id = mk_fresh_id () in
         let load_instr = Env.load_field_from_expr env id (Var ident) field tuple_typ in
         let load_block = Block.make_instruction env [load_instr] in
-        let sub_block, sub_expr = type_condition env constraints (id, type_) in
+        let sub_block, sub_expr = type_condition_real env constraints (id, type_) in
         (Block.all env [load_block; sub_block], sub_expr)
       in
       let blocks, exprs = List.unzip (List.map ~f fields_and_types) in
       ( Block.all env (is_tuple_block :: blocks)
       , combine_bool ~op:Binop.LAnd ~default:true_const (is_tuple_cond :: exprs) )
   | Union types ->
-      let f t = type_condition env constraints (ident, t) in
+      let f t = type_condition_real env constraints (ident, t) in
       let blocks, exprs = List.unzip (List.map ~f types) in
       (* Union shouldn't be empty, but if it somehow happens, just return true. *)
       (Block.all env blocks, combine_bool ~op:Binop.LOr ~default:true_const exprs)
@@ -125,7 +125,7 @@ let rec type_condition (env : (_, _) Env.t) constraints ((ident, type_) : Ident.
        such cases before. TODO: check for cycles in a validation step (T115271156) *)
     match Map.find constraints v with
     | Some subtyp ->
-        type_condition env constraints (ident, subtyp)
+        type_condition_real env constraints (ident, subtyp)
     | None ->
         L.debug Capture Verbose
           "@[No constraint found, or type is not supported for type variable %s, treating as \
@@ -137,6 +137,12 @@ let rec type_condition (env : (_, _) Env.t) constraints ((ident, type_) : Ident.
         (Sexp.to_string (Ast.sexp_of_type_ t)) ;
       succ_true env
 
+
+let type_condition_dummy (env : (_, _) Env.t) _constraints _arg_typ : Block.t * Exp.t =
+  (Block.make_success env, Exp.bool true)
+
+
+let type_condition = if Config.erlang_reliability then type_condition_real else type_condition_dummy
 
 let disjunct_condition_args (env : (_, _) Env.t) arg_ids (specd : Ast.spec_disjunct) =
   (* Generate condition for the type of each argument and form a conjunction. *)
@@ -170,10 +176,22 @@ let process_disjuncts env spec f =
   Block.all env (blocks @ [load_block; prune_block])
 
 
-let prune_spec_args (env : (_, _) Env.t) arg_ids (spec : Ast.spec) : Block.t =
+let prune_spec_args_real (env : (_, _) Env.t) arg_ids (spec : Ast.spec) : Block.t =
   process_disjuncts env spec (disjunct_condition_args env arg_ids)
 
 
-let prune_spec_return (env : (_, _) Env.t) ret_id (spec : Ast.spec) : Block.t =
+let prune_spec_args_dummy (env : (_, _) Env.t) _arg_ids _spec : Block.t = Block.make_success env
+
+let prune_spec_args =
+  if Config.erlang_reliability then prune_spec_args_real else prune_spec_args_dummy
+
+
+let prune_spec_return_real (env : (_, _) Env.t) ret_id (spec : Ast.spec) : Block.t =
   let f (specd : Ast.spec_disjunct) = type_condition env specd.constraints (ret_id, specd.return) in
   process_disjuncts env spec f
+
+
+let prune_spec_return_dummy (env : (_, _) Env.t) _ret_id _spec : Block.t = Block.make_success env
+
+let prune_spec_return =
+  if Config.erlang_reliability then prune_spec_return_real else prune_spec_return_dummy

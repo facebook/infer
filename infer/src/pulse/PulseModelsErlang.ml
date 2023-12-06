@@ -174,7 +174,29 @@ let get_module_attribute tenv ~tag =
       None
 
 
-module Errors = struct
+module type ERRORS = sig
+  val badarg : model_no_non_disj
+
+  val badkey : model_no_non_disj
+
+  val badmap : model_no_non_disj
+
+  val badmatch : model_no_non_disj
+
+  val badrecord : model_no_non_disj
+
+  val badreturn : model_no_non_disj
+
+  val case_clause : model_no_non_disj
+
+  val function_clause : model_no_non_disj
+
+  val if_clause : model_no_non_disj
+
+  val try_clause : model_no_non_disj
+end
+
+module ErrorsReport : ERRORS = struct
   let error err astate = [FatalError (ReportableError {astate; diagnostic= ErlangError err}, [])]
 
   let badarg : model_no_non_disj =
@@ -216,6 +238,33 @@ module Errors = struct
   let try_clause : model_no_non_disj =
    fun {location} astate -> error (Try_clause {calling_context= []; location}) astate
 end
+
+module ErrorsSilent : ERRORS = struct
+  let stuck : model_no_non_disj = fun _data _astate -> []
+
+  let badarg = stuck
+
+  let badkey = stuck
+
+  let badmap = stuck
+
+  let badmatch = stuck
+
+  let badrecord = stuck
+
+  let badreturn = stuck
+
+  let case_clause = stuck
+
+  let function_clause = stuck
+
+  let if_clause = stuck
+
+  let try_clause = stuck
+end
+
+module Errors : ERRORS =
+  (val if Config.erlang_reliability then (module ErrorsReport) else (module ErrorsSilent) : ERRORS)
 
 module Atoms = struct
   let name_field = Fieldname.make (ErlangType Atom) ErlangTypeName.atom_name

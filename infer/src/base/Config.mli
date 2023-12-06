@@ -371,11 +371,13 @@ val erlang_ast_dir : string option
 
 val erlang_check_return : bool
 
+val erlang_list_unfold_depth : int
+
+val erlang_reliability : bool
+
 val erlang_skip_compile : bool
 
 val erlang_with_otp_specs : bool
-
-val erlang_list_unfold_depth : int
 
 val extract_capture_from : string option
 

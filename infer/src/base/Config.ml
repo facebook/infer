@@ -1608,6 +1608,20 @@ and erlang_check_return =
      promises. This check is introduced at capture time."
 
 
+and erlang_reliability =
+  CLOpt.mk_bool ~long:"erlang-reliability" ~default:true
+    ~in_help:InferCommand.[(Capture, manual_erlang); (Analyze, manual_erlang)]
+    "Analyze crashing executions. This flag affects both capture and analysis. At capture time, it \
+     encodes Erlang specs; at (Pulse) analysis time, it models Erlang exceptions (builtin or OTP \
+     ones)."
+
+
+and erlang_list_unfold_depth =
+  CLOpt.mk_int ~long:"erlang-list-unfold-depth" ~default:4
+    ~in_help:InferCommand.[(Analyze, manual_erlang)]
+    "Unfold Erlang lists up to depth $(i,int)"
+
+
 and erlang_skip_compile =
   CLOpt.mk_bool ~long:"erlang-skip-compile"
     ~in_help:InferCommand.[(Capture, manual_erlang)]
@@ -1620,12 +1634,6 @@ and erlang_with_otp_specs =
     ~in_help:InferCommand.[(Capture, manual_erlang)]
     "[EXPERIMENTAL] Use type specs from OTP (available in the system) to generate more precise \
      Pulse summaries for unknown library functions."
-
-
-and erlang_list_unfold_depth =
-  CLOpt.mk_int ~long:"erlang-list-unfold-depth" ~default:4
-    ~in_help:InferCommand.[(Analyze, manual_erlang)]
-    "Unfold Erlang lists up to depth $(i,int)"
 
 
 and export_changed_functions =
@@ -3995,11 +4003,13 @@ and erlang_ast_dir = !erlang_ast_dir
 
 and erlang_check_return = !erlang_check_return
 
+and erlang_list_unfold_depth = !erlang_list_unfold_depth
+
+and erlang_reliability = !erlang_reliability
+
 and erlang_skip_compile = !erlang_skip_compile
 
 and erlang_with_otp_specs = !erlang_with_otp_specs
-
-and erlang_list_unfold_depth = !erlang_list_unfold_depth
 
 and external_java_packages = !external_java_packages
 

@@ -342,6 +342,12 @@ ERLANG OPTIONS
            correspond to what the function's spec promises. This check is
            introduced at capture time. (Conversely: --no-erlang-check-return)
 
+       --no-erlang-reliability
+           Deactivates: Analyze crashing executions. This flag affects both
+           capture and analysis. At capture time, it encodes Erlang specs; at
+           (Pulse) analysis time, it models Erlang exceptions (builtin or OTP
+           ones). (Conversely: --erlang-reliability)
+
        --erlang-skip-compile
            Activates: Skip running compiler (erlc/rebar3), to save time. The
            build command is basically ignored in this case. To be used

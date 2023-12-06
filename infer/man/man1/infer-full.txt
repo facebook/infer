@@ -738,6 +738,12 @@ OPTIONS
        --erlang-list-unfold-depth int
            Unfold Erlang lists up to depth int           See also infer-analyze(1).
 
+       --no-erlang-reliability
+           Deactivates: Analyze crashing executions. This flag affects both
+           capture and analysis. At capture time, it encodes Erlang specs; at
+           (Pulse) analysis time, it models Erlang exceptions (builtin or OTP
+           ones). (Conversely: --erlang-reliability)           See also infer-analyze(1) and infer-capture(1).
+
        --erlang-skip-compile
            Activates: Skip running compiler (erlc/rebar3), to save time. The
            build command is basically ignored in this case. To be used

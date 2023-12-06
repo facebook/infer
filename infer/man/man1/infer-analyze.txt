@@ -599,6 +599,12 @@ CLANG OPTIONS
 ERLANG OPTIONS
        --erlang-list-unfold-depth int
            Unfold Erlang lists up to depth int
+
+       --no-erlang-reliability
+           Deactivates: Analyze crashing executions. This flag affects both
+           capture and analysis. At capture time, it encodes Erlang specs; at
+           (Pulse) analysis time, it models Erlang exceptions (builtin or OTP
+           ones). (Conversely: --erlang-reliability)
 JAVA OPTIONS
        --annotation-reachability-custom-pairs json
            Specify custom sources/sink for the annotation reachability
