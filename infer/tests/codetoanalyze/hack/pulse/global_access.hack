@@ -111,7 +111,7 @@ class Helper {
 
 class TooMuchDisjuncts extends EventHandler {
 
-  public function FN_bad(
+  public function bad(
     Helper $o,
     bool $choice0,
     bool $choice1,

@@ -41,6 +41,8 @@ val make_summary : t -> summary
 
 module Summary : sig
   include AbstractDomain.WithBottom with type t = summary
+
+  val iter_on_transitive_accesses_if_not_top : t -> f:(Trace.t -> unit) -> unit
 end
 
 val add_var :

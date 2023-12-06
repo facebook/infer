@@ -90,6 +90,7 @@ let pp_ ~is_summary f
     ; decompiler
     ; need_closure_specialization
     ; need_dynamic_type_specialization
+    ; transitive_accesses
     ; topl
     ; skipped_calls } =
   let pp_decompiler f =
@@ -101,16 +102,18 @@ let pp_ ~is_summary f
     if is_summary then F.fprintf f "PRE=@[%a@]@;POST=@[%a@]" PreDomain.pp pre PostDomain.pp post
     else F.fprintf f "%a@;PRE=[%a]" PostDomain.pp post PreDomain.pp pre
   in
+  let pp_transitive_acces fmt set = Trace.Set.pp fmt set in
   F.fprintf f
     "@[<v>%a@;\
      %t@;\
      %tneed_closure_specialization=%b@;\
      need_dynamic_type_specialization=%a@;\
+     transitive_accessess=%a@;\
      skipped_calls=%a@;\
      Topl=%a@]"
     Formula.pp path_condition pp_pre_post pp_decompiler need_closure_specialization
-    AbstractValue.Set.pp need_dynamic_type_specialization SkippedCalls.pp skipped_calls
-    PulseTopl.pp_state topl
+    AbstractValue.Set.pp need_dynamic_type_specialization pp_transitive_acces transitive_accesses
+    SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
 
 
 let pp = pp_ ~is_summary:false

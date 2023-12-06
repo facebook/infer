@@ -296,12 +296,22 @@ type elt =
 module Elt = struct
   type t = elt [@@deriving abstract_domain]
 
-  let pp fmt {copy_map; parameter_map; destructor_checked; captured; locked; loads; passed_to} =
+  let pp fmt
+      { copy_map
+      ; parameter_map
+      ; destructor_checked
+      ; dropped_transitive_accesses
+      ; captured
+      ; locked
+      ; loads
+      ; passed_to } =
     F.fprintf fmt
-      "@[@[copy map: %a@],@ @[parameter map: %a@],@ @[destructor checked: %a@],@ @[captured: \
-       %a@],@ @[locked: %a@],@ @[loads: %a@],@ @[passed to: %a@]@]"
+      "@[@[copy map: %a@],@ @[parameter map: %a@],@ @[destructor checked: %a@],@ @[dropped \
+       transitive accesses: %a@],@ @[captured: %a@],@ @[locked: %a@],@ @[loads: %a@],@ @[passed \
+       to: %a@]@]"
       CopyMap.pp copy_map ParameterMap.pp parameter_map DestructorChecked.pp destructor_checked
-      Captured.pp captured Locked.pp locked Loads.pp loads PassedTo.pp passed_to
+      DroppedTransitiveAccesses.pp dropped_transitive_accesses Captured.pp captured Locked.pp locked
+      Loads.pp loads PassedTo.pp passed_to
 end
 
 include AbstractDomain.TopLifted (Elt)
@@ -687,4 +697,8 @@ module Summary = struct
 
   let is_bottom (x : t) =
     match x with Top -> false | NonTop set -> DroppedTransitiveAccesses.is_empty set
+
+
+  let iter_on_transitive_accesses_if_not_top (x : t) ~f =
+    match x with Top -> () | NonTop set -> DroppedTransitiveAccesses.iter f set
 end

@@ -40,13 +40,22 @@ let rec pp ~pp_immediate fmt trace =
           (pp ~pp_immediate) in_call
 
 
+let rec pp_all fmt trace =
+  match trace with
+  | Immediate {location; history} ->
+      F.fprintf fmt "%a::(%a)" ValueHistory.pp history Location.pp location
+  | ViaCall {f; location; history; in_call} ->
+      F.fprintf fmt "%a::(%a)%a[%a]" ValueHistory.pp history CallEvent.pp f Location.pp location
+        pp_all in_call
+
+
 module Set = struct
   module T = struct
     type nonrec t = t
 
     let compare = compare
 
-    let pp = pp ~pp_immediate:(fun _ -> ())
+    let pp = pp_all
   end
 
   include PrettyPrintable.MakePPSet (T)

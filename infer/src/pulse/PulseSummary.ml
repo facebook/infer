@@ -28,8 +28,9 @@ let pp_pre_post_list fmt ~pp_kind pre_posts =
   F.close_box ()
 
 
-let pp_summary fmt ~pp_kind {pre_post_list; non_disj= _} =
-  pp_pre_post_list fmt ~pp_kind pre_post_list
+let pp_summary fmt ~pp_kind {pre_post_list; non_disj} =
+  F.fprintf fmt "@[<hov>pre/posts:%a@\nnon_disj:%a@]" (pp_pre_post_list ~pp_kind) pre_post_list
+    NonDisjDomain.Summary.pp non_disj
 
 
 let pp fmt {main; specialized} =

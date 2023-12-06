@@ -159,18 +159,19 @@ let record_call tenv procname location astate =
   else astate
 
 
-let report_errors tenv proc_desc err_log summary =
+let report_errors tenv proc_desc err_log {PulseSummary.pre_post_list; non_disj} =
   let procname = Procdesc.get_proc_name proc_desc in
   match Config.find_matching_context tenv procname with
   | Some {tag; description} ->
-      List.iter summary.PulseSummary.pre_post_list ~f:(function
+      let report call_trace =
+        PulseReport.report ~is_suppressed:false ~latent:false tenv proc_desc err_log
+          (Diagnostic.TransitiveAccess {tag; description; call_trace})
+      in
+      List.iter pre_post_list ~f:(function
         | ContinueProgram astate ->
-            PulseTrace.Set.iter
-              (fun call_trace ->
-                PulseReport.report ~is_suppressed:false ~latent:false tenv proc_desc err_log
-                  (Diagnostic.TransitiveAccess {tag; description; call_trace}) )
-              (AbductiveDomain.Summary.get_transitive_accesses astate)
+            PulseTrace.Set.iter report (AbductiveDomain.Summary.get_transitive_accesses astate)
         | _ ->
-            () )
+            () ) ;
+      NonDisjDomain.Summary.iter_on_transitive_accesses_if_not_top non_disj ~f:report
   | None ->
       ()
