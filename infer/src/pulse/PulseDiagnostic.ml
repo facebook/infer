@@ -828,8 +828,8 @@ let get_message_and_suggestion diagnostic =
           ( F.asprintf "An intermediate is %a on %a." CopyOrigin.pp from Location.pp_line location
           , Some (get_suggestion_msg source_opt) )
       | IntoIntermediate _, Some ((PVar _, _) as source_expr) ->
-          ( F.asprintf "variable `%a` is %a unnecessarily into an intermediate on %a."
-              DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from Location.pp_line location
+          ( F.asprintf "variable `%a` is %a into an intermediate and is never modified."
+              DecompilerExpr.pp_source_expr source_expr CopyOrigin.pp from
           , Some (get_suggestion_msg source_opt) )
       | IntoIntermediate _, Some ((ReturnValue _, _) as source_expr) ->
           ( F.asprintf "The return value from %a is %a unnecessarily  on %a."
