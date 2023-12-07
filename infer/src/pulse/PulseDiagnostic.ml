@@ -543,11 +543,13 @@ let get_message_and_suggestion diagnostic =
       F.asprintf "Function %a used config %a at %a." Procname.pp pname ConfigName.pp config
         Location.pp branch_location
       |> no_suggestion
-  | ConstRefableParameter {param; location} ->
+  | ConstRefableParameter {param} ->
       ( F.asprintf
-          "Function parameter `%a` is passed by-value but not modified inside the function on %a, \
-           potentially resulting in an unnecessary copy at the function's callsite."
-          Var.pp param Location.pp_line location
+          (* TODO: We want to include the function name here when possible,
+             without any template parameters or preceding namespaces/class names. *)
+          "Function parameter `%a` is passed by-value but not modified inside this function, \
+           resulting in a potential unnecessary copy at the function's callsites."
+          Var.pp param
       , Some "Change the type of the parameter to `const &`." )
   | CSharpResourceLeak {class_name; location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
