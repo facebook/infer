@@ -259,6 +259,9 @@ struct F14FastMap : public std::conditional<
 // sizeof(std::pair<const BigPoint, T>) >= 24.
 struct BigPoint {
   std::uint64_t x, y, z;
+  friend BigPoint operator+(const BigPoint& a, const BigPoint& b) {
+    return {a.x + b.x, a.y + b.y, a.z + b.z};
+  }
   friend bool operator==(const BigPoint& a, const BigPoint& b);
 };
 
@@ -760,4 +763,28 @@ void right_sequenced_before_left_ok(folly::F14FastMap<int, int>& map) {
 
 void right_before_left_compound_ok(folly::F14FastMap<int, int>& map) {
   map[13] += map[71] / 31;
+}
+
+// This only seems to be a false negative for integral types.
+void unsafe_assign_bad_FN(folly::F14FastMap<int, int>& map) {
+  // The LHS evaluation can invalidate the RHS reference.
+  map[13] = map[71];
+}
+
+void unsafe_operation_bad_FN(folly::F14FastMap<int, int>& map) {
+  const auto result = map[13] * map[71];
+}
+
+void unsafe_assign_struct_bad(folly::F14FastMap<int, BigPoint>& map) {
+  map[13] = map[71];
+}
+
+void unsafe_operation_struct_bad(folly::F14FastMap<int, BigPoint>& map) {
+  const auto result = map[13] + map[71];
+}
+
+int mul(const int& a, const int& b) { return a * b; }
+
+void unsafe_function_call_bad(folly::F14FastMap<int, int>& map) {
+  const auto result = mul(map[13], map[71]);
 }
