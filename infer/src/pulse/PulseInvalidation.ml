@@ -188,7 +188,9 @@ let suggest cause =
   | CppMap (_, OperatorBracket) ->
       Some
         "`operator[]` inserts when the key is not present, which can easily lead to unsafe code. \
-         Use `.at` if the key is in the map and/or `insert_or_assign` to update an existing value."
+         Use `.at` if the key is known to be in the map. If not, decomposing the expression, \
+         performing another lookup, or using different map methods are common ways to fix and/or \
+         improve the code."
   | _ ->
       None
 
