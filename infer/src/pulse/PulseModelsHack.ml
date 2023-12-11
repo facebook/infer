@@ -200,6 +200,21 @@ module Vec = struct
         unreachable
 
 
+  let hack_array_idx vec args : unit DSL.model_monad =
+    let open DSL.Syntax in
+    match args with
+    | [key; default] ->
+        let field = mk_hack_field "HackInt" "val" in
+        let* index = eval_deref_access Read key (FieldAccess field) in
+        let value = get_vec_dsl vec index in
+        let* ret_values = disjuncts [value; ret default] in
+        assign_ret ret_values
+    | _ ->
+        L.d_printfln "vec hack array idx argument error" ;
+        L.internal_error "Vec.hack_array_idx expects 2 arguments" ;
+        unreachable
+
+
   (*
   See also $builtins.hack_array_cow_append in lib/hack/models.sil
   Model of set is very like that of append, since it ignores the index
@@ -496,6 +511,20 @@ module Dict = struct
           eval_deref_access Read dict (FieldAccess field) )
     in
     assign_ret value
+
+
+  let hack_array_idx dict args : unit DSL.model_monad =
+    let open DSL.Syntax in
+    match args with
+    | [key; default] ->
+        let* field = field_of_string_value key in
+        let value = eval_deref_access Read dict (FieldAccess field) in
+        let* ret_values = disjuncts [value; ret default] in
+        assign_ret ret_values
+    | _ ->
+        L.d_printfln "dict hack_array_idx argument error" ;
+        L.internal_error "Dict.hack_array_idx expects 2 arguments" ;
+        unreachable
 end
 
 module DictIter = struct
@@ -655,6 +684,23 @@ let hack_array_get this args : model =
     ~cases:
       [ (TextualSil.hack_dict_type_name, fun () -> Dict.hack_array_get this args)
       ; (TextualSil.hack_vec_type_name, fun () -> Vec.hack_array_get this args) ]
+    ~default
+
+
+let hack_array_idx this args : model =
+  let open DSL.Syntax in
+  start_model
+  @@
+  let this = payload_of_arg this in
+  let args = payloads_of_args args in
+  let default () =
+    let* fresh = mk_fresh ~model_desc:"hack_array_idx" () in
+    assign_ret fresh
+  in
+  dynamic_dispatch this
+    ~cases:
+      [ (TextualSil.hack_dict_type_name, fun () -> Dict.hack_array_idx this args)
+      ; (TextualSil.hack_vec_type_name, fun () -> Vec.hack_array_idx this args) ]
     ~default
 
 
@@ -1046,6 +1092,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "__sil_splat" <>$ capt_arg_payload $--> SplatedVec.make
   ; -"$builtins" &:: "hhbc_await" <>$ capt_arg_payload $--> hack_await
   ; -"$builtins" &:: "hack_array_get" <>$ capt_arg $++$--> hack_array_get
+  ; -"$builtins" &:: "hhbc_idx" <>$ capt_arg $++$--> hack_array_idx
   ; -"$builtins" &:: "hack_array_cow_set" <>$ capt_arg $++$--> hack_array_cow_set
   ; -"$builtins" &:: "hack_new_dict" &::.*++> Dict.new_dict
   ; -"$builtins" &:: "hhbc_new_vec" &::.*++> Vec.new_vec
