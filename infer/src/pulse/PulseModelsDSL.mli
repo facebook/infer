@@ -34,6 +34,8 @@ module Syntax : sig
 
   val option_iter : 'a option -> f:('a -> unit model_monad) -> unit model_monad
 
+  val ignore : 'a model_monad -> unit model_monad
+
   val assign_ret : aval -> unit model_monad
   (** assign the value to the return variable of the current function *)
 

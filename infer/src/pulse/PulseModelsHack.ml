@@ -660,6 +660,9 @@ let hack_array_cow_set this args : model =
   let this = payload_of_arg this in
   let args = payloads_of_args args in
   let default () =
+    let* () =
+      option_iter (List.last args) ~f:(fun value_written -> ignore (await_hack_value value_written))
+    in
     let* fresh = mk_fresh ~model_desc:"hack_array_cow_set" () in
     assign_ret fresh
   in

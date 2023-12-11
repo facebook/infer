@@ -32,3 +32,8 @@ async function vecupdateFN(): Awaitable<void> {
   await $v[1];
   await $v[0];
 }
+
+async function nodynamictypeOK(mixed $c): Awaitable<void> {
+  $c[0] = genInt3();
+  await ($c[0]);
+}

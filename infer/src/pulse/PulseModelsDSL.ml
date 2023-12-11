@@ -81,6 +81,11 @@ module Syntax = struct
     Option.value_map o ~default:(ret ()) ~f
 
 
+  let ignore (m : 'a model_monad) : unit model_monad =
+    let* _ = m in
+    ret ()
+
+
   let get_data : model_data model_monad = fun data astate -> ret data data astate
 
   let ok x = Ok x
