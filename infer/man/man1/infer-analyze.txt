@@ -578,6 +578,13 @@ CLANG OPTIONS
            these types (or common wrappers around these types such as
            unique_ptr<type>) will count as dead stores when the variables are
            not read explicitly by the program.
+
+       --lock-model json
+           Specify custom lock models for starvation analysis.       
+    Example for pthreads (already included in infer): 
+           [{"lock":["pthread_mutex_lock"],"unlock":["pthread_mutex_unlock"]}]
+           
+
 ERLANG OPTIONS
        --erlang-list-unfold-depth int
            Unfold Erlang lists up to depth int

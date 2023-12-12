@@ -1954,6 +1954,14 @@ and liveness_ignored_constant =
     "List of integer constants to be ignored by liveness analysis"
 
 
+and lock_model =
+  CLOpt.mk_json ~long:"lock-model"
+    ~in_help:InferCommand.[(Analyze, manual_clang)]
+    {|Specify custom lock models for starvation analysis.
+Example for pthreads (already included in infer): 
+[{"lock":["pthread_mutex_lock"],"unlock":["pthread_mutex_unlock"]}] |}
+
+
 and _log_events =
   CLOpt.mk_bool ~long:"" ~deprecated:["-log-events"] ~deprecated_no:["-no-log-events"]
     "[DOES NOTHING] Turn on the feature that logs events in a machine-readable format"
@@ -4076,6 +4084,8 @@ and liveness_ignored_constant = RevList.to_list !liveness_ignored_constant
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
 
+
+and lock_model = !lock_model
 
 and log_missing_deps = !log_missing_deps
 

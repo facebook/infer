@@ -104,11 +104,14 @@ module Clang : sig
   val is_recursive_lock_type : QualifiedCppName.t -> bool
 end = struct
   type lock_model =
-    { classname: string
-    ; lock: string list
-    ; trylock: string list
-    ; unlock: string list
-    ; recursive: bool }
+    { classname: string [@default ""]
+    ; lock: string list [@default []]
+    ; trylock: string list [@default []]
+    ; unlock: string list [@default []]
+    ; recursive: bool [@default true] }
+  [@@deriving of_yojson]
+
+  type lock_model_cfg = lock_model list [@@deriving of_yojson]
 
   let lock_models =
     let def =
@@ -126,6 +129,9 @@ end = struct
         lock= ["acquireRead"; "acquireWrite"]
       ; trylock= ["attemptRead"; "attemptWrite"]
       ; unlock= ["release"] }
+    in
+    let config_locks =
+      lock_model_cfg_of_yojson (Yojson.Safe.from_string (Yojson.Basic.to_string Config.lock_model))
     in
     [ {c_rec with lock= ["pthread_mutex_lock"]; unlock= ["pthread_mutex_unlock"]}
     ; { def with
@@ -147,6 +153,7 @@ end = struct
     ; {def with classname= "std::recursive_timed_mutex"; recursive= true}
     ; {shd with classname= "std::shared_mutex"}
     ; {def with classname= "std::timed_mutex"} ]
+    @ config_locks
 
 
   let is_recursive_lock_type qname =

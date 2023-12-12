@@ -484,6 +484,8 @@ val liveness_ignored_constant : string list
 
 val load_average : float option
 
+val lock_model : Yojson.Basic.t
+
 val log_missing_deps : bool
 
 val margin_html : int
