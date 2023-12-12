@@ -17,9 +17,7 @@ type t =
   | Cost
   | Datalog
   | DisjunctiveDemo
-  | Eradicate
   | FragmentRetainsView
-  | ImmutableCast
   | Impurity
   | InefficientKeysetIterator
   | LithoRequiredProps
@@ -182,20 +180,6 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= []; show_in_help= false}
       ; enabled_by_default= false
       ; activates= [] }
-  | Eradicate ->
-      { id= "eradicate"
-      ; kind=
-          UserFacingDeprecated
-            { title= "Eradicate"
-            ; markdown_body= [%blob "./documentation/checkers/Eradicate.md"]
-            ; deprecation_message=
-                "Unmaintained and will be removed in the future. Consider using \
-                 [NullAway](https://github.com/uber/NullAway) as an alternative to Eradicate." }
-      ; support= mk_support_func ~java:Support ()
-      ; short_documentation= "The eradicate `@Nullable` checker for Java annotations."
-      ; cli_flags= Some {deprecated= []; show_in_help= true}
-      ; enabled_by_default= false
-      ; activates= [] }
   | FragmentRetainsView ->
       { id= "fragment-retains-view"
       ; kind=
@@ -208,23 +192,6 @@ let config_unsafe checker =
           "Detects when Android fragments are not explicitly nullified before becoming unreachable."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
-      ; activates= [] }
-  | ImmutableCast ->
-      { id= "immutable-cast"
-      ; kind=
-          UserFacingDeprecated
-            { title= "Immutable Cast"
-            ; markdown_body=
-                "Casts flagged by this checker are unsafe because calling mutation operations on \
-                 the cast objects will fail at runtime."
-            ; deprecation_message= "Unmaintained due to poor actionability of the reports." }
-      ; support= mk_support_func ~java:Support ()
-      ; short_documentation=
-          "Detection of object cast from immutable types to mutable types. For instance, it will \
-           detect casts from `ImmutableList` to `List`, `ImmutableMap` to `Map`, and \
-           `ImmutableSet` to `Set`."
-      ; cli_flags= Some {deprecated= []; show_in_help= true}
-      ; enabled_by_default= false
       ; activates= [] }
   | Impurity ->
       { id= "impurity"

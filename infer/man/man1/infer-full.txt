@@ -516,7 +516,6 @@ OPTIONS
              CHECKERS_CALLS_EXPENSIVE_METHOD (enabled by default),
              CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED (enabled by default),
              CHECKERS_FRAGMENT_RETAINS_VIEW (enabled by default),
-             CHECKERS_IMMUTABLE_CAST (enabled by default),
              CHECKERS_PRINTF_ARGS (enabled by default),
              CLASS_CAST_EXCEPTION (disabled by default),
              CONDITION_ALWAYS_FALSE (disabled by default),
@@ -538,28 +537,6 @@ OPTIONS
              DIVIDE_BY_ZERO (disabled by default),
              DO_NOT_REPORT (enabled by default),
              EMPTY_VECTOR_ACCESS (enabled by default),
-             ERADICATE_ANNOTATION_GRAPH (enabled by default),
-             ERADICATE_BAD_NESTED_CLASS_ANNOTATION (enabled by default),
-             ERADICATE_CONDITION_REDUNDANT (enabled by default),
-             ERADICATE_FIELD_NOT_INITIALIZED (enabled by default),
-             ERADICATE_FIELD_NOT_NULLABLE (enabled by default),
-             ERADICATE_FIELD_OVER_ANNOTATED (enabled by default),
-             ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION (enabled
-           by default),
-             ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION (enabled by
-           default),
-             ERADICATE_META_CLASS_CAN_BE_NULLSAFE (disabled by default),
-             ERADICATE_META_CLASS_IS_NULLSAFE (disabled by default),
-             ERADICATE_META_CLASS_NEEDS_IMPROVEMENT (disabled by default),
-             ERADICATE_NULLABLE_DEREFERENCE (enabled by default),
-             ERADICATE_PARAMETER_NOT_NULLABLE (enabled by default),
-             ERADICATE_REDUNDANT_NESTED_CLASS_ANNOTATION (enabled by
-           default),
-             ERADICATE_RETURN_NOT_NULLABLE (enabled by default),
-             ERADICATE_RETURN_OVER_ANNOTATED (enabled by default),
-             ERADICATE_UNCHECKED_USAGE_IN_NULLSAFE (enabled by default),
-             ERADICATE_UNVETTED_THIRD_PARTY_IN_NULLSAFE (enabled by
-           default),
              EXECUTION_TIME_COMPLEXITY_INCREASE (enabled by default),
              EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD (enabled by
            default),
@@ -716,14 +693,6 @@ OPTIONS
            checker run; see individual checker options to turn them on or
            off.           See also infer-report(1).
 
-       --eradicate
-           Activates: checker eradicate: The eradicate `@Nullable` checker
-           for Java annotations. (Conversely: --no-eradicate)           See also infer-analyze(1).
-
-       --eradicate-only
-           Activates: Enable eradicate and disable all other checkers
-           (Conversely: --no-eradicate-only)           See also infer-analyze(1).
-
        --erlang-ast-dir dir
            Also load AST from all .json files in the given path. These .json
            files usually come from a previous run with --debug.       
@@ -872,17 +841,6 @@ OPTIONS
        --html
            Activates: Generate an html report of issues found. (Conversely:
            --no-html)           See also infer-explore(1).
-
-       --immutable-cast
-           Activates: checker immutable-cast: Detection of object cast from
-           immutable types to mutable types. For instance, it will detect
-           casts from `ImmutableList` to `List`, `ImmutableMap` to `Map`, and
-           `ImmutableSet` to `Set`. (Conversely: --no-immutable-cast)       
-    See also infer-analyze(1).
-
-       --immutable-cast-only
-           Activates: Enable immutable-cast and disable all other checkers
-           (Conversely: --no-immutable-cast-only)           See also infer-analyze(1).
 
        --impurity
            Activates: checker impurity: Detects functions with potential
@@ -2403,22 +2361,6 @@ INTERNAL OPTIONS
        --enable-issue-type-reset
            Set --enable-issue-type to the empty list.
 
-       --eradicate-condition-redundant
-           Activates: Condition redundant warnings (Conversely:
-           --no-eradicate-condition-redundant)
-
-       --eradicate-field-over-annotated
-           Activates: Field over-annotated warnings (Conversely:
-           --no-eradicate-field-over-annotated)
-
-       --eradicate-return-over-annotated
-           Activates: Return over-annotated warning (Conversely:
-           --no-eradicate-return-over-annotated)
-
-       --eradicate-verbose
-           Activates: Print initial and final typestates (Conversely:
-           --no-eradicate-verbose)
-
        --erlang-ast-dir-reset
            Cancel the effect of --erlang-ast-dir.
 
@@ -2632,48 +2574,6 @@ INTERNAL OPTIONS
 
        --nullable-annotation-name-reset
            Cancel the effect of --nullable-annotation-name.
-
-       --nullsafe-annotation-graph
-           Activates: Nullsafe: an experimental mode for calculating the
-           dependency graph between potential annotations to add in the
-           source code. (Conversely: --no-nullsafe-annotation-graph)
-
-       --nullsafe-disable-field-not-initialized-in-nonstrict-classes
-           Activates: Nullsafe: In this mode field not initialized issues
-           won't be reported unless the class is marked as @NullsafeStrict.
-           This feature is needed for compatibility reasons. (Conversely:
-           --no-nullsafe-disable-field-not-initialized-in-nonstrict-classes)
-
-       --no-nullsafe-optimistic-third-party-in-default-mode
-           Deactivates: Nullsafe: Unless @Nullsafe annotation is used, treat
-           not annotated third party method params as if they were annotated
-           as nullable, and return values as if they were annotated as
-           non-null (Conversely:
-           --nullsafe-optimistic-third-party-in-default-mode)
-
-       --nullsafe-strict-containers
-           Activates: Warn when containers are used with nullable keys or
-           values (Conversely: --no-nullsafe-strict-containers)
-
-       --nullsafe-third-party-location-for-messaging-only string
-           Path to a folder with annotated signatures to include into error
-           message. If not specified, path will be fetched from
-           nullsafe-third-party-signatures. This param is only needed for the
-           case when the real repository is located in the different place,
-           and nullsafe-third-party-signatures contains only its copy (which
-           can happen e.g. in case of caching by the build system)
-
-       --nullsafe-third-party-location-for-messaging-only-reset
-           Cancel the effect of
-           --nullsafe-third-party-location-for-messaging-only.
-
-       --nullsafe-third-party-signatures string
-           Path to a folder with annotated signatures of third-party methods
-           to be taken into account by nullsafe. Path is either relative to
-           .inferconfig folder or absolute
-
-       --nullsafe-third-party-signatures-reset
-           Cancel the effect of --nullsafe-third-party-signatures.
 
        --no-only-cheap-debug
            Deactivates: Disable expensive debugging output (Conversely:

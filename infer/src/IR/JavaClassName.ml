@@ -14,14 +14,6 @@ module L = Logging
 type t = {classname: string; package: string option}
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-module Map = Caml.Map.Make (struct
-  type nonrec t = t [@@deriving compare]
-end)
-
-module Set = Caml.Set.Make (struct
-  type nonrec t = t [@@deriving compare]
-end)
-
 let make ~package ~classname =
   match package with Some "" -> {package= None; classname} | _ -> {package; classname}
 
@@ -101,11 +93,6 @@ let get_user_defined_class_if_anonymous_inner {package; classname} =
 
 
 let is_anonymous_inner_class_name t = get_user_defined_class_if_anonymous_inner t |> is_some
-
-let is_external_via_config t =
-  let package = package t in
-  Option.exists ~f:Config.java_package_is_external package
-
 
 let pp_with_verbosity ~verbose fmt t =
   if verbose then pp fmt t else F.pp_print_string fmt (classname t)

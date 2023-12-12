@@ -118,14 +118,6 @@ OPTIONS
            --liveness, --parameter-not-null-checked, --racerd, --siof,
            --self-in-block, --starvation (Conversely: --default-checkers)
 
-       --eradicate
-           Activates: checker eradicate: The eradicate `@Nullable` checker
-           for Java annotations. (Conversely: --no-eradicate)
-
-       --eradicate-only
-           Activates: Enable eradicate and disable all other checkers
-           (Conversely: --no-eradicate-only)
-
        --files-to-analyze-index file
            File containing a list of source files where analysis should start
            from. When used, the set of files given to this argument must be a
@@ -152,16 +144,6 @@ OPTIONS
        --help-full
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
-
-       --immutable-cast
-           Activates: checker immutable-cast: Detection of object cast from
-           immutable types to mutable types. For instance, it will detect
-           casts from `ImmutableList` to `List`, `ImmutableMap` to `Map`, and
-           `ImmutableSet` to `Set`. (Conversely: --no-immutable-cast)
-
-       --immutable-cast-only
-           Activates: Enable immutable-cast and disable all other checkers
-           (Conversely: --no-immutable-cast-only)
 
        --impurity
            Activates: checker impurity: Detects functions with potential

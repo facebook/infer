@@ -246,8 +246,6 @@ DIRECT_TESTS += \
   java_immutability \
   java_inefficientKeysetIterator \
   java_litho-required-props \
-  java_nullsafe \
-  java_nullsafe-annotation-graph \
   java_performance \
   java_performance-exclusive \
   java_pulse \

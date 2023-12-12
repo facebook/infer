@@ -344,9 +344,6 @@ val exp_sub : subst -> Exp.t -> Exp.t
 
 val atom_sub : subst -> atom -> atom
 
-val instr_sub : subst -> Sil.instr -> Sil.instr
-(** apply [subst] to all id's in [instr], including LHS id's *)
-
 val hpred_sub : subst -> hpred -> hpred
 
 (** {2 Functions for replacing occurrences of expressions.} *)

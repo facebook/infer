@@ -49,29 +49,15 @@ module Java : sig
 
   type t [@@deriving compare, equal]
 
-  val to_simplified_string : ?withclass:bool -> t -> string
-
   val constructor_method_name : string
 
   val class_initializer_method_name : string
-
-  val replace_method_name : string -> t -> t
-  (** Replace the method name of an existing java procname. *)
-
-  val replace_parameters : Typ.t list -> t -> t
-  (** Replace the parameters of a java procname. *)
-
-  val replace_return_type : Typ.t -> t -> t
-  (** Replace the method of a java procname. *)
 
   val get_class_name : t -> string
   (** Return the fully qualified class name of a java procedure name (package + class name) *)
 
   val get_class_type_name : t -> Typ.Name.t
   (** Return the class name as a typename of a java procedure name. *)
-
-  val get_simple_class_name : t -> string
-  (** Return the simple class name of a java procedure name (i.e. name without the package info). *)
 
   val get_package : t -> string option
   (** Return the package name of a java procedure name. *)
@@ -95,10 +81,6 @@ module Java : sig
   val is_autogen_method : t -> bool
   (** Check if the procedure name is of an auto-generated/synthetic method. *)
 
-  val is_anonymous_inner_class_constructor_exn : t -> bool
-  (** Check if the procedure name is an anonymous inner class constructor. Throws if it is not a
-      Java type *)
-
   val is_close : t -> bool
   (** Check if the method name is "close". *)
 
@@ -108,9 +90,6 @@ module Java : sig
   val is_vararg : t -> bool
   (** Check if the proc name has the type of a java vararg. Note: currently only checks that the
       last argument has type Object[]. *)
-
-  val is_lambda : t -> bool
-  (** Check if the proc name comes from a lambda expression *)
 
   val is_generated : t -> bool
   (** Check if the proc name comes from generated code *)

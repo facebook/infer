@@ -16,9 +16,7 @@ type t =
   | Cost
   | Datalog
   | DisjunctiveDemo
-  | Eradicate
   | FragmentRetainsView
-  | ImmutableCast
   | Impurity
   | InefficientKeysetIterator
   | LithoRequiredProps

@@ -121,7 +121,7 @@ let rec find_normal_variable_load_ tenv (seen : Exp.Set.t) node id : DExp.t opti
            propagation. previously, we would have code like:
            n1 = foo(); x = n1; n2 = x; n2.toString(), but copy-propagation will optimize this to:
            n1 = foo(); x = n1; n1.toString(). This case allows us to recognize the association
-           between n1 and x. Eradicate/checkers don't use copy-prop, so they don't need this. *)
+           between n1 and x. Checkers don't use copy-prop, so they don't need this. *)
         Some (DExp.Dpvar pvar)
     | _ ->
         None

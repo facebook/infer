@@ -1579,20 +1579,6 @@ and dynamic_dispatch_json_file_path =
     "Dynamic dispatch file path to get the JSON used for method name substitution"
 
 
-and eradicate_condition_redundant =
-  CLOpt.mk_bool ~long:"eradicate-condition-redundant" "Condition redundant warnings"
-
-
-and eradicate_field_over_annotated =
-  CLOpt.mk_bool ~long:"eradicate-field-over-annotated" "Field over-annotated warnings"
-
-
-and eradicate_return_over_annotated =
-  CLOpt.mk_bool ~long:"eradicate-return-over-annotated" "Return over-annotated warning"
-
-
-and eradicate_verbose = CLOpt.mk_bool ~long:"eradicate-verbose" "Print initial and final typestates"
-
 and erlang_ast_dir =
   CLOpt.mk_path_opt ~long:"erlang-ast-dir"
     ~in_help:InferCommand.[(Capture, manual_erlang)]
@@ -2113,49 +2099,6 @@ and no_censor_report =
 
 and nullable_annotation =
   CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify a custom nullable annotation name."
-
-
-and nullsafe_annotation_graph =
-  CLOpt.mk_bool ~long:"nullsafe-annotation-graph"
-    "Nullsafe: an experimental mode for calculating the dependency graph between potential \
-     annotations to add in the source code."
-
-
-and nullsafe_disable_field_not_initialized_in_nonstrict_classes =
-  CLOpt.mk_bool ~long:"nullsafe-disable-field-not-initialized-in-nonstrict-classes" ~default:false
-    "Nullsafe: In this mode field not initialized issues won't be reported unless the class is \
-     marked as @NullsafeStrict. This feature is needed for compatibility reasons."
-
-
-and nullsafe_optimistic_third_party_in_default_mode =
-  CLOpt.mk_bool
-    ~long:"nullsafe-optimistic-third-party-in-default-mode"
-      (* Turned on for compatibility reasons
-       *)
-    ~default:true
-    "Nullsafe: Unless @Nullsafe annotation is used, treat not annotated third party method params \
-     as if they were annotated as nullable, and return values as if they were annotated as \
-     non-null"
-
-
-and nullsafe_third_party_signatures =
-  CLOpt.mk_string_opt ~long:"nullsafe-third-party-signatures"
-    "Path to a folder with annotated signatures of third-party methods to be taken into account by \
-     nullsafe. Path is either relative to .inferconfig folder or absolute"
-
-
-and nullsafe_third_party_location_for_messaging_only =
-  CLOpt.mk_string_opt ~long:"nullsafe-third-party-location-for-messaging-only"
-    "Path to a folder with annotated signatures to include into error message. If not specified, \
-     path will be fetched from nullsafe-third-party-signatures. This param is only needed for the \
-     case when the real repository is located in the different place, and \
-     nullsafe-third-party-signatures contains only its copy (which can happen e.g. in case of \
-     caching by the build system)"
-
-
-and nullsafe_strict_containers =
-  CLOpt.mk_bool ~long:"nullsafe-strict-containers" ~default:false
-    "Warn when containers are used with nullable keys or values"
 
 
 and oom_threshold =
@@ -3991,14 +3934,6 @@ and dump_textual = !dump_textual
 
 and abstract_pulse_models_for_erlang = !abstract_pulse_models_for_erlang
 
-and eradicate_condition_redundant = !eradicate_condition_redundant
-
-and eradicate_field_over_annotated = !eradicate_field_over_annotated
-
-and eradicate_return_over_annotated = !eradicate_return_over_annotated
-
-and eradicate_verbose = !eradicate_verbose
-
 and erlang_ast_dir = !erlang_ast_dir
 
 and erlang_check_return = !erlang_check_return
@@ -4175,24 +4110,6 @@ and no_censor_report = RevList.rev_map !no_censor_report ~f:Str.regexp
 and no_translate_libs = not !headers
 
 and nullable_annotation = !nullable_annotation
-
-and nullsafe_annotation_graph = !nullsafe_annotation_graph
-
-and nullsafe_disable_field_not_initialized_in_nonstrict_classes =
-  !nullsafe_disable_field_not_initialized_in_nonstrict_classes
-
-
-and nullsafe_optimistic_third_party_in_default_mode =
-  !nullsafe_optimistic_third_party_in_default_mode
-
-
-and nullsafe_third_party_signatures = !nullsafe_third_party_signatures
-
-and nullsafe_third_party_location_for_messaging_only =
-  !nullsafe_third_party_location_for_messaging_only
-
-
-and nullsafe_strict_containers = !nullsafe_strict_containers
 
 and oom_threshold = !oom_threshold
 

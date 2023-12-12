@@ -128,7 +128,6 @@ OPTIONS
              CHECKERS_CALLS_EXPENSIVE_METHOD (enabled by default),
              CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED (enabled by default),
              CHECKERS_FRAGMENT_RETAINS_VIEW (enabled by default),
-             CHECKERS_IMMUTABLE_CAST (enabled by default),
              CHECKERS_PRINTF_ARGS (enabled by default),
              CLASS_CAST_EXCEPTION (disabled by default),
              CONDITION_ALWAYS_FALSE (disabled by default),
@@ -150,28 +149,6 @@ OPTIONS
              DIVIDE_BY_ZERO (disabled by default),
              DO_NOT_REPORT (enabled by default),
              EMPTY_VECTOR_ACCESS (enabled by default),
-             ERADICATE_ANNOTATION_GRAPH (enabled by default),
-             ERADICATE_BAD_NESTED_CLASS_ANNOTATION (enabled by default),
-             ERADICATE_CONDITION_REDUNDANT (enabled by default),
-             ERADICATE_FIELD_NOT_INITIALIZED (enabled by default),
-             ERADICATE_FIELD_NOT_NULLABLE (enabled by default),
-             ERADICATE_FIELD_OVER_ANNOTATED (enabled by default),
-             ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION (enabled
-           by default),
-             ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION (enabled by
-           default),
-             ERADICATE_META_CLASS_CAN_BE_NULLSAFE (disabled by default),
-             ERADICATE_META_CLASS_IS_NULLSAFE (disabled by default),
-             ERADICATE_META_CLASS_NEEDS_IMPROVEMENT (disabled by default),
-             ERADICATE_NULLABLE_DEREFERENCE (enabled by default),
-             ERADICATE_PARAMETER_NOT_NULLABLE (enabled by default),
-             ERADICATE_REDUNDANT_NESTED_CLASS_ANNOTATION (enabled by
-           default),
-             ERADICATE_RETURN_NOT_NULLABLE (enabled by default),
-             ERADICATE_RETURN_OVER_ANNOTATED (enabled by default),
-             ERADICATE_UNCHECKED_USAGE_IN_NULLSAFE (enabled by default),
-             ERADICATE_UNVETTED_THIRD_PARTY_IN_NULLSAFE (enabled by
-           default),
              EXECUTION_TIME_COMPLEXITY_INCREASE (enabled by default),
              EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD (enabled by
            default),

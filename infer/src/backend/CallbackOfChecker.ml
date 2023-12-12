@@ -99,8 +99,3 @@ let intraprocedural checker ({Callbacks.summary} as callbacks) =
 let intraprocedural_with_field_dependency payload_field checker ({Callbacks.summary} as callbacks) =
   checker (to_intraprocedural_t callbacks) (Field.get payload_field summary.payloads |> Lazy.force) ;
   summary
-
-
-let intraprocedural_with_field payload_field checker ({Callbacks.summary} as callbacks) =
-  let result = checker (to_intraprocedural_t callbacks) |> Lazy.from_val in
-  {summary with payloads= Field.fset payload_field summary.payloads result}

@@ -959,69 +959,6 @@ let apply_sub subst : subst_fun =
 
 let exp_sub (subst : subst) e = exp_sub_ids (apply_sub subst) e
 
-(** apply [f] to id's in [instr]. if [sub_id_binders] is false, [f] is only applied to bound id's *)
-let instr_sub_ids ~sub_id_binders f (instr : Sil.instr) : Sil.instr =
-  let sub_id id =
-    match exp_sub_ids f (Var id) with Var id' when not (Ident.equal id id') -> id' | _ -> id
-  in
-  match instr with
-  | Load {id; e= rhs_exp; typ; loc} ->
-      let id' = if sub_id_binders then sub_id id else id in
-      let rhs_exp' = exp_sub_ids f rhs_exp in
-      if phys_equal id' id && phys_equal rhs_exp' rhs_exp then instr
-      else Load {id= id'; e= rhs_exp'; typ; loc}
-  | Store {e1= lhs_exp; typ; e2= rhs_exp; loc} ->
-      let lhs_exp' = exp_sub_ids f lhs_exp in
-      let rhs_exp' = exp_sub_ids f rhs_exp in
-      if phys_equal lhs_exp' lhs_exp && phys_equal rhs_exp' rhs_exp then instr
-      else Store {e1= lhs_exp'; typ; e2= rhs_exp'; loc}
-  | Call (((id, typ) as ret_id_typ), fun_exp, actuals, call_flags, loc) ->
-      let ret_id' =
-        if sub_id_binders then
-          let id' = sub_id id in
-          if Ident.equal id id' then ret_id_typ else (id', typ)
-        else ret_id_typ
-      in
-      let fun_exp' = exp_sub_ids f fun_exp in
-      let actuals' =
-        IList.map_changed ~equal:[%equal: Exp.t * Typ.t]
-          ~f:(fun ((actual, typ) as actual_pair) ->
-            let actual' = exp_sub_ids f actual in
-            if phys_equal actual' actual then actual_pair else (actual', typ) )
-          actuals
-      in
-      if phys_equal ret_id' ret_id_typ && phys_equal fun_exp' fun_exp && phys_equal actuals' actuals
-      then instr
-      else Call (ret_id', fun_exp', actuals', call_flags, loc)
-  | Prune (exp, loc, true_branch, if_kind) ->
-      let exp' = exp_sub_ids f exp in
-      if phys_equal exp' exp then instr else Prune (exp', loc, true_branch, if_kind)
-  | Metadata (ExitScope (vars, loc)) ->
-      let sub_var var =
-        match var with
-        | Var.ProgramVar _ ->
-            var
-        | Var.LogicalVar ident ->
-            let ident' = sub_id ident in
-            if phys_equal ident ident' then var else Var.of_id ident'
-      in
-      let vars' = IList.map_changed ~equal:phys_equal ~f:sub_var vars in
-      if phys_equal vars vars' then instr else Metadata (ExitScope (vars', loc))
-  | Metadata
-      ( Abstract _
-      | CatchEntry _
-      | EndBranches
-      | Nullify _
-      | Skip
-      | TryEntry _
-      | TryExit _
-      | VariableLifetimeBegins _ ) ->
-      instr
-
-
-(** apply [subst] to all id's in [instr], including binder id's *)
-let instr_sub (subst : subst) instr = instr_sub_ids ~sub_id_binders:true (apply_sub subst) instr
-
 let atom_sub subst = atom_expmap (exp_sub subst)
 
 let hpred_sub subst =

@@ -13,4 +13,3 @@ infer -- make -C 02 clean all
 infer explore --no-source-preview --select 0
 infer -- make -C 03 clean all
 infer explore --no-source-preview --select 1
-infer --eradicate-only -- make -C 04 clean all

@@ -27,7 +27,6 @@ type t =
   ; lineage: Lineage.Summary.t option Lazy.t
   ; lineage_shape: LineageShape.Summary.t option Lazy.t
   ; starvation: StarvationDomain.summary option Lazy.t
-  ; nullsafe: NullsafeSummary.t option Lazy.t
   ; uninit: UninitDomain.Summary.t option Lazy.t }
 [@@deriving fields]
 
@@ -62,7 +61,6 @@ let all_fields =
     ~lineage:(fun f -> mk f Lineage Lineage.Summary.pp)
     ~lineage_shape:(fun f -> mk f LineageShape LineageShape.Summary.pp)
     ~starvation:(fun f -> mk f Starvation StarvationDomain.pp_summary)
-    ~nullsafe:(fun f -> mk f Nullsafe NullsafeSummary.pp)
     ~uninit:(fun f -> mk f Uninit UninitDomain.Summary.pp)
   (* sorted to help serialization, see {!SQLite.serialize} below *)
   |> List.sort ~compare:(fun (F {payload_id= payload_id1}) (F {payload_id= payload_id2}) ->
@@ -98,7 +96,6 @@ let empty =
   ; lineage= no_payload
   ; lineage_shape= no_payload
   ; starvation= no_payload
-  ; nullsafe= no_payload
   ; uninit= no_payload }
 
 
@@ -147,8 +144,7 @@ module SQLite = struct
       ~racerd:data_of_sqlite_column ~lab_resource_leaks:data_of_sqlite_column
       ~scope_leakage:data_of_sqlite_column ~siof:data_of_sqlite_column
       ~lineage:data_of_sqlite_column ~lineage_shape:data_of_sqlite_column
-      ~starvation:data_of_sqlite_column ~nullsafe:data_of_sqlite_column
-      ~uninit:data_of_sqlite_column
+      ~starvation:data_of_sqlite_column ~uninit:data_of_sqlite_column
 
 
   let eager_load stmt ~first_column = (make_eager first_column |> fst) stmt
@@ -206,6 +202,5 @@ module SQLite = struct
     ; lineage= lazy (load table ~proc_uid Lineage)
     ; lineage_shape= lazy (load table ~proc_uid LineageShape)
     ; starvation= lazy (load table ~proc_uid Starvation)
-    ; nullsafe= lazy (load table ~proc_uid Nullsafe)
     ; uninit= lazy (load table ~proc_uid Uninit) }
 end

@@ -7,7 +7,7 @@ TESTS_DIR = ../../..
 
 INFER_OPTIONS = \
   --debug-exceptions --no-default-checkers \
-  --fragment-retains-view --immutable-cast --printf-args --quandary \
+  --fragment-retains-view --printf-args --quandary \
   --racerd \
 
 INFERPRINT_OPTIONS = --issues-tests

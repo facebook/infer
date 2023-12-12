@@ -69,7 +69,7 @@ void false_negative() {
   int* x = (int*) malloc(sizeof(int));
   if (x) {
     // unknown call to x makes Pulse forget that x was allocated, in case it frees x
-    unknown(x); 
+    unknown(x);
   }
 } // no memory leak reported: false negative!
 
@@ -94,7 +94,7 @@ $ infer debug --procedures --procedures-filter 'false_negative' --procedures-sum
 
 ## Pulse x Nullsafe
 
-[Nullsafe](/docs/next/checker-eradicate) is a type checker for `@Nullable` annotations for Java. Classes following the Nullsafe discipline are annotated with `@Nullsafe`.
+Nullsafe is a type checker for `@Nullable` annotations for Java. Classes following the Nullsafe discipline are annotated with `@Nullsafe`.
 
 Consider the classes `Person` and `Registry` from the previous example. Assuming that class `Person` is annotated with `@Nullsafe`. In this case, we also annotate `getEmergencyContact()` with `@Nullable`, to make explicit that this method can return the `null` value. There is still the risk that classes depending on `Person` have Null dereferences. In this case, Pulse would report a Null dereference on `Registry`. It could also be the case that class `Registry` is annotated with `@Nullsafe`. By default Pulse reports on `@Nullsafe` files too, see the `--pulse-nullsafe-report-npe` option (Facebook-specific: Pulse does not report on `@Nullsafe` files).
 

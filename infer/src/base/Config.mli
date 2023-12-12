@@ -359,14 +359,6 @@ val dump_textual : bool
 
 val dynamic_dispatch_json_file_path : string option
 
-val eradicate_condition_redundant : bool
-
-val eradicate_field_over_annotated : bool
-
-val eradicate_return_over_annotated : bool
-
-val eradicate_verbose : bool
-
 val erlang_ast_dir : string option
 
 val erlang_check_return : bool
@@ -456,8 +448,6 @@ val inclusive_cost : bool
 
 val inferconfig_file : string option
 
-val inferconfig_dir : string option
-
 val is_checker_enabled : Checker.t -> bool
 
 val issues_tests : string option
@@ -527,18 +517,6 @@ val no_censor_report : Str.regexp list
 val no_translate_libs : bool
 
 val nullable_annotation : string option
-
-val nullsafe_annotation_graph : bool
-
-val nullsafe_disable_field_not_initialized_in_nonstrict_classes : bool
-
-val nullsafe_optimistic_third_party_in_default_mode : bool
-
-val nullsafe_third_party_signatures : string option
-
-val nullsafe_third_party_location_for_messaging_only : string option
-
-val nullsafe_strict_containers : bool
 
 val oom_threshold : int option
 

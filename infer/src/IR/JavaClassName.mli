@@ -9,10 +9,6 @@ open! IStd
 
 type t [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-module Map : Caml.Map.S with type key = t
-
-module Set : Caml.Set.S with type elt = t
-
 val make : package:string option -> classname:string -> t
 (** [make ~package:(Some "java.lang") "Object"] creates a value representing [java.lang.Object] *)
 
@@ -31,9 +27,6 @@ val pp_with_verbosity : verbose:bool -> Format.formatter -> t -> unit
 val package : t -> string option
 
 val classname : t -> string
-
-val is_external_via_config : t -> bool
-(** Considered external based on config flags. *)
 
 val get_outer_class_name : t -> t option
 (** If this is an inner class, return the closest outer, e.g. A$B for A$B$C. None if the class is

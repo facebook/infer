@@ -52,8 +52,6 @@ let type_get_direct_supertypes tenv (typ : Typ.t) =
       []
 
 
-let type_get_class_name {Typ.desc} = match desc with Typ.Tptr (typ, _) -> Typ.name typ | _ -> None
-
 let type_name_get_annotation tenv (name : Typ.name) : Annot.Item.t option =
   match Tenv.lookup tenv name with Some {annots} -> Some annots | None -> None
 
@@ -201,49 +199,6 @@ module Java = struct
 
   let implements_kotlin_intrinsics = implements "kotlin.jvm.internal.Intrinsics"
 
-  let initializer_classes =
-    List.map ~f:Typ.Name.Java.from_string
-      [ "android.app.Activity"
-      ; "android.app.Application"
-      ; "android.app.Fragment"
-      ; "android.app.Service"
-      ; "android.support.v4.app.Fragment"
-      ; "androidx.fragment.app.Fragment"
-      ; "junit.framework.TestCase" ]
-
-
-  let initializer_methods =
-    ["onActivityCreated"; "onAttach"; "onCreate"; "onCreateView"; "setUp"; "onViewCreated"]
-
-
-  (** Check if the type has in its supertypes from the initializer_classes list. *)
-  let type_has_initializer (tenv : Tenv.t) (t : Typ.t) : bool =
-    let is_initializer_class typename _ =
-      List.mem ~equal:Typ.Name.equal initializer_classes typename
-    in
-    match t.desc with
-    | Typ.Tstruct name | Tptr ({desc= Tstruct name}, _) ->
-        supertype_exists tenv is_initializer_class name
-    | _ ->
-        false
-
-
-  (** Check if the method is one of the known initializer methods. *)
-  let method_is_initializer (tenv : Tenv.t) (proc_attributes : ProcAttributes.t) : bool =
-    match get_this_type_nonstatic_methods_only proc_attributes with
-    | Some this_type ->
-        if type_has_initializer tenv this_type then
-          match proc_attributes.ProcAttributes.proc_name with
-          | Procname.Java pname_java ->
-              let mname = Procname.Java.get_method pname_java in
-              List.exists ~f:(String.equal mname) initializer_methods
-          | _ ->
-              false
-        else false
-    | None ->
-        false
-
-
   let get_const_type_name (const : Const.t) : string =
     match const with
     | Const.Cstr _ ->
@@ -290,18 +245,6 @@ module Java = struct
         Option.fold struct_opt ~init:acc ~f:(fun acc {Struct.annots} ->
             if check annots then name :: acc else acc ) )
     |> List.rev
-
-
-  let is_override_of_lang_object_equals curr_pname =
-    let is_only_param_of_object_type = function
-      | [Procname.Parameter.JavaParameter param_type]
-        when Typ.equal param_type StdTyp.Java.pointer_to_java_lang_object ->
-          true
-      | _ ->
-          false
-    in
-    String.equal (Procname.get_method curr_pname) "equals"
-    && is_only_param_of_object_type (Procname.get_parameters curr_pname)
 end
 
 module ObjectiveC = struct
@@ -433,28 +376,6 @@ let type_is_class typ =
       false
 
 
-let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t) list =
-  let res = ref [] in
-  let do_instruction _ instr =
-    match instr with
-    | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) -> (
-      match resolve_attributes callee_pn with
-      | Some callee_attributes ->
-          if filter callee_pn callee_attributes then res := (callee_pn, callee_attributes) :: !res
-      | None ->
-          () )
-    | _ ->
-        ()
-  in
-  let do_node node =
-    let instrs = Procdesc.Node.get_instrs node in
-    Instrs.iter ~f:(do_instruction node) instrs
-  in
-  let nodes = Procdesc.get_nodes pdesc in
-  List.iter ~f:do_node nodes ;
-  List.rev !res
-
-
 let has_same_signature proc_name =
   let method_name = Procname.get_method proc_name in
   let params = Procname.get_parameters proc_name in
@@ -506,28 +427,6 @@ let override_iter f tenv proc_name =
          f pname ;
          false )
        tenv proc_name )
-
-
-let lookup_attributes tenv proc_name =
-  let found_attributes = ref None in
-  let f pname =
-    match Attributes.load pname with
-    | None ->
-        false
-    | Some _ as attributes ->
-        found_attributes := attributes ;
-        true
-  in
-  ignore (override_find ~check_current_type:true f tenv proc_name) ;
-  !found_attributes
-
-
-let lookup_attributes_exn tenv proc_name =
-  match lookup_attributes tenv proc_name with
-  | Some result ->
-      result
-  | None ->
-      Logging.die InternalError "Did not find attributes for %a" Procname.pp proc_name
 
 
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)

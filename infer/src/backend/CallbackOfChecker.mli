@@ -74,9 +74,3 @@ val intraprocedural_with_field_dependency :
   -> (IntraproceduralAnalysis.t -> 'payload -> unit)
   -> Callbacks.proc_callback_t
 (** an intra-procedural analysis that depends on the summary payload found by another *)
-
-val intraprocedural_with_field :
-     (Payloads.t, 'payload option Lazy.t) Field.t
-  -> (IntraproceduralAnalysis.t -> 'payload option)
-  -> Callbacks.proc_callback_t
-(** runs an intra-procedural analysis that nonetheless produces a payload *)

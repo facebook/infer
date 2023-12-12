@@ -58,19 +58,7 @@ val ia_ends_with : Annot.Item.t -> string -> bool
 
 val ia_has_annotation_with : Annot.Item.t -> (Annot.t -> bool) -> bool
 
-val ia_is_false_on_null : Annot.Item.t -> bool
-
 val ia_is_initializer : Annot.Item.t -> bool
-
-val ia_is_cleanup : Annot.Item.t -> bool
-
-val ia_is_field_injector_readonly : Annot.Item.t -> bool
-(** Annotations for readonly injectors. The injector framework initializes the field but does not
-    write null into it. *)
-
-val ia_is_field_injector_readwrite : Annot.Item.t -> bool
-(** Annotations for read-write injectors. The injector framework initializes the field and can write
-    null into it. *)
 
 val ia_is_nonnull : Annot.Item.t -> bool
 
@@ -82,19 +70,13 @@ val ia_is_nullsafe_strict : Annot.Item.t -> bool
 
 val ia_find_nullsafe : Annot.Item.t -> Annot.t option
 
-val ia_is_true_on_null : Annot.Item.t -> bool
-
 val ia_is_expensive : Annot.Item.t -> bool
 
 val ia_is_functional : Annot.Item.t -> bool
 
-val ia_is_propagates_nullable : Annot.Item.t -> bool
-
 val ia_is_ignore_allocations : Annot.Item.t -> bool
 
 val ia_is_inject : Annot.Item.t -> bool
-
-val ia_is_json_field : Annot.Item.t -> bool
 
 val ia_is_suppress_lint : Annot.Item.t -> bool
 

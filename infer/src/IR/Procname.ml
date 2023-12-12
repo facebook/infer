@@ -159,11 +159,7 @@ module Java = struct
 
   let get_method j = j.method_name
 
-  let replace_method_name method_name j = {j with method_name}
-
   let replace_parameters parameters j = {j with parameters}
-
-  let replace_return_type ret_type j = {j with return_type= Some ret_type}
 
   let get_parameters j = j.parameters
 
@@ -205,8 +201,6 @@ module Java = struct
         F.fprintf fmt "%a%s" pp_class_name_dot j j.method_name
 
 
-  let to_simplified_string ?(withclass = false) = Pp.string_of_pp (pp ~withclass Simple)
-
   let get_return_typ pname_java = Option.value ~default:StdTyp.void pname_java.return_type
 
   let is_close {method_name} = String.equal method_name "close"
@@ -223,10 +217,6 @@ module Java = struct
 
   let is_constructor {method_name} = String.equal method_name constructor_method_name
 
-  let is_anonymous_inner_class_constructor_exn {class_name} =
-    Typ.Name.Java.is_anonymous_inner_class_name_exn class_name
-
-
   let is_anonymous_inner_class_method {class_name} =
     Option.value ~default:false (Typ.Name.Java.is_anonymous_inner_class_name_opt class_name)
 
@@ -234,8 +224,6 @@ module Java = struct
   let is_static {kind} = match kind with Static -> true | _ -> false
 
   let is_instance x = not (is_static x)
-
-  let is_lambda {method_name} = String.is_prefix ~prefix:"lambda$" method_name
 
   let is_generated {method_name} = String.is_prefix ~prefix:"$" method_name
 

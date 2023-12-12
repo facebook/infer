@@ -129,8 +129,6 @@ val checkers_expensive_overrides_unexpensive : t
 
 val checkers_fragment_retain_view : t
 
-val checkers_immutable_cast : t
-
 val checkers_printf_args : t
 
 val class_cast_exception : t
@@ -173,42 +171,6 @@ val do_not_report : t
 (** an issue type that should never be reported *)
 
 val empty_vector_access : t
-
-val eradicate_annotation_graph : t
-
-val eradicate_condition_redundant : t
-
-val eradicate_field_not_initialized : t
-
-val eradicate_field_not_nullable : t
-
-val eradicate_field_over_annotated : t
-
-val eradicate_inconsistent_subclass_parameter_annotation : t
-
-val eradicate_inconsistent_subclass_return_annotation : t
-
-val eradicate_redundant_nested_class_annotation : t
-
-val eradicate_bad_nested_class_annotation : t
-
-val eradicate_nullable_dereference : t
-
-val eradicate_parameter_not_nullable : t
-
-val eradicate_return_not_nullable : t
-
-val eradicate_return_over_annotated : t
-
-val eradicate_unvetted_third_party_in_nullsafe : t
-
-val eradicate_unchecked_usage_in_nullsafe : t
-
-val eradicate_meta_class_can_be_nullsafe : t
-
-val eradicate_meta_class_needs_improvement : t
-
-val eradicate_meta_class_is_nullsafe : t
 
 val exposed_insecure_intent_handling : t
 

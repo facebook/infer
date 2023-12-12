@@ -46,7 +46,7 @@ let () =
         ; TaintTests.tests
         ; TraceTests.tests
         ; WeakTopologicalOrderTests.tests ]
-      @ ClangTests.tests @ AllNullsafeTests.tests )
+      @ ClangTests.tests )
   in
   let test_suite = "all" >::: tests in
   run_test_tt_main test_suite ;

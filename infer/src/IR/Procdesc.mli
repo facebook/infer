@@ -335,9 +335,6 @@ val iter_nodes : (Node.t -> unit) -> t -> unit
 val fold_nodes : t -> init:'accum -> f:('accum -> Node.t -> 'accum) -> 'accum
 (** fold over all the nodes of a procedure *)
 
-val fold_slope_range : Node.t -> Node.t -> init:'accum -> f:('accum -> Node.t -> 'accum) -> 'accum
-(** fold between two nodes or until we reach a branching structure *)
-
 val set_succs : Node.t -> normal:Node.t list option -> exn:Node.t list option -> unit
 (** Set the successor nodes and exception nodes, if given, and update predecessor links *)
 
@@ -363,8 +360,6 @@ val pp_with_instrs : ?print_types:bool -> Format.formatter -> t -> unit
   [@@warning "-unused-value-declaration"]
 
 val is_specialized : t -> bool
-
-val is_kotlin : t -> bool
 
 val is_captured_pvar : t -> Pvar.t -> bool
 (** true if pvar is a captured variable of a cpp lambda or obcj block *)

@@ -388,11 +388,6 @@ let checkers_fragment_retain_view =
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_FRAGMENT_RETAINS_VIEW.md"]
 
 
-let checkers_immutable_cast =
-  register ~id:"CHECKERS_IMMUTABLE_CAST" Warning ImmutableCast
-    ~user_documentation:[%blob "./documentation/issues/CHECKERS_IMMUTABLE_CAST.md"]
-
-
 let checkers_printf_args =
   register ~id:"CHECKERS_PRINTF_ARGS" Error PrintfArgs
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_PRINTF_ARGS.md"]
@@ -475,127 +470,6 @@ let do_not_report = register_hidden ~id:"DO_NOT_REPORT" Error Quandary
 let empty_vector_access =
   register ~id:"EMPTY_VECTOR_ACCESS" Error Biabduction
     ~user_documentation:[%blob "./documentation/issues/EMPTY_VECTOR_ACCESS.md"]
-
-
-(* A technical issue needed to output the annotation graph for the class - not intended to be surfaces to the end user *)
-let eradicate_annotation_graph =
-  (* Enabled by default since this requires a special mode anyway *)
-  register ~id:"ERADICATE_ANNOTATION_GRAPH" ~hum:"Annotation Graph" Info Eradicate
-    ~user_documentation:""
-
-
-(* Condition redundant is a very non-precise issue. Depending on the origin of what is compared with
-   null, this can have a lot of reasons to be actually nullable.
-
-   Until it is made non-precise, it is recommended to not turn this warning on.  But even when it is
-   on, this should not be more than advice. *)
-let eradicate_condition_redundant =
-  register ~id:"ERADICATE_CONDITION_REDUNDANT" ~hum:"Condition Redundant" Advice Eradicate
-    ~user_documentation:[%blob "./documentation/issues/ERADICATE_CONDITION_REDUNDANT.md"]
-
-
-let eradicate_field_not_initialized =
-  register ~id:"ERADICATE_FIELD_NOT_INITIALIZED" ~hum:"Field Not Initialized" Warning Eradicate
-    ~user_documentation:[%blob "./documentation/issues/ERADICATE_FIELD_NOT_INITIALIZED.md"]
-
-
-let eradicate_field_not_nullable =
-  register ~id:"ERADICATE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable" Warning Eradicate
-    ~user_documentation:[%blob "./documentation/issues/ERADICATE_FIELD_NOT_NULLABLE.md"]
-
-
-(* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
-let eradicate_field_over_annotated =
-  register ~id:"ERADICATE_FIELD_OVER_ANNOTATED" ~hum:"Field Over Annotated" Advice
-    Eradicate (* TODO *)
-    ~user_documentation:""
-
-
-let eradicate_inconsistent_subclass_parameter_annotation =
-  register ~id:"ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION"
-    ~hum:"Inconsistent Subclass Parameter Annotation" Warning Eradicate
-    ~user_documentation:
-      [%blob "./documentation/issues/ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION.md"]
-
-
-let eradicate_inconsistent_subclass_return_annotation =
-  register ~id:"ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION"
-    ~hum:"Inconsistent Subclass Return Annotation" Warning Eradicate
-    ~user_documentation:
-      [%blob "./documentation/issues/ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION.md"]
-
-
-let eradicate_redundant_nested_class_annotation =
-  register ~id:"ERADICATE_REDUNDANT_NESTED_CLASS_ANNOTATION"
-    ~hum:"@Nullsafe annotation is redundant" Advice Eradicate (* TODO *)
-    ~user_documentation:""
-
-
-let eradicate_bad_nested_class_annotation =
-  register ~id:"ERADICATE_BAD_NESTED_CLASS_ANNOTATION"
-    ~hum:"@Nullsafe annotation is inconsistent with outer class" Warning Eradicate (* TODO *)
-    ~user_documentation:""
-
-
-let eradicate_nullable_dereference =
-  register ~id:"ERADICATE_NULLABLE_DEREFERENCE" ~hum:"Nullable Dereference" Warning
-    Eradicate (* TODO *)
-    ~user_documentation:""
-
-
-let eradicate_parameter_not_nullable =
-  register ~id:"ERADICATE_PARAMETER_NOT_NULLABLE" ~hum:"Parameter Not Nullable" Warning Eradicate
-    ~user_documentation:[%blob "./documentation/issues/ERADICATE_PARAMETER_NOT_NULLABLE.md"]
-
-
-let eradicate_return_not_nullable =
-  register ~id:"ERADICATE_RETURN_NOT_NULLABLE" ~hum:"Return Not Nullable" Warning Eradicate
-    ~user_documentation:[%blob "./documentation/issues/ERADICATE_RETURN_NOT_NULLABLE.md"]
-
-
-(* Very non-precise issue. Should be actually turned off unless for experimental purposes. *)
-let eradicate_return_over_annotated =
-  register ~id:"ERADICATE_RETURN_OVER_ANNOTATED" ~hum:"Return Over Annotated" Advice Eradicate
-    ~user_documentation:[%blob "./documentation/issues/ERADICATE_RETURN_OVER_ANNOTATED.md"]
-
-
-let eradicate_unchecked_usage_in_nullsafe =
-  register ~id:"ERADICATE_UNCHECKED_USAGE_IN_NULLSAFE"
-    ~hum:"Nullsafe mode: unchecked usage of a value" Warning Eradicate (* TODO *)
-    ~user_documentation:""
-
-
-let eradicate_unvetted_third_party_in_nullsafe =
-  register ~id:"ERADICATE_UNVETTED_THIRD_PARTY_IN_NULLSAFE"
-    ~hum:"Nullsafe mode: unchecked usage of unvetted third-party" Warning Eradicate (* TODO *)
-    ~user_documentation:""
-
-
-(* Meta issues in eradicate are technical issues reflecting null-safety state of classes in general,
-   in contrast with concrete nullability type violations *)
-
-let eradicate_meta_class_is_nullsafe =
-  register ~id:"ERADICATE_META_CLASS_IS_NULLSAFE"
-    ~hum:
-      "Class is marked @Nullsafe and has 0 issues" (* Should be enabled for special integrations *)
-    ~enabled:false Info Eradicate (* TODO *)
-    ~user_documentation:""
-
-
-let eradicate_meta_class_needs_improvement =
-  register ~id:"ERADICATE_META_CLASS_NEEDS_IMPROVEMENT"
-    ~hum:
-      "Class needs improvement to become @Nullsafe" (* Should be enabled for special integrations *)
-    ~enabled:false Info Eradicate
-    ~user_documentation:[%blob "./documentation/issues/ERADICATE_META_CLASS_NEEDS_IMPROVEMENT.md"]
-
-
-let eradicate_meta_class_can_be_nullsafe =
-  register ~id:"ERADICATE_META_CLASS_CAN_BE_NULLSAFE"
-    ~hum:"Class has 0 issues and can be marked @Nullsafe"
-      (* Should be enabled for special integrations *)
-    ~enabled:false Advice Eradicate (* TODO *)
-    ~user_documentation:""
 
 
 let exposed_insecure_intent_handling =

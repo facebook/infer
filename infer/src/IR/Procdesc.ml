@@ -662,20 +662,6 @@ let replace_instrs_by_using_context pdesc ~f ~update_context ~context_at_node =
   update_nodes pdesc ~update
 
 
-(** fold between two nodes or until we reach a branching structure *)
-let fold_slope_range =
-  let rec aux node visited acc ~f =
-    let visited = NodeSet.add node visited in
-    let acc = f acc node in
-    match Node.get_succs node with
-    | [n] when not (NodeSet.mem n visited) ->
-        aux n visited acc ~f
-    | _ ->
-        acc
-  in
-  fun src_node dst_node ~init ~f -> aux src_node (NodeSet.singleton dst_node) init ~f
-
-
 (** Set the exit node of the proc desc *)
 let set_exit_node pdesc node = pdesc.exit_node <- node
 
@@ -910,12 +896,6 @@ let pp_with_instrs ?print_types fmt pdesc =
 let is_specialized pdesc =
   let attributes = get_attributes pdesc in
   attributes.ProcAttributes.is_specialized
-
-
-let is_kotlin pdesc =
-  let attributes = get_attributes pdesc in
-  let source = attributes.ProcAttributes.translation_unit in
-  SourceFile.has_extension ~ext:Config.kotlin_source_extension source
 
 
 (* true if pvar is a captured variable of a cpp lambda or objc block *)

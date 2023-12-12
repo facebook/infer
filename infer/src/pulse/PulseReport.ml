@@ -14,7 +14,7 @@ open PulseDomainInterface
 (* Is nullptr dereference issue in Java class annotated with [@Nullsafe] *)
 let is_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference jn =
   is_nullptr_dereference
-  && match NullsafeMode.of_java_procname tenv jn with Default -> false | Local _ | Strict -> true
+  && match NullsafeMode.of_java_procname tenv jn with Default -> false | Local | Strict -> true
 
 
 let report tenv ~is_suppressed ~latent proc_desc err_log diagnostic =

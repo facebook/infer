@@ -226,9 +226,6 @@ module Name : sig
     val is_external : t -> bool
     (** return true if the typename is in the .inferconfig list of external classes *)
 
-    val is_anonymous_inner_class_name_exn : t -> bool
-    (** Throws if it is not a Java class *)
-
     val is_anonymous_inner_class_name_opt : t -> bool option
     (** return None if it is not a Java class *)
   end
