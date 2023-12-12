@@ -114,6 +114,7 @@ end = struct
     let def =
       {classname= ""; lock= ["lock"]; trylock= ["try_lock"]; unlock= ["unlock"]; recursive= false}
     in
+    let c_rec = {classname= ""; lock= []; trylock= []; unlock= []; recursive= true} in
     let shd =
       { def with
         lock= "lock_shared" :: def.lock
@@ -126,7 +127,8 @@ end = struct
       ; trylock= ["attemptRead"; "attemptWrite"]
       ; unlock= ["release"] }
     in
-    [ { def with
+    [ {c_rec with lock= ["pthread_mutex_lock"]; unlock= ["pthread_mutex_unlock"]}
+    ; { def with
         classname= "apache::thrift::concurrency::Monitor"
       ; trylock= "timedlock" :: def.trylock }
     ; {def with classname= "apache::thrift::concurrency::Mutex"; trylock= "timedlock" :: def.trylock}

@@ -28,15 +28,25 @@ let iter_critical_pairs_of_scheduled_work f (work_item : Domain.ScheduledWorkIte
   |> Option.iter ~f:(iter_critical_pairs_of_summary (iter_scheduled_pair work_item f))
 
 
+let rec should_report tenv procname =
+  match (procname : Procname.t) with
+  | Java _ ->
+      StarvationModels.is_java_main_method procname
+      || ConcurrencyModels.is_android_lifecycle_method tenv procname
+  | C _ ->
+      true
+  | WithFunctionParameters (proc_name', _, _) ->
+      should_report tenv proc_name'
+  | Block _ | CSharp _ | Erlang _ | Hack _ | Linters_dummy_method | ObjC_Cpp _ | Python _ ->
+      false
+
+
 let iter_summary ~f exe_env ({payloads; proc_name} : Summary.t) =
   let open Domain in
   Payloads.starvation payloads |> Lazy.force
   |> Option.iter ~f:(fun (payload : summary) ->
          let tenv = Exe_env.get_proc_tenv exe_env proc_name in
-         if
-           StarvationModels.is_java_main_method proc_name
-           || ConcurrencyModels.is_android_lifecycle_method tenv proc_name
-         then iter_critical_pairs_of_summary (f proc_name) payload ;
+         if should_report tenv proc_name then iter_critical_pairs_of_summary (f proc_name) payload ;
          ScheduledWorkDomain.iter
            (iter_critical_pairs_of_scheduled_work (f proc_name))
            payload.scheduled_work )

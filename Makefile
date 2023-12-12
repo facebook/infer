@@ -60,6 +60,7 @@ DIRECT_TESTS += \
   c_performance \
   c_pulse \
   c_purity \
+  c_starvation \
   c_uninit \
   cpp_annotation-reachability \
   cpp_biabduction \
