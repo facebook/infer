@@ -114,3 +114,25 @@ int closure_call_good() {
   } else
     return 0;
 }
+
+int named_closure_call() {
+  int x = 5;
+  auto closure = [x]() { return x + 27; };
+  return closure_as_arg(closure);
+}
+
+int named_closure_call_bad() {
+  if (named_closure_call() == 32) {
+    int* ptr = NULL;
+    return *ptr;
+  } else
+    return 0;
+}
+
+int named_closure_call_good_FP() {
+  if (named_closure_call() == 30) {
+    int* ptr = NULL;
+    return *ptr;
+  } else
+    return 0;
+}

@@ -717,29 +717,6 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:114.1f0b0894318c1d25_4" -> "operator()#lambda_lambda1.cpp:114.1f0b0894318c1d25_2" ;
-"lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_1" [label="1: Start lambda_lambda1.cpp:114_8f63c59e::lambda_lambda1.cpp:114_a3877209\nFormals:  this:lambda_lambda1.cpp:114_8f63c59e* __param_0:lambda_lambda1.cpp:114_8f63c59e&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_1" -> "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_5" ;
-"lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_2" [label="2: Exit lambda_lambda1.cpp:114_8f63c59e::lambda_lambda1.cpp:114_a3877209 \n  " color=yellow style=filled]
-	
-
-"lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_3" [label="3:  Constructor Init \n   n$1=*&this:lambda_lambda1.cpp:114_8f63c59e* [line 114, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_3" -> "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_4" ;
-"lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:114_8f63c59e&& [line 114, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.xref_captured_by_value_:SomeStruct*,(lambda_lambda1.cpp:114_8f63c59e&&)n$2.xref_captured_by_value_:SomeStruct&) [line 114, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_4" -> "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_2" ;
-"lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_5" [label="5:  Constructor Init \n   n$4=*&this:lambda_lambda1.cpp:114_8f63c59e* [line 114, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_5" -> "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_6" ;
-"lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:114_8f63c59e&& [line 114, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.x_captured_by_value_:SomeStruct*,(lambda_lambda1.cpp:114_8f63c59e&&)n$5.x_captured_by_value_:SomeStruct&) [line 114, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_6" -> "lambda_lambda1.cpp:114_a3877209#l.f982316ddf78233e_3" ;
 "__infer_inner_destructor_lambda_l.52f94ea465c95165_1" [label="1: Start lambda_lambda1.cpp:114_8f63c59e::__infer_inner_destructor_lambda_lambda1.cpp:114_3411cb22\nFormals:  this:lambda_lambda1.cpp:114_8f63c59e*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -781,29 +758,6 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:121.6320e415b8bfe8aa_5" -> "operator()#lambda_lambda1.cpp:121.6320e415b8bfe8aa_3" ;
-"lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_1" [label="1: Start lambda_lambda1.cpp:121_adee64af::lambda_lambda1.cpp:121_a04e0893\nFormals:  this:lambda_lambda1.cpp:121_adee64af* __param_0:lambda_lambda1.cpp:121_adee64af&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_1" -> "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_5" ;
-"lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_2" [label="2: Exit lambda_lambda1.cpp:121_adee64af::lambda_lambda1.cpp:121_a04e0893 \n  " color=yellow style=filled]
-	
-
-"lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_3" [label="3:  Constructor Init \n   n$1=*&this:lambda_lambda1.cpp:121_adee64af* [line 121, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_3" -> "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_4" ;
-"lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:121_adee64af&& [line 121, column 12]\n  n$3=*(lambda_lambda1.cpp:121_adee64af&&)n$2.xref_captured_by_ref_:SomeStruct& [line 121, column 12]\n  *n$1.xref_captured_by_ref_:SomeStruct&=n$3 [line 121, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_4" -> "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_2" ;
-"lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_5" [label="5:  Constructor Init \n   n$4=*&this:lambda_lambda1.cpp:121_adee64af* [line 121, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_5" -> "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_6" ;
-"lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:121_adee64af&& [line 121, column 12]\n  n$6=*(lambda_lambda1.cpp:121_adee64af&&)n$5.x_captured_by_ref_:SomeStruct& [line 121, column 12]\n  *n$4.x_captured_by_ref_:SomeStruct&=n$6 [line 121, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_6" -> "lambda_lambda1.cpp:121_a04e0893#l.ce9a45e0ec723f0f_3" ;
 "operator()#lambda_lambda1.cpp:131.386c7c9c833b5f1f_1" [label="1: Start lambda_lambda1.cpp:131_815acded::operator()\nFormals:  this:lambda_lambda1.cpp:131_815acded const *\nLocals: \nCaptured:  [by value]&xlambda:SomeStruct& [by value]&xreflambda:SomeStruct& \n  " color=yellow style=filled]
 	
 
@@ -819,29 +773,6 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:131.386c7c9c833b5f1f_4" -> "operator()#lambda_lambda1.cpp:131.386c7c9c833b5f1f_2" ;
-"lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_1" [label="1: Start lambda_lambda1.cpp:131_815acded::lambda_lambda1.cpp:131_91f18bb2\nFormals:  this:lambda_lambda1.cpp:131_815acded* __param_0:lambda_lambda1.cpp:131_815acded&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_1" -> "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_5" ;
-"lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_2" [label="2: Exit lambda_lambda1.cpp:131_815acded::lambda_lambda1.cpp:131_91f18bb2 \n  " color=yellow style=filled]
-	
-
-"lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_3" [label="3:  Constructor Init \n   n$1=*&this:lambda_lambda1.cpp:131_815acded* [line 131, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_3" -> "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_4" ;
-"lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:131_815acded&& [line 131, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.xreflambda_captured_by_value_:SomeStruct*,(lambda_lambda1.cpp:131_815acded&&)n$2.xreflambda_captured_by_value_:SomeStruct&) [line 131, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_4" -> "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_2" ;
-"lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_5" [label="5:  Constructor Init \n   n$4=*&this:lambda_lambda1.cpp:131_815acded* [line 131, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_5" -> "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_6" ;
-"lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:131_815acded&& [line 131, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.xlambda_captured_by_value_:SomeStruct*,(lambda_lambda1.cpp:131_815acded&&)n$5.xlambda_captured_by_value_:SomeStruct&) [line 131, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_6" -> "lambda_lambda1.cpp:131_91f18bb2#l.2bbc9f2cda738587_3" ;
 "__infer_inner_destructor_lambda_l.1a5650d74a96b165_1" [label="1: Start lambda_lambda1.cpp:131_815acded::__infer_inner_destructor_lambda_lambda1.cpp:131_dfe5c888\nFormals:  this:lambda_lambda1.cpp:131_815acded*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -883,29 +814,6 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:140.2255730fc712aa4d_5" -> "operator()#lambda_lambda1.cpp:140.2255730fc712aa4d_3" ;
-"lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_1" [label="1: Start lambda_lambda1.cpp:140_41385ab3::lambda_lambda1.cpp:140_0132ef85\nFormals:  this:lambda_lambda1.cpp:140_41385ab3* __param_0:lambda_lambda1.cpp:140_41385ab3&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_1" -> "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_5" ;
-"lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_2" [label="2: Exit lambda_lambda1.cpp:140_41385ab3::lambda_lambda1.cpp:140_0132ef85 \n  " color=yellow style=filled]
-	
-
-"lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_3" [label="3:  Constructor Init \n   n$1=*&this:lambda_lambda1.cpp:140_41385ab3* [line 140, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_3" -> "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_4" ;
-"lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:140_41385ab3&& [line 140, column 12]\n  n$3=*(lambda_lambda1.cpp:140_41385ab3&&)n$2.xreflambda_captured_by_ref_:SomeStruct& [line 140, column 12]\n  *n$1.xreflambda_captured_by_ref_:SomeStruct&=n$3 [line 140, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_4" -> "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_2" ;
-"lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_5" [label="5:  Constructor Init \n   n$4=*&this:lambda_lambda1.cpp:140_41385ab3* [line 140, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_5" -> "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_6" ;
-"lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:140_41385ab3&& [line 140, column 12]\n  n$6=*(lambda_lambda1.cpp:140_41385ab3&&)n$5.xlambda_captured_by_ref_:SomeStruct& [line 140, column 12]\n  *n$4.xlambda_captured_by_ref_:SomeStruct&=n$6 [line 140, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_6" -> "lambda_lambda1.cpp:140_0132ef85#l.7517103570d69898_3" ;
 "operator()#lambda_lambda1.cpp:17_.654f5fca1e89edfe_1" [label="1: Start lambda_lambda1.cpp:17_395d4b06::operator()\nFormals:  this:lambda_lambda1.cpp:17_395d4b06 const *\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -917,13 +825,6 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:17_.654f5fca1e89edfe_3" -> "operator()#lambda_lambda1.cpp:17_.654f5fca1e89edfe_2" ;
-"lambda_lambda1.cpp:17_d1fc440e#la.88fd765d10740384_1" [label="1: Start lambda_lambda1.cpp:17_395d4b06::lambda_lambda1.cpp:17_d1fc440e\nFormals:  this:lambda_lambda1.cpp:17_395d4b06* __param_0:lambda_lambda1.cpp:17_395d4b06&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:17_d1fc440e#la.88fd765d10740384_1" -> "lambda_lambda1.cpp:17_d1fc440e#la.88fd765d10740384_2" ;
-"lambda_lambda1.cpp:17_d1fc440e#la.88fd765d10740384_2" [label="2: Exit lambda_lambda1.cpp:17_395d4b06::lambda_lambda1.cpp:17_d1fc440e \n  " color=yellow style=filled]
-	
-
 "operator()#lambda_lambda1.cpp:18_.8ad6c1c74fc6203a_1" [label="1: Start lambda_lambda1.cpp:18_a7671274::operator()\nFormals:  this:lambda_lambda1.cpp:18_a7671274 const * i:int\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -939,13 +840,6 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:18_.8ad6c1c74fc6203a_4" -> "operator()#lambda_lambda1.cpp:18_.8ad6c1c74fc6203a_2" ;
-"lambda_lambda1.cpp:18_1786f9a1#la.d9d27e0f73cc7516_1" [label="1: Start lambda_lambda1.cpp:18_a7671274::lambda_lambda1.cpp:18_1786f9a1\nFormals:  this:lambda_lambda1.cpp:18_a7671274* __param_0:lambda_lambda1.cpp:18_a7671274&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:18_1786f9a1#la.d9d27e0f73cc7516_1" -> "lambda_lambda1.cpp:18_1786f9a1#la.d9d27e0f73cc7516_2" ;
-"lambda_lambda1.cpp:18_1786f9a1#la.d9d27e0f73cc7516_2" [label="2: Exit lambda_lambda1.cpp:18_a7671274::lambda_lambda1.cpp:18_1786f9a1 \n  " color=yellow style=filled]
-	
-
 "operator()#lambda_lambda1.cpp:24_.9c1a93d92f3920ae_1" [label="1: Start lambda_lambda1.cpp:24_d1db7639::operator()\nFormals:  this:lambda_lambda1.cpp:24_d1db7639 const * i:int\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -961,13 +855,6 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:24_.9c1a93d92f3920ae_4" -> "operator()#lambda_lambda1.cpp:24_.9c1a93d92f3920ae_2" ;
-"lambda_lambda1.cpp:24_01460d9a#la.afd4ed5a7fd25dd7_1" [label="1: Start lambda_lambda1.cpp:24_d1db7639::lambda_lambda1.cpp:24_01460d9a\nFormals:  this:lambda_lambda1.cpp:24_d1db7639* __param_0:lambda_lambda1.cpp:24_d1db7639&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:24_01460d9a#la.afd4ed5a7fd25dd7_1" -> "lambda_lambda1.cpp:24_01460d9a#la.afd4ed5a7fd25dd7_2" ;
-"lambda_lambda1.cpp:24_01460d9a#la.afd4ed5a7fd25dd7_2" [label="2: Exit lambda_lambda1.cpp:24_d1db7639::lambda_lambda1.cpp:24_01460d9a \n  " color=yellow style=filled]
-	
-
 "operator()#lambda_lambda1.cpp:31_.a54d1bb636824b4d_1" [label="1: Start lambda_lambda1.cpp:31_68ac50e6::operator()\nFormals:  this:lambda_lambda1.cpp:31_68ac50e6 const *\nLocals: \nCaptured:  [by value]&x:int [by value]&y:int \n  " color=yellow style=filled]
 	
 
@@ -1039,21 +926,6 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:51_.ed56bd1a92d1b582_4" -> "operator()#lambda_lambda1.cpp:51_.ed56bd1a92d1b582_2" ;
-"lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_1" [label="1: Start lambda_lambda1.cpp:51_dcfc757f::lambda_lambda1.cpp:51_815899c0\nFormals:  this:lambda_lambda1.cpp:51_dcfc757f* __param_0:lambda_lambda1.cpp:51_dcfc757f&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_1" -> "lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_3" ;
-"lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_2" [label="2: Exit lambda_lambda1.cpp:51_dcfc757f::lambda_lambda1.cpp:51_815899c0 \n  " color=yellow style=filled]
-	
-
-"lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_3" [label="3:  Constructor Init \n   n$1=*&this:lambda_lambda1.cpp:51_dcfc757f* [line 51, column 19]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_3" -> "lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_4" ;
-"lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:51_dcfc757f&& [line 51, column 19]\n  n$3=*(lambda_lambda1.cpp:51_dcfc757f&&)n$2.__anon_field_0_captured_by_ref_:Capture* [line 51, column 19]\n  *n$1.__anon_field_0_captured_by_ref_:Capture*=n$3 [line 51, column 19]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_4" -> "lambda_lambda1.cpp:51_815899c0#la.6f71b3520a5c84b7_2" ;
 "operator()#lambda_lambda1.cpp:55_.c6ddb88da4117e3a_1" [label="1: Start lambda_lambda1.cpp:55_2d65d568::operator()\nFormals:  this:lambda_lambda1.cpp:55_2d65d568 const *\nLocals: \nCaptured:  [by value]&this:Capture* \n  " color=yellow style=filled]
 	
 
@@ -1061,21 +933,6 @@ digraph cfg {
 "operator()#lambda_lambda1.cpp:55_.c6ddb88da4117e3a_2" [label="2: Exit lambda_lambda1.cpp:55_2d65d568::operator() \n  " color=yellow style=filled]
 	
 
-"lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_1" [label="1: Start lambda_lambda1.cpp:55_2d65d568::lambda_lambda1.cpp:55_6fbb69e5\nFormals:  this:lambda_lambda1.cpp:55_2d65d568* __param_0:lambda_lambda1.cpp:55_2d65d568&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_1" -> "lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_3" ;
-"lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_2" [label="2: Exit lambda_lambda1.cpp:55_2d65d568::lambda_lambda1.cpp:55_6fbb69e5 \n  " color=yellow style=filled]
-	
-
-"lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_3" [label="3:  Constructor Init \n   n$1=*&this:lambda_lambda1.cpp:55_2d65d568* [line 55, column 19]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_3" -> "lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_4" ;
-"lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:55_2d65d568&& [line 55, column 19]\n  n$3=_fun_Capture::Capture(n$1.__anon_field_0_captured_by_value_:Capture*,(lambda_lambda1.cpp:55_2d65d568&&)n$2.__anon_field_0_captured_by_value_:Capture&) [line 55, column 19]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_4" -> "lambda_lambda1.cpp:55_6fbb69e5#la.d9057cfee8dc355c_2" ;
 "operator()#lambda_lambda1.cpp:61_.5fa895ac2beb0885_1" [label="1: Start lambda_lambda1.cpp:61_d4c594cc::operator()\nFormals:  this:lambda_lambda1.cpp:61_d4c594cc const *\nLocals: \nCaptured:  [by ref]&this:Capture* \n  " color=yellow style=filled]
 	
 
@@ -1091,21 +948,6 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:61_.5fa895ac2beb0885_4" -> "operator()#lambda_lambda1.cpp:61_.5fa895ac2beb0885_2" ;
-"lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_1" [label="1: Start lambda_lambda1.cpp:61_d4c594cc::lambda_lambda1.cpp:61_4e480eda\nFormals:  this:lambda_lambda1.cpp:61_d4c594cc* __param_0:lambda_lambda1.cpp:61_d4c594cc&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_1" -> "lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_3" ;
-"lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_2" [label="2: Exit lambda_lambda1.cpp:61_d4c594cc::lambda_lambda1.cpp:61_4e480eda \n  " color=yellow style=filled]
-	
-
-"lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_3" [label="3:  Constructor Init \n   n$1=*&this:lambda_lambda1.cpp:61_d4c594cc* [line 61, column 19]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_3" -> "lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_4" ;
-"lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:61_d4c594cc&& [line 61, column 19]\n  n$3=*(lambda_lambda1.cpp:61_d4c594cc&&)n$2.__anon_field_0_captured_by_ref_:Capture* [line 61, column 19]\n  *n$1.__anon_field_0_captured_by_ref_:Capture*=n$3 [line 61, column 19]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_4" -> "lambda_lambda1.cpp:61_4e480eda#la.1d5f05cf0b1e4f35_2" ;
 "operator()#lambda_lambda1.cpp:65_.9a9e787b50399134_1" [label="1: Start lambda_lambda1.cpp:65_2095d5b0::operator()\nFormals:  this:lambda_lambda1.cpp:65_2095d5b0 const *\nLocals: \nCaptured:  [by ref]&this:Capture* \n  " color=yellow style=filled]
 	
 
@@ -1121,21 +963,6 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:65_.9a9e787b50399134_4" -> "operator()#lambda_lambda1.cpp:65_.9a9e787b50399134_2" ;
-"lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_1" [label="1: Start lambda_lambda1.cpp:65_2095d5b0::lambda_lambda1.cpp:65_35e72d6c\nFormals:  this:lambda_lambda1.cpp:65_2095d5b0* __param_0:lambda_lambda1.cpp:65_2095d5b0&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_1" -> "lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_3" ;
-"lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_2" [label="2: Exit lambda_lambda1.cpp:65_2095d5b0::lambda_lambda1.cpp:65_35e72d6c \n  " color=yellow style=filled]
-	
-
-"lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_3" [label="3:  Constructor Init \n   n$1=*&this:lambda_lambda1.cpp:65_2095d5b0* [line 65, column 19]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_3" -> "lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_4" ;
-"lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:65_2095d5b0&& [line 65, column 19]\n  n$3=*(lambda_lambda1.cpp:65_2095d5b0&&)n$2.__anon_field_0_captured_by_ref_:Capture* [line 65, column 19]\n  *n$1.__anon_field_0_captured_by_ref_:Capture*=n$3 [line 65, column 19]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_4" -> "lambda_lambda1.cpp:65_35e72d6c#la.c0669807527bd7bd_2" ;
 "operator()#lambda_lambda1.cpp:77_.e3498e1de6f7f400_1" [label="1: Start lambda_lambda1.cpp:77_53b2556e::operator()\nFormals:  this:lambda_lambda1.cpp:77_53b2556e const *\nLocals: \nCaptured:  [by value]&x:SomeStruct& [by value]&y:SomeStruct& \n  " color=yellow style=filled]
 	
 
@@ -1151,29 +978,6 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:77_.e3498e1de6f7f400_4" -> "operator()#lambda_lambda1.cpp:77_.e3498e1de6f7f400_2" ;
-"lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_1" [label="1: Start lambda_lambda1.cpp:77_53b2556e::lambda_lambda1.cpp:77_b91970d1\nFormals:  this:lambda_lambda1.cpp:77_53b2556e* __param_0:lambda_lambda1.cpp:77_53b2556e&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_1" -> "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_5" ;
-"lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_2" [label="2: Exit lambda_lambda1.cpp:77_53b2556e::lambda_lambda1.cpp:77_b91970d1 \n  " color=yellow style=filled]
-	
-
-"lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_3" [label="3:  Constructor Init \n   n$1=*&this:lambda_lambda1.cpp:77_53b2556e* [line 77, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_3" -> "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_4" ;
-"lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:77_53b2556e&& [line 77, column 12]\n  n$3=_fun_SomeStruct::SomeStruct(n$1.y_captured_by_value_:SomeStruct*,(lambda_lambda1.cpp:77_53b2556e&&)n$2.y_captured_by_value_:SomeStruct&) [line 77, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_4" -> "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_2" ;
-"lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_5" [label="5:  Constructor Init \n   n$4=*&this:lambda_lambda1.cpp:77_53b2556e* [line 77, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_5" -> "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_6" ;
-"lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_6" [label="6:  Constructor Init \n   n$5=*&__param_0:lambda_lambda1.cpp:77_53b2556e&& [line 77, column 12]\n  n$6=_fun_SomeStruct::SomeStruct(n$4.x_captured_by_value_:SomeStruct*,(lambda_lambda1.cpp:77_53b2556e&&)n$5.x_captured_by_value_:SomeStruct&) [line 77, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_6" -> "lambda_lambda1.cpp:77_b91970d1#la.1af9618755b16d75_3" ;
 "__infer_inner_destructor_lambda_l.dfa4baf3eb932926_1" [label="1: Start lambda_lambda1.cpp:77_53b2556e::__infer_inner_destructor_lambda_lambda1.cpp:77_52e1a36c\nFormals:  this:lambda_lambda1.cpp:77_53b2556e*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -1211,21 +1015,6 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:84_.b8a638673672b9f8_4" -> "operator()#lambda_lambda1.cpp:84_.b8a638673672b9f8_2" ;
-"lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_1" [label="1: Start lambda_lambda1.cpp:84_d154032c::lambda_lambda1.cpp:84_0e54436f\nFormals:  this:lambda_lambda1.cpp:84_d154032c* __param_0:lambda_lambda1.cpp:84_d154032c&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_1" -> "lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_3" ;
-"lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_2" [label="2: Exit lambda_lambda1.cpp:84_d154032c::lambda_lambda1.cpp:84_0e54436f \n  " color=yellow style=filled]
-	
-
-"lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_3" [label="3:  Constructor Init \n   n$1=*&this:lambda_lambda1.cpp:84_d154032c* [line 84, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_3" -> "lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_4" ;
-"lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:84_d154032c&& [line 84, column 12]\n  n$3=*(lambda_lambda1.cpp:84_d154032c&&)n$2.xref_captured_by_value_:int [line 84, column 12]\n  *n$1.xref_captured_by_value_:int=n$3 [line 84, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_4" -> "lambda_lambda1.cpp:84_0e54436f#la.bcba89a32d7d018e_2" ;
 "operator()#lambda_lambda1.cpp:92_.8d651e1749c901d4_1" [label="1: Start lambda_lambda1.cpp:92_377e76cc::operator()\nFormals:  this:lambda_lambda1.cpp:92_377e76cc const *\nLocals: \nCaptured:  [by value]&xlambda:int \n  " color=yellow style=filled]
 	
 
@@ -1241,21 +1030,6 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:92_.8d651e1749c901d4_4" -> "operator()#lambda_lambda1.cpp:92_.8d651e1749c901d4_2" ;
-"lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_1" [label="1: Start lambda_lambda1.cpp:92_377e76cc::lambda_lambda1.cpp:92_3acac00a\nFormals:  this:lambda_lambda1.cpp:92_377e76cc* __param_0:lambda_lambda1.cpp:92_377e76cc&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_1" -> "lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_3" ;
-"lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_2" [label="2: Exit lambda_lambda1.cpp:92_377e76cc::lambda_lambda1.cpp:92_3acac00a \n  " color=yellow style=filled]
-	
-
-"lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_3" [label="3:  Constructor Init \n   n$1=*&this:lambda_lambda1.cpp:92_377e76cc* [line 92, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_3" -> "lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_4" ;
-"lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_4" [label="4:  Constructor Init \n   n$2=*&__param_0:lambda_lambda1.cpp:92_377e76cc&& [line 92, column 12]\n  n$3=*(lambda_lambda1.cpp:92_377e76cc&&)n$2.xlambda_captured_by_value_:int [line 92, column 12]\n  *n$1.xlambda_captured_by_value_:int=n$3 [line 92, column 12]\n " shape="box"]
-	
-
-	 "lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_4" -> "lambda_lambda1.cpp:92_3acac00a#la.9f6d42cb763855ea_2" ;
 "operator()#lambda_lambda1.cpp:9_4.ad1cb13178349b24_1" [label="1: Start lambda_lambda1.cpp:9_47763053::operator()\nFormals:  this:lambda_lambda1.cpp:9_47763053 const *\nLocals:  i:int \n  " color=yellow style=filled]
 	
 
@@ -1275,11 +1049,4 @@ digraph cfg {
 	
 
 	 "operator()#lambda_lambda1.cpp:9_4.ad1cb13178349b24_5" -> "operator()#lambda_lambda1.cpp:9_4.ad1cb13178349b24_3" ;
-"lambda_lambda1.cpp:9_6a46cf42#lam.a07248536aca100b_1" [label="1: Start lambda_lambda1.cpp:9_47763053::lambda_lambda1.cpp:9_6a46cf42\nFormals:  this:lambda_lambda1.cpp:9_47763053* __param_0:lambda_lambda1.cpp:9_47763053&&\nLocals:  \n  " color=yellow style=filled]
-	
-
-	 "lambda_lambda1.cpp:9_6a46cf42#lam.a07248536aca100b_1" -> "lambda_lambda1.cpp:9_6a46cf42#lam.a07248536aca100b_2" ;
-"lambda_lambda1.cpp:9_6a46cf42#lam.a07248536aca100b_2" [label="2: Exit lambda_lambda1.cpp:9_47763053::lambda_lambda1.cpp:9_6a46cf42 \n  " color=yellow style=filled]
-	
-
 }
