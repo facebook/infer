@@ -371,16 +371,15 @@ let make_read_write_race_description ~read_is_sync (conflict : reported_access) 
   let pp_conflict fmt {procname} =
     F.pp_print_string fmt (Procname.to_simplified_string ~withclass:true procname)
   in
-  let conflicts_description =
-    Format.asprintf "Potentially races with%s write in method %a"
-      (if read_is_sync then " unsynchronized" else "")
-      (MF.wrap_monospaced pp_conflict) conflict
-  in
-  Format.asprintf "Read/Write race. Non-private method %a%s reads%s from %a. %s." describe_pname
-    pname
+  Format.asprintf
+    "Read/Write race. Non-private method %a%s reads%s from %a, which races with the%s write in \
+     method %a."
+    describe_pname pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if read_is_sync then " with synchronization" else " without synchronization")
-    pp_access final_sink conflicts_description
+    pp_access final_sink
+    (if read_is_sync then " unsynchronized" else "")
+    (MF.wrap_monospaced pp_conflict) conflict
 
 
 let make_guardedby_violation_description pname final_sink_site initial_sink_site final_sink =
