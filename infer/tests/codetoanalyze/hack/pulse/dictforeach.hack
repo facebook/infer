@@ -41,16 +41,38 @@ async function dictForeachFN(): Awaitable<void> {
 }
 
 // check we know iteration over empty dict does nothing
-async function dictforeachOK2(): Awaitable<void> {
+async function dictForeachOK2(): Awaitable<void> {
   $d = dict[];
   foreach ($d as $v) {
     genInt7();
   }
 }
 
-async function dictforeachBad2(): Awaitable<void> {
+async function dictForeachBad2(): Awaitable<void> {
   $d = dict['a' => 'b'];
   foreach ($d as $v) {
     genInt7();
   }
+}
+
+async function dictFromAsyncOK(): Awaitable<void> {
+  $d = dict['a' => genInt7(), 'b' => genInt7()];
+  await Dict\from_async($d);
+}
+
+async function dictFromAsyncBad(): Awaitable<void> {
+  $d = dict['a' => genInt7(), 'b' => genInt7()];
+  Dict\from_async($d);
+}
+
+async function do_await_dict_from_async(
+  dict<string, Awaitable<int>> $d,
+): Awaitable<void> {
+  await Dict\from_async($d);
+}
+
+// this demonstrates the need for a better treatment of less-concrete dicts
+async function dictFromAsyncIndirectFP(): Awaitable<void> {
+  $d = dict['a' => genInt7(), 'b' => genInt7()];
+  await do_await_dict_from_async($d);
 }

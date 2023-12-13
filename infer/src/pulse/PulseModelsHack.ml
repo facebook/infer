@@ -476,6 +476,27 @@ module Dict = struct
        assign_ret dict
 
 
+  let dict_from_async _dummy dict : model =
+    let open DSL.Syntax in
+    start_model
+    @@ let* fields = get_known_fields dict in
+       let* new_dict = mk_fresh ~model_desc:"dict_from_async" () in
+       let typ = Typ.mk_struct TextualSil.hack_dict_type_name in
+       let* () = add_dynamic_type typ new_dict in
+       let* () =
+         list_iter fields ~f:(fun field_access ->
+             match (field_access : Access.t) with
+             | FieldAccess field_name ->
+                 let* awaitable_value = eval_deref_access Read dict field_access in
+                 let* awaited_value = await_hack_value awaitable_value in
+                 write_deref_field ~ref:new_dict field_name ~obj:awaited_value
+             | _ ->
+                 ret () )
+       in
+       let* new_awaitable = make_new_awaitable new_dict in
+       assign_ret new_awaitable
+
+
   (* TODO: handle the situation where we have mix of dict and vec *)
   let hack_array_cow_set_dsl dict args : unit DSL.model_monad =
     let open DSL.Syntax in
@@ -1118,6 +1139,8 @@ let matchers : matcher list =
     $+ capt_arg_payload $--> hack_set_static_prop
   ; -"$root" &:: "FlibSL::Vec::from_async" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Vec.vec_from_async
+  ; -"$root" &:: "FlibSL::Dict::from_async" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> Dict.dict_from_async
   ; -"$builtins" &:: "hhbc_iter_init" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $--> hhbc_iter_init
   ; -"$builtins" &:: "hhbc_iter_next" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
