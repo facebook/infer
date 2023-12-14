@@ -490,9 +490,8 @@ let d_increase_indent () = d_printf "  @["
 
 let d_decrease_indent () = d_printf "@]"
 
-let d_with_indent ?name_color ?(collapsible = false) ?(escape_result = true) ?pp_result ~f name_fmt
-    =
-  if not Config.write_html then F.ikfprintf (fun _ -> f ()) Format.err_formatter name_fmt
+let with_indent ?name_color ?(collapsible = false) ?(escape_result = true) ?pp_result ~f name_fmt =
+  if not Config.write_html then F.ikfprintf (fun _ -> f ()) Format.std_formatter name_fmt
   else
     let print_block name =
       let block_tag, name_tag = if collapsible then ("details", "summary") else ("div", "div") in

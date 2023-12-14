@@ -140,7 +140,7 @@ val d_decrease_indent : unit -> unit
 (** dump command to decrease the indentation level NOTE: most likely, you need [d_with_indent]
     instead. *)
 
-val d_with_indent :
+val with_indent :
      ?name_color:Pp.color
   -> ?collapsible:bool
   -> ?escape_result:bool
@@ -148,8 +148,8 @@ val d_with_indent :
   -> f:(unit -> 'a)
   -> ('b, F.formatter, unit, 'a) format4
   -> 'b
-(** Execute arbitrary function (the last argument) with a given [name] so that all logs written
-    inside (if any) are written with indentation.
+(** Unconditionally execute [f] so that all logs written inside (if any) are written with
+    indentation, using the title format provided.
 
     [pp_result], if provided, will make the result of a call to be printed as well (useful for cases
     when there are several places when the function returns).

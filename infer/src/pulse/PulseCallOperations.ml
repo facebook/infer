@@ -647,7 +647,7 @@ let call tenv path ~caller_proc_desc
             (res, non_disj, contradiction, `KnownCall) )
       else (res, non_disj, contradiction, `UnknownCall)
     else if is_pulse_specialization_limit_not_reached then
-      L.d_with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
+      L.with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
           match maybe_dynamic_type_specialization_is_needed specialization contradiction astate with
           | `NeedSpecialization (dyntypes_map, needs_from_caller) ->
               let specialization_is_fully_satisfied =

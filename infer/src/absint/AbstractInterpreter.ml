@@ -401,7 +401,7 @@ struct
             DisjunctiveMetadata.add_dropped_disjuncts 1 ;
             (post_astate, n_disjuncts) )
           else
-            L.d_with_indent "Executing instruction from disjunct #%d" i ~f:(fun () ->
+            L.with_indent "Executing instruction from disjunct #%d" i ~f:(fun () ->
                 (* check timeout once per disjunct to execute instead of once for all disjuncts *)
                 Timer.check_timeout () ;
                 let disjuncts', non_disj' =
@@ -599,7 +599,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
           | None ->
               fun fmt -> F.fprintf fmt "<unknown>"
         in
-        L.d_with_indent ~name_color:Blue ~collapsible:true ~pp_result ~escape_result:false
+        L.with_indent ~name_color:Blue ~collapsible:true ~pp_result ~escape_result:false
           "exec_instr %t" pp_instr ~f:(fun () ->
             try
               let post = TransferFunctions.exec_instr pre proc_data node idx instr in

@@ -1167,7 +1167,7 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
   let pp_summary =
     Pp.html_collapsible_block ~name:"Show/hide the summary" AbductiveDomain.Summary.pp
   in
-  L.d_with_indent ~collapsible:true "Applying pre/post for %a(%a):" Procname.pp callee_proc_name
+  L.with_indent ~collapsible:true "Applying pre/post for %a(%a):" Procname.pp callee_proc_name
     pp_formals formals ~f:(fun () ->
       L.d_printfln "%a" pp_summary callee_summary ;
       aux () )

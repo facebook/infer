@@ -131,7 +131,7 @@ let taint_sources path location ~intra_procedural_only tainted astate =
                 AbstractValue.pp addr ;
               astate ) ) )
   in
-  L.d_with_indent "taint_sources" ~f:aux
+  L.with_indent "taint_sources" ~f:aux
 
 
 let taint_sanitizers path location tainted astate =
@@ -150,7 +150,7 @@ let taint_sanitizers path location tainted astate =
               (TaintSanitized (Attribute.TaintSanitizedSet.singleton taint_sanitized))
               astate ) )
   in
-  L.d_with_indent "taint_sanitizers" ~f:aux
+  L.with_indent "taint_sanitizers" ~f:aux
 
 
 let source_matches_sink_policy sink_kind {SinkPolicy.source_kinds= sink_sources} source_kind =
@@ -397,7 +397,7 @@ let check_flows_wrt_sink ?(policy_violations_reported = IntSet.empty) path locat
       sources (Ok policy_violations_reported)
     |> PulseResult.map ~f:(fun res -> (res, sanitizers))
   in
-  L.d_with_indent "check flows wrt sink from %a (%a)" AbstractValue.pp source_value
+  L.with_indent "check flows wrt sink from %a (%a)" AbstractValue.pp source_value
     DecompilerExpr.pp_with_abstract_value source_expr ~collapsible:true ~f:(fun () ->
       let taint_dependencies = gather_taint_dependencies source astate in
       TaintDependencies.fold taint_dependencies ~init:(policy_violations_reported, astate)
@@ -473,7 +473,7 @@ let taint_sinks path location tainted astate =
           let+ _, astate = mark_sinked IntSet.empty ~sink v history astate in
           astate )
   in
-  L.d_with_indent "taint_sinks" ~f:aux
+  L.with_indent "taint_sinks" ~f:aux
 
 
 let propagate_to path location value_origin values call astate =
@@ -555,7 +555,7 @@ let taint_propagators path location proc_name actuals tainted astate =
         in
         propagate_to path location value_origin other_actuals (Call proc_name) astate )
   in
-  L.d_with_indent "taint_propagators" ~f:aux
+  L.with_indent "taint_propagators" ~f:aux
 
 
 let is_cpp_assignment_operator proc_name_opt =
@@ -713,7 +713,7 @@ let should_treat_as_unknown_for_taint tenv ?proc_attributes proc_name =
 
 let call tenv path location return ~call_was_unknown (call : _ Either.t)
     (actuals : ValueOrigin.t FuncArg.t list) astate =
-  L.d_with_indent "taint operations -> call" ~f:(fun () ->
+  L.with_indent "taint operations -> call" ~f:(fun () ->
       match call with
       | First call_exp ->
           L.d_printfln "call to expression [unknown=%b]" call_was_unknown ;
