@@ -31,7 +31,6 @@
  (libraries
   core
   iter
-  ocamlgraph
   ppx_show.runtime
   IStdlib
   ATDGenerated

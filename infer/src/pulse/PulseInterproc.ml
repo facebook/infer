@@ -1031,7 +1031,7 @@ let check_all_taint_valid path callee_proc_name call_location callee_summary ast
           let sink_and_trace =
             ({TaintItem.kinds= [kind]; value_tuple= sink}, trace_via_call trace)
           in
-          let+ _, astate =
+          let+ astate =
             PulseTaintOperations.check_flows_wrt_sink path call_location ~sink:sink_and_trace
               ~source:addr_hist_caller astate
           in
