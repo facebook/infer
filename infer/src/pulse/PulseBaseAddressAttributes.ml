@@ -61,7 +61,7 @@ let mk_transitive_taint_from_subst f_keep memory =
         match Attributes.get_propagate_taint_from attrs with
         | None ->
             taint_from_map
-        | Some taints_in ->
+        | Some (_, taints_in) ->
             List.fold ~init:taint_from_map
               ~f:(fun acc {Attribute.v= from} ->
                 match AbstractValue.Map.find_opt addr acc with

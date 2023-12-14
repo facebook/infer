@@ -270,8 +270,11 @@ let fold_taint_dependencies addr_hist0 astate ~init ~f =
       visited := AbstractValue.Set.add from_addr !visited ;
       (* Collect propagated taint from attributes *)
       Option.iter (AbductiveDomain.AddressAttributes.get_propagate_taint_from from_addr astate)
-        ~f:(fun taints_in ->
+        ~f:(fun (reason, taints_in) ->
           List.iter taints_in ~f:(fun Attribute.{v= to_v; history= to_h} ->
+              L.d_printfln "Propagating from attribute to %a (reason: %a), hist=[@[<hv>%a@]]"
+                AbstractValue.pp to_v Attribute.pp_taint_propagation_reason reason ValueHistory.pp
+                to_h ;
               let acc, sanitizers = f !acc_ref sanitizers (to_v, to_h) in
               acc_ref := acc ;
               fold_taint_dependencies_aux sanitizers (to_v, to_h) ) ) ;
@@ -281,6 +284,8 @@ let fold_taint_dependencies addr_hist0 astate ~init ~f =
           if should_follow_access access then
             Option.iter (AbductiveDomain.Memory.find_edge_opt dest_addr Dereference astate)
               ~f:(fun deref_dest ->
+                L.d_printfln "Propagating from edges to %a, hist=[@[<hv>%a@]]" AbstractValue.pp
+                  (fst deref_dest) ValueHistory.pp (snd deref_dest) ;
                 let acc, sanitizers = f !acc_ref sanitizers deref_dest in
                 acc_ref := acc ;
                 fold_taint_dependencies_aux sanitizers deref_dest ) ) )
@@ -460,7 +465,7 @@ let taint_sinks path location tainted astate =
   L.with_indent "taint_sinks" ~f:aux
 
 
-let propagate_to path location value_origin values call astate =
+let propagate_to path location reason value_origin values call astate =
   let v = ValueOrigin.value value_origin in
   let path_condition = astate.AbductiveDomain.path_condition in
   if PulseFormula.is_known_zero path_condition v then
@@ -468,12 +473,12 @@ let propagate_to path location value_origin values call astate =
   else
     let astate =
       if not (List.is_empty values) then
-        AbductiveDomain.AddressAttributes.add_one v
-          (PropagateTaintFrom
-             (List.map values ~f:(fun {FuncArg.arg_payload= value_origin} ->
-                  let v, history = ValueOrigin.addr_hist value_origin in
-                  Attribute.{v; history} ) ) )
-          astate
+        let taints_in =
+          List.map values ~f:(fun {FuncArg.arg_payload= value_origin} ->
+              let v, history = ValueOrigin.addr_hist value_origin in
+              Attribute.{v; history} )
+        in
+        AbductiveDomain.AddressAttributes.add_one v (PropagateTaintFrom (reason, taints_in)) astate
       else astate
     in
     fold_reachable_values value_origin astate ~f:(fun vo astate ->
@@ -528,7 +533,7 @@ let propagate_to path location value_origin values call astate =
             astate ) )
 
 
-let taint_propagators path location proc_name actuals tainted astate =
+let taint_propagators path location reason proc_name actuals tainted astate =
   let aux () =
     List.fold tainted ~init:astate ~f:(fun astate TaintItemMatcher.{value_origin} ->
         let v = ValueOrigin.value value_origin in
@@ -537,7 +542,7 @@ let taint_propagators path location proc_name actuals tainted astate =
               let actual = ValueOrigin.value actual_value_origin in
               not (AbstractValue.equal v actual) )
         in
-        propagate_to path location value_origin other_actuals (Call proc_name) astate )
+        propagate_to path location reason value_origin other_actuals (Call proc_name) astate )
   in
   L.with_indent "taint_propagators" ~f:aux
 
@@ -655,20 +660,20 @@ let propagate_taint_for_unknown_calls tenv path location (return, return_typ)
     match Stack.find_opt return astate with
     | Some return_addr_hist when propagate_to_return ->
         let return_value_origin = ValueOrigin.OnStack {var= return; addr_hist= return_addr_hist} in
-        propagate_to path location return_value_origin actuals call astate
+        propagate_to path location UnknownCall return_value_origin actuals call astate
     | _ ->
         astate
   in
   let astate =
     match actuals with
     | {FuncArg.arg_payload= this} :: other_actuals when propagate_to_receiver ->
-        propagate_to path location this other_actuals call astate
+        propagate_to path location UnknownCall this other_actuals call astate
     | _ ->
         astate
   in
   match List.rev actuals with
   | {FuncArg.arg_payload= last} :: other_actuals when propagate_to_last_actual ->
-      propagate_to path location last other_actuals call astate
+      propagate_to path location UnknownCall last other_actuals call astate
   | _ ->
       astate
 
@@ -743,7 +748,7 @@ let call tenv path location return ~call_was_unknown (call : _ Either.t)
           in
           let astate, should_propagate_for_unknown =
             let new_state =
-              taint_propagators path location proc_name actuals propagator_matches astate
+              taint_propagators path location UserConfig proc_name actuals propagator_matches astate
             in
             (new_state, call_was_unknown && phys_equal astate new_state)
           in

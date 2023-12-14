@@ -105,6 +105,9 @@ module Attribute = struct
 
   module TaintSanitizedSet = PrettyPrintable.MakePPSet (TaintSanitized)
 
+  type taint_propagation_reason = InternalModel | UnknownCall | UserConfig
+  [@@deriving compare, equal, show {with_path= false}]
+
   module CopyOrigin = struct
     type t = CopyCtor | CopyAssignment | CopyToOptional | CopyInGetDefault
     [@@deriving compare, equal]
@@ -192,7 +195,7 @@ module Attribute = struct
     | JavaResourceReleased
     | CSharpResourceReleased
     | HackAsyncAwaited
-    | PropagateTaintFrom of taint_in list
+    | PropagateTaintFrom of taint_propagation_reason * taint_in list
       (* [v -> PropagateTaintFrom \[v1; ..; vn\]] does not
          retain [v1] to [vn], in fact they should be collected
          when they become unreachable *)
@@ -341,8 +344,9 @@ module Attribute = struct
         F.pp_print_string f "Released"
     | HackAsyncAwaited ->
         F.pp_print_string f "Awaited"
-    | PropagateTaintFrom taints_in ->
-        F.fprintf f "PropagateTaintFrom([%a])" (Pp.seq ~sep:";" pp_taint_in) taints_in
+    | PropagateTaintFrom (reason, taints_in) ->
+        F.fprintf f "PropagateTaintFrom(%a, [%a])" pp_taint_propagation_reason reason
+          (Pp.seq ~sep:";" pp_taint_in) taints_in
     | RefCounted ->
         F.fprintf f "RefCounted"
     | ReturnedFromUnknown values ->
@@ -523,15 +527,16 @@ module Attribute = struct
           TaintSink.{taint_sink with trace= add_call_to_trace taint_sink.trace}
         in
         MustNotBeTainted (TaintSinkMap.map add_call_to_sink sinks)
-    | PropagateTaintFrom taints_in ->
+    | PropagateTaintFrom (reason, taints_in) ->
         let add_propagation_event_to_history hist =
           let hist = add_call_to_history hist in
           let propagation_event = ValueHistory.TaintPropagated (call_location, timestamp) in
           ValueHistory.sequence propagation_event hist
         in
         PropagateTaintFrom
-          (List.map taints_in ~f:(fun {v; history} ->
-               {v= subst v; history= add_propagation_event_to_history history} ) )
+          ( reason
+          , List.map taints_in ~f:(fun {v; history} ->
+                {v= subst v; history= add_propagation_event_to_history history} ) )
     | ReturnedFromUnknown values ->
         ReturnedFromUnknown (List.map values ~f:subst)
     | Tainted tainted ->
@@ -624,9 +629,9 @@ module Attribute = struct
     match attr with
     | ConfigUsage (StringParam {v= source}) | CopiedReturn {source} ->
         Option.some_if (f_keep source) attr
-    | PropagateTaintFrom taints_in ->
+    | PropagateTaintFrom (reason, taints_in) ->
         filter_aux taints_in ~get_addr:(fun {v} -> v) ~set_addr:(fun v thing -> {thing with v})
-        |> Option.map ~f:(fun taints_in -> PropagateTaintFrom taints_in)
+        |> Option.map ~f:(fun taints_in -> PropagateTaintFrom (reason, taints_in))
     | ReturnedFromUnknown values ->
         filter_aux values ~get_addr:Fn.id ~set_addr:(fun v _ -> v)
         |> Option.map ~f:(fun values -> ReturnedFromUnknown values)
@@ -767,7 +772,7 @@ module Attributes = struct
 
   let get_propagate_taint_from =
     get_by_rank Attribute.propagate_taint_from_rank ~dest:(function [@warning "-partial-match"]
-        | PropagateTaintFrom taints_in -> taints_in )
+        | PropagateTaintFrom (reason, taints_in) -> (reason, taints_in) )
 
 
   let remove_propagate_taint_from = remove_by_rank Attribute.propagate_taint_from_rank

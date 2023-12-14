@@ -303,7 +303,7 @@ module BasicString = struct
     let+ astate, internal_string = to_internal_string path location this_hist astate in
     let astate =
       AbductiveDomain.AddressAttributes.add_one iter
-        (PropagateTaintFrom [{v= this; history= hist}])
+        (PropagateTaintFrom (InternalModel, [{v= this; history= hist}]))
         astate
     in
     (astate, event, backing_ptr, internal_string)

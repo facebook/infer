@@ -62,6 +62,10 @@ end
 
 module TaintSanitizedSet : PrettyPrintable.PPSet with type elt = TaintSanitized.t
 
+type taint_propagation_reason = InternalModel | UnknownCall | UserConfig
+
+val pp_taint_propagation_reason : F.formatter -> taint_propagation_reason -> unit
+
 module CopyOrigin : sig
   type t = CopyCtor | CopyAssignment | CopyToOptional | CopyInGetDefault
   [@@deriving compare, equal]
@@ -116,7 +120,7 @@ type t =
   | JavaResourceReleased
   | CSharpResourceReleased
   | HackAsyncAwaited
-  | PropagateTaintFrom of taint_in list
+  | PropagateTaintFrom of taint_propagation_reason * taint_in list
   | RefCounted
   | ReturnedFromUnknown of AbstractValue.t list
   | SourceOriginOfCopy of {source: PulseAbstractValue.t; is_const_ref: bool}
@@ -194,7 +198,7 @@ module Attributes : sig
 
   val remove_must_not_be_tainted : ?kinds:TaintConfig.Kind.Set.t -> t -> t
 
-  val get_propagate_taint_from : t -> taint_in list option
+  val get_propagate_taint_from : t -> (taint_propagation_reason * taint_in list) option
 
   val remove_propagate_taint_from : t -> t
 
