@@ -41,7 +41,7 @@ std::string skip_indirect(std::string formal) {
   return skip_value(*skipped_pointer);
 }
 
-void skip_indirect_bad() {
+void FN_skip_indirect_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = skip_indirect(source);
   __infer_taint_sink(laundered_source);

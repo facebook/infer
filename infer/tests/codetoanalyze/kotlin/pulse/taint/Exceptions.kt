@@ -125,7 +125,8 @@ class Exceptions {
     throw RuntimeException(param.toString())
   }
 
-  fun callSinkWithSourceInsideExceptionObjectBad() {
+  // see comment on the similar function in codetoanalyze/java/pulse/taint/Exceptions.java
+  fun FN_callSinkWithSourceInsideExceptionObjectBad() {
     try {
       doThrow(inferSecretSource())
     } catch (e: RuntimeException) {

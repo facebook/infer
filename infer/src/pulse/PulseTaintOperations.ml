@@ -265,19 +265,35 @@ let fold_taint_dependencies addr_hist0 astate ~init ~f =
   in
   let acc, sanitizers = f init Attribute.TaintSanitizedSet.empty addr_hist0 in
   let acc_ref = ref acc in
-  let rec fold_taint_dependencies_aux sanitizers (from_addr, _) =
+  let rec fold_taint_dependencies_aux sanitizers from_hist0 from_addr =
     if not (AbstractValue.Set.mem from_addr !visited) then (
       visited := AbstractValue.Set.add from_addr !visited ;
       (* Collect propagated taint from attributes *)
       Option.iter (AbductiveDomain.AddressAttributes.get_propagate_taint_from from_addr astate)
         ~f:(fun (reason, taints_in) ->
           List.iter taints_in ~f:(fun Attribute.{v= to_v; history= to_h} ->
-              L.d_printfln "Propagating from attribute to %a (reason: %a), hist=[@[<hv>%a@]]"
-                AbstractValue.pp to_v Attribute.pp_taint_propagation_reason reason ValueHistory.pp
-                to_h ;
-              let acc, sanitizers = f !acc_ref sanitizers (to_v, to_h) in
+              let hist =
+                match (reason : Attribute.taint_propagation_reason) with
+                | UnknownCall ->
+                    (* for unknown calls [from_hist] should already contain the taint event *)
+                    L.d_printfln
+                      "Propagating from original history to %a (reason: %a), hist=[@[<hv>%a@]]"
+                      AbstractValue.pp to_v Attribute.pp_taint_propagation_reason reason
+                      ValueHistory.pp from_hist0 ;
+                    from_hist0
+                | UserConfig | InternalModel ->
+                    (* but if the taint was propagated then we need to fall back to the history
+                       present in the attribute even though it may not be accurate, because the
+                       propagation of the tainting event cannot be accurately propagated to
+                       histories *)
+                    L.d_printfln "Propagating from attribute to %a (reason: %a), hist=[@[<hv>%a@]]"
+                      AbstractValue.pp to_v Attribute.pp_taint_propagation_reason reason
+                      ValueHistory.pp to_h ;
+                    to_h
+              in
+              let acc, sanitizers = f !acc_ref sanitizers (to_v, hist) in
               acc_ref := acc ;
-              fold_taint_dependencies_aux sanitizers (to_v, to_h) ) ) ;
+              fold_taint_dependencies_aux sanitizers from_hist0 to_v ) ) ;
       (* Collect taint from memory [from_addr_hist] points to *)
       AbductiveDomain.Memory.fold_edges from_addr astate ~init:()
         ~f:(fun () (access, (dest_addr, _)) ->
@@ -288,9 +304,9 @@ let fold_taint_dependencies addr_hist0 astate ~init ~f =
                   (fst deref_dest) ValueHistory.pp (snd deref_dest) ;
                 let acc, sanitizers = f !acc_ref sanitizers deref_dest in
                 acc_ref := acc ;
-                fold_taint_dependencies_aux sanitizers deref_dest ) ) )
+                fold_taint_dependencies_aux sanitizers (snd deref_dest) (fst deref_dest) ) ) )
   in
-  fold_taint_dependencies_aux sanitizers addr_hist0 ;
+  fold_taint_dependencies_aux sanitizers (snd addr_hist0) (fst addr_hist0) ;
   !acc_ref
 
 

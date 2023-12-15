@@ -45,7 +45,19 @@ class C1 {
     \Level1\taintSink($sc);
   }
 
-  public static function FP_propagatedTaintUnrelated(SensitiveClass $sc) {
+  public function propagatedTaintUnrelated(SensitiveClass $sc) {
+    $t1 = Unknown::unknown($sc->getId());
+    if ($t1 is null) {
+      ShapeLogger::logMixed(false);
+    }
+
+    $t2 = Shapes::idx($t1, 'field');
+    if ($t2 is null) {
+      ShapeLogger::logMixed(false);
+    }
+  }
+
+  public static function FP_staticPropagatedTaintUnrelated(SensitiveClass $sc) {
     $t1 = Unknown::unknown($sc->getId());
     if ($t1 is null) {
       ShapeLogger::logMixed(false);

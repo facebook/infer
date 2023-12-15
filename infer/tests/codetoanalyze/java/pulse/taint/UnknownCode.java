@@ -105,11 +105,20 @@ public abstract class UnknownCode {
     InferTaint.inferSensitiveSink(launderedSource);
   }
 
-  static void FP_propagatedTaintUnrelated(SensitiveClass sc) {
+  static void propagatedTaintUnrelated(SensitiveClass sc) {
     Object t1 = nativeMethod(sc.getId());
     Object t2 = nativeMethod(null);
     if (t1 == t2) {
       InferTaint.inferSensitiveSink(t2);
     }
+  }
+
+  static String returnToString(Object param) {
+    return param.toString();
+  }
+
+  static void sourceIndirectToStringToSink() {
+    String tainted = returnToString(InferTaint.inferSecretSource());
+    InferTaint.inferSensitiveSink(tainted);
   }
 }

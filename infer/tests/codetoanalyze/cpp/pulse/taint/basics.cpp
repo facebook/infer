@@ -165,7 +165,7 @@ void via_passthrough_bad1(Obj* obj) {
   obj->string_sink(*laundered_source);
 }
 
-void via_passthrough_bad2(Obj* obj) {
+void FN_via_passthrough_bad2(Obj* obj) {
   std::string source = obj->string_source(0);
   std::string laundered_source = id2<std::string>(source);
   obj->string_sink(laundered_source);

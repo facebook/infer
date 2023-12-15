@@ -180,13 +180,13 @@ Formatter<Args...> format3(std::string fmt, Args&&... args);
 template <class... Args>
 Formatter<Args...>* format4(std::string fmt, Args&&... args);
 
-void format1_bad() {
+void FN_format1_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = format1("%s", source).str();
   __infer_taint_sink(laundered_source);
 }
 
-void format2_bad() {
+void FN_format2_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = format2("%s", source)->str();
   __infer_taint_sink(laundered_source);
