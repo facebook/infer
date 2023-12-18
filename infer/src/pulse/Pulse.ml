@@ -28,9 +28,27 @@ let report_topl_errors proc_desc err_log summary =
   List.iter ~f summary
 
 
-let is_hack_async pname =
-  Option.exists (IRAttributes.load pname) ~f:(fun attrs -> attrs.ProcAttributes.is_hack_async)
-  || Procname.is_hack_async_name pname
+let is_hack_async tenv pname =
+  match IRAttributes.load pname with
+  | None ->
+      L.d_printfln "no attributes found for %a" Procname.pp pname ;
+      Procname.is_hack_async_name pname
+  | Some attrs ->
+      L.d_printfln "attributes are %a" ProcAttributes.pp attrs ;
+      attrs.ProcAttributes.is_hack_async
+      || Procname.is_hack_async_name pname
+         && ( attrs.ProcAttributes.is_abstract
+            || (not attrs.ProcAttributes.is_defined)
+            ||
+            match Procname.get_class_type_name pname with
+            | None ->
+                false
+            | Some tn -> (
+              match Tenv.lookup tenv tn with
+              | None ->
+                  false
+              | Some str ->
+                  Struct.is_hack_interface str ) )
 
 
 let is_not_implicit_or_copy_ctor_assignment pname =
@@ -834,7 +852,7 @@ module PulseTransferFunctions = struct
     else L.d_printfln "caller %a is not a wrapper" Procdesc.pp_signature proc_desc ;
     let ret, ret_and_name_saved_for_hack_async =
       match callee_pname with
-      | Some proc_name when is_hack_async proc_name && not caller_is_hack_wrapper ->
+      | Some proc_name when is_hack_async tenv proc_name && not caller_is_hack_wrapper ->
           L.d_printfln "about to make asynchronous call of %a, ret=%a" Procname.pp proc_name
             Ident.pp (fst ret) ;
           ((Ident.create_fresh Ident.kprimed, snd ret), Some (ret, proc_name))

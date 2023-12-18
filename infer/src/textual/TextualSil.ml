@@ -468,6 +468,7 @@ module StructBridge = struct
           | Desc proc ->
               Some proc.procdecl
           | Decl _ ->
+              (* TODO: Don't just throw Decls away entirely *)
               None )
       |> List.map ~f:(ProcDeclBridge.to_sil lang)
     in
@@ -987,6 +988,7 @@ module ProcDescBridge = struct
     in
     let definition_loc = LocationBridge.to_sil sourcefile procdecl.qualified_name.name.loc in
     let is_hack_async = List.exists procdecl.attributes ~f:Attr.is_async in
+    let is_abstract = List.exists procdecl.attributes ~f:Attr.is_abstract in
     let is_hack_wrapper = List.exists procdecl.attributes ~f:Attr.is_hack_wrapper in
     let hack_variadic_position =
       Option.value_map ~default:None procdecl.formals_types ~f:(fun formals_types ->
@@ -999,6 +1001,7 @@ module ProcDescBridge = struct
       { (ProcAttributes.default (SourceFile.file sourcefile) sil_procname) with
         is_defined= true
       ; is_hack_async
+      ; is_abstract
       ; is_hack_wrapper
       ; hack_variadic_position
       ; formals

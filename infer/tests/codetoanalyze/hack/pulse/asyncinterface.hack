@@ -9,11 +9,24 @@ interface IAsync {
   public function genFoo(): Awaitable<int>;
 }
 
-async function callinterfaceOK(IAsync $a): Awaitable<int> {
+async function callInterfaceOK(IAsync $a): Awaitable<int> {
   return await $a->genFoo();
 }
 
-async function callinterfaceBad(IAsync $a): Awaitable<int> {
+async function callInterfaceBad(IAsync $a): Awaitable<int> {
+  $x = $a->genFoo();
+  return 42;
+}
+
+abstract class CAbs {
+  abstract public function genFoo(): Awaitable<int>;
+}
+
+async function callAbstractOK(CAbs $a): Awaitable<int> {
+  return await $a->genFoo();
+}
+
+async function callAbstractBad(CAbs $a): Awaitable<int> {
   $x = $a->genFoo();
   return 42;
 }

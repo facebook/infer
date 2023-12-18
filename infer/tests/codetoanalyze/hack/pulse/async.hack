@@ -12,25 +12,32 @@ async function an_async_not_starting_with_gen(): Awaitable<int> {
   return 42;
 }
 
+interface ISomeNames {
+  public function generate_a_boolean(): Awaitable<bool>;
+  public function genFoo(): Awaitable<int>;
+  public function gena(): Awaitable<int>;
+  public function genvxHH45(): Awaitable<int>;
+}
+
 // tests for ugly naming rules, deliberately reference unknown functions
-async function testnamingOK(): Awaitable<void> {
-  generate_a_boolean(); // should not error
+async function testnamingOK(ISomeNames $x): Awaitable<void> {
+  $x->generate_a_boolean(); // should not error
 }
 
-async function testnamingBad(): Awaitable<void> {
-  genFoo(); // should error
+async function testnamingBad(ISomeNames $x): Awaitable<void> {
+  $x->genFoo(); // should error
 }
 
-async function testnamingBad2(): Awaitable<void> {
-  gena(); // should error
+async function testnamingBad2(ISomeNames $x): Awaitable<void> {
+  $x->gena(); // should error
 }
 
 async function testnamingBad3(): Awaitable<void> {
   an_async_not_starting_with_gen(); // should error because we know decl
 }
 
-async function testnamingBad4(): Awaitable<void> {
-  genvxHH45(); // should error
+async function testnamingBad4(ISomeNames $x): Awaitable<void> {
+  $x->genvxHH45(); // should error
 }
 
 async function genOk(): Awaitable<void> {

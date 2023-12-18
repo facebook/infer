@@ -37,3 +37,10 @@ async function nodynamictypeOK(mixed $c): Awaitable<void> {
   $c[0] = genInt3();
   await ($c[0]);
 }
+
+async function vecAccessFP(): Awaitable<void> {
+  $v = vec[genInt3(), genInt3()];
+  await $v[0];
+  $_dummy = $v[0];
+  await $v[1];
+}
