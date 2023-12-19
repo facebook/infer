@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "infer"
-version: "1.1.0"
+version: "1.2.0"
 synopsis: "A multi-language static analyzer"
 maintainer: "the infer team"
 authors: "Meta"
