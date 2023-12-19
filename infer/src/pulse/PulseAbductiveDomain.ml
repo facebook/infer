@@ -429,8 +429,8 @@ module Internal = struct
             let stack, addr = add_edge_on_src timestamp src location (post :> base_domain).stack in
             let init = PostDomain.update ~stack post in
             List.fold fields ~init ~f:(fun (acc : PostDomain.t) (field, field_typ, _) ->
-                if Fieldname.is_internal field || Fieldname.is_capture_field_in_cpp_lambda field
-                then acc
+                if Fieldname.is_internal field || Fieldname.is_capture_field_in_closure field then
+                  acc
                 else
                   let field_addr = CanonValue.mk_fresh () in
                   let fields = RevList.cons field fields_prefix in

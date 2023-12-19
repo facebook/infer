@@ -8,20 +8,30 @@
 open! IStd
 module F = Format
 
-type t = {class_name: Typ.Name.t; field_name: string; capture_mode: CapturedVar.capture_mode option}
+type captured_data = {capture_mode: CapturedVar.capture_mode; is_weak: bool; captured_pos: int}
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+
+type t = {class_name: Typ.Name.t; field_name: string; captured_data: captured_data option}
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let string_of_capture_mode = function
   | CapturedVar.ByReference ->
-      "by_ref_"
+      "by_ref"
   | CapturedVar.ByValue ->
-      "by_value_"
+      "by_value"
+
+
+let pp_captured_data f (captured_data : captured_data) =
+  F.fprintf f "captured_%s_%d%s"
+    (string_of_capture_mode captured_data.capture_mode)
+    captured_data.captured_pos
+    (if captured_data.is_weak then "_weak" else "")
 
 
 let pp f fld =
-  match fld.capture_mode with
-  | Some capture_mode ->
-      F.fprintf f "%s_captured_%s" fld.field_name (string_of_capture_mode capture_mode)
+  match fld.captured_data with
+  | Some captured_data ->
+      F.fprintf f "%s_%a" fld.field_name pp_captured_data captured_data
   | None ->
       F.pp_print_string f fld.field_name
 
@@ -31,59 +41,35 @@ type name_ = Typ.name
 let compare_name_ = Typ.Name.compare_name
 
 let compare_name f f' =
-  [%compare: name_ * string * CapturedVar.capture_mode option]
-    (f.class_name, f.field_name, f.capture_mode)
-    (f'.class_name, f'.field_name, f'.capture_mode)
+  [%compare: name_ * string * captured_data option]
+    (f.class_name, f.field_name, f.captured_data)
+    (f'.class_name, f'.field_name, f'.captured_data)
 
 
-let make ?capture_mode class_name field_name = {class_name; field_name; capture_mode}
+let make ?captured_data class_name field_name = {class_name; field_name; captured_data}
 
-let fake_capture_field_prefix = "__capture_"
-
-let fake_capture_field_weak_prefix = fake_capture_field_prefix ^ "weak_"
-
-let prefix_of_typ typ =
-  match typ.Typ.desc with
-  | Tptr (_, (Pk_objc_weak | Pk_objc_unsafe_unretained)) ->
-      fake_capture_field_weak_prefix
-  | _ ->
-      fake_capture_field_prefix
-
-
-let mk_fake_capture_field ~id typ mode =
-  make
-    (Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]))
-    (Printf.sprintf "%s%s%d" (prefix_of_typ typ) (string_of_capture_mode mode) id)
-
-
-let mk_capture_field_in_cpp_lambda var_name capture_mode =
+let mk_capture_field_in_closure var_name captured_data =
   (* We use this type as before rather than the lambda struct name because
      when we want to create the same names in Pulse we don't have easy access
      to that lambda struct name. The struct name as part of the field name is
      there just to help with inheritance anyway and is not used otherwise. *)
   let class_tname = Typ.CStruct (QualifiedCppName.of_list ["std"; "function"]) in
-  make ~capture_mode class_tname (Mangled.to_string var_name)
+  let name = Printf.sprintf "%s" (Mangled.to_string var_name) in
+  make ~captured_data class_tname name
 
 
-let is_fake_capture_field {field_name} =
-  String.is_prefix ~prefix:fake_capture_field_prefix field_name
+let is_capture_field_in_closure {captured_data} = Option.is_some captured_data
+
+let is_weak_capture_field_in_closure {captured_data} =
+  Option.exists captured_data ~f:(fun {is_weak} -> is_weak)
 
 
-let is_fake_capture_field_weak {field_name} =
-  String.is_prefix ~prefix:fake_capture_field_weak_prefix field_name
+let get_capture_field_position {captured_data} =
+  Option.map captured_data ~f:(fun {captured_pos} -> captured_pos)
 
 
-let is_capture_field_in_cpp_lambda {capture_mode} = Option.is_some capture_mode
-
-let is_capture_field_in_cpp_lambda_by_ref {capture_mode} =
-  Option.exists capture_mode ~f:(fun captured_mode -> CapturedVar.is_captured_by_ref captured_mode)
-
-
-let get_capture_field_position ({field_name} as field) =
-  if is_fake_capture_field field then
-    String.rsplit2 field_name ~on:'_'
-    |> Option.bind ~f:(fun (_, str_pos) -> int_of_string_opt str_pos)
-  else None
+let is_capture_field_in_closure_by_ref {captured_data} =
+  Option.exists captured_data ~f:(fun {capture_mode} -> CapturedVar.is_captured_by_ref capture_mode)
 
 
 let get_class_name {class_name} = class_name

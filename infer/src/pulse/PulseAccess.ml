@@ -55,13 +55,13 @@ module T = struct
     match access with
     | FieldAccess fieldname -> (
         let classname = Fieldname.get_class_name fieldname in
-        let is_fake_capture_field_strong fieldname =
+        let is_capture_field_strong fieldname =
           (* a strongly referencing capture field is a capture field that is not weak *)
-          Fieldname.is_fake_capture_field fieldname
-          && not (Fieldname.is_fake_capture_field_weak fieldname)
+          Fieldname.is_capture_field_in_closure fieldname
+          && not (Fieldname.is_weak_capture_field_in_closure fieldname)
         in
         match Tenv.lookup tenv classname with
-        | None when is_fake_capture_field_strong fieldname ->
+        | None when is_capture_field_strong fieldname ->
             (* Strongly referencing captures *)
             true
         | None ->

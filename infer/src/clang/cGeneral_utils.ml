@@ -65,7 +65,7 @@ let mk_class_field_name ?cxx_record_decl_info class_tname ni_name =
       let lambda_captured_info =
         List.nth_exn cxx_record_decl_info.Clang_ast_t.xrdi_lambda_captures index
       in
-      let captured_mode =
+      let capture_mode =
         CAst_utils.get_captured_mode
           ~lci_capture_this:lambda_captured_info.Clang_ast_t.lci_capture_this
           ~lci_capture_kind:lambda_captured_info.Clang_ast_t.lci_capture_kind
@@ -84,7 +84,8 @@ let mk_class_field_name ?cxx_record_decl_info class_tname ni_name =
         | None ->
             ni_name
       in
-      Fieldname.mk_capture_field_in_cpp_lambda (Mangled.from_string name) captured_mode
+      let captured_data = {Fieldname.capture_mode; is_weak= false; captured_pos= index} in
+      Fieldname.mk_capture_field_in_closure (Mangled.from_string name) captured_data
   | _ ->
       Fieldname.make class_tname ni_name
 

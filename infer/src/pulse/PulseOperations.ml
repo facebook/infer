@@ -51,19 +51,19 @@ module Closures = struct
   let is_captured_by_ref_access (access : _ MemoryAccess.t) =
     match access with
     | FieldAccess fieldname ->
-        Fieldname.is_capture_field_in_cpp_lambda_by_ref fieldname
+        Fieldname.is_capture_field_in_closure_by_ref fieldname
     | _ ->
         false
 
 
-  let mk_capture_edges ~is_lambda captured =
-    let add_edge id edges (mode, typ, addr, trace, captured_as) =
+  let mk_capture_edges captured =
+    let add_edge id edges (capture_mode, typ, addr, trace, captured_as) =
       (* it's ok to use [UnsafeMemory] here because we are building edges *)
       let var_name = Pvar.get_name captured_as in
-      let field_name =
-        if not is_lambda then Fieldname.mk_fake_capture_field ~id typ mode
-        else Fieldname.mk_capture_field_in_cpp_lambda var_name mode
+      let captured_data =
+        {Fieldname.capture_mode; is_weak= Typ.is_weak_pointer typ; captured_pos= id}
       in
+      let field_name = Fieldname.mk_capture_field_in_closure var_name captured_data in
       UnsafeMemory.Edges.add (FieldAccess field_name) (addr, trace) edges
     in
     List.foldi captured ~init:BaseMemory.Edges.empty ~f:add_edge
@@ -95,8 +95,7 @@ module Closures = struct
     let ((closure_addr, _) as closure_addr_hist) =
       (AbstractValue.mk_fresh (), ValueHistory.singleton (Assignment (location, timestamp)))
     in
-    let is_lambda = Procname.is_cpp_lambda pname in
-    let fake_capture_edges = mk_capture_edges ~is_lambda captured_addresses in
+    let fake_capture_edges = mk_capture_edges captured_addresses in
     let++ astate =
       AbductiveDomain.set_post_cell path closure_addr_hist
         (fake_capture_edges, Attributes.singleton (Closure pname))
@@ -189,8 +188,11 @@ and record_closure_cpp_lambda astate (path : PathContext.t) loc procname
         astate
   in
   let** astate = PulseArithmetic.and_positive (fst closure_addr_hist) astate in
-  let store_captured_var result (exp, var, _typ, mode) =
-    let field_name = Fieldname.mk_capture_field_in_cpp_lambda (Pvar.get_name var) mode in
+  let store_captured_var i result (exp, var, typ, capture_mode) =
+    let captured_data =
+      {Fieldname.capture_mode; is_weak= Typ.is_weak_pointer typ; captured_pos= i}
+    in
+    let field_name = Fieldname.mk_capture_field_in_closure (Pvar.get_name var) captured_data in
     let** astate = result in
     let** astate, rhs_value_origin = eval_to_value_origin path NoAccess loc exp astate in
     let rhs_addr, rhs_history = ValueOrigin.addr_hist rhs_value_origin in
@@ -202,7 +204,7 @@ and record_closure_cpp_lambda astate (path : PathContext.t) loc procname
     in
     write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, rhs_history) astate
   in
-  let++ astate = List.fold captured_vars ~init:(Sat (Ok astate)) ~f:store_captured_var in
+  let++ astate = List.foldi captured_vars ~init:(Sat (Ok astate)) ~f:store_captured_var in
   (astate, ValueOrigin.Unknown closure_addr_hist)
 
 
@@ -727,14 +729,14 @@ let remove_vars vars location astate =
 let get_var_captured_actuals path location ~is_lambda ~captured_formals ~actual_closure astate =
   let+ _, astate, captured_actuals =
     PulseResult.list_fold captured_formals ~init:(0, astate, [])
-      ~f:(fun (id, astate, captured) (var, mode, typ) ->
+      ~f:(fun (id, astate, captured) (var, capture_mode, typ) ->
         match var with
         | Var.ProgramVar pvar ->
             let var_name = Pvar.get_name pvar in
-            let field_name =
-              if not is_lambda then Fieldname.mk_fake_capture_field ~id typ mode
-              else Fieldname.mk_capture_field_in_cpp_lambda var_name mode
+            let captured_data =
+              {Fieldname.capture_mode; is_weak= Typ.is_weak_pointer typ; captured_pos= id}
             in
+            let field_name = Fieldname.mk_capture_field_in_closure var_name captured_data in
             let+ astate, captured_actual =
               if is_lambda then
                 eval_deref_access path Read location actual_closure (FieldAccess field_name) astate

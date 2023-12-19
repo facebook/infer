@@ -119,7 +119,11 @@ let captured_vars_of_captured_and_exp caller_proc_desc captured exp path call_lo
           ( astate
           , List.mapi captured ~f:(fun id CapturedVar.{pvar; typ; capture_mode} ->
                 let field_exp =
-                  let fieldname = Fieldname.mk_fake_capture_field ~id typ capture_mode in
+                  let is_weak = Typ.is_weak_pointer typ in
+                  let captured_data = {Fieldname.capture_mode; is_weak; captured_pos= id} in
+                  let fieldname =
+                    Fieldname.mk_capture_field_in_closure (Pvar.get_name pvar) captured_data
+                  in
                   Exp.Lfield (exp, fieldname, typ)
                 in
                 (field_exp, pvar, typ, capture_mode) ) ) )
