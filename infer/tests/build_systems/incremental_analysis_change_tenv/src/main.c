@@ -7,10 +7,9 @@
 
 #include "library.h"
 
-struct my_pair twice(int n) { make_pair(n, n); }
+struct my_pair twice(int n) { return make_pair(n, n); }
 
 int main() {
-  struct my_pair p;
-  p = twice(42);
+  struct my_pair p = twice(42);
   return p.x + p.y;
 }

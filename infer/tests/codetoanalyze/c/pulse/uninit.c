@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <assert.h>
 #include <stdlib.h>
 
 int dereference_bad() {
@@ -112,9 +113,7 @@ void malloc_array_good(int len) {
 
 struct uninit_s unknown_struct();
 
-struct uninit_s unknown_wrapper() {
-  return unknown_struct();
-}
+struct uninit_s unknown_wrapper() { return unknown_struct(); }
 
 void havoc_calling_unknown_struct_good() {
   struct uninit_s x = unknown_wrapper();
@@ -226,3 +225,38 @@ int call_init_by_conditionaql_exp_ok(int b) {
   struct uninit_s x = init_by_conditional_exp(b);
   return x.f1;
 }
+
+/** testing passing structs by value */
+
+struct my_pair {
+  int x;
+  int y;
+};
+
+struct my_pair make_pair(int x, int y) {
+  struct my_pair pair;
+  pair.x = x;
+  pair.y = y;
+  return pair;
+}
+
+struct my_pair twice(int n) { return make_pair(n, n); }
+
+int FP_build_struct_after_var_init_ok() {
+  struct my_pair p;
+  p = twice(42);
+  return p.x + p.y;
+}
+
+int build_struct_during_var_init_ok() {
+  struct my_pair p = twice(42);
+  return p.x + p.y;
+}
+
+struct my_pair init_only_x_bad(int x) {
+  struct my_pair pair;
+  pair.x = x;
+  return pair;
+}
+
+/** /testing passing structs by value */
