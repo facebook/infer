@@ -1,3 +1,3 @@
-hello.c, test, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test()]
-hello2.c, test2, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test2()]
-hello3.c, test3, 2, NULL_DEREFERENCE, no_bucket, ERROR, [start of procedure test3()]
+hello.c, test, 2, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+hello2.c, test2, 2, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+hello3.c, test3, 2, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]

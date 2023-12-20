@@ -1,2 +1,2 @@
-codetoanalyze/dotnet/bgeble/NullDerefBgeBle.cs, Void TestCodeBgeBle.NullExceptionBgeBad(), 8, NULL_DEREFERENCE, no_bucket
-codetoanalyze/dotnet/bgeble/NullDerefBgeBle.cs, Void TestCodeBgeBle.NullExceptionBleBad(), 8, NULL_DEREFERENCE, no_bucket
+codetoanalyze/dotnet/bgeble/NullDerefBgeBle.cs, Void TestCodeBgeBle.NullExceptionBgeBad(), 8, NULLPTR_DEREFERENCE, no_bucket
+codetoanalyze/dotnet/bgeble/NullDerefBgeBle.cs, Void TestCodeBgeBle.NullExceptionBleBad(), 8, NULLPTR_DEREFERENCE, no_bucket

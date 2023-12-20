@@ -108,7 +108,7 @@ let config_unsafe checker =
       ; short_documentation=
           "This analysis deals with a range of issues, many linked to memory safety."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
-      ; enabled_by_default= true
+      ; enabled_by_default= false
       ; activates= [] }
   | BufferOverrunAnalysis ->
       { id= "bufferoverrun-analysis"
@@ -281,9 +281,9 @@ let config_unsafe checker =
       { id= "pulse"
       ; kind= UserFacing {title= "Pulse"; markdown_body= [%blob "./documentation/checkers/Pulse.md"]}
       ; support= mk_support_func ~clang:Support ~java:Support ~erlang:ExperimentalSupport ()
-      ; short_documentation= "Memory and lifetime analysis."
+      ; short_documentation= "General-purpose memory and value analysis engine."
       ; cli_flags= Some {deprecated= ["-ownership"]; show_in_help= true}
-      ; enabled_by_default= false
+      ; enabled_by_default= true
       ; activates= [] }
   | PurityAnalysis ->
       { id= "purity-analysis"

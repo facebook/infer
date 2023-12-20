@@ -25,10 +25,10 @@ OPTIONS
            Activates: Enable annotation-reachability and disable all other
            checkers (Conversely: --no-annotation-reachability-only)
 
-       --no-biabduction
-           Deactivates: checker biabduction: This analysis deals with a range
+       --biabduction
+           Activates: checker biabduction: This analysis deals with a range
            of issues, many linked to memory safety. (Conversely:
-           --biabduction)
+           --no-biabduction)
 
        --biabduction-only
            Activates: Enable biabduction and disable all other checkers
@@ -113,9 +113,9 @@ OPTIONS
            and/or reporting. (Conversely: --deduplicate)
 
        --no-default-checkers
-           Deactivates: Default checkers: --biabduction,
-           --fragment-retains-view, --inefficient-keyset-iterator,
-           --liveness, --parameter-not-null-checked, --racerd, --siof,
+           Deactivates: Default checkers: --fragment-retains-view,
+           --inefficient-keyset-iterator, --liveness,
+           --parameter-not-null-checked, --pulse, --racerd, --siof,
            --self-in-block, --starvation (Conversely: --default-checkers)
 
        --files-to-analyze-index file
@@ -281,9 +281,9 @@ OPTIONS
        --project-root,-C dir
            Specify the root directory of the project
 
-       --pulse
-           Activates: checker pulse: Memory and lifetime analysis.
-           (Conversely: --no-pulse)
+       --no-pulse
+           Deactivates: checker pulse: General-purpose memory and value
+           analysis engine. (Conversely: --pulse)
 
        --pulse-only
            Activates: Enable pulse and disable all other checkers

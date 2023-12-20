@@ -113,10 +113,10 @@ OPTIONS
            Additional Buck flavors to append to targets discovered by the
            --buck-compilation-database option.           See also infer-capture(1).
 
-       --no-biabduction
-           Deactivates: checker biabduction: This analysis deals with a range
+       --biabduction
+           Activates: checker biabduction: This analysis deals with a range
            of issues, many linked to memory safety. (Conversely:
-           --biabduction)           See also infer-analyze(1).
+           --no-biabduction)           See also infer-analyze(1).
 
        --biabduction-only
            Activates: Enable biabduction and disable all other checkers
@@ -457,9 +457,9 @@ OPTIONS
            infer-reportdiff(1).
 
        --no-default-checkers
-           Deactivates: Default checkers: --biabduction,
-           --fragment-retains-view, --inefficient-keyset-iterator,
-           --liveness, --parameter-not-null-checked, --racerd, --siof,
+           Deactivates: Default checkers: --fragment-retains-view,
+           --inefficient-keyset-iterator, --liveness,
+           --parameter-not-null-checked, --pulse, --racerd, --siof,
            --self-in-block, --starvation (Conversely: --default-checkers)       
     See also infer-analyze(1).
 
@@ -1222,9 +1222,9 @@ OPTIONS
            Specify the root directory of the project           See also infer-analyze(1), infer-capture(1), infer-report(1), and
            infer-run(1).
 
-       --pulse
-           Activates: checker pulse: Memory and lifetime analysis.
-           (Conversely: --no-pulse)           See also infer-analyze(1).
+       --no-pulse
+           Deactivates: checker pulse: General-purpose memory and value
+           analysis engine. (Conversely: --pulse)           See also infer-analyze(1).
 
        --pulse-cut-to-one-path-procedures-pattern string
            Regex of methods for which pulse will only explore one path. Can

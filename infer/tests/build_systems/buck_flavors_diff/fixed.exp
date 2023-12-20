@@ -1,1 +1,1 @@
-BIABDUCTION_MEMORY_LEAK, no_bucket, src/hello.c, test3, 3
+MEMORY_LEAK_C, no_bucket, src/hello.c, test3, 3

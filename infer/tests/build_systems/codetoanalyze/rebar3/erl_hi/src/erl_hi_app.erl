@@ -32,7 +32,7 @@ guarded(Xs) ->
     end.
 
 main() ->
-    % ok
+    % ok, FP, nothing after that is explored
     maybe_good_matcher("odd"),
     % ok
     maybe_good_matcher("even"),
@@ -42,7 +42,7 @@ main() ->
     guarded("even"),
     % ok
     odd_matcher("odd"),
-    % nok [FN]
+    % nok
     odd_matcher("even"),
-    % nok [FN] (not a good matcher after all)
+    % nok (not a good matcher after all)
     maybe_good_matcher("").

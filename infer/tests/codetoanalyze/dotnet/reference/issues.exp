@@ -1,2 +1,2 @@
-codetoanalyze/dotnet/reference/NullExceptionReference.cs, Void TestCodeReference.NullExceptionReferenceParameterBad(), 9, NULL_DEREFERENCE, no_bucket
-codetoanalyze/dotnet/reference/NullExceptionReference.cs, Void TestCodeReference.NullExceptionReferenceStructBad(), 3, NULL_DEREFERENCE, no_bucket
+codetoanalyze/dotnet/reference/NullExceptionReference.cs, Void TestCodeReference.NullExceptionReferenceParameterBad(), 9, NULLPTR_DEREFERENCE, no_bucket
+codetoanalyze/dotnet/reference/NullExceptionReference.cs, Void TestCodeReference.NullExceptionReferenceStructBad(), 3, NULLPTR_DEREFERENCE, no_bucket
