@@ -100,11 +100,13 @@ let config_unsafe checker =
   | Biabduction ->
       { id= "biabduction"
       ; kind=
-          UserFacing
+          UserFacingDeprecated
             { title= "Biabduction"
             ; markdown_body=
                 "Read more about its foundations in the [Separation Logic and Biabduction \
-                 page](separation-logic-and-bi-abduction)." }
+                 page](separation-logic-and-bi-abduction)."
+            ; deprecation_message=
+                "This has been replaced by Pulse and will be removed in the next release." }
       ; support= mk_support_func ~clang:Support ~java:Support ~csharp:Support ()
       ; short_documentation=
           "This analysis deals with a range of issues, many linked to memory safety."

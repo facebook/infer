@@ -115,8 +115,11 @@ OPTIONS
 
        --biabduction
            Activates: biabduction checker: This analysis deals with a range
-           of issues, many linked to memory safety. (Conversely:
-           --no-biabduction)           See also infer-analyze(1).
+           of issues, many linked to memory safety.           
+           DEPRECATED: This has been replaced by Pulse and will be removed
+           in the next release.
+            (Conversely: --no-biabduction)
+           See also infer-analyze(1).
 
        --biabduction-only
            Activates: Enable biabduction and disable all other checkers
