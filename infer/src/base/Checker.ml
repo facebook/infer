@@ -309,8 +309,12 @@ let config_unsafe checker =
   | Quandary ->
       { id= "quandary"
       ; kind=
-          UserFacing
-            {title= "Quandary"; markdown_body= [%blob "./documentation/checkers/Quandary.md"]}
+          UserFacingDeprecated
+            { title= "Quandary"
+            ; deprecation_message=
+                "Taint analysis is now supported by the Pulse checker and Quandary will be removed \
+                 in the next release."
+            ; markdown_body= [%blob "./documentation/checkers/Quandary.md"] }
       ; support= mk_support_func ~clang:Support ~java:Support ()
       ; short_documentation=
           "The Quandary taint analysis detects flows of values between sources and sinks, except \
