@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 
-void foo_defined_in_subtarget1() {
+void null_deref_spec_defined_in_subtarget1() {
   int* s = NULL;
   *s = 42;
 }

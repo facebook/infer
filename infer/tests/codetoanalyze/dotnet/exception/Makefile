@@ -5,7 +5,10 @@
 
 TESTS_DIR = ../../..
 
+# TODO: better pulse support for C# exceptions
+
 INFER_OPTIONS = \
+  --biabduction-only \
   --cfg-json cfg.json \
   --tenv-json tenv.json \
 
