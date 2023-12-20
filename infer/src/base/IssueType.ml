@@ -118,9 +118,18 @@ end = struct
   (** keep track of the list of all declared issue types *)
   let all_issues = ref IssueSet.empty
 
+  let checker_names_to_remove = ["BIABDUCTION"; "CHECKERS"; "INFERBO"; "PULSE"]
+
+  let remove_leading_checker_name = function
+    | first :: rest when List.mem ~equal:String.equal checker_names_to_remove first ->
+        rest
+    | l ->
+        l
+
+
   let prettify s =
-    String.lowercase s |> String.split ~on:'_' |> List.map ~f:String.capitalize
-    |> String.concat ~sep:" " |> String.strip
+    String.split ~on:'_' s |> remove_leading_checker_name |> List.map ~f:String.lowercase
+    |> List.map ~f:String.capitalize |> String.concat ~sep:" " |> String.strip
 
 
   let set_enabled issue b = issue.enabled <- b
