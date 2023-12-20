@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 
 type t =
   | AnnotationReachability
@@ -85,3 +86,6 @@ val get_id : t -> string
 (** [get_id c] is [(config c).id] *)
 
 val from_id : string -> t option
+
+val pp_manual : F.formatter -> t -> unit
+(** prints a short explanation of the checker; used for the man pages *)

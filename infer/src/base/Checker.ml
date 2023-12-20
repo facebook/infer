@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Die
 
 type t =
@@ -451,3 +452,34 @@ let config c =
 let get_id c = (config c).id
 
 let from_id id = List.find all ~f:(fun checker -> String.equal (get_id checker) id)
+
+let is_user_facing c =
+  let {kind} = config c in
+  match kind with UserFacing _ | UserFacingDeprecated _ -> true | Exercise | Internal -> false
+
+
+let pp_manual fmt checker =
+  let {kind; short_documentation; activates} = config checker in
+  let pp_kind fmt = function
+    | UserFacing _ | Exercise ->
+        ()
+    | Internal ->
+        F.fprintf fmt
+          "\n\
+           $(b,NOTE): This is used internally by other checkers and shouldn't need to be activated \
+           directly."
+    | UserFacingDeprecated {deprecation_message} ->
+        F.fprintf fmt "\n\n$(b,DEPRECATED): %s\n" deprecation_message
+  in
+  let pp_activates fmt activates =
+    match (List.filter ~f:is_user_facing) activates with
+    | [] ->
+        ()
+    | _ :: _ as activates ->
+        let pp_checker fmt c =
+          let {id} = config c in
+          F.fprintf fmt "$(i,%s)" id
+        in
+        F.fprintf fmt "\n$(i,ACTIVATES): %a" (Pp.seq ~sep:"," pp_checker) activates
+  in
+  F.fprintf fmt "%s%a%a" short_documentation pp_activates activates pp_kind kind

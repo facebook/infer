@@ -543,7 +543,7 @@ let () =
       | Some {deprecated; show_in_help} ->
           let in_help = if show_in_help then in_analyze_help else [] in
           CLOpt.mk_bool ?f ~long:config.id ~in_help ~default:config.enabled_by_default ~deprecated
-            (Printf.sprintf "checker %s: %s" config.id config.short_documentation)
+            (F.asprintf "$(i,%s) checker: %a" config.id Checker.pp_manual checker)
     in
     all_checkers := (checker, config, var) :: !all_checkers
   in
@@ -559,7 +559,7 @@ let () =
               var := b ;
               b )
             ( if show_in_help then
-                Printf.sprintf "Enable %s and disable all other checkers" config.id
+                Printf.sprintf "Enable $(i,%s) and disable all other checkers" config.id
               else "" )
             [] (* do all the work in ~f *) []
           (* do all the work in ~f *)

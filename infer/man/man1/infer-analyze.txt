@@ -14,7 +14,7 @@ DESCRIPTION
 
 OPTIONS
        --annotation-reachability
-           Activates: checker annotation-reachability: Given a pair of source
+           Activates: annotation-reachability checker: Given a pair of source
            and sink annotation, e.g. `@PerformanceCritical` and `@Expensive`,
            this checker will warn whenever some method annotated with
            `@PerformanceCritical` calls, directly or indirectly, another
@@ -26,7 +26,7 @@ OPTIONS
            checkers (Conversely: --no-annotation-reachability-only)
 
        --biabduction
-           Activates: checker biabduction: This analysis deals with a range
+           Activates: biabduction checker: This analysis deals with a range
            of issues, many linked to memory safety. (Conversely:
            --no-biabduction)
 
@@ -39,7 +39,7 @@ OPTIONS
            in infer-out/captured. (Conversely: --no-biabduction-write-dotty)
 
        --bufferoverrun
-           Activates: checker bufferoverrun: InferBO is a detector for
+           Activates: bufferoverrun checker: InferBO is a detector for
            out-of-bounds array accesses. (Conversely: --no-bufferoverrun)
 
        --bufferoverrun-only
@@ -52,7 +52,7 @@ OPTIONS
            relative to project root or be absolute
 
        --config-impact-analysis
-           Activates: checker config-impact-analysis: [EXPERIMENTAL] Collects
+           Activates: config-impact-analysis checker: [EXPERIMENTAL] Collects
            function that are called without config checks. (Conversely:
            --no-config-impact-analysis)
 
@@ -67,7 +67,7 @@ OPTIONS
            --incremental-analysis. (Conversely: --no-continue-analysis)
 
        --cost
-           Activates: checker cost: Computes the asymptotic complexity of
+           Activates: cost checker: Computes the asymptotic complexity of
            functions with respect to execution cost or other user defined
            resources. Can be used to detect changes in the complexity with
            `infer reportdiff`. (Conversely: --no-cost)
@@ -81,7 +81,7 @@ OPTIONS
            (Conversely: --cost-suppress-func-ptr)
 
        --datalog
-           Activates: checker datalog: Experimental datalog-based points-to
+           Activates: datalog checker: Experimental datalog-based points-to
            analysis. (Conversely: --no-datalog)
 
        --datalog-only
@@ -125,9 +125,11 @@ OPTIONS
            specified).
 
        --no-fragment-retains-view
-           Deactivates: checker fragment-retains-view: Detects when Android
+           Deactivates: fragment-retains-view checker: Detects when Android
            fragments are not explicitly nullified before becoming
-           unreachable. (Conversely: --fragment-retains-view)
+           unreachable.           
+           DEPRECATED: Unmaintained due to poor precision.
+            (Conversely: --fragment-retains-view)
 
        --fragment-retains-view-only
            Activates: Enable fragment-retains-view and disable all other
@@ -146,9 +148,9 @@ OPTIONS
            section
 
        --impurity
-           Activates: checker impurity: Detects functions with potential
-           side-effects. Same as "purity", but implemented on top of Pulse.
-           (Conversely: --no-impurity)
+           Activates: impurity checker: Detects functions with potential
+           side-effects. Same as "purity", but implemented on top of Pulse.       
+    ACTIVATES: pulse (Conversely: --no-impurity)
 
        --impurity-only
            Activates: Enable impurity and disable all other checkers
@@ -165,7 +167,7 @@ OPTIONS
            --mark-unchanged-procs. (Conversely: --no-incremental-analysis)
 
        --no-inefficient-keyset-iterator
-           Deactivates: checker inefficient-keyset-iterator: Check for
+           Deactivates: inefficient-keyset-iterator checker: Check for
            inefficient uses of iterators that iterate on keys then lookup
            their values, instead of iterating on key-value pairs directly.
            (Conversely: --inefficient-keyset-iterator)
@@ -187,7 +189,7 @@ OPTIONS
            failure (Conversely: --no-keep-going)
 
        --lineage
-           Activates: checker lineage: Computes a dataflow graph (Conversely:
+           Activates: lineage checker: Computes a dataflow graph (Conversely:
            --no-lineage)
 
        --lineage-only
@@ -195,7 +197,7 @@ OPTIONS
            (Conversely: --no-lineage-only)
 
        --litho-required-props
-           Activates: checker litho-required-props: Checks that all
+           Activates: litho-required-props checker: Checks that all
            non-optional `@Prop`s have been specified when constructing Litho
            components. (Conversely: --no-litho-required-props)
 
@@ -204,7 +206,7 @@ OPTIONS
            checkers (Conversely: --no-litho-required-props-only)
 
        --no-liveness
-           Deactivates: checker liveness: Detection of dead stores and unused
+           Deactivates: liveness checker: Detection of dead stores and unused
            variables. (Conversely: --liveness)
 
        --liveness-ignored-constant +string
@@ -219,7 +221,7 @@ OPTIONS
            (Conversely: --no-log-missing-deps)
 
        --loop-hoisting
-           Activates: checker loop-hoisting: Detect opportunities to hoist
+           Activates: loop-hoisting checker: Detect opportunities to hoist
            function calls that are invariant outside of loop bodies for
            efficiency. (Conversely: --no-loop-hoisting)
 
@@ -247,7 +249,7 @@ OPTIONS
            functions that never return null.
 
        --no-parameter-not-null-checked
-           Deactivates: checker parameter-not-null-checked: An
+           Deactivates: parameter-not-null-checked checker: An
            Objective-C-specific analysis to detect when a block parameter is
            used before being checked for null first. (Conversely:
            --parameter-not-null-checked)
@@ -265,10 +267,12 @@ OPTIONS
            --no-print-logs)
 
        --printf-args
-           Activates: checker printf-args: Detect mismatches between the Java
+           Activates: printf-args checker: Detect mismatches between the Java
            `printf` format strings and the argument types For example, this
            checker will warn about the type error in `printf("Hello %d",
-           "world")` (Conversely: --no-printf-args)
+           "world")`           
+           DEPRECATED: Unmaintained.
+            (Conversely: --no-printf-args)
 
        --printf-args-only
            Activates: Enable printf-args and disable all other checkers
@@ -282,7 +286,7 @@ OPTIONS
            Specify the root directory of the project
 
        --no-pulse
-           Deactivates: checker pulse: General-purpose memory and value
+           Deactivates: pulse checker: General-purpose memory and value
            analysis engine. (Conversely: --pulse)
 
        --pulse-only
@@ -290,7 +294,7 @@ OPTIONS
            (Conversely: --no-pulse-only)
 
        --purity
-           Activates: checker purity: Detects pure (side-effect-free)
+           Activates: purity checker: Detects pure (side-effect-free)
            functions. A different implementation of "impurity". (Conversely:
            --no-purity)
 
@@ -299,7 +303,7 @@ OPTIONS
            (Conversely: --no-purity-only)
 
        --quandary
-           Activates: checker quandary: The Quandary taint analysis detects
+           Activates: quandary checker: The Quandary taint analysis detects
            flows of values between sources and sinks, except if the value
            went through a "sanitizer". In addition to some defaults, users
            can specify their own sources, sinks, and sanitizers functions.
@@ -314,7 +318,7 @@ OPTIONS
            --no-quiet | -Q)
 
        --no-racerd
-           Deactivates: checker racerd: Thread safety analysis. (Conversely:
+           Deactivates: racerd checker: Thread safety analysis. (Conversely:
            --racerd)
 
        --racerd-only
@@ -338,7 +342,7 @@ OPTIONS
            Write results and internal files in the specified directory
 
        --scope-leakage
-           Activates: checker scope-leakage: The Java/Kotlin checker takes
+           Activates: scope-leakage checker: The Java/Kotlin checker takes
            into account a set of "scope" annotations and a must-not-hold
            relation over the scopes. The checker raises an alarm if there
            exists a field access path from object A to object B, with
@@ -350,7 +354,7 @@ OPTIONS
            (Conversely: --no-scope-leakage-only)
 
        --no-self-in-block
-           Deactivates: checker self-in-block: An Objective-C-specific
+           Deactivates: self-in-block checker: An Objective-C-specific
            analysis to detect when a block captures `self`. (Conversely:
            --self-in-block)
 
@@ -364,7 +368,7 @@ OPTIONS
            --no-shrink-analysis-db)
 
        --sil-validation
-           Activates: checker sil-validation: This checker validates that all
+           Activates: sil-validation checker: This checker validates that all
            SIL instructions in all procedure bodies conform to a (front-end
            specific) subset of SIL. (Conversely: --no-sil-validation)
 
@@ -373,7 +377,7 @@ OPTIONS
            (Conversely: --no-sil-validation-only)
 
        --no-siof
-           Deactivates: checker siof: Catches Static Initialization Order
+           Deactivates: siof checker: Catches Static Initialization Order
            Fiascos in C++, that can lead to subtle,
            compiler-version-dependent errors. (Conversely: --siof)
 
@@ -400,7 +404,7 @@ OPTIONS
            65536.
 
        --no-starvation
-           Deactivates: checker starvation: Detect various kinds of
+           Deactivates: starvation checker: Detect various kinds of
            situations when no progress is being made because of concurrency
            errors. (Conversely: --starvation)
 
@@ -417,17 +421,19 @@ OPTIONS
            info.
 
        --topl
-           Activates: checker topl: Detect errors based on user-provided
+           Activates: topl checker: Detect errors based on user-provided
            state machines describing temporal properties over multiple
-           objects. (Conversely: --no-topl)
+           objects.           ACTIVATES: pulse (Conversely: --no-topl)
 
        --topl-only
            Activates: Enable topl and disable all other checkers (Conversely:
            --no-topl-only)
 
        --uninit
-           Activates: checker uninit: Warns when values are used before
-           having been initialized. (Conversely: --no-uninit)
+           Activates: uninit checker: Warns when values are used before
+           having been initialized.           
+           DEPRECATED: Uninitialized value checking has moved to Pulse.
+            (Conversely: --no-uninit)
 
        --uninit-only
            Activates: Enable uninit and disable all other checkers

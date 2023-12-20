@@ -61,7 +61,7 @@ OPTIONS
            infer-out/analysis_dependency_graph           See also infer-analyze(1).
 
        --annotation-reachability
-           Activates: checker annotation-reachability: Given a pair of source
+           Activates: annotation-reachability checker: Given a pair of source
            and sink annotation, e.g. `@PerformanceCritical` and `@Expensive`,
            this checker will warn whenever some method annotated with
            `@PerformanceCritical` calls, directly or indirectly, another
@@ -114,7 +114,7 @@ OPTIONS
            --buck-compilation-database option.           See also infer-capture(1).
 
        --biabduction
-           Activates: checker biabduction: This analysis deals with a range
+           Activates: biabduction checker: This analysis deals with a range
            of issues, many linked to memory safety. (Conversely:
            --no-biabduction)           See also infer-analyze(1).
 
@@ -254,7 +254,7 @@ OPTIONS
            --no-buck2-use-bxl)           See also infer-capture(1).
 
        --bufferoverrun
-           Activates: checker bufferoverrun: InferBO is a detector for
+           Activates: bufferoverrun checker: InferBO is a detector for
            out-of-bounds array accesses. (Conversely: --no-bufferoverrun)       
     See also infer-analyze(1).
 
@@ -344,7 +344,7 @@ OPTIONS
            to the capture database.           See also infer-debug(1).
 
        --config-impact-analysis
-           Activates: checker config-impact-analysis: [EXPERIMENTAL] Collects
+           Activates: config-impact-analysis checker: [EXPERIMENTAL] Collects
            function that are called without config checks. (Conversely:
            --no-config-impact-analysis)           See also infer-analyze(1).
 
@@ -386,7 +386,7 @@ OPTIONS
     See also infer-analyze(1).
 
        --cost
-           Activates: checker cost: Computes the asymptotic complexity of
+           Activates: cost checker: Computes the asymptotic complexity of
            functions with respect to execution cost or other user defined
            resources. Can be used to detect changes in the complexity with
            `infer reportdiff`. (Conversely: --no-cost)           See also infer-analyze(1).
@@ -419,7 +419,7 @@ OPTIONS
            without being reported as dead stores.           See also infer-analyze(1).
 
        --datalog
-           Activates: checker datalog: Experimental datalog-based points-to
+           Activates: datalog checker: Experimental datalog-based points-to
            analysis. (Conversely: --no-datalog)           See also infer-analyze(1).
 
        --datalog-only
@@ -768,9 +768,12 @@ OPTIONS
            erlc, xcodebuild.           See also infer-capture(1) and infer-run(1).
 
        --no-fragment-retains-view
-           Deactivates: checker fragment-retains-view: Detects when Android
+           Deactivates: fragment-retains-view checker: Detects when Android
            fragments are not explicitly nullified before becoming
-           unreachable. (Conversely: --fragment-retains-view)           See also infer-analyze(1).
+           unreachable.           
+           DEPRECATED: Unmaintained due to poor precision.
+            (Conversely: --fragment-retains-view)
+           See also infer-analyze(1).
 
        --fragment-retains-view-only
            Activates: Enable fragment-retains-view and disable all other
@@ -843,9 +846,10 @@ OPTIONS
            --no-html)           See also infer-explore(1).
 
        --impurity
-           Activates: checker impurity: Detects functions with potential
-           side-effects. Same as "purity", but implemented on top of Pulse.
-           (Conversely: --no-impurity)           See also infer-analyze(1).
+           Activates: impurity checker: Detects functions with potential
+           side-effects. Same as "purity", but implemented on top of Pulse.       
+    ACTIVATES: pulse (Conversely: --no-impurity)
+           See also infer-analyze(1).
 
        --impurity-only
            Activates: Enable impurity and disable all other checkers
@@ -863,7 +867,7 @@ OPTIONS
     See also infer-analyze(1).
 
        --no-inefficient-keyset-iterator
-           Deactivates: checker inefficient-keyset-iterator: Check for
+           Deactivates: inefficient-keyset-iterator checker: Check for
            inefficient uses of iterators that iterate on keys then lookup
            their values, instead of iterating on key-value pairs directly.
            (Conversely: --inefficient-keyset-iterator)           See also infer-analyze(1).
@@ -917,7 +921,7 @@ OPTIONS
            (Conversely: --no-kotlin-capture)           See also infer-capture(1).
 
        --lineage
-           Activates: checker lineage: Computes a dataflow graph (Conversely:
+           Activates: lineage checker: Computes a dataflow graph (Conversely:
            --no-lineage)           See also infer-analyze(1).
 
        --no-lineage-dedup
@@ -994,7 +998,7 @@ OPTIONS
            report. (Conversely: --no-list-issue-types)           See also infer-help(1).
 
        --litho-required-props
-           Activates: checker litho-required-props: Checks that all
+           Activates: litho-required-props checker: Checks that all
            non-optional `@Prop`s have been specified when constructing Litho
            components. (Conversely: --no-litho-required-props)       
     See also infer-analyze(1).
@@ -1005,7 +1009,7 @@ OPTIONS
     See also infer-analyze(1).
 
        --no-liveness
-           Deactivates: checker liveness: Detection of dead stores and unused
+           Deactivates: liveness checker: Detection of dead stores and unused
            variables. (Conversely: --liveness)           See also infer-analyze(1).
 
        --liveness-dangerous-classes json
@@ -1039,7 +1043,7 @@ OPTIONS
            (Conversely: --no-log-missing-deps)           See also infer-analyze(1).
 
        --loop-hoisting
-           Activates: checker loop-hoisting: Detect opportunities to hoist
+           Activates: loop-hoisting checker: Detect opportunities to hoist
            function calls that are invariant outside of loop bodies for
            efficiency. (Conversely: --no-loop-hoisting)           See also infer-analyze(1).
 
@@ -1103,7 +1107,7 @@ OPTIONS
            functions that never return null.           See also infer-analyze(1), infer-capture(1), and infer-run(1).
 
        --no-parameter-not-null-checked
-           Deactivates: checker parameter-not-null-checked: An
+           Deactivates: parameter-not-null-checked checker: An
            Objective-C-specific analysis to detect when a block parameter is
            used before being checked for null first. (Conversely:
            --parameter-not-null-checked)           See also infer-analyze(1).
@@ -1133,10 +1137,13 @@ OPTIONS
            infer-run(1).
 
        --printf-args
-           Activates: checker printf-args: Detect mismatches between the Java
+           Activates: printf-args checker: Detect mismatches between the Java
            `printf` format strings and the argument types For example, this
            checker will warn about the type error in `printf("Hello %d",
-           "world")` (Conversely: --no-printf-args)           See also infer-analyze(1).
+           "world")`           
+           DEPRECATED: Unmaintained.
+            (Conversely: --no-printf-args)
+           See also infer-analyze(1).
 
        --printf-args-only
            Activates: Enable printf-args and disable all other checkers
@@ -1223,7 +1230,7 @@ OPTIONS
            infer-run(1).
 
        --no-pulse
-           Deactivates: checker pulse: General-purpose memory and value
+           Deactivates: pulse checker: General-purpose memory and value
            analysis engine. (Conversely: --pulse)           See also infer-analyze(1).
 
        --pulse-cut-to-one-path-procedures-pattern string
@@ -1561,7 +1568,7 @@ OPTIONS
            Stop exploring new paths after int loop iterations           See also infer-analyze(1).
 
        --purity
-           Activates: checker purity: Detects pure (side-effect-free)
+           Activates: purity checker: Detects pure (side-effect-free)
            functions. A different implementation of "impurity". (Conversely:
            --no-purity)           See also infer-analyze(1).
 
@@ -1570,7 +1577,7 @@ OPTIONS
            (Conversely: --no-purity-only)           See also infer-analyze(1).
 
        --quandary
-           Activates: checker quandary: The Quandary taint analysis detects
+           Activates: quandary checker: The Quandary taint analysis detects
            flows of values between sources and sinks, except if the value
            went through a "sanitizer". In addition to some defaults, users
            can specify their own sources, sinks, and sanitizers functions.
@@ -1597,7 +1604,7 @@ OPTIONS
            --no-quiet | -Q)           See also infer-analyze(1) and infer-report(1).
 
        --no-racerd
-           Deactivates: checker racerd: Thread safety analysis. (Conversely:
+           Deactivates: racerd checker: Thread safety analysis. (Conversely:
            --racerd)           See also infer-analyze(1).
 
        --racerd-always-report-java
@@ -1698,7 +1705,7 @@ OPTIONS
            See also infer-analyze(1).
 
        --scope-leakage
-           Activates: checker scope-leakage: The Java/Kotlin checker takes
+           Activates: scope-leakage checker: The Java/Kotlin checker takes
            into account a set of "scope" annotations and a must-not-hold
            relation over the scopes. The checker raises an alarm if there
            exists a field access path from object A to object B, with
@@ -1714,7 +1721,7 @@ OPTIONS
            input.           See also infer-debug(1) and infer-explore(1).
 
        --no-self-in-block
-           Deactivates: checker self-in-block: An Objective-C-specific
+           Deactivates: self-in-block checker: An Objective-C-specific
            analysis to detect when a block captures `self`. (Conversely:
            --self-in-block)           See also infer-analyze(1).
 
@@ -1728,7 +1735,7 @@ OPTIONS
            --no-shrink-analysis-db)           See also infer-analyze(1).
 
        --sil-validation
-           Activates: checker sil-validation: This checker validates that all
+           Activates: sil-validation checker: This checker validates that all
            SIL instructions in all procedure bodies conform to a (front-end
            specific) subset of SIL. (Conversely: --no-sil-validation)       
     See also infer-analyze(1).
@@ -1738,7 +1745,7 @@ OPTIONS
            (Conversely: --no-sil-validation-only)           See also infer-analyze(1).
 
        --no-siof
-           Deactivates: checker siof: Catches Static Initialization Order
+           Deactivates: siof checker: Catches Static Initialization Order
            Fiascos in C++, that can lead to subtle,
            compiler-version-dependent errors. (Conversely: --siof)       
     See also infer-analyze(1).
@@ -1856,7 +1863,7 @@ OPTIONS
            65536.           See also infer-analyze(1), infer-capture(1), and infer-run(1).
 
        --no-starvation
-           Deactivates: checker starvation: Detect various kinds of
+           Deactivates: starvation checker: Detect various kinds of
            situations when no progress is being made because of concurrency
            errors. (Conversely: --starvation)           See also infer-analyze(1).
 
@@ -1891,17 +1898,21 @@ OPTIONS
            info.           See also infer-analyze(1).
 
        --topl
-           Activates: checker topl: Detect errors based on user-provided
+           Activates: topl checker: Detect errors based on user-provided
            state machines describing temporal properties over multiple
-           objects. (Conversely: --no-topl)           See also infer-analyze(1).
+           objects.           ACTIVATES: pulse (Conversely: --no-topl)
+           See also infer-analyze(1).
 
        --topl-only
            Activates: Enable topl and disable all other checkers (Conversely:
            --no-topl-only)           See also infer-analyze(1).
 
        --uninit
-           Activates: checker uninit: Warns when values are used before
-           having been initialized. (Conversely: --no-uninit)           See also infer-analyze(1).
+           Activates: uninit checker: Warns when values are used before
+           having been initialized.           
+           DEPRECATED: Uninitialized value checking has moved to Pulse.
+            (Conversely: --no-uninit)
+           See also infer-analyze(1).
 
        --uninit-only
            Activates: Enable uninit and disable all other checkers
@@ -2350,8 +2361,9 @@ INTERNAL OPTIONS
            Set --disable-issue-type to the empty list.
 
        --disjunctive-demo
-           Activates: checker disjunctive-demo: Demo of the disjunctive
-           domain, used for testing. (Conversely: --no-disjunctive-demo)
+           Activates: disjunctive-demo checker: Demo of the disjunctive
+           domain, used for testing.           NOTE: This is used internally by other checkers and shouldn't
+           need to be activated directly. (Conversely: --no-disjunctive-demo)
 
        --no-dotty-cfg-libs
            Deactivates: Print the cfg of the code coming from the libraries
@@ -2528,8 +2540,9 @@ INTERNAL OPTIONS
            Cancel the effect of --lineage-max-cfg-size.
 
        --lineage-shape
-           Activates: checker lineage-shape: Computes shape informations to
-           be used in the Lineage analysis (Conversely: --no-lineage-shape)
+           Activates: lineage-shape checker: Computes shape informations to
+           be used in the Lineage analysis           NOTE: This is used internally by other checkers and shouldn't
+           need to be activated directly. (Conversely: --no-lineage-shape)
 
        --liveness-ignored-constant-reset
            Set --liveness-ignored-constant to the empty list.
@@ -2812,7 +2825,7 @@ INTERNAL OPTIONS
            --no-reports-include-ml-loc)
 
        --resource-leak-lab
-           Activates: checker resource-leak-lab: Toy checker for the
+           Activates: resource-leak-lab checker: Toy checker for the
            "resource leak" write-your-own-checker exercise. (Conversely:
            --no-resource-leak-lab)
 
