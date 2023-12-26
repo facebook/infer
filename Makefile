@@ -514,20 +514,20 @@ clang_plugin: clang_setup
 	  CC="$(CC)" CXX="$(CXX)" \
 	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
 	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
-	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
-	  CLANG_PREFIX=$(CLANG_PREFIX) \
-	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
-	  SDKPATH=$(XCODE_ISYSROOT) \
+	  LOCAL_CLANG="$(CLANG_PREFIX)/bin/clang" \
+	  CLANG_PREFIX="$(CLANG_PREFIX)" \
+	  CLANG_INCLUDES="$(CLANG_INCLUDES)" \
+	  SDKPATH="$(XCODE_ISYSROOT)" \
 	)
 	$(QUIET)$(call silent_on_success,Building clang plugin OCaml interface,\
 	$(MAKE) -C $(FCP_DIR)/clang-ocaml build/clang_ast_proj.ml build/clang_ast_proj.mli \
-	  CC=$(CC) CXX=$(CXX) \
+	  CC="$(CC)" CXX="$(CXX)" \
 	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
 	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
-	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
-	  CLANG_PREFIX=$(CLANG_PREFIX) \
-	  CLANG_INCLUDES=$(CLANG_INCLUDES) \
-	  SDKPATH=$(XCODE_ISYSROOT) \
+	  LOCAL_CLANG="$(CLANG_PREFIX)/bin/clang" \
+	  CLANG_PREFIX="$(CLANG_PREFIX)" \
+	  CLANG_INCLUDES="$(CLANG_INCLUDES)" \
+	  SDKPATH="$(XCODE_ISYSROOT)" \
 	)
 .PHONY: clang_plugin_test
 clang_plugin_test: clang_setup
