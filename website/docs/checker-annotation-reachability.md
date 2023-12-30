@@ -8,6 +8,7 @@ Given pairs of source and sink annotations, e.g. `@A` and `@B`, this checker wil
 Activate with `--annotation-reachability`.
 
 Supported languages:
+
 - C/C++/ObjC: Yes
 - C#/.Net: No
 - Erlang: No
@@ -15,11 +16,10 @@ Supported languages:
 - Java: Yes
 - Python: No
 
-
-
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+
 - [CHECKERS_ALLOCATES_MEMORY](/docs/next/all-issue-types#checkers_allocates_memory)
 - [CHECKERS_ANNOTATION_REACHABILITY_ERROR](/docs/next/all-issue-types#checkers_annotation_reachability_error)
 - [CHECKERS_CALLS_EXPENSIVE_METHOD](/docs/next/all-issue-types#checkers_calls_expensive_method)

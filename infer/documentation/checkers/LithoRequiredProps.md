@@ -1,7 +1,7 @@
 This analysis checks that all non-optional [`@Prop`](https://fblitho.com/docs/props)`s have been specified when constructing Litho components. This is a [Litho](https://fblitho.com/) specific checker.
 
-
 ## What are required Props?
+
 In a nutshell, a Litho Component is essentially a class that defines immutable inputs, called prop (annotated with `@Prop`) in component hierarchy methods. For each Component there is a corresponding spec class which defines the required props:. E.g:
 
 ```java

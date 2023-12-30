@@ -5,7 +5,7 @@ Contents
 --------
 
 - `Hello.java`: try this example by running
-```infer -- javac Hello.java ```
+```infer -- javac Hello.java```
 
 - `Hello.m`: try this example by running
   ```infer -- clang -c Hello.m```
@@ -38,4 +38,3 @@ Note
 The infer toplevel command must be in your PATH for the commands above to
 succeed. Otherwise, modify the commands to use the correct path to infer, eg
   ```../infer/bin/infer -- javac Hello.java```
-

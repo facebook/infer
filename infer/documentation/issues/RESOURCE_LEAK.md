@@ -18,14 +18,14 @@ This is an example of a resource leak in C code:
 For the remaining of this section, we will consider examples of resource leaks
 in Java code.
 
-TIP: A common source of bugs is <b>exceptions skipping past close()
-statements</b>. That is the first thing to look for if INFER reports a potential
+TIP: A common source of bugs is **exceptions skipping past close()
+statements**. That is the first thing to look for if INFER reports a potential
 resource leak.
 
 ### Basics and Standard Idiom
 
-Some objects in Java, the <i>resources</i>, are supposed to be closed when you
-stop using them, and failure to close is a <i>resource leak</i>. Resources
+Some objects in Java, the *resources*, are supposed to be closed when you
+stop using them, and failure to close is a *resource leak*. Resources
 include input streams, output streams, readers, writers, sockets, http
 connections, cursors, and json parsers.
 
@@ -263,7 +263,7 @@ legitimate to simply convert the code over to try-with-resources if you have
 access to Java 7, so as to save yourself some brain-cycles. You will also end up
 with cleaner code.
 
-If try-with-resources is so great you should <i>always</i> use it. But you
+If try-with-resources is so great you should *always* use it. But you
 shouldn't… Try-with-resources gives resources static scoping, and works via a
 stack discipline. Sometimes, you want a resource to persist beyond scope, as in
 the escaping example above. In an escaping example maybe you could refactor lots

@@ -8,6 +8,7 @@ Checks that all non-optional `@Prop`s have been specified when constructing Lith
 Activate with `--litho-required-props`.
 
 Supported languages:
+
 - C/C++/ObjC: No
 - C#/.Net: No
 - Erlang: No
@@ -17,8 +18,8 @@ Supported languages:
 
 This analysis checks that all non-optional [`@Prop`](https://fblitho.com/docs/props)`s have been specified when constructing Litho components. This is a [Litho](https://fblitho.com/) specific checker.
 
-
 ## What are required Props?
+
 In a nutshell, a Litho Component is essentially a class that defines immutable inputs, called prop (annotated with `@Prop`) in component hierarchy methods. For each Component there is a corresponding spec class which defines the required props:. E.g:
 
 ```java
@@ -53,4 +54,5 @@ Check out the examples defined in the issue type [MISSING_REQUIRED_PROP](/docs/n
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+
 - [MISSING_REQUIRED_PROP](/docs/next/all-issue-types#missing_required_prop)

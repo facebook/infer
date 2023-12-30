@@ -1,4 +1,5 @@
 We report this issue type when a function call is loop-invariant and hoistable, i.e.
+
 - the function has no side side effects (pure)
 - has invariant arguments and result (i.e. have the same value in all loop iterations)
 - it is guaranteed to execute, i.e. it dominates all loop sources

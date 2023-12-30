@@ -134,8 +134,8 @@ it runs over program statements. Infer's question
 
 ---
 
-is called _bi-abduction_. The problem here is for the theorem prover to <i>
-discover </i> a pair of frame and antiframe formulae that make the entailment
+is called _bi-abduction_. The problem here is for the theorem prover to
+*discover* a pair of frame and antiframe formulae that make the entailment
 statement valid.
 
 Global analyses of large programs are normally computationally intractable.
@@ -309,17 +309,14 @@ read the source code if you wish!
 The following papers contain some of the technical background on Infer and
 information on how it is used inside Facebook.
 
-- <a href="http://link.springer.com/chapter/10.1007%2F3-540-44802-0_1">Local
-  Reasoning about Programs that Alter Data Structures.</a> An early separation
-  logic paper which advanced ideas about local reasoning and the frame rule.
-- <a href="http://link.springer.com/chapter/10.1007/11804192_6">Smallfoot:
-  Modular Automatic Assertion Checking with Separation Logic.</a> First
-  separation logic verification tool, introduced frame inference
-- <a href="http://link.springer.com/chapter/10.1007%2F11691372_19">A Local Shape
-  Analysis Based on Separation Logic.</a> Separation logic meets abstract
-  interpretation; calculating loop invariants via a fixed-point computation.
-- <a href="http://dl.acm.org/citation.cfm?id=2049700">Compositional Shape
-  Analysis by Means of Bi-Abduction.</a> The bi-abduction paper.
-- <a href="https://research.facebook.com/publications/moving-fast-with-software-verification/">Moving
-  Fast with Software Verification.</a> A paper about the way we use Infer at
-  Facebook.
+- [Local Reasoning about Programs that Alter Data Structures.](http://link.springer.com/chapter/10.1007%2F3-540-44802-0_1)
+  An early separation logic paper which advanced ideas about local reasoning and
+  the frame rule.
+- [Smallfoot:Modular Automatic Assertion Checking with Separation Logic.](http://link.springer.com/chapter/10.1007/11804192_6)
+  First separation logic verification tool, introduced frame inference
+- [A Local Shape Analysis Based on Separation Logic.](http://link.springer.com/chapter/10.1007%2F11691372_19)
+  Separation logic meets abstract interpretation; calculating loop invariants via a fixed-point computation.
+- [Compositional Shape Analysis by Means of Bi-Abduction.](http://dl.acm.org/citation.cfm?id=2049700)
+  The bi-abduction paper.
+- [Moving Fast with Software Verification.](https://research.facebook.com/publications/moving-fast-with-software-verification/)
+  A paper about the way we use Infer at Facebook.

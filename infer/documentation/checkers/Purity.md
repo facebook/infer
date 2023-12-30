@@ -2,10 +2,10 @@ This is an experimental inter-procedural analysis that detects pure (side-effect
 
 If the function is pure (i.e. doesn't modify any global state or its parameters and doesn't call any unknown functions), then it reports an [`PURE_FUNCTION`](/docs/next/all-issue-types#pure_function) issue.
 
-
 ## Weaknesses
 
 There are two issues with the existing purity analysis:
+
 - In order to detect which parameters are modified, we need an alias analysis which is difficult to get right.
 - Just keeping track of modified arguments doesn't suffice.
 
@@ -14,7 +14,7 @@ Too see the issue with the first point, consider the following simple program:
 ```java
 void foo(Foo a){
   Foo b = a;
-  b.x = 10; 
+  b.x = 10;
 }
 ```
 
@@ -36,11 +36,9 @@ boolean contains(Integer i, ArrayList<Integer> list){
 
 The existing purity analysis concludes that the above function `contains` is impure because it calls an impure function `next()` which modifies the iterator (hence it thinks it also modifies the `list`). However, notice that `contains` doesn't have an observable side-effect: `list.iterator()` returns a new object, `hasNext()` and `equals()` are pure, and `next()` only modifies the fields of the fresh object `listIterator`.  Therefore, `contains` should be considered as pure.
 
-
 To alleviate this problem, we have developed an [Impurity](/docs/next/checker-impurity) analysis which uses [pulse](/docs/next/checker-pulse) which can successfully analyze this program as pure \o/
-
 
 The analysis is used by:
 
-- [Loop-hoisting](/docs/next/checker-loop-hoisting) analysis which identifies loop-invariant function calls, i.e. functions that are pure and have loop-invariant arguments. 
+- [Loop-hoisting](/docs/next/checker-loop-hoisting) analysis which identifies loop-invariant function calls, i.e. functions that are pure and have loop-invariant arguments.
 - [Cost](/docs/next/checker-cost) analysis which identifies control variables in the loop that affect how many times a loop is executed. In this computation, we need to prune control variables that do not affect how many times a loop is executed. In this pruning step, we need to compute loop-invariant variables (which requires the above analysis).

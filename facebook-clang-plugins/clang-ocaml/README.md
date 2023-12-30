@@ -1,8 +1,7 @@
-
 # Ocaml frontend to the Clang AST
 
-
 Additional requirements:
+
 - ocaml >= 4.02
 - camlzip
 - yojson
@@ -10,11 +9,13 @@ Additional requirements:
 - atdgen >= 2.0.0
 
 The simplest way to install these dependencies is
+
 1) to install ocaml and opam using your system package manager (e.g. homebrew on MAC OS).
 2) run 'opam install camlzip yojson atd atdgen'
 
 Assuming that the current dir is the root of the git repository and CLANG_PREFIX=/usr/local, you may compile and run tests with
-```
+
+```console
 export CLANG_PREFIX=/usr/local
 make -C clang-ocaml depend
 make -C clang-ocaml test
@@ -34,6 +35,7 @@ Refer to [clang_ast_proj.mli.p](clang_ast_proj.mli.p) for a list of currently av
 ### Visitors
 
 The `Clang_ast_visit` module provides hooks to be run on AST nodes. Currently there is support for visitors in `Decl`, `Stmt`, `Type` and `SourceLocation` nodes. Here is basic example, that prints kinds of all decl and stmt nodes:
+
 ```OCaml
 let print_decl _ decl =
   prerr (Clang_ast_proj.get_decl_kind_string decl)
@@ -59,17 +61,16 @@ It's possible to extend existing OCaml variant types in the AST structure with m
 
 For example, see how [infer's frontend](https://github.com/facebook/infer/blob/8c6615963f79f03a644ae9087eb160da89a09a1a/infer/src/clang/clang_ast_extend.ml) uses this feature to extend `type_ptr`.
 
-
 ## Implementation details
 
 High level:
+
 - The plugin YojsonASTExporter defined in libtooling/ASTExporter.cpp outputs AST trees in an extended JSON format called "Yojson". Respectively, BiniouASTExporter outputs the AST in the "Biniou" format.
-
 - Most of the ATD definitions are embedded in the C++ code of the ASTExporter. Refer to [ATD guidelines](../libtooling/ATD_GUIDELINES.md) for more information.
-
 - We use scripts in libtooling/atdlib to extract and process the ATD definitions, then we use `atdgen` to generate the OCaml type definitions and json stub.
 
 Utility functions in `Clang_ast_proj`:
+
 - This module relies heavily on the C preprocessor - it uses information from clang headers to generate OCaml code.
 - Clang provides `.inc` and `.def` files that provide information about available Node kinds. For example, [`TypeNode.def`](https://github.com/llvm-mirror/clang/blob/fe32c6a33461a8c60e18c0414d4844a47442328a/include/clang/AST/TypeNodes.def) contains information about all possible types that clang can produce. Internally clang uses the same headers.
 - In order to add new function, one needs to identify clang header that contains relevant information. Sometimes it's useful to read clang codebase to see how certain enums are generated - usually clang includes same headers to generate them. For example decl kind enum is [defined](https://github.com/llvm-mirror/clang/blob/c5dd58546ce4d20cd71cc26cb790e7f91c8f908f/include/clang/AST/DeclBase.h#L84-L91) by including `clang/AST/DeclNodes.inc` file.
@@ -77,19 +78,23 @@ Utility functions in `Clang_ast_proj`:
 - If something doesn't work, `build/Clang_ast_proj.ml` will contain generated code. This way, it's easier to see what happens during macro expansion.
 
 Visitors:
+
 - Implemented via [atdgen validation](https://mjambon.github.io/atdgen-doc/atdgen#field-validator)
 - Adding support for a new visitor requires changing ATD annotations in ASTExporter and modifying `Clang_ast_visit.ml`
 - Refer to existing visitors to see how it's done
 - It is possible to modify the current node inside a visitor as long as its fields are mutable
 
 Extensible variants:
+
 - Implemented via [atdgen custom wrapper](https://mjambon.github.io/atdgen-doc/atdgen#field-t). It defines `type_ptr` to be extensible variant.
 - When looking at Yojson/Biniou output, `type_ptr` will be of type int. It's up to atdgen serializer to call `wrap`/`unwrap`
 
 Testing:
+
 - The main program [`clang_ast_yojson_validator.ml`](clang_ast_yojson_validator.ml) is meant to parse, re-print, and compare yojson files emitted by ASTExporter. We use ydump (part of the yojson package) to normalize the original json and the re-emitted json before comparing them.
 - `clang_ast_main_test.ml` runs custom validators to confirm that visitors work as expected. Its output is recorded and checked into repository.
 
 ## ATD docs
+
 https://mjambon.github.io/atdgen-doc/atdgen
 https://mjambon.github.io/atdgen-doc/atd-syntax

@@ -8,6 +8,7 @@ InferBO is a detector for out-of-bounds array accesses.
 Activate with `--bufferoverrun`.
 
 Supported languages:
+
 - C/C++/ObjC: Yes
 - C#/.Net: No
 - Erlang: No
@@ -20,6 +21,7 @@ You can read about its origins in this [blog post](https://research.fb.com/infer
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+
 - [BUFFER_OVERRUN_L1](/docs/next/all-issue-types#buffer_overrun_l1)
 - [BUFFER_OVERRUN_L2](/docs/next/all-issue-types#buffer_overrun_l2)
 - [BUFFER_OVERRUN_L3](/docs/next/all-issue-types#buffer_overrun_l3)

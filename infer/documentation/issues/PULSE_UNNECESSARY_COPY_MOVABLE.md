@@ -1,4 +1,5 @@
 This is reported when Infer detects an unnecessary copy into a field where
+
 - the source is an rvalue-reference
 - the source is not modified before it goes out of scope or is destroyed.
 

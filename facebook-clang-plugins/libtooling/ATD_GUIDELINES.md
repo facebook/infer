@@ -1,5 +1,4 @@
-Guidelines for writing ATD annotations in ASTExporter.cpp
-=========================================================
+# Guidelines for writing ATD annotations in ASTExporter.cpp
 
 The ATD specifications inlined in ASTExporter.cpp are used to generate Ocaml parsers using `atdgen`. Those annotations must reflect
 closely the Yojson/Json/Biniou emitted by the C++ plugin.
@@ -7,11 +6,11 @@ closely the Yojson/Json/Biniou emitted by the C++ plugin.
 The ATD language and the parser generating tool `atdgen` are documented here:
   https://atd.readthedocs.io/en/latest/atdgen.html
 
-ATD basics
-----------
+## ATD basics
 
 The definition of object in ASTExporter.cpp typically look like this:
-```
+
+```cpp
 //@atd type record = {
 //@atd  mandatory_field : string
 //@atd  ?optional_int : int option
@@ -28,15 +27,15 @@ The `<ocaml field_prefix="r_">` annotations are currently required to disambigua
 made the first letters of the C++ types, except for a few exceptions (e.g. `CXX` is mapped to `x`).
 
 Valid Yojson values for this specification are for instance:
-```
+
+```json
 { "mandatory_field" : "foo" }
 { "mandatory_field" : "foo", "optional_int" : 3 }
 ```
 
-Simple example
---------------
+## Simple example
 
-```
+```cpp
 //@atd type source_location = {
 //@atd   ?file : string option;
 //@atd   ?line : int option;
@@ -76,11 +75,11 @@ void ASTExporter<ATDWriter>::dumpSourceLocation(SourceLocation Loc) {
 
 Note that parser expects the C++ code to emit the corresponding fields in the same order.
 
-More complex example
---------------------
+## More complex example
 
 To get types of AST nodes, exporter relies on generated header files from clang.
-```
+
+```cpp
 //@atd type decl_ref = {
 //@atd   kind : decl_kind;                (* ATD type declared below *)
 //@atd   ?name : string;
@@ -128,7 +127,8 @@ void ASTExporter<ATDWriter>::dumpBareDeclRef(const Decl &D) {
 The complex definition for decl_kind is processed in several stages.
 
 First we use an adequate node of the clang preprocessor and expand the `#include <clang/AST/DeclNodes.inc>` to following code:
-```
+
+```cpp
 //@atd type decl_kind = [
 //@atd | AccessSpec
 //@atd | Block
@@ -138,7 +138,8 @@ First we use an adequate node of the clang preprocessor and expand the `#include
 ```
 
 Then we extract the ATD specifications by looking for `//@atd`-style comments
-```
+
+```text
 type decl_kind = [
 | AccessSpec
 | Block
@@ -148,12 +149,12 @@ type decl_kind = [
 ```
 
 After calling `atdgen`, the final Ocaml type is:
+
 ```
 type decl_kind = `AccessSpec | `Block | `Captured | `ClassScopeFunctionSpecialization  (* ... *)
 ```
 
-Testing
--------
+## Testing
 
 Compiling with `DEBUG=1` will make the ATDWriter enforce the general well-formedness of the emitted Yojson/Json/Biniou. For instance, a missing tag will trigger an assert failure.
 
@@ -163,8 +164,7 @@ It's is important to test both exporter (`make test`) and atd annotations (`make
 
 When changing the exporter, sometimes tests will fail due to exporting new information. To record this fact, run `make record-test-outputs`
 
-Mapping clang AST nodes to ocaml values
----------------------------------------
+## Mapping clang AST nodes to ocaml values
 
 Clang AST entities of a given type are typically represented by a cluster of classes.
 
@@ -176,15 +176,17 @@ before, we heavily rely on a (hacky) C-preprocessing stage and several scripts. 
 
 Let us study how declarations are handled more precisely. Handling for statement and type nodes is very similar.
 
-##### Default values for node tuples
-```
+### Default values for node tuples
+
+```cpp
 #define DECL(DERIVED, BASE) //@atd #define @DERIVED@_decl_tuple @BASE@_tuple
 #define ABSTRACT_DECL(DECL) DECL
 #include <clang/AST/DeclNodes.inc>
 ```
 
 After one step of preprocessing + ATD-extraction, this creates the following intermediate code (see `build/ast_inline.atd.inc`)
-```
+
+```cpp
 #define access_spec_decl_tuple decl_tuple
 #define block_decl_tuple decl_tuple
 #define captured_decl_tuple decl_tuple
@@ -197,7 +199,7 @@ This defines the default value of each `xxxx_decl_tuple` to be that of the base 
 
 The `@...@` signs are processed by python macros in `libtooling/atdlib`. For instance, `@CaptureDecl@` gives `capture_decl`.
 
-##### Overriding node tuples when outputting data
+### Overriding node tuples when outputting data
 
 When the visiting method for nodes of given type is effectively written, it is expected that the
 corresponding `#define xxxx_decl_tuple` is overwritten to add the specific information of the kind of nodes.
@@ -205,8 +207,7 @@ It is important to name tuples correctly. For example, for `SomeNewNodeDecl`, tu
 
 It is also required to specify how many fields tuple for given node has via `XxxTupleSize()` method
 
-```
-
+```cpp
 //@atd #define decl_tuple decl_info
 //@atd type decl_info = {
 //@atd    (* ... *)
@@ -241,11 +242,11 @@ void ASTExporter<ATDWriter>::VisitNamedDecl(const NamedDecl *D) {
 }
 ```
 
-##### Putting everything together
+### Putting everything together
 
 The final definitions of the `xxx_decl_tuple` are meant to be inlined in the declaration of the actual sum type for all declarations.
 
-```
+```cpp
 // main variant for declarations
 //@atd type decl = [
 #define DECL(DERIVED, BASE)   //@atd   | DERIVED@@Decl of (@DERIVED@_decl_tuple)
@@ -256,7 +257,8 @@ The final definitions of the `xxx_decl_tuple` are meant to be inlined in the dec
 ```
 
 This expands first to: (see `build/ast_inline.atd.p`)
-```
+
+```text
 type decl = [
 | AccessSpecDecl of (access_spec_decl_tuple)
 | BlockDecl of (block_decl_tuple)
@@ -267,7 +269,8 @@ type decl = [
 ```
 
 Then after a last stage of preprocessing: (see `build/clang_ast.atd`)
-```
+
+```text
 type decl = [
     AccessSpecDecl of (decl_info)
   | BlockDecl
