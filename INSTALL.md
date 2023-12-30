@@ -8,7 +8,6 @@ the instructions in our [Getting
 Started](http://fbinfer.com/docs/getting-started/#get-infer)
 page to install Infer.
 
-
 ## Infer dependencies for MacOSX
 
 Here are the prerequisites to be able to compile Infer on MacOSX. This
@@ -35,7 +34,6 @@ You can install some of these dependencies using
 brew install autoconf automake cmake opam pkg-config sqlite gmp mpfr java
 ```
 
-
 ## Infer dependencies for Linux
 
 Here are the prerequisites to be able to compile Infer on Linux. This
@@ -51,7 +49,6 @@ is required to compile everything from source.
   C/Objective-C analysis)
 
 See also the distro-specific instructions for Ubuntu and Debian below.
-
 
 ## Install Infer from source
 
@@ -78,7 +75,6 @@ Objective-C source code.
 See `./build-infer.sh --help` for more options, eg `./build-infer.sh`
 on its own will build the analyzers for both Java and C/ObjC.
 
-
 ## Install Infer from source without opam
 
 If for some reason you prefer to install Infer's OCaml dependencies by
@@ -94,12 +90,10 @@ sudo make install
 export PATH=`pwd`/infer/bin:$PATH
 ```
 
-
 ## How to install the dependencies on Linux
 
 See the Dockerfile in docker/ for inspiration. It includes the
 dependencies needed to build Infer on Debian 9 (stretch).
-
 
 ### Setting up opam
 

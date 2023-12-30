@@ -2,6 +2,7 @@ A call that may execute arbitrary code (such as registered, or chained, callback
 This code may deadlock whenever the callbacks obtain locks themselves, so it is an unsafe pattern.
 
 Example:
+
 ```java
   SettableFuture future = null;
 

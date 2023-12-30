@@ -8,6 +8,7 @@ Thread safety analysis.
 Activate with `--racerd`.
 
 Supported languages:
+
 - C/C++/ObjC: Yes
 - C#/.Net: Yes
 - Erlang: No
@@ -41,7 +42,7 @@ accesses occur on the same thread.
 
 ## Triggering the analysis
 
-RacerD doesn't try to check _all_ code for concurrency issues; it only looks at
+RacerD doesn't try to check *all* code for concurrency issues; it only looks at
 code that it believes can run in a concurrent context. There are two signals
 that RacerD looks for: (1) Explicitly annotating a class/method with
 `@ThreadSafe` and (2) using a lock via the `synchronized` keyword. In both
@@ -66,7 +67,7 @@ write-write race that occurs due to a method running in parallel with itself)
 and (2) two conflicting writes to the same location. Here's an example of the
 self-race flavor:
 
-```
+```java
 @ThreadSafe
 public class Dinner {
   private int mTemperature;
@@ -96,7 +97,7 @@ with `@ThreadSafe(enableChecks = false)`.
 We sometimes need to protect read accesses as well as writes. Consider the
 following class with unsynchronized methods.
 
-```
+```java
 @ThreadSafe
 public class Account {
 
@@ -140,7 +141,7 @@ to wrap both read and write accesses, or to use an `AtomicInteger` for
 In the following code, RacerD will report an `Interface not thread-safe` warning
 on the call to `i.bar()`:
 
-```
+```java
 interface I {
   void bar();
 }
@@ -192,7 +193,7 @@ execution. Annotating such elements with `@ThreadConfined` informs RacerD of
 this restriction. Note that a thread-confined method cannot race with itself but
 it can still race with other methods.
 
-```
+```java
 List mCache;
 
 @ThreadConfined(UI)
@@ -220,7 +221,7 @@ itself.
 
 Not all races are bugs; a race can be benign. Consider the following:
 
-```
+```java
 @Functional Boolean askNetworkIfShouldShowFeature();
 
 private Boolean mShouldShowFeature;
@@ -238,7 +239,7 @@ current user should be shown an experimental feature. This code looks racy, and
 indeed it is: if two threads execute `shouldShowFeature()` at the same time, one
 may read `mShouldShowFeature` at the same time the other is writing it.
 
-However, this is actually a _benign_ race that the programmer intentionally
+However, this is actually a *benign* race that the programmer intentionally
 allows for performance reasons. The reason this code is safe is that the
 programmer knows that `askNetworkIfShouldShowFeature()` will always return the
 same value in the same run of the app. Adding synchronization would remove the
@@ -252,10 +253,10 @@ the function is always expected to return the same value. This assumption allows
 RacerD to understand that this particular code is safe, though it will still
 (correctly) warn if `mShouldShowFeature` is read/written elsewhere.
 
-Be sure not to use the `@Functional` pattern for _singleton instantiation_, as
+Be sure not to use the `@Functional` pattern for *singleton instantiation*, as
 it's possible the "singleton" can be constructed more than once.
 
-```
+```java
 public class MySingleton {
   private static sInstance;
 
@@ -272,12 +273,12 @@ public class MySingleton {
 
 ### `@ReturnsOwnership`
 
-RacerD does not warn on unprotected writes to _owned_ objects. An object is
+RacerD does not warn on unprotected writes to *owned* objects. An object is
 owned if it has been freshly allocated in the current thread and has not escaped
 to another thread. RacerDf automatically tracks ownership in most cases, but it
 needs help with `abstract` and `interface` methods that return ownership:
 
-```
+```java
 @ThreadSafe
 public interface Car {
   @ReturnsOwnership abstract Car buyCar();
@@ -301,7 +302,7 @@ that need to call the method in order to test it. In this case, the
 `@VisibleForTesting` annotation will allow RacerD to consider the method as
 effectively `private` and will still allow it to be called from the unit test:
 
-```
+```java
 @VisibleForTesting void setF() {
   this.f = ...; // RacerD would normally warn here, but @VisibleForTesting will silence the warning
 }
@@ -322,7 +323,7 @@ several procedure calls. It handles this even between classes and between files.
 
 Here is a very basic example
 
-```
+```java
 @ThreadSafe
 class A{
 
@@ -346,7 +347,7 @@ does not directly look for threading issues there. However, method `m1()` in
 class `A` has a potential self-race, if it is run in parallel with itself and
 the same argument for each call. RacerD discovers this.
 
-```
+```console
 InterProc.java:17: error: THREAD_SAFETY_VIOLATION
   Unprotected write. Non-private method `A.m1` indirectly writes to field `&this.B.x` outside of synchronization.
  Reporting because the current class is annotated `@ThreadSafe`, so we assume that this method can run in
@@ -358,8 +359,8 @@ InterProc.java:17: error: THREAD_SAFETY_VIOLATION
   19.   }
 ```
 
-RacerD does this sort of reasoning using what is known as a _compositional
-inteprocedural analysis_. There, each method is analyzed independently of its
+RacerD does this sort of reasoning using what is known as a *compositional
+inteprocedural analysis*. There, each method is analyzed independently of its
 context to produce a summary of the behaviour of the procedure. In this case the
 summaries for `m1()' and`meth()' include information as follows.
 
@@ -429,7 +430,7 @@ including in
 [Google's Error Prone analyzer](https://github.com/google/error-prone/blob/master/docs/bugpattern/GuardedBy.md).
 When lock annotations are present they make the analyzer's life easier. It is possible to have a very effective race analysis without decreeing
 that such annotations must be present. This was essential for our deployment,
-since _requiring_ lock annotations would have been a show stopper for converting
+since *requiring* lock annotations would have been a show stopper for converting
 many thousands of lines of code to a concurrent context. We believe that this
 finding should be transportable to new type systems and language designs, as
 well as to other analyses for existing languages.
@@ -477,7 +478,7 @@ concurrency issues out there that RacerD does not check for (but might in the
 future). Examples include deadlock, atomicity, and check-then-act bugs (shown
 below). You must look for these bugs yourself!
 
-```
+```java
 @ThreadSafe
 public class SynchronizedList<T> {
   synchronized boolean isEmpty() { ... }
@@ -500,10 +501,10 @@ concurrency issues is difficult. If you would like to learn more about best
 practices, [Java Concurrency in Practice](http://jcip.net/) is an excellent
 resource.
 
-
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+
 - [GUARDEDBY_VIOLATION](/docs/next/all-issue-types#guardedby_violation)
 - [INTERFACE_NOT_THREAD_SAFE](/docs/next/all-issue-types#interface_not_thread_safe)
 - [LOCK_CONSISTENCY_VIOLATION](/docs/next/all-issue-types#lock_consistency_violation)

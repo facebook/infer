@@ -28,6 +28,7 @@ class Registry {
 ```
 
 How to run pulse for Java:
+
 ```bash
 infer run --pulse -- javac Test.java
 ```
@@ -84,6 +85,7 @@ void false_positive(int *x) {
 ```
 
 You can check if a given function called any unknown functions by inspecting its Pulse summary. For example, for the code above:
+
 ```console
 $ infer --pulse-only -- clang -c unknown_code.c
   No issues found

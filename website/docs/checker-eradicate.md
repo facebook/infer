@@ -10,6 +10,7 @@ The eradicate `@Nullable` checker for Java annotations.
 Activate with `--eradicate`.
 
 Supported languages:
+
 - C/C++/ObjC: No
 - C#/.Net: No
 - Erlang: No
@@ -28,7 +29,7 @@ Infer:Eradicate is a type checker for `@Nullable` annotations for Java. It is pa
 of the Infer static analysis suite of tools. The goal is to eradicate null
 pointer exceptions.
 
-<a href="https://developer.android.com/reference/android/support/annotation/Nullable.html">@Nullable</a>
+[@Nullable](https://developer.android.com/reference/android/support/annotation/Nullable.html)
 annotations denote that a parameter, field or the return value of a method can
 be null. When decorating a parameter, this denotes that the parameter can
 legitimately be null and the method will need to deal with it. When decorating a
@@ -93,10 +94,10 @@ class C {
 }
 ```
 
-
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+
 - [ERADICATE_ANNOTATION_GRAPH](/docs/next/all-issue-types#eradicate_annotation_graph)
 - [ERADICATE_BAD_NESTED_CLASS_ANNOTATION](/docs/next/all-issue-types#eradicate_bad_nested_class_annotation)
 - [ERADICATE_CONDITION_REDUNDANT](/docs/next/all-issue-types#eradicate_condition_redundant)
