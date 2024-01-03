@@ -442,7 +442,7 @@ AC_SUBST([NCPU])
 # optional progs and libraries that, eg build systems to be run in integration tests
 
 AC_CHECK_TOOL([ANT], [ant], [no])
-AC_CHECK_TOOL([BUCK], [buck], [no])
+AC_CHECK_TOOL([BUCK], [buck1], [no])
 AC_CHECK_TOOL([EMACS], [emacs], [no])
 AC_ARG_VAR([MVN], [command to execute Maven when running tests])
 AS_IF([test "x$MVN" = "x"], [
