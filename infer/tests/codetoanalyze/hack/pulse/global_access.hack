@@ -19,7 +19,7 @@ class Parent1 extends Parent2 {}
 
 class ExtendsVeryUnsafe extends VeryUnsafe {}
 
-class GlobalAccess extends Parent1 {
+final class GlobalAccess extends Parent1 {
 
   public function basic_is_entry_bad(A $a): int {
     return $a->GlobalVARIABLES;
@@ -59,7 +59,7 @@ class GlobalAccess extends Parent1 {
 }
 
 class EventNotHandler {}
-class DoesNotInheritEvenHandler extends EventNotHandler {
+final class DoesNotInheritEvenHandler extends EventNotHandler {
   public function indirect_other_is_not_entry_ok(A $a): int {
     return $a->get();
   }
@@ -68,7 +68,7 @@ class DoesNotInheritEvenHandler extends EventNotHandler {
 interface Unsafe {}
 interface I extends Unsafe {}
 
-class ImplementUnsafe extends Parent1 implements Unsafe {
+final class ImplementUnsafe extends Parent1 implements Unsafe {
   public function indirect_other_is_not_entry_ok(A $a): int {
     return $a->get();
   }
@@ -109,7 +109,7 @@ class Helper {
   }
 }
 
-class TooMuchDisjuncts extends EventHandler {
+final class TooMuchDisjuncts extends EventHandler {
 
   public function bad(
     Helper $o,

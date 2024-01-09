@@ -17,6 +17,7 @@
     {
       "initial_caller_class_extends": ["hack GlobalAccess::EventHandler"],
       "initial_caller_class_does_not_extend": ["hack GlobalAccess::Unsafe"],
+      "final_class_only": true,
       "tag": "Unsafe Globals",
       "description": "The value is accessed in an unsafe context"
     },

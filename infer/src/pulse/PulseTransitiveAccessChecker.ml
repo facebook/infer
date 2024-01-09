@@ -18,6 +18,7 @@ module Config : sig
   type context =
     { initial_caller_class_extends: string list
     ; initial_caller_class_does_not_extend: string list
+    ; final_class_only: bool
     ; description: string
     ; tag: string }
 
@@ -47,6 +48,7 @@ end = struct
   type context =
     { initial_caller_class_extends: string list
     ; initial_caller_class_does_not_extend: string list
+    ; final_class_only: bool [@yojson.default false]
     ; description: string
     ; tag: string }
   [@@deriving of_yojson]
@@ -103,14 +105,19 @@ end = struct
 
 
   let is_matching_context tenv procname
-      {initial_caller_class_extends; initial_caller_class_does_not_extend} =
+      {initial_caller_class_extends; initial_caller_class_does_not_extend; final_class_only} =
     match Procname.get_class_type_name procname with
     | Some type_name ->
+        let is_final =
+          Tenv.lookup tenv type_name
+          |> Option.exists ~f:(fun {Struct.annots} -> Annot.Item.is_final annots)
+        in
         let parents =
           Tenv.fold_supers tenv type_name ~init:String.Set.empty ~f:(fun parent _ acc ->
               String.Set.add acc (Typ.Name.to_string parent) )
         in
-        List.exists initial_caller_class_extends ~f:(String.Set.mem parents)
+        ((not final_class_only) || is_final)
+        && List.exists initial_caller_class_extends ~f:(String.Set.mem parents)
         && List.for_all initial_caller_class_does_not_extend ~f:(fun type_str ->
                not (String.Set.mem parents type_str) )
     | None ->
