@@ -169,3 +169,23 @@ abstract class CInitFieldInterface {
 function init_field_in_interface_ok(): string {
   return CInitFieldInterface::get_field();
 }
+
+enum E: int {
+  S1 = 1;
+  S2 = 2;
+}
+
+abstract final class InitEnumFields {
+  // The long field name somehow triggers a deduplication of the field name evaluations in hackc,
+  // which was needed to reproduce a false positive.
+  const E F1_VERY_VERY_VERY_VERY_VERY_VERY_LONG_NAME = E::S1;
+  const E F2 = E::S2;
+
+  public static function access_f1(): void {
+    $_ = static::F1_VERY_VERY_VERY_VERY_VERY_VERY_LONG_NAME;
+  }
+}
+
+function call_init_enum_fields_access_f1_ok_FP() {
+  InitEnumFields::access_f1();
+}
