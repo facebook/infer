@@ -3,7 +3,7 @@ digraph cfg {
 "class_method_in_conditional.2a19b0bd8eafdb32_1" [label="1: Start class_method_in_conditional\nFormals: \nLocals:  c:objc_class* \n  " color=yellow style=filled]
 	
 
-	 "class_method_in_conditional.2a19b0bd8eafdb32_1" -> "class_method_in_conditional.2a19b0bd8eafdb32_8" ;
+	 "class_method_in_conditional.2a19b0bd8eafdb32_1" -> "class_method_in_conditional.2a19b0bd8eafdb32_9" ;
 "class_method_in_conditional.2a19b0bd8eafdb32_2" [label="2: Exit class_method_in_conditional \n  " color=yellow style=filled]
 	
 
@@ -15,23 +15,27 @@ digraph cfg {
 	
 
 	 "class_method_in_conditional.2a19b0bd8eafdb32_4" -> "class_method_in_conditional.2a19b0bd8eafdb32_3" ;
-"class_method_in_conditional.2a19b0bd8eafdb32_5" [label="5: Prune (true branch, if (terminated)) \n   PRUNE(sizeof(t=objc_class), true); [line 104, column 7]\n " shape="invhouse"]
+"class_method_in_conditional.2a19b0bd8eafdb32_5" [label="5:  Message Call: class \n   n$0=*&c:objc_class* [line 104, column 8]\n " shape="box"]
 	
 
+	 "class_method_in_conditional.2a19b0bd8eafdb32_5" -> "class_method_in_conditional.2a19b0bd8eafdb32_6" ;
 	 "class_method_in_conditional.2a19b0bd8eafdb32_5" -> "class_method_in_conditional.2a19b0bd8eafdb32_7" ;
-"class_method_in_conditional.2a19b0bd8eafdb32_6" [label="6: Prune (false branch, if (terminated)) \n   PRUNE(!sizeof(t=objc_class), false); [line 104, column 7]\n " shape="invhouse"]
+"class_method_in_conditional.2a19b0bd8eafdb32_6" [label="6: Prune (true branch, if (terminated)) \n   PRUNE(sizeof(t=objc_class), true); [line 104, column 7]\n " shape="invhouse"]
 	
 
-	 "class_method_in_conditional.2a19b0bd8eafdb32_6" -> "class_method_in_conditional.2a19b0bd8eafdb32_4" ;
-"class_method_in_conditional.2a19b0bd8eafdb32_7" [label="7:  Return Stmt \n   *&return:_Bool=1 [line 105, column 5]\n " shape="box"]
+	 "class_method_in_conditional.2a19b0bd8eafdb32_6" -> "class_method_in_conditional.2a19b0bd8eafdb32_8" ;
+"class_method_in_conditional.2a19b0bd8eafdb32_7" [label="7: Prune (false branch, if (terminated)) \n   PRUNE(!sizeof(t=objc_class), false); [line 104, column 7]\n " shape="invhouse"]
 	
 
-	 "class_method_in_conditional.2a19b0bd8eafdb32_7" -> "class_method_in_conditional.2a19b0bd8eafdb32_2" ;
-"class_method_in_conditional.2a19b0bd8eafdb32_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(c:objc_class*); [line 103, column 3]\n  n$3=_fun_foo() [line 103, column 13]\n  *&c:objc_class*=n$3 [line 103, column 3]\n " shape="box"]
+	 "class_method_in_conditional.2a19b0bd8eafdb32_7" -> "class_method_in_conditional.2a19b0bd8eafdb32_4" ;
+"class_method_in_conditional.2a19b0bd8eafdb32_8" [label="8:  Return Stmt \n   *&return:_Bool=1 [line 105, column 5]\n " shape="box"]
 	
 
-	 "class_method_in_conditional.2a19b0bd8eafdb32_8" -> "class_method_in_conditional.2a19b0bd8eafdb32_5" ;
-	 "class_method_in_conditional.2a19b0bd8eafdb32_8" -> "class_method_in_conditional.2a19b0bd8eafdb32_6" ;
+	 "class_method_in_conditional.2a19b0bd8eafdb32_8" -> "class_method_in_conditional.2a19b0bd8eafdb32_2" ;
+"class_method_in_conditional.2a19b0bd8eafdb32_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(c:objc_class*); [line 103, column 3]\n  n$3=_fun_foo() [line 103, column 13]\n  *&c:objc_class*=n$3 [line 103, column 3]\n " shape="box"]
+	
+
+	 "class_method_in_conditional.2a19b0bd8eafdb32_9" -> "class_method_in_conditional.2a19b0bd8eafdb32_5" ;
 "call_alloc_class#A#[class].ad5ad169bfefdaf6_1" [label="1: Start A.call_alloc_class\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -261,7 +265,7 @@ digraph cfg {
 "loggerName#A#[instance].0134c8e794cdf775_2" [label="2: Exit A.loggerName \n  " color=yellow style=filled]
 	
 
-"loggerName#A#[instance].0134c8e794cdf775_3" [label="3:  Return Stmt \n   n$19=_fun_NSStringFromClass(sizeof(t=A):unsigned long) [line 90, column 10]\n " shape="box"]
+"loggerName#A#[instance].0134c8e794cdf775_3" [label="3:  Return Stmt \n   n$18=*&self:A* [line 90, column 29]\n  n$19=_fun_NSStringFromClass(sizeof(t=A):unsigned long) [line 90, column 10]\n " shape="box"]
 	
 
 	 "loggerName#A#[instance].0134c8e794cdf775_3" -> "loggerName#A#[instance].0134c8e794cdf775_4" ;
@@ -298,7 +302,7 @@ digraph cfg {
 "use_class_in_other_ways:#A(class .e38f4d2ebf991f46_2" [label="2: Exit A.use_class_in_other_ways: \n  " color=yellow style=filled]
 	
 
-"use_class_in_other_ways:#A(class .e38f4d2ebf991f46_3" [label="3:  Return Stmt \n   n$13=*&object:B* [line 78, column 11]\n  n$14=_fun_B.isC:(n$13:B*,sizeof(t=A):unsigned long) virtual [line 78, column 10]\n " shape="box"]
+"use_class_in_other_ways:#A(class .e38f4d2ebf991f46_3" [label="3:  Return Stmt \n   n$13=*&object:B* [line 78, column 11]\n  n$12=*&self:A* [line 78, column 23]\n  n$14=_fun_B.isC:(n$13:B*,sizeof(t=A):unsigned long) virtual [line 78, column 10]\n " shape="box"]
 	
 
 	 "use_class_in_other_ways:#A(class .e38f4d2ebf991f46_3" -> "use_class_in_other_ways:#A(class .e38f4d2ebf991f46_4" ;

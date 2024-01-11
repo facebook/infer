@@ -1797,12 +1797,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         callee_ms_opt
     in
     let subexpr_exprs = collect_returns res_trans_subexpr_list in
+    let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
+    let node_name = Procdesc.Node.MessageCall selector in
     match
       objCMessageExpr_trans_special_cases trans_state si obj_c_message_expr_info method_type
         trans_state_pri sil_loc subexpr_exprs
     with
     | Some res ->
-        res
+        PriorityNode.compute_results_to_parent trans_state_pri sil_loc node_name si
+          ~return:res.return (res_trans_subexpr_list @ [res])
     | None ->
         let procname = Procdesc.get_proc_name context.CContext.procdesc in
         let callee_name, method_call_type =
@@ -1823,8 +1826,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           create_call_instr trans_state method_type method_sil subexpr_exprs sil_loc call_flags
             ~is_inherited_ctor:false
         in
-        let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
-        let node_name = Procdesc.Node.MessageCall selector in
         let assertion_trans_opt =
           if CTrans_models.is_handleFailureInMethod selector then
             Some (CTrans_utils.trans_assertion trans_state sil_loc)
