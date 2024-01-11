@@ -1032,8 +1032,9 @@ let map_matchers =
         ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator*" <>$ capt_arg_payload
           $--> GenericMapCollection.iterator_star
                  (Format.asprintf "folly::f14::detail::%s::operator*" it)
-        ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator++" <>$ any_arg
-          $+...$--> Basic.skip |> with_non_disj ] )
+        ; -"folly" <>:: "f14" <>:: "detail" <>:: it &:: "operator++"
+          &++> Basic.unknown_call "folly::f14::detail::it::operator++"
+          |> with_non_disj ] )
   in
   let folly_concurrent_hash_map_matchers =
     (* We ignore all [folly::ConcurrentHashMap] methods as of now, because the summaries from the

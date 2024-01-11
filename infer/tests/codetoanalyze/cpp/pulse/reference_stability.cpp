@@ -646,7 +646,7 @@ void folly_fastmap_cbegin_bad(folly::F14FastMap<int, int>& map) {
   const auto keyCopy = it->first;
 }
 
-void folly_fastmap_iterator_increment_bad(folly::F14FastMap<int, int>& map) {
+void folly_fastmap_iterator_increment_bad_FN(folly::F14FastMap<int, int>& map) {
   auto it = map.begin();
   ++it;
   const auto& valueRef = it->second;
@@ -746,8 +746,7 @@ void known_existing_map_key_literal_ok_FP(folly::F14FastMap<int, int>& map) {
   const auto valueCopy = valueRef;
 }
 
-// False positive for USE_AFTER_DELETE.
-void delete_in_loop_ok_FP(folly::F14FastMap<int, int*>& map) {
+void delete_in_loop_ok(folly::F14FastMap<int, int*>& map) {
   for (auto& it : map) {
     delete it.second;
   }
