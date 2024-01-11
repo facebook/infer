@@ -52,6 +52,8 @@ val incr_timeouts : unit -> unit
 
 val add_timing : Timeable.t -> float -> unit
 
+val set_process_times : ExecutionDuration.t -> unit
+
 val reset : unit -> unit
 (** reset all stats *)
 

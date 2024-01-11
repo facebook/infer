@@ -83,7 +83,8 @@ include struct
     ; mutable topl_reachable_calls: int
     ; mutable timeouts: int
     ; mutable timings: (Timings.t, Timings.serialized) serialize_before_marshal
-    ; mutable longest_proc_duration_heap: LongestProcDurationHeap.t }
+    ; mutable longest_proc_duration_heap: LongestProcDurationHeap.t
+    ; mutable process_times: ExecutionDuration.t }
   [@@deriving fields]
 end
 
@@ -100,6 +101,7 @@ let global_stats =
   ; proc_locker_unlock_time= ExecutionDuration.zero
   ; restart_scheduler_useful_time= ExecutionDuration.zero
   ; restart_scheduler_total_time= ExecutionDuration.zero
+  ; process_times= ExecutionDuration.zero
   ; pulse_aliasing_contradictions= 0
   ; pulse_args_length_contradictions= 0
   ; pulse_captured_vars_length_contradictions= 0
@@ -187,6 +189,10 @@ let add_timing timeable t =
       T (Timings.add timeable t (deserialize Timings.deserialize timings)) )
 
 
+let set_process_times execution_duration =
+  update_with Fields.process_times ~f:(fun _ -> execution_duration)
+
+
 let copy from ~into : unit =
   let ({ longest_proc_duration_heap
        ; summary_file_try_load
@@ -198,6 +204,7 @@ let copy from ~into : unit =
        ; proc_locker_unlock_time
        ; restart_scheduler_useful_time
        ; restart_scheduler_total_time
+       ; process_times
        ; pulse_aliasing_contradictions
        ; pulse_args_length_contradictions
        ; pulse_captured_vars_length_contradictions
@@ -213,9 +220,10 @@ let copy from ~into : unit =
   Fields.Direct.set_all_mutable_fields into ~longest_proc_duration_heap ~summary_file_try_load
     ~summary_read_from_disk ~summary_cache_hits ~summary_cache_misses ~ondemand_procs_analyzed
     ~proc_locker_lock_time ~proc_locker_unlock_time ~restart_scheduler_useful_time
-    ~restart_scheduler_total_time ~pulse_aliasing_contradictions ~pulse_args_length_contradictions
-    ~pulse_captured_vars_length_contradictions ~pulse_disjuncts_dropped ~pulse_interrupted_loops
-    ~pulse_summaries_contradictions ~pulse_summaries_count ~topl_reachable_calls ~timeouts ~timings
+    ~restart_scheduler_total_time ~process_times ~pulse_aliasing_contradictions
+    ~pulse_args_length_contradictions ~pulse_captured_vars_length_contradictions
+    ~pulse_disjuncts_dropped ~pulse_interrupted_loops ~pulse_summaries_contradictions
+    ~pulse_summaries_count ~topl_reachable_calls ~timeouts ~timings
 
 
 let merge stats1 stats2 =
@@ -231,11 +239,7 @@ let merge stats1 stats2 =
       ExecutionDuration.add stats1.proc_locker_lock_time stats2.proc_locker_lock_time
   ; proc_locker_unlock_time=
       ExecutionDuration.add stats1.proc_locker_unlock_time stats2.proc_locker_unlock_time
-  ; restart_scheduler_useful_time=
-      ExecutionDuration.add stats1.restart_scheduler_useful_time
-        stats2.restart_scheduler_useful_time
-  ; restart_scheduler_total_time=
-      ExecutionDuration.add stats1.restart_scheduler_total_time stats2.restart_scheduler_total_time
+  ; process_times= ExecutionDuration.add stats1.process_times stats2.process_times
   ; pulse_aliasing_contradictions=
       stats1.pulse_aliasing_contradictions + stats2.pulse_aliasing_contradictions
   ; pulse_args_length_contradictions=
@@ -251,6 +255,11 @@ let merge stats1 stats2 =
       PulseSumCountMap.merge
         (fun _ i j -> Some (Option.value ~default:0 i + Option.value ~default:0 j))
         stats1.pulse_summaries_count stats2.pulse_summaries_count
+  ; restart_scheduler_useful_time=
+      ExecutionDuration.add stats1.restart_scheduler_useful_time
+        stats2.restart_scheduler_useful_time
+  ; restart_scheduler_total_time=
+      ExecutionDuration.add stats1.restart_scheduler_total_time stats2.restart_scheduler_total_time
   ; topl_reachable_calls= stats1.topl_reachable_calls + stats2.topl_reachable_calls
   ; timeouts= stats1.timeouts + stats2.timeouts
   ; timings=
@@ -269,8 +278,7 @@ let initial =
   ; ondemand_procs_analyzed= 0
   ; proc_locker_lock_time= ExecutionDuration.zero
   ; proc_locker_unlock_time= ExecutionDuration.zero
-  ; restart_scheduler_useful_time= ExecutionDuration.zero
-  ; restart_scheduler_total_time= ExecutionDuration.zero
+  ; process_times= ExecutionDuration.zero
   ; pulse_aliasing_contradictions= 0
   ; pulse_args_length_contradictions= 0
   ; pulse_captured_vars_length_contradictions= 0
@@ -278,6 +286,8 @@ let initial =
   ; pulse_interrupted_loops= 0
   ; pulse_summaries_contradictions= 0
   ; pulse_summaries_count= PulseSumCountMap.empty
+  ; restart_scheduler_useful_time= ExecutionDuration.zero
+  ; restart_scheduler_total_time= ExecutionDuration.zero
   ; topl_reachable_calls= 0
   ; timeouts= 0
   ; timings= T Timings.init }
@@ -333,14 +343,15 @@ let pp fmt stats =
       ~summary_cache_misses:(pp_int_field fmt) ~ondemand_procs_analyzed:(pp_int_field fmt)
       ~proc_locker_lock_time:(pp_execution_duration_field fmt)
       ~proc_locker_unlock_time:(pp_execution_duration_field fmt)
-      ~restart_scheduler_useful_time:(pp_execution_duration_field fmt)
-      ~restart_scheduler_total_time:(pp_execution_duration_field fmt)
+      ~process_times:(pp_execution_duration_field fmt)
       ~pulse_aliasing_contradictions:(pp_int_field fmt)
       ~pulse_args_length_contradictions:(pp_int_field fmt)
       ~pulse_captured_vars_length_contradictions:(pp_int_field fmt)
       ~pulse_disjuncts_dropped:(pp_int_field fmt) ~pulse_interrupted_loops:(pp_int_field fmt)
       ~pulse_summaries_contradictions:(pp_int_field fmt)
       ~pulse_summaries_count:(pp_pulse_summaries_count fmt) ~timeouts:(pp_int_field fmt)
+      ~restart_scheduler_useful_time:(pp_execution_duration_field fmt)
+      ~restart_scheduler_total_time:(pp_execution_duration_field fmt)
       ~topl_reachable_calls:(pp_int_field fmt)
       ~timings:(pp_serialized_field Timings.deserialize Timings.pp fmt)
   in
@@ -381,13 +392,14 @@ let log_to_scuba stats =
       ~summary_file_try_load:create_counter ~summary_read_from_disk:create_counter
       ~summary_cache_hits:create_counter ~summary_cache_misses:create_counter
       ~ondemand_procs_analyzed:create_counter ~proc_locker_lock_time:create_time_entry
-      ~proc_locker_unlock_time:create_time_entry ~restart_scheduler_useful_time:create_time_entry
-      ~restart_scheduler_total_time:create_time_entry ~pulse_aliasing_contradictions:create_counter
-      ~pulse_args_length_contradictions:create_counter
+      ~proc_locker_unlock_time:create_time_entry ~process_times:create_time_entry
+      ~pulse_aliasing_contradictions:create_counter ~pulse_args_length_contradictions:create_counter
       ~pulse_captured_vars_length_contradictions:create_counter
       ~pulse_disjuncts_dropped:create_counter ~pulse_interrupted_loops:create_counter
       ~pulse_summaries_contradictions:create_counter
-      ~pulse_summaries_count:create_pulse_summaries_count_entry ~timeouts:create_counter
+      ~pulse_summaries_count:create_pulse_summaries_count_entry
+      ~restart_scheduler_useful_time:create_time_entry
+      ~restart_scheduler_total_time:create_time_entry ~timeouts:create_counter
       ~topl_reachable_calls:create_counter ~timings:create_timings_entry
     |> List.concat
   in

@@ -60,10 +60,17 @@ let sys_time exe_duration = Duration.secs exe_duration.sys
 
 let wall_time exe_duration = exe_duration.wall
 
+let wall_time_s exe_duration = wall_time exe_duration |> IMtime.span_to_s_float
+
+let oncpu_pct exe_duration =
+  100.0 *. (user_time exe_duration +. sys_time exe_duration) /. wall_time_s exe_duration
+  |> Float.round |> int_of_float
+
+
 let pp ~prefix fmt exe_duration =
-  F.fprintf fmt "%s_user= %.8f@;%s_sys= %.8f@;%s_wall= %.8f" prefix (user_time exe_duration) prefix
-    (sys_time exe_duration) prefix
-    (wall_time exe_duration |> IMtime.span_to_s_float)
+  F.fprintf fmt "%s_user= %.8f@;%s_sys= %.8f@;%s_wall= %.8f@;%s_oncpu_pct= %d%%" prefix
+    (user_time exe_duration) prefix (sys_time exe_duration) prefix (wall_time_s exe_duration) prefix
+    (oncpu_pct exe_duration)
 
 
 let counter () = {process_times= Unix.times (); wall_time= Mtime_clock.counter ()}
@@ -78,8 +85,8 @@ let to_scuba_entries ~prefix exe_duration =
   let secs_to_us s = s *. 1000_000. |> Float.to_int in
   [ LogEntry.mk_time ~label:(prefix ^ "_sys") ~duration_us:(sys_time exe_duration |> secs_to_us)
   ; LogEntry.mk_time ~label:(prefix ^ "_user") ~duration_us:(user_time exe_duration |> secs_to_us)
-  ; LogEntry.mk_time ~label:(prefix ^ "_wall")
-      ~duration_us:(wall_time exe_duration |> IMtime.span_to_us_int) ]
+  ; LogEntry.mk_time ~label:(prefix ^ "_wall") ~duration_us:(wall_time_s exe_duration |> secs_to_us)
+  ; LogEntry.mk_count ~label:(prefix ^ "_oncpu_pct") ~value:(oncpu_pct exe_duration) ]
 
 
 let log ~prefix debug_kind exe_duration =

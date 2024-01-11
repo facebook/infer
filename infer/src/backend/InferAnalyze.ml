@@ -222,9 +222,11 @@ let analyze replay_call_graph source_files_to_analyze =
     let runner =
       (* use a ref to pass data from prologue to epilogue without too much machinery *)
       let gc_stats_pre_fork = ref None in
+      let process_times_counter = ref None in
       let child_prologue _ =
         Stats.reset () ;
         gc_stats_pre_fork := Some (GCStats.get ~since:ProgramStart) ;
+        process_times_counter := Some (ExecutionDuration.counter ()) ;
         if Config.memtrace_analysis then
           let filename =
             allocation_traces_dir ^/ F.asprintf "memtrace.%a" Pid.pp (Unix.getpid ())
@@ -241,6 +243,14 @@ let analyze replay_call_graph source_files_to_analyze =
           | None ->
               L.internal_error "child did not store GC stats in its prologue, what happened?" ;
               None
+        in
+        let () =
+          match !process_times_counter with
+          | Some counter ->
+              Stats.set_process_times (ExecutionDuration.since counter)
+          | None ->
+              L.internal_error
+                "Child did not start the process times counter in its prologue, what happened?"
         in
         (Stats.get (), gc_stats_in_fork, MissingDependencies.get ())
       in
