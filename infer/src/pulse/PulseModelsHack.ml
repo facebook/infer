@@ -806,34 +806,49 @@ let hhbc_cmp_same x y : model =
   in
   let* res =
     disjuncts
-      [ (let* () = prune_eq x y in
+      [ (let* () = prune_eq_zero x in
+         let* () = prune_eq_zero y in
          make_hack_bool true )
-      ; (let* () = prune_ne x y in
-         disjuncts
-           [ ((* either of those is null but not both *)
-              let* () = disjuncts [prune_eq_zero x; prune_eq_zero y] in
-              make_hack_bool false )
-           ; (let* () = prune_ne_zero x in
-              let* () = prune_ne_zero y in
-              let* x_dynamic_type_data = get_dynamic_type ~ask_specialization:true x in
-              let* y_dynamic_type_data = get_dynamic_type ~ask_specialization:true y in
-              match (x_dynamic_type_data, y_dynamic_type_data) with
-              | None, _ | _, None ->
-                  make_hack_random_bool
-              | ( Some {Attribute.typ= {Typ.desc= Tstruct x_typ_name}}
-                , Some {Attribute.typ= {Typ.desc= Tstruct y_typ_name}} )
-                when Typ.Name.equal x_typ_name y_typ_name ->
-                  if Typ.Name.equal x_typ_name TextualSil.hack_int_type_name then
-                    let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
-                    let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
-                    value_equality_test x_val y_val
-                  else if Typ.Name.equal x_typ_name TextualSil.hack_bool_type_name then
-                    let* x_val = eval_deref_access Read x (FieldAccess bool_val_field) in
-                    let* y_val = eval_deref_access Read y (FieldAccess bool_val_field) in
-                    value_equality_test x_val y_val
-                  else make_hack_random_bool
-              | _, _ ->
-                  make_hack_bool false ) ] ) ]
+      ; (let* () = prune_eq_zero x in
+         let* () = prune_ne_zero y in
+         make_hack_bool false )
+      ; (let* () = prune_ne_zero x in
+         let* () = prune_eq_zero y in
+         make_hack_bool false )
+      ; (let* () = prune_ne_zero x in
+         let* () = prune_ne_zero y in
+         let* x_dynamic_type_data = get_dynamic_type ~ask_specialization:true x in
+         let* y_dynamic_type_data = get_dynamic_type ~ask_specialization:true y in
+         match (x_dynamic_type_data, y_dynamic_type_data) with
+         | ( Some {Attribute.typ= {desc= Tstruct x_typ_name}}
+           , Some {Attribute.typ= {desc= Tstruct y_typ_name}} )
+           when Typ.Name.equal x_typ_name y_typ_name ->
+             if Typ.Name.equal x_typ_name TextualSil.hack_int_type_name then
+               let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
+               let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
+               value_equality_test x_val y_val
+             else if Typ.Name.equal x_typ_name TextualSil.hack_bool_type_name then
+               let* x_val = eval_deref_access Read x (FieldAccess bool_val_field) in
+               let* y_val = eval_deref_access Read y (FieldAccess bool_val_field) in
+               value_equality_test x_val y_val
+             else if Typ.Name.equal x_typ_name TextualSil.hack_string_type_name then
+               make_hack_random_bool
+             else
+               disjuncts
+                 [ (let* () = prune_eq x y in
+                    (* CAUTION: Note that the pruning on a pointer may result in incorrect semantics
+                       if the pointer is given as a parameter. In that case, the pruning may work as
+                       a value assignment to the pointer. *)
+                    make_hack_bool true )
+                 ; (let* () = prune_ne x y in
+                    (* Random because its does not cover the comparisons of vec, keyset, dict and
+                       shape at the moment. *)
+                    make_hack_random_bool ) ]
+         | Some {Attribute.typ= x_typ}, Some {Attribute.typ= y_typ} when not (Typ.equal x_typ y_typ)
+           ->
+             make_hack_bool false
+         | _, _ ->
+             make_hack_random_bool ) ]
   in
   assign_ret res
 

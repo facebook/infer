@@ -186,6 +186,6 @@ abstract final class InitEnumFields {
   }
 }
 
-function call_init_enum_fields_access_f1_ok_FP() {
+function call_init_enum_fields_access_f1_ok() {
   InitEnumFields::access_f1();
 }
