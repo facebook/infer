@@ -455,7 +455,7 @@ module StructBridge = struct
       class. Therefore we keep [supers] as reverse to perform an efficient lookup. *)
   let rev_hack_supers lang supers = match lang with Lang.Hack -> List.rev supers | _ -> supers
 
-  let to_sil lang decls_env tenv proc_entries {name; supers; fields; attributes} =
+  let to_sil lang decls_env tenv proc_entries source_file {name; supers; fields; attributes} =
     let class_info =
       match lang with Textual.Lang.Hack -> Some (to_hack_class_info decls_env name) | _ -> None
     in
@@ -483,7 +483,7 @@ module StructBridge = struct
           if Attr.is_final attr then Some Annot.final else None )
     in
     (* FIXME: generate static fields *)
-    Tenv.mk_struct tenv ~fields ~annots ~supers ~methods ?class_info name |> ignore
+    Tenv.mk_struct tenv ~fields ~annots ~supers ~methods ?class_info ?source_file name |> ignore
 
 
   let of_hack_class_info class_info =
@@ -1152,7 +1152,8 @@ module ModuleBridge = struct
           (fun name ->
             let proc_entries = TypeName.Map.find name all_proc_entries in
             let struct_ = {Textual.Struct.name; supers= []; fields= []; attributes= []} in
-            StructBridge.to_sil lang decls_env tenv proc_entries struct_ )
+            let source_file = None in
+            StructBridge.to_sil lang decls_env tenv proc_entries source_file struct_ )
           types_used_as_enclosing_but_not_defined ;
         List.iter module_.decls ~f:(fun decl ->
             match decl with
@@ -1162,7 +1163,8 @@ module ModuleBridge = struct
                 let proc_entries =
                   TypeName.Map.find_opt strct.name all_proc_entries |> Option.value ~default:[]
                 in
-                StructBridge.to_sil lang decls_env tenv proc_entries strct
+                let source_file = Some (TextualDecls.source_file decls_env |> SourceFile.file) in
+                StructBridge.to_sil lang decls_env tenv proc_entries source_file strct
             | Procdecl _ ->
                 ()
             | Proc pdesc ->

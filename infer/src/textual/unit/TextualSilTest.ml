@@ -56,6 +56,7 @@ let%expect_test "undefined types are included in tenv" =
          annots: {<>}
          class_info: {HackClassInfo (Class)}
          dummy: false
+         source_file: dummy.sil
          hack Quux
          fields: {}
          statics: {}
@@ -113,6 +114,7 @@ let%expect_test "final annotation" =
       annots: {<_final>}
       class_info: {HackClassInfo (Class)}
       dummy: false
+      source_file: dummy.sil
       hack Bar
       fields: {}
       statics: {}
@@ -122,7 +124,8 @@ let%expect_test "final annotation" =
       exported_obj_methods: {}
       annots: {<>}
       class_info: {HackClassInfo (Class)}
-      dummy: false |}]
+      dummy: false
+      source_file: dummy.sil |}]
 
 
 let%expect_test "unknown formal calls" =
@@ -362,6 +365,7 @@ let%expect_test "trait vs class kind" =
       annots: {<>}
       class_info: {HackClassInfo (Class)}
       dummy: false
+      source_file: dummy.sil
       hack T
       fields: {}
       statics: {}
@@ -371,7 +375,8 @@ let%expect_test "trait vs class kind" =
       exported_obj_methods: {}
       annots: {<>}
       class_info: {HackClassInfo (Trait)}
-      dummy: false |}]
+      dummy: false
+      source_file: dummy.sil |}]
 
 
 let%expect_test "const" =
@@ -410,4 +415,5 @@ let%expect_test "const" =
     exported_obj_methods: {}
     annots: {<>}
     class_info: {HackClassInfo (Class)}
-    dummy: false |}]
+    dummy: false
+    source_file: dummy.sil |}]
