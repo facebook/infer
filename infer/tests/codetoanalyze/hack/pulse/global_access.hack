@@ -11,6 +11,11 @@ class A {
   public function get(): int {
     return $this->GlobalVARIABLES;
   }
+
+  public function double_get(): int {
+    $_ = $this->get();
+    return $this->get();
+  }
 }
 
 class EventHandler {}
@@ -31,6 +36,15 @@ final class GlobalAccess extends Parent1 {
 
   public function indirect_other_is_entry_bad(A $a): int {
     return $a->get();
+  }
+
+  public function indirect_is_entry_two_signals_bad(A $a1, A $a2): int {
+    $_ = $a1->get();
+    return $a2->get();
+  }
+
+  public function FN_indirect_is_entry_calls_double_get_two_signals_bad(A $a): int {
+    return $a->double_get();
   }
 
   public function call1_is_entry_bad(Unsafe $a): int {
@@ -89,7 +103,7 @@ class EventHandler2 {
 }
 
 class Helper {
-  public function bomb(
+  public function bomb1(
     bool $choice0,
     bool $choice1,
     bool $choice2,
@@ -107,11 +121,32 @@ class Helper {
       ;
     }
   }
+
+  public function bomb2(
+    bool $choice0,
+    bool $choice1,
+    bool $choice2,
+    bool $activate,
+    A $a1,
+    A $a2,
+  ): void {
+    if ($choice0) {
+    }
+    if ($choice1) {
+    }
+    if ($choice2) {
+      if ($activate && $choice0 && $choice1 && $choice2) {
+        $_ = $a1->get();
+        $_ = $a2->get();
+      }
+      ;
+    }
+  }
 }
 
 final class TooMuchDisjuncts extends EventHandler {
 
-  public function bad(
+  public function one_signal_bad(
     Helper $o,
     bool $choice0,
     bool $choice1,
@@ -120,10 +155,10 @@ final class TooMuchDisjuncts extends EventHandler {
     A $a,
   ): void {
     $activate = $choice3 ? true : false;
-    $o->bomb($choice0, $choice1, $choice2, $activate, $a);
+    $o->bomb1($choice0, $choice1, $choice2, $activate, $a);
   }
 
-  public function bad_flipped(
+  public function one_signal_bad_flipped(
     Helper $o,
     bool $choice0,
     bool $choice1,
@@ -132,6 +167,32 @@ final class TooMuchDisjuncts extends EventHandler {
     A $a,
   ): void {
     $activate = $choice3 ? true : false;
-    $o->bomb($choice0, $choice1, $choice2, !$activate, $a);
+    $o->bomb1($choice0, $choice1, $choice2, !$activate, $a);
+  }
+
+  public function FN_two_signals_bad(
+    Helper $o,
+    bool $choice0,
+    bool $choice1,
+    bool $choice2,
+    bool $choice3,
+    A $a1,
+    A $a2,
+  ): void {
+    $activate = $choice3 ? true : false;
+    $o->bomb2($choice0, $choice1, $choice2, $activate, $a1, $a2);
+  }
+
+  public function FN_two_signals_bad_flipped(
+    Helper $o,
+    bool $choice0,
+    bool $choice1,
+    bool $choice2,
+    bool $choice3,
+    A $a1,
+    A $a2,
+  ): void {
+    $activate = $choice3 ? true : false;
+    $o->bomb2($choice0, $choice1, $choice2, !$activate, $a1, $a2);
   }
 }
