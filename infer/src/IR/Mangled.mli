@@ -39,6 +39,8 @@ val self : t [@@warning "-unused-value-declaration"]
 
 val is_self : t -> bool
 
+val is_artificial : t -> bool
+
 val return_param : t
 
 val is_return_param : t -> bool

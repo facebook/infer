@@ -381,7 +381,9 @@ module Liveness = struct
     let is_local pvar = not (Liveness.is_always_in_scope proc_desc pvar) in
     let prepend_node_nullify_instructions loc pvars instrs =
       List.fold pvars ~init:instrs ~f:(fun instrs pvar ->
-          if is_local pvar then Sil.Metadata (Nullify (pvar, loc)) :: instrs else instrs )
+          if is_local pvar && not (Pvar.is_artificial pvar) then
+            Sil.Metadata (Nullify (pvar, loc)) :: instrs
+          else instrs )
     in
     let node_deadvars_instruction loc vars =
       let local_vars =
@@ -399,6 +401,7 @@ module Liveness = struct
             let dead_vars, pvars_to_nullify =
               VarDomain.fold
                 (fun var (dead_vars, pvars_to_nullify) ->
+                  let dead_vars = if Var.is_artificial var then dead_vars else var :: dead_vars in
                   let pvars_to_nullify =
                     match Var.get_pvar var with
                     | Some pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
@@ -408,7 +411,7 @@ module Liveness = struct
                     | _ ->
                         pvars_to_nullify
                   in
-                  (var :: dead_vars, pvars_to_nullify) )
+                  (dead_vars, pvars_to_nullify) )
                 to_nullify ([], [])
             in
             let loc = Procdesc.Node.get_last_loc node in

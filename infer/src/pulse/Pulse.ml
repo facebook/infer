@@ -310,7 +310,9 @@ module PulseTransferFunctions = struct
     if flags.cf_injected_destructor then
       match (callee_pname, actuals) with
       | Some (Procname.ObjC_Cpp pname), [(Exp.Lvar pvar, typ)]
-        when Pvar.is_local pvar && not (Procname.ObjC_Cpp.is_inner_destructor pname) ->
+        when Pvar.is_local pvar
+             && (not (Procname.ObjC_Cpp.is_inner_destructor pname))
+             && not (Pvar.is_artificial pvar) ->
           (* ignore inner destructors, only trigger out of scope on the final destructor call *)
           Some (pvar, typ)
       | _ ->

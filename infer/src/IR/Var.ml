@@ -47,6 +47,8 @@ let is_none = function LogicalVar id -> Ident.is_none id | _ -> false
 
 let is_this = function ProgramVar pv -> Pvar.is_this pv | LogicalVar _ -> false
 
+let is_artificial = function ProgramVar pv -> Pvar.is_artificial pv | LogicalVar _ -> false
+
 let get_all_vars_in_exp e =
   let acc = Exp.free_vars e |> Sequence.map ~f:of_id in
   Exp.program_vars e |> Sequence.map ~f:of_pvar |> Sequence.append acc

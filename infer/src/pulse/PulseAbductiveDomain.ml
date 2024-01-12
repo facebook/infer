@@ -972,7 +972,7 @@ module Internal = struct
                        else None )
                  in
                  match var with
-                 | Var.ProgramVar pvar ->
+                 | Var.ProgramVar pvar when not (Pvar.is_artificial pvar) ->
                      get_local_typ_opt pvar
                      |> Option.value_map ~default:acc
                           ~f:(add_out_of_scope_attribute addr pvar location history acc)

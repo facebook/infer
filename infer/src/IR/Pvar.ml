@@ -118,6 +118,8 @@ let is_this pvar = Mangled.is_this (get_name pvar)
 (** Check if a pvar is the special "self" var *)
 let is_self pvar = Mangled.is_self (get_name pvar)
 
+let is_artificial pvar = Mangled.is_artificial (get_name pvar)
+
 (** Check if the pvar is a return var *)
 let is_return pv = Mangled.equal (get_name pv) Ident.name_return
 
