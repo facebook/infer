@@ -59,6 +59,8 @@ val add_field : t -> Typ.Name.t -> Struct.field -> unit
 val pp : Format.formatter -> t -> unit
 (** print a type environment *)
 
+val fold : t -> init:'acc -> f:(Typ.Name.t -> Struct.t -> 'acc -> 'acc) -> 'acc
+
 val fold_supers :
      ?ignore_require_extends:bool
   -> t

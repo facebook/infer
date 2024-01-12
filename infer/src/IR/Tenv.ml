@@ -20,6 +20,8 @@ let pp fmt (tenv : t) =
   TypenameHash.iter (fun name typ -> Format.fprintf fmt "%a@," (Struct.pp Pp.text name) typ) tenv
 
 
+let fold tenv ~init ~f = TypenameHash.fold f tenv init
+
 (** Create a new type environment. *)
 let create () = TypenameHash.create 1000
 
