@@ -1036,7 +1036,7 @@ OPTIONS
 
        --lock-model json
            Specify custom lock models for starvation analysis.       
-    Example for pthreads (already included in infer): 
+    Example for pthreads (already included in infer):
            [{"lock":["pthread_mutex_lock"],"unlock":["pthread_mutex_unlock"]}]
            
            See also infer-analyze(1).

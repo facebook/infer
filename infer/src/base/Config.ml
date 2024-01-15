@@ -1958,7 +1958,7 @@ and lock_model =
   CLOpt.mk_json ~long:"lock-model"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
     {|Specify custom lock models for starvation analysis.
-Example for pthreads (already included in infer): 
+Example for pthreads (already included in infer):
 [{"lock":["pthread_mutex_lock"],"unlock":["pthread_mutex_unlock"]}] |}
 
 
@@ -2673,7 +2673,7 @@ and pulse_taint_skip_sources =
 
 
 and pulse_transitive_access_config =
-  CLOpt.mk_path_opt ~long:"pulse-transitive-access-config"
+  CLOpt.mk_string_opt ~long:"pulse-transitive-access-config"
     {|Specifies the accesses that must be tracked and the entry methods.
     Here is an example of the intended JSON syntax:
 {
