@@ -1567,6 +1567,10 @@ OPTIONS
              
            See also infer-analyze(1).
 
+       --pulse-unsafe-malloc
+           Activates: Assume that malloc(3) never returns null. (Conversely:
+           --no-pulse-unsafe-malloc)           See also infer-analyze(1).
+
        --pulse-widen-threshold int
            Stop exploring new paths after int loop iterations           See also infer-analyze(1).
 

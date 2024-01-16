@@ -2371,6 +2371,12 @@ and pulse_model_malloc_pattern =
      for more information."
 
 
+and pulse_unsafe_malloc =
+  CLOpt.mk_bool ~long:"pulse-unsafe-malloc"
+    ~in_help:InferCommand.[(Analyze, manual_clang)]
+    "Assume that malloc(3) never returns null."
+
+
 and pulse_model_realloc_pattern =
   CLOpt.mk_string_opt ~long:"pulse-model-realloc-pattern"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4247,6 +4253,8 @@ and pulse_model_cheap_copy_type = Option.map ~f:Str.regexp !pulse_model_cheap_co
 and pulse_model_free_pattern = Option.map ~f:Str.regexp !pulse_model_free_pattern
 
 and pulse_model_malloc_pattern = Option.map ~f:Str.regexp !pulse_model_malloc_pattern
+
+and pulse_unsafe_malloc = !pulse_unsafe_malloc
 
 and pulse_model_realloc_pattern = Option.map ~f:Str.regexp !pulse_model_realloc_pattern
 

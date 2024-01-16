@@ -56,6 +56,11 @@ let custom_malloc size_exp model_data astate =
     astate
 
 
+let custom_malloc_not_null size_exp model_data astate =
+  alloc_not_null_common (CustomMalloc model_data.callee_procname) ~size_exp_opt:(Some size_exp)
+    model_data astate
+
+
 let custom_alloc_not_null model_data astate =
   alloc_not_null_common (CustomMalloc model_data.callee_procname) ~size_exp_opt:None model_data
     astate
@@ -97,8 +102,12 @@ let matchers : matcher list =
   ; -"realloc" <>$ capt_arg $+ capt_exp $--> realloc
   ; +match_regexp_opt Config.pulse_model_realloc_pattern
     <>$ capt_arg $+ capt_exp $+...$--> custom_realloc ]
-  @ ( [ +BuiltinDecl.(match_builtin malloc) <>$ capt_exp $--> malloc
-      ; +match_regexp_opt Config.pulse_model_malloc_pattern <>$ capt_exp $+...$--> custom_malloc
+  @ ( [ ( +BuiltinDecl.(match_builtin malloc)
+        <>$ capt_exp
+        $--> if Config.pulse_unsafe_malloc then malloc_not_null else malloc )
+      ; ( +match_regexp_opt Config.pulse_model_malloc_pattern
+        <>$ capt_exp
+        $+...$--> if Config.pulse_unsafe_malloc then custom_malloc_not_null else custom_malloc )
       ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_create_or_copy
         &--> custom_alloc_not_null
       ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy

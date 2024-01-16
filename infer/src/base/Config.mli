@@ -596,6 +596,8 @@ val pulse_model_free_pattern : Str.regexp option
 
 val pulse_model_malloc_pattern : Str.regexp option
 
+val pulse_unsafe_malloc : bool
+
 val pulse_model_realloc_pattern : Str.regexp option
 
 val pulse_model_release_pattern : Str.regexp option
