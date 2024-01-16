@@ -2693,8 +2693,20 @@ and pulse_transitive_access_config =
     Here is an example of the intended JSON syntax:
 {
     "fieldnames_to_monitor": ["GlobalVARIABLES"],
-    "initial_caller_class_extends": "GlobalAccess::EventHandler",
-    "initial_caller_class_does_not_extend": ["GlobalAccess::Unsafe"]
+    "procnames_to_monitor": [
+      {
+        "class_names": ["GlobalAccess"],
+        "method_names": ["getGlobalData"]
+      },
+      {"class_name_regex": "SomeGlobals"}
+    ],
+    "contexts": [
+      {
+        "initial_caller_class_extends": ["GlobalAccess::EventHandler"],
+        "initial_caller_class_does_not_extend": ["GlobalAccess::Unsafe"],
+        "final_class_only": true
+      }
+    ]
 } |}
 
 
