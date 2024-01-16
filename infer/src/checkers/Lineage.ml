@@ -17,6 +17,16 @@ module PPNode = struct
   include CFG.Node
 
   let pp fmt node = pp_id fmt (id node)
+
+  let dummy () : t =
+    (* This is to fulfill ocamlgraph interface types, it should not appear in the graph. Otherwise
+       it's a lineage implementation bug, meaning some code is adding edges without specifying
+       a label. *)
+    let dummy_procname =
+      Procname.make_erlang ~module_name:"__infer__lineage__" ~function_name:"__dummy__" ~arity:0
+    in
+    let dummy_instr_index = -42 in
+    (Procdesc.Node.dummy dummy_procname, dummy_instr_index)
 end
 
 module Shapes = LineageShape.Summary
@@ -68,7 +78,7 @@ module Local = struct
       | ConstantInt of string
       | ConstantString of string
       | Cell of (Cell.t[@sexp.opaque])
-    [@@deriving compare, equal, sexp]
+    [@@deriving compare, equal, sexp, hash]
   end
 
   include T
@@ -106,7 +116,7 @@ module Vertex = struct
       | ReturnOf of (Procname.t[@sexp.opaque])
       | Self
       | Function of (Procname.t[@sexp.opaque])
-    [@@deriving compare, equal, sexp]
+    [@@deriving compare, equal, sexp, hash]
   end
 
   include T
@@ -184,6 +194,8 @@ module Edge = struct
 
   type t = {kind: kind; node: (PPNode.t[@sexp.opaque])} [@@deriving compare, equal, sexp]
 
+  let default = {kind= Direct; node= PPNode.dummy ()}
+
   let pp_e fmt (src, {kind; node}, dst) =
     Format.fprintf fmt "@[<2>[%a@ ->@ %a@ (%a@@%a)]@]@;" Vertex.pp src Vertex.pp dst Kind.pp kind
       PPNode.pp node
@@ -193,27 +205,12 @@ module G = struct
   (** INV: Constants occur only as sources of edges. NOTE: Constants are "local" because type [data]
       associates them with a location, in a proc. *)
 
-  module V = Vertex
+  module Impl = Graph.Persistent.Digraph.ConcreteBidirectionalLabeled (Vertex) (Edge)
+  include Impl
 
-  module E = struct
-    type t = V.t * Edge.t * V.t [@@deriving compare, equal, sexp]
-  end
-
-  type vertex = V.t
-
-  type edge = E.t
-
-  type t = edge list
-
-  let count_vertices edges =
-    let v_list = List.concat_map ~f:(function src, _, dst -> [src; dst]) edges in
-    let v_set = V.Set.of_list v_list in
-    Set.length v_set
-
-
-  let pp fmt edges =
-    Format.fprintf fmt "@[<v 2>LineageGraph: edges %d vertices %d@;@[%a@]@]" (List.length edges)
-      (count_vertices edges) (Format.pp_print_list Edge.pp_e) edges
+  let pp fmt graph =
+    Format.fprintf fmt "@[<v 2>LineageGraph: edges %d vertices %d@;@[%a@]@]" (nb_edges graph)
+      (nb_vertex graph) (Fmt.iter iter_edges_e Edge.pp_e) graph
 
 
   let preserves_shape ((src, {kind; _}, dst) : E.t) =
@@ -685,7 +682,7 @@ module G = struct
            {function_= {name= Procname.hashable_name procname; has_unsupported_features}} ) ;
       let _fun_id = save_vertex proc_desc Self in
       let record_edge edge = ignore (save_edge proc_desc edge) in
-      List.iter ~f:record_edge graph ;
+      iter_edges_e record_edge graph ;
       Out_channel.flush (channel ()) ;
       Hash_set.clear write_json_cache
   end
@@ -914,30 +911,28 @@ module Summary = struct
       graph
 
 
-  let extract_tito shapes proc_desc graph =
+  let extract_tito shapes proc_desc (graph : G.t) =
     (* - Construct an adjacency list representation of the reversed graph.
        - Collect a set of nodes that break shape preservation, due to either being abstract cells, or
          being targets of edges that have this effect. *)
-    let graph_rev, shape_mixing_nodes =
-      let add_edge g ((src, {kind; _}, dst) : G.edge) =
-        match kind with
-        | Call _ | Return _ ->
-            g (* skip call/return edges *)
-        | _ ->
-            Map.add_multi ~key:dst ~data:src g
-      in
-      let add_if_shape_mixing set ((_, _, dst) as edge) =
+    let shape_mixing_nodes =
+      let add_dst_if_shape_mixing ((_, _, dst) as edge) set =
         if G.preserves_shape edge then set else Set.add set dst
       in
-      let walk_edge (g, s) edge = (add_edge g edge, add_if_shape_mixing s edge) in
-      List.fold ~init:(Vertex.Map.empty, Vertex.Set.empty) ~f:walk_edge graph
+      G.fold_edges_e add_dst_if_shape_mixing graph Vertex.Set.empty
     in
     (* Do a DFS, to see which arguments are reachable from a return field path. *)
     let rec dfs (shape_is_preserved, seen) node =
       if Set.mem seen node then (shape_is_preserved, seen)
       else
         let seen = Set.add seen node in
-        let parents = Map.find_multi graph_rev node in
+        let incoming = G.pred_e graph node in
+        let parents =
+          List.filter_map
+            ~f:(fun (src, {Edge.kind; _}, _) ->
+              match kind with Call _ | Return _ -> None | _ -> Some src )
+            incoming
+        in
         let shape_is_preserved =
           (* That return field path is shape-preserved if it is only reachable by a direct path
              through shape-preserving one-source nodes. *)
@@ -997,13 +992,6 @@ module Summary = struct
       Note2: The algorithm guarantees that the number of edges does not increase, and that the
       number of vertices does not increase. *)
   let remove_temporaries proc_desc graph =
-    (* Build adjacency list representation, to make DFS easy. *)
-    let parents, children =
-      let add_edge (parents, children) ((src, _, dst) as edge) =
-        (Map.add_multi ~key:dst ~data:edge parents, Map.add_multi ~key:src ~data:edge children)
-      in
-      List.fold ~init:Vertex.Map.(empty, empty) ~f:add_edge graph
-    in
     (* A check for vertex interestingness, used in the graph simplification that follows. *)
     let special_variables =
       let formals = get_formals proc_desc in
@@ -1070,26 +1058,20 @@ module Summary = struct
      * is initialized, and at most m while in the main loop. And each iteration of the main loop
      * does one deletion from the set [todo].) *)
     let todo =
-      Vertex.Set.of_list (List.concat_map ~f:(function src, _, dst -> [src; dst]) graph)
+      (* Initialise todo with the set of non interesting vertices *)
+      G.fold_vertex
+        (fun vertex set -> if is_interesting_vertex vertex then set else Set.add set vertex)
+        graph Vertex.Set.empty
     in
-    let todo = Set.filter ~f:(Fn.non is_interesting_vertex) todo in
-    let remove_edge (parents, children) ((src, _, dst) as edge) =
-      let rm map key =
-        let edge_list = Map.find_multi map key in
-        let edge_list = List.filter ~f:(fun elem -> not (G.E.equal elem edge)) edge_list in
-        Map.set map ~key ~data:edge_list
-      in
-      (rm parents dst, rm children src)
-    in
-    let rec simplify todo parents children =
+    let rec simplify todo graph =
       match Set.choose todo with
       | None ->
-          (parents, children)
+          graph
       | Some vertex ->
           if is_interesting_vertex vertex then L.die InternalError "Shouldn't happen" ;
           let todo = Set.remove todo vertex in
-          let before = Map.find_multi parents vertex in
-          let after = Map.find_multi children vertex in
+          let before = G.pred_e graph vertex in
+          let after = G.succ_e graph vertex in
           let before_interesting = List.exists ~f:is_interesting_edge before in
           let after_interesting = List.exists ~f:is_interesting_edge after in
           let short list = match list with [] | [_] -> true | _ -> false in
@@ -1098,15 +1080,13 @@ module Summary = struct
           if (before_short || after_short) && not (before_interesting && after_interesting) then
             let pairs = List.cartesian_product before after in
             (* (A) remove old edges *)
-            let parents, children = List.fold ~init:(parents, children) ~f:remove_edge before in
-            let parents, children = List.fold ~init:(parents, children) ~f:remove_edge after in
-            let do_pair (todo, (parents, children)) ((edge_ab : G.edge), (edge_bc : G.edge)) =
-              let ((keep_src, _, keep_dst) as keep) = merge_edges edge_ab edge_bc in
+            let graph = G.remove_vertex graph vertex in
+            let do_pair (todo, graph) ((edge_ab : G.edge), (edge_bc : G.edge)) =
+              let ((keep_src, _, keep_dst) as keep_edge) = merge_edges edge_ab edge_bc in
               if Vertex.equal keep_src keep_dst then
                 L.die InternalError "OOPS: I don't work with loops." ;
               (* (B) add new edges *)
-              let parents = Map.add_multi ~key:keep_dst ~data:keep parents in
-              let children = Map.add_multi ~key:keep_src ~data:keep children in
+              let graph = G.add_edge_e graph keep_edge in
               (* The following two lines insert at most 1 vertex into [todo] for each [edge_ab]/
                * [edge_bc] edge that gets removed from the graph, in step (A) above. This is where
                * the earlier claim that at most m insertions happen in the main loop. However,
@@ -1115,17 +1095,13 @@ module Summary = struct
                * in the graph. *)
               let todo = if is_interesting_vertex keep_src then todo else Set.add todo keep_src in
               let todo = if is_interesting_vertex keep_dst then todo else Set.add todo keep_dst in
-              (todo, (parents, children))
+              (todo, graph)
             in
-            let todo, (parents, children) =
-              List.fold ~init:(todo, (parents, children)) ~f:do_pair pairs
-            in
-            simplify todo parents children
-          else simplify todo parents children
+            let todo, graph = List.fold ~init:(todo, graph) ~f:do_pair pairs in
+            simplify todo graph
+          else simplify todo graph
     in
-    let parents, _children = simplify todo parents children in
-    (* Simplified graph: from adjacency list to edge list representation.*)
-    List.concat (Map.data parents)
+    simplify todo graph
 
 
   (** Given a graph, computes tito_arguments, and makes a summary. *)
@@ -1195,7 +1171,10 @@ end = struct
         added
 
 
-  let aggregate partial_graph_list : G.t = List.concat partial_graph_list
+  let aggregate partial_graph_list : G.t =
+    List.fold
+      ~f:(fun acc partial_graph -> List.fold ~f:G.add_edge_e ~init:acc partial_graph)
+      ~init:G.empty partial_graph_list
 end
 
 module Domain : sig
