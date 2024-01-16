@@ -114,7 +114,7 @@ end = struct
         in
         let parents =
           Tenv.fold_supers tenv type_name ~init:String.Set.empty ~f:(fun parent _ acc ->
-              String.Set.add acc (Typ.Name.to_string parent) )
+              String.Set.add acc (Typ.Name.name parent) )
         in
         ((not final_class_only) || is_final)
         && List.exists initial_caller_class_extends ~f:(String.Set.mem parents)
