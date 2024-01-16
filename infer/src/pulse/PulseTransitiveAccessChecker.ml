@@ -171,9 +171,10 @@ let report_errors tenv proc_desc err_log {PulseSummary.pre_post_list; non_disj} 
   let procname = Procdesc.get_proc_name proc_desc in
   match Config.find_matching_context tenv procname with
   | Some {tag; description} ->
+      let transitive_callees = NonDisjDomain.Summary.get_transitive_callees_if_not_top non_disj in
       let report call_trace =
         PulseReport.report ~is_suppressed:false ~latent:false tenv proc_desc err_log
-          (Diagnostic.TransitiveAccess {tag; description; call_trace})
+          (Diagnostic.TransitiveAccess {tag; description; call_trace; transitive_callees})
       in
       List.iter pre_post_list ~f:(function
         | ContinueProgram astate ->

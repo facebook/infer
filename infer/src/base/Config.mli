@@ -612,6 +612,8 @@ val pulse_model_skip_pattern : Str.regexp option
 
 val pulse_models_for_erlang : string list
 
+val pulse_monitor_transitive_callees : bool
+
 val pulse_prevent_non_disj_top : bool
 
 val pulse_report_flows_from_taint_source : string option

@@ -43,6 +43,8 @@ module Summary : sig
   include AbstractDomain.WithBottom with type t = summary
 
   val iter_on_transitive_accesses_if_not_top : t -> f:(Trace.t -> unit) -> unit
+
+  val get_transitive_callees_if_not_top : t -> TransitiveCallees.t option
 end
 
 val add_var :
@@ -100,8 +102,10 @@ val is_lifetime_extended : Var.t -> t -> bool
 
 val remember_dropped_transitive_accesses : Trace.Set.t -> t -> t
 
-val add_transitive_accesses_from_callee : Procname.t -> Location.t -> t -> summary -> t
-  [@@warning "-unused-value-declaration"]
+val apply_summary : callee_pname:Procname.t -> call_loc:Location.t -> t -> summary -> t
+
+val record_call_resolution :
+  Location.t -> TransitiveCallees.call_kind -> TransitiveCallees.resolution -> t -> t
 
 val bind : 'a list * t -> f:('a -> t -> 'b list * t) -> 'b list * t
 (** {[

@@ -416,8 +416,7 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
       callee_pname ;
   (* we propagate transitive accesses from callee to caller using *)
   let non_disj =
-    NonDisjDomain.add_transitive_accesses_from_callee callee_pname call_loc non_disj_caller
-      non_disj_callee
+    NonDisjDomain.apply_summary ~callee_pname ~call_loc non_disj_caller non_disj_callee
   in
   (* call {!AbductiveDomain.PrePost.apply} on each pre/post pair in the summary. *)
   let posts, contradiction =

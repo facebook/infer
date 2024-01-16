@@ -1888,7 +1888,16 @@ and issues_tests_fields =
     ~in_help:InferCommand.[(Report, manual_generic)]
     ~default:
       IssuesTestField.
-        [File; Procedure; LineOffset; BugType; Bucket; Severity; BugTrace; NullsafeExtra; TaintExtra]
+        [ File
+        ; Procedure
+        ; LineOffset
+        ; BugType
+        ; Bucket
+        ; Severity
+        ; BugTrace
+        ; NullsafeExtra
+        ; TaintExtra
+        ; TransitiveCalleesExtra ]
     ~symbols:IssuesTestField.all_symbols ~eq:IssuesTestField.equal
     "Fields to emit with $(b,--issues-tests)"
 
@@ -2454,6 +2463,12 @@ and pulse_model_transfer_ownership =
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Methods that should be modelled as transfering memory ownership in Pulse. Accepted formats \
      are method or namespace::method"
+
+
+and pulse_monitor_transitive_callees =
+  CLOpt.mk_bool ~long:"pulse-monitor-transitive-callees" ~default:false
+    "Record the transitive call resolutions and output them in PULSE_TRANSITIVE_ACCESS signals. \
+     Should only be used for debugging purpose due to its potential large size."
 
 
 and pulse_prevent_non_disj_top =
@@ -4257,6 +4272,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
 
 
 and pulse_models_for_erlang = RevList.to_list !pulse_models_for_erlang
+
+and pulse_monitor_transitive_callees = !pulse_monitor_transitive_callees
 
 and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
 

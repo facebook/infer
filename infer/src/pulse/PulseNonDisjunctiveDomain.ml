@@ -290,6 +290,7 @@ type elt =
   ; locked: Locked.t
   ; loads: Loads.t
   ; stores: Stores.t
+  ; transitive_callees: TransitiveCallees.t
   ; passed_to: PassedTo.t }
 [@@deriving abstract_domain]
 
@@ -326,6 +327,7 @@ let bottom =
     ; locked= Locked.bottom
     ; loads= Loads.bottom
     ; stores= Stores.bottom
+    ; transitive_callees= TransitiveCallees.bottom
     ; passed_to= PassedTo.bottom }
 
 
@@ -668,37 +670,82 @@ let remember_dropped_transitive_accesses accesses (non_disj : t) =
       NonTop {non_disj with dropped_transitive_accesses}
 
 
-type summary = DroppedTransitiveAccesses.t top_lifted
-
-let make_summary (non_disj : t) =
+let record_call_resolution loc call_kind resolution non_disj =
   match non_disj with
   | Top ->
       Top
-  | NonTop {dropped_transitive_accesses} ->
-      NonTop dropped_transitive_accesses
+  | NonTop ({transitive_callees} as non_disj) ->
+      let transitive_callees =
+        TransitiveCallees.record loc call_kind resolution transitive_callees
+      in
+      NonTop {non_disj with transitive_callees}
 
 
-let add_transitive_accesses_from_callee procname call_loc (non_disj : t) (summary : summary) =
+module SummaryElt = struct
+  type t =
+    { transitive_callees: TransitiveCallees.t
+    ; dropped_transitive_accesses: DroppedTransitiveAccesses.t }
+  [@@deriving abstract_domain]
+
+  let bottom =
+    { transitive_callees= TransitiveCallees.bottom
+    ; dropped_transitive_accesses= DroppedTransitiveAccesses.bottom }
+
+
+  let is_bottom {transitive_callees; dropped_transitive_accesses} =
+    TransitiveCallees.is_bottom transitive_callees
+    && DroppedTransitiveAccesses.is_bottom dropped_transitive_accesses
+
+
+  let pp fmt {transitive_callees; dropped_transitive_accesses} =
+    F.fprintf fmt "@[@[calls history: %a@],@ @[dropped transitive accesses: %a@]@]"
+      TransitiveCallees.pp transitive_callees DroppedTransitiveAccesses.pp
+      dropped_transitive_accesses
+end
+
+type summary = SummaryElt.t top_lifted
+
+let make_summary (non_disj : t) : summary =
+  match non_disj with
+  | Top ->
+      Top
+  | NonTop {transitive_callees; dropped_transitive_accesses} ->
+      NonTop {transitive_callees; dropped_transitive_accesses}
+
+
+let apply_summary ~callee_pname ~call_loc (non_disj : t) (summary : summary) =
   match (non_disj, summary) with
   | Top, _ | _, Top ->
       Top
-  | NonTop ({dropped_transitive_accesses} as non_dis), NonTop summary ->
+  | NonTop ({dropped_transitive_accesses; transitive_callees} as non_dis), NonTop summary ->
       let dropped_transitive_accesses =
-        Trace.Set.map_callee (CallEvent.Call procname) call_loc summary
+        Trace.Set.map_callee (CallEvent.Call callee_pname) call_loc
+          summary.dropped_transitive_accesses
         |> Trace.Set.union dropped_transitive_accesses
       in
-      NonTop {non_dis with dropped_transitive_accesses}
+      let transitive_callees =
+        TransitiveCallees.join transitive_callees summary.transitive_callees
+      in
+      NonTop {non_dis with dropped_transitive_accesses; transitive_callees}
 
 
 module Summary = struct
-  include AbstractDomain.TopLifted (DroppedTransitiveAccesses)
+  include AbstractDomain.TopLifted (SummaryElt)
 
-  let bottom = NonTop DroppedTransitiveAccesses.empty
+  let bottom = NonTop SummaryElt.bottom
 
   let is_bottom (x : t) =
-    match x with Top -> false | NonTop set -> DroppedTransitiveAccesses.is_empty set
+    match x with Top -> false | NonTop summary -> SummaryElt.is_bottom summary
 
 
   let iter_on_transitive_accesses_if_not_top (x : t) ~f =
-    match x with Top -> () | NonTop set -> DroppedTransitiveAccesses.iter f set
+    match x with
+    | Top ->
+        ()
+    | NonTop {dropped_transitive_accesses} ->
+        DroppedTransitiveAccesses.iter f dropped_transitive_accesses
+
+
+  let get_transitive_callees_if_not_top (x : t) =
+    match x with Top -> None | NonTop {transitive_callees} -> Some transitive_callees
 end

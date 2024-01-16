@@ -5,7 +5,7 @@
 
 namespace GlobalAccess;
 
-class A {
+final class A {
   public function __construct(public int $GlobalVARIABLES) {}
 
   public function get(): int {
@@ -69,6 +69,30 @@ final class GlobalAccess extends Parent1 {
 
   public function call6_is_entry_bad(ContainsABadPatternInside $a): int {
     return $a->foo();
+  }
+
+  public static function gen_closure1(A $a): (function(): int) {
+    return () ==> $a->get();
+  }
+
+  public static function gen_closure2(A $a): (function(): int) {
+    return () ==> $a->get();
+  }
+
+  public static function indirect_gen_closure2(A $a): (function(): int) {
+    return self::gen_closure2($a);
+  }
+
+  public function call7_is_entry_with_closures_bad(
+    A $a,
+    (function(): int) $f,
+  ): int {
+    $f1 = self::gen_closure1($a);
+    $f2 = self::indirect_gen_closure2($a);
+    $res1 = $f1();
+    $res2 = $f2();
+    $res3 = $f();
+    return $res1 + $res2;
   }
 }
 

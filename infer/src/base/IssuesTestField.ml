@@ -25,6 +25,7 @@ type t =
   | QualifierContainsPotentialExceptionNote
   | NullsafeExtra
   | TaintExtra
+  | TransitiveCalleesExtra
 [@@deriving equal]
 
 let all_symbols =
@@ -44,4 +45,5 @@ let all_symbols =
   ; ("line_offset", LineOffset)
   ; ("qualifier_contains_potential_exception_note", QualifierContainsPotentialExceptionNote)
   ; ("nullsafe_extra", NullsafeExtra)
-  ; ("taint_extra", TaintExtra) ]
+  ; ("taint_extra", TaintExtra)
+  ; ("transitive_callees_extra", TransitiveCalleesExtra) ]

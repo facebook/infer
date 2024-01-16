@@ -23,6 +23,7 @@ module TaintConfig = PulseTaintConfig
 module TaintItem = PulseTaintItem
 module Timestamp = PulseTimestamp
 module Trace = PulseTrace
+module TransitiveCallees = PulseTransitiveCallees
 module ValueHistory = PulseValueHistory
 module CellId = ValueHistory.CellId
 module ValueOrigin = PulseValueOrigin

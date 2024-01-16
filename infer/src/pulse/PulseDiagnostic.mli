@@ -14,6 +14,7 @@ module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module TaintItem = PulseTaintItem
 module Trace = PulseTrace
+module TransitiveCallees = PulseTransitiveCallees
 module ValueHistory = PulseValueHistory
 
 type calling_context = (CallEvent.t * Location.t) list [@@deriving compare, equal]
@@ -76,7 +77,11 @@ type t =
   | CSharpResourceLeak of
       {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
   | ErlangError of ErlangError.t
-  | TransitiveAccess of {tag: string; description: string; call_trace: Trace.t}
+  | TransitiveAccess of
+      { tag: string
+      ; description: string
+      ; call_trace: Trace.t
+      ; transitive_callees: TransitiveCallees.t option }
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | HackUnawaitedAwaitable of {allocation_trace: Trace.t; location: Location.t}

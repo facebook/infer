@@ -15,6 +15,7 @@ module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module TaintItem = PulseTaintItem
 module Trace = PulseTrace
+module TransitiveCallees = PulseTransitiveCallees
 module ValueHistory = PulseValueHistory
 
 type calling_context = (CallEvent.t * Location.t) list [@@deriving compare, equal]
@@ -129,7 +130,11 @@ type t =
   | CSharpResourceLeak of
       {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
   | ErlangError of ErlangError.t
-  | TransitiveAccess of {tag: string; description: string; call_trace: Trace.t}
+  | TransitiveAccess of
+      { tag: string
+      ; description: string
+      ; call_trace: Trace.t
+      ; transitive_callees: TransitiveCallees.t option [@ignore] }
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
     (* TODO: add more data to HackUnawaitedAwaitable tracking the parameter type *)
@@ -185,9 +190,10 @@ let pp fmt diagnostic =
   | JavaResourceLeak {class_name; allocation_trace; location} ->
       F.fprintf fmt "ResourceLeak {@[class_name=%a;@;allocation_trace:%a;@;location:%a@]}"
         JavaClassName.pp class_name (Trace.pp ~pp_immediate) allocation_trace Location.pp location
-  | TransitiveAccess {tag; description; call_trace} ->
-      F.fprintf fmt "TransitiveAccess {@[tag=%s;description=%s;call_trace:%a@]}" tag description
-        (Trace.pp ~pp_immediate) call_trace
+  | TransitiveAccess {tag; description; call_trace; transitive_callees} ->
+      F.fprintf fmt "TransitiveAccess {@[tag=%s;description=%s;call_trace:%a%t@]}" tag description
+        (Trace.pp ~pp_immediate) call_trace (fun fmt ->
+          Option.iter transitive_callees ~f:(TransitiveCallees.pp fmt) )
   | HackUnawaitedAwaitable {allocation_trace; location} ->
       F.fprintf fmt "UnawaitedAwaitable {@[allocation_trace:%a;@;location:%a@]}"
         (Trace.pp ~pp_immediate) allocation_trace Location.pp location

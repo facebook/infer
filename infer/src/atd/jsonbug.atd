@@ -109,6 +109,17 @@ type taint_extra = {
   ?tainted_expression : string option;
 }
 
+type transitive_callee_kind = [Static | Virtual | Closure]
+
+type transitive_callee_resolution = [ResolvedUsingDynamicType | ResolvedUsingStaticType | Unresolved]
+
+type transitive_callee = {
+  key: string;
+  kind: transitive_callee_kind;
+  resolution: transitive_callee_resolution
+}           
+  
+
 type extra = {
   ?cost_polynomial : string option;
   ?cost_degree : int option;
@@ -116,6 +127,7 @@ type extra = {
   ?copy_type : string option;
   ?config_usage_extra : config_usage_extra option;
   ?taint_extra : taint_extra option;
+  ?transitive_callees : transitive_callee list option;    
 }
 
 type jsonbug = {

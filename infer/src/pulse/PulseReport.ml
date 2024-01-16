@@ -33,6 +33,34 @@ let report tenv ~is_suppressed ~latent proc_desc err_log diagnostic =
       else []
     in
     let extras =
+      let transitive_callees =
+        let get_kind = function
+          | TransitiveCallees.Static ->
+              `Static
+          | TransitiveCallees.Virtual ->
+              `Virtual
+          | TransitiveCallees.Closure ->
+              `Closure
+        in
+        let get_resolution = function
+          | TransitiveCallees.ResolvedUsingDynamicType ->
+              `ResolvedUsingDynamicType
+          | TransitiveCallees.ResolvedUsingStaticType ->
+              `ResolvedUsingStaticType
+          | TransitiveCallees.Unresolved ->
+              `Unresolved
+        in
+        let get_item {TransitiveCallees.loc; kind; resolution} : Jsonbug_t.transitive_callee =
+          let key = F.asprintf "%a" Location.pp_file_pos loc in
+          {key; kind= get_kind kind; resolution= get_resolution resolution}
+        in
+        match diagnostic with
+        | TransitiveAccess {transitive_callees} ->
+            Option.map transitive_callees ~f:(fun transitive_calles ->
+                TransitiveCallees.report_as_extra_info transitive_calles |> List.map ~f:get_item )
+        | _ ->
+            None
+      in
       let copy_type = get_copy_type diagnostic |> Option.map ~f:Typ.to_string in
       let taint_source, taint_sink =
         let proc_name_of_taint taint_item =
@@ -86,7 +114,8 @@ let report tenv ~is_suppressed ~latent proc_desc err_log diagnostic =
         ; nullsafe_extra= None
         ; copy_type
         ; config_usage_extra
-        ; taint_extra }
+        ; taint_extra
+        ; transitive_callees }
     in
     (* [Diagnostic.get_issue_type] wrapper to report different type of issue for
        nullptr dereferences in Java classes annotated with @Nullsafe if requested *)
