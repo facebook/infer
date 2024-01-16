@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-type call_kind = Static | Virtual | Closure [@@deriving equal]
+type call_kind = Static | Virtual | Closure [@@deriving equal, compare]
 
 type resolution =
   | ResolvedUsingDynamicType (* the most precise resolution *)
@@ -16,7 +16,7 @@ type resolution =
   | Unresolved
     (* the worst resolution because we don't have enough type
        information or the capture was incomplete *)
-[@@deriving equal]
+[@@deriving equal, compare]
 
 module CallSite = struct
   type t = Location.t [@@deriving compare]
@@ -25,9 +25,9 @@ module CallSite = struct
 end
 
 module Status = struct
-  type kind = call_kind [@@deriving equal]
+  type kind = call_kind [@@deriving equal, compare]
 
-  type t = {kind: kind; resolution: resolution} [@@deriving equal]
+  type t = {kind: kind; resolution: resolution} [@@deriving equal, compare]
 
   let pp fmt {kind; resolution} =
     let kind = match kind with Static -> "static" | Virtual -> "virtual" | Closure -> "closure" in
@@ -60,6 +60,10 @@ module Status = struct
 end
 
 include AbstractDomain.Map (CallSite) (Status)
+
+let compare = compare Status.compare
+
+let equal = equal Status.equal
 
 let record loc kind resolution history = add loc {kind; resolution} history
 

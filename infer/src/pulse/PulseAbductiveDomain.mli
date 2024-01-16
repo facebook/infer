@@ -70,6 +70,8 @@ type t = private
         (** a set of abstract values that are used as receiver of method calls in the instructions
             reached so far *)
   ; transitive_accesses: Trace.Set.t  (** record specific acceses inter-procedurally *)
+  ; transitive_callees: TransitiveCallees.t
+        (** record all call resolutions that were transitively performed *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 [@@deriving equal]
@@ -295,6 +297,9 @@ val unset_need_closure_specialization : t -> t
 
 val record_transitive_access : Location.t -> t -> t
 
+val record_call_resolution :
+  Location.t -> TransitiveCallees.call_kind -> TransitiveCallees.resolution -> t -> t
+
 val add_need_dynamic_type_specialization : AbstractValue.t -> t -> t
 
 val map_decompiler : t -> f:(Decompiler.t -> Decompiler.t) -> t
@@ -332,7 +337,11 @@ module Summary : sig
 
   val get_transitive_accesses : summary -> Trace.Set.t
 
+  val get_transitive_callees : summary -> TransitiveCallees.t
+
   val transfer_accesses_to_caller : t -> Procname.t -> Location.t -> summary -> t
+
+  val transfer_transitive_callees_to_caller : t -> summary -> t
 
   val of_post :
        Tenv.t

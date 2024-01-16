@@ -11,6 +11,10 @@ open! IStd
 
 include AbstractDomain.WithBottom
 
+val compare : t -> t -> int
+
+val equal : t -> t -> bool
+
 val pp : Format.formatter -> t -> unit
 
 type call_kind = Static | Virtual | Closure

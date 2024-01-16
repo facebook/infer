@@ -171,16 +171,27 @@ let report_errors tenv proc_desc err_log {PulseSummary.pre_post_list; non_disj} 
   let procname = Procdesc.get_proc_name proc_desc in
   match Config.find_matching_context tenv procname with
   | Some {tag; description} ->
-      let transitive_callees = NonDisjDomain.Summary.get_transitive_callees_if_not_top non_disj in
-      let report call_trace =
+      let non_disj_transitive_callees =
+        NonDisjDomain.Summary.get_transitive_callees_if_not_top non_disj
+      in
+      let report transitive_callees call_trace =
         PulseReport.report ~is_suppressed:false ~latent:false tenv proc_desc err_log
           (Diagnostic.TransitiveAccess {tag; description; call_trace; transitive_callees})
       in
       List.iter pre_post_list ~f:(function
         | ContinueProgram astate ->
-            PulseTrace.Set.iter report (AbductiveDomain.Summary.get_transitive_accesses astate)
+            let transitive_callees = AbductiveDomain.Summary.get_transitive_callees astate in
+            let transitive_callees =
+              Option.value_map non_disj_transitive_callees ~default:transitive_callees
+                ~f:(fun non_disj_transitive_callees ->
+                  PulseTransitiveCallees.join transitive_callees non_disj_transitive_callees )
+            in
+            PulseTrace.Set.iter
+              (report (Some transitive_callees))
+              (AbductiveDomain.Summary.get_transitive_accesses astate)
         | _ ->
             () ) ;
-      NonDisjDomain.Summary.iter_on_transitive_accesses_if_not_top non_disj ~f:report
+      NonDisjDomain.Summary.iter_on_transitive_accesses_if_not_top non_disj
+        ~f:(report non_disj_transitive_callees)
   | None ->
       ()

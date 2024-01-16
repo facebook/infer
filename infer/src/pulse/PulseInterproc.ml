@@ -840,6 +840,13 @@ let record_transitive_accesses callee_proc_name call_loc callee_summary call_sta
   {call_state with astate}
 
 
+let record_transitive_callees callee_summary call_state =
+  let astate =
+    AbductiveDomain.Summary.transfer_transitive_callees_to_caller call_state.astate callee_summary
+  in
+  {call_state with astate}
+
+
 let apply_unknown_effects callee_summary call_state =
   let open IOption.Let_syntax in
   L.d_printfln "Applying unknown effects, call_state before = %a" pp_call_state call_state ;
@@ -935,6 +942,7 @@ let apply_post path callee_proc_name call_location callee_summary call_state =
     >>| record_skipped_calls callee_proc_name call_location callee_summary
     >>| record_need_closure_specialization callee_summary
     >>| record_transitive_accesses callee_proc_name call_location callee_summary
+    >>| record_transitive_callees callee_summary
     >>| read_return_value path callee_proc_name call_location callee_summary
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;

@@ -104,9 +104,6 @@ val remember_dropped_transitive_accesses : Trace.Set.t -> t -> t
 
 val apply_summary : callee_pname:Procname.t -> call_loc:Location.t -> t -> summary -> t
 
-val record_call_resolution :
-  Location.t -> TransitiveCallees.call_kind -> TransitiveCallees.resolution -> t -> t
-
 val bind : 'a list * t -> f:('a -> t -> 'b list * t) -> 'b list * t
 (** {[
       bind ([astate1; astate2; ...; astateN], non_disj) f =

@@ -670,17 +670,6 @@ let remember_dropped_transitive_accesses accesses (non_disj : t) =
       NonTop {non_disj with dropped_transitive_accesses}
 
 
-let record_call_resolution loc call_kind resolution non_disj =
-  match non_disj with
-  | Top ->
-      Top
-  | NonTop ({transitive_callees} as non_disj) ->
-      let transitive_callees =
-        TransitiveCallees.record loc call_kind resolution transitive_callees
-      in
-      NonTop {non_disj with transitive_callees}
-
-
 module SummaryElt = struct
   type t =
     { transitive_callees: TransitiveCallees.t
