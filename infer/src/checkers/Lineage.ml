@@ -914,7 +914,7 @@ module Summary = struct
       graph
 
 
-  let tito_arguments_of_graph graph return_field_paths =
+  let extract_tito shapes proc_desc graph =
     (* - Construct an adjacency list representation of the reversed graph.
        - Collect a set of nodes that break shape preservation, due to either being abstract cells, or
          being targets of edges that have this effect. *)
@@ -966,6 +966,11 @@ module Summary = struct
               Tito.add ~arg_index ~arg_field_path ~ret_field_path ~shape_is_preserved acc
           | _ ->
               acc )
+    in
+    let ret_var_path = VarPath.pvar (Procdesc.get_ret_var proc_desc) in
+    let return_field_paths =
+      Shapes.fold_cells shapes ret_var_path ~init:[] ~f:(fun acc cell ->
+          Cell.field_path cell :: acc )
     in
     List.fold return_field_paths ~init:Tito.empty ~f:collect_tito
 
@@ -1124,10 +1129,10 @@ module Summary = struct
 
 
   (** Given a graph, computes tito_arguments, and makes a summary. *)
-  let make has_unsupported_features proc_desc graph return_field_paths =
+  let make shapes proc_desc has_unsupported_features graph =
     (* We need to compute the Tito arguments before reducing the graph to make use of information
        hold by temporary nodes (eg. if they're abstract or not). *)
-    let tito_arguments = tito_arguments_of_graph graph return_field_paths in
+    let tito_arguments = extract_tito shapes proc_desc graph in
     let graph =
       if Config.lineage_keep_temporaries then graph else remove_temporaries proc_desc graph
     in
@@ -2110,12 +2115,8 @@ let unskipped_checker ({InterproceduralAnalysis.proc_desc} as analysis) (shapes 
       [Domain.get_partial_graph initial_astate; Domain.get_partial_graph final_astate]
     |> PartialGraph.aggregate
   in
-  (* Collect the return fields to finish the summary *)
-  let known_ret_field_paths =
-    Shapes.fold_cells shapes ret_var_path ~init:[] ~f:(fun acc cell -> Cell.field_path cell :: acc)
-  in
   let exit_has_unsupported_features = Domain.has_unsupported_features exit_astate in
-  let summary = Summary.make exit_has_unsupported_features proc_desc graph known_ret_field_paths in
+  let summary = Summary.make shapes proc_desc exit_has_unsupported_features graph in
   if Config.lineage_json_report then Summary.report summary proc_desc ;
   L.debug Analysis Verbose "@[Lineage summary for %a:@;@[%a@]@]@;" Procname.pp
     (Procdesc.get_proc_name proc_desc)
