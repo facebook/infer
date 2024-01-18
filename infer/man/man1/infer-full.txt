@@ -1015,6 +1015,10 @@ OPTIONS
            Deactivates: liveness checker: Detection of dead stores and unused
            variables. (Conversely: --liveness)           See also infer-analyze(1).
 
+       --liveness-block-list-var-regex string
+           Specify a regular expression for variable names that are ignored
+           when reporting dead stores.           See also infer-analyze(1).
+
        --liveness-dangerous-classes json
            Specify classes where the destructor should be ignored when
            computing liveness. In other words, assignement to variables of
@@ -2554,6 +2558,9 @@ INTERNAL OPTIONS
            Activates: lineage-shape checker: Computes shape informations to
            be used in the Lineage analysis           NOTE: This is used internally by other checkers and shouldn't
            need to be activated directly. (Conversely: --no-lineage-shape)
+
+       --liveness-block-list-var-regex-reset
+           Cancel the effect of --liveness-block-list-var-regex.
 
        --liveness-ignored-constant-reset
            Set --liveness-ignored-constant to the empty list.

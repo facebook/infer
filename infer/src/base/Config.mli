@@ -327,6 +327,8 @@ val cxx : bool
 
 val cxx_scope_guards : Yojson.Basic.t
 
+val liveness_block_list_var_regex : Str.regexp option
+
 val data_flow_queries_on_topl : string list
 
 val dbwriter : bool

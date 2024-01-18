@@ -583,6 +583,10 @@ CLANG OPTIONS
            prefix used to build the global function pointers used for
            testing.
 
+       --liveness-block-list-var-regex string
+           Specify a regular expression for variable names that are ignored
+           when reporting dead stores.
+
        --liveness-dangerous-classes json
            Specify classes where the destructor should be ignored when
            computing liveness. In other words, assignement to variables of

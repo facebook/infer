@@ -1302,6 +1302,12 @@ and cxx_scope_guards =
      dead stores."
 
 
+and liveness_block_list_var_regex =
+  CLOpt.mk_string_opt ~long:"liveness-block-list-var-regex"
+    ~in_help:InferCommand.[(Analyze, manual_clang)]
+    "Specify a regular expression for variable names that are ignored when reporting dead stores."
+
+
 and cxx =
   CLOpt.mk_bool ~long:"cxx" ~default:true
     ~in_help:InferCommand.[(Capture, manual_clang)]
@@ -3942,6 +3948,8 @@ and cost_suppress_func_ptr = !cost_suppress_func_ptr
 and cxx = !cxx
 
 and cxx_scope_guards = !cxx_scope_guards
+
+and liveness_block_list_var_regex = Option.map ~f:Str.regexp !liveness_block_list_var_regex
 
 and data_flow_queries_on_topl = RevList.to_list !data_flow_queries_on_topl
 
