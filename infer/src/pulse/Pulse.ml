@@ -392,7 +392,7 @@ module PulseTransferFunctions = struct
         None
 
 
-  let find_override exe_env tenv astate receiver proc_name proc_name_opt =
+  let find_override exe_env tenv astate receiver proc_name =
     let tenv_resolve_method tenv type_name proc_name =
       let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
       Tenv.resolve_method ~method_exists tenv type_name proc_name
@@ -423,7 +423,7 @@ module PulseTransferFunctions = struct
                static resolution so we have to do it here *)
             let* type_name = Procname.get_class_type_name proc_name in
             tenv_resolve_method tenv type_name proc_name
-          else Option.map ~f:Tenv.MethodInfo.mk_class proc_name_opt
+          else Some (Tenv.MethodInfo.mk_class proc_name)
         in
         (proc_name, `ApproxDevirtualization)
 
@@ -439,7 +439,7 @@ module PulseTransferFunctions = struct
 
   let resolve_virtual_call exe_env tenv astate receiver proc_name_opt =
     Option.map proc_name_opt ~f:(fun proc_name ->
-        match find_override exe_env tenv astate receiver proc_name proc_name_opt with
+        match find_override exe_env tenv astate receiver proc_name with
         | Some (info, devirtualization_status) ->
             let proc_name' = Tenv.MethodInfo.get_procname info in
             L.d_printfln "Dynamic dispatch: %a %s resolved to %a" Procname.pp_verbose proc_name
