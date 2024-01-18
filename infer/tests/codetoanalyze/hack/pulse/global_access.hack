@@ -127,6 +127,18 @@ class EventHandler2 {
 }
 
 class Helper {
+  public static function gen_closure1(): (function(): int) {
+    return () ==> 0;
+  }
+
+  public static function gen_closure2(): (function(): int) {
+    return () ==> 1;
+  }
+
+  public static function indirect_gen_closure2(): (function(): int) {
+    return self::gen_closure2();
+  }
+
   public function bomb1(
     bool $choice0,
     bool $choice1,
@@ -141,8 +153,14 @@ class Helper {
     if ($choice2) {
       if ($activate && $choice0 && $choice1 && $choice2) {
         $_ = $a->get();
+        $f1 = self::gen_closure1();
+        $f2 = self::indirect_gen_closure2();
+        $_ = $f1();
+        $_ = $f2();
       }
       ;
+      $_ =
+        0; // trying to influence the CFG shape, we want a junction point with only 2 predecessors
     }
   }
 
@@ -162,8 +180,14 @@ class Helper {
       if ($activate && $choice0 && $choice1 && $choice2) {
         $_ = $a1->get();
         $_ = $a2->get();
+        $f1 = self::gen_closure1();
+        $f2 = self::indirect_gen_closure2();
+        $_ = $f1();
+        $_ = $f2();
       }
       ;
+      $_ =
+        0; // trying to influence the CFG shape, we want a junction point with only 2 predecessors
     }
   }
 }
