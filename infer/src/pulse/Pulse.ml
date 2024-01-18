@@ -612,8 +612,11 @@ module PulseTransferFunctions = struct
     let caller = Procdesc.get_proc_name proc_desc in
     let record_call_resolution_if_closure resolution astate =
       if Config.pulse_monitor_transitive_callees && is_closure_call callee_pname then
-        AbductiveDomain.record_call_resolution call_loc Closure resolution astate
-        (* Note: we just record closure resolution for now *)
+        let caller_loc = Procdesc.get_loc proc_desc in
+        let caller_name = Procname.get_method caller in
+        let callsite_loc = call_loc in
+        AbductiveDomain.record_call_resolution ~caller_name ~caller_loc ~callsite_loc Closure
+          resolution astate (* Note: we just record closure resolution for now *)
       else astate
     in
     match get_receiver callee_pname func_args with

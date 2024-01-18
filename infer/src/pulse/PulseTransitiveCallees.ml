@@ -19,9 +19,13 @@ type resolution =
 [@@deriving equal, compare]
 
 module CallSite = struct
-  type t = Location.t [@@deriving compare]
+  type t =
+    { callsite_loc: Location.t
+    ; caller_name: (string[@compare.ignore])
+    ; caller_loc: (Location.t[@compare.ignore]) }
+  [@@deriving compare]
 
-  let pp = Location.pp_file_pos
+  let pp fmt {callsite_loc} = Location.pp_file_pos fmt callsite_loc
 end
 
 module Status = struct
@@ -65,11 +69,20 @@ let compare = compare Status.compare
 
 let equal = equal Status.equal
 
-let record loc kind resolution history = add loc {kind; resolution} history
+let record ~caller_name ~caller_loc ~callsite_loc kind resolution history =
+  let callsite = {CallSite.caller_name; caller_loc; callsite_loc} in
+  add callsite {kind; resolution} history
 
-type item = {loc: Location.t; kind: call_kind; resolution: resolution}
+
+type item =
+  { callsite_loc: Location.t
+  ; caller_name: string
+  ; caller_loc: Location.t
+  ; kind: call_kind
+  ; resolution: resolution }
 
 let report_as_extra_info history =
   fold
-    (fun loc ({kind; resolution} : Status.t) acc : item list -> {loc; kind; resolution} :: acc)
+    (fun {callsite_loc; caller_name; caller_loc} ({kind; resolution} : Status.t) acc : item list ->
+      {callsite_loc; caller_name; caller_loc; kind; resolution} :: acc )
     history []

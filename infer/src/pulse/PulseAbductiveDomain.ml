@@ -132,9 +132,12 @@ let record_transitive_access location astate =
   {astate with transitive_accesses= Trace.Set.add trace astate.transitive_accesses}
 
 
-let record_call_resolution loc call_kind resolution astate =
+let record_call_resolution ~caller_name ~caller_loc ~callsite_loc call_kind resolution astate =
   let {transitive_callees} = astate in
-  let transitive_callees = TransitiveCallees.record loc call_kind resolution transitive_callees in
+  let transitive_callees =
+    TransitiveCallees.record ~caller_name ~caller_loc ~callsite_loc call_kind resolution
+      transitive_callees
+  in
   {astate with transitive_callees}
 
 

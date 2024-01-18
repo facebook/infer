@@ -114,7 +114,10 @@ type transitive_callee_kind = [Static | Virtual | Closure]
 type transitive_callee_resolution = [ResolvedUsingDynamicType | ResolvedUsingStaticType | Unresolved]
 
 type transitive_callee = {
-  key: string;
+  callsite_filename: string;
+  callsite_absolute_position_in_file: int;
+  caller_name: string;
+  callsite_relative_position_in_caller: int;
   kind: transitive_callee_kind;
   resolution: transitive_callee_resolution
 }           

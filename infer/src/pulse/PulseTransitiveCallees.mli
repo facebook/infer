@@ -21,8 +21,20 @@ type call_kind = Static | Virtual | Closure
 
 type resolution = ResolvedUsingDynamicType | ResolvedUsingStaticType | Unresolved
 
-val record : Location.t -> call_kind -> resolution -> t -> t
+val record :
+     caller_name:string
+  -> caller_loc:Location.t
+  -> callsite_loc:Location.t
+  -> call_kind
+  -> resolution
+  -> t
+  -> t
 
-type item = {loc: Location.t; kind: call_kind; resolution: resolution}
+type item =
+  { callsite_loc: Location.t
+  ; caller_name: string
+  ; caller_loc: Location.t
+  ; kind: call_kind
+  ; resolution: resolution }
 
 val report_as_extra_info : t -> item list

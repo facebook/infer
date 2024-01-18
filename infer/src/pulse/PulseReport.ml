@@ -50,9 +50,17 @@ let report tenv ~is_suppressed ~latent proc_desc err_log diagnostic =
           | TransitiveCallees.Unresolved ->
               `Unresolved
         in
-        let get_item {TransitiveCallees.loc; kind; resolution} : Jsonbug_t.transitive_callee =
-          let key = F.asprintf "%a" Location.pp_file_pos loc in
-          {key; kind= get_kind kind; resolution= get_resolution resolution}
+        let get_item {TransitiveCallees.callsite_loc; caller_name; caller_loc; kind; resolution} :
+            Jsonbug_t.transitive_callee =
+          let callsite_filename = SourceFile.to_abs_path callsite_loc.file in
+          let callsite_absolute_position_in_file = callsite_loc.line in
+          let callsite_relative_position_in_caller = callsite_loc.line - caller_loc.line in
+          { callsite_filename
+          ; callsite_absolute_position_in_file
+          ; caller_name
+          ; callsite_relative_position_in_caller
+          ; kind= get_kind kind
+          ; resolution= get_resolution resolution }
         in
         match diagnostic with
         | TransitiveAccess {transitive_callees} ->

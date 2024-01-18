@@ -122,10 +122,13 @@ let pp_custom_of_report fmt report fields =
           Option.iter taint_extra ~f:(fun taint_extra ->
               F.fprintf fmt "%s%a" (comma_separator index) pp_taint_extra taint_extra )
       | TransitiveCalleesExtra ->
-          let pp_item fmt {Jsonbug_t.key; kind; resolution} =
-            F.fprintf fmt "%s:%s:%s" key
-              (Jsonbug_j.string_of_transitive_callee_kind kind)
-              (Jsonbug_j.string_of_transitive_callee_resolution resolution)
+          let pp_item fmt
+              {Jsonbug_t.caller_name; callsite_relative_position_in_caller; kind; resolution} =
+            F.fprintf fmt "%s:%d:%a:%a" caller_name callsite_relative_position_in_caller
+              (Pp.of_string ~f:Jsonbug_j.string_of_transitive_callee_kind)
+              kind
+              (Pp.of_string ~f:Jsonbug_j.string_of_transitive_callee_resolution)
+              resolution
           in
           let calls_history =
             Option.bind issue.extras ~f:(fun extras -> extras.transitive_callees)

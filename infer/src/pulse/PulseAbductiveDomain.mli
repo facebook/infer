@@ -298,7 +298,13 @@ val unset_need_closure_specialization : t -> t
 val record_transitive_access : Location.t -> t -> t
 
 val record_call_resolution :
-  Location.t -> TransitiveCallees.call_kind -> TransitiveCallees.resolution -> t -> t
+     caller_name:string
+  -> caller_loc:Location.t
+  -> callsite_loc:Location.t
+  -> TransitiveCallees.call_kind
+  -> TransitiveCallees.resolution
+  -> t
+  -> t
 
 val add_need_dynamic_type_specialization : AbstractValue.t -> t -> t
 
