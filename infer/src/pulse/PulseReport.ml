@@ -64,10 +64,9 @@ let report tenv ~is_suppressed ~latent proc_desc err_log diagnostic =
         in
         match diagnostic with
         | TransitiveAccess {transitive_callees} ->
-            Option.map transitive_callees ~f:(fun transitive_calles ->
-                TransitiveCallees.report_as_extra_info transitive_calles |> List.map ~f:get_item )
+            TransitiveCallees.report_as_extra_info transitive_callees |> List.map ~f:get_item
         | _ ->
-            None
+            []
       in
       let copy_type = get_copy_type diagnostic |> Option.map ~f:Typ.to_string in
       let taint_source, taint_sink =

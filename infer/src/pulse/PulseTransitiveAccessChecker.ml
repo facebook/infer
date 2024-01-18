@@ -178,13 +178,13 @@ let report_errors tenv proc_desc err_log {PulseSummary.pre_post_list; non_disj} 
       List.iter pre_post_list ~f:(function
         | ContinueProgram astate ->
             let transitive_callees = AbductiveDomain.Summary.get_transitive_callees astate in
-            PulseTrace.Set.iter
-              (report (Some transitive_callees))
+            PulseTrace.Set.iter (report transitive_callees)
               (AbductiveDomain.Summary.get_transitive_accesses astate)
         | _ ->
             () ) ;
       let non_disj_transitive_callees =
         NonDisjDomain.Summary.get_transitive_callees_if_not_top non_disj
+        |> Option.value ~default:PulseTransitiveCallees.bottom
       in
       NonDisjDomain.Summary.iter_on_transitive_accesses_if_not_top non_disj
         ~f:(report non_disj_transitive_callees)

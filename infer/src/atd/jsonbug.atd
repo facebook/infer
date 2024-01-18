@@ -130,7 +130,7 @@ type extra = {
   ?copy_type : string option;
   ?config_usage_extra : config_usage_extra option;
   ?taint_extra : taint_extra option;
-  ?transitive_callees : transitive_callee list option;    
+  ~transitive_callees : transitive_callee list;
 }
 
 type jsonbug = {

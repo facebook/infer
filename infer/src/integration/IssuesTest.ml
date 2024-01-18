@@ -130,11 +130,10 @@ let pp_custom_of_report fmt report fields =
               (Pp.of_string ~f:Jsonbug_j.string_of_transitive_callee_resolution)
               resolution
           in
-          let calls_history =
-            Option.bind issue.extras ~f:(fun extras -> extras.transitive_callees)
-          in
-          Option.iter calls_history ~f:(fun calls_history ->
-              F.fprintf fmt "%s{%a}" (comma_separator index) (Pp.seq ~sep:"," pp_item) calls_history )
+          Option.iter issue.extras ~f:(fun extras ->
+              if not (List.is_empty extras.transitive_callees) then
+                F.fprintf fmt "%s{%a}" (comma_separator index) (Pp.seq ~sep:"," pp_item)
+                  extras.transitive_callees )
     in
     List.iteri ~f:pp_field fields ;
     F.fprintf fmt "@."

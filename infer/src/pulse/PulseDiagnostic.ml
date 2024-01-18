@@ -134,7 +134,7 @@ type t =
       { tag: string
       ; description: string
       ; call_trace: Trace.t
-      ; transitive_callees: TransitiveCallees.t option [@ignore] }
+      ; transitive_callees: TransitiveCallees.t [@ignore] }
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
     (* TODO: add more data to HackUnawaitedAwaitable tracking the parameter type *)
@@ -193,7 +193,8 @@ let pp fmt diagnostic =
   | TransitiveAccess {tag; description; call_trace; transitive_callees} ->
       F.fprintf fmt "TransitiveAccess {@[tag=%s;description=%s;call_trace:%a%t@]}" tag description
         (Trace.pp ~pp_immediate) call_trace (fun fmt ->
-          Option.iter transitive_callees ~f:(TransitiveCallees.pp fmt) )
+          if TransitiveCallees.is_bottom transitive_callees then ()
+          else TransitiveCallees.pp fmt transitive_callees )
   | HackUnawaitedAwaitable {allocation_trace; location} ->
       F.fprintf fmt "UnawaitedAwaitable {@[allocation_trace:%a;@;location:%a@]}"
         (Trace.pp ~pp_immediate) allocation_trace Location.pp location
