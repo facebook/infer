@@ -305,14 +305,15 @@ module Elt = struct
       ; captured
       ; locked
       ; loads
+      ; transitive_callees
       ; passed_to } =
     F.fprintf fmt
       "@[@[copy map: %a@],@ @[parameter map: %a@],@ @[destructor checked: %a@],@ @[dropped \
        transitive accesses: %a@],@ @[captured: %a@],@ @[locked: %a@],@ @[loads: %a@],@ @[passed \
-       to: %a@]@]"
+       to: %a@],@ @[transitive callees: %a@],@ @]"
       CopyMap.pp copy_map ParameterMap.pp parameter_map DestructorChecked.pp destructor_checked
       DroppedTransitiveAccesses.pp dropped_transitive_accesses Captured.pp captured Locked.pp locked
-      Loads.pp loads PassedTo.pp passed_to
+      Loads.pp loads PassedTo.pp passed_to TransitiveCallees.pp transitive_callees
 end
 
 include AbstractDomain.TopLifted (Elt)
@@ -659,15 +660,16 @@ let bind (execs, non_disj) ~f =
          (l @ acc, join joined_non_disj new_non_disj) )
 
 
-let remember_dropped_transitive_accesses accesses (non_disj : t) =
+let remember_dropped_elements accesses callees (non_disj : t) =
   match non_disj with
   | Top ->
       Top
-  | NonTop ({dropped_transitive_accesses} as non_disj) ->
+  | NonTop ({dropped_transitive_accesses; transitive_callees} as non_disj) ->
       let dropped_transitive_accesses =
         DroppedTransitiveAccesses.union accesses dropped_transitive_accesses
       in
-      NonTop {non_disj with dropped_transitive_accesses}
+      let transitive_callees = TransitiveCallees.join callees transitive_callees in
+      NonTop {non_disj with dropped_transitive_accesses; transitive_callees}
 
 
 module SummaryElt = struct

@@ -100,7 +100,7 @@ val set_passed_to : Location.t -> Timestamp.t -> Exp.t -> (Exp.t * Typ.t) list -
 
 val is_lifetime_extended : Var.t -> t -> bool
 
-val remember_dropped_transitive_accesses : Trace.Set.t -> t -> t
+val remember_dropped_elements : Trace.Set.t -> TransitiveCallees.t -> t -> t
 
 val apply_summary : callee_pname:Procname.t -> call_loc:Location.t -> t -> summary -> t
 
