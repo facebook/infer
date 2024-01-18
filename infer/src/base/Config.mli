@@ -269,7 +269,7 @@ val clang_block_listed_flags_with_arg : string list
 
 val clang_frontend_action_string : string
 
-val clang_ignore_regex : string option
+val clang_ignore_regex : Str.regexp option
 
 val clang_isystem_to_override_regex : Str.regexp option
 

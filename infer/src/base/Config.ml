@@ -3887,7 +3887,7 @@ and clang_block_listed_flags = RevList.to_list !clang_block_listed_flags
 
 and clang_block_listed_flags_with_arg = RevList.to_list !clang_block_listed_flags_with_arg
 
-and clang_ignore_regex = !clang_ignore_regex
+and clang_ignore_regex = Option.map ~f:Str.regexp !clang_ignore_regex
 
 and clang_idirafter_to_override_regex = Option.map ~f:Str.regexp !clang_idirafter_to_override_regex
 
