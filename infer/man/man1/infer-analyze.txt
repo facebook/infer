@@ -232,7 +232,8 @@ OPTIONS
            (Conversely: --no-loop-hoisting-only)
 
        --max-jobs int
-           Maximum number of analysis jobs running simultaneously
+           Maximum number of analysis jobs running simultaneously.
+           Experiments show current best value is 40 jobs.
 
        --memtrace-analysis-profiling
            Activates: Generate OCaml analysis allocation traces in

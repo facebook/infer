@@ -1071,8 +1071,8 @@ OPTIONS
            capture (Conversely: --mask-sawja-exceptions)           See also infer-capture(1).
 
        --max-jobs int
-           Maximum number of analysis jobs running simultaneously       
-    See also infer-analyze(1).
+           Maximum number of analysis jobs running simultaneously.
+           Experiments show current best value is 40 jobs.           See also infer-analyze(1).
 
        --max-nesting int
            Level of nested procedure calls to show. Trace elements beyond the

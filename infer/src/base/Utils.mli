@@ -170,10 +170,8 @@ val inline_argument_files : string list -> string list
 (** Given a list of arguments return the extended list of arguments where the args in a file have
     been extracted *)
 
-val numcores : int
-(** - On Linux return the number of physical cores (sockets * cores per socket).
-    - On Darwin and Windows returns half of the number of CPUs since most processors have 2 hardware
-      threads per core. *)
+val cpus : int
+(** Number of CPUs as computed by [Setcore.numcores]. *)
 
 val zip_fold : init:'a -> f:('a -> Zip.in_file -> Zip.entry -> 'a) -> zip_filename:string -> 'a
 (** fold over each file in the given [zip_filename]. *)

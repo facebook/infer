@@ -395,8 +395,6 @@ let pulse_default_taint_config = config_dir ^/ "taint"
 
 let wrappers_dir = lib_dir ^/ "wrappers"
 
-let ncpu = Utils.numcores
-
 let os_type = match Sys.os_type with "Win32" -> Win32 | "Cygwin" -> Cygwin | _ -> Unix
 
 (** Resolve relative paths passed as command line options, i.e., with respect to the working
@@ -1940,7 +1938,7 @@ and java_version =
 and job_id = CLOpt.mk_string_opt ~long:"job-id" "Specify the job ID of this Infer run."
 
 and jobs =
-  CLOpt.mk_int ~deprecated:["-multicore"] ~long:"jobs" ~short:'j' ~default:ncpu
+  CLOpt.mk_int ~deprecated:["-multicore"] ~long:"jobs" ~short:'j' ~default:Utils.cpus
     ~default_to_string:(fun _ -> "<number of cores>")
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     ~meta:"int" "Run the specified number of analysis jobs simultaneously"
@@ -2034,9 +2032,11 @@ and mask_sajwa_exceptions =
 
 
 and max_jobs =
-  CLOpt.mk_int_opt ~long:"max-jobs"
+  CLOpt.mk_int_opt ~long:"max-jobs" ~default:40
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    ~meta:"int" "Maximum number of analysis jobs running simultaneously"
+    ~meta:"int"
+    "Maximum number of analysis jobs running simultaneously. Experiments show current best value \
+     is 40 jobs."
 
 
 and max_nesting =
@@ -3311,7 +3311,7 @@ and sqlite_lock_timeout =
   (* some lame estimate: when the frontend writes CFGs to disk, it may take a few seconds to write
      one CFG and all the cores may be trying to write to the database at the same time. This means
      one process might wait (a few seconds) * (number of cores) to write its CFG. *)
-  let five_seconds_per_core = ncpu * 5_000 in
+  let five_seconds_per_core = Utils.cpus * 5_000 in
   CLOpt.mk_int ~long:"sqlite-lock-timeout" ~default:five_seconds_per_core
     ~default_to_string:(fun _ -> "five seconds times number of cores")
     ~in_help:
@@ -4121,7 +4121,7 @@ and liveness_dangerous_classes = !liveness_dangerous_classes
 and liveness_ignored_constant = RevList.to_list !liveness_ignored_constant
 
 and load_average =
-  match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
+  match !load_average with None when !buck -> Some (float_of_int Utils.cpus) | _ -> !load_average
 
 
 and lock_model = !lock_model

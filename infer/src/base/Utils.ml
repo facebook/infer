@@ -543,42 +543,7 @@ let inline_argument_files args =
   List.concat_map ~f:expand_arg args
 
 
-let physical_cores () =
-  with_file_in "/proc/cpuinfo" ~f:(fun ic ->
-      let physical_or_core_regxp =
-        Re.Str.regexp "\\(physical id\\|core id\\)[^0-9]+\\([0-9]+\\).*"
-      in
-      let rec loop sockets cores =
-        match In_channel.input_line ~fix_win_eol:true ic with
-        | None ->
-            let physical_cores = Int.Set.length sockets * Int.Set.length cores in
-            if physical_cores <= 0 then None else Some physical_cores
-        | Some line when Re.Str.string_match physical_or_core_regxp line 0 -> (
-            let value = Re.Str.matched_group 2 line |> int_of_string in
-            match Re.Str.matched_group 1 line with
-            | "physical id" ->
-                loop (Int.Set.add sockets value) cores
-            | "core id" ->
-                loop sockets (Int.Set.add cores value)
-            | _ ->
-                (* cannot happen thanks to the regexp *)
-                L.die InternalError "Couldn't parse line '%s' from /proc/cpuinfo." line )
-        | Some _ ->
-            loop sockets cores
-      in
-      loop Int.Set.empty Int.Set.empty )
-
-
 let cpus = Setcore.numcores ()
-
-let numcores =
-  let default = cpus / 2 in
-  match Version.build_platform with
-  | Darwin | Windows ->
-      default
-  | Linux ->
-      physical_cores () |> Option.value ~default
-
 
 let zip_fold ~init ~f ~zip_filename =
   let file_in = Zip.open_in zip_filename in
