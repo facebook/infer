@@ -403,8 +403,6 @@ let os_type = match Sys.os_type with "Win32" -> Win32 | "Cygwin" -> Cygwin | _ -
     directory of the initial invocation of infer. *)
 let resolve = Utils.filename_to_absolute ~root:CLOpt.init_work_dir
 
-let infer_top_results_dir_env_var = "INFER_TOP_RESULTS_DIR"
-
 let infer_inside_maven_env_var = "INFER_INSIDE_MAVEN"
 
 let maven = CLOpt.is_env_var_set infer_inside_maven_env_var
@@ -4744,6 +4742,6 @@ let is_originator =
 let toplevel_results_dir =
   if is_originator then (
     (* let subprocesses know where the toplevel process' results dir is *)
-    Unix.putenv ~key:infer_top_results_dir_env_var ~data:results_dir ;
+    Unix.putenv ~key:CLOpt.infer_top_results_dir_env_var ~data:results_dir ;
     results_dir )
-  else Sys.getenv infer_top_results_dir_env_var |> Option.value ~default:results_dir
+  else Sys.getenv CLOpt.infer_top_results_dir_env_var |> Option.value ~default:results_dir

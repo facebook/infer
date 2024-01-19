@@ -1006,6 +1006,9 @@ let rev_prefix_before_rest args =
   rev_prefix_before_rest_ [] args
 
 
+(** environment variable used for the results dir of the originator process *)
+let infer_top_results_dir_env_var = "INFER_TOP_RESULTS_DIR"
+
 (** environment variable use to pass arguments from parent to child processes *)
 let args_env_var = "INFER_ARGS"
 
@@ -1101,7 +1104,8 @@ let parse ?config_file ~usage action initial_command =
          environment contributes to the length of the command to be run. If the environment + CLI is
          too big, running any command will fail with a cryptic "exit code 127" error. Use an argfile
          to prevent this from happening *)
-      let file = Filename.temp_file "args" "" in
+      let in_dir = Sys.getenv "TMPDIR" in
+      let file = Filename.temp_file ?in_dir "args" "" in
       Out_channel.with_file file ~f:(fun oc -> Out_channel.output_lines oc argv_to_export) ;
       if not !keep_args_file then Utils.unlink_file_on_exit file ;
       "@" ^ file )

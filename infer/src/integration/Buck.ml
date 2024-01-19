@@ -36,7 +36,11 @@ let store_args_in_file ~identifier args =
 
 
 let infer_vars_to_kill =
-  CommandLineOption.[infer_cwd_env_var; args_env_var; strict_mode_env_var; inferconfig_path_arg]
+  [ CommandLineOption.infer_cwd_env_var
+  ; CommandLineOption.args_env_var
+  ; CommandLineOption.strict_mode_env_var
+  ; CommandLineOption.infer_top_results_dir_env_var
+  ; CommandDoc.inferconfig_env_var ]
 
 
 (** Wrap a call to buck while (i) logging standard error to our standard error in real time; (ii)
