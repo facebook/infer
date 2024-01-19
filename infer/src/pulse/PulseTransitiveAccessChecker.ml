@@ -135,18 +135,17 @@ end = struct
     | None ->
         ()
     | Some filepath -> (
-        let filepath = Utils.filename_to_absolute filepath ~root:Config.project_root in
-        match Utils.read_safe_json_file filepath with
-        | Ok (`List []) ->
-            L.die ExternalError "The content of transitive-access JSON config is empty@."
-        | Ok json -> (
-          try t_of_yojson json |> set
-          with _ ->
-            L.die ExternalError "Could not read or parse transitive-access JSON config in %s@."
-              filepath )
-        | Error msg ->
-            L.die ExternalError
-              "Could not read or parse transitive-access JSON config in %s:@\n%s@." filepath msg )
+      match Utils.read_safe_json_file filepath with
+      | Ok (`List []) ->
+          L.die ExternalError "The content of transitive-access JSON config is empty@."
+      | Ok json -> (
+        try t_of_yojson json |> set
+        with _ ->
+          L.die ExternalError "Could not read or parse transitive-access JSON config in %s@."
+            filepath )
+      | Error msg ->
+          L.die ExternalError "Could not read or parse transitive-access JSON config in %s:@\n%s@."
+            filepath msg )
 end
 
 let record_load rhs_exp location astates =
