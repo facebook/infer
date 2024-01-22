@@ -451,6 +451,14 @@ let resolve_method ~method_exists tenv class_name proc_name =
   resolve_name class_name
 
 
+let is_captured tenv type_name =
+  (let open IOption.Let_syntax in
+   let* struct_ = lookup tenv type_name in
+   let* _sourcefile = struct_.Struct.source_file in
+   Some true )
+  |> Option.value ~default:false
+
+
 let find_cpp_destructor tenv class_name =
   let open IOption.Let_syntax in
   let* struct_ = lookup tenv class_name in

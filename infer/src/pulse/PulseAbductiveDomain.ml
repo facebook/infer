@@ -81,6 +81,7 @@ type t =
   ; need_dynamic_type_specialization: (AbstractValue.Set.t[@yojson.opaque])
   ; transitive_accesses: (Trace.Set.t[@yojson.opaque])
   ; transitive_callees: (TransitiveCallees.t[@yojson.opaque])
+  ; transitive_missed_captures: (Typ.Name.Set.t[@yojson.opaque])
   ; skipped_calls: SkippedCalls.t }
 [@@deriving compare, equal, yojson_of]
 
@@ -93,6 +94,7 @@ let pp_ ~is_summary f
     ; need_dynamic_type_specialization
     ; transitive_accesses
     ; transitive_callees
+    ; transitive_missed_captures
     ; topl
     ; skipped_calls } =
   let pp_decompiler f =
@@ -112,11 +114,13 @@ let pp_ ~is_summary f
      need_dynamic_type_specialization=%a@;\
      transitive_accesses=%a@;\
      transitive_callees=%a@;\
+     transitive_missed_captures=%a@;\
      skipped_calls=%a@;\
      Topl=%a@]"
     Formula.pp path_condition pp_pre_post pp_decompiler need_closure_specialization
     AbstractValue.Set.pp need_dynamic_type_specialization pp_transitive_acces transitive_accesses
-    TransitiveCallees.pp transitive_callees SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
+    TransitiveCallees.pp transitive_callees Typ.Name.Set.pp transitive_missed_captures
+    SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
 
 
 let pp = pp_ ~is_summary:false
@@ -1578,6 +1582,7 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
     ; topl= PulseTopl.start ()
     ; transitive_accesses= Trace.Set.empty
     ; transitive_callees= TransitiveCallees.bottom
+    ; transitive_missed_captures= Typ.Name.Set.empty
     ; skipped_calls= SkippedCalls.empty }
   in
   let astate =
@@ -2222,9 +2227,18 @@ module Summary = struct
     {astate with transitive_callees}
 
 
+  let transfer_transitive_missed_captures_to_caller astate summary =
+    let transitive_missed_captures =
+      Typ.Name.Set.union astate.transitive_missed_captures summary.transitive_missed_captures
+    in
+    {astate with transitive_missed_captures}
+
+
   let get_transitive_accesses summary = summary.transitive_accesses
 
   let get_transitive_callees summary = summary.transitive_callees
+
+  let get_transitive_missed_captures summary = summary.transitive_missed_captures
 
   let heap_paths_that_need_dynamic_type_specialization summary =
     let rec mk_heap_path var rev_accesses =
@@ -2302,6 +2316,11 @@ module Topl = struct
   let report_errors proc_desc err_log ~pulse_is_manifest astate =
     PulseTopl.report_errors proc_desc err_log ~pulse_is_manifest astate.topl
 end
+
+let add_missed_capture type_name ({transitive_missed_captures} as astate) =
+  let transitive_missed_captures = Typ.Name.Set.add type_name transitive_missed_captures in
+  {astate with transitive_missed_captures}
+
 
 let add_skipped_call pname trace astate =
   let new_skipped_calls = SkippedCalls.add pname trace astate.skipped_calls in

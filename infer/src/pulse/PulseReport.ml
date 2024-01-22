@@ -62,11 +62,12 @@ let report tenv ~is_suppressed ~latent proc_desc err_log diagnostic =
           ; kind= get_kind kind
           ; resolution= get_resolution resolution }
         in
+        let get_missed_capture_item class_name = {Jsonbug_t.class_name= Typ.Name.name class_name} in
         match diagnostic with
-        | TransitiveAccess {transitive_callees}
-          when not (TransitiveCallees.is_bottom transitive_callees) ->
+        | TransitiveAccess {transitive_callees; transitive_missed_captures} ->
             ( TransitiveCallees.report_as_extra_info transitive_callees |> List.map ~f:get_item
-            , [{Jsonbug_t.class_name= "TEST"}] )
+            , Typ.Name.Set.elements transitive_missed_captures
+              |> List.map ~f:get_missed_capture_item )
         | _ ->
             ([], [])
       in

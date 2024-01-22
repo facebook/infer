@@ -81,7 +81,8 @@ type t =
       { tag: string
       ; description: string
       ; call_trace: Trace.t
-      ; transitive_callees: TransitiveCallees.t }
+      ; transitive_callees: TransitiveCallees.t
+      ; transitive_missed_captures: Typ.Name.Set.t }
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
   | HackUnawaitedAwaitable of {allocation_trace: Trace.t; location: Location.t}

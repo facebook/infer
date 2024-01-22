@@ -72,6 +72,9 @@ type t = private
   ; transitive_accesses: Trace.Set.t  (** record specific acceses inter-procedurally *)
   ; transitive_callees: TransitiveCallees.t
         (** record all call resolutions that were transitively performed *)
+  ; transitive_missed_captures: Typ.Name.Set.t
+        (** record types that were missing during name resolution (fields/methods) while analysing
+            this function and its transitive callees *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 [@@deriving equal]
@@ -289,6 +292,8 @@ val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
 val add_skipped_calls : SkippedCalls.t -> t -> t
 
+val add_missed_capture : Typ.name -> t -> t
+
 val set_path_condition : Formula.t -> t -> t
 
 val set_need_closure_specialization : t -> t
@@ -345,9 +350,13 @@ module Summary : sig
 
   val get_transitive_callees : summary -> TransitiveCallees.t
 
+  val get_transitive_missed_captures : summary -> Typ.Name.Set.t
+
   val transfer_accesses_to_caller : t -> Procname.t -> Location.t -> summary -> t
 
   val transfer_transitive_callees_to_caller : t -> summary -> t
+
+  val transfer_transitive_missed_captures_to_caller : t -> summary -> t
 
   val of_post :
        Tenv.t

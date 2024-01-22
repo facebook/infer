@@ -9,6 +9,7 @@ final class A {
   public function __construct(public int $GlobalVARIABLES) {}
 
   public function get(): int {
+    $_ = new Unknown();
     return $this->GlobalVARIABLES;
   }
 

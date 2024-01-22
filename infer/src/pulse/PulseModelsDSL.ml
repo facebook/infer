@@ -221,6 +221,10 @@ module Syntax = struct
     PulseOperations.add_dynamic_type typ addr |> exec_command
 
 
+  let add_missed_capture type_name : unit model_monad =
+    AbductiveDomain.add_missed_capture type_name |> exec_command
+
+
   let get_dynamic_type ~ask_specialization (addr, _) :
       Attribute.dynamic_type_data option model_monad =
    fun data astate ->
@@ -268,6 +272,10 @@ module Syntax = struct
    fun ({analysis_data= {tenv}} as data) astate ->
     let field_name = Tenv.resolve_fieldname tenv typ_name name in
     ret field_name data astate
+
+
+  let tenv_is_captured typ_name : bool model_monad =
+   fun ({analysis_data= {tenv}} as data) astate -> ret (Tenv.is_captured tenv typ_name) data astate
 
 
   let eval_read exp : aval model_monad =

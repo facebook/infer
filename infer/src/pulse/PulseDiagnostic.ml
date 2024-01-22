@@ -134,7 +134,8 @@ type t =
       { tag: string
       ; description: string
       ; call_trace: Trace.t
-      ; transitive_callees: TransitiveCallees.t [@ignore] }
+      ; transitive_callees: TransitiveCallees.t [@ignore]
+      ; transitive_missed_captures: Typ.Name.Set.t [@ignore] }
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
     (* TODO: add more data to HackUnawaitedAwaitable tracking the parameter type *)
@@ -190,11 +191,16 @@ let pp fmt diagnostic =
   | JavaResourceLeak {class_name; allocation_trace; location} ->
       F.fprintf fmt "ResourceLeak {@[class_name=%a;@;allocation_trace:%a;@;location:%a@]}"
         JavaClassName.pp class_name (Trace.pp ~pp_immediate) allocation_trace Location.pp location
-  | TransitiveAccess {tag; description; call_trace; transitive_callees} ->
-      F.fprintf fmt "TransitiveAccess {@[tag=%s;description=%s;call_trace:%a%t@]}" tag description
-        (Trace.pp ~pp_immediate) call_trace (fun fmt ->
+  | TransitiveAccess {tag; description; call_trace; transitive_callees; transitive_missed_captures}
+    ->
+      F.fprintf fmt "TransitiveAccess {@[tag=%s;description=%s;call_trace:%a%t%t@]}" tag description
+        (Trace.pp ~pp_immediate) call_trace
+        (fun fmt ->
           if TransitiveCallees.is_bottom transitive_callees then ()
           else TransitiveCallees.pp fmt transitive_callees )
+        (fun fmt ->
+          if Typ.Name.Set.is_empty transitive_missed_captures then ()
+          else Typ.Name.Set.pp fmt transitive_missed_captures )
   | HackUnawaitedAwaitable {allocation_trace; location} ->
       F.fprintf fmt "UnawaitedAwaitable {@[allocation_trace:%a;@;location:%a@]}"
         (Trace.pp ~pp_immediate) allocation_trace Location.pp location
