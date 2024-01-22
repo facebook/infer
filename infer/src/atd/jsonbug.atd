@@ -122,6 +122,9 @@ type transitive_callee = {
   resolution: transitive_callee_resolution
 }           
   
+type missed_capture = {
+  class_name: string;
+}
 
 type extra = {
   ?cost_polynomial : string option;
@@ -130,7 +133,8 @@ type extra = {
   ?copy_type : string option;
   ?config_usage_extra : config_usage_extra option;
   ?taint_extra : taint_extra option;
-  ~transitive_callees : transitive_callee list;
+  ~transitive_callees: transitive_callee list;
+  ~transitive_missed_captures: missed_capture list;    
 }
 
 type jsonbug = {

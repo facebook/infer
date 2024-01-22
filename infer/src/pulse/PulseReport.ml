@@ -33,7 +33,7 @@ let report tenv ~is_suppressed ~latent proc_desc err_log diagnostic =
       else []
     in
     let extras =
-      let transitive_callees =
+      let transitive_callees, transitive_missed_captures =
         let get_kind = function
           | TransitiveCallees.Static ->
               `Static
@@ -63,10 +63,12 @@ let report tenv ~is_suppressed ~latent proc_desc err_log diagnostic =
           ; resolution= get_resolution resolution }
         in
         match diagnostic with
-        | TransitiveAccess {transitive_callees} ->
-            TransitiveCallees.report_as_extra_info transitive_callees |> List.map ~f:get_item
+        | TransitiveAccess {transitive_callees}
+          when not (TransitiveCallees.is_bottom transitive_callees) ->
+            ( TransitiveCallees.report_as_extra_info transitive_callees |> List.map ~f:get_item
+            , [{Jsonbug_t.class_name= "TEST"}] )
         | _ ->
-            []
+            ([], [])
       in
       let copy_type = get_copy_type diagnostic |> Option.map ~f:Typ.to_string in
       let taint_source, taint_sink =
@@ -122,7 +124,8 @@ let report tenv ~is_suppressed ~latent proc_desc err_log diagnostic =
         ; copy_type
         ; config_usage_extra
         ; taint_extra
-        ; transitive_callees }
+        ; transitive_callees
+        ; transitive_missed_captures }
     in
     (* [Diagnostic.get_issue_type] wrapper to report different type of issue for
        nullptr dereferences in Java classes annotated with @Nullsafe if requested *)
