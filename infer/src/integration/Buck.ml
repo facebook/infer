@@ -52,7 +52,7 @@ let infer_vars_to_kill =
     To achieve this we need to do two things: (i) tell the JVM not to use signals, meaning it leaves
     the default handler for [SIGQUIT] in place; (ii) uninstall the default handler for [SIGQUIT]
     because now that the JVM doesn't touch it, it will lead to process death. *)
-let wrap_buck_call ?(extend_env = []) ?(kill_infer_env_vars = false) version ~label cmd =
+let wrap_buck_call ?(extend_env = []) version ~label cmd =
   let is_buck2 = match (version : version) with V1 -> false | V2 -> true in
   let stdout_file =
     let prefix = Printf.sprintf "%s_%s" (binary_of_version version) label in
@@ -93,7 +93,7 @@ let wrap_buck_call ?(extend_env = []) ?(kill_infer_env_vars = false) version ~la
       (buck_extra_java_args_env_var, new_buck_extra_java_args) :: extend_env
   in
   let env =
-    if kill_infer_env_vars then
+    if is_buck2 then
       `Override
         ( List.map infer_vars_to_kill ~f:(fun var -> (var, None))
         @ List.map env_vars ~f:(fun (lhs, rhs) -> (lhs, Some rhs)) )
