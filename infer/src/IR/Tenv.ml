@@ -388,11 +388,20 @@ module MethodInfo = struct
   let get_hack_kind = function HackInfo {kind} -> Some kind | _ -> None
 end
 
+let is_captured tenv type_name =
+  (let open IOption.Let_syntax in
+   let* struct_ = lookup tenv type_name in
+   let* _sourcefile = struct_.Struct.source_file in
+   Some true )
+  |> Option.value ~default:false
+
+
 let resolve_method ~method_exists tenv class_name proc_name =
   let visited = ref Typ.Name.Set.empty in
   (* For Hack, we need to remember the last class we visited. Once we visit a trait, we are sure
      we will only visit traits from now on *)
   let last_class_visited = ref None in
+  let missed_capture_types = ref Typ.Name.Set.empty in
   let rec resolve_name_struct (class_name : Typ.Name.t) (class_struct : Struct.t) =
     if
       (not (Typ.Name.is_class class_name))
@@ -401,6 +410,11 @@ let resolve_method ~method_exists tenv class_name proc_name =
     then None
     else (
       visited := Typ.Name.Set.add class_name !visited ;
+      if Language.curr_language_is Hack && not (is_captured tenv class_name) then
+        (* we do not need to record class names for which [lookup tenv class_name == None] because
+           we assume that all direct super classes of a captured class are declared in Tenv
+           (even if not necessarily properly captured) *)
+        missed_capture_types := Typ.Name.Set.add class_name !missed_capture_types ;
       let kind =
         MethodInfo.get_kind_from_struct ~last_class_visited:!last_class_visited class_name
           class_struct
@@ -448,15 +462,8 @@ let resolve_method ~method_exists tenv class_name proc_name =
         in
         List.find_map supers_to_search ~f:resolve_name )
   and resolve_name class_name = lookup tenv class_name >>= resolve_name_struct class_name in
-  resolve_name class_name
-
-
-let is_captured tenv type_name =
-  (let open IOption.Let_syntax in
-   let* struct_ = lookup tenv type_name in
-   let* _sourcefile = struct_.Struct.source_file in
-   Some true )
-  |> Option.value ~default:false
+  let opt_info = resolve_name class_name in
+  (opt_info, !missed_capture_types)
 
 
 let find_cpp_destructor tenv class_name =

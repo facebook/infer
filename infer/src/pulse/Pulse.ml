@@ -397,16 +397,18 @@ module PulseTransferFunctions = struct
       let method_exists proc_name methods = List.mem ~equal:Procname.equal methods proc_name in
       Tenv.resolve_method ~method_exists tenv type_name proc_name
     in
+    let no_missed_captures = Typ.Name.Set.empty in
     let open IOption.Let_syntax in
     match get_dynamic_type_name astate receiver with
     | Some (dynamic_type_name, _) when Typ.Name.Hack.is_generated_curry dynamic_type_name ->
         (* this is a ...$static_...$curry'.__invoke() call to a Hack function reference *)
-        let+ class_name, function_name = Typ.Name.Hack.extract_curry_info dynamic_type_name in
-        let arity = Procname.get_hack_arity proc_name in
-        let proc_name = Procname.make_hack ~class_name:(Some class_name) ~function_name ~arity in
-        L.d_printfln "function pointer on %a detected" Procname.pp proc_name ;
-        (* TODO (dpichardie): we need to modify the first argument because this is not the expected class object *)
-        (Tenv.MethodInfo.mk_class proc_name, `HackFunctionReference)
+        ( (let+ class_name, function_name = Typ.Name.Hack.extract_curry_info dynamic_type_name in
+           let arity = Procname.get_hack_arity proc_name in
+           let proc_name = Procname.make_hack ~class_name:(Some class_name) ~function_name ~arity in
+           L.d_printfln "function pointer on %a detected" Procname.pp proc_name ;
+           (* TODO (dpichardie): we need to modify the first argument because this is not the expected class object *)
+           (Tenv.MethodInfo.mk_class proc_name, `HackFunctionReference) )
+        , no_missed_captures )
     | Some (dynamic_type_name, source_file_opt) ->
         (* if we have a source file then do the look up in the (local) tenv
            for that source file instead of in the tenv for the current file *)
@@ -414,18 +416,23 @@ module PulseTransferFunctions = struct
           Option.bind source_file_opt ~f:(Exe_env.get_source_tenv exe_env)
           |> Option.value ~default:tenv
         in
-        let+ proc_name = tenv_resolve_method tenv dynamic_type_name proc_name in
-        (proc_name, `ExactDevirtualization)
+        let opt_proc_name, missed_captures = tenv_resolve_method tenv dynamic_type_name proc_name in
+        ( (let+ proc_name = opt_proc_name in
+           (proc_name, `ExactDevirtualization) )
+        , missed_captures )
     | None ->
-        let+ proc_name =
+        let opt_proc_name, missed_captures =
           if Language.curr_language_is Hack || Language.curr_language_is Python then
             (* contrary to the Java frontend, the Hack and Python frontends do not perform
                static resolution so we have to do it here *)
-            let* type_name = Procname.get_class_type_name proc_name in
-            tenv_resolve_method tenv type_name proc_name
-          else Some (Tenv.MethodInfo.mk_class proc_name)
+            Procname.get_class_type_name proc_name
+            |> Option.value_map ~default:(None, no_missed_captures) ~f:(fun type_name ->
+                   tenv_resolve_method tenv type_name proc_name )
+          else (Some (Tenv.MethodInfo.mk_class proc_name), no_missed_captures)
         in
-        (proc_name, `ApproxDevirtualization)
+        ( (let+ proc_name = opt_proc_name in
+           (proc_name, `ApproxDevirtualization) )
+        , missed_captures )
 
 
   let string_of_devirtualization_status = function
@@ -440,14 +447,14 @@ module PulseTransferFunctions = struct
   let resolve_virtual_call exe_env tenv astate receiver proc_name_opt =
     Option.map proc_name_opt ~f:(fun proc_name ->
         match find_override exe_env tenv astate receiver proc_name with
-        | Some (info, devirtualization_status) ->
+        | Some (info, devirtualization_status), missed_captures ->
             let proc_name' = Tenv.MethodInfo.get_procname info in
             L.d_printfln "Dynamic dispatch: %a %s resolved to %a" Procname.pp_verbose proc_name
               (string_of_devirtualization_status devirtualization_status)
               Procname.pp_verbose proc_name' ;
-            (info, devirtualization_status)
-        | None ->
-            (Tenv.MethodInfo.mk_class proc_name, `ApproxDevirtualization) )
+            (info, devirtualization_status, missed_captures)
+        | None, missed_captures ->
+            (Tenv.MethodInfo.mk_class proc_name, `ApproxDevirtualization, missed_captures) )
 
 
   let need_dynamic_type_specialization astate receiver_addr =
@@ -473,7 +480,7 @@ module PulseTransferFunctions = struct
       let method_exists proc_name methods = List.mem ~equal methods proc_name in
       if is_already_resolved proc_name then (
         L.d_printfln "always_implemented %a" Procname.pp proc_name ;
-        Some (Tenv.MethodInfo.mk_class proc_name) )
+        (Some (Tenv.MethodInfo.mk_class proc_name), Typ.Name.Set.empty) )
       else Tenv.resolve_method ~method_exists tenv type_name proc_name
     in
     (* In a Hack trait, try to replace [__self__$static] with the static class name where the
@@ -527,7 +534,7 @@ module PulseTransferFunctions = struct
         let* static_class_name, astate = trait_resolution astate static_class_name in
         L.d_printfln "hack static dispatch from %a in class name %a" Procname.pp callee_pname
           Typ.Name.pp static_class_name ;
-        let opt_callee = resolve_method tenv static_class_name callee_pname in
+        let opt_callee, missed_captures = resolve_method tenv static_class_name callee_pname in
         let astate =
           match opt_callee with
           | None ->
@@ -535,6 +542,7 @@ module PulseTransferFunctions = struct
           | Some _ ->
               record_call_resolution ResolvedUsingStaticType astate
         in
+        let astate = AbductiveDomain.add_missed_captures missed_captures astate in
         (opt_callee, astate)
 
 
@@ -628,7 +636,7 @@ module PulseTransferFunctions = struct
         improve_receiver_static_type astate (ValueOrigin.value receiver) callee_pname
         |> resolve_virtual_call exe_env tenv astate (ValueOrigin.value receiver)
       with
-      | Some (info, `HackFunctionReference) ->
+      | Some (info, `HackFunctionReference, missed_captures) ->
           let callee = Tenv.MethodInfo.get_procname info in
           let info, astate =
             match resolve_hack_static_method path call_loc astate tenv caller (Some callee) with
@@ -637,13 +645,22 @@ module PulseTransferFunctions = struct
             | None, _ ->
                 (info, astate)
           in
-          let astate = record_call_resolution_if_closure ResolvedUsingDynamicType astate in
+          let astate =
+            record_call_resolution_if_closure ResolvedUsingDynamicType astate
+            |> AbductiveDomain.add_missed_captures missed_captures
+          in
           (Some info, astate)
-      | Some (info, `ExactDevirtualization) ->
-          let astate = record_call_resolution_if_closure ResolvedUsingDynamicType astate in
+      | Some (info, `ExactDevirtualization, missed_captures) ->
+          let astate =
+            record_call_resolution_if_closure ResolvedUsingDynamicType astate
+            |> AbductiveDomain.add_missed_captures missed_captures
+          in
           (Some info, astate)
-      | Some (info, `ApproxDevirtualization) ->
-          let astate = record_call_resolution_if_closure Unresolved astate in
+      | Some (info, `ApproxDevirtualization, missed_captures) ->
+          let astate =
+            record_call_resolution_if_closure Unresolved astate
+            |> AbductiveDomain.add_missed_captures missed_captures
+          in
           (Some info, need_dynamic_type_specialization astate (ValueOrigin.value receiver))
       | None ->
           let astate = record_call_resolution_if_closure Unresolved astate in

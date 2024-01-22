@@ -46,15 +46,6 @@ let new_ type_exp =
   let open PulseModelsDSL.Syntax in
   start_model
   @@ let* ret_val = new_ type_exp in
-     (* TODO: this is a temporary place for detecting missed captures (dpichardie) *)
-     let* () =
-       match type_exp with
-       | Exp.Sizeof {typ= {desc= Tstruct type_name}} when Language.curr_language_is Hack ->
-           let* is_captured = tenv_is_captured type_name in
-           if is_captured then ret () else add_missed_capture type_name
-       | _ ->
-           ret ()
-     in
      assign_ret ret_val
 
 

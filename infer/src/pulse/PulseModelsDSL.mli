@@ -74,8 +74,6 @@ module Syntax : sig
 
   val add_dynamic_type : Typ.t -> aval -> unit model_monad
 
-  val add_missed_capture : Typ.name -> unit model_monad
-
   val add_static_type : Typ.name -> aval -> unit model_monad
 
   val deep_copy : ?depth_max:int -> aval -> aval model_monad
@@ -151,8 +149,6 @@ module Syntax : sig
   val tenv_resolve_field_info : Typ.name -> Fieldname.t -> Struct.field_info option model_monad
 
   val tenv_resolve_fieldname : Typ.name -> string -> Fieldname.t option model_monad
-
-  val tenv_is_captured : Typ.name -> bool model_monad
 
   val write_deref : ref:aval -> obj:aval -> unit model_monad
 

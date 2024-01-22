@@ -2317,8 +2317,8 @@ module Topl = struct
     PulseTopl.report_errors proc_desc err_log ~pulse_is_manifest astate.topl
 end
 
-let add_missed_capture type_name ({transitive_missed_captures} as astate) =
-  let transitive_missed_captures = Typ.Name.Set.add type_name transitive_missed_captures in
+let add_missed_captures missed_captures ({transitive_missed_captures} as astate) =
+  let transitive_missed_captures = Typ.Name.Set.union missed_captures transitive_missed_captures in
   {astate with transitive_missed_captures}
 
 

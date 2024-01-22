@@ -431,7 +431,7 @@ let method_exists right_proc_name methods =
 
 
 let resolve_method tenv class_name proc_name =
-  match Tenv.resolve_method ~method_exists tenv class_name proc_name with
+  match Tenv.resolve_method ~method_exists tenv class_name proc_name |> fst with
   | None ->
       Logging.d_printfln "Couldn't find method in the hierarchy of type %s"
         (Typ.Name.name class_name) ;

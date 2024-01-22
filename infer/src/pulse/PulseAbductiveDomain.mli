@@ -292,7 +292,7 @@ val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
 val add_skipped_calls : SkippedCalls.t -> t -> t
 
-val add_missed_capture : Typ.name -> t -> t
+val add_missed_captures : Typ.Name.Set.t -> t -> t
 
 val set_path_condition : Formula.t -> t -> t
 
