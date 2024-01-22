@@ -58,7 +58,7 @@ val add_field : Fieldname.t -> source_addr_opt:AbstractValue.t option -> copy_sp
 
 val add_parameter : Var.t -> parameter_spec_t -> t -> t
 
-val checked_via_dtor : Var.t -> t -> t
+val checked_via_destructor : Var.t -> t -> t
 
 val mark_copy_as_modified :
      is_modified:(BaseMemory.t -> Timestamp.t -> bool)
@@ -84,7 +84,7 @@ val get_copied :
 
 val get_const_refable_parameters : t -> (Var.t * Typ.t * Location.t) list
 
-val is_checked_via_dtor : Var.t -> t -> bool
+val is_checked_via_destructor : Var.t -> t -> bool
 
 val set_captured_variables : Exp.t -> t -> t
 

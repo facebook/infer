@@ -356,7 +356,7 @@ module IntraDomElt = struct
     {astate_n with parameter_map}
 
 
-  let checked_via_dtor var astate_n =
+  let checked_via_destructor var astate_n =
     {astate_n with destructor_checked= DestructorChecked.add var astate_n.destructor_checked}
 
 
@@ -473,7 +473,9 @@ module IntraDomElt = struct
     {astate_n with parameter_map= ParameterMap.add parameter_var res astate_n.parameter_map}
 
 
-  let is_checked_via_dtor var {destructor_checked} = DestructorChecked.mem var destructor_checked
+  let is_checked_via_destructor var {destructor_checked} =
+    DestructorChecked.mem var destructor_checked
+
 
   let set_captured_variables exp astate_n =
     match exp with
@@ -551,7 +553,7 @@ module IntraDom = struct
     map (IntraDomElt.mark_parameter_as_modified ~is_modified ~var)
 
 
-  let checked_via_dtor var = map (IntraDomElt.checked_via_dtor var)
+  let checked_via_destructor var = map (IntraDomElt.checked_via_destructor var)
 
   let get_copied ~ref_formals ~ptr_formals =
     get ~default:[] (IntraDomElt.get_copied ~ref_formals ~ptr_formals)
@@ -571,7 +573,7 @@ module IntraDom = struct
 
   let add_parameter parameter_var res = map (IntraDomElt.add_parameter parameter_var res)
 
-  let is_checked_via_dtor var = get ~default:true (IntraDomElt.is_checked_via_dtor var)
+  let is_checked_via_destructor var = get ~default:true (IntraDomElt.is_checked_via_destructor var)
 
   let set_captured_variables exp = map (IntraDomElt.set_captured_variables exp)
 
@@ -721,7 +723,7 @@ let mark_parameter_as_modified ~is_modified ~var =
   map_intra (IntraDom.mark_parameter_as_modified ~is_modified ~var)
 
 
-let checked_via_dtor var = map_intra (IntraDom.checked_via_dtor var)
+let checked_via_destructor var = map_intra (IntraDom.checked_via_destructor var)
 
 let get_copied ~ref_formals ~ptr_formals {intra} =
   IntraDom.get_copied ~ref_formals ~ptr_formals intra
@@ -741,7 +743,7 @@ let add_field copied_field ~source_addr_opt res =
 
 let add_parameter parameter_var res = map_intra (IntraDom.add_parameter parameter_var res)
 
-let is_checked_via_dtor var {intra} = IntraDom.is_checked_via_dtor var intra
+let is_checked_via_destructor var {intra} = IntraDom.is_checked_via_destructor var intra
 
 let set_captured_variables exp = map_intra (IntraDom.set_captured_variables exp)
 

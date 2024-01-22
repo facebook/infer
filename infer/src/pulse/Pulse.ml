@@ -1306,14 +1306,14 @@ module PulseTransferFunctions = struct
     if Typ.is_int typ then PulseArithmetic.and_is_int v astate else Sat (Ok astate)
 
 
-  let check_modified_before_dtor args call_exp astate astate_n =
+  let check_modified_before_destructor args call_exp astate astate_n =
     match ((call_exp : Exp.t), args) with
     | (Const (Cfun proc_name) | Closure {name= proc_name}), (Exp.Lvar pvar, _) :: _
       when Procname.is_destructor proc_name ->
         let var = Var.of_pvar pvar in
         PulseNonDisjunctiveOperations.mark_modified_copies_and_parameters_on_abductive [var] astate
           astate_n
-        |> NonDisjDomain.checked_via_dtor var
+        |> NonDisjDomain.checked_via_destructor var
     | _ ->
         astate_n
 
@@ -1482,7 +1482,7 @@ module PulseTransferFunctions = struct
           let results = SatUnsat.to_list result in
           (PulseReport.report_results tenv proc_desc err_log loc results, path, astate_n)
       | Call (ret, call_exp, actuals, loc, call_flags) ->
-          let astate_n = check_modified_before_dtor actuals call_exp astate astate_n in
+          let astate_n = check_modified_before_destructor actuals call_exp astate astate_n in
           let astates, astate_n =
             List.fold actuals ~init:([astate], astate_n) ~f:(fun (astates, astate_n) (exp, typ) ->
                 NonDisjDomain.bind (astates, astate_n) ~f:(fun astate astate_n ->

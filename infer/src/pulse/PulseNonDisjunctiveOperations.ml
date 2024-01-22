@@ -689,7 +689,7 @@ let mark_modified_copies_and_parameters_on_abductive vars astate astate_n =
 
 let mark_modified_copies_and_parameters vars astates astate_n =
   let unchecked_vars =
-    List.filter vars ~f:(fun var -> not (NonDisjDomain.is_checked_via_dtor var astate_n))
+    List.filter vars ~f:(fun var -> not (NonDisjDomain.is_checked_via_destructor var astate_n))
   in
   continue_fold astates ~init:astate_n ~f:(fun astate_n astate ->
       mark_modified_copies_and_parameters_on_abductive unchecked_vars astate astate_n )
