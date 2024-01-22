@@ -190,7 +190,11 @@ let report_errors tenv proc_desc err_log {PulseSummary.pre_post_list; non_disj} 
         NonDisjDomain.Summary.get_transitive_callees_if_not_top non_disj
         |> Option.value ~default:PulseTransitiveCallees.bottom
       in
+      let non_disj_transitive_missed_captures =
+        NonDisjDomain.Summary.get_transitive_missed_capture_if_not_top non_disj
+        |> Option.value ~default:Typ.Name.Set.empty
+      in
       NonDisjDomain.Summary.iter_on_transitive_accesses_if_not_top non_disj
-        ~f:(report non_disj_transitive_callees Typ.Name.Set.empty)
+        ~f:(report non_disj_transitive_callees non_disj_transitive_missed_captures)
   | None ->
       ()

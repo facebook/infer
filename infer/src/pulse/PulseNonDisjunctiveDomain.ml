@@ -280,6 +280,7 @@ module PassedTo = struct
 end
 
 module DroppedTransitiveAccesses = AbstractDomain.FiniteSetOfPPSet (Trace.Set)
+module TransitiveMissedCapture = AbstractDomain.FiniteSetOfPPSet (Typ.Name.Set)
 
 type elt =
   { copy_map: CopyMap.t
@@ -291,6 +292,7 @@ type elt =
   ; loads: Loads.t
   ; stores: Stores.t
   ; transitive_callees: TransitiveCallees.t
+  ; transitive_missed_captures: TransitiveMissedCapture.t
   ; passed_to: PassedTo.t }
 [@@deriving abstract_domain]
 
@@ -306,14 +308,16 @@ module Elt = struct
       ; locked
       ; loads
       ; transitive_callees
+      ; transitive_missed_captures
       ; passed_to } =
     F.fprintf fmt
       "@[@[copy map: %a@],@ @[parameter map: %a@],@ @[destructor checked: %a@],@ @[dropped \
        transitive accesses: %a@],@ @[captured: %a@],@ @[locked: %a@],@ @[loads: %a@],@ @[passed \
-       to: %a@],@ @[transitive callees: %a@],@ @]"
+       to: %a@],@ @[transitive callees: %a@],@ @[transitive missed captures: %a],@ @]"
       CopyMap.pp copy_map ParameterMap.pp parameter_map DestructorChecked.pp destructor_checked
       DroppedTransitiveAccesses.pp dropped_transitive_accesses Captured.pp captured Locked.pp locked
-      Loads.pp loads PassedTo.pp passed_to TransitiveCallees.pp transitive_callees
+      Loads.pp loads PassedTo.pp passed_to TransitiveCallees.pp transitive_callees Typ.Name.Set.pp
+      transitive_missed_captures
 end
 
 include AbstractDomain.TopLifted (Elt)
@@ -329,6 +333,7 @@ let bottom =
     ; loads= Loads.bottom
     ; stores= Stores.bottom
     ; transitive_callees= TransitiveCallees.bottom
+    ; transitive_missed_captures= Typ.Name.Set.empty
     ; passed_to= PassedTo.bottom }
 
 
@@ -660,26 +665,33 @@ let bind (execs, non_disj) ~f =
          (l @ acc, join joined_non_disj new_non_disj) )
 
 
-let remember_dropped_elements accesses callees (non_disj : t) =
+let remember_dropped_elements accesses callees missed_captures (non_disj : t) =
   match non_disj with
   | Top ->
       Top
-  | NonTop ({dropped_transitive_accesses; transitive_callees} as non_disj) ->
+  | NonTop
+      ({dropped_transitive_accesses; transitive_callees; transitive_missed_captures} as non_disj) ->
       let dropped_transitive_accesses =
         DroppedTransitiveAccesses.union accesses dropped_transitive_accesses
       in
       let transitive_callees = TransitiveCallees.join callees transitive_callees in
-      NonTop {non_disj with dropped_transitive_accesses; transitive_callees}
+      let transitive_missed_captures =
+        Typ.Name.Set.union missed_captures transitive_missed_captures
+      in
+      NonTop
+        {non_disj with dropped_transitive_accesses; transitive_callees; transitive_missed_captures}
 
 
 module SummaryElt = struct
   type t =
     { transitive_callees: TransitiveCallees.t
-    ; dropped_transitive_accesses: DroppedTransitiveAccesses.t }
+    ; dropped_transitive_accesses: DroppedTransitiveAccesses.t
+    ; transitive_missed_captures: TransitiveMissedCapture.t }
   [@@deriving abstract_domain]
 
   let bottom =
     { transitive_callees= TransitiveCallees.bottom
+    ; transitive_missed_captures= Typ.Name.Set.empty
     ; dropped_transitive_accesses= DroppedTransitiveAccesses.bottom }
 
 
@@ -700,8 +712,8 @@ let make_summary (non_disj : t) : summary =
   match non_disj with
   | Top ->
       Top
-  | NonTop {transitive_callees; dropped_transitive_accesses} ->
-      NonTop {transitive_callees; dropped_transitive_accesses}
+  | NonTop {transitive_callees; dropped_transitive_accesses; transitive_missed_captures} ->
+      NonTop {transitive_callees; dropped_transitive_accesses; transitive_missed_captures}
 
 
 let apply_summary ~callee_pname ~call_loc (non_disj : t) (summary : summary) =
@@ -739,4 +751,12 @@ module Summary = struct
 
   let get_transitive_callees_if_not_top (x : t) =
     match x with Top -> None | NonTop {transitive_callees} -> Some transitive_callees
+
+
+  let get_transitive_missed_capture_if_not_top (x : t) =
+    match x with
+    | Top ->
+        None
+    | NonTop {transitive_missed_captures} ->
+        Some transitive_missed_captures
 end

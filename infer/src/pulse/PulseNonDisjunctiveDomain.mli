@@ -45,6 +45,8 @@ module Summary : sig
   val iter_on_transitive_accesses_if_not_top : t -> f:(Trace.t -> unit) -> unit
 
   val get_transitive_callees_if_not_top : t -> TransitiveCallees.t option
+
+  val get_transitive_missed_capture_if_not_top : t -> Typ.Name.Set.t option
 end
 
 val add_var :
@@ -100,7 +102,7 @@ val set_passed_to : Location.t -> Timestamp.t -> Exp.t -> (Exp.t * Typ.t) list -
 
 val is_lifetime_extended : Var.t -> t -> bool
 
-val remember_dropped_elements : Trace.Set.t -> TransitiveCallees.t -> t -> t
+val remember_dropped_elements : Trace.Set.t -> TransitiveCallees.t -> Typ.Name.Set.t -> t -> t
 
 val apply_summary : callee_pname:Procname.t -> call_loc:Location.t -> t -> summary -> t
 
