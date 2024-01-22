@@ -185,6 +185,8 @@ module TopLiftedUtils = struct
   let pp ~pp f = function Top -> pp_top f | NonTop astate -> pp f astate
 
   let map f = function Top -> Top | NonTop astate -> NonTop (f astate)
+
+  let get ~default f = function Top -> default | NonTop astate -> f astate
 end
 
 module TopLifted (Domain : S) = struct
@@ -217,6 +219,8 @@ module TopLifted (Domain : S) = struct
 
 
   let map = TopLiftedUtils.map
+
+  let get = TopLiftedUtils.get
 
   let pp = TopLiftedUtils.pp ~pp:Domain.pp
 end

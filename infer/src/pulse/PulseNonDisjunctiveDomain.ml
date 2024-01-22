@@ -279,467 +279,532 @@ module PassedTo = struct
   let is_moved var x = find_opt var x |> Option.exists ~f:CalleesWithLoc.is_moved
 end
 
-module DroppedTransitiveAccesses = AbstractDomain.FiniteSetOfPPSet (Trace.Set)
-module TransitiveMissedCapture = AbstractDomain.FiniteSetOfPPSet (Typ.Name.Set)
+module IntraDomElt = struct
+  type t =
+    { copy_map: CopyMap.t
+    ; parameter_map: ParameterMap.t
+    ; destructor_checked: DestructorChecked.t
+    ; captured: Captured.t
+    ; locked: Locked.t
+    ; loads: Loads.t
+    ; stores: Stores.t
+    ; passed_to: PassedTo.t }
+  [@@deriving abstract_domain]
 
-type elt =
-  { copy_map: CopyMap.t
-  ; parameter_map: ParameterMap.t
-  ; destructor_checked: DestructorChecked.t
-  ; dropped_transitive_accesses: DroppedTransitiveAccesses.t
-  ; captured: Captured.t
-  ; locked: Locked.t
-  ; loads: Loads.t
-  ; stores: Stores.t
-  ; transitive_callees: TransitiveCallees.t
-  ; transitive_missed_captures: TransitiveMissedCapture.t
-  ; passed_to: PassedTo.t }
-[@@deriving abstract_domain]
-
-module Elt = struct
-  type t = elt [@@deriving abstract_domain]
-
-  let pp fmt
-      { copy_map
-      ; parameter_map
-      ; destructor_checked
-      ; dropped_transitive_accesses
-      ; captured
-      ; locked
-      ; loads
-      ; transitive_callees
-      ; transitive_missed_captures
-      ; passed_to } =
+  let pp fmt {copy_map; parameter_map; destructor_checked; captured; locked; loads; passed_to} =
     F.fprintf fmt
-      "@[@[copy map: %a@],@ @[parameter map: %a@],@ @[destructor checked: %a@],@ @[dropped \
-       transitive accesses: %a@],@ @[captured: %a@],@ @[locked: %a@],@ @[loads: %a@],@ @[passed \
-       to: %a@],@ @[transitive callees: %a@],@ @[transitive missed captures: %a],@ @]"
+      "@[@[copy map: %a@],@ @[parameter map: %a@],@ @[destructor checked: %a@],@ @[captured: \
+       %a@],@ @[locked: %a@],@ @[loads: %a@],@ @[passed to: %a@]@]"
       CopyMap.pp copy_map ParameterMap.pp parameter_map DestructorChecked.pp destructor_checked
-      DroppedTransitiveAccesses.pp dropped_transitive_accesses Captured.pp captured Locked.pp locked
-      Loads.pp loads PassedTo.pp passed_to TransitiveCallees.pp transitive_callees Typ.Name.Set.pp
-      transitive_missed_captures
-end
+      Captured.pp captured Locked.pp locked Loads.pp loads PassedTo.pp passed_to
 
-include AbstractDomain.TopLifted (Elt)
 
-let bottom =
-  NonTop
+  let bottom =
     { copy_map= CopyMap.empty
     ; parameter_map= ParameterMap.empty
     ; destructor_checked= DestructorChecked.empty
-    ; dropped_transitive_accesses= DroppedTransitiveAccesses.empty
     ; captured= Captured.bottom
     ; locked= Locked.bottom
     ; loads= Loads.bottom
     ; stores= Stores.bottom
-    ; transitive_callees= TransitiveCallees.bottom
-    ; transitive_missed_captures= Typ.Name.Set.empty
     ; passed_to= PassedTo.bottom }
 
 
-let is_bottom = function
-  | Top ->
-      false
-  | NonTop {copy_map; parameter_map; destructor_checked; captured; locked; loads; passed_to} ->
-      CopyMap.is_bottom copy_map
-      && ParameterMap.is_bottom parameter_map
-      && DestructorChecked.is_bottom destructor_checked
-      && Captured.is_bottom captured && Locked.is_bottom locked && Loads.is_bottom loads
-      && PassedTo.is_bottom passed_to
+  let is_bottom
+      {copy_map; parameter_map; destructor_checked; captured; locked; loads; stores; passed_to} =
+    CopyMap.is_bottom copy_map
+    && ParameterMap.is_bottom parameter_map
+    && DestructorChecked.is_bottom destructor_checked
+    && Captured.is_bottom captured && Locked.is_bottom locked && Loads.is_bottom loads
+    && Stores.is_bottom stores && PassedTo.is_bottom passed_to
 
 
-let join lhs rhs =
-  if phys_equal lhs bottom then rhs else if phys_equal rhs bottom then lhs else join lhs rhs
+  let mark_copy_as_modified ~is_modified ~copied_into ~source_addr_opt ({copy_map} as astate_n) =
+    let copy_var = CopyVar.{copied_into; source_addr_opt} in
+    let copy_map =
+      match CopyMap.find_opt copy_var copy_map with
+      | Some
+          (Copied
+            { source_typ
+            ; source_opt
+            ; from
+            ; copied_location
+            ; location
+            ; heap= copy_heap
+            ; timestamp= copied_timestamp } )
+        when is_modified copy_heap copied_timestamp ->
+          Logging.d_printfln_escaped "Copy/source modified!" ;
+          let modified : copy_spec_t =
+            Modified {source_typ; source_opt; location; copied_location; from; copied_timestamp}
+          in
+          CopyMap.add copy_var modified copy_map
+      | _ ->
+          copy_map
+    in
+    {astate_n with copy_map}
 
 
-let mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt ({copy_map} as astate_n) =
-  let copy_var = CopyVar.{copied_into; source_addr_opt} in
-  let copy_map =
-    match CopyMap.find_opt copy_var copy_map with
-    | Some
-        (Copied
-          { source_typ
-          ; source_opt
-          ; from
-          ; copied_location
-          ; location
-          ; heap= copy_heap
-          ; timestamp= copied_timestamp } )
-      when is_modified copy_heap copied_timestamp ->
-        Logging.d_printfln_escaped "Copy/source modified!" ;
-        let modified : copy_spec_t =
-          Modified {source_typ; source_opt; location; copied_location; from; copied_timestamp}
-        in
-        CopyMap.add copy_var modified copy_map
+  let mark_parameter_as_modified ~is_modified ~var ({parameter_map} as astate_n) =
+    let parameter_map =
+      match ParameterMap.find_opt var parameter_map with
+      | Some (Unmodified {heap= copy_heap}) when is_modified copy_heap Timestamp.t0 ->
+          Logging.d_printfln_escaped "Parameter %a modified!" Var.pp var ;
+          ParameterMap.add var Modified parameter_map
+      | _ ->
+          parameter_map
+    in
+    {astate_n with parameter_map}
+
+
+  let checked_via_dtor var astate_n =
+    {astate_n with destructor_checked= DestructorChecked.add var astate_n.destructor_checked}
+
+
+  let is_never_used_after_copy_into_intermediate_or_field pvar (copied_timestamp : Timestamp.t)
+      {passed_to; loads; stores} =
+    let is_after_copy =
+      TrackedLoc.exists (fun _ timestamp -> (copied_timestamp :> int) < (timestamp :> int))
+    in
+    let source_var = Var.of_pvar pvar in
+    let is_passed_to_non_destructor_after_copy =
+      PassedTo.find source_var passed_to
+      |> CalleesWithLoc.exists (fun callee tracked_loc ->
+             match callee with
+             | V {callee} ->
+                 is_after_copy tracked_loc && not (Procname.is_destructor callee)
+             | Unknown ->
+                 false )
+    in
+    let is_loaded_after_copy = Loads.get_loaded_locations source_var loads |> is_after_copy in
+    let is_stored_after_copy = Stores.find pvar stores |> is_after_copy in
+    not (is_loaded_after_copy || is_stored_after_copy || is_passed_to_non_destructor_after_copy)
+
+
+  module CopiedSet = PrettyPrintable.MakePPSet (Attribute.CopiedInto)
+
+  let is_lvalue_ref_param ~ref_formals pvar =
+    Option.exists (List.Assoc.find ref_formals ~equal:Pvar.equal pvar) ~f:(fun typ ->
+        not (Typ.is_rvalue_reference typ) )
+
+
+  let get_copied ~ref_formals ~ptr_formals ({copy_map; captured} as astate_n) =
+    let modified =
+      CopyMap.fold
+        (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
+          match copy_spec with Modified _ -> CopiedSet.add copied_into acc | Copied _ -> acc )
+        copy_map CopiedSet.empty
+    in
+    let is_captured copy_into =
+      match (copy_into : Attribute.CopiedInto.t) with
+      | IntoVar {copied_var= ProgramVar pvar} ->
+          Captured.mem pvar captured
+      | _ ->
+          false
+    in
+    CopyMap.fold
+      (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
+        match (copied_into, copy_spec) with
+        | _, Copied _ when CopiedSet.mem copied_into modified || is_captured copied_into ->
+            acc
+        | ( (IntoField _ | IntoIntermediate _)
+          , ( Copied
+                { location
+                ; copied_location
+                ; source_typ
+                ; source_opt= Some (PVar pvar, _) as source_opt
+                ; from
+                ; timestamp= copied_timestamp }
+            | Modified
+                { location
+                ; copied_location
+                ; source_typ
+                ; source_opt= Some (PVar pvar, _) as source_opt
+                ; from
+                ; copied_timestamp } ) ) ->
+            if
+              (not (Pvar.is_global pvar))
+              && (not (is_lvalue_ref_param ~ref_formals pvar))
+              && (not (List.Assoc.mem ptr_formals ~equal:Pvar.equal pvar))
+              && is_never_used_after_copy_into_intermediate_or_field pvar copied_timestamp astate_n
+            then
+              (* if source var is never used later on, we can still suggest removing the copy even though the copy is modified *)
+              (copied_into, source_typ, source_opt, location, copied_location, from) :: acc
+            else acc
+        | _, Copied {location; copied_location; source_typ; source_opt; from} ->
+            (copied_into, source_typ, source_opt, location, copied_location, from) :: acc
+        | _, Modified _ ->
+            acc )
+      copy_map []
+
+
+  let get_const_refable_parameters {parameter_map; captured; loads; passed_to} =
+    ParameterMap.fold
+      (fun var (parameter_spec_t : ParameterSpec.t) acc ->
+        if Captured.is_captured_by_ref var captured then acc
+        else if
+          (Loads.is_loaded var loads || Captured.mem_var var captured)
+          && (not (PassedTo.is_copied_to_field_or_global var passed_to))
+          && not (PassedTo.is_moved var passed_to)
+        then
+          match parameter_spec_t with
+          | Modified ->
+              acc
+          | Unmodified {location; typ= copied_source_typ} ->
+              (var, copied_source_typ, location) :: acc
+        else acc )
+      parameter_map []
+
+
+  let add_var copied_into ~source_addr_opt res astate_n =
+    {astate_n with copy_map= CopyMap.add {copied_into; source_addr_opt} res astate_n.copy_map}
+
+
+  let remove_var var astate_n = {astate_n with copy_map= CopyMap.remove_var var astate_n.copy_map}
+
+  let add_field copied_field ~source_addr_opt res astate_n =
+    { astate_n with
+      copy_map=
+        CopyMap.add
+          {copied_into= IntoField {field= copied_field}; source_addr_opt}
+          res astate_n.copy_map }
+
+
+  let add_parameter parameter_var res astate_n =
+    {astate_n with parameter_map= ParameterMap.add parameter_var res astate_n.parameter_map}
+
+
+  let is_checked_via_dtor var {destructor_checked} = DestructorChecked.mem var destructor_checked
+
+  let set_captured_variables exp astate_n =
+    match exp with
+    | Exp.Closure {captured_vars} ->
+        List.fold captured_vars ~init:astate_n ~f:(fun astate_n (_, pvar, _, mode) ->
+            {astate_n with captured= Captured.add pvar mode astate_n.captured} )
     | _ ->
-        copy_map
-  in
-  {astate_n with copy_map}
+        astate_n
 
+
+  let set_locked astate_n = {astate_n with locked= true}
+
+  let is_locked {locked} = locked
+
+  let set_load loc tstamp ident var astate_n =
+    {astate_n with loads= Loads.add loc tstamp ident var astate_n.loads}
+
+
+  let set_store loc timestamp var astate_n =
+    {astate_n with stores= Stores.add var loc timestamp astate_n.stores}
+
+
+  let get_loaded_locations var {loads} =
+    Loads.get_loaded_locations var loads |> TrackedLoc.get_all_keys
+
+
+  let set_passed_to loc timestamp call_exp actuals ({loads; passed_to} as astate_n) =
+    let new_callee =
+      match (call_exp : Exp.t) with
+      | Const (Cfun callee) | Closure {name= callee} ->
+          let copy_tgt =
+            match actuals with
+            | (tgt, _) :: _
+              when Option.exists (IRAttributes.load callee) ~f:(fun attrs ->
+                       attrs.ProcAttributes.is_cpp_copy_ctor
+                       || attrs.ProcAttributes.is_cpp_copy_assignment
+                       || attrs.ProcAttributes.is_cpp_move_ctor ) ->
+                Some tgt
+            | _ ->
+                None
+          in
+          CalleeWithUnknown.V {copy_tgt; callee}
+      | _ ->
+          CalleeWithUnknown.Unknown
+    in
+    let vars =
+      List.fold actuals ~init:Var.Set.empty ~f:(fun acc (actual, _) ->
+          match (actual : Exp.t) with
+          | Lvar pvar when not (Pvar.is_frontend_tmp pvar) ->
+              Var.Set.add (Var.of_pvar pvar) acc
+          | Var ident ->
+              List.fold (Loads.get_all ident loads) ~init:acc ~f:(fun acc var ->
+                  Var.Set.add var acc )
+          | _ ->
+              acc )
+    in
+    let passed_to =
+      Var.Set.fold (fun var acc -> PassedTo.add var new_callee loc timestamp acc) vars passed_to
+    in
+    {astate_n with passed_to}
+end
+
+module IntraDom = struct
+  include AbstractDomain.TopLifted (IntraDomElt)
+
+  let bottom = NonTop IntraDomElt.bottom
+
+  let is_bottom = get ~default:false IntraDomElt.is_bottom
+
+  let mark_copy_as_modified ~is_modified ~copied_into ~source_addr_opt =
+    map (IntraDomElt.mark_copy_as_modified ~is_modified ~copied_into ~source_addr_opt)
+
+
+  let mark_parameter_as_modified ~is_modified ~var =
+    map (IntraDomElt.mark_parameter_as_modified ~is_modified ~var)
+
+
+  let checked_via_dtor var = map (IntraDomElt.checked_via_dtor var)
+
+  let get_copied ~ref_formals ~ptr_formals =
+    get ~default:[] (IntraDomElt.get_copied ~ref_formals ~ptr_formals)
+
+
+  let get_const_refable_parameters = get ~default:[] IntraDomElt.get_const_refable_parameters
+
+  let add_var copied_into ~source_addr_opt res =
+    map (IntraDomElt.add_var copied_into ~source_addr_opt res)
+
+
+  let remove_var var = map (IntraDomElt.remove_var var)
+
+  let add_field copied_field ~source_addr_opt res =
+    map (IntraDomElt.add_field copied_field ~source_addr_opt res)
+
+
+  let add_parameter parameter_var res = map (IntraDomElt.add_parameter parameter_var res)
+
+  let is_checked_via_dtor var = get ~default:true (IntraDomElt.is_checked_via_dtor var)
+
+  let set_captured_variables exp = map (IntraDomElt.set_captured_variables exp)
+
+  let set_locked = map IntraDomElt.set_locked
+
+  let is_locked = function Top -> true | NonTop elt -> IntraDomElt.is_locked elt
+
+  let set_load loc tstamp ident var = map (IntraDomElt.set_load loc tstamp ident var)
+
+  let set_store loc tstamp var = map (IntraDomElt.set_store loc tstamp var)
+
+  let get_loaded_locations var = get ~default:[] (IntraDomElt.get_loaded_locations var)
+
+  let is_captured var astate_n =
+    match ((var : Var.t), (astate_n : t)) with
+    | LogicalVar _, _ ->
+        false
+    | ProgramVar x, NonTop {captured} ->
+        Captured.mem x captured
+    | ProgramVar _, Top ->
+        true
+
+
+  let set_passed_to loc timestamp call_exp actuals =
+    map (IntraDomElt.set_passed_to loc timestamp call_exp actuals)
+
+
+  let get_passed_to var ~f = function
+    | Top ->
+        `Top
+    | NonTop {IntraDomElt.passed_to} ->
+        let callees =
+          PassedTo.find var passed_to |> CalleesWithLoc.filter (fun callee _ -> f callee)
+        in
+        `PassedTo callees
+
+
+  let is_lifetime_extended var astate_n =
+    is_captured var astate_n
+    ||
+    match
+      get_passed_to var astate_n ~f:(function
+        | CalleeWithUnknown.V {callee} ->
+            not (Procname.is_shared_ptr_observer callee)
+        | CalleeWithUnknown.Unknown ->
+            true )
+    with
+    | `Top ->
+        true
+    | `PassedTo callees ->
+        not (CalleesWithLoc.is_empty callees)
+end
+
+module DroppedTransitiveAccesses = AbstractDomain.FiniteSetOfPPSet (Trace.Set)
+module TransitiveMissedCapture = AbstractDomain.FiniteSetOfPPSet (Typ.Name.Set)
+
+module InterDomElt = struct
+  type t =
+    { dropped_transitive_accesses: DroppedTransitiveAccesses.t
+    ; transitive_callees: TransitiveCallees.t
+    ; transitive_missed_captures: TransitiveMissedCapture.t }
+  [@@deriving abstract_domain]
+
+  let pp fmt {dropped_transitive_accesses; transitive_callees; transitive_missed_captures} =
+    F.fprintf fmt
+      "@[@[dropped transitive accesses: %a@],@ @[transitive callees: %a@],@ @[transitive missed \
+       captures: %a@]@]"
+      DroppedTransitiveAccesses.pp dropped_transitive_accesses TransitiveCallees.pp
+      transitive_callees Typ.Name.Set.pp transitive_missed_captures
+
+
+  let bottom =
+    { dropped_transitive_accesses= DroppedTransitiveAccesses.empty
+    ; transitive_callees= TransitiveCallees.bottom
+    ; transitive_missed_captures= Typ.Name.Set.empty }
+
+
+  let is_bottom {dropped_transitive_accesses; transitive_callees; transitive_missed_captures} =
+    DroppedTransitiveAccesses.is_bottom dropped_transitive_accesses
+    && TransitiveCallees.is_bottom transitive_callees
+    && Typ.Name.Set.is_empty transitive_missed_captures
+
+
+  let remember_dropped_elements accesses callees missed_captures
+      {dropped_transitive_accesses; transitive_callees; transitive_missed_captures} =
+    let dropped_transitive_accesses =
+      DroppedTransitiveAccesses.union accesses dropped_transitive_accesses
+    in
+    let transitive_callees = TransitiveCallees.join callees transitive_callees in
+    let transitive_missed_captures =
+      Typ.Name.Set.union missed_captures transitive_missed_captures
+    in
+    {dropped_transitive_accesses; transitive_callees; transitive_missed_captures}
+
+
+  let apply_summary ~callee_pname ~call_loc ~summary
+      ({dropped_transitive_accesses; transitive_callees} as astate_n) =
+    let dropped_transitive_accesses =
+      Trace.Set.map_callee (CallEvent.Call callee_pname) call_loc
+        summary.dropped_transitive_accesses
+      |> Trace.Set.union dropped_transitive_accesses
+    in
+    let transitive_callees = TransitiveCallees.join transitive_callees summary.transitive_callees in
+    {astate_n with dropped_transitive_accesses; transitive_callees}
+end
+
+module InterDom = struct
+  include AbstractDomain.TopLifted (InterDomElt)
+
+  let bottom = NonTop InterDomElt.bottom
+
+  let is_bottom = get ~default:false InterDomElt.is_bottom
+
+  let remember_dropped_elements accesses callees missed_captures =
+    map (InterDomElt.remember_dropped_elements accesses callees missed_captures)
+
+
+  let apply_summary ~callee_pname ~call_loc ~summary non_disj =
+    match (non_disj, summary) with
+    | Top, _ | _, Top ->
+        Top
+    | NonTop non_disj, NonTop summary ->
+        NonTop (InterDomElt.apply_summary ~callee_pname ~call_loc ~summary non_disj)
+end
+
+type t = {intra: IntraDom.t; inter: InterDom.t} [@@deriving abstract_domain]
+
+let pp fmt {intra; inter} = F.fprintf fmt "@[%a,@ %a@]" IntraDom.pp intra InterDom.pp inter
+
+let bottom = {intra= IntraDom.bottom; inter= InterDom.bottom}
+
+let is_bottom {intra; inter} = IntraDom.is_bottom intra && InterDom.is_bottom inter
+
+let top = {intra= IntraDom.top; inter= InterDom.top}
+
+let is_top {intra; inter} = IntraDom.is_top intra && InterDom.is_top inter
+
+let map_intra f ({intra} as x) = {x with intra= f intra}
+
+let map_inter f ({inter} as x) = {x with inter= f inter}
 
 let mark_copy_as_modified ~is_modified ~copied_into ~source_addr_opt =
-  map (mark_copy_as_modified_elt ~is_modified ~copied_into ~source_addr_opt)
-
-
-let mark_parameter_as_modified_elt ~is_modified ~var ({parameter_map} as astate_n) =
-  let parameter_map =
-    match ParameterMap.find_opt var parameter_map with
-    | Some (Unmodified {heap= copy_heap}) when is_modified copy_heap Timestamp.t0 ->
-        Logging.d_printfln_escaped "Parameter %a modified!" Var.pp var ;
-        ParameterMap.add var Modified parameter_map
-    | _ ->
-        parameter_map
-  in
-  {astate_n with parameter_map}
+  map_intra (IntraDom.mark_copy_as_modified ~is_modified ~copied_into ~source_addr_opt)
 
 
 let mark_parameter_as_modified ~is_modified ~var =
-  map (mark_parameter_as_modified_elt ~is_modified ~var)
+  map_intra (IntraDom.mark_parameter_as_modified ~is_modified ~var)
 
 
-let checked_via_dtor_elt var astate_n =
-  {astate_n with destructor_checked= DestructorChecked.add var astate_n.destructor_checked}
+let checked_via_dtor var = map_intra (IntraDom.checked_via_dtor var)
+
+let get_copied ~ref_formals ~ptr_formals {intra} =
+  IntraDom.get_copied ~ref_formals ~ptr_formals intra
 
 
-let checked_via_dtor var = map (checked_via_dtor_elt var)
+let get_const_refable_parameters {intra} = IntraDom.get_const_refable_parameters intra
 
-module CopiedSet = PrettyPrintable.MakePPSet (Attribute.CopiedInto)
-
-let is_never_used_after_copy_into_intermediate_or_field pvar (copied_timestamp : Timestamp.t)
-    astate_n =
-  match astate_n with
-  | Top ->
-      false
-  | NonTop {passed_to; loads; stores} ->
-      let is_after_copy =
-        TrackedLoc.exists (fun _ timestamp -> (copied_timestamp :> int) < (timestamp :> int))
-      in
-      let source_var = Var.of_pvar pvar in
-      let is_passed_to_non_destructor_after_copy =
-        PassedTo.find source_var passed_to
-        |> CalleesWithLoc.exists (fun callee tracked_loc ->
-               match callee with
-               | V {callee} ->
-                   is_after_copy tracked_loc && not (Procname.is_destructor callee)
-               | Unknown ->
-                   false )
-      in
-      let is_loaded_after_copy = Loads.get_loaded_locations source_var loads |> is_after_copy in
-      let is_stored_after_copy = Stores.find pvar stores |> is_after_copy in
-      not (is_loaded_after_copy || is_stored_after_copy || is_passed_to_non_destructor_after_copy)
+let add_var copied_into ~source_addr_opt res =
+  map_intra (IntraDom.add_var copied_into ~source_addr_opt res)
 
 
-let is_lvalue_ref_param ~ref_formals pvar =
-  Option.exists (List.Assoc.find ref_formals ~equal:Pvar.equal pvar) ~f:(fun typ ->
-      not (Typ.is_rvalue_reference typ) )
-
-
-let get_copied ~ref_formals ~ptr_formals astate_n =
-  match astate_n with
-  | Top ->
-      []
-  | NonTop {copy_map; captured} ->
-      let modified =
-        CopyMap.fold
-          (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
-            match copy_spec with Modified _ -> CopiedSet.add copied_into acc | Copied _ -> acc )
-          copy_map CopiedSet.empty
-      in
-      let is_captured copy_into =
-        match (copy_into : Attribute.CopiedInto.t) with
-        | IntoVar {copied_var= ProgramVar pvar} ->
-            Captured.mem pvar captured
-        | _ ->
-            false
-      in
-      CopyMap.fold
-        (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
-          match (copied_into, copy_spec) with
-          | _, Copied _ when CopiedSet.mem copied_into modified || is_captured copied_into ->
-              acc
-          | ( (IntoField _ | IntoIntermediate _)
-            , ( Copied
-                  { location
-                  ; copied_location
-                  ; source_typ
-                  ; source_opt= Some (PVar pvar, _) as source_opt
-                  ; from
-                  ; timestamp= copied_timestamp }
-              | Modified
-                  { location
-                  ; copied_location
-                  ; source_typ
-                  ; source_opt= Some (PVar pvar, _) as source_opt
-                  ; from
-                  ; copied_timestamp } ) ) ->
-              if
-                (not (Pvar.is_global pvar))
-                && (not (is_lvalue_ref_param ~ref_formals pvar))
-                && (not (List.Assoc.mem ptr_formals ~equal:Pvar.equal pvar))
-                && is_never_used_after_copy_into_intermediate_or_field pvar copied_timestamp
-                     astate_n
-              then
-                (* if source var is never used later on, we can still suggest removing the copy even though the copy is modified *)
-                (copied_into, source_typ, source_opt, location, copied_location, from) :: acc
-              else acc
-          | _, Copied {location; copied_location; source_typ; source_opt; from} ->
-              (copied_into, source_typ, source_opt, location, copied_location, from) :: acc
-          | _, Modified _ ->
-              acc )
-        copy_map []
-
-
-let get_const_refable_parameters = function
-  | Top ->
-      []
-  | NonTop {parameter_map; captured; loads; passed_to} ->
-      ParameterMap.fold
-        (fun var (parameter_spec_t : ParameterSpec.t) acc ->
-          if Captured.is_captured_by_ref var captured then acc
-          else if
-            (Loads.is_loaded var loads || Captured.mem_var var captured)
-            && (not (PassedTo.is_copied_to_field_or_global var passed_to))
-            && not (PassedTo.is_moved var passed_to)
-          then
-            match parameter_spec_t with
-            | Modified ->
-                acc
-            | Unmodified {location; typ= copied_source_typ} ->
-                (var, copied_source_typ, location) :: acc
-          else acc )
-        parameter_map []
-
-
-let add_var_elt copied_into ~source_addr_opt (res : copy_spec_t) astate_n =
-  {astate_n with copy_map= CopyMap.add {copied_into; source_addr_opt} res astate_n.copy_map}
-
-
-let remove_var_elt var astate_n = {astate_n with copy_map= CopyMap.remove_var var astate_n.copy_map}
-
-let add_var copied_into ~source_addr_opt res = map (add_var_elt copied_into ~source_addr_opt res)
-
-let remove_var var = map (remove_var_elt var)
-
-let add_field_elt copied_field ~source_addr_opt (res : copy_spec_t) astate_n =
-  { astate_n with
-    copy_map=
-      CopyMap.add
-        {copied_into= IntoField {field= copied_field}; source_addr_opt}
-        res astate_n.copy_map }
-
+let remove_var var = map_intra (IntraDom.remove_var var)
 
 let add_field copied_field ~source_addr_opt res =
-  map (add_field_elt copied_field ~source_addr_opt res)
+  map_intra (IntraDom.add_field copied_field ~source_addr_opt res)
 
 
-let add_parameter_elt parameter_var (res : parameter_spec_t) astate_n =
-  {astate_n with parameter_map= ParameterMap.add parameter_var res astate_n.parameter_map}
+let add_parameter parameter_var res = map_intra (IntraDom.add_parameter parameter_var res)
 
+let is_checked_via_dtor var {intra} = IntraDom.is_checked_via_dtor var intra
 
-let add_parameter parameter_var res = map (add_parameter_elt parameter_var res)
+let set_captured_variables exp = map_intra (IntraDom.set_captured_variables exp)
 
-let is_checked_via_dtor var = function
-  | Top ->
-      true
-  | NonTop {destructor_checked} ->
-      DestructorChecked.mem var destructor_checked
+let set_locked = map_intra IntraDom.set_locked
 
-
-let set_captured_variables_elt exp astate_n =
-  match exp with
-  | Exp.Closure {captured_vars} ->
-      List.fold captured_vars ~init:astate_n ~f:(fun astate_n (_, pvar, _, mode) ->
-          {astate_n with captured= Captured.add pvar mode astate_n.captured} )
-  | _ ->
-      astate_n
-
-
-let set_captured_variables exp = map (set_captured_variables_elt exp)
-
-let set_locked_elt astate_n = {astate_n with locked= true}
-
-let set_locked = map set_locked_elt
-
-let is_locked = function Top -> true | NonTop {locked} -> locked
-
-let set_load_elt loc tstamp ident var astate_n =
-  {astate_n with loads= Loads.add loc tstamp ident var astate_n.loads}
-
+let is_locked {intra} = IntraDom.is_locked intra
 
 let set_load loc tstamp ident var astate_n =
-  if Ident.is_none ident then astate_n else map (set_load_elt loc tstamp ident var) astate_n
+  if Ident.is_none ident then astate_n
+  else map_intra (IntraDom.set_load loc tstamp ident var) astate_n
 
 
-let set_store_elt loc timestamp var astate_n =
-  {astate_n with stores= Stores.add var loc timestamp astate_n.stores}
+let set_store loc tstamp var = map_intra (IntraDom.set_store loc tstamp var)
 
-
-let set_store loc tstamp var astate_n = map (set_store_elt loc tstamp var) astate_n
-
-let get_loaded_locations var = function
-  | Top ->
-      []
-  | NonTop {loads} ->
-      Loads.get_loaded_locations var loads |> TrackedLoc.get_all_keys
-
-
-let is_captured var astate_n =
-  match ((var : Var.t), astate_n) with
-  | LogicalVar _, _ ->
-      false
-  | ProgramVar x, NonTop {captured} ->
-      Captured.mem x captured
-  | ProgramVar _, Top ->
-      true
-
-
-let set_passed_to_elt loc timestamp call_exp actuals ({loads; passed_to} as astate_n) =
-  let new_callee =
-    match (call_exp : Exp.t) with
-    | Const (Cfun callee) | Closure {name= callee} ->
-        let copy_tgt =
-          match actuals with
-          | (tgt, _) :: _
-            when Option.exists (IRAttributes.load callee) ~f:(fun attrs ->
-                     attrs.ProcAttributes.is_cpp_copy_ctor
-                     || attrs.ProcAttributes.is_cpp_copy_assignment
-                     || attrs.ProcAttributes.is_cpp_move_ctor ) ->
-              Some tgt
-          | _ ->
-              None
-        in
-        CalleeWithUnknown.V {copy_tgt; callee}
-    | _ ->
-        CalleeWithUnknown.Unknown
-  in
-  let vars =
-    List.fold actuals ~init:Var.Set.empty ~f:(fun acc (actual, _) ->
-        match (actual : Exp.t) with
-        | Lvar pvar when not (Pvar.is_frontend_tmp pvar) ->
-            Var.Set.add (Var.of_pvar pvar) acc
-        | Var ident ->
-            List.fold (Loads.get_all ident loads) ~init:acc ~f:(fun acc var -> Var.Set.add var acc)
-        | _ ->
-            acc )
-  in
-  let passed_to =
-    Var.Set.fold (fun var acc -> PassedTo.add var new_callee loc timestamp acc) vars passed_to
-  in
-  {astate_n with passed_to}
-
+let get_loaded_locations var {intra} = IntraDom.get_loaded_locations var intra
 
 let set_passed_to loc timestamp call_exp actuals =
-  map (set_passed_to_elt loc timestamp call_exp actuals)
+  map_intra (IntraDom.set_passed_to loc timestamp call_exp actuals)
 
 
-let get_passed_to var ~f = function
-  | Top ->
-      `Top
-  | NonTop {passed_to} ->
-      let callees =
-        PassedTo.find var passed_to |> CalleesWithLoc.filter (fun callee _ -> f callee)
-      in
-      `PassedTo callees
+let is_lifetime_extended var {intra} = IntraDom.is_lifetime_extended var intra
+
+let remember_dropped_elements accesses callees missed_captures =
+  map_inter (InterDom.remember_dropped_elements accesses callees missed_captures)
 
 
-let is_lifetime_extended var astate_n =
-  is_captured var astate_n
-  ||
-  match
-    get_passed_to var astate_n ~f:(function
-      | CalleeWithUnknown.V {callee} ->
-          not (Procname.is_shared_ptr_observer callee)
-      | CalleeWithUnknown.Unknown ->
-          true )
-  with
-  | `Top ->
-      true
-  | `PassedTo callees ->
-      not (CalleesWithLoc.is_empty callees)
+let quick_join lhs rhs =
+  if phys_equal lhs bottom then rhs else if phys_equal rhs bottom then lhs else join lhs rhs
 
 
 let bind (execs, non_disj) ~f =
   List.rev execs
   |> List.fold ~init:([], bottom) ~f:(fun (acc, joined_non_disj) elt ->
          let l, new_non_disj = f elt non_disj in
-         (l @ acc, join joined_non_disj new_non_disj) )
+         (l @ acc, quick_join joined_non_disj new_non_disj) )
 
 
-let remember_dropped_elements accesses callees missed_captures (non_disj : t) =
-  match non_disj with
-  | Top ->
-      Top
-  | NonTop
-      ({dropped_transitive_accesses; transitive_callees; transitive_missed_captures} as non_disj) ->
-      let dropped_transitive_accesses =
-        DroppedTransitiveAccesses.union accesses dropped_transitive_accesses
-      in
-      let transitive_callees = TransitiveCallees.join callees transitive_callees in
-      let transitive_missed_captures =
-        Typ.Name.Set.union missed_captures transitive_missed_captures
-      in
-      NonTop
-        {non_disj with dropped_transitive_accesses; transitive_callees; transitive_missed_captures}
+type summary = InterDom.t [@@deriving abstract_domain]
 
+let make_summary {inter} = inter
 
-module SummaryElt = struct
-  type t =
-    { transitive_callees: TransitiveCallees.t
-    ; dropped_transitive_accesses: DroppedTransitiveAccesses.t
-    ; transitive_missed_captures: TransitiveMissedCapture.t }
-  [@@deriving abstract_domain]
-
-  let bottom =
-    { transitive_callees= TransitiveCallees.bottom
-    ; transitive_missed_captures= Typ.Name.Set.empty
-    ; dropped_transitive_accesses= DroppedTransitiveAccesses.bottom }
-
-
-  let is_bottom {transitive_callees; dropped_transitive_accesses} =
-    TransitiveCallees.is_bottom transitive_callees
-    && DroppedTransitiveAccesses.is_bottom dropped_transitive_accesses
-
-
-  let pp fmt {transitive_callees; dropped_transitive_accesses} =
-    F.fprintf fmt "@[@[calls history: %a@],@ @[dropped transitive accesses: %a@]@]"
-      TransitiveCallees.pp transitive_callees DroppedTransitiveAccesses.pp
-      dropped_transitive_accesses
-end
-
-type summary = SummaryElt.t top_lifted
-
-let make_summary (non_disj : t) : summary =
-  match non_disj with
-  | Top ->
-      Top
-  | NonTop {transitive_callees; dropped_transitive_accesses; transitive_missed_captures} ->
-      NonTop {transitive_callees; dropped_transitive_accesses; transitive_missed_captures}
-
-
-let apply_summary ~callee_pname ~call_loc (non_disj : t) (summary : summary) =
-  match (non_disj, summary) with
-  | Top, _ | _, Top ->
-      Top
-  | NonTop ({dropped_transitive_accesses; transitive_callees} as non_dis), NonTop summary ->
-      let dropped_transitive_accesses =
-        Trace.Set.map_callee (CallEvent.Call callee_pname) call_loc
-          summary.dropped_transitive_accesses
-        |> Trace.Set.union dropped_transitive_accesses
-      in
-      let transitive_callees =
-        TransitiveCallees.join transitive_callees summary.transitive_callees
-      in
-      NonTop {non_dis with dropped_transitive_accesses; transitive_callees}
+let apply_summary ~callee_pname ~call_loc non_disj summary =
+  map_inter (InterDom.apply_summary ~callee_pname ~call_loc ~summary) non_disj
 
 
 module Summary = struct
-  include AbstractDomain.TopLifted (SummaryElt)
+  type t = summary [@@deriving abstract_domain]
 
-  let bottom = NonTop SummaryElt.bottom
+  let pp fmt = function
+    | Top ->
+        AbstractDomain.TopLiftedUtils.pp_top fmt
+    | NonTop
+        {InterDomElt.dropped_transitive_accesses; transitive_callees; transitive_missed_captures} ->
+        F.fprintf fmt
+          "@[@[calls history: %a@],@ @[dropped transitive accesses: %a@],@ @[transitive missed \
+           captures: %a@]@]"
+          TransitiveCallees.pp transitive_callees DroppedTransitiveAccesses.pp
+          dropped_transitive_accesses Typ.Name.Set.pp transitive_missed_captures
 
-  let is_bottom (x : t) =
-    match x with Top -> false | NonTop summary -> SummaryElt.is_bottom summary
 
+  let bottom = InterDom.bottom
+
+  let is_bottom = InterDom.is_bottom
 
   let iter_on_transitive_accesses_if_not_top (x : t) ~f =
     match x with

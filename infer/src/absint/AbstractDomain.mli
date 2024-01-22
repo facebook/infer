@@ -116,6 +116,8 @@ module TopLifted (Domain : S) : sig
   include WithTop with type t = Domain.t top_lifted
 
   val map : (Domain.t -> Domain.t) -> t -> t
+
+  val get : default:'a -> (Domain.t -> 'a) -> t -> 'a
 end
 
 module TopLiftedUtils : sig
