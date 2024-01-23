@@ -1741,20 +1741,16 @@ and genrule_mode =
     "Enable the genrule compatibility mode used for the Buck integration"
 
 
-and hackc_binary =
-  CLOpt.mk_string ~long:"hackc-binary" ~default:"hackc" ~meta:"path"
-    "Specify hackc binary to use (either name or path)"
-
+and hackc_binary = CLOpt.mk_path_opt ~long:"hackc-binary" "Specify hackc binary to use"
 
 and hack_builtin_models =
-  CLOpt.mk_string ~long:"hack-builtin-models" ~default:default_hack_builtin_models
+  CLOpt.mk_path ~long:"hack-builtin-models" ~default:default_hack_builtin_models
     "Specify .sil file to use as Hack builtin models (uses bundled models by default)"
 
 
 and hack_models =
-  CLOpt.mk_string_list ~long:"hack-models"
-    "Specify .sil and .hack files to use as Hack models on top of builtins. Relative filenames are \
-     resolved against project's root"
+  CLOpt.mk_path_list ~long:"hack-models"
+    "Specify .sil and .hack files to use as Hack models on top of builtins"
 
 
 and hack_naming_table =

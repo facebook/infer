@@ -2457,13 +2457,13 @@ INTERNAL OPTIONS
            Activates: Enable the genrule compatibility mode used for the Buck
            integration (Conversely: --no-genrule-mode)
 
-       --hack-builtin-models string
+       --hack-builtin-models path
            Specify .sil file to use as Hack builtin models (uses bundled
            models by default)
 
-       --hack-models +string
+       --hack-models +path
            Specify .sil and .hack files to use as Hack models on top of
-           builtins. Relative filenames are resolved against project's root
+           builtins
 
        --hack-models-reset
            Set --hack-models to the empty list.
@@ -2475,7 +2475,10 @@ INTERNAL OPTIONS
            Cancel the effect of --hack-naming-table.
 
        --hackc-binary path
-           Specify hackc binary to use (either name or path)
+           Specify hackc binary to use
+
+       --hackc-binary-reset
+           Cancel the effect of --hackc-binary.
 
        --help-checker-reset
            Set --help-checker to the empty list.

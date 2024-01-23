@@ -413,7 +413,7 @@ val global_tenv : bool
 
 val hack_naming_table : string option [@@warning "-unused-value-declaration"]
 
-val hackc_binary : string
+val hackc_binary : string option
 
 val hack_builtin_models : string
 

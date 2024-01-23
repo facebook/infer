@@ -460,9 +460,7 @@ let load_hack_models compiler filenames =
 let load_models compiler =
   let builtins = Config.hack_builtin_models in
   let textual, hack =
-    Config.hack_models
-    |> List.map ~f:(Utils.filename_to_absolute ~root:Config.project_root)
-    |> List.partition_tf ~f:(String.is_suffix ~suffix:TextualSil.textual_ext)
+    Config.hack_models |> List.partition_tf ~f:(String.is_suffix ~suffix:TextualSil.textual_ext)
   in
   let textual_tenv = load_textual_models (builtins :: textual) in
   let hack_tenv = load_hack_models compiler hack in
@@ -473,7 +471,10 @@ let capture ~prog ~args =
   if List.exists args ~f:(fun arg -> String.equal arg textual_subcommand) then (
     (* In force_integration mode we should use whatever program is provided on the command line to
        support cases where hackc is invoked via buck run or similar. *)
-    let compiler = if Option.is_some Config.force_integration then prog else Config.hackc_binary in
+    let compiler =
+      if Option.is_some Config.force_integration then prog
+      else Option.value Config.hackc_binary ~default:"hackc"
+    in
     let captured_tenv = compile compiler args ~process_output:process_output_in_parallel in
     let textual_model_tenv, hack_model_tenv = load_models compiler in
     Tenv.merge ~src:hack_model_tenv ~dst:captured_tenv ;
