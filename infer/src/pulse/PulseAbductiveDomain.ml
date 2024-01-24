@@ -2319,8 +2319,12 @@ module Topl = struct
 end
 
 let add_missed_captures missed_captures ({transitive_missed_captures} as astate) =
-  let transitive_missed_captures = Typ.Name.Set.union missed_captures transitive_missed_captures in
-  {astate with transitive_missed_captures}
+  if Config.pulse_monitor_transitive_missed_captures then
+    let transitive_missed_captures =
+      Typ.Name.Set.union missed_captures transitive_missed_captures
+    in
+    {astate with transitive_missed_captures}
+  else astate
 
 
 let add_skipped_call pname trace astate =

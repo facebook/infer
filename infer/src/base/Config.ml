@@ -2476,6 +2476,13 @@ and pulse_monitor_transitive_callees =
      Should only be used for debugging purpose due to its potential large size."
 
 
+and pulse_monitor_transitive_missed_captures =
+  CLOpt.mk_bool ~long:"pulse-monitor-transitive-missed-captures" ~default:false
+    "Record the transitive name resolutions that may have been altered or have failed becaud a \
+     type was not captured. The list of types is output them in PULSE_TRANSITIVE_ACCESS signals. \
+     Should only be used for debugging purpose due to its potential large size."
+
+
 and pulse_prevent_non_disj_top =
   CLOpt.mk_bool ~long:"pulse-prevent-non-disj-top" ~default:false
     "Forcibly prevent non-disjunctive domain value from becoming top. Without this option, \
@@ -4295,6 +4302,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
 and pulse_models_for_erlang = RevList.to_list !pulse_models_for_erlang
 
 and pulse_monitor_transitive_callees = !pulse_monitor_transitive_callees
+
+and pulse_monitor_transitive_missed_captures = !pulse_monitor_transitive_missed_captures
 
 and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
 

@@ -2735,6 +2735,14 @@ INTERNAL OPTIONS
            debugging purpose due to its potential large size. (Conversely:
            --no-pulse-monitor-transitive-callees)
 
+       --pulse-monitor-transitive-missed-captures
+           Activates: Record the transitive name resolutions that may have
+           been altered or have failed becaud a type was not captured. The
+           list of types is output them in PULSE_TRANSITIVE_ACCESS signals.
+           Should only be used for debugging purpose due to its potential
+           large size. (Conversely:
+           --no-pulse-monitor-transitive-missed-captures)
+
        --pulse-prevent-non-disj-top
            Activates: Forcibly prevent non-disjunctive domain value from
            becoming top. Without this option, non-disjunctive domain value
