@@ -35,23 +35,23 @@ let report tenv ~is_suppressed ~latent proc_desc err_log diagnostic =
     let extras =
       let transitive_callees, transitive_missed_captures =
         let get_kind = function
-          | TransitiveCallees.Static ->
+          | TransitiveInfo.Callees.Static ->
               `Static
-          | TransitiveCallees.Virtual ->
+          | TransitiveInfo.Callees.Virtual ->
               `Virtual
-          | TransitiveCallees.Closure ->
+          | TransitiveInfo.Callees.Closure ->
               `Closure
         in
         let get_resolution = function
-          | TransitiveCallees.ResolvedUsingDynamicType ->
+          | TransitiveInfo.Callees.ResolvedUsingDynamicType ->
               `ResolvedUsingDynamicType
-          | TransitiveCallees.ResolvedUsingStaticType ->
+          | TransitiveInfo.Callees.ResolvedUsingStaticType ->
               `ResolvedUsingStaticType
-          | TransitiveCallees.Unresolved ->
+          | TransitiveInfo.Callees.Unresolved ->
               `Unresolved
         in
-        let get_item {TransitiveCallees.callsite_loc; caller_name; caller_loc; kind; resolution} :
-            Jsonbug_t.transitive_callee =
+        let get_item {TransitiveInfo.Callees.callsite_loc; caller_name; caller_loc; kind; resolution}
+            : Jsonbug_t.transitive_callee =
           let callsite_filename = SourceFile.to_abs_path callsite_loc.file in
           let callsite_absolute_position_in_file = callsite_loc.line in
           let callsite_relative_position_in_caller = callsite_loc.line - caller_loc.line in
@@ -65,7 +65,7 @@ let report tenv ~is_suppressed ~latent proc_desc err_log diagnostic =
         let get_missed_capture_item class_name = {Jsonbug_t.class_name= Typ.Name.name class_name} in
         match diagnostic with
         | TransitiveAccess {transitive_callees; transitive_missed_captures} ->
-            ( TransitiveCallees.report_as_extra_info transitive_callees |> List.map ~f:get_item
+            ( TransitiveInfo.Callees.report_as_extra_info transitive_callees |> List.map ~f:get_item
             , Typ.Name.Set.elements transitive_missed_captures
               |> List.map ~f:get_missed_capture_item )
         | _ ->

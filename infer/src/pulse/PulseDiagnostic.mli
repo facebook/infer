@@ -14,7 +14,7 @@ module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module TaintItem = PulseTaintItem
 module Trace = PulseTrace
-module TransitiveCallees = PulseTransitiveCallees
+module TransitiveInfo = PulseTransitiveInfo
 module ValueHistory = PulseValueHistory
 
 type calling_context = (CallEvent.t * Location.t) list [@@deriving compare, equal]
@@ -81,7 +81,7 @@ type t =
       { tag: string
       ; description: string
       ; call_trace: Trace.t
-      ; transitive_callees: TransitiveCallees.t
+      ; transitive_callees: TransitiveInfo.Callees.t
       ; transitive_missed_captures: Typ.Name.Set.t }
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}

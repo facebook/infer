@@ -15,7 +15,7 @@ module DecompilerExpr = PulseDecompilerExpr
 module Invalidation = PulseInvalidation
 module TaintItem = PulseTaintItem
 module Trace = PulseTrace
-module TransitiveCallees = PulseTransitiveCallees
+module TransitiveInfo = PulseTransitiveInfo
 module ValueHistory = PulseValueHistory
 
 type calling_context = (CallEvent.t * Location.t) list [@@deriving compare, equal]
@@ -134,7 +134,7 @@ type t =
       { tag: string
       ; description: string
       ; call_trace: Trace.t
-      ; transitive_callees: TransitiveCallees.t [@ignore]
+      ; transitive_callees: TransitiveInfo.Callees.t [@ignore]
       ; transitive_missed_captures: Typ.Name.Set.t [@ignore] }
   | JavaResourceLeak of
       {class_name: JavaClassName.t; allocation_trace: Trace.t; location: Location.t}
@@ -196,8 +196,8 @@ let pp fmt diagnostic =
       F.fprintf fmt "TransitiveAccess {@[tag=%s;description=%s;call_trace:%a%t%t@]}" tag description
         (Trace.pp ~pp_immediate) call_trace
         (fun fmt ->
-          if TransitiveCallees.is_bottom transitive_callees then ()
-          else TransitiveCallees.pp fmt transitive_callees )
+          if TransitiveInfo.Callees.is_bottom transitive_callees then ()
+          else TransitiveInfo.Callees.pp fmt transitive_callees )
         (fun fmt ->
           if Typ.Name.Set.is_empty transitive_missed_captures then ()
           else Typ.Name.Set.pp fmt transitive_missed_captures )

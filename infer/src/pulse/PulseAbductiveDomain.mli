@@ -70,7 +70,7 @@ type t = private
         (** a set of abstract values that are used as receiver of method calls in the instructions
             reached so far *)
   ; transitive_accesses: Trace.Set.t  (** record specific acceses inter-procedurally *)
-  ; transitive_callees: TransitiveCallees.t
+  ; transitive_callees: TransitiveInfo.Callees.t
         (** record all call resolutions that were transitively performed *)
   ; transitive_missed_captures: Typ.Name.Set.t
         (** record types that were missing during name resolution (fields/methods) while analysing
@@ -306,8 +306,8 @@ val record_call_resolution :
      caller_name:string
   -> caller_loc:Location.t
   -> callsite_loc:Location.t
-  -> TransitiveCallees.call_kind
-  -> TransitiveCallees.resolution
+  -> TransitiveInfo.Callees.call_kind
+  -> TransitiveInfo.Callees.resolution
   -> t
   -> t
 
@@ -348,7 +348,7 @@ module Summary : sig
 
   val get_transitive_accesses : summary -> Trace.Set.t
 
-  val get_transitive_callees : summary -> TransitiveCallees.t
+  val get_transitive_callees : summary -> TransitiveInfo.Callees.t
 
   val get_transitive_missed_captures : summary -> Typ.Name.Set.t
 

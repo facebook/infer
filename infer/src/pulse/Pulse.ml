@@ -520,7 +520,7 @@ module PulseTransferFunctions = struct
         resolve_parent_in_trait astate static_class_name
       else (Some static_class_name, astate)
     in
-    let record_call_resolution (_resolution : TransitiveCallees.resolution) astate =
+    let record_call_resolution (_resolution : TransitiveInfo.Callees.resolution) astate =
       (* TODO(dpichardie): record static call resolution here but for now we focus on virtual calls *)
       astate
     in

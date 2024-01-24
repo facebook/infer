@@ -80,7 +80,7 @@ type t =
   ; need_closure_specialization: bool
   ; need_dynamic_type_specialization: (AbstractValue.Set.t[@yojson.opaque])
   ; transitive_accesses: (Trace.Set.t[@yojson.opaque])
-  ; transitive_callees: (TransitiveCallees.t[@yojson.opaque])
+  ; transitive_callees: (TransitiveInfo.Callees.t[@yojson.opaque])
   ; transitive_missed_captures: (Typ.Name.Set.t[@yojson.opaque])
   ; skipped_calls: SkippedCalls.t }
 [@@deriving compare, equal, yojson_of]
@@ -119,7 +119,7 @@ let pp_ ~is_summary f
      Topl=%a@]"
     Formula.pp path_condition pp_pre_post pp_decompiler need_closure_specialization
     AbstractValue.Set.pp need_dynamic_type_specialization pp_transitive_acces transitive_accesses
-    TransitiveCallees.pp transitive_callees Typ.Name.Set.pp transitive_missed_captures
+    TransitiveInfo.Callees.pp transitive_callees Typ.Name.Set.pp transitive_missed_captures
     SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
 
 
@@ -139,7 +139,7 @@ let record_transitive_access location astate =
 let record_call_resolution ~caller_name ~caller_loc ~callsite_loc call_kind resolution astate =
   let {transitive_callees} = astate in
   let transitive_callees =
-    TransitiveCallees.record ~caller_name ~caller_loc ~callsite_loc call_kind resolution
+    TransitiveInfo.Callees.record ~caller_name ~caller_loc ~callsite_loc call_kind resolution
       transitive_callees
   in
   {astate with transitive_callees}
@@ -1582,7 +1582,7 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
     ; need_dynamic_type_specialization= AbstractValue.Set.empty
     ; topl= PulseTopl.start ()
     ; transitive_accesses= Trace.Set.empty
-    ; transitive_callees= TransitiveCallees.bottom
+    ; transitive_callees= TransitiveInfo.Callees.bottom
     ; transitive_missed_captures= Typ.Name.Set.empty
     ; skipped_calls= SkippedCalls.empty }
   in
@@ -2223,7 +2223,7 @@ module Summary = struct
 
   let transfer_transitive_callees_to_caller astate summary =
     let transitive_callees =
-      TransitiveCallees.join astate.transitive_callees summary.transitive_callees
+      TransitiveInfo.Callees.join astate.transitive_callees summary.transitive_callees
     in
     {astate with transitive_callees}
 

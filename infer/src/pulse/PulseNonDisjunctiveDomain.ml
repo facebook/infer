@@ -633,7 +633,7 @@ module TransitiveMissedCapture = AbstractDomain.FiniteSetOfPPSet (Typ.Name.Set)
 module InterDomElt = struct
   type t =
     { dropped_transitive_accesses: DroppedTransitiveAccesses.t
-    ; transitive_callees: TransitiveCallees.t
+    ; transitive_callees: TransitiveInfo.Callees.t
     ; transitive_missed_captures: TransitiveMissedCapture.t }
   [@@deriving abstract_domain]
 
@@ -641,19 +641,19 @@ module InterDomElt = struct
     F.fprintf fmt
       "@[@[dropped transitive accesses: %a@],@ @[transitive callees: %a@],@ @[transitive missed \
        captures: %a@]@]"
-      DroppedTransitiveAccesses.pp dropped_transitive_accesses TransitiveCallees.pp
+      DroppedTransitiveAccesses.pp dropped_transitive_accesses TransitiveInfo.Callees.pp
       transitive_callees Typ.Name.Set.pp transitive_missed_captures
 
 
   let bottom =
     { dropped_transitive_accesses= DroppedTransitiveAccesses.empty
-    ; transitive_callees= TransitiveCallees.bottom
+    ; transitive_callees= TransitiveInfo.Callees.bottom
     ; transitive_missed_captures= Typ.Name.Set.empty }
 
 
   let is_bottom {dropped_transitive_accesses; transitive_callees; transitive_missed_captures} =
     DroppedTransitiveAccesses.is_bottom dropped_transitive_accesses
-    && TransitiveCallees.is_bottom transitive_callees
+    && TransitiveInfo.Callees.is_bottom transitive_callees
     && Typ.Name.Set.is_empty transitive_missed_captures
 
 
@@ -662,7 +662,7 @@ module InterDomElt = struct
     let dropped_transitive_accesses =
       DroppedTransitiveAccesses.union accesses dropped_transitive_accesses
     in
-    let transitive_callees = TransitiveCallees.join callees transitive_callees in
+    let transitive_callees = TransitiveInfo.Callees.join callees transitive_callees in
     let transitive_missed_captures =
       Typ.Name.Set.union missed_captures transitive_missed_captures
     in
@@ -676,7 +676,9 @@ module InterDomElt = struct
         summary.dropped_transitive_accesses
       |> Trace.Set.union dropped_transitive_accesses
     in
-    let transitive_callees = TransitiveCallees.join transitive_callees summary.transitive_callees in
+    let transitive_callees =
+      TransitiveInfo.Callees.join transitive_callees summary.transitive_callees
+    in
     let transitive_missed_captures =
       TransitiveMissedCapture.join transitive_missed_captures summary.transitive_missed_captures
     in
@@ -803,7 +805,7 @@ module Summary = struct
         F.fprintf fmt
           "@[@[calls history: %a@],@ @[dropped transitive accesses: %a@],@ @[transitive missed \
            captures: %a@]@]"
-          TransitiveCallees.pp transitive_callees DroppedTransitiveAccesses.pp
+          TransitiveInfo.Callees.pp transitive_callees DroppedTransitiveAccesses.pp
           dropped_transitive_accesses Typ.Name.Set.pp transitive_missed_captures
 
 
