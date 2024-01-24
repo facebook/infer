@@ -670,14 +670,17 @@ module InterDomElt = struct
 
 
   let apply_summary ~callee_pname ~call_loc ~summary
-      ({dropped_transitive_accesses; transitive_callees} as astate_n) =
+      {dropped_transitive_accesses; transitive_callees; transitive_missed_captures} =
     let dropped_transitive_accesses =
       Trace.Set.map_callee (CallEvent.Call callee_pname) call_loc
         summary.dropped_transitive_accesses
       |> Trace.Set.union dropped_transitive_accesses
     in
     let transitive_callees = TransitiveCallees.join transitive_callees summary.transitive_callees in
-    {astate_n with dropped_transitive_accesses; transitive_callees}
+    let transitive_missed_captures =
+      TransitiveMissedCapture.join transitive_missed_captures summary.transitive_missed_captures
+    in
+    {dropped_transitive_accesses; transitive_callees; transitive_missed_captures}
 end
 
 module InterDom = struct
