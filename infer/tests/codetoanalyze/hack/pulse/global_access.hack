@@ -207,6 +207,17 @@ final class TooMuchDisjuncts extends EventHandler {
     $o->bomb1($choice0, $choice1, $choice2, $activate, $a);
   }
 
+  public function call_one_signal_bad(
+    Helper $o,
+    bool $choice0,
+    bool $choice1,
+    bool $choice2,
+    bool $choice3,
+    A $a,
+  ): void {
+    $this->one_signal_bad($o, $choice0, $choice1, $choice2, $choice3, $a);
+  }
+
   public function one_signal_bad_flipped(
     Helper $o,
     bool $choice0,
