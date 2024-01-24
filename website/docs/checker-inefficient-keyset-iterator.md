@@ -8,6 +8,7 @@ Check for inefficient uses of iterators that iterate on keys then lookup their v
 Activate with `--inefficient-keyset-iterator`.
 
 Supported languages:
+
 - C/C++/ObjC: No
 - C#/.Net: No
 - Erlang: No
@@ -15,9 +16,8 @@ Supported languages:
 - Java: Yes
 - Python: No
 
-
-
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+
 - [INEFFICIENT_KEYSET_ITERATOR](/docs/next/all-issue-types#inefficient_keyset_iterator)

@@ -188,4 +188,3 @@ Warns when values are used before having been initialized.
 **\*\*\*DEPRECATED\*\*\*** Uninitialized value checking has moved to Pulse.
 
 [Visit here for more information.](/docs/next/checker-uninit)
-

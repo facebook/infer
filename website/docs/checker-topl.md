@@ -8,12 +8,13 @@ Detect errors based on user-provided state machines describing temporal properti
 Activate with `--topl`.
 
 Supported languages:
-- C/C++/ObjC: Experimental
-- C#/.Net: No
-- Erlang: Experimental
-- Hack: No
-- Java: Experimental
-- Python: No
+
+* C/C++/ObjC: Experimental
+* C#/.Net: No
+* Erlang: Experimental
+* Hack: No
+* Java: Experimental
+* Python: No
 
 # Topl
 
@@ -32,7 +33,7 @@ property Taint
 This specifies an automaton called `Taint` that has three states (`start`, `tracking`, `error`). Two of those states (`start` and `error`) have special meaning; other states (`tracking`) can have any names. The first transition (`start → tracking`) is taken when a method called `source()` is called, and its return value is stored in a register called `x`; the second transition (`tracking → error`) is taken when a method called `sink()` is called, but only if its argument equals what was previously saved in register `x`.
 This property is violated in the following Java code:
 
-```
+```java
 public class Main {
   static void f() { g(tito(source())); }
   static void g(Object x) { h(x); }
@@ -45,13 +46,13 @@ public class Main {
 
 Note that `source()` and `sink()` are not called from the same method, and that the “dirty” object is passed around a few times before finally reaching the sink. Assuming that the property is in a file `taint.topl` and the Java code in a file `Main.java`, you can invoke Infer with the following command:
 
-```
+```console
 infer --topl --topl-properties taint.topl  -- javac Main.java
 ```
 
 It will display the following error:
 
-```
+```console
 Main.java:2: error: Topl Error
   property Taint reaches state error.
   1.   public class Main {
@@ -62,7 +63,7 @@ Main.java:2: error: Topl Error
 
 To get a full trace, use the command
 
-```
+```console
 infer explore
 ```
 
@@ -99,12 +100,13 @@ Otherwise, the label on a transition contains:
 There are two types of patterns:
 
 * a regex that matches method names
-    * if the regex uses non-letters (such as dots) it must be within double-quotes; otherwise, double quotes are optional
-    * the prefix declarations are used to add potential prefixes to the regex. The combine regex is essentially “(prefix_regex_a | prefix_regex_b) transition_pattern_regex“
-    * for a method with n arguments, there must be n+1 transition variables to get a match. The first n transition variables get bound to the argument values, and the last transition variable gets bound to the return value. *This is true even for the case in which the return type is void*.
+  * if the regex uses non-letters (such as dots) it must be within double-quotes; otherwise, double quotes are optional
+  * the prefix declarations are used to add potential prefixes to the regex. The combine regex is essentially “(prefix_regex_a | prefix_regex_b) transition_pattern_regex“
+  * for a method with n arguments, there must be n+1 transition variables to get a match. The first n transition variables get bound to the argument values, and the last transition variable gets bound to the return value. *This is true even for the case in which the return type is void*.
 * the special keyword **#ArrayWrite**. In that case, there should be two transition variables like “(Array, Index)” — Array gets bound to the array object, and Index gets bound to the index at which the write happens.
 
 The condition supports the following kinds of expressions:
+
 * Referring to identifiers: transition variables and registers
 * Field access over objects in the form `Identifier:Type.FieldName`, e.g. `X:MyClass.myField` (this is currently only supported for Erlang)
 * Integer literals
@@ -117,12 +119,12 @@ For several examples, see https://github.com/facebook/infer/tree/main/infer/test
 
 * By design, some problems may be missed. Topl is built on Pulse, which attempts to minimize false positives, at the cost of sometimes having false negatives.
 * Analysis time increases exponentially with the number of registers used in properties.
-    * In theory, there should be no significant slowdown if registers belong to different properties, but the implementation is not yet optimized.
-    * If there are many registers within the same property, then the slowdown is unavoidable (without some significant breakthrough). However, the maximum number of registers we ever used for one practical property was 3.
-
+  * In theory, there should be no significant slowdown if registers belong to different properties, but the implementation is not yet optimized.
+  * If there are many registers within the same property, then the slowdown is unavoidable (without some significant breakthrough). However, the maximum number of registers we ever used for one practical property was 3.
 
 ## List of Issue Types
 
 The following issue types are reported by this checker:
-- [TOPL_ERROR](/docs/next/all-issue-types#topl_error)
-- [TOPL_ERROR_LATENT](/docs/next/all-issue-types#topl_error_latent)
+
+* [TOPL_ERROR](/docs/next/all-issue-types#topl_error)
+* [TOPL_ERROR_LATENT](/docs/next/all-issue-types#topl_error_latent)

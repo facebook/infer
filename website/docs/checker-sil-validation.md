@@ -8,6 +8,7 @@ This checker validates that all SIL instructions in all procedure bodies conform
 Activate with `--sil-validation`.
 
 Supported languages:
+
 - C/C++/ObjC: No
 - C#/.Net: No
 - Erlang: No
@@ -15,9 +16,8 @@ Supported languages:
 - Java: Yes
 - Python: No
 
-
-
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+
 - [INVALID_SIL](/docs/next/all-issue-types#invalid_sil)

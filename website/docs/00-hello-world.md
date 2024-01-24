@@ -81,7 +81,7 @@ infer run -- clang -c Hello.m
 
 You should see the following error reported by Infer.
 
-```
+```console
 Hello.m:10 NULL_DEREFERENCE
   pointer hello last assigned on line 9 could be null and is dereferenced at line 10, column 12
 ```
@@ -120,7 +120,7 @@ infer run -- gcc -c hello.c
 
 You should see the following error reported by Infer.
 
-```
+```console
 hello.c:5: error: NULL_DEREFERENCE
   pointer s last assigned on line 4 could be null and is dereferenced at line 5, column 10
 ```
@@ -217,7 +217,6 @@ There are three solutions to remedy this:
 
    This causes gradle to recompile everything each time, and subsequently Infer
    to capture all the files again.
-
 2. Run Infer indicating that the capture of compilation commands should
    continue, using option `--continue` (or `-c` for short).
 
@@ -225,9 +224,8 @@ There are three solutions to remedy this:
    infer run --continue -- ./gradlew build
    ```
 
-This makes Infer add the effects of the new compilation commands to the previous
+   This makes Infer add the effects of the new compilation commands to the previous
 ones, and start a new analysis of the entire code.
-
 3. Run Infer in reactive mode after a code change, using option `--reactive` (or
    `-r` for short).
 
@@ -248,13 +246,13 @@ Go to the sample iOS app in
 [`infer/examples/ios_hello`](https://github.com/facebook/infer/tree/main/examples/ios_hello/)
 and run Infer on it:
 
-```bash
+```console
 infer run -- xcodebuild -target HelloWorldApp -configuration Debug -sdk iphonesimulator
 ```
 
 Infer will output the list of found bugs:
 
-```bash
+```console
 AppDelegate.m:20: error: MEMORY_LEAK
    memory dynamically allocated to shadowPath by call to CGPathCreateWithRect() at line 20, column 28 is not reachable after line 20, column 5
 
@@ -285,14 +283,14 @@ running the command above a second time will yield no analysis results, as
 nothing gets recompiled. Either add the `--reactive` (or `-r`) flag to the
 `infer` command:
 
-```bash
+```console
 infer run --reactive -- xcodebuild -target HelloWorldApp -configuration Debug -sdk iphonesimulator
 ```
 
 or ask the build system to reinitialize the directory before running Infer
 again, using
 
-```bash
+```console
 xcodebuild -target HelloWorldApp -configuration Debug -sdk iphonesimulator clean
 ```
 
@@ -302,13 +300,13 @@ Go to the sample C project in
 [`infer/examples/c_hello`](https://github.com/facebook/infer/tree/main/examples/c_hello/)
 and run Infer on it:
 
-```bash
+```console
 infer run -- make
 ```
 
 Infer will output the list of found bugs:
 
-```bash
+```console
 example.c:22: error: NULL_DEREFERENCE
    pointer max last assigned on line 21 could be null and is dereferenced at line 22, column 10
 
@@ -330,13 +328,13 @@ running `infer run -- make` a second time will yield no analysis results, as
 nothing gets recompiled. Either add the `--reactive` (or `-r`) flag to the
 `infer` command:
 
-```bash
+```console
 infer run --reactive -- make
 ```
 
 or run
 
-```bash
+```console
 make clean
 ```
 

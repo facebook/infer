@@ -18,15 +18,15 @@ Using Docker is the fastest way: you do not need to clone the Infer repository a
 
 3. Within Docker, pull the latest version of infer, copy the /infer directory to your mount point, then fully build infer once:
 
-```shell
-cd /infer
-git branch --unset-upstream
-git pull
-git branch --set-upstream-to=origin/main master
-git pull
-cp -av /infer/. /infer-host
-make -C /infer-host -j 4
-```
+    ```shell
+    cd /infer
+    git branch --unset-upstream
+    git pull
+    git branch --set-upstream-to=origin/main master
+    git pull
+    cp -av /infer/. /infer-host
+    make -C /infer-host -j 4
+    ```
 
 4. Outside Docker, you will likely need to change the permissions of `$HOME/infer-docker` to make the files editable by your user: `sudo chown $USER -R $HOME/infer-docker`.
 
@@ -45,12 +45,11 @@ For Java, ensure that you have the following jar files in your `$CLASSPATH`:
 - infer/lib/java/android/android-23.jar
 - infer/dependencies/java/sun-tools/tools.jar
 
-
 ## (1) Warm up: running, testing, and debugging Infer
 
 (a) Change to the test directory (`cd infer/tests/codetoanalyze/java/lab`) and run infer in its default configuration:
 
-```
+```console
 infer -- javac Leaks.java
 ```
 
@@ -58,13 +57,13 @@ Infer should report 7 resource leaks. These reports come from the separation log
 
 (b) Run the analyzer on a single test file to produce the debug HTML:
 
-```
+```console
 infer -g --resource-leak-lab-only -- javac Leaks.java
 ```
 
 Then, open the debug HTML:
 
-```
+```console
 firefox infer-out/captured/*.html
 ```
 
@@ -118,7 +117,6 @@ include AbstractDomain.TopLifted (FiniteBounds)
 
 - Hint#2: use `open AbstractDomain.Types` to be able to write, e.g., `Top` instead of `AbstractDomain.Top`.
 
-
 ## (4) Interprocedural analysis
 
 Augment the summary type with state to indicate whether the current procedure returns a resource. Allowing a resource to escape to the caller should not be considered a leak. Use this information in callers too by reading from the callee's summary. Use the `analyze_dependency` field of the `InterproceduralAnalysis.t` record passed to the analysis like so:
@@ -145,19 +143,14 @@ Hint: What do return values look like in infer? They are assignments to a specia
 
 Then `ret_var` is the return variable (if `Var.is_return ret_var` returns true), of type `ret_typename` (really `ret_typename*` in infer's intermediate representation).
 
-
 ## (5) Access paths
 
 (a) Change the simple counting domain to a domain that overapproximates the set of storage locations that hold a resource. As a concrete goal, the new domain should allow you to print the name of the resource(s) that leak in the error message (rather than just the number of resources). The new domain should also allow your analysis to get the correct answer on your false negative and false positive tests from 2(d) and 2(e). Think about the following questions when designing your new domain:
 
 - How should we abstract storage locations? Is abstracting the stack program variables (`Var.t`) enough, or do we need an abstraction of the heap as well?
-
 - How will we handle aliasing (storage locations that store the same address)? More precisely, how to handle assignement? We will need to make some simplifying assumptions and cut some corners here. Developing a full memory model that accounts for aliasing perfectly is out of the scope of this lab (check out how the Pulse analysis does it!).
-
 - Will it be easy to extend the domain to incorporate information from the callee summaries/represent state that will be instantiated by callers?
-
 - Some modules that might be useful in creating your new domain (depending on what approach you choose): `AbstractDomain.FiniteSet`, `AbstractDomain.Map`, `AccessPath`, `Var`, `FormalMap`.
-
 - It's okay for the domain to diverge in certain cases for the purpose of this lab. Can you write a method that would make your checker diverge?
 
 (b) Write some tests that demonstrate the limitations of your new domain: both false positives (names prefixed with `FP_` and false negatives (prefixed with `FN_`). Add them to [LeaksAccessPaths.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksAccessPath.java).
@@ -166,13 +159,13 @@ Then `ret_var` is the return variable (if `Var.is_return ret_var` returns true),
 
 Hint: You will find the `FormalMap` module useful for this. This module lets you go back and forth between the index of a formal and its name. This utility module is also used in the `RacerD` and `TaintAnalysis` modules.
 
-
 ## (6) Making it practical
 
 (a) Real resource leaks frequently involve failing to close resources along exceptional control-flow paths. For simplicity, the initial version of the current analysis uses a filtered view of the CFG that skips exceptional edges (`ProcCfg.Normal`). To find more bugs, you might want to switch to using `ProcCfg.Exceptional` and make sure that your analysis gets the right answer on some realistic exception examples like [LeaksExceptions.java](https://github.com/facebook/infer/blob/main/infer/tests/codetoanalyze/java/lab/LeaksExceptions.java).
 
 (b) Try running on real code! The instructions [here](http://fm.csl.sri.com/SSFT17/infer-instr.html) have several suggestions for open-source Android apps to point your analysis at. Try `./gradlew assembleDebug -x test` first to make sure everything builds correctly without Infer (if not, you are probably missing some dependencies--the error messages should guide you). Once that's working, try
 `./gradlew clean; infer run --resource-leak-lab-only -- ./gradlew assembleDebug -x test`.
+
 - Found a real bug? Bonus points! Send a pull request to fix it! Very frequently, the best fix is to use try-with-resources.
 - Found a false positive in your analysis? Try re-running Infer with `--debug` and see if you can narrow down the root cause/fix it.
 - How does your analysis compare to Infer's production resource leak analysis? Run with `infer -- <gradle command>` to see if your analysis finds bugs that Infer misses, or vice versa.

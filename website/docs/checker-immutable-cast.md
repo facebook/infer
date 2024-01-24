@@ -10,6 +10,7 @@ Detection of object cast from immutable types to mutable types. For instance, it
 Activate with `--immutable-cast`.
 
 Supported languages:
+
 - C/C++/ObjC: No
 - C#/.Net: No
 - Erlang: No
@@ -22,4 +23,5 @@ Casts flagged by this checker are unsafe because calling mutation operations on 
 ## List of Issue Types
 
 The following issue types are reported by this checker:
+
 - [CHECKERS_IMMUTABLE_CAST](/docs/next/all-issue-types#checkers_immutable_cast)
