@@ -1565,8 +1565,9 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
   in
   let post =
     List.fold proc_attrs.locals ~init:post
-      ~f:(fun (acc : PostDomain.t) {ProcAttributes.name; typ; modify_in_block; is_constexpr} ->
-        if modify_in_block || is_constexpr then acc
+      ~f:(fun (acc : PostDomain.t) {ProcAttributes.name; typ; modify_in_block; is_constexpr; tmp_id}
+         ->
+        if modify_in_block || is_constexpr || Option.is_some tmp_id then acc
         else
           SafeAttributes.set_uninitialized_post tenv Timestamp.t0
             (`LocalDecl (Pvar.mk name proc_name, None))
