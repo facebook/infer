@@ -4860,7 +4860,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         caseStmt_trans trans_state stmt_info stmt_list
     | DefaultStmt (stmt_info, stmt_list) ->
         defaultStmt_trans trans_state stmt_info stmt_list
-    | StmtExpr ({Clang_ast_t.si_source_range}, stmt_list, _) ->
+    | StmtExpr ({si_source_range}, stmt_list, _)
+    | CXXRewrittenBinaryOperator ({si_source_range}, stmt_list, _) ->
         stmtExpr_trans trans_state si_source_range stmt_list
     | ForStmt (stmt_info, [init; decl_stmt; condition; increment; body]) ->
         forStmt_trans trans_state ~init ~decl_stmt ~condition ~increment ~body stmt_info
@@ -5091,7 +5092,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | CXXAddrspaceCastExpr _
     | CXXFoldExpr _
     | CXXParenListInitExpr _
-    | CXXRewrittenBinaryOperator _
     | CXXUnresolvedConstructExpr _
     | CXXUuidofExpr _
     | DependentCoawaitExpr _
