@@ -177,24 +177,14 @@ let report_errors tenv proc_desc err_log {PulseSummary.pre_post_list; non_disj} 
       in
       List.iter pre_post_list ~f:(function
         | ContinueProgram astate ->
-            let transitive_callees = AbductiveDomain.Summary.get_transitive_callees astate in
-            let transitive_missed_captures =
-              AbductiveDomain.Summary.get_transitive_missed_captures astate
+            let {PulseTransitiveInfo.accesses; callees; missed_captures} =
+              AbductiveDomain.Summary.get_transitive_info astate
             in
-            PulseTrace.Set.iter
-              (report transitive_callees transitive_missed_captures)
-              (AbductiveDomain.Summary.get_transitive_accesses astate)
+            PulseTrace.Set.iter (report callees missed_captures) accesses
         | _ ->
             () ) ;
-      let non_disj_transitive_callees =
-        NonDisjDomain.Summary.get_transitive_callees_if_not_top non_disj
-        |> Option.value ~default:PulseTransitiveInfo.Callees.bottom
-      in
-      let non_disj_transitive_missed_captures =
-        NonDisjDomain.Summary.get_transitive_missed_capture_if_not_top non_disj
-        |> Option.value ~default:Typ.Name.Set.empty
-      in
-      NonDisjDomain.Summary.iter_on_transitive_accesses_if_not_top non_disj
-        ~f:(report non_disj_transitive_callees non_disj_transitive_missed_captures)
+      NonDisjDomain.Summary.get_transitive_info_if_not_top non_disj
+      |> Option.iter ~f:(fun {PulseTransitiveInfo.accesses; callees; missed_captures} ->
+             PulseTrace.Set.iter (report callees missed_captures) accesses )
   | None ->
       ()

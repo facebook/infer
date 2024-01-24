@@ -627,81 +627,21 @@ module IntraDom = struct
         not (CalleesWithLoc.is_empty callees)
 end
 
-module DroppedTransitiveAccesses = AbstractDomain.FiniteSetOfPPSet (Trace.Set)
-module TransitiveMissedCapture = AbstractDomain.FiniteSetOfPPSet (Typ.Name.Set)
-
-module InterDomElt = struct
-  type t =
-    { dropped_transitive_accesses: DroppedTransitiveAccesses.t
-    ; transitive_callees: TransitiveInfo.Callees.t
-    ; transitive_missed_captures: TransitiveMissedCapture.t }
-  [@@deriving abstract_domain]
-
-  let pp fmt {dropped_transitive_accesses; transitive_callees; transitive_missed_captures} =
-    F.fprintf fmt
-      "@[@[dropped transitive accesses: %a@],@ @[transitive callees: %a@],@ @[transitive missed \
-       captures: %a@]@]"
-      DroppedTransitiveAccesses.pp dropped_transitive_accesses TransitiveInfo.Callees.pp
-      transitive_callees Typ.Name.Set.pp transitive_missed_captures
-
-
-  let bottom =
-    { dropped_transitive_accesses= DroppedTransitiveAccesses.empty
-    ; transitive_callees= TransitiveInfo.Callees.bottom
-    ; transitive_missed_captures= Typ.Name.Set.empty }
-
-
-  let is_bottom {dropped_transitive_accesses; transitive_callees; transitive_missed_captures} =
-    DroppedTransitiveAccesses.is_bottom dropped_transitive_accesses
-    && TransitiveInfo.Callees.is_bottom transitive_callees
-    && Typ.Name.Set.is_empty transitive_missed_captures
-
-
-  let remember_dropped_elements accesses callees missed_captures
-      {dropped_transitive_accesses; transitive_callees; transitive_missed_captures} =
-    let dropped_transitive_accesses =
-      DroppedTransitiveAccesses.union accesses dropped_transitive_accesses
-    in
-    let transitive_callees = TransitiveInfo.Callees.join callees transitive_callees in
-    let transitive_missed_captures =
-      Typ.Name.Set.union missed_captures transitive_missed_captures
-    in
-    {dropped_transitive_accesses; transitive_callees; transitive_missed_captures}
-
-
-  let apply_summary ~callee_pname ~call_loc ~summary
-      {dropped_transitive_accesses; transitive_callees; transitive_missed_captures} =
-    let dropped_transitive_accesses =
-      Trace.Set.map_callee (CallEvent.Call callee_pname) call_loc
-        summary.dropped_transitive_accesses
-      |> Trace.Set.union dropped_transitive_accesses
-    in
-    let transitive_callees =
-      TransitiveInfo.Callees.join transitive_callees summary.transitive_callees
-    in
-    let transitive_missed_captures =
-      TransitiveMissedCapture.join transitive_missed_captures summary.transitive_missed_captures
-    in
-    {dropped_transitive_accesses; transitive_callees; transitive_missed_captures}
-end
-
 module InterDom = struct
-  include AbstractDomain.TopLifted (InterDomElt)
+  include AbstractDomain.TopLifted (TransitiveInfo)
 
-  let bottom = NonTop InterDomElt.bottom
+  let bottom = NonTop TransitiveInfo.bottom
 
-  let is_bottom = get ~default:false InterDomElt.is_bottom
+  let is_bottom = get ~default:false TransitiveInfo.is_bottom
 
-  let remember_dropped_elements accesses callees missed_captures =
-    map (InterDomElt.remember_dropped_elements accesses callees missed_captures)
-
+  let remember_dropped_elements dropped = map (TransitiveInfo.remember_dropped_elements ~dropped)
 
   let apply_summary ~callee_pname ~call_loc ~summary non_disj =
     match (non_disj, summary) with
     | Top, _ | _, Top ->
         Top
     | NonTop non_disj, NonTop summary ->
-        NonTop (InterDomElt.apply_summary ~callee_pname ~call_loc ~summary non_disj)
+        NonTop (TransitiveInfo.apply_summary ~callee_pname ~call_loc ~summary non_disj)
 end
 
 type t = {intra: IntraDom.t; inter: InterDom.t} [@@deriving abstract_domain]
@@ -771,9 +711,7 @@ let set_passed_to loc timestamp call_exp actuals =
 
 let is_lifetime_extended var {intra} = IntraDom.is_lifetime_extended var intra
 
-let remember_dropped_elements accesses callees missed_captures =
-  map_inter (InterDom.remember_dropped_elements accesses callees missed_captures)
-
+let remember_dropped_elements dropped = map_inter (InterDom.remember_dropped_elements dropped)
 
 let quick_join lhs rhs =
   if phys_equal lhs bottom then rhs else if phys_equal rhs bottom then lhs else join lhs rhs
@@ -800,35 +738,14 @@ module Summary = struct
   let pp fmt = function
     | Top ->
         AbstractDomain.TopLiftedUtils.pp_top fmt
-    | NonTop
-        {InterDomElt.dropped_transitive_accesses; transitive_callees; transitive_missed_captures} ->
-        F.fprintf fmt
-          "@[@[calls history: %a@],@ @[dropped transitive accesses: %a@],@ @[transitive missed \
-           captures: %a@]@]"
-          TransitiveInfo.Callees.pp transitive_callees DroppedTransitiveAccesses.pp
-          dropped_transitive_accesses Typ.Name.Set.pp transitive_missed_captures
+    | NonTop transitive_info ->
+        TransitiveInfo.pp fmt transitive_info
 
 
   let bottom = InterDom.bottom
 
   let is_bottom = InterDom.is_bottom
 
-  let iter_on_transitive_accesses_if_not_top (x : t) ~f =
-    match x with
-    | Top ->
-        ()
-    | NonTop {dropped_transitive_accesses} ->
-        DroppedTransitiveAccesses.iter f dropped_transitive_accesses
-
-
-  let get_transitive_callees_if_not_top (x : t) =
-    match x with Top -> None | NonTop {transitive_callees} -> Some transitive_callees
-
-
-  let get_transitive_missed_capture_if_not_top (x : t) =
-    match x with
-    | Top ->
-        None
-    | NonTop {transitive_missed_captures} ->
-        Some transitive_missed_captures
+  let get_transitive_info_if_not_top (x : t) =
+    match x with Top -> None | NonTop transitive_info -> Some transitive_info
 end

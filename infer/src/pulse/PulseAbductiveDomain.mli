@@ -69,12 +69,7 @@ type t = private
   ; need_dynamic_type_specialization: AbstractValue.Set.t
         (** a set of abstract values that are used as receiver of method calls in the instructions
             reached so far *)
-  ; transitive_accesses: Trace.Set.t  (** record specific acceses inter-procedurally *)
-  ; transitive_callees: TransitiveInfo.Callees.t
-        (** record all call resolutions that were transitively performed *)
-  ; transitive_missed_captures: Typ.Name.Set.t
-        (** record types that were missing during name resolution (fields/methods) while analysing
-            this function and its transitive callees *)
+  ; transitive_info: TransitiveInfo.t  (** record transitive information inter-procedurally *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 [@@deriving equal]
@@ -346,18 +341,6 @@ module Summary : sig
 
   val add_need_dynamic_type_specialization : AbstractValue.t -> summary -> summary
 
-  val get_transitive_accesses : summary -> Trace.Set.t
-
-  val get_transitive_callees : summary -> TransitiveInfo.Callees.t
-
-  val get_transitive_missed_captures : summary -> Typ.Name.Set.t
-
-  val transfer_accesses_to_caller : t -> Procname.t -> Location.t -> summary -> t
-
-  val transfer_transitive_callees_to_caller : t -> summary -> t
-
-  val transfer_transitive_missed_captures_to_caller : t -> summary -> t
-
   val of_post :
        Tenv.t
     -> Procname.t
@@ -414,7 +397,11 @@ module Summary : sig
       have made. *)
 
   type t = summary [@@deriving compare, equal, yojson_of]
+
+  val get_transitive_info : t -> TransitiveInfo.t
 end
+
+val transfer_transitive_info_to_caller : Procname.t -> Location.t -> Summary.t -> t -> t
 
 module Topl : sig
   val small_step : Location.t -> PulseTopl.event -> t -> t

@@ -832,25 +832,10 @@ let record_need_closure_specialization callee_summary call_state =
   else call_state
 
 
-let record_transitive_accesses callee_proc_name call_loc callee_summary call_state =
+let record_transitive_info callee_proc_name call_location callee_summary call_state =
   let astate =
-    AbductiveDomain.Summary.transfer_accesses_to_caller call_state.astate callee_proc_name call_loc
-      callee_summary
-  in
-  {call_state with astate}
-
-
-let record_transitive_callees callee_summary call_state =
-  let astate =
-    AbductiveDomain.Summary.transfer_transitive_callees_to_caller call_state.astate callee_summary
-  in
-  {call_state with astate}
-
-
-let record_transitive_missed_captures callee_summary call_state =
-  let astate =
-    AbductiveDomain.Summary.transfer_transitive_missed_captures_to_caller call_state.astate
-      callee_summary
+    AbductiveDomain.transfer_transitive_info_to_caller callee_proc_name call_location callee_summary
+      call_state.astate
   in
   {call_state with astate}
 
@@ -949,9 +934,7 @@ let apply_post path callee_proc_name call_location callee_summary call_state =
           (AbductiveDomain.Summary.get_post callee_summary).attrs
     >>| record_skipped_calls callee_proc_name call_location callee_summary
     >>| record_need_closure_specialization callee_summary
-    >>| record_transitive_accesses callee_proc_name call_location callee_summary
-    >>| record_transitive_callees callee_summary
-    >>| record_transitive_missed_captures callee_summary
+    >>| record_transitive_info callee_proc_name call_location callee_summary
     >>| read_return_value path callee_proc_name call_location callee_summary
   in
   PerfEvent.(log (fun logger -> log_end_event logger ())) ;

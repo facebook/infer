@@ -1597,10 +1597,8 @@ module PulseTransferFunctions = struct
   let remember_dropped_disjuncts disjuncts non_disj =
     List.fold disjuncts ~init:non_disj ~f:(fun non_disj (exec, _) ->
         match exec with
-        | ContinueProgram
-            {AbductiveDomain.transitive_accesses; transitive_callees; transitive_missed_captures} ->
-            NonDisjDomain.remember_dropped_elements transitive_accesses transitive_callees
-              transitive_missed_captures non_disj
+        | ContinueProgram {AbductiveDomain.transitive_info} ->
+            NonDisjDomain.remember_dropped_elements transitive_info non_disj
         | _ ->
             non_disj )
 

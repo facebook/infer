@@ -12,10 +12,6 @@ module Callees : sig
 
   include AbstractDomain.WithBottom
 
-  val compare : t -> t -> int
-
-  val equal : t -> t -> bool
-
   val pp : Format.formatter -> t -> unit
 
   type call_kind = Static | Virtual | Closure
@@ -40,3 +36,20 @@ module Callees : sig
 
   val report_as_extra_info : t -> item list
 end
+
+type t =
+  { accesses: PulseTrace.Set.t  (** record specific accesses inter-procedurally *)
+  ; callees: Callees.t  (** record all call resolutions that were transitively performed *)
+  ; missed_captures: Typ.Name.Set.t
+        (** record types that were missing during name resolution (fields/methods) while analysing
+            this function and its transitive callees *) }
+[@@deriving compare, equal]
+
+include AbstractDomain.WithBottom with type t := t
+
+val apply_summary : callee_pname:Procname.t -> call_loc:Location.t -> summary:t -> t -> t
+
+val remember_dropped_elements : dropped:t -> t -> t
+
+val transfer_transitive_info_to_caller :
+  caller:t -> Procname.t -> Location.t -> callee_summary:t -> t

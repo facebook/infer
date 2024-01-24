@@ -90,3 +90,46 @@ module Callees = struct
         {callsite_loc; caller_name; caller_loc; kind; resolution} :: acc )
       history []
 end
+
+module Accesses = AbstractDomain.FiniteSetOfPPSet (PulseTrace.Set)
+module MissedCaptures = AbstractDomain.FiniteSetOfPPSet (Typ.Name.Set)
+
+type t = {accesses: Accesses.t; callees: Callees.t; missed_captures: MissedCaptures.t}
+[@@deriving abstract_domain, compare, equal]
+
+let pp fmt {accesses; callees; missed_captures} =
+  F.fprintf fmt "@[@[accesses: %a@],@ @[callees: %a@],@ @[missed captures: %a@]@]" Accesses.pp
+    accesses Callees.pp callees Typ.Name.Set.pp missed_captures
+
+
+let bottom = {accesses= Accesses.empty; callees= Callees.bottom; missed_captures= Typ.Name.Set.empty}
+
+let is_bottom {accesses; callees; missed_captures} =
+  Accesses.is_bottom accesses && Callees.is_bottom callees && Typ.Name.Set.is_empty missed_captures
+
+
+let remember_dropped_elements ~dropped {accesses; callees; missed_captures} =
+  let accesses = Accesses.union dropped.accesses accesses in
+  let callees = Callees.join dropped.callees callees in
+  let missed_captures = Typ.Name.Set.union dropped.missed_captures missed_captures in
+  {accesses; callees; missed_captures}
+
+
+let apply_summary ~callee_pname ~call_loc ~summary {accesses; callees; missed_captures} =
+  let accesses =
+    PulseTrace.Set.map_callee (PulseCallEvent.Call callee_pname) call_loc summary.accesses
+    |> PulseTrace.Set.union accesses
+  in
+  let callees = Callees.join callees summary.callees in
+  let missed_captures = MissedCaptures.join missed_captures summary.missed_captures in
+  {accesses; callees; missed_captures}
+
+
+let transfer_transitive_info_to_caller ~caller callee_proc_name call_loc ~callee_summary =
+  let accesses =
+    PulseTrace.Set.map_callee (Call callee_proc_name) call_loc callee_summary.accesses
+    |> PulseTrace.Set.union caller.accesses
+  in
+  let callees = Callees.join caller.callees callee_summary.callees in
+  let missed_captures = Typ.Name.Set.union caller.missed_captures callee_summary.missed_captures in
+  {accesses; callees; missed_captures}
