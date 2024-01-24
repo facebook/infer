@@ -118,8 +118,6 @@ let progress_bar_style_symbols = [("auto", `Auto); ("plain", `Plain); ("multilin
 
 (** Constant configuration values *)
 
-let anonymous_block_num_sep = "_"
-
 let anonymous_block_prefix = "objc_block_"
 
 let assign = "<\"Assign\">"

@@ -101,3 +101,5 @@ val get_captured_mode :
      lci_capture_this:bool
   -> lci_capture_kind:[< `LCK_ByCopy | `LCK_ByRef | `LCK_StarThis | `LCK_This | `LCK_VLAType]
   -> CapturedVar.capture_mode
+
+val create_objc_block_name : Clang_ast_t.decl_info -> Clang_ast_t.block_decl_info -> string * string

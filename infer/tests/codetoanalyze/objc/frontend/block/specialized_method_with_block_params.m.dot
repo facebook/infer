@@ -1,60 +1,60 @@
 /* @generated */
 digraph cfg {
-"objc_block_A.bar2_3(class A).968031ecc85ebf22_1" [label="1: Start objc_block_A.bar2_3\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
+"objc_block_specialized_method_wit.f16868ddd5e62dc0_1" [label="1: Start objc_block_specialized_method_with_block_params.m:27\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* [by value]&x:int \n  " color=yellow style=filled]
 	
 
-	 "objc_block_A.bar2_3(class A).968031ecc85ebf22_1" -> "objc_block_A.bar2_3(class A).968031ecc85ebf22_3" ;
-"objc_block_A.bar2_3(class A).968031ecc85ebf22_2" [label="2: Exit objc_block_A.bar2_3 \n  " color=yellow style=filled]
+	 "objc_block_specialized_method_wit.f16868ddd5e62dc0_1" -> "objc_block_specialized_method_wit.f16868ddd5e62dc0_3" ;
+"objc_block_specialized_method_wit.f16868ddd5e62dc0_2" [label="2: Exit objc_block_specialized_method_with_block_params.m:27 \n  " color=yellow style=filled]
 	
 
-"objc_block_A.bar2_3(class A).968031ecc85ebf22_3" [label="3:  BinaryOperatorStmt: Assign \n   n$15=*&self:A* [line 41, column 9]\n  *n$15.x:int=5 [line 41, column 9]\n " shape="box"]
+"objc_block_specialized_method_wit.f16868ddd5e62dc0_3" [label="3:  BinaryOperatorStmt: Assign \n   n$6=*&x:int [line 28, column 19]\n  n$5=*&self:A* [line 28, column 9]\n  *n$5.x:int=n$6 [line 28, column 9]\n " shape="box"]
 	
 
-	 "objc_block_A.bar2_3(class A).968031ecc85ebf22_3" -> "objc_block_A.bar2_3(class A).968031ecc85ebf22_2" ;
-"objc_block_A.bar2_4(class A).31b0a8dada99423a_1" [label="1: Start objc_block_A.bar2_4\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
+	 "objc_block_specialized_method_wit.f16868ddd5e62dc0_3" -> "objc_block_specialized_method_wit.f16868ddd5e62dc0_2" ;
+"objc_block_specialized_method_wit.d5579054493013ee_1" [label="1: Start objc_block_specialized_method_with_block_params.m:30\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
 	
 
-	 "objc_block_A.bar2_4(class A).31b0a8dada99423a_1" -> "objc_block_A.bar2_4(class A).31b0a8dada99423a_3" ;
-"objc_block_A.bar2_4(class A).31b0a8dada99423a_2" [label="2: Exit objc_block_A.bar2_4 \n  " color=yellow style=filled]
+	 "objc_block_specialized_method_wit.d5579054493013ee_1" -> "objc_block_specialized_method_wit.d5579054493013ee_3" ;
+"objc_block_specialized_method_wit.d5579054493013ee_2" [label="2: Exit objc_block_specialized_method_with_block_params.m:30 \n  " color=yellow style=filled]
 	
 
-"objc_block_A.bar2_4(class A).31b0a8dada99423a_3" [label="3:  BinaryOperatorStmt: Assign \n   n$17=*&self:A* [line 44, column 9]\n  *n$17.x:int=5 [line 44, column 9]\n " shape="box"]
+"objc_block_specialized_method_wit.d5579054493013ee_3" [label="3:  BinaryOperatorStmt: Assign \n   n$9=*&i:int [line 31, column 19]\n  n$8=*&self:A* [line 31, column 9]\n  *n$8.x:int=n$9 [line 31, column 9]\n " shape="box"]
 	
 
-	 "objc_block_A.bar2_4(class A).31b0a8dada99423a_3" -> "objc_block_A.bar2_4(class A).31b0a8dada99423a_2" ;
-"objc_block_A.bar:_1(class A).08ec268b0c783346_1" [label="1: Start objc_block_A.bar:_1\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* [by value]&x:int \n  " color=yellow style=filled]
+	 "objc_block_specialized_method_wit.d5579054493013ee_3" -> "objc_block_specialized_method_wit.d5579054493013ee_2" ;
+"objc_block_specialized_method_wit.866afacefb3561d4_1" [label="1: Start objc_block_specialized_method_with_block_params.m:40\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
 	
 
-	 "objc_block_A.bar:_1(class A).08ec268b0c783346_1" -> "objc_block_A.bar:_1(class A).08ec268b0c783346_3" ;
-"objc_block_A.bar:_1(class A).08ec268b0c783346_2" [label="2: Exit objc_block_A.bar:_1 \n  " color=yellow style=filled]
+	 "objc_block_specialized_method_wit.866afacefb3561d4_1" -> "objc_block_specialized_method_wit.866afacefb3561d4_3" ;
+"objc_block_specialized_method_wit.866afacefb3561d4_2" [label="2: Exit objc_block_specialized_method_with_block_params.m:40 \n  " color=yellow style=filled]
 	
 
-"objc_block_A.bar:_1(class A).08ec268b0c783346_3" [label="3:  BinaryOperatorStmt: Assign \n   n$6=*&x:int [line 28, column 19]\n  n$5=*&self:A* [line 28, column 9]\n  *n$5.x:int=n$6 [line 28, column 9]\n " shape="box"]
+"objc_block_specialized_method_wit.866afacefb3561d4_3" [label="3:  BinaryOperatorStmt: Assign \n   n$15=*&self:A* [line 41, column 9]\n  *n$15.x:int=5 [line 41, column 9]\n " shape="box"]
 	
 
-	 "objc_block_A.bar:_1(class A).08ec268b0c783346_3" -> "objc_block_A.bar:_1(class A).08ec268b0c783346_2" ;
-"objc_block_A.bar:_2(class A).20dc072df19c24c2_1" [label="1: Start objc_block_A.bar:_2\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
+	 "objc_block_specialized_method_wit.866afacefb3561d4_3" -> "objc_block_specialized_method_wit.866afacefb3561d4_2" ;
+"objc_block_specialized_method_wit.667bc55797d1ca78_1" [label="1: Start objc_block_specialized_method_with_block_params.m:43\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
 	
 
-	 "objc_block_A.bar:_2(class A).20dc072df19c24c2_1" -> "objc_block_A.bar:_2(class A).20dc072df19c24c2_3" ;
-"objc_block_A.bar:_2(class A).20dc072df19c24c2_2" [label="2: Exit objc_block_A.bar:_2 \n  " color=yellow style=filled]
+	 "objc_block_specialized_method_wit.667bc55797d1ca78_1" -> "objc_block_specialized_method_wit.667bc55797d1ca78_3" ;
+"objc_block_specialized_method_wit.667bc55797d1ca78_2" [label="2: Exit objc_block_specialized_method_with_block_params.m:43 \n  " color=yellow style=filled]
 	
 
-"objc_block_A.bar:_2(class A).20dc072df19c24c2_3" [label="3:  BinaryOperatorStmt: Assign \n   n$9=*&i:int [line 31, column 19]\n  n$8=*&self:A* [line 31, column 9]\n  *n$8.x:int=n$9 [line 31, column 9]\n " shape="box"]
+"objc_block_specialized_method_wit.667bc55797d1ca78_3" [label="3:  BinaryOperatorStmt: Assign \n   n$17=*&self:A* [line 44, column 9]\n  *n$17.x:int=5 [line 44, column 9]\n " shape="box"]
 	
 
-	 "objc_block_A.bar:_2(class A).20dc072df19c24c2_3" -> "objc_block_A.bar:_2(class A).20dc072df19c24c2_2" ;
-"objc_block_A.call_foo_with_same_p.15923c0eae272586_1" [label="1: Start objc_block_A.call_foo_with_same_param_5\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
+	 "objc_block_specialized_method_wit.667bc55797d1ca78_3" -> "objc_block_specialized_method_wit.667bc55797d1ca78_2" ;
+"objc_block_specialized_method_wit.982152dd64690368_1" [label="1: Start objc_block_specialized_method_with_block_params.m:51\nFormals:  i:int\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
 	
 
-	 "objc_block_A.call_foo_with_same_p.15923c0eae272586_1" -> "objc_block_A.call_foo_with_same_p.15923c0eae272586_3" ;
-"objc_block_A.call_foo_with_same_p.15923c0eae272586_2" [label="2: Exit objc_block_A.call_foo_with_same_param_5 \n  " color=yellow style=filled]
+	 "objc_block_specialized_method_wit.982152dd64690368_1" -> "objc_block_specialized_method_wit.982152dd64690368_3" ;
+"objc_block_specialized_method_wit.982152dd64690368_2" [label="2: Exit objc_block_specialized_method_with_block_params.m:51 \n  " color=yellow style=filled]
 	
 
-"objc_block_A.call_foo_with_same_p.15923c0eae272586_3" [label="3:  BinaryOperatorStmt: Assign \n   n$31=*&self:A* [line 52, column 5]\n  *n$31.x:int=5 [line 52, column 5]\n " shape="box"]
+"objc_block_specialized_method_wit.982152dd64690368_3" [label="3:  BinaryOperatorStmt: Assign \n   n$31=*&self:A* [line 52, column 5]\n  *n$31.x:int=5 [line 52, column 5]\n " shape="box"]
 	
 
-	 "objc_block_A.call_foo_with_same_p.15923c0eae272586_3" -> "objc_block_A.call_foo_with_same_p.15923c0eae272586_2" ;
+	 "objc_block_specialized_method_wit.982152dd64690368_3" -> "objc_block_specialized_method_wit.982152dd64690368_2" ;
 "foo.acbd18db4cc2f85c_1" [label="1: Start foo\nFormals:  <_Nullable> my_block1:_fn_(*) <_Nullable> my_block2:_fn_(*) <_Nonnull> a:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -92,7 +92,7 @@ digraph cfg {
 	
 
 	 "bar2#A#[instance].2f0519276ed04788_4" -> "bar2#A#[instance].2f0519276ed04788_2" ;
-"bar2#A#[instance].2f0519276ed04788_5" [label="5:  Compound statement \n   n$14=*&self:A* [line 40, column 7]\n  n$16=*&self:A* [line 43, column 7]\n  n$18=*&self:A* [line 46, column 7]\n  n$19=_fun_foo((_fun_objc_block_A.bar2_3,([by value]n$14 &self:A*)):_fn_(*),(_fun_objc_block_A.bar2_4,([by value]n$16 &self:A*)):_fn_(*),n$18:A*) [line 39, column 3]\n " shape="box"]
+"bar2#A#[instance].2f0519276ed04788_5" [label="5:  Compound statement \n   n$14=*&self:A* [line 40, column 7]\n  n$16=*&self:A* [line 43, column 7]\n  n$18=*&self:A* [line 46, column 7]\n  n$19=_fun_foo((_fun_objc_block_specialized_method_with_block_params.m:40,([by value]n$14 &self:A*)):_fn_(*),(_fun_objc_block_specialized_method_with_block_params.m:43,([by value]n$16 &self:A*)):_fn_(*),n$18:A*) [line 39, column 3]\n " shape="box"]
 	
 
 	 "bar2#A#[instance].2f0519276ed04788_5" -> "bar2#A#[instance].2f0519276ed04788_3" ;
@@ -115,7 +115,7 @@ digraph cfg {
 	
 
 	 "bar:#A(class A)#[instance].8e6cfff8b86359b6_5" -> "bar:#A(class A)#[instance].8e6cfff8b86359b6_3" ;
-"bar:#A(class A)#[instance].8e6cfff8b86359b6_6" [label="6:  Compound statement \n   n$3=*&self:A* [line 27, column 7]\n  n$4=*&x:int [line 27, column 7]\n  n$7=*&self:A* [line 30, column 7]\n  n$10=*&a:A* [line 33, column 7]\n  n$11=_fun_foo((_fun_objc_block_A.bar:_1,([by value]n$3 &self:A*),([by value]n$4 &x:int)):_fn_(*),(_fun_objc_block_A.bar:_2,([by value]n$7 &self:A*)):_fn_(*),n$10:A*) [line 26, column 3]\n " shape="box"]
+"bar:#A(class A)#[instance].8e6cfff8b86359b6_6" [label="6:  Compound statement \n   n$3=*&self:A* [line 27, column 7]\n  n$4=*&x:int [line 27, column 7]\n  n$7=*&self:A* [line 30, column 7]\n  n$10=*&a:A* [line 33, column 7]\n  n$11=_fun_foo((_fun_objc_block_specialized_method_with_block_params.m:27,([by value]n$3 &self:A*),([by value]n$4 &x:int)):_fn_(*),(_fun_objc_block_specialized_method_with_block_params.m:30,([by value]n$7 &self:A*)):_fn_(*),n$10:A*) [line 26, column 3]\n " shape="box"]
 	
 
 	 "bar:#A(class A)#[instance].8e6cfff8b86359b6_6" -> "bar:#A(class A)#[instance].8e6cfff8b86359b6_5" ;
@@ -146,7 +146,7 @@ digraph cfg {
 	
 
 	 "call_foo_with_same_param#A#[insta.0f7e046192340a49_6" -> "call_foo_with_same_param#A#[insta.0f7e046192340a49_5" ;
-"call_foo_with_same_param#A#[insta.0f7e046192340a49_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(b:_fn_(*)); [line 51, column 3]\n  n$30=*&self:A* [line 51, column 20]\n  *&b:_fn_(*)=(_fun_objc_block_A.call_foo_with_same_param_5,([by value]n$30 &self:A*)) [line 51, column 3]\n " shape="box"]
+"call_foo_with_same_param#A#[insta.0f7e046192340a49_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(b:_fn_(*)); [line 51, column 3]\n  n$30=*&self:A* [line 51, column 20]\n  *&b:_fn_(*)=(_fun_objc_block_specialized_method_with_block_params.m:51,([by value]n$30 &self:A*)) [line 51, column 3]\n " shape="box"]
 	
 
 	 "call_foo_with_same_param#A#[insta.0f7e046192340a49_7" -> "call_foo_with_same_param#A#[insta.0f7e046192340a49_6" ;

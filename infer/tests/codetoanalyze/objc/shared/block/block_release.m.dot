@@ -1,33 +1,33 @@
 /* @generated */
 digraph cfg {
-"objc_block_My_manager.blockReleas.a83259fe861f0509_1" [label="1: Start objc_block_My_manager.blockReleaseNoLeak_1\nFormals:  a:int\nLocals: \nCaptured:  [by value]&newImage:CGImage* \n  " color=yellow style=filled]
+"objc_block_block_release.m:23_bca.a75e5c2171d1b867_1" [label="1: Start objc_block_block_release.m:23\nFormals:  a:int\nLocals: \nCaptured:  [by value]&newImage:CGImage* \n  " color=yellow style=filled]
 	
 
-	 "objc_block_My_manager.blockReleas.a83259fe861f0509_1" -> "objc_block_My_manager.blockReleas.a83259fe861f0509_5" ;
-	 "objc_block_My_manager.blockReleas.a83259fe861f0509_1" -> "objc_block_My_manager.blockReleas.a83259fe861f0509_6" ;
-"objc_block_My_manager.blockReleas.a83259fe861f0509_2" [label="2: Exit objc_block_My_manager.blockReleaseNoLeak_1 \n  " color=yellow style=filled]
+	 "objc_block_block_release.m:23_bca.a75e5c2171d1b867_1" -> "objc_block_block_release.m:23_bca.a75e5c2171d1b867_5" ;
+	 "objc_block_block_release.m:23_bca.a75e5c2171d1b867_1" -> "objc_block_block_release.m:23_bca.a75e5c2171d1b867_6" ;
+"objc_block_block_release.m:23_bca.a75e5c2171d1b867_2" [label="2: Exit objc_block_block_release.m:23 \n  " color=yellow style=filled]
 	
 
-"objc_block_My_manager.blockReleas.a83259fe861f0509_3" [label="3: + \n   END_BRANCHES\n " ]
+"objc_block_block_release.m:23_bca.a75e5c2171d1b867_3" [label="3: + \n   END_BRANCHES\n " ]
 	
 
-	 "objc_block_My_manager.blockReleas.a83259fe861f0509_3" -> "objc_block_My_manager.blockReleas.a83259fe861f0509_4" ;
-"objc_block_My_manager.blockReleas.a83259fe861f0509_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
+	 "objc_block_block_release.m:23_bca.a75e5c2171d1b867_3" -> "objc_block_block_release.m:23_bca.a75e5c2171d1b867_4" ;
+"objc_block_block_release.m:23_bca.a75e5c2171d1b867_4" [label="4:  between_join_and_exit \n   END_BRANCHES\n " shape="box"]
 	
 
-	 "objc_block_My_manager.blockReleas.a83259fe861f0509_4" -> "objc_block_My_manager.blockReleas.a83259fe861f0509_2" ;
-"objc_block_My_manager.blockReleas.a83259fe861f0509_5" [label="5: Prune (true branch, if (terminated)) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(n$10, true); [line 24, column 9]\n " shape="invhouse"]
+	 "objc_block_block_release.m:23_bca.a75e5c2171d1b867_4" -> "objc_block_block_release.m:23_bca.a75e5c2171d1b867_2" ;
+"objc_block_block_release.m:23_bca.a75e5c2171d1b867_5" [label="5: Prune (true branch, if (terminated)) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(n$10, true); [line 24, column 9]\n " shape="invhouse"]
 	
 
-	 "objc_block_My_manager.blockReleas.a83259fe861f0509_5" -> "objc_block_My_manager.blockReleas.a83259fe861f0509_7" ;
-"objc_block_My_manager.blockReleas.a83259fe861f0509_6" [label="6: Prune (false branch, if (terminated)) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(!n$10, false); [line 24, column 9]\n " shape="invhouse"]
+	 "objc_block_block_release.m:23_bca.a75e5c2171d1b867_5" -> "objc_block_block_release.m:23_bca.a75e5c2171d1b867_7" ;
+"objc_block_block_release.m:23_bca.a75e5c2171d1b867_6" [label="6: Prune (false branch, if (terminated)) \n   n$10=*&newImage:CGImage* [line 24, column 9]\n  PRUNE(!n$10, false); [line 24, column 9]\n " shape="invhouse"]
 	
 
-	 "objc_block_My_manager.blockReleas.a83259fe861f0509_6" -> "objc_block_My_manager.blockReleas.a83259fe861f0509_3" ;
-"objc_block_My_manager.blockReleas.a83259fe861f0509_7" [label="7:  Call _fun_CGImageRelease \n   n$11=*&newImage:CGImage* [line 25, column 22]\n  n$12=_fun_CGImageRelease(n$11:CGImage*) [line 25, column 7]\n " shape="box"]
+	 "objc_block_block_release.m:23_bca.a75e5c2171d1b867_6" -> "objc_block_block_release.m:23_bca.a75e5c2171d1b867_3" ;
+"objc_block_block_release.m:23_bca.a75e5c2171d1b867_7" [label="7:  Call _fun_CGImageRelease \n   n$11=*&newImage:CGImage* [line 25, column 22]\n  n$12=_fun_CGImageRelease(n$11:CGImage*) [line 25, column 7]\n " shape="box"]
 	
 
-	 "objc_block_My_manager.blockReleas.a83259fe861f0509_7" -> "objc_block_My_manager.blockReleas.a83259fe861f0509_3" ;
+	 "objc_block_block_release.m:23_bca.a75e5c2171d1b867_7" -> "objc_block_block_release.m:23_bca.a75e5c2171d1b867_3" ;
 "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_1" [label="1: Start My_manager.blockReleaseNoLeak\nFormals:  self:My_manager*\nLocals:  newImage:CGImage* context:CGContext* z:int b:_fn_(*) \n  " color=yellow style=filled]
 	
 
@@ -64,7 +64,7 @@ digraph cfg {
 
 	 "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_9" -> "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_6" ;
 	 "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_9" -> "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_7" ;
-"blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_10" [label="10:  Compound statement \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_block_My_manager.blockReleaseNoLeak_1,([by value]n$9 &newImage:CGImage*)) [line 23, column 3]\n  n$15=*&b:_fn_(*) [line 23, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_10" [label="10:  Compound statement \n   n$9=*&newImage:CGImage* [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_block_block_release.m:23,([by value]n$9 &newImage:CGImage*)) [line 23, column 3]\n  n$15=*&b:_fn_(*) [line 23, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_10" -> "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_9" ;

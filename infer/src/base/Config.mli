@@ -43,8 +43,6 @@ val env_inside_maven : Unix.env
 
 (** {2 Constant configuration values} *)
 
-val anonymous_block_num_sep : string
-
 val anonymous_block_prefix : string
 
 val assign : string

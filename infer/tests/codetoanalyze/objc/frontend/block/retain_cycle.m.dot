@@ -1,16 +1,16 @@
 /* @generated */
 digraph cfg {
-"objc_block_A.capture_1(class A,cl.e88ebb9e15006f2e_1" [label="1: Start objc_block_A.capture_1\nFormals:  d:D*\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
+"objc_block_retain_cycle.m:45_226e.1528e2cfff3121fd_1" [label="1: Start objc_block_retain_cycle.m:45\nFormals:  d:D*\nLocals: \nCaptured:  [by value]&self:A* \n  " color=yellow style=filled]
 	
 
-	 "objc_block_A.capture_1(class A,cl.e88ebb9e15006f2e_1" -> "objc_block_A.capture_1(class A,cl.e88ebb9e15006f2e_3" ;
-"objc_block_A.capture_1(class A,cl.e88ebb9e15006f2e_2" [label="2: Exit objc_block_A.capture_1 \n  " color=yellow style=filled]
+	 "objc_block_retain_cycle.m:45_226e.1528e2cfff3121fd_1" -> "objc_block_retain_cycle.m:45_226e.1528e2cfff3121fd_3" ;
+"objc_block_retain_cycle.m:45_226e.1528e2cfff3121fd_2" [label="2: Exit objc_block_retain_cycle.m:45 \n  " color=yellow style=filled]
 	
 
-"objc_block_A.capture_1(class A,cl.e88ebb9e15006f2e_3" [label="3:  BinaryOperatorStmt: Assign \n   n$2=*&d:D* [line 46, column 13]\n  n$1=*&self:A* [line 46, column 5]\n  *n$1._data:D*=n$2 [line 46, column 5]\n " shape="box"]
+"objc_block_retain_cycle.m:45_226e.1528e2cfff3121fd_3" [label="3:  BinaryOperatorStmt: Assign \n   n$2=*&d:D* [line 46, column 13]\n  n$1=*&self:A* [line 46, column 5]\n  *n$1._data:D*=n$2 [line 46, column 5]\n " shape="box"]
 	
 
-	 "objc_block_A.capture_1(class A,cl.e88ebb9e15006f2e_3" -> "objc_block_A.capture_1(class A,cl.e88ebb9e15006f2e_2" ;
+	 "objc_block_retain_cycle.m:45_226e.1528e2cfff3121fd_3" -> "objc_block_retain_cycle.m:45_226e.1528e2cfff3121fd_2" ;
 "foo.acbd18db4cc2f85c_1" [label="1: Start foo\nFormals:  a:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -56,7 +56,7 @@ digraph cfg {
 "capture#A#[instance].ca0ec9307f9d5110_2" [label="2: Exit A.capture \n  " color=yellow style=filled]
 	
 
-"capture#A#[instance].ca0ec9307f9d5110_3" [label="3:  Compound statement \n   n$3=*&self:A* [line 45, column 4]\n  n$4=*n$3._b:B* [line 45, column 4]\n  n$0=*&self:A* [line 45, column 16]\n  n$5=_fun_B.sHandler:(n$4:B*,(_fun_objc_block_A.capture_1,([by value]n$0 &self:A*)):_fn_(*)) virtual [line 45, column 3]\n " shape="box"]
+"capture#A#[instance].ca0ec9307f9d5110_3" [label="3:  Compound statement \n   n$3=*&self:A* [line 45, column 4]\n  n$4=*n$3._b:B* [line 45, column 4]\n  n$0=*&self:A* [line 45, column 16]\n  n$5=_fun_B.sHandler:(n$4:B*,(_fun_objc_block_retain_cycle.m:45,([by value]n$0 &self:A*)):_fn_(*)) virtual [line 45, column 3]\n " shape="box"]
 	
 
 	 "capture#A#[instance].ca0ec9307f9d5110_3" -> "capture#A#[instance].ca0ec9307f9d5110_2" ;

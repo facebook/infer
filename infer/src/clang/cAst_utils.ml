@@ -40,6 +40,18 @@ let reduce_lambda_anon_name name =
       name
 
 
+let create_objc_block_name decl_info block_decl_info =
+  let source_location, _ = decl_info.Clang_ast_t.di_source_range in
+  let path = Option.value source_location.Clang_ast_t.sl_file ~default:"" in
+  let line = Option.value source_location.Clang_ast_t.sl_line ~default:(-1) in
+  let path_items = String.split ~on:'/' path in
+  let file = List.hd_exn (List.rev path_items) in
+  let hash =
+    String.sub (Utils.string_crc_hex32 block_decl_info.Clang_ast_t.bdi_mangled_name) ~pos:0 ~len:8
+  in
+  (F.asprintf "%s%s:%d" Config.anonymous_block_prefix file line, hash)
+
+
 let is_lambda_qual name =
   let is_lambda = String.is_substring name ~substring:"lambda" in
   match String.index name ':' with

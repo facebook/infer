@@ -589,16 +589,6 @@ and objc_method_procname ?tenv decl_info method_name parameters mdi =
   mk_objc_method class_typename method_name method_kind parameters
 
 
-and objc_block_procname outer_proc_opt parameters =
-  let block_type =
-    Option.value_map ~f:Procname.get_block_type outer_proc_opt
-      ~default:(Procname.Block.SurroundingProc {class_name= None; name= ""})
-  in
-  let block_index = CFrontend_config.get_fresh_block_index () in
-  let block = Procname.Block.make_in_outer_scope block_type block_index parameters in
-  Procname.Block block
-
-
 and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
   let open Clang_ast_t in
   let parameters =
@@ -644,8 +634,12 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
       mk_cpp_method decl_info name_info fdi mdi
   | ObjCMethodDecl (decl_info, name_info, mdi) ->
       objc_method_procname ?tenv decl_info name_info.Clang_ast_t.ni_name parameters mdi
-  | BlockDecl _ ->
-      objc_block_procname outer_proc parameters
+  | BlockDecl (decl_info, block_decl_info) ->
+      let outer_proc_class_name =
+        Option.value_map ~default:None ~f:Procname.get_class_type_name outer_proc
+      in
+      let name, mangled = CAst_utils.create_objc_block_name decl_info block_decl_info in
+      Procname.Block {Procname.Block.class_name= outer_proc_class_name; name; mangled}
   | _ ->
       Logging.die InternalError "Expected method decl, but got %s."
         (Clang_ast_proj.get_decl_kind_string meth_decl)

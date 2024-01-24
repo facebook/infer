@@ -1,16 +1,16 @@
 /* @generated */
 digraph cfg {
-"objc_block_Block_no_args.m_1.68592789fae7a0ea_1" [label="1: Start objc_block_Block_no_args.m_1\nFormals: \nLocals: \nCaptured:  [by value]&z:int \n  " color=yellow style=filled]
+"objc_block_block_no_args.m:23_2ee.8e071046ccc36b64_1" [label="1: Start objc_block_block_no_args.m:23\nFormals: \nLocals: \nCaptured:  [by value]&z:int \n  " color=yellow style=filled]
 	
 
-	 "objc_block_Block_no_args.m_1.68592789fae7a0ea_1" -> "objc_block_Block_no_args.m_1.68592789fae7a0ea_3" ;
-"objc_block_Block_no_args.m_1.68592789fae7a0ea_2" [label="2: Exit objc_block_Block_no_args.m_1 \n  " color=yellow style=filled]
+	 "objc_block_block_no_args.m:23_2ee.8e071046ccc36b64_1" -> "objc_block_block_no_args.m:23_2ee.8e071046ccc36b64_3" ;
+"objc_block_block_no_args.m:23_2ee.8e071046ccc36b64_2" [label="2: Exit objc_block_block_no_args.m:23 \n  " color=yellow style=filled]
 	
 
-"objc_block_Block_no_args.m_1.68592789fae7a0ea_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&z:int [line 24, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$8 + 3) [line 24, column 5]\n " shape="box"]
+"objc_block_block_no_args.m:23_2ee.8e071046ccc36b64_3" [label="3:  BinaryOperatorStmt: Assign \n   n$8=*&z:int [line 24, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$8 + 3) [line 24, column 5]\n " shape="box"]
 	
 
-	 "objc_block_Block_no_args.m_1.68592789fae7a0ea_3" -> "objc_block_Block_no_args.m_1.68592789fae7a0ea_2" ;
+	 "objc_block_block_no_args.m:23_2ee.8e071046ccc36b64_3" -> "objc_block_block_no_args.m:23_2ee.8e071046ccc36b64_2" ;
 "dealloc#Block_no_args#[instance].505e14ab24bbd202_1" [label="1: Start Block_no_args.dealloc\nFormals:  self:Block_no_args*\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -87,7 +87,7 @@ digraph cfg {
 	
 
 	 "m#Block_no_args#[instance].e3d1ef26a8955830_13" -> "m#Block_no_args#[instance].e3d1ef26a8955830_12" ;
-"m#Block_no_args#[instance].e3d1ef26a8955830_14" [label="14:  Compound statement \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_block_Block_no_args.m_1,([by value]n$7 &z:int)) [line 23, column 3]\n  n$9=*&b:_fn_(*) [line 23, column 3]\n " shape="box"]
+"m#Block_no_args#[instance].e3d1ef26a8955830_14" [label="14:  Compound statement \n   n$7=*&z:int [line 23, column 7]\n  *&b:_fn_(*)=(_fun_objc_block_block_no_args.m:23,([by value]n$7 &z:int)) [line 23, column 3]\n  n$9=*&b:_fn_(*) [line 23, column 3]\n " shape="box"]
 	
 
 	 "m#Block_no_args#[instance].e3d1ef26a8955830_14" -> "m#Block_no_args#[instance].e3d1ef26a8955830_13" ;

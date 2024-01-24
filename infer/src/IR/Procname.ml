@@ -511,61 +511,21 @@ end
 
 module Block = struct
   (** Type of Objective C block names. *)
-  type block_type =
-    | InOuterScope of {outer_scope: block_type; block_index: int}
-    | SurroundingProc of {class_name: Typ.name option; name: string}
+
+  type t = {class_name: Typ.Name.t option; name: string; mangled: string}
   [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
-
-  type t = {block_type: block_type; parameters: Parameter.clang_parameter list}
-  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
-
-  let make_surrounding class_name name parameters =
-    {block_type= SurroundingProc {class_name; name}; parameters}
-
-
-  let make_in_outer_scope outer_scope block_index parameters =
-    {block_type= InOuterScope {outer_scope; block_index}; parameters}
-
-
-  let pp_block_type fmt ~with_prefix_and_index =
-    let prefix = if with_prefix_and_index then Config.anonymous_block_prefix else "^" in
-    let pp_index fmt index =
-      if with_prefix_and_index then F.fprintf fmt "%s%d" Config.anonymous_block_num_sep index
-    in
-    let rec aux fmt proc =
-      match proc with
-      | SurroundingProc {name} ->
-          F.pp_print_string fmt name
-      | InOuterScope {outer_scope; block_index} ->
-          F.fprintf fmt "%s%a%a" prefix aux outer_scope pp_index block_index
-    in
-    aux fmt
-
 
   let pp verbosity fmt bsig =
-    let pp_block = pp_block_type ~with_prefix_and_index:true in
     match verbosity with
     | Simple | NameOnly ->
         F.pp_print_string fmt "block"
     | Non_verbose ->
-        pp_block fmt bsig.block_type
+        F.fprintf fmt "%s" bsig.name
     | Verbose ->
-        F.fprintf fmt "%a%a" pp_block bsig.block_type Parameter.pp_parameters bsig.parameters
+        F.fprintf fmt "%s_%s" bsig.name bsig.mangled
 
 
-  let get_parameters block = block.parameters
-
-  let replace_parameters new_parameters block = {block with parameters= new_parameters}
-
-  let get_class_type_name {block_type} =
-    let rec get_class_type_name_aux = function
-      | InOuterScope {outer_scope} ->
-          get_class_type_name_aux outer_scope
-      | SurroundingProc {class_name} ->
-          class_name
-    in
-    get_class_type_name_aux block_type
-
+  let get_class_type_name {class_name} = class_name
 
   let get_class_name block = get_class_type_name block |> Option.map ~f:Typ.Name.name
 end
@@ -905,7 +865,7 @@ let to_function_parameter procname =
       Logging.die InternalError "Only to be called with Objective-C block names or C function names"
 
 
-let empty_block = Block (Block.make_surrounding None "" [])
+let empty_block = Block {class_name= None; name= ""; mangled= ""}
 
 (** Replace the class name component of a procedure name. In case of Java, replace package and class
     name. For Hack traits, we also update their arity. [hackc] introduces a new parameter to each
@@ -952,8 +912,8 @@ let get_class_type_name t =
       Some (CSharp.get_class_type_name cs_pname)
   | ObjC_Cpp objc_pname ->
       Some (ObjC_Cpp.get_class_type_name objc_pname)
-  | Block block ->
-      Block.get_class_type_name block
+  | Block bsig ->
+      Block.get_class_type_name bsig
   | Hack hack ->
       Hack.get_class_type_name hack
   | Python python ->
@@ -970,8 +930,8 @@ let get_class_name t =
       Some (CSharp.get_class_name cs_pname)
   | ObjC_Cpp objc_pname ->
       Some (ObjC_Cpp.get_class_name objc_pname)
-  | Block block ->
-      Block.get_class_name block
+  | Block bsig ->
+      Block.get_class_name bsig
   | Hack hack_pname ->
       Hack.get_class_name_as_a_string hack_pname
   | Python _ ->
@@ -1003,8 +963,7 @@ let rec objc_cpp_replace_method_name t (new_method_name : string) =
       t
 
 
-(** Return the method/function of a procname. For Blocks, we don't display objc_block prefix or
-    block index suffix. *)
+(** Return the method/function of a procname. *)
 let rec get_method = function
   | ObjC_Cpp name ->
       name.method_name
@@ -1016,8 +975,8 @@ let rec get_method = function
       name.function_name
   | Hack name ->
       name.function_name
-  | Block {block_type} ->
-      F.asprintf "%a" (Block.pp_block_type ~with_prefix_and_index:false) block_type
+  | Block bsig ->
+      bsig.name
   | Java j ->
       j.method_name
   | CSharp cs ->
@@ -1289,14 +1248,6 @@ let to_string ?(verbosity = Non_verbose) proc_name =
   F.asprintf "%a" (pp_with_verbosity verbosity) proc_name
 
 
-let get_block_type proc =
-  match base_of proc with
-  | Block {block_type} ->
-      block_type
-  | _ ->
-      Block.SurroundingProc {class_name= get_class_type_name proc; name= to_string proc}
-
-
 let rec pp_name_only fmt = function
   | Java j ->
       Java.pp NameOnly fmt j
@@ -1390,8 +1341,7 @@ let hashable_name proc_name =
       let name = F.asprintf "%a" (pp_simplified_string ~withclass:true) proc_name in
       List.hd_exn (String.split name ~on:':')
   | Block bsig ->
-      let name = F.asprintf "%a" (Block.pp Non_verbose) bsig in
-      List.hd_exn (String.split name ~on:':')
+      F.asprintf "%a" (Block.pp Non_verbose) bsig
   | _ ->
       (* Other cases for C and C++ method names *)
       F.asprintf "%a" (pp_simplified_string ~withclass:true) proc_name
@@ -1415,8 +1365,8 @@ let rec get_parameters procname =
       []
   | ObjC_Cpp osig ->
       clang_param_to_param (ObjC_Cpp.get_parameters osig)
-  | Block bsig ->
-      clang_param_to_param (Block.get_parameters bsig)
+  | Block _ ->
+      []
   | WithFunctionParameters (base, _, _) ->
       get_parameters base
   | Linters_dummy_method ->
@@ -1486,8 +1436,8 @@ let rec replace_parameters new_parameters procname =
       procname
   | ObjC_Cpp osig ->
       ObjC_Cpp (ObjC_Cpp.replace_parameters (params_to_clang_params new_parameters) osig)
-  | Block bsig ->
-      Block (Block.replace_parameters (params_to_clang_params new_parameters) bsig)
+  | Block _ ->
+      procname
   | WithFunctionParameters (base, func, functions) ->
       WithFunctionParameters (replace_parameters new_parameters base, func, functions)
   | Linters_dummy_method ->

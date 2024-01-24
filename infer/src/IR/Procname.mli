@@ -186,16 +186,9 @@ end
 
 module Block : sig
   (** Type of Objective C block names. *)
-  type block_type =
-    | InOuterScope of {outer_scope: block_type; block_index: int}
-        (** a block nested in the scope of an outer one *)
-    | SurroundingProc of {class_name: Typ.name option; name: string}
-        (** tracks the name of the surrounding proc and an optional class name where the procedure
-            is defined *)
 
-  type t = {block_type: block_type; parameters: Parameter.clang_parameter list} [@@deriving compare]
-
-  val make_in_outer_scope : block_type -> int -> Parameter.clang_parameter list -> t
+  type t = {class_name: Typ.Name.t option; name: string; mangled: string}
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 end
 
 module Erlang : sig
@@ -369,8 +362,6 @@ val make_python :
 
 val empty_block : t
 (** Empty block name. *)
-
-val get_block_type : t -> Block.block_type
 
 val get_language : t -> Language.t
 (** Return the language of the procedure. *)
