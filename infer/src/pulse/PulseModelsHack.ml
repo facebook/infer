@@ -66,6 +66,17 @@ let make_new_awaitable av =
   ret av
 
 
+let deep_await_hack_value aval : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* reachable_addresses =
+    exec_pure_operation (fun astate ->
+        AbductiveDomain.reachable_addresses_from (Seq.return (fst aval)) astate `Post )
+  in
+  absvalue_set_iter reachable_addresses ~f:(fun absval ->
+      let* _v = await_hack_value (absval, ValueHistory.epoch) in
+      ret () )
+
+
 (* vecs, similar treatment of Java collections, though these are value types
    Should be shared with dict (and keyset) but will generalise later.
    We have an integer size field (rather than just an empty flag) and a
@@ -114,9 +125,7 @@ module Vec = struct
                   ret ()
               (* Do "fake" await on the values we drop on the floor. TODO: mark reachable too? *)
               | rest ->
-                  list_iter rest ~f:(fun awaitable ->
-                      let* _v = await_hack_value awaitable in
-                      ret () ) ) )
+                  list_iter rest ~f:deep_await_hack_value ) )
     in
     let* () = prune_eq_int size (IntLit.of_int actual_size) in
     let* () = prune_eq_int dummy (IntLit.of_int 9) in
@@ -225,7 +234,7 @@ module Vec = struct
     | [_key; value] ->
         let* v_fst = eval_deref_access Read vec (FieldAccess fst_field) in
         let* v_snd = eval_deref_access Read vec (FieldAccess snd_field) in
-        let* _v = await_hack_value v_fst in
+        let* () = deep_await_hack_value v_fst in
         let* new_vec = new_vec_dsl [v_snd; value] in
         let* size = eval_deref_access Read vec (FieldAccess size_field) in
         let* () = write_deref_field ~ref:new_vec size_field ~obj:size in
@@ -681,9 +690,7 @@ let hack_array_cow_set this args : model =
   let this = payload_of_arg this in
   let args = payloads_of_args args in
   let default () =
-    let* () =
-      option_iter (List.last args) ~f:(fun value_written -> ignore (await_hack_value value_written))
-    in
+    let* () = option_iter (List.last args) ~f:deep_await_hack_value in
     let* fresh = mk_fresh ~model_desc:"hack_array_cow_set" () in
     assign_ret fresh
   in

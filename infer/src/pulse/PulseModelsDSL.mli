@@ -34,7 +34,17 @@ module Syntax : sig
 
   val option_iter : 'a option -> f:('a -> unit model_monad) -> unit model_monad
 
-  val ignore : 'a model_monad -> unit model_monad
+  val absvalue_set_fold :
+       AbstractValue.Set.t
+    -> init:'accum
+    -> f:('accum -> AbstractValue.t -> 'accum model_monad)
+    -> 'accum model_monad
+    [@@warning "-unused-value-declaration"]
+
+  val absvalue_set_iter :
+    AbstractValue.Set.t -> f:(AbstractValue.t -> unit model_monad) -> unit model_monad
+
+  val ignore : 'a model_monad -> unit model_monad [@@warning "-unused-value-declaration"]
 
   val assign_ret : aval -> unit model_monad
   (** assign the value to the return variable of the current function *)

@@ -81,6 +81,21 @@ module Syntax = struct
     Option.value_map o ~default:(ret ()) ~f
 
 
+  (* TODO: this isn't quite as general as one might like, could put a functor in here *)
+  let absvalue_set_fold (s : AbstractValue.Set.t) ~(init : 'accum)
+      ~(f : 'accum -> AbstractValue.t -> 'accum model_monad) : 'accum model_monad =
+    AbstractValue.Set.fold
+      (fun a comp ->
+        let* acc = comp in
+        f acc a )
+      s (ret init)
+
+
+  let absvalue_set_iter (s : AbstractValue.Set.t) ~(f : AbstractValue.t -> unit model_monad) :
+      unit model_monad =
+    absvalue_set_fold s ~init:() ~f:(fun () a -> f a)
+
+
   let ignore (m : 'a model_monad) : unit model_monad =
     let* _ = m in
     ret ()
