@@ -1932,10 +1932,11 @@ and java_version =
 and job_id = CLOpt.mk_string_opt ~long:"job-id" "Specify the job ID of this Infer run."
 
 and jobs =
-  CLOpt.mk_int ~deprecated:["-multicore"] ~long:"jobs" ~short:'j' ~default:Utils.cpus
-    ~default_to_string:(fun _ -> "<number of cores>")
+  CLOpt.mk_int_opt ~long:"jobs" ~short:'j'
     ~in_help:InferCommand.[(Analyze, manual_generic)]
-    ~meta:"int" "Run the specified number of analysis jobs simultaneously"
+    ~meta:"int"
+    "Run the specified number of analysis jobs simultaneously. Defaults to the minimum value of \
+     the max_jobs argument and the number of CPUs."
 
 
 and kotlin_capture =
@@ -2026,7 +2027,7 @@ and mask_sajwa_exceptions =
 
 
 and max_jobs =
-  CLOpt.mk_int_opt ~long:"max-jobs" ~default:40
+  CLOpt.mk_int ~long:"max-jobs" ~default:40
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     ~meta:"int"
     "Maximum number of analysis jobs running simultaneously. Experiments show current best value \
@@ -4102,7 +4103,7 @@ and javac_classes_out = !javac_classes_out
 
 and job_id = !job_id
 
-and jobs = Option.fold !max_jobs ~init:!jobs ~f:min
+and jobs = Option.value !jobs ~default:(min !max_jobs Utils.cpus)
 
 and kotlin_capture = !kotlin_capture
 

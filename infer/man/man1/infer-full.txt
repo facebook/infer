@@ -912,8 +912,9 @@ OPTIONS
            is failing.           See also infer-analyze(1) and infer-capture(1).
 
        --jobs,-j int
-           Run the specified number of analysis jobs simultaneously       
-    See also infer-analyze(1).
+           Run the specified number of analysis jobs simultaneously. Defaults
+           to the minimum value of the max_jobs argument and the number of
+           CPUs.           See also infer-analyze(1).
 
        --keep-going
            Activates: Keep going when the analysis or capture encounter a
@@ -2548,6 +2549,9 @@ INTERNAL OPTIONS
        --job-id-reset
            Cancel the effect of --job-id.
 
+       --jobs-reset
+           Cancel the effect of --jobs.
+
        --lineage-field-max-cfg-size-reset
            Cancel the effect of --lineage-field-max-cfg-size.
 
@@ -2576,9 +2580,6 @@ INTERNAL OPTIONS
 
        --margin-html int
            Set margin for the pretty printing in html
-
-       --max-jobs-reset
-           Cancel the effect of --max-jobs.
 
        --max-nesting-reset
            Cancel the effect of --max-nesting.

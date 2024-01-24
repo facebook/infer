@@ -184,7 +184,9 @@ OPTIONS
            doing any actual analysis. (Conversely: --no-invalidate-only)
 
        --jobs,-j int
-           Run the specified number of analysis jobs simultaneously
+           Run the specified number of analysis jobs simultaneously. Defaults
+           to the minimum value of the max_jobs argument and the number of
+           CPUs.
 
        --keep-going
            Activates: Keep going when the analysis or capture encounter a
