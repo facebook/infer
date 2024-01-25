@@ -144,7 +144,7 @@ Reported as "Memory Leak" by [biabduction](/docs/next/checker-biabduction).
 See [MEMORY_LEAK](#memory_leak).
 ## BIABDUCTION_RETAIN_CYCLE
 
-Reported as "Biabduction Retain Cycle" by [biabduction](/docs/next/checker-biabduction).
+Reported as "Retain Cycle" by [biabduction](/docs/next/checker-biabduction).
 
 See [RETAIN_CYCLE](#retain_cycle).
 ## BLOCK_PARAMETER_NOT_NULL_CHECKED
@@ -398,29 +398,9 @@ retain a useless reference to that `View` that will not be cleaned up until the
 
 Action: Nullify the `View` in question in `onDestroyView`.
 
-## CHECKERS_IMMUTABLE_CAST
-
-Reported as "Checkers Immutable Cast" by [immutable-cast](/docs/next/checker-immutable-cast).
-
-This error type is reported in Java. It fires when an immutable collection is
-returned from a method whose type is mutable.
-
-```java
-  public List<String> getSomeList() {
-    ImmutableList<String> l = foo(...);
-    return l;
-  }
-```
-
-This can lead to a runtime error if users of `getSomeList` try to modify the
-list e.g. by adding elements.
-
-Action: you can change the return type to be immutable, or make a copy of the
-collection so that it can be modified.
-
 ## CHECKERS_PRINTF_ARGS
 
-Reported as "Checkers Printf Args" by [printf-args](/docs/next/checker-printf-args).
+Reported as "Printf Args" by [printf-args](/docs/next/checker-printf-args).
 
 This error is reported when the argument types to a `printf` method do not match the format string.
 
@@ -656,297 +636,6 @@ int foo(){
 }
 ```
 
-## ERADICATE_ANNOTATION_GRAPH
-
-Reported as "Annotation Graph" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_BAD_NESTED_CLASS_ANNOTATION
-
-Reported as "@Nullsafe annotation is inconsistent with outer class" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_CONDITION_REDUNDANT
-
-Reported as "Condition Redundant" by [eradicate](/docs/next/checker-eradicate).
-
-This report is inactive by default. Condition (x != null) or (x == null) when x
-cannot be null: the first condition is always true and the second is always
-false
-
-Example:
-
-```java
-class C {
-  void m() {
-    String s = new String("abc");
-    if (s != null) {
-      int n = s.length();
-    }
-  }
-}
-```
-
-Action: Make sure that the annotations are correct, as the condition is
-considered redundant based on the existing annotations. In particular, check the
-annotation of any input parameters and fields of the current method, as well as
-the annotations of any method called directly by the current method, if
-relevant. If the annotations are correct, you can remove the redundant case.
-
-## ERADICATE_FIELD_NOT_INITIALIZED
-
-Reported as "Field Not Initialized" by [eradicate](/docs/next/checker-eradicate).
-
-The constructor does not initialize a field f which is not annotated with
-@Nullable
-
-Example:
-
-```java
-class C {
-  String f;
-
-  C () { // field f not initialized and not annotated @Nullable
-  }
-}
-```
-
-Action: The preferred action is to initialize the field with a value that is not
-null. If, by design, null is a valid value for the field, then it should be
-annotated with @Nullable.
-
-## ERADICATE_FIELD_NOT_NULLABLE
-
-Reported as "Field Not Nullable" by [eradicate](/docs/next/checker-eradicate).
-
-An assignment x.f = v where v could be null and field f is not annotated with
-@Nullable.
-
-Example:
-
-```java
-class C {
-  String f;
-
-  void foo(@Nullable String s) {
-    f = s;
-  }
-}
-```
-
-Action: The preferred action is to ensure that a null value is never stored in
-the field, by changing the code or changing annotations. If this cannot be done,
-add a @Nullable annotation to the field. This annotation might trigger more
-warnings in other code that uses the field, as that code must now deal with null
-values.
-
-## ERADICATE_FIELD_OVER_ANNOTATED
-
-Reported as "Field Over Annotated" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION
-
-Reported as "Inconsistent Subclass Parameter Annotation" by [eradicate](/docs/next/checker-eradicate).
-
-A parameter of the overridden method is missing a @Nullable annotation present in the superclass.
-
-Action: choose a consistent annotation based on the desired invariant.
-
-Example:
-
-```java
-class A {
-
-  int len(@Nullable String s) {
-    if (s != null) {
-      return s.length();
-    } else {
-      return 0;
-    }
-  }
-}
-
-class B extends A {
-
-  int len(String s) {  // @Nullable missing.
-    return s.length();
-  }
-}
-```
-
-A consistent use of @Nullable on parameters across subtyping should prevent runtime issue like in:
-
-```java
-public class Main {
-
-  String s;
-
-  int foo() {
-    A a = new B();
-    return a.len(s);
-  }
-}
-```
-
-
-## ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION
-
-Reported as "Inconsistent Subclass Return Annotation" by [eradicate](/docs/next/checker-eradicate).
-
-The return type of the overridden method is annotated @Nullable, but the
-corresponding method in the superclass is not.
-
-Action: choose a consistent annotation based on the desired invariant.
-
-Example:
-
-```java
-class A {
-  String create() {
-    return new String("abc");
-  }
-}
-
-class B extends A {
-  @Nullable String create() {  // Inconsistent @Nullable annotation.
-      return null;
-  }
-}
-```
-
-A consistent use of `@Nullable` on the return type across subtyping should prevent
-runtime issue like in:
-
-```java
-class Main {
-
-  int foo(A a) {
-     String s = a.create();
-     return s.length();
-  }
-
-  void main(String[] args) {
-     A a = new B();
-     foo(a);
-  }
-
-}
-```
-
-## ERADICATE_META_CLASS_CAN_BE_NULLSAFE
-
-Reported as "Class has 0 issues and can be marked @Nullsafe" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_META_CLASS_IS_NULLSAFE
-
-Reported as "Class is marked @Nullsafe and has 0 issues" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_META_CLASS_NEEDS_IMPROVEMENT
-
-Reported as "Class needs improvement to become @Nullsafe" by [eradicate](/docs/next/checker-eradicate).
-
-Reported when the class either:
-- has at least one nullability issue, or
-- has at least one (currently possibly hidden) issue preventing it from being marked `@Nullsafe`.
-
-## ERADICATE_NULLABLE_DEREFERENCE
-
-Reported as "Nullable Dereference" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_PARAMETER_NOT_NULLABLE
-
-Reported as "Parameter Not Nullable" by [eradicate](/docs/next/checker-eradicate).
-
-Method call x.m(..., v, ...) where v can be null and the corresponding parameter
-in method m is not annotated with @Nullable
-
-Example:
-
-```java
-class C {
-  void m(C x) {
-    String s = x.toString()
-  }
-
-  void test(@Nullable C x) {
-    m(x);
-  }
-}
-```
-
-Action: The preferred action is to ensure that a null value is never passed to
-the method, by changing the code or changing annotations. If this cannot be
-done, add a @Nullable annotation to the relevant parameter in the method
-declaration. This annotation might trigger more warnings in the implementation
-of method m, as that code must now deal with null values.
-
-## ERADICATE_REDUNDANT_NESTED_CLASS_ANNOTATION
-
-Reported as "@Nullsafe annotation is redundant" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_RETURN_NOT_NULLABLE
-
-Reported as "Return Not Nullable" by [eradicate](/docs/next/checker-eradicate).
-
-Method m can return null, but the method's return type is not annotated with
-@Nullable
-
-Example:
-
-```java
-class C {
-  String m() {
-    return null;
-  }
-}
-```
-
-Action: The preferred action is to ensure that a null value is never returned by
-the method, by changing the code or changing annotations. If this cannot be
-done, add a @Nullable annotation to the method declaration. This annotation
-might trigger more warnings in the callers of method m, as the callers must now
-deal with null values.
-
-## ERADICATE_RETURN_OVER_ANNOTATED
-
-Reported as "Return Over Annotated" by [eradicate](/docs/next/checker-eradicate).
-
-This report is inactive by default. Method m is annotated with @Nullable but the
-method cannot return null
-
-Example:
-
-```java
-class C {
-  @Nullable String m() {
-    String s = new String("abc");
-    return s;
-  }
-}
-```
-
-Action: Make sure that the annotations are correct, as the return annotation is
-considered redundant based on the existing annotations. In particular, check the
-annotation of any input parameters and fields of the current method, as well as
-the annotations of any method called directly by the current method, if
-relevant. If the annotations are correct, you can remove the @Nullable
-annotation.
-
-## ERADICATE_UNCHECKED_USAGE_IN_NULLSAFE
-
-Reported as "Nullsafe mode: unchecked usage of a value" by [eradicate](/docs/next/checker-eradicate).
-
-
-## ERADICATE_UNVETTED_THIRD_PARTY_IN_NULLSAFE
-
-Reported as "Nullsafe mode: unchecked usage of unvetted third-party" by [eradicate](/docs/next/checker-eradicate).
-
-
 ## EXECUTION_TIME_COMPLEXITY_INCREASE
 
 Reported as "Execution Time Complexity Increase" by [cost](/docs/next/checker-cost).
@@ -1115,35 +804,35 @@ void efficient_loop_ok(HashMap<String, Integer> testMap) {
 
 ## INFERBO_ALLOC_IS_BIG
 
-Reported as "Inferbo Alloc Is Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+Reported as "Alloc Is Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 `malloc` is passed a large constant value (>=10^6). For example, `int n = 1000000; malloc(n);` generates `INFERBO_ALLOC_IS_BIG` on `malloc(n)`.
 
 Action: Fix the size argument or make sure it is really needed.
 ## INFERBO_ALLOC_IS_NEGATIVE
 
-Reported as "Inferbo Alloc Is Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+Reported as "Alloc Is Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 `malloc` is called with a negative size. For example, `int n = 3 - 5; malloc(n);` generates `INFERBO_ALLOC_IS_NEGATIVE` on `malloc(n)`.
 
 Action: Fix the size argument.
 ## INFERBO_ALLOC_IS_ZERO
 
-Reported as "Inferbo Alloc Is Zero" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+Reported as "Alloc Is Zero" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 `malloc` is called with a zero size. For example, `int n = 3 - 3; malloc(n);` generates `INFERBO_ALLOC_IS_ZERO` on `malloc(n)`.
 
 Action: Fix the size argument.
 ## INFERBO_ALLOC_MAY_BE_BIG
 
-Reported as "Inferbo Alloc May Be Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+Reported as "Alloc May Be Big" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 `malloc` *may* be called with a large value. For example, `int n = b ? 3 : 1000000; malloc(n);` generates `INFERBO_ALLOC_MAY_BE_BIG` on `malloc(n)`.
 
 Action: Fix the size argument or add a bound checking, e.g. `if (n < A_SMALL_NUMBER) { malloc(n); }`.
 ## INFERBO_ALLOC_MAY_BE_NEGATIVE
 
-Reported as "Inferbo Alloc May Be Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
+Reported as "Alloc May Be Negative" by [bufferoverrun](/docs/next/checker-bufferoverrun).
 
 `malloc` *may* be called with a negative value. For example, `int n = b ? 3 : -5; malloc(n);` generates `INFERBO_ALLOC_MAY_BE_NEGATIVE` on `malloc(n)`.
 
@@ -2107,7 +1796,7 @@ void caller() {
 
 ## PULSE_REFERENCE_STABILITY
 
-Reported as "Pulse Reference Stability" by [pulse](/docs/next/checker-pulse).
+Reported as "Reference Stability" by [pulse](/docs/next/checker-pulse).
 
 The family of maps `folly::F14ValueMap`, `folly::F14VectorMap`, and by extension
 `folly::F14FastMap` differs slightly from `std::unordered_map` as it does not
@@ -2144,12 +1833,12 @@ void unsafe_expressions_bad(folly::F14FastMap<int, int>& map) {
 
 ## PULSE_RESOURCE_LEAK
 
-Reported as "Pulse Resource Leak" by [pulse](/docs/next/checker-pulse).
+Reported as "Resource Leak" by [pulse](/docs/next/checker-pulse).
 
 See [RESOURCE_LEAK](#resource_leak)
 ## PULSE_TRANSITIVE_ACCESS
 
-Reported as "Pulse Transitive Access" by [pulse](/docs/next/checker-pulse).
+Reported as "Transitive Access" by [pulse](/docs/next/checker-pulse).
 
 This issue tracks spurious accesses that are reachable from specific entry functions.
 
@@ -2158,6 +1847,27 @@ Spurious accesses are specified as specific load/calls.
 Entry functions are specified through their enclosing class that must extend a specific 
 class and should not extend a list of specific classes.
 
+
+## PULSE_UNAWAITED_AWAITABLE
+
+Reported as "Unawaited Awaitable" by [pulse](/docs/next/checker-pulse).
+
+`Awaitable` values created by calls to asynchronous methods should eventually be `await`ed along all codepaths (even if their value is unused). Hence the following is *not* OK
+
+```hack
+class A {
+  public static async genInt() : Awaitable<int>{
+    // typically do something involving IO
+  }
+
+  public static async genBad() : Awaitable<void> {
+    $_unused = self::genInt(); // ERROR: should have done $_unused = await self::genInt();
+    return;
+  }
+}
+```
+
+Failure to `await` an `Awaitable` can lead to non-deterministic amount of the asynchronous call actually being executed, and can also indicate a logical confusion between `T` and `Awaitable<T>` that may not be caught by the type-checker.
 
 ## PULSE_UNINITIALIZED_CONST
 

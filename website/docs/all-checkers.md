@@ -15,6 +15,8 @@ Given a pair of source and sink annotation, e.g. `@PerformanceCritical` and `@Ex
 
 This analysis deals with a range of issues, many linked to memory safety.
 
+**\*\*\*DEPRECATED\*\*\*** This has been replaced by Pulse and will be removed in the next release.
+
 [Visit here for more information.](/docs/next/checker-biabduction)
 
 ## Buffer Overrun Analysis (InferBO)
@@ -41,14 +43,6 @@ Experimental datalog-based points-to analysis.
 
 [Visit here for more information.](/docs/next/checker-datalog)
 
-## Eradicate
-
-The eradicate `@Nullable` checker for Java annotations.
-
-**\*\*\*DEPRECATED\*\*\*** Unmaintained and will be removed in the future. Consider using [NullAway](https://github.com/uber/NullAway) as an alternative to Eradicate.
-
-[Visit here for more information.](/docs/next/checker-eradicate)
-
 ## Fragment Retains View
 
 Detects when Android fragments are not explicitly nullified before becoming unreachable.
@@ -56,14 +50,6 @@ Detects when Android fragments are not explicitly nullified before becoming unre
 **\*\*\*DEPRECATED\*\*\*** Unmaintained due to poor precision.
 
 [Visit here for more information.](/docs/next/checker-fragment-retains-view)
-
-## Immutable Cast
-
-Detection of object cast from immutable types to mutable types. For instance, it will detect casts from `ImmutableList` to `List`, `ImmutableMap` to `Map`, and `ImmutableSet` to `Set`.
-
-**\*\*\*DEPRECATED\*\*\*** Unmaintained due to poor actionability of the reports.
-
-[Visit here for more information.](/docs/next/checker-immutable-cast)
 
 ## Impurity
 
@@ -111,7 +97,7 @@ Detect mismatches between the Java `printf` format strings and the argument type
 
 ## Pulse
 
-Memory and lifetime analysis.
+General-purpose memory and value analysis engine.
 
 [Visit here for more information.](/docs/next/checker-pulse)
 
@@ -124,6 +110,8 @@ Detects pure (side-effect-free) functions. A different implementation of "impuri
 ## Quandary
 
 The Quandary taint analysis detects flows of values between sources and sinks, except if the value went through a "sanitizer". In addition to some defaults, users can specify their own sources, sinks, and sanitizers functions.
+
+**\*\*\*DEPRECATED\*\*\*** Taint analysis is now supported by the Pulse checker and Quandary will be removed in the next release.
 
 [Visit here for more information.](/docs/next/checker-quandary)
 
