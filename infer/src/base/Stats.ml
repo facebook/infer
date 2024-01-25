@@ -364,10 +364,14 @@ let log_to_scuba stats =
   in
   let create_longest_proc_duration_heap field =
     Field.get field stats |> LongestProcDurationHeap.to_list
-    |> List.mapi ~f:(fun i DurationItem.{duration_us} ->
+    |> List.foldi ~init:[] ~f:(fun i acc DurationItem.{duration_us; file; pname} ->
            LogEntry.mk_time
              ~label:(F.sprintf "backend_stats.longest_proc_duration_heap_%d" i)
-             ~duration_us )
+             ~duration_us
+           :: LogEntry.mk_string
+                ~label:(F.sprintf "backend_stats.longest_proc_duration_heap_name_%d" i)
+                ~message:(F.sprintf "%s:%s" file pname)
+           :: acc )
   in
   let create_time_entry field =
     Field.get field stats
