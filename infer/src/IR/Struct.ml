@@ -101,7 +101,7 @@ let pp pe name f
 
 let compare_custom_field (fld, _, _) (fld', _, _) = Fieldname.compare fld fld'
 
-let make_java_struct fields' statics' methods' supers' annots' class_info ?source_file dummy =
+let make_sorted_struct fields' statics' methods' supers' annots' class_info ?source_file dummy =
   let fields = List.dedup_and_sort ~compare:compare_custom_field fields' in
   let statics = List.dedup_and_sort ~compare:compare_custom_field statics' in
   let methods = List.dedup_and_sort ~compare:Procname.compare methods' in
@@ -139,8 +139,8 @@ let internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods
       ?(annots = default.annots) ?(dummy = default.dummy) ?source_file typename =
     let class_info = Option.value class_info ~default:ClassInfo.NoInfo in
     match typename with
-    | Typ.JavaClass _jclass ->
-        make_java_struct fields statics methods supers annots class_info ?source_file dummy
+    | Typ.JavaClass _ | Typ.HackClass _ | Typ.CSharpClass _ | Typ.PythonClass _ ->
+        make_sorted_struct fields statics methods supers annots class_info ?source_file dummy
     | _ ->
         { fields
         ; statics
@@ -341,6 +341,7 @@ let merge_class_info ~newer ~current =
       Logging.die InternalError "Tried to merge a JavaClassInfo with a HackClassInfo value.@\n"
 
 
+(* must only be used on structs made with [make_sorted_struct] *)
 let full_merge ~newer ~current =
   let fields = merge_fields ~newer:newer.fields ~current:current.fields in
   let statics = merge_fields ~newer:newer.statics ~current:current.statics in

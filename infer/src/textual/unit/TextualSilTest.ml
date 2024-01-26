@@ -195,7 +195,7 @@ let%expect_test "hack extends is ordered" =
   let supers = Tenv.fold_supers tenv name ~init:[] ~f:(fun name _ acc -> name :: acc) in
   F.printf "%a@\n" (Fmt.list ~sep:(Fmt.any " ") IR.Typ.Name.pp) (List.rev supers) ;
   [%expect {|
-    hack A hack T3 hack T2 hack T1 hack T0 hack P3 hack P2 hack P1 hack P0 |}]
+    hack A hack P0 hack P1 hack P2 hack P3 hack T0 hack T1 hack T2 hack T3 |}]
 
 
 let%expect_test "overloads in tenv" =
@@ -217,8 +217,8 @@ let%expect_test "overloads in tenv" =
     supers: {}
     objc_protocols: {}
     methods: {
-                C.f#2
                 C.f#1
+                C.f#2
               }
     exported_obj_methods: {}
     annots: {<>}
