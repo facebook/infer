@@ -35,7 +35,7 @@ type pvar_kind =
 [@@deriving compare, equal, sexp, hash, normalize]
 
 (** Names for program variables. *)
-type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind; pv_tmp_id: Ident.t option}
+type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind; pv_tmp_id: Ident.t option [@ignore]}
 [@@deriving compare, equal, sexp, hash, normalize]
 
 let yojson_of_t {pv_name} = [%yojson_of: Mangled.t] pv_name
