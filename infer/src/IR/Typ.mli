@@ -70,7 +70,6 @@ val is_volatile : type_quals -> bool
 
 (** types for sil (structured) expressions *)
 type t = {desc: desc; quals: type_quals}
-[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 and desc =
   | Tint of ikind  (** integer type *)
@@ -83,20 +82,23 @@ and desc =
   | Tarray of {elt: t; length: IntLit.t option; stride: IntLit.t option}
       (** array type with statically fixed length and stride *)
 
+and objc_block_sig = {class_name: name option; name: string; mangled: string}
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+
 and name =
   | CStruct of QualifiedCppName.t
   | CUnion of QualifiedCppName.t
-      (** qualified name does NOT contain template arguments of the class. It will contain template
-          args of its parent classes, for example: MyClass<int>::InnerClass<int> will store
-          "MyClass<int>", "InnerClass" *)
-  | CppClass of {name: QualifiedCppName.t; template_spec_info: template_spec_info; is_union: bool}
+  | CppClass of
+      {name: QualifiedCppName.t; template_spec_info: template_spec_info; is_union: bool [@ignore]}
   | CSharpClass of CSharpClassName.t
   | ErlangType of ErlangTypeName.t
   | HackClass of HackClassName.t
   | JavaClass of JavaClassName.t
-  | ObjcClass of QualifiedCppName.t  (** ObjC class *)
+  | ObjcClass of QualifiedCppName.t
   | ObjcProtocol of QualifiedCppName.t
   | PythonClass of PythonClassName.t
+  | ObjcBlock of objc_block_sig
+[@@deriving hash, sexp]
 
 and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque
 

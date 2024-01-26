@@ -63,6 +63,8 @@ let templated_name_of_class_name class_name =
       (QualifiedCppName.of_list (HackClassName.components mangled_name), [])
   | PythonClass mangled_name ->
       (QualifiedCppName.of_list (PythonClassName.components mangled_name), [])
+  | ObjcBlock bsig ->
+      (QualifiedCppName.of_list [bsig.name], [])
 
 
 let templated_name_of_hack hack =

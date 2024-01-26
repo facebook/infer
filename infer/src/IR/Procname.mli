@@ -187,8 +187,7 @@ end
 module Block : sig
   (** Type of Objective C block names. *)
 
-  type t = {class_name: Typ.Name.t option; name: string; mangled: string}
-  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+  type t = Typ.objc_block_sig [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 end
 
 module Erlang : sig

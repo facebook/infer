@@ -512,10 +512,9 @@ end
 module Block = struct
   (** Type of Objective C block names. *)
 
-  type t = {class_name: Typ.Name.t option; name: string; mangled: string}
-  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+  type t = Typ.objc_block_sig [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-  let pp verbosity fmt bsig =
+  let pp verbosity fmt (bsig : Typ.objc_block_sig) =
     match verbosity with
     | Simple | NameOnly ->
         F.pp_print_string fmt "block"
@@ -525,7 +524,7 @@ module Block = struct
         F.fprintf fmt "%s_%s" bsig.name bsig.mangled
 
 
-  let get_class_type_name {class_name} = class_name
+  let get_class_type_name ({class_name} : Typ.objc_block_sig) = class_name
 
   let get_class_name block = get_class_type_name block |> Option.map ~f:Typ.Name.name
 end

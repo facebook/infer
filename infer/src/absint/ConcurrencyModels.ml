@@ -357,7 +357,8 @@ let is_android_lifecycle_method tenv pname =
            | HackClass _
            | ObjcClass _
            | ObjcProtocol _
-           | PythonClass _ ->
+           | PythonClass _
+           | ObjcBlock _ ->
                false
            | JavaClass java_class_name ->
                JavaClassName.package java_class_name

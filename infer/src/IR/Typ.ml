@@ -134,6 +134,9 @@ module T = struct
     | Tarray of {elt: t; length: IntLit.t option; stride: IntLit.t option}
         (** array type with statically fixed length and stride *)
 
+  and objc_block_sig = {class_name: name option; name: string; mangled: string}
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+
   and name =
     | CStruct of QualifiedCppName.t
     | CUnion of QualifiedCppName.t
@@ -146,6 +149,7 @@ module T = struct
     | ObjcClass of QualifiedCppName.t
     | ObjcProtocol of QualifiedCppName.t
     | PythonClass of PythonClassName.t
+    | ObjcBlock of objc_block_sig
   [@@deriving hash, sexp]
 
   and template_arg = TType of t | TInt of int64 | TNull | TNullPtr | TOpaque
@@ -340,6 +344,8 @@ and pp_name_c_syntax pe f = function
       CSharpClassName.pp f name
   | PythonClass name ->
       PythonClassName.pp f name
+  | ObjcBlock bsig ->
+      F.fprintf f "%s" bsig.name
 
 
 and pp_template_spec_info pe f = function
@@ -431,6 +437,12 @@ module Name = struct
         -1
     | _, PythonClass _ ->
         1
+    | ObjcBlock bsig1, ObjcBlock bsig2 ->
+        compare_objc_block_sig bsig1 bsig2
+    | ObjcBlock _, _ ->
+        -1
+    | _, ObjcBlock _ ->
+        1
 
 
   let qual_name = function
@@ -439,7 +451,7 @@ module Name = struct
     | CppClass {name; template_spec_info} ->
         let template_suffix = F.asprintf "%a" (pp_template_spec_info Pp.text) template_spec_info in
         QualifiedCppName.append_template_args_to_last name ~args:template_suffix
-    | JavaClass _ | CSharpClass _ | ErlangType _ | HackClass _ | PythonClass _ ->
+    | JavaClass _ | CSharpClass _ | ErlangType _ | HackClass _ | PythonClass _ | ObjcBlock _ ->
         QualifiedCppName.empty
 
 
@@ -448,7 +460,7 @@ module Name = struct
         name
     | CppClass {name} ->
         name
-    | JavaClass _ | CSharpClass _ | ErlangType _ | HackClass _ | PythonClass _ ->
+    | JavaClass _ | CSharpClass _ | ErlangType _ | HackClass _ | PythonClass _ | ObjcBlock _ ->
         QualifiedCppName.empty
 
 
@@ -475,6 +487,8 @@ module Name = struct
         HackClassName.to_string name
     | PythonClass name ->
         PythonClassName.to_string name
+    | ObjcBlock bsig ->
+        bsig.name
 
 
   let pp fmt tname =
@@ -493,6 +507,8 @@ module Name = struct
           "python"
       | ObjcProtocol _ ->
           "protocol"
+      | ObjcBlock _ ->
+          ""
     in
     F.fprintf fmt "%s %a" (prefix tname) (pp_name_c_syntax Pp.text) tname
 
@@ -502,7 +518,7 @@ module Name = struct
   let is_class = function
     | CppClass _ | JavaClass _ | HackClass _ | ObjcClass _ | CSharpClass _ | PythonClass _ ->
         true
-    | CStruct _ | CUnion _ | ErlangType _ | ObjcProtocol _ ->
+    | CStruct _ | CUnion _ | ErlangType _ | ObjcProtocol _ | ObjcBlock _ ->
         false
 
 

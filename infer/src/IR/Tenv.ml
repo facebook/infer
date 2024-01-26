@@ -454,7 +454,7 @@ let resolve_method ~method_exists tenv class_name proc_name =
           | ObjcClass _ ->
               (* multiple inheritance impossible, but recursive calls will throw away protocols *)
               class_struct.supers
-          | ObjcProtocol _ ->
+          | ObjcProtocol _ | ObjcBlock _ ->
               []
           | PythonClass _ ->
               (* We currently only support single inheritance for Python so this is straightforward *)

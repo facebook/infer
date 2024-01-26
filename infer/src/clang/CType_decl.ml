@@ -639,7 +639,7 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
         Option.value_map ~default:None ~f:Procname.get_class_type_name outer_proc
       in
       let name, mangled = CAst_utils.create_objc_block_name decl_info block_decl_info in
-      Procname.Block {Procname.Block.class_name= outer_proc_class_name; name; mangled}
+      Procname.Block {Typ.class_name= outer_proc_class_name; name; mangled}
   | _ ->
       Logging.die InternalError "Expected method decl, but got %s."
         (Clang_ast_proj.get_decl_kind_string meth_decl)
