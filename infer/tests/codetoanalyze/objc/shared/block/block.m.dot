@@ -15,7 +15,7 @@ digraph cfg {
 	
 
 	 "objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_4" -> "objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_2" ;
-"objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_5" [label="5:  BinaryOperatorStmt: Assign \n   n$13=*&addblock2:_fn_(*) [line 25, column 12]\n  n$14=n$13(1:int) objc_block [line 25, column 12]\n  *&add2:int=n$14 [line 25, column 5]\n " shape="box"]
+"objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_5" [label="5:  BinaryOperatorStmt: Assign \n   n$13=*&addblock2:_fn_(*) [line 25, column 12]\n  n$14=_fun___call_objc_block(n$13:_fn_,1:int) objc_block [line 25, column 12]\n  *&add2:int=n$14 [line 25, column 5]\n " shape="box"]
 	
 
 	 "objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_5" -> "objc_block_block.m:16_b5d94b7b.4639411e261cc5d4_3" ;
@@ -91,7 +91,7 @@ digraph cfg {
 	
 
 	 "main1.38f534a9576db7ec_5" -> "main1.38f534a9576db7ec_3" ;
-"main1.38f534a9576db7ec_6" [label="6:  BinaryOperatorStmt: Assign \n   n$3=*&addblock:_fn_(*) [line 35, column 10]\n  n$4=n$3(3:int,2:int) objc_block [line 35, column 10]\n  *&add2:int=n$4 [line 35, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec_6" [label="6:  BinaryOperatorStmt: Assign \n   n$3=*&addblock:_fn_(*) [line 35, column 10]\n  n$4=_fun___call_objc_block(n$3:_fn_,3:int,2:int) objc_block [line 35, column 10]\n  *&add2:int=n$4 [line 35, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec_6" -> "main1.38f534a9576db7ec_5" ;
@@ -99,7 +99,7 @@ digraph cfg {
 	
 
 	 "main1.38f534a9576db7ec_7" -> "main1.38f534a9576db7ec_6" ;
-"main1.38f534a9576db7ec_8" [label="8:  BinaryOperatorStmt: Assign \n   n$7=*&addblock:_fn_(*) [line 29, column 10]\n  n$8=n$7(1:int,2:int) objc_block [line 29, column 10]\n  *&add1:int=n$8 [line 29, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec_8" [label="8:  BinaryOperatorStmt: Assign \n   n$7=*&addblock:_fn_(*) [line 29, column 10]\n  n$8=_fun___call_objc_block(n$7:_fn_,1:int,2:int) objc_block [line 29, column 10]\n  *&add1:int=n$8 [line 29, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec_8" -> "main1.38f534a9576db7ec_7" ;

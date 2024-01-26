@@ -62,7 +62,7 @@ digraph cfg {
 "foo.acbd18db4cc2f85c_2" [label="2: Exit foo \n  " color=yellow style=filled]
 	
 
-"foo.acbd18db4cc2f85c_3" [label="3:  Call n$0 \n   n$0=*&my_block1:_fn_(*) [line 16, column 3]\n  n$1=n$0(22:int) objc_block [line 16, column 3]\n " shape="box"]
+"foo.acbd18db4cc2f85c_3" [label="3:  Call n$0 \n   n$0=*&my_block1:_fn_(*) [line 16, column 3]\n  n$1=_fun___call_objc_block(n$0:_fn_,22:int) objc_block [line 16, column 3]\n " shape="box"]
 	
 
 	 "foo.acbd18db4cc2f85c_3" -> "foo.acbd18db4cc2f85c_2" ;

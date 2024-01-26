@@ -74,6 +74,8 @@ let __builtin_offsetof = create_procname "__builtin_offsetof"
 
 let __cast = create_procname "__cast"
 
+let __call_objc_block = create_procname "__call_objc_block"
+
 let __cxx_typeid = create_procname "__cxx_typeid"
 
 let __delete = create_procname "__delete"

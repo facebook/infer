@@ -127,7 +127,7 @@ digraph cfg {
 	
 
 	 "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_12" -> "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_5" ;
-"navigateToURLInBackground#BlockVa.8013af6ffddfbf14_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 21, column 3]\n  n$5=*&addBlock:_fn_(*) [line 21, column 11]\n  n$6=n$5(1:int,2:int) objc_block [line 21, column 11]\n  *&x:int=n$6 [line 21, column 3]\n " shape="box"]
+"navigateToURLInBackground#BlockVa.8013af6ffddfbf14_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(x:int); [line 21, column 3]\n  n$5=*&addBlock:_fn_(*) [line 21, column 11]\n  n$6=_fun___call_objc_block(n$5:_fn_,1:int,2:int) objc_block [line 21, column 11]\n  *&x:int=n$6 [line 21, column 3]\n " shape="box"]
 	
 
 	 "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_13" -> "navigateToURLInBackground#BlockVa.8013af6ffddfbf14_12" ;
@@ -153,7 +153,7 @@ digraph cfg {
 "blockPostBad#BlockVar#[instance].47932460613f653f_2" [label="2: Exit BlockVar.blockPostBad \n  " color=yellow style=filled]
 	
 
-"blockPostBad#BlockVar#[instance].47932460613f653f_3" [label="3:  Return Stmt \n   n$11=*&my_block:_fn_(*) [line 34, column 11]\n  n$12=n$11() objc_block [line 34, column 11]\n  n$13=*n$12:int [line 34, column 10]\n " shape="box"]
+"blockPostBad#BlockVar#[instance].47932460613f653f_3" [label="3:  Return Stmt \n   n$11=*&my_block:_fn_(*) [line 34, column 11]\n  n$12=_fun___call_objc_block(n$11:_fn_) objc_block [line 34, column 11]\n  n$13=*n$12:int [line 34, column 10]\n " shape="box"]
 	
 
 	 "blockPostBad#BlockVar#[instance].47932460613f653f_3" -> "blockPostBad#BlockVar#[instance].47932460613f653f_4" ;
@@ -176,7 +176,7 @@ digraph cfg {
 "blockPostOk#BlockVar#[instance].a2b2d2d14542ee03_2" [label="2: Exit BlockVar.blockPostOk \n  " color=yellow style=filled]
 	
 
-"blockPostOk#BlockVar#[instance].a2b2d2d14542ee03_3" [label="3:  Return Stmt \n   n$16=*&my_block:_fn_(*) [line 43, column 11]\n  n$17=n$16() objc_block [line 43, column 11]\n  n$18=*n$17:int [line 43, column 10]\n " shape="box"]
+"blockPostOk#BlockVar#[instance].a2b2d2d14542ee03_3" [label="3:  Return Stmt \n   n$16=*&my_block:_fn_(*) [line 43, column 11]\n  n$17=_fun___call_objc_block(n$16:_fn_) objc_block [line 43, column 11]\n  n$18=*n$17:int [line 43, column 10]\n " shape="box"]
 	
 
 	 "blockPostOk#BlockVar#[instance].a2b2d2d14542ee03_3" -> "blockPostOk#BlockVar#[instance].a2b2d2d14542ee03_4" ;
@@ -203,7 +203,7 @@ digraph cfg {
 "capturedNoNullDeref#BlockVar#[ins.0edb1a16a0d48da5_2" [label="2: Exit BlockVar.capturedNoNullDeref \n  " color=yellow style=filled]
 	
 
-"capturedNoNullDeref#BlockVar#[ins.0edb1a16a0d48da5_3" [label="3:  Return Stmt \n   n$26=*&my_block:_fn_(*) [line 61, column 10]\n  n$27=n$26() objc_block [line 61, column 10]\n " shape="box"]
+"capturedNoNullDeref#BlockVar#[ins.0edb1a16a0d48da5_3" [label="3:  Return Stmt \n   n$26=*&my_block:_fn_(*) [line 61, column 10]\n  n$27=_fun___call_objc_block(n$26:_fn_) objc_block [line 61, column 10]\n " shape="box"]
 	
 
 	 "capturedNoNullDeref#BlockVar#[ins.0edb1a16a0d48da5_3" -> "capturedNoNullDeref#BlockVar#[ins.0edb1a16a0d48da5_4" ;
@@ -234,7 +234,7 @@ digraph cfg {
 "capturedNullDeref#BlockVar#[insta.53b2f4512435f496_2" [label="2: Exit BlockVar.capturedNullDeref \n  " color=yellow style=filled]
 	
 
-"capturedNullDeref#BlockVar#[insta.53b2f4512435f496_3" [label="3:  Return Stmt \n   n$21=*&my_block:_fn_(*) [line 51, column 10]\n  n$22=n$21() objc_block [line 51, column 10]\n " shape="box"]
+"capturedNullDeref#BlockVar#[insta.53b2f4512435f496_3" [label="3:  Return Stmt \n   n$21=*&my_block:_fn_(*) [line 51, column 10]\n  n$22=_fun___call_objc_block(n$21:_fn_) objc_block [line 51, column 10]\n " shape="box"]
 	
 
 	 "capturedNullDeref#BlockVar#[insta.53b2f4512435f496_3" -> "capturedNullDeref#BlockVar#[insta.53b2f4512435f496_4" ;

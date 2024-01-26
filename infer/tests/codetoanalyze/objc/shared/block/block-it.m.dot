@@ -124,7 +124,7 @@ digraph cfg {
 	
 
 	 "array_trans#MyBlock#[instance].92a91a5a6c07d842_13" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842_10" ;
-"array_trans#MyBlock#[instance].92a91a5a6c07d842_14" [label="14:  Call n$20 \n   n$20=*&enumerateObjectsUsingBlock:_fn_(*) [line 51, column 5]\n  n$21=*&object:objc_object* [line 51, column 32]\n  n$22=*&idx:unsigned long [line 51, column 40]\n  n$23=*&stop:_Bool* [line 51, column 45]\n  n$24=n$20(n$21:objc_object*,n$22:unsigned long,n$23:_Bool*) objc_block [line 51, column 5]\n " shape="box"]
+"array_trans#MyBlock#[instance].92a91a5a6c07d842_14" [label="14:  Call n$20 \n   n$20=*&enumerateObjectsUsingBlock:_fn_(*) [line 51, column 5]\n  n$21=*&object:objc_object* [line 51, column 32]\n  n$22=*&idx:unsigned long [line 51, column 40]\n  n$23=*&stop:_Bool* [line 51, column 45]\n  n$24=_fun___call_objc_block(n$20:_fn_,n$21:objc_object*,n$22:unsigned long,n$23:_Bool*) objc_block [line 51, column 5]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#[instance].92a91a5a6c07d842_14" -> "array_trans#MyBlock#[instance].92a91a5a6c07d842_11" ;

@@ -1,4 +1,5 @@
-codetoanalyze/objc/bufferoverrun/block.m, Block.block_in_field_Bad, 7, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Call,Assignment,<Length trace>,Array declaration,Array access: Offset: 15 Size: 10]
+codetoanalyze/objc/bufferoverrun/block.m, Block.block_in_field_Good, 7, BUFFER_OVERRUN_U5, no_bucket, ERROR, [<Offset trace>,Unknown value from: __call_objc_block,<Length trace>,Array declaration,Array access: Offset: [-oo, +oo] Size: 10]
+codetoanalyze/objc/bufferoverrun/block.m, Block.block_in_field_Bad, 7, BUFFER_OVERRUN_U5, no_bucket, ERROR, [<Offset trace>,Unknown value from: __call_objc_block,<Length trace>,Array declaration,Array access: Offset: [-oo, +oo] Size: 10]
 codetoanalyze/objc/bufferoverrun/global.m, access_constant_global_Bad, 2, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Array access: Offset: 8 Size: 5]
 codetoanalyze/objc/bufferoverrun/global.m, access_constant_global_via_assignment_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Assignment,<Length trace>,Array declaration,Array access: Offset: 8 Size: 5]
 codetoanalyze/objc/bufferoverrun/return_struct.m, ReturnStruct.call_get_struct_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Offset trace>,Call,Parameter `n`,Assignment,Assignment,<Length trace>,Array declaration,Array access: Offset: 5 Size: 3]

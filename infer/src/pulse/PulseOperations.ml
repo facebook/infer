@@ -173,18 +173,23 @@ let rec eval (path : PathContext.t) mode location exp astate :
   (astate, ValueOrigin.addr_hist value_origin)
 
 
-and record_closure_cpp_lambda astate (path : PathContext.t) loc procname
+and record_closure astate (path : PathContext.t) loc procname
     (captured_vars : (Exp.t * Pvar.t * Typ.t * CapturedVar.capture_mode) list) =
   let assign_event = ValueHistory.Assignment (loc, path.timestamp) in
   let closure_addr_hist = (AbstractValue.mk_fresh (), ValueHistory.singleton assign_event) in
   let astate =
-    match Procname.get_class_type_name procname with
-    | Some typ_name ->
+    match (Procname.get_class_type_name procname, procname) with
+    | Some typ_name, _ when Procname.is_cpp_lambda procname ->
         let typ = Typ.mk (Typ.Tstruct typ_name) in
         AddressAttributes.add_one (fst closure_addr_hist)
           (Attribute.DynamicType {typ; source_file= None})
           astate
-    | None ->
+    | _, Procname.Block bsig ->
+        let typ = Typ.mk (Typ.Tstruct (Typ.ObjcBlock bsig)) in
+        AddressAttributes.add_one (fst closure_addr_hist)
+          (Attribute.DynamicType {typ; source_file= None})
+          astate
+    | _ ->
         astate
   in
   let** astate = PulseArithmetic.and_positive (fst closure_addr_hist) astate in
@@ -229,8 +234,8 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
         (ArrayAccess (StdTyp.void, fst addr_hist_index))
         astate
   | Closure {name; captured_vars} ->
-      if Procname.is_cpp_lambda name then
-        let++ astate, v_hist = record_closure_cpp_lambda astate path location name captured_vars in
+      if Procname.is_cpp_lambda name || Procname.is_objc_block name then
+        let++ astate, v_hist = record_closure astate path location name captured_vars in
         (astate, v_hist)
       else
         let** astate, rev_captured =
@@ -726,7 +731,8 @@ let remove_vars vars location astate =
   Stack.remove_vars vars astate
 
 
-let get_var_captured_actuals path location ~is_lambda ~captured_formals ~actual_closure astate =
+let get_var_captured_actuals path location ~is_lambda_or_block ~captured_formals ~actual_closure
+    astate =
   let+ _, astate, captured_actuals =
     PulseResult.list_fold captured_formals ~init:(0, astate, [])
       ~f:(fun (id, astate, captured) (var, capture_mode, typ) ->
@@ -738,7 +744,7 @@ let get_var_captured_actuals path location ~is_lambda ~captured_formals ~actual_
             in
             let field_name = Fieldname.mk_capture_field_in_closure var_name captured_data in
             let+ astate, captured_actual =
-              if is_lambda then
+              if is_lambda_or_block then
                 eval_deref_access path Read location actual_closure (FieldAccess field_name) astate
               else eval_access path Read location actual_closure (FieldAccess field_name) astate
             in
@@ -773,7 +779,7 @@ type call_kind =
   | `ResolvedProcname ]
 
 let get_captured_actuals procname path location ~captured_formals ~call_kind ~actuals astate =
-  let is_lambda = Procname.is_cpp_lambda procname in
+  let is_lambda_or_block = Procname.is_cpp_lambda procname || Procname.is_objc_block procname in
   if
     Procname.is_objc_block procname
     || Procname.is_specialized_with_function_parameters procname
@@ -784,9 +790,16 @@ let get_captured_actuals procname path location ~captured_formals ~call_kind ~ac
         get_closure_captured_actuals path location ~captured_actuals astate
     | `Var id ->
         let+* astate, actual_closure = eval path Read location (Exp.Var id) astate in
-        get_var_captured_actuals path location ~is_lambda ~captured_formals ~actual_closure astate
-    | `ResolvedProcname ->
-        Sat (Ok (astate, []))
+        get_var_captured_actuals path location ~is_lambda_or_block ~captured_formals ~actual_closure
+          astate
+    | `ResolvedProcname -> (
+      match actuals with
+      | (actual_closure, _) :: _ ->
+          Sat
+            (get_var_captured_actuals path location ~is_lambda_or_block ~captured_formals
+               ~actual_closure astate )
+      | [] ->
+          Sat (Ok (astate, [])) )
   else
     match actuals with
     | (actual_closure, _) :: _ when not (List.is_empty captured_formals) ->
@@ -795,8 +808,8 @@ let get_captured_actuals procname path location ~captured_formals ~call_kind ~ac
            let* astate, actual_closure =
              eval_access path Read location actual_closure Dereference astate
            in
-           get_var_captured_actuals path location ~is_lambda ~captured_formals ~actual_closure
-             astate )
+           get_var_captured_actuals path location ~is_lambda_or_block ~captured_formals
+             ~actual_closure astate )
     | _ ->
         Sat (Ok (astate, []))
 

@@ -205,7 +205,8 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
 
 
 let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee_pname call_loc
-    callee_exec_state ~ret ~captured_formals ~captured_actuals ~formals ~actuals astate =
+    callee_exec_state ~ret ~captured_formals ~captured_actuals ~formals ~actuals ?call_flags astate
+    =
   let open ExecutionDomain in
   let copy_to_caller_return_variable astate return_val_opt =
     (* Copies the return value of the callee into the return register of the caller.
@@ -248,6 +249,15 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
         in
         calee_summary
       else callee_summary
+    in
+    (* In order to apply summary specialisation, we call blocks with the closure as the first argument,
+       but when we want to call the actual code of the block, we need to remove the closure argument again. *)
+    let actuals =
+      match call_flags with
+      | Some call_flags when call_flags.CallFlags.cf_is_objc_block -> (
+        match actuals with _ :: rest -> rest | [] -> [] )
+      | _ ->
+          actuals
     in
     let sat_unsat, contradiction =
       PulseInterproc.apply_summary path callee_pname call_loc ~callee_summary ~captured_formals
@@ -392,7 +402,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
 
 let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
     (callee_proc_attrs : ProcAttributes.t) exec_states_callee non_disj_callee
-    (astate_caller : AbductiveDomain.t) non_disj_caller =
+    (astate_caller : AbductiveDomain.t) ?call_flags non_disj_caller =
   let formals =
     List.map callee_proc_attrs.formals ~f:(fun (mangled, typ, _) ->
         (Pvar.mk mangled callee_pname |> Var.of_pvar, typ) )
@@ -429,7 +439,7 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
           Timer.check_timeout () ;
           match
             apply_callee tenv path ~caller_proc_desc callee_pname call_loc callee_exec_state
-              ~captured_formals ~captured_actuals ~formals ~actuals ~ret astate
+              ~captured_formals ~captured_actuals ~formals ~actuals ~ret ?call_flags astate
           with
           | Unsat, new_contradiction ->
               (* couldn't apply pre/post pair *)
@@ -441,7 +451,7 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
 
 
 let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals ~formals_opt
-    ~call_kind (astate : AbductiveDomain.t) non_disj_caller =
+    ~call_kind (astate : AbductiveDomain.t) ?call_flags non_disj_caller =
   let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
   let ( let<**> ) = bind_sat_result (non_disj_caller, None) in
   let<**> astate_unknown =
@@ -471,7 +481,8 @@ let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~act
              ~default:([], (NonDisjDomain.bottom, None))
              ~f:(fun nil_summary ->
                call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
-                 proc_attrs [nil_summary] NonDisjDomain.Summary.bottom astate non_disj_caller )
+                 proc_attrs [nil_summary] NonDisjDomain.Summary.bottom astate ?call_flags
+                 non_disj_caller )
       in
       ( result_unknown @ result_unknown_nil
       , (NonDisjDomain.join non_disj non_disj_nil, contradiction) )
@@ -564,7 +575,7 @@ let maybe_dynamic_type_specialization_is_needed specialization contradiction ast
 let call tenv path ~caller_proc_desc
     ~(analyze_dependency : ?specialization:Specialization.t -> Procname.t -> PulseSummary.t option)
     call_loc callee_pname ~ret ~actuals ~formals_opt ~call_kind (astate : AbductiveDomain.t)
-    non_disj_caller =
+    ?call_flags non_disj_caller =
   let has_continue_program results =
     let f one_result =
       match one_result with
@@ -578,7 +589,7 @@ let call tenv path ~caller_proc_desc
   let call_as_unknown () =
     let results, (non_disj, contradiction) =
       call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals ~formals_opt
-        ~call_kind astate non_disj_caller
+        ~call_kind astate ?call_flags non_disj_caller
     in
     if Option.is_some contradiction then (
       L.debug Analysis Verbose
@@ -593,7 +604,7 @@ let call tenv path ~caller_proc_desc
     let results, (non_disj, contradiction) =
       call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_kind
         (IRAttributes.load_exn callee_pname)
-        exec_states non_disj_callee astate non_disj_caller
+        exec_states non_disj_callee astate ?call_flags non_disj_caller
     in
     (* When a function call does not have a post of type ContinueProgram, we may want to treat
        the call as unknown to make the analysis continue. This may introduce false positives but
@@ -711,6 +722,6 @@ let call tenv path ~caller_proc_desc
       L.d_printfln_escaped "No spec found for %a@\n" Procname.pp callee_pname ;
       let res, (non_disj, contradiction) =
         call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~actuals
-          ~formals_opt ~call_kind astate non_disj_caller
+          ~formals_opt ~call_kind astate ?call_flags non_disj_caller
       in
       (res, non_disj, contradiction, `UnknownCall)

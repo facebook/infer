@@ -39,7 +39,11 @@ void call_f_npe_bad() {
   }
 }
 
-void call_f_no_npe_good() {
+/* We can't handle the call [b f] properly above because of aliasing problems
+(self and my_block are both parameters to call_block: but self -> x points to
+the same value as my_block -> self_captured_by_value_0) and that's a problem. We
+need to improve the alias specialization to deal with this. */
+void call_f_no_npe_good_FP() {
   B* b = [[B alloc] init];
   b->y = 10;
   int z = [b f];

@@ -83,7 +83,7 @@ digraph cfg {
 	
 
 	 "m#Block_no_args#[instance].e3d1ef26a8955830_12" -> "m#Block_no_args#[instance].e3d1ef26a8955830_5" ;
-"m#Block_no_args#[instance].e3d1ef26a8955830_13" [label="13:  Call n$5 \n   n$5=*&b:_fn_(*) [line 26, column 3]\n  n$6=n$5() objc_block [line 26, column 3]\n " shape="box"]
+"m#Block_no_args#[instance].e3d1ef26a8955830_13" [label="13:  Call n$5 \n   n$5=*&b:_fn_(*) [line 26, column 3]\n  n$6=_fun___call_objc_block(n$5:_fn_) objc_block [line 26, column 3]\n " shape="box"]
 	
 
 	 "m#Block_no_args#[instance].e3d1ef26a8955830_13" -> "m#Block_no_args#[instance].e3d1ef26a8955830_12" ;

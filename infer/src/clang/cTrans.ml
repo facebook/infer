@@ -281,7 +281,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       if is_inherited_ctor then get_forwarded_params trans_state sil_loc else ([], [])
     in
     let call_instr =
-      Sil.Call (ret_id', function_sil, params @ forwarded_params, sil_loc, call_flags)
+      match function_sil with
+      | Exp.Var _ when call_flags.CallFlags.cf_is_objc_block ->
+          let block_param = (function_sil, Typ.mk Typ.Tfun) in
+          Sil.Call
+            ( ret_id'
+            , Exp.Const (Const.Cfun BuiltinDecl.__call_objc_block)
+            , block_param :: (params @ forwarded_params)
+            , sil_loc
+            , call_flags )
+      | _ ->
+          Sil.Call (ret_id', function_sil, params @ forwarded_params, sil_loc, call_flags)
     in
     mk_trans_result ret_exps
       {empty_control with instrs= forwarded_init_instrs @ [call_instr]; initd_exps}

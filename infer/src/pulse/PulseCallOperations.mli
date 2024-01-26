@@ -21,6 +21,7 @@ val call :
   -> formals_opt:(Pvar.t * Typ.t) list option
   -> call_kind:PulseOperations.call_kind
   -> AbductiveDomain.t
+  -> ?call_flags:CallFlags.t
   -> NonDisjDomain.t
   -> ExecutionDomain.t AccessResult.t list
      * NonDisjDomain.t

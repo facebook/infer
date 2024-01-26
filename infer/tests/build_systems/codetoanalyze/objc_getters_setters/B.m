@@ -59,7 +59,8 @@
   return self->y;
 }
 
-+ (int)calling_method_with_block_parameters_sets_fields_correctly {
+/* This is not working now because of aliasing problems. */
++ (int)calling_method_with_block_parameters_sets_fields_correctly_FP {
   B* b = [B new];
   [b calling_method_with_block_parameters];
   if (b->x + b->y == 42) {
@@ -86,7 +87,8 @@
   return self->y;
 }
 
-+ (int)calling_c_function_with_block_parameters_sets_fields_correctly {
+/* This is not working now because of aliasing problems. */
++ (int)calling_c_function_with_block_parameters_sets_fields_correctly_FP {
   B* b = [B new];
   [b calling_c_function_with_block_parameters];
   if (b->x + b->y == 42) {

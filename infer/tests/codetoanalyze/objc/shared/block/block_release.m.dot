@@ -59,7 +59,7 @@ digraph cfg {
 	
 
 	 "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_8" -> "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_5" ;
-"blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_9" [label="9:  Call n$6 \n   n$6=*&b:_fn_(*) [line 27, column 3]\n  n$7=*&z:int [line 27, column 5]\n  n$8=n$6(n$7:int) objc_block [line 27, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_9" [label="9:  Call n$6 \n   n$6=*&b:_fn_(*) [line 27, column 3]\n  n$7=*&z:int [line 27, column 5]\n  n$8=_fun___call_objc_block(n$6:_fn_,n$7:int) objc_block [line 27, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_9" -> "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_6" ;

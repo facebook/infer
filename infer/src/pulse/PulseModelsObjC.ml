@@ -12,6 +12,7 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
+module FuncArg = ProcnameDispatcher.Call.FuncArg
 
 module CoreFoundation = struct
   let cf_bridging_release access : model_no_non_disj =
@@ -258,6 +259,52 @@ let check_arg_not_nil (value, value_hist) ~desc : model_no_non_disj =
   PulseOperations.write_id ret_id (ret_val, Hist.single_call path location desc) astate
 
 
+let call_objc_block FuncArg.{arg_payload= block_ptr_hist; typ} actuals : model =
+ fun {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret= (ret_id, _) as ret}
+     astate non_disj ->
+  let block = fst block_ptr_hist in
+  let callee_proc_name_opt =
+    match AddressAttributes.get_dynamic_type block astate with
+    | Some {typ= {desc= Typ.Tstruct (ObjcBlock bsig)}} ->
+        Some (Procname.Block bsig)
+    | _ ->
+        None
+  in
+  match callee_proc_name_opt with
+  | Some callee_proc_name ->
+      let actuals =
+        (block_ptr_hist, typ)
+        :: List.map actuals ~f:(fun FuncArg.{arg_payload; typ} -> (arg_payload, typ))
+      in
+      let astate, non_disj, _, _ =
+        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
+          callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
+          ~call_flags:{CallFlags.default with cf_is_objc_block= true}
+          non_disj
+      in
+      (astate, non_disj)
+  | _ ->
+      (* we don't know what procname this block resolves to *)
+      let res =
+        (* dereference call expression to catch nil issues *)
+        let<+> astate, _ =
+          PulseOperations.eval_access path Read location ~must_be_valid_reason:BlockCall
+            block_ptr_hist Dereference astate
+        in
+        let desc = Procname.to_string BuiltinDecl.__call_objc_block in
+        let hist = Hist.single_event path (Hist.call_event path location desc) in
+        let astate = PulseOperations.havoc_id ret_id hist astate in
+        let astate = AbductiveDomain.add_need_dynamic_type_specialization block astate in
+        let astate =
+          let unknown_effect = Attribute.UnknownEffect (Model desc, hist) in
+          List.fold actuals ~init:astate ~f:(fun acc FuncArg.{arg_payload= actual, _} ->
+              AddressAttributes.add_one actual unknown_effect acc )
+        in
+        astate
+      in
+      (res, non_disj)
+
+
 let transfer_ownership_matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let transfer_ownership_namespace_matchers =
@@ -296,7 +343,8 @@ let matchers : matcher list =
   let map_context_tenv f (x, _) = f x in
   ( [ -"dispatch_sync" <>$ any_arg $++$--> call
     ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UITraitCollection")
-      &:: "performAsCurrentTraitCollection:" <>$ any_arg $++$--> call ]
+      &:: "performAsCurrentTraitCollection:" <>$ any_arg $++$--> call
+    ; +BuiltinDecl.(match_builtin __call_objc_block) $ capt_arg $++$--> call_objc_block ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist) )
   @ ( [ +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release
         <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release

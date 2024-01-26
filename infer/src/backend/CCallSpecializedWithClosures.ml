@@ -12,7 +12,7 @@ let replace_with_specialize_methods instr =
   | Sil.Call (ret, Exp.Const (Const.Cfun callee_pname), actual_params, loc, flags) -> (
       let args =
         List.map actual_params ~f:(function
-          | Exp.Closure c, _ ->
+          | Exp.Closure c, _ when not (Procname.is_objc_block c.Exp.name) ->
               let captured =
                 List.map c.captured_vars ~f:(fun (_, pvar, typ, capture_mode) ->
                     CapturedVar.{pvar; typ; capture_mode} )

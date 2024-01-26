@@ -229,7 +229,7 @@ digraph cfg {
 	
 
 	 "trans#DispatchA#[class].c52c322010b9e8d8_4" -> "trans#DispatchA#[class].c52c322010b9e8d8_2" ;
-"trans#DispatchA#[class].c52c322010b9e8d8_5" [label="5:  Call n$13 \n   n$13=*&dummy_block:_fn_(*) [line 48, column 3]\n  n$14=n$13() objc_block [line 48, column 3]\n " shape="box"]
+"trans#DispatchA#[class].c52c322010b9e8d8_5" [label="5:  Call n$13 \n   n$13=*&dummy_block:_fn_(*) [line 48, column 3]\n  n$14=_fun___call_objc_block(n$13:_fn_) objc_block [line 48, column 3]\n " shape="box"]
 	
 
 	 "trans#DispatchA#[class].c52c322010b9e8d8_5" -> "trans#DispatchA#[class].c52c322010b9e8d8_3" ;
