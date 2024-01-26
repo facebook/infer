@@ -101,83 +101,83 @@ digraph cfg {
 	
 
 	 "forward<int_&>#std#32881243201550.4d44031ae211ec0d_4" -> "forward<int_&>#std#32881243201550.4d44031ae211ec0d_2" ;
-"make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_1" [label="1: Start pass_by_val::make_id<int,_int_&,_int_&,_int>\nFormals:  args:int& args:int& args:int&& __return_param:pass_by_val::Id<int>*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int> \n  " color=yellow style=filled]
+"make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_1" [label="1: Start pass_by_val::make_id<int,_int_&,_int_&,_int>\nFormals:  args:int& args:int& args:int&& __return_param:pass_by_val::Id<int>*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int> \n  " color=yellow style=filled]
 	
 
-	 "make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_1" -> "make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_4" ;
-"make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_2" [label="2: Exit pass_by_val::make_id<int,_int_&,_int_&,_int> \n  " color=yellow style=filled]
+	 "make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_1" -> "make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_4" ;
+"make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_2" [label="2: Exit pass_by_val::make_id<int,_int_&,_int_&,_int> \n  " color=yellow style=filled]
 	
 
-"make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>); [line 59, column 10]\n  n$2=*&args:int& [line 59, column 35]\n  n$3=_fun_std::forward<int_&>(n$2:int&) [line 59, column 16]\n  n$4=*n$3:int [line 59, column 16]\n  n$5=*&args:int& [line 59, column 35]\n  n$6=_fun_std::forward<int_&>(n$5:int&) [line 59, column 16]\n  n$7=*&args:int&& [line 59, column 35]\n  n$8=_fun_std::forward<int>(n$7:int&&) [line 59, column 16]\n  n$9=_fun_pass_by_val::Id<int>::Id(&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*,n$4:int,n$6:int&,n$8:int&) [line 59, column 10]\n " shape="box"]
+"make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>); [line 59, column 10]\n  n$2=*&args:int& [line 59, column 35]\n  n$3=_fun_std::forward<int_&>(n$2:int&) [line 59, column 16]\n  n$4=*n$3:int [line 59, column 16]\n  n$5=*&args:int& [line 59, column 35]\n  n$6=_fun_std::forward<int_&>(n$5:int&) [line 59, column 16]\n  n$7=*&args:int&& [line 59, column 35]\n  n$8=_fun_std::forward<int>(n$7:int&&) [line 59, column 16]\n  n$9=_fun_pass_by_val::Id<int>::Id(&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*,n$4:int,n$6:int&,n$8:int&) [line 59, column 10]\n " shape="box"]
 	
 
-	 "make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_3" -> "make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_5" ;
-"make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_4" [label="4:  Return Stmt \n   n$0=*&__return_param:pass_by_val::Id<int>* [line 59, column 3]\n " shape="box"]
+	 "make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_3" -> "make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_5" ;
+"make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_4" [label="4:  Return Stmt \n   n$0=*&__return_param:pass_by_val::Id<int>* [line 59, column 3]\n " shape="box"]
 	
 
-	 "make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_4" -> "make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_3" ;
-"make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_5" [label="5:  Return Stmt \n   n$10=_fun_pass_by_val::Id<int>::Id(n$0:pass_by_val::Id<int>*,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>&) [line 59, column 10]\n " shape="box"]
+	 "make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_4" -> "make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_3" ;
+"make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_5" [label="5:  Return Stmt \n   n$10=_fun_pass_by_val::Id<int>::Id(n$0:pass_by_val::Id<int>*,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>&) [line 59, column 10]\n " shape="box"]
 	
 
-	 "make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_5" -> "make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_6" ;
-"make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_6" [label="6:  Return Stmt \n  " shape="box"]
+	 "make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_5" -> "make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_6" ;
+"make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_6" [label="6:  Return Stmt \n  " shape="box"]
 	
 
-	 "make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_6" -> "make_id<int,_int_&,_int_&,_int>#p.704a07df7f1fd491_2" ;
-"perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_1" [label="1: Start pass_by_val::perfect_forwarding_by_ref\nFormals:  __return_param:pass_by_val::Id<int>*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$2:int 0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int> b:int a:int \n  " color=yellow style=filled]
+	 "make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_6" -> "make_id<int,_int_&,_int_&,_int>#p.2f2dd9bec9bb8475_2" ;
+"perfect_forwarding_by_ref#pass_by.47db45acfc842e77_1" [label="1: Start pass_by_val::perfect_forwarding_by_ref\nFormals:  __return_param:pass_by_val::Id<int>*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$2:int 0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int> b:int a:int \n  " color=yellow style=filled]
 	
 
-	 "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_1" -> "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_10" ;
-"perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_2" [label="2: Exit pass_by_val::perfect_forwarding_by_ref \n  " color=yellow style=filled]
+	 "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_1" -> "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_10" ;
+"perfect_forwarding_by_ref#pass_by.47db45acfc842e77_2" [label="2: Exit pass_by_val::perfect_forwarding_by_ref \n  " color=yellow style=filled]
 	
 
-"perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:int); [line 64, column 29]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=2 [line 64, column 29]\n " shape="box"]
+"perfect_forwarding_by_ref#pass_by.47db45acfc842e77_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:int); [line 64, column 29]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:int=2 [line 64, column 29]\n " shape="box"]
 	
 
-	 "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_3" -> "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_5" ;
-"perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>); [line 64, column 10]\n " shape="box"]
+	 "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_3" -> "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_5" ;
+"perfect_forwarding_by_ref#pass_by.47db45acfc842e77_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>); [line 64, column 10]\n " shape="box"]
 	
 
-	 "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_4" -> "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_3" ;
-"perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_5" [label="5:  DeclStmt \n   n$4=_fun_pass_by_val::make_id<int,_int_&,_int_&,_int>(&a:int&,&b:int&,&0$?%__sil_tmpSIL_materialize_temp__n$2:int&,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*) assign_last [line 64, column 10]\n " shape="box"]
+	 "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_4" -> "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_3" ;
+"perfect_forwarding_by_ref#pass_by.47db45acfc842e77_5" [label="5:  DeclStmt \n   n$4=_fun_pass_by_val::make_id<int,_int_&,_int_&,_int>(&a:int&,&b:int&,&0$?%__sil_tmpSIL_materialize_temp__n$2:int&,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>*) assign_last [line 64, column 10]\n " shape="box"]
 	
 
-	 "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_5" -> "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_7" ;
-"perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_6" [label="6:  Return Stmt \n   n$0=*&__return_param:pass_by_val::Id<int>* [line 64, column 3]\n " shape="box"]
+	 "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_5" -> "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_7" ;
+"perfect_forwarding_by_ref#pass_by.47db45acfc842e77_6" [label="6:  Return Stmt \n   n$0=*&__return_param:pass_by_val::Id<int>* [line 64, column 3]\n " shape="box"]
 	
 
-	 "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_6" -> "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_4" ;
-"perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_7" [label="7:  Return Stmt \n   n$5=_fun_pass_by_val::Id<int>::Id(n$0:pass_by_val::Id<int>*,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>&) [line 64, column 10]\n " shape="box"]
+	 "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_6" -> "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_4" ;
+"perfect_forwarding_by_ref#pass_by.47db45acfc842e77_7" [label="7:  Return Stmt \n   n$5=_fun_pass_by_val::Id<int>::Id(n$0:pass_by_val::Id<int>*,&0$?%__sil_tmpSIL_materialize_temp__n$1:pass_by_val::Id<int>&) [line 64, column 10]\n " shape="box"]
 	
 
-	 "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_7" -> "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_8" ;
-"perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_8" [label="8:  Return Stmt \n  " shape="box"]
+	 "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_7" -> "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_8" ;
+"perfect_forwarding_by_ref#pass_by.47db45acfc842e77_8" [label="8:  Return Stmt \n  " shape="box"]
 	
 
-	 "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_8" -> "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_2" ;
-"perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 63, column 3]\n  *&b:int=1 [line 63, column 3]\n " shape="box"]
+	 "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_8" -> "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_2" ;
+"perfect_forwarding_by_ref#pass_by.47db45acfc842e77_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(b:int); [line 63, column 3]\n  *&b:int=1 [line 63, column 3]\n " shape="box"]
 	
 
-	 "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_9" -> "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_6" ;
-"perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 63, column 3]\n  *&a:int=0 [line 63, column 3]\n " shape="box"]
+	 "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_9" -> "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_6" ;
+"perfect_forwarding_by_ref#pass_by.47db45acfc842e77_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 63, column 3]\n  *&a:int=0 [line 63, column 3]\n " shape="box"]
 	
 
-	 "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_10" -> "perfect_forwarding_by_ref#pass_by.4a78b0c805a8de47_9" ;
-"plain_struct_by_ref#pass_by_val(c.ebb1ec27d296c7f7_1" [label="1: Start pass_by_val::plain_struct_by_ref\nFormals:  lref:pass_by_val::PlainStruct& rref:pass_by_val::PlainStruct&& ptr:pass_by_val::PlainStruct*\nLocals:  \n  " color=yellow style=filled]
+	 "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_10" -> "perfect_forwarding_by_ref#pass_by.47db45acfc842e77_9" ;
+"plain_struct_by_ref#pass_by_val#2.700667e64fd3e548_1" [label="1: Start pass_by_val::plain_struct_by_ref\nFormals:  lref:pass_by_val::PlainStruct& rref:pass_by_val::PlainStruct&& ptr:pass_by_val::PlainStruct*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "plain_struct_by_ref#pass_by_val(c.ebb1ec27d296c7f7_1" -> "plain_struct_by_ref#pass_by_val(c.ebb1ec27d296c7f7_3" ;
-"plain_struct_by_ref#pass_by_val(c.ebb1ec27d296c7f7_2" [label="2: Exit pass_by_val::plain_struct_by_ref \n  " color=yellow style=filled]
+	 "plain_struct_by_ref#pass_by_val#2.700667e64fd3e548_1" -> "plain_struct_by_ref#pass_by_val#2.700667e64fd3e548_3" ;
+"plain_struct_by_ref#pass_by_val#2.700667e64fd3e548_2" [label="2: Exit pass_by_val::plain_struct_by_ref \n  " color=yellow style=filled]
 	
 
-"plain_struct_by_ref#pass_by_val(c.ebb1ec27d296c7f7_3" [label="3:  Return Stmt \n   n$0=*&lref:pass_by_val::PlainStruct& [line 21, column 10]\n  n$1=*n$0.x:int [line 21, column 10]\n  n$2=*&rref:pass_by_val::PlainStruct&& [line 21, column 19]\n  n$3=*n$2.x:int [line 21, column 19]\n  n$4=*&ptr:pass_by_val::PlainStruct* [line 21, column 28]\n  n$5=*n$4.x:int [line 21, column 28]\n " shape="box"]
+"plain_struct_by_ref#pass_by_val#2.700667e64fd3e548_3" [label="3:  Return Stmt \n   n$0=*&lref:pass_by_val::PlainStruct& [line 21, column 10]\n  n$1=*n$0.x:int [line 21, column 10]\n  n$2=*&rref:pass_by_val::PlainStruct&& [line 21, column 19]\n  n$3=*n$2.x:int [line 21, column 19]\n  n$4=*&ptr:pass_by_val::PlainStruct* [line 21, column 28]\n  n$5=*n$4.x:int [line 21, column 28]\n " shape="box"]
 	
 
-	 "plain_struct_by_ref#pass_by_val(c.ebb1ec27d296c7f7_3" -> "plain_struct_by_ref#pass_by_val(c.ebb1ec27d296c7f7_4" ;
-"plain_struct_by_ref#pass_by_val(c.ebb1ec27d296c7f7_4" [label="4:  Return Stmt \n   *&return:int=((n$1 + n$3) + n$5) [line 21, column 3]\n " shape="box"]
+	 "plain_struct_by_ref#pass_by_val#2.700667e64fd3e548_3" -> "plain_struct_by_ref#pass_by_val#2.700667e64fd3e548_4" ;
+"plain_struct_by_ref#pass_by_val#2.700667e64fd3e548_4" [label="4:  Return Stmt \n   *&return:int=((n$1 + n$3) + n$5) [line 21, column 3]\n " shape="box"]
 	
 
-	 "plain_struct_by_ref#pass_by_val(c.ebb1ec27d296c7f7_4" -> "plain_struct_by_ref#pass_by_val(c.ebb1ec27d296c7f7_2" ;
+	 "plain_struct_by_ref#pass_by_val#2.700667e64fd3e548_4" -> "plain_struct_by_ref#pass_by_val#2.700667e64fd3e548_2" ;
 "plain_struct_by_val#pass_by_val#7.eb0e0bdde375e8d1_1" [label="1: Start pass_by_val::plain_struct_by_val\nFormals:  p:pass_by_val::PlainStruct&\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -223,21 +223,21 @@ digraph cfg {
 	
 
 	 "tricky_dependent_by_val#pass_by_v.2c9738321ba9545d_4" -> "tricky_dependent_by_val#pass_by_v.2c9738321ba9545d_2" ;
-"type_alias_by_ref#pass_by_val(cla.a3dda6b37896a0f8_1" [label="1: Start pass_by_val::type_alias_by_ref\nFormals:  p1:pass_by_val::PlainStruct* p2:pass_by_val::PlainStruct const *\nLocals:  \n  " color=yellow style=filled]
+"type_alias_by_ref#pass_by_val#126.f656e449ac4cf31b_1" [label="1: Start pass_by_val::type_alias_by_ref\nFormals:  p1:pass_by_val::PlainStruct* p2:pass_by_val::PlainStruct const *\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "type_alias_by_ref#pass_by_val(cla.a3dda6b37896a0f8_1" -> "type_alias_by_ref#pass_by_val(cla.a3dda6b37896a0f8_3" ;
-"type_alias_by_ref#pass_by_val(cla.a3dda6b37896a0f8_2" [label="2: Exit pass_by_val::type_alias_by_ref \n  " color=yellow style=filled]
+	 "type_alias_by_ref#pass_by_val#126.f656e449ac4cf31b_1" -> "type_alias_by_ref#pass_by_val#126.f656e449ac4cf31b_3" ;
+"type_alias_by_ref#pass_by_val#126.f656e449ac4cf31b_2" [label="2: Exit pass_by_val::type_alias_by_ref \n  " color=yellow style=filled]
 	
 
-"type_alias_by_ref#pass_by_val(cla.a3dda6b37896a0f8_3" [label="3:  Return Stmt \n   n$0=*&p1:pass_by_val::PlainStruct* [line 33, column 10]\n  n$1=*n$0.x:int [line 33, column 10]\n  n$2=*&p2:pass_by_val::PlainStruct const * [line 33, column 18]\n  n$3=*n$2.x:int [line 33, column 18]\n " shape="box"]
+"type_alias_by_ref#pass_by_val#126.f656e449ac4cf31b_3" [label="3:  Return Stmt \n   n$0=*&p1:pass_by_val::PlainStruct* [line 33, column 10]\n  n$1=*n$0.x:int [line 33, column 10]\n  n$2=*&p2:pass_by_val::PlainStruct const * [line 33, column 18]\n  n$3=*n$2.x:int [line 33, column 18]\n " shape="box"]
 	
 
-	 "type_alias_by_ref#pass_by_val(cla.a3dda6b37896a0f8_3" -> "type_alias_by_ref#pass_by_val(cla.a3dda6b37896a0f8_4" ;
-"type_alias_by_ref#pass_by_val(cla.a3dda6b37896a0f8_4" [label="4:  Return Stmt \n   *&return:int=(n$1 + n$3) [line 33, column 3]\n " shape="box"]
+	 "type_alias_by_ref#pass_by_val#126.f656e449ac4cf31b_3" -> "type_alias_by_ref#pass_by_val#126.f656e449ac4cf31b_4" ;
+"type_alias_by_ref#pass_by_val#126.f656e449ac4cf31b_4" [label="4:  Return Stmt \n   *&return:int=(n$1 + n$3) [line 33, column 3]\n " shape="box"]
 	
 
-	 "type_alias_by_ref#pass_by_val(cla.a3dda6b37896a0f8_4" -> "type_alias_by_ref#pass_by_val(cla.a3dda6b37896a0f8_2" ;
+	 "type_alias_by_ref#pass_by_val#126.f656e449ac4cf31b_4" -> "type_alias_by_ref#pass_by_val#126.f656e449ac4cf31b_2" ;
 "type_alias_by_val#pass_by_val#927.425db1bd7e6b4811_1" [label="1: Start pass_by_val::type_alias_by_val\nFormals:  p1:pass_by_val::PlainStruct& p2:pass_by_val::PlainStruct&\nLocals:  0$?%__sil_tmp__temp_construct_n$0:pass_by_val::PlainStruct 0$?%__sil_tmp__temp_construct_n$4:pass_by_val::PlainStruct \n  " color=yellow style=filled]
 	
 

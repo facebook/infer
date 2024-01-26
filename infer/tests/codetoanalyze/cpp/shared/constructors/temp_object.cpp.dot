@@ -42,29 +42,29 @@ digraph cfg {
 	
 
 	 "div#temp_object#82357420092119352.2061ea7bd543a210_4" -> "div#temp_object#82357420092119352.2061ea7bd543a210_2" ;
-"getX#temp_object(class temp_objec.c6d7bacbd2aa751d_1" [label="1: Start temp_object::getX\nFormals:  a:int b:int __return_param:temp_object::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const  \n  " color=yellow style=filled]
+"getX#temp_object#4720444219866178.f48412a1530fe282_1" [label="1: Start temp_object::getX\nFormals:  a:int b:int __return_param:temp_object::X*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const  \n  " color=yellow style=filled]
 	
 
-	 "getX#temp_object(class temp_objec.c6d7bacbd2aa751d_1" -> "getX#temp_object(class temp_objec.c6d7bacbd2aa751d_4" ;
-"getX#temp_object(class temp_objec.c6d7bacbd2aa751d_2" [label="2: Exit temp_object::getX \n  " color=yellow style=filled]
+	 "getX#temp_object#4720444219866178.f48412a1530fe282_1" -> "getX#temp_object#4720444219866178.f48412a1530fe282_4" ;
+"getX#temp_object#4720444219866178.f48412a1530fe282_2" [label="2: Exit temp_object::getX \n  " color=yellow style=filled]
 	
 
-"getX#temp_object(class temp_objec.c6d7bacbd2aa751d_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const ); [line 24, column 31]\n  n$2=*&a:int [line 24, column 33]\n  n$3=*&b:int [line 24, column 36]\n  n$4=_fun_temp_object::X::X(&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const *,n$2:int,n$3:int) [line 24, column 31]\n " shape="box"]
+"getX#temp_object#4720444219866178.f48412a1530fe282_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const ); [line 24, column 31]\n  n$2=*&a:int [line 24, column 33]\n  n$3=*&b:int [line 24, column 36]\n  n$4=_fun_temp_object::X::X(&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const *,n$2:int,n$3:int) [line 24, column 31]\n " shape="box"]
 	
 
-	 "getX#temp_object(class temp_objec.c6d7bacbd2aa751d_3" -> "getX#temp_object(class temp_objec.c6d7bacbd2aa751d_5" ;
-"getX#temp_object(class temp_objec.c6d7bacbd2aa751d_4" [label="4:  Return Stmt \n   n$0=*&__return_param:temp_object::X* [line 24, column 24]\n " shape="box"]
+	 "getX#temp_object#4720444219866178.f48412a1530fe282_3" -> "getX#temp_object#4720444219866178.f48412a1530fe282_5" ;
+"getX#temp_object#4720444219866178.f48412a1530fe282_4" [label="4:  Return Stmt \n   n$0=*&__return_param:temp_object::X* [line 24, column 24]\n " shape="box"]
 	
 
-	 "getX#temp_object(class temp_objec.c6d7bacbd2aa751d_4" -> "getX#temp_object(class temp_objec.c6d7bacbd2aa751d_3" ;
-"getX#temp_object(class temp_objec.c6d7bacbd2aa751d_5" [label="5:  Return Stmt \n   n$5=_fun_temp_object::X::X(n$0:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const &) [line 24, column 31]\n " shape="box"]
+	 "getX#temp_object#4720444219866178.f48412a1530fe282_4" -> "getX#temp_object#4720444219866178.f48412a1530fe282_3" ;
+"getX#temp_object#4720444219866178.f48412a1530fe282_5" [label="5:  Return Stmt \n   n$5=_fun_temp_object::X::X(n$0:temp_object::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:temp_object::X const &) [line 24, column 31]\n " shape="box"]
 	
 
-	 "getX#temp_object(class temp_objec.c6d7bacbd2aa751d_5" -> "getX#temp_object(class temp_objec.c6d7bacbd2aa751d_6" ;
-"getX#temp_object(class temp_objec.c6d7bacbd2aa751d_6" [label="6:  Return Stmt \n  " shape="box"]
+	 "getX#temp_object#4720444219866178.f48412a1530fe282_5" -> "getX#temp_object#4720444219866178.f48412a1530fe282_6" ;
+"getX#temp_object#4720444219866178.f48412a1530fe282_6" [label="6:  Return Stmt \n  " shape="box"]
 	
 
-	 "getX#temp_object(class temp_objec.c6d7bacbd2aa751d_6" -> "getX#temp_object(class temp_objec.c6d7bacbd2aa751d_2" ;
+	 "getX#temp_object#4720444219866178.f48412a1530fe282_6" -> "getX#temp_object#4720444219866178.f48412a1530fe282_2" ;
 "getX_field_div0#temp_object#12698.854c4a3940ca0511_1" [label="1: Start temp_object::getX_field_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:temp_object::X \n  " color=yellow style=filled]
 	
 

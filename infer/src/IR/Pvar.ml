@@ -339,7 +339,7 @@ let get_initializer_pname {pv_name; pv_kind} =
           SourceFile.to_string file |> Utils.string_crc_hex32 |> Option.return
         else Some None
       in
-      Procname.C (Procname.C.c qual_name ?mangled [] template_args)
+      Procname.C (Procname.C.c qual_name ?mangled template_args)
   | _ ->
       None
 

@@ -507,7 +507,7 @@ and get_template_info tenv (fdi : Clang_ast_t.function_decl_info) =
       Typ.NoTemplate
 
 
-and mk_c_function ?tenv name function_decl_info_opt parameters =
+and mk_c_function ?tenv name function_decl_info_opt =
   let file =
     match function_decl_info_opt with
     (* when we model static functions, we cannot take the file into account to
@@ -543,7 +543,7 @@ and mk_c_function ?tenv name function_decl_info_opt parameters =
   in
   let mangled = file ^ mangled_name in
   if String.is_empty mangled then Procname.from_string_c_fun (QualifiedCppName.to_qual_string name)
-  else Procname.C (Procname.C.c name ~mangled parameters template_info)
+  else Procname.C (Procname.C.c name ~mangled template_info)
 
 
 and mk_cpp_method ?tenv class_name method_name ?meth_decl mangled parameters =
@@ -617,7 +617,7 @@ and procname_from_decl ?tenv ?block_return_type ?outer_proc meth_decl =
   match meth_decl with
   | FunctionDecl (decl_info, name_info, _, fdi) ->
       let name = CAst_utils.get_qualified_name name_info in
-      mk_c_function ?tenv name (Some (decl_info, fdi)) parameters
+      mk_c_function ?tenv name (Some (decl_info, fdi))
   | CXXConstructorDecl (decl_info, {ni_name= ""; ni_qual_name= "" :: qual_names}, _, fdi, mdi) ->
       (* For some constructors of non-class objects in C++, the clang frontend gives empty method
          name, e.g. struct, lambda, and union.  For better readability, we replace them to a
@@ -744,7 +744,7 @@ module CProcname = struct
   module NoAstDecl = struct
     let c_function_of_string tenv name =
       let qual_name = QualifiedCppName.of_qual_string name in
-      mk_c_function ~tenv qual_name None []
+      mk_c_function ~tenv qual_name None
 
 
     let cpp_method_of_string tenv class_name method_name =

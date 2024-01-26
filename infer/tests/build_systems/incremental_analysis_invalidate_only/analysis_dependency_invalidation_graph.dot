@@ -6,7 +6,7 @@ digraph callgraph {
   N5 [ label = "f\nflag=false" ];
   N5 -> N4 ;
 
-  N0 [ label = "g\nflag=false" ];
+  N0 [ label = "b\nflag=false" ];
   N0 -> N1 ;
 
   N7 [ label = "main\nflag=false" ];
@@ -18,10 +18,10 @@ digraph callgraph {
   N4 -> N6 ;
   N4 -> N3 ;
 
-  N2 [ label = "b\nflag=false" ];
+  N2 [ label = "g\nflag=false" ];
   N2 -> N1 ;
 
   N3 [ label = "c\nflag=false" ];
-  N3 -> N2 ;
+  N3 -> N0 ;
 
 }

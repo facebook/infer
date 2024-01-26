@@ -11,52 +11,52 @@ digraph cfg {
 	
 
 	 "callgetZ#destructor_scope#1641872.f4c0cbb2a5d892ea_3" -> "callgetZ#destructor_scope#1641872.f4c0cbb2a5d892ea_2" ;
-"getX#destructor_scope(class destr.956e6b931ba67c14_1" [label="1: Start destructor_scope::getX\nFormals:  __return_param:destructor_scope::X*\nLocals:  x:destructor_scope::X \n  " color=yellow style=filled]
+"getX#destructor_scope#11739464242.40a1d0621360ad71_1" [label="1: Start destructor_scope::getX\nFormals:  __return_param:destructor_scope::X*\nLocals:  x:destructor_scope::X \n  " color=yellow style=filled]
 	
 
-	 "getX#destructor_scope(class destr.956e6b931ba67c14_1" -> "getX#destructor_scope(class destr.956e6b931ba67c14_6" ;
-"getX#destructor_scope(class destr.956e6b931ba67c14_2" [label="2: Exit destructor_scope::getX \n  " color=yellow style=filled]
+	 "getX#destructor_scope#11739464242.40a1d0621360ad71_1" -> "getX#destructor_scope#11739464242.40a1d0621360ad71_6" ;
+"getX#destructor_scope#11739464242.40a1d0621360ad71_2" [label="2: Exit destructor_scope::getX \n  " color=yellow style=filled]
 	
 
-"getX#destructor_scope(class destr.956e6b931ba67c14_3" [label="3:  Return Stmt \n   n$0=*&__return_param:destructor_scope::X* [line 70, column 3]\n " shape="box"]
+"getX#destructor_scope#11739464242.40a1d0621360ad71_3" [label="3:  Return Stmt \n   n$0=*&__return_param:destructor_scope::X* [line 70, column 3]\n " shape="box"]
 	
 
-	 "getX#destructor_scope(class destr.956e6b931ba67c14_3" -> "getX#destructor_scope(class destr.956e6b931ba67c14_4" ;
-"getX#destructor_scope(class destr.956e6b931ba67c14_4" [label="4:  Return Stmt \n   n$1=_fun_destructor_scope::X::X(n$0:destructor_scope::X*,&x:destructor_scope::X&) [line 70, column 10]\n " shape="box"]
+	 "getX#destructor_scope#11739464242.40a1d0621360ad71_3" -> "getX#destructor_scope#11739464242.40a1d0621360ad71_4" ;
+"getX#destructor_scope#11739464242.40a1d0621360ad71_4" [label="4:  Return Stmt \n   n$1=_fun_destructor_scope::X::X(n$0:destructor_scope::X*,&x:destructor_scope::X&) [line 70, column 10]\n " shape="box"]
 	
 
-	 "getX#destructor_scope(class destr.956e6b931ba67c14_4" -> "getX#destructor_scope(class destr.956e6b931ba67c14_5" ;
-"getX#destructor_scope(class destr.956e6b931ba67c14_5" [label="5:  Return Stmt \n   _=*&x:destructor_scope::X [line 70, column 10]\n  n$3=_fun_destructor_scope::X::~X(&x:destructor_scope::X*) injected [line 70, column 10]\n " shape="box"]
+	 "getX#destructor_scope#11739464242.40a1d0621360ad71_4" -> "getX#destructor_scope#11739464242.40a1d0621360ad71_5" ;
+"getX#destructor_scope#11739464242.40a1d0621360ad71_5" [label="5:  Return Stmt \n   _=*&x:destructor_scope::X [line 70, column 10]\n  n$3=_fun_destructor_scope::X::~X(&x:destructor_scope::X*) injected [line 70, column 10]\n " shape="box"]
 	
 
-	 "getX#destructor_scope(class destr.956e6b931ba67c14_5" -> "getX#destructor_scope(class destr.956e6b931ba67c14_2" ;
-"getX#destructor_scope(class destr.956e6b931ba67c14_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x:destructor_scope::X); [line 69, column 3]\n  n$5=_fun_destructor_scope::X::X(&x:destructor_scope::X*) [line 69, column 5]\n " shape="box"]
+	 "getX#destructor_scope#11739464242.40a1d0621360ad71_5" -> "getX#destructor_scope#11739464242.40a1d0621360ad71_2" ;
+"getX#destructor_scope#11739464242.40a1d0621360ad71_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x:destructor_scope::X); [line 69, column 3]\n  n$5=_fun_destructor_scope::X::X(&x:destructor_scope::X*) [line 69, column 5]\n " shape="box"]
 	
 
-	 "getX#destructor_scope(class destr.956e6b931ba67c14_6" -> "getX#destructor_scope(class destr.956e6b931ba67c14_3" ;
-"getZ#destructor_scope(class destr.27b8261073c8d260_1" [label="1: Start destructor_scope::getZ\nFormals:  __return_param:destructor_scope::Z*\nLocals:  z:destructor_scope::Z \n  " color=yellow style=filled]
+	 "getX#destructor_scope#11739464242.40a1d0621360ad71_6" -> "getX#destructor_scope#11739464242.40a1d0621360ad71_3" ;
+"getZ#destructor_scope#13110319947.fe2bc6519a3d7998_1" [label="1: Start destructor_scope::getZ\nFormals:  __return_param:destructor_scope::Z*\nLocals:  z:destructor_scope::Z \n  " color=yellow style=filled]
 	
 
-	 "getZ#destructor_scope(class destr.27b8261073c8d260_1" -> "getZ#destructor_scope(class destr.27b8261073c8d260_6" ;
-"getZ#destructor_scope(class destr.27b8261073c8d260_2" [label="2: Exit destructor_scope::getZ \n  " color=yellow style=filled]
+	 "getZ#destructor_scope#13110319947.fe2bc6519a3d7998_1" -> "getZ#destructor_scope#13110319947.fe2bc6519a3d7998_6" ;
+"getZ#destructor_scope#13110319947.fe2bc6519a3d7998_2" [label="2: Exit destructor_scope::getZ \n  " color=yellow style=filled]
 	
 
-"getZ#destructor_scope(class destr.27b8261073c8d260_3" [label="3:  Return Stmt \n   n$0=*&__return_param:destructor_scope::Z* [line 75, column 3]\n " shape="box"]
+"getZ#destructor_scope#13110319947.fe2bc6519a3d7998_3" [label="3:  Return Stmt \n   n$0=*&__return_param:destructor_scope::Z* [line 75, column 3]\n " shape="box"]
 	
 
-	 "getZ#destructor_scope(class destr.27b8261073c8d260_3" -> "getZ#destructor_scope(class destr.27b8261073c8d260_4" ;
-"getZ#destructor_scope(class destr.27b8261073c8d260_4" [label="4:  Return Stmt \n   n$1=_fun_destructor_scope::Z::Z(n$0:destructor_scope::Z*,&z:destructor_scope::Z&) [line 75, column 10]\n " shape="box"]
+	 "getZ#destructor_scope#13110319947.fe2bc6519a3d7998_3" -> "getZ#destructor_scope#13110319947.fe2bc6519a3d7998_4" ;
+"getZ#destructor_scope#13110319947.fe2bc6519a3d7998_4" [label="4:  Return Stmt \n   n$1=_fun_destructor_scope::Z::Z(n$0:destructor_scope::Z*,&z:destructor_scope::Z&) [line 75, column 10]\n " shape="box"]
 	
 
-	 "getZ#destructor_scope(class destr.27b8261073c8d260_4" -> "getZ#destructor_scope(class destr.27b8261073c8d260_5" ;
-"getZ#destructor_scope(class destr.27b8261073c8d260_5" [label="5:  Return Stmt \n  " shape="box"]
+	 "getZ#destructor_scope#13110319947.fe2bc6519a3d7998_4" -> "getZ#destructor_scope#13110319947.fe2bc6519a3d7998_5" ;
+"getZ#destructor_scope#13110319947.fe2bc6519a3d7998_5" [label="5:  Return Stmt \n  " shape="box"]
 	
 
-	 "getZ#destructor_scope(class destr.27b8261073c8d260_5" -> "getZ#destructor_scope(class destr.27b8261073c8d260_2" ;
-"getZ#destructor_scope(class destr.27b8261073c8d260_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(z:destructor_scope::Z); [line 74, column 3]\n  n$2=_fun_destructor_scope::Z::Z(&z:destructor_scope::Z*) [line 74, column 5]\n " shape="box"]
+	 "getZ#destructor_scope#13110319947.fe2bc6519a3d7998_5" -> "getZ#destructor_scope#13110319947.fe2bc6519a3d7998_2" ;
+"getZ#destructor_scope#13110319947.fe2bc6519a3d7998_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(z:destructor_scope::Z); [line 74, column 3]\n  n$2=_fun_destructor_scope::Z::Z(&z:destructor_scope::Z*) [line 74, column 5]\n " shape="box"]
 	
 
-	 "getZ#destructor_scope(class destr.27b8261073c8d260_6" -> "getZ#destructor_scope(class destr.27b8261073c8d260_3" ;
+	 "getZ#destructor_scope#13110319947.fe2bc6519a3d7998_6" -> "getZ#destructor_scope#13110319947.fe2bc6519a3d7998_3" ;
 "test1#destructor_scope#3167061604.d3af82d2ddb9b80d_1" [label="1: Start destructor_scope::test1\nFormals:  a:_Bool b:_Bool\nLocals:  y3:destructor_scope::Y y1:destructor_scope::Y x3:destructor_scope::X y2:destructor_scope::Y x2:destructor_scope::X s:destructor_scope::S x1:destructor_scope::X \n  " color=yellow style=filled]
 	
 

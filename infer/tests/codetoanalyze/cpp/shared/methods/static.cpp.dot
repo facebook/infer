@@ -11,17 +11,17 @@ digraph cfg {
 	
 
 	 "div0_class#4984704850372216251.260ce38d809793fc_3" -> "div0_class#4984704850372216251.260ce38d809793fc_2" ;
-"div0_instance(class A)#1337694953.fc775825a5031b98_1" [label="1: Start div0_instance\nFormals:  a:A*\nLocals:  \n  " color=yellow style=filled]
+"div0_instance#1337694953475009043.51640b59fd921707_1" [label="1: Start div0_instance\nFormals:  a:A*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "div0_instance(class A)#1337694953.fc775825a5031b98_1" -> "div0_instance(class A)#1337694953.fc775825a5031b98_3" ;
-"div0_instance(class A)#1337694953.fc775825a5031b98_2" [label="2: Exit div0_instance \n  " color=yellow style=filled]
+	 "div0_instance#1337694953475009043.51640b59fd921707_1" -> "div0_instance#1337694953475009043.51640b59fd921707_3" ;
+"div0_instance#1337694953475009043.51640b59fd921707_2" [label="2: Exit div0_instance \n  " color=yellow style=filled]
 	
 
-"div0_instance(class A)#1337694953.fc775825a5031b98_3" [label="3:  Call _fun_A::fun \n   n$0=*&a:A* [line 19, column 3]\n  n$2=_fun_A::fun(0:int) [line 19, column 3]\n " shape="box"]
+"div0_instance#1337694953475009043.51640b59fd921707_3" [label="3:  Call _fun_A::fun \n   n$0=*&a:A* [line 19, column 3]\n  n$2=_fun_A::fun(0:int) [line 19, column 3]\n " shape="box"]
 	
 
-	 "div0_instance(class A)#1337694953.fc775825a5031b98_3" -> "div0_instance(class A)#1337694953.fc775825a5031b98_2" ;
+	 "div0_instance#1337694953475009043.51640b59fd921707_3" -> "div0_instance#1337694953475009043.51640b59fd921707_2" ;
 "fun#A#(6769534270530582672).0ab578f4190d39d2_1" [label="1: Start A::fun\nFormals:  a:int\nLocals:  \n  " color=yellow style=filled]
 	
 

@@ -140,60 +140,60 @@ digraph cfg {
 	
 
 	 "copyY_moveY_div1#copy_move_constr.5716e8b7acbd3ff4_11" -> "copyY_moveY_div1#copy_move_constr.5716e8b7acbd3ff4_10" ;
-"getX#copy_move_constructor(class .3ed1bf77442fb4e4_1" [label="1: Start copy_move_constructor::getX\nFormals:  f:int __return_param:copy_move_constructor::X*\nLocals:  x:copy_move_constructor::X \n  " color=yellow style=filled]
+"getX#copy_move_constructor#221168.876b259ed079b8b1_1" [label="1: Start copy_move_constructor::getX\nFormals:  f:int __return_param:copy_move_constructor::X*\nLocals:  x:copy_move_constructor::X \n  " color=yellow style=filled]
 	
 
-	 "getX#copy_move_constructor(class .3ed1bf77442fb4e4_1" -> "getX#copy_move_constructor(class .3ed1bf77442fb4e4_7" ;
-"getX#copy_move_constructor(class .3ed1bf77442fb4e4_2" [label="2: Exit copy_move_constructor::getX \n  " color=yellow style=filled]
+	 "getX#copy_move_constructor#221168.876b259ed079b8b1_1" -> "getX#copy_move_constructor#221168.876b259ed079b8b1_7" ;
+"getX#copy_move_constructor#221168.876b259ed079b8b1_2" [label="2: Exit copy_move_constructor::getX \n  " color=yellow style=filled]
 	
 
-"getX#copy_move_constructor(class .3ed1bf77442fb4e4_3" [label="3:  Return Stmt \n   n$0=*&__return_param:copy_move_constructor::X* [line 30, column 3]\n " shape="box"]
+"getX#copy_move_constructor#221168.876b259ed079b8b1_3" [label="3:  Return Stmt \n   n$0=*&__return_param:copy_move_constructor::X* [line 30, column 3]\n " shape="box"]
 	
 
-	 "getX#copy_move_constructor(class .3ed1bf77442fb4e4_3" -> "getX#copy_move_constructor(class .3ed1bf77442fb4e4_4" ;
-"getX#copy_move_constructor(class .3ed1bf77442fb4e4_4" [label="4:  Return Stmt \n   n$1=_fun_copy_move_constructor::X::X(n$0:copy_move_constructor::X*,&x:copy_move_constructor::X&) [line 30, column 10]\n " shape="box"]
+	 "getX#copy_move_constructor#221168.876b259ed079b8b1_3" -> "getX#copy_move_constructor#221168.876b259ed079b8b1_4" ;
+"getX#copy_move_constructor#221168.876b259ed079b8b1_4" [label="4:  Return Stmt \n   n$1=_fun_copy_move_constructor::X::X(n$0:copy_move_constructor::X*,&x:copy_move_constructor::X&) [line 30, column 10]\n " shape="box"]
 	
 
-	 "getX#copy_move_constructor(class .3ed1bf77442fb4e4_4" -> "getX#copy_move_constructor(class .3ed1bf77442fb4e4_5" ;
-"getX#copy_move_constructor(class .3ed1bf77442fb4e4_5" [label="5:  Return Stmt \n  " shape="box"]
+	 "getX#copy_move_constructor#221168.876b259ed079b8b1_4" -> "getX#copy_move_constructor#221168.876b259ed079b8b1_5" ;
+"getX#copy_move_constructor#221168.876b259ed079b8b1_5" [label="5:  Return Stmt \n  " shape="box"]
 	
 
-	 "getX#copy_move_constructor(class .3ed1bf77442fb4e4_5" -> "getX#copy_move_constructor(class .3ed1bf77442fb4e4_2" ;
-"getX#copy_move_constructor(class .3ed1bf77442fb4e4_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&f:int [line 29, column 9]\n  *&x.f:int=n$2 [line 29, column 3]\n " shape="box"]
+	 "getX#copy_move_constructor#221168.876b259ed079b8b1_5" -> "getX#copy_move_constructor#221168.876b259ed079b8b1_2" ;
+"getX#copy_move_constructor#221168.876b259ed079b8b1_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&f:int [line 29, column 9]\n  *&x.f:int=n$2 [line 29, column 3]\n " shape="box"]
 	
 
-	 "getX#copy_move_constructor(class .3ed1bf77442fb4e4_6" -> "getX#copy_move_constructor(class .3ed1bf77442fb4e4_3" ;
-"getX#copy_move_constructor(class .3ed1bf77442fb4e4_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:copy_move_constructor::X); [line 28, column 3]\n  n$3=_fun_copy_move_constructor::X::X(&x:copy_move_constructor::X*) [line 28, column 5]\n " shape="box"]
+	 "getX#copy_move_constructor#221168.876b259ed079b8b1_6" -> "getX#copy_move_constructor#221168.876b259ed079b8b1_3" ;
+"getX#copy_move_constructor#221168.876b259ed079b8b1_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:copy_move_constructor::X); [line 28, column 3]\n  n$3=_fun_copy_move_constructor::X::X(&x:copy_move_constructor::X*) [line 28, column 5]\n " shape="box"]
 	
 
-	 "getX#copy_move_constructor(class .3ed1bf77442fb4e4_7" -> "getX#copy_move_constructor(class .3ed1bf77442fb4e4_6" ;
-"getY#copy_move_constructor(class .ad9dd85c67bb69fc_1" [label="1: Start copy_move_constructor::getY\nFormals:  f:int __return_param:copy_move_constructor::Y*\nLocals:  y:copy_move_constructor::Y \n  " color=yellow style=filled]
+	 "getX#copy_move_constructor#221168.876b259ed079b8b1_7" -> "getX#copy_move_constructor#221168.876b259ed079b8b1_6" ;
+"getY#copy_move_constructor#171201.2c171bbad2707d61_1" [label="1: Start copy_move_constructor::getY\nFormals:  f:int __return_param:copy_move_constructor::Y*\nLocals:  y:copy_move_constructor::Y \n  " color=yellow style=filled]
 	
 
-	 "getY#copy_move_constructor(class .ad9dd85c67bb69fc_1" -> "getY#copy_move_constructor(class .ad9dd85c67bb69fc_7" ;
-"getY#copy_move_constructor(class .ad9dd85c67bb69fc_2" [label="2: Exit copy_move_constructor::getY \n  " color=yellow style=filled]
+	 "getY#copy_move_constructor#171201.2c171bbad2707d61_1" -> "getY#copy_move_constructor#171201.2c171bbad2707d61_7" ;
+"getY#copy_move_constructor#171201.2c171bbad2707d61_2" [label="2: Exit copy_move_constructor::getY \n  " color=yellow style=filled]
 	
 
-"getY#copy_move_constructor(class .ad9dd85c67bb69fc_3" [label="3:  Return Stmt \n   n$0=*&__return_param:copy_move_constructor::Y* [line 36, column 3]\n " shape="box"]
+"getY#copy_move_constructor#171201.2c171bbad2707d61_3" [label="3:  Return Stmt \n   n$0=*&__return_param:copy_move_constructor::Y* [line 36, column 3]\n " shape="box"]
 	
 
-	 "getY#copy_move_constructor(class .ad9dd85c67bb69fc_3" -> "getY#copy_move_constructor(class .ad9dd85c67bb69fc_4" ;
-"getY#copy_move_constructor(class .ad9dd85c67bb69fc_4" [label="4:  Return Stmt \n   n$1=_fun_copy_move_constructor::Y::Y(n$0:copy_move_constructor::Y*,&y:copy_move_constructor::Y&) [line 36, column 10]\n " shape="box"]
+	 "getY#copy_move_constructor#171201.2c171bbad2707d61_3" -> "getY#copy_move_constructor#171201.2c171bbad2707d61_4" ;
+"getY#copy_move_constructor#171201.2c171bbad2707d61_4" [label="4:  Return Stmt \n   n$1=_fun_copy_move_constructor::Y::Y(n$0:copy_move_constructor::Y*,&y:copy_move_constructor::Y&) [line 36, column 10]\n " shape="box"]
 	
 
-	 "getY#copy_move_constructor(class .ad9dd85c67bb69fc_4" -> "getY#copy_move_constructor(class .ad9dd85c67bb69fc_5" ;
-"getY#copy_move_constructor(class .ad9dd85c67bb69fc_5" [label="5:  Return Stmt \n  " shape="box"]
+	 "getY#copy_move_constructor#171201.2c171bbad2707d61_4" -> "getY#copy_move_constructor#171201.2c171bbad2707d61_5" ;
+"getY#copy_move_constructor#171201.2c171bbad2707d61_5" [label="5:  Return Stmt \n  " shape="box"]
 	
 
-	 "getY#copy_move_constructor(class .ad9dd85c67bb69fc_5" -> "getY#copy_move_constructor(class .ad9dd85c67bb69fc_2" ;
-"getY#copy_move_constructor(class .ad9dd85c67bb69fc_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&f:int [line 35, column 9]\n  *&y.f:int=n$2 [line 35, column 3]\n " shape="box"]
+	 "getY#copy_move_constructor#171201.2c171bbad2707d61_5" -> "getY#copy_move_constructor#171201.2c171bbad2707d61_2" ;
+"getY#copy_move_constructor#171201.2c171bbad2707d61_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&f:int [line 35, column 9]\n  *&y.f:int=n$2 [line 35, column 3]\n " shape="box"]
 	
 
-	 "getY#copy_move_constructor(class .ad9dd85c67bb69fc_6" -> "getY#copy_move_constructor(class .ad9dd85c67bb69fc_3" ;
-"getY#copy_move_constructor(class .ad9dd85c67bb69fc_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(y:copy_move_constructor::Y); [line 34, column 3]\n  n$3=_fun_copy_move_constructor::Y::Y(&y:copy_move_constructor::Y*) [line 34, column 5]\n " shape="box"]
+	 "getY#copy_move_constructor#171201.2c171bbad2707d61_6" -> "getY#copy_move_constructor#171201.2c171bbad2707d61_3" ;
+"getY#copy_move_constructor#171201.2c171bbad2707d61_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(y:copy_move_constructor::Y); [line 34, column 3]\n  n$3=_fun_copy_move_constructor::Y::Y(&y:copy_move_constructor::Y*) [line 34, column 5]\n " shape="box"]
 	
 
-	 "getY#copy_move_constructor(class .ad9dd85c67bb69fc_7" -> "getY#copy_move_constructor(class .ad9dd85c67bb69fc_6" ;
+	 "getY#copy_move_constructor#171201.2c171bbad2707d61_7" -> "getY#copy_move_constructor#171201.2c171bbad2707d61_6" ;
 "moveX_div0#copy_move_constructor#.f23c95e594ab41ba_1" [label="1: Start copy_move_constructor::moveX_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:copy_move_constructor::X \n  " color=yellow style=filled]
 	
 

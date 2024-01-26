@@ -1,16 +1,16 @@
 /* @generated */
 digraph cfg {
-"call_with_forward_declaration(cla.c1f98de069e5c709_1" [label="1: Start call_with_forward_declaration\nFormals:  x:XForward*\nLocals:  \n  " color=yellow style=filled]
+"call_with_forward_declaration#161.7dab8d0b16e63b8b_1" [label="1: Start call_with_forward_declaration\nFormals:  x:XForward*\nLocals:  \n  " color=yellow style=filled]
 	
 
-	 "call_with_forward_declaration(cla.c1f98de069e5c709_1" -> "call_with_forward_declaration(cla.c1f98de069e5c709_3" ;
-"call_with_forward_declaration(cla.c1f98de069e5c709_2" [label="2: Exit call_with_forward_declaration \n  " color=yellow style=filled]
+	 "call_with_forward_declaration#161.7dab8d0b16e63b8b_1" -> "call_with_forward_declaration#161.7dab8d0b16e63b8b_3" ;
+"call_with_forward_declaration#161.7dab8d0b16e63b8b_2" [label="2: Exit call_with_forward_declaration \n  " color=yellow style=filled]
 	
 
-"call_with_forward_declaration(cla.c1f98de069e5c709_3" [label="3:  Call _fun_XForward::call \n   n$0=*&x:XForward* [line 33, column 51]\n  _=*n$0:XForward [line 33, column 51]\n  n$2=_fun_XForward::call(n$0:XForward*) [line 33, column 51]\n " shape="box"]
+"call_with_forward_declaration#161.7dab8d0b16e63b8b_3" [label="3:  Call _fun_XForward::call \n   n$0=*&x:XForward* [line 33, column 51]\n  _=*n$0:XForward [line 33, column 51]\n  n$2=_fun_XForward::call(n$0:XForward*) [line 33, column 51]\n " shape="box"]
 	
 
-	 "call_with_forward_declaration(cla.c1f98de069e5c709_3" -> "call_with_forward_declaration(cla.c1f98de069e5c709_2" ;
+	 "call_with_forward_declaration#161.7dab8d0b16e63b8b_3" -> "call_with_forward_declaration#161.7dab8d0b16e63b8b_2" ;
 "getX#13708790503777666214.a992c0752db0283a_1" [label="1: Start getX\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 

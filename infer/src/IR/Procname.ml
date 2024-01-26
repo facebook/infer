@@ -401,23 +401,16 @@ end
 
 module C = struct
   (** Type of c procedure names. *)
-  type t =
-    { name: QualifiedCppName.t
-    ; mangled: string option
-    ; parameters: Parameter.clang_parameter list
-    ; template_args: Typ.template_spec_info }
+  type t = {name: QualifiedCppName.t; mangled: string option; template_args: Typ.template_spec_info}
   [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-  let c name ?mangled parameters template_args = {name; mangled; parameters; template_args}
+  let c name ?mangled template_args = {name; mangled; template_args}
 
   let from_string name =
-    { name= QualifiedCppName.of_qual_string name
-    ; mangled= None
-    ; parameters= []
-    ; template_args= NoTemplate }
+    {name= QualifiedCppName.of_qual_string name; mangled= None; template_args= NoTemplate}
 
 
-  let pp verbosity fmt {name; mangled; parameters} =
+  let pp verbosity fmt {name; mangled} =
     let plain = QualifiedCppName.to_qual_string name in
     match verbosity with
     | Simple ->
@@ -426,17 +419,13 @@ module C = struct
         F.pp_print_string fmt plain
     | Verbose ->
         let pp_mangled fmt = function None -> () | Some s -> F.fprintf fmt "{%s}" s in
-        F.fprintf fmt "%s%a%a" plain Parameter.pp_parameters parameters pp_mangled mangled
+        F.fprintf fmt "%s%a" plain pp_mangled mangled
 
 
   let pp_without_templates fmt {name} =
     let plain = QualifiedCppName.to_qual_string name in
     F.pp_print_string fmt (remove_templates plain)
 
-
-  let get_parameters c = c.parameters
-
-  let replace_parameters new_parameters c = {c with parameters= new_parameters}
 
   (** NOTE: [std::_] is parsed as [C] proc name in Sil, rather than [ObjC_Cpp]. *)
   let is_std_function ~prefix {name} =
@@ -1355,8 +1344,8 @@ let rec get_parameters procname =
       List.map ~f:(fun par -> Parameter.JavaParameter par) (Java.get_parameters j)
   | CSharp cs ->
       List.map ~f:(fun par -> Parameter.CSharpParameter par) (CSharp.get_parameters cs)
-  | C osig ->
-      clang_param_to_param (C.get_parameters osig)
+  | C _ ->
+      []
   | Erlang e ->
       List.init e.arity ~f:(fun _ -> Parameter.ErlangParameter)
   | Hack _ ->
@@ -1427,8 +1416,8 @@ let rec replace_parameters new_parameters procname =
       Java (Java.replace_parameters (params_to_java_params new_parameters) j)
   | CSharp cs ->
       CSharp (CSharp.replace_parameters (params_to_csharp_params new_parameters) cs)
-  | C osig ->
-      C (C.replace_parameters (params_to_clang_params new_parameters) osig)
+  | C _ ->
+      procname
   | Erlang e ->
       Erlang (Erlang.set_arity (params_to_erlang_arity new_parameters) e)
   | Hack _ ->
@@ -1542,10 +1531,9 @@ let to_short_unique_name pname =
   in
   let proc_id =
     match pname with
-    | C {parameters; mangled} ->
+    | C {mangled} ->
         let pp_mangled fmt = function None -> () | Some mangled -> F.fprintf fmt "#%s" mangled in
-        F.asprintf "%a%a%a" pp_rev_qualified pname Parameter.pp_parameters parameters pp_mangled
-          mangled
+        F.asprintf "%a%a" pp_rev_qualified pname pp_mangled mangled
     | ObjC_Cpp objc_cpp ->
         F.asprintf "%a%a#%a" pp_rev_qualified pname Parameter.pp_parameters objc_cpp.parameters
           ObjC_Cpp.pp_verbose_kind objc_cpp.kind

@@ -1,32 +1,32 @@
 /* @generated */
 digraph cfg {
-"get#return_struct(class return_st.86e6722206a41548_1" [label="1: Start return_struct::get\nFormals:  a:int __return_param:return_struct::X*\nLocals:  x:return_struct::X \n  " color=yellow style=filled]
+"get#return_struct#152069431635814.ccfaa809d6b1c936_1" [label="1: Start return_struct::get\nFormals:  a:int __return_param:return_struct::X*\nLocals:  x:return_struct::X \n  " color=yellow style=filled]
 	
 
-	 "get#return_struct(class return_st.86e6722206a41548_1" -> "get#return_struct(class return_st.86e6722206a41548_7" ;
-"get#return_struct(class return_st.86e6722206a41548_2" [label="2: Exit return_struct::get \n  " color=yellow style=filled]
+	 "get#return_struct#152069431635814.ccfaa809d6b1c936_1" -> "get#return_struct#152069431635814.ccfaa809d6b1c936_7" ;
+"get#return_struct#152069431635814.ccfaa809d6b1c936_2" [label="2: Exit return_struct::get \n  " color=yellow style=filled]
 	
 
-"get#return_struct(class return_st.86e6722206a41548_3" [label="3:  Return Stmt \n   n$0=*&__return_param:return_struct::X* [line 22, column 3]\n " shape="box"]
+"get#return_struct#152069431635814.ccfaa809d6b1c936_3" [label="3:  Return Stmt \n   n$0=*&__return_param:return_struct::X* [line 22, column 3]\n " shape="box"]
 	
 
-	 "get#return_struct(class return_st.86e6722206a41548_3" -> "get#return_struct(class return_st.86e6722206a41548_4" ;
-"get#return_struct(class return_st.86e6722206a41548_4" [label="4:  Return Stmt \n   n$1=_fun_return_struct::X::X(n$0:return_struct::X*,&x:return_struct::X&) [line 22, column 10]\n " shape="box"]
+	 "get#return_struct#152069431635814.ccfaa809d6b1c936_3" -> "get#return_struct#152069431635814.ccfaa809d6b1c936_4" ;
+"get#return_struct#152069431635814.ccfaa809d6b1c936_4" [label="4:  Return Stmt \n   n$1=_fun_return_struct::X::X(n$0:return_struct::X*,&x:return_struct::X&) [line 22, column 10]\n " shape="box"]
 	
 
-	 "get#return_struct(class return_st.86e6722206a41548_4" -> "get#return_struct(class return_st.86e6722206a41548_5" ;
-"get#return_struct(class return_st.86e6722206a41548_5" [label="5:  Return Stmt \n  " shape="box"]
+	 "get#return_struct#152069431635814.ccfaa809d6b1c936_4" -> "get#return_struct#152069431635814.ccfaa809d6b1c936_5" ;
+"get#return_struct#152069431635814.ccfaa809d6b1c936_5" [label="5:  Return Stmt \n  " shape="box"]
 	
 
-	 "get#return_struct(class return_st.86e6722206a41548_5" -> "get#return_struct(class return_st.86e6722206a41548_2" ;
-"get#return_struct(class return_st.86e6722206a41548_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&a:int [line 21, column 9]\n  *&x.f:int=n$2 [line 21, column 3]\n " shape="box"]
+	 "get#return_struct#152069431635814.ccfaa809d6b1c936_5" -> "get#return_struct#152069431635814.ccfaa809d6b1c936_2" ;
+"get#return_struct#152069431635814.ccfaa809d6b1c936_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&a:int [line 21, column 9]\n  *&x.f:int=n$2 [line 21, column 3]\n " shape="box"]
 	
 
-	 "get#return_struct(class return_st.86e6722206a41548_6" -> "get#return_struct(class return_st.86e6722206a41548_3" ;
-"get#return_struct(class return_st.86e6722206a41548_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:return_struct::X); [line 20, column 3]\n  n$3=_fun_return_struct::X::X(&x:return_struct::X*) [line 20, column 5]\n " shape="box"]
+	 "get#return_struct#152069431635814.ccfaa809d6b1c936_6" -> "get#return_struct#152069431635814.ccfaa809d6b1c936_3" ;
+"get#return_struct#152069431635814.ccfaa809d6b1c936_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:return_struct::X); [line 20, column 3]\n  n$3=_fun_return_struct::X::X(&x:return_struct::X*) [line 20, column 5]\n " shape="box"]
 	
 
-	 "get#return_struct(class return_st.86e6722206a41548_7" -> "get#return_struct(class return_st.86e6722206a41548_6" ;
+	 "get#return_struct#152069431635814.ccfaa809d6b1c936_7" -> "get#return_struct#152069431635814.ccfaa809d6b1c936_6" ;
 "get_div0#return_struct#3543093399.0c3db3a444952aef_1" [label="1: Start return_struct::get_div0\nFormals: \nLocals:  x:return_struct::X 0$?%__sil_tmpSIL_materialize_temp__n$1:return_struct::X const  \n  " color=yellow style=filled]
 	
 
