@@ -2679,6 +2679,10 @@ INTERNAL OPTIONS
            debugging, to quickly assess if a false negative may be caused by
            lack of coverage. (Conversely: --no-pulse-force-continue)
 
+       --no-pulse-havoc-arguments
+           Deactivates: Heuristically havoc arguments to unknown functions.
+           (Conversely: --pulse-havoc-arguments)
+
        --pulse-intraprocedural-only
            Activates: Disable inter-procedural analysis in Pulse. Used for
            experimentations only. (Conversely:

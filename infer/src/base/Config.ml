@@ -2305,6 +2305,11 @@ and pulse_force_continue =
      be caused by lack of coverage."
 
 
+and pulse_havoc_arguments =
+  CLOpt.mk_bool ~long:"pulse-havoc-arguments" ~default:true
+    "Heuristically havoc arguments to unknown functions."
+
+
 and pulse_inline_global_init_func_pointer =
   CLOpt.mk_bool ~long:"pulse-inline-global-init-func-pointer" ~default:false
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4314,6 +4319,8 @@ and pulse_nullsafe_report_npe_as_separate_issue_type =
 and pulse_log_summary_count = !pulse_log_summary_count
 
 and pulse_force_continue = !pulse_force_continue
+
+and pulse_havoc_arguments = !pulse_havoc_arguments
 
 and pulse_prevent_non_disj_top = !pulse_prevent_non_disj_top
 

@@ -576,6 +576,8 @@ val pulse_cut_to_one_path_procedures_pattern : Str.regexp option
 
 val pulse_force_continue : bool
 
+val pulse_havoc_arguments : bool
+
 val pulse_inline_global_init_func_pointer : bool
 
 val pulse_intraprocedural_only : bool

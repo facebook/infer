@@ -74,6 +74,8 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
         ; "__gnu_cxx::__normal_iterator" ]
     in
     match actual_typ.Typ.desc with
+    | _ when not Config.pulse_havoc_arguments ->
+        `DoNotHavoc
     | _ when Language.curr_language_is Erlang ->
         `DoNotHavoc
     | Tstruct (CppClass {name})
