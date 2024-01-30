@@ -80,7 +80,7 @@ let verify_decl ~env errors (decl : Module.decl) =
     if ProcDecl.is_not_regular_proc proc then errors
     else
       let procsig = Exp.call_sig proc nb_args (TextualDecls.lang env) in
-      match TextualDecls.get_procdecl env procsig with
+      match TextualDecls.get_procdecl env procsig nb_args with
       | None when QualifiedProcName.contains_wildcard proc ->
           errors
       | None ->
@@ -97,8 +97,9 @@ let verify_decl ~env errors (decl : Module.decl) =
           else errors
       | Some (NotVariadic, {formals_types= Some formals_types}) ->
           let errors =
-            if must_be_implemented && TextualDecls.get_procdecl env procsig |> Option.is_none then
-              ProcNotImplementedButInClosure {proc} :: errors
+            if
+              must_be_implemented && TextualDecls.get_procdecl env procsig nb_args |> Option.is_none
+            then ProcNotImplementedButInClosure {proc} :: errors
             else errors
           in
           let formals = List.length formals_types in

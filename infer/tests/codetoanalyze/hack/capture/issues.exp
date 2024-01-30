@@ -17,6 +17,7 @@ Tenv types without source: { hack $builtins,
                              hack HackInt,
                              hack HackMixed,
                              hack HackString,
+                             hack HackVec,
                              hack TypeInUnit3,
                              hack class,
                              hack string }.

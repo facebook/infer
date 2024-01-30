@@ -164,21 +164,27 @@ let is_trait_method decls_env procsig =
   not (Textual.ProcSig.is_hack_init procsig)
 
 
-let get_procdecl decls procsig =
+let get_procdecl decls procsig nb_args =
   let procname = ProcSig.to_qualified_procname procsig in
+  (* The trait methods has an additional parameter added by [hackc]. *)
+  let procsig =
+    if is_trait_method decls procsig then Textual.ProcSig.incr_arity procsig else procsig
+  in
+  let non_variadic_case =
+    get_procentry decls procsig |> Option.map ~f:(fun entry -> (NotVariadic, ProcEntry.decl entry))
+  in
   match get_variadic_procdesc decls procname with
   | Some procdesc ->
       let formals_type = ProcDesc.formals procdesc in
       let variadic_type = List.last_exn formals_type in
       (* get_variadic_procdesc will only succeed for non empty param list *)
-      Some (Variadic variadic_type.typ, procdesc.procdecl)
+      if nb_args + 1 < List.length formals_type then
+        (* at call site there is not enough argument to activate the variadic argument,
+           then our last chance to succeed is the non-variadic case *)
+        non_variadic_case
+      else Some (Variadic variadic_type.typ, procdesc.procdecl)
   | None ->
-      (* The trait methods has an additional parameter added by [hackc]. *)
-      let procsig =
-        if is_trait_method decls procsig then Textual.ProcSig.incr_arity procsig else procsig
-      in
-      get_procentry decls procsig
-      |> Option.map ~f:(fun entry -> (NotVariadic, ProcEntry.decl entry))
+      non_variadic_case
 
 
 let get_procdesc decls procsig =

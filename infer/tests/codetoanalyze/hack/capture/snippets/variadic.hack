@@ -14,6 +14,41 @@ function main2(string $format, string $x, string $y): void {
   variadic($format, $x, $y);
 }
 
+function variadic_with_optionals(
+  string $format,
+  string $opt1 = "",
+  string $opt2 = "",
+  mixed ...$args
+): void {
+}
+
+function main_using_optionnals1(string $format, string $x): void {
+  variadic_with_optionals($format, $x);
+}
+
+function main_using_optionnals2(string $format, string $x, string $y): void {
+  variadic_with_optionals($format, $x, $y);
+}
+
+function main_using_optionnals3(
+  string $format,
+  string $x,
+  string $y,
+  string $z,
+): void {
+  variadic_with_optionals($format, $x, $y, $z);
+}
+
+function main_using_optionnals4(
+  string $format,
+  string $x,
+  string $y,
+  string $z,
+  string $t,
+): void {
+  variadic_with_optionals($format, $x, $y, $z, $t);
+}
+
 class C {
   use T;
 

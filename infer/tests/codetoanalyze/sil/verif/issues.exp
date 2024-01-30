@@ -46,4 +46,4 @@ type_error_argnum.sil, line 19, column 2: textual type error: expression n0 has 
 type_token_clash.sil, line 7, column 2: SIL syntax error: unexpected token n00b
 variadic.sil, line 30, column 7: SIL consistency error: variadic parameter is not in penultimate position in trait fonction T.bad
 variadic.sil, line 18, column 7: SIL consistency error: variadic parameter is not in last position in fonction f3
-variadic.sil, line 10, column 8: SIL consistency error: the variadic function f2 is expecting at least 2 arguments but is called with only 1
+variadic.sil, line 10, column 8: SIL consistency error: function f2 which can be called with 1 arguments is not declared

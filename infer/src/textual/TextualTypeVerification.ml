@@ -371,8 +371,8 @@ let typeof_reserved_proc (proc : QualifiedProcName.t) =
 
 
 (* Since procname can be both defined and declared in a file we should account for unknown formals in declarations. *)
-let typeof_procname (procsig : ProcSig.t) state =
-  match TextualDecls.get_procdecl state.decls procsig with
+let typeof_procname (procsig : ProcSig.t) nb_args state =
+  match TextualDecls.get_procdecl state.decls procsig nb_args with
   | Some (variadic_status, procdecl) ->
       let formals_types =
         procdecl.formals_types
@@ -462,7 +462,7 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
   | Call {proc; args; kind} ->
       let* lang = get_lang in
       let procsig = Exp.call_sig proc (List.length args) lang in
-      let* result_type, formals_types, is_variadic = typeof_procname procsig in
+      let* result_type, formals_types, is_variadic = typeof_procname procsig (List.length args) in
       let* loc = get_location in
       let+ args =
         match formals_types with

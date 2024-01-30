@@ -597,9 +597,10 @@ module ExpBridge = struct
       | Call {proc; args= [Typ typ; exp]} when ProcDecl.is_cast_builtin proc ->
           Cast (TypBridge.to_sil lang typ, aux exp)
       | Call {proc; args} -> (
-          let procsig = Exp.call_sig proc (List.length args) (TextualDecls.lang decls_env) in
+          let nb_args = List.length args in
+          let procsig = Exp.call_sig proc nb_args (TextualDecls.lang decls_env) in
           match
-            ( TextualDecls.get_procdecl decls_env procsig
+            ( TextualDecls.get_procdecl decls_env procsig nb_args
             , ProcDecl.to_unop proc
             , ProcDecl.to_binop proc
             , args )
@@ -761,7 +762,7 @@ module InstrBridge = struct
         let ret = IdentBridge.to_sil id in
         let procsig = Exp.call_sig proc (List.length args) (TextualDecls.lang decls_env) in
         let variadic_status, ({formals_types} as callee_procdecl : ProcDecl.t) =
-          match TextualDecls.get_procdecl decls_env procsig with
+          match TextualDecls.get_procdecl decls_env procsig (List.length args) with
           | Some (variadic_flag, procdecl) ->
               (variadic_flag, procdecl)
           | None when QualifiedProcName.contains_wildcard proc ->

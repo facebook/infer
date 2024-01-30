@@ -35,7 +35,7 @@ type variadic_status =
   | NotVariadic
   | Variadic of Textual.Typ.t (* type of the variadic parameter *)
 
-val get_procdecl : t -> Textual.ProcSig.t -> (variadic_status * Textual.ProcDecl.t) option
+val get_procdecl : t -> Textual.ProcSig.t -> int -> (variadic_status * Textual.ProcDecl.t) option
 
 val get_procdesc : t -> Textual.ProcSig.t -> Textual.ProcDesc.t option
 
