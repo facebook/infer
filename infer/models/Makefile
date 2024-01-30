@@ -15,7 +15,7 @@ RESULTS_DIR = infer-out
 RESULTS_DB = $(RESULTS_DIR)/results.db
 CAPTURE_DB = $(RESULTS_DIR)/capture.db
 
-INFER_OPTIONS = --jobs 1 --biabduction-only --results-dir $(RESULTS_DIR) --biabduction-models-mode
+INFER_OPTIONS = --jobs 1 --biabduction-only --results-dir $(RESULTS_DIR) --biabduction-models-mode --scheduler=file
 
 JAVA_MODELS_OUT = java/models
 MODELS_JAR = models.jar

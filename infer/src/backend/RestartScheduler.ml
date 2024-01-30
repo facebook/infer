@@ -59,8 +59,7 @@ let make sources =
 
 
 let if_restart_scheduler f =
-  if not (Int.equal Config.jobs 1) then
-    match Config.scheduler with File | SyntacticCallGraph -> () | Restart -> f ()
+  match Config.scheduler with File | SyntacticCallGraph -> () | Restart -> f ()
 
 
 let setup () = if_restart_scheduler ProcLocker.setup

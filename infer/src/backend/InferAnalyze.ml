@@ -193,6 +193,7 @@ let analyze replay_call_graph source_files_to_analyze =
   if Config.is_checker_enabled ConfigImpactAnalysis then
     L.debug Analysis Quiet "Config impact strict mode: %a@." ConfigImpactAnalysis.pp_mode
       ConfigImpactAnalysis.mode ;
+  RestartScheduler.setup () ;
   if Int.equal Config.jobs 1 then (
     let target_files =
       List.rev_map (Lazy.force source_files_to_analyze) ~f:(fun sf -> TaskSchedulerTypes.File sf)
@@ -211,7 +212,6 @@ let analyze replay_call_graph source_files_to_analyze =
       tasks_generator_builder_for replay_call_graph (Lazy.force source_files_to_analyze)
     in
     (* Prepare tasks one file at a time while executing in parallel *)
-    RestartScheduler.setup () ;
     let allocation_traces_dir = ResultsDir.get_path AllocationTraces in
     if Config.memtrace_analysis then (
       Utils.create_dir allocation_traces_dir ;

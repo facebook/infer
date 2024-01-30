@@ -2970,15 +2970,15 @@ and sarif =
 
 
 and scheduler =
-  CLOpt.mk_symbol ~long:"scheduler" ~default:File ~eq:equal_scheduler
+  CLOpt.mk_symbol ~long:"scheduler" ~default:Restart ~eq:equal_scheduler
     ~in_help:InferCommand.[(Analyze, manual_scheduler)]
     ~symbols:scheduler_symbols
     "Specify the scheduler used for the analysis phase:\n\
-     - file: schedule one job per file\n\
-     - callgraph: schedule one job per procedure, following the syntactic call graph. Usually \
+     - file: schedules one job per file\n\
+     - callgraph: schedules one job per procedure, following the syntactic call graph. Usually \
      faster than \"file\".\n\
-     - restart: same as callgraph but uses locking to try and avoid duplicate work between \
-     different analysis processes and thus performs better in some circumstances"
+     - restart: schedules one job per procedure, using locking to try and avoid duplicate work \
+     between different analysis processes and thus performs generally better on high parallelism"
 
 
 and scope_leakage_config =

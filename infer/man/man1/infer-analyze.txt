@@ -484,12 +484,12 @@ ANALYSIS SCHEDULER OPTIONS
            --no-replay-ondemand-should-error)
 
        --scheduler { file | restart | callgraph }
-           Specify the scheduler used for the analysis phase:           - file: schedule one job per file
-           - callgraph: schedule one job per procedure, following the
+           Specify the scheduler used for the analysis phase:           - file: schedules one job per file
+           - callgraph: schedules one job per procedure, following the
            syntactic call graph. Usually faster than "file".
-           - restart: same as callgraph but uses locking to try and avoid
-           duplicate work between different analysis processes and thus
-           performs better in some circumstances
+           - restart: schedules one job per procedure, using locking to try
+           and avoid duplicate work between different analysis processes and
+           thus performs generally better on high parallelism
 
        --store-analysis-schedule
            Activates: Store the analysis schedule for later replay, honoring
