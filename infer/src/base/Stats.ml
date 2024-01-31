@@ -84,14 +84,16 @@ include struct
     ; mutable timeouts: int
     ; mutable timings: (Timings.t, Timings.serialized) serialize_before_marshal
     ; mutable longest_proc_duration_heap: LongestProcDurationHeap.t
-    ; mutable process_times: ExecutionDuration.t }
+    ; mutable process_times: ExecutionDuration.t
+    ; mutable useful_times: ExecutionDuration.t }
   [@@deriving fields]
 end
 
 let empty_duration_map = LongestProcDurationHeap.create ~dummy:DurationItem.dummy 10
 
 let global_stats =
-  { longest_proc_duration_heap= empty_duration_map
+  { useful_times= ExecutionDuration.zero
+  ; longest_proc_duration_heap= empty_duration_map
   ; summary_file_try_load= 0
   ; summary_read_from_disk= 0
   ; summary_cache_hits= 0
@@ -193,8 +195,13 @@ let set_process_times execution_duration =
   update_with Fields.process_times ~f:(fun _ -> execution_duration)
 
 
+let set_useful_times execution_duration =
+  update_with Fields.useful_times ~f:(fun _ -> execution_duration)
+
+
 let copy from ~into : unit =
-  let ({ longest_proc_duration_heap
+  let ({ useful_times
+       ; longest_proc_duration_heap
        ; summary_file_try_load
        ; summary_read_from_disk
        ; summary_cache_hits
@@ -217,17 +224,18 @@ let copy from ~into : unit =
        ; timings } [@warning "+9"] ) =
     from
   in
-  Fields.Direct.set_all_mutable_fields into ~longest_proc_duration_heap ~summary_file_try_load
-    ~summary_read_from_disk ~summary_cache_hits ~summary_cache_misses ~ondemand_procs_analyzed
-    ~proc_locker_lock_time ~proc_locker_unlock_time ~restart_scheduler_useful_time
-    ~restart_scheduler_total_time ~process_times ~pulse_aliasing_contradictions
-    ~pulse_args_length_contradictions ~pulse_captured_vars_length_contradictions
-    ~pulse_disjuncts_dropped ~pulse_interrupted_loops ~pulse_summaries_contradictions
-    ~pulse_summaries_count ~topl_reachable_calls ~timeouts ~timings
+  Fields.Direct.set_all_mutable_fields into ~useful_times ~longest_proc_duration_heap
+    ~summary_file_try_load ~summary_read_from_disk ~summary_cache_hits ~summary_cache_misses
+    ~ondemand_procs_analyzed ~proc_locker_lock_time ~proc_locker_unlock_time
+    ~restart_scheduler_useful_time ~restart_scheduler_total_time ~process_times
+    ~pulse_aliasing_contradictions ~pulse_args_length_contradictions
+    ~pulse_captured_vars_length_contradictions ~pulse_disjuncts_dropped ~pulse_interrupted_loops
+    ~pulse_summaries_contradictions ~pulse_summaries_count ~topl_reachable_calls ~timeouts ~timings
 
 
 let merge stats1 stats2 =
-  { longest_proc_duration_heap=
+  { useful_times= ExecutionDuration.add stats1.useful_times stats2.useful_times
+  ; longest_proc_duration_heap=
       LongestProcDurationHeap.merge stats1.longest_proc_duration_heap
         stats2.longest_proc_duration_heap
   ; summary_file_try_load= stats1.summary_file_try_load + stats2.summary_file_try_load
@@ -270,7 +278,8 @@ let merge stats1 stats2 =
 
 
 let initial =
-  { longest_proc_duration_heap= empty_duration_map
+  { useful_times= ExecutionDuration.zero
+  ; longest_proc_duration_heap= empty_duration_map
   ; summary_file_try_load= 0
   ; summary_read_from_disk= 0
   ; summary_cache_hits= 0
@@ -337,6 +346,7 @@ let pp fmt stats =
   in
   let pp_stats fmt =
     Fields.iter ~summary_file_try_load:(pp_int_field fmt)
+      ~useful_times:(pp_execution_duration_field fmt)
       ~longest_proc_duration_heap:(pp_longest_proc_duration_heap fmt)
       ~summary_read_from_disk:(pp_int_field fmt)
       ~summary_cache_hits:(pp_cache_hits stats stats.summary_cache_misses fmt)
@@ -392,7 +402,8 @@ let log_to_scuba stats =
     Field.get field stats |> deserialize Timings.deserialize |> Timings.to_scuba
   in
   let entries =
-    Fields.to_list ~longest_proc_duration_heap:create_longest_proc_duration_heap
+    Fields.to_list ~useful_times:create_time_entry
+      ~longest_proc_duration_heap:create_longest_proc_duration_heap
       ~summary_file_try_load:create_counter ~summary_read_from_disk:create_counter
       ~summary_cache_hits:create_counter ~summary_cache_misses:create_counter
       ~ondemand_procs_analyzed:create_counter ~proc_locker_lock_time:create_time_entry

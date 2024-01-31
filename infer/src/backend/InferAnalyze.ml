@@ -61,6 +61,8 @@ let proc_name_of_uid uid =
       L.die InternalError "Requested non-existent proc_uid: %s@." uid
 
 
+let useful_time = ref ExecutionDuration.zero
+
 let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
   let analyze_source_file exe_env source_file =
     DB.Results_dir.init source_file ;
@@ -96,6 +98,7 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
         None
   in
   fun target ->
+    let start = ExecutionDuration.counter () in
     let exe_env = Exe_env.mk () in
     let result =
       match target with
@@ -110,6 +113,7 @@ let analyze_target : (TaskSchedulerTypes.target, string) Tasks.doer =
        release memory before potentially going idle *)
     clear_caches () ;
     do_compaction_if_needed () ;
+    useful_time := ExecutionDuration.add_duration_since !useful_time start ;
     result
 
 
@@ -252,6 +256,7 @@ let analyze replay_call_graph source_files_to_analyze =
               L.internal_error
                 "Child did not start the process times counter in its prologue, what happened?"
         in
+        Stats.set_useful_times !useful_time ;
         (Stats.get (), gc_stats_in_fork, MissingDependencies.get ())
       in
       ScubaLogging.log_count ~label:"num_analysis_workers" ~value:Config.jobs ;
