@@ -62,13 +62,14 @@ let wall_time exe_duration = exe_duration.wall
 
 let wall_time_s exe_duration = wall_time exe_duration |> IMtime.span_to_s_float
 
+let total_useful_s exe_duration = user_time exe_duration +. sys_time exe_duration
+
 let oncpu_pct exe_duration =
-  100.0 *. (user_time exe_duration +. sys_time exe_duration) /. wall_time_s exe_duration
-  |> Float.round |> int_of_float
+  100.0 *. total_useful_s exe_duration /. wall_time_s exe_duration |> Float.round |> int_of_float
 
 
 let pp ~prefix fmt exe_duration =
-  F.fprintf fmt "%s_user= %.8f@;%s_sys= %.8f@;%s_wall= %.8f@;%s_oncpu_pct= %d%%" prefix
+  F.fprintf fmt "%s_user= %.8f@\n%s_sys= %.8f@\n%s_wall= %.8f@\n%s_oncpu_pct= %d%%" prefix
     (user_time exe_duration) prefix (sys_time exe_duration) prefix (wall_time_s exe_duration) prefix
     (oncpu_pct exe_duration)
 

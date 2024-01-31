@@ -305,6 +305,8 @@ module Implementation = struct
     IntHash.create 10
 
 
+  let store_sql_time = ref ExecutionDuration.zero
+
   let store_spec =
     let store_statement =
       Database.register_statement AnalysisDatabase
@@ -322,12 +324,14 @@ module Implementation = struct
       |> Option.value_map ~default:0 ~f:(( + ) 1)
       (* [default] is 0 as we are only counting overwrites *)
       |> IntHash.replace specs_overwrite_counts proc_uid_hash ;
+      let now = ExecutionDuration.counter () in
       Database.with_registered_statement store_statement ~f:(fun db store_stmt ->
           Sqlite3.bind_values store_stmt
             ( Sqlite3.Data.TEXT proc_uid :: proc_name :: report_summary :: summary_metadata
             :: payloads )
           |> SqliteUtils.check_result_code db ~log:"store spec bind_values" ;
-          SqliteUtils.result_unit ~finalize:false ~log:"store spec" db store_stmt )
+          SqliteUtils.result_unit ~finalize:false ~log:"store spec" db store_stmt ) ;
+      store_sql_time := ExecutionDuration.add_duration_since !store_sql_time now
 
 
   let terminate () =
@@ -455,10 +459,20 @@ module Server = struct
       function. *)
   let in_results_dir ~f = Utils.do_in_dir ~dir:Config.toplevel_results_dir ~f
 
-  let rec server_loop socket =
+  let log_store_pct useful_time =
+    let label = "dbwriter.store_sql_pct" in
+    let total_useful = ExecutionDuration.total_useful_s useful_time in
+    let total_store = ExecutionDuration.total_useful_s !Implementation.store_sql_time in
+    let store_pct = 100.0 *. total_store /. total_useful |> Float.round |> int_of_float in
+    L.debug Analysis Quiet "%s= %d%%@\n" label store_pct ;
+    ScubaLogging.log_count ~label ~value:store_pct
+
+
+  let rec server_loop ?(useful_time = ExecutionDuration.zero) socket =
     let client_sock, _client = Unix.accept socket in
     let in_channel = Unix.in_channel_of_descr client_sock
     and out_channel = Unix.out_channel_of_descr client_sock in
+    let now = ExecutionDuration.counter () in
     let command : Command.t = Marshal.from_channel in_channel in
     ( try
         Command.execute command ;
@@ -467,12 +481,16 @@ module Server = struct
         Marshal.to_channel out_channel (Error (exn, Caml.Printexc.get_raw_backtrace ())) [] ) ;
     Out_channel.flush out_channel ;
     In_channel.close in_channel ;
+    let useful_time = ExecutionDuration.add_duration_since useful_time now in
     match command with
     | Terminate ->
         L.debug Analysis Quiet "Sqlite write daemon: terminating@." ;
+        ExecutionDuration.log ~prefix:"dbwriter.useful_time" Analysis useful_time ;
+        ExecutionDuration.log ~prefix:"dbwriter.store_sql" Analysis !Implementation.store_sql_time ;
+        log_store_pct useful_time ;
         ()
     | _ ->
-        server_loop socket
+        server_loop ~useful_time socket
 
 
   let socket_exists () = in_results_dir ~f:(fun () -> Sys.file_exists_exn socket_name)
@@ -513,7 +531,11 @@ module Server = struct
 
   let server socket =
     let finally () = remove_socket socket in
-    Exception.try_finally ~f:(fun () -> server_loop socket) ~finally
+    Exception.try_finally ~finally ~f:(fun () ->
+        let ExecutionDuration.{execution_duration} =
+          ExecutionDuration.timed_evaluate ~f:(fun () -> server_loop socket)
+        in
+        ExecutionDuration.log ~prefix:"dbwriter.total_time" Analysis execution_duration )
 
 
   let send cmd =
