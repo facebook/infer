@@ -231,7 +231,7 @@ module Vec = struct
     | _ ->
         L.d_printfln "vec hack array cow set argument error" ;
         L.internal_error "Vec.hack_array_cow_set expects 1 key and 1 value arguments" ;
-        unreachable
+        ret ()
 end
 
 let bool_val_field = Fieldname.make TextualSil.hack_bool_type_name "val"
