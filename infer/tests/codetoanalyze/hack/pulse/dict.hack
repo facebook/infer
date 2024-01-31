@@ -190,7 +190,7 @@ class Main {
     }
   }
 
-  public function FN_vec_of_dict_bad(): void {
+  public function vec_of_dict_bad(): void {
     $tainted = \Level1\taintSource();
     $shape = shape('x' => $tainted, 'y' => 0);
     $vec = vec[$shape];
@@ -204,15 +204,15 @@ class Main {
     \Level1\taintSink($vec[0]['y']);
   }
 
-  public function FN_vec_of_vec_bad(): void {
+  public function vec_of_vec_bad(): void {
     $tainted = \Level1\taintSource();
     $vec = vec[vec[$tainted]];
     \Level1\taintSink($vec[0][0]);
   }
 
-  public function vec_of_vec_good(): void {
+  public function FP_vec_of_vec_good(): void {
     $tainted = \Level1\taintSource();
-    $vec = vec[vec[$tainted], 0];
+    $vec = vec[vec[$tainted], vec[0]];
     \Level1\taintSink($vec[1][0]);
   }
 

@@ -190,23 +190,11 @@ module Vec = struct
     disjuncts [(* case1; *) case2; case3]
 
 
-  let get_vec argv index : unit DSL.model_monad =
+  let hack_array_get_one_dim vec key : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
-    let* ret_val = get_vec_dsl argv index in
-    assign_ret ret_val
-
-
-  let hack_array_get vec args : unit DSL.model_monad =
-    let open DSL.Syntax in
-    match args with
-    | [key] ->
-        let field = mk_hack_field "HackInt" "val" in
-        let* index = eval_deref_access Read key (FieldAccess field) in
-        get_vec vec index
-    | _ ->
-        L.d_printfln "vec hack array get argument error" ;
-        L.internal_error "Vec.hack_array_get expects only 1 key argument" ;
-        unreachable
+    let field = mk_hack_field "HackInt" "val" in
+    let* index = eval_deref_access Read key (FieldAccess field) in
+    get_vec_dsl vec index
 
 
   let hack_array_idx vec args : unit DSL.model_monad =
@@ -532,15 +520,11 @@ module Dict = struct
         L.die InternalError "should not happen"
 
 
-  let hack_array_get dict keys : unit DSL.model_monad =
+  let hack_array_get_one_dim dict key : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     (* TODO: a key for a non-vec could be also a int *)
-    let* value =
-      list_fold keys ~init:dict ~f:(fun dict key ->
-          let* field = field_of_string_value key in
-          eval_deref_access Read dict (FieldAccess field) )
-    in
-    assign_ret value
+    let* field = field_of_string_value key in
+    eval_deref_access Read dict (FieldAccess field)
 
 
   let hack_array_idx dict args : unit DSL.model_monad =
@@ -707,15 +691,16 @@ let hack_array_get this args : model =
   @@
   let this = payload_of_arg this in
   let args = payloads_of_args args in
-  let default () =
-    let* fresh = mk_fresh ~model_desc:"hack_array_get" () in
-    assign_ret fresh
+  let default () = mk_fresh ~model_desc:"hack_array_get" () in
+  let hack_array_get_one_dim this key : DSL.aval DSL.model_monad =
+    dynamic_dispatch this
+      ~cases:
+        [ (TextualSil.hack_dict_type_name, fun () -> Dict.hack_array_get_one_dim this key)
+        ; (TextualSil.hack_vec_type_name, fun () -> Vec.hack_array_get_one_dim this key) ]
+      ~default
   in
-  dynamic_dispatch this
-    ~cases:
-      [ (TextualSil.hack_dict_type_name, fun () -> Dict.hack_array_get this args)
-      ; (TextualSil.hack_vec_type_name, fun () -> Vec.hack_array_get this args) ]
-    ~default
+  let* value = list_fold args ~init:this ~f:hack_array_get_one_dim in
+  assign_ret value
 
 
 let hack_array_idx this args : model =
