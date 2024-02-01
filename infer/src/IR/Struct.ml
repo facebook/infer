@@ -364,7 +364,14 @@ let full_merge ~newer ~current =
 
 let merge typename ~newer ~current =
   match (typename : Typ.Name.t) with
-  | CStruct _ | CUnion _ | ErlangType _ | ObjcClass _ | ObjcProtocol _ | CppClass _ | ObjcBlock _ ->
+  | CStruct _
+  | CUnion _
+  | ErlangType _
+  | ObjcClass _
+  | ObjcProtocol _
+  | CppClass _
+  | ObjcBlock _
+  | CFunction _ ->
       if not (is_dummy newer) then newer else current
   | JavaClass _ when is_dummy newer ->
       current

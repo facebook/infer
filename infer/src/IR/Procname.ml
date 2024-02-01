@@ -401,17 +401,18 @@ end
 
 module C = struct
   (** Type of c procedure names. *)
-  type t = {name: QualifiedCppName.t; mangled: string option; template_args: Typ.template_spec_info}
-  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+  type t = Typ.c_function_sig [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-  let c name ?mangled template_args = {name; mangled; template_args}
+  let c c_name ?mangled template_args =
+    {Typ.c_name; c_mangled= mangled; c_template_args= template_args}
+
 
   let from_string name =
-    {name= QualifiedCppName.of_qual_string name; mangled= None; template_args= NoTemplate}
+    {Typ.c_name= QualifiedCppName.of_qual_string name; c_mangled= None; c_template_args= NoTemplate}
 
 
-  let pp verbosity fmt {name; mangled} =
-    let plain = QualifiedCppName.to_qual_string name in
+  let pp verbosity fmt {Typ.c_name; c_mangled} =
+    let plain = QualifiedCppName.to_qual_string c_name in
     match verbosity with
     | Simple ->
         F.fprintf fmt "%s()" plain
@@ -419,17 +420,17 @@ module C = struct
         F.pp_print_string fmt plain
     | Verbose ->
         let pp_mangled fmt = function None -> () | Some s -> F.fprintf fmt "{%s}" s in
-        F.fprintf fmt "%s%a" plain pp_mangled mangled
+        F.fprintf fmt "%s%a" plain pp_mangled c_mangled
 
 
-  let pp_without_templates fmt {name} =
-    let plain = QualifiedCppName.to_qual_string name in
+  let pp_without_templates fmt {Typ.c_name} =
+    let plain = QualifiedCppName.to_qual_string c_name in
     F.pp_print_string fmt (remove_templates plain)
 
 
   (** NOTE: [std::_] is parsed as [C] proc name in Sil, rather than [ObjC_Cpp]. *)
-  let is_std_function ~prefix {name} =
-    match QualifiedCppName.to_rev_list name with
+  let is_std_function ~prefix {Typ.c_name} =
+    match QualifiedCppName.to_rev_list c_name with
     | [fname; "std"] when String.is_prefix fname ~prefix ->
         true
     | _ ->
@@ -687,7 +688,7 @@ let rec compare_name x y =
       -1
   | _, Java _ ->
       1
-  | C {name= name1}, C {name= name2} ->
+  | C {c_name= name1}, C {c_name= name2} ->
       QualifiedCppName.compare_name name1 name2
   | C _, _ ->
       -1
@@ -957,8 +958,8 @@ let rec get_method = function
       name.method_name
   | WithFunctionParameters (base, _, _) ->
       get_method base
-  | C {name} ->
-      QualifiedCppName.to_qual_string name
+  | C {c_name} ->
+      QualifiedCppName.to_qual_string c_name
   | Erlang name ->
       name.function_name
   | Hack name ->
@@ -1104,10 +1105,10 @@ let has_hack_classname = function Hack {class_name= Some _} -> true | _ -> false
 
 let get_global_name_of_initializer t =
   match base_of t with
-  | C {name}
+  | C {c_name}
     when String.is_prefix ~prefix:Config.clang_initializer_prefix
-           (QualifiedCppName.to_qual_string name) ->
-      let name_str = QualifiedCppName.to_qual_string name in
+           (QualifiedCppName.to_qual_string c_name) ->
+      let name_str = QualifiedCppName.to_qual_string c_name in
       let prefix_len = String.length Config.clang_initializer_prefix in
       Some (String.sub name_str ~pos:prefix_len ~len:(String.length name_str - prefix_len))
   | _ ->
@@ -1514,8 +1515,8 @@ end)
 
 let get_qualifiers pname =
   match base_of pname with
-  | C {name} ->
-      name
+  | C {c_name} ->
+      c_name
   | ObjC_Cpp objc_cpp ->
       ObjC_Cpp.get_class_qualifiers objc_cpp
       |> QualifiedCppName.append_qualifier ~qual:objc_cpp.method_name
@@ -1531,9 +1532,9 @@ let to_short_unique_name pname =
   in
   let proc_id =
     match pname with
-    | C {mangled} ->
+    | C {c_mangled} ->
         let pp_mangled fmt = function None -> () | Some mangled -> F.fprintf fmt "#%s" mangled in
-        F.asprintf "%a%a" pp_rev_qualified pname pp_mangled mangled
+        F.asprintf "%a%a" pp_rev_qualified pname pp_mangled c_mangled
     | ObjC_Cpp objc_cpp ->
         F.asprintf "%a%a#%a" pp_rev_qualified pname Parameter.pp_parameters objc_cpp.parameters
           ObjC_Cpp.pp_verbose_kind objc_cpp.kind

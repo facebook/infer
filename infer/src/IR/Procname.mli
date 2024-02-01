@@ -167,8 +167,7 @@ end
 
 module C : sig
   (** Type of c procedure names. *)
-  type t = private
-    {name: QualifiedCppName.t; mangled: string option; template_args: Typ.template_spec_info}
+  type t = Typ.c_function_sig
 
   val c : QualifiedCppName.t -> ?mangled:string -> Typ.template_spec_info -> t
   (** Create a C procedure name from plain and mangled name. *)

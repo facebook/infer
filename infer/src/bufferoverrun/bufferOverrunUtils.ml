@@ -399,7 +399,7 @@ module ReplaceCallee = struct
       IOption.value_default_f (CacheForMakeShared.find_opt pname) ~f:(fun () ->
           let result =
             match pname with
-            | Procname.C ({template_args= Typ.Template {args}} as name)
+            | Procname.C ({c_template_args= Typ.Template {args}} as name)
               when Procname.C.is_make_shared name -> (
               match strip_ttype args with
               | Some (class_typ_templ :: param_typs_templ) ->

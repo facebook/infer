@@ -118,7 +118,7 @@ let to_simplified_string ({class_name; field_name} : t) =
         QualifiedCppName.extract_last name |> Option.map ~f:fst
     | CSharpClass name ->
         Some (CSharpClassName.classname name)
-    | ErlangType _ | ObjcBlock _ ->
+    | ErlangType _ | ObjcBlock _ | CFunction _ ->
         None
     | HackClass name ->
         Some (HackClassName.classname name)

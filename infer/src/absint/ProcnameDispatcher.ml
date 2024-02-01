@@ -65,6 +65,8 @@ let templated_name_of_class_name class_name =
       (QualifiedCppName.of_list (PythonClassName.components mangled_name), [])
   | ObjcBlock bsig ->
       (QualifiedCppName.of_list [bsig.name], [])
+  | CFunction csig ->
+      (csig.c_name, [])
 
 
 let templated_name_of_hack hack =
@@ -576,8 +578,8 @@ module Call = struct
     fun m ->
       let {on_templated_name; path_extra= PathNonEmpty {on_objc_cpp}} = m in
       let on_c context f (c : c) =
-        let template_args = template_args_of_template_spec_info c.template_args in
-        on_templated_name context f (c.name, template_args)
+        let template_args = template_args_of_template_spec_info c.c_template_args in
+        on_templated_name context f (c.c_name, template_args)
       in
       let on_java context f (java : java) =
         on_templated_name context f (templated_name_of_java java)
@@ -1162,8 +1164,8 @@ module ProcName = struct
       on_templated_name context templated_name
     in
     let on_c context (c : c) =
-      let template_args = template_args_of_template_spec_info c.template_args in
-      let templated_name = (c.name, template_args) in
+      let template_args = template_args_of_template_spec_info c.c_template_args in
+      let templated_name = (c.c_name, template_args) in
       on_templated_name context templated_name
     in
     fun context procname ->

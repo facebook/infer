@@ -28,12 +28,16 @@ let create () = TypenameHash.create 1000
 (** Construct a struct type in a type environment *)
 let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?supers ?objc_protocols
     ?annots ?class_info ?dummy ?source_file name =
-  let struct_typ =
-    Struct.internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
-      ?objc_protocols ?annots ?class_info ?dummy ?source_file name
-  in
-  TypenameHash.replace tenv name struct_typ ;
-  struct_typ
+  match name with
+  | Typ.ObjcBlock _ | Typ.CFunction _ ->
+      L.die InternalError "%a is not allowed as a key in the tenv" Typ.Name.pp name
+  | _ ->
+      let struct_typ =
+        Struct.internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
+          ?objc_protocols ?annots ?class_info ?dummy ?source_file name
+      in
+      TypenameHash.replace tenv name struct_typ ;
+      struct_typ
 
 
 (** Look up a name in the given type environment. *)
@@ -454,7 +458,7 @@ let resolve_method ~method_exists tenv class_name proc_name =
           | ObjcClass _ ->
               (* multiple inheritance impossible, but recursive calls will throw away protocols *)
               class_struct.supers
-          | ObjcProtocol _ | ObjcBlock _ ->
+          | ObjcProtocol _ | ObjcBlock _ | CFunction _ ->
               []
           | PythonClass _ ->
               (* We currently only support single inheritance for Python so this is straightforward *)

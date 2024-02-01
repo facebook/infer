@@ -85,6 +85,10 @@ and desc =
 and objc_block_sig = {class_name: name option; name: string; mangled: string}
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
+and c_function_sig =
+  {c_name: QualifiedCppName.t; c_mangled: string option; c_template_args: template_spec_info}
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+
 and name =
   | CStruct of QualifiedCppName.t
   | CUnion of QualifiedCppName.t
@@ -98,6 +102,7 @@ and name =
   | ObjcProtocol of QualifiedCppName.t
   | PythonClass of PythonClassName.t
   | ObjcBlock of objc_block_sig
+  | CFunction of c_function_sig
 [@@deriving hash, sexp]
 
 and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque
