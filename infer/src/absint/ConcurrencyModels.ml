@@ -379,7 +379,7 @@ let is_android_lifecycle_method tenv pname =
   in
   let test_pname pname =
     match (pname : Procname.t) with
-    | C _ | Erlang _ | Hack _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | CSharp _ | Python _ ->
+    | C _ | Erlang _ | Hack _ | Block _ | ObjC_Cpp _ | CSharp _ | Python _ ->
         false
     | Java _ ->
         method_starts_with_on pname

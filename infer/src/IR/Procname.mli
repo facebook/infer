@@ -214,7 +214,6 @@ type t =
   | Erlang of Erlang.t
   | Hack of Hack.t
   | Java of Java.t
-  | Linters_dummy_method
   | ObjC_Cpp of ObjC_Cpp.t
   | Python of Python.t
 [@@deriving compare, yojson_of, sexp, hash, normalize]

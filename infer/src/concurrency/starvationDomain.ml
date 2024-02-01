@@ -335,7 +335,7 @@ module Acquisition = struct
     Errlog.make_trace_element 0 acquisition.loc description []
 
 
-  let make_dummy lock = {lock; loc= Location.dummy; procname= Procname.Linters_dummy_method}
+  let make_dummy lock = {lock; loc= Location.dummy; procname= Procname.from_string_c_fun ""}
 
   let apply_subst subst acquisition =
     match Lock.apply_subst subst acquisition.lock with

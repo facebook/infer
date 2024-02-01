@@ -370,7 +370,6 @@ module MethodInfo = struct
     | Procname.CSharp _
     | Procname.Erlang _
     | Procname.Java _
-    | Procname.Linters_dummy_method
     | Procname.ObjC_Cpp _
     | Procname.Python _ ->
         DefaultInfo (Default.mk_class proc_name)

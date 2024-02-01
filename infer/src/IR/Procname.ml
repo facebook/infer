@@ -621,7 +621,6 @@ type t =
   | Erlang of Erlang.t
   | Hack of Hack.t
   | Java of Java.t
-  | Linters_dummy_method
   | ObjC_Cpp of ObjC_Cpp.t
   | Python of Python.t
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
@@ -687,12 +686,6 @@ let compare_name x y =
       -1
   | _, Hack _ ->
       1
-  | Linters_dummy_method, Linters_dummy_method ->
-      0
-  | Linters_dummy_method, _ ->
-      -1
-  | _, Linters_dummy_method ->
-      1
   | Block _, Block _ ->
       0
   | Block _, _ ->
@@ -755,7 +748,7 @@ let is_java_autogen_method = is_java_lift Java.is_autogen_method
 let on_objc_helper ~f ~default = function
   | ObjC_Cpp objc_cpp_pname ->
       f objc_cpp_pname
-  | Block _ | C _ | CSharp _ | Erlang _ | Hack _ | Java _ | Linters_dummy_method | Python _ ->
+  | Block _ | C _ | CSharp _ | Erlang _ | Hack _ | Java _ | Python _ ->
       default
 
 
@@ -826,7 +819,7 @@ let replace_class t ?(arity_incr = 0) (new_class : Typ.Name.t) =
             L.die InternalError "replace_class on ill-formed Python type"
       in
       Python {p with class_name= Some name}
-  | C _ | Block _ | Erlang _ | Linters_dummy_method ->
+  | C _ | Block _ | Erlang _ ->
       t
 
 
@@ -844,7 +837,7 @@ let get_class_type_name t =
       Hack.get_class_type_name hack
   | Python python ->
       Python.get_class_type_name python
-  | C _ | Erlang _ | Linters_dummy_method ->
+  | C _ | Erlang _ ->
       None
 
 
@@ -862,7 +855,7 @@ let get_class_name t =
       Hack.get_class_name_as_a_string hack_pname
   | Python _ ->
       L.die InternalError "TODO: get_class_name for Python type"
-  | C _ | Erlang _ | Linters_dummy_method ->
+  | C _ | Erlang _ ->
       None
 
 
@@ -883,7 +876,7 @@ let objc_cpp_replace_method_name t (new_method_name : string) =
   match t with
   | ObjC_Cpp osig ->
       ObjC_Cpp {osig with method_name= new_method_name}
-  | C _ | CSharp _ | Block _ | Erlang _ | Hack _ | Linters_dummy_method | Java _ | Python _ ->
+  | C _ | CSharp _ | Block _ | Erlang _ | Hack _ | Java _ | Python _ ->
       t
 
 
@@ -903,8 +896,6 @@ let get_method = function
       j.method_name
   | CSharp cs ->
       cs.method_name
-  | Linters_dummy_method ->
-      "Linters_dummy_method"
   | Python name ->
       name.function_name
 
@@ -928,8 +919,6 @@ let get_language = function
   | Hack _ ->
       Language.Hack
   | Block _ ->
-      Language.Clang
-  | Linters_dummy_method ->
       Language.Clang
   | Java _ ->
       Language.Java
@@ -974,7 +963,6 @@ let is_static = function
   | Block _
   | Erlang _
   | Hack _
-  | Linters_dummy_method
   | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _}
   | Python _ ->
       None
@@ -1065,8 +1053,6 @@ let pp_unique_id fmt = function
       ObjC_Cpp.pp Verbose fmt osig
   | Block bsig ->
       Block.pp Verbose fmt bsig
-  | Linters_dummy_method ->
-      F.pp_print_string fmt "Linters_dummy_method"
   | Python h ->
       Python.pp Verbose fmt h
 
@@ -1089,8 +1075,6 @@ let pp_with_verbosity verbosity fmt = function
       ObjC_Cpp.pp verbosity fmt osig
   | Block bsig ->
       Block.pp verbosity fmt bsig
-  | Linters_dummy_method ->
-      pp_unique_id fmt Linters_dummy_method
   | Python h ->
       Python.pp verbosity fmt h
 
@@ -1128,8 +1112,6 @@ let pp_name_only fmt = function
       ObjC_Cpp.pp NameOnly fmt osig
   | Block bsig ->
       Block.pp NameOnly fmt bsig
-  | Linters_dummy_method ->
-      pp_unique_id fmt Linters_dummy_method
   | Python h ->
       Python.pp NameOnly fmt h
 
@@ -1155,8 +1137,6 @@ let pp_simplified_string ?(withclass = false) fmt = function
       ObjC_Cpp.pp (if withclass then Non_verbose else Simple) fmt osig
   | Block bsig ->
       Block.pp Simple fmt bsig
-  | Linters_dummy_method ->
-      pp_unique_id fmt Linters_dummy_method
   | Python h ->
       Python.pp Simple fmt h
 
@@ -1228,8 +1208,6 @@ let get_parameters procname =
       clang_param_to_param (ObjC_Cpp.get_parameters osig)
   | Block _ ->
       []
-  | Linters_dummy_method ->
-      []
   | Python _ ->
       (* TODO(vsiles) get inspiration from Hack :D *)
       []
@@ -1296,8 +1274,6 @@ let replace_parameters new_parameters procname =
   | ObjC_Cpp osig ->
       ObjC_Cpp (ObjC_Cpp.replace_parameters (params_to_clang_params new_parameters) osig)
   | Block _ ->
-      procname
-  | Linters_dummy_method ->
       procname
   | Python _ ->
       procname

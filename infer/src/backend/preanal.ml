@@ -303,7 +303,7 @@ module Liveness = struct
           astate
 
 
-    let cache_node = ref (Procdesc.Node.dummy Procname.Linters_dummy_method)
+    let cache_node = ref (Procdesc.Node.dummy (Procname.from_string_c_fun ""))
 
     let cache_instr = ref Sil.skip_instr
 

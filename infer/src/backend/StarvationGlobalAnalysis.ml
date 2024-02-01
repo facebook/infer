@@ -35,7 +35,7 @@ let should_report tenv procname =
       || ConcurrencyModels.is_android_lifecycle_method tenv procname
   | C _ ->
       true
-  | Block _ | CSharp _ | Erlang _ | Hack _ | Linters_dummy_method | ObjC_Cpp _ | Python _ ->
+  | Block _ | CSharp _ | Erlang _ | Hack _ | ObjC_Cpp _ | Python _ ->
       false
 
 
