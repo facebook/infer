@@ -204,7 +204,7 @@ BOOL test_FunPtrExample_YES_using_property_bad() {
   return *ptr == y;
 }
 
-BOOL test_FunPtrExample_YES_using_property_good() {
+BOOL test_FunPtrExample_YES_using_property_good_FP() {
   FunPtrExample* example = [FunPtrExample new];
   [example application:YES];
   int y = example.manipulatedContent.y;
@@ -237,7 +237,7 @@ BOOL test_FunPtrExample_YES_using_ivar_bad() {
   return *ptr == x;
 }
 
-BOOL test_FunPtrExample_YES_using_ivar_good() {
+BOOL test_FunPtrExample_YES_using_ivar_good_FP() {
   FunPtrExample* example = [FunPtrExample new];
   [example application:YES];
   int x = [example.manipulatedContent get_x];

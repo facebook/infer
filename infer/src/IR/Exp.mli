@@ -158,8 +158,6 @@ val d_texp_full : t -> unit
 val d_list : t list -> unit
 (** Dump a list of expressions. *)
 
-val is_objc_block_closure : t -> bool
-
 val is_cpp_closure : t -> bool
 
 val zero_of_type : Typ.t -> t option

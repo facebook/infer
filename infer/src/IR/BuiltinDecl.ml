@@ -76,6 +76,8 @@ let __cast = create_procname "__cast"
 
 let __call_objc_block = create_procname "__call_objc_block"
 
+let __call_c_function_ptr = create_procname "__call_c_function_ptr"
+
 let __cxx_typeid = create_procname "__cxx_typeid"
 
 let __delete = create_procname "__delete"

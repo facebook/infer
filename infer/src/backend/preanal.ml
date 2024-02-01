@@ -464,10 +464,9 @@ let do_preanalysis tenv pdesc =
   if Procname.is_java proc_name || Procname.is_csharp proc_name then
     InlineJavaSyntheticMethods.process pdesc ;
   (* NOTE: It is important that this preanalysis stays before Liveness *)
-  if not (Procname.is_java proc_name || Procname.is_csharp proc_name) then (
-    CCallSpecializedWithClosures.process pdesc ;
+  if not (Procname.is_java proc_name || Procname.is_csharp proc_name) then
     (* Apply dynamic selection of copy and overriden methods *)
-    ReplaceObjCMethodCall.process tenv pdesc proc_name ) ;
+    ReplaceObjCMethodCall.process tenv pdesc proc_name ;
   Liveness.process pdesc ;
   AddAbstractionInstructions.process pdesc ;
   if Procname.is_java proc_name then Devirtualizer.process pdesc tenv ;

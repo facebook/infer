@@ -11,6 +11,7 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 module DSL = PulseModelsDSL
+module FuncArg = ProcnameDispatcher.Call.FuncArg
 
 let free deleted_access : model = Basic.free_or_delete `Free CFree deleted_access
 
@@ -89,6 +90,51 @@ let custom_realloc pointer size data astate =
   realloc_common (CustomRealloc data.callee_procname) pointer size data astate
 
 
+let call_c_function_ptr FuncArg.{arg_payload= function_ptr_hist; typ} actuals : model =
+ fun {path; analysis_data= {analyze_dependency; tenv; proc_desc}; location; ret= (ret_id, _) as ret}
+     astate non_disj ->
+  let block = fst function_ptr_hist in
+  let callee_proc_name_opt =
+    match AddressAttributes.get_dynamic_type block astate with
+    | Some {typ= {desc= Typ.Tstruct (Typ.CFunction csig)}} ->
+        Some (Procname.C csig)
+    | _ ->
+        None
+  in
+  match callee_proc_name_opt with
+  | Some callee_proc_name ->
+      let actuals =
+        (function_ptr_hist, typ)
+        :: List.map actuals ~f:(fun FuncArg.{arg_payload; typ} -> (arg_payload, typ))
+      in
+      let astate, non_disj, _, _ =
+        PulseCallOperations.call tenv path ~caller_proc_desc:proc_desc ~analyze_dependency location
+          callee_proc_name ~ret ~actuals ~formals_opt:None ~call_kind:`ResolvedProcname astate
+          ~call_flags:{CallFlags.default with cf_is_c_function_ptr= true}
+          non_disj
+      in
+      (astate, non_disj)
+  | _ ->
+      (* we don't know what procname this function pointer resolves to *)
+      let res =
+        (* dereference call expression to catch nil issues *)
+        let<+> astate, _ =
+          PulseOperations.eval_access path Read location function_ptr_hist Dereference astate
+        in
+        let desc = Procname.to_string BuiltinDecl.__call_c_function_ptr in
+        let hist = Hist.single_event path (Hist.call_event path location desc) in
+        let astate = PulseOperations.havoc_id ret_id hist astate in
+        let astate = AbductiveDomain.add_need_dynamic_type_specialization block astate in
+        let astate =
+          let unknown_effect = Attribute.UnknownEffect (Model desc, hist) in
+          List.fold actuals ~init:astate ~f:(fun acc FuncArg.{arg_payload= actual, _} ->
+              AddressAttributes.add_one actual unknown_effect acc )
+        in
+        astate
+      in
+      (res, non_disj)
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let match_regexp_opt r_opt (_tenv, proc_name) _ =
@@ -113,5 +159,6 @@ let matchers : matcher list =
       ; +map_context_tenv PatternMatch.ObjectiveC.is_core_foundation_create_or_copy
         &--> custom_alloc_not_null
       ; +BuiltinDecl.(match_builtin malloc_no_fail) <>$ capt_exp $--> malloc_not_null
-      ; +match_regexp_opt Config.pulse_model_alloc_pattern &--> custom_alloc_not_null ]
+      ; +match_regexp_opt Config.pulse_model_alloc_pattern &--> custom_alloc_not_null
+      ; +BuiltinDecl.(match_builtin __call_c_function_ptr) $ capt_arg $++$--> call_c_function_ptr ]
     |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist) )

@@ -261,21 +261,7 @@ module PulseTransferFunctions = struct
         , non_disj
         , is_known_call )
     | _ ->
-        ( (let<**> astate, _ =
-             let astate =
-               if
-                 (* this condition may need refining to check that the function comes
-                    from the function's parameters or captured variables.
-                    The function_pointer_specialization option is there to compensate
-                    this / control the specialization's agressivity *)
-                 Config.function_pointer_specialization
-                 && Language.equal Language.Clang
-                      (Procname.get_language (Procdesc.get_proc_name proc_desc))
-               then AbductiveDomain.set_need_closure_specialization astate
-               else astate
-             in
-             PulseOperations.eval_deref path call_loc call_exp astate
-           in
+        ( (let<**> astate, _ = PulseOperations.eval_deref path call_loc call_exp astate in
            L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;
            let astate =
              let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in

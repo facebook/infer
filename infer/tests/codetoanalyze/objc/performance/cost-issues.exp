@@ -242,7 +242,7 @@ codetoanalyze/objc/performance/mutable_copy_test.m, MyMutableObj.objects, 5,  On
 codetoanalyze/objc/performance/mutable_copy_test.m, MyMutableObj.setMObjects:, 3,  OnUIThread:false, []
 codetoanalyze/objc/performance/mutable_copy_test.m, loop_over_mutable_copy_linear, 31 + 3 ⋅ b->_mObjects->elements.length.ub + 3 ⋅ (b->_mObjects->elements.length.ub + 1),  OnUIThread:false, [{b->_mObjects->elements.length.ub + 1},Loop,{b->_mObjects->elements.length.ub},Loop]
 codetoanalyze/objc/performance/property_test.m, getter_property_linear, 7 + 3 ⋅ data->name.length.ub + 3 ⋅ (data->name.length.ub + 1),  OnUIThread:false, [{data->name.length.ub + 1},Loop,{data->name.length.ub},Loop]
-codetoanalyze/objc/performance/purity.m, loop, 6006 + 1000 ⋅ |fun_ptr|,  OnUIThread:false, []
+codetoanalyze/objc/performance/purity.m, loop, 7006,  OnUIThread:false, []
 codetoanalyze/objc/performance/struct_test.m, __infer_globals_initializer_mSpecs, 4,  OnUIThread:false, []
 codetoanalyze/objc/performance/struct_test.m, const_struct_field_read_constant, 9,  OnUIThread:false, []
 codetoanalyze/objc/performance/struct_test.m, loop_array_struct_constant, 17,  OnUIThread:false, []

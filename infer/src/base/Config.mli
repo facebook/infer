@@ -401,8 +401,6 @@ val frontend_stats : bool
 
 val frontend_tests : bool
 
-val function_pointer_specialization : bool
-
 val generated_classes : string option
 
 val genrule_mode : bool

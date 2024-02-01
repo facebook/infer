@@ -979,14 +979,6 @@ let rec get_method = function
 (** Return whether the procname is a block procname. *)
 let is_objc_block = function Block _ -> true | _ -> false
 
-(** Return whether the procname is a specialized with functions procname. *)
-let is_specialized_with_function_parameters = function
-  | WithFunctionParameters _ ->
-      true
-  | _ ->
-      false
-
-
 (** Return whether the procname is a cpp lambda procname. *)
 let is_cpp_lambda t =
   match base_of t with

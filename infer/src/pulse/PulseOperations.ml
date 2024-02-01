@@ -189,6 +189,11 @@ and record_closure astate (path : PathContext.t) loc procname
         AddressAttributes.add_one (fst closure_addr_hist)
           (Attribute.DynamicType {typ; source_file= None})
           astate
+    | _, Procname.C csig ->
+        let typ = Typ.mk (Typ.Tstruct (Typ.CFunction csig)) in
+        AddressAttributes.add_one (fst closure_addr_hist)
+          (Attribute.DynamicType {typ; source_file= None})
+          astate
     | _ ->
         astate
   in
@@ -255,8 +260,8 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
         (astate, ValueOrigin.Unknown v_hist)
   | Const (Cfun proc_name) ->
       (* function pointers are represented as closures with no captured variables *)
-      let++ astate, addr_hist = Closures.record path location proc_name [] astate in
-      (astate, ValueOrigin.Unknown addr_hist)
+      let++ astate, v_hist = record_closure astate path location proc_name [] in
+      (astate, v_hist)
   | Cast (_, exp') ->
       eval_to_value_origin path mode location exp' astate
   | Const (Cint i) ->
@@ -780,11 +785,7 @@ type call_kind =
 
 let get_captured_actuals procname path location ~captured_formals ~call_kind ~actuals astate =
   let is_lambda_or_block = Procname.is_cpp_lambda procname || Procname.is_objc_block procname in
-  if
-    Procname.is_objc_block procname
-    || Procname.is_specialized_with_function_parameters procname
-    || Procname.is_erlang procname
-  then
+  if Procname.is_objc_block procname || Procname.is_erlang procname then
     match call_kind with
     | `Closure captured_actuals ->
         get_closure_captured_actuals path location ~captured_actuals astate

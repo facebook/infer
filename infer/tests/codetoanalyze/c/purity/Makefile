@@ -5,7 +5,7 @@
 TESTS_DIR = ../../..
 
 CLANG_OPTIONS = -c
-INFER_OPTIONS = -F --project-root $(TESTS_DIR) --purity-only --function-pointer-specialization
+INFER_OPTIONS = -F --project-root $(TESTS_DIR) --purity-only
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.c)

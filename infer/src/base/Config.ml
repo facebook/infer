@@ -1723,9 +1723,13 @@ and frontend_stats =
     "Output statistics about the capture phase to *.o.astlog (clang only)"
 
 
-and function_pointer_specialization =
-  CLOpt.mk_bool ~long:"function-pointer-specialization" ~default:false
-    "Apply function specialization to higher-order functions taking function pointers."
+and _function_pointer_specialization =
+  CLOpt.mk_bool ~long:""
+    ~deprecated:["-function-pointer-specialization"]
+    ~deprecated_no:["-no-function-pointer-specialization"]
+    ~default:false
+    "[DOES NOTHING] Used to apply function specialization to higher-order functions taking \
+     function pointers."
 
 
 and generated_classes =
@@ -4039,8 +4043,6 @@ and from_json_costs_report =
 
 
 and frontend_stats = !frontend_stats
-
-and function_pointer_specialization = !function_pointer_specialization
 
 and frontend_tests = !frontend_tests
 

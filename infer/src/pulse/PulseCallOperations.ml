@@ -252,11 +252,12 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
         calee_summary
       else callee_summary
     in
-    (* In order to apply summary specialisation, we call blocks with the closure as the first argument,
-       but when we want to call the actual code of the block, we need to remove the closure argument again. *)
+    (* In order to apply summary specialisation, we call blocks or function pointers with the closure as the first argument,
+       but when we want to call the actual code of the block or function, we need to remove the closure argument again. *)
     let actuals =
       match call_flags with
-      | Some call_flags when call_flags.CallFlags.cf_is_objc_block -> (
+      | Some call_flags
+        when call_flags.CallFlags.cf_is_objc_block || call_flags.CallFlags.cf_is_c_function_ptr -> (
         match actuals with _ :: rest -> rest | [] -> [] )
       | _ ->
           actuals

@@ -308,7 +308,7 @@ void call_to_fn_ptr_with_init_arg_good(void (*f)(int)) {
   f(a);
 }
 
-void FN_call_to_fn_ptr_with_uninit_arg_bad(void (*f)(int)) {
+void call_to_fn_ptr_with_uninit_arg_bad(void (*f)(int)) {
   int a;
   f(a);
 }

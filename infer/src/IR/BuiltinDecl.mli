@@ -96,6 +96,8 @@ val __c11_atomic_fetch_min : Procname.t
 
 val __call_objc_block : Procname.t
 
+val __call_c_function_ptr : Procname.t
+
 val __opencl_atomic_fetch_max : Procname.t
 
 val __opencl_atomic_fetch_min : Procname.t

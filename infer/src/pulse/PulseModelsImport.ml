@@ -262,13 +262,7 @@ module Basic = struct
           Logging.d_printfln "No destructor found for class %a@\n" Typ.Name.pp class_name ;
           (ok_continue astate, non_disj)
       | Some destructor ->
-          let callflags : CallFlags.t =
-            { cf_assign_last_arg= false
-            ; cf_injected_destructor= true
-            ; cf_interface= false
-            ; cf_is_objc_block= false
-            ; cf_virtual= false }
-          in
+          let callflags : CallFlags.t = CallFlags.default in
           dispatch_call_eval_args analysis_data path ret exp
             [(exp, typ)]
             [deleted_arg] location callflags astate non_disj (Some destructor) )

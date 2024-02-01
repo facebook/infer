@@ -2448,11 +2448,6 @@ INTERNAL OPTIONS
            Activates: Output statistics about the capture phase to *.o.astlog
            (clang only) (Conversely: --no-frontend-stats)
 
-       --function-pointer-specialization
-           Activates: Apply function specialization to higher-order functions
-           taking function pointers. (Conversely:
-           --no-function-pointer-specialization)
-
        --generated-classes-reset
            Cancel the effect of --generated-classes.
 

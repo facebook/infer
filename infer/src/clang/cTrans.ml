@@ -282,12 +282,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let call_instr =
       match function_sil with
-      | Exp.Var _ when call_flags.CallFlags.cf_is_objc_block ->
-          let block_param = (function_sil, Typ.mk Typ.Tfun) in
+      | Exp.Var _ ->
+          let closure_param = (function_sil, Typ.mk Typ.Tfun) in
+          let builtin =
+            if call_flags.CallFlags.cf_is_objc_block then BuiltinDecl.__call_objc_block
+            else BuiltinDecl.__call_c_function_ptr
+          in
           Sil.Call
             ( ret_id'
-            , Exp.Const (Const.Cfun BuiltinDecl.__call_objc_block)
-            , block_param :: (params @ forwarded_params)
+            , Exp.Const (Const.Cfun builtin)
+            , closure_param :: (params @ forwarded_params)
             , sil_loc
             , call_flags )
       | _ ->

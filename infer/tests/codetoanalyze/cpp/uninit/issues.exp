@@ -22,4 +22,5 @@ codetoanalyze/cpp/uninit/uninit.cpp, capture_by_ref_init_FP, 3, UNINITIALIZED_VA
 codetoanalyze/cpp/uninit/uninit.cpp, capture_by_ref_init2_FP, 4, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/uninit.cpp, warning_when_throw_in_other_branch_bad, 9, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/uninit.cpp, condition_no_init_bad, 2, UNINITIALIZED_VALUE, no_bucket, ERROR, []
+codetoanalyze/cpp/uninit/uninit.cpp, call_to_fn_ptr_with_uninit_arg_bad, 2, UNINITIALIZED_VALUE, no_bucket, ERROR, []
 codetoanalyze/cpp/uninit/uninit.cpp, use_uninit_in_expr_bad, 2, UNINITIALIZED_VALUE, no_bucket, ERROR, []
