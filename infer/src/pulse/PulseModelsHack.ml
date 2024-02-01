@@ -41,7 +41,7 @@ let mk_hack_field clazz field = Fieldname.make (Typ.HackClass (HackClassName.mak
 
 let await_hack_value aval : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  let class_name = "HackAwaitable" in
+  let class_name = "HH::Awaitable" in
   let val_field = mk_hack_field class_name "val" in
   dynamic_dispatch aval
     ~cases:

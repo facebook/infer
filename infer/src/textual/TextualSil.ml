@@ -117,7 +117,7 @@ let hack_string_type_name = SilTyp.HackClass (HackClassName.make "HackString")
 
 let hack_mixed_type_name = SilTyp.HackClass (HackClassName.make "HackMixed")
 
-let hack_awaitable_type_name = SilTyp.HackClass (HackClassName.make "HackAwaitable")
+let hack_awaitable_type_name = SilTyp.HackClass (HackClassName.make "HH::Awaitable")
 
 let mk_hack_mixed_type_textual loc = Typ.Struct TypeName.{value= "HackMixed"; loc}
 

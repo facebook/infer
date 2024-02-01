@@ -41,8 +41,13 @@ let instance_of (argv, hist) typeexpr : model_no_non_disj =
   if Language.curr_language_is Hack then
     let event = Hist.call_event path location "Hack.instanceof" in
     let res_addr = AbstractValue.mk_fresh () in
-    PulseOperations.write_id ret_id (res_addr, Hist.add_event path event hist) astate
-    |> Basic.ok_continue
+    (* Just copying the Java version to see how well it works *)
+    match typeexpr with
+    | Exp.Sizeof {typ} ->
+        let<++> astate = PulseArithmetic.and_equal_instanceof res_addr argv typ astate in
+        PulseOperations.write_id ret_id (res_addr, Hist.add_event path event hist) astate
+    | _ ->
+        astate |> Basic.ok_continue
   else
     let event = Hist.call_event path location "Java.instanceof" in
     let res_addr = AbstractValue.mk_fresh () in
