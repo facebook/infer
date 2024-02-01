@@ -28,15 +28,13 @@ let iter_critical_pairs_of_scheduled_work f (work_item : Domain.ScheduledWorkIte
   |> Option.iter ~f:(iter_critical_pairs_of_summary (iter_scheduled_pair work_item f))
 
 
-let rec should_report tenv procname =
+let should_report tenv procname =
   match (procname : Procname.t) with
   | Java _ ->
       StarvationModels.is_java_main_method procname
       || ConcurrencyModels.is_android_lifecycle_method tenv procname
   | C _ ->
       true
-  | WithFunctionParameters (proc_name', _, _) ->
-      should_report tenv proc_name'
   | Block _ | CSharp _ | Erlang _ | Hack _ | Linters_dummy_method | ObjC_Cpp _ | Python _ ->
       false
 

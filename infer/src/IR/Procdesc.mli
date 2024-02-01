@@ -369,8 +369,6 @@ val is_captured_var : t -> Var.t -> bool
 
 val has_modify_in_block_attr : t -> Pvar.t -> bool
 
-val deep_copy_code_from_pdesc : orig_pdesc:t -> dest_pdesc:t -> unit
-
 val size : t -> int
 (** Return number of nodes, plus number of instructions (in nodes), plus number of edges (between
     nodes). *)

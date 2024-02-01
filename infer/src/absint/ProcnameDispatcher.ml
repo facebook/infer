@@ -727,7 +727,7 @@ module Call = struct
       List.find_map matchers ~f:(fun (matcher : _ matcher) -> matcher.on_csharp context csharp args)
     in
     fun context procname args ->
-      let rec match_procname procname =
+      let match_procname procname =
         match (procname : Procname.t) with
         | ObjC_Cpp objc_cpp ->
             on_objc_cpp context objc_cpp args
@@ -741,8 +741,6 @@ module Call = struct
             on_erlang context erlang args
         | CSharp csharp ->
             on_csharp context csharp args
-        | WithFunctionParameters (procname, _, _) ->
-            match_procname procname
         | _ ->
             None
       in

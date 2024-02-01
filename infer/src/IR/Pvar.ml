@@ -348,20 +348,6 @@ let get_template_args pvar =
   match pvar.pv_kind with Global_var {template_args} -> template_args | _ -> Typ.NoTemplate
 
 
-let swap_proc_in_local_pvar pvar proc_name =
-  match pvar.pv_kind with Local_var _ -> {pvar with pv_kind= Local_var proc_name} | _ -> pvar
-
-
-let rec specialize_pvar pvar proc_name =
-  match proc_name with
-  | Procname.WithFunctionParameters (orig_pname, _, _) ->
-      let pvar = specialize_pvar pvar orig_pname in
-      if equal (mk (get_name pvar) orig_pname) pvar then swap_proc_in_local_pvar pvar proc_name
-      else pvar
-  | _ ->
-      pvar
-
-
 let is_objc_static_local_of_proc_name pname pvar =
   (* local static name is of the form procname_varname *)
   let var_name = Mangled.to_string (get_name pvar) in

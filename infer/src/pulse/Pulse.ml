@@ -152,56 +152,7 @@ module PulseTransferFunctions = struct
     IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
 
-  let need_closure_specialization astates =
-    List.exists astates ~f:(fun res ->
-        match PulseResult.ok res with
-        | Some
-            ( ContinueProgram {AbductiveDomain.need_closure_specialization}
-            | ExceptionRaised {AbductiveDomain.need_closure_specialization} ) ->
-            need_closure_specialization
-        | Some
-            ( ExitProgram astate
-            | AbortProgram astate
-            | LatentAbortProgram {astate}
-            | LatentInvalidAccess {astate} ) ->
-            AbductiveDomain.Summary.need_closure_specialization astate
-        | None ->
-            false )
-
-
-  let reset_need_closure_specialization needed_closure_specialization astates =
-    if needed_closure_specialization then
-      List.map astates ~f:(fun res ->
-          PulseResult.map res ~f:(function
-            | ExceptionRaised astate ->
-                let astate = AbductiveDomain.set_need_closure_specialization astate in
-                ExceptionRaised astate
-            | ContinueProgram astate ->
-                let astate = AbductiveDomain.set_need_closure_specialization astate in
-                ContinueProgram astate
-            | ExitProgram astate ->
-                let astate = AbductiveDomain.Summary.with_need_closure_specialization astate in
-                ExitProgram astate
-            | AbortProgram astate ->
-                let astate = AbductiveDomain.Summary.with_need_closure_specialization astate in
-                AbortProgram astate
-            | LatentAbortProgram latent_abort_program ->
-                let astate =
-                  AbductiveDomain.Summary.with_need_closure_specialization
-                    latent_abort_program.astate
-                in
-                LatentAbortProgram {latent_abort_program with astate}
-            | LatentInvalidAccess latent_invalid_access ->
-                let astate =
-                  AbductiveDomain.Summary.with_need_closure_specialization
-                    latent_invalid_access.astate
-                in
-                LatentInvalidAccess {latent_invalid_access with astate} ) )
-    else astates
-
-
-  let interprocedural_call
-      ({InterproceduralAnalysis.analyze_dependency; tenv; proc_desc} as analysis_data) path ret
+  let interprocedural_call {InterproceduralAnalysis.analyze_dependency; tenv; proc_desc} path ret
       callee_pname call_exp func_args call_loc astate non_disj =
     let actuals =
       List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
@@ -224,42 +175,10 @@ module PulseTransferFunctions = struct
     in
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
-        (* [needed_closure_specialization] = current function already needs specialization before
-           the upcoming call (i.e. we did not have enough information to sufficiently
-           specialize a callee). *)
-        let needed_closure_specialization = astate.AbductiveDomain.need_closure_specialization in
-        (* [astate.need_closure_specialization] is false when entering the call. This is to
-           detect calls that need specialization. The value will be set back to true
-           (if it was) in the end by [reset_need_closure_specialization] *)
-        let astate = AbductiveDomain.unset_need_closure_specialization astate in
-        let maybe_call_specialization callee_pname call_exp ((res, non_disj, _, _) as call_res) =
-          if
-            (not needed_closure_specialization)
-            && need_closure_specialization res
-            && Procname.should_create_specialized_proc callee_pname
-          then (
-            L.d_printfln "Trying to closure-specialize %a" Exp.pp call_exp ;
-            match
-              PulseClosureSpecialization.make_specialized_call_exp analysis_data
-                (ValueOrigin.addr_hist_args func_args)
-                callee_pname (call_kind_of call_exp) path call_loc astate
-            with
-            | Some (callee_pname, call_exp, astate) ->
-                L.d_printfln "Succesfully closure-specialized %a@\n" Exp.pp call_exp ;
-                let call_res = eval_args_and_call callee_pname call_exp astate non_disj in
-                (callee_pname, call_exp, call_res)
-            | None ->
-                L.d_printfln "Failed to closure-specialize %a@\n" Exp.pp call_exp ;
-                (callee_pname, call_exp, call_res) )
-          else (callee_pname, call_exp, call_res)
-        in
-        let _, _, (res, non_disj, _, is_known_call) =
+        let res, non_disj, _, is_known_call =
           eval_args_and_call callee_pname call_exp astate non_disj
-          |> maybe_call_specialization callee_pname call_exp
         in
-        ( reset_need_closure_specialization needed_closure_specialization res
-        , non_disj
-        , is_known_call )
+        (res, non_disj, is_known_call)
     | _ ->
         ( (let<**> astate, _ = PulseOperations.eval_deref path call_loc call_exp astate in
            L.d_printfln "Skipping indirect call %a@\n" Exp.pp call_exp ;

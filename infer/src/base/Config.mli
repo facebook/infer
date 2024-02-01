@@ -754,8 +754,6 @@ val show_buckets : bool
 
 val shrink_analysis_db : bool
 
-val specialized_proc_depth : int
-
 val lineage_include_builtins : bool
 
 val lineage_field_depth : int

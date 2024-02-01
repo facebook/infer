@@ -185,10 +185,6 @@ module Erlang : sig
   type t = private {module_name: string; function_name: string; arity: int}
 end
 
-module FunctionParameters : sig
-  type t = private FunPtr of C.t | Block of Block.t
-end
-
 module Hack : sig
   (** Hack procedure is identified by the class and function names and its arity. The arity can be
       absent for external function declarations of the form [declare F.f(...): ...]
@@ -210,11 +206,7 @@ module Python : sig
     | Other  (** Other methods *)
 end
 
-(** Type of procedure names. WithFunctionParameters is used for creating an instantiation of a
-    method that contains non-empty function parameters and it's called with concrete functions. For
-    example: [foo(Block block) {block();}] [bar() {foo(my_block)}] is executed as
-    [foo_my_block() {my_block(); }] where foo_my_block is created with WithFunctionParameters (foo,
-    [my_block]) *)
+(** Type of procedure names. *)
 type t =
   | Block of Block.t
   | C of C.t
@@ -225,15 +217,7 @@ type t =
   | Linters_dummy_method
   | ObjC_Cpp of ObjC_Cpp.t
   | Python of Python.t
-  | WithFunctionParameters of t * FunctionParameters.t * FunctionParameters.t list
 [@@deriving compare, yojson_of, sexp, hash, normalize]
-
-val base_of : t -> t
-(** if a procedure has been specialised, return the original one, otherwise itself *)
-
-val of_function_parameter : FunctionParameters.t -> t
-
-val to_function_parameter : t -> FunctionParameters.t
 
 val equal : t -> t -> bool
 
@@ -395,10 +379,6 @@ val is_python : t -> bool
 val as_java_exn : explanation:string -> t -> Java.t
 (** Converts to a Java.t. Throws if [is_java] is false *)
 
-val with_function_parameters : t -> FunctionParameters.t list -> t option
-(** Create a procedure name instantiated with function parameters from a base procedure name and a
-    list of function procedures. It returns [None] when the given function parameter list is empty. *)
-
 val objc_cpp_replace_method_name : t -> string -> t
 
 val is_infer_undefined : t -> bool
@@ -518,5 +498,3 @@ val has_hack_classname : t -> bool
 
 val is_hack_async_name : t -> bool
 (* Checks if the function name starts with "gen", which is a (lint-checked) convention for it being async at Meta *)
-
-val should_create_specialized_proc : t -> bool

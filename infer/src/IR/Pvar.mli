@@ -184,8 +184,6 @@ val get_template_args : t -> Typ.template_spec_info
 
 val materialized_cpp_temporary : string
 
-val specialize_pvar : t -> Procname.t -> t
-
 module Set : PrettyPrintable.PPSet with type elt = t
 
 module Map : PrettyPrintable.PPMap with type key = t

@@ -23,7 +23,7 @@ let is_synchronized_library_call =
 let should_skip_analysis =
   let matcher = MethodMatcher.of_json Config.starvation_skip_analysis in
   fun tenv pname actuals ->
-    match Procname.base_of pname with
+    match pname with
     | Procname.Java java_pname
       when Procname.Java.is_static java_pname
            && String.equal "getInstance" (Procname.get_method pname) ->
@@ -351,7 +351,7 @@ let get_returned_executor tenv callee actuals =
              | _ ->
                  false ) )
   in
-  match (Procname.base_of callee, actuals) with
+  match (callee, actuals) with
   | Procname.Java java_pname, [] -> (
     match Procname.Java.get_method java_pname with
     | ("getForegroundExecutor" | "getBackgroundExecutor") when Lazy.force type_check ->
@@ -414,15 +414,7 @@ let is_java_main_method (pname : Procname.t) =
   in
   let test_pname pname =
     match (pname : Procname.t) with
-    | C _
-    | Erlang _
-    | Hack _
-    | Linters_dummy_method
-    | Block _
-    | ObjC_Cpp _
-    | CSharp _
-    | Python _
-    | WithFunctionParameters _ ->
+    | C _ | Erlang _ | Hack _ | Linters_dummy_method | Block _ | ObjC_Cpp _ | CSharp _ | Python _ ->
         false
     | Java java_pname ->
         Procname.Java.is_static java_pname

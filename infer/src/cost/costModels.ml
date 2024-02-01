@@ -7,7 +7,6 @@
 
 open! IStd
 module BasicCost = CostDomain.BasicCost
-module BasicCostWithReason = CostDomain.BasicCostWithReason
 open BufferOverrunUtils.ModelEnv
 open CostUtils.CostModelEnv
 open ProcnameDispatcher.Call.FuncArg
@@ -218,7 +217,7 @@ module NSString = struct
 end
 
 module NSAttributedString = struct
-  let enumerate_using_block args ({get_summary; model_env} as cost_model_env) ~ret inferbo_mem =
+  let enumerate_using_block args ({model_env} as cost_model_env) ~ret inferbo_mem =
     let pname = model_env.pname in
     match List.rev args with
     | _attr :: _inRange :: _options :: _usingBlock :: {exp= str} :: _captured_args -> (
@@ -227,19 +226,7 @@ module NSAttributedString = struct
             ~of_function:(Procname.to_simplified_string pname)
             str cost_model_env ~ret inferbo_mem
         in
-        match pname with
-        | WithFunctionParameters (_, function_parameter, []) -> (
-            let pname = Procname.of_function_parameter function_parameter in
-            match get_summary pname with
-            | Some {CostDomain.post= callee_summary} ->
-                let {BasicCostWithReason.cost= callee_cost} =
-                  CostDomain.get_cost_kind OperationCost callee_summary
-                in
-                BasicCost.mult_loop ~iter:length ~body:callee_cost
-            | None ->
-                length )
-        | _ ->
-            length )
+        match pname with _ -> length )
     | _ ->
         BasicCost.one
 end
@@ -258,7 +245,7 @@ module NSCollection = struct
     cost_op (get_length coll1) (get_length coll2)
 
 
-  let enumerate_using_block args ({get_summary; model_env} as cost_model_env) ~ret inferbo_mem =
+  let enumerate_using_block args ({model_env} as cost_model_env) ~ret inferbo_mem =
     let pname = model_env.pname in
     match List.rev args with
     | _block :: {exp= array} :: _captured_args -> (
@@ -267,19 +254,7 @@ module NSCollection = struct
             ~of_function:(Procname.to_simplified_string pname)
             array cost_model_env ~ret inferbo_mem
         in
-        match pname with
-        | WithFunctionParameters (_, function_parameter, []) -> (
-            let pname = Procname.of_function_parameter function_parameter in
-            match get_summary pname with
-            | Some {CostDomain.post= callee_summary} ->
-                let {BasicCostWithReason.cost= callee_cost} =
-                  CostDomain.get_cost_kind OperationCost callee_summary
-                in
-                BasicCost.mult_loop ~iter:length ~body:callee_cost
-            | None ->
-                length )
-        | _ ->
-            length )
+        match pname with _ -> length )
     | _ ->
         BasicCost.one
 end

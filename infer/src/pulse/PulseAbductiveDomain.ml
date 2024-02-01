@@ -77,7 +77,6 @@ type t =
   ; path_condition: Formula.t
   ; decompiler: (Decompiler.t[@yojson.opaque] [@equal.ignore] [@compare.ignore])
   ; topl: (PulseTopl.state[@yojson.opaque])
-  ; need_closure_specialization: bool
   ; need_dynamic_type_specialization: (AbstractValue.Set.t[@yojson.opaque])
   ; transitive_info: (TransitiveInfo.t[@yojson.opaque])
   ; skipped_calls: SkippedCalls.t }
@@ -88,7 +87,6 @@ let pp_ ~is_summary f
     ; pre
     ; path_condition
     ; decompiler
-    ; need_closure_specialization
     ; need_dynamic_type_specialization
     ; transitive_info
     ; topl
@@ -105,23 +103,18 @@ let pp_ ~is_summary f
   F.fprintf f
     "@[<v>%a@;\
      %t@;\
-     %tneed_closure_specialization=%b@;\
-     need_dynamic_type_specialization=%a@;\
+     %tneed_dynamic_type_specialization=%a@;\
      transitive_info=%a@;\
      skipped_calls=%a@;\
      Topl=%a@]"
-    Formula.pp path_condition pp_pre_post pp_decompiler need_closure_specialization
-    AbstractValue.Set.pp need_dynamic_type_specialization TransitiveInfo.pp transitive_info
-    SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
+    Formula.pp path_condition pp_pre_post pp_decompiler AbstractValue.Set.pp
+    need_dynamic_type_specialization TransitiveInfo.pp transitive_info SkippedCalls.pp skipped_calls
+    PulseTopl.pp_state topl
 
 
 let pp = pp_ ~is_summary:false
 
 let set_path_condition path_condition astate = {astate with path_condition}
-
-let set_need_closure_specialization astate = {astate with need_closure_specialization= true}
-
-let unset_need_closure_specialization astate = {astate with need_closure_specialization= false}
 
 let record_transitive_access location astate =
   let trace = Trace.Immediate {location; history= ValueHistory.epoch} in
@@ -1573,7 +1566,6 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
     ; post
     ; path_condition= Formula.ttrue
     ; decompiler= Decompiler.empty
-    ; need_closure_specialization= false
     ; need_dynamic_type_specialization= AbstractValue.Set.empty
     ; topl= PulseTopl.start ()
     ; transitive_info= TransitiveInfo.bottom
@@ -2096,8 +2088,6 @@ module Summary = struct
 
   let get_topl {topl} = topl
 
-  let need_closure_specialization {need_closure_specialization} = need_closure_specialization
-
   let get_skipped_calls {skipped_calls} = skipped_calls
 
   let is_heap_allocated = is_heap_allocated
@@ -2201,8 +2191,6 @@ module Summary = struct
         Stats.incr_pulse_summaries_contradictions () ;
         Unsat
 
-
-  let with_need_closure_specialization summary = {summary with need_closure_specialization= true}
 
   let add_need_dynamic_type_specialization = add_need_dynamic_type_specialization
 

@@ -76,7 +76,7 @@ module Lock = struct
   let pp_locks fmt lock = F.fprintf fmt " locks %a" describe lock
 
   let make_java_synchronized formals procname =
-    match Procname.base_of procname with
+    match procname with
     | Procname.Java java_pname when Procname.Java.is_static java_pname ->
         (* this is crafted so as to match synchronized(CLASSNAME.class) constructs *)
         let typename_str = Procname.Java.get_class_type_name java_pname |> Typ.Name.name in
@@ -980,7 +980,7 @@ let summary_of_astate : Procdesc.t -> t -> summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let attributes =
     let var_predicate =
-      match Procname.base_of proc_name with
+      match proc_name with
       | Procname.Java jname when Procname.Java.is_class_initializer jname ->
           (* only keep static attributes for the class initializer *)
           fun v -> Var.is_global v

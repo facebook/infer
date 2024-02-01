@@ -64,8 +64,6 @@ type t = private
   ; decompiler: Decompiler.t
   ; topl: PulseTopl.state
         (** state at of the Topl monitor at the current program point, when Topl is enabled *)
-  ; need_closure_specialization: bool
-        (** a call that could be resolved via analysis-time specialization has been skipped *)
   ; need_dynamic_type_specialization: AbstractValue.Set.t
         (** a set of abstract values that are used as receiver of method calls in the instructions
             reached so far *)
@@ -291,10 +289,6 @@ val add_missed_captures : Typ.Name.Set.t -> t -> t
 
 val set_path_condition : Formula.t -> t -> t
 
-val set_need_closure_specialization : t -> t
-
-val unset_need_closure_specialization : t -> t
-
 val record_transitive_access : Location.t -> t -> t
 
 val record_call_resolution :
@@ -337,8 +331,6 @@ module Summary : sig
       not called twice *)
   type summary = private t [@@deriving compare, equal, yojson_of]
 
-  val with_need_closure_specialization : summary -> summary
-
   val add_need_dynamic_type_specialization : AbstractValue.t -> summary -> summary
 
   val of_post :
@@ -373,8 +365,6 @@ module Summary : sig
   val get_path_condition : summary -> Formula.t
 
   val get_topl : summary -> PulseTopl.state
-
-  val need_closure_specialization : summary -> bool
 
   val heap_paths_that_need_dynamic_type_specialization :
     summary -> AbstractValue.t Specialization.HeapPath.Map.t
