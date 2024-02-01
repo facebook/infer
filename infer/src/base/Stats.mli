@@ -56,6 +56,8 @@ val set_process_times : ExecutionDuration.t -> unit
 
 val set_useful_times : ExecutionDuration.t -> unit
 
+val incr_spec_store_times : ExecutionDuration.counter -> unit
+
 val reset : unit -> unit
 (** reset all stats *)
 

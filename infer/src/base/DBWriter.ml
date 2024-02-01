@@ -639,4 +639,9 @@ let store_issue_log ~checker ~source_file ~issue_log =
 
 
 let store_spec ~proc_uid ~proc_name ~payloads ~report_summary ~summary_metadata =
-  perform (StoreSpec {proc_uid; proc_name; payloads; report_summary; summary_metadata})
+  let counter = ExecutionDuration.counter () in
+  let result =
+    perform (StoreSpec {proc_uid; proc_name; payloads; report_summary; summary_metadata})
+  in
+  Stats.incr_spec_store_times counter ;
+  result
