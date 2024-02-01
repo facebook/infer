@@ -6,7 +6,7 @@
               "sink_kinds": ["Logging"]
             }
           ],
-          "exclude_matching": [".*DoNotReport.*"]
+          "exclude_in": ["TaintFunctionDoNotReport.m"]
         }
     ],
     "pulse-taint-sources": [

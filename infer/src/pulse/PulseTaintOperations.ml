@@ -170,13 +170,29 @@ let source_is_sanitized source_times sink_policy
   is_sanitized_after_tainted && sanitizer_matches_sink_policy sink_policy sanitizer
 
 
-let exclude_in_loc source_file exclude_in =
-  match exclude_in with
-  | Some exclude_in ->
-      List.exists exclude_in ~f:(fun exclude_in ->
-          String.is_substring (SourceFile.to_string source_file) ~substring:exclude_in )
-  | _ ->
-      false
+let exclude_in_loc source_file exclude_in exclude_matching =
+  let source_file = SourceFile.to_string source_file in
+  let explicitly_excluded =
+    match exclude_in with
+    | Some exclude_in ->
+        List.exists exclude_in ~f:(fun exclude_in ->
+            String.is_substring source_file ~substring:exclude_in )
+    | _ ->
+        false
+  in
+  let excluded_by_regex =
+    match exclude_matching with
+    | Some exclude_matching ->
+        List.exists exclude_matching ~f:(fun exclude_matching ->
+            match Str.search_forward exclude_matching source_file 0 with
+            | _ ->
+                true
+            | exception Caml.Not_found ->
+                false )
+    | _ ->
+        false
+  in
+  explicitly_excluded || excluded_by_regex
 
 
 let check_source_against_sink_policy location ~source source_times intra_procedural_only hist
@@ -206,8 +222,10 @@ let check_source_against_sink_policy location ~source source_times intra_procedu
   let matching_sanitizers =
     Attribute.TaintSanitizedSet.filter (source_is_sanitized source_times sink_policy) sanitizers
   in
-  let {SinkPolicy.description; policy_id; privacy_effect; exclude_in} = sink_policy in
-  if exclude_in_loc location.Location.file exclude_in then (
+  let {SinkPolicy.description; policy_id; privacy_effect; exclude_in; exclude_matching} =
+    sink_policy
+  in
+  if exclude_in_loc location.Location.file exclude_in exclude_matching then (
     L.d_printfln ~color:Green "...but location %a should be excluded from reporting" SourceFile.pp
       location.Location.file ;
     None )

@@ -607,7 +607,8 @@ module SinkPolicy = struct
     ; description: string [@ignore]
     ; policy_id: int
     ; privacy_effect: string option [@ignore]
-    ; exclude_in: string list option [@ignore] }
+    ; exclude_in: string list option [@ignore]
+    ; exclude_matching: Str.regexp list option [@ignore] }
   [@@deriving equal]
 
   let pp f policy =
@@ -646,9 +647,17 @@ let fill_policies_from_config () =
   Config.pulse_taint_config.policies
   |> List.iter
        ~f:(fun
-            {Pulse_config_t.short_description= description; taint_flows; privacy_effect; exclude_in}
+            { Pulse_config_t.short_description= description
+            ; taint_flows
+            ; privacy_effect
+            ; exclude_in
+            ; exclude_matching }
           ->
          let policy_id = SinkPolicy.next_policy_id () in
+         let exclude_matching =
+           Option.map exclude_matching ~f:(fun regexes ->
+               List.map regexes ~f:(fun regex -> Str.regexp regex) )
+         in
          List.iter taint_flows ~f:(fun {Pulse_config_t.source_kinds; sanitizer_kinds; sink_kinds} ->
              let source_kinds = List.map source_kinds ~f:Kind.of_string in
              let sanitizer_kinds = List.map sanitizer_kinds ~f:Kind.of_string in
@@ -660,7 +669,8 @@ let fill_policies_from_config () =
                    ; description
                    ; policy_id
                    ; privacy_effect
-                   ; exclude_in }
+                   ; exclude_in
+                   ; exclude_matching }
                  in
                  Hashtbl.update SinkPolicy.sink_policies sink_kind ~f:(function
                    | None ->
@@ -679,7 +689,8 @@ let () =
         ; sanitizer_kinds= [Kind.simple_kind]
         ; policy_id= SinkPolicy.next_policy_id ()
         ; privacy_effect= None
-        ; exclude_in= None } ]
+        ; exclude_in= None
+        ; exclude_matching= None } ]
   |> ignore ;
   fill_data_flow_kinds_from_config () ;
   fill_policies_from_config ()

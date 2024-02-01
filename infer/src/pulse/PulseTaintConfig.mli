@@ -84,7 +84,8 @@ module SinkPolicy : sig
     ; description: string [@ignore]
     ; policy_id: int
     ; privacy_effect: string option [@ignore]
-    ; exclude_in: string list option [@ignore] }
+    ; exclude_in: string list option [@ignore]
+    ; exclude_matching: Str.regexp list option [@ignore] }
   [@@deriving equal]
 
   val sink_policies : (Kind.t, t list) Base.Hashtbl.t
