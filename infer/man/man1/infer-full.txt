@@ -1252,8 +1252,11 @@ OPTIONS
            --no-pulse-inline-global-init-func-pointer)           See also infer-analyze(1).
 
        --pulse-log-summary-count
-           Activates: Log the number of summaries for each analyzed procedure
-           in Pulse (Conversely: --no-pulse-log-summary-count)       
+           Activates: Log the number of summaries (grouped by summary kind)
+           for each analyzed procedure in Pulse. Results are put in JSON
+           files under a 'pulse' subdirectory, one corresponding to each
+           analysis job. Note that when joining the files, deduplication
+           might be needed. (Conversely: --no-pulse-log-summary-count)       
     See also infer-analyze(1).
 
        --pulse-max-cfg-size int

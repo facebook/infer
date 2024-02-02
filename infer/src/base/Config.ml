@@ -2754,7 +2754,9 @@ and pulse_nullsafe_report_npe_as_separate_issue_type =
 and pulse_log_summary_count =
   CLOpt.mk_bool ~long:"pulse-log-summary-count"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
-    "Log the number of summaries for each analyzed procedure in Pulse"
+    "Log the number of summaries (grouped by summary kind) for each analyzed procedure in Pulse. \
+     Results are put in JSON files under a 'pulse' subdirectory, one corresponding to each \
+     analysis job. Note that when joining the files, deduplication might be needed."
 
 
 and pure_by_default =
