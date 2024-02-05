@@ -109,28 +109,31 @@ let verify_decl ~env errors (decl : Module.decl) =
       | Some (NotVariadic, {formals_types= None}) ->
           errors
   in
-  let rec verify_exp loc errors (exp : Exp.t) =
-    match exp with
-    | Var _ | Lvar _ | Const _ | Typ _ ->
-        errors
-    | Load {exp} ->
-        verify_exp loc errors exp
-    | Field {exp; field} ->
-        let errors = verify_field errors field in
-        verify_exp loc errors exp
-    | Index (e1, e2) ->
-        let errors = verify_exp loc errors e1 in
-        verify_exp loc errors e2
-    | Call {proc; args} ->
-        let errors = List.fold ~f:(verify_exp loc) ~init:errors args in
-        verify_call loc errors proc (List.length args)
-    | Closure {proc; captured; params} ->
-        let errors = List.fold ~f:(verify_exp loc) ~init:errors captured in
-        verify_call loc errors ~must_be_implemented:true proc
-          (List.length captured + List.length params)
-    | Apply {closure; args} ->
-        let errors = verify_exp loc errors closure in
-        List.fold ~f:(verify_exp loc) ~init:errors args
+  let verify_exp loc errors exp =
+    let rec aux errors (exp : Exp.t) =
+      match exp with
+      | Var _ | Lvar _ | Const _ | Typ _ ->
+          errors
+      | Load {exp} ->
+          aux errors exp
+      | Field {exp; field} ->
+          let errors = verify_field errors field in
+          aux errors exp
+      | Index (e1, e2) ->
+          let errors = aux errors e1 in
+          aux errors e2
+      | Call {proc; args} ->
+          let errors = List.fold ~f:aux ~init:errors args in
+          verify_call loc errors proc (List.length args)
+      | Closure {proc; captured; params} ->
+          let errors = List.fold ~f:aux ~init:errors captured in
+          verify_call loc ~must_be_implemented:true errors proc
+            (List.length captured + List.length params)
+      | Apply {closure; args} ->
+          let errors = aux errors closure in
+          List.fold ~f:aux ~init:errors args
+    in
+    aux errors exp
   in
   let verify_instr errors (instr : Instr.t) =
     let loc = Instr.loc instr in
