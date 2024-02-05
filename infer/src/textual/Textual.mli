@@ -59,6 +59,8 @@ module TypeName : sig
   (* structured value type name *)
   include NAME
 
+  val hack_generics : t
+
   val wildcard : t
 end
 
@@ -195,6 +197,8 @@ module ProcSig : sig
 
   val incr_arity : t -> t
 
+  val decr_arity : t -> int -> t
+
   val is_hack_init : t -> bool
 
   module Hashtbl : Hashtbl.S with type key = t
@@ -226,6 +230,8 @@ module ProcDecl : sig
   val to_binop : QualifiedProcName.t -> Binop.t option
 
   val is_cast_builtin : QualifiedProcName.t -> bool
+
+  val is_generics_constructor_builtin : QualifiedProcName.t -> bool
 
   val is_instanceof_builtin : QualifiedProcName.t -> bool
 

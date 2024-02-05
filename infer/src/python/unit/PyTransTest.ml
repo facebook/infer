@@ -3428,7 +3428,11 @@ d = { 0x78: "abc", # 1-n decoding mapping
 
         declare $builtins.python_float(float) : *PyFloat
 
-        declare $builtins.python_int(int) : *PyInt |}]
+        declare $builtins.python_int(int) : *PyInt
+
+        Errors while type checking the test:
+        dummy.py, line 3, column 0: textual type error: ident n0 is read before being written
+        dummy.py, line 3, column 0: textual type error: ident n0 is read before being written |}]
   end )
 
 

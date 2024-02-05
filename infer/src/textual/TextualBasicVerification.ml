@@ -64,6 +64,11 @@ let pp_error sourcefile fmt error =
         QualifiedProcName.pp proc args formals
 
 
+let count_generics_args args generics =
+  List.count args ~f:(fun exp ->
+      match exp with Exp.Var id -> Ident.Set.mem id generics | _ -> false )
+
+
 let verify_decl ~env errors (decl : Module.decl) =
   let verify_label errors declared_labels pname label =
     if String.Set.mem declared_labels label.NodeName.value then errors
@@ -76,26 +81,32 @@ let verify_decl ~env errors (decl : Module.decl) =
     then errors
     else UnknownField field :: errors
   in
-  let verify_call loc errors ?(must_be_implemented = false) proc nb_args =
+  let rec verify_call loc errors ?(must_be_implemented = false) proc nb_args nb_generics_args =
     if ProcDecl.is_not_regular_proc proc then errors
     else
       let procsig = Exp.call_sig proc nb_args (TextualDecls.lang env) in
       match TextualDecls.get_procdecl env procsig nb_args with
       | None when QualifiedProcName.contains_wildcard proc ->
           errors
+      | None when nb_generics_args > 0 ->
+          (* second try by removing generics args *)
+          verify_call loc errors ~must_be_implemented proc (nb_args - nb_generics_args) 0
       | None ->
           UnknownProc {proc; args= nb_args} :: errors
-      | Some (Variadic _, {formals_types= None}) ->
+      | Some (_, NotReified, _) when nb_generics_args > 0 ->
+          (* we did not feed get_procdecl with right arity: let's retry *)
+          verify_call loc errors ~must_be_implemented proc (nb_args - nb_generics_args) 0
+      | Some (Variadic _, _, {formals_types= None}) ->
           Logging.internal_error "Textual variadic status with empty list of formals" ;
           (* unexpected situation because a procdecl will be stored as variadic only
              if one of its parameter is annotated as being variadic *)
           errors
-      | Some (Variadic _, {formals_types= Some formals_types}) ->
+      | Some (Variadic _, _, {formals_types= Some formals_types}) ->
           let nb_formals = List.length formals_types in
           if nb_args < nb_formals - 1 then
             VariadicNotEnoughArgs {proc; nb_args; nb_formals} :: errors
           else errors
-      | Some (NotVariadic, {formals_types= Some formals_types}) ->
+      | Some (NotVariadic, _, {formals_types= Some formals_types}) ->
           let errors =
             if
               must_be_implemented && TextualDecls.get_procdecl env procsig nb_args |> Option.is_none
@@ -106,10 +117,10 @@ let verify_decl ~env errors (decl : Module.decl) =
           let args = nb_args + if TextualDecls.is_trait_method env procsig then 1 else 0 in
           if not (Int.equal args formals) then WrongArgNumber {proc; args; formals; loc} :: errors
           else errors
-      | Some (NotVariadic, {formals_types= None}) ->
+      | Some (NotVariadic, _, {formals_types= None}) ->
           errors
   in
-  let verify_exp loc errors exp =
+  let verify_exp loc generics errors exp =
     let rec aux errors (exp : Exp.t) =
       match exp with
       | Var _ | Lvar _ | Const _ | Typ _ ->
@@ -124,25 +135,28 @@ let verify_decl ~env errors (decl : Module.decl) =
           aux errors e2
       | Call {proc; args} ->
           let errors = List.fold ~f:aux ~init:errors args in
-          verify_call loc errors proc (List.length args)
+          let nb_generics_args = count_generics_args args generics in
+          let nb_args = List.length args in
+          verify_call loc errors proc nb_args nb_generics_args
       | Closure {proc; captured; params} ->
           let errors = List.fold ~f:aux ~init:errors captured in
-          verify_call loc ~must_be_implemented:true errors proc
-            (List.length captured + List.length params)
+          let nb_generics_args = count_generics_args captured generics in
+          let nb_args = List.length captured + List.length params in
+          verify_call loc ~must_be_implemented:true errors proc nb_args nb_generics_args
       | Apply {closure; args} ->
           let errors = aux errors closure in
           List.fold ~f:aux ~init:errors args
     in
     aux errors exp
   in
-  let verify_instr errors (instr : Instr.t) =
+  let verify_instr generics errors (instr : Instr.t) =
     let loc = Instr.loc instr in
     match instr with
     | Load {exp} | Prune {exp} | Let {exp} ->
-        verify_exp loc errors exp
+        verify_exp loc generics errors exp
     | Store {exp1; exp2} ->
-        let errors = verify_exp loc errors exp1 in
-        verify_exp loc errors exp2
+        let errors = verify_exp loc generics errors exp1 in
+        verify_exp loc generics errors exp2
   in
   let verify_variadic_position errors {ProcDesc.procdecl= {qualified_name; formals_types}} =
     let contains_variadic_typ formals =
@@ -162,6 +176,18 @@ let verify_decl ~env errors (decl : Module.decl) =
             errors )
   in
   let verify_procdesc errors (procdesc : ProcDesc.t) =
+    (* we expect the frontend to encapsulate each generic argument with an intermediate
+       [id = __sil_generics(arg)] call. The [generics] set will contain all this identifiers. *)
+    let generics : Ident.Set.t =
+      List.fold procdesc.nodes ~init:Ident.Set.empty ~f:(fun init node ->
+          List.fold node.Node.instrs ~init ~f:(fun idents instr ->
+              match instr with
+              | Instr.Let {id; exp= Call {proc}} when ProcDecl.is_generics_constructor_builtin proc
+                ->
+                  Ident.Set.add id idents
+              | _ ->
+                  idents ) )
+    in
     let declared_labels =
       List.fold procdesc.nodes ~init:String.Set.empty ~f:(fun set node ->
           String.Set.add set node.Node.label.value )
@@ -178,16 +204,16 @@ let verify_decl ~env errors (decl : Module.decl) =
       | Jump l ->
           List.fold ~init:errors ~f:verify_node_call l
       | Ret e | Throw e ->
-          verify_exp loc errors e
+          verify_exp loc generics errors e
       | Unreachable ->
           errors
     in
-    let verify_node errors (node : Node.t) =
-      let errors = List.fold ~f:verify_instr ~init:errors node.instrs in
+    let verify_node generics errors (node : Node.t) =
+      let errors = List.fold ~f:(verify_instr generics) ~init:errors node.instrs in
       verify_terminator node.last_loc errors node.last
     in
     let errors = verify_variadic_position errors procdesc in
-    List.fold ~f:verify_node ~init:errors procdesc.nodes
+    List.fold ~f:(verify_node generics) ~init:errors procdesc.nodes
   in
   match decl with
   | Global _ | Struct _ | Procdecl _ ->

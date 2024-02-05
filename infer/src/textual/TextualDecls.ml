@@ -145,6 +145,8 @@ let get_variadic_procdesc decls qualified_procname =
 
 type variadic_status = NotVariadic | Variadic of Typ.t
 
+type generics_status = Reified | NotReified
+
 let get_struct decls tname = TypeName.Hashtbl.find_opt decls.structs tname
 
 let is_defined_in_a_trait decls_env {Textual.QualifiedProcName.enclosing_class} =
@@ -170,8 +172,21 @@ let get_procdecl decls procsig nb_args =
   let procsig =
     if is_trait_method decls procsig then Textual.ProcSig.incr_arity procsig else procsig
   in
+  let generics_status procdesc =
+    (* TODO(dpichardie) ask hackc to put an annotation on the function signature instead *)
+    if
+      List.exists procdesc.ProcDesc.params ~f:(fun varname ->
+          String.equal varname.VarName.value "$0ReifiedGenerics" )
+    then Reified
+    else NotReified
+  in
   let non_variadic_case =
-    get_procentry decls procsig |> Option.map ~f:(fun entry -> (NotVariadic, ProcEntry.decl entry))
+    get_procentry decls procsig
+    |> Option.map ~f:(fun entry ->
+           let generics_status =
+             ProcEntry.desc entry |> Option.value_map ~default:Reified ~f:generics_status
+           in
+           (NotVariadic, generics_status, ProcEntry.decl entry) )
   in
   match get_variadic_procdesc decls procname with
   | Some procdesc ->
@@ -182,7 +197,7 @@ let get_procdecl decls procsig nb_args =
         (* at call site there is not enough argument to activate the variadic argument,
            then our last chance to succeed is the non-variadic case *)
         non_variadic_case
-      else Some (Variadic variadic_type.typ, procdesc.procdecl)
+      else Some (Variadic variadic_type.typ, generics_status procdesc, procdesc.procdecl)
   | None ->
       non_variadic_case
 

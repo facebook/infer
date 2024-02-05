@@ -763,7 +763,7 @@ module InstrBridge = struct
         let procsig = Exp.call_sig proc (List.length args) (TextualDecls.lang decls_env) in
         let variadic_status, ({formals_types} as callee_procdecl : ProcDecl.t) =
           match TextualDecls.get_procdecl decls_env procsig (List.length args) with
-          | Some (variadic_flag, procdecl) ->
+          | Some (variadic_flag, _, procdecl) ->
               (variadic_flag, procdecl)
           | None when QualifiedProcName.contains_wildcard proc ->
               let textual_ret_typ =
