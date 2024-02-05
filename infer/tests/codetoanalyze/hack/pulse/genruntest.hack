@@ -67,8 +67,8 @@ class MaybeContainsAwaitable {
     $x = await $b->getX();
   }
 
-  // demonstrate type test on primitive types doesn't work yet
-  public static async function boolTestOK_FP(): Awaitable<void> {
+  // this now works
+  public static async function boolTestOK(): Awaitable<void> {
     $b = true;
     if ($b is bool) {
       $a = 10;

@@ -180,6 +180,12 @@ module Syntax = struct
     ret (Formula.get_known_constant_opt phi v) data astate
 
 
+  let get_known_int_opt v : int option model_monad =
+    let* n_q_opt = get_known_constant_opt v in
+    let n = Option.bind n_q_opt ~f:QSafeCapped.to_int in
+    ret n
+
+
   let get_known_fields (v, _) =
     exec_pure_operation (fun astate ->
         let res =
@@ -257,6 +263,10 @@ module Syntax = struct
     PulseArithmetic.and_equal (PulseArithmetic.AbstractValueOperand x)
       (PulseArithmetic.AbstractValueOperand y)
     |> exec_partial_command
+
+
+  let and_equal_instanceof (res, _) (obj, _) ty : unit model_monad =
+    PulseArithmetic.and_equal_instanceof res obj ty |> exec_partial_command
 
 
   let and_positive (addr, _) : unit model_monad =

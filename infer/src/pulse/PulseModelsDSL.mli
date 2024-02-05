@@ -151,9 +151,13 @@ module Syntax : sig
 
   val and_eq : aval -> aval -> unit model_monad
 
+  val and_equal_instanceof : aval -> aval -> Typ.t -> unit model_monad
+
   val and_positive : aval -> unit model_monad
 
   val get_known_constant_opt : aval -> Q.t option model_monad
+
+  val get_known_int_opt : aval -> int option model_monad
 
   (* Tenv operations *)
   val tenv_resolve_field_info : Typ.name -> Fieldname.t -> Struct.field_info option model_monad

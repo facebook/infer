@@ -1115,6 +1115,57 @@ let build_vec_for_variadic_callee data args astate =
   (SplatedVec.build_vec_for_variadic_callee args |> DSL.unsafe_to_astate_transformer) data astate
 
 
+(* Map the kind tag values used in type structure dictionaries to their corresponding Pulse dynamic type names
+   This only works for primitive types at the moment
+   See fbcode/hphp/runtime/base/type-structure-kinds.h
+*)
+let type_struct_prim_tag_to_classname n =
+  match n with
+  | 0 ->
+      None (* void doesn't have a tag 'cos it's represented as null *)
+  | 1 ->
+      Some TextualSil.hack_int_type_name
+  | 2 ->
+      Some TextualSil.hack_bool_type_name
+  | 3 ->
+      None (* no floats yet *)
+  | 4 ->
+      Some TextualSil.hack_string_type_name
+  | 14 ->
+      Some TextualSil.hack_dict_type_name (* really shape but the reps should be the same *)
+  | 19 ->
+      Some TextualSil.hack_dict_type_name (* actually dict this time *)
+  | 20 ->
+      Some TextualSil.hack_vec_type_name
+  | _ ->
+      None
+
+
+(* for now ignores resolve and enforce options, and just for primitive types *)
+let hhbc_is_type_struct_c v tdict _resolveop _enforcekind : model =
+  let open DSL.Syntax in
+  start_model
+  @@
+  let kind_field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack "kind" in
+  let* kind_boxed_int = eval_deref_access Read tdict (FieldAccess kind_field) in
+  let* kind_int_val = eval_deref_access Read kind_boxed_int (FieldAccess int_val_field) in
+  let* kind_int_opt = get_known_int_opt kind_int_val in
+  match kind_int_opt with
+  | None ->
+      L.internal_error "didn't get known integer tag in is_type_struct_c" ;
+      ret ()
+  | Some k -> (
+      let* rv = mk_fresh ~model_desc:"hhbc_is_type_struct_c" () in
+      match type_struct_prim_tag_to_classname k with
+      | Some name ->
+          let typ = Typ.mk (Typ.Tstruct name) in
+          let* () = and_equal_instanceof rv v typ in
+          assign_ret rv
+      | None ->
+          (* previous version always returned true, this is just unconstrained for now *)
+          assign_ret rv )
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"$builtins" &:: "nondet" <>$$--> lift_model @@ Basic.nondet ~desc:"nondet"
@@ -1144,6 +1195,8 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_cls_cns" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cls_cns
   ; -"$builtins" &:: "hack_set_static_prop" <>$ capt_arg_payload $+ capt_arg_payload
     $+ capt_arg_payload $--> hack_set_static_prop
+  ; -"$builtins" &:: "hhbc_is_type_struct_c" <>$ capt_arg_payload $+ capt_arg_payload
+    $+ capt_arg_payload $+ capt_arg_payload $--> hhbc_is_type_struct_c
   ; -"$root" &:: "FlibSL::Vec::from_async" <>$ capt_arg_payload $+ capt_arg_payload
     $--> Vec.vec_from_async
   ; -"$root" &:: "FlibSL::Dict::from_async" <>$ capt_arg_payload $+ capt_arg_payload
