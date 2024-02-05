@@ -83,7 +83,7 @@ type error =
   | IdentAssignedTwice of {id: Ident.t; typ1: Typ.t; typ2: Typ.t; loc1: Location.t; loc2: Location.t}
   | IdentReadBeforeWrite of {id: Ident.t; loc: Location.t}
   | VarTypeNotDeclared of {var: VarName.t; loc: Location.t}
-  | MissingDeclaration of {proc: QualifiedProcName.t; loc: Location.t}
+  | MissingDeclaration of {procsig: ProcSig.t; loc: Location.t}
   | ArityMismatch of {length1: int; length2: int; loc: Location.t}
 
 let error_loc = function
@@ -123,8 +123,11 @@ let pp_error sourcefile fmt error =
       F.fprintf fmt "ident %a is read before being written" Ident.pp id
   | VarTypeNotDeclared {var; _} ->
       F.fprintf fmt "variable %a has not been declared" VarName.pp var
-  | MissingDeclaration {proc} ->
-      F.fprintf fmt "procname %a should be user-declared or a builtin" QualifiedProcName.pp proc
+  | MissingDeclaration {procsig} ->
+      let proc = ProcSig.to_qualified_procname procsig in
+      F.fprintf fmt "procname %a %tshould be user-declared or a builtin" QualifiedProcName.pp proc
+        (fun fmt ->
+          ProcSig.arity procsig |> Option.iter ~f:(fun n -> F.fprintf fmt "with arity %d " n) )
   | ArityMismatch {length1; length2; loc} ->
       F.fprintf fmt "iter2 was run on lists of different lengths at %a: %d vs %d" Location.pp loc
         length1 length2
@@ -157,10 +160,11 @@ let mk_type_mismatch_error expected loc exp typ : error =
   TypeMismatch {exp; typ; expected; loc}
 
 
-let mk_missing_declaration_error (proc : QualifiedProcName.t) : error =
+let mk_missing_declaration_error procsig : error =
+  let proc = ProcSig.to_qualified_procname procsig in
   let name = QualifiedProcName.name proc in
   let {ProcName.loc} = name in
-  MissingDeclaration {proc; loc}
+  MissingDeclaration {procsig; loc}
 
 
 (** state + error monad *)
@@ -360,13 +364,14 @@ let typeof_const (const : Const.t) : Typ.t =
       Float
 
 
-let typeof_reserved_proc (proc : QualifiedProcName.t) =
+let typeof_reserved_proc procsig =
+  let proc = ProcSig.to_qualified_procname procsig in
   if ProcDecl.to_binop proc |> Option.is_some then
     ret (Typ.Int, Some [Typ.Int; Typ.Int], TextualDecls.NotVariadic)
   else if ProcDecl.to_unop proc |> Option.is_some then
     ret (Typ.Int, Some [Typ.Int], TextualDecls.NotVariadic)
   else
-    let* () = add_error (mk_missing_declaration_error proc) in
+    let* () = add_error (mk_missing_declaration_error procsig) in
     abort
 
 
@@ -382,7 +387,7 @@ let typeof_procname (procsig : ProcSig.t) nb_args state =
   | None when ProcSig.to_qualified_procname procsig |> QualifiedProcName.contains_wildcard ->
       ret (Typ.Void, None, TextualDecls.NotVariadic) state
   | None ->
-      typeof_reserved_proc (ProcSig.to_qualified_procname procsig) state
+      typeof_reserved_proc procsig state
 
 
 (* In all the typecheck/typeof function below, when typechecking/type-computation succeeds

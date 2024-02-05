@@ -343,6 +343,8 @@ module ProcSig = struct
         qualified_name
 
 
+  let arity = function Hack {arity} | Python {arity} -> arity | Other _ -> None
+
   let incr_arity procsig =
     match procsig with
     | Hack {qualified_name; arity= Some arity} ->

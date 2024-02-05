@@ -191,6 +191,8 @@ module ProcSig : sig
 
   val to_qualified_procname : t -> QualifiedProcName.t
 
+  val arity : t -> int option
+
   val incr_arity : t -> t
 
   val is_hack_init : t -> bool
