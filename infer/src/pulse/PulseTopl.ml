@@ -262,7 +262,8 @@ end = struct
        Next, we iterate through disequality path predicates. If the predicate is implied by the path
        condition *or* by the heap, we drop it. Otherwise, we conjoin it to the path condition (and
        detect if it leads to unsatisfiability). We assert that no new_eqs are produced (which is
-       what Formula.and_normalized_atom currently does).
+       what Formula.and_normalized_atom currently does). (TODO: This assumption does not hold
+       anymore T171889331.)
 
        Next, we iterate through LeadsTo predicates. If they are implied by the heap, we drop them;
        otherwise, we keep them and we add them to the heap. (For implementation, we do not actually
@@ -351,8 +352,8 @@ end = struct
         (path_condition, heap)
       in
       (* Handle disequalities. *)
-      let* _path_condition =
-        let f path_condition (l, r) =
+      let* _path_condition, out_constr =
+        let f (path_condition, out_constr) (l, r) =
           let l, r = (rep path_condition l, rep path_condition r) in
           if Formula.equal_operand l r then Unsat
           else
@@ -370,16 +371,17 @@ end = struct
               | _ ->
                   false
             in
-            if implied_by_heap () || implied_by_pathcondition () then Sat path_condition
+            if implied_by_heap () || implied_by_pathcondition () then
+              Sat (path_condition, out_constr)
             else
               let+ path_condition, new_eqs =
                 Formula.prune_binop ~negated:false Ne l r path_condition
               in
               if not (RevList.is_empty new_eqs) then
                 L.die InternalError "Oh, no: I expected disequalities to not introduce equalities" ;
-              path_condition
+              (path_condition, C.{out_constr with neq_constr= (l, r) :: out_constr.neq_constr})
         in
-        SatUnsat.list_fold in_constr.C.neq_constr ~init:path_condition ~f
+        SatUnsat.list_fold in_constr.C.neq_constr ~init:(path_condition, out_constr) ~f
       in
       (* Digresion: heap (and fake-heap) traversal. *)
       let leadsto fake_heap heap source target =

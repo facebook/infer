@@ -1,1 +1,0 @@
-codetoanalyze/c/topl/lock-unlock/lock.c, FP_lock_unlock, 0, TOPL_ERROR_LATENT, no_bucket, ERROR, [call to pthread_mutex_lock]

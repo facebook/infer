@@ -12,7 +12,7 @@ int pthread_mutex_lock(struct FakeMut* mut);
 void pthread_mutex_unlock(struct FakeMut*);
 
 void unlock_wrap() { pthread_mutex_unlock(&m1); }
-void FP_lock_unlock() {
+void lock_unlock() {
   pthread_mutex_lock(&m1);
   unlock_wrap();
 }
