@@ -1,9 +1,9 @@
 Capturing in hackc mode...
-Expecting to capture 8 files
+Expecting to capture 9 files
 Merging captured targets...
 Merging type environments took X, of which X were spent storing the global tenv
 Merging 1 captured targets took X
-Finished capture: success 8 files, error 0 files.
+Finished capture: success 9 files, error 0 files.
 Tenv types with source: { hack A,
                           hack A$static,
                           hack B,
@@ -24,6 +24,8 @@ Tenv types without source: { hack $builtins,
                              hack HackMixed,
                              hack HackString,
                              hack HackVec,
+                             hack TParent,
+                             hack TParent$static,
                              hack TypeInUnit3,
                              hack class,
                              hack string }.

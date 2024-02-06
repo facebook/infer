@@ -788,44 +788,47 @@ module InstrBridge = struct
             callee_procdecl.result_type.typ
         in
         let args = List.map ~f:(ExpBridge.to_sil lang decls_env procname) args in
-        let formals_types =
-          match formals_types with
-          | Some formals_types ->
-              List.map formals_types ~f:(fun ({typ} : Typ.annotated) -> TypBridge.to_sil lang typ)
-          | None -> (
-            match lang with
-            | Lang.Hack ->
-                (* Declarations with unknown formals are expected in Hack. Assume that unknown
-                   formal types are *HackMixed and their number matches that of the arguments. *)
-                List.map args ~f:(fun _ -> TypBridge.hack_mixed)
-            | Lang.Python ->
-                (* Declarations with unknown formals are expected in Python. Assume that unknown
-                   formal types are *PyObject and their number matches that of the arguments. *)
-                List.map args ~f:(fun _ -> TypBridge.python_mixed)
-            | other ->
-                L.die InternalError "Unexpected unknown formals outside of Hack/Python: %s"
-                  (Lang.to_string other) )
-        in
-        let formals_types =
-          match (variadic_status : TextualDecls.variadic_status) with
-          | NotVariadic ->
-              if TextualDecls.is_trait_method decls_env procsig then
-                List.drop_last_exn formals_types
-              else formals_types
-          | Variadic variadic_type ->
-              (* we may have too much arguments, and we then complete formal_args *)
-              (* formals_args = [t1; ...; tn; variadic_type ] *)
-              let n = List.length formals_types - 1 in
-              let variadic_type = TypBridge.to_sil lang variadic_type in
-              List.take formals_types n
-              @ List.init (List.length args - n) ~f:(fun _ -> variadic_type)
-        in
         let args =
-          match List.zip args formals_types with
-          | Ok l ->
-              l
-          | _ ->
-              L.die UserError "the call %a has been given a wrong number of arguments" pp i
+          match formals_types with
+          | None ->
+              let default_typ =
+                match lang with
+                | Lang.Hack ->
+                    (* Declarations with unknown formals are expected in Hack. Assume that unknown
+                       formal types are *HackMixed. *)
+                    TypBridge.hack_mixed
+                | Lang.Python ->
+                    (* Declarations with unknown formals are expected in Python. Assume that unknown
+                       formal types are *PyObject. *)
+                    TypBridge.python_mixed
+                | other ->
+                    L.die InternalError "Unexpected unknown formals outside of Hack/Python: %s"
+                      (Lang.to_string other)
+              in
+              List.map args ~f:(fun arg -> (arg, default_typ))
+          | Some formals_types -> (
+              let formals_types =
+                List.map formals_types ~f:(fun ({typ} : Typ.annotated) -> TypBridge.to_sil lang typ)
+              in
+              let formals_types =
+                match (variadic_status : TextualDecls.variadic_status) with
+                | NotVariadic ->
+                    if TextualDecls.is_trait_method decls_env procsig then
+                      List.drop_last_exn formals_types
+                    else formals_types
+                | Variadic variadic_type ->
+                    (* we may have too much arguments, and we then complete formal_args *)
+                    (* formals_args = [t1; ...; tn; variadic_type ] *)
+                    let n = List.length formals_types - 1 in
+                    let variadic_type = TypBridge.to_sil lang variadic_type in
+                    List.take formals_types n
+                    @ List.init (List.length args - n) ~f:(fun _ -> variadic_type)
+              in
+              match List.zip args formals_types with
+              | Ok l ->
+                  l
+              | _ ->
+                  L.die UserError "the call %a has been given a wrong number of arguments" pp i )
         in
         let loc = LocationBridge.to_sil sourcefile loc in
         let cf_virtual = Exp.equal_call_kind kind Virtual in
