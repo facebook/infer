@@ -14,6 +14,7 @@ module DomainData = struct
     | SELF
     | UNCHECKED_STRONG_SELF
     | WEAK_SELF
+    | CXX_REF
   [@@deriving compare]
 
   let is_unchecked_strong_self kind = match kind with UNCHECKED_STRONG_SELF -> true | _ -> false
@@ -31,6 +32,8 @@ module DomainData = struct
           "UNCHECKED_STRONG_SELF"
       | WEAK_SELF ->
           "WEAK_SELF"
+      | CXX_REF ->
+          "CXX_REF"
     in
     F.fprintf fmt "%s" s
 
@@ -258,6 +261,13 @@ module Mem = struct
       attributes.ProcAttributes.captured
 
 
+  let get_captured_cpp_reference attributes pvar =
+    List.exists
+      ~f:(fun {CapturedVar.pvar= captured; typ} ->
+        pvar_same_name captured pvar && Typ.is_reference typ )
+      attributes.ProcAttributes.captured
+
+
   let load attributes id pvar loc typ astate =
     let vars =
       if is_captured_self attributes pvar then Vars.add id {pvar; typ; loc; kind= SELF} astate.vars
@@ -265,6 +275,8 @@ module Mem = struct
         Vars.add id {pvar; typ; loc; kind= CAPTURED_STRONG_SELF} astate.vars
       else if is_captured_weak_self attributes pvar then
         Vars.add id {pvar; typ; loc; kind= WEAK_SELF} astate.vars
+      else if get_captured_cpp_reference attributes pvar then
+        Vars.add id {pvar; typ; loc; kind= CXX_REF} astate.vars
       else
         try
           let isChecked = StrongEqualToWeakCapturedVars.find pvar astate.strongVars in
@@ -313,7 +325,8 @@ type report_issues_result =
   { reported_captured_strong_self: Pvar.Set.t
   ; reported_weak_self_in_noescape_block: Pvar.Set.t
   ; selfList: DomainData.t list
-  ; weakSelfList: DomainData.t list }
+  ; weakSelfList: DomainData.t list
+  ; reported_cxx_ref: Pvar.Set.t }
 
 module TransferFunctions = struct
   module Domain = Domain
@@ -433,12 +446,12 @@ let make_trace_use_self_weakself domain =
       Location.compare loc1 loc2 )
 
 
-let make_trace_captured_strong_self domain =
+let make_trace_captured domain var =
   let trace_elems =
     Vars.fold
       (fun _ {pvar; loc; kind} trace_elems ->
         match kind with
-        | CAPTURED_STRONG_SELF ->
+        | (CAPTURED_STRONG_SELF | CXX_REF) when Pvar.equal pvar var ->
             let trace_elem_desc = F.asprintf "Using captured %a" (Pvar.pp Pp.text) pvar in
             let trace_elem = Errlog.make_trace_element 0 loc trace_elem_desc [] in
             trace_elem :: trace_elems
@@ -524,11 +537,35 @@ let report_captured_strongself_issue proc_desc err_log domain (capturedStrongSel
         (Pvar.pp Pp.text) capturedStrongSelf.pvar Location.pp capturedStrongSelf.loc
     in
     let suggestion = "Use a local strong pointer or a captured weak pointer instead." in
-    let ltr = make_trace_captured_strong_self domain in
+    let ltr = make_trace_captured domain capturedStrongSelf.pvar in
     Reporting.log_issue ~suggestion proc_desc err_log ~ltr ~loc:capturedStrongSelf.loc SelfInBlock
       IssueType.captured_strong_self message ;
     report_captured_strongself )
   else report_captured_strongself
+
+
+let report_cxx_ref_captured_in_block proc_desc err_log domain (cxx_ref : DomainData.t)
+    reported_cxx_ref =
+  let attributes = Procdesc.get_attributes proc_desc in
+  let passed_as_noescape_block =
+    Option.value_map
+      ~f:(fun ({passed_as_noescape_block} : ProcAttributes.block_as_arg_attributes) ->
+        passed_as_noescape_block )
+      ~default:false attributes.ProcAttributes.block_as_arg_attributes
+  in
+  if (not passed_as_noescape_block) && not (Pvar.Set.mem cxx_ref.pvar reported_cxx_ref) then (
+    let reported_cxx_ref = Pvar.Set.add cxx_ref.pvar reported_cxx_ref in
+    let message =
+      F.asprintf
+        "The variable `%a` is a C++ reference and it's captured in the block. This can lead to \
+         crashes."
+        (Pvar.pp Pp.text) cxx_ref.pvar
+    in
+    let ltr = make_trace_captured domain cxx_ref.pvar in
+    Reporting.log_issue proc_desc err_log ~ltr ~loc:cxx_ref.loc SelfInBlock
+      IssueType.cxx_ref_captured_in_block message ;
+    reported_cxx_ref )
+  else reported_cxx_ref
 
 
 let report_issues proc_desc err_log domain =
@@ -540,6 +577,12 @@ let report_issues proc_desc err_log domain =
             result.reported_captured_strong_self
         in
         {result with reported_captured_strong_self}
+    | DomainData.CXX_REF ->
+        let reported_cxx_ref =
+          report_cxx_ref_captured_in_block proc_desc err_log domain domain_data
+            result.reported_cxx_ref
+        in
+        {result with reported_cxx_ref}
     | DomainData.WEAK_SELF ->
         let reported_weak_self_in_noescape_block =
           let attributes = Procdesc.get_attributes proc_desc in
@@ -562,7 +605,8 @@ let report_issues proc_desc err_log domain =
     { reported_captured_strong_self= Pvar.Set.empty
     ; reported_weak_self_in_noescape_block= Pvar.Set.empty
     ; selfList= []
-    ; weakSelfList= [] }
+    ; weakSelfList= []
+    ; reported_cxx_ref= Pvar.Set.empty }
   in
   let domain_bindings =
     Vars.bindings domain

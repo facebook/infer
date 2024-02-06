@@ -439,6 +439,11 @@ let constant_address_dereference =
     ~user_documentation:[%blob "./documentation/issues/CONSTANT_ADDRESS_DEREFERENCE.md"]
 
 
+let cxx_ref_captured_in_block =
+  register ~id:"CXX_REF_CAPTURED_IN_BLOCK" ~hum:"C++ Reference Captured in Block" Error SelfInBlock
+    ~user_documentation:[%blob "./documentation/issues/CXX_REF_CAPTURED_IN_BLOCK.md"]
+
+
 let create_intent_from_uri =
   register ~id:"CREATE_INTENT_FROM_URI" Error Quandary
     ~user_documentation:

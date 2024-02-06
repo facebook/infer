@@ -149,6 +149,8 @@ val pulse_const_refable : t
 
 val constant_address_dereference : latent:bool -> t
 
+val cxx_ref_captured_in_block : t
+
 val create_intent_from_uri : t
 
 val cross_site_scripting : t

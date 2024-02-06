@@ -139,6 +139,7 @@ OPTIONS
              CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
              CREATE_INTENT_FROM_URI (enabled by default),
              CROSS_SITE_SCRIPTING (enabled by default),
+             CXX_REF_CAPTURED_IN_BLOCK (enabled by default),
              Cannot_star (enabled by default),
              DANGLING_POINTER_DEREFERENCE (disabled by default),
              DANGLING_POINTER_DEREFERENCE_MAYBE (disabled by default),

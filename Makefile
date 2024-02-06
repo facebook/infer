@@ -156,6 +156,7 @@ DIRECT_TESTS += \
   objcpp_pulse \
   objcpp_racerd \
   objcpp_retain-cycles \
+  objcpp_self-in-block \
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 BUILD_SYSTEMS_TESTS += \
