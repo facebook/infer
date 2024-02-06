@@ -3,14 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-TESTS_DIR = ../../..
-
-CLANG_OPTIONS = -c $(OBJC_CLANG_OPTIONS)
-
-CLEAN_EXTRA = infer-out-arc infer-out-all infer-out-all infer-out-arc \
-              issues.exp.test.all issues.exp.test.arc issues.exp.test.default $(wildcard *.o)
-INFER_OPTIONS = --biabduction-only --dump-duplicate-symbols --debug-exceptions --project-root $(TESTS_DIR)
-INFERPRINT_OPTIONS = --issues-tests
+ROOT_DIR = ../../../../..
+include $(ROOT_DIR)/Makefile.config
 
 SOURCES_DEFAULT = \
   memory_leaks_benchmark/NSString_models_tests.m \
@@ -71,40 +65,14 @@ SOURCES_ARC = \
   specialized_methods_with_blocks/BlockAsReceiver.m \
   variadic_methods/premature_nil_termination.m \
 
-include $(TESTS_DIR)/clang.make
-include $(TESTS_DIR)/objc.make
+.PHONY: default
+default: analyze
 
-OBJECTS_ARC = $(foreach source,$(SOURCES_ARC),$(basename $(source)).o)
-OBJECTS_BUCKET_ALL = $(foreach source,$(SOURCES_BUCKET_ALL),$(basename $(source)).o)
-OBJECTS_DEFAULT = $(foreach source,$(SOURCES_DEFAULT),$(basename $(source)).o)
-
-$(OBJECTS_ARC): $(SOURCES_ARC)
-	clang $(CLANG_OPTIONS) -fobjc-arc $*
-
-$(OBJECTS_BASE) $(OBJECTS_BUCKETS_ALL): $(SOURCES_BASE) $(SOURCES_BUCKET_ALL)
-	clang $(CLANG_OPTIONS) $*
-
-infer-out-all/report.json: $(CLANG_DEPS) $(SOURCES_BUCKET_ALL)
-	$(QUIET)$(call silent_on_success,Testing infer/Objective-C with all memleak buckets,\
-	  $(INFER_BIN) $(INFER_OPTIONS) --biabduction-memleak-buckets all -o infer-out-all -- \
-	  clang $(CLANG_OPTIONS) $(SOURCES_BUCKET_ALL))
-
-infer-out-arc/report.json: $(CLANG_DEPS) $(SOURCES_ARC)
-	$(QUIET)$(call silent_on_success,Testing infer/Objective-C with arc memleak buckets,\
-	  $(INFER_BIN) $(INFER_OPTIONS) --biabduction-memleak-buckets cf -o infer-out-arc -- \
-	  clang $(CLANG_OPTIONS) -fobjc-arc $(SOURCES_ARC))
-
-infer-out/report.json: $(CLANG_DEPS) $(SOURCES_DEFAULT)
-	$(QUIET)$(call silent_on_success,Testing infer/Objective-C with CF memleak buckets,\
-	  $(INFER_BIN) $(INFER_OPTIONS) --biabduction-memleak-buckets cf -o infer-out -- \
-	  clang $(CLANG_OPTIONS) $(SOURCES_DEFAULT))
-
-issues.exp.test: infer-out-all/report.json infer-out-arc/report.json infer-out/report.json
-	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.all \
-	  -o infer-out-all
-	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.arc \
-	  -o infer-out-arc
-	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.default \
-	  -o infer-out
-	$(QUIET)cat $@.all $@.arc $@.default > $@
-	$(QUIET)cat infer-out-all/duplicates.txt infer-out-arc/duplicates.txt >> infer-out/duplicates.txt
+.PHONY: analyze print replace test clean
+analyze print replace test clean:
+	$(QUIET)$(MAKE) -f Makefile.common TEST_SUB_TITLE="(bucket-all)" TEST_SUFFIX=-all \
+	  TEST_RESULT_SUFFIX=-all MEMLEAK_BUCKET=all SOURCES="$(SOURCES_BUCKET_ALL)" $@
+	$(QUIET)$(MAKE) -f Makefile.common TEST_SUB_TITLE="(arc)" TEST_SUFFIX=-arc \
+	  TEST_RESULT_SUFFIX=-arc MEMLEAK_BUCKET=cf FOBJC_ARC=-fobjc-arc SOURCES="$(SOURCES_ARC)" $@
+	$(QUIET)$(MAKE) -f Makefile.common TEST_SUB_TITLE="(default)" MEMLEAK_BUCKET=cf \
+	  SOURCES="$(SOURCES_DEFAULT)" $@

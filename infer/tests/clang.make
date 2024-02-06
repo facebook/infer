@@ -12,7 +12,7 @@ include $(TESTS_DIR)/infer.make
 include $(TESTS_DIR)/clang-base.make
 
 infer-out$(TEST_SUFFIX)/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS) $(TESTS_DIR)/.inferconfig $(MAKEFILE_LIST)
-	$(QUIET)$(call silent_on_success,Testing infer/clang in $(TEST_REL_DIR),\
+	$(QUIET)$(call silent_on_success,Testing infer/clang in $(TEST_REL_DIR)$(TEST_SUB_TITLE),\
 	  $(INFER_BIN) --results-dir $(@D) --dump-duplicate-symbols \
 	    $(INFER_OPTIONS) -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES))
