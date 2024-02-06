@@ -1,0 +1,5 @@
+property LockUnlock
+  message "Found function that locks but does not unlock."
+  start -> start: *
+  start -> error: "pthread_mutex_lock"(Lck, Ret) when Ret == 0 => l := Lck
+  error -> start: "pthread_mutex_unlock"(Lck, VoidRet)  when l == Lck
