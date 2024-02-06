@@ -37,6 +37,27 @@ let init sourcefile lang =
   ; lang }
 
 
+let pp_seq pp_item fmt seq =
+  F.fprintf fmt "@[<v>" ;
+  Seq.iter (fun item -> F.fprintf fmt "@;%a" pp_item item) seq ;
+  F.fprintf fmt "@]"
+
+
+let pp fmt {globals; procs; variadic_procs; structs; sourcefile; lang} =
+  F.fprintf fmt
+    "@[<v>@;globals=%a@;procs=%a@;variadic_procs=%a@;structs=%a@;sourcefile=%a@;lang=%s@]"
+    (pp_seq VarName.pp)
+    (VarName.Hashtbl.to_seq_keys globals)
+    (pp_seq ProcSig.pp)
+    (ProcSig.Hashtbl.to_seq_keys procs)
+    (pp_seq QualifiedProcName.pp)
+    (QualifiedProcName.Hashtbl.to_seq_keys variadic_procs)
+    (pp_seq TypeName.pp)
+    (TypeName.Hashtbl.to_seq_keys structs)
+    SourceFile.pp sourcefile
+    (Option.value_map lang ~default:"none" ~f:Lang.to_string)
+
+
 type error =
   | FieldDeclaredTwice of qualified_fieldname
   | GlobalDeclaredTwice of Global.t

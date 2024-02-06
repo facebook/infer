@@ -9,6 +9,8 @@ open! IStd
 
 type t
 
+val pp : Format.formatter -> t -> unit [@@warning "-unused-value-declaration"]
+
 module ProcEntry : sig
   type t = Decl of Textual.ProcDecl.t | Desc of Textual.ProcDesc.t
 end
