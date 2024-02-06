@@ -108,7 +108,9 @@ module CXXTemporaries = struct
                     marker_pvar (Pvar.pp Pp.text) pvar ;
                   (marker_pvar, if_kind) )
             in
-            {CContext.pvar; typ; qual_type= expr_info.ei_qual_type; marker} :: temporaries )
+            CContext.CXXTemporarySet.add
+              {CContext.pvar; typ; qual_type= expr_info.ei_qual_type; marker}
+              temporaries )
           else temporaries
         in
         visit_stmt_list ~bound_to_decl context stmt_list ~marker temporaries
@@ -156,7 +158,9 @@ module CXXTemporaries = struct
 
 
   let get_temporaries ~bound_to_decl context stmt_list =
-    let temporaries = visit_stmt_list ~bound_to_decl context stmt_list ~marker:None [] in
+    let temporaries =
+      visit_stmt_list ~bound_to_decl context stmt_list ~marker:None CContext.CXXTemporarySet.empty
+    in
     L.debug Capture Verbose "@\n" ;
     temporaries
 
@@ -271,6 +275,7 @@ module Variables = struct
                    that (in reality just before) the lvalues they are bound to get destroyed *)
                 let temporaries_in_extended_scope =
                   CXXTemporaries.get_temporaries_bound_to_decl context di_pointer stmts
+                  |> CContext.CXXTemporarySet.elements
                   |> List.map ~f:(fun temp -> CContext.CXXTemporary temp)
                 in
                 CContext.VarDecl var_decl :: temporaries_in_extended_scope

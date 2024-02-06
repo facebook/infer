@@ -4531,13 +4531,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             in
             destroy_all stmt_info (trans_result :: trans_results_acc) trans_state temporaries )
     in
-    L.debug Capture Verbose "Destroying [%a] in state %a@\n"
-      (Pp.seq ~sep:";" (fun fmt (temporary : CContext.cxx_temporary) ->
-           Format.fprintf fmt "(%a,%a)" (Pvar.pp Pp.text_break) temporary.pvar
-             (Pp.option (Pp.pair ~fst:(Pvar.pp Pp.text_break) ~snd:Sil.pp_if_kind))
-             temporary.marker ) )
-      temporaries pp_trans_state trans_state ;
-    match destroy_all stmt_info [] trans_state (List.rev temporaries) with
+    L.debug Capture Verbose "Destroying [%a] in state %a@\n" CContext.CXXTemporarySet.pp temporaries
+      pp_trans_state trans_state ;
+    match destroy_all stmt_info [] trans_state (CContext.CXXTemporarySet.elements temporaries) with
     | [] ->
         expr_trans_result
     | _ :: _ as destr_trans_results ->
@@ -4565,13 +4561,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let[@warning "-partial-match"] [stmt] = stmt_list in
     let temporaries_constructor_markers =
-      List.fold temporaries_to_destroy ~init:trans_state.context.temporaries_constructor_markers
-        ~f:(fun markers {CContext.pvar; typ; marker} ->
+      CContext.CXXTemporarySet.fold
+        (fun {CContext.pvar; typ; marker} markers ->
           match marker with
           | None ->
               markers
           | Some (marker_pvar, _if_kind) ->
               Pvar.Map.add pvar (marker_pvar, typ) markers )
+        temporaries_to_destroy trans_state.context.temporaries_constructor_markers
     in
     (* translate the sub-expression in its own node(s) so we can inject code for managing
        conditional destructor markers before and after its nodes *)
@@ -4584,12 +4581,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* HACK: we can know which C++ temporaries were actually used by the translation of the
        sub-expression by inspecting the local variables *)
     let temporaries_to_destroy =
-      List.filter temporaries_to_destroy ~f:(fun {CContext.pvar} ->
-          Procdesc.is_local trans_state.context.procdesc pvar )
+      CContext.CXXTemporarySet.filter
+        (fun {CContext.pvar} -> Procdesc.is_local trans_state.context.procdesc pvar)
+        temporaries_to_destroy
     in
     L.debug Capture Verbose "sub_expr_result.control=%a@\n" pp_control sub_expr_result.control ;
     let init_markers_to_zero_instrs =
-      List.fold temporaries_to_destroy ~init:[] ~f:(fun instrs {CContext.marker} ->
+      CContext.CXXTemporarySet.fold
+        (fun {CContext.marker} instrs ->
           match marker with
           | None ->
               instrs
@@ -4600,15 +4599,18 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 )
               :: Sil.Store {e1= Lvar marker_pvar; e2= Exp.zero; typ= StdTyp.boolean; loc}
               :: instrs )
+        temporaries_to_destroy []
     in
     let markers_var_data =
-      List.fold temporaries_to_destroy ~init:[] ~f:(fun vds {CContext.marker} ->
+      CContext.CXXTemporarySet.fold
+        (fun {CContext.marker} vds ->
           match marker with
           | None ->
               vds
           | Some (marker_pvar, _if_kind) ->
               let var_data = ProcAttributes.default_var_data marker_pvar StdTyp.boolean in
               var_data :: vds )
+        temporaries_to_destroy []
     in
     Procdesc.append_locals trans_state.context.procdesc markers_var_data ;
     let init_then_sub_expr_result =

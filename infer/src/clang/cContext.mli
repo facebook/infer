@@ -79,3 +79,5 @@ val create_context :
 val add_block_static_var : t -> Procname.t -> Pvar.t * Typ.t -> unit
 
 val get_outer_procname : t -> Procname.t
+
+module CXXTemporarySet : PrettyPrintable.PPSet with type elt = cxx_temporary

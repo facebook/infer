@@ -155,3 +155,16 @@ let rec get_outer_procname context =
       get_outer_procname outer_context
   | None ->
       Procdesc.get_proc_name context.procdesc
+
+
+module CXXTemporarySet = PrettyPrintable.MakePPSet (struct
+  type t = cxx_temporary
+
+  let pp f {pvar; marker} =
+    F.fprintf f "(%a,%a)" (Pvar.pp Pp.text_break) pvar
+      (Pp.option (Pp.pair ~fst:(Pvar.pp Pp.text_break) ~snd:Sil.pp_if_kind))
+      marker
+
+
+  let compare {pvar= pvar1} {pvar= pvar2} = Pvar.compare pvar1 pvar2
+end)
