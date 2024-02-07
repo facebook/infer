@@ -664,6 +664,8 @@ val pulse_taint_skip_sources : bool
 
 val pulse_transitive_access_config : string option
 
+val pulse_transitive_access_verbose : bool
+
 val pulse_widen_threshold : int
 
 val pulse_nullsafe_report_npe : bool

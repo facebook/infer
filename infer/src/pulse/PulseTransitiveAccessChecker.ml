@@ -10,6 +10,8 @@ module L = Logging
 open PulseDomainInterface
 open PulseOperationResult.Import
 
+let pulse_transitive_access_verbose = Config.pulse_transitive_access_verbose
+
 module Config : sig
   val fieldname_must_be_monitored : Fieldname.t -> bool
 
@@ -108,18 +110,29 @@ end = struct
       {initial_caller_class_extends; initial_caller_class_does_not_extend; final_class_only} =
     match Procname.get_class_type_name procname with
     | Some type_name ->
-        let is_final =
-          Tenv.lookup tenv type_name
-          |> Option.exists ~f:(fun {Struct.annots} -> Annot.Item.is_final annots)
+        let check_final_status () =
+          let is_final () =
+            Tenv.lookup tenv type_name
+            |> Option.exists ~f:(fun {Struct.annots} -> Annot.Item.is_final annots)
+          in
+          pulse_transitive_access_verbose || (not final_class_only) || is_final ()
         in
-        let parents =
-          Tenv.fold_supers tenv type_name ~init:String.Set.empty ~f:(fun parent _ acc ->
-              String.Set.add acc (Typ.Name.name parent) )
+        let check_parents () =
+          let has_parents =
+            let parents =
+              Tenv.fold_supers tenv type_name ~init:String.Set.empty ~f:(fun parent _ acc ->
+                  String.Set.add acc (Typ.Name.name parent) )
+            in
+            fun classes -> List.exists classes ~f:(String.Set.mem parents)
+          in
+          let check_extends = has_parents initial_caller_class_extends in
+          let check_does_not_extend () =
+            pulse_transitive_access_verbose
+            || not (has_parents initial_caller_class_does_not_extend)
+          in
+          check_extends && check_does_not_extend ()
         in
-        ((not final_class_only) || is_final)
-        && List.exists initial_caller_class_extends ~f:(String.Set.mem parents)
-        && List.for_all initial_caller_class_does_not_extend ~f:(fun type_str ->
-               not (String.Set.mem parents type_str) )
+        check_final_status () && check_parents ()
     | None ->
         false
 
@@ -170,7 +183,9 @@ let report_errors tenv proc_desc err_log {PulseSummary.pre_post_list; non_disj} 
   let procname = Procdesc.get_proc_name proc_desc in
   match Config.find_matching_context tenv procname with
   | Some {tag; description} ->
+      let nothing_reported = ref true in
       let report transitive_callees transitive_missed_captures call_trace =
+        nothing_reported := false ;
         PulseReport.report ~is_suppressed:false ~latent:false tenv proc_desc err_log
           (Diagnostic.TransitiveAccess
              {tag; description; call_trace; transitive_callees; transitive_missed_captures} )
@@ -185,6 +200,19 @@ let report_errors tenv proc_desc err_log {PulseSummary.pre_post_list; non_disj} 
             () ) ;
       NonDisjDomain.Summary.get_transitive_info_if_not_top non_disj
       |> Option.iter ~f:(fun {PulseTransitiveInfo.accesses; callees; missed_captures} ->
-             PulseTrace.Set.iter (report callees missed_captures) accesses )
+             PulseTrace.Set.iter (report callees missed_captures) accesses ;
+             if !nothing_reported && pulse_transitive_access_verbose then
+               let call_trace : PulseTrace.t =
+                 Immediate {location= Location.dummy; history= PulseValueHistory.epoch}
+               in
+               let transitive_callees = callees in
+               let transitive_missed_captures = missed_captures in
+               PulseReport.report ~is_suppressed:false ~latent:false tenv proc_desc err_log
+                 (Diagnostic.TransitiveAccess
+                    { tag= "NO ACCESS FOUND"
+                    ; description= ""
+                    ; call_trace
+                    ; transitive_callees
+                    ; transitive_missed_captures } ) )
   | None ->
       ()

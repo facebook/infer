@@ -2810,6 +2810,16 @@ INTERNAL OPTIONS
        --pulse-transitive-access-config-reset
            Cancel the effect of --pulse-transitive-access-config.
 
+       --pulse-transitive-access-verbose
+           Activates: Forces the transitive-access analysis to be more
+           verbose by ignoring the fields final_class_only and
+           initial_caller_class_does_not_extend and if no signal is found,
+           still generate a fake one for each eligible entries.It also sets
+           --pulse-monitor-transitive-callees,
+           --pusle-monitor-transitive-missed-captures so that every signal
+           gets extra informations to look at in report.json (Conversely:
+           --no-pulse-transitive-access-verbose)
+
        --pure-by-default
            Activates: [Purity]Consider unknown functions to be pure by
            default (Conversely: --no-pure-by-default)

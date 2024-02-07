@@ -3523,6 +3523,17 @@ and xcpretty =
      to be in the path, infer command is still just $(i,`infer -- <xcodebuild command>`)."
 
 
+let pulse_transitive_access_verbose =
+  CLOpt.mk_bool_group ~long:"pulse-transitive-access-verbose"
+    "Forces the transitive-access analysis to be more verbose by ignoring the fields \
+     final_class_only and initial_caller_class_does_not_extend and if no signal is found, still \
+     generate a fake one for each eligible entries.It also sets \
+     $(b,--pulse-monitor-transitive-callees), $(b,--pusle-monitor-transitive-missed-captures) so \
+     that every signal gets extra informations to look at in report.json"
+    [pulse_monitor_transitive_callees; pulse_monitor_transitive_missed_captures]
+    []
+
+
 (* The "rest" args must appear after "--" on the command line, and hence after other args, so they
    are allowed to refer to the other arg variables. *)
 
@@ -4421,6 +4432,8 @@ and pulse_taint_short_traces = !pulse_taint_short_traces
 and pulse_taint_skip_sources = !pulse_taint_skip_sources
 
 and pulse_transitive_access_config = !pulse_transitive_access_config
+
+and pulse_transitive_access_verbose = !pulse_transitive_access_verbose
 
 and pulse_widen_threshold = !pulse_widen_threshold
 
