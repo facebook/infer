@@ -283,7 +283,7 @@ end = struct
   let db_close_1 id =
     let descr = get_db_descr id in
     Option.iter !descr ~f:(fun (loc, db) ->
-        L.debug Capture Quiet "Closing an existing database connection %a %a@\n" pp_location loc
+        L.debug Capture Verbose "Closing an existing database connection %a %a@\n" pp_location loc
           pp_id id ;
         do_db_close db (get_close_db_callbacks id) ) ;
     descr := None
@@ -292,7 +292,8 @@ end = struct
   let db_close () = List.iter [CaptureDatabase; AnalysisDatabase] ~f:db_close_1
 
   let new_database_connection location id =
-    L.debug Capture Quiet "Opening a new database connection %a %a@\n" pp_location location pp_id id ;
+    L.debug Capture Verbose "Opening a new database connection %a %a@\n" pp_location location pp_id
+      id ;
     (* we always want at most one connection alive throughout the lifetime of the module *)
     db_close_1 id ;
     let db_path = get_db_path location id in
