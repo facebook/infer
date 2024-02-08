@@ -792,6 +792,18 @@ let is_shared_pointer typ =
       false
 
 
+let is_folly_coro =
+  let matcher =
+    QualifiedCppName.Match.of_fuzzy_qual_names ~prefix:true
+      ["folly::coro::AsyncGenerator"; "folly::coro::Generator"; "folly::coro::Task"]
+  in
+  function
+  | {desc= Tstruct (CppClass {name})} | {desc= Tptr ({desc= Tstruct (CppClass {name})}, _)} ->
+      QualifiedCppName.Match.match_qualifiers matcher name
+  | _ ->
+      false
+
+
 let is_void typ = match typ.desc with Tvoid -> true | _ -> false
 
 let is_pointer_to_int typ = match typ.desc with Tptr ({desc= Tint _}, _) -> true | _ -> false

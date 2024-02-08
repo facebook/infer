@@ -1446,8 +1446,8 @@ module PulseTransferFunctions = struct
           exit_scope vars location path astate astate_n analysis_data
       | Metadata (VariableLifetimeBegins {pvar; typ; loc; is_cpp_structured_binding})
         when not (Pvar.is_global pvar) ->
-          ( [ PulseOperations.realloc_pvar tenv path
-                ~set_uninitialized:(not is_cpp_structured_binding) pvar typ loc astate
+          let set_uninitialized = (not is_cpp_structured_binding) && not (Typ.is_folly_coro typ) in
+          ( [ PulseOperations.realloc_pvar tenv path ~set_uninitialized pvar typ loc astate
               |> ExecutionDomain.continue ]
           , path
           , astate_n )
