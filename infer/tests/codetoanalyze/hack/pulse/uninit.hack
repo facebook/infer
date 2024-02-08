@@ -189,3 +189,23 @@ abstract final class InitEnumFields {
 function call_init_enum_fields_access_f1_ok() {
   InitEnumFields::access_f1();
 }
+
+trait SetConstInTraitTrait {
+  const string FIELD = "defined";
+}
+
+class SetConstInTraitClass extends A {
+  use SetConstInTraitTrait;
+}
+
+// NOTE: FP since the trait constructor is not called in current semantics.
+function call_get_field_set_in_trait_ok_FP(): string {
+  return SetConstInTraitClass::get_field();
+}
+
+class SetConstInTraitDeepClass extends SetConstInTraitClass {
+}
+
+function call_get_field_set_in_trait_deep_ok_FP(): string {
+  return SetConstInTraitDeepClass::get_field();
+}
