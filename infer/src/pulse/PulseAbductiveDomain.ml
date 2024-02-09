@@ -757,7 +757,7 @@ module Internal = struct
 
 
   let add_static_types tenv astate formals_and_captured =
-    let record_static_type astate (_var, typ, _, (src_addr, _)) =
+    let record_static_type astate (_var, typ, _, (src_addr, src_addr_hist)) =
       match typ with
       | {Typ.desc= Tptr ({desc= Tstruct typ_name}, _)} ->
           let pre_heap = (astate.pre :> BaseDomain.t).heap in
@@ -766,11 +766,11 @@ module Internal = struct
           (* safe because this is for creating the initial state only *)
           let[@alert "-deprecated"] src_addr = CanonValue.unsafe_cast src_addr in
           let pre_heap =
-            BaseMemory.add_edge src_addr Dereference (downcast addr, ValueHistory.epoch) pre_heap
+            BaseMemory.add_edge src_addr Dereference (downcast addr, src_addr_hist) pre_heap
             |> BaseMemory.register_address addr
           in
           let post_heap =
-            BaseMemory.add_edge src_addr Dereference (downcast addr, ValueHistory.epoch) post_heap
+            BaseMemory.add_edge src_addr Dereference (downcast addr, src_addr_hist) post_heap
           in
           let astate =
             { astate with
