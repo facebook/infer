@@ -519,14 +519,6 @@ module Internal = struct
       map_post_attrs astate ~f:(BaseAddressAttributes.add_static_type typ address)
 
 
-    let add_ref_counted address astate =
-      map_post_attrs astate ~f:(BaseAddressAttributes.add_ref_counted address)
-
-
-    let is_ref_counted addr astate =
-      BaseAddressAttributes.is_ref_counted addr (astate.post :> base_domain).attrs
-
-
     let remove_allocation_attr address astate =
       map_post_attrs astate ~f:(BaseAddressAttributes.remove_allocation_attr address)
 
@@ -1760,6 +1752,22 @@ let check_memory_leaks ~live_addresses ~unreachable_addresses astate =
           Ok () )
 
 
+let is_ref_counted addr astate =
+  let attributed_opt = SafeAttributes.find_opt addr astate in
+  let dynamic_type_data_opt =
+    Option.value_map ~default:None ~f:Attributes.get_dynamic_type attributed_opt
+  in
+  match dynamic_type_data_opt with
+  | Some dynamic_type_data -> (
+    match dynamic_type_data.Attribute.typ with
+    | {Typ.desc= Tstruct typ_name} ->
+        Typ.Name.is_objc_class typ_name
+    | _ ->
+        false )
+  | None ->
+      false
+
+
 (* A retain cycle is a memory path from an address to itself, following only
    strong references. From that definition, detecting them can be made
    trivial:
@@ -1807,9 +1815,7 @@ let check_retain_cycles ~dead_addresses tenv astate =
         let value = Decompiler.find (downcast addr) astate.decompiler in
         let is_known = not (DecompilerExpr.is_unknown value) in
         let is_seen = AbstractValue.Set.mem (downcast addr) seen in
-        let is_ref_counted =
-          Option.exists ~f:Attributes.is_ref_counted (SafeAttributes.find_opt addr astate)
-        in
+        let is_ref_counted = is_ref_counted addr astate in
         if is_known && is_seen && is_ref_counted then
           let assignment_traces = List.dedup_and_sort ~compare:compare_traces assignment_traces in
           match assignment_traces with
@@ -1868,12 +1874,7 @@ let check_retain_cycles ~dead_addresses tenv astate =
   in
   List.fold_result dead_addresses ~init:() ~f:(fun () addr ->
       let addr = CanonValue.canon' astate addr in
-      match SafeAttributes.find_opt addr astate with
-      | None ->
-          Ok ()
-      | Some attributes ->
-          (* retain cycles exist in the context of reference counting *)
-          if Attributes.is_ref_counted attributes then check_retain_cycle addr else Ok () )
+      if is_ref_counted addr astate then check_retain_cycle addr else Ok () )
 
 
 let get_all_addrs_marked_as_always_reachable {post} =
@@ -2495,13 +2496,11 @@ module AddressAttributes = struct
     SafeAttributes.add_dynamic_type dynamic_type_data (CanonValue.canon' astate v) astate
 
 
-  let add_ref_counted v astate = SafeAttributes.add_ref_counted (CanonValue.canon' astate v) astate
+  let is_ref_counted v astate = is_ref_counted (CanonValue.canon' astate v) astate
 
   let add_static_type tenv typ v astate =
     add_static_type tenv typ (CanonValue.canon' astate v) astate
 
-
-  let is_ref_counted v astate = SafeAttributes.is_ref_counted (CanonValue.canon' astate v) astate
 
   let remove_allocation_attr v astate =
     SafeAttributes.remove_allocation_attr (CanonValue.canon' astate v) astate

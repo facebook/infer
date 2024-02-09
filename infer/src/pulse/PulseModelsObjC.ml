@@ -192,20 +192,13 @@ let init_with_bytes_free_when_done bytes : model_no_non_disj =
 
 
 let alloc_no_fail size : model_no_non_disj =
- fun ({ret= ret_id, _} as model_data) astate ->
+ fun model_data astate ->
   (* NOTE: technically this doesn't initialize the result but we haven't modelled initialization so
      assume the object is initialized after [init] for now *)
   let<++> astate =
     Basic.alloc_not_null ~initialize:true ~desc:"alloc" ObjCAlloc (Some size) model_data astate
   in
-  let ret_addr =
-    match PulseOperations.read_id ret_id astate with
-    | None ->
-        AbstractValue.mk_fresh ()
-    | Some (ret_addr, _) ->
-        ret_addr
-  in
-  PulseOperations.add_ref_counted ret_addr astate
+  astate
 
 
 let set_ref_count (value, value_hist) (ref_count, ref_count_hist) : model_no_non_disj =

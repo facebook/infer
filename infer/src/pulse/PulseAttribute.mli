@@ -121,7 +121,6 @@ type t =
   | CSharpResourceReleased
   | HackAsyncAwaited
   | PropagateTaintFrom of taint_propagation_reason * taint_in list
-  | RefCounted
   | ReturnedFromUnknown of AbstractValue.t list
   | SourceOriginOfCopy of {source: PulseAbstractValue.t; is_const_ref: bool}
       (** records the source value for a given copy to lookup the appropriate heap in non-disj
@@ -175,8 +174,6 @@ module Attributes : sig
   val get_allocation : t -> (allocator * Trace.t) option
 
   val remove_allocation : t -> t
-
-  val is_ref_counted : t -> bool
 
   val get_unknown_effect : t -> (CallEvent.t * ValueHistory.t) option
 

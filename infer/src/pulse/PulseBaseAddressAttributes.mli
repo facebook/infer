@@ -77,10 +77,6 @@ module type S = sig
 
   val get_static_type : t -> key -> Typ.Name.t option
 
-  val add_ref_counted : key -> t -> t
-
-  val is_ref_counted : key -> t -> bool
-
   val get_written_to : key -> t -> (Timestamp.t * Trace.t) option
 
   val std_vector_reserve : key -> t -> t

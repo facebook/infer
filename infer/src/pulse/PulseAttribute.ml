@@ -199,7 +199,6 @@ module Attribute = struct
       (* [v -> PropagateTaintFrom \[v1; ..; vn\]] does not
          retain [v1] to [vn], in fact they should be collected
          when they become unreachable *)
-    | RefCounted
     | ReturnedFromUnknown of AbstractValue.t list
     (* [ret_v -> ReturnedFromUnknown \[v1; ..; vn\]] does not
          retain actuals [v1] to [vn] just like PropagateTaintFrom *)
@@ -261,8 +260,6 @@ module Attribute = struct
   let must_not_be_tainted_rank = Variants.mustnotbetainted.rank
 
   let propagate_taint_from_rank = Variants.propagatetaintfrom.rank
-
-  let ref_counted_rank = Variants.refcounted.rank
 
   let returned_from_unknown = Variants.returnedfromunknown.rank
 
@@ -347,8 +344,6 @@ module Attribute = struct
     | PropagateTaintFrom (reason, taints_in) ->
         F.fprintf f "PropagateTaintFrom(%a, [%a])" pp_taint_propagation_reason reason
           (Pp.seq ~sep:";" pp_taint_in) taints_in
-    | RefCounted ->
-        F.fprintf f "RefCounted"
     | ReturnedFromUnknown values ->
         F.fprintf f "ReturnedFromUnknown([%a])" (Pp.seq ~sep:";" AbstractValue.pp) values
     | SourceOriginOfCopy {source; is_const_ref} ->
@@ -382,7 +377,7 @@ module Attribute = struct
 
 
   let is_suitable_for_pre = function
-    | MustBeValid _ | MustBeInitialized _ | MustNotBeTainted _ | RefCounted | UsedAsBranchCond _ ->
+    | MustBeValid _ | MustBeInitialized _ | MustNotBeTainted _ | UsedAsBranchCond _ ->
         true
     | Invalid _
     | Allocated _
@@ -443,7 +438,6 @@ module Attribute = struct
     | CSharpResourceReleased
     | HackAsyncAwaited
     | PropagateTaintFrom _
-    | RefCounted
     | ReturnedFromUnknown _
     | SourceOriginOfCopy _
     | StaticType _
@@ -488,7 +482,6 @@ module Attribute = struct
     | MustBeValid _
     | MustNotBeTainted _
     | PropagateTaintFrom _
-    | RefCounted
     | ReturnedFromUnknown _
     | StaticType _
     | StdMoved
@@ -582,7 +575,6 @@ module Attribute = struct
       | Initialized
       | JavaResourceReleased
       | LastLookup _
-      | RefCounted
       | StaticType _
       | StdMoved
       | StdVectorReserve
@@ -660,7 +652,6 @@ module Attribute = struct
       | MustBeInitialized _
       | MustBeValid _
       | MustNotBeTainted _
-      | RefCounted
       | SourceOriginOfCopy _
       | StaticType _
       | StdMoved
@@ -876,8 +867,6 @@ module Attributes = struct
 
 
   let remove_uninitialized = remove_by_rank Attribute.uninitialized_rank
-
-  let is_ref_counted = mem_by_rank Attribute.ref_counted_rank
 
   let get_allocation =
     get_by_rank Attribute.allocated_rank ~dest:(function [@warning "-partial-match"]

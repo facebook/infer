@@ -265,12 +265,6 @@ let add_static_type typ address memory = add_one address (Attribute.StaticType t
 
 let get_static_type attrs v = get_attribute Attributes.get_static_type v attrs
 
-let add_ref_counted address memory = add_one address Attribute.RefCounted memory
-
-let is_ref_counted address attrs =
-  Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_ref_counted
-
-
 let std_vector_reserve address memory = add_one address Attribute.StdVectorReserve memory
 
 let add_unreachable_at address location memory = add_one address (UnreachableAt location) memory
@@ -412,10 +406,6 @@ module type S = sig
   val add_static_type : Typ.Name.t -> key -> t -> t
 
   val get_static_type : t -> key -> Typ.Name.t option
-
-  val add_ref_counted : key -> t -> t
-
-  val is_ref_counted : key -> t -> bool
 
   val get_written_to : key -> t -> (Timestamp.t * Trace.t) option
 

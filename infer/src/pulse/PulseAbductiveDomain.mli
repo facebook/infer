@@ -186,17 +186,15 @@ module AddressAttributes : sig
 
   val add_dynamic_type : Attribute.dynamic_type_data -> AbstractValue.t -> t -> t
 
-  val add_ref_counted : AbstractValue.t -> t -> t
-
   val add_static_type : Tenv.t -> Typ.name -> AbstractValue.t -> t -> t
-
-  val is_ref_counted : AbstractValue.t -> t -> bool
 
   val remove_allocation_attr : AbstractValue.t -> t -> t
 
   val remove_taint_attrs : AbstractValue.t -> t -> t
 
   val get_dynamic_type : AbstractValue.t -> t -> Attribute.dynamic_type_data option
+
+  val is_ref_counted : AbstractValue.t -> t -> bool
 
   val get_static_type : AbstractValue.t -> t -> Typ.Name.t option
 

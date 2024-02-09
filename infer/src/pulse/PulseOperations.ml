@@ -499,8 +499,6 @@ let add_dynamic_type typ ?source_file address astate =
   AddressAttributes.add_dynamic_type {typ; source_file} address astate
 
 
-let add_ref_counted address astate = AddressAttributes.add_ref_counted address astate
-
 let is_ref_counted address astate = AddressAttributes.is_ref_counted address astate
 
 let remove_allocation_attr address astate = AddressAttributes.remove_allocation_attr address astate
