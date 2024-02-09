@@ -759,7 +759,9 @@ module Internal = struct
   let add_static_types tenv astate formals_and_captured =
     let record_static_type astate (_var, typ, _, (src_addr, src_addr_hist)) =
       match typ with
-      | {Typ.desc= Tptr ({desc= Tstruct typ_name}, _)} ->
+      | {Typ.desc= Tptr ({desc= Tstruct typ_name}, _)}
+        when Typ.Name.is_objc_class typ_name || Typ.Name.is_hack_class typ_name
+             || Typ.Name.is_python_class typ_name ->
           let pre_heap = (astate.pre :> BaseDomain.t).heap in
           let post_heap = (astate.post :> BaseDomain.t).heap in
           let addr = CanonValue.mk_fresh () in
@@ -1572,8 +1574,11 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
     ; skipped_calls= SkippedCalls.empty }
   in
   let astate =
-    if Language.curr_language_is Hack || Language.curr_language_is Python then
-      (* The Hack and Python frontends do not propagate types from declarations to usage,
+    if
+      Language.curr_language_is Hack || Language.curr_language_is Python
+      || Language.curr_language_is Clang
+    then
+      (* The Hack and Python and Clang frontends do not propagate types from declarations to usage,
          so we redo part of the work ourself *)
       add_static_types tenv astate formals_and_captured
     else astate

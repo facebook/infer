@@ -555,6 +555,12 @@ module Name = struct
 
   let is_objc_protocol name = match name with ObjcProtocol _ -> true | _ -> false
 
+  let is_objc_class name = match name with ObjcClass _ -> true | _ -> false
+
+  let is_hack_class name = match name with HackClass _ -> true | _ -> false
+
+  let is_python_class name = match name with PythonClass _ -> true | _ -> false
+
   let is_same_type t1 t2 =
     match (t1, t2) with
     | CStruct _, CStruct _
