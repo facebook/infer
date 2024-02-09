@@ -1763,7 +1763,8 @@ let is_ref_counted addr astate =
     | {Typ.desc= Tstruct typ_name} ->
         Typ.Name.is_objc_class typ_name
     | _ ->
-        false )
+        Option.value_map ~default:None ~f:Attributes.get_static_type attributed_opt
+        |> Option.exists ~f:(fun typ_name -> Typ.Name.is_objc_class typ_name) )
   | None ->
       false
 
@@ -1774,20 +1775,18 @@ let is_ref_counted addr astate =
    Given an address and a list of adresses seen on the path, if the adress is
    part of the path then it is part of a retain cycle. Otherwise add that
    adress to the path and reiterate for each strongly referenced adresses
-   there is from that adress. Explore paths starting from all dead addresses
-   (if an address is still reachable from outside the function, then the
-   cycle could be broken).
+   there is from that adress. Explore paths starting from all addresses.
    To improve on that simple algorithm, we can keep track of another marker
    to indicate adresses that have already been explored to indicate there
    will not be any retain cycle to be found down that path and skip it.
    This is handled by [check_retain_cycle] which will recursively explore
    paths from a given adress and mark explored adresses in the [checked]
-   list. This function is called over all the [dead_addresses].
+   list. This function is called over all the addresses.
 
    When reporting a retain cycle, we want to give the location of its
    creation, therefore we need to remember location of the latest assignement
    in the cycle *)
-let check_retain_cycles ~dead_addresses tenv astate =
+let check_retain_cycles ~live_addresses ~dead_addresses tenv astate =
   let get_assignment_trace addr =
     match SafeAttributes.find_opt addr astate with
     | None ->
@@ -1872,8 +1871,10 @@ let check_retain_cycles ~dead_addresses tenv astate =
     let seen = AbstractValue.Set.empty in
     contains_cycle astate.decompiler ~assignment_traces:[] ~seen src_addr
   in
-  List.fold_result dead_addresses ~init:() ~f:(fun () addr ->
-      let addr = CanonValue.canon' astate addr in
+  let live_addresses = CanonValue.Set.elements live_addresses in
+  let dead_addresses = List.map ~f:(CanonValue.canon' astate) dead_addresses in
+  let addresses = List.append live_addresses dead_addresses in
+  List.fold_result addresses ~init:() ~f:(fun () addr ->
       if is_ref_counted addr astate then check_retain_cycle addr else Ok () )
 
 
@@ -2134,7 +2135,7 @@ module Summary = struct
     match error with
     | None -> (
       match
-        check_retain_cycles ~dead_addresses tenv
+        check_retain_cycles ~live_addresses ~dead_addresses tenv
           {astate_before_filter with decompiler= astate0.decompiler}
       with
       | Error (assignment_traces, value, path, location) ->

@@ -43,7 +43,7 @@
   self.view = _myView;
 }
 
-- (void)loadViewRetainCycle {
+- (void)loadViewRetainCycle_bad {
   MyCustomView* _myView = [[MyCustomView alloc] initWithStrongDelegate:self];
   self.view = _myView;
 }
@@ -58,6 +58,6 @@ int test_loadViewNoRetainCycle_good() {
 
 int test_loadViewRetainCycle_bad() {
   MyCustomViewController* a = [MyCustomViewController new];
-  [a loadViewRetainCycle];
+  [a loadViewRetainCycle_bad];
   return 0;
 }
