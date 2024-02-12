@@ -4,12 +4,24 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-#import <Foundation/NSObject.h>
-#include <dispatch/dispatch.h>
+#import <Foundation/Foundation.h>
+
+typedef struct InternalInput {
+  BOOL flag;
+  int x;
+} InternalInput;
+
+@interface Task : NSObject
+@property(nonatomic) int result;
+@end
 
 @interface CxxRefInBlock : NSObject
 - (int)foo:(int&)y;
 @end
+
+@class Attachments;
+
+void foo(Attachments* attachments);
 
 @implementation CxxRefInBlock
 
@@ -20,6 +32,51 @@
     return;
   });
   return 1;
+}
+
+- (int)ref_captured_struct_good_FP {
+  __block InternalInput internalInput = {
+      .flag = NO,
+      .x = 0,
+  };
+  dispatch_async(dispatch_get_main_queue(), ^{
+    internalInput.x = 5;
+  });
+  return internalInput.x;
+}
+
+- (int)ref_captured_class_good_FP {
+  __block Task* task = [Task new];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    task.result = 5;
+  });
+  return task.result;
+}
+
+- (int)ref_captured_int_good_FP {
+  __block uint64_t startTimestamp = 0;
+  __block int32_t threadIdx = 0;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    startTimestamp = 5;
+    threadIdx = 5;
+  });
+  return startTimestamp;
+}
+
+- (int)ref_captured_forward_class_good_FP {
+  __block Attachments* set;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    foo(set);
+  });
+  return 0;
+}
+
+- (int)ref_captured_bool_good_FP {
+  auto __block hasMutated = NO;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    hasMutated = YES;
+  });
+  return 0;
 }
 
 - (int)ref_captured_in_no_escaping_block_good:(int&)y {
