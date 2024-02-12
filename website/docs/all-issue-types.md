@@ -527,6 +527,30 @@ Create an intent/start a component using a (possibly user-controlled) URI. may o
 Reported as "Cross Site Scripting" by [quandary](/docs/next/checker-quandary).
 
 Untrusted data flows into HTML; XSS risk.
+## CXX_REF_CAPTURED_IN_BLOCK
+
+Reported as "C++ Reference Captured in Block" by [self-in-block](/docs/next/checker-self-in-block).
+
+This check flags when a C++ reference is captured in an escaping block.
+This means that the block will be leaving the current scope, i.e. it is
+not annotated with `__attribute__((noescape))`.
+
+Example:
+
+```
+- (void)ref_captured_in_escaping_block_bad:(int&)y {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    int a = y;
+    ...
+  });
+  ...;
+}
+```
+
+This could cause crashes because C++ references are not managed pointers
+(like ARC pointers) and so the referent is likely to be gone if the block
+dereferences it later.
+
 ## DANGLING_POINTER_DEREFERENCE
 
 Reported as "Dangling Pointer Dereference" by [biabduction](/docs/next/checker-biabduction).

@@ -21,6 +21,7 @@ Supported languages:
 
 The following issue types are reported by this checker:
 - [CAPTURED_STRONG_SELF](/docs/next/all-issue-types#captured_strong_self)
+- [CXX_REF_CAPTURED_IN_BLOCK](/docs/next/all-issue-types#cxx_ref_captured_in_block)
 - [MIXED_SELF_WEAKSELF](/docs/next/all-issue-types#mixed_self_weakself)
 - [MULTIPLE_WEAKSELF](/docs/next/all-issue-types#multiple_weakself)
 - [STRONG_SELF_NOT_CHECKED](/docs/next/all-issue-types#strong_self_not_checked)
