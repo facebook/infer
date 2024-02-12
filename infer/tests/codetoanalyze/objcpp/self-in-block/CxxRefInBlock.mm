@@ -34,7 +34,17 @@ void foo(Attachments* attachments);
   return 1;
 }
 
-- (int)ref_captured_struct_good_FP {
+- (int)ref_captured_in_escaping_block_bad:(int*)ptr {
+  __block int& y = *ptr;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    int a = y;
+    int i = *ptr;
+    return;
+  });
+  return 1;
+}
+
+- (int)ref_captured_struct_good {
   __block InternalInput internalInput = {
       .flag = NO,
       .x = 0,
@@ -45,7 +55,7 @@ void foo(Attachments* attachments);
   return internalInput.x;
 }
 
-- (int)ref_captured_class_good_FP {
+- (int)ref_captured_class_good {
   __block Task* task = [Task new];
   dispatch_async(dispatch_get_main_queue(), ^{
     task.result = 5;
@@ -53,7 +63,7 @@ void foo(Attachments* attachments);
   return task.result;
 }
 
-- (int)ref_captured_int_good_FP {
+- (int)ref_captured_int_good {
   __block uint64_t startTimestamp = 0;
   __block int32_t threadIdx = 0;
   dispatch_async(dispatch_get_main_queue(), ^{
@@ -63,7 +73,7 @@ void foo(Attachments* attachments);
   return startTimestamp;
 }
 
-- (int)ref_captured_forward_class_good_FP {
+- (int)ref_captured_forward_class_good {
   __block Attachments* set;
   dispatch_async(dispatch_get_main_queue(), ^{
     foo(set);
@@ -71,7 +81,7 @@ void foo(Attachments* attachments);
   return 0;
 }
 
-- (int)ref_captured_bool_good_FP {
+- (int)ref_captured_bool_good {
   auto __block hasMutated = NO;
   dispatch_async(dispatch_get_main_queue(), ^{
     hasMutated = YES;

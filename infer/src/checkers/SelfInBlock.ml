@@ -262,10 +262,21 @@ module Mem = struct
 
 
   let get_captured_cpp_reference attributes pvar =
-    List.exists
-      ~f:(fun {CapturedVar.pvar= captured; typ} ->
-        pvar_same_name captured pvar && Typ.is_reference typ )
-      attributes.ProcAttributes.captured
+    let is_ref typ capture_mode =
+      (* In the frontend, if the variable is captured by reference, which is the case if it's
+         declared with the __block attribute, we add an extra reference to the type, so we need to
+         remove it here to check the real type. *)
+      if CapturedVar.is_captured_by_ref capture_mode then
+        match typ with
+        | {Typ.desc= Typ.Tptr (t, _)} ->
+            Typ.is_reference t
+        | _ ->
+            Logging.die InternalError "Not a possible case because of frontend constraints."
+      else Typ.is_reference typ
+    in
+    List.exists attributes.ProcAttributes.captured
+      ~f:(fun {CapturedVar.pvar= captured; typ; capture_mode} ->
+        pvar_same_name captured pvar && is_ref typ capture_mode )
 
 
   let load attributes id pvar loc typ astate =
