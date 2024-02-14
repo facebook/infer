@@ -256,6 +256,10 @@ module Node = struct
     if not (List.is_empty instrs) then node.instrs <- Instrs.append_list node.instrs instrs
 
 
+  let prepend_instrs node instrs =
+    if not (List.is_empty instrs) then node.instrs <- Instrs.prepend_list node.instrs instrs
+
+
   (** Map and replace the instructions to be executed *)
   let replace_instrs node ~f =
     let instrs' = Instrs.map node.instrs ~f:(f node) in

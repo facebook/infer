@@ -122,6 +122,9 @@ module Node : sig
   val append_instrs : t -> Sil.instr list -> unit
   (** Append the instructions to the list of instructions to execute *)
 
+  val prepend_instrs : t -> Sil.instr list -> unit
+  (** Prepend the instructions to the list of instructions to execute *)
+
   val d_instrs : highlight:Sil.instr option -> t -> unit
   (** Dump instructions for the node, highlighting the given subinstruction if present *)
 

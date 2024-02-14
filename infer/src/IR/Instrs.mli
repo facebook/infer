@@ -25,6 +25,8 @@ val singleton : Sil.instr -> _ t
 
 val append_list : not_reversed t -> Sil.instr list -> not_reversed t
 
+val prepend_list : not_reversed t -> Sil.instr list -> not_reversed t
+
 val of_list : Sil.instr list -> not_reversed t
 
 val filter_map : not_reversed t -> f:(Sil.instr -> Sil.instr option) -> not_reversed t

@@ -143,6 +143,8 @@ val find_cpp_constructor : t -> Typ.Name.t -> Procname.t list
 
 val is_trivially_copyable : t -> Typ.t -> bool
 
+val get_hack_direct_used_traits : t -> Typ.Name.t -> HackClassName.t list
+
 module SQLite : SqliteUtils.Data with type t = per_file
 
 val normalize : per_file -> per_file

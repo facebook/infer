@@ -458,6 +458,54 @@ module NoReturn = struct
       proc_desc
 end
 
+module InjectTraitSinit = struct
+  let update_ident_generator pdesc =
+    let idents =
+      Procdesc.fold_instrs pdesc ~init:Ident.Set.empty ~f:(fun acc _ instr ->
+          List.fold (Sil.exps_of_instr instr) ~init:acc ~f:(fun acc exp ->
+              Sequence.fold (Exp.free_vars exp) ~init:acc ~f:(fun acc ident ->
+                  Ident.Set.add ident acc ) ) )
+    in
+    Ident.update_name_generator (Ident.Set.elements idents)
+
+
+  let inject_trait_sinit tenv pdesc =
+    let traits =
+      let pname = Procdesc.get_proc_name pdesc in
+      Option.value_map (Procname.get_class_type_name pname) ~default:[] ~f:(fun name ->
+          Tenv.get_hack_direct_used_traits tenv name )
+    in
+    if not (List.is_empty traits) then
+      match Procdesc.get_pvar_formals pdesc with
+      | (this_pvar, this_typ) :: _ ->
+          update_ident_generator pdesc ;
+          let entry_node = Procdesc.get_start_node pdesc in
+          let instrs =
+            let loc = Procdesc.Node.get_loc entry_node in
+            let this_id = Ident.create_fresh Ident.knormal in
+            let this_load = Sil.Load {id= this_id; e= Lvar this_pvar; typ= this_typ; loc} in
+            let sinit_calls =
+              let ret_typ = Procdesc.get_ret_type pdesc in
+              let arg = [(Exp.Var this_id, this_typ)] in
+              List.map traits ~f:(fun trait ->
+                  let ret_id = Ident.create_none () in
+                  let sinit = Procname.get_hack_static_init trait in
+                  Sil.Call ((ret_id, ret_typ), Const (Cfun sinit), arg, loc, CallFlags.default) )
+            in
+            this_load :: sinit_calls
+          in
+          let succs = Procdesc.Node.get_succs entry_node in
+          List.iter succs ~f:(fun succ -> Procdesc.Node.prepend_instrs succ instrs)
+      | [] ->
+          L.internal_error "Error loading the `$this` formal from sinit"
+
+
+  let process tenv pdesc =
+    NodePrinter.with_session (Procdesc.get_start_node pdesc) ~kind:`ComputePre
+      ~pp_name:(fun fmt -> Format.pp_print_string fmt "Inject trait sinit")
+      ~f:(fun () -> inject_trait_sinit tenv pdesc)
+end
+
 let do_preanalysis tenv pdesc =
   if not Config.preanalysis_html then NodePrinter.print_html := false ;
   let proc_name = Procdesc.get_proc_name pdesc in
@@ -467,6 +515,7 @@ let do_preanalysis tenv pdesc =
   if not (Procname.is_java proc_name || Procname.is_csharp proc_name) then
     (* Apply dynamic selection of copy and overriden methods *)
     ReplaceObjCMethodCall.process tenv pdesc proc_name ;
+  if Procname.is_hack_sinit proc_name then InjectTraitSinit.process tenv pdesc ;
   Liveness.process pdesc ;
   AddAbstractionInstructions.process pdesc ;
   if Procname.is_java proc_name then Devirtualizer.process pdesc tenv ;
