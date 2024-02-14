@@ -2460,7 +2460,7 @@ either directly or transitively.
 A configuration is used to list the set of scopes and the must-not-hold relation.
 
 In the following Java example, the set of scopes is Outer and Inner, and the must-not-hold
-relation is simply {(Outer, Inner)}:
+relation is simply \{(Outer, Inner)\}:
 ```java
 @ScopeType(value = Outer.class)
 class ClassOfOuterScope {

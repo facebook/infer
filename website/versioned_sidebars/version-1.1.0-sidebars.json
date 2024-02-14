@@ -1,5 +1,5 @@
 {
-  "version-1.1.0/docs": [
+  "docs": [
     {
       "collapsed": true,
       "type": "category",
@@ -7,11 +7,11 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-1.1.0/getting-started"
+          "id": "getting-started"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/hello-world"
+          "id": "hello-world"
         }
       ]
     },
@@ -22,15 +22,15 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-1.1.0/infer-workflow"
+          "id": "infer-workflow"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/analyzing-apps-or-projects"
+          "id": "analyzing-apps-or-projects"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/steps-for-ci"
+          "id": "steps-for-ci"
         },
         {
           "collapsed": true,
@@ -39,43 +39,43 @@
           "items": [
             {
               "type": "doc",
-              "id": "version-1.1.0/man-infer"
+              "id": "man-infer"
             },
             {
               "type": "doc",
-              "id": "version-1.1.0/man-infer-analyze"
+              "id": "man-infer-analyze"
             },
             {
               "type": "doc",
-              "id": "version-1.1.0/man-infer-capture"
+              "id": "man-infer-capture"
             },
             {
               "type": "doc",
-              "id": "version-1.1.0/man-infer-compile"
+              "id": "man-infer-compile"
             },
             {
               "type": "doc",
-              "id": "version-1.1.0/man-infer-debug"
+              "id": "man-infer-debug"
             },
             {
               "type": "doc",
-              "id": "version-1.1.0/man-infer-explore"
+              "id": "man-infer-explore"
             },
             {
               "type": "doc",
-              "id": "version-1.1.0/man-infer-help"
+              "id": "man-infer-help"
             },
             {
               "type": "doc",
-              "id": "version-1.1.0/man-infer-report"
+              "id": "man-infer-report"
             },
             {
               "type": "doc",
-              "id": "version-1.1.0/man-infer-reportdiff"
+              "id": "man-infer-reportdiff"
             },
             {
               "type": "doc",
-              "id": "version-1.1.0/man-infer-run"
+              "id": "man-infer-run"
             }
           ]
         }
@@ -88,115 +88,115 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-1.1.0/all-issue-types"
+          "id": "all-issue-types"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-annotation-reachability"
+          "id": "checker-annotation-reachability"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-biabduction"
+          "id": "checker-biabduction"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-bufferoverrun"
+          "id": "checker-bufferoverrun"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-config-checks-between-markers"
+          "id": "checker-config-checks-between-markers"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-config-impact-analysis"
+          "id": "checker-config-impact-analysis"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-cost"
+          "id": "checker-cost"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-eradicate"
+          "id": "checker-eradicate"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-fragment-retains-view"
+          "id": "checker-fragment-retains-view"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-immutable-cast"
+          "id": "checker-immutable-cast"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-impurity"
+          "id": "checker-impurity"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-inefficient-keyset-iterator"
+          "id": "checker-inefficient-keyset-iterator"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-linters"
+          "id": "checker-linters"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-litho-required-props"
+          "id": "checker-litho-required-props"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-liveness"
+          "id": "checker-liveness"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-loop-hoisting"
+          "id": "checker-loop-hoisting"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-printf-args"
+          "id": "checker-printf-args"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-pulse"
+          "id": "checker-pulse"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-purity"
+          "id": "checker-purity"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-quandary"
+          "id": "checker-quandary"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-racerd"
+          "id": "checker-racerd"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-resource-leak-lab"
+          "id": "checker-resource-leak-lab"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-dotnet-resource-leak"
+          "id": "checker-dotnet-resource-leak"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-siof"
+          "id": "checker-siof"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-self-in-block"
+          "id": "checker-self-in-block"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-starvation"
+          "id": "checker-starvation"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-topl"
+          "id": "checker-topl"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/checker-uninit"
+          "id": "checker-uninit"
         }
       ]
     },
@@ -207,11 +207,11 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-1.1.0/about-Infer"
+          "id": "about-Infer"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/separation-logic-and-bi-abduction"
+          "id": "separation-logic-and-bi-abduction"
         }
       ]
     },
@@ -222,11 +222,11 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-1.1.0/absint-framework"
+          "id": "absint-framework"
         },
         {
           "type": "doc",
-          "id": "version-1.1.0/internal-API"
+          "id": "internal-API"
         }
       ]
     },
@@ -237,7 +237,7 @@
       "items": [
         {
           "type": "doc",
-          "id": "version-1.1.0/versions"
+          "id": "versions"
         }
       ]
     }
