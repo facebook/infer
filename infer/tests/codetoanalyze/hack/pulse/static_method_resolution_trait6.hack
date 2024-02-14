@@ -37,7 +37,7 @@ class C0 extends P0 {
   use T;
 }
 
-function Bad0(): void {
+function Bad0_FN(): void {
   $tainted = C0::f_self();
   \Level1\taintSink($tainted);
 }

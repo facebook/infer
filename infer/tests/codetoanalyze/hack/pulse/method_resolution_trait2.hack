@@ -56,7 +56,7 @@ function basicFlowBad22(): void {
   \Level1\taintSink($tainted);
 }
 
-function basicFlowOk22(): void {
+function basicFlowOk22_FP(): void {
   $c = new Ok22();
   $untainted = $c->runSource();
   \Level1\taintSink($untainted);

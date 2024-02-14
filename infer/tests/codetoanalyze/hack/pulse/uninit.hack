@@ -108,7 +108,7 @@ function call_self_get_field_Bad(): string {
   return AbstractUseTrait::self_get_field();
 }
 
-function call_self_get_field2_Bad(): string {
+function call_self_get_field2_Bad_FN(): string {
   return AbstractUseTrait::self_get_field2();
 }
 
@@ -148,7 +148,7 @@ class InitFieldByTrait extends A {
   use InitFieldTrait3;
 }
 
-function init_field_by_trait_get_field_ok(): string {
+function init_field_by_trait_get_field_ok_FP(): string {
   return InitFieldByTrait::get_field();
 }
 
