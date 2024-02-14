@@ -14,16 +14,16 @@
     "@docusaurus/plugin-google-gtag": "^3.1.1",
     "@docusaurus/preset-classic": "^3.1.1",
     "async": "2.6.4",
-    "classnames": "2.2.6",
+    "classnames": "2.5.1",
     "got": "11.8.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-github-btn": "1.2.0"
+    "react-github-btn": "1.4.0"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.0.0",
-    "@docusaurus/types": "3.0.0",
-    "prettier": "2.2.1"
+    "@docusaurus/module-type-aliases": "3.1.1",
+    "@docusaurus/types": "3.1.1",
+    "prettier": "3.2.5"
   },
   "browserslist": {
     "production": [
