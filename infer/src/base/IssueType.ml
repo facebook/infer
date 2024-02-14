@@ -817,7 +817,7 @@ let resource_leak =
 
 
 let retain_cycle =
-  register ~enabled:false ~id:"RETAIN_CYCLE" Error Pulse
+  register ~enabled:true ~id:"RETAIN_CYCLE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/RETAIN_CYCLE.md"]
 
 
