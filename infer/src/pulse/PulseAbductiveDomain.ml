@@ -1757,16 +1757,22 @@ let is_ref_counted addr astate =
   let dynamic_type_data_opt =
     Option.value_map ~default:None ~f:Attributes.get_dynamic_type attributed_opt
   in
-  match dynamic_type_data_opt with
-  | Some dynamic_type_data -> (
-    match dynamic_type_data.Attribute.typ with
-    | {Typ.desc= Tstruct typ_name} ->
-        Typ.Name.is_objc_class typ_name
-    | _ ->
-        Option.value_map ~default:None ~f:Attributes.get_static_type attributed_opt
-        |> Option.exists ~f:(fun typ_name -> Typ.Name.is_objc_class typ_name) )
-  | None ->
-      false
+  let has_dynamic_type =
+    match dynamic_type_data_opt with
+    | Some dynamic_type_data -> (
+      match dynamic_type_data.Attribute.typ with
+      | {Typ.desc= Tstruct typ_name} ->
+          Typ.Name.is_objc_class typ_name
+      | _ ->
+          false )
+    | None ->
+        false
+  in
+  let has_static_type =
+    Option.value_map ~default:None ~f:Attributes.get_static_type attributed_opt
+    |> Option.exists ~f:(fun typ_name -> Typ.Name.is_objc_class typ_name)
+  in
+  has_dynamic_type || has_static_type
 
 
 (* A retain cycle is a memory path from an address to itself, following only

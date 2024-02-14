@@ -42,7 +42,7 @@
   _feed.adapter.feed = _feed;
 }
 
-- (void)test_strong_adapter_cycle {
+- (void)test_strong_adapter_cycle_bad {
   _feed.strong_adapter.feed = _feed;
 }
 
@@ -59,5 +59,5 @@ void create_strong_cycle_bad() {
   RetainCycleExampleWeak* r = [[RetainCycleExampleWeak alloc] init];
   r.feed = [[AFeed alloc] init];
   r.feed.strong_adapter = [[Adapter alloc] init];
-  [r test_strong_adapter_cycle];
+  [r test_strong_adapter_cycle_bad];
 }

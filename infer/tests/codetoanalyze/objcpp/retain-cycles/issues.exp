@@ -1,0 +1,1 @@
+codetoanalyze/objcpp/retain-cycles/ObjCPPStruct.mm, A.aFnBad, 2, RETAIN_CYCLE, no_bucket, ERROR, [assigned,assigned,retain cycle here]

@@ -24,7 +24,7 @@ struct WeakHolder {
   return self;
 }
 
-- (instancetype)FN_aFnBad {
+- (instancetype)aFnBad {
   _weakHolder = new WeakHolder();
   _weakHolder->ref = self;
   return self;
