@@ -10,17 +10,19 @@
     "deploy": "docusaurus deploy"
   },
   "dependencies": {
-    "@docusaurus/core": "^2.3.1",
-    "@docusaurus/plugin-google-gtag": "^2.4.1",
-    "@docusaurus/preset-classic": "^2.3.1",
+    "@docusaurus/core": "^3.1.1",
+    "@docusaurus/plugin-google-gtag": "^3.1.1",
+    "@docusaurus/preset-classic": "^3.1.1",
     "async": "2.6.4",
     "classnames": "2.2.6",
     "got": "11.8.5",
-    "react": "17.0.2",
-    "react-dom": "17.0.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-github-btn": "1.2.0"
   },
   "devDependencies": {
+    "@docusaurus/module-type-aliases": "3.0.0",
+    "@docusaurus/types": "3.0.0",
     "prettier": "2.2.1"
   },
   "browserslist": {
