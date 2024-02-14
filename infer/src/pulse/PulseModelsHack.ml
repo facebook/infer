@@ -1117,7 +1117,7 @@ let build_vec_for_variadic_callee data args astate =
 
 (* Map the kind tag values used in type structure dictionaries to their corresponding Pulse dynamic type names
    This only works for primitive types at the moment
-   See fbcode/hphp/runtime/base/type-structure-kinds.h
+   See https://github.com/facebook/hhvm/blob/master/hphp/runtime/base/type-structure-kinds.h
 *)
 let type_struct_prim_tag_to_classname n =
   match n with
@@ -1152,8 +1152,13 @@ let hhbc_is_type_struct_c v tdict _resolveop _enforcekind : model =
   let* kind_int_opt = get_known_int_opt kind_int_val in
   match kind_int_opt with
   | None ->
-      L.internal_error "didn't get known integer tag in is_type_struct_c" ;
-      ret ()
+      L.d_printfln "didn't get known integer tag in is_type_struct_c" ;
+      let* md = get_data in
+      L.internal_error "known tag failure tdict is %a at %a" AbstractValue.pp (fst tdict)
+        Location.pp_file_pos md.location ;
+      (* duplicating behaviour of previous sil model instead of calling this an internal error *)
+      let* rv = make_hack_bool true in
+      assign_ret rv
   | Some k -> (
       let* rv = mk_fresh ~model_desc:"hhbc_is_type_struct_c" () in
       match type_struct_prim_tag_to_classname k with

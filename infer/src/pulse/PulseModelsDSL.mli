@@ -23,6 +23,8 @@ module Syntax : sig
 
   val ret : 'a -> 'a model_monad
 
+  val throw : unit model_monad [@@warning "-unused-value-declaration"]
+
   val unreachable : 'a model_monad
 
   val list_fold :

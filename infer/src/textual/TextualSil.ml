@@ -1034,7 +1034,8 @@ module ProcDescBridge = struct
     | None ->
         L.die InternalError "start node %a npt found" NodeName.pp start ) ;
     (* TODO: register this exit node *)
-    let normal_succ : Terminator.t -> P.Node.t list = function
+    let normal_succ (term : Terminator.t) (exns : P.Node.t list) =
+      match term with
       | If _ ->
           L.die InternalError "to_sil should not be called on If terminator"
       | Ret _ ->
@@ -1043,17 +1044,18 @@ module ProcDescBridge = struct
           List.map
             ~f:(fun ({label} : Terminator.node_call) -> Hashtbl.find node_map label.value |> snd)
             l
-      | Throw _ ->
-          L.die InternalError "TODO: implement throw"
+      (* Placeholder Throw case. Needs more testing once hackc updated *)
+      | Throw _ -> (
+        match exns with [] -> [exit_node] | _ -> exns )
       | Unreachable ->
           []
     in
     Hashtbl.iter
       (fun _ ((node : Node.t), sil_node) ->
-        let normal = normal_succ node.last in
         let exn : P.Node.t list =
           List.map ~f:(fun name -> Hashtbl.find node_map name.NodeName.value |> snd) node.exn_succs
         in
+        let normal = normal_succ node.last exn in
         P.node_set_succs pdesc sil_node ~normal ~exn )
       node_map
 

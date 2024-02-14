@@ -32,6 +32,10 @@ module Syntax = struct
    fun _data astate non_disj -> ([Ok (ContinueProgram (a, astate))], non_disj)
 
 
+  let throw : unit model_monad =
+   fun _data astate non_disj -> ([Ok (Other (ExceptionRaised astate))], non_disj)
+
+
   let unreachable : 'a model_monad = fun _ _ _ -> ([], NonDisjDomain.bottom)
 
   let bind (x : 'a model_monad) (f : 'a -> 'b model_monad) : 'b model_monad =

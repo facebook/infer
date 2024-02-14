@@ -1,0 +1,64 @@
+// TEXTUAL UNIT COUNT 1
+// TEXTUAL UNIT START tester.php
+.source_language = "hack"
+
+// .file "tester.php"
+// .line 7
+define $root.main($this: *void, $v: *HackString, $b: *HackBool) : *void {
+local $_: *void, $0: *void, $1: *void, $2: *void
+#b0:
+  n0 = $builtins.hack_new_dict($builtins.hack_string("kind"), $builtins.hack_int(4))
+// .line 8
+  n1: *HackMixed = load &$b
+  jmp b1, b2
+#b1:
+  prune ! $builtins.hack_is_true(n1)
+// .line 13
+  ret null
+#b2:
+// .line 8
+  prune $builtins.hack_is_true(n1)
+// .line 9
+  n2: *HackMixed = load &$v
+  n3 = $builtins.hhbc_is_type_struct_c(n2, n0, $builtins.hack_int(1), $builtins.hack_int(0))
+  store &$_ <- n3: *HackMixed
+  jmp b3
+#b3:
+// .line 11
+  n4 = __sil_lazy_class_initialize(<Exception>)
+  store &$0 <- n4: *HackMixed
+  n5 = __sil_allocate(<Exception>)
+  n6 = Exception._86pinit(n5)
+  store &$2 <- n5: *HackMixed
+  n7: *HackMixed = load &$0
+  n8: *HackMixed = load &$0
+  n9: *HackMixed = load &$2
+  jmp b5
+  .handlers b4
+#b4(n10: *HackMixed):
+  store &$0 <- null: *HackMixed
+  store &$1 <- null: *HackMixed
+  store &$2 <- null: *HackMixed
+  throw n10
+#b5:
+  store &$0 <- null: *HackMixed
+  store &$1 <- null: *HackMixed
+  store &$2 <- null: *HackMixed
+  n12 = n9.?.__construct()
+  n13 = $builtins.hhbc_lock_obj(n9)
+  throw n9
+}
+
+// ----- EXTERNALS -----
+declare $builtins.hhbc_is_type_struct_c(...): *HackMixed
+declare $builtins.hhbc_lock_obj(...): *HackMixed
+declare $builtins.hhbc_throw(...): *HackMixed
+declare Exception._86pinit(...): *HackMixed
+
+// ----- BUILTIN DECLS STARTS HERE -----
+declare $builtins.hack_int(int): *HackInt
+declare $builtins.hack_is_true(*HackMixed): int
+declare $builtins.hack_new_dict(...): *HackMixed
+declare $builtins.hack_string(*string): *HackString
+
+// TEXTUAL UNIT END tester.php
