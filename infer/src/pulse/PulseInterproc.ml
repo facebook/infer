@@ -256,10 +256,10 @@ type contradiction =
           [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
   | DynamicTypeNeeded of AbstractValue.t Specialization.HeapPath.Map.t
   | CapturedFormalActualLength of
-      { captured_formals: (Var.t * Typ.t) list
+      { captured_formals: (Pvar.t * Typ.t) list
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
   | FormalActualLength of
-      {formals: (Var.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
+      {formals: (Pvar.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
   | PathCondition
 
 let pp_contradiction fmt = function
@@ -540,6 +540,7 @@ let callee_deref_non_c_struct addr typ astate =
 (** materialize subgraph of [pre] rooted at the address represented by a [formal] parameter that has
     been instantiated with the corresponding [actual] into the current state [call_state.astate] *)
 let materialize_pre_from_actual ~pre ~formal:(formal, typ) ~actual:(actual, _) call_state =
+  let formal = Var.of_pvar formal in
   L.d_printfln "Materializing PRE from [%a <- %a]" Var.pp formal AbstractValue.pp (fst actual) ;
   (let open IOption.Let_syntax in
    let* addr_formal_pre, _ = UnsafeStack.find_opt formal pre.BaseDomain.stack in
@@ -1156,7 +1157,7 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
         log_contradiction reason ;
         (Unsat, Some reason) )
   in
-  let pp_formals = Pp.seq ~sep:"," (fun f (var, _) -> Var.pp f var) in
+  let pp_formals = Pp.seq ~sep:"," (fun f (var, _) -> Var.pp f (Var.of_pvar var)) in
   let pp_summary =
     Pp.html_collapsible_block ~name:"Show/hide the summary" AbductiveDomain.Summary.pp
   in

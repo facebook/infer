@@ -738,22 +738,18 @@ let get_var_captured_actuals path location ~is_lambda_or_block ~captured_formals
     astate =
   let+ _, astate, captured_actuals =
     PulseResult.list_fold captured_formals ~init:(0, astate, [])
-      ~f:(fun (id, astate, captured) (var, capture_mode, typ) ->
-        match var with
-        | Var.ProgramVar pvar ->
-            let var_name = Pvar.get_name pvar in
-            let captured_data =
-              {Fieldname.capture_mode; is_weak= Typ.is_weak_pointer typ; captured_pos= id}
-            in
-            let field_name = Fieldname.mk_capture_field_in_closure var_name captured_data in
-            let+ astate, captured_actual =
-              if is_lambda_or_block then
-                eval_deref_access path Read location actual_closure (FieldAccess field_name) astate
-              else eval_access path Read location actual_closure (FieldAccess field_name) astate
-            in
-            (id + 1, astate, (captured_actual, typ) :: captured)
-        | Var.LogicalVar _ ->
-            L.die InternalError "program var expected but got %a" Var.pp var )
+      ~f:(fun (id, astate, captured) (pvar, capture_mode, typ) ->
+        let var_name = Pvar.get_name pvar in
+        let captured_data =
+          {Fieldname.capture_mode; is_weak= Typ.is_weak_pointer typ; captured_pos= id}
+        in
+        let field_name = Fieldname.mk_capture_field_in_closure var_name captured_data in
+        let+ astate, captured_actual =
+          if is_lambda_or_block then
+            eval_deref_access path Read location actual_closure (FieldAccess field_name) astate
+          else eval_access path Read location actual_closure (FieldAccess field_name) astate
+        in
+        (id + 1, astate, (captured_actual, typ) :: captured) )
   in
   (* captured_actuals is currently in reverse order compared with the given
      captured_formals because it is built during the above fold (equivalent to a

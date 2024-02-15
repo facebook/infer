@@ -52,8 +52,7 @@ let make_formals_set callee_pname actual_args actual_captured_vars (attributes :
 
 let get_actual_captured_vars callee_pname call_kind captured actuals path call_loc astate =
   let captured_formals =
-    List.map captured ~f:(fun CapturedVar.{pvar; typ; capture_mode} ->
-        (Var.of_pvar pvar, capture_mode, typ) )
+    List.map captured ~f:(fun CapturedVar.{pvar; typ; capture_mode} -> (pvar, capture_mode, typ))
   in
   let astate_captured_vars =
     PulseOperations.get_captured_actuals callee_pname path call_loc ~captured_formals ~call_kind

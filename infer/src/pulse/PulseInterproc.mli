@@ -25,10 +25,10 @@ type contradiction = private
       (** A map [path -> value] such that each path leads to a value (in the caller space) that
           requires dynamic type specialization *)
   | CapturedFormalActualLength of
-      { captured_formals: (Var.t * Typ.t) list
+      { captured_formals: (Pvar.t * Typ.t) list
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
   | FormalActualLength of
-      {formals: (Var.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
+      {formals: (Pvar.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
   | PathCondition
 
 val is_aliasing_contradiction : contradiction -> bool
@@ -46,9 +46,9 @@ val apply_summary :
   -> Procname.t
   -> Location.t
   -> callee_summary:AbductiveDomain.Summary.t
-  -> captured_formals:(Var.t * Typ.t) list
+  -> captured_formals:(Pvar.t * Typ.t) list
   -> captured_actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
-  -> formals:(Var.t * Typ.t) list
+  -> formals:(Pvar.t * Typ.t) list
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> AbductiveDomain.t
   -> ( AbductiveDomain.t

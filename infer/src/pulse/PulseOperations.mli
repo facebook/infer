@@ -309,7 +309,7 @@ val get_captured_actuals :
      Procname.t
   -> PathContext.t
   -> Location.t
-  -> captured_formals:(Var.t * CapturedVar.capture_mode * Typ.t) list
+  -> captured_formals:(Pvar.t * CapturedVar.capture_mode * Typ.t) list
   -> call_kind:call_kind
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
   -> t

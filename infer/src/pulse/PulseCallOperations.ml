@@ -408,11 +408,11 @@ let call_aux tenv path caller_proc_desc call_loc callee_pname ret actuals call_k
     (astate_caller : AbductiveDomain.t) ?call_flags non_disj_caller =
   let formals =
     List.map callee_proc_attrs.formals ~f:(fun (mangled, typ, _) ->
-        (Pvar.mk mangled callee_pname |> Var.of_pvar, typ) )
+        (Pvar.mk mangled callee_pname, typ) )
   in
   let captured_formals =
     List.map callee_proc_attrs.captured ~f:(fun {CapturedVar.pvar; capture_mode; typ} ->
-        (Var.of_pvar pvar, capture_mode, typ) )
+        (pvar, capture_mode, typ) )
   in
   let ( let<**> ) = bind_sat_result (non_disj_caller, None) in
   let<**> astate, captured_actuals =
