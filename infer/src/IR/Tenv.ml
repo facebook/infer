@@ -75,7 +75,24 @@ let add_field tenv class_tn_name field =
       ()
 
 
+(** Reorder Hack's supers so that traits come first. *)
+let reorder_hack_supers tenv ~ignore_require_extends ({Struct.supers} as str) =
+  let supers = List.map supers ~f:(fun super -> (super, lookup tenv super)) in
+  let supers =
+    if ignore_require_extends && Struct.is_hack_trait str then
+      List.filter supers ~f:(fun (_, str) ->
+          Option.exists str ~f:(fun str ->
+              Struct.is_hack_interface str || Struct.is_hack_trait str ) )
+    else supers
+  in
+  let traits, others =
+    List.partition_tf supers ~f:(fun (_, str) -> Option.exists str ~f:Struct.is_hack_trait)
+  in
+  List.map traits ~f:fst @ List.map others ~f:fst
+
+
 let fold_supers ?(ignore_require_extends = false) tenv name ~init ~f =
+  let is_hack = Typ.Name.is_hack_class name in
   let rec aux worklist visited result =
     match worklist with
     | [] ->
@@ -91,11 +108,7 @@ let fold_supers ?(ignore_require_extends = false) tenv name ~init ~f =
             aux worklist visited result
         | Some ({supers} as str) ->
             let supers =
-              if ignore_require_extends && Struct.is_hack_trait str then
-                List.filter supers ~f:(fun super ->
-                    Option.exists (lookup tenv super) ~f:(fun str ->
-                        Struct.is_hack_interface str || Struct.is_hack_trait str ) )
-              else supers
+              if is_hack then reorder_hack_supers tenv ~ignore_require_extends str else supers
             in
             let visited, result = aux supers visited result in
             aux worklist visited result )
@@ -404,66 +417,67 @@ let resolve_method ~method_exists tenv class_name proc_name =
      we will only visit traits from now on *)
   let last_class_visited = ref None in
   let missed_capture_types = ref Typ.Name.Set.empty in
-  let rec resolve_name_struct (class_name : Typ.Name.t) (class_struct : Struct.t) =
-    if
-      (not (Typ.Name.is_class class_name))
-      || (not (Struct.is_not_java_interface class_struct))
-      || Typ.Name.Set.mem class_name !visited
-    then None
-    else (
-      visited := Typ.Name.Set.add class_name !visited ;
-      if Language.curr_language_is Hack && not (is_captured tenv class_name) then
-        (* we do not need to record class names for which [lookup tenv class_name == None] because
-           we assume that all direct super classes of a captured class are declared in Tenv
-           (even if not necessarily properly captured) *)
-        missed_capture_types := Typ.Name.Set.add class_name !missed_capture_types ;
-      let kind =
-        MethodInfo.get_kind_from_struct ~last_class_visited:!last_class_visited class_name
-          class_struct
-      in
-      let arity_incr =
-        match kind with
-        | IsClass ->
-            last_class_visited := Some class_name ;
-            0
-        | IsTrait {is_direct= false} ->
-            1
-        | IsTrait {is_direct= true} ->
-            (* We do not need to increase the arity when the trait method is called directly, i.e.
-               [T::foo], since the [proc_name] has the increased arity already. *)
-            0
-      in
-      let right_proc_name = Procname.replace_class ~arity_incr proc_name class_name in
-      if method_exists right_proc_name class_struct.methods then
-        Some (MethodInfo.return ~kind right_proc_name)
-      else
-        let supers_to_search =
-          match (class_name : Typ.Name.t) with
-          | ErlangType _ ->
-              L.die InternalError "attempting to call a method on an Erlang value"
-          | CStruct _ | CUnion _ | CppClass _ ->
-              (* multiple inheritance possible, search all supers *)
-              class_struct.supers
-          | HackClass _ ->
-              (* super-classes, super-interfaces, and traits are modelled via multiple inheritance *)
-              class_struct.supers
-          | JavaClass _ ->
-              (* multiple inheritance not possible, but cannot distinguish interfaces from typename so search all *)
-              class_struct.supers
-          | CSharpClass _ ->
-              (* multiple inheritance not possible, but cannot distinguish interfaces from typename so search all *)
-              class_struct.supers
-          | ObjcClass _ ->
-              (* multiple inheritance impossible, but recursive calls will throw away protocols *)
-              class_struct.supers
-          | ObjcProtocol _ | ObjcBlock _ | CFunction _ ->
-              []
-          | PythonClass _ ->
-              (* We currently only support single inheritance for Python so this is straightforward *)
-              class_struct.supers
-        in
-        List.find_map supers_to_search ~f:resolve_name )
-  and resolve_name class_name = lookup tenv class_name >>= resolve_name_struct class_name in
+  let rec resolve_name (class_name : Typ.Name.t) =
+    Option.bind (lookup tenv class_name) ~f:(fun ({Struct.methods; supers} as class_struct) ->
+        if
+          (not (Typ.Name.is_class class_name))
+          || (not (Struct.is_not_java_interface class_struct))
+          || Typ.Name.Set.mem class_name !visited
+        then None
+        else (
+          visited := Typ.Name.Set.add class_name !visited ;
+          if Language.curr_language_is Hack && not (is_captured tenv class_name) then
+            (* we do not need to record class names for which [lookup tenv class_name == None] because
+               we assume that all direct super classes of a captured class are declared in Tenv
+               (even if not necessarily properly captured) *)
+            missed_capture_types := Typ.Name.Set.add class_name !missed_capture_types ;
+          let kind =
+            MethodInfo.get_kind_from_struct ~last_class_visited:!last_class_visited class_name
+              class_struct
+          in
+          let arity_incr =
+            match kind with
+            | IsClass ->
+                last_class_visited := Some class_name ;
+                0
+            | IsTrait {is_direct= false} ->
+                1
+            | IsTrait {is_direct= true} ->
+                (* We do not need to increase the arity when the trait method is called directly, i.e.
+                   [T::foo], since the [proc_name] has the increased arity already. *)
+                0
+          in
+          let right_proc_name = Procname.replace_class ~arity_incr proc_name class_name in
+          if method_exists right_proc_name methods then
+            Some (MethodInfo.return ~kind right_proc_name)
+          else
+            let supers_to_search =
+              match (class_name : Typ.Name.t) with
+              | ErlangType _ ->
+                  L.die InternalError "attempting to call a method on an Erlang value"
+              | CStruct _ | CUnion _ | CppClass _ ->
+                  (* multiple inheritance possible, search all supers *)
+                  supers
+              | HackClass _ ->
+                  (* super-classes, super-interfaces, and traits are modelled via multiple inheritance *)
+                  reorder_hack_supers tenv ~ignore_require_extends:false class_struct
+              | JavaClass _ ->
+                  (* multiple inheritance not possible, but cannot distinguish interfaces from typename so search all *)
+                  supers
+              | CSharpClass _ ->
+                  (* multiple inheritance not possible, but cannot distinguish interfaces from typename so search all *)
+                  supers
+              | ObjcClass _ ->
+                  (* multiple inheritance impossible, but recursive calls will throw away protocols *)
+                  supers
+              | ObjcProtocol _ | ObjcBlock _ | CFunction _ ->
+                  []
+              | PythonClass _ ->
+                  (* We currently only support single inheritance for Python so this is straightforward *)
+                  supers
+            in
+            List.find_map supers_to_search ~f:resolve_name ) )
+  in
   let opt_info = resolve_name class_name in
   (opt_info, !missed_capture_types)
 

@@ -108,7 +108,7 @@ function call_self_get_field_Bad(): string {
   return AbstractUseTrait::self_get_field();
 }
 
-function call_self_get_field2_Bad_FN(): string {
+function call_self_get_field2_Bad(): string {
   return AbstractUseTrait::self_get_field2();
 }
 
@@ -148,7 +148,7 @@ class InitFieldByTrait extends A {
   use InitFieldTrait3;
 }
 
-function init_field_by_trait_get_field_ok_FP(): string {
+function init_field_by_trait_get_field_ok(): string {
   return InitFieldByTrait::get_field();
 }
 
@@ -198,14 +198,13 @@ class SetConstInTraitClass extends A {
   use SetConstInTraitTrait;
 }
 
-// NOTE: FP since the trait constructor is not called in current semantics.
-function call_get_field_set_in_trait_ok_FP(): string {
+function call_get_field_set_in_trait_ok(): string {
   return SetConstInTraitClass::get_field();
 }
 
 class SetConstInTraitDeepClass extends SetConstInTraitClass {
 }
 
-function call_get_field_set_in_trait_deep_ok_FP(): string {
+function call_get_field_set_in_trait_deep_ok(): string {
   return SetConstInTraitDeepClass::get_field();
 }
