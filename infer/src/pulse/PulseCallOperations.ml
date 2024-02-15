@@ -609,17 +609,7 @@ let call tenv path ~caller_proc_desc
         (IRAttributes.load_exn callee_pname)
         exec_states non_disj_callee astate ?call_flags non_disj_caller
     in
-    (* When a function call does not have a post of type ContinueProgram, we may want to treat
-       the call as unknown to make the analysis continue. This may introduce false positives but
-       could uncover additional true positives too. *)
-    let should_try_as_unknown = Config.pulse_force_continue && not (has_continue_program results) in
-    if should_try_as_unknown then (
-      L.d_printfln_escaped ~color:Orange
-        "No disjuncts of type ContinueProgram, treating the call to %a as unknown" Procname.pp
-        callee_pname ;
-      let unknown_results, non_disj = call_as_unknown () in
-      (unknown_results @ results, non_disj, None) )
-    else (results, non_disj, contradiction)
+    (results, non_disj, contradiction)
   in
   let rec iter_call ~max_iteration ~nth_iteration ~is_pulse_specialization_limit_not_reached
       ?specialization already_given pre_post_list =
@@ -718,8 +708,25 @@ let call tenv path ~caller_proc_desc
       in
       let max_iteration = Config.pulse_specialization_iteration_limit in
       let already_given = Specialization.Pulse.DynamicTypes.Set.empty in
-      iter_call ~max_iteration ~nth_iteration:0 ~is_pulse_specialization_limit_not_reached
-        already_given summary.main
+      let res, non_disj, contradiction, resolution_status =
+        iter_call ~max_iteration ~nth_iteration:0 ~is_pulse_specialization_limit_not_reached
+          already_given summary.main
+      in
+      let res, non_disj =
+        match resolution_status with
+        | `UnknownCall when Config.pulse_force_continue && not (has_continue_program res) ->
+            (* When a function call does not have a post of type ContinueProgram, we may want to treat
+               the call as unknown to make the analysis continue. This may introduce false positives but
+               could uncover additional true positives too. *)
+            L.d_printfln_escaped ~color:Orange
+              "No disjuncts of type ContinueProgram, treating the call to %a as unknown" Procname.pp
+              callee_pname ;
+            let unknown_results, non_disj = call_as_unknown () in
+            (unknown_results @ res, non_disj)
+        | _ ->
+            (res, non_disj)
+      in
+      (res, non_disj, contradiction, resolution_status)
   | None ->
       (* no spec found for some reason (unknown function, ...) *)
       L.d_printfln_escaped "No spec found for %a@\n" Procname.pp callee_pname ;
