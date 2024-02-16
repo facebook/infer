@@ -197,6 +197,9 @@ AS_IF([test "x$enable_python_analyzers" != "xno"], [
   esac
 ]) # end if($enable_python_analyzers)
 
+AC_ARG_VAR([PYTHONHOME], [the location of the standard Python libraries])
+AC_SUBST([PYTHONHOME])
+
 AC_CHECK_TOOL([XCODE_SELECT], [xcode-select], [no])
 AS_IF([test "x$XCODE_SELECT" != "xno"], [XCODE_SELECT_OUT=`xcode-select -p`])
 
