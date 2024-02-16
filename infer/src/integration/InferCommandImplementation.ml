@@ -20,14 +20,15 @@ let debug () =
         | Some tenv ->
             L.result "Global type environment:@\n@[<v>%a@]" Tenv.pp tenv ) ;
     ( if Config.procedures then
-        let filter = Lazy.force Filtering.procedures_filter in
+        let procedures_filter = Lazy.force Filtering.procedures_filter in
+        let summary_of proc_name = Summary.OnDisk.get ~lazy_payloads:false proc_name in
+        let filter source_file proc_name =
+          procedures_filter source_file proc_name
+          &&
+          if Config.procedures_summary_skip_empty then Option.is_some (summary_of proc_name)
+          else true
+        in
         if Config.procedures_summary || Config.procedures_summary_json then
-          let summary_of proc_name = Summary.OnDisk.get ~lazy_payloads:false proc_name in
-          let filter =
-            if Config.procedures_summary_skip_empty then fun source_file proc_name ->
-              filter source_file proc_name && Option.is_some (summary_of proc_name)
-            else filter
-          in
           let f_console_output proc_names =
             let pp_summary fmt proc_name =
               match summary_of proc_name with
