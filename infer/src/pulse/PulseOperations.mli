@@ -137,6 +137,8 @@ val eval_proc_name :
 val hack_python_propagates_type_on_load :
   Tenv.t -> PathContext.t -> Location.t -> Exp.t -> AbstractValue.t -> t -> t
 
+val add_static_type_objc_class : Tenv.t -> Typ.t -> AbstractValue.t -> t -> t
+
 val havoc_id : Ident.t -> ValueHistory.t -> t -> t
 
 val havoc_deref_field :

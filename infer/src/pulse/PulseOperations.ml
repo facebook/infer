@@ -389,6 +389,14 @@ let write_id id new_addr_loc astate = Stack.add (Var.of_id id) new_addr_loc asta
 
 let read_id id astate = Stack.find_opt (Var.of_id id) astate
 
+let add_static_type_objc_class tenv typ address astate =
+  match typ with
+  | {Typ.desc= Typ.Tptr ({Typ.desc= Tstruct (ObjcClass class_name)}, _)} ->
+      AddressAttributes.add_static_type tenv (ObjcClass class_name) address astate
+  | _ ->
+      astate
+
+
 let havoc_id id loc_opt astate =
   (* Topl needs to track the return value of a method; even if nondet now, it may be pruned later. *)
   if Topl.is_active () || Stack.mem (Var.of_id id) astate then
