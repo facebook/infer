@@ -45,20 +45,24 @@ module Pulse = struct
     let pp fmt dtypes = HeapPath.Map.pp ~pp_value:Typ.Name.pp fmt dtypes
   end
 
-  type t = Aliases of Aliases.t | DynamicTypes of DynamicTypes.t [@@deriving equal, compare]
+  type t = {aliases: Aliases.t option; dynamic_types: DynamicTypes.t} [@@deriving equal, compare]
 
-  let is_empty = function
-    | Aliases aliases ->
-        List.is_empty aliases
-    | DynamicTypes dtypes ->
-        HeapPath.Map.is_empty dtypes
+  let bottom = {aliases= None; dynamic_types= HeapPath.Map.empty}
+
+  let is_empty {aliases; dynamic_types} =
+    Option.is_none aliases && HeapPath.Map.is_empty dynamic_types
 
 
-  let pp fmt = function
-    | Aliases aliases ->
-        F.fprintf fmt "(alias) %a" Aliases.pp aliases
-    | DynamicTypes dtypes ->
-        F.fprintf fmt "(dynamic types) %a" DynamicTypes.pp dtypes
+  let pp_aliases fmt = function
+    | None ->
+        F.pp_print_string fmt "none"
+    | Some aliases ->
+        Aliases.pp fmt aliases
+
+
+  let pp fmt {aliases; dynamic_types} =
+    F.fprintf fmt "@[@[alias: %a@],@ @[dynamic_types: %a@]@]" pp_aliases aliases DynamicTypes.pp
+      dynamic_types
 
 
   module Set = PrettyPrintable.MakePPSet (struct

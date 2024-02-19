@@ -643,9 +643,12 @@ let call tenv path ~caller_proc_desc
               with
             | None ->
                 L.internal_error "Alias specialization of %a failed@;" Procname.pp callee_pname ;
-                Specialization.Pulse.Aliases []
+                Specialization.Pulse.bottom
             | Some alias_specialization ->
-                let specialization = Specialization.Pulse.Aliases alias_specialization in
+                let specialization =
+                  { Specialization.Pulse.aliases= Some alias_specialization
+                  ; dynamic_types= Specialization.HeapPath.Map.empty }
+                in
                 L.d_printfln "requesting alias specialization %a" Specialization.Pulse.pp
                   specialization ;
                 specialization )
@@ -654,7 +657,7 @@ let call tenv path ~caller_proc_desc
         else
           let already_specialized =
             match specialization with
-            | Some (Specialization.Pulse.DynamicTypes heap_paths) ->
+            | Some {Specialization.Pulse.dynamic_types= heap_paths} ->
                 heap_paths
             | _ ->
                 Specialization.HeapPath.Map.empty
@@ -672,16 +675,16 @@ let call tenv path ~caller_proc_desc
                       "[specialization] not enough dyntypes information in the caller context. \
                        Missing = %a"
                       AbstractValue.Set.pp needs_from_caller ;
-                  let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
+                  let specialization =
+                    {Specialization.Pulse.dynamic_types= dyntypes_map; aliases= None}
+                  in
                   ( specialization
                   , (not specialization_is_fully_satisfied)
                     && not Config.pulse_specialization_partial
                   , needs_from_caller )
               | `UseCurrentSummary ->
                   L.d_printfln "abort, using current summary" ;
-                  let specialization =
-                    Specialization.Pulse.DynamicTypes Specialization.HeapPath.Map.empty
-                  in
+                  let specialization = Specialization.Pulse.bottom in
                   (specialization, false, AbstractValue.Set.empty) )
       in
       if

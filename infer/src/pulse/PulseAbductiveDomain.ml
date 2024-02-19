@@ -782,7 +782,8 @@ module Internal = struct
     match specialization with
     | None ->
         astate
-    | Some (Specialization.Pulse.Aliases aliases) ->
+    | Some {Specialization.Pulse.aliases= Some aliases; dynamic_types} ->
+        assert (Specialization.HeapPath.Map.is_empty dynamic_types) ;
         (* If a function is alias-specialized, then we want to make sure all the captured
            variables and parameters aliasing each other share the same memory. To do so, we
            simply add a dereference access from each aliasing variables' address to the same
@@ -824,7 +825,11 @@ module Internal = struct
         { astate with
           pre= PreDomain.update ~heap:pre_heap astate.pre
         ; post= PostDomain.update ~heap:post_heap astate.post }
-    | Some (Specialization.Pulse.DynamicTypes dtypes) ->
+    | Some {Specialization.Pulse.aliases= None; dynamic_types= dtypes}
+      when Specialization.HeapPath.Map.is_empty dtypes ->
+        astate
+    | Some {Specialization.Pulse.aliases= None; dynamic_types= dtypes} ->
+        assert (Specialization.HeapPath.Map.is_empty dtypes |> not) ;
         let pre = (astate.pre :> base_domain) in
         let post = (astate.post :> base_domain) in
         let add_edge_in_pre_and_post pre_heap post_heap src_addr access =
