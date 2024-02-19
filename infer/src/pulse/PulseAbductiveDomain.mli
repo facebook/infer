@@ -76,7 +76,7 @@ val leq : lhs:t -> rhs:t -> bool
 
 val pp : Format.formatter -> t -> unit
 
-val mk_initial : Tenv.t -> ProcAttributes.t -> Specialization.Pulse.t option -> t
+val mk_initial : Tenv.t -> ProcAttributes.t -> t
 
 (** Safe version of {!PulseBaseStack} *)
 module Stack : sig

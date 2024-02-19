@@ -197,7 +197,7 @@ let mk_nil_messaging_summary_aux tenv proc_name (proc_attrs : ProcAttributes.t) 
   let path = PathContext.initial in
   let t0 = path.PathContext.timestamp in
   let self = mk_objc_self_pvar proc_name in
-  let astate = AbductiveDomain.mk_initial tenv proc_attrs None in
+  let astate = AbductiveDomain.mk_initial tenv proc_attrs in
   let** astate, (self_value, self_history) =
     PulseOperations.eval_deref path proc_attrs.loc (Lvar self) astate
   in
@@ -226,7 +226,7 @@ let mk_nil_messaging_summary_aux tenv proc_name (proc_attrs : ProcAttributes.t) 
 let mk_latent_non_POD_nil_messaging tenv proc_name (proc_attrs : ProcAttributes.t) =
   let path = PathContext.initial in
   let self = mk_objc_self_pvar proc_name in
-  let astate = AbductiveDomain.mk_initial tenv proc_attrs None in
+  let astate = AbductiveDomain.mk_initial tenv proc_attrs in
   let** astate, (self_value, _self_history) =
     PulseOperations.eval_deref path proc_attrs.loc (Lvar self) astate
   in

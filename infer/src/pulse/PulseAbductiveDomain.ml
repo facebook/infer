@@ -280,24 +280,6 @@ module Internal = struct
 
     let mem var astate = BaseStack.mem var (astate.post :> base_domain).stack
 
-    let map_var_address_pre proc_name astate ~f ~default pvar =
-      match
-        BaseStack.find_opt (Var.of_pvar pvar) (astate.pre :> base_domain).stack
-        |> CanonValue.canon_opt_fst astate
-      with
-      | None ->
-          L.d_printfln "Misnamed %a. Not found in initial_stack of %a" Pvar.pp_value pvar
-            Procname.pp proc_name ;
-          ( match Pvar.get_declaring_function pvar with
-          | None ->
-              ()
-          | Some pname ->
-              L.d_printfln "%a belongs to %a" Pvar.pp_value pvar Procname.pp pname ) ;
-          default
-      | Some addr ->
-          f addr
-
-
     let exists f astate =
       BaseStack.exists
         (fun var addr_hist -> f var (CanonValue.canon_fst astate addr_hist))
@@ -776,111 +758,6 @@ module Internal = struct
           astate
     in
     List.fold formals_and_captured ~init:astate ~f:record_static_type
-
-
-  let apply_specialization proc_name specialization astate =
-    match specialization with
-    | None ->
-        astate
-    | Some {Specialization.Pulse.aliases; dynamic_types} ->
-        (* If a function is alias-specialized, then we want to make sure all the captured
-           variables and parameters aliasing each other share the same memory. To do so, we
-           simply add a dereference access from each aliasing variables' address to the same
-           address in the pre and the post of the initial state.
-
-           e.g. f(x, y) with the aliasing information x = y will have the following pre:
-             roots={ &x=v1, &y=v2 };
-             mem  ={ v1 -> { * -> v3 }, v2 -> { * -> v3 }, v3 -> { } };
-             attrs={ };
-        *)
-        let pre_heap = (astate.pre :> base_domain).heap in
-        let post_heap = (astate.post :> base_domain).heap in
-        let post_attrs = (astate.post :> base_domain).attrs in
-        let pre_heap, post_heap =
-          Option.value_map aliases ~default:(pre_heap, post_heap) ~f:(fun aliases ->
-              List.fold aliases ~init:(pre_heap, post_heap) ~f:(fun (pre_heap, post_heap) alias ->
-                  let pre_heap, post_heap, _ =
-                    List.fold alias ~init:(pre_heap, post_heap, None)
-                      ~f:(fun ((pre_heap, post_heap, addr) as acc) pvar ->
-                        SafeStack.map_var_address_pre proc_name astate pvar ~default:acc
-                          ~f:(fun (src_addr, src_hist) ->
-                            let addr =
-                              match addr with None -> CanonValue.mk_fresh () | Some addr -> addr
-                            in
-                            let cell_id = ValueHistory.CellId.next () in
-                            let pre_heap =
-                              BaseMemory.add_edge src_addr Dereference
-                                (downcast addr, ValueHistory.from_cell_id cell_id ValueHistory.epoch)
-                                pre_heap
-                              |> BaseMemory.register_address addr
-                            in
-                            let post_heap =
-                              BaseMemory.add_edge src_addr Dereference
-                                (downcast addr, ValueHistory.from_cell_id cell_id src_hist)
-                                post_heap
-                            in
-                            (pre_heap, post_heap, Some addr) ) )
-                  in
-                  (pre_heap, post_heap) ) )
-        in
-        let add_edge_in_pre_and_post pre_heap post_heap src_addr access =
-          match BaseMemory.find_edge_opt src_addr access pre_heap with
-          | Some (addr, _) ->
-              (pre_heap, post_heap, CanonValue.canon astate addr)
-          | None ->
-              let addr = CanonValue.mk_fresh () in
-              let pre_heap =
-                BaseMemory.add_edge src_addr access (downcast addr, ValueHistory.epoch) pre_heap
-                |> BaseMemory.register_address addr
-              in
-              let post_heap =
-                BaseMemory.add_edge src_addr access (downcast addr, ValueHistory.epoch) post_heap
-              in
-              (pre_heap, post_heap, addr)
-        in
-        let rec initialize_heap_path heap_path (pre_heap, post_heap) =
-          match (heap_path : Specialization.HeapPath.t) with
-          | Pvar pvar ->
-              SafeStack.map_var_address_pre proc_name astate pvar
-                ~default:(pre_heap, post_heap, None) ~f:(fun (addr, _) ->
-                  (pre_heap, post_heap, Some addr) )
-          | FieldAccess (fieldname, heap_path) ->
-              let pre_heap, post_heap, opt_addr =
-                initialize_heap_path heap_path (pre_heap, post_heap)
-              in
-              Option.value_map opt_addr ~default:(pre_heap, post_heap, None) ~f:(fun src_addr ->
-                  let access = MemoryAccess.FieldAccess fieldname in
-                  let pre_heap, post_heap, addr =
-                    add_edge_in_pre_and_post pre_heap post_heap src_addr access
-                  in
-                  (pre_heap, post_heap, Some addr) )
-          | Dereference heap_path ->
-              let pre_heap, post_heap, opt_addr =
-                initialize_heap_path heap_path (pre_heap, post_heap)
-              in
-              Option.value_map opt_addr ~default:(pre_heap, post_heap, None) ~f:(fun src_addr ->
-                  let pre_heap, post_heap, addr =
-                    add_edge_in_pre_and_post pre_heap post_heap src_addr Dereference
-                  in
-                  (pre_heap, post_heap, Some addr) )
-        in
-        let pre_heap, post_heap, attrs =
-          Specialization.HeapPath.Map.fold
-            (fun heap_path typename (pre_heap, post_heap, attrs) ->
-              let pre_heap, post_heap, opt_addr =
-                initialize_heap_path heap_path (pre_heap, post_heap)
-              in
-              let attrs =
-                Option.value_map opt_addr ~default:attrs ~f:(fun addr ->
-                    let typ = Typ.mk_struct typename in
-                    BaseAddressAttributes.add_dynamic_type {typ; source_file= None} addr attrs )
-              in
-              (pre_heap, post_heap, attrs) )
-            dynamic_types (pre_heap, post_heap, post_attrs)
-        in
-        { astate with
-          pre= PreDomain.update ~heap:pre_heap ~attrs astate.pre
-        ; post= PostDomain.update ~heap:post_heap ~attrs astate.post }
 
 
   let is_local var astate = not (Var.is_return var || SafeStack.is_abducible astate var)
@@ -1491,7 +1368,7 @@ let update_pre_for_kotlin_proc astate (proc_attrs : ProcAttributes.t) formals =
   else astate
 
 
-let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
+let mk_initial tenv (proc_attrs : ProcAttributes.t) =
   let proc_name = proc_attrs.proc_name in
   (* HACK: save the formals in the stacks of the pre and the post to remember which local variables
      correspond to formals *)
@@ -1571,8 +1448,7 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) specialization =
       add_static_types tenv astate formals_and_captured
     else astate
   in
-  let astate = update_pre_for_kotlin_proc astate proc_attrs formals in
-  apply_specialization proc_name specialization astate
+  update_pre_for_kotlin_proc astate proc_attrs formals
 
 
 let leq ~lhs ~rhs =

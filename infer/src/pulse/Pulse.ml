@@ -1551,7 +1551,8 @@ let set_uninitialize_prop path tenv ({ProcAttributes.loc} as proc_attrs) astate 
 let initial tenv proc_attrs specialization =
   let path = PathContext.initial in
   let initial_astate =
-    AbductiveDomain.mk_initial tenv proc_attrs specialization
+    AbductiveDomain.mk_initial tenv proc_attrs
+    |> Option.value_map specialization ~default:Fun.id ~f:PulseSpecialization.apply
     |> PulseSummary.initial_with_positive_self proc_attrs
     |> PulseTaintOperations.taint_initial tenv proc_attrs
     |> set_uninitialize_prop path tenv proc_attrs
