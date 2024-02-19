@@ -530,6 +530,7 @@ module Server = struct
 
 
   let server socket =
+    L.debug Analysis Quiet "Server starting, pid= %a@." Pid.pp (Unix.getpid ()) ;
     let finally () = remove_socket socket in
     Exception.try_finally ~finally ~f:(fun () ->
         let ExecutionDuration.{execution_duration} =
@@ -621,7 +622,16 @@ let replace_attributes ~proc_uid ~proc_attributes ~cfg ~callees ~analysis =
 
 let shrink_analysis_db () = perform ShrinkAnalysisDB
 
-let stop () = try Server.send Command.Terminate with Unix.Unix_error _ -> ()
+let stop () =
+  (try Server.send Command.Terminate with Unix.Unix_error _ -> ()) ;
+  let rec loop_until_socket_file_removed count_down =
+    if count_down < 0 then try Server.remove_socket_file () with Unix.Unix_error _ -> ()
+    else if Server.socket_exists () then (
+      Unix.sleep 1 ;
+      loop_until_socket_file_removed (count_down - 1) )
+  in
+  loop_until_socket_file_removed 5
+
 
 let start =
   let already_started = ref false in
