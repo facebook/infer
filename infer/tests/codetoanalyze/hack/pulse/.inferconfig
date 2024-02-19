@@ -9,6 +9,7 @@
   "pulse-taint-short-traces": true,
   "pulse-taint-sources": [
     { "procedure": "$root.Level1::taintSource" },
+    { "procedure": "$root.Level1::unknownTaintSource" },
     { "class_names": ["OuterFile"], "method_names": ["taintSource"] },
     { "class_names": ["OuterFileSuper"], "method_names": ["superTaintSource"] },
     { "class_names": ["Level5Base"], "method_names": ["getSuperContext"] },

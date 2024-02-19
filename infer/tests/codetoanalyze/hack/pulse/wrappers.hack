@@ -4,30 +4,37 @@
 // LICENSE file in the root directory of this source tree.
 
 final class WrappersTest {
-  static async function genInt(): Awaitable<int> {
+  public static async function genInt(): Awaitable<int> {
     return 42;
   }
 
-  static async function genWithDefault(int $x = 0): Awaitable<void> {
-    await WrapperTest::genInt();
+  public static async function genWithDefaultStatic(
+    int $x = 0,
+  ): Awaitable<void> {
+    await WrappersTest::genInt();
+    return;
+  }
+
+  public async function genWithDefault(int $x = 0): Awaitable<void> {
+    await WrappersTest::genInt();
     return;
   }
 
   // all of these had an FP caused by wrappers leading to nested awaitables
   // fixed by identifying wrappers and not treating their tail calls as async
-  async function f1(): Awaitable<void> {
-    await self::genWithDefault();
+  public async function f1(): Awaitable<void> {
+    await self::genWithDefaultStatic();
   }
 
-  async function f2(): Awaitable<void> {
-    await self::genWithDefault(99);
+  public async function f2(): Awaitable<void> {
+    await self::genWithDefaultStatic(99);
   }
 
-  async function f3(): Awaitable<void> {
+  public async function f3(): Awaitable<void> {
     await $this->genWithDefault();
   }
 
-  async function f4(): Awaitable<void> {
+  public async function f4(): Awaitable<void> {
     await $this->genWithDefault(666);
   }
 }

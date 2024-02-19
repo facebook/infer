@@ -20,4 +20,3 @@ class Flows {
     Sink::consume(Source::get());
   }
 }
-

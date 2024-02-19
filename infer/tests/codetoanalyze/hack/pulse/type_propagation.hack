@@ -11,7 +11,7 @@ class A {
     return \Level1\taintSource();
   }
 
-  public function getUntainted() {
+  public function getUntainted(): int {
     return 1;
   }
 
@@ -21,53 +21,62 @@ abstract class C {
 
   public A $a;
 
-  public static A $globalvar;
+  public static ?A $globalvar;
 
   abstract public function get(): A;
+}
 
+class D extends C {
+  public function __construct() {
+    $this->a = new A();
+  }
+
+  public function get(): A {
+    return $this->a;
+  }
 }
 
 class Main {
 
-  public static function fromParamsBad(A $a) {
+  public static function fromParamsBad(A $a): void {
     \Level1\taintSink($a->getTainted());
   }
 
-  public static function fromParamsGood(A $a) {
+  public static function fromParamsGood(A $a): void {
     \Level1\taintSink($a->getUntainted());
   }
 
-  public static function fromPropertyThroughParamBad(C $c) {
+  public static function fromPropertyThroughParamBad(C $c): void {
     \Level1\taintSink($c->a->getTainted());
   }
 
-  public static function fromPropertyThroughParamGood(C $c) {
+  public static function fromPropertyThroughParamGood(C $c): void {
     \Level1\taintSink($c->a->getUntainted());
   }
 
-  public static function fromPropertyThroughNewBad() {
-    $c = new C();
+  public static function fromPropertyThroughNewBad(): void {
+    $c = new D();
     \Level1\taintSink($c->a->getTainted());
   }
 
-  public static function fromPropertyThroughNewGood() {
-    $c = new C();
+  public static function fromPropertyThroughNewGood(): void {
+    $c = new D();
     \Level1\taintSink($c->a->getUntainted());
   }
 
-  public static function fromGlobalBad(C $c) {
-    \Level1\taintSink(C::$globalvar->getTainted());
+  public static function fromGlobalBad(C $c): void {
+    \Level1\taintSink(C::$globalvar?->getTainted());
   }
 
-  public static function fromGlobalGood(C $c) {
-    \Level1\taintSink(C::$globalvar->getUntainted());
+  public static function fromGlobalGood(C $c): void {
+    \Level1\taintSink(C::$globalvar?->getUntainted());
   }
 
-  public static function FN_fromCallResultBad(C $c) {
+  public static function FN_fromCallResultBad(C $c): void {
     \Level1\taintSink($c->get()->getTainted());
   }
 
-  public static function fromCallResultGood(C $c) {
+  public static function fromCallResultGood(C $c): void {
     \Level1\taintSink($c->get()->getUntainted());
   }
 }

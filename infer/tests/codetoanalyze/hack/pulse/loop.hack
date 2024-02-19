@@ -36,7 +36,7 @@ async function loophorror(): Awaitable<void> {
   while ($n < 10) {
     $n++;
   }
-  genInt6();
+  $_ = genInt6();
 }
 async function simpleloopBad(): Awaitable<void> {
   $v = genInt6();

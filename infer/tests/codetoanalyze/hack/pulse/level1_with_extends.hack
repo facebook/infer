@@ -30,32 +30,32 @@ class C extends B {
 }
 
 class Main {
-  function fromABad(): void {
+  public function fromABad(): void {
     $tainted = (new A())->sourceIfA();
     \Level1\taintSink($tainted);
   }
 
-  function fromBBad(): void {
+  public function fromBBad(): void {
     $tainted = (new B())->sourceIfA();
     \Level1\taintSink($tainted);
   }
 
-  function fromCGood(): void {
+  public function fromCGood(): void {
     $tainted = (new C())->sourceIfA();
     \Level1\taintSink($tainted);
   }
 
-  function fromAGood(): void {
+  public function fromAGood(): void {
     $tainted = (new A())->sourceIfC();
     \Level1\taintSink($tainted);
   }
 
-  function fromBGood(): void {
+  public function fromBGood(): void {
     $tainted = (new B())->sourceIfC();
     \Level1\taintSink($tainted);
   }
 
-  function fromCBad(): void {
+  public function fromCBad(): void {
     $tainted = (new C())->sourceIfC();
     \Level1\taintSink($tainted);
   }
@@ -63,35 +63,35 @@ class Main {
 }
 
 class NeedSpecialization {
-  static function getSourceIfA(A $a): int {
+  public static function getSourceIfA(A $a): int {
     return $a->sourceIfA();
   }
 
-  static function getSourceIfC(A $a): int {
+  public static function getSourceIfC(A $a): int {
     return $a->sourceIfC();
   }
 
-  static function fromABad(): void {
+  public static function fromABad(): void {
     \Level1\taintSink(self::getSourceIfA(new A()));
   }
 
-  static function fromBBad(): void {
+  public static function fromBBad(): void {
     \Level1\taintSink(self::getSourceIfA(new B()));
   }
 
-  static function fromCGood(): void {
+  public static function fromCGood(): void {
     \Level1\taintSink(self::getSourceIfA(new C()));
   }
 
-  static function fromAGood(): void {
+  public static function fromAGood(): void {
     \Level1\taintSink(self::getSourceIfC(new A()));
   }
 
-  static function fromBGood(): void {
+  public static function fromBGood(): void {
     \Level1\taintSink(self::getSourceIfC(new B()));
   }
 
-  static function fromCBad(): void {
+  public static function fromCBad(): void {
     \Level1\taintSink(self::getSourceIfC(new C()));
   }
 

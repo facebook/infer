@@ -8,7 +8,7 @@ namespace DictIdxTests;
 class Main {
 
   // Flow: the key is found, 1 on the left, 1 \/ 42 on the right
-  public function idx_as_get_1_BAD() {
+  public function idx_as_get_1_BAD(): void {
     $tainted = \Level1\taintSource();
 
     $w = dict['a' => 1];
@@ -20,7 +20,7 @@ class Main {
 
   // Flow: dicts do not model the set of defined fields,
   // so this is really a false positive
-  public function idx_as_get_2_FP() {
+  public function idx_as_get_2_FP(): void {
     $tainted = \Level1\taintSource();
 
     $w = dict['a' => 1];
@@ -31,7 +31,7 @@ class Main {
   }
 
   // Flow
-  public function idx_defined_not_default_1_BAD() {
+  public function idx_defined_not_default_1_BAD(): void {
     $tainted = \Level1\taintSource();
 
     $w = dict['a' => 1];
@@ -42,7 +42,7 @@ class Main {
   }
 
   // Flow: false positive because dict do not track the defined fields
-  public function idx_defined_not_default_2_OK_FP() {
+  public function idx_defined_not_default_2_OK_FP(): void {
     $tainted = \Level1\taintSource();
 
     $w = dict['a' => 1];
@@ -53,7 +53,7 @@ class Main {
   }
 
   // Flow
-  public function idx_not_defined_1_BAD() {
+  public function idx_not_defined_1_BAD(): void {
     $tainted = \Level1\taintSource();
 
     $w = dict['a' => 1];
@@ -64,7 +64,7 @@ class Main {
   }
 
   // Flow: false positive because dict do not track the defined fields
-  public function idx_not_defined_2_OK_FP() {
+  public function idx_not_defined_2_OK_FP(): void {
     $tainted = \Level1\taintSource();
 
     $w = dict['a' => 1];
@@ -75,7 +75,7 @@ class Main {
   }
 
   // False negative: Infer should identify a flow
-  public function idx_get_BAD_FN(string $key) {
+  public function idx_get_BAD_FN(string $key): void {
     $tainted = \Level1\taintSource();
 
     $w = dict['a' => 1];

@@ -26,7 +26,7 @@ class Helper {
 }
 
 class Flows {
-  function flowBad(): void {
+  public function flowBad(): void {
     Helper::f1(Source::get());
   }
 }

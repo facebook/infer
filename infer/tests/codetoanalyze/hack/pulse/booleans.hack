@@ -5,6 +5,9 @@
 
 namespace Booleans;
 
+class A {}
+class SensitiveClass {}
+
 function testBoolBad(SensitiveClass $sc): void {
   $b = true;
   if ($b) {

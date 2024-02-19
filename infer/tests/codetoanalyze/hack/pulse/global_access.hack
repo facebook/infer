@@ -21,7 +21,19 @@ final class A {
 
 class EventHandler {}
 class Parent2 extends EventHandler {}
-class Parent1 extends Parent2 {}
+class Parent1 extends Parent2 {
+  public function dangerous(): int {
+    return 42;
+  }
+
+  public function suspicious(): int {
+    return 42;
+  }
+
+  public function fine(): int {
+    return 42;
+  }
+}
 
 class ExtendsVeryUnsafe extends VeryUnsafe {}
 
@@ -44,7 +56,9 @@ final class GlobalAccess extends Parent1 {
     return $a2->get();
   }
 
-  public function FN_indirect_is_entry_calls_double_get_two_signals_bad(A $a): int {
+  public function FN_indirect_is_entry_calls_double_get_two_signals_bad(
+    A $a,
+  ): int {
     return $a->double_get();
   }
 
@@ -104,7 +118,11 @@ final class DoesNotInheritEvenHandler extends EventNotHandler {
   }
 }
 
-interface Unsafe {}
+interface Unsafe {
+  public function dangerous(): int;
+  public function suspicious(): int;
+  public function fine(): int;
+}
 interface I extends Unsafe {}
 
 final class ImplementUnsafe extends Parent1 implements Unsafe {

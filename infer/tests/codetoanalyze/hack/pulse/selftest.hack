@@ -9,6 +9,12 @@ class Baz {
   private Awaitable<int> $field;
   private dict<string, mixed> $fields = dict[];
 
+  public function __construct() {
+    $this->field = async {
+      return 42;
+    };
+  }
+
   public async function fooOK(): Awaitable<void> {
     $this->field = async {
       return 42;
@@ -19,7 +25,7 @@ class Baz {
   }
 
   public async function fooBad(): Awaitable<void> {
-    async {
+    $_ = async {
       return 42;
     };
   }

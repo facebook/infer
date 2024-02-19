@@ -9,19 +9,19 @@ class ArgIndexMatcher {
     return \Level1\taintSource();
   }
 
-  public static function sink1(mixed $arg, mixed $tainted) {}
+  public static function sink1(mixed $arg, mixed $tainted): void {}
 
-  public function sink2(mixed $arg, mixed $tainted) {}
+  public function sink2(mixed $arg, mixed $tainted): void {}
 }
 
 class Main {
 
-  function staticSink() {
+  public function staticSink(): void {
     $tainted = ArgIndexMatcher::source();
     ArgIndexMatcher::sink1(null, $tainted);
   }
 
-  function instanceSink() {
+  public function instanceSink(): void {
     $instance = new ArgIndexMatcher();
     $tainted = ArgIndexMatcher::source();
     $instance->sink2(null, $tainted);

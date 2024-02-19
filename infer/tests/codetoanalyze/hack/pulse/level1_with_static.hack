@@ -14,12 +14,12 @@ class A {
 class B extends A {}
 
 class Main {
-  function fromABad(): void {
+  public function fromABad(): void {
     $tainted = A::source();
     \Level1\taintSink($tainted);
   }
 
-  function fromBBad(): void {
+  public function fromBBad(): void {
     $tainted = B::source();
     \Level1\taintSink($tainted);
   }

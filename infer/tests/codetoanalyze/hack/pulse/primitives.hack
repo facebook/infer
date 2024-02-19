@@ -5,6 +5,8 @@
 
 namespace Primitives;
 
+class SensitiveClass {}
+
 function condLog(mixed $data, bool $should_log = false): void {
   if ($should_log) {
     \Level1\taintSink($data);

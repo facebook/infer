@@ -6,7 +6,7 @@
 namespace TypeTestTest;
 
 class Wrapper {
-  function primitiveTag(mixed $v): int {
+  public function primitiveTag(mixed $v): int {
     if ($v is null) {
       return 0;
     }
@@ -25,65 +25,65 @@ class Wrapper {
     return -1;
   }
 
-  async function fail(): Awaitable<int> {
+  public async function fail(): Awaitable<int> {
     return 99;
   }
 
-  async function checkNullOK(): Awaitable<void> {
+  public async function checkNullOK(): Awaitable<void> {
     if (null is null) {
       return;
     }
-    $this->fail();
+    $_ = $this->fail();
   }
 
-  async function checkIntOK(): Awaitable<void> {
+  public async function checkIntOK(): Awaitable<void> {
     if (3 is int) {
       return;
     }
-    $this->fail();
+    $_ = $this->fail();
   }
 
-  async function checkBoolOK(): Awaitable<void> {
+  public async function checkBoolOK(): Awaitable<void> {
     if (true is bool) {
       return;
     }
-    $this->fail();
+    $_ = $this->fail();
   }
 
-  async function checkStringOK(): Awaitable<void> {
+  public async function checkStringOK(): Awaitable<void> {
     if ("foo" is string) {
       return;
     }
-    $this->fail();
+    $_ = $this->fail();
   }
 
-  async function checkNullBad(): Awaitable<void> {
+  public async function checkNullBad(): Awaitable<void> {
     if (null is int) {
       return;
     }
-    $this->fail();
+    $_ = $this->fail();
   }
 
-  async function checkIntBad(): Awaitable<void> {
+  public async function checkIntBad(): Awaitable<void> {
     if (3 is bool) {
       return;
     }
-    $this->fail();
+    $_ = $this->fail();
   }
 
-  async function checkBoolBad(): Awaitable<void> {
+  public async function checkBoolBad(): Awaitable<void> {
     if (true is string) {
       return;
     }
-    $this->fail();
+    $_ = $this->fail();
   }
 
   // here we use specialised isnull check
-  async function checkStringBad(): Awaitable<void> {
+  public async function checkStringBad(): Awaitable<void> {
     if ("foo" is null) {
       return;
     }
-    $this->fail();
+    $_ = $this->fail();
   }
 
 }

@@ -6,12 +6,19 @@
 namespace SingletonPattern;
 
 final class C {
+  public function __construct(int $n) {}
 
   public function getTainted(): int {
     return \Level1\taintSource();
   }
 
   public function getUntainted(): int {
+    return 42;
+  }
+}
+
+class Utils {
+  public static function getUser(): int {
     return 42;
   }
 }

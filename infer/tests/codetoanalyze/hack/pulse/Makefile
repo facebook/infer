@@ -11,6 +11,7 @@ INFER_OPTIONS = --pulse-only --debug-exceptions --pulse-specialization-partial \
   --pulse-transitive-access-config transitive-access-config.json
 INFERPRINT_OPTIONS = --issues-tests
 
+HH_SOURCES = $(sort $(wildcard hh/*.hack))
 SOURCES = $(sort $(wildcard *.hack))
 
 include $(TESTS_DIR)/hack.make

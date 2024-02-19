@@ -6,8 +6,8 @@
 namespace Propagators;
 
 class Source {
-  public function getTainted(): int {
-    return 42;
+  public static function getTainted(): string {
+    return "42";
   }
 }
 

@@ -23,7 +23,7 @@ async function awaits_arg(Awaitable<int> $x): Awaitable<void> {
 
 async function notoops(): Awaitable<void> {
   $i = gen();
-  awaits_arg($i); // No error
+  $_ = awaits_arg($i); // No error
 }
 
 function oops_vec(): void {

@@ -21,23 +21,23 @@ interface ISomeNames {
 
 // tests for ugly naming rules, deliberately reference unknown functions
 async function testnamingOK(ISomeNames $x): Awaitable<void> {
-  $x->generate_a_boolean(); // should not error
+  $_ = $x->generate_a_boolean(); // should not error
 }
 
 async function testnamingBad(ISomeNames $x): Awaitable<void> {
-  $x->genFoo(); // should error
+  $_ = $x->genFoo(); // should error
 }
 
 async function testnamingBad2(ISomeNames $x): Awaitable<void> {
-  $x->gena(); // should error
+  $_ = $x->gena(); // should error
 }
 
 async function testnamingBad3(): Awaitable<void> {
-  an_async_not_starting_with_gen(); // should error because we know decl
+  $_ = an_async_not_starting_with_gen(); // should error because we know decl
 }
 
 async function testnamingBad4(ISomeNames $x): Awaitable<void> {
-  $x->genvxHH45(); // should error
+  $_ = $x->genvxHH45(); // should error
 }
 
 async function genOk(): Awaitable<void> {
@@ -50,7 +50,7 @@ async function genOK2(): Awaitable<void> {
 }
 
 async function genBad(): Awaitable<void> {
-  genInt();
+  $_ = genInt();
 }
 
 async function genBad2(): Awaitable<void> {
@@ -62,7 +62,7 @@ function produce_awaitable_int(): Awaitable<int> {
 }
 
 async function genBadIndirect(): Awaitable<void> {
-  produce_awaitable_int();
+  $_ = produce_awaitable_int();
 }
 
 async function genOkIndirect(): Awaitable<void> {

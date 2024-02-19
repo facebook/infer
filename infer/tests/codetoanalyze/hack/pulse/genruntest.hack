@@ -44,7 +44,7 @@ class GenRunTest {
   }
 
   // neither of these calls are bad, need appropriate specialisation to detect that
-  static async function mainShouldBeOK(): Awaitable<void> {
+  public static async function mainShouldBeOK(): Awaitable<void> {
     await self::inGeneralCaseBad(new GoodRunner(), true);
     await self::inGeneralCaseBad(new BadRunner(), false);
   }

@@ -5,6 +5,8 @@
 
 namespace Equality;
 
+class A {}
+
 class CmpSame {
 
   public function cmpSameNullSimpleBad(): void {

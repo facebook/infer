@@ -5,6 +5,7 @@
 
 namespace Uninit;
 
+<<__ConsistentConstruct>>
 abstract class A {
   abstract const string FIELD;
 
@@ -27,11 +28,6 @@ abstract class A {
   public static function call_new_static_ok(): void {
     call_nop(); // for __lazy_class_initialize(A)
     $_ = new static();
-  }
-
-  public static function call_new_self_bad(): void {
-    call_nop(); // for __lazy_class_initialize(A)
-    $_ = new self();
   }
 }
 
@@ -186,7 +182,7 @@ abstract final class InitEnumFields {
   }
 }
 
-function call_init_enum_fields_access_f1_ok() {
+function call_init_enum_fields_access_f1_ok(): void {
   InitEnumFields::access_f1();
 }
 

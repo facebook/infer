@@ -5,6 +5,8 @@
 
 namespace Closures;
 
+class SensitiveClass {}
+
 class Delayed {
   public function startAndWait((function(): Awaitable<void>) $action): void {
     \HH\Asio\join($action());
@@ -13,7 +15,7 @@ class Delayed {
 
 class Utils {
   public function logDelayed(mixed $data): void {
-    new Delayed()->startAndWait(async () ==> {
+    (new Delayed())->startAndWait(async () ==> {
       \Level1\taintSink($data);
     });
   }
@@ -21,7 +23,7 @@ class Utils {
 
 class C1 {
   public function f1Bad(SensitiveClass $sc): void {
-    new Utils()->logDelayed($sc);
+    (new Utils())->logDelayed($sc);
   }
 }
 

@@ -44,14 +44,14 @@ async function dictForeachFN(): Awaitable<void> {
 async function dictForeachOK2(): Awaitable<void> {
   $d = dict[];
   foreach ($d as $v) {
-    genInt7();
+    $_ = genInt7();
   }
 }
 
 async function dictForeachBad2(): Awaitable<void> {
   $d = dict['a' => 'b'];
   foreach ($d as $v) {
-    genInt7();
+    $_ = genInt7();
   }
 }
 
@@ -62,7 +62,7 @@ async function dictFromAsyncOK(): Awaitable<void> {
 
 async function dictFromAsyncBad(): Awaitable<void> {
   $d = dict['a' => genInt7(), 'b' => genInt7()];
-  Dict\from_async($d);
+  $_ = Dict\from_async($d);
 }
 
 async function do_await_dict_from_async(

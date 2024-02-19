@@ -8,7 +8,7 @@ namespace VecIdxTests;
 class Main {
 
   // Flow
-  function idx_found_1_BAD(): void {
+  public function idx_found_1_BAD(): void {
     $tainted = \Level1\taintSource();
 
     $v = vec[1, 2, 3];
@@ -19,7 +19,7 @@ class Main {
   }
 
   // Flow
-  function idx_found_2_BAD(): void {
+  public function idx_found_2_BAD(): void {
     $tainted = \Level1\taintSource();
 
     $v = vec[1, 2, 3];
@@ -30,7 +30,7 @@ class Main {
   }
 
   // Should be a flow, but vec is approximated with the first two values only
-  function idx_found_3_BAD_FN(): void {
+  public function idx_found_3_BAD_FN(): void {
     $tainted = \Level1\taintSource();
 
     $v = vec[1, 2, 3];
@@ -41,7 +41,7 @@ class Main {
   }
 
   // Flow
-  function idx_default_1_BAD(): void {
+  public function idx_default_1_BAD(): void {
     $tainted = \Level1\taintSource();
 
     $v = vec[1, 2, 3];
@@ -52,7 +52,7 @@ class Main {
   }
 
   // Not a flow
-  function idx_default_2_OK(): void {
+  public function idx_default_2_OK(): void {
     $tainted = \Level1\taintSource();
 
     $v = vec[1, 2, 3];
