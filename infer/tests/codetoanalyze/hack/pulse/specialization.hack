@@ -134,7 +134,7 @@ class Main {
     \Level1\taintSink(self::conditional_call_foo($tainted, $o, $i1, $i1));
   }
 
-  public static function FP_with_alias_call_B_foo_with_new_ok(int $i): void {
+  public static function with_alias_call_B_foo_with_new_ok(int $i): void {
     $tainted = \Level1\taintSource();
     $o = new B();
     $i1 = new BoxedInt(10);
