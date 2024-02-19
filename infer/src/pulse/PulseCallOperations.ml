@@ -652,9 +652,14 @@ let call tenv path ~caller_proc_desc
       | Some alias_specialization ->
           let specialization = Specialization.Pulse.Aliases alias_specialization in
           L.d_printfln "requesting alias specialization %a" Specialization.Pulse.pp specialization ;
-          let pre_posts, _ = request_specialization specialization in
-          let res, non_disj, contradiction = call_aux pre_posts in
-          (res, non_disj, contradiction, `KnownCall) )
+          let has_already_be_given = Specialization.Pulse.Set.mem specialization already_given in
+          if nth_iteration >= max_iteration || has_already_be_given then
+            (res, non_disj, contradiction, `KnownCall)
+          else
+            let pre_posts, _ = request_specialization specialization in
+            let already_given = Specialization.Pulse.Set.add specialization already_given in
+            iter_call ~max_iteration ~nth_iteration:(nth_iteration + 1)
+              ~is_pulse_specialization_limit_not_reached ~specialization already_given pre_posts )
     else
       L.with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
           match maybe_dynamic_type_specialization_is_needed specialization contradiction astate with

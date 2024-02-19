@@ -156,7 +156,7 @@ void FN_test_alias_then_block_specialization_bad(void) {
   x = *ptr;
 }
 
-void FP_test_alias_then_block_specialization_good(void) {
+void test_alias_then_block_specialization_good(void) {
   int x = 0;
   int* ptr = &x;
   void (^incr_deref)(int*) = ^(int*) {
