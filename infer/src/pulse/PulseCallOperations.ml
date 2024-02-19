@@ -614,7 +614,7 @@ let call tenv path ~caller_proc_desc
   let rec iter_call ~max_iteration ~nth_iteration ~is_pulse_specialization_limit_not_reached
       ?specialization already_given pre_post_list =
     let res, non_disj, contradiction = call_aux pre_post_list in
-    let needs_aliasing_specialization res contradiction =
+    let needs_aliasing_specialization =
       List.is_empty res && Option.exists contradiction ~f:PulseInterproc.is_aliasing_contradiction
     in
     let request_specialization specialization =
@@ -633,23 +633,29 @@ let call tenv path ~caller_proc_desc
       | Some pre_posts ->
           (pre_posts, is_limit_not_reached)
     in
-    if needs_aliasing_specialization res contradiction then
-      if is_pulse_specialization_limit_not_reached then (
-        match
-          PulseAliasSpecialization.make_specialization callee_pname actuals call_kind path call_loc
-            astate
-        with
-        | None ->
-            L.internal_error "Alias specialization of %a failed@;" Procname.pp callee_pname ;
-            (res, non_disj, contradiction, `UnknownCall)
-        | Some alias_specialization ->
-            let specialization = Specialization.Pulse.Aliases alias_specialization in
-            L.d_printfln "requesting alias specialization %a" Specialization.Pulse.pp specialization ;
-            let pre_posts, _ = request_specialization specialization in
-            let res, non_disj, contradiction = call_aux pre_posts in
-            (res, non_disj, contradiction, `KnownCall) )
-      else (res, non_disj, contradiction, `UnknownCall)
-    else if is_pulse_specialization_limit_not_reached then
+    let case_if_specialization_is_impossible ~f =
+      ( f res
+      , non_disj
+      , contradiction
+      , if needs_aliasing_specialization then `UnknownCall else `KnownCall )
+    in
+    if not is_pulse_specialization_limit_not_reached then
+      case_if_specialization_is_impossible ~f:Fun.id
+    else if needs_aliasing_specialization then (
+      match
+        PulseAliasSpecialization.make_specialization callee_pname actuals call_kind path call_loc
+          astate
+      with
+      | None ->
+          L.internal_error "Alias specialization of %a failed@;" Procname.pp callee_pname ;
+          (res, non_disj, contradiction, `UnknownCall)
+      | Some alias_specialization ->
+          let specialization = Specialization.Pulse.Aliases alias_specialization in
+          L.d_printfln "requesting alias specialization %a" Specialization.Pulse.pp specialization ;
+          let pre_posts, _ = request_specialization specialization in
+          let res, non_disj, contradiction = call_aux pre_posts in
+          (res, non_disj, contradiction, `KnownCall) )
+    else
       L.with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
           match maybe_dynamic_type_specialization_is_needed specialization contradiction astate with
           | `NeedSpecialization (dyntypes_map, needs_from_caller) ->
@@ -661,45 +667,38 @@ let call tenv path ~caller_proc_desc
                   "[specialization] not enough dyntypes information in the caller context. Missing \
                    = %a"
                   AbstractValue.Set.pp needs_from_caller ;
+              let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
               let has_already_be_given =
-                Specialization.Pulse.DynamicTypes.Set.mem dyntypes_map already_given
+                Specialization.Pulse.Set.mem specialization already_given
               in
               if has_already_be_given then
                 L.d_printfln
                   "[specialization] we have already query the callee with specialization %a"
-                  (Specialization.HeapPath.Map.pp ~pp_value:Typ.Name.pp)
-                  dyntypes_map ;
+                  Specialization.Pulse.pp specialization ;
               if nth_iteration >= max_iteration then
                 L.d_printfln "[specialization] we have reached the maximum number of iteration" ;
               if
-                Specialization.HeapPath.Map.is_empty dyntypes_map
+                Specialization.Pulse.is_empty specialization
                 || nth_iteration >= max_iteration || has_already_be_given
                 || (not specialization_is_fully_satisfied)
                    && not Config.pulse_specialization_partial
               then
-                ( add_need_dynamic_type_specialization needs_from_caller res
-                , non_disj
-                , contradiction
-                , `KnownCall )
+                case_if_specialization_is_impossible
+                  ~f:(add_need_dynamic_type_specialization needs_from_caller)
               else (
                 L.d_printfln "requesting specialized analysis using %sspecialization %a"
                   (if not specialization_is_fully_satisfied then "partial " else "")
-                  (Specialization.HeapPath.Map.pp ~pp_value:Typ.Name.pp)
-                  dyntypes_map ;
-                let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
+                  Specialization.Pulse.pp specialization ;
                 let specialized_pre_post_lists, is_pulse_specialization_limit_not_reached =
                   request_specialization specialization
                 in
-                let already_given =
-                  Specialization.Pulse.DynamicTypes.Set.add dyntypes_map already_given
-                in
+                let already_given = Specialization.Pulse.Set.add specialization already_given in
                 iter_call ~max_iteration ~nth_iteration:(nth_iteration + 1)
                   ~is_pulse_specialization_limit_not_reached ~specialization already_given
                   specialized_pre_post_lists )
           | `UseCurrentSummary ->
               L.d_printfln "abort, using current summary" ;
               (res, non_disj, contradiction, `KnownCall) )
-    else (res, non_disj, contradiction, `KnownCall)
   in
   match (analyze_dependency callee_pname : PulseSummary.t option) with
   | Some summary ->
@@ -707,7 +706,7 @@ let call tenv path ~caller_proc_desc
         Specialization.Pulse.is_pulse_specialization_limit_not_reached summary.specialized
       in
       let max_iteration = Config.pulse_specialization_iteration_limit in
-      let already_given = Specialization.Pulse.DynamicTypes.Set.empty in
+      let already_given = Specialization.Pulse.Set.empty in
       let res, non_disj, contradiction, resolution_status =
         iter_call ~max_iteration ~nth_iteration:0 ~is_pulse_specialization_limit_not_reached
           already_given summary.main

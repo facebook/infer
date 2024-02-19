@@ -43,17 +43,16 @@ module Pulse = struct
     type t = Typ.name HeapPath.Map.t [@@deriving equal, compare]
 
     let pp fmt dtypes = HeapPath.Map.pp ~pp_value:Typ.Name.pp fmt dtypes
-
-    module Set = PrettyPrintable.MakePPSet (struct
-      type nonrec t = t
-
-      let compare = HeapPath.Map.compare Typ.Name.compare_name
-
-      let pp = pp
-    end)
   end
 
   type t = Aliases of Aliases.t | DynamicTypes of DynamicTypes.t [@@deriving equal, compare]
+
+  let is_empty = function
+    | Aliases aliases ->
+        List.is_empty aliases
+    | DynamicTypes dtypes ->
+        HeapPath.Map.is_empty dtypes
+
 
   let pp fmt = function
     | Aliases aliases ->
@@ -61,6 +60,14 @@ module Pulse = struct
     | DynamicTypes dtypes ->
         F.fprintf fmt "(dynamic types) %a" DynamicTypes.pp dtypes
 
+
+  module Set = PrettyPrintable.MakePPSet (struct
+    type nonrec t = t
+
+    let compare = compare
+
+    let pp = pp
+  end)
 
   module Map = PrettyPrintable.MakePPMap (struct
     type nonrec t = t

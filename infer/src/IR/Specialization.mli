@@ -28,15 +28,17 @@ module Pulse : sig
     (** binding from heap paths to their inferred dynamic type (will be used for devirtualization in
         the callee) *)
     type t = Typ.name HeapPath.Map.t [@@deriving equal, compare]
-
-    module Set : PrettyPrintable.PPSet with type elt = t
   end
 
   type t = Aliases of Aliases.t | DynamicTypes of DynamicTypes.t [@@deriving equal, compare]
 
+  val is_empty : t -> bool
+
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 
   module Map : PrettyPrintable.PPMap with type key = t
+
+  module Set : PrettyPrintable.PPSet with type elt = t
 
   val is_pulse_specialization_limit_not_reached : 'a Map.t -> bool
 end
