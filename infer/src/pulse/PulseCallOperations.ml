@@ -527,14 +527,7 @@ let add_need_dynamic_type_specialization needs execution_states =
             LatentInvalidAccess {latent_invalid_access with astate} ) )
 
 
-let maybe_dynamic_type_specialization_is_needed specialization contradiction astate =
-  let already_specialized =
-    match specialization with
-    | Some (Specialization.Pulse.DynamicTypes heap_paths) ->
-        heap_paths
-    | _ ->
-        Specialization.HeapPath.Map.empty
-  in
+let maybe_dynamic_type_specialization_is_needed already_specialized contradiction astate =
   let make_dynamic_type_specialization =
     (* we try to find a dynamic type name for each pvar in the [pvars] set in order to devirtualize all
        calls in the callee (and its own callees). If we do not find a dynamic type, we record the
@@ -659,9 +652,16 @@ let call tenv path ~caller_proc_desc
           , false
           , AbstractValue.Set.empty )
         else
+          let already_specialized =
+            match specialization with
+            | Some (Specialization.Pulse.DynamicTypes heap_paths) ->
+                heap_paths
+            | _ ->
+                Specialization.HeapPath.Map.empty
+          in
           L.with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
               match
-                maybe_dynamic_type_specialization_is_needed specialization contradiction astate
+                maybe_dynamic_type_specialization_is_needed already_specialized contradiction astate
               with
               | `NeedSpecialization (dyntypes_map, needs_from_caller) ->
                   let specialization_is_fully_satisfied =
