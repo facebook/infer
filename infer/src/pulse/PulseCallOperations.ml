@@ -661,49 +661,55 @@ let call tenv path ~caller_proc_desc
             iter_call ~max_iteration ~nth_iteration:(nth_iteration + 1)
               ~is_pulse_specialization_limit_not_reached ~specialization already_given pre_posts )
     else
-      L.with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
-          match maybe_dynamic_type_specialization_is_needed specialization contradiction astate with
-          | `NeedSpecialization (dyntypes_map, needs_from_caller) ->
-              let specialization_is_fully_satisfied =
-                AbstractValue.Set.is_empty needs_from_caller
-              in
-              if not specialization_is_fully_satisfied then
-                L.d_printfln
-                  "[specialization] not enough dyntypes information in the caller context. Missing \
-                   = %a"
-                  AbstractValue.Set.pp needs_from_caller ;
-              let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
-              let has_already_be_given =
-                Specialization.Pulse.Set.mem specialization already_given
-              in
-              if has_already_be_given then
-                L.d_printfln
-                  "[specialization] we have already query the callee with specialization %a"
-                  Specialization.Pulse.pp specialization ;
-              if nth_iteration >= max_iteration then
-                L.d_printfln "[specialization] we have reached the maximum number of iteration" ;
-              if
-                Specialization.Pulse.is_empty specialization
-                || nth_iteration >= max_iteration || has_already_be_given
-                || (not specialization_is_fully_satisfied)
-                   && not Config.pulse_specialization_partial
-              then
-                case_if_specialization_is_impossible
-                  ~f:(add_need_dynamic_type_specialization needs_from_caller)
-              else (
-                L.d_printfln "requesting specialized analysis using %sspecialization %a"
-                  (if not specialization_is_fully_satisfied then "partial " else "")
-                  Specialization.Pulse.pp specialization ;
-                let specialized_pre_post_lists, is_pulse_specialization_limit_not_reached =
-                  request_specialization specialization
+      let specialization, ask_caller_of_caller_first, needs_from_caller =
+        L.with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
+            match
+              maybe_dynamic_type_specialization_is_needed specialization contradiction astate
+            with
+            | `NeedSpecialization (dyntypes_map, needs_from_caller) ->
+                let specialization_is_fully_satisfied =
+                  AbstractValue.Set.is_empty needs_from_caller
                 in
-                let already_given = Specialization.Pulse.Set.add specialization already_given in
-                iter_call ~max_iteration ~nth_iteration:(nth_iteration + 1)
-                  ~is_pulse_specialization_limit_not_reached ~specialization already_given
-                  specialized_pre_post_lists )
-          | `UseCurrentSummary ->
-              L.d_printfln "abort, using current summary" ;
-              (res, non_disj, contradiction, `KnownCall) )
+                if not specialization_is_fully_satisfied then
+                  L.d_printfln
+                    "[specialization] not enough dyntypes information in the caller context. \
+                     Missing = %a"
+                    AbstractValue.Set.pp needs_from_caller ;
+                let specialization = Specialization.Pulse.DynamicTypes dyntypes_map in
+                ( specialization
+                , (not specialization_is_fully_satisfied) && not Config.pulse_specialization_partial
+                , needs_from_caller )
+            | `UseCurrentSummary ->
+                L.d_printfln "abort, using current summary" ;
+                let specialization =
+                  Specialization.Pulse.DynamicTypes Specialization.HeapPath.Map.empty
+                in
+                (specialization, false, AbstractValue.Set.empty) )
+      in
+      if
+        Specialization.Pulse.is_empty specialization && AbstractValue.Set.is_empty needs_from_caller
+      then (res, non_disj, contradiction, `KnownCall)
+      else
+        let has_already_be_given = Specialization.Pulse.Set.mem specialization already_given in
+        if has_already_be_given then
+          L.d_printfln "[specialization] we have already query the callee with specialization %a"
+            Specialization.Pulse.pp specialization ;
+        if nth_iteration >= max_iteration then
+          L.d_printfln "[specialization] we have reached the maximum number of iteration" ;
+        if nth_iteration >= max_iteration || has_already_be_given || ask_caller_of_caller_first then
+          case_if_specialization_is_impossible
+            ~f:(add_need_dynamic_type_specialization needs_from_caller)
+        else (
+          L.d_printfln "requesting specialized analysis using %sspecialization %a"
+            (if not (AbstractValue.Set.is_empty needs_from_caller) then "partial " else "")
+            Specialization.Pulse.pp specialization ;
+          let specialized_pre_post_lists, is_pulse_specialization_limit_not_reached =
+            request_specialization specialization
+          in
+          let already_given = Specialization.Pulse.Set.add specialization already_given in
+          iter_call ~max_iteration ~nth_iteration:(nth_iteration + 1)
+            ~is_pulse_specialization_limit_not_reached ~specialization already_given
+            specialized_pre_post_lists )
   in
   match (analyze_dependency callee_pname : PulseSummary.t option) with
   | Some summary ->
