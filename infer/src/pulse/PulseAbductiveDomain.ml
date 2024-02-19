@@ -782,8 +782,7 @@ module Internal = struct
     match specialization with
     | None ->
         astate
-    | Some {Specialization.Pulse.aliases= Some aliases; dynamic_types} ->
-        assert (Specialization.HeapPath.Map.is_empty dynamic_types) ;
+    | Some {Specialization.Pulse.aliases; dynamic_types} ->
         (* If a function is alias-specialized, then we want to make sure all the captured
            variables and parameters aliasing each other share the same memory. To do so, we
            simply add a dereference access from each aliasing variables' address to the same
@@ -796,42 +795,34 @@ module Internal = struct
         *)
         let pre_heap = (astate.pre :> base_domain).heap in
         let post_heap = (astate.post :> base_domain).heap in
+        let post_attrs = (astate.post :> base_domain).attrs in
         let pre_heap, post_heap =
-          List.fold aliases ~init:(pre_heap, post_heap) ~f:(fun (pre_heap, post_heap) alias ->
-              let pre_heap, post_heap, _ =
-                List.fold alias ~init:(pre_heap, post_heap, None)
-                  ~f:(fun ((pre_heap, post_heap, addr) as acc) pvar ->
-                    SafeStack.map_var_address_pre proc_name astate pvar ~default:acc
-                      ~f:(fun (src_addr, src_hist) ->
-                        let addr =
-                          match addr with None -> CanonValue.mk_fresh () | Some addr -> addr
-                        in
-                        let cell_id = ValueHistory.CellId.next () in
-                        let pre_heap =
-                          BaseMemory.add_edge src_addr Dereference
-                            (downcast addr, ValueHistory.from_cell_id cell_id ValueHistory.epoch)
-                            pre_heap
-                          |> BaseMemory.register_address addr
-                        in
-                        let post_heap =
-                          BaseMemory.add_edge src_addr Dereference
-                            (downcast addr, ValueHistory.from_cell_id cell_id src_hist)
-                            post_heap
-                        in
-                        (pre_heap, post_heap, Some addr) ) )
-              in
-              (pre_heap, post_heap) )
+          Option.value_map aliases ~default:(pre_heap, post_heap) ~f:(fun aliases ->
+              List.fold aliases ~init:(pre_heap, post_heap) ~f:(fun (pre_heap, post_heap) alias ->
+                  let pre_heap, post_heap, _ =
+                    List.fold alias ~init:(pre_heap, post_heap, None)
+                      ~f:(fun ((pre_heap, post_heap, addr) as acc) pvar ->
+                        SafeStack.map_var_address_pre proc_name astate pvar ~default:acc
+                          ~f:(fun (src_addr, src_hist) ->
+                            let addr =
+                              match addr with None -> CanonValue.mk_fresh () | Some addr -> addr
+                            in
+                            let cell_id = ValueHistory.CellId.next () in
+                            let pre_heap =
+                              BaseMemory.add_edge src_addr Dereference
+                                (downcast addr, ValueHistory.from_cell_id cell_id ValueHistory.epoch)
+                                pre_heap
+                              |> BaseMemory.register_address addr
+                            in
+                            let post_heap =
+                              BaseMemory.add_edge src_addr Dereference
+                                (downcast addr, ValueHistory.from_cell_id cell_id src_hist)
+                                post_heap
+                            in
+                            (pre_heap, post_heap, Some addr) ) )
+                  in
+                  (pre_heap, post_heap) ) )
         in
-        { astate with
-          pre= PreDomain.update ~heap:pre_heap astate.pre
-        ; post= PostDomain.update ~heap:post_heap astate.post }
-    | Some {Specialization.Pulse.aliases= None; dynamic_types= dtypes}
-      when Specialization.HeapPath.Map.is_empty dtypes ->
-        astate
-    | Some {Specialization.Pulse.aliases= None; dynamic_types= dtypes} ->
-        assert (Specialization.HeapPath.Map.is_empty dtypes |> not) ;
-        let pre = (astate.pre :> base_domain) in
-        let post = (astate.post :> base_domain) in
         let add_edge_in_pre_and_post pre_heap post_heap src_addr access =
           match BaseMemory.find_edge_opt src_addr access pre_heap with
           | Some (addr, _) ->
@@ -885,7 +876,7 @@ module Internal = struct
                     BaseAddressAttributes.add_dynamic_type {typ; source_file= None} addr attrs )
               in
               (pre_heap, post_heap, attrs) )
-            dtypes (pre.heap, post.heap, post.attrs)
+            dynamic_types (pre_heap, post_heap, post_attrs)
         in
         { astate with
           pre= PreDomain.update ~heap:pre_heap ~attrs astate.pre
