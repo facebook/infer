@@ -117,7 +117,7 @@ void test_alias_in_block_specialization_bad(void) {
   x = *ptr;
 }
 
-void test_alias_in_block_specialization_good(void) {
+void FP_test_alias_in_block_specialization_good(void) {
   int x = 0;
   int* ptr = &x;
   void (^incr_deref)(int*) = ^(int* ptr2) {
@@ -139,7 +139,7 @@ void test_alias_then_block_specialization(void (^incr_deref)(int*),
   incr_deref(ptr);
 }
 
-void test_alias_then_block_specialization_bad(void) {
+void FN_test_alias_then_block_specialization_bad(void) {
   int x = 0;
   int* ptr = &x;
   void (^incr_deref)(int*) = ^(int*) {
@@ -156,7 +156,7 @@ void test_alias_then_block_specialization_bad(void) {
   x = *ptr;
 }
 
-void test_alias_then_block_specialization_good(void) {
+void FP_test_alias_then_block_specialization_good(void) {
   int x = 0;
   int* ptr = &x;
   void (^incr_deref)(int*) = ^(int*) {
