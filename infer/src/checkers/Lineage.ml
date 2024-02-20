@@ -1522,7 +1522,15 @@ module TransferFunctions = struct
   module CFG = CFG
   module Domain = Domain
 
-  type analysis_data = Shapes.t option * Summary.t InterproceduralAnalysis.t
+  (** The payload returned by the interprocedural analysis of dependency procedures *)
+  type payload = Summary.t option * Shapes.t option
+
+  (** Un-nest options from a payload option *)
+  let join_payload (payload_opt : payload option) : payload =
+    match payload_opt with None -> (None, None) | Some payload -> payload
+
+
+  type analysis_data = Shapes.t option * payload InterproceduralAnalysis.t
 
   (** If an expression is made of a single variable, return it. *)
   let exp_as_single_var (e : Exp.t) : Var.t option =
@@ -1770,12 +1778,12 @@ module TransferFunctions = struct
 
   (* Add the relevant Summary/Direct call edges from concrete arguments to the destination, depending
      on the presence of a summary. *)
-  let add_summary_flows shapes node kind_f (callee : Summary.t option) (argument_list : Exp.t list)
-      (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
-    match callee with
-    | None ->
+  let add_summary_flows shapes node kind_f (callee_payload : payload option)
+      (argument_list : Exp.t list) (ret_id : Ident.t) (astate : Domain.t) : Domain.t =
+    match join_payload callee_payload with
+    | None, _ ->
         add_tito_all shapes node kind_f argument_list ret_id astate
-    | Some {Summary.tito_arguments} ->
+    | Some {Summary.tito_arguments}, _ ->
         add_tito shapes node kind_f tito_arguments argument_list ret_id astate
 
 

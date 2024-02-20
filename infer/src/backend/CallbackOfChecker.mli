@@ -51,11 +51,14 @@ val make_is_already_specialized_test :
 
 val interprocedural_with_field_dependency :
      dep_field:(Payloads.t, 'payload_dep Lazy.t) Field.t
-  -> (Payloads.t, 'payload option Lazy.t) Field.t
-  -> ('payload InterproceduralAnalysis.t -> 'payload_dep -> 'payload option)
-  -> Callbacks.proc_callback_t
+  -> (Payloads.t, 'payload Lazy.t) Field.t
+  -> (('payload * 'payload_dep) InterproceduralAnalysis.t -> 'payload_dep -> 'payload)
+  -> Callbacks.proc_callback_args
+  -> Summary.t
 (** An inter-procedural analysis that depends on the summary payload found by another one for a
-    procedure to analyse the same procedure. *)
+    procedure to analyse the same procedure. The checker will be passed that payload dependency as
+    an argument for the procedure being analysed. The [InterproceduralAnalysis] argument allows
+    retrieving both the dependency payload and the "current" one on other procedures. *)
 
 val interprocedural_file :
      (Payloads.t, 'payload option Lazy.t) Field.t

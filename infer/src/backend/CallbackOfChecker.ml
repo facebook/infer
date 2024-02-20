@@ -75,7 +75,11 @@ let interprocedural_with_field_dependency ~dep_field payload_field checker
   let checker analysis_data =
     checker analysis_data (Field.get dep_field summary.payloads |> Lazy.force)
   in
-  interprocedural_with_field payload_field checker callbacks
+  interprocedural ~f_analyze_dep:Option.some
+    ~get_payload:(fun payloads ->
+      (Field.get payload_field payloads |> Lazy.force, Field.get dep_field payloads |> Lazy.force)
+      )
+    ~set_payload:(Field.fset payload_field) checker callbacks
 
 
 let interprocedural_file payload_field checker {Callbacks.procedures; exe_env; source_file} =
