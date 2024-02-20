@@ -16,6 +16,8 @@ module HeapPath : sig
   val pp : F.formatter -> t -> unit
 
   module Map : PrettyPrintable.PPMap with type key = t
+
+  module Set : PrettyPrintable.PPSet with type elt = t
 end
 
 module Pulse : sig

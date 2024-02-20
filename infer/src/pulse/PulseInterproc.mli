@@ -11,12 +11,14 @@ open PulseDomainInterface
 
 type call_state
 
+type aliasing_reason =
+  { addr_caller: AbstractValue.t
+  ; addr_callee: AbstractValue.t
+  ; addr_callee': AbstractValue.t
+  ; call_state: call_state }
+
 type contradiction = private
-  | Aliasing of
-      { addr_caller: AbstractValue.t
-      ; addr_callee: AbstractValue.t
-      ; addr_callee': AbstractValue.t
-      ; call_state: call_state }
+  | Aliasing of aliasing_reason
       (** raised when the precondition and the current state disagree on the aliasing, i.e. some
           addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to a
           single address [caller_addr] in the caller's current state. Typically raised when calling

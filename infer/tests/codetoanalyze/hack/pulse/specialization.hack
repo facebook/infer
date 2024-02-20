@@ -194,6 +194,7 @@ class Main {
       \Level1\taintSink($tainted);
     }
   }
+
   public function FP_test_alias_in_closure_specialization_good(): void {
     $tainted = \Level1\taintSource();
     $counter = new Box<int>(0);

@@ -28,6 +28,12 @@ module HeapPath = struct
 
     let pp = pp
   end)
+
+  module Set = PrettyPrintable.MakePPSet (struct
+    type nonrec t = t [@@deriving compare]
+
+    let pp = pp
+  end)
 end
 
 module Pulse = struct
