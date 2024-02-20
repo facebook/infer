@@ -161,7 +161,7 @@ let%expect_test "unknown formal calls" =
         ; proc_id= foo#2 }
             #n1:
 
-            #n3:
+            #n4:
               n$0=*&x:HackMixed* [line 8, column 11];
               n$1=_fun_unknown(n$0:HackMixed*) [line 9, column 11];
               n$2=*&y:HackMixed* [line 10, column 11];
@@ -327,14 +327,14 @@ let%expect_test "instanceof translation" =
     ; proc_id= bar#0 }
         #n1:
 
-        #n3:
+        #n4:
           n$0=_fun_foo() [line 7, column 9];
 
-        #n4:
+        #n5:
           n$1=_fun___instanceof(n$0:void*,sizeof(t=HackBool*):void) [line 10, column 9];
           *&return:int=n$1 [line 11, column 9];
 
-        #n5:
+        #n6:
           n$2=_fun___instanceof(n$0:void*,sizeof(t=HackBool*):void) [line 13, column 9];
           *&return:int=n$2 [line 13, column 9];
 

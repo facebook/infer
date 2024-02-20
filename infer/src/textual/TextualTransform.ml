@@ -766,6 +766,13 @@ let out_of_ssa module_ =
         try NodeName.Map.find node map
         with Caml.Not_found -> L.die InternalError "Textual.remove_ssa_params internal error"
     in
+    (* Compute which nodes are handlers. This should *really* be done upfront in hackc but for now just see
+       which ones are listed as handlers for some other other node. We'll assume that handlers are disjoint from
+       non-handlers and that handlers all have exactly one parameter *)
+    let handler_nodes =
+      List.fold pdesc.nodes ~init:NodeName.Set.empty ~f:(fun accum (node : Node.t) ->
+          List.fold node.exn_succs ~init:accum ~f:(fun accum succ -> NodeName.Set.add succ accum) )
+    in
     let zip_ssa_args call_location (node_call : Terminator.node_call) (end_node : Node.t) :
         Instr.t list =
       match
@@ -801,24 +808,32 @@ let out_of_ssa module_ =
       match terminator with
       | If _ ->
           L.die InternalError "out_of_ssa should not be called on If terminator"
-      | Ret _ | Throw _ | Unreachable ->
+      | Throw _ | Ret _ | Unreachable ->
           terminator
       | Jump node_calls ->
           Jump (List.map node_calls ~f:node_call_remove_args)
     in
+    (* We leave the ssa parameters (there should be only one) in for handlers
+       and do the parameter loading at the top during the conversion to SIL, as only there
+       do we have a return variable available to read from *)
     let nodes =
-      List.map pdesc.nodes ~f:(fun node ->
+      List.map pdesc.nodes ~f:(fun (node : Node.t) ->
           let rev_instrs = build_assignements node in
-          let load_param (id, typ) : Instr.t =
-            Load {id; exp= Lvar (Ident.to_ssa_var id); typ= Some typ; loc= Location.Unknown}
+          let prefix, ssa_parameters =
+            if NodeName.Set.mem node.label handler_nodes then ([], node.ssa_parameters)
+            else
+              let load_param (id, typ) : Instr.t =
+                Load {id; exp= Lvar (Ident.to_ssa_var id); typ= Some typ; loc= Location.Unknown}
+              in
+              let prefix = List.map node.Node.ssa_parameters ~f:load_param in
+              (prefix, [])
           in
-          let prefix = List.map node.Node.ssa_parameters ~f:load_param in
           let last = terminator_remove_args node.Node.last in
           let instrs =
             if List.is_empty rev_instrs then prefix @ node.Node.instrs
             else prefix @ node.Node.instrs @ List.rev rev_instrs
           in
-          ({node with instrs; ssa_parameters= []; last} : Node.t) )
+          ({node with instrs; ssa_parameters; last} : Node.t) )
     in
     {pdesc with nodes}
   in

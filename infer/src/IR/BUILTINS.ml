@@ -66,6 +66,9 @@ module type S = sig
   (** [__java_throw] implements java's throw instruction (without arg yet, but this is covered by
       the usage of the return variable during frontend translation *)
 
+  val __hack_throw : t
+  (* [__hack_throw] also doesn't take an argument as that is dealt with by the Textual translation *)
+
   val __method_set_ignore_attribute : t
 
   val __new : t

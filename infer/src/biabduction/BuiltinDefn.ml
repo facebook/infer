@@ -876,6 +876,8 @@ let __instanceof = Builtin.register BuiltinDecl.__instanceof execute___instanceo
 (* Throw is not handled via this builtin by biabduction *)
 let __java_throw = Builtin.register BuiltinDecl.__java_throw execute_skip
 
+let __hack_throw = Builtin.register BuiltinDecl.__hack_throw execute_skip
+
 let __method_set_ignore_attribute =
   Builtin.register BuiltinDecl.__method_set_ignore_attribute execute___method_set_ignore_attribute
 

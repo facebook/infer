@@ -223,6 +223,8 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
           PulseOperations.eval_var path call_loc caller_return_var astate
         in
         let+ (astate : AbductiveDomain.t) =
+          L.d_printfln "called copy to caller return ref=%a, obj=%a" AbstractValue.pp
+            (fst caller_return_val_hist) AbstractValue.pp (fst return_val_hist) ;
           PulseOperations.write_deref path call_loc ~ref:caller_return_val_hist ~obj:return_val_hist
             astate
         in

@@ -850,21 +850,27 @@ let instr_is_return = function Sil.Store {e1= Lvar v} -> SilPvar.is_return v | _
 module TerminatorBridge = struct
   open Terminator
 
-  let to_sil lang decls_env procname pdesc loc (t : t) : Sil.instr option =
+  let to_sil lang decls_env procname pdesc loc (t : t) : Sil.instr list =
+    let write_to_ret_var exp =
+      let ret_var = SilPvar.get_ret_pvar (ProcDeclBridge.to_sil lang procname) in
+      let ret_type = SilProcdesc.get_ret_type pdesc in
+      let e2 = ExpBridge.to_sil lang decls_env procname exp in
+      Sil.Store {e1= SilExp.Lvar ret_var; typ= ret_type; e2; loc}
+    in
     match t with
     | If _ ->
         L.die InternalError "to_sil should not be called on If terminator"
     | Ret exp ->
-        let ret_var = SilPvar.get_ret_pvar (ProcDeclBridge.to_sil lang procname) in
-        let ret_type = SilProcdesc.get_ret_type pdesc in
-        let e2 = ExpBridge.to_sil lang decls_env procname exp in
-        Some (Sil.Store {e1= SilExp.Lvar ret_var; typ= ret_type; e2; loc})
+        [write_to_ret_var exp]
+    | Throw exp ->
+        let builtin_throw = SilExp.Const (SilConst.Cfun BuiltinDecl.__hack_throw) in
+        let ret = SilIdent.create_fresh SilIdent.kprimed in
+        [ write_to_ret_var exp
+        ; Call ((ret, SilTyp.mk SilTyp.Tvoid), builtin_throw, [], loc, CallFlags.default) ]
     | Jump _ ->
-        None
-    | Throw _ ->
-        None (* TODO (T132392184) *)
+        []
     | Unreachable ->
-        None
+        []
 
 
   let of_sil decls tenv label_of_node ~opt_last succs =
@@ -882,16 +888,37 @@ module NodeBridge = struct
   open Node
 
   let to_sil lang decls_env procname pdesc node =
-    ( if not (List.is_empty node.ssa_parameters) then
-        let msg =
-          lazy (F.asprintf "node %a should not have SSA parameters" NodeName.pp node.label)
-        in
-        raise (TextualTransformError [{loc= node.label_loc; msg}]) ) ;
-    let instrs = List.map ~f:(InstrBridge.to_sil lang decls_env procname) node.instrs in
     let sourcefile = TextualDecls.source_file decls_env in
+    let load_thrown_exception =
+      match node.ssa_parameters with
+      | [] ->
+          []
+      | [(id, _typ)] ->
+          let sil_param_ident = IdentBridge.to_sil id in
+          let ret_var = SilPvar.get_ret_pvar (ProcDeclBridge.to_sil lang procname) in
+          let ret_type = SilProcdesc.get_ret_type pdesc in
+          let load_param : Sil.instr =
+            Sil.Load
+              { id= sil_param_ident
+              ; e= SilExp.Lvar ret_var
+              ; typ= ret_type
+              ; loc= LocationBridge.to_sil sourcefile node.label_loc }
+          in
+          [load_param]
+      | _ ->
+          let msg =
+            lazy
+              (F.asprintf "node %a should not have more than one SSA parameter" NodeName.pp
+                 node.label )
+          in
+          raise (TextualTransformError [{loc= node.label_loc; msg}])
+    in
+    let instrs =
+      load_thrown_exception @ List.map ~f:(InstrBridge.to_sil lang decls_env procname) node.instrs
+    in
     let last_loc = LocationBridge.to_sil sourcefile node.last_loc in
     let last = TerminatorBridge.to_sil lang decls_env procname pdesc last_loc node.last in
-    let instrs = Option.value_map ~default:instrs ~f:(fun instr -> instrs @ [instr]) last in
+    let instrs = match last with [] -> instrs | _ -> instrs @ last in
     (* Use min instr line for node's loc. This makes node placement in a debug HTML a bit more
        predictable and relevant compared to using block labels' locations which can be more detached
        from the actual source code when we're dealing with translated sources
@@ -1014,7 +1041,7 @@ module ProcDescBridge = struct
       ; loc= definition_loc }
     in
     let pdesc = Cfg.create_proc_desc cfgs pattributes in
-    (* Create standalone start and end nodes. Note that SIL start node does not correspond to the start node in
+    (* Create standalone start, end, and exn_sink nodes. Note that SIL start node does not correspond to the start node in
        Textual. The latter is more like a _first node_. *)
     let module P = SilProcdesc in
     let start_node = P.create_node pdesc definition_loc P.Node.Start_node [] in
@@ -1022,7 +1049,8 @@ module ProcDescBridge = struct
     let exit_loc = LocationBridge.to_sil sourcefile exit_loc in
     let exit_node = P.create_node pdesc exit_loc P.Node.Exit_node [] in
     P.set_exit_node pdesc exit_node ;
-    (* FIXME: special exit nodes should be added *)
+    let exn_sink_node = P.create_node pdesc exit_loc P.Node.exn_sink_kind [] in
+    P.node_set_succs pdesc exn_sink_node ~normal:[exit_node] ~exn:[exit_node] ;
     let node_map : (string, Node.t * P.Node.t) Hashtbl.t = Hashtbl.create 17 in
     List.iter nodes ~f:(fun node ->
         let data = (node, NodeBridge.to_sil lang decls_env procdecl pdesc node) in
@@ -1034,7 +1062,7 @@ module ProcDescBridge = struct
     | None ->
         L.die InternalError "start node %a npt found" NodeName.pp start ) ;
     (* TODO: register this exit node *)
-    let normal_succ (term : Terminator.t) (exns : P.Node.t list) =
+    let normal_succ (term : Terminator.t) =
       match term with
       | If _ ->
           L.die InternalError "to_sil should not be called on If terminator"
@@ -1044,10 +1072,7 @@ module ProcDescBridge = struct
           List.map
             ~f:(fun ({label} : Terminator.node_call) -> Hashtbl.find node_map label.value |> snd)
             l
-      (* Placeholder Throw case. Needs more testing once hackc updated *)
-      | Throw _ -> (
-        match exns with [] -> [exit_node] | _ -> exns )
-      | Unreachable ->
+      | Throw _ | Unreachable ->
           []
     in
     Hashtbl.iter
@@ -1055,7 +1080,8 @@ module ProcDescBridge = struct
         let exn : P.Node.t list =
           List.map ~f:(fun name -> Hashtbl.find node_map name.NodeName.value |> snd) node.exn_succs
         in
-        let normal = normal_succ node.last exn in
+        let exn = if List.is_empty exn then [exn_sink_node] else exn in
+        let normal = normal_succ node.last in
         P.node_set_succs pdesc sil_node ~normal ~exn )
       node_map
 

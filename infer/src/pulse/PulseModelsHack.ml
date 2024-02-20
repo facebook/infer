@@ -1081,6 +1081,11 @@ let hhbc_iter_next iter keyaddr eltaddr : model =
        ~default:(fun () -> VecIter.iter_next_vec iter keyaddr eltaddr)
 
 
+let hack_throw : model =
+  let open DSL.Syntax in
+  start_model @@ throw
+
+
 module SplatedVec = struct
   let class_name = "HackSplatedVec"
 
@@ -1176,6 +1181,7 @@ let matchers : matcher list =
   [ -"$builtins" &:: "nondet" <>$$--> lift_model @@ Basic.nondet ~desc:"nondet"
   ; +BuiltinDecl.(match_builtin __lazy_class_initialize) <>$ capt_exp $--> lazy_class_initialize
   ; +BuiltinDecl.(match_builtin __get_lazy_class) <>$ capt_exp $--> lazy_class_initialize
+  ; +BuiltinDecl.(match_builtin __hack_throw) <>--> hack_throw
   ; -"$builtins" &:: "__sil_splat" <>$ capt_arg_payload $--> SplatedVec.make
   ; -"$builtins" &:: "hhbc_await" <>$ capt_arg_payload $--> hack_await
   ; -"$builtins" &:: "hack_array_get" <>$ capt_arg $++$--> hack_array_get
