@@ -185,7 +185,7 @@ int call_sub_counters(RetainCycle* rc) {
 
 // needs aliasing
 // needs retain cycle handled in specialization
-int test_retainCycle_used_cycle_bad_FN() {
+int test_retainCycle_used_cycle_bad() {
   RetainCycle* rc = [RetainCycle new];
   rc.selfField = rc;
   int counter = call_sub_counters(rc);

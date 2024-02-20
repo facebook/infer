@@ -137,7 +137,7 @@ class Main {
     self::conditional_with_paths_sink($tainted, $i, $i);
   }
 
-  public static function FN_with_heap_alias2_bad(int $i): void {
+  public static function with_heap_alias2_bad(int $i): void {
     $tainted = \Level1\taintSource();
     $i = new Box<int>(10);
     $i1 = new Box<Box<int>>($i);
@@ -182,7 +182,7 @@ class Main {
     $f($counter);
   }
 
-  public function FN_test_alias_in_closure_specialization_bad(): void {
+  public function test_alias_in_closure_specialization_bad(): void {
     $tainted = \Level1\taintSource();
     $counter = new Box<int>(0);
     $incr_deref = (Box<int> $counter2) ==> {

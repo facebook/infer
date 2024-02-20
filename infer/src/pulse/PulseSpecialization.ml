@@ -22,36 +22,34 @@ let prune_eq_list_values astate values =
           prune_eq astate head value |> PulseOperationResult.sat_ok |> Option.value ~default:astate )
 
 
+let rec initialize_heap_path heap_path astate =
+  match (heap_path : Specialization.HeapPath.t) with
+  | Pvar pvar ->
+      let opt_addr = Stack.find_opt (Var.of_pvar pvar) astate in
+      if Option.is_none opt_addr then
+        L.internal_error "pvar %a should be defined in pre" Var.pp (Var.of_pvar pvar) ;
+      let default () = (PulseAbstractValue.mk_fresh (), PulseValueHistory.epoch) in
+      (astate, Option.value_or_thunk opt_addr ~default)
+  | FieldAccess (fieldname, heap_path) ->
+      let astate, src_addr = initialize_heap_path heap_path astate in
+      let access = MemoryAccess.FieldAccess fieldname in
+      Memory.eval_edge src_addr access astate
+  | Dereference heap_path ->
+      let astate, src_addr = initialize_heap_path heap_path astate in
+      Memory.eval_edge src_addr Dereference astate
+
+
 let apply {Specialization.Pulse.aliases; dynamic_types} astate =
   let astate =
     Option.value_map aliases ~default:astate ~f:(fun aliases ->
         List.fold aliases ~init:astate ~f:(fun astate alias ->
             let astate, values =
-              List.fold alias ~init:(astate, []) ~f:(fun ((astate, values) as acc) pvar ->
-                  Stack.find_opt (Var.of_pvar pvar) astate
-                  |> Option.value_map ~default:acc ~f:(fun src_addr_hist ->
-                         let astate, (value, _) =
-                           Memory.eval_edge src_addr_hist Dereference astate
-                         in
-                         (astate, value :: values) ) )
+              List.fold alias ~init:(astate, []) ~f:(fun (astate, values) heap_path ->
+                  let astate, addr = initialize_heap_path heap_path astate in
+                  let astate, (value, _) = Memory.eval_edge addr Dereference astate in
+                  (astate, value :: values) )
             in
             prune_eq_list_values astate values ) )
-  in
-  let rec initialize_heap_path heap_path astate =
-    match (heap_path : Specialization.HeapPath.t) with
-    | Pvar pvar ->
-        let opt_addr = Stack.find_opt (Var.of_pvar pvar) astate in
-        if Option.is_none opt_addr then
-          L.internal_error "pvar %a should be defined in pre" Var.pp (Var.of_pvar pvar) ;
-        let default () = (PulseAbstractValue.mk_fresh (), PulseValueHistory.epoch) in
-        (astate, Option.value_or_thunk opt_addr ~default)
-    | FieldAccess (fieldname, heap_path) ->
-        let astate, src_addr = initialize_heap_path heap_path astate in
-        let access = MemoryAccess.FieldAccess fieldname in
-        Memory.eval_edge src_addr access astate
-    | Dereference heap_path ->
-        let astate, src_addr = initialize_heap_path heap_path astate in
-        Memory.eval_edge src_addr Dereference astate
   in
   let astate =
     Specialization.HeapPath.Map.fold

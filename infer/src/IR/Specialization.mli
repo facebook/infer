@@ -23,7 +23,7 @@ end
 module Pulse : sig
   module Aliases : sig
     (** set of alias sets (Note: list is enough because it is normalised during construction) *)
-    type t = Pvar.t list list [@@deriving equal, compare]
+    type t = HeapPath.t list list [@@deriving equal, compare]
   end
 
   module DynamicTypes : sig

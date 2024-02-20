@@ -750,7 +750,7 @@ public class NullPointerExceptions {
   }
 
   // need combination of alias specialization and dynamic type specialization
-  void FN_test_capture_alias_bad() {
+  void test_capture_alias_bad() {
     A a = new A();
     a.x = 0;
     AFunction incr_deref =

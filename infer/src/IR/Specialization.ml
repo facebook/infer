@@ -38,10 +38,10 @@ end
 
 module Pulse = struct
   module Aliases = struct
-    type t = Pvar.t list list [@@deriving equal, compare]
+    type t = HeapPath.t list list [@@deriving equal, compare]
 
     let pp fmt aliases =
-      let pp_alias fmt alias = Pp.seq ~sep:" = " Pvar.pp_value fmt alias in
+      let pp_alias fmt alias = Pp.seq ~sep:" = " HeapPath.pp fmt alias in
       Pp.seq ~sep:"@,&& " pp_alias fmt aliases
   end
 

@@ -651,30 +651,11 @@ let call tenv path ~caller_proc_desc
             L.internal_error "Alias specialization of %a failed@;" Procname.pp callee_pname ;
             (`NoMoreSpecialization, false, AbstractValue.Set.empty)
         | `AliasSpeciationWith alias_specialization ->
-            ( (let exception ImpossibleFiltering in
-              try
-                let pvar_only_aliases_specialization =
-                  (* this is a temporary restriction: we not yet process non-pvar path in specialized
-                     analysis requests *)
-                  List.map alias_specialization ~f:(fun group ->
-                      List.map group ~f:(function
-                        | Specialization.HeapPath.Pvar pvar ->
-                            pvar
-                        | _ ->
-                            raise ImpossibleFiltering ) )
-                in
-                let specialization =
-                  { specialization with
-                    Specialization.Pulse.aliases= Some pvar_only_aliases_specialization }
-                in
-                L.d_printfln "requesting alias specialization %a" Specialization.Pulse.pp
-                  specialization ;
-                `MoreSpecialization specialization
-              with ImpossibleFiltering ->
-                L.internal_error "Alias specialization of %a failed@;" Procname.pp callee_pname ;
-                `NoMoreSpecialization )
-            , false
-            , AbstractValue.Set.empty )
+            let specialization =
+              {specialization with Specialization.Pulse.aliases= Some alias_specialization}
+            in
+            L.d_printfln "requesting alias specialization %a" Specialization.Pulse.pp specialization ;
+            (`MoreSpecialization specialization, false, AbstractValue.Set.empty)
         | `NoAliasSpecializationRequired ->
             let already_specialized = specialization.Specialization.Pulse.dynamic_types in
             L.with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->

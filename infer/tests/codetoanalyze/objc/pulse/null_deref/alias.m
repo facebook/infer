@@ -103,7 +103,7 @@ void test_alias_in_block_specialization(void (^incr_deref)(int*), int* ptr) {
   incr_deref(ptr);
 }
 
-void FN_test_alias_in_block_specialization_bad(void) {
+void test_alias_in_block_specialization_bad(void) {
   int x = 0;
   int* ptr = &x;
   void (^incr_deref)(int*) = ^(int* ptr2) {
