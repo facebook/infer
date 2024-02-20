@@ -22,7 +22,7 @@ type model_data =
       -> Ident.t * Typ.t
       -> Exp.t
       -> (Exp.t * Typ.t) list
-      -> ValueOrigin.t PulseAliasSpecialization.FuncArg.t list
+      -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
       -> Location.t
       -> CallFlags.t
       -> AbductiveDomain.t
@@ -295,7 +295,7 @@ module Basic = struct
         L.d_printfln_escaped "Constructor found: %a" Procname.pp_unique_id constructor ;
         dispatch_call_eval_args analysis_data path ret exp
           (List.map args ~f:(fun x ->
-               (x.PulseAliasSpecialization.FuncArg.exp, x.PulseAliasSpecialization.FuncArg.typ) ) )
+               (x.ProcnameDispatcher.Call.FuncArg.exp, x.ProcnameDispatcher.Call.FuncArg.typ) ) )
           args location CallFlags.default astate non_disj (Some constructor)
     | None ->
         (* A constructor can be not found if it is not in captured data, e.g. standard library. *)

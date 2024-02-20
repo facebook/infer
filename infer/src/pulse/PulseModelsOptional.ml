@@ -86,7 +86,7 @@ let assign_precise_value (ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= thi
       (* We need an expression corresponding to the value of the argument we pass to
          the constructor. *)
       let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
-      let args : ValueOrigin.t PulseAliasSpecialization.FuncArg.t list =
+      let args : ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list =
         {typ; exp= fake_exp; arg_payload= ValueOrigin.Unknown value_address} :: [other]
       in
       (* create the list of types of the actual arguments of the constructor *)

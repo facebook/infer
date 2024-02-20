@@ -20,7 +20,7 @@ type model_data =
       -> Ident.t * Typ.t
       -> Exp.t
       -> (Exp.t * Typ.t) list
-      -> arg_payload PulseAliasSpecialization.FuncArg.t list
+      -> arg_payload ProcnameDispatcher.Call.FuncArg.t list
       -> Location.t
       -> CallFlags.t
       -> AbductiveDomain.t
@@ -169,7 +169,7 @@ module Basic : sig
   val call_constructor :
        Typ.name
     -> Typ.t list
-    -> ValueOrigin.t PulseAliasSpecialization.FuncArg.t list
+    -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
     -> Exp.t
     -> model_data
     -> AbductiveDomain.t

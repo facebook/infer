@@ -25,7 +25,7 @@ end
 
 module Function : sig
   val operator_call :
-       (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t
-    -> (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list
+       (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t
+    -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
     -> model
 end

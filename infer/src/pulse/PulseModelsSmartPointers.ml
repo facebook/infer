@@ -399,9 +399,8 @@ module SharedPtr = struct
     (astates, non_disj)
 
 
-  let make_shared
-      (args : (AbstractValue.t * ValueHistory.t) PulseAliasSpecialization.FuncArg.t list) ~desc :
-      model =
+  let make_shared (args : (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list)
+      ~desc : model =
    fun ({callee_procname; path; location} as model_data) astate non_disj ->
     let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
     let ( let<**> ) x f = bind_sat_result non_disj x f in
