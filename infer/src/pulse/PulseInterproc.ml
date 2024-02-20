@@ -157,18 +157,10 @@ module Unsafe : sig
               (or a contradiction) at the end of applying the precondition. We set this field to
               make sure we actually do, so in case something goes wrong we don't just continue with
               a broken (partial) summary application. *)
-    ; aliases_first_reason: aliasing_reason option
-          (** [Some reason] means an aliasing was detected during summary application *)
     ; aliases: HeapPath.Set.t HeapPath.Map.t
           (** if an alias was detected between a [addr_callee] and [addr_callee'] with heap path
               accesses [path] nad [path'], then [aliases\[addr_callee\]] contains [addr_callee'],
               where [rev_subst\[addr_caller\] = (addr_callee, path)]. *) }
-
-  and aliasing_reason =
-    { addr_caller: AbstractValue.t
-    ; addr_callee: AbstractValue.t
-    ; addr_callee': AbstractValue.t
-    ; call_state: call_state }
 
   val to_caller_value_ :
        AbductiveDomain.t
@@ -234,14 +226,7 @@ end = struct
     ; visited: AddressSet.t
     ; array_indices_to_visit: callee_index_to_visit list
     ; first_error: AbstractValue.t option
-    ; aliases_first_reason: aliasing_reason option
     ; aliases: HeapPath.Set.t HeapPath.Map.t }
-
-  and aliasing_reason =
-    { addr_caller: AbstractValue.t
-    ; addr_callee: AbstractValue.t
-    ; addr_callee': AbstractValue.t
-    ; call_state: call_state }
 
   let to_caller_value call_state x = to_caller_value_ call_state.astate call_state.subst x
 
@@ -291,15 +276,8 @@ let pp_hist_map fmt hist_map =
 
 
 let pp_call_state fmt
-    ({ astate
-     ; subst
-     ; rev_subst
-     ; hist_map
-     ; visited
-     ; array_indices_to_visit
-     ; first_error
-     ; aliases
-     ; aliases_first_reason= _ } [@warning "+missing-record-field-pattern"] ) =
+    ({astate; subst; rev_subst; hist_map; visited; array_indices_to_visit; first_error; aliases}
+      [@warning "+missing-record-field-pattern"] ) =
   let pp_value_and_path fmt (value, path) =
     F.fprintf fmt "[value %a from %a]" AbstractValue.pp value LazyHeapPath.pp path
   in
@@ -332,11 +310,12 @@ let pp_call_state = Pp.html_collapsible_block ~name:"Show/hide the call state" p
 let to_callee_addr call_state x = AddressMap.find_opt x call_state.rev_subst
 
 type contradiction =
-  | Aliasing of aliasing_reason
-      (** raised when the precondition and the current state disagree on the aliasing, i.e. some
-          addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to a
-          single address [caller_addr] in the caller's current state. Typically raised when calling
-          [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
+  | Aliasing of
+      { addr_caller: AbstractValue.t
+      ; addr_callee: AbstractValue.t
+      ; addr_callee': AbstractValue.t
+      ; call_state: call_state }
+  | AliasingWithAllAliases of HeapPath.t list list
   | DynamicTypeNeeded of AbstractValue.t HeapPath.Map.t
   | CapturedFormalActualLength of
       { captured_formals: (Pvar.t * Typ.t) list
@@ -345,12 +324,19 @@ type contradiction =
       {formals: (Pvar.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
   | PathCondition
 
+let pp_aliases fmt aliases =
+  let pp fmt group = F.fprintf fmt "[%a]" (Pp.seq ~sep:";" HeapPath.pp) group in
+  F.fprintf fmt "[%a]" (Pp.seq ~sep:"; " pp) aliases
+
+
 let pp_contradiction fmt = function
   | Aliasing {addr_caller; addr_callee; addr_callee'; call_state} ->
       F.fprintf fmt
         "address %a in caller already bound to %a, not %a@\nnote: current call state was %a"
         AbstractValue.pp addr_caller AbstractValue.pp addr_callee' AbstractValue.pp addr_callee
         pp_call_state call_state
+  | AliasingWithAllAliases aliases ->
+      F.fprintf fmt "aliases: %a" pp_aliases aliases
   | DynamicTypeNeeded heap_paths ->
       F.fprintf fmt "Heap paths %a need to give their dynamic types"
         (HeapPath.Map.pp ~pp_value:AbstractValue.pp)
@@ -366,7 +352,7 @@ let pp_contradiction fmt = function
 
 
 let log_contradiction = function
-  | Aliasing _ ->
+  | Aliasing _ | AliasingWithAllAliases _ ->
       Stats.incr_pulse_aliasing_contradictions ()
   | DynamicTypeNeeded _ ->
       ()
@@ -378,17 +364,14 @@ let log_contradiction = function
       ()
 
 
-let is_aliasing_contradiction = function
-  | Aliasing _ ->
-      true
-  | DynamicTypeNeeded _ | CapturedFormalActualLength _ | FormalActualLength _ | PathCondition ->
-      false
-
-
 let is_dynamic_type_needed_contradiction = function
   | DynamicTypeNeeded heap_paths ->
       Some heap_paths
-  | Aliasing _ | CapturedFormalActualLength _ | FormalActualLength _ | PathCondition ->
+  | Aliasing _
+  | AliasingWithAllAliases _
+  | CapturedFormalActualLength _
+  | FormalActualLength _
+  | PathCondition ->
       None
 
 
@@ -447,13 +430,6 @@ let and_restricted_arith ~addr_callee ~addr_caller call_state =
   else Ok call_state
 
 
-let add_alias_reason ~addr_caller ~addr_callee ~addr_callee' call_state =
-  if Option.is_none call_state.aliases_first_reason then
-    let reason = {addr_caller; addr_callee; addr_callee'; call_state} in
-    {call_state with aliases_first_reason= Some reason}
-  else call_state
-
-
 let add_alias call_state ~current_head ~new_elem =
   let aliases = call_state.aliases in
   let elems =
@@ -481,9 +457,7 @@ let visit call_state ~pre ~addr_callee cell_id ~addr_hist_caller path =
         then
           match (LazyHeapPath.force path, LazyHeapPath.force path') with
           | Some path, Some path' ->
-              `AliasFound
-                ( add_alias_reason call_state ~addr_caller ~addr_callee ~addr_callee'
-                |> add_alias ~current_head:path' ~new_elem:path )
+              `AliasFound (add_alias ~current_head:path' ~new_elem:path call_state)
           | _ ->
               (* some path elements are not supported yet, then we gave up with alias specialization *)
               raise_notrace
@@ -1172,7 +1146,6 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
       ; visited= AddressSet.empty
       ; array_indices_to_visit= []
       ; first_error= None
-      ; aliases_first_reason= None
       ; aliases= HeapPath.Map.empty }
     in
     (* read the precondition *)
@@ -1186,11 +1159,18 @@ let apply_summary path callee_proc_name call_location ~callee_summary ~captured_
         L.d_printfln ~color:Orange "Cannot apply precondition: %a@\n" pp_contradiction reason ;
         log_contradiction reason ;
         (Unsat, Some reason)
-    | Ok {aliases; aliases_first_reason= Some reason} ->
+    | Ok {aliases} when HeapPath.Map.is_empty aliases |> not ->
         L.d_printfln ~color:Orange "Aliases found: %a@\n"
           (HeapPath.Map.pp ~pp_value:HeapPath.Set.pp)
           aliases ;
-        (Unsat, Some (Aliasing reason))
+        let aliases =
+          HeapPath.Map.fold
+            (fun path set aliases ->
+              let new_alias_group = HeapPath.Set.add path set |> HeapPath.Set.elements in
+              new_alias_group :: aliases )
+            aliases []
+        in
+        (Unsat, Some (AliasingWithAllAliases aliases))
     | result -> (
       try
         let pre_astate, pre_subst =

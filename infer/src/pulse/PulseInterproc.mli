@@ -11,18 +11,21 @@ open PulseDomainInterface
 
 type call_state
 
-type aliasing_reason =
-  { addr_caller: AbstractValue.t
-  ; addr_callee: AbstractValue.t
-  ; addr_callee': AbstractValue.t
-  ; call_state: call_state }
-
 type contradiction = private
-  | Aliasing of aliasing_reason
+  | Aliasing of
+      { addr_caller: AbstractValue.t
+      ; addr_callee: AbstractValue.t
+      ; addr_callee': AbstractValue.t
+      ; call_state: call_state }
       (** raised when the precondition and the current state disagree on the aliasing, i.e. some
           addresses [callee_addr] and [callee_addr'] that are distinct in the pre are aliased to a
           single address [caller_addr] in the caller's current state. Typically raised when calling
-          [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. *)
+          [foo(z,z)] where the spec for [foo(x,y)] says that [x] and [y] are disjoint. We only raise
+          this information if we have found this alias through a heap path that is not supported by
+          our current abstraction (like array accesses). *)
+  | AliasingWithAllAliases of Specialization.HeapPath.t list list
+      (** similar to [Aliasing] case above but we have collected in a list of alias classes all
+          alias information before raising and all of them rely on heap paths that we support. *)
   | DynamicTypeNeeded of AbstractValue.t Specialization.HeapPath.Map.t
       (** A map [path -> value] such that each path leads to a value (in the caller space) that
           requires dynamic type specialization *)
@@ -32,8 +35,6 @@ type contradiction = private
   | FormalActualLength of
       {formals: (Pvar.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
   | PathCondition
-
-val is_aliasing_contradiction : contradiction -> bool
 
 val is_dynamic_type_needed_contradiction :
   contradiction -> AbstractValue.t Specialization.HeapPath.Map.t option

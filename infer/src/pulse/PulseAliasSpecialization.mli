@@ -17,3 +17,4 @@ val make_specialization :
   -> Location.t
   -> PulseAbductiveDomain.t
   -> Specialization.Pulse.Aliases.t option
+  [@@warning "-unused-value-declaration"]

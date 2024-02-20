@@ -608,7 +608,13 @@ let call tenv path ~caller_proc_desc
       ?(specialization = Specialization.Pulse.bottom) already_given pre_post_list =
     let res, non_disj, contradiction = call_aux pre_post_list in
     let needs_aliasing_specialization =
-      List.is_empty res && Option.exists contradiction ~f:PulseInterproc.is_aliasing_contradiction
+      match (res, contradiction) with
+      | [], Some (Aliasing _) ->
+          `AliasSpecializationImpossible
+      | [], Some (AliasingWithAllAliases aliases) ->
+          `AliasSpeciationWith aliases
+      | _, _ ->
+          `NoAliasSpecializationRequired
     in
     let request_specialization specialization =
       let specialized_summary : PulseSummary.t =
@@ -630,54 +636,71 @@ let call tenv path ~caller_proc_desc
       ( f res
       , non_disj
       , contradiction
-      , if needs_aliasing_specialization then `UnknownCall else `KnownCall )
+      , match needs_aliasing_specialization with
+        | `AliasSpecializationImpossible | `AliasSpeciationWith _ ->
+            `UnknownCall
+        | `NoAliasSpecializationRequired ->
+            `KnownCall )
     in
     if not is_pulse_specialization_limit_not_reached then
       case_if_specialization_is_impossible ~f:Fun.id
     else
       let more_specialization, ask_caller_of_caller_first, needs_from_caller =
-        if needs_aliasing_specialization then
-          ( ( match
-                PulseAliasSpecialization.make_specialization callee_pname actuals call_kind path
-                  call_loc astate
-              with
-            | None ->
-                L.internal_error "Alias specialization of %a failed@;" Procname.pp callee_pname ;
-                `NoMoreSpecialization
-            | Some alias_specialization ->
+        match needs_aliasing_specialization with
+        | `AliasSpecializationImpossible ->
+            L.internal_error "Alias specialization of %a failed@;" Procname.pp callee_pname ;
+            (`NoMoreSpecialization, false, AbstractValue.Set.empty)
+        | `AliasSpeciationWith alias_specialization ->
+            ( (let exception ImpossibleFiltering in
+              try
+                let pvar_only_aliases_specialization =
+                  (* this is a temporary restriction: we not yet process non-pvar path in specialized
+                     analysis requests *)
+                  List.map alias_specialization ~f:(fun group ->
+                      List.map group ~f:(function
+                        | Specialization.HeapPath.Pvar pvar ->
+                            pvar
+                        | _ ->
+                            raise ImpossibleFiltering ) )
+                in
                 let specialization =
-                  {specialization with Specialization.Pulse.aliases= Some alias_specialization}
+                  { specialization with
+                    Specialization.Pulse.aliases= Some pvar_only_aliases_specialization }
                 in
                 L.d_printfln "requesting alias specialization %a" Specialization.Pulse.pp
                   specialization ;
-                `MoreSpecialization specialization )
-          , false
-          , AbstractValue.Set.empty )
-        else
-          let already_specialized = specialization.Specialization.Pulse.dynamic_types in
-          L.with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
-              match
-                maybe_dynamic_type_specialization_is_needed already_specialized contradiction astate
-              with
-              | `NeedSpecialization (dyntypes_map, needs_from_caller) ->
-                  let specialization_is_fully_satisfied =
-                    AbstractValue.Set.is_empty needs_from_caller
-                  in
-                  if not specialization_is_fully_satisfied then
-                    L.d_printfln
-                      "[specialization] not enough dyntypes information in the caller context. \
-                       Missing = %a"
-                      AbstractValue.Set.pp needs_from_caller ;
-                  let specialization =
-                    {specialization with Specialization.Pulse.dynamic_types= dyntypes_map}
-                  in
-                  ( `MoreSpecialization specialization
-                  , (not specialization_is_fully_satisfied)
-                    && not Config.pulse_specialization_partial
-                  , needs_from_caller )
-              | `UseCurrentSummary ->
-                  L.d_printfln "abort, using current summary" ;
-                  (`NoMoreSpecialization, false, AbstractValue.Set.empty) )
+                `MoreSpecialization specialization
+              with ImpossibleFiltering ->
+                L.internal_error "Alias specialization of %a failed@;" Procname.pp callee_pname ;
+                `NoMoreSpecialization )
+            , false
+            , AbstractValue.Set.empty )
+        | `NoAliasSpecializationRequired ->
+            let already_specialized = specialization.Specialization.Pulse.dynamic_types in
+            L.with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
+                match
+                  maybe_dynamic_type_specialization_is_needed already_specialized contradiction
+                    astate
+                with
+                | `NeedSpecialization (dyntypes_map, needs_from_caller) ->
+                    let specialization_is_fully_satisfied =
+                      AbstractValue.Set.is_empty needs_from_caller
+                    in
+                    if not specialization_is_fully_satisfied then
+                      L.d_printfln
+                        "[specialization] not enough dyntypes information in the caller context. \
+                         Missing = %a"
+                        AbstractValue.Set.pp needs_from_caller ;
+                    let specialization =
+                      {specialization with Specialization.Pulse.dynamic_types= dyntypes_map}
+                    in
+                    ( `MoreSpecialization specialization
+                    , (not specialization_is_fully_satisfied)
+                      && not Config.pulse_specialization_partial
+                    , needs_from_caller )
+                | `UseCurrentSummary ->
+                    L.d_printfln "abort, using current summary" ;
+                    (`NoMoreSpecialization, false, AbstractValue.Set.empty) )
       in
       match more_specialization with
       | `NoMoreSpecialization ->
