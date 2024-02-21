@@ -350,8 +350,11 @@ module Liveness = struct
           ->
             astate
         | Metadata (Nullify _) ->
-            L.(die InternalError)
-              "Should not add nullify instructions before running nullify analysis!"
+            L.die InternalError
+              "%a: found NULLIFY instructions while doing the nullify pre-analysis; did the \
+               pre-analysis run twice?"
+              Procname.pp
+              (Procdesc.Node.get_proc_name node)
       in
       if is_last_instr_in_node instr node then postprocess astate' node liveness_inv_map
       else astate'
