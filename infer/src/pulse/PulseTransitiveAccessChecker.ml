@@ -61,6 +61,8 @@ end = struct
     ; contexts: context list }
   [@@deriving of_yojson]
 
+  let empty = {fieldnames_to_monitor= []; procnames_to_monitor= []; contexts= []}
+
   let get, set =
     let current = ref (None : t option) in
     ((fun () -> !current), fun config -> current := Some config)
@@ -145,20 +147,30 @@ end = struct
 
   let () =
     match Config.pulse_transitive_access_config with
-    | None ->
+    | [] ->
         ()
-    | Some filepath -> (
-      match Utils.read_safe_json_file filepath with
-      | Ok (`List []) ->
-          L.die ExternalError "The content of transitive-access JSON config is empty@."
-      | Ok json -> (
-        try t_of_yojson json |> set
-        with _ ->
-          L.die ExternalError "Could not read or parse transitive-access JSON config in %s@."
-            filepath )
-      | Error msg ->
-          L.die ExternalError "Could not read or parse transitive-access JSON config in %s:@\n%s@."
-            filepath msg )
+    | config_files ->
+        List.fold config_files ~init:empty ~f:(fun merged_config config_file ->
+            let config =
+              match Utils.read_safe_json_file config_file with
+              | Ok (`List []) ->
+                  L.die ExternalError "The content of transitive-access JSON config is empty@."
+              | Ok json -> (
+                try t_of_yojson json
+                with _ ->
+                  L.die ExternalError
+                    "Could not read or parse transitive-access JSON config in %s@." config_file )
+              | Error msg ->
+                  L.die ExternalError
+                    "Could not read or parse transitive-access JSON config in %s:@\n%s@."
+                    config_file msg
+            in
+            { fieldnames_to_monitor=
+                List.rev_append merged_config.fieldnames_to_monitor config.fieldnames_to_monitor
+            ; procnames_to_monitor=
+                List.rev_append merged_config.procnames_to_monitor config.procnames_to_monitor
+            ; contexts= List.rev_append merged_config.contexts config.contexts } )
+        |> set
 end
 
 let record_load rhs_exp location astates =

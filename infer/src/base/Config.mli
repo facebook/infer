@@ -662,7 +662,7 @@ val pulse_taint_short_traces : bool
 
 val pulse_taint_skip_sources : bool
 
-val pulse_transitive_access_config : string option
+val pulse_transitive_access_config : string list
 
 val pulse_transitive_access_verbose : bool
 
