@@ -16,9 +16,9 @@ HH_AUTO_NAMESPACE_MAP = '{ \
 HH_OPTIONS = --auto-namespace-map=$(HH_AUTO_NAMESPACE_MAP)
 
 infer-out$(TEST_SUFFIX)/report.json: $(SOURCES) $(HH_SOURCES) $(INFER_BIN) $(HACKC) $(MAKEFILE_LIST)
-ifeq ($(IS_FACEBOOK_TREE),yes)
+ifneq ($(HH_SINGLE_TYPE_CHECK),no)
 	$(QUIET)$(call silent_on_success,Type checking infer/hack in $(TEST_REL_DIR),\
-	  $(ROOT_DIR)/facebook/scripts/hh.sh $(HH_OPTIONS) $(HH_SOURCES) $(SOURCES))
+	  $(HH_SINGLE_TYPE_CHECK) $(HH_OPTIONS) $(HH_SOURCES) $(SOURCES))
 endif
 	$(QUIET)$(call silent_on_success,Testing infer/hack in $(TEST_REL_DIR),\
 	  $(INFER_BIN) --results-dir $(@D) --dump-duplicate-symbols --hackc-binary $(HACKC) \
