@@ -150,26 +150,32 @@ end = struct
     | [] ->
         ()
     | config_files ->
-        List.fold config_files ~init:empty ~f:(fun merged_config config_file ->
-            let config =
-              match Utils.read_safe_json_file config_file with
-              | Ok (`List []) ->
-                  L.die ExternalError "The content of transitive-access JSON config is empty@."
-              | Ok json -> (
-                try t_of_yojson json
-                with _ ->
-                  L.die ExternalError
-                    "Could not read or parse transitive-access JSON config in %s@." config_file )
-              | Error msg ->
-                  L.die ExternalError
-                    "Could not read or parse transitive-access JSON config in %s:@\n%s@."
-                    config_file msg
-            in
-            { fieldnames_to_monitor=
-                List.rev_append merged_config.fieldnames_to_monitor config.fieldnames_to_monitor
-            ; procnames_to_monitor=
-                List.rev_append merged_config.procnames_to_monitor config.procnames_to_monitor
-            ; contexts= List.rev_append merged_config.contexts config.contexts } )
+        let rev_config =
+          List.fold config_files ~init:empty ~f:(fun merged_config config_file ->
+              let new_config =
+                match Utils.read_safe_json_file config_file with
+                | Ok (`List []) ->
+                    L.die ExternalError "The content of transitive-access JSON config is empty@."
+                | Ok json -> (
+                  try t_of_yojson json
+                  with _ ->
+                    L.die ExternalError
+                      "Could not read or parse transitive-access JSON config in %s@." config_file )
+                | Error msg ->
+                    L.die ExternalError
+                      "Could not read or parse transitive-access JSON config in %s:@\n%s@."
+                      config_file msg
+              in
+              { fieldnames_to_monitor=
+                  List.rev_append new_config.fieldnames_to_monitor
+                    merged_config.fieldnames_to_monitor
+              ; procnames_to_monitor=
+                  List.rev_append new_config.procnames_to_monitor merged_config.procnames_to_monitor
+              ; contexts= List.rev_append new_config.contexts merged_config.contexts } )
+        in
+        { fieldnames_to_monitor= List.rev rev_config.fieldnames_to_monitor
+        ; procnames_to_monitor= List.rev rev_config.procnames_to_monitor
+        ; contexts= List.rev rev_config.contexts }
         |> set
 end
 
