@@ -39,11 +39,12 @@ let set_common_fields sample =
        ~value:(Option.map ~f:Int64.to_string Config.scuba_execution_id)
 
 
-let sample_from_event ({label; created_at_ts; data} : LogEntry.t) =
+let sample_from_event ~loc ({label; created_at_ts; data} : LogEntry.t) =
   let create_sample_with_label label =
     Scuba.new_sample ~time:(Some created_at_ts)
     |> set_common_fields |> set_command_line_normales |> set_command_line_tagsets
     |> Scuba.add_normal ~name:"event" ~value:label
+    |> maybe_add_normal ~name:"location" ~value:loc
   in
   match data with
   | Count {value} ->
@@ -58,28 +59,34 @@ let sample_from_event ({label; created_at_ts; data} : LogEntry.t) =
 
 
 (** Consider buffering or batching if proves to be a problem *)
-let log_many entries =
-  let samples = List.map entries ~f:sample_from_event in
+let log_many ~loc entries =
+  let samples = List.map entries ~f:(sample_from_event ~loc) in
   Scuba.log Scuba.InferEvents samples
 
 
 (** If scuba logging is disabled, we would not log anyway, but let's not even try to create samples
     to save perf *)
-let log_many = if Config.scuba_logging then log_many else fun _ -> ()
+let log_many ~loc = if Config.scuba_logging then log_many ~loc else fun _ -> ()
 
-let log_one entry = log_many [entry]
+let log_one ~loc entry = log_many ~loc [entry]
+
+let log_message ~label ~loc ~message = log_one ~loc (LogEntry.mk_string ~label ~message)
+
+let pulse_log_message ~label ~loc ~message =
+  if Config.pulse_scuba_logging then log_message ~label ~loc:(Some loc) ~message
+
+
+let log_many = log_many ~loc:None
+
+let log_one = log_one ~loc:None
+
+let log_message = log_message ~loc:None
 
 let log_count ~label ~value = log_one (LogEntry.mk_count ~label ~value)
 
 let log_duration ~label ~duration_us = log_one (LogEntry.mk_time ~label ~duration_us)
 
-let log_message ~label ~message = log_one (LogEntry.mk_string ~label ~message)
-
 let cost_log_message ~label ~message = if Config.cost_scuba_logging then log_message ~label ~message
-
-let pulse_log_message ~label ~message =
-  if Config.pulse_scuba_logging then log_message ~label ~message
-
 
 let execute_with_time_logging label f =
   let ret_val, duration = Utils.timeit ~f in

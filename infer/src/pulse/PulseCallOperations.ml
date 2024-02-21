@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 module IRAttributes = Attributes
 open PulseBasicInterface
@@ -465,6 +466,7 @@ let call_aux_unknown tenv path ~caller_proc_desc call_loc callee_pname ~ret ~act
          ~actuals ~formals_opt
   in
   ScubaLogging.pulse_log_message ~label:"unmodeled_function_operation_pulse"
+    ~loc:(F.asprintf "%a" Location.pp_file_pos call_loc)
     ~message:
       (Format.asprintf "Unmodeled Function[Pulse] : %a" Procname.pp_without_templates callee_pname) ;
   if Procname.is_objc_instance_method callee_pname then
