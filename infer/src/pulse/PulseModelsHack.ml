@@ -276,6 +276,8 @@ let int_to_hack_int n : DSL.aval DSL.model_monad =
 
 let make_zero = int_to_hack_int 0
 
+let string_val_field = Fieldname.make TextualSil.hack_string_type_name "val"
+
 let make_hack_string (s : string) : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let str_exp = Exp.Const (Const.Cstr s) in
@@ -836,7 +838,9 @@ let hhbc_cmp_same x y : model =
                let* y_val = eval_deref_access Read y (FieldAccess bool_val_field) in
                value_equality_test x_val y_val
              else if Typ.Name.equal x_typ_name TextualSil.hack_string_type_name then
-               make_hack_random_bool
+               let* x_val = eval_deref_access Read x (FieldAccess string_val_field) in
+               let* y_val = eval_deref_access Read y (FieldAccess string_val_field) in
+               value_equality_test x_val y_val
              else
                disjuncts
                  [ (let* () = prune_eq x y in
@@ -845,8 +849,10 @@ let hhbc_cmp_same x y : model =
                        a value assignment to the pointer. *)
                     make_hack_bool true )
                  ; (let* () = prune_ne x y in
-                    (* Random because its does not cover the comparisons of vec, keyset, dict and
-                       shape at the moment. *)
+                    (* TODO(dpichardie) cover the comparisons of vec, keyset, dict and
+                       shape, taking into account the difference between == and ===. *)
+                    (* TODO(dpichardie) cover the specificities of == that compare objects properties
+                       (structural equality). *)
                     make_hack_random_bool ) ]
          | Some {Attribute.typ= x_typ}, Some {Attribute.typ= y_typ} when not (Typ.equal x_typ y_typ)
            ->
@@ -1285,6 +1291,8 @@ let matchers : matcher list =
     (* we should be able to model that directly in Textual once specialization will be stronger *)
   ; -"$builtins" &:: "hhbc_cmp_same" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_same
   ; -"$builtins" &:: "hhbc_cmp_nsame" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_nsame
+  ; -"$builtins" &:: "hhbc_cmp_eq" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_same
+  ; -"$builtins" &:: "hhbc_cmp_neq" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_nsame
   ; -"$builtins" &:: "hhbc_cmp_lt" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_lt
   ; -"$builtins" &:: "hhbc_cmp_gt" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_gt
   ; -"$builtins" &:: "hhbc_cmp_ge" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_ge

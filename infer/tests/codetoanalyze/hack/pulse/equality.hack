@@ -315,7 +315,7 @@ class CmpEq {
     }
   }
 
-  public function FP_cmpEqBoolSimpleGood(): void {
+  public function cmpEqBoolSimpleGood(): void {
     $a = true;
     $b = false;
     $taint = \Level1\taintSource();
@@ -333,7 +333,7 @@ class CmpEq {
     }
   }
 
-  public function FP_neBoolSimpleGood(): void {
+  public function neBoolSimpleGood(): void {
     $a = true;
     $b = true;
     $taint = \Level1\taintSource();
