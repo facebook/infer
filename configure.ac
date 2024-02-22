@@ -297,12 +297,7 @@ AC_ASSERT_OCAML_PKG([oUnit])
 AC_CHECK_TOOL([UTOP], [utop], [no])
 AC_ASSERT_OCAML_PKG([yojson])
 
-AC_MSG_CHECKING([which ocamlformat to use])
-AS_IF([test x"$is_facebook_tree" = x"yes"],
-  [OCAMLFORMAT="$(pwd)"/facebook/dependencies/bin/ocamlformat],
-  [OCAMLFORMAT=ocamlformat])
-AC_MSG_RESULT([$OCAMLFORMAT])
-AC_SUBST([OCAMLFORMAT])
+AC_CHECK_TOOL([OCAMLFORMAT], [ocamlformat], [no])
 
 AC_ARG_VAR([CPATH], [Additional directories to search for C headers.])
 AC_ARG_VAR([LIBRARY_PATH], [Additional directories to search for C shared objects.])
@@ -339,15 +334,12 @@ if test "x$enable_erlang_analyzers" = "xyes"; then
 fi
 # end if($enable_erlang_analyzers)
 
-if test "x$enable_hack_analyzers" = "xyes"; then
-  if test "x$is_facebook_tree" = "xyes"; then
-    # Look for hackc in $PATH first, then fallback to the bundled version
-    AC_PATH_TOOL([HACKC], [hackc], [no], [$PATH$PATH_SEPARATOR$ac_pwd/facebook/dependencies/bin])
-  else
-    AC_PATH_TOOL([HACKC], [hackc], [no])
-  fi
-fi
-# end if($enable_hack_analyzers)
+AC_PATH_TOOL([HACKC], [hackc], [no])
+AC_MSG_CHECKING([if hackc can run])
+AS_IF([$HACKC --version >/dev/null 2>/dev/null],
+  [AC_MSG_RESULT([yes])],
+  [HACKC=no
+   AC_MSG_RESULT([no])])
 
 if test "x$enable_java_analyzers" = "xyes"; then
   AC_CHECK_TOOL([JAVA], [java], [no])

@@ -199,7 +199,6 @@ BUILD_SYSTEMS_TESTS += rebar3
 endif
 endif # BUILD_ERLANG_ANALYZERS
 
-ifeq ($(BUILD_PLATFORM)+$(BUILD_HACK_ANALYZERS)+$(IS_FACEBOOK_TREE),Linux+yes+yes)
 ifneq ($(HACKC),no)
 DIRECT_TESTS += \
   hack_capture \
@@ -210,15 +209,14 @@ BUILD_SYSTEMS_TESTS += \
   pulse_messages_hack \
 
 endif
-endif # BUILD_PLATFORM+BUILD_HACK_ANALYZERS
 
-ifeq ($(BUILD_PLATFORM)+$(BUILD_PYTHON_ANALYZERS)+$(IS_FACEBOOK_TREE),Linux+yes+yes)
+ifeq ($(BUILD_PYTHON_ANALYZERS),yes)
 ifneq ($(PYTHON),no)
 DIRECT_TESTS += \
   python_pulse \
 
 endif
-endif # BUILD_PLATFORM+BUILD_PYTHON_ANALYZERS
+endif # BUILD_PYTHON_ANALYZERS
 
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \

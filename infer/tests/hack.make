@@ -22,4 +22,4 @@ ifneq ($(HH_SINGLE_TYPE_CHECK),no)
 endif
 	$(QUIET)$(call silent_on_success,Testing infer/hack in $(TEST_REL_DIR),\
 	  $(INFER_BIN) --results-dir $(@D) --dump-duplicate-symbols --hackc-binary $(HACKC) \
-	    $(INFER_OPTIONS) -- hackc compile-infer $(SOURCES))
+	    $(INFER_OPTIONS) -- $(HACKC) compile-infer $(SOURCES))
