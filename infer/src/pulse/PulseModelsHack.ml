@@ -1237,6 +1237,33 @@ let hhbc_verify_type_pred _dummy pred : model =
      assign_ret zero
 
 
+let hhbc_cast_string arg : model =
+  (* https://github.com/facebook/hhvm/blob/605ac5dde604ded7f25e9786032a904f28230845/hphp/doc/bytecode.specification#L1087
+     Cast to string ((string),(binary)). Pushes (string)$1 onto the stack. If $1
+     is an object that implements the __toString method, the string cast returns
+     $1->__toString(). If $1 is an object that does not implement __toString
+     method, the string cast throws a fatal error.
+  *)
+  let open DSL.Syntax in
+  start_model
+  @@
+  let hackString = TextualSil.hack_string_type_name in
+  let* dynamic_type_data = get_dynamic_type ~ask_specialization:true arg in
+  match dynamic_type_data with
+  | Some {Attribute.typ= {Typ.desc= Tstruct typ_name}} when Typ.Name.equal typ_name hackString ->
+      assign_ret arg
+  | Some _ ->
+      (* note: we do not model precisely the value returned by __toString() *)
+      let* str = eval_read (Const (Cstr "__infer_hack_generated_from_cast_string")) in
+      let* rv = constructor hackString [("val", str)] in
+      (* note: we do not model the case where __toString() is not implemented *)
+      assign_ret rv
+  | _ ->
+      (* hopefully we will come back later with a dynamic type thanks to specialization *)
+      let* rv = mk_fresh ~model_desc:"hhbc_is_type_struct_c" () in
+      assign_ret rv
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"$builtins" &:: "nondet" <>$$--> lift_model @@ Basic.nondet ~desc:"nondet"
@@ -1253,6 +1280,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_not" <>$ capt_arg_payload $--> hhbc_not
   ; -"$builtins" &:: "hack_get_class" <>$ capt_arg_payload $--> hack_get_class
   ; -"$builtins" &:: "hack_field_get" <>$ capt_arg_payload $+ capt_arg_payload $--> hack_field_get
+  ; -"$builtins" &:: "hhbc_cast_string" <>$ capt_arg_payload $--> hhbc_cast_string
   ; -"$builtins" &:: "hhbc_class_get_c" <>$ capt_arg_payload $--> hhbc_class_get_c
     (* we should be able to model that directly in Textual once specialization will be stronger *)
   ; -"$builtins" &:: "hhbc_cmp_same" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_same

@@ -37,7 +37,7 @@ class Tests {
     }
   }
 
-  public static function FP_cast_v1_ok(): void {
+  public static function cast_v1_ok(): void {
     $msg = "hello";
     if (Main::cast_test($msg) != $msg) {
       \Level1\taintSink(\Level1\taintSource());
