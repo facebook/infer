@@ -43,6 +43,22 @@ class Wrapper {
     $_ = $this->fail();
   }
 
+  public async function checkcheckIntIsBoolOK(): Awaitable<void> {
+    $b = 3 is int;
+    if ($b is bool) {
+      return;
+    }
+    $_ = $this->fail();
+  }
+
+  public async function checkcheckIntIsBoolBad(): Awaitable<void> {
+    $b = "foo" is int;
+    if ($b is bool) {
+      $_ = $this->fail();
+    }
+    return;
+  }
+
   public async function checkBoolOK(): Awaitable<void> {
     if (true is bool) {
       return;

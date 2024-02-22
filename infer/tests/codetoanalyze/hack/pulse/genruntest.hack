@@ -43,6 +43,13 @@ class GenRunTest {
     }
   }
 
+  // this should be bad, needs specialisation to tell, though
+  // and that seems rather fragile - whether or not I get an error
+  // showing up on inGeneralCaseBad depends on what calls are around
+  public static async function mainShouldBeBadFN(): Awaitable<void> {
+    await self::inGeneralCaseBad(new BadRunner(), true);
+  }
+
   // neither of these calls are bad, need appropriate specialisation to detect that
   public static async function mainShouldBeOK(): Awaitable<void> {
     await self::inGeneralCaseBad(new GoodRunner(), true);

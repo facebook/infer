@@ -21,7 +21,7 @@ define $builtins.hack_string(str: *string): *HackMixed {
     ret n0
 }
 
-type HackInt = { val: int }
+type HackInt = .final { val: int }
 
 define $builtins.hack_int(i: int): *HackInt {
   #entry:
@@ -31,7 +31,7 @@ define $builtins.hack_int(i: int): *HackInt {
     ret n0
 }
 
-type HackBool = { val: int }
+type HackBool = .final { val: int }
 
 define $builtins.hack_bool(b: int): *HackBool {
   #entry:
@@ -100,11 +100,6 @@ define $builtins.hhbc_has_reified_parent(class: *HackMixed): *HackMixed {
     ret $builtins.hack_make_false()
 }
 
-define $builtins.hhbc_is_type_int(o: *HackMixed): *HackMixed {
-  #entry:
-    ret $builtins.hack_make_random_bool()
-}
-
 define $builtins.hhbc_is_type_null(o: *HackMixed): *HackMixed {
   #entry:
     jmp tlab, flab
@@ -123,17 +118,6 @@ define $builtins.hhbc_is_type_null(o: *HackMixed): *HackMixed {
 define $builtins.hhbc_is_late_bound_cls(o: *HackMixed): *HackMixed {
   #entry:
     ret $builtins.hack_make_random_bool()
-}
-
-define $builtins.hhbc_verify_type_pred(o: *HackMixed, typ: *HackMixed): *HackMixed {
-  #entry:
-    ret null
-}
-
-
-define $builtins.hhbc_verify_param_type_ts(o: *HackMixed, typ: *HackMixed): *HackMixed {
-  #entry:
-    ret null
 }
 
 define $builtins.hhbc_lock_obj(o: *HackMixed): *HackMixed {

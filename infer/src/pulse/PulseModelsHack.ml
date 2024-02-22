@@ -255,6 +255,18 @@ let aval_to_hack_int n_val : DSL.aval DSL.model_monad =
   ret ret_val
 
 
+let aval_to_hack_bool b_val : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let class_name = "HackBool" in
+  let typ = Typ.mk_struct (Typ.HackClass (HackClassName.make class_name)) in
+  let* ret_val = mk_fresh ~model_desc:"make_bool" () in
+  let* () = add_dynamic_type typ ret_val in
+  let* () = and_positive ret_val in
+  let field = mk_hack_field class_name "val" in
+  let* () = write_deref_field ~ref:ret_val field ~obj:b_val in
+  ret ret_val
+
+
 let int_to_hack_int n : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let* n_val = mk_fresh ~model_desc:"make_int" () in
@@ -1146,34 +1158,83 @@ let type_struct_prim_tag_to_classname n =
       None
 
 
-(* for now ignores resolve and enforce options, and just for primitive types *)
-let hhbc_is_type_struct_c v tdict _resolveop _enforcekind : model =
+(* returns a fresh value equated to the SIL result of the comparison *)
+let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@
   let kind_field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack "kind" in
   let* kind_boxed_int = eval_deref_access Read tdict (FieldAccess kind_field) in
   let* kind_int_val = eval_deref_access Read kind_boxed_int (FieldAccess int_val_field) in
   let* kind_int_opt = get_known_int_opt kind_int_val in
   match kind_int_opt with
   | None ->
-      L.d_printfln "didn't get known integer tag in is_type_struct_c" ;
+      L.d_printfln "didn't get known integer tag in check against type struct" ;
       let* md = get_data in
       L.internal_error "known tag failure tdict is %a at %a" AbstractValue.pp (fst tdict)
         Location.pp_file_pos md.location ;
       (* duplicating behaviour of previous sil model instead of calling this an internal error *)
-      let* rv = make_hack_bool true in
-      assign_ret rv
+      let* one = eval_read (Const (Cint IntLit.one)) in
+      ret one
   | Some k -> (
-      let* rv = mk_fresh ~model_desc:"hhbc_is_type_struct_c" () in
+      let* inner_val = mk_fresh ~model_desc:"check against type struct" () in
       match type_struct_prim_tag_to_classname k with
       | Some name ->
           let typ = Typ.mk (Typ.Tstruct name) in
-          let* () = and_equal_instanceof rv v typ in
-          assign_ret rv
+          let* () = and_equal_instanceof inner_val v typ in
+          ret inner_val
       | None ->
-          (* previous version always returned true, this is just unconstrained for now *)
-          assign_ret rv )
+          (* previous version always returned true, this is just unconstrained to prevent
+             pruning feasible paths *)
+          ret inner_val )
+
+
+(* for now ignores resolve and enforce options, and just for primitive types *)
+let hhbc_is_type_struct_c v tdict _resolveop _enforcekind : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* inner_val = check_against_type_struct v tdict in
+     let* wrapped_result = aval_to_hack_bool inner_val in
+     assign_ret wrapped_result
+
+
+let hhbc_verify_param_type_ts v tdict : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* inner_val = check_against_type_struct v tdict in
+     let* () = prune_ne_zero inner_val in
+     let* zero = eval_read (Const (Cint IntLit.zero)) in
+     assign_ret zero
+
+
+let hhbc_is_type_prim typname v : model =
+  let open DSL.Syntax in
+  start_model
+  @@
+  let typ = Typ.mk (Typ.Tstruct typname) in
+  let model_desc = Printf.sprintf "hhbc_is_type_%s" (Typ.Name.to_string typname) in
+  let* inner_val = mk_fresh ~model_desc () in
+  let* rv = aval_to_hack_bool inner_val in
+  let* () = and_equal_instanceof inner_val v typ in
+  assign_ret rv
+
+
+let hhbc_is_type_str = hhbc_is_type_prim TextualSil.hack_string_type_name
+
+let hhbc_is_type_bool = hhbc_is_type_prim TextualSil.hack_bool_type_name
+
+let hhbc_is_type_int = hhbc_is_type_prim TextualSil.hack_int_type_name
+
+let hhbc_is_type_dict = hhbc_is_type_prim TextualSil.hack_dict_type_name
+
+let hhbc_is_type_vec = hhbc_is_type_prim TextualSil.hack_vec_type_name
+
+let hhbc_verify_type_pred _dummy pred : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* pred_val = eval_deref_access Read pred (FieldAccess bool_val_field) in
+     let* () = prune_ne_zero pred_val in
+     (* TODO: log when state is unsat at this point *)
+     let* zero = eval_read (Const (Cint IntLit.zero)) in
+     assign_ret zero
 
 
 let matchers : matcher list =
@@ -1201,6 +1262,15 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_cmp_ge" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_ge
   ; -"$builtins" &:: "hhbc_cmp_le" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_le
   ; -"$builtins" &:: "hack_is_true" <>$ capt_arg_payload $--> hack_is_true
+  ; -"$builtins" &:: "hhbc_is_type_str" <>$ capt_arg_payload $--> hhbc_is_type_str
+  ; -"$builtins" &:: "hhbc_is_type_bool" <>$ capt_arg_payload $--> hhbc_is_type_bool
+  ; -"$builtins" &:: "hhbc_is_type_int" <>$ capt_arg_payload $--> hhbc_is_type_int
+  ; -"$builtins" &:: "hhbc_is_type_dict" <>$ capt_arg_payload $--> hhbc_is_type_dict
+  ; -"$builtins" &:: "hhbc_is_type_vec" <>$ capt_arg_payload $--> hhbc_is_type_vec
+  ; -"$builtins" &:: "hhbc_verify_type_pred" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> hhbc_verify_type_pred
+  ; -"$builtins" &:: "hhbc_verify_param_type_ts" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> hhbc_verify_param_type_ts
   ; -"$builtins" &:: "hhbc_add" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_add
   ; -"$builtins" &:: "hack_get_static_class" <>$ capt_arg_payload $--> get_static_class
   ; -"$builtins" &:: "hhbc_cls_cns" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cls_cns

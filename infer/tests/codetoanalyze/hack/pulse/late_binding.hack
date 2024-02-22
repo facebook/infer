@@ -36,7 +36,7 @@ class Main {
   public function call_caller_bad(): void {
     $tainted = \Level1\taintSource();
     $i = C::caller2();
-    if ($i == 0) {
+    if ($i === 0) {
       \Level1\taintSink($tainted);
     }
   }
