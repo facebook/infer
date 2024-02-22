@@ -670,12 +670,13 @@ module GenericMapCollection = struct
                 (CppClass {template_spec_info= Template {args= TType key_t :: TType value_t :: _}})
           }
         , _ ) ->
-        (key_t, value_t)
+        Some (key_t, value_t)
     | _ ->
-        (* This can never happen, as we already know from using capt_arg_of_typ that map
+        (* This should never happen, as we already know from using capt_arg_of_typ that map
            is of some map type, hence it should have a first and second template arguments
            mapping to key and value types respectively. *)
-        assert false
+        L.internal_error "Unexpected (key, value) template type: %a" (Typ.pp Pp.text) map.typ ;
+        None
 
 
   let unwrap_pointer_to_struct_type (typ : Typ.t) =
@@ -685,10 +686,10 @@ module GenericMapCollection = struct
   let return_value_reference_dsl ?desc ({FuncArg.arg_payload} as map) :
       unit PulseModelsDSL.model_monad =
     let open PulseModelsDSL.Syntax in
-    let key_t, value_t = extract_key_and_value_types map in
-    let* pair = eval_access Read arg_payload pair_access in
-    let* value_ref = eval_access ?desc Read pair (pair_second_access key_t value_t) in
-    assign_ret value_ref
+    Option.value_map (extract_key_and_value_types map) ~default:(ret ()) ~f:(fun (key_t, value_t) ->
+        let* pair = eval_access Read arg_payload pair_access in
+        let* value_ref = eval_access ?desc Read pair (pair_second_access key_t value_t) in
+        assign_ret value_ref )
 
 
   let return_value_reference desc map =
@@ -722,13 +723,13 @@ module GenericMapCollection = struct
   let reset_backing_fields_dsl ({FuncArg.arg_payload} as map) desc : unit PulseModelsDSL.model_monad
       =
     let open PulseModelsDSL.Syntax in
-    let key_t, value_t = extract_key_and_value_types map in
-    let* first = mk_fresh ~model_desc:desc () in
-    let* second = mk_fresh ~model_desc:desc () in
-    let* pair = mk_fresh ~model_desc:desc () in
-    let* () = write_field ~ref:pair ~obj:first (pair_first_field key_t value_t) in
-    let* () = write_field ~ref:pair ~obj:second (pair_second_field key_t value_t) in
-    write_field ~ref:arg_payload ~obj:pair pair_field
+    Option.value_map (extract_key_and_value_types map) ~default:(ret ()) ~f:(fun (key_t, value_t) ->
+        let* first = mk_fresh ~model_desc:desc () in
+        let* second = mk_fresh ~model_desc:desc () in
+        let* pair = mk_fresh ~model_desc:desc () in
+        let* () = write_field ~ref:pair ~obj:first (pair_first_field key_t value_t) in
+        let* () = write_field ~ref:pair ~obj:second (pair_second_field key_t value_t) in
+        write_field ~ref:arg_payload ~obj:pair pair_field )
 
 
   let update_last_dsl arg_payload key_payload : unit PulseModelsDSL.model_monad =
@@ -758,16 +759,16 @@ module GenericMapCollection = struct
   let invalidate_references_dsl map_t map_f ({FuncArg.arg_payload} as map) :
       unit PulseModelsDSL.model_monad =
     let open PulseModelsDSL.Syntax in
-    let key_t, value_t = extract_key_and_value_types map in
-    let desc =
-      Format.asprintf "%a::%a" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f
-    in
-    let cause = Invalidation.CppMap (map_t, map_f) in
-    let* pair = eval_access NoAccess arg_payload pair_access in
-    let* () = invalidate_access cause arg_payload pair_access in
-    let* () = invalidate_access cause pair (pair_first_access key_t value_t) in
-    let* () = invalidate_access cause pair (pair_second_access key_t value_t) in
-    reset_backing_fields_dsl map desc
+    Option.value_map (extract_key_and_value_types map) ~default:(ret ()) ~f:(fun (key_t, value_t) ->
+        let desc =
+          Format.asprintf "%a::%a" Invalidation.pp_map_type map_t Invalidation.pp_map_function map_f
+        in
+        let cause = Invalidation.CppMap (map_t, map_f) in
+        let* pair = eval_access NoAccess arg_payload pair_access in
+        let* () = invalidate_access cause arg_payload pair_access in
+        let* () = invalidate_access cause pair (pair_first_access key_t value_t) in
+        let* () = invalidate_access cause pair (pair_second_access key_t value_t) in
+        reset_backing_fields_dsl map desc )
 
 
   let invalidate_references map_t map_f map =
