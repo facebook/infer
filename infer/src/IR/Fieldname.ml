@@ -92,7 +92,7 @@ module T = struct
   let pp = pp
 end
 
-module Set = Caml.Set.Make (T)
+module Set = PrettyPrintable.MakePPSet (T)
 module Map = PrettyPrintable.MakePPMap (T)
 
 let join ~sep c f = String.concat ~sep [c; f]

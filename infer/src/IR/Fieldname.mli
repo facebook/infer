@@ -44,7 +44,7 @@ val is_internal : t -> bool
 (** Check if the field has the prefix "__" or "_M_" (internal field of std::thread::id) *)
 
 (** Set for fieldnames *)
-module Set : Caml.Set.S with type elt = t
+module Set : PrettyPrintable.PPSet with type elt = t
 
 (** Map for fieldnames *)
 module Map : PrettyPrintable.PPMap with type key = t
