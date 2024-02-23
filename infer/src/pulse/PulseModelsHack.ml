@@ -1287,6 +1287,25 @@ let hhbc_cast_string arg : model =
       assign_ret rv
 
 
+let hhbc_concat arg1 arg2 : model =
+  let open DSL.Syntax in
+  start_model
+  @@ let* arg1_opt_string = read_boxed_string_value_opt_dsl arg1 in
+     let* arg2_opt_string = read_boxed_string_value_opt_dsl arg2 in
+     let hackString = TextualSil.hack_string_type_name in
+     match (arg1_opt_string, arg2_opt_string) with
+     | Some arg1_str, Some arg2_str ->
+         let* str = eval_read (Const (Cstr (arg1_str ^ arg2_str))) in
+         let* res = constructor hackString [("val", str)] in
+         assign_ret res
+     | _, _ ->
+         let* res = mk_fresh ~model_desc:"hhbc_concat" () in
+         let typ = Typ.mk_struct hackString in
+         let* () = add_dynamic_type typ res in
+         let* () = and_positive res in
+         assign_ret res
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"$builtins" &:: "nondet" <>$$--> lift_model @@ Basic.nondet ~desc:"nondet"
@@ -1313,6 +1332,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_cmp_lt" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_lt
   ; -"$builtins" &:: "hhbc_cmp_gt" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_gt
   ; -"$builtins" &:: "hhbc_cmp_ge" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_ge
+  ; -"$builtins" &:: "hhbc_concat" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_concat
   ; -"$builtins" &:: "hhbc_cmp_le" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_le
   ; -"$builtins" &:: "hack_is_true" <>$ capt_arg_payload $--> hack_is_true
   ; -"$builtins" &:: "hhbc_is_type_str" <>$ capt_arg_payload $--> hhbc_is_type_str

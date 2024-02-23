@@ -89,4 +89,18 @@ class Tests {
     }
   }
 
+  public static function inlined_concat_bad(): void {
+    $msg = "hello"."world";
+    if ($msg == "helloworld") {
+      \Level1\taintSink(\Level1\taintSource());
+    }
+  }
+
+  public static function inlined_concat_ok(): void {
+    $msg = "hello"."world";
+    if ($msg == "hello world") {
+      \Level1\taintSink(\Level1\taintSource());
+    }
+  }
+
 }
