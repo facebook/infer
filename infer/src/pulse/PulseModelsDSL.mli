@@ -84,7 +84,7 @@ module Syntax : sig
   (* each PulseOperations functions you need should be copied here *)
   val allocation : Attribute.allocator -> aval -> unit model_monad
 
-  val add_dynamic_type : Typ.t -> aval -> unit model_monad
+  val add_dynamic_type : Typ.t -> aval -> unit model_monad [@@warning "-unused-value-declaration"]
 
   val add_static_type : Typ.name -> aval -> unit model_monad
 
@@ -94,7 +94,7 @@ module Syntax : sig
 
   val eval_binop_int : Binop.t -> aval -> IntLit.t -> aval model_monad
 
-  val eval_read : Exp.t -> aval model_monad
+  val eval_read : Exp.t -> aval model_monad [@@warning "-unused-value-declaration"]
 
   val eval_const_int : int -> aval model_monad
 
@@ -159,7 +159,7 @@ module Syntax : sig
 
   val and_equal_instanceof : aval -> aval -> Typ.t -> unit model_monad
 
-  val and_positive : aval -> unit model_monad
+  val and_positive : aval -> unit model_monad [@@warning "-unused-value-declaration"]
 
   val get_known_constant_opt : aval -> Q.t option model_monad
 
