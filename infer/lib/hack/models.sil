@@ -30,6 +30,16 @@ define $builtins.hack_int(i: int): *HackInt {
     ret n0
 }
 
+type HackFloat = .final { val: float }
+
+define $builtins.hack_float(f: float): *HackFloat {
+  #entry:
+    n0 = __sil_allocate(<HackFloat>)
+    n1: float = load &f
+    store n0.HackFloat.val <- n1 : float
+    ret n0
+}
+
 type HackBool = .final { val: int }
 
 define $builtins.hack_bool(b: int): *HackBool {

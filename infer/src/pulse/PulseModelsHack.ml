@@ -19,6 +19,8 @@ let hack_bool_type_name = TextualSil.hack_bool_type_name
 
 let hack_int_type_name = TextualSil.hack_int_type_name
 
+let hack_float_type_name = TextualSil.hack_float_type_name
+
 let mixed_type_name = TextualSil.hack_mixed_type_name
 
 let hack_string_type_name = TextualSil.hack_string_type_name
@@ -785,6 +787,8 @@ let hhbc_not arg : model =
 
 let int_val_field = Fieldname.make hack_int_type_name "val"
 
+let float_val_field = Fieldname.make hack_float_type_name "val"
+
 let hhbc_cmp_same x y : model =
   let open DSL.Syntax in
   start_model
@@ -822,6 +826,10 @@ let hhbc_cmp_same x y : model =
              if Typ.Name.equal x_typ_name hack_int_type_name then
                let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
                let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
+               value_equality_test x_val y_val
+             else if Typ.Name.equal x_typ_name hack_float_type_name then
+               let* x_val = eval_deref_access Read x (FieldAccess float_val_field) in
+               let* y_val = eval_deref_access Read y (FieldAccess float_val_field) in
                value_equality_test x_val y_val
              else if Typ.Name.equal x_typ_name hack_bool_type_name then
                let* x_val = eval_deref_access Read x (FieldAccess bool_val_field) in
@@ -987,6 +995,10 @@ let hhbc_cmp_lt x y : model =
                     let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
                     let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
                     value_lt_test x_val y_val
+                  else if Typ.Name.equal x_typ_name hack_float_type_name then
+                    let* x_val = eval_deref_access Read x (FieldAccess float_val_field) in
+                    let* y_val = eval_deref_access Read y (FieldAccess float_val_field) in
+                    value_lt_test x_val y_val
                   else if Typ.Name.equal x_typ_name hack_bool_type_name then
                     let* x_val = eval_deref_access Read x (FieldAccess bool_val_field) in
                     let* y_val = eval_deref_access Read y (FieldAccess bool_val_field) in
@@ -1039,6 +1051,10 @@ let hhbc_cmp_le x y : model =
                   if Typ.Name.equal x_typ_name hack_int_type_name then
                     let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
                     let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
+                    value_le_test x_val y_val
+                  else if Typ.Name.equal x_typ_name hack_float_type_name then
+                    let* x_val = eval_deref_access Read x (FieldAccess float_val_field) in
+                    let* y_val = eval_deref_access Read y (FieldAccess float_val_field) in
                     value_le_test x_val y_val
                   else if Typ.Name.equal x_typ_name hack_bool_type_name then
                     let* x_val = eval_deref_access Read x (FieldAccess bool_val_field) in

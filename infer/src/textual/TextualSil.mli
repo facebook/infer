@@ -32,6 +32,8 @@ val hack_bool_type_name : Typ.name
 
 val hack_int_type_name : Typ.name
 
+val hack_float_type_name : Typ.name
+
 val hack_string_type_name : Typ.name
 
 val hack_splated_vec_type_name : Typ.name

@@ -113,6 +113,8 @@ let hack_bool_type_name = SilTyp.HackClass (HackClassName.make "HackBool")
 
 let hack_int_type_name = SilTyp.HackClass (HackClassName.make "HackInt")
 
+let hack_float_type_name = SilTyp.HackClass (HackClassName.make "HackFloat")
+
 let hack_string_type_name = SilTyp.HackClass (HackClassName.make "HackString")
 
 let hack_splated_vec_type_name = SilTyp.HackClass (HackClassName.make "HackSplatedVec")

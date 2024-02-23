@@ -62,6 +62,24 @@ class CmpSame {
     }
   }
 
+  public function cmpSameFloatSimpleBad(): void {
+    $a = 3.14;
+    $b = 3.14;
+    $taint = \Level1\taintSource();
+    if ($a === $b) {
+      \Level1\taintSink($taint);
+    }
+  }
+
+  public function cmpSameFloatSimpleGood(): void {
+    $a = 3.14;
+    $b = 42.0;
+    $taint = \Level1\taintSource();
+    if ($a === $b) {
+      \Level1\taintSink($taint);
+    }
+  }
+
   public function cmpSameBoolSimpleBad(): void {
     $a = true;
     $b = true;
@@ -196,6 +214,24 @@ class CmpNsame {
     }
   }
 
+  public function nsameFloatSimpleBad(): void {
+    $a = 3.14;
+    $b = 42.0;
+    $taint = \Level1\taintSource();
+    if ($a !== $b) {
+      \Level1\taintSink($taint);
+    }
+  }
+
+  public function nsameFloatSimpleGood(): void {
+    $a = 3.14;
+    $b = 3.14;
+    $taint = \Level1\taintSource();
+    if ($a !== $b) {
+      \Level1\taintSink($taint);
+    }
+  }
+
   public function neBoolSimpleBad(): void {
     $a = true;
     $b = false;
@@ -300,6 +336,42 @@ class CmpEq {
   public function neIntSimpleGood(): void {
     $a = 0;
     $b = 0;
+    $taint = \Level1\taintSource();
+    if ($a != $b) {
+      \Level1\taintSink($taint);
+    }
+  }
+
+  public function cmpEqFloatSimpleBad(): void {
+    $a = 3.14;
+    $b = 3.14;
+    $taint = \Level1\taintSource();
+    if ($a == $b) {
+      \Level1\taintSink($taint);
+    }
+  }
+
+  public function cmpEqFloatSimpleGood(): void {
+    $a = 3.14;
+    $b = 42.0;
+    $taint = \Level1\taintSource();
+    if ($a == $b) {
+      \Level1\taintSink($taint);
+    }
+  }
+
+  public function neFloatSimpleBad(): void {
+    $a = 3.14;
+    $b = 42.0;
+    $taint = \Level1\taintSource();
+    if ($a != $b) {
+      \Level1\taintSink($taint);
+    }
+  }
+
+  public function neFloatSimpleGood(): void {
+    $a = 3.14;
+    $b = 3.14;
     $taint = \Level1\taintSource();
     if ($a != $b) {
       \Level1\taintSink($taint);
