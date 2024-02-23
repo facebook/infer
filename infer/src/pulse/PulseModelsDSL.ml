@@ -304,6 +304,10 @@ module Syntax = struct
     PulseOperations.eval path Read location exp |> exec_partial_operation
 
 
+  let eval_const_int i : aval model_monad = eval_read (Const (Cint (IntLit.of_int i)))
+
+  let eval_const_string str : aval model_monad = eval_read (Const (Cstr str))
+
   let eval_to_value_origin exp : ValueOrigin.t model_monad =
     let* {path; location} = get_data in
     PulseOperations.eval_to_value_origin path Read location exp |> exec_partial_operation

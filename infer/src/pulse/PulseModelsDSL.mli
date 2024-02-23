@@ -96,6 +96,10 @@ module Syntax : sig
 
   val eval_read : Exp.t -> aval model_monad
 
+  val eval_const_int : int -> aval model_monad
+
+  val eval_const_string : string -> aval model_monad
+
   val eval_to_value_origin : Exp.t -> ValueOrigin.t model_monad
 
   val eval_access : ?desc:string -> access_mode -> aval -> Access.t -> aval model_monad

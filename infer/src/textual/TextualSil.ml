@@ -115,6 +115,8 @@ let hack_int_type_name = SilTyp.HackClass (HackClassName.make "HackInt")
 
 let hack_string_type_name = SilTyp.HackClass (HackClassName.make "HackString")
 
+let hack_splated_vec_type_name = SilTyp.HackClass (HackClassName.make "HackSplatedVec")
+
 let hack_mixed_type_name = SilTyp.HackClass (HackClassName.make "HackMixed")
 
 let hack_awaitable_type_name = SilTyp.HackClass (HackClassName.make "HH::Awaitable")

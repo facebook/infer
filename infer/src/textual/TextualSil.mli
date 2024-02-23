@@ -34,6 +34,8 @@ val hack_int_type_name : Typ.name
 
 val hack_string_type_name : Typ.name
 
+val hack_splated_vec_type_name : Typ.name
+
 val hack_mixed_type_name : Typ.name
 
 val hack_awaitable_type_name : Typ.name

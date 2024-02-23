@@ -13,10 +13,19 @@ open PulseOperationResult.Import
 open PulseModelsImport
 module DSL = PulseModelsDSL
 
+let awaitable_type_name = TextualSil.hack_awaitable_type_name
+
+let hack_bool_type_name = TextualSil.hack_bool_type_name
+
+let hack_int_type_name = TextualSil.hack_int_type_name
+
+let mixed_type_name = TextualSil.hack_mixed_type_name
+
+let hack_string_type_name = TextualSil.hack_string_type_name
+
 let read_boxed_string_value address astate =
   let open IOption.Let_syntax in
-  let hackString = TextualSil.hack_string_type_name in
-  let field = Fieldname.make hackString "val" in
+  let field = Fieldname.make hack_string_type_name "val" in
   let* box_val, _ = Memory.find_edge_opt address (FieldAccess field) astate in
   let* string_val, _ = Memory.find_edge_opt box_val Dereference astate in
   AddressAttributes.get_const_string string_val astate
@@ -45,15 +54,12 @@ let payload_of_arg arg =
 
 let payloads_of_args args = List.map ~f:payload_of_arg args
 
-let mk_hack_field clazz field = Fieldname.make (Typ.HackClass (HackClassName.make clazz)) field
-
 let await_hack_value aval : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  let class_name = "HH::Awaitable" in
-  let val_field = mk_hack_field class_name "val" in
+  let val_field = Fieldname.make awaitable_type_name "val" in
   dynamic_dispatch aval
     ~cases:
-      [ ( TextualSil.hack_awaitable_type_name
+      [ ( awaitable_type_name
         , fun () ->
             let* () = fst aval |> AddressAttributes.hack_async_await |> DSL.Syntax.exec_command in
             eval_deref_access Read aval (FieldAccess val_field) ) ]
@@ -69,7 +75,7 @@ let hack_await arg : model =
 
 let make_new_awaitable av =
   let open DSL.Syntax in
-  let* av = constructor TextualSil.hack_awaitable_type_name [("val", av)] in
+  let* av = constructor awaitable_type_name [("val", av)] in
   let* () = allocation Attribute.HackAsync av in
   ret av
 
@@ -95,37 +101,48 @@ let deep_await_hack_value aval : unit DSL.model_monad =
    TODO: a more principled approach to collections of resources.
 *)
 module Vec = struct
-  let class_name = "HackVec"
+  let type_name = TextualSil.hack_vec_type_name
 
-  let fst_field = mk_hack_field class_name "__infer_model_backing_vec_fst"
+  let mk_vec_field name = Fieldname.make type_name name
 
-  let snd_field = mk_hack_field class_name "__infer_model_backing_vec_snd"
+  let fst_field_name = "__infer_model_backing_vec_fst"
 
-  let size_field = mk_hack_field class_name "__infer_model_backing_vec_size"
+  let snd_field_name = "__infer_model_backing_vec_snd"
 
-  let last_read_field = mk_hack_field class_name "__infer_model_backing_last_read"
+  let size_field_name = "__infer_model_backing_vec_size"
+
+  let last_read_field_name = "__infer_model_backing_last_read"
+
+  let fst_field = mk_vec_field fst_field_name
+
+  let snd_field = mk_vec_field snd_field_name
+
+  let size_field = mk_vec_field size_field_name
+
+  let last_read_field = mk_vec_field last_read_field_name
 
   let new_vec_dsl args : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
     let actual_size = List.length args in
-    let typ = Typ.mk_struct TextualSil.hack_vec_type_name in
-    let* vec = mk_fresh ~model_desc:"new_vec" () in
-    let* () = add_dynamic_type typ vec in
-    let* size = mk_fresh ~model_desc:"new_vec.size" () in
+    let* size = eval_const_int actual_size in
     let* last_read = mk_fresh ~model_desc:"new_vec.last_read" () in
-    let* dummy = mk_fresh ~model_desc:"new_vec.dummy" () in
-    let* () = write_deref_field ~ref:vec size_field ~obj:size in
-    let* () = write_deref_field ~ref:vec last_read_field ~obj:last_read in
+    let* dummy = eval_const_int 9 in
+    let* vec =
+      constructor type_name
+        [ (fst_field_name, dummy)
+        ; (snd_field_name, dummy)
+        ; (size_field_name, size)
+        ; (last_read_field_name, last_read) ]
+    in
     let* () =
       match args with
       | [] ->
-          let* () = write_deref_field ~ref:vec fst_field ~obj:dummy in
           write_deref_field ~ref:vec snd_field ~obj:dummy
       | arg1 :: rest -> (
           let* () = write_deref_field ~ref:vec fst_field ~obj:arg1 in
           match rest with
           | [] ->
-              write_deref_field ~ref:vec snd_field ~obj:dummy
+              ret ()
           | arg2 :: rest -> (
               let* () = write_deref_field ~ref:vec snd_field ~obj:arg2 in
               match rest with
@@ -135,8 +152,6 @@ module Vec = struct
               | rest ->
                   list_iter rest ~f:deep_await_hack_value ) )
     in
-    let* () = prune_eq_int size (IntLit.of_int actual_size) in
-    let* () = prune_eq_int dummy (IntLit.of_int 9) in
     ret vec
 
 
@@ -200,7 +215,7 @@ module Vec = struct
 
   let hack_array_get_one_dim vec key : DSL.aval DSL.model_monad =
     let open DSL.Syntax in
-    let field = mk_hack_field "HackInt" "val" in
+    let field = Fieldname.make hack_int_type_name "val" in
     let* index = eval_deref_access Read key (FieldAccess field) in
     get_vec_dsl vec index
 
@@ -209,7 +224,7 @@ module Vec = struct
     let open DSL.Syntax in
     match args with
     | [key; default] ->
-        let field = mk_hack_field "HackInt" "val" in
+        let field = Fieldname.make hack_int_type_name "val" in
         let* index = eval_deref_access Read key (FieldAccess field) in
         let value = get_vec_dsl vec index in
         let* ret_values = disjuncts [value; ret default] in
@@ -242,64 +257,54 @@ module Vec = struct
         ret ()
 end
 
-let bool_val_field = Fieldname.make TextualSil.hack_bool_type_name "val"
+let bool_val_field = Fieldname.make hack_bool_type_name "val"
 
 let make_hack_bool bool : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  let* bool = eval_read (Const (Cint (if bool then IntLit.one else IntLit.zero))) in
-  let* boxed_bool = constructor TextualSil.hack_bool_type_name [("val", bool)] in
+  let* bool = eval_const_int (if bool then 1 else 0) in
+  let* boxed_bool = constructor hack_bool_type_name [("val", bool)] in
   ret boxed_bool
 
 
 let aval_to_hack_int n_val : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  let class_name = "HackInt" in
-  let typ = Typ.mk_struct (Typ.HackClass (HackClassName.make class_name)) in
-  let* ret_val = mk_fresh ~model_desc:"make_int" () in
-  let* () = add_dynamic_type typ ret_val in
-  let* () = and_positive ret_val in
-  let field = mk_hack_field class_name "val" in
-  let* () = write_deref_field ~ref:ret_val field ~obj:n_val in
+  let* ret_val = constructor hack_int_type_name [("val", n_val)] in
   ret ret_val
 
 
 let aval_to_hack_bool b_val : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  let class_name = "HackBool" in
-  let typ = Typ.mk_struct (Typ.HackClass (HackClassName.make class_name)) in
-  let* ret_val = mk_fresh ~model_desc:"make_bool" () in
-  let* () = add_dynamic_type typ ret_val in
-  let* () = and_positive ret_val in
-  let field = mk_hack_field class_name "val" in
-  let* () = write_deref_field ~ref:ret_val field ~obj:b_val in
+  let* ret_val = constructor hack_bool_type_name [("val", b_val)] in
   ret ret_val
 
 
 let int_to_hack_int n : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  let* n_val = mk_fresh ~model_desc:"make_int" () in
-  let* () = and_eq_int n_val (IntLit.of_int n) in
+  let* n_val = eval_const_int n in
   aval_to_hack_int n_val
 
 
-let make_zero = int_to_hack_int 0
-
-let string_val_field = Fieldname.make TextualSil.hack_string_type_name "val"
+let string_val_field = Fieldname.make hack_string_type_name "val"
 
 let make_hack_string (s : string) : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
-  let str_exp = Exp.Const (Const.Cstr s) in
-  let* str_val = eval_read str_exp in
-  let* ret_val = constructor TextualSil.hack_string_type_name [("val", str_val)] in
+  let* str_val = eval_const_string s in
+  let* ret_val = constructor hack_string_type_name [("val", str_val)] in
   ret ret_val
 
 
 module VecIter = struct
-  let class_name = "HackVecIterator"
+  let type_name = TextualSil.hack_vec_iter_type_name
 
-  let vec_field = mk_hack_field class_name "__infer_model_backing_veciterator_vec"
+  let mk_vec_iter_field name = Fieldname.make type_name name
 
-  let index_field = mk_hack_field class_name "__infer_model_backing_veciterator_index"
+  let vec_field_name = "__infer_model_backing_veciterator_vec"
+
+  let index_field_name = "__infer_model_backing_veciterator_index"
+
+  let vec_field = mk_vec_iter_field vec_field_name
+
+  let index_field = mk_vec_iter_field index_field_name
 
   let iter_init_vec iteraddr keyaddr eltaddr argv : unit DSL.model_monad =
     let open DSL.Syntax in
@@ -311,16 +316,10 @@ module VecIter = struct
     in
     let nonemptycase : DSL.aval DSL.model_monad =
       let* () = prune_positive size_val in
-      let* iter = mk_fresh ~model_desc:"iter_init" () in
-      let* zero = mk_fresh ~model_desc:"iter_init" () in
-      let* () = and_eq_int zero IntLit.zero in
-      let typ = Typ.mk_struct (Typ.HackClass (HackClassName.make class_name)) in
-      let* () = add_dynamic_type typ iter in
-      let* () = and_positive iter in
-      let* () = write_deref_field ~ref:iter vec_field ~obj:argv in
-      let* () = write_deref_field ~ref:iter index_field ~obj:zero in
+      let* zero = eval_const_int 0 in
+      let* iter = constructor type_name [(vec_field_name, argv); (index_field_name, zero)] in
       let* () = write_deref ~ref:iteraddr ~obj:iter in
-      let* hack_zero = make_zero in
+      let* hack_zero = int_to_hack_int 0 in
       let* elt = Vec.get_vec_dsl argv hack_zero in
       let* () = write_deref ~ref:eltaddr ~obj:elt in
       let* ret_val = make_hack_bool true in
@@ -416,7 +415,7 @@ let lazy_class_initialize size_exp : model =
     match type_name with
     | HackClass class_name ->
         let ret_id = Ident.create_none () in
-        let ret_typ = Typ.mk_ptr (Typ.mk_struct TextualSil.hack_mixed_type_name) in
+        let ret_typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
         let pname = Procname.get_hack_static_init class_name in
         let exp = Exp.Lvar (get_static_companion_var type_name) in
         let typ = Typ.mk_struct type_name in
@@ -447,7 +446,7 @@ let hhbc_class_get_c value : model =
   start_model
   @@ dynamic_dispatch value
        ~cases:
-         [ ( TextualSil.hack_string_type_name
+         [ ( hack_string_type_name
            , fun () ->
                let* string = read_boxed_string_value_dsl value in
                (* namespace\\classname becomes namespace::classname *)
@@ -463,6 +462,8 @@ let hhbc_class_get_c value : model =
 module Dict = struct
   (* We model dict/shape keys as fields. This is a bit unorthodox in Pulse, but we need
      maximum precision on this ubiquitous Hack data structure. *)
+
+  let type_name = TextualSil.hack_dict_type_name
 
   let field_of_string_value value : Fieldname.t option DSL.model_monad =
     let open DSL.Syntax in
@@ -486,9 +487,7 @@ module Dict = struct
     let open DSL.Syntax in
     start_model
     @@ let* bindings = payloads_of_args args |> get_bindings in
-       let* dict = mk_fresh ~model_desc:"new_dict" () in
-       let typ = Typ.mk_struct TextualSil.hack_dict_type_name in
-       let* () = add_dynamic_type typ dict in
+       let* dict = constructor type_name [] in
        let* () =
          list_iter bindings ~f:(fun (field, value) -> write_deref_field ~ref:dict field ~obj:value)
        in
@@ -499,9 +498,7 @@ module Dict = struct
     let open DSL.Syntax in
     start_model
     @@ let* fields = get_known_fields dict in
-       let* new_dict = mk_fresh ~model_desc:"dict_from_async" () in
-       let typ = Typ.mk_struct TextualSil.hack_dict_type_name in
-       let* () = add_dynamic_type typ new_dict in
+       let* new_dict = constructor type_name [] in
        let* () =
          list_iter fields ~f:(fun field_access ->
              match (field_access : Access.t) with
@@ -578,17 +575,22 @@ module Dict = struct
 end
 
 module DictIter = struct
-  let class_name = "HackDictIterator"
+  let type_name = TextualSil.hack_dict_iter_type_name
 
-  let dict_field = mk_hack_field class_name "__infer_model_backing_dictiterator_dict"
+  let mk_dict_iter_field name = Fieldname.make type_name name
 
-  let index_field = mk_hack_field class_name "__infer_model_backing_dictiterator_index"
+  let dict_field_name = "__infer_model_backing_dictiterator_dict"
+
+  let index_field_name = "__infer_model_backing_dictiterator_index"
+
+  let dict_field = mk_dict_iter_field dict_field_name
+
+  let index_field = mk_dict_iter_field index_field_name
 
   let iter_init_dict iteraddr keyaddr eltaddr argd : unit DSL.model_monad =
     let open DSL.Syntax in
     let* fields = get_known_fields argd in
-    let* size_val = mk_fresh ~model_desc:"dict_iter_init" () in
-    let* () = and_eq_int size_val (IntLit.of_int (List.length fields)) in
+    let* size_val = eval_const_int (List.length fields) in
     let emptycase : DSL.aval DSL.model_monad =
       let* () = prune_eq_zero size_val in
       let* ret_val = make_hack_bool false in
@@ -596,14 +598,8 @@ module DictIter = struct
     in
     let nonemptycase : DSL.aval DSL.model_monad =
       let* () = prune_positive size_val in
-      let* iter = mk_fresh ~model_desc:"dict_iter_init" () in
-      let* zero = mk_fresh ~model_desc:"dict_iter_init" () in
-      let* () = and_eq_int zero IntLit.zero in
-      let typ = Typ.mk_struct (Typ.HackClass (HackClassName.make class_name)) in
-      let* () = add_dynamic_type typ iter in
-      let* () = and_positive iter in
-      let* () = write_deref_field ~ref:iter dict_field ~obj:argd in
-      let* () = write_deref_field ~ref:iter index_field ~obj:zero in
+      let* zero = eval_const_int 0 in
+      let* iter = constructor type_name [(dict_field_name, argd); (index_field_name, zero)] in
       let* () = write_deref ~ref:iteraddr ~obj:iter in
       let* field =
         match List.hd fields with
@@ -644,8 +640,7 @@ module DictIter = struct
     let open DSL.Syntax in
     let* thedict = eval_deref_access Read iter (FieldAccess dict_field) in
     let* fields = get_known_fields thedict in
-    let* size_val = mk_fresh ~model_desc:"dict_iter_init" () in
-    let* () = and_eq_int size_val (IntLit.of_int (List.length fields)) in
+    let* size_val = eval_const_int (List.length fields) in
     let* index = eval_deref_access Read iter (FieldAccess index_field) in
     let* succindex = eval_binop_int (Binop.PlusA None) index IntLit.one in
     (* In contrast to vecs, we don't have an overapproximate exit condition here *)
@@ -716,8 +711,8 @@ let hack_array_cow_set this args : model =
   in
   dynamic_dispatch this
     ~cases:
-      [ (TextualSil.hack_dict_type_name, fun () -> Dict.hack_array_cow_set_dsl this args)
-      ; (TextualSil.hack_vec_type_name, fun () -> Vec.hack_array_cow_set_dsl this args) ]
+      [ (Dict.type_name, fun () -> Dict.hack_array_cow_set_dsl this args)
+      ; (Vec.type_name, fun () -> Vec.hack_array_cow_set_dsl this args) ]
     ~default
 
 
@@ -731,8 +726,8 @@ let hack_array_get this args : model =
   let hack_array_get_one_dim this key : DSL.aval DSL.model_monad =
     dynamic_dispatch this
       ~cases:
-        [ (TextualSil.hack_dict_type_name, fun () -> Dict.hack_array_get_one_dim this key)
-        ; (TextualSil.hack_vec_type_name, fun () -> Vec.hack_array_get_one_dim this key) ]
+        [ (Dict.type_name, fun () -> Dict.hack_array_get_one_dim this key)
+        ; (Vec.type_name, fun () -> Vec.hack_array_get_one_dim this key) ]
       ~default
   in
   let* value = list_fold args ~init:this ~f:hack_array_get_one_dim in
@@ -751,8 +746,8 @@ let hack_array_idx this args : model =
   in
   dynamic_dispatch this
     ~cases:
-      [ (TextualSil.hack_dict_type_name, fun () -> Dict.hack_array_idx this args)
-      ; (TextualSil.hack_vec_type_name, fun () -> Vec.hack_array_idx this args) ]
+      [ (Dict.type_name, fun () -> Dict.hack_array_idx this args)
+      ; (Vec.type_name, fun () -> Vec.hack_array_idx this args) ]
     ~default
 
 
@@ -788,7 +783,7 @@ let hack_field_get this field : model =
 let make_hack_random_bool : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let* any = mk_fresh ~model_desc:"make_hack_random_bool" () in
-  let* boxed_bool = constructor TextualSil.hack_bool_type_name [("val", any)] in
+  let* boxed_bool = constructor hack_bool_type_name [("val", any)] in
   ret boxed_bool
 
 
@@ -815,7 +810,7 @@ let hhbc_not arg : model =
      assign_ret res
 
 
-let int_val_field = Fieldname.make TextualSil.hack_int_type_name "val"
+let int_val_field = Fieldname.make hack_int_type_name "val"
 
 let hhbc_cmp_same x y : model =
   let open DSL.Syntax in
@@ -851,15 +846,15 @@ let hhbc_cmp_same x y : model =
          | ( Some {Attribute.typ= {desc= Tstruct x_typ_name}}
            , Some {Attribute.typ= {desc= Tstruct y_typ_name}} )
            when Typ.Name.equal x_typ_name y_typ_name ->
-             if Typ.Name.equal x_typ_name TextualSil.hack_int_type_name then
+             if Typ.Name.equal x_typ_name hack_int_type_name then
                let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
                let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
                value_equality_test x_val y_val
-             else if Typ.Name.equal x_typ_name TextualSil.hack_bool_type_name then
+             else if Typ.Name.equal x_typ_name hack_bool_type_name then
                let* x_val = eval_deref_access Read x (FieldAccess bool_val_field) in
                let* y_val = eval_deref_access Read y (FieldAccess bool_val_field) in
                value_equality_test x_val y_val
-             else if Typ.Name.equal x_typ_name TextualSil.hack_string_type_name then
+             else if Typ.Name.equal x_typ_name hack_string_type_name then
                let* opt_str_x = read_boxed_string_value_opt_dsl x in
                let* opt_str_y = read_boxed_string_value_opt_dsl y in
                match (opt_str_x, opt_str_y) with
@@ -900,7 +895,7 @@ let hack_is_true b : model =
   @@
   let nullcase =
     let* () = prune_eq_zero b in
-    let* zero = eval_read (Const (Cint IntLit.zero)) in
+    let* zero = eval_const_int 0 in
     assign_ret zero
   in
   let nonnullcase =
@@ -911,12 +906,12 @@ let hack_is_true b : model =
         let* ret = make_hack_random_bool in
         assign_ret ret
     | Some {Attribute.typ= {Typ.desc= Tstruct b_typ_name}} ->
-        if Typ.Name.equal b_typ_name TextualSil.hack_bool_type_name then
+        if Typ.Name.equal b_typ_name hack_bool_type_name then
           let* b_val = eval_deref_access Read b (FieldAccess bool_val_field) in
           assign_ret b_val
         else (
           L.d_printfln "istrue got typename %a" Typ.Name.pp b_typ_name ;
-          let* one = eval_read (Const (Cint IntLit.one)) in
+          let* one = eval_const_int 1 in
           assign_ret one )
     | _ ->
         unreachable (* shouldn't happen *)
@@ -1015,11 +1010,11 @@ let hhbc_cmp_lt x y : model =
               | ( Some {Attribute.typ= {Typ.desc= Tstruct x_typ_name}}
                 , Some {Attribute.typ= {Typ.desc= Tstruct y_typ_name}} )
                 when Typ.Name.equal x_typ_name y_typ_name ->
-                  if Typ.Name.equal x_typ_name TextualSil.hack_int_type_name then
+                  if Typ.Name.equal x_typ_name hack_int_type_name then
                     let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
                     let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
                     value_lt_test x_val y_val
-                  else if Typ.Name.equal x_typ_name TextualSil.hack_bool_type_name then
+                  else if Typ.Name.equal x_typ_name hack_bool_type_name then
                     let* x_val = eval_deref_access Read x (FieldAccess bool_val_field) in
                     let* y_val = eval_deref_access Read y (FieldAccess bool_val_field) in
                     value_lt_test x_val y_val
@@ -1068,11 +1063,11 @@ let hhbc_cmp_le x y : model =
               | ( Some {Attribute.typ= {Typ.desc= Tstruct x_typ_name}}
                 , Some {Attribute.typ= {Typ.desc= Tstruct y_typ_name}} )
                 when Typ.Name.equal x_typ_name y_typ_name ->
-                  if Typ.Name.equal x_typ_name TextualSil.hack_int_type_name then
+                  if Typ.Name.equal x_typ_name hack_int_type_name then
                     let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
                     let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
                     value_le_test x_val y_val
-                  else if Typ.Name.equal x_typ_name TextualSil.hack_bool_type_name then
+                  else if Typ.Name.equal x_typ_name hack_bool_type_name then
                     let* x_val = eval_deref_access Read x (FieldAccess bool_val_field) in
                     let* y_val = eval_deref_access Read y (FieldAccess bool_val_field) in
                     value_le_test x_val y_val
@@ -1093,8 +1088,7 @@ let hhbc_add x y : model =
      match (x_dynamic_type_data, y_dynamic_type_data) with
      | ( Some {Attribute.typ= {Typ.desc= Tstruct x_typ_name}}
        , Some {Attribute.typ= {Typ.desc= Tstruct y_typ_name}} )
-       when Typ.Name.equal x_typ_name y_typ_name
-            && Typ.Name.equal x_typ_name TextualSil.hack_int_type_name ->
+       when Typ.Name.equal x_typ_name y_typ_name && Typ.Name.equal x_typ_name hack_int_type_name ->
          let* x_val = eval_deref_access Read x (FieldAccess int_val_field) in
          let* y_val = eval_deref_access Read y (FieldAccess int_val_field) in
          let* sum = eval_binop (PlusA (Some IInt)) x_val y_val in
@@ -1110,10 +1104,8 @@ let hhbc_iter_init iteraddr keyaddr eltaddr arg : model =
   start_model
   @@ dynamic_dispatch arg
        ~cases:
-         [ ( TextualSil.hack_dict_type_name
-           , fun () -> DictIter.iter_init_dict iteraddr keyaddr eltaddr arg )
-         ; ( TextualSil.hack_vec_type_name
-           , fun () -> VecIter.iter_init_vec iteraddr keyaddr eltaddr arg ) ]
+         [ (Dict.type_name, fun () -> DictIter.iter_init_dict iteraddr keyaddr eltaddr arg)
+         ; (Vec.type_name, fun () -> VecIter.iter_init_vec iteraddr keyaddr eltaddr arg) ]
          (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
        ~default:(fun () -> VecIter.iter_init_vec iteraddr keyaddr eltaddr arg)
 
@@ -1123,9 +1115,8 @@ let hhbc_iter_next iter keyaddr eltaddr : model =
   start_model
   @@ dynamic_dispatch iter
        ~cases:
-         [ (TextualSil.hack_vec_iter_type_name, fun () -> VecIter.iter_next_vec iter keyaddr eltaddr)
-         ; ( TextualSil.hack_dict_iter_type_name
-           , fun () -> DictIter.iter_next_dict iter keyaddr eltaddr ) ]
+         [ (VecIter.type_name, fun () -> VecIter.iter_next_vec iter keyaddr eltaddr)
+         ; (DictIter.type_name, fun () -> DictIter.iter_next_dict iter keyaddr eltaddr) ]
          (* TODO: The default is a hack to make the variadic.hack test work, should be fixed properly *)
        ~default:(fun () -> VecIter.iter_next_vec iter keyaddr eltaddr)
 
@@ -1136,18 +1127,16 @@ let hack_throw : model =
 
 
 module SplatedVec = struct
-  let class_name = "HackSplatedVec"
+  let type_name = TextualSil.hack_splated_vec_type_name
 
   let field_name = "content"
 
-  let field = mk_hack_field class_name field_name
-
-  let typ_name = Typ.HackClass (HackClassName.make class_name)
+  let field = Fieldname.make type_name field_name
 
   let make arg : model =
     let open DSL.Syntax in
     start_model
-    @@ let* boxed = constructor typ_name [(field_name, arg)] in
+    @@ let* boxed = constructor type_name [(field_name, arg)] in
        assign_ret boxed
 
 
@@ -1157,7 +1146,7 @@ module SplatedVec = struct
     | [arg] -> (
         let* arg_dynamic_type_data = get_dynamic_type ~ask_specialization:false arg in
         match arg_dynamic_type_data with
-        | Some {Attribute.typ= {Typ.desc= Tstruct name}} when Typ.Name.equal name typ_name ->
+        | Some {Attribute.typ= {Typ.desc= Tstruct name}} when Typ.Name.equal name type_name ->
             eval_deref_access Read arg (FieldAccess field)
         | _ ->
             Vec.new_vec_dsl args )
@@ -1178,19 +1167,19 @@ let type_struct_prim_tag_to_classname n =
   | 0 ->
       None (* void doesn't have a tag 'cos it's represented as null *)
   | 1 ->
-      Some TextualSil.hack_int_type_name
+      Some hack_int_type_name
   | 2 ->
-      Some TextualSil.hack_bool_type_name
+      Some hack_bool_type_name
   | 3 ->
       None (* no floats yet *)
   | 4 ->
-      Some TextualSil.hack_string_type_name
+      Some hack_string_type_name
   | 14 ->
-      Some TextualSil.hack_dict_type_name (* really shape but the reps should be the same *)
+      Some Dict.type_name (* really shape but the reps should be the same *)
   | 19 ->
-      Some TextualSil.hack_dict_type_name (* actually dict this time *)
+      Some Dict.type_name (* actually dict this time *)
   | 20 ->
-      Some TextualSil.hack_vec_type_name
+      Some Vec.type_name
   | _ ->
       None
 
@@ -1209,7 +1198,7 @@ let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
       L.internal_error "known tag failure tdict is %a at %a" AbstractValue.pp (fst tdict)
         Location.pp_file_pos md.location ;
       (* duplicating behaviour of previous sil model instead of calling this an internal error *)
-      let* one = eval_read (Const (Cint IntLit.one)) in
+      let* one = eval_const_int 1 in
       ret one
   | Some k -> (
       let* inner_val = mk_fresh ~model_desc:"check against type struct" () in
@@ -1238,7 +1227,7 @@ let hhbc_verify_param_type_ts v tdict : model =
   start_model
   @@ let* inner_val = check_against_type_struct v tdict in
      let* () = prune_ne_zero inner_val in
-     let* zero = eval_read (Const (Cint IntLit.zero)) in
+     let* zero = eval_const_int 0 in
      assign_ret zero
 
 
@@ -1254,15 +1243,15 @@ let hhbc_is_type_prim typname v : model =
   assign_ret rv
 
 
-let hhbc_is_type_str = hhbc_is_type_prim TextualSil.hack_string_type_name
+let hhbc_is_type_str = hhbc_is_type_prim hack_string_type_name
 
-let hhbc_is_type_bool = hhbc_is_type_prim TextualSil.hack_bool_type_name
+let hhbc_is_type_bool = hhbc_is_type_prim hack_bool_type_name
 
-let hhbc_is_type_int = hhbc_is_type_prim TextualSil.hack_int_type_name
+let hhbc_is_type_int = hhbc_is_type_prim hack_int_type_name
 
-let hhbc_is_type_dict = hhbc_is_type_prim TextualSil.hack_dict_type_name
+let hhbc_is_type_dict = hhbc_is_type_prim Dict.type_name
 
-let hhbc_is_type_vec = hhbc_is_type_prim TextualSil.hack_vec_type_name
+let hhbc_is_type_vec = hhbc_is_type_prim Vec.type_name
 
 let hhbc_verify_type_pred _dummy pred : model =
   let open DSL.Syntax in
@@ -1270,7 +1259,7 @@ let hhbc_verify_type_pred _dummy pred : model =
   @@ let* pred_val = eval_deref_access Read pred (FieldAccess bool_val_field) in
      let* () = prune_ne_zero pred_val in
      (* TODO: log when state is unsat at this point *)
-     let* zero = eval_read (Const (Cint IntLit.zero)) in
+     let* zero = eval_const_int 0 in
      assign_ret zero
 
 
@@ -1283,22 +1272,21 @@ let hhbc_cast_string arg : model =
   *)
   let open DSL.Syntax in
   start_model
-  @@
-  let hackString = TextualSil.hack_string_type_name in
-  let* dynamic_type_data = get_dynamic_type ~ask_specialization:true arg in
-  match dynamic_type_data with
-  | Some {Attribute.typ= {Typ.desc= Tstruct typ_name}} when Typ.Name.equal typ_name hackString ->
-      assign_ret arg
-  | Some _ ->
-      (* note: we do not model precisely the value returned by __toString() *)
-      let* str = eval_read (Const (Cstr "__infer_hack_generated_from_cast_string")) in
-      let* rv = constructor hackString [("val", str)] in
-      (* note: we do not model the case where __toString() is not implemented *)
-      assign_ret rv
-  | _ ->
-      (* hopefully we will come back later with a dynamic type thanks to specialization *)
-      let* rv = mk_fresh ~model_desc:"hhbc_is_type_struct_c" () in
-      assign_ret rv
+  @@ let* dynamic_type_data = get_dynamic_type ~ask_specialization:true arg in
+     match dynamic_type_data with
+     | Some {Attribute.typ= {Typ.desc= Tstruct typ_name}}
+       when Typ.Name.equal typ_name hack_string_type_name ->
+         assign_ret arg
+     | Some _ ->
+         (* note: we do not model precisely the value returned by __toString() *)
+         let* str = eval_const_string "__infer_hack_generated_from_cast_string" in
+         let* rv = constructor hack_string_type_name [("val", str)] in
+         (* note: we do not model the case where __toString() is not implemented *)
+         assign_ret rv
+     | _ ->
+         (* hopefully we will come back later with a dynamic type thanks to specialization *)
+         let* rv = mk_fresh ~model_desc:"hhbc_is_type_struct_c" () in
+         assign_ret rv
 
 
 let hhbc_concat arg1 arg2 : model =
@@ -1306,17 +1294,13 @@ let hhbc_concat arg1 arg2 : model =
   start_model
   @@ let* arg1_opt_string = read_boxed_string_value_opt_dsl arg1 in
      let* arg2_opt_string = read_boxed_string_value_opt_dsl arg2 in
-     let hackString = TextualSil.hack_string_type_name in
      match (arg1_opt_string, arg2_opt_string) with
      | Some arg1_str, Some arg2_str ->
-         let* str = eval_read (Const (Cstr (arg1_str ^ arg2_str))) in
-         let* res = constructor hackString [("val", str)] in
+         let* str = eval_const_string (arg1_str ^ arg2_str) in
+         let* res = constructor hack_string_type_name [("val", str)] in
          assign_ret res
      | _, _ ->
-         let* res = mk_fresh ~model_desc:"hhbc_concat" () in
-         let typ = Typ.mk_struct hackString in
-         let* () = add_dynamic_type typ res in
-         let* () = and_positive res in
+         let* res = constructor hack_string_type_name [] in
          assign_ret res
 
 
