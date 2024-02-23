@@ -896,6 +896,11 @@ module Call = struct
     {eat_func_arg}
 
 
+  let all_arg_payloads : ('context, 'arg_payload list -> 'f_out, 'f_out, 'arg_payload) func_arg =
+    let eat_func_arg _context (f, args) = Some (f (List.map args ~f:FuncArg.arg_payload), []) in
+    {eat_func_arg}
+
+
   let capt_arg_payload :
       ('context, 'arg_payload, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg =
     {one_arg_matcher= match_any_arg; capture= capture_arg_val}
@@ -1021,6 +1026,8 @@ module Call = struct
 
   let ( $++ ) args_matcher () = args_matcher $+! all_args
 
+  let ( $+++ ) args_matcher () = args_matcher $+! all_arg_payloads
+
   let ( $+? ) args_matcher one_arg = args_matcher $+! (one_arg $?! ())
 
   let ( >$ ) templ_matcher one_arg = templ_matcher >$! () $+ one_arg
@@ -1036,6 +1043,8 @@ module Call = struct
   let ( $+...$--> ) args_matcher f = args_matcher $* any_func_args $*--> f
 
   let ( $++$--> ) args_matcher f = args_matcher $++ () $--> f
+
+  let ( $+++$--> ) args_matcher f = args_matcher $+++ () $--> f
 
   let ( >--> ) templ_matcher f = templ_matcher >$! () $+...$--> f
 
@@ -1054,6 +1063,8 @@ module Call = struct
   let ( &::.*--> ) name_matcher f = name_matcher <...>! () &::.*! () $! () $+...$--> f
 
   let ( &::.*++> ) name_matcher f = name_matcher <...>! () &::.*! () $! () $++$--> f
+
+  let ( &::.*+++> ) name_matcher f = name_matcher <...>! () &::.*! () $! () $+++$--> f
 
   let ( $!--> ) args_matcher f =
     args_matcher $* exact_args_or_retry wrong_args_internal_error $*--> f

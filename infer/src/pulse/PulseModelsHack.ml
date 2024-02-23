@@ -47,13 +47,6 @@ let read_boxed_string_value_opt_dsl aval : string option DSL.model_monad =
   ret opt_string
 
 
-let payload_of_arg arg =
-  let {ProcnameDispatcher.Call.FuncArg.arg_payload= addr} = arg in
-  addr
-
-
-let payloads_of_args args = List.map ~f:payload_of_arg args
-
 let await_hack_value aval : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
   let val_field = Fieldname.make awaitable_type_name "val" in
@@ -158,10 +151,8 @@ module Vec = struct
   let new_vec args : model =
     let open DSL.Syntax in
     start_model
-    @@
-    let values = payloads_of_args args in
-    let* vec = new_vec_dsl values in
-    assign_ret vec
+    @@ let* vec = new_vec_dsl args in
+       assign_ret vec
 
 
   (* TODO: this isn't *quite* right with respect to dummy values, but I think it's OK *)
@@ -220,19 +211,13 @@ module Vec = struct
     get_vec_dsl vec index
 
 
-  let hack_array_idx vec args : unit DSL.model_monad =
+  let hack_array_idx vec key default : unit DSL.model_monad =
     let open DSL.Syntax in
-    match args with
-    | [key; default] ->
-        let field = Fieldname.make hack_int_type_name "val" in
-        let* index = eval_deref_access Read key (FieldAccess field) in
-        let value = get_vec_dsl vec index in
-        let* ret_values = disjuncts [value; ret default] in
-        assign_ret ret_values
-    | _ ->
-        L.d_printfln "vec hack array idx argument error" ;
-        L.internal_error "Vec.hack_array_idx expects 2 arguments" ;
-        unreachable
+    let field = Fieldname.make hack_int_type_name "val" in
+    let* index = eval_deref_access Read key (FieldAccess field) in
+    let value = get_vec_dsl vec index in
+    let* ret_values = disjuncts [value; ret default] in
+    assign_ret ret_values
 
 
   (*
@@ -486,7 +471,7 @@ module Dict = struct
   let new_dict args : model =
     let open DSL.Syntax in
     start_model
-    @@ let* bindings = payloads_of_args args |> get_bindings in
+    @@ let* bindings = get_bindings args in
        let* dict = constructor type_name [] in
        let* () =
          list_iter bindings ~f:(fun (field, value) -> write_deref_field ~ref:dict field ~obj:value)
@@ -554,24 +539,18 @@ module Dict = struct
         mk_fresh ~model_desc:"hack_array_get_one_dim" ()
 
 
-  let hack_array_idx dict args : unit DSL.model_monad =
+  let hack_array_idx dict key default : unit DSL.model_monad =
     let open DSL.Syntax in
-    match args with
-    | [key; default] ->
-        let* field = field_of_string_value key in
-        let value =
-          match field with
-          | Some field ->
-              eval_deref_access Read dict (FieldAccess field)
-          | None ->
-              mk_fresh ~model_desc:"hack_array_idx" ()
-        in
-        let* ret_values = disjuncts [value; ret default] in
-        assign_ret ret_values
-    | _ ->
-        L.d_printfln "dict hack_array_idx argument error" ;
-        L.internal_error "Dict.hack_array_idx expects 2 arguments" ;
-        unreachable
+    let* field = field_of_string_value key in
+    let value =
+      match field with
+      | Some field ->
+          eval_deref_access Read dict (FieldAccess field)
+      | None ->
+          mk_fresh ~model_desc:"hack_array_idx" ()
+    in
+    let* ret_values = disjuncts [value; ret default] in
+    assign_ret ret_values
 end
 
 module DictIter = struct
@@ -702,8 +681,6 @@ let hack_array_cow_set this args : model =
   let open DSL.Syntax in
   start_model
   @@
-  let this = payload_of_arg this in
-  let args = payloads_of_args args in
   let default () =
     let* () = option_iter (List.last args) ~f:deep_await_hack_value in
     let* fresh = mk_fresh ~model_desc:"hack_array_cow_set" () in
@@ -720,8 +697,6 @@ let hack_array_get this args : model =
   let open DSL.Syntax in
   start_model
   @@
-  let this = payload_of_arg this in
-  let args = payloads_of_args args in
   let default () = mk_fresh ~model_desc:"hack_array_get" () in
   let hack_array_get_one_dim this key : DSL.aval DSL.model_monad =
     dynamic_dispatch this
@@ -734,20 +709,18 @@ let hack_array_get this args : model =
   assign_ret value
 
 
-let hack_array_idx this args : model =
+let hack_array_idx this key default_val : model =
   let open DSL.Syntax in
   start_model
   @@
-  let this = payload_of_arg this in
-  let args = payloads_of_args args in
   let default () =
     let* fresh = mk_fresh ~model_desc:"hack_array_idx" () in
     assign_ret fresh
   in
   dynamic_dispatch this
     ~cases:
-      [ (Dict.type_name, fun () -> Dict.hack_array_idx this args)
-      ; (Vec.type_name, fun () -> Vec.hack_array_idx this args) ]
+      [ (Dict.type_name, fun () -> Dict.hack_array_idx this key default_val)
+      ; (Vec.type_name, fun () -> Vec.hack_array_idx this key default_val) ]
     ~default
 
 
@@ -1312,11 +1285,12 @@ let matchers : matcher list =
   ; +BuiltinDecl.(match_builtin __hack_throw) <>--> hack_throw
   ; -"$builtins" &:: "__sil_splat" <>$ capt_arg_payload $--> SplatedVec.make
   ; -"$builtins" &:: "hhbc_await" <>$ capt_arg_payload $--> hack_await
-  ; -"$builtins" &:: "hack_array_get" <>$ capt_arg $++$--> hack_array_get
-  ; -"$builtins" &:: "hhbc_idx" <>$ capt_arg $++$--> hack_array_idx
-  ; -"$builtins" &:: "hack_array_cow_set" <>$ capt_arg $++$--> hack_array_cow_set
-  ; -"$builtins" &:: "hack_new_dict" &::.*++> Dict.new_dict
-  ; -"$builtins" &:: "hhbc_new_vec" &::.*++> Vec.new_vec
+  ; -"$builtins" &:: "hack_array_get" <>$ capt_arg_payload $+++$--> hack_array_get
+  ; -"$builtins" &:: "hhbc_idx" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $--> hack_array_idx
+  ; -"$builtins" &:: "hack_array_cow_set" <>$ capt_arg_payload $+++$--> hack_array_cow_set
+  ; -"$builtins" &:: "hack_new_dict" &::.*+++> Dict.new_dict
+  ; -"$builtins" &:: "hhbc_new_vec" &::.*+++> Vec.new_vec
   ; -"$builtins" &:: "hhbc_not" <>$ capt_arg_payload $--> hhbc_not
   ; -"$builtins" &:: "hack_get_class" <>$ capt_arg_payload $--> hack_get_class
   ; -"$builtins" &:: "hack_field_get" <>$ capt_arg_payload $+ capt_arg_payload $--> hack_field_get

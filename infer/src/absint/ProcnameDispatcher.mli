@@ -323,6 +323,12 @@ module Call : sig
     -> ('context, 'f_out, 'arg_payload) matcher
   (** Ends and captures ALL function arguments as a list and binds the function *)
 
+  val ( $+++$--> ) :
+       ('context, 'f_in, _, 'arg_payload list -> 'f_out, 'arg_payload) args_matcher
+    -> 'f_in
+    -> ('context, 'f_out, 'arg_payload) matcher
+  (** Ends and captures ALL function arguments as a list and binds the function *)
+
   val ( >$$--> ) :
        ('context, 'f_in, 'f_out, _, 'arg_payload) templ_matcher
     -> 'f_in
@@ -372,6 +378,13 @@ module Call : sig
 
   val ( &::.*++> ) :
        ('context, 'f_in, 'arg_payload FuncArg.t list -> 'f_out, 'arg_payload) name_matcher
+    -> 'f_in
+    -> ('context, 'f_out, 'arg_payload) matcher
+  (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
+      captures ALL function arguments as a list, binds the function *)
+
+  val ( &::.*+++> ) :
+       ('context, 'f_in, 'arg_payload list -> 'f_out, 'arg_payload) name_matcher
     -> 'f_in
     -> ('context, 'f_out, 'arg_payload) matcher
   (** After a name, accepts ALL template arguments, accepts ALL path tails (names, templates),
