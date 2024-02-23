@@ -1160,7 +1160,7 @@ let type_struct_prim_tag_to_classname n =
   | 2 ->
       Some hack_bool_type_name
   | 3 ->
-      None (* no floats yet *)
+      Some hack_float_type_name
   | 4 ->
       Some hack_string_type_name
   | 14 ->
@@ -1237,6 +1237,8 @@ let hhbc_is_type_str = hhbc_is_type_prim hack_string_type_name
 let hhbc_is_type_bool = hhbc_is_type_prim hack_bool_type_name
 
 let hhbc_is_type_int = hhbc_is_type_prim hack_int_type_name
+
+let hhbc_is_type_float = hhbc_is_type_prim hack_float_type_name
 
 let hhbc_is_type_dict = hhbc_is_type_prim Dict.type_name
 
@@ -1326,6 +1328,7 @@ let matchers : matcher list =
   ; -"$builtins" &:: "hhbc_is_type_str" <>$ capt_arg_payload $--> hhbc_is_type_str
   ; -"$builtins" &:: "hhbc_is_type_bool" <>$ capt_arg_payload $--> hhbc_is_type_bool
   ; -"$builtins" &:: "hhbc_is_type_int" <>$ capt_arg_payload $--> hhbc_is_type_int
+  ; -"$builtins" &:: "hhbc_is_type_dbl" <>$ capt_arg_payload $--> hhbc_is_type_float
   ; -"$builtins" &:: "hhbc_is_type_dict" <>$ capt_arg_payload $--> hhbc_is_type_dict
   ; -"$builtins" &:: "hhbc_is_type_vec" <>$ capt_arg_payload $--> hhbc_is_type_vec
   ; -"$builtins" &:: "hhbc_verify_type_pred" <>$ capt_arg_payload $+ capt_arg_payload
