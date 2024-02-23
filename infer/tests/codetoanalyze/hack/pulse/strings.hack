@@ -103,4 +103,49 @@ class Tests {
     }
   }
 
+  public static function get_foo_string(): string {
+    return "foo";
+  }
+
+  public static function string_eq(string $arg1, string $arg2): bool {
+    return ($arg1 == $arg2);
+  }
+
+  public static function string_ne(string $arg1, string $arg2): bool {
+    return ($arg1 != $arg2);
+  }
+
+  public static function FN_call_string_eq_bad(): void {
+    $arg1 = self::get_foo_string();
+    $arg2 = self::get_foo_string();
+    if (self::string_eq($arg1, $arg2)) {
+      \Level1\taintSink(\Level1\taintSource());
+    }
+  }
+
+  public static function call_string_eq_ok(): void {
+    $arg1 = self::get_foo_string();
+    $arg2 = "bar";
+    if (self::string_eq($arg1, $arg2)) {
+      \Level1\taintSink(\Level1\taintSource());
+    }
+  }
+
+  public static function FP_call_string_ne_ok(): void {
+    $arg1 = self::get_foo_string();
+    $arg2 = self::get_foo_string();
+    if (self::string_ne($arg1, $arg2)) {
+      \Level1\taintSink(\Level1\taintSource());
+    }
+  }
+
+  public static function call_string_ne_bad(): void {
+    $arg1 = self::get_foo_string();
+    $arg2 = "bar";
+    if (self::string_ne($arg1, $arg2)) {
+      \Level1\taintSink(\Level1\taintSource());
+    }
+  }
+
+
 }
