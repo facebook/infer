@@ -58,7 +58,7 @@ class Tests {
     }
   }
 
-  public static function FN_is_v2_bad(): void {
+  public static function is_v2_bad(): void {
     if (Main::is_test(0) == "") {
       \Level1\taintSink(\Level1\taintSource());
     }
@@ -71,7 +71,7 @@ class Tests {
     }
   }
 
-  public static function FP_is_v2_ok(): void {
+  public static function is_v2_ok(): void {
     if (Main::is_test(0) != "") {
       \Level1\taintSink(\Level1\taintSource());
     }

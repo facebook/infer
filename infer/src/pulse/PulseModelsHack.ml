@@ -30,6 +30,14 @@ let read_boxed_string_value_dsl aval : string DSL.model_monad =
   Option.value_map opt_string ~default:unreachable ~f:ret
 
 
+let read_boxed_string_value_opt_dsl aval : string option DSL.model_monad =
+  (* we cut the current path if no constant string is found *)
+  let open PulseModelsDSL.Syntax in
+  let operation astate = (read_boxed_string_value (fst aval) astate, astate) in
+  let* opt_string = exec_operation operation in
+  ret opt_string
+
+
 let payload_of_arg arg =
   let {ProcnameDispatcher.Call.FuncArg.arg_payload= addr} = arg in
   addr
@@ -838,9 +846,18 @@ let hhbc_cmp_same x y : model =
                let* y_val = eval_deref_access Read y (FieldAccess bool_val_field) in
                value_equality_test x_val y_val
              else if Typ.Name.equal x_typ_name TextualSil.hack_string_type_name then
-               let* x_val = eval_deref_access Read x (FieldAccess string_val_field) in
-               let* y_val = eval_deref_access Read y (FieldAccess string_val_field) in
-               value_equality_test x_val y_val
+               let* opt_str_x = read_boxed_string_value_opt_dsl x in
+               let* opt_str_y = read_boxed_string_value_opt_dsl y in
+               match (opt_str_x, opt_str_y) with
+               | Some str_x, Some str_y ->
+                   String.equal str_x str_y |> make_hack_bool
+               | _, _ ->
+                   let* x_val = eval_deref_access Read x (FieldAccess string_val_field) in
+                   let* y_val = eval_deref_access Read y (FieldAccess string_val_field) in
+                   disjuncts
+                     [ (let* () = prune_eq x_val y_val in
+                        make_hack_bool true )
+                     ; make_hack_bool false (* we can not assume [prune_ne x_val y_val] here *) ]
              else
                disjuncts
                  [ (let* () = prune_eq x y in
