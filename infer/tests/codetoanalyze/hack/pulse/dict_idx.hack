@@ -74,8 +74,7 @@ class Main {
     }
   }
 
-  // False negative: Infer should identify a flow
-  public function idx_get_BAD_FN(string $key): void {
+  public function idx_get_BAD(string $key): void {
     $tainted = \Level1\taintSource();
 
     $w = dict['a' => 1];

@@ -464,10 +464,10 @@ module Dict = struct
   (* We model dict/shape keys as fields. This is a bit unorthodox in Pulse, but we need
      maximum precision on this ubiquitous Hack data structure. *)
 
-  let field_of_string_value value : Fieldname.t DSL.model_monad =
+  let field_of_string_value value : Fieldname.t option DSL.model_monad =
     let open DSL.Syntax in
-    let* string = read_boxed_string_value_dsl value in
-    TextualSil.wildcard_sil_fieldname Textual.Lang.Hack string |> ret
+    let* string = read_boxed_string_value_opt_dsl value in
+    ret (Option.map string ~f:(fun string -> TextualSil.wildcard_sil_fieldname Hack string))
 
 
   let get_bindings values : (Fieldname.t * DSL.aval) list DSL.model_monad =
@@ -476,7 +476,7 @@ module Dict = struct
     list_filter_map chunked ~f:(function
       | [string; value] ->
           let* field = field_of_string_value string in
-          ret (Some (field, value))
+          ret (Option.map field ~f:(fun field -> (field, value)))
       | _ ->
           ret None )
 
@@ -527,13 +527,17 @@ module Dict = struct
         let* inner_dict =
           list_fold keys ~init:copy ~f:(fun dict key ->
               let* field = field_of_string_value key in
-              let* inner_dict = eval_deref_access Read dict (FieldAccess field) in
-              let* copied_inned_dict = deep_copy ~depth_max:1 inner_dict in
-              let* () = write_deref_field ~ref:dict field ~obj:copied_inned_dict in
-              ret copied_inned_dict )
+              match field with
+              | Some field ->
+                  let* inner_dict = eval_deref_access Read dict (FieldAccess field) in
+                  let* copied_inned_dict = deep_copy ~depth_max:1 inner_dict in
+                  let* () = write_deref_field ~ref:dict field ~obj:copied_inned_dict in
+                  ret copied_inned_dict
+              | None ->
+                  mk_fresh ~model_desc:"hack_array_cow_set_dsl" () )
         in
         let* field = field_of_string_value key in
-        let* () = write_deref_field ~ref:inner_dict field ~obj:value in
+        let* () = option_iter field ~f:(write_deref_field ~ref:inner_dict ~obj:value) in
         assign_ret copy
     | _ when List.length args > 2 ->
         L.d_printfln "multidimensional copy on write not implemented yet" ;
@@ -546,7 +550,11 @@ module Dict = struct
     let open DSL.Syntax in
     (* TODO: a key for a non-vec could be also a int *)
     let* field = field_of_string_value key in
-    eval_deref_access Read dict (FieldAccess field)
+    match field with
+    | Some field ->
+        eval_deref_access Read dict (FieldAccess field)
+    | None ->
+        mk_fresh ~model_desc:"hack_array_get_one_dim" ()
 
 
   let hack_array_idx dict args : unit DSL.model_monad =
@@ -554,7 +562,13 @@ module Dict = struct
     match args with
     | [key; default] ->
         let* field = field_of_string_value key in
-        let value = eval_deref_access Read dict (FieldAccess field) in
+        let value =
+          match field with
+          | Some field ->
+              eval_deref_access Read dict (FieldAccess field)
+          | None ->
+              mk_fresh ~model_desc:"hack_array_idx" ()
+        in
         let* ret_values = disjuncts [value; ret default] in
         assign_ret ret_values
     | _ ->
