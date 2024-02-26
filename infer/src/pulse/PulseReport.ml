@@ -188,6 +188,7 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
   | ConstRefableParameter _
   | CSharpResourceLeak _
   | ErlangError _
+  | InfiniteError _
   | TransitiveAccess _
   | JavaResourceLeak _
   | HackUnawaitedAwaitable _

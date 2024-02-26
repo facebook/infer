@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
-
 open! IStd
 module F = Format
 module L = Logging
@@ -145,9 +144,58 @@ module PulseTransferFunctions = struct
   module CFG = ProcCfg.ExceptionalNoSinkToExitEdge
   module DisjDomain = AbstractDomain.PairDisjunct (ExecutionDomain) (PathContext)
   module NonDisjDomain = NonDisjDomain
-
+  module ExecDom = ExecutionDomain
+                 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
+  (* Call on back_edge from widen in AbstractInterpreter.ml *)
+  let back_edge (prev:DisjDomain.t list) (next:DisjDomain.t list) (num_iters:int)  : DisjDomain.t list * int =
+    
+    let plen,nlen = List.length(prev), List.length(next) in
+    L.debug Analysis Quiet "JV PULSE:BACKEDGE NUMITER %d Number of Prev state = %d Number of Post states = %d \n" num_iters plen nlen;
+    
+    let rec listpair_split (l:DisjDomain.t list) (o1:ExecDom.t list) (o2:PathContext.t list) =
+      match l with
+      | [] -> (o1,o2)
+      | (ed,pc)::tail -> listpair_split tail (ed::o1) (pc::o2)
+    in
+    let listpair_combine (l1:ExecDom.t list) (l2: PathContext.t list) : (ExecDom.t * PathContext.t) list =
+      
+      let l1len,l2len = (List.length l1),(List.length l2) in
+      L.debug Analysis Quiet "JV: listpair_combine L1 len = %u L2 len = %u \n" l1len l2len;
+      if (l1len <> l2len) then [] else
+        
+        let rec listpair_combine_int (l1:ExecDom.t list) (l2: PathContext.t list) (out: (ExecDom.t * PathContext.t) list)
+                : (ExecDom.t * PathContext.t) list =
+          match (l1,l2) with
+          | hd::tl, hd2::tl2  -> let p = (hd,hd2) in listpair_combine_int tl tl2 (out @ [p])
+          | [],[]             -> out
+          | _                 -> L.debug Analysis Quiet "JV PULSE:BACKEDGE MISMATCH in list size to recombine \n"; out
+        in listpair_combine_int l1 l2 []
+    in
+    let plist,rplist = listpair_split prev [] [] in
+    let nlist,rnlist = listpair_split next [] [] in
+    let dbe,cnt      = (ExecDom.back_edge plist nlist num_iters) in
+    
+    let _,_       = (PathContext.back_edge rplist rnlist num_iters) in    
+    let (pathctx: PathContext.t option) = (List.nth rnlist cnt) in
+
+    let used,pts =
+      match (pathctx) with
+      | Some p -> 1, p
+      | _ ->
+         (* L.debug Analysis Quiet "JV PATHCTX DEBUG: not finding back pathctx at provided index  - this should never happen \n"; *)
+         0, PathContext.initial (* pathctx is None *)
+            
+    in
+    (* L.debug Analysis Quiet "JV PATHCTX: dbe len = %u pts len = 1 \n" (List.length dbe); *)
+    let res = if (used > 0 && cnt >= 0) then
+                listpair_combine (plist @ dbe) (rplist @ [pts])
+              else listpair_combine plist rplist
+    in
+    (res,-1)
+  (* END OF BACK-EDGE CODE *)
+                     
   let get_pvar_formals pname =
     IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
@@ -224,7 +272,7 @@ module PulseTransferFunctions = struct
           (StackAddress (Var.of_pvar pvar, ValueHistory.epoch))
           call_loc gone_out_of_scope out_of_scope_base astate
         |> ExecutionDomain.continue
-    | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
+    | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ | InfiniteProgram _ ->
         Sat (Ok exec_state)
 
 
@@ -246,6 +294,7 @@ module PulseTransferFunctions = struct
       | LatentAbortProgram _
       | ExitProgram _
       | ExceptionRaised _
+      | InfiniteProgram _
       | LatentInvalidAccess _ ->
           exec_state
     in
@@ -923,6 +972,7 @@ module PulseTransferFunctions = struct
             in
             ContinueProgram astate
         | ( ExceptionRaised _
+          | InfiniteProgram _
           | ExitProgram _
           | AbortProgram _
           | LatentAbortProgram _
@@ -1040,6 +1090,7 @@ module PulseTransferFunctions = struct
               match astate with
               | AbortProgram _
               | ExceptionRaised _
+              | InfiniteProgram _
               | ExitProgram _
               | LatentAbortProgram _
               | LatentInvalidAccess _ ->
@@ -1099,6 +1150,7 @@ module PulseTransferFunctions = struct
           match astate with
           | AbortProgram _
           | ExceptionRaised _
+          | InfiniteProgram _
           | ExitProgram _
           | LatentAbortProgram _
           | LatentInvalidAccess _ ->
@@ -1127,7 +1179,7 @@ module PulseTransferFunctions = struct
   let remove_vars vars location astates =
     List.filter_map astates ~f:(fun (exec_state : ExecutionDomain.t) ->
         match exec_state with
-        | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
+        | AbortProgram _ | ExitProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ | InfiniteProgram _ ->
             Some exec_state
         | ContinueProgram astate -> (
           match PulseOperations.remove_vars vars location astate with
@@ -1264,7 +1316,7 @@ module PulseTransferFunctions = struct
       ({InterproceduralAnalysis.tenv; proc_desc; err_log; exe_env} as analysis_data) _cfg_node
       (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
-    | AbortProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ ->
+    | AbortProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ | InfiniteProgram _ ->
         ([astate], path, astate_n)
     (* an exception has been raised, we skip the other instructions until we enter in
        exception edge *)
@@ -1576,6 +1628,7 @@ let exit_function analysis_data location posts non_disj_astate =
         | AbortProgram _
         | ExitProgram _
         | ExceptionRaised _
+        | InfiniteProgram _
         | LatentAbortProgram _
         | LatentInvalidAccess _ ->
             (exec_state :: acc_astates, astate_n)

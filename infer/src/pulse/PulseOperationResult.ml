@@ -132,6 +132,7 @@ module Import = struct
 
   type 'abductive_domain_t execution_domain_base_t = 'abductive_domain_t ExecutionDomain.base_t =
     | ContinueProgram of 'abductive_domain_t
+    | InfiniteProgram of 'abductive_domain_t
     | ExceptionRaised of 'abductive_domain_t
     | ExitProgram of AbductiveDomain.Summary.t
     | AbortProgram of AbductiveDomain.Summary.t

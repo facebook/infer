@@ -130,6 +130,7 @@ type t =
   | CSharpResourceLeak of
       {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
   | ErlangError of ErlangError.t
+  | InfiniteError of {location: Location.t}
   | TransitiveAccess of
       { tag: string
       ; description: string
@@ -187,7 +188,9 @@ let pp fmt diagnostic =
       F.fprintf fmt "ResourceLeak {@[class_name=%a;@;allocation_trace:%a;@;location:%a@]}"
         CSharpClassName.pp class_name (Trace.pp ~pp_immediate) allocation_trace Location.pp location
   | ErlangError erlang_error ->
-      ErlangError.pp fmt erlang_error
+     ErlangError.pp fmt erlang_error
+  | InfiniteError {location} ->
+     F.fprintf fmt "InfiniteExecution {@[location:%a@]}" Location.pp location
   | JavaResourceLeak {class_name; allocation_trace; location} ->
       F.fprintf fmt "ResourceLeak {@[class_name=%a;@;allocation_trace:%a;@;location:%a@]}"
         JavaClassName.pp class_name (Trace.pp ~pp_immediate) allocation_trace Location.pp location
@@ -295,8 +298,8 @@ let get_location = function
   | RetainCycle {location}
   | StackVariableAddressEscape {location}
   | TaintFlow {location}
-  | UnnecessaryCopy {location} ->
-      location
+  | UnnecessaryCopy {location} -> location
+  | InfiniteError {location} -> location
 
 
 let get_location_instantiated = function
@@ -317,6 +320,7 @@ let get_copy_type = function
 
 let aborts_execution = function
   | AccessToInvalidAddress _
+  | InfiniteError _
   | ErlangError
       ( Badarg _
       | Badkey _
@@ -602,7 +606,9 @@ let get_message_and_suggestion diagnostic =
   | ErlangError (If_clause {calling_context= _; location}) ->
       F.asprintf "no true branch in if expression at %a" Location.pp location |> no_suggestion
   | ErlangError (Try_clause {calling_context= _; location}) ->
-      F.asprintf "no matching branch in try at %a" Location.pp location |> no_suggestion
+     F.asprintf "no matching branch in try at %a" Location.pp location |> no_suggestion
+  | InfiniteError {location} ->
+     F.asprintf "Recurring state leading to infinite execution at %a" Location.pp location |> no_suggestion
   | JavaResourceLeak {class_name; location; allocation_trace} ->
       (* NOTE: this is very similar to the MemoryLeak case *)
       let allocation_line =
@@ -1076,12 +1082,15 @@ let get_trace = function
       ; Errlog.make_trace_element nesting copied_location
           (F.asprintf "%a here%a" PulseAttribute.CopyOrigin.pp from pp_copy_typ source_typ)
           [] ]
-
+  | InfiniteError {location} ->
+     [Errlog.make_trace_element 0 location "in loop" []]
 
 let get_issue_type ~latent issue_type =
   match (issue_type, latent) with
   | AccessToInvalidAddress {invalidation; must_be_valid_reason}, _ ->
       Invalidation.issue_type_of_cause ~latent invalidation must_be_valid_reason
+  | InfiniteError {location}, _ ->
+     let _ = location in IssueType.pulse_infinite
   | ConfigUsage _, false ->
       IssueType.pulse_config_usage
   | ConstRefableParameter _, false ->

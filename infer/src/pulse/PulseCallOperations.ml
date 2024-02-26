@@ -301,6 +301,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
          ready to be accessed by the exception handler. *)
       map_call_result astate ~f:(fun return_val_opt _subst astate ->
           Sat (copy_to_caller_return_variable astate return_val_opt) )
+  | InfiniteProgram astate
   | AbortProgram astate
   | ExitProgram astate
   | LatentAbortProgram {astate}
@@ -318,7 +319,7 @@ let apply_callee tenv ({PathContext.timestamp} as path) ~caller_proc_desc callee
           match callee_exec_state with
           | ContinueProgram _ | ExceptionRaised _ ->
               assert false
-          | AbortProgram _ ->
+          | AbortProgram _ | InfiniteProgram _ ->
               (* bypass the current errors to avoid compounding issues *)
               Sat (Ok (AbortProgram astate_summary))
           | ExitProgram _ ->
@@ -518,7 +519,9 @@ let add_need_dynamic_type_specialization needs execution_states =
         | ExecutionDomain.ExceptionRaised astate ->
             ExceptionRaised (update_astate astate)
         | ContinueProgram astate ->
-            ContinueProgram (update_astate astate)
+           ContinueProgram (update_astate astate)
+        | InfiniteProgram astate ->
+           InfiniteProgram (update_astate astate)
         | ExitProgram summary ->
             ExitProgram (update_summary summary)
         | AbortProgram summary ->

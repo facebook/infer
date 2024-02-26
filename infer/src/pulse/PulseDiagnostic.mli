@@ -77,6 +77,7 @@ type t =
   | CSharpResourceLeak of
       {class_name: CSharpClassName.t; allocation_trace: Trace.t; location: Location.t}
   | ErlangError of ErlangError.t
+  | InfiniteError of {location: Location.t}
   | TransitiveAccess of
       { tag: string
       ; description: string

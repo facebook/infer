@@ -63,7 +63,7 @@ let join summary1 summary2 =
   {pre_post_list; non_disj}
 
 
-let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_desc err_log location
+let exec_summary_of_post_common tenv ~continue_program ~exception_raised ~infinite_raised proc_desc err_log location
     (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t SatUnsat.t =
   let summarize (astate : AbductiveDomain.t)
       ~(exec_domain_of_summary : AbductiveDomain.Summary.summary -> 'a ExecutionDomain.base_t) :
@@ -77,7 +77,12 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
     in
     match (summary_result : _ result) with
     | Ok summary ->
-        exec_domain_of_summary summary
+       let r = exec_domain_of_summary summary in
+       (match r with
+        | InfiniteProgram _ -> 
+           let error = ReportableError {astate=astate; diagnostic=(InfiniteError {location})} in
+           PulseReport.report_summary_error tenv proc_desc err_log (error, summary) |> Option.value ~default:r
+        | _ -> r)
     | Error (`RetainCycle (summary, astate, assignment_traces, value, path, location)) ->
         PulseReport.report_summary_error tenv proc_desc err_log
           ( ReportableError
@@ -140,6 +145,9 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
   | ContinueProgram astate ->
       summarize astate ~exec_domain_of_summary:continue_program
   (* already a summary but need to reconstruct the variants to make the type system happy :( *)
+  | InfiniteProgram astate ->
+     L.debug Analysis Quiet "*** JV Summarizing InfiniteProgram \n"; 
+     summarize astate ~exec_domain_of_summary:infinite_raised 
   | AbortProgram astate ->
       Sat (AbortProgram astate)
   | ExitProgram astate ->
@@ -154,7 +162,7 @@ let force_exit_program tenv proc_desc err_log post =
   exec_summary_of_post_common tenv proc_desc err_log post
     ~continue_program:(fun astate -> ExitProgram astate)
     ~exception_raised:(fun astate -> ExitProgram astate)
-
+    ~infinite_raised:(fun  astate -> ExitProgram astate)
 
 let of_posts tenv proc_desc err_log location posts non_disj =
   let pre_post_list =
@@ -163,6 +171,7 @@ let of_posts tenv proc_desc err_log location posts non_disj =
         exec_summary_of_post_common tenv proc_desc err_log location exec_state
           ~continue_program:(fun astate -> ContinueProgram astate)
           ~exception_raised:(fun astate -> ExceptionRaised astate)
+          ~infinite_raised:(fun  astate -> InfiniteProgram astate)
         |> SatUnsat.sat )
   in
   {pre_post_list; non_disj= NonDisjDomain.make_summary non_disj}

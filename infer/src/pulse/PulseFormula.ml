@@ -3272,6 +3272,12 @@ type t =
 
 let ttrue = {conditions= Atom.Set.empty; phi= Formula.ttrue}
 
+(* added pulse-infinite *)
+let extract_cond (var:t) = var.conditions
+
+let set_is_empty (conds: Atom.Set.t) = (Atom.Set.is_empty conds)
+(* end pulse-infinite *)
+          
 let pp_with_pp_var pp_var fmt {conditions; phi} =
   F.fprintf fmt "@[<hv>conditions: %a@;phi: %a@]" (Atom.Set.pp_with_pp_var pp_var) conditions
     (Formula.pp_with_pp_var pp_var) phi

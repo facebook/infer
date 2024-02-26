@@ -774,6 +774,9 @@ let pure_function =
   register ~id:"PURE_FUNCTION" Error PurityChecker
     ~user_documentation:[%blob "./documentation/issues/PURE_FUNCTION.md"]
 
+let pulse_infinite =
+  register ~enabled:true ~id:"PULSE_INFINITE" Error Pulse
+    ~user_documentation:"None yet"
 
 let quandary_taint_error =
   register ~hum:"Taint Error" ~id:"QUANDARY_TAINT_ERROR" Error Quandary

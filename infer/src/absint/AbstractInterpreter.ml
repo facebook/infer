@@ -310,18 +310,21 @@ struct
         DisjunctiveMetadata.incr_interrupted_loops () ;
         prev )
       else
-        let post_disj, _, dropped, n_dropped =
-          join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into:(fst prev) (fst next)
+        let back_edges (prev: T.DisjDomain.t list) (next: T.DisjDomain.t list) (num_iters:int) : T.DisjDomain.t list * int =
+                         (T.back_edge prev next num_iters) in
+        (* L.debug Analysis Quiet "JV AbsInt T.DisjDomain.widen called \n"; *)
+        let dbe,_ = (back_edges (fst prev) (fst next) num_iters) in
+        let lstdbe,_,dropped, n_dropped =
+          (* L.debug Analysis Quiet "JV Widen Just Before LEQ PulseExecutionDomain \n"; *)
+          join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into:dbe (fst next)
         in
         let next_non_disj = T.remember_dropped_disjuncts dropped (snd next) in
-        let post =
-          (post_disj, T.NonDisjDomain.widen ~prev:(snd prev) ~next:next_non_disj ~num_iters)
-        in
-        if leq ~lhs:post ~rhs:prev then prev
-        else (
-          DisjunctiveMetadata.add_dropped_disjuncts n_dropped ;
-          post )
-
+         let ndnews = (T.NonDisjDomain.widen ~prev:(snd prev) ~next:next_non_disj ~num_iters) in
+         let post = (lstdbe, ndnews) in
+         if leq ~lhs:post ~rhs:prev then prev
+         else (
+           DisjunctiveMetadata.add_dropped_disjuncts n_dropped ;
+           post )
 
     let pp f (disjuncts, non_disj) =
       let pp_disjuncts f disjuncts =

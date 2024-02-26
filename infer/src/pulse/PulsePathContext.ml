@@ -25,6 +25,9 @@ let is_executable _ = true
 
 let exceptional_to_normal x = x
 
+(* pulse-infinite do nothing *)                            
+let back_edge _ _ _ = ([],-1)
+                            
 let pp fmt ({conditions; timestamp} [@warning "+missing-record-field-pattern"]) =
   let pp_condition fmt hist =
     if Config.debug_level_analysis >= 3 then F.fprintf fmt "[%a]" ValueHistory.pp hist
