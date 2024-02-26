@@ -6,25 +6,25 @@ The new checker adds a new Error Type in Pulse: PULSE_INFINITE, which is now par
 
 To compile pulse-OO, there is nothing special to do, just build infer the normal way. We currently test on C/C++ programs, so it suffices to build infer as such:
 
-$ build-infer clang
+$ build-infer clang  
 
 # Run Pulse-OO on divergence test cases (infinite.cpp) 
 
 First edit termination-run-all.sh to change the HOME value to yours, then run:
 
-$ cd infer/tests/codetoanalyze/c/pulse
-$ ./termination-run-all.sh
+$ cd infer/tests/codetoanalyze/c/pulse  
+$ ./termination-run-all.sh  
 
 The results go into infer-run.log as well as on the standard output
 
 # Run Pulse/Pulse-OO on some OOS project (ex: openssl)
 
-git clone https://github.com/openssl/openssl
-cp termination-run-all.sh ./openssl/
+git clone https://github.com/openssl/openssl  
+cp termination-run-all.sh ./openssl/  
 
 Edit termination-run-all.sh and change "clang -c infinite.cpp" by "make" which is how openssl is built. This will build the target and run the analysis automatically after the build.
 
-$ ./termination-run-all.sh
+$ ./termination-run-all.sh  
 
 The results go to infer-run.log again (unless you changed that name for your OSS project log file in termination-run-all.sh)
 
