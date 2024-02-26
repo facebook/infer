@@ -521,7 +521,13 @@ module Dict = struct
                   mk_fresh ~model_desc:"hack_array_cow_set_dsl" () )
         in
         let* field = field_of_string_value key in
-        let* () = option_iter field ~f:(write_deref_field ~ref:inner_dict ~obj:value) in
+        let* () =
+          match field with
+          | None ->
+              deep_await_hack_value value
+          | Some field ->
+              write_deref_field field ~ref:inner_dict ~obj:value
+        in
         assign_ret copy
     | _ when List.length args > 2 ->
         L.d_printfln "multidimensional copy on write not implemented yet" ;
