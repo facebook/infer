@@ -5,26 +5,9 @@
 
 namespace TypeTestTest;
 
-class Wrapper {
-  public function primitiveTag(mixed $v): int {
-    if ($v is null) {
-      return 0;
-    }
-    if ($v is int) {
-      return 1;
-    }
-    if ($v is bool) {
-      return 2;
-    }
-    if ($v is float) {
-      return 3;
-    }
-    if ($v is string) {
-      return 4;
-    }
-    return -1;
-  }
+final class C {}
 
+class Wrapper {
   public async function fail(): Awaitable<int> {
     return 99;
   }
@@ -102,4 +85,25 @@ class Wrapper {
     $_ = $this->fail();
   }
 
+  public async function checkClassOK(): Awaitable<void> {
+    $c = new C();
+    if ($c is C) {
+      return;
+    }
+    $_ = $this->fail();
+  }
+
+  public async function checkClass2OK(): Awaitable<void> {
+    if (3 is C) {
+      $_ = $this->fail();
+    }
+    return;
+  }
+
+  public async function checkClass2Bad(): Awaitable<void> {
+    if (3 is C) {
+      return;
+    }
+    $_ = $this->fail();
+  }
 }
