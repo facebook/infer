@@ -66,8 +66,8 @@ let join summary1 summary2 =
 let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_desc err_log location
     (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t SatUnsat.t =
   let summarize (astate : AbductiveDomain.t)
-      ~(exec_domain_of_summary : AbductiveDomain.Summary.summary -> 'a ExecutionDomain.base_t) :
-      _ ExecutionDomain.base_t SatUnsat.t =
+      ~(exec_domain_of_summary : AbductiveDomain.Summary.summary -> 'a ExecutionDomain.base_t)
+      ~(is_exceptional_state : bool) : _ ExecutionDomain.base_t SatUnsat.t =
     let open SatUnsat.Import in
     let+ summary_result =
       AbductiveDomain.Summary.of_post tenv
@@ -96,10 +96,17 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
           , summary )
         |> Option.value ~default:(exec_domain_of_summary summary)
     | Error (`HackUnawaitedAwaitable (summary, astate, allocation_trace, location)) ->
-        PulseReport.report_summary_error tenv proc_desc err_log
-          ( ReportableError {astate; diagnostic= HackUnawaitedAwaitable {allocation_trace; location}}
-          , summary )
-        |> Option.value ~default:(exec_domain_of_summary summary)
+        (* suppress unawaited awaitable reporting in the case that we're throwing an exception because it leads to
+           too many true-but-unhelpful positives. TODO: reinstate reporting in the case that the exception is caught *)
+        if is_exceptional_state then (
+          L.d_printfln "Suppressing Unawaited Awaitable report because exception thown" ;
+          exec_domain_of_summary summary )
+        else
+          PulseReport.report_summary_error tenv proc_desc err_log
+            ( ReportableError
+                {astate; diagnostic= HackUnawaitedAwaitable {allocation_trace; location}}
+            , summary )
+          |> Option.value ~default:(exec_domain_of_summary summary)
     | Error (`CSharpResourceLeak (summary, astate, class_name, allocation_trace, location)) ->
         PulseReport.report_summary_error tenv proc_desc err_log
           ( ReportableError
@@ -136,9 +143,9 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
   in
   match exec_astate with
   | ExceptionRaised astate ->
-      summarize astate ~exec_domain_of_summary:exception_raised
+      summarize astate ~exec_domain_of_summary:exception_raised ~is_exceptional_state:true
   | ContinueProgram astate ->
-      summarize astate ~exec_domain_of_summary:continue_program
+      summarize astate ~exec_domain_of_summary:continue_program ~is_exceptional_state:false
   (* already a summary but need to reconstruct the variants to make the type system happy :( *)
   | AbortProgram astate ->
       Sat (AbortProgram astate)
