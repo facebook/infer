@@ -86,15 +86,16 @@ let pp fmt exec_state = pp_ AbductiveDomain.pp fmt exec_state
 let widenstate = ref None;; 
 widenstate := Some (Caml.Hashtbl.create 16);;
 
-
 let back_edge (prev: t list) (next: t list) (num_iters: int)  : t list * int =
 
   (* Instead of this, we want to stop reporting at current and next widening iteration 
      if we already have had an alert at a previous widening iteration *)
   (* if (num_iters <= 0) then next,-1 else *)
+  (* It looks like infer reporting will filter issues by location to avoid duplicate already *)
 
   let same = phys_equal prev next in
 
+  (* Future work: implement a more generic way to check for recurring sets than filtering on the path condition *)
   (* let substate _ _ = false (* TODO *) 
   in *)
      
@@ -107,10 +108,13 @@ let back_edge (prev: t list) (next: t list) (num_iters: int)  : t list * int =
    *)
   
   let print_warning s cnt state =
-    L.debug Analysis Quiet "JV: BACK-EDGE FOUND infinite state from %s at iter %i with cnt %i) \n" s num_iters cnt;
+    (* let _ = state in *)
+    L.debug Analysis Quiet "JV: BACK-EDGE FOUND infinite state from %s at iter %i with cnt %i) \n" s num_iters cnt; 
+    (* To prints the whole state where the bug was found. This is useful but verbose *)
     L.debug Analysis Quiet "JV: Begin Infinite State numiter %d \n" num_iters;
     pp_ AbductiveDomain.pp Format.std_formatter state; 
     L.debug Analysis Quiet "JV: End infinite state numiter %d \n" num_iters;
+     
   in
   
   let rec detect_elem e lst curi : bool * int =
@@ -139,11 +143,15 @@ let back_edge (prev: t list) (next: t list) (num_iters: int)  : t list * int =
   let worklen = List.length(workset) in
 
   L.debug Analysis Quiet "JV PULSE_EXEC BACKEDGE prevlen %d nextlen %d diff %d worklen %d \n" prevlen nextlen (nextlen - prevlen) worklen;
+
+  (* Do-nothing version to avoid debug output *)
+  (* let print_workset _ = true in *)
   
+  (* Pulse-inf debug output: useful but verbose *)
   let rec print_workset ws =
     match ws with
     | [] -> true
-    | (hd,idx)::tl ->
+    | (hd,idx)::tl ->                 
        L.debug Analysis Quiet "JV: Workset at numiter %i with orig-idx %i \n" num_iters idx;
        L.debug Analysis Quiet "JV: Begin Workset State numiter %d \n" num_iters;
        pp_ AbductiveDomain.pp Format.err_formatter hd;
@@ -181,7 +189,7 @@ let back_edge (prev: t list) (next: t list) (num_iters: int)  : t list * int =
           | Some _ ->
              match (Formula.set_is_empty rcond) with
              | true ->
-                L.debug Analysis Quiet "JV: Recorded pathcond ALREADY in htable! (EMPTY) idx %d \n" idx; idx
+                L.debug Analysis Quiet "JV: Recorded pathcond ALREADY in htable! (EMPTY) idx %d \n" idx; -1
              | false -> 
              L.debug Analysis Quiet "JV: Recorded pathcond ALREADY in htable! (NON-TERM BUG) idx %d \n" idx; idx
            
@@ -218,15 +226,6 @@ let back_edge (prev: t list) (next: t list) (num_iters: int)  : t list * int =
   let lastelm = (List.length next) in
   let isempty = (phys_equal lastelm 0) || (phys_equal (List.length prev) 0) in
 
-  (* Just remove the useless idx now *)
-  (*
-  let rec map_fst (ws: (t * int) list)  (res: t list) = 
-    match ws with
-    | [] -> res
-    | (hd,_)::tl -> map_fst tl (res @ [hd])
-  in
-   *)
-
   (* Identify which state in the post is repeated and generate a new infinite state for it *)
   let rec is_repeated e lst : bool = 
       match lst with
@@ -246,15 +245,14 @@ let back_edge (prev: t list) (next: t list) (num_iters: int)  : t list * int =
   
   (* we have a trivial lasso because prev = next - this should trigger an alert *)
   if same && (phys_equal isempty false) then
-    (create_infinite_state_and_print next lastelm 1)
+    create_infinite_state_and_print next lastelm 1
   (* We have duplication of (at least two) equivalent states in the post - trigger an alert *)
   else if (phys_equal worklen 0) && (nextlen - prevlen) > 0 then
-    (create_infinite_state_and_print next (find_duplicate_state next 0 (-1)) 2)
-    (* We have a new state in the post whose condition is equivalent to an existing state - trigger an alert *)
+    create_infinite_state_and_print next (find_duplicate_state next 0 (-1)) 2
+  (* We have a new state in the post whose condition is equivalent to an existing state - trigger an alert *)
   else if repeated_wsidx >= 0 then
-    (* (create_infinite_state_and_print (map_fst workset []) repeated_wsidx 3) *)
-    (create_infinite_state_and_print next repeated_wsidx 3) 
-  (* No lasso detected, return empty *)
+    create_infinite_state_and_print next repeated_wsidx 3
+  (* No recurring state detected, return empty *)
   else [],-1
 
                       
