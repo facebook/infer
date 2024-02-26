@@ -1,6 +1,6 @@
-# PULSE-OO (read "pulse-infinite") : An under-approximate non-termination checker
+# PULSE-OO ("pulse-infinite")
 
-Pulse-OO is based on the Pulse checker part of Infer by Meta.
+Pulse-OO is an under-approximate non-termination checker based on the Pulse checker, part of the Infer framework by Meta.
 
 The new checker adds a new Error Type in Pulse: PULSE_INFINITE, which is now part of the error report printed by Pulse at the end of analysis.
 
