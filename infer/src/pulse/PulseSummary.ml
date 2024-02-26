@@ -154,7 +154,7 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised ~infini
   (* already a summary but need to reconstruct the variants to make the type system happy :( *)
   | InfiniteProgram astate ->
      L.debug Analysis Quiet "*** JV Summarizing InfiniteProgram \n"; 
-     summarize astate ~exec_domain_of_summary:infinite_raised 
+     summarize astate ~exec_domain_of_summary:infinite_raised ~is_exceptional_state:false
   | AbortProgram astate ->
       Sat (AbortProgram astate)
   | ExitProgram astate ->
