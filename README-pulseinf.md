@@ -1,13 +1,14 @@
-This is the README for pulse-OO (read "pulse-infinite"), an under-approximate non-termination checker based on the Pulse checker by Meta.
+# PULSE-OO (read "pulse-infinite") : An under-approximate non-termination checker
 
-The new checker adds a new Error Type in Pulse: PULSE_INFINITE, which is now part of the error report printed by Pulse.
+Pulse-OO is based on the Pulse checker part of Infer by Meta.
 
-To compile pulse-OO, there is nothing special to do, just build infer the normal way:
+The new checker adds a new Error Type in Pulse: PULSE_INFINITE, which is now part of the error report printed by Pulse at the end of analysis.
 
-# for C/C++ checker - the one we are testing on
+To compile pulse-OO, there is nothing special to do, just build infer the normal way. We currently test on C/C++ programs, so it suffices to build infer as such:
+
 $ build-infer clang
 
-# Run pulse-OO on all test cases (infinite.cpp) 
+# Run Pulse-OO on divergence test cases (infinite.cpp) 
 
 First edit termination-run-all.sh to change the HOME value to yours, then run:
 
