@@ -20,7 +20,9 @@ IF needed, edit termination-run-all.sh to change the HOME value to yours, then r
 
 $ ./termination-run-all.sh  
 
-The results go into infer-run.log as well as on the standard output
+The results go into infer-run.log as well as on the standard output.
+
+The full structured list of bug reports is stored in pulseinf-report.json 
 
 # Run Pulse-♾️ on an OSS project (ex: openssl)
 
