@@ -2,9 +2,11 @@
 
 Pulse-♾️ is an under-approximate non-termination checker based on the Pulse checker, part of the Infer framework by Meta.
 
+Program termination is a well-known undecidable problem in the general case, and under-approximation is a tractable strategy to find non-termination bugs.
+
 The new checker adds a new Error Type in Pulse: PULSE_INFINITE, which is now part of the error report printed by Pulse at the end of analysis.
 
-To compile Pulse-♾️, there is nothing special to do, just build infer the normal way. We currently test on C/C++ programs, so it suffices to build infer as such:
+To compile Pulse-♾️, just build infer the normal way. We currently test on C/C++ programs, so it suffices to build infer as such:
 
 $ build-infer clang  
 
