@@ -1,14 +1,14 @@
-# PULSE-OO ("pulse-infinite")
+# PULSE-♾️("pulse-infinite")
 
-Pulse-OO is an under-approximate non-termination checker based on the Pulse checker, part of the Infer framework by Meta.
+Pulse-♾️ is an under-approximate non-termination checker based on the Pulse checker, part of the Infer framework by Meta.
 
 The new checker adds a new Error Type in Pulse: PULSE_INFINITE, which is now part of the error report printed by Pulse at the end of analysis.
 
-To compile pulse-OO, there is nothing special to do, just build infer the normal way. We currently test on C/C++ programs, so it suffices to build infer as such:
+To compile Pulse-♾️, there is nothing special to do, just build infer the normal way. We currently test on C/C++ programs, so it suffices to build infer as such:
 
 $ build-infer clang  
 
-# Run Pulse-OO on divergence test cases (infinite.cpp) 
+# Run Pulse-♾️ on divergence test cases (infinite.cpp) 
 
 First edit termination-run-all.sh to change the HOME value to yours, then run:
 
@@ -17,7 +17,7 @@ $ ./termination-run-all.sh
 
 The results go into infer-run.log as well as on the standard output
 
-# Run Pulse/Pulse-OO on some OSS project (ex: openssl)
+# Run Pulse-♾️ on an OSS project (ex: openssl)
 
 git clone https://github.com/openssl/openssl  
 cp termination-run-all.sh ./openssl/  
@@ -30,10 +30,12 @@ The results go to infer-run.log again (unless you changed that name for your OSS
 
 # How to remove debug output
 
-The new Pulse-OO checker is a DEVELOPMENT build which prints a lot of debug output and generate very large log files for development purpose.
+The Pulse-♾️ checker is a DEVELOPMENT build which prints a lot of debug output and generate very large log files for development purpose.
 
 To remove the excessive debug output printed by default in pulse-OO, do the following:
 
-Edit the termination-run-all.sh and remove: "--debug-level=2" and "-g" on the pulse invocation line
+Edit the termination-run-all.sh and remove: "--debug-level=2" and "-g" from the pulse invocation line.
+
+Enjoy!
 
 
