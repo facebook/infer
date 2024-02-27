@@ -17,7 +17,7 @@ $ ./termination-run-all.sh
 
 The results go into infer-run.log as well as on the standard output
 
-# Run Pulse/Pulse-OO on some OOS project (ex: openssl)
+# Run Pulse/Pulse-OO on some OSS project (ex: openssl)
 
 git clone https://github.com/openssl/openssl  
 cp termination-run-all.sh ./openssl/  
