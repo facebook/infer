@@ -616,6 +616,11 @@ ERLANG OPTIONS
            (Pulse) analysis time, it models Erlang exceptions (builtin or OTP
            ones). (Conversely: --erlang-reliability)
 JAVA OPTIONS
+       --no-annotation-reachability-builtin-pairs
+           Deactivates: include default builtin source/sink pairs for the
+           annotation reachability checker (Conversely:
+           --annotation-reachability-builtin-pairs)
+
        --annotation-reachability-custom-pairs json
            Specify custom sources/sink for the annotation reachability
            checker           Example format: for custom annotations
