@@ -2519,8 +2519,20 @@ module Formula = struct
         what we know implies keeping track of *all* the consequences (to avoid diverging by
         re-discovering the same facts over and over), which would be expensive. *)
 
-    (** an arbitrary value *)
-    let base_fuel = 10
+    exception OutOfFuel of (t * new_eqs * (F.formatter -> unit))
+
+    (* the only way to initialize fuel: no functions in the interface of this module
+       take fuel as argument, and no functions in this module pass concrete fuel values,
+       so this will always catch [OutOfFuel] exceptions and these exceptions will not
+       escape this module *)
+    let with_base_fuel f =
+      (* an arbitrary value *)
+      let base_fuel = 10 in
+      try f ~fuel:base_fuel
+      with OutOfFuel (phi, new_eqs, why) ->
+        L.d_printfln "%t" why ;
+        Sat (phi, new_eqs)
+
 
     let normalize_linear_ phi linear_eqs l =
       LinArith.subst_variables l ~f:(fun v ->
@@ -2605,10 +2617,13 @@ module Formula = struct
                 if fuel > 0 then (
                   L.d_printfln "Consuming fuel solving linear equality (from %d)" fuel ;
                   solve_normalized_lin_eq ~fuel:(fuel - 1) new_eqs l l' phi )
-                else (
+                else
                   (* [fuel = 0]: give up simplifying further for fear of diverging *)
-                  L.d_printfln "Ran out of fuel solving linear equality" ;
-                  Sat (phi, new_eqs) ) ) )
+                  raise
+                    (OutOfFuel
+                       ( phi
+                       , new_eqs
+                       , fun fmt -> F.fprintf fmt "Ran out of fuel solving linear equality" ) ) ) )
 
 
     and discharge_new_eq_opt ~fuel new_eqs v new_eq_opt phi =
@@ -2696,10 +2711,14 @@ module Formula = struct
                   Debug.p "pivoted tableau: %a@\n" (Tableau.pp Var.pp) phi.tableau ;
                   solve_tableau_restricted_eq ~fuel:(fuel - 1) new_eqs w
                     (normalize_restricted phi l) phi )
-            else (
-              L.debug Analysis Verbose "Ran out of fuel pivoting the tableau %a@\n"
-                (Tableau.pp Var.pp) phi.tableau ;
-              Sat (phi, new_eqs) ) )
+            else
+              raise
+                (OutOfFuel
+                   ( phi
+                   , new_eqs
+                   , fun fmt ->
+                       F.fprintf fmt "Ran out of fuel pivoting the tableau %a@\n"
+                         (Tableau.pp Var.pp) phi.tableau ) ) )
 
 
     (** add [t = v] to [phi.term_eqs] and resolves consequences of that new fact; assumes that
@@ -3146,12 +3165,12 @@ module Formula = struct
       (* [l1 ≤ l2] becomes [(l2-l1) ≥ 0], encoded as [l = w] with [w] a fresh restricted variable *)
       let l = LinArith.subtract l2 l1 |> normalize_linear phi |> normalize_restricted phi in
       let w = Var.mk_fresh_restricted () in
-      solve_tableau_eq ~fuel:base_fuel new_eqs w l phi
+      with_base_fuel (solve_tableau_eq new_eqs w l phi)
 
 
     and solve_lin_eq new_eqs t1 t2 phi =
-      solve_normalized_lin_eq ~fuel:base_fuel new_eqs (normalize_linear phi t1)
-        (normalize_linear phi t2) phi
+      with_base_fuel
+        (solve_normalized_lin_eq new_eqs (normalize_linear phi t1) (normalize_linear phi t2) phi)
 
 
     and and_var_linarith v l (phi, new_eqs) = solve_lin_eq new_eqs l (LinArith.of_var v) phi
@@ -3177,7 +3196,7 @@ module Formula = struct
       | (Atom.Equal (Linear l, t) | Atom.Equal (t, Linear l))
         when Option.is_some (LinArith.get_as_var l) ->
           let v = Option.value_exn (LinArith.get_as_var l) in
-          let+ phi_new_eqs' = solve_normalized_term_eq ~fuel:base_fuel new_eqs t v phi in
+          let+ phi_new_eqs' = with_base_fuel (solve_normalized_term_eq new_eqs t v phi) in
           (false, phi_new_eqs')
       | Atom.LessEqual (Linear l, Const c) ->
           let+ phi', new_eqs = solve_lin_ineq new_eqs l (LinArith.of_q c) phi in
@@ -3254,9 +3273,9 @@ module Formula = struct
       phi_new_eqs'
 
 
-    let and_var_term v t phi_new_eqs = and_var_term ~fuel:base_fuel v t phi_new_eqs
+    let and_var_term v t phi_new_eqs = with_base_fuel (and_var_term v t phi_new_eqs)
 
-    let and_var_var v1 v2 (phi, new_eqs) = merge_vars ~fuel:base_fuel new_eqs v1 v2 phi
+    let and_var_var v1 v2 (phi, new_eqs) = with_base_fuel (merge_vars new_eqs v1 v2 phi)
   end
 end
 
