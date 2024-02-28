@@ -13,7 +13,7 @@ module CallEvent = PulseCallEvent
 type base = PVar of Pvar.t | ReturnValue of CallEvent.t [@@deriving compare, equal]
 
 type access =
-  | CaptureFieldAccess of CapturedVar.t
+  | CaptureFieldAccess of string
   | FieldAccess of Fieldname.t
   | ArrayAccess of source_expr option
   | TakeAddress
@@ -28,7 +28,7 @@ and source_expr = base * access list [@@deriving compare, equal]
 type access_expr =
   | ProgramVar of Pvar.t
   | Call of CallEvent.t
-  | Capture of access_expr * CapturedVar.t
+  | Capture of access_expr * string
   | Deref of access_expr
   | ArrowField of access_expr * Fieldname.t
   | DotField of access_expr * Fieldname.t
@@ -41,8 +41,7 @@ let rec pp_access_expr fmt access_expr =
     let pp_access_expr fmt access_expr =
       match access_expr with
       | Capture (_, captured_var) ->
-          F.fprintf fmt "%a containing %a" pp_access_expr access_expr Pvar.pp_value
-            captured_var.CapturedVar.pvar
+          F.fprintf fmt "%a containing %s" pp_access_expr access_expr captured_var
       | _ ->
           pp_access_expr fmt access_expr
     in
@@ -68,8 +67,7 @@ let rec pp_access_expr fmt access_expr =
       if java_or_objc then CallEvent.pp_name_only fmt call
       else F.fprintf fmt "%a()" CallEvent.pp_name_only call
   | Capture (access_expr, captured_var) ->
-      F.fprintf fmt "%a capturing %a" pp_access_expr access_expr Pvar.pp_value
-        captured_var.CapturedVar.pvar
+      F.fprintf fmt "%a capturing %s" pp_access_expr access_expr captured_var
   | ArrowField (access_expr, field) ->
       pp_field_acces_expr fmt access_expr "->" field
   | DotField (access_expr, field) ->

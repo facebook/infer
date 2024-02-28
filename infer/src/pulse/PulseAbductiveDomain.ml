@@ -686,8 +686,7 @@ module Internal = struct
         map_decompiler astate ~f:(fun decompiler ->
             Decompiler.add_access_source
               (fst addr_hist_dst |> downcast)
-              (downcast_access access) ~src:(downcast addr_src) (astate.post :> base_domain).attrs
-              decompiler )
+              (downcast_access access) ~src:(downcast addr_src) decompiler )
       in
       (astate, addr_hist_dst)
 

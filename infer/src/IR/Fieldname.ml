@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-type captured_data = {capture_mode: CapturedVar.capture_mode; is_weak: bool; captured_pos: int}
+type captured_data = {capture_mode: CapturedVar.capture_mode; is_weak: bool}
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 type t = {class_name: Typ.Name.t; field_name: string; captured_data: captured_data option}
@@ -22,9 +22,8 @@ let string_of_capture_mode = function
 
 
 let pp_captured_data f (captured_data : captured_data) =
-  F.fprintf f "captured_%s_%d%s"
+  F.fprintf f "captured_%s_%s"
     (string_of_capture_mode captured_data.capture_mode)
-    captured_data.captured_pos
     (if captured_data.is_weak then "_weak" else "")
 
 
@@ -62,10 +61,6 @@ let is_capture_field_in_closure {captured_data} = Option.is_some captured_data
 
 let is_weak_capture_field_in_closure {captured_data} =
   Option.exists captured_data ~f:(fun {is_weak} -> is_weak)
-
-
-let get_capture_field_position {captured_data} =
-  Option.map captured_data ~f:(fun {captured_pos} -> captured_pos)
 
 
 let is_capture_field_in_closure_by_ref {captured_data} =
