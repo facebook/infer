@@ -883,12 +883,13 @@ module PulseTransferFunctions = struct
             let call_was_unknown =
               match call_was_unknown with `UnknownCall -> true | `KnownCall -> false
             in
+            let ret_opt = PulseOperations.read_id (fst ret) astate in
             let+ astate =
               let astate_after_call =
                 match ret_and_name_saved_for_hack_async with
                 | Some (saved_ret, saved_name) -> (
                     L.d_printfln "returned from asynchronous call" ;
-                    match PulseOperations.read_id (fst ret) astate with
+                    match ret_opt with
                     | None ->
                         L.d_printfln "couldn't find ret in state" ;
                         astate
@@ -917,6 +918,9 @@ module PulseTransferFunctions = struct
                     )
                 | _ ->
                     astate
+              in
+              let* () =
+                PulseRetainCycleChecker.check_retain_cycles_call tenv func_args ret_opt astate
               in
               PulseTaintOperations.call tenv path call_loc ret ~call_was_unknown call_event
                 func_args astate_after_call
@@ -1359,6 +1363,9 @@ module PulseTransferFunctions = struct
             in
             let=+ astate =
               PulseOperations.write_deref path loc ~ref:lhs_addr_hist ~obj:(rhs_addr, hist) astate
+            in
+            let* () =
+              PulseRetainCycleChecker.check_retain_cycles_store tenv (rhs_addr, hist) astate
             in
             let astate =
               if Topl.is_active () then topl_store_step path loc ~lhs:lhs_exp ~rhs:rhs_exp astate

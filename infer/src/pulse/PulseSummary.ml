@@ -78,12 +78,6 @@ let exec_summary_of_post_common tenv ~continue_program ~exception_raised proc_de
     match (summary_result : _ result) with
     | Ok summary ->
         exec_domain_of_summary summary
-    | Error (`RetainCycle (summary, astate, assignment_traces, value, path, location)) ->
-        PulseReport.report_summary_error tenv proc_desc err_log
-          ( ReportableError
-              {astate; diagnostic= RetainCycle {assignment_traces; value; path; location}}
-          , summary )
-        |> Option.value ~default:(exec_domain_of_summary summary)
     | Error (`MemoryLeak (summary, astate, allocator, allocation_trace, location)) ->
         PulseReport.report_summary_error tenv proc_desc err_log
           ( ReportableError {astate; diagnostic= MemoryLeak {allocator; allocation_trace; location}}

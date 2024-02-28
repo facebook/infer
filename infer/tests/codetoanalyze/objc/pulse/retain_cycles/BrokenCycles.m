@@ -94,7 +94,7 @@ void weak_cycle() {
   b_obj.a = a_obj; // Not a retain cycle
 }
 
-void broken_strong_cycle() {
+void broken_strong_cycle_good_FP() {
   ClassA* a_obj = [ClassA alloc];
   ClassBStrong* b_obj = [[ClassBStrong alloc] init];
 
@@ -110,7 +110,7 @@ void broken_strong_cycle() {
   // the reassignment of a_obj.b leading to its deallocation
 }
 
-void broken_inner_cycle() {
+void broken_inner_cycle_good_FP() {
   ClassC* c_obj = [ClassC alloc];
   c_obj.a = [ClassA alloc];
   ClassBStrong* b_obj = [[ClassBStrong alloc] init];
@@ -126,7 +126,7 @@ void broken_inner_cycle() {
   // the reassignment of c_obj.a.b leading to its deallocation
 }
 
-void broken_self_strong_cycle() {
+void broken_self_strong_cycle_good_FP() {
   SelfReferencing* obj = [[SelfReferencing alloc] init];
   obj.s = obj; // retain cycle
   obj.s = nil; // broken cycle
